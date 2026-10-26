@@ -5,7 +5,7 @@ import { createRebindSession } from "@jgengine/core/input/rebindSession";
 import type { GameContext, GameContextEntityEntry } from "@jgengine/core/runtime/gameContext";
 import { createAssetCatalog } from "@jgengine/core/scene/assetCatalog";
 import { environment, grass, terrain } from "@jgengine/core/world/features";
-import { KeybindingMenu } from "@jgengine/react/settings/keybindingMenu";
+import { KeybindingMenu } from "@jgengine/core/settings/keybindingMenu.view";
 
 import { EnvironmentScene } from "@jgengine/shell/environment/EnvironmentScene";
 import type { PlayableGame } from "@jgengine/shell/registry";

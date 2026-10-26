@@ -1,7 +1,7 @@
 import { useState } from "react";
-import { useSettings } from "@jgengine/react/settings/settings";
+import { useSettings } from "@jgengine/core/settings/settings.view";
 import { KitButton, KitPanel } from "@jgengine/react/uiKitRoot";
-import { SettingsSection, SettingsTabs } from "@jgengine/react/settings/settingsBlocks";
+import { SettingsSection, SettingsTabs } from "@jgengine/core/settings/settingsBlocks.view";
 
 /**
  * The keep's settings, cut into a stone tablet: category tabs are chiselled notches, every row is a

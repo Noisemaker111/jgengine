@@ -1,7 +1,7 @@
 import type { CSSProperties } from "react";
 import { useDisplayProfile } from "@jgengine/react";
 import { GameCursor } from "@jgengine/react/gameCursor";
-import { useMenuNav } from "@jgengine/react/menu/menuNav";
+import { useMenuNav } from "@jgengine/core/menu/menuNav.view";
 import { CHARACTERS } from "../../characters";
 import { ReclaimerPortrait } from "../components/Portrait";
 import { ControlKeys } from "./FieldTerminal";

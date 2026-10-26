@@ -18,8 +18,8 @@ import { GameInspectionCamera } from "./GameInspectionCamera";
 import { GameOrbitCamera } from "./GameOrbitCamera";
 import { resolveDirectedCamera } from "./rigMath";
 import { resolveCaptureCameraConfig, resolveRigKind, turntableAsObserver } from "./rigResolve";
-import { CameraShakeApplier } from "./shake/CameraShakeApplier";
-import { rigShakeConfig, useCameraShake } from "./shake/shakeChannel";
+import { CameraShakeApplier } from "@jgengine/core/camera/shake/CameraShakeApplier.draw";
+import { rigShakeConfig, useCameraShake } from "@jgengine/core/camera/shake/shakeChannel.draw";
 
 export { resolveRigKind } from "./rigResolve";
 

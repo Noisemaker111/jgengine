@@ -1,7 +1,7 @@
 import { lazy, Suspense, useEffect, useMemo, useState, type ComponentType, type ReactNode } from "react";
 
 import type { GameContext } from "@jgengine/core/runtime/gameContext";
-import { useAccessibilitySettings } from "@jgengine/react/settings/accessibilitySettings";
+import { useAccessibilitySettings } from "@jgengine/core/settings/accessibilitySettings.view";
 import { HudOverlayHost, HudThemeRoot } from "@jgengine/core/hud/hudThemeRoot.view";
 import { HudViewportProvider } from "@jgengine/core/hud/hudViewport.view";
 import { GameProvider } from "@jgengine/react/provider";
@@ -18,8 +18,8 @@ import { MissingModelsNotice } from "./devtools/MissingModelsNotice";
 import { FeedbackHost } from "./audio/FeedbackHost";
 import type { AudioEngine } from "./audio/audioEngine";
 import { GamePhaseStamp } from "./GamePhaseStamp";
-import { ShellNotices, ShellUiCues } from "./notifications/ShellNotices";
-import { SettingsPlayControlGate } from "./settings/SettingsRuntime";
+import { ShellNotices, ShellUiCues } from "@jgengine/core/notifications/ShellNotices.view";
+import { SettingsPlayControlGate } from "@jgengine/core/settings/SettingsRuntime.draw";
 import type { ShellMultiplayer } from "./multiplayer";
 import type { PlayableGame } from "./registry";
 

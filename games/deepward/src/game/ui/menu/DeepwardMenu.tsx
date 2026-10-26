@@ -1,13 +1,13 @@
 import { type ReactNode, useCallback, useEffect, useState } from "react";
-import { ContinuePane, CreditsPane, SaveSlotsPane } from "@jgengine/react/menu/gameMenuSaves";
+import { ContinuePane, CreditsPane, SaveSlotsPane } from "@jgengine/core/menu/gameMenuSaves.view";
 import { KitButton, KitPanel } from "@jgengine/react/uiKitRoot";
-import { GameMenu } from "@jgengine/react/menu/gameMenu";
-import { PauseMenu } from "@jgengine/react/menu/pauseMenu";
+import { GameMenu } from "@jgengine/core/menu/gameMenu.view";
+import { PauseMenu } from "@jgengine/core/menu/pauseMenu.view";
 import { useGameStore, useOptionalGamePhase } from "@jgengine/react/hooks";
 import { useGameContext } from "@jgengine/react/provider";
 import { useSaveSlots } from "@jgengine/core/save/saveSlots.view";
-import { useSettings } from "@jgengine/react/settings/settings";
-import { SettingsSection, SettingsTabs } from "@jgengine/react/settings/settingsBlocks";
+import { useSettings } from "@jgengine/core/settings/settings.view";
+import { SettingsSection, SettingsTabs } from "@jgengine/core/settings/settingsBlocks.view";
 import { useStore } from "@jgengine/react/store";
 import type { SaveSlotMeta } from "@jgengine/core/save/saveSlots";
 

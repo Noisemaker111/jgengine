@@ -7,7 +7,7 @@ import { HudSlots } from "@jgengine/shell/gameKit";
 import { KitButton, KitMeter, KitPanel } from "@jgengine/react/uiKitRoot";
 
 import { continueGame } from "@jgengine/core/game/gameFlow";
-import { startNewGame } from "@jgengine/react/menu/gameFlowMenus";
+import { startNewGame } from "@jgengine/core/menu/gameFlowMenus.view";
 import { gunView } from "../guns";
 import { idea } from "../idea";
 import { opsView } from "../play";

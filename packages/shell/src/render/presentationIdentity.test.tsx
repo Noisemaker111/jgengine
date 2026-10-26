@@ -11,7 +11,7 @@ import type { GraphicsProfile } from "@jgengine/core/settings/graphicsProfile";
 import type { PostProcessingConfig } from "@jgengine/core/render/postProcessing";
 import type { SettingsStore } from "@jgengine/core/settings/settingsModel";
 
-import { useGraphicsSettings, type AppliedGraphicsSettings } from "../settings/appliedSettings";
+import { useGraphicsSettings, type AppliedGraphicsSettings } from "@jgengine/core/settings/appliedSettings.draw";
 import { createTerrainDetailMaterial } from "../terrain/terrainDetailMaterial";
 import { PostProcessing } from "../postfx/PostProcessing";
 import { usePresentationLook } from "./presentationLook";

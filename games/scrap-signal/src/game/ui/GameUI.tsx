@@ -4,7 +4,7 @@ import { useGameFonts } from "@jgengine/react/gameFonts";
 import { useGamePhase } from "@jgengine/react/hooks";
 import { useStore } from "@jgengine/react/store";
 import { lootDropsOf } from "@jgengine/core/game/events";
-import { ToastStack } from "@jgengine/react/notifications/toastStack";
+import { ToastStack } from "@jgengine/core/notifications/toastStack.view";
 import { itemNameById } from "../content";
 import { DamageVignette, HitMarker, LevelUpBurst } from "./components/Feedback";
 import { CashPlate, MissionTracker } from "./components/Mission";

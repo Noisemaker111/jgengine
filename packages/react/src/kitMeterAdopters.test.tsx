@@ -8,7 +8,7 @@ import { createTalentTree } from "@jgengine/core/game/talents";
 import { createTimerSet } from "@jgengine/core/time/timerSet";
 import { createCameraShake } from "@jgengine/core/camera/shake/cameraShake";
 
-import { CameraShakeMeter } from "./camera/shake/cameraShake";
+import { CameraShakeMeter } from "@jgengine/core/camera/shake/cameraShake.view";
 import { ComboMeterHud } from "@jgengine/core/hud/comboMeter.view";
 import { DialogueView } from "./dialogueView";
 import { Crosshair } from "@jgengine/core/hud/hudReadouts.view";

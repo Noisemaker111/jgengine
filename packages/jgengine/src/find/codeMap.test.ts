@@ -67,23 +67,6 @@ describe("this checkout answers where a concept lives in one call", () => {
   const read = (file: CodeFile) => readFileSync(join(root, file.path), "utf8");
   const homeOf = (query: string) => new Map(locate(files, read, queryTokens(query)).map((home) => [home.layer, home.home]));
 
-  test("camera shake: one folder per layer", () => {
-    const homes = homeOf("camera shake");
-    expect(homes.get("core")).toBe("packages/core/src/camera/shake/");
-    expect(homes.get("shell")).toBe("packages/shell/src/camera/shake/");
-    expect(homes.get("react")).toBe("packages/react/src/camera/shake/");
-  });
-
-  test("haptics and notifications have one home per layer", () => {
-    const haptics = homeOf("haptics");
-    expect(haptics.get("core")).toBe("packages/core/src/haptics/");
-    expect(haptics.get("shell")).toBe("packages/shell/src/haptics/");
-    const notifications = homeOf("notifications");
-    expect(notifications.get("core")).toBe("packages/core/src/notifications/");
-    expect(notifications.get("shell")).toBe("packages/shell/src/notifications/");
-    expect(notifications.get("react")).toBe("packages/react/src/notifications/");
-  });
-
   test("grass and hud point at the folders that hold them", () => {
     const grass = homeOf("grass");
     expect(grass.get("core")).toBe("packages/core/src/world/");
@@ -91,11 +74,21 @@ describe("this checkout answers where a concept lives in one call", () => {
   });
 
   test("a moved feature answers with its one feature folder", () => {
-    for (const feature of ["hud", "save"]) {
-      const homes = homeOf(feature);
-      expect(homes.get("core")).toBe(`packages/core/src/${feature}/`);
-      expect(homes.get("shell") ?? "").not.toEndWith(`/${feature}/`);
-      expect(homes.get("react") ?? "").not.toEndWith(`/${feature}/`);
+    const features: [string, string][] = [
+      ["hud", "hud"],
+      ["save", "save"],
+      ["camera shake", "camera/shake"],
+      ["haptics", "haptics"],
+      ["notifications", "notifications"],
+      ["menu", "menu"],
+      ["settings", "settings"],
+      ["inventory", "inventory"],
+    ];
+    for (const [query, folder] of features) {
+      const homes = homeOf(query);
+      expect(homes.get("core")).toBe(`packages/core/src/${folder}/`);
+      expect(homes.get("shell") ?? "").not.toEndWith(`/${folder}/`);
+      expect(homes.get("react") ?? "").not.toEndWith(`/${folder}/`);
     }
   });
 });

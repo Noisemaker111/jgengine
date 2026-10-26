@@ -244,6 +244,13 @@ export function homeFor(path: string, layers: Map<string, Map<string, Set<string
   if (folders === undefined) return null;
   const words = nameWords(path);
   const inside = path.slice(root.length + 1).split("/").slice(0, -1).map((part) => part.toLowerCase());
+  // `menu/gameMenu.view.tsx` already sits in the folder its name ends on.
+  for (let start = 1; start < words.length; start += 1) {
+    for (let end = start + 1; end <= words.length; end += 1) {
+      const run = words.slice(start, end).join("");
+      if (inside.includes(run) || inside.includes(run.replace(/s$/, ""))) return null;
+    }
+  }
   for (let length = words.length; length >= 1; length -= 1) {
     const concept = words.slice(0, length).join("");
     const homes = folders.get(concept);

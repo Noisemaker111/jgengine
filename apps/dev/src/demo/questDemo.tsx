@@ -3,7 +3,7 @@ import { createQuestJournal, describeTrackedQuest, type QuestDef, type QuestJour
 import type { GameContext, GameContextEntityEntry } from "@jgengine/core/runtime/gameContext";
 import { createAssetCatalog } from "@jgengine/core/scene/assetCatalog";
 import { environment, grass, terrain } from "@jgengine/core/world/features";
-import { QuestTracker } from "@jgengine/react/questTracker";
+import { QuestTracker } from "@jgengine/core/mission/questTracker.view";
 import { usePlayer, useTicker } from "@jgengine/react/hooks";
 
 import { EnvironmentScene } from "@jgengine/shell/environment/EnvironmentScene";

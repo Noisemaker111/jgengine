@@ -1,0 +1,310 @@
+import { useEffect, useLayoutEffect, useRef, useState, useSyncExternalStore, type CSSProperties, type ReactNode } from "react";
+
+import type { Notice, NoticeFeed, NoticeTone } from "@jgengine/core/notifications/notices";
+import type { LayoutRect, LayoutRegion } from "@jgengine/core/hud/hudPriority";
+
+import { useGameViewportLayout } from "@jgengine/react/gameViewport";
+import { useOptionalGameContext } from "@jgengine/react/provider";
+import type { KitTone } from "@jgengine/react/uiKit";
+import { KitToast, useHasUiKit, useUiKit } from "@jgengine/react/uiKitRoot";
+
+export type { Notice, NoticeTone } from "@jgengine/core/notifications/notices";
+
+/** Where {@link NoticeStack} sits: below top-edge HUD bars, over the play area, or above bottom action bars. */
+export type NoticePlacement = "top" | "center" | "bottom";
+
+const EXIT_MS = 200;
+const EMPTY: readonly Notice[] = [];
+const NO_FEED_SUBSCRIBE = () => () => undefined;
+
+const TONE_COLOR: Record<NoticeTone, string> = {
+  info: "var(--jg-accent, #7cc4ff)",
+  success: "var(--jg-success, #3ecf8e)",
+  warn: "var(--jg-warning, #f5b544)",
+  deny: "var(--jg-danger, #f26d6d)",
+};
+
+const KIT_TONE: Record<NoticeTone, KitTone> = { info: "accent", success: "good", warn: "warn", deny: "bad" };
+
+/** The entries a capped stack shows: every leaving one plus the newest `max` live ones. @internal */
+export function cappedShown<T extends { leaving: boolean }>(shown: readonly T[], max: number): T[] {
+  const live = shown.filter((entry) => !entry.leaving).length;
+  let skip = Math.max(0, live - Math.max(1, Math.floor(max)));
+  return shown.filter((entry) => {
+    if (entry.leaving || skip === 0) return true;
+    skip -= 1;
+    return false;
+  });
+}
+
+const TONE_LABEL: Record<NoticeTone, string> = { info: "Info", success: "Done", warn: "Warning", deny: "Can't do that" };
+
+const DEFAULT_OFFSET: Record<NoticePlacement, string> = {
+  top: "clamp(64px, 14%, 150px)",
+  center: "34%",
+  bottom: "clamp(120px, 22%, 230px)",
+};
+
+const AVOID_GAP = 8;
+
+function placementStyle(placement: NoticePlacement, offset: number | string | undefined): CSSProperties {
+  const edge = offset === undefined ? DEFAULT_OFFSET[placement] : typeof offset === "number" ? `${offset}px` : offset;
+  if (placement === "bottom") return { bottom: `calc(var(--jg-safe-bottom, 0px) + ${edge})`, flexDirection: "column-reverse" };
+  if (placement === "center") return { top: edge };
+  return { top: `calc(var(--jg-safe-top, 0px) + ${edge})` };
+}
+
+/**
+ * How far a top or bottom notice stack must move toward the screen middle to clear the registered
+ * layout regions in its column. `stack` is its current rect, already moved by `shift`; regions
+ * reaching past the container's middle (full-height sidebars, screens) are ignored. @internal
+ */
+export function noticeAvoidShift(
+  placement: NoticePlacement,
+  stack: LayoutRect,
+  shift: number,
+  container: LayoutRect,
+  regions: readonly Pick<LayoutRegion, "kind" | "rect">[],
+  gap = AVOID_GAP,
+): number {
+  if (placement === "center") return 0;
+  const middle = (container.top + container.bottom) / 2;
+  let need = 0;
+  for (const { kind, rect } of regions) {
+    if (kind === "screen" || rect.right <= rect.left || rect.bottom <= rect.top) continue;
+    if (rect.right <= stack.left || rect.left >= stack.right) continue;
+    if (placement === "top") {
+      if (rect.bottom > middle) continue;
+      need = Math.max(need, rect.bottom + gap - (stack.top - shift));
+    } else {
+      if (rect.top < middle) continue;
+      need = Math.max(need, stack.bottom + shift - (rect.top - gap));
+    }
+  }
+  return Math.max(0, Math.round(need));
+}
+
+const KEYFRAMES = `
+@keyframes jg-notice-in { from { opacity: 0; transform: translateY(-8px) scale(0.97); } to { opacity: 1; transform: none; } }
+@keyframes jg-notice-out { from { opacity: 1; transform: none; } to { opacity: 0; transform: translateY(-6px) scale(0.98); } }
+@keyframes jg-notice-shake { 0%,100% { transform: none; } 20% { transform: translateX(-5px); } 45% { transform: translateX(4px); } 70% { transform: translateX(-2px); } }
+@keyframes jg-notice-pop { 0% { transform: scale(1); } 40% { transform: scale(1.035); } 100% { transform: scale(1); } }
+[data-jg-notice] { animation: jg-notice-in 180ms cubic-bezier(.2,.8,.2,1) both; }
+[data-jg-notice][data-leaving] { animation: jg-notice-out ${EXIT_MS}ms ease-in both; }
+[data-jg-notice-body][data-bump="deny"] { animation: jg-notice-shake 260ms ease-out; }
+[data-jg-notice-body][data-bump="other"] { animation: jg-notice-pop 220ms ease-out; }
+@media (prefers-reduced-motion: reduce) { [data-jg-notice], [data-jg-notice][data-leaving], [data-jg-notice-body][data-bump] { animation-duration: 1ms; } }
+`;
+
+function ToneGlyph({ tone }: { tone: NoticeTone }) {
+  const path = tone === "deny"
+    ? "M5 5l6 6M11 5l-6 6"
+    : tone === "success"
+      ? "M4.5 8.5l2.5 2.5 4.5-5"
+      : tone === "warn"
+        ? "M8 4.5v4.5M8 11.4v.1"
+        : "M8 7.2v4.3M8 4.6v.1";
+  return (
+    <span
+      aria-hidden
+      style={{
+        flex: "none",
+        width: 20,
+        height: 20,
+        borderRadius: 999,
+        display: "grid",
+        placeItems: "center",
+        background: TONE_COLOR[tone],
+        color: "var(--jg-surface-deep, #0b1018)",
+      }}
+    >
+      <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+        <path d={path} />
+      </svg>
+    </span>
+  );
+}
+
+type Shown = { notice: Notice; leaving: boolean };
+
+/** Keeps removed notices on screen, in place, for the exit animation; new ones join the end. @internal */
+export function reconcileShown(previous: readonly Shown[], live: readonly Notice[]): Shown[] {
+  const byId = new Map(live.map((notice) => [notice.id, notice]));
+  const next: Shown[] = previous.map((entry) => {
+    const current = byId.get(entry.notice.id);
+    return current === undefined ? { notice: entry.notice, leaving: true } : { notice: current, leaving: false };
+  });
+  const known = new Set(previous.map((entry) => entry.notice.id));
+  for (const notice of live) if (!known.has(notice.id)) next.push({ notice, leaving: false });
+  return next;
+}
+
+/**
+ * Live notices of `feed`, re-rendering on change and pruning each one when it expires.
+ *
+ * @capability use-notice-list read the live notice feed in a game's own notice view
+ */
+export function useNoticeList(feed: NoticeFeed | null): readonly Notice[] {
+  const list = useSyncExternalStore(
+    feed?.subscribe ?? NO_FEED_SUBSCRIBE,
+    feed === null ? () => EMPTY : feed.list,
+    feed === null ? () => EMPTY : feed.list,
+  );
+  const [, setRetry] = useState(0);
+  useEffect(() => {
+    if (feed === null || list.length === 0) return;
+    const soonest = Math.min(...list.map((notice) => notice.expiresAt));
+    const timer = setTimeout(() => {
+      feed.prune();
+      // A feed on a non-wall clock may not have expired yet; poll gently until it does.
+      if (feed.list() === list) setRetry((value) => value + 1);
+    }, Math.max(16, soonest - Date.now()));
+    return () => clearTimeout(timer);
+  });
+  return list;
+}
+
+/**
+ * Animated, toned notice stack for a {@link NoticeFeed} — the default renderer the shell mounts for
+ * `ctx.game.notices` inside the HUD theme root. Uses `--jg-*` theme vars with fallbacks, 14px text, and
+ * never takes pointer input. A top or bottom stack keeps clear of HUD panels registered in its column
+ * and sits above modal overlays.
+ *
+ * @capability notice-feed render ctx.game.notices as an animated toned stack (enter/exit motion, ×N stacking, HUD avoidance)
+ */
+export function NoticeStack({
+  feed,
+  placement = "top",
+  offset,
+  avoidHud = true,
+  zIndex = 85,
+  scale = 1,
+  maxVisible = 3,
+  renderNotice,
+}: {
+  /** Defaults to the surrounding game's `ctx.game.notices`. */
+  feed?: NoticeFeed;
+  placement?: NoticePlacement;
+  /** Distance from the band's screen edge (px or CSS length), added to the safe-area inset. */
+  offset?: number | string;
+  /** Move a top/bottom stack clear of registered HUD panels and touch controls in its column. Default true. */
+  avoidHud?: boolean;
+  /** Default 85: above `ModalHost` (80) and `PanelHost` (40). */
+  zIndex?: number;
+  /** Multiplies text and spacing (the shell passes the player's UI scale). */
+  scale?: number;
+  /** Most notices on screen at once; older ones wait their turn off screen. Default 3. */
+  maxVisible?: number;
+  renderNotice?: (notice: Notice) => ReactNode;
+}) {
+  const kitted = useHasUiKit();
+  const kit = useUiKit();
+  const exitMs = kitted ? kit.motion.exitMs : EXIT_MS;
+  const ctx = useOptionalGameContext();
+  const source = feed ?? ctx?.game.notices ?? null;
+  const live = useNoticeList(source);
+  const [shown, setShown] = useState<Shown[]>(() => reconcileShown([], live));
+  const [seenLive, setSeenLive] = useState(live);
+  if (seenLive !== live) {
+    setSeenLive(live);
+    setShown(reconcileShown(shown, live));
+  }
+  const { regions } = useGameViewportLayout();
+  const stackRef = useRef<HTMLDivElement | null>(null);
+  const [shift, setShift] = useState(0);
+  const visible = shown.length > 0;
+  useLayoutEffect(() => {
+    const element = stackRef.current;
+    const container = element?.offsetParent;
+    const next = element == null || container == null || !avoidHud
+      ? 0
+      : noticeAvoidShift(placement, element.getBoundingClientRect(), shift, container.getBoundingClientRect(), regions);
+    if (next !== shift) setShift(next);
+  }, [regions, visible, placement, avoidHud, shift]);
+  const anyLeaving = shown.some((entry) => entry.leaving);
+  useEffect(() => {
+    if (!anyLeaving) return;
+    const timer = setTimeout(() => setShown((previous) => previous.filter((entry) => !entry.leaving)), exitMs);
+    return () => clearTimeout(timer);
+  }, [anyLeaving, exitMs]);
+
+  if (shown.length === 0) return null;
+  return (
+    <div
+      ref={stackRef}
+      data-jg-notices={placement}
+      role="status"
+      aria-live="polite"
+      style={{
+        position: "absolute",
+        left: "50%",
+        transform: "translateX(-50%)",
+        zIndex,
+        display: "flex",
+        flexDirection: "column",
+        alignItems: "center",
+        gap: 6 * scale,
+        width: "min(460px, calc(100% - 32px))",
+        pointerEvents: "none",
+        ...placementStyle(placement, offset),
+        ...(shift === 0 ? {} : placement === "bottom" ? { marginBottom: shift } : { marginTop: shift }),
+      }}
+    >
+      <style>{KEYFRAMES}</style>
+      {cappedShown(shown, maxVisible).map(({ notice, leaving }) => kitted && renderNotice === undefined ? (
+        <div key={notice.id} data-jg-notice-kit={notice.tone} style={{ maxWidth: "100%" }}>
+          <KitToast key={notice.count} tone={KIT_TONE[notice.tone]} count={notice.count} leaving={leaving}>
+            {notice.text}
+          </KitToast>
+        </div>
+      ) : (
+        <div key={notice.id} data-jg-notice={notice.tone} data-leaving={leaving ? "" : undefined} style={{ maxWidth: "100%" }}>
+          {renderNotice !== undefined ? renderNotice(notice) : (
+            <div
+              key={notice.count}
+              data-jg-notice-body
+              data-bump={notice.count > 1 ? (notice.tone === "deny" ? "deny" : "other") : undefined}
+              style={{
+                display: "flex",
+                alignItems: "center",
+                gap: 10 * scale,
+                padding: `${8 * scale}px ${14 * scale}px ${8 * scale}px ${10 * scale}px`,
+                borderRadius: 10 * scale,
+                background: "var(--jg-surface, rgba(13, 18, 27, 0.9))",
+                border: "1px solid var(--jg-edge, rgba(255, 255, 255, 0.12))",
+                boxShadow: `inset 3px 0 0 ${TONE_COLOR[notice.tone]}, 0 8px 24px rgba(0, 0, 0, 0.35)`,
+                color: "var(--jg-text, #f1f5f9)",
+                fontFamily: "var(--jg-font-body, ui-sans-serif, system-ui, -apple-system, 'Segoe UI', sans-serif)",
+                fontSize: 14 * scale,
+                fontWeight: 600,
+                lineHeight: 1.3,
+                letterSpacing: "0.01em",
+                textShadow: "0 1px 1px rgba(0, 0, 0, 0.35)",
+              }}
+            >
+              <ToneGlyph tone={notice.tone} />
+              <span style={{ position: "absolute", width: 1, height: 1, overflow: "hidden", clip: "rect(0 0 0 0)" }}>{TONE_LABEL[notice.tone]}: </span>
+              <span>{notice.text}</span>
+              {notice.count > 1 ? (
+                <span
+                  style={{
+                    flex: "none",
+                    fontSize: 12 * scale,
+                    fontWeight: 700,
+                    fontVariantNumeric: "tabular-nums",
+                    padding: `${1 * scale}px ${6 * scale}px`,
+                    borderRadius: 999,
+                    background: "rgba(255, 255, 255, 0.12)",
+                    color: "var(--jg-text-dim, rgba(241, 245, 249, 0.8))",
+                  }}
+                >
+                  ×{notice.count}
+                </span>
+              ) : null}
+            </div>
+          )}
+        </div>
+      ))}
+    </div>
+  );
+}

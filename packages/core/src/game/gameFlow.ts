@@ -64,7 +64,7 @@ export interface GameFlowOptions {
  * Title, play, pause and checkpoints as one system. Boot stops the clock behind the title; the
  * `pause` command (bind it to Esc / P) opens and closes the pause menu; the `start` command leaves
  * the title straight into play, which is what a capture or a drive runs to skip the menu. Pair it
- * with `GameFlowUI` from `@jgengine/react/menu/gameFlowMenus`.
+ * with `GameFlowUI` from `@jgengine/core/menu/gameFlowMenus.view`.
  *
  * @capability game-flow title, play, pause and autosave checkpoints as one system, with newGame/continueGame/saveNow for menus
  */

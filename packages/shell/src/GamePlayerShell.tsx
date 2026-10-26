@@ -60,7 +60,7 @@ import { configureModelSurface } from "./render/modelSurface";
 import type { ShellMultiplayer } from "./multiplayer";
 import type { PlayableGame } from "./registry";
 import { OrientationHint } from "./touch/OrientationHint";
-import { useTouchStyle, useTouchJoystickVariant, useGraphicsSettings } from "./settings/appliedSettings";
+import { useTouchStyle, useTouchJoystickVariant, useGraphicsSettings } from "@jgengine/core/settings/appliedSettings.draw";
 import {
   logRuntimeError,
   type RuntimeDiagnostic,

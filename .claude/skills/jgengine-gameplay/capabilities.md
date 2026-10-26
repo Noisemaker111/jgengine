@@ -236,6 +236,10 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `groupCredits` (function) · `import { groupCredits } from "@jgengine/core/game/credits"`
 
+## hud-slots — atomic themed equipment/weapon/armor/potion slot grids with painted icons
+
+- `SlotItem` (interface) · `import { SlotItem } from "@jgengine/core/inventory/slots.view"`
+
 ## imprint-bonus — apply imprint stat and handler bonuses at an imprint fraction
 
 - `applyImprintBonus` (function) · `import { applyImprintBonus } from "@jgengine/core/game/breeding"`
@@ -494,15 +498,24 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `createNeedSet` (function) · `import { createNeedSet } from "@jgengine/core/gameplay"`
 
-## notice-feed — serializable tone-tagged notice/event feed bounded by count and age (toasts, life events, killfeed)
+## notice-feed — render ctx.game.notices as an animated toned stack (enter/exit motion, ×N stacking, HUD avoidance)
 
+- `NoticeStack` (function) · `import { NoticeStack } from "@jgengine/core/notifications/notices.view"`
 - `appendFeed` (function) · `import { appendFeed } from "@jgengine/core/gameplay"`
 - `createNoticeFeed` (function) · `import { createNoticeFeed } from "@jgengine/core/notifications/notices"`
 - `pruneFeed` (function) · `import { pruneFeed } from "@jgengine/core/gameplay"`
 
+## notification-bell — icon button with a live unread-count badge over a notification store
+
+- `NotificationBell` (function) · `import { NotificationBell } from "@jgengine/core/notifications/notificationCenter.view"`
+
 ## notification-center — persistent, read-tracked notification log (newest-first, capped, serializable) behind an unread badge — the durable counterpart to transient toasts
 
 - `createNotificationCenter` (function) · `import { createNotificationCenter } from "@jgengine/core/gameplay"`
+
+## notification-center-panel — scrollable notification log with kind markers, read tracking, relative time, and mark-all-read/clear
+
+- `NotificationCenter` (function) · `import { NotificationCenter } from "@jgengine/core/notifications/notificationCenter.view"`
 
 ## objectives — check progress of a threshold objective against a live metric
 
@@ -602,6 +615,10 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 ## quest-rewards — grant a quest or mission reward bundle: items, XP, currency and unlocks
 
 - `applyQuestRewards` (function) · `import { applyQuestRewards } from "@jgengine/core/mission/quest"`
+
+## quest-tracker — compact quest/objective HUD tracker — titles + labelled objective progress from describeTrackedQuest views
+
+- `QuestTracker` (function) · `import { QuestTracker } from "@jgengine/core/mission/questTracker.view"`
 
 ## quest-tracker-view — join a QuestDef + live QuestInstance into a flat labelled view for a quest/objective HUD tracker
 
@@ -735,6 +752,10 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `createShopStock` (function) · `import { createShopStock } from "@jgengine/core/gameplay"`
 
+## shop-grid-host — drop-in vendor/shop grid over a caller-owned wallet — item cards with icon/price/stock, afford-aware Buy, optional Sell, and a balance readout, token-themed
+
+- `ShopGrid` (function) · `import { ShopGrid } from "@jgengine/core/inventory/shopGrid.view"`
+
 ## shrink-capture — downscale a captured frame to a save-card thumbnail data URL
 
 - `shrinkCapture` (function) · `import { shrinkCapture } from "@jgengine/core/save/saveThumbnail.view"`
@@ -867,9 +888,21 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `createUpgradeTree` (function) · `import { createUpgradeTree } from "@jgengine/core/progression/upgrades"`
 
+## use-notice-list — read the live notice feed in a game's own notice view
+
+- `useNoticeList` (function) · `import { useNoticeList } from "@jgengine/core/notifications/notices.view"`
+
+## use-notifications — read a notification store's live list in a game's own inbox view
+
+- `useNotifications` (function) · `import { useNotifications } from "@jgengine/core/notifications/notificationCenter.view"`
+
 ## use-save-slots — React hook binding a save-slots metadata index — re-renders on change and returns the ordered slot list
 
 - `useSaveSlots` (function) · `import { useSaveSlots } from "@jgengine/core/save/saveSlots.view"`
+
+## use-shop-stock — React hook binding a shop-stock model — re-renders on any stock change and returns the entry list
+
+- `useShopStock` (function) · `import { useShopStock } from "@jgengine/core/inventory/shopGrid.view"`
 
 ## visitor-population — a crowd whose on-site and daily counts are the bodies the game made
 

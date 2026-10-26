@@ -47,7 +47,7 @@ beforeAll(async () => {
     await Bun.write(`${directory}/tsconfig.json`, JSON.stringify({ extends: resolve(import.meta.dir, "../../../../tsconfig.base.json") }));
     await Bun.write(`${directory}/fixture.tsx`, `
       import React,{useState} from 'react';import {createRoot} from 'react-dom/client';
-      import {InventoryGrid} from '@jgengine/react/inventory/inventoryGrid';import {GameProvider} from '@jgengine/react/provider';
+      import {InventoryGrid} from '@jgengine/core/inventory/inventoryGrid.view';import {GameProvider} from '@jgengine/react/provider';
       import {Window} from '@jgengine/react/panels';import {createShellKeyHandlers} from '@jgengine/shell/ShellChrome';
       import {defineGameDefinition} from '@jgengine/core/game/defineGame';import {createAssetCatalog} from '@jgengine/core/scene/assetCatalog';
       import {createGameContext} from '@jgengine/core/runtime/gameContext';import {createActionStateTracker,toActionStateBindingMap} from '@jgengine/core/input/actionBindings';

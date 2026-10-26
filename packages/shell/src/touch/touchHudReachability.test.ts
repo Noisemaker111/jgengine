@@ -14,7 +14,7 @@ beforeAll(async()=>{
   await Bun.write(`${scratch}/fixture.tsx`, `
     import React, {useState} from 'react'; import {createRoot} from 'react-dom/client';
     import {TouchControlsDock} from '@jgengine/shell/touch/TouchControlsOverlay';
-    import {SettingsMenu} from '@jgengine/shell/settings/SettingsMenu';
+    import {SettingsMenu} from '@jgengine/core/settings/SettingsMenu.draw';
     window.trace={selected:0,codes:[],analog:null};
     const btn=(action,kind='primary',shape='circle')=>({action,label:action.replace(/([a-z])([A-Z])/g,'$1 $2'),icon:null,kind,shape,anchor:null,image:null});
     const shooter=location.hash==='#shooter';

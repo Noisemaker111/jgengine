@@ -43,7 +43,7 @@ import {
   type ChaseRigState,
 } from "./rigMath";
 import { usePlayerFov } from "./PlayerFov";
-import { applyCameraShake, useCameraShake } from "./shake/shakeChannel";
+import { applyCameraShake, useCameraShake } from "@jgengine/core/camera/shake/shakeChannel.draw";
 import {
   applyCameraBlendStep,
   captureCameraBlendFrom,

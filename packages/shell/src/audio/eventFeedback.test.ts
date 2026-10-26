@@ -14,7 +14,7 @@ import {
   type EventFeedback,
   type FeedbackDeps,
 } from "./eventFeedback";
-import { createHapticsRoute } from "../haptics/hapticsRoute";
+import { createHapticsRoute } from "@jgengine/core/haptics/hapticsRoute.view";
 
 function harness(overrides: Partial<FeedbackDeps> = {}) {
   let t = 0;

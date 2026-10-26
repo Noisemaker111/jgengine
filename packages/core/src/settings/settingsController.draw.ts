@@ -1,0 +1,350 @@
+import { actionLabel, bindingLabel, type ActionCodesMap } from "@jgengine/core/input/actionBindings";
+import type { BindingOverrides } from "@jgengine/core/input/bindingOverrides";
+import type { AudioBusDef } from "@jgengine/core/audio/audioFalloff";
+import {
+  BUILT_IN_SETTING_CATEGORIES,
+  busVolumeSettingId,
+  DEFAULT_GRAPHICS_SHADOWS,
+  DEFAULT_MASTER_VOLUME,
+  DEFAULT_UI_SCALE,
+  GRAPHICS_QUALITY_OPTIONS,
+  SETTING_IDS,
+  UI_SCALE_MAX,
+  UI_SCALE_MIN,
+  type GameSettingDef,
+  type GraphicsQuality,
+  type SettingCategory,
+  type SettingCategoryDef,
+  type SettingOption,
+  type SettingsStore,
+  type SettingValue,
+} from "@jgengine/core/settings/settingsModel";
+import {
+  ANISOTROPY_OPTIONS,
+  applyGraphicsQuality,
+  GRAPHICS_POST_STAGE_LABELS,
+  graphicsPostStageSettingId,
+  readGraphicsSettings,
+  RENDER_SCALE_MAX,
+  RENDER_SCALE_MIN,
+  RENDER_SCALE_STEP,
+  type GraphicsProfileOverrides,
+} from "@jgengine/core/settings/graphicsSettings";
+import { FRAME_RATE_LIMIT_DISPLAY, FRAME_RATE_LIMIT_OPTIONS } from "@jgengine/core/settings/frameRateLimit";
+import { accessibilitySettingRows } from "@jgengine/core/settings/accessibilitySettings";
+import type { PostProcessingConfig } from "@jgengine/core/render/postProcessing";
+import { busMuteSettingId, MASTER_MUTE_SETTING_ID } from "@jgengine/shell/audio/busMix";
+import { availablePostfxStages } from "@jgengine/shell/postfx/PostProcessing";
+import {
+  DEFAULT_TOUCH_JOYSTICK_VARIANT,
+  TOUCH_JOYSTICK_VARIANT_OPTIONS,
+  TOUCH_STYLE_OPTIONS,
+} from "@jgengine/core/input/touchScheme";
+import { TOUCH_STYLE_AUTO, useSettingsRevision } from "./appliedSettings.draw";
+import {
+  useSettingsStore,
+  type SettingsActionView,
+  type SettingsKeybindRow,
+  type SettingsCategoryView,
+  type SettingsController,
+  type SettingsRow,
+} from "@jgengine/core/settings/settings.view";
+
+import { usePlayerFov } from "@jgengine/shell/camera/PlayerFov";
+
+export type { SettingsActionView, SettingsKeybindRow, SettingsCategoryView, SettingsController, SettingsRow };
+
+const DEFAULT_CATEGORY_LABELS: Record<string, string> = {
+  sound: "Sound",
+  graphics: "Graphics",
+  gameplay: "Gameplay",
+  controls: "Controls",
+  accessibility: "Accessibility",
+};
+
+const percent = (value: number): string => `${Math.round(value * 100)}%`;
+
+export interface SettingsControllerInput {
+  input: ActionCodesMap;
+  buses: Record<string, AudioBusDef> | undefined;
+  extra: readonly GameSettingDef[];
+  categories: readonly SettingCategoryDef[];
+  hide: readonly SettingCategory[];
+  fovEnabled: boolean;
+  /** The game's per-tier profile overrides (`defineGame({ graphics })`), so tier defaults match what renders. */
+  graphics?: GraphicsProfileOverrides;
+  /** The post chain this game actually runs, so a stage row never outlives its pass. */
+  postProcessing?: PostProcessingConfig;
+  hideBindings: readonly string[];
+  /** Show the touch-controls skin selector in Controls (touch device with a dock). */
+  touchStyle: boolean;
+  overrides: BindingOverrides;
+  rebind: (action: string, code: string) => void;
+  resetBinding: (action: string) => void;
+}
+
+const TOUCH_STYLE_SELECT_OPTIONS: readonly SettingOption[] = [
+  { value: TOUCH_STYLE_AUTO, label: "Auto (game default)" },
+  ...TOUCH_STYLE_OPTIONS.map((option) => ({ value: option.value, label: option.label })),
+];
+
+export function useSettingsCategories(config: SettingsControllerInput): SettingsCategoryView[] {
+  const store = useSettingsStore();
+  const fov = usePlayerFov();
+  useSettingsRevision(store);
+
+  const hidden = new Set(config.hide);
+  const extrasFor = (category: SettingCategory): SettingsRow[] =>
+    config.extra
+      .filter((def) => def.category === category)
+      .map((def) => ({
+        id: def.id,
+        label: def.label,
+        kind: def.kind,
+        value: store.get(def.id, def.default),
+        min: def.min,
+        max: def.max,
+        step: def.step,
+        options: def.options,
+        set: (value: SettingValue) => store.set(def.id, value),
+      }));
+
+  const soundRows: SettingsRow[] = [
+    {
+      id: SETTING_IDS.masterVolume,
+      label: "Master volume",
+      kind: "slider",
+      value: store.get(SETTING_IDS.masterVolume, DEFAULT_MASTER_VOLUME),
+      min: 0,
+      max: 1,
+      step: 0.01,
+      format: percent,
+      set: (value) => store.set(SETTING_IDS.masterVolume, value),
+    },
+    ...Object.values(config.buses ?? {}).map((bus): SettingsRow => {
+      const id = busVolumeSettingId(bus.id);
+      return {
+        id,
+        label: bus.id === "ui" ? "UI volume" : `${bus.id.charAt(0).toUpperCase()}${bus.id.slice(1)} volume`,
+        kind: "slider",
+        value: store.get(id, bus.gain ?? 1),
+        min: 0,
+        max: 1,
+        step: 0.01,
+        format: percent,
+        set: (value) => store.set(id, value),
+      };
+    }),
+    ...Object.values(config.buses ?? {}).map((bus): SettingsRow => ({
+      id: busMuteSettingId(bus.id),
+      label: bus.id === "ui" ? "Mute UI" : `Mute ${bus.id}`,
+      kind: "toggle",
+      value: Boolean(store.get(busMuteSettingId(bus.id), false)),
+      set: (value) => store.set(busMuteSettingId(bus.id), Boolean(value)),
+    })),
+    {
+      id: MASTER_MUTE_SETTING_ID,
+      label: "Mute all",
+      kind: "toggle",
+      value: Boolean(store.get(MASTER_MUTE_SETTING_ID, false)),
+      set: (value) => store.set(MASTER_MUTE_SETTING_ID, Boolean(value)),
+    },
+    ...extrasFor("sound"),
+  ];
+
+  const graphicsRows: SettingsRow[] = [
+    ...graphicsSettingRows(store, config.graphics, config.postProcessing),
+    ...extrasFor("graphics"),
+  ];
+
+  const gameplayRows: SettingsRow[] = [
+    ...(config.fovEnabled
+      ? [
+          {
+            id: "gameplay.fov",
+            label: "Field of view",
+            kind: "slider" as const,
+            value: fov.fov,
+            min: fov.bounds.min,
+            max: fov.bounds.max,
+            step: 1,
+            format: (value: number) => `${Math.round(value)}`,
+            set: (value: SettingValue) => fov.setFov(Number(value)),
+          },
+        ]
+      : []),
+    ...extrasFor("gameplay"),
+  ];
+
+  const hiddenBindings = new Set(config.hideBindings);
+  const keybinds: SettingsKeybindRow[] = Object.keys(config.input)
+    .filter((action) => !hiddenBindings.has(action))
+    .map((action) => {
+    const override = config.overrides[action];
+    const effective = override === undefined ? config.input : { ...config.input, [action]: override };
+    return {
+      action,
+      label: humanizeAction(action),
+      bindingLabel: actionLabel(effective, action) ?? "Unbound",
+      isDefault: override === undefined,
+      rebind: (code: string) => config.rebind(action, code),
+      reset: () => config.resetBinding(action),
+    };
+  });
+
+  const controlsRows: SettingsRow[] = [
+    ...(config.touchStyle
+      ? [
+          {
+            id: SETTING_IDS.touchStyle,
+            label: "Touch controls",
+            kind: "select" as const,
+            value: store.get(SETTING_IDS.touchStyle, TOUCH_STYLE_AUTO),
+            options: TOUCH_STYLE_SELECT_OPTIONS,
+            set: (value: SettingValue) => store.set(SETTING_IDS.touchStyle, value),
+          },
+          {
+            id: SETTING_IDS.touchJoystick,
+            label: "Joystick",
+            kind: "select" as const,
+            value: store.get(SETTING_IDS.touchJoystick, DEFAULT_TOUCH_JOYSTICK_VARIANT),
+            options: TOUCH_JOYSTICK_VARIANT_OPTIONS.map((option) => ({ value: option.value, label: option.label })),
+            set: (value: SettingValue) => store.set(SETTING_IDS.touchJoystick, value),
+          },
+        ]
+      : []),
+    ...extrasFor("controls"),
+  ];
+
+  const builtInRows: Record<string, SettingsRow[]> = {
+    sound: soundRows,
+    graphics: graphicsRows,
+    gameplay: gameplayRows,
+    controls: controlsRows,
+    accessibility: accessibilitySettingRows(store) as SettingsRow[],
+  };
+  const builtInKeybinds: Record<string, SettingsKeybindRow[]> = { controls: keybinds };
+
+  const declaredLabels = new Map(config.categories.map((c) => [c.id, c.label]));
+  const declaredOrder = new Map(config.categories.map((c, index) => [c.id, c.order ?? 1000 + index]));
+  const order: SettingCategory[] = [];
+  const push = (id: SettingCategory): void => {
+    if (!order.includes(id)) order.push(id);
+  };
+  for (const id of BUILT_IN_SETTING_CATEGORIES) push(id);
+  for (const c of config.categories) push(c.id);
+  for (const def of config.extra) push(def.category);
+
+  const views = order
+    .filter((id) => !hidden.has(id))
+    .map((id): SettingsCategoryView => ({
+      id,
+      label: declaredLabels.get(id) ?? DEFAULT_CATEGORY_LABELS[id] ?? humanizeAction(id),
+      rows: builtInRows[id] ?? extrasFor(id),
+      keybinds: builtInKeybinds[id] ?? [],
+    }))
+    .filter((view) => view.rows.length > 0 || view.keybinds.length > 0);
+
+  views.sort((a, b) => (declaredOrder.get(a.id) ?? indexOrder(order, a.id)) - (declaredOrder.get(b.id) ?? indexOrder(order, b.id)));
+  return views;
+}
+
+/**
+ * The built-in Graphics rows: tier, scale, filtering, shadows, one toggle per postfx stage this
+ * game's chain can build, then UI scale and FPS.
+ * @internal
+ */
+export function graphicsSettingRows(
+  store: SettingsStore,
+  overrides: GraphicsProfileOverrides | undefined,
+  postProcessing: PostProcessingConfig | undefined,
+): SettingsRow[] {
+  const graphics = readGraphicsSettings(store, overrides);
+  const stages = postProcessing === undefined || postProcessing.enabled === false ? [] : availablePostfxStages(postProcessing);
+  return [
+    {
+      id: SETTING_IDS.graphicsQuality,
+      label: "Quality",
+      kind: "select",
+      value: graphics.quality,
+      options: GRAPHICS_QUALITY_OPTIONS,
+      set: (value) => applyGraphicsQuality(store, String(value) as GraphicsQuality, overrides),
+    },
+    {
+      id: SETTING_IDS.graphicsRenderScale,
+      label: "Render scale",
+      kind: "slider",
+      value: graphics.profile.renderScale,
+      min: RENDER_SCALE_MIN,
+      max: RENDER_SCALE_MAX,
+      step: RENDER_SCALE_STEP,
+      format: percent,
+      set: (value) => store.set(SETTING_IDS.graphicsRenderScale, value),
+    },
+    {
+      id: SETTING_IDS.graphicsFrameRateLimit,
+      label: "Frame rate limit",
+      kind: "select",
+      value: store.get(SETTING_IDS.graphicsFrameRateLimit, FRAME_RATE_LIMIT_DISPLAY),
+      options: FRAME_RATE_LIMIT_OPTIONS,
+      set: (value) => store.set(SETTING_IDS.graphicsFrameRateLimit, String(value)),
+    },
+    {
+      id: SETTING_IDS.graphicsAnisotropy,
+      label: "Texture filtering",
+      kind: "select",
+      value: String(graphics.profile.anisotropy),
+      options: ANISOTROPY_OPTIONS,
+      set: (value) => store.set(SETTING_IDS.graphicsAnisotropy, String(value)),
+    },
+    {
+      id: SETTING_IDS.graphicsShadows,
+      label: "Shadows",
+      kind: "toggle",
+      value: store.get(SETTING_IDS.graphicsShadows, DEFAULT_GRAPHICS_SHADOWS),
+      set: (value) => store.set(SETTING_IDS.graphicsShadows, value),
+    },
+    ...stages.map(
+      (stage): SettingsRow => ({
+        id: graphicsPostStageSettingId(stage),
+        label: GRAPHICS_POST_STAGE_LABELS[stage],
+        kind: "toggle",
+        value: graphics.profile.postStages[stage],
+        set: (value) => store.set(graphicsPostStageSettingId(stage), value),
+      }),
+    ),
+    {
+      id: SETTING_IDS.graphicsUiScale,
+      label: "UI scale",
+      kind: "slider",
+      value: store.get(SETTING_IDS.graphicsUiScale, DEFAULT_UI_SCALE),
+      min: UI_SCALE_MIN,
+      max: UI_SCALE_MAX,
+      step: 0.05,
+      format: percent,
+      set: (value) => store.set(SETTING_IDS.graphicsUiScale, value),
+    },
+    {
+      id: SETTING_IDS.graphicsShowFps,
+      label: "Show FPS",
+      kind: "toggle",
+      value: store.get(SETTING_IDS.graphicsShowFps, false),
+      set: (value) => store.set(SETTING_IDS.graphicsShowFps, value),
+    },
+  ];
+}
+
+function indexOrder(order: readonly SettingCategory[], id: SettingCategory): number {
+  const index = order.indexOf(id);
+  return index === -1 ? 999 : index;
+}
+
+function humanizeAction(action: string): string {
+  const spaced = action
+    .replace(/([a-z0-9])([A-Z])/g, "$1 $2")
+    .replace(/[._-]+/g, " ")
+    .trim();
+  return spaced.charAt(0).toUpperCase() + spaced.slice(1);
+}
+
+export { bindingLabel };

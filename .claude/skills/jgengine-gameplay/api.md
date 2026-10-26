@@ -637,7 +637,7 @@
 
 ## @jgengine/core/game/feed
 
-- `FeedEntry` (interface): interface FeedEntry<T = unknown> { at: number; data: T } — ⚠ undocumented · used by `ToastStack` (@jgengine/react): Render `ctx.game.feed`'s entries for `action` as a newest-first toast stack.
+- `FeedEntry` (interface): interface FeedEntry<T = unknown> { at: number; data: T } — ⚠ undocumented · used by `ToastStack` (@jgengine/core/notifications/toastStack.view): Render `ctx.game.feed`'s entries for `action` as a newest-first toast stack.
 - `FeedWindow` (interface): interface FeedWindow — Bounds for {@link appendFeed} / {@link pruneFeed}: newest-`limit` cap and/or `ttl` age window.
 - `GameFeed` (interface): interface GameFeed { bind<TName extends keyof GameEventMap>(action: TName, events: GameEvents): () => void; push(action: string, entry: unknown): void; recent(action: string, options?: {limit?: number}): FeedEntry[]; subscribe(action: string, listener: (entry… — ⚠ undocumented · used by `createGameFeed`: A rolling per-action feed of recent gameplay events, bindable to the event bus — the HUD ticker and killfeed history.
 - `GameFeedOptions` (interface): interface GameFeedOptions { limit?: number } — ⚠ undocumented · used by `createGameFeed`: A rolling per-action feed of recent gameplay events, bindable to the event bus — the HUD ticker and killfeed history.
@@ -652,7 +652,7 @@
 
 - `GameFlowOptions` (interface): interface GameFlowOptions — Options for {@link createGameFlowSystem}.
 - `continueGame` (function): function continueGame(ctx: GameContext): Promise<boolean> — Load the save and play it; resolves `false` (and stays put) when there is none.
-- `createGameFlowSystem` (function): function createGameFlowSystem(options: GameFlowOptions = {}): SystemDefinition — Title, play, pause and checkpoints as one system. Boot stops the clock behind the title; the `pause` command (bind it to Esc / P) opens and closes the pause menu; the `start` command leaves the title straight into play, which is what a capture or a drive runs to skip the menu. Pair it with `GameFlowUI` from `@jgengine/react/menu/gameFlowMenus`.
+- `createGameFlowSystem` (function): function createGameFlowSystem(options: GameFlowOptions = {}): SystemDefinition — Title, play, pause and checkpoints as one system. Boot stops the clock behind the title; the `pause` command (bind it to Esc / P) opens and closes the pause menu; the `start` command leaves the title straight into play, which is what a capture or a drive runs to skip the menu. Pair it with `GameFlowUI` from `@jgengine/core/menu/gameFlowMenus.view`.
 - `newGame` (function): function newGame(ctx: GameContext, restart?: () => void): Promise<void> — A fresh run: clears the save, then plays. When a run already played in this world, `restart` is called instead so nothing carries over (the browser host passes a page reload).
 - `openTitle` (function): function openTitle(ctx: GameContext): void — Stop the clock and show the title (`"menu"` phase).
 - `playGame` (function): function playGame(ctx: GameContext): void — Start the clock and enter the `"playing"` phase.
@@ -1172,7 +1172,7 @@
 - `ExpeditionHazard` (interface): interface ExpeditionHazard — One encounter's mechanical effects and optional caller-authored notices.
 - `ExpeditionState` (interface): interface ExpeditionState — Plain saveable expedition data. Persist this whole value, including the RNG cursor and tick frontier.
 - `ExpeditionSupplyRule` (interface): interface ExpeditionSupplyRule — Ordered auto-consumption rule: spends one finite supply only when its declared effect changes a vital.
-- `FeedEntry` (interface): interface FeedEntry<T = unknown> { at: number; data: T } — ⚠ undocumented · used by `ToastStack` (@jgengine/react): Render `ctx.game.feed`'s entries for `action` as a newest-first toast stack.
+- `FeedEntry` (interface): interface FeedEntry<T = unknown> { at: number; data: T } — ⚠ undocumented · used by `ToastStack` (@jgengine/core/notifications/toastStack.view): Render `ctx.game.feed`'s entries for `action` as a newest-first toast stack.
 - `FeedWindow` (interface): interface FeedWindow — Bounds for {@link appendFeed} / {@link pruneFeed}: newest-`limit` cap and/or `ttl` age window.
 - `FiringBlock` (type): type FiringBlock = "predicate" | "no-target" | "cooldown" | "rate-limit" | "no-charges" | "stack-ignored" — Reason a firing did not produce an effect — surfaced for debug inspection, never thrown.
 - `FirstPersonCameraConfig` (interface): interface FirstPersonCameraConfig { eyeHeight?: number; sensitivity?: number; maxPitch?: number; reticle?: boolean; viewmodel?: boolean; collision?: false | FirstPersonCollisionConfig } — ⚠ undocumented
@@ -1924,6 +1924,11 @@
 - `WornEntry` (interface): interface WornEntry — One worn item and the slot holding it.
 - `createEquipment` (function): function createEquipment(slotDefs: readonly EquipSlotDef[], lookup: EquipItemLookup, options: EquipmentOptions = {}): Equipment — A worn-gear set over caller slot and item data.
 
+## @jgengine/core/inventory/inventoryGrid.view
+
+- `InventoryGrid` (function): function InventoryGrid({ inventoryId, columns, size = 44, gap = 6, itemIcon, onActivate, className, style, }: InventoryGridProps): React.JSX.Element — A drop-in inventory grid with drag/swap/stack-merge/split and full keyboard control, bound to `inventoryId`.
+- `InventoryGridProps` (interface): interface InventoryGridProps — Props for {@link InventoryGrid}.
+
 ## @jgengine/core/inventory/inventoryModel
 
 - `InventoryLayout` (interface): interface InventoryLayout { slots: number; accepts?: string | readonly string[] } — ⚠ undocumented · used by `createEmptyInventory`: A bag of stackable items supporting add, remove, count, and move — the base inventory model.
@@ -1970,11 +1975,27 @@
 - `placeShaped` (function): function placeShaped<T>(grid: ShapedGrid<T>, item: ShapedItem<T>, origin: Cell, rotation: Rotation = 0): ShapedResult<T> — Place a caller-defined item without mutating the source board; duplicate ids reject.
 - `removeShaped` (function): function removeShaped<T>(grid: ShapedGrid<T>, id: string): ShapedResult<T> — Remove one placement without mutating the source board.
 
+## @jgengine/core/inventory/shopGrid.view
+
+- `ShopGrid` (function): function ShopGrid({ shop, wallet, onWalletChange, theme, currencyIcons, iconFor, showSell = false, walletCurrencies, title = "Shop", labelFor, minCardWidth = "140px", className, style, }: ShopGridProps): ReactNode — A drop-in vendor/shop grid: item cards (icon, name, price with a currency glyph, stock count or "∞") over a caller-owned wallet, plus a wallet balance readout. Each card's Buy button disables when the wallet cannot afford it (`shop.canAfford`) or the item is sold out; an optional Sell button appears for entries with a `sellPrice`. Buying/selling routes through the core shop model and hands the debited/credited wallet back via `onWalletChange` — the component never owns the wallet. Purely token-driven presentation (shared `--jg-*` HudTheme tokens, reskinnable via {@link ShopGridTheme}); `kind` and `currency` are free strings the game styles, never interpreted.
+- `ShopGridProps` (interface): interface ShopGridProps — Props for {@link ShopGrid}.
+- `ShopGridTheme` (interface): interface ShopGridTheme — Reskin tokens for {@link ShopGrid}. Falls back to shared `--jg-*` HudTheme tokens, then neutral defaults.
+- `useShopStock` (function): function useShopStock(shop: ShopStock): ShopStockEntry[] — Subscribe to a shop's stock and re-render whenever it changes (buy, sell, restock, price, add, remove, restore). Returns the current entry list — a detached snapshot safe to map over.
+
 ## @jgengine/core/inventory/slotModel
 
 - `Slot` (type): type Slot<T> = T | null — ⚠ undocumented
 - `SlotGrid` (type): type SlotGrid<T> = readonly Slot<T>[] — ⚠ undocumented
 - `SlotResult` (type): type SlotResult<T> = | { status: "ok"; grid: Slot<T>[] } | { status: "rejected"; reason: "invalid-slot" | "slot-occupied" | "empty-slot" } — ⚠ undocumented
+
+## @jgengine/core/inventory/slots.view
+
+- `ArmorSlots` (function): function ArmorSlots(props: SlotGridProps): React.JSX.Element — Armor piece slots.
+- `EquipmentSlots` (function): function EquipmentSlots(props: SlotGridProps): React.JSX.Element — Worn-gear slots (head/chest/hands/…): one atomic grid, painted icons, themed from tokens.
+- `PotionSlots` (function): function PotionSlots(props: SlotGridProps): React.JSX.Element — Consumable (health/shield potion) slots.
+- `SlotGridProps` (interface): interface SlotGridProps — Props shared by every atomic slot grid.
+- `SlotItem` (interface): interface SlotItem — Atomic, purpose-named slot grids (#1033): one component per category — `EquipmentSlots`, `WeaponSlots`, `ArmorSlots`, `PotionSlots` — for paperdoll / equip layouts where each grid holds a single gear category. A full multi-category backpack that binds to a live inventory with drag/swap/stack/split is a different, supported shape: reach for `<InventoryGrid>` (`inventoryGrid.tsx`) there, and use these atomic grids for the equip slots around it. Each renders a grid of painted {@link IconTreatment} tiles (glyph + gradient + count badge) for filled slots and a themed placeholder for empty ones, all reading the shared `--jg-slot-*` / `--jg-accent` HudTheme tokens (#1034). Composition stays the game's; the engine ships the grid.
+- `WeaponSlots` (function): function WeaponSlots(props: SlotGridProps): React.JSX.Element — Weapon loadout slots.
 
 ## @jgengine/core/inventory/storageTier
 
@@ -2339,6 +2360,11 @@
 - `QuestCatalogValidationOptions` (interface): interface QuestCatalogValidationOptions — Declarations and optional lookups for a game's own authoring rules.
 - `validateQuestCatalog` (function): function validateQuestCatalog(catalog: readonly QuestCatalogDefinition[] | Readonly<Record<string, QuestCatalogDefinition>>, options: QuestCatalogValidationOptions = {}): QuestCatalogIssue[] — Validate catalog ids, references, quantities, and potential prerequisite progression without mutation. Requirements are completed quest ids OR unlock ids; all requirements of a quest must be met. Any eligible quest may be accepted directly. External unlocks and granted quest starts are possible entry points, not claims about their timing. Blocked progression/cycles are warnings: game systems can bypass prerequisites. Topology uses the last duplicate, matching journal registration. Traversal is iterative and linear in definitions, requirements, and their producer edges. Objective and item counts may be fractional or zero; negative/nonfinite counts are invalid. This assumes objectives can be completed and does not evaluate narrative, chronology, or balance.
 
+## @jgengine/core/mission/questTracker.view
+
+- `QuestTracker` (function): function QuestTracker({ quests, title = "Quests", emptyLabel = "No active quests.", maxObjectives, accent = "var(--jg-accent, #facc15)", className, style, }: QuestTrackerProps): ReactNode — Quest / objective tracker HUD — a compact panel of active quests with a title and labelled, progress-barred objectives (checked + struck when complete). Presentation-only over `describeTrackedQuest(def, instance)` views, so it stays decoupled from the `QuestJournal` runtime.
+- `QuestTrackerProps` (interface): interface QuestTrackerProps — Props for {@link QuestTracker}.
+
 ## @jgengine/core/mission/sideJobs
 
 - `SideJobActive` (interface): interface SideJobActive — An accepted job's live state.
@@ -2390,6 +2416,14 @@
 - `attachRefusalNotices` (function): function attachRefusalNotices(events: Pick<GameEvents, "on">, notices: Pick<NoticeFeed, "push">, options: RefusalNoticeOptions = {}): () => void — Show every player-facing command refusal (`validate` returned `{ reason, message }`) as a deny notice. Refusals without a `message` stay silent: `reason` is a machine string. Returns the detach function.
 - `createNoticeFeed` (function): function createNoticeFeed(config: NoticeFeedConfig & { now?: () => number } = {}): NoticeFeed — Player-facing notice feed: info/success/warn/deny messages with stacking dedupe and TTL. Pure state with an injected clock, so it runs headless; the shell renders it and plays a UI cue per push.
 
+## @jgengine/core/notifications/notices.view
+
+- `Notice` (interface): interface Notice — A live notice as the HUD renders it.
+- `NoticePlacement` (type): type NoticePlacement = "top" | "center" | "bottom" — Where {@link NoticeStack} sits: below top-edge HUD bars, over the play area, or above bottom action bars.
+- `NoticeStack` (function): function NoticeStack({ feed, placement = "top", offset, avoidHud = true, zIndex = 85, scale = 1, maxVisible = 3, renderNotice, }: { /** Defaults to the surrounding game's `ctx.game.notices`. */ feed?: NoticeFeed; placement?: NoticePlacement; /** Distance from the band's screen edge (px or CSS length… — Animated, toned notice stack for a {@link NoticeFeed} — the default renderer the shell mounts for `ctx.game.notices` inside the HUD theme root. Uses `--jg-*` theme vars with fallbacks, 14px text, and never takes pointer input. A top or bottom stack keeps clear of HUD panels registered in its column and sits above modal overlays.
+- `NoticeTone` (type): type NoticeTone = "info" | "success" | "warn" | "deny" — How a notice reads: neutral info, a win, a caution, or a refused action.
+- `useNoticeList` (function): function useNoticeList(feed: NoticeFeed | null): readonly Notice[] — Live notices of `feed`, re-rendering on change and pruning each one when it expires.
+
 ## @jgengine/core/notifications/notificationCenter
 
 - `NotificationCenterOptions` (interface): interface NotificationCenterOptions — Options for {@link createNotificationCenter}.
@@ -2398,6 +2432,18 @@
 - `NotificationInput` (interface): interface NotificationInput<TMeta = unknown> — Fields accepted by {@link NotificationStore.push}.
 - `NotificationStore` (interface): interface NotificationStore<TMeta = unknown> — Serializable, observable log of persistent notifications with read tracking.
 - `createNotificationCenter` (function): function createNotificationCenter<TMeta = unknown>(options: NotificationCenterOptions = {}): NotificationStore<TMeta> — A persistent notification log with read/unread tracking — the "notification center" surface toasts don't cover. Newest-first, capped, serializable, and observable; a game pushes durable events (quest updates, trades, party news) here and a HUD renders the list + an unread badge. `snapshot`/`restore` round-trip through a save.
+
+## @jgengine/core/notifications/notificationCenter.view
+
+- `NotificationBell` (function): function NotificationBell({ store, onClick, icon = "🔔", className, style }: NotificationBellProps): ReactNode — Notification bell — an icon button with an unread-count badge, bound to a notification store. Toggle a {@link NotificationCenter} panel from its click.
+- `NotificationBellProps` (interface): interface NotificationBellProps — Props for {@link NotificationBell}.
+- `NotificationCenter` (function): function NotificationCenter({ store, title = "Notifications", emptyLabel = "You're all caught up.", onClose, formatTime, className, style, }: NotificationCenterProps): ReactNode — Notification center panel — the scrollable log toasts don't provide: newest notifications with a kind-colored marker, title/body, relative time, and an unread highlight; a header with the unread count, mark-all-read, and clear. Clicking an entry marks it read. Bind it to a `createNotificationCenter`.
+- `NotificationCenterProps` (interface): interface NotificationCenterProps — Props for {@link NotificationCenter}.
+- `useNotifications` (function): function useNotifications<TMeta = unknown>(store: NotificationStore<TMeta>): readonly NotificationEntry<TMeta>[] — Subscribe to a notification store's live list.
+
+## @jgengine/core/notifications/toastStack.view
+
+- `ToastStack` (function): function ToastStack({ action, limit = 4, className, renderToast, }: { action: string; limit?: number; className?: string; renderToast?: (entry: FeedEntry, index: number) => ReactNode; }): React.JSX.Element | null — Render `ctx.game.feed`'s entries for `action` as a newest-first toast stack. Reach for this when the message source is already an engine event bound onto `ctx.game.feed` (kill feed, quest updates, loot log); for ad-hoc player messages push to `ctx.game.notices`, which the shell draws as a {@link NoticeStack}.
 
 ## @jgengine/core/progression/careerBank
 

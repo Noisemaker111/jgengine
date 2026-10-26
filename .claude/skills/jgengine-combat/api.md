@@ -336,6 +336,12 @@
 - `weaponIntervalMs` (function): function weaponIntervalMs(definition: WeaponDefinition): number — Milliseconds between shots at full cadence: `60_000 / roundsPerMinute`.
 - `weaponMaxInFlight` (function): function weaponMaxInFlight(definition: WeaponDefinition): number — Live pellets one definition may keep, clamped to a bounded range.
 
+## @jgengine/core/combat/ProjectileModels.draw
+
+- `ProjectileModels` (function): function ProjectileModels({ model, fallback, forward = [0, 1, 0], maxInstances = 256, source }: ProjectileModelsProps): ReactElement — Mount caller-owned models at authoritative projectile positions. Flight ids determine lifetime; each frame only updates transforms, and settlement removes the model. Optional shaft/head geometry is enabled only by the caller.
+- `ProjectileModelsProps` (interface): interface ProjectileModelsProps — Render simulated flights without owning their travel or settlement.
+- `ProjectileShaft` (interface): interface ProjectileShaft — Explicit opt-in shaft/head geometry when a game has no projectile model.
+
 ## @jgengine/core/combat/abilityKit
 
 - `AbilityCastReason` (type): type AbilityCastReason = "unknown-slot" | "cooldown" | "group-cooldown" | "no-resource" — ⚠ undocumented

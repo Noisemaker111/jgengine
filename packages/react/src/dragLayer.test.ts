@@ -22,7 +22,7 @@ beforeAll(async () => {
   await Bun.write(entry, `
     import React, {useState} from 'react'; import {createRoot} from 'react-dom/client'; import {flushSync} from 'react-dom';
     import {useDragLayer,DraggableCard,DropZone,DragGhost} from '@jgengine/react/dragLayer';
-    import {InventoryGrid} from '@jgengine/react/inventory/inventoryGrid'; import {GameProvider} from '@jgengine/react/provider';
+    import {InventoryGrid} from '@jgengine/core/inventory/inventoryGrid.view'; import {GameProvider} from '@jgengine/react/provider';
     import {CardFace} from '@jgengine/react/cards';
     import {defineGameDefinition} from '@jgengine/core/game/defineGame';
     import {createAssetCatalog} from '@jgengine/core/scene/assetCatalog'; import {createGameContext} from '@jgengine/core/runtime/gameContext';

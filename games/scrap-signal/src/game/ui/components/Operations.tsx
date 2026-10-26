@@ -3,9 +3,9 @@ import { HudPanel, useBrowserSuspension, useDisplayProfile } from "@jgengine/rea
 import { GameIcon } from "@jgengine/react/gameIcons";
 import { HudFade } from "@jgengine/core/hud/hudLayout.view";
 import { useGame, useGamePhase, useGameStore } from "@jgengine/react/hooks";
-import { useMenuNav } from "@jgengine/react/menu/menuNav";
+import { useMenuNav } from "@jgengine/core/menu/menuNav.view";
 import { useGameContext } from "@jgengine/react/provider";
-import { useSettings } from "@jgengine/react/settings/settings";
+import { useSettings } from "@jgengine/core/settings/settings.view";
 import { useStore } from "@jgengine/react/store";
 import { gamePhase, setGamePhase } from "@jgengine/core/game/gamePhase";
 import { RELAY, relayDistance, relayStore } from "../../relay";

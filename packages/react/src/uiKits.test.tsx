@@ -3,11 +3,11 @@ import { renderToStaticMarkup } from "react-dom/server";
 
 import { UI_CUES } from "@jgengine/core/audio/uiCues";
 
-import { GameMenu } from "./menu/gameMenu";
-import { ContinuePane } from "./menu/gameMenuSaves";
+import { GameMenu } from "@jgengine/core/menu/gameMenu.view";
+import { ContinuePane } from "@jgengine/core/menu/gameMenuSaves.view";
 import { actionGlyph } from "./inputDevice";
 import { deadlineStage, formatCountdown, KitObjective, KitResultScreen } from "./kitFlow";
-import { cappedShown } from "./notifications/notices";
+import { cappedShown } from "@jgengine/core/notifications/notices.view";
 import { customizeKit, meterFraction, meterSegmentsLit, missingKitParts, uiKitVars, type UiKit } from "./uiKit";
 import { arcadeKit } from "./uiKitArcade";
 import { broadcastKit } from "./uiKitBroadcast";

@@ -62,7 +62,7 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 ## adjust-setting-row — step a settings row value once, for keyboard and gamepad alike
 
-- `adjustSettingRow` (function) · `import { adjustSettingRow } from "@jgengine/react/settings/settingsBlocks"`
+- `adjustSettingRow` (function) · `import { adjustSettingRow } from "@jgengine/core/settings/settingsBlocks.view"`
 
 ## animation — turn a killed rigged character into a physics ragdoll on death
 
@@ -357,7 +357,7 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 ## game-flow-ui — title, HUD and pause menu wired to the game-flow system — the game passes its HUD and menu words
 
-- `GameFlowUI` (function) · `import { GameFlowUI } from "@jgengine/react/menu/gameFlowMenus"`
+- `GameFlowUI` (function) · `import { GameFlowUI } from "@jgengine/core/menu/gameFlowMenus.view"`
 
 ## game-font-stacks — display/body/numeric font stacks for a game's font pairing, with installed fallbacks
 
@@ -384,10 +384,6 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 - `applyGroundEdgeFade` (function) · `import { applyGroundEdgeFade } from "@jgengine/shell/terrain"`
 - `buildGroundCoverageMask` (function) · `import { buildGroundCoverageMask } from "@jgengine/shell/terrain"`
 - `createGroundEdgeFade` (function) · `import { createGroundEdgeFade } from "@jgengine/shell/terrain"`
-
-## haptics-route — send a feedback pulse to the gamepad when one is connected, else to the phone's vibration motor
-
-- `createHapticsRoute` (function) · `import { createHapticsRoute } from "@jgengine/shell/haptics/hapticsRoute"`
 
 ## heavy-models — models over the per-model triangle budget, for perf probes and smoke assertions
 
@@ -693,7 +689,7 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 ## menu-router — screen stack for a game front-end — push/back/replace/reset with optional Escape-to-back
 
-- `useMenuRouter` (function) · `import { useMenuRouter } from "@jgengine/react/menu/menuRouter"`
+- `useMenuRouter` (function) · `import { useMenuRouter } from "@jgengine/core/menu/menuRouter.view"`
 
 ## menu-screen — animated enter/exit menu screen over a live scene, with translucent scrim, backdrop slot, reduced-motion support and exit unmount
 
@@ -705,7 +701,7 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 ## menu-stack-reducer — pure push/back/replace/reset transitions for a menu screen stack
 
-- `menuStackReducer` (function) · `import { menuStackReducer } from "@jgengine/react/menu/menuRouter"`
+- `menuStackReducer` (function) · `import { menuStackReducer } from "@jgengine/core/menu/menuRouter.view"`
 
 ## menu-transition — enter/exit phase timing for an animated menu screen, with reduced-motion collapse and snapshot/restore
 
@@ -776,10 +772,6 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 ## new-character-pane — character creation pane — name field, palette and avatar choice, start action
 
 - `NewCharacterPane` (function) · `import { NewCharacterPane } from "@jgengine/react"`
-
-## notice-feed — render ctx.game.notices as an animated toned stack (enter/exit motion, ×N stacking, HUD avoidance)
-
-- `NoticeStack` (function) · `import { NoticeStack } from "@jgengine/react/notifications/notices"`
 
 ## notification-bell — icon button with a live unread-count badge over a notification store
 
@@ -886,10 +878,6 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `measureProjectedOverdraw` (function) · `import { measureProjectedOverdraw } from "@jgengine/shell/render/projectedOverdraw"`
 
-## projectile-models — render authoritative projectile flights with caller models or opt-in shaft/head geometry, velocity orientation, bounded instances, and settlement cleanup
-
-- `ProjectileModels` (function) · `import { ProjectileModels } from "@jgengine/shell/combat/ProjectileModels"`
-
 ## quest-tracker — compact quest/objective HUD tracker — titles + labelled objective progress from describeTrackedQuest views
 
 - `QuestTracker` (function) · `import { QuestTracker } from "@jgengine/react"`
@@ -976,19 +964,19 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 ## settings-keybind-row — one rebindable controls row — key glyph, armed state and reset
 
-- `SettingsKeybindControl` (function) · `import { SettingsKeybindControl } from "@jgengine/react/settings/settingsBlocks"`
+- `SettingsKeybindControl` (function) · `import { SettingsKeybindControl } from "@jgengine/core/settings/settingsBlocks.view"`
 
 ## settings-section — settings category block — rows plus click-to-capture keybind rows, HudTheme-styled, store-backed, keyboard and gamepad navigable
 
-- `SettingsSection` (function) · `import { SettingsSection } from "@jgengine/react/settings/settingsBlocks"`
+- `SettingsSection` (function) · `import { SettingsSection } from "@jgengine/core/settings/settingsBlocks.view"`
 
 ## settings-slider — a settings slider row that mirrors locally and persists on release
 
-- `SettingsSlider` (function) · `import { SettingsSlider } from "@jgengine/react/settings/settingsBlocks"`
+- `SettingsSlider` (function) · `import { SettingsSlider } from "@jgengine/core/settings/settingsBlocks.view"`
 
 ## settings-tabs — scrollable settings category tabs with pressed state
 
-- `SettingsTabs` (function) · `import { SettingsTabs } from "@jgengine/react/settings/settingsBlocks"`
+- `SettingsTabs` (function) · `import { SettingsTabs } from "@jgengine/core/settings/settingsBlocks.view"`
 
 ## shop-grid-host — drop-in vendor/shop grid over a caller-owned wallet — item cards with icon/price/stock, afford-aware Buy, optional Sell, and a balance readout, token-themed
 
@@ -1013,7 +1001,7 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 ## start-new-game — start a fresh run from a menu or result screen; reloads the page when a run already played
 
-- `startNewGame` (function) · `import { startNewGame } from "@jgengine/react/menu/gameFlowMenus"`
+- `startNewGame` (function) · `import { startNewGame } from "@jgengine/core/menu/gameFlowMenus.view"`
 
 ## start-screen — headless title/attract overlay the game fills and skins
 
@@ -1134,11 +1122,11 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 ## use-accessibility-rows — accessibility setting rows for a game-owned settings layout
 
-- `useAccessibilityRows` (function) · `import { useAccessibilityRows } from "@jgengine/react/settings/accessibilitySettings"`
+- `useAccessibilityRows` (function) · `import { useAccessibilityRows } from "@jgengine/core/settings/accessibilitySettings.view"`
 
 ## use-accessibility-settings — live accessibility preferences from the shared settings store
 
-- `useAccessibilitySettings` (function) · `import { useAccessibilitySettings } from "@jgengine/react/settings/accessibilitySettings"`
+- `useAccessibilitySettings` (function) · `import { useAccessibilitySettings } from "@jgengine/core/settings/accessibilitySettings.view"`
 
 ## use-camera-shake — React hook reading a camera-shake controller's live trauma and kind
 
@@ -1170,7 +1158,7 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 ## use-hold-vs-toggle — live hold-or-toggle preference from the shared settings store
 
-- `useHoldVsToggle` (function) · `import { useHoldVsToggle } from "@jgengine/react/settings/accessibilitySettings"`
+- `useHoldVsToggle` (function) · `import { useHoldVsToggle } from "@jgengine/core/settings/accessibilitySettings.view"`
 
 ## use-interaction-prompt — React hook binding a prompt registry to a moving player — resolves the nearest interactable prompt and returns the active one
 
@@ -1183,10 +1171,6 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 ## use-modal-stack — React hook binding a modal stack to a component — re-renders on push/pop/resolve
 
 - `useModalStack` (function) · `import { useModalStack } from "@jgengine/react"`
-
-## use-notice-list — read the live notice feed in a game's own notice view
-
-- `useNoticeList` (function) · `import { useNoticeList } from "@jgengine/react/notifications/notices"`
 
 ## use-notifications — read a notification store's live list in a game's own inbox view
 

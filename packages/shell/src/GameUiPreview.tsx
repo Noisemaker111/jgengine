@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 
 import { createGameContext, type GameContext } from "@jgengine/core/runtime/gameContext";
-import { useAccessibilitySettings } from "@jgengine/react/settings/accessibilitySettings";
+import { useAccessibilitySettings } from "@jgengine/core/settings/accessibilitySettings.view";
 import { GameProvider } from "@jgengine/react/provider";
 import { HudThemeRoot } from "@jgengine/core/hud/hudThemeRoot.view";
 import { HudViewportProvider } from "@jgengine/core/hud/hudViewport.view";

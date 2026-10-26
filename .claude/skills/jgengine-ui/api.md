@@ -2,6 +2,11 @@
 
 # jgengine-ui — exported API surface
 
+## @jgengine/core/dialog/dialogBehavior.view
+
+- `DialogBehaviorOptions` (interface): interface DialogBehaviorOptions — Options for controlled dialog focus behavior; callers own markup, state, and close policy.
+- `useDialogBehavior` (function): function useDialogBehavior<T extends HTMLElement = HTMLDivElement>(options: DialogBehaviorOptions): RefObject<T | null> — Focus entry, Tab trapping, Escape requests, and focus restoration for a caller-owned dialog. Attach the returned ref to the dialog root and supply `role="dialog"`, `aria-modal`, an accessible name, and `tabIndex={-1}`. The most recently opened dialog handles keys, including portal roots. Closing an inner dialog restores its opener; cleanup never steals focus from another active dialog. Replacing the root while open keeps its position and original return target.
+
 ## @jgengine/core/dialog/modalStack
 
 - `MODAL_CANCEL` (const): const MODAL_CANCEL: "cancel" — Conventional cancel/dismiss result (also the default auto-dismiss and pop result).
@@ -14,6 +19,16 @@
 - `ModalStackOptions` (interface): interface ModalStackOptions — Options for {@link createModalStack}.
 - `ModalStackSnapshot` (interface): interface ModalStackSnapshot — Serializable state — the ordered entries (bottom-first) and the id counter. Plain JSON.
 - `createModalStack` (function): function createModalStack(options: ModalStackOptions = {}): ModalStack — A stack of modal dialogs: push opaque records to open blocking overlays (a pause menu, a confirm prompt, a reward popup), pop or resolve them with a free-form result to close, and query the top / open / depth to gate game input. The model is deliberately vocabulary-free — it never reads a record's `kind` or a resolution's `result`, so a game owns every dialog style — and fully serializable, with an optional injected clock driving per-modal auto-dismiss. A React host renders `top()`; `subscribe` re-renders it, `snapshot`/`restore` round-trip it through a save.
+
+## @jgengine/core/dialog/modals.view
+
+- `ConfirmDialog` (function): function ConfirmDialog({ title, body, confirmLabel = "Confirm", cancelLabel = "Cancel", onConfirm, onCancel, danger = false, width = 360, className, style, }: ConfirmDialogProps): ReactNode — A generic two-button confirmation dialog — title, optional body, and Cancel / Confirm buttons over a `HudTheme`-token-driven {@link HudSurface}. Presentation-only: wire `onConfirm`/`onCancel` to a modal stack's `resolve` (typically inside a {@link ModalHost} render callback) and reskin via `HudTheme` tokens or `danger` for a destructive action. It interprets nothing — the game supplies the copy.
+- `ConfirmDialogProps` (interface): interface ConfirmDialogProps — Props for {@link ConfirmDialog}.
+- `ModalControls` (interface): interface ModalControls — Stack-bound controls handed to a {@link ModalHost} render callback.
+- `ModalHost` (function): function ModalHost({ stack, children, showBackdrop = true, backdrop, closeOnBackdrop = true, closeOnEsc = true, zIndexBase = 80, onInteract, className, style, }: ModalHostProps): ReactNode — Full-screen modal host: watches a stack, renders only the topmost modal centered over a dimmed backdrop, and manages accessibility — the panel is a `role="dialog" aria-modal`, focus moves into it on open and is trapped with Tab/Shift+Tab cycling, Escape and (optionally) a backdrop click cancel the top modal, and focus returns to the previously focused element on close. It renders nothing when the stack is empty. Skin the panel and backdrop via `HudTheme` tokens.
+- `ModalHostProps` (interface): interface ModalHostProps — Props for {@link ModalHost}.
+- `ModalStackView` (interface): interface ModalStackView — React chrome over the headless modal stack (`@jgengine/core/dialog/modalStack`) — the blocking-overlay layer a game raises over its scene: a pause menu, a "quit to menu?" confirm, a reward popup. {@link useModalStack} is the DATA/HOOK layer (subscribe + the active record), {@link ModalHost} renders the top modal with a backdrop, focus trap, and Esc-to-cancel, and {@link ConfirmDialog} / {@link PauseMenu} (`menu/pauseMenu`) are ready-to-wire, HudTheme-token-driven building blocks. All unskinned and game-owned: the model never interprets a modal's `kind`, so a game switches on it to pick which of these (or its own) content to show, and reskins everything via `HudTheme` tokens and the frame.
+- `useModalStack` (function): function useModalStack(stack: ModalStack): ModalStackView — Subscribe to a modal stack and re-render on every change, returning the active modal and depth.
 
 ## @jgengine/core/format/distance
 
@@ -347,11 +362,54 @@
 - `createI18n` (function): function createI18n(options: I18nOptions): I18n — Create a translator over a message catalog: active-locale lookup with a fallback-locale chain, `{param}` interpolation, and `Intl.PluralRules`-based pluralization. Observable (`subscribe`) so React re-renders on `setLocale`; the catalog is caller-owned static data, the locale is the only state.
 - `interpolate` (function): function interpolate(template: string, params?: TParams): string — Replace `{name}` placeholders in `template` with `params[name]`. Unknown placeholders are left intact. Pure and locale-independent.
 
+## @jgengine/core/menu/gameFlowMenus.view
+
+- `GameFlowMenuContent` (interface): interface GameFlowMenuContent — What the title and pause menus of {@link GameFlowUI} say: the game's words, keys and credits.
+- `GameFlowUI` (function): function GameFlowUI({ menu, hud }: GameFlowUIProps): ReactNode — A game's whole UI over `createGameFlowSystem`: the title over the standing world, the HUD while playing, and the pause menu over it. The game supplies its HUD and its menu words; the look comes from the UI kit and `menu.accent`.
+- `GameFlowUIProps` (interface): interface GameFlowUIProps — Props for {@link GameFlowUI}.
+- `startNewGame` (function): function startNewGame(ctx: GameContext): Promise<void> — New game in a browser page: a second run reloads the page so nothing from the first carries over.
+
+## @jgengine/core/menu/gameMenu.view
+
+- `GameMenu` (function): function GameMenu({ items, initialId, onSelect, onBack, onHighlight, detail, logo, eyebrow, tagline, background, art, secondary, footer, controlHint, sound = true, variant = "title", open = true, reducedMotion, label, className, style, detailClassName, detailStyle, }: GameMenuProps): ReactNode — A game front-end menu: full-bleed over a living background, with a logo, an animated primary list and a detail pane that follows the highlighted verb. One system covers the main menu and the pause menu (`variant="pause"`), keyboard and gamepad navigation come from `useMenuNav`, confirmation ticks are generated (no audio asset), and the document never scrolls while it is open.
+- `GameMenuItem` (interface): interface GameMenuItem — One primary verb in a {@link GameMenu}.
+- `GameMenuLogo` (interface): interface GameMenuLogo — The logo slot. Give it `image` for art, or `text` for a styled wordmark.
+- `GameMenuProps` (interface): interface GameMenuProps — Props for {@link GameMenu}.
+- `GameMenuStyle` (type): type GameMenuStyle = CSSProperties & Record<`--${string}`, string | number> — Inline style for a menu surface that also accepts `--jg-*` theme tokens, so a game sets a token with `{ "--jg-menu-radius": "12px" }` instead of casting the object to `CSSProperties`.
+- `GameMenuVariant` (type): type GameMenuVariant = "title" | "pause" — How a {@link GameMenu} is used. `pause` is the same system at a smaller scale.
+- `useViewportScrollLock` (function): function useViewportScrollLock(active: boolean): void — Lock the page scroll while `active`, so a fixed full-bleed surface is exactly the viewport and the document behind it never gains a scrollbar. Nested and repeated locks are counted, and the previous inline styles are restored when the last one releases.
+
+## @jgengine/core/menu/gameMenuSaves.view
+
+- `ContinuePane` (function): function ContinuePane({ slot, onContinue, emptyMessage = "No run saved yet. Start a new game to begin one.", now = Date.now, className, style, }: ContinuePaneProps): ReactNode — The Continue detail pane: the save being continued, read big — captured thumbnail, character, time played, the game's progress summary, when it was saved, and the resume action.
+- `ContinuePaneProps` (interface): interface ContinuePaneProps — Props for {@link ContinuePane}.
+- `CreditsPane` (function): function CreditsPane({ sections, heading = "Credits", notice, className, style }: CreditsPaneProps): ReactNode — The Credits detail pane: a scroller that belongs to the pane. Wheel, arrows, PageUp/PageDown, Home and End scroll it, the native scrollbar is hidden, and the page behind never moves.
+- `CreditsPaneProps` (interface): interface CreditsPaneProps — Props for {@link CreditsPane}.
+- `GameMenuAvatar` (interface): interface GameMenuAvatar — One avatar/portrait choice in {@link NewCharacterPane}.
+- `GameMenuPalette` (interface): interface GameMenuPalette — One palette choice in {@link NewCharacterPane}.
+- `NewCharacterChoice` (interface): interface NewCharacterChoice — What {@link NewCharacterPane} reports when a run starts.
+- `NewCharacterPane` (function): function NewCharacterPane({ name, onNameChange, palettes, paletteId, onPaletteChange, avatars, avatarId, onAvatarChange, onStart, heading = "New run", nameLabel = "Character name", namePlaceholder = "Name your character", maxLength = 24, startLabel = "Begin", className, style, }: NewCharacterPanePro… — The New Game detail pane: a character name field, an optional palette and avatar choice, and the action that starts the run. The name field is a real form field, so menu key handling leaves typing alone (Enter inside the field starts the run).
+- `NewCharacterPaneProps` (interface): interface NewCharacterPaneProps — Props for {@link NewCharacterPane}.
+- `SAVE_SLOT_CHARACTER_KEY` (const): const SAVE_SLOT_CHARACTER_KEY: "character" — The character name a save card shows first, when the game supplies one as its own meta key.
+- `SAVE_SLOT_THUMBNAIL_KEY` (const): const SAVE_SLOT_THUMBNAIL_KEY: "thumbnail" — The save slot `meta` key a card reads as its thumbnail: a data URL or image URL captured when the save was written. Every other meta key is shown as a progress chip and never interpreted.
+- `SaveSlotCard` (function): function SaveSlotCard({ slot, now = Date.now, recent = false, onSelect, onDelete, loadLabel, className, style, }: SaveSlotCardProps): ReactNode — One save slot as a card: a captured thumbnail, the character name, playtime, the game's progress summary and when it was saved — or, for an empty slot, an empty slot with a New Game affordance. Deleting takes two presses: the first swaps the button for a confirm pair, so a mis-click cannot erase a run.
+- `SaveSlotCardProps` (interface): interface SaveSlotCardProps — Props for {@link SaveSlotCard}.
+- `SaveSlotsPane` (function): function SaveSlotsPane({ model, onContinue, onLoad, onNew, onDelete, heading = "Save slots", now = Date.now, columns = 2, className, style, }: SaveSlotsPaneProps): ReactNode — The slot grid for a {@link GameMenu} detail pane: Continue over the most recent save, then one card per slot. Arrow keys move between cards, Enter loads, and the grid scrolls inside its own pane rather than the page.
+- `SaveSlotsPaneProps` (interface): interface SaveSlotsPaneProps — Props for {@link SaveSlotsPane}.
+
+## @jgengine/core/menu/gameMenuSound.view
+
+- `GameMenuSound` (interface): interface GameMenuSound — A menu sound player. Give it to `GameMenu`'s `sound` prop, or call its methods from your own menu.
+- `GameMenuSoundConfig` (interface): interface GameMenuSoundConfig — How {@link createGameMenuSound} is tuned.
+- `GameMenuSoundKind` (type): type GameMenuSoundKind = "move" | "confirm" | "back" — The short, quiet click a menu makes when the selection moves or is confirmed. Generated with an oscillator instead of shipped as an audio file, so a game gets menu feedback without authoring a sound and the whole thing unmounts with the screen.
+- `GameMenuSoundState` (interface): interface GameMenuSoundState — The sound player's readable state: on/off, gain, and whether audio is actually running.
+- `createGameMenuSound` (function): function createGameMenuSound(config: GameMenuSoundConfig = {}): GameMenuSound — A tiny WebAudio click generator for menu feedback: one oscillator burst per tick, created on the first play (so a browser autoplay policy does not log an error at mount) and reused after.
+
 ## @jgengine/core/menu/menuNav
 
 - `MENU_KEY_INTENTS` (const): const MENU_KEY_INTENTS: Readonly<Record<string, MenuIntent>> — Keyboard codes that drive a menu, by `KeyboardEvent.code`. Tab is deliberately absent: it stays native.
 - `MenuIntent` (type): type MenuIntent = MenuNavDirection | "confirm" | "back" — Everything a key or gamepad button can ask a menu to do.
-- `MenuNavDirection` (type): type MenuNavDirection = "up" | "down" | "left" | "right" | "first" | "last" — Headless focus-order model for a game front-end menu: a list or grid of item ids, one focused item, and the keyboard/gamepad intents that move between them. It holds no React state, no DOM and no look — `@jgengine/react/menu/menuNav` binds it to a container and real focus, and each game decides what the items are and where they sit.
+- `MenuNavDirection` (type): type MenuNavDirection = "up" | "down" | "left" | "right" | "first" | "last" — Headless focus-order model for a game front-end menu: a list or grid of item ids, one focused item, and the keyboard/gamepad intents that move between them. It holds no React state, no DOM and no look — `@jgengine/core/menu/menuNav.view` binds it to a container and real focus, and each game decides what the items are and where they sit.
 - `MenuNavHold` (interface): interface MenuNavHold — When a held direction was pressed and when it last moved the focus.
 - `MenuNavLayout` (interface): interface MenuNavLayout — The shape of the item list being navigated: how many items, how they wrap into rows.
 - `MenuNavRepeat` (interface): interface MenuNavRepeat — Hold-to-repeat timing for a held d-pad/stick: one immediate move, then repeats.
@@ -363,6 +421,29 @@
 - `menuNavMove` (function): function menuNavMove(index: number, direction: MenuNavDirection, layout: MenuNavLayout): number — The next focused index for a direction, or the same index when the move is a no-op. Moves skip `disabled` indices and stop (rather than wrap) when every item in the way is disabled, so a menu can never hand focus to a dead row.
 - `shouldRepeatMenuNav` (function): function shouldRepeatMenuNav(now: number, hold: MenuNavHold, repeat: MenuNavRepeat = {}): boolean — Whether a held direction should fire a move at `now`: immediately on press, then only after `delayMs`, and no more often than `intervalMs`. Pure timing, so a gamepad poll and a keydown handler share one rule.
 
+## @jgengine/core/menu/menuNav.view
+
+- `MenuNavContainerProps` (interface): interface MenuNavContainerProps — The container props that make a menu navigable.
+- `MenuNavController` (interface): interface MenuNavController — The live navigation controller returned by {@link useMenuNav}.
+- `MenuNavItemProps` (interface): interface MenuNavItemProps — Props a menu item needs so {@link useMenuNav} can focus it and track pointer/focus.
+- `MenuNavRender` (type): type MenuNavRender = (nav: MenuNavController) => ReactNode — Render prop for a menu whose items come from {@link useMenuNav}.
+- `UseMenuNavOptions` (interface): interface UseMenuNavOptions — How {@link useMenuNav} is wired.
+- `useMenuNav` (function): function useMenuNav({ ids, columns = 1, wrap = true, disabled, initialId, enabled = true, onConfirm, onBack, onAdjust, gamepad = true, repeat, }: UseMenuNavOptions): MenuNavController — Bind a menu's focus order to the DOM: arrow keys, WASD, Home/End and a standard gamepad move a roving focus, Enter/Space/A confirm, Escape/Backspace/B/Start go back. Tab is left to the browser, so a menu never traps focus, and typing in a text field is never intercepted. The menu is pure state + listeners — it unmounts with the screen, so it costs nothing during play.
+
+## @jgengine/core/menu/menuRouter.view
+
+- `MenuRouter` (interface): interface MenuRouter<Id extends string> — A menu screen stack: where you are, how you got there, and how to go back.
+- `MenuStackAction` (type): type MenuStackAction<Id extends string> = | { type: "open"; id: Id } | { type: "back" } | { type: "replace"; id: Id } | { type: "reset"; id?: Id } — A screen-stack transition. `reset` without an id collapses to the router's original root.
+- `menuStackReducer` (function): function menuStackReducer<Id extends string>(path: readonly Id[], action: MenuStackAction<Id>, root: Id): readonly Id[] — The pure screen-stack transition behind {@link useMenuRouter}. Exported so a game can drive the same navigation from its own store or a replayable command log instead of React state.
+- `useMenuRouter` (function): function useMenuRouter<Id extends string>(root: Id, options: { escapeToBack?: boolean } = {}): MenuRouter<Id> — The screen stack behind a game front-end: title → save select → settings → credits, and Escape back out. Every game menu needs this and none of it is game-specific, so it ships here rather than being re-derived per game. Holds no content and imposes no look — the game decides what each screen id renders.
+
+## @jgengine/core/menu/menuScreen.view
+
+- `MenuScreen` (function): function MenuScreen({ open = true, transition = "fade", scrim = "dim", coversCanvas = false, enterMs = 220, exitMs = 160, reducedMotion, label, role = "dialog", backdrop, className, style, contentClassName, contentStyle, children, onClosed, }: MenuScreenProps): ReactNode — One animated screen of a game front-end: full-bleed, laid out by the game, with an enter/exit animation that runs on transform/opacity only (no layout, no frame hitch) and unmounts when the exit finishes. The scrim is translucent and the optional `backdrop` slot paints behind the content, so a live 3D scene stays visible behind a title, pause or settings screen. Durations come from the caller or collapse to zero under reduced motion.
+- `MenuScreenProps` (interface): interface MenuScreenProps — Props for {@link MenuScreen}.
+- `MenuScreenScrim` (type): type MenuScreenScrim = "none" | "dim" | "blur" — How much a {@link MenuScreen} dims the scene behind it. `none` keeps a live 3D scene fully visible.
+- `MenuScreenTransition` (type): type MenuScreenTransition = "fade" | "slide" | "scale" | "none" — Which motion a {@link MenuScreen} uses when it enters and leaves.
+
 ## @jgengine/core/menu/menuTransition
 
 - `MenuTransition` (interface): interface MenuTransition — Observable enter/exit phase machine.
@@ -373,6 +454,18 @@
 - `menuTransitionDurations` (function): function menuTransitionDurations(config: MenuTransitionConfig = {}): { enter: number; exit: number } — The enter and exit durations after reduced-motion is applied.
 - `menuTransitionPhaseMs` (function): function menuTransitionPhaseMs(phase: MenuTransitionPhase, config: MenuTransitionConfig = {}): number — How long the current phase lasts, in ms (0 for open/closed).
 
+## @jgengine/core/menu/pauseMenu.view
+
+- `PauseMenu` (function): function PauseMenu(props: PauseMenuProps): ReactNode — The pause menu: {@link GameMenu} at its smaller pause scale, so a game composes one menu system for title and pause. The game fills the verbs (Resume, Save, Settings, Quit) and the detail pane, and reskins it with `--jg-*` tokens on `style`. Escape (or B/Start) resumes.
+- `PauseMenuProps` (type): type PauseMenuProps = Omit<GameMenuProps, "variant"> & { /** Resume play. Escape, B and Start call it too unless `onBack` is given. */ onResume?: () => void; } — Props for {@link PauseMenu}: every {@link GameMenu} knob except `variant`, plus `onResume`.
+
+## @jgengine/core/menu/quickMenu.view
+
+- `QuickMenu` (function): function QuickMenu({ items, layout = "list", onSelect, onClose, title, columns = 3, arc = { startAngle: Math.PI / 2, sweep: Math.PI }, radialSize = 300, accent = "var(--jg-accent, #38bdf8)", className, style, }: QuickMenuProps): ReactNode — Versatile quick menu that takes many forms — a `radial` wheel, a partial `arc`, a vertical `list`, or a `grid` — over one item model with icons, labels, hotkeys, count badges, cooldowns, section headers, and nested submenus (drill in / back). Radial and arc forms reuse {@link RadialMenu}; list and grid render sectioned rows/tiles. The game supplies content and skin.
+- `QuickMenuItem` (interface): interface QuickMenuItem extends RadialMenuOption — An entry on a {@link QuickMenu}: a leaf action, or (with `children`) a submenu.
+- `QuickMenuLayout` (type): type QuickMenuLayout = "radial" | "arc" | "list" | "grid" — The forms a {@link QuickMenu} can take.
+- `QuickMenuProps` (interface): interface QuickMenuProps — Props for {@link QuickMenu}.
+
 ## @jgengine/core/menu/radialMenu
 
 - `RadialArc` (interface): interface RadialArc — Arc the slices span. Omit for a full wheel (index 0 at the top). A partial `sweep` (e.g. `Math.PI` for a bottom half, `Math.PI / 2` for a quarter) packs the slices evenly inside `[startAngle, startAngle + sweep]` — the arc/quick-bar forms. Angles are radians from "up" (−Y), clockwise.
@@ -382,6 +475,12 @@
 - `radialIndexFromVector` (function): function radialIndexFromVector(dx: number, dy: number, count: number, options: RadialVectorOptions = {}): number | null — Pick the slice a pointer/stick vector points at. `dx`/`dy` are screen-space (y down): up is `(0, -1)`. Returns null inside `deadZone` or (for a partial `arc`) outside the arc, so a centered stick or a click off the arc selects nothing.
 - `radialSlicePosition` (function): function radialSlicePosition(index: number, count: number, radius: number, arc?: RadialArc): { x: number; y: number } — Unit-circle position of a slice center (up = `(0, -1)`), scaled by `radius` — where to place a wedge's icon/label.
 - `radialSlices` (function): function radialSlices(count: number, arc?: RadialArc): RadialSlice[] — Divide a ring (or `arc`) into `count` wedges — the geometry a radial/quick menu (weapon wheel, emote arc, ping bar) renders. A full wheel centers index 0 at the top; a partial `arc` packs the slices inside its sweep.
+
+## @jgengine/core/menu/radialMenu.view
+
+- `RadialMenu` (function): function RadialMenu({ options, open = true, onSelect, onClose, size = 300, innerRadius = 52, arc, highlightIndex, accent = "var(--jg-accent, #38bdf8)", className, style, }: RadialMenuProps): ReactNode — Radial / quick menu (weapon or emote wheel) — a ring or partial `arc` of selectable wedges the player points at with the mouse (or a stick). Pointer angle drives the highlight via core `radialIndexFromVector`; click/confirm fires `onSelect`, the neutral hub closes. Options carry optional hotkeys, count badges, cooldowns, and submenu markers. The game supplies icons/labels and skins it.
+- `RadialMenuOption` (interface): interface RadialMenuOption — One selectable entry on a radial/quick menu (weapon or emote wheel).
+- `RadialMenuProps` (interface): interface RadialMenuProps — Props for {@link RadialMenu}.
 
 ## @jgengine/core/render/ambientLife
 
@@ -471,6 +570,23 @@
 - `createSpriteClipPlayer` (function): function createSpriteClipPlayer(atlas: SpriteAtlas): { play(name: string): void; advance(dt: number): void; frame: () => { x: number; y: number; w: number; h: number; pivot?: [number, number] | undefined; } | undefined; snapshot: () => { animation: string; frameIndex: number; elapsed: number; done: … — Create a renderer-independent sprite animation player.
 - `sortingOrder` (function): function sortingOrder(layers: readonly string[], layer: string, offset = 0): number — Resolve a layer name and local offset into a stable render order.
 
+## @jgengine/core/settings/QuickControls.draw
+
+- `QuickControls` (function): function QuickControls({ controller }: { controller: SettingsController }): React.JSX.Element | null — ⚠ undocumented
+
+## @jgengine/core/settings/SettingsChrome.draw
+
+- `SettingsChrome` (function): function SettingsChrome(): React.JSX.Element | null — ⚠ undocumented
+
+## @jgengine/core/settings/SettingsMenu.draw
+
+- `SettingsMenu` (function): function SettingsMenu({ controller, onClose, initialTab, }: { controller: SettingsController; onClose: () => void; initialTab?: string; }): React.JSX.Element | null — ⚠ undocumented
+
+## @jgengine/core/settings/SettingsRuntime.draw
+
+- `SettingsRuntime` (function): function SettingsRuntime({ variant, surface, actions, children, ...input }: SettingsRuntimeProps): React.JSX.Element — ⚠ undocumented
+- `SettingsRuntimeProps` (interface): interface SettingsRuntimeProps extends SettingsControllerInput { variant: SettingsVariant; surface: SettingsSurface | false; actions: readonly SettingsActionView[]; children: ReactNode } — ⚠ undocumented
+
 ## @jgengine/core/settings/accessibilitySettings
 
 - `ACCESSIBILITY_SETTING_IDS` (const): const ACCESSIBILITY_SETTING_IDS: { readonly textScale: "accessibility.textScale"; readonly colorblind: "accessibility.colorblind"; readonly reducedMotion: "accessibility.reducedMotion"; readonly highContrast: "accessibility.highContrast"; readonly captions: "accessibility.captions"; readonly holdVsT… — The persisted settings ids behind the accessibility section.
@@ -487,6 +603,20 @@
 - `readColorblind` (function): function readColorblind(store: SettingsStore): ColorblindMode — Read a stored colorblind mode, falling back to `none` for an unknown value.
 - `readHoldVsToggle` (function): function readHoldVsToggle(store: SettingsStore): HoldVsToggle — Read the hold-or-toggle preference, falling back to `hold`.
 - `readTextScale` (function): function readTextScale(store: SettingsStore): number — Read a stored text scale, clamped to the supported range.
+
+## @jgengine/core/settings/accessibilitySettings.view
+
+- `useAccessibilityRows` (function): function useAccessibilityRows(): AccessibilitySettingRow[] — The accessibility rows backed by the shared settings store, for a settings screen the game lays out itself: map them through `SettingsRowControl` (`@jgengine/core/settings/settingsBlocks.view`). The shell's stock settings menu shows the same rows as its `accessibility` category.
+- `useAccessibilitySettings` (function): function useAccessibilitySettings(): AccessibilityState — The live accessibility preferences (reduced motion, high contrast, text scale, colorblind mode, captions) from the shared settings store. Re-renders whenever any setting changes, so a root that spreads them onto the HUD updates the moment the player picks a value.
+- `useHoldVsToggle` (function): function useHoldVsToggle(): HoldVsToggle — The live hold-versus-toggle preference for actions that support both (aim, sprint, crouch). Pair it with `holdToggleActive` (`@jgengine/core/settings/accessibilitySettings`) per frame.
+
+## @jgengine/core/settings/appliedSettings.draw
+
+- `AppliedGraphicsSettings` (interface): interface AppliedGraphicsSettings — The player's graphics choices as the shell applies them.
+- `AudioSettingsBridge` (function): function AudioSettingsBridge({ store, engine, buses, }: { store: SettingsStore; engine: AudioEngine; buses: Record<string, AudioBusDef> | undefined; }): null — ⚠ undocumented
+- `TOUCH_STYLE_AUTO` (const): const TOUCH_STYLE_AUTO: "auto" — Sentinel Controls value meaning "defer to the game's suggested touch skin".
+- `useGraphicsSettings` (function): function useGraphicsSettings(store: SettingsStore, shadowsDefault: boolean, overrides?: GraphicsProfileOverrides): AppliedGraphicsSettings — ⚠ undocumented
+- `useSettingsRevision` (function): function useSettingsRevision(store: SettingsStore): number — ⚠ undocumented
 
 ## @jgengine/core/settings/frameRateLimit
 
@@ -519,6 +649,53 @@
 - `readGraphicsQuality` (function): function readGraphicsQuality(store: Pick<SettingsStore, "get">): GraphicsQuality — The stored quality tier, falling back to the default when the value is missing or unknown.
 - `readGraphicsSettings` (function): function readGraphicsSettings(store: Pick<SettingsStore, "get">, overrides?: GraphicsProfileOverrides): GraphicsSettingsState — Resolve the player's graphics state from a settings store. The tier profile (with the game's overrides) supplies every default; a stored render scale or stage toggle replaces its field.
 - `withGraphicsQualityOverride` (function): function withGraphicsQualityOverride(store: SettingsStore, quality: GraphicsQuality, overrides?: GraphicsProfileOverrides): SettingsStore — Wrap a settings store so the graphics tier reads as `quality` for this session only: every graphics field resolves from that tier until the player changes it, and nothing is persisted. Capture hosts use it (`?quality=low`) to render cheap iteration shots without leaving the draft tier in the browser profile for the next full-quality shot.
+
+## @jgengine/core/settings/keybindingMenu.view
+
+- `KeybindingMenu` (function): function KeybindingMenu({ session, theme, title = "Controls", resetAllLabel = "Reset All", capturePrompt = "Press a key…", onChange, className, style, }: KeybindingMenuProps): ReactNode — A drop-in controls-settings surface for a {@link RebindSession}: one row per action showing its label and current key glyph. Clicking a row arms capture ("Press a key…") and a window `keydown` listener feeds the pressed `event.code` to `session.capture`; rows that collide with another action show a conflict badge; each row has a Reset button and the panel has a Reset-all button. Presentation only — all conflict/capture/reset logic lives in the core session, and action ids/labels are the game's free strings. Reskin via {@link KeybindingMenuTheme} or ambient HudTheme tokens. A game owns its overall settings layout; this is the reusable controls block it drops in.
+- `KeybindingMenuProps` (interface): interface KeybindingMenuProps — Props for {@link KeybindingMenu}.
+- `KeybindingMenuTheme` (interface): interface KeybindingMenuTheme — Reskin tokens for {@link KeybindingMenu}. All fall back to HudTheme `--jg-*` vars.
+- `useRebindSession` (function): function useRebindSession(session: RebindSession): RebindSession — Subscribe to a rebind session and re-render on every change (capture, reset, arm/disarm, restore). Returns the session unchanged for convenient inline use.
+
+## @jgengine/core/settings/settings.view
+
+- `SETTINGS_TRIGGER_CLASSNAME` (const): const SETTINGS_TRIGGER_CLASSNAME: "pointer-events-auto flex h-8 w-8 items-center justify-center rounded-md border border-[var(--jg-edge-bright)] bg-[var(--jg-surface)]/80 text-base text-[var(--jg-text-dim)] shadow-[0_1px_2px_rgba(0,0,0,0.6)] transition hover:bg-[var(--jg-surface-deep)] hover:text-[v… — Default HudTheme-token skin for {@link SettingsTrigger} — the 8×8 chrome button games re-authored seven times. Pass your own `className` only to override placement or brand chrome; the gear glyph already scales with `text-base` / `1em`.
+- `SettingsActionView` (interface): interface SettingsActionView — A resolved game-state action — `run` is already bound to the game context and closes the menu.
+- `SettingsCategoryView` (interface): interface SettingsCategoryView — A settings menu category with its rows and keybinds, ready to render.
+- `SettingsController` (interface): interface SettingsController — The live settings controller — every category/row/keybind/action plus open-state. Render it any way you like or drive the engine menu.
+- `SettingsControllerProvider` (function): function SettingsControllerProvider({ controller, children, }: { controller: SettingsController; children: ReactNode; }): React.JSX.Element — ⚠ undocumented
+- `SettingsKeybindRow` (interface): interface SettingsKeybindRow — One rebindable action row rendered in the controls settings category.
+- `SettingsProvider` (function): function SettingsProvider({ store, children }: { store: SettingsStore; children: ReactNode }): React.JSX.Element — ⚠ undocumented
+- `SettingsRow` (interface): interface SettingsRow — One editable setting rendered in a settings menu category.
+- `SettingsTrigger` (function): function SettingsTrigger({ className = SETTINGS_TRIGGER_CLASSNAME, children, label = "Settings", }: { className?: string; children?: ReactNode; label?: string; }): React.JSX.Element | null — Inline settings entry — drop it anywhere in your game's menu or HUD; it opens the themed settings menu. Headless: pass `className` only when overriding the default HudTheme skin; pass `children` to replace the gear glyph. Renders nothing when the game has no settings to show, so it never leaves a dead button behind.
+- `useHasSettings` (function): function useHasSettings(): boolean — True when the game has any setting or game-action to show — gate your own settings entry on it.
+- `useSetting` (function): function useSetting<T extends SettingValue>(id: string, fallback: T): readonly [T, (value: SettingValue) => void] — Read + write one persisted setting; re-renders when the value changes anywhere.
+- `useSettings` (function): function useSettings(): SettingsController — The engine settings controller for the current game — render your own settings UI from `categories`, or open the built-in menu with `open()`. Null-safe stub when mounted outside the shell.
+- `useSettingsStore` (function): function useSettingsStore(): SettingsStore — The shared settings store, or a standalone one when no provider is mounted (game code read outside the shell).
+
+## @jgengine/core/settings/settingsBlocks.view
+
+- `SettingsKeybindControl` (function): function SettingsKeybindControl({ row, armed = false, onArm, buttonProps, rowProps }: SettingsKeybindControlProps): ReactNode — A controls row for one action: its label, the bound key (click to rebind), a conflict/armed state and reset. The caller owns capture; this is the row's presentation.
+- `SettingsKeybindControlProps` (interface): interface SettingsKeybindControlProps — One rebindable action row: current key glyph, armed-capture state and a reset button.
+- `SettingsRowControl` (function): function SettingsRowControl({ row, itemProps }: { row: SettingsRow; itemProps?: MenuNavItemProps }): ReactNode — Render the control a {@link SettingsRow} kind asks for. `itemProps` carries `useMenuNav` focus tracking from {@link SettingsSection}.
+- `SettingsSection` (function): function SettingsSection({ category, heading = true, capture = true, enabled = true, initialId, className, style, onCaptureChange, }: SettingsSectionProps): ReactNode — One settings category as a block: its rows, then its rebindable actions with click-to-capture. The game picks where it sits and how wide it is; the block reads HudTheme tokens and the live rows the settings controller hands it, and writes every change straight back to that controller's store.
+- `SettingsSectionProps` (interface): interface SettingsSectionProps — How a {@link SettingsSection} handles a rebind capture.
+- `SettingsSelect` (function): function SettingsSelect({ row, itemProps }: { row: SettingsRow; itemProps?: MenuNavItemProps }): ReactNode — One choice row from a {@link SettingsRow}, rendered as a pressed-state option group.
+- `SettingsSlider` (function): function SettingsSlider({ row, itemProps }: { row: SettingsRow; itemProps?: MenuNavItemProps }): ReactNode — One slider row from a {@link SettingsRow}: mirrors the thumb locally and commits on release, so a drag never storms the settings store or the graphics rebuild it drives.
+- `SettingsTabs` (function): function SettingsTabs({ categories, activeId, onSelect, leading, tabProps, className, style }: SettingsTabsProps): ReactNode — The category tab rail for a settings screen: a scrollable row of buttons with pressed state. The game owns the surrounding layout; this block keeps every category reachable on narrow screens.
+- `SettingsTabsProps` (interface): interface SettingsTabsProps — The live category tabs for a settings screen: a scrollable rail with pressed state.
+- `SettingsToggle` (function): function SettingsToggle({ row, itemProps }: { row: SettingsRow; itemProps?: MenuNavItemProps }): ReactNode — One on/off row from a {@link SettingsRow}.
+- `adjustSettingRow` (function): function adjustSettingRow(row: SettingsRow, delta: -1 | 1): SettingValue | undefined — One adjustment of a settings row: a slider moves by its step inside its bounds, a toggle flips, a select moves one option (wrapping at both ends). Returns the value to write, or `undefined` when the kind has nothing to step. Shared by the keyboard and the gamepad so both change a row the same way.
+
+## @jgengine/core/settings/settingsController.draw
+
+- `SettingsActionView` (interface): interface SettingsActionView — A resolved game-state action — `run` is already bound to the game context and closes the menu.
+- `SettingsCategoryView` (interface): interface SettingsCategoryView — A settings menu category with its rows and keybinds, ready to render.
+- `SettingsController` (interface): interface SettingsController — The live settings controller — every category/row/keybind/action plus open-state. Render it any way you like or drive the engine menu.
+- `SettingsControllerInput` (interface): interface SettingsControllerInput { input: ActionCodesMap; buses: Record<string, AudioBusDef> | undefined; extra: readonly GameSettingDef[]; categories: readonly SettingCategoryDef[]; hide: readonly SettingCategory[]; fovEnabled: boolean; graphics?: GraphicsProfileOverrides… — ⚠ undocumented
+- `SettingsKeybindRow` (interface): interface SettingsKeybindRow — One rebindable action row rendered in the controls settings category.
+- `SettingsRow` (interface): interface SettingsRow — One editable setting rendered in a settings menu category.
+- `useSettingsCategories` (function): function useSettingsCategories(config: SettingsControllerInput): SettingsCategoryView[] — ⚠ undocumented
 
 ## @jgengine/core/settings/settingsModel
 
@@ -615,7 +792,7 @@
 - `MODAL_CANCEL` (const): const MODAL_CANCEL: "cancel" — Conventional cancel/dismiss result (also the default auto-dismiss and pop result).
 - `MODAL_CONFIRM` (const): const MODAL_CONFIRM: "confirm" — Conventional confirm result for a two-button dialog — a shared string, not model behavior.
 - `MenuIntent` (type): type MenuIntent = MenuNavDirection | "confirm" | "back" — Everything a key or gamepad button can ask a menu to do.
-- `MenuNavDirection` (type): type MenuNavDirection = "up" | "down" | "left" | "right" | "first" | "last" — Headless focus-order model for a game front-end menu: a list or grid of item ids, one focused item, and the keyboard/gamepad intents that move between them. It holds no React state, no DOM and no look — `@jgengine/react/menu/menuNav` binds it to a container and real focus, and each game decides what the items are and where they sit.
+- `MenuNavDirection` (type): type MenuNavDirection = "up" | "down" | "left" | "right" | "first" | "last" — Headless focus-order model for a game front-end menu: a list or grid of item ids, one focused item, and the keyboard/gamepad intents that move between them. It holds no React state, no DOM and no look — `@jgengine/core/menu/menuNav.view` binds it to a container and real focus, and each game decides what the items are and where they sit.
 - `MenuNavHold` (interface): interface MenuNavHold — When a held direction was pressed and when it last moved the focus.
 - `MenuNavLayout` (interface): interface MenuNavLayout — The shape of the item list being navigated: how many items, how they wrap into rows.
 - `MenuNavRepeat` (interface): interface MenuNavRepeat — Hold-to-repeat timing for a held d-pad/stick: one immediate move, then repeats.
@@ -665,7 +842,7 @@
 - `SettingCategoryDef` (interface): interface SettingCategoryDef — Declares or relabels/reorders a category tab; use it for a custom category or to reshape the built-ins.
 - `SettingKind` (type): type SettingKind = "slider" | "toggle" | "select" — ⚠ undocumented
 - `SettingOption` (interface): interface SettingOption { value: string; label: string } — ⚠ undocumented · used by `COLORBLIND_OPTIONS` (@jgengine/core/settings/accessibilitySettings): Colorblind palette choices.
-- `SettingValue` (type): type SettingValue = number | boolean | string — ⚠ undocumented · used by `asSettingType` (@jgengine/core/settings/settingsModel): Read a stored value as the type the caller asked for.
+- `SettingValue` (type): type SettingValue = number | boolean | string — ⚠ undocumented · used by `useSetting` (@jgengine/core/settings/settings.view): Read + write one persisted setting; re-renders when the value changes anywhere.
 - `SettingsActionDef` (interface): interface SettingsActionDef — A game-state action (Restart, Quit to menu, …) shown as rows in the first "Game" settings tab — never a floating button or a rebindable key.
 - `SettingsStore` (interface): interface SettingsStore { get<T extends SettingValue>(id: string, fallback: T): T; set(id: string, value: SettingValue): void; subscribe(listener: () => void): () => void } — ⚠ undocumented · used by `createSettingsStore`: Reactive, localStorage-backed settings store shared by the shell wiring and React hooks.
 - `SettingsSurface` (type): type SettingsSurface = "quick" — `quick` shows compact on-screen volume/graphics buttons; `false` (default) mounts no engine trigger — open the menu from your own UI with `<SettingsTrigger>` or `useSettings().open()`.
@@ -1549,13 +1726,6 @@
 - `observeBrowserSuspension` (function): function observeBrowserSuspension(onSuspend: (reason: BrowserSuspensionReason) => void, options: BrowserSuspensionOptions = {}, sources: BrowserSuspensionSources | null = typeof window === "undefined" || typeof document === "undefined" ? null : { window, document }): () => void — Observe interruption events until detached. Lock loss requires a preceding lock; SSR attaches nothing. Blur and hidden are ignored while a capture host holds play ({@link CAPTURE_HOLD_KEY}).
 - `useBrowserSuspension` (function): function useBrowserSuspension(onSuspend: (reason: BrowserSuspensionReason) => void, options: BrowserSuspensionOptions = {}): void — Observe browser interruptions while mounted, invoking the latest callback without replacing listeners.
 
-## @jgengine/react/camera/shake/cameraShake
-
-- `CameraShakeMeter` (function): function CameraShakeMeter({ controller, title = "CAMERA SHAKE", kindLabels, variation = "glass", className, style, }: CameraShakeMeterProps): ReactNode — A drop-in HUD panel that visualizes a core {@link CameraShakeController}: a trauma meter (reusing the shared {@link KitMeter}) plus a live percentage and the current impact `kind` label. Presentation only — it reads the controller and never interprets `kind`, mapping it through `kindLabels` for display. The shell camera rig applies the same controller's `offset()` to the camera; this panel is the on-screen readout of how much shake is in flight.
-- `CameraShakeMeterProps` (interface): interface CameraShakeMeterProps — Props for {@link CameraShakeMeter}.
-- `CameraShakeReadout` (interface): interface CameraShakeReadout — A live read of a camera-shake controller: current trauma `0..1` and the last game-owned `kind`.
-- `useCameraShakeReadout` (function): function useCameraShakeReadout(controller: CameraShakeController): CameraShakeReadout — Subscribe to a camera-shake controller and re-render on every change (add / decay / clear). It only reads: the camera rig that applies the shake is what advances it. Returns the current trauma + kind for a HUD readout.
-
 ## @jgengine/react/canvasCover
 
 - `CanvasCover` (interface): interface CanvasCover — A page-wide declaration that some surface paints over the whole game canvas.
@@ -1661,21 +1831,6 @@
 - `DamageDirectionOverlayProps` (interface): interface DamageDirectionOverlayProps — Props for {@link DamageDirectionOverlay}.
 - `DamageDirectionTheme` (interface): interface DamageDirectionTheme — Reskin tokens for {@link DamageDirectionOverlay}.
 - `useDamageDirection` (function): function useDamageDirection(tracker: DamageDirectionTracker): readonly DamageIndicator[] — Subscribe to a damage-direction tracker and animate. Because indicators fade continuously on a clock (not just on discrete events), this drives a `requestAnimationFrame` loop while any indicator is live and stops when the screen is clear, then wakes again on the next hit. Returns the tracker's current `active()` array (reused between frames — copy if you retain it).
-
-## @jgengine/react/dialog/dialogBehavior
-
-- `DialogBehaviorOptions` (interface): interface DialogBehaviorOptions — Options for controlled dialog focus behavior; callers own markup, state, and close policy.
-- `useDialogBehavior` (function): function useDialogBehavior<T extends HTMLElement = HTMLDivElement>(options: DialogBehaviorOptions): RefObject<T | null> — Focus entry, Tab trapping, Escape requests, and focus restoration for a caller-owned dialog. Attach the returned ref to the dialog root and supply `role="dialog"`, `aria-modal`, an accessible name, and `tabIndex={-1}`. The most recently opened dialog handles keys, including portal roots. Closing an inner dialog restores its opener; cleanup never steals focus from another active dialog. Replacing the root while open keeps its position and original return target.
-
-## @jgengine/react/dialog/modals
-
-- `ConfirmDialog` (function): function ConfirmDialog({ title, body, confirmLabel = "Confirm", cancelLabel = "Cancel", onConfirm, onCancel, danger = false, width = 360, className, style, }: ConfirmDialogProps): ReactNode — A generic two-button confirmation dialog — title, optional body, and Cancel / Confirm buttons over a `HudTheme`-token-driven {@link HudSurface}. Presentation-only: wire `onConfirm`/`onCancel` to a modal stack's `resolve` (typically inside a {@link ModalHost} render callback) and reskin via `HudTheme` tokens or `danger` for a destructive action. It interprets nothing — the game supplies the copy.
-- `ConfirmDialogProps` (interface): interface ConfirmDialogProps — Props for {@link ConfirmDialog}.
-- `ModalControls` (interface): interface ModalControls — Stack-bound controls handed to a {@link ModalHost} render callback.
-- `ModalHost` (function): function ModalHost({ stack, children, showBackdrop = true, backdrop, closeOnBackdrop = true, closeOnEsc = true, zIndexBase = 80, onInteract, className, style, }: ModalHostProps): ReactNode — Full-screen modal host: watches a stack, renders only the topmost modal centered over a dimmed backdrop, and manages accessibility — the panel is a `role="dialog" aria-modal`, focus moves into it on open and is trapped with Tab/Shift+Tab cycling, Escape and (optionally) a backdrop click cancel the top modal, and focus returns to the previously focused element on close. It renders nothing when the stack is empty. Skin the panel and backdrop via `HudTheme` tokens.
-- `ModalHostProps` (interface): interface ModalHostProps — Props for {@link ModalHost}.
-- `ModalStackView` (interface): interface ModalStackView — React chrome over the headless modal stack (`@jgengine/core/dialog/modalStack`) — the blocking-overlay layer a game raises over its scene: a pause menu, a "quit to menu?" confirm, a reward popup. {@link useModalStack} is the DATA/HOOK layer (subscribe + the active record), {@link ModalHost} renders the top modal with a backdrop, focus trap, and Esc-to-cancel, and {@link ConfirmDialog} / {@link PauseMenu} (`menu/pauseMenu`) are ready-to-wire, HudTheme-token-driven building blocks. All unskinned and game-owned: the model never interprets a modal's `kind`, so a game switches on it to pick which of these (or its own) content to show, and reskins everything via `HudTheme` tokens and the frame.
-- `useModalStack` (function): function useModalStack(stack: ModalStack): ModalStackView — Subscribe to a modal stack and re-render on every change, returning the active modal and depth.
 
 ## @jgengine/react/dialogueView
 
@@ -1895,27 +2050,6 @@
 - `InteractionPromptTheme` (interface): interface InteractionPromptTheme — Reskin tokens for {@link InteractionPrompt}.
 - `useInteractionPrompt` (function): function useInteractionPrompt(registry: PromptRegistry, playerPosition: PromptPoint): PositionedPrompt | null — Subscribe to a {@link PromptRegistry} and re-`resolve` it whenever the player moves, returning the prompt to draw right now — or `null` when the player is out of range of every interactable. The registry notifies only on active-prompt *changes*, so this re-renders on transitions rather than every frame the hero moves. Feed it the player's `{ x, z }` position each frame; identical positions do no work.
 
-## @jgengine/react/inventory/inventoryGrid
-
-- `InventoryGrid` (function): function InventoryGrid({ inventoryId, columns, size = 44, gap = 6, itemIcon, onActivate, className, style, }: InventoryGridProps): React.JSX.Element — A drop-in inventory grid with drag/swap/stack-merge/split and full keyboard control, bound to `inventoryId`.
-- `InventoryGridProps` (interface): interface InventoryGridProps — Props for {@link InventoryGrid}.
-
-## @jgengine/react/inventory/shopGrid
-
-- `ShopGrid` (function): function ShopGrid({ shop, wallet, onWalletChange, theme, currencyIcons, iconFor, showSell = false, walletCurrencies, title = "Shop", labelFor, minCardWidth = "140px", className, style, }: ShopGridProps): ReactNode — A drop-in vendor/shop grid: item cards (icon, name, price with a currency glyph, stock count or "∞") over a caller-owned wallet, plus a wallet balance readout. Each card's Buy button disables when the wallet cannot afford it (`shop.canAfford`) or the item is sold out; an optional Sell button appears for entries with a `sellPrice`. Buying/selling routes through the core shop model and hands the debited/credited wallet back via `onWalletChange` — the component never owns the wallet. Purely token-driven presentation (shared `--jg-*` HudTheme tokens, reskinnable via {@link ShopGridTheme}); `kind` and `currency` are free strings the game styles, never interpreted.
-- `ShopGridProps` (interface): interface ShopGridProps — Props for {@link ShopGrid}.
-- `ShopGridTheme` (interface): interface ShopGridTheme — Reskin tokens for {@link ShopGrid}. Falls back to shared `--jg-*` HudTheme tokens, then neutral defaults.
-- `useShopStock` (function): function useShopStock(shop: ShopStock): ShopStockEntry[] — Subscribe to a shop's stock and re-render whenever it changes (buy, sell, restock, price, add, remove, restore). Returns the current entry list — a detached snapshot safe to map over.
-
-## @jgengine/react/inventory/slots
-
-- `ArmorSlots` (function): function ArmorSlots(props: SlotGridProps): React.JSX.Element — Armor piece slots.
-- `EquipmentSlots` (function): function EquipmentSlots(props: SlotGridProps): React.JSX.Element — Worn-gear slots (head/chest/hands/…): one atomic grid, painted icons, themed from tokens.
-- `PotionSlots` (function): function PotionSlots(props: SlotGridProps): React.JSX.Element — Consumable (health/shield potion) slots.
-- `SlotGridProps` (interface): interface SlotGridProps — Props shared by every atomic slot grid.
-- `SlotItem` (interface): interface SlotItem — Atomic, purpose-named slot grids (#1033): one component per category — `EquipmentSlots`, `WeaponSlots`, `ArmorSlots`, `PotionSlots` — for paperdoll / equip layouts where each grid holds a single gear category. A full multi-category backpack that binds to a live inventory with drag/swap/stack/split is a different, supported shape: reach for `<InventoryGrid>` (`inventoryGrid.tsx`) there, and use these atomic grids for the equip slots around it. Each renders a grid of painted {@link IconTreatment} tiles (glyph + gradient + count badge) for filled slots and a themed placeholder for empty ones, all reading the shared `--jg-slot-*` / `--jg-accent` HudTheme tokens (#1034). Composition stays the game's; the engine ships the grid.
-- `WeaponSlots` (function): function WeaponSlots(props: SlotGridProps): React.JSX.Element — Weapon loadout slots.
-
 ## @jgengine/react/keyHint
 
 - `KeyHint` (function): function KeyHint({ children, className, style, }: { children: ReactNode; className?: string; style?: CSSProperties; }): React.JSX.Element | null — Wraps a keyboard/mouse control hint (a cap plus what it does). Renders nothing on coarse-pointer devices — a touchscreen has no keyboard, so the hint is noise and only fights the on-screen controls for space. The `data-jg-kbd-hint` marker is also hidden by an engine stylesheet as a hydration-safe backstop, so a hint stays hidden on touch even before this component's effect runs. Put the touch equivalent (a `TouchControls` dock, a tappable button) on the coarse branch instead.
@@ -2001,110 +2135,6 @@
 - `useFog` (function): function useFog(fog: FogField): ReturnType<FogField["cells"]> — ⚠ undocumented
 - `useMarkers` (function): function useMarkers<TMeta = unknown>(markers: MarkerSet<TMeta>): readonly MapMarker<TMeta>[] — Subscribe to a native marker set or external marker source, or read a static marker array.
 
-## @jgengine/react/menu/gameFlowMenus
-
-- `GameFlowMenuContent` (interface): interface GameFlowMenuContent — What the title and pause menus of {@link GameFlowUI} say: the game's words, keys and credits.
-- `GameFlowUI` (function): function GameFlowUI({ menu, hud }: GameFlowUIProps): ReactNode — A game's whole UI over `createGameFlowSystem`: the title over the standing world, the HUD while playing, and the pause menu over it. The game supplies its HUD and its menu words; the look comes from the UI kit and `menu.accent`.
-- `GameFlowUIProps` (interface): interface GameFlowUIProps — Props for {@link GameFlowUI}.
-- `startNewGame` (function): function startNewGame(ctx: GameContext): Promise<void> — New game in a browser page: a second run reloads the page so nothing from the first carries over.
-
-## @jgengine/react/menu/gameMenu
-
-- `GameMenu` (function): function GameMenu({ items, initialId, onSelect, onBack, onHighlight, detail, logo, eyebrow, tagline, background, art, secondary, footer, controlHint, sound = true, variant = "title", open = true, reducedMotion, label, className, style, detailClassName, detailStyle, }: GameMenuProps): ReactNode — A game front-end menu: full-bleed over a living background, with a logo, an animated primary list and a detail pane that follows the highlighted verb. One system covers the main menu and the pause menu (`variant="pause"`), keyboard and gamepad navigation come from `useMenuNav`, confirmation ticks are generated (no audio asset), and the document never scrolls while it is open.
-- `GameMenuItem` (interface): interface GameMenuItem — One primary verb in a {@link GameMenu}.
-- `GameMenuLogo` (interface): interface GameMenuLogo — The logo slot. Give it `image` for art, or `text` for a styled wordmark.
-- `GameMenuProps` (interface): interface GameMenuProps — Props for {@link GameMenu}.
-- `GameMenuStyle` (type): type GameMenuStyle = CSSProperties & Record<`--${string}`, string | number> — Inline style for a menu surface that also accepts `--jg-*` theme tokens, so a game sets a token with `{ "--jg-menu-radius": "12px" }` instead of casting the object to `CSSProperties`.
-- `GameMenuVariant` (type): type GameMenuVariant = "title" | "pause" — How a {@link GameMenu} is used. `pause` is the same system at a smaller scale.
-- `useViewportScrollLock` (function): function useViewportScrollLock(active: boolean): void — Lock the page scroll while `active`, so a fixed full-bleed surface is exactly the viewport and the document behind it never gains a scrollbar. Nested and repeated locks are counted, and the previous inline styles are restored when the last one releases.
-
-## @jgengine/react/menu/gameMenuSaves
-
-- `ContinuePane` (function): function ContinuePane({ slot, onContinue, emptyMessage = "No run saved yet. Start a new game to begin one.", now = Date.now, className, style, }: ContinuePaneProps): ReactNode — The Continue detail pane: the save being continued, read big — captured thumbnail, character, time played, the game's progress summary, when it was saved, and the resume action.
-- `ContinuePaneProps` (interface): interface ContinuePaneProps — Props for {@link ContinuePane}.
-- `CreditsPane` (function): function CreditsPane({ sections, heading = "Credits", notice, className, style }: CreditsPaneProps): ReactNode — The Credits detail pane: a scroller that belongs to the pane. Wheel, arrows, PageUp/PageDown, Home and End scroll it, the native scrollbar is hidden, and the page behind never moves.
-- `CreditsPaneProps` (interface): interface CreditsPaneProps — Props for {@link CreditsPane}.
-- `GameMenuAvatar` (interface): interface GameMenuAvatar — One avatar/portrait choice in {@link NewCharacterPane}.
-- `GameMenuPalette` (interface): interface GameMenuPalette — One palette choice in {@link NewCharacterPane}.
-- `NewCharacterChoice` (interface): interface NewCharacterChoice — What {@link NewCharacterPane} reports when a run starts.
-- `NewCharacterPane` (function): function NewCharacterPane({ name, onNameChange, palettes, paletteId, onPaletteChange, avatars, avatarId, onAvatarChange, onStart, heading = "New run", nameLabel = "Character name", namePlaceholder = "Name your character", maxLength = 24, startLabel = "Begin", className, style, }: NewCharacterPanePro… — The New Game detail pane: a character name field, an optional palette and avatar choice, and the action that starts the run. The name field is a real form field, so menu key handling leaves typing alone (Enter inside the field starts the run).
-- `NewCharacterPaneProps` (interface): interface NewCharacterPaneProps — Props for {@link NewCharacterPane}.
-- `SAVE_SLOT_CHARACTER_KEY` (const): const SAVE_SLOT_CHARACTER_KEY: "character" — The character name a save card shows first, when the game supplies one as its own meta key.
-- `SAVE_SLOT_THUMBNAIL_KEY` (const): const SAVE_SLOT_THUMBNAIL_KEY: "thumbnail" — The save slot `meta` key a card reads as its thumbnail: a data URL or image URL captured when the save was written. Every other meta key is shown as a progress chip and never interpreted.
-- `SaveSlotCard` (function): function SaveSlotCard({ slot, now = Date.now, recent = false, onSelect, onDelete, loadLabel, className, style, }: SaveSlotCardProps): ReactNode — One save slot as a card: a captured thumbnail, the character name, playtime, the game's progress summary and when it was saved — or, for an empty slot, an empty slot with a New Game affordance. Deleting takes two presses: the first swaps the button for a confirm pair, so a mis-click cannot erase a run.
-- `SaveSlotCardProps` (interface): interface SaveSlotCardProps — Props for {@link SaveSlotCard}.
-- `SaveSlotsPane` (function): function SaveSlotsPane({ model, onContinue, onLoad, onNew, onDelete, heading = "Save slots", now = Date.now, columns = 2, className, style, }: SaveSlotsPaneProps): ReactNode — The slot grid for a {@link GameMenu} detail pane: Continue over the most recent save, then one card per slot. Arrow keys move between cards, Enter loads, and the grid scrolls inside its own pane rather than the page.
-- `SaveSlotsPaneProps` (interface): interface SaveSlotsPaneProps — Props for {@link SaveSlotsPane}.
-
-## @jgengine/react/menu/gameMenuSound
-
-- `GameMenuSound` (interface): interface GameMenuSound — A menu sound player. Give it to `GameMenu`'s `sound` prop, or call its methods from your own menu.
-- `GameMenuSoundConfig` (interface): interface GameMenuSoundConfig — How {@link createGameMenuSound} is tuned.
-- `GameMenuSoundKind` (type): type GameMenuSoundKind = "move" | "confirm" | "back" — The short, quiet click a menu makes when the selection moves or is confirmed. Generated with an oscillator instead of shipped as an audio file, so a game gets menu feedback without authoring a sound and the whole thing unmounts with the screen.
-- `GameMenuSoundState` (interface): interface GameMenuSoundState — The sound player's readable state: on/off, gain, and whether audio is actually running.
-- `createGameMenuSound` (function): function createGameMenuSound(config: GameMenuSoundConfig = {}): GameMenuSound — A tiny WebAudio click generator for menu feedback: one oscillator burst per tick, created on the first play (so a browser autoplay policy does not log an error at mount) and reused after.
-
-## @jgengine/react/menu/menuNav
-
-- `MenuNavContainerProps` (interface): interface MenuNavContainerProps — The container props that make a menu navigable.
-- `MenuNavController` (interface): interface MenuNavController — The live navigation controller returned by {@link useMenuNav}.
-- `MenuNavItemProps` (interface): interface MenuNavItemProps — Props a menu item needs so {@link useMenuNav} can focus it and track pointer/focus.
-- `MenuNavRender` (type): type MenuNavRender = (nav: MenuNavController) => ReactNode — Render prop for a menu whose items come from {@link useMenuNav}.
-- `UseMenuNavOptions` (interface): interface UseMenuNavOptions — How {@link useMenuNav} is wired.
-- `useMenuNav` (function): function useMenuNav({ ids, columns = 1, wrap = true, disabled, initialId, enabled = true, onConfirm, onBack, onAdjust, gamepad = true, repeat, }: UseMenuNavOptions): MenuNavController — Bind a menu's focus order to the DOM: arrow keys, WASD, Home/End and a standard gamepad move a roving focus, Enter/Space/A confirm, Escape/Backspace/B/Start go back. Tab is left to the browser, so a menu never traps focus, and typing in a text field is never intercepted. The menu is pure state + listeners — it unmounts with the screen, so it costs nothing during play.
-
-## @jgengine/react/menu/menuRouter
-
-- `MenuRouter` (interface): interface MenuRouter<Id extends string> — A menu screen stack: where you are, how you got there, and how to go back.
-- `MenuStackAction` (type): type MenuStackAction<Id extends string> = | { type: "open"; id: Id } | { type: "back" } | { type: "replace"; id: Id } | { type: "reset"; id?: Id } — A screen-stack transition. `reset` without an id collapses to the router's original root.
-- `menuStackReducer` (function): function menuStackReducer<Id extends string>(path: readonly Id[], action: MenuStackAction<Id>, root: Id): readonly Id[] — The pure screen-stack transition behind {@link useMenuRouter}. Exported so a game can drive the same navigation from its own store or a replayable command log instead of React state.
-- `useMenuRouter` (function): function useMenuRouter<Id extends string>(root: Id, options: { escapeToBack?: boolean } = {}): MenuRouter<Id> — The screen stack behind a game front-end: title → save select → settings → credits, and Escape back out. Every game menu needs this and none of it is game-specific, so it ships here rather than being re-derived per game. Holds no content and imposes no look — the game decides what each screen id renders.
-
-## @jgengine/react/menu/menuScreen
-
-- `MenuScreen` (function): function MenuScreen({ open = true, transition = "fade", scrim = "dim", coversCanvas = false, enterMs = 220, exitMs = 160, reducedMotion, label, role = "dialog", backdrop, className, style, contentClassName, contentStyle, children, onClosed, }: MenuScreenProps): ReactNode — One animated screen of a game front-end: full-bleed, laid out by the game, with an enter/exit animation that runs on transform/opacity only (no layout, no frame hitch) and unmounts when the exit finishes. The scrim is translucent and the optional `backdrop` slot paints behind the content, so a live 3D scene stays visible behind a title, pause or settings screen. Durations come from the caller or collapse to zero under reduced motion.
-- `MenuScreenProps` (interface): interface MenuScreenProps — Props for {@link MenuScreen}.
-- `MenuScreenScrim` (type): type MenuScreenScrim = "none" | "dim" | "blur" — How much a {@link MenuScreen} dims the scene behind it. `none` keeps a live 3D scene fully visible.
-- `MenuScreenTransition` (type): type MenuScreenTransition = "fade" | "slide" | "scale" | "none" — Which motion a {@link MenuScreen} uses when it enters and leaves.
-
-## @jgengine/react/menu/pauseMenu
-
-- `PauseMenu` (function): function PauseMenu(props: PauseMenuProps): ReactNode — The pause menu: {@link GameMenu} at its smaller pause scale, so a game composes one menu system for title and pause. The game fills the verbs (Resume, Save, Settings, Quit) and the detail pane, and reskins it with `--jg-*` tokens on `style`. Escape (or B/Start) resumes.
-- `PauseMenuProps` (type): type PauseMenuProps = Omit<GameMenuProps, "variant"> & { /** Resume play. Escape, B and Start call it too unless `onBack` is given. */ onResume?: () => void; } — Props for {@link PauseMenu}: every {@link GameMenu} knob except `variant`, plus `onResume`.
-
-## @jgengine/react/menu/quickMenu
-
-- `QuickMenu` (function): function QuickMenu({ items, layout = "list", onSelect, onClose, title, columns = 3, arc = { startAngle: Math.PI / 2, sweep: Math.PI }, radialSize = 300, accent = "var(--jg-accent, #38bdf8)", className, style, }: QuickMenuProps): ReactNode — Versatile quick menu that takes many forms — a `radial` wheel, a partial `arc`, a vertical `list`, or a `grid` — over one item model with icons, labels, hotkeys, count badges, cooldowns, section headers, and nested submenus (drill in / back). Radial and arc forms reuse {@link RadialMenu}; list and grid render sectioned rows/tiles. The game supplies content and skin.
-- `QuickMenuItem` (interface): interface QuickMenuItem extends RadialMenuOption — An entry on a {@link QuickMenu}: a leaf action, or (with `children`) a submenu.
-- `QuickMenuLayout` (type): type QuickMenuLayout = "radial" | "arc" | "list" | "grid" — The forms a {@link QuickMenu} can take.
-- `QuickMenuProps` (interface): interface QuickMenuProps — Props for {@link QuickMenu}.
-
-## @jgengine/react/menu/radialMenu
-
-- `RadialMenu` (function): function RadialMenu({ options, open = true, onSelect, onClose, size = 300, innerRadius = 52, arc, highlightIndex, accent = "var(--jg-accent, #38bdf8)", className, style, }: RadialMenuProps): ReactNode — Radial / quick menu (weapon or emote wheel) — a ring or partial `arc` of selectable wedges the player points at with the mouse (or a stick). Pointer angle drives the highlight via core `radialIndexFromVector`; click/confirm fires `onSelect`, the neutral hub closes. Options carry optional hotkeys, count badges, cooldowns, and submenu markers. The game supplies icons/labels and skins it.
-- `RadialMenuOption` (interface): interface RadialMenuOption — One selectable entry on a radial/quick menu (weapon or emote wheel).
-- `RadialMenuProps` (interface): interface RadialMenuProps — Props for {@link RadialMenu}.
-
-## @jgengine/react/notifications/notices
-
-- `Notice` (interface): interface Notice — A live notice as the HUD renders it.
-- `NoticePlacement` (type): type NoticePlacement = "top" | "center" | "bottom" — Where {@link NoticeStack} sits: below top-edge HUD bars, over the play area, or above bottom action bars.
-- `NoticeStack` (function): function NoticeStack({ feed, placement = "top", offset, avoidHud = true, zIndex = 85, scale = 1, maxVisible = 3, renderNotice, }: { /** Defaults to the surrounding game's `ctx.game.notices`. */ feed?: NoticeFeed; placement?: NoticePlacement; /** Distance from the band's screen edge (px or CSS length… — Animated, toned notice stack for a {@link NoticeFeed} — the default renderer the shell mounts for `ctx.game.notices` inside the HUD theme root. Uses `--jg-*` theme vars with fallbacks, 14px text, and never takes pointer input. A top or bottom stack keeps clear of HUD panels registered in its column and sits above modal overlays.
-- `NoticeTone` (type): type NoticeTone = "info" | "success" | "warn" | "deny" — How a notice reads: neutral info, a win, a caution, or a refused action.
-- `useNoticeList` (function): function useNoticeList(feed: NoticeFeed | null): readonly Notice[] — Live notices of `feed`, re-rendering on change and pruning each one when it expires.
-
-## @jgengine/react/notifications/notificationCenter
-
-- `NotificationBell` (function): function NotificationBell({ store, onClick, icon = "🔔", className, style }: NotificationBellProps): ReactNode — Notification bell — an icon button with an unread-count badge, bound to a notification store. Toggle a {@link NotificationCenter} panel from its click.
-- `NotificationBellProps` (interface): interface NotificationBellProps — Props for {@link NotificationBell}.
-- `NotificationCenter` (function): function NotificationCenter({ store, title = "Notifications", emptyLabel = "You're all caught up.", onClose, formatTime, className, style, }: NotificationCenterProps): ReactNode — Notification center panel — the scrollable log toasts don't provide: newest notifications with a kind-colored marker, title/body, relative time, and an unread highlight; a header with the unread count, mark-all-read, and clear. Clicking an entry marks it read. Bind it to a `createNotificationCenter`.
-- `NotificationCenterProps` (interface): interface NotificationCenterProps — Props for {@link NotificationCenter}.
-- `useNotifications` (function): function useNotifications<TMeta = unknown>(store: NotificationStore<TMeta>): readonly NotificationEntry<TMeta>[] — Subscribe to a notification store's live list.
-
-## @jgengine/react/notifications/toastStack
-
-- `ToastStack` (function): function ToastStack({ action, limit = 4, className, renderToast, }: { action: string; limit?: number; className?: string; renderToast?: (entry: FeedEntry, index: number) => ReactNode; }): React.JSX.Element | null — Render `ctx.game.feed`'s entries for `action` as a newest-first toast stack. Reach for this when the message source is already an engine event bound onto `ctx.game.feed` (kill feed, quest updates, loot log); for ad-hoc player messages push to `ctx.game.notices`, which the shell draws as a {@link NoticeStack}.
-
 ## @jgengine/react/objectiveBanner
 
 - `ObjectiveBannerHost` (function): function ObjectiveBannerHost({ controller, theme, kindThemes, animate = true, dismissOnClick = false, zIndex = 50, className, style, }: ObjectiveBannerHostProps): ReactNode — A full-screen overlay that renders an {@link ObjectiveBannerController} as the classic transient centered title stamp — "WAVE 3", "VICTORY", "OBJECTIVE COMPLETE" — flying in, holding, and fading out. It subscribes to the model, drives `advance()` on an animation frame (unless the game ticks it), and maps the current banner's phase + progress to opacity/scale/translate. Reskin the base look with {@link ObjectiveBannerTheme} and color each variant via `kindThemes` keyed on the game-owned `kind`. Presentation only: all timing and queueing live in the core model, and `kind` is never interpreted here.
@@ -2153,11 +2183,6 @@
 - `useGameContext` (function): function useGameContext(): GameContext — ⚠ undocumented
 - `useOptionalGameContext` (function): function useOptionalGameContext(): GameContext | null — The game context if a `GameProvider` is present, otherwise `null` — for chrome that may render outside a running game (showcases, previews).
 
-## @jgengine/react/questTracker
-
-- `QuestTracker` (function): function QuestTracker({ quests, title = "Quests", emptyLabel = "No active quests.", maxObjectives, accent = "var(--jg-accent, #facc15)", className, style, }: QuestTrackerProps): ReactNode — Quest / objective tracker HUD — a compact panel of active quests with a title and labelled, progress-barred objectives (checked + struck when complete). Presentation-only over `describeTrackedQuest(def, instance)` views, so it stays decoupled from the `QuestJournal` runtime.
-- `QuestTrackerProps` (interface): interface QuestTrackerProps — Props for {@link QuestTracker}.
-
 ## @jgengine/react/roads/streetGeometryPreview
 
 - `StreetGeometryPreview` (function): function StreetGeometryPreview({ className }: { className?: string }): React.JSX.Element — Deterministic close-up gallery of the shared road/junction mesh seam.
@@ -2181,49 +2206,6 @@
 ## @jgengine/react/selectSnapshot
 
 - `SelectCache` (type): type SelectCache<TSnapshot, TSelected> = { ready: boolean; snapshot: TSnapshot; value: TSelected; } — ⚠ undocumented
-
-## @jgengine/react/settings/accessibilitySettings
-
-- `useAccessibilityRows` (function): function useAccessibilityRows(): AccessibilitySettingRow[] — The accessibility rows backed by the shared settings store, for a settings screen the game lays out itself: map them through `SettingsRowControl` (`@jgengine/react/settings/settingsBlocks`). The shell's stock settings menu shows the same rows as its `accessibility` category.
-- `useAccessibilitySettings` (function): function useAccessibilitySettings(): AccessibilityState — The live accessibility preferences (reduced motion, high contrast, text scale, colorblind mode, captions) from the shared settings store. Re-renders whenever any setting changes, so a root that spreads them onto the HUD updates the moment the player picks a value.
-- `useHoldVsToggle` (function): function useHoldVsToggle(): HoldVsToggle — The live hold-versus-toggle preference for actions that support both (aim, sprint, crouch). Pair it with `holdToggleActive` (`@jgengine/core/settings/accessibilitySettings`) per frame.
-
-## @jgengine/react/settings/keybindingMenu
-
-- `KeybindingMenu` (function): function KeybindingMenu({ session, theme, title = "Controls", resetAllLabel = "Reset All", capturePrompt = "Press a key…", onChange, className, style, }: KeybindingMenuProps): ReactNode — A drop-in controls-settings surface for a {@link RebindSession}: one row per action showing its label and current key glyph. Clicking a row arms capture ("Press a key…") and a window `keydown` listener feeds the pressed `event.code` to `session.capture`; rows that collide with another action show a conflict badge; each row has a Reset button and the panel has a Reset-all button. Presentation only — all conflict/capture/reset logic lives in the core session, and action ids/labels are the game's free strings. Reskin via {@link KeybindingMenuTheme} or ambient HudTheme tokens. A game owns its overall settings layout; this is the reusable controls block it drops in.
-- `KeybindingMenuProps` (interface): interface KeybindingMenuProps — Props for {@link KeybindingMenu}.
-- `KeybindingMenuTheme` (interface): interface KeybindingMenuTheme — Reskin tokens for {@link KeybindingMenu}. All fall back to HudTheme `--jg-*` vars.
-- `useRebindSession` (function): function useRebindSession(session: RebindSession): RebindSession — Subscribe to a rebind session and re-render on every change (capture, reset, arm/disarm, restore). Returns the session unchanged for convenient inline use.
-
-## @jgengine/react/settings/settings
-
-- `SETTINGS_TRIGGER_CLASSNAME` (const): const SETTINGS_TRIGGER_CLASSNAME: "pointer-events-auto flex h-8 w-8 items-center justify-center rounded-md border border-[var(--jg-edge-bright)] bg-[var(--jg-surface)]/80 text-base text-[var(--jg-text-dim)] shadow-[0_1px_2px_rgba(0,0,0,0.6)] transition hover:bg-[var(--jg-surface-deep)] hover:text-[v… — Default HudTheme-token skin for {@link SettingsTrigger} — the 8×8 chrome button games re-authored seven times. Pass your own `className` only to override placement or brand chrome; the gear glyph already scales with `text-base` / `1em`.
-- `SettingsActionView` (interface): interface SettingsActionView — A resolved game-state action — `run` is already bound to the game context and closes the menu.
-- `SettingsCategoryView` (interface): interface SettingsCategoryView — A settings menu category with its rows and keybinds, ready to render.
-- `SettingsController` (interface): interface SettingsController — The live settings controller — every category/row/keybind/action plus open-state. Render it any way you like or drive the engine menu.
-- `SettingsControllerProvider` (function): function SettingsControllerProvider({ controller, children, }: { controller: SettingsController; children: ReactNode; }): React.JSX.Element — ⚠ undocumented
-- `SettingsKeybindRow` (interface): interface SettingsKeybindRow — One rebindable action row rendered in the controls settings category.
-- `SettingsProvider` (function): function SettingsProvider({ store, children }: { store: SettingsStore; children: ReactNode }): React.JSX.Element — ⚠ undocumented
-- `SettingsRow` (interface): interface SettingsRow — One editable setting rendered in a settings menu category.
-- `SettingsTrigger` (function): function SettingsTrigger({ className = SETTINGS_TRIGGER_CLASSNAME, children, label = "Settings", }: { className?: string; children?: ReactNode; label?: string; }): React.JSX.Element | null — Inline settings entry — drop it anywhere in your game's menu or HUD; it opens the themed settings menu. Headless: pass `className` only when overriding the default HudTheme skin; pass `children` to replace the gear glyph. Renders nothing when the game has no settings to show, so it never leaves a dead button behind.
-- `useHasSettings` (function): function useHasSettings(): boolean — True when the game has any setting or game-action to show — gate your own settings entry on it.
-- `useSetting` (function): function useSetting<T extends SettingValue>(id: string, fallback: T): readonly [T, (value: SettingValue) => void] — Read + write one persisted setting; re-renders when the value changes anywhere.
-- `useSettings` (function): function useSettings(): SettingsController — The engine settings controller for the current game — render your own settings UI from `categories`, or open the built-in menu with `open()`. Null-safe stub when mounted outside the shell.
-- `useSettingsStore` (function): function useSettingsStore(): SettingsStore — The shared settings store, or a standalone one when no provider is mounted (game code read outside the shell).
-
-## @jgengine/react/settings/settingsBlocks
-
-- `SettingsKeybindControl` (function): function SettingsKeybindControl({ row, armed = false, onArm, buttonProps, rowProps }: SettingsKeybindControlProps): ReactNode — A controls row for one action: its label, the bound key (click to rebind), a conflict/armed state and reset. The caller owns capture; this is the row's presentation.
-- `SettingsKeybindControlProps` (interface): interface SettingsKeybindControlProps — One rebindable action row: current key glyph, armed-capture state and a reset button.
-- `SettingsRowControl` (function): function SettingsRowControl({ row, itemProps }: { row: SettingsRow; itemProps?: MenuNavItemProps }): ReactNode — Render the control a {@link SettingsRow} kind asks for. `itemProps` carries `useMenuNav` focus tracking from {@link SettingsSection}.
-- `SettingsSection` (function): function SettingsSection({ category, heading = true, capture = true, enabled = true, initialId, className, style, onCaptureChange, }: SettingsSectionProps): ReactNode — One settings category as a block: its rows, then its rebindable actions with click-to-capture. The game picks where it sits and how wide it is; the block reads HudTheme tokens and the live rows the settings controller hands it, and writes every change straight back to that controller's store.
-- `SettingsSectionProps` (interface): interface SettingsSectionProps — How a {@link SettingsSection} handles a rebind capture.
-- `SettingsSelect` (function): function SettingsSelect({ row, itemProps }: { row: SettingsRow; itemProps?: MenuNavItemProps }): ReactNode — One choice row from a {@link SettingsRow}, rendered as a pressed-state option group.
-- `SettingsSlider` (function): function SettingsSlider({ row, itemProps }: { row: SettingsRow; itemProps?: MenuNavItemProps }): ReactNode — One slider row from a {@link SettingsRow}: mirrors the thumb locally and commits on release, so a drag never storms the settings store or the graphics rebuild it drives.
-- `SettingsTabs` (function): function SettingsTabs({ categories, activeId, onSelect, leading, tabProps, className, style }: SettingsTabsProps): ReactNode — The category tab rail for a settings screen: a scrollable row of buttons with pressed state. The game owns the surrounding layout; this block keeps every category reachable on narrow screens.
-- `SettingsTabsProps` (interface): interface SettingsTabsProps — The live category tabs for a settings screen: a scrollable rail with pressed state.
-- `SettingsToggle` (function): function SettingsToggle({ row, itemProps }: { row: SettingsRow; itemProps?: MenuNavItemProps }): ReactNode — One on/off row from a {@link SettingsRow}.
-- `adjustSettingRow` (function): function adjustSettingRow(row: SettingsRow, delta: -1 | 1): SettingValue | undefined — One adjustment of a settings row: a slider moves by its step inside its bounds, a toggle flips, a select moves one option (wrapping at both ends). Returns the value to write, or `undefined` when the kind has nothing to step. Shared by the keyboard and the gamepad so both change a row the same way.
 
 ## @jgengine/react/social
 
@@ -2758,19 +2740,6 @@
 - `ResolvedTopDown` (interface): interface ResolvedTopDown { height: number; pitch: number; yaw: number; offset: Xyz; followSmoothing: number } — ⚠ undocumented
 - `StaticCameraValues` (interface): interface StaticCameraValues { followEntityId?: string | null; cinematic?: CinematicCameraConfig } — ⚠ undocumented
 
-## @jgengine/shell/camera/shake/shakeChannel
-
-- `CALIBRATED_TRAUMA_DECAY_PER_SECOND` (const): const CALIBRATED_TRAUMA_DECAY_PER_SECOND: 1.4 — Trauma decay the engine's impact presets are calibrated against, trauma/second.
-- `CameraShakeContext` (const): const CameraShakeContext: React.Context<CameraShakeController> — Override which controller the rigs below apply; defaults to {@link defaultCameraShake}.
-- `cameraShake` (function): function cameraShake(amplitude: number, decayPerSecond?: number): void — Add camera trauma from anywhere. `decayPerSecond`, when given, retunes how fast it bleeds off.
-- `defaultCameraShake` (const): const defaultCameraShake: CameraShakeController — The one camera-shake controller the rigs apply. Game systems with no React context (a `loop.onTick` reacting to `entity.died`) feed it through {@link cameraShake}; a rig reads it through {@link useCameraShake}. It is the core `createCameraShake` model, so a demo or test can drive the same controller directly.
-
-## @jgengine/shell/combat/ProjectileModels
-
-- `ProjectileModels` (function): function ProjectileModels({ model, fallback, forward = [0, 1, 0], maxInstances = 256, source }: ProjectileModelsProps): ReactElement — Mount caller-owned models at authoritative projectile positions. Flight ids determine lifetime; each frame only updates transforms, and settlement removes the model. Optional shaft/head geometry is enabled only by the caller.
-- `ProjectileModelsProps` (interface): interface ProjectileModelsProps — Render simulated flights without owning their travel or settlement.
-- `ProjectileShaft` (interface): interface ProjectileShaft — Explicit opt-in shaft/head geometry when a game has no projectile model.
-
 ## @jgengine/shell/commandSink
 
 - `CommandSink` (interface): interface CommandSink — Where a gameplay command goes when the shell dispatches it — run locally, or sent to the authoritative host.
@@ -2967,18 +2936,6 @@
 - `GrassStream` (class): class GrassStream — Camera-streamed grass for one patch. A quadtree over the patch's base cells splits near the camera and stays coarse far away; each leaf node bakes only the share of tufts its distance needs, so resident and drawn work follow what the camera sees rather than the patch area. Leaves are three meshes under {@link GrassStream.group}; three frustum-culls them per camera, and each draw trims its instance count and segment detail to that camera's distance.
 - `GrassStreamOptions` (interface): interface GrassStreamOptions — Options for {@link GrassStream}.
 - `GrassStreamStats` (interface): interface GrassStreamStats — Per-frame bookkeeping the stream reports, for tests and devtools.
-
-## @jgengine/shell/haptics/hapticsRoute
-
-- `HapticsRoute` (interface): interface HapticsRoute — Route haptic pulses to whatever the player can feel them on.
-- `HapticsRouteOptions` (interface): interface HapticsRouteOptions — The browser reach of {@link createHapticsRoute}; injected so the route runs headless.
-- `HapticsSink` (type): type HapticsSink = "gamepad" | "vibration" | "none" — Where a pulse actually landed: a gamepad, the device's own motor, or nowhere.
-- `createHapticsRoute` (function): function createHapticsRoute(pad: (pulse: HapticPulse) => void, options: HapticsRouteOptions = {}): HapticsRoute — One pulse in, whichever motor the player has: a connected gamepad takes it through the haptic channels the gamepad loop already drives, and a phone with no pad falls back to `navigator.vibrate`. Pad presence is cached and refreshed on connection events, so a hit never asks the browser for its pad list. Reduced motion does not silence this: see `eventFeedback`.
-
-## @jgengine/shell/haptics/padHaptics
-
-- `PAD_HAPTIC_EFFECT_MS` (const): const PAD_HAPTIC_EFFECT_MS: 120 — How long each rumble command lasts; refreshed before it runs out so a held level feels continuous.
-- `PadHapticState` (interface): interface PadHapticState — Last command sent to one pad.
 
 ## @jgengine/shell/input/gamepadMerge
 
@@ -3614,41 +3571,6 @@
 - `SceneKindRenderContext` (interface): interface SceneKindRenderContext — Context a scene-kind renderer receives alongside the matching document objects.
 - `SceneKindRenderer` (type): type SceneKindRenderer = (props: { objects: readonly SceneKindObject[]; context: SceneKindRenderContext }) => ReactElement | null — A registered renderer: given every document object of its kind, returns the render tree for them.
 - `registerSceneKindRenderer` (function): function registerSceneKindRenderer(kind: string, renderer: SceneKindRenderer): void — Register the runtime renderer for a scene kind — the shell half of the #809 seam. `AuthoredScene` groups a document's objects by kind and mounts the registered renderer for each, so a new studio renders from the document with no fork of `AuthoredScene`. Idempotent per kind (last wins).
-
-## @jgengine/shell/settings/QuickControls
-
-- `QuickControls` (function): function QuickControls({ controller }: { controller: SettingsController }): React.JSX.Element | null — ⚠ undocumented
-
-## @jgengine/shell/settings/SettingsChrome
-
-- `SettingsChrome` (function): function SettingsChrome(): React.JSX.Element | null — ⚠ undocumented
-
-## @jgengine/shell/settings/SettingsMenu
-
-- `SettingsMenu` (function): function SettingsMenu({ controller, onClose, initialTab, }: { controller: SettingsController; onClose: () => void; initialTab?: string; }): React.JSX.Element | null — ⚠ undocumented
-
-## @jgengine/shell/settings/SettingsRuntime
-
-- `SettingsRuntime` (function): function SettingsRuntime({ variant, surface, actions, children, ...input }: SettingsRuntimeProps): React.JSX.Element — ⚠ undocumented
-- `SettingsRuntimeProps` (interface): interface SettingsRuntimeProps extends SettingsControllerInput { variant: SettingsVariant; surface: SettingsSurface | false; actions: readonly SettingsActionView[]; children: ReactNode } — ⚠ undocumented
-
-## @jgengine/shell/settings/appliedSettings
-
-- `AppliedGraphicsSettings` (interface): interface AppliedGraphicsSettings — The player's graphics choices as the shell applies them.
-- `AudioSettingsBridge` (function): function AudioSettingsBridge({ store, engine, buses, }: { store: SettingsStore; engine: AudioEngine; buses: Record<string, AudioBusDef> | undefined; }): null — ⚠ undocumented
-- `TOUCH_STYLE_AUTO` (const): const TOUCH_STYLE_AUTO: "auto" — Sentinel Controls value meaning "defer to the game's suggested touch skin".
-- `useGraphicsSettings` (function): function useGraphicsSettings(store: SettingsStore, shadowsDefault: boolean, overrides?: GraphicsProfileOverrides): AppliedGraphicsSettings — ⚠ undocumented
-- `useSettingsRevision` (function): function useSettingsRevision(store: SettingsStore): number — ⚠ undocumented
-
-## @jgengine/shell/settings/settingsController
-
-- `SettingsActionView` (interface): interface SettingsActionView — A resolved game-state action — `run` is already bound to the game context and closes the menu.
-- `SettingsCategoryView` (interface): interface SettingsCategoryView — A settings menu category with its rows and keybinds, ready to render.
-- `SettingsController` (interface): interface SettingsController — The live settings controller — every category/row/keybind/action plus open-state. Render it any way you like or drive the engine menu.
-- `SettingsControllerInput` (interface): interface SettingsControllerInput { input: ActionCodesMap; buses: Record<string, AudioBusDef> | undefined; extra: readonly GameSettingDef[]; categories: readonly SettingCategoryDef[]; hide: readonly SettingCategory[]; fovEnabled: boolean; graphics?: GraphicsProfileOverrides… — ⚠ undocumented
-- `SettingsKeybindRow` (interface): interface SettingsKeybindRow — One rebindable action row rendered in the controls settings category.
-- `SettingsRow` (interface): interface SettingsRow — One editable setting rendered in a settings menu category.
-- `useSettingsCategories` (function): function useSettingsCategories(config: SettingsControllerInput): SettingsCategoryView[] — ⚠ undocumented
 
 ## @jgengine/shell/shellConstants
 

@@ -90,6 +90,8 @@ test("a new file named for a concept with a folder in its layer must sit in that
   expect(homeFor("packages/core/src/hud/hudLanes.tsx", layers)).toBeNull();
   expect(homeFor("packages/react/src/notifications.ts", layers)).toBeNull();
   expect(homeFor("packages/react/src/camera/index.ts", layers)).toBeNull();
+  // A name that ends on its own folder is home, even when it starts with another concept's name.
+  expect(homeFor("packages/react/src/notifications/cameraNotifications.tsx", layers)).toBeNull();
   // A concept folder only binds its own layer.
   expect(homeFor("packages/shell/src/cameraRig.tsx", layers)).toBeNull();
   const failures = homeFailures(["packages/react/src/notificationsBell.tsx", "packages/react/src/notifications/bell.tsx"], tree);

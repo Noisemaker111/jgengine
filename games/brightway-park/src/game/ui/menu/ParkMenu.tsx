@@ -1,11 +1,11 @@
 import { type ReactNode, useEffect, useState } from "react";
-import { ContinuePane, CreditsPane, SaveSlotsPane } from "@jgengine/react/menu/gameMenuSaves";
-import { GameMenu } from "@jgengine/react/menu/gameMenu";
-import { PauseMenu } from "@jgengine/react/menu/pauseMenu";
+import { ContinuePane, CreditsPane, SaveSlotsPane } from "@jgengine/core/menu/gameMenuSaves.view";
+import { GameMenu } from "@jgengine/core/menu/gameMenu.view";
+import { PauseMenu } from "@jgengine/core/menu/pauseMenu.view";
 import { useGame, useGameClock, useGameStore } from "@jgengine/react/hooks";
 import { useGameContext } from "@jgengine/react/provider";
 import { useSaveSlots } from "@jgengine/core/save/saveSlots.view";
-import { useSettings } from "@jgengine/react/settings/settings";
+import { useSettings } from "@jgengine/core/settings/settings.view";
 import { KitButton } from "@jgengine/react/uiKitRoot";
 
 import { captureParkThumb, parkProfile } from "../../parkProfile";
