@@ -21,7 +21,8 @@ export interface DragPayload<T> {
   rotation: Rotation;
 }
 
-export interface DragState<T> {
+/** What the drag layer is carrying now: the payload, the pointer and where the drag began. */
+export interface DragLayerState<T> {
   payload: DragPayload<T> | null;
   point: { x: number; y: number };
   origin: { x: number; y: number };
@@ -37,7 +38,7 @@ export interface DropInfo<T> {
 }
 
 export interface DragLayer<T> {
-  state: DragState<T>;
+  state: DragLayerState<T>;
   dragging: boolean;
   pointRef: RefObject<{ x: number; y: number }>;
   beginDrag(payload: { id: string; value: T; rotation?: Rotation }, event: ReactPointerEvent): void;
@@ -61,7 +62,7 @@ const targetRegistries = new WeakMap<object, (element: HTMLElement, id: string, 
 export function useDragLayer<T>(options?: {
   onDrop?: (info: DropInfo<T>) => void;
 }): DragLayer<T> {
-  const [state, setState] = useState<DragState<T>>({
+  const [state, setState] = useState<DragLayerState<T>>({
     payload: null, point: EMPTY_POINT, origin: EMPTY_POINT, overTarget: null, overCell: null,
   });
   const pointRef = useRef(EMPTY_POINT);

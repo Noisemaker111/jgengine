@@ -190,7 +190,6 @@
   "@jgengine/shell/devtools/TunePanel#TunePanel",
   "@jgengine/shell/devtools/devtoolsOverrides#readStoredOverrides",
   "@jgengine/shell/devtools/panelAtoms#SectionLabel",
-  "@jgengine/shell/devtools/panelAtoms#StatRow",
   "@jgengine/shell/devtools/perfDiagnose#diagnose",
   "@jgengine/shell/diagnostics/RuntimeDiagnostics#DiagnosticOverlay",
   "@jgengine/shell/diagnostics/RuntimeDiagnostics#GameUiErrorBoundary",

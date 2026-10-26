@@ -2,7 +2,11 @@ export function ms(value: number): string {
   return `${value.toFixed(1)}ms`;
 }
 
-export function StatRow({ name, value, alert }: { name: string; value: string; alert?: boolean }) {
+/**
+ * One name/value line in a devtools panel; `alert` paints the value red.
+ * @internal devtools panels only
+ */
+export function PanelStatRow({ name, value, alert }: { name: string; value: string; alert?: boolean }) {
   return (
     <div className="flex items-baseline justify-between gap-3">
       <span className="text-neutral-400">{name}</span>

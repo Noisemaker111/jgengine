@@ -1,6 +1,4 @@
 import { useEffect, useRef, useState, type ReactNode } from "react";
-import type { InventorySlot } from "@jgengine/core/inventory/inventoryModel";
-import type { ProximityPrompt as ProximityPromptDef } from "@jgengine/core/interaction/proximityPrompt";
 import {
   evaluateSkillCheck,
   type SkillCheckConfig,
@@ -11,66 +9,11 @@ import type { StatLevelUpEvent } from "@jgengine/core/game/events";
 import { rollCheck, type CheckAdvantage, type CheckResult } from "@jgengine/core/stats/rollCheck";
 import { dialogueSlot } from "@jgengine/core/game/dialogue";
 import { useGameContext } from "./provider";
-import { useInventory, useLocalPlayerDead } from "./hooks";
+import { useLocalPlayerDead } from "./hooks";
 import { useStore } from "./store";
 import { paintQteStepDom, paintSkillCheckDom } from "./skillCheckPaint";
 
 export { paintQteStepDom, paintSkillCheckDom } from "./skillCheckPaint";
-
-export function SlotGrid({
-  inventoryId,
-  className,
-  renderSlot,
-}: {
-  inventoryId: string;
-  className?: string;
-  renderSlot?: (slot: InventorySlot, index: number) => ReactNode;
-}) {
-  const slots = useInventory(inventoryId);
-  return (
-    <div className={className} data-inventory={inventoryId}>
-      {slots.map((slot, index) => (
-        <div key={index} data-slot={index}>
-          {renderSlot !== undefined
-            ? renderSlot(slot, index)
-            : slot !== null
-              ? `${slot.itemId} x${slot.count}`
-              : null}
-        </div>
-      ))}
-    </div>
-  );
-}
-
-export function ProximityPrompt({
-  prompt,
-  className,
-}: {
-  prompt: ProximityPromptDef;
-  className?: string;
-}) {
-  const display = prompt.display;
-  if (display.kind === "keybind") {
-    return (
-      <span className={className} data-prompt="keybind" data-action={display.actionId}>
-        <kbd>{display.actionId}</kbd>
-        {display.label !== undefined ? <span data-prompt-label>{display.label}</span> : null}
-      </span>
-    );
-  }
-  if (display.kind === "gauge") {
-    return (
-      <span className={className} data-prompt="gauge" data-gauge={display.gaugeId}>
-        {display.gaugeId}
-      </span>
-    );
-  }
-  return (
-    <span className={className} data-prompt="label">
-      {display.text}
-    </span>
-  );
-}
 
 export function Screen({
   id,

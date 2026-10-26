@@ -5,7 +5,7 @@ import { createCodex, type CodexEntryDef } from "@jgengine/core/game/codex";
 import type { GameContext, GameContextEntityEntry } from "@jgengine/core/runtime/gameContext";
 import { createAssetCatalog } from "@jgengine/core/scene/assetCatalog";
 import { environment, grass, terrain } from "@jgengine/core/world/features";
-import { Codex } from "@jgengine/react/codex";
+import { CodexPanel } from "@jgengine/react/codex";
 
 import { EnvironmentScene } from "@jgengine/shell/environment/EnvironmentScene";
 import type { PlayableGame } from "@jgengine/shell/registry";
@@ -63,7 +63,7 @@ function CodexUI() {
   return (
     <div className="pointer-events-none absolute inset-0 font-sans text-white">
       <div className="pointer-events-auto absolute left-1/2 top-6 -translate-x-1/2">
-        <Codex entries={entries} title="Bestiary" columns={3} />
+        <CodexPanel entries={entries} title="Bestiary" columns={3} />
       </div>
       <div className="pointer-events-auto absolute bottom-4 left-1/2 flex -translate-x-1/2 items-center gap-3 rounded-md border border-white/15 bg-neutral-900/80 px-3 py-2 text-[11px] text-white/70">
         Codex / bestiary — discovered entries fill in; secret ones stay masked.

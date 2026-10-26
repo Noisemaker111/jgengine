@@ -30,7 +30,7 @@ import { useHudInteract, type HudInteractListener } from "./hud/hudInteract";
 import { HudSurface } from "./hud/hudSurface";
 import { hudType } from "./hud/hudTokens";
 import { observeBrowserSuspension } from "./browserLifecycle";
-import { usePresence } from "./presence";
+import { useMountPresence } from "./presence";
 
 /**
  * React chrome over the headless panel/window model (`@jgengine/core/ui/panelModel`) — the toggleable,
@@ -304,7 +304,7 @@ function WindowView({
     if (!open) retireDrag.current?.();
   }, [open]);
   const reduced = useReducedMotion();
-  const presence = usePresence(open, reduced ? 0 : WINDOW_EXIT_MS);
+  const presence = useMountPresence(open, reduced ? 0 : WINDOW_EXIT_MS);
   const report = useHudInteract("window", cue, onInteract);
   const reported = useRef<boolean | null>(null);
   useEffect(() => {

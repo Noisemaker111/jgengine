@@ -6,7 +6,7 @@ import { talentTreeViewFrom } from "@jgengine/core/game/talentTreeView";
 import type { GameContext, GameContextEntityEntry } from "@jgengine/core/runtime/gameContext";
 import { createAssetCatalog } from "@jgengine/core/scene/assetCatalog";
 import { environment, grass, terrain } from "@jgengine/core/world/features";
-import { TalentTree } from "@jgengine/react/talentTree";
+import { TalentTreePanel } from "@jgengine/react/talentTree";
 import type { GameIconName } from "@jgengine/react/gameIcons";
 
 import { EnvironmentScene } from "@jgengine/shell/environment/EnvironmentScene";
@@ -100,7 +100,7 @@ function UpgradeTree(): ReactNode {
   });
 
   return (
-    <TalentTree
+    <TalentTreePanel
       view={view}
       title={`Upgrades · ${gold}g`}
       showPoints={false}
@@ -120,7 +120,7 @@ function TalentTreeUI(): ReactNode {
   return (
     <div className="pointer-events-none absolute inset-0 font-sans text-white">
       <div style={rowStyle}>
-        <TalentTree<Stat>
+        <TalentTreePanel<Stat>
           nodes={NODES}
           tree={tree}
           icon={iconOf}
