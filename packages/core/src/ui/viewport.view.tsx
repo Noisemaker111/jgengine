@@ -49,6 +49,8 @@ interface RegionRegistry {
   remove(id: string): void;
   list(): RegionRecord[];
   subscribe(listener: () => void): () => void;
+  /** Re-read every registered element's rectangle, for siblings that moved without resizing. */
+  remeasure(): void;
 }
 
 function sameRect(a: LayoutRect, b: LayoutRect): boolean {
@@ -103,6 +105,18 @@ function createRegionRegistry(): RegionRegistry {
       return () => {
         listeners.delete(listener);
       };
+    },
+    remeasure() {
+      let changed = false;
+      for (const region of records.values()) {
+        if (region.element == null) continue;
+        const box = region.element.getBoundingClientRect();
+        const rect = { left: box.left, top: box.top, right: box.right, bottom: box.bottom };
+        if (sameRect(region.rect, rect)) continue;
+        records.set(region.id, { ...region, rect });
+        changed = true;
+      }
+      if (changed) emit();
     },
   };
 }
@@ -258,6 +272,26 @@ export function GameViewportProvider({
   }, [metrics]);
 
   const regions = useSyncExternalStore(registry.subscribe, registry.list, () => EMPTY_REGIONS);
+
+  // A region is measured on mount and on its own resize, so a sibling that mounts or unmounts beside it
+  // moves it without re-measuring it. Re-measure whenever the viewport's DOM changes.
+  useEffect(() => {
+    const root = rootRef.current;
+    if (root === null || typeof MutationObserver === "undefined" || typeof requestAnimationFrame !== "function") return;
+    let frame = 0;
+    const observer = new MutationObserver(() => {
+      if (frame !== 0) return;
+      frame = requestAnimationFrame(() => {
+        frame = 0;
+        registry.remeasure();
+      });
+    });
+    observer.observe(root, { childList: true, subtree: true });
+    return () => {
+      observer.disconnect();
+      if (frame !== 0) cancelAnimationFrame(frame);
+    };
+  }, [registry]);
 
   const mobileSupported = platforms?.includes("mobile") ?? true;
   const visual = metrics.visual;

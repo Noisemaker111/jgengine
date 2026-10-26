@@ -1,3 +1,4 @@
+import { useDisplayProfile } from "@jgengine/core/ui/display.view";
 import { useGameFonts } from "@jgengine/core/ui/fonts.view";
 import { useGameContext } from "@jgengine/react/provider";
 import { HudCanvas, HudPanel, useHudLayout } from "@jgengine/shell/gameKit";
@@ -19,6 +20,7 @@ import { BeaconMenu, PauseSigil } from "./menu/BeaconMenu";
 export function GameUI() {
   useGameFonts(GAME_FONTS);
   const ctx = useGameContext();
+  const { compact } = useDisplayProfile();
   const layout = useHudLayout({ storageKey: "beacon-bastion" });
   return (
     <>
@@ -38,7 +40,7 @@ export function GameUI() {
         <HudPanel id="build-bar" anchor="bottom" inset={{ x: 0, y: 14 }}>
           <BuildBar />
         </HudPanel>
-        <HudPanel id="rites" anchor="bottom-right" inset={{ x: 16, y: 14 }}>
+        <HudPanel id="rites" anchor={compact ? "right" : "bottom-right"} order={compact ? -1 : 0} inset={{ x: 16, y: 14 }}>
           <AbilityStones />
         </HudPanel>
         <HudPanel id="tower" anchor="right" inset={{ x: 16, y: 0 }}>

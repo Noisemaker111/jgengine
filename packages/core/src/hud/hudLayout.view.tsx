@@ -1047,8 +1047,12 @@ export function HudPanel({
     }),
     [id, mobileBehavior, priority, allowOverlapWith, collisionGroup],
   );
+  // A panel that has not been moved takes its anchor from the prop on every render: the stored
+  // placement is only the first registration, so a game that changes anchor per display profile
+  // would otherwise keep the anchor it mounted with.
+  const flowAnchor = compact || panel === undefined || !panel.moved ? anchor : panel.placement.anchor;
   // A flowing panel portals into its anchor region, which HudCanvas only provides after its first commit.
-  const awaitingRegion = panel !== undefined && (compact || !panel.moved) && regions[compact ? anchor : panel.placement.anchor] === undefined;
+  const awaitingRegion = panel !== undefined && (compact || !panel.moved) && regions[flowAnchor] === undefined;
   useRegisterLayoutRegion(regionSpec, rootRef, region && !regionHidden && !awaitingRegion);
 
   const laneActive = lane !== undefined && !regionHidden && !(panel !== undefined && panel.moved);
@@ -1058,7 +1062,7 @@ export function HudPanel({
     if (!laneActive) return;
     declareLane({
       id,
-      anchor: panel?.placement.anchor ?? anchor,
+      anchor,
       lane,
       order,
       width: panel?.width ?? width,
@@ -1070,7 +1074,7 @@ export function HudPanel({
     declareLane,
     removeLane,
     id,
-    panel?.placement.anchor,
+    anchor,
     lane,
     order,
     panel?.width,
@@ -1293,7 +1297,7 @@ export function HudPanel({
   }
   const flow = compact || !panel.moved;
   if (flow) {
-    const regionEl = regions[compact ? anchor : panel.placement.anchor];
+    const regionEl = regions[flowAnchor];
     if (regionEl === undefined) return null;
     const chipped = compact && compactMode === "chip";
     const passThrough = interactive === false && !editing && !chipped;
