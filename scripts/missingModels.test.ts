@@ -10,7 +10,7 @@ describe("captures fail on placeholder models", () => {
   test("names each missing model and how to fix it", () => {
     const line = missingModelsProblem([{ name: "pack/Crate", url: "/models/pack/Crate.glb", message: "404" }]);
     expect(line).toContain("MISSING MODELS: 1");
-    expect(line).toContain("pack/Crate");
+    expect(line).toContain("pack/Crate (/models/pack/Crate.glb)");
     expect(line).toContain("games:provision");
   });
 });

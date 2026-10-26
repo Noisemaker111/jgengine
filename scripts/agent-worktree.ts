@@ -216,6 +216,29 @@ export function ensureWorktreeReady(cwd: string, options: WorktreeReadyOptions =
   return result;
 }
 
+/**
+ * Link every game's referenced packs from the shared asset store (`games/shared/assetStore.ts`).
+ * Nothing is downloaded: a pack no checkout has pulled yet is fetched once, into the store, the first
+ * time a dev server or `games:provision` needs it.
+ */
+export async function linkGameAssets(target: string): Promise<{ linked: number; absent: number; store: string }> {
+  const { provisionGame } = await import("../games/shared/provisionAssets");
+  const { assetStoreRoot } = await import("../games/shared/assetStore");
+  const games = join(target, "games");
+  let linked = 0;
+  let absent = 0;
+  if (existsSync(games)) {
+    for (const game of readdirSync(games)) {
+      const dir = join(games, game);
+      if (!existsSync(join(dir, "src")) || !existsSync(join(dir, "package.json"))) continue;
+      const result = await provisionGame(dir, { download: false, log: () => {} });
+      linked += result.linked.length;
+      absent += result.absent.length;
+    }
+  }
+  return { linked, absent, store: assetStoreRoot(target) };
+}
+
 function git(cwd: string, args: string[], timeoutMs = 120_000): string {
   const result = Bun.spawnSync(["git", ...args], { cwd, stdout: "pipe", stderr: "pipe", timeout: timeoutMs });
   const out = (result.stdout?.toString() ?? "") + (result.stderr?.toString() ?? "");
@@ -277,6 +300,9 @@ if (import.meta.main) {
     process.exit(1);
   }
 
+  // Pulled packs come from the one shared store, never a per-worktree download.
+  const assets = await linkGameAssets(target);
+
   const dirty = git(target, ["status", "--porcelain"]);
   if (dirty !== "") {
     console.error(`agent-worktree: new worktree is not clean — a link is not gitignored:\n${dirty}`);
@@ -288,6 +314,8 @@ if (import.meta.main) {
   if (readiness.installed) did.push("installed dependencies (bun install --frozen-lockfile)");
   if (readiness.deps.length > 0) did.push(`linked ${readiness.deps.length} node_modules from the main checkout`);
   if (readiness.assets.length > 0) did.push(`linked ${readiness.assets.join(", ")}`);
+  if (assets.linked > 0) did.push(`linked ${assets.linked} game asset pack(s) from ${assets.store}`);
+  if (assets.absent > 0) did.push(`${assets.absent} pack(s) not in the store yet (a game's dev server or bun run games:provision pulls them once)`);
   console.log(
     `agent-worktree: ready in ${seconds}s — ${did.length > 0 ? did.join("; ") : "already set up (deps and assets present; nothing changed)"}`,
   );

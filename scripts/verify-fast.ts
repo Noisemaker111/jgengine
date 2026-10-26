@@ -21,7 +21,8 @@ import { fileURLToPath } from "node:url";
 
 import { effectivePaths } from "./sourcePaths";
 import { assertCheckoutReady } from "./checkout-ready";
-import { scopePattern } from "./ci-scope";
+import { digestLines, writeStepLog } from "./failure-digest";
+import { REPRESENTATIVE_GAME, scopePattern } from "./ci-scope";
 import { printHelpIfAsked } from "./script-help";
 import { TEST_ROOTS, walkTestFiles } from "./test-shard";
 
@@ -55,6 +56,8 @@ const SOURCE_FILE = /\.[cm]?[jt]sx?$/;
 const DECLARATION = /\.d\.[cm]?ts$/;
 const RUNTIME_ROOTS = [/^packages\/[^/]+\/src\//, /^apps\/[^/]+\/src\//, /^scripts\/[^/]+\.[cm]?tsx?$/, /^games\/[^/]+\/src\//];
 const GAME_DIR = /^games\/[^/]+$/;
+/** Demo scenes exist to be looked at; a test of one would be filler, so they never need one. */
+const DEMO = /(^|\/)demos?\//;
 
 export interface Step {
   name: string;
@@ -110,6 +113,32 @@ export interface Plan {
   gates: string[];
   /** Changed runtime files no selected test can reach. */
   unattributed: string[];
+  /** Workspaces whose whole suite runs because a changed file in them has no test of its own. */
+  suites: string[];
+  /**
+   * Games booted on this machine with their packs linked from the shared asset store. CI never
+   * boots a game, so this is the only place a boot regression is caught before merge.
+   */
+  boots: string[];
+}
+
+/** At most this many games boot in the inner loop; each costs ~15-40 s. */
+export const MAX_BOOTS = 2;
+
+/**
+ * The games a change should boot: each game whose own source changed, else the representative
+ * game when the change reaches what a game draws (`scripts/ci-scope.ts`'s heavy paths).
+ */
+export function bootsFor(changed: readonly string[]): string[] {
+  const touched = [
+    ...new Set(
+      changed
+        .filter((path) => /^games\/[^/]+\/(src|public|index\.html|vite\.config)/.test(path) && !isTestFile(path))
+        .map((path) => path.split("/")[1]!),
+    ),
+  ].sort();
+  if (touched.length > 0) return touched.slice(0, MAX_BOOTS);
+  return changed.some((path) => scopePattern().test(path) && !isTestFile(path) && !/\.(md|mdx)$/i.test(path)) ? [REPRESENTATIVE_GAME] : [];
 }
 
 const posix = (path: string): string => path.replaceAll("\\", "/");
@@ -142,6 +171,21 @@ export function changedFiles(root: string, base: string = BASE): string[] {
   add(["diff", "--name-only", "--diff-filter=ACMR"]);
   add(["ls-files", "--others", "--exclude-standard"]);
   return [...out].sort();
+}
+
+/**
+ * Files this branch moved without editing (`R100`): a rename changes no behavior, so it never
+ * needs a test of its own.
+ */
+export function pureRenames(root: string, base: string = BASE): string[] {
+  const renamed = new Set<string>();
+  for (const args of [["diff", "--name-status", "-M", `${base}...HEAD`], ["diff", "--name-status", "-M", "--cached"]]) {
+    for (const line of names(git(root, args))) {
+      const fields = line.split("\t");
+      if (fields[0] === "R100" && fields[2] !== undefined) renamed.add(fields[2]);
+    }
+  }
+  return [...renamed].sort();
 }
 
 /** Every workspace dir under the root `package.json` globs, with whether it type-checks. */
@@ -197,7 +241,13 @@ export function isTestFile(path: string): boolean {
 
 /** A file whose behavior a test is expected to reach: source under a runtime root, not a test or a declaration. */
 export function isRuntimeSource(path: string): boolean {
-  return RUNTIME_ROOTS.some((root) => root.test(path)) && SOURCE_FILE.test(path) && !DECLARATION.test(path) && !TEST_FILE.test(path);
+  return (
+    RUNTIME_ROOTS.some((root) => root.test(path)) &&
+    SOURCE_FILE.test(path) &&
+    !DECLARATION.test(path) &&
+    !TEST_FILE.test(path) &&
+    !DEMO.test(path)
+  );
 }
 
 /** Import specifiers in a source file: static, dynamic, re-export and require forms. */
@@ -315,6 +365,11 @@ export function gatesFor(changed: readonly string[]): string[] {
   if (changed.some((path) => path.startsWith("games/"))) {
     for (const gate of ["games:check-framework", "games:check-module-globals", "games:check-save-states", "games:check-design"]) gates.add(gate);
   }
+  // The `games` CI job runs both on every package or game change; each takes seconds here.
+  if (changed.some((path) => path.startsWith("games/") || /^packages\/[^/]+\/src\//.test(path))) {
+    gates.add("games:capabilities-sync");
+    gates.add("games:check-capabilities");
+  }
   if (changed.some((path) => /\.(md|mdx)$/i.test(path) || path.startsWith(".claude/skills/"))) {
     gates.add("check-skills");
     gates.add("check-stage-skills");
@@ -329,9 +384,12 @@ export function buildPlan(input: {
   workspaces: readonly Workspace[];
   readText: (path: string) => string;
   resolveSpecifier: (specifier: string, from: string) => string[];
+  /** Changed paths that need no test (pure renames). */
+  exempt?: readonly string[];
 }): Plan {
   const changed = [...new Set(input.changed)].sort();
-  const runtime = changed.filter(isRuntimeSource);
+  const exempt = new Set(input.exempt ?? []);
+  const runtime = changed.filter((path) => isRuntimeSource(path) && !exempt.has(path));
   const importedBy = importers(runtime, input.testFiles, input.readText, input.resolveSpecifier);
   const tests = new Set<string>();
   for (const file of changed) {
@@ -367,12 +425,21 @@ export function buildPlan(input: {
     for (const test of input.testFiles) if (test.startsWith(`${workspace.dir}/`)) tests.add(test);
   }
 
-  const unattributed = runtime.filter(
-    (path) =>
-      ownTests(path, input.testFiles).length === 0 &&
-      (importedBy.get(path) ?? []).length === 0 &&
-      !(GAME_DIR.test(path.split("/").slice(0, 2).join("/")) && [...tests].some((test) => test.startsWith(`${path.split("/").slice(0, 2).join("/")}/`))),
-  );
+  // A file no test names is still covered when its package's whole suite runs: that is the suite
+  // CI runs for it. Only a file outside every tested package (a root script) stays unattributed.
+  const unattributed: string[] = [];
+  const suites: string[] = [];
+  for (const path of runtime) {
+    if (ownTests(path, input.testFiles).length > 0 || (importedBy.get(path) ?? []).length > 0) continue;
+    const workspace = workspaceOf(path, input.workspaces);
+    const suite = workspace === null ? [] : input.testFiles.filter((test) => test.startsWith(`${workspace.dir}/`));
+    if (suite.length === 0) {
+      unattributed.push(path);
+      continue;
+    }
+    for (const test of suite) tests.add(test);
+    if (!suites.includes(workspace!.dir)) suites.push(workspace!.dir);
+  }
 
   return {
     changed,
@@ -380,6 +447,8 @@ export function buildPlan(input: {
     tests: [...tests].sort(),
     gates: gatesFor(changed),
     unattributed,
+    suites: suites.sort(),
+    boots: bootsFor(changed),
   };
 }
 
@@ -396,6 +465,12 @@ export const GATE_FIX: Readonly<Record<string, string>> = {
     "bun run gen  (rewrites .claude/skills/*/api.md and prunes scripts/api-doc-baseline.json and scripts/api-orphan-baseline.json)",
 };
 
+/** Arguments a gate needs after its script name, as CI passes them. */
+const GATE_ARGS: Readonly<Record<string, readonly string[]>> = {
+  "games:capabilities-sync": ["--check"],
+  "games:check-capabilities": ["--summary"],
+};
+
 /** Rough seconds per gate on this PC (2026-10-24), so the 21 s check starts before the 1 s ones. */
 const GATE_COST: Readonly<Record<string, number>> = {
   "check-skill-api": 21,
@@ -407,7 +482,20 @@ export function fastSteps(plan: Plan, options: { skillApi?: boolean } = {}): Ste
   for (const dir of plan.typechecks) steps.push({ name: `typecheck ${dir}`, command: ["bun", `--cwd=${dir}`, "run", "check-types"] });
   if (plan.tests.length > 0) steps.push({ name: `test ${plan.tests.length} file(s)`, command: ["bun", "test", "--timeout", "20000", ...plan.tests] });
   const gates = options.skillApi === true ? plan.gates : plan.gates.filter((gate) => gate !== "check-skill-api");
-  for (const gate of gates) steps.push({ name: gate, command: ["bun", "run", gate], fix: GATE_FIX[gate], cost: GATE_COST[gate] });
+  for (const gate of gates) {
+    const extra = GATE_ARGS[gate] ?? [];
+    steps.push({ name: gate, command: ["bun", "run", gate, ...(extra.length > 0 ? ["--", ...extra] : [])], fix: GATE_FIX[gate], cost: GATE_COST[gate] });
+  }
+  if (plan.boots.length > 0) {
+    // Link (or, once per machine, download) the packs first, so the boot reads real models.
+    steps.push({ name: `provision ${plan.boots.join(" ")}`, command: ["bun", "games/scripts/provision-assets.ts", ...plan.boots], cost: 2 });
+    steps.push({
+      name: `boot probe ${plan.boots.join(" ")}`,
+      command: ["bun", "games/scripts/capabilities-probe.ts", ...plan.boots],
+      needs: [`provision ${plan.boots.join(" ")}`],
+      cost: 40,
+    });
+  }
   return steps;
 }
 
@@ -731,6 +819,12 @@ async function withHeavyServer<T>(root: string, steps: readonly Step[], work: ()
   }
 }
 
+/** Each failing file with its first error, and the whole output in a UTF-8 log under `.scratch/verify-fast/`. */
+function printFailure(root: string, step: string, output: string): void {
+  const log = writeStepLog(root, "verify-fast", step, output);
+  for (const line of digestLines(output, relPosix(root, log))) console.log(line);
+}
+
 function printPlan(plan: Plan, steps: readonly Step[]): void {
   for (const path of plan.changed) console.log(`  changed  ${path}`);
   for (const step of steps) console.log(`  step     ${step.name}  (${step.command.join(" ")})`);
@@ -814,7 +908,7 @@ async function main(argv: readonly string[]): Promise<number> {
         const result = await run(step, root);
         const suffix = result.blockedBy === undefined ? "" : `  (${result.output})`;
         console.log(`${result.ok ? "PASS" : "FAIL"}  ${step.name}  ${(result.ms / 1000).toFixed(1)}s${suffix}`);
-        if (!result.ok && result.blockedBy === undefined) console.log(result.output);
+        if (!result.ok && result.blockedBy === undefined) printFailure(root, step.name, result.output);
         if (!result.ok && result.blockedBy === undefined && step.fix !== undefined) console.log(`  fix: ${step.fix}`);
         return result;
       }),
@@ -833,6 +927,7 @@ async function main(argv: readonly string[]): Promise<number> {
     workspaces: workspaces(root),
     readText: (path) => readFileSync(join(root, path), "utf8"),
     resolveSpecifier,
+    exempt: pureRenames(root, base),
   });
   const steps = fastSteps(plan, { skillApi });
 
@@ -849,6 +944,9 @@ async function main(argv: readonly string[]): Promise<number> {
   console.log(
     `verify:fast against ${base}: ${plan.changed.length} changed file(s), ${plan.tests.length} test file(s), ${plan.gates.length - (leftOutSkillApi ? 1 : 0)} gate(s)`,
   );
+  if (plan.suites.length > 0) {
+    console.log(`verify:fast: whole suite of ${plan.suites.join(", ")}: a changed file there has no test of its own, so its package's tests cover it`);
+  }
   if (leftOutSkillApi) {
     console.log("verify:fast: check-skill-api (21 s) is left out here; `--skill-api` runs it, and lane:close and ship:preflight already do.");
   }
@@ -871,7 +969,8 @@ async function main(argv: readonly string[]): Promise<number> {
     console.log(`${result.ok ? "PASS" : "FAIL"}  ${result.name}  ${(result.ms / 1000).toFixed(1)}s`);
     if (result.ok) continue;
     failures.push(result.name);
-    if (result.output.length > 0) console.log(result.output);
+    if (result.output.length > 0 && result.blockedBy === undefined) printFailure(root, result.name, result.output);
+    else if (result.blockedBy !== undefined) console.log(`  ${result.output}`);
     if (step?.fix !== undefined) console.log(`  fix: ${step.fix}`);
   }
   const seconds = (Date.now() - started) / 1000;

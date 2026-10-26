@@ -1,6 +1,8 @@
 import { spawnSync } from "node:child_process";
 import { fileURLToPath } from "node:url";
 
+import { digestLines, writeStepLog } from "./failure-digest";
+
 /**
  * Multi-stage runner for the composite gates (`gate`, `check-types`).
  *
@@ -220,20 +222,33 @@ if (import.meta.main) {
   }
 
   const root = fileURLToPath(new URL("..", import.meta.url));
+  // `gate` runs the 15-minute suite, so it streams; the short plans capture each stage so a failure
+  // ends with its failing files and first errors instead of a count, plus a UTF-8 log of the rest.
+  const capture = plan !== "gate";
+  const digests: string[] = [];
   const results = runPlan(stages, (stage) => {
     console.log(`\n--- ${plan} › ${stage.name}`);
     const result = spawnSync(stage.command, [...stage.args], {
       cwd: root,
-      stdio: "inherit",
+      stdio: capture ? ["ignore", "pipe", "pipe"] : "inherit",
+      encoding: "utf8",
+      maxBuffer: 256 * 1024 * 1024,
       shell: false,
     });
     if (result.error !== undefined) {
       console.error(`${stage.name}: failed to spawn — ${result.error.message}`);
       return false;
     }
+    const output = capture ? `${result.stdout ?? ""}${result.stderr ?? ""}` : "";
+    if (output.trim().length > 0) process.stdout.write(output.endsWith("\n") ? output : `${output}\n`);
+    if (capture && result.status !== 0) {
+      const log = writeStepLog(root, `stages-${plan}`, stage.name, output);
+      digests.push(`${stage.name}:`, ...digestLines(output, log));
+    }
     return result.status === 0;
   });
 
   console.log(formatSummary(plan as string, stages, results));
+  if (digests.length > 0) console.log(`\nwhat failed, first error per file:\n${digests.join("\n")}`);
   process.exit(results.every((result) => result.state === "passed") ? 0 : 1);
 }

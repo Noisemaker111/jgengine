@@ -2,7 +2,7 @@ import { afterEach, describe, expect, test } from "bun:test";
 import { mkdirSync, rmSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 
-import { assess, exemptionReason, isGeneratedSource, isRuntimePath, isTestPath, parseNameStatus } from "./check-fix-has-test";
+import { assess, exemptionReason, isGeneratedSource, isRuntimePath, isTestPath, parseNameStatus, pureRenamesFrom } from "./check-fix-has-test";
 
 const SCRIPT = join(import.meta.dir, "check-fix-has-test.ts");
 const SCRATCH = join(import.meta.dir, "..", ".scratch");
@@ -212,5 +212,19 @@ describe("reading a real diff", () => {
     const noBody = runCheck(["--root", repo, "--base", "HEAD", "--body-file", join(repo, "absent.md")], repo);
     expect(noBody.code).toBe(2);
     expect(noBody.stderr).toContain("could not read");
+  });
+});
+
+describe("renames and demos need no test", () => {
+  test("a file moved without an edit is not runtime change", () => {
+    const renamed = pureRenamesFrom("R100\tscripts/old.ts\tscripts/new.ts\nR087\tscripts/a.ts\tscripts/b.ts\nM\tscripts/c.ts");
+    expect(renamed).toEqual(["scripts/new.ts"]);
+    expect(assess(["scripts/new.ts"], "", [], renamed).ok).toBe(true);
+    expect(assess(["scripts/b.ts"], "", [], renamed).ok).toBe(false);
+  });
+
+  test("a demo scene is not runtime source", () => {
+    expect(isRuntimePath("apps/dev/src/demo/scene.tsx")).toBe(false);
+    expect(isRuntimePath("apps/dev/src/DevApp.tsx")).toBe(true);
   });
 });

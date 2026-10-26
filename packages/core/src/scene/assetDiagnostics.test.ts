@@ -2,6 +2,7 @@ import { describe, expect, test } from "bun:test";
 
 import {
   classifyAssetResponse,
+  pullTargetForUrl,
   readByteSignature,
   type AssetByteSignature,
 } from "./assetDiagnostics";
@@ -59,11 +60,17 @@ describe("classifyAssetResponse", () => {
     expect(d.message).toContain("kaykit-adventurers/Barbarian");
     expect(d.message).toContain("/models/kaykit-adventurers/Barbarian.glb");
     expect(d.message).toContain("404");
-    // Names the dir the dev server actually serves so the suggested `assets pull`
-    // fix resolves with no manual copy (issue #1499).
-    expect(d.message).toContain("assets pull <source>");
-    expect(d.message).toContain("apps/dev/public/models");
-    expect(d.message.toLowerCase()).toContain("no manual copy");
+    // Names the file and the one command that serves its pack.
+    expect(d.message).toContain("Missing file /models/kaykit-adventurers/Barbarian.glb");
+    expect(d.message).toContain("bun run games:provision");
+    expect(d.message).toContain("npx assets pull kaykit-adventurers");
+  });
+
+  test("a library model names its model: pull target", () => {
+    expect(pullTargetForUrl("/models/library/city/street-lamp/model.glb")).toBe("model:city/street-lamp");
+    expect(pullTargetForUrl("/materials/ambientcg-rock022/color.jpg")).toBe("ambientcg-rock022");
+    expect(pullTargetForUrl("/models/imported/deepward/a.glb")).toBeNull();
+    expect(pullTargetForUrl("/x.glb")).toBeNull();
   });
 
   test("status 0 (network failure) is missing", () => {
@@ -81,8 +88,8 @@ describe("classifyAssetResponse", () => {
     expect(d.kind).toBe("html");
     expect(d.message.toLowerCase()).toContain("html page");
     expect(d.message).toContain("missing/Prop");
-    expect(d.message).toContain("apps/dev/public/models");
-    expect(d.message.toLowerCase()).toContain("no manual copy");
+    expect(d.message).toContain("Missing file /models/missing/Prop.glb");
+    expect(d.message).toContain("npx assets pull missing");
   });
 
   test("html content-type with no readable bytes still flags html", () => {

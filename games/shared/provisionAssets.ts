@@ -1,9 +1,12 @@
 import { spawn } from "node:child_process";
 import { existsSync, readdirSync, readFileSync, statSync } from "node:fs";
-import { basename, join } from "node:path";
+import { basename, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 
+import { assetStoreRoot, linkFromStore, mainCheckoutOf, seedCandidates, seedStore } from "./assetStore";
+
 const assetsDir = fileURLToPath(new URL("../../packages/assets", import.meta.url));
+const provisionScript = fileURLToPath(new URL("../scripts/provision-assets.ts", import.meta.url));
 
 /** The asset catalogs a game's source is matched against. */
 export interface AssetCatalogs {
@@ -75,10 +78,10 @@ async function loadCatalogs(): Promise<AssetCatalogs> {
   return { sources: module.sources, library: module.MODEL_LIBRARY ?? [] };
 }
 
-function runPull(gameDir: string, target: string): Promise<boolean> {
+function runPull(cwd: string, target: string, outRoot: string): Promise<boolean> {
   return new Promise((resolve) => {
-    const child = spawn("bun", [join(assetsDir, "src/cli/pull.ts"), "pull", target, "--dir", join(gameDir, "public")], {
-      cwd: gameDir,
+    const child = spawn("bun", [join(assetsDir, "src/cli/pull.ts"), "pull", target, "--dir", outRoot], {
+      cwd,
       stdio: "inherit",
       windowsHide: true,
     });
@@ -87,23 +90,56 @@ function runPull(gameDir: string, target: string): Promise<boolean> {
   });
 }
 
+export interface ProvisionResult {
+  /** Targets now served from the shared store through a link. */
+  linked: string[];
+  /** Targets downloaded into the store by this call. */
+  pulled: string[];
+  /** Targets a download was tried for and failed. */
+  failed: string[];
+  /** Targets the store lacks and this call was told not to download (`download: false`). */
+  absent: string[];
+}
+
 /**
- * Pull every pack and library model a game references and is missing. Already-present ones are
- * skipped, so a provisioned game costs one source scan. Returns the targets that failed.
+ * Serve every pack and library model a game references and is missing from the shared asset store
+ * (`assetStore.ts`): link it when the store has it, seed the store from a copy any checkout already
+ * pulled, and only then download into the store. Already-present ones are skipped, so a provisioned
+ * game costs one source scan. `download: false` links what the store has and downloads nothing.
  */
-export async function provisionGame(gameDir: string, log: (line: string) => void = console.log): Promise<string[]> {
+export async function provisionGame(
+  gameDir: string,
+  options: { log?: (line: string) => void; download?: boolean; env?: Readonly<Record<string, string | undefined>> } = {},
+): Promise<ProvisionResult> {
+  const log = options.log ?? console.log;
+  const repoRoot = resolve(gameDir, "..", "..");
+  const store = assetStoreRoot(repoRoot, options.env);
+  const roots = [repoRoot, mainCheckoutOf(repoRoot) ?? repoRoot];
   const text = sourceText(join(gameDir, "src"));
   const scene = join(gameDir, "src", "editor.scene.json");
   const sceneText = existsSync(scene) ? readFileSync(scene, "utf8") : "";
   // Paved roads wear the default scanned asphalt even though no source line names its pack.
   const referenced = drawsPavedRoad(text, sceneText) ? `${text}\n"${DEFAULT_ROAD_SCAN_SOURCE}"` : text;
   const jobs = missingPulls(referenced, join(gameDir, "public"), await loadCatalogs());
-  const failed: string[] = [];
+  const result: ProvisionResult = { linked: [], pulled: [], failed: [], absent: [] };
   for (const job of jobs) {
-    log(`${basename(gameDir)}: pulling ${job.target}`);
-    if (!(await runPull(gameDir, job.target))) failed.push(job.target);
+    const storeDir = join(store, job.dir);
+    if (!seedStore(storeDir, seedCandidates(roots, job.dir))) {
+      if (options.download === false) {
+        result.absent.push(job.target);
+        continue;
+      }
+      log(`${basename(gameDir)}: pulling ${job.target} into the shared asset store ${store}`);
+      if (!(await runPull(gameDir, job.target, store))) {
+        result.failed.push(job.target);
+        continue;
+      }
+      result.pulled.push(job.target);
+    }
+    if (linkFromStore(storeDir, join(gameDir, "public", job.dir))) result.linked.push(job.target);
+    else result.failed.push(job.target);
   }
-  return failed;
+  return result;
 }
 
 /** Whether a dev server should pull missing assets: on by default, off in CI, `JG_DEV_PROVISION` overrides both. */
@@ -125,10 +161,15 @@ export function viteProvisionAssets(): { name: string; apply: "serve"; configure
     apply: "serve",
     async configureServer(server) {
       if (!shouldProvision(process.env)) return;
-      const failed = await provisionGame(server.config.root, (line) => console.error(`dev: ${line}`));
-      if (failed.length > 0) {
-        console.error(`dev: could not pull ${failed.join(", ")} - those models will show as named MISSING boxes`);
-      }
+      // Vite runs under Node, which cannot load the asset catalogs' TypeScript source, so the work
+      // runs in Bun: the same `games:provision` a lane would type.
+      const game = basename(server.config.root);
+      const ok = await new Promise<boolean>((resolve) => {
+        const child = spawn("bun", [provisionScript, game], { cwd: server.config.root, stdio: "inherit", windowsHide: true });
+        child.once("error", () => resolve(false));
+        child.once("exit", (code) => resolve(code === 0));
+      });
+      if (!ok) console.error(`dev: some models are not on disk and will show as named MISSING boxes; run: bun run games:provision ${game}`);
     },
   };
 }

@@ -56,8 +56,15 @@ export function supervise(dir: string, command: string): void {
   const fd = openSync(join(dir, "out.log"), "a");
   writeFileSync(join(dir, "runner"), `${process.pid}\n`);
   const [file, args] =
-    process.platform === "win32" ? ["cmd.exe", ["/d", "/s", "/c", command]] : ["bash", ["-lc", command]];
-  const child = spawn(file, args, { cwd: root, stdio: ["ignore", fd, fd], windowsHide: true });
+    // `chcp 65001` makes the console code page UTF-8, so a tool that encodes for the console
+    // (git, cmd builtins) writes the same UTF-8 bytes into the log that bun does.
+    process.platform === "win32" ? ["cmd.exe", ["/d", "/s", "/c", `chcp 65001 >nul & ${command}`]] : ["bash", ["-lc", command]];
+  const child = spawn(file, args, {
+    cwd: root,
+    stdio: ["ignore", fd, fd],
+    windowsHide: true,
+    env: { ...process.env, PYTHONUTF8: "1", PYTHONIOENCODING: "utf-8" },
+  });
   const finish = (code: number, note?: string): void => {
     if (note !== undefined) writeFileSync(join(dir, "out.log"), `${note}\n`, { flag: "a" });
     writeFileSync(join(dir, "exit"), `${code}\n`);

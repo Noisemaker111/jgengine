@@ -1,9 +1,9 @@
 import { Database } from "bun:sqlite";
-import { afterEach, expect, test } from "bun:test";
+import { afterEach, describe, expect, test } from "bun:test";
 import { mkdirSync, rmSync } from "node:fs";
 import { join, resolve } from "node:path";
 
-import { auditSession, attributeLane, classifyCommand, countReferences, cwdFilter, directoryMatches, pathForms, toolCallsFromMessages } from "./lane-audit";
+import { auditSession, attributeLane, claudeSession, classifyCommand, countReferences, cwdFilter, directoryMatches, pathForms, toolCallsFromMessages } from "./lane-audit";
 import type { ToolCall } from "./lane-audit";
 import { auditShapeProblem } from "./lane-close";
 
@@ -285,7 +285,7 @@ test("a worktree no session names exits non-zero naming the path it searched", (
   expect(result.stdout.trim()).toBe("");
   expect(result.stderr).toContain(absent);
   expect(result.stderr).toContain("no session in the window names");
-  expect(result.stderr).toContain("searched 2 child session(s)");
+  expect(result.stderr).toContain("searched 2 session(s)");
 });
 
 test("a session that only records the directory is used, and the weaker basis is said", () => {
@@ -359,12 +359,43 @@ test("an empty window says so instead of printing an empty table", () => {
   const fixture = fixtureDatabase();
   const result = run(["--db", fixture.path, "--hours", "0.5"]);
   expect(result.code).toBe(1);
-  expect(result.stderr).toContain("no child sessions in the last 0.5h");
+  expect(result.stderr).toContain("no sessions in the last 0.5h");
 });
 
 test("a missing database names every path it tried", () => {
   const result = run(["--db", join(SCRATCH, "absent", "opencode.db")]);
   expect(result.code).toBe(1);
-  expect(result.stderr).toMatch(/no database at|no child sessions/);
+  expect(result.stderr).toMatch(/no database at|no sessions/);
 });
 
+
+describe("Claude Code transcripts", () => {
+  test("a transcript is a session: its id, prompt, directory and timed tool calls", () => {
+    const at = (s: number): string => new Date(T0 + s * 1000).toISOString();
+    const lines = [
+      { type: "user", agentId: "agent-1", cwd: "C:/repo", timestamp: at(0), message: { content: "Fix the walls\nmore" } },
+      {
+        type: "assistant",
+        agentId: "agent-1",
+        timestamp: at(1),
+        message: { content: [{ type: "tool_use", id: "t1", name: "Bash", input: { command: "cd C:/repo/.claude/worktrees/lane && sleep 30", timeout: 1 } }] },
+      },
+      { type: "user", agentId: "agent-1", timestamp: at(31), message: { content: [{ type: "tool_result", tool_use_id: "t1" }] } },
+      "not json",
+    ].map((line) => (typeof line === "string" ? line : JSON.stringify(line)));
+    const read = claudeSession(lines.join("\n"), "fallback");
+    expect(read?.session).toEqual({ id: "agent-1", title: "Fix the walls", directory: "C:/repo", timeCreated: T0, timeUpdated: T0 + 31_000 });
+    expect(read?.calls).toHaveLength(1);
+    expect(read?.calls[0]?.ms).toBe(30_000);
+    const audit = auditSession(read!.session, read!.calls);
+    expect(audit.sleepMs).toBe(30_000);
+    const lane = attributeLane("C:/repo/.claude/worktrees/lane", [
+      { id: "agent-1", title: "t", directory: "C:/repo", timeUpdated: T0, waitingMs: 0, texts: read!.calls.map((call) => call.command) },
+    ]);
+    expect(lane.session).toBe("agent-1");
+  });
+
+  test("an empty transcript is no session", () => {
+    expect(claudeSession("", "x")).toBeNull();
+  });
+});

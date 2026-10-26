@@ -6,7 +6,9 @@ import { fileURLToPath } from "node:url";
 import { describe, expect, test } from "bun:test";
 
 import {
+  bootsFor,
   buildPlan,
+  MAX_BOOTS,
   changedFiles,
   fastSteps,
   fullSteps,
@@ -17,6 +19,7 @@ import {
   jsonRun,
   makeResolver,
   ownTests,
+  pureRenames,
   runSteps,
   splitByCost,
   specifiers,
@@ -27,6 +30,7 @@ import {
   type Workspace,
 } from "./verify-fast";
 import { matchingShard, walkTestFiles } from "./test-shard";
+import { REPRESENTATIVE_GAME } from "./ci-scope";
 
 const root = fileURLToPath(new URL("..", import.meta.url));
 
@@ -63,6 +67,33 @@ describe("what changed", () => {
       writeFileSync(join(dir, "src/untracked.ts"), "export const d = 1;\n");
 
       expect(changedFiles(dir, "base")).toEqual(["src/committed.ts", "src/staged.ts", "src/untouched.ts", "src/untracked.ts"]);
+    } finally {
+      rmSync(dir, { recursive: true, force: true });
+    }
+  });
+
+  test("a file moved without an edit is a pure rename; a moved and edited one is not", () => {
+    const dir = join(root, ".scratch", `verify-fast-rename-${process.pid}-${Date.now()}`);
+    mkdirSync(join(dir, "src"), { recursive: true });
+    const git = (...args: string[]): void => {
+      const result = spawnSync("git", args, { cwd: dir, encoding: "utf8", timeout: 10_000 });
+      if (result.status !== 0) throw new Error(`git ${args.join(" ")}: ${result.stderr}`);
+    };
+    try {
+      git("init", "-q");
+      git("config", "user.email", "lane@example.test");
+      git("config", "user.name", "lane");
+      const body = Array.from({ length: 20 }, (_, i) => `export const v${i} = ${i};`).join("\n");
+      writeFileSync(join(dir, "src/a.ts"), `${body}\n`);
+      writeFileSync(join(dir, "src/b.ts"), `${body}\nexport const b = 1;\n`);
+      git("add", ".");
+      git("commit", "-qm", "base");
+      git("branch", "base");
+      git("mv", "src/a.ts", "src/moved.ts");
+      git("mv", "src/b.ts", "src/edited.ts");
+      writeFileSync(join(dir, "src/edited.ts"), `${body}\nexport const b = 2;\n`);
+      git("add", ".");
+      expect(pureRenames(dir, "base")).toEqual(["src/moved.ts"]);
     } finally {
       rmSync(dir, { recursive: true, force: true });
     }
@@ -193,15 +224,42 @@ describe("test mapping", () => {
 });
 
 describe("attribution fails loudly", () => {
-  test("a runtime file no test reaches is reported, not passed", () => {
+  test("a package file no test names is covered by running its package's suite", () => {
     const plan = buildPlan({
       changed: ["packages/core/src/world/terrain.ts", "packages/core/src/world/unreachable.ts"],
-      testFiles: ["packages/core/src/world/terrain.test.ts"],
+      testFiles: ["packages/core/src/world/terrain.test.ts", "packages/core/src/other.test.ts", "packages/react/src/a.test.ts"],
       workspaces: fakeWorkspaces,
       readText: () => "",
       resolveSpecifier: () => [],
     });
-    expect(plan.unattributed).toEqual(["packages/core/src/world/unreachable.ts"]);
+    expect(plan.unattributed).toEqual([]);
+    expect(plan.suites).toEqual(["packages/core"]);
+    expect(plan.tests).toContain("packages/core/src/other.test.ts");
+    expect(plan.tests).not.toContain("packages/react/src/a.test.ts");
+  });
+
+  test("a root script no test reaches is reported, not passed", () => {
+    const plan = buildPlan({
+      changed: ["scripts/unreachable.ts"],
+      testFiles: ["scripts/other.test.ts"],
+      workspaces: fakeWorkspaces,
+      readText: () => "",
+      resolveSpecifier: () => [],
+    });
+    expect(plan.unattributed).toEqual(["scripts/unreachable.ts"]);
+  });
+
+  test("a pure rename and a demo never need a test", () => {
+    const plan = buildPlan({
+      changed: ["scripts/moved.ts", "apps/dev/src/demo/scene.tsx"],
+      testFiles: [],
+      workspaces: fakeWorkspaces,
+      readText: () => "",
+      resolveSpecifier: () => [],
+      exempt: ["scripts/moved.ts"],
+    });
+    expect(plan.unattributed).toEqual([]);
+    expect(isRuntimeSource("apps/dev/src/demo/scene.tsx")).toBe(false);
   });
 
   test("docs, data and declarations need no test", () => {
@@ -248,10 +306,12 @@ describe("static gates", () => {
       tests: [],
       gates: ["check-export-manifest", "check-skill-api"],
       unattributed: [],
+      suites: [],
+      boots: [],
     });
     const manifest = steps.find((step) => step.name === "check-export-manifest");
     const skillApi = fastSteps(
-      { changed: ["packages/core/src/world/terrain.ts"], typechecks: [], tests: [], gates: ["check-skill-api"], unattributed: [] },
+      { changed: ["packages/core/src/world/terrain.ts"], typechecks: [], tests: [], gates: ["check-skill-api"], unattributed: [], suites: [], boots: [] },
       { skillApi: true },
     ).find((step) => step.name === "check-skill-api");
     expect(manifest?.fix).toContain("bun run gen");
@@ -267,6 +327,8 @@ describe("static gates", () => {
       tests: [],
       gates: ["check-artifacts", "check-export-manifest", "check-skill-api"],
       unattributed: [],
+      suites: [],
+      boots: [],
     };
     const byDefault = fastSteps(plan).map((step) => step.name);
     expect(byDefault).not.toContain("check-skill-api");
@@ -581,5 +643,30 @@ describe("--json", () => {
       { name: "check-changelog", ok: false, ms: 40 },
     ]);
     expect(stderr).toEqual(["missing entry for packages/core"]);
+  });
+});
+
+describe("local boots", () => {
+  test("a game's own change boots that game; an engine change a game draws boots the representative; a test or doc boots none", () => {
+    expect(bootsFor(["games/scrap-signal/src/game/world.ts"])).toEqual(["scrap-signal"]);
+    expect(bootsFor(["games/scrap-signal/src/game/world.test.ts"])).toEqual([]);
+    expect(bootsFor(["README.md"])).toEqual([]);
+    expect(bootsFor(["packages/shell/src/render/modelLoad.ts"])).toEqual([REPRESENTATIVE_GAME]);
+    expect(bootsFor(["games/a/src/x.ts", "games/b/src/x.ts", "games/c/src/x.ts"])).toHaveLength(MAX_BOOTS);
+  });
+
+  test("a boot links the packs from the shared store first, then probes the running page", () => {
+    const steps = fastSteps({ changed: [], typechecks: [], tests: [], gates: [], unattributed: [], suites: [], boots: ["scrap-signal"] });
+    expect(steps.map((step) => step.command.join(" "))).toEqual([
+      "bun games/scripts/provision-assets.ts scrap-signal",
+      "bun games/scripts/capabilities-probe.ts scrap-signal",
+    ]);
+    expect(steps[1]?.needs).toEqual(["provision scrap-signal"]);
+  });
+
+  test("the games job's capability gates run here with CI's arguments", () => {
+    const steps = fastSteps({ changed: [], typechecks: [], tests: [], gates: gatesFor(["games/x/src/a.ts"]), unattributed: [], suites: [], boots: [] });
+    expect(steps.map((step) => step.command.join(" "))).toContain("bun run games:capabilities-sync -- --check");
+    expect(steps.map((step) => step.command.join(" "))).toContain("bun run games:check-capabilities -- --summary");
   });
 });

@@ -1160,3 +1160,17 @@ test("checks that already failed stop the hand-off, and a failed verify never ar
   expect(unverified.calls.some((call) => call[1] === "merge")).toBe(false);
   expect(second.logs).toContain("verify bun run ship:preflight");
 });
+
+test("a reused PR keeps its body and gets the Bends section the diff now shows", () => {
+  const { gh, calls } = scriptedGh({ open: [{ number: 12, url: "https://example.test/12" }], body: "Context.\n\n## Bends\n\nold" });
+  const pr = ensurePr({
+    args: { base: "beta" },
+    branch: "agent/lane-x",
+    summary: "the last commit",
+    body: { text: "from the fragment", explicit: false, bends: "## Bends\n\n- test skipped: `a.test.ts` - test.skip" },
+    gh,
+    log: noLog,
+  });
+  expect(pr).toEqual({ number: 12, url: "https://example.test/12" });
+  expect(calls).toContainEqual(["pr", "edit", "12", "--body", "Context.\n\n## Bends\n\n- test skipped: `a.test.ts` - test.skip\n"]);
+});
