@@ -4,9 +4,9 @@ import {
   WorldTelegraphs,
 } from "@jgengine/core/hud/WorldHud.draw";
 import { HitReactionShake } from "./camera/shake/HitReactionShake";
-import { WorldSpellVfx } from "./world/WorldVfx";
+import { SpellVfx } from "./vfx/SpellVfx";
 import { HitMarkers, MuzzleFlashes } from "./world/ShotFeedback";
-import { RetainedVfx } from "./world/RetainedVfx";
+import { RetainedVfx } from "./vfx/RetainedVfx";
 import { ImpactFeedback } from "./world/ImpactFeedback";
 import { CorpseRagdolls } from "./render/CorpseRagdolls";
 import { POSTFX_OVERLAY_USERDATA } from "./postfx/postfxOverlay";
@@ -22,7 +22,7 @@ export function CombatPresentation({ effects }: { effects: ResolvedPresentationE
       {effects.telegraphs ? <WorldTelegraphs /> : null}
       {effects.vfx ? (
         <>
-          <WorldSpellVfx />
+          <SpellVfx />
           <RetainedVfx />
         </>
       ) : null}

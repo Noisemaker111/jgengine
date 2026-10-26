@@ -273,7 +273,7 @@ function VfxItem({ event, texture }: { event: CombatVfxEvent; texture: THREE.Tex
  *
  * @internal
  */
-export function WorldSpellVfx({ tailMs = 200 }: { tailMs?: number }) {
+export function SpellVfx({ tailMs = 200 }: { tailMs?: number }) {
   const ctx = useGameContext();
   const texture = useRadialTexture();
   const [active, setActive] = useState<ActiveVfx[]>([]);

@@ -7920,8 +7920,8 @@
       "packages": [
         "@jgengine/core"
       ],
-      "module": "@jgengine/core/game/vfxInstance",
-      "domain": "game",
+      "module": "@jgengine/core/vfx/vfxInstance",
+      "domain": "vfx",
       "gameFacing": false,
       "probe": null,
       "intent": "create/update/stop long-lived dynamic visual effects (beam, tether, zone, target line) by stable id"

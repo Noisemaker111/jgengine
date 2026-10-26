@@ -1,7 +1,7 @@
 import { describe, expect, test } from "bun:test";
 import * as THREE from "three";
 
-import { slashArcPoint } from "./WorldVfx";
+import { slashArcPoint } from "./SpellVfx";
 
 describe("melee slash arc", () => {
   const from = new THREE.Vector3(0, 1, 0);

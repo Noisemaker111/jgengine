@@ -2,7 +2,7 @@ import { useFrame } from "@react-three/fiber";
 import { useEffect, useRef, useState } from "react";
 import * as THREE from "three";
 import type { VfxRef } from "@jgengine/core/game/events";
-import type { VfxInstanceState } from "@jgengine/core/game/vfxInstance";
+import type { VfxInstanceState } from "@jgengine/core/vfx/vfxInstance";
 import type { GameContext } from "@jgengine/core/runtime/gameContext";
 import { useGameContext } from "@jgengine/react/provider";
 
@@ -111,7 +111,7 @@ function RetainedBeam({
 /**
  * Renders retained VFX instances (`combat.vfxInstance` ops from {@link GameContext}'s `scene.entity.vfxInstance`
  * store) as long-lived beams whose endpoints follow live entity poses. Auto-mounted by the player shell alongside
- * the one-shot {@link WorldSpellVfx} overlay. `upsert`/`update` mutate render resources imperatively (no per-frame
+ * the one-shot {@link SpellVfx} overlay. `upsert`/`update` mutate render resources imperatively (no per-frame
  * React allocation); only create/stop change the mounted set, and `stop` fades out over its requested duration.
  * Beam is the first shipped retained renderer; other kinds are ignored here for a future renderer to claim.
  *

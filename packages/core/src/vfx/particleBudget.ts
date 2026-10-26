@@ -10,8 +10,18 @@ export interface ParticleBudgetEntry {
   id: string;
   /** Drop order: higher survives, lower is dropped first. */
   priority: number;
-  /** Particles this effect wants (its pool maximum, or a burst's count). */
-  requested: number;
+  /** Particles this effect wants (its pool maximum, or a burst's count). Omit to ask for the full {@link ParticleBudgetOptions.effectCap}. */
+  requested?: number;
+}
+
+/** Knobs on {@link planParticleBudget}. */
+export interface ParticleBudgetOptions {
+  /**
+   * The most one effect may hold: the graphics tier's `particleCap`. Each request is clamped to it
+   * (an unsized request takes all of it, and any request keeps at least one particle) before the
+   * total `cap` is shared out. A finite count; omitted or non-finite takes requests as they are.
+   */
+  effectCap?: number;
 }
 
 /** An admitted effect and the particles it may hold. */
@@ -45,10 +55,15 @@ function count(value: number | undefined, fallback = 0): number {
  *
  * @capability plan-particle-budget cap live particles to a graphics tier and drop whole effects lowest-priority-first when over budget
  */
-export function planParticleBudget(entries: readonly ParticleBudgetEntry[], cap: number): ParticleBudgetPlan {
-  const limit = count(cap);
+export function planParticleBudget(entries: readonly ParticleBudgetEntry[], cap: number, options: ParticleBudgetOptions = {}): ParticleBudgetPlan {
+  const limit = cap === Infinity ? Infinity : count(cap);
+  const effectCap = typeof options.effectCap === "number" && Number.isFinite(options.effectCap) ? Math.max(1, Math.floor(options.effectCap)) : undefined;
+  const wanted = (requested: number | undefined): number => {
+    if (effectCap === undefined) return count(requested);
+    return typeof requested === "number" && Number.isFinite(requested) ? Math.max(1, Math.floor(Math.min(requested, effectCap))) : effectCap;
+  };
   const ordered = entries
-    .map((entry, index) => ({ entry, index, priority: Number.isFinite(entry.priority) ? entry.priority : 0, wanted: count(entry.requested) }))
+    .map((entry, index) => ({ entry, index, priority: Number.isFinite(entry.priority) ? entry.priority : 0, wanted: wanted(entry.requested) }))
     .sort((a, b) => (b.priority - a.priority) || (a.index - b.index));
   const grants: ParticleBudgetGrant[] = [];
   const dropped: string[] = [];
@@ -63,5 +78,5 @@ export function planParticleBudget(entries: readonly ParticleBudgetEntry[], cap:
     remaining -= particles;
   }
   dropped.reverse();
-  return { grants, dropped, particles: limit - remaining };
+  return { grants, dropped, particles: grants.reduce((sum, grant) => sum + grant.particles, 0) };
 }

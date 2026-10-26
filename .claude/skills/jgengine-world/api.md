@@ -2744,8 +2744,9 @@
 
 - `ParticleBudgetEntry` (interface): interface ParticleBudgetEntry — The graphics-tier particle budget. A tier caps the live particle count across every effect on screen; when the requested effects do not fit, whole effects are dropped in a defined order (lowest {@link ParticleBudgetEntry.priority} first) rather than every effect thinning out.
 - `ParticleBudgetGrant` (interface): interface ParticleBudgetGrant — An admitted effect and the particles it may hold.
+- `ParticleBudgetOptions` (interface): interface ParticleBudgetOptions — Knobs on {@link planParticleBudget}.
 - `ParticleBudgetPlan` (interface): interface ParticleBudgetPlan — What the tier cap admits, and what it drops.
-- `planParticleBudget` (function): function planParticleBudget(entries: readonly ParticleBudgetEntry[], cap: number): ParticleBudgetPlan — Allocate a tier's particle cap across the effects that want it.
+- `planParticleBudget` (function): function planParticleBudget(entries: readonly ParticleBudgetEntry[], cap: number, options: ParticleBudgetOptions = {}): ParticleBudgetPlan — Allocate a tier's particle cap across the effects that want it.
 
 ## @jgengine/core/vfx/particleDirector
 
@@ -2790,6 +2791,18 @@
 - `ScreenEffectsSnapshot` (interface): interface ScreenEffectsSnapshot — Serializable state of every active effect, for save/restore and replay.
 - `StoredScreenEffect` (interface): interface StoredScreenEffect — A persisted effect record (all spec fields resolved plus its start time and id).
 - `createScreenEffects` (function): function createScreenEffects(options: ScreenEffectsOptions = {}): ScreenEffectsController — A serializable screen-feedback controller: a game triggers transient flashes and edge vignettes (a red damage hit, a green heal flash) or sustained, optionally oscillating tints (a low-health pulse), and reads back a composite of the effects to draw right now with their eased opacities. It is clock-driven — call `advance()` each frame against an injected `now` — and allocation-aware: the composite array and its entries are pooled and reused, so steady-state ticking never allocates. Nothing here is genre-specific: `kind` is a free label the game owns and styles, and vignette / flash / pulse are just parameterizations of the same data (region shape, decay easing, sustained oscillation). A shell overlay subscribes and renders; `snapshot`/`restore` round-trips through a save.
+
+## @jgengine/core/vfx/vfxInstance
+
+- `CombatVfxInstanceEvent` (interface): interface CombatVfxInstanceEvent — The lifecycle op a {@link VfxInstanceStore} emits to its renderer sink. `upsert`/`update` carry the full merged {@link VfxInstanceState} (the renderer applies it directly, no merge); `stop` carries the id plus a fade duration. This is the payload of the `combat.vfxInstance` game event when the store is wired to the event bus.
+- `VfxInstancePatch` (interface): interface VfxInstancePatch — A partial update to a live retained VFX instance. Only the provided fields change; `params` is shallow-merged so a caller can nudge one knob without resending the whole bag. Setting a field to `undefined` clears it. Applying a patch refreshes the instance heartbeat.
+- `VfxInstanceSpec` (interface): interface VfxInstanceSpec — The serializable specification for creating (or replacing) a retained VFX instance. Unlike a one-shot `combat.vfx` burst this describes a long-lived effect whose endpoints and parameters are updated over time. `id` is caller-stable so repeated `upsert` calls address the same effect; omit it to mint one. `from`/`to` are {@link VfxRef}s (an entity instance id or a world point) that a renderer resolves each frame, so an endpoint bound to a moving entity follows it without any per-frame command traffic.
+- `VfxInstanceState` (interface): interface VfxInstanceState — The stored, fully-resolved form of a retained VFX instance. It is a plain serializable record so hosts can replicate it and debug tooling can inspect it; renderers receive it verbatim and never merge partial state themselves. `updatedAtMs` is the last create/update time and drives TTL heartbeat eviction.
+- `VfxInstanceStopOptions` (interface): interface VfxInstanceStopOptions — Options for {@link VfxInstanceStore.stop}.
+- `VfxInstanceStore` (interface): interface VfxInstanceStore — A headless registry of retained VFX instances: create/replace, partially update, and stop long-lived effects addressed by stable id, independent of any renderer. It owns the authoritative serializable state and exposes inspection counts; wire {@link VfxInstanceStoreOptions.onOp} to a renderer (via the `combat.vfxInstance` event) to drive visuals.
+- `VfxInstanceStoreOptions` (interface): interface VfxInstanceStoreOptions — Options for {@link createVfxInstanceStore}.
+- `VfxInstanceStoreState` (interface): interface VfxInstanceStoreState — Plain JSON state of a {@link VfxInstanceStore}.
+- `createVfxInstanceStore` (function): function createVfxInstanceStore(options: VfxInstanceStoreOptions = {}): VfxInstanceStore — Build a headless retained-VFX registry. The store is the serializable source of truth for long-lived effects (beams, tethers, zones, target lines, looping emitters) that must move and mutate without one-shot re-emit flicker: `upsert` creates or replaces by stable id, `update` nudges dynamic params, `stop` disposes with an optional fade, and `tick` enforces TTL heartbeats. It stays independent of renderer availability, so simulation and tests run without a shell; a wired `onOp` sink turns each op into a `combat.vfxInstance` event the shell binds to render resources.
 
 ## @jgengine/core/visibility/assetStreaming
 

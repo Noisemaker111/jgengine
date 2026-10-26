@@ -347,16 +347,6 @@ export {
 } from "./game/talentTreeView";
 export { createTalentTree, type TalentNodeDef, type TalentTree } from "./game/talents";
 export { createUnlockCatalog, createUnlocks, type UnlockDef } from "./game/unlocks";
-export {
-  createVfxInstanceStore,
-  type CombatVfxInstanceEvent,
-  type VfxInstancePatch,
-  type VfxInstanceSpec,
-  type VfxInstanceState,
-  type VfxInstanceStopOptions,
-  type VfxInstanceStore,
-  type VfxInstanceStoreOptions,
-} from "./game/vfxInstance";
 export { type ActionCodes, type ActionCodesMap, type ActionStateTracker } from "./input/actionBindings";
 export { NEUTRAL_AXIS, type AxisBindingMap, type AxisChannelConfig, type AxisInput } from "./input/axisInput";
 export {
@@ -840,6 +830,16 @@ export {
 export { createCommitController } from "./turn/commit";
 export { createIntentBoard } from "./turn/intent";
 export { createTurnLoop, type TurnLoop } from "./turn/turnLoop";
+export {
+  createVfxInstanceStore,
+  type CombatVfxInstanceEvent,
+  type VfxInstancePatch,
+  type VfxInstanceSpec,
+  type VfxInstanceState,
+  type VfxInstanceStopOptions,
+  type VfxInstanceStore,
+  type VfxInstanceStoreOptions,
+} from "./vfx/vfxInstance";
 export {
   dispatchExpedition,
   recallExpedition,

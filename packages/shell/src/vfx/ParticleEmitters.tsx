@@ -10,16 +10,8 @@ import { planParticleBudget } from "@jgengine/core/vfx/particleBudget";
 import type { ParticleCollisionEffect, ParticleEmitterSpec, ParticleRenderHint } from "@jgengine/core/vfx/particleDirector";
 import { useGameContext } from "@jgengine/react/provider";
 
-import { ParticleField, type ParticleFieldMetrics } from "../vfx/ParticleField";
+import { ParticleField, type ParticleFieldMetrics } from "./ParticleField";
 import type { Vec3 } from "@jgengine/core/world/geometry";
-
-/** The requested visual pool clamped to the graphics tier. */
-export function resolveParticleBudget(quality: GraphicsQuality, requested: number | undefined, particleCap?: number): number {
-  const tier = DEFAULT_GRAPHICS_PROFILES[quality].particleCap;
-  const rawCap = particleCap ?? tier;
-  const cap = Number.isFinite(rawCap) ? Math.max(1, Math.floor(rawCap)) : tier;
-  return Number.isFinite(requested) ? Math.max(1, Math.floor(Math.min(requested!, cap))) : cap;
-}
 
 interface ParticlePose { position: Vec3; yaw: number; found: boolean }
 
@@ -72,7 +64,7 @@ export function resolveParticleDelta(previousTime: number, gameTime: number): nu
 }
 
 /** Renders the existing director and pooled simulator; named bursts reuse the standing pool. @internal */
-export function WorldParticles({ quality, particleCap, particleBudget, diagnostics = false }: { quality: GraphicsQuality; particleCap?: number; particleBudget?: number; diagnostics?: boolean }): ReactElement {
+export function ParticleEmitters({ quality, particleCap, particleBudget, diagnostics = false }: { quality: GraphicsQuality; particleCap?: number; particleBudget?: number; diagnostics?: boolean }): ReactElement {
   const ctx = useGameContext();
   const emittersRef = useRef(new Map<string, EmitterInstance>());
   const burstsRef = useRef<BurstInstance[]>([]);
@@ -143,13 +135,14 @@ export function WorldParticles({ quality, particleCap, particleBudget, diagnosti
     const emitters = emittersRef.current;
     function sync(): void {
       let changed = false;
-      const cap = resolveParticleBudget(quality, undefined, particleBudget ?? DEFAULT_GRAPHICS_PROFILES[quality].particleBudget);
+      const tier = DEFAULT_GRAPHICS_PROFILES[quality];
+      const cap = particleBudget ?? tier.particleBudget;
       const specs = ctx.particles.emitters();
       const queued = ctx.particles.drainBursts();
       const plan = planParticleBudget([
-        ...specs.map((spec) => ({ id: spec.id, priority: spec.priority ?? 0, requested: resolveParticleBudget(quality, spec.config.max, particleCap) })),
-        ...queued.map((burst) => ({ id: `burst:${burst.seq}`, priority: burst.priority ?? 0, requested: resolveParticleBudget(quality, Math.min(burst.count, burst.config.max ?? burst.count), particleCap) })),
-      ], cap);
+        ...specs.map((spec) => ({ id: spec.id, priority: spec.priority ?? 0, ...(spec.config.max === undefined ? {} : { requested: spec.config.max }) })),
+        ...queued.map((burst) => ({ id: `burst:${burst.seq}`, priority: burst.priority ?? 0, requested: Math.min(burst.count, burst.config.max ?? burst.count) })),
+      ], cap, { effectCap: particleCap !== undefined && Number.isFinite(particleCap) ? particleCap : tier.particleCap });
       const granted = new Map(plan.grants.map((grant) => [grant.id, grant.particles]));
       budget.current = { cap, particles: plan.particles, dropped: plan.dropped };
       const liveIds = new Set<string>();
@@ -226,7 +219,7 @@ export function WorldParticles({ quality, particleCap, particleBudget, diagnosti
       for (const instance of emittersRef.current.values()) read(instance.system);
       for (const burst of burstsRef.current) read(burst.system);
       const sample = timing.current, fields = resources.current;
-      return { scope: "WorldParticles", emitters: emittersRef.current.size, bursts: burstsRef.current.length, count, capacity, renderBufferBytes,
+      return { scope: "ParticleEmitters", emitters: emittersRef.current.size, bursts: burstsRef.current.length, count, capacity, renderBufferBytes,
         cap: budget.current.cap, budgetParticles: budget.current.particles, dropped: budget.current.dropped.length, droppedIds: budget.current.dropped,
         poolsCreated: sample.poolsCreated, poolsRetired: sample.poolsRetired,
         updateSamples: sample.updateSamples, lastUpdateMs: sample.lastUpdateMs, maxUpdateMs: sample.maxUpdateMs,

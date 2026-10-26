@@ -1,4 +1,4 @@
-import type { RetainedVfxKind, VfxRef } from "./events";
+import type { RetainedVfxKind, VfxRef } from "../game/events";
 
 /**
  * The serializable specification for creating (or replacing) a retained VFX instance. Unlike a one-shot
