@@ -1265,6 +1265,13 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `surfaceRing` (function) · `import { surfaceRing } from "@jgengine/core/terrain/terrainGuides"`
 
+## survey-terrain — build a real-world-style landmass (shores, summits, chains, rivers, biomes) from scene shapes and ask it where land and biomes are
+
+- `surveyBiomeAt` (function) · `import { surveyBiomeAt } from "@jgengine/core/terrain/surveyTerrain"`
+- `surveyFromDocument` (function) · `import { surveyFromDocument } from "@jgengine/core/terrain/surveyTerrain"`
+- `surveyHeightField` (function) · `import { surveyHeightField } from "@jgengine/core/terrain/surveyTerrain"`
+- `surveyIsLand` (function) · `import { surveyIsLand } from "@jgengine/core/terrain/surveyTerrain"`
+
 ## sync-authored-objects — synchronize edited catalog prop poses, elevation and removal through the existing object store
 
 - `syncAuthoredObjects` (function) · `import { syncAuthoredObjects } from "@jgengine/core/world/authoredObjects"`

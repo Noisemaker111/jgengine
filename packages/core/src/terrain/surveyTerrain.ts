@@ -181,6 +181,7 @@ interface IndexedRidge {
  * its crater), every chain as a crest falling off to the plains. Mountains rise out of the plains with
  * a rock roughness that grows with height. Pure and deterministic; feed it to `terrain({ heightField })`
  * with {@link surveyTerrain}'s coast so the shore eases it down to the beach.
+ * @capability survey-terrain build a real-world-style landmass (shores, summits, chains, rivers, biomes) from scene shapes and ask it where land and biomes are
  */
 export function surveyHeightField(survey: Survey, plains: SurveyPlains = {}): (x: number, z: number) => number {
   const height = plains.height ?? 8;
@@ -256,7 +257,10 @@ export function surveyTerrain(survey: Survey, options: SurveyTerrainOptions = {}
   };
 }
 
-/** The biome at a point: the last outline (in survey order) that contains it, or null outside them all. */
+/**
+ * The biome at a point: the last outline (in survey order) that contains it, or null outside them all.
+ * @capability survey-terrain build a real-world-style landmass (shores, summits, chains, rivers, biomes) from scene shapes and ask it where land and biomes are
+ */
 export function surveyBiomeAt(survey: Survey, x: number, z: number): SurveyBiome | null {
   for (let i = survey.biomes.length - 1; i >= 0; i -= 1) {
     const biome = survey.biomes[i]!;
@@ -265,7 +269,10 @@ export function surveyBiomeAt(survey: Survey, x: number, z: number): SurveyBiome
   return null;
 }
 
-/** Whether a point is on land: inside one of the survey's shore outlines. */
+/**
+ * Whether a point is on land: inside one of the survey's shore outlines.
+ * @capability survey-terrain build a real-world-style landmass (shores, summits, chains, rivers, biomes) from scene shapes and ask it where land and biomes are
+ */
 export function surveyIsLand(survey: Survey, x: number, z: number): boolean {
   return survey.coasts.some((ring) => pointInPolygon(ring, x, z));
 }
