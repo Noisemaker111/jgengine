@@ -70,7 +70,6 @@ export interface HudOverflow {
 
 /**
  * Non-null when any edge of `rect` falls outside `viewport` by more than `tolerance` px; each field is the overflow distance past that edge (0 when inside).
- * @internal
  */
 export function rectOverflow(rect: HudRect, viewport: HudSize, tolerance = 1.5): Omit<HudOverflow, "id"> | null {
   const left = Math.max(0, -rect.x);

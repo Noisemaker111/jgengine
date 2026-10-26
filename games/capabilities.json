@@ -6384,8 +6384,8 @@
       "packages": [
         "@jgengine/shell"
       ],
-      "module": "@jgengine/shell/world/WorldHud",
-      "domain": "world",
+      "module": "@jgengine/shell/hud/WorldHud",
+      "domain": "hud",
       "gameFacing": false,
       "probe": null,
       "intent": "billboarded name + HP bar over nearby entities"
@@ -11003,8 +11003,8 @@
       "packages": [
         "@jgengine/shell"
       ],
-      "module": "@jgengine/shell/world/WorldHud",
-      "domain": "world",
+      "module": "@jgengine/shell/hud/WorldHud",
+      "domain": "hud",
       "gameFacing": false,
       "probe": null,
       "intent": "ground-ring highlight over every selected placed object"

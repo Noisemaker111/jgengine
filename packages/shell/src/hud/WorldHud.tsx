@@ -1,3 +1,4 @@
+// home-ok: world-space HUD (nameplates, entity bars, float text, reticle, tracers, telegraphs) is HUD drawn in the scene
 import { Html, Line } from "@react-three/drei";
 import { useFrame, useThree } from "@react-three/fiber";
 import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
@@ -11,7 +12,7 @@ import { useGameContext } from "@jgengine/react/provider";
 import type { GameContext } from "@jgengine/core/runtime/gameContextTypes";
 import { readFirstPersonMuzzle } from "../camera/GameFirstPersonCamera";
 import { readEntityMuzzle } from "../render/entityMuzzle";
-import { resolveFloatTextStyle } from "./floatTextStyle";
+import { resolveFloatTextStyle } from "../world/floatTextStyle";
 import {
   collectNameplateSamples,
   collectWorldBarSamples,
@@ -24,14 +25,14 @@ import {
   worldNameplateTargetFilter,
   type NameplateSample,
   type WorldBarSample,
-} from "./worldBarSamples";
-import { telegraphPulseOpacity } from "./telegraphPulse";
+} from "../world/worldBarSamples";
+import { telegraphPulseOpacity } from "../world/telegraphPulse";
 import { useRenderVisibility } from "../visibility/CullingProvider";
 import { CAMERA_POST_FRAME_PRIORITY } from "../camera/cameraRigs";
 
-export type { NameplateSample, WorldBarSample } from "./worldBarSamples";
-export { collectNameplateSamples, collectWorldBarSamples, paintWorldBarSamples } from "./worldBarSamples";
-export { telegraphPulseOpacity } from "./telegraphPulse";
+export type { NameplateSample, WorldBarSample } from "../world/worldBarSamples";
+export { collectNameplateSamples, collectWorldBarSamples, paintWorldBarSamples } from "../world/worldBarSamples";
+export { telegraphPulseOpacity } from "../world/telegraphPulse";
 
 function pinOverlayToViewport(
   _el: THREE.Object3D,

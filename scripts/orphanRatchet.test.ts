@@ -37,6 +37,16 @@ describe("orphan baseline shrink-only ratchet", () => {
     expect(result.added).toContain("@jgengine/core/z#Sneaked");
   });
 
+  test("a symbol whose file moved folders is the same orphan, not a new one", () => {
+    const committed = ["@jgengine/core/x/a#Foo", "@jgengine/core/b#Bar", "@jgengine/core/c#Baz"];
+    expect(orphanRatchetViolations(REFERENCE, committed).ok).toBe(true);
+  });
+
+  test("the same name in another package is still new", () => {
+    const committed = [...REFERENCE, "@jgengine/react/a#Foo"];
+    expect(orphanRatchetViolations(REFERENCE, committed).added).toEqual(["@jgengine/react/a#Foo"]);
+  });
+
   test("parseBaseline rejects non-string-array baselines", () => {
     expect(() => parseBaseline('{"not":"an array"}')).toThrow();
     expect(() => parseBaseline("[1, 2, 3]")).toThrow();

@@ -19,7 +19,6 @@ import { registerSimStepper } from "../devtools/simStepper";
 
 /**
  * Drives a HUD-only page: steps the sim with no 3D canvas so a capture can render just the game UI.
- * @internal
  */
 export function HudOnlyDriver({
   ctx,
