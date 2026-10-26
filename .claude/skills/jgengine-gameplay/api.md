@@ -1168,8 +1168,7 @@
 - `DEFAULT_RIDE_FUN_CURVE` (const): const DEFAULT_RIDE_FUN_CURVE: ResponseCurve — How empty a bored guest's fun need has to be before a ride starts to pull, by default.
 - `DEFAULT_RIDE_RATING_RANGE` (const): const DEFAULT_RIDE_RATING_RANGE: RideRatingRange — A 0–10 rating scale, the usual shape of a ride catalog. Override it when a park rates differently.
 - `DEFAULT_TOUCH_STYLE` (const): const DEFAULT_TOUCH_STYLE: TouchStyle — Skin used when neither the game nor the player picks one.
-- `DecayMeterSet` (interface): interface DecayMeterSet — Set of named survival meters (hunger/thirst/…) that drain and refill over game time.
-- `DecayMeterValues` (type): type DecayMeterValues = Record<string, number> — Plain-data meter values: `meter id → current value`. The value half of a save — a tuned meter also needs its rate and rate modifiers, which {@link DecayMeterSetState} carries and {@link createDecayMeterSet}'s `serialize`/`restore` hand back and forth.
+- `DecayMeterValues` (type): type DecayMeterValues = Record<string, number> — Plain-data meter values: `meter id → current value`. The value half of a save — a tuned meter also needs its rate and rate modifiers, which `createNeedSet` (`sim/needs`) snapshots and restores.
 - `DecayModifier` (type): type DecayModifier = number | Record<string, number> — Rate multiplier for {@link decayMeters}: one scalar applied to every meter (a member's metabolism, a game-mode harshness dial) or a per-meter record (cold biome → warmth only). `1` / omitted leaves the base rates unscaled.
 - `DefendMissionOptions` (interface): interface DefendMissionOptions extends ComposedMissionOptions — Options for {@link defendMission}: hold a position, scored by what is left standing.
 - `DeliveryEntry` (interface): interface DeliveryEntry { id: string; userId: string; inventoryId: string; items: readonly ItemStack[]; deliverAt: number } — ⚠ undocumented
@@ -1390,7 +1389,7 @@
 - `NearSpawn` (interface): interface NearSpawn — Everything a near-side simulator is told when a resident crosses into range.
 - `NeedDefinition` (type): type NeedDefinition = DecayMeterConfig — A decaying need is a survival decay meter (`max`/`min`/`start`/`rate`, optional moodle thresholds) whose satisfaction an agent brain reads to score actions. The meter owns the numbers; per-need appeal lives in the game's utility options.
 - `NeedReading` (interface): interface NeedReading — One need's current satisfaction, worst-first ready: `fraction` is 0 (empty) … 1 (full).
-- `NeedSet` (interface): interface NeedSet — Named needs that drain or recover on game time — hunger, energy, hygiene, bladder, fun. Reads are index-addressed (`indexOf` once, `fractionAt` per tick) so a thousand-agent loop never re-resolves ids; the whole set round-trips through {@link NeedSnapshot}.
+- `NeedSet` (interface): interface NeedSet — Named needs that drain or recover on game time — hunger, thirst, oxygen, warmth, energy, fun — with moodles at thresholds and rate modifiers an environment drives (cold → faster warmth loss). Reads are index-addressed (`indexOf` once, `fractionAt` per tick) so a thousand-agent loop never re-resolves ids; the whole set round-trips through {@link NeedSnapshot}.
 - `NeedSnapshot` (interface): interface NeedSnapshot — Serializable need state: values plus any in-play retuning, so a save keeps the dials.
 - `NotificationCenterOptions` (interface): interface NotificationCenterOptions — Options for {@link createNotificationCenter}.
 - `NotificationEntry` (interface): interface NotificationEntry<TMeta = unknown> — One persistent notification — unlike a transient toast, it stays in the log until dismissed.
@@ -1522,7 +1521,6 @@
 - `ScheduledRule` (interface): interface ScheduledRule — A serializable recurring resource flow. Every field is plain JSON so the whole {@link ResourceLedger} round-trips through `structuredClone`/`JSON`. Dynamic, context-aware behaviour (providers, tax curves, affordability caps) lives in the runtime {@link ResourcePolicy} pipeline, never in this data.
 - `SerializedBehaviorState` (type): type SerializedBehaviorState = Record<string, BehaviorState> — A serialized snapshot of every behavior's state on one item, keyed by behavior id. Round-trips through JSON so it can live in a saved game.
 - `SetBonus` (interface): interface SetBonus — A match/set bonus: extra stats granted when enough parts (or a tag) of a given kind are present — e.g. "3 Blackwood parts grant +recoil control". Counting is declarative (`countBy`/`value`) so the whole catalog is data.
-- `ShapeTable` (type): type ShapeTable<TShape extends string = string> = Record< TShape, readonly (readonly (readonly [number, number])[])[] > — ⚠ undocumented
 - `ShopBuyRejection` (type): type ShopBuyRejection = "unknown-item" | "out-of-stock" | "insufficient-funds" — Why a {@link ShopStock.buy} was refused.
 - `ShopBuyResult` (type): type ShopBuyResult = | { ok: true; wallet: WalletState; entry: ShopStockEntry } | { ok: false; reason: ShopBuyRejection } — Result of {@link ShopStock.buy}: on success the caller receives the debited `wallet` to adopt and a snapshot of the purchased `entry` (post-decrement); on failure a `reason` and the wallet is untouched.
 - `ShopPrice` (interface): interface ShopPrice — A price tag: how much of a free-string `currency` an entry costs (buy) or returns (sell). `amount` is a non-negative finite number; `0` means free (no wallet charge/grant happens).
@@ -1699,7 +1697,6 @@
 - `createCodex` (function): function createCodex<TMeta = unknown>(options: CodexOptions<TMeta>): Codex<TMeta> — A codex / bestiary / lorebook: a fixed set of defined entries plus per-player discovery tracking, fragment scanning (learn an entry after N scans), with categories, secret masking, completion, an `onDiscover` seam, and serializable `snapshot`/`restore`. The view `list()` keeps a stable identity between changes so React reads it through `useSyncExternalStore` without re-projecting each frame.
 - `createCommitController` (function): function createCommitController<TAction>(config: CommitControllerConfig): CommitController<TAction> — ⚠ undocumented
 - `createCosmetics` (function): function createCosmetics(deps: CosmeticsDeps = {}): Cosmetics — Equip cosmetic skins and customizations by slot, independent of gameplay stats.
-- `createDecayMeterSet` (function): function createDecayMeterSet(configs: readonly DecayMeterConfig[]): DecayMeterSet — Named decay meters — hunger, thirst, oxygen, sanity, warmth, stamina. Each drains (or recovers) on game-time `dt` at a configurable rate, refills from consumables or actions, and raises moodle statuses at thresholds. Rate modifiers let the environment drive them (colder → faster warmth loss; toxic biome → oxygen drops), so a game reads an environment field then calls `setRateModifier`.
 - `createDeliveryQueue` (function): function createDeliveryQueue(): DeliveryQueue — ⚠ undocumented
 - `createDialogueRun` (function): function createDialogueRun(graph: DialogueGraph, options: DialogueRunOptions = {}): DialogueRun — Walk a branching {@link DialogueGraph}: hold the current node, expose its render-ready view, and advance by choosing one of the current node's responses (each choice names the node it leads to; a choice with no `to` ends the conversation). Purely a serializable model — a React host renders `current()` and calls `choose(index)` — so no game re-implements node lookup, choice-to-node traversal, or "am I at the end" bookkeeping. `snapshot`/`restore` round-trip the run through a save.
 - `createDurability` (function): function createDurability(spec: DurabilitySpec): DurabilityState — ⚠ undocumented
@@ -1774,9 +1771,9 @@
 - `curve` (function): function curve(spec: Curve): (x: number) => number — Bind a {@link Curve} into a reusable `(x) => value` evaluator — a partial application of {@link evalCurve}.
 - `curveScale` (function): function curveScale(read: PolicyRead, shape: Curve): ResourcePolicy — Scale the amount by a {@link Curve} evaluated at the read value — a generic curve modifier (population upkeep, depletion falloff, difficulty income) over caller-provided context.
 - `decayMeterMoodles` (function): function decayMeterMoodles(values: DecayMeterValues, defs: readonly DecayMeterConfig[]): Moodle[] — Moodles for every crossed threshold, worst-first per meter in declared order.
-- `decayMeterSnapshot` (function): function decayMeterSnapshot(values: DecayMeterValues, defs: readonly DecayMeterConfig[]): Record<string, DecayMeterState> — Numeric state for every meter, keyed by id — the pure counterpart to {@link DecayMeterSet.snapshot}.
+- `decayMeterSnapshot` (function): function decayMeterSnapshot(values: DecayMeterValues, defs: readonly DecayMeterConfig[]): Record<string, DecayMeterState> — Numeric state for every meter, keyed by id — the pure counterpart to `NeedSet.states`.
 - `decayMeterState` (function): function decayMeterState(values: DecayMeterValues, defs: readonly DecayMeterConfig[], id: string): DecayMeterState — Numeric state (value, bounds, 0..1 fraction) for one meter. Throws on an unknown id.
-- `decayMeters` (function): function decayMeters(values: DecayMeterValues, defs: readonly DecayMeterConfig[], dt: number, modifier?: DecayModifier): DecayMeterValues — Pure per-tick decay over plain data: drain (or fill) every meter by `rate * modifier * dt`, clamped to its range, returning a new `id → value` record. Returns `values` unchanged when `dt <= 0`. The serializable counterpart to {@link DecayMeterSet.tick}.
+- `decayMeters` (function): function decayMeters(values: DecayMeterValues, defs: readonly DecayMeterConfig[], dt: number, modifier?: DecayModifier): DecayMeterValues — Pure per-tick decay over plain data: drain (or fill) every meter by `rate * modifier * dt`, clamped to its range, returning a new `id → value` record. Returns `values` unchanged when `dt <= 0`. The serializable counterpart to `NeedSet.tick`.
 - `defendMission` (function): function defendMission(options: DefendMissionOptions): MissionDef — Hold a position for a duration, scored by what is left standing: one `survive` objective whose `minSurvivors` gate is the fail condition and whose completion banks the survivors as the mission score. Same primitive a timed delivery uses, with a guard.
 - `defineLootPipeline` (function): function defineLootPipeline<TCtx = unknown>(def: LootPipelineDef<TCtx>): LootPipelineDef<TCtx> — Validate a loot pipeline definition and return it unchanged, for use with {@link createLootPipeline}.
 - `defineSystem` (function): function defineSystem(definition: SystemDefinition): SystemDefinition — Declare a composable game system. Pure data + hooks — the engine compiles the schedule and installs lifecycle when the game boots.
@@ -1808,7 +1805,7 @@
 - `grant` (function): function grant(state: WalletState, currency: string | CurrencyDefinition, amount: number): WalletState — ⚠ undocumented
 - `identityOf` (function): function identityOf(family: string, tags: readonly string[], parts: readonly InstalledPart[]): ItemIdentity — Assemble an {@link ItemIdentity} from a family, tags, and installed parts.
 - `idleRaceSession` (function): function idleRaceSession(): RaceSessionState — The pre-race session on the grid: `idle`, both clocks at zero. Call {@link startRaceCountdown} to light the lights, or hold here until the field is ready.
-- `initDecayMeters` (function): function initDecayMeters(defs: readonly DecayMeterConfig[]): DecayMeterValues — Starting values for `defs` — each meter's `start ?? max`, clamped to its range. Seed a serialized state record with this instead of holding a {@link createDecayMeterSet} closure.
+- `initDecayMeters` (function): function initDecayMeters(defs: readonly DecayMeterConfig[]): DecayMeterValues — Starting values for `defs` — each meter's `start ?? max`, clamped to its range. Seed a serialized state record with this instead of holding a `createNeedSet` closure.
 - `install` (function): function install(def: ModularItemDef, installed: readonly InstalledPart[], slotId: string, part: PartDef): InstallResult — ⚠ undocumented
 - `insureLost` (function): function insureLost(lost: readonly ItemStack[], policy: InsurancePolicy, userId: string, now: number, rng?: () => number): ScheduledDelivery | null — ⚠ undocumented
 - `isComplete` (function): function isComplete(def: ModularItemDef, installed: readonly InstalledPart[]): boolean — ⚠ undocumented
@@ -1860,7 +1857,7 @@
 - `readPath` (function): function readPath(facts: PredicateFacts, path: PredicatePath): unknown — Read a dot path out of a fact bag, descending only through plain objects. Returns `undefined` when any segment is missing or non-traversable. Bounded by the path's segment count.
 - `recallExpedition` (function): function recallExpedition<TCtx>(config: ExpeditionConfig<TCtx>, state: ExpeditionState, nowMs: number): ExpeditionState — Settle first, then recall safely. If the catch-up budget leaves due exploring ticks, return that state without recalling; repeat at the same target until the frontier catches up. Dead state never revives.
 - `redirect` (function): function redirect(endpoints: { source?: string; recipient?: string }): ResourcePolicy — Override the source and/or recipient accounts of a transaction.
-- `refillMeter` (function): function refillMeter(values: DecayMeterValues, defs: readonly DecayMeterConfig[], id: string, amount: number): DecayMeterValues — Refill (or drain, if negative) one meter by `amount`, clamped to its range. Returns a new record; throws on an unknown id. The pure counterpart to {@link DecayMeterSet.refill}.
+- `refillMeter` (function): function refillMeter(values: DecayMeterValues, defs: readonly DecayMeterConfig[], id: string, amount: number): DecayMeterValues — Refill (or drain, if negative) one meter by `amount`, clamped to its range. Returns a new record; throws on an unknown id. The pure counterpart to `NeedSet.refill`.
 - `registerMissionTriggerActions` (function): function registerMissionTriggerActions(): void — Register {@link MISSION_TRIGGER_ACTIONS} so the editor lists them. Idempotent; call at module load next to the game's catalogs.
 - `registerRuleEffect` (function): function registerRuleEffect(definition: RuleEffectDefinition): void — Declare a rule effect id. Idempotent per id (last registration wins); call at module load next to catalogs so authored content and inspectors share one vocabulary.
 - `rejectWhen` (function): function rejectWhen(predicate: (txn: ResourceTransaction, ctx: PolicyContext) => boolean): ResourcePolicy — Drop a transaction when `predicate` holds — the reject arm of the pipeline.
@@ -2567,11 +2564,17 @@
 - `withCell` (function): function withCell<T>(grid: CellGrid<T>, x: number, y: number, value: T | null): CellGrid<T> — A copy with `(x, y)` set to `value`; off-board writes return the grid unchanged.
 - `withCells` (function): function withCells<T>(grid: CellGrid<T>, entries: readonly { readonly x: number; readonly y: number; readonly value: T | null }[]): CellGrid<T> — A copy with every in-bounds entry written; one allocation for a whole piece or stamp.
 
-## @jgengine/core/puzzle/fallingPiece
+## @jgengine/core/puzzle/fallingGrid
 
-- `FallingPiece` (interface): interface FallingPiece<TShape extends string = string> { readonly shape: TShape; readonly rotation: number; readonly x: number; readonly y: number } — ⚠ undocumented
-- `LockDelayState` (interface): interface LockDelayState { readonly delaySeconds: number; readonly elapsed: number } — ⚠ undocumented
-- `ShapeTable` (type): type ShapeTable<TShape extends string = string> = Record< TShape, readonly (readonly (readonly [number, number])[])[] > — ⚠ undocumented
+- `CLASSIC_LINE_SCORE` (const): const CLASSIC_LINE_SCORE: readonly number[] — Classic line-clear points for 0-4 rows at level 0.
+- `FallingGrid` (interface): interface FallingGrid<TCell> { readonly cols: number; readonly rows: number; occupied(col: number, row: number): boolean; cellAt(col: number, row: number): TCell | null; setCell(col: number, row: number, value: TCell): void; clearCell(col: number, row: number): void; c… — ⚠ undocumented
+- `FallingGridCell` (type): type FallingGridCell = readonly [number, number] — ⚠ undocumented
+- `FallingGridConfig` (interface): interface FallingGridConfig { cols: number; rows: number; lockDelayMs?: number } — ⚠ undocumented
+- `FallingGridSnapshot` (interface): interface FallingGridSnapshot<TCell> { cols: number; rows: number; cells: readonly (TCell | null)[] } — ⚠ undocumented
+- `FallingPiece` (interface): interface FallingPiece<TShape extends string = string> — A falling piece: a shape id from a {@link ShapeTable}, its rotation index and its board offset.
+- `GravityIntervalConfig` (interface): interface GravityIntervalConfig { baseMs?: number; perLevel?: number; minMs?: number } — ⚠ undocumented
+- `LockState` (interface): interface LockState — Elapsed grounded time for the lock-delay state machine. `null` means airborne / not timing.
+- `ShapeTable` (type): type ShapeTable<TShape extends string = string> = Record<TShape, readonly (readonly FallingGridCell[])[]> — Rotation states per shape: each state is the footprint cells relative to the piece offset.
 
 ## @jgengine/core/puzzle/nonogram
 
@@ -2814,7 +2817,7 @@
 
 - `NeedDefinition` (type): type NeedDefinition = DecayMeterConfig — A decaying need is a survival decay meter (`max`/`min`/`start`/`rate`, optional moodle thresholds) whose satisfaction an agent brain reads to score actions. The meter owns the numbers; per-need appeal lives in the game's utility options.
 - `NeedReading` (interface): interface NeedReading — One need's current satisfaction, worst-first ready: `fraction` is 0 (empty) … 1 (full).
-- `NeedSet` (interface): interface NeedSet — Named needs that drain or recover on game time — hunger, energy, hygiene, bladder, fun. Reads are index-addressed (`indexOf` once, `fractionAt` per tick) so a thousand-agent loop never re-resolves ids; the whole set round-trips through {@link NeedSnapshot}.
+- `NeedSet` (interface): interface NeedSet — Named needs that drain or recover on game time — hunger, thirst, oxygen, warmth, energy, fun — with moodles at thresholds and rate modifiers an environment drives (cold → faster warmth loss). Reads are index-addressed (`indexOf` once, `fractionAt` per tick) so a thousand-agent loop never re-resolves ids; the whole set round-trips through {@link NeedSnapshot}.
 - `NeedSnapshot` (interface): interface NeedSnapshot — Serializable need state: values plus any in-play retuning, so a save keeps the dials.
 - `createNeedSet` (function): function createNeedSet(definitions: readonly NeedDefinition[]): NeedSet — Create the needs an agent or a park guest carries. Decay reuses the survival meter formulas (`survival/decayMeter`), so moodle thresholds, clamping and rate modifiers behave exactly like every other meter; this set adds index-addressed reads and single-need retuning for hot AI loops. Score these needs into an action with `createUtilityBrain` (`@jgengine/core/world`).
 
@@ -2912,20 +2915,17 @@
 
 ## @jgengine/core/survival/decayMeter
 
-- `DecayMeterConfig` (interface): interface DecayMeterConfig { id: string; max: number; min?: number; start?: number; rate: number; thresholds?: readonly MeterThreshold[] } — ⚠ undocumented · used by `createDecayMeterSet`: Named decay meters — hunger, thirst, oxygen, sanity, warmth, stamina.
-- `DecayMeterSet` (interface): interface DecayMeterSet — Set of named survival meters (hunger/thirst/…) that drain and refill over game time.
-- `DecayMeterSetState` (interface): interface DecayMeterSetState — The whole persisted state of a {@link DecayMeterSet}: every meter's value plus the play-time rate changes `setRate` and `setRateModifier` applied. A save that carries only values resumes a tuned meter at its config rate, which is how a cold biome's faster warmth drain vanished on load.
-- `DecayMeterState` (interface): interface DecayMeterState { id: string; value: number; max: number; min: number; fraction: number } — ⚠ undocumented · used by `decayMeterSnapshot`: Numeric state for every meter, keyed by id — the pure counterpart to {@link DecayMeterSet.snapshot}.
-- `DecayMeterValues` (type): type DecayMeterValues = Record<string, number> — Plain-data meter values: `meter id → current value`. The value half of a save — a tuned meter also needs its rate and rate modifiers, which {@link DecayMeterSetState} carries and {@link createDecayMeterSet}'s `serialize`/`restore` hand back and forth.
+- `DecayMeterConfig` (interface): interface DecayMeterConfig { id: string; max: number; min?: number; start?: number; rate: number; thresholds?: readonly MeterThreshold[] } — ⚠ undocumented · used by `decayMeterMoodles`: Moodles for every crossed threshold, worst-first per meter in declared order.
+- `DecayMeterState` (interface): interface DecayMeterState { id: string; value: number; max: number; min: number; fraction: number } — ⚠ undocumented · used by `decayMeterSnapshot`: Numeric state for every meter, keyed by id — the pure counterpart to `NeedSet.states`.
+- `DecayMeterValues` (type): type DecayMeterValues = Record<string, number> — Plain-data meter values: `meter id → current value`. The value half of a save — a tuned meter also needs its rate and rate modifiers, which `createNeedSet` (`sim/needs`) snapshots and restores.
 - `DecayModifier` (type): type DecayModifier = number | Record<string, number> — Rate multiplier for {@link decayMeters}: one scalar applied to every meter (a member's metabolism, a game-mode harshness dial) or a per-meter record (cold biome → warmth only). `1` / omitted leaves the base rates unscaled.
 - `MeterThreshold` (interface): interface MeterThreshold { id: string; label: string; at: number; when: "below" | "above"; severity?: MoodleSeverity; icon?: string } — ⚠ undocumented
-- `createDecayMeterSet` (function): function createDecayMeterSet(configs: readonly DecayMeterConfig[]): DecayMeterSet — Named decay meters — hunger, thirst, oxygen, sanity, warmth, stamina. Each drains (or recovers) on game-time `dt` at a configurable rate, refills from consumables or actions, and raises moodle statuses at thresholds. Rate modifiers let the environment drive them (colder → faster warmth loss; toxic biome → oxygen drops), so a game reads an environment field then calls `setRateModifier`.
 - `decayMeterMoodles` (function): function decayMeterMoodles(values: DecayMeterValues, defs: readonly DecayMeterConfig[]): Moodle[] — Moodles for every crossed threshold, worst-first per meter in declared order.
-- `decayMeterSnapshot` (function): function decayMeterSnapshot(values: DecayMeterValues, defs: readonly DecayMeterConfig[]): Record<string, DecayMeterState> — Numeric state for every meter, keyed by id — the pure counterpart to {@link DecayMeterSet.snapshot}.
+- `decayMeterSnapshot` (function): function decayMeterSnapshot(values: DecayMeterValues, defs: readonly DecayMeterConfig[]): Record<string, DecayMeterState> — Numeric state for every meter, keyed by id — the pure counterpart to `NeedSet.states`.
 - `decayMeterState` (function): function decayMeterState(values: DecayMeterValues, defs: readonly DecayMeterConfig[], id: string): DecayMeterState — Numeric state (value, bounds, 0..1 fraction) for one meter. Throws on an unknown id.
-- `decayMeters` (function): function decayMeters(values: DecayMeterValues, defs: readonly DecayMeterConfig[], dt: number, modifier?: DecayModifier): DecayMeterValues — Pure per-tick decay over plain data: drain (or fill) every meter by `rate * modifier * dt`, clamped to its range, returning a new `id → value` record. Returns `values` unchanged when `dt <= 0`. The serializable counterpart to {@link DecayMeterSet.tick}.
-- `initDecayMeters` (function): function initDecayMeters(defs: readonly DecayMeterConfig[]): DecayMeterValues — Starting values for `defs` — each meter's `start ?? max`, clamped to its range. Seed a serialized state record with this instead of holding a {@link createDecayMeterSet} closure.
-- `refillMeter` (function): function refillMeter(values: DecayMeterValues, defs: readonly DecayMeterConfig[], id: string, amount: number): DecayMeterValues — Refill (or drain, if negative) one meter by `amount`, clamped to its range. Returns a new record; throws on an unknown id. The pure counterpart to {@link DecayMeterSet.refill}.
+- `decayMeters` (function): function decayMeters(values: DecayMeterValues, defs: readonly DecayMeterConfig[], dt: number, modifier?: DecayModifier): DecayMeterValues — Pure per-tick decay over plain data: drain (or fill) every meter by `rate * modifier * dt`, clamped to its range, returning a new `id → value` record. Returns `values` unchanged when `dt <= 0`. The serializable counterpart to `NeedSet.tick`.
+- `initDecayMeters` (function): function initDecayMeters(defs: readonly DecayMeterConfig[]): DecayMeterValues — Starting values for `defs` — each meter's `start ?? max`, clamped to its range. Seed a serialized state record with this instead of holding a `createNeedSet` closure.
+- `refillMeter` (function): function refillMeter(values: DecayMeterValues, defs: readonly DecayMeterConfig[], id: string, amount: number): DecayMeterValues — Refill (or drain, if negative) one meter by `amount`, clamped to its range. Returns a new record; throws on an unknown id. The pure counterpart to `NeedSet.refill`.
 
 ## @jgengine/core/survival/moodle
 
@@ -2949,15 +2949,6 @@
 - `RegionHealthState` (interface): interface RegionHealthState { id: string; label: string; current: number; max: number; fraction: number; vital: boolean } — ⚠ undocumented
 - `TreatResult` (interface): interface TreatResult { treated: readonly string[] } — ⚠ undocumented
 - `createMultiRegionHealth` (function): function createMultiRegionHealth(config: MultiRegionHealthConfig): MultiRegionHealth — Per-region/limb health tracked separately, so each body part takes and heals damage on its own.
-
-## @jgengine/core/tactics/fallingGrid
-
-- `FallingGrid` (interface): interface FallingGrid<TCell> { readonly cols: number; readonly rows: number; occupied(col: number, row: number): boolean; cellAt(col: number, row: number): TCell | null; setCell(col: number, row: number, value: TCell): void; clearCell(col: number, row: number): void; c… — ⚠ undocumented
-- `FallingGridCell` (type): type FallingGridCell = readonly [number, number] — ⚠ undocumented
-- `FallingGridConfig` (interface): interface FallingGridConfig { cols: number; rows: number; lockDelayMs?: number } — ⚠ undocumented
-- `FallingGridSnapshot` (interface): interface FallingGridSnapshot<TCell> { cols: number; rows: number; cells: readonly (TCell | null)[] } — ⚠ undocumented
-- `GravityIntervalConfig` (interface): interface GravityIntervalConfig { baseMs?: number; perLevel?: number; minMs?: number } — ⚠ undocumented
-- `LockState` (interface): interface LockState — Elapsed grounded time for the lock-delay state machine. `null` means airborne / not timing.
 
 ## @jgengine/core/tactics/predictiveQuery
 
