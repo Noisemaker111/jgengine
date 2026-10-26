@@ -20,7 +20,7 @@
  * `session_message.type = 'assistant'`, one item per call under `data.content[]` with `type: "tool"`.
  */
 import { Database } from "bun:sqlite";
-import { existsSync, statSync } from "node:fs";
+import { existsSync, readdirSync, readFileSync, statSync } from "node:fs";
 import { homedir } from "node:os";
 import { join, resolve } from "node:path";
 
@@ -28,10 +28,11 @@ import { printHelpIfAsked } from "./script-help";
 
 const LANE_AUDIT_USAGE = {
   summary: "account every child session in a time window: work, waiting, and the slowest commands",
-  usage: "bun run lane:audit [--hours <n>] [--db <path>] [--cwd <dir>] [--json] [--fail-on-waiting]",
+  usage: "bun run lane:audit [--hours <n>] [--db <path>] [--claude <dir>] [--cwd <dir>] [--json] [--fail-on-waiting]",
   flags: [
     { flag: "--hours <n>", detail: "window to account, in hours (default: 40)" },
     { flag: "--db <path>", detail: "OpenCode database, else OPENCODE_DB, else the user-data default" },
+    { flag: "--claude <dir>", detail: "Claude Code projects dir (default ~/.claude/projects); read alongside the OpenCode database unless --db names one" },
     { flag: "--cwd <dir>", detail: "the one lane whose own commands name this path, and why it was picked" },
     { flag: "--json", detail: "the same numbers as one document on stdout" },
     { flag: "--fail-on-waiting", detail: "exit 2 when any selected session slept, polled or watched CI" },
@@ -711,6 +712,15 @@ export function readSessionCalls(database: Database, sessionIds: readonly string
 export function auditDatabase(database: Database, options: AuditOptions): AuditReport {
   const sessions = loadSessions(database, options);
   const calls = readSessionCalls(database, sessions.map((session) => session.id));
+  return auditRecords(sessions, calls, options);
+}
+
+/** The report for sessions already read from any source: an OpenCode database, Claude Code transcripts, or both. */
+export function auditRecords(
+  sessions: readonly SessionIdentity[],
+  calls: ReadonlyMap<string, readonly ToolCall[]>,
+  options: Pick<AuditOptions, "cwd">,
+): AuditReport {
   const audits = sessions.map((session) => auditSession(session, calls.get(session.id) ?? []));
   const report = buildReport(audits);
   if (options.cwd === undefined) return report;
@@ -763,6 +773,127 @@ export function toJson(report: AuditReport): string {
     null,
     2,
   );
+}
+
+/**
+ * Claude Code keeps each session (and each subagent it spawned) as a JSONL transcript under
+ * `~/.claude/projects/<project>/`. A lane run by Claude Code is only visible there, so without this
+ * source `lane:close` answered "no session found" for every Claude lane.
+ */
+export function claudeProjectsDir(env: NodeJS.ProcessEnv = process.env): string {
+  if (env.CLAUDE_PROJECTS_DIR !== undefined && env.CLAUDE_PROJECTS_DIR !== "") return env.CLAUDE_PROJECTS_DIR;
+  return join(env.CLAUDE_CONFIG_DIR ?? join(homedir(), ".claude"), "projects");
+}
+
+/**
+ * Transcripts touched since `since`: `<project>/<session>.jsonl` and
+ * `<project>/<session>/subagents/*.jsonl`, three fixed levels, never a recursive walk.
+ */
+export function claudeTranscripts(dir: string, since: number): string[] {
+  const found: string[] = [];
+  const list = (path: string): string[] => {
+    try {
+      return readdirSync(path);
+    } catch {
+      return [];
+    }
+  };
+  const recent = (path: string): boolean => {
+    try {
+      return statSync(path).mtimeMs >= since;
+    } catch {
+      return false;
+    }
+  };
+  for (const project of list(dir)) {
+    const projectDir = join(dir, project);
+    for (const entry of list(projectDir)) {
+      const path = join(projectDir, entry);
+      if (entry.endsWith(".jsonl")) {
+        if (recent(path)) found.push(path);
+        continue;
+      }
+      for (const file of list(join(path, "subagents"))) {
+        const transcript = join(path, "subagents", file);
+        if (file.endsWith(".jsonl") && recent(transcript)) found.push(transcript);
+      }
+    }
+  }
+  return found;
+}
+
+/** One transcript's identity and timed tool calls: a `tool_use` ends at its `tool_result`. */
+export function claudeSession(text: string, fallbackId: string): { session: SessionIdentity; calls: ToolCall[] } | null {
+  const started = new Map<string, { name: string; input: unknown; at: number }>();
+  const calls: ToolCall[] = [];
+  let id: string | null = null;
+  let title: string | null = null;
+  let directory = "";
+  let first = Number.POSITIVE_INFINITY;
+  let last = 0;
+  for (const line of text.split("\n")) {
+    if (line.trim() === "") continue;
+    let entry: {
+      timestamp?: string;
+      agentId?: string;
+      sessionId?: string;
+      cwd?: string;
+      type?: string;
+      message?: { content?: unknown };
+    };
+    try {
+      entry = JSON.parse(line);
+    } catch {
+      continue;
+    }
+    const at = entry.timestamp === undefined ? Number.NaN : Date.parse(entry.timestamp);
+    if (!Number.isFinite(at)) continue;
+    first = Math.min(first, at);
+    last = Math.max(last, at);
+    id ??= entry.agentId ?? entry.sessionId ?? null;
+    if (directory === "" && typeof entry.cwd === "string") directory = entry.cwd;
+    const content = entry.message?.content;
+    if (title === null && entry.type === "user" && typeof content === "string") title = content.split("\n")[0]!.slice(0, 80);
+    if (!Array.isArray(content)) continue;
+    for (const item of content as { type?: string; id?: string; name?: string; input?: unknown; tool_use_id?: string }[]) {
+      if (item.type === "tool_use" && item.id !== undefined) started.set(item.id, { name: item.name ?? "tool", input: item.input, at });
+      if (item.type === "tool_result" && item.tool_use_id !== undefined) {
+        const use = started.get(item.tool_use_id);
+        if (use === undefined) continue;
+        started.delete(item.tool_use_id);
+        const input = (use.input ?? {}) as Record<string, unknown>;
+        const command = typeof input.command === "string" ? input.command : "";
+        const rest = JSON.stringify(Object.fromEntries(Object.entries(input).filter(([key]) => key !== "command")));
+        calls.push({ name: use.name, command, input: rest === "{}" ? "" : rest, startedAt: use.at, endedAt: at, ms: Math.max(0, at - use.at) });
+      }
+    }
+  }
+  if (!Number.isFinite(first)) return null;
+  const sessionId = id ?? fallbackId;
+  return {
+    session: { id: sessionId, title: title ?? `claude ${sessionId}`, directory, timeCreated: first, timeUpdated: last },
+    calls,
+  };
+}
+
+/** Every Claude Code session alive in the window, with its calls. */
+export function loadClaudeSessions(dir: string, options: { hours: number; now: number }): { sessions: SessionIdentity[]; calls: Map<string, ToolCall[]> } {
+  const since = options.now - options.hours * 3_600_000;
+  const sessions: SessionIdentity[] = [];
+  const calls = new Map<string, ToolCall[]>();
+  for (const path of claudeTranscripts(dir, since)) {
+    let text: string;
+    try {
+      text = readFileSync(path, "utf8");
+    } catch {
+      continue;
+    }
+    const read = claudeSession(text, path.split(/[\\/]/).pop()!.replace(/\.jsonl$/, ""));
+    if (read === null || read.session.timeUpdated < since || calls.has(read.session.id)) continue;
+    sessions.push(read.session);
+    calls.set(read.session.id, read.calls);
+  }
+  return { sessions, calls };
 }
 
 /** The OpenCode user-data database, most specific first. `OPENCODE_DB` overrides every guess. */
@@ -825,6 +956,7 @@ export function cwdFilter(value: string): string {
 interface Args {
   hours: number;
   database?: string;
+  claude?: string;
   cwd?: string;
   json: boolean;
   failOnWaiting: boolean;
@@ -842,6 +974,7 @@ function parseArgs(argv: readonly string[]): Args {
     };
     if (flag === "--hours") args.hours = Number(value());
     else if (flag === "--db") args.database = value();
+    else if (flag === "--claude") args.claude = value();
     else if (flag === "--cwd") args.cwd = value();
     else if (flag === "--json") args.json = true;
     else if (flag === "--fail-on-waiting") args.failOnWaiting = true;
@@ -860,61 +993,78 @@ function main(argv: readonly string[]): number {
     console.error(`lane:audit: ${(error as Error).message}`);
     return 1;
   }
+  if (args.database !== undefined && !existsSync(resolve(args.database))) {
+    const tried = [`${resolve(args.database)} (missing)`, ...resolveDatabase().tried];
+    console.error(
+      `lane:audit: no database at ${resolve(args.database)}.\n` +
+        `tried:\n${tried.map((entry) => `  ${entry}`).join("\n")}\n` +
+        "pass --db <path> or set OPENCODE_DB to a database with session_v2 and session_message rows.",
+    );
+    return 1;
+  }
+  // `--db` names one database and nothing else; without it the audit reads every source this
+  // machine has: the OpenCode database and the Claude Code transcripts.
   const resolved = args.database ?? resolveDatabase().path;
-  if (resolved === undefined) {
-    const tried = resolveDatabase().tried;
-    console.error(
-      "lane:audit: no OpenCode database found.\n" +
-        `tried:\n${tried.map((entry) => `  ${entry}`).join("\n")}\n` +
-        "pass --db <path> or set OPENCODE_DB to a database with session_v2 and session_message rows.",
-    );
-    return 1;
-  }
-  if (!existsSync(resolve(resolved))) {
-    const tried = [`${resolve(resolved)} (missing)`, ...resolveDatabase().tried];
-    console.error(
-      `lane:audit: no database at ${resolve(resolved)}.\n` +
-        `tried:\n${tried.map((entry) => `  ${entry}`).join("\n")}\n` +
-        "pass --db <path> or set OPENCODE_DB to a database with session_v2 and session_message rows.",
-    );
-    return 1;
-  }
-  const database = new Database(resolve(resolved), { readonly: true });
-  try {
-    const report = auditDatabase(database, {
-      hours: args.hours,
-      database: resolved,
-      cwd: args.cwd === undefined ? undefined : cwdFilter(args.cwd),
-      now: Date.now(),
-    });
-    if (report.attribution !== undefined) console.error(`lane:audit: ${report.attribution.reason}`);
-    if (report.sessions.length === 0) {
-      const searched =
-        report.attribution === undefined
-          ? ""
-          : `\nsearched ${report.population} child session(s) alive in the last ${args.hours}h of ${resolved}.` +
-            "\nA child session records the directory of the agent that spawned it, so the worktree it worked in" +
-            "\nis only visible in its own commands; pass --cwd <worktree> and make sure its calls name that path.";
-      console.error(
-        `lane:audit: no child sessions ${report.attribution === undefined ? `in the last ${args.hours}h` : `found for ${args.cwd} in the last ${args.hours}h`} (database ${resolved}).${searched}`,
-      );
-      return 1;
+  const claudeDir = args.database === undefined ? (args.claude ?? claudeProjectsDir()) : args.claude;
+  const now = Date.now();
+  const sessions: SessionIdentity[] = [];
+  const calls = new Map<string, ToolCall[]>();
+  const sources: string[] = [];
+  if (resolved !== undefined) {
+    const database = new Database(resolve(resolved), { readonly: true });
+    try {
+      const rows = loadSessions(database, { hours: args.hours, database: resolved, now });
+      sessions.push(...rows);
+      for (const [id, list] of readSessionCalls(database, rows.map((row) => row.id))) calls.set(id, list);
+    } finally {
+      database.close();
     }
-    console.log(args.json ? toJson(report) : formatTable(report, { hours: args.hours, database: resolved }));
-    if (!args.failOnWaiting) return 0;
-    const offending = report.sessions.filter((audit) => audit.waits.length > 0);
-    if (offending.length === 0) return 0;
-    for (const offline of describeWaits(offending)) console.error(`waiting call: ${offline}`);
-    console.error(
-      `lane:audit: ${offending.length} of ${report.sessions.length} session(s) waited on a clock.` +
-        "\nA sleep or a CI watch is never necessary: start the work and ask once later with" +
-        "\n`gh run list`, or check `gh pr checks <n>` without the watch flag.",
-    );
-    return 2;
-  } finally {
-    database.close();
+    sources.push(resolved);
   }
+  if (claudeDir !== undefined && existsSync(claudeDir)) {
+    const claude = loadClaudeSessions(claudeDir, { hours: args.hours, now });
+    for (const session of claude.sessions) {
+      if (calls.has(session.id)) continue;
+      sessions.push(session);
+      calls.set(session.id, claude.calls.get(session.id) ?? []);
+    }
+    sources.push(claudeDir);
+  }
+  if (sources.length === 0) {
+    const tried = [...resolveDatabase().tried, `${claudeDir ?? claudeProjectsDir()} (no Claude Code transcripts)`];
+    console.error(
+      "lane:audit: no session store found.\n" +
+        `tried:\n${tried.map((entry) => `  ${entry}`).join("\n")}\n` +
+        "pass --db <path> (OpenCode) or --claude <dir> (Claude Code projects).",
+    );
+    return 1;
+  }
+  const source = sources.join(" + ");
+  const report = auditRecords(sessions, calls, { cwd: args.cwd === undefined ? undefined : cwdFilter(args.cwd) });
+  if (report.attribution !== undefined) console.error(`lane:audit: ${report.attribution.reason}`);
+  if (report.sessions.length === 0) {
+    const searched =
+      report.attribution === undefined
+        ? ""
+        : `\nsearched ${report.population} session(s) alive in the last ${args.hours}h of ${source}.` +
+          "\nA child session records the directory of the agent that spawned it, so the worktree it worked in" +
+          "\nis only visible in its own commands; pass --cwd <worktree> and make sure its calls name that path.";
+    console.error(
+      `lane:audit: no sessions ${report.attribution === undefined ? `in the last ${args.hours}h` : `found for ${args.cwd} in the last ${args.hours}h`} (${source}).${searched}`,
+    );
+    return 1;
+  }
+  console.log(args.json ? toJson(report) : formatTable(report, { hours: args.hours, database: source }));
+  if (!args.failOnWaiting) return 0;
+  const offending = report.sessions.filter((audit) => audit.waits.length > 0);
+  if (offending.length === 0) return 0;
+  for (const offline of describeWaits(offending)) console.error(`waiting call: ${offline}`);
+  console.error(
+    `lane:audit: ${offending.length} of ${report.sessions.length} session(s) waited on a clock.` +
+      "\nA sleep or a CI watch is never necessary: start the work and ask once later with" +
+      "\n`gh run list`, or check `gh pr checks <n>` without the watch flag.",
+  );
+  return 2;
 }
 
 if (import.meta.main) process.exit(main(process.argv.slice(2)));
-

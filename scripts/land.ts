@@ -63,6 +63,7 @@ import { spawnSync } from "node:child_process";
 import { existsSync, readdirSync, readFileSync, renameSync, rmSync, statSync, writeFileSync } from "node:fs";
 import { basename, isAbsolute, join, relative, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
+import { bendsSection, findBends, withBends } from "./bends";
 import { FRAGMENT_PATTERN } from "./changelog-fragments";
 import { assertCheckoutReady } from "./checkout-ready";
 import { printHelpIfAsked } from "./script-help";
@@ -233,6 +234,8 @@ export interface PrBody {
   text: string;
   /** True when the text came from `--body-file`, so land may write it over an open PR's body. */
   explicit: boolean;
+  /** The "Bends" section read from the diff (`scripts/bends.ts`), written into a reused PR's body too. */
+  bends?: string;
 }
 
 /**
@@ -915,8 +918,13 @@ export interface PrRef {
   url: string;
 }
 
-/** Replace a PR's body, leaving it alone when it already reads the same. */
-export function updatePrBody(number: number, text: string, gh: Gh, log = (line: string) => console.log(`land: ${line}`)): boolean {
+/** Replace a PR's body (or rewrite it from the current one), leaving it alone when it already reads the same. */
+export function updatePrBody(
+  number: number,
+  next: string | ((current: string) => string),
+  gh: Gh,
+  log = (line: string) => console.log(`land: ${line}`),
+): boolean {
   const view = gh(["pr", "view", String(number), "--json", "body"]);
   if (view.status !== 0) {
     console.error(`land: gh pr view #${number} failed: ${details(view)}`);
@@ -929,6 +937,7 @@ export function updatePrBody(number: number, text: string, gh: Gh, log = (line: 
     console.error(`land: unreadable gh pr view output for #${number}: ${String(error)}`);
     return false;
   }
+  const text = typeof next === "string" ? next : next(current);
   if (current.trim() === text.trim()) {
     log(`PR #${number} body is already the one given`);
     return true;
@@ -967,6 +976,10 @@ export function ensurePr(options: {
   if (existing !== undefined) {
     log(`reusing PR #${existing.number} ${existing.url}`);
     if (body.explicit && !updatePrBody(existing.number, body.text, runGh, log)) return null;
+    // A reused PR keeps its body, but its Bends section is rewritten from the diff it now carries.
+    if (!body.explicit && body.bends !== undefined && !updatePrBody(existing.number, (current) => withBends(current, body.bends!), runGh, log)) {
+      return null;
+    }
     return existing;
   }
 
@@ -1121,7 +1134,13 @@ function prepare(args: LandArgs, branch: string, io: LandIo): PrRef | number {
     subjects: () => branchSubjects(args.base, io.git),
     log: io.log,
   });
-  const pr = ensurePr({ args, branch, summary, body, gh: io.gh, log: io.log });
+  // Every PR names its bends - assertions deleted or loosened, budgets raised, tests skipped, checks
+  // disabled - read from the diff, so a reviewer who never opens it still sees them.
+  const diff = io.git(["diff", "--no-color", "-M", "-U0", `origin/${args.base}...HEAD`]);
+  const bends = diff.status === 0 ? bendsSection(findBends(diff.stdout)) : undefined;
+  if (bends !== undefined) io.log(bends.includes("None found") ? "Bends: none found in the diff" : "Bends: listed in the PR body");
+  const withSection = bends === undefined ? body : { ...body, text: withBends(body.text, bends), bends };
+  const pr = ensurePr({ args, branch, summary, body: withSection, gh: io.gh, log: io.log });
   return pr ?? EXIT_COULD_NOT_MERGE;
 }
 

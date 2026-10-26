@@ -24,27 +24,12 @@ concurrency:
   cancel-in-progress: ${{ github.ref != 'refs/heads/main' && github.ref != 'refs/heads/beta' }}
 
 jobs:
-  # Decides how much of the game matrix this run pays for. Booting every reference game
-  # and measuring its frame budget costs a runner and ~90 s per game, and a docs, test or
-  # unrelated-package change cannot move either, so a PR runs them only when a changed path
-  # can reach them. `scripts/ci-scope.ts` owns the map; `scripts/ci-scope.test.ts` holds it.
-  #
-  #   full    — perf-game on every reference game: frame work in a package a game loads,
-  #             games/shared, a script that boots or measures a game, a workflow, the release
-  #             PR, or any path the map does not know.
-  #   surface — perf-game on the representative game plus any reference game whose own
-  #             files changed: a shared surface, or one game's source.
-  #   none    — neither: prose, skills, change notes, the web app, server and CLI packages,
-  #             lane tooling, repo config, test files, a game outside the frame set.
-  #
-  # `gameChecks` is the separate list the `games` job type-checks and tests: each game a
-  # changed file sits in, each game that declares a changed engine package, and every game
-  # for the root install, compiler settings, games/shared or the games' own scripts.
-  #
-  # #2218 changed movement, scene and runtime and merged with both gates skipped; #2342
-  # changed the react menu and skipped them the same way, so a path a game loads always
-  # pays. `smoke` and `perf` fail when the verdict needed a job that did not run, and both
-  # print what a skip skipped.
+  # Decides which games the `games` job type-checks and tests. `scripts/ci-scope.ts` owns the
+  # map; `scripts/ci-scope.test.ts` holds it. `games` (full / surface / none) still says how far a
+  # change reaches a booted game, and `lane:close` uses the same verdict to pick the boots it runs
+  # locally. `gameChecks` is the list the `games` job checks: each game a changed file sits in,
+  # each game that declares a changed engine package, and every game for the root install,
+  # compiler settings, games/shared or the games' own scripts.
   changes:
     runs-on: ubuntu-latest
     timeout-minutes: 5
@@ -193,59 +178,15 @@ jobs:
       - run: bun install --frozen-lockfile
       - run: bun --cwd=apps/web run build
 
-  # Every game is launched once per PR. `perf-game` already fails when a game throws at
-  # boot: `measureGame` waits on the same `data-jg-capture` handshake `bun run smoke` does
-  # and throws on `error` or the 90 s timeout, so a separate smoke job booted the same four
-  # games a second time for the same failure. The `smoke` check below reads this job's
-  # result instead, and the matrix is the scope's game list: every game for frame work, the
-  # representative game for a shared surface.
-  perf-game:
-    needs: [changes]
-    if: needs.changes.outputs.games != 'none'
-    runs-on: ubuntu-latest
-    timeout-minutes: 20
-    strategy:
-      fail-fast: false
-      matrix:
-        game: ${{ fromJSON(needs.changes.outputs.gameList) }}
-    steps:
-      - uses: actions/checkout@v4
-      - uses: oven-sh/setup-bun@v2
-        with:
-          bun-version: 1.4.2
-      - uses: actions/cache@v4
-        with:
-          path: ~/.bun/install/cache
-          key: bun-${{ runner.os }}-${{ hashFiles('bun.lock') }}
-          restore-keys: bun-${{ runner.os }}-
-      - run: bun install --frozen-lockfile
-      # A game draws library models and scanned materials that are not in git, so the leg
-      # pulls them first, from the same cache the games job fills.
-      - uses: actions/cache@v4
-        with:
-          path: |
-            games/*/public/models
-            games/*/public/materials
-            games/*/public/sprites
-          key: game-assets-${{ hashFiles('bun.lock', 'games/*/src/game/assets.ts') }}
-          restore-keys: game-assets-
-      - run: bun run games:provision -- ${{ matrix.game }}
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      # 2 of the first 32 leg runs died on a cold Chrome start ("debugger not ready
-      # … within 30000ms") and passed on a plain rerun. A budget breach fails again,
-      # so the retry hides nothing; it stops a launch flake from paging a PR owner.
-      # One step, not a second step after `failure()`: a failed step keeps the job red
-      # even when a later step passes, so the retry only counts from inside the step.
-      - name: perf gate (one retry after a browser launch flake)
-        run: bun run perf:gate --games ${{ matrix.game }} || bun run perf:gate --games ${{ matrix.game }}
-        env:
-          CHROME_PATH: /usr/bin/google-chrome
-
+  # CI never downloads a model or boots a game (Jon, 25 Oct): a booted game needs the pulled
+  # packs, and a download or a browser on a runner is minutes of flake for a check the lane's own
+  # machine runs in seconds against the shared asset store. `lane:close` runs those boot checks
+  # locally (`verify:fast`: the capabilities probe of every game it reaches). `smoke` and `perf`
+  # stay as the check names branch protection reads.
   # The games under games/ run engine source from this checkout, so an engine change and the
   # games it breaks are fixed in one PR. This job checks the games `changes` named in
-  # `gameChecks`: the games' own gates over every game (seconds each), then the type-check,
-  # tests and boot probes of the reached games only. An empty list skips it, and `ci` holds
+  # `gameChecks`: the games' own gates over every game (seconds each), then the type-check and
+  # tests of the reached games only - none needs a pulled model. An empty list skips it, and `ci` holds
   # that skip to the verdict.
   games:
     needs: [changes]
@@ -267,19 +208,6 @@ jobs:
           key: bun-${{ runner.os }}-${{ hashFiles('bun.lock') }}
           restore-keys: bun-${{ runner.os }}-
       - run: bun install --frozen-lockfile
-      - uses: actions/cache@v4
-        with:
-          path: |
-            games/*/public/models
-            games/*/public/materials
-            games/*/public/sprites
-          key: game-assets-${{ hashFiles('bun.lock', 'games/*/src/game/assets.ts') }}
-          restore-keys: game-assets-
-      # Rocketbox and Khronos library models list files through the GitHub contents API;
-      # anonymous runners share a 60-an-hour limit and get HTTP 403, so the pull sends this token.
-      - run: bun run games:provision -- $GAMES
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       - run: git fetch --no-tags origin beta
       - run: bun run games:check-framework -- --base origin/beta
       - run: bun run games:check-module-globals
@@ -298,34 +226,21 @@ jobs:
           test -z "$failed" || { echo "type errors in:$failed"; exit 1; }
       - name: test the games' scripts and the reached games
         run: bun test games/scripts games/shared $(for game in $GAMES; do printf 'games/%s ' "$game"; done)
-      - run: bun run games:capabilities-probe -- $GAMES
-        env:
-          CHROME_PATH: /usr/bin/google-chrome
 
-  # The `smoke` check the merge requires, fed by the one job that boots games: a game that
-  # throws at boot fails `perf-game` (the capture handshake is the same one `bun run smoke`
-  # used), and a skip says which paths let it skip.
+  # The `smoke` check the merge requires. Boots run on the lane's machine (`lane:close`), never
+  # here, so this names the scope and passes.
   smoke:
-    needs: [changes, perf-game]
-    if: ${{ !cancelled() }}
+    needs: [changes]
     runs-on: ubuntu-latest
     timeout-minutes: 5
     steps:
       - name: smoke verdict
         env:
           SCOPE: ${{ needs.changes.outputs.games }}
-          GAMES: ${{ needs.changes.outputs.gameList }}
           REASON: ${{ needs.changes.outputs.reason }}
-          BOOTS: ${{ needs.perf-game.result }}
         run: |
-          echo "scope=$SCOPE $GAMES ($REASON)"
-          if [ "$SCOPE" = "none" ]; then
-            test "$BOOTS" = "skipped"
-            echo "skipped: no changed path can change what a game boots ($REASON)"
-            exit 0
-          fi
-          test "$BOOTS" = "success"
-          echo "every game in $GAMES booted clean and stayed inside its budget"
+          echo "scope=$SCOPE ($REASON)"
+          echo "game boots run locally in lane:close against the shared asset store; CI boots no game"
 
   # The CPU timing budgets (nav crowd, perception, utility, visibility, off-screen,
   # flock, paths) assert via `bench:cpu` with JG_TIMING_GATE=1; the unit suite keeps
@@ -348,12 +263,10 @@ jobs:
       - run: bun install --frozen-lockfile
       - run: bun run bench:cpu
 
-  # The `perf` check branch protection reads: green only when the CPU budgets passed
-  # and, when the change can reach rendering, every game the scope named passed too.
-  # A red matrix leg shows as a failed job and fails the check here, so one over-budget
-  # game still blocks the merge.
+  # The `perf` check branch protection reads: green when the CPU budgets passed. Frame
+  # budgets need a booted game, so they run on the lane's machine, not here.
   perf:
-    needs: [changes, perf-game, perf-cpu]
+    needs: [changes, perf-cpu]
     if: ${{ !cancelled() }}
     runs-on: ubuntu-latest
     timeout-minutes: 5
@@ -361,20 +274,12 @@ jobs:
       - name: perf verdict
         env:
           SCOPE: ${{ needs.changes.outputs.games }}
-          GAMES: ${{ needs.changes.outputs.gameList }}
           REASON: ${{ needs.changes.outputs.reason }}
-          FRAME: ${{ needs.perf-game.result }}
           CPU: ${{ needs.perf-cpu.result }}
         run: |
-          echo "scope=$SCOPE $GAMES ($REASON)"
+          echo "scope=$SCOPE ($REASON)"
           test "$CPU" = "success"
-          if [ "$SCOPE" = "none" ]; then
-            test "$FRAME" = "skipped"
-            echo "frame budgets skipped: $REASON"
-            exit 0
-          fi
-          test "$FRAME" = "success"
-          echo "frame budgets measured on $GAMES"
+          echo "CPU budgets passed; frame budgets need booted games, which run on the lane machine in lane:close, never in CI"
 
   # Three package tests fail on Windows only (#2119: workspaceDoctor's wildcard and dangling
   # symlink cases, and `Bun.build` returning `EINVAL: failed to open root directory: /C:/...` in
@@ -461,23 +366,8 @@ jobs:
             test "$TEST" = "success"
             echo "ran: every test shard"
           fi
-          case "$GAMES" in
-            none)
-              # A path the map calls no game surface can still trip a smoke job (a script under
-              # scripts/ is in the heavy set), and a smoke that ran and passed is more evidence
-              # than a skip, not a contradiction. Only a failure is wrong here.
-              [ "$SMOKE" = "skipped" ] || [ "$SMOKE" = "success" ]
-              echo "ran: smoke and frame gates ($REASON)"
-              ;;
-            surface)
-              test "$SMOKE" = "success"
-              echo "ran: smoke and frame budgets on the representative game"
-              ;;
-            *)
-              test "$SMOKE" = "success"
-              echo "ran: smoke and frame budgets on every reference game"
-              ;;
-          esac
+          test "$SMOKE" = "success"
+          echo "game scope $GAMES: boots and frame budgets run locally in lane:close ($REASON)"
       - name: Track red main in one issue
         if: always() && github.event_name == 'push' && github.ref == 'refs/heads/main'
         env:

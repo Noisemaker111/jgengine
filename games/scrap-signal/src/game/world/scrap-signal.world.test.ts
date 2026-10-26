@@ -1,4 +1,3 @@
-import { existsSync } from "node:fs";
 import { join } from "node:path";
 import { describe, expect, test } from "bun:test";
 import { summarizeEnvironment } from "@jgengine/core/world/environmentSummary";
@@ -9,6 +8,7 @@ import { AUTHORED_PIECES, ROUTES, SPUR_ROUTES, authoredScene } from "./level";
 import { entityModels, objectModels } from "./models";
 import { BOLT_POS, BOLT_YAW, PLAYER_SPAWN, PLAYER_SPAWN_YAW } from "./sites";
 import { ZONES, zoneAt, zoneLevelAt } from "./zones";
+import { assetTest, missingServed } from "../../../../shared/assetTest";
 
 describe("scrap-signal world", () => {
   const summary = summarizeEnvironment(world);
@@ -194,14 +194,12 @@ describe("campaign chain", () => {
 describe("settlement building kits", () => {
   const publicRoot = join(import.meta.dir, "../../../public");
 
-  test("every bound model is a file the game actually serves", () => {
+  assetTest("every bound model is a file the game actually serves", () => {
     for (const kit of Object.values(SETTLEMENT_KITS)) {
       const bound = [...Object.values(kit.parts), ...Object.values(kit.slots ?? {})].flat();
       expect(bound.length).toBeGreaterThan(0);
-      for (const part of bound) {
-        expect(part.model.startsWith("/models/")).toBe(true);
-        expect(existsSync(join(publicRoot, part.model))).toBe(true);
-      }
+      for (const part of bound) expect(part.model.startsWith("/models/")).toBe(true);
+      expect(missingServed(publicRoot, bound.map((part) => part.model))).toEqual([]);
     }
   });
 
@@ -211,12 +209,10 @@ describe("settlement building kits", () => {
 
   // The kit's models were checked here from the start; the object catalog's were not, and that is
   // where a broken reference would show up as a magenta placeholder in the starting settlement.
-  test("every object and entity model the game mounts is a file it actually serves", () => {
+  assetTest("every object and entity model the game mounts is a file it actually serves", () => {
     const mounted = [...Object.values(objectModels), ...Object.values(entityModels)];
     expect(mounted.length).toBeGreaterThan(0);
-    for (const config of mounted) {
-      expect(config.url.startsWith("/models/")).toBe(true);
-      expect(existsSync(join(publicRoot, config.url))).toBe(true);
-    }
+    for (const config of mounted) expect(config.url.startsWith("/models/")).toBe(true);
+    expect(missingServed(publicRoot, mounted.map((config) => config.url))).toEqual([]);
   });
 });

@@ -1948,9 +1948,9 @@ export async function readMissingModels(session: CdpSession): Promise<MissingMod
 /** The line a capture prints when models are missing, or null when none are. */
 export function missingModelsProblem(missing: readonly MissingModel[]): string | null {
   if (missing.length === 0) return null;
-  const names = missing.slice(0, 8).map((entry) => entry.name).join(", ");
+  const names = missing.slice(0, 8).map((entry) => `${entry.name} (${entry.url})`).join(", ");
   const more = missing.length > 8 ? ` and ${missing.length - 8} more` : "";
-  return `MISSING MODELS: ${missing.length} drawn as placeholder boxes - ${names}${more}. Run bun run games:provision <game> or fix the path.`;
+  return `MISSING MODELS: ${missing.length} drawn as placeholder boxes - ${names}${more}. Run: bun run games:provision (links them from the shared asset store), or fix the path.`;
 }
 
 /** Layout status the shot is judged against, read in the same pass as the regions. */

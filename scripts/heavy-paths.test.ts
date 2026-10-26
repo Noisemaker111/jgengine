@@ -57,17 +57,15 @@ describe("game scope", () => {
     for (const game of SMOKE_GAMES) expect(PERF_GATE_GAMES).toContain(game);
   });
 
-  test("one job boots games, and its matrix is the scope's list", () => {
-    expect(workflow).not.toContain("smoke-game:");
-    expect(jobBlock("perf-game")).toContain("game: ${{ fromJSON(needs.changes.outputs.gameList) }}");
-    expect(jobBlock("perf-game")).toContain("needs.changes.outputs.games != 'none'");
+  test("CI never boots a game or downloads a model", () => {
+    for (const forbidden of ["perf-game:", "smoke-game:", "games:provision", "capabilities-probe", "perf:gate", "assets pull", "public/models"]) {
+      expect(workflow).not.toContain(forbidden);
+    }
   });
 
-  test("the verdicts fail a needed job that did not run, and name the skip", () => {
+  test("the smoke and perf checks branch protection reads still exist and name the scope", () => {
     for (const job of ["perf", "smoke", "ci"]) expect(jobBlock(job)).toContain("needs.changes.outputs.reason");
-    expect(jobBlock("smoke")).toContain('test "$BOOTS" = "success"');
-    expect(jobBlock("perf")).toContain('test "$FRAME" = "success"');
-    expect(jobBlock("perf")).toContain('test "$FRAME" = "skipped"');
+    expect(jobBlock("perf")).toContain('test "$CPU" = "success"');
   });
 
   test("a change-notes diff skips the test shards, and a skipped matrix cannot pass as run", () => {

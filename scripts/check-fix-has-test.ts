@@ -20,6 +20,8 @@ export const EXEMPTION_PREFIX = "Prevention: none - ";
 const MIN_REASON = 10;
 const RUNTIME_ROOTS = [/^packages\/[^/]+\/src\//, /^apps\//, /^scripts\//];
 const NOT_RUNTIME = /\.(test|spec)\.tsx?$|\.(md|json|snap)$/i;
+/** Demo scenes exist to be looked at; asking one for a test asks for filler. */
+const DEMO = /(^|\/)demos?\//;
 const TEST_FILE = /\.test\.tsx?$/;
 /**
  * The marker a generator writes into the file it owns, in the form the markdown generators
@@ -65,7 +67,17 @@ export function parseNameStatus(text: string): string[] {
 }
 
 export function isRuntimePath(path: string): boolean {
-  return RUNTIME_ROOTS.some((root) => root.test(path)) && !NOT_RUNTIME.test(path);
+  return RUNTIME_ROOTS.some((root) => root.test(path)) && !NOT_RUNTIME.test(path) && !DEMO.test(path);
+}
+
+/** New paths of files moved without an edit (`R100`): a rename changes no behavior. */
+export function pureRenamesFrom(text: string): string[] {
+  const renamed: string[] = [];
+  for (const line of text.split("\n")) {
+    const fields = line.trim().split("\t");
+    if (fields[0] === "R100" && fields[2] !== undefined) renamed.push(fields[2]);
+  }
+  return renamed;
 }
 
 /**
@@ -134,9 +146,14 @@ export interface Assessment {
   problems: string[];
 }
 
-export function assess(changed: readonly string[], body: string, generated: readonly string[] = []): Assessment {
+export function assess(
+  changed: readonly string[],
+  body: string,
+  generated: readonly string[] = [],
+  renamed: readonly string[] = [],
+): Assessment {
   const paths = [...new Set(changed)].sort();
-  const owned = new Set(generated);
+  const owned = new Set([...generated, ...renamed]);
   const runtime = paths.filter((path) => isRuntimePath(path) && !owned.has(path));
   const tests = paths.filter(isTestPath);
   const exempt = runtime.length === 0 || tests.length > 0 ? null : exemptionReason(body);
@@ -172,12 +189,15 @@ function git(root: string, args: string[]): { status: number; stdout: string; st
 }
 
 /** Committed-against-base paths plus whatever is staged, so a run before committing still sees the diff. */
-export function changedPaths(root: string, base: string): { paths: string[]; error?: string } {
-  const committed = git(root, ["diff", "--name-status", `${base}...HEAD`]);
-  if (committed.status !== 0) return { paths: [], error: `git diff ${base}...HEAD failed: ${committed.stderr.trim()}` };
-  const staged = git(root, ["diff", "--name-status", "--cached"]);
-  if (staged.status !== 0) return { paths: [], error: `git diff --cached failed: ${staged.stderr.trim()}` };
-  return { paths: [...parseNameStatus(committed.stdout), ...parseNameStatus(staged.stdout)] };
+export function changedPaths(root: string, base: string): { paths: string[]; renamed: string[]; error?: string } {
+  const committed = git(root, ["diff", "--name-status", "-M", `${base}...HEAD`]);
+  if (committed.status !== 0) return { paths: [], renamed: [], error: `git diff ${base}...HEAD failed: ${committed.stderr.trim()}` };
+  const staged = git(root, ["diff", "--name-status", "-M", "--cached"]);
+  if (staged.status !== 0) return { paths: [], renamed: [], error: `git diff --cached failed: ${staged.stderr.trim()}` };
+  return {
+    paths: [...parseNameStatus(committed.stdout), ...parseNameStatus(staged.stdout)],
+    renamed: [...pureRenamesFrom(committed.stdout), ...pureRenamesFrom(staged.stdout)],
+  };
 }
 
 function main(): number {
@@ -206,7 +226,7 @@ function main(): number {
     return 2;
   }
 
-  const assessment = assess(changed.paths, body, generatedPaths(root, changed.paths));
+  const assessment = assess(changed.paths, body, generatedPaths(root, changed.paths), changed.renamed);
   if (!assessment.ok) {
     console.error(`\ncheck-fix-has-test failed: ${assessment.problems.join("; ")}\n`);
     console.error(report(assessment));

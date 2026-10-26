@@ -108,7 +108,7 @@ bun run verify:fast   # seconds: the branch diff vs origin/beta mapped to the pa
 bun run lane:close    # verify:fast, land, one ci:status read, then refuse a lane that slept or watched
 bun run games:check-types  # type-check every game in games/ against this checkout's engine source
 bun run games:test         # every game's tests and the games' own scripts
-bun run games:provision    # pull the asset packs the games reference (games:provision <id> for one game)
+bun run games:provision    # link the asset packs the games reference from the shared store (games:provision <id> for one game)
 bun dev              # jgengine.com locally, games playable at /games/<id>
 bun run perf <game>  # frame times, draws, triangles, node/GL counts and top self-time functions as JSON (--help; --state pins the scene, --param k=v pins a spawn/seed, --set key=value prices a setting)
 bun run debug <game> # the same JSON for a game already open in a browser, ~0.3 s, fails on a budget breach

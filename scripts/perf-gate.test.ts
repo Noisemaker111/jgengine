@@ -282,9 +282,8 @@ describe("debugPortFor", () => {
 describe("ci matrix", () => {
   const workflow = readFileSync(fileURLToPath(new URL("../.github/workflows/ci.yml", import.meta.url)), "utf8");
 
-  test("the matrix is the scope's game list, so a game is measured once and a surface change still boots one", () => {
-    const job = /^ {2}perf-game:\n([\s\S]*?)(?=^ {2}\S)/m.exec(workflow)?.[1] ?? "";
-    expect(job).toContain("game: ${{ fromJSON(needs.changes.outputs.gameList) }}");
+  test("frame budgets are measured on the lane's machine, never on a CI runner", () => {
+    expect(workflow).not.toContain("perf:gate");
     // `scripts/ci-scope.ts` cannot import this list: the `changes` job runs it with no node_modules.
     expect([...FRAME_GAMES]).toEqual([...PERF_GATE_GAMES]);
   });

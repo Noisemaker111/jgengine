@@ -102,6 +102,28 @@ export function readByteSignature(bytes: Uint8Array): AssetByteSignature {
   return "unknown";
 }
 
+/**
+ * The `assets pull` target that provides a served URL: `/models/<pack>/…` is `<pack>`,
+ * `/models/library/<category>/<name>/…` is `model:<category>/<name>`. Null for a URL outside those trees.
+ * @internal
+ */
+export function pullTargetForUrl(url: string): string | null {
+  const parts = (url.split(/[?#]/)[0] ?? url).split("/").filter((part) => part !== "");
+  const at = parts.findIndex((part) => part === "models" || part === "materials" || part === "sprites");
+  if (at < 0 || parts.length < at + 3) return null;
+  if (parts[at] === "models" && parts[at + 1] === "library") {
+    return parts.length >= at + 5 ? `model:${parts[at + 2]}/${parts[at + 3]}` : null;
+  }
+  return parts[at + 1] === "imported" ? null : parts[at + 1]!;
+}
+
+/** The one fix line a missing file gets: the command that serves it. */
+function missingFix(url: string): string {
+  const target = pullTargetForUrl(url);
+  if (target === null) return "Check the path: nothing under models/, materials/ or sprites/ provides it.";
+  return `Run \`bun run games:provision\` in the jgengine repo (it links ${target} from the shared asset store, downloading it once if no checkout has it), or \`npx assets pull ${target}\` in your own game.`;
+}
+
 function describe(logicalId: string | undefined, url: string): string {
   return logicalId === undefined ? `"${url}"` : `"${logicalId}" (${url})`;
 }
@@ -133,7 +155,7 @@ export function classifyAssetResponse(probe: AssetResponseProbe): AssetLoadDiagn
     const suffix = statusText === undefined || statusText.length === 0 ? "" : ` ${statusText}`;
     return finish(
       "missing",
-      `Asset ${who} did not load: HTTP ${status}${suffix}. The bytes are not being served at that path — run \`assets pull <source>\`, which provisions the pack into the dev server's served models dir (\`apps/dev/public/models\` in the jgengine monorepo) so no manual copy is needed; or check the model path.`,
+      `Missing file ${url}: ${who} did not load (HTTP ${status}${suffix}). ${missingFix(url)}`,
     );
   }
 
@@ -141,7 +163,7 @@ export function classifyAssetResponse(probe: AssetResponseProbe): AssetLoadDiagn
   if (signature === "html" || (htmlContentType && signature !== "glb" && signature !== "gltf-json")) {
     return finish(
       "html",
-      `Asset ${who} resolved to an HTML page, not a model — the dev server returned its fallback document because the file is missing. Run \`assets pull <source>\` to provision the pack into the served models dir (\`apps/dev/public/models\` in the jgengine monorepo); the bytes must exist there, no manual copy needed.`,
+      `Missing file ${url}: ${who} resolved to an HTML page, not a model (the dev server's fallback for a file it does not have). ${missingFix(url)}`,
     );
   }
 

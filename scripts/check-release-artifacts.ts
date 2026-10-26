@@ -19,6 +19,7 @@ import { join } from "node:path";
 import { pathToFileURL } from "node:url";
 
 import { packageDir, publishedPackages, readManifest, repoRoot } from "./exportManifest";
+import { extractArgs, tarExecutable } from "./tar";
 
 export interface TarballResponse {
   status: number;
@@ -314,7 +315,7 @@ export function unpackWithTar(name: string, version: string, bytes: Uint8Array):
   const extract = "extract";
   writeFileSync(join(work, archive), bytes);
   mkdirSync(join(work, extract));
-  execFileSync("tar", ["-xzf", archive, "-C", extract], { cwd: work, timeout: 120_000 });
+  execFileSync(tarExecutable(), extractArgs(archive, extract), { cwd: work, timeout: 120_000 });
   const dir = join(work, extract);
   const files = readdirSync(join(dir, "package"), { recursive: true })
     .map((entry) => String(entry).split("\\").join("/"))

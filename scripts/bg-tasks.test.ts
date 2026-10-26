@@ -15,7 +15,7 @@ function checkout(): string {
   return dir;
 }
 afterEach(() => {
-  for (const dir of made) rmSync(dir, { recursive: true, force: true });
+  for (const dir of made) rmSync(dir, { recursive: true, force: true, maxRetries: 10, retryDelay: 200 }); // Windows holds an exited child's log open briefly (EBUSY under load)
   made.clear();
 });
 

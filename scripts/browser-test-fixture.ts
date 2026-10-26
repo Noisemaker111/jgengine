@@ -2,6 +2,8 @@ import { mkdirSync, mkdtempSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
 
+import { extractArgs, tarExecutable } from "./tar";
+
 const packagesRoot = resolve(import.meta.dir, "../packages");
 const packed = new Map<string, Promise<string>>();
 let cacheDir: string | undefined;
@@ -48,7 +50,7 @@ export async function installPublicPackages(root: string, packages: readonly str
     const tarball = await packPublicPackage(pkg);
     const destination = join(root, "node_modules", "@jgengine", pkg);
     mkdirSync(destination, { recursive: true });
-    await run(["tar", "-xzf", tarball, "-C", destination, "--strip-components=1"], root);
+    await run([tarExecutable(), ...extractArgs(tarball, destination, ["--strip-components=1"])], root);
   }));
 }
 
