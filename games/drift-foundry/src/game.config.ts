@@ -47,13 +47,17 @@ export const game = defineGame({
   // This run uses its own held throttle/jump pad alongside the branded HUD.
   touch: false,
   capture: {
-    play: ["startRun"],
+    // The compactor catches a parked kart within seconds, and the capture keeps the sim running while
+    // models stream, so a live shot hands the wheel to the course autopilot; otherwise it films the
+    // result card of a run nobody drove.
+    play: ["startRun", { name: "run.autopilot", input: {} }],
     // `mid-run` is the corridor driven quickly: 14 s of throttle with the pickups, gates, crusher
-    // and rivals all live. `result` keeps driving to the finish the gauntlet actually gives (an
-    // escape in 42 s from the stock build), so the result card carries a real line, not a number.
+    // and rivals all live, then the autopilot keeps it driving. `result` keeps driving to the finish
+    // the gauntlet actually gives (an escape in 42 s from the stock build), so the result card
+    // carries a real line, not a number.
     states: {
       title: [],
-      "mid-run": ["startRun", { name: "run.stage", input: { mode: "midrun" } }],
+      "mid-run": ["startRun", { name: "run.stage", input: { mode: "midrun" } }, { name: "run.autopilot", input: {} }],
       result: ["startRun", { name: "run.stage", input: { mode: "result" } }],
     },
     views: {
