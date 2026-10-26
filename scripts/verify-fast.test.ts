@@ -419,7 +419,7 @@ describe("commands", () => {
       boots: ["harbor-heat"],
       inputs: { "test:packages/core/src/a.test.ts": ["packages/core/src/a.ts"], "test:packages/core/src/b.test.ts": [] },
     };
-    const passed = new Set(["test:packages/core/src/b.test.ts", "gate:artifacts", "boot:harbor-heat"]);
+    const passed = new Set(["test:packages/core/src/b.test.ts", "gate:artifacts", "boot:harbor-heat", "load:harbor-heat"]);
     const steps = fastSteps(plan, { fresh: (unit) => passed.has(unit) });
     expect(steps.map((step) => step.name)).toEqual(["typecheck packages/core", "test 1 file(s)"]);
     expect(steps[1]?.command.slice(4)).toEqual(["packages/core/src/a.test.ts"]);
@@ -773,11 +773,22 @@ describe("local boots", () => {
     expect(steps.map((step) => step.command.join(" "))).toEqual([
       "bun games/scripts/provision-assets.ts scrap-signal",
       "bun games/scripts/capabilities-probe.ts scrap-signal",
+      "bun scripts/load-check.ts scrap-signal --guard",
     ]);
     expect(steps[1]?.needs).toEqual(["provision scrap-signal"]);
+    // The load guard times the same game against its baseline with the machine to itself.
+    expect(steps[2]).toMatchObject({ needs: ["provision scrap-signal"], exclusive: true });
     // The boot runs beside the tests: its deadline waits out a busy page instead of the suite.
     const withTests = fastSteps({ ...emptyPlan, tests: ["a.test.ts"], boots: ["scrap-signal"] });
     expect(withTests.find((step) => step.name === "boot probe scrap-signal")?.needs).toEqual(["provision scrap-signal"]);
+  });
+
+  test("a load guard that already passed with the same inputs is skipped, and a boot alone still provisions", () => {
+    const plan = { ...emptyPlan, boots: ["scrap-signal"], inputs: { "boot:scrap-signal": ["games/scrap-signal/src/main.tsx"] } };
+    const steps = fastSteps(plan, { fresh: (id) => id === "load:scrap-signal" });
+    expect(steps.map((step) => step.name)).toEqual(["provision scrap-signal", "boot probe scrap-signal"]);
+    const onlyLoad = fastSteps(plan, { fresh: (id) => id === "boot:scrap-signal" });
+    expect(onlyLoad.map((step) => step.name)).toEqual(["provision scrap-signal", "load guard scrap-signal"]);
   });
 
   test("the games job's capability gates run here with CI's arguments", () => {

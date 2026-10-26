@@ -1,7 +1,7 @@
 import { describe, expect, test } from "bun:test";
 
 import { shootCommand, LOAD_GUARD_SECONDS } from "./shoot";
-import { parseLoadArgs, renderTable, siteGames, summarizeRuns, type LoadSample } from "./load-check";
+import { bestOf, judgeLoad, parseLoadArgs, renderTable, siteGames, summarizeRuns, type LoadSample } from "./load-check";
 
 const known = ["apex-nights", "hold-the-line", "saltwick"];
 
@@ -46,5 +46,30 @@ describe("renderTable", () => {
   test("shows before -> after cells when a previous run is given", () => {
     const table = renderTable([sample("saltwick", 400, 3000)], [sample("saltwick", 12_000, null)]);
     expect(table).toContain("| saltwick | 500 -> 500 | 900 -> 900 | 12000 -> 400 | 2000 -> 2000 | - -> 3000 |");
+  });
+});
+
+describe("judgeLoad", () => {
+  const base = { worstClick: 600, sceneReady: 4000 };
+  const now = (worstClick: number | null, sceneReady: number | null): LoadSample => ({ ...sample("saltwick", worstClick, null), sceneReady });
+
+  test("passes a load within noise of its baseline", () => {
+    expect(judgeLoad("saltwick", base, now(950, 5400))).toEqual([]);
+  });
+
+  test("fails a worse freeze or a slower scene and names the numbers", () => {
+    expect(judgeLoad("saltwick", base, now(1100, 4000))).toEqual(["saltwick: worst freeze 1100 ms, baseline 600 ms, limit 1000 ms"]);
+    expect(judgeLoad("saltwick", base, now(600, 5600))).toEqual(["saltwick: scene ready 5600 ms, baseline 4000 ms, limit 5500 ms"]);
+    expect(judgeLoad("saltwick", base, now(600, null))).toEqual(["saltwick: scene ready never happened (baseline 4000 ms)"]);
+  });
+
+  test("a baseline that never reached the scene does not judge it", () => {
+    expect(judgeLoad("saltwick", { worstClick: 600, sceneReady: null }, now(600, null))).toEqual([]);
+  });
+
+  test("a retry keeps the better of the two runs per measure", () => {
+    const best = bestOf(now(1200, 3000), now(700, 9000));
+    expect(best.worstClick).toBe(700);
+    expect(best.sceneReady).toBe(3000);
   });
 });

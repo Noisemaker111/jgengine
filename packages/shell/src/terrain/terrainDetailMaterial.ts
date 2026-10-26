@@ -89,22 +89,26 @@ vec3 jgLayerMap(int slot, vec3 wp, out bool has) {
 }
 #endif
 JgSurf jgSlot(int slot, vec3 baseTone, vec3 wp){
+  // One jgSurface call site: shader compilers inline every call, so picking the arguments first
+  // keeps one copy of the surface code per slot instead of three.
   vec3 jgFlatC = baseTone;
-  JgSurf s;
+  int cls = 0;
+  float rough = roughness;
+  float scale = 1.0;
   if (slot == 9) {
     jgFlatC = uRockColor;
-    s = jgSurface(4, uRockColor, roughness, 1.0, wp);
+    cls = 4;
   }
 #ifdef JG_TERRAIN_PAINT
   else if (slot > 0) {
     int i = slot - 1;
     jgFlatC = uLayerColor[i];
-    s = jgSurface(int(uLayerClass[i] + 0.5), uLayerColor[i], uLayerRough[i], uLayerScale[i], wp);
+    cls = int(uLayerClass[i] + 0.5);
+    rough = uLayerRough[i];
+    scale = uLayerScale[i];
   }
 #endif
-  else {
-    s = jgSurface(0, baseTone, roughness, 1.0, wp);
-  }
+  JgSurf s = jgSurface(cls, jgFlatC, rough, scale, wp);
 #ifdef JG_TERRAIN_LAYER_MAPS
   if (slot > 0 && slot <= 4) {
     bool jgHasMap;

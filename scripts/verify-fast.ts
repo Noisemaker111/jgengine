@@ -605,18 +605,35 @@ export function fastSteps(plan: Plan, options: FastOptions = {}): Step[] {
   }
 
   const boots = plan.boots.map((game) => unit(`boot:${game}`)).filter((settles) => !fresh(settles.id, settles.inputs));
+  // The same games, timed cold against the load baseline (`bun run shoot --load --guard`): a change
+  // that makes a game freeze or reach its scene slower fails here, since CI has no GPU to see it.
+  const loads = plan.boots.map((game) => unit(`load:${game}`, plan.inputs[`boot:${game}`])).filter((settles) => !fresh(settles.id, settles.inputs));
+  const linked = [...new Set([...boots, ...loads].map((settles) => settles.id.slice(settles.id.indexOf(":") + 1)))];
+  const provision = `provision ${linked.join(" ")}`;
+  // Link (or, once per machine, download) the packs first, so the boot reads real models.
+  if (linked.length > 0) steps.push({ name: provision, command: ["bun", "games/scripts/provision-assets.ts", ...linked], cost: 2 });
   if (boots.length > 0) {
     const games = boots.map((settles) => settles.id.slice("boot:".length));
-    // Link (or, once per machine, download) the packs first, so the boot reads real models.
-    steps.push({ name: `provision ${games.join(" ")}`, command: ["bun", "games/scripts/provision-assets.ts", ...games], cost: 2 });
     // Beside the tests, not after them: the probe's deadline counts from when the page stops
     // loading, so a busy machine makes it slower, never red.
     steps.push({
       name: `boot probe ${games.join(" ")}`,
       command: ["bun", "games/scripts/capabilities-probe.ts", ...games],
-      needs: [`provision ${games.join(" ")}`],
+      needs: [provision],
       cost: 40,
       units: boots,
+    });
+  }
+  if (loads.length > 0) {
+    const games = loads.map((settles) => settles.id.slice("load:".length));
+    // Alone on the machine: a neighbour's browser or build would read as a slower load.
+    steps.push({
+      name: `load guard ${games.join(" ")}`,
+      command: ["bun", "scripts/load-check.ts", ...games, "--guard"],
+      needs: [provision],
+      exclusive: true,
+      cost: 90,
+      units: loads,
     });
   }
   return steps;
