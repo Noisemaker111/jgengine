@@ -12,7 +12,7 @@ import {
 } from "@jgengine/core/combat/weaponPresentation";
 import { useGameContext } from "@jgengine/react/provider";
 import { usePlayer } from "@jgengine/react/hooks";
-import { useEntityRenderCues } from "@jgengine/shell/render/useEntityRenderCues";
+import { useEntityRenderCues } from "@jgengine/core/anim/useEntityRenderCues.draw";
 import { clearCameraBoom, sceneCameraQuery } from "./cameraCollision";
 import { usePlayerFov } from "./PlayerFov.draw";
 import { GAME_SIM_FRAME_PRIORITY, ORBIT_CAMERA_FRAME_PRIORITY } from "./orbitCameraMath";

@@ -2,7 +2,7 @@ import { createShellKeyHandlers } from "./ShellChrome";
 import { expect, test } from "bun:test";
 
 import { JoinGate } from "@jgengine/core/multiplayer/JoinGate.view";
-import { TerritoryOverlay } from "./TerritoryOverlay";
+import { TerritoryOverlay } from "@jgengine/core/placement/TerritoryOverlay.view";
 
 test("failed join blocks children and renders a retry action", () => {
   const html = JSON.stringify(JoinGate({ status: "failed", failureReason: "full", retry: () => {}, children: "gameplay" }));

@@ -76,7 +76,7 @@
 - `NameplateSample` (interface): interface NameplateSample — Projected nameplate with optional health and distance from the render camera.
 - `ProjectileTracers` (function): function ProjectileTracers({ lifeMs = 200 }: { lifeMs?: number }): React.JSX.Element — ⚠ undocumented
 - `Reticle` (function): function Reticle({ className }: { className?: string }): React.JSX.Element — ⚠ undocumented
-- `WorldBarSample` (interface): interface WorldBarSample — ⚠ undocumented
+- `WorldBarSample` (interface): interface WorldBarSample — One world-anchored health or name bar projected to screen: position, fill and label.
 - `WorldEntityBars` (function): function WorldEntityBars({ statId, height = 2.2, roles, resolveRole, maxDistance, occlude = true, tickMs = 80, maxSamples = 64, }: { statId: string; height?: number; roles?: readonly CatalogEntityRole[]; resolveRole?: (entity: SceneEntity) => CatalogEntityRole | undefined; /** Hide bars beyond this … — ⚠ undocumented
 - `WorldFloatText` (function): function WorldFloatText({ height = 1.9, lifeMs = 950 }: { height?: number; lifeMs?: number }): React.JSX.Element — ⚠ undocumented
 - `WorldNameplates` (function): function WorldNameplates({ statId = "health", height = 2.3, roles, resolveRole, maxDistance, occlude = true, tickMs = 120, maxSamples = 64, resolveName, showHealth = true, className, nameplateClassName, nameClassName, barClassName, fillClassName, renderNameplate, }: WorldNameplatesProps): React.JSX.… — Billboarded name + 78×6px HP bar over every nearby non-local entity that passes `roles`/`maxDistance` — headless (className/data-* slots on every part, `renderNameplate` for a full swap), turned on declaratively via `defineGame({ nameplates })` rather than mounted by hand.
@@ -103,6 +103,14 @@
 - `actionBarKeyAction` (function): function actionBarKeyAction(actions: readonly ResolvedAction[], focusedId: string | null, columns: number, key: string, options?: { wrap?: boolean }): ActionBarKeyResult — Pure keyboard/controller resolver for an action bar: arrows/Home/End move grid focus, Enter/Space activate the focused action, and any other single key routes through {@link actionByHotkey}. Returns the resulting intent without touching the DOM, so it unit-tests headless and `useActionBar` is a thin shell over it.
 - `actionFromAbilitySlot` (function): function actionFromAbilitySlot(slot: AbilitySlotSnapshot, extra?: Partial<ActionDef> & { resourceId?: string }): ActionDef — Composable React renderers over the headless action view model (`@jgengine/core/ui/actionModel`) — the data/renderer/chrome split for an RTS command card, an ability action bar, a build menu, or a radial. `useActionBar` is the DATA/HOOK layer (resolution + focus/hover/keyboard/hotkey), `ActionBarChrome` is the composable RENDERER (swap `renderItem` for custom chrome, or ignore it and consume the model directly for a radial), and `ActionBar` is the batteries-included default. A game swaps renderer or chrome without forking the logic. Layout, dimensions, hotkeys, and catalog-id mapping stay caller-owned.
 - `useActionBar` (function): function useActionBar(defs: readonly ActionDef[], options?: UseActionBarOptions): ActionBarModel — The DATA/HOOK layer: resolve `defs` into a live view model with focus, hover, keyboard grid navigation, and hotkey activation. Rendering-agnostic — feed the returned model to {@link ActionBarChrome}, or read it directly to lay out a radial or a bespoke card.
+
+## @jgengine/core/hud/barSamples.draw
+
+- `NameplateSample` (interface): interface NameplateSample — Projected nameplate with optional health and distance from the render camera.
+- `Projectable` (interface): interface Projectable — A vector that can be set and projected through a camera, such as THREE.Vector3.
+- `WorldBarSample` (interface): interface WorldBarSample — One world-anchored health or name bar projected to screen: position, fill and label.
+- `WorldOverlayCamera` (interface): interface WorldOverlayCamera — Render camera matrices; world translation supplies the overlay's viewpoint.
+- `WorldOverlaySampleOptions` (interface): interface WorldOverlaySampleOptions — Sampling policy shared by health bars and nameplates.
 
 ## @jgengine/core/hud/comboMeter.view
 
@@ -593,6 +601,17 @@
 - `EntityPreview` (function): function EntityPreview({ children, model, instanceId, mood = "studio", backdrop, turntable = 0, faceCamera = false, forward, environment = true, cameraPosition = [0, 1, 3], fov = 35, dpr = [1, 2], className, style, }: EntityPreviewProps): React.JSX.Element — Drop-in live 3D preview of a single entity — the character-screen portrait, unit inspector, or loadout viewer. It owns all the plumbing a game would otherwise re-derive by hand: a nested `<Canvas>`, the {@link GameContextBridge} that carries the running `GameContext` across the R3F reconciler boundary (so the subject's `useEntityRenderCues` / `useGameContext` hooks resolve and it mirrors the live game), a {@link StudioStage} 3-point lighting rig with optional turntable / face-camera, and a capture-friendly GL surface. The game keeps ownership of its `renderEntity`: pass it as `children`, or hand a native `model` (+ `instanceId`) for an engine-composed body. Bound to a live `instanceId`, the portrait walks, flinches, and topples in lockstep with the world instead of a canned spin.
 - `EntityPreviewProps` (interface): interface EntityPreviewProps — Props for {@link EntityPreview}.
 
+## @jgengine/core/render/SpriteBatch.draw
+
+- `SpriteBatch` (function): function SpriteBatch({ url, columns = 1, rows = 1, capacity = DEFAULT_CAPACITY, instances, plane = "xy", billboard = false, pixelated = true, alphaTest = DEFAULT_ALPHA_TEST, opacity = 1, }: SpriteBatchProps): React.JSX.Element — Renders a sprite sheet / tile atlas as a single InstancedMesh — one draw call for the whole batch. Each instance picks its atlas frame via a per-instance UV offset attribute patched into the material's vertex shader, so platformer/puzzle-grid presentation never needs one draw call per sprite. Transforms and UV offsets are written directly into the mesh's typed arrays each frame from a plain instance list (bodies never touch the per-entity React path).
+- `SpriteBatchInstance` (interface): interface SpriteBatchInstance — One sprite in a batch: world position, size and atlas frame.
+- `SpriteBatchProps` (interface): interface SpriteBatchProps — Props for SpriteBatch: atlas URL and grid, and the sprites to draw.
+
+## @jgengine/core/render/TileLayerRenderer.draw
+
+- `TileLayerRenderer` (function): function TileLayerRenderer({ config, parallax = [1, 1], pixelated = true }: TileLayerRendererProps): React.JSX.Element | null — Renders a tilemap as one instanced quad mesh with atlas UV rectangles.
+- `TileLayerRendererProps` (interface): interface TileLayerRendererProps — Inputs for the instanced textured tile-layer renderer.
+
 ## @jgengine/core/render/ambientLife
 
 - `AmbientLifeConfig` (interface): interface AmbientLifeConfig — Small life the renderer adds around the camera, driven by the weather and the time of day. Birds circle overhead in fair daylight and leave in rain or at night; litter blows along the ground when the wind picks up; steam rises from vents, thicker when it is cold, wet or dark.
@@ -677,6 +696,10 @@
 - `SpriteClipState` (interface): interface SpriteClipState — Serializable playback position for a named sprite animation.
 - `createSpriteClipPlayer` (function): function createSpriteClipPlayer(atlas: SpriteAtlas): { play(name: string): void; advance(dt: number): void; frame: () => { x: number; y: number; w: number; h: number; pivot?: [number, number] | undefined; } | undefined; snapshot: () => { animation: string; frameIndex: number; elapsed: number; done: … — Create a renderer-independent sprite animation player.
 - `sortingOrder` (function): function sortingOrder(layers: readonly string[], layer: string, offset = 0): number — Resolve a layer name and local offset into a stable render order.
+
+## @jgengine/core/render/tileLayerInstances
+
+- `TileLayerInstance` (interface): interface TileLayerInstance — One resolved map cell with its world position and atlas UV rectangle.
 
 ## @jgengine/core/render/tileLayerPreview.view
 
@@ -2234,11 +2257,6 @@
 - `UiPreviewScenario` (type): type UiPreviewScenario = (ctx: GameContext, playable: PlayableGame) => void — ⚠ undocumented
 - `defaultUiScenario` (const): const defaultUiScenario: UiPreviewScenario — ⚠ undocumented
 
-## @jgengine/shell/TerritoryOverlay
-
-- `TerritoryOverlay` (function): function TerritoryOverlay({ cells, cost, affordable, formatCost = String, renderCell, className, style }: { cells: readonly TerritoryPreviewCell[]; cost: number; affordable: boolean; formatCost?: (cost: number) => ReactNode; renderCell?: (cell: TerritoryPreviewCell) => ReactNode; className?: string;… — Placement footprint feedback with inline claim cost and affordability.
-- `TerritoryPreviewCell` (type): type TerritoryPreviewCell = { key: string; x: number; z: number; status: "owned" | "claimable" | "blocked" } — A placement footprint cell and its authoritative preview status.
-
 ## @jgengine/shell/drivers/FrameDriver
 
 - `FrameDriver` (function): function FrameDriver({ ctx, playable, tracker, yawRef, pitchRef, primaryClickRef, pointerAxisRef, analogRef, gateRef, onRuntimeError, multiplayer, serverIdRef, pointerService, pointerAim, pingCommand, poster, onPosterSettled, authoritativeFrameRef, }: { ctx: GameContext; playable: PlayableGame; trac… — ⚠ undocumented
@@ -2252,146 +2270,15 @@
 - `RenderObject` (type): type RenderObject = (object: SceneObject) => ReactNode — ⚠ undocumented
 - `resolveGameLoader` (function): function resolveGameLoader(registry: GameRegistry, gameId: string, fallbackGameId?: string): (() => Promise<PlayableGame>) | undefined — ⚠ undocumented
 
-## @jgengine/shell/render/CharacterCrowd
-
-- `CharacterCrowd` (function): function CharacterCrowd({ models, registry, fps = 24, onPick }: CharacterCrowdProps): React.JSX.Element — Draws characters through the GPU batch path: one baked rig per character kind, one instanced draw per material, every member's clip, time offset and speed sampled in the vertex shader. The entity markers decide who is batched (their `lod` tiers and the batch capacity) and write poses into `registry`; this layer owns the bakes, the materials and the instance buffers. Mount it in the same canvas as the entity markers; unmount it to fall back to per-entity rigs.
-- `CharacterCrowdProps` (interface): interface CharacterCrowdProps — Props for {@link CharacterCrowd}.
-
-## @jgengine/shell/render/InteriorDressing
-
-- `DEFAULT_INTERIOR_SURFACES` (const): const DEFAULT_INTERIOR_SURFACES: InteriorDressingSurfaces — Plain defaults: grey paint, dull steel, a warm lens.
-- `InteriorDressing` (function): function InteriorDressing({ plan, surfaces, cableColor = "#141414", decalSeed = "interior", decals = true }: InteriorDressingProps): React.JSX.Element — The drawn side of a planned interior: trims, pipes, fittings and lamp housings as static instance batches, every cable as one merged tube, and every stain style as one instanced decal mesh. A whole floor costs a handful of draws however many pieces it has. Pair it with {@link PracticalLights} for the lamps' light.
-- `InteriorDressingProps` (interface): interface InteriorDressingProps — Props for {@link InteriorDressing}.
-- `InteriorDressingSurfaces` (interface): interface InteriorDressingSurfaces — The surface each dressing family wears. Any family left out falls back to a plain painted default.
-- `PracticalLights` (function): function PracticalLights({ fixtures, count = 6, shadowed = 0, color = "#ffe2b0", intensity = 14, distance = 9, angle = 1.05, penumbra = 0.6, reach = 28, every = 8 }: PracticalLightsProps): React.JSX.Element — A fixed pool of spot lights that follows the camera through a planned interior, lighting the lamps nearest the eye and aiming each down and out from its wall. The pool size and shadow count never change, so walking a floor of hundreds of lamps costs the same few lights.
-- `PracticalLightsProps` (interface): interface PracticalLightsProps — Props for {@link PracticalLights}.
-
-## @jgengine/shell/render/PartMotion
-
-- `PartMotionRig` (function): function PartMotionRig({ parts, model, instanceId, renderPart, children, }: { parts: readonly ModelPart[]; model: ModelConfig; instanceId?: string; /** Renders one part's model content (the shell passes its part renderer to avoid an import cycle). */ renderPart: (part: ModelPart, index: number) => R… — Procedural motion rig for a rig-less part-composed character (`ModelPart.role` — see `@jgengine/core/game/partAnimation`). Wraps the whole composition in a root group that bobs, breathes, flinches on `combat.hitReaction`, and topples on `entity.died`, while each role-tagged part swings around its authored transform — legs/arms counter-phase from the entity's live movement speed, head counter-sway, tail wag, wing flap. Untagged parts render as static kit pieces. Children are the base model content (primitive, attachments).
-
-## @jgengine/shell/render/SkinnedInstances
-
-- `BakeSkinnedCrowdOptions` (interface): interface BakeSkinnedCrowdOptions — Options for {@link bakeSkinnedCrowd}.
-- `BakedSkinnedCrowd` (interface): interface BakedSkinnedCrowd — A rig baked for instancing: one merged geometry, the bone-matrix texture and its layout.
-- `CrowdInstance` (interface): interface CrowdInstance — One crowd member: where it stands and what it plays.
-- `CrowdUniforms` (interface): interface CrowdUniforms — Uniforms shared by every material of one crowd; `crowdTime` advances once per frame.
-- `SkinnedCrowdSource` (interface): interface SkinnedCrowdSource — A rig to bake: a loaded scene with skinned meshes and its clips.
-- `SkinnedInstances` (function): function SkinnedInstances({ url, instances, clips, once, fps, modelScale = 1, castShadow = true, receiveShadow = true, timeScale = 1, }: SkinnedInstancesProps): React.JSX.Element — Renders many animated copies of one rigged model in a single instanced draw per material: the rig's clips are baked to a bone-matrix texture once, and each instance samples its own clip, time offset and speed on the GPU. For crowds, spectators and distant NPCs; a character that needs blending, IK or attachments stays an entity model.
-- `SkinnedInstancesProps` (interface): interface SkinnedInstancesProps — Props for {@link SkinnedInstances}.
-- `bakeSkinnedCrowd` (function): function bakeSkinnedCrowd(source: SkinnedCrowdSource, options: BakeSkinnedCrowdOptions = {}): BakedSkinnedCrowd — Bakes a rig for {@link SkinnedInstances}: merges its meshes into one geometry per material, samples every requested clip at `fps`, and writes each slot's model-space matrix into a float texture laid out by `planBoneTexture`. A skinned mesh contributes its bones as slots; a rig-less part that a clip moves contributes that node, with its vertices weighted fully to it, so a node-transform character (a walking miniature with rotating limbs) batches through the same shader. A model with no clips at all bakes to `animated: false`: one merged geometry per material and no texture. Meshes with several materials keep only the first. Exported for tests and custom crowd renderers.
-- `createCrowdUniforms` (function): function createCrowdUniforms(baked: BakedSkinnedCrowd): CrowdUniforms — Builds the uniforms a crowd material reads: the texture and per-clip start, frames, fps and loop.
-- `patchCrowdMaterial` (function): function patchCrowdMaterial<T extends THREE.Material>(material: T, uniforms: CrowdUniforms): T — Patches a material so each instance skins itself from the crowd texture: per-instance `crowdPlay` is (clip index, time offset, speed). Works on any built-in material, the depth material for shadows included.
-
-## @jgengine/shell/render/characterGlance
-
-- `DEFAULT_GLANCE` (const): const DEFAULT_GLANCE: GlanceTuning — Default glance: starts at 7 m, lets go at 8.5 m, head turns up to 65° sideways and 30° up or down.
-- `GlanceRig` (interface): interface GlanceRig — Head and neck bones the glance turns, found by name on the loaded rig.
-- `GlanceState` (interface): interface GlanceState — Carried between frames: the smoothed aim and the faded weight.
-- `GlanceTuning` (interface): interface GlanceTuning — Tuning for the default head turn a rigged character makes toward the local player. Angles are radians, distances metres.
-- `applyGlance` (function): function applyGlance(rig: GlanceRig, facingYaw: number, target: THREE.Vector3 | null, state: GlanceState, delta: number, tuning: GlanceTuning = DEFAULT_GLANCE): void — One frame of the glance, after the animation mixer and foot IK. The turn is added on top of the animated pose relative to the character's own heading (`facingYaw`, engine convention: forward is `(sin yaw, cos yaw)`), so it does not depend on which axis a rig's head bone points along. `target` is a world point or `null` for nothing to look at; the turn fades out either way. Exported for tests.
-- `createGlanceState` (function): function createGlanceState(): GlanceState — A fresh glance state: looking straight ahead with no turn applied.
-- `findGlanceRig` (function): function findGlanceRig(scene: THREE.Object3D): GlanceRig | null — Finds the head (and neck) of a humanoid or animal rig by bone name: KayKit `head`, Mixamo `mixamorigHead`, Rocketbox `Bip01 Head`, Quaternius `Head`. End markers (`HeadTop_End`) are skipped. Returns `null` when no head bone exists.
-- `useCharacterGlance` (function): function useCharacterGlance(scene: THREE.Object3D, enabled: boolean, ctx: GameContext | null, instanceId: string | undefined, maxCameraDistance: number): void — Default glance for a rigged character: its head turns toward the local player when they come close, from any angle in front of it, and turns back when they leave. The local player's own model never glances. `maxCameraDistance` skips the work for characters too far away to read.
-
-## @jgengine/shell/render/crowdBatch
-
-- `poseTimeOffset` (function): function poseTimeOffset(id: string): number — A stable non-zero time offset for a member with no recorded pose, so a crowd is not in lockstep.
-
-## @jgengine/shell/render/crowdRegistry
-
-- `CharacterCrowdRegistry` (class): class CharacterCrowdRegistry — The characters the crowd layer is currently drawing, written by their entity markers each frame. It holds poses rather than React state: 71 pedestrians writing matrices must not re-render the world, and the crowd batch reads the same entries back to fill its instance buffers.
-- `crowdClipForSpeed` (function): function crowdClipForSpeed(clips: readonly string[], speed: number, bands?: CrowdSpeedBands): string | undefined — The baked clip a crowd member at `speed` plays; clips are `[idle, walk, run]` as {@link crowdClipsOf} orders them. `bands` is the model's own walk/run speed.
-- `crowdClipsOf` (function): function crowdClipsOf(model: ModelConfig, clipNames: readonly string[]): string[] — The clips a crowd batch bakes for a model: its resolved idle, walk and run, in that order. Empty when the model plays no clips at all (a static character) or when the rig's clip names do not resolve to locomotion roles, which leaves the character on its own rig instead of drawing a frozen crowd copy.
-- `crowdEligible` (function): function crowdEligible(model: ModelConfig | undefined): model is ModelConfig — Whether a model can leave its own rig for the GPU crowd path: one whose drawn result a batch can reproduce. A rigged, clip-played, plain model qualifies, and so does a model with no animation at all (a static crowd character) — it has no playback to lose. A model that needs per-entity materials, wind, hidden nodes, IK, attachments or a part composition keeps its own rig.
-- `crowdKindOf` (function): function crowdKindOf(model: ModelConfig): string — The identity a character model shares with every other model the GPU crowd can draw: rig url, height normalization and material tint. Two entity kinds with the same key can share one instanced draw; a different tint or height needs its own.
-- `crowdSpeedBandsOf` (function): function crowdSpeedBandsOf(model: ModelConfig, clipNames: readonly string[]): CrowdSpeedBands — The ground speeds the model's own locomotion graph switches clips at, so a batched character walks and idles at the same speed its own rig would. A model that declares none keeps the engine's defaults.
-
-## @jgengine/shell/render/entityMuzzle
-
-- `EntityMuzzleReader` (type): type EntityMuzzleReader = (target: THREE.Vector3) => boolean — Writes where an entity's shots visibly leave from, in world space; false when it has none right now.
-- `findMuzzleBone` (function): function findMuzzleBone(scene: THREE.Object3D): THREE.Object3D | null — The bone a rigged character's shots leave from: a `muzzle` node when the model has one, else its right hand (KayKit `handslot.r`, Mixamo `RightHand`, Rocketbox `Bip01 R Hand`, Quaternius `Hand.R`), else its left. Exported for tests.
-- `readEntityMuzzle` (function): function readEntityMuzzle(instanceId: string, target: THREE.Vector3): boolean — The visible muzzle of `instanceId` into `target`; false leaves `target` unchanged.
-- `registerEntityMuzzle` (function): function registerEntityMuzzle(instanceId: string, reader: EntityMuzzleReader): () => void — Register where shots fired by `instanceId` visibly leave from (a gun hand, a turret barrel, a staff tip). Tracers and muzzle effects start there instead of at the shot's rule origin; the rule origin still decides what is hit. Returns the cleanup.
-- `useEntityMuzzle` (function): function useEntityMuzzle(scene: THREE.Object3D, instanceId: string | undefined, facingYaw: () => number): void — Register a placed character's visible muzzle: its muzzle node, or a point just in front of its shooting hand along its facing. A model with no hand bone registers nothing.
-
-## @jgengine/shell/render/livingWorld
-
-- `DRY_SECONDS` (const): const DRY_SECONDS: 70 — Seconds of dry weather until soaked surfaces are dry again.
-- `WET_SECONDS` (const): const WET_SECONDS: 14 — Seconds of steady rain until surfaces are soaked.
-
-## @jgengine/shell/render/testFixtures/proceduralTileLayer
-
-- `drawProceduralTileLayer` (function): function drawProceduralTileLayer(canvas: CanvasFixture): TilemapWorldConfig — Draw the deterministic tile atlas used by textured tile-layer captures and tests.
-
-## @jgengine/shell/render/useEntityRenderCues
-
-- `useEntityRenderCues` (function): function useEntityRenderCues(instanceId: string | undefined, tuning?: RenderCueTuning): MutableRefObject<EntityRenderCues> — Live motion + animation cues for one entity, read from a mutable ref inside your own `useFrame` — no re-render per frame, no diffing the parent group's position, no game-side module map for attack/hit timing. Backs both custom `renderEntity` rigs and a custom first-person viewmodel (#542): call it with `entity.id` / the local player's userId and drive bob/recoil/reload poses from `cuesRef.current` inside the calling component's own `useFrame`.
-
-## @jgengine/shell/render/useFootIk
-
-- `FootIkRig` (interface): interface FootIkRig — Bones resolved once per loaded scene for {@link applyFootIk}.
-- `FootIkState` (interface): interface FootIkState — Per-model state carried between frames: the faded weight and the smoothed pelvis drop.
-- `applyFootIk` (function): function applyFootIk(rig: FootIkRig, originY: number, probe: GroundProbe, state: FootIkState, delta: number, lookAtTarget?: readonly [number, number, number]): boolean — Applies one frame of foot IK after the animation mixer: probes the ground under each foot, resolves targets with `placeFeet`, lowers the pelvis, solves each leg with `solveTwoBone` bending toward the animated knee, and tilts planted feet to the ground. Turns the look-at bone toward `lookAtTarget` when the rig has one. Returns whether the feet are grounded; `state` carries the faded weight between frames. Exported for tests and custom hosts.
-- `resolveFootIkRig` (function): function resolveFootIkRig(scene: THREE.Object3D, config: FootIkConfig, quiet = false): FootIkRig | null — Resolves foot-IK bones on a loaded rig: explicit chains, or legs found by bone name for `"auto"` and configs without `feet`. Returns `null` when no leg resolves.
-- `useFootIk` (function): function useFootIk(scene: THREE.Object3D, config: FootIkConfig | undefined, ctx: GameContext | null, instanceId?: string, groundOffset = 0, options: { quiet?: boolean; maxCameraDistance?: number } = {}): void — Runs foot IK after the model's animation mixer for `ModelConfig.ik`. Ground probes hit terrain and blocking physical objects, never the model's own entity. `groundOffset` is the model-space height its soles rest on (`ModelConfig.y`). `options.quiet` drops the rig diagnostics (the engine's own default IK on a model that never asked for it); `options.maxCameraDistance` skips characters further than that from the camera, fading their correction out.
-
-## @jgengine/shell/render/useModelAnimation
-
-- `GraphPose` (interface): interface GraphPose — A mixer set up to show {@link AnimGraph} output on a rig; see {@link createGraphPose}.
-- `ModelAnimationDiagnostic` (interface): interface ModelAnimationDiagnostic — A repairable mismatch between a model animation config and its imported rig.
-- `ModelMotionStep` (interface): interface ModelMotionStep — One visual sample's measured motion, used to derive the directional locomotion parameters. `dx`/`dz` are world horizontal displacement since the previous sample, `dyaw` the yaw change in radians and `seconds` the time the sample covers.
-- `createGraphPose` (function): function createGraphPose(scene: THREE.Object3D, graph: AnimGraph, clips: THREE.AnimationClip[]): GraphPose — Binds a graph's clips to a rig exactly as `useModelAnimation` does (masked layers get filtered clips, additive layers additive ones) so a host that runs its own `createAnimGraphRuntime`, such as the editor's graph preview, poses the rig from the runtime's output.
-- `diagnoseModelAnimation` (function): function diagnoseModelAnimation(scene: THREE.Object3D, animation: ModelAnimationConfig, clips: readonly THREE.AnimationClip[]): readonly ModelAnimationDiagnostic[] — Checks clip mappings, masked layers and root-motion assumptions without starting a mixer.
-- `readModelAnimationParams` (function): function readModelAnimationParams(ctx: GameContext, instanceId: string, speed: number, out: Record<string, AnimParamValue>, step?: ModelMotionStep): Record<string, AnimParamValue> — Refreshes a caller-owned graph parameter dictionary from authored extras and known physical movement. Grounded, verticalSpeed and crouched use the shared motor's resolved state when available; custom movers retain their authored values. Speed always uses the supplied measured ground speed. Passing `step` derives the directional parameters from the character's own motion: `direction` is the motion's share along the character's right axis, `facing` its share along the facing axis, and `turnRate` its yaw change per second. Derived values override conflicting authored extras. Does not write game state.
-- `takeRootMotion` (function): function takeRootMotion(rootBone: THREE.Object3D, bind: THREE.Vector3, localDelta: readonly [number, number, number] | undefined, out: THREE.Vector3): THREE.Vector3 — For a frame where a `rootMotion` state is current: pins the root bone's horizontal translation to its bind pose, so the clip plays in place, and returns that step's root travel as a world-space horizontal delta (through the rig's parent transform, so the entity's facing and the model's scale apply). The root bone's vertical motion stays in the clip.
-- `useModelAnimation` (function): function useModelAnimation(scene: THREE.Object3D, clips: THREE.AnimationClip[], animationInput: ModelAnimationConfig | "auto" | "none" | undefined, instanceId?: string): void — The engine's model animation driver as a standalone hook — the same mixer `EntityModel` runs, for games that render a cloned scene themselves (custom materials, procedural composition). Handles `"auto"` derivation from the GLB's clip names, speed-driven idle/walk/run crossfades read from the entity's live position when `instanceId` is set, one-shots fired from `entity.animation` / `combat.hitReaction` / `entity.died`, held poses, and the death clamp. With `animation.graph` set, the headless `AnimGraph` runtime owns every clip's time and weight and the mixer only applies them; clip events surface as `animation.event`. Equivalent same-order config data retains playback across rerenders; actual data edits reset it. Entity-bound playback holds while context game time is frozen; unbound previews keep playing.
-
-## @jgengine/shell/render/useRagdoll
-
-- `RagdollOptions` (interface): interface RagdollOptions — What {@link useRagdoll} needs: the rig's bone names, the physics world and what arms it.
-- `useRagdoll` (function): function useRagdoll(scene: THREE.Object3D, options: RagdollOptions): void — Turns a rigged character into a physics ragdoll when `active` goes true: the bones' world poses at that moment become box bodies joined by distance links in `world`, and every frame after, each bone's world position and aim come from its body. The physics bodies carry translation only, so each bone is oriented by rotating its death-pose direction-to-child onto the current one, which is what gives the body a skeleton instead of a pile of boxes.
-
 ## @jgengine/shell/shellConstants
 
 - `EMPTY_RESERVED` (const): const EMPTY_RESERVED: ReadonlySet<string> — No action names are reserved when no camera rig is active (hud/none presentation): games may bind `turnLeft`/`interact`/etc. as their own.
 - `NO_ACTIONS` (const): const NO_ACTIONS: string[] — Empty action list — published while the orientation gate is up to suppress all held input without touching the tracker.
 
-## @jgengine/shell/world/AuthoredFlocks
-
-- `AuthoredFlocks` (function): function AuthoredFlocks({ models, assets, forward = [0, 0, -1], maxInstances = 256 }: AuthoredFlocksProps): ReactElement — Render bounded authored habitat agents with game-selected species models. The environment owns movement and lifetime; existing model owners load, animate, and dispose the native GLB. Unmapped species have no substitute geometry.
-- `AuthoredFlocksProps` (interface): interface AuthoredFlocksProps — Caller-owned species models for authored habitat agents.
-
-## @jgengine/shell/world/DataObjects
-
-- `DataObjects` (function): function DataObjects<T>({ data, position, height, color, cellSize = 0.28, hovered = null, hoverColor = "#ffffff", onHover, grow, castShadow = true, receiveShadow = true, renderItem, }: DataObjectsProps<T>): React.JSX.Element | null — ⚠ undocumented
-- `DataObjectsProps` (interface): interface DataObjectsProps<T> — Renders one placed 3D object per data item — a 3D bar chart, a heatmap, a city of buildings, a crowd. By default each item is an extruded box (all boxes share one `InstancedMesh`, so hundreds cost one draw call), sized and colored from the item; `renderItem` swaps the box for arbitrary content (a sprite, a GLB, a full entity). Genre-agnostic: the caller owns the data `T`, this owns the placement.
-
 ## @jgengine/shell/world/GridWorldScene
 
 - `GridWorldScene` (function): function GridWorldScene({ feature }: GridWorldSceneProps): React.JSX.Element | null — Data-driven renderer for the `biomes()`/`voxel()`/`plots()`/`tilemap()` world-feature kinds (#207.1): one `InstancedMesh` of extruded, colored boxes built from each feature's declared `cells`, uploaded through the shared instance upload.
 - `GridWorldSceneProps` (interface): interface GridWorldSceneProps { feature: WorldFeature } — ⚠ undocumented · used by `GridWorldScene`: Data-driven renderer for the `biomes()`/`voxel()`/`plots()`/`tilemap()` world-feature kinds (#207.1): one `InstancedMesh` of extruded, color…
-
-## @jgengine/shell/world/InstancedBodies
-
-- `InstancedBodies` (function): function InstancedBodies({ world, debugTint = false, baseColors, epoch = 0 }: InstancedBodiesProps): React.JSX.Element — Renders a PhysicsWorld's box bodies as a single InstancedMesh — one draw call per batch. Transforms are written directly into `instanceMatrix.array` each frame (bodies never touch the per-entity React path). Reusable by any game: hand it a physics world and go.
-- `InstancedBodiesProps` (interface): interface InstancedBodiesProps { world: PhysicsWorld; debugTint?: boolean; baseColors?: Float32Array; epoch?: number } — ⚠ undocumented · used by `InstancedBodies`: Renders a PhysicsWorld's box bodies as a single InstancedMesh — one draw call per batch.
-
-## @jgengine/shell/world/InstancedJoints
-
-- `InstancedJoints` (function): function InstancedJoints({ world, color = "#f5c542" }: InstancedJointsProps): React.JSX.Element — Debug overlay drawing a PhysicsWorld's joints (suspension, ragdoll links, carry tethers) as one LineSegments batch. Endpoints are streamed each frame from `world.readJointSegments`; pair with `InstancedBodies` to see the constraint structure over the bodies.
-- `InstancedJointsProps` (interface): interface InstancedJointsProps { world: PhysicsWorld; color?: THREE.ColorRepresentation } — ⚠ undocumented · used by `InstancedJoints`: Debug overlay drawing a PhysicsWorld's joints (suspension, ragdoll links, carry tethers) as one LineSegments batch.
-
-## @jgengine/shell/world/SpriteBatch
-
-- `SpriteBatch` (function): function SpriteBatch({ url, columns = 1, rows = 1, capacity = DEFAULT_CAPACITY, instances, plane = "xy", billboard = false, pixelated = true, alphaTest = DEFAULT_ALPHA_TEST, opacity = 1, }: SpriteBatchProps): React.JSX.Element — Renders a sprite sheet / tile atlas as a single InstancedMesh — one draw call for the whole batch. Each instance picks its atlas frame via a per-instance UV offset attribute patched into the material's vertex shader, so platformer/puzzle-grid presentation never needs one draw call per sprite. Transforms and UV offsets are written directly into the mesh's typed arrays each frame from a plain instance list (bodies never touch the per-entity React path).
-- `SpriteBatchInstance` (interface): interface SpriteBatchInstance { x: number; y: number; z?: number; frame?: number; scale?: number; rotation?: number } — ⚠ undocumented
-- `SpriteBatchProps` (interface): interface SpriteBatchProps { url: string; columns?: number; rows?: number; capacity?: number; instances: () => readonly SpriteBatchInstance[]; plane?: "xy" | "xz"; billboard?: boolean; pixelated?: boolean; alphaTest?: number; opacity?: number } — ⚠ undocumented · used by `SpriteBatch`: Renders a sprite sheet / tile atlas as a single InstancedMesh — one draw call for the whole batch.
-
-## @jgengine/shell/world/TileLayerRenderer
-
-- `TileLayerRenderer` (function): function TileLayerRenderer({ config, parallax = [1, 1], pixelated = true }: TileLayerRendererProps): React.JSX.Element | null — Renders a tilemap as one instanced quad mesh with atlas UV rectangles.
-- `TileLayerRendererProps` (interface): interface TileLayerRendererProps — Inputs for the instanced textured tile-layer renderer.
 
 ## @jgengine/shell/world/WorldEntityFrames
 
@@ -2400,30 +2287,8 @@
 - `projectWorldToScreen` (function): function projectWorldToScreen(scratch: THREE.Vector3, camera: THREE.Camera, worldPosition: readonly [number, number, number], width: number, height: number): EntityScreenProjection — Pure world→screen projection: NDC via `camera.project`, mapped to CSS pixels. `behind` is set when the point falls outside the near/far clip range (NDC z beyond [-1, 1]), which covers positions behind the camera. Exposed for tests and for callers wiring their own frame loop around a bare THREE camera.
 - `useWorldProjection` (function): function useWorldProjection(): ProjectEntity — Returns a {@link ProjectEntity} bound to the live R3F camera and canvas size — the world→screen half of the data-first entity-frame seam. Call the returned function with a world position to get a CSS-pixel screen point (or `null`/`behind` when the point is outside the frustum). Reads the camera fresh on every call, so sample it inside a frame loop. Games that already own their entities use this to feed `@jgengine/react`'s `EntityFrames` without mirroring state into a store.
 
-## @jgengine/shell/world/WorldItems
-
-- `WorldItems` (function): function WorldItems({ config }: { config?: WorldItemRenderConfig }): React.JSX.Element — Rarity→beam/color/label render binding + loot-filter overlay (#32/#33) for every dropped `worldItem`.
-
 ## @jgengine/shell/world/WorldScene
 
 - `RemotePlayers` (function): function RemotePlayers({ rows, presenceInterpolationMs = 100 }: { rows: PresencePoseRow[]; presenceInterpolationMs?: number }): React.JSX.Element — ⚠ undocumented
 - `WorldView` (function): function WorldView({ entitySprites, entityModels, objectModels, objectStyles, environment, assets, renderEntity, renderObject, selectedIds, hideLocalActor, editorLayers, }: { entitySprites: Record<string, EntitySpriteConfig> | undefined; entityModels: Record<string, string | ModelConfig> | undefined… — ⚠ undocumented
 - `drawsScaledModel` (function): function drawsScaledModel(object: Pick<SceneObject, "visual">): boolean — Whether an object draws its catalog model through a per-placement scale group. A scaled placement skips the per-catalog bounds measurement, which would otherwise record one instance's stretched size as every instance's footprint.
-
-## @jgengine/shell/world/entityPose
-
-- `PoseSource` (interface): interface PoseSource { position: readonly [number, number, number]; rotationY: number } — ⚠ undocumented
-- `PoseWritable` (interface): interface PoseWritable { position: {set(x: number, y: number, z: number): void}; rotation: {y: number} } — ⚠ undocumented
-
-## @jgengine/shell/world/tileLayerInstances
-
-- `TileLayerInstance` (interface): interface TileLayerInstance — One resolved map cell with its world position and atlas UV rectangle.
-- `resolveTileLayerInstances` (function): function resolveTileLayerInstances(config: TilemapWorldConfig): readonly TileLayerInstance[] — Resolve map glyphs to atlas frames and normalized UV rectangles for deterministic tests and renderers.
-
-## @jgengine/shell/world/worldBarSamples
-
-- `NameplateSample` (interface): interface NameplateSample — Projected nameplate with optional health and distance from the render camera.
-- `Projectable` (interface): interface Projectable { set(x: number, y: number, z: number): this; project(camera: {matrixWorldInverse: unknown; projectionMatrix: unknown}): this; x: number; y: number; z: number } — ⚠ undocumented
-- `WorldBarSample` (interface): interface WorldBarSample { entityId?: string; x: number; y: number; percent: number; pxPerMeter?: number } — ⚠ undocumented
-- `WorldOverlayCamera` (interface): interface WorldOverlayCamera — Render camera matrices; world translation supplies the overlay's viewpoint.
-- `WorldOverlaySampleOptions` (interface): interface WorldOverlaySampleOptions — Sampling policy shared by health bars and nameplates.

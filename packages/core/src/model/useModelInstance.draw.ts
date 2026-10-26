@@ -10,7 +10,7 @@ import { measureLocalBounds } from "./measureBounds.draw";
 import { detectKtx2Support, sharedGltfLoader } from "./modelLoad.draw";
 import { cloneModelScene, disposeModelScene, modelPlacementTransform } from "./modelRender.draw";
 import { applyModelWindToScene } from "./modelWind.draw";
-import { useModelAnimation } from "@jgengine/shell/render/useModelAnimation";
+import { useModelAnimation } from "@jgengine/core/anim/useModelAnimation.draw";
 import { applyModelNodeVisibility, modelHiddenNodesKey } from "./modelNodeVisibility.draw";
 
 /** Model loading, placement, shadows and animation for a custom renderer. */

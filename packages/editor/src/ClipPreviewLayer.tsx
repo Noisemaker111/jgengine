@@ -2,7 +2,7 @@ import { Suspense, useEffect, useMemo } from "react";
 import { useLoader } from "@react-three/fiber";
 
 import { sharedGltfLoader } from "@jgengine/core/model/modelLoad.draw";
-import { createGraphPose } from "@jgengine/shell/render/useModelAnimation";
+import { createGraphPose } from "@jgengine/core/anim/useModelAnimation.draw";
 import { useModelInstance } from "@jgengine/core/model/useModelInstance.draw";
 
 import { previewAnimationConfig, type ClipPreviewSession } from "./shell/clipPreview";

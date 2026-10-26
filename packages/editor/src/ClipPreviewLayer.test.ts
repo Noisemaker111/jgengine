@@ -7,7 +7,7 @@ import { GLTFLoader, type GLTF } from "three/examples/jsm/loaders/GLTFLoader.js"
 import { createAnimGraphRuntime, type AnimGraph } from "@jgengine/core/anim/animGraph";
 import { sharedGltfLoader } from "@jgengine/core/model/modelLoad.draw";
 import { standardMaterialsOf } from "@jgengine/core/model/modelRender.draw";
-import { createGraphPose } from "@jgengine/shell/render/useModelAnimation";
+import { createGraphPose } from "@jgengine/core/anim/useModelAnimation.draw";
 import { useModelInstance, type ModelInstance } from "@jgengine/core/model/useModelInstance.draw";
 import { ClipPreviewLayer } from "./ClipPreviewLayer";
 import { createEditorUiStore } from "./uiStore";

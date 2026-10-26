@@ -1,4 +1,4 @@
-import type { TerritoryOverlay } from "@jgengine/shell/TerritoryOverlay";
+import type { TerritoryOverlay } from "@jgengine/core/placement/TerritoryOverlay.view";
 type ClaimHint = Pick<Parameters<typeof TerritoryOverlay>[0], "cells" | "cost" | "affordable">;
 /**
  * Build session — placement draft, confirm/cancel/sell/pickup, storage selection,

@@ -64,18 +64,6 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `adjustSettingRow` (function) · `import { adjustSettingRow } from "@jgengine/core/settings/settingsBlocks.view"`
 
-## animation — turn a killed rigged character into a physics ragdoll on death
-
-- `useRagdoll` (function) · `import { useRagdoll } from "@jgengine/shell/render/useRagdoll"`
-
-## animation-motion-params — read resolved player movement into reusable animation graph parameters
-
-- `readModelAnimationParams` (function) · `import { readModelAnimationParams } from "@jgengine/shell/render/useModelAnimation"`
-
-## authored-flocks — render authored habitat agents through caller-selected animated species models with velocity orientation and bounded model lifetime
-
-- `AuthoredFlocks` (function) · `import { AuthoredFlocks } from "@jgengine/shell/world/AuthoredFlocks"`
-
 ## auto-scroll — pin a log/chat/console panel to its newest line as entries arrive — no hand-rolled scrollTop effects
 
 - `useAutoScroll` (function) · `import { useAutoScroll } from "@jgengine/react"`
@@ -95,10 +83,6 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 ## canvas-cover — stop world rendering behind a full-screen surface while input, audio, the HUD and the menu keep running
 
 - `canvasCover` (const) · `import { canvasCover } from "@jgengine/react"`
-
-## character-crowd — draw animated or static characters as batched instanced draws instead of posing each skeleton
-
-- `CharacterCrowd` (function) · `import { CharacterCrowd } from "@jgengine/shell/render/CharacterCrowd"`
 
 ## character-paperdoll — equip-slot paperdoll — flanking columns around a portrait, activatable slots
 
@@ -233,10 +217,6 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 - `projectWorldToScreen` (function) · `import { projectWorldToScreen } from "@jgengine/shell/world/WorldEntityFrames"`
 - `useWorldProjection` (function) · `import { useWorldProjection } from "@jgengine/shell/world/WorldEntityFrames"`
 
-## entity-muzzle — draw a character's or turret's shots leaving from its hand or barrel
-
-- `registerEntityMuzzle` (function) · `import { registerEntityMuzzle } from "@jgengine/shell/render/entityMuzzle"`
-
 ## entity-portrait — selectable entity portrait tile with vitals and selected/focus states
 
 - `EntityPortrait` (function) · `import { EntityPortrait } from "@jgengine/react"`
@@ -244,10 +224,6 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 ## entity-preview — live 3D entity portrait — nested Canvas + context bridge + studio stage, driven by the game's own renderEntity
 
 - `EntityPreview` (function) · `import { EntityPreview } from "@jgengine/core/render/EntityPreview.draw"`
-
-## entity-render-cues — live velocity/bob/fire/reload/hit/death cues for a custom renderEntity or viewmodel component
-
-- `useEntityRenderCues` (function) · `import { useEntityRenderCues } from "@jgengine/shell/render/useEntityRenderCues"`
 
 ## event-meter-hud — render a core event/heat meter's live value, fraction, tier, and ready state in a HUD gauge
 
@@ -413,10 +389,6 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 ## interaction-prompt-host — screen-anchored "press E to…" callout rendering a prompt registry's active interactable — keybind cap+label, gauge hold bar, or plain label, theme- and per-prompt-accent skinnable
 
 - `InteractionPrompt` (function) · `import { InteractionPrompt } from "@jgengine/react"`
-
-## interior-dressing — render a planned interior's trims, pipes, cables, lamps and stains in a few instanced draws
-
-- `InteriorDressing` (function) · `import { InteriorDressing } from "@jgengine/shell/render/InteriorDressing"`
 
 ## key-hint — keyboard/mouse control hint that hides itself on touch
 
@@ -603,10 +575,6 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `createModalStack` (function) · `import { createModalStack } from "@jgengine/core/ui"`
 
-## model-animation-diagnostics — inspect imported clip mappings, layer masks and root-track compatibility
-
-- `diagnoseModelAnimation` (function) · `import { diagnoseModelAnimation } from "@jgengine/shell/render/useModelAnimation"`
-
 ## nameplates — billboarded name + HP bar over nearby entities
 
 - `WorldNameplates` (function) · `import { WorldNameplates } from "@jgengine/core/hud/WorldHud.draw"`
@@ -699,10 +667,6 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 ## popover — viewport-flipping, viewport-clamped anchored popover/tooltip shell
 
 - `Popover` (function) · `import { Popover } from "@jgengine/react"`
-
-## practical-lights — light the planned lamps nearest the camera with a fixed, shadow-capped spot-light pool
-
-- `PracticalLights` (function) · `import { PracticalLights } from "@jgengine/shell/render/InteriorDressing"`
 
 ## presence — keep a closing element mounted through its exit transition
 
@@ -805,6 +769,10 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 - `createSpriteClipPlayer` (function) · `import { createSpriteClipPlayer } from "@jgengine/core/render/sprite2d"`
 - `sortingOrder` (function) · `import { sortingOrder } from "@jgengine/core/render/sprite2d"`
 
+## sprite-batch — Draw many atlas sprites in one instanced draw
+
+- `SpriteBatch` (function) · `import { SpriteBatch } from "@jgengine/core/render/SpriteBatch.draw"`
+
 ## start-new-game — start a fresh run from a menu or result screen; reloads the page when a run already played
 
 - `startNewGame` (function) · `import { startNewGame } from "@jgengine/core/menu/gameFlowMenus.view"`
@@ -820,10 +788,6 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 ## talent-tree — drop-in skill/talent/upgrade-tree widget — pass `nodes`+`tree` for point-spend or a precomputed `view` for any unlock rule; branch/tier layout, SVG prerequisite edges, learned/available/locked/maxed styling, icon + rank, onLearn
 
 - `TalentTreePanel` (function) · `import { TalentTreePanel } from "@jgengine/react"`
-
-## territory-overlay — show footprint ownership, claim cost, and affordability
-
-- `TerritoryOverlay` (function) · `import { TerritoryOverlay } from "@jgengine/shell/TerritoryOverlay"`
 
 ## timer-readout — live digital mm:ss/m:ss.d timer readout bound to a TimerSet
 

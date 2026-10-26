@@ -1,0 +1,429 @@
+import { useThree } from "@react-three/fiber";
+import { useLayoutEffect, useMemo, useRef } from "react";
+import * as THREE from "three";
+
+import { inferLegChains, placeFeet, type FootGroundSample, type FootPlacement } from "@jgengine/core/anim/footPlacement";
+import { lookAt, solveTwoBone, type MutableVec3 } from "@jgengine/core/anim/ikSolver";
+import type { GameContext } from "@jgengine/core/runtime/gameContextTypes";
+import type { ModelConfig, ModelIkConfig, ModelLookAtConfig } from "@jgengine/core/game/playableGame";
+import type { SceneRaycastHit, SceneRaycastInput } from "@jgengine/core/scene/sceneRaycast";
+import { resolveRigNode } from "@jgengine/core/model/rigNode.draw";
+import { noteCharacterMotion } from "@jgengine/core/lod/characterLod";
+import { useFrameWhile } from "@jgengine/core/render/useFrameWhile.draw";
+
+type FootIkConfig = Exclude<NonNullable<ModelConfig["ik"]>, "none">;
+type GroundProbe = (input: SceneRaycastInput) => SceneRaycastHit | null;
+
+interface IkLeg {
+  root: THREE.Object3D;
+  mid: THREE.Object3D;
+  tip: THREE.Object3D;
+  /** Rest-pose ankle height above the sole divided by rest leg length, so it survives any scale. */
+  ankleRatio: number;
+}
+
+interface PoseRecord {
+  bone: THREE.Object3D;
+  animated: { q: THREE.Quaternion; p: THREE.Vector3 };
+  written: { q: THREE.Quaternion; p: THREE.Vector3 };
+}
+
+/** Bones resolved once per loaded scene for {@link applyFootIk}. */
+export interface FootIkRig {
+  legs: IkLeg[];
+  pelvis: THREE.Object3D | null;
+  head: THREE.Object3D | null;
+  /** Yaw and pitch limits of the look-at solve, in radians; absent means unconstrained. */
+  lookAtLimits: { maxYaw?: number; maxPitch?: number };
+  /** How much of the solved look-at turn reaches the bone, `0..1`. */
+  lookAtWeight: number;
+  maxAdjust: number;
+  alignToGround: number;
+  /** Pose before and after last frame's correction, so a bone no clip animates never accumulates it. */
+  poses: PoseRecord[];
+}
+
+/** Per-model state carried between frames: the faded weight and the smoothed pelvis drop. */
+export interface FootIkState {
+  weight: number;
+  pelvis: number;
+}
+
+const DEFAULT_MAX_ADJUST = 0.4;
+const UP = new THREE.Vector3(0, 1, 0);
+const scratch = {
+  root: new THREE.Vector3(),
+  mid: new THREE.Vector3(),
+  tip: new THREE.Vector3(),
+  a: new THREE.Vector3(),
+  b: new THREE.Vector3(),
+  q: new THREE.Quaternion(),
+  q2: new THREE.Quaternion(),
+  parent: new THREE.Quaternion(),
+  m: new THREE.Matrix4(),
+};
+const solved = { mid: [0, 0, 0] as MutableVec3, tip: [0, 0, 0] as MutableVec3 };
+
+function bindPosition(skeleton: THREE.Skeleton, bone: THREE.Bone, out: THREE.Vector3): THREE.Vector3 | null {
+  const index = skeleton.bones.indexOf(bone);
+  if (index < 0) return null;
+  return out.setFromMatrixPosition(scratch.m.copy(skeleton.boneInverses[index]!).invert());
+}
+
+function restAnkleRatio(scene: THREE.Object3D, leg: Omit<IkLeg, "ankleRatio">): number {
+  let soleY = Infinity;
+  let ratio = 0;
+  const root = new THREE.Vector3();
+  const mid = new THREE.Vector3();
+  const tip = new THREE.Vector3();
+  scene.traverse((object) => {
+    const mesh = object as THREE.SkinnedMesh;
+    if (mesh.isSkinnedMesh !== true || !(leg.tip instanceof THREE.Bone) || !(leg.mid instanceof THREE.Bone) || !(leg.root instanceof THREE.Bone)) return;
+    if (bindPosition(mesh.skeleton, leg.tip, tip) === null || bindPosition(mesh.skeleton, leg.mid, mid) === null || bindPosition(mesh.skeleton, leg.root, root) === null) return;
+    if (mesh.geometry.boundingBox === null) mesh.geometry.computeBoundingBox();
+    const box = mesh.geometry.boundingBox!.clone().applyMatrix4(mesh.bindMatrix);
+    soleY = Math.min(soleY, box.min.y);
+    const length = root.distanceTo(mid) + mid.distanceTo(tip);
+    if (length > 1e-6) ratio = Math.max(0, tip.y - soleY) / length;
+  });
+  return ratio;
+}
+
+function isAncestor(ancestor: THREE.Object3D, child: THREE.Object3D): boolean {
+  for (let parent = child.parent; parent !== null; parent = parent.parent) {
+    if (parent === ancestor) return true;
+  }
+  return false;
+}
+
+/**
+ * Resolves foot-IK bones on a loaded rig: explicit chains, or legs found by bone name for `"auto"`
+ * and configs without `feet`. Returns `null` when no leg resolves.
+ * @internal
+ */
+export function resolveFootIkRig(scene: THREE.Object3D, config: FootIkConfig, quiet = false): FootIkRig | null {
+  const options: ModelIkConfig = config === "auto" ? {} : config;
+  const named = new Map<string, THREE.Object3D[]>();
+  scene.traverse((object) => {
+    if (object.name.length === 0) return;
+    const matches = named.get(object.name);
+    if (matches === undefined) named.set(object.name, [object]);
+    else matches.push(object);
+  });
+  const available = [...named.keys()].filter((name) => named.get(name)!.some((object) => (object as THREE.Bone).isBone === true)).slice(0, 12).join(", ");
+  const warn = (message: string) => {
+    if (!quiet) console.warn(`[jgengine foot IK] ${message}${available.length > 0 ? ` Available bones include: ${available}.` : ""}`);
+  };
+  const resolve = (name: string, role: string): THREE.Object3D | null => {
+    const matches = named.get(name);
+    if (matches?.length === 1) return matches[0]!;
+    if (matches === undefined) {
+      const imported = resolveRigNode(scene, name);
+      if (imported.node !== undefined) return imported.node;
+      warn(`${role} "${name}" ${imported.diagnostic.code === "ambiguous-node" ? "matches multiple original imported names; use a unique runtime name or repair duplicate imported names" : "was not found by runtime or original imported name; check the loaded rig names"}.`);
+      return null;
+    }
+    warn(`${role} "${name}" matches multiple objects; use a unique rig name.`);
+    return null;
+  };
+  let chains = options.feet;
+  if (chains === undefined) {
+    const bones: { name: string; parent: string | null }[] = [];
+    scene.traverse((object) => {
+      if ((object as THREE.Bone).isBone === true) bones.push({ name: object.name, parent: (object.parent as THREE.Bone | null)?.isBone === true ? object.parent!.name : null });
+    });
+    chains = inferLegChains(bones);
+    if (chains.length === 0 && options.lookAt === undefined) warn("No thigh → shin → foot chain was recognized. Configure feet with the rig's bone names, or disable IK for this model.");
+  }
+  const legs: IkLeg[] = [];
+  const used = new Set<THREE.Object3D>();
+  for (const chain of chains) {
+    const root = resolve(chain.root, "Foot-chain root");
+    const mid = resolve(chain.mid, "Foot-chain middle");
+    const tip = resolve(chain.tip, "Foot-chain tip");
+    if (root === null || mid === null || tip === null) continue;
+    if (!isAncestor(root, mid) || !isAncestor(mid, tip)) {
+      warn(`Skipped chain "${chain.root}" → "${chain.mid}" → "${chain.tip}": each joint must descend from the previous joint.`);
+      continue;
+    }
+    if ([root, mid, tip].some((bone) => used.has(bone))) {
+      warn(`Skipped chain "${chain.root}" → "${chain.mid}" → "${chain.tip}": a joint is already corrected by another foot chain.`);
+      continue;
+    }
+    for (const bone of [root, mid, tip]) used.add(bone);
+    legs.push({ root, mid, tip, ankleRatio: restAnkleRatio(scene, { root, mid, tip }) });
+  }
+  const head = options.lookAt === undefined ? null : resolve(options.lookAt.bone, "Look-at bone");
+  if (legs.length === 0 && head === null) return null;
+  let found = options.pelvis !== undefined ? resolve(options.pelvis, "Pelvis") : (legs[0]?.root.parent ?? null);
+  if (options.pelvis === undefined) {
+    while (found !== null && !legs.every((leg) => isAncestor(found!, leg.root))) found = found.parent;
+  }
+  const pelvis = found === scene ? null : found;
+  const bones = new Set<THREE.Object3D>(legs.flatMap((leg) => [leg.root, leg.mid, leg.tip]));
+  if (pelvis !== null) bones.add(pelvis);
+  if (head !== null) bones.add(head);
+  return {
+    legs,
+    pelvis,
+    head,
+    lookAtLimits: { ...(options.lookAt?.maxYaw === undefined ? {} : { maxYaw: options.lookAt.maxYaw }), ...(options.lookAt?.maxPitch === undefined ? {} : { maxPitch: options.lookAt.maxPitch }) },
+    lookAtWeight: Math.max(0, Math.min(1, options.lookAt?.weight ?? 1)),
+    maxAdjust: options.maxAdjust ?? DEFAULT_MAX_ADJUST,
+    alignToGround: Math.max(0, Math.min(1, options.alignToGround ?? 1)),
+    poses: [...bones].map((bone) => ({
+      bone,
+      animated: { q: bone.quaternion.clone(), p: bone.position.clone() },
+      written: { q: bone.quaternion.clone(), p: bone.position.clone() },
+    })),
+  };
+}
+
+function writeWorldQuaternion(bone: THREE.Object3D, world: THREE.Quaternion): void {
+  if (bone.parent === null) bone.quaternion.copy(world);
+  else bone.quaternion.copy(bone.parent.getWorldQuaternion(scratch.parent).invert().multiply(world));
+  bone.updateMatrixWorld(true);
+}
+
+function aimSegment(bone: THREE.Object3D, from: THREE.Vector3, currentTo: THREE.Vector3, solvedTo: readonly number[]): void {
+  const current = scratch.a.copy(currentTo).sub(from);
+  const desired = scratch.b.set(solvedTo[0]! - from.x, solvedTo[1]! - from.y, solvedTo[2]! - from.z);
+  if (current.lengthSq() < 1e-10 || desired.lengthSq() < 1e-10) return;
+  const correction = scratch.q.setFromUnitVectors(current.normalize(), desired.normalize());
+  writeWorldQuaternion(bone, correction.multiply(bone.getWorldQuaternion(scratch.q2)));
+}
+
+function legLength(leg: IkLeg): number {
+  leg.root.getWorldPosition(scratch.root);
+  leg.mid.getWorldPosition(scratch.mid);
+  leg.tip.getWorldPosition(scratch.tip);
+  return scratch.root.distanceTo(scratch.mid) + scratch.mid.distanceTo(scratch.tip);
+}
+
+function restoreFootIkPose(rig: FootIkRig): void {
+  for (const record of rig.poses) {
+    if (record.bone.quaternion.equals(record.written.q)) record.bone.quaternion.copy(record.animated.q);
+    if (record.bone.position.equals(record.written.p)) record.bone.position.copy(record.animated.p);
+  }
+}
+
+/**
+ * Reused per frame by {@link applyFootIk}: the ground probes, their hits and the solver input are read
+ * synchronously inside one call, so a rig posing every frame allocates nothing.
+ */
+const probeInput = { origin: [0, 0, 0] as [number, number, number], direction: [0, -1, 0] as [number, number, number], maxDistance: 0 };
+const samplesScratch: FootGroundSample[] = [];
+const normalsScratch: (readonly [number, number, number] | null)[] = [];
+const samplePool: FootGroundSample[] = [];
+
+/**
+ * Applies one frame of foot IK after the animation mixer: probes the ground under each foot,
+ * resolves targets with `placeFeet`, lowers the pelvis, solves each leg with `solveTwoBone` bending
+ * toward the animated knee, and tilts planted feet to the ground. Turns the look-at bone toward
+ * `lookAtTarget` when the rig has one. Returns whether the feet are grounded; `state` carries the
+ * faded weight between frames. Exported for tests and custom hosts.
+ * @internal
+ */
+export function applyFootIk(
+  rig: FootIkRig,
+  originY: number,
+  probe: GroundProbe,
+  state: FootIkState,
+  delta: number,
+  lookAtTarget?: readonly [number, number, number],
+): boolean {
+  restoreFootIkPose(rig);
+  for (const record of rig.poses) {
+    record.animated.q.copy(record.bone.quaternion);
+    record.animated.p.copy(record.bone.position);
+  }
+  samplesScratch.length = 0;
+  normalsScratch.length = 0;
+  let length = 0;
+  let ankleHeight = 0;
+  for (const leg of rig.legs) {
+    leg.root.updateWorldMatrix(true, true);
+    const legSize = legLength(leg);
+    length = Math.max(length, legSize);
+    ankleHeight = Math.max(ankleHeight, leg.ankleRatio * legSize);
+    const from = Math.max(scratch.tip.y, originY) + legSize * 0.5;
+    probeInput.origin[0] = scratch.tip.x;
+    probeInput.origin[1] = from;
+    probeInput.origin[2] = scratch.tip.z;
+    probeInput.maxDistance = legSize * 2;
+    const hit = probe(probeInput);
+    const index = samplesScratch.length;
+    const sample = samplePool[index] ?? (samplePool[index] = { ankleY: 0, groundY: null });
+    sample.ankleY = scratch.tip.y;
+    sample.groundY = hit === null ? null : hit.point[1];
+    samplesScratch.push(sample);
+    normalsScratch.push(hit === null ? null : hit.normal);
+  }
+
+  const placement: FootPlacement = placeFeet({ feet: samplesScratch, originY, ankleHeight, maxAdjust: rig.maxAdjust * length, airborneGap: length * 0.3 });
+  const blend = Math.min(1, delta * (placement.grounded ? 12 : 6));
+  state.weight += ((placement.grounded ? 1 : 0) - state.weight) * blend;
+  state.pelvis += (placement.pelvisOffset - state.pelvis) * Math.min(1, delta * 15);
+  const weight = state.weight;
+
+  if (rig.pelvis !== null && weight > 1e-3 && Math.abs(state.pelvis) > 1e-6) {
+    const world = rig.pelvis.getWorldPosition(scratch.a);
+    world.y += state.pelvis * weight;
+    rig.pelvis.position.copy(rig.pelvis.parent === null ? world : rig.pelvis.parent.worldToLocal(world));
+    rig.pelvis.updateMatrixWorld(true);
+  }
+
+  for (let i = 0; i < rig.legs.length && weight > 1e-3; i += 1) {
+    const target = placement.ankleTargets[i];
+    if (target === null || target === undefined) continue;
+    const leg = rig.legs[i]!;
+    const root = leg.root.getWorldPosition(scratch.root);
+    const mid = leg.mid.getWorldPosition(scratch.mid);
+    const tip = leg.tip.getWorldPosition(scratch.tip);
+    const bend = scratch.a.copy(root).add(tip).multiplyScalar(0.5);
+    bend.subVectors(mid, bend);
+    if (bend.lengthSq() < 1e-8) bend.set(0, 0, 1).applyQuaternion(leg.root.parent?.getWorldQuaternion(scratch.q) ?? scratch.q.identity());
+    const pole = bend.normalize().multiplyScalar(length).add(mid);
+    const targetY = tip.y + (target - tip.y) * weight;
+    solveTwoBone({ root: [root.x, root.y, root.z], mid: [mid.x, mid.y, mid.z], tip: [tip.x, tip.y, tip.z], target: [tip.x, targetY, tip.z], pole: [pole.x, pole.y, pole.z] }, solved);
+    aimSegment(leg.root, root, mid, solved.mid);
+    // Rotating the thigh also moved the tip; aim the shin from that updated pose.
+    aimSegment(leg.mid, leg.mid.getWorldPosition(scratch.mid), leg.tip.getWorldPosition(scratch.tip), solved.tip);
+
+    const normal = normalsScratch[i];
+    if (normal !== null && normal !== undefined && rig.alignToGround > 0) {
+      const planted = 1 - Math.min(1, Math.max(0, samplesScratch[i]!.ankleY - ankleHeight - samplesScratch[i]!.groundY!) / Math.max(ankleHeight, length * 0.05));
+      const tilt = scratch.q.setFromUnitVectors(UP, scratch.b.set(normal[0], normal[1], normal[2]).normalize());
+      const current = leg.tip.getWorldQuaternion(scratch.q2);
+      writeWorldQuaternion(leg.tip, current.slerp(tilt.multiply(current), planted * weight * rig.alignToGround));
+    }
+  }
+
+  if (rig.head !== null && lookAtTarget !== undefined) {
+    const from = rig.head.getWorldPosition(scratch.a);
+    const q = lookAt({ from: [from.x, from.y, from.z], target: lookAtTarget, up: [0, 1, 0], ...rig.lookAtLimits });
+    const current = rig.head.getWorldQuaternion(scratch.q2);
+    const reach = Math.max(weight, rig.legs.length === 0 ? 1 : 0) * rig.lookAtWeight;
+    writeWorldQuaternion(rig.head, current.slerp(scratch.q.set(q[0], q[1], q[2], q[3]), reach));
+  }
+  for (const record of rig.poses) {
+    record.written.q.copy(record.bone.quaternion);
+    record.written.p.copy(record.bone.position);
+  }
+  return placement.grounded;
+}
+
+/** Materials a foot probe may hit: blocking physical objects and terrain, never the model's own entity. */
+const IK_FILTER = { entities: false, objects: true, walls: false, terrain: true } as const;
+
+/**
+ * Runs foot IK after the model's animation mixer for `ModelConfig.ik`. Ground probes hit terrain and
+ * blocking physical objects, never the model's own entity. `groundOffset` is the model-space height
+ * its soles rest on (`ModelConfig.y`). `options.quiet` drops the rig diagnostics (the engine's own
+ * default IK on a model that never asked for it); `options.maxCameraDistance` skips characters
+ * further than that from the camera, fading their correction out.
+ */
+export function useFootIk(
+  scene: THREE.Object3D,
+  config: FootIkConfig | undefined,
+  ctx: GameContext | null,
+  instanceId?: string,
+  groundOffset = 0,
+  options: { quiet?: boolean; maxCameraDistance?: number } = {},
+): void {
+  const camera = useThree((three) => three.camera);
+  const quiet = options.quiet === true;
+  const maxCameraDistance = options.maxCameraDistance ?? Infinity;
+  const rig = useMemo(() => (config === undefined ? null : resolveFootIkRig(scene, config, quiet)), [scene, config, quiet]);
+  const state = useRef<FootIkState>({ weight: 0, pelvis: 0 });
+  const lookAtConfig = config === undefined || config === "auto" ? undefined : config.lookAt;
+  const target = useRef<THREE.Vector3 | null>(null);
+  // One probe input and one look-at triple per mount: a rig that poses every frame allocates nothing.
+  const probe = useMemo(
+    () => ({
+      origin: [0, 0, 0] as [number, number, number],
+      direction: [0, -1, 0] as [number, number, number],
+      maxDistance: 0,
+      excludeInstanceIds: instanceId === undefined ? [] : [instanceId],
+      filter: IK_FILTER,
+      accept: (hit: { blocks: boolean; purpose: string }) => hit.blocks && hit.purpose === "physical",
+    }),
+    [instanceId],
+  );
+  const lookAtPoint = useMemo(() => [0, 0, 0] as [number, number, number], []);
+  useLayoutEffect(() => {
+    state.current = { weight: 0, pelvis: 0 };
+    target.current = null;
+    return () => {
+      if (rig !== null) {
+        if (instanceId !== undefined) noteCharacterMotion(instanceId, "feet", false);
+        restoreFootIkPose(rig);
+        scene.updateMatrixWorld(true);
+      }
+    };
+  }, [rig, scene, instanceId]);
+  useFrameWhile(rig !== null && ctx !== null && instanceId !== undefined, (_three, delta) => {
+    if (rig === null || ctx === null || instanceId === undefined) return;
+    const parent = scene.parent;
+    const originY = parent === null ? scene.position.y : parent.localToWorld(scratch.a.set(0, groundOffset, 0)).y;
+    if (maxCameraDistance !== Infinity && camera.getWorldPosition(scratch.b).distanceTo(scene.getWorldPosition(scratch.a)) > maxCameraDistance) {
+      if (state.current.weight > 0) {
+        restoreFootIkPose(rig);
+        state.current = { weight: 0, pelvis: 0 };
+        if (rig.legs.length > 0) noteCharacterMotion(instanceId, "feet", false);
+      }
+      return;
+    }
+    const aim = resolveLookAtTarget(lookAtConfig?.target, ctx, target.current, lookAtConfig?.entityEyeHeight ?? DEFAULT_EYE_HEIGHT);
+    target.current = aim;
+    if (aim === null) {
+      const world = camera.getWorldPosition(scratch.b);
+      lookAtPoint[0] = world.x;
+      lookAtPoint[1] = world.y;
+      lookAtPoint[2] = world.z;
+    } else {
+      lookAtPoint[0] = aim.x;
+      lookAtPoint[1] = aim.y;
+      lookAtPoint[2] = aim.z;
+    }
+    applyFootIk(
+      rig,
+      originY,
+      (input) => {
+        probe.origin[0] = input.origin[0]!;
+        probe.origin[1] = input.origin[1]!;
+        probe.origin[2] = input.origin[2]!;
+        probe.maxDistance = input.maxDistance;
+        return ctx.scene.raycast(probe);
+      },
+      state.current,
+      delta,
+      lookAtPoint,
+    );
+    if (rig.legs.length > 0) noteCharacterMotion(instanceId, "feet", state.current.weight > 0.01);
+  });
+}
+
+const DEFAULT_EYE_HEIGHT = 1.5;
+
+/**
+ * Where a look-at bone should aim this frame, or `null` when it aims at the camera. An entity
+ * target that is not spawned yet reuses `previous` rather than snapping back to the camera.
+ */
+function resolveLookAtTarget(
+  spec: ModelLookAtConfig["target"],
+  ctx: GameContext,
+  previous: THREE.Vector3 | null,
+  eyeHeight: number,
+): THREE.Vector3 | null {
+  if (spec === undefined || spec === "camera") return null;
+  if ("point" in spec) {
+    previous?.set(spec.point[0], spec.point[1], spec.point[2]);
+    return previous ?? new THREE.Vector3(spec.point[0], spec.point[1], spec.point[2]);
+  }
+  const entity = ctx.scene.entity.get(spec.entity);
+  if (entity === null || entity === undefined) return previous;
+  const position = entity.position;
+  previous?.set(position[0], position[1] + eyeHeight, position[2]);
+  return previous ?? new THREE.Vector3(position[0], position[1] + eyeHeight, position[2]);
+}

@@ -1,7 +1,8 @@
 import { describe, expect, test } from "bun:test";
 
 import { shootCommand, LOAD_GUARD_SECONDS } from "./shoot";
-import { bestOf, judgeLoad, parseLoadArgs, renderTable, siteGames, summarizeRuns, type LoadSample } from "./load-check";
+import { bestOf, judgeLoad, parseLoadArgs, renderTable, summarizeRuns, type LoadSample } from "./load-check";
+import { siteGames } from "./siteGames";
 
 const known = ["apex-nights", "hold-the-line", "saltwick"];
 

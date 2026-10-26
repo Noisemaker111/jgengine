@@ -1,6 +1,6 @@
 import * as THREE from "three";
 
-import { wetnessUniform } from "@jgengine/shell/render/livingWorld";
+import { wetnessUniform } from "@jgengine/core/weather/livingWorld.draw";
 
 const WET_KEY = "jgWet";
 

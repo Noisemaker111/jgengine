@@ -3,7 +3,7 @@
 // /games/<id> in a fresh Chrome profile per game, so the HTTP, code and GPU shader caches are as
 // cold as a first visit. Local only: it needs a real GPU and a window, so CI never runs it.
 import { spawnSync } from "node:child_process";
-import { existsSync, mkdirSync, readdirSync, readFileSync, statSync, writeFileSync } from "node:fs";
+import { existsSync, mkdirSync, readFileSync, statSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { fileURLToPath } from "node:url";
 
@@ -14,6 +14,7 @@ import { assetStoreRoot } from "../games/shared/assetStore";
 import { compressedVariant, textureVariantDir } from "../games/shared/textureVariants";
 import { killPid, pickDebugPort, removeProfileDir, startBrowser, waitForPidExit } from "./browser-lib";
 import { printHelpIfAsked } from "./script-help";
+import { siteGames } from "./siteGames";
 
 const repoRoot = fileURLToPath(new URL("..", import.meta.url));
 const webRoot = join(repoRoot, "apps", "web");
@@ -47,14 +48,6 @@ export interface LoadArgs {
   guard: boolean;
   /** Write this run into the saved baseline. */
   saveBaseline: boolean;
-}
-
-/** Every game the site lists: a games/<id> folder with a src/index.tsx, llmville aside. */
-export function siteGames(gamesDir = join(repoRoot, "games")): string[] {
-  return readdirSync(gamesDir, { withFileTypes: true })
-    .filter((entry) => entry.isDirectory() && entry.name !== "llmville" && existsSync(join(gamesDir, entry.name, "src", "index.tsx")))
-    .map((entry) => entry.name)
-    .sort();
 }
 
 export function parseLoadArgs(argv: readonly string[], known: readonly string[]): LoadArgs {

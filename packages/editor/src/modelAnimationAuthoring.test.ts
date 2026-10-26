@@ -13,7 +13,7 @@ import { createEditorSession, createEmptyEditorDocument } from "@jgengine/core/e
 import { markerAnimation, placeAuthoredObjectsFromDocument } from "@jgengine/core/world/authoredObjects";
 import { animGraphFromConfig } from "@jgengine/core/anim/locomotionGraph";
 import { createAnimGraphRuntime } from "@jgengine/core/anim/animGraph";
-import { diagnoseModelAnimation } from "@jgengine/shell/render/useModelAnimation";
+import { diagnoseModelAnimation } from "@jgengine/core/anim/useModelAnimation.draw";
 
 import { createEditorHost } from "./session";
 import { createEditorUiStore } from "./uiStore";

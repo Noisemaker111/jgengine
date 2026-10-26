@@ -5,7 +5,7 @@ import * as THREE from "three";
 import type { SceneEntity } from "@jgengine/core/scene/entityStore";
 import { sharedGltfLoader } from "@jgengine/core/model/modelLoad.draw";
 import { cloneModelScene, disposeClonedMaterials, modelPlacementTransform, standardMaterialsOf } from "@jgengine/core/model/modelRender.draw";
-import { useModelAnimation } from "@jgengine/shell/render/useModelAnimation";
+import { useModelAnimation } from "@jgengine/core/anim/useModelAnimation.draw";
 import { useStore } from "@jgengine/react/store";
 
 import { bodyColor, type AlienBodyPlan } from "../creatures/bodyPlan";
