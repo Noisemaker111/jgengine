@@ -527,6 +527,7 @@ export function survivorView(ctx: GameContext) {
   const xp = ctx.scene.entity.stats.get(ctx.player.userId, "xp");
   const lvl = level(ctx);
   const load = encumbrance(ctx, survivor);
+  const pool = ctx.scene.entity.stats.get(ctx.player.userId, "health");
   const vital = (id: string) => ({ value: Math.round(survivor.vitals.value(id) * 10) / 10, max: survivor.vitals.max(id) });
   const now = ctx.time.now();
   return {
@@ -536,7 +537,8 @@ export function survivorView(ctx: GameContext) {
     xpFrom: track.xpForLevel(lvl),
     statPoints: unspentPoints(ctx, survivor),
     engramPoints: survivor.engrams.available(),
-    health: vital("health"),
+    // Damage lands on the entity's health pool first and reaches the vitals on the next tick: read the pool.
+    health: pool === null ? vital("health") : { value: Math.round(pool.current * 10) / 10, max: pool.max },
     stamina: vital("stamina"),
     oxygen: vital("oxygen"),
     food: vital("food"),

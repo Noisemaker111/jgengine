@@ -96,6 +96,20 @@ test("club a raptor unconscious, tame it on raw meat, saddle it and ride it", ()
   expect(runner.ctx.player.possession.active(runner.userId)).toBe(runner.userId);
 });
 
+test("bare fists knock out as well as hurt: a punch puts ARK's 1.75x its damage into torpor", () => {
+  const runner = islandRunner();
+  tick(runner, 0.1);
+  runner.ui.tryInvoke("cheat", { summon: { species: "phiomia", level: 1, distance: 1.2 } });
+  tick(runner, 0.1);
+  expect(creaturesView(runner.ctx).aimed?.label).toBe("Phiomia");
+  runner.ui.tryInvoke("fire", { yaw: facing(runner) });
+  tick(runner, 0.1);
+  const card = creaturesView(runner.ctx).aimed!;
+  expect(card.health.value).toBe(card.health.max - 8);
+  // 8 damage x 1.75 = 14 torpor, of which a creature takes half (the same share a club's lands).
+  expect(card.taming?.torpor).toBe(7);
+});
+
 test("a dodo runs when hit, and its body carves into meat and hide", () => {
   const runner = islandRunner();
   tick(runner, 0.1);

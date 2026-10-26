@@ -79,3 +79,22 @@ test("a dry throat stops healing and costs about one health every five seconds",
   expect(lost).toBeGreaterThan(4);
   expect(lost).toBeLessThan(6.5);
 });
+
+test("the HUD's health is the pool hits land on, the moment they land", () => {
+  const runner = survivorRunner();
+  tick(runner, 0.1);
+  runner.ui.tryInvoke("cheat", { xp: 100000, spend: { health: 10 } });
+  tick(runner, 0.1);
+  const shows = () => {
+    const health = survivorView(runner.ctx).health;
+    expect(health.max).toBe(pool().max);
+    expect(health.value).toBeCloseTo(pool().current, 1);
+  };
+  const pool = () => runner.ctx.scene.entity.stats.get(runner.userId, "health")!;
+  shows();
+  expect(pool().max).toBeGreaterThan(100);
+  const before = pool().current;
+  runner.ctx.scene.entity.effect({ from: "raptor", to: runner.userId, effect: "damage", via: { amount: 15 } });
+  shows();
+  expect(pool().current).toBeCloseTo(before - 15, 5);
+});

@@ -43,11 +43,15 @@ export interface ItemDef {
 const resource = (id: string, label: string, weight: number, stack: number, note: string): ItemDef => ({ id, label, kind: "resource", weight, stack, note });
 const berry = (id: string, label: string, consume: Consume, note: string): ItemDef => ({ id, label, kind: "consumable", weight: 0.1, stack: 100, consume, note });
 
-/** Bare hands: ARK's 8-damage punch, thatch from trees, a little stone from rocks. */
+/**
+ * Bare hands: ARK's 8-damage punch, thatch from trees, a little stone from rocks. A punch knocks out
+ * as well as hurts: ARK deals 1.75x a fist's damage as torpor (a club 3.75x).
+ */
 export const FIST: ToolDef = {
   gather: { power: 1, biases: { thatch: 1, wood: 0.35, stone: 0.5, flint: 0.25, fiber: 0, raw_meat: 0.5, hide: 0.5 }, defaultBias: 0 },
   reach: 1.6,
   damage: 8,
+  torpor: 8 * 1.75,
   stamina: 5,
   cooldown: 0.55,
 };
