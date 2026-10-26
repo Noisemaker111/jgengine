@@ -25,7 +25,7 @@ import { readFileSync, rmSync, writeFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import { foldFragments, readFragments } from "./changelog-fragments";
 import { deploySite, publishThenDeploy, runStep } from "./deploy-site";
-import { awaitPublish, type RunGh } from "./release-await";
+import { awaitPublish, type AwaitResult, type RunGh } from "./release-await";
 
 export interface ChangelogSections {
   migrate: string[];
@@ -482,11 +482,46 @@ async function landAndAwait(root: string, version: string, cutFrom: string): Pro
   const back = git(["checkout", "--quiet", cutFrom]);
   if (back.status !== 0) console.error(`release: published, but this checkout did not switch back to ${cutFrom}: ${back.stderr.trim()}`);
   // The site deploy runs here, not in CI, because its build needs game models.
+  const published = await publishFollowingBeta({
+    sha: forward.sha,
+    publish: (sha) => awaitPublish({ version, sha, gh, log: (line) => console.log(line) }),
+    pushTip: () => fastForwardMain(git),
+    log: (line) => console.log(line),
+  });
+  if (!published.ok) {
+    console.error(`release: ${published.error}`);
+    process.exit(1);
+  }
   const code = await publishThenDeploy(
-    () => awaitPublish({ version, sha: forward.sha, gh, log: (line) => console.log(line) }),
-    () => deploySite(root, runStep, forward.sha),
+    async () => published.result,
+    () => deploySite(root, runStep, published.sha),
   );
   process.exit(code);
+}
+
+/**
+ * Publish `sha`. Beta can move while Publish runs, and Publish refuses a commit beta has already
+ * passed: the 0.47.0 cut was refused when #2575 merged between its push and its Publish check. So a
+ * failed publish pushes beta's tip to `main` and publishes that instead, at most twice.
+ */
+export async function publishFollowingBeta(input: {
+  sha: string;
+  publish: (sha: string) => Promise<AwaitResult>;
+  pushTip: () => { ok: true; sha: string } | { ok: false; error: string };
+  log: (line: string) => void;
+  retries?: number;
+}): Promise<{ ok: true; sha: string; result: AwaitResult } | { ok: false; error: string }> {
+  let sha = input.sha;
+  let result = await input.publish(sha);
+  for (let retry = 0; !result.ok && retry < (input.retries ?? 2); retry++) {
+    const tip = input.pushTip();
+    if (!tip.ok) return { ok: false, error: `fast-forwarding main failed: ${tip.error}` };
+    if (tip.sha === sha) break;
+    input.log(`release: beta moved to ${tip.sha.slice(0, 8)} while Publish ran; publishing that commit`);
+    sha = tip.sha;
+    result = await input.publish(sha);
+  }
+  return { ok: true, sha, result };
 }
 
 /**
