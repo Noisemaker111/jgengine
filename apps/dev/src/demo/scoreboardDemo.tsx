@@ -46,7 +46,7 @@ const scoreboardTheme: ScoreboardTheme = {
 
 const terrainFeature = environment({
   terrain: terrain({ bounds: { w: 60, d: 60 }, height: 2, frequency: 0.03, seed: "scoreboard" }),
-  vegetation: grass({ area: { w: 52, d: 52 }, colorBase: "#241a3a", colorTip: "#6b4aa0", seed: "scoreboard" }),
+  vegetation: grass({ area: { w: 52, d: 52 }, baseColor: "#241a3a", tipColor: "#6b4aa0", seed: "scoreboard" }),
 });
 
 const entityCatalog: Record<string, GameContextEntityEntry> = {

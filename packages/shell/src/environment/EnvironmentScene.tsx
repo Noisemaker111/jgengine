@@ -36,7 +36,7 @@ import { GroundPad } from "./GroundPad";
 import { Roads } from "./RoadRibbons";
 import { terrainGroundColorSampler } from "./terrainGroundColor";
 import { InstancedBuildings, type InstancedBuildingPlacement } from "../structures/GeneratedBuilding";
-import { GrassField } from "../terrain/GrassField";
+import { GrassPatch } from "../grass/GrassPatch";
 import { CarvedTerrain, type CarvedTerrainProps } from "../terrain/CarvedTerrain";
 import { createTerrainDetailMaterial } from "../terrain/terrainDetailMaterial";
 import { MAX_TERRAIN_LAYER_MAPS, type TerrainDetailMaterialTextures, type TerrainLayerMap } from "../terrain/terrainDetailMaterial";
@@ -350,7 +350,7 @@ function Vegetation({
   );
   const area = useMemo(() => [grass.area.w, grass.area.d] as const, [grass.area.w, grass.area.d]);
   return (
-    <GrassField position={[cx, 0, cz]} rules={grass.rules} area={area} heightAt={heightAt} colorGround={groundColor} />
+    <GrassPatch position={[cx, 0, cz]} look={grass.look} area={area} heightAt={heightAt} groundColor={groundColor} />
   );
 }
 

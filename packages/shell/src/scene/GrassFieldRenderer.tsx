@@ -6,8 +6,8 @@ import type { TerrainField } from "@jgengine/core/world/terrain";
 import { clearanceMasksFrom, DEFAULT_CLEARANCE_KINDS } from "@jgengine/core/world/scatterRegion";
 import { masksInfluence } from "@jgengine/core/world/geometry";
 
-import { GrassField } from "../terrain/GrassField";
-import type { GrassExclusion } from "../terrain/grassGeometry";
+import { GrassPatch } from "../grass/GrassPatch";
+import type { GrassExclusion } from "../grass/grassBake";
 import { registerSceneKindRenderer, type SceneKindRenderContext } from "./sceneKindRenderers";
 
 /** Volume kinds turf yields to — blades never grow through cracked soil or out of open water. */
@@ -42,10 +42,10 @@ function sampleHeight(field: TerrainField, x: number, z: number): number {
 }
 
 /**
- * One authored grass volume → the shared `GrassField` over its footprint.
- * `area`/`heightAt`/`coverageAt` are memoized so `GrassField`'s internal geometry and
+ * One authored grass volume → the shared `GrassPatch` over its footprint.
+ * `area`/`heightAt`/`coverageAt` are memoized so `GrassPatch`'s stream and
  * material `useMemo`s see stable references across re-renders — otherwise every re-render (the
- * live-sync document context object is recreated per render) rebuilds the blade geometry and
+ * live-sync document context object is recreated per render) rebuilds the blade stream and
  * shader material from scratch, which shows up as recurring render hitches.
  */
 function OneGrass({ object, context }: { object: SceneKindObject; context: SceneKindRenderContext }) {
@@ -70,7 +70,7 @@ function OneGrass({ object, context }: { object: SceneKindObject; context: Scene
   const coverageAt = useCallback((x: number, z: number) => resolved === null ? 0 :
     1 - masksInfluence(x + resolved.center[0], z + resolved.center[2], masks), [resolved, masks]);
   // Depends on the volumes slice, not the context object — the live-sync context is recreated
-  // per render and would otherwise rebuild the tuft geometry every frame.
+  // per render and would otherwise rebuild the grass stream every frame.
   const volumes = context.document.volumes;
   const exclude = useMemo(
     () => (resolved === null ? null : grassExclusionsFrom(context, resolved.center)),
@@ -78,14 +78,14 @@ function OneGrass({ object, context }: { object: SceneKindObject; context: Scene
     [volumes, resolved],
   );
   if (resolved === null || area === null || exclude === null) return null;
-  const { rules, center } = resolved;
+  const { look, center } = resolved;
   return (
-    <GrassField
+    <GrassPatch
       position={[center[0], center[1], center[2]]}
-      rules={rules}
+      look={look}
       area={area}
       seed={object.id}
-      colorGround={context.groundColorAt?.(center[0], center[2])}
+      groundColor={context.groundColorAt?.(center[0], center[2])}
       heightAt={heightAt}
       coverageAt={coverageAt}
       edgeFeather={2.2}

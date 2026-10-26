@@ -56,7 +56,7 @@ const UPGRADE_COST: Record<string, number> = Object.fromEntries(UPGRADES.map((u)
 
 const terrainFeature = environment({
   terrain: terrain({ bounds: { w: 60, d: 60 }, height: 2, frequency: 0.03, seed: "talent" }),
-  vegetation: grass({ area: { w: 52, d: 52 }, colorBase: "#243b1e", colorTip: "#5f8f3a", seed: "talent" }),
+  vegetation: grass({ area: { w: 52, d: 52 }, baseColor: "#243b1e", tipColor: "#5f8f3a", seed: "talent" }),
 });
 
 const entityCatalog: Record<string, GameContextEntityEntry> = {

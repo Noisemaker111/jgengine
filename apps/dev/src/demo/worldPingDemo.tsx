@@ -45,7 +45,7 @@ const CRATES: readonly [number, number, number][] = [
 
 const terrainFeature = environment({
   terrain: terrain({ bounds: { w: 90, d: 90 }, height: 3, frequency: 0.03, seed: "pings" }),
-  vegetation: grass({ area: { w: 76, d: 76 }, colorBase: "#2f4f1e", colorTip: "#8fbf4a", seed: "pings" }),
+  vegetation: grass({ area: { w: 76, d: 76 }, baseColor: "#2f4f1e", tipColor: "#8fbf4a", seed: "pings" }),
 });
 
 const markerSet: MarkerSet = createMarkerSet();

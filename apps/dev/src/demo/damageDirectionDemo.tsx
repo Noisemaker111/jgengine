@@ -43,7 +43,7 @@ const ARC_COLORS: Record<string, string> = {
 
 const terrainFeature = environment({
   terrain: terrain({ bounds: { w: 60, d: 60 }, height: 2, frequency: 0.03, seed: "damagedir" }),
-  vegetation: grass({ area: { w: 52, d: 52 }, colorBase: "#3a2f24", colorTip: "#6b5a3a", seed: "damagedir" }),
+  vegetation: grass({ area: { w: 52, d: 52 }, baseColor: "#3a2f24", tipColor: "#6b5a3a", seed: "damagedir" }),
 });
 
 const entityCatalog: Record<string, GameContextEntityEntry> = {

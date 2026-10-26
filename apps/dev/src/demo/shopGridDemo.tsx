@@ -32,7 +32,7 @@ const STARTING_WALLET: WalletState = grant(grant(createEmptyWallet(), "gold", 10
 
 const terrainFeature = environment({
   terrain: terrain({ bounds: { w: 60, d: 60 }, height: 2, frequency: 0.03, seed: "shop" }),
-  vegetation: grass({ area: { w: 52, d: 52 }, colorBase: "#26401a", colorTip: "#7fb04a", seed: "shop" }),
+  vegetation: grass({ area: { w: 52, d: 52 }, baseColor: "#26401a", tipColor: "#7fb04a", seed: "shop" }),
 });
 
 const entityCatalog: Record<string, GameContextEntityEntry> = {

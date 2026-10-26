@@ -7,8 +7,9 @@ import {
   resolveTerrainPalette,
   TERRAIN_MATERIAL_PALETTES,
 } from "@jgengine/core/world/terrain";
+import { GRASS_DEFAULTS } from "@jgengine/core/world/grassKind";
 
-import { createGrassBladeGeometry } from "./grassGeometry";
+import { bakeGrassNode, resolveGrassBake } from "../grass/grassBake";
 import { createSeededRandom } from "./random";
 import {
   createFieldGroundGeometry,
@@ -161,25 +162,15 @@ describe("terrain primitives", () => {
     geometry.dispose();
   });
 
-  test("grass blade geometry places seeded tuft instances on the provided surface", () => {
-    const geometry = createGrassBladeGeometry({
-      count: 12,
-      area: [6, 4],
-      seed: "grass",
-      tuftBlades: 4,
-      edgeFeather: 0,
-      heightAt: (x, z) => x * 0.25 + z * 0.5,
-    });
-    // 12 blades at 4 blades per tuft → 3 tuft instances, each template carrying 4 blades.
-    const offsets = geometry.getAttribute("instanceOffset");
-    expect(geometry.instanceCount).toBe(3);
-    expect(offsets.count).toBe(3);
-    const vertsPerBlade = geometry.getAttribute("position").count / 4;
-    expect(vertsPerBlade).toBe((4 + 1) * 2);
-    for (let index = 0; index < offsets.count; index += 1) {
-      expect(offsets.getY(index)).toBeCloseTo(offsets.getX(index) * 0.25 + offsets.getZ(index) * 0.5);
+  test("grass bakes seeded tufts onto the provided surface", () => {
+    const heightAt = (x: number, z: number) => x * 0.25 + z * 0.5;
+    const bake = resolveGrassBake({ look: GRASS_DEFAULTS, area: [6, 4], seed: "grass", edgeFeather: 0, heightAt });
+    const tufts = bakeGrassNode(bake, 0, 0, 0, 1);
+    expect(tufts.count).toBeGreaterThan(0);
+    expect(bakeGrassNode(bake, 0, 0, 0, 1).offsets).toEqual(tufts.offsets);
+    for (let index = 0; index < tufts.count; index += 1) {
+      expect(tufts.offsets[index * 3 + 1]!).toBeCloseTo(heightAt(tufts.offsets[index * 3]!, tufts.offsets[index * 3 + 2]!));
     }
-    geometry.dispose();
   });
 
   test("field ground geometry applies flatten masks at center, falloff, and outside", () => {
