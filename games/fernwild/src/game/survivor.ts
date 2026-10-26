@@ -19,6 +19,7 @@ import { ENGRAMS, engramDef, CRAFTING_RECIPES, recipeDef } from "./data/engrams"
 import { gatheredBy, HARVESTABLES } from "./data/harvestables";
 import { command, keybind, proximityPrompt, type PositionedPrompt } from "@jgengine/core/interaction/proximityPrompt";
 import { FIST, itemDef, itemLabel, itemTraits, PICK_UP, type ToolDef } from "./data/items";
+import { placeHeld, stations, strikeStructure } from "./base";
 import { mountCanSprint, strikeCreature } from "./creatures";
 import { openScreen } from "./screens";
 import { COMFORT, ENGRAM_POINTS, LEVEL_STATS, MAX_LEVEL, SURVIVOR, survivorVitals, XP_TO_LEVEL, type LevelStat } from "./data/survivor";
@@ -143,6 +144,13 @@ function takeAnywhere(ctx: GameContext, itemId: string, count: number): boolean 
   return true;
 }
 
+/** The item in the active hotbar slot: a tool, or a structure to place. */
+export function heldItem(ctx: GameContext): string | null {
+  const survivor = survivorOf(ctx);
+  if (survivor.activeSlot === null) return null;
+  return ctx.player.inventory.state(HOTBAR).slots[survivor.activeSlot]?.itemId ?? null;
+}
+
 function heldTool(ctx: GameContext, survivor: Survivor): { id: string | null; tool: ToolDef } {
   if (survivor.activeSlot === null) return { id: null, tool: FIST };
   const slot = ctx.player.inventory.state(HOTBAR).slots[survivor.activeSlot] ?? null;
@@ -185,6 +193,13 @@ export function swing(ctx: GameContext, yaw?: number): void {
   if (me === null || survivor.dead || survivor.vitals.has("unconscious") || openScreen(ctx) !== null) return;
   const now = ctx.time.now();
   if (now < survivor.swingReady) return;
+  const held = heldItem(ctx);
+  if (held !== null && itemDef(held)?.kind === "structure") {
+    survivor.swingReady = now + 0.25;
+    placeHeld(ctx, held, yaw);
+    if (ctx.player.inventory.count(HOTBAR, held) === 0) survivor.activeSlot = null;
+    return;
+  }
   const { tool } = heldTool(ctx, survivor);
   if (!survivor.vitals.spend("stamina", tool.stamina)) {
     ctx.game.notices.push({ text: "Too tired to swing", tone: "deny" });
@@ -201,6 +216,7 @@ export function swing(ctx: GameContext, yaw?: number): void {
     if (struck.killed) grantXp(ctx, struck.xp);
     return;
   }
+  if (strikeStructure(ctx, yaw ?? me.rotationY, tool.reach + 0.5, tool.damage * melee, tool.damageClass ?? "primitive")) return;
   ensurePlacements(ctx, survivor);
   const hit = survivor.harvest.strike({
     x: me.position[0],
@@ -295,7 +311,8 @@ export function selectSlot(ctx: GameContext, slot: number): void {
     consume(ctx, HOTBAR, slot);
     return;
   }
-  survivor.activeSlot = survivor.activeSlot === slot || def?.tool === undefined ? null : slot;
+  const holdable = def?.tool !== undefined || def?.kind === "structure";
+  survivor.activeSlot = survivor.activeSlot === slot || !holdable ? null : slot;
 }
 
 /** Double-click in the inventory: tools and food go to the hotbar, hotbar items come back. */
@@ -330,11 +347,11 @@ function queueConfig(survivor: Survivor): WorkQueueConfig<CraftSpec, undefined, 
   };
 }
 
-/** What a recipe checks against: learned engrams, and the stations near the survivor (placed ones arrive with building). */
+/** What a recipe checks against: learned engrams, and the stations placed near the survivor. */
 function craftContext(ctx: GameContext, survivor: Survivor) {
   const me = ctx.scene.entity.get(ctx.player.userId);
   const origin: readonly [number, number] = me === null ? [0, 0] : [me.position[0], me.position[2]];
-  return { unlocked: (id: string) => survivor.engrams.isUnlocked(id), stations: [], origin };
+  return { unlocked: (id: string) => survivor.engrams.isUnlocked(id), stations: stations(ctx), origin };
 }
 
 /** Why a recipe cannot start now, or null when it can. */

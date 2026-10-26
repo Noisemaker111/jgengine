@@ -1,5 +1,7 @@
 import type { ToolProfile } from "@jgengine/core/world/resourceNode";
 
+import { STRUCTURES } from "./structures";
+
 /** What eating or drinking one unit does to the survivor. */
 export interface Consume {
   food?: number;
@@ -23,6 +25,8 @@ export interface ToolDef {
   stamina: number;
   /** Seconds between swings. */
   cooldown: number;
+  /** What a structure tier sees this hit as (ARK: wood ignores fists and stone tools). Default `"primitive"`. */
+  damageClass?: "fist" | "primitive" | "ranged" | "metal";
 }
 
 export type ItemKind = "resource" | "consumable" | "tool" | "structure" | "armor" | "saddle" | "ammo";
@@ -52,6 +56,7 @@ export const FIST: ToolDef = {
   reach: 1.6,
   damage: 8,
   torpor: 8 * 1.75,
+  damageClass: "fist",
   stamina: 5,
   cooldown: 0.55,
 };
@@ -102,22 +107,16 @@ export const ITEMS: readonly ItemDef[] = [
     tool: { gather: { power: 1, biases: { raw_meat: 1, hide: 0.5 }, defaultBias: 0 }, reach: 2.8, damage: 25, stamina: 7, cooldown: 0.9 },
   },
   { id: "torch", label: "Torch", kind: "tool", weight: 0.5, stack: 1, note: "Light and a little warmth.", tool: { gather: { power: 1, biases: {}, defaultBias: 0 }, reach: 1.8, damage: 8, stamina: 5, cooldown: 0.7 } },
-  { id: "campfire", label: "Campfire", kind: "structure", weight: 4, stack: 100, note: "Cooks meat and keeps you warm." },
-  { id: "mortar_and_pestle", label: "Mortar and Pestle", kind: "structure", weight: 12, stack: 100, note: "Grinds sparkpowder and narcotics." },
-  { id: "storage_box", label: "Storage Box", kind: "structure", weight: 4, stack: 100, note: "Holds 25 stacks." },
+  { id: "storage_box", label: "Storage Box", kind: "structure", weight: 4, stack: 100, note: "Holds 15 stacks. Placing it comes later." },
   { id: "hide_sleeping_bag", label: "Hide Sleeping Bag", kind: "structure", weight: 2, stack: 1, note: "A one-time respawn point." },
-  { id: "thatch_foundation", label: "Thatch Foundation", kind: "structure", weight: 4, stack: 100, note: "The floor every hut starts from." },
-  { id: "thatch_wall", label: "Thatch Wall", kind: "structure", weight: 4, stack: 100, note: "Snaps to a foundation edge." },
-  { id: "thatch_doorframe", label: "Thatch Doorframe", kind: "structure", weight: 4, stack: 100, note: "A wall with a door gap." },
-  { id: "thatch_door", label: "Thatch Door", kind: "structure", weight: 4, stack: 100, note: "Fits a doorframe." },
-  { id: "thatch_ceiling", label: "Thatch Ceiling", kind: "structure", weight: 4, stack: 100, note: "A roof over walls." },
   { id: "cloth_shirt", label: "Cloth Shirt", kind: "armor", weight: 1, stack: 1, note: "Keeps the sun off." },
   { id: "cloth_pants", label: "Cloth Pants", kind: "armor", weight: 1, stack: 1, note: "Keeps the sun off." },
   { id: "cloth_hat", label: "Cloth Hat", kind: "armor", weight: 0.5, stack: 1, note: "Keeps the sun off." },
   { id: "cloth_gloves", label: "Cloth Gloves", kind: "armor", weight: 0.5, stack: 1, note: "Keeps the sun off." },
   { id: "cloth_boots", label: "Cloth Boots", kind: "armor", weight: 0.5, stack: 1, note: "Keeps the sun off." },
   { id: "waterskin", label: "Waterskin", kind: "consumable", weight: 0.5, stack: 1, consume: { water: 20 }, note: "Carry a drink with you." },
-  { id: "slingshot", label: "Slingshot", kind: "tool", weight: 1, stack: 1, note: "Throws stones that knock creatures out.", tool: { gather: { power: 1, biases: {}, defaultBias: 0 }, reach: 2, damage: 5, torpor: 8, stamina: 4, cooldown: 1 } },
+  { id: "slingshot", label: "Slingshot", kind: "tool", weight: 1, stack: 1, note: "Throws stones that knock creatures out.", tool: { gather: { power: 1, biases: {}, defaultBias: 0 }, reach: 2, damage: 5, torpor: 8, damageClass: "ranged", stamina: 4, cooldown: 1 } },
+  ...STRUCTURES.map((entry): ItemDef => ({ id: entry.id, label: entry.label, kind: "structure", weight: entry.weight, stack: 100, note: entry.note })),
   { id: "phiomia_saddle", label: "Phiomia Saddle", kind: "saddle", weight: 7, stack: 1, note: "Lets you ride a tamed Phiomia." },
   { id: "raptor_saddle", label: "Raptor Saddle", kind: "saddle", weight: 8, stack: 1, note: "Lets you ride a tamed Raptor." },
 ];

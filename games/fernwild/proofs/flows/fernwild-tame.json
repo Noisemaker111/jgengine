@@ -4,7 +4,7 @@
     { "shot": "fernwild-herds", "note": "dodos grazing inland of the spawn" },
     { "rpc": { "method": "run_command", "name": "cheat", "input": { "xp": 100000, "spend": { "health": 45, "stamina": 8 }, "give": { "wooden_club": 1, "raw_meat": 10, "raptor_saddle": 1 }, "tamingSpeed": 20 } }, "note": "ARK's admin console: a levelled survivor with a club, raw meat and a raptor saddle; taming twenty times faster so the proof is short" },
     { "rpc": { "method": "run_command", "name": "shuttle", "input": { "inventoryId": "inventory", "slot": 0 } }, "note": "the club onto the hotbar" },
-    { "rpc": { "method": "run_command", "name": "slot1", "input": {} }, "note": "club in hand" },
+    { "key": "Digit1", "ms": 80, "note": "club in hand: key 1" },
     { "key": "KeyD", "ms": 700, "note": "step right onto open sand, clear of the palm by the spawn" },
     { "key": "KeyW", "ms": 250, "note": "face inland again, where the camera looks" },
     { "rpc": { "method": "run_command", "name": "cheat", "input": { "summon": { "species": "raptor", "level": 1, "distance": 4 } } }, "note": "a level-1 raptor right in front" },

@@ -11,6 +11,7 @@ export const CORE_DOMAIN_SKILLS: Record<string, string> = {
   anim: "jgengine-world",
   area: "jgengine-world",
   audio: "jgengine-world",
+  basebuilding: "jgengine-gameplay",
   behaviour: "jgengine-gameplay",
   board: "jgengine-gameplay",
   camera: "jgengine-world",

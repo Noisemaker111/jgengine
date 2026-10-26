@@ -51,7 +51,7 @@ test("wake on the beach, punch a tree, pick stones, craft a Stone Pick, level up
   expect(runner.ctx.player.inventory.count(HOTBAR, "stone_pick")).toBe(1);
 
   // A few more swings with the pick cross ARK's level-2 threshold: one stat point, eight engram points.
-  runner.ui.tryInvoke("slot1", {});
+  runner.ctx.item.use.use({ from: runner.userId, itemId: runner.ctx.player.inventory.state(HOTBAR).slots[0]!.itemId, inventoryId: HOTBAR });
   for (let swing = 0; swing < 12 && survivorView(runner.ctx).level < 2; swing += 1) {
     runner.ui.tryInvoke("fire", { yaw: facing });
     tick(runner, 0.6);

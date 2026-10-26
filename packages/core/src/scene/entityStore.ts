@@ -5,6 +5,8 @@ export type EntityRole = "player" | "npc" | "prop";
 
 export interface EntityMovement {
   walkSpeed?: number;
+  /** Sprint speed as a multiple of this body's walk speed; overrides the game's `feel.runMultiplier` (a mount sprints at its own ratio). */
+  runMultiplier?: number;
   frozen?: boolean;
 }
 

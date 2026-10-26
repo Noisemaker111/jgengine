@@ -371,8 +371,12 @@ function tickTame(ctx: GameContext, creature: Creature, ridden: boolean, dt: num
   const sprinting = ridden && moving && ctx.input.isDown("sprint") && creature.stamina > 1;
   const rate = sprinting ? -defOf(creature).sprintStamina : moving ? 0 : max * STAMINA_REGEN;
   creature.stamina = Math.max(0, Math.min(max, creature.stamina + rate * dt));
-  const walk = defOf(creature).walk * statOf(creature, "speed");
-  if (ridden && entity !== null && Math.abs((entity.movement.walkSpeed ?? 0) - walk) > 0.01) ctx.scene.entity.update(creature.id, { movement: { ...entity.movement, walkSpeed: walk } });
+  const def = defOf(creature);
+  const walk = def.walk * statOf(creature, "speed");
+  // Ridden, the mount sprints at its own ARK ratio (a tamed raptor 11.04 / 4.8 m/s), not the survivor's.
+  const run = (def.tamedSprint ?? def.sprint) / def.walk;
+  const moved = entity === null ? null : entity.movement;
+  if (ridden && moved !== null && (Math.abs((moved.walkSpeed ?? 0) - walk) > 0.01 || moved.runMultiplier !== run)) ctx.scene.entity.update(creature.id, { movement: { ...moved, walkSpeed: walk, runMultiplier: run } });
 }
 
 /** Whether the mount under the survivor has the stamina to sprint; null on foot. */

@@ -28,8 +28,7 @@ const tick = (runner: HeadlessRunner, seconds: number) => {
 const bagSlot = (runner: HeadlessRunner, itemId: string) => runner.ctx.player.inventory.state(BAG).slots.findIndex((slot) => slot?.itemId === itemId);
 const equip = (runner: HeadlessRunner, itemId: string) => {
   runner.ui.tryInvoke("shuttle", { inventoryId: BAG, slot: bagSlot(runner, itemId) });
-  const slot = runner.ctx.player.inventory.state(HOTBAR).slots.findIndex((stack) => stack?.itemId === itemId);
-  runner.ui.tryInvoke(`slot${slot + 1}`, {});
+  runner.ctx.item.use.use({ from: runner.userId, itemId, inventoryId: HOTBAR });
 };
 const facing = (runner: HeadlessRunner) => runner.ctx.scene.entity.get(runner.userId)!.rotationY;
 

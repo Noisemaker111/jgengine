@@ -25,6 +25,8 @@ export interface SpeciesDef {
   /** Walk and sprint in metres per second (ARK units / 100). */
   walk: number;
   sprint: number;
+  /** Sprint once tamed, when ARK lists a different one (a tamed raptor outruns a wild one). */
+  tamedSprint?: number;
   /** Stamina a second while ridden at a sprint (ARK's movement table). */
   sprintStamina: number;
   /** ARK's base kill XP: a kill gives this x (1 + 0.1 x (level - 1)). */
@@ -129,6 +131,7 @@ export const SPECIES: Readonly<Record<string, SpeciesDef>> = {
     melee: { base: 15, perLevel: 0.75 },
     walk: 4.8,
     sprint: 9.94,
+    tamedSprint: 11.04,
     sprintStamina: 6,
     killXp: 12,
     attack: { damage: 15, interval: 0.8, reach: 2.2 },

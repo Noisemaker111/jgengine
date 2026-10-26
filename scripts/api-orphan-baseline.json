@@ -101,7 +101,6 @@
   "@jgengine/core/map/mapLayers#pointInMapZone",
   "@jgengine/core/movement/movementSpeed#deriveWalkSpeed",
   "@jgengine/core/movement/playerMovement#forgetPlayerMovement",
-  "@jgengine/core/movement/playerMovement#playerMovementHeading",
   "@jgengine/core/movement/steering#yawForward",
   "@jgengine/core/movement/steering#yawRight",
   "@jgengine/core/movement/voxelController#advanceVoxelPlayer",

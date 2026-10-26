@@ -3221,7 +3221,7 @@
 ## @jgengine/core/scene/entityStore
 
 - `EntityBlackboard` (interface): interface EntityBlackboard — Per-entity scratch and cooldown timers, auto-cleared on despawn (#533.8) — the home for AI state (next-shot-at, alert level) that would otherwise be smuggled through the serializable `meta` or a hand-pruned module-level map. Keys share one namespace per entity: `arm`/`ready`/`remaining` store a deadline under a key, `get`/`set` store arbitrary scratch.
-- `EntityMovement` (interface): interface EntityMovement { walkSpeed?: number; frozen?: boolean } — ⚠ undocumented
+- `EntityMovement` (interface): interface EntityMovement { walkSpeed?: number; runMultiplier?: number; frozen?: boolean } — ⚠ undocumented
 - `EntityPose` (interface): interface EntityPose { position: SpawnPositionInput; rotationY?: number; rotationX?: number; rotationZ?: number; dt?: number } — ⚠ undocumented
 - `EntityPosition` (type): type EntityPosition = readonly [number, number, number] — ⚠ undocumented · used by `resolveSourceWalkerStep` (@jgengine/core/movement/solidObstacles): {@link resolveWalkerStep} with no `GameContext`: gather plus slide against a bare {@link SolidObstacleSource} and a caller-owned {@link Obst…
 - `EntityRole` (type): type EntityRole = "player" | "npc" | "prop" — ⚠ undocumented
@@ -4271,7 +4271,7 @@
 
 - `ANNOTATION_FEED_ACTION` (const): const ANNOTATION_FEED_ACTION: "map.annotation" — Feed action shared drawings ride by default (pair with the party feed, like pings).
 - `AUTO_TARGET_POLICIES` (const): const AUTO_TARGET_POLICIES: readonly AutoTargetPolicy[] — Every policy, in the order a "cycle targeting" button steps through them.
-- `Aabb` (interface): interface Aabb { minX: number; minZ: number; maxX: number; maxZ: number } — ⚠ undocumented · used by `rectRegion`: An axis-aligned rectangle on the XZ plane.
+- `Aabb` (interface): interface Aabb — ⚠ undocumented · used by `rectRegion`: An axis-aligned rectangle on the XZ plane.
 - `AcquisitionEnvelope` (type): type AcquisitionEnvelope = number | ((selfId: string, candidateId: string) => number) — Composable target acquisition: the "which enemy do I lock onto?" decision split into the independent concerns every aggro system tangles together — a bounded candidate provider, an eligibility filter, a per-pair acquisition envelope (dynamic range), a perception/LOS gate, scoring, deterministic tie-break, and retention hysteresis. This owns *policy*; threat, brains, and movement stay separate. Feed `candidates` a spatial-index query, never a full-world scan.
 - `AcquisitionPolicy` (interface): interface AcquisitionPolicy — A fully composed acquisition policy. Every concern is an independent, injectable seam; the only required pieces are the bounded `candidates` provider and the `distance` metric. Omit the rest to fall back to the thin default — a static/unbounded range, everything eligible and perceptible, nearest-wins scoring, id tie-break, no hysteresis — which matches a plain proximity aggro radius.
 - `AcquisitionResult` (interface): interface AcquisitionResult — Outcome of one acquisition pass.
