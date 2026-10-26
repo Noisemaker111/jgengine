@@ -11,7 +11,6 @@ button[data-jg-frame].fd-rimmed:focus-visible { background:#f2c230; }
 .fd-hud-btn { pointer-events:auto; border:0; font:inherit; color:inherit; }
 
 /* Pit-lane timing board, top left. */
-.fd-tower-wrap { position:absolute; left:18px; top:18px; }
 .fd-tower { width:176px; background:#121416; clip-path:polygon(0 0,100% 0,100% calc(100% - 12px),calc(100% - 12px) 100%,0 100%); }
 .fd-tower-head { display:flex; align-items:stretch; }
 .fd-tower-pos { display:flex; align-items:baseline; padding:6px 10px 4px 9px; background:#f2c230; color:#141414; font:38px/1 "Saira Stencil One",sans-serif; }
@@ -27,7 +26,6 @@ button[data-jg-frame].fd-rimmed:focus-visible { background:#f2c230; }
 .fd-tower-field li[data-you] b { color:#0f1b1d; }
 
 /* The next barrier: a painted gate sign hung over the road. */
-.fd-sign-wrap { position:absolute; left:50%; top:14px; transform:translateX(-50%); }
 .fd-ui .fd-sign { width:min(470px,40vw); }
 .fd-sign > [data-jg-frame-face] { color:#141414; }
 .fd-sign[data-tone="stop"] > [data-jg-frame-face] { color:#fff4e0; }
@@ -38,14 +36,13 @@ button[data-jg-frame].fd-rimmed:focus-visible { background:#f2c230; }
 .fd-sign-sub { font-size:14px; letter-spacing:.1em; text-transform:uppercase; opacity:.78; }
 
 /* Dash rail: pause tab and the settings key, top right. */
-.fd-dash-rail { position:absolute; right:18px; top:18px; display:flex; gap:6px; align-items:center; }
+.fd-dash-rail { display:flex; gap:6px; align-items:center; }
 .fd-tab-face { display:flex; align-items:center; gap:8px; }
 .fd-ui .fd-gear { pointer-events:auto; appearance:none; border:0; margin:0; width:44px; height:36px; padding:2px; cursor:pointer; background:#0b0d0e; clip-path:polygon(9px 0,100% 0,calc(100% - 9px) 100%,0 100%); }
 .fd-gear-face { display:grid; place-items:center; width:100%; height:100%; clip-path:polygon(8px 0,100% 0,calc(100% - 8px) 100%,0 100%); background:linear-gradient(180deg,#5b6266,#3a4044 55%,#2a2f31); }
 .fd-ui .fd-gear:focus-visible { background:#f2c230; outline:none; }
 
 /* Four sockets for what is bolted on. */
-.fd-rack-wrap { position:absolute; right:18px; top:66px; }
 .fd-rack { display:flex; align-items:center; gap:8px; padding:5px 8px 5px 12px; background:linear-gradient(180deg,#3a4044,#24292c); clip-path:polygon(10px 0,100% 0,100% 100%,0 100%,0 10px); }
 .fd-rack-label { font:14px/1 "Saira Stencil One",sans-serif; color:#f2c230; letter-spacing:.04em; }
 .fd-rack-sockets { display:flex; gap:4px; }
@@ -55,7 +52,7 @@ button[data-jg-frame].fd-rimmed:focus-visible { background:#f2c230; }
 .fd-socket[data-empty] svg { opacity:.55; }
 
 /* A manila tag tied on for a swap. */
-.fd-ui .fd-tag { position:absolute; right:18px; top:122px; width:min(300px,38vw); }
+.fd-ui .fd-tag { width:min(300px,38vw); }
 .fd-tag > [data-jg-frame-face] { color:#2a2419; font-size:15px; line-height:1.22; }
 .fd-tag-head { display:block; font-size:13px; letter-spacing:.14em; text-transform:uppercase; color:#a8380f; }
 .fd-tag-head b { font:16px/1 "Saira Stencil One",sans-serif; font-weight:400; letter-spacing:.02em; }
@@ -65,7 +62,7 @@ button[data-jg-frame].fd-rimmed:focus-visible { background:#f2c230; }
 .fd-tag-how { display:block; margin-top:6px; font-size:14px; font-weight:600; }
 
 /* The gauge cluster. */
-.fd-dash { position:absolute; left:16px; bottom:10px; width:220px; }
+.fd-dash { width:220px; }
 .fd-tach { position:relative; width:100%; aspect-ratio:1; }
 .fd-tach > svg { position:absolute; inset:0; width:100%; height:100%; }
 .fd-tach-major { stroke:#efe6cf; stroke-width:2.6; }
@@ -92,7 +89,7 @@ button[data-jg-frame].fd-rimmed:focus-visible { background:#f2c230; }
 .fd-lamp[data-on][data-tone="yellow"] i { background:#f2c230; box-shadow:0 0 6px #f2c230; }
 
 /* The compactor behind you: a crusher bar, bottom centre. */
-.fd-crusher-wrap { position:absolute; left:50%; bottom:22px; transform:translateX(-50%); width:min(440px,34vw); }
+.fd-crusher-wrap { width:min(440px,34vw); }
 .fd-crusher { display:grid; grid-template-columns:auto 1fr auto; align-items:center; gap:10px; padding:7px 22px; background:linear-gradient(180deg,#3a4044,#1c2022); clip-path:polygon(14px 0,calc(100% - 14px) 0,100% 50%,calc(100% - 14px) 100%,14px 100%,0 50%); }
 .fd-crusher-label { font:15px/1 "Saira Stencil One",sans-serif; color:#f2c230; letter-spacing:.05em; }
 .fd-crusher-label em { font-style:normal; color:#ff4934; text-transform:uppercase; }
@@ -107,7 +104,7 @@ button[data-jg-frame].fd-rimmed:focus-visible { background:#f2c230; }
 @keyframes fd-alarm { 50% { opacity:.62; } }
 
 /* The corridor rule, bottom right. */
-.fd-route-wrap { position:absolute; right:18px; bottom:18px; width:330px; }
+.fd-route-wrap { width:330px; }
 .fd-route { padding:8px 14px 9px; background:linear-gradient(180deg,#3a4044,#1c2022); clip-path:polygon(12px 0,100% 0,100% 100%,0 100%,0 12px); }
 .fd-route-head { display:flex; justify-content:space-between; align-items:baseline; font-size:14px; letter-spacing:.14em; text-transform:uppercase; color:#b9b4a6; }
 .fd-route-head b { font:18px/1 "Saira Stencil One",sans-serif; font-weight:400; color:#f2c230; letter-spacing:0; }
@@ -136,9 +133,8 @@ button[data-jg-frame].fd-rimmed:focus-visible { background:#f2c230; }
 .fd-ui .fd-pad[data-kind="go"] { grid-column:2 / 4; height:64px; color:#141414; font-size:18px; background:repeating-linear-gradient(-45deg,rgba(0,0,0,.08) 0 3px,transparent 3px 9px),linear-gradient(180deg,#f6d25a,#d8a81c); }
 @media (pointer:coarse) {
   .fd-touch { display:flex; }
-  .fd-dash { bottom:150px; }
-  .fd-crusher-wrap { bottom:154px; }
-  .fd-route-wrap { bottom:150px; }
+  /* The pedals' height over each bottom third, so HUD panels settle above them. */
+  .fd-ui { --jg-hud-dock-clearance-left:84px; --jg-hud-dock-clearance-right:136px; }
 }
 
 /* Narrow screens and phones. */
@@ -157,61 +153,50 @@ button[data-jg-frame].fd-rimmed:focus-visible { background:#f2c230; }
   .fd-crusher-wrap { width:min(340px,38vw); }
 }
 @media (pointer:coarse) and (max-height:520px) {
-  .fd-touch { bottom:8px; left:10px; right:10px; }
-  .fd-dash { left:auto; right:50%; bottom:8px; margin-right:-75px; }
-  .fd-crusher-wrap { bottom:auto; top:64px; }
-  .fd-route-wrap { bottom:128px; width:240px; }
+  .fd-route-wrap { width:240px; }
   .fd-touch-act { grid-template-columns:repeat(3,52px); }
   .fd-pad[data-kind="act"] { height:42px; }
   .fd-pad[data-kind="brake"], .fd-ui .fd-pad[data-kind="go"] { height:54px; }
 }
 @media (max-width:520px) {
-  .fd-sign-wrap { left:10px; right:122px; top:10px; transform:none; }
-  .fd-ui .fd-sign { width:100%; }
+  .fd-ui .fd-sign { width:min(260px,60vw); }
   .fd-sign-band { height:7px; }
   .fd-sign-body { padding:3px 8px 5px; }
   .fd-sign-eyebrow { font-size:12px; letter-spacing:.1em; }
   .fd-sign-call { font-size:15px; }
   .fd-sign-sub { display:none; }
-  .fd-dash-rail { right:10px; top:10px; gap:4px; }
+  .fd-dash-rail { gap:4px; }
   .fd-tab-face kbd { display:none; }
-  .fd-tower-wrap { left:10px; top:86px; }
   .fd-tower { width:136px; }
   .fd-tower-pos { font-size:28px; padding:4px 7px 3px 6px; }
   .fd-tower-lap { font-size:13px; padding:3px 8px; }
   .fd-tower-lap em { font-size:15px; }
   .fd-tower-field li { height:21px; font-size:14px; }
-  .fd-rack-wrap { right:10px; top:86px; }
   .fd-rack { padding:4px 6px 4px 9px; gap:5px; }
   .fd-rack-label { display:none; }
   .fd-socket { width:30px; }
   .fd-socket svg { width:20px; height:20px; }
   .fd-socket small { font-size:9px; }
-  .fd-ui .fd-tag { right:10px; top:142px; width:min(214px,55vw); }
+  .fd-ui .fd-tag { width:min(214px,55vw); }
   .fd-tag > [data-jg-frame-face] { font-size:14px; }
   .fd-tag strong { font-size:16px; }
   .fd-tag-blurb { display:none; }
-  .fd-dash { width:136px; left:8px; }
+  .fd-dash { width:136px; }
   .fd-tach-read b { font-size:24px; }
   .fd-tach-read small { font-size:10px; }
   .fd-tach-lamps { gap:4px; bottom:4%; }
   .fd-lamp { font-size:9px; letter-spacing:.04em; }
-  .fd-route-wrap { left:152px; right:10px; width:auto; }
+  .fd-route-wrap { width:min(240px,60vw); }
   .fd-route { padding:7px 10px 8px; }
   .fd-route-head { font-size:12px; }
   .fd-route-next { font-size:12px; }
   .fd-route-risk { font-size:13px; }
   .fd-route-risk b { font-size:15px; }
-  .fd-crusher-wrap { left:10px; right:10px; width:auto; transform:none; }
+  .fd-crusher-wrap { width:min(340px,90vw); }
   .fd-crusher { padding:6px 18px; gap:8px; }
   .fd-crusher-label { font-size:13px; }
   .fd-crusher-gap { font-size:12px; }
   .fd-crusher-gap b { font-size:16px; }
-}
-@media (pointer:coarse) and (max-width:520px) {
-  .fd-crusher-wrap { bottom:142px; }
-  .fd-dash { bottom:184px; }
-  .fd-route-wrap { bottom:190px; }
 }
 @media (prefers-reduced-motion:reduce) { .fd-ui * { transition:none!important; animation:none!important; } }
 

@@ -1,18 +1,15 @@
 html,body,#root{height:100%;margin:0;background:#24444c}
 /* Layout only: every surface is a kit part (see game/ui/kit.ts for the Brightway look). */
 .bw-hud{position:absolute;inset:0;pointer-events:none}
-.bw-hud>*>*,.bw-build>*{pointer-events:auto}
-.bw-hud .bw-build{pointer-events:none}
-.bw-left{position:absolute;top:16px;left:16px;width:290px;display:grid;gap:18px}
-.bw-time{position:absolute;top:14px;right:16px;display:flex;gap:4px;align-items:center}
-.bw-side{position:absolute;top:72px;right:16px;width:310px;max-height:calc(100% - 300px);overflow:auto}
-.bw-bottom{position:absolute;left:0;right:0;bottom:10px;display:grid;justify-items:center;gap:8px;padding:0 16px}
+.bw-status,.bw-goal{width:290px}
+.bw-time{display:flex;gap:4px;align-items:center}
+.bw-side{width:310px;max-height:calc(100vh - 300px);overflow:auto}
 .bw-build{display:grid;justify-items:center;gap:8px;max-width:100%}
 .bw-build>nav{max-width:100%}
 .bw-tabs{display:flex;gap:2px;overflow-x:auto;margin-bottom:6px}
 .bw-tickets{display:flex;flex-wrap:wrap;justify-content:center;gap:10px;padding:6px 4px;max-width:min(1040px,calc(100vw - 64px))}
 .bw-tickets>button{flex-shrink:0}
-.bw-camera{justify-self:end;display:grid;grid-template-columns:repeat(3,44px);gap:4px}
+.bw-camera{display:grid;grid-template-columns:repeat(3,44px);gap:4px}
 .bw-status .jgk-paper-meter{margin-top:6px}
 .bw-line{display:flex;justify-content:space-between;align-items:center;gap:8px}
 .bw-stepper{display:inline-flex;align-items:center;gap:2px}.bw-stepper b{min-width:36px;text-align:center}
@@ -26,19 +23,12 @@ html,body,#root{height:100%;margin:0;background:#24444c}
 .bw-field input{width:min(360px,100%);padding:6px 4px;border:0;border-bottom:2px dashed var(--kit-ink);background:transparent;color:var(--kit-ink);font:700 22px var(--kit-font-display);outline:none}
 .bw-field input:focus{border-bottom-color:var(--kit-accent)}
 .bw-scenarios{display:flex;flex-wrap:wrap;gap:12px}.bw-scenarios small{display:block;margin-top:4px;font:600 12px var(--kit-font-body)}
-/* With the palette open (it grows a ride-family row) the side card stops above it and scrolls. */
-.bw-hud:has(.bw-build) .bw-side{max-height:max(200px,calc(100% - 440px))}
 .bw-shut{display:grid;gap:6px;margin:0 0 8px;font-size:13px}
 .bw-lab{display:grid;gap:4px;margin-top:10px}.bw-lab h3{margin:0;font-size:12px;letter-spacing:.1em;text-transform:uppercase;color:var(--kit-pencil)}
 .bw-thoughts,.bw-said{list-style:none;margin:8px 0 0;padding:0;display:grid;gap:2px;font-size:13px;font-style:italic}
 .bw-thoughts li{color:var(--kit-pencil)}.bw-thoughts li[data-latest]{color:var(--kit-ink);font-weight:700}
 .bw-said li{display:flex;justify-content:space-between;color:var(--kit-good)}.bw-said li[data-bad]{color:var(--kit-bad)}
 @media(max-width:650px){
-  .bw-left{top:56px;left:8px;width:min(260px,calc(100% - 16px));gap:12px}
-  .bw-time{top:8px;right:8px}
-  .bw-side{top:56px;right:8px;width:calc(100% - 16px);max-height:calc(100% - 330px)}
-  .bw-hud:has(.bw-side>*) .bw-left{display:none}
   .bw-goal ul,.bw-wide{display:none!important}
-  .bw-bottom{padding:0 8px;bottom:6px}
   .bw-tickets{flex-wrap:nowrap;justify-content:start;overflow-x:auto}
 }
