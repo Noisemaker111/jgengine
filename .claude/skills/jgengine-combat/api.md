@@ -336,6 +336,11 @@
 - `weaponIntervalMs` (function): function weaponIntervalMs(definition: WeaponDefinition): number — Milliseconds between shots at full cadence: `60_000 / roundsPerMinute`.
 - `weaponMaxInFlight` (function): function weaponMaxInFlight(definition: WeaponDefinition): number — Live pellets one definition may keep, clamped to a bounded range.
 
+## @jgengine/core/combat/ImpactFeedback.draw
+
+- `ImpactFeedback` (function): function ImpactFeedback({ classes, marks = true, hitstop = true }: ImpactFeedbackOptions): React.JSX.Element | null — The engine's default impact layer, mounted with the combat presentation: every `combat.damage` with a position throws sparks and dust sized by its {@link ImpactClass}, a direct-fire shot that misses leaves a scorch mark on the surface it hit, an explosion or crash near the local player kicks the camera and rumbles the pad (no kick with reduced motion), and the local player's heavy hits, hits taken and kills stop the game clock for a few dozen milliseconds. Damage over time (status ticks) is quiet. Marks are off on the `low` graphics tier.
+- `ImpactFeedbackOptions` (interface): interface ImpactFeedbackOptions — What {@link ImpactFeedback} reacts with; every field defaults on.
+
 ## @jgengine/core/combat/ProjectileModels.draw
 
 - `ProjectileModels` (function): function ProjectileModels({ model, fallback, forward = [0, 1, 0], maxInstances = 256, source }: ProjectileModelsProps): ReactElement — Mount caller-owned models at authoritative projectile positions. Flight ids determine lifetime; each frame only updates transforms, and settlement removes the model. Optional shaft/head geometry is enabled only by the caller.

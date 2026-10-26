@@ -6,7 +6,7 @@ import type { GameContext } from "@jgengine/core/runtime/gameContext";
 import { useGameContext } from "@jgengine/react/provider";
 
 import { useDisposable } from "@jgengine/shell/render/useDisposable";
-import { POSTFX_OVERLAY_USERDATA } from "@jgengine/shell/postfx/postfxOverlay";
+import { POSTFX_OVERLAY_USERDATA } from "@jgengine/core/postfx/postfxOverlay.draw";
 import {
   aimProbeNeeded,
   anyCollisionLayerOn,

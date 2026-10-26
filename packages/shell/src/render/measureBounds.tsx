@@ -7,7 +7,7 @@ import { useGameContext } from "@jgengine/react/provider";
 
 import { measureLocalCollisionTriangles, reportMeasuredCollisionMesh } from "./measureCollisionMesh";
 import { modelBindPosePositions } from "./modelBindPose";
-import { recordRenderBounds } from "../visibility/renderBounds";
+import { recordRenderBounds } from "@jgengine/core/visibility/measuredBounds";
 
 /** Subtrees flagged with this userData key are excluded from bounds measurement — debug gizmos,
  * selection quads, effect billboards that should not inflate the hitbox. Sprites and invisible

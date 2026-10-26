@@ -5,7 +5,7 @@ for every game — no per-game setup. A normal object with a position and a vers
 culled automatically; you only touch this system to *override* the defaults.
 
 This package (`@jgengine/core/visibility/*`) is headless and zero-dependency. The shell wires it
-into the R3F render path (`packages/shell/src/visibility/CullingProvider.tsx`), which reads the
+into the R3F render path (`packages/core/src/visibility/CullingProvider.draw.tsx`), which reads the
 live camera each frame and toggles `group.visible` so off-screen objects are never submitted to
 the renderer.
 

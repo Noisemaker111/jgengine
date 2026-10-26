@@ -16,7 +16,7 @@ import type { EntityScreenProjection, ProjectEntity } from "./entityFrames.view"
  *
  * No `GameProvider`, Three.js, or React Three Fiber is imported here — the same
  * way `EntityFrames` stays renderer-agnostic. An R3F game gets the one-line drop-in
- * from `@jgengine/shell/vfx/WorldFloatingText`, which binds the live camera and
+ * from `@jgengine/core/hud/floatingTextWorld.draw`, which binds the live camera and
  * advances the field.
  *
  * @capability floating-text world-anchored floating combat text / damage numbers overlay, data-first + caller-projected + per-kind skinnable

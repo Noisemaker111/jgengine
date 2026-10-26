@@ -295,7 +295,7 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `FloatingText` (function) · `import { FloatingText } from "@jgengine/react"`
 - `FloatingTextPlacement` (interface) · `import { FloatingTextPlacement } from "@jgengine/react"`
-- `WorldFloatingText` (function) · `import { WorldFloatingText } from "@jgengine/shell/vfx/WorldFloatingText"`
+- `WorldFloatingText` (function) · `import { WorldFloatingText } from "@jgengine/core/hud/floatingTextWorld.draw"`
 - `createFloatingTextField` (function) · `import { createFloatingTextField } from "@jgengine/core/hud/floatingText"`
 - `layoutFloatingText` (function) · `import { layoutFloatingText } from "@jgengine/react"`
 
@@ -782,10 +782,6 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `togglePanel` (function) · `import { togglePanel } from "@jgengine/core/ui"`
 
-## particle-field — render a core particle pool as soft points, velocity streaks, connected ribbons, flakes, flames, smoke sprites, or ground ripples
-
-- `ParticleField` (function) · `import { ParticleField } from "@jgengine/shell/vfx/ParticleField"`
-
 ## pause-menu — pause menu from the shared game-menu system: game-filled verbs and detail pane, same navigation and surface as the title menu, sized down
 
 - `PauseMenu` (function) · `import { PauseMenu } from "@jgengine/react"`
@@ -870,10 +866,6 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 ## scoreboard-table — reskinnable ranked-score / leaderboard table over the rankLeaderboard selector — medal-colored podium, local-row highlight, HudTheme-token driven
 
 - `Scoreboard` (function) · `import { Scoreboard } from "@jgengine/react"`
-
-## screen-effects-overlay — shell DOM overlay that renders a core screen-effects controller as full-screen flash / edge-vignette / low-health-pulse color-grade layers
-
-- `ScreenEffectsOverlay` (function) · `import { ScreenEffectsOverlay } from "@jgengine/shell/postfx/ScreenEffectsOverlay"`
 
 ## scroll-rail — reachable horizontal controls with visible overflow navigation and keyboard focus reveal
 
@@ -1157,7 +1149,3 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 ## world-object-highlights — ground-ring highlight over every selected placed object
 
 - `WorldObjectHighlights` (function) · `import { WorldObjectHighlights } from "@jgengine/core/hud/WorldHud.draw"`
-
-## world-pings — in-scene ping markers — a bobbing downward arrowhead, ground ring, and billboarded callout per marker, colored by kind and fading over the marker's lifetime
-
-- `WorldPings` (function) · `import { WorldPings } from "@jgengine/shell/world/WorldPings"`

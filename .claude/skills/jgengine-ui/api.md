@@ -54,7 +54,7 @@
 
 - `FrustumSensorProbeOptions` (interface): interface FrustumSensorProbeOptions extends FramingConfig { subjectIds: readonly string[]; subjectRadius?: number } — ⚠ undocumented · used by `FrustumSensorReadout`: Renders inside the Canvas (needs the live camera via `useFrame`/`useThree`) but portals a real HTML readout via drei's `Html fullscreen` — a…
 - `FrustumSensorReadout` (function): function FrustumSensorReadout(props: FrustumSensorProbeOptions & { wrapperClassName?: string; className?: string }): React.JSX.Element — Renders inside the Canvas (needs the live camera via `useFrame`/`useThree`) but portals a real HTML readout via drei's `Html fullscreen` — a photo-mode "is this subject framed" HUD.
-- `frustumSampleDisplayEqual` (function): function frustumSampleDisplayEqual(a: FrustumSample | null, b: FrustumSample | null): boolean — ⚠ undocumented
+- `frustumSampleDisplayEqual` (function): function frustumSampleDisplayEqual(a: FrustumSample | null, b: FrustumSample | null): boolean — True when two frustum samples would draw the same, so a HUD can skip a re-render.
 - `useFrustumSensor` (function): function useFrustumSensor(options: FrustumSensorProbeOptions): FrustumSample | null — ⚠ undocumented
 
 ## @jgengine/core/hud/HiddenStateProbeHud.view
@@ -122,6 +122,11 @@
 - `ProjectEntity` (type): type ProjectEntity = ( worldPosition: readonly [number, number, number], ) => EntityScreenProjection | null — Projects a world position to a screen point, or returns `null` to cull the entry entirely (e.g. outside the frustum). Caller-owned so this seam never depends on a specific camera or renderer.
 - `layoutEntityFrames` (function): function layoutEntityFrames<E extends EntityFrameEntry>(entries: readonly E[], project: ProjectEntity, options: EntityFrameLayoutOptions = {}): EntityFramePlacement<E>[] — Pure layout core: projects each entry, drops the ones behind the camera, off-screen (when `viewport` is set), or beyond `maxCount`, and returns the survivors sorted farthest-first so nearer frames render last (on top). Stable for equal depths via `id`. No React, no DOM — unit-testable in isolation.
 
+## @jgengine/core/hud/floatTextStyle
+
+- `FloatTextInfo` (interface): interface FloatTextInfo — What a floating number shows: its kind, hit type, element, crit flag and scale.
+- `FloatTextStyle` (interface): interface FloatTextStyle — How a floating number draws: colour, font size, weight and glow.
+
 ## @jgengine/core/hud/floatingText
 
 - `FloatingTextDef` (interface): interface FloatingTextDef — One text pop to spawn: what to say, where in the world, and how it moves and fades. Everything but `position` and `text` is optional and falls back to the field's defaults. `kind` is a free-form tag (`"damage"`, `"heal"`, `"crit"`, `"xp"`, `"gold"`, `"bark"`, …) the presentation layer styles — the model never interprets it, so nothing here is combat- or genre-specific.
@@ -139,6 +144,11 @@
 - `FloatingTextPlacement` (interface): interface FloatingTextPlacement — World-anchored floating text — the presentation half of the data-first `@jgengine/core/hud/floatingText` seam. The game keeps owning the simulation: it passes the field's `active()` views plus a `project` function (world → screen), exactly the transport {@link ./entityFrames!EntityFrames} uses, so an R3F game gets it for free from `useWorldProjection`. This component owns only the reusable presentation: projecting each entry, culling ones behind the camera or off-screen, and rendering absolutely-positioned text with the entry's color, current alpha, and pop-in scale — reskinnable per `kind` through `styleFor`.
 - `FloatingTextProps` (interface): interface FloatingTextProps extends FloatingTextLayoutOptions — Props for {@link FloatingText}.
 - `layoutFloatingText` (function): function layoutFloatingText(views: readonly FloatingTextView[], project: ProjectEntity, options: FloatingTextLayoutOptions = {}): FloatingTextPlacement[] — Pure layout core: projects each view, drops the ones behind the camera or (when `viewport` is set) off-screen, and returns the survivors sorted farthest-first so nearer text paints on top. No React, no DOM — unit-testable.
+
+## @jgengine/core/hud/floatingTextWorld.draw
+
+- `WorldFloatingText` (function): function WorldFloatingText({ field, advance = true, styleFor, fontSizePx, className, ...layout }: WorldFloatingTextProps): React.JSX.Element — R3F one-line drop-in for world-anchored floating text: mounts inside the scene, (optionally) advances a core {@link FloatingTextField} each frame, samples the live camera to project every live entry to the screen, and renders `@jgengine/react`'s {@link FloatingText} through a fullscreen `<Html>` overlay. This is the turnkey way an R3F game gets damage numbers / heal pops / XP gains from its own field without wiring projection by hand — the camera binding, viewport culling, and depth stacking come for free. Skin per `kind` with `styleFor`.
+- `WorldFloatingTextProps` (interface): interface WorldFloatingTextProps extends FloatingTextLayoutOptions — Props for {@link WorldFloatingText}.
 
 ## @jgengine/core/hud/hudButton.view
 
@@ -2372,35 +2382,6 @@
 - `MaterialOverrideOptions` (interface): interface MaterialOverrideOptions { clone?: boolean; textures?: MaterialOverrideTextures; ownMaterial?: (material: THREE.Material) => void } — ⚠ undocumented
 - `MaterialOverrideTextures` (interface): interface MaterialOverrideTextures — Loaded PBR textures for `applyMaterialOverride`'s `textures` option — matches `ModelMaterialMaps`' roles.
 
-## @jgengine/shell/postfx/PostProcessing
-
-- `PostProcessing` (function): function PostProcessing({ config, quality = "high", stages }: { config: PostProcessingConfig; quality?: GraphicsQuality; stages?: { ao: boolean; bloom: boolean; dof: boolean; smaa: boolean } }): null — Mounts an `EffectComposer` inside the shell Canvas and takes over rendering (priority-1 `useFrame`, which disables R3F auto-render) to run the configured post chain: RenderPass → GTAO → UnrealBloom → SMAA → exposure meter → OutputPass → Stylize → Grade. Rendered only when `PlayableGame.postProcessing` is set, so games without it draw unchanged.
-
-## @jgengine/shell/postfx/ScreenEffectsOverlay
-
-- `ScreenEffectsOverlay` (function): function ScreenEffectsOverlay({ controller, blendMode = "normal", zIndex = 40, animate = true, }: ScreenEffectsOverlayProps): ReactNode — A DOM overlay that renders a {@link ScreenEffectsController} as full-screen color-grade layers over the game canvas — damage vignettes, heal flashes, a sustained low-health pulse — through the shell's postfx overlay layer, so a game gets screen feedback without hand-rolling shader or overlay timing. It subscribes to the model, drives `advance()` on an animation frame (unless the game ticks it), and paints one absolutely-positioned, pointer-transparent layer per active effect at its eased opacity. Presentation only: all timing and state live in the core model, and `kind` is never interpreted here.
-- `ScreenEffectsOverlayProps` (interface): interface ScreenEffectsOverlayProps — Reskin tokens for {@link ScreenEffectsOverlay}.
-
-## @jgengine/shell/postfx/atmospherePass
-
-- `MAX_HAZE_LAMPS` (const): const MAX_HAZE_LAMPS: 8 — Point and spot lights the haze glows around at once, nearest the camera first.
-
-## @jgengine/shell/postfx/gradeShader
-
-- `createGradePass` (function): function createGradePass(config: GradeConfig = {}): ShaderPass — Build the display-space colour-grade pass and load its optional LUT. Dispose the pass to release its LUT; advance `uniforms.uTime.value` each frame to animate grain.
-
-## @jgengine/shell/postfx/postfxOverlay
-
-- `POSTFX_OVERLAY_USERDATA` (const): const POSTFX_OVERLAY_USERDATA: { readonly jgPostfxOverlay: true } — Spread onto a group's `userData` to mark its subtree as a screen/world overlay effect — additive glows, telegraphs, tracers, debug gizmos — that post-processing scene prepasses (GTAO's normal/depth render, DOF's depth render) must skip. Those prepasses render the scene with `overrideMaterial`, which turns transparent overlay quads into opaque stamps in the AO/DOF buffers (visible as black squares over hit sparks). The shell marks its own combat VFX and collision-debug mounts; games mark custom overlay effects the same way.
-- `hidePostfxOverlays` (function): function hidePostfxOverlays(scene: THREE.Object3D, out: THREE.Object3D[], withUnmodelled = false): void — Hide every currently visible object `scene`'s prepasses must skip, recording what was hidden into `out` (cleared first, no allocation on the hot path) so {@link restorePostfxOverlays} can undo exactly that set. `withUnmodelled` also hides points and lines, which three's GTAO pass excludes from its normal buffer but a depth prepass keeps.
-- `isPostfxOverlay` (function): function isPostfxOverlay(object: { userData?: Record<string, unknown> }): boolean — True when the object opted out of postfx scene prepasses via {@link POSTFX_OVERLAY_USERDATA}.
-- `releasePostfxOverlayTracking` (function): function releasePostfxOverlayTracking(scene: THREE.Object3D): void — Drop the cached set and its listeners for a scene that is going away, so a torn-down world does not keep its node graph reachable through this module.
-- `restorePostfxOverlays` (function): function restorePostfxOverlays(hidden: THREE.Object3D[]): void — Restore visibility for the objects hidden by {@link hidePostfxOverlays} and clear the list.
-
-## @jgengine/shell/postfx/stylizePass
-
-- `StylizePass` (class): class StylizePass extends Pass — Art-style post pass: ink outlines from a normal+depth prepass, cel luminance bands, and pixelation. Runs on the display-space frame after `OutputPass`. The prepass renders only when outlines are on, and reuses the frame's shadow maps instead of re-rendering them.
-
 ## @jgengine/shell/registry
 
 - `GameRegistry` (type): type GameRegistry = Record<string, () => Promise<PlayableGame>> — ⚠ undocumented
@@ -2730,40 +2711,6 @@
 - `EMPTY_RESERVED` (const): const EMPTY_RESERVED: ReadonlySet<string> — No action names are reserved when no camera rig is active (hud/none presentation): games may bind `turnLeft`/`interact`/etc. as their own.
 - `NO_ACTIONS` (const): const NO_ACTIONS: string[] — Empty action list — published while the orientation gate is up to suppress all held input without touching the tracker.
 
-## @jgengine/shell/vfx/ParticleField
-
-- `ParticleBlending` (type): type ParticleBlending = "additive" | "normal" — How particle fragments composite on screen.
-- `ParticleField` (function): function ParticleField({ system, advance = true, blending = "additive", scale = 300, depthWrite = false, render, metrics }: ParticleFieldProps): ReactElement — Render one pooled simulation through a point cloud or instanced quads. Output selection does not replace spawn, forces, collisions, or deterministic state.
-- `ParticleFieldProps` (interface): interface ParticleFieldProps — Props for the existing pooled particle renderer.
-
-## @jgengine/shell/vfx/WorldFloatingText
-
-- `WorldFloatingText` (function): function WorldFloatingText({ field, advance = true, styleFor, fontSizePx, className, ...layout }: WorldFloatingTextProps): React.JSX.Element — R3F one-line drop-in for world-anchored floating text: mounts inside the scene, (optionally) advances a core {@link FloatingTextField} each frame, samples the live camera to project every live entry to the screen, and renders `@jgengine/react`'s {@link FloatingText} through a fullscreen `<Html>` overlay. This is the turnkey way an R3F game gets damage numbers / heal pops / XP gains from its own field without wiring projection by hand — the camera binding, viewport culling, and depth stacking come for free. Skin per `kind` with `styleFor`.
-- `WorldFloatingTextProps` (interface): interface WorldFloatingTextProps extends FloatingTextLayoutOptions — Props for {@link WorldFloatingText}.
-
-## @jgengine/shell/visibility/CullingProvider
-
-- `CullingProvider` (function): function CullingProvider({ config, drawDistance, children }: { config: VisibilityConfig | undefined; drawDistance?: number; children: ReactNode }): ReactNode — Drives automatic frustum + distance culling for every entity and placed object. It reads the live render camera each frame, updates the engine VisibilitySystem, and exposes a predicate the entity/object markers consult to toggle `group.visible` — objects fully outside the view (plus a conservative preload margin) are never submitted to the renderer, without unmounting them or touching gameplay. UI, sky, terrain, and environment live outside this subtree and are unaffected.
-- `useRenderVisibility` (function): function useRenderVisibility(): MutableRefObject<VisiblePredicate> — Read the current render-visibility predicate. Backward compatible: with no CullingProvider mounted (or culling disabled) it returns an always-visible ref, so a marker that consults it behaves exactly as before this feature existed.
-
-## @jgengine/shell/visibility/renderBounds
-
-- `RenderBox` (interface): interface RenderBox — A model's measured local box (entity/object frame, Y up), as the renderer mounted it.
-- `RenderSphere` (interface): interface RenderSphere — A Y-axis-centred sphere that wraps a {@link RenderBox} under any yaw.
-
-## @jgengine/shell/vision/RevealVision
-
-- `RevealHighlights` (function): function RevealHighlights(props: RevealHighlightsProps): React.JSX.Element | null — Screen-space reveal effect (#115) — highlights tagged entities through occluders (Dark Sight / detective-vision / wallhack style). Renders with `depthTest: false` so the highlight draws over any wall standing between the origin and the revealed entity, rather than the usual depth-sorted scene. Highlights track the origin and their targets every frame while enabled, so a disabled mode costs no renders.
-- `RevealHighlightsProps` (interface): interface RevealHighlightsProps extends RevealVisionOptions { enabled: boolean; color?: string } — ⚠ undocumented · used by `RevealHighlights`: Screen-space reveal effect (#115) — highlights tagged entities through occluders (Dark Sight / detective-vision / wallhack style).
-- `RevealScreenTint` (function): function RevealScreenTint({ enabled, color = "rgba(56, 189, 248, 0.16)", className }: RevealScreenTintProps): React.JSX.Element | null — Full-screen desaturating tint that reads as "vision mode is on" (Dark Sight / thermal / detective vision).
-- `RevealScreenTintProps` (interface): interface RevealScreenTintProps { enabled: boolean; color?: string; className?: string } — ⚠ undocumented · used by `RevealScreenTint`: Full-screen desaturating tint that reads as "vision mode is on" (Dark Sight / thermal / detective vision).
-- `RevealVisionOptions` (interface): interface RevealVisionOptions { originEntityId?: string; radius: number; tags: readonly string[]; resolveTags: (entity: SceneEntity) => readonly string[] } — ⚠ undocumented · used by `useRevealHits`: Occlusion-ignoring tagged-entity radius query (#115), bound to the live scene and refreshed on render.
-- `useRevealHits` (function): function useRevealHits(options: RevealVisionOptions): readonly RevealHit[] — Occlusion-ignoring tagged-entity radius query (#115), bound to the live scene and refreshed on render.
-
-## @jgengine/shell/vision/frustumSampleEqual
-
-- `frustumSampleDisplayEqual` (function): function frustumSampleDisplayEqual(a: FrustumSample | null, b: FrustumSample | null): boolean — ⚠ undocumented
-
 ## @jgengine/shell/world/AuthoredFlocks
 
 - `AuthoredFlocks` (function): function AuthoredFlocks({ models, assets, forward = [0, 0, -1], maxInstances = 256 }: AuthoredFlocksProps): ReactElement — Render bounded authored habitat agents with game-selected species models. The environment owns movement and lifetime; existing model owners load, animate, and dispose the native GLB. Unmapped species have no substitute geometry.
@@ -2778,14 +2725,6 @@
 
 - `GridWorldScene` (function): function GridWorldScene({ feature }: GridWorldSceneProps): React.JSX.Element | null — Data-driven renderer for the `biomes()`/`voxel()`/`plots()`/`tilemap()` world-feature kinds (#207.1): one `InstancedMesh` of extruded, colored boxes built from each feature's declared `cells`, uploaded through the shared instance upload.
 - `GridWorldSceneProps` (interface): interface GridWorldSceneProps { feature: WorldFeature } — ⚠ undocumented · used by `GridWorldScene`: Data-driven renderer for the `biomes()`/`voxel()`/`plots()`/`tilemap()` world-feature kinds (#207.1): one `InstancedMesh` of extruded, color…
-
-## @jgengine/shell/world/ImpactFeedback
-
-- `ImpactFeedback` (function): function ImpactFeedback({ classes, marks = true, hitstop = true }: ImpactFeedbackOptions): React.JSX.Element | null — The engine's default impact layer, mounted with the combat presentation: every `combat.damage` with a position throws sparks and dust sized by its {@link ImpactClass}, a direct-fire shot that misses leaves a scorch mark on the surface it hit, an explosion or crash near the local player kicks the camera and rumbles the pad (no kick with reduced motion), and the local player's heavy hits, hits taken and kills stop the game clock for a few dozen milliseconds. Damage over time (status ticks) is quiet. Marks are off on the `low` graphics tier.
-- `ImpactFeedbackOptions` (interface): interface ImpactFeedbackOptions — What {@link ImpactFeedback} reacts with; every field defaults on.
-- `createHitstop` (function): function createHitstop(time: Pick<GameContext["time"], "timescale" | "setTimescale">): { start(ms: number, now: number): void; tick(now: number): void; active(): boolean; } — Tracks a short hit-stop on the game clock: the clock slows to 5% for the given real milliseconds and returns to whatever the game had set. A game that changes the timescale itself during the stop keeps its own value. Exported for tests.
-- `drawnSurfaceHit` (function): function drawnSurfaceHit(scene: THREE.Object3D, origin: readonly [number, number, number], direction: readonly [number, number, number], far: number, skip: THREE.Object3D | null, camera: THREE.Camera | null = null): { point: [number, number, number]; normal: [number, number, number]; distance: numbe… — The first drawn surface along a shot, from the rendered scene rather than the physics world: roads, floors and props are often meshes with no collider over a lower ground, and a mark placed on the physics hit would sit hidden under them. Skinned characters, sprites, lines and overlay effects are skipped. Exported for tests.
-- `impactKick` (function): function impactKick(profile: Pick<ImpactProfile, "kick" | "kickRadius">, distance: number): number — Camera trauma for an impact `distance` metres from the local player: the profile's full kick at the player, falling off with the square of the distance to nothing at `kickRadius`. Exported for tests.
 
 ## @jgengine/shell/world/InstancedBodies
 
@@ -2819,11 +2758,6 @@
 
 - `WorldItems` (function): function WorldItems({ config }: { config?: WorldItemRenderConfig }): React.JSX.Element — Rarity→beam/color/label render binding + loot-filter overlay (#32/#33) for every dropped `worldItem`.
 
-## @jgengine/shell/world/WorldPings
-
-- `WorldPings` (function): function WorldPings({ markers, kindStyles, pingsOnly = true, height = 2.4, showCallout = true, renderCallout, }: WorldPingsProps): ReactNode — World-space pings — the in-scene side of a ping/marker: a bobbing downward arrowhead pointing at the spot, a ground ring, and a billboarded callout, colored by marker kind and fading in/out over the marker's lifetime. Reads a `MarkerSet` (typically the one a `createPingSystem` writes to), a marker source, or a static array; mount through `PlayableGame.WorldOverlay`.
-- `WorldPingsProps` (interface): interface WorldPingsProps — Props for {@link WorldPings}.
-
 ## @jgengine/shell/world/WorldScene
 
 - `RemotePlayers` (function): function RemotePlayers({ rows, presenceInterpolationMs = 100 }: { rows: PresencePoseRow[]; presenceInterpolationMs?: number }): React.JSX.Element — ⚠ undocumented
@@ -2834,17 +2768,6 @@
 
 - `PoseSource` (interface): interface PoseSource { position: readonly [number, number, number]; rotationY: number } — ⚠ undocumented
 - `PoseWritable` (interface): interface PoseWritable { position: {set(x: number, y: number, z: number): void}; rotation: {y: number} } — ⚠ undocumented
-
-## @jgengine/shell/world/floatTextStyle
-
-- `FloatTextInfo` (interface): interface FloatTextInfo { kind: string; hitType?: string; element?: string; crit?: boolean; scale?: number } — ⚠ undocumented
-- `FloatTextStyle` (interface): interface FloatTextStyle { color: string; fontSizePx: number; fontWeight: number; glow: string } — ⚠ undocumented
-
-## @jgengine/shell/world/pingPulse
-
-- `PingOpacityInput` (interface): interface PingOpacityInput — Inputs to {@link pingOpacity}.
-- `pingBobOffset` (function): function pingBobOffset(elapsedSeconds: number, amplitude = 0.18, speedHz = 1.1): number — Vertical bob offset (world units) for a hovering ping arrow at `elapsedSeconds`.
-- `pingOpacity` (function): function pingOpacity(input: PingOpacityInput): number — Alpha for a world ping in `[0, 1]`: ramps up over `fadeInMs` after it appears and ramps back down over `fadeOutMs` before it expires. Pure math so the lifecycle can be unit-tested without an R3F canvas.
 
 ## @jgengine/shell/world/tileLayerInstances
 

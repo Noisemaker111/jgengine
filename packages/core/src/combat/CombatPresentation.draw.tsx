@@ -4,12 +4,12 @@ import {
   WorldTelegraphs,
 } from "@jgengine/core/hud/WorldHud.draw";
 import { HitReactionShake } from "@jgengine/core/camera/shake/HitReactionShake.draw";
-import { SpellVfx } from "@jgengine/shell/vfx/SpellVfx";
-import { HitMarkers, MuzzleFlashes } from "@jgengine/shell/world/ShotFeedback";
-import { RetainedVfx } from "@jgengine/shell/vfx/RetainedVfx";
-import { ImpactFeedback } from "@jgengine/shell/world/ImpactFeedback";
+import { SpellVfx } from "@jgengine/core/vfx/SpellVfx.draw";
+import { HitMarkers, MuzzleFlashes } from "@jgengine/core/combat/ShotFeedback.draw";
+import { RetainedVfx } from "@jgengine/core/vfx/RetainedVfx.draw";
+import { ImpactFeedback } from "@jgengine/core/combat/ImpactFeedback.draw";
 import { CorpseRagdolls } from "@jgengine/shell/render/CorpseRagdolls";
-import { POSTFX_OVERLAY_USERDATA } from "@jgengine/shell/postfx/postfxOverlay";
+import { POSTFX_OVERLAY_USERDATA } from "@jgengine/core/postfx/postfxOverlay.draw";
 import type { ResolvedPresentationEffects } from "@jgengine/shell/presentationResolve";
 
 /** Mounts the opt-in combat VFX stack inside the 3D canvas. @internal */

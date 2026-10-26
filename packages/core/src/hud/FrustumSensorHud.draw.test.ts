@@ -1,7 +1,7 @@
 import { describe, expect, test } from "bun:test";
 import type { FrustumSample } from "@jgengine/core/sensor/frustumSensor";
 
-import { frustumSampleDisplayEqual } from "@jgengine/shell/vision/frustumSampleEqual";
+import { frustumSampleDisplayEqual } from "@jgengine/core/sensor/frustumSampleEqual";
 
 function sample(partial: Partial<FrustumSample> & Pick<FrustumSample, "id">): FrustumSample {
   return {

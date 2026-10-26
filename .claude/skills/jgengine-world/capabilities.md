@@ -818,6 +818,10 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `validateEmitterConfig` (function) · `import { validateEmitterConfig } from "@jgengine/core/vfx/particles"`
 
+## particle-field — render a core particle pool as soft points, velocity streaks, connected ribbons, flakes, flames, smoke sprites, or ground ripples
+
+- `ParticleField` (function) · `import { ParticleField } from "@jgengine/core/vfx/ParticleField.draw"`
+
 ## particle-system — deterministic pooled particle emitter with spawn volumes, force fields, bounded collision/death events, live tuning, SoA render buffers, and serializable state
 
 - `createParticleSystem` (function) · `import { createParticleSystem } from "@jgengine/core/world"`
@@ -866,6 +870,14 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 ## piece-sockets-from-model — derive build-piece snap sockets from a model's named attach points
 
 - `pieceSocketsFromModel` (function) · `import { pieceSocketsFromModel } from "@jgengine/core/world/buildSockets"`
+
+## ping-classify — sort a pointer hit into a ping category (enemy, loot, location, danger) from roles and object categories
+
+- `classifyPing` (function) · `import { classifyPing } from "@jgengine/core/map/ping"`
+
+## ping-wheel — contextual ping/marker communication between teammates
+
+- `createPingSystem` (function) · `import { createPingSystem } from "@jgengine/core/map/ping"`
 
 ## place-asset — resolve a placement commit into a shared asset placement payload
 
@@ -1007,6 +1019,10 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 ## screen-effects — serializable, pooled screen-feedback controller — transient flash/vignette and sustained low-health-style pulses with eased opacities, free-string kinds the game styles, and snapshot/restore
 
 - `createScreenEffects` (function) · `import { createScreenEffects } from "@jgengine/core/world"`
+
+## screen-effects-overlay — shell DOM overlay that renders a core screen-effects controller as full-screen flash / edge-vignette / low-health-pulse color-grade layers
+
+- `ScreenEffectsOverlay` (function) · `import { ScreenEffectsOverlay } from "@jgengine/core/postfx/ScreenEffectsOverlay.draw"`
 
 ## selection-bookmark-recall — fold a saved set into the active selection with stale-ref pruning and a caller focus hook
 
@@ -1374,6 +1390,10 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 ## world-physics-colliders — Synchronize terrain and authored static colliders with a physics backend.
 
 - `syncWorldColliders` (function) · `import { syncWorldColliders } from "@jgengine/core/physics/worldColliders"`
+
+## world-pings — in-scene ping markers — a bobbing downward arrowhead, ground ring, and billboarded callout per marker, colored by kind and fading over the marker's lifetime
+
+- `WorldPings` (function) · `import { WorldPings } from "@jgengine/core/map/pingBeacons.draw"`
 
 ## world-place — declare the place a game happens in — flat/round/voxel/board ground, surface laws, per-place physics
 

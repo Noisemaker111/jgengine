@@ -7,7 +7,7 @@ import { createScreenEffects } from "@jgengine/core/vfx/screenEffects";
 import { environment, grass, terrain } from "@jgengine/core/world/features";
 
 import { EnvironmentScene } from "@jgengine/core/environment/EnvironmentScene.draw";
-import { ScreenEffectsOverlay } from "@jgengine/shell/postfx/ScreenEffectsOverlay";
+import { ScreenEffectsOverlay } from "@jgengine/core/postfx/ScreenEffectsOverlay.draw";
 import type { PlayableGame } from "@jgengine/shell/registry";
 
 const HERO = "hero";

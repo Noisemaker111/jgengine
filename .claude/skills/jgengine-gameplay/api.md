@@ -813,22 +813,6 @@
 - `sampleBodyPose` (function): function sampleBodyPose(input: PartMotionInput, params?: PartMotionParams, out: PartPose = createPartPose()): PartPose — Sample the character-root pose: walk bob, idle breathe/sway, backward hit flinch, and death — a sideways topple by default, or a flatten-out splat with `deathStyle: "splat"`. With `squashAmp > 0` the body also squashes and stretches (footfall squash, jelly idle breathe, flinch squash pulse), volume-conserving. A driver applies this to the group wrapping the whole composition (base model plus parts) — limbs ride along, as they would on a real torso.
 - `samplePartPose` (function): function samplePartPose(role: PartRole, input: PartMotionInput, params?: PartMotionParams, out: PartPose = createPartPose()): PartPose — Sample one part's pose offset by role: counter-phase leg/arm swing driven by speed, a head counter-sway, tail wag, and wing flap. Offsets are added onto the part's authored position/rotation. Motion fades to zero as `death` ramps so the topple reads as one piece.
 
-## @jgengine/core/game/ping
-
-- `DEFAULT_PING_CATEGORIES` (const): const DEFAULT_PING_CATEGORIES: Record<PingCategory, PingCategoryDef> — Content-agnostic default ping wheel: enemy / loot / location / danger.
-- `PING_FEED_ACTION` (const): const PING_FEED_ACTION: "party.ping" — ⚠ undocumented
-- `PingCategory` (type): type PingCategory = string — ⚠ undocumented · used by `DEFAULT_PING_CATEGORIES`: Content-agnostic default ping wheel: enemy / loot / location / danger.
-- `PingCategoryDef` (interface): interface PingCategoryDef { id: PingCategory; markerKind: string; label: string; callout: string } — ⚠ undocumented · used by `DEFAULT_PING_CATEGORIES`: Content-agnostic default ping wheel: enemy / loot / location / danger.
-- `PingClassifyDeps` (interface): interface PingClassifyDeps { roleOf?(entityId: string): string | null | undefined; categoryOf?(objectId: string): PingCategory | null | undefined } — ⚠ undocumented · used by `classifyPing`: Classify what a pointer/aim ray hit into a ping category.
-- `PingClassifyOptions` (interface): interface PingClassifyOptions { hostileRoles?: readonly string[]; enemyCategory?: PingCategory; lootCategory?: PingCategory; locationCategory?: PingCategory; dangerCategory?: PingCategory } — ⚠ undocumented · used by `classifyPing`: Classify what a pointer/aim ray hit into a ping category.
-- `PingFeedSink` (interface): interface PingFeedSink { push(action: string, entry: unknown): void } — ⚠ undocumented
-- `PingParty` (interface): interface PingParty { membersOf(userId: string): string[] } — ⚠ undocumented
-- `PingPayload` (interface): interface PingPayload { id: string; from: string; category: PingCategory; position: MarkerPosition; entityId: string | null; objectId: string | null; at: number; callout: string; recipients: readonly string[] } — ⚠ undocumented
-- `PingSystem` (interface): interface PingSystem { classify(hit: PointerHit): PingCategory; buildPayload(from: string, hit: PointerHit, category?: PingCategory): PingPayload; broadcast(payload: PingPayload): MapMarker; ping(from: string, hit: PointerHit, category?: PingCategory): PingPayl… — ⚠ undocumented · used by `createPingSystem`: Contextual ping/marker communication between teammates, classified by what was pinged.
-- `PingSystemDeps` (interface): interface PingSystemDeps { markers: MarkerSet; feed: PingFeedSink; party?: PingParty; categories?: Record<PingCategory, PingCategoryDef>; now?(): number; ttlMs?: number; feedAction?: string; classify?: PingClassifyDeps; classifyOptions?: PingClassifyOptions } — ⚠ undocumented · used by `createPingSystem`: Contextual ping/marker communication between teammates, classified by what was pinged.
-- `classifyPing` (function): function classifyPing(hit: PointerHit, deps: PingClassifyDeps = {}, options: PingClassifyOptions = {}): PingCategory — Classify what a pointer/aim ray hit into a ping category. Entity hits resolve by catalog role (hostile → enemy, else location); object hits by an optional catalog category tag; open ground is a location ping.
-- `createPingSystem` (function): function createPingSystem(deps: PingSystemDeps): PingSystem — Contextual ping/marker communication between teammates, classified by what was pinged.
-
 ## @jgengine/core/game/pixelPerfect
 
 - `PixelPerfectFrustum` (interface): interface PixelPerfectFrustum — The orthographic bounds and scale derived from a pixel-perfect camera config.
@@ -1371,7 +1355,7 @@
 - `OffScreenStats` (interface): interface OffScreenStats — Counters a devtools probe or a test reads to prove far agents cost nothing.
 - `OffScreenWorld` (interface): interface OffScreenWorld — The off-screen world: every resident exists, but only the ones within the policy radius are simulated. The rest are a position, a routine phase and a needs record that only move when the clock crosses a routine boundary — no navigation, no utility scoring, no per-frame need decay.
 - `Overdraft` (type): type Overdraft = boolean | { max: number } — Opt-in debt affordance for {@link charge}/{@link chargeAll}: `true` allows the balance to go arbitrarily negative, a number caps how far into the red it may go (the charge is rejected once `balance - amount` would fall below `-max`). Omitted (the default) keeps the strict no-debt rule.
-- `PING_FEED_ACTION` (const): const PING_FEED_ACTION: "party.ping" — ⚠ undocumented
+- `PING_FEED_ACTION` (const): const PING_FEED_ACTION: "party.ping" — Feed action pings ride to the rest of the party.
 - `PairKeyCodec` (interface): interface PairKeyCodec — Canonicalizes a two-part relation identity into a single delimiter-safe record key.
 - `PairKeyOptions` (interface): interface PairKeyOptions — Direction and delimiter policy for {@link createPairKeyCodec}.
 - `ParamContribution` (interface): interface ParamContribution — One recorded fold step — which layer's op ran and the value before/after. Contribution provenance.
@@ -1384,8 +1368,8 @@
 - `PartyInviteEntry` (interface): interface PartyInviteEntry { inviteId: string; fromUserId: string; createdAt: number } — ⚠ undocumented
 - `PartyMemberEntry` (interface): interface PartyMemberEntry { userId: string; role: PartyRole } — ⚠ undocumented
 - `PhysicsConfig` (interface): interface PhysicsConfig — World gravity and jump tuning, plus the optional rigid-body backend and character capsule.
-- `PingCategory` (type): type PingCategory = string — ⚠ undocumented · used by `DEFAULT_PING_CATEGORIES`: Content-agnostic default ping wheel: enemy / loot / location / danger.
-- `PingSystem` (interface): interface PingSystem { classify(hit: PointerHit): PingCategory; buildPayload(from: string, hit: PointerHit, category?: PingCategory): PingPayload; broadcast(payload: PingPayload): MapMarker; ping(from: string, hit: PointerHit, category?: PingCategory): PingPayl… — ⚠ undocumented · used by `createPingSystem`: Contextual ping/marker communication between teammates, classified by what was pinged.
+- `PingCategory` (type): type PingCategory = string — A ping category id, such as `enemy`, `loot`, `location` or `danger`.
+- `PingSystem` (interface): interface PingSystem — Classify, build and broadcast pings as map markers shared with the party.
 - `PlayableGameContract` (interface): interface PlayableGameContract<TUi = unknown, TWorldOverlay = unknown, TRenderEntity = never, TRenderObject = never, TViewmodel = unknown, TOverlay = TWorldOverlay> — The renderer-agnostic game contract, generic over its UI and render types; shell's `PlayableGame` fills them with React components.
 - `PointerAxisState` (interface): interface PointerAxisState { x: number; y: number; active: boolean } — ⚠ undocumented · used by `normalizePointerToAxis`: Normalize client coordinates against a surface rect into a `PointerAxisState`, clamped to `[-1, 1]` per axis.
 - `PointerConfig` (interface): interface PointerConfig — Mouse/touch pointer bindings for `defineGame({ pointer })`.

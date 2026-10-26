@@ -5,7 +5,7 @@ import * as THREE from "three";
 import { resolveAmbientLife, type AmbientLifeConfig, type ResolvedAmbientLife, type SteamVent } from "@jgengine/core/render/ambientLife";
 
 import { uploadInstances } from "@jgengine/core/instancing/instanceUpload.draw";
-import { findKeyLight, towardLight } from "../postfx/contactShadowPass";
+import { findKeyLight, towardLight } from "@jgengine/core/postfx/contactShadowPass.draw";
 import { advanceLivingWorld, livingWorld, resetLivingWorld } from "./livingWorld";
 import { windDirection, windGust } from "./modelWind";
 import { useDisposable } from "./useDisposable";

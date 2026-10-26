@@ -3,7 +3,7 @@ import type { ReactElement } from "react";
 
 import { CombatPresentation } from "./CombatPresentation.draw";
 import { resolvePresentationEffects } from "@jgengine/shell/presentationResolve";
-import { HitMarkers, MuzzleFlashes } from "@jgengine/shell/world/ShotFeedback";
+import { HitMarkers, MuzzleFlashes } from "@jgengine/core/combat/ShotFeedback.draw";
 import { CorpseRagdolls } from "@jgengine/shell/render/CorpseRagdolls";
 
 function mounted(config: Parameters<typeof resolvePresentationEffects>[0]): unknown[] {

@@ -44,7 +44,7 @@ import {
   type CharacterLodTier,
 } from "@jgengine/core/lod/characterLod";
 import { resolveEntityModel, resolveObjectModel, type ObjectModelCacheEntry } from "../render/resolveModel";
-import { useRenderVisibility } from "../visibility/CullingProvider";
+import { useRenderVisibility } from "@jgengine/core/visibility/CullingProvider.draw";
 import { writePoseIfChanged, writeRenderPoseIfChanged, emptyPoseMemo, type PoseMemo } from "./entityPose";
 import type { RenderPose } from "@jgengine/core/runtime/poseInterpolation";
 import { createSnapshotBuffer, type SnapshotBuffer } from "@jgengine/core/runtime/snapshotBuffer";

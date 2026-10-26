@@ -12,7 +12,7 @@ import { useGameContext } from "@jgengine/react/provider";
 import type { GameContext } from "@jgengine/core/runtime/gameContextTypes";
 import { readFirstPersonMuzzle } from "@jgengine/shell/camera/GameFirstPersonCamera";
 import { readEntityMuzzle } from "@jgengine/shell/render/entityMuzzle";
-import { resolveFloatTextStyle } from "@jgengine/shell/world/floatTextStyle";
+import { resolveFloatTextStyle } from "@jgengine/core/hud/floatTextStyle";
 import {
   collectNameplateSamples,
   collectWorldBarSamples,
@@ -26,13 +26,13 @@ import {
   type NameplateSample,
   type WorldBarSample,
 } from "@jgengine/shell/world/worldBarSamples";
-import { telegraphPulseOpacity } from "@jgengine/shell/world/telegraphPulse";
-import { useRenderVisibility } from "@jgengine/shell/visibility/CullingProvider";
+import { telegraphPulseOpacity } from "@jgengine/core/combat/telegraphPulse";
+import { useRenderVisibility } from "@jgengine/core/visibility/CullingProvider.draw";
 import { CAMERA_POST_FRAME_PRIORITY } from "@jgengine/shell/camera/cameraRigs";
 
 export type { NameplateSample, WorldBarSample } from "@jgengine/shell/world/worldBarSamples";
 export { collectNameplateSamples, collectWorldBarSamples, paintWorldBarSamples } from "@jgengine/shell/world/worldBarSamples";
-export { telegraphPulseOpacity } from "@jgengine/shell/world/telegraphPulse";
+export { telegraphPulseOpacity } from "@jgengine/core/combat/telegraphPulse";
 
 function pinOverlayToViewport(
   _el: THREE.Object3D,

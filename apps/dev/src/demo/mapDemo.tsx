@@ -7,7 +7,7 @@ import {
   PING_FEED_ACTION,
   type PingCategory,
   type PingSystem,
-} from "@jgengine/core/game/ping";
+} from "@jgengine/core/map/ping";
 import type { PointerHit } from "@jgengine/core/input/pointer";
 import type {
   GameContext,

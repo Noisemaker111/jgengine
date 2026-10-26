@@ -14,7 +14,7 @@ import { useOptionalGameContext } from "@jgengine/react/provider";
 import { detectKtx2Support, sharedGltfLoader } from "./modelLoad";
 import { modelAssetRequests } from "./modelAssets";
 import { measureLocalBounds, reportMeasuredBounds } from "./measureBounds";
-import { recordRenderBounds } from "../visibility/renderBounds";
+import { recordRenderBounds } from "@jgengine/core/visibility/measuredBounds";
 import { measureLocalCollisionTriangles, reportCollisionMeshOnce } from "./measureCollisionMesh";
 import { useModelInstance } from "./useModelInstance";
 import { applyMaterialAssignments, useModelMaterialTextures, MaterialTextureLoader, validateMaterialAssignmentTargets } from "./materialAsset";

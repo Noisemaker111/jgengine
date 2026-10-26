@@ -5,7 +5,7 @@ import {
   PING_FEED_ACTION,
   type PingCategory,
   type PingSystem,
-} from "@jgengine/core/game/ping";
+} from "@jgengine/core/map/ping";
 import type { PointerHit } from "@jgengine/core/input/pointer";
 import type {
   GameContext,
@@ -18,7 +18,7 @@ import { createMarkerSet, type MarkerSet } from "@jgengine/core/map/markers";
 import { useFeed } from "@jgengine/react/hooks";
 
 import { EnvironmentScene } from "@jgengine/core/environment/EnvironmentScene.draw";
-import { WorldPings } from "@jgengine/shell/world/WorldPings";
+import { WorldPings } from "@jgengine/core/map/pingBeacons.draw";
 import type { PlayableGame } from "@jgengine/shell/registry";
 
 const SCOUT = "scout";

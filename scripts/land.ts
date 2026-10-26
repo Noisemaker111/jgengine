@@ -693,7 +693,10 @@ export function acquireLock(options: LockOptions): HeldLock {
       log(`waited ${duration(waitedMs)} for the lock (held by ${holder})`);
       return { release, wait: { holder, waitedMs } };
     } catch (error) {
-      if ((error as NodeJS.ErrnoException).code !== "EEXIST") throw error;
+      const code = (error as NodeJS.ErrnoException).code;
+      // Windows answers EPERM while the holder's release is still deleting the file: it is the
+      // same "someone has the lock" as EEXIST, and the next poll finds it gone.
+      if (code !== "EEXIST" && !(code === "EPERM" && process.platform === "win32")) throw error;
     }
 
     const held = readLockFile(path);

@@ -1,7 +1,7 @@
 import type { SceneEntity } from "@jgengine/core/scene/entityStore";
 import type { CatalogEntityRole } from "@jgengine/core/runtime/gameContext";
 import type { PresentationEffectsConfig } from "@jgengine/core/game/playableGame";
-import type { ImpactFeedbackOptions } from "./world/ImpactFeedback";
+import type { ImpactFeedbackOptions } from "@jgengine/core/combat/ImpactFeedback.draw";
 
 /** Resolved world-bar / nameplate config, or `null` when the feature is off. @internal */
 export interface ResolvedWorldOverlayBars {
