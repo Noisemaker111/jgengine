@@ -65,10 +65,7 @@ Hold the Line, Fernwild and Apex Nights were first generated from one-sentence i
 | Game | Pack (folder under `public/models/imported/`) | Author | License |
 | --- | --- | --- | --- |
 | Hold the Line, Apex Nights | KayKit City Builder Bits (`kaykit-city-builder`): buildings, cars, water tower, dumpster | Kay Lousberg | CC0 1.0 |
-| Hold the Line, Fernwild | Quaternius Stylized Nature (`quaternius-stylized-nature`): trees, bushes, ferns | Quaternius | CC0 1.0 |
-| Fernwild | Quaternius Medieval Village (`quaternius-medieval-village`): wooden fence | Quaternius | CC0 1.0 |
-| Fernwild | KayKit Dungeon (`kaykit-dungeon`): lit torch | Kay Lousberg | CC0 1.0 |
-| Fernwild | KayKit adventurer and Quaternius animal models renamed for the engine's former Lantern Reach port (`lantern-reach`): ranger, raptor, stag, boar, bull, settlement | Kay Lousberg; Quaternius | CC0 1.0 |
+| Hold the Line, Fernwild | Quaternius Stylized Nature (`quaternius-stylized-nature`): trees, pines, bushes, ferns, rocks, pebbles, grass | Quaternius | CC0 1.0 |
 
 ## Bundled fonts
 

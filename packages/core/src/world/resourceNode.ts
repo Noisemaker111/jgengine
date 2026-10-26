@@ -82,6 +82,12 @@ export interface ResourceNodeState {
 /** Construction options for {@link createResourceNodeField}: node definitions and an optional RNG/suppression hook. */
 export interface ResourceNodeFieldConfig {
   nodes: readonly ResourceNodeDef[];
+  /**
+   * Resolve a node not listed in `nodes` on first touch — a field over thousands of placed trees and rocks
+   * keeps state only for the ones someone hit. A resolved node that respawns back to full is forgotten
+   * again, so `ids()` and `snapshot()` stay as small as the player's footprint.
+   */
+  resolve?: (nodeId: string) => ResourceNodeDef | null;
   /** Injected [0,1) generator for deterministic yield variance. Omitting it falls back to `Math.random` and warns once. */
   rng?: () => number;
   /**
@@ -152,25 +158,37 @@ export function createResourceNodeField(config: ResourceNodeFieldConfig): Resour
   const nodes = new Map<string, NodeRuntime>();
   const order: string[] = [];
 
-  for (const def of config.nodes) {
-    if (nodes.has(def.id)) throw new Error(`duplicate resource node "${def.id}"`);
-    const respawnBudget = def.respawnBudget ?? def.budget;
-    nodes.set(def.id, {
+  const listed = new Set<string>();
+  const materialize = (def: ResourceNodeDef): NodeRuntime => {
+    const node: NodeRuntime = {
       def,
       budget: def.budget,
       maxBudget: def.budget,
-      respawnBudget,
+      respawnBudget: def.respawnBudget ?? def.budget,
       depleted: def.budget <= 0,
       respawnTimer: 0,
       respawnBlocked: false,
-    });
+    };
+    nodes.set(def.id, node);
     order.push(def.id);
+    return node;
+  };
+  for (const def of config.nodes) {
+    if (nodes.has(def.id)) throw new Error(`duplicate resource node "${def.id}"`);
+    listed.add(def.id);
+    materialize(def);
   }
 
   const getNode = (id: string): NodeRuntime => {
     const node = nodes.get(id);
-    if (node === undefined) throw new Error(`unknown resource node "${id}"`);
-    return node;
+    if (node !== undefined) return node;
+    const resolved = config.resolve?.(id) ?? null;
+    if (resolved === null || resolved.id !== id) throw new Error(`unknown resource node "${id}"`);
+    return materialize(resolved);
+  };
+  const forget = (id: string): void => {
+    nodes.delete(id);
+    order.splice(order.indexOf(id), 1);
   };
 
   const isSuppressed = (node: NodeRuntime): boolean => {
@@ -213,7 +231,7 @@ export function createResourceNodeField(config: ResourceNodeFieldConfig): Resour
     },
     tick(dt) {
       if (dt <= 0) return;
-      for (const id of order) {
+      for (const id of [...order]) {
         const node = nodes.get(id)!;
         if (!node.depleted || node.def.respawn === undefined) continue;
         if (isSuppressed(node)) continue;
@@ -222,6 +240,7 @@ export function createResourceNodeField(config: ResourceNodeFieldConfig): Resour
           node.budget = node.respawnBudget;
           node.depleted = false;
           node.respawnTimer = 0;
+          if (!listed.has(id) && node.budget >= node.maxBudget) forget(id);
         }
       }
     },
@@ -229,7 +248,11 @@ export function createResourceNodeField(config: ResourceNodeFieldConfig): Resour
       return toState(getNode(nodeId));
     },
     isDepleted(nodeId) {
-      return getNode(nodeId).depleted;
+      // An untouched resolvable node is full; asking must not materialize it.
+      const node = nodes.get(nodeId);
+      if (node !== undefined) return node.depleted;
+      if (config.resolve?.(nodeId)?.id === nodeId) return false;
+      throw new Error(`unknown resource node "${nodeId}"`);
     },
     setRespawnBlocked(nodeId, blocked) {
       getNode(nodeId).respawnBlocked = blocked;
@@ -243,6 +266,8 @@ export function createResourceNodeField(config: ResourceNodeFieldConfig): Resour
       return out;
     },
     hydrate(snapshot) {
+      for (const id of [...order]) if (!listed.has(id) && snapshot[id] === undefined) forget(id);
+      for (const id of Object.keys(snapshot)) if (!nodes.has(id) && config.resolve?.(id)?.id === id) getNode(id);
       for (const id of order) {
         const saved = snapshot[id];
         if (saved === undefined) continue;

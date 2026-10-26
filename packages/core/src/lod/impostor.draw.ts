@@ -31,6 +31,17 @@ export function impostorDistance(radius: number, quality: GraphicsQuality): numb
   return Math.max(base, radius * perRadius);
 }
 
+/**
+ * Distance in metres beyond which a model too small for an impostor (a bush, a pebble, a fern) stops
+ * drawing at all. Small detail reads only up close, so culling it by size keeps an island-sized
+ * scatter field to the draws near the camera; fog and the far trees' impostors carry the distance.
+ * @internal
+ */
+export function detailDrawDistance(radius: number, quality: GraphicsQuality): number {
+  const [base, perRadius] = quality === "low" ? [40, 45] : quality === "medium" ? [55, 60] : quality === "high" ? [70, 75] : [90, 100];
+  return base + radius * perRadius;
+}
+
 /** Hemi-octahedral encoding of an upward unit direction into 0..1 atlas coordinates. @internal */
 export function hemiOctEncode(x: number, y: number, z: number): [number, number] {
   const sum = Math.abs(x) + Math.abs(Math.max(y, 0)) + Math.abs(z) || 1;

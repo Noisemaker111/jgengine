@@ -6,6 +6,7 @@ import type {
   TerrainColors,
   TerrainDetailConfig,
   TerrainEnvironmentConfig,
+  TerrainCoast,
   TerrainEnvironmentDescriptor,
   TerrainFlattenMask,
   TerrainIslandDescriptor,
@@ -1115,6 +1116,54 @@ export function heightMapField(config: HeightMapFieldConfig): TerrainField {
   );
 }
 
+function coastHash(seed: string): number {
+  let h = 2166136261 >>> 0;
+  for (let i = 0; i < seed.length; i += 1) {
+    h ^= seed.charCodeAt(i);
+    h = Math.imul(h, 16777619);
+  }
+  return ((h >>> 0) / 4294967296) * Math.PI * 2;
+}
+
+function smooth01(t: number): number {
+  const c = Math.min(1, Math.max(0, t));
+  return c * c * (3 - 2 * c);
+}
+
+/**
+ * Bend a height function into an island: inside the wobbling shore ring the ground keeps its height
+ * (eased down to `shoreHeight` across `falloff`), past it the ground drops along a shelf to `seaFloor`.
+ * Deterministic for a seed.
+ *
+ * @capability terrain-coast shape any terrain into an island landmass with beaches, bays and a sea floor
+ */
+export function withCoast(height: (x: number, z: number) => number, coast: TerrainCoast): (x: number, z: number) => number {
+  const [cx, cz] = coast.center ?? [0, 0];
+  const [sx, sz] = coast.stretch ?? [1, 1];
+  const falloff = Math.max(1, coast.falloff ?? coast.radius * 0.25);
+  const shore = coast.shoreHeight ?? 1;
+  const floor = coast.seaFloor ?? -30;
+  const shelf = Math.max(1, coast.shelf ?? 120);
+  const wobble = coast.wobble ?? 0.25;
+  const phase = coastHash(coast.seed ?? "coast");
+  return (x, z) => {
+    const dx = (x - cx) / sx;
+    const dz = (z - cz) / sz;
+    const angle = Math.atan2(dz, dx);
+    const wander =
+      1 +
+      wobble *
+        (0.55 * Math.sin(angle * 3 + phase) + 0.3 * Math.sin(angle * 7 + phase * 1.7) + 0.15 * Math.sin(angle * 13 + phase * 2.3));
+    const edge = coast.radius * wander;
+    const inside = edge - Math.hypot(dx, dz);
+    if (inside >= 0) {
+      const land = Math.max(height(x, z), shore);
+      return shore + (land - shore) * smooth01(inside / falloff);
+    }
+    return shore + (floor - shore) * smooth01(-inside / shelf);
+  };
+}
+
 /** Resolves a `TerrainEnvironmentDescriptor` into a concrete `TerrainField`, applying flatten masks.
  * @internal
  */
@@ -1141,10 +1190,17 @@ export function resolveTerrainField(descriptor?: TerrainEnvironmentDescriptor): 
           waterLevel: descriptor.waterLevel,
           bounds: descriptor.bounds,
         });
+  const landed =
+    descriptor.coast === undefined
+      ? base
+      : fieldFromHeight(withCoast(base.sampleHeight, descriptor.coast), {
+          bounds: base.bounds,
+          waterLevel: base.waterLevel,
+        });
   const flattened =
     descriptor.flatten === undefined || descriptor.flatten.length === 0
-      ? base
-      : fieldFromHeight(withFlattenMasks(base.sampleHeight, descriptor.flatten), {
+      ? landed
+      : fieldFromHeight(withFlattenMasks(landed.sampleHeight, descriptor.flatten), {
           bounds: base.bounds,
           waterLevel: base.waterLevel,
         });

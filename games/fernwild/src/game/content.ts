@@ -1,22 +1,21 @@
-import type { GameContextEntityEntry } from "@jgengine/core/runtime/gameContext";
+import type { GameContextEntityEntry, GameContextItemEntry } from "@jgengine/core/runtime/gameContext";
 
-import { idea } from "./idea";
+import { ITEMS } from "./data/items";
+import { MAX_LEVEL, SURVIVOR } from "./data/survivor";
 
-const body = (health: number, extra: Partial<GameContextEntityEntry> = {}): GameContextEntityEntry => ({
-  stats: { health: { max: health } },
-  receive: { damage: { order: ["health"] } },
-  ...extra,
-});
-
-/** Every entity the starter spawns, by catalog id: the hero, home, what is built, what comes, what is tamed. */
+/** Every entity by catalog id: for now the survivor; creatures arrive with taming. */
 const entities: Record<string, GameContextEntityEntry> = {
-  player: body(idea.hero.health, { role: "player", movement: { poses: ["standing", "running", "crouch"], walkSpeed: 4.2 } }),
-  home: body(idea.home.health),
-  ...Object.fromEntries(idea.structures.map((structure) => [structure.id, body(structure.health)])),
-  ...Object.fromEntries(idea.threats.map((threat) => [threat.id, body(threat.health, { role: "enemy", movement: { walkSpeed: threat.speed } })])),
-  ...Object.fromEntries(idea.allies.map((ally) => [ally.id, body(ally.health, { role: "npc", movement: { walkSpeed: ally.speed } })])),
+  player: {
+    role: "player",
+    stats: { health: { max: SURVIVOR.health }, level: { max: MAX_LEVEL }, xp: { max: 5 } },
+    receive: { damage: { order: ["health"] } },
+    movement: { poses: ["standing", "running", "crouch"], walkSpeed: SURVIVOR.walkSpeed },
+  },
 };
+
+const items: Record<string, GameContextItemEntry> = Object.fromEntries(ITEMS.map((item) => [item.id, {}]));
 
 export const content = {
   entityById: (id: string) => entities[id] ?? null,
+  itemById: (id: string) => items[id] ?? null,
 };

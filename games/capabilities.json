@@ -313,6 +313,17 @@
       "intent": "a scene declares looping sound beds keyed to world volumes; walking between them crossfades bed levels on the existing buses instead of cutting."
     },
     {
+      "id": "ambient-temperature",
+      "packages": [
+        "@jgengine/core"
+      ],
+      "module": "@jgengine/core/survival/bodyTemperature",
+      "domain": "survival",
+      "gameFacing": false,
+      "probe": null,
+      "intent": "air temperature from climate, time of day, weather, altitude, wetness and nearby heat"
+    },
+    {
       "id": "anim-graph",
       "packages": [
         "@jgengine/core"
@@ -953,6 +964,17 @@
       "gameFacing": false,
       "probe": null,
       "intent": "mirror sim-body snapshots onto scene entities each tick, no per-body setPose"
+    },
+    {
+      "id": "body-temperature",
+      "packages": [
+        "@jgengine/core"
+      ],
+      "module": "@jgengine/core/survival/bodyTemperature",
+      "domain": "survival",
+      "gameFacing": false,
+      "probe": null,
+      "intent": "hypothermia and hyperthermia from ambient temperature, insulation and fortitude, as vital drain and exposure damage"
     },
     {
       "id": "boss-phase-state",
@@ -8278,6 +8300,17 @@
       "intent": "stretch one placement of a catalog model with visual.scale"
     },
     {
+      "id": "scatter-clearing",
+      "packages": [
+        "@jgengine/core"
+      ],
+      "module": "@jgengine/core/scatter/scatterClearing",
+      "domain": "scatter",
+      "gameFacing": false,
+      "probe": null,
+      "intent": "hide and restore individual scatter placements at runtime — felled trees, mined rocks"
+    },
+    {
       "id": "scatter-coverage",
       "packages": [
         "@jgengine/core"
@@ -8287,6 +8320,17 @@
       "gameFacing": false,
       "probe": null,
       "intent": "shared density/budget semantics for scatterable kinds"
+    },
+    {
+      "id": "scatter-harvest",
+      "packages": [
+        "@jgengine/core"
+      ],
+      "module": "@jgengine/core/harvest/scatterHarvest",
+      "domain": "harvest",
+      "gameFacing": false,
+      "probe": null,
+      "intent": "strike scatter trees, rocks and bushes for tool-biased resources; spent ones vanish and regrow"
     },
     {
       "id": "scene-capture-binding",
@@ -9435,6 +9479,17 @@
       "intent": "surface-following placement guide ring"
     },
     {
+      "id": "survival-vitals",
+      "packages": [
+        "@jgengine/core"
+      ],
+      "module": "@jgengine/core/survival/vitals",
+      "domain": "survival",
+      "gameFacing": false,
+      "probe": null,
+      "intent": "linked survival meters — drain, delayed regen that costs other vitals, starvation links and knockout-style flags"
+    },
+    {
       "id": "sync-authored-objects",
       "packages": [
         "@jgengine/core"
@@ -9554,6 +9609,17 @@
       "gameFacing": false,
       "probe": null,
       "intent": "research nodes with prerequisites that unlock recipes"
+    },
+    {
+      "id": "terrain-coast",
+      "packages": [
+        "@jgengine/core"
+      ],
+      "module": "@jgengine/core/terrain/terrain",
+      "domain": "terrain",
+      "gameFacing": false,
+      "probe": null,
+      "intent": "shape any terrain into an island landmass with beaches, bays and a sea floor"
     },
     {
       "id": "terrain-contours",

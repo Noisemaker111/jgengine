@@ -252,6 +252,8 @@ export interface TerrainEnvironmentConfig {
   ridged?: boolean;
   baseHeight?: number;
   waterLevel?: number;
+  /** Shape the ground into a landmass in the sea: everything past the coastline sinks to the sea floor. */
+  coast?: TerrainCoast;
   /** Flat pads carved into the noise field, e.g. for building pads or spawn circles. */
   flatten?: readonly TerrainFlattenMask[];
   /** Authored path profiles that flatten/grade/carve the heightfield along a centerline (roads, rivers, ramps) with optional retaining walls. Applied after `flatten`. */
@@ -498,6 +500,28 @@ export type TerrainEnvironmentDescriptor = { kind: "terrain" } & Required<
   Pick<TerrainEnvironmentConfig, "bounds" | "height">
 > &
   Omit<TerrainEnvironmentConfig, "bounds" | "height">;
+
+/** An island coastline over a terrain: a wobbling shore ring, a beach shelf and a sea floor beyond. */
+export interface TerrainCoast {
+  /** Island centre `[x, z]`. Default `[0, 0]`. */
+  center?: readonly [number, number];
+  /** Mean shore distance from the centre in metres. */
+  radius: number;
+  /** Shore stretch per axis `[x, z]` (1 = round). Default `[1, 1]`. */
+  stretch?: readonly [number, number];
+  /** Metres over which land falls from full height to the shore. Default `radius * 0.25`. */
+  falloff?: number;
+  /** Height of the shore line (sand at the water). Default 1. */
+  shoreHeight?: number;
+  /** Sea floor height far offshore. Default -30. */
+  seaFloor?: number;
+  /** Metres the sea floor takes to reach `seaFloor` past the shore. Default 120. */
+  shelf?: number;
+  /** 0..1 how much the shoreline wanders (bays, capes). Default 0.25. */
+  wobble?: number;
+  /** Seed for the wobble. Default "coast". */
+  seed?: string;
+}
 
 /** A bounded terrain patch floating at its own altitude — sky islands, arena platforms, split landmasses with void between. */
 export interface TerrainIslandConfig extends TerrainEnvironmentConfig {
@@ -951,6 +975,7 @@ export function terrain(config: TerrainEnvironmentConfig = {}): TerrainEnvironme
       ...(config.ridged === undefined ? {} : { ridged: config.ridged }),
       ...(config.baseHeight === undefined ? {} : { baseHeight: config.baseHeight }),
       ...(config.waterLevel === undefined ? {} : { waterLevel: config.waterLevel }),
+      ...(config.coast === undefined ? {} : { coast: config.coast }),
       ...(config.flatten === undefined ? {} : { flatten: config.flatten }),
       ...(config.pathProfiles === undefined ? {} : { pathProfiles: config.pathProfiles }),
       ...(config.detail === undefined ? {} : { detail: config.detail }),

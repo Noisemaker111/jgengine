@@ -20,6 +20,7 @@ import { syncAuthoredSolids } from "@jgengine/core/world/authoredSolids";
 import type { RoadEnvironmentDescriptor } from "@jgengine/core/world/features";
 import { pathRoad } from "@jgengine/core/roads/pathRoads";
 import { isScatterPath, resolveScatter } from "@jgengine/core/scatter/scatterRegion";
+import { scatterClearingOf } from "@jgengine/core/scatter/scatterClearing";
 import type { TerrainField } from "@jgengine/core/terrain/terrain";
 
 import { getAssetGenerator } from "@jgengine/core/scene/assetGenerator";
@@ -304,6 +305,8 @@ export function AuthoredScene({
   // Authoring updates configuration only. Physics remains owned by the fixed game-time stages.
   useEffect(() => { ctx.environment.retune(liveDocument); }, [ctx.environment, liveDocument]);
   const instances = useMemo(() => resolveScatter(liveDocument, field), [liveDocument, field]);
+  const clearing = scatterClearingOf(ctx);
+  const hidden = useSyncExternalStore(clearing.subscribe, clearing.hidden, clearing.hidden);
   const resolveItem = useMemo(
     () => createModelMapResolver(scatterModels, assets, "scatterModels"),
     [scatterModels, assets],
@@ -321,7 +324,7 @@ export function AuthoredScene({
         surfaceDetail={pathSurfaceDetail}
         {...(pathKinds === undefined ? {} : { kinds: pathKinds })}
       />
-      <InstancedScatter instances={instances} {...(resolveItem === undefined ? {} : { resolveItem })} />
+      <InstancedScatter instances={instances} hidden={hidden} {...(resolveItem === undefined ? {} : { resolveItem })} />
       <AuthoredStudios
         document={liveDocument}
         context={{

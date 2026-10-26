@@ -17,12 +17,36 @@ import { variantLevelModel } from "@jgengine/core/lod/singleVariantLod.draw";
 import { buildScatterProxy } from "./scatterProxies.draw";
 import { buildScatterModelSources, disposeScatterModelSources, type ScatterModelSource } from "./scatterModels.draw";
 import { writeScatterVariantLevel } from "./scatterVariants.draw";
-import { IMPOSTOR_MIN_RADIUS, sourceRadius } from "@jgengine/core/lod/impostor.draw";
+import { detailDrawDistance, IMPOSTOR_MIN_RADIUS, sourceRadius } from "@jgengine/core/lod/impostor.draw";
+import { useTerrainQuality } from "@jgengine/core/terrain/terrainQuality.draw";
 import { ScatterImpostorField } from "./ScatterImpostorField.draw";
 
 /** Chunk edge (m): dense fields split into this-sized buckets, each frustum-culled independently. */
 const DEFAULT_CHUNK_SIZE = 24;
 const DEFAULT_MAX_INSTANCES = 20000;
+/** Most chunks one field splits into; past it chunks grow, so an island costs hundreds of objects, not tens of thousands. */
+const DEFAULT_MAX_CHUNKS = 400;
+
+/**
+ * Chunk edge for a field: `chunkSize`, grown until the field's footprint fits in `maxChunks` chunks.
+ * Every chunk is one scene object per species and draw source, walked every frame even when culled,
+ * so a fixed 24 m grid over a 2 km island would be most of the frame before a triangle is drawn.
+ * @internal
+ */
+export function scatterChunkSize(instances: readonly { x: number; z: number }[], chunkSize: number, maxChunks: number): number {
+  if (instances.length === 0) return chunkSize;
+  let minX = Number.POSITIVE_INFINITY;
+  let maxX = Number.NEGATIVE_INFINITY;
+  let minZ = Number.POSITIVE_INFINITY;
+  let maxZ = Number.NEGATIVE_INFINITY;
+  for (const instance of instances) {
+    minX = Math.min(minX, instance.x);
+    maxX = Math.max(maxX, instance.x);
+    minZ = Math.min(minZ, instance.z);
+    maxZ = Math.max(maxZ, instance.z);
+  }
+  return Math.max(chunkSize, Math.ceil(Math.sqrt(((maxX - minX) * (maxZ - minZ)) / Math.max(1, maxChunks))));
+}
 
 /** One instanced draw unit - a single species within a single spatial chunk. @internal */
 export interface ScatterBatch {
@@ -53,6 +77,31 @@ export function scatterBatchInstances(instances: readonly ScatterInstance[], chu
     }
   }
   return batches;
+}
+
+/**
+ * Drops hidden placements from the batches that hold them. Every other batch comes back as the same
+ * object, so felling one tree re-uploads one chunk instead of rebuilding the whole field.
+ * @internal
+ */
+export function hideScatterPlacements(batches: readonly ScatterBatch[], hidden: ReadonlySet<string> | undefined): ScatterBatch[] {
+  if (hidden === undefined || hidden.size === 0) return [...batches];
+  const shown: ScatterBatch[] = [];
+  for (const batch of batches) {
+    if (!batch.instances.some((instance) => hidden.has(instance.id))) {
+      shown.push(batch);
+      continue;
+    }
+    const matrices: THREE.Matrix4[] = [];
+    const instances: ScatterInstance[] = [];
+    batch.instances.forEach((instance, index) => {
+      if (hidden.has(instance.id)) return;
+      instances.push(instance);
+      matrices.push(batch.matrices[index]!);
+    });
+    if (instances.length > 0) shown.push({ key: batch.key, item: batch.item, matrices, instances });
+  }
+  return shown;
 }
 
 /** One species-in-a-chunk InstancedMesh; frustum-culled as a unit so offscreen chunks cost nothing. */
@@ -183,10 +232,59 @@ function ScatterVariantSpecies({ model, batches }: { model: ModelConfig; batches
   );
 }
 
+/** A batch's footprint on the ground: its centre and the radius that reaches its farthest placement. @internal */
+export function scatterBatchFootprint(batch: ScatterBatch): { x: number; z: number; radius: number } {
+  let minX = Number.POSITIVE_INFINITY;
+  let maxX = Number.NEGATIVE_INFINITY;
+  let minZ = Number.POSITIVE_INFINITY;
+  let maxZ = Number.NEGATIVE_INFINITY;
+  for (const instance of batch.instances) {
+    minX = Math.min(minX, instance.x);
+    maxX = Math.max(maxX, instance.x);
+    minZ = Math.min(minZ, instance.z);
+    maxZ = Math.max(maxZ, instance.z);
+  }
+  return { x: (minX + maxX) / 2, z: (minZ + maxZ) / 2, radius: Math.hypot(maxX - minX, maxZ - minZ) / 2 };
+}
+
+/**
+ * Small-detail species (below impostor size): every chunk of the species is its own group, hidden
+ * once the camera is farther than {@link detailDrawDistance} from the chunk's nearest edge. Without
+ * it a field the size of an island draws every pebble on it every frame.
+ */
+function ScatterDetailInstances({ sources, batches, radius }: { sources: ScatterModelSource[]; batches: ScatterBatch[]; radius: number }) {
+  const quality = useTerrainQuality();
+  const reach = useMemo(() => detailDrawDistance(radius, quality), [radius, quality]);
+  const footprints = useMemo(() => batches.map(scatterBatchFootprint), [batches]);
+  const groups = useRef<(THREE.Group | null)[]>([]);
+  const cameraPosition = useMemo(() => new THREE.Vector3(), []);
+  useFrame((state) => {
+    state.camera.getWorldPosition(cameraPosition);
+    for (let index = 0; index < footprints.length; index += 1) {
+      const group = groups.current[index];
+      const footprint = footprints[index]!;
+      if (group === null || group === undefined) continue;
+      group.visible = Math.hypot(cameraPosition.x - footprint.x, cameraPosition.z - footprint.z) - footprint.radius <= reach;
+    }
+  }, CAMERA_POST_FRAME_PRIORITY + 0.1);
+  return (
+    <>
+      {batches.map((batch, batchIndex) => (
+        <group key={batch.key} ref={(group) => { groups.current[batchIndex] = group; }}>
+          {sources.map((source, sourceIndex) => (
+            <ScatterModelSourceInstances key={sourceIndex} source={source} matrices={batch.matrices} />
+          ))}
+        </group>
+      ))}
+    </>
+  );
+}
+
 /**
  * Loads one species' real catalog GLB once, harvests its instanceable draw sources, then GPU-instances
  * them across every chunk that species appears in. A species big enough to read from afar (trees,
- * rocks, huts) draws its distant placements as impostor cards in one draw for the whole field.
+ * rocks, huts) draws its distant placements as impostor cards in one draw for the whole field; a
+ * smaller one stops drawing past its detail distance.
  */
 function ScatterSingleSpecies({ model, batches }: { model: ModelConfig; batches: ScatterBatch[] }) {
   const gltf = useLoader(GLTFLoader, model.url, (loader) => {
@@ -198,15 +296,7 @@ function ScatterSingleSpecies({ model, batches }: { model: ModelConfig; batches:
   if (radius >= IMPOSTOR_MIN_RADIUS) {
     return <ScatterImpostorField cacheKey={`scatter:${model.url}:${JSON.stringify(model)}`} sources={sources} batches={batches} radius={radius} />;
   }
-  return (
-    <>
-      {sources.map((source, sourceIndex) =>
-        batches.map((batch) => (
-          <ScatterModelSourceInstances key={`${batch.key}:${sourceIndex}`} source={source} matrices={batch.matrices} />
-        )),
-      )}
-    </>
-  );
+  return <ScatterDetailInstances sources={sources} batches={batches} radius={radius} />;
 }
 
 /** One species draw: the level switch for a model with `variants`, the single GLB otherwise. */
@@ -223,11 +313,15 @@ export interface InstancedScatterProps {
   chunkSize?: number;
   /** Hard cap on rendered instances. Default 20000. */
   maxInstances?: number;
+  /** Most chunks the field splits into; bigger fields get bigger chunks. Default 400. */
+  maxChunks?: number;
   /**
    * Per-species override: return a real catalog `ModelConfig` for an item to GPU-instance the actual
    * GLB instead of the stylized proxy; return `null` (or omit the prop) to keep `buildScatterProxy`.
    */
   resolveItem?: (item: string) => ModelConfig | null;
+  /** Placement ids not drawn — felled trees, mined rocks ({@link ScatterClearing}). */
+  hidden?: ReadonlySet<string>;
 }
 
 /**
@@ -242,12 +336,15 @@ export function InstancedScatter({
   instances,
   chunkSize = DEFAULT_CHUNK_SIZE,
   maxInstances = DEFAULT_MAX_INSTANCES,
+  maxChunks = DEFAULT_MAX_CHUNKS,
   resolveItem,
+  hidden,
 }: InstancedScatterProps) {
-  const batches = useMemo(
-    () => scatterBatchInstances(instances.length > maxInstances ? instances.slice(0, maxInstances) : instances, chunkSize),
-    [instances, chunkSize, maxInstances],
-  );
+  const capped = useMemo(() => (instances.length > maxInstances ? instances.slice(0, maxInstances) : instances), [instances, maxInstances]);
+  // The grid is sized from every placement, not the shown ones, so clearing a tree never re-chunks the field.
+  const edge = useMemo(() => scatterChunkSize(capped, chunkSize, maxChunks), [capped, chunkSize, maxChunks]);
+  const allBatches = useMemo(() => scatterBatchInstances(capped, edge), [capped, edge]);
+  const batches = useMemo(() => hideScatterPlacements(allBatches, hidden), [allBatches, hidden]);
 
   const { proxyBatches, modelSpecies } = useMemo(() => {
     // Dev diagnostic (no-op unless armed): re-zero the scatter seam before re-tallying which species

@@ -170,3 +170,24 @@ describe("createResourceNodeField", () => {
     expect(() => createResourceNodeField({ nodes: [rock(), rock()] })).toThrow();
   });
 });
+
+describe("createResourceNodeField resolve", () => {
+  const tree = (id: string) => ({ id, budget: 2, resources: [{ kind: "wood", amount: 1 }], respawn: 5 });
+  test("resolves untouched nodes on first hit and forgets them once regrown", () => {
+    const field = createResourceNodeField({ nodes: [], resolve: (id) => (id.startsWith("tree/") ? tree(id) : null), rng: () => 0 });
+    expect(field.ids()).toEqual([]);
+    expect(field.isDepleted("tree/1")).toBe(false);
+    expect(field.ids()).toEqual([]);
+    field.harvest("tree/1", {});
+    field.harvest("tree/1", {});
+    expect(field.isDepleted("tree/1")).toBe(true);
+    const saved = field.snapshot();
+    expect(Object.keys(saved)).toEqual(["tree/1"]);
+    const loaded = createResourceNodeField({ nodes: [], resolve: (id) => tree(id), rng: () => 0 });
+    loaded.hydrate(saved);
+    expect(loaded.isDepleted("tree/1")).toBe(true);
+    field.tick(5);
+    expect(field.ids()).toEqual([]);
+    expect(() => field.harvest("rock/1", {})).toThrow();
+  });
+});

@@ -1,50 +1,37 @@
 import { environmentContentFromDocument } from "@jgengine/core/editor/environment";
-import { environment, sky, terrain } from "@jgengine/core/world/features";
+import { environment, ocean, sky, terrain } from "@jgengine/core/world/features";
 
 import { editorLayers } from "./editorLayers";
-import { idea } from "./game/idea";
 
-// Places - towns, forests, lakes, paths, clearings and the sky's mood - live in editor.scene.json;
-// reshape them in the editor (F2+E). This file only picks how the ground and sky are drawn, from idea.ts.
-const authored = environmentContentFromDocument(editorLayers, { minBounds: { w: 520, d: 520 }, padding: 60, feather: 6 });
+/** The island: wider east-west than north-south like ARK's, beaches all round, hills inland. */
+export const ISLAND = { radius: 900, stretch: [1.15, 0.9] as const, seaLevel: 0 };
+const SIZE = 2600;
 
-/** Level ground under towns, camps and lake shores: every `pad` marker flattens a disc, to `meta.level` or the ground's own height there. */
-const pads = editorLayers.markers
-  .filter((marker) => marker.kind === "pad")
-  .map((marker) => ({
-    center: [marker.position.x, marker.position.z] as const,
-    radius: Number(marker.meta?.["radius"] ?? 20),
-    ...(marker.meta?.["level"] === undefined ? {} : { height: Number(marker.meta["level"]) }),
-    falloff: Number(marker.meta?.["falloff"] ?? 24),
-  }));
+// Spawn markers, foliage regions and sculpt live in editor.scene.json (F2+E); this file shapes the
+// landmass and picks how ground, sea and sky are drawn.
+const authored = environmentContentFromDocument(editorLayers, { minBounds: { w: SIZE, d: SIZE } });
 
 export const world = environment({
   terrain: terrain({
     bounds: authored.bounds,
-    segments: 200,
-    seed: idea.id,
-    height: idea.world.relief,
-    frequency: idea.world.frequency,
-    octaves: 4,
-    flatten: pads,
-    material: idea.ground.material,
-    colors: { low: idea.ground.low, high: idea.ground.high },
-    waterLevel: idea.world.waterLevel,
-    // Snow only on a snowy idea; elsewhere the detail shader reads grass and dirt into rock.
-    detail: idea.ground.material === "snow" ? {} : { snowHeight: 400 },
+    segments: 320,
+    seed: "fernwild",
+    height: 70,
+    frequency: 0.0016,
+    octaves: 5,
+    baseHeight: 18,
+    coast: { radius: ISLAND.radius, stretch: ISLAND.stretch, falloff: 260, shoreHeight: 0.8, seaFloor: -28, shelf: 160, wobble: 0.22, seed: "fernwild" },
+    material: "grass",
+    colors: { low: "#4f7f35", high: "#7d9a4a" },
+    waterLevel: ISLAND.seaLevel,
+    // The sand band rides a little above the sea so the beach reads as ARK's wide south shore; snow waits for the snow biome.
+    detail: { waterLevel: 2.6, snowHeight: 400, sandColor: "#d8c58f" },
   }),
-  sky: sky({
-    preset: idea.world.sky.preset,
-    timeOfDay: idea.world.sky.cycle,
-    hazeStrength: idea.world.sky.haze,
-    ...(authored.sky ?? {}),
-  }),
+  sky: sky({ preset: "day", timeOfDay: true, ...(authored.sky ?? {}) }),
+  water: [ocean({ bounds: { w: SIZE * 1.6, d: SIZE * 1.6 }, level: ISLAND.seaLevel, color: "#1a9cb8", waveHeight: 0.35, waveScale: 30, waveSpeed: 0.45 })],
   ...(authored.sculpt === undefined ? {} : { sculpt: authored.sculpt }),
   clearings: authored.clearings,
 });
 
-/** The in-world clock the sky runs on: one day lasts `dayLength` seconds of play, starting at `startHour`. */
-export const time = {
-  dayLength: idea.world.sky.dayLength,
-  start: (idea.world.sky.startHour / 24) * idea.world.sky.dayLength,
-};
+/** ARK's default day is about an hour of play; the survivor wakes late morning. */
+export const time = { dayLength: 3600, start: (11 / 24) * 3600 };

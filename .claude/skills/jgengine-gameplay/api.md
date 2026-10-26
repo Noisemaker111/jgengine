@@ -1046,6 +1046,7 @@
 - `AdvanceOptions` (interface): interface AdvanceOptions — Per-advance settings: the policy pipeline, caller context, rounding, and safety bounds.
 - `AdvanceResult` (interface): interface AdvanceResult — The outcome of {@link advanceLedger}: the new ledger plus applied transactions and events.
 - `AffixPool` (interface): interface AffixPool { id: string; affixes: readonly AffixDef[] } — ⚠ undocumented
+- `AmbientInput` (interface): interface AmbientInput — What sets the air temperature at a spot: its climate plus the hour, the weather, the height and nearby heat.
 - `AppliedTransaction` (type): type AppliedTransaction = ResourceTransaction — A {@link ResourceTransaction} after policies and rounding, as actually applied to balances.
 - `Auction` (interface): interface Auction — One live timed auction in an {@link AuctionBook}: an item stack under open bidding until it closes.
 - `AuctionSettlement` (type): type AuctionSettlement = | { status: "sold"; auction: Auction; winnerId: string; price: number; houseCut: number; sellerProceeds: number; } | { status: "returned"; auction: Auction } — How one closed auction resolved during {@link AuctionBook.settleExpired}.
@@ -1059,6 +1060,7 @@
 - `BehaviourModule` (class): class BehaviourModule — A world-lifetime service with typed sibling access via `this.modules`. Modules awake and start before any behaviour during `world.start()`, subscribe to update dispatch first (their `onUpdate` fires before every behaviour's), and have no disable/destroy — they live as long as the world.
 - `BehaviourWorld` (interface): interface BehaviourWorld { add(id: string, parentId?: string): void; has(id: string): boolean; parentOf(id: string): string | null; childrenOf(id: string): readonly string[]; setParent(id: string, parentId: string | null): void; attach<T extends Behaviour>(nodeId: … — ⚠ undocumented
 - `BindingOverrides` (type): type BindingOverrides = Record<string, ActionCodes> — Player-rebound keys, keyed by action name. Values mirror an `ActionCodes` entry so hold/toggle/repeat semantics survive a rebind — the settings menu only swaps which physical codes drive the action.
+- `BodyComfort` (interface): interface BodyComfort — What the temperature does to a body right now.
 - `CAMERA_FRUSTUM_DEFAULTS` (const): const CAMERA_FRUSTUM_DEFAULTS: { readonly fov: 55; readonly near: 0.1; readonly far: 300; readonly zoom: 50; } — ⚠ undocumented
 - `CameraKeyframe` (interface): interface CameraKeyframe — One stop on a scripted camera path (#29).
 - `CameraRigKind` (type): type CameraRigKind = | "orbit" | "first" | "topDown" | "rts" | "shoulder" | "lockOn" | "chase" | "observer" | "turntable" | "sideScroll" | "inspection" | "none" — Which camera rig the shell mounts. Every rig accepts `followEntityId: null` (avatar-less games — city-builders, card games, auto-battlers — still get a camera). Rigs are tuned through their config block below, never by writing camera positions from `onTick`. - `orbit` — third-person chase (the historical default; `perspective: "third"`). - `first` — pointer-lock mouse-look (`perspective: "first"`). - `topDown` — fixed height/pitch/yaw with decoupled follow (ARPG iso, top-down). - `rts` — free-pan / edge-scroll / rotate / zoom, optional follow. - `shoulder` — over-the-shoulder with ADS transition + shoulder swap. - `lockOn` — yaw bound to the player→target vector; move axis becomes strafe. - `chase` — speed-reactive vehicle chase (speed→FOV, spring arm, shake) + cockpit/hood/rear views. - `observer` — detached spectator/photo cam bound to any entity or fixed point; never reads player input. - `turntable` — slow auto-orbit of a fixed point: a rotating display stand for a scene. The friendly, flat spelling of `observer`'s point-orbit mode; providing `camera.turntable` selects it without an explicit `rig`. - `sideScroll` — fixed lateral follow (2.5D platformer/beat-'em-up side view); reads no player input. - `inspection` — model-viewer / editor rig (#207.7, #866): middle-drag pan, right-drag orbit, scroll zoom toward a configurable anchor; orbits a fixed point, reads no player/entity input. - `none` — no camera rig is mounted; use for HUD-only presentations or a game that manages its own camera.
@@ -1087,6 +1089,8 @@
 - `CombatTelegraphEvent` (interface): interface CombatTelegraphEvent { id: number; shape: TelegraphShape; position: [number, number, number]; dir?: number; windupMs: number; kind: string } — ⚠ undocumented
 - `CombatVfxEvent` (interface): interface CombatVfxEvent — A transient sprite-particle effect the shell renders once and expires — one burst of `kind`, tinted `color`, anchored at `from` (and `to` for travel/beam effects).
 - `CombatVfxInstanceEvent` (interface): interface CombatVfxInstanceEvent — The lifecycle op a {@link VfxInstanceStore} emits to its renderer sink. `upsert`/`update` carry the full merged {@link VfxInstanceState} (the renderer applies it directly, no merge); `stop` carries the id plus a fade duration. This is the payload of the `combat.vfxInstance` game event when the store is wired to the event bus.
+- `ComfortBand` (type): type ComfortBand = "freezing" | "cold" | "comfortable" | "hot" | "scorching" — Comfort band a body is in.
+- `ComfortConfig` (interface): interface ComfortConfig — How well a body copes: its comfortable band, what its gear and stats add, and what each degree outside costs.
 - `CompatibilityRule` (type): type CompatibilityRule = RequireRule | ForbidRule — A cross-slot compatibility rule constraining which part/tag/family combinations a modular item may hold.
 - `CompiledSystemSchedule` (interface): interface CompiledSystemSchedule — Deterministic compiled schedule: stage buckets, multi-subscribe channels, dependency validation. Order never depends on import order — only stage tables + explicit before/after constraints.
 - `ComposedMissionOptions` (interface): interface ComposedMissionOptions — Options shared by every composed mission.
@@ -1194,6 +1198,7 @@
 - `InspectionCameraConfig` (interface): interface InspectionCameraConfig — Model-viewer / inspection rig (#207.7) — orbit + pan + anchored zoom around a fixed point, never reads player input.
 - `InspectionZoomAnchor` (type): type InspectionZoomAnchor = "target" | "cursor" | "center" — How scroll-zoom re-anchors the view for the inspection rig (#207.7): - `target` — dolly toward the orbit target (classic OrbitControls behavior). - `cursor` — dolly toward the point under the pointer. - `center` — dolly toward the viewport center; equivalent to `target` for an OrbitControls-driven rig, since the camera always faces `target` and that point already projects to the exact center of the viewport.
 - `InstalledPart` (interface): interface InstalledPart { slotId: string; part: PartDef } — ⚠ undocumented · used by `identityOf`: Assemble an {@link ItemIdentity} from a family, tags, and installed parts.
+- `Insulation` (interface): interface Insulation — A body's insulation from worn gear and stats.
 - `InventoryDeclaration` (interface): interface InventoryDeclaration — Shape of one named inventory a game declares — slot count, accepted item types, HUD binding.
 - `InventorySlot` (type): type InventorySlot = { itemId: string; count: number } | null — ⚠ undocumented
 - `InventoryState` (interface): interface InventoryState { slots: InventorySlot[] } — ⚠ undocumented · used by `carriedEntries` (@jgengine/core/inventory/carryLoad): Every filled stack in the given inventories as load entries, in slot order.
@@ -1577,6 +1582,14 @@
 - `VisitorPopulationSnapshot` (interface): interface VisitorPopulationSnapshot — Serializable state. No on-site count is stored: it is the restored visitor list.
 - `VisitorPopulationStats` (interface): interface VisitorPopulationStats — Counters a HUD, a probe or a test reads. The on-site figure is the visitor list's length.
 - `VisitorWorld` (interface): interface VisitorWorld — The game's world behind every counted visitor: it creates and removes the body.
+- `VitalDef` (interface): interface VitalDef — One survival vital: its range, how it moves on its own, what it costs and what it does when empty.
+- `VitalFlag` (interface): interface VitalFlag — A named condition a vital raises from its value, with optional hysteresis.
+- `VitalFlagChange` (interface): interface VitalFlagChange — A flag that changed this tick.
+- `VitalLink` (interface): interface VitalLink — A per-second change one vital applies to another while a condition holds.
+- `VitalRateModifier` (type): type VitalRateModifier = number | Readonly<Record<string, number>> — Per-tick rate scaling: one scalar for every vital, or per vital id (a cold body burns food twice as fast).
+- `Vitals` (interface): interface Vitals — One body's survival vitals over plain data; every write is bounded and every value retunable.
+- `VitalsState` (interface): interface VitalsState — Plain, JSON-safe vitals state: current values, current maxes (levelled), regen cooldowns and raised flags.
+- `VitalsTickOptions` (interface): interface VitalsTickOptions — Options for {@link Vitals.tick}.
 - `WORLD_ITEM_ENTITY_NAME` (const): const WORLD_ITEM_ENTITY_NAME: "world_item" — Scene-entity catalog name every dropped-item instance spawns under (see the three buckets: worldItem is an entity, never an inventory item or object).
 - `WaitQueue` (interface): interface WaitQueue — A real line: guests join the back, leave the head, and the wait a new arrival faces comes from how fast this queue has actually been boarding — not from a configured constant. A broken ride stops boarding, the line grows, and the estimate grows with it.
 - `WaitQueueOptions` (interface): interface WaitQueueOptions — Tunables for {@link createWaitQueue}, every one retunable through a restore.
@@ -1601,6 +1614,7 @@
 - `advanceLedger` (function): function advanceLedger(ledger: ResourceLedger, toSeconds: number, options: AdvanceOptions = {}): AdvanceResult — Advance the ledger clock to `toSeconds`, settling every due cycle deterministically. Rules are processed in sorted-id order; cycle counts are integer math; large deltas are bounded by `catchUp`, `maxCatchUpCycles`, and `maxCyclesPerRule`. Every produced transaction flows through the policy pipeline (transform, cap, reject, split, redirect, annotate) before it is quantised and applied to balances.
 - `advanceTransport` (function): function advanceTransport(path: TransportPath, items: readonly TransportItem[], dt: number): { items: TransportItem[]; delivered: TransportItem[] } — ⚠ undocumented
 - `aimToPoint` (function): function aimToPoint(origin: PointerVec3, point: PointerVec3): Aim — Build an `origin → point` aim for `item.use` / projectiles, firing toward the cursor.
+- `ambientTemperature` (function): function ambientTemperature(input: AmbientInput): number — Air temperature at one spot in °C from climate, hour, weather, altitude, wetness and heat sources. Pure — sample it per player per second, not per frame.
 - `annotate` (function): function annotate(tag: string): ResourcePolicy — Append a provenance tag to a transaction without changing its value.
 - `appendFeed` (function): function appendFeed<T extends TimedFeedEntry>(list: readonly T[], entry: T, options?: FeedWindow): T[] — Append `entry` to a flat, serializable feed list, then bound it by age (`ttl`, relative to the appended entry's `at`) and/or count (`limit`, newest kept). Works on the game's own flat entry shape — anything with an `at` stamp — so `{ id, text, tone, at }`-style notice lists and event logs drop into serialized state with no `{ at, data }` envelope. Returns a new array.
 - `applyBindingOverrides` (function): function applyBindingOverrides<TAction extends string, TCode extends string>(input: ActionCodesMap<TAction, TCode>, overrides: BindingOverrides): ActionCodesMap<TAction, TCode> — Merge player rebinds over a game's authored `input` map. Only actions the game already declares can be overridden; unknown override keys are ignored so a stale localStorage entry can't inject phantom actions.
@@ -1612,6 +1626,7 @@
 - `assertXpCurve` (function): function assertXpCurve(def: XpCurveDef): void — Check curve data before use; throws `RangeError` naming the offending field.
 - `balance` (function): function balance(state: WalletState, currency: string | CurrencyDefinition): number — ⚠ undocumented
 - `balanceOf` (function): function balanceOf(ledger: ResourceLedger, account: string, currency: string): number — Read a single balance; unknown account/currency pairs read as `0`.
+- `bodyComfort` (function): function bodyComfort(ambientC: number, config: ComfortConfig, insulation: Insulation = {}): BodyComfort — Turn an ambient temperature into its cost for one body: a comfortable band widened by insulation and fortitude, drain multipliers on the vitals each side burns, and exposure damage past a margin.
 - `buildLoanSchedule` (function): function buildLoanSchedule(terms: LoanTerms): LoanSchedule — Build a loan's repayment schedule: one entry per period with its due time, interest/principal split and the balance left, in integer minor units. An amortized loan levels the payment over the outstanding balance (`P·i / (1 − (1+i)^−n)`); a flat loan charges interest on the original principal. Either way the final payment absorbs the rounding, so the principal parts sum to the principal exactly and the balance ends at zero. Deterministic and pure.
 - `canAfford` (function): function canAfford(state: WalletState, costs: Readonly<Record<string, number>>): boolean — True when every currency in `costs` has at least that much balance (a pure, non-mutating check).
 - `canCraft` (function): function canCraft(state: InventoryState, layout: InventoryLayout, traits: ItemTraits, recipe: RecipeDef, context: CraftContext = {}): CraftCheck — ⚠ undocumented
@@ -1710,6 +1725,7 @@
 - `createUseBehaviorRegistry` (function): function createUseBehaviorRegistry<TWorld>(): UseBehaviorRegistry<TWorld> — Create an empty use-behavior registry. Games register their behaviors, then compose each item's stored refs into a dispatcher whose serializable state lives with the item.
 - `createVfxInstanceStore` (function): function createVfxInstanceStore(options: VfxInstanceStoreOptions = {}): VfxInstanceStore — Build a headless retained-VFX registry. The store is the serializable source of truth for long-lived effects (beams, tethers, zones, target lines, looping emitters) that must move and mutate without one-shot re-emit flicker: `upsert` creates or replaces by stable id, `update` nudges dynamic params, `stop` disposes with an optional fade, and `tick` enforces TTL heartbeats. It stays independent of renderer availability, so simulation and tests run without a shell; a wired `onOp` sink turns each op into a `combat.vfxInstance` event the shell binds to render resources.
 - `createVisitorPopulation` (function): function createVisitorPopulation(options: VisitorPopulationOptions): VisitorPopulation — Create the population a scene reports, with the game owning arrival and leaving policy. A visitor only exists once the world has made its body, so the HUD's count and the bodies on screen are the same list: `admit` returning `null` is a refused arrival, not a number.
+- `createVitals` (function): function createVitals(initial: readonly VitalDef[]): Vitals — Survival vitals for one body — health, stamina, food, water, oxygen, torpor or anything the game names. Each vital drains or regenerates per second, regen can wait out a delay and charge other vitals (health regen eats food), an empty vital pushes on others (starving drains health), and thresholds raise flags with hysteresis (torpor full knocks out until it wears off). Plain data, deterministic, bounded by the number of vitals.
 - `createWaitQueue` (function): function createWaitQueue(options: WaitQueueOptions = {}): WaitQueue — Create a line whose wait estimate is derived from its own throughput. The queue owns the order and the measurement; the ride owns how fast guests are taken off the head, so a slower cycle raises the estimate without the queue being told a cycle time.
 - `createWeaponStats` (function): function createWeaponStats(resolveEntry: (itemId: string) => WeaponEntry | null | undefined): WeaponStats — Resolve per-weapon stat values — damage, fire rate, spread — for combat math.
 - `createWorkQueue` (function): function createWorkQueue<TSpec, TReserve = undefined>(): WorkQueueState<TSpec, TReserve> — Create an empty timed work queue.
@@ -1865,6 +1881,17 @@
 - `wear` (function): function wear(spec: DurabilitySpec, state: DurabilityState, kind: WearKind, times = 1): DurabilityState — ⚠ undocumented
 - `withTouchCodes` (function): function withTouchCodes(map: ActionCodesMap | undefined): ActionCodesMap — Every action gains a synthetic touch code alongside its physical codes.
 - `worldHealthBarAllowsRole` (function): function worldHealthBarAllowsRole(roles: readonly CatalogEntityRole[] | undefined, role: CatalogEntityRole | undefined): boolean — ⚠ undocumented
+
+## @jgengine/core/harvest/scatterHarvest
+
+- `HarvestHit` (interface): interface HarvestHit — What a swing took.
+- `HarvestPlacement` (interface): interface HarvestPlacement — A placement the harvest can strike: a resolved scatter instance or anything with an id, a species and a spot.
+- `HarvestStrike` (interface): interface HarvestStrike — One swing: where from, which way, how far and with what.
+- `HarvestableDef` (interface): interface HarvestableDef extends Omit<ResourceNodeDef, "id"> — What one scatter species yields when struck: a resource node definition without its id, plus its trunk radius.
+- `ScatterHarvest` (interface): interface ScatterHarvest — Strikeable scatter: trees, rocks and bushes the player hits for resources, which vanish when spent and regrow.
+- `ScatterHarvestConfig` (interface): interface ScatterHarvestConfig — Construction options for {@link createScatterHarvest}.
+- `ScatterHarvestState` (interface): interface ScatterHarvestState — Plain save data: the touched nodes only.
+- `createScatterHarvest` (function): function createScatterHarvest(config: ScatterHarvestConfig): ScatterHarvest — Turn scatter into resources: every placed tree, rock or bush of a listed species is a depletable, respawning node (backed by {@link createResourceNodeField} resolved on first hit, so ten thousand trees cost nothing until someone swings). A strike picks the nearest standing placement inside reach and a facing cone, applies the tool's biases (a hatchet favours wood, a pick favours stone, a fist gets thatch), and a spent node is hidden through {@link ScatterClearing} until it regrows.
 
 ## @jgengine/core/inventory/carryLoad
 
@@ -3046,6 +3073,16 @@
 - `StoreHandle` (interface): interface StoreHandle<T> — A typed, cast-free handle onto one slot of the reactive game store (`ctx.game.store`). The single type parameter is fixed at definition; `read`/`write`/`update` never widen to `unknown`, so no call site repeats `store.get(key) as T`. Writes flow through the engine store, so they bump `ctx.version()`, serialize into a {@link WorldSnapshot}, and replay under host authority — the same guarantees a hand-rolled `store.get`/`store.set` pair gives up the moment it forks run state into a module-level singleton.
 - `defineStore` (function): function defineStore<T>(key: string, initial: T | (() => T)): StoreHandle<T> — Define a typed slot on the game store: game code expresses `read(ctx)`/`write(ctx, v)`/`update(...)` with the value type it means, and the `unknown → T` cast lives once, here, behind the boundary. Pass a factory for `initial` when the fallback is a fresh mutable object; the factory runs at most once and its result is reused, so an unwritten slot keeps a stable identity across reads (no per-read churn for a React selector, no allocation on a hot path). A value that carries functions (a closure-based run store, an input handle) is runtime-only: snapshots, saves and replication skip it and hydration keeps it in place. Hold such objects with `perContext` when they need no store notifications.
 
+## @jgengine/core/survival/bodyTemperature
+
+- `AmbientInput` (interface): interface AmbientInput — What sets the air temperature at a spot: its climate plus the hour, the weather, the height and nearby heat.
+- `BodyComfort` (interface): interface BodyComfort — What the temperature does to a body right now.
+- `ComfortBand` (type): type ComfortBand = "freezing" | "cold" | "comfortable" | "hot" | "scorching" — Comfort band a body is in.
+- `ComfortConfig` (interface): interface ComfortConfig — How well a body copes: its comfortable band, what its gear and stats add, and what each degree outside costs.
+- `Insulation` (interface): interface Insulation — A body's insulation from worn gear and stats.
+- `ambientTemperature` (function): function ambientTemperature(input: AmbientInput): number — Air temperature at one spot in °C from climate, hour, weather, altitude, wetness and heat sources. Pure — sample it per player per second, not per frame.
+- `bodyComfort` (function): function bodyComfort(ambientC: number, config: ComfortConfig, insulation: Insulation = {}): BodyComfort — Turn an ambient temperature into its cost for one body: a comfortable band widened by insulation and fortitude, drain multipliers on the vitals each side burns, and exposure damage past a margin.
+
 ## @jgengine/core/survival/decayMeter
 
 - `DecayMeterConfig` (interface): interface DecayMeterConfig { id: string; max: number; min?: number; start?: number; rate: number; thresholds?: readonly MeterThreshold[] } — ⚠ undocumented · used by `decayMeterMoodles`: Moodles for every crossed threshold, worst-first per meter in declared order.
@@ -3082,6 +3119,18 @@
 - `RegionHealthState` (interface): interface RegionHealthState { id: string; label: string; current: number; max: number; fraction: number; vital: boolean } — ⚠ undocumented
 - `TreatResult` (interface): interface TreatResult { treated: readonly string[] } — ⚠ undocumented
 - `createMultiRegionHealth` (function): function createMultiRegionHealth(config: MultiRegionHealthConfig): MultiRegionHealth — Per-region/limb health tracked separately, so each body part takes and heals damage on its own.
+
+## @jgengine/core/survival/vitals
+
+- `VitalDef` (interface): interface VitalDef — One survival vital: its range, how it moves on its own, what it costs and what it does when empty.
+- `VitalFlag` (interface): interface VitalFlag — A named condition a vital raises from its value, with optional hysteresis.
+- `VitalFlagChange` (interface): interface VitalFlagChange — A flag that changed this tick.
+- `VitalLink` (interface): interface VitalLink — A per-second change one vital applies to another while a condition holds.
+- `VitalRateModifier` (type): type VitalRateModifier = number | Readonly<Record<string, number>> — Per-tick rate scaling: one scalar for every vital, or per vital id (a cold body burns food twice as fast).
+- `Vitals` (interface): interface Vitals — One body's survival vitals over plain data; every write is bounded and every value retunable.
+- `VitalsState` (interface): interface VitalsState — Plain, JSON-safe vitals state: current values, current maxes (levelled), regen cooldowns and raised flags.
+- `VitalsTickOptions` (interface): interface VitalsTickOptions — Options for {@link Vitals.tick}.
+- `createVitals` (function): function createVitals(initial: readonly VitalDef[]): Vitals — Survival vitals for one body — health, stamina, food, water, oxygen, torpor or anything the game names. Each vital drains or regenerates per second, regen can wait out a delay and charge other vitals (health regen eats food), an empty vital pushes on others (starving drains health), and thresholds raise flags with hysteresis (torpor full knocks out until it wears off). Plain data, deterministic, bounded by the number of vitals.
 
 ## @jgengine/core/tactics/predictiveQuery
 

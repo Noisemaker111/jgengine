@@ -2,6 +2,7 @@
   "name": "Fernwild",
   "id": "fernwild",
   "template": "3d",
+  "editor": true,
   "engine": [
     "assets",
     "core",
@@ -11,54 +12,37 @@
   ],
   "capabilities": {
     "adopts": [
+      "authored-entities",
       "authored-spawn",
-      "auto-scroll",
-      "cell-grid",
+      "authored-triggers",
+      "collider-autofit",
       "color-grading",
-      "confirm-dialog",
-      "current-target",
+      "default-drive-codes",
       "default-walk-codes",
       "define-game",
       "define-system",
-      "dom-event",
-      "event-meter-hud",
-      "game-context-bridge",
+      "editor-catalogs",
+      "editor-environment",
+      "fire-input",
+      "game-context-rng",
       "game-kit",
-      "game-menu",
-      "game-spec",
       "game-system",
+      "hotbar-slot-bindings",
       "hud-canvas",
-      "hud-frame",
+      "hud-fade",
+      "hud-idle",
       "hud-layout",
       "hud-panel",
-      "hud-ticker",
-      "kit-action-glyph",
-      "kit-action-prompt",
-      "kit-banner",
-      "kit-button",
-      "kit-menu",
-      "kit-meter",
-      "kit-minimap-frame",
-      "kit-objective",
-      "kit-panel",
-      "kit-result-screen",
-      "kit-toast",
-      "library-model",
-      "live-markers",
-      "modal-host",
-      "model-library",
+      "hud-slots",
+      "light-probes",
+      "measured-colliders",
+      "measured-hitboxes",
+      "minimap-bake",
       "mount-game",
-      "pause-menu",
       "pointer-commands",
-      "proximity-prompt",
-      "pursue-behavior",
-      "raf-loop",
-      "ui-kit-root",
-      "use-modal-stack",
-      "use-viewport-scroll-lock",
       "world-convergence",
       "world-environment",
-      "world-model",
+      "world-item-pickup",
       "world-place",
       "world-seed"
     ],
@@ -66,199 +50,195 @@
     "declines": {
       "agents": {
         "kind": "not-applicable",
-        "reason": "Fernwild has no agent loop yet: it is a camp survival (gather by day, hold the night) starter, and nothing in its loop uses agents."
+        "reason": "No creatures roam the island in this survival slice; the dinosaur PR brings the agent loop for wild and tamed dinos."
       },
       "audio-probe": {
         "kind": "not-applicable",
-        "reason": "Fernwild has no audio mix yet: it is a camp survival (gather by day, hold the night) starter, and nothing in its loop uses audio-probe."
+        "reason": "Audio mix: The survival slice ships silent; ARK-style ambience and gather sounds come with an audio pass."
       },
       "cover-field": {
         "kind": "not-applicable",
-        "reason": "Fernwild has no cover yet: it is a camp survival (gather by day, hold the night) starter, and nothing in its loop uses cover-field."
+        "reason": "Fernwild has no gunfight cover: combat is melee and tranq shots at dinos in the open."
       },
       "cover-points-from-solids": {
         "kind": "not-applicable",
-        "reason": "Fernwild has no cover yet: it is a camp survival (gather by day, hold the night) starter, and nothing in its loop uses cover-points-from-solids."
+        "reason": "No cover shooting in an ARK survival game; nothing derives cover points from solids."
       },
       "cover-points-near": {
         "kind": "not-applicable",
-        "reason": "Fernwild has no cover yet: it is a camp survival (gather by day, hold the night) starter, and nothing in its loop uses cover-points-near."
+        "reason": "No cover shooting in an ARK survival game; nothing looks up nearby cover."
       },
       "cover-score": {
         "kind": "not-applicable",
-        "reason": "Fernwild has no cover yet: it is a camp survival (gather by day, hold the night) starter, and nothing in its loop uses cover-score."
+        "reason": "No cover shooting in an ARK survival game; cover is never scored."
       },
       "cover-select": {
         "kind": "not-applicable",
-        "reason": "Fernwild has no cover yet: it is a camp survival (gather by day, hold the night) starter, and nothing in its loop uses cover-select."
+        "reason": "No cover shooting in an ARK survival game; nobody picks cover."
       },
       "damage-runtime": {
         "kind": "not-applicable",
-        "reason": "Fernwild has no damage table yet: it is a camp survival (gather by day, hold the night) starter, and nothing in its loop uses damage-runtime."
+        "reason": "Only the survivor takes damage (starvation, heat, cold) through vitals; creature combat and its damage table land with the dinos."
       },
       "damage-target-unknown": {
         "kind": "not-applicable",
-        "reason": "Fernwild has no damage table yet: it is a camp survival (gather by day, hold the night) starter, and nothing in its loop uses damage-target-unknown."
+        "reason": "No damage table in the survival slice; fists and tools only gather, they hit nothing that bleeds yet."
       },
       "equipment-slot-inventory": {
         "kind": "not-applicable",
-        "reason": "Fernwild has no equipment slots yet: it is a camp survival (gather by day, hold the night) starter, and nothing in its loop uses equipment-slot-inventory."
+        "reason": "Equipment slots: Cloth armor is craftable but worn armor slots come with the armor pass; the slice uses inventory and hotbar only."
       },
       "game-save": {
         "kind": "not-applicable",
-        "reason": "Fernwild has no save document yet: it is a camp survival (gather by day, hold the night) starter, and nothing in its loop uses game-save."
+        "reason": "Progress saves through the survivor system's snapshot module and the shell's manual save; no separate save document yet."
       },
       "game-save-digest": {
         "kind": "not-applicable",
-        "reason": "Fernwild has no save document yet: it is a camp survival (gather by day, hold the night) starter, and nothing in its loop uses game-save-digest."
+        "reason": "The survivor snapshot module is the whole save in this slice; there is no save document to digest."
       },
       "loan-schedule": {
         "kind": "not-applicable",
-        "reason": "Fernwild has no loans yet: it is a camp survival (gather by day, hold the night) starter, and nothing in its loop uses loan-schedule."
+        "reason": "ARK has no banks or loans; nothing is borrowed on the island."
       },
       "loans": {
         "kind": "not-applicable",
-        "reason": "Fernwild has no loans yet: it is a camp survival (gather by day, hold the night) starter, and nothing in its loop uses loans."
+        "reason": "ARK has no banks or loans; nothing is borrowed on the island."
       },
       "loot-comparison": {
         "kind": "not-applicable",
-        "reason": "Fernwild has no loot rolling yet: it is a camp survival (gather by day, hold the night) starter, and nothing in its loop uses loot-comparison."
+        "reason": "Loot rolling: No rolled gear with stats yet; supply drops and their loot tables come with the late-game PR."
       },
       "loot-generation": {
         "kind": "not-applicable",
-        "reason": "Fernwild has no loot rolling yet: it is a camp survival (gather by day, hold the night) starter, and nothing in its loop uses loot-generation."
+        "reason": "No loot rolling yet; resource yields come from fixed harvest ranges, drops arrive later."
       },
       "loot-roller": {
         "kind": "not-applicable",
-        "reason": "Fernwild has no loot rolling yet: it is a camp survival (gather by day, hold the night) starter, and nothing in its loop uses loot-roller."
+        "reason": "Loot rolling: Gathering yields fixed ARK ranges per node, not loot rolls; supply drops come later."
       },
       "loot-score": {
         "kind": "not-applicable",
-        "reason": "Fernwild has no loot rolling yet: it is a camp survival (gather by day, hold the night) starter, and nothing in its loop uses loot-score."
+        "reason": "Loot rolling: No rolled items to score in the survival slice."
       },
       "loot-validation": {
         "kind": "not-applicable",
-        "reason": "Fernwild has no loot rolling yet: it is a camp survival (gather by day, hold the night) starter, and nothing in its loop uses loot-validation."
+        "reason": "Loot rolling: No loot tables exist yet to validate; supply drops add them."
       },
       "mission-events": {
         "kind": "not-applicable",
-        "reason": "Fernwild has no mission runtime yet: it is a camp survival (gather by day, hold the night) starter, and nothing in its loop uses mission-events."
+        "reason": "Mission runtime: ARK is sandbox survival with no missions; progression is levels and engrams."
       },
       "mission-rewards": {
         "kind": "not-applicable",
-        "reason": "Fernwild has no mission runtime yet: it is a camp survival (gather by day, hold the night) starter, and nothing in its loop uses mission-rewards."
+        "reason": "Mission runtime: ARK is sandbox survival with no missions; rewards are XP and engram points."
       },
       "mission-runtime": {
         "kind": "not-applicable",
-        "reason": "Fernwild has no mission runtime yet: it is a camp survival (gather by day, hold the night) starter, and nothing in its loop uses mission-runtime."
+        "reason": "Mission runtime: ARK is sandbox survival with no mission system."
       },
       "mission-validation": {
         "kind": "not-applicable",
-        "reason": "Fernwild has no mission runtime yet: it is a camp survival (gather by day, hold the night) starter, and nothing in its loop uses mission-validation."
+        "reason": "Mission runtime: ARK is sandbox survival with no missions to validate."
       },
       "nav-crowd": {
         "kind": "not-applicable",
-        "reason": "Fernwild has no navigation yet: it is a camp survival (gather by day, hold the night) starter, and nothing in its loop uses nav-crowd."
+        "reason": "Navigation: No herds or packs yet; dino pathing arrives with the creature PR."
       },
       "nav-runtime": {
         "kind": "not-applicable",
-        "reason": "Fernwild has no navigation yet: it is a camp survival (gather by day, hold the night) starter, and nothing in its loop uses nav-runtime."
+        "reason": "The survivor is player-driven and no creatures path yet; navigation comes with the dinos."
       },
       "navmesh-from-scene": {
         "kind": "not-applicable",
-        "reason": "Fernwild has no navigation yet: it is a camp survival (gather by day, hold the night) starter, and nothing in its loop uses navmesh-from-scene."
+        "reason": "Navigation: No pathing actors in the survival slice, so no navmesh is baked from the island."
       },
       "near-agents": {
         "kind": "not-applicable",
-        "reason": "Fernwild has no agent loop yet: it is a camp survival (gather by day, hold the night) starter, and nothing in its loop uses near-agents."
+        "reason": "Agent loop: No creatures yet, so nothing asks which agents are near the survivor; dinos arrive with the creature PR."
       },
       "offscreen-world": {
         "kind": "not-applicable",
-        "reason": "Fernwild has no offscreen simulation yet: it is a camp survival (gather by day, hold the night) starter, and nothing in its loop uses offscreen-world."
+        "reason": "Offscreen simulation: The island is one live scene; nothing simulates offscreen in the survival slice."
       },
       "perception-service": {
         "kind": "not-applicable",
-        "reason": "Fernwild has no perception yet: it is a camp survival (gather by day, hold the night) starter, and nothing in its loop uses perception-service."
+        "reason": "No creature senses yet; dino aggro and flee perception come with the creature PR."
       },
       "police-response": {
         "kind": "not-applicable",
-        "reason": "Fernwild has no police heat yet: it is a camp survival (gather by day, hold the night) starter, and nothing in its loop uses police-response."
+        "reason": "Police heat: A prehistoric island has no police or wanted level."
       },
       "police-roads": {
         "kind": "not-applicable",
-        "reason": "Fernwild has no police heat yet: it is a camp survival (gather by day, hold the night) starter, and nothing in its loop uses police-roads."
+        "reason": "Police heat: A prehistoric island has no roads or police patrols."
       },
       "ride-appeal": {
         "kind": "not-applicable",
-        "reason": "Fernwild has no ride simulation yet: it is a camp survival (gather by day, hold the night) starter, and nothing in its loop uses ride-appeal."
+        "reason": "Ride simulation: Riding is dino saddles, not theme-park rides; no ride appeal model applies."
       },
       "ride-choice": {
         "kind": "not-applicable",
-        "reason": "Fernwild has no ride simulation yet: it is a camp survival (gather by day, hold the night) starter, and nothing in its loop uses ride-choice."
+        "reason": "Ride simulation: No theme-park rides on the island; dino riding uses possession."
       },
       "ride-sim": {
         "kind": "not-applicable",
-        "reason": "Fernwild has no ride simulation yet: it is a camp survival (gather by day, hold the night) starter, and nothing in its loop uses ride-sim."
+        "reason": "No theme-park ride simulation; dino riding uses possession with saddles."
       },
       "rvo-avoidance": {
         "kind": "not-applicable",
-        "reason": "Fernwild has no crowd steering yet: it is a camp survival (gather by day, hold the night) starter, and nothing in its loop uses rvo-avoidance."
+        "reason": "Crowd steering: No crowds to steer in the survival slice; dinos come later."
       },
       "session-loop": {
         "kind": "not-applicable",
-        "reason": "Fernwild has no run yet: it is a camp survival (gather by day, hold the night) starter, and nothing in its loop uses session-loop."
+        "reason": "ARK is an endless sandbox with no rounds or runs; the island persists."
       },
       "skill-tree": {
         "kind": "not-applicable",
-        "reason": "Fernwild has no skill tree yet: it is a camp survival (gather by day, hold the night) starter, and nothing in its loop uses skill-tree."
+        "reason": "ARK progression is the engram list unlocked by level and engram points, built on unlock points, not a skill tree."
       },
       "squad-combat": {
         "kind": "not-applicable",
-        "reason": "Fernwild has no squad combat yet: it is a camp survival (gather by day, hold the night) starter, and nothing in its loop uses squad-combat."
+        "reason": "Squad combat: No squads or teams fight on the island; tamed dino orders come with the creature PR."
       },
       "status-runtime": {
         "kind": "not-applicable",
-        "reason": "Fernwild has no status effects yet: it is a camp survival (gather by day, hold the night) starter, and nothing in its loop uses status-runtime."
+        "reason": "Status effects: Hungry, thirsty, hot and cold are vitals flags in the survival system; buff and debuff effects come with narcotics on dinos."
       },
       "status-unknown": {
         "kind": "not-applicable",
-        "reason": "Fernwild has no status effects yet: it is a camp survival (gather by day, hold the night) starter, and nothing in its loop uses status-unknown."
+        "reason": "Status effects: Status in the slice is vitals flags only; no status table exists to reference unknown ids."
       },
       "supply-demand-pricing": {
         "kind": "not-applicable",
-        "reason": "Fernwild has no market pricing yet: it is a camp survival (gather by day, hold the night) starter, and nothing in its loop uses supply-demand-pricing."
+        "reason": "Market pricing: No traders or market on the island; nothing is bought or sold."
       },
       "traffic": {
         "kind": "not-applicable",
-        "reason": "Fernwild has no traffic yet: it is a camp survival (gather by day, hold the night) starter, and nothing in its loop uses traffic."
+        "reason": "A prehistoric island has no road traffic."
       },
       "transaction-ledger": {
         "kind": "not-applicable",
-        "reason": "Fernwild has no transaction ledger yet: it is a camp survival (gather by day, hold the night) starter, and nothing in its loop uses transaction-ledger."
-      },
-      "turf-war": {
-        "kind": "not-applicable",
-        "reason": "Turf war is not part of fernwild: the survivor gathers and builds alone, and no side claims the woods."
+        "reason": "Transaction ledger: No currency in ARK; resources move only between inventories."
       },
       "utility-brain": {
         "kind": "not-applicable",
-        "reason": "Fernwild has no agent loop yet: it is a camp survival (gather by day, hold the night) starter, and nothing in its loop uses utility-brain."
+        "reason": "Agent loop: Dino behaviour (flee, aggro, graze) lands with the creature PR; the survival slice has no thinking actors."
       },
       "vehicle-damage": {
         "kind": "not-applicable",
-        "reason": "Fernwild has no vehicle damage yet: it is a camp survival (gather by day, hold the night) starter, and nothing in its loop uses vehicle-damage."
+        "reason": "Vehicle damage: No vehicles on the island; dinos are mounts with health, not vehicles."
       },
       "visitor-population": {
         "kind": "not-applicable",
-        "reason": "Fernwild has no park population yet: it is a camp survival (gather by day, hold the night) starter, and nothing in its loop uses visitor-population."
+        "reason": "Park population: No park visitors; the island's population is dinosaurs."
       },
       "wait-queue": {
         "kind": "not-applicable",
-        "reason": "Fernwild has no queue yet: it is a camp survival (gather by day, hold the night) starter, and nothing in its loop uses wait-queue."
+        "reason": "No queues of people; the crafting queue is the survivor's own work queue."
       },
       "weapon-system": {
         "kind": "not-applicable",
-        "reason": "Fernwild has no weapon runtime yet: it is a camp survival (gather by day, hold the night) starter, and nothing in its loop uses weapon-system."
+        "reason": "Weapon runtime: Fists and tools gather resources; spears, slingshots and tranq weapons join the creature PR."
       }
     }
   }
