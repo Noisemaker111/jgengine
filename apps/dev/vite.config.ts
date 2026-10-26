@@ -4,12 +4,11 @@ import { fileURLToPath } from "node:url";
 
 import tailwindcss from "@tailwindcss/vite";
 import react from "@vitejs/plugin-react";
-import { defineConfig, searchForWorkspaceRoot, type ProxyOptions } from "vite";
+import { defineConfig, searchForWorkspaceRoot, type Plugin, type ProxyOptions } from "vite";
 
 import { parseDevProxyTable } from "../../packages/core/src/data/devProxy";
 import { tunableDiscoveryPlugin } from "../../packages/core/src/devtools/transformTunables";
 import { devServerMarkerPlugin } from "../../scripts/devServerMarker";
-import { devSavePlugin, gamesSrcDir } from "../../packages/node/src/devSavePlugin";
 import { devReportPlugin } from "./devReportPlugin";
 import { gamePublicPlugin } from "./gamePublicPlugin";
 
@@ -18,6 +17,24 @@ const game = (name: string) => fileURLToPath(new URL(`../../games/${name}/src`, 
 const gamesDir = fileURLToPath(new URL("../../games", import.meta.url));
 const studios = fileURLToPath(new URL("../../examples/studios/src", import.meta.url));
 const registryUi = fileURLToPath(new URL("../../registry/jgengine", import.meta.url));
+
+const devSaveModule = fileURLToPath(new URL("../../packages/node/src/devSavePlugin.ts", import.meta.url));
+
+/**
+ * The F2 save path (`@jgengine/node`'s `devSavePlugin`). It imports `@jgengine/core` by package name,
+ * which only the running server's aliases resolve to source, so the server loads it rather than this
+ * config file importing it.
+ */
+function devSave(servedDir: string | undefined): Plugin {
+  return {
+    name: "jgengine-dev-save-loader",
+    apply: "serve",
+    async configureServer(server) {
+      const save = (await server.ssrLoadModule(devSaveModule)) as typeof import("../../packages/node/src/devSavePlugin");
+      save.devSavePlugin(save.gamesSrcDir(gamesDir, servedDir)).configureServer(server);
+    },
+  };
+}
 
 // Every workspace package resolves to its source, so the runner never needs a build.
 const packagesDir = fileURLToPath(new URL("../../packages", import.meta.url));
@@ -67,7 +84,7 @@ const devProxy: Record<string, string | ProxyOptions> = Object.fromEntries(
 );
 
 export default defineConfig({
-  plugins: [devServerMarkerPlugin({ kind: "runner" }), tunableDiscoveryPlugin(), devSavePlugin(gamesSrcDir(gamesDir, servedGameDir)), devReportPlugin(), gamePublicPlugin(servedGameDir, gamesDir, fileURLToPath(new URL("./public", import.meta.url))), react(), tailwindcss()],
+  plugins: [devServerMarkerPlugin({ kind: "runner" }), tunableDiscoveryPlugin(), devSave(servedGameDir), devReportPlugin(), gamePublicPlugin(servedGameDir, gamesDir, fileURLToPath(new URL("./public", import.meta.url))), react(), tailwindcss()],
   clearScreen: false,
   build: {
     target: "es2022",
