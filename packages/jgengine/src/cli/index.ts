@@ -15,7 +15,6 @@ import { cliVersion, findUp, pickPackageManager, readPackageJson, sdkVersion } f
 import { runSkills } from "../skills";
 import { runningCli, staleCliWarnings } from "../staleCli";
 import { runSync } from "../sync";
-import { runUpgrade } from "../upgrade";
 import { editorScaffold } from "../templates";
 
 const ENGINE_PACKAGES = ["core", "react", "shell", "ws", "sql", "convex", "node", "assets", "editor"];
@@ -42,8 +41,9 @@ usage: jgengine <command> [...args]
                         --template 3d|2d|builder (default 3d); writes jgengine.json, the game's config
                         --from-scene <folder> promotes an authored editor.scene.json into the game
                         --player/--ground/--scene pick the starting look · create --help for all flags
-  sync [dir...]         make a game match its jgengine.json and this engine: @jgengine deps, its
-                        template's shared files, capability answers (monorepo) · --check changes nothing
+  sync [dir...]         bring a game, or a workspace root and its games, to this engine and to each
+                        game's jgengine.json: @jgengine deps and catalogs, template files, capability
+                        answers (monorepo); prints the release notes crossed · --check changes nothing
   desktop [dir]         ship a Windows NSIS installer (local project or --url https://…)
                         [--url] [--name] [--id] [--version] [--icon] [--out] [--dry-run]
                         [--allow-remote] (required for --url hosts outside jgengine.com)
@@ -67,9 +67,6 @@ usage: jgengine <command> [...args]
                        --workspace [--json]: root + declared owners' installed SDK identities only
   assets [...]          @jgengine/assets CLI: list, search, pull CC0 packs
   editor-mcp [...]      scene editor agent bridge (document RPC / localhost server)
-  upgrade [dir]         diff installed @jgengine/* against the latest release and print every
-                        Migrate step and Adopt-worthy addition in between [--json] [--to x.y.z]
-                        --plan previews a root catalog update; --apply writes it without installing
   versions              CLI + installed @jgengine/* versions
   help                  this map
 `;
@@ -229,9 +226,6 @@ switch (command) {
     break;
   case "drive":
     process.exit(runHarness("drive", rest));
-    break;
-  case "upgrade":
-    process.exit(await runUpgrade(rest));
     break;
   case "versions":
     process.exit(runVersions());

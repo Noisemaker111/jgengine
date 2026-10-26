@@ -1,5 +1,6 @@
 import { describe, expect, test } from "bun:test";
 
+import { browserLibMjs, driveMjs, shootMjs } from "./templates/harnessScripts";
 import { isAllowedGameSrcEntry } from "./gameShape";
 import {
   displayNameFromId,
@@ -32,9 +33,6 @@ const THIN_FILES = [
   "package.json",
   "tsconfig.json",
   ".gitignore",
-  "scripts/browser.mjs",
-  "scripts/shoot.mjs",
-  "scripts/drive.mjs",
   "AGENTS.md",
   "src/art-direction.md",
   "src/index.css",
@@ -136,28 +134,35 @@ describe("gameTemplate canonical shape (mirrors gameShape.ts)", () => {
       }
     });
 
-    test(`${variant}: ships a dependency-free WebGL screenshot script wired to a shoot command`, () => {
+    test(`${variant}: shoot and drive run the jgengine CLI's own harness; the game carries no copy`, () => {
       const files = render(variant);
       const pkg = JSON.parse(fileOf(files, "package.json")) as { scripts?: Record<string, string> };
-      expect(pkg.scripts?.shoot).toBe("node scripts/shoot.mjs");
-      const lib = fileOf(files, "scripts/browser.mjs");
+      expect(pkg.scripts?.shoot).toBe("jgengine shoot");
+      expect(pkg.scripts?.drive).toBe("jgengine drive");
+      expect(files.some((file) => file.path.startsWith("scripts/"))).toBe(false);
+      // shots/ output is ignored so generated screenshots are never committed.
+      expect(fileOf(files, ".gitignore")).toContain("shots/");
+    });
+  }
+
+  describe("the shoot/drive harness", () => {
+    test("a dependency-free WebGL screenshot harness", () => {
+      const lib = browserLibMjs;
       // No npm deps — only node: builtins and web globals.
       expect(lib).not.toContain("playwright");
       expect(lib).not.toContain("puppeteer");
       // The two things that make WebGL capture reliable: a forced viewport and an honest-frame wait.
-      expect(fileOf(files, "scripts/shoot.mjs")).toContain("await emulateDevice(session, profile, width, height)");
+      expect(shootMjs).toContain("await emulateDevice(session, profile, width, height)");
       expect(lib).toContain("Emulation.setDeviceMetricsOverride");
       expect(lib).toContain("Emulation.setTouchEmulationEnabled");
       expect(lib).toContain("Page.captureScreenshot");
-      // shots/ output is ignored so generated screenshots are never committed.
-      expect(fileOf(files, ".gitignore")).toContain("shots/");
+      // Windows refuses to spawn vite's .cmd shim without a shell; the harness runs vite's JS entry with node.
+      expect(lib).toContain('"bin", "vite.js"');
+      expect(lib).not.toContain("vite.cmd");
     });
 
-    test(`${variant}: ships a dependency-free drive script wired to a drive command`, () => {
-      const files = render(variant);
-      const pkg = JSON.parse(fileOf(files, "package.json")) as { scripts?: Record<string, string> };
-      expect(pkg.scripts?.drive).toBe("node scripts/drive.mjs");
-      const script = fileOf(files, "scripts/drive.mjs");
+    test("a dependency-free drive harness", () => {
+      const script = driveMjs;
       // No npm deps — clicks/keys via raw CDP, RPC via the page's agent bridge.
       expect(script).not.toContain("playwright");
       expect(script).not.toContain("puppeteer");
@@ -169,7 +174,7 @@ describe("gameTemplate canonical shape (mirrors gameShape.ts)", () => {
       expect(script).toContain("--playtest");
       expect(script).toContain("softlock");
     });
-  }
+  });
 
   test("in-repo: tsconfig paths match the exact map doctor requires", () => {
     const tsconfig = JSON.parse(fileOf(render("in-repo"), "tsconfig.json")) as {

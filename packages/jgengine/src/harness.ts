@@ -1,24 +1,19 @@
 import { spawnSync } from "node:child_process";
 import { createHash } from "node:crypto";
-import { existsSync, mkdtempSync, readFileSync, writeFileSync } from "node:fs";
+import { mkdtempSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 
 import { cliVersion, findUp, readPackageJson } from "./pkg";
-import { browserLibMjs, driveMjs, shootMjs } from "./templates/gameFiles";
+import { browserLibMjs, driveMjs, shootMjs } from "./templates/harnessScripts";
 
 /**
  * `jgengine shoot` / `jgengine drive` — the browser capture + play-driving rungs
- * as first-class CLI verbs, so a standalone project (scaffolded with
- * `npx jgengine create`, outside this monorepo) can screenshot and playtest its
- * own game with no monorepo-only tooling. This is the CLI companion to the
- * `scripts/shoot.mjs` / `scripts/drive.mjs` a fresh scaffold ships: run inside a
- * project that already has those scripts and the verb delegates to them (parity
- * with `bun run shoot`); run in one that lacks them (an older scaffold, or one
- * whose scripts were removed) and it materializes the same dependency-free
- * harness — the very source the scaffold embeds — and drives the project's dev
- * server. Chrome/Chromium is the only capture engine; no Playwright, no npm deps
- * travel with the published CLI.
+ * as CLI verbs, so a game project made with `npx jgengine create` can screenshot
+ * and playtest itself with no monorepo tooling. The game carries no copy: the CLI
+ * writes its dependency-free harness to a temp folder and runs it against the
+ * project's dev server, so a newer CLI brings a newer harness. Chrome/Chromium is
+ * the only capture engine; no Playwright, no npm deps travel with the CLI.
  */
 export type HarnessKind = "shoot" | "drive";
 
@@ -38,12 +33,7 @@ export function findProjectRoot(startDir: string): string | null {
   });
 }
 
-/**
- * Write the dependency-free harness (shared `browser.mjs` + the `shoot`/`drive`
- * CLI) into a fresh temp dir and return that dir. Used when the project has no
- * `scripts/<kind>.mjs` of its own — the bundled copy is byte-identical to what a
- * scaffold embeds, so behavior matches `bun run <kind>`.
- */
+/** Write the dependency-free harness (shared `browser.mjs` + the `shoot`/`drive` CLI) into a fresh temp dir and return that dir. */
 export function materializeHarness(kind: HarnessKind): string {
   const dir = mkdtempSync(join(tmpdir(), `jgengine-${kind}-`));
   writeFileSync(join(dir, "browser.mjs"), browserLibMjs);
@@ -56,14 +46,11 @@ export function harnessRevision(kind: HarnessKind): string {
   return createHash("sha256").update(browserLibMjs).update(HARNESS_SOURCE[kind]).digest("hex").slice(0, 8);
 }
 
-export type HarnessPlan =
-  | { ok: true; script: string; cwd: string; source: "project" | "bundled" }
-  | { ok: false; error: string };
+export type HarnessPlan = { ok: true; script: string; cwd: string } | { ok: false; error: string };
 
 /**
- * Decide how to run the `kind` harness from `cwd`: delegate to the project's own
- * `scripts/<kind>.mjs` when present, otherwise materialize the bundled harness.
- * `allowNoProject` lets `--help` render without a game project on disk.
+ * Decide how to run the `kind` harness from `cwd`: the bundled harness, run in the
+ * nearest game project. `allowNoProject` lets `--help` render without one on disk.
  */
 export function planHarness(
   kind: HarnessKind,
@@ -80,14 +67,8 @@ export function planHarness(
         '  scaffold one first:  npx jgengine create "My Game"',
     };
   }
-  if (root !== null) {
-    const projectScript = join(root, "scripts", `${kind}.mjs`);
-    if (existsSync(projectScript)) {
-      return { ok: true, script: projectScript, cwd: root, source: "project" };
-    }
-  }
   const dir = materializeHarness(kind);
-  return { ok: true, script: join(dir, `${kind}.mjs`), cwd: root ?? cwd, source: "bundled" };
+  return { ok: true, script: join(dir, `${kind}.mjs`), cwd: root ?? cwd };
 }
 
 /** @internal */
@@ -99,17 +80,7 @@ export function runHarness(kind: HarnessKind, argv: string[], cwd: string = proc
     return 1;
   }
   if (!wantsHelp) {
-    const where =
-      plan.source === "project"
-        ? `using this project's scripts/${kind}.mjs`
-        : `using the bundled ${kind} harness (jgengine ${cliVersion()}, harness ${harnessRevision(kind)})`;
-    console.error(`jgengine ${kind}: ${where} — cwd ${plan.cwd}`);
-    if (plan.source === "project" && readFileSync(plan.script, "utf8") !== HARNESS_SOURCE[kind]) {
-      console.error(
-        `jgengine ${kind}: warning — scripts/${kind}.mjs differs from this CLI's harness ${harnessRevision(kind)}; ` +
-          `if it is an old scaffold copy, delete scripts/${kind}.mjs and scripts/browser.mjs to use the bundled one`,
-      );
-    }
+    console.error(`jgengine ${kind}: using the bundled ${kind} harness (jgengine ${cliVersion()}, harness ${harnessRevision(kind)}) — cwd ${plan.cwd}`);
   }
   const result = spawnSync(process.execPath, [plan.script, ...argv], {
     cwd: plan.cwd,

@@ -2,7 +2,7 @@ import { describe, expect, test } from "bun:test";
 import { createServer, type Server } from "node:http";
 
 import { BROWSER_LAUNCH_BLOCK, LAUNCH_BLOCK_END, LAUNCH_BLOCK_START } from "./browserLaunch";
-import { browserLibMjs, driveMjs, shootMjs } from "./gameFiles";
+import { browserLibMjs, driveMjs, shootMjs } from "./harnessScripts";
 
 /** The scaffold's own `scripts/browser.mjs`, loaded exactly as a generated project runs it. */
 async function scaffoldBrowser(): Promise<Record<string, any>> {

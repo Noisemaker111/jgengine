@@ -1,6 +1,6 @@
 import { randomUUID } from "node:crypto";
 import { existsSync, readFileSync, renameSync, rmSync, statSync, writeFileSync } from "node:fs";
-import { dirname, join, resolve } from "node:path";
+import { join, resolve } from "node:path";
 import { LOCKSTEP_SDK_PACKAGES } from "./compatibility";
 
 interface CatalogEntry {
@@ -10,8 +10,8 @@ interface CatalogEntry {
   path: string[];
 }
 
-/** @internal */
-export interface UpgradeCatalog {
+/** A workspace root's `@jgengine` catalog entries, read for `jgengine sync`. @internal */
+export interface WorkspaceCatalog {
   root: string;
   file: string;
   before: string;
@@ -20,7 +20,7 @@ export interface UpgradeCatalog {
 }
 
 /** @internal */
-export interface CatalogUpgradePlan {
+export interface CatalogSyncPlan {
   file: string;
   before: string;
   after: string;
@@ -32,10 +32,14 @@ function record(value: unknown): value is Record<string, unknown> {
   return value !== null && typeof value === "object" && !Array.isArray(value);
 }
 
-/** @internal */
-export function loadUpgradeCatalog(projectDir: string): UpgradeCatalog {
-  let root = resolve(projectDir);
-  for (;;) {
+/**
+ * The `@jgengine` entries in a workspace root's Bun catalogs, or null when `rootDir` is no
+ * workspace root or its catalogs pin no SDK package.
+ * @internal
+ */
+export function readWorkspaceCatalog(rootDir: string): WorkspaceCatalog | null {
+  const root = resolve(rootDir);
+  {
     const file = join(root, "package.json");
     if (existsSync(file)) {
       const before = readFileSync(file, "utf8");
@@ -43,11 +47,9 @@ export function loadUpgradeCatalog(projectDir: string): UpgradeCatalog {
       try { manifest = JSON.parse(before); }
       catch { throw new Error(`${file}: invalid JSON`); }
       if (!record(manifest)) throw new Error(`${file}: package.json must be an object`);
-      if (manifest.workspaces !== undefined) {
+      // A plain workspaces array has no catalogs: each game pins its own SDK versions.
+      if (record(manifest.workspaces)) {
         const workspaces = manifest.workspaces;
-        if (!record(workspaces) || !Array.isArray(workspaces.packages) || !workspaces.packages.every(value => typeof value === "string")) {
-          throw new Error(`${file}: catalog authoring requires workspaces.packages and object catalogs`);
-        }
         const entries: CatalogEntry[] = [];
         const collect = (catalog: unknown, path: string[]) => {
           if (!record(catalog)) throw new Error(`${file}: malformed ${path.join(".")}`);
@@ -65,15 +67,13 @@ export function loadUpgradeCatalog(projectDir: string): UpgradeCatalog {
           if (!record(workspaces.catalogs)) throw new Error(`${file}: malformed workspaces.catalogs`);
           for (const [name, catalog] of Object.entries(workspaces.catalogs)) collect(catalog, ["workspaces", "catalogs", name]);
         }
-        if (entries.length === 0) throw new Error(`${file}: no lockstep SDK entries in workspace catalogs`);
+        if (entries.length === 0) return null;
         if (manifest.overrides !== undefined && !record(manifest.overrides)) throw new Error(`${file}: overrides must be an object`);
         return { root, file, before, entries, overrides: manifest.overrides ?? {} };
       }
     }
-    const parent = dirname(root);
-    if (parent === root) throw new Error("catalog authoring requires a root workspace catalog; direct game pins are not rewritten");
-    root = parent;
   }
+  return null;
 }
 
 function stringLocations(text: string): Map<string, { start: number; end: number }> {
@@ -109,12 +109,12 @@ function stringLocations(text: string): Map<string, { start: number; end: number
 }
 
 /** @internal */
-export function planCatalogUpgrade(catalog: UpgradeCatalog, target: string): CatalogUpgradePlan {
+export function planCatalogSync(catalog: WorkspaceCatalog, target: string): CatalogSyncPlan {
   if (!/^\d+\.\d+\.\d+$/.test(target)) throw new Error("catalog target must be a stable x.y.z version");
   const locations = stringLocations(catalog.before);
   const edits: { start: number; end: number; value: string }[] = [];
-  const changes: CatalogUpgradePlan["changes"] = [];
-  const preserved: CatalogUpgradePlan["preserved"] = [];
+  const changes: CatalogSyncPlan["changes"] = [];
+  const preserved: CatalogSyncPlan["preserved"] = [];
   for (const entry of catalog.entries) {
     if (entry.name === "@jgengine/editor" && entry.name in catalog.overrides) {
       preserved.push({ name: entry.name, range: entry.range, catalogSource: entry.catalogSource, reason: "root editor override remains unchanged" });
@@ -129,7 +129,7 @@ export function planCatalogUpgrade(catalog: UpgradeCatalog, target: string): Cat
     const current = entry.range.replace(/^[\^~]/, "").split(".").map(Number);
     const next = target.split(".").map(Number);
     const difference = current.map((value, index) => value - next[index]).find(value => value !== 0) ?? 0;
-    if (difference > 0) throw new Error(`${entry.name}: ${entry.range} is newer than published target ${target}; refusing a downgrade`);
+    if (difference > 0) throw new Error(`${entry.name}: ${entry.range} is newer than published target ${target}; refusing a downgrade; run a newer jgengine`);
     const prefix = /^[\^~]/.exec(entry.range)?.[0] ?? "";
     const to = prefix + target;
     if (to === entry.range) continue;
@@ -144,13 +144,13 @@ export function planCatalogUpgrade(catalog: UpgradeCatalog, target: string): Cat
 }
 
 /** @internal */
-export function applyCatalogUpgrade(plan: CatalogUpgradePlan): void {
+export function applyCatalogSync(plan: CatalogSyncPlan): void {
   const unchanged = () => {
-    if (readFileSync(plan.file, "utf8") !== plan.before) throw new Error(`${plan.file}: changed while planning; rerun upgrade to review the current file`);
+    if (readFileSync(plan.file, "utf8") !== plan.before) throw new Error(`${plan.file}: changed while planning; rerun jgengine sync`);
   };
   unchanged();
   if (plan.after === plan.before) return;
-  const temporary = `${plan.file}.jgengine-upgrade-${randomUUID()}.tmp`;
+  const temporary = `${plan.file}.jgengine-sync-${randomUUID()}.tmp`;
   try {
     writeFileSync(temporary, plan.after, { flag: "wx", mode: statSync(plan.file).mode });
     unchanged();

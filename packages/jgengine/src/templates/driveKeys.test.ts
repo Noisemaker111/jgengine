@@ -1,6 +1,6 @@
 import { expect, test } from "bun:test";
 
-import { driveMjs } from "./gameFiles";
+import { driveMjs } from "./harnessScripts";
 import { holdDriveInput, type DriveInputDeps } from "./driveSteps";
 import { focusGameSurface, gameSurfaceCenter, holdComplete, mouseButtonForCode } from "./gameSurfaceFocus";
 

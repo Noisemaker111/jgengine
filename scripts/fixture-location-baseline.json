@@ -22,8 +22,6 @@
   "packages/jgengine/src/sharedBuilder.test.ts",
   "packages/jgengine/src/skills.test.ts",
   "packages/jgengine/src/staleCli.test.ts",
-  "packages/jgengine/src/upgrade.test.ts",
-  "packages/jgengine/src/upgradeCatalog.test.ts",
   "packages/jgengine/src/workspaceDoctor.test.ts",
   "packages/node/src/editorHostPlugin.test.ts",
   "packages/node/src/fileWorldStore.test.ts",

@@ -1474,6 +1474,7 @@
     "./projectConfig",
     "./prototypeLook",
     "./recipes/index",
+    "./releaseNotes",
     "./skills",
     "./staleCli",
     "./sync",
@@ -1487,12 +1488,12 @@
     "./templates/editorWorkspace",
     "./templates/gameFiles",
     "./templates/gameSurfaceFocus",
+    "./templates/harnessScripts",
     "./templates/names",
     "./templates/sharedBuilder",
     "./templates/starterTerrain",
     "./templates/types",
-    "./upgrade",
-    "./upgradeCatalog",
+    "./workspaceCatalog",
     "./workspaceDoctor"
   ]
 }
