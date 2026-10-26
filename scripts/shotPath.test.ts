@@ -3,7 +3,7 @@ import { join, resolve } from "node:path";
 
 import { driveShotPath, shootOutPath, shotsDir } from "./shotPath";
 
-const dir = shotsDir(resolve("/repo"));
+const dir = shotsDir(resolve(import.meta.dir, "fixture-repo"));
 
 test("a drive shot lands in shots/<game>/, never a game's docs folder", () => {
   expect(driveShotPath(dir, "harbor-heat", "before")).toBe(join(dir, "harbor-heat", "before.png"));
