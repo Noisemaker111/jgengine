@@ -129,13 +129,15 @@ export function createScatterHarvest(config: ScatterHarvestConfig): ScatterHarve
       for (let iz = cz - span; iz <= cz + span; iz += 1) {
         for (const placement of cells.get(cellKey(ix, iz)) ?? []) {
           const kind = kinds[placement.item];
-          if (kind === undefined || (strike.accepts !== undefined && !strike.accepts(placement.item)) || field.isDepleted(placement.id)) continue;
+          if (kind === undefined) continue;
+          // Geometry first: most of a cell is out of reach, and that test is cheaper than the filters.
           const dx = placement.x - strike.x;
           const dz = placement.z - strike.z;
           const distance = Math.hypot(dx, dz);
           const radius = (kind.radius ?? 0.5) * (placement.scale ?? 1);
           if (distance - radius > strike.reach) continue;
           if (distance > radius && angleBetween(Math.atan2(dx, dz), strike.yaw) > cone) continue;
+          if ((strike.accepts !== undefined && !strike.accepts(placement.item)) || field.isDepleted(placement.id)) continue;
           if (distance < bestDistance) {
             best = placement;
             bestDistance = distance;

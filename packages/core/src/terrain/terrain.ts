@@ -1166,7 +1166,7 @@ function outlineSignedDistance(rings: readonly (readonly (readonly [number, numb
       minZ = Math.min(minZ, pz);
       maxZ = Math.max(maxZ, pz);
     }
-    return { ring, closed, normals, index: buildPolylineIndex(closed), minX: minX - reach, maxX: maxX + reach, minZ: minZ - reach, maxZ: maxZ + reach };
+    return { ring, closed, normals, index: buildPolylineIndex(closed, reach), minX: minX - reach, maxX: maxX + reach, minZ: minZ - reach, maxZ: maxZ + reach };
   });
   const minX = Math.min(...shores.map((shore) => shore.minX));
   const minZ = Math.min(...shores.map((shore) => shore.minZ));

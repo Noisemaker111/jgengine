@@ -1,0 +1,9 @@
+Fernwild's coastline is now traced from ARK's topographic map of The Island instead of drawn by hand: the main island's bays, inlets and southern lobe, plus Southwest Island, the Dead Island, Herbivore Island and the smaller islets (11 outlines, 808 points). Fourteen spawn zones, two peaks and the north-east cave that the new shore left in the sea were moved onto the nearest land. The beach spawn moved 28 m up the south beach, facing a tree it can punch, with a small cluster of stones authored beside it so a stone is always in reach. The taming proof now steps right until it is 3 m clear of that tree and checks nothing strikeable is in front before the raptor comes. A denser coast made ground sampling by the beach slow, so the shore lookup was made cheaper: a nearest-segment search now starts with a small box and widens only while nothing is close enough, a coast sizes its search grid for the 140 m it always asks within, and the grid's few-dozen-id result lists are sorted by insertion instead of a comparator. Harvest aiming tests distance before its item filters.
+
+Engine seam: packages/core/src/world/polylineIndex.ts (search box grows on demand; optional usual reach sizes the grid), packages/core/src/terrain/terrain.ts (coast index built for its reach), packages/core/src/spatial/spatialBuckets.ts (insertion sort for short results), packages/core/src/harvest/scatterHarvest.ts (geometry before filters)
+
+Prevention: polyline index test (a query beside the line with a 300 m bound examines only the local segments; fails on the old full-box walk), the existing brute-force comparison test keeps every answer identical to a full scan, and Fernwild's 40-minute dehydration test runs inside its time limit on the new coast.
+
+### Changed
+
+- `buildPolylineIndex(points, reach?)` takes the bound most queries will pass and sizes its grid for it; `nearest` searches outward from the query instead of walking the whole bound, with the same answers.
