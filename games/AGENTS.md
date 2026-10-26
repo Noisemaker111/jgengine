@@ -31,5 +31,5 @@ Reasons are 20+ specific characters, never copied between games. `bun run check 
 
 ## Where the work is defined
 
-A game's loop is its README design checklist ([rules](README.md#design-checklist-and-loop-proofs)); keep its numbers true to the build.
+A game's build order is its `PLAN.md` (root [AGENTS.md](../AGENTS.md#game-changes-improve-the-framework), step 0). Its loop is its README design checklist ([rules](README.md#design-checklist-and-loop-proofs)); keep its numbers true to the build.
 

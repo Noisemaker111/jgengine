@@ -1,16 +1,7 @@
-import { existsSync, readFileSync } from "node:fs";
+import { readFileSync } from "node:fs";
 import { join } from "node:path";
 
-import {
-  findCapabilities,
-  loadCapabilityIndex,
-  loadSkillRecipes,
-  MAX_RESULTS,
-  recipeCapabilities,
-  renderFindResults,
-  resolveSkillsDir,
-  type CapabilityEntry,
-} from "./capabilities";
+import { findCapabilities, loadAllCapabilities, MAX_RESULTS, renderFindResults } from "./capabilities";
 import { engineRoot, listInstalledFiles, listRepoFiles, locate, renderLocations, type CodeFile, type LayerHome } from "./codeMap";
 import { parseTextSearchArgs, searchText } from "./textSearch";
 import { queryTokens } from "./words";
@@ -127,10 +118,7 @@ export async function runFind(argv: string[]): Promise<number> {
   }
   const tokens = queryTokens(query);
   const { homes, source } = codeLocations(tokens);
-  const checkout = engineRoot(process.cwd());
-  const repoSkills = checkout === null ? null : join(checkout, ".claude", "skills");
-  const skillsDir = resolveSkillsDir() ?? (repoSkills !== null && existsSync(repoSkills) ? repoSkills : null);
-  const index: CapabilityEntry[] = skillsDir === null ? [] : [...loadCapabilityIndex(skillsDir), ...loadSkillRecipes(skillsDir), ...recipeCapabilities()];
+  const index = loadAllCapabilities(engineRoot(process.cwd()));
   const { matches, partial } = findCapabilities(index, query);
   const assets = await assetMatches(query);
   if (json) {

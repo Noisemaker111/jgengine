@@ -4,7 +4,7 @@
 
 ## Project purpose
 
-JGengine is built through distinct playable games in `games/`. Reviewing a game exists to improve the shared framework, so one fix reaches every game. Trace a game symptom to its real cause, the engine contract, its adoption or the game's own rules, before fixing it: an obstructed HUD does not justify game-local CSS, and apparent sinking does not justify a guessed offset.
+JGengine is measured by the time from an idea to a deep playable game; friction an agent hits while building a game is an engine bug to fix. JGengine is built through distinct playable games in `games/`. Reviewing a game exists to improve the shared framework, so one fix reaches every game. Trace a game symptom to its real cause, the engine contract, its adoption or the game's own rules, before fixing it: an obstructed HUD does not justify game-local CSS, and apparent sinking does not justify a guessed offset.
 
 ## Writing
 
@@ -40,6 +40,7 @@ Code comments default to none. Exported public API keeps tight JSDoc (it generat
 
 ## Game changes improve the framework
 
+0. **Plan first.** Before building a game or a big feature, write `games/<id>/PLAN.md`: `bun run jgengine plan <id> --brief "<brief>"`, list every feature the brief implies under `## Features`, run `bun run jgengine plan <id>` again (it fills each feature's engine owner and the gaps), then order `## Milestones`, one PR each. Each PR ticks its milestone; a changed goal changes the plan first. Ask "does the engine have X?" of the plan or of `bun run jgengine has <feature> ...` (one JSON answer for many features), not one search at a time.
 1. Separate the game's rules, content and presentation from reusable behavior.
 2. Check engine `beta` before declaring a gap; if the fix exists, adopt it.
 3. Build missing shared behavior upstream with configurable policy, keeping the first adopter's behavior. Do not edit files another session owns.
@@ -73,7 +74,7 @@ Outside users are protected by npm versions only: a breaking change gets a semve
 - **Releases** are agent-owned, for outside users, about once a day at most. Check no open PR touches the version, `bun run release` on a fresh branch, land it, `git push origin origin/beta:main`, then confirm the Publish run and `npm view @jgengine/core version`. `bun run release --wait` does all of that and then deploys jgengine.com from the released commit on this machine. The deploy builds in its own worktree at that commit, removed afterwards, so the folder the release ran in does not matter (`bun run deploy:site` alone deploys HEAD the same way: provision models, then apps/web's `deploy:cloudflare`). `bun run release --wait <version>` waits on a version already cut and deploys it the same way. A failed deploy fails the release; run that command again to retry it. `publish.yml` refuses commits CI did not pass.
 - A bugfix ships a regression test when one is cheap; `check fix-has-test` rejects runtime source with no test change unless the body says `Prevention: none - <reason>`. Do not add new `check-*` gates: a gate costs every lane on every landing, and a rule here is enough for a one-off.
 - Rendered changes embed before/after screenshots; behavior over time is shown by driving the game (`jgengine-verify`, `scripts/pr-video.ts`).
-- API, workflow or tooling changes update their skill and generated artifacts in the same PR. Plans and findings go in the issue or PR; `check skills` fails markdown outside this file, READMEs, skills, `changes/` and `examples/`.
+- API, workflow or tooling changes update their skill and generated artifacts in the same PR. Findings go in the issue or PR and a game's build plan in its `PLAN.md`; `check skills` fails markdown outside this file, READMEs, skills, `changes/` and `examples/`.
 
 ## Skill architecture
 

@@ -189,6 +189,16 @@ export function loadCapabilityIndex(skillsDir: string): CapabilityEntry[] {
   return entries;
 }
 
+/**
+ * Every searchable row: the capability indexes and skill recipes shipped in this CLI (or, in the
+ * monorepo, `.claude/skills` under `checkout`) plus the CLI recipes.
+ */
+export function loadAllCapabilities(checkout: string | null): CapabilityEntry[] {
+  const repoSkills = checkout === null ? null : join(checkout, ".claude", "skills");
+  const skillsDir = resolveSkillsDir() ?? (repoSkills !== null && existsSync(repoSkills) ? repoSkills : null);
+  return skillsDir === null ? [] : [...loadCapabilityIndex(skillsDir), ...loadSkillRecipes(skillsDir), ...recipeCapabilities()];
+}
+
 /** CLI recipes (`npx jgengine recipe <name>`) as searchable rows. */
 export function recipeCapabilities(): CapabilityEntry[] {
   return RECIPES.map((recipe) => ({
