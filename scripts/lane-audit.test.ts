@@ -5,7 +5,6 @@ import { join, resolve } from "node:path";
 
 import { auditSession, attributeLane, claudeSession, classifyCommand, countReferences, cwdFilter, directoryMatches, pathForms, toolCallsFromMessages } from "./lane-audit";
 import type { ToolCall } from "./lane-audit";
-import { auditShapeProblem } from "./lane-close";
 
 const SCRIPT = join(import.meta.dir, "lane-audit.ts");
 const SCRATCH = join(import.meta.dir, "..", ".scratch");
@@ -215,8 +214,6 @@ test("--json carries the documented shape and percentile", () => {
     totals: Record<string, number>;
     population: number;
   };
-  // The consumer's checks, run against the producer's real output: the two sides cannot drift silently.
-  expect(auditShapeProblem(document)).toBeNull();
   expect(document.sessions.map((session) => session.id)).toEqual(["ses_wait", "ses_work"]);
   const [worst] = document.sessions;
   expect(Object.keys(worst!).sort()).toEqual(

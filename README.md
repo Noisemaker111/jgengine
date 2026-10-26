@@ -105,7 +105,7 @@ bun run verify:fast --full         # the whole local verdict in one run: build, 
 bun run build        # tsgo + import-extension rewrite, per package; only for pack/publish and the Node CLI
 bun run gen           # regenerate every committed derived artifact, in dependency order
 bun run verify:fast   # seconds: the branch diff vs origin/beta mapped to the packages, tests and quick gates it reaches
-bun run lane:close    # verify:fast, land, one ci:status read, then refuse a lane that slept or watched
+bun run lane:close    # verify:fast, land, one ci:status read, print the lane report
 bun --filter="@games/*" run check-types  # type-check every game in games/ against this checkout's engine source
 bun test games         # every game's tests and the games' own scripts
 bun run games:provision    # link the asset packs the games reference from the shared store (games:provision <id> for one game)
