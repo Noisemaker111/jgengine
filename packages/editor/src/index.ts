@@ -30,8 +30,6 @@ export {
   newPlacementId,
   DEFAULT_SCULPT_SETTINGS,
   DEFAULT_PAINT_SETTINGS,
-  TERRAIN_MATERIALS,
-  TERRAIN_MATERIAL_COLORS,
   type EditorTool,
   type EditorUiState,
   type EditorUiStore,
@@ -41,7 +39,6 @@ export {
   type SculptSettings,
   type EditorSnapMode,
   type TerrainBrushKind,
-  type TerrainMaterial,
   type TerrainMode,
 } from "./uiStore";
 export { TerrainSculpt } from "./TerrainSculpt";

@@ -1,5 +1,5 @@
 import type { PadEnvironmentDescriptor } from "@jgengine/core/world/features";
-import type { TerrainField } from "@jgengine/core/world/terrain";
+import type { TerrainField } from "@jgengine/core/terrain/terrain";
 
 import { PAD_THICKNESS, resolvePadMeshY, resolvePadShape } from "./groundPadMath";
 

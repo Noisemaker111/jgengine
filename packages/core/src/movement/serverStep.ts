@@ -1,6 +1,6 @@
 import type { GameContext } from "../runtime/gameContext";
 import type { InputFrame } from "../runtime/inputSnapshot";
-import { groundFieldFor } from "../world/terrain";
+import { groundFieldFor } from "../terrain/terrain";
 import { stepPlayerMovement, type PlayerMovementTuning } from "./playerMovement";
 
 /** Advance one authoritative player's movement using the same controller as the shell. */

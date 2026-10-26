@@ -5,7 +5,7 @@ import {
   placeAuthoredObjectsFromDocument,
   resolveAuthoredObjects,
 } from "@jgengine/core/world/authoredObjects";
-import type { TerrainPathProfile } from "@jgengine/core/world/pathTerrain";
+import type { TerrainPathProfile } from "@jgengine/core/terrain/pathTerrain";
 import sceneJson from "../../editor.scene.json";
 import { zoneById } from "./zones";
 

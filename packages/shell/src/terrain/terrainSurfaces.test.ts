@@ -1,5 +1,5 @@
 import { expect, test } from "bun:test";
-import type { TerrainMaterialLayer } from "@jgengine/core/world/terraform";
+import type { TerrainMaterialLayer } from "@jgengine/core/terrain/terraform";
 
 import type { TerrainPaintSource } from "./terrainPaintColor";
 import { createTerrainPaintTextures, packTerrainPaintWeights, terrainSurfaceClass } from "./terrainSurfaces";

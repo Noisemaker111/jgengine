@@ -10,7 +10,7 @@ import { defineStore } from "../store/defineStore";
 import { resetRngFallbackWarnings } from "../random/resolveRng";
 import { createDamageRuntime } from "../combat/damage/damageRuntime";
 import { environment, terrain } from "../world/features";
-import { resolveTerrainField } from "../world/terrain";
+import { resolveTerrainField } from "../terrain/terrain";
 import { createGameContext, type GameContextContent } from "./gameContext";
 
 const CONTENT: GameContextContent = {

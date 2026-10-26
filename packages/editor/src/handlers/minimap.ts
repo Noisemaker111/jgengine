@@ -1,5 +1,5 @@
 import { bakeMinimapFromDocument, type DocumentBakeOptions } from "@jgengine/core/editor/index";
-import { editableTerrainFromSnapshot } from "@jgengine/core/world/terraform";
+import { editableTerrainFromSnapshot } from "@jgengine/core/terrain/terraform";
 
 import type { HandlerTable } from "./context";
 

@@ -3,7 +3,7 @@ import { useEffect, useLayoutEffect, useMemo, useRef, type MutableRefObject, typ
 import * as THREE from "three";
 
 import type { BiomeBand, SkyEnvironmentDescriptor } from "@jgengine/core/world/features";
-import { createBiomeFogSampler, createBiomeSkySampler } from "@jgengine/core/world/terrain";
+import { createBiomeFogSampler, createBiomeSkySampler } from "@jgengine/core/terrain/terrain";
 import { resolveVolumetricClouds } from "@jgengine/core/sky/volumetricClouds";
 
 import { warnOnce } from "@jgengine/core/devtools/warnOnce";

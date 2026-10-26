@@ -1,7 +1,7 @@
 import { useMemo } from "react";
 import * as THREE from "three";
 import type { Aabb } from "@jgengine/core/world/geometry";
-import type { EditableTerrain } from "@jgengine/core/world/terraform";
+import type { EditableTerrain } from "@jgengine/core/terrain/terraform";
 
 export interface EditableGroundProps {
   terrain: Pick<EditableTerrain, "sampleHeight" | "surfaceAt">;

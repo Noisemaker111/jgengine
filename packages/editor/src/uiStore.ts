@@ -1,5 +1,5 @@
 import type { EditorSession, EditorVec3, EditorVolumeShape } from "@jgengine/core/editor/index";
-import type { TerraformFalloff, TerraformShape } from "@jgengine/core/world/terraform";
+import type { TerraformFalloff, TerraformShape } from "@jgengine/core/terrain/terraform";
 
 import type { ClipPreviewSession } from "./shell/clipPreview";
 
@@ -12,7 +12,6 @@ export type TerrainBrushKind = "raise" | "lower" | "smooth" | "flatten" | "noise
 /** The terrain tool's active sub-mode: reshape the heightfield, or paint material layers onto it. */
 export type TerrainMode = "sculpt" | "paint";
 
-export { TERRAIN_MATERIALS, TERRAIN_MATERIAL_COLORS, type TerrainMaterial } from "@jgengine/core/editor/terrainMaterials";
 
 /** Live terrain material-paint controls driven by the terrain tool panel. */
 export interface PaintSettings {

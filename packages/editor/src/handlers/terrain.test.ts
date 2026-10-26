@@ -1,5 +1,5 @@
 import { describe, expect, test } from "bun:test";
-import { editableTerrainFromSnapshot } from "@jgengine/core/world/terraform";
+import { editableTerrainFromSnapshot } from "@jgengine/core/terrain/terraform";
 import { createEditorHost } from "../session";
 
 function host() {

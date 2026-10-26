@@ -25,7 +25,7 @@ export const BENCH_FILES = [
   "packages/core/src/sim/offScreen.perf.test.ts",
   "packages/core/src/visibility/benchmark.test.ts",
   "packages/core/src/spatial/spatialIndex.test.ts",
-  "packages/core/src/world/terrain.test.ts",
+  "packages/core/src/terrain/terrain.test.ts",
 ] as const;
 
 const root = fileURLToPath(new URL("..", import.meta.url));

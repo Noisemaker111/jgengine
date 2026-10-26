@@ -1,6 +1,6 @@
 import * as THREE from "three";
-import { TERRAIN_MATERIAL_COLORS } from "@jgengine/core/editor/terrainMaterials";
-import type { EditableTerrain } from "@jgengine/core/world/terraform";
+import { TERRAIN_PAINT_COLORS } from "@jgengine/core/terrain/terrainPaint";
+import type { EditableTerrain } from "@jgengine/core/terrain/terraform";
 
 /**
  * Live authored paint channels needed to sample a terrain's material stack without its heightfield.
@@ -25,8 +25,8 @@ const smooth = (t: number): number => t * t * (3 - 2 * t);
  */
 export function createTerrainPaintColorSampler(terrain: TerrainPaintSource): TerrainPaintColorSampler {
   const layers = terrain.layers;
-  const colors = layers.map(layer => new THREE.Color(layer.tint ?? TERRAIN_MATERIAL_COLORS[layer.surface] ?? "#7c7f86"));
-  const defaults = new Map(Object.entries(TERRAIN_MATERIAL_COLORS).map(([id, color]) => [id, new THREE.Color(color)]));
+  const colors = layers.map(layer => new THREE.Color(layer.tint ?? TERRAIN_PAINT_COLORS[layer.surface] ?? "#7c7f86"));
+  const defaults = new Map(Object.entries(TERRAIN_PAINT_COLORS).map(([id, color]) => [id, new THREE.Color(color)]));
 
   const cellColor = (x: number, z: number, out: THREE.Color): boolean => {
     const weights = terrain.weightsAt(x, z);

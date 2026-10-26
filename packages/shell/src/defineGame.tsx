@@ -19,7 +19,7 @@ import { resolveGameLook } from "@jgengine/core/render/lookPreset";
 import type { ResolveAuthoredObjectsOptions } from "@jgengine/core/world/authoredObjects";
 
 import { EnvironmentScene } from "./environment";
-import { terrainGroundColorSampler } from "./environment/terrainGroundColor";
+import { terrainGroundColorSampler } from "./terrain/terrainGroundColor";
 import type { PlayableGame } from "./registry";
 import { AuthoredScene } from "./scene/AuthoredScene";
 

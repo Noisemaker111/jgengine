@@ -82,9 +82,6 @@
 - `SplitWorldResult` (interface): interface SplitWorldResult — The result of splitting a document: a manifest plus the shard documents keyed by their file path.
 - `StreamUpdate` (interface): interface StreamUpdate — The residency change produced by one {@link WorldStreamer.update}.
 - `StreamerShard` (interface): interface StreamerShard — The proximity streamer for a sharded world (#985 stage 3): a stateful scheduler that decides, as the camera moves, which shards enter and leave residency. It is pure scheduling — actually reading/merging the shard documents stays the caller's job (compose with `@jgengine/core/editor/world`'s `loadWorldDocument` on each returned delta) — so the streamer has no I/O and stays deterministic and testable. Hysteresis (`loadRadius` < `keepRadius`) stops a shard on a boundary from thrashing load/unload every frame.
-- `TERRAIN_MATERIALS` (const): const TERRAIN_MATERIALS: readonly TerrainMaterial[] — The default terrain paint palette (surface id → color) shared by the panel and the mesh.
-- `TERRAIN_MATERIAL_COLORS` (const): const TERRAIN_MATERIAL_COLORS: Record<string, string> — Maps every default material id to its render color, for the sculpt mesh's per-cell surface tint.
-- `TerrainMaterial` (interface): interface TerrainMaterial — A paintable terrain material layer — a surface id plus the color it renders as.
 - `WELL_KNOWN_MARKER_KINDS` (const): const WELL_KNOWN_MARKER_KINDS: readonly ["player_spawn", "mob", "boss", "vendor", "chest", "travel", "npc", "poi", "prop", "goal", "branch"] — Standard marker kinds recognized with default colors and behavior.
 - `WELL_KNOWN_PATH_KINDS` (const): const WELL_KNOWN_PATH_KINDS: readonly ["road", "corridor", "branch", "route"] — Standard path kinds recognized with default colors and behavior.
 - `WELL_KNOWN_VOLUME_KINDS` (const): const WELL_KNOWN_VOLUME_KINDS: readonly ["zone", "flatten", "cluster", "aggro", "leash", "discover", "capture", "prompt", "poi", "respawn_skip"] — Standard volume kinds recognized with default colors and behavior.
@@ -364,12 +361,6 @@
 - `createWorldStreamer` (function): function createWorldStreamer(config: WorldStreamerConfig): WorldStreamer — Creates a proximity streamer over a world's shards. Always-resident shards are resident from the first update onward; each bounded shard loads when the camera comes within `loadRadius` of its footprint and unloads only once the camera passes `keepRadius` (≥ `loadRadius`, clamped up), giving a hysteresis band that prevents boundary thrash. Purely spatial and deterministic; the caller wires each delta to `loadWorldDocument`.
 - `shardDistance` (function): function shardDistance(shard: StreamerShard, center: { x: number; z: number }): number — Distance from a point to a shard's XZ footprint (0 when inside), or 0 for an always-resident shard.
 
-## @jgengine/core/editor/terrainMaterials
-
-- `TERRAIN_MATERIALS` (const): const TERRAIN_MATERIALS: readonly TerrainMaterial[] — The default terrain paint palette (surface id → color) shared by the panel and the mesh.
-- `TERRAIN_MATERIAL_COLORS` (const): const TERRAIN_MATERIAL_COLORS: Record<string, string> — Maps every default material id to its render color, for the sculpt mesh's per-cell surface tint.
-- `TerrainMaterial` (interface): interface TerrainMaterial — A paintable terrain material layer — a surface id plus the color it renders as.
-
 ## @jgengine/core/editor/types
 
 - `EditorAutoExposure` (interface): interface EditorAutoExposure — Authored clamped auto-exposure range: how far the meter may pull a dark room or a bright street.
@@ -519,10 +510,7 @@
 - `StandaloneEditor` (function): function StandaloneEditor({ sceneId = "standalone", scene, assets, world, save, importAsset = importAssetToHost, hidePickers = false, }: StandaloneEditorProps): React.JSX.Element — The scene editor, mounted over a blank gameless world instead of a game — the same `EditorApp` every jgengine game ships, usable standalone on the user's own project (CLI `jgengine editor`, desktop app, or any React host). Ships a slim strip to open a world file and pull in an asset folder; both are also settable up front through props.
 - `StandaloneEditorProps` (interface): interface StandaloneEditorProps — Props for the gameless scene editor — everything optional so it boots on a blank world with nothing wired.
 - `SubscribableStore` (interface): interface SubscribableStore<S> — The minimal external-store shape both the editor session and UI store satisfy.
-- `TERRAIN_MATERIALS` (const): const TERRAIN_MATERIALS: readonly TerrainMaterial[] — The default terrain paint palette (surface id → color) shared by the panel and the mesh.
-- `TERRAIN_MATERIAL_COLORS` (const): const TERRAIN_MATERIAL_COLORS: Record<string, string> — Maps every default material id to its render color, for the sculpt mesh's per-cell surface tint.
 - `TerrainBrushKind` (type): type TerrainBrushKind = "raise" | "lower" | "smooth" | "flatten" | "noise" | "ramp" — A heightfield sculpt brush the terrain tool can apply.
-- `TerrainMaterial` (interface): interface TerrainMaterial — A paintable terrain material layer — a surface id plus the color it renders as.
 - `TerrainMode` (type): type TerrainMode = "sculpt" | "paint" — The terrain tool's active sub-mode: reshape the heightfield, or paint material layers onto it.
 - `ViewportSelect` (const): const ViewportSelect: React.MemoExoticComponent<({ api, ui }: { api: EditorHostApi; ui: EditorUiStore; }) => null> — Canvas click-to-select and click-to-place. Document objects pick by screen proximity (registration always matches what you see) with click-cycling through stacked candidates and shift/ctrl additive selection; everything else picks by occlusion-ordered raycast against the tagged scene graph. When a placement tool is armed, clicks author new markers, volumes, notes, or path points at the ground hit instead of selecting.
 - `VirtualWindow` (interface): interface VirtualWindow — The visible slice of a fixed-row-height list: which rows to mount and the spacer geometry.
@@ -619,7 +607,7 @@
 
 ## @jgengine/editor/TerrainReadout
 
-- `TerrainReadout` (function): function TerrainReadout({ groundHeightAt, region, showContours, showSurfaceGrid, version, readout, }: { groundHeightAt: (x: number, z: number) => number; region: GuideRegion; showContours: boolean; showSurfaceGrid: boolean; /** Bumped by the host when the terrain changes, so the overlay rebuilds off… — Surface-following terrain-readability overlay: draws iso-elevation contour lines and an optional terrain-draped reference grid from the live ground field, and tracks the cursor's elevation. All geometry comes from headless `@jgengine/core/world/terrainGuides` math; this component only turns it into three.js lines and publishes the measured feedback to the readout store.
+- `TerrainReadout` (function): function TerrainReadout({ groundHeightAt, region, showContours, showSurfaceGrid, version, readout, }: { groundHeightAt: (x: number, z: number) => number; region: GuideRegion; showContours: boolean; showSurfaceGrid: boolean; /** Bumped by the host when the terrain changes, so the overlay rebuilds off… — Surface-following terrain-readability overlay: draws iso-elevation contour lines and an optional terrain-draped reference grid from the live ground field, and tracks the cursor's elevation. All geometry comes from headless `@jgengine/core/terrain/terrainGuides` math; this component only turns it into three.js lines and publishes the measured feedback to the readout store.
 
 ## @jgengine/editor/TerrainReadoutHud
 
@@ -1089,10 +1077,7 @@
 - `ROTATION_SNAP_CHOICES_DEG` (const): const ROTATION_SNAP_CHOICES_DEG: readonly number[] — Rotation snap increments (degrees) offered by the toolbar snap menu.
 - `SCALE_SNAP_CHOICES` (const): const SCALE_SNAP_CHOICES: readonly number[] — Scale snap increments offered by the toolbar snap menu.
 - `SculptSettings` (interface): interface SculptSettings — Live terrain-brush controls driven by the terrain tool panel.
-- `TERRAIN_MATERIALS` (const): const TERRAIN_MATERIALS: readonly TerrainMaterial[] — The default terrain paint palette (surface id → color) shared by the panel and the mesh.
-- `TERRAIN_MATERIAL_COLORS` (const): const TERRAIN_MATERIAL_COLORS: Record<string, string> — Maps every default material id to its render color, for the sculpt mesh's per-cell surface tint.
 - `TerrainBrushKind` (type): type TerrainBrushKind = "raise" | "lower" | "smooth" | "flatten" | "noise" | "ramp" — A heightfield sculpt brush the terrain tool can apply.
-- `TerrainMaterial` (interface): interface TerrainMaterial — A paintable terrain material layer — a surface id plus the color it renders as.
 - `TerrainMode` (type): type TerrainMode = "sculpt" | "paint" — The terrain tool's active sub-mode: reshape the heightfield, or paint material layers onto it.
 - `createEditorUiStore` (function): function createEditorUiStore(): EditorUiStore — Creates the shared UI store the editor chrome and viewport both drive.
 - `newPlacementId` (function): function newPlacementId(prefix: string): string — Generates a fresh scene-object id for a placement tool click.

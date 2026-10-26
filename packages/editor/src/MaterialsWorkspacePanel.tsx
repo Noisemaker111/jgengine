@@ -14,7 +14,7 @@ import {
   type MaterialAssignmentRow,
 } from "./materialAssignments";
 import type { EditorHostApi } from "./session";
-import { TERRAIN_MATERIALS } from "./uiStore";
+import { TERRAIN_PAINT_PRESETS } from "@jgengine/core/terrain/terrainPaint";
 import { FOCUS_RING, INPUT_CLS, MICRO_LABEL } from "./shell/theme";
 import { EmptyState } from "./shell/ui";
 import { shallowArrayEqual, useStoreSelector } from "./useStoreSelector";
@@ -26,11 +26,11 @@ const CHIP_ACTIVE = "border-cyan-400/40 bg-cyan-500/15 text-cyan-100";
 
 function materialColor(materialId: string | null): string {
   if (materialId === null) return "transparent";
-  return TERRAIN_MATERIALS.find((material) => material.id === materialId)?.color ?? "#64748b";
+  return TERRAIN_PAINT_PRESETS.find((material) => material.id === materialId)?.color ?? "#64748b";
 }
 
 function materialLabel(materialId: string): string {
-  return TERRAIN_MATERIALS.find((material) => material.id === materialId)?.label ?? materialId;
+  return TERRAIN_PAINT_PRESETS.find((material) => material.id === materialId)?.label ?? materialId;
 }
 
 /** Read the selected model's first usable assignment for workspace initialization. @internal */
@@ -247,7 +247,7 @@ export function MaterialsWorkspacePanel({
               Selection ({selection.length}) — assign or clear
             </div>
             <div className="flex flex-wrap gap-1">
-              {TERRAIN_MATERIALS.map((material) => (
+              {TERRAIN_PAINT_PRESETS.map((material) => (
                 <button
                   key={material.id}
                   type="button"
@@ -366,7 +366,7 @@ function MaterialRow({
         onClick={(event) => event.stopPropagation()}
       >
         <option value="">none</option>
-        {TERRAIN_MATERIALS.map((material) => (
+        {TERRAIN_PAINT_PRESETS.map((material) => (
           <option key={material.id} value={material.id}>
             {material.label}
           </option>

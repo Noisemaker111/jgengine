@@ -1,7 +1,7 @@
 import { type ThreeElements } from "@react-three/fiber";
 import * as THREE from "three";
 
-import type { TerrainField } from "@jgengine/core/world/terrain";
+import type { TerrainField } from "@jgengine/core/terrain/terrain";
 
 import { useDisposable } from "../render/useDisposable";
 import { useSlicedValue } from "../render/useSlicedValue";

@@ -925,12 +925,6 @@ export {
   type MinimapBakeSource,
   type MinimapBakeZone,
 } from "./world/minimapBake";
-export {
-  withPathProfiles,
-  type PathHeightPolicy,
-  type PathRetaining,
-  type TerrainPathProfile,
-} from "./world/pathTerrain";
 export { POLE_LINE_SCHEMA, resolvePoleLine, type ResolvedPoleLine } from "./world/poleLineKind";
 export { pointInPolygon, polygonArea } from "./world/polygon";
 export { composeRealm } from "./world/realm";
@@ -975,59 +969,6 @@ export {
   type WeightedRegionEntry,
 } from "./world/spatialSample";
 export { solveSupport, toDebrisBodies, type SupportResult } from "./world/support";
-export {
-  applyDeltaToSnapshot,
-  applySurfaceDeltaToSnapshot,
-  beginSurfaceStroke,
-  beginTerraformStroke,
-  createEditableTerrain,
-  createTerraformBrush,
-  createTerrainSnapshot,
-  editableTerrainFromSnapshot,
-  migrateTerrainSnapshot,
-  revertDeltaFromSnapshot,
-  revertSurfaceDeltaFromSnapshot,
-  type EditableTerrain,
-  type SurfaceDelta,
-  type SurfaceStroke,
-  type TerraformDelta,
-  type TerraformEdit,
-  type TerraformFalloff,
-  type TerraformMode,
-  type TerraformShape,
-  type TerraformSnapshot,
-  type TerraformStroke,
-  type TerrainMaterialLayer,
-  type TerrainSurfaceRule,
-} from "./world/terraform";
-export {
-  TERRAIN_MATERIAL_PALETTES,
-  applyPathProfiles,
-  type NoiseFieldConfig,
-  type ResolvedTerrainDetail,
-  type TerrainField,
-  type TerrainPalette,
-} from "./world/terrain";
-export {
-  chooseContourInterval,
-  drapePolyline,
-  extractContours,
-  sampleElevation,
-  summarizeElevation,
-  surfaceGridLines,
-  surfaceRing,
-  terrainContourGuides,
-  type ContourLine,
-  type ContourOptions,
-  type DrapeOptions,
-  type ElevationReadout,
-  type ElevationSummary,
-  type GroundPoint,
-  type GuideRegion,
-  type HeightSampler,
-  type SurfaceGridLine,
-  type SurfaceGridOptions,
-} from "./world/terrainGuides";
 export {
   VISIBILITY_HIDDEN,
   VISIBILITY_OBSERVED,

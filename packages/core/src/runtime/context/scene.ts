@@ -50,7 +50,7 @@ import {
   type SolidObstacleSource,
 } from "../../movement/solidObstacles";
 import { createTargeting, type Targeting } from "../../scene/targeting";
-import type { TerrainField } from "../../world/terrain";
+import type { TerrainField } from "../../terrain/terrain";
 import type { WorldSolids } from "../../world/worldSolids";
 import type { SimClock } from "../../time/simClock";
 import { notifyAfter } from "../../store/changeSignal";

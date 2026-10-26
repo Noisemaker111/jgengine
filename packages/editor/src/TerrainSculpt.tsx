@@ -11,7 +11,7 @@ import {
   resolveTerrainDetail,
   type ResolvedTerrainDetail,
   type TerrainPalette,
-} from "@jgengine/core/world/terrain";
+} from "@jgengine/core/terrain/terrain";
 import {
   beginSurfaceStroke,
   beginTerraformStroke,
@@ -21,7 +21,7 @@ import {
   type TerraformEdit,
   type TerraformSnapshot,
   type TerraformStroke,
-} from "@jgengine/core/world/terraform";
+} from "@jgengine/core/terrain/terraform";
 import { useGameContext } from "@jgengine/react/provider";
 import {
   displaceHeightfieldGeometry,

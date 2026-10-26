@@ -7,7 +7,7 @@
 import type { ComponentType } from "react";
 
 import { devtools } from "@jgengine/core/devtools/devtools";
-import { resolveTerrainField } from "@jgengine/core/world/terrain";
+import { resolveTerrainField } from "@jgengine/core/terrain/terrain";
 import type { CameraRigConfig } from "@jgengine/core/runtime/cameraDirector";
 import type { GameCameraConfig } from "@jgengine/core/game/playableGame";
 import { applyStoredDevtoolsOverrides } from "@jgengine/shell/devtools/DevtoolsOverlay";

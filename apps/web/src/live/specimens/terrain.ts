@@ -1,6 +1,6 @@
 /**
  * Live specimen: seeded terrain. A 90×90-segment plane is displaced by the real
- * `fractalNoise()` from `@jgengine/core/world/terrain` — every vertex's height is
+ * `fractalNoise()` from `@jgengine/core/terrain/terrain` — every vertex's height is
  * one call into the core value-noise fractal. Height drives the vertex color ramp
  * (deep ink → emerald → pale slate), normals are recomputed, and the whole field
  * turns slowly. Change octaves / frequency / ridged / seed and the displacement is
@@ -8,7 +8,7 @@
  */
 import * as THREE from "three";
 
-import { fractalNoise } from "@jgengine/core/world/terrain";
+import { fractalNoise } from "@jgengine/core/terrain/terrain";
 import { mountLive } from "../mount";
 
 export interface TerrainDials {

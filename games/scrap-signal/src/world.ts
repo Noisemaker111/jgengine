@@ -1,5 +1,5 @@
 import type { PhysicsConfig } from "@jgengine/core/game/defineGame";
-import { resolveTerrainField, type TerrainField } from "@jgengine/core/world/terrain";
+import { resolveTerrainField, type TerrainField } from "@jgengine/core/terrain/terrain";
 import { seededRng } from "@jgengine/core/random/rng";
 import {
   building,

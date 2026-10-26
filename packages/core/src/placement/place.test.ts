@@ -1,7 +1,7 @@
 import { describe, expect, test } from "bun:test";
 
 import { defineGameDefinition } from "../game/defineGame";
-import { groundFieldFor } from "../world/terrain";
+import { groundFieldFor } from "../terrain/terrain";
 import { isPlaceWorld, resolveWorldPhysics, seedForPlace, world, type PlaceConfig } from "./place";
 
 describe("world (place model)", () => {

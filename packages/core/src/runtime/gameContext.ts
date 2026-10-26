@@ -3,7 +3,7 @@ import { createCommandRegistry, type CommandResult } from "../commands/commandRe
 import { createNoticeFeed } from "../notifications/notices";
 import { type Cosmetics } from "../game/cosmetics";
 import type { GameDefinition, GameFeatures, PersistConfig } from "../game/defineGame";
-import { groundFieldFor } from "../world/terrain";
+import { groundFieldFor } from "../terrain/terrain";
 import { createWorldSolids, structureSolids } from "../world/worldSolids";
 import { createGameEvents, type GameEventMap, type GameEvents } from "../game/events";
 import { createGameFeed } from "../feed/feed";

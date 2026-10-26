@@ -1,5 +1,5 @@
 import { normalizeEditorLayers, type EditorLayersInput } from "@jgengine/core/editor/index";
-import { FLAT_FIELD } from "@jgengine/core/world/terrain";
+import { FLAT_FIELD } from "@jgengine/core/terrain/terrain";
 import { AuthoredScene } from "@jgengine/shell/scene/AuthoredScene";
 import type { PlayableGame } from "@jgengine/shell/registry";
 

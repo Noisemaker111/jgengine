@@ -795,7 +795,7 @@ Play scripts prove play in seconds instead of minutes of browser play, and the t
 
 ### Performance
 
-- `createTerrainPaletteSampler` (`@jgengine/core/world/terrain`) tests only the material regions whose painted core or blend ring covers a sample, so a world with hundreds of authored regions no longer pays for all of them at every vertex.
+- `createTerrainPaletteSampler` (`@jgengine/core/terrain/terrain`) tests only the material regions whose painted core or blend ring covers a sample, so a world with hundreds of authored regions no longer pays for all of them at every vertex.
 
 ## 0.35.0
 
@@ -1124,7 +1124,7 @@ Harbor Heat's shadow pass self time at `--quality full`: 2.88 → 1.37 ms per fr
 - `KinematicVehicleTuning.weightTransfer` (`@jgengine/core/world`) adds load-transfer grip: longitudinal transfer under braking/traction and lateral transfer under cornering cut the tire grip curve (tire load sensitivity), so braking into a corner holds less slide than coasting through it. Each tick reports `weightTransfer` and `loadGrip`; omitting the block keeps the previous flat-grip model exactly.
 - `KinematicVehicleModifiers.gripScale` scales the grip curve for one tick, mirroring `VehicleDynamicsModifiers.gripScale` so a damage layer drives either sim.
 - `decal` scene kind (`@jgengine/core/world/decalKind`) and its renderer (`@jgengine/shell/scene/DecalRenderer`): dirt, cracks, paint and blood decals authored as placed markers, draped on the live terrain or standing on an authored tilt, with a deterministic procedural texture per style+seed.
-- `TerrainMaterialLayer.material` (`@jgengine/core/world/terraform`): a material library name whose scanned color map paints that terrain layer. The runtime samples up to four layer maps at each layer's `tiling` and blends them through the authored mask weights (`createTerrainDetailMaterial`'s `layerMaps`), so painted terrain blends between authored layers instead of tiling one flat map.
+- `TerrainMaterialLayer.material` (`@jgengine/core/terrain/terraform`): a material library name whose scanned color map paints that terrain layer. The runtime samples up to four layer maps at each layer's `tiling` and blends them through the authored mask weights (`createTerrainDetailMaterial`'s `layerMaps`), so painted terrain blends between authored layers instead of tiling one flat map.
 - `grass_field` volumes now paint a ground-cover mat under their blades (`groundCover` rule, `@jgengine/shell/terrain/GrassCover`), so an authored patch reads as turf rather than bare ground with stubble. `GrassEnvironmentConfig.groundCover` does the same for `grass()` patches.
 - `ModelConfig.wind` (`@jgengine/core/game/playableGame`) and `applyModelWind` (`@jgengine/shell/render/modelWind`): per-model foliage sway with height-ramped travel, shared gust clock and per-model strength/speed/direction.
 
@@ -1276,7 +1276,7 @@ Harbor Heat's shadow pass self time at `--quality full`: 2.88 → 1.37 ms per fr
 - `createSurfaceRibbonMaterial`, `ribbonSurfaceFrame`, `resolvePathSurface` and `useSurfaceRibbonMaterial` (`@jgengine/shell/terrain`) shade ground ribbons with the terrain's procedural surface functions, plus wear and a noise-warped soft edge.
 - `road({ surface })` (`@jgengine/core/world/features`) picks the carriageway surface; `false` keeps flat colour.
 - `AuthoredScene`/`AuthoredPaths` `pathSurfaceDetail`/`surfaceDetail` props and path `meta.surface`, `meta.edgeSoftness`, `meta.wear`, `meta.surfaceDetail`.
-- `EditableTerrain.gridBounds` (`@jgengine/core/world/terraform`) exposes the world extent of the paint/height cell grid.
+- `EditableTerrain.gridBounds` (`@jgengine/core/terrain/terraform`) exposes the world extent of the paint/height cell grid.
 - Painted terrain renders each layer's `surface` as its own procedural ground (grass, dirt, gravel, rock, sand, mud, snow, road) with albedo variation, roughness and micro-normals, blended along noise-warped, height-aware edges, in play and in the editor viewport. No game config or assets needed.
 - `TerrainDetailConfig.surfaceStrength` (0..1, default 1) scales the per-surface response; `detail: false` opts a terrain out to the flat vertex-colour ground.
 - `@jgengine/shell/terrain` exports `packTerrainPaintWeights`, `createTerrainPaintTextures`, `terrainSurfaceClass`, `createTerrainDetailMaterial` and `TerrainQualityContext`/`useTerrainQuality`.
@@ -2805,7 +2805,7 @@ Pure, renderer-free primitives for card, board, and deckbuilder games — they s
   - `@jgengine/core/world/support` — `solveSupport` walks the connector graph to ground (`supported`/`unsupported`/hop-`distance` for white→red decay); `toDebrisBodies` sinks collapsed pieces into the `PhysicsWorld`.
   - `@jgengine/core/world/walls` — `createWallDrawTool` (drag walls → auto-enclose → `footprintFromWalls` → `autoRoof` hip/gable/flat) plus `createSurfacePaint` for per-tile floor/wall surfaces.
   - `@jgengine/core/world/placedStructureStore` — `createPlacedStructureStore` save/load/select/move/delete with a `snapshot`↔`load` round-trip that survives reload.
-  - `@jgengine/core/world/terraform` — `createEditableTerrain({ bounds, base, cellSize })` makes a `TerrainField` you can **write back to** via `apply(edit)` (raise/lower/flatten/paint), and `createTerraformBrush` is the cursor tool. This height-offset grid is the shared terrain-edit write-back pattern.
+  - `@jgengine/core/terrain/terraform` — `createEditableTerrain({ bounds, base, cellSize })` makes a `TerrainField` you can **write back to** via `apply(edit)` (raise/lower/flatten/paint), and `createTerraformBrush` is the cursor tool. This height-offset grid is the shared terrain-edit write-back pattern.
   - `@jgengine/core/world/buildPermissions` — `createPlotPermissions` (per-plot/guild `BuildRole` edit authority) + `createContributionPool` (co-op pooled-resource contribution model).
   - `@jgengine/shell` renderers: `structures/PlacementGhost` (tinted ghost), `terrain/EditableGround` (renders an `EditableTerrain` with surface paint), `terrain/TerraformBrushCursor` (brush ring); the `builder-sandbox` demo game wires them to `pointer.worldHit()`.
 - **Map, fog of war & contextual ping.** Minimap/world-map/fog/compass + a squad ping verb, built on renderer-free core state, a shell terrain bake, and react HUD components. (Stacked on the pointer foundation above.)

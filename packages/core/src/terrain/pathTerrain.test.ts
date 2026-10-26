@@ -1,6 +1,6 @@
 import { describe, expect, test } from "bun:test";
 
-import { terrain } from "./features";
+import { terrain } from "../world/features";
 import { type TerrainPathProfile, withPathProfiles } from "./pathTerrain";
 import { applyPathProfiles, resolveTerrainField } from "./terrain";
 

@@ -48,7 +48,7 @@ import {
   type BuildingPalette,
 } from "@jgengine/core/buildings/buildings";
 import { hashString } from "@jgengine/core/random/rng";
-import { valueNoise } from "@jgengine/core/world/terrain";
+import { valueNoise } from "@jgengine/core/terrain/terrain";
 import type { SceneKindObject } from "@jgengine/core/scene/sceneKinds";
 
 import { buildScatterProxy } from "../scatter/scatterProxies";

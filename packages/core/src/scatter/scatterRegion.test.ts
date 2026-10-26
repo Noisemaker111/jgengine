@@ -2,7 +2,7 @@ import { describe, expect, test } from "bun:test";
 
 import type { EditorPath } from "../editor/types";
 import { distanceToRing, pointInPolygon, polygonArea } from "../world/polygon";
-import { flatField, noiseField } from "../world/terrain";
+import { flatField, noiseField } from "../terrain/terrain";
 import {
   clearanceZonesFrom,
   DEFAULT_MARKER_CLEARANCE,

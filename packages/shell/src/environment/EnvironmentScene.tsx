@@ -28,14 +28,14 @@ import {
   resolveTerrainPalette,
   type ResolvedTerrainDetail,
   type TerrainField,
-} from "@jgengine/core/world/terrain";
+} from "@jgengine/core/terrain/terrain";
 
 import { useDisposable } from "../render/useDisposable";
-import { editableTerrainFromSnapshot, type TerraformSnapshot } from "@jgengine/core/world/terraform";
+import { editableTerrainFromSnapshot, type TerraformSnapshot } from "@jgengine/core/terrain/terraform";
 import { createTerrainPaintColorSampler } from "../terrain/terrainPaintColor";
 import { GroundPad } from "./GroundPad";
 import { Roads } from "../roads/RoadRibbons";
-import { terrainGroundColorSampler } from "./terrainGroundColor";
+import { terrainGroundColorSampler } from "../terrain/terrainGroundColor";
 import { InstancedBuildings, type InstancedBuildingPlacement } from "../buildings/GeneratedBuilding";
 import { GrassPatch } from "../grass/GrassPatch";
 import { CarvedTerrain, type CarvedTerrainProps } from "../terrain/CarvedTerrain";

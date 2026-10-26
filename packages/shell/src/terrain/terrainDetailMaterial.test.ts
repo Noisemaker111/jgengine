@@ -1,4 +1,4 @@
-import { resolveTerrainDetail } from "@jgengine/core/world/terrain";
+import { resolveTerrainDetail } from "@jgengine/core/terrain/terrain";
 import type { TerrainMaterialMaps } from "@jgengine/core/world/features";
 import { expect, test } from "bun:test";
 import * as THREE from "three";

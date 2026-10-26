@@ -110,7 +110,7 @@ export function useShellRootResubscribe(ctx: GameContext | null, userId: string)
 export { applyMotionImpulses } from "@jgengine/core/runtime/motionIntents";
 export { nearbyObstacles } from "@jgengine/core/movement/movementModel";
 export { resolvePhysicsTuning } from "@jgengine/core/movement/playerMovement";
-export { hasEnvironmentTerrain } from "@jgengine/core/world/terrain";
+export { hasEnvironmentTerrain } from "@jgengine/core/terrain/terrain";
 
 /**
  * The shell body `GameHost` renders after resolving multiplayer. Hosts that resolve their own

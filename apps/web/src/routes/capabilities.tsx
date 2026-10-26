@@ -75,12 +75,12 @@ const points = catenaryCurve(
   },
   {
     key: "terrain",
-    domain: "world/terrain",
+    domain: "terrain/terrain",
     title: "Terrain from a single seed",
     blurb:
       "Every vertex height is one call into the core value-noise fractal. Turn octaves, frequency, and ridged, or reseed, and the whole field is rebuilt in place from the same function a shipped game bakes into its heightfield.",
     filename: "terrain.noise.ts",
-    code: `import { fractalNoise } from "@jgengine/core/world/terrain";
+    code: `import { fractalNoise } from "@jgengine/core/terrain/terrain";
 
 const cfg = { seed, frequency, octaves, lacunarity: 2, persistence: 0.5, ridged };
 

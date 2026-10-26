@@ -8,10 +8,11 @@ import {
   type EditableTerrain,
   type SurfaceDelta,
   type TerrainSurfaceRule,
-} from "@jgengine/core/world/terraform";
+} from "@jgengine/core/terrain/terraform";
 
 import type { EditorHostApi, EditorSession } from "./session";
-import { TERRAIN_MATERIALS, type EditorUiStore, type TerrainBrushKind } from "./uiStore";
+import { TERRAIN_PAINT_PRESETS } from "@jgengine/core/terrain/terrainPaint";
+import { type EditorUiStore, type TerrainBrushKind } from "./uiStore";
 import { SliderRow } from "./chromeFields";
 import { useStoreVersion } from "./useStoreSelector";
 import { BORDER, CONTROL, CONTROL_ACTIVE, FOCUS_RING, INPUT_CLS, MICRO_LABEL } from "./shell/theme";
@@ -110,7 +111,7 @@ function PaintControls({ session, ui }: { session: EditorSession; ui: EditorUiSt
   return (
     <>
       <div className="grid grid-cols-2 gap-1">
-        {TERRAIN_MATERIALS.map((material) => (
+        {TERRAIN_PAINT_PRESETS.map((material) => (
           <button
             key={material.id}
             type="button"

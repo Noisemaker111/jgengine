@@ -10,7 +10,7 @@ import {
   type CharacterControllerConfig,
   type CharacterControllerState,
 } from "./characterController";
-import { groundFieldFor, hasEnvironmentTerrain, sampleSlope, type TerrainField } from "../world/terrain";
+import { groundFieldFor, hasEnvironmentTerrain, sampleSlope, type TerrainField } from "../terrain/terrain";
 import type { WorldFeature } from "../world/features";
 import type { EntityPosition } from "../scene/entityStore";
 import type { PhysicsBackend } from "../physics/physicsBackend";
@@ -43,7 +43,7 @@ import {
 import { solidObstaclesNear } from "./solidObstacles";
 import { withPoseRollback } from "./poseState";
 import { approachYaw, steerYaw } from "./steering";
-import { resolveTerrainGradeStep } from "./terrainGrade";
+import { resolveTerrainGradeStep } from "../terrain/terrainGrade";
 import {
   advanceVoxelPlayer,
   createVoxelPlayerBody,

@@ -11,7 +11,7 @@ import {
   revertWeightDeltaFromSnapshot,
   type TerrainMaterialLayer,
 } from "./terraform";
-import { environment, terrain as terrainDescriptor } from "./features";
+import { environment, terrain as terrainDescriptor } from "../world/features";
 import { flattenFieldAround, groundFieldFor, resolveEnvironmentField } from "./terrain";
 
 const bounds = { minX: -16, minZ: -16, maxX: 16, maxZ: 16 };

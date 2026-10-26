@@ -12,7 +12,7 @@ import {
   type TerraformDelta,
   type TerrainMaterialLayer,
   type WeightDelta,
-} from "../world/terraform";
+} from "../terrain/terraform";
 import type { EditorUiDocument, EditorUiPanelLayout } from "../hud/hudDocument";
 import {
   cloneEditorDocument,

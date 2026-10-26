@@ -3,7 +3,7 @@ import { describe, expect, test } from "bun:test";
 import { findLibraryMaterial } from "@jgengine/assets/catalogs/materialLibrary";
 import { summarizeEnvironment } from "@jgengine/core/world/environmentSummary";
 import { createGameContext, type GameContext } from "@jgengine/core/runtime/gameContext";
-import { editableTerrainFromSnapshot } from "@jgengine/core/world/terraform";
+import { editableTerrainFromSnapshot } from "@jgengine/core/terrain/terraform";
 import { editorLayers } from "../editorLayers";
 
 import { world } from "../world";

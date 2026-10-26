@@ -87,6 +87,7 @@ export const CORE_DOMAIN_SKILLS: Record<string, string> = {
   survival: "jgengine-gameplay",
   tactics: "jgengine-gameplay",
   threshold: "jgengine-gameplay",
+  terrain: "jgengine-world",
   time: "jgengine-world",
   turn: "jgengine-gameplay",
   ui: "jgengine-ui",

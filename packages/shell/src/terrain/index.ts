@@ -54,7 +54,7 @@ export {
   type NoiseFieldConfig,
   type TerrainField,
   type TerrainNormal,
-} from "@jgengine/core/world/terrain";
+} from "@jgengine/core/terrain/terrain";
 
 export { createTerrainPaintColorSampler, type TerrainPaintColorSampler, type TerrainPaintSource } from "./terrainPaintColor";
 export {

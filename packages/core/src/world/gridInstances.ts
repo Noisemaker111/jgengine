@@ -7,7 +7,7 @@ import type {
   WorldGridCell,
   WorldGridConfig,
 } from "./features";
-import { seedFrom, valueNoise } from "./terrain";
+import { seedFrom, valueNoise } from "../terrain/terrain";
 
 export interface GridInstanceTransform {
   position: readonly [number, number, number];

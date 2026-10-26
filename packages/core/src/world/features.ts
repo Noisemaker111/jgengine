@@ -1,9 +1,9 @@
 import type { BuildingPaletteOverrides, BuildingProbabilities, BuildingStyle } from "../buildings/buildings";
 import type { BuildingKit } from "../buildings/buildingKit";
 import type { AvoidZone } from "./geometry";
-import type { TerrainPathProfile } from "./pathTerrain";
+import type { TerrainPathProfile } from "../terrain/pathTerrain";
 import type { PlaceWorldFeature } from "../placement/place";
-import type { TerraformSnapshot } from "./terraform";
+import type { TerraformSnapshot } from "../terrain/terraform";
 import type { SpriteAtlas } from "../assets/spriteAtlas";
 import type { VolumetricCloudsConfig } from "../sky/volumetricClouds";
 import { warnOnce } from "../devtools/warnOnce";
@@ -133,7 +133,7 @@ export interface TerrainFlattenMask {
 
 /** Palette and blend fields shared by every `TerrainMaterialRegion` shape. */
 export interface TerrainRegionStyle {
-  /** Named palette preset for this region (see `TERRAIN_MATERIAL_PALETTES` in `world/terrain`); overridden field-by-field by `colors`. */
+  /** Named palette preset for this region (see `TERRAIN_MATERIAL_PALETTES` in `terrain/terrain`); overridden field-by-field by `colors`. */
   material?: TerrainMaterial;
   colors?: TerrainColors;
   /** Blend-ring width outside the region core back to the surrounding palette; default: half the region's characteristic size. */
@@ -223,7 +223,7 @@ export interface TerrainEnvironmentConfig {
    * the rendered ground and `ctx.world.ground` sample it. A function doesn't serialize; keep it pure.
    */
   heightField?: (x: number, z: number) => number;
-  /** Named palette preset (see `TERRAIN_MATERIAL_PALETTES` in `world/terrain`); default "grass". Overridden field-by-field by `colors`. */
+  /** Named palette preset (see `TERRAIN_MATERIAL_PALETTES` in `terrain/terrain`); default "grass". Overridden field-by-field by `colors`. */
   material?: TerrainMaterial;
   /** Explicit low/high/waterline hex colors; any field left unset falls back to the resolved `material` preset. */
   colors?: TerrainColors;

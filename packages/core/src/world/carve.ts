@@ -1,4 +1,4 @@
-import { withNormal, type TerrainField } from "./terrain";
+import { withNormal, type TerrainField } from "../terrain/terrain";
 import type { WorldBounds } from "./features";
 
 export const EMPTY_VOXEL = 0;

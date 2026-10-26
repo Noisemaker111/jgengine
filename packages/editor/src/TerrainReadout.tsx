@@ -10,7 +10,7 @@ import {
   surfaceRing,
   chooseContourInterval,
   type GuideRegion,
-} from "@jgengine/core/world/terrainGuides";
+} from "@jgengine/core/terrain/terrainGuides";
 
 import type { TerrainReadoutStore } from "./terrainReadoutStore";
 
@@ -49,7 +49,7 @@ function lineSegments(positions: number[], color: string, opacity: number): THRE
 /**
  * Surface-following terrain-readability overlay: draws iso-elevation contour lines and an optional
  * terrain-draped reference grid from the live ground field, and tracks the cursor's elevation. All
- * geometry comes from headless `@jgengine/core/world/terrainGuides` math; this component only turns it
+ * geometry comes from headless `@jgengine/core/terrain/terrainGuides` math; this component only turns it
  * into three.js lines and publishes the measured feedback to the readout store.
  */
 export function TerrainReadout({

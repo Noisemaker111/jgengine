@@ -20,7 +20,7 @@ import type {
 } from "./features";
 import type { Aabb } from "./geometry";
 import { polylineLength } from "../roads/roads";
-import { resolveTerrainField, resolveTerrainPalette, type TerrainPalette } from "./terrain";
+import { resolveTerrainField, resolveTerrainPalette, type TerrainPalette } from "../terrain/terrain";
 
 /**
  * The buildings one `building()` descriptor places, always through the one frontage placer

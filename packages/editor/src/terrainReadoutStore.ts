@@ -1,4 +1,4 @@
-import type { ElevationReadout, ElevationSummary } from "@jgengine/core/world/terrainGuides";
+import type { ElevationReadout, ElevationSummary } from "@jgengine/core/terrain/terrainGuides";
 
 /** Live, transient terrain-readability feedback shared by the viewport overlay and the HUD legend. */
 export interface TerrainReadoutState {
