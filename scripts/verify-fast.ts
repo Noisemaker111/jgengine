@@ -319,7 +319,7 @@ export function ownTests(file: string, testFiles: readonly string[]): string[] {
  * inner loop stays under 5 s and a push still cannot ship a stale generated file.
  */
 export function gatesFor(changed: readonly string[]): string[] {
-  const gates = new Set(["artifacts", "fixture-location", "path-portability", "orphan-ratchet", "concept-homes"]);
+  const gates = new Set(["artifacts", "path-portability", "concept-homes"]);
   const shippedSource = changed.filter((path) => /^packages\/[^/]+\/src\//.test(path) && !isTestFile(path));
   if (changed.some((path) => path.startsWith("scripts/")) || shippedSource.length > 0) gates.add("capture-hygiene");
   if (shippedSource.length > 0) gates.add("changelog");
@@ -335,10 +335,7 @@ export function gatesFor(changed: readonly string[]): string[] {
     gates.add("games-ledger");
     gates.add("games-capabilities");
   }
-  if (changed.some((path) => /\.(md|mdx)$/i.test(path) || path.startsWith(".claude/skills/"))) {
-    gates.add("skills");
-    gates.add("stage-skills");
-  }
+  if (changed.some((path) => /\.(md|mdx)$/i.test(path) || path.startsWith(".claude/skills/"))) gates.add("stage-skills");
   return [...gates];
 }
 

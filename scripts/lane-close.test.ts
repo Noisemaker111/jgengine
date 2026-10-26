@@ -22,6 +22,7 @@ const CI_OK = JSON.stringify({
 });
 
 interface Script {
+  gen?: number;
   verify?: number;
   land?: number;
   ci?: string;
@@ -43,7 +44,8 @@ function io(script: Script = {}): LaneIo & { lines: { out: string[]; err: string
     sh: (argv) => {
       const key = argv.join(" ");
       if (key === "git rev-parse --abbrev-ref HEAD") return { ...run(), stdout: `${script.branch ?? "agent/x"}\n` };
-      if (key === "run verify:fast --skill-api") return { ...run(), status: script.verify ?? 0 };
+      if (key === "run gen") return { ...run(), status: script.gen ?? 0 };
+      if (key === "run verify:fast") return { ...run(), status: script.verify ?? 0 };
       if (key === "run scripts/land.ts --commit") return { ...run(), status: script.land ?? 0 };
       if (key.startsWith("run ci:status")) {
         return { ...run(), stdout: script.ci ?? CI_OK, status: script.ciStatus ?? 0 };
@@ -114,7 +116,7 @@ describe("lane:close end to end", () => {
     expect(landed).not.toContain("run scripts/land.ts --commit");
   });
 
-  test("closing pays the generated-file check, so a stale manifest or api.md never lands", () => {
+  test("closing regenerates derived files before verifying, so a stale manifest or api.md never lands", () => {
     const calls: string[] = [];
     const fake = io();
     const sh = fake.sh;
@@ -123,13 +125,20 @@ describe("lane:close end to end", () => {
       return sh(argv, inherit);
     };
     closeLane({}, fake);
-    expect(calls).toContain("run verify:fast --skill-api");
+    expect(calls.indexOf("run gen")).toBeLessThan(calls.indexOf("run verify:fast"));
   });
 
-  test("a verification failure names the command that regenerates a stale file", () => {
-    const fake = io({ verify: 1 });
+  test("a gen failure stops before verify and land", () => {
+    const calls: string[] = [];
+    const fake = io({ gen: 1 });
+    const sh = fake.sh;
+    fake.sh = (argv, inherit) => {
+      calls.push(argv.join(" "));
+      return sh(argv, inherit);
+    };
     expect(closeLane({}, fake)).toBe(EXIT_VERIFY_FAILED);
-    expect(fake.lines.err.join("\n")).toContain("bun run gen");
+    expect(calls).not.toContain("run verify:fast");
+    expect(fake.lines.err.join("\n")).toContain("gen failed");
   });
 
   test("land failing returns its exit code and does not close", () => {
