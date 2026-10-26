@@ -7,7 +7,8 @@ import { KitActionBar, KitCount, KitCounts, KitVitals, KitWaveClock } from "@jge
 import { KitActionPrompt, KitPanel } from "@jgengine/react/uiKitRoot";
 import { HudSlots } from "@jgengine/shell/gameKit";
 
-import { continueGame, newGame } from "../flow";
+import { continueGame } from "@jgengine/core/game/gameFlow";
+import { startNewGame } from "@jgengine/react/menu/gameFlowMenus";
 import { idea } from "../idea";
 import { campView, prompts } from "../prompts";
 
@@ -122,7 +123,7 @@ function Ending(): ReactNode {
       ]}
       onAction={(id) => {
         if (id === "retry") void continueGame(ctx);
-        else void newGame(ctx);
+        else void startNewGame(ctx);
       }}
     />
   );

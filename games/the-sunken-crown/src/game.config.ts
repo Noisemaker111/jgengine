@@ -1,8 +1,8 @@
+import { createGameFlowSystem } from "@jgengine/core/game/gameFlow";
 import { DEFAULT_WALK_CODES, defineGame } from "@jgengine/shell/gameKit";
 
 import { editorLayers } from "./editorLayers";
 import { content } from "./game/content";
-import { flowSystem } from "./game/flow";
 import { idea } from "./game/idea";
 import { canSprint, journeyView } from "./game/journey";
 import { entityModels, objectModels, scatterModels } from "./game/models";
@@ -31,7 +31,7 @@ export const game = defineGame({
   },
   // Sprint runs on the stamina bar the journey keeps; a relic deepens it.
   movement: { canSprint },
-  systems: [flowSystem, ...systems],
+  systems: [createGameFlowSystem(), ...systems],
   loop: { onNewPlayer },
   content,
   GameUI,

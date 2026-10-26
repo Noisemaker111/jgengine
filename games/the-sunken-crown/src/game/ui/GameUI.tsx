@@ -1,16 +1,16 @@
 import type { ReactNode } from "react";
-import { useGamePhase } from "@jgengine/react/hooks";
+import { GameFlowUI } from "@jgengine/react/menu/gameFlowMenus";
 
+import { BRIEFING, CONTROLS, CREDITS } from "../controls";
+import { idea } from "../idea";
 import { Hud } from "./Hud";
-import { PauseMenu, TitleMenu } from "./Menus";
 
-/** Title over the standing world, the HUD while playing, the pause menu over it, the end card after. */
+/** Title over the standing world, the HUD while playing, the pause menu over it. */
 export function GameUI(): ReactNode {
-  const { phase } = useGamePhase();
   return (
-    <>
-      {phase === "menu" ? <TitleMenu /> : <Hud />}
-      {phase === "paused" ? <PauseMenu /> : null}
-    </>
+    <GameFlowUI
+      hud={<Hud />}
+      menu={{ name: idea.name, tagline: idea.tagline, pitch: idea.pitch, accent: idea.accent, controls: CONTROLS, briefing: BRIEFING, credits: CREDITS }}
+    />
   );
 }

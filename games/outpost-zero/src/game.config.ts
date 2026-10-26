@@ -1,8 +1,8 @@
+import { createGameFlowSystem } from "@jgengine/core/game/gameFlow";
 import { DEFAULT_WALK_CODES, defineGame } from "@jgengine/shell/gameKit";
 
 import { editorLayers } from "./editorLayers";
 import { content } from "./game/content";
-import { flowSystem } from "./game/flow";
 import { gunView, SHOULDER, shoulderView } from "./game/guns";
 import { idea } from "./game/idea";
 import { entityModels, objectModels, scatterModels } from "./game/models";
@@ -28,7 +28,7 @@ export const game = defineGame({
     ...Object.fromEntries(idea.guns.map((_, index) => [`gun${index + 1}`, [`Digit${index + 1}`]])),
     ...Object.fromEntries(idea.upgrades.map((_, index) => [`upgrade${index + 1}`, [`Digit${idea.guns.length + index + 1}`]])),
   },
-  systems: [flowSystem, ...systems],
+  systems: [createGameFlowSystem(), ...systems],
   loop: { onNewPlayer },
   content,
   GameUI,

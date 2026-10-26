@@ -6,7 +6,8 @@ import { KitCount, KitCounts, KitVitals } from "@jgengine/react/hud/kitHud";
 import { HudSlots } from "@jgengine/shell/gameKit";
 import { KitButton, KitMeter, KitPanel } from "@jgengine/react/uiKitRoot";
 
-import { continueGame, newGame } from "../flow";
+import { continueGame } from "@jgengine/core/game/gameFlow";
+import { startNewGame } from "@jgengine/react/menu/gameFlowMenus";
 import { gunView } from "../guns";
 import { idea } from "../idea";
 import { opsView } from "../play";
@@ -139,8 +140,8 @@ function Ending(): ReactNode {
         { id: "new", label: "New game" },
       ]}
       onAction={(id) => {
-        if (id === "retry") void continueGame(ctx).then((loaded) => (loaded ? undefined : newGame(ctx)));
-        else void newGame(ctx);
+        if (id === "retry") void continueGame(ctx).then((loaded) => (loaded ? undefined : startNewGame(ctx)));
+        else void startNewGame(ctx);
       }}
     />
   );

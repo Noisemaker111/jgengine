@@ -1,8 +1,8 @@
+import { createGameFlowSystem } from "@jgengine/core/game/gameFlow";
 import { DEFAULT_WALK_CODES, defineGame } from "@jgengine/shell/gameKit";
 
 import { editorLayers } from "./editorLayers";
 import { content } from "./game/content";
-import { flowSystem } from "./game/flow";
 import { idea } from "./game/idea";
 import { entityModels, objectModels, scatterModels } from "./game/models";
 import { farmView, prompts } from "./game/prompts";
@@ -22,7 +22,7 @@ export const game = defineGame({
     pause: ["Escape", "KeyP"],
     ...Object.fromEntries(Array.from({ length: 6 }, (_, index) => [`digit${index + 1}`, [`Digit${index + 1}`]])),
   },
-  systems: [flowSystem, ...systems],
+  systems: [createGameFlowSystem(), ...systems],
   loop: { onNewPlayer },
   content,
   GameUI,

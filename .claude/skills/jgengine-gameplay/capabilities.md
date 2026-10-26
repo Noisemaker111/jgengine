@@ -203,6 +203,10 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `ActionCodesMap` (type) · `import { ActionCodesMap } from "@jgengine/core/gameplay"`
 
+## game-flow — title, play, pause and autosave checkpoints as one system, with newGame/continueGame/saveNow for menus
+
+- `createGameFlowSystem` (function) · `import { createGameFlowSystem } from "@jgengine/core/game/gameFlow"`
+
 ## game-save — one versioned save document with per-system sections, named slots, caller-policy autosave, migration and a state digest
 
 - `createGameSave` (function) · `import { createGameSave } from "@jgengine/core/gameplay"`
