@@ -31,8 +31,21 @@ const DIFF = `diff --git a/packages/core/src/world/scatterItems.ts b/packages/co
 +++ /dev/null
 `;
 
-test("reads the exported names a diff adds, skipping tests, games and deleted files", () => {
-  expect(addedExports(DIFF)).toEqual([{ name: "pickWeighted", file: "packages/core/src/world/scatterItems.ts" }]);
+test("reads the exported names a diff adds, games included, skipping tests and deleted files", () => {
+  expect(addedExports(DIFF)).toEqual([
+    { name: "pickWeighted", file: "packages/core/src/world/scatterItems.ts" },
+    { name: "world", file: "games/odd-orbit/src/world.ts" },
+  ]);
+});
+
+test("a game export named like an engine export fails; two games may share a name; entry exports are the contract", () => {
+  const engine = { name: "pathLength", file: "packages/core/src/world/roads.ts" };
+  expect(clashes({ name: "pathLength", file: "games/beacon-bastion/src/game/world/layout.ts" }, engine)).toBe(true);
+  expect(clashes({ name: "Hud", file: "games/fernwild/src/game/Hud.tsx" }, { name: "Hud", file: "games/hold-the-line/src/game/Hud.tsx" })).toBe(false);
+  const place = { name: "world", file: "packages/core/src/world/place.ts" };
+  expect(clashes({ name: "world", file: "games/fernwild/src/world.ts" }, place)).toBe(false);
+  expect(clashes({ name: "world", file: "games/fernwild/src/game/spec.ts" }, place)).toBe(true);
+  expect(clashes({ name: "isPopulated", file: "games/shared/assetStore.ts" }, { name: "isPopulated", file: "packages/assets/src/cli/pull.ts" })).toBe(true);
 });
 
 test("a second engine definition of a name fails; two scripts or two games may share one", () => {

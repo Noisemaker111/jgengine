@@ -6,7 +6,7 @@ import type { Faction } from "./tuning";
 /**
  * Player research. A Barracks funds permanent, ranked upgrades over the shared work-queue: Iron
  * Weapons adds melee/ranged damage, Iron Armor shaves incoming damage. Ranks live on the serializable
- * `session.research` clock; combat reads their effect through {@link resolveDamage}, the single site
+ * `session.research` clock; combat reads their effect through {@link factionDamage}, the single site
  * every swing routes through. The enemy does not research in this slice — the bonuses are player-only.
  */
 
@@ -97,6 +97,6 @@ function armorReduction(faction: Faction): number {
 
 /** Effective damage of a swing from `attacker` onto `defender` after both sides' upgrades. Every hit
  * chips at least 1 so armour can soften but never fully negate a blow. */
-export function resolveDamage(base: number, attacker: Faction, defender: Faction): number {
+export function factionDamage(base: number, attacker: Faction, defender: Faction): number {
   return Math.max(1, base + weaponBonus(attacker) - armorReduction(defender));
 }

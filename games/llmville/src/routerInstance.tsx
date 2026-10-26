@@ -8,7 +8,7 @@ import { GameRouteErrorComponent } from "@/runtime/components/GameRouteErrorComp
 
 import { routeTree } from "./routeTree.gen";
 
-export const convex = new ConvexReactClient(env.VITE_CONVEX_URL);
+export const convexClient = new ConvexReactClient(env.VITE_CONVEX_URL);
 
 // Read once at startup: seeds Convex auth from the last remembered session so the
 // first render is authenticated without waiting for the session round-trip.

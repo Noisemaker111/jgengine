@@ -24,7 +24,7 @@ export const BEACON_DAMAGE: DamageTableDef = {
 };
 assertDamageTable(BEACON_DAMAGE);
 
-export interface HitInput {
+export interface RaiderHit {
   type: DamageType;
   base: number;
   raider: RaiderClass;
@@ -37,7 +37,7 @@ export interface HitInput {
 }
 
 /** What one hit lands, after class, armor and brittleness. */
-export function hitDamage(input: HitInput): number {
+export function hitDamage(input: RaiderHit): number {
   const armor = Math.max(0, input.armor - (input.pen ?? 0));
   const row = resolveTableDamage(BEACON_DAMAGE, { type: input.type, resistance: input.raider, armor, base: input.base });
   return (row.damage ?? 0) * (1 + Math.max(0, input.brittle ?? 0));

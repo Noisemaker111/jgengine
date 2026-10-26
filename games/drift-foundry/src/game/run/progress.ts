@@ -2,7 +2,7 @@ import { swapPart } from "../parts/build";
 import { partById, type DriftFoundryPartDef } from "../parts/catalog";
 import { ROW_SIX_TRACK, SPAWN_RUN, trackById } from "../tracks/catalog";
 import { CORRIDOR_DRIVE_HALF_WIDTH } from "./constants";
-import type { RecordStorage } from "./records";
+import type { RunStorage } from "./records";
 
 export const PROGRESS_KEY = "drift-foundry.parked-run.v1";
 export interface ParkedRun {
@@ -41,7 +41,7 @@ export function checkpointParts(run: ParkedRun): readonly DriftFoundryPartDef[] 
 }
 
 /** Checkpoints represent a grounded, stopped buggy, never a reconstructed moving physics state. */
-export function readParkedRun(storage?: RecordStorage): ParkedRun | null {
+export function readParkedRun(storage?: RunStorage): ParkedRun | null {
   try {
     const run = JSON.parse(storage?.getItem(PROGRESS_KEY) ?? "null");
     const nonnegative = (value: unknown) => typeof value === "number" && Number.isFinite(value) && value >= 0;
@@ -65,7 +65,7 @@ export function readParkedRun(storage?: RecordStorage): ParkedRun | null {
   } catch { return null; }
 }
 
-export function saveParkedRun(run: ParkedRun | null, storage?: RecordStorage): boolean {
+export function saveParkedRun(run: ParkedRun | null, storage?: RunStorage): boolean {
   if (!storage) return false;
   try { storage.setItem(PROGRESS_KEY, JSON.stringify(run)); return true; }
   catch { return false; }

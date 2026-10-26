@@ -7,7 +7,7 @@ import { ITEM_LABELS } from "../content";
 import { sessionStore } from "../session";
 import { CityMinimap } from "./components/CityMinimap";
 import { Counters } from "./components/Counters";
-import { Hotbar } from "./components/Hotbar";
+import { BeltHotbar } from "./components/Hotbar";
 import { Objective } from "./components/Objective";
 import { PauseButton, PhoneButton, PhonePanel } from "./components/PhonePanel";
 import { SessionUI } from "./components/SessionUI";
@@ -50,7 +50,7 @@ export function GameUI() {
           <HudPanel id="wanted" anchor={compact ? "top-right" : "top"} order={compact ? 1 : 0} compact="keep" interactive={false}><WantedStars /></HudPanel>
           {/* A landscape phone gives most of its height to the thumb controls, so there the chart, belt and dash hang from the top edge. */}
           <HudPanel id="minimap" anchor={short ? "top-left" : "bottom-left"} order={short ? 1 : 0} compact="keep" interactive={false}><CityMinimap /></HudPanel>
-          <HudPanel id="hotbar" anchor={short ? "top" : "bottom"} compact="keep"><Hotbar /></HudPanel>
+          <HudPanel id="hotbar" anchor={short ? "top" : "bottom"} compact="keep"><BeltHotbar /></HudPanel>
           <HudPanel id="speedo" anchor={short ? "top-right" : "bottom-right"} order={short ? 2 : 0} compact="keep" interactive={false}><Speedo /></HudPanel>
           <HudPanel id="radio" anchor={short ? "top-right" : "bottom-right"} order={short ? 3 : -1} compact="keep"><RadioReadout /></HudPanel>
           <HudPanel id="phone" anchor="right" compact="keep"><PhonePanel /></HudPanel>

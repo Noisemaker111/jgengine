@@ -21,12 +21,12 @@ import { createOpponentField, RIVAL_DEFS, type OpponentField, type RivalBody } f
 import { createStandings, PLAYER_RACER_ID, type RaceSnapshot, type Standings } from "../race/standings";
 import { grantPickup, nearestUncollected, PICKUPS, type PickupDef } from "./pickups";
 import { gateSatisfied, gateStanding, inLane } from "../route/gates";
-import { createVehicleController, type DriveAxis, type VehicleController, type VehiclePose } from "../vehicle/controller";
+import { createVehicleController, type DriveAxis, type VehicleController, type VehicleTelemetry } from "../vehicle/controller";
 import { NEAR_MISS_ENTER, NEAR_MISS_EXIT } from "./constants";
 import { zoneProgress, type TrackZone } from "../zones/catalog";
 import { ROW_SIX_TRACK, trackById, type ActiveHazard, type Track } from "../tracks/catalog";
 import { FLAT_YARD_GROUND } from "../tracks/ground";
-import { browserRecordStorage, completeRun, readRecords, saveRecords, type PersonalBest, type RunRecords, type RecordStorage } from "./records";
+import { browserRecordStorage, completeRun, readRecords, saveRecords, type PersonalBest, type RunRecords, type RunStorage } from "./records";
 import { checkpointParts, readParkedRun, saveParkedRun, type ParkedRun } from "./progress";
 import { ESCAPE_BONUS, bankOf, buyPart as buyGaragePart, garageRows, medalsOf, ownedParts, readCareer, SALVAGE_CREDITS, saveCareer, settleRun, standingOf, DRIVER, type CareerSave } from "../career";
 import { DEFAULT_EVENT_ID, eventById, eventCompactor, eventRivals, formatMetric, MEDALS, targetText, YARD_EVENTS, YARD_TIERS, type MedalId, type YardEvent } from "../events/catalog";
@@ -43,7 +43,7 @@ export interface KartTireEffects {
 }
 export type RunPhase = "start" | "running" | "won" | "crushed";
 
-export interface RadioLine {
+export interface RadioCall {
   id: number;
   text: string;
 }
@@ -124,7 +124,7 @@ export interface SessionSnapshot {
   clearedGateIds: ReadonlySet<string>;
   phase: RunPhase;
   runTime: number;
-  pose: VehiclePose;
+  pose: VehicleTelemetry;
   /** The track this run is on, and where the kart sits on it. */
   track: { id: string; label: string; exitAt: number; gates: number };
   /** Run metres from the start line, and metres left of the centreline. */
@@ -145,7 +145,7 @@ export interface SessionSnapshot {
   surface: SurfaceSample;
   /** Front-corner damage, one entry per authored zone - a bent nose reads here and in `tuning.feel`. */
   damage: readonly VehicleDamageZoneState[];
-  ticker: readonly RadioLine[];
+  ticker: readonly RadioCall[];
   nearMissCount: number;
   closestGap: number;
   armorSaveArmed: boolean;
@@ -206,13 +206,13 @@ export function ghostKey(event: YardEvent): string {
   return track.id === ROW_SIX_TRACK.id ? event.id : `${track.id}:${event.id}`;
 }
 
-const runOf = (pose: VehiclePose): number => pose.run ?? pose.position[2];
-const lateralOf = (pose: VehiclePose): number => pose.lateral ?? pose.position[0];
+const runOf = (pose: VehicleTelemetry): number => pose.run ?? pose.position[2];
+const lateralOf = (pose: VehicleTelemetry): number => pose.lateral ?? pose.position[0];
 
 /** `notices` is the game's shared feed (`ctx.game.notices`); pickups, saves and armor saves surface there. */
 export function createRunSession(
   groundHeightAt: (x: number, z: number) => number = FLAT_YARD_GROUND,
-  storage: RecordStorage | undefined = browserRecordStorage(),
+  storage: RunStorage | undefined = browserRecordStorage(),
   notices?: Pick<NoticeFeed, "push">,
 ): RunSession {
   let begun = false;
@@ -313,12 +313,12 @@ export function createRunSession(
   let standings: Standings = createGrid();
   let FIELD_SIZE = eventRivals(event, RIVAL_DEFS).length + 1;
   let announcedPlace = standings.placeOf(PLAYER_RACER_ID);
-  const restPose = (position: readonly [number, number, number], heading: number): VehiclePose => {
+  const restPose = (position: readonly [number, number, number], heading: number): VehicleTelemetry => {
     const fix = track.locate(position[0], position[2]);
     return { position, heading, speedKmh: 0, slip: 0, surface: 1, airborne: false, blockedByGate: false, run: track.run(fix), lateral: fix.offset, route: fix.route, roadY: fix.elevation, hazards: [] };
   };
   let announcedHazards = new Set<string>();
-  let pose: VehiclePose = {
+  let pose: VehicleTelemetry = {
     ...restPose(track.spawn.position, track.spawn.heading),
     speedKmh: 0,
     slip: 0,
@@ -634,7 +634,7 @@ export function createRunSession(
         tuning,
         surface: surfaceAt(lateralOf(pose), runOf(pose), track, pose.hazards ?? []),
         damage: damage.zones(),
-        ticker: radioFeed.recent("radio").map((entry) => entry.data as RadioLine),
+        ticker: radioFeed.recent("radio").map((entry) => entry.data as RadioCall),
         nearMissCount,
         closestGap: Number.isFinite(closestGap) ? closestGap : 0,
         armorSaveArmed,

@@ -1,6 +1,6 @@
 import type { GameContext } from "@jgengine/core/runtime/gameContext";
 import { captureRecordThumb, refreshRecordSlots } from "./menuRecord";
-import { openTitle, persistRecord, stageMidDive } from "./controls";
+import { openMarrowTitle, persistRecord, stageMidDive } from "./controls";
 import { menuFocus } from "./ui/menu/DeepwardMenu";
 
 /**
@@ -18,7 +18,7 @@ export function registerCaptureCommands(ctx: GameContext): void {
           await captureRecordThumb();
           await persistRecord(state);
         }
-        openTitle(state);
+        openMarrowTitle(state);
         await refreshRecordSlots(state);
       })();
       return state;

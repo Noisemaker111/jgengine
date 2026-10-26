@@ -2,12 +2,12 @@ import { describe, expect, test } from "bun:test";
 
 import type { GameRuntimeSnapshot } from "@jgengine/core/runtime/snapshot";
 import {
-  canAfford,
+  playerCanAfford,
   chargeCurrency,
   currencyBalance,
   grantCurrency,
-  grantUnlock,
-  hasUnlock,
+  grantPlayerUnlock,
+  playerHasUnlock,
 } from "@llmville/game/game/runtime/economy";
 
 function snapshot(economy: Record<string, number>, unlocks: string[] = []): GameRuntimeSnapshot {
@@ -88,15 +88,15 @@ describe("runtime economy", () => {
 
   test("answers affordability without mutating", () => {
     const base = snapshot({ money: 40 });
-    expect(canAfford(base, "user_1", "money", 40)).toBe(true);
-    expect(canAfford(base, "user_1", "money", 41)).toBe(false);
+    expect(playerCanAfford(base, "user_1", "money", 40)).toBe(true);
+    expect(playerCanAfford(base, "user_1", "money", 41)).toBe(false);
   });
 
   test("grants an unlock once and is idempotent", () => {
     const base = snapshot({}, []);
-    expect(hasUnlock(base, "user_1", "base_1")).toBe(false);
-    const granted = grantUnlock(base, "user_1", "base_1");
-    expect(hasUnlock(granted, "user_1", "base_1")).toBe(true);
-    expect(grantUnlock(granted, "user_1", "base_1")).toBe(granted);
+    expect(playerHasUnlock(base, "user_1", "base_1")).toBe(false);
+    const granted = grantPlayerUnlock(base, "user_1", "base_1");
+    expect(playerHasUnlock(granted, "user_1", "base_1")).toBe(true);
+    expect(grantPlayerUnlock(granted, "user_1", "base_1")).toBe(granted);
   });
 });

@@ -1,6 +1,6 @@
 import { JoinGate } from "@jgengine/shell/JoinGate";
 import { WorldChat } from "@/multiplayer/components/WorldChat";
-import PlacementController from "./PlacementController";
+import PlacementControls from "./PlacementController";
 import { GameConnectionErrorScreen } from "./GameConnectionErrorScreen";
 import { useEffect, useMemo, useState } from "react";
 
@@ -303,7 +303,7 @@ function SharedFeedbackPreview({ kind }: { kind: string }) {
     renderFailure={(reason, retry) => <GameConnectionErrorScreen message={reason ?? "Could not join"} onRetry={retry} kind="connection" />} />;
   return <TabletNavProvider value={nav.nav}>
     <div className="flex min-h-screen items-center justify-center gap-8 bg-[#16201e] p-8 text-brand-cream">
-      {kind.startsWith("chat") ? <WorldChat world={preview.world} placing={false} open={chatOpen} setOpen={setChatOpen} fixtureMessages={WORLD_CHAT_PREVIEW_MESSAGES} /> : <PlacementController onRotate={() => {}} onPlace={() => {}} canPlace={false} facingLabel="North" claimHint={{ cells: [{ key: "0,0", x: 0, z: 0, status: "claimable" }], cost: 75, affordable: false }} />}
+      {kind.startsWith("chat") ? <WorldChat world={preview.world} placing={false} open={chatOpen} setOpen={setChatOpen} fixtureMessages={WORLD_CHAT_PREVIEW_MESSAGES} /> : <PlacementControls onRotate={() => {}} onPlace={() => {}} canPlace={false} facingLabel="North" claimHint={{ cells: [{ key: "0,0", x: 0, z: 0, status: "claimable" }], cost: 75, affordable: false }} />}
     </div>
   </TabletNavProvider>;
 }

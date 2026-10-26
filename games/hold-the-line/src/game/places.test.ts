@@ -2,7 +2,7 @@ import { describe, expect, test } from "bun:test";
 
 import { editorLayers } from "../editorLayers";
 import { idea } from "./idea";
-import { campGrid, cellAt, herdMarkers, homeMarker, lairs, nodeMarkers } from "./places";
+import { campGrid, gridCellAt, herdMarkers, homeMarker, lairs, nodeMarkers } from "./places";
 import { waveRoster } from "./waves";
 
 describe("the authored camp", () => {
@@ -13,14 +13,14 @@ describe("the authored camp", () => {
   test("you start inside the build grid, so the first build lands", () => {
     const spawn = editorLayers.markers.find((marker) => marker.kind === "player_spawn");
     expect(spawn).toBeDefined();
-    expect(cellAt(grid, spawn!.position.x, spawn!.position.z)).not.toBeNull();
+    expect(gridCellAt(grid, spawn!.position.x, spawn!.position.z)).not.toBeNull();
   });
 
   test("every resource has spots to gather, outside the camp", () => {
     for (const resource of idea.nodes) {
       const spots = nodeMarkers(editorLayers).filter((spot) => spot.node === resource.id);
       expect(spots.length).toBeGreaterThan(0);
-      for (const spot of spots) expect(cellAt(grid, spot.x, spot.z)).toBeNull();
+      for (const spot of spots) expect(gridCellAt(grid, spot.x, spot.z)).toBeNull();
     }
   });
 

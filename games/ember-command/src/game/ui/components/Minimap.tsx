@@ -78,7 +78,7 @@ function fogPaths(snapshot: FogCellsSnapshot): { unseen: string; explored: strin
  * faction/kind come from the session roster, then `MinimapChrome` plots the dots over the
  * game's own square battlefield frame. Fog of war: unseen ground is black, explored-but-unseen
  * ground is dimmed, and a Marauder unit outside Vanguard sight has no blip at all. */
-export function Minimap() {
+export function TacticalMinimap() {
   const fog = useFogSnapshot();
 
   const markers = useLiveMarkers((set, ctx) => {

@@ -23,12 +23,21 @@ export const HOME_OK = "home-ok:";
 const SOURCE = /\.tsx?$/;
 const NOT_SOURCE = /\.(test|spec)\.tsx?$|\.d\.ts$|\.fixture\.|(^|\/)fixtures?\/|^packages\/jgengine\/src\/(templates|recipes\/snippets)\//;
 /**
- * Where an exported name must be unique: engine packages, and the apps and scripts that could shadow
- * them. Games are products with their own conventions (`world`, `GameUI`); a game re-implementing an
- * engine primitive is `check games-framework`'s job.
+ * Where an exported name must be unique: engine packages, the apps and scripts that could shadow them,
+ * and the games. A game is its own namespace (two games may each have a `Hud`), but a game export named
+ * like an engine export is a re-implementation to replace with the engine's, or a game-specific thing
+ * that needs its own name.
  */
-const SCANNED = /^(packages\/[^/]+\/src|apps\/[^/]+|scripts)\//;
-const SCOPE = ["packages/*/src/*.ts", "packages/*/src/*.tsx", "apps/*.ts", "apps/*.tsx", "scripts/*.ts"];
+const SCANNED = /^(packages\/[^/]+\/src|apps\/[^/]+|scripts|games\/[^/]+\/src|games\/[^/]+\/packages\/[^/]+\/src|games\/shared)\//;
+const SCOPE = [
+  "packages/*/src/*.ts",
+  "packages/*/src/*.tsx",
+  "apps/*.ts",
+  "apps/*.tsx",
+  "scripts/*.ts",
+  "games/*.ts",
+  "games/*.tsx",
+];
 const ENGINE = /^packages\/[^/]+\/src\//;
 /** Layer roots whose folders are concept homes. */
 const LAYER_ROOT = /^(packages\/[^/]+\/src|apps\/[^/]+\/src)\//;
@@ -76,17 +85,30 @@ export function addedExports(diff: string): Definition[] {
 /** The namespace an export lives in: the engine as one scope, then one per app and one per script file. */
 export function namespaceOf(file: string): string {
   if (ENGINE.test(file)) return "engine";
-  const app = /^apps\/([^/]+)\//.exec(file);
-  if (app !== null) return `apps/${app[1]}`;
+  const app = /^(apps|games)\/([^/]+)\//.exec(file);
+  if (app !== null) return `${app[1]}/${app[2]}`;
   return file;
 }
 
 /**
+ * The names a game's entry files hand the engine (`export const game` in `src/game.config.ts`,
+ * `export const world` in `src/world.ts`, `editorLayers`, …): the template writes them, so they are the
+ * game's contract with the engine, not a second definition of an engine concept.
+ */
+const GAME_ENTRY_EXPORTS: ReadonlySet<string> = new Set(["game", "world", "editorLayers", "editorCatalogs", "uiScenario"]);
+const GAME_ENTRY_FILE = /^games\/[^/]+\/src\/[^/]+$/;
+
+function isGameEntryExport(definition: Definition): boolean {
+  return GAME_ENTRY_FILE.test(definition.file) && GAME_ENTRY_EXPORTS.has(definition.name);
+}
+
+/**
  * Two definitions of one name clash when either is engine code: the engine has one owner per name, and
- * an app or script that redefines an engine export should import it. Two scripts may share a name.
+ * an app, script or game that redefines an engine export should import it. Two scripts, or two games,
+ * may share a name.
  */
 export function clashes(a: Definition, b: Definition): boolean {
-  if (a.file === b.file) return false;
+  if (a.file === b.file || isGameEntryExport(a) || isGameEntryExport(b)) return false;
   const left = namespaceOf(a.file);
   const right = namespaceOf(b.file);
   return left === "engine" || right === "engine";

@@ -2,11 +2,12 @@ import type { ActionCodesMap } from "@jgengine/core/input/actionBindings";
 import type { GameContext } from "@jgengine/core/runtime/gameContext";
 import { perContext } from "@jgengine/core/runtime/perContext";
 import { defineStore } from "@jgengine/core/store/defineStore";
+import { openTitle } from "@jgengine/core/game/gameFlow";
 import { setGamePhase } from "@jgengine/core/game/gamePhase";
 import type { DamageRuntime } from "@jgengine/core/combat/damage/damageRuntime";
 import type { WeaponAmmo, WeaponSystem } from "@jgengine/core/combat/weaponSystem";
 import { createPerception, type PerceptionService } from "@jgengine/core/sensor/perception";
-import { BAYS, distance, depthAt, EXIT, EXIT_REACH, FABRICATOR, FABRICATOR_REACH, FRAGMENTS, GARAGE, GARAGE_REACH, HOME_SPAWN, inside, LIFTS, lineOfSight, NODES, PRINT_ID, PRINT_SPAWN, PRINTER_ZERO, PRINTER_ZERO_REACH, RECEIVING_BACK_Z, SALVAGE, STASH, STASH_REACH, STEAM, STRATUM_SPAWNS, SUPPLIES, VAULT_SPAWN, walkable, type Point } from "../world";
+import { BAYS, groundDistance, depthAt, EXIT, EXIT_REACH, FABRICATOR, FABRICATOR_REACH, FRAGMENTS, GARAGE, GARAGE_REACH, HOME_SPAWN, inside, LIFTS, lineOfSight, NODES, PRINT_ID, PRINT_SPAWN, PRINTER_ZERO, PRINTER_ZERO_REACH, RECEIVING_BACK_Z, SALVAGE, STASH, STASH_REACH, STEAM, STRATUM_SPAWNS, SUPPLIES, VAULT_SPAWN, walkable, type Point } from "../world";
 import { acknowledgeReprint, ageDive, depart, fits, ITEMS, ledgerOf, newDive, newHome, normalizeDive, pack, peekLoot, recoverInterrupted, settle, takeLoot, type Dive, type Home, type ItemKind, type Result } from "./state";
 import { installRefit, REFITS, type RefitId } from "./progression";
 import { buySupply, dismantle } from "./counter";
@@ -296,15 +297,15 @@ export function nearby(ctx: GameContext): Target | null {
       { label: "E · Inspect Marrow's persistent stash", id: "stash", at: STASH, act: { type: "stash" }, reach: STASH_REACH },
       { label: "E · Fabricator / print gear, build bays", id: "fabricator", at: FABRICATOR, act: { type: "fabricator" }, reach: FABRICATOR_REACH },
     ];
-    const near = spots.filter(spot => distance(at, spot.at) <= spot.reach).sort((a, b) => distance(at, a.at) - distance(at, b.at))[0];
+    const near = spots.filter(spot => groundDistance(at, spot.at) <= spot.reach).sort((a, b) => groundDistance(at, a.at) - groundDistance(at, b.at))[0];
     return near === undefined ? null : { label: near.label, id: near.id, at: near.at, act: near.act };
   }
   const dive = v.dive;
   if (v.mode !== "dive" || dive === null) return null;
   const stratum = dive.stratum, world = marrowOf(ctx);
-  if (stratum === "vault" && distance(at, EXIT) <= EXIT_REACH) return { label: "E · Return by rail / bank carried haul", id: "exit", at: EXIT, act: { type: "exit" } };
+  if (stratum === "vault" && groundDistance(at, EXIT) <= EXIT_REACH) return { label: "E · Return by rail / bank carried haul", id: "exit", at: EXIT, act: { type: "exit" } };
   for (const lift of LIFTS) {
-    if (lift.place !== stratum || distance(at, lift.at) > lift.reach) continue;
+    if (lift.place !== stratum || groundDistance(at, lift.at) > lift.reach) continue;
     const up = STRATA[lift.to].pressure < STRATA[stratum].pressure;
     if (up && has(v.deep, "crawler")) return { label: "E · Crawler home to Marrow / bank carried haul", id: lift.id, at: lift.at, act: { type: "lift", to: lift.to, locked: null, crawler: true } };
     const locked = up ? null : liftLock(lift.to, world);
@@ -312,7 +313,7 @@ export function nearby(ctx: GameContext): Target | null {
     const label = locked !== null ? `${STRATA[lift.to].name} / cage code needed` : `E · ${up ? "Up" : "Down"} to ${STRATA[lift.to].name} / P${STRATA[lift.to].pressure}${weak}`;
     return { label, id: lift.id, at: lift.at, act: { type: "lift", to: lift.to, locked, crawler: false } };
   }
-  const visible = (spot: Point, reach: number) => distance(at, spot) <= reach && lineOfSight(at, spot, stratum);
+  const visible = (spot: Point, reach: number) => groundDistance(at, spot) <= reach && lineOfSight(at, spot, stratum);
   const choices: Target[] = [];
   if (stratum === "vault") {
     for (const s of SALVAGE) {
@@ -339,11 +340,11 @@ export function nearby(ctx: GameContext): Target | null {
   }
   if (stratum === "choir" && world.fact("story.zero") !== true) choices.push({ label: "E · Take the pattern from Printer Zero / 4s", id: "zero", at: PRINTER_ZERO, act: { type: "zero" } });
   const reach = (target: Target) => target.act.type === "zero" ? PRINTER_ZERO_REACH : target.act.type === "scan" ? 2.4 : 2.1;
-  return choices.filter(target => visible(target.at, reach(target))).sort((a, b) => distance(at, a.at) - distance(at, b.at))[0] ?? null;
+  return choices.filter(target => visible(target.at, reach(target))).sort((a, b) => groundDistance(at, a.at) - groundDistance(at, b.at))[0] ?? null;
 }
 function begin(ctx: GameContext): Promise<void> | void {
   const v = viewStore.read(ctx), at = playerAt(ctx), save = runtime(ctx).save;
-  if (!playable(ctx) || v.mode !== "home" || at === null || distance(at, GARAGE) > GARAGE_REACH || save === null) return;
+  if (!playable(ctx) || v.mode !== "home" || at === null || groundDistance(at, GARAGE) > GARAGE_REACH || save === null) return;
   const state = runtime(ctx);
   if (state.writing) return;
   const rifle = v.rifleUid === null ? null : v.home.stash.find(item => item.id === v.rifleUid && kindOf(item) === "service-rifle") ?? null;
@@ -401,7 +402,7 @@ export async function stageMidDive(ctx: GameContext): Promise<void> {
   for (const loot of SALVAGE.slice(0, 3)) {
     teleport(ctx, loot.at);
     interact(ctx);
-    for (let elapsed = 0; elapsed < 1.8; elapsed += 0.1) tick(ctx, 0.1);
+    for (let elapsed = 0; elapsed < 1.8; elapsed += 0.1) tickControls(ctx, 0.1);
   }
 }
 /**
@@ -918,7 +919,7 @@ function holdAtHome(ctx: GameContext, save: RecordSession, record: RunSnapshot |
     pending: null, error: "", trace: null, ammo: null, hint: recovered.last?.reason ?? viewStore.read(ctx).hint });
   teleport(ctx, HOME_SPAWN); clearLoot(ctx); syncPrint(ctx, null); syncPlayer(ctx, null);
   // A lost Life is acknowledged before anything else; every other record waits at the title.
-  if (recovered.reprintPending) freeze(ctx); else openTitle(ctx);
+  if (recovered.reprintPending) freeze(ctx); else openMarrowTitle(ctx);
 }
 
 /** Continue: put the record's dive (or its home) back on screen and run it. */
@@ -942,7 +943,7 @@ async function applyRecord(ctx: GameContext, save: RecordSession, record: RunSna
     viewStore.write(ctx, { ...viewStore.read(ctx), home: recovered, mode: recovered.reprintPending ? "reprinting" : "home", dive: null, panel: null, paused: false,
       pending: null, error: "", trace: null, ammo: null, hint: recovered.last?.reason ?? viewStore.read(ctx).hint });
     teleport(ctx, HOME_SPAWN); clearLoot(ctx); syncPrint(ctx, null); syncPlayer(ctx, null);
-    openTitle(ctx);
+    openMarrowTitle(ctx);
     return;
   }
   const dive = normalizeDive(record.dive);
@@ -961,9 +962,8 @@ async function applyRecord(ctx: GameContext, save: RecordSession, record: RunSna
 }
 
 /** Stand in front of Marrow with the world frozen: nothing runs until a shift is chosen. */
-export function openTitle(ctx: GameContext): void {
-  ctx.time.pause();
-  setGamePhase(ctx, "menu");
+export function openMarrowTitle(ctx: GameContext): void {
+  openTitle(ctx);
   ctx.game.audio.setLoop("bed", { gain: 0 });
   ungrab();
 }
@@ -1023,7 +1023,7 @@ export async function beginRecordSlot(ctx: GameContext, slot: string, replace = 
 /** Save the record and stand back at Marrow's title, the way a shift is left. */
 export async function withdrawToTitle(ctx: GameContext): Promise<void> {
   await persistRecord(ctx);
-  openTitle(ctx);
+  openMarrowTitle(ctx);
 }
 
 export function seatPlayer(ctx: GameContext): void {
@@ -1031,7 +1031,7 @@ export function seatPlayer(ctx: GameContext): void {
   syncPlayer(ctx, null);
   // The record decides whether this is a fresh title or a resumed dive; until it has been read,
   // hold the world frozen behind the title.
-  openTitle(ctx);
+  openMarrowTitle(ctx);
   if (runtime(ctx).ready && (viewStore.read(ctx).mode === "blocked" || viewStore.read(ctx).mode === "reprinting")) freeze(ctx);
 }
 /** Called only by a storage change event, never by a polling loop. */
@@ -1042,7 +1042,7 @@ export function storageChanged(ctx: GameContext): void {
   viewStore.update(ctx, s => ({ ...s, mode: "blocked", error: "Marrow changed in another window. Reload to use its saved state." }));
   freeze(ctx);
 }
-export function tick(ctx: GameContext, dt: number): void {
+export function tickControls(ctx: GameContext, dt: number): void {
   const v = viewStore.read(ctx);
   if (v.paused || v.mode === "saving" || v.mode === "blocked" || !(dt > 0)) return;
   // Seconds at the home or in a dive are the record's playtime, written with the next record.
@@ -1075,7 +1075,7 @@ export function tick(ctx: GameContext, dt: number): void {
   } else runState.airBeat = -1;
   let p = { ...dive.print, cooldown: Math.max(0, dive.print.cooldown - dt) };
   if (p.health > 0 && stratum === "vault") {
-    const range = distance(at, p.at), senses = sensesOf(ctx), nowMs = dive.elapsed * 1000;
+    const range = groundDistance(at, p.at), senses = sensesOf(ctx), nowMs = dive.elapsed * 1000;
     // A search is a sound at the station's hearing range; the shared service decides whether the
     // Fitter heard it from where it stands and keeps the memory that makes it investigate.
     if (dive.channel !== null && lineOfSight(at, p.at)) {
@@ -1105,7 +1105,7 @@ export function tick(ctx: GameContext, dt: number): void {
     } else {
       p.mode = "route";
       const goal: Point = [PRINT_SPAWN[0] + Math.sin(dive.elapsed * 0.4), PRINT_SPAWN[1], PRINT_SPAWN[2] + Math.sin(dive.elapsed * 0.3) * 2];
-      const remaining = distance(p.at, goal);
+      const remaining = groundDistance(p.at, goal);
       if (remaining > 0) {
         const from = p.at;
         p.at = advanceRoute(runtime(ctx).navigation, p.at, goal, dt * 2.5, "vault");
@@ -1137,7 +1137,7 @@ export function tick(ctx: GameContext, dt: number): void {
     const ch = dive.channel, kind = ch.kind ?? "search";
     const spot = channelSpot(dive, ch.id, kind);
     const jolted = steam || v.dive.health - dive.health > 3 || dive.health <= 0;
-    if (spot === null || jolted || distance(at, ch.anchor) > 0.3 || distance(at, spot) > 2.7 || !lineOfSight(at, spot, stratum)) {
+    if (spot === null || jolted || groundDistance(at, ch.anchor) > 0.3 || groundDistance(at, spot) > 2.7 || !lineOfSight(at, spot, stratum)) {
       dive = { ...dive, channel: null }; hint = "Interrupted / stay still and clear of danger.";
     } else if (ch.remaining <= dt) {
       const done = completeChannel(ctx, dive, deep, ch.id, kind);
@@ -1256,7 +1256,7 @@ export function captureProbe(ctx: GameContext): Record<string, number> {
 function depthProbe(ctx: GameContext, v: View): Record<string, number> {
   const world = marrowOf(ctx), dive = v.dive, at = playerAt(ctx);
   const alive = dive === null ? [] : Object.values(dive.fauna).filter(creature => creature.place === dive.stratum && creature.health > 0);
-  const near = at === null ? Infinity : Math.min(Infinity, ...alive.map(creature => distance(creature.at, at)));
+  const near = at === null ? Infinity : Math.min(Infinity, ...alive.map(creature => groundDistance(creature.at, at)));
   const flag = (key: string) => world.fact(key) === true ? 1 : 0;
   return {
     stratum: dive === null ? 0 : ["vault", "cold", "wells", "choir"].indexOf(dive.stratum) + 1,

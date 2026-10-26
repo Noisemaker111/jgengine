@@ -25,7 +25,7 @@ import { getModelBoundsSnapshot, subscribeModelBounds } from "@/scene/modelBound
 import { getWorldModelAsset } from "@llmville/game/world/worldModelCatalog";
 import { registerBuilderOrbitControls } from "@/dev/builder/builderCameraBridge";
 import {
-  SceneCapture,
+  SceneCapturePanel,
   useScreenshotRequestPoller,
 } from "@/dev/builder/components/SceneCapture";
 
@@ -207,7 +207,7 @@ export function Viewport({ onContextMenuRequest }: { onContextMenuRequest: (stat
           captureActive={activeCapture !== null}
         />
         {activeCapture ? (
-          <SceneCapture
+          <SceneCapturePanel
             key={activeCapture.key}
             floor={floor}
             angles={activeCapture.angles}

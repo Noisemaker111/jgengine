@@ -20,7 +20,7 @@ import { tickFront } from "./game/encounters/front";
 import { loseRift, registerRift, riftLootFor, riftShieldRegen, tickRift } from "./game/rift/rift";
 import { enemyById, levelXpFor } from "./game/entities/enemies/catalog";
 import { lootTables } from "./game/entities/enemies/loot-tables";
-import { player } from "./game/entities/players/catalog";
+import { playerDef } from "./game/entities/players/catalog";
 import {
   enterDowned,
   gunById,
@@ -126,7 +126,7 @@ function onEntityDied(ctx: GameContext, event: EntityDiedEvent): void {
     }
     if (reservePhase(ctx) === "downed") {
       powerSurge(ctx);
-      ctx.scene.entity.update(userId, { movement: { walkSpeed: player.walkSpeed } });
+      ctx.scene.entity.update(userId, { movement: { walkSpeed: playerDef.walkSpeed } });
       ctx.scene.entity.floatText({ instanceId: userId, text: "POWER SURGE!", kind: "pickup" });
     }
     if (enemy.id === "captain_rusk") ruskDownStore.write(ctx, true);
@@ -177,7 +177,7 @@ function respawnAtNewU(ctx: GameContext): void {
   const y = ctx.world.groundHeightAt(station.x, station.z);
   ctx.scene.entity.update(userId, {
     position: [station.x, y, station.z],
-    movement: { walkSpeed: player.walkSpeed },
+    movement: { walkSpeed: playerDef.walkSpeed },
   });
   const health = ctx.scene.entity.stats.get(userId, "health");
   if (health !== null) ctx.scene.entity.stats.delta(userId, "health", health.max);
@@ -286,7 +286,7 @@ function onNewPlayer(ctx: GameContext): void {
   setGamePhase(ctx, "menu");
   ctx.time.pause();
   const y = ctx.world.groundHeightAt(PLAYER_SPAWN[0], PLAYER_SPAWN[2]);
-  ctx.scene.entity.spawn(player.id, {
+  ctx.scene.entity.spawn(playerDef.id, {
     id: ctx.player.userId,
     position: [PLAYER_SPAWN[0], y, PLAYER_SPAWN[2]],
     rotationY: PLAYER_SPAWN_YAW,

@@ -1,6 +1,6 @@
 import { describe, expect, test } from "bun:test";
 
-import { createVehicleController, type DriveAxis, type VehiclePose } from "./controller";
+import { createVehicleController, type DriveAxis, type VehicleTelemetry } from "./controller";
 import { surfaceAt } from "./surface";
 import { CORRIDOR_DRIVE_HALF_WIDTH } from "../run/constants";
 import { HOP_GRAVITY, STUB_HOP_SPEED, tuningFrom } from "../parts/build";
@@ -27,7 +27,7 @@ describe("createVehicleController — straight-line feel", () => {
   test("launches to its top speed in about a second and holds it there", () => {
     const controller = createVehicleController(OPEN_ROAD);
     let reached = Number.POSITIVE_INFINITY;
-    let pose: VehiclePose | null = null;
+    let pose: VehicleTelemetry | null = null;
     for (let i = 1; i <= 240; i += 1) {
       pose = controller.tick(DT, drive({ throttle: 1 }), BARE, NO_INPUT, FLAT);
       if (reached === Number.POSITIVE_INFINITY && pose.speedKmh >= BARE.topSpeed * 3.6 * 0.95) reached = i * DT;
@@ -47,7 +47,7 @@ describe("createVehicleController — straight-line feel", () => {
     expect(stoppedAt).toBeGreaterThan(1);
     expect(stoppedAt).toBeLessThan(3);
     const before = controller.tick(DT, drive({}), BARE, NO_INPUT, FLAT).position[2];
-    let pose: VehiclePose | null = null;
+    let pose: VehicleTelemetry | null = null;
     for (let i = 0; i < 240; i += 1) pose = controller.tick(DT, drive({ brake: 1 }), BARE, NO_INPUT, FLAT);
     expect(pose!.position[2]).toBeLessThan(before - 1);
     expect(pose!.speedKmh / 3.6).toBeLessThanOrEqual(BARE.topSpeed * 0.35 + 0.05);
@@ -56,7 +56,7 @@ describe("createVehicleController — straight-line feel", () => {
   test("a braced plow pulls harder than the same kart unbraced", () => {
     const run = (plowBracing: boolean) => {
       const controller = createVehicleController(OPEN_ROAD);
-      let pose: VehiclePose | null = null;
+      let pose: VehicleTelemetry | null = null;
       for (let i = 0; i < 200; i += 1) pose = controller.tick(DT, drive({ throttle: 1 }), LOADED, { jumpPressed: false, plowBracing }, FLAT);
       return pose!;
     };
@@ -96,7 +96,7 @@ describe("createVehicleController — handling model", () => {
     const run = (startZ: number) => {
       const controller = createVehicleController({ position: [0, 0, startZ], heading: 0 });
       let peakSlip = 0;
-      let last: VehiclePose | null = null;
+      let last: VehicleTelemetry | null = null;
       for (let i = 0; i < 120; i += 1) last = controller.tick(DT, drive({ throttle: 1 }), BARE, NO_INPUT, FLAT);
       const cornerEntrySurface = last!.surface;
       for (let i = 0; i < 30; i += 1) {
@@ -140,7 +140,7 @@ describe("createVehicleController — handling model", () => {
 describe("createVehicleController — corridor and gates", () => {
   test("the corridor wall stops lateral travel at the drivable half-width", () => {
     const controller = createVehicleController({ position: [0, 0, 0], heading: Math.PI / 2 });
-    let pose: VehiclePose | null = null;
+    let pose: VehicleTelemetry | null = null;
     for (let i = 0; i < 600; i += 1) pose = controller.tick(DT, drive({ throttle: 1 }), BARE, NO_INPUT, FLAT);
     expect(pose?.position[0]).toBeLessThanOrEqual(CORRIDOR_DRIVE_HALF_WIDTH + 1e-6);
     expect(pose?.position[0]).toBeCloseTo(CORRIDOR_DRIVE_HALF_WIDTH, 3);
@@ -148,7 +148,7 @@ describe("createVehicleController — corridor and gates", () => {
 
   test("a bare chassis is walled in at the first barricade and reports it", () => {
     const controller = createVehicleController(SPAWN);
-    let pose: VehiclePose | null = null;
+    let pose: VehicleTelemetry | null = null;
     let sawBlocked = false;
     for (let i = 0; i < 1200; i += 1) {
       pose = controller.tick(DT, drive({ throttle: 1 }), BARE, NO_INPUT, FLAT);
@@ -161,7 +161,7 @@ describe("createVehicleController — corridor and gates", () => {
 
   test("a kart that gains parts mid-run keeps its momentum and clears the barricade", () => {
     const controller = createVehicleController(SPAWN);
-    let pose: VehiclePose | null = null;
+    let pose: VehicleTelemetry | null = null;
     for (let i = 0; i < 1200; i += 1) pose = controller.tick(DT, drive({ throttle: 1 }), BARE, NO_INPUT, FLAT);
     const speedAtGate = pose?.speedKmh ?? 0;
     expect(pose?.blockedByGate).toBe(true);

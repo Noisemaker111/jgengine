@@ -1,3 +1,5 @@
+import { clamp } from "@jgengine/core/math/scalar";
+
 export const NEEDS = ["hunger", "energy", "social", "fun"] as const;
 export type NeedId = (typeof NEEDS)[number];
 
@@ -20,8 +22,9 @@ export function emptyNeeds(): Record<NeedId, number> {
   return { hunger: 78, energy: 78, social: 70, fun: 70 };
 }
 
-export function clamp(value: number): number {
-  return value < 0 ? 0 : value > 100 ? 100 : value;
+/** A need or stress value held to its 0–100 scale. */
+export function clampNeed(value: number): number {
+  return clamp(value, 0, 100);
 }
 
 /** The emptiest need in a plain record; declared order breaks ties. */

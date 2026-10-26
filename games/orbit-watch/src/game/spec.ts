@@ -65,7 +65,7 @@ const jobs: Record<string, WorldJobDecl> = Object.fromEntries(
 const padSlots: Record<string, WorldSlotDecl> = Object.fromEntries(pads(editorLayers).map((pad) => [pad.id, { position: [pad.x, pad.z] as const, label: pad.label }]));
 
 /** The whole hold as data: coin and lives, the pads, the towers, what an upgrade costs, when it ends. */
-export const world: WorldModelDecl = {
+export const campWorld: WorldModelDecl = {
   factions: {
     hold: {
       label: idea.core.label,
@@ -109,7 +109,7 @@ export const world: WorldModelDecl = {
  */
 export const hold = defineGameSpec({
   id: idea.spec,
-  world,
+  world: campWorld,
   hooks: { fallen: onFallen, victory: onVictory, built: onBuilt },
   show: { tower: true },
   autoStart: true,

@@ -145,14 +145,14 @@ export const MANUFACTURERS: readonly Manufacturer[] = [
   { id: "Scrapjack", damage: 1.05, interval: 1.05, spread: 1.3, mag: 1.7, reload: 1.25, prefixes: ["Salvaged", "Oversized", "Rebuilt", "Riveted"] },
 ];
 
-export interface RarityTier {
+export interface GunRarity {
   id: Rarity;
   mult: number;
   weight: number;
   elementChance: number;
 }
 
-export const RARITY_TIERS: readonly RarityTier[] = [
+export const RARITY_TIERS: readonly GunRarity[] = [
   { id: "common", mult: 1, weight: 100, elementChance: 0 },
   { id: "uncommon", mult: 1.15, weight: 45, elementChance: 0.25 },
   { id: "rare", mult: 1.35, weight: 18, elementChance: 0.5 },

@@ -1,5 +1,5 @@
 import { cn } from "@/components/ui/cn";
-import { GRAPHICS_QUALITY_OPTIONS, useAppSettings } from "@/settings/settings";
+import { GRAPHICS_PRESET_OPTIONS, useAppSettings } from "@/settings/settings";
 
 import { KeybindSettingsControls } from "@/settings/components/KeybindSettingsControls";
 
@@ -20,7 +20,7 @@ export function AppSettingsControls({
   keybindsOnly = false,
 }: AppSettingsControlsProps) {
   const { reducedMotion, setReducedMotion, graphicsQuality, setGraphicsQuality } = useAppSettings();
-  const activeGraphicsMode = GRAPHICS_QUALITY_OPTIONS.find((option) => option.id === graphicsQuality) ?? GRAPHICS_QUALITY_OPTIONS[1];
+  const activeGraphicsMode = GRAPHICS_PRESET_OPTIONS.find((option) => option.id === graphicsQuality) ?? GRAPHICS_PRESET_OPTIONS[1];
 
   const showReducedMotion = generalOnly || (!videoOnly && !keybindsOnly);
   const showGraphics = videoOnly || (!generalOnly && !keybindsOnly);
@@ -71,7 +71,7 @@ export function AppSettingsControls({
                 </p>
               </div>
               <div className={cn("grid grid-cols-3 gap-2", compact ? "mt-2.5" : "mt-3")}>
-                {GRAPHICS_QUALITY_OPTIONS.map((option) => {
+                {GRAPHICS_PRESET_OPTIONS.map((option) => {
                   const active = option.id === graphicsQuality;
                   return (
                   <button

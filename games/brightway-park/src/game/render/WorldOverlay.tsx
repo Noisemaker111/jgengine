@@ -12,12 +12,12 @@ import { cellCentres, cellFor, park, parkObject, parkObjects, patrolRadius, type
 import { BUILDABLES } from "../objects/catalog";
 import { coasterCircuit, rideView } from "../rides";
 import { placementAt } from "../build/placement";
-import { GRID, snapToGrid } from "../catalog";
+import { GRID, snapToTile } from "../catalog";
 import { traceNative } from "../evidence";
 import { hoverRefusal, placementHintStore } from "../build/placementHint";
 import { SceneCaptureBinding } from "@jgengine/shell/render/sceneCapture";
 import { bindParkCapture } from "../parkProfile";
-import { cellAt, cellCentre, groundAt, isLandTool, LEVEL_HEIGHT, lineCells, raisedCells, rectCells } from "../build/terrain";
+import { tileAt, cellCentre, groundAt, isLandTool, LEVEL_HEIGHT, lineCells, raisedCells, rectCells } from "../build/terrain";
 import { landCheck, LINE_KINDS } from "../build/commands";
 
 /** Each moving ride part: its own GLB whose origin is the pivot, and how it moves (spin, wheel, swing, drop). */
@@ -138,7 +138,7 @@ function Blueprint() {
       const r=gl.domElement.getBoundingClientRect();
       ray.setFromCamera(new Vector2((e.clientX-r.left)/r.width*2-1,-(e.clientY-r.top)/r.height*2+1),camera);
       if(!ray.ray.intersectPlane(plane,hit)){setHover(null);return;}
-      const x=snapToGrid(hit.x),z=snapToGrid(hit.z);
+      const x=snapToTile(hit.x),z=snapToTile(hit.z);
       setHover(old=>old?.[0]===x&&old?.[1]===z?old:[x,z]);
     };
     const leave=()=>setHover(null);
@@ -148,7 +148,7 @@ function Blueprint() {
       const r=gl.domElement.getBoundingClientRect();
       ray.setFromCamera(new Vector2((e.clientX-r.left)/r.width*2-1,-(e.clientY-r.top)/r.height*2+1),camera);
       if(!ray.ray.intersectPlane(plane,hit))return;
-      const at:[number,number]=[snapToGrid(hit.x),snapToGrid(hit.z)];
+      const at:[number,number]=[snapToTile(hit.x),snapToTile(hit.z)];
       setDown(at);
       ctx.game.commands.run("build.dragFrom",{point:at});
     };
@@ -167,7 +167,7 @@ function Blueprint() {
   useEffect(()=>{if(placementHintStore.read(ctx)!==refusal)placementHintStore.write(ctx,refusal);return()=>{if(placementHintStore.read(ctx)!==null)placementHintStore.write(ctx,null);};},[ctx,refusal]);
   if(isLandTool(selected)&&hover){
     const color=landRefusal===null?(selected==="land_raise"?"#7cf3c8":"#f3c87c"):"#ef7059";
-    const cells=rectCells(cellAt(...(down??hover)),cellAt(...hover));
+    const cells=rectCells(tileAt(...(down??hover)),tileAt(...hover));
     return <group>{cells.map(([col,row])=>{const [x,z]=cellCentre(col,row);const y=groundAt(park.of(ctx),x,z);return <mesh key={`${col},${row}`} position={[x,y+.25,z]} rotation={[-Math.PI/2,0,0]} raycast={()=>{}}><planeGeometry args={[GRID-.2,GRID-.2]}/><meshBasicMaterial color={color} transparent opacity={.45} depthWrite={false}/></mesh>;})}</group>;
   }
   if(!def||!hover)return null;
@@ -175,8 +175,8 @@ function Blueprint() {
   const color=valid?"#7cf3c8":"#ef7059";
   const w=park.of(ctx);
   // Dragging a path or queue shows the whole line it will lay.
-  const dragging=down!==null&&LINE_KINDS.has(def.id)&&cellAt(...down).join()!==cellAt(...hover).join();
-  const centres=dragging?lineCells(cellAt(...down),cellAt(...hover)).map(([c,r])=>cellCentre(c,r)):cellCentres(def.id,cellFor(def.id,...hover));
+  const dragging=down!==null&&LINE_KINDS.has(def.id)&&tileAt(...down).join()!==tileAt(...hover).join();
+  const centres=dragging?lineCells(tileAt(...down),tileAt(...hover)).map(([c,r])=>cellCentre(c,r)):cellCentres(def.id,cellFor(def.id,...hover));
   const mid=centres.reduce((a,[x,z])=>[a[0]+x/centres.length,a[1]+z/centres.length],[0,0]);
   const lineColor=(x:number,z:number)=>dragging?(placementAt(w,def.id,x,z).ok?"#7cf3c8":"#ef7059"):color;
   return <group>{!dragging&&<Suspense fallback={null}><Ghost kind={def.id} at={mid as [number,number]} y={groundAt(w,mid[0]!,mid[1]!)} valid={valid}/></Suspense>}{def.staff&&<PatrolRing x={mid[0]!} z={mid[1]!} radius={def.staff.patrol}/>}{centres.map(([x,z])=>{const key=`${x},${z}`;return <mesh key={key} position={[x,groundAt(w,x,z)+.22,z]} rotation={[-Math.PI/2,0,0]} raycast={()=>{}}><planeGeometry args={[GRID-.12,GRID-.12]}/><meshBasicMaterial color={lineColor(x,z)} transparent opacity={.4} depthWrite={false}/></mesh>;})}</group>;

@@ -38,7 +38,7 @@ import { getAvatarById, normalizeAvatarId, normalizePlayerProfile } from "@/user
 import { useQuery } from "convex/react";
 import { useCallback, useEffect, useMemo } from "react";
 
-import { useGameClock } from "./clock";
+import { useRuntimeClock } from "./clock";
 import { deriveWorldBootLabel, deriveWorldBootProgress } from "./worldBootPhase";
 
 import type { RuntimeGame, SiteHealth, WorldSpendPulse } from "./worldViewModel";
@@ -354,7 +354,7 @@ export function useWorldState({
     },
   });
 
-  const gameTime = useGameClock(game?.createdAt, game?.serverNow, game?.gameTimeScale);
+  const gameTime = useRuntimeClock(game?.createdAt, game?.serverNow, game?.gameTimeScale);
   const spendPulse: WorldSpendPulse | null = useMemo(
     () => spendPulseEffect != null && spendPulseEffect.until > Date.now()
       ? { amount: spendPulseEffect.amount, token: spendPulseEffect.until }

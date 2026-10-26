@@ -24,7 +24,7 @@ export { CARDINAL } from "@llmville/game/world/cardinal";
 import type { MeasuredAssetExtents } from "@llmville/game/scene/assetBounds";
 
 export type {
-  AssetAnchor,
+  AssetFloorAnchor as AssetAnchor,
   AssetBoundsMeters,
   AssetFrame,
   AssetTransformInput,

@@ -8,7 +8,7 @@ import { readOptimisticConvexToken } from "@/auth/sessionToken";
 import { registerServiceWorker } from "@/pwa/serviceWorker";
 import { loadGameSessionModule } from "@/runtime/gameRoutePreload";
 import { loadAuthScreenModule } from "@/user/authScreenPreload";
-import { convex, initialConvexToken, router } from "./routerInstance";
+import { convexClient, initialConvexToken, router } from "./routerInstance";
 
 const rootElement = document.getElementById("app");
 
@@ -20,7 +20,7 @@ if (!rootElement.innerHTML) {
   const root = ReactDOM.createRoot(rootElement);
   root.render(
     <ConvexBetterAuthProvider
-      client={convex}
+      client={convexClient}
       authClient={authClient}
       initialToken={initialConvexToken}
     >

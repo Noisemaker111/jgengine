@@ -1,9 +1,9 @@
-export type BodyShape = "blob" | "tall" | "round" | "insectoid";
+export type CreatureBodyShape = "blob" | "tall" | "round" | "insectoid";
 
-export const BODY_SHAPES: readonly BodyShape[] = ["blob", "tall", "round", "insectoid"];
+export const BODY_SHAPES: readonly CreatureBodyShape[] = ["blob", "tall", "round", "insectoid"];
 
 export interface AlienBodyPlan {
-  shape: BodyShape;
+  shape: CreatureBodyShape;
   size: number;
   limbCount: number;
   limbLength: number;

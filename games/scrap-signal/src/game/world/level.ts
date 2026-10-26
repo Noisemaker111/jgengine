@@ -186,7 +186,7 @@ export function roadPathProfiles(heightAt: HeightSampler): readonly TerrainPathP
   });
 }
 
-export interface PlacedPiece {
+export interface LevelPiece {
   catalogId: string;
   x: number;
   z: number;
@@ -195,7 +195,7 @@ export interface PlacedPiece {
 }
 
 /** Every placed level prop, resolved from the authored document (`catalogId` / `meta.catalogId`). */
-export const AUTHORED_PIECES: readonly PlacedPiece[] = resolveAuthoredObjects(authoredScene).map((object) => ({
+export const AUTHORED_PIECES: readonly LevelPiece[] = resolveAuthoredObjects(authoredScene).map((object) => ({
   catalogId: object.catalogId,
   x: object.x,
   z: object.z,

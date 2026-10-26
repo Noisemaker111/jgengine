@@ -1,3 +1,5 @@
+import type { UiKitName } from "@jgengine/react/uiKits";
+
 /**
  * The shared shape of `idea.ts`: what every generated game has whatever its kind (name, look, the
  * ground and sky, the UI kit). Each kind adds its own fields in `kindShape.ts`. `bun run new-game`
@@ -5,7 +7,6 @@
  */
 
 export type KindName = "survival" | "racer" | "builder" | "defense" | "farm" | "shooter" | "colony" | "explorer";
-export type UiKitName = "ink" | "paper" | "parchment" | "terminal" | "holo" | "broadcast" | "arcade" | "signal";
 export type LookName = "cinematic" | "photoreal" | "toon" | "comic" | "retro";
 export type MoodName = "day" | "bright" | "golden" | "dusk" | "overcast" | "night";
 export type GroundName = "grass" | "sand" | "snow" | "rock" | "ash" | "highland" | "slate";

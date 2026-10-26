@@ -9,7 +9,7 @@ import type { GameContextContent, GameContextEntityEntry } from "@jgengine/core/
 import { defineGame } from "@jgengine/shell/defineGame";
 import { useGameContext } from "@jgengine/react/provider";
 import { useStore } from "@jgengine/react/store";
-import { distance, GARAGE, EXIT, PROPS, PRINT_ID, SALVAGE, STEAM, STASH, walkable, world, physics, editorLayers, ROOMS, RETURN_SPINE, DECOR, decorPoint, type Place, type Point } from "./world";
+import { groundDistance, GARAGE, EXIT, PROPS, PRINT_ID, SALVAGE, STEAM, STASH, walkable, world, physics, editorLayers, ROOMS, RETURN_SPINE, DECOR, decorPoint, type Place, type Point } from "./world";
 import { hazardsAt } from "./game/descent";
 import { marrowOf, marrowSpec } from "./game/marrow";
 import { STRATA } from "./game/strata";
@@ -19,7 +19,7 @@ import { surfaceMaterial, type IndustrialSurface } from "./game/industrialMateri
 import { FitterModel } from "./game/fitterArt";
 import { ServiceWeapon, serviceWeaponPose } from "./game/weaponArt";
 import { activeRoomLamps, deriveRoomPresentation, ROOM_LIGHT_BUDGET, ROOM_LIGHT_REACH, ROOM_LIGHT_INTENSITY } from "./game/roomPresentation";
-import { captureProbe, initialize, keybinds, seatPlayer, setAim, tick, viewStore } from "./game/controls";
+import { captureProbe, initialize, keybinds, seatPlayer, setAim, tickControls, viewStore } from "./game/controls";
 import { registerCaptureCommands } from "./game/capture";
 import { SceneCaptureBinding } from "@jgengine/shell/render/sceneCapture";
 import { registerSceneCapture } from "@jgengine/shell/render/sceneCaptureRequest";
@@ -261,7 +261,7 @@ export const game = defineGame({
   worldItem: { filter: [{ id: "authored-salvage", when: {}, hide: true }] },
   // Marrow's base and story run on the engine's world model: bays, power, galley flows, story facts.
   systems: [marrowSpec.system],
-  loop: { onInit: (ctx) => { initialize(ctx); registerCaptureCommands(ctx); }, onNewPlayer: seatPlayer, onTick: tick },
+  loop: { onInit: (ctx) => { initialize(ctx); registerCaptureCommands(ctx); }, onNewPlayer: seatPlayer, onTick: tickControls },
   GameUI, WorldOverlay, renderEntity,
   hudTheme: shiftTheme,
   // Marrow's console draws the menu verbs as hull switch plates and every pane as the dive-log screen.
@@ -275,7 +275,7 @@ export const game = defineGame({
       // Ink pools drag at the suit: a step through one covers a little over half the ground.
       const drag = view.dive !== null && place !== "home" && hazardsAt(frame.current, place, false).has("ink") ? 0.55 : 1;
       // Subdivide the whole displacement so a long frame cannot tunnel through a wall.
-      const steps = Math.max(1, Math.ceil(distance(frame.current, frame.next) / 0.15));
+      const steps = Math.max(1, Math.ceil(groundDistance(frame.current, frame.next) / 0.15));
       let x = frame.current[0], z = frame.current[2];
       const dx = (frame.next[0] - x) / steps * drag, dz = (frame.next[2] - z) / steps * drag;
       for (let n = 0; n < steps; n++) {

@@ -30,7 +30,7 @@ import { DatacenterLighting } from "@/scene/components/DatacenterLighting";
 import Rack from "@/infrastructure/components/Rack";
 import { InterpolatedWorldAgentAvatar } from "@/agent/components/WorldAgentAvatar";
 import { PresenceSyncController } from "@/movement/PresenceSyncController";
-import type { PresenceActions } from "@/multiplayer/presenceTransport";
+import type { WorldPresenceActions } from "@/multiplayer/presenceTransport";
 import { SceneAxesHelper, useShowSceneAxes } from "@/scene/components/SceneAxesHelper";
 import { PlayLook } from "@/movement/components/PlayLook";
 import { TutorialRackArrow } from "@/tutorial/components/TutorialUi";
@@ -70,7 +70,7 @@ interface GameSceneProps {
   playerPosition: { x: number; z: number };
   buildPlacementModeActive: boolean;
   presenceSyncEnabled: boolean;
-  presenceActions: PresenceActions;
+  presenceActions: WorldPresenceActions;
   placementDraftItemId: BuildItemId | null;
   placementDraftDirection: BuildDirection;
   placementPreview: BuildPlacementPreview | null;

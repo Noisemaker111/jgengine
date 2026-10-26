@@ -4,7 +4,7 @@ import { seededRng } from "@jgengine/core/random/rng";
 import type { SceneObject } from "@jgengine/core/scene/objectStore";
 
 import { bumpNeed, householdBook, syncBook } from "../agents";
-import { clamp, type NeedId } from "../needs/needs";
+import { clampNeed, type NeedId } from "../needs/needs";
 import { FURNITURE_BY_ID } from "../objects/catalog";
 import { createHazards, noteEvent, type HabitatHazards, type HouseholdState, type MemberState, type PendingIncident } from "../session/types";
 import { hasTrait, stressFactor } from "../traits";
@@ -59,7 +59,7 @@ function named(state: HouseholdState, id: string | null): string {
 }
 
 function stress(member: MemberState, amount: number): void {
-  member.stress = clamp(member.stress + (amount > 0 ? amount * stressFactor(member) : amount));
+  member.stress = clampNeed(member.stress + (amount > 0 ? amount * stressFactor(member) : amount));
 }
 
 function spend(state: HouseholdState, credits: number): void {
@@ -386,7 +386,7 @@ function expireHazards(state: HouseholdState, now: number): void {
   for (const m of members(state)) if (m.illUntil !== undefined && m.illUntil > 0 && now >= m.illUntil) m.illUntil = 0;
 }
 
-export function isBroken(state: HouseholdState, objId: string): boolean {
+export function isObjectBroken(state: HouseholdState, objId: string): boolean {
   return state.hazards?.broken.includes(objId) ?? false;
 }
 

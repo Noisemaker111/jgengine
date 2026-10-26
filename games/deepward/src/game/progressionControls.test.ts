@@ -3,7 +3,7 @@ import { defineGameDefinition } from "@jgengine/core/game/defineGame";
 import { createGameContext } from "@jgengine/core/runtime/gameContext";
 import { gamePhase } from "@jgengine/core/game/gamePhase";
 import { GARAGE, physics, world } from "../world";
-import { captureProbe, initialize, keybinds, seatPlayer, tick, viewStore, whenReady, whenWritten } from "./controls";
+import { captureProbe, initialize, keybinds, seatPlayer, tickControls, viewStore, whenReady, whenWritten } from "./controls";
 import { RECORD_ENTRY, SAVE_KEY } from "./save";
 import { depart, newDive, newHome, settle, takeLoot } from "./state";
 
@@ -61,7 +61,7 @@ test("real command/context boundary applies refits on departure and acknowledges
     expect(captureProbe(ctx).tankSeconds).toBe(145);
     expect(ctx.scene.entity.stats.get(ctx.player.userId, "oxygen")?.max).toBe(145);
     viewStore.update(ctx, v => ({ ...v, dive: { ...v.dive!, health: 0 } }));
-    tick(ctx, 0.05);
+    tickControls(ctx, 0.05);
     await whenWritten(ctx);
     expect(viewStore.read(ctx).mode).toBe("reprinting");
     expect(viewStore.read(ctx).dive).not.toBeNull(); // Failed view remains until acknowledgement.

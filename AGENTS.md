@@ -35,7 +35,7 @@ Code comments default to none. Exported public API keeps tight JSDoc (it generat
 - **One concept, one folder per layer, same name in each.** `core` holds the model, `shell` draws it, `react` shows it as UI, `editor` authors it: `packages/core/src/camera/shake/`, `packages/shell/src/camera/shake/`, `packages/react/src/camera/shake/`. A layer the concept does not need has no folder. A sub-concept nests in its parent's folder in every layer.
 - **Names say what the thing is**: `notificationCenter.ts`, not `store.ts` or `utils.ts`. One exported name has one definition engine-wide.
 - **The folders are the map.** No hand-kept concept list; `bun run find <words>` reads folders, exports and doc lines and names the home folder in each layer. Moving a concept home: move its files, delete duplicates, fix every importer and game in the same PR.
-- `check concept-homes` (in `verify:fast` and CI) fails a branch that adds an exported name already defined elsewhere, or a file named for a concept outside that concept's folder (`// home-ok: <reason>` exempts one). `--all` prints today's duplicates as a worklist.
+- `check concept-homes` (in `verify:fast` and CI) fails a branch that adds an exported name already defined elsewhere (a game export named like an engine export counts: import the engine's, or give the game's thing its own name), or a file named for a concept outside that concept's folder (`// home-ok: <reason>` exempts one). `--all` prints today's duplicates as a worklist.
 
 ## Game changes improve the framework
 

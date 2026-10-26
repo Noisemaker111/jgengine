@@ -101,7 +101,7 @@ const jobs: Record<string, WorldJobDecl> = Object.fromEntries(
 );
 
 /** The whole realm as data: what it stores, what can be built, what it makes, how it grows. */
-export const world: WorldModelDecl = {
+export const campWorld: WorldModelDecl = {
   factions: {
     realm: {
       label: idea.seat.label,
@@ -156,7 +156,7 @@ function census(ctx: GameContext): { people: number; jobs: number } {
  */
 export const realm = defineGameSpec({
   id: idea.spec,
-  world,
+  world: campWorld,
   hooks: { tier: onTier, crowned: onCrowned },
   show: { home: true, producer: true, crown: true },
   autoStart: true,

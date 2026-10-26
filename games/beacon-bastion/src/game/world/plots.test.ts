@@ -2,7 +2,8 @@ import { describe, expect, test } from "bun:test";
 
 import { editorLayers } from "../../editorLayers";
 import { TOWER_CATALOG, TOWER_IDS, towerDef } from "../entities/towers/catalog";
-import { BUILD_PLOT_XZ, FLANK_WAYPOINTS_XZ, PATH_WAYPOINTS_XZ, type Vec2 } from "./layout";
+import { BUILD_PLOT_XZ, FLANK_WAYPOINTS_XZ, PATH_WAYPOINTS_XZ } from "./layout";
+import type { Vec2 } from "@jgengine/core/world/geometry";
 
 /** Creeps walk the centerline; a tower needs at least this much slack past it so one waypoint corner does not drop the target. */
 const RANGE_MARGIN = 1;

@@ -1,6 +1,6 @@
 import { VEHICLE_STYLES, type AircraftAssistTuning, type GripCurve, type RigidAircraftTuning, type VehicleSpec } from "@jgengine/core/world";
 
-export type VehicleDynamics =
+export type VehicleHandling =
   | { type: "ground"; tuning: VehicleSpec }
   | {
       type: "aircraft";
@@ -21,7 +21,7 @@ export interface VehicleDef {
   body: string;
   cabin: string;
   price: number;
-  dynamics: VehicleDynamics;
+  dynamics: VehicleHandling;
   /** Body radius (world units) the driving obstacle clamp inflates solids by, and the crash/knockdown reach (#1051). */
   collisionRadius: number;
 }

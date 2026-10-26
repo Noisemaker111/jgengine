@@ -9,16 +9,16 @@ import { session } from "../session";
  * takes it away and pays its whole price back; undoing a demolish puts it back where it stood and
  * takes back the refund; undoing a land change puts the ground back and returns what it cost.
  */
-export type BuildStep =
+export type UndoStep =
   | { type: "place"; ids: string[]; cost: number }
   | { type: "remove"; kind: string; cell: [number, number]; rot: number; refund: number }
   | { type: "land"; cells: { col: number; row: number; level: number }[]; cost: number };
 
 const LIMIT = 30;
 // The run's own undo list lives on the session, so a new park starts with none.
-const steps = (): BuildStep[] => session.undo;
+const steps = (): UndoStep[] => session.undo;
 
-export function recordStep(step: BuildStep): void {
+export function recordStep(step: UndoStep): void {
   steps().push(step);
   if (steps().length > LIMIT) steps().shift();
 }
@@ -27,11 +27,11 @@ export function clearUndo(): void {
   steps().length = 0;
 }
 
-export function canUndo(): boolean {
+export function canUndoBuild(): boolean {
   return steps().length > 0;
 }
 
-export function lastStep(): BuildStep | null {
+export function lastStep(): UndoStep | null {
   return steps().at(-1) ?? null;
 }
 

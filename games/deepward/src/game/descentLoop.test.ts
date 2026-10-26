@@ -2,7 +2,7 @@ import { afterEach, beforeEach, expect, test } from "bun:test";
 import { defineGameDefinition } from "@jgengine/core/game/defineGame";
 import { createGameContext, type GameContext } from "@jgengine/core/runtime/gameContext";
 import { EXIT, FRAGMENTS, GARAGE, LIFTS, NODES, physics, SUPPLIES, world, type Point } from "../world";
-import { captureProbe, initialize, keybinds, seatPlayer, tick, viewStore, whenReady, whenWritten } from "./controls";
+import { captureProbe, initialize, keybinds, seatPlayer, tickControls, viewStore, whenReady, whenWritten } from "./controls";
 import { marrowOf, marrowSpec } from "./marrow";
 import { rollItem } from "./items";
 import { broadcast, createSenses, tickCreatures } from "./descent";
@@ -35,7 +35,7 @@ async function create(): Promise<GameContext> {
   return ctx;
 }
 const stand = (ctx: GameContext, at: Point) => ctx.scene.entity.setPose(ctx.player.userId, { position: at, dt: 0 });
-const run = (ctx: GameContext, seconds: number) => { for (let t = 0; t < seconds; t += 0.1) tick(ctx, 0.1); };
+const run = (ctx: GameContext, seconds: number) => { for (let t = 0; t < seconds; t += 0.1) tickControls(ctx, 0.1); };
 async function depart(ctx: GameContext): Promise<void> {
   stand(ctx, GARAGE);
   ctx.game.commands.run("deepward.depart", {});

@@ -205,7 +205,7 @@ function clutterAt(place: Place): readonly FloorRect[] {
   }
   return solids;
 }
-export function distance(a: Point, b: Point): number { return Math.hypot(a[0] - b[0], a[2] - b[2]); }
+export function groundDistance(a: Point, b: Point): number { return Math.hypot(a[0] - b[0], a[2] - b[2]); }
 export function inside(x: number, z: number, r: { x: number; z: number; w: number; d: number }): boolean {
   return Math.abs(x - r.x) < r.w / 2 && Math.abs(z - r.z) < r.d / 2;
 }
@@ -220,7 +220,7 @@ export function walkable(x: number, z: number, place: Place, radius = 0.28): boo
 }
 /** Segment checks cover interior walls and machinery, also used for firing and looting. */
 export function lineOfSight(a: Point, b: Point, place: Place = "vault"): boolean {
-  const steps = Math.ceil(distance(a, b) / 0.18);
+  const steps = Math.ceil(groundDistance(a, b) / 0.18);
   for (let n = 1; n < steps; n++) {
     const t = n / steps;
     if (!walkable(a[0] + (b[0] - a[0]) * t, a[2] + (b[2] - a[2]) * t, place, 0)) return false;

@@ -19,7 +19,7 @@ import { session } from "../../session";
 import { placementHintStore } from "../../build/placementHint";
 import { isLandTool, LAND_COST, LAND_TOOLS } from "../../build/terrain";
 import { LINE_KINDS } from "../../build/commands";
-import { canUndo } from "../../build/undo";
+import { canUndoBuild } from "../../build/undo";
 import { PRICE_TOLERANCE } from "../../park";
 import { guestRidePreference, rideFit } from "../../sim/rideExperience";
 import { coasterCircuit } from "../../rides";
@@ -53,7 +53,7 @@ export function BuildBar({ onClose, onResearch }: { onClose: () => void; onResea
   const ctx = useGameContext();
   const cash = w.num("park.cash");
   const selected = useGameStore(() => session.selectedTool);
-  const undoable = useGameStore(() => canUndo());
+  const undoable = useGameStore(() => canUndoBuild());
   const refusal = useStore(placementHintStore);
   useEffect(() => {
     if (isLandTool(selected)) { setCategory("land"); return; }

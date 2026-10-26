@@ -10,7 +10,7 @@ import { createPoseSyncGate, type PoseSyncTuning } from "@jgengine/core/multipla
 import { PROFILE_SECTION, useProfiledFrame } from "@/runtime/runtimePerformanceProfiler";
 import { readJumpOffset, readLookPitch, readLookYaw } from "@/movement/movementInput";
 import type { GameEngine } from "@/runtime/gameEngine";
-import type { PresenceActions } from "@/multiplayer/presenceTransport";
+import type { WorldPresenceActions } from "@/multiplayer/presenceTransport";
 
 const POSE_SYNC_TUNING: PoseSyncTuning = {
   minIntervalMs: 100,
@@ -24,7 +24,7 @@ interface PresenceSyncControllerProps {
   engine: GameEngine;
   playerId: string;
   enabled: boolean;
-  presenceActions: PresenceActions;
+  presenceActions: WorldPresenceActions;
 }
 
 function readPlayerPose(engine: GameEngine) {

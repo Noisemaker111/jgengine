@@ -24,7 +24,7 @@ export interface MyPresenceLocation {
   rotationY: number;
 }
 
-export type PresenceSession = EnginePresenceSession<Id<"games">>;
-export type PresenceFeeds = EnginePresenceFeeds<WorldPresenceRow, MyPresenceLocation>;
-export type PresenceActions = EnginePresenceActions<Id<"games">>;
-export type PresenceTransport = EnginePresenceTransport<WorldPresenceRow, MyPresenceLocation, Id<"games">>;
+export type WorldPresenceSession = EnginePresenceSession<Id<"games">>;
+export type WorldPresenceFeeds = EnginePresenceFeeds<WorldPresenceRow, MyPresenceLocation>;
+export type WorldPresenceActions = EnginePresenceActions<Id<"games">>;
+export type WorldPresenceTransport = EnginePresenceTransport<WorldPresenceRow, MyPresenceLocation, Id<"games">>;

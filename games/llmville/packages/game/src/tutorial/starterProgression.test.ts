@@ -8,7 +8,7 @@ import { getFounderMultipliers } from "../user/founder";
 import { getHardwareDefinition, getRackCatalogDefinition, STARTER_RACK_CATALOG_ID } from "../infrastructure/catalog";
 import { getPlacementBounds } from "../build/build";
 import { cellsForBounds } from "../datacenter/grid";
-import { planFootprintClaims } from "../datacenter/claims";
+import { planDatacenterClaims } from "../datacenter/claims";
 const STARTER_GPU_ID = "gpu_1";
 import { advanceTutorialNode, TUTORIAL_NODE } from "./tutorialMachine";
 import { deriveTutorialWorldSignals, TUTORIAL_SCRAPE_MODEL_ID, TUTORIAL_TRAIN_BASE_MODEL_ID } from "./tutorialProgress";
@@ -26,7 +26,7 @@ describe("starter progression", () => {
   test("starting money covers individually purchased equipment, footprint tiles, and scraper license", () => {
     const license = getBaseModelDefinition(TUTORIAL_SCRAPE_MODEL_ID)!;
     const equipmentCost = getRackCatalogDefinition(STARTER_RACK_CATALOG_ID).buyPrice + 2 * getHardwareDefinition(STARTER_GPU_ID).buyPrice;
-    const tiles = planFootprintClaims({ cells: cellsForBounds(getPlacementBounds(STARTER_RACK_CATALOG_ID, { x: 10.5, z: 10.5 }, 0)), ownerGameId: "starter", claims: [], money: DEFAULT_STARTING_MONEY - equipmentCost - license.licenseCost });
+    const tiles = planDatacenterClaims({ cells: cellsForBounds(getPlacementBounds(STARTER_RACK_CATALOG_ID, { x: 10.5, z: 10.5 }, 0)), ownerGameId: "starter", claims: [], money: DEFAULT_STARTING_MONEY - equipmentCost - license.licenseCost });
     expect(tiles.ok).toBe(true);
     if (!tiles.ok) throw new Error(tiles.reason);
     expect(equipmentCost + license.licenseCost + tiles.totalCost).toBeLessThanOrEqual(DEFAULT_STARTING_MONEY);

@@ -72,7 +72,7 @@ const jobs: Record<string, WorldJobDecl> = Object.fromEntries(
 );
 
 /** The whole camp as data: what it holds, what can be built, gathered and tamed, and when waves come. */
-export const world: WorldModelDecl = {
+export const campWorld: WorldModelDecl = {
   factions: {
     camp: {
       label: idea.home.label,
@@ -149,7 +149,7 @@ export const world: WorldModelDecl = {
  */
 export const camp = defineGameSpec({
   id: idea.spec,
-  world,
+  world: campWorld,
   hooks: { wave: spawnWave, dawn: onDawn, fallen: onFallen, victory: onVictory, repair: repairTarget, tamed: tameTarget },
   show: { structure: { role: "prop" } },
   autoStart: true,

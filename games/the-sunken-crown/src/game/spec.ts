@@ -35,7 +35,7 @@ const jobs: Record<string, WorldJobDecl> = Object.fromEntries(
 );
 
 /** The whole journey as data: what is found, what is carried, what still guards what, and the story. */
-export const world: WorldModelDecl = {
+export const campWorld: WorldModelDecl = {
   factions: { journey: { label: idea.hero.label, facts: { found: 0, relics: 0, won: 0, fallen: 0 } } },
   people: { guide: { name: idea.guide.name, faction: "journey", known: true, says: [{ text: idea.pitch }] } },
   things: {
@@ -75,7 +75,7 @@ export const world: WorldModelDecl = {
 /** The running journey: the declaration above plus the code it names; the story plays straight through. */
 export const journey = defineGameSpec({
   id: idea.spec,
-  world,
+  world: campWorld,
   hooks: { found: onFound, relic: onRelic, victory: onVictory },
   autoStart: true,
   input: (ctx) => ({ actors: { player: { alive: ctx.scene.entity.get(ctx.player.userId) !== null } } }),

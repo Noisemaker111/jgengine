@@ -202,7 +202,7 @@ function sanitizeSingleKeybind(input: object, actionId: KeybindActionId): Keybin
 
 export const APP_SETTINGS_STORAGE_KEY = "llmville:app-settings";
 
-export const GRAPHICS_QUALITY_OPTIONS = [
+export const GRAPHICS_PRESET_OPTIONS = [
   {
     id: "performance",
     label: "Performance",
@@ -220,11 +220,11 @@ export const GRAPHICS_QUALITY_OPTIONS = [
   },
 ] as const;
 
-export type GraphicsQuality = (typeof GRAPHICS_QUALITY_OPTIONS)[number]["id"];
+export type GraphicsPreset = (typeof GRAPHICS_PRESET_OPTIONS)[number]["id"];
 
 export interface AppSettings {
   reducedMotion: boolean;
-  graphicsQuality: GraphicsQuality;
+  graphicsQuality: GraphicsPreset;
   keybinds: AppKeybinds;
 }
 
@@ -268,8 +268,8 @@ const DEFAULT_APP_SETTINGS: AppSettings = {
   keybinds: DEFAULT_APP_KEYBINDS,
 };
 
-export function isGraphicsQuality(value: string): value is GraphicsQuality {
-  return GRAPHICS_QUALITY_OPTIONS.some((option) => option.id === value);
+export function isGraphicsQuality(value: string): value is GraphicsPreset {
+  return GRAPHICS_PRESET_OPTIONS.some((option) => option.id === value);
 }
 
 const listeners = new Set<() => void>();
@@ -375,7 +375,7 @@ export function useAppSettings() {
   return {
     ...settings,
     setReducedMotion: (reducedMotion: boolean) => updateAppSettings({ reducedMotion }),
-    setGraphicsQuality: (graphicsQuality: GraphicsQuality) => updateAppSettings({ graphicsQuality }),
+    setGraphicsQuality: (graphicsQuality: GraphicsPreset) => updateAppSettings({ graphicsQuality }),
     setKeybind: (actionId: KeybindActionId, slot: KeybindSlot, key: BindableKey | null) =>
       updateAppSettings({
         keybinds: {

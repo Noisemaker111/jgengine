@@ -71,7 +71,7 @@ export function AmmoPlate({ combat = false }: { combat?: boolean }) {
 }
 
 /** The weapon cartridges slotted into the forearm rig; the live one rides up and lights. */
-export function Hotbar({ combat = false }: { combat?: boolean }) {
+export function WeaponHotbar({ combat = false }: { combat?: boolean }) {
   const selected = useSelectedSlot();
   const slots = useInventory("hotbar");
   const ids = [0, 1, 2, 3].map((index) => slots[index]?.itemId ?? "");

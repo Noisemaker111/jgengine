@@ -1,6 +1,6 @@
 import { expect, test } from "bun:test";
 import { createFitterSenses, FITTER_CONE_DEG, FITTER_HEARING, FITTER_SIGHT } from "./controls";
-import { distance, lineOfSight, PRINT_SPAWN, VAULT_SPAWN, walkable, type Point } from "../world";
+import { groundDistance, lineOfSight, PRINT_SPAWN, VAULT_SPAWN, walkable, type Point } from "../world";
 
 const OBSERVER = "bellwether-fitter";
 const DIVER = "diver";
@@ -18,7 +18,7 @@ function openAt(metres: number): Point {
 
 test("the Fitter sees a diver in front of it and keeps the memory for half a second", () => {
   const senses = createFitterSenses(), diver = openAt(6);
-  expect(distance(PRINT_SPAWN, diver)).toBeLessThanOrEqual(FITTER_SIGHT);
+  expect(groundDistance(PRINT_SPAWN, diver)).toBeLessThanOrEqual(FITTER_SIGHT);
   senses.observe({ id: OBSERVER, position: PRINT_SPAWN, yaw: facing(PRINT_SPAWN, diver) }, [{ id: DIVER, position: diver }], 1_000);
   expect(senses.memoryOf(OBSERVER, DIVER)).not.toBeNull();
   // The memory fades rather than pinning the diver in place forever.
@@ -63,8 +63,8 @@ test("a wall stops a sighting, and a search is heard only inside the hearing ran
   const heard = senses.memoryOf(OBSERVER, DIVER);
   expect(heard).not.toBeNull();
   // The nearer sound is the one remembered, and the far one is out of earshot.
-  expect(distance(heard!.lastKnownPos as unknown as Point, near)).toBeLessThan(0.001);
-  expect(distance(PRINT_SPAWN, far)).toBeGreaterThan(FITTER_HEARING);
+  expect(groundDistance(heard!.lastKnownPos as unknown as Point, near)).toBeLessThan(0.001);
+  expect(groundDistance(PRINT_SPAWN, far)).toBeGreaterThan(FITTER_HEARING);
 });
 
 test("the station's own spawn points are a valid sight line for the test", () => {

@@ -58,7 +58,7 @@ const jobs: Record<string, WorldJobDecl> = Object.fromEntries(
 );
 
 /** The whole campaign as data: the wallet, the outposts, the guns and upgrades cash buys, the story. */
-export const world: WorldModelDecl = {
+export const campWorld: WorldModelDecl = {
   factions: {
     ops: {
       label: idea.base.label,
@@ -84,7 +84,7 @@ export const world: WorldModelDecl = {
 /** The running campaign: the declaration above plus the code it names. */
 export const ops = defineGameSpec({
   id: idea.spec,
-  world,
+  world: campWorld,
   hooks: {
     victory: (ctx: GameContext, call) => {
       call.world.set(fact("won"), true);

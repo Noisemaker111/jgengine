@@ -21,7 +21,7 @@ export function guestCap(rating: number): number {
   return Math.round(GUEST_CAP_BASE + rating * GUEST_CAP_PER_RATING);
 }
 
-export function snapToGrid(value: number): number {
+export function snapToTile(value: number): number {
   return Math.round(value / GRID) * GRID;
 }
 

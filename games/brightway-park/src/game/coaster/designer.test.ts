@@ -1,8 +1,8 @@
 import { describe, expect, test } from "bun:test";
 
-import { canAppend, isClosed, launchCell, LOOP_SPEED, platformCells, STYLES, testRun, walkLayout, type PieceType, type Station } from "./designer";
+import { canAppend, isClosed, launchCell, LOOP_SPEED, platformCells, STYLES, testRun, walkLayout, type PieceType, type CoasterStation } from "./designer";
 
-const station: Station = { cell: [19, 15], size: 2, heading: 0 };
+const station: CoasterStation = { cell: [19, 15], size: 2, heading: 0 };
 /** Two lifts up, a drop back down, round a rectangle into the station's back. */
 const ring: PieceType[] = ["lift", "lift", "straight", "right", "down", "down", "right", "straight", "straight", "straight", "straight", "straight", "right", "straight", "straight", "right"];
 

@@ -11,15 +11,15 @@ import { DOM_EVENT } from "@/movement/movementInput";
 import { REMOTE_AVATAR_RENDER_CAP } from "@/world/location";
 import { readPlayerPosition } from "@/runtime/playerPosition";
 import { publishLiveRemotePoses, type LiveRemotePose } from "@/world/remotePresenceRuntime";
-import type { PresenceActions, PresenceFeeds, WorldPresenceRow } from "@/multiplayer/presenceTransport";
+import type { WorldPresenceActions, WorldPresenceFeeds, WorldPresenceRow } from "@/multiplayer/presenceTransport";
 
 interface UseMovementPresenceParams {
   engine: GameEngine;
   playerId: string;
   canViewGame: boolean;
   game: { _id: Id<"games"> } | null | undefined;
-  presenceFeeds: PresenceFeeds;
-  presenceActions: PresenceActions;
+  presenceFeeds: WorldPresenceFeeds;
+  presenceActions: WorldPresenceActions;
 }
 
 interface MovementPresence {
