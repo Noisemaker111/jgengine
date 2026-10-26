@@ -1,4 +1,4 @@
-import { LevelUpFlash } from "@jgengine/react/components";
+import { LevelUpFlash } from "@jgengine/core/ui/components.view";
 import { useEntityStat, useGameStore, usePlayer } from "@jgengine/react/hooks";
 import { lastHit, lastHurtAtMs } from "../../feel";
 

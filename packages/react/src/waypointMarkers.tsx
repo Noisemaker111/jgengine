@@ -4,7 +4,7 @@ import { layoutScreenMarker, type ScreenMarkerLayout } from "@jgengine/core/ui/s
 import { waypointAnchor, type WaypointEntry, type WaypointStore } from "@jgengine/core/world/waypoints";
 import { formatDistance, type DistanceFormat } from "@jgengine/core/format/distance";
 
-import type { ProjectEntity } from "./entityFrames";
+import type { ProjectEntity } from "@jgengine/core/hud/entityFrames.view";
 import { hudType } from "@jgengine/core/hud/hudTokens";
 
 /**

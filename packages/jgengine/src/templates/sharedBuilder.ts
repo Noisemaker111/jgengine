@@ -122,7 +122,7 @@ else {
   root.render(<ConvexProvider client={client}><GameHost playable={game} multiplayer={multiplayer}${options.editor === false ? "" : ' editor={() => import("@jgengine/editor")}'} /></ConvexProvider>);
 }
 ` },
-    { path: "src/game/ui/GameUI.tsx", contents: `import { ChatPanel } from "@jgengine/react/chat";
+    { path: "src/game/ui/GameUI.tsx", contents: `import { ChatPanel } from "@jgengine/core/chat/chat.view";
 export function GameUI() {
   return <div className="pointer-events-auto absolute bottom-4 left-4 w-80 rounded-lg bg-slate-950/90 p-3 text-white"><ChatPanel initialChannel="global" defaultExpanded={false} ownMessageClassName="text-cyan-300" logClassName="max-h-48 overflow-auto" /></div>;
 }

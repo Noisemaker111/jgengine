@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { HudCanvas, HudPanel, useDisplayProfile, useHudLayout } from "@jgengine/react";
-import { useGameFonts } from "@jgengine/react/gameFonts";
+import { useGameFonts } from "@jgengine/core/ui/fonts.view";
 import { useGamePhase } from "@jgengine/react/hooks";
 import { useStore } from "@jgengine/react/store";
 import { lootDropsOf } from "@jgengine/core/game/events";

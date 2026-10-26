@@ -2,10 +2,10 @@ import { type CSSProperties, type ReactNode } from "react";
 
 import { defineGameDefinition } from "@jgengine/core/game/defineGame";
 import { createAssetCatalog } from "@jgengine/core/scene/assetCatalog";
-import { createDialogueRun, type DialogueGraph } from "@jgengine/core/game/dialogueGraph";
+import { createDialogueRun, type DialogueGraph } from "@jgengine/core/dialogue/dialogueGraph";
 import type { GameContext, GameContextEntityEntry } from "@jgengine/core/runtime/gameContext";
 import { environment, grass, terrain } from "@jgengine/core/world/features";
-import { DialogueView } from "@jgengine/react/dialogueView";
+import { DialogueView } from "@jgengine/core/dialogue/dialogueView.view";
 
 import { EnvironmentScene } from "@jgengine/shell/environment/EnvironmentScene";
 import type { PlayableGame } from "@jgengine/shell/registry";

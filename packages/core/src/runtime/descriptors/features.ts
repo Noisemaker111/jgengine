@@ -8,11 +8,11 @@ import {
 import { createCosmetics } from "../../game/cosmetics";
 import type { GameFeatures } from "../../game/defineGame";
 import type { GameEvents } from "../../game/events";
-import { createLeaderboard, type LeaderboardRow } from "../../game/leaderboard";
-import { createGameDialogue } from "../../game/dialogue";
+import { createLeaderboard, type LeaderboardRow } from "../../leaderboard/leaderboard";
+import { createGameDialogue } from "../../dialogue/dialogue";
 import { createQuestJournal, type QuestSnapshotEntry } from "../../mission/quest";
-import { createChat, type ChatSnapshot } from "../../game/chat";
-import { type Social, type SocialSnapshot } from "../../game/social";
+import { createChat, type ChatSnapshot } from "../../chat/chat";
+import { type Social, type SocialSnapshot } from "../../social/social";
 import { createTradeSystem } from "../../game/trade";
 import { createUnlocks, type Unlocks } from "../../game/unlocks";
 import {

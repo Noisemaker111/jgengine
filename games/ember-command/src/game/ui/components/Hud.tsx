@@ -1,8 +1,8 @@
 import type { CSSProperties, ReactNode, RefObject } from "react";
 import { useLayoutEffect, useRef, useState, useSyncExternalStore } from "react";
 import { HudFade } from "@jgengine/core/hud/hudLayout.view";
-import { KitPanel } from "@jgengine/react/uiKitRoot";
-import { useRegisterLayoutRegion } from "@jgengine/react/gameViewport";
+import { KitPanel } from "@jgengine/core/ui/kit/uiKitRoot.view";
+import { useRegisterLayoutRegion } from "@jgengine/core/ui/viewport.view";
 import { useEntityStat, useGame } from "@jgengine/react/hooks";
 
 import { hudStore, type ArmyUnit, type HeroKitEntry, type HudSnapshot } from "../../hudStore";

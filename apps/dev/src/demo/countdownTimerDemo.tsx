@@ -5,7 +5,7 @@ import type { GameContext, GameContextEntityEntry } from "@jgengine/core/runtime
 import { createAssetCatalog } from "@jgengine/core/scene/assetCatalog";
 import { createTimerSet } from "@jgengine/core/time/timerSet";
 import { environment, grass, terrain } from "@jgengine/core/world/features";
-import { TimerReadout, TimerRing } from "@jgengine/react/timerReadout";
+import { TimerReadout, TimerRing } from "@jgengine/core/time/timerReadout.view";
 
 import { EnvironmentScene } from "@jgengine/shell/environment/EnvironmentScene";
 import type { PlayableGame } from "@jgengine/shell/registry";

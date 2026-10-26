@@ -1,4 +1,4 @@
-import type { UiKitName } from "@jgengine/react/uiKits";
+import type { UiKitName } from "@jgengine/core/ui/kit/uiKits.view";
 
 /**
  * The shared shape of `idea.ts`: what every generated game has whatever its kind (name, look, the

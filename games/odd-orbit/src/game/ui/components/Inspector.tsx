@@ -1,5 +1,5 @@
 import { HudButton } from "@jgengine/core/hud/hudButton.view";
-import { KitPanel } from "@jgengine/react/uiKitRoot";
+import { KitPanel } from "@jgengine/core/ui/kit/uiKitRoot.view";
 import { useGame, useGameClock, useSceneObjects } from "@jgengine/react/hooks";
 import { useStore } from "@jgengine/react/store";
 import { NEEDS } from "../../needs/needs";

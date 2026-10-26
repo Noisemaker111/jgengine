@@ -1,6 +1,6 @@
 import { useState, type CSSProperties, type ReactNode } from "react";
 
-import type { CreditsSection } from "@jgengine/core/game/credits";
+import type { CreditsSection } from "@jgengine/core/menu/credits";
 import { formatSavePlaytime } from "@jgengine/core/save/saveSlotIndex";
 import type { SaveSlotMeta, SaveSlots } from "@jgengine/core/save/saveSlots";
 

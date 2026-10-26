@@ -11,7 +11,7 @@ import type {
 import { createAssetCatalog } from "@jgengine/core/scene/assetCatalog";
 import { environment, grass, terrain } from "@jgengine/core/world/features";
 import { useGameStore, localPlayerEntity } from "@jgengine/react/hooks";
-import { InteractionPrompt } from "@jgengine/react/interactionPrompt";
+import { InteractionPrompt } from "@jgengine/core/interaction/interactionPrompt.view";
 
 import { EnvironmentScene } from "@jgengine/shell/environment/EnvironmentScene";
 import type { PlayableGame } from "@jgengine/shell/registry";

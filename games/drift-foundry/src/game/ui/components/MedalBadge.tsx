@@ -1,6 +1,6 @@
 import type { ReactNode } from "react";
-import { GameIcon } from "@jgengine/react/gameIcons";
-import { KitPanel } from "@jgengine/react/uiKitRoot";
+import { GameIcon } from "@jgengine/core/ui/icons/gameIcons.view";
+import { KitPanel } from "@jgengine/core/ui/kit/uiKitRoot.view";
 
 import type { MedalId } from "../../events/catalog";
 

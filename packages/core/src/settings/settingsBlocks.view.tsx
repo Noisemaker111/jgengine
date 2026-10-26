@@ -5,9 +5,9 @@ import type { SettingValue } from "@jgengine/core/settings/settingsModel";
 import { hudSpace, hudType, hudTransition } from "@jgengine/core/hud/hudTokens";
 import { useMenuNav, type MenuNavItemProps } from "../menu/menuNav.view";
 import type { SettingsCategoryView, SettingsKeybindRow, SettingsRow } from "./settings.view";
-import { GameSlider } from "@jgengine/react/gameSlider";
-import { ScrollRail } from "@jgengine/react/scrollRail";
-import { useDebouncedCommit } from "@jgengine/react/useDebouncedCommit";
+import { GameSlider } from "@jgengine/core/ui/slider.view";
+import { ScrollRail } from "@jgengine/core/ui/scrollRail.view";
+import { useDebouncedCommit } from "@jgengine/core/ui/useDebouncedCommit.view";
 
 const rowStyle: CSSProperties = {
   display: "flex",

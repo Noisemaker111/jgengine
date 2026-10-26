@@ -1,7 +1,7 @@
 import type { CSSProperties } from "react";
 import { useSyncExternalStore } from "react";
-import { useGameFonts } from "@jgengine/react/gameFonts";
-import { KIT_MATERIALS } from "@jgengine/react/kitFrame";
+import { useGameFonts } from "@jgengine/core/ui/fonts.view";
+import { KIT_MATERIALS } from "@jgengine/core/ui/kit/kitFrame.view";
 import { useGameContext } from "@jgengine/react/provider";
 
 import { GAME_FONTS } from "../../art/fonts/fonts";

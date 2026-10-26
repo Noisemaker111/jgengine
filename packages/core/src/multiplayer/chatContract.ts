@@ -1,4 +1,4 @@
-import type { ChatMessage } from "../game/chat";
+import type { ChatMessage } from "../chat/chat";
 
 export interface ChatSendArgs {
   channelId: string;

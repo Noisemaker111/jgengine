@@ -36,13 +36,13 @@ describe("findFrontEndGaps", () => {
 
   test("a credits screen clears credits", () => {
     expect(
-      scan({ "games/probe/src/ui.tsx": 'import { CreditsScreen } from "@jgengine/react/creditsScreen";\n' }),
+      scan({ "games/probe/src/ui.tsx": 'import { CreditsScreen } from "@jgengine/core/menu/creditsScreen.view";\n' }),
     ).toEqual(["probe#settings"]);
   });
 
   test("the shipped credits panel clears it", () => {
     expect(
-      scan({ "games/probe/src/ui.tsx": 'import { CreditsPanel } from "@jgengine/react/creditsPanel";\n' }),
+      scan({ "games/probe/src/ui.tsx": 'import { CreditsPanel } from "@jgengine/core/menu/creditsPanel.view";\n' }),
     ).toEqual(["probe#settings"]);
   });
 
@@ -65,7 +65,7 @@ describe("findFrontEndGaps", () => {
     expect(
       scan({
         "games/probe/src/game.config.ts": "defineGame({\n  settings: { variant: \"sheet\" },\n});\n",
-        "games/probe/src/ui.tsx": 'import { CreditsScreen } from "@jgengine/react/creditsScreen";\n',
+        "games/probe/src/ui.tsx": 'import { CreditsScreen } from "@jgengine/core/menu/creditsScreen.view";\n',
       }),
     ).toEqual([]);
   });

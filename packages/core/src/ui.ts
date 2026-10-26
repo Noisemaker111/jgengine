@@ -90,6 +90,16 @@ export {
   type RadialSlice,
   type RadialVectorOptions,
 } from "./menu/radialMenu";
+export {
+  createObjectiveBanner,
+  type ObjectiveBannerAnnouncement,
+  type ObjectiveBannerController,
+  type ObjectiveBannerOptions,
+  type ObjectiveBannerPhase,
+  type ObjectiveBannerSnapshot,
+  type ObjectiveBannerView,
+  type StoredObjectiveBanner,
+} from "./mission/objectiveBanner";
 export { resolveGameLook, type LookPreset } from "./render/lookPreset";
 export {
   STUDIO_STAGE_POST,
@@ -160,16 +170,6 @@ export {
   type CoachMarkStep,
   type CoachMarkView,
 } from "./ui/coachMarks";
-export {
-  createObjectiveBanner,
-  type ObjectiveBannerAnnouncement,
-  type ObjectiveBannerController,
-  type ObjectiveBannerOptions,
-  type ObjectiveBannerPhase,
-  type ObjectiveBannerSnapshot,
-  type ObjectiveBannerView,
-  type StoredObjectiveBanner,
-} from "./ui/objectiveBanner";
 export {
   orientationGateActive,
   orientationHintActive,

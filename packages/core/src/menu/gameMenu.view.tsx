@@ -6,12 +6,12 @@ import {
   type ReactNode,
 } from "react";
 
-import { useReducedMotion } from "@jgengine/react/accessibility";
+import { useReducedMotion } from "@jgengine/core/ui/accessibility.view";
 import { createGameMenuSound, type GameMenuSound } from "./gameMenuSound.view";
-import { useGameViewportLayout } from "@jgengine/react/gameViewport";
+import { useGameViewportLayout } from "@jgengine/core/ui/viewport.view";
 import { hudDuration, hudEase, hudFont, hudType } from "@jgengine/core/hud/hudTokens";
 import { useMenuNav } from "./menuNav.view";
-import { kitHudBridge, KitMenu, KitPanel, useHasUiKit } from "@jgengine/react/uiKitRoot";
+import { kitHudBridge, KitMenu, KitPanel, useHasUiKit } from "@jgengine/core/ui/kit/uiKitRoot.view";
 
 /**
  * A game's front-end menu: a full-bleed surface over a living background, a logo, primary verbs on

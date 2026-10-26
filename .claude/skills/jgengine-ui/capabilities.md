@@ -237,7 +237,7 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 ## credits-screen — drop-in credits view over a CreditsDocument — headed sections, optional links, HudTheme-skinned
 
-- `CreditsScreen` (function) · `import { CreditsScreen } from "@jgengine/react/creditsScreen"`
+- `CreditsScreen` (function) · `import { CreditsScreen } from "@jgengine/core/menu/creditsScreen.view"`
 
 ## current-target — read the player's selected target (click or tab target) to drive a target frame
 
@@ -340,7 +340,7 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 - `FloatingText` (function) · `import { FloatingText } from "@jgengine/react"`
 - `FloatingTextPlacement` (interface) · `import { FloatingTextPlacement } from "@jgengine/react"`
 - `WorldFloatingText` (function) · `import { WorldFloatingText } from "@jgengine/shell/vfx/WorldFloatingText"`
-- `createFloatingTextField` (function) · `import { createFloatingTextField } from "@jgengine/core/ui/floatingText"`
+- `createFloatingTextField` (function) · `import { createFloatingTextField } from "@jgengine/core/hud/floatingText"`
 - `layoutFloatingText` (function) · `import { layoutFloatingText } from "@jgengine/react"`
 
 ## fullscreen-map — fullscreen pan/zoom world-map overlay over WorldMapSurface — wheel-zoom, drag-pan, click-to-place, and a freehand draw tool (onStrokeComplete)
@@ -384,6 +384,10 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 - `applyGroundEdgeFade` (function) · `import { applyGroundEdgeFade } from "@jgengine/shell/terrain"`
 - `buildGroundCoverageMask` (function) · `import { buildGroundCoverageMask } from "@jgengine/shell/terrain"`
 - `createGroundEdgeFade` (function) · `import { createGroundEdgeFade } from "@jgengine/shell/terrain"`
+
+## group-credits — turn a flat list of credited things into ordered credit sections
+
+- `groupCredits` (function) · `import { groupCredits } from "@jgengine/core/menu/credits"`
 
 ## heavy-models — models over the per-model triangle budget, for perf probes and smoke assertions
 
@@ -707,6 +711,10 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `createMenuTransition` (function) · `import { createMenuTransition } from "@jgengine/core/ui"`
 
+## merge-credits — fold generated and hand-authored credit documents into one, deduped by entry
+
+- `mergeCredits` (function) · `import { mergeCredits } from "@jgengine/core/menu/credits"`
+
 ## merge-post-processing — layer a partial post chain over a look preset without losing its stages
 
 - `mergePostProcessing` (function) · `import { mergePostProcessing } from "@jgengine/core/render/lookPreset"`
@@ -872,7 +880,7 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 ## presence — keep a closing element mounted through its exit transition
 
-- `useMountPresence` (function) · `import { useMountPresence } from "@jgengine/react/presence"`
+- `useMountPresence` (function) · `import { useMountPresence } from "@jgengine/core/ui/presence.view"`
 
 ## projected-overdraw — sample actual mesh/camera fragment overlap with native coverage and explicit depth/blending/transmission limits
 
@@ -958,10 +966,6 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `SelectionPanel` (function) · `import { SelectionPanel } from "@jgengine/react"`
 
-## server-session — join a multiplayer host with status, retry, and teardown
-
-- `useServerSession` (function) · `import { useServerSession } from "@jgengine/react/useServerSession"`
-
 ## settings-keybind-row — one rebindable controls row — key glyph, armed state and reset
 
 - `SettingsKeybindControl` (function) · `import { SettingsKeybindControl } from "@jgengine/core/settings/settingsBlocks.view"`
@@ -994,10 +998,6 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `createSpriteClipPlayer` (function) · `import { createSpriteClipPlayer } from "@jgengine/core/render/sprite2d"`
 - `sortingOrder` (function) · `import { sortingOrder } from "@jgengine/core/render/sprite2d"`
-
-## standalone-chat — render persisted chat with focus controls and visible send failures
-
-- `StandaloneChatPanel` (function) · `import { StandaloneChatPanel } from "@jgengine/react/standaloneChatPanel"`
 
 ## start-new-game — start a fresh run from a menu or result screen; reloads the page when a run already played
 
@@ -1064,14 +1064,6 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `tuneControlLabels` (function) · `import { tuneControlLabels } from "@jgengine/shell/devtools/TunePanel"`
 
-## tween-number — rolling number readout with an up/down delta flash
-
-- `TweenNumber` (function) · `import { TweenNumber } from "@jgengine/react/tweenNumber"`
-
-## tweened-value — animate a displayed number toward its target, honouring reduced motion
-
-- `useTweenedValue` (function) · `import { useTweenedValue } from "@jgengine/react/tweenNumber"`
-
 ## ui-kit-arcade — retro 8-bit arcade UI kit: stepped pixel frames, JRPG windows, depth buttons, hearts, score popups, chiptune cues
 
 - `arcadeKit` (const) · `import { arcadeKit } from "@jgengine/react"`
@@ -1118,7 +1110,8 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 ## ui-sound-cues — play click/hover/open/close/confirm/deny/notify UI sounds from any component
 
-- `useUiCue` (function) · `import { useUiCue } from "@jgengine/react/uiCues"`
+- `useUiCue` (function) · `import { useUiCue } from "@jgengine/core/ui/uiCues.view"`
+- `withUiCueSounds` (function) · `import { withUiCueSounds } from "@jgengine/core/ui/uiCues"`
 
 ## use-accessibility-rows — accessibility setting rows for a game-owned settings layout
 

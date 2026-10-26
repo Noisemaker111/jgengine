@@ -143,7 +143,7 @@ export interface ResolvedTouchLayout {
 export interface TouchButtonSpec {
   action: string;
   label?: string;
-  /** Glyph for the button face: a `GameIconName` (`@jgengine/react/gameIcons`) or touch glyph (`fire`, `reload`, `aim`), or a 1–3 character text glyph such as `"R"`; unset derives one from the action name, `false` shows short initials of the label. */
+  /** Glyph for the button face: a `GameIconName` (`@jgengine/core/ui/icons/gameIcons.view`) or touch glyph (`fire`, `reload`, `aim`), or a 1–3 character text glyph such as `"R"`; unset derives one from the action name, `false` shows short initials of the label. */
   icon?: string | false;
   /** Makes this the large main button the thumb cluster arcs around. Unset picks the first fire/shoot/attack action, else the first primary button. */
   main?: boolean;

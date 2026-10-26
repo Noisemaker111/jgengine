@@ -1,7 +1,7 @@
 import { formatSpeed } from "@jgengine/core/format/speed";
 import type { GameContext } from "@jgengine/core/runtime/gameContext";
 import { useGameStore } from "@jgengine/react/hooks";
-import { useActionGlyph } from "@jgengine/react/uiKitRoot";
+import { useActionGlyph } from "@jgengine/core/ui/kit/uiKitRoot.view";
 import { vehicleById } from "../../entities/vehicles/catalog";
 import { drivingStore, handrollOf } from "../../handroll";
 import { KeyCap } from "../fiction/kit";

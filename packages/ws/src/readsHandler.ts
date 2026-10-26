@@ -1,4 +1,4 @@
-import type { LeaderboardScope } from "@jgengine/core/game/leaderboard";
+import type { LeaderboardScope } from "@jgengine/core/leaderboard/leaderboard";
 import type { HostPersistence, ServerListing } from "@jgengine/core/runtime/hostPersistence";
 import { toOpenServerListings, toServerListing } from "@jgengine/core/runtime/hostPersistence";
 

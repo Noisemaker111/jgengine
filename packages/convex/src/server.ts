@@ -17,8 +17,8 @@ import type {
 } from "convex/server";
 import type { GenericId } from "convex/values";
 import { ConvexError, v } from "convex/values";
-import { validateChatMessage, type ChatMessage } from "@jgengine/core/game/chat";
-import type { LeaderboardScope } from "@jgengine/core/game/leaderboard";
+import { validateChatMessage, type ChatMessage } from "@jgengine/core/chat/chat";
+import type { LeaderboardScope } from "@jgengine/core/leaderboard/leaderboard";
 import type { ChatSendOutcome } from "@jgengine/core/multiplayer/chatContract";
 import {
   createFeedWriteGate,

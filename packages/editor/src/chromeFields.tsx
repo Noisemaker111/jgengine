@@ -1,4 +1,4 @@
-import { useDebouncedCommit } from "@jgengine/react/useDebouncedCommit";
+import { useDebouncedCommit } from "@jgengine/core/ui/useDebouncedCommit.view";
 
 import { INPUT } from "./chromeStyles";
 

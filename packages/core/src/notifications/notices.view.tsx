@@ -3,10 +3,10 @@ import { useEffect, useLayoutEffect, useRef, useState, useSyncExternalStore, typ
 import type { Notice, NoticeFeed, NoticeTone } from "@jgengine/core/notifications/notices";
 import type { LayoutRect, LayoutRegion } from "@jgengine/core/hud/hudPriority";
 
-import { useGameViewportLayout } from "@jgengine/react/gameViewport";
+import { useGameViewportLayout } from "@jgengine/core/ui/viewport.view";
 import { useOptionalGameContext } from "@jgengine/react/provider";
-import type { KitTone } from "@jgengine/react/uiKit";
-import { KitToast, useHasUiKit, useUiKit } from "@jgengine/react/uiKitRoot";
+import type { KitTone } from "@jgengine/core/ui/kit/uiKit.view";
+import { KitToast, useHasUiKit, useUiKit } from "@jgengine/core/ui/kit/uiKitRoot.view";
 
 export type { Notice, NoticeTone } from "@jgengine/core/notifications/notices";
 

@@ -5,7 +5,7 @@ import { createI18n, type Catalog, type I18n } from "@jgengine/core/i18n/i18n";
 import type { GameContext, GameContextEntityEntry } from "@jgengine/core/runtime/gameContext";
 import { createAssetCatalog } from "@jgengine/core/scene/assetCatalog";
 import { environment, grass, terrain } from "@jgengine/core/world/features";
-import { I18nProvider, useLocale, usePlural, useT } from "@jgengine/react/i18n";
+import { I18nProvider, useLocale, usePlural, useT } from "@jgengine/core/i18n/i18n.view";
 
 import { EnvironmentScene } from "@jgengine/shell/environment/EnvironmentScene";
 import type { PlayableGame } from "@jgengine/shell/registry";

@@ -3,9 +3,9 @@ import { resolveActivePrompt } from "@jgengine/core/interaction/proximityPrompt"
 import { useGameStore } from "@jgengine/react/hooks";
 import { Compass } from "@jgengine/react/map";
 import { useGameContext } from "@jgengine/react/provider";
-import { KitBanner, KitResultScreen } from "@jgengine/react/kitFlow";
+import { KitBanner, KitResultScreen } from "@jgengine/core/ui/kit/kitFlow.view";
 import { KitCount, KitCounts, KitVitals } from "@jgengine/core/hud/kitHud.view";
-import { KitActionPrompt, KitPanel } from "@jgengine/react/uiKitRoot";
+import { KitActionPrompt, KitPanel } from "@jgengine/core/ui/kit/uiKitRoot.view";
 import { HudSlots } from "@jgengine/shell/gameKit";
 
 import { openTitle } from "@jgengine/core/game/gameFlow";

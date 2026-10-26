@@ -9,7 +9,7 @@ import {
   type EntityFramePlacement,
   type EntityScreenProjection,
   type ProjectEntity,
-} from "@jgengine/react/entityFrames";
+} from "@jgengine/core/hud/entityFrames.view";
 
 /**
  * Returns a {@link ProjectEntity} bound to the live R3F camera and canvas size —

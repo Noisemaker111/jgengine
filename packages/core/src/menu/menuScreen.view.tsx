@@ -2,8 +2,8 @@ import { useEffect, useMemo, useSyncExternalStore, type CSSProperties, type Reac
 
 import { createMenuTransition, menuTransitionDurations } from "@jgengine/core/menu/menuTransition";
 
-import { useReducedMotion } from "@jgengine/react/accessibility";
-import { useCanvasCover } from "@jgengine/react/canvasCover";
+import { useReducedMotion } from "@jgengine/core/ui/accessibility.view";
+import { useCanvasCover } from "@jgengine/core/ui/canvasCover.view";
 
 /** Which motion a {@link MenuScreen} uses when it enters and leaves. */
 export type MenuScreenTransition = "fade" | "slide" | "scale" | "none";

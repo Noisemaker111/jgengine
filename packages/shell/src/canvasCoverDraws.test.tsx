@@ -3,7 +3,7 @@ import { act, createRoot, useFrame, useThree } from "@react-three/fiber";
 import { createElement, Fragment, useEffect } from "react";
 import * as THREE from "three";
 
-import { canvasCover } from "@jgengine/react/canvasCover";
+import { canvasCover } from "@jgengine/core/ui/canvasCover.view";
 
 import { CanvasCoverFrameloop } from "./drivers/CanvasCoverFrameloop";
 import { FrameRateLimiter } from "./drivers/FrameRateLimiter";

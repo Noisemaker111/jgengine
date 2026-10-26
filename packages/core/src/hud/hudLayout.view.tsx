@@ -42,9 +42,9 @@ import {
   type MobileHudBehavior,
 } from "@jgengine/core/hud/hudPriority";
 import type { GamePhase } from "@jgengine/core/game/gamePhase";
-import { useDisplayProfile } from "@jgengine/react/display";
+import { useDisplayProfile } from "@jgengine/core/ui/display.view";
 import { useEngineState } from "@jgengine/react/engineStore";
-import { useGameLayoutMode, useRegisterLayoutRegion } from "@jgengine/react/gameViewport";
+import { useGameLayoutMode, useRegisterLayoutRegion } from "@jgengine/core/ui/viewport.view";
 import { useOptionalGamePhase } from "@jgengine/react/hooks";
 import { resolveHudLanes, type HudLaneSlot } from "./hudLanes";
 import { useHudLayoutPersist } from "./hudLayoutPersist.view";

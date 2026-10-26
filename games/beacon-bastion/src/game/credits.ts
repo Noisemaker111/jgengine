@@ -1,5 +1,5 @@
 import { creditsForSourceIds } from "@jgengine/assets/credits";
-import { mergeCredits } from "@jgengine/core/game/credits";
+import { mergeCredits } from "@jgengine/core/menu/credits";
 
 import { ASSET_SOURCE_IDS } from "./assets";
 

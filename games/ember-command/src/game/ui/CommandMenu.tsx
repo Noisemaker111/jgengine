@@ -1,8 +1,8 @@
 import { type ReactNode, useCallback, useEffect, useRef, useState, useSyncExternalStore } from "react";
 import { CreditsPane } from "@jgengine/core/menu/gameMenuSaves.view";
-import { KitButton, KitPanel } from "@jgengine/react/uiKitRoot";
-import { GameCursor } from "@jgengine/react/gameCursor";
-import { GameIcon } from "@jgengine/react/gameIcons";
+import { KitButton, KitPanel } from "@jgengine/core/ui/kit/uiKitRoot.view";
+import { GameCursor } from "@jgengine/core/ui/cursor.view";
+import { GameIcon } from "@jgengine/core/ui/icons/gameIcons.view";
 import { useGame } from "@jgengine/react/hooks";
 import { useMenuNav } from "@jgengine/core/menu/menuNav.view";
 import { useGameContext } from "@jgengine/react/provider";
@@ -11,7 +11,7 @@ import { useSettings } from "@jgengine/core/settings/settings.view";
 import { SettingsSection, SettingsTabs } from "@jgengine/core/settings/settingsBlocks.view";
 import type { SaveSlotMeta } from "@jgengine/core/save/saveSlots";
 import { creditsForSourceIds } from "@jgengine/assets/credits";
-import { mergeCredits } from "@jgengine/core/game/credits";
+import { mergeCredits } from "@jgengine/core/menu/credits";
 
 import { campaignOrdinal, markStoresRestored, type CampaignReadout } from "../campaign";
 import { hudStore } from "../hudStore";

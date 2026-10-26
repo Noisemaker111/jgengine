@@ -1,11 +1,11 @@
 import { useEffect, type CSSProperties, type ReactNode } from "react";
 
 import { defineGameDefinition } from "@jgengine/core/game/defineGame";
-import { createObjectiveBanner } from "@jgengine/core/ui/objectiveBanner";
+import { createObjectiveBanner } from "@jgengine/core/mission/objectiveBanner";
 import type { GameContext, GameContextEntityEntry } from "@jgengine/core/runtime/gameContext";
 import { createAssetCatalog } from "@jgengine/core/scene/assetCatalog";
 import { environment, grass, terrain } from "@jgengine/core/world/features";
-import { ObjectiveBannerHost, type ObjectiveBannerTheme } from "@jgengine/react/objectiveBanner";
+import { ObjectiveBannerHost, type ObjectiveBannerTheme } from "@jgengine/core/mission/objectiveBanner.view";
 
 import { EnvironmentScene } from "@jgengine/shell/environment/EnvironmentScene";
 import type { PlayableGame } from "@jgengine/shell/registry";

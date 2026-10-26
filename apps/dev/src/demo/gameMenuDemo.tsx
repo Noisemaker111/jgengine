@@ -5,7 +5,7 @@ import { createGameSave, type GameSaveDocument } from "@jgengine/core/save/saveD
 import { createSaveSlots } from "@jgengine/core/save/saveSlots";
 import { formatSavePlaytime, gameSaveSlotSource, refreshSaveSlots } from "@jgengine/core/save/saveSlotIndex";
 import { localSaveBackend } from "@jgengine/core/save/saveStore";
-import { mergeCredits } from "@jgengine/core/game/credits";
+import { mergeCredits } from "@jgengine/core/menu/credits";
 import { createAssetCatalog } from "@jgengine/core/scene/assetCatalog";
 import type { GameContext } from "@jgengine/core/runtime/gameContext";
 import { environment, grass, terrain } from "@jgengine/core/world/features";

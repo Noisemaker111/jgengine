@@ -1,4 +1,4 @@
-import { createCodex, type Codex, type CodexEntryDef, type CodexSnapshot } from "@jgengine/core/game/codex";
+import { createCodex, type Codex, type CodexEntryDef, type CodexSnapshot } from "@jgengine/core/codex/codex";
 import { craft, missingInputs, type RecipeDef, type RecipeItem } from "@jgengine/core/crafting/recipe";
 import { createRecipeGraph } from "@jgengine/core/crafting/recipe";
 import { kindOf, type Item } from "./items";

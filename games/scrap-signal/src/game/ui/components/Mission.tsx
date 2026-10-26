@@ -1,4 +1,4 @@
-import { GameIcon, type GameIconName } from "@jgengine/react/gameIcons";
+import { GameIcon, type GameIconName } from "@jgengine/core/ui/icons/gameIcons.view";
 import { HudFade } from "@jgengine/core/hud/hudLayout.view";
 import { useCurrency, useGame, useQuestJournal } from "@jgengine/react/hooks";
 import { useStore } from "@jgengine/react/store";

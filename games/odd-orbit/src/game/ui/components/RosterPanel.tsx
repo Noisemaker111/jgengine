@@ -1,4 +1,4 @@
-import { GameIcon } from "@jgengine/react/gameIcons";
+import { GameIcon } from "@jgengine/core/ui/icons/gameIcons.view";
 import { HudFade } from "@jgengine/core/hud/hudLayout.view";
 import { useGame } from "@jgengine/react/hooks";
 import { useStore } from "@jgengine/react/store";

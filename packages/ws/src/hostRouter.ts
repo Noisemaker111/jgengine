@@ -11,7 +11,7 @@ import {
   DEFAULT_CHAT_HISTORY_LIMIT,
   DEFAULT_CHAT_RATE_LIMIT,
   type ChatRateLimit,
-} from "@jgengine/core/game/chat";
+} from "@jgengine/core/chat/chat";
 import type { JoinServerResult, ResumeTicket } from "@jgengine/core/runtime/transport";
 import type { SnapshotViewer } from "@jgengine/core/runtime/worldSnapshot";
 

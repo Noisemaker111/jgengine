@@ -1,6 +1,6 @@
 import { forwardRef, type CSSProperties, type HTMLAttributes, type ReactNode, type Ref } from "react";
-import { kitCutPath, type KitCut } from "@jgengine/react/kitFrame";
-import { KitButton, KitPanel, type KitMaterialButtonProps, type KitMaterialPanelProps } from "@jgengine/react/uiKitRoot";
+import { kitCutPath, type KitCut } from "@jgengine/core/ui/kit/kitFrame.view";
+import { KitButton, KitPanel, type KitMaterialButtonProps, type KitMaterialPanelProps } from "@jgengine/core/ui/kit/uiKitRoot.view";
 
 /**
  * Scrap Signal's salvaged hardware: carbon and riveted hull housings with welded rims, CRT screens

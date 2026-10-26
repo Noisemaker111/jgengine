@@ -1,10 +1,10 @@
 import type { ReactNode } from "react";
 import { useGameStore } from "@jgengine/react/hooks";
 import { useGameContext } from "@jgengine/react/provider";
-import { KitBanner, KitResultScreen } from "@jgengine/react/kitFlow";
+import { KitBanner, KitResultScreen } from "@jgengine/core/ui/kit/kitFlow.view";
 import { KitCount, KitCounts, KitVitals } from "@jgengine/core/hud/kitHud.view";
 import { HudSlots } from "@jgengine/shell/gameKit";
-import { KitButton, KitMeter, KitPanel } from "@jgengine/react/uiKitRoot";
+import { KitButton, KitMeter, KitPanel } from "@jgengine/core/ui/kit/uiKitRoot.view";
 
 import { continueGame } from "@jgengine/core/game/gameFlow";
 import { startNewGame } from "@jgengine/core/menu/gameFlowMenus.view";

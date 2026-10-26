@@ -8,7 +8,7 @@ import {
   type ParamSchema,
   type WeightedParamEntry,
 } from "@jgengine/core/scene/sceneKinds";
-import { useDebouncedCommit } from "@jgengine/react/useDebouncedCommit";
+import { useDebouncedCommit } from "@jgengine/core/ui/useDebouncedCommit.view";
 
 import { BORDER, CONTROL, FOCUS_RING, INPUT_CLS, MICRO_LABEL } from "./shell/theme";
 

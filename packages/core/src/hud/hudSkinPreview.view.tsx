@@ -2,7 +2,7 @@ import { useMemo, type CSSProperties } from "react";
 import { HudFrame } from "./hudFrame.view";
 import { hudTheme, hudThemeVars } from "./hudTheme.view";
 import { type HudSkin, hudSkinVars } from "./hudSkin.view";
-import { KitMeter } from "@jgengine/react/uiKitRoot";
+import { KitMeter } from "@jgengine/core/ui/kit/uiKitRoot.view";
 
 function painted(color: string, dark: string): string {
   if (typeof document === "undefined") return "";

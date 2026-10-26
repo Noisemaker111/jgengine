@@ -1,3 +1,12 @@
+export {
+  createAchievementTracker,
+  type AchievementDef,
+  type AchievementSnapshot,
+  type AchievementTracker,
+  type AchievementTrackerOptions,
+  type AchievementUnlock,
+  type AchievementView,
+} from "./achievements/achievements";
 export { Behaviour, BehaviourModule, createBehaviourWorld, type BehaviourWorld } from "./behaviour/behaviour";
 export { type LaneRule } from "./board/laneBoard";
 export {
@@ -12,6 +21,24 @@ export {
   type CardPileState,
 } from "./cards/cardPile";
 export { runPipeline } from "./cards/modifierPipeline";
+export {
+  DEFAULT_CHAT_BODY_LENGTH,
+  DEFAULT_CHAT_HISTORY_LIMIT,
+  DEFAULT_CHAT_RATE_LIMIT,
+  createChatRateLimiter,
+  type Chat,
+  type ChatMessage,
+  type ChatRateLimit,
+  type ChatSendResult,
+} from "./chat/chat";
+export {
+  createCodex,
+  type Codex,
+  type CodexEntryDef,
+  type CodexEntryView,
+  type CodexOptions,
+  type CodexSnapshot,
+} from "./codex/codex";
 export { type CropDef, type CropTileState } from "./crafting/crop";
 export {
   advanceTransport,
@@ -31,6 +58,18 @@ export {
   type RecipeDef,
   type RecipeItem,
 } from "./crafting/recipe";
+export { createGameDialogue, dialogueSlot } from "./dialogue/dialogue";
+export {
+  createDialogueRun,
+  selectDialogueView,
+  type DialogueGraph,
+  type DialogueGraphChoice,
+  type DialogueGraphNode,
+  type DialogueGraphSnapshot,
+  type DialogueGraphView,
+  type DialogueRun,
+  type DialogueRunOptions,
+} from "./dialogue/dialogueGraph";
 export { createAuctionBook, type Auction, type AuctionSettlement } from "./economy/auctionBook";
 export { createListingBook, type Listing } from "./economy/listingBook";
 export {
@@ -135,32 +174,22 @@ export {
   type Overdraft,
 } from "./economy/wallet";
 export {
-  createAchievementTracker,
-  type AchievementDef,
-  type AchievementSnapshot,
-  type AchievementTracker,
-  type AchievementTrackerOptions,
-  type AchievementUnlock,
-  type AchievementView,
-} from "./game/achievements";
+  createEventTicker,
+  type EventTicker,
+  type EventTickerEntry,
+  type EventTickerInput,
+  type EventTickerOptions,
+  type EventTickerSnapshot,
+  type EventTickerView,
+} from "./feed/eventTicker";
 export {
-  DEFAULT_CHAT_BODY_LENGTH,
-  DEFAULT_CHAT_HISTORY_LIMIT,
-  DEFAULT_CHAT_RATE_LIMIT,
-  createChatRateLimiter,
-  type Chat,
-  type ChatMessage,
-  type ChatRateLimit,
-  type ChatSendResult,
-} from "./game/chat";
-export {
-  createCodex,
-  type Codex,
-  type CodexEntryDef,
-  type CodexEntryView,
-  type CodexOptions,
-  type CodexSnapshot,
-} from "./game/codex";
+  appendFeed,
+  createGameFeed,
+  pruneFeed,
+  type FeedEntry,
+  type FeedWindow,
+  type TimedFeedEntry,
+} from "./feed/feed";
 export { playControlsActive } from "./game/controlGate";
 export { createCosmetics } from "./game/cosmetics";
 export {
@@ -173,27 +202,6 @@ export {
   type PhysicsConfig,
 } from "./game/defineGame";
 export { defineSystem, type SystemDefinition, type SystemEventHandlers, type SystemTick } from "./game/defineSystem";
-export { createGameDialogue, dialogueSlot } from "./game/dialogue";
-export {
-  createDialogueRun,
-  selectDialogueView,
-  type DialogueGraph,
-  type DialogueGraphChoice,
-  type DialogueGraphNode,
-  type DialogueGraphSnapshot,
-  type DialogueGraphView,
-  type DialogueRun,
-  type DialogueRunOptions,
-} from "./game/dialogueGraph";
-export {
-  createEventTicker,
-  type EventTicker,
-  type EventTickerEntry,
-  type EventTickerInput,
-  type EventTickerOptions,
-  type EventTickerSnapshot,
-  type EventTickerView,
-} from "./game/eventTicker";
 export {
   createGameEvents,
   type CombatTelegraphEvent,
@@ -207,29 +215,11 @@ export {
   type VfxKind,
   type VfxRef,
 } from "./game/events";
-export {
-  appendFeed,
-  createGameFeed,
-  pruneFeed,
-  type FeedEntry,
-  type FeedWindow,
-  type TimedFeedEntry,
-} from "./game/feed";
 export { gamePhase, setGamePhase, type GamePhase } from "./game/gamePhase";
 export { createKeyValueStore, type KeyValueStorage } from "./game/keyValueStore";
-export { createLeaderboard, type LeaderboardRow, type LeaderboardScope } from "./game/leaderboard";
-export {
-  medalFor,
-  rankLeaderboard,
-  type RankLeaderboardOptions,
-  type RankableRow,
-  type RankedEntry,
-  type TieMode,
-} from "./game/leaderboardRank";
 export { createLevelSequence, type LevelSequence } from "./game/levelSequence";
 export { createLoadouts, type LoadoutDef } from "./game/loadout";
 export { resolveOneShotClip } from "./game/modelAnimation";
-export { evaluateObjective } from "./game/objectives";
 export {
   createLayerRegistry,
   diffParams,
@@ -313,20 +303,6 @@ export {
   type RuleSelectionConfig,
 } from "./game/ruleSelection";
 export { createRunDraft, type RunDraft, type RunModifierOffer } from "./game/runDraft";
-export {
-  createSocial,
-  type FriendEntry,
-  type FriendRequestEntry,
-  type Friends,
-  type Party,
-  type PartyInviteEntry,
-  type PartyMemberEntry,
-  type PresenceInfo,
-  type Social,
-  type SocialDeps,
-  type WorldInvite,
-  type WorldInviteTarget,
-} from "./game/social";
 export { createSpawnPoints } from "./game/spawnPoints";
 export { composeGameLoop } from "./game/systemRuntime";
 export {
@@ -335,17 +311,6 @@ export {
   compileSystemSchedule,
   type CompiledSystemSchedule,
 } from "./game/systemSchedule";
-export {
-  talentTreeView,
-  talentTreeViewFrom,
-  type TalentEdgeView,
-  type TalentNodeState,
-  type TalentNodeStatus,
-  type TalentNodeView,
-  type TalentPointTotals,
-  type TalentTreeView,
-} from "./game/talentTreeView";
-export { createTalentTree, type TalentNodeDef, type TalentTree } from "./game/talents";
 export { createUnlockCatalog, createUnlocks, type UnlockDef } from "./game/unlocks";
 export { type ActionCodes, type ActionCodesMap, type ActionStateTracker } from "./input/actionBindings";
 export { NEUTRAL_AXIS, type AxisBindingMap, type AxisChannelConfig, type AxisInput } from "./input/axisInput";
@@ -482,6 +447,15 @@ export {
   type UseBehaviorRejection,
 } from "./item/useBehavior";
 export { createWeaponStats } from "./item/weapon";
+export { createLeaderboard, type LeaderboardRow, type LeaderboardScope } from "./leaderboard/leaderboard";
+export {
+  medalFor,
+  rankLeaderboard,
+  type RankLeaderboardOptions,
+  type RankableRow,
+  type RankedEntry,
+  type TieMode,
+} from "./leaderboard/leaderboardRank";
 export {
   DEFAULT_PICKUP_RADIUS,
   WORLD_ITEM_ENTITY_NAME,
@@ -581,6 +555,7 @@ export {
   type MissionWorldEvent,
   type MissionWorldEventKind,
 } from "./mission/mission";
+export { evaluateObjective } from "./mission/objectives";
 export {
   MISSION_TRIGGER_ACTIONS,
   createMissionTriggerBridge,
@@ -808,6 +783,20 @@ export {
   type RoutineTimeline,
 } from "./sim/routine";
 export {
+  createSocial,
+  type FriendEntry,
+  type FriendRequestEntry,
+  type Friends,
+  type Party,
+  type PartyInviteEntry,
+  type PartyMemberEntry,
+  type PresenceInfo,
+  type Social,
+  type SocialDeps,
+  type WorldInvite,
+  type WorldInviteTarget,
+} from "./social/social";
+export {
   decayMeterMoodles,
   decayMeterSnapshot,
   decayMeterState,
@@ -819,6 +808,17 @@ export {
 } from "./survival/decayMeter";
 export { createMoodleStack, stackMoodles, type Moodle, type MoodleStack } from "./survival/moodle";
 export { createMultiRegionHealth, type MultiRegionHealth } from "./survival/regionHealth";
+export {
+  talentTreeView,
+  talentTreeViewFrom,
+  type TalentEdgeView,
+  type TalentNodeState,
+  type TalentNodeStatus,
+  type TalentNodeView,
+  type TalentPointTotals,
+  type TalentTreeView,
+} from "./talents/talentTreeView";
+export { createTalentTree, type TalentNodeDef, type TalentTree } from "./talents/talents";
 export {
   crossThresholds,
   tierAt,

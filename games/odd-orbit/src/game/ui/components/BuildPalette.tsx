@@ -1,7 +1,7 @@
 import { HudButton } from "@jgengine/core/hud/hudButton.view";
 import { useGame, useSceneObjects } from "@jgengine/react/hooks";
 import { useStore } from "@jgengine/react/store";
-import { GameIcon } from "@jgengine/react/gameIcons";
+import { GameIcon } from "@jgengine/core/ui/icons/gameIcons.view";
 import { NEED_ICON } from "../fiction/kit";
 import { FURNITURE, FURNITURE_BY_ID } from "../../objects/catalog";
 import { creditsText } from "./bits";

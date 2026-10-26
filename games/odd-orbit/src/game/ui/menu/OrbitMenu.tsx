@@ -1,8 +1,8 @@
 import { type ReactNode, useCallback, useEffect, useRef, useState } from "react";
 import { useDisplayProfile } from "@jgengine/react";
-import { GameCursor } from "@jgengine/react/gameCursor";
-import { KitPanel } from "@jgengine/react/uiKitRoot";
-import { GameIcon, type GameIconName } from "@jgengine/react/gameIcons";
+import { GameCursor } from "@jgengine/core/ui/cursor.view";
+import { KitPanel } from "@jgengine/core/ui/kit/uiKitRoot.view";
+import { GameIcon, type GameIconName } from "@jgengine/core/ui/icons/gameIcons.view";
 import { useViewportScrollLock } from "@jgengine/core/menu/gameMenu.view";
 import { useGame, useGameClock } from "@jgengine/react/hooks";
 import { useMenuNav } from "@jgengine/core/menu/menuNav.view";
@@ -12,7 +12,7 @@ import { useStore } from "@jgengine/react/store";
 import { EntityPreview } from "@jgengine/shell/render/EntityPreview";
 import type { SaveSlotMeta } from "@jgengine/core/save/saveSlots";
 import { creditsForSourceIds } from "@jgengine/assets/credits";
-import { mergeCredits } from "@jgengine/core/game/credits";
+import { mergeCredits } from "@jgengine/core/menu/credits";
 
 import { ASSET_SOURCE_IDS } from "../../assets";
 import { moodOfNeeds } from "../../agents";

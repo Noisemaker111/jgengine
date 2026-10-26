@@ -3,7 +3,7 @@ import { createServer } from "node:http";
 
 import type { RuntimePlayerRow, RuntimeServerRow } from "@jgengine/core/runtime/snapshot";
 import type { GameRuntimeFeedView, GameRuntimeServerView } from "@jgengine/core/runtime/transport";
-import type { ChatMessage } from "@jgengine/core/game/chat";
+import type { ChatMessage } from "@jgengine/core/chat/chat";
 import type { VoiceParticipant } from "@jgengine/core/multiplayer/voiceContract";
 import { createWsBackend, type WsBackend } from "@jgengine/ws/createWsBackend";
 import type { WsChatMessage, WsPresenceRow } from "@jgengine/ws/protocol";

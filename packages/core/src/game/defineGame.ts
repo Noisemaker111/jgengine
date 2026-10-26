@@ -1,7 +1,7 @@
 import type { EditorDocument } from "../editor/types";
 import type { ProjectileTravelDeps } from "../combat/projectiles";
 import type { ActionCodesMap } from "../input/actionBindings";
-import type { GameFeedOptions } from "./feed";
+import type { GameFeedOptions } from "../feed/feed";
 import type { GamePhase } from "./gamePhase";
 import type { SystemDefinition } from "./defineSystem";
 import { mergeSystemFeatures } from "./defineSystem";

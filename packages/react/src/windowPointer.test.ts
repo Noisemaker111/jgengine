@@ -15,7 +15,7 @@ beforeAll(async () => {
   await installPublicPackages(scratch, ["core", "react"]);
   await Bun.write(`${scratch}/fixture.tsx`, `
     import React,{useState} from 'react';import {createRoot} from 'react-dom/client';import {flushSync} from 'react-dom';
-    import {Window,PanelHost,usePanels} from '@jgengine/react/panels';
+    import {Window,PanelHost,usePanels} from '@jgengine/core/ui/panels.view';
     const listeners=new Map();const add=window.addEventListener.bind(window),remove=window.removeEventListener.bind(window);
     // Exclude browser automation observers from SDK listener ownership.
     window.addEventListener=(type,fn,options)=>{if(new Error().stack.split('\\n')[2]?.includes('/fixture.js')&&['pointermove','pointerup','pointercancel','lostpointercapture','blur'].includes(type)){if(!listeners.has(type))listeners.set(type,new Set());listeners.get(type).add(fn)}return add(type,fn,options)};

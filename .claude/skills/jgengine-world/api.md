@@ -425,6 +425,15 @@
 - `runtimeBoneName` (function): function runtimeBoneName(authored: string): string — The runtime name GLTFLoader gives an authored bone name: three's `PropertyBinding.sanitizeNodeName` strips `[ ] . : /`, so the authored `upperleg.l` loads as `upperlegl`.
 - `standardBoneMask` (function): function standardBoneMask(slots: readonly SkeletonSlot[]): string[] — Bone-name prefixes for a set of standard slots, for an {@link AnimLayer.mask}. A slot on one side contributes its side-less prefix (`upperLeg.l` → `upperleg`), which matches both sides' tracks; an unsided slot contributes its own runtime name. Masking by slot means a rig mapped onto the standard is masked without hand-typing its bone names.
 
+## @jgengine/core/anim/tweenNumber.view
+
+- `TweenDelta` (type): type TweenDelta = "up" | "down" — Direction of the last change, for the delta flash.
+- `TweenNumber` (function): function TweenNumber({ value, format = defaultFormat, flash = true, durationMs, ease, className, style }: TweenNumberProps): ReactNode — A counter that rolls to each new value and flashes the `--jg-success` / `--jg-danger` color with a small scale pop on the change (`data-jg-delta="up" | "down"`). Tabular digits keep its width stable.
+- `TweenNumberProps` (interface): interface TweenNumberProps extends TweenOptions — Props for {@link TweenNumber}.
+- `TweenOptions` (interface): interface TweenOptions — Options for {@link useTweenedValue}.
+- `tweenAt` (function): function tweenAt(from: number, to: number, t: number, ease: (t: number) => number = easeOutCubic): number — Value at progress `t` (0–1) between `from` and `to` under `ease`.
+- `useTweenedValue` (function): function useTweenedValue(target: number, options: TweenOptions = {}): number — Animates toward `target` whenever it changes, starting from the currently displayed value, so a counter rolls instead of jumping. Snaps immediately under reduced motion or a non-finite target.
+
 ## @jgengine/core/area/areaEffectField
 
 - `AreaEffectEvent` (interface): interface AreaEffectEvent<P> — One membership edge emitted by `step`, `removeSource`, or `clear`.
@@ -587,17 +596,6 @@
 - `SynthWave` (type): type SynthWave = "sine" | "square" | "sawtooth" | "triangle" — Oscillator waveform available to a pitched synth voice.
 - `ToneVoice` (interface): interface ToneVoice — A pitched oscillator voice: a 12ms linear attack to `gain`, then an exponential decay to silence across `duration`, with an optional exponential pitch slide from `freq` to `slideTo`.
 - `patchDuration` (function): function patchDuration(patch: SynthPatch): number — Total wall-clock length of a patch in seconds — the latest voice end across all voices.
-
-## @jgengine/core/audio/uiCues
-
-- `DEFAULT_UI_CUE_SOUNDS` (const): const DEFAULT_UI_CUE_SOUNDS: Readonly<Record<UiCue, SoundDef>> — Short, soft procedural patches: no samples to load, quiet enough to sit under game audio.
-- `NOTICE_TONE_CUES` (const): const NOTICE_TONE_CUES: Readonly<Record<NoticeTone, UiCue>> — The cue a notice of each tone plays when it appears.
-- `UI_CUES` (const): const UI_CUES: readonly UiCue[] — Every {@link UiCue}, in a stable order.
-- `UI_CUE_BUS` (const): const UI_CUE_BUS: "ui" — Bus the default UI cues mix through; the settings menu shows its volume.
-- `UiCue` (type): type UiCue = "click" | "hover" | "open" | "close" | "confirm" | "deny" | "notify" — Interface sound cues every game gets: press, hover, panel open/close, confirm, refusal, notification.
-- `UiCueOverrides` (type): type UiCueOverrides = false | Partial<Record<UiCue, SoundDef | false>> — Per-cue override: a replacement sound, or `false` to silence that cue. `false` for the whole map silences all.
-- `uiCueSoundId` (function): function uiCueSoundId(cue: UiCue): string — Catalog id a cue plays under: `ui.click`, `ui.deny`, ... A game sound with that id replaces the default.
-- `withUiCueSounds` (function): function withUiCueSounds(sounds: Readonly<Record<string, SoundDef>> | undefined, buses: Readonly<Record<string, AudioBusDef>> | undefined, overrides?: UiCueOverrides): { sounds: Record<string, SoundDef>; buses: Record<string, AudioBusDef> | undefined } — Merge the default UI cue patches into a game's sound catalog. A game sound already named `ui.<cue>` wins, then `overrides`, then the default. Adds the `ui` bus (gain 0.8) when the game did not declare one.
 
 ## @jgengine/core/audio/voiceAllocator
 
@@ -834,6 +832,25 @@
 - `resolveCityLayout` (function): function resolveCityLayout(patch: CityLayoutPatch = {}, base: CityLayout = US_CITY_LAYOUT): CityLayout — Merge a patch over a full layout, clamping every number to its slider range.
 - `tuneCityLayout` (function): function tuneCityLayout(store: CityLayoutStore, options: TuneCityLayoutOptions = {}): void — Register a devtools slider for every number in the layout (and a toggle per zone's driveways); dragging one sets the store, which re-lays whatever listens to it. Registering again keeps the values already dragged, so a hot reload does not snap the sliders back.
 
+## @jgengine/core/cutscene/cutscene.view
+
+- `CutsceneLetterbox` (function): function CutsceneLetterbox({ active, caption, onSkip, skipLabel = "Skip", progress, theme, className, style, }: CutsceneLetterboxProps): ReactNode — A drop-in cinematic letterbox overlay: black bars slide in top and bottom while a cutscene is `active`, an optional caption/dialogue line sits above the lower bar with an optional progress line, and a Skip button rides the top bar. Presentation only — it never touches the director; wire `active`/`caption`/`progress`/`onSkip` from {@link useSequenceDirector} and your `onCue` handler. Reskin via {@link CutsceneLetterboxTheme}.
+- `CutsceneLetterboxProps` (interface): interface CutsceneLetterboxProps — Props for {@link CutsceneLetterbox}.
+- `CutsceneLetterboxTheme` (interface): interface CutsceneLetterboxTheme — Reskin tokens for {@link CutsceneLetterbox}.
+- `SequenceDirectorBinding` (interface): interface SequenceDirectorBinding extends SequenceState — The live playback state plus bound controls returned by {@link useSequenceDirector}.
+- `useSequenceDirector` (function): function useSequenceDirector(director: SequenceDirector): SequenceDirectorBinding — Bind a {@link SequenceDirector} to a component: subscribe to its state, and while it is playing run a `requestAnimationFrame` loop that ticks the director each frame off the same injected clock — so a game drops in one hook and the cutscene advances itself. Returns the current playback state (playhead, progress, playing/done) plus bound `play`/`pause`/`skip`/`seek`/`stop`. Cue side effects belong on `director.onCue`, not here — the hook never interprets a cue.
+
+## @jgengine/core/cutscene/sequenceDirector
+
+- `CueListener` (type): type CueListener<Payload = unknown> = (emitted: EmittedCue<Payload>) => void — A cue listener, called once per cue as it fires. Returns nothing.
+- `EmittedCue` (interface): interface EmittedCue<Payload = unknown> — A cue plus the resolved firing context passed to {@link SequenceDirector.onCue} listeners.
+- `SequenceCue` (interface): interface SequenceCue<Payload = unknown> — One scheduled beat of a cutscene: a typed cue that fires when the playhead reaches `atMs`.
+- `SequenceDirector` (interface): interface SequenceDirector<Payload = unknown> — A data-driven cutscene: an ordered timeline of typed cues that fire on a single injected clock. See {@link createSequenceDirector}.
+- `SequenceDirectorOptions` (interface): interface SequenceDirectorOptions<Payload = unknown> — Options for {@link createSequenceDirector}.
+- `SequenceSnapshot` (interface): interface SequenceSnapshot — Serializable snapshot — enough to resume a cutscene exactly where a save left it.
+- `SequenceState` (interface): interface SequenceState — A read-only view of the director's playback state, returned by {@link SequenceDirector.state}.
+- `createSequenceDirector` (function): function createSequenceDirector<Payload = unknown>(options: SequenceDirectorOptions<Payload>): SequenceDirector<Payload> — A serializable cutscene / sequence director: an ordered timeline of typed cues (`{ atMs, kind, payload }`) advanced by one injected clock, firing each cue once and in order as its time passes — even across a large seek — with play/pause/ seek/skip/stop controls. The director only *schedules and emits* cues; it never interprets what a `kind` means, so the same primitive drives camera moves, dialogue lines, fades, or any game event. `snapshot`/`restore` round-trip the playhead and which cues have fired. Deterministic (no wall clock beyond the injected `now`) and allocation-free on the tick path.
+
 ## @jgengine/core/faction/factions
 
 - `FactionDef` (interface): interface FactionDef { id: string; relations?: Readonly<Record<string, FactionRelation>>; towardSelf?: FactionRelation; towardOthers?: FactionRelation } — ⚠ undocumented
@@ -1022,6 +1039,19 @@
 - `InputBufferSnapshot` (interface): interface InputBufferSnapshot — Serializable state for an {@link InputBuffer}.
 - `createInputBuffer` (function): function createInputBuffer(options: { windowMs: number }): InputBuffer — Creates an input buffer for jump buffering, coyote time, hold duration and double taps.
 
+## @jgengine/core/input/inputDevice.view
+
+- `InputDevice` (type): type InputDevice = "keyboard" | "gamepad" | "touch" — The device the player last used: drives which glyph a prompt shows.
+- `actionGlyph` (function): function actionGlyph(map: ActionCodesMap, action: string, device: InputDevice, glyphSet: GamepadGlyphName = "xbox"): string | null — The glyph to show for `action` on `device`: the first keyboard/mouse code on keyboard, the first pad code on gamepad (in `glyphSet`'s names), `"Tap"` on touch. Null when nothing is bound for that device.
+- `getInputDevice` (function): function getInputDevice(): InputDevice — The device the player last used, without subscribing.
+- `setInputDevice` (function): function setInputDevice(device: InputDevice): void — Report the device the player just used. The shell's own input calls it; a game rarely needs to.
+- `useInputDevice` (function): function useInputDevice(): InputDevice — The device the player is using right now — keyboard/mouse, gamepad or touch — switching the moment they touch another one. Prompts use it to show `E`, `A` or a tap target.
+
+## @jgengine/core/input/keyHint.view
+
+- `KeyHint` (function): function KeyHint({ children, className, style, }: { children: ReactNode; className?: string; style?: CSSProperties; }): React.JSX.Element | null — Wraps a keyboard/mouse control hint (a cap plus what it does). Renders nothing on coarse-pointer devices — a touchscreen has no keyboard, so the hint is noise and only fights the on-screen controls for space. The `data-jg-kbd-hint` marker is also hidden by an engine stylesheet as a hydration-safe backstop, so a hint stays hidden on touch even before this component's effect runs. Put the touch equivalent (a `TouchControls` dock, a tappable button) on the coarse branch instead.
+- `Keycap` (function): function Keycap({ children, className, style, }: { children: ReactNode; className?: string; style?: CSSProperties; }): React.JSX.Element — A single keyboard/mouse key rendered as a cap. Tagged `data-jg-kbd` so tooling can find it; on its own it stays visible (hiding a lone cap would strand its label). Wrap keys + their meaning in `KeyHint` to make the whole hint vanish on touch.
+
 ## @jgengine/core/input/lookChannel
 
 - `LookChannel` (interface): interface LookChannel { accumulate(dx: number, dy: number): void; consume(): LookDeltas; setYaw(yaw: number): void; readYaw(): number; setPitch(pitch: number): void; readPitch(): number; setVerticalOffset(offset: number): void; readVerticalOffset(): number; snap… — ⚠ undocumented
@@ -1119,6 +1149,14 @@
 - `buildContextMenu` (function): function buildContextMenu(input: BuildContextMenuInput): ContextMenu | null — Assemble a menu from a target's catalog verbs; null when the target lists none.
 - `contextVerb` (function): function contextVerb(label: string, command: string, args?: Record<string, unknown>): ContextVerb — Builds a {@link ContextVerb} for a right-click menu entry.
 - `contextVerbInput` (function): function contextVerbInput(menu: ContextMenu, verb: ContextVerb): Record<string, unknown> — Command input a chosen verb dispatches: the verb's own args, plus the target id and the world point, so a single handler can walk the actor to the target then perform it.
+
+## @jgengine/core/interaction/interactionPrompt.view
+
+- `InteractionPrompt` (function): function InteractionPrompt({ registry, playerPosition, theme, accentFor, keyFor, gaugeProgress, anchor = "bottom-center", zIndex = 40, className, style, }: InteractionPromptProps): ReactNode — A screen-anchored "Press E to …" interaction callout that renders the active prompt of a {@link PromptRegistry}. It subscribes to the registry and — when given `playerPosition` — re-resolves as the hero moves, showing the nearest in-range interactable and switching to a closer/higher-priority one as they cross radii. Each display kind renders as itself: a `keybind` shows a key cap plus its label ("Press [E] Open"), a `gauge` shows a hold bar filling with `gaugeProgress`, and a `label` shows plain text. Presentation only — the registry never branches on a prompt's meaning; the game colors each via `accentFor` and maps action ids to key glyphs via `keyFor`. HudTheme-skinnable through `--jg-accent` and {@link InteractionPromptTheme}.
+- `InteractionPromptAnchor` (type): type InteractionPromptAnchor = "bottom-center" | "top-center" | "center" — Where the callout sits over the scene.
+- `InteractionPromptProps` (interface): interface InteractionPromptProps — Props for {@link InteractionPrompt}.
+- `InteractionPromptTheme` (interface): interface InteractionPromptTheme — Reskin tokens for {@link InteractionPrompt}.
+- `useInteractionPrompt` (function): function useInteractionPrompt(registry: PromptRegistry, playerPosition: PromptPoint): PositionedPrompt | null — Subscribe to a {@link PromptRegistry} and re-`resolve` it whenever the player moves, returning the prompt to draw right now — or `null` when the player is out of range of every interactable. The registry notifies only on active-prompt *changes*, so this re-renders on transitions rather than every frame the hero moves. Feed it the player's `{ x, z }` position each frame; identical positions do no work.
 
 ## @jgengine/core/interaction/lockpick
 
@@ -2430,17 +2468,6 @@
 - `createSelectionBookmarks` (function): function createSelectionBookmarks(snapshot?: SelectionBookmarkSnapshot): SelectionBookmarks — Create a keyed bookmark store, optionally restored from a {@link serialize} snapshot. Restoration re-dedupes and drops empty sets, so a hand-authored or migrated snapshot always normalizes to the same invariants a live store holds.
 - `recallSelectionBookmark` (function): function recallSelectionBookmark(bookmarks: SelectionBookmarks, key: string, selection: SelectionSet, options: RecallBookmarkOptions = {}): string[] — Compose a bookmark recall onto an active {@link SelectionSet}: optionally prune stale ids (updating the stored bookmark), fold the survivors into the selection by `mode`, then fire the caller's focus hook. This is the one place the store, the selection, and the camera meet — kept as an explicit helper, not a store side effect, so games opt into the exact replacement/merge and focus policy they want. Returns the surviving ids that were applied.
 
-## @jgengine/core/scene/sequenceDirector
-
-- `CueListener` (type): type CueListener<Payload = unknown> = (emitted: EmittedCue<Payload>) => void — A cue listener, called once per cue as it fires. Returns nothing.
-- `EmittedCue` (interface): interface EmittedCue<Payload = unknown> — A cue plus the resolved firing context passed to {@link SequenceDirector.onCue} listeners.
-- `SequenceCue` (interface): interface SequenceCue<Payload = unknown> — One scheduled beat of a cutscene: a typed cue that fires when the playhead reaches `atMs`.
-- `SequenceDirector` (interface): interface SequenceDirector<Payload = unknown> — A data-driven cutscene: an ordered timeline of typed cues that fire on a single injected clock. See {@link createSequenceDirector}.
-- `SequenceDirectorOptions` (interface): interface SequenceDirectorOptions<Payload = unknown> — Options for {@link createSequenceDirector}.
-- `SequenceSnapshot` (interface): interface SequenceSnapshot — Serializable snapshot — enough to resume a cutscene exactly where a save left it.
-- `SequenceState` (interface): interface SequenceState — A read-only view of the director's playback state, returned by {@link SequenceDirector.state}.
-- `createSequenceDirector` (function): function createSequenceDirector<Payload = unknown>(options: SequenceDirectorOptions<Payload>): SequenceDirector<Payload> — A serializable cutscene / sequence director: an ordered timeline of typed cues (`{ atMs, kind, payload }`) advanced by one injected clock, firing each cue once and in order as its time passes — even across a large seek — with play/pause/ seek/skip/stop controls. The director only *schedules and emits* cues; it never interprets what a `kind` means, so the same primitive drives camera moves, dialogue lines, fades, or any game event. `snapshot`/`restore` round-trip the playhead and which cues have fired. Deterministic (no wall clock beyond the injected `now`) and allocation-free on the tick path.
-
 ## @jgengine/core/scene/spatial
 
 - `Aim` (type): type Aim = | { origin: EntityPosition; direction: EntityPosition; spread?: number } | { yaw: number; pitch: number; spread?: number } — Where a shot or ability points: a world ray (cursor aim) or a look angle (crosshair aim). `spread` is the cone half-angle in degrees a projectile strays inside, on either form.
@@ -2689,6 +2716,17 @@
 - `createStateSchedule` (function): function createStateSchedule<T>(config: StateScheduleConfig<T>): StateSchedule<T> — ⚠ undocumented
 - `nextClearWindow` (function): function nextClearWindow(isClear: (t: number) => boolean, scan: ClearWindowScan): ScheduleWindow | null — Forward-scan any predicate-of-time — a timetable mover's "is the crossing clear at `t`" — for the next open window. Sampling-based: pick `stepSeconds` at or below half the shortest gap that matters.
 
+## @jgengine/core/time/timerReadout.view
+
+- `TimerFormat` (type): type TimerFormat = "mm:ss" | "m:ss.d" | "ss.d" — Digital text format for a timer readout.
+- `TimerReadout` (function): function TimerReadout({ timer, id, source = "auto", format = "mm:ss", placeholder = "--:--", active = true, className, style, }: TimerReadoutProps): ReactNode — A live digital timer readout (mm:ss / m:ss.d) driven off a {@link TimerSet}. It re-reads every frame and formats remaining or elapsed time — a round clock, a respawn countdown, or an ability charge, all the same widget. HudTheme-skinned via `--jg-text`; reskin with `style` or the theme tokens.
+- `TimerReadoutProps` (interface): interface TimerReadoutProps — Props for {@link TimerReadout}.
+- `TimerReadoutSource` (type): type TimerReadoutSource = "auto" | "remaining" | "elapsed" — Which value a readout leads with. `"auto"` follows the timer's direction — remaining for a countdown, elapsed for a countup charge.
+- `TimerRing` (function): function TimerRing({ timer, id, size = 72, thickness = 8, mode = "fill", color = "var(--jg-accent, #38bdf8)", trackColor = "var(--jg-surface-deep, rgba(148,163,184,0.25))", children, active = true, className, style, }: TimerRingProps): ReactNode — A radial charge/cooldown ring driven off a {@link TimerSet}'s `progress01`. Re-reads every frame and sweeps an SVG arc as the timer advances — ability charge, cooldown wipe, respawn ring, capture progress, all the same widget. `mode` chooses filling vs. draining; center `children` can hold a readout. HudTheme-skinned via `--jg-accent` / `--jg-surface-deep`.
+- `TimerRingProps` (interface): interface TimerRingProps — Props for {@link TimerRing}.
+- `formatTimerMs` (function): function formatTimerMs(ms: number, format: TimerFormat = "mm:ss"): string — Format a millisecond duration as digital timer text — `mm:ss` (default), `m:ss.d` (with tenths), or `ss.d` (seconds + tenths). Negative inputs clamp to zero. No genre meaning: the same helper serves a round clock, a respawn countdown, or an ability charge readout.
+- `useTimerRead` (function): function useTimerRead(timer: TimerSet, id: string, active = true): TimerRead | null — Subscribe to a single timer and re-read it every animation frame while mounted, so a HUD readout stays live without the game hand-rolling interval math. Reuses one read object (allocation-aware). Returns `null` for an unknown id. Pass `active={false}` to freeze the per-frame tick (e.g. an off-screen HUD).
+
 ## @jgengine/core/time/timerSet
 
 - `TimerDirection` (type): type TimerDirection = "down" | "up" — A serializable set of named countdown / countup timers evaluated against an injected clock. One primitive covers round timers, respawn clocks, and ability cooldown/charge — they are the same mechanic (elapsed vs. duration on a clock), so `id` and any labels are free strings the engine never interprets.
@@ -2700,15 +2738,6 @@
 - `TimerSnapshot` (interface): interface TimerSnapshot — One timer's serializable state — elapsed resolved at snapshot time, ready to re-anchor on restore.
 - `TimerStartOptions` (interface): interface TimerStartOptions — Options for {@link TimerSet.start}.
 - `createTimerSet` (function): function createTimerSet(options: TimerSetOptions = {}): TimerSet — Create a serializable set of named countdown / countup timers on an injected clock — one primitive for round timers, respawn clocks, and ability cooldown/charge. Start/pause/resume/stop/reset timers by free-string id, read `{ remainingMs, elapsedMs, durationMs, progress01, running, expired }` for a mm:ss readout or a radial/bar fill, and `poll` for expiry edges. Ids and labels carry no genre meaning; `snapshot`/`restore` round-trip through a save.
-
-## @jgengine/core/vfx/damageDirection
-
-- `DamageDirectionOptions` (interface): interface DamageDirectionOptions — Options for {@link createDamageDirectionTracker}.
-- `DamageDirectionSnapshot` (interface): interface DamageDirectionSnapshot — Serializable state for save/restore — the clock reading plus every live indicator.
-- `DamageDirectionTracker` (interface): interface DamageDirectionTracker — A serializable, allocation-aware brain that tracks where recent damage came from. Each registered hit becomes a directional indicator that fades over a fixed duration on the injected clock; {@link DamageDirectionTracker.active} reports the live ones with their eased current strength.
-- `DamageIndicator` (interface): interface DamageIndicator — A live directional indicator with its eased, time-decayed strength, produced by {@link DamageDirectionTracker.active}. The `intensity` here is the *current* eased value (peak faded over the elapsed lifetime), ready to drive opacity/scale.
-- `HitInput` (interface): interface HitInput — A single incoming hit to register on a {@link DamageDirectionTracker}. The angle is relative to the player's facing (renderer-agnostic): `0` points at the front/top of the reticle and increases clockwise, so a game passes the bearing from the player toward the attacker without knowing anything about the screen.
-- `createDamageDirectionTracker` (function): function createDamageDirectionTracker(options: DamageDirectionOptions = {}): DamageDirectionTracker — Create a damage-direction tracker: the classic "hit-from" feedback brain. A game calls `registerHit({ angle, intensity, kind })` with the bearing from the player toward the attacker (radians, `0` = front) and the tracker owns the fade timers and eased strength so the renderer just draws an arc per `active()` entry. It is renderer-free and genre-agnostic (the `kind` tag is never interpreted here), allocation-aware (a fixed pool, no per-frame garbage), and fully serializable via `snapshot`/`restore`. Optional angle merging collapses a burst from one direction into a single strong arc.
 
 ## @jgengine/core/vfx/effectLibrary
 

@@ -1,7 +1,7 @@
 import { useThree } from "@react-three/fiber";
 import { useEffect } from "react";
 
-import { useCanvasCovered } from "@jgengine/react/canvasCover";
+import { useCanvasCovered } from "@jgengine/core/ui/canvasCover.view";
 
 /** The frameloop the shell asked for; the cover only ever overrides it with `"never"`. */
 type CanvasFrameloop = "always" | "demand" | "never";

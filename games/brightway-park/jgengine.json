@@ -95,7 +95,7 @@
       },
       "kit-minimap-frame": {
         "kind": "not-applicable",
-        "reason": "kit-minimap-frame has nothing to frame here: Brightway Park is one fenced lot the sky camera shows whole, so there is no minimap."
+        "reason": "kit-minimap-frame has nothing to frame in this ui: Brightway Park is one fenced lot the sky camera shows whole, so there is no minimap."
       },
       "loan-schedule": {
         "kind": "debt",

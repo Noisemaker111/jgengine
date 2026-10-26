@@ -8,7 +8,7 @@ import type { GameContext } from "@jgengine/core/runtime/gameContext";
 import type { BindingOverrides } from "@jgengine/core/input/bindingOverrides";
 import { BUILT_IN_SETTING_CATEGORIES, type GameSettingsConfig, type SettingsStore } from "@jgengine/core/settings/settingsModel";
 import { SettingsProvider, type SettingsActionView } from "@jgengine/core/settings/settings.view";
-import { GameViewportProvider } from "@jgengine/react/gameViewport";
+import { GameViewportProvider } from "@jgengine/core/ui/viewport.view";
 import type { TouchScheme } from "@jgengine/core/input/touchScheme";
 
 import { HudOnlyDriver } from "./HudOnlyDriver.draw";

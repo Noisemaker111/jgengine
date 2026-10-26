@@ -3,12 +3,12 @@ import { resolveActivePrompt } from "@jgengine/core/interaction/proximityPrompt"
 import type { GameContext } from "@jgengine/core/runtime/gameContext";
 import { compassBearing, headingToBearing, relativeBearing } from "@jgengine/core/world/minimap";
 import { useGame, useGameStore } from "@jgengine/react/hooks";
-import { GameIcon } from "@jgengine/react/gameIcons";
+import { GameIcon } from "@jgengine/core/ui/icons/gameIcons.view";
 import { useHudAwake } from "@jgengine/core/hud/hudLayout.view";
-import { useInputDevice } from "@jgengine/react/inputDevice";
-import { deadlineStage, formatCountdown } from "@jgengine/react/kitFlow";
-import { useUiCue } from "@jgengine/react/uiCues";
-import { useActionGlyph } from "@jgengine/react/uiKitRoot";
+import { useInputDevice } from "@jgengine/core/input/inputDevice.view";
+import { deadlineStage, formatCountdown } from "@jgengine/core/ui/kit/kitFlow.view";
+import { useUiCue } from "@jgengine/core/ui/uiCues.view";
+import { useActionGlyph } from "@jgengine/core/ui/kit/uiKitRoot.view";
 import { city } from "../../city";
 import { cityOf } from "../../cityRuntime";
 import { frontViews } from "../../city/fronts";

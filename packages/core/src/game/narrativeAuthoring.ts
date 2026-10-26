@@ -1,4 +1,4 @@
-import { validateDialogueGraph, type DialogueGraph } from "./dialogueGraph";
+import { validateDialogueGraph, type DialogueGraph } from "../dialogue/dialogueGraph";
 
 /** Caller-reviewed facts for one authoring revision; event ids are in strict chronological order. */
 export interface NarrativeCanon {

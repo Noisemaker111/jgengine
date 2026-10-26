@@ -8,8 +8,8 @@ import type {
 import { createAssetCatalog } from "@jgengine/core/scene/assetCatalog";
 import { Coins, Hotbar } from "@jgengine/core/hud/hudReadouts.view";
 import { useEntityStat, useFeed, useGameClock, useGameStore, usePlayer, useTarget } from "@jgengine/react/hooks";
-import type { KitTone } from "@jgengine/react/uiKit";
-import { KitMeter } from "@jgengine/react/uiKitRoot";
+import type { KitTone } from "@jgengine/core/ui/kit/uiKit.view";
+import { KitMeter } from "@jgengine/core/ui/kit/uiKitRoot.view";
 
 import type { PlayableGame } from "@jgengine/shell/registry";
 

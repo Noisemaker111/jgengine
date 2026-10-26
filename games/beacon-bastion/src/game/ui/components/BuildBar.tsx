@@ -1,8 +1,8 @@
-import { useActionBindings } from "@jgengine/react/uiKitRoot";
+import { useActionBindings } from "@jgengine/core/ui/kit/uiKitRoot.view";
 import { useGame, useGameStore } from "@jgengine/react/hooks";
-import { KitButton } from "@jgengine/react/uiKitRoot";
+import { KitButton } from "@jgengine/core/ui/kit/uiKitRoot.view";
 import { useGameContext } from "@jgengine/react/provider";
-import { GameIcon } from "@jgengine/react/gameIcons";
+import { GameIcon } from "@jgengine/core/ui/icons/gameIcons.view";
 import { HudFade } from "@jgengine/core/hud/hudLayout.view";
 import { actionLabel } from "@jgengine/core/input/actionBindings";
 

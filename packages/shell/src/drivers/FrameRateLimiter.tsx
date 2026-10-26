@@ -2,7 +2,7 @@ import { useThree } from "@react-three/fiber";
 import { useEffect } from "react";
 
 import { paceFrame } from "@jgengine/core/settings/frameRateLimit";
-import { useCanvasCovered } from "@jgengine/react/canvasCover";
+import { useCanvasCovered } from "@jgengine/core/ui/canvasCover.view";
 
 /**
  * Drives the Canvas at a capped frame rate. Mount only with `frameloop="never"`: it runs its

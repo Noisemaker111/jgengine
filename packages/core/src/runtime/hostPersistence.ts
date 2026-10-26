@@ -1,4 +1,4 @@
-import type { LeaderboardRow, LeaderboardScope } from "../game/leaderboard";
+import type { LeaderboardRow, LeaderboardScope } from "../leaderboard/leaderboard";
 import type { SessionVisibility } from "../multiplayer/matchmaking";
 import type { NormalizedScenarioReset } from "./persistenceScope";
 import type { SaveConfig } from "../save/saveConfig";

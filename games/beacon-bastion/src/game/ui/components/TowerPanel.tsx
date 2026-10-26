@@ -1,8 +1,8 @@
-import { useActionBindings } from "@jgengine/react/uiKitRoot";
+import { useActionBindings } from "@jgengine/core/ui/kit/uiKitRoot.view";
 import { useGame, useGameStore } from "@jgengine/react/hooks";
-import { KitButton, KitPanel } from "@jgengine/react/uiKitRoot";
+import { KitButton, KitPanel } from "@jgengine/core/ui/kit/uiKitRoot.view";
 import { actionLabel } from "@jgengine/core/input/actionBindings";
-import { GameIcon, type GameIconName } from "@jgengine/react/gameIcons";
+import { GameIcon, type GameIconName } from "@jgengine/core/ui/icons/gameIcons.view";
 
 import { editorLayers } from "../../../editorLayers";
 import type { DamageType } from "../../combat/damage";

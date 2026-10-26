@@ -8,6 +8,10 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `createActionContextStack` (function) · `import { createActionContextStack } from "@jgengine/core/input/actionContexts"`
 
+## action-glyph — the key, pad button or tap label for an action on the device in use
+
+- `actionGlyph` (function) · `import { actionGlyph } from "@jgengine/core/input/inputDevice.view"`
+
 ## ai-decision-graph — Evaluate serializable selector, sequence, condition, action, utility, timer, and random AI decisions with interrupt hooks.
 
 - `createDecisionGraphRuntime` (function) · `import { createDecisionGraphRuntime } from "@jgengine/core/ai/decisionGraph"`
@@ -313,6 +317,10 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `createPoseState` (function) · `import { createPoseState } from "@jgengine/core/world"`
 
+## cutscene-letterbox — reskinnable cinematic letterbox + skip overlay for a cutscene — animated bars, caption/dialogue slot, progress line, Skip button
+
+- `CutsceneLetterbox` (function) · `import { CutsceneLetterbox } from "@jgengine/core/cutscene/cutscene.view"`
+
 ## damage-direction — serializable hit-from damage-direction indicator brain — pooled directional arcs that flare on `registerHit(angle, intensity)` and fade on an injected clock, with optional same-direction merging
 
 - `createDamageDirectionTracker` (function) · `import { createDamageDirectionTracker } from "@jgengine/core/world"`
@@ -524,9 +532,17 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `createInputBuffer` (function) · `import { createInputBuffer } from "@jgengine/core/input/inputBuffer"`
 
+## input-device — which device the player last used (keyboard, gamepad, touch), live, for device-correct prompts
+
+- `useInputDevice` (function) · `import { useInputDevice } from "@jgengine/core/input/inputDevice.view"`
+
 ## interaction-prompt — observable nearest-interactable prompt registry over the proximity-prompt resolver — register/resolve/active with priority+range and change-notified snapshot/restore
 
 - `createPromptRegistry` (function) · `import { createPromptRegistry } from "@jgengine/core/world"`
+
+## interaction-prompt-host — screen-anchored "press E to…" callout rendering a prompt registry's active interactable — keybind cap+label, gauge hold bar, or plain label, theme- and per-prompt-accent skinnable
+
+- `InteractionPrompt` (function) · `import { InteractionPrompt } from "@jgengine/core/interaction/interactionPrompt.view"`
 
 ## interest-census — running active/dormant gate tally folded into the caller's tick loop
 
@@ -544,9 +560,17 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `interestPhase` (function) · `import { interestPhase } from "@jgengine/core/world"`
 
+## key-hint — keyboard/mouse control hint that hides itself on touch
+
+- `KeyHint` (function) · `import { KeyHint } from "@jgengine/core/input/keyHint.view"`
+
 ## key-rebinding — conflict-aware key-remap session over the action-binding model — capture/reassign, conflict detection, reset-to-defaults, persist overrides, snapshot/restore
 
 - `createRebindSession` (function) · `import { createRebindSession } from "@jgengine/core/input/rebindSession"`
+
+## keycap — styled keyboard/mouse key cap for control hints
+
+- `Keycap` (function) · `import { Keycap } from "@jgengine/core/input/keyHint.view"`
 
 ## lane-graph — directed lane topology with junctions, signals and parking for vehicle traffic
 
@@ -1048,6 +1072,18 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `territoryChunkKeys` (function) · `import { territoryChunkKeys } from "@jgengine/core/world/territory"`
 
+## timer-readout — live digital mm:ss/m:ss.d timer readout bound to a TimerSet
+
+- `TimerReadout` (function) · `import { TimerReadout } from "@jgengine/core/time/timerReadout.view"`
+
+## timer-readout-format — format milliseconds as digital timer text (mm:ss / m:ss.d / ss.d)
+
+- `formatTimerMs` (function) · `import { formatTimerMs } from "@jgengine/core/time/timerReadout.view"`
+
+## timer-ring — radial SVG charge/cooldown ring bound to a TimerSet's progress
+
+- `TimerRing` (function) · `import { TimerRing } from "@jgengine/core/time/timerReadout.view"`
+
 ## tire-marks — skid marks laid by sliding wheels that fade over time from a fixed pool
 
 - `createTireMarks` (function) · `import { createTireMarks } from "@jgengine/core/world"`
@@ -1062,9 +1098,13 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `createTraffic` (function) · `import { createTraffic } from "@jgengine/core/world"`
 
-## ui-sound-cues — default procedural click/hover/open/close/confirm/deny/notify cues on a "ui" bus, overridable per game
+## tween-number — rolling number readout with an up/down delta flash
 
-- `withUiCueSounds` (function) · `import { withUiCueSounds } from "@jgengine/core/audio/uiCues"`
+- `TweenNumber` (function) · `import { TweenNumber } from "@jgengine/core/anim/tweenNumber.view"`
+
+## tweened-value — animate a displayed number toward its target, honouring reduced motion
+
+- `useTweenedValue` (function) · `import { useTweenedValue } from "@jgengine/core/anim/tweenNumber.view"`
 
 ## uphill-grade-step — constrain sampled heightfield ascent with axis sliding and a configurable terrain-policy sampler
 
@@ -1073,6 +1113,18 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 ## use-camera-shake — React hook reading a camera-shake controller's live trauma and kind
 
 - `useCameraShakeReadout` (function) · `import { useCameraShakeReadout } from "@jgengine/core/camera/shake/cameraShake.view"`
+
+## use-interaction-prompt — React hook binding a prompt registry to a moving player — resolves the nearest interactable prompt and returns the active one
+
+- `useInteractionPrompt` (function) · `import { useInteractionPrompt } from "@jgengine/core/interaction/interactionPrompt.view"`
+
+## use-sequence-director — React hook that drives a cutscene director's per-frame tick loop and exposes playhead/progress + play/pause/skip controls
+
+- `useSequenceDirector` (function) · `import { useSequenceDirector } from "@jgengine/core/cutscene/cutscene.view"`
+
+## use-timer — React hook binding one timer to a component with a per-frame re-read
+
+- `useTimerRead` (function) · `import { useTimerRead } from "@jgengine/core/time/timerReadout.view"`
 
 ## utility-brain — pick actions by decaying-need appeal with response curves, hysteresis and interrupts
 

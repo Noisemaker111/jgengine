@@ -48,9 +48,9 @@ import { balanceLightingForIbl } from "@jgengine/core/render/lightingBalance";
 import { skyNoonKeyframes } from "@jgengine/core/sky/skyOwnedLighting";
 import type { PresencePoseRow } from "@jgengine/core/runtime/transport";
 import type { GameContext } from "@jgengine/core/runtime/gameContext";
-import { GameViewportProvider } from "@jgengine/react/gameViewport";
+import { GameViewportProvider } from "@jgengine/core/ui/viewport.view";
 import { GameProvider } from "@jgengine/react/provider";
-import { ColorblindFrame, useColorblindMode } from "@jgengine/react/accessibility";
+import { ColorblindFrame, useColorblindMode } from "@jgengine/core/ui/accessibility.view";
 import { SettingsProvider, type SettingsActionView } from "@jgengine/core/settings/settings.view";
 
 import { resolveWorldSky } from "./worldSky";

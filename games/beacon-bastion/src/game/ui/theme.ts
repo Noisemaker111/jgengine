@@ -1,4 +1,4 @@
-import { gameFontStacks } from "@jgengine/react/gameFonts";
+import { gameFontStacks } from "@jgengine/core/ui/fonts.view";
 import { HUD_THEME_PRESETS, type HudTheme } from "@jgengine/core/hud/hudTheme.view";
 
 import { GAME_FONTS } from "../../art/fonts/fonts";

@@ -14,14 +14,14 @@ import {
   type ModalStack,
 } from "@jgengine/core/dialog/modalStack";
 
-import { useReducedMotion } from "@jgengine/react/accessibility";
+import { useReducedMotion } from "@jgengine/core/ui/accessibility.view";
 import { useDialogBehavior } from "./dialogBehavior.view";
 import { useEngineStyles } from "@jgengine/react/engineStyles";
 import { HudButton } from "@jgengine/core/hud/hudButton.view";
 import { useHudInteract, type HudInteractListener } from "@jgengine/core/hud/hudInteract.view";
 import { HudSurface } from "@jgengine/core/hud/hudSurface.view";
 import { hudType } from "@jgengine/core/hud/hudTokens";
-import { useMountPresence } from "@jgengine/react/presence";
+import { useMountPresence } from "@jgengine/core/ui/presence.view";
 
 /**
  * React chrome over the headless modal stack (`@jgengine/core/dialog/modalStack`) — the blocking-overlay

@@ -159,7 +159,7 @@ For repeated authoring and repair, follow the [narrative authoring recipe](recip
 Validate dialogue structure before opening a conversation:
 
 ```ts
-import { validateDialogueGraph, type DialogueGraph } from "@jgengine/core/game/dialogueGraph";
+import { validateDialogueGraph, type DialogueGraph } from "@jgengine/core/dialogue/dialogueGraph";
 
 function reviewDialogue(graph: DialogueGraph) {
   const issues = validateDialogueGraph(graph);

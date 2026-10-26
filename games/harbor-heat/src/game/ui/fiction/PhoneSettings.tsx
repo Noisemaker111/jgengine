@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
-import { GameCursor } from "@jgengine/react/gameCursor";
-import { GameIcon } from "@jgengine/react/gameIcons";
-import { GameSlider } from "@jgengine/react/gameSlider";
+import { GameCursor } from "@jgengine/core/ui/cursor.view";
+import { GameIcon } from "@jgengine/core/ui/icons/gameIcons.view";
+import { GameSlider } from "@jgengine/core/ui/slider.view";
 import { useMenuNav, type MenuNavController } from "@jgengine/core/menu/menuNav.view";
 import { useSettings, type SettingsKeybindRow, type SettingsRow } from "@jgengine/core/settings/settings.view";
 import { adjustSettingRow } from "@jgengine/core/settings/settingsBlocks.view";

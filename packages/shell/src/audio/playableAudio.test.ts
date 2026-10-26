@@ -1,7 +1,7 @@
 import { describe, expect, test } from "bun:test";
 
-import { DEFAULT_UI_CUE_SOUNDS } from "@jgengine/core/audio/uiCues";
-import { UI_KITS } from "@jgengine/react/uiKits";
+import { DEFAULT_UI_CUE_SOUNDS } from "@jgengine/core/ui/uiCues";
+import { UI_KITS } from "@jgengine/core/ui/kit/uiKits.view";
 
 import type { PlayableGame } from "../registry";
 import { kitCueOverrides, resolvePlayableAudio } from "./playableAudio";

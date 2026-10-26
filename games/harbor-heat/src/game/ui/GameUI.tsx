@@ -1,6 +1,6 @@
 import { useEffect } from "react";
 import { HudCanvas, HudPanel, useHudLayout } from "@jgengine/react";
-import { useGameFonts } from "@jgengine/react/gameFonts";
+import { useGameFonts } from "@jgengine/core/ui/fonts.view";
 import { useGameContext } from "@jgengine/react/provider";
 import { useStore } from "@jgengine/react/store";
 import { ITEM_LABELS } from "../content";

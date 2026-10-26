@@ -1,5 +1,5 @@
 import { afterAll, expect, test } from "bun:test";
-import { createDialogueRun } from "../../../core/src/game/dialogueGraph";
+import { createDialogueRun } from "../../../core/src/dialogue/dialogueGraph";
 import type { NarrativeBatch, NarrativeCanon } from "../../../core/src/game/narrativeAuthoring";
 import { mkdtempSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";

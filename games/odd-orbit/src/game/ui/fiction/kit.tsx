@@ -1,6 +1,6 @@
 import { forwardRef, type CSSProperties, type ReactNode, type Ref } from "react";
-import type { GameIconName } from "@jgengine/react/gameIcons";
-import { KitButton, KitPanel, type KitMaterialButtonProps, type KitMaterialPanelProps } from "@jgengine/react/uiKitRoot";
+import type { GameIconName } from "@jgengine/core/ui/icons/gameIcons.view";
+import { KitButton, KitPanel, type KitMaterialButtonProps, type KitMaterialPanelProps } from "@jgengine/core/ui/kit/uiKitRoot.view";
 import type { NeedId } from "../../needs/needs";
 import { NEED_COLORS } from "../../palette";
 

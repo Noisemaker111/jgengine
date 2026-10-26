@@ -20,10 +20,10 @@ import { createGameContext, type GameContext } from "@jgengine/core/runtime/game
 import { localPlayers } from "@jgengine/core/runtime/localPlayers";
 import { actionContextStack, activeActionCodes } from "@jgengine/core/game/controlGate";
 import type { PresencePoseRow } from "@jgengine/core/runtime/transport";
-import { useDisplayProfile } from "@jgengine/react/display";
-import { RotateDeviceScreen } from "@jgengine/react/rotateDevice";
-import { canvasCover } from "@jgengine/react/canvasCover";
-import { ActionBindingsProvider } from "@jgengine/react/uiKitRoot";
+import { useDisplayProfile } from "@jgengine/core/ui/display.view";
+import { RotateDeviceScreen } from "@jgengine/core/ui/rotateDevice.view";
+import { canvasCover } from "@jgengine/core/ui/canvasCover.view";
+import { ActionBindingsProvider } from "@jgengine/core/ui/kit/uiKitRoot.view";
 import { createSettingsStore } from "@jgengine/core/settings/settingsModel";
 import { parseGraphicsQuality, withGraphicsQualityOverride } from "@jgengine/core/settings/graphicsSettings";
 import {

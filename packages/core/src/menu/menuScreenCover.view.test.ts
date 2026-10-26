@@ -26,7 +26,7 @@ beforeAll(async () => {
     import { createRoot } from 'react-dom/client';
     import { flushSync } from 'react-dom';
     import { MenuScreen } from '../../packages/core/src/menu/menuScreen.view';
-    import { canvasCover } from '../../packages/react/src/canvasCover';
+    import { canvasCover } from '../../packages/core/src/ui/canvasCover.view';
 
     const root = createRoot(document.getElementById('root'));
 

@@ -1,4 +1,4 @@
-import { GameIcon } from "@jgengine/react/gameIcons";
+import { GameIcon } from "@jgengine/core/ui/icons/gameIcons.view";
 import { useStore } from "@jgengine/react/store";
 import { MAX_HEAT, MAX_STARS, type WantedSnapshot, wantedStore } from "../../handroll";
 

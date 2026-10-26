@@ -2,9 +2,9 @@ import { useMemo, type CSSProperties, type ReactNode } from "react";
 
 import { groundSpeed } from "@jgengine/core/scene/entityStore";
 
-import { iconForItemId } from "@jgengine/react/gameIcons";
+import { iconForItemId } from "@jgengine/core/ui/icons/gameIcons.view";
 import { hudFrameStyle } from "./hudFrame.view";
-import { IconTreatment, schoolForItem } from "@jgengine/react/iconTreatment";
+import { IconTreatment, schoolForItem } from "@jgengine/core/ui/icons/iconTreatment.view";
 import { useCurrency, useGameClock, useGameStore, useInventory, localPlayerEntity } from "@jgengine/react/hooks";
 import { hudType } from "./hudTokens";
 

@@ -21,7 +21,7 @@ beforeAll(async () => {
   await Bun.write(`${scratch}/fixture.tsx`, `
     import React,{StrictMode,useEffect,useLayoutEffect,useState} from 'react';
     import {createRoot} from 'react-dom/client';import {flushSync} from 'react-dom';
-    import {useVoice} from '@jgengine/react/voice';
+    import {useVoice} from '@jgengine/core/multiplayer/voice.view';
     import {createLocalVoiceTransport} from '@jgengine/core/multiplayer/voiceContract';
     const audio=new AudioContext(),requests=[],results=[],publishes=[],joins=[],publicationRequests=[],unhandled=[];
     let publicationMode='normal';

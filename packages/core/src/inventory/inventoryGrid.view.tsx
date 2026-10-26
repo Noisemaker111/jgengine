@@ -11,9 +11,9 @@ import {
 
 import { moveGridFocus, type FocusDirection } from "@jgengine/core/ui/actionModel";
 
-import { DragGhost, DraggableCard, DropZone, useDragLayer } from "@jgengine/react/dragLayer";
-import { iconForItemId } from "@jgengine/react/gameIcons";
-import { IconTreatment, schoolForItem } from "@jgengine/react/iconTreatment";
+import { DragGhost, DraggableCard, DropZone, useDragLayer } from "@jgengine/core/inventory/dragLayer.view";
+import { iconForItemId } from "@jgengine/core/ui/icons/gameIcons.view";
+import { IconTreatment, schoolForItem } from "@jgengine/core/ui/icons/iconTreatment.view";
 import { useInventoryGrid } from "@jgengine/react/hooks";
 
 /**

@@ -1,5 +1,5 @@
 import type { WalletState } from "../../economy/wallet";
-import type { FeedEntry, GameFeed } from "../../game/feed";
+import type { FeedEntry, GameFeed } from "../../feed/feed";
 import type { InventorySet, InventoryState } from "../../inventory/inventoryModel";
 import type { PoseSnapshot, PoseState } from "../../movement/poseState";
 import {

@@ -1,8 +1,8 @@
 import { useEffect, useState } from "react";
 import { HudCanvas, HudPanel, useHudLayout, useDisplayProfile, usePanels } from "@jgengine/react";
-import { useGameFonts } from "@jgengine/react/gameFonts";
-import { KitPanel } from "@jgengine/react/uiKitRoot";
-import { GameIcon } from "@jgengine/react/gameIcons";
+import { useGameFonts } from "@jgengine/core/ui/fonts.view";
+import { KitPanel } from "@jgengine/core/ui/kit/uiKitRoot.view";
+import { GameIcon } from "@jgengine/core/ui/icons/gameIcons.view";
 import { HudButton } from "@jgengine/core/hud/hudButton.view";
 import { useGame, useSceneObjects } from "@jgengine/react/hooks";
 import { useStore } from "@jgengine/react/store";

@@ -1,7 +1,7 @@
 import { useGame, useGameStore } from "@jgengine/react/hooks";
-import { KitButton, KitPanel } from "@jgengine/react/uiKitRoot";
-import { GameCursor } from "@jgengine/react/gameCursor";
-import { GameIcon } from "@jgengine/react/gameIcons";
+import { KitButton, KitPanel } from "@jgengine/core/ui/kit/uiKitRoot.view";
+import { GameCursor } from "@jgengine/core/ui/cursor.view";
+import { GameIcon } from "@jgengine/core/ui/icons/gameIcons.view";
 import { useMenuNav } from "@jgengine/core/menu/menuNav.view";
 
 import { campaign, COUNCIL_NODES, councilPoints, councilTree, DIFFICULTIES, DIFFICULTY_IDS } from "../../campaign";

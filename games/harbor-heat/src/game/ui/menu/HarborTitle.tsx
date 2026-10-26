@@ -1,9 +1,9 @@
 import { createElement, useEffect, useRef, useState, type CSSProperties, type ReactNode, type Ref } from "react";
 import type { SaveSlotMeta } from "@jgengine/core/save/saveSlots";
-import { GameCursor } from "@jgengine/react/gameCursor";
-import { KitButton, KitPanel } from "@jgengine/react/uiKitRoot";
-import { kitCutPath } from "@jgengine/react/kitFrame";
-import { GameIcon } from "@jgengine/react/gameIcons";
+import { GameCursor } from "@jgengine/core/ui/cursor.view";
+import { KitButton, KitPanel } from "@jgengine/core/ui/kit/uiKitRoot.view";
+import { kitCutPath } from "@jgengine/core/ui/kit/kitFrame.view";
+import { GameIcon } from "@jgengine/core/ui/icons/gameIcons.view";
 import { useViewportScrollLock } from "@jgengine/core/menu/gameMenu.view";
 import { useMenuNav, type MenuNavItemProps } from "@jgengine/core/menu/menuNav.view";
 import { EntityPreview } from "@jgengine/shell/render/EntityPreview";

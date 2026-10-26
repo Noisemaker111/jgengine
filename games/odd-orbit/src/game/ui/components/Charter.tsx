@@ -1,5 +1,5 @@
-import { GameIcon, type GameIconName } from "@jgengine/react/gameIcons";
-import { KitPanel } from "@jgengine/react/uiKitRoot";
+import { GameIcon, type GameIconName } from "@jgengine/core/ui/icons/gameIcons.view";
+import { KitPanel } from "@jgengine/core/ui/kit/uiKitRoot.view";
 import { useGame, useGameClock, useSceneObjects } from "@jgengine/react/hooks";
 import { useStore } from "@jgengine/react/store";
 

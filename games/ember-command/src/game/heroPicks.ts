@@ -1,12 +1,12 @@
-import type { TalentNodeDef, TalentSnapshot, TalentTree } from "@jgengine/core/game/talents";
-import { talentTreeViewFrom, type TalentNodeView } from "@jgengine/core/game/talentTreeView";
+import type { TalentNodeDef, TalentSnapshot, TalentTree } from "@jgengine/core/talents/talents";
+import { talentTreeViewFrom, type TalentNodeView } from "@jgengine/core/talents/talentTreeView";
 import { defineStore } from "@jgengine/core/store/defineStore";
 import type { StatModifierSet } from "@jgengine/core/stats/statModifiers";
 
 /**
  * Bram's field kit: the picks a level-up offers, authored as engine talent nodes.
  *
- * `@jgengine/core/game/talents` owns the model (points, prerequisites, ranks, grants, the stat and
+ * `@jgengine/core/talents/talents` owns the model (points, prerequisites, ranks, grants, the stat and
  * ability resolution) and `talentTreeViewFrom` owns the render view the choice card reads. What Ember
  * owns is the content: which two picks each level offers, in its own voice, and the store the campaign
  * save keeps them in. The picked ranks are the only hero state that outlives a battle.

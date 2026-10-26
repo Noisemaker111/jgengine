@@ -7,7 +7,7 @@ import type {
   SceneKindObject,
   WeightedParamEntry,
 } from "@jgengine/core/scene/sceneKinds";
-import { useDebouncedCommit } from "@jgengine/react/useDebouncedCommit";
+import { useDebouncedCommit } from "@jgengine/core/ui/useDebouncedCommit.view";
 
 import { MICRO_LABEL } from "./theme";
 

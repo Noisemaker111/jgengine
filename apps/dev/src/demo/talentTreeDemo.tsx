@@ -1,13 +1,13 @@
 import { useReducer, useState, type CSSProperties, type ReactNode } from "react";
 
 import { defineGameDefinition } from "@jgengine/core/game/defineGame";
-import { createTalentTree, type TalentNodeDef } from "@jgengine/core/game/talents";
-import { talentTreeViewFrom } from "@jgengine/core/game/talentTreeView";
+import { createTalentTree, type TalentNodeDef } from "@jgengine/core/talents/talents";
+import { talentTreeViewFrom } from "@jgengine/core/talents/talentTreeView";
 import type { GameContext, GameContextEntityEntry } from "@jgengine/core/runtime/gameContext";
 import { createAssetCatalog } from "@jgengine/core/scene/assetCatalog";
 import { environment, grass, terrain } from "@jgengine/core/world/features";
-import { TalentTreePanel } from "@jgengine/react/talentTree";
-import type { GameIconName } from "@jgengine/react/gameIcons";
+import { TalentTreePanel } from "@jgengine/core/talents/talentTree.view";
+import type { GameIconName } from "@jgengine/core/ui/icons/gameIcons.view";
 
 import { EnvironmentScene } from "@jgengine/shell/environment/EnvironmentScene";
 import type { PlayableGame } from "@jgengine/shell/registry";

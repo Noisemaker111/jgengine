@@ -1,11 +1,11 @@
 import { useEffect, type CSSProperties, type ReactNode } from "react";
 
 import { defineGameDefinition } from "@jgengine/core/game/defineGame";
-import { createDamageDirectionTracker } from "@jgengine/core/vfx/damageDirection";
+import { createDamageDirectionTracker } from "@jgengine/core/combat/damage/damageDirection";
 import type { GameContext, GameContextEntityEntry } from "@jgengine/core/runtime/gameContext";
 import { createAssetCatalog } from "@jgengine/core/scene/assetCatalog";
 import { environment, grass, terrain } from "@jgengine/core/world/features";
-import { DamageDirectionOverlay } from "@jgengine/react/damageDirection";
+import { DamageDirectionOverlay } from "@jgengine/core/combat/damage/damageDirection.view";
 
 import { EnvironmentScene } from "@jgengine/shell/environment/EnvironmentScene";
 import type { PlayableGame } from "@jgengine/shell/registry";

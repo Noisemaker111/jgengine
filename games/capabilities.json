@@ -16,10 +16,10 @@
     {
       "id": "accessibility-provider",
       "packages": [
-        "@jgengine/react"
+        "@jgengine/core"
       ],
-      "module": "@jgengine/react/accessibility",
-      "domain": "accessibility-provider",
+      "module": "@jgengine/core/ui/accessibility.view",
+      "domain": "ui",
       "gameFacing": false,
       "probe": null,
       "intent": "apply accessibility preferences to a subtree — text-scale CSS var and reduced-motion/high-contrast/colorblind/captions data attrs"
@@ -60,10 +60,10 @@
     {
       "id": "achievement-gallery",
       "packages": [
-        "@jgengine/react"
+        "@jgengine/core"
       ],
-      "module": "@jgengine/react/achievements",
-      "domain": "achievement-gallery",
+      "module": "@jgengine/core/achievements/achievements.view",
+      "domain": "achievements",
       "gameFacing": false,
       "probe": null,
       "intent": "responsive achievement/trophy grid with unlocked/locked state, counter progress bars, secret masking, and a completion/score header"
@@ -71,10 +71,10 @@
     {
       "id": "achievement-toast",
       "packages": [
-        "@jgengine/react"
+        "@jgengine/core"
       ],
-      "module": "@jgengine/react/achievements",
-      "domain": "achievement-toast",
+      "module": "@jgengine/core/achievements/achievements.view",
+      "domain": "achievements",
       "gameFacing": false,
       "probe": null,
       "intent": "unlock-moment banner (icon, heading, name, points) for an achievement toast queue"
@@ -84,8 +84,8 @@
       "packages": [
         "@jgengine/core"
       ],
-      "module": "@jgengine/core/game/achievements",
-      "domain": "game",
+      "module": "@jgengine/core/achievements/achievements",
+      "domain": "achievements",
       "gameFacing": false,
       "probe": null,
       "intent": "track achievement/trophy unlocks over counter goals and boolean flags, with score, completion, an onUnlock seam, and serializable snapshot/restore"
@@ -126,10 +126,10 @@
     {
       "id": "action-bindings-hook",
       "packages": [
-        "@jgengine/react"
+        "@jgengine/core"
       ],
-      "module": "@jgengine/react/uiKitRoot",
-      "domain": "action-bindings-hook",
+      "module": "@jgengine/core/ui/kit/uiKitRoot.view",
+      "domain": "ui",
       "gameFacing": false,
       "probe": null,
       "intent": "the game's live key bindings, rebinds included, for HUD key labels"
@@ -170,10 +170,10 @@
     {
       "id": "action-glyph",
       "packages": [
-        "@jgengine/react"
+        "@jgengine/core"
       ],
-      "module": "@jgengine/react/inputDevice",
-      "domain": "action-glyph",
+      "module": "@jgengine/core/input/inputDevice.view",
+      "domain": "input",
       "gameFacing": false,
       "probe": null,
       "intent": "the key, pad button or tap label for an action on the device in use"
@@ -991,10 +991,10 @@
     {
       "id": "browser-suspension",
       "packages": [
-        "@jgengine/react"
+        "@jgengine/core"
       ],
-      "module": "@jgengine/react/browserLifecycle",
-      "domain": "browser-suspension",
+      "module": "@jgengine/core/runtime/browserLifecycle.view",
+      "domain": "runtime",
       "gameFacing": false,
       "probe": null,
       "intent": "observe blur, hidden-page and pointer-lock loss while the game owns pause and input policy"
@@ -1002,10 +1002,10 @@
     {
       "id": "browser-suspension-observer",
       "packages": [
-        "@jgengine/react"
+        "@jgengine/core"
       ],
-      "module": "@jgengine/react/browserLifecycle",
-      "domain": "browser-suspension-observer",
+      "module": "@jgengine/core/runtime/browserLifecycle.view",
+      "domain": "runtime",
       "gameFacing": false,
       "probe": null,
       "intent": "observe browser interruptions outside React with caller-owned pause policy and event sources"
@@ -1189,10 +1189,10 @@
     {
       "id": "canvas-cover",
       "packages": [
-        "@jgengine/react"
+        "@jgengine/core"
       ],
-      "module": "@jgengine/react/canvasCover",
-      "domain": "canvas-cover",
+      "module": "@jgengine/core/ui/canvasCover.view",
+      "domain": "ui",
       "gameFacing": false,
       "probe": null,
       "intent": "stop world rendering behind a full-screen surface while input, audio, the HUD and the menu keep running"
@@ -1355,10 +1355,10 @@
     {
       "id": "character-paperdoll",
       "packages": [
-        "@jgengine/react"
+        "@jgengine/core"
       ],
-      "module": "@jgengine/react/characterSheet",
-      "domain": "character-paperdoll",
+      "module": "@jgengine/core/inventory/characterSheet.view",
+      "domain": "inventory",
       "gameFacing": false,
       "probe": null,
       "intent": "equip-slot paperdoll — flanking columns around a portrait, activatable slots"
@@ -1366,10 +1366,10 @@
     {
       "id": "character-sheet",
       "packages": [
-        "@jgengine/react"
+        "@jgengine/core"
       ],
-      "module": "@jgengine/react/characterSheet",
-      "domain": "character-sheet",
+      "module": "@jgengine/core/inventory/characterSheet.view",
+      "domain": "inventory",
       "gameFacing": false,
       "probe": null,
       "intent": "drop-in paperdoll + derived-stat sheet in a HudFrame — game supplies slots/stats"
@@ -1377,10 +1377,10 @@
     {
       "id": "character-statlist",
       "packages": [
-        "@jgengine/react"
+        "@jgengine/core"
       ],
-      "module": "@jgengine/react/characterSheet",
-      "domain": "character-statlist",
+      "module": "@jgengine/core/inventory/characterSheet.view",
+      "domain": "inventory",
       "gameFacing": false,
       "probe": null,
       "intent": "derived-stat readout — grouped small-caps label→value rows, token-themed"
@@ -1531,10 +1531,10 @@
     {
       "id": "coach-mark",
       "packages": [
-        "@jgengine/react"
+        "@jgengine/core"
       ],
-      "module": "@jgengine/react/coachMarks",
-      "domain": "coach-mark",
+      "module": "@jgengine/core/ui/coachMarks.view",
+      "domain": "ui",
       "gameFacing": false,
       "probe": null,
       "intent": "single onboarding callout — title/body, N-of-M counter, Next + Skip controls, theme-reskinnable"
@@ -1542,10 +1542,10 @@
     {
       "id": "coach-mark-host",
       "packages": [
-        "@jgengine/react"
+        "@jgengine/core"
       ],
-      "module": "@jgengine/react/coachMarks",
-      "domain": "coach-mark-host",
+      "module": "@jgengine/core/ui/coachMarks.view",
+      "domain": "ui",
       "gameFacing": false,
       "probe": null,
       "intent": "full-screen onboarding coach-mark host — anchored/centered callout, dimmed spotlight backdrop, Next/Skip wired to the sequence"
@@ -1566,8 +1566,8 @@
       "packages": [
         "@jgengine/core"
       ],
-      "module": "@jgengine/core/game/codex",
-      "domain": "game",
+      "module": "@jgengine/core/codex/codex",
+      "domain": "codex",
       "gameFacing": false,
       "probe": null,
       "intent": "codex/bestiary/lorebook of defined entries with discovery tracking, fragment scans, categories, secret masking, completion, an onDiscover seam, and serializable state"
@@ -1575,10 +1575,10 @@
     {
       "id": "codex-gallery",
       "packages": [
-        "@jgengine/react"
+        "@jgengine/core"
       ],
-      "module": "@jgengine/react/codex",
-      "domain": "codex-gallery",
+      "module": "@jgengine/core/codex/codex.view",
+      "domain": "codex",
       "gameFacing": false,
       "probe": null,
       "intent": "codex/bestiary gallery with category tabs, discovered/locked cards, secret masking, and a completion header"
@@ -1608,10 +1608,10 @@
     {
       "id": "colorblind-filters",
       "packages": [
-        "@jgengine/react"
+        "@jgengine/core"
       ],
-      "module": "@jgengine/react/accessibility",
-      "domain": "colorblind-filters",
+      "module": "@jgengine/core/ui/accessibility.view",
+      "domain": "ui",
       "gameFacing": false,
       "probe": null,
       "intent": "SVG feColorMatrix defs (protanopia/deuteranopia/tritanopia/grayscale) referenced by the accessibility colorblind filter"
@@ -1619,10 +1619,10 @@
     {
       "id": "colorblind-frame",
       "packages": [
-        "@jgengine/react"
+        "@jgengine/core"
       ],
-      "module": "@jgengine/react/accessibility",
-      "domain": "colorblind-frame",
+      "module": "@jgengine/core/ui/accessibility.view",
+      "domain": "ui",
       "gameFacing": false,
       "probe": null,
       "intent": "apply the player's colour-vision mode to the 3D frame alone, leaving HUD and menu text unfiltered"
@@ -1641,10 +1641,10 @@
     {
       "id": "colorblind-frame-mode",
       "packages": [
-        "@jgengine/react"
+        "@jgengine/core"
       ],
-      "module": "@jgengine/react/accessibility",
-      "domain": "colorblind-frame-mode",
+      "module": "@jgengine/core/ui/accessibility.view",
+      "domain": "ui",
       "gameFacing": false,
       "probe": null,
       "intent": "read the live colour-vision mode from the settings store that the settings rows write"
@@ -1850,10 +1850,10 @@
     {
       "id": "controls-list",
       "packages": [
-        "@jgengine/react"
+        "@jgengine/core"
       ],
-      "module": "@jgengine/react/startScreen",
-      "domain": "controls-list",
+      "module": "@jgengine/core/menu/startScreen.view",
+      "domain": "menu",
       "gameFacing": false,
       "probe": null,
       "intent": "keybind-derived control legend that hides on touch"
@@ -2080,10 +2080,10 @@
     {
       "id": "credits-panel",
       "packages": [
-        "@jgengine/react"
+        "@jgengine/core"
       ],
-      "module": "@jgengine/react/creditsPanel",
-      "domain": "credits-panel",
+      "module": "@jgengine/core/menu/creditsPanel.view",
+      "domain": "menu",
       "gameFacing": false,
       "probe": null,
       "intent": "scrollable, navigable credits screen with a back affordance"
@@ -2091,10 +2091,10 @@
     {
       "id": "credits-screen",
       "packages": [
-        "@jgengine/react"
+        "@jgengine/core"
       ],
-      "module": "@jgengine/react/creditsScreen",
-      "domain": "credits-screen",
+      "module": "@jgengine/core/menu/creditsScreen.view",
+      "domain": "menu",
       "gameFacing": false,
       "probe": null,
       "intent": "drop-in credits view over a CreditsDocument — headed sections, optional links, HudTheme-skinned"
@@ -2179,10 +2179,10 @@
     {
       "id": "cutscene-letterbox",
       "packages": [
-        "@jgengine/react"
+        "@jgengine/core"
       ],
-      "module": "@jgengine/react/cutscene",
-      "domain": "cutscene-letterbox",
+      "module": "@jgengine/core/cutscene/cutscene.view",
+      "domain": "cutscene",
       "gameFacing": false,
       "probe": null,
       "intent": "reskinnable cinematic letterbox + skip overlay for a cutscene — animated bars, caption/dialogue slot, progress line, Skip button"
@@ -2203,8 +2203,8 @@
       "packages": [
         "@jgengine/core"
       ],
-      "module": "@jgengine/core/vfx/damageDirection",
-      "domain": "vfx",
+      "module": "@jgengine/core/combat/damage/damageDirection",
+      "domain": "combat",
       "gameFacing": false,
       "probe": null,
       "intent": "serializable hit-from damage-direction indicator brain — pooled directional arcs that flare on `registerHit(angle, intensity)` and fade on an injected clock, with optional same-direction merging"
@@ -2212,10 +2212,10 @@
     {
       "id": "damage-direction-overlay",
       "packages": [
-        "@jgengine/react"
+        "@jgengine/core"
       ],
-      "module": "@jgengine/react/damageDirection",
-      "domain": "damage-direction-overlay",
+      "module": "@jgengine/core/combat/damage/damageDirection.view",
+      "domain": "combat",
       "gameFacing": false,
       "probe": null,
       "intent": "drop-in hit-from damage-direction overlay — SVG arcs flaring around a center reticle toward each recent hit and fading over time, colored per `kind`/HudTheme, pointer-events none"
@@ -2415,10 +2415,10 @@
     {
       "id": "debounced-commit",
       "packages": [
-        "@jgengine/react"
+        "@jgengine/core"
       ],
-      "module": "@jgengine/react/useDebouncedCommit",
-      "domain": "debounced-commit",
+      "module": "@jgengine/core/ui/useDebouncedCommit.view",
+      "domain": "ui",
       "gameFacing": false,
       "probe": null,
       "intent": "bind a slider/number/color control to an expensive commit path (scene-document patch, settings persist) — instant local mirror, one trailing commit per pause, flush on release/blur/unmount; no raw onChange→patch wiring"
@@ -2560,8 +2560,8 @@
       "packages": [
         "@jgengine/core"
       ],
-      "module": "@jgengine/core/game/dialogue",
-      "domain": "game",
+      "module": "@jgengine/core/dialogue/dialogue",
+      "domain": "dialogue",
       "gameFacing": false,
       "probe": null,
       "intent": "open/close the talkable→DialogueBox flow with no per-game store or command glue"
@@ -2571,8 +2571,8 @@
       "packages": [
         "@jgengine/core"
       ],
-      "module": "@jgengine/core/game/dialogueGraph",
-      "domain": "game",
+      "module": "@jgengine/core/dialogue/dialogueGraph",
+      "domain": "dialogue",
       "gameFacing": false,
       "probe": null,
       "intent": "diagnose duplicate ids, broken branches, unreachable dialogue, and nodes without a route to an ending before play"
@@ -2582,8 +2582,8 @@
       "packages": [
         "@jgengine/core"
       ],
-      "module": "@jgengine/core/game/dialogueGraph",
-      "domain": "game",
+      "module": "@jgengine/core/dialogue/dialogueGraph",
+      "domain": "dialogue",
       "gameFacing": false,
       "probe": null,
       "intent": "select a conversation node's render-ready view (speaker, line, branching choices) from a serializable dialogue graph"
@@ -2593,8 +2593,8 @@
       "packages": [
         "@jgengine/core"
       ],
-      "module": "@jgengine/core/game/dialogueGraph",
-      "domain": "game",
+      "module": "@jgengine/core/dialogue/dialogueGraph",
+      "domain": "dialogue",
       "gameFacing": false,
       "probe": null,
       "intent": "walk a serializable branching dialogue graph — current node view, choose-to-advance traversal, visited history, snapshot/restore"
@@ -2602,10 +2602,10 @@
     {
       "id": "dialogue-view",
       "packages": [
-        "@jgengine/react"
+        "@jgengine/core"
       ],
-      "module": "@jgengine/react/dialogueView",
-      "domain": "dialogue-view",
+      "module": "@jgengine/core/dialogue/dialogueView.view",
+      "domain": "dialogue",
       "gameFacing": false,
       "probe": null,
       "intent": "drop-in branching conversation UI — speaker + portrait slot, current line, clickable response choices that advance a DialogueRun"
@@ -2789,10 +2789,10 @@
     {
       "id": "drag-layer",
       "packages": [
-        "@jgengine/react"
+        "@jgengine/core"
       ],
-      "module": "@jgengine/react/dragLayer",
-      "domain": "drag-layer",
+      "module": "@jgengine/core/inventory/dragLayer.view",
+      "domain": "inventory",
       "gameFacing": false,
       "probe": null,
       "intent": "composable pointer-owned drag, drop targets and cancellation for custom cards and inventory UI"
@@ -3141,11 +3141,11 @@
     {
       "id": "entity-frames",
       "packages": [
-        "@jgengine/react",
+        "@jgengine/core",
         "@jgengine/shell"
       ],
-      "module": "@jgengine/react/entityFrames",
-      "domain": "entity-frames",
+      "module": "@jgengine/core/hud/entityFrames.view",
+      "domain": "hud",
       "gameFacing": false,
       "probe": null,
       "intent": "world-anchored overhead entity frames (nameplate/healthbar), data-first + caller-composed"
@@ -3245,8 +3245,8 @@
       "packages": [
         "@jgengine/core"
       ],
-      "module": "@jgengine/core/game/feed",
-      "domain": "game",
+      "module": "@jgengine/core/feed/feed",
+      "domain": "feed",
       "gameFacing": false,
       "probe": null,
       "intent": "a rolling feed of recent gameplay events for a HUD ticker or killfeed"
@@ -3289,8 +3289,8 @@
       "packages": [
         "@jgengine/core"
       ],
-      "module": "@jgengine/core/game/eventTicker",
-      "domain": "game",
+      "module": "@jgengine/core/feed/eventTicker",
+      "domain": "feed",
       "gameFacing": false,
       "probe": null,
       "intent": "rolling capped, timed-fade event/kill-feed ticker of free-string entries over the feed helpers — push/recent-with-fade, snapshot/restore"
@@ -3464,14 +3464,13 @@
       "id": "floating-text",
       "packages": [
         "@jgengine/core",
-        "@jgengine/react",
         "@jgengine/shell"
       ],
-      "module": "@jgengine/react/floatingText",
-      "domain": "floating-text",
+      "module": "@jgengine/core/hud/floatingText",
+      "domain": "hud",
       "gameFacing": false,
       "probe": null,
-      "intent": "world-anchored floating combat text / damage numbers overlay, data-first + caller-projected + per-kind skinnable"
+      "intent": "deterministic pooled world-anchored floating combat text / damage numbers with rise, drift, fade, and serializable state"
     },
     {
       "id": "follow-trail",
@@ -3641,10 +3640,10 @@
     {
       "id": "game-cursor",
       "packages": [
-        "@jgengine/react"
+        "@jgengine/core"
       ],
-      "module": "@jgengine/react/gameCursor",
-      "domain": "game-cursor",
+      "module": "@jgengine/core/ui/cursor.view",
+      "domain": "ui",
       "gameFacing": false,
       "probe": null,
       "intent": "console-style selection cursor (brackets, chevron, bar) that glides to the focused menu item"
@@ -3674,10 +3673,10 @@
     {
       "id": "game-font-stacks",
       "packages": [
-        "@jgengine/react"
+        "@jgengine/core"
       ],
-      "module": "@jgengine/react/gameFonts",
-      "domain": "game-font-stacks",
+      "module": "@jgengine/core/ui/fonts.view",
+      "domain": "ui",
       "gameFacing": false,
       "probe": null,
       "intent": "display/body/numeric font stacks for a game's font pairing, with installed fallbacks"
@@ -3685,10 +3684,10 @@
     {
       "id": "game-fonts",
       "packages": [
-        "@jgengine/react"
+        "@jgengine/core"
       ],
-      "module": "@jgengine/react/gameFonts",
-      "domain": "game-fonts",
+      "module": "@jgengine/core/ui/fonts.view",
+      "domain": "ui",
       "gameFacing": false,
       "probe": null,
       "intent": "load a game's bundled display and body fonts"
@@ -3744,10 +3743,10 @@
     {
       "id": "game-slider",
       "packages": [
-        "@jgengine/react"
+        "@jgengine/core"
       ],
-      "module": "@jgengine/react/gameSlider",
-      "domain": "game-slider",
+      "module": "@jgengine/core/ui/slider.view",
+      "domain": "ui",
       "gameFacing": false,
       "probe": null,
       "intent": "drawn game slider (groove or pips) with keyboard, drag and screen reader support, no browser range input"
@@ -3911,8 +3910,8 @@
       "packages": [
         "@jgengine/core"
       ],
-      "module": "@jgengine/core/game/credits",
-      "domain": "game",
+      "module": "@jgengine/core/menu/credits",
+      "domain": "menu",
       "gameFacing": false,
       "probe": null,
       "intent": "turn a flat list of credited things into ordered credit sections"
@@ -4251,10 +4250,10 @@
     {
       "id": "hud-icons",
       "packages": [
-        "@jgengine/react"
+        "@jgengine/core"
       ],
-      "module": "@jgengine/react/iconTreatment",
-      "domain": "hud-icons",
+      "module": "@jgengine/core/ui/icons/iconTreatment.view",
+      "domain": "ui",
       "gameFacing": false,
       "probe": null,
       "intent": "painted-icon treatment for hotbar/action slots — glyph + gradient + count badge"
@@ -4526,10 +4525,10 @@
     {
       "id": "input-device",
       "packages": [
-        "@jgengine/react"
+        "@jgengine/core"
       ],
-      "module": "@jgengine/react/inputDevice",
-      "domain": "input-device",
+      "module": "@jgengine/core/input/inputDevice.view",
+      "domain": "input",
       "gameFacing": false,
       "probe": null,
       "intent": "which device the player last used (keyboard, gamepad, touch), live, for device-correct prompts"
@@ -4559,10 +4558,10 @@
     {
       "id": "interaction-prompt-host",
       "packages": [
-        "@jgengine/react"
+        "@jgengine/core"
       ],
-      "module": "@jgengine/react/interactionPrompt",
-      "domain": "interaction-prompt-host",
+      "module": "@jgengine/core/interaction/interactionPrompt.view",
+      "domain": "interaction",
       "gameFacing": false,
       "probe": null,
       "intent": "screen-anchored \"press E to…\" callout rendering a prompt registry's active interactable — keybind cap+label, gauge hold bar, or plain label, theme- and per-prompt-accent skinnable"
@@ -4824,10 +4823,10 @@
     {
       "id": "key-hint",
       "packages": [
-        "@jgengine/react"
+        "@jgengine/core"
       ],
-      "module": "@jgengine/react/keyHint",
-      "domain": "key-hint",
+      "module": "@jgengine/core/input/keyHint.view",
+      "domain": "input",
       "gameFacing": false,
       "probe": null,
       "intent": "keyboard/mouse control hint that hides itself on touch"
@@ -4857,10 +4856,10 @@
     {
       "id": "keycap",
       "packages": [
-        "@jgengine/react"
+        "@jgengine/core"
       ],
-      "module": "@jgengine/react/keyHint",
-      "domain": "keycap",
+      "module": "@jgengine/core/input/keyHint.view",
+      "domain": "input",
       "gameFacing": false,
       "probe": null,
       "intent": "styled keyboard/mouse key cap for control hints"
@@ -4868,10 +4867,10 @@
     {
       "id": "kill-feed",
       "packages": [
-        "@jgengine/react"
+        "@jgengine/core"
       ],
-      "module": "@jgengine/react/killFeed",
-      "domain": "kill-feed",
+      "module": "@jgengine/core/feed/killFeed.view",
+      "domain": "feed",
       "gameFacing": false,
       "probe": null,
       "intent": "vertical event/kill-feed ticker rendering a core event-ticker as a fading, newest-on-top stack of per-kind iconned, accent-colored rows over HudTheme tokens"
@@ -4879,10 +4878,10 @@
     {
       "id": "kit-action-glyph",
       "packages": [
-        "@jgengine/react"
+        "@jgengine/core"
       ],
-      "module": "@jgengine/react/uiKitRoot",
-      "domain": "kit-action-glyph",
+      "module": "@jgengine/core/ui/kit/uiKitRoot.view",
+      "domain": "ui",
       "gameFacing": false,
       "probe": null,
       "intent": "the bound key, pad button or tap label for an action, live, for any kit part"
@@ -4890,10 +4889,10 @@
     {
       "id": "kit-action-prompt",
       "packages": [
-        "@jgengine/react"
+        "@jgengine/core"
       ],
-      "module": "@jgengine/react/uiKitRoot",
-      "domain": "kit-action-prompt",
+      "module": "@jgengine/core/ui/kit/uiKitRoot.view",
+      "domain": "ui",
       "gameFacing": false,
       "probe": null,
       "intent": "a device-correct \"press X to do Y\" prompt (keyboard key, pad button, tap) in the active UI kit"
@@ -4901,10 +4900,10 @@
     {
       "id": "kit-banner",
       "packages": [
-        "@jgengine/react"
+        "@jgengine/core"
       ],
-      "module": "@jgengine/react/kitFlow",
-      "domain": "kit-banner",
+      "module": "@jgengine/core/ui/kit/kitFlow.view",
+      "domain": "ui",
       "gameFacing": false,
       "probe": null,
       "intent": "a phase-change banner (day, wave, run start) in the active UI kit, shown when its cue changes"
@@ -4912,10 +4911,10 @@
     {
       "id": "kit-button",
       "packages": [
-        "@jgengine/react"
+        "@jgengine/core"
       ],
-      "module": "@jgengine/react/uiKitRoot",
-      "domain": "kit-button",
+      "module": "@jgengine/core/ui/kit/uiKitRoot.view",
+      "domain": "ui",
       "gameFacing": false,
       "probe": null,
       "intent": "a button drawn by the active UI kit, or made of a material (steel, wood, enamel…), with UI cue sounds"
@@ -4945,10 +4944,10 @@
     {
       "id": "kit-frame-cut",
       "packages": [
-        "@jgengine/react"
+        "@jgengine/core"
       ],
-      "module": "@jgengine/react/kitFrame",
-      "domain": "kit-frame-cut",
+      "module": "@jgengine/core/ui/kit/kitFrame.view",
+      "domain": "ui",
       "gameFacing": false,
       "probe": null,
       "intent": "clip path for an angled or irregular frame silhouette (chamfer, banner, ticket, torn…)"
@@ -4956,10 +4955,10 @@
     {
       "id": "kit-frame-style",
       "packages": [
-        "@jgengine/react"
+        "@jgengine/core"
       ],
-      "module": "@jgengine/react/kitFrame",
-      "domain": "kit-frame-style",
+      "module": "@jgengine/core/ui/kit/kitFrame.view",
+      "domain": "ui",
       "gameFacing": false,
       "probe": null,
       "intent": "CSS variables for a material frame on an element the game already owns"
@@ -4978,10 +4977,10 @@
     {
       "id": "kit-menu",
       "packages": [
-        "@jgengine/react"
+        "@jgengine/core"
       ],
-      "module": "@jgengine/react/uiKitRoot",
-      "domain": "kit-menu",
+      "module": "@jgengine/core/ui/kit/uiKitRoot.view",
+      "domain": "ui",
       "gameFacing": false,
       "probe": null,
       "intent": "a verb list drawn by the active UI kit over shared menu navigation"
@@ -4989,10 +4988,10 @@
     {
       "id": "kit-meter",
       "packages": [
-        "@jgengine/react"
+        "@jgengine/core"
       ],
-      "module": "@jgengine/react/uiKitRoot",
-      "domain": "kit-meter",
+      "module": "@jgengine/core/ui/kit/uiKitRoot.view",
+      "domain": "ui",
       "gameFacing": false,
       "probe": null,
       "intent": "a value meter (bar, segments, ring) drawn by the active UI kit"
@@ -5000,10 +4999,10 @@
     {
       "id": "kit-minimap-frame",
       "packages": [
-        "@jgengine/react"
+        "@jgengine/core"
       ],
-      "module": "@jgengine/react/uiKitRoot",
-      "domain": "kit-minimap-frame",
+      "module": "@jgengine/core/ui/kit/uiKitRoot.view",
+      "domain": "ui",
       "gameFacing": false,
       "probe": null,
       "intent": "a minimap or radar frame drawn by the active UI kit"
@@ -5011,10 +5010,10 @@
     {
       "id": "kit-objective",
       "packages": [
-        "@jgengine/react"
+        "@jgengine/core"
       ],
-      "module": "@jgengine/react/kitFlow",
-      "domain": "kit-objective",
+      "module": "@jgengine/core/ui/kit/kitFlow.view",
+      "domain": "ui",
       "gameFacing": false,
       "probe": null,
       "intent": "first-minute guidance in the active UI kit — goal, distance and direction, checklist, countdown with urgency warnings, idle hint, next-action prompt"
@@ -5022,10 +5021,10 @@
     {
       "id": "kit-panel",
       "packages": [
-        "@jgengine/react"
+        "@jgengine/core"
       ],
-      "module": "@jgengine/react/uiKitRoot",
-      "domain": "kit-panel",
+      "module": "@jgengine/core/ui/kit/uiKitRoot.view",
+      "domain": "ui",
       "gameFacing": false,
       "probe": null,
       "intent": "a content surface drawn by the active UI kit, or made of a material with a cut silhouette, with enter/exit motion"
@@ -5033,10 +5032,10 @@
     {
       "id": "kit-result-screen",
       "packages": [
-        "@jgengine/react"
+        "@jgengine/core"
       ],
-      "module": "@jgengine/react/kitFlow",
-      "domain": "kit-result-screen",
+      "module": "@jgengine/core/ui/kit/kitFlow.view",
+      "domain": "ui",
       "gameFacing": false,
       "probe": null,
       "intent": "run/day/level result screen in the active UI kit — scrim, summary, tally, keyboard/gamepad/touch choices, kit motion"
@@ -5044,10 +5043,10 @@
     {
       "id": "kit-toast",
       "packages": [
-        "@jgengine/react"
+        "@jgengine/core"
       ],
-      "module": "@jgengine/react/uiKitRoot",
-      "domain": "kit-toast",
+      "module": "@jgengine/core/ui/kit/uiKitRoot.view",
+      "domain": "ui",
       "gameFacing": false,
       "probe": null,
       "intent": "a short message drawn by the active UI kit, with its enter/exit motion"
@@ -5178,8 +5177,8 @@
       "packages": [
         "@jgengine/core"
       ],
-      "module": "@jgengine/core/game/leaderboard",
-      "domain": "game",
+      "module": "@jgengine/core/leaderboard/leaderboard",
+      "domain": "leaderboard",
       "gameFacing": false,
       "probe": null,
       "intent": "ranked score tracking across global, server, and per-profile scopes"
@@ -5352,10 +5351,10 @@
     {
       "id": "loading-screen",
       "packages": [
-        "@jgengine/react"
+        "@jgengine/core"
       ],
-      "module": "@jgengine/react/loadingScreen",
-      "domain": "loading-screen",
+      "module": "@jgengine/core/menu/loadingScreen.view",
+      "domain": "menu",
       "gameFacing": false,
       "probe": null,
       "intent": "loading block with progress, rotating tips, a ready gate, and a scene backdrop"
@@ -5887,8 +5886,8 @@
       "packages": [
         "@jgengine/core"
       ],
-      "module": "@jgengine/core/game/credits",
-      "domain": "game",
+      "module": "@jgengine/core/menu/credits",
+      "domain": "menu",
       "gameFacing": false,
       "probe": null,
       "intent": "fold generated and hand-authored credit documents into one, deduped by entry"
@@ -6523,8 +6522,8 @@
       "packages": [
         "@jgengine/core"
       ],
-      "module": "@jgengine/core/game/feed",
-      "domain": "game",
+      "module": "@jgengine/core/feed/feed",
+      "domain": "feed",
       "gameFacing": false,
       "probe": null,
       "intent": "serializable tone-tagged notice/event feed bounded by count and age (toasts, life events, killfeed)"
@@ -6578,8 +6577,8 @@
       "packages": [
         "@jgengine/core"
       ],
-      "module": "@jgengine/core/ui/objectiveBanner",
-      "domain": "ui",
+      "module": "@jgengine/core/mission/objectiveBanner",
+      "domain": "mission",
       "gameFacing": false,
       "probe": null,
       "intent": "serializable, clock-driven stage/objective banner queue — flies a big transient centered title + optional subtitle in, holds, and fades out one at a time, with phase + progress for animation, free-string kinds the game styles, and snapshot/restore"
@@ -6587,10 +6586,10 @@
     {
       "id": "objective-banner-host",
       "packages": [
-        "@jgengine/react"
+        "@jgengine/core"
       ],
-      "module": "@jgengine/react/objectiveBanner",
-      "domain": "objective-banner-host",
+      "module": "@jgengine/core/mission/objectiveBanner.view",
+      "domain": "mission",
       "gameFacing": false,
       "probe": null,
       "intent": "full-screen overlay that renders a core objective-banner controller as a fly-in / hold / fade-out centered title + subtitle stamp, theme- and per-kind-skinnable"
@@ -6600,8 +6599,8 @@
       "packages": [
         "@jgengine/core"
       ],
-      "module": "@jgengine/core/game/objectives",
-      "domain": "game",
+      "module": "@jgengine/core/mission/objectives",
+      "domain": "mission",
       "gameFacing": false,
       "probe": null,
       "intent": "check progress of a threshold objective against a live metric"
@@ -6721,10 +6720,10 @@
     {
       "id": "panel-host",
       "packages": [
-        "@jgengine/react"
+        "@jgengine/core"
       ],
-      "module": "@jgengine/react/panels",
-      "domain": "panel-host",
+      "module": "@jgengine/core/ui/panels.view",
+      "domain": "ui",
       "gameFacing": false,
       "probe": null,
       "intent": "render a manager's open windows as draggable, closable, z-stacked dialogs above the HUD"
@@ -7009,10 +7008,10 @@
     {
       "id": "photo-mode-controls",
       "packages": [
-        "@jgengine/react"
+        "@jgengine/core"
       ],
-      "module": "@jgengine/react/photoMode",
-      "domain": "photo-mode-controls",
+      "module": "@jgengine/core/ui/photoMode.view",
+      "domain": "ui",
       "gameFacing": false,
       "probe": null,
       "intent": "photo-mode toolbar (hide-HUD toggle, capture, exit) bound to a photo-mode store"
@@ -7387,10 +7386,10 @@
     {
       "id": "presence",
       "packages": [
-        "@jgengine/react"
+        "@jgengine/core"
       ],
-      "module": "@jgengine/react/presence",
-      "domain": "presence",
+      "module": "@jgengine/core/ui/presence.view",
+      "domain": "ui",
       "gameFacing": false,
       "probe": null,
       "intent": "keep a closing element mounted through its exit transition"
@@ -8211,8 +8210,8 @@
       "packages": [
         "@jgengine/core"
       ],
-      "module": "@jgengine/core/game/leaderboardRank",
-      "domain": "game",
+      "module": "@jgengine/core/leaderboard/leaderboardRank",
+      "domain": "leaderboard",
       "gameFacing": false,
       "probe": null,
       "intent": "pure tie-aware ranking selector over the leaderboard model — standard/dense ranks, local-entry highlight, top-N, medal tokens for a reskinnable table"
@@ -8220,10 +8219,10 @@
     {
       "id": "scoreboard-table",
       "packages": [
-        "@jgengine/react"
+        "@jgengine/core"
       ],
-      "module": "@jgengine/react/scoreboard",
-      "domain": "scoreboard-table",
+      "module": "@jgengine/core/leaderboard/scoreboard.view",
+      "domain": "leaderboard",
       "gameFacing": false,
       "probe": null,
       "intent": "reskinnable ranked-score / leaderboard table over the rankLeaderboard selector — medal-colored podium, local-row highlight, HudTheme-token driven"
@@ -8253,10 +8252,10 @@
     {
       "id": "scroll-rail",
       "packages": [
-        "@jgengine/react"
+        "@jgengine/core"
       ],
-      "module": "@jgengine/react/scrollRail",
-      "domain": "scroll-rail",
+      "module": "@jgengine/core/ui/scrollRail.view",
+      "domain": "ui",
       "gameFacing": false,
       "probe": null,
       "intent": "reachable horizontal controls with visible overflow navigation and keyboard focus reveal"
@@ -8343,8 +8342,8 @@
       "packages": [
         "@jgengine/core"
       ],
-      "module": "@jgengine/core/scene/sequenceDirector",
-      "domain": "scene",
+      "module": "@jgengine/core/cutscene/sequenceDirector",
+      "domain": "cutscene",
       "gameFacing": false,
       "probe": null,
       "intent": "data-driven cutscene timeline — fire typed camera/dialogue/event cues on one injected clock with play/pause/seek/skip and snapshot/restore"
@@ -8352,10 +8351,10 @@
     {
       "id": "server-session",
       "packages": [
-        "@jgengine/react"
+        "@jgengine/core"
       ],
-      "module": "@jgengine/react/useServerSession",
-      "domain": "server-session",
+      "module": "@jgengine/core/session/useServerSession.view",
+      "domain": "session",
       "gameFacing": false,
       "probe": null,
       "intent": "join a multiplayer host with status, retry, and teardown"
@@ -8623,8 +8622,8 @@
       "packages": [
         "@jgengine/core"
       ],
-      "module": "@jgengine/core/game/social",
-      "domain": "game",
+      "module": "@jgengine/core/social/social",
+      "domain": "social",
       "gameFacing": false,
       "probe": null,
       "intent": "emotes and social interactions between nearby players"
@@ -8986,10 +8985,10 @@
     {
       "id": "standalone-chat",
       "packages": [
-        "@jgengine/react"
+        "@jgengine/core"
       ],
-      "module": "@jgengine/react/standaloneChatPanel",
-      "domain": "standalone-chat",
+      "module": "@jgengine/core/chat/standaloneChatPanel.view",
+      "domain": "chat",
       "gameFacing": false,
       "probe": null,
       "intent": "render persisted chat with focus controls and visible send failures"
@@ -9030,10 +9029,10 @@
     {
       "id": "start-screen",
       "packages": [
-        "@jgengine/react"
+        "@jgengine/core"
       ],
-      "module": "@jgengine/react/startScreen",
-      "domain": "start-screen",
+      "module": "@jgengine/core/menu/startScreen.view",
+      "domain": "menu",
       "gameFacing": false,
       "probe": null,
       "intent": "headless title/attract overlay the game fills and skins"
@@ -9366,10 +9365,10 @@
     {
       "id": "talent-tree",
       "packages": [
-        "@jgengine/react"
+        "@jgengine/core"
       ],
-      "module": "@jgengine/react/talentTree",
-      "domain": "talent-tree",
+      "module": "@jgengine/core/talents/talentTree.view",
+      "domain": "talents",
       "gameFacing": false,
       "probe": null,
       "intent": "drop-in skill/talent/upgrade-tree widget — pass `nodes`+`tree` for point-spend or a precomputed `view` for any unlock rule; branch/tier layout, SVG prerequisite edges, learned/available/locked/maxed styling, icon + rank, onLearn"
@@ -9379,8 +9378,8 @@
       "packages": [
         "@jgengine/core"
       ],
-      "module": "@jgengine/core/game/talentTreeView",
-      "domain": "game",
+      "module": "@jgengine/core/talents/talentTreeView",
+      "domain": "talents",
       "gameFacing": false,
       "probe": null,
       "intent": "flatten a talent tree into a placed, per-node render view — branch/tier layout, learned/available/locked/maxed state, prerequisite edges"
@@ -9390,8 +9389,8 @@
       "packages": [
         "@jgengine/core"
       ],
-      "module": "@jgengine/core/game/talentTreeView",
-      "domain": "game",
+      "module": "@jgengine/core/talents/talentTreeView",
+      "domain": "talents",
       "gameFacing": false,
       "probe": null,
       "intent": "build a placed talent/upgrade-tree render view from any per-node unlock rule (points, currency, level, flag) — branch/tier layout, learned/available/locked/maxed state, prerequisite edges"
@@ -9641,10 +9640,10 @@
     {
       "id": "timer-readout",
       "packages": [
-        "@jgengine/react"
+        "@jgengine/core"
       ],
-      "module": "@jgengine/react/timerReadout",
-      "domain": "timer-readout",
+      "module": "@jgengine/core/time/timerReadout.view",
+      "domain": "time",
       "gameFacing": false,
       "probe": null,
       "intent": "live digital mm:ss/m:ss.d timer readout bound to a TimerSet"
@@ -9652,10 +9651,10 @@
     {
       "id": "timer-readout-format",
       "packages": [
-        "@jgengine/react"
+        "@jgengine/core"
       ],
-      "module": "@jgengine/react/timerReadout",
-      "domain": "timer-readout-format",
+      "module": "@jgengine/core/time/timerReadout.view",
+      "domain": "time",
       "gameFacing": false,
       "probe": null,
       "intent": "format milliseconds as digital timer text (mm:ss / m:ss.d / ss.d)"
@@ -9663,10 +9662,10 @@
     {
       "id": "timer-ring",
       "packages": [
-        "@jgengine/react"
+        "@jgengine/core"
       ],
-      "module": "@jgengine/react/timerReadout",
-      "domain": "timer-ring",
+      "module": "@jgengine/core/time/timerReadout.view",
+      "domain": "time",
       "gameFacing": false,
       "probe": null,
       "intent": "radial SVG charge/cooldown ring bound to a TimerSet's progress"
@@ -9709,10 +9708,10 @@
     {
       "id": "trans",
       "packages": [
-        "@jgengine/react"
+        "@jgengine/core"
       ],
-      "module": "@jgengine/react/i18n",
-      "domain": "trans",
+      "module": "@jgengine/core/i18n/i18n.view",
+      "domain": "i18n",
       "gameFacing": false,
       "probe": null,
       "intent": "inline translated-message component bound to the active locale"
@@ -9810,10 +9809,10 @@
     {
       "id": "tween-number",
       "packages": [
-        "@jgengine/react"
+        "@jgengine/core"
       ],
-      "module": "@jgengine/react/tweenNumber",
-      "domain": "tween-number",
+      "module": "@jgengine/core/anim/tweenNumber.view",
+      "domain": "anim",
       "gameFacing": false,
       "probe": null,
       "intent": "rolling number readout with an up/down delta flash"
@@ -9821,10 +9820,10 @@
     {
       "id": "tweened-value",
       "packages": [
-        "@jgengine/react"
+        "@jgengine/core"
       ],
-      "module": "@jgengine/react/tweenNumber",
-      "domain": "tweened-value",
+      "module": "@jgengine/core/anim/tweenNumber.view",
+      "domain": "anim",
       "gameFacing": false,
       "probe": null,
       "intent": "animate a displayed number toward its target, honouring reduced motion"
@@ -9854,10 +9853,10 @@
     {
       "id": "ui-kit-arcade",
       "packages": [
-        "@jgengine/react"
+        "@jgengine/core"
       ],
-      "module": "@jgengine/react/uiKitArcade",
-      "domain": "ui-kit-arcade",
+      "module": "@jgengine/core/ui/kit/uiKitArcade.view",
+      "domain": "ui",
       "gameFacing": false,
       "probe": null,
       "intent": "retro 8-bit arcade UI kit: stepped pixel frames, JRPG windows, depth buttons, hearts, score popups, chiptune cues"
@@ -9865,10 +9864,10 @@
     {
       "id": "ui-kit-broadcast",
       "packages": [
-        "@jgengine/react"
+        "@jgengine/core"
       ],
-      "module": "@jgengine/react/uiKitBroadcast",
-      "domain": "ui-kit-broadcast",
+      "module": "@jgengine/core/ui/kit/uiKitBroadcast.view",
+      "domain": "ui",
       "gameFacing": false,
       "probe": null,
       "intent": "sports broadcast UI kit — skewed slabs, score bugs, breaking-news bands, tote-board menus, shot-clock rings, wipe motion, whoosh and stinger sounds"
@@ -9876,10 +9875,10 @@
     {
       "id": "ui-kit-customize",
       "packages": [
-        "@jgengine/react"
+        "@jgengine/core"
       ],
-      "module": "@jgengine/react/uiKit",
-      "domain": "ui-kit-customize",
+      "module": "@jgengine/core/ui/kit/uiKit.view",
+      "domain": "ui",
       "gameFacing": false,
       "probe": null,
       "intent": "reshape a UI kit per game — tokens, swapped parts, extra CSS, motion and sounds — without losing any part"
@@ -9887,10 +9886,10 @@
     {
       "id": "ui-kit-holo",
       "packages": [
-        "@jgengine/react"
+        "@jgengine/core"
       ],
-      "module": "@jgengine/react/uiKitHolo",
-      "domain": "ui-kit-holo",
+      "module": "@jgengine/core/ui/kit/uiKitHolo.view",
+      "domain": "ui",
       "gameFacing": false,
       "probe": null,
       "intent": "sci-fi hologram UI kit — chamfered glass, bracket corners, hex tags, radar frames, projection motion and tone sweeps"
@@ -9898,10 +9897,10 @@
     {
       "id": "ui-kit-ink",
       "packages": [
-        "@jgengine/react"
+        "@jgengine/core"
       ],
-      "module": "@jgengine/react/uiKitInk",
-      "domain": "ui-kit-ink",
+      "module": "@jgengine/core/ui/kit/uiKitInk.view",
+      "domain": "ui",
       "gameFacing": false,
       "probe": null,
       "intent": "comic ink UI kit — outlines, halftone, caption tabs, speech balloons, pop motion, marker sounds"
@@ -9909,10 +9908,10 @@
     {
       "id": "ui-kit-paper",
       "packages": [
-        "@jgengine/react"
+        "@jgengine/core"
       ],
-      "module": "@jgengine/react/uiKitPaper",
-      "domain": "ui-kit-paper",
+      "module": "@jgengine/core/ui/kit/uiKitPaper.view",
+      "domain": "ui",
       "gameFacing": false,
       "probe": null,
       "intent": "paper and sticker UI kit — taped notes, ticket buttons, sticker badges, ruler meters, tag toasts, place-and-peel motion"
@@ -9920,10 +9919,10 @@
     {
       "id": "ui-kit-parchment",
       "packages": [
-        "@jgengine/react"
+        "@jgengine/core"
       ],
-      "module": "@jgengine/react/uiKitParchment",
-      "domain": "ui-kit-parchment",
+      "module": "@jgengine/core/ui/kit/uiKitParchment.view",
+      "domain": "ui",
       "gameFacing": false,
       "probe": null,
       "intent": "painterly fantasy parchment UI kit — stained paper, wax seals, scroll panels, vial meters, compass rims, unfurl motion, plucked-string sounds"
@@ -9931,10 +9930,10 @@
     {
       "id": "ui-kit-root",
       "packages": [
-        "@jgengine/react"
+        "@jgengine/core"
       ],
-      "module": "@jgengine/react/uiKitRoot",
-      "domain": "ui-kit-root",
+      "module": "@jgengine/core/ui/kit/uiKitRoot.view",
+      "domain": "ui",
       "gameFacing": false,
       "probe": null,
       "intent": "one line picks a complete UI language (shapes, type, motion, sound) for every kit part below it"
@@ -9942,10 +9941,10 @@
     {
       "id": "ui-kit-signal",
       "packages": [
-        "@jgengine/react"
+        "@jgengine/core"
       ],
-      "module": "@jgengine/react/uiKitSignal",
-      "domain": "ui-kit-signal",
+      "module": "@jgengine/core/ui/kit/uiKitSignal.view",
+      "domain": "ui",
       "gameFacing": false,
       "probe": null,
       "intent": "in-world signage UI kit — enamel plates, arrow and blade signs, route shields, LED departure boards, split-flap motion and clacks"
@@ -9953,10 +9952,10 @@
     {
       "id": "ui-kit-terminal",
       "packages": [
-        "@jgengine/react"
+        "@jgengine/core"
       ],
-      "module": "@jgengine/react/uiKitTerminal",
-      "domain": "ui-kit-terminal",
+      "module": "@jgengine/core/ui/kit/uiKitTerminal.view",
+      "domain": "ui",
       "gameFacing": false,
       "probe": null,
       "intent": "brutalist phosphor terminal UI kit: double rules, ASCII meters, log toasts, scanlines, stepped reveals, square-wave beeps"
@@ -9964,10 +9963,10 @@
     {
       "id": "ui-kits",
       "packages": [
-        "@jgengine/react"
+        "@jgengine/core"
       ],
-      "module": "@jgengine/react/uiKits",
-      "domain": "ui-kits",
+      "module": "@jgengine/core/ui/kit/uiKits.view",
+      "domain": "ui",
       "gameFacing": false,
       "probe": null,
       "intent": "eight complete built-in UI kits (ink, paper, parchment, terminal, holo, broadcast, arcade, signal) a game picks in one line"
@@ -9975,14 +9974,13 @@
     {
       "id": "ui-sound-cues",
       "packages": [
-        "@jgengine/core",
-        "@jgengine/react"
+        "@jgengine/core"
       ],
-      "module": "@jgengine/react/uiCues",
-      "domain": "ui-sound-cues",
+      "module": "@jgengine/core/ui/uiCues",
+      "domain": "ui",
       "gameFacing": false,
       "probe": null,
-      "intent": "play click/hover/open/close/confirm/deny/notify UI sounds from any component"
+      "intent": "default procedural click/hover/open/close/confirm/deny/notify cues on a \"ui\" bus, overridable per game"
     },
     {
       "id": "unit-training",
@@ -10108,10 +10106,10 @@
     {
       "id": "use-coach-marks",
       "packages": [
-        "@jgengine/react"
+        "@jgengine/core"
       ],
-      "module": "@jgengine/react/coachMarks",
-      "domain": "use-coach-marks",
+      "module": "@jgengine/core/ui/coachMarks.view",
+      "domain": "ui",
       "gameFacing": false,
       "probe": null,
       "intent": "React hook binding a coach-mark sequence to a component — re-renders on advance/skip/gate changes"
@@ -10130,10 +10128,10 @@
     {
       "id": "use-damage-direction",
       "packages": [
-        "@jgengine/react"
+        "@jgengine/core"
       ],
-      "module": "@jgengine/react/damageDirection",
-      "domain": "use-damage-direction",
+      "module": "@jgengine/core/combat/damage/damageDirection.view",
+      "domain": "combat",
       "gameFacing": false,
       "probe": null,
       "intent": "React hook that animates a damage-direction tracker's fade with requestAnimationFrame and re-renders its live indicators"
@@ -10141,10 +10139,10 @@
     {
       "id": "use-dialogue-run",
       "packages": [
-        "@jgengine/react"
+        "@jgengine/core"
       ],
-      "module": "@jgengine/react/dialogueView",
-      "domain": "use-dialogue-run",
+      "module": "@jgengine/core/dialogue/dialogueView.view",
+      "domain": "dialogue",
       "gameFacing": false,
       "probe": null,
       "intent": "React hook binding a branching dialogue run to a component — re-renders as the player advances the conversation"
@@ -10152,10 +10150,10 @@
     {
       "id": "use-event-ticker",
       "packages": [
-        "@jgengine/react"
+        "@jgengine/core"
       ],
-      "module": "@jgengine/react/killFeed",
-      "domain": "use-event-ticker",
+      "module": "@jgengine/core/feed/killFeed.view",
+      "domain": "feed",
       "gameFacing": false,
       "probe": null,
       "intent": "React hook binding an event-ticker — re-renders per frame so entries fade and drop live, returning the current newest-first views"
@@ -10185,10 +10183,10 @@
     {
       "id": "use-interaction-prompt",
       "packages": [
-        "@jgengine/react"
+        "@jgengine/core"
       ],
-      "module": "@jgengine/react/interactionPrompt",
-      "domain": "use-interaction-prompt",
+      "module": "@jgengine/core/interaction/interactionPrompt.view",
+      "domain": "interaction",
       "gameFacing": false,
       "probe": null,
       "intent": "React hook binding a prompt registry to a moving player — resolves the nearest interactable prompt and returns the active one"
@@ -10240,10 +10238,10 @@
     {
       "id": "use-objective-banner",
       "packages": [
-        "@jgengine/react"
+        "@jgengine/core"
       ],
-      "module": "@jgengine/react/objectiveBanner",
-      "domain": "use-objective-banner",
+      "module": "@jgengine/core/mission/objectiveBanner.view",
+      "domain": "mission",
       "gameFacing": false,
       "probe": null,
       "intent": "React hook binding an objective-banner controller — advances its clock per frame and returns the current banner view"
@@ -10251,10 +10249,10 @@
     {
       "id": "use-panels",
       "packages": [
-        "@jgengine/react"
+        "@jgengine/core"
       ],
-      "module": "@jgengine/react/panels",
-      "domain": "use-panels",
+      "module": "@jgengine/core/ui/panels.view",
+      "domain": "ui",
       "gameFacing": false,
       "probe": null,
       "intent": "headless toggleable-window manager with keybind + ESC handling over the core panel model"
@@ -10284,10 +10282,10 @@
     {
       "id": "use-sequence-director",
       "packages": [
-        "@jgengine/react"
+        "@jgengine/core"
       ],
-      "module": "@jgengine/react/cutscene",
-      "domain": "use-sequence-director",
+      "module": "@jgengine/core/cutscene/cutscene.view",
+      "domain": "cutscene",
       "gameFacing": false,
       "probe": null,
       "intent": "React hook that drives a cutscene director's per-frame tick loop and exposes playhead/progress + play/pause/skip controls"
@@ -10306,10 +10304,10 @@
     {
       "id": "use-timer",
       "packages": [
-        "@jgengine/react"
+        "@jgengine/core"
       ],
-      "module": "@jgengine/react/timerReadout",
-      "domain": "use-timer",
+      "module": "@jgengine/core/time/timerReadout.view",
+      "domain": "time",
       "gameFacing": false,
       "probe": null,
       "intent": "React hook binding one timer to a component with a per-frame re-read"
@@ -10317,10 +10315,10 @@
     {
       "id": "use-translate",
       "packages": [
-        "@jgengine/react"
+        "@jgengine/core"
       ],
-      "module": "@jgengine/react/i18n",
-      "domain": "use-translate",
+      "module": "@jgengine/core/i18n/i18n.view",
+      "domain": "i18n",
       "gameFacing": false,
       "probe": null,
       "intent": "live `t(key, params)` translator bound to the active locale, re-rendering on locale change"
@@ -10811,10 +10809,10 @@
     {
       "id": "window",
       "packages": [
-        "@jgengine/react"
+        "@jgengine/core"
       ],
-      "module": "@jgengine/react/panels",
-      "domain": "window",
+      "module": "@jgengine/core/ui/panels.view",
+      "domain": "ui",
       "gameFacing": false,
       "probe": null,
       "intent": "standalone draggable, closable window primitive over HudFrame — no manager required"

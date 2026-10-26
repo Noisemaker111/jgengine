@@ -1,12 +1,12 @@
 import { type ReactNode } from "react";
 
 import { defineGameDefinition } from "@jgengine/core/game/defineGame";
-import { createLeaderboard } from "@jgengine/core/game/leaderboard";
-import { rankLeaderboard } from "@jgengine/core/game/leaderboardRank";
+import { createLeaderboard } from "@jgengine/core/leaderboard/leaderboard";
+import { rankLeaderboard } from "@jgengine/core/leaderboard/leaderboardRank";
 import type { GameContext, GameContextEntityEntry } from "@jgengine/core/runtime/gameContext";
 import { createAssetCatalog } from "@jgengine/core/scene/assetCatalog";
 import { environment, grass, terrain } from "@jgengine/core/world/features";
-import { Scoreboard, type ScoreboardTheme } from "@jgengine/react/scoreboard";
+import { Scoreboard, type ScoreboardTheme } from "@jgengine/core/leaderboard/scoreboard.view";
 
 import { EnvironmentScene } from "@jgengine/shell/environment/EnvironmentScene";
 import type { PlayableGame } from "@jgengine/shell/registry";
