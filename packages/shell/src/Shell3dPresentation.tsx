@@ -6,7 +6,6 @@ import {
   useRef,
   useState,
   useSyncExternalStore,
-  type CSSProperties,
   type Dispatch,
   type MutableRefObject,
   type MouseEvent as ReactMouseEvent,
@@ -103,7 +102,6 @@ import { defaultHudTheme, hudThemeVars } from "@jgengine/core/hud/hudTheme.view"
 import type { PlayableGame } from "./registry";
 import type { AuthoritativeFrameHandler } from "@jgengine/core/multiplayer/authoritativeSync";
 import { TouchControlsDock, TouchPlaySurface, useTouchViewport, type TouchCodeSink } from "@jgengine/core/input/TouchControlsOverlay.view";
-import { floatingJoystickZoneHeight, touchDockInsets } from "@jgengine/core/input/touchClusterLayout";
 import { SettingsRuntime } from "@jgengine/core/settings/SettingsRuntime.draw";
 import { SettingsChrome } from "@jgengine/core/settings/SettingsChrome.draw";
 import { resolvePlayableAudio } from "@jgengine/core/audio/playableAudio.draw";
@@ -593,14 +591,6 @@ export function Shell3dPresentation({
     touchScheme !== null &&
     (touchScheme.joystick !== null || touchScheme.buttons.length > 0 || touchScheme.slots.length > 0);
   const touchViewport = useTouchViewport();
-  const dockInsets = dockMounted
-    ? touchDockInsets(
-        touchScheme,
-        touchScale,
-        touchViewport.shortSide,
-        touchJoystickVariant === "floating" ? floatingJoystickZoneHeight(touchViewport.height, touchScale) : undefined,
-      )
-    : { left: 0, center: 0, right: 0 };
   // The dock sits outside the GameUI theme root; carry the game's HudTheme tokens so its default skin matches the HUD.
   const dockThemeVars = useMemo(
     () => (playable.hudTheme === false ? undefined : hudThemeVars(playable.hudTheme ?? defaultHudTheme)),
@@ -648,14 +638,6 @@ export function Shell3dPresentation({
             tabIndex={0}
             {...(poster && posterFrozen ? { "data-poster-ready": "" } : {})}
             className="relative h-full w-full bg-neutral-950 outline-none"
-            style={
-              {
-                "--jg-hud-dock-clearance": `${Math.max(dockInsets.left, dockInsets.center, dockInsets.right)}px`,
-                "--jg-hud-dock-clearance-left": `${dockInsets.left}px`,
-                "--jg-hud-dock-clearance-center": `${dockInsets.center}px`,
-                "--jg-hud-dock-clearance-right": `${dockInsets.right}px`,
-              } as CSSProperties
-            }
             onKeyDown={keys.onKeyDown}
             onKeyUp={keys.onKeyUp}
             onBlur={keys.onBlur}

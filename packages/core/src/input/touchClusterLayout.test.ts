@@ -1,33 +1,7 @@
 import { describe, expect, test } from "bun:test";
 
-import { deriveTouchScheme } from "@jgengine/core/input/touchScheme";
-
-import { floatingJoystickZoneHeight, mainButtonIndex, touchClusterLayout, touchClusterSizes, touchDockInsets } from "./touchClusterLayout";
+import { mainButtonIndex, touchClusterLayout, touchClusterSizes } from "./touchClusterLayout";
 import { touchButtonFace, touchInitials } from "./touchIcons.view";
-
-const RESERVED = new Set(["moveForward", "moveBack", "moveLeft", "moveRight", "jump", "sprint", "interact", "crouch"]);
-
-/** Scrap Signal's real bindings: the 14-button dock this layout replaced. */
-const SHOOTER_INPUT = {
-  moveForward: ["KeyW"],
-  moveBack: ["KeyS"],
-  moveLeft: ["KeyA"],
-  moveRight: ["KeyD"],
-  jump: ["Space"],
-  sprint: ["ShiftLeft"],
-  crouch: ["KeyC"],
-  interact: ["KeyE"],
-  fire: ["mouse0"],
-  aim: ["mouse2"],
-  reload: ["KeyR"],
-  throwGrenade: ["KeyG"],
-  useHealthVial: ["KeyQ"],
-  selectSlot1: ["Digit1"],
-  selectSlot2: ["Digit2"],
-  selectSlot3: ["Digit3"],
-  selectSlot4: ["Digit4"],
-  openSkills: ["KeyK"],
-};
 
 describe("touchClusterSizes", () => {
   test("the main button is larger than secondaries and both scale with the short side", () => {
@@ -99,37 +73,5 @@ describe("touchButtonFace", () => {
     expect(face("flightYawLeft", false, "Yaw L")).toEqual({ kind: "text", text: "Yaw L" });
     expect(face("flightVectorToggle", false, "Vector Thrust Toggle")).toEqual({ kind: "text", text: "VTT" });
     expect(touchInitials("Exit Vehicle")).toBe("EV");
-  });
-});
-
-describe("touchDockInsets", () => {
-  test("only the corners the dock occupies are reserved; bottom-centre stays free", () => {
-    const scheme = deriveTouchScheme(SHOOTER_INPUT, { reserved: RESERVED, firstPerson: true });
-    expect(scheme?.slots).toEqual(["selectSlot1", "selectSlot2", "selectSlot3", "selectSlot4"]);
-    const insets = touchDockInsets(scheme, 0.88, 360);
-    expect(insets.center).toBe(0);
-    expect(insets.left).toBeGreaterThan(0);
-    expect(insets.right).toBeGreaterThan(insets.left);
-    // The whole right-thumb stack (cluster, slot strip, skills chip) leaves room above it on a 360px-tall phone.
-    expect(insets.right).toBeLessThan(300);
-  });
-
-  test("the floating stick's taller capture zone is what the movement corner reserves", () => {
-    const scheme = deriveTouchScheme(SHOOTER_INPUT, { reserved: RESERVED, firstPerson: true });
-    const zone = floatingJoystickZoneHeight(360, 0.88);
-    expect(zone).toBeCloseTo(144);
-    expect(touchDockInsets(scheme, 0.88, 360, zone).left).toBeGreaterThan(touchDockInsets(scheme, 0.88, 360).left);
-    expect(floatingJoystickZoneHeight(2000)).toBe(260);
-  });
-
-  test("a bottom-centre utility row reserves the centre, and a missing scheme reserves nothing", () => {
-    const scheme = deriveTouchScheme(
-      { fire: ["mouse0"], toggleMap: ["KeyM"] },
-      { reserved: RESERVED, firstPerson: false, config: { layout: { utility: "bottom-center" } } },
-    );
-    const insets = touchDockInsets(scheme, 1, 390);
-    expect(insets.center).toBeGreaterThan(0);
-    expect(insets.left).toBe(0);
-    expect(touchDockInsets(null)).toEqual({ left: 0, center: 0, right: 0 });
   });
 });

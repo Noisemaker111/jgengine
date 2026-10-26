@@ -38,6 +38,7 @@ import {
   isMobileMode,
   type HudPriority,
   type LayoutCollisionPolicy,
+  type LayoutRect,
   type MobileHudBehavior,
 } from "@jgengine/core/hud/hudPriority";
 import type { GamePhase } from "@jgengine/core/game/gamePhase";
@@ -389,26 +390,29 @@ function localSize(element: HTMLElement): HudSize {
   return { width: element.offsetWidth, height: element.offsetHeight };
 }
 
-function cssPx(style: CSSStyleDeclaration, name: string): number {
-  const value = Number.parseFloat(style.getPropertyValue(name));
-  return Number.isFinite(value) ? value : 0;
-}
-
-interface DockClearance {
+/** The HUD host's top-left corner on screen; control zones are measured on screen and placed relative to it. */
+interface HostOrigin {
   left: number;
-  center: number;
-  right: number;
+  top: number;
 }
 
-const NO_DOCK: DockClearance = { left: 0, center: 0, right: 0 };
+const ORIGIN: HostOrigin = { left: 0, top: 0 };
 
-/** The touch dock's height over each bottom third, as the shell publishes it on an ancestor. */
-function readDockClearance(canvas: HTMLElement): DockClearance {
-  if (typeof getComputedStyle !== "function") return NO_DOCK;
-  const style = getComputedStyle(canvas);
-  const all = cssPx(style, "--jg-hud-dock-clearance");
-  const side = (name: string) => (style.getPropertyValue(`--jg-hud-dock-clearance-${name}`).trim() === "" ? all : cssPx(style, `--jg-hud-dock-clearance-${name}`));
-  return { left: side("left"), center: side("center"), right: side("right") };
+/**
+ * Every touch control and system control on screen, as rectangles in the HUD host's own on-screen pixels.
+ * Any element registered with `useRegisterLayoutRegion` as kind `control` or `system` counts, so the
+ * engine dock and a game's own touch pads are kept clear the same way.
+ */
+function controlObstacles(zones: readonly LayoutRect[], origin: HostOrigin, viewport: HudSize): LayoutRect[] {
+  const obstacles: LayoutRect[] = [];
+  for (const zone of zones) {
+    const left = Math.max(0, zone.left - origin.left);
+    const top = Math.max(0, zone.top - origin.top);
+    const right = Math.min(viewport.width, zone.right - origin.left);
+    const bottom = Math.min(viewport.height, zone.bottom - origin.top);
+    if (right - left > 0 && bottom - top > 0) obstacles.push({ left, top, right, bottom });
+  }
+  return obstacles;
 }
 
 /** A toggle's size before it has been drawn: the label's letters plus the pill's padding and caret. */
@@ -421,8 +425,8 @@ function estimateChipSize(label: string): HudSize {
  * panel and places them all at once so none lands on another, at any screen size. Panels sharing an
  * anchor stack outward from that edge; a panel that would cover a neighbour slides along its edge to
  * the nearest free spot; when the screen is too small, the lowest-priority panels fold into a toggle,
- * and only then does the whole HUD shrink. Device safe areas and the touch-control dock
- * (`--jg-hud-dock-clearance-*`) are kept clear. Games declare panels, never place them per size.
+ * and only then does the whole HUD shrink. Device safe areas and every touch control (any region
+ * registered as kind `control` or `system`) are kept clear. Games declare panels, never place them per size.
   *
  * @capability hud-canvas the HUD root surface — design-resolution scaling plus live panel-placement editing (F2+C)
  */
@@ -445,11 +449,11 @@ export function HudCanvas({
   const canvasRef = useRef<HTMLDivElement | null>(null);
   const phase = useOptionalGamePhase();
   const { compact } = useDisplayProfile();
-  const { safeArea } = useGameViewportLayout();
+  const { safeArea, controlZones } = useGameViewportLayout();
   const hudViewport = useHudViewport();
   const fitEnabled = hudViewport?.fitEnabled === true;
   const [viewport, setViewport] = useState<HudSize | null>(null);
-  const [dock, setDock] = useState<DockClearance>(NO_DOCK);
+  const [origin, setOrigin] = useState<HostOrigin>(ORIGIN);
   const [offenders, setOffenders] = useState<(HudOverflow & { x: number; y: number; width: number; height: number })[]>([]);
   const [layer, setLayer] = useState<HTMLDivElement | null>(null);
   const [revision, setRevision] = useState(0);
@@ -493,8 +497,7 @@ export function HudCanvas({
       const rect = host.getBoundingClientRect();
       const next = { width: Math.round(rect.width), height: Math.round(rect.height) };
       setViewport((prev) => (prev !== null && prev.width === next.width && prev.height === next.height ? prev : next));
-      const nextDock = readDockClearance(canvas);
-      setDock((prev) => (prev.left === nextDock.left && prev.center === nextDock.center && prev.right === nextDock.right ? prev : nextDock));
+      setOrigin((prev) => (prev.left === rect.left && prev.top === rect.top ? prev : { left: rect.left, top: rect.top }));
     };
     measure();
     if (typeof ResizeObserver === "undefined") return;
@@ -524,19 +527,10 @@ export function HudCanvas({
         chipSize: chipSizes.current.get(declaration.id) ?? estimateChipSize(declaration.chip),
       });
     }
-    const third = viewport.width / 3;
-    const reserved = (
-      [
-        [0, dock.left],
-        [third, dock.center],
-        [third * 2, dock.right],
-      ] as const
-    )
-      .filter(([, height]) => height > 0)
-      .map(([left, height]) => ({ left, right: left + third, top: viewport.height - safeArea.bottom - height, bottom: viewport.height }));
+    const reserved = controlObstacles(controlZones, origin, viewport);
     return arrangeHudPanels(claims, { viewport, scale: preferredScale, insets: safeArea, edgePad, gap: PANEL_GAP, reserved });
     // `revision` stands for the declaration and size maps, which are refs.
-  }, [viewport, revision, preferredScale, safeArea, dock, edgePad]);
+  }, [viewport, revision, preferredScale, safeArea, controlZones, origin, edgePad]);
   const scale = placements.scale;
   const frame = useMemo(() => (viewport === null ? null : { width: viewport.width / scale, height: viewport.height / scale }), [viewport, scale]);
 

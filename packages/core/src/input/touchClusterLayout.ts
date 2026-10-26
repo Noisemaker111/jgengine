@@ -1,4 +1,4 @@
-import type { TouchAnchor, TouchButton, TouchScheme } from "@jgengine/core/input/touchScheme";
+import type { TouchButton, TouchScheme } from "@jgengine/core/input/touchScheme";
 
 /** Button sizes for the thumb cluster, in CSS px, derived from the screen's short side. */
 export interface TouchClusterSizes {
@@ -120,87 +120,10 @@ export function partitionDockButtons(scheme: Pick<TouchScheme, "buttons">): { pr
 /** Utility buttons past this count fold into one overflow button. */
 export const UTILITY_INLINE_LIMIT = 2;
 
-/** Bottom-edge space (px, excluding safe areas) the dock occupies in each third of the screen. */
-export interface TouchDockInsets {
-  left: number;
-  center: number;
-  right: number;
-}
-
-/** Dock geometry constants shared by the renderer and the clearance math. */
+/** Dock geometry constants the renderer sizes the stick and side rails from. */
 export const DOCK_GEOMETRY = {
   joystick: 132,
   joystickThumb: 52,
   railButton: 64,
   basePadding: 20,
-  edgeMargin: 12,
 } as const;
-
-function sideOf(anchor: TouchAnchor): keyof TouchDockInsets | null {
-  if (anchor === "bottom-left") return "left";
-  if (anchor === "bottom-right") return "right";
-  if (anchor === "bottom-center") return "center";
-  return null;
-}
-
-/**
- * Height of the floating joystick's capture zone for a viewport height: `min(40vh, 260px)`, never shorter than the stick.
- *
- * @internal
- */
-export function floatingJoystickZoneHeight(viewportHeight: number, scale = 1): number {
-  return Math.max(DOCK_GEOMETRY.joystick * scale, Math.min(viewportHeight * 0.4, 260));
-}
-
-/**
- * Height of the slot strip / menu chip row stacked above an arc cluster, 0 when it holds nothing.
- *
- * @internal
- */
-export function auxRowHeight(slotCount: number, utilityCount: number, sizes: TouchClusterSizes): number {
-  return slotCount + utilityCount > 0 ? sizes.chip + sizes.gap : 0;
-}
-
-/**
- * Space each bottom third of the screen loses to the touch dock. Only the corners a cluster
- * actually occupies are reserved, so HUD at bottom-centre stays visible when the joystick and
- * the action cluster sit in the corners. Side rails and top clusters reserve their own rectangles
- * through the layout registry instead.
- *
- * @internal
- */
-export function touchDockInsets(
-  scheme: TouchScheme | null,
-  scale = 1,
-  shortSide = DEFAULT_TOUCH_SHORT_SIDE,
-  /** Height of the movement control's touch zone; defaults to the fixed stick. The floating stick's capture zone is taller. */
-  movementHeight = DOCK_GEOMETRY.joystick * scale,
-): TouchDockInsets {
-  const insets: TouchDockInsets = { left: 0, center: 0, right: 0 };
-  if (scheme === null) return insets;
-  const sizes = touchClusterSizes(shortSide);
-  const layout = scheme.layout;
-  const reserve = (anchor: TouchAnchor, height: number): void => {
-    const side = sideOf(anchor);
-    if (side === null || height <= 0) return;
-    insets[side] = Math.max(insets[side], Math.round(height + DOCK_GEOMETRY.basePadding + DOCK_GEOMETRY.edgeMargin));
-  };
-  const { primary, utility } = partitionDockButtons(scheme);
-  const slots = scheme.slots ?? [];
-  if (scheme.joystick !== null) reserve(layout.movement, movementHeight);
-  const arc = layout.actions === "bottom-left" || layout.actions === "bottom-right";
-  const utilityJoinsActions = utility.length > 0 && layout.utility === layout.actions && arc;
-  if (primary.length > 0 || slots.length > 0) {
-    if (arc) {
-      const cluster = primary.length > 0 ? touchClusterLayout(primary.length - 1, sizes).height : 0;
-      reserve(layout.actions, cluster + auxRowHeight(slots.length, utilityJoinsActions ? utility.length : 0, sizes));
-    } else {
-      reserve(layout.actions, DOCK_GEOMETRY.railButton * scale);
-    }
-  }
-  if (utility.length > 0 && !utilityJoinsActions) reserve(layout.utility, sizes.chip);
-  for (const button of scheme.buttons) {
-    if (button.anchor !== null) reserve(button.anchor, DOCK_GEOMETRY.railButton * scale);
-  }
-  return insets;
-}

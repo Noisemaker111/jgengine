@@ -32,7 +32,6 @@ import {
   partitionDockButtons,
   touchClusterLayout,
   touchClusterSizes,
-  touchDockInsets,
   type TouchClusterSizes,
 } from "./touchClusterLayout";
 import { TouchGlyph, touchButtonFace } from "./touchIcons.view";
@@ -167,16 +166,6 @@ const STYLE_TOKENS: Record<TouchStyle, StyleTokens> = {
     chipActive: { border: "1px solid rgba(255,255,255,0.8)", background: "rgba(255,255,255,0.14)", color: "#fff" },
   },
 };
-
-/**
- * Tallest bottom-edge space the dock occupies (px, excluding device safe areas). The shell
- * publishes it as `--jg-hud-dock-clearance`; {@link touchDockInsets} gives each bottom third its
- * own value so HUD at bottom-centre is not pushed up by controls that only fill the corners.
- */
-export function touchDockClearance(scheme: TouchScheme | null, scale = 1, shortSide = DEFAULT_TOUCH_SHORT_SIDE): number {
-  const insets = touchDockInsets(scheme, scale, shortSide);
-  return Math.max(insets.left, insets.center, insets.right);
-}
 
 /** Viewport size in CSS px the touch dock lays out against. */
 export interface TouchViewport {
@@ -1011,6 +1000,43 @@ function bucketByAnchor(buttons: readonly TouchButton[]): Map<TouchAnchor, Ancho
   return map;
 }
 
+/** Buttons a game pinned to one anchor; registered as a control region so HUD panels keep clear of them. */
+function AnchoredButtons({
+  anchor,
+  bucket,
+  sink,
+  tokens,
+  scale,
+  sizes,
+}: {
+  anchor: TouchAnchor;
+  bucket: AnchorBucket;
+  sink: TouchCodeSink;
+  tokens: StyleTokens;
+  scale: number;
+  sizes: TouchClusterSizes;
+}) {
+  const slotRef = useRef<HTMLDivElement | null>(null);
+  const zone = useMemo(
+    () => ({ id: `control:anchored:${anchor}`, kind: "control", collisionPolicy: "forbid", collisionGroup: "touch-dock" }) as const,
+    [anchor],
+  );
+  useRegisterLayoutRegion(zone, slotRef);
+  return (
+    <AnchoredSlot anchor={anchor} slotRef={slotRef}>
+      <StackCluster
+        buttons={bucket.primary}
+        utility={bucket.utility}
+        sink={sink}
+        tokens={tokens}
+        column={anchor === "left" || anchor === "right"}
+        scale={scale}
+        sizes={sizes}
+      />
+    </AnchoredSlot>
+  );
+}
+
 const ARC_ANCHORS: ReadonlySet<TouchAnchor> = new Set(["bottom-left", "bottom-right"]);
 
 export function TouchControlsDock({
@@ -1101,17 +1127,7 @@ export function TouchControlsDock({
       ) : null}
 
       {[...extras.entries()].map(([anchor, bucket]) => (
-        <AnchoredSlot key={anchor} anchor={anchor}>
-          <StackCluster
-            buttons={bucket.primary}
-            utility={bucket.utility}
-            sink={sink}
-            tokens={tokens}
-            column={anchor === "left" || anchor === "right"}
-            scale={scale}
-            sizes={sizes}
-          />
-        </AnchoredSlot>
+        <AnchoredButtons key={anchor} anchor={anchor} bucket={bucket} sink={sink} tokens={tokens} scale={scale} sizes={sizes} />
       ))}
     </ResolvedLayout>
   );
