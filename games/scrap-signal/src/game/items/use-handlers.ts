@@ -1,7 +1,7 @@
 import type { ItemUseHandler } from "@jgengine/core/item/use";
 import type { GameContext } from "@jgengine/core/runtime/gameContext";
 import { seededRng } from "@jgengine/core/random/rng";
-import { cameraShake } from "@jgengine/shell/camera";
+import { cameraShake } from "@jgengine/core/camera/shake/cameraShake";
 import { AMMO_LABELS } from "../ammo";
 import { bonus } from "../characters";
 import { resolveGunHit, type GunHitMods } from "../combat/hitModel";

@@ -12,10 +12,10 @@ import {
   ShoulderRig,
   SideScrollRig,
   TopDownRig,
-} from "./cameraRigs";
-import { GameFirstPersonCamera, type ViewmodelProps } from "./GameFirstPersonCamera";
-import { GameInspectionCamera } from "./GameInspectionCamera";
-import { GameOrbitCamera } from "./GameOrbitCamera";
+} from "./cameraRigs.draw";
+import { GameFirstPersonCamera, type ViewmodelProps } from "./GameFirstPersonCamera.draw";
+import { GameInspectionCamera } from "./GameInspectionCamera.draw";
+import { GameOrbitCamera } from "./GameOrbitCamera.draw";
 import { resolveDirectedCamera } from "./rigMath";
 import { resolveCaptureCameraConfig, resolveRigKind, turntableAsObserver } from "./rigResolve";
 import { CameraShakeApplier } from "@jgengine/core/camera/shake/CameraShakeApplier.draw";
@@ -24,6 +24,7 @@ import { useCameraShake } from "@jgengine/core/camera/shake/shakeChannel.draw";
 
 export { resolveRigKind } from "./rigResolve";
 
+/** Props for GameCameraRig: shared yaw/pitch refs, the game's camera config and pointer/key control switches. */
 export interface GameCameraRigProps {
   yawRef: MutableRefObject<number>;
   pitchRef: MutableRefObject<number>;
@@ -40,6 +41,7 @@ export interface GameCameraRigProps {
   viewmodel?: ComponentType<ViewmodelProps>;
 }
 
+/** Mounts the camera rig the game's camera config selects (orbit, first person, top-down, RTS, shoulder, chase, cinematic and the rest). */
 export function GameCameraRig({
   yawRef,
   pitchRef,

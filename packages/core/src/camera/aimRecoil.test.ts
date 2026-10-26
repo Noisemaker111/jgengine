@@ -30,3 +30,15 @@ describe("createAimRecoil", () => {
     expect(recoil.debt().pitch).toBeLessThanOrEqual(0.35 + 1e-9);
   });
 });
+
+describe("aim recoil state", () => {
+  test("a restored recoil settles exactly like the one it was taken from", () => {
+    const original = createAimRecoil();
+    original.kick(0.2, 0.05, 4);
+    original.step(1 / 60);
+    const copy = createAimRecoil();
+    copy.restore(original.snapshot());
+    for (let frame = 0; frame < 30; frame += 1) expect(copy.step(1 / 60)).toEqual(original.step(1 / 60));
+    expect(copy.debt()).toEqual(original.debt());
+  });
+});

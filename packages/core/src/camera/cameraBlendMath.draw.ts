@@ -2,6 +2,7 @@ import type { Camera, PerspectiveCamera, Quaternion, Vector3 } from "three";
 
 import { smoothstep } from "@jgengine/core/anim/easing";
 
+/** Reusable scratch for blending the camera from one rig's pose to the next: start and goal pose, FOV and timer. */
 export interface CameraBlendScratch {
   fromPos: Vector3;
   fromQuat: Quaternion;

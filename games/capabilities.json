@@ -1122,9 +1122,9 @@
     {
       "id": "camera-clearance",
       "packages": [
-        "@jgengine/shell"
+        "@jgengine/core"
       ],
-      "module": "@jgengine/shell/camera/cameraCollision",
+      "module": "@jgengine/core/camera/cameraCollision",
       "domain": "camera",
       "gameFacing": false,
       "probe": null,
@@ -1166,9 +1166,9 @@
     {
       "id": "camera-transparent-decor",
       "packages": [
-        "@jgengine/shell"
+        "@jgengine/core"
       ],
-      "module": "@jgengine/shell/camera/cameraCollision",
+      "module": "@jgengine/core/camera/cameraCollision",
       "domain": "camera",
       "gameFacing": false,
       "probe": null,
@@ -1232,10 +1232,9 @@
     {
       "id": "capture",
       "packages": [
-        "@jgengine/core",
-        "@jgengine/shell"
+        "@jgengine/core"
       ],
-      "module": "@jgengine/shell/camera/rigResolve",
+      "module": "@jgengine/core/camera/rigResolve",
       "domain": "camera",
       "gameFacing": false,
       "probe": null,
@@ -1409,9 +1408,9 @@
     {
       "id": "chase-heading",
       "packages": [
-        "@jgengine/shell"
+        "@jgengine/core"
       ],
-      "module": "@jgengine/shell/camera/chaseHeading",
+      "module": "@jgengine/core/camera/chaseHeading",
       "domain": "camera",
       "gameFacing": false,
       "probe": null,
@@ -2178,9 +2177,9 @@
     {
       "id": "custom-viewmodel-muzzle",
       "packages": [
-        "@jgengine/shell"
+        "@jgengine/core"
       ],
-      "module": "@jgengine/shell/camera/customMuzzle",
+      "module": "@jgengine/core/camera/customMuzzle.draw",
       "domain": "camera",
       "gameFacing": false,
       "probe": null,

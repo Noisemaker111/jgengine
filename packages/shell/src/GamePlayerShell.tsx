@@ -53,7 +53,7 @@ import { resolvePlayableAudio } from "@jgengine/core/audio/playableAudio.draw";
 import { installAgentBridge } from "@jgengine/core/devtools/agentBridge.draw";
 import { attachPlaytestProbe } from "@jgengine/core/devtools/playtestProbe";
 import { withDevtoolsLatency } from "@jgengine/core/devtools/latencyInstrumentation.draw";
-import { resolveRigKind } from "./camera/rigResolve";
+import { resolveRigKind } from "@jgengine/core/camera/rigResolve";
 import { contextModels } from "./render/resolveModel";
 import { configureModelScan } from "./render/modelScan";
 import { configureModelSurface } from "./render/modelSurface";

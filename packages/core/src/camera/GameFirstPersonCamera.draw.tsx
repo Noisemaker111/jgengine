@@ -12,12 +12,12 @@ import {
 } from "@jgengine/core/combat/weaponPresentation";
 import { useGameContext } from "@jgengine/react/provider";
 import { usePlayer } from "@jgengine/react/hooks";
-import { useEntityRenderCues } from "../render/useEntityRenderCues";
+import { useEntityRenderCues } from "@jgengine/shell/render/useEntityRenderCues";
 import { clearCameraBoom, sceneCameraQuery } from "./cameraCollision";
-import { usePlayerFov } from "./PlayerFov";
+import { usePlayerFov } from "./PlayerFov.draw";
 import { GAME_SIM_FRAME_PRIORITY, ORBIT_CAMERA_FRAME_PRIORITY } from "./orbitCameraMath";
 import { requestRawPointerLock } from "@jgengine/core/input/pointerLock";
-import { readRegisteredFirstPersonMuzzle, registerTrackedFirstPersonMuzzle } from "./customMuzzle";
+import { readRegisteredFirstPersonMuzzle, registerTrackedFirstPersonMuzzle } from "./customMuzzle.draw";
 
 const DEFAULT_SENSITIVITY = 0.0025;
 const DEFAULT_MAX_PITCH = 1.45;
@@ -35,6 +35,7 @@ export interface ViewmodelProps {
   cuesRef: MutableRefObject<EntityRenderCues>;
 }
 
+/** Props for GameFirstPersonCamera: look refs, first-person config, the followed entity and an optional custom viewmodel. */
 export interface GameFirstPersonCameraProps {
   yawRef: MutableRefObject<number>;
   pitchRef: MutableRefObject<number>;
@@ -46,6 +47,7 @@ export interface GameFirstPersonCameraProps {
   weapon?: (entityId: string) => CameraWeaponView | null;
 }
 
+/** First-person camera locked to the followed entity's eyes, with mouse look, head bob and the muzzle-tracked viewmodel. */
 export function GameFirstPersonCamera({
   yawRef,
   pitchRef,

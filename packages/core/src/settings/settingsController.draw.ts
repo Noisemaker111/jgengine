@@ -50,7 +50,7 @@ import {
   type SettingsRow,
 } from "@jgengine/core/settings/settings.view";
 
-import { usePlayerFov } from "@jgengine/shell/camera/PlayerFov";
+import { usePlayerFov } from "@jgengine/core/camera/PlayerFov.draw";
 
 export type { SettingsActionView, SettingsKeybindRow, SettingsCategoryView, SettingsController, SettingsRow };
 

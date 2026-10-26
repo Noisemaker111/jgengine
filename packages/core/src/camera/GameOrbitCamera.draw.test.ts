@@ -1,7 +1,7 @@
 import { describe, expect, test } from "bun:test";
 import { MOUSE } from "three";
 
-import { orbitMouseButtons } from "./GameOrbitCamera";
+import { orbitMouseButtons } from "./GameOrbitCamera.draw";
 
 describe("orbit rig mouse mapping", () => {
   test("right-drag orbits whether or not the left button picks", () => {

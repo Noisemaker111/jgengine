@@ -5,7 +5,7 @@ import {
   applyCameraBlendStep,
   captureCameraBlendFrom,
   createCameraBlendScratch,
-} from "./cameraBlendMath";
+} from "./cameraBlendMath.draw";
 
 describe("camera blend scratch", () => {
   test("blends without allocating new Vector3 or Quaternion per step", () => {

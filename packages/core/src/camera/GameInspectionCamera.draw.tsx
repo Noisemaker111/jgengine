@@ -12,6 +12,7 @@ import {
   type InspectionCameraConfig,
 } from "./inspectionCameraMath";
 
+/** Props for GameInspectionCamera: the inspection orbit config patch (target, distances, zoom anchor). */
 export interface GameInspectionCameraProps {
   config?: InspectionCameraConfig;
 }

@@ -1,10 +1,15 @@
 import { CAMERA_FRUSTUM_DEFAULTS } from "@jgengine/core/game/playableGame";
 
+/** Default player FOV in degrees, the engine's base camera frustum FOV. */
 export const PLAYER_FOV_DEFAULT = CAMERA_FRUSTUM_DEFAULTS.fov;
+/** Lowest FOV in degrees a player may pick. */
 export const PLAYER_FOV_MIN = 40;
+/** Highest FOV in degrees a player may pick. */
 export const PLAYER_FOV_MAX = 120;
+/** Storage key the player FOV preference is saved under. */
 export const PLAYER_FOV_STORAGE_KEY = "jgengine:player-fov";
 
+/** Min, max and default FOV in degrees a game allows its player. */
 export interface PlayerFovBounds {
   min: number;
   max: number;

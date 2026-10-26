@@ -54,8 +54,8 @@ import { ColorblindFrame, useColorblindMode } from "@jgengine/core/ui/accessibil
 import { SettingsProvider, type SettingsActionView } from "@jgengine/core/settings/settings.view";
 
 import { resolveWorldSky } from "@jgengine/core/sky/worldSky";
-import { resolveCaptureCameraConfig } from "./camera/rigResolve";
-import { rtsRotateKeysConflict } from "./camera/rigMath";
+import { resolveCaptureCameraConfig } from "@jgengine/core/camera/rigResolve";
+import { rtsRotateKeysConflict } from "@jgengine/core/camera/rigMath";
 import { pointerAimFor, pointerContextMenu, resolvePointerAim } from "@jgengine/core/input/shellPointer.draw";
 import { shellPointerInput } from "@jgengine/core/input/shellPointerInput";
 import { createControlGroupKeys, groupCentroid } from "@jgengine/core/input/controlGroupKeys";
@@ -74,14 +74,10 @@ import { LivingWorld } from "./render/LivingWorldLayer";
 import { CollisionDebugWorld } from "@jgengine/core/devtools/CollisionDebugWorld.draw";
 import { DevtoolsRendererProbe } from "@jgengine/core/devtools/DevtoolsOverlay.draw";
 import { FrameTelemetry } from "@jgengine/core/devtools/FrameTelemetry.draw";
-import {
-  CAMERA_TRANSPARENT_USERDATA,
-  GameCameraRig,
-  PlayerFovProvider,
-  PlayerFovSlider,
-  resolveRigKind,
-  rtsPanKeysConflict,
-} from "./camera";
+import { CAMERA_TRANSPARENT_USERDATA } from "@jgengine/core/camera/cameraCollision";
+import { GameCameraRig, resolveRigKind } from "@jgengine/core/camera/GameCameraRig.draw";
+import { PlayerFovProvider, PlayerFovSlider } from "@jgengine/core/camera/PlayerFov.draw";
+import { rtsPanKeysConflict } from "@jgengine/core/camera/rigMath";
 import { CullingProvider } from "@jgengine/core/visibility/CullingProvider.draw";
 import { BuildingRenderBudget } from "@jgengine/core/buildings/BuildingRenderBudget.draw";
 import { Sky } from "@jgengine/core/sky/Daylight.draw";
@@ -119,7 +115,7 @@ import type { GameLookInput } from "@jgengine/core/render/lookPreset";
 import { WorldView, RemotePlayers } from "./world/WorldScene";
 import { FrameDriver } from "./drivers/FrameDriver";
 import { GamepadSource } from "@jgengine/core/input/gamepadSource.draw";
-import { SplitScreenRenderer, useSeatViewports } from "./camera/Viewports";
+import { SplitScreenRenderer, useSeatViewports } from "@jgengine/core/camera/Viewports.draw";
 import { localPlayers } from "@jgengine/core/runtime/localPlayers";
 import type { RuntimeDiagnostic } from "@jgengine/core/devtools/diagnosticOverlay.view";
 import { createShellKeyHandlers, ShellDebugOverlays, ShellGameUiChrome } from "./ShellChrome";

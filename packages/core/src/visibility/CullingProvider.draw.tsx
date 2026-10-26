@@ -5,7 +5,7 @@ import { useGameContext } from "@jgengine/react/provider";
 import type { CameraView } from "@jgengine/core/visibility/frustum";
 import type { VisibilityConfig } from "@jgengine/core/visibility/config";
 import { buildCullingDriver } from "./cullingDriver";
-import { CAMERA_POST_FRAME_PRIORITY } from "@jgengine/shell/camera/cameraRigs";
+import { CAMERA_POST_FRAME_PRIORITY } from "@jgengine/core/camera/cameraRigs.draw";
 import type { Vec3 } from "@jgengine/core/world/geometry";
 
 type VisiblePredicate = (id: string) => boolean;

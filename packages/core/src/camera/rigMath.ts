@@ -15,6 +15,7 @@ import { clamp } from "@jgengine/core/math/scalar";
 import { lerpVec3, smoothBlend } from "./orbitCameraMath";
 import type { Xyz } from "@jgengine/core/math/xyz";
 
+/** A camera pose: position, look-at point and FOV in degrees. */
 export interface CameraPose {
   position: Xyz;
   lookAt: Xyz;
@@ -57,6 +58,7 @@ export function rightVector(yaw: number): Xyz {
   return { x: -Math.cos(yaw), y: 0, z: Math.sin(yaw) };
 }
 
+/** Top-down rig config with defaults filled in. */
 export interface ResolvedTopDown {
   height: number;
   pitch: number;
@@ -147,6 +149,7 @@ export function springArmStep(current: Xyz, desired: Xyz, damping: number, dt: n
   return lerpVec3(current, desired, smoothBlend(dt, damping));
 }
 
+/** Side-scroll rig config with defaults filled in. */
 export interface ResolvedSideScroll {
   axis: "x" | "z";
   distance: number;
@@ -230,6 +233,7 @@ export function smoothYaw(current: number, desired: number, speed: number, dt: n
   return current + angleDelta(current, desired) * smoothBlend(dt, speed);
 }
 
+/** Shoulder rig config with defaults filled in. */
 export interface ResolvedShoulder {
   shoulderOffset: number;
   heightOffset: number;
@@ -335,6 +339,7 @@ export function lockOnPose(
   return { pose: { position, lookAt: focus, fov }, yaw };
 }
 
+/** Chase rig config with defaults filled in. */
 export interface ResolvedChase {
   distance: number;
   height: number;
@@ -458,6 +463,7 @@ export function bankRollStep(currentRoll: number, yaw: number, previousYaw: numb
   return currentRoll + (target - currentRoll) * Math.min(1, resolved.bankDamping * dt);
 }
 
+/** Observer rig config with defaults filled in. */
 export interface ResolvedObserver {
   distance: number;
   height: number;
@@ -727,6 +733,7 @@ export function crossfadePose(from: CameraPose, to: CameraPose, t: number): Came
   };
 }
 
+/** A CameraDirector's runtime overrides for the followed entity and cinematic. */
 export interface DirectorCameraValues {
   /** `undefined` = no runtime override (fall back to static); `null` = explicitly follow nothing. */
   followEntityId?: string | null;
@@ -734,11 +741,13 @@ export interface DirectorCameraValues {
   cinematic?: CinematicCameraConfig | null;
 }
 
+/** The game's static follow entity and cinematic, used when no director override is active. */
 export interface StaticCameraValues {
   followEntityId?: string | null;
   cinematic?: CinematicCameraConfig;
 }
 
+/** Follow entity and cinematic after director overrides are merged over the static config. */
 export interface ResolvedDirectedCamera {
   followEntityId: string | null | undefined;
   cinematic: CinematicCameraConfig | undefined;
@@ -762,6 +771,7 @@ export function resolveDirectedCamera(
   return { followEntityId, cinematic };
 }
 
+/** One cinematic sample: the pose at that time and whether the path has finished. */
 export interface CinematicSample {
   pose: CameraPose;
   done: boolean;

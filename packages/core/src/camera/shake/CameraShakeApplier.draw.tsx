@@ -3,7 +3,7 @@ import { useFrame, useThree } from "@react-three/fiber";
 
 import type { CameraShakeOffset } from "@jgengine/core/camera/shake/cameraShake";
 
-import { GAME_SIM_FRAME_PRIORITY } from "@jgengine/shell/camera/orbitCameraMath";
+import { GAME_SIM_FRAME_PRIORITY } from "@jgengine/core/camera/orbitCameraMath";
 import { applyCameraShake, removeCameraShake, useCameraShake } from "./shakeChannel.draw";
 
 /** Runs before orbit controls (drei updates them at priority -1), so they never read a shaken pose. */

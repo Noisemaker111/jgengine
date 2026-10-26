@@ -1,7 +1,7 @@
 import { describe, expect, test } from "bun:test";
 import { Camera, Group, Object3D, PerspectiveCamera, Vector3 } from "three";
-import { readFirstPersonMuzzle } from "./GameFirstPersonCamera";
-import { registerFirstPersonMuzzle, registerTrackedFirstPersonMuzzle } from "./customMuzzle";
+import { readFirstPersonMuzzle } from "./GameFirstPersonCamera.draw";
+import { registerFirstPersonMuzzle, registerTrackedFirstPersonMuzzle } from "./customMuzzle.draw";
 
 const at = (x: number, y = 0, z = 0) => (target: Vector3) => { target.set(x, y, z); return true; };
 

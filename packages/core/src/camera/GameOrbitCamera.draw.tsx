@@ -18,7 +18,7 @@ import {
   type OrbitCameraConfig,
   type OrbitFollowRuntimeState,
 } from "./orbitCameraMath";
-import { usePlayerFov } from "./PlayerFov";
+import { usePlayerFov } from "./PlayerFov.draw";
 import type { Xyz } from "@jgengine/core/math/xyz";
 import type { CameraFollowState } from "@jgengine/core/camera/cameraConfig";
 
@@ -36,8 +36,10 @@ export function orbitMouseButtons(pointerControls: boolean): { LEFT?: MOUSE; MID
     : { LEFT: MOUSE.ROTATE, MIDDLE: MOUSE.DOLLY, RIGHT: MOUSE.ROTATE };
 }
 
+/** Callback that receives the orbit camera's follow state every frame. */
 export type CameraFollowListener = (state: CameraFollowState) => void;
 
+/** Props for GameOrbitCamera: yaw/pitch refs, orbit config patch, followed entity and follow-target overrides. */
 export interface GameOrbitCameraProps {
   yawRef: MutableRefObject<number>;
   /** Written each frame with the camera's look elevation (radians) for aim.pitch. */
@@ -52,6 +54,7 @@ export interface GameOrbitCameraProps {
   pointerControls?: boolean;
 }
 
+/** Third-person orbit camera that follows an entity, with drag-to-orbit, zoom limits and optional collision pull-in. */
 export function GameOrbitCamera({
   yawRef,
   pitchRef,

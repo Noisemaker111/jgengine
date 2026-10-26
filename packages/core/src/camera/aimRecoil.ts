@@ -16,6 +16,19 @@ export interface AimRecoil {
   step(dt: number): { pitch: number; yaw: number };
   /** Climb still owed back to the view, for tests and probes. */
   debt(): { pitch: number; yaw: number };
+  /** The recoil in flight, for a save, a replay or a host that moves the view between machines. */
+  snapshot(): AimRecoilState;
+  /** Resume from a {@link AimRecoilState} taken by `snapshot()`. */
+  restore(state: AimRecoilState): void;
+}
+
+/** Recoil still rising into the view, climb owed back, and the current settle rate. @internal */
+export interface AimRecoilState {
+  risePitch: number;
+  riseYaw: number;
+  debtPitch: number;
+  debtYaw: number;
+  recover: number;
 }
 
 /** @internal */
@@ -48,5 +61,9 @@ export function createAimRecoil(): AimRecoil {
       return { pitch: upPitch - downPitch, yaw: upYaw - downYaw };
     },
     debt: () => ({ pitch: debtPitch + risePitch, yaw: debtYaw + riseYaw }),
+    snapshot: () => ({ risePitch, riseYaw, debtPitch, debtYaw, recover }),
+    restore(state) {
+      ({ risePitch, riseYaw, debtPitch, debtYaw, recover } = state);
+    },
   };
 }

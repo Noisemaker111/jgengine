@@ -9,7 +9,7 @@ import {
   loadPlayerFov,
   resolvePlayerFovBounds,
   savePlayerFov,
-} from "./fovPreference";
+} from "./fovPreference.view";
 
 function memoryStorage(seed: Record<string, string> = {}): Storage {
   const map = new Map(Object.entries(seed));
