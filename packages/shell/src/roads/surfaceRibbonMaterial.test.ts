@@ -61,6 +61,7 @@ describe("createSurfaceRibbonMaterial", () => {
   test("soft edge turns on blending and the edge define; hard edge stays opaque", () => {
     const soft = createSurfaceRibbonMaterial({ color: "#96764e", halfWidth: 2.5, surface: "dirt", feather: 0.9, warp: 0.4, wear: 1 });
     expect(soft.transparent).toBe(true);
+    expect(soft.forceSinglePass, "a flat see-through ribbon must not take a second back-face pass and program").toBe(true);
     expect(soft.defines?.["JG_RIBBON_EDGE"]).toBe("");
     expect(soft.defines?.["JG_RIBBON_WEAR"]).toBe("");
     const hard = createSurfaceRibbonMaterial({ color: "#33363f", halfWidth: 4.5, surface: "asphalt", quality: "low" });

@@ -8,6 +8,7 @@ import {
   createShaderWarmup,
   gpuFence,
   drawsHeld,
+  firstUnlinkedDrawable,
   holdDraws,
   warmupDraws,
   warmupDrawsToTarget,
@@ -352,6 +353,118 @@ describe("createShaderWarmup", () => {
     // Background rounds queue links for late content and never extend the covered round count.
     expect(warmup.state().rounds).toBe(coveredRoundCount);
     expect(compiles.length).toBeGreaterThan(compilesAtReveal);
+  });
+});
+
+describe("preparing the view a cover hid", () => {
+  /** A renderer that links one program per material it has not seen, as three does. */
+  function linkingRenderer() {
+    const seen = new Set<string>();
+    const renderer = {
+      info: { programs: [] as FakeProgram[] },
+      compiled: [] as string[],
+      compile(root: Object3D) {
+        root.traverse((object) => {
+          const material = (object as Mesh).material as Material | undefined;
+          if (material === undefined || seen.has(material.uuid)) return;
+          seen.add(material.uuid);
+          renderer.compiled.push(material.name);
+          renderer.info.programs.push({ isReady: () => true });
+        });
+      },
+    };
+    return renderer;
+  }
+
+  test("links what was mounted since the reveal before it resolves, and leaves the cover down", async () => {
+    let clock = 0;
+    const renderer = linkingRenderer();
+    const scene = new Scene();
+    scene.add(meshAt(0, 0, -5, Object.assign(new MeshBasicMaterial(), { name: "menu" })));
+    const states: ShaderWarmupState[] = [];
+    const warmup = createShaderWarmup({
+      renderer,
+      scene,
+      camera: new PerspectiveCamera(),
+      quietMs: 0,
+      backgroundMs: 0,
+      now: () => clock,
+      sleep: async (ms) => {
+        clock += ms;
+      },
+      loaderQuiet: () => true,
+      loaderStarts: () => 0,
+      onState: (state) => states.push(state),
+    });
+    await warmup.done;
+    expect(renderer.compiled).toEqual(["menu"]);
+
+    // Play mounts the level: a new material, behind the camera too.
+    scene.add(meshAt(0, 0, 5, Object.assign(new MeshNormalMaterial(), { name: "level" })));
+    const shown = states.length;
+    await warmup.prepare();
+    expect(renderer.compiled).toEqual(["menu", "level"]);
+    expect(states.slice(shown).some((state) => state.phase !== "ready"), "a quick prepare must not flash the cover").toBe(false);
+
+    const before = renderer.compiled.length;
+    await warmup.prepare();
+    expect(renderer.compiled.length, "nothing new links nothing").toBe(before);
+  });
+
+  test("a frame would link mid-draw only for a visible drawable whose program is missing or still building", () => {
+    const programs = new Map<object, { currentProgram?: FakeProgram }>();
+    const renderer = { properties: { get: (material: object) => programs.get(material) ?? {} } };
+    const scene = new Scene();
+    const camera = new PerspectiveCamera();
+    const linked = meshAt(0);
+    programs.set(linked.material as object, { currentProgram: { isReady: () => true } });
+    scene.add(linked);
+    expect(firstUnlinkedDrawable(renderer, scene, camera)).toBeNull();
+
+    const hidden = meshAt(1);
+    hidden.visible = false;
+    scene.add(hidden);
+    expect(firstUnlinkedDrawable(renderer, scene, camera), "a hidden mesh is not drawn").toBeNull();
+
+    const building = meshAt(2);
+    programs.set(building.material as object, { currentProgram: { isReady: () => false } });
+    scene.add(building);
+    expect(firstUnlinkedDrawable(renderer, scene, camera), "a program still building would be waited on in the draw").toBe(building);
+    scene.remove(building);
+
+    const added = meshAt(3);
+    scene.add(added);
+    expect(firstUnlinkedDrawable(renderer, scene, camera), "a new material has no program yet").toBe(added);
+  });
+
+  test("waits for models the press started loading, then links them", async () => {
+    let clock = 0;
+    let loading = false;
+    const renderer = linkingRenderer();
+    const scene = new Scene();
+    const warmup = createShaderWarmup({
+      renderer,
+      scene,
+      camera: new PerspectiveCamera(),
+      quietMs: 0,
+      backgroundMs: 0,
+      now: () => clock,
+      sleep: async (ms) => {
+        clock += ms;
+        // The model lands while the prepare waits on the loader.
+        if (loading && clock >= 1_000) {
+          loading = false;
+          scene.add(meshAt(0, 0, -5, Object.assign(new MeshBasicMaterial(), { name: "landed" })));
+        }
+      },
+      loaderQuiet: () => !loading,
+      loaderStarts: () => 0,
+    });
+    await warmup.done;
+    loading = true;
+    clock = 0;
+    await warmup.prepare();
+    expect(renderer.compiled).toContain("landed");
   });
 });
 

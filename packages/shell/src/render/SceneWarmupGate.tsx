@@ -3,7 +3,7 @@ import { useEffect, useSyncExternalStore } from "react";
 
 import { devtools } from "@jgengine/core/devtools/devtools";
 
-import { createShaderWarmup, holdDraws, type HeldDraw, type ShaderWarmupState } from "./shaderWarmup";
+import { createShaderWarmup, firstUnlinkedDrawable, holdDraws, registerSceneWarmup, SHADER_WARMUP_DEFAULTS, type HeldDraw, type ShaderWarmupState } from "./shaderWarmup";
 
 /** Warmup state before the gate has run, so the loading screen covers the very first frame. @internal */
 export const SCENE_WARMUP_PENDING: ShaderWarmupState = { phase: "waiting", rounds: 0, programs: 0, planned: 0, deferred: 0, progress: 0, elapsedMs: 0 };
@@ -82,13 +82,59 @@ export function SceneWarmupGate({ onState, sceneDrawsToTarget }: { onState: (sta
         return taken;
       },
     });
-    void warmup.done.then(release);
+    // After the reveal, a frame that would link a program mid-draw (a level the Play press spawns,
+    // a pooled effect turning on) is skipped instead: the canvas keeps its last image while the
+    // warmup links the new content off the frame, then drawing resumes with nothing left to link.
+    let watchUntil = 0;
+    let preparing = false;
+    const watch = (): void => {
+      watchUntil = performance.now() + SHADER_WARMUP_DEFAULTS.watchMs;
+    };
+    const linkedPrograms = (): number => gl.info.programs?.length ?? 0;
+    /** `found`: a frame saw content to link, rather than the cover lifting. */
+    const prepare = (found: boolean): Promise<void> => {
+      preparing = true;
+      const before = linkedPrograms();
+      return warmup.prepare().finally(() => {
+        preparing = false;
+        // A prepare a frame asked for that linked nothing found nothing it could link: stop looking
+        // rather than hold frame after frame for something that never gets a program.
+        if (!found || linkedPrograms() > before) watch();
+        else watchUntil = 0;
+      });
+    };
+    let unwatch = (): void => {};
+    let disposed = false;
+    void warmup.done.then((state) => {
+      release();
+      if (disposed || state.phase !== "ready") return;
+      watch();
+      let inWatchedFrame = false;
+      const releaseWatchDraws = holdDraws(gl, { holding: () => inWatchedFrame && preparing });
+      const enterWatched = addEffect(() => {
+        inWatchedFrame = true;
+        if (preparing || performance.now() > watchUntil) return;
+        if (firstUnlinkedDrawable(gl, scene, camera) !== null) void prepare(true);
+      });
+      const leaveWatched = addAfterEffect(() => {
+        inWatchedFrame = false;
+      });
+      unwatch = () => {
+        releaseWatchDraws();
+        enterWatched();
+        leaveWatched();
+      };
+    });
+    const unregisterWarmup = registerSceneWarmup(scene, { ...warmup, prepare: () => prepare(false) });
     const unregister = devtools.probes.register("sceneWarmup", () => {
       const state = warmup.state();
       return `${state.phase}, ${state.rounds} rounds, ${state.programs} programs, ${state.planned} planned, ${state.deferred} deferred, ${state.elapsedMs}ms`;
     });
     return () => {
+      disposed = true;
       warmup.cancel();
+      unregisterWarmup();
+      unwatch();
       release();
       unregister();
     };

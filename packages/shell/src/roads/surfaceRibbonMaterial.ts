@@ -314,6 +314,9 @@ export function createSurfaceRibbonMaterial(options: SurfaceRibbonMaterialOption
     roughness,
     metalness: 0,
     side: THREE.DoubleSide,
+    // A ribbon lies flat on the ground: drawing its back faces in a pass of their own, as three
+    // does for a see-through double-sided material, doubles its programs and draws for nothing.
+    forceSinglePass: true,
     transparent: edge || paint,
     ...(paint ? { depthWrite: false } : {}),
     vertexColors: options.vertexColors === true,

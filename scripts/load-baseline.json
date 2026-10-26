@@ -2,8 +2,8 @@
   "gpu": "ANGLE (NVIDIA, NVIDIA GeForce RTX 3070 (0x00002484) Direct3D11 vs_5_0 ps_5_0, D3D11)",
   "games": {
     "apex-nights": {
-      "worstClick": 398,
-      "sceneReady": 5981
+      "worstClick": 375,
+      "sceneReady": 5975
     },
     "beacon-bastion": {
       "worstClick": 588,
@@ -58,12 +58,12 @@
       "sceneReady": 4971
     },
     "saltwick": {
-      "worstClick": 467,
+      "worstClick": 387,
       "sceneReady": 5744
     },
     "scrap-signal": {
       "worstClick": 796,
-      "sceneReady": 12487
+      "sceneReady": 9120
     },
     "the-sunken-crown": {
       "worstClick": 491,

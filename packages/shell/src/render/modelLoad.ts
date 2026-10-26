@@ -14,6 +14,7 @@ import { reportTextureLoadError } from "@jgengine/core/devtools/textureErrors";
 import { resolveAssetBaseUrl } from "./assetBase";
 import { mergeModelSubMeshes, mergeSkinnedModelParts } from "./modelMeshMerge";
 import { applyModelSurface } from "./modelSurface";
+import { sharedModelImages } from "./sharedModelImages";
 
 /** Model containers already covered by the whole-model fallback probe; not "texture" errors. @internal */
 const MODEL_URL_RE = /\.(glb|gltf)(\?|#|$)/i;
@@ -330,6 +331,22 @@ export function clearHeavyModels(): void {
 }
 
 /**
+ * A see-through double-sided material is drawn twice by three, back faces then front, each pass
+ * with its own program. Model glass and foliage cards are panes, not closed volumes, so the extra
+ * pass changes nothing on screen but doubles their programs and draws; they draw in one pass.
+ * @internal
+ */
+export function singlePassModelMaterials(root: THREE.Object3D): void {
+  root.traverse((node) => {
+    const mesh = node as THREE.Mesh;
+    if (!mesh.isMesh) return;
+    for (const material of Array.isArray(mesh.material) ? mesh.material : [mesh.material]) {
+      if (material.transparent && material.side === THREE.DoubleSide) material.forceSinglePass = true;
+    }
+  });
+}
+
+/**
  * A {@link GLTFLoader} whose success path is unchanged but whose failures degrade
  * gracefully: when a load errors, it probes the URL and — for a diagnosed broken
  * asset (missing / HTML fallback / corrupt / unsupported) — resolves to a
@@ -349,6 +366,7 @@ export class DiagnosticGLTFLoader extends GLTFLoader {
       url,
       (gltf: GLTF) => {
         recordModelTriangles(url, countSceneTriangles(gltf.scene));
+        singlePassModelMaterials(gltf.scene);
         applyModelSurface(gltf.scene);
         mergeSkinnedModelParts(gltf.scene);
         mergeModelSubMeshes(gltf.scene, gltf.animations);
@@ -450,6 +468,7 @@ export function modelLoadStarts(): number {
 /** Shared GLTF loader used by shell entity/object model mounts. @internal */
 export const sharedGltfLoader = new DiagnosticGLTFLoader(modelLoadingManager);
 sharedGltfLoader.setMeshoptDecoder(MeshoptDecoder);
+sharedGltfLoader.register(sharedModelImages);
 configureModelLoaders();
 
 let sceneWorkSerial = 0;

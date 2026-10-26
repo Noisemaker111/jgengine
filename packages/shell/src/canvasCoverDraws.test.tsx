@@ -7,6 +7,7 @@ import { canvasCover } from "@jgengine/core/ui/canvasCover.view";
 
 import { CanvasCoverFrameloop } from "./drivers/CanvasCoverFrameloop";
 import { FrameRateLimiter } from "./drivers/FrameRateLimiter";
+import { registerSceneWarmup, type ShaderWarmup } from "./render/shaderWarmup";
 
 /**
  * A covered canvas must stop drawing: Harbor Heat's pause screen left a paused world, its cascade
@@ -158,6 +159,40 @@ test("a declared cover stops world draws and ticks, and lifting it resumes the s
     expect(world?.position.toArray(), "the world must resume where it was").toEqual([1, 2, 3]);
     expect(harness.ticks(), "the loop must tick again after the cover").toBeGreaterThan(ticksBeforeCover);
   } finally {
+    await harness.retire();
+  }
+});
+
+test("lifting the cover waits for what the scene gained to compile before drawing again", async () => {
+  const harness = await mount();
+  let finish = () => {};
+  let asked = 0;
+  const warmup = {
+    prepare: () => {
+      asked += 1;
+      return new Promise<void>((resolve) => {
+        finish = resolve;
+      });
+    },
+  } as unknown as ShaderWarmup;
+  const unregister = registerSceneWarmup(harness.scene(), warmup);
+  try {
+    await harness.pump(1);
+    let release = () => {};
+    await harness.write(() => {
+      release = canvasCover.hold();
+    });
+    await harness.write(() => release());
+    expect(asked, "the press must ask the warmup to compile the new view").toBe(1);
+    expect(harness.frameloop(), "the loop must stay stopped while the new view compiles").toBe("never");
+    await harness.pump(2);
+    expect(harness.draws(), "nothing may draw (and link mid-frame) before the compile is done").toBe(1);
+    await harness.write(() => finish());
+    expect(harness.frameloop()).toBe("always");
+    await harness.pump(1);
+    expect(harness.draws()).toBe(2);
+  } finally {
+    unregister();
     await harness.retire();
   }
 });
