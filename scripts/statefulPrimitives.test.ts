@@ -24,6 +24,24 @@ export function createThing(): Thing {
 `;
 
 describe("findStatefulPrimitives", () => {
+  test("a draw file's render resources are not scanned as game state", () => {
+    const root = mkdtempSync(join(tmpdir(), "stateful-"));
+    try {
+      mkdirSync(join(root, "packages/core/src/probe"), { recursive: true });
+      mkdirSync(join(root, "packages/react/src"), { recursive: true });
+      const source = `export interface Thing {
+  tick(dt: number): void;
+  count(): number;
+}
+${STATEFUL_BODY}`;
+      writeFileSync(join(root, "packages/core/src/probe/thing.draw.ts"), source);
+      writeFileSync(join(root, "packages/core/src/probe/thing.ts"), source);
+      expect(findStatefulPrimitives(root).map((entry) => entry.key)).toEqual(["packages/core/src/probe/thing.ts#createThing"]);
+    } finally {
+      rmSync(root, { recursive: true, force: true });
+    }
+  });
+
   test("flags a mutable handle with no way to read the state out", () => {
     expect(scan(`export interface Thing {\n  tick(dt: number): void;\n  count(): number;\n}\n${STATEFUL_BODY}`)).toEqual([
       "createThing",
