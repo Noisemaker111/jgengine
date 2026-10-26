@@ -47,9 +47,21 @@ describe("static authored object batching", () => {
     expect(grouped.batches).toHaveLength(2);
     expect(grouped.batches.map((batch) => batch.objects.length)).toEqual([STATIC_BATCH_MIN, STATIC_BATCH_MIN]);
     expect(grouped.batches[1]!.model.material?.color).toBe("red");
+    expect(groupStaticObjects([candidate(0, { custom: true }), candidate(1, { custom: true })]).singles).toHaveLength(2);
   });
 
-  test("one model batches inside a cell and a lone placement in another cell stays single", () => {
+  test("lone placements of a model with no cell batch gather into one batch", () => {
+    const scattered = Array.from({ length: 3 }, (_, i) => {
+      const entry = candidate(i);
+      entry.object.position = [i * STATIC_BATCH_CELL * 3, 1, 0];
+      return entry;
+    });
+    const grouped = groupStaticObjects(scattered);
+    expect(grouped.batches.map((batch) => batch.objects.length)).toEqual([3]);
+    expect(grouped.singles).toHaveLength(0);
+  });
+
+  test("one model batches inside a cell and a lone placement in another cell joins that batch", () => {
     const inside = Array.from({ length: 2 }, (_, i) => {
       const entry = candidate(i);
       entry.object.position = [i * 100, 1, 0];
@@ -59,9 +71,10 @@ describe("static authored object batching", () => {
     const elsewhere = candidate(2);
     elsewhere.object.position = [STATIC_BATCH_CELL + 22, 1, 0];
     const split = groupStaticObjects([...inside, elsewhere]);
-    expect(split.batches).toHaveLength(1);
-    expect(split.batches[0]!.objects).toHaveLength(2);
-    expect(split.singles).toHaveLength(1);
+    // Drawn alone it would link a plain program beside the instanced one its model already has.
+    expect(split.batches.map((batch) => batch.objects.length)).toEqual([3]);
+    expect(split.batches[0]!.objects.at(-1)!.instanceId).toBe(elsewhere.object.instanceId);
+    expect(split.singles).toHaveLength(0);
   });
 
   test("a world-wide batch draws only what the frustum keeps and its bounds cover only those", () => {

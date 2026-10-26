@@ -1208,6 +1208,7 @@
     "./terrain/index",
     "./terrain/random",
     "./terrain/soilPatchMaterial",
+    "./terrain/terrainChunks",
     "./terrain/terrainDetailMaterial",
     "./terrain/terrainGroundColor",
     "./terrain/terrainMath",
