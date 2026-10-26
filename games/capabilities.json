@@ -95,8 +95,8 @@
       "packages": [
         "@jgengine/react"
       ],
-      "module": "@jgengine/react/actionHud",
-      "domain": "action-bar",
+      "module": "@jgengine/react/hud/actionHud",
+      "domain": "hud",
       "gameFacing": false,
       "probe": null,
       "intent": "optional skinned action-bar composition over the headless model — games own chrome"
@@ -106,8 +106,8 @@
       "packages": [
         "@jgengine/react"
       ],
-      "module": "@jgengine/react/actionHud",
-      "domain": "action-bar-chrome",
+      "module": "@jgengine/react/hud/actionHud",
+      "domain": "hud",
       "gameFacing": false,
       "probe": null,
       "intent": "accessible grid/list toolbar renderer over an action-bar model with swappable item chrome"
@@ -117,8 +117,8 @@
       "packages": [
         "@jgengine/react"
       ],
-      "module": "@jgengine/react/actionHud",
-      "domain": "action-bar-model",
+      "module": "@jgengine/react/hud/actionHud",
+      "domain": "hud",
       "gameFacing": false,
       "probe": null,
       "intent": "headless action-collection model with focus, hover, keyboard, and hotkey routing"
@@ -139,8 +139,8 @@
       "packages": [
         "@jgengine/react"
       ],
-      "module": "@jgengine/react/actionHud",
-      "domain": "action-button",
+      "module": "@jgengine/react/hud/actionHud",
+      "domain": "hud",
       "gameFacing": false,
       "probe": null,
       "intent": "cooldown/cost/hotkey action button with complete interaction states"
@@ -161,8 +161,8 @@
       "packages": [
         "@jgengine/react"
       ],
-      "module": "@jgengine/react/actionHud",
-      "domain": "action-from-ability-slot",
+      "module": "@jgengine/react/hud/actionHud",
+      "domain": "hud",
       "gameFacing": false,
       "probe": null,
       "intent": "adapt a combat ability-kit snapshot into an action-bar action def"
@@ -183,8 +183,8 @@
       "packages": [
         "@jgengine/react"
       ],
-      "module": "@jgengine/react/actionHud",
-      "domain": "action-tooltip",
+      "module": "@jgengine/react/hud/actionHud",
+      "domain": "hud",
       "gameFacing": false,
       "probe": null,
       "intent": "structured action tooltip body (title, cost, cooldown, blocking notes)"
@@ -1677,8 +1677,8 @@
       "packages": [
         "@jgengine/react"
       ],
-      "module": "@jgengine/react/comboMeter",
-      "domain": "combo-meter-hud",
+      "module": "@jgengine/react/hud/comboMeter",
+      "domain": "hud",
       "gameFacing": false,
       "probe": null,
       "intent": "drop-in HUD for a core combo meter — big live count, free-string tier label, derived multiplier, and a draining decay-window bar, per-tier colored from a caller map and HudTheme-token skinnable"
@@ -3178,8 +3178,8 @@
       "packages": [
         "@jgengine/react"
       ],
-      "module": "@jgengine/react/selectionHud",
-      "domain": "entity-portrait",
+      "module": "@jgengine/react/hud/selectionHud",
+      "domain": "hud",
       "gameFacing": false,
       "probe": null,
       "intent": "selectable entity portrait tile with vitals and selected/focus states"
@@ -4155,8 +4155,8 @@
       "packages": [
         "@jgengine/react"
       ],
-      "module": "@jgengine/react/hudButton",
-      "domain": "hud-button",
+      "module": "@jgengine/react/hud/hudButton",
+      "domain": "hud",
       "gameFacing": false,
       "probe": null,
       "intent": "themed button with hover lift, press scale, focus ring, disabled state, and an interaction cue seam"
@@ -4166,8 +4166,8 @@
       "packages": [
         "@jgengine/react"
       ],
-      "module": "@jgengine/react/hudLayout",
-      "domain": "hud-canvas",
+      "module": "@jgengine/react/hud/hudLayout",
+      "domain": "hud",
       "gameFacing": false,
       "probe": null,
       "intent": "the HUD root surface — design-resolution scaling plus live panel-placement editing (F2+C)"
@@ -4177,8 +4177,8 @@
       "packages": [
         "@jgengine/react"
       ],
-      "module": "@jgengine/react/hud",
-      "domain": "hud-clock",
+      "module": "@jgengine/react/hud/hudReadouts",
+      "domain": "hud",
       "gameFacing": false,
       "probe": null,
       "intent": "in-game time-of-day readout bound to the sim clock"
@@ -4188,8 +4188,8 @@
       "packages": [
         "@jgengine/react"
       ],
-      "module": "@jgengine/react/hud",
-      "domain": "hud-coins",
+      "module": "@jgengine/react/hud/hudReadouts",
+      "domain": "hud",
       "gameFacing": false,
       "probe": null,
       "intent": "currency counter widget bound to a currency id"
@@ -4199,8 +4199,8 @@
       "packages": [
         "@jgengine/react"
       ],
-      "module": "@jgengine/react/hud",
-      "domain": "hud-components",
+      "module": "@jgengine/react/hud/hudReadouts",
+      "domain": "hud",
       "gameFacing": false,
       "probe": null,
       "intent": "optional health/hotbar/speed/clock/wave/currency building blocks — games own custom chrome"
@@ -4210,8 +4210,8 @@
       "packages": [
         "@jgengine/react"
       ],
-      "module": "@jgengine/react/hudLayout",
-      "domain": "hud-fade",
+      "module": "@jgengine/react/hud/hudLayout",
+      "domain": "hud",
       "gameFacing": false,
       "probe": null,
       "intent": "HUD group that fades when idle and returns when its values change"
@@ -4221,8 +4221,8 @@
       "packages": [
         "@jgengine/react"
       ],
-      "module": "@jgengine/react/hudFrame",
-      "domain": "hud-frame",
+      "module": "@jgengine/react/hud/hudFrame",
+      "domain": "hud",
       "gameFacing": false,
       "probe": null,
       "intent": "optional framed panel skins (glass/plate/retro/themed) — games own product chrome"
@@ -4232,8 +4232,8 @@
       "packages": [
         "@jgengine/react"
       ],
-      "module": "@jgengine/react/hud",
-      "domain": "hud-hotbar",
+      "module": "@jgengine/react/hud/hudReadouts",
+      "domain": "hud",
       "gameFacing": false,
       "probe": null,
       "intent": "optional inventory hotbar building block — games own slot chrome"
@@ -4254,8 +4254,8 @@
       "packages": [
         "@jgengine/react"
       ],
-      "module": "@jgengine/react/hudLayout",
-      "domain": "hud-idle",
+      "module": "@jgengine/react/hud/hudLayout",
+      "domain": "hud",
       "gameFacing": false,
       "probe": null,
       "intent": "true while a HUD group's values are changing, false once they sit still"
@@ -4265,8 +4265,8 @@
       "packages": [
         "@jgengine/react"
       ],
-      "module": "@jgengine/react/hudInteract",
-      "domain": "hud-interact",
+      "module": "@jgengine/react/hud/hudInteract",
+      "domain": "hud",
       "gameFacing": false,
       "probe": null,
       "intent": "one listener for hover/press/activate/open/close from every engine HUD primitive"
@@ -4276,8 +4276,8 @@
       "packages": [
         "@jgengine/react"
       ],
-      "module": "@jgengine/react/hudLanes",
-      "domain": "hud-lanes",
+      "module": "@jgengine/react/hud/hudLanes",
+      "domain": "hud",
       "gameFacing": false,
       "probe": null,
       "intent": "lay HUD blocks out in non-overlapping anchored lanes"
@@ -4287,8 +4287,8 @@
       "packages": [
         "@jgengine/react"
       ],
-      "module": "@jgengine/react/hudLayout",
-      "domain": "hud-layout",
+      "module": "@jgengine/react/hud/hudLayout",
+      "domain": "hud",
       "gameFacing": false,
       "probe": null,
       "intent": "persistent, live-editable HUD panel layout state for `HudCanvas`"
@@ -4298,8 +4298,8 @@
       "packages": [
         "@jgengine/react"
       ],
-      "module": "@jgengine/react/hudLayoutPersist",
-      "domain": "hud-layout-persist",
+      "module": "@jgengine/react/hud/hudLayoutPersist",
+      "domain": "hud",
       "gameFacing": false,
       "probe": null,
       "intent": "inject a host callback so canvas HUD edits commit into the scene document"
@@ -4309,8 +4309,8 @@
       "packages": [
         "@jgengine/react"
       ],
-      "module": "@jgengine/react/hudLayoutPersist",
-      "domain": "hud-layout-persist-hook",
+      "module": "@jgengine/react/hud/hudLayoutPersist",
+      "domain": "hud",
       "gameFacing": false,
       "probe": null,
       "intent": "read the host panel-commit port from a HUD layout widget"
@@ -4320,8 +4320,8 @@
       "packages": [
         "@jgengine/react"
       ],
-      "module": "@jgengine/react/hudLanes",
-      "domain": "hud-overlap-report",
+      "module": "@jgengine/react/hud/hudLanes",
+      "domain": "hud",
       "gameFacing": false,
       "probe": null,
       "intent": "name every intersecting pair of rendered HUD blocks"
@@ -4331,8 +4331,8 @@
       "packages": [
         "@jgengine/react"
       ],
-      "module": "@jgengine/react/hudLayout",
-      "domain": "hud-panel",
+      "module": "@jgengine/react/hud/hudLayout",
+      "domain": "hud",
       "gameFacing": false,
       "probe": null,
       "intent": "anchored HUD slot — drop any widget in a named, player-movable panel"
@@ -4353,8 +4353,8 @@
       "packages": [
         "@jgengine/react"
       ],
-      "module": "@jgengine/react/hudSurface",
-      "domain": "hud-surface",
+      "module": "@jgengine/react/hud/hudSurface",
+      "domain": "hud",
       "gameFacing": false,
       "probe": null,
       "intent": "themed panel frame with elevation, header slots, landmark element, and open/close transitions"
@@ -4364,8 +4364,8 @@
       "packages": [
         "@jgengine/react"
       ],
-      "module": "@jgengine/react/hudTheme",
-      "domain": "hud-theme",
+      "module": "@jgengine/react/hud/hudTheme",
+      "domain": "hud",
       "gameFacing": false,
       "probe": null,
       "intent": "game-authored token object covering bars, frames, slots, chrome, text, status colors, fonts, and rarity"
@@ -4375,8 +4375,8 @@
       "packages": [
         "@jgengine/react"
       ],
-      "module": "@jgengine/react/hudTheme",
-      "domain": "hud-theme-author",
+      "module": "@jgengine/react/hud/hudTheme",
+      "domain": "hud",
       "gameFacing": false,
       "probe": null,
       "intent": "fill a full HudTheme from per-group partial overrides"
@@ -4386,8 +4386,8 @@
       "packages": [
         "@jgengine/react"
       ],
-      "module": "@jgengine/react/hudTheme",
-      "domain": "hud-theme-derive",
+      "module": "@jgengine/react/hud/hudTheme",
+      "domain": "hud",
       "gameFacing": false,
       "probe": null,
       "intent": "build a full HudTheme from an accent + surface seed pair"
@@ -4397,8 +4397,8 @@
       "packages": [
         "@jgengine/react"
       ],
-      "module": "@jgengine/react/hudThemeRoot",
-      "domain": "hud-theme-root",
+      "module": "@jgengine/react/hud/hudThemeRoot",
+      "domain": "hud",
       "gameFacing": false,
       "probe": null,
       "intent": "apply the default (or a game) HudTheme, the player's accessibility preferences and the engine stylesheet at the HUD root"
@@ -4419,8 +4419,8 @@
       "packages": [
         "@jgengine/react"
       ],
-      "module": "@jgengine/react/hudTokens",
-      "domain": "hud-tokens",
+      "module": "@jgengine/react/hud/hudTokens",
+      "domain": "hud",
       "gameFacing": false,
       "probe": null,
       "intent": "inline-style accessors for the HudTheme type scale, spacing, motion, elevation, and focus ring"
@@ -4882,8 +4882,8 @@
       "packages": [
         "@jgengine/react"
       ],
-      "module": "@jgengine/react/kitHud",
-      "domain": "kit-action-bar",
+      "module": "@jgengine/react/hud/kitHud",
+      "domain": "hud",
       "gameFacing": false,
       "probe": null,
       "intent": "a HUD build/action bar — keyed kit buttons with costs, affordability and the held tool, progress meters, the interact prompt"
@@ -4937,8 +4937,8 @@
       "packages": [
         "@jgengine/react"
       ],
-      "module": "@jgengine/react/kitHud",
-      "domain": "kit-count",
+      "module": "@jgengine/react/hud/kitHud",
+      "domain": "hud",
       "gameFacing": false,
       "probe": null,
       "intent": "a HUD resource readout — a number and its word, with an optional rate line"
@@ -4948,8 +4948,8 @@
       "packages": [
         "@jgengine/react"
       ],
-      "module": "@jgengine/react/kitHud",
-      "domain": "kit-counts",
+      "module": "@jgengine/react/hud/kitHud",
+      "domain": "hud",
       "gameFacing": false,
       "probe": null,
       "intent": "a row of HUD resource counts"
@@ -4981,8 +4981,8 @@
       "packages": [
         "@jgengine/react"
       ],
-      "module": "@jgengine/react/kitHud",
-      "domain": "kit-hint",
+      "module": "@jgengine/react/hud/kitHud",
+      "domain": "hud",
       "gameFacing": false,
       "probe": null,
       "intent": "a HUD hint strip for the current tool or problem, with the phase banner"
@@ -5069,8 +5069,8 @@
       "packages": [
         "@jgengine/react"
       ],
-      "module": "@jgengine/react/kitHud",
-      "domain": "kit-vitals",
+      "module": "@jgengine/react/hud/kitHud",
+      "domain": "hud",
       "gameFacing": false,
       "probe": null,
       "intent": "a HUD vitals card — meters that turn bad when low, extra readouts, the labeled current objective under it"
@@ -5080,8 +5080,8 @@
       "packages": [
         "@jgengine/react"
       ],
-      "module": "@jgengine/react/kitHud",
-      "domain": "kit-wave-clock",
+      "module": "@jgengine/react/hud/kitHud",
+      "domain": "hud",
       "gameFacing": false,
       "probe": null,
       "intent": "a HUD wave clock — countdown or enemies left, a note, and the wave banner"
@@ -7314,8 +7314,8 @@
       "packages": [
         "@jgengine/react"
       ],
-      "module": "@jgengine/react/actionHud",
-      "domain": "popover",
+      "module": "@jgengine/react/hud/actionHud",
+      "domain": "hud",
       "gameFacing": false,
       "probe": null,
       "intent": "viewport-flipping, viewport-clamped anchored popover/tooltip shell"
@@ -8290,8 +8290,8 @@
       "packages": [
         "@jgengine/react"
       ],
-      "module": "@jgengine/react/selectionHud",
-      "domain": "selection-collection",
+      "module": "@jgengine/react/hud/selectionHud",
+      "domain": "hud",
       "gameFacing": false,
       "probe": null,
       "intent": "accessible portrait-strip / group-chip renderer over a selection model"
@@ -8301,8 +8301,8 @@
       "packages": [
         "@jgengine/react"
       ],
-      "module": "@jgengine/react/selectionHud",
-      "domain": "selection-group-chip",
+      "module": "@jgengine/react/hud/selectionHud",
+      "domain": "hud",
       "gameFacing": false,
       "probe": null,
       "intent": "same-kind selection chip (icon + count) for a grouped selection"
@@ -8312,8 +8312,8 @@
       "packages": [
         "@jgengine/react"
       ],
-      "module": "@jgengine/react/selectionHud",
-      "domain": "selection-model",
+      "module": "@jgengine/react/hud/selectionHud",
+      "domain": "hud",
       "gameFacing": false,
       "probe": null,
       "intent": "headless multi-entity selection model with primary focus, grouping, and virtualization"
@@ -8323,8 +8323,8 @@
       "packages": [
         "@jgengine/react"
       ],
-      "module": "@jgengine/react/selectionHud",
-      "domain": "selection-panel",
+      "module": "@jgengine/react/hud/selectionHud",
+      "domain": "hud",
       "gameFacing": false,
       "probe": null,
       "intent": "optional selection-panel composition: summary + portrait strip / group chips"
@@ -8911,8 +8911,8 @@
       "packages": [
         "@jgengine/shell"
       ],
-      "module": "@jgengine/shell/camera/Viewports",
-      "domain": "camera",
+      "module": "@jgengine/shell/hud/ViewportHuds",
+      "domain": "hud",
       "gameFacing": false,
       "probe": null,
       "intent": "Per-seat HUD roots positioned over each split-screen viewport."
@@ -9144,8 +9144,8 @@
       "packages": [
         "@jgengine/react"
       ],
-      "module": "@jgengine/react/statusEffectBar",
-      "domain": "status-effect-bar",
+      "module": "@jgengine/react/hud/statusEffectBar",
+      "domain": "hud",
       "gameFacing": false,
       "probe": null,
       "intent": "timeline HUD row of active statuses — icon + radial countdown ring + stack badge, driven off the status model, HudTheme-skinned"
@@ -10112,8 +10112,8 @@
       "packages": [
         "@jgengine/react"
       ],
-      "module": "@jgengine/react/comboMeter",
-      "domain": "use-combo-meter",
+      "module": "@jgengine/react/hud/comboMeter",
+      "domain": "hud",
       "gameFacing": false,
       "probe": null,
       "intent": "React hook binding a combo meter — re-renders per frame so the decay-window bar drains live and returns the current combo view"
@@ -10332,8 +10332,8 @@
       "packages": [
         "@jgengine/react"
       ],
-      "module": "@jgengine/react/waveHud",
-      "domain": "use-wave-runner",
+      "module": "@jgengine/react/hud/waveHud",
+      "domain": "hud",
       "gameFacing": false,
       "probe": null,
       "intent": "React hook that subscribes to a wave runner and returns its pooled current-wave view"
@@ -10593,8 +10593,8 @@
       "packages": [
         "@jgengine/react"
       ],
-      "module": "@jgengine/react/waveHud",
-      "domain": "wave-hud",
+      "module": "@jgengine/react/hud/waveHud",
+      "domain": "hud",
       "gameFacing": false,
       "probe": null,
       "intent": "drop-in wave/spawn HUD over a wave runner — big WAVE N label, wave-progress bar, spawned/total + budget + alert readouts, theme-skinnable"

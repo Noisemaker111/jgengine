@@ -99,7 +99,7 @@ import { GridWorldScene } from "./world/GridWorldScene";
 import { PlaceScene } from "./world/PlaceScene";
 import { WorldItems } from "./world/WorldItems";
 import type { ShellMultiplayer } from "./multiplayer";
-import { defaultHudTheme, hudThemeVars } from "@jgengine/react/hudTheme";
+import { defaultHudTheme, hudThemeVars } from "@jgengine/react/hud/hudTheme";
 import type { PlayableGame } from "./registry";
 import type { AuthoritativeFrameHandler } from "./worldSync";
 import { TouchControlsDock, TouchPlaySurface, useTouchViewport, type TouchCodeSink } from "./touch/TouchControlsOverlay";

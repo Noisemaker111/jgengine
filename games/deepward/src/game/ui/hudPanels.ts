@@ -1,4 +1,4 @@
-import type { HudAnchor } from "@jgengine/core/ui/hudLayout";
+import type { HudAnchor } from "@jgengine/core/hud/hudLayout";
 
 /** Every live HUD block, its anchor and its lane. One owner: the UI spreads these onto `HudPanel`. */
 export interface HudPanelClaim {

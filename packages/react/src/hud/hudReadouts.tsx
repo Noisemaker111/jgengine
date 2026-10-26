@@ -2,10 +2,10 @@ import { useMemo, type CSSProperties, type ReactNode } from "react";
 
 import { groundSpeed } from "@jgengine/core/scene/entityStore";
 
-import { iconForItemId } from "./gameIcons";
+import { iconForItemId } from "../gameIcons";
 import { hudFrameStyle } from "./hudFrame";
-import { IconTreatment, schoolForItem } from "./iconTreatment";
-import { useCurrency, useGameClock, useGameStore, useInventory, localPlayerEntity } from "./hooks";
+import { IconTreatment, schoolForItem } from "../iconTreatment";
+import { useCurrency, useGameClock, useGameStore, useInventory, localPlayerEntity } from "../hooks";
 import { hudType } from "./hudTokens";
 
 /**
@@ -212,32 +212,6 @@ function ClockPill({ label, active, onClick }: { label: string; active: boolean;
     >
       {label}
     </button>
-  );
-}
-
-/**
- * A wave / round banner — a bold centered pill for "WAVE 3" style callouts, with an optional subtitle
- * (enemies remaining, timer). Pure display: pass the current `wave` and whatever subtitle you track.
- */
-export function WaveBanner({
-  wave,
-  label = "Wave",
-  subtitle,
-  style,
-  className,
-}: {
-  wave: number | string;
-  label?: string;
-  subtitle?: ReactNode;
-  style?: CSSProperties;
-  className?: string;
-}) {
-  return (
-    <div className={className} style={{ ...PANEL, padding: "6px 16px", textAlign: "center", display: "inline-block", ...style }}>
-      <div style={{ fontSize: hudType("xs"), letterSpacing: 2, textTransform: "uppercase", opacity: 0.65 }}>{label}</div>
-      <div style={{ fontSize: 24, fontWeight: 800, lineHeight: 1.1 }}>{wave}</div>
-      {subtitle !== undefined ? <div style={{ fontSize: hudType("xs"), opacity: 0.7, marginTop: 2 }}>{subtitle}</div> : null}
-    </div>
   );
 }
 

@@ -1,9 +1,9 @@
 import type { ReactNode } from "react";
 import { useGameStore } from "@jgengine/react/hooks";
 import { useGameContext } from "@jgengine/react/provider";
-import { HUD_CORNER_WIDTH } from "@jgengine/react/hudLayout";
+import { HUD_CORNER_WIDTH } from "@jgengine/react/hud/hudLayout";
 import { KitResultScreen } from "@jgengine/react/kitFlow";
-import { KitActionBar, KitCount, KitCounts, KitHint, KitVitals } from "@jgengine/react/kitHud";
+import { KitActionBar, KitCount, KitCounts, KitHint, KitVitals } from "@jgengine/react/hud/kitHud";
 import { KitButton, KitPanel } from "@jgengine/react/uiKitRoot";
 import { HudSlots } from "@jgengine/shell/gameKit";
 

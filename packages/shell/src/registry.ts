@@ -2,7 +2,7 @@ import type { ComponentType, ReactNode } from "react";
 import type { PlayableGame as EnginePlayableGame, WorldOverlayProps } from "@jgengine/core/game/playableGame";
 import type { SceneEntity } from "@jgengine/core/scene/entityStore";
 import type { SceneObject } from "@jgengine/core/scene/objectStore";
-import type { HudTheme } from "@jgengine/react/hudTheme";
+import type { HudTheme } from "@jgengine/react/hud/hudTheme";
 import type { UiKit } from "@jgengine/react/uiKit";
 import type { UiKitName } from "@jgengine/react/uiKits";
 import type { ViewmodelProps } from "./camera/GameFirstPersonCamera";

@@ -1,6 +1,6 @@
 import type { CSSProperties, ReactNode, RefObject } from "react";
 import { useLayoutEffect, useRef, useState, useSyncExternalStore } from "react";
-import { HudFade } from "@jgengine/react/hudLayout";
+import { HudFade } from "@jgengine/react/hud/hudLayout";
 import { KitPanel } from "@jgengine/react/uiKitRoot";
 import { useRegisterLayoutRegion } from "@jgengine/react/gameViewport";
 import { useEntityStat, useGame } from "@jgengine/react/hooks";

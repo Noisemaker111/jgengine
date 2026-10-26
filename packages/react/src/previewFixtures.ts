@@ -1,15 +1,15 @@
 import { createElement } from "react";
 
 import type { GamePreviewComponent } from "./preview";
-import { HudChromePreview } from "./hudChromePreview";
-import { HudLanesPreview } from "./hudLanesPreview";
-import { HudThemePreview } from "./hudThemePreview";
+import { HudChromePreview } from "./hud/hudChromePreview";
+import { HudLanesPreview } from "./hud/hudLanesPreview";
+import { HudThemePreview } from "./hud/hudThemePreview";
 import { IconsPreview } from "./iconsPreview";
 import { KitFramesPreview } from "./kitFramesPreview";
 import { StreetGeometryPreview } from "./streetGeometryPreview";
 import { SpriteClipPreview } from "./spriteClipPreview";
 import { TileLayerPreview } from "./tileLayerPreview";
-import { HudSkinPreview } from "./hudSkinPreview";
+import { HudSkinPreview } from "./hud/hudSkinPreview";
 import { ScrollRailPreview } from "./scrollRailPreview";
 import { UI_KITS, type UiKitName } from "./uiKits";
 import { UiKitMenuPreview, UiKitPreview, UiKitsPreview } from "./uiKitsPreview";

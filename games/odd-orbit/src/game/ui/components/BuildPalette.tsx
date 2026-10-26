@@ -1,4 +1,4 @@
-import { HudButton } from "@jgengine/react/hudButton";
+import { HudButton } from "@jgengine/react/hud/hudButton";
 import { useGame, useSceneObjects } from "@jgengine/react/hooks";
 import { useStore } from "@jgengine/react/store";
 import { GameIcon } from "@jgengine/react/gameIcons";

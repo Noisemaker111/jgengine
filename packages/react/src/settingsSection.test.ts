@@ -24,7 +24,7 @@ beforeAll(async () => {
     import { SettingsSection } from '../../packages/react/src/settingsBlocks';
     import { SettingsProvider, useSettingsStore } from '../../packages/react/src/settings';
     import { useAccessibilitySettings } from '../../packages/react/src/accessibilitySettings';
-    import { HudThemeRoot } from '../../packages/react/src/hudThemeRoot';
+    import { HudThemeRoot } from '../../packages/react/src/hud/hudThemeRoot';
 
     const pad = { buttons: new Set(), axes: [0, 0] };
     Object.defineProperty(navigator, 'getGamepads', {

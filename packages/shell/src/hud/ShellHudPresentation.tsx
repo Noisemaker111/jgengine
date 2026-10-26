@@ -1,6 +1,6 @@
 import { useEffect, type Dispatch, type MutableRefObject, type RefObject, type SetStateAction } from "react";
 
-import { suppressBrowserContextMenu } from "./pointer/contextMenu";
+import { suppressBrowserContextMenu } from "../pointer/contextMenu";
 import type { PointerAxisState } from "@jgengine/core/input/pointerAxis";
 import type { ActionStateTracker } from "@jgengine/core/input/actionBindings";
 import { playControlsActive } from "@jgengine/core/game/controlGate";
@@ -11,17 +11,17 @@ import { SettingsProvider, type SettingsActionView } from "@jgengine/react/setti
 import { GameViewportProvider } from "@jgengine/react/gameViewport";
 import type { TouchScheme } from "@jgengine/core/input/touchScheme";
 
-import { HudOnlyDriver } from "./drivers/HudOnlyDriver";
-import type { RuntimeDiagnostic } from "./diagnostics/RuntimeDiagnostics";
-import type { ShellMultiplayer } from "./multiplayer";
-import type { PlayableGame } from "./registry";
-import { createShellKeyHandlers, ShellDebugOverlays, ShellGameUiChrome } from "./ShellChrome";
-import type { AudioEngine } from "./audio/audioEngine";
-import { resolvePlayableAudio } from "./audio/playableAudio";
-import { AudioSettingsBridge } from "./settings/appliedSettings";
-import { SettingsRuntime } from "./settings/SettingsRuntime";
-import { SettingsChrome } from "./settings/SettingsChrome";
-import { TouchPlaySurface } from "./touch/TouchControlsOverlay";
+import { HudOnlyDriver } from "./HudOnlyDriver";
+import type { RuntimeDiagnostic } from "../diagnostics/RuntimeDiagnostics";
+import type { ShellMultiplayer } from "../multiplayer";
+import type { PlayableGame } from "../registry";
+import { createShellKeyHandlers, ShellDebugOverlays, ShellGameUiChrome } from "../ShellChrome";
+import type { AudioEngine } from "../audio/audioEngine";
+import { resolvePlayableAudio } from "../audio/playableAudio";
+import { AudioSettingsBridge } from "../settings/appliedSettings";
+import { SettingsRuntime } from "../settings/SettingsRuntime";
+import { SettingsChrome } from "../settings/SettingsChrome";
+import { TouchPlaySurface } from "../touch/TouchControlsOverlay";
 
 /**
  * Marks a HUD-only page ready for capture (`data-jg-capture="ready"`) unless a capture host already

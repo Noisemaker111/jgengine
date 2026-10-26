@@ -2,7 +2,7 @@ import type { CSSProperties, ReactNode } from "react";
 import { type KitMaterial } from "@jgengine/react/kitFrame";
 import { KitButton, KitPanel } from "@jgengine/react/uiKitRoot";
 import { GameIcon, type GameIconName } from "@jgengine/react/gameIcons";
-import { HudFade } from "@jgengine/react/hudLayout";
+import { HudFade } from "@jgengine/react/hud/hudLayout";
 import type { RaceSnapshot } from "../race/standings";
 import type { DriftFoundryPartDef, PartSlotId } from "../parts/catalog";
 import { PART_SLOTS } from "../parts/catalog";

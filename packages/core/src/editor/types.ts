@@ -2,7 +2,7 @@ import type { EditorSimulation } from "./simulation";
 import type { MaterialAsset } from "../material/materialAsset";
 import type { StaticPrefabBake } from "./staticPrefab";
 import type { ParamSchema } from "../scene/sceneKinds";
-import type { EditorUiDocument } from "../ui/hudDocument";
+import type { EditorUiDocument } from "../hud/hudDocument";
 import type { MinimapBakeBounds } from "../world/minimapBake";
 import type { TerraformSnapshot } from "../world/terraform";
 import type { EditorGridLayer } from "./grid";
@@ -12,7 +12,7 @@ import type { PointLightingConfig } from "../game/playableGame";
 /** Runtime point-light shape reused by authored editor light markers. */
 export type { PointLightingConfig } from "../game/playableGame";
 
-export type { EditorUiDocument, EditorUiPanelLayout, HudResizeAxes, HudPanelTypeDef } from "../ui/hudDocument";
+export type { EditorUiDocument, EditorUiPanelLayout, HudResizeAxes, HudPanelTypeDef } from "../hud/hudDocument";
 
 /** A world-space point used across editor markers, volumes, and paths. */
 export type EditorVec3 = { x: number; y: number; z: number };

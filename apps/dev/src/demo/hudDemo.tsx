@@ -1,4 +1,5 @@
-import { Clock, Coins, Crosshair, HudCanvas, HudPanel, Hotbar, Speedometer, WaveBanner, useEntityStat, useHudLayout, usePlayer } from "@jgengine/react";
+import { Clock, Coins, Crosshair, HudCanvas, HudPanel, Hotbar, Speedometer, useEntityStat, useHudLayout, usePlayer } from "@jgengine/react";
+import { KitWaveClock } from "@jgengine/react/hud/kitHud";
 import { KitMeter } from "@jgengine/react/uiKitRoot";
 import type { KitTone } from "@jgengine/react/uiKit";
 import type { PlayableGame } from "@jgengine/shell/registry";
@@ -23,7 +24,7 @@ function HudShowcaseUI() {
         <Clock controls showDay />
       </HudPanel>
       <HudPanel id="wave" anchor="top">
-        <WaveBanner wave={3} subtitle="7 enemies left" />
+        <KitWaveClock text="Wave 3" detail="7 enemies left" />
       </HudPanel>
       <HudPanel id="coins" anchor="top-right">
         <Coins currencyId="gold" />

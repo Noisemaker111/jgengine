@@ -4,7 +4,7 @@ import type { GameContext } from "@jgengine/core/runtime/gameContext";
 import { compassBearing, headingToBearing, relativeBearing } from "@jgengine/core/world/minimap";
 import { useGame, useGameStore } from "@jgengine/react/hooks";
 import { GameIcon } from "@jgengine/react/gameIcons";
-import { useHudAwake } from "@jgengine/react/hudLayout";
+import { useHudAwake } from "@jgengine/react/hud/hudLayout";
 import { useInputDevice } from "@jgengine/react/inputDevice";
 import { deadlineStage, formatCountdown } from "@jgengine/react/kitFlow";
 import { useUiCue } from "@jgengine/react/uiCues";

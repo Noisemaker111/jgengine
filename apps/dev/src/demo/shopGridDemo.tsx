@@ -7,7 +7,7 @@ import type { GameContext, GameContextEntityEntry } from "@jgengine/core/runtime
 import { createAssetCatalog } from "@jgengine/core/scene/assetCatalog";
 import { environment, grass, terrain } from "@jgengine/core/world/features";
 import { ShopGrid } from "@jgengine/react/shopGrid";
-import { hudThemeVars, HUD_THEME_PRESETS } from "@jgengine/react/hudTheme";
+import { hudThemeVars, HUD_THEME_PRESETS } from "@jgengine/react/hud/hudTheme";
 
 import { EnvironmentScene } from "@jgengine/shell/environment/EnvironmentScene";
 import type { PlayableGame } from "@jgengine/shell/registry";

@@ -21,10 +21,10 @@ import {
 } from "@jgengine/core/ui/actionModel";
 import { actionTooltip, placePopover, type PopoverSide, type TooltipContent } from "@jgengine/core/ui/tooltipModel";
 
-import { useEngineStyles } from "./engineStyles";
+import { useEngineStyles } from "../engineStyles";
 import { useHudInteract, type HudInteractListener } from "./hudInteract";
 import { HUD_FOCUS_RING, hudElevation, hudFont, hudType } from "./hudTokens";
-import { Keycap } from "./keyHint";
+import { Keycap } from "../keyHint";
 
 /**
  * Composable React renderers over the headless action view model (`@jgengine/core/ui/actionModel`) —

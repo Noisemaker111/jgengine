@@ -1209,7 +1209,7 @@ Harbor Heat's shadow pass self time at `--quality full`: 2.88 → 1.37 ms per fr
 ### Migrate
 
 - **Bump lockstep SDK packages to `^0.25.0`:** `@jgengine/{core,rapier,react,ws,node,sql,convex,shell,editor,assets,navbake}`. CLI `jgengine` is `0.22.0`; `@jgengine/github` is `0.12.0`.
-- The frame panel from `@jgengine/react/hudPanel` is now `HudSurface` in `@jgengine/react/hudSurface` (`HudSurfaceProps`, `HudSurfaceElevation`). `HudPanel`, `HudPanelProps` and `HudPanelElevation` from `@jgengine/react/hudPanel` stay as deprecated aliases for this release. The `HudCanvas` layout slot keeps the name `HudPanel`.
+- The frame panel from `@jgengine/react/hudPanel` is now `HudSurface` in `@jgengine/react/hud/hudSurface` (`HudSurfaceProps`, `HudSurfaceElevation`). `HudPanel`, `HudPanelProps` and `HudPanelElevation` from `@jgengine/react/hudPanel` stay as deprecated aliases for this release. The `HudCanvas` layout slot keeps the name `HudPanel`.
 - Engine HUD control sounds (button click/hover, panel and window open/close) no longer turn off with `notices: false` or `notices.cues: false`. Set `audio.hudCues: false` to silence them; `notices.cues` now covers notice sounds only.
 - The notice stack now defaults to z-index 85 (was 45), above `ModalHost`. Pass `notices.zIndex` to put it back under a game overlay.
 
@@ -1286,7 +1286,7 @@ Harbor Heat's shadow pass self time at `--quality full`: 2.88 → 1.37 ms per fr
 - UI sound cues: `useUiCue()` / `playUiCue` (`@jgengine/react/uiCues`) play `click`, `hover`, `open`, `close`, `confirm`, `deny`, `notify`. Soft procedural defaults (`@jgengine/core/audio/uiCues`) mix on a new "ui" bus with a "UI volume" setting under master volume. A game sound named `ui.<cue>` replaces one; `audio.uiCues` overrides or silences cues (`false` for all).
 - `notice_push` and `run_command` agent-bridge verbs for `drive --rpc`.
 - `ui-feedback` dev probe (apps/dev) exercising refusals, the feed and cues.
-- `HudTheme` gains a type scale with a 12px floor, spacing, motion (durations and easings), elevation (layered shadows and a lit top rim), and hover/press/focus/disabled state tokens; `hudThemeVars` emits them as `--jg-type-*`, `--jg-space-*`, `--jg-motion-*`, `--jg-ease*`, `--jg-elevation-*`, `--jg-highlight`, `--jg-hover-*`, `--jg-press-*`, `--jg-focus-ring`, and `--jg-disabled-opacity`. `@jgengine/react/hudTokens` reads them in inline styles (`hudType`, `hudSpace`, `hudTransition`, `hudElevation`, `hudFont`, `HUD_FOCUS_RING`).
+- `HudTheme` gains a type scale with a 12px floor, spacing, motion (durations and easings), elevation (layered shadows and a lit top rim), and hover/press/focus/disabled state tokens; `hudThemeVars` emits them as `--jg-type-*`, `--jg-space-*`, `--jg-motion-*`, `--jg-ease*`, `--jg-elevation-*`, `--jg-highlight`, `--jg-hover-*`, `--jg-press-*`, `--jg-focus-ring`, and `--jg-disabled-opacity`. `@jgengine/react/hud/hudTokens` reads them in inline styles (`hudType`, `hudSpace`, `hudTransition`, `hudElevation`, `hudFont`, `HUD_FOCUS_RING`).
 - Engine stylesheet `@jgengine/react/styles.css` (also `ENGINE_STYLESHEET` / `useEngineStyles` in `@jgengine/react/engineStyles`): every `jg-*` keyframe the shared blocks and registry use, `[data-jg-*]` interaction states, quiet hover/press/focus defaults for plain HUD buttons, and reduced-motion handling for `prefers-reduced-motion` and `[data-reduced-motion="true"]`. The `jgengine create` template imports it.
 - `HudThemeRoot`: the shell wraps every `GameUI` in it, applying `defaultHudTheme` and the stylesheet. `defineGame({ hudTheme })` swaps the root theme; `hudTheme: false` opts out.
 - Primitives `HudButton`, `HudPanel` (open/close transition via `usePresence`), and `TweenNumber` / `useTweenedValue` with an up/down delta flash; `useReducedMotion` in `@jgengine/react/accessibility`.
@@ -2237,7 +2237,7 @@ Harbor Heat's shadow pass self time at `--quality full`: 2.88 → 1.37 ms per fr
   that owns a `SpawnDirectorState`, ticks it from `update(dt, ctx?)`, forwards each `SpawnRequest` to an
   optional `onSpawn` sink (so the model never instantiates entities), and exposes a pooled `view()`
   readout (1-based `WAVE N`, wave progress `0..1`, budget/alert, spawned-this-wave/total, done) plus
-  `forceNextWave`/`raiseAlert`/`subscribe`/`snapshot`/`restore`. `@jgengine/react/waveHud` adds
+  `forceNextWave`/`raiseAlert`/`subscribe`/`snapshot`/`restore`. `@jgengine/react/hud/waveHud` adds
   `WaveHud`/`useWaveRunner` — a theme-skinnable panel with a big WAVE N label, wave-progress bar, and
   spawn/budget/alert readouts. Spawn-entry kinds stay free strings the runner never interprets.
 - **Count-based combo / multiplier meter.** `@jgengine/core/combat/comboMeter` adds
@@ -2245,7 +2245,7 @@ Harbor Heat's shadow pass self time at `--quality full`: 2.88 → 1.37 ms per fr
   climbs on `hit(kind?)`, resets a decay window each hit, and drops (to 0, or by `dropStep`) when the
   window elapses, driven by an injected `now` and/or `update(dt)`. Free-string `tiers` derive the active
   `tier()` and a score `multiplier()`, with `peak()`, a pooled `view()`, `subscribe`, and
-  `snapshot`/`restore`. React `@jgengine/react/comboMeter` ships `ComboMeterHud` (big live count, tier
+  `snapshot`/`restore`. React `@jgengine/react/hud/comboMeter` ships `ComboMeterHud` (big live count, tier
   label, draining window bar, multiplier — per-tier colored from a caller map) and a `useComboMeter` hook.
 - **Off-screen objective / waypoint markers.** `@jgengine/core/ui/screenMarkers` adds a serializable,
   observable `createWaypointTracker()` (`set`/`remove`/`clear`/`all`/`subscribe`/`snapshot`/`restore`,
@@ -2650,7 +2650,7 @@ Harbor Heat's shadow pass self time at `--quality full`: 2.88 → 1.37 ms per fr
 
 ### Added
 
-- Shared mobile layout composition — `@jgengine/core/ui/gameLayout` (pure geometry: `resolveLayoutMode`, `intersects`, `overlapArea`, `detectLayoutCollisions`, `computeGameplayRect`, `LayoutRegion`, `GameViewportLayout`) and `@jgengine/core/ui/orientation` (`resolveOrientationRequirement`, `orientationGateActive`, `MobileOrientationRule`). `@jgengine/react` adds `GameViewportProvider` (mounted by the shell), hooks (`useGameViewportLayout`, `useGameLayoutMode`, `useGameOrientation`, `useReservedControlZones`, `useLayoutCollisions`, `useRegisterLayoutRegion`), and a headless `RotateDeviceScreen`. The provider tracks `window.visualViewport`, publishes `--jg-viewport-*` / `--jg-visual-viewport-*` / `--jg-safe-*` CSS vars, resolves the explicit layout mode, and detects forbidden region overlaps (dev `data-jg-layout-collision` + console diagnostic).
+- Shared mobile layout composition — `@jgengine/core/hud/hudPriority` (pure geometry: `resolveLayoutMode`, `intersects`, `overlapArea`, `detectLayoutCollisions`, `computeGameplayRect`, `LayoutRegion`, `GameViewportLayout`) and `@jgengine/core/ui/orientation` (`resolveOrientationRequirement`, `orientationGateActive`, `MobileOrientationRule`). `@jgengine/react` adds `GameViewportProvider` (mounted by the shell), hooks (`useGameViewportLayout`, `useGameLayoutMode`, `useGameOrientation`, `useReservedControlZones`, `useLayoutCollisions`, `useRegisterLayoutRegion`), and a headless `RotateDeviceScreen`. The provider tracks `window.visualViewport`, publishes `--jg-viewport-*` / `--jg-visual-viewport-*` / `--jg-safe-*` CSS vars, resolves the explicit layout mode, and detects forbidden region overlaps (dev `data-jg-layout-collision` + console diagnostic).
 - Mandatory orientation contract — `PlayableGame.orientation` accepts `{ mobile: <rule> }`; `landscape-required`/`portrait-required` render an engine-owned rotate gate that blocks gameplay (input suppressed, simulation frozen, HUD/controls unmounted), self-correcting when the device is turned. Reduced-motion and safe-area respected; `visualViewport`-sized for mobile Safari/PWA.
 - Reserved touch-control zones — the touch dock registers its joystick / action-cluster / utility rectangles (runtime-measured) as `control` regions, so HUD placement and collision validation know exactly where controls sit.
 - HUD placement metadata — `HudPanel` gains `priority`, `mobileBehavior`, `allowOverlapWith`, `collisionGroup`, and registers as a collision-tracked layout region.
@@ -2665,7 +2665,7 @@ Harbor Heat's shadow pass self time at `--quality full`: 2.88 → 1.37 ms per fr
 
 ### Added
 
-- Mobile HUD fit — design-resolution UI scaling now applies to every game by default: `HudCanvas` measures the live viewport and scales the whole HUD from `PlayableGame.hudFit.designSize` (default 1600×900, clamps `minScale`/`maxScale` 0.4–1) so desktop-authored layouts shrink to fit a phone instead of overflowing it; `hudFit.mobile` overrides tune the phone fit separately. Pure math lives in `@jgengine/core/ui/hudScale` (`hudScaleForViewport`, `resolveHudFit`, `rectOverflow`, `overflowingPanels`); the shell mounts `@jgengine/react`'s `HudViewportProvider` around `GameUI` so games need no wiring.
+- Mobile HUD fit — design-resolution UI scaling now applies to every game by default: `HudCanvas` measures the live viewport and scales the whole HUD from `PlayableGame.hudFit.designSize` (default 1600×900, clamps `minScale`/`maxScale` 0.4–1) so desktop-authored layouts shrink to fit a phone instead of overflowing it; `hudFit.mobile` overrides tune the phone fit separately. Pure math lives in `@jgengine/core/hud/hudScale` (`hudScaleForViewport`, `resolveHudFit`, `rectOverflow`, `overflowingPanels`); the shell mounts `@jgengine/react`'s `HudViewportProvider` around `GameUI` so games need no wiring.
 - Graphics → UI scale — a player-facing `graphics.uiScale` slider (0.5–1.5, default 1) multiplies the computed HUD scale on every platform; the same resolution system drives desktop preference and mobile shrink.
 - HUD overflow gate — `HudCanvas` measures every `HudPanel` against the viewport at runtime and reports offenders on a `data-hud-overflow` attribute (plus a console warning); `bun run shoot <game> --device mobile|both` now exits non-zero naming the panels that escape the viewport.
 - Automatic visibility & streaming defaults — an engine-level `VisibilitySystem` (exported from `@jgengine/core`) gives every scene renderer-agnostic culling and asset-streaming policy with no per-object wiring: distance culling, preload margins, hysteresis, delayed unloading, multi-camera awareness (including cameras excluded from streaming), and per-object overrides (always-visible, never-unload, disabled culling/streaming, custom render distance and preload margin).

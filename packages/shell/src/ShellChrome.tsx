@@ -2,8 +2,8 @@ import { lazy, Suspense, useEffect, useMemo, useState, type ComponentType, type 
 
 import type { GameContext } from "@jgengine/core/runtime/gameContext";
 import { useAccessibilitySettings } from "@jgengine/react/accessibilitySettings";
-import { HudOverlayHost, HudThemeRoot } from "@jgengine/react/hudThemeRoot";
-import { HudViewportProvider } from "@jgengine/react/hudViewport";
+import { HudOverlayHost, HudThemeRoot } from "@jgengine/react/hud/hudThemeRoot";
+import { HudViewportProvider } from "@jgengine/react/hud/hudViewport";
 import { GameProvider } from "@jgengine/react/provider";
 import { kitHudBridge, UiKitRoot } from "@jgengine/react/uiKitRoot";
 import { resolveUiKit } from "@jgengine/react/uiKits";

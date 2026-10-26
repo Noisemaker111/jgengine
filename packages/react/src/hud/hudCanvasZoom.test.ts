@@ -2,8 +2,8 @@ import { afterAll, beforeAll, expect, setDefaultTimeout, test } from "bun:test";
 import { mkdir, rm, symlink } from "node:fs/promises";
 import { resolve } from "node:path";
 import { chromium, type Browser, type Page } from "playwright-core";
-import { buildBrowserFixture, findChromeExecutable } from "../../../scripts/browser-lib";
-import { gotoFixture, installPublicPackages } from "../../../scripts/browser-test-fixture";
+import { buildBrowserFixture, findChromeExecutable } from "../../../../scripts/browser-lib";
+import { gotoFixture, installPublicPackages } from "../../../../scripts/browser-test-fixture";
 
 /**
  * `HudCanvas` zooms the whole HUD on compact displays. Lane blocks must still reach the real right and
@@ -11,7 +11,7 @@ import { gotoFixture, installPublicPackages } from "../../../scripts/browser-tes
  * zoom, which left a dead band of about 100 px at 844x390 with `compactScale={0.86}`.
  */
 setDefaultTimeout(30_000);
-const root = resolve(import.meta.dir, "../../..");
+const root = resolve(import.meta.dir, "../../../..");
 const scratch = `${root}/.scratch/hud-canvas-zoom-test`;
 let browser: Browser, page: Page, server: ReturnType<typeof Bun.serve>;
 
@@ -22,7 +22,7 @@ beforeAll(async () => {
   await installPublicPackages(scratch, ["core", "react"]);
   await Bun.write(`${scratch}/fixture.tsx`, `
     import React from 'react';import {createRoot} from 'react-dom/client';
-    import {HudCanvas,HudPanel,useHudLayout} from '@jgengine/react/hudLayout';
+    import {HudCanvas,HudPanel,useHudLayout} from '@jgengine/react/hud/hudLayout';
     const zoom=Number(new URLSearchParams(location.search).get('zoom')??'1');
     const box=(w,h)=><div style={{width:w,height:h,background:'#345'}}/>;
     function Fixture(){const layout=useHudLayout();return <HudCanvas layout={layout} editChord={false} compactScale={zoom}>

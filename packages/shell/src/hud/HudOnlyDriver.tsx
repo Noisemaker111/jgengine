@@ -17,6 +17,10 @@ import { EMPTY_RESERVED, NO_ACTIONS } from "../shellConstants";
 import type { PlayableGame } from "../registry";
 import { registerSimStepper } from "../devtools/simStepper";
 
+/**
+ * Drives a HUD-only page: steps the sim with no 3D canvas so a capture can render just the game UI.
+ * @internal
+ */
 export function HudOnlyDriver({
   ctx,
   multiplayer,

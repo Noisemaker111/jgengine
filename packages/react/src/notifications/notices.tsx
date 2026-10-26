@@ -1,7 +1,7 @@
 import { useEffect, useLayoutEffect, useRef, useState, useSyncExternalStore, type CSSProperties, type ReactNode } from "react";
 
 import type { Notice, NoticeFeed, NoticeTone } from "@jgengine/core/notifications/notices";
-import type { LayoutRect, LayoutRegion } from "@jgengine/core/ui/gameLayout";
+import type { LayoutRect, LayoutRegion } from "@jgengine/core/hud/hudPriority";
 
 import { useGameViewportLayout } from "../gameViewport";
 import { useOptionalGameContext } from "../provider";

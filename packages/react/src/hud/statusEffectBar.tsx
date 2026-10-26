@@ -2,8 +2,8 @@ import { type CSSProperties, type ReactNode } from "react";
 
 import { statusEffectRemainingFraction, type StatusEffectView } from "@jgengine/core/combat";
 
-import { iconForItemId, isGameIconName, type GameIconName } from "./gameIcons";
-import { IconTreatment, schoolForItem, type IconSchool } from "./iconTreatment";
+import { iconForItemId, isGameIconName, type GameIconName } from "../gameIcons";
+import { IconTreatment, schoolForItem, type IconSchool } from "../iconTreatment";
 import { hudType } from "./hudTokens";
 
 /**

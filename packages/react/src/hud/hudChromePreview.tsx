@@ -5,10 +5,10 @@ import { HudButton } from "./hudButton";
 import { HudFrame } from "./hudFrame";
 import { HudSurface } from "./hudSurface";
 import { HudThemeRoot } from "./hudThemeRoot";
-import { ConfirmDialog, PauseMenu } from "./modals";
-import { Window } from "./panels";
-import { TweenNumber } from "./tweenNumber";
-import { KitMeter } from "./uiKitRoot";
+import { ConfirmDialog, PauseMenu } from "../modals";
+import { Window } from "../panels";
+import { TweenNumber } from "../tweenNumber";
+import { KitMeter } from "../uiKitRoot";
 
 const ACTIONS = [
   resolveAction({ id: "slash", label: "Slash", icon: "⚔", hotkey: "1" }),

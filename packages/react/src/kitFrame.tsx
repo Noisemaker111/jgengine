@@ -11,7 +11,7 @@ import {
   type Ref,
 } from "react";
 
-import type { HudInteractKind } from "./hudInteract";
+import type { HudInteractKind } from "./hud/hudInteract";
 
 /**
  * What a frame is made of. Every material is a generated texture (SVG turbulence and lighting, no

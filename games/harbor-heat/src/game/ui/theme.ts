@@ -1,5 +1,5 @@
 import { gameFontStacks } from "@jgengine/react/gameFonts";
-import { hudTheme } from "@jgengine/react/hudTheme";
+import { hudTheme } from "@jgengine/react/hud/hudTheme";
 import { customizeKit } from "@jgengine/react/uiKit";
 import { UI_KITS } from "@jgengine/react/uiKits";
 import { GAME_FONTS } from "../../art/fonts/fonts";

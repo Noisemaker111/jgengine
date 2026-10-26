@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { HudPanel, useBrowserSuspension, useDisplayProfile } from "@jgengine/react";
 import { GameIcon } from "@jgengine/react/gameIcons";
-import { HudFade } from "@jgengine/react/hudLayout";
+import { HudFade } from "@jgengine/react/hud/hudLayout";
 import { useGame, useGamePhase, useGameStore } from "@jgengine/react/hooks";
 import { useMenuNav } from "@jgengine/react/menuNav";
 import { useGameContext } from "@jgengine/react/provider";

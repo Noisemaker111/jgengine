@@ -9,15 +9,16 @@ import { createTimerSet } from "@jgengine/core/time/timerSet";
 import { createCameraShake } from "@jgengine/core/camera/shake/cameraShake";
 
 import { CameraShakeMeter } from "./camera/shake/cameraShake";
-import { ComboMeterHud } from "./comboMeter";
+import { ComboMeterHud } from "./hud/comboMeter";
 import { DialogueView } from "./dialogueView";
-import { Crosshair, WaveBanner } from "./hud";
-import { HudChromePreview } from "./hudChromePreview";
-import { HudSkinPreview } from "./hudSkinPreview";
-import { StatusEffectBar } from "./statusEffectBar";
+import { Crosshair } from "./hud/hudReadouts";
+import { KitWaveClock } from "./hud/kitHud";
+import { HudChromePreview } from "./hud/hudChromePreview";
+import { HudSkinPreview } from "./hud/hudSkinPreview";
+import { StatusEffectBar } from "./hud/statusEffectBar";
 import { TalentTree } from "./talentTree";
 import { TimerReadout, TimerRing } from "./timerReadout";
-import { WaveHud } from "./waveHud";
+import { WaveHud } from "./hud/waveHud";
 
 // The widgets whose bars moved onto KitMeter and whose colours moved off the retired `--jg-bar-*`
 // tokens: each still renders, draws its meter through the kit, and reads no removed token.
@@ -55,7 +56,7 @@ describe("widgets on KitMeter", () => {
   });
 
   test("the stock HUD pieces and the chrome previews render", () => {
-    expect(render(<WaveBanner wave={2} subtitle="6 left" />)).toContain("6 left");
+    expect(render(<KitWaveClock text="Wave 2" detail="6 left" />)).toContain("6 left");
     render(<Crosshair />);
     expect(render(<HudChromePreview />)).toContain('role="meter"');
     expect(render(<HudSkinPreview />)).toContain("data-hud-skin-preview");

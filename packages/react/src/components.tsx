@@ -11,7 +11,7 @@ import type { StatLevelUpEvent } from "@jgengine/core/game/events";
 import { rollCheck, type CheckAdvantage, type CheckResult } from "@jgengine/core/stats/rollCheck";
 import { dialogueSlot } from "@jgengine/core/game/dialogue";
 import { useGameContext } from "./provider";
-import { useCurrency, useInventory, useLocalPlayerDead } from "./hooks";
+import { useInventory, useLocalPlayerDead } from "./hooks";
 import { useStore } from "./store";
 import { paintQteStepDom, paintSkillCheckDom } from "./skillCheckPaint";
 
@@ -39,15 +39,6 @@ export function SlotGrid({
         </div>
       ))}
     </div>
-  );
-}
-
-export function CurrencyPill({ currencyId, className }: { currencyId: string; className?: string }) {
-  const amount = useCurrency(currencyId);
-  return (
-    <span className={className} data-currency={currencyId}>
-      {amount}
-    </span>
   );
 }
 

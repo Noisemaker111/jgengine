@@ -1,7 +1,7 @@
 import { type CSSProperties, type ReactNode } from "react";
 
 import { GameIcon, iconForAction, iconForItemId, type GameIconName } from "./gameIcons";
-import { hudType } from "./hudTokens";
+import { hudType } from "./hud/hudTokens";
 
 /**
  * `IconTreatment` (#1035): a procedural painted-icon face — a glyph over a school-keyed radial

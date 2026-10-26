@@ -1,7 +1,7 @@
 import { useCurrency, useEntityStat, useGame, usePlayer } from "@jgengine/react/hooks";
 import { respecCost } from "../../commands";
 import { useStore } from "@jgengine/react/store";
-import { HudButton } from "@jgengine/react/hudButton";
+import { HudButton } from "@jgengine/react/hud/hudButton";
 import {
   activeCharacter,
   characterNodes,

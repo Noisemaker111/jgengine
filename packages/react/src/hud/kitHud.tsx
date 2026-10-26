@@ -1,9 +1,9 @@
 import type { ReactNode } from "react";
 
 import { HUD_CORNER_WIDTH } from "./hudLayout";
-import { KitBanner, KitObjective, type KitBannerProps } from "./kitFlow";
-import type { KitButtonProps, KitTone } from "./uiKit";
-import { KitButton, KitMeter, KitPanel } from "./uiKitRoot";
+import { KitBanner, KitObjective, type KitBannerProps } from "../kitFlow";
+import type { KitButtonProps, KitTone } from "../uiKit";
+import { KitButton, KitMeter, KitPanel } from "../uiKitRoot";
 
 /**
  * The play-HUD readouts every game repeats, drawn from the active UI kit's parts: resource counts,

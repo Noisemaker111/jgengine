@@ -8,7 +8,7 @@ import { summarizeWave } from "@jgengine/core/waves/wavePreview";
 import { abilityDef } from "../../combat/abilities";
 import { creepTraits } from "../../entities/enemies/catalog";
 import { FLANK_POINT_KEY } from "../../world/path";
-import { HudFade } from "@jgengine/react/hudLayout";
+import { HudFade } from "@jgengine/react/hud/hudLayout";
 
 import { keep } from "../../keep";
 import { TOTAL_WAVES } from "../../waves/manifest";

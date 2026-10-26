@@ -11,7 +11,7 @@ import {
   resolveLayoutMode,
   type LayoutRect,
   type LayoutRegion,
-} from "./gameLayout";
+} from "./hudPriority";
 
 const rect = (left: number, top: number, right: number, bottom: number): LayoutRect => ({ left, top, right, bottom });
 

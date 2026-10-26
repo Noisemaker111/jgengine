@@ -1,6 +1,6 @@
 import { describe, expect, test } from "bun:test";
 
-import { HudThemePreview } from "./hudThemePreview";
+import { HudThemePreview } from "./hud/hudThemePreview";
 import { IconsPreview } from "./iconsPreview";
 import { StreetGeometryPreview } from "./streetGeometryPreview";
 import {

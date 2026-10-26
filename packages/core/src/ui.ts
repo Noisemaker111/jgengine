@@ -2,6 +2,40 @@ export { formatDistance } from "./format/distance";
 export { formatDelta, formatDuration, formatOrdinal } from "./format/duration";
 export { formatSpeed } from "./format/speed";
 export {
+  listHudPanelTypes,
+  registerHudPanelType,
+  resizePanelSize,
+  resolveHudPanelLayout,
+  type EditorUiDocument,
+  type EditorUiPanelLayout,
+  type HudResizeAxes,
+} from "./hud/hudDocument";
+export {
+  HUD_ANCHOR_FRACTIONS,
+  type HudAnchor,
+  type HudLayoutStore,
+  type HudPlacement,
+  type HudSize,
+} from "./hud/hudLayout";
+export {
+  type GameLayoutMode,
+  type GameViewportLayout,
+  type HudPriority,
+  type Insets,
+  type LayoutCollision,
+  type LayoutCollisionPolicy,
+  type LayoutRect,
+  type LayoutRegion,
+  type MobileHudBehavior,
+} from "./hud/hudPriority";
+export {
+  hudScaleForViewport,
+  overflowingPanels,
+  resolveHudFit,
+  type HudPlatform,
+  type HudViewportConfig,
+} from "./hud/hudScale";
+export {
   createI18n,
   interpolate,
   type Catalog,
@@ -81,40 +115,6 @@ export {
   type CoachMarkStep,
   type CoachMarkView,
 } from "./ui/coachMarks";
-export {
-  type GameLayoutMode,
-  type GameViewportLayout,
-  type HudPriority,
-  type Insets,
-  type LayoutCollision,
-  type LayoutCollisionPolicy,
-  type LayoutRect,
-  type LayoutRegion,
-  type MobileHudBehavior,
-} from "./ui/gameLayout";
-export {
-  listHudPanelTypes,
-  registerHudPanelType,
-  resizePanelSize,
-  resolveHudPanelLayout,
-  type EditorUiDocument,
-  type EditorUiPanelLayout,
-  type HudResizeAxes,
-} from "./ui/hudDocument";
-export {
-  HUD_ANCHOR_FRACTIONS,
-  type HudAnchor,
-  type HudLayoutStore,
-  type HudPlacement,
-  type HudSize,
-} from "./ui/hudLayout";
-export {
-  hudScaleForViewport,
-  overflowingPanels,
-  resolveHudFit,
-  type HudPlatform,
-  type HudViewportConfig,
-} from "./ui/hudScale";
 export {
   MENU_KEY_INTENTS,
   menuIntentForKey,

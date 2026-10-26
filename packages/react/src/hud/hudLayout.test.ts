@@ -2,8 +2,8 @@ import { describe, expect, test } from "bun:test";
 import { createElement, type ReactNode } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 
-import { anchoredPlacement, type HudLayoutStore } from "@jgengine/core/ui/hudLayout";
-import type { EditorUiPanelLayout } from "@jgengine/core/ui/hudDocument";
+import { anchoredPlacement, type HudLayoutStore } from "@jgengine/core/hud/hudLayout";
+import type { EditorUiPanelLayout } from "@jgengine/core/hud/hudDocument";
 
 import { hudVisibleInPhase, useHudLayout } from "./hudLayout";
 import { HudLayoutPersistProvider } from "./hudLayoutPersist";

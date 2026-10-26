@@ -6,7 +6,7 @@ import { createMarkerSet } from "@jgengine/core/world/markers";
 import { resolveActionCollection } from "@jgengine/core/ui/actionModel";
 
 import { ActionBar, ActionButton } from "./actionHud";
-import { Minimap } from "./map";
+import { Minimap } from "../map";
 
 /**
  * #1034 acceptance: one HudTheme drives bars + frames + action slots + minimap ring. The bars/frames

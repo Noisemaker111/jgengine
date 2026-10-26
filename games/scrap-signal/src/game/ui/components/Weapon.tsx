@@ -1,6 +1,6 @@
 import type { CSSProperties } from "react";
 import { GameIcon } from "@jgengine/react/gameIcons";
-import { HudFade } from "@jgengine/react/hudLayout";
+import { HudFade } from "@jgengine/react/hud/hudLayout";
 import { useEntityStat, useGameStore, useInventory, usePlayer } from "@jgengine/react/hooks";
 import { useGameContext } from "@jgengine/react/provider";
 import { useStore } from "@jgengine/react/store";

@@ -1,4 +1,4 @@
-import { HudFade } from "@jgengine/react/hudLayout";
+import { HudFade } from "@jgengine/react/hud/hudLayout";
 import { useCurrency, useEntityStat, usePlayer } from "@jgengine/react/hooks";
 import { money } from "../fiction/kit";
 

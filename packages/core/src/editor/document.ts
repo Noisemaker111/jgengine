@@ -3,7 +3,7 @@ import { parseMaterialAssignments, validateMaterialAsset, validateMaterialAssign
 import { authoredHiddenNodes } from "./modelNodeVisibility";
 import { parseStaticPrefabBake } from "./staticPrefab";
 import type { ParamField, ParamSchema } from "../scene/sceneKinds";
-import { cloneEditorUiDocument, decodeEditorUiDocument } from "../ui/hudDocument";
+import { cloneEditorUiDocument, decodeEditorUiDocument } from "../hud/hudDocument";
 import { migrateTerrainSnapshot } from "../world/terraform";
 import {
   cloneGridLayer,

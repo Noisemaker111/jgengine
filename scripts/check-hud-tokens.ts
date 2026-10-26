@@ -6,7 +6,7 @@
 import { readdirSync, readFileSync, statSync } from "node:fs";
 import { join } from "node:path";
 
-import { defaultHudTheme, hudThemeVars } from "../packages/react/src/hudTheme";
+import { defaultHudTheme, hudThemeVars } from "../packages/react/src/hud/hudTheme";
 
 /** Tokens that are deliberately not theme values. */
 const NON_THEME = [
@@ -67,7 +67,7 @@ if (failures.length > 0) {
   console.error("check-hud-tokens: unthemed --jg-* tokens\n");
   for (const failure of failures) console.error(`  ${failure}`);
   console.error(
-    `\nAdd the token to HudTheme + hudThemeVars (packages/react/src/hudTheme.ts), or list it in NON_THEME` +
+    `\nAdd the token to HudTheme + hudThemeVars (packages/react/src/hud/hudTheme.ts), or list it in NON_THEME` +
       ` with a theme-token fallback at the read site.\nFix: bun scripts/check-hud-tokens.ts`,
   );
   process.exit(1);

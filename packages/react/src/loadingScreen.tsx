@@ -3,7 +3,7 @@ import { useEffect, useMemo, useState, type CSSProperties, type ReactNode } from
 import { createTipRotation, type TipRotation } from "@jgengine/core/ui/loadingTips";
 import { menuIntentForKey } from "@jgengine/core/ui/menuNav";
 
-import { hudSpace, hudType } from "./hudTokens";
+import { hudSpace, hudType } from "./hud/hudTokens";
 import { useMenuNav } from "./menuNav";
 import { MenuScreen, type MenuScreenScrim } from "./menuScreen";
 

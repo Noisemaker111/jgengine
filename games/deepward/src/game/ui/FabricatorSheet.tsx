@@ -1,6 +1,6 @@
 import type { useDialogBehavior } from "@jgengine/react";
-import { HudButton } from "@jgengine/react/hudButton";
-import { HudSurface } from "@jgengine/react/hudSurface";
+import { HudButton } from "@jgengine/react/hud/hudButton";
+import { HudSurface } from "@jgengine/react/hud/hudSurface";
 import type { WorldModel } from "@jgengine/core/worldModel/worldModel";
 import { BAYS } from "../../world";
 import { ITEMS, type ItemKind } from "../state";

@@ -26,7 +26,7 @@ import type { TouchControlsConfig } from "../input/touchScheme";
 import type { GameSettingsConfig } from "../settings/settingsModel";
 import type { GraphicsProfile } from "../settings/graphicsProfile";
 import type { GameOrientation } from "../ui/orientation";
-import type { HudPlatform, HudViewportConfig } from "../ui/hudScale";
+import type { HudPlatform, HudViewportConfig } from "../hud/hudScale";
 import type { PositionedPrompt } from "../interaction/proximityPrompt";
 import type { ChaseCameraTuning } from "../runtime/cameraDirector";
 import type { CatalogEntityRole, GameContext, GameContextContent } from "../runtime/gameContext";

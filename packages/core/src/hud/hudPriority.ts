@@ -5,7 +5,7 @@
  * instead of each independently claiming an edge. Pure math — no DOM, no React.
  */
 
-import type { LayoutOrientation } from "./orientation";
+import type { LayoutOrientation } from "../ui/orientation";
 
 /** The explicit composition mode a game renders for — not a scaled desktop layout. */
 export type GameLayoutMode = "desktop-wide" | "desktop-compact" | "mobile-landscape" | "mobile-portrait";

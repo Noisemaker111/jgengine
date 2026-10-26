@@ -11,7 +11,7 @@ import {
   TEXT_SCALE_OPTIONS,
 } from "@jgengine/core/settings/accessibilitySettings";
 import { useAccessibilitySettings, useHoldVsToggle } from "@jgengine/react/accessibilitySettings";
-import { HudThemeRoot } from "@jgengine/react/hudThemeRoot";
+import { HudThemeRoot } from "@jgengine/react/hud/hudThemeRoot";
 import { useSettingsStore } from "@jgengine/react/settings";
 
 import { EnvironmentScene } from "@jgengine/shell/environment/EnvironmentScene";

@@ -3,7 +3,7 @@ import { useEffect, useReducer, type CSSProperties, type ReactNode } from "react
 import type { CameraShakeController } from "@jgengine/core/camera/shake/cameraShake";
 
 import { KitMeter } from "../../uiKitRoot";
-import { HudFrame, type HudFrameVariation } from "../../hudFrame";
+import { HudFrame, type HudFrameVariation } from "../../hud/hudFrame";
 
 /** A live read of a camera-shake controller: current trauma `0..1` and the last game-owned `kind`. */
 export interface CameraShakeReadout {

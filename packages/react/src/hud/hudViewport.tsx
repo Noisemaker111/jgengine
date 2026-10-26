@@ -1,5 +1,5 @@
 import { createContext, useContext, useMemo, type ReactNode } from "react";
-import type { HudPlatform, HudViewportConfig } from "@jgengine/core/ui/hudScale";
+import type { HudPlatform, HudViewportConfig } from "@jgengine/core/hud/hudScale";
 
 export interface HudViewportContextValue {
   /** True unless the game's `platforms` explicitly excludes `"mobile"` — the HUD auto-fits the design resolution to the live viewport. */

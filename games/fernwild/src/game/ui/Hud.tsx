@@ -3,7 +3,7 @@ import { resolveActivePrompt } from "@jgengine/core/interaction/proximityPrompt"
 import { useGameStore } from "@jgengine/react/hooks";
 import { useGameContext } from "@jgengine/react/provider";
 import { KitResultScreen } from "@jgengine/react/kitFlow";
-import { KitActionBar, KitCount, KitCounts, KitVitals, KitWaveClock } from "@jgengine/react/kitHud";
+import { KitActionBar, KitCount, KitCounts, KitVitals, KitWaveClock } from "@jgengine/react/hud/kitHud";
 import { KitActionPrompt, KitPanel } from "@jgengine/react/uiKitRoot";
 import { HudSlots } from "@jgengine/shell/gameKit";
 

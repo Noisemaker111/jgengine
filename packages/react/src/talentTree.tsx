@@ -9,8 +9,8 @@ import {
 } from "@jgengine/core/game/talentTreeView";
 
 import { GameIcon, iconForAction, iconForItemId, isGameIconName, type GameIconName } from "./gameIcons";
-import { HudFrame, type HudFrameVariation } from "./hudFrame";
-import { hudType } from "./hudTokens";
+import { HudFrame, type HudFrameVariation } from "./hud/hudFrame";
+import { hudType } from "./hud/hudTokens";
 
 /** How a node id resolves to display art: a built-in {@link GameIconName}, any node, or `null` for the default. */
 export type TalentIcon = GameIconName | ReactNode | null;
