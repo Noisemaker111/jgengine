@@ -1,0 +1,2390 @@
+diff --git a/.claude/skills/jgengine-ui/capabilities.md b/.claude/skills/jgengine-ui/capabilities.md
+index 53ee0379c..02de5ddba 100644
+--- a/.claude/skills/jgengine-ui/capabilities.md
++++ b/.claude/skills/jgengine-ui/capabilities.md
+@@ -473,11 +473,11 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
+ 
+ ## instance-chunks — split a big instanced batch into spatial cells that cull as units
+ 
+-- `partitionInstances` (function) · `import { partitionInstances } from "@jgengine/shell/instancing/instanceChunks"`
++- `partitionInstances` (function) · `import { partitionInstances } from "@jgengine/core/instancing/instanceChunks.draw"`
+ 
+ ## instance-upload — write transforms, colors, count and culling bounds into one instanced draw
+ 
+-- `uploadInstances` (function) · `import { uploadInstances } from "@jgengine/shell/instancing/instanceUpload"`
++- `uploadInstances` (function) · `import { uploadInstances } from "@jgengine/core/instancing/instanceUpload.draw"`
+ 
+ ## interaction-prompt-host — screen-anchored "press E to…" callout rendering a prompt registry's active interactable — keybind cap+label, gauge hold bar, or plain label, theme- and per-prompt-accent skinnable
+ 
+@@ -969,7 +969,7 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
+ 
+ ## static-shape-instances — render authored primitive transforms as static material-compatible instance batches
+ 
+-- `StaticShapeInstances` (function) · `import { StaticShapeInstances } from "@jgengine/shell/instancing/staticShapeInstances"`
++- `StaticShapeInstances` (function) · `import { StaticShapeInstances } from "@jgengine/core/instancing/staticShapeInstances.draw"`
+ 
+ ## static-transforms — static-transforms
+ 
+diff --git a/.claude/skills/jgengine-world/reference.md b/.claude/skills/jgengine-world/reference.md
+index ab6b7c417..abd825560 100644
+--- a/.claude/skills/jgengine-world/reference.md
++++ b/.claude/skills/jgengine-world/reference.md
+@@ -121,7 +121,7 @@ Pure `@jgengine/core` functions so gameplay reads the same world the shell rende
+ 
+ **Voxel field (`world/voxelField`).** `createVoxelField<T extends string>({ chunkSize? })` (default 16) is a logical block lattice for voxel games and instanced renderers — distinct from the `voxel()` `WorldFeature` descriptor above (that's the runner-level world kind; this is the block data structure a voxel game's gameplay reads and writes). `set`/`remove`/`get`/`has`/`fill`/`clear`/`count`/`cells`/`bounds` are the block CRUD (`set` returns `false` only when the identical type is already there — a no-op write). `neighbors(x, y, z)` returns the 6-adjacent occupied cells; `exposedFaces(x, y, z)` returns the `VoxelFace`s (`"px"|"nx"|"py"|"ny"|"pz"|"nz"`) not touching another voxel — feed that straight into greedy-meshing/face-culling. `raycast(origin, direction, maxDistance)` runs a 3D DDA and returns `{ x, y, z, type, face, adjacent, distance }`, where `adjacent` is the empty cell just in front of the hit — the placement target for block-place tools. Renderers dirty-track via `chunkOf(x, y, z)` + `chunkVersion(chunk)` and `subscribe(listener)`, so an instanced mesh only rebuilds the chunks that changed. For a non-`environment()` voxel world, assert on `field.summary()` (`{ blocks, types, bounds }`) the same way an `environment()` world asserts on `summarizeEnvironment` (see `jgengine-verify`).
+ 
+-**Destructible terrain (`world/carve`).** Two runtime-editable primitives for dig/carve worlds. `VoxelVolume` is a dense grid of material ids (0 = empty) — `carve({ center, radius, toolStrength })` clears a sphere of solid cells the tool is strong enough to break and returns the count removed (feed a loot roll), `deposit({ center, radius, material })` fills one (Deep Rock tunnels, Astroneer terrain add); `solidAtWorld` reads it back for collision. `CarvableField` (via `carvableTerrain(base)`) wraps any `TerrainField` and writes craters/mounds into its height — `carve({ x, z, radius, depth })`/`deposit({ x, z, radius, height })` — so ground-snap, collision, and the shell mesh all read the deformed surface (Helldivers 2 explosion craters). Cell strengths come from a `VoxelMaterial` table (DATA). Renders through `@jgengine/shell/terrain/CarvedTerrain`.
++**Destructible terrain (`world/carve`).** Two runtime-editable primitives for dig/carve worlds. `VoxelVolume` is a dense grid of material ids (0 = empty) — `carve({ center, radius, toolStrength })` clears a sphere of solid cells the tool is strong enough to break and returns the count removed (feed a loot roll), `deposit({ center, radius, material })` fills one (Deep Rock tunnels, Astroneer terrain add); `solidAtWorld` reads it back for collision. `CarvableField` (via `carvableTerrain(base)`) wraps any `TerrainField` and writes craters/mounds into its height — `carve({ x, z, radius, depth })`/`deposit({ x, z, radius, height })` — so ground-snap, collision, and the shell mesh all read the deformed surface (Helldivers 2 explosion craters). Cell strengths come from a `VoxelMaterial` table (DATA). Renders through `@jgengine/core/terrain/CarvedTerrain.draw`.
+ 
+ Renderers for these descriptors live in `@jgengine/shell` (`shell/terrain`, `shell/water`, `shell/weather`, `shell/structures`).
+ 
+@@ -459,7 +459,7 @@ For custom audio hosts, `createVoiceAllocator` (`@jgengine/core/audio/voiceAlloc
+ Cancelled or stolen pending cues never create a late source. Natural sample/synth completion, failed loads, explicit stops, and engine teardown release reservations and disconnect source, filters, per-cue gains, and panners. Mocked graph tests establish routing and lifecycle; they do not establish audible quality.
+ 
+ 
+-Custom authored primitive renderers use `StaticShapeInstances` (`@jgengine/shell/instancing/staticShapeInstances`) with document-derived box/cylinder transforms and caller-owned `AuthoredSurfaceConfig`. Boxes span one unit; cylinders use unit radius/height. Grouping includes maps, sampler settings, PBR/rim values, tessellation and shadow policy. Updates upload matrices and recompute conservative bounds; positive finite scale is required. Bounds include an affine-parent safety factor, so culling may retain extra geometry. Generator markers (including Field Station's authored bookcase) consume this seam automatically without changing generator data or material defaults.
++Custom authored primitive renderers use `StaticShapeInstances` (`@jgengine/core/instancing/staticShapeInstances.draw`) with document-derived box/cylinder transforms and caller-owned `AuthoredSurfaceConfig`. Boxes span one unit; cylinders use unit radius/height. Grouping includes maps, sampler settings, PBR/rim values, tessellation and shadow policy. Updates upload matrices and recompute conservative bounds; positive finite scale is required. Bounds include an affine-parent safety factor, so culling may retain extra geometry. Generator markers (including Field Station's authored bookcase) consume this seam automatically without changing generator data or material defaults.
+ 
+ Interiors dress from their room footprints: `planInteriorDressing(rects, { seed, floorY, ceilingY, density?, keepClear?, trims?, panels?, pipes?, cables?, decals?, fixtures?, clutter?, debris? })` (`@jgengine/core/world/interiorDressing`) returns trims, wainscot panels and hatches, pipes, fittings, cables (some run down to the floor), stains, paper, soot, wall lamps (some `dead` or `flicker`), clutter slots and small debris slots along walls, in inside corners and in the open, each family tunable or `false`. `density` scales clutter, decals, debris and cables together for a busier or barer floor; a `keepClear` circle with `mark: true` gets hazard stripes. Doorways between touching rects get no wall. Clutter slots keep `passage` metres open in front, skip `keepClear` circles and carry a deterministic `pick` the game maps to its own props (GPU-instance them with `InstancedScatter` and a `resolveItem`). The shell's `InteriorDressing` draws a plan with caller-owned `AuthoredSurfaceConfig` per family; `PracticalLights` lights the `count` lamps nearest the camera, `shadowed` of them with shadows, a pool fixed for its life so shaders never recompile. For indoor air, set `postProcessing.atmosphere: { indoor: true, fogDensity, lamps, beams? }`: the haze is coloured by the scene fog and each nearby lamp glows in it; `beams` (0..1) stretches a spot light's glow down its cone, so downward ceiling spots throw visible shafts and pools with dark gaps between.
+ 
+diff --git a/apps/dev/src/demo/accessibilityDemo.tsx b/apps/dev/src/demo/accessibilityDemo.tsx
+index 6a980f396..aa8344f39 100644
+--- a/apps/dev/src/demo/accessibilityDemo.tsx
++++ b/apps/dev/src/demo/accessibilityDemo.tsx
+@@ -14,7 +14,7 @@ import { useAccessibilitySettings, useHoldVsToggle } from "@jgengine/core/settin
+ import { HudThemeRoot } from "@jgengine/core/hud/hudThemeRoot.view";
+ import { useSettingsStore } from "@jgengine/core/settings/settings.view";
+ 
+-import { EnvironmentScene } from "@jgengine/shell/environment/EnvironmentScene";
++import { EnvironmentScene } from "@jgengine/core/environment/EnvironmentScene.draw";
+ import type { PlayableGame } from "@jgengine/shell/registry";
+ 
+ const SCOUT = "scout";
+diff --git a/apps/dev/src/demo/ambienceDemo.tsx b/apps/dev/src/demo/ambienceDemo.tsx
+index ae0d680ce..69033b04a 100644
+--- a/apps/dev/src/demo/ambienceDemo.tsx
++++ b/apps/dev/src/demo/ambienceDemo.tsx
+@@ -7,7 +7,7 @@ import { createAssetCatalog } from "@jgengine/core/scene/assetCatalog";
+ import { environment, grass, terrain } from "@jgengine/core/world/features";
+ import { useGameContext } from "@jgengine/react/provider";
+ 
+-import { EnvironmentScene } from "@jgengine/shell/environment/EnvironmentScene";
++import { EnvironmentScene } from "@jgengine/core/environment/EnvironmentScene.draw";
+ import type { AudioProbe } from "@jgengine/core/audio/audioProbe.view";
+ import type { PlayableGame } from "@jgengine/shell/registry";
+ 
+diff --git a/apps/dev/src/demo/builderDemo.tsx b/apps/dev/src/demo/builderDemo.tsx
+index bc9675d35..59f4df65c 100644
+--- a/apps/dev/src/demo/builderDemo.tsx
++++ b/apps/dev/src/demo/builderDemo.tsx
+@@ -21,8 +21,8 @@ import { placeAssetFromCommit, toStructureInput } from "@jgengine/core/placement
+ import type { TerraformMode } from "@jgengine/core/terrain/terraform";
+ 
+ import { createPointerService } from "@jgengine/core/input/pointerService.draw";
+-import { EditableGround } from "@jgengine/shell/terrain/EditableGround";
+-import { TerraformBrushCursor } from "@jgengine/shell/terrain/TerraformBrushCursor";
++import { EditableGround } from "@jgengine/core/terrain/EditableGround.draw";
++import { TerraformBrushCursor } from "@jgengine/core/terrain/TerraformBrushCursor.draw";
+ import { PlacementGhost } from "@jgengine/core/placement/PlacementGhost.draw";
+ import { TransformGizmo } from "@jgengine/core/placement/TransformGizmo.draw";
+ import type { PlayableGame } from "@jgengine/shell/registry";
+diff --git a/apps/dev/src/demo/cameraShakeDemo.tsx b/apps/dev/src/demo/cameraShakeDemo.tsx
+index 20c8422e7..d42e03c49 100644
+--- a/apps/dev/src/demo/cameraShakeDemo.tsx
++++ b/apps/dev/src/demo/cameraShakeDemo.tsx
+@@ -7,7 +7,7 @@ import { environment, grass, terrain } from "@jgengine/core/world/features";
+ import { CameraShakeMeter } from "@jgengine/core/camera/shake/cameraShake.view";
+ 
+ import { defaultCameraShake } from "@jgengine/shell/camera";
+-import { EnvironmentScene } from "@jgengine/shell/environment/EnvironmentScene";
++import { EnvironmentScene } from "@jgengine/core/environment/EnvironmentScene.draw";
+ import type { PlayableGame } from "@jgengine/shell/registry";
+ 
+ const HERO = "hero";
+diff --git a/apps/dev/src/demo/coachMarksDemo.tsx b/apps/dev/src/demo/coachMarksDemo.tsx
+index 4213ef3d4..b94f600c6 100644
+--- a/apps/dev/src/demo/coachMarksDemo.tsx
++++ b/apps/dev/src/demo/coachMarksDemo.tsx
+@@ -7,7 +7,7 @@ import { createAssetCatalog } from "@jgengine/core/scene/assetCatalog";
+ import { environment, grass, terrain } from "@jgengine/core/world/features";
+ import { CoachMarkHost } from "@jgengine/core/ui/coachMarks.view";
+ 
+-import { EnvironmentScene } from "@jgengine/shell/environment/EnvironmentScene";
++import { EnvironmentScene } from "@jgengine/core/environment/EnvironmentScene.draw";
+ import type { PlayableGame } from "@jgengine/shell/registry";
+ 
+ const SCOUT = "scout";
+diff --git a/apps/dev/src/demo/codexDemo.tsx b/apps/dev/src/demo/codexDemo.tsx
+index 03cc4d96e..572375fe5 100644
+--- a/apps/dev/src/demo/codexDemo.tsx
++++ b/apps/dev/src/demo/codexDemo.tsx
+@@ -7,7 +7,7 @@ import { createAssetCatalog } from "@jgengine/core/scene/assetCatalog";
+ import { environment, grass, terrain } from "@jgengine/core/world/features";
+ import { CodexPanel } from "@jgengine/core/codex/codex.view";
+ 
+-import { EnvironmentScene } from "@jgengine/shell/environment/EnvironmentScene";
++import { EnvironmentScene } from "@jgengine/core/environment/EnvironmentScene.draw";
+ import type { PlayableGame } from "@jgengine/shell/registry";
+ 
+ const SCOUT = "scout";
+diff --git a/apps/dev/src/demo/colorPipelineDemo.tsx b/apps/dev/src/demo/colorPipelineDemo.tsx
+index 2f46db8a7..dd316a8eb 100644
+--- a/apps/dev/src/demo/colorPipelineDemo.tsx
++++ b/apps/dev/src/demo/colorPipelineDemo.tsx
+@@ -3,7 +3,7 @@ import { type ReactNode } from "react";
+ import { importEditorDocumentJson } from "@jgengine/core/editor/document";
+ import type { EditorDocument } from "@jgengine/core/editor/index";
+ import { environment, sky, terrain } from "@jgengine/core/world/features";
+-import { EnvironmentScene } from "@jgengine/shell/environment/EnvironmentScene";
++import { EnvironmentScene } from "@jgengine/core/environment/EnvironmentScene.draw";
+ import type { PlayableGame } from "@jgengine/shell/registry";
+ 
+ import { demoGame } from "./demoGame";
+diff --git a/apps/dev/src/demo/comboMeterDemo.tsx b/apps/dev/src/demo/comboMeterDemo.tsx
+index 4044c983b..88c22efbc 100644
+--- a/apps/dev/src/demo/comboMeterDemo.tsx
++++ b/apps/dev/src/demo/comboMeterDemo.tsx
+@@ -7,7 +7,7 @@ import { createAssetCatalog } from "@jgengine/core/scene/assetCatalog";
+ import { environment, grass, terrain } from "@jgengine/core/world/features";
+ import { ComboMeterHud } from "@jgengine/core/hud/comboMeter.view";
+ 
+-import { EnvironmentScene } from "@jgengine/shell/environment/EnvironmentScene";
++import { EnvironmentScene } from "@jgengine/core/environment/EnvironmentScene.draw";
+ import type { PlayableGame } from "@jgengine/shell/registry";
+ 
+ const HERO = "hero";
+diff --git a/apps/dev/src/demo/countdownTimerDemo.tsx b/apps/dev/src/demo/countdownTimerDemo.tsx
+index 3b43f5a1a..72b7f6858 100644
+--- a/apps/dev/src/demo/countdownTimerDemo.tsx
++++ b/apps/dev/src/demo/countdownTimerDemo.tsx
+@@ -7,7 +7,7 @@ import { createTimerSet } from "@jgengine/core/time/timerSet";
+ import { environment, grass, terrain } from "@jgengine/core/world/features";
+ import { TimerReadout, TimerRing } from "@jgengine/core/time/timerReadout.view";
+ 
+-import { EnvironmentScene } from "@jgengine/shell/environment/EnvironmentScene";
++import { EnvironmentScene } from "@jgengine/core/environment/EnvironmentScene.draw";
+ import type { PlayableGame } from "@jgengine/shell/registry";
+ 
+ const RUNNER = "runner";
+diff --git a/apps/dev/src/demo/crowdDemo.tsx b/apps/dev/src/demo/crowdDemo.tsx
+index bf2d2acb3..9e67571f7 100644
+--- a/apps/dev/src/demo/crowdDemo.tsx
++++ b/apps/dev/src/demo/crowdDemo.tsx
+@@ -11,7 +11,7 @@ import { useLoader } from "@react-three/fiber";
+ import { useEffect, useMemo } from "react";
+ import * as THREE from "three";
+ 
+-import { EnvironmentScene } from "@jgengine/shell/environment/EnvironmentScene";
++import { EnvironmentScene } from "@jgengine/core/environment/EnvironmentScene.draw";
+ import { sharedGltfLoader } from "@jgengine/shell/render/modelLoad";
+ import type { PlayableGame } from "@jgengine/shell/registry";
+ import { SkinnedInstances, type CrowdInstance } from "@jgengine/shell/render/SkinnedInstances";
+diff --git a/apps/dev/src/demo/cutsceneDemo.tsx b/apps/dev/src/demo/cutsceneDemo.tsx
+index fc7505f84..a8c9415e0 100644
+--- a/apps/dev/src/demo/cutsceneDemo.tsx
++++ b/apps/dev/src/demo/cutsceneDemo.tsx
+@@ -7,7 +7,7 @@ import { createAssetCatalog } from "@jgengine/core/scene/assetCatalog";
+ import { environment, grass, terrain } from "@jgengine/core/world/features";
+ import { CutsceneLetterbox, useSequenceDirector } from "@jgengine/core/cutscene/cutscene.view";
+ 
+-import { EnvironmentScene } from "@jgengine/shell/environment/EnvironmentScene";
++import { EnvironmentScene } from "@jgengine/core/environment/EnvironmentScene.draw";
+ import type { PlayableGame } from "@jgengine/shell/registry";
+ 
+ const HERO = "hero";
+diff --git a/apps/dev/src/demo/damageDirectionDemo.tsx b/apps/dev/src/demo/damageDirectionDemo.tsx
+index 564a4f78b..27631bb9d 100644
+--- a/apps/dev/src/demo/damageDirectionDemo.tsx
++++ b/apps/dev/src/demo/damageDirectionDemo.tsx
+@@ -7,7 +7,7 @@ import { createAssetCatalog } from "@jgengine/core/scene/assetCatalog";
+ import { environment, grass, terrain } from "@jgengine/core/world/features";
+ import { DamageDirectionOverlay } from "@jgengine/core/combat/damage/damageDirection.view";
+ 
+-import { EnvironmentScene } from "@jgengine/shell/environment/EnvironmentScene";
++import { EnvironmentScene } from "@jgengine/core/environment/EnvironmentScene.draw";
+ import type { PlayableGame } from "@jgengine/shell/registry";
+ 
+ const TARGET = "target";
+diff --git a/apps/dev/src/demo/dayNightDemo.tsx b/apps/dev/src/demo/dayNightDemo.tsx
+index 1bce1e5f9..2280ea323 100644
+--- a/apps/dev/src/demo/dayNightDemo.tsx
++++ b/apps/dev/src/demo/dayNightDemo.tsx
+@@ -7,7 +7,7 @@ import { createDayNightCycle, type DayNightKeyframe } from "@jgengine/core/sky/d
+ import { environment, grass, sky, terrain } from "@jgengine/core/world/features";
+ 
+ import { Sky } from "@jgengine/shell/sky/Daylight";
+-import { EnvironmentScene } from "@jgengine/shell/environment/EnvironmentScene";
++import { EnvironmentScene } from "@jgengine/core/environment/EnvironmentScene.draw";
+ import type { PlayableGame } from "@jgengine/shell/registry";
+ 
+ const WANDERER = "wanderer";
+diff --git a/apps/dev/src/demo/dialogueDemo.tsx b/apps/dev/src/demo/dialogueDemo.tsx
+index 1e529e67e..ae5222c3c 100644
+--- a/apps/dev/src/demo/dialogueDemo.tsx
++++ b/apps/dev/src/demo/dialogueDemo.tsx
+@@ -7,7 +7,7 @@ import type { GameContext, GameContextEntityEntry } from "@jgengine/core/runtime
+ import { environment, grass, terrain } from "@jgengine/core/world/features";
+ import { DialogueView } from "@jgengine/core/dialogue/dialogueView.view";
+ 
+-import { EnvironmentScene } from "@jgengine/shell/environment/EnvironmentScene";
++import { EnvironmentScene } from "@jgengine/core/environment/EnvironmentScene.draw";
+ import type { PlayableGame } from "@jgengine/shell/registry";
+ 
+ const TRAVELER = "traveler";
+diff --git a/apps/dev/src/demo/environmentShowcase.tsx b/apps/dev/src/demo/environmentShowcase.tsx
+index a332aa96d..a62a6a4a2 100644
+--- a/apps/dev/src/demo/environmentShowcase.tsx
++++ b/apps/dev/src/demo/environmentShowcase.tsx
+@@ -7,7 +7,7 @@ import {
+   terrain,
+ } from "@jgengine/core/world/features";
+ 
+-import { EnvironmentScene } from "@jgengine/shell/environment/EnvironmentScene";
++import { EnvironmentScene } from "@jgengine/core/environment/EnvironmentScene.draw";
+ import type { PlayableGame } from "@jgengine/shell/registry";
+ import { demoGame } from "./demoGame";
+ 
+diff --git a/apps/dev/src/demo/fastTravelDemo.tsx b/apps/dev/src/demo/fastTravelDemo.tsx
+index a9feadb23..3700ec2c1 100644
+--- a/apps/dev/src/demo/fastTravelDemo.tsx
++++ b/apps/dev/src/demo/fastTravelDemo.tsx
+@@ -7,7 +7,7 @@ import { createFastTravelNetwork } from "@jgengine/core/world/fastTravel";
+ import { environment, grass, terrain } from "@jgengine/core/world/features";
+ import { FastTravelMenu } from "@jgengine/react/fastTravel";
+ 
+-import { EnvironmentScene } from "@jgengine/shell/environment/EnvironmentScene";
++import { EnvironmentScene } from "@jgengine/core/environment/EnvironmentScene.draw";
+ import type { PlayableGame } from "@jgengine/shell/registry";
+ 
+ const WANDERER = "wanderer";
+diff --git a/apps/dev/src/demo/feelAudioDemo.tsx b/apps/dev/src/demo/feelAudioDemo.tsx
+index ab9aff474..09c912c5d 100644
+--- a/apps/dev/src/demo/feelAudioDemo.tsx
++++ b/apps/dev/src/demo/feelAudioDemo.tsx
+@@ -12,7 +12,7 @@ import { useGame } from "@jgengine/react/hooks";
+ import { useGameContext } from "@jgengine/react/provider";
+ import { useSettingsStore } from "@jgengine/core/settings/settings.view";
+ 
+-import { EnvironmentScene } from "@jgengine/shell/environment/EnvironmentScene";
++import { EnvironmentScene } from "@jgengine/core/environment/EnvironmentScene.draw";
+ import type { PlayableGame } from "@jgengine/shell/registry";
+ 
+ const HERO = "hero";
+diff --git a/apps/dev/src/demo/floatingTextDemo.tsx b/apps/dev/src/demo/floatingTextDemo.tsx
+index bee515494..93b82ca9c 100644
+--- a/apps/dev/src/demo/floatingTextDemo.tsx
++++ b/apps/dev/src/demo/floatingTextDemo.tsx
+@@ -4,7 +4,7 @@ import { createAssetCatalog } from "@jgengine/core/scene/assetCatalog";
+ import { createFloatingTextField, type FloatingTextView } from "@jgengine/core/hud/floatingText";
+ import { environment, grass, terrain } from "@jgengine/core/world/features";
+ 
+-import { EnvironmentScene } from "@jgengine/shell/environment/EnvironmentScene";
++import { EnvironmentScene } from "@jgengine/core/environment/EnvironmentScene.draw";
+ import type { PlayableGame } from "@jgengine/shell/registry";
+ import { WorldFloatingText } from "@jgengine/shell/vfx/WorldFloatingText";
+ 
+diff --git a/apps/dev/src/demo/gameMenuDemo.tsx b/apps/dev/src/demo/gameMenuDemo.tsx
+index f0e4a3378..8428455f2 100644
+--- a/apps/dev/src/demo/gameMenuDemo.tsx
++++ b/apps/dev/src/demo/gameMenuDemo.tsx
+@@ -13,7 +13,7 @@ import { ContinuePane, CreditsPane, GameMenu, PauseMenu, NewCharacterPane, SaveS
+ import { shrinkCapture } from "@jgengine/core/save/saveThumbnail.view";
+ import { useSettings } from "@jgengine/core/settings/settings.view";
+ import { SettingsSection, SettingsTabs } from "@jgengine/core/settings/settingsBlocks.view";
+-import { EnvironmentScene } from "@jgengine/shell/environment/EnvironmentScene";
++import { EnvironmentScene } from "@jgengine/core/environment/EnvironmentScene.draw";
+ import { SceneCaptureBinding } from "@jgengine/shell/render/sceneCapture";
+ import type { PlayableGame } from "@jgengine/shell/registry";
+ 
+diff --git a/apps/dev/src/demo/interactionPromptDemo.tsx b/apps/dev/src/demo/interactionPromptDemo.tsx
+index a6c1ee18f..4766a0222 100644
+--- a/apps/dev/src/demo/interactionPromptDemo.tsx
++++ b/apps/dev/src/demo/interactionPromptDemo.tsx
+@@ -13,7 +13,7 @@ import { environment, grass, terrain } from "@jgengine/core/world/features";
+ import { useGameStore, localPlayerEntity } from "@jgengine/react/hooks";
+ import { InteractionPrompt } from "@jgengine/core/interaction/interactionPrompt.view";
+ 
+-import { EnvironmentScene } from "@jgengine/shell/environment/EnvironmentScene";
++import { EnvironmentScene } from "@jgengine/core/environment/EnvironmentScene.draw";
+ import type { PlayableGame } from "@jgengine/shell/registry";
+ 
+ const HERO = "hero";
+diff --git a/apps/dev/src/demo/keyRebindingDemo.tsx b/apps/dev/src/demo/keyRebindingDemo.tsx
+index 3d0d32c41..8137707b5 100644
+--- a/apps/dev/src/demo/keyRebindingDemo.tsx
++++ b/apps/dev/src/demo/keyRebindingDemo.tsx
+@@ -7,7 +7,7 @@ import { createAssetCatalog } from "@jgengine/core/scene/assetCatalog";
+ import { environment, grass, terrain } from "@jgengine/core/world/features";
+ import { KeybindingMenu } from "@jgengine/core/settings/keybindingMenu.view";
+ 
+-import { EnvironmentScene } from "@jgengine/shell/environment/EnvironmentScene";
++import { EnvironmentScene } from "@jgengine/core/environment/EnvironmentScene.draw";
+ import type { PlayableGame } from "@jgengine/shell/registry";
+ 
+ const HERO = "hero";
+diff --git a/apps/dev/src/demo/killFeedDemo.tsx b/apps/dev/src/demo/killFeedDemo.tsx
+index 66a4ee935..6e46f7fe1 100644
+--- a/apps/dev/src/demo/killFeedDemo.tsx
++++ b/apps/dev/src/demo/killFeedDemo.tsx
+@@ -7,7 +7,7 @@ import { createAssetCatalog } from "@jgengine/core/scene/assetCatalog";
+ import { environment, grass, terrain } from "@jgengine/core/world/features";
+ import { KillFeed, type KillFeedKindStyle } from "@jgengine/core/feed/killFeed.view";
+ 
+-import { EnvironmentScene } from "@jgengine/shell/environment/EnvironmentScene";
++import { EnvironmentScene } from "@jgengine/core/environment/EnvironmentScene.draw";
+ import type { PlayableGame } from "@jgengine/shell/registry";
+ 
+ const HERO = "hero";
+diff --git a/apps/dev/src/demo/localizationDemo.tsx b/apps/dev/src/demo/localizationDemo.tsx
+index dd0dab8c4..d4458e228 100644
+--- a/apps/dev/src/demo/localizationDemo.tsx
++++ b/apps/dev/src/demo/localizationDemo.tsx
+@@ -7,7 +7,7 @@ import { createAssetCatalog } from "@jgengine/core/scene/assetCatalog";
+ import { environment, grass, terrain } from "@jgengine/core/world/features";
+ import { I18nProvider, useLocale, usePlural, useT } from "@jgengine/core/i18n/i18n.view";
+ 
+-import { EnvironmentScene } from "@jgengine/shell/environment/EnvironmentScene";
++import { EnvironmentScene } from "@jgengine/core/environment/EnvironmentScene.draw";
+ import type { PlayableGame } from "@jgengine/shell/registry";
+ 
+ const SCOUT = "scout";
+diff --git a/apps/dev/src/demo/mapDemo.tsx b/apps/dev/src/demo/mapDemo.tsx
+index cc4fc1bb6..e2e4fc2e0 100644
+--- a/apps/dev/src/demo/mapDemo.tsx
++++ b/apps/dev/src/demo/mapDemo.tsx
+@@ -24,7 +24,7 @@ import { createAnnotationLayer, type AnnotationLayer } from "@jgengine/core/worl
+ import { Compass, FullscreenMap, MapLegend, Minimap, WaypointArrow } from "@jgengine/react/map";
+ import { usePlayer, useRafLoop, useSceneEntities, useFeed } from "@jgengine/react/hooks";
+ 
+-import { EnvironmentScene } from "@jgengine/shell/environment/EnvironmentScene";
++import { EnvironmentScene } from "@jgengine/core/environment/EnvironmentScene.draw";
+ import { bakeTerrainMap, type BakedMap } from "@jgengine/shell/map/terrainMap";
+ import { MapMarkerBeacons } from "@jgengine/shell/map/MapMarkerBeacons";
+ import type { PlayableGame } from "@jgengine/shell/registry";
+diff --git a/apps/dev/src/demo/menuFrameworkDemo.tsx b/apps/dev/src/demo/menuFrameworkDemo.tsx
+index 99a18145a..8abc04fbe 100644
+--- a/apps/dev/src/demo/menuFrameworkDemo.tsx
++++ b/apps/dev/src/demo/menuFrameworkDemo.tsx
+@@ -18,7 +18,7 @@ import { SaveSlotsPane } from "@jgengine/core/menu/gameMenuSaves.view";
+ import { useSettings } from "@jgengine/core/settings/settings.view";
+ import { SettingsSection, SettingsTabs } from "@jgengine/core/settings/settingsBlocks.view";
+ import { GameMenu } from "@jgengine/core/menu/gameMenu.view";
+-import { EnvironmentScene } from "@jgengine/shell/environment/EnvironmentScene";
++import { EnvironmentScene } from "@jgengine/core/environment/EnvironmentScene.draw";
+ import type { PlayableGame } from "@jgengine/shell/registry";
+ 
+ const terrainFeature = environment({
+diff --git a/apps/dev/src/demo/notificationDemo.tsx b/apps/dev/src/demo/notificationDemo.tsx
+index 40e9ccfcf..ef2426308 100644
+--- a/apps/dev/src/demo/notificationDemo.tsx
++++ b/apps/dev/src/demo/notificationDemo.tsx
+@@ -7,7 +7,7 @@ import { createAssetCatalog } from "@jgengine/core/scene/assetCatalog";
+ import { environment, grass, terrain } from "@jgengine/core/world/features";
+ import { NotificationBell, NotificationCenter } from "@jgengine/core/notifications/notificationCenter.view";
+ 
+-import { EnvironmentScene } from "@jgengine/shell/environment/EnvironmentScene";
++import { EnvironmentScene } from "@jgengine/core/environment/EnvironmentScene.draw";
+ import type { PlayableGame } from "@jgengine/shell/registry";
+ 
+ const SCOUT = "scout";
+diff --git a/apps/dev/src/demo/objectiveBannerDemo.tsx b/apps/dev/src/demo/objectiveBannerDemo.tsx
+index 9a6bf45a0..7c6162219 100644
+--- a/apps/dev/src/demo/objectiveBannerDemo.tsx
++++ b/apps/dev/src/demo/objectiveBannerDemo.tsx
+@@ -7,7 +7,7 @@ import { createAssetCatalog } from "@jgengine/core/scene/assetCatalog";
+ import { environment, grass, terrain } from "@jgengine/core/world/features";
+ import { ObjectiveBannerHost, type ObjectiveBannerTheme } from "@jgengine/core/mission/objectiveBanner.view";
+ 
+-import { EnvironmentScene } from "@jgengine/shell/environment/EnvironmentScene";
++import { EnvironmentScene } from "@jgengine/core/environment/EnvironmentScene.draw";
+ import type { PlayableGame } from "@jgengine/shell/registry";
+ 
+ const HERO = "hero";
+diff --git a/apps/dev/src/demo/particleDemo.tsx b/apps/dev/src/demo/particleDemo.tsx
+index 03238c20d..8610a778d 100644
+--- a/apps/dev/src/demo/particleDemo.tsx
++++ b/apps/dev/src/demo/particleDemo.tsx
+@@ -4,7 +4,7 @@ import { createAssetCatalog } from "@jgengine/core/scene/assetCatalog";
+ import { createParticleSystem } from "@jgengine/core/vfx/particles";
+ import { environment, grass, terrain } from "@jgengine/core/world/features";
+ 
+-import { EnvironmentScene } from "@jgengine/shell/environment/EnvironmentScene";
++import { EnvironmentScene } from "@jgengine/core/environment/EnvironmentScene.draw";
+ import type { PlayableGame } from "@jgengine/shell/registry";
+ import { ParticleField } from "@jgengine/shell/vfx/ParticleField";
+ 
+diff --git a/apps/dev/src/demo/pauseMenuDemo.tsx b/apps/dev/src/demo/pauseMenuDemo.tsx
+index 367707486..1781e74a2 100644
+--- a/apps/dev/src/demo/pauseMenuDemo.tsx
++++ b/apps/dev/src/demo/pauseMenuDemo.tsx
+@@ -8,7 +8,7 @@ import { environment, grass, terrain } from "@jgengine/core/world/features";
+ import { PauseMenu } from "@jgengine/core/menu/pauseMenu.view";
+ import { ConfirmDialog, ModalHost } from "@jgengine/core/dialog/modals.view";
+ 
+-import { EnvironmentScene } from "@jgengine/shell/environment/EnvironmentScene";
++import { EnvironmentScene } from "@jgengine/core/environment/EnvironmentScene.draw";
+ import type { PlayableGame } from "@jgengine/shell/registry";
+ 
+ const HERO = "hero";
+diff --git a/apps/dev/src/demo/photoModeDemo.tsx b/apps/dev/src/demo/photoModeDemo.tsx
+index 24381345a..7f1c3a304 100644
+--- a/apps/dev/src/demo/photoModeDemo.tsx
++++ b/apps/dev/src/demo/photoModeDemo.tsx
+@@ -7,7 +7,7 @@ import { environment, grass, terrain } from "@jgengine/core/world/features";
+ import { createPhotoModeStore } from "@jgengine/core/ui/photoMode";
+ import { PhotoModeControls, usePhotoMode } from "@jgengine/core/ui/photoMode.view";
+ 
+-import { EnvironmentScene } from "@jgengine/shell/environment/EnvironmentScene";
++import { EnvironmentScene } from "@jgengine/core/environment/EnvironmentScene.draw";
+ import { SceneCaptureBinding, downloadImage } from "@jgengine/shell/render/sceneCapture";
+ import type { PlayableGame } from "@jgengine/shell/registry";
+ 
+diff --git a/apps/dev/src/demo/presentationRecoveryDemo.tsx b/apps/dev/src/demo/presentationRecoveryDemo.tsx
+index 5743856a0..2277aa6a2 100644
+--- a/apps/dev/src/demo/presentationRecoveryDemo.tsx
++++ b/apps/dev/src/demo/presentationRecoveryDemo.tsx
+@@ -6,7 +6,7 @@ import type { GameContext } from "@jgengine/core/runtime/gameContext";
+ import { playControlsActive } from "@jgengine/core/game/controlGate";
+ import { environment, terrain } from "@jgengine/core/world/features";
+ import { useGame, useGameContext, useGameStoreValue } from "@jgengine/react";
+-import { EnvironmentScene } from "@jgengine/shell/environment/EnvironmentScene";
++import { EnvironmentScene } from "@jgengine/core/environment/EnvironmentScene.draw";
+ import type { PlayableGame } from "@jgengine/shell/registry";
+ import { hostedAuthorityDemoGame } from "./hostedAuthorityDemo";
+ import type { AuthorityView } from "./hostedAuthority";
+diff --git a/apps/dev/src/demo/questDemo.tsx b/apps/dev/src/demo/questDemo.tsx
+index ecdfabb50..d7d1a522e 100644
+--- a/apps/dev/src/demo/questDemo.tsx
++++ b/apps/dev/src/demo/questDemo.tsx
+@@ -6,7 +6,7 @@ import { environment, grass, terrain } from "@jgengine/core/world/features";
+ import { QuestTracker } from "@jgengine/core/mission/questTracker.view";
+ import { usePlayer, useTicker } from "@jgengine/react/hooks";
+ 
+-import { EnvironmentScene } from "@jgengine/shell/environment/EnvironmentScene";
++import { EnvironmentScene } from "@jgengine/core/environment/EnvironmentScene.draw";
+ import type { PlayableGame } from "@jgengine/shell/registry";
+ 
+ const SCOUT = "scout";
+diff --git a/apps/dev/src/demo/radialDemo.tsx b/apps/dev/src/demo/radialDemo.tsx
+index 167ed210e..bafbede22 100644
+--- a/apps/dev/src/demo/radialDemo.tsx
++++ b/apps/dev/src/demo/radialDemo.tsx
+@@ -6,7 +6,7 @@ import { createAssetCatalog } from "@jgengine/core/scene/assetCatalog";
+ import { environment, grass, terrain } from "@jgengine/core/world/features";
+ import { QuickMenu, type QuickMenuItem, type QuickMenuLayout } from "@jgengine/core/menu/quickMenu.view";
+ 
+-import { EnvironmentScene } from "@jgengine/shell/environment/EnvironmentScene";
++import { EnvironmentScene } from "@jgengine/core/environment/EnvironmentScene.draw";
+ import type { PlayableGame } from "@jgengine/shell/registry";
+ 
+ const SCOUT = "scout";
+diff --git a/apps/dev/src/demo/saveSlotsDemo.tsx b/apps/dev/src/demo/saveSlotsDemo.tsx
+index 262ca8295..6c67a0cd4 100644
+--- a/apps/dev/src/demo/saveSlotsDemo.tsx
++++ b/apps/dev/src/demo/saveSlotsDemo.tsx
+@@ -7,7 +7,7 @@ import { createAssetCatalog } from "@jgengine/core/scene/assetCatalog";
+ import { environment, grass, terrain } from "@jgengine/core/world/features";
+ import { SaveSlotsPane } from "@jgengine/core/menu/gameMenuSaves.view";
+ 
+-import { EnvironmentScene } from "@jgengine/shell/environment/EnvironmentScene";
++import { EnvironmentScene } from "@jgengine/core/environment/EnvironmentScene.draw";
+ import type { PlayableGame } from "@jgengine/shell/registry";
+ 
+ const HERO = "hero";
+diff --git a/apps/dev/src/demo/scoreboardDemo.tsx b/apps/dev/src/demo/scoreboardDemo.tsx
+index fafc9db25..1bb49e08a 100644
+--- a/apps/dev/src/demo/scoreboardDemo.tsx
++++ b/apps/dev/src/demo/scoreboardDemo.tsx
+@@ -8,7 +8,7 @@ import { createAssetCatalog } from "@jgengine/core/scene/assetCatalog";
+ import { environment, grass, terrain } from "@jgengine/core/world/features";
+ import { Scoreboard, type ScoreboardTheme } from "@jgengine/core/leaderboard/scoreboard.view";
+ 
+-import { EnvironmentScene } from "@jgengine/shell/environment/EnvironmentScene";
++import { EnvironmentScene } from "@jgengine/core/environment/EnvironmentScene.draw";
+ import type { PlayableGame } from "@jgengine/shell/registry";
+ 
+ const HERO = "hero";
+diff --git a/apps/dev/src/demo/screenEffectsDemo.tsx b/apps/dev/src/demo/screenEffectsDemo.tsx
+index d915c2b3c..ff4005a50 100644
+--- a/apps/dev/src/demo/screenEffectsDemo.tsx
++++ b/apps/dev/src/demo/screenEffectsDemo.tsx
+@@ -6,7 +6,7 @@ import { createAssetCatalog } from "@jgengine/core/scene/assetCatalog";
+ import { createScreenEffects } from "@jgengine/core/vfx/screenEffects";
+ import { environment, grass, terrain } from "@jgengine/core/world/features";
+ 
+-import { EnvironmentScene } from "@jgengine/shell/environment/EnvironmentScene";
++import { EnvironmentScene } from "@jgengine/core/environment/EnvironmentScene.draw";
+ import { ScreenEffectsOverlay } from "@jgengine/shell/postfx/ScreenEffectsOverlay";
+ import type { PlayableGame } from "@jgengine/shell/registry";
+ 
+diff --git a/apps/dev/src/demo/shopGridDemo.tsx b/apps/dev/src/demo/shopGridDemo.tsx
+index 568201611..fef53cee7 100644
+--- a/apps/dev/src/demo/shopGridDemo.tsx
++++ b/apps/dev/src/demo/shopGridDemo.tsx
+@@ -9,7 +9,7 @@ import { environment, grass, terrain } from "@jgengine/core/world/features";
+ import { ShopGrid } from "@jgengine/core/inventory/shopGrid.view";
+ import { hudThemeVars, HUD_THEME_PRESETS } from "@jgengine/core/hud/hudTheme.view";
+ 
+-import { EnvironmentScene } from "@jgengine/shell/environment/EnvironmentScene";
++import { EnvironmentScene } from "@jgengine/core/environment/EnvironmentScene.draw";
+ import type { PlayableGame } from "@jgengine/shell/registry";
+ 
+ const HERO = "hero";
+diff --git a/apps/dev/src/demo/statusEffectDemo.tsx b/apps/dev/src/demo/statusEffectDemo.tsx
+index 7c312d41b..e02c0e4fd 100644
+--- a/apps/dev/src/demo/statusEffectDemo.tsx
++++ b/apps/dev/src/demo/statusEffectDemo.tsx
+@@ -8,7 +8,7 @@ import { createAssetCatalog } from "@jgengine/core/scene/assetCatalog";
+ import { environment, grass, terrain } from "@jgengine/core/world/features";
+ import { StatusEffectBar, type StatusIconResolver } from "@jgengine/core/hud/statusEffectBar.view";
+ 
+-import { EnvironmentScene } from "@jgengine/shell/environment/EnvironmentScene";
++import { EnvironmentScene } from "@jgengine/core/environment/EnvironmentScene.draw";
+ import type { PlayableGame } from "@jgengine/shell/registry";
+ 
+ const HERO = "hero";
+diff --git a/apps/dev/src/demo/survivalDemo.tsx b/apps/dev/src/demo/survivalDemo.tsx
+index 561598abc..62a9cbd48 100644
+--- a/apps/dev/src/demo/survivalDemo.tsx
++++ b/apps/dev/src/demo/survivalDemo.tsx
+@@ -28,7 +28,7 @@ import {
+ } from "@jgengine/core/world/weather";
+ import { useEngineState, type ReadableEngineStore } from "@jgengine/react/engineStore";
+ 
+-import { EnvironmentScene } from "@jgengine/shell/environment/EnvironmentScene";
++import { EnvironmentScene } from "@jgengine/core/environment/EnvironmentScene.draw";
+ import { FireSpreadLayer } from "@jgengine/shell/weather/FireSpreadLayer";
+ import type { PlayableGame } from "@jgengine/shell/registry";
+ 
+diff --git a/apps/dev/src/demo/talentTreeDemo.tsx b/apps/dev/src/demo/talentTreeDemo.tsx
+index a66e067a4..c2b72f662 100644
+--- a/apps/dev/src/demo/talentTreeDemo.tsx
++++ b/apps/dev/src/demo/talentTreeDemo.tsx
+@@ -9,7 +9,7 @@ import { environment, grass, terrain } from "@jgengine/core/world/features";
+ import { TalentTreePanel } from "@jgengine/core/talents/talentTree.view";
+ import type { GameIconName } from "@jgengine/core/ui/icons/gameIcons.view";
+ 
+-import { EnvironmentScene } from "@jgengine/shell/environment/EnvironmentScene";
++import { EnvironmentScene } from "@jgengine/core/environment/EnvironmentScene.draw";
+ import type { PlayableGame } from "@jgengine/shell/registry";
+ 
+ const HERO = "hero";
+diff --git a/apps/dev/src/demo/terrainLayersDemo.tsx b/apps/dev/src/demo/terrainLayersDemo.tsx
+index 65662c33b..38633fc6f 100644
+--- a/apps/dev/src/demo/terrainLayersDemo.tsx
++++ b/apps/dev/src/demo/terrainLayersDemo.tsx
+@@ -2,7 +2,7 @@ import { createEditableTerrain } from "@jgengine/core/terrain/terraform";
+ import { environment, terrain } from "@jgengine/core/world/features";
+ import type { TerrainMaterialLayer } from "@jgengine/core/terrain/terraform";
+ import type { PlayableGame } from "@jgengine/shell/registry";
+-import { EnvironmentScene } from "@jgengine/shell/environment/EnvironmentScene";
++import { EnvironmentScene } from "@jgengine/core/environment/EnvironmentScene.draw";
+ import { libraryMaterialAsset } from "@jgengine/assets/catalogs/materialLibrary";
+ 
+ import { demoGame } from "./demoGame";
+diff --git a/apps/dev/src/demo/terrainMacroDemo.tsx b/apps/dev/src/demo/terrainMacroDemo.tsx
+index 6ab7402fd..06001f956 100644
+--- a/apps/dev/src/demo/terrainMacroDemo.tsx
++++ b/apps/dev/src/demo/terrainMacroDemo.tsx
+@@ -1,7 +1,7 @@
+ import { libraryTerrainMaterial } from "@jgengine/assets/catalogs/materialLibrary";
+ import { environment, terrain } from "@jgengine/core/world/features";
+ import type { PlayableGame } from "@jgengine/shell/registry";
+-import { EnvironmentScene } from "@jgengine/shell/environment/EnvironmentScene";
++import { EnvironmentScene } from "@jgengine/core/environment/EnvironmentScene.draw";
+ 
+ import { demoGame } from "./demoGame";
+ 
+diff --git a/apps/dev/src/demo/uiFeedbackDemo.tsx b/apps/dev/src/demo/uiFeedbackDemo.tsx
+index 7b3fcc271..4d758d35d 100644
+--- a/apps/dev/src/demo/uiFeedbackDemo.tsx
++++ b/apps/dev/src/demo/uiFeedbackDemo.tsx
+@@ -5,7 +5,7 @@ import { environment, grass, terrain } from "@jgengine/core/world/features";
+ import { useGame, useGameStoreValue } from "@jgengine/react/hooks";
+ import { useUiCue } from "@jgengine/core/ui/uiCues.view";
+ 
+-import { EnvironmentScene } from "@jgengine/shell/environment/EnvironmentScene";
++import { EnvironmentScene } from "@jgengine/core/environment/EnvironmentScene.draw";
+ import type { PlayableGame } from "@jgengine/shell/registry";
+ 
+ const SCOUT = "scout";
+diff --git a/apps/dev/src/demo/waveDirectorDemo.tsx b/apps/dev/src/demo/waveDirectorDemo.tsx
+index 7ab7de2d1..b8de7d4bd 100644
+--- a/apps/dev/src/demo/waveDirectorDemo.tsx
++++ b/apps/dev/src/demo/waveDirectorDemo.tsx
+@@ -8,7 +8,7 @@ import { createAssetCatalog } from "@jgengine/core/scene/assetCatalog";
+ import { environment, grass, terrain } from "@jgengine/core/world/features";
+ import { WaveHud } from "@jgengine/core/hud/waveHud.view";
+ 
+-import { EnvironmentScene } from "@jgengine/shell/environment/EnvironmentScene";
++import { EnvironmentScene } from "@jgengine/core/environment/EnvironmentScene.draw";
+ import type { PlayableGame } from "@jgengine/shell/registry";
+ 
+ const HERO = "hero";
+diff --git a/apps/dev/src/demo/waypointMarkersDemo.tsx b/apps/dev/src/demo/waypointMarkersDemo.tsx
+index 6479de41e..e8723667b 100644
+--- a/apps/dev/src/demo/waypointMarkersDemo.tsx
++++ b/apps/dev/src/demo/waypointMarkersDemo.tsx
+@@ -10,7 +10,7 @@ import { createAssetCatalog } from "@jgengine/core/scene/assetCatalog";
+ import { environment, grass, terrain } from "@jgengine/core/world/features";
+ import { WaypointMarkers } from "@jgengine/react/waypointMarkers";
+ 
+-import { EnvironmentScene } from "@jgengine/shell/environment/EnvironmentScene";
++import { EnvironmentScene } from "@jgengine/core/environment/EnvironmentScene.draw";
+ import { useWorldProjection } from "@jgengine/shell/world/WorldEntityFrames";
+ import type { PlayableGame } from "@jgengine/shell/registry";
+ 
+diff --git a/apps/dev/src/demo/worldPingDemo.tsx b/apps/dev/src/demo/worldPingDemo.tsx
+index 15e872ef6..1532af79e 100644
+--- a/apps/dev/src/demo/worldPingDemo.tsx
++++ b/apps/dev/src/demo/worldPingDemo.tsx
+@@ -17,7 +17,7 @@ import { environment, grass, terrain } from "@jgengine/core/world/features";
+ import { createMarkerSet, type MarkerSet } from "@jgengine/core/world/markers";
+ import { useFeed } from "@jgengine/react/hooks";
+ 
+-import { EnvironmentScene } from "@jgengine/shell/environment/EnvironmentScene";
++import { EnvironmentScene } from "@jgengine/core/environment/EnvironmentScene.draw";
+ import { WorldPings } from "@jgengine/shell/world/WorldPings";
+ import type { PlayableGame } from "@jgengine/shell/registry";
+ 
+diff --git a/games/beacon-bastion/src/game/world/WorldOverlay.tsx b/games/beacon-bastion/src/game/world/WorldOverlay.tsx
+index 41755d7c9..b374e9736 100644
+--- a/games/beacon-bastion/src/game/world/WorldOverlay.tsx
++++ b/games/beacon-bastion/src/game/world/WorldOverlay.tsx
+@@ -4,7 +4,7 @@ import { useFrame } from "@react-three/fiber";
+ import { useGameContext } from "@jgengine/react/provider";
+ import { useGameStore } from "@jgengine/react/hooks";
+ import { SceneCaptureBinding } from "@jgengine/shell/render/sceneCapture";
+-import { StaticShapeInstances } from "@jgengine/shell/instancing/staticShapeInstances";
++import { StaticShapeInstances } from "@jgengine/core/instancing/staticShapeInstances.draw";
+ 
+ import { bindKeepCapture } from "../thumbs";
+ 
+diff --git a/games/beacon-bastion/src/game/world/plotShapes.test.ts b/games/beacon-bastion/src/game/world/plotShapes.test.ts
+index bdd51e007..60b002a4f 100644
+--- a/games/beacon-bastion/src/game/world/plotShapes.test.ts
++++ b/games/beacon-bastion/src/game/world/plotShapes.test.ts
+@@ -1,5 +1,5 @@
+ import { describe, expect, test } from "bun:test";
+-import { groupStaticShapeInstances } from "@jgengine/shell/instancing/staticShapeInstances";
++import { groupStaticShapeInstances } from "@jgengine/core/instancing/staticShapeInstances.draw";
+ 
+ import { plotShapes } from "./plotShapes";
+ 
+diff --git a/games/beacon-bastion/src/game/world/plotShapes.ts b/games/beacon-bastion/src/game/world/plotShapes.ts
+index 00dfcfc39..a41348b38 100644
+--- a/games/beacon-bastion/src/game/world/plotShapes.ts
++++ b/games/beacon-bastion/src/game/world/plotShapes.ts
+@@ -1,4 +1,4 @@
+-import type { StaticShapeInstance } from "@jgengine/shell/instancing/staticShapeInstances";
++import type { StaticShapeInstance } from "@jgengine/core/instancing/staticShapeInstances.draw";
+ 
+ type Vec3 = readonly [number, number, number];
+ 
+diff --git a/games/capabilities.json b/games/capabilities.json
+index 78bc91ac5..cd6aeba4c 100644
+--- a/games/capabilities.json
++++ b/games/capabilities.json
+@@ -3888,7 +3888,7 @@
+       "packages": [
+         "@jgengine/shell"
+       ],
+-      "module": "@jgengine/shell/terrain/groundEdgeFade",
++      "module": "@jgengine/core/terrain/groundEdgeFade.draw",
+       "domain": "terrain",
+       "gameFacing": false,
+       "probe": null,
+@@ -3987,7 +3987,7 @@
+       "packages": [
+         "@jgengine/shell"
+       ],
+-      "module": "@jgengine/shell/terrain/heightfieldGeometry",
++      "module": "@jgengine/core/terrain/heightfieldGeometry.draw",
+       "domain": "terrain",
+       "gameFacing": false,
+       "probe": null,
+@@ -4560,7 +4560,7 @@
+       "packages": [
+         "@jgengine/shell"
+       ],
+-      "module": "@jgengine/shell/instancing/instanceChunks",
++      "module": "@jgengine/core/instancing/instanceChunks.draw",
+       "domain": "instancing",
+       "gameFacing": false,
+       "probe": null,
+@@ -4571,7 +4571,7 @@
+       "packages": [
+         "@jgengine/shell"
+       ],
+-      "module": "@jgengine/shell/instancing/instanceUpload",
++      "module": "@jgengine/core/instancing/instanceUpload.draw",
+       "domain": "instancing",
+       "gameFacing": false,
+       "probe": null,
+@@ -9162,7 +9162,7 @@
+       "packages": [
+         "@jgengine/shell"
+       ],
+-      "module": "@jgengine/shell/instancing/staticShapeInstances",
++      "module": "@jgengine/core/instancing/staticShapeInstances.draw",
+       "domain": "instancing",
+       "gameFacing": false,
+       "probe": null,
+@@ -9498,7 +9498,7 @@
+       "packages": [
+         "@jgengine/shell"
+       ],
+-      "module": "@jgengine/shell/terrain/terrainPaintColor",
++      "module": "@jgengine/core/terrain/terrainPaintColor.draw",
+       "domain": "terrain",
+       "gameFacing": false,
+       "probe": null,
+diff --git a/games/deepward/src/game/interiorArt.tsx b/games/deepward/src/game/interiorArt.tsx
+index 35176735a..2b1893b23 100644
+--- a/games/deepward/src/game/interiorArt.tsx
++++ b/games/deepward/src/game/interiorArt.tsx
+@@ -4,8 +4,8 @@ import type { ModelConfig } from "@jgengine/core/game/playableGame";
+ import type { ScatterInstance } from "@jgengine/core/scatter/scatterRegion";
+ import type { AuthoredSurfaceConfig } from "@jgengine/shell/render/authoredSurfaceMaterial";
+ import { InteriorDressing, PracticalLights } from "@jgengine/shell/render/InteriorDressing";
+-import { StaticShapeInstances, type StaticShapeInstance } from "@jgengine/shell/instancing/staticShapeInstances";
+-import { InstancedScatter } from "@jgengine/shell/scatter/InstancedScatter";
++import { StaticShapeInstances, type StaticShapeInstance } from "@jgengine/core/instancing/staticShapeInstances.draw";
++import { InstancedScatter } from "@jgengine/core/scatter/InstancedScatter.draw";
+ 
+ import { editorLayers, floorDressing } from "../world";
+ import { FLOOR_DEBRIS, FLOOR_PROPS } from "./interiorPlan";
+diff --git a/games/deepward/src/game/stationArt.tsx b/games/deepward/src/game/stationArt.tsx
+index 5680932d4..11c949bcb 100644
+--- a/games/deepward/src/game/stationArt.tsx
++++ b/games/deepward/src/game/stationArt.tsx
+@@ -1,6 +1,6 @@
+ import { Suspense, useLayoutEffect, useMemo, useRef } from 'react';
+ import { InstancedMesh } from 'three';
+-import { composeInstance, uploadInstances } from '@jgengine/shell/instancing/instanceUpload';
++import { composeInstance, uploadInstances } from '@jgengine/core/instancing/instanceUpload.draw';
+ import { editorLayers, type Place } from '../world';
+ import { StationSurface } from './stationSurface';
+ import { stationModelReplacements } from './stationModels';
+diff --git a/games/llmville/src/world/components/EndlessDatacenter.tsx b/games/llmville/src/world/components/EndlessDatacenter.tsx
+index 66a45716d..5c68bbfe5 100644
+--- a/games/llmville/src/world/components/EndlessDatacenter.tsx
++++ b/games/llmville/src/world/components/EndlessDatacenter.tsx
+@@ -27,7 +27,7 @@ import {
+ } from "@llmville/game/datacenter/claimMap";
+ import { readPlayerPosition } from "@/runtime/playerPosition";
+ import type { GameEngine } from "@/runtime/gameEngine";
+-import { composeInstance, uploadInstances } from "@jgengine/shell/instancing/instanceUpload";
++import { composeInstance, uploadInstances } from "@jgengine/core/instancing/instanceUpload.draw";
+ 
+ const FLOOR_TILE_SIZE = DATACENTER_FLOOR_TILE_CELLS * CELL_SIZE;
+ const FLOOR_SPAN = WORLD_SCENERY_RADIUS * 2;
+diff --git a/packages/core/src/buildings/BuildingKitBatch.draw.tsx b/packages/core/src/buildings/BuildingKitBatch.draw.tsx
+index 9bcbb5057..6a420f85f 100644
+--- a/packages/core/src/buildings/BuildingKitBatch.draw.tsx
++++ b/packages/core/src/buildings/BuildingKitBatch.draw.tsx
+@@ -9,7 +9,7 @@ import {
+   buildScatterModelSources,
+   disposeScatterModelSources,
+   type ScatterModelSource,
+-} from "@jgengine/shell/scatter/scatterModels";
++} from "@jgengine/core/scatter/scatterModels.draw";
+ import {
+   measureBuildingKitModel,
+   type BuildingKitInstance,
+@@ -17,8 +17,8 @@ import {
+ import { useBuildingSurfaceTextures } from "./buildingSurface.draw";
+ import { groupBuildingKitInstances, buildBuildingKitSources, validateBuildingKitSource, type BuildingKitStyleGroup } from "./buildingKitMaterials.draw";
+ import { useBuildingChunkBudget } from "./BuildingRenderBudget.draw";
+-import { partitionInstances, type InstanceChunk } from "@jgengine/shell/instancing/instanceChunks";
+-import { uploadInstances } from "@jgengine/shell/instancing/instanceUpload";
++import { partitionInstances, type InstanceChunk } from "@jgengine/core/instancing/instanceChunks.draw";
++import { uploadInstances } from "@jgengine/core/instancing/instanceUpload.draw";
+ 
+ function KitSourceInstances({
+   source,
+diff --git a/packages/core/src/buildings/GeneratedBuilding.draw.tsx b/packages/core/src/buildings/GeneratedBuilding.draw.tsx
+index fb51146e4..c9981ed0a 100644
+--- a/packages/core/src/buildings/GeneratedBuilding.draw.tsx
++++ b/packages/core/src/buildings/GeneratedBuilding.draw.tsx
+@@ -15,8 +15,8 @@ import type { MaterialOverrideTextures } from "@jgengine/shell/materialOverride"
+ import { useDisposable } from "@jgengine/shell/render/useDisposable";
+ import { BuildingKitBatch } from "./BuildingKitBatch.draw";
+ import { useBuildingChunkBudget } from "./BuildingRenderBudget.draw";
+-import { partitionInstances, type InstanceChunk } from "@jgengine/shell/instancing/instanceChunks";
+-import { uploadInstances } from "@jgengine/shell/instancing/instanceUpload";
++import { partitionInstances, type InstanceChunk } from "@jgengine/core/instancing/instanceChunks.draw";
++import { uploadInstances } from "@jgengine/core/instancing/instanceUpload.draw";
+ import { bucketBuildingParts, normalFor, outwardOffset } from "./buildingKitFit.draw";
+ import { applyBuildingSurface, useBuildingSurfaceTextures } from "./buildingSurface.draw";
+ 
+diff --git a/packages/core/src/buildings/buildingKitMaterials.draw.test.ts b/packages/core/src/buildings/buildingKitMaterials.draw.test.ts
+index 737a77bb7..7f1cc6574 100644
+--- a/packages/core/src/buildings/buildingKitMaterials.draw.test.ts
++++ b/packages/core/src/buildings/buildingKitMaterials.draw.test.ts
+@@ -6,7 +6,7 @@ import { createEditorSession } from "@jgengine/core/editor/commands";
+ import { createEmptyEditorDocument, importEditorDocumentJson } from "@jgengine/core/editor/document";
+ import { authoredMaterialAssignments } from "@jgengine/core/editor/materialAuthoring";
+ import { generateBuilding } from "@jgengine/core/buildings/buildings";
+-import { buildScatterModelSources, disposeScatterModelSources } from "@jgengine/shell/scatter/scatterModels";
++import { buildScatterModelSources, disposeScatterModelSources } from "@jgengine/core/scatter/scatterModels.draw";
+ import { configureMaterialTexture } from "@jgengine/shell/render/materialAsset";
+ import { bucketBuildingParts } from "./buildingKitFit.draw";
+ import { buildingKitMaterialKey, buildBuildingKitSources, groupBuildingKitInstances } from "./buildingKitMaterials.draw";
+diff --git a/packages/core/src/buildings/buildingKitMaterials.draw.ts b/packages/core/src/buildings/buildingKitMaterials.draw.ts
+index c63e57aae..d26d7a6b5 100644
+--- a/packages/core/src/buildings/buildingKitMaterials.draw.ts
++++ b/packages/core/src/buildings/buildingKitMaterials.draw.ts
+@@ -3,7 +3,7 @@ import type { BuildingKitPart } from "@jgengine/core/buildings/buildingKit";
+ import { validateMaterialAssignments, type MaterialAsset } from "@jgengine/core/material/materialAsset";
+ import type { MaterialOverrideTextures } from "@jgengine/shell/materialOverride";
+ import { applyMaterialAssignments, validateMaterialAssignmentTargets } from "@jgengine/shell/render/materialAsset";
+-import { buildScatterModelSources, disposeScatterModelSources } from "@jgengine/shell/scatter/scatterModels";
++import { buildScatterModelSources, disposeScatterModelSources } from "@jgengine/core/scatter/scatterModels.draw";
+ import { composeBuildingKitMatrix, type BuildingKitInstance, type BuildingKitModelBounds } from "./buildingKitFit.draw";
+ import { applyBuildingSurface, surfaceKey } from "./buildingSurface.draw";
+ 
+diff --git a/packages/shell/src/environment/EnvironmentScene.tsx b/packages/core/src/environment/EnvironmentScene.draw.tsx
+similarity index 93%
+rename from packages/shell/src/environment/EnvironmentScene.tsx
+rename to packages/core/src/environment/EnvironmentScene.draw.tsx
+index dec8a6a2c..139bec230 100644
+--- a/packages/shell/src/environment/EnvironmentScene.tsx
++++ b/packages/core/src/environment/EnvironmentScene.draw.tsx
+@@ -1,8 +1,8 @@
+-import { oceanColor } from "../water/oceanColor";
++import { oceanColor } from "@jgengine/shell/water/oceanColor";
+ import { waterSurfaceConfigFromDescriptor } from "@jgengine/core/water/waterSurface";
+ import { useCallback, useEffect, useMemo, useRef, useState, useSyncExternalStore } from "react";import { useFrame } from "@react-three/fiber";
+-import { PresentationAssetBoundary } from "../presentationRecovery";
+-import { PresentationRecoveredDraw, useRecoverableTexture } from "../presentationRecovery3d";
++import { PresentationAssetBoundary } from "@jgengine/shell/presentationRecovery";
++import { PresentationRecoveredDraw, useRecoverableTexture } from "@jgengine/shell/presentationRecovery3d";
+ import * as THREE from "three";
+ import type { Group } from "three";
+ import { useGameContext } from "@jgengine/react/provider";
+@@ -30,24 +30,24 @@ import {
+   type TerrainField,
+ } from "@jgengine/core/terrain/terrain";
+ 
+-import { useDisposable } from "../render/useDisposable";
++import { useDisposable } from "@jgengine/shell/render/useDisposable";
+ import { editableTerrainFromSnapshot, type TerraformSnapshot } from "@jgengine/core/terrain/terraform";
+-import { createTerrainPaintColorSampler } from "../terrain/terrainPaintColor";
+-import { GroundPad } from "./GroundPad";
+-import { Roads } from "../roads/RoadRibbons";
+-import { terrainGroundColorSampler } from "../terrain/terrainGroundColor";
++import { createTerrainPaintColorSampler } from "@jgengine/core/terrain/terrainPaintColor.draw";
++import { GroundPad } from "./GroundPad.draw";
++import { Roads } from "@jgengine/shell/roads/RoadRibbons";
++import { terrainGroundColorSampler } from "@jgengine/core/terrain/terrainGroundColor.draw";
+ import { InstancedBuildings, type InstancedBuildingPlacement } from "@jgengine/core/buildings/GeneratedBuilding.draw";
+-import { GrassPatch } from "../grass/GrassPatch";
+-import { CarvedTerrain, type CarvedTerrainProps } from "../terrain/CarvedTerrain";
+-import { ImageTextureLoader } from "../render/imageTexture";
+-import { trackSceneWork } from "../render/modelLoad";
+-import { createTerrainDetailMaterial } from "../terrain/terrainDetailMaterial";
+-import { MAX_TERRAIN_LAYER_MAPS, type TerrainDetailMaterialTextures, type TerrainLayerMap } from "../terrain/terrainDetailMaterial";
+-import { useTerrainQuality } from "../terrain/terrainQuality";
+-import { createTerrainPaintTextures, packTerrainPaintWeights, type TerrainPaintTextures } from "../terrain/terrainSurfaces";
+-import { Ocean } from "../water/Ocean";
+-import { RainField } from "../weather/RainField";
+-import { SnowField } from "../weather/SnowField";
++import { GrassPatch } from "@jgengine/shell/grass/GrassPatch";
++import { CarvedTerrain, type CarvedTerrainProps } from "@jgengine/core/terrain/CarvedTerrain.draw";
++import { ImageTextureLoader } from "@jgengine/shell/render/imageTexture";
++import { trackSceneWork } from "@jgengine/shell/render/modelLoad";
++import { createTerrainDetailMaterial } from "@jgengine/core/terrain/terrainDetailMaterial.draw";
++import { MAX_TERRAIN_LAYER_MAPS, type TerrainDetailMaterialTextures, type TerrainLayerMap } from "@jgengine/core/terrain/terrainDetailMaterial.draw";
++import { useTerrainQuality } from "@jgengine/core/terrain/terrainQuality.draw";
++import { createTerrainPaintTextures, packTerrainPaintWeights, type TerrainPaintTextures } from "@jgengine/core/terrain/terrainSurfaces.draw";
++import { Ocean } from "@jgengine/shell/water/Ocean";
++import { RainField } from "@jgengine/shell/weather/RainField";
++import { SnowField } from "@jgengine/shell/weather/SnowField";
+ 
+ export interface EnvironmentSceneProps {
+   feature: EnvironmentWorldFeature;
+diff --git a/packages/shell/src/environment/GroundPad.tsx b/packages/core/src/environment/GroundPad.draw.tsx
+similarity index 100%
+rename from packages/shell/src/environment/GroundPad.tsx
+rename to packages/core/src/environment/GroundPad.draw.tsx
+diff --git a/packages/shell/src/environment/groundPadMath.test.ts b/packages/core/src/environment/groundPadMath.test.ts
+similarity index 100%
+rename from packages/shell/src/environment/groundPadMath.test.ts
+rename to packages/core/src/environment/groundPadMath.test.ts
+diff --git a/packages/shell/src/environment/groundPadMath.ts b/packages/core/src/environment/groundPadMath.ts
+similarity index 100%
+rename from packages/shell/src/environment/groundPadMath.ts
+rename to packages/core/src/environment/groundPadMath.ts
+diff --git a/packages/shell/src/instancing/instanceChunks.test.ts b/packages/core/src/instancing/instanceChunks.draw.test.ts
+similarity index 99%
+rename from packages/shell/src/instancing/instanceChunks.test.ts
+rename to packages/core/src/instancing/instanceChunks.draw.test.ts
+index 93c177a23..ef70eebce 100644
+--- a/packages/shell/src/instancing/instanceChunks.test.ts
++++ b/packages/core/src/instancing/instanceChunks.draw.test.ts
+@@ -6,8 +6,8 @@ import { defineBuildingKit } from "@jgengine/core/buildings/buildingKit";
+ 
+ import { bucketBuildingParts, composeBuildingKitMatrix, type BuildingKitInstance } from "@jgengine/core/buildings/buildingKitFit.draw";
+ import { buildingChunkWithinBudget, resolveBuildingRenderPolicy } from "@jgengine/core/buildings/BuildingRenderBudget.draw";
+-import { partitionInstances, type InstanceChunk } from "./instanceChunks";
+-import { uploadInstances } from "./instanceUpload";
++import { partitionInstances, type InstanceChunk } from "./instanceChunks.draw";
++import { uploadInstances } from "./instanceUpload.draw";
+ 
+ /** Upload a chunk the way the building renderer does; the cleanup releases only the instance buffers. */
+ function applyChunk(mesh: THREE.InstancedMesh, chunk: InstanceChunk): () => void {
+diff --git a/packages/shell/src/instancing/instanceChunks.ts b/packages/core/src/instancing/instanceChunks.draw.ts
+similarity index 100%
+rename from packages/shell/src/instancing/instanceChunks.ts
+rename to packages/core/src/instancing/instanceChunks.draw.ts
+diff --git a/packages/shell/src/instancing/instanceUpload.ts b/packages/core/src/instancing/instanceUpload.draw.ts
+similarity index 98%
+rename from packages/shell/src/instancing/instanceUpload.ts
+rename to packages/core/src/instancing/instanceUpload.draw.ts
+index a1c60cf13..cf9feab2f 100644
+--- a/packages/shell/src/instancing/instanceUpload.ts
++++ b/packages/core/src/instancing/instanceUpload.draw.ts
+@@ -1,6 +1,6 @@
+ import * as THREE from "three";
+ 
+-import { submitInstanceCount } from "../render/submittedDraws";
++import { submitInstanceCount } from "@jgengine/shell/render/submittedDraws";
+ 
+ /** Instance transforms: a ready list of matrices, or a count plus a writer that fills each one. */
+ export type InstanceSource = readonly THREE.Matrix4[] | { count: number; at(index: number, out: THREE.Matrix4): void };
+diff --git a/packages/shell/src/instancing/staticShapeInstances.test.ts b/packages/core/src/instancing/staticShapeInstances.draw.test.ts
+similarity index 98%
+rename from packages/shell/src/instancing/staticShapeInstances.test.ts
+rename to packages/core/src/instancing/staticShapeInstances.draw.test.ts
+index 2052333ee..9e8308e1f 100644
+--- a/packages/shell/src/instancing/staticShapeInstances.test.ts
++++ b/packages/core/src/instancing/staticShapeInstances.draw.test.ts
+@@ -1,6 +1,6 @@
+ import { describe, expect, test } from "bun:test";
+ import * as THREE from "three";
+-import { groupStaticShapeInstances, writeStaticShapeInstances, type StaticShapeInstance } from "./staticShapeInstances";
++import { groupStaticShapeInstances, writeStaticShapeInstances, type StaticShapeInstance } from "./staticShapeInstances.draw";
+ 
+ const box: StaticShapeInstance = { shape: "box", position: [2, 1, -3], scale: [2, 1, 3], surface: { color: "#765432" } };
+ describe("static authored shapes", () => {
+@@ -61,7 +61,7 @@ describe("static authored shapes", () => {
+ test("mounted batches retune matrices, share only compatible draws and dispose owned resources", async () => {
+   const { act, createRoot, extend } = await import("@react-three/fiber");
+   const { createElement, Suspense } = await import("react");
+-  const { StaticShapeInstances } = await import("./staticShapeInstances");
++  const { StaticShapeInstances } = await import("./staticShapeInstances.draw");
+   const environment = globalThis as typeof globalThis & { IS_REACT_ACT_ENVIRONMENT?: boolean };
+   const previous = environment.IS_REACT_ACT_ENVIRONMENT;
+   environment.IS_REACT_ACT_ENVIRONMENT = true;
+diff --git a/packages/shell/src/instancing/staticShapeInstances.tsx b/packages/core/src/instancing/staticShapeInstances.draw.tsx
+similarity index 95%
+rename from packages/shell/src/instancing/staticShapeInstances.tsx
+rename to packages/core/src/instancing/staticShapeInstances.draw.tsx
+index c5a6d61e4..ed6a34bb3 100644
+--- a/packages/shell/src/instancing/staticShapeInstances.tsx
++++ b/packages/core/src/instancing/staticShapeInstances.draw.tsx
+@@ -2,10 +2,10 @@ import { Suspense, useLayoutEffect, useMemo, useRef } from "react";
+ import * as THREE from "three";
+ 
+ import type { ModelShadowMode } from "@jgengine/core/lod/modelLod";
+-import { AuthoredSurfaceMaterial, authoredSurfaceKey, type AuthoredSurfaceConfig, type SurfaceShape } from "../render/authoredSurfaceMaterial";
+-import { ModelFallbackBoundary } from "../render/SceneModels";
+-import { useDisposable } from "../render/useDisposable";
+-import { composeInstance, uploadInstances } from "./instanceUpload";
++import { AuthoredSurfaceMaterial, authoredSurfaceKey, type AuthoredSurfaceConfig, type SurfaceShape } from "@jgengine/shell/render/authoredSurfaceMaterial";
++import { ModelFallbackBoundary } from "@jgengine/shell/render/SceneModels";
++import { useDisposable } from "@jgengine/shell/render/useDisposable";
++import { composeInstance, uploadInstances } from "./instanceUpload.draw";
+ 
+ /** One editor-derived static primitive. A box spans one unit; a cylinder has unit radius and height before scale. */
+ export interface StaticShapeInstance {
+diff --git a/packages/shell/src/lod/characterLod.test.ts b/packages/core/src/lod/characterLod.test.ts
+similarity index 100%
+rename from packages/shell/src/lod/characterLod.test.ts
+rename to packages/core/src/lod/characterLod.test.ts
+diff --git a/packages/shell/src/lod/characterLod.ts b/packages/core/src/lod/characterLod.ts
+similarity index 100%
+rename from packages/shell/src/lod/characterLod.ts
+rename to packages/core/src/lod/characterLod.ts
+diff --git a/packages/shell/src/lod/impostor.test.ts b/packages/core/src/lod/impostor.draw.test.ts
+similarity index 99%
+rename from packages/shell/src/lod/impostor.test.ts
+rename to packages/core/src/lod/impostor.draw.test.ts
+index 85ba42ad4..a00035d0f 100644
+--- a/packages/shell/src/lod/impostor.test.ts
++++ b/packages/core/src/lod/impostor.draw.test.ts
+@@ -2,7 +2,7 @@ import { expect, test } from "bun:test";
+ 
+ import * as THREE from "three";
+ 
+-import { hemiOctDecode, hemiOctEncode, impostorDistance, impostorSettingsForQuality, impostorSwitch, impostorUp } from "./impostor";
++import { hemiOctDecode, hemiOctEncode, impostorDistance, impostorSettingsForQuality, impostorSwitch, impostorUp } from "./impostor.draw";
+ 
+ test("hemi-octahedral directions round-trip for every view above the horizon", () => {
+   const out = new THREE.Vector3();
+diff --git a/packages/shell/src/lod/impostor.ts b/packages/core/src/lod/impostor.draw.ts
+similarity index 100%
+rename from packages/shell/src/lod/impostor.ts
+rename to packages/core/src/lod/impostor.draw.ts
+diff --git a/packages/shell/src/lod/impostorCardPool.test.ts b/packages/core/src/lod/impostorCardPool.draw.test.ts
+similarity index 97%
+rename from packages/shell/src/lod/impostorCardPool.test.ts
+rename to packages/core/src/lod/impostorCardPool.draw.test.ts
+index bc001d47b..e0a5a2da6 100644
+--- a/packages/shell/src/lod/impostorCardPool.test.ts
++++ b/packages/core/src/lod/impostorCardPool.draw.test.ts
+@@ -3,7 +3,7 @@ import { expect, test } from "bun:test";
+ import * as THREE from "three";
+ 
+ import { POINTER_OBJECT_INSTANCES_KEY } from "@jgengine/core/input/pointerService.draw";
+-import { acquireImpostorCardPool, ImpostorCardPool, releaseImpostorCardPool } from "./impostorCardPool";
++import { acquireImpostorCardPool, ImpostorCardPool, releaseImpostorCardPool } from "./impostorCardPool.draw";
+ 
+ const makePool = () => new ImpostorCardPool(new THREE.PlaneGeometry(2, 2), new THREE.MeshStandardMaterial(), new THREE.MeshDepthMaterial());
+ 
+diff --git a/packages/shell/src/lod/impostorCardPool.ts b/packages/core/src/lod/impostorCardPool.draw.ts
+similarity index 98%
+rename from packages/shell/src/lod/impostorCardPool.ts
+rename to packages/core/src/lod/impostorCardPool.draw.ts
+index e60b27838..79775d320 100644
+--- a/packages/shell/src/lod/impostorCardPool.ts
++++ b/packages/core/src/lod/impostorCardPool.draw.ts
+@@ -1,7 +1,7 @@
+ import * as THREE from "three";
+ 
+ import { POINTER_OBJECT_INSTANCES_KEY } from "@jgengine/core/input/pointerService.draw";
+-import { submitInstanceCount } from "../render/submittedDraws";
++import { submitInstanceCount } from "@jgengine/shell/render/submittedDraws";
+ 
+ /** One user's share of a pooled card draw: its far placements this frame. @internal */
+ export interface ImpostorCardSlice {
+diff --git a/packages/shell/src/lod/levelPass.test.ts b/packages/core/src/lod/levelPass.draw.test.ts
+similarity index 99%
+rename from packages/shell/src/lod/levelPass.test.ts
+rename to packages/core/src/lod/levelPass.draw.test.ts
+index b304333a0..b2bf37063 100644
+--- a/packages/shell/src/lod/levelPass.test.ts
++++ b/packages/core/src/lod/levelPass.draw.test.ts
+@@ -12,7 +12,7 @@ import {
+   noteLevelPassFrame,
+   resetLevelPassStats,
+   variantSwitchOf,
+-} from "./levelPass";
++} from "./levelPass.draw";
+ 
+ const PALM = {
+   levels: [{ url: "mainsail-palm.glb", maxDistance: 60 }, { url: "mainsail-palm-lod1.glb" }],
+diff --git a/packages/shell/src/lod/levelPass.ts b/packages/core/src/lod/levelPass.draw.ts
+similarity index 100%
+rename from packages/shell/src/lod/levelPass.ts
+rename to packages/core/src/lod/levelPass.draw.ts
+diff --git a/packages/shell/src/lod/singleVariantLod.test.ts b/packages/core/src/lod/singleVariantLod.draw.test.ts
+similarity index 98%
+rename from packages/shell/src/lod/singleVariantLod.test.ts
+rename to packages/core/src/lod/singleVariantLod.draw.test.ts
+index 8703a75bf..1904819e7 100644
+--- a/packages/shell/src/lod/singleVariantLod.test.ts
++++ b/packages/core/src/lod/singleVariantLod.draw.test.ts
+@@ -4,9 +4,9 @@ import type { ModelConfig } from "@jgengine/core/game/playableGame";
+ import { createObjectStore } from "@jgengine/core/scene/objectStore";
+ import { createModelVariantSelector } from "@jgengine/core/lod/modelLod";
+ import { lodBandIndex } from "@jgengine/core/lod/lod";
+-import { EntityModel, IsolatedEntityModel, SingleVariantModel } from "../render/SceneModels";
+-import { singleVariantLevel, variantLevelModel } from "./singleVariantLod";
+-import { attributeTriangles } from "../render/triangleAttribution";
++import { EntityModel, IsolatedEntityModel, SingleVariantModel } from "@jgengine/shell/render/SceneModels";
++import { singleVariantLevel, variantLevelModel } from "./singleVariantLod.draw";
++import { attributeTriangles } from "@jgengine/shell/render/triangleAttribution";
+ 
+ const FULL_TRIANGLES = 9134;
+ const FAR_TRIANGLES = 4110;
+diff --git a/packages/shell/src/lod/singleVariantLod.ts b/packages/core/src/lod/singleVariantLod.draw.ts
+similarity index 100%
+rename from packages/shell/src/lod/singleVariantLod.ts
+rename to packages/core/src/lod/singleVariantLod.draw.ts
+diff --git a/packages/shell/src/lod/variantShadows.test.ts b/packages/core/src/lod/variantShadows.draw.test.ts
+similarity index 97%
+rename from packages/shell/src/lod/variantShadows.test.ts
+rename to packages/core/src/lod/variantShadows.draw.test.ts
+index 6559e39fa..a16892c56 100644
+--- a/packages/shell/src/lod/variantShadows.test.ts
++++ b/packages/core/src/lod/variantShadows.draw.test.ts
+@@ -3,10 +3,10 @@ import * as THREE from "three";
+ import type { ModelConfig, ModelVariantLodConfig } from "@jgengine/core/game/playableGame";
+ import { createModelVariantSelector } from "@jgengine/core/lod/modelLod";
+ 
+-import { attributeTriangles } from "../render/triangleAttribution";
+-import { cloneModelScene } from "../render/modelRender";
+-import { buildScatterModelSources, disposeScatterModelSources } from "../scatter/scatterModels";
+-import { variantLevelModel, variantLevelShadows } from "./singleVariantLod";
++import { attributeTriangles } from "@jgengine/shell/render/triangleAttribution";
++import { cloneModelScene } from "@jgengine/shell/render/modelRender";
++import { buildScatterModelSources, disposeScatterModelSources } from "@jgengine/core/scatter/scatterModels.draw";
++import { variantLevelModel, variantLevelShadows } from "./singleVariantLod.draw";
+ 
+ /** Harbor's palm, as the repo's variant test states it: the full mesh near, a cheaper one far. */
+ const NEAR_TRIANGLES = 9134;
+diff --git a/packages/shell/src/scatter/InstancedScatter.tsx b/packages/core/src/scatter/InstancedScatter.draw.tsx
+similarity index 94%
+rename from packages/shell/src/scatter/InstancedScatter.tsx
+rename to packages/core/src/scatter/InstancedScatter.draw.tsx
+index 7ed3c5c2a..823c85579 100644
+--- a/packages/shell/src/scatter/InstancedScatter.tsx
++++ b/packages/core/src/scatter/InstancedScatter.draw.tsx
+@@ -10,15 +10,15 @@ import { groupInstancesByCell } from "@jgengine/core/instancing/instanceCells";
+ import { beginFallbackSeam, reportFallbackSeam } from "@jgengine/core/devtools/fallbackSeams";
+ import { createModelVariantSelector, type ModelVariantSelector } from "@jgengine/core/lod/modelLod";
+ 
+-import { CAMERA_POST_FRAME_PRIORITY } from "../camera/cameraRigs";
+-import { composeInstance, uploadInstances } from "../instancing/instanceUpload";
+-import { LEVEL_PASS_MIN_CAMERA_MOVE, levelPassNeeded } from "../lod/levelPass";
+-import { variantLevelModel } from "../lod/singleVariantLod";
+-import { buildScatterProxy } from "./scatterProxies";
+-import { buildScatterModelSources, disposeScatterModelSources, type ScatterModelSource } from "./scatterModels";
+-import { writeScatterVariantLevel } from "./scatterVariants";
+-import { IMPOSTOR_MIN_RADIUS, sourceRadius } from "../lod/impostor";
+-import { ScatterImpostorField } from "./ScatterImpostorField";
++import { CAMERA_POST_FRAME_PRIORITY } from "@jgengine/shell/camera/cameraRigs";
++import { composeInstance, uploadInstances } from "@jgengine/core/instancing/instanceUpload.draw";
++import { LEVEL_PASS_MIN_CAMERA_MOVE, levelPassNeeded } from "@jgengine/core/lod/levelPass.draw";
++import { variantLevelModel } from "@jgengine/core/lod/singleVariantLod.draw";
++import { buildScatterProxy } from "./scatterProxies.draw";
++import { buildScatterModelSources, disposeScatterModelSources, type ScatterModelSource } from "./scatterModels.draw";
++import { writeScatterVariantLevel } from "./scatterVariants.draw";
++import { IMPOSTOR_MIN_RADIUS, sourceRadius } from "@jgengine/core/lod/impostor.draw";
++import { ScatterImpostorField } from "./ScatterImpostorField.draw";
+ 
+ /** Chunk edge (m): dense fields split into this-sized buckets, each frustum-culled independently. */
+ const DEFAULT_CHUNK_SIZE = 24;
+diff --git a/packages/shell/src/scatter/ScatterImpostorField.test.ts b/packages/core/src/scatter/ScatterImpostorField.draw.test.ts
+similarity index 90%
+rename from packages/shell/src/scatter/ScatterImpostorField.test.ts
+rename to packages/core/src/scatter/ScatterImpostorField.draw.test.ts
+index 7b76ffbcf..bc3369487 100644
+--- a/packages/shell/src/scatter/ScatterImpostorField.test.ts
++++ b/packages/core/src/scatter/ScatterImpostorField.draw.test.ts
+@@ -1,6 +1,6 @@
+ import { expect, test } from "bun:test";
+ 
+-import { markFarPlacements } from "./ScatterImpostorField";
++import { markFarPlacements } from "./ScatterImpostorField.draw";
+ 
+ test("placements past their threshold go far, and the band keeps them there near the edge", () => {
+   const instances = [{ x: 10, y: 0, z: 0 }, { x: 100, y: 0, z: 0 }, { x: 72, y: 0, z: 0 }];
+diff --git a/packages/shell/src/scatter/ScatterImpostorField.tsx b/packages/core/src/scatter/ScatterImpostorField.draw.tsx
+similarity index 92%
+rename from packages/shell/src/scatter/ScatterImpostorField.tsx
+rename to packages/core/src/scatter/ScatterImpostorField.draw.tsx
+index 755d93da9..684fba3ce 100644
+--- a/packages/shell/src/scatter/ScatterImpostorField.tsx
++++ b/packages/core/src/scatter/ScatterImpostorField.draw.tsx
+@@ -2,12 +2,12 @@ import { useFrame, useThree } from "@react-three/fiber";
+ import { useEffect, useMemo, useRef, useState } from "react";
+ import * as THREE from "three";
+ 
+-import { CAMERA_POST_FRAME_PRIORITY } from "../camera/cameraRigs";
+-import { acquireImpostor, impostorCard, impostorDistance, impostorSettingsForQuality, impostorSwitch, releaseImpostor, type ImpostorEntry } from "../lod/impostor";
+-import { uploadInstances } from "../instancing/instanceUpload";
+-import { useTerrainQuality } from "../terrain/terrainQuality";
+-import type { ScatterBatch } from "./InstancedScatter";
+-import type { ScatterModelSource } from "./scatterModels";
++import { CAMERA_POST_FRAME_PRIORITY } from "@jgengine/shell/camera/cameraRigs";
++import { acquireImpostor, impostorCard, impostorDistance, impostorSettingsForQuality, impostorSwitch, releaseImpostor, type ImpostorEntry } from "@jgengine/core/lod/impostor.draw";
++import { uploadInstances } from "@jgengine/core/instancing/instanceUpload.draw";
++import { useTerrainQuality } from "@jgengine/core/terrain/terrainQuality.draw";
++import type { ScatterBatch } from "./InstancedScatter.draw";
++import type { ScatterModelSource } from "./scatterModels.draw";
+ 
+ /** Camera travel in metres before the near/far split is recomputed. */
+ const SPLIT_MOVE = 1;
+diff --git a/packages/shell/src/scatter/scatterModels.test.ts b/packages/core/src/scatter/scatterModels.draw.test.ts
+similarity index 99%
+rename from packages/shell/src/scatter/scatterModels.test.ts
+rename to packages/core/src/scatter/scatterModels.draw.test.ts
+index 5dbd1c408..b9f9fe0a1 100644
+--- a/packages/shell/src/scatter/scatterModels.test.ts
++++ b/packages/core/src/scatter/scatterModels.draw.test.ts
+@@ -3,7 +3,7 @@ import * as THREE from "three";
+ 
+ import type { ModelConfig } from "@jgengine/core/game/playableGame";
+ 
+-import { buildScatterModelSources, disposeScatterModelSources } from "./scatterModels";
++import { buildScatterModelSources, disposeScatterModelSources } from "./scatterModels.draw";
+ 
+ function meshScene(): { scene: THREE.Group; mesh: THREE.Mesh } {
+   const scene = new THREE.Group();
+diff --git a/packages/shell/src/scatter/scatterModels.ts b/packages/core/src/scatter/scatterModels.draw.ts
+similarity index 95%
+rename from packages/shell/src/scatter/scatterModels.ts
+rename to packages/core/src/scatter/scatterModels.draw.ts
+index 04bd29a4f..35c242dd0 100644
+--- a/packages/shell/src/scatter/scatterModels.ts
++++ b/packages/core/src/scatter/scatterModels.draw.ts
+@@ -3,10 +3,10 @@ import * as THREE from "three";
+ import type { ModelConfig } from "@jgengine/core/game/playableGame";
+ import { parseModelHiddenNodes } from "@jgengine/core/editor/modelNodeVisibility";
+ 
+-import { applyMaterialOverride } from "../materialOverride";
+-import { cloneModelScene, disposeModelScene, ownModelMaterial } from "../render/modelRender";
+-import { applyModelSurface } from "../render/modelSurface";
+-import { applyModelWindToScene } from "../render/modelWind";
++import { applyMaterialOverride } from "@jgengine/shell/materialOverride";
++import { cloneModelScene, disposeModelScene, ownModelMaterial } from "@jgengine/shell/render/modelRender";
++import { applyModelSurface } from "@jgengine/shell/render/modelSurface";
++import { applyModelWindToScene } from "@jgengine/shell/render/modelWind";
+ /** One instanceable draw source harvested from a resolved GLB — geometry stays shared with the loader cache, `localMatrix` bakes the model's own transform (from its scene root) plus scale/anchor normalization. */
+ export interface ScatterModelSource {
+   geometry: THREE.BufferGeometry;
+diff --git a/packages/shell/src/scatter/scatterProxies.ts b/packages/core/src/scatter/scatterProxies.draw.ts
+similarity index 100%
+rename from packages/shell/src/scatter/scatterProxies.ts
+rename to packages/core/src/scatter/scatterProxies.draw.ts
+diff --git a/packages/shell/src/scatter/scatterVariants.test.ts b/packages/core/src/scatter/scatterVariants.draw.test.ts
+similarity index 98%
+rename from packages/shell/src/scatter/scatterVariants.test.ts
+rename to packages/core/src/scatter/scatterVariants.draw.test.ts
+index 41f2c7b9e..fff4f44b9 100644
+--- a/packages/shell/src/scatter/scatterVariants.test.ts
++++ b/packages/core/src/scatter/scatterVariants.draw.test.ts
+@@ -4,9 +4,9 @@ import type { ModelConfig } from "@jgengine/core/game/playableGame";
+ import { createModelVariantSelector } from "@jgengine/core/lod/modelLod";
+ import { lodBandIndex } from "@jgengine/core/lod/lod";
+ import type { ScatterInstance } from "@jgengine/core/scatter/scatterRegion";
+-import { scatterBatchInstances, type ScatterBatch } from "./InstancedScatter";
+-import { buildScatterModelSources, disposeScatterModelSources } from "./scatterModels";
+-import { scatterVariantTriangles, writeScatterVariantLevel } from "./scatterVariants";
++import { scatterBatchInstances, type ScatterBatch } from "./InstancedScatter.draw";
++import { buildScatterModelSources, disposeScatterModelSources } from "./scatterModels.draw";
++import { scatterVariantTriangles, writeScatterVariantLevel } from "./scatterVariants.draw";
+ 
+ const FULL_TRIANGLES = 9134;
+ const FAR_TRIANGLES = 4110;
+diff --git a/packages/shell/src/scatter/scatterVariants.ts b/packages/core/src/scatter/scatterVariants.draw.ts
+similarity index 100%
+rename from packages/shell/src/scatter/scatterVariants.ts
+rename to packages/core/src/scatter/scatterVariants.draw.ts
+diff --git a/packages/shell/src/worldSky.ts b/packages/core/src/sky/worldSky.ts
+similarity index 76%
+rename from packages/shell/src/worldSky.ts
+rename to packages/core/src/sky/worldSky.ts
+index 885df7268..3bbfa1b0d 100644
+--- a/packages/shell/src/worldSky.ts
++++ b/packages/core/src/sky/worldSky.ts
+@@ -14,10 +14,3 @@ export function resolveWorldSky(world: WorldFeature | undefined): SkyEnvironment
+   if (world?.kind === "place") return world.ground.mode === "board" ? undefined : PLACE_DEFAULT_SKY;
+   return world?.kind === "environment" ? world.sky : undefined;
+ }
+-
+-/** Deterministic HSL color from a stable instance id (default entity/object tint). @internal */
+-export function colorFromId(id: string): string {
+-  let hash = 0;
+-  for (let index = 0; index < id.length; index += 1) hash = (hash * 31 + id.charCodeAt(index)) >>> 0;
+-  return `hsl(${hash % 360}, 65%, 55%)`;
+-}
+diff --git a/packages/shell/src/terrain/CarvedTerrain.tsx b/packages/core/src/terrain/CarvedTerrain.draw.tsx
+similarity index 97%
+rename from packages/shell/src/terrain/CarvedTerrain.tsx
+rename to packages/core/src/terrain/CarvedTerrain.draw.tsx
+index 7ce03ea1d..d31b42792 100644
+--- a/packages/shell/src/terrain/CarvedTerrain.tsx
++++ b/packages/core/src/terrain/CarvedTerrain.draw.tsx
+@@ -6,10 +6,10 @@ import { runSliced, type SlicedRun } from "@jgengine/core/run/slicedWork";
+ 
+ import type { TerrainField } from "@jgengine/core/terrain/terrain";
+ 
+-import { useDisposable } from "../render/useDisposable";
+-import { useSlicedValue } from "../render/useSlicedValue";
+-import { CHUNKED_GROUND_MIN_VERTICES, GroundChunks } from "./terrainChunks";
+-import { fieldGroundGeometryJob, resolveFieldGroundGrid, type FieldGroundOptions } from "./terrainMath";
++import { useDisposable } from "@jgengine/shell/render/useDisposable";
++import { useSlicedValue } from "@jgengine/shell/render/useSlicedValue";
++import { CHUNKED_GROUND_MIN_VERTICES, GroundChunks } from "./terrainChunks.draw";
++import { fieldGroundGeometryJob, resolveFieldGroundGrid, type FieldGroundOptions } from "./terrainMath.draw";
+ 
+ export interface CarvedTerrainProps extends Omit<ThreeElements["mesh"], "args" | "children" | "geometry" | "material"> {
+   /** The terrain field to mesh — a `CarvableField` renders its craters and mounds. */
+diff --git a/packages/shell/src/terrain/EditableGround.tsx b/packages/core/src/terrain/EditableGround.draw.tsx
+similarity index 100%
+rename from packages/shell/src/terrain/EditableGround.tsx
+rename to packages/core/src/terrain/EditableGround.draw.tsx
+diff --git a/packages/shell/src/terrain/ProceduralGround.tsx b/packages/core/src/terrain/ProceduralGround.draw.tsx
+similarity index 87%
+rename from packages/shell/src/terrain/ProceduralGround.tsx
+rename to packages/core/src/terrain/ProceduralGround.draw.tsx
+index 2b84076cb..c27680c8b 100644
+--- a/packages/shell/src/terrain/ProceduralGround.tsx
++++ b/packages/core/src/terrain/ProceduralGround.draw.tsx
+@@ -1,8 +1,8 @@
+ import { type ThreeElements } from "@react-three/fiber";
+ import * as THREE from "three";
+ 
+-import { useDisposable } from "../render/useDisposable";
+-import { createProceduralGroundGeometry, type ProceduralTerrainConfig, type TerrainVertexColorOptions } from "./terrainMath";
++import { useDisposable } from "@jgengine/shell/render/useDisposable";
++import { createProceduralGroundGeometry, type ProceduralTerrainConfig, type TerrainVertexColorOptions } from "./terrainMath.draw";
+ 
+ export interface ProceduralGroundProps extends Omit<ThreeElements["mesh"], "args" | "children" | "geometry" | "material"> {
+   terrain?: ProceduralTerrainConfig;
+diff --git a/packages/shell/src/terrain/TerraformBrushCursor.tsx b/packages/core/src/terrain/TerraformBrushCursor.draw.tsx
+similarity index 100%
+rename from packages/shell/src/terrain/TerraformBrushCursor.tsx
+rename to packages/core/src/terrain/TerraformBrushCursor.draw.tsx
+diff --git a/packages/shell/src/terrain/groundEdgeFade.test.ts b/packages/core/src/terrain/groundEdgeFade.draw.test.ts
+similarity index 96%
+rename from packages/shell/src/terrain/groundEdgeFade.test.ts
+rename to packages/core/src/terrain/groundEdgeFade.draw.test.ts
+index 786f0a3ec..5f1c295a4 100644
+--- a/packages/shell/src/terrain/groundEdgeFade.test.ts
++++ b/packages/core/src/terrain/groundEdgeFade.draw.test.ts
+@@ -1,8 +1,8 @@
+ import { describe, expect, test } from "bun:test";
+ import * as THREE from "three";
+ 
+-import { applyGroundEdgeFade, buildGroundCoverageMask, createGroundEdgeFade, type GroundCoverageMask } from "./groundEdgeFade";
+-import { createSurfaceRibbonMaterial } from "../roads/surfaceRibbonMaterial";
++import { applyGroundEdgeFade, buildGroundCoverageMask, createGroundEdgeFade, type GroundCoverageMask } from "./groundEdgeFade.draw";
++import { createSurfaceRibbonMaterial } from "@jgengine/shell/roads/surfaceRibbonMaterial";
+ 
+ /** A flat XZ rectangle as two triangles. */
+ const rect = (x0: number, z0: number, x1: number, z1: number): THREE.BufferGeometry => {
+diff --git a/packages/shell/src/terrain/groundEdgeFade.ts b/packages/core/src/terrain/groundEdgeFade.draw.ts
+similarity index 100%
+rename from packages/shell/src/terrain/groundEdgeFade.ts
+rename to packages/core/src/terrain/groundEdgeFade.draw.ts
+diff --git a/packages/shell/src/terrain/heightfieldGeometry.test.ts b/packages/core/src/terrain/heightfieldGeometry.draw.test.ts
+similarity index 99%
+rename from packages/shell/src/terrain/heightfieldGeometry.test.ts
+rename to packages/core/src/terrain/heightfieldGeometry.draw.test.ts
+index 2ff9b676b..f6781aee3 100644
+--- a/packages/shell/src/terrain/heightfieldGeometry.test.ts
++++ b/packages/core/src/terrain/heightfieldGeometry.draw.test.ts
+@@ -1,7 +1,7 @@
+ import { describe, expect, test } from "bun:test";
+ import * as THREE from "three";
+ 
+-import { displaceHeightfieldGeometry, type HeightfieldRect } from "./heightfieldGeometry";
++import { displaceHeightfieldGeometry, type HeightfieldRect } from "./heightfieldGeometry.draw";
+ 
+ const BOUNDS: HeightfieldRect = { minX: -40, minZ: -40, maxX: 40, maxZ: 40 };
+ const SEGMENTS = 32;
+diff --git a/packages/shell/src/terrain/heightfieldGeometry.ts b/packages/core/src/terrain/heightfieldGeometry.draw.ts
+similarity index 100%
+rename from packages/shell/src/terrain/heightfieldGeometry.ts
+rename to packages/core/src/terrain/heightfieldGeometry.draw.ts
+diff --git a/packages/shell/src/terrain/random.ts b/packages/core/src/terrain/random.ts
+similarity index 100%
+rename from packages/shell/src/terrain/random.ts
+rename to packages/core/src/terrain/random.ts
+diff --git a/packages/shell/src/terrain/soilPatchMaterial.test.ts b/packages/core/src/terrain/soilPatchMaterial.draw.test.ts
+similarity index 96%
+rename from packages/shell/src/terrain/soilPatchMaterial.test.ts
+rename to packages/core/src/terrain/soilPatchMaterial.draw.test.ts
+index 39947c7ef..7563cb4cb 100644
+--- a/packages/shell/src/terrain/soilPatchMaterial.test.ts
++++ b/packages/core/src/terrain/soilPatchMaterial.draw.test.ts
+@@ -2,7 +2,7 @@ import { expect, test } from "bun:test";
+ 
+ import { SOIL_DEFAULTS } from "@jgengine/core/world/soilKind";
+ 
+-import { createSoilPatchMaterial } from "./soilPatchMaterial";
++import { createSoilPatchMaterial } from "./soilPatchMaterial.draw";
+ 
+ function fakeShader() {
+   return {
+diff --git a/packages/shell/src/terrain/soilPatchMaterial.ts b/packages/core/src/terrain/soilPatchMaterial.draw.ts
+similarity index 100%
+rename from packages/shell/src/terrain/soilPatchMaterial.ts
+rename to packages/core/src/terrain/soilPatchMaterial.draw.ts
+diff --git a/packages/shell/src/terrain/terrainChunks.test.ts b/packages/core/src/terrain/terrainChunks.draw.test.ts
+similarity index 98%
+rename from packages/shell/src/terrain/terrainChunks.test.ts
+rename to packages/core/src/terrain/terrainChunks.draw.test.ts
+index a9ba629a1..77953920e 100644
+--- a/packages/shell/src/terrain/terrainChunks.test.ts
++++ b/packages/core/src/terrain/terrainChunks.draw.test.ts
+@@ -3,8 +3,8 @@ import { describe, expect, test } from "bun:test";
+ import { runToEnd } from "@jgengine/core/run/slicedWork";
+ import * as THREE from "three";
+ 
+-import { CHUNKED_GROUND_MIN_VERTICES, GroundChunks } from "./terrainChunks";
+-import { createFieldGroundGeometry, groundPatchJob, resolveFieldGroundGrid } from "./terrainMath";
++import { CHUNKED_GROUND_MIN_VERTICES, GroundChunks } from "./terrainChunks.draw";
++import { createFieldGroundGeometry, groundPatchJob, resolveFieldGroundGrid } from "./terrainMath.draw";
+ 
+ const hill = { sampleHeight: (x: number, z: number) => Math.sin(x * 0.3) * 2 + Math.cos(z * 0.2), sampleNormal: () => [0, 1, 0] as const };
+ 
+diff --git a/packages/shell/src/terrain/terrainChunks.ts b/packages/core/src/terrain/terrainChunks.draw.ts
+similarity index 98%
+rename from packages/shell/src/terrain/terrainChunks.ts
+rename to packages/core/src/terrain/terrainChunks.draw.ts
+index e1f77e368..ce7072584 100644
+--- a/packages/shell/src/terrain/terrainChunks.ts
++++ b/packages/core/src/terrain/terrainChunks.draw.ts
+@@ -1,7 +1,7 @@
+ import type { SlicedJob } from "@jgengine/core/run/slicedWork";
+ import * as THREE from "three";
+ 
+-import { groundPatchJob, type GroundGrid } from "./terrainMath";
++import { groundPatchJob, type GroundGrid } from "./terrainMath.draw";
+ 
+ /** Above this many vertices a ground is meshed as LOD tiles instead of one mesh. */
+ export const CHUNKED_GROUND_MIN_VERTICES = 129 * 129 * 4;
+diff --git a/packages/shell/src/terrain/terrainDetailMaterial.test.ts b/packages/core/src/terrain/terrainDetailMaterial.draw.test.ts
+similarity index 98%
+rename from packages/shell/src/terrain/terrainDetailMaterial.test.ts
+rename to packages/core/src/terrain/terrainDetailMaterial.draw.test.ts
+index 1c10c757f..214796042 100644
+--- a/packages/shell/src/terrain/terrainDetailMaterial.test.ts
++++ b/packages/core/src/terrain/terrainDetailMaterial.draw.test.ts
+@@ -3,9 +3,9 @@ import type { TerrainMaterialMaps } from "@jgengine/core/world/features";
+ import { expect, test } from "bun:test";
+ import * as THREE from "three";
+ 
+-import { createTerrainDetailMaterial, type TerrainDetailMaterialTextures } from "./terrainDetailMaterial";
+-import { createTerrainPaintTextures, packTerrainPaintWeights } from "./terrainSurfaces";
+-import { surfaceNoiseTexture } from "./terrainSurfaceShader";
++import { createTerrainDetailMaterial, type TerrainDetailMaterialTextures } from "./terrainDetailMaterial.draw";
++import { createTerrainPaintTextures, packTerrainPaintWeights } from "./terrainSurfaces.draw";
++import { surfaceNoiseTexture } from "./terrainSurfaceShader.draw";
+ 
+ function fakeShader() {
+   return {
+diff --git a/packages/shell/src/terrain/terrainDetailMaterial.ts b/packages/core/src/terrain/terrainDetailMaterial.draw.ts
+similarity index 99%
+rename from packages/shell/src/terrain/terrainDetailMaterial.ts
+rename to packages/core/src/terrain/terrainDetailMaterial.draw.ts
+index 4bea84abf..dc8f2b2a3 100644
+--- a/packages/shell/src/terrain/terrainDetailMaterial.ts
++++ b/packages/core/src/terrain/terrainDetailMaterial.draw.ts
+@@ -3,8 +3,8 @@ import * as THREE from "three";
+ import type { GraphicsQuality } from "@jgengine/core/settings/settingsModel";
+ import type { ResolvedTerrainDetail } from "@jgengine/core/terrain/terrain";
+ 
+-import { NOISE_GLSL, PAINT_PARS_GLSL, SURFACE_BUMP_NORMAL_GLSL, SURFACE_FUNCTIONS_GLSL, surfaceNoiseUniforms } from "./terrainSurfaceShader";
+-import type { TerrainPaintTextures } from "./terrainSurfaces";
++import { NOISE_GLSL, PAINT_PARS_GLSL, SURFACE_BUMP_NORMAL_GLSL, SURFACE_FUNCTIONS_GLSL, surfaceNoiseUniforms } from "./terrainSurfaceShader.draw";
++import type { TerrainPaintTextures } from "./terrainSurfaces.draw";
+ 
+ /** The built procedural detail terrain material, ready to mount on the ground mesh. */
+ export interface TerrainDetailMaterialHandle {
+diff --git a/packages/shell/src/terrain/terrainGroundColor.ts b/packages/core/src/terrain/terrainGroundColor.draw.ts
+similarity index 99%
+rename from packages/shell/src/terrain/terrainGroundColor.ts
+rename to packages/core/src/terrain/terrainGroundColor.draw.ts
+index f6e640141..f2c1ca7be 100644
+--- a/packages/shell/src/terrain/terrainGroundColor.ts
++++ b/packages/core/src/terrain/terrainGroundColor.draw.ts
+@@ -3,7 +3,7 @@ import * as THREE from "three";
+ import type { TerrainEnvironmentDescriptor } from "@jgengine/core/world/features";
+ import { createTerrainPaletteSampler, resolveTerrainPalette, type TerrainField } from "@jgengine/core/terrain/terrain";
+ import { editableTerrainFromSnapshot, type TerraformSnapshot } from "@jgengine/core/terrain/terraform";
+-import { createTerrainPaintColorSampler } from "./terrainPaintColor";
++import { createTerrainPaintColorSampler } from "./terrainPaintColor.draw";
+ 
+ /**
+  * Terrain base color at a world XZ — authored paint first, otherwise the regional palette lerped
+diff --git a/packages/shell/src/terrain/terrainMath.test.ts b/packages/core/src/terrain/terrainMath.draw.test.ts
+similarity index 98%
+rename from packages/shell/src/terrain/terrainMath.test.ts
+rename to packages/core/src/terrain/terrainMath.draw.test.ts
+index 21068651f..3b4f3e4e5 100644
+--- a/packages/shell/src/terrain/terrainMath.test.ts
++++ b/packages/core/src/terrain/terrainMath.draw.test.ts
+@@ -9,7 +9,7 @@ import {
+ } from "@jgengine/core/terrain/terrain";
+ import { GRASS_DEFAULTS } from "@jgengine/core/world/grassKind";
+ 
+-import { bakeGrassNode, resolveGrassBake } from "../grass/grassBake";
++import { bakeGrassNode, resolveGrassBake } from "@jgengine/shell/grass/grassBake";
+ import { seededRng } from "@jgengine/core/random/rng";
+ import {
+   createFieldGroundGeometry,
+@@ -17,7 +17,7 @@ import {
+   createProceduralTerrainSampler,
+   fieldGroundGeometryJob,
+   normalizeHeightBlend,
+-} from "./terrainMath";
++} from "./terrainMath.draw";
+ 
+ describe("terrain primitives", () => {
+   test("seeded random streams are stable", () => {
+diff --git a/packages/shell/src/terrain/terrainMath.ts b/packages/core/src/terrain/terrainMath.draw.ts
+similarity index 100%
+rename from packages/shell/src/terrain/terrainMath.ts
+rename to packages/core/src/terrain/terrainMath.draw.ts
+diff --git a/packages/shell/src/terrain/terrainPaintColor.test.ts b/packages/core/src/terrain/terrainPaintColor.draw.test.ts
+similarity index 97%
+rename from packages/shell/src/terrain/terrainPaintColor.test.ts
+rename to packages/core/src/terrain/terrainPaintColor.draw.test.ts
+index 62ea22e7c..757628441 100644
+--- a/packages/shell/src/terrain/terrainPaintColor.test.ts
++++ b/packages/core/src/terrain/terrainPaintColor.draw.test.ts
+@@ -5,9 +5,9 @@ import { environmentContentFromDocument } from "@jgengine/core/editor/environmen
+ import { environment, terrain } from "@jgengine/core/world/features";
+ import { resolveEnvironmentField } from "@jgengine/core/terrain/terrain";
+ import { createEditableTerrain, editableTerrainFromSnapshot } from "@jgengine/core/terrain/terraform";
+-import { terrainGroundColorSampler } from "./terrainGroundColor";
+-import { createFieldGroundGeometry } from "./terrainMath";
+-import { createTerrainPaintColorSampler } from "./terrainPaintColor";
++import { terrainGroundColorSampler } from "./terrainGroundColor.draw";
++import { createFieldGroundGeometry } from "./terrainMath.draw";
++import { createTerrainPaintColorSampler } from "./terrainPaintColor.draw";
+ 
+ function authored() {
+   return createEditableTerrain({ bounds: { minX: -2, maxX: 2, minZ: -2, maxZ: 2 }, cellSize: 1 });
+diff --git a/packages/shell/src/terrain/terrainPaintColor.ts b/packages/core/src/terrain/terrainPaintColor.draw.ts
+similarity index 100%
+rename from packages/shell/src/terrain/terrainPaintColor.ts
+rename to packages/core/src/terrain/terrainPaintColor.draw.ts
+diff --git a/packages/shell/src/terrain/terrainQuality.ts b/packages/core/src/terrain/terrainQuality.draw.ts
+similarity index 100%
+rename from packages/shell/src/terrain/terrainQuality.ts
+rename to packages/core/src/terrain/terrainQuality.draw.ts
+diff --git a/packages/shell/src/terrain/terrainSurfaceShader.ts b/packages/core/src/terrain/terrainSurfaceShader.draw.ts
+similarity index 100%
+rename from packages/shell/src/terrain/terrainSurfaceShader.ts
+rename to packages/core/src/terrain/terrainSurfaceShader.draw.ts
+diff --git a/packages/shell/src/terrain/terrainSurfaces.test.ts b/packages/core/src/terrain/terrainSurfaces.draw.test.ts
+similarity index 96%
+rename from packages/shell/src/terrain/terrainSurfaces.test.ts
+rename to packages/core/src/terrain/terrainSurfaces.draw.test.ts
+index 76cd83c11..9a8f3ea64 100644
+--- a/packages/shell/src/terrain/terrainSurfaces.test.ts
++++ b/packages/core/src/terrain/terrainSurfaces.draw.test.ts
+@@ -1,8 +1,8 @@
+ import { expect, test } from "bun:test";
+ import type { TerrainMaterialLayer } from "@jgengine/core/terrain/terraform";
+ 
+-import type { TerrainPaintSource } from "./terrainPaintColor";
+-import { createTerrainPaintTextures, packTerrainPaintWeights, terrainSurfaceClass } from "./terrainSurfaces";
++import type { TerrainPaintSource } from "./terrainPaintColor.draw";
++import { createTerrainPaintTextures, packTerrainPaintWeights, terrainSurfaceClass } from "./terrainSurfaces.draw";
+ 
+ function gridSource(
+   layers: TerrainMaterialLayer[],
+diff --git a/packages/shell/src/terrain/terrainSurfaces.ts b/packages/core/src/terrain/terrainSurfaces.draw.ts
+similarity index 99%
+rename from packages/shell/src/terrain/terrainSurfaces.ts
+rename to packages/core/src/terrain/terrainSurfaces.draw.ts
+index a8127d256..24072daa1 100644
+--- a/packages/shell/src/terrain/terrainSurfaces.ts
++++ b/packages/core/src/terrain/terrainSurfaces.draw.ts
+@@ -2,7 +2,7 @@ import * as THREE from "three";
+ import { TERRAIN_PAINT_COLORS } from "@jgengine/core/terrain/terrainPaint";
+ import type { TerrainMaterialLayer } from "@jgengine/core/terrain/terraform";
+ 
+-import type { TerrainPaintSource } from "./terrainPaintColor";
++import type { TerrainPaintSource } from "./terrainPaintColor.draw";
+ 
+ /** Procedural ground response the terrain shader renders for a painted surface id. */
+ export type TerrainSurfaceClass = "ground" | "grass" | "dirt" | "gravel" | "rock" | "sand" | "mud" | "snow" | "road";
+diff --git a/packages/editor/src/ScatterPreview.tsx b/packages/editor/src/ScatterPreview.tsx
+index 76b8799eb..57073e965 100644
+--- a/packages/editor/src/ScatterPreview.tsx
++++ b/packages/editor/src/ScatterPreview.tsx
+@@ -4,7 +4,7 @@ import type { EditorSession } from "@jgengine/core/editor/index";
+ import { editableTerrainFromSnapshot } from "@jgengine/core/terrain/terraform";
+ import { resolveScatter, type ScatterInstance, type ScatterTerrain } from "@jgengine/core/scatter/scatterRegion";
+ import { useGameContext } from "@jgengine/react/provider";
+-import { InstancedScatter } from "@jgengine/shell/scatter";
++import { InstancedScatter } from "@jgengine/core/scatter/InstancedScatter.draw";
+ 
+ import type { EditorHostApi } from "./session";
+ import { useStoreSelector } from "./useStoreSelector";
+diff --git a/packages/editor/src/TerrainSculpt.tsx b/packages/editor/src/TerrainSculpt.tsx
+index e94038572..d4dc80423 100644
+--- a/packages/editor/src/TerrainSculpt.tsx
++++ b/packages/editor/src/TerrainSculpt.tsx
+@@ -23,20 +23,18 @@ import {
+   type TerraformStroke,
+ } from "@jgengine/core/terrain/terraform";
+ import { useGameContext } from "@jgengine/react/provider";
++import { displaceHeightfieldGeometry } from "@jgengine/core/terrain/heightfieldGeometry.draw";
++import { normalizeHeightBlend } from "@jgengine/core/terrain/terrainMath.draw";
++import { ALL_TERRAIN_SURFACE_CLASSES, createTerrainDetailMaterial } from "@jgengine/core/terrain/terrainDetailMaterial.draw";
++import { createTerrainPaintColorSampler, type TerrainPaintColorSampler } from "@jgengine/core/terrain/terrainPaintColor.draw";
+ import {
+-  displaceHeightfieldGeometry,
+-  normalizeHeightBlend,
+-  ALL_TERRAIN_SURFACE_CLASSES,
+-  createTerrainDetailMaterial,
+-  createTerrainPaintColorSampler,
+   createTerrainPaintTextures,
+   packTerrainPaintWeights,
+-  type TerrainPaintColorSampler,
+   type TerrainPaintTextures,
+   type TerrainPaintWeights,
+-  TerraformBrushCursor,
+-  useTerrainQuality,
+-} from "@jgengine/shell/terrain";
++} from "@jgengine/core/terrain/terrainSurfaces.draw";
++import { TerraformBrushCursor } from "@jgengine/core/terrain/TerraformBrushCursor.draw";
++import { useTerrainQuality } from "@jgengine/core/terrain/terrainQuality.draw";
+ 
+ import { editorPerfMarks } from "./perfMarks";
+ import type { EditorHostApi } from "./session";
+diff --git a/packages/shell/src/GamePlayerShell.test.ts b/packages/shell/src/GamePlayerShell.test.ts
+index f9ef58d6b..5e0698d6f 100644
+--- a/packages/shell/src/GamePlayerShell.test.ts
++++ b/packages/shell/src/GamePlayerShell.test.ts
+@@ -7,7 +7,7 @@ import {
+   resolvePhysicsTuning,
+ } from "./GamePlayerShell";
+ import { heldActionsFor, shouldFireBoundAction } from "@jgengine/core/input/boundActionDispatch";
+-import { resolveWorldSky } from "./worldSky";
++import { resolveWorldSky } from "@jgengine/core/sky/worldSky";
+ import { world } from "@jgengine/core/placement/place";
+ import { advanceVoxelPlayer, createVoxelPlayerBody } from "@jgengine/core/movement/voxelController";
+ import { resolveMovementIntent, createEmptyMovementKeys } from "@jgengine/core/movement/movementModel";
+diff --git a/packages/shell/src/Shell3dPresentation.tsx b/packages/shell/src/Shell3dPresentation.tsx
+index b1dc08af0..a1a7acda5 100644
+--- a/packages/shell/src/Shell3dPresentation.tsx
++++ b/packages/shell/src/Shell3dPresentation.tsx
+@@ -53,7 +53,7 @@ import { GameProvider } from "@jgengine/react/provider";
+ import { ColorblindFrame, useColorblindMode } from "@jgengine/core/ui/accessibility.view";
+ import { SettingsProvider, type SettingsActionView } from "@jgengine/core/settings/settings.view";
+ 
+-import { resolveWorldSky } from "./worldSky";
++import { resolveWorldSky } from "@jgengine/core/sky/worldSky";
+ import { resolveCaptureCameraConfig } from "./camera/rigResolve";
+ import { rtsRotateKeysConflict } from "./camera/rigMath";
+ import { pointerAimFor, pointerContextMenu, resolvePointerAim } from "@jgengine/core/input/shellPointer.draw";
+@@ -89,7 +89,7 @@ import { bearingFromDirection } from "@jgengine/core/sky/daylightCycle";
+ import type { DaylightModulation } from "./render/SceneLighting";
+ import { colorGradeFromDocument, lightProbesFromDocument } from "@jgengine/core/editor/environment";
+ import { resolveSkyLightOwnership, skyEmitsLights } from "./sky/skyLightingPolicy";
+-import { EnvironmentScene } from "./environment/EnvironmentScene";
++import { EnvironmentScene } from "@jgengine/core/environment/EnvironmentScene.draw";
+ import { PointerProbe } from "@jgengine/core/input/PointerProbe.draw";
+ import { MarqueeBox, ContextMenuView } from "@jgengine/core/input/PointerOverlays.view";
+ import { createPointerService } from "@jgengine/core/input/pointerService.draw";
+@@ -126,7 +126,7 @@ import { createShellKeyHandlers, ShellDebugOverlays, ShellGameUiChrome } from ".
+ import { CombatPresentation } from "@jgengine/core/combat/CombatPresentation.draw";
+ import { ParticleEmitters } from "./vfx/ParticleEmitters";
+ import { WorldTireMarks } from "./world/WorldTireMarks";
+-import { TerrainQualityContext } from "./terrain/terrainQuality";
++import { TerrainQualityContext } from "@jgengine/core/terrain/terrainQuality.draw";
+ import { detectKtx2Support } from "./render/modelLoad";
+ import { SceneWarmupCoverLive, SceneWarmupGate, createSceneWarmupStore } from "./render/SceneWarmupGate";
+ import {
+diff --git a/packages/shell/src/city/CityRenderer.tsx b/packages/shell/src/city/CityRenderer.tsx
+index 586cd5139..bf908afe3 100644
+--- a/packages/shell/src/city/CityRenderer.tsx
++++ b/packages/shell/src/city/CityRenderer.tsx
+@@ -51,14 +51,14 @@ import { hashString } from "@jgengine/core/random/rng";
+ import { valueNoise } from "@jgengine/core/terrain/terrain";
+ import type { SceneKindObject } from "@jgengine/core/scene/sceneKinds";
+ 
+-import { buildScatterProxy } from "../scatter/scatterProxies";
++import { buildScatterProxy } from "@jgengine/core/scatter/scatterProxies.draw";
+ import { InstancedBuildings, type InstancedBuildingPlacement } from "@jgengine/core/buildings/GeneratedBuilding.draw";
+ import { getBuildingKit } from "@jgengine/core/buildings/buildingKitRegistry";
+-import { uploadInstances } from "../instancing/instanceUpload";
++import { uploadInstances } from "@jgengine/core/instancing/instanceUpload.draw";
+ import { createCityWindowMaterial } from "./cityWindowMaterial";
+ import { createSurfaceRibbonMaterial } from "../roads/surfaceRibbonMaterial";
+-import { applyGroundEdgeFade, buildGroundCoverageMask, createGroundEdgeFade } from "../terrain/groundEdgeFade";
+-import { useTerrainQuality } from "../terrain/terrainQuality";
++import { applyGroundEdgeFade, buildGroundCoverageMask, createGroundEdgeFade } from "@jgengine/core/terrain/groundEdgeFade.draw";
++import { useTerrainQuality } from "@jgengine/core/terrain/terrainQuality.draw";
+ import { registerSceneKindRenderer, type SceneKindRenderContext } from "../scene/sceneKindRenderers";
+ import { junctionSurface } from "./cityJunctionSurface";
+ 
+diff --git a/packages/shell/src/defineGame.tsx b/packages/shell/src/defineGame.tsx
+index a55f5b2de..65a86d987 100644
+--- a/packages/shell/src/defineGame.tsx
++++ b/packages/shell/src/defineGame.tsx
+@@ -19,7 +19,7 @@ import { resolveGameLook } from "@jgengine/core/render/lookPreset";
+ import type { ResolveAuthoredObjectsOptions } from "@jgengine/core/world/authoredObjects";
+ 
+ import { EnvironmentScene } from "./environment";
+-import { terrainGroundColorSampler } from "./terrain/terrainGroundColor";
++import { terrainGroundColorSampler } from "@jgengine/core/terrain/terrainGroundColor.draw";
+ import type { PlayableGame } from "./registry";
+ import { AuthoredScene } from "./scene/AuthoredScene";
+ 
+diff --git a/packages/shell/src/environment.ts b/packages/shell/src/environment.ts
+deleted file mode 100644
+index 2213af985..000000000
+--- a/packages/shell/src/environment.ts
++++ /dev/null
+@@ -1 +0,0 @@
+-export * from "./environment/index";
+diff --git a/packages/shell/src/environment/index.test.ts b/packages/shell/src/environment/index.test.ts
+deleted file mode 100644
+index 335d98ee6..000000000
+--- a/packages/shell/src/environment/index.test.ts
++++ /dev/null
+@@ -1,13 +0,0 @@
+-import { expect, test } from "bun:test";
+-
+-import * as environment from "./index";
+-import { VolumetricClouds } from "../sky/VolumetricClouds";
+-
+-test("the sky has one component; the old daylight variants are gone", () => {
+-  expect(typeof environment.Sky).toBe("function");
+-  expect(typeof environment.SkyDome).toBe("function");
+-  for (const removed of ["Daylight", "SkyDaylight", "StaticSkyDaylight", "TimeOfDayDaylight", "BiomeDaylight", "DrivenDaylight", "AuthoredDaylight", "DayNightSky"]) {
+-    expect(removed in environment).toBe(false);
+-  }
+-  expect(typeof VolumetricClouds).toBe("function");
+-});
+diff --git a/packages/shell/src/environment/index.ts b/packages/shell/src/environment/index.ts
+deleted file mode 100644
+index 65290fc0e..000000000
+--- a/packages/shell/src/environment/index.ts
++++ /dev/null
+@@ -1,14 +0,0 @@
+-export { Sky, SkyDome, type SkyDomeProps, type SkyProps } from "../sky/Daylight";
+-export { EnvironmentScene, type EnvironmentSceneProps } from "./EnvironmentScene";
+-export { VolumetricClouds, type VolumetricCloudsProps } from "../sky/VolumetricClouds";
+-export {
+-  daylightStateAt,
+-  SKY_PRESET_DAY_FRACTION,
+-  type DaylightCycleConfig,
+-  type DaylightState,
+-} from "@jgengine/core/sky/daylightCycle";
+-export {
+-  resolveSkyLightOwnership,
+-  skyEmitsLights,
+-  type SkyLightOwnership,
+-} from "../sky/skyLightingPolicy";
+diff --git a/packages/shell/src/grass/GrassCover.tsx b/packages/shell/src/grass/GrassCover.tsx
+index 816bec292..2137653c7 100644
+--- a/packages/shell/src/grass/GrassCover.tsx
++++ b/packages/shell/src/grass/GrassCover.tsx
+@@ -2,7 +2,7 @@ import * as THREE from "three";
+ 
+ import { useDisposable } from "../render/useDisposable";
+ import { createGrassCoverGeometry, GRASS_COVER_MAX_SEGMENTS } from "./grassCoverGeometry";
+-import type { TerrainHeightSampler } from "../terrain/terrainMath";
++import type { TerrainHeightSampler } from "@jgengine/core/terrain/terrainMath.draw";
+ 
+ let grainTexture: THREE.DataTexture | null = null;
+ 
+diff --git a/packages/shell/src/grass/GrassPatch.tsx b/packages/shell/src/grass/GrassPatch.tsx
+index 3f3e00aad..9b706db42 100644
+--- a/packages/shell/src/grass/GrassPatch.tsx
++++ b/packages/shell/src/grass/GrassPatch.tsx
+@@ -4,8 +4,8 @@ import type * as THREE from "three";
+ 
+ import type { GrassLook } from "@jgengine/core/world/grassKind";
+ 
+-import { seedToUint32, type TerrainSeed } from "../terrain/random";
+-import { resolveTerrainSize, type TerrainArea, type TerrainHeightSampler } from "../terrain/terrainMath";
++import { seedToUint32, type TerrainSeed } from "@jgengine/core/terrain/random";
++import { resolveTerrainSize, type TerrainArea, type TerrainHeightSampler } from "@jgengine/core/terrain/terrainMath.draw";
+ import { GrassCover } from "./GrassCover";
+ import { grassFieldColors, resolveGrassBake, type GrassExclusion } from "./grassBake";
+ import { createGrassMaterial } from "./grassMaterial";
+diff --git a/packages/shell/src/grass/grassBake.ts b/packages/shell/src/grass/grassBake.ts
+index 304c6254a..5ce2460c4 100644
+--- a/packages/shell/src/grass/grassBake.ts
++++ b/packages/shell/src/grass/grassBake.ts
+@@ -3,8 +3,8 @@ import * as THREE from "three";
+ import { seededRng } from "@jgengine/core/random/rng";
+ import { grassBladeDensity, type GrassLook } from "@jgengine/core/world/grassKind";
+ 
+-import { hashNoise2, seedToUint32, type TerrainSeed } from "../terrain/random";
+-import { resolveTerrainSize, type TerrainArea, type TerrainHeightSampler } from "../terrain/terrainMath";
++import { hashNoise2, seedToUint32, type TerrainSeed } from "@jgengine/core/terrain/random";
++import { resolveTerrainSize, type TerrainArea, type TerrainHeightSampler } from "@jgengine/core/terrain/terrainMath.draw";
+ 
+ /** Side of one base grass cell in metres: the unit of seeded tuft generation. Coarser stream nodes cover power-of-two blocks of cells. */
+ export const GRASS_CELL_SIZE = 8;
+diff --git a/packages/shell/src/grass/grassCoverGeometry.ts b/packages/shell/src/grass/grassCoverGeometry.ts
+index b65a15879..1d1e09d01 100644
+--- a/packages/shell/src/grass/grassCoverGeometry.ts
++++ b/packages/shell/src/grass/grassCoverGeometry.ts
+@@ -1,6 +1,6 @@
+ import * as THREE from "three";
+ 
+-import { resolveTerrainSize, type TerrainArea, type TerrainHeightSampler } from "../terrain/terrainMath";
++import { resolveTerrainSize, type TerrainArea, type TerrainHeightSampler } from "@jgengine/core/terrain/terrainMath.draw";
+ 
+ /** World metres one cover-texture tile spans; the mat's own grain is sampled in world space. */
+ export const GRASS_COVER_TILE_METRES = 3;
+diff --git a/packages/shell/src/render/CharacterCrowd.tsx b/packages/shell/src/render/CharacterCrowd.tsx
+index cdf5c4179..06cc90269 100644
+--- a/packages/shell/src/render/CharacterCrowd.tsx
++++ b/packages/shell/src/render/CharacterCrowd.tsx
+@@ -13,7 +13,7 @@ import {
+   clearCrowdKind,
+   noteCharacterFrame,
+   noteCrowdInstances,
+-} from "../lod/characterLod";
++} from "@jgengine/core/lod/characterLod";
+ import {
+   CharacterCrowdRegistry,
+   crowdClipsOf,
+diff --git a/packages/shell/src/render/CorpseRagdolls.tsx b/packages/shell/src/render/CorpseRagdolls.tsx
+index b567770a2..c7689456b 100644
+--- a/packages/shell/src/render/CorpseRagdolls.tsx
++++ b/packages/shell/src/render/CorpseRagdolls.tsx
+@@ -9,7 +9,7 @@ import { mapRigToStandard, RIG_SCHEMES, type SkeletonMap } from "@jgengine/core/
+ import { PhysicsWorld } from "@jgengine/core/physics/physicsWorld";
+ import { useGameContext } from "@jgengine/react/provider";
+ 
+-import { useTerrainQuality } from "../terrain/terrainQuality";
++import { useTerrainQuality } from "@jgengine/core/terrain/terrainQuality.draw";
+ import { useRagdoll } from "./useRagdoll";
+ 
+ const bodies = new Map<string, THREE.Object3D>();
+diff --git a/packages/shell/src/render/InteriorDressing.test.ts b/packages/shell/src/render/InteriorDressing.test.ts
+index 48c032a17..d4d1e2b01 100644
+--- a/packages/shell/src/render/InteriorDressing.test.ts
++++ b/packages/shell/src/render/InteriorDressing.test.ts
+@@ -4,7 +4,7 @@ import * as THREE from "three";
+ import { planInteriorDressing } from "@jgengine/core/world/interiorDressing";
+ 
+ import { DEFAULT_INTERIOR_SURFACES, groupInteriorDecals, interiorCableGeometry, interiorDressingShapes, practicalFlicker, writeInteriorDecals } from "./InteriorDressing";
+-import { groupStaticShapeInstances } from "../instancing/staticShapeInstances";
++import { groupStaticShapeInstances } from "@jgengine/core/instancing/staticShapeInstances.draw";
+ 
+ const plan = planInteriorDressing([{ x: 0, z: 0, w: 12, d: 8 }, { x: 9, z: 2, w: 6, d: 10 }], { seed: "shell", floorY: 0, ceilingY: 4 });
+ 
+diff --git a/packages/shell/src/render/InteriorDressing.tsx b/packages/shell/src/render/InteriorDressing.tsx
+index 9ab73f0ea..3ab88ce1b 100644
+--- a/packages/shell/src/render/InteriorDressing.tsx
++++ b/packages/shell/src/render/InteriorDressing.tsx
+@@ -7,8 +7,8 @@ import { nearestFixtures, type InteriorDecal, type InteriorDecalStyle, type Inte
+ 
+ import type { AuthoredSurfaceConfig } from "./authoredSurfaceMaterial";
+ import { createDecalTexture } from "./decalTexture";
+-import { StaticShapeInstances, type StaticShapeInstance } from "../instancing/staticShapeInstances";
+-import { uploadInstances } from "../instancing/instanceUpload";
++import { StaticShapeInstances, type StaticShapeInstance } from "@jgengine/core/instancing/staticShapeInstances.draw";
++import { uploadInstances } from "@jgengine/core/instancing/instanceUpload.draw";
+ import { useDisposable } from "./useDisposable";
+ 
+ /** The surface each dressing family wears. Any family left out falls back to a plain painted default. */
+diff --git a/packages/shell/src/render/LivingWorldLayer.tsx b/packages/shell/src/render/LivingWorldLayer.tsx
+index 67d3dac26..148e38a45 100644
+--- a/packages/shell/src/render/LivingWorldLayer.tsx
++++ b/packages/shell/src/render/LivingWorldLayer.tsx
+@@ -4,7 +4,7 @@ import * as THREE from "three";
+ 
+ import { resolveAmbientLife, type AmbientLifeConfig, type ResolvedAmbientLife, type SteamVent } from "@jgengine/core/render/ambientLife";
+ 
+-import { uploadInstances } from "../instancing/instanceUpload";
++import { uploadInstances } from "@jgengine/core/instancing/instanceUpload.draw";
+ import { findKeyLight, towardLight } from "../postfx/contactShadowPass";
+ import { advanceLivingWorld, livingWorld, resetLivingWorld } from "./livingWorld";
+ import { windDirection, windGust } from "./modelWind";
+diff --git a/packages/shell/src/render/SceneModels.tsx b/packages/shell/src/render/SceneModels.tsx
+index 5ad27623a..c97373da2 100644
+--- a/packages/shell/src/render/SceneModels.tsx
++++ b/packages/shell/src/render/SceneModels.tsx
+@@ -24,9 +24,9 @@ import { PartMotionRig } from "./PartMotion";
+ import { useCharacterGlance } from "./characterGlance";
+ import { useEntityMuzzle } from "./entityMuzzle";
+ import { registerEntityBody } from "./CorpseRagdolls";
+-import { useTerrainQuality } from "../terrain/terrainQuality";
++import { useTerrainQuality } from "@jgengine/core/terrain/terrainQuality.draw";
+ import { syncSpriteFrame } from "./spriteRender";
+-import { singleVariantLevel, variantLevelModel } from "../lod/singleVariantLod";
++import { singleVariantLevel, variantLevelModel } from "@jgengine/core/lod/singleVariantLod.draw";
+ import { applyMaterialOverride } from "../materialOverride";
+ import {
+   applyPaintTextureToMaterials,
+diff --git a/packages/shell/src/render/characterGlance.ts b/packages/shell/src/render/characterGlance.ts
+index eb5f86720..10d99b48d 100644
+--- a/packages/shell/src/render/characterGlance.ts
++++ b/packages/shell/src/render/characterGlance.ts
+@@ -3,7 +3,7 @@ import { useLayoutEffect, useMemo, useRef } from "react";
+ import * as THREE from "three";
+ 
+ import type { GameContext } from "@jgengine/core/runtime/gameContextTypes";
+-import { noteCharacterMotion } from "../lod/characterLod";
++import { noteCharacterMotion } from "@jgengine/core/lod/characterLod";
+ import { useFrameWhile } from "./useFrameWhile";
+ 
+ /**
+diff --git a/packages/shell/src/render/crowdBatch.ts b/packages/shell/src/render/crowdBatch.ts
+index 15e195635..ae6b083f7 100644
+--- a/packages/shell/src/render/crowdBatch.ts
++++ b/packages/shell/src/render/crowdBatch.ts
+@@ -1,6 +1,6 @@
+ import * as THREE from "three";
+ 
+-import { animationPhaseOf } from "../lod/characterLod";
++import { animationPhaseOf } from "@jgengine/core/lod/characterLod";
+ import {
+   crowdClipForSpeed,
+   type CrowdMember,
+diff --git a/packages/shell/src/render/decalGeometry.ts b/packages/shell/src/render/decalGeometry.ts
+index d85922c43..f681e6342 100644
+--- a/packages/shell/src/render/decalGeometry.ts
++++ b/packages/shell/src/render/decalGeometry.ts
+@@ -1,4 +1,4 @@
+-import type { TerrainHeightSampler } from "../terrain/terrainMath";
++import type { TerrainHeightSampler } from "@jgengine/core/terrain/terrainMath.draw";
+ 
+ /** Inputs for {@link createDecalDrapeGeometry}. */
+ export interface DecalDrapeOptions {
+diff --git a/packages/shell/src/render/presentationIdentity.test.tsx b/packages/shell/src/render/presentationIdentity.test.tsx
+index a7d304212..09f043b33 100644
+--- a/packages/shell/src/render/presentationIdentity.test.tsx
++++ b/packages/shell/src/render/presentationIdentity.test.tsx
+@@ -12,7 +12,7 @@ import type { PostProcessingConfig } from "@jgengine/core/render/postProcessing"
+ import type { SettingsStore } from "@jgengine/core/settings/settingsModel";
+ 
+ import { useGraphicsSettings, type AppliedGraphicsSettings } from "@jgengine/core/settings/appliedSettings.draw";
+-import { createTerrainDetailMaterial } from "../terrain/terrainDetailMaterial";
++import { createTerrainDetailMaterial } from "@jgengine/core/terrain/terrainDetailMaterial.draw";
+ import { PostProcessing } from "../postfx/PostProcessing";
+ import { usePresentationLook } from "./presentationLook";
+ import { useStableTextureSet } from "./stableTextureSet";
+diff --git a/packages/shell/src/render/submittedDraws.test.ts b/packages/shell/src/render/submittedDraws.test.ts
+index 25b258b12..a2b4ac57d 100644
+--- a/packages/shell/src/render/submittedDraws.test.ts
++++ b/packages/shell/src/render/submittedDraws.test.ts
+@@ -4,9 +4,9 @@ import type { ModelConfig } from "@jgengine/core/game/playableGame";
+ import { createObjectStore } from "@jgengine/core/scene/objectStore";
+ import { createModelVariantSelector } from "@jgengine/core/lod/modelLod";
+ import type { ScatterInstance } from "@jgengine/core/scatter/scatterRegion";
+-import { scatterBatchInstances, type ScatterBatch } from "../scatter/InstancedScatter";
+-import { buildScatterModelSources, disposeScatterModelSources } from "../scatter/scatterModels";
+-import { scatterVariantTriangles, writeScatterVariantLevel } from "../scatter/scatterVariants";
++import { scatterBatchInstances, type ScatterBatch } from "@jgengine/core/scatter/InstancedScatter.draw";
++import { buildScatterModelSources, disposeScatterModelSources } from "@jgengine/core/scatter/scatterModels.draw";
++import { scatterVariantTriangles, writeScatterVariantLevel } from "@jgengine/core/scatter/scatterVariants.draw";
+ import { countStaticBatchDraws, groupStaticObjects, STATIC_BATCH_MESH_KEY, syncStaticObjectSource } from "../world/staticObjectBatches";
+ import { countSubmittedDraws, submitInstanceCount } from "./submittedDraws";
+ 
+diff --git a/packages/shell/src/render/useFootIk.ts b/packages/shell/src/render/useFootIk.ts
+index 1f6b92f7c..2dbca2da1 100644
+--- a/packages/shell/src/render/useFootIk.ts
++++ b/packages/shell/src/render/useFootIk.ts
+@@ -8,7 +8,7 @@ import type { GameContext } from "@jgengine/core/runtime/gameContextTypes";
+ import type { ModelConfig, ModelIkConfig, ModelLookAtConfig } from "@jgengine/core/game/playableGame";
+ import type { SceneRaycastHit, SceneRaycastInput } from "@jgengine/core/scene/sceneRaycast";
+ import { resolveRigNode } from "./rigNode";
+-import { noteCharacterMotion } from "../lod/characterLod";
++import { noteCharacterMotion } from "@jgengine/core/lod/characterLod";
+ import { useFrameWhile } from "./useFrameWhile";
+ 
+ type FootIkConfig = Exclude<NonNullable<ModelConfig["ik"]>, "none">;
+diff --git a/packages/shell/src/render/useModelAnimation.ts b/packages/shell/src/render/useModelAnimation.ts
+index 4630a04e4..26ef77ca9 100644
+--- a/packages/shell/src/render/useModelAnimation.ts
++++ b/packages/shell/src/render/useModelAnimation.ts
+@@ -28,7 +28,7 @@ import { seededRng } from "@jgengine/core/random/rng";
+ import type { GameContext } from "@jgengine/core/runtime/gameContextTypes";
+ import { useOptionalGameContext } from "@jgengine/react/provider";
+ 
+-import { characterLodInterval, characterLodTierOf, noteAnimationPhase, noteCharacterPose } from "../lod/characterLod";
++import { characterLodInterval, characterLodTierOf, noteAnimationPhase, noteCharacterPose } from "@jgengine/core/lod/characterLod";
+ import { useFrameWhile } from "./useFrameWhile";
+ 
+ /** Wraps a yaw change into `(-pi, pi]`, so a turn across the wrap boundary is not a full spin. */
+diff --git a/packages/shell/src/render/useModelInstance.ts b/packages/shell/src/render/useModelInstance.ts
+index 70526932c..b2f17142d 100644
+--- a/packages/shell/src/render/useModelInstance.ts
++++ b/packages/shell/src/render/useModelInstance.ts
+@@ -5,7 +5,7 @@ import { Group, type Object3D, type SkinnedMesh } from "three";
+ import type { ModelConfig } from "@jgengine/core/game/playableGame";
+ import { parseModelHiddenNodes } from "@jgengine/core/editor/modelNodeVisibility";
+ 
+-import { registerCharacterRig, unregisterCharacterRig } from "../lod/characterLod";
++import { registerCharacterRig, unregisterCharacterRig } from "@jgengine/core/lod/characterLod";
+ import { measureLocalBounds } from "./measureBounds";
+ import { detectKtx2Support, sharedGltfLoader } from "./modelLoad";
+ import { cloneModelScene, disposeModelScene, modelPlacementTransform } from "./modelRender";
+diff --git a/packages/shell/src/roads/RoadJunctions.tsx b/packages/shell/src/roads/RoadJunctions.tsx
+index c1478d8f8..82e45d20e 100644
+--- a/packages/shell/src/roads/RoadJunctions.tsx
++++ b/packages/shell/src/roads/RoadJunctions.tsx
+@@ -4,7 +4,7 @@ import type { RoadRibbon } from "@jgengine/core/roads/roads";
+ import type { TerrainDetailMaterialConfig } from "@jgengine/core/world/features";
+ import { useSurfaceScan } from "../render/surfaceScanTextures";
+ import { useSurfaceRibbonMaterial } from "./surfaceRibbonMaterial";
+-import { useTerrainQuality } from "../terrain/terrainQuality";
++import { useTerrainQuality } from "@jgengine/core/terrain/terrainQuality.draw";
+ import type { JunctionSurface } from "./RoadRibbons";
+ 
+ function JunctionPatch({
+diff --git a/packages/shell/src/roads/RoadRibbons.tsx b/packages/shell/src/roads/RoadRibbons.tsx
+index d4c996cc9..de7e1856f 100644
+--- a/packages/shell/src/roads/RoadRibbons.tsx
++++ b/packages/shell/src/roads/RoadRibbons.tsx
+@@ -27,7 +27,7 @@ import {
+   useSurfaceRibbonMaterial,
+   type RibbonSurfaceScan,
+ } from "./surfaceRibbonMaterial";
+-import { useTerrainQuality } from "../terrain/terrainQuality";
++import { useTerrainQuality } from "@jgengine/core/terrain/terrainQuality.draw";
+ 
+ /**
+  * Decal sub-layers as small lifts above each road's authored base `elevation`, spaced by the
+diff --git a/packages/shell/src/roads/roadSurfaces.test.tsx b/packages/shell/src/roads/roadSurfaces.test.tsx
+index 80d5f7358..612b01abc 100644
+--- a/packages/shell/src/roads/roadSurfaces.test.tsx
++++ b/packages/shell/src/roads/roadSurfaces.test.tsx
+@@ -6,7 +6,7 @@ import * as THREE from "three";
+ import { environment, road } from "@jgengine/core/world/features";
+ 
+ import { setSurfaceScanLoader } from "../render/surfaceScanTextures";
+-import { EnvironmentScene } from "../environment/EnvironmentScene";
++import { EnvironmentScene } from "@jgengine/core/environment/EnvironmentScene.draw";
+ import { JUNCTION_PAINT } from "./RoadJunctions";
+ import { mixColor } from "./RoadRibbons";
+ 
+diff --git a/packages/shell/src/roads/surfaceRibbonMaterial.ts b/packages/shell/src/roads/surfaceRibbonMaterial.ts
+index 5a37b0a33..7e406e165 100644
+--- a/packages/shell/src/roads/surfaceRibbonMaterial.ts
++++ b/packages/shell/src/roads/surfaceRibbonMaterial.ts
+@@ -5,8 +5,8 @@ import type { GraphicsQuality } from "@jgengine/core/settings/settingsModel";
+ 
+ import { SURFACE_SCAN_PARS_GLSL, surfaceScanDefines, surfaceScanKeyPart, surfaceScanUniforms, type SurfaceScanBlend } from "../render/surfaceScanShader";
+ import type { SurfaceScanTextures } from "../render/surfaceScanTextures";
+-import { NOISE_GLSL, SURFACE_BUMP_NORMAL_GLSL, SURFACE_FUNCTIONS_GLSL, surfaceNoiseUniforms } from "../terrain/terrainSurfaceShader";
+-import { terrainSurfaceClass, terrainSurfaceClassIndex, terrainSurfaceRoughness, type TerrainSurfaceClass } from "../terrain/terrainSurfaces";
++import { NOISE_GLSL, SURFACE_BUMP_NORMAL_GLSL, SURFACE_FUNCTIONS_GLSL, surfaceNoiseUniforms } from "@jgengine/core/terrain/terrainSurfaceShader.draw";
++import { terrainSurfaceClass, terrainSurfaceClassIndex, terrainSurfaceRoughness, type TerrainSurfaceClass } from "@jgengine/core/terrain/terrainSurfaces.draw";
+ 
+ /** Vertex attribute {@link ribbonSurfaceFrame} fills: metres along the ribbon, signed metres across it, metres to its far end. */
+ export const RIBBON_FRAME_ATTRIBUTE = "jgRibbon";
+diff --git a/packages/shell/src/scatter.ts b/packages/shell/src/scatter.ts
+deleted file mode 100644
+index eb0d29b1a..000000000
+--- a/packages/shell/src/scatter.ts
++++ /dev/null
+@@ -1 +0,0 @@
+-export * from "./scatter/InstancedScatter";
+diff --git a/packages/shell/src/scene/AuthoredScene.tsx b/packages/shell/src/scene/AuthoredScene.tsx
+index a2de58339..e7c4291fc 100644
+--- a/packages/shell/src/scene/AuthoredScene.tsx
++++ b/packages/shell/src/scene/AuthoredScene.tsx
+@@ -28,7 +28,7 @@ import { useGameContext } from "@jgengine/react/provider";
+ import { Roads } from "../roads/RoadRibbons";
+ 
+ import { createModelMapResolver } from "../render/resolveModel";
+-import { InstancedScatter } from "../scatter/InstancedScatter";
++import { InstancedScatter } from "@jgengine/core/scatter/InstancedScatter.draw";
+ import { GeneratedAssetInstance } from "./GeneratedAssetRenderer";
+ import { registerBuiltinSceneKindRenderers } from "./builtinSceneKindRenderers";
+ import { getSceneKindRenderer, type SceneKindRenderContext } from "./sceneKindRenderers";
+diff --git a/packages/shell/src/scene/GeneratedAssetRenderer.tsx b/packages/shell/src/scene/GeneratedAssetRenderer.tsx
+index 7b1740760..10a672b70 100644
+--- a/packages/shell/src/scene/GeneratedAssetRenderer.tsx
++++ b/packages/shell/src/scene/GeneratedAssetRenderer.tsx
+@@ -1,7 +1,7 @@
+ import { useMemo } from "react";
+ 
+ import { resolveGeneratorAsset, type GeneratedAsset } from "@jgengine/core/scene/assetGenerator";
+-import { StaticShapeInstances, type StaticShapeInstance } from "../instancing/staticShapeInstances";
++import { StaticShapeInstances, type StaticShapeInstance } from "@jgengine/core/instancing/staticShapeInstances.draw";
+ 
+ const NEUTRAL = "#b8b0a4";
+ 
+diff --git a/packages/shell/src/scene/PoleLineRenderer.tsx b/packages/shell/src/scene/PoleLineRenderer.tsx
+index d5ca371b7..66ee8e2cc 100644
+--- a/packages/shell/src/scene/PoleLineRenderer.tsx
++++ b/packages/shell/src/scene/PoleLineRenderer.tsx
+@@ -15,7 +15,7 @@ import { readNamedSockets, type ModelNode } from "@jgengine/core/scene/modelSock
+ import { POLE_LINE_KIND, POLE_LINE_SCHEMA, resolvePoleLine, type Cable, type Pole, type ResolvedPoleLine } from "@jgengine/core/world/poleLineKind";
+ import type { SceneKindObject } from "@jgengine/core/scene/sceneKinds";
+ 
+-import { composeInstance, uploadInstances } from "../instancing/instanceUpload";
++import { composeInstance, uploadInstances } from "@jgengine/core/instancing/instanceUpload.draw";
+ import { useDisposable } from "../render/useDisposable";
+ import { registerSceneKindRenderer, type SceneKindRenderContext } from "./sceneKindRenderers";
+ 
+diff --git a/packages/shell/src/scene/SoilPatchRenderer.tsx b/packages/shell/src/scene/SoilPatchRenderer.tsx
+index 026f5b615..748a8fec1 100644
+--- a/packages/shell/src/scene/SoilPatchRenderer.tsx
++++ b/packages/shell/src/scene/SoilPatchRenderer.tsx
+@@ -4,7 +4,7 @@ import * as THREE from "three";
+ import { resolveSoilObject } from "@jgengine/core/world/soilKind";
+ import type { SceneKindObject } from "@jgengine/core/scene/sceneKinds";
+ 
+-import { createSoilPatchMaterial } from "../terrain/soilPatchMaterial";
++import { createSoilPatchMaterial } from "@jgengine/core/terrain/soilPatchMaterial.draw";
+ import { registerSceneKindRenderer, type SceneKindRenderContext } from "./sceneKindRenderers";
+ 
+ /** Height offset above the sampled terrain so the draped patch never z-fights the ground. */
+diff --git a/packages/shell/src/terrain.ts b/packages/shell/src/terrain.ts
+deleted file mode 100644
+index d3b245dcd..000000000
+--- a/packages/shell/src/terrain.ts
++++ /dev/null
+@@ -1 +0,0 @@
+-export * from "./terrain/index";
+diff --git a/packages/shell/src/terrain/index.test.ts b/packages/shell/src/terrain/index.test.ts
+deleted file mode 100644
+index aa751e9be..000000000
+--- a/packages/shell/src/terrain/index.test.ts
++++ /dev/null
+@@ -1,10 +0,0 @@
+-import { expect, test } from "bun:test";
+-
+-import * as terrain from "./index";
+-
+-test("the terrain entry point serves the grass system and nothing of the old renderer", () => {
+-  expect(typeof terrain.GrassPatch).toBe("function");
+-  expect(typeof terrain.GrassStream).toBe("function");
+-  expect(terrain.GRASS_SCREEN_DENSITY).toBeGreaterThan(0);
+-  expect("GrassField" in terrain).toBe(false);
+-});
+diff --git a/packages/shell/src/terrain/index.ts b/packages/shell/src/terrain/index.ts
+deleted file mode 100644
+index c3eccf351..000000000
+--- a/packages/shell/src/terrain/index.ts
++++ /dev/null
+@@ -1,87 +0,0 @@
+-export { CarvedTerrain, type CarvedTerrainProps } from "./CarvedTerrain";
+-export { GrassPatch, type GrassPatchProps } from "../grass/GrassPatch";
+-export {
+-  bakeGrassNode,
+-  createGrassTuftTemplate,
+-  GRASS_CELL_SIZE,
+-  grassFieldColors,
+-  resolveGrassBake,
+-  type GrassBakeOptions,
+-  type GrassExclusion,
+-  type GrassTufts,
+-  type GrassTuftTemplate,
+-  type ResolvedGrassBake,
+-} from "../grass/grassBake";
+-export { createGrassMaterial, type GrassMaterialHandle, type GrassShaderUniforms } from "../grass/grassMaterial";
+-export { GRASS_SCREEN_DENSITY, GrassStream, type GrassStreamOptions, type GrassStreamStats } from "../grass/grassStream";
+-export { ProceduralGround, type ProceduralGroundProps } from "./ProceduralGround";
+-export { EditableGround, type EditableGroundProps } from "./EditableGround";
+-export {
+-  displaceHeightfieldGeometry,
+-  type HeightfieldColorFn,
+-  type HeightfieldDisplaceOptions,
+-  type HeightfieldRect,
+-} from "./heightfieldGeometry";
+-export { TerraformBrushCursor, type TerraformBrushCursorProps } from "./TerraformBrushCursor";
+-export { hashNoise2, seedToUint32, type TerrainSeed } from "./random";
+-export {
+-  createFieldGroundGeometry,
+-  createProceduralGroundGeometry,
+-  createProceduralTerrainSampler,
+-  normalizeHeightBlend,
+-  resolveTerrainSegments,
+-  resolveTerrainSize,
+-  toNoiseFieldConfig,
+-  type FieldGroundOptions,
+-  type ProceduralTerrainConfig,
+-  type ResolvedTerrainSegments,
+-  type ResolvedTerrainSize,
+-  type TerrainArea,
+-  type TerrainHeightSampler,
+-  type TerrainSurfaceColorOptions,
+-  type TerrainVertexColorOptions,
+-} from "./terrainMath";
+-export {
+-  arenaField,
+-  flatField,
+-  fractalNoise,
+-  noiseField,
+-  resolveGroundStep,
+-  resolveTerrainField,
+-  valueNoise,
+-  withNormal,
+-  type FractalNoiseConfig,
+-  type NoiseFieldConfig,
+-  type TerrainField,
+-  type TerrainNormal,
+-} from "@jgengine/core/terrain/terrain";
+-
+-export { createTerrainPaintColorSampler, type TerrainPaintColorSampler, type TerrainPaintSource } from "./terrainPaintColor";
+-export {
+-  ALL_TERRAIN_SURFACE_CLASSES,
+-  createTerrainDetailMaterial,
+-  type TerrainDetailMaterialHandle,
+-  type TerrainDetailMaterialOptions,
+-  type TerrainDetailMaterialTextures,
+-} from "./terrainDetailMaterial";
+-export {
+-  createTerrainPaintTextures,
+-  MAX_TERRAIN_PAINT_LAYERS,
+-  packTerrainPaintWeights,
+-  terrainSurfaceClass,
+-  terrainSurfaceClassIndex,
+-  terrainSurfaceRoughness,
+-  type TerrainPaintSlot,
+-  type TerrainPaintTextures,
+-  type TerrainPaintWeights,
+-  type TerrainSurfaceClass,
+-} from "./terrainSurfaces";
+-export { TerrainQualityContext, useTerrainQuality } from "./terrainQuality";
+-export {
+-  applyGroundEdgeFade,
+-  buildGroundCoverageMask,
+-  createGroundEdgeFade,
+-  type GroundCoverageMask,
+-  type GroundCoverageOptions,
+-  type GroundEdgeFade,
+-} from "./groundEdgeFade";
+diff --git a/packages/shell/src/weather/FireSpreadLayer.tsx b/packages/shell/src/weather/FireSpreadLayer.tsx
+index 0c3134185..02482a39c 100644
+--- a/packages/shell/src/weather/FireSpreadLayer.tsx
++++ b/packages/shell/src/weather/FireSpreadLayer.tsx
+@@ -4,7 +4,7 @@ import * as THREE from "three";
+ 
+ import type { FireGrid } from "@jgengine/core/world/weather";
+ 
+-import { uploadInstances } from "../instancing/instanceUpload";
++import { uploadInstances } from "@jgengine/core/instancing/instanceUpload.draw";
+ import { setBillboardQuaternion } from "./fireSpreadPose";
+ 
+ export interface FireSpreadLayerProps {
+diff --git a/packages/shell/src/world/DataObjects.tsx b/packages/shell/src/world/DataObjects.tsx
+index 7dde6c2fb..c5a44a67d 100644
+--- a/packages/shell/src/world/DataObjects.tsx
++++ b/packages/shell/src/world/DataObjects.tsx
+@@ -2,7 +2,7 @@ import { type ThreeEvent, useFrame } from "@react-three/fiber";
+ import { useEffect, useMemo, useRef, type ReactNode } from "react";
+ import * as THREE from "three";
+ 
+-import { uploadInstances } from "../instancing/instanceUpload";
++import { uploadInstances } from "@jgengine/core/instancing/instanceUpload.draw";
+ import { useDisposable } from "../render/useDisposable";
+ 
+ /**
+diff --git a/packages/shell/src/world/GridWorldScene.tsx b/packages/shell/src/world/GridWorldScene.tsx
+index c71d03437..9972c208f 100644
+--- a/packages/shell/src/world/GridWorldScene.tsx
++++ b/packages/shell/src/world/GridWorldScene.tsx
+@@ -4,7 +4,7 @@ import * as THREE from "three";
+ import type { WorldFeature } from "@jgengine/core/world/features";
+ import { resolveGridInstances } from "@jgengine/core/world/gridInstances";
+ 
+-import { composeInstance, uploadInstances } from "../instancing/instanceUpload";
++import { composeInstance, uploadInstances } from "@jgengine/core/instancing/instanceUpload.draw";
+ import { useDisposable } from "../render/useDisposable";
+ import { TileLayerRenderer } from "./TileLayerRenderer";
+ 
+diff --git a/packages/shell/src/world/ImpactFeedback.tsx b/packages/shell/src/world/ImpactFeedback.tsx
+index db987f455..c01e6118f 100644
+--- a/packages/shell/src/world/ImpactFeedback.tsx
++++ b/packages/shell/src/world/ImpactFeedback.tsx
+@@ -10,7 +10,7 @@ import { useAccessibilitySettings } from "@jgengine/core/settings/accessibilityS
+ import { useGameContext } from "@jgengine/react/provider";
+ 
+ import { cameraShake } from "@jgengine/core/camera/shake/cameraShake";
+-import { useTerrainQuality } from "../terrain/terrainQuality";
++import { useTerrainQuality } from "@jgengine/core/terrain/terrainQuality.draw";
+ 
+ /** What {@link ImpactFeedback} reacts with; every field defaults on. */
+ export interface ImpactFeedbackOptions {
+diff --git a/packages/shell/src/world/StaticObjectModels.tsx b/packages/shell/src/world/StaticObjectModels.tsx
+index a1086c5c7..c7b596266 100644
+--- a/packages/shell/src/world/StaticObjectModels.tsx
++++ b/packages/shell/src/world/StaticObjectModels.tsx
+@@ -8,17 +8,17 @@ import { devtools } from "@jgengine/core/devtools/devtools";
+ import { useGameContext } from "@jgengine/react/provider";
+ import { sharedGltfLoader } from "../render/modelLoad";
+ import { IsolatedModelPart } from "../render/SceneModels";
+-import { variantLevelModel } from "../lod/singleVariantLod";
+-import { assignVariantLevels, createLevelPassGate, levelPassProbe, noteLevelPass, noteLevelPassFrame, variantSwitchOf } from "../lod/levelPass";
++import { variantLevelModel } from "@jgengine/core/lod/singleVariantLod.draw";
++import { assignVariantLevels, createLevelPassGate, levelPassProbe, noteLevelPass, noteLevelPassFrame, variantSwitchOf } from "@jgengine/core/lod/levelPass.draw";
+ import { freezeStaticTransforms } from "../render/staticTransforms";
+ import { measureLocalBounds, reportMeasuredBounds } from "../render/measureBounds";
+ import { recordRenderBounds } from "../visibility/renderBounds";
+ import { measureLocalCollisionTriangles, reportMeasuredCollisionMesh } from "../render/measureCollisionMesh";
+-import { buildScatterModelSources, disposeScatterModelSources, type ScatterModelSource } from "../scatter/scatterModels";
++import { buildScatterModelSources, disposeScatterModelSources, type ScatterModelSource } from "@jgengine/core/scatter/scatterModels.draw";
+ import { useRenderVisibility } from "../visibility/CullingProvider";
+-import { acquireImpostor, IMPOSTOR_MIN_RADIUS, impostorCard, impostorDistance, impostorSettingsForQuality, impostorSwitch, releaseImpostor, sourceRadius, type ImpostorEntry } from "../lod/impostor";
+-import { acquireImpostorCardPool, ImpostorCardPool, releaseImpostorCardPool, type ImpostorCardSlice } from "../lod/impostorCardPool";
+-import { useTerrainQuality } from "../terrain/terrainQuality";
++import { acquireImpostor, IMPOSTOR_MIN_RADIUS, impostorCard, impostorDistance, impostorSettingsForQuality, impostorSwitch, releaseImpostor, sourceRadius, type ImpostorEntry } from "@jgengine/core/lod/impostor.draw";
++import { acquireImpostorCardPool, ImpostorCardPool, releaseImpostorCardPool, type ImpostorCardSlice } from "@jgengine/core/lod/impostorCardPool.draw";
++import { useTerrainQuality } from "@jgengine/core/terrain/terrainQuality.draw";
+ import { CAMERA_POST_FRAME_PRIORITY } from "../camera/cameraRigs";
+ import { canInstanceStaticScene, countStaticBatchDraws, incompatibleStaticObjectIds, isCompatibleStaticObject, STATIC_BATCH_MESH_KEY, syncStaticObjectSource, type StaticObjectBatch } from "./staticObjectBatches";
+ 
+diff --git a/packages/shell/src/world/TileLayerRenderer.tsx b/packages/shell/src/world/TileLayerRenderer.tsx
+index ed57205c9..16c16f2b5 100644
+--- a/packages/shell/src/world/TileLayerRenderer.tsx
++++ b/packages/shell/src/world/TileLayerRenderer.tsx
+@@ -5,7 +5,7 @@ import * as THREE from "three";
+ import type { TilemapWorldConfig } from "@jgengine/core/world/features";
+ import { sortingOrder } from "@jgengine/core/render/sprite2d";
+ 
+-import { uploadInstances } from "../instancing/instanceUpload";
++import { uploadInstances } from "@jgengine/core/instancing/instanceUpload.draw";
+ import { useDisposable } from "../render/useDisposable";
+ 
+ import { resolveTileLayerInstances } from "./tileLayerInstances";
+diff --git a/packages/shell/src/world/WorldScene.tsx b/packages/shell/src/world/WorldScene.tsx
+index b2a6d39e6..bedfbdd28 100644
+--- a/packages/shell/src/world/WorldScene.tsx
++++ b/packages/shell/src/world/WorldScene.tsx
+@@ -24,7 +24,6 @@ import {
+ import { useGameContext } from "@jgengine/react/provider";
+ import { useSceneEntityIds, useSceneObjectIds, useGameStore, usePlayer, useTarget } from "@jgengine/react/hooks";
+ 
+-import { colorFromId } from "../worldSky";
+ import { DefaultSurface, detailMaps } from "../render/defaultSurface";
+ import { useDisposable } from "../render/useDisposable";
+ import { WindClock } from "../render/modelWind";
+@@ -43,7 +42,7 @@ import {
+   clearCharacterLodTier,
+   setCharacterLodTier,
+   type CharacterLodTier,
+-} from "../lod/characterLod";
++} from "@jgengine/core/lod/characterLod";
+ import { resolveEntityModel, resolveObjectModel, type ObjectModelCacheEntry } from "../render/resolveModel";
+ import { useRenderVisibility } from "../visibility/CullingProvider";
+ import { writePoseIfChanged, writeRenderPoseIfChanged, emptyPoseMemo, type PoseMemo } from "./entityPose";
+@@ -51,6 +50,13 @@ import type { RenderPose } from "@jgengine/core/runtime/poseInterpolation";
+ import { createSnapshotBuffer, type SnapshotBuffer } from "@jgengine/core/runtime/snapshotBuffer";
+ import { POINTER_ENTITY_KEY, POINTER_OBJECT_KEY } from "@jgengine/core/input/pointerService.draw";
+ 
++/** Deterministic HSL color from a stable instance id (default entity/object tint). */
++function colorFromId(id: string): string {
++  let hash = 0;
++  for (let index = 0; index < id.length; index += 1) hash = (hash * 31 + id.charCodeAt(index)) >>> 0;
++  return `hsl(${hash % 360}, 65%, 55%)`;
++}
++
+ const EMPTY_DOCUMENT = createEmptyEditorDocument();
+ const GROUND_SIZE = 160;
+ const GROUND_SEGMENTS = 80;
+diff --git a/packages/shell/src/world/modelVariantBatches.test.ts b/packages/shell/src/world/modelVariantBatches.test.ts
+index 24100d520..1463c9852 100644
+--- a/packages/shell/src/world/modelVariantBatches.test.ts
++++ b/packages/shell/src/world/modelVariantBatches.test.ts
+@@ -3,7 +3,7 @@ import * as THREE from "three";
+ import type { ModelConfig } from "@jgengine/core/game/playableGame";
+ import { createObjectStore } from "@jgengine/core/scene/objectStore";
+ import { createModelVariantSelector } from "@jgengine/core/lod/modelLod";
+-import { buildScatterModelSources, disposeScatterModelSources } from "../scatter/scatterModels";
++import { buildScatterModelSources, disposeScatterModelSources } from "@jgengine/core/scatter/scatterModels.draw";
+ import { countStaticBatchDraws, groupStaticObjects, STATIC_BATCH_MESH_KEY, syncStaticObjectSource, type StaticObjectBatch } from "./staticObjectBatches";
+ import { LevelSingles, VariantStaticObjects } from "./StaticObjectModels";
+ 
+diff --git a/packages/shell/src/world/staticObjectBatches.test.ts b/packages/shell/src/world/staticObjectBatches.test.ts
+index b0fccc9ce..741fad644 100644
+--- a/packages/shell/src/world/staticObjectBatches.test.ts
++++ b/packages/shell/src/world/staticObjectBatches.test.ts
+@@ -5,7 +5,7 @@ import { createObjectStore, type SceneObject } from "@jgengine/core/scene/object
+ import { createAssetCatalog } from "@jgengine/core/scene/assetCatalog";
+ import type { GameContext } from "@jgengine/core/runtime/gameContext";
+ import { placeAuthoredObjects, resolveAuthoredObjects } from "@jgengine/core/world/authoredObjects";
+-import { buildScatterModelSources, disposeScatterModelSources } from "../scatter/scatterModels";
++import { buildScatterModelSources, disposeScatterModelSources } from "@jgengine/core/scatter/scatterModels.draw";
+ import { createPointerService, POINTER_OBJECT_INSTANCES_KEY } from "@jgengine/core/input/pointerService.draw";
+ import { measureLocalBounds } from "../render/measureBounds";
+ import { measureLocalCollisionTriangles } from "../render/measureCollisionMesh";
+diff --git a/packages/shell/src/world/staticObjectBatches.ts b/packages/shell/src/world/staticObjectBatches.ts
+index 640c2100c..50f780dd5 100644
+--- a/packages/shell/src/world/staticObjectBatches.ts
++++ b/packages/shell/src/world/staticObjectBatches.ts
+@@ -2,7 +2,7 @@ import * as THREE from "three";
+ import type { ModelConfig, ObjectStyle } from "@jgengine/core/game/playableGame";
+ import { objectVisualScale, type SceneObject } from "@jgengine/core/scene/objectStore";
+ import type { GameContextObjectEntry } from "@jgengine/core/runtime/gameContext";
+-import type { ScatterModelSource } from "../scatter/scatterModels";
++import type { ScatterModelSource } from "@jgengine/core/scatter/scatterModels.draw";
+ import { POINTER_OBJECT_INSTANCES_KEY } from "@jgengine/core/input/pointerService.draw";
+ import { submitInstanceCount, submitsDraw } from "../render/submittedDraws";
+ 
