@@ -39,7 +39,7 @@ import { terrainGroundColorSampler } from "@jgengine/core/terrain/terrainGroundC
 import { InstancedBuildings, type InstancedBuildingPlacement } from "@jgengine/core/buildings/GeneratedBuilding.draw";
 import { GrassPatch } from "@jgengine/core/grass/GrassPatch.draw";
 import { CarvedTerrain, type CarvedTerrainProps } from "@jgengine/core/terrain/CarvedTerrain.draw";
-import { ImageTextureLoader } from "@jgengine/shell/render/imageTexture";
+import { ImageTextureLoader } from "@jgengine/core/material/imageTexture.draw";
 import { trackSceneWork } from "@jgengine/shell/render/modelLoad";
 import { createTerrainDetailMaterial } from "@jgengine/core/terrain/terrainDetailMaterial.draw";
 import { MAX_TERRAIN_LAYER_MAPS, type TerrainDetailMaterialTextures, type TerrainLayerMap } from "@jgengine/core/terrain/terrainDetailMaterial.draw";

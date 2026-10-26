@@ -1,5 +1,5 @@
 import type { AddBodyOptions } from "../physics/physicsWorld";
-import type { SocketVec3 } from "./buildSockets";
+import type { SocketVec3 } from "@jgengine/core/placement/buildSockets";
 
 export interface SupportPiece {
   id: string;

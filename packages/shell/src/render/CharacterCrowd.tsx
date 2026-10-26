@@ -22,7 +22,7 @@ import {
   setCrowdKindReady,
   type CrowdMember,
 } from "./crowdRegistry";
-import { applyMaterialOverrideToMaterial } from "../materialOverride";
+import { applyMaterialOverrideToMaterial } from "@jgengine/core/material/materialOverride.draw";
 import { useRenderVisibility } from "@jgengine/core/visibility/CullingProvider.draw";
 import { useOptionalGameContext } from "@jgengine/react/provider";
 import { POINTER_ENTITY_INSTANCES_KEY } from "@jgengine/core/input/pointerService.draw";

@@ -15,7 +15,7 @@ import { useGraphicsSettings, type AppliedGraphicsSettings } from "@jgengine/cor
 import { createTerrainDetailMaterial } from "@jgengine/core/terrain/terrainDetailMaterial.draw";
 import { PostProcessing } from "@jgengine/core/postfx/PostProcessing.draw";
 import { usePresentationLook } from "./presentationLook";
-import { useStableTextureSet } from "./stableTextureSet";
+import { useStableTextureSet } from "@jgengine/core/material/stableTextureSet.draw";
 import { useDisposable } from "./useDisposable";
 
 /**

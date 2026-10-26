@@ -1,7 +1,7 @@
 import { Suspense, useEffect, useMemo } from "react";
 import { BoxGeometry, BufferGeometry, CapsuleGeometry, CatmullRomCurve3, CylinderGeometry, LatheGeometry, SphereGeometry, TorusGeometry, TubeGeometry, Vector2, Vector3 } from "three";
 import { mergeGeometries } from "three/examples/jsm/utils/BufferGeometryUtils.js";
-import { AuthoredSurfaceMaterial } from "@jgengine/shell/render/authoredSurfaceMaterial";
+import { AuthoredSurfaceMaterial } from "@jgengine/core/material/authoredSurfaceMaterial.draw";
 import { librarySurface } from "./interiorLook";
 
 /**

@@ -43,7 +43,7 @@ import {
   type SettingsStore,
 } from "@jgengine/core/settings/settingsModel";
 import { playControlsActive } from "@jgengine/core/game/controlGate";
-import { balanceLightingForIbl } from "@jgengine/core/render/lightingBalance";
+import { balanceLightingForIbl } from "@jgengine/core/lighting/lightingBalance";
 import { skyNoonKeyframes } from "@jgengine/core/sky/skyOwnedLighting";
 import type { PresencePoseRow } from "@jgengine/core/runtime/transport";
 import type { GameContext } from "@jgengine/core/runtime/gameContext";
@@ -67,8 +67,8 @@ import {
 import { AudioListener, EntityAudioEmitters, ObjectAudioEmitters } from "@jgengine/core/audio/AudioComponents.draw";
 import type { AudioEngine } from "@jgengine/core/audio/audioEngine.view";
 import { PostProcessing } from "@jgengine/core/postfx/PostProcessing.draw";
-import { EnvironmentLighting } from "./render/EnvironmentLighting";
-import { worldProbeForQuality } from "./render/worldReflectionProbe";
+import { EnvironmentLighting } from "@jgengine/core/lighting/EnvironmentLighting.draw";
+import { worldProbeForQuality } from "@jgengine/core/lighting/reflectionProbe.draw";
 import { LivingWorld } from "./render/LivingWorldLayer";
 import { CollisionDebugWorld } from "@jgengine/core/devtools/CollisionDebugWorld.draw";
 import { DevtoolsRendererProbe } from "@jgengine/core/devtools/DevtoolsOverlay.draw";
@@ -81,7 +81,7 @@ import { CullingProvider } from "@jgengine/core/visibility/CullingProvider.draw"
 import { BuildingRenderBudget } from "@jgengine/core/buildings/BuildingRenderBudget.draw";
 import { Sky } from "@jgengine/core/sky/Daylight.draw";
 import { bearingFromDirection } from "@jgengine/core/sky/daylightCycle";
-import type { DaylightModulation } from "./render/SceneLighting";
+import type { DaylightModulation } from "@jgengine/core/lighting/SceneLighting.draw";
 import { colorGradeFromDocument, lightProbesFromDocument } from "@jgengine/core/editor/environment";
 import { resolveSkyLightOwnership, skyEmitsLights } from "@jgengine/core/sky/skyLightingPolicy";
 import { EnvironmentScene } from "@jgengine/core/environment/EnvironmentScene.draw";
@@ -102,12 +102,12 @@ import { SettingsRuntime } from "@jgengine/core/settings/SettingsRuntime.draw";
 import { SettingsChrome } from "@jgengine/core/settings/SettingsChrome.draw";
 import { resolvePlayableAudio } from "@jgengine/core/audio/playableAudio.draw";
 import { AudioSettingsBridge, type AppliedGraphicsSettings } from "@jgengine/core/settings/appliedSettings.draw";
-import { TextureFiltering } from "./render/TextureFiltering";
+import { TextureFiltering } from "@jgengine/core/material/TextureFiltering.draw";
 import { FrameRateLimiter } from "./drivers/FrameRateLimiter";
 import { CanvasCoverFrameloop } from "./drivers/CanvasCoverFrameloop";
 import { FpsCounter, FpsProbe, type FrameTally } from "@jgengine/core/devtools/FpsCounter.draw";
-import { ConfiguredLighting, BackdropFog } from "./render/SceneLighting";
-import { IrradianceVolumeLighting } from "./render/IrradianceVolumeLighting";
+import { ConfiguredLighting, BackdropFog } from "@jgengine/core/lighting/SceneLighting.draw";
+import { IrradianceVolumeLighting } from "@jgengine/core/lighting/IrradianceVolumeLighting.draw";
 import { usePresentationLook } from "./render/presentationLook";
 import type { GameLookInput } from "@jgengine/core/render/lookPreset";
 import { WorldView, RemotePlayers } from "./world/WorldScene";

@@ -2,7 +2,7 @@ import { useMemo } from "react";
 import { BufferAttribute, BufferGeometry, DoubleSide } from "three";
 import type { RoadRibbon } from "@jgengine/core/roads/roads";
 import type { TerrainDetailMaterialConfig } from "@jgengine/core/world/features";
-import { useSurfaceScan } from "@jgengine/shell/render/surfaceScanTextures";
+import { useSurfaceScan } from "@jgengine/core/material/surfaceScanTextures.draw";
 import { useSurfaceRibbonMaterial } from "./surfaceRibbonMaterial.draw";
 import { useTerrainQuality } from "@jgengine/core/terrain/terrainQuality.draw";
 import type { JunctionSurface } from "./RoadRibbons.draw";

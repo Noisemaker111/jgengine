@@ -5,8 +5,8 @@ import { mergeGeometries } from "three/examples/jsm/utils/BufferGeometryUtils.js
 
 import { nearestFixtures, type InteriorDecal, type InteriorDecalStyle, type InteriorDressingPlan, type InteriorFixture } from "@jgengine/core/world/interiorDressing";
 
-import type { AuthoredSurfaceConfig } from "./authoredSurfaceMaterial";
-import { createDecalTexture } from "./decalTexture";
+import type { AuthoredSurfaceConfig } from "@jgengine/core/material/authoredSurfaceMaterial.draw";
+import { createDecalTexture } from "@jgengine/core/scene/decalTexture";
 import { StaticShapeInstances, type StaticShapeInstance } from "@jgengine/core/instancing/staticShapeInstances.draw";
 import { uploadInstances } from "@jgengine/core/instancing/instanceUpload.draw";
 import { useDisposable } from "./useDisposable";

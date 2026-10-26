@@ -781,10 +781,10 @@
     {
       "id": "authored-surface-material",
       "packages": [
-        "@jgengine/shell"
+        "@jgengine/core"
       ],
-      "module": "@jgengine/shell/render/authoredSurfaceMaterial",
-      "domain": "render",
+      "module": "@jgengine/core/material/authoredSurfaceMaterial.draw",
+      "domain": "material",
       "gameFacing": false,
       "probe": null,
       "intent": "render declared PBR maps with colour-space handling and metre-scale box/cylinder UVs"
@@ -882,8 +882,8 @@
       "packages": [
         "@jgengine/core"
       ],
-      "module": "@jgengine/core/render/lightingBalance",
-      "domain": "render",
+      "module": "@jgengine/core/lighting/lightingBalance",
+      "domain": "lighting",
       "gameFacing": false,
       "probe": null,
       "intent": "trim flat ambient under IBL and add a key light to directionless lighting"
@@ -1058,8 +1058,8 @@
       "packages": [
         "@jgengine/core"
       ],
-      "module": "@jgengine/core/world/buildSockets",
-      "domain": "world",
+      "module": "@jgengine/core/placement/buildSockets",
+      "domain": "placement",
       "gameFacing": false,
       "probe": null,
       "intent": "grid cells a snapped build piece footprint covers (footprintGrid occupancy bridge)"
@@ -1091,8 +1091,8 @@
       "packages": [
         "@jgengine/core"
       ],
-      "module": "@jgengine/core/world/buildSockets",
-      "domain": "world",
+      "module": "@jgengine/core/placement/buildSockets",
+      "domain": "placement",
       "gameFacing": false,
       "probe": null,
       "intent": "data-driven named-socket snap catalog for modular base building"
@@ -1866,6 +1866,17 @@
       "gameFacing": false,
       "probe": null,
       "intent": "readable auto-spacing for elevation contours"
+    },
+    {
+      "id": "contribution-pool",
+      "packages": [
+        "@jgengine/core"
+      ],
+      "module": "@jgengine/core/placement/buildPermissions",
+      "domain": "placement",
+      "gameFacing": false,
+      "probe": null,
+      "intent": "Players pool resources toward a shared build goal"
     },
     {
       "id": "control-suspension",
@@ -5713,22 +5724,21 @@
     {
       "id": "material-appearance-signals",
       "packages": [
-        "@jgengine/core",
-        "@jgengine/shell"
+        "@jgengine/core"
       ],
-      "module": "@jgengine/shell/render/materialAsset",
-      "domain": "render",
+      "module": "@jgengine/core/material/appearanceSignals",
+      "domain": "material",
       "gameFacing": false,
       "probe": null,
-      "intent": "apply sampled local exposure to the hair-card backlight approximation without global lighting edits"
+      "intent": "adapt selected surface response to sampled wetness and local card exposure"
     },
     {
       "id": "material-assets",
       "packages": [
-        "@jgengine/shell"
+        "@jgengine/core"
       ],
-      "module": "@jgengine/shell/render/materialAsset",
-      "domain": "render",
+      "module": "@jgengine/core/material/materialAsset.draw",
+      "domain": "material",
       "gameFacing": false,
       "probe": null,
       "intent": "resolve fabric and hair construction into sparse physical appearance parameters"
@@ -5747,10 +5757,10 @@
     {
       "id": "material-resource-metrics",
       "packages": [
-        "@jgengine/shell"
+        "@jgengine/core"
       ],
-      "module": "@jgengine/shell/render/materialAsset",
-      "domain": "render",
+      "module": "@jgengine/core/material/materialAsset.draw",
+      "domain": "material",
       "gameFacing": false,
       "probe": null,
       "intent": "inspect loaded texture byte bounds and physical, coverage and transmission participation"
@@ -5758,22 +5768,21 @@
     {
       "id": "material-slot-selection",
       "packages": [
-        "@jgengine/core",
-        "@jgengine/shell"
+        "@jgengine/core"
       ],
-      "module": "@jgengine/shell/render/materialAsset",
-      "domain": "render",
+      "module": "@jgengine/core/material/materialAsset",
+      "domain": "material",
       "gameFacing": false,
       "probe": null,
-      "intent": "preflight native model assignments without allocating or changing imported resources"
+      "intent": "match named meshes and imported material slots independently"
     },
     {
       "id": "material-slots",
       "packages": [
-        "@jgengine/shell"
+        "@jgengine/core"
       ],
-      "module": "@jgengine/shell/render/materialAsset",
-      "domain": "render",
+      "module": "@jgengine/core/material/materialAsset.draw",
+      "domain": "material",
       "gameFacing": false,
       "probe": null,
       "intent": "discover exact imported mesh and material selectors with UV and tangent prerequisites"
@@ -5792,10 +5801,10 @@
     {
       "id": "material-texture-metadata",
       "packages": [
-        "@jgengine/shell"
+        "@jgengine/core"
       ],
-      "module": "@jgengine/shell/render/materialAsset",
-      "domain": "render",
+      "module": "@jgengine/core/material/materialAsset.draw",
+      "domain": "material",
       "gameFacing": false,
       "probe": null,
       "intent": "configure owned map views with semantic color space, packed channels, UV transforms and sampling"
@@ -5803,10 +5812,10 @@
     {
       "id": "material-triplanar",
       "packages": [
-        "@jgengine/shell"
+        "@jgengine/core"
       ],
-      "module": "@jgengine/shell/render/triplanarMaterial",
-      "domain": "render",
+      "module": "@jgengine/core/material/triplanarMaterial.draw",
+      "domain": "material",
       "gameFacing": false,
       "probe": null,
       "intent": "render a material asset on world geometry without UVs"
@@ -7137,8 +7146,8 @@
       "packages": [
         "@jgengine/core"
       ],
-      "module": "@jgengine/core/world/buildSockets",
-      "domain": "world",
+      "module": "@jgengine/core/placement/buildSockets",
+      "domain": "placement",
       "gameFacing": false,
       "probe": null,
       "intent": "derive build-piece snap sockets from a model's named attach points"
@@ -7285,6 +7294,17 @@
       "gameFacing": false,
       "probe": null,
       "intent": "create, edit, save, playtest and reopen bounded player scenes through the production editor"
+    },
+    {
+      "id": "plot-permissions",
+      "packages": [
+        "@jgengine/core"
+      ],
+      "module": "@jgengine/core/placement/buildPermissions",
+      "domain": "placement",
+      "gameFacing": false,
+      "probe": null,
+      "intent": "Owner, editor and guild build rights on a plot"
     },
     {
       "id": "pointer-commands",

@@ -470,6 +470,20 @@
 - `verifyData` (function): function verifyData(input: VerifyInput): VerifyResult — ⚠ undocumented
 - `verifyManifest` (function): function verifyManifest(): VerifyResult — ⚠ undocumented
 
+## @jgengine/core/material/appearanceSignals.draw
+
+- `RenderMaterialAppearanceBaseline` (interface): interface RenderMaterialAppearanceBaseline extends MaterialAppearanceBaseline — Immutable resolved baseline for one caller-owned assigned material, including its original card exposure.
+- `applyMaterialAppearanceSignals` (function): function applyMaterialAppearanceSignals(material: THREE.MeshStandardMaterial, baseline: MaterialAppearanceBaseline, sample: EnvironmentSample, policy: MaterialAppearancePolicy = {}): MaterialAppearanceResponse — Apply one sample to an already owned material. Imported/cache materials must be cloned before use. Allocates no textures or materials; clearcoat/sheen require an existing physical material and opt-in policy.
+- `captureMaterialAppearanceBaseline` (function): function captureMaterialAppearanceBaseline(material: THREE.MeshStandardMaterial): RenderMaterialAppearanceBaseline — Capture once after assignment; recapture after an authored change. Never capture an already wet material.
+- `restoreMaterialAppearanceBaseline` (function): function restoreMaterialAppearanceBaseline(material: THREE.MeshStandardMaterial, baseline: RenderMaterialAppearanceBaseline): void — Restore the dry baseline when removing an appearance binding; maps and unrelated imported features remain borrowed.
+
+## @jgengine/core/material/authoredSurfaceMaterial.draw
+
+- `AuthoredSurfaceConfig` (interface): interface AuthoredSurfaceConfig extends Omit<ModelMaterialOverride, "anisotropy" | "normalScale"> — Serializable PBR settings for an authored primitive surface. Map roles use the model-material contract.
+- `AuthoredSurfaceMaterial` (function): function AuthoredSurfaceMaterial({ surface, shape = "box" }: { surface: AuthoredSurfaceConfig; shape?: SurfaceShape }): React.JSX.Element — Mount an owned PBR surface material on a mesh.
+- `SurfaceShape` (type): type SurfaceShape = "box" | "cylinder" — Primitive UV layout whose physical dimensions drive `repeatMetres`.
+- `useAuthoredSurfaceMaterial` (function): function useAuthoredSurfaceMaterial(config: AuthoredSurfaceConfig, shape: SurfaceShape = "box"): THREE.MeshStandardMaterial — Load declared surface-map roles and own the material/map clones (cached textures remain untouched). Colour, emissive, sheen-colour and specular-colour maps are sRGB; numeric maps are linear. Cylinder side metres use the RMS ellipse circumference approximation. Static batches and custom meshes share this lifecycle.
+
 ## @jgengine/core/material/hairCards
 
 - `HAIR_CARD_STRAND_ROTATION` (const): const HAIR_CARD_STRAND_ROTATION: number — Tangents follow card width (UV U); strand length follows UV V. Angles are radians.
@@ -478,6 +492,10 @@
 - `HairCardMesh` (interface): interface HairCardMesh — Renderer-neutral indexed ribbons with an explicit tangent frame and guide ranges.
 - `buildHairCards` (function): function buildHairCards(input: HairCardAuthoring): HairCardMesh — Build deterministic model-local ribbon geometry; guides remain separately editable source data.
 - `validateHairCardAuthoring` (function): function validateHairCardAuthoring(value: unknown): MaterialDiagnostic[] — Validate finite guides, tangent frames and bounded generation; crossing/collision is not solved.
+
+## @jgengine/core/material/hairCards.draw
+
+- `HairCards` (function): function HairCards({ cards, material }: { cards: HairCardAuthoring; material: MaterialAsset }): React.JSX.Element — Render authored guide ribbons with explicit UVs and strand tangents; motion and collision remain caller-owned.
 
 ## @jgengine/core/material/materialAsset
 
@@ -507,3 +525,43 @@
 - `validateMaterialAsset` (function): function validateMaterialAsset(value: unknown): MaterialDiagnostic[] — Validate material JSON and renderer prerequisites before saving or assigning it.
 - `validateMaterialAssignments` (function): function validateMaterialAssignments(assignments: readonly MaterialAssignment[], assets: readonly MaterialAsset[], options: MaterialAssignmentValidationOptions = {}): MaterialDiagnostic[] — Validate references and selectors without accepting accidental whole-model assignment.
 - `validateMaterialSurface` (function): function validateMaterialSurface(value: unknown, path = "surface"): MaterialDiagnostic[] — Validate sparse surface edits without mutating them or guessing unsupported fields.
+
+## @jgengine/core/material/materialAsset.draw
+
+- `MaterialAssetSurface` (function): function MaterialAssetSurface({ asset, ...options }: { asset: MaterialAsset } & MaterialAssetSurfaceOptions): React.JSX.Element — Mount a serializable material asset on an authored primitive, sharing model-slot rendering and owned resource cleanup.
+- `MaterialAssetSurfaceOptions` (interface): interface MaterialAssetSurfaceOptions — Reusable primitive surface options; physical metre UVs reuse the instanced surface renderer.
+- `MaterialAssignmentTargetOptions` (interface): interface MaterialAssignmentTargetOptions extends MaterialAssignmentValidationOptions — Read-only target validation policy; source coverage can reflect an earlier all-slot override.
+- `ModelMaterialSlotInfo` (interface): interface ModelMaterialSlotInfo — Runtime imported-slot inventory for precise authoring selectors; indices address the mesh material array.
+- `applyMaterialAsset` (function): function applyMaterialAsset(material: THREE.Material, asset: MaterialAsset, textures?: MaterialOverrideTextures, overrides?: MaterialSurfaceParameters): THREE.MeshStandardMaterial — Apply one reusable material's parameters, map views and construction to an imported PBR slot.
+- `applyMaterialAssignments` (function): function applyMaterialAssignments(root: THREE.Object3D, assets: readonly MaterialAsset[], assignments: readonly MaterialAssignment[], textures: ReadonlyMap<string, MaterialOverrideTextures> = new Map(), options: Pick<MaterialAssignmentTargetOptions, "unmatched"> = {}): THREE.Material[] — Apply intersecting mesh/slot selectors without changing omitted imported slots. Returns caller-owned replacements; model clones register them only after success.
+- `configureMaterialTexture` (function): function configureMaterialTexture(role: MaterialTextureRole, metadata: MaterialTextureMetadata, source: THREE.Texture): THREE.Texture — Validate and configure an owned texture view while retaining the loader's immutable source.
+- `inspectModelMaterialSlots` (function): function inspectModelMaterialSlots(root: THREE.Object3D): ModelMaterialSlotInfo[] — Inspect imported names, local slot indices and directional/map prerequisites without mutating the source.
+- `materialAssetSurface` (function): function materialAssetSurface(asset: MaterialAsset, overrides: MaterialSurfaceParameters = {}): MaterialSurfaceParameters — Physical defaults adapt a declared construction; explicit authored parameters remain authoritative.
+- `materialResourceMetrics` (function): function materialResourceMetrics(materials: readonly THREE.Material[]): { materials: number; textures: number; textureBytes: number; unknownTextureSizes: number; blendedMaterials: number; maskedMaterials: number; transmissionMaterials: number; doubleSidedMaterials: number; physicalMaterials: number … — Estimate texture allocation from loaded dimensions/mips and report pass/coverage risks. Compressed maps count actual mip bytes; uncompressed bytes bound texture views that may share uploads. This does not measure pixel overdraw.
+- `setHairCardLightExposure` (function): function setHairCardLightExposure(material: THREE.Material, exposure: number): void — Gate the existing thin-sheet hair-card scatter by sampled local light exposure, without changing scene exposure.
+- `useMaterialAssetMaterial` (function): function useMaterialAssetMaterial(asset: MaterialAsset, options: MaterialAssetSurfaceOptions = {}): THREE.MeshStandardMaterial — Load map views, own their cleanup and build the same physical shader used by model assignments.
+- `validateMaterialAssignmentTargets` (function): function validateMaterialAssignmentTargets(root: THREE.Object3D, assets: readonly MaterialAsset[], assignments: readonly MaterialAssignment[], options: MaterialAssignmentTargetOptions = {}): void — Check selectors, PBR slots, UVs and construction prerequisites before allocating material or texture views. Optional role restrictions apply only to referenced assets; imported maps remain untouched.
+
+## @jgengine/core/material/materialOverride.draw
+
+- `MaterialOverrideOptions` (interface): interface MaterialOverrideOptions — Options for applyMaterialOverride: clone first, textures to apply and a hook that records replaced materials.
+- `MaterialOverrideTextures` (interface): interface MaterialOverrideTextures — Loaded PBR textures for `applyMaterialOverride`'s `textures` option — matches `ModelMaterialMaps`' roles.
+
+## @jgengine/core/material/surfaceScanShader.draw
+
+- `SURFACE_SCAN_PARS_GLSL` (const): const SURFACE_SCAN_PARS_GLSL: "\n#ifdef JG_SCAN\nuniform sampler2D uScanColor;\nuniform sampler2D uScanNormal;\n#ifdef JG_SCAN_ROUGH\nuniform sampler2D uScanRough;\n#endif\n#ifdef JG_SCAN_AO\nuniform sampler2D uScanAo;\n#endif\nuniform float uScanRepeat;\nuniform float uScanStrength;\nuniform float … — Fragment helpers for a scanned surface: uniforms, the scan's mean tone (its last mip), the grain/tint recolour, mean-relative roughness and a derivative cotangent frame for its normal map. Guarded by `JG_SCAN`, so a material compiled before its maps arrive carries none of it.
+- `SurfaceScanBlend` (interface): interface SurfaceScanBlend — Blend settings for one scanned layer.
+- `SurfaceScanUniforms` (interface): interface SurfaceScanUniforms — Uniform values a scanned-surface shader reads; one object per material, maps shared.
+
+## @jgengine/core/material/surfaceScanTextures.draw
+
+- `SurfaceScanLoader` (type): type SurfaceScanLoader = (url: string, onLoad: (texture: THREE.Texture) => void, onError: () => void) => void — Loads one map; the default goes through {@link ImageTextureLoader}.
+- `SurfaceScanState` (interface): interface SurfaceScanState — A scan's maps as a component sees them.
+- `SurfaceScanTextures` (interface): interface SurfaceScanTextures — Decoded maps of one scanned surface, shared by every material that tiles it.
+- `useSurfaceScan` (function): function useSurfaceScan(maps: TerrainMaterialMaps | undefined, enabled = true): SurfaceScanState — React handle on a scan's maps. `maps` undefined or `enabled` false (the `low` tier) asks for none and is never pending. Every component naming the same URLs shares one decode. The scene's shader warmup waits for the maps, and a caller hides its surface while `pending`, so the warmup links only the scanned programs the first frame draws, not the procedural ones they replace.
+
+## @jgengine/core/material/triplanarMaterial.draw
+
+- `TriplanarAssetMaterial` (function): function TriplanarAssetMaterial({ asset, ...options }: { asset: MaterialAsset } & { tileMetres?: number; sharpness?: number; normalScale?: number }): React.JSX.Element — Mounts {@link useTriplanarAssetMaterial} on a mesh; the R3F renderer owns disposal.
+- `TriplanarProjectionOptions` (interface): interface TriplanarProjectionOptions — Inputs for {@link applyTriplanarProjection}.
+- `useTriplanarAssetMaterial` (function): function useTriplanarAssetMaterial(asset: MaterialAsset, options: { tileMetres?: number; sharpness?: number; normalScale?: number } = {}): THREE.MeshStandardMaterial — Render a serializable material asset — one built by `libraryMaterialAsset`, or authored in the editor — with world-space triplanar projection, so world geometry needs no UVs. Tile size defaults to the asset's own `physicalSize`, which the shared library sets per surface.

@@ -38,9 +38,9 @@ import type {
   EditorVolume,
   EditorVolumeShape,
 } from "./types";
-import type { EnvironmentSource } from "../render/environment";
+import type { EnvironmentSource } from "@jgengine/core/lighting/environmentLighting";
 import type { EditorLightProbe } from "./types";
-import { PROBE_STRIDE, type IrradianceBakeSettings } from "../render/lightProbes";
+import { PROBE_STRIDE, type IrradianceBakeSettings } from "@jgengine/core/lighting/lightProbes";
 
 function cloneLightProbes(probes: readonly EditorLightProbe[]): EditorLightProbe[] {
   return probes.map((probe) => ({

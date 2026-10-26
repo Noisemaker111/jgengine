@@ -7,7 +7,7 @@ import type { GameContext } from "@jgengine/core/runtime/gameContext";
 import type { ModelConfig } from "@jgengine/core/game/playableGame";
 import type { MaterialAsset } from "@jgengine/core/material/materialAsset";
 import { MATERIAL_TEXTURE_SEMANTICS, type MaterialTextureRole } from "@jgengine/core/material/materialAsset";
-import { MATERIAL_TEXTURE_PROPERTIES } from "../materialOverride";
+import { MATERIAL_TEXTURE_PROPERTIES } from "@jgengine/core/material/materialOverride.draw";
 import { GameProvider } from "@jgengine/react/provider";
 import { readFileSync } from "node:fs";
 import { GLTFLoader } from "three/examples/jsm/loaders/GLTFLoader.js";

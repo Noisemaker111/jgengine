@@ -9,7 +9,7 @@ export type { EditorEnvironment, EditorFogConfig, EditorLightProbe, EditorSkyPre
 /** Authored per-game colour grade: band tints, saturation/contrast and the clamped exposure range. */
 export type { EditorAutoExposure, EditorColorGrading } from "./types";
 /** Declarative HDRI, cube, or gradient environment source used by the shell. */
-export type { EnvironmentSource } from "../render/environment";
+export type { EnvironmentSource } from "@jgengine/core/lighting/environmentLighting";
 /** Per-kind show/hide flags for the editor's layer panel. */
 export type { EditorKindVisibility } from "./types";
 /** The four placeable-object collections a prefab fragment or clipboard fragment carries. */

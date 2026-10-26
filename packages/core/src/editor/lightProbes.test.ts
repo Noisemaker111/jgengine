@@ -2,7 +2,7 @@ import { describe, expect, test } from "bun:test";
 
 import { decodeEditorDocument } from "./document";
 import { authoredLightsFromDocument, bakeLightProbe, lightProbesFromDocument } from "./environment";
-import { PROBE_STRIDE } from "../render/lightProbes";
+import { PROBE_STRIDE } from "@jgengine/core/lighting/lightProbes";
 
 const emptyDocument = (environment: unknown) => ({
   version: 1,

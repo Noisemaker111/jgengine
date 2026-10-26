@@ -4,7 +4,7 @@ import { clearanceZonesFrom, DEFAULT_CLEARANCE_KINDS, type ClearanceOptions } fr
 import type { TerraformSnapshot } from "../terrain/terraform";
 import { editorDocumentBounds } from "./document";
 import type { EditorAutoExposure, EditorColorGrading, EditorDocument, EditorEnvironment, EditorLightProbe } from "./types";
-import { bakeIrradianceVolume, type IrradianceBakeSettings, type IrradianceVolume } from "../render/lightProbes";
+import { bakeIrradianceVolume, type IrradianceBakeSettings, type IrradianceVolume } from "@jgengine/core/lighting/lightProbes";
 import type { LutCube } from "../render/postProcessing";
 import type { LightingConfig, PointLightingConfig, SpotLightingConfig } from "../game/playableGame";
 

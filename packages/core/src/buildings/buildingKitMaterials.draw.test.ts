@@ -7,7 +7,7 @@ import { createEmptyEditorDocument, importEditorDocumentJson } from "@jgengine/c
 import { authoredMaterialAssignments } from "@jgengine/core/editor/materialAuthoring";
 import { generateBuilding } from "@jgengine/core/buildings/buildings";
 import { buildScatterModelSources, disposeScatterModelSources } from "@jgengine/core/scatter/scatterModels.draw";
-import { configureMaterialTexture } from "@jgengine/shell/render/materialAsset";
+import { configureMaterialTexture } from "@jgengine/core/material/materialAsset.draw";
 import { bucketBuildingParts } from "./buildingKitFit.draw";
 import { buildingKitMaterialKey, buildBuildingKitSources, groupBuildingKitInstances } from "./buildingKitMaterials.draw";
 

@@ -604,25 +604,6 @@
 - `exposureForKey` (function): function exposureForKey(keyLuminance: number, config: AutoExposureConfig = {}): number — Exposure that places a frame whose key luminance is `keyLuminance` on {@link MID_GREY}, bounded by the authored range. A dark interior asks for more than `max` and gets `max`; a blown-out exterior asks for less than `min` and gets `min`, so the frame never runs away at either end.
 - `keyLuminanceFromSamples` (function): function keyLuminanceFromSamples(samples: ArrayLike<number>): number — Key luminance of a metered frame: the median of its samples, each clamped to {@link METERING_HIGHLIGHT_CEILING}. A median rather than a mean because a bright sky, a window or a lamp is a large minority of the frame: averaging those in drags an interior down to a silhouette, where the median still reports the room.
 
-## @jgengine/core/render/environment
-
-- `EnvironmentSource` (type): type EnvironmentSource = | { kind: "gradient"; sky: string; ground: string; sun?: string; intensity?: number } /** Equirectangular HDR or EXR environment map loaded from `url`. */ | { kind: "hdri"; url: string; rotation?: number; intensity?: number } /** Six faces of a cube environment map, in three… — A declarative source for image-based scene lighting.
-
-## @jgengine/core/render/lightProbes
-
-- `IrradianceBakeInput` (interface): interface IrradianceBakeInput — Everything a bake needs for one volume: where the grid sits, how much sky reaches it, and what fills the dark.
-- `IrradianceBakeSettings` (interface): interface IrradianceBakeSettings — Authored bake inputs stored beside the samples so a volume can be re-baked without the editor.
-- `IrradianceVolume` (interface): interface IrradianceVolume — One irradiance volume authored on a scene document.
-- `PROBE_STRIDE` (const): const PROBE_STRIDE: number — Floats stored per probe: {@link SH_COEFFICIENTS} × RGB.
-- `SH_COEFFICIENTS` (const): const SH_COEFFICIENTS: 9 — Baked irradiance volume: a grid of second-order (9-coefficient, RGB) spherical-harmonic probes over a box region, sampled at runtime for ambient lighting. It is the datum an interior has that a hemisphere light cannot: a room's fill is its own, not the sky's, and it varies across the space.
-- `bakeIrradianceVolume` (function): function bakeIrradianceVolume(input: IrradianceBakeInput): IrradianceVolume — Bakes an irradiance volume from authored inputs: sky radiance where the region is open, an authored ceiling/floor fill where it is enclosed, plus inverse-square lamp radiance. Each probe projects its directional radiance into L2 SH, so ambient varies across the grid and keeps a lit side instead of flattening to one number.
-
-## @jgengine/core/render/lightingBalance
-
-- `DEFAULT_IBL_AMBIENT_SCALE` (const): const DEFAULT_IBL_AMBIENT_SCALE: 0.5 — Ambient multiplier applied under image-based light when `iblAmbientScale` is unset.
-- `FALLBACK_KEY_LIGHT` (const): const FALLBACK_KEY_LIGHT: Readonly<DirectionalLightingConfig> — Soft key added when authored lighting has no directional light: high, off to one side, shadowless.
-- `balanceLightingForIbl` (function): function balanceLightingForIbl(lighting: LightingConfig | undefined): LightingConfig | undefined — Rebalance authored lighting for a scene that also has image-based light: trim the flat ambient term by `iblAmbientScale` (default 0.5) and, when no directional light is authored, add {@link FALLBACK_KEY_LIGHT} tinted by the ambient colour so forms keep a lit and a shaded side. Returns the input unchanged when there is nothing to adjust.
-
 ## @jgengine/core/render/lookMood
 
 - `LookMood` (type): type LookMood = MoodPreset | MoodConfig — A mood: a preset name, or a preset with token overrides.
@@ -2231,11 +2212,6 @@
 - `FrameDriver` (function): function FrameDriver({ ctx, playable, tracker, yawRef, pitchRef, primaryClickRef, pointerAxisRef, analogRef, gateRef, onRuntimeError, multiplayer, serverIdRef, pointerService, pointerAim, pingCommand, poster, onPosterSettled, authoritativeFrameRef, }: { ctx: GameContext; playable: PlayableGame; trac… — ⚠ undocumented
 - `POSTER_SETTLE_SECONDS` (const): const POSTER_SETTLE_SECONDS: 1.6 — ⚠ undocumented
 
-## @jgengine/shell/materialOverride
-
-- `MaterialOverrideOptions` (interface): interface MaterialOverrideOptions { clone?: boolean; textures?: MaterialOverrideTextures; ownMaterial?: (material: THREE.Material) => void } — ⚠ undocumented
-- `MaterialOverrideTextures` (interface): interface MaterialOverrideTextures — Loaded PBR textures for `applyMaterialOverride`'s `textures` option — matches `ModelMaterialMaps`' roles.
-
 ## @jgengine/shell/registry
 
 - `GameRegistry` (type): type GameRegistry = Record<string, () => Promise<PlayableGame>> — ⚠ undocumented
@@ -2243,13 +2219,6 @@
 - `RenderEntity` (type): type RenderEntity = (entity: SceneEntity) => ReactNode — ⚠ undocumented
 - `RenderObject` (type): type RenderObject = (object: SceneObject) => ReactNode — ⚠ undocumented
 - `resolveGameLoader` (function): function resolveGameLoader(registry: GameRegistry, gameId: string, fallbackGameId?: string): (() => Promise<PlayableGame>) | undefined — ⚠ undocumented
-
-## @jgengine/shell/render/CascadedShadows
-
-- `CASCADE_DEPTH_STEP_TEXELS` (const): const CASCADE_DEPTH_STEP_TEXELS: 8 — Depth-axis steps worth of a texel the snapped light may drift before it re-anchors.
-- `CascadeRefreshState` (interface): interface CascadeRefreshState — Per-frame cascade refresh bookkeeping: the centre each map was last rendered with.
-- `CsmMaterialSetup` (interface): interface CsmMaterialSetup — Structural slice of CSM so the patcher is testable without a renderer.
-- `patchSceneMaterials` (function): function patchSceneMaterials(scene: THREE.Scene, csm: CsmMaterialSetup, patched: WeakSet<THREE.Material>): void — Run CSM's `setupMaterial` over every unpatched standard material in the scene, chaining rather than clobbering a material's own `onBeforeCompile`.
 
 ## @jgengine/shell/render/CharacterCrowd
 
@@ -2260,10 +2229,6 @@
 
 - `EntityPreview` (function): function EntityPreview({ children, model, instanceId, mood = "studio", backdrop, turntable = 0, faceCamera = false, forward, environment = true, cameraPosition = [0, 1, 3], fov = 35, dpr = [1, 2], className, style, }: EntityPreviewProps): React.JSX.Element — Drop-in live 3D preview of a single entity — the character-screen portrait, unit inspector, or loadout viewer. It owns all the plumbing a game would otherwise re-derive by hand: a nested `<Canvas>`, the {@link GameContextBridge} that carries the running `GameContext` across the R3F reconciler boundary (so the subject's `useEntityRenderCues` / `useGameContext` hooks resolve and it mirrors the live game), a {@link StudioStage} 3-point lighting rig with optional turntable / face-camera, and a capture-friendly GL surface. The game keeps ownership of its `renderEntity`: pass it as `children`, or hand a native `model` (+ `instanceId`) for an engine-composed body. Bound to a live `instanceId`, the portrait walks, flinches, and topples in lockstep with the world instead of a canned spin.
 - `EntityPreviewProps` (interface): interface EntityPreviewProps — Props for {@link EntityPreview}.
-
-## @jgengine/shell/render/HairCards
-
-- `HairCards` (function): function HairCards({ cards, material }: { cards: HairCardAuthoring; material: MaterialAsset }): React.JSX.Element — Render authored guide ribbons with explicit UVs and strand tangents; motion and collision remain caller-owned.
 
 ## @jgengine/shell/render/InteriorDressing
 
@@ -2277,13 +2242,6 @@
 ## @jgengine/shell/render/PartMotion
 
 - `PartMotionRig` (function): function PartMotionRig({ parts, model, instanceId, renderPart, children, }: { parts: readonly ModelPart[]; model: ModelConfig; instanceId?: string; /** Renders one part's model content (the shell passes its part renderer to avoid an import cycle). */ renderPart: (part: ModelPart, index: number) => R… — Procedural motion rig for a rig-less part-composed character (`ModelPart.role` — see `@jgengine/core/game/partAnimation`). Wraps the whole composition in a root group that bobs, breathes, flinches on `combat.hitReaction`, and topples on `entity.died`, while each role-tagged part swings around its authored transform — legs/arms counter-phase from the entity's live movement speed, head counter-sway, tail wag, wing flap. Untagged parts render as static kit pieces. Children are the base model content (primitive, attachments).
-
-## @jgengine/shell/render/SceneLighting
-
-- `BackdropFog` (function): function BackdropFog({ fog }: { fog: BackdropConfig["fog"] }): React.JSX.Element | null — ⚠ undocumented
-- `ConfiguredLighting` (function): function ConfiguredLighting({ lighting, profile, modulation, }: { lighting: LightingConfig; profile?: GraphicsProfile; /** Day-cycle scaling for the first directional (the sun) and the ambient fill. */ modulation?: DaylightModulation; }): React.JSX.Element — ⚠ undocumented
-- `POINT_LIGHT_BUDGET` (const): const POINT_LIGHT_BUDGET: 8 — Default cap for combined dynamic point and spot lights.
-- `syncShadowProjection` (function): function syncShadowProjection(light: DirectionalLight): void — Refresh a directional light's shadow projection after its frustum bounds change. R3F pierced `shadow-camera-*` props write the bounds but never call `updateProjectionMatrix()`, so depth renders with the stale default ~10×10 box and `shadowCameraSize` is silently inert.
 
 ## @jgengine/shell/render/SceneModels
 
@@ -2310,13 +2268,6 @@
 - `installAssetBase` (function): function installAssetBase(base: string): void — Installs the app base URL (pass `import.meta.env.BASE_URL`) so root-absolute asset paths load from under it. Call once at app startup, before any game loads. Bases that are not root-absolute (`/`, `./`) reset to the pass-through default. Also registers {@link resolveAssetBaseUrl} on `THREE.DefaultLoadingManager`, covering `TextureLoader`, drei's `useTexture` / `useGLTF`, and every other loader on the default manager.
 - `resolveAssetBaseUrl` (function): function resolveAssetBaseUrl(url: string): string — Resolves a root-absolute asset URL (`/models/…`, `/materials/…`) against the installed app base. Relative, protocol-relative, absolute-scheme (`https:`, `blob:`, `data:`), and already-based URLs pass through unchanged. Installed as the URL modifier on THREE loading managers so every model and texture load resolves correctly wherever the app is mounted.
 
-## @jgengine/shell/render/authoredSurfaceMaterial
-
-- `AuthoredSurfaceConfig` (interface): interface AuthoredSurfaceConfig extends Omit<ModelMaterialOverride, "anisotropy" | "normalScale"> — Serializable PBR settings for an authored primitive surface. Map roles use the model-material contract.
-- `AuthoredSurfaceMaterial` (function): function AuthoredSurfaceMaterial({ surface, shape = "box" }: { surface: AuthoredSurfaceConfig; shape?: SurfaceShape }): React.JSX.Element — Mount an owned PBR surface material on a mesh.
-- `SurfaceShape` (type): type SurfaceShape = "box" | "cylinder" — Primitive UV layout whose physical dimensions drive `repeatMetres`.
-- `useAuthoredSurfaceMaterial` (function): function useAuthoredSurfaceMaterial(config: AuthoredSurfaceConfig, shape: SurfaceShape = "box"): THREE.MeshStandardMaterial — Load declared surface-map roles and own the material/map clones (cached textures remain untouched). Colour, emissive, sheen-colour and specular-colour maps are sRGB; numeric maps are linear. Cylinder side metres use the RMS ellipse circumference approximation. Static batches and custom meshes share this lifecycle.
-
 ## @jgengine/shell/render/characterGlance
 
 - `DEFAULT_GLANCE` (const): const DEFAULT_GLANCE: GlanceTuning — Default glance: starts at 7 m, lets go at 8.5 m, head turns up to 65° sideways and 30° up or down.
@@ -2341,15 +2292,6 @@
 - `crowdKindOf` (function): function crowdKindOf(model: ModelConfig): string — The identity a character model shares with every other model the GPU crowd can draw: rig url, height normalization and material tint. Two entity kinds with the same key can share one instanced draw; a different tint or height needs its own.
 - `crowdSpeedBandsOf` (function): function crowdSpeedBandsOf(model: ModelConfig, clipNames: readonly string[]): CrowdSpeedBands — The ground speeds the model's own locomotion graph switches clips at, so a batched character walks and idles at the same speed its own rig would. A model that declares none keeps the engine's defaults.
 
-## @jgengine/shell/render/decalGeometry
-
-- `DecalDrapeGeometry` (interface): interface DecalDrapeGeometry — Baked vertex/index buffers for one draped ground decal.
-- `DecalDrapeOptions` (interface): interface DecalDrapeOptions — Inputs for {@link createDecalDrapeGeometry}.
-
-## @jgengine/shell/render/decalTexture
-
-- `DecalTextureData` (interface): interface DecalTextureData — Row-major RGBA bytes plus their edge length, ready for a `THREE.DataTexture`.
-
 ## @jgengine/shell/render/entityMuzzle
 
 - `EntityMuzzleReader` (type): type EntityMuzzleReader = (target: THREE.Vector3) => boolean — Writes where an entity's shots visibly leave from, in world space; false when it has none right now.
@@ -2362,29 +2304,6 @@
 
 - `DRY_SECONDS` (const): const DRY_SECONDS: 70 — Seconds of dry weather until soaked surfaces are dry again.
 - `WET_SECONDS` (const): const WET_SECONDS: 14 — Seconds of steady rain until surfaces are soaked.
-
-## @jgengine/shell/render/materialAppearanceSignals
-
-- `RenderMaterialAppearanceBaseline` (interface): interface RenderMaterialAppearanceBaseline extends MaterialAppearanceBaseline — Immutable resolved baseline for one caller-owned assigned material, including its original card exposure.
-- `applyMaterialAppearanceSignals` (function): function applyMaterialAppearanceSignals(material: THREE.MeshStandardMaterial, baseline: MaterialAppearanceBaseline, sample: EnvironmentSample, policy: MaterialAppearancePolicy = {}): MaterialAppearanceResponse — Apply one sample to an already owned material. Imported/cache materials must be cloned before use. Allocates no textures or materials; clearcoat/sheen require an existing physical material and opt-in policy.
-- `captureMaterialAppearanceBaseline` (function): function captureMaterialAppearanceBaseline(material: THREE.MeshStandardMaterial): RenderMaterialAppearanceBaseline — Capture once after assignment; recapture after an authored change. Never capture an already wet material.
-- `restoreMaterialAppearanceBaseline` (function): function restoreMaterialAppearanceBaseline(material: THREE.MeshStandardMaterial, baseline: RenderMaterialAppearanceBaseline): void — Restore the dry baseline when removing an appearance binding; maps and unrelated imported features remain borrowed.
-
-## @jgengine/shell/render/materialAsset
-
-- `MaterialAssetSurface` (function): function MaterialAssetSurface({ asset, ...options }: { asset: MaterialAsset } & MaterialAssetSurfaceOptions): React.JSX.Element — Mount a serializable material asset on an authored primitive, sharing model-slot rendering and owned resource cleanup.
-- `MaterialAssetSurfaceOptions` (interface): interface MaterialAssetSurfaceOptions — Reusable primitive surface options; physical metre UVs reuse the instanced surface renderer.
-- `MaterialAssignmentTargetOptions` (interface): interface MaterialAssignmentTargetOptions extends MaterialAssignmentValidationOptions — Read-only target validation policy; source coverage can reflect an earlier all-slot override.
-- `ModelMaterialSlotInfo` (interface): interface ModelMaterialSlotInfo — Runtime imported-slot inventory for precise authoring selectors; indices address the mesh material array.
-- `applyMaterialAsset` (function): function applyMaterialAsset(material: THREE.Material, asset: MaterialAsset, textures?: MaterialOverrideTextures, overrides?: MaterialSurfaceParameters): THREE.MeshStandardMaterial — Apply one reusable material's parameters, map views and construction to an imported PBR slot.
-- `applyMaterialAssignments` (function): function applyMaterialAssignments(root: THREE.Object3D, assets: readonly MaterialAsset[], assignments: readonly MaterialAssignment[], textures: ReadonlyMap<string, MaterialOverrideTextures> = new Map(), options: Pick<MaterialAssignmentTargetOptions, "unmatched"> = {}): THREE.Material[] — Apply intersecting mesh/slot selectors without changing omitted imported slots. Returns caller-owned replacements; model clones register them only after success.
-- `configureMaterialTexture` (function): function configureMaterialTexture(role: MaterialTextureRole, metadata: MaterialTextureMetadata, source: THREE.Texture): THREE.Texture — Validate and configure an owned texture view while retaining the loader's immutable source.
-- `inspectModelMaterialSlots` (function): function inspectModelMaterialSlots(root: THREE.Object3D): ModelMaterialSlotInfo[] — Inspect imported names, local slot indices and directional/map prerequisites without mutating the source.
-- `materialAssetSurface` (function): function materialAssetSurface(asset: MaterialAsset, overrides: MaterialSurfaceParameters = {}): MaterialSurfaceParameters — Physical defaults adapt a declared construction; explicit authored parameters remain authoritative.
-- `materialResourceMetrics` (function): function materialResourceMetrics(materials: readonly THREE.Material[]): { materials: number; textures: number; textureBytes: number; unknownTextureSizes: number; blendedMaterials: number; maskedMaterials: number; transmissionMaterials: number; doubleSidedMaterials: number; physicalMaterials: number … — Estimate texture allocation from loaded dimensions/mips and report pass/coverage risks. Compressed maps count actual mip bytes; uncompressed bytes bound texture views that may share uploads. This does not measure pixel overdraw.
-- `setHairCardLightExposure` (function): function setHairCardLightExposure(material: THREE.Material, exposure: number): void — Gate the existing thin-sheet hair-card scatter by sampled local light exposure, without changing scene exposure.
-- `useMaterialAssetMaterial` (function): function useMaterialAssetMaterial(asset: MaterialAsset, options: MaterialAssetSurfaceOptions = {}): THREE.MeshStandardMaterial — Load map views, own their cleanup and build the same physical shader used by model assignments.
-- `validateMaterialAssignmentTargets` (function): function validateMaterialAssignmentTargets(root: THREE.Object3D, assets: readonly MaterialAsset[], assignments: readonly MaterialAssignment[], options: MaterialAssignmentTargetOptions = {}): void — Check selectors, PBR slots, UVs and construction prerequisites before allocating material or texture views. Optional role restrictions apply only to referenced assets; imported maps remain untouched.
 
 ## @jgengine/shell/render/measureBounds
 
@@ -2489,19 +2408,6 @@
 - `freezeStaticTransforms` (function): function freezeStaticTransforms(root: THREE.Object3D): void — Bake a subtree's world matrices from its current pose and take it out of three's per-frame `updateMatrixWorld` pass. Three recomposes every node that keeps `matrixAutoUpdate` and then forces its whole subtree to rebuild the world matrix, so authored scenery — terrain, batched props, scatter, instanced ground — pays that cost every frame for a pose it never changes (#2038).
 - `thawStaticTransforms` (function): function thawStaticTransforms(root: THREE.Object3D): void — Put a subtree back on the per-frame matrix pass after {@link freezeStaticTransforms} — for the authored seam that moves on an event rather than every frame.
 
-## @jgengine/shell/render/surfaceScanShader
-
-- `SURFACE_SCAN_PARS_GLSL` (const): const SURFACE_SCAN_PARS_GLSL: "\n#ifdef JG_SCAN\nuniform sampler2D uScanColor;\nuniform sampler2D uScanNormal;\n#ifdef JG_SCAN_ROUGH\nuniform sampler2D uScanRough;\n#endif\n#ifdef JG_SCAN_AO\nuniform sampler2D uScanAo;\n#endif\nuniform float uScanRepeat;\nuniform float uScanStrength;\nuniform float … — Fragment helpers for a scanned surface: uniforms, the scan's mean tone (its last mip), the grain/tint recolour, mean-relative roughness and a derivative cotangent frame for its normal map. Guarded by `JG_SCAN`, so a material compiled before its maps arrive carries none of it.
-- `SurfaceScanBlend` (interface): interface SurfaceScanBlend — Blend settings for one scanned layer.
-- `SurfaceScanUniforms` (interface): interface SurfaceScanUniforms — Uniform values a scanned-surface shader reads; one object per material, maps shared.
-
-## @jgengine/shell/render/surfaceScanTextures
-
-- `SurfaceScanLoader` (type): type SurfaceScanLoader = (url: string, onLoad: (texture: THREE.Texture) => void, onError: () => void) => void — Loads one map; the default goes through {@link ImageTextureLoader}.
-- `SurfaceScanState` (interface): interface SurfaceScanState — A scan's maps as a component sees them.
-- `SurfaceScanTextures` (interface): interface SurfaceScanTextures — Decoded maps of one scanned surface, shared by every material that tiles it.
-- `useSurfaceScan` (function): function useSurfaceScan(maps: TerrainMaterialMaps | undefined, enabled = true): SurfaceScanState — React handle on a scan's maps. `maps` undefined or `enabled` false (the `low` tier) asks for none and is never pending. Every component naming the same URLs shares one decode. The scene's shader warmup waits for the maps, and a caller hides its surface while `pending`, so the warmup links only the scanned programs the first frame draws, not the procedural ones they replace.
-
 ## @jgengine/shell/render/testFixtures/proceduralTileLayer
 
 - `drawProceduralTileLayer` (function): function drawProceduralTileLayer(canvas: CanvasFixture): TilemapWorldConfig — Draw the deterministic tile atlas used by textured tile-layer captures and tests.
@@ -2511,13 +2417,6 @@
 - `TriangleAttribution` (interface): interface TriangleAttribution — Where one scene's triangles are, biggest line first.
 - `TriangleLine` (interface): interface TriangleLine — One line of the triangle table: the draws sharing one geometry inside one named model.
 - `attributeTriangles` (function): function attributeTriangles(root: THREE.Object3D, limit = 12): TriangleAttribution — Sum a scene's triangles by model and geometry, which is the attribution a triangle budget needs: a total says a frame is heavy, a table says which authored object made it heavy. Walks the graph once; call it on demand, never per frame.
-
-## @jgengine/shell/render/triplanarMaterial
-
-- `TriplanarAssetMaterial` (function): function TriplanarAssetMaterial({ asset, ...options }: { asset: MaterialAsset } & { tileMetres?: number; sharpness?: number; normalScale?: number }): React.JSX.Element — Mounts {@link useTriplanarAssetMaterial} on a mesh; the R3F renderer owns disposal.
-- `TriplanarProjectionOptions` (interface): interface TriplanarProjectionOptions — Inputs for {@link applyTriplanarProjection}.
-- `applyTriplanarProjection` (function): function applyTriplanarProjection(material: THREE.MeshStandardMaterial, options: TriplanarProjectionOptions): THREE.MeshStandardMaterial — Projects a standard material's maps from world position instead of mesh UVs, so world geometry without a `uv` attribute still renders a textured PBR surface. Instanced meshes project in their instanced world space. Skinned meshes keep the bind-pose normal for the blend weights, which is close enough for the static world surfaces this path exists for.
-- `useTriplanarAssetMaterial` (function): function useTriplanarAssetMaterial(asset: MaterialAsset, options: { tileMetres?: number; sharpness?: number; normalScale?: number } = {}): THREE.MeshStandardMaterial — Render a serializable material asset — one built by `libraryMaterialAsset`, or authored in the editor — with world-space triplanar projection, so world geometry needs no UVs. Tile size defaults to the asset's own `physicalSize`, which the shared library sets per surface.
 
 ## @jgengine/shell/render/useDisposable
 

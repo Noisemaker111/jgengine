@@ -4,8 +4,8 @@ import * as THREE from "three";
 import { resolveDecalObject } from "@jgengine/core/world/decalKind";
 import type { SceneKindObject } from "@jgengine/core/scene/sceneKinds";
 
-import { createDecalDrapeGeometry } from "@jgengine/shell/render/decalGeometry";
-import { createDecalTexture } from "@jgengine/shell/render/decalTexture";
+import { createDecalDrapeGeometry } from "@jgengine/core/scene/decalGeometry.draw";
+import { createDecalTexture } from "@jgengine/core/scene/decalTexture";
 import { useDisposable } from "@jgengine/shell/render/useDisposable";
 import { registerSceneKindRenderer, type SceneKindRenderContext } from "./sceneKindRenderers.draw";
 

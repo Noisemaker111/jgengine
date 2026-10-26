@@ -183,8 +183,6 @@
   "@jgengine/node/testFixtures#createTestRuntime",
   "@jgengine/node/webHandler#toWebRequest",
   "@jgengine/shell/GamePhaseStamp#GamePhaseStamp",
-  "@jgengine/shell/render/SceneLighting#BackdropFog",
-  "@jgengine/shell/render/SceneLighting#ConfiguredLighting",
   "@jgengine/shell/render/SceneModels#EntitySprite",
   "@jgengine/shell/world/DataObjects#DataObjects",
   "@jgengine/shell/world/GridWorldScene#GridWorldScene",

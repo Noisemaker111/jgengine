@@ -554,6 +554,7 @@ export {
   type VehicleStat,
 } from "./physics/vehicleParts";
 export { VEHICLE_STYLES, vehicleTuning, type VehicleSpec, type VehicleSpecGearbox } from "./physics/vehicleSpec";
+export { createContributionPool, createPlotPermissions, type BuildRole } from "./placement/buildPermissions";
 export {
   isPlaceWorld,
   resolveWorldPhysics,
@@ -886,7 +887,6 @@ export {
   placeAuthoredObjectsFromDocument,
   resolveAuthoredObjects,
 } from "./world/authoredObjects";
-export { createContributionPool, createPlotPermissions, type BuildRole } from "./world/buildPermissions";
 export { CarvableField, VoxelVolume, carvableTerrain, type VoxelMaterial } from "./world/carve";
 export { catenaryCurve, sagCurve } from "./world/catenary";
 export { createEnvironmentField, type EnvironmentField, type HeatSource } from "./world/envField";

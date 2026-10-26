@@ -13,7 +13,7 @@ import type { GameContext, GameContextContent } from "@jgengine/core/runtime/gam
 import type { AssetCatalog, ModelAssetRef } from "@jgengine/core/scene/assetCatalog";
 import type { ModelConfig } from "@jgengine/core/game/playableGame";
 import type { EnvironmentWorldFeature, SkyEnvironmentConfig } from "@jgengine/core/world/features";
-import type { EnvironmentSource } from "@jgengine/core/render/environment";
+import type { EnvironmentSource } from "@jgengine/core/lighting/environmentLighting";
 import { lightingFromDocument, skyFromDocument } from "@jgengine/core/editor/environment";
 import { resolveGameLook } from "@jgengine/core/render/lookPreset";
 import type { ResolveAuthoredObjectsOptions } from "@jgengine/core/world/authoredObjects";

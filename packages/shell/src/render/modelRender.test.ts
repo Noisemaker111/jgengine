@@ -1,7 +1,7 @@
 import { describe, expect, test } from "bun:test";
 import * as THREE from "three";
 
-import { applyMaterialOverride } from "../materialOverride";
+import { applyMaterialOverride } from "@jgengine/core/material/materialOverride.draw";
 import {
   cacheStandardMaterials,
   cloneModelScene,
