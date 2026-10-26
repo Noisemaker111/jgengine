@@ -5,12 +5,13 @@ import { GLTFLoader } from "three/examples/jsm/loaders/GLTFLoader.js";
 import { MeshoptDecoder } from "three/examples/jsm/libs/meshopt_decoder.module.js";
 
 import type { ModelConfig } from "@jgengine/core/game/playableGame";
-import { chunkScatterInstances, type ScatterInstance } from "@jgengine/core/scatter/scatterRegion";
+import type { ScatterInstance } from "@jgengine/core/scatter/scatterRegion";
+import { groupInstancesByCell } from "@jgengine/core/instancing/instanceCells";
 import { beginFallbackSeam, reportFallbackSeam } from "@jgengine/core/devtools/fallbackSeams";
 import { createModelVariantSelector, type ModelVariantSelector } from "@jgengine/core/lod/modelLod";
 
 import { CAMERA_POST_FRAME_PRIORITY } from "../camera/cameraRigs";
-import { submitInstanceCount } from "../render/submittedDraws";
+import { composeInstance, uploadInstances } from "../instancing/instanceUpload";
 import { LEVEL_PASS_MIN_CAMERA_MOVE, levelPassNeeded } from "../lod/levelPass";
 import { variantLevelModel } from "../lod/singleVariantLod";
 import { buildScatterProxy } from "./scatterProxies";
@@ -36,23 +37,14 @@ export interface ScatterBatch {
 /** Groups resolved instances by spatial chunk then species so each batch is one cullable draw. @internal */
 export function scatterBatchInstances(instances: readonly ScatterInstance[], chunkSize: number): ScatterBatch[] {
   const batches: ScatterBatch[] = [];
-  const matrix = new THREE.Matrix4();
-  const position = new THREE.Vector3();
-  const quaternion = new THREE.Quaternion();
-  const euler = new THREE.Euler();
-  const scale = new THREE.Vector3();
-  for (const chunk of chunkScatterInstances(instances, chunkSize)) {
+  for (const chunk of groupInstancesByCell(instances, chunkSize, (instance) => [instance.x, instance.z])) {
     const byItem = new Map<string, { matrices: THREE.Matrix4[]; instances: ScatterInstance[] }>();
-    for (const instance of chunk.instances) {
-      position.set(instance.x, instance.y, instance.z);
-      euler.set(0, instance.rotationY, 0);
-      quaternion.setFromEuler(euler);
-      scale.set(instance.scale, instance.scale, instance.scale);
-      matrix.compose(position, quaternion, scale);
+    for (const instance of chunk.items) {
+      const matrix = composeInstance(new THREE.Matrix4(), [instance.x, instance.y, instance.z], [0, instance.rotationY, 0], instance.scale);
       const bucket = byItem.get(instance.item);
-      if (bucket === undefined) byItem.set(instance.item, { matrices: [matrix.clone()], instances: [instance] });
+      if (bucket === undefined) byItem.set(instance.item, { matrices: [matrix], instances: [instance] });
       else {
-        bucket.matrices.push(matrix.clone());
+        bucket.matrices.push(matrix);
         bucket.instances.push(instance);
       }
     }
@@ -68,11 +60,7 @@ function ScatterBatchMesh({ batch, geometry }: { batch: ScatterBatch; geometry: 
   const meshRef = useRef<THREE.InstancedMesh>(null);
   useEffect(() => {
     const mesh = meshRef.current;
-    if (mesh === null) return;
-    for (let i = 0; i < batch.matrices.length; i += 1) mesh.setMatrixAt(i, batch.matrices[i]!);
-    submitInstanceCount(mesh, batch.matrices.length);
-    mesh.instanceMatrix.needsUpdate = true;
-    mesh.computeBoundingSphere();
+    if (mesh !== null) uploadInstances(mesh, batch.matrices);
   }, [batch]);
   return (
     <instancedMesh ref={meshRef} args={[geometry, undefined, batch.matrices.length]} castShadow receiveShadow>
@@ -86,15 +74,7 @@ function ScatterModelSourceInstances({ source, matrices }: { source: ScatterMode
   const meshRef = useRef<THREE.InstancedMesh>(null);
   useEffect(() => {
     const mesh = meshRef.current;
-    if (mesh === null) return;
-    const composed = new THREE.Matrix4();
-    for (let i = 0; i < matrices.length; i += 1) {
-      composed.multiplyMatrices(matrices[i]!, source.localMatrix);
-      mesh.setMatrixAt(i, composed);
-    }
-    submitInstanceCount(mesh, matrices.length);
-    mesh.instanceMatrix.needsUpdate = true;
-    mesh.computeBoundingSphere();
+    if (mesh !== null) uploadInstances(mesh, matrices, { localMatrix: source.localMatrix });
   }, [matrices, source]);
   return <instancedMesh ref={meshRef} args={[source.geometry, source.material, matrices.length]} castShadow receiveShadow />;
 }
@@ -128,9 +108,7 @@ function ScatterVariantSourceInstances({ source, batch, level, selector }: {
       source.localMatrix,
       slots,
     );
-    submitInstanceCount(mesh, count);
-    mesh.instanceMatrix.needsUpdate = true;
-    if (count > 0) mesh.computeBoundingSphere();
+    uploadInstances(mesh, { count, at: (index, out) => out.copy(slots[index]!) });
   }, [level, selector, batch, source, slots]);
   useLayoutEffect(() => {
     camera.getWorldPosition(cameraPosition);

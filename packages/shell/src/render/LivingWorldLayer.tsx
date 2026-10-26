@@ -4,6 +4,7 @@ import * as THREE from "three";
 
 import { resolveAmbientLife, type AmbientLifeConfig, type ResolvedAmbientLife, type SteamVent } from "@jgengine/core/render/ambientLife";
 
+import { uploadInstances } from "../instancing/instanceUpload";
 import { findKeyLight, towardLight } from "../postfx/contactShadowPass";
 import { advanceLivingWorld, livingWorld, resetLivingWorld } from "./livingWorld";
 import { windDirection, windGust } from "./modelWind";
@@ -116,7 +117,6 @@ function birdGeometry(): THREE.BufferGeometry {
   return geometry;
 }
 
-const birdMatrix = new THREE.Matrix4();
 const birdPosition = new THREE.Vector3();
 const birdQuaternion = new THREE.Quaternion();
 const birdScale = new THREE.Vector3();
@@ -168,18 +168,25 @@ function Birds({ flock }: { flock: NonNullable<ResolvedAmbientLife["birds"]> }) 
     material.uniforms.uTime!.value = time;
     material.uniforms.uOpacity!.value = Math.min(1, presence.current * 1.2);
     const { count, height, radius } = flock;
-    for (let index = 0; index < count; index += 1) {
-      const orbit = radius * (0.55 + ((index * 0.618) % 1) * 0.6);
-      const speed = (0.11 + (index % 4) * 0.012) * (index % 2 === 0 ? 1 : 0.92);
-      const angle = time * speed + index * 2.39996;
-      const lift = height + Math.sin(time * 0.31 + index) * 3 + (index % 5) * 1.6;
-      birdPosition.set(centre.current.x + Math.cos(angle) * orbit, lift, centre.current.z + Math.sin(angle) * orbit);
-      birdEuler.set(0, -angle, Math.sin(time * 0.5 + index) * 0.25);
-      birdQuaternion.setFromEuler(birdEuler);
-      birdScale.setScalar(0.9 + (index % 3) * 0.15);
-      instanced.setMatrixAt(index, birdMatrix.compose(birdPosition, birdQuaternion, birdScale));
-    }
-    instanced.instanceMatrix.needsUpdate = true;
+    const middle = centre.current;
+    uploadInstances(
+      instanced,
+      {
+        count,
+        at: (index, out) => {
+          const orbit = radius * (0.55 + ((index * 0.618) % 1) * 0.6);
+          const speed = (0.11 + (index % 4) * 0.012) * (index % 2 === 0 ? 1 : 0.92);
+          const angle = time * speed + index * 2.39996;
+          const lift = height + Math.sin(time * 0.31 + index) * 3 + (index % 5) * 1.6;
+          birdPosition.set(middle.x + Math.cos(angle) * orbit, lift, middle.z + Math.sin(angle) * orbit);
+          birdEuler.set(0, -angle, Math.sin(time * 0.5 + index) * 0.25);
+          birdQuaternion.setFromEuler(birdEuler);
+          birdScale.setScalar(0.9 + (index % 3) * 0.15);
+          out.compose(birdPosition, birdQuaternion, birdScale);
+        },
+      },
+      { bounds: "none", dynamic: true },
+    );
   });
   return <instancedMesh ref={mesh} args={[geometry, material, flock.count]} frustumCulled={false} renderOrder={2} />;
 }

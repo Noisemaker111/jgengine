@@ -1,5 +1,6 @@
 import { Suspense, useLayoutEffect, useMemo, useRef } from 'react';
-import { InstancedMesh, Object3D } from 'three';
+import { InstancedMesh } from 'three';
+import { composeInstance, uploadInstances } from '@jgengine/shell/instancing/instanceUpload';
 import { editorLayers, type Place } from '../world';
 import { StationSurface } from './stationSurface';
 import { stationModelReplacements } from './stationModels';
@@ -24,15 +25,11 @@ export function StationBatch({parts}:{parts:(typeof editorLayers.volumes)[number
  const ref=useRef<InstancedMesh>(null), first=parts[0]!;
  useLayoutEffect(()=>{
   const mesh=ref.current;if(!mesh)return;
-  const transform=new Object3D();
-  parts.forEach((p,i)=>{
-   transform.position.set(p.center.x,p.center.y,p.center.z);
-   transform.rotation.set(Number(p.meta?.turnX??0),Number(p.meta?.turn??0),Number(p.meta?.turnZ??0));
-   if(p.shape==='box' && p.halfExtents)transform.scale.set(p.halfExtents.x*2,p.halfExtents.y*2,p.halfExtents.z*2);
-   else transform.scale.set(p.radius??1,p.height??1,p.radius??1);
-   transform.updateMatrix();mesh.setMatrixAt(i,transform.matrix);
-  });
-  mesh.instanceMatrix.needsUpdate=true;mesh.computeBoundingSphere();
+  uploadInstances(mesh,{count:parts.length,at:(i,out)=>{
+   const p=parts[i]!;
+   const scale:[number,number,number]=p.shape==='box' && p.halfExtents?[p.halfExtents.x*2,p.halfExtents.y*2,p.halfExtents.z*2]:[p.radius??1,p.height??1,p.radius??1];
+   composeInstance(out,[p.center.x,p.center.y,p.center.z],[Number(p.meta?.turnX??0),Number(p.meta?.turn??0),Number(p.meta?.turnZ??0)],scale);
+  }});
  },[parts]);
  return <instancedMesh ref={ref} args={[undefined,undefined,parts.length]} castShadow receiveShadow>
   {first.shape==='box'?<boxGeometry args={[1,1,1]}/>:<cylinderGeometry args={[1,1,1,16]}/>}

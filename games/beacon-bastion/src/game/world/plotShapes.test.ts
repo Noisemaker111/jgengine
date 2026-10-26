@@ -1,5 +1,5 @@
 import { describe, expect, test } from "bun:test";
-import { groupStaticShapeInstances } from "@jgengine/shell/render/staticShapeInstances";
+import { groupStaticShapeInstances } from "@jgengine/shell/instancing/staticShapeInstances";
 
 import { plotShapes } from "./plotShapes";
 

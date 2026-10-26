@@ -507,6 +507,14 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `useInputDevice` (function) · `import { useInputDevice } from "@jgengine/react"`
 
+## instance-chunks — split a big instanced batch into spatial cells that cull as units
+
+- `partitionInstances` (function) · `import { partitionInstances } from "@jgengine/shell/instancing/instanceChunks"`
+
+## instance-upload — write transforms, colors, count and culling bounds into one instanced draw
+
+- `uploadInstances` (function) · `import { uploadInstances } from "@jgengine/shell/instancing/instanceUpload"`
+
 ## interaction-prompt-host — screen-anchored "press E to…" callout rendering a prompt registry's active interactable — keybind cap+label, gauge hold bar, or plain label, theme- and per-prompt-accent skinnable
 
 - `InteractionPrompt` (function) · `import { InteractionPrompt } from "@jgengine/react"`
@@ -1009,7 +1017,7 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 ## static-shape-instances — render authored primitive transforms as static material-compatible instance batches
 
-- `StaticShapeInstances` (function) · `import { StaticShapeInstances } from "@jgengine/shell/render/staticShapeInstances"`
+- `StaticShapeInstances` (function) · `import { StaticShapeInstances } from "@jgengine/shell/instancing/staticShapeInstances"`
 
 ## static-transforms — static-transforms
 

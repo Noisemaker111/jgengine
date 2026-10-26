@@ -2,10 +2,10 @@ import { Suspense, useLayoutEffect, useMemo, useRef } from "react";
 import * as THREE from "three";
 
 import type { ModelShadowMode } from "@jgengine/core/lod/modelLod";
-import { AuthoredSurfaceMaterial, authoredSurfaceKey, type AuthoredSurfaceConfig, type SurfaceShape } from "./authoredSurfaceMaterial";
-import { ModelFallbackBoundary } from "./SceneModels";
-import { submitInstanceCount } from "./submittedDraws";
-import { useDisposable } from "./useDisposable";
+import { AuthoredSurfaceMaterial, authoredSurfaceKey, type AuthoredSurfaceConfig, type SurfaceShape } from "../render/authoredSurfaceMaterial";
+import { ModelFallbackBoundary } from "../render/SceneModels";
+import { useDisposable } from "../render/useDisposable";
+import { composeInstance, uploadInstances } from "./instanceUpload";
 
 /** One editor-derived static primitive. A box spans one unit; a cylinder has unit radius and height before scale. */
 export interface StaticShapeInstance {
@@ -51,34 +51,19 @@ export function groupStaticShapeInstances(instances: readonly StaticShapeInstanc
 
 /** Upload static transforms and refresh conservative aggregate bounds after a prop change. @internal */
 export function writeStaticShapeInstances(mesh: THREE.InstancedMesh, instances: readonly StaticShapeInstance[]): void {
-  const transform = new THREE.Object3D();
-  instances.forEach((instance, index) => {
-    transform.position.set(...instance.position);
-    transform.rotation.set(...(instance.rotation ?? [0, 0, 0]));
-    transform.scale.set(...instance.scale);
-    transform.updateMatrix();
-    mesh.setMatrixAt(index, transform.matrix);
-  });
-  submitInstanceCount(mesh, instances.length);
-  if (mesh.geometry.boundingBox === null) mesh.geometry.computeBoundingBox();
-  const heightSurface = instances[0]?.surface;
-  const displacedBounds = mesh.geometry.boundingBox!.clone();
-  if (heightSurface?.maps?.height !== undefined) {
-    const bias = heightSurface.displacementBias ?? 0;
-    const scale = heightSurface.displacementScale ?? 1;
+  const surface = instances[0]?.surface;
+  let pad = 0;
+  if (surface?.maps?.height !== undefined) {
+    const bias = surface.displacementBias ?? 0;
+    const scale = surface.displacementScale ?? 1;
     const displacement = Math.max(Math.abs(bias), Math.abs(bias + scale));
-    displacedBounds.expandByScalar(displacement + Number.EPSILON * Math.max(1, displacement) * 8);
+    pad = displacement + Number.EPSILON * Math.max(1, displacement) * 8;
   }
-  mesh.instanceMatrix.needsUpdate = true;
-  mesh.boundingBox = new THREE.Box3();
-  const matrix = new THREE.Matrix4(), bounds = new THREE.Box3();
-  for (let index = 0; index < instances.length; index++) {
-    mesh.getMatrixAt(index, matrix);
-    mesh.boundingBox.union(bounds.copy(displacedBounds).applyMatrix4(matrix));
-  }
-  mesh.boundingSphere = mesh.boundingBox!.getBoundingSphere(new THREE.Sphere());
-  // Three scales spheres by the longest matrix column. sqrt(3) also encloses affine parent shear.
-  mesh.boundingSphere.radius *= Math.sqrt(3);
+  uploadInstances(
+    mesh,
+    { count: instances.length, at: (index, out) => composeInstance(out, instances[index]!.position, instances[index]!.rotation, instances[index]!.scale) },
+    { bounds: "boxes", boundsPad: pad },
+  );
 }
 
 function ShapeBatch({ batch }: { batch: StaticShapeBatch }) {

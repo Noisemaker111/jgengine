@@ -4,7 +4,6 @@ import type { EditorPath } from "../editor/types";
 import { distanceToRing, pointInPolygon, polygonArea } from "../world/polygon";
 import { flatField, noiseField } from "../world/terrain";
 import {
-  chunkScatterInstances,
   clearanceZonesFrom,
   DEFAULT_MARKER_CLEARANCE,
   readScatterRules,
@@ -151,60 +150,6 @@ describe("scatter paths in a document", () => {
     expect(instances.length).toBeGreaterThan(0);
     expect(instances.every((i) => i.item === "bush")).toBe(true);
     expect(scatterRegionFromPath(doc.paths[0]!)?.polygon.length).toBe(4);
-  });
-});
-
-describe("chunkScatterInstances", () => {
-  const chunkPath = (meta: Record<string, unknown>): EditorPath => ({
-    id: "foliage_c",
-    kind: SCATTER_PATH_KIND,
-    points: [
-      { x: -8, y: 0, z: -8 },
-      { x: 8, y: 0, z: -8 },
-      { x: 8, y: 0, z: 8 },
-      { x: -8, y: 0, z: 8 },
-    ],
-    meta,
-  });
-
-  test("buckets instances into a uniform grid, omitting empty chunks", () => {
-    const doc = {
-      version: 1 as const,
-      markers: [],
-      volumes: [],
-      paths: [chunkPath({ density: 0.6, item: "tree" })],
-      annotations: [],
-    };
-    const instances = resolveScatter(doc, flatField());
-    const chunks = chunkScatterInstances(instances, 8);
-    expect(chunks.length).toBeGreaterThan(0);
-    // Every instance lands in exactly one chunk.
-    const total = chunks.reduce((sum, chunk) => sum + chunk.instances.length, 0);
-    expect(total).toBe(instances.length);
-    // No empty chunks, and each instance sits inside its chunk bounds.
-    for (const chunk of chunks) {
-      expect(chunk.instances.length).toBeGreaterThan(0);
-      for (const instance of chunk.instances) {
-        expect(instance.x).toBeGreaterThanOrEqual(chunk.min[0]);
-        expect(instance.x).toBeLessThan(chunk.min[0] + chunk.size);
-        expect(instance.z).toBeGreaterThanOrEqual(chunk.min[1]);
-        expect(instance.z).toBeLessThan(chunk.min[1] + chunk.size);
-      }
-    }
-  });
-
-  test("deterministic order for the same instances", () => {
-    const doc = {
-      version: 1 as const,
-      markers: [],
-      volumes: [],
-      paths: [chunkPath({ density: 0.4, item: "rock" })],
-      annotations: [],
-    };
-    const instances = resolveScatter(doc, flatField());
-    const a = chunkScatterInstances(instances, 8).map((chunk) => chunk.key);
-    const b = chunkScatterInstances(instances, 8).map((chunk) => chunk.key);
-    expect(a).toEqual(b);
   });
 });
 

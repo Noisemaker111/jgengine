@@ -4,7 +4,7 @@ import * as THREE from "three";
 
 import { CAMERA_POST_FRAME_PRIORITY } from "../camera/cameraRigs";
 import { acquireImpostor, impostorCard, impostorDistance, impostorSettingsForQuality, impostorSwitch, releaseImpostor, type ImpostorEntry } from "../lod/impostor";
-import { submitInstanceCount } from "../render/submittedDraws";
+import { uploadInstances } from "../instancing/instanceUpload";
 import { useTerrainQuality } from "../terrain/terrainQuality";
 import type { ScatterBatch } from "./InstancedScatter";
 import type { ScatterModelSource } from "./scatterModels";
@@ -17,6 +17,8 @@ interface NearDraw {
   batch: ScatterBatch;
   /** Placement × source matrices, composed once. */
   composed: Float32Array;
+  /** Scratch: which placements this frame keeps near, in draw order. */
+  kept: Uint32Array;
 }
 
 /**
@@ -71,7 +73,7 @@ export function ScatterImpostorField({ cacheKey, sources, batches, radius }: {
     const composed = new Float32Array(batch.matrices.length * 16);
     const scratch = new THREE.Matrix4();
     batch.matrices.forEach((matrix, index) => composed.set(scratch.multiplyMatrices(matrix, source.localMatrix).elements, index * 16));
-    return { mesh, batch, composed };
+    return { mesh, batch, composed, kept: new Uint32Array(batch.matrices.length) };
   })), [batches, sources]);
   useEffect(() => () => near.forEach((draw) => draw.mesh.dispose()), [near]);
 
@@ -82,12 +84,13 @@ export function ScatterImpostorField({ cacheKey, sources, batches, radius }: {
     mesh.customDepthMaterial = entry.materials.depth;
     mesh.castShadow = true;
     mesh.receiveShadow = true;
-    submitInstanceCount(mesh, 0);
+    uploadInstances(mesh, []);
     return mesh;
   }, [entry, total]);
   useEffect(() => () => { far?.geometry.dispose(); far?.dispose(); }, [far]);
 
   const flags = useMemo(() => batches.map((batch) => new Uint8Array(batch.instances.length)), [batches]);
+  const farMatrices = useMemo<THREE.Matrix4[]>(() => [], []);
   const lastSplit = useRef<THREE.Vector3 | null>(null);
   const lastFar = useRef<THREE.InstancedMesh | null>(null);
   const camera = useMemo(() => new THREE.Vector3(), []);
@@ -99,7 +102,7 @@ export function ScatterImpostorField({ cacheKey, sources, batches, radius }: {
     if (!fresh && lastSplit.current !== null && lastSplit.current.distanceToSquared(camera) < SPLIT_MOVE * SPLIT_MOVE) return;
     lastFar.current = far;
     lastSplit.current = (lastSplit.current ?? new THREE.Vector3()).copy(camera);
-    let farCount = 0;
+    farMatrices.length = 0;
     batches.forEach((batch, batchIndex) => {
       const batchFlags = flags[batchIndex]!;
       if (far === null) {
@@ -108,26 +111,16 @@ export function ScatterImpostorField({ cacheKey, sources, batches, radius }: {
       }
       markFarPlacements(batch.instances, thresholds[batchIndex]!, batchFlags, camera);
       batchFlags.forEach((flag, index) => {
-        if (flag === 1) far.instanceMatrix.array.set(batch.matrices[index]!.elements, (farCount++) * 16);
+        if (flag === 1) farMatrices.push(batch.matrices[index]!);
       });
     });
     for (const draw of near) {
       const batchFlags = flags[batches.indexOf(draw.batch)]!;
-      const array = draw.mesh.instanceMatrix.array as Float32Array;
       let count = 0;
-      for (let index = 0; index < batchFlags.length; index += 1) {
-        if (batchFlags[index] === 1) continue;
-        array.set(draw.composed.subarray(index * 16, index * 16 + 16), (count++) * 16);
-      }
-      submitInstanceCount(draw.mesh, count);
-      draw.mesh.instanceMatrix.needsUpdate = true;
-      if (count > 0) draw.mesh.computeBoundingSphere();
+      for (let index = 0; index < batchFlags.length; index += 1) if (batchFlags[index] !== 1) draw.kept[count++] = index;
+      uploadInstances(draw.mesh, { count, at: (slot, out) => out.fromArray(draw.composed, draw.kept[slot]! * 16) });
     }
-    if (far !== null) {
-      submitInstanceCount(far, farCount);
-      far.instanceMatrix.needsUpdate = true;
-      if (farCount > 0) far.computeBoundingSphere();
-    }
+    if (far !== null) uploadInstances(far, farMatrices);
   }, CAMERA_POST_FRAME_PRIORITY + 0.1);
 
   return (

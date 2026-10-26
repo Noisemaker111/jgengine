@@ -4,7 +4,7 @@ import type { ModelConfig } from "@jgengine/core/game/playableGame";
 import type { ScatterInstance } from "@jgengine/core/scatter/scatterRegion";
 import type { AuthoredSurfaceConfig } from "@jgengine/shell/render/authoredSurfaceMaterial";
 import { InteriorDressing, PracticalLights } from "@jgengine/shell/render/InteriorDressing";
-import { StaticShapeInstances, type StaticShapeInstance } from "@jgengine/shell/render/staticShapeInstances";
+import { StaticShapeInstances, type StaticShapeInstance } from "@jgengine/shell/instancing/staticShapeInstances";
 import { InstancedScatter } from "@jgengine/shell/scatter/InstancedScatter";
 
 import { editorLayers, floorDressing } from "../world";

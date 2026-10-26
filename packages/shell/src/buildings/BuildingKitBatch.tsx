@@ -17,7 +17,8 @@ import {
 import { useBuildingSurfaceTextures } from "./buildingSurface";
 import { groupBuildingKitInstances, buildBuildingKitSources, validateBuildingKitSource, type BuildingKitStyleGroup } from "./buildingKitMaterials";
 import { useBuildingChunkBudget } from "./BuildingRenderBudget";
-import { applyBuildingChunk, partitionBuildingMatrices, type BuildingSpatialChunk } from "./buildingSpatialBatch";
+import { partitionInstances, type InstanceChunk } from "../instancing/instanceChunks";
+import { uploadInstances } from "../instancing/instanceUpload";
 
 function KitSourceInstances({
   source,
@@ -29,7 +30,7 @@ function KitSourceInstances({
   matrices: readonly THREE.Matrix4[];
 }) {
   const chunks = useMemo(
-    () => partitionBuildingMatrices(source.geometry, matrices, source.localMatrix),
+    () => partitionInstances(source.geometry, matrices, { localMatrix: source.localMatrix }),
     [source, matrices],
   );
   return <>{chunks.map((chunk) => <KitSourceChunk key={chunk.key} source={source} material={material} chunk={chunk} />)}</>;
@@ -38,14 +39,18 @@ function KitSourceInstances({
 function KitSourceChunk({ source, material, chunk }: {
   source: ScatterModelSource;
   material: THREE.Material | THREE.Material[];
-  chunk: BuildingSpatialChunk;
+  chunk: InstanceChunk;
 }) {
   const meshRef = useRef<THREE.InstancedMesh>(null);
   useBuildingChunkBudget(meshRef, chunk.bounds);
   useLayoutEffect(() => {
     const mesh = meshRef.current;
     if (mesh === null) return;
-    return applyBuildingChunk(mesh, chunk);
+    uploadInstances(mesh, chunk.matrices, { bounds: chunk.bounds });
+    // Release only this chunk's instance buffers; geometry and materials are shared.
+    return () => {
+      mesh.dispose();
+    };
   }, [chunk, source, material]);
   return (
     <instancedMesh

@@ -15,7 +15,8 @@ import type { MaterialOverrideTextures } from "../materialOverride";
 import { useDisposable } from "../render/useDisposable";
 import { BuildingKitBatch } from "./BuildingKitBatch";
 import { useBuildingChunkBudget } from "./BuildingRenderBudget";
-import { applyBuildingChunk, partitionBuildingMatrices, type BuildingSpatialChunk } from "./buildingSpatialBatch";
+import { partitionInstances, type InstanceChunk } from "../instancing/instanceChunks";
+import { uploadInstances } from "../instancing/instanceUpload";
 import { bucketBuildingParts, normalFor, outwardOffset } from "./buildingKitFit";
 import { applyBuildingSurface, useBuildingSurfaceTextures } from "./buildingSurface";
 
@@ -120,12 +121,12 @@ function BuildingKindBatch({ kind, matrices, palette, geometry }: BuildingKindBa
   const surface = useMemo(() => surfaceFor(kind, palette), [kind, palette]);
   const textures = useBuildingSurfaceTextures(surface);
   const material = useDisposable(() => batchMaterialFor(kind, surface, textures), [kind, surface, textures]);
-  const chunks = useMemo(() => partitionBuildingMatrices(geometry, matrices), [geometry, matrices]);
+  const chunks = useMemo(() => partitionInstances(geometry, matrices), [geometry, matrices]);
   return <>{chunks.map((chunk) => <BuildingChunk key={chunk.key} chunk={chunk} material={material} geometry={geometry} />)}</>;
 }
 
 function BuildingChunk({ chunk, material, geometry }: {
-  chunk: BuildingSpatialChunk;
+  chunk: InstanceChunk;
   material: THREE.Material;
   geometry: THREE.BoxGeometry;
 }) {
@@ -134,7 +135,11 @@ function BuildingChunk({ chunk, material, geometry }: {
   useLayoutEffect(() => {
     const mesh = meshRef.current;
     if (mesh === null) return;
-    return applyBuildingChunk(mesh, chunk);
+    uploadInstances(mesh, chunk.matrices, { bounds: chunk.bounds });
+    // Release only this chunk's instance buffers; geometry and materials are shared.
+    return () => {
+      mesh.dispose();
+    };
   }, [chunk, geometry, material]);
   return (
     <instancedMesh

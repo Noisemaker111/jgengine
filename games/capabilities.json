@@ -4545,6 +4545,39 @@
       "intent": "tick-indexed input log for replay, rollback, and regression tests"
     },
     {
+      "id": "instance-cells",
+      "packages": [
+        "@jgengine/core"
+      ],
+      "module": "@jgengine/core/instancing/instanceCells",
+      "domain": "instancing",
+      "gameFacing": false,
+      "probe": null,
+      "intent": "bucket instanced placements into cullable XZ grid cells"
+    },
+    {
+      "id": "instance-chunks",
+      "packages": [
+        "@jgengine/shell"
+      ],
+      "module": "@jgengine/shell/instancing/instanceChunks",
+      "domain": "instancing",
+      "gameFacing": false,
+      "probe": null,
+      "intent": "split a big instanced batch into spatial cells that cull as units"
+    },
+    {
+      "id": "instance-upload",
+      "packages": [
+        "@jgengine/shell"
+      ],
+      "module": "@jgengine/shell/instancing/instanceUpload",
+      "domain": "instancing",
+      "gameFacing": false,
+      "probe": null,
+      "intent": "write transforms, colors, count and culling bounds into one instanced draw"
+    },
+    {
       "id": "interaction-prompt",
       "packages": [
         "@jgengine/core"
@@ -6909,8 +6942,8 @@
       "packages": [
         "@jgengine/core"
       ],
-      "module": "@jgengine/core/world/pathInstances",
-      "domain": "world",
+      "module": "@jgengine/core/instancing/pathInstances",
+      "domain": "instancing",
       "gameFacing": false,
       "probe": null,
       "intent": "evenly spaced transforms along a polyline"
@@ -9130,8 +9163,8 @@
       "packages": [
         "@jgengine/shell"
       ],
-      "module": "@jgengine/shell/render/staticShapeInstances",
-      "domain": "render",
+      "module": "@jgengine/shell/instancing/staticShapeInstances",
+      "domain": "instancing",
       "gameFacing": false,
       "probe": null,
       "intent": "render authored primitive transforms as static material-compatible instance batches"
