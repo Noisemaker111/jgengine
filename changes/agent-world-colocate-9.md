@@ -32,3 +32,5 @@ The last world and render features leave `@jgengine/shell` for their `@jgengine/
 - `@jgengine/shell/world/staticObjectBatches` → `@jgengine/core/instancing/staticObjectBatches.draw`
 - `@jgengine/shell/world/tileLayerInstances` → `@jgengine/core/render/tileLayerInstances`
 - `@jgengine/shell/world/worldBarSamples` → `@jgengine/core/hud/barSamples.draw`
+
+`verify:fast` boots only games the load check can open: a change touching llmville no longer fails the load guard with "unknown game". `siteGames` moved to `scripts/siteGames.ts`.

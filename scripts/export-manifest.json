@@ -756,8 +756,6 @@
     "./render/spriteClipPreview.view",
     "./render/spriteRender.draw",
     "./render/submittedDraws.draw",
-    "./render/testFixtures/proceduralSpriteAtlas.view",
-    "./render/testFixtures/proceduralTileLayer.view",
     "./render/tileLayerInstances",
     "./render/tileLayerPreview.view",
     "./render/triangleAttribution.draw",

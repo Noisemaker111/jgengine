@@ -26,6 +26,7 @@ import { buildImportGraph, closure, repoFiles, reverseReach, type ImportGraph } 
 import { openPassCache, treeDigests, WHOLE_TREE } from "./verify-cache";
 import { checkCommand, findCheck, jobChecks } from "./run-stages";
 import { printHelpIfAsked } from "./script-help";
+import { siteGames } from "./siteGames";
 import { TEST_ROOTS, walkTestFiles } from "./test-shard";
 
 const VERIFY_FAST_USAGE = {
@@ -465,7 +466,9 @@ export function verifyPlan(input: {
   }
 
   const reached = new Set(reachedBy.keys());
-  const boots = bootsFor(changed, reached);
+  // Only a game the load check can boot: llmville and folders without a web entry have none.
+  const loadable = new Set(siteGames());
+  const boots = bootsFor(changed, reached).filter((game) => loadable.has(game));
 
   const inputs: Record<string, string[]> = {};
   for (const test of tests) inputs[`test:${test}`] = unitInputs(input.graph, [test], workspaceOf(test, input.workspaces)?.dir ?? null);
