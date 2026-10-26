@@ -1,5 +1,5 @@
-import { createDamageRuntime, type DamageRuntime } from "@jgengine/core/combat/damageRuntime";
-import type { DamageTableDef } from "@jgengine/core/combat/damageTable";
+import { createDamageRuntime, type DamageRuntime } from "@jgengine/core/combat/damage/damageRuntime";
+import type { DamageTableDef } from "@jgengine/core/combat/damage/damageTable";
 import type { HitZoneTable } from "@jgengine/core/combat/hitZones";
 import { weaponIntervalMs, type WeaponDefinition } from "@jgengine/core/combat/weaponDefinition";
 import { createWeaponSystem, type WeaponContact, type WeaponSystem } from "@jgengine/core/combat/weaponSystem";

@@ -1,5 +1,5 @@
 import { describe, expect, it } from "bun:test";
-import { seededRng } from "../random/rng";
+import { seededRng } from "../../random/rng";
 import { resolveDamageHit, type DamageHitInput } from "./damageResolution";
 import type { DamageMatchup } from "./damageMatchup";
 import type { ReceivedModifier } from "./receivedDamage";

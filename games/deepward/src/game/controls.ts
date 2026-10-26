@@ -3,7 +3,7 @@ import type { GameContext } from "@jgengine/core/runtime/gameContext";
 import { perContext } from "@jgengine/core/runtime/perContext";
 import { defineStore } from "@jgengine/core/store/defineStore";
 import { setGamePhase } from "@jgengine/core/game/gamePhase";
-import type { DamageRuntime } from "@jgengine/core/combat/damageRuntime";
+import type { DamageRuntime } from "@jgengine/core/combat/damage/damageRuntime";
 import type { WeaponAmmo, WeaponSystem } from "@jgengine/core/combat/weaponSystem";
 import { createPerception, type PerceptionService } from "@jgengine/core/sensor/perception";
 import { BAYS, distance, depthAt, EXIT, EXIT_REACH, FABRICATOR, FABRICATOR_REACH, FRAGMENTS, GARAGE, GARAGE_REACH, HOME_SPAWN, inside, LIFTS, lineOfSight, NODES, PRINT_ID, PRINT_SPAWN, PRINTER_ZERO, PRINTER_ZERO_REACH, RECEIVING_BACK_Z, SALVAGE, STASH, STASH_REACH, STEAM, STRATUM_SPAWNS, SUPPLIES, VAULT_SPAWN, walkable, type Point } from "../world";

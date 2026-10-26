@@ -1,10 +1,10 @@
 import { normalizeOnDeath, type OnDeathSpec } from "../../combat/death";
-import type { Drop } from "../../game/lootTable";
+import type { Drop } from "../../loot/lootTable";
 import {
   DEFAULT_RARITY,
   resolveDeathDrops,
   type WorldItemSpawnInput,
-} from "../../game/worldItem";
+} from "../../loot/groundItem";
 import type { GameContextContent } from "../gameContext";
 
 /** @internal Inputs for routing a resolved lethal kill into bag grants and/or ground-item spawns. */

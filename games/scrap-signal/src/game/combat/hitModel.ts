@@ -1,5 +1,6 @@
-import { createDamageRuntime, type DamageRuntime, type DamageRuntimeState } from "@jgengine/core/combat/damageRuntime";
-import type { DamageTableDef } from "@jgengine/core/combat/damageTable";
+import { createDamageRuntime, type DamageRuntime, type DamageRuntimeState } from "@jgengine/core/combat/damage/damageRuntime";
+import { landDamage } from "@jgengine/core/combat/damage/landDamage";
+import type { DamageTableDef } from "@jgengine/core/combat/damage/damageTable";
 import type { HitZoneTable } from "@jgengine/core/combat/hitZones";
 import type { StatusDef } from "@jgengine/core/combat/statusRuntime";
 import { seededRng } from "@jgengine/core/random/rng";
@@ -13,7 +14,7 @@ import type { GunDef, GunElement, Surface } from "../handroll/guns";
 
 /**
  * Scrap's elemental chart, as data the shared damage model reads. The old local `ELEMENT_MATCHUP`
- * table is the same numbers, moved into the shape `combat/damageRuntime` consumes: a damage type per
+ * table is the same numbers, moved into the shape `combat/damage/damageRuntime` consumes: a damage type per
  * gun element scored against the three resistance classes a body here can present. A target with a
  * live shield presents `shield` and ignores its hull surface, which is the precedence the old
  * shielded-overrides-surface check encoded.
@@ -155,18 +156,16 @@ export function resolveGunHit(
   const fluxed = isFluxed(ctx, targetId) && gun.element !== "flux";
   const base = hitBase(gun, fluxed) * (mods.damageScale ?? 1);
   const statuses = gun.element === "flux" ? [{ id: FLUX_STATUS.id, chanceScale: fluxChance }] : [];
-  const resolution = combat.damage.hit({
+  const { resolution, amount } = landDamage(ctx, combat.damage, {
     target: targetId,
     type: gun.element,
     base,
     zone: "body",
     source: from,
     statuses,
+    item: gun.id,
+    round: true,
   });
-  const amount = Math.round(resolution.damage);
-  if (amount !== 0) {
-    ctx.scene.entity.effect({ from, to: targetId, effect: "damage", via: { amount, item: gun.id } });
-  }
   return {
     damage: amount,
     crit: resolution.zone.crit,

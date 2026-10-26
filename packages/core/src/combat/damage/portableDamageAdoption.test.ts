@@ -1,8 +1,8 @@
 import { describe, expect, test } from "bun:test";
 import { createDamageClamp, resolveDamage } from "./damageInterceptors";
 import { resolveDamageHit } from "./damageResolution";
-import { createEffectSystem } from "./effects";
-import { createStatPool, type StatPool, type StatPoolAccess } from "../stats/statPool";
+import { createEffectSystem } from "../effects";
+import { createStatPool, type StatPool, type StatPoolAccess } from "../../stats/statPool";
 
 describe("portable damage adoption", () => {
   test("pure hit, ordered interceptors, status provenance, and caller-owned pools compose deterministically", () => {

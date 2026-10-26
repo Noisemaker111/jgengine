@@ -13,8 +13,8 @@ tick frontier. `settleExpedition(config, state, nowMs)` uses `accrueSince` and
 and receives the state at that event's time, with the persisted RNG stream.
 
 ```ts
-import { createLootPipeline } from "@jgengine/core/game/lootPipeline";
-import { timeScaledRarity } from "@jgengine/core/game/lootModifiers";
+import { createLootPipeline } from "@jgengine/core/loot/lootPipeline";
+import { timeScaledRarity } from "@jgengine/core/loot/lootModifiers";
 import {
   dispatchExpedition, settleExpedition, recallExpedition, returnExpeditionNow,
   type ExpeditionConfig, type ExpeditionState,

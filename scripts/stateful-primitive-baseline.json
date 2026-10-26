@@ -39,7 +39,7 @@
     "packages/core/src/game/snapshotHistory.ts#createSnapshotHistory",
     "packages/core/src/game/spawnPoints.ts#createSpawnPoints",
     "packages/core/src/game/unlocks.ts#createUnlockCatalog",
-    "packages/core/src/game/worldItem.ts#createWorldItemStore",
+    "packages/core/src/loot/groundItem.ts#createWorldItemStore",
     "packages/core/src/i18n/i18n.ts#createI18n",
     "packages/core/src/input/actionBindings.ts#createActionStateTracker",
     "packages/core/src/input/gestureSurface.ts#createGestureSurfaceTracker",

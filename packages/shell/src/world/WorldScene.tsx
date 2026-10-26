@@ -13,7 +13,7 @@ import type { AssetCatalog } from "@jgengine/core/scene/assetCatalog";
 import type { SceneEntity } from "@jgengine/core/scene/entityStore";
 import { groundSpeed } from "@jgengine/core/scene/entityStore";
 import { objectVisualScale, type SceneObject } from "@jgengine/core/scene/objectStore";
-import { WORLD_ITEM_ENTITY_NAME } from "@jgengine/core/game/worldItem";
+import { WORLD_ITEM_ENTITY_NAME } from "@jgengine/core/loot/groundItem";
 import type { EntitySpriteConfig, ModelConfig, ObjectStyle } from "@jgengine/core/game/playableGame";
 import type { PresencePoseRow } from "@jgengine/core/runtime/transport";
 import {

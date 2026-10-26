@@ -1,7 +1,7 @@
-import { devtools } from "../devtools/devtools";
-import type { DamageAppliedEvent, GameEvents } from "../game/events";
-import { resolveRng } from "../random/resolveRng";
-import type { StatusApplicationOutcome, StatusInstance } from "./statusApplication";
+import { devtools } from "../../devtools/devtools";
+import type { DamageAppliedEvent, GameEvents } from "../../game/events";
+import { resolveRng } from "../../random/resolveRng";
+import type { StatusApplicationOutcome, StatusInstance } from "../statusApplication";
 import {
   assertDamageTable,
   readDamageTable,
@@ -15,7 +15,7 @@ import {
   resolveHitZone,
   type HitZoneResolution,
   type HitZoneTable,
-} from "./hitZones";
+} from "../hitZones";
 import {
   createStatusRuntime,
   type StatusDamageTick,
@@ -23,7 +23,7 @@ import {
   type StatusRuntime,
   type StatusRuntimeState,
   type StatusTickEvent,
-} from "./statusRuntime";
+} from "../statusRuntime";
 
 /** How many recent damage applications the runtime keeps for `recentDamage` and its probe line. */
 const RECENT_DAMAGE_LIMIT = 8;

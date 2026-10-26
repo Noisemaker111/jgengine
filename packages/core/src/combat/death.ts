@@ -1,6 +1,6 @@
 import type { EntityDiedEvent, GameEvents } from "../game/events";
-import type { Drop } from "../game/lootTable";
-import type { ScatterOptions } from "../game/worldItem";
+import type { Drop } from "../loot/lootTable";
+import type { ScatterOptions } from "../loot/groundItem";
 import type { DeathReason } from "./deathReason";
 import type { EffectVia } from "./effects";
 
@@ -32,7 +32,7 @@ export interface OnDeathSpec {
   command?: string | OnDeathCommandRule;
   /** "grant" (default) puts drops straight into the killer's inventory; "world" scatters them as ground `worldItem`s instead (#32). */
   dropMode?: DropMode;
-  /** Scatter-offset tuning when `dropMode` is `"world"`; defaults to `DEFAULT_SCATTER` from `game/worldItem`. */
+  /** Scatter-offset tuning when `dropMode` is `"world"`; defaults to `DEFAULT_SCATTER` from `loot/groundItem`. */
   scatter?: ScatterOptions;
   /**
    * The game owns what a death means for this entity (a downed window, a revive, a respawn in place):

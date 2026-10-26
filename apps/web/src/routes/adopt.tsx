@@ -71,7 +71,7 @@ const hit = applyStatPoolDelta(access, "hero", "health", -12); // hit.applied ==
     keep: "Your entities, your health sink, when a hit happens.",
     get: "A serializable, replay-safe resolution you can run on the authority and mirror to clients.",
     filename: "damage.ts",
-    code: `import { resolveDamageHit } from "@jgengine/core/combat/damageResolution";
+    code: `import { resolveDamageHit } from "@jgengine/core/combat/damage/damageResolution";
 import { applyStatPoolDelta } from "@jgengine/core/stats/statPool";
 
 const result = resolveDamageHit({

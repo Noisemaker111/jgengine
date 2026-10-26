@@ -1,4 +1,4 @@
-import type { LootTableDef } from "@jgengine/core/game/lootTable";
+import type { LootTableDef } from "@jgengine/core/loot/lootTable";
 
 interface Profile {
   id: string;

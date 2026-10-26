@@ -1,5 +1,5 @@
 import { devtools } from "../devtools/devtools";
-import type { DamageRuntime, DamageRuntimeHitInput, DamageRuntimeResolution } from "./damageRuntime";
+import type { DamageRuntime, DamageRuntimeHitInput, DamageRuntimeResolution } from "./damage/damageRuntime";
 import { createMagazine, type Magazine, type MagazineSnapshot } from "./magazine";
 import {
   assertWeaponDefinition,
@@ -107,7 +107,7 @@ export interface WeaponAmmo {
 }
 
 /** Lifetime ammo economy and resolution counters. */
-export interface WeaponStats {
+export interface WeaponCounters {
   shots: number;
   /** Loaded rounds spent; `0` for a weapon without a magazine. */
   roundsSpent: number;
@@ -147,7 +147,7 @@ export interface WeaponSystemState {
   pendingPull: boolean;
   burstRemaining: number;
   shotCount: number;
-  stats: WeaponStats;
+  stats: WeaponCounters;
   pellets: WeaponProjectileView[];
 }
 
@@ -189,7 +189,7 @@ export interface WeaponSystem {
   /** The definition in force. */
   definition(): WeaponDefinition;
   ammo(): WeaponAmmo;
-  stats(): WeaponStats;
+  stats(): WeaponCounters;
   /** Live pellets, capped by the definition's `maxInFlight`. */
   pellets(): readonly WeaponProjectileView[];
   /** Handling state for recoil presentation and `measureWeapon`. */
@@ -213,7 +213,7 @@ interface MutableTick {
   impacts: WeaponImpact[];
 }
 
-function freshStats(): WeaponStats {
+function freshStats(): WeaponCounters {
   return {
     shots: 0,
     roundsSpent: 0,

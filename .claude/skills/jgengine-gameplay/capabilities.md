@@ -221,6 +221,10 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `gearScore` (function) · `import { gearScore } from "@jgengine/core/gameplay"`
 
+## grant-drops — deliver rolled loot drops into inventory and currency
+
+- `grantDrops` (function) · `import { grantDrops } from "@jgengine/core/loot/lootTable"`
+
 ## group-credits — turn a flat list of credited things into ordered credit sections
 
 - `groupCredits` (function) · `import { groupCredits } from "@jgengine/core/game/credits"`

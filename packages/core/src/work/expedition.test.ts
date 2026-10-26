@@ -1,6 +1,6 @@
 import { describe, expect, test } from "bun:test";
-import { createLootPipeline } from "../game/lootPipeline";
-import { timeScaledRarity } from "../game/lootModifiers";
+import { createLootPipeline } from "../loot/lootPipeline";
+import { timeScaledRarity } from "../loot/lootModifiers";
 import { defineGameDefinition } from "../game/defineGame";
 import { defineSystem } from "../game/defineSystem";
 import { createGameContext } from "../runtime/gameContext";

@@ -30,5 +30,5 @@ const combat = defineSystem({
 
 export const game = defineGame({ name: "Combat", content, systems: [combat] });
 // Mount: <GameHost playable={game} />  ·  fire: ctx.game.commands.run("attack", { target: goblinId, amount: 12 })
-// Data-defined hit math (channels, resistances): resolveDamageHit from @jgengine/core/combat/damageResolution,
+// Data-defined hit math (channels, resistances): resolveDamageHit from @jgengine/core/combat/damage/damageResolution,
 // then pass its `impact` as `via.amount`.

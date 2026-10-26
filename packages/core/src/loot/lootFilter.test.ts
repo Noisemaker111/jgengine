@@ -1,5 +1,5 @@
 import { describe, expect, test } from "bun:test";
-import { evaluateLootFilter, lootFilter, type LootFilterRule } from "@jgengine/core/game/lootFilter";
+import { evaluateLootFilter, lootFilter, type LootFilterRule } from "@jgengine/core/loot/lootFilter";
 
 const RULES: readonly LootFilterRule[] = lootFilter([
   { id: "hide-common-ammo", when: { rarity: "common", baseType: "resource" }, hide: true },

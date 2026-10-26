@@ -1,13 +1,13 @@
 import { describe, expect, test } from "bun:test";
 
 import { assertWeaponDefinition } from "../combat/weaponDefinition";
-import { createDamageRuntime } from "../combat/damageRuntime";
-import type { DamageTableDef } from "../combat/damageTable";
+import { createDamageRuntime } from "../combat/damage/damageRuntime";
+import type { DamageTableDef } from "../combat/damage/damageTable";
 import type { HitZoneTable } from "../combat/hitZones";
 import { createWeaponSystem } from "../combat/weaponSystem";
 import { devtools } from "../devtools/devtools";
 import { createItemInstanceRegistry, proceduralLootEntry } from "../item/itemInstanceRegistry";
-import { createLootRegistry, lootTable } from "../game/lootTable";
+import { createLootRegistry, lootTable } from "./lootTable";
 import { seededRng } from "../random/rng";
 import {
   MAX_LOOT_AFFIXES,

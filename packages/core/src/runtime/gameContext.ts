@@ -8,7 +8,7 @@ import { createWorldSolids, structureSolids } from "../world/worldSolids";
 import { createGameEvents, type GameEventMap, type GameEvents } from "../game/events";
 import { createGameFeed } from "../game/feed";
 import { setGamePhase } from "../game/gamePhase";
-import { createLootRegistry, grantDrops } from "../game/lootTable";
+import { createLootRegistry, grantDrops } from "../loot/lootTable";
 import { createSocial, type Social } from "../game/social";
 import { splitStack } from "../inventory/inventoryModel";
 import { createItemUse } from "../item/use";

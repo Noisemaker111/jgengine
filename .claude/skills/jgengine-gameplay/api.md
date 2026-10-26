@@ -735,49 +735,6 @@
 - `Loadouts` (interface): interface Loadouts { register(defs: Record<string, LoadoutDef>): void; has(loadoutId: string): boolean; applyLoadout(userId: string, loadoutId: string): {reason: string} | null } — ⚠ undocumented · used by `createLoadouts`: Save, name, and swap equipment loadouts.
 - `createLoadouts` (function): function createLoadouts(deps: LoadoutDeps): Loadouts — Save, name, and swap equipment loadouts.
 
-## @jgengine/core/game/lootFilter
-
-- `LootFilterCondition` (interface): interface LootFilterCondition { rarity?: string | readonly string[]; baseType?: string | readonly string[]; minAffixTier?: number; maxAffixTier?: number } — ⚠ undocumented
-- `LootFilterItem` (interface): interface LootFilterItem { rarity: string; baseType: string; affixTier?: number } — ⚠ undocumented · used by `evaluateLootFilter`: First matching rule wins (PoE/Last Epoch block semantics) — later rules never override an earlier match.
-- `LootFilterOverride` (interface): interface LootFilterOverride { hidden?: boolean; color?: string; beam?: boolean; label?: string } — ⚠ undocumented · used by `evaluateLootFilter`: First matching rule wins (PoE/Last Epoch block semantics) — later rules never override an earlier match.
-- `LootFilterRule` (interface): interface LootFilterRule { id: string; when: LootFilterCondition; hide?: boolean; color?: string; beam?: boolean; label?: string } — ⚠ undocumented · used by `evaluateLootFilter`: First matching rule wins (PoE/Last Epoch block semantics) — later rules never override an earlier match.
-- `evaluateLootFilter` (function): function evaluateLootFilter(rules: readonly LootFilterRule[], item: LootFilterItem): LootFilterOverride — First matching rule wins (PoE/Last Epoch block semantics) — later rules never override an earlier match. Returns overrides only; fields the rule doesn't set are left for the caller's baseline (rarity style) to fill in.
-- `lootFilter` (function): function lootFilter(rules: readonly LootFilterRule[]): readonly LootFilterRule[] — Validating factory — rule ids must be unique so authoring mistakes fail loudly.
-
-## @jgengine/core/game/lootModifiers
-
-- `TimeScaledRarityOptions` (interface): interface TimeScaledRarityOptions — Caller-authored weighting curve; item ids, quality tiers and balance never live in the modifier.
-- `timeScaledRarity` (function): function timeScaledRarity<TCtx extends { elapsedMs: number }>(options: TimeScaledRarityOptions): LootModifier<TCtx> — Multiply weighted odds (or independent chances, clamped to one) by a caller-authored elapsed-time curve. Keeps source tables unchanged and uses the existing pipeline's modifier provenance. Elapsed time and multipliers must be finite and nonnegative; invalid curves reject the roll.
-
-## @jgengine/core/game/lootPipeline
-
-- `LootDropProvenance` (interface): interface LootDropProvenance — Why one drop is in the result: the stage/table/entry that produced it, its weights, and the modifiers that shaped it.
-- `LootModifier` (interface): interface LootModifier<TCtx = unknown> — A registered, id-tagged loot policy applied to one stage. `plan` transforms eligibility, weights, and roll counts before rolling (luck, difficulty, gating); `drops` post-processes the rolled drops (quantity multipliers, dedupe, caps). Neither hook mutates table definitions, and the id is recorded in provenance so a resolved drop can be traced back to the policies that shaped it.
-- `LootPipeline` (interface): interface LootPipeline<TCtx = unknown> — A resolved, reusable loot pipeline. Call {@link LootPipeline.resolve} with a per-drop context and RNG.
-- `LootPipelineDef` (interface): interface LootPipelineDef<TCtx = unknown> — A named, ordered loot-resolution pipeline: the stages to run plus result-shaping policy (duplicate stacking, a total drop cap). Serializable except for its stage gate/modifier functions, mirroring how {@link LootTableDef} entries may carry a `generate` function.
-- `LootPipelineDeps` (interface): interface LootPipelineDeps — Dependencies a pipeline needs at build time — chiefly how to turn a table id into its definition.
-- `LootPlanEntry` (interface): interface LootPlanEntry — One eligible entry inside a {@link LootRollPlan}: the original table entry plus its live eligibility and effective weight/chance. Modifiers rewrite these fields; the source `entry` object is never mutated, so table definitions stay shared and reusable.
-- `LootResolution` (interface): interface LootResolution — The fully serializable outcome of a resolution: the drops, their provenance, per-stage traces, and the replay seed.
-- `LootResolveContext` (interface): interface LootResolveContext<TCtx = unknown> — The caller-owned context, injected RNG, and optional seed threaded through a single resolution.
-- `LootRollPlan` (interface): interface LootRollPlan — The mutable roll plan a stage derives from its table before rolling. Modifiers transform this — gating entries, reweighting them, or changing the roll count — instead of touching table defs.
-- `LootStage` (interface): interface LootStage<TCtx = unknown> — One ordered step in a {@link LootPipelineDef}: a source pool (a table id or inline table), an optional context gate, a fold mode, and the modifiers that reshape its roll. Stages compose the genre concepts — world pool, dedicated pool, luck, pity — without any of them living in core.
-- `LootStageKind` (type): type LootStageKind = "contribute" | "fallback" | "replace" — How a stage folds its rolled drops into the accumulating result: `"contribute"` appends, `"fallback"` rolls only when nothing has dropped yet, `"replace"` discards prior drops and overrides with its own (quest/boss overrides).
-- `LootStageStatus` (type): type LootStageStatus = "rolled" | "skipped" | "empty" | "replaced" | "fell-through" — The disposition of a stage after resolution — did it roll, get gated, fall through, override, or find nothing.
-- `LootStageTrace` (interface): interface LootStageTrace — Per-stage record of what happened during resolution, for debugging and replay auditing.
-- `createLootPipeline` (function): function createLootPipeline<TCtx = unknown>(def: LootPipelineDef<TCtx>, deps: LootPipelineDeps = {}): LootPipeline<TCtx> — Build a composable loot-resolution pipeline: ordered source pools, context gates, fallbacks when a pool yields nothing, roll modifiers (luck, quantity, difficulty) applied as registered policies, and full provenance for every drop (stage, table, entry, original vs effective weights, modifier ids, seed). Rolling consumes the injected RNG in the same order as the base loot table, so a seeded resolution is deterministic and server-authoritatively replayable. Genre concepts (world, dedicated, boss, luck, rarity, pity) stay out of core and ship as stage/modifier compositions.
-- `defineLootPipeline` (function): function defineLootPipeline<TCtx = unknown>(def: LootPipelineDef<TCtx>): LootPipelineDef<TCtx> — Validate a loot pipeline definition and return it unchanged, for use with {@link createLootPipeline}.
-
-## @jgengine/core/game/lootTable
-
-- `Drop` (interface): interface Drop — A resolved loot outcome — one item or currency grant with its rolled count.
-- `LootEntry` (interface): interface LootEntry — One possible drop in a {@link LootTableDef} — an item, currency, or generated item, its count range, and its odds.
-- `LootRegistry` (interface): interface LootRegistry { register(def: LootTableDef): void; has(id: string): boolean; roll(id: string, rng?: () => number): Drop[]; snapshot(): LootTableDef[]; restore(next: readonly LootTableDef[]): void } — ⚠ undocumented · used by `createLootRegistry`: Register named loot tables and roll weighted randomized drops from them.
-- `LootRegistryOptions` (interface): interface LootRegistryOptions — Options for {@link createLootRegistry} — inject a default RNG so bare `roll(id)` uses the world stream.
-- `LootTableDef` (interface): interface LootTableDef — A named, validated loot table — its roll count, weighted-vs-independent mode, and candidate entries.
-- `createLootRegistry` (function): function createLootRegistry(options: LootRegistryOptions = {}): LootRegistry — Register named loot tables and roll weighted randomized drops from them.
-- `grantDrops` (function): function grantDrops(drops: Drop[], appliers: { putItem: (itemId: string, count: number) => unknown; grantCurrency: (currencyId: string, amount: number) => unknown; }): void — ⚠ undocumented
-- `lootTable` (function): function lootTable(def: LootTableDef): LootTableDef — Validates a loot table definition and returns it unchanged, for use with {@link createLootRegistry}.
-
 ## @jgengine/core/game/modelAnimation
 
 - `AUTO_ONE_SHOT_EVENTS` (const): const AUTO_ONE_SHOT_EVENTS: readonly ["hit", "death"] — The two one-shot events the shell fires automatically for an entity, from `combat.hitReaction` and `entity.died`.
@@ -1157,22 +1114,6 @@
 - `resolveViewports` (function): function resolveViewports(config: ViewportsConfig | undefined, slots: readonly string[]): ViewportDef[] — The viewports to draw for the seats currently joined: the explicit layout filtered to joined seats, or an even split.
 - `splitViewports` (function): function splitViewports(slots: readonly string[], split: "vertical" | "horizontal" = "vertical"): ViewportDef[] — Even split-screen rects for seats in order: one fills the screen, two split side by side (or stacked), three put the first on a full-width top half, four make a 2×2 grid, more fill a grid row by row.
 - `viewportPixels` (function): function viewportPixels(rect: ViewportRect, width: number, height: number): ViewportPixels — Convert a top-left fractional rect into whole canvas pixels with a bottom-left origin; neighbours share edges exactly.
-
-## @jgengine/core/game/worldItem
-
-- `DEFAULT_PICKUP_RADIUS` (const): const DEFAULT_PICKUP_RADIUS: 2 — ⚠ undocumented
-- `DEFAULT_RARITY` (const): const DEFAULT_RARITY: "common" — ⚠ undocumented
-- `DEFAULT_SCATTER` (const): const DEFAULT_SCATTER: ScatterOptions — ⚠ undocumented
-- `RarityStyle` (interface): interface RarityStyle — Per-rarity look of a dropped item: beam, color and label. Set via `defineGame({ worldItem: { rarityStyle } })`.
-- `ResolveDeathDropsOptions` (interface): interface ResolveDeathDropsOptions { mode: "grant" | "world"; origin: EntityPosition; resolveRarity(itemId: string): string; resolveBaseType?(itemId: string): string; scatter?: ScatterOptions; rng?(): number; source?: string } — ⚠ undocumented
-- `ResolvedDeathDrops` (interface): interface ResolvedDeathDrops { worldSpawns: WorldItemSpawnInput[]; grants: Drop[] } — ⚠ undocumented
-- `ScatterOptions` (interface): interface ScatterOptions { radius: number; minRadius?: number; height?: number } — ⚠ undocumented
-- `WORLD_ITEM_ENTITY_NAME` (const): const WORLD_ITEM_ENTITY_NAME: "world_item" — Scene-entity catalog name every dropped-item instance spawns under (see the three buckets: worldItem is an entity, never an inventory item or object).
-- `WorldItemPresentation` (interface): interface WorldItemPresentation { hidden: boolean; color?: string; beam: boolean; label?: string } — ⚠ undocumented
-- `WorldItemRecord` (interface): interface WorldItemRecord { instanceId: string; itemId: string; rarity: string; baseType: string; count: number; affixTier?: number; source?: string; droppedAt: number } — ⚠ undocumented · used by `useNearestWorldItem` (@jgengine/react): Nearest ground item within `radius` of the local player — drives a pickup prompt/highlight.
-- `WorldItemSpawnInput` (interface): interface WorldItemSpawnInput { itemId: string; position: EntityPosition; rarity?: string; baseType?: string; count?: number; affixTier?: number; source?: string } — ⚠ undocumented
-- `WorldItemStore` (interface): interface WorldItemStore { spawn(input: WorldItemSpawnInput): WorldItemRecord; get(instanceId: string): WorldItemRecord | null; list(): readonly WorldItemRecord[]; nearestInRadius(from: EntityPosition, radius: number, filter?: (record: WorldItemRecord) => boolean):… — ⚠ undocumented
-- `WorldItemStoreDeps` (interface): interface WorldItemStoreDeps { spawnEntity(position: EntityPosition): string; despawnEntity(instanceId: string): boolean; resolvePosition(instanceId: string): EntityPosition | undefined; now?(): number } — ⚠ undocumented
 
 ## @jgengine/core/gameplay
 
@@ -2267,6 +2208,22 @@
 - `itemMass` (function): function itemMass(item: Pick<LootItem, "mass">): number — Carried mass of a rolled item. Older saves may predate `mass`; those default to `1`.
 - `rollDrop` (function): function rollDrop(catalog: LootCatalog, seed: string | number, options: RollDropOptions = {}): ItemDrop — Roll one item from a seed. Same seed, catalog and options produce the same id, name, affixes, stats and mass on every run; level gates which bases and affixes are in the pool.
 
+## @jgengine/core/loot/groundItem
+
+- `DEFAULT_PICKUP_RADIUS` (const): const DEFAULT_PICKUP_RADIUS: 2 — ⚠ undocumented
+- `DEFAULT_RARITY` (const): const DEFAULT_RARITY: "common" — ⚠ undocumented
+- `DEFAULT_SCATTER` (const): const DEFAULT_SCATTER: ScatterOptions — ⚠ undocumented
+- `RarityStyle` (interface): interface RarityStyle — Per-rarity look of a dropped item: beam, color and label. Set via `defineGame({ worldItem: { rarityStyle } })`.
+- `ResolveDeathDropsOptions` (interface): interface ResolveDeathDropsOptions { mode: "grant" | "world"; origin: EntityPosition; resolveRarity(itemId: string): string; resolveBaseType?(itemId: string): string; scatter?: ScatterOptions; rng?(): number; source?: string } — ⚠ undocumented
+- `ResolvedDeathDrops` (interface): interface ResolvedDeathDrops { worldSpawns: WorldItemSpawnInput[]; grants: Drop[] } — ⚠ undocumented
+- `ScatterOptions` (interface): interface ScatterOptions { radius: number; minRadius?: number; height?: number } — ⚠ undocumented
+- `WORLD_ITEM_ENTITY_NAME` (const): const WORLD_ITEM_ENTITY_NAME: "world_item" — Scene-entity catalog name every dropped-item instance spawns under (see the three buckets: worldItem is an entity, never an inventory item or object).
+- `WorldItemPresentation` (interface): interface WorldItemPresentation { hidden: boolean; color?: string; beam: boolean; label?: string } — ⚠ undocumented
+- `WorldItemRecord` (interface): interface WorldItemRecord { instanceId: string; itemId: string; rarity: string; baseType: string; count: number; affixTier?: number; source?: string; droppedAt: number } — ⚠ undocumented · used by `useNearestWorldItem` (@jgengine/react): Nearest ground item within `radius` of the local player — drives a pickup prompt/highlight.
+- `WorldItemSpawnInput` (interface): interface WorldItemSpawnInput { itemId: string; position: EntityPosition; rarity?: string; baseType?: string; count?: number; affixTier?: number; source?: string } — ⚠ undocumented
+- `WorldItemStore` (interface): interface WorldItemStore { spawn(input: WorldItemSpawnInput): WorldItemRecord; get(instanceId: string): WorldItemRecord | null; list(): readonly WorldItemRecord[]; nearestInRadius(from: EntityPosition, radius: number, filter?: (record: WorldItemRecord) => boolean):… — ⚠ undocumented
+- `WorldItemStoreDeps` (interface): interface WorldItemStoreDeps { spawnEntity(position: EntityPosition): string; despawnEntity(instanceId: string): boolean; resolvePosition(instanceId: string): EntityPosition | undefined; now?(): number } — ⚠ undocumented
+
 ## @jgengine/core/loot/haul
 
 - `CarryOutcome` (type): type CarryOutcome = | { ok: true; mass: number; remaining: number } | { ok: false; reason: "over-capacity" | "no-space" | "invalid-count"; mass: number; remaining: number } — What a carry attempt returns: the new load, or the rule that refused it.
@@ -2275,6 +2232,15 @@
 - `RunHaulConfig` (interface): interface RunHaulConfig<TId extends string> — What a run haul needs: two inventories, a weight rule and an optional save cell.
 - `RunHaulState` (interface): interface RunHaulState — Detached run and stash contents, for a save or a debug readout.
 - `createRunHaul` (function): function createRunHaul<TId extends string>(config: RunHaulConfig<TId>): RunHaul — A run's haul beside a persistent stash. Carrying is gated by the shared encumbrance rules; `bank` moves what the stash fits and saves; `fail` throws the run's haul away and leaves the stash as it was. The game decides when a run succeeds or fails and calls one of them.
+
+## @jgengine/core/loot/lootFilter
+
+- `LootFilterCondition` (interface): interface LootFilterCondition { rarity?: string | readonly string[]; baseType?: string | readonly string[]; minAffixTier?: number; maxAffixTier?: number } — ⚠ undocumented
+- `LootFilterItem` (interface): interface LootFilterItem { rarity: string; baseType: string; affixTier?: number } — ⚠ undocumented · used by `evaluateLootFilter`: First matching rule wins (PoE/Last Epoch block semantics) — later rules never override an earlier match.
+- `LootFilterOverride` (interface): interface LootFilterOverride { hidden?: boolean; color?: string; beam?: boolean; label?: string } — ⚠ undocumented · used by `evaluateLootFilter`: First matching rule wins (PoE/Last Epoch block semantics) — later rules never override an earlier match.
+- `LootFilterRule` (interface): interface LootFilterRule { id: string; when: LootFilterCondition; hide?: boolean; color?: string; beam?: boolean; label?: string } — ⚠ undocumented · used by `evaluateLootFilter`: First matching rule wins (PoE/Last Epoch block semantics) — later rules never override an earlier match.
+- `evaluateLootFilter` (function): function evaluateLootFilter(rules: readonly LootFilterRule[], item: LootFilterItem): LootFilterOverride — First matching rule wins (PoE/Last Epoch block semantics) — later rules never override an earlier match. Returns overrides only; fields the rule doesn't set are left for the caller's baseline (rarity style) to fill in.
+- `lootFilter` (function): function lootFilter(rules: readonly LootFilterRule[]): readonly LootFilterRule[] — Validating factory — rule ids must be unique so authoring mistakes fail loudly.
 
 ## @jgengine/core/loot/lootGen
 
@@ -2302,6 +2268,40 @@
 - `rollLoot` (function): function rollLoot(catalog: LootCatalog, rng: () => number, options: LootRollOptions = {}): LootItem — Roll one item from a catalog: a base and maker, a weighted rarity, one part per slot, rarity-count affixes, level-scaled stats and a name composed from maker, rarity, part, affix words and base. Deterministic for a given `rng`; every field it reads is caller data. Validate a catalog built outside {@link createLootRoller} once with {@link assertLootCatalog} before rolling from it.
 - `scoreLootStats` (function): function scoreLootStats(stats: Readonly<Record<string, number>>, options: Pick<LootComparisonOptions, "weights" | "lowerIsBetter"> = {}): number — One stat block's weighted score: the sum of `value × weight`, negated for stats listed in `lowerIsBetter`. Pair it with {@link lootStatContributions} when a caller also needs the split.
 - `validateLootItem` (function): function validateLootItem(item: LootItem, catalog: LootCatalog): LootValidationIssue[] — Check one rolled item against its catalog: base, maker and rarity exist, every slot holds an eligible part, affixes belong to the base's pools, stats are finite and the item is named.
+
+## @jgengine/core/loot/lootModifiers
+
+- `TimeScaledRarityOptions` (interface): interface TimeScaledRarityOptions — Caller-authored weighting curve; item ids, quality tiers and balance never live in the modifier.
+- `timeScaledRarity` (function): function timeScaledRarity<TCtx extends { elapsedMs: number }>(options: TimeScaledRarityOptions): LootModifier<TCtx> — Multiply weighted odds (or independent chances, clamped to one) by a caller-authored elapsed-time curve. Keeps source tables unchanged and uses the existing pipeline's modifier provenance. Elapsed time and multipliers must be finite and nonnegative; invalid curves reject the roll.
+
+## @jgengine/core/loot/lootPipeline
+
+- `LootDropProvenance` (interface): interface LootDropProvenance — Why one drop is in the result: the stage/table/entry that produced it, its weights, and the modifiers that shaped it.
+- `LootModifier` (interface): interface LootModifier<TCtx = unknown> — A registered, id-tagged loot policy applied to one stage. `plan` transforms eligibility, weights, and roll counts before rolling (luck, difficulty, gating); `drops` post-processes the rolled drops (quantity multipliers, dedupe, caps). Neither hook mutates table definitions, and the id is recorded in provenance so a resolved drop can be traced back to the policies that shaped it.
+- `LootPipeline` (interface): interface LootPipeline<TCtx = unknown> — A resolved, reusable loot pipeline. Call {@link LootPipeline.resolve} with a per-drop context and RNG.
+- `LootPipelineDef` (interface): interface LootPipelineDef<TCtx = unknown> — A named, ordered loot-resolution pipeline: the stages to run plus result-shaping policy (duplicate stacking, a total drop cap). Serializable except for its stage gate/modifier functions, mirroring how {@link LootTableDef} entries may carry a `generate` function.
+- `LootPipelineDeps` (interface): interface LootPipelineDeps — Dependencies a pipeline needs at build time — chiefly how to turn a table id into its definition.
+- `LootPlanEntry` (interface): interface LootPlanEntry — One eligible entry inside a {@link LootRollPlan}: the original table entry plus its live eligibility and effective weight/chance. Modifiers rewrite these fields; the source `entry` object is never mutated, so table definitions stay shared and reusable.
+- `LootResolution` (interface): interface LootResolution — The fully serializable outcome of a resolution: the drops, their provenance, per-stage traces, and the replay seed.
+- `LootResolveContext` (interface): interface LootResolveContext<TCtx = unknown> — The caller-owned context, injected RNG, and optional seed threaded through a single resolution.
+- `LootRollPlan` (interface): interface LootRollPlan — The mutable roll plan a stage derives from its table before rolling. Modifiers transform this — gating entries, reweighting them, or changing the roll count — instead of touching table defs.
+- `LootStage` (interface): interface LootStage<TCtx = unknown> — One ordered step in a {@link LootPipelineDef}: a source pool (a table id or inline table), an optional context gate, a fold mode, and the modifiers that reshape its roll. Stages compose the genre concepts — world pool, dedicated pool, luck, pity — without any of them living in core.
+- `LootStageKind` (type): type LootStageKind = "contribute" | "fallback" | "replace" — How a stage folds its rolled drops into the accumulating result: `"contribute"` appends, `"fallback"` rolls only when nothing has dropped yet, `"replace"` discards prior drops and overrides with its own (quest/boss overrides).
+- `LootStageStatus` (type): type LootStageStatus = "rolled" | "skipped" | "empty" | "replaced" | "fell-through" — The disposition of a stage after resolution — did it roll, get gated, fall through, override, or find nothing.
+- `LootStageTrace` (interface): interface LootStageTrace — Per-stage record of what happened during resolution, for debugging and replay auditing.
+- `createLootPipeline` (function): function createLootPipeline<TCtx = unknown>(def: LootPipelineDef<TCtx>, deps: LootPipelineDeps = {}): LootPipeline<TCtx> — Build a composable loot-resolution pipeline: ordered source pools, context gates, fallbacks when a pool yields nothing, roll modifiers (luck, quantity, difficulty) applied as registered policies, and full provenance for every drop (stage, table, entry, original vs effective weights, modifier ids, seed). Rolling consumes the injected RNG in the same order as the base loot table, so a seeded resolution is deterministic and server-authoritatively replayable. Genre concepts (world, dedicated, boss, luck, rarity, pity) stay out of core and ship as stage/modifier compositions.
+- `defineLootPipeline` (function): function defineLootPipeline<TCtx = unknown>(def: LootPipelineDef<TCtx>): LootPipelineDef<TCtx> — Validate a loot pipeline definition and return it unchanged, for use with {@link createLootPipeline}.
+
+## @jgengine/core/loot/lootTable
+
+- `Drop` (interface): interface Drop — A resolved loot outcome — one item or currency grant with its rolled count.
+- `LootEntry` (interface): interface LootEntry — One possible drop in a {@link LootTableDef} — an item, currency, or generated item, its count range, and its odds.
+- `LootRegistry` (interface): interface LootRegistry { register(def: LootTableDef): void; has(id: string): boolean; roll(id: string, rng?: () => number): Drop[]; snapshot(): LootTableDef[]; restore(next: readonly LootTableDef[]): void } — ⚠ undocumented · used by `createLootRegistry`: Register named loot tables and roll weighted randomized drops from them.
+- `LootRegistryOptions` (interface): interface LootRegistryOptions — Options for {@link createLootRegistry} — inject a default RNG so bare `roll(id)` uses the world stream.
+- `LootTableDef` (interface): interface LootTableDef — A named, validated loot table — its roll count, weighted-vs-independent mode, and candidate entries.
+- `createLootRegistry` (function): function createLootRegistry(options: LootRegistryOptions = {}): LootRegistry — Register named loot tables and roll weighted randomized drops from them.
+- `grantDrops` (function): function grantDrops(drops: Drop[], appliers: { putItem: (itemId: string, count: number) => unknown; grantCurrency: (currencyId: string, amount: number) => unknown; }): void — Hand rolled drops to their owner: items to inventory, currency to the economy.
+- `lootTable` (function): function lootTable(def: LootTableDef): LootTableDef — Validates a loot table definition and returns it unchanged, for use with {@link createLootRegistry}.
 
 ## @jgengine/core/loot/lootWeapon
 

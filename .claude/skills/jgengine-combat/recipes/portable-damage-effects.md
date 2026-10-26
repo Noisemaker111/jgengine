@@ -19,8 +19,8 @@ import {
 import {
   createDamageClamp,
   resolveDamage,
-} from "@jgengine/core/combat/damageInterceptors";
-import { resolveDamageHit } from "@jgengine/core/combat/damageResolution";
+} from "@jgengine/core/combat/damage/damageInterceptors";
+import { resolveDamageHit } from "@jgengine/core/combat/damage/damageResolution";
 import {
   createStatPool,
   type StatPool,

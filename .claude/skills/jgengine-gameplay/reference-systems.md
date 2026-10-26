@@ -54,7 +54,7 @@ const weapon = lootWeaponDefinition(item, { template, stats: { damage: "power", 
 `missing-slot-part`, `unknown-affix`, `empty-name`…) and the roller's counters
 snapshot/restore as plain data. Register a roll through
 `proceduralLootEntry` into `item/itemInstanceRegistry` and hand its runtime id
-to `game/lootTable`; the weapon projection only maps stats it is told to, so a
+to `loot/lootTable`; the weapon projection only maps stats it is told to, so a
 catalog without weapon stats stays usable for non-weapon gear. Check a
 distribution with a fixed seed over 10,000 drops against each tier's 4σ
 binomial bound rather than eyeballing shares.
@@ -245,7 +245,7 @@ context when rebooting systems with registered modules.
 
 ## Snapshot and restore on stateful handles
 
-These handles hand back a plain JSON `snapshot()` that later ticks do not mutate, and take it back with `restore(next)`, so a host, save file or replay can rewind them bit-exactly: `game/lootTable` `createLootRegistry` (registered tables; not JSON when an entry uses `generate`), `game/vfxInstance` `createVfxInstanceStore` (restore emits `stop` then `upsert` so the renderer follows), `session/roundState` `createRoundState` (`RoundSnapshot` now carries `pendingWinner`), `input/lookChannel` `createLookChannel`, and `input/pointer` `createDragCapture` (`state()` out, `restore(state | null)` in).
+These handles hand back a plain JSON `snapshot()` that later ticks do not mutate, and take it back with `restore(next)`, so a host, save file or replay can rewind them bit-exactly: `loot/lootTable` `createLootRegistry` (registered tables; not JSON when an entry uses `generate`), `game/vfxInstance` `createVfxInstanceStore` (restore emits `stop` then `upsert` so the renderer follows), `session/roundState` `createRoundState` (`RoundSnapshot` now carries `pendingWinner`), `input/lookChannel` `createLookChannel`, and `input/pointer` `createDragCapture` (`state()` out, `restore(state | null)` in).
 
 ## Staffed production
 

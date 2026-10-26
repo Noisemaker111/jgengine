@@ -11,7 +11,7 @@
  * This is intentionally NOT boss-specific: health-gating, phase transitions,
  * armor breaks, music stingers, and resource warnings are all the same
  * primitive. Consumers wire emitted crossings to whatever effect they own —
- * e.g. installing an immunity interceptor from `combat/damageInterceptors`.
+ * e.g. installing an immunity interceptor from `combat/damage/damageInterceptors`.
  */
 
 /** A named threshold on the numeric source. */

@@ -1,8 +1,8 @@
 import { describe, expect, it } from "bun:test";
-import { devtools } from "../devtools/devtools";
-import { createGameEvents, type DamageAppliedEvent } from "../game/events";
+import { devtools } from "../../devtools/devtools";
+import { createGameEvents, type DamageAppliedEvent } from "../../game/events";
 import { createDamageRuntime, UnknownTargetProfileError, type DamageRuntimeConfig } from "./damageRuntime";
-import type { StatusDef } from "./statusRuntime";
+import type { StatusDef } from "../statusRuntime";
 
 const statuses: StatusDef[] = [
   { id: "burn", stack: { kind: "stack", max: 3 }, durationMs: 3_000, intervalMs: 500, magnitude: 4, effect: { kind: "damage", channel: "fire" } },

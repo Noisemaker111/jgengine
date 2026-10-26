@@ -1,7 +1,7 @@
 import { describe, expect, test } from "bun:test";
 import { createWeaponRuntime } from "./weaponFire";
 import type { MagazineReserve } from "./magazine";
-import type { DamageHitInput } from "./damageResolution";
+import type { DamageHitInput } from "./damage/damageResolution";
 
 /**
  * Proves an existing project drives the portable weapon runtime with ITS OWN aim, raycaster, entity

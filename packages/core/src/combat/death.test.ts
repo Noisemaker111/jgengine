@@ -7,7 +7,7 @@ import {
   type OnDeathSpec,
 } from "@jgengine/core/combat/death";
 import { createGameEvents, type EntityDiedEvent } from "@jgengine/core/game/events";
-import type { Drop } from "@jgengine/core/game/lootTable";
+import type { Drop } from "@jgengine/core/loot/lootTable";
 
 function createGraveyard(onDeath: OnDeathSpec | null) {
   const events = createGameEvents();

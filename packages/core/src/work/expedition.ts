@@ -1,6 +1,6 @@
 import { appendFeed } from "../game/feed";
-import type { LootPipeline, LootResolution } from "../game/lootPipeline";
-import type { Drop } from "../game/lootTable";
+import type { LootPipeline, LootResolution } from "../loot/lootPipeline";
+import type { Drop } from "../loot/lootTable";
 import { hashString, randomSeedFrom, stepRandomSeed, type RandomSeed } from "../random/rng";
 import { accrueSince } from "../time/accrueSince";
 import { steppedCatchUp } from "../time/idleProgress";

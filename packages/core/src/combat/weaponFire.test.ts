@@ -1,6 +1,6 @@
 import { describe, expect, test } from "bun:test";
 import { createFireCadence, createWeaponRuntime } from "./weaponFire";
-import type { DamageHitInput } from "./damageResolution";
+import type { DamageHitInput } from "./damage/damageResolution";
 
 describe("createFireCadence", () => {
   test("starts ready, blocks until the interval elapses, and reports progress", () => {

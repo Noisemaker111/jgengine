@@ -40,8 +40,8 @@ import type { VisibilityConfig } from "../visibility/config";
 import type { GameDefinition, GameLoop } from "./defineGame";
 import type { GameCameraConfig } from "./cameraConfig";
 import type { ViewportsConfig } from "./viewports";
-import type { LootFilterRule } from "./lootFilter";
-import type { RarityStyle } from "./worldItem";
+import type { LootFilterRule } from "../loot/lootFilter";
+import type { RarityStyle } from "../loot/groundItem";
 import type { ImpactClass } from "../combat/impactProfile";
 
 /** How the shell presents `ctx.game.notices`; every field is optional. */

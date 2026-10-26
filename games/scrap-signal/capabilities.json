@@ -36,7 +36,7 @@
     "triggered-rules"
   ],
   "probes": {
-    "@jgengine/core/combat/damageRuntime": [
+    "@jgengine/core/combat/damage/damageRuntime": [
       "scrap.damage"
     ],
     "@jgengine/core/economy/transactionLedger": [
