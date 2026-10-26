@@ -2,7 +2,8 @@
 //   bun run release              # 0.17.0 -> 0.18.0, cut CHANGELOG, mirror, regen api.md
 //   bun run release --dry-run    # print the plan, write nothing
 //   bun run release --no-gen     # skip the generated-artifact refresh
-//   bun run release --await 0.38.4   # wait for the publish run of an already-cut version (release-await.ts)
+//   bun run release --wait           # cut, land, wait for Publish, then deploy jgengine.com from that commit
+//   bun run release --wait 0.38.4    # the same wait and deploy for a version already cut (release-await.ts)
 //
 // A release is a milestone, not a step after each change: publish at most about once a day,
 // or when an outside user needs a version. The games in games/ run engine source from the same
@@ -22,7 +23,7 @@ import { readFileSync, rmSync, writeFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import { foldFragments, readFragments } from "./changelog-fragments";
 import { deploySite, publishThenDeploy, runStep } from "./deploy-site";
-import { awaitPublish } from "./release-await";
+import { awaitPublish, type RunGh } from "./release-await";
 
 export interface ChangelogSections {
   migrate: string[];
@@ -250,12 +251,33 @@ export function ancestorFailureLines(report: AncestorReport): string[] {
   return lines;
 }
 
+const KNOWN_FLAGS = ["--dry-run", "--no-gen", "--patch", "--no-fetch", "--commit", "--wait", "--run", "--sha"];
+
+/** The first `--flag` this script does not take. A retired flag fails here instead of falling through to a cut. */
+export function unknownFlag(args: readonly string[]): string | undefined {
+  return args.find((arg) => arg.startsWith("--") && !KNOWN_FLAGS.includes(arg));
+}
+
 function main(): void {
   const root = fileURLToPath(new URL("..", import.meta.url));
   const args = process.argv.slice(2);
-  if (args[0] === "--await") {
-    const waited = spawnSync("bun", ["scripts/release-await.ts", ...args.slice(1)], { cwd: root, stdio: "inherit" });
-    process.exit(waited.status ?? 1);
+  const unknown = unknownFlag(args);
+  if (unknown !== undefined) {
+    console.error(`release: unknown argument ${unknown}`);
+    process.exit(2);
+  }
+  const wait = waitRequest(args);
+  if (wait !== null && wait.runId !== undefined && !Number.isInteger(wait.runId)) {
+    console.error("release: --run takes a publish run id");
+    process.exit(2);
+  }
+  if (wait !== null && wait.version !== undefined) {
+    void waitForVersion(root, wait.version, wait);
+    return;
+  }
+  if (wait !== null && (wait.runId !== undefined || wait.sha !== undefined)) {
+    console.error("release: --run and --sha name a publish run, so they go with --wait <version>");
+    process.exit(2);
   }
   const dryRun = args.includes("--dry-run");
   const skipGen = args.includes("--no-gen");
@@ -317,8 +339,64 @@ function main(): void {
     const gen = spawnSync("bun", ["scripts/gen-skill-api-safe.ts"], { cwd: root, stdio: "inherit" });
     if (gen.status !== 0) process.exit(gen.status ?? 1);
   }
-  if (args.includes("--wait")) void landAndAwait(root, sdk);
+  if (wait !== null) void landAndAwait(root, sdk);
   else console.log("release: review the diff, then commit and open the release PR.");
+}
+
+export interface WaitRequest {
+  /** The version already cut. Absent means cut, land and wait. */
+  version?: string;
+  runId?: number;
+  sha?: string;
+}
+
+/** `--wait` cuts, lands and waits; `--wait <version>` only waits on a version already cut. Null without `--wait`. */
+export function waitRequest(args: readonly string[]): WaitRequest | null {
+  const at = args.indexOf("--wait");
+  if (at < 0) return null;
+  const next = args[at + 1];
+  const value = (flag: string): string | undefined => {
+    const i = args.indexOf(flag);
+    return i < 0 ? undefined : args[i + 1];
+  };
+  const run = value("--run");
+  return {
+    version: next !== undefined && /^\d+\.\d+\.\d+(?:-[0-9A-Za-z.-]+)?$/.test(next) ? next : undefined,
+    runId: run === undefined ? undefined : Number(run),
+    sha: value("--sha"),
+  };
+}
+
+/**
+ * `--wait <version>`: the version is already cut and on main. Wait for its Publish run, then deploy
+ * jgengine.com from the commit that run published, the same tail `--wait` runs after a cut. A failed
+ * deploy is retried by running this again, not by hand.
+ */
+async function waitForVersion(root: string, version: string, wait: WaitRequest): Promise<never> {
+  spawnSync("git", ["fetch", "--quiet", "origin", "main"], { cwd: root, stdio: "ignore", timeout: 20_000 });
+  const sha = resolveCommit(root, wait.sha ?? "origin/main");
+  if (sha === "") {
+    console.error(`release: cannot resolve ${wait.sha ?? "origin/main"} to a commit`);
+    process.exit(1);
+  }
+  const code = await publishThenDeploy(
+    () => awaitPublish({ version, sha, runId: wait.runId, gh: ghIn(root), log: (line) => console.log(line) }),
+    () => deploySite(root, runStep, sha),
+  );
+  process.exit(code);
+}
+
+function resolveCommit(root: string, rev: string): string {
+  const out = spawnSync("git", ["rev-parse", "--verify", "--quiet", rev], { cwd: root, encoding: "utf8" });
+  return out.status === 0 ? out.stdout.trim() : "";
+}
+
+/** `gh` run in the release folder, so it reads that repository. */
+function ghIn(root: string): RunGh {
+  return (args) => {
+    const result = spawnSync("gh", [...args], { cwd: root, encoding: "utf8" });
+    return { status: result.status ?? 1, stdout: result.stdout ?? "", stderr: result.stderr ?? "" };
+  };
 }
 
 /**
@@ -347,10 +425,7 @@ async function landAndAwait(root: string, version: string): Promise<never> {
     process.exit(land.status ?? 1);
   }
 
-  const gh = (args: readonly string[]): { status: number; stdout: string; stderr: string } => {
-    const result = spawnSync("gh", [...args], { cwd: root, encoding: "utf8" });
-    return { status: result.status ?? 1, stdout: result.stdout ?? "", stderr: result.stderr ?? "" };
-  };
+  const gh = ghIn(root);
   const merged = await waitForMerge(gh);
   if (merged === null) process.exit(1);
   const forward = fastForwardMain(git);

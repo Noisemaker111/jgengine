@@ -4,7 +4,6 @@ import {
   awaitPublish,
   failureLine,
   failedJobs,
-  parseAwaitArgs,
   pickRun,
   registryVersion,
   successLine,
@@ -216,16 +215,7 @@ describe("waiting on the publish run", () => {
   });
 });
 
-describe("arguments", () => {
-  test("a version, a run id and a sha are each read", () => {
-    expect(parseAwaitArgs(["0.38.4"])).toMatchObject({ version: "0.38.4" });
-    expect(parseAwaitArgs(["--run", "40107700057", "--version", "0.38.4"])).toMatchObject({
-      version: "0.38.4",
-      runId: 40107700057,
-    });
-    expect(parseAwaitArgs(["--sha", "abc"]).sha).toBe("abc");
-  });
-
+describe("npm's answer", () => {
   test("npm answering nothing is not a version", () => {
     expect(registryVersion(() => ({ status: 1, stdout: "", stderr: "E404" }))).toBeNull();
     expect(registryVersion(() => ({ status: 0, stdout: "  \n", stderr: "" }))).toBeNull();

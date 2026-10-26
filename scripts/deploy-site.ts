@@ -1,15 +1,19 @@
 // Deploy jgengine.com. The site build bakes game covers and reads game models, and CI never touches
-// models (Jon, 25 Oct), so the deploy runs on this machine: link every game's packs from the shared
-// asset store (`games:provision`, downloading only what the store lacks), then build and push the
-// Cloudflare worker. `bun run release --wait` runs it after the Publish run succeeds; `bun run
-// deploy:site` runs it alone.
+// models (Jon, 25 Oct), so the deploy runs on this machine. It builds in its own worktree at the commit
+// being deployed, so the folder a release ran in can be emptied or removed without breaking the deploy.
+// That worktree is removed afterwards, pass or fail. `bun run release --wait` runs it after the Publish
+// run succeeds; `bun run deploy:site` runs it alone, for HEAD.
 import { spawnSync } from "node:child_process";
+import { lstatSync, rmSync } from "node:fs";
+import { join } from "node:path";
 import { fileURLToPath } from "node:url";
 
+import { mainCheckoutRoot } from "./agent-worktree";
+import { removeNodeModules } from "./worktree-doctor";
 import { printHelpIfAsked } from "./script-help";
 
 const DEPLOY_SITE_USAGE = {
-  summary: "link every game's models from the shared asset store, then build and deploy jgengine.com to Cloudflare",
+  summary: "build jgengine.com in a fresh worktree at HEAD, with the shared asset store linked, and deploy it to Cloudflare",
   usage: "bun run deploy:site",
   example: "bun run deploy:site",
   flags: [],
@@ -19,6 +23,8 @@ export interface StepResult {
   status: number;
   /** The last output lines, kept for the failure reason. */
   tail: string;
+  /** The standard output, for the one step whose answer is needed (a commit id). */
+  stdout: string;
 }
 
 export type RunStep = (command: readonly string[], cwd: string) => StepResult;
@@ -28,25 +34,82 @@ export interface DeployResult {
   line: string;
 }
 
-/** The commands a site deploy runs, in order. `sha` first checks out the released commit. */
-export function deploySteps(sha?: string): string[][] {
+/** The commands a site deploy runs inside its worktree, in order. */
+export function deploySteps(): string[][] {
   return [
-    ...(sha === undefined ? [] : [["git", "checkout", "--quiet", "--detach", sha]]),
+    ["bun", "scripts/ensure-ready.ts", "--install-only"],
     ["bun", "run", "games:provision"],
     ["bun", "--cwd=apps/web", "run", "deploy:cloudflare"],
   ];
 }
 
-/** Run the deploy steps, stopping at the first failure and naming it with its last output. */
+/** Where a deploy of `commit` builds: under the main checkout's `.claude/worktrees/`, never nested. */
+export function siteWorktreePath(mainRoot: string, commit: string): string {
+  return join(mainRoot, ".claude", "worktrees", `site-deploy-${commit.slice(0, 9)}`);
+}
+
+/**
+ * Deploy `sha` (HEAD when omitted) from a fresh worktree at that commit. The folder the call runs from
+ * only names the commit and the main checkout, so a release that emptied its own folder still deploys.
+ */
 export function deploySite(root: string, run: RunStep, sha?: string): DeployResult {
-  for (const step of deploySteps(sha)) {
-    const result = run(step, root);
+  const resolved = run(["git", "rev-parse", "--verify", "--quiet", sha ?? "HEAD"], root);
+  const commit = resolved.stdout.trim();
+  if (resolved.status !== 0 || commit === "") {
+    return { ok: false, line: `deploy:site FAILED: cannot resolve ${sha ?? "HEAD"} to a commit; jgengine.com was not updated` };
+  }
+  const mainRoot = mainCheckoutRoot(root) ?? root;
+  const worktree = siteWorktreePath(mainRoot, commit);
+  removeSiteWorktree(mainRoot, worktree, run);
+  const added = run(["git", "worktree", "add", "--detach", worktree, commit], mainRoot);
+  if (added.status !== 0) {
+    return { ok: false, line: `deploy:site FAILED at \`git worktree add\` (exit ${added.status}); jgengine.com was not updated${reasonOf(added)}` };
+  }
+
+  let outcome: DeployResult;
+  let removed = true;
+  try {
+    outcome = buildAndDeploy(worktree, run, commit);
+  } finally {
+    removed = removeSiteWorktree(mainRoot, worktree, run);
+  }
+  return removed ? outcome : { ...outcome, line: `${outcome.line}\ndeploy:site: could not remove ${worktree}; remove it with git worktree remove --force` };
+}
+
+function buildAndDeploy(worktree: string, run: RunStep, commit: string): DeployResult {
+  for (const step of deploySteps()) {
+    const result = run(step, worktree);
     if (result.status !== 0) {
-      const reason = result.tail.trim() === "" ? "" : `\n${result.tail.trim()}`;
-      return { ok: false, line: `deploy:site FAILED at \`${step.join(" ")}\` (exit ${result.status}); jgengine.com was not updated${reason}` };
+      return { ok: false, line: `deploy:site FAILED at \`${step.join(" ")}\` (exit ${result.status}); jgengine.com was not updated${reasonOf(result)}` };
     }
   }
-  return { ok: true, line: `deploy:site: jgengine.com deployed${sha === undefined ? "" : ` from ${sha.slice(0, 9)}`}` };
+  return { ok: true, line: `deploy:site: jgengine.com deployed from ${commit.slice(0, 9)}` };
+}
+
+function reasonOf(result: StepResult): string {
+  return result.tail.trim() === "" ? "" : `\n${result.tail.trim()}`;
+}
+
+function lexists(path: string): boolean {
+  try {
+    lstatSync(path);
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+/**
+ * Remove a deploy's worktree. The root node_modules is a link into the main checkout, so it is unlinked
+ * before the recursive delete (as `worktree reap` does), and the git metadata is pruned after.
+ */
+function removeSiteWorktree(mainRoot: string, worktree: string, run: RunStep): boolean {
+  if (lexists(worktree)) {
+    if (lexists(join(worktree, "node_modules"))) removeNodeModules(worktree);
+    rmSync(worktree, { recursive: true, force: true, maxRetries: 2 });
+  }
+  run(["git", "worktree", "prune"], mainRoot);
+  return !lexists(worktree);
 }
 
 /**
@@ -76,7 +139,7 @@ export const runStep: RunStep = (command, cwd) => {
   const output = `${result.stdout ?? ""}${result.stderr ?? ""}`;
   process.stdout.write(output);
   const tail = (result.error ? String(result.error) : output).trim().split(/\r?\n/).slice(-15).join("\n");
-  return { status: result.status ?? 1, tail };
+  return { status: result.status ?? 1, tail, stdout: result.stdout ?? "" };
 };
 
 if (import.meta.main) {

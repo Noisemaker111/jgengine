@@ -3,7 +3,22 @@ import { spawnSync } from "node:child_process";
 import { mkdirSync, rmSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { fileURLToPath } from "node:url";
-import { checkReleaseAncestor, cutChangelog, fastForwardMain, lockstepBullet, mirrorEntry, nextReleaseVersion, parseSections, sectionLines, splitComment } from "./release";
+import { checkReleaseAncestor, cutChangelog, fastForwardMain, lockstepBullet, mirrorEntry, nextReleaseVersion, parseSections, sectionLines, splitComment, unknownFlag, waitRequest } from "./release";
+
+describe("--wait", () => {
+  test("alone it cuts, lands and waits; with a version it only waits on that version", () => {
+    expect(waitRequest(["--dry-run"])).toBeNull();
+    expect(waitRequest(["--wait"])).toMatchObject({ version: undefined });
+    expect(waitRequest(["--wait", "0.45.0"])).toMatchObject({ version: "0.45.0" });
+    expect(waitRequest(["--wait", "0.45.0-next.2"])).toMatchObject({ version: "0.45.0-next.2" });
+    expect(waitRequest(["--wait", "--run", "40107700057"])).toMatchObject({ version: undefined, runId: 40107700057 });
+  });
+
+  test("the retired --await is an unknown argument, never a cut", () => {
+    expect(unknownFlag(["--await", "0.45.0"])).toBe("--await");
+    expect(unknownFlag(["--wait", "0.45.0", "--dry-run", "--sha", "abc"])).toBeUndefined();
+  });
+});
 
 const MARKDOWN = `# Changelog
 
