@@ -14,21 +14,23 @@ import {
   fullSteps,
   gatesFor,
   heavyPaths,
-  importers,
   isRuntimeSource,
   jsonRun,
-  makeResolver,
+  junitCosts,
+  opaqueScopes,
   ownTests,
   pureRenames,
   runSteps,
   splitByCost,
-  specifiers,
+  TESTS_PER_LANE,
   workspaceOf,
   workspaces,
+  type Plan,
   type Step,
   type StepResult,
   type Workspace,
 } from "./verify-fast";
+import { buildImportGraph, specifiers, type ImportGraph } from "./import-graph";
 import { matchingShard, walkTestFiles } from "./test-shard";
 import { REPRESENTATIVE_GAME } from "./ci-scope";
 
@@ -39,6 +41,25 @@ const fakeWorkspaces: Workspace[] = [
   { dir: "packages/shell", checkTypes: true },
   { dir: "apps/dev", checkTypes: false },
 ];
+
+const ENGINE_PATHS = new Map([
+  [
+    "",
+    [
+      { key: "@jgengine/core/*", targets: ["packages/core/src/*"] },
+      { key: "@jgengine/shell/*", targets: ["packages/shell/src/*"] },
+    ],
+  ],
+]);
+
+/** A graph over `sources` (path -> text), plus `others` that exist but are not parsed. */
+function fixtureGraph(sources: Record<string, string>, others: readonly string[] = []): ImportGraph {
+  return buildImportGraph("/repo", [...Object.keys(sources), ...others], { readText: (path) => sources[path] ?? "", tsconfigs: ENGINE_PATHS });
+}
+
+const emptyGraph = fixtureGraph({});
+
+const emptyPlan: Plan = { changed: [], deleted: [], typechecks: [], tests: [], gates: [], unattributed: [], suites: [], boots: [], inputs: {} };
 
 describe("what changed", () => {
   test("counts committed, staged, unstaged and untracked paths", () => {
@@ -112,8 +133,7 @@ describe("workspace mapping", () => {
       changed: ["scripts/verify-fast.ts"],
       testFiles: [],
       workspaces: fakeWorkspaces,
-      readText: () => "",
-      resolveSpecifier: () => [],
+      graph: emptyGraph,
     });
     expect(plan.typechecks).toEqual(["scripts"]);
   });
@@ -151,22 +171,29 @@ describe("specifiers", () => {
 });
 
 describe("import resolution", () => {
-  const resolveSpecifier = makeResolver(root);
+  const graph = buildImportGraph(root, ["packages/shell/src/x.ts", "scripts/x.ts", "packages/core/src/world.ts", "packages/core/src/index.ts", "packages/core/src/world/terrain.ts", "packages/core/src/world/terrain.test.ts"], {
+    readText: (path) =>
+      ({
+        "packages/shell/src/x.ts": 'import { world } from "@jgengine/core/world";\nimport React from "react";',
+        "scripts/x.ts": 'import * as core from "@jgengine/core";',
+        "packages/core/src/world/terrain.test.ts": 'import { sample } from "./terrain";',
+      })[path] ?? "",
+  });
 
   test("resolves a package subpath through the repo's tsconfig paths", () => {
-    expect(resolveSpecifier("@jgengine/core/world", "packages/shell/src/x.ts")).toEqual(["packages/core/src/world.ts"]);
+    expect(graph.imports.get("packages/shell/src/x.ts")).toEqual(["packages/core/src/world.ts"]);
   });
 
   test("resolves a bare package name to its source entry", () => {
-    expect(resolveSpecifier("@jgengine/core", "scripts/x.ts")).toContain("packages/core/src/index.ts");
+    expect(graph.imports.get("scripts/x.ts")).toEqual(["packages/core/src/index.ts"]);
   });
 
   test("resolves a relative import beside the importer", () => {
-    expect(resolveSpecifier("./terrain", "packages/core/src/world/terrain.test.ts")).toEqual(["packages/core/src/world/terrain.ts"]);
+    expect(graph.imports.get("packages/core/src/world/terrain.test.ts")).toEqual(["packages/core/src/world/terrain.ts"]);
   });
 
-  test("ignores a package that is not in the monorepo", () => {
-    expect(resolveSpecifier("react", "packages/shell/src/x.ts")).toEqual([]);
+  test("ignores a package that is not in the monorepo, and does not call it opaque", () => {
+    expect(graph.opaque.has("packages/shell/src/x.ts")).toBe(false);
   });
 });
 
@@ -183,30 +210,47 @@ describe("test mapping", () => {
     expect(ownTests("scripts/land.test.ts", ["scripts/land.test.ts"])).toEqual(["scripts/land.test.ts"]);
   });
 
-  test("a test that imports the file reaches it, and one that does not is left out", () => {
-    const files = ["packages/core/src/world/terrain.ts"];
-    const text: Record<string, string> = {
-      "packages/core/src/world/terrain.test.ts": 'import { sample } from "./terrain";',
-      "packages/core/src/game/loop.test.ts": 'import { tick } from "./loop";',
-    };
-    const reached = importers(files, Object.keys(text), (path) => text[path]!, (specifier) =>
-      specifier === "./terrain"
-        ? ["packages/core/src/world/terrain.ts"]
-        : ["packages/core/src/game/loop.ts"],
+  const tests = ["packages/core/src/world/terrain.test.ts", "packages/core/src/game/loop.test.ts", "packages/shell/src/render/World.test.ts"];
+
+  test("a test whose imports reach the file runs, directly or through other modules; one that does not is left out", () => {
+    const graph = fixtureGraph(
+      {
+        "packages/core/src/world/terrain.test.ts": 'import { sample } from "./terrain";',
+        "packages/core/src/game/loop.test.ts": 'import { tick } from "./loop";',
+        "packages/shell/src/render/World.test.ts": 'import { World } from "./World";',
+        "packages/shell/src/render/World.tsx": 'import { heightAt } from "@jgengine/core/world/heights";',
+        "packages/core/src/world/heights.ts": 'export { sample as heightAt } from "./terrain";',
+        "packages/core/src/world/terrain.ts": "export const sample = 1;",
+        "packages/core/src/game/loop.ts": "export const tick = 1;",
+      },
     );
-    expect(reached.get(files[0]!)).toEqual(["packages/core/src/world/terrain.test.ts"]);
+    const plan = buildPlan({ changed: ["packages/core/src/world/terrain.ts"], testFiles: tests, workspaces: fakeWorkspaces, graph });
+    expect(plan.tests).toEqual(["packages/core/src/world/terrain.test.ts", "packages/shell/src/render/World.test.ts"]);
   });
 
-  test("a test that imports a package barrel is not counted against every module it re-exports", () => {
-    const files = ["packages/core/src/world/terrain.ts"];
-    const text: Record<string, string> = {
-      "packages/shell/src/render/World.test.ts": 'import { world } from "@jgengine/core/world";',
-      "packages/core/src/world/terrain.test.ts": 'import { sample } from "./terrain";',
-    };
-    const resolveSpecifier = (specifier: string): string[] =>
-      specifier === "@jgengine/core/world" ? ["packages/core/src/world.ts"] : ["packages/core/src/world/terrain.ts"];
-    const reached = importers(files, Object.keys(text), (path) => text[path]!, resolveSpecifier);
-    expect(reached.get(files[0]!)).toEqual(["packages/core/src/world/terrain.test.ts"]);
+  test("a type-only import is an edge: a changed type can break what imports it", () => {
+    const graph = fixtureGraph({
+      "packages/shell/src/render/World.test.ts": 'import type { Terrain } from "@jgengine/core/world/terrain";',
+      "packages/core/src/world/terrain.ts": "export interface Terrain {}",
+    });
+    const plan = buildPlan({ changed: ["packages/core/src/world/terrain.ts"], testFiles: tests, workspaces: fakeWorkspaces, graph });
+    expect(plan.tests).toContain("packages/shell/src/render/World.test.ts");
+  });
+
+  test("an import the graph cannot resolve runs its importer for any change in the scope it names", () => {
+    const graph = fixtureGraph({
+      "packages/shell/src/render/World.test.ts": 'const mod = await import("@jgengine/core/world/" + name);\nimport { x } from "@jgengine/core/world/missing";',
+    });
+    expect(opaqueScopes("packages/shell/src/render/World.test.ts", ["@jgengine/core/world/missing", "./gone"], fakeWorkspaces)).toEqual(["packages/core/", "packages/shell/"]);
+    expect(buildPlan({ changed: ["packages/core/src/world/terrain.ts"], testFiles: tests, workspaces: fakeWorkspaces, graph }).tests).toContain("packages/shell/src/render/World.test.ts");
+    expect(buildPlan({ changed: ["apps/dev/src/x.ts"], testFiles: tests, workspaces: fakeWorkspaces, graph }).tests).not.toContain("packages/shell/src/render/World.test.ts");
+  });
+
+  test("a deleted file reaches whatever still imports it", () => {
+    const graph = fixtureGraph({ "packages/core/src/world/terrain.test.ts": 'import { sample } from "./terrain";' });
+    const plan = buildPlan({ changed: [], deleted: ["packages/core/src/world/terrain.ts"], testFiles: tests, workspaces: fakeWorkspaces, graph });
+    expect(plan.tests).toEqual(["packages/core/src/world/terrain.test.ts"]);
+    expect(plan.typechecks).toEqual(["packages/core"]);
   });
 
   test("the real tree maps a core file to the test beside it", () => {
@@ -214,8 +258,7 @@ describe("test mapping", () => {
       changed: ["packages/core/src/world/terrain.ts"],
       testFiles: ["packages/core/src/world/terrain.test.ts", "packages/core/src/world/city.test.ts"],
       workspaces: fakeWorkspaces,
-      readText: () => "",
-      resolveSpecifier: makeResolver(root),
+      graph: emptyGraph,
     });
     expect(plan.tests).toEqual(["packages/core/src/world/terrain.test.ts"]);
     expect(plan.unattributed).toEqual([]);
@@ -229,8 +272,7 @@ describe("attribution fails loudly", () => {
       changed: ["packages/core/src/world/terrain.ts", "packages/core/src/world/unreachable.ts"],
       testFiles: ["packages/core/src/world/terrain.test.ts", "packages/core/src/other.test.ts", "packages/react/src/a.test.ts"],
       workspaces: fakeWorkspaces,
-      readText: () => "",
-      resolveSpecifier: () => [],
+      graph: emptyGraph,
     });
     expect(plan.unattributed).toEqual([]);
     expect(plan.suites).toEqual(["packages/core"]);
@@ -243,8 +285,7 @@ describe("attribution fails loudly", () => {
       changed: ["scripts/unreachable.ts"],
       testFiles: ["scripts/other.test.ts"],
       workspaces: fakeWorkspaces,
-      readText: () => "",
-      resolveSpecifier: () => [],
+      graph: emptyGraph,
     });
     expect(plan.unattributed).toEqual(["scripts/unreachable.ts"]);
   });
@@ -254,8 +295,7 @@ describe("attribution fails loudly", () => {
       changed: ["scripts/moved.ts", "apps/dev/src/demo/scene.tsx"],
       testFiles: [],
       workspaces: fakeWorkspaces,
-      readText: () => "",
-      resolveSpecifier: () => [],
+      graph: emptyGraph,
       exempt: ["scripts/moved.ts"],
     });
     expect(plan.unattributed).toEqual([]);
@@ -301,18 +341,10 @@ describe("static gates", () => {
   });
 
   test("a stale generated file names the command that rewrites it, not just the failure", () => {
-    const steps = fastSteps({
-      changed: ["packages/core/src/world/terrain.ts"],
-      typechecks: [],
-      tests: [],
-      gates: ["check-export-manifest", "check-skill-api"],
-      unattributed: [],
-      suites: [],
-      boots: [],
-    });
+    const steps = fastSteps({ ...emptyPlan, changed: ["packages/core/src/world/terrain.ts"], gates: ["check-export-manifest", "check-skill-api"] });
     const manifest = steps.find((step) => step.name === "check-export-manifest");
     const skillApi = fastSteps(
-      { changed: ["packages/core/src/world/terrain.ts"], typechecks: [], tests: [], gates: ["check-skill-api"], unattributed: [], suites: [], boots: [] },
+      { ...emptyPlan, changed: ["packages/core/src/world/terrain.ts"], gates: ["check-skill-api"] },
       { skillApi: true },
     ).find((step) => step.name === "check-skill-api");
     expect(manifest?.fix).toContain("bun run gen");
@@ -322,15 +354,7 @@ describe("static gates", () => {
   });
 
   test("the inner loop leaves the 21 s generated check out unless --skill-api asks for it", () => {
-    const plan = {
-      changed: ["packages/core/src/world/terrain.ts"],
-      typechecks: [],
-      tests: [],
-      gates: ["check-artifacts", "check-export-manifest", "check-skill-api"],
-      unattributed: [],
-      suites: [],
-      boots: [],
-    };
+    const plan: Plan = { ...emptyPlan, changed: ["packages/core/src/world/terrain.ts"], gates: ["check-artifacts", "check-export-manifest", "check-skill-api"] };
     const byDefault = fastSteps(plan).map((step) => step.name);
     expect(byDefault).not.toContain("check-skill-api");
     expect(byDefault).toContain("check-export-manifest");
@@ -344,13 +368,89 @@ describe("commands", () => {
       changed: ["packages/shell/src/render/crowdBatch.ts"],
       testFiles: ["packages/shell/src/render/crowdBatch.test.ts"],
       workspaces: fakeWorkspaces,
-      readText: () => "",
-      resolveSpecifier: () => [],
+      graph: emptyGraph,
     });
     const steps = fastSteps(plan);
     expect(steps[0]?.command).toEqual(["bun", "--cwd=packages/shell", "run", "check-types"]);
     expect(steps[1]?.command).toEqual(["bun", "test", "--timeout", "20000", "packages/shell/src/render/crowdBatch.test.ts"]);
     expect(steps.some((step) => step.command.includes("packages/core"))).toBe(false);
+  });
+
+  test("many test files split across the lanes, each file in exactly one process", () => {
+    const files = Array.from({ length: 45 }, (_, index) => `packages/core/src/t${String(index).padStart(2, "0")}.test.ts`);
+    const steps = fastSteps({ ...emptyPlan, tests: files }, { lanes: 4 }).filter((step) => step.command[1] === "test");
+    expect(steps).toHaveLength(Math.min(4, Math.ceil(files.length / TESTS_PER_LANE)));
+    expect(steps.flatMap((step) => step.command.slice(4)).sort()).toEqual(files);
+    expect(steps.flatMap((step) => step.units ?? []).map((unit) => unit.id).sort()).toEqual(files.map((file) => `test:${file}`));
+  });
+
+  test("measured test times split the processes by time, and the junit report supplies them", () => {
+    const xml = [
+      String.raw`<testsuite name="packages\core\src\slow.test.ts" file="packages\core\src\slow.test.ts" tests="3" time="40.5">`,
+      String.raw`<testsuite name="slow" file="packages\core\src\slow.test.ts" line="4" tests="3" time="40.4">`,
+      '<testsuite name="packages/core/src/fast.test.ts" file="packages/core/src/fast.test.ts" tests="1" time="0.01">',
+    ].join("\n");
+    expect(junitCosts(xml)).toEqual({ "packages/core/src/slow.test.ts": 40.5, "packages/core/src/fast.test.ts": 0.01 });
+    const files = Array.from({ length: 20 }, (_, index) => `packages/core/src/t${String(index).padStart(2, "0")}.test.ts`);
+    const steps = fastSteps({ ...emptyPlan, tests: files }, { lanes: 2, testCosts: { [files[0]!]: 60 }, reportDir: ".scratch/r" }).filter((step) => step.command[1] === "test");
+    // 80 measured seconds make three ~30 s processes: the 60 s file alone, the other nineteen split.
+    const sizes = steps.map((step) => step.command.filter((arg) => arg.endsWith(".test.ts")).length);
+    expect(sizes.sort((a, b) => a - b)).toEqual([1, 9, 10]);
+    expect(steps[0]?.command).toContain("--reporter-outfile=.scratch/r/tests-1.xml");
+  });
+
+  test("a long measured suite splits past the lane count so its chunks pack around other steps", () => {
+    const files = Array.from({ length: 24 }, (_, index) => `packages/core/src/t${String(index).padStart(2, "0")}.test.ts`);
+    const testCosts = Object.fromEntries(files.map((file) => [file, 10]));
+    const steps = fastSteps({ ...emptyPlan, tests: files }, { lanes: 2, testCosts }).filter((step) => step.command[1] === "test");
+    // 252 s at 30 s a process wants 9, held to three per lane.
+    expect(steps).toHaveLength(6);
+    expect(steps.flatMap((step) => step.command.filter((arg) => arg.endsWith(".test.ts"))).sort()).toEqual(files);
+  });
+
+  test("a unit that passed with the same inputs is left out; one whose inputs changed runs", () => {
+    const plan: Plan = {
+      ...emptyPlan,
+      changed: ["packages/core/src/a.ts"],
+      typechecks: ["packages/core"],
+      tests: ["packages/core/src/a.test.ts", "packages/core/src/b.test.ts"],
+      gates: ["check-artifacts"],
+      boots: ["harbor-heat"],
+      inputs: { "test:packages/core/src/a.test.ts": ["packages/core/src/a.ts"], "test:packages/core/src/b.test.ts": [] },
+    };
+    const passed = new Set(["test:packages/core/src/b.test.ts", "gate:check-artifacts", "boot:harbor-heat"]);
+    const steps = fastSteps(plan, { fresh: (unit) => passed.has(unit) });
+    expect(steps.map((step) => step.name)).toEqual(["typecheck packages/core", "test 1 file(s)"]);
+    expect(steps[1]?.command.slice(4)).toEqual(["packages/core/src/a.test.ts"]);
+    expect(steps[1]?.units).toEqual([{ id: "test:packages/core/src/a.test.ts", inputs: ["packages/core/src/a.ts"] }]);
+  });
+
+  test("a unit's inputs are the files that decide it: its import closure, its workspace's data, the root configs; a repo script's test reads the whole tree", () => {
+    const graph = fixtureGraph(
+      {
+        "packages/shell/src/World.test.ts": 'import { World } from "./World";',
+        "packages/shell/src/World.tsx": 'import { sample } from "@jgengine/core/terrain";',
+        "packages/core/src/terrain.ts": "export const sample = 1;",
+        "packages/core/src/loop.ts": "export const tick = 1;",
+        "scripts/x.test.ts": 'import { tick } from "../packages/core/src/loop";',
+      },
+      ["packages/shell/src/scene.json", "packages/core/src/data.json", "bun.lock"],
+    );
+    const plan = buildPlan({
+      changed: ["packages/core/src/terrain.ts", "packages/core/src/loop.ts"],
+      testFiles: ["packages/shell/src/World.test.ts", "scripts/x.test.ts"],
+      workspaces: fakeWorkspaces,
+      graph,
+    });
+    expect(plan.inputs["test:packages/shell/src/World.test.ts"]).toEqual([
+      "bun.lock",
+      "packages/core/src/terrain.ts",
+      "packages/shell/src/World.test.ts",
+      "packages/shell/src/World.tsx",
+      "packages/shell/src/scene.json",
+    ]);
+    expect(plan.inputs["typecheck:packages/core"]).toEqual(["bun.lock", "packages/core/src/data.json", "packages/core/src/loop.ts", "packages/core/src/terrain.ts"]);
+    expect(plan.inputs["test:scripts/x.test.ts"]).toEqual(["*"]);
   });
 
   test("--full runs the quick job, the types job, every test shard and the other jobs", async () => {
@@ -656,19 +756,31 @@ describe("local boots", () => {
     expect(bootsFor(["games/a/src/x.ts", "games/b/src/x.ts", "games/c/src/x.ts"])).toHaveLength(MAX_BOOTS);
   });
 
+  test("an engine change boots a game its import graph reaches, the representative first, and none when no game imports it", () => {
+    const changed = ["packages/shell/src/render/modelLoad.ts"];
+    const reaches = (...files: string[]): Set<string> => new Set([...changed, ...files]);
+    expect(bootsFor(changed, reaches(`games/${REPRESENTATIVE_GAME}/src/main.tsx`, "games/odd-orbit/src/main.tsx"))).toEqual([REPRESENTATIVE_GAME]);
+    expect(bootsFor(changed, reaches("games/odd-orbit/src/main.tsx", "games/saltwick/src/main.tsx"))).toEqual(["odd-orbit"]);
+    expect(bootsFor(changed, reaches("games/saltwick/src/main.tsx"))).toEqual(["saltwick"]);
+    expect(bootsFor(changed, reaches("packages/shell/src/other.ts", "games/scripts/check.ts"))).toEqual([]);
+    // A heavy path no import shows (a lockfile, a workflow) still boots the representative.
+    expect(bootsFor(["bun.lock"], new Set(["bun.lock"]))).toEqual([REPRESENTATIVE_GAME]);
+  });
+
   test("a boot links the packs from the shared store first, then probes the running page", () => {
-    const steps = fastSteps({ changed: [], typechecks: [], tests: [], gates: [], unattributed: [], suites: [], boots: ["scrap-signal"] });
+    const steps = fastSteps({ ...emptyPlan, boots: ["scrap-signal"] });
     expect(steps.map((step) => step.command.join(" "))).toEqual([
       "bun games/scripts/provision-assets.ts scrap-signal",
       "bun games/scripts/capabilities-probe.ts scrap-signal",
     ]);
     expect(steps[1]?.needs).toEqual(["provision scrap-signal"]);
-    const withTests = fastSteps({ changed: [], typechecks: [], tests: ["a.test.ts"], gates: [], unattributed: [], suites: [], boots: ["scrap-signal"] });
-    expect(withTests.find((step) => step.name === "boot probe scrap-signal")?.needs).toEqual(["provision scrap-signal", "test 1 file(s)"]);
+    // The boot runs beside the tests: its deadline waits out a busy page instead of the suite.
+    const withTests = fastSteps({ ...emptyPlan, tests: ["a.test.ts"], boots: ["scrap-signal"] });
+    expect(withTests.find((step) => step.name === "boot probe scrap-signal")?.needs).toEqual(["provision scrap-signal"]);
   });
 
   test("the games job's capability gates run here with CI's arguments", () => {
-    const steps = fastSteps({ changed: [], typechecks: [], tests: [], gates: gatesFor(["games/x/src/a.ts"]), unattributed: [], suites: [], boots: [] });
+    const steps = fastSteps({ ...emptyPlan, gates: gatesFor(["games/x/src/a.ts"]) });
     expect(steps.map((step) => step.command.join(" "))).toContain("bun run games:capabilities-sync -- --check");
     expect(steps.map((step) => step.command.join(" "))).toContain("bun run games:check-capabilities -- --summary");
   });

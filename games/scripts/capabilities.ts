@@ -861,6 +861,27 @@ export function probeMatches(pattern: string, keys: string[]): boolean {
  * at least one finite number, such as the audio master level or a run's banked total. Absent or empty
  * counters fail the claim rather than passing it as "imported".
  */
+/** Frames the game draws after it mounts before a readout it has not published counts as absent. */
+export const PROBE_SETTLE_FRAMES = 300;
+/** The most a boot may take to mount at all, however busy the machine; past it the game never mounted. */
+export const PROBE_MOUNT_MS = 300_000;
+
+/**
+ * Whether the boot probe stops waiting for a page's readouts. The wait counts frames drawn since the
+ * shell mounted the game (`data-jg-phase`), never wall time: a loaded machine draws those frames
+ * later, so a late-mounting readout (harbor-heat's audio) is slower to read, never absent. A page
+ * that threw an uncaught error before it mounted will not mount, so it stops at once; only a page
+ * that neither mounts nor throws is cut off by the clock.
+ */
+export function probeGivesUp(
+  clock: { now: number; startedAt: number; framesSinceMount: number | null; crashedBeforeMount?: boolean },
+  limits: { settleFrames: number; mountMs: number } = { settleFrames: PROBE_SETTLE_FRAMES, mountMs: PROBE_MOUNT_MS },
+): boolean {
+  if (clock.framesSinceMount !== null) return clock.framesSinceMount >= limits.settleFrames;
+  if (clock.crashedBeforeMount === true) return true;
+  return clock.now - clock.startedAt >= limits.mountMs;
+}
+
 export function windowProbeVerdict(global: string, readout: unknown): string | null {
   if (readout === undefined || readout === null) return `window.${global} is absent on the running page`;
   if (typeof readout !== "object") return `window.${global} reports no counters`;

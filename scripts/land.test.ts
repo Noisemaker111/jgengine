@@ -409,6 +409,67 @@ test("a task branch pushed before beta moved is rebased and force-pushed instead
   expect(gitIn(work, ["rev-list", "--count", "HEAD..origin/beta"]).stdout.trim()).toBe("0");
 });
 
+test("a rebase that conflicts only in generated files and the lane's change note resolves them and regenerates", () => {
+  const { bare, work, partner } = originWithBeta();
+  mkdirSync(join(work, "scripts"), { recursive: true });
+  mkdirSync(join(work, "changes"), { recursive: true });
+  commit(work, "scripts/export-manifest.json", '{"exports":["a"]}\n', "manifest");
+  gitOk(work, ["push", "-q", "origin", "beta"]);
+  gitOk(partner, ["pull", "-q", "origin", "beta"]);
+
+  gitOk(work, ["checkout", "-q", "-b", "agent/gen"]);
+  writeFileSync(join(work, "lane.ts"), "export const lane = 1;\n");
+  writeFileSync(join(work, "scripts/export-manifest.json"), '{"exports":["a","lane"]}\n');
+  writeFileSync(join(work, "changes/agent-gen.md"), "### Added\n\n- Lane.\n");
+  gitOk(work, ["add", "-A"]);
+  gitOk(work, ["commit", "-q", "-m", "lane work"]);
+  gitOk(work, ["push", "-q", "-u", "origin", "agent/gen"]);
+
+  mkdirSync(join(partner, "scripts"), { recursive: true });
+  mkdirSync(join(partner, "changes"), { recursive: true });
+  writeFileSync(join(partner, "other.ts"), "export const other = 1;\n");
+  writeFileSync(join(partner, "scripts/export-manifest.json"), '{"exports":["a","other"]}\n');
+  writeFileSync(join(partner, "changes/agent-gen.md"), "### Added\n\n- Someone else's note.\n");
+  gitOk(partner, ["add", "-A"]);
+  gitOk(partner, ["commit", "-q", "-m", "another PR lands"]);
+  gitOk(partner, ["push", "-q", "origin", "beta"]);
+
+  const ran: string[] = [];
+  const sync = syncOntoBase({
+    branch: "agent/gen",
+    base: "beta",
+    git: (args) => gitIn(work, args),
+    exec: (command) => {
+      ran.push(command.join(" "));
+      // The generator writes the manifest from the merged source.
+      if (command.join(" ") === "bun run gen") writeFileSync(join(work, "scripts/export-manifest.json"), '{"exports":["a","lane","other"]}\n');
+      return { status: 0, stdout: "", stderr: "" };
+    },
+  });
+  expect(sync).toEqual({ rebased: true, refusal: null });
+  expect(ran).toEqual(["bun run gen", "bun run games:capabilities-sync"]);
+  expect(readFileSync(join(work, "scripts/export-manifest.json"), "utf8")).toBe('{"exports":["a","lane","other"]}\n');
+  expect(readFileSync(join(work, "changes/agent-gen.md"), "utf8")).toContain("- Lane.");
+  expect(gitOk(work, ["log", "-1", "--format=%s"])).toBe("Regenerate generated files after rebasing");
+  expect(gitOk(work, ["status", "--porcelain", "--untracked-files=no"])).toBe("");
+  expect(gitOk(bare, ["rev-parse", "refs/heads/agent/gen"])).toBe(gitOk(work, ["rev-parse", "HEAD"]));
+}, 120_000);
+
+test("a conflict in source is still the lane's, named, and the branch is left as it was", () => {
+  const { work, partner } = originWithBeta();
+  gitOk(work, ["checkout", "-q", "-b", "agent/real"]);
+  commit(work, "shared.txt", "mine\n", "lane edits shared");
+  gitOk(work, ["push", "-q", "-u", "origin", "agent/real"]);
+  const before = gitOk(work, ["rev-parse", "HEAD"]);
+  commit(partner, "shared.txt", "theirs\n", "beta edits shared");
+  gitOk(partner, ["push", "-q", "origin", "beta"]);
+
+  const sync = syncOntoBase({ branch: "agent/real", base: "beta", git: (args) => gitIn(work, args), exec: () => ({ status: 0, stdout: "", stderr: "" }) });
+  expect(sync.rebased).toBe(false);
+  expect(sync.refusal).toContain("conflict in shared.txt");
+  expect(gitOk(work, ["rev-parse", "HEAD"])).toBe(before);
+}, 120_000);
+
 test("a branch land did not push is refused, and the remote copy is left alone", () => {
   const { bare, work, partner, base } = originWithBeta();
 
@@ -426,6 +487,26 @@ test("a branch land did not push is refused, and the remote copy is left alone",
   expect(gitOk(bare, ["rev-parse", "refs/heads/agent/foreign"])).toBe(untouched);
 });
 
+test("after land pushed and stopped on a source conflict the lane resolved, the next land rewrites its own push", () => {
+  const { bare, work, partner } = originWithBeta();
+  gitOk(work, ["checkout", "-q", "-b", "agent/again"]);
+  commit(work, "shared.txt", "mine\n", "lane edits shared");
+  commit(partner, "shared.txt", "theirs\n", "beta edits shared");
+  gitOk(partner, ["push", "-q", "origin", "beta"]);
+  const git = (args: string[]) => gitIn(work, args);
+  const exec = () => ({ status: 0, stdout: "", stderr: "" });
+
+  expect(syncOntoBase({ branch: "agent/again", base: "beta", git, exec }).refusal).toContain("conflict in shared.txt");
+  // The lane rebases and resolves the conflict itself.
+  gitIn(work, ["rebase", "origin/beta"]);
+  writeFileSync(join(work, "shared.txt"), "both\n");
+  gitOk(work, ["add", "shared.txt"]);
+  gitOk(work, ["-c", "core.editor=true", "rebase", "--continue"]);
+
+  expect(syncOntoBase({ branch: "agent/again", base: "beta", git, exec })).toEqual({ rebased: false, refusal: null });
+  expect(gitOk(bare, ["rev-parse", "refs/heads/agent/again"])).toBe(gitOk(work, ["rev-parse", "HEAD"]));
+}, 120_000);
+
 test("the only force land uses is a lease on the branch it pushed", () => {
   expect(forcePushArgs("agent/lane-x")).toEqual(["push", "--force-with-lease=agent/lane-x", "origin", "HEAD:agent/lane-x"]);
 });
@@ -438,17 +519,19 @@ function lockPathForTest(): string {
 }
 
 /** A holder in its own OS process, the way a second landing is; it logs what it did to a file. */
-function spawnHolder(options: { lock: string; branch: string; holdMs: number; crash?: boolean; delayMs?: number }) {
+/** `releaseOn`: hold until that file exists, so a test releases on an event instead of a timer. */
+function spawnHolder(options: { lock: string; branch: string; holdMs: number; crash?: boolean; releaseOn?: string }) {
   const logFile = `${options.lock}.${options.branch.replace(/\W/g, "-")}.log`;
   const script = `
-import { appendFileSync } from "node:fs";
+import { appendFileSync, existsSync } from "node:fs";
 const { acquireLock } = await import("./scripts/land.ts");
 const at = (label) => appendFileSync(${JSON.stringify(logFile)}, label + " " + Date.now() + "\\n");
-if (${options.delayMs ?? 0} > 0) await Bun.sleep(${options.delayMs ?? 0});
 const release = acquireLock({ path: ${JSON.stringify(options.lock)}, branch: ${JSON.stringify(options.branch)}, log: (line) => at("LOG " + line) }).release;
 at("HELD");
 if (${options.crash === true}) process.exit(9);
 await Bun.sleep(${options.holdMs});
+const releaseOn = ${JSON.stringify(options.releaseOn ?? null)};
+while (releaseOn !== null && !existsSync(releaseOn)) await Bun.sleep(20);
 release();
 at("RELEASED");
 `;
@@ -499,10 +582,16 @@ test("a second landing waits on the first one's branch, then takes the lock", as
   expect(first.events().at(-1)).toStartWith("RELEASED");
 });
 
-test("two landings launched together hold the lock one at a time, in start order", async () => {
+test("a landing started while another holds the lock waits for it, then holds it alone", async () => {
   const lock = lockPathForTest();
-  const first = spawnHolder({ lock, branch: "agent/one", holdMs: 700 });
-  const second = spawnHolder({ lock, branch: "agent/two", holdMs: 0, delayMs: 300 });
+  const releaseOn = `${lock}.release`;
+  const first = spawnHolder({ lock, branch: "agent/one", holdMs: 0, releaseOn });
+  // Started on the first's HELD, not after a delay: under load a process can take longer than any
+  // fixed delay to reach the lock, and then the order this test checks was never set up.
+  await first.waitFor("HELD");
+  const second = spawnHolder({ lock, branch: "agent/two", holdMs: 0 });
+  await second.waitFor("LOG");
+  writeFileSync(releaseOn, "");
   await first.child.exited;
   await second.child.exited;
 

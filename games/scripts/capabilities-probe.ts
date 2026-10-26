@@ -13,7 +13,7 @@
  *
  * Usage: bun run games:capabilities-probe [game...]
  */
-import { spawn } from "node:child_process";
+import { spawn, spawnSync } from "node:child_process";
 import { existsSync, mkdtempSync, readFileSync, rmSync } from "node:fs";
 import { createServer } from "node:net";
 import { tmpdir } from "node:os";
@@ -23,6 +23,7 @@ import { fileURLToPath } from "node:url";
 import {
   DECLINE_MIN,
   gameDirs,
+  probeGivesUp,
   probeMatches,
   readDeclaration,
   readInstalled,
@@ -89,23 +90,46 @@ function findChrome(): string {
   throw new Error("No Chrome/Chromium found. Set CHROME_PATH to run the capability probe.");
 }
 
+/** End a process and everything it started: killing only `bun run dev` left its vite server running. */
+function killTree(child: ReturnType<typeof spawn> | undefined): void {
+  if (child?.pid === undefined) return;
+  if (process.platform === "win32") {
+    spawnSync("taskkill", ["/pid", String(child.pid), "/T", "/F"], { stdio: "ignore", windowsHide: true, timeout: 15_000 });
+    return;
+  }
+  try {
+    process.kill(-child.pid, "SIGKILL");
+  } catch {
+    child.kill("SIGKILL");
+  }
+}
+
 class Cdp {
   private readonly socket: WebSocket;
   private nextId = 1;
-  private readonly pending = new Map<number, { resolve: (value: unknown) => void; reject: (error: Error) => void }>();
+  private readonly pending = new Map<number, { resolve: (value: unknown) => void; reject: (error: Error) => void; timer: ReturnType<typeof setTimeout> }>();
+  /** Uncaught page errors, in order (`Runtime.exceptionThrown`). */
+  readonly exceptions: string[] = [];
 
   private constructor(socket: WebSocket) {
     this.socket = socket;
     socket.addEventListener("message", (event) => {
       const message = JSON.parse(String(event.data)) as {
         id?: number;
+        method?: string;
+        params?: { exceptionDetails?: { text?: string; exception?: { description?: string } } };
         result?: unknown;
         error?: { message?: string };
       };
+      if (message.method === "Runtime.exceptionThrown") {
+        const details = message.params?.exceptionDetails;
+        this.exceptions.push((details?.exception?.description ?? details?.text ?? "uncaught error").split(/\r?\n/)[0]!);
+      }
       if (message.id === undefined) return;
       const pending = this.pending.get(message.id);
       if (pending === undefined) return;
       this.pending.delete(message.id);
+      clearTimeout(pending.timer);
       if (message.error !== undefined) pending.reject(new Error(message.error.message ?? "CDP error"));
       else pending.resolve(message.result);
     });
@@ -125,13 +149,14 @@ class Cdp {
   send(method: string, params: Record<string, unknown> = {}): Promise<unknown> {
     const id = this.nextId++;
     return new Promise((resolve, reject) => {
-      this.pending.set(id, { resolve, reject });
-      this.socket.send(JSON.stringify({ id, method, params }));
-      setTimeout(() => {
+      // Cleared on the answer: an open 30 s timer per call held the process 30 s past its verdict.
+      const timer = setTimeout(() => {
         if (!this.pending.has(id)) return;
         this.pending.delete(id);
         reject(new Error(`CDP ${method} timed out`));
       }, 30000);
+      this.pending.set(id, { resolve, reject, timer });
+      this.socket.send(JSON.stringify({ id, method, params }));
     });
   }
 
@@ -171,6 +196,18 @@ async function pageTarget(debugPort: number, timeoutMs: number): Promise<string>
 }
 
 const READ_PAGE = `(() => {
+  // Frames the page has drawn since the shell stamped its game phase: the shell mounts the game
+  // chrome (and every probe it installs) in the commit that stamps it, so this counts game
+  // progress, which a loaded machine slows down rather than cuts short.
+  if (window.__jgProbeFrames === undefined) {
+    window.__jgProbeFrames = 0;
+    const count = () => {
+      if (document.documentElement.dataset.jgPhase !== undefined) window.__jgProbeFrames += 1;
+      requestAnimationFrame(count);
+    };
+    requestAnimationFrame(count);
+  }
+  const mounted = document.documentElement.dataset.jgPhase !== undefined;
   const agent = window.__jgengineAgent;
   const windows = {};
   // Every readout the engine mounts, not a list kept here: a new window.__jgengine* is read too.
@@ -198,14 +235,19 @@ const READ_PAGE = `(() => {
       error = String(caught);
     }
   }
-    return { ready: agent !== undefined || Object.keys(windows).length > 0, probes, windows, error };
+    return { ready: agent !== undefined || Object.keys(windows).length > 0, mounted, framesSinceMount: window.__jgProbeFrames, probes, windows, error };
 })()`;
 
 interface LivePage {
+  /** The shell stamped `data-jg-phase`: the game's chrome and its probes are mounted. */
+  mounted?: boolean;
+  framesSinceMount?: number;
   probes: Record<string, unknown> | null;
   /** Every `window.__jgengine*` readout the page answers with, keyed by global name. */
   windows: Record<string, unknown>;
   error?: string;
+  /** The first uncaught page error, when the page threw before it mounted. */
+  crash?: string;
 }
 
 interface Expectations {
@@ -213,17 +255,13 @@ interface Expectations {
   devtools: string[];
 }
 
-async function bootAndRead(
-  game: string,
-  port: number,
-  timeoutMs: number,
-  expectations: Expectations,
-): Promise<LivePage> {
+async function bootAndRead(game: string, port: number, expectations: Expectations): Promise<LivePage> {
   const url = `http://127.0.0.1:${port}/`;
   const dev = spawn("bun", ["run", "dev", "--", "--port", String(port), "--strictPort", "--host", "127.0.0.1"], {
     cwd: join(root, game),
     env: { ...process.env, BROWSER: "none" },
     stdio: "ignore",
+    detached: process.platform !== "win32",
   });
 
   let chrome: ReturnType<typeof spawn> | undefined;
@@ -246,15 +284,23 @@ async function bootAndRead(
         `--remote-debugging-port=${debugPort}`,
         `--user-data-dir=${profile}`,
         "--window-size=1280,720",
-        url,
+        // The game loads only after CDP listens, so an error it throws while loading is seen.
+        "about:blank",
       ],
-      { stdio: "ignore" },
+      { stdio: "ignore", detached: process.platform !== "win32" },
     );
 
     cdp = await Cdp.connect(await pageTarget(debugPort, 30000));
+    await cdp.send("Page.navigate", { url });
     const started = Date.now();
     let last: LivePage = { probes: null, windows: {} };
-    while (Date.now() - started < timeoutMs) {
+    const clock = (): Parameters<typeof probeGivesUp>[0] => ({
+      now: Date.now(),
+      startedAt: started,
+      framesSinceMount: last.mounted === true ? (last.framesSinceMount ?? 0) : null,
+      crashedBeforeMount: cdp!.exceptions.length > 0,
+    });
+    while (!probeGivesUp(clock())) {
       try {
         const page = await cdp.evaluate<LivePage>(READ_PAGE);
         last = page;
@@ -269,11 +315,11 @@ async function bootAndRead(
       }
       await Bun.sleep(500);
     }
-    return last;
+    return cdp.exceptions.length > 0 && last.mounted !== true ? { ...last, crash: cdp.exceptions[0] } : last;
   } finally {
     cdp?.close();
     if (chrome !== undefined) {
-      chrome.kill();
+      killTree(chrome);
       await Bun.sleep(500);
     }
     if (profile !== undefined) {
@@ -283,7 +329,7 @@ async function bootAndRead(
         // Chrome can hold its profile open briefly on Windows; a temp dir is disposable.
       }
     }
-    dev.kill();
+    killTree(dev);
   }
 }
 
@@ -324,8 +370,14 @@ for (const game of targets) {
   }
   const port = await freePort();
   process.stdout.write(`probing ${game}... `);
-  const page = await bootAndRead(game, port, 45000, expectations);
+  const page = await bootAndRead(game, port, expectations);
   const gameFailures: ProbeFailure[] = [];
+  const unmounted =
+    page.mounted === true
+      ? ""
+      : page.crash !== undefined
+        ? ` (the game threw before it mounted: ${page.crash})`
+        : " (the shell never stamped data-jg-phase: the game did not mount)";
 
   for (const [module, patterns] of entries) {
     const capabilities = capabilitiesForModule(declaration, module);
@@ -338,7 +390,7 @@ for (const game of targets) {
       const readout = page.windows?.[global];
       const verdict = windowProbeVerdict(global, readout);
       if (verdict !== null) {
-        gameFailures.push({ game, capability, module, reason: `declared adopted, but ${verdict}` });
+        gameFailures.push({ game, capability, module, reason: `declared adopted, but ${verdict}${unmounted}` });
       } else {
         const counters = Object.entries(readout as Record<string, unknown>)
           .filter(([, value]) => typeof value === "number")
@@ -358,7 +410,7 @@ for (const game of targets) {
         game,
         capability,
         module,
-        reason: `declared adopted, but debug_snapshot.probes has no ${missing.map((p) => `"${p}"`).join(" or ")} (keys: ${keys.slice(0, 8).join(", ") || "none"}${page.error === undefined ? "" : `; ${page.error}`})`,
+        reason: `declared adopted, but debug_snapshot.probes has no ${missing.map((p) => `"${p}"`).join(" or ")} (keys: ${keys.slice(0, 8).join(", ") || "none"}${page.error === undefined ? "" : `; ${page.error}`})${unmounted}`,
       });
       continue;
     }

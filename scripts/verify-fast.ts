@@ -14,21 +14,22 @@
 // 0 or 1: a caller reading the document gets no meaningful 2, so an unattributed
 // change is a failed check named `attribution`.
 import { spawnSync } from "node:child_process";
-import { existsSync, readdirSync, readFileSync, statSync } from "node:fs";
+import { existsSync, mkdirSync, readdirSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { availableParallelism } from "node:os";
-import { basename, dirname, join, relative, resolve } from "node:path";
+import { basename, dirname, join, relative } from "node:path";
 import { fileURLToPath } from "node:url";
 
-import { effectivePaths } from "./sourcePaths";
 import { assertCheckoutReady } from "./checkout-ready";
 import { digestLines, writeStepLog } from "./failure-digest";
-import { REPRESENTATIVE_GAME, scopePattern } from "./ci-scope";
+import { FRAME_GAMES, REPRESENTATIVE_GAME, scopePattern } from "./ci-scope";
+import { buildImportGraph, closure, repoFiles, reverseReach, type ImportGraph } from "./import-graph";
+import { openPassCache, treeDigests, WHOLE_TREE } from "./verify-cache";
 import { printHelpIfAsked } from "./script-help";
 import { TEST_ROOTS, walkTestFiles } from "./test-shard";
 
 const VERIFY_FAST_USAGE = {
   summary: "run only the tests and static gates this branch's diff reaches, in seconds",
-  usage: "bun run verify:fast [--full] [--plan] [--json] [--base <ref>] [--jobs <n>] [--skill-api]",
+  usage: "bun run verify:fast [--full] [--plan] [--json] [--base <ref>] [--jobs <n>] [--skill-api] [--no-cache]",
   flags: [
     { flag: "--full", detail: "what CI runs, not just what this change reaches; minutes, before landing" },
     { flag: "--plan", detail: "print the steps and their commands, run nothing" },
@@ -36,6 +37,7 @@ const VERIFY_FAST_USAGE = {
     { flag: "--base <ref>", detail: "diff against this ref (default: origin/beta)" },
     { flag: "--jobs <n>", detail: "steps to run at once (default: half the cores, at most 6)" },
     { flag: "--skill-api", detail: "also run check-skill-api, the 21 s generated api.md check lane:close and ship:preflight run" },
+    { flag: "--no-cache", detail: "run every unit, including those that passed before with the same inputs" },
   ],
   example: "bun run verify:fast --plan",
   exits: [
@@ -84,6 +86,14 @@ export interface Step {
    * lanes guessing and pushed them to CI to find out.
    */
   fix?: string;
+  /** The units this step settles; each is remembered as passed when the step passes. */
+  units?: Unit[];
+}
+
+/** One test file, type-check, gate or boot, and the changed paths that can decide its result. */
+export interface Unit {
+  id: string;
+  inputs: readonly string[];
 }
 
 /**
@@ -105,6 +115,8 @@ export interface Workspace {
 
 export interface Plan {
   changed: string[];
+  /** Paths the branch deleted. */
+  deleted: string[];
   /** Workspace dirs whose own `check-types` runs. */
   typechecks: string[];
   /** Test files to run, sorted. */
@@ -120,16 +132,24 @@ export interface Plan {
    * boots a game, so this is the only place a boot regression is caught before merge.
    */
   boots: string[];
+  /**
+   * The files whose content decides each unit's result, keyed `test:<file>`, `typecheck:<dir>` and
+   * `boot:<game>` (see `unitInputs`; `*` is the whole tree). A unit whose inputs are byte-identical
+   * to a run that passed is not run again.
+   */
+  inputs: Record<string, string[]>;
 }
 
 /** At most this many games boot in the inner loop; each costs ~15-40 s. */
 export const MAX_BOOTS = 2;
 
 /**
- * The games a change should boot: each game whose own source changed, else the representative
- * game when the change reaches what a game draws (`scripts/ci-scope.ts`'s heavy paths).
+ * The games a change should boot: each game whose own source changed; else, for a change to what
+ * a game draws (`scripts/ci-scope.ts`'s heavy paths), one game whose import graph reaches it, the
+ * representative first. A heavy path that is not source (a workflow, a lockfile, a config) reaches
+ * every game in ways no import shows, so it boots the representative.
  */
-export function bootsFor(changed: readonly string[]): string[] {
+export function bootsFor(changed: readonly string[], reached?: ReadonlySet<string>): string[] {
   const touched = [
     ...new Set(
       changed
@@ -138,7 +158,14 @@ export function bootsFor(changed: readonly string[]): string[] {
     ),
   ].sort();
   if (touched.length > 0) return touched.slice(0, MAX_BOOTS);
-  return changed.some((path) => scopePattern().test(path) && !isTestFile(path) && !/\.(md|mdx)$/i.test(path)) ? [REPRESENTATIVE_GAME] : [];
+  const heavy = changed.filter((path) => scopePattern().test(path) && !isTestFile(path) && !/\.(md|mdx)$/i.test(path));
+  if (heavy.length === 0) return [];
+  if (reached === undefined || heavy.some((path) => !SOURCE_FILE.test(path) || DECLARATION.test(path))) return [REPRESENTATIVE_GAME];
+  const games = new Set(
+    [...reached].filter((path) => /^games\/[^/]+\/[^/]/.test(path) && !path.startsWith("games/scripts/") && !path.startsWith("games/shared/") && !isTestFile(path)).map((path) => path.split("/")[1]!),
+  );
+  const first = [REPRESENTATIVE_GAME, ...FRAME_GAMES, ...[...games].sort()].find((game) => games.has(game));
+  return first === undefined ? [] : [first];
 }
 
 const posix = (path: string): string => path.replaceAll("\\", "/");
@@ -171,6 +198,25 @@ export function changedFiles(root: string, base: string = BASE): string[] {
   add(["diff", "--name-only", "--diff-filter=ACMR"]);
   add(["ls-files", "--others", "--exclude-standard"]);
   return [...out].sort();
+}
+
+/** Paths this branch deleted against `base`, committed, staged or not. */
+export function deletedFiles(root: string, base: string = BASE): string[] {
+  const out = new Set<string>();
+  for (const args of [["diff", "--name-only", "--diff-filter=D", `${base}...HEAD`], ["diff", "--name-only", "--diff-filter=D", "--cached"], ["diff", "--name-only", "--diff-filter=D"]]) {
+    for (const path of names(git(root, args))) out.add(path);
+  }
+  return [...out].sort();
+}
+
+/** `test:a`, `test:b`, `gate:c` -> `2 test(s), 1 gate(s)`. */
+export function summarizeUnits(units: readonly string[]): string {
+  const counts = new Map<string, number>();
+  for (const unit of units) {
+    const kind = unit.split(":")[0]!;
+    counts.set(kind, (counts.get(kind) ?? 0) + 1);
+  }
+  return [...counts].map(([kind, count]) => `${count} ${kind}(s)`).join(", ");
 }
 
 /**
@@ -250,94 +296,12 @@ export function isRuntimeSource(path: string): boolean {
   );
 }
 
-/** Import specifiers in a source file: static, dynamic, re-export and require forms. */
-export function specifiers(text: string): string[] {
-  const found: string[] = [];
-  const pattern = /(?:^|[^\w$.])(?:import|export)\s*(?:[^"'();]*?\sfrom\s*)?["']([^"']+)["']|import\s*\(\s*["']([^"']+)["']|require\s*\(\s*["']([^"']+)["']/g;
-  for (const match of text.matchAll(pattern)) {
-    const specifier = match[1] ?? match[2] ?? match[3];
-    if (specifier !== undefined) found.push(specifier);
-  }
-  return found;
-}
-
-/**
- * Resolve a specifier the way the repo's tsconfig `paths` do, against the files that
- * exist. Relative imports resolve beside the importer; `@jgengine/*` resolve through
- * `tsconfig.base.json`, which is the map `bun test` and `tsgo` both use.
- */
-export function makeResolver(root: string): (specifier: string, from: string) => string[] {
-  const effective = effectivePaths(join(root, "tsconfig.base.json"));
-  const paths = effective?.paths ?? {};
-  const pathsDir = effective?.dir ?? root;
-  const keys = Object.keys(paths).sort((a, b) => b.length - a.length);
-
-  const candidates = (base: string): string[] =>
-    [base, `${base}.ts`, `${base}.tsx`, `${base}.mts`, `${base}.cts`, join(base, "index.ts"), join(base, "index.tsx")].filter(
-      (candidate) => existsSync(candidate) && statSync(candidate).isFile(),
-    );
-
-  return (specifier, from) => {
-    const bases: string[] = [];
-    if (specifier.startsWith(".")) {
-      bases.push(resolve(dirname(join(root, from)), specifier));
-    } else {
-      for (const key of keys) {
-        if (key.endsWith("/*")) {
-          const prefix = key.slice(0, -1);
-          if (!specifier.startsWith(prefix)) continue;
-          const rest = specifier.slice(prefix.length);
-          for (const target of paths[key] ?? []) bases.push(resolve(pathsDir, target.replace("*", rest)));
-          break;
-        }
-        if (key === specifier) {
-          for (const target of paths[key] ?? []) bases.push(resolve(pathsDir, target));
-          break;
-        }
-      }
-    }
-    const resolved = new Set<string>();
-    for (const base of bases) for (const candidate of candidates(base)) resolved.add(relPosix(root, candidate));
-    return [...resolved];
-  };
-}
-
 /** Tests in the same directory named after the file: `terrain.ts` reaches `terrain.test.ts`. */
 export function ownTests(file: string, testFiles: readonly string[]): string[] {
   if (TEST_FILE.test(file)) return [file];
   const dir = posix(dirname(file));
   const stem = basename(file).replace(/\.[cm]?[jt]sx?$/, "");
   return testFiles.filter((test) => test.startsWith(`${dir}/${stem}.`) && TEST_FILE.test(test));
-}
-
-/**
- * Which changed files each test imports, one level deep. A test reaches a file only
- * when it imports that file: a test that imports a package barrel (`@jgengine/core`)
- * is not counted against every module the barrel re-exports, because that would make
- * every core change run every test that imports core.
- */
-export function importers(
-  files: readonly string[],
-  testFiles: readonly string[],
-  readText: (path: string) => string,
-  resolveSpecifier: (specifier: string, from: string) => string[],
-): Map<string, string[]> {
-  const wanted = new Set(files);
-  const found = new Map<string, string[]>(files.map((file) => [file, []]));
-  for (const test of testFiles) {
-    let text: string;
-    try {
-      text = readText(test);
-    } catch {
-      continue;
-    }
-    const reached = new Set<string>();
-    for (const specifier of specifiers(text)) {
-      for (const target of resolveSpecifier(specifier, test)) if (wanted.has(target)) reached.add(target);
-    }
-    for (const file of reached) found.get(file)!.push(test);
-  }
-  return found;
 }
 
 /**
@@ -377,60 +341,120 @@ export function gatesFor(changed: readonly string[]): string[] {
   return [...gates];
 }
 
+/**
+ * Where an unresolvable import could point. A relative or local alias names something in the
+ * importer's own workspace; `@jgengine/<pkg>/...` names that package. The importer counts as
+ * reaching any change under these, so a specifier the graph cannot follow (a template string, a
+ * path built at run time, a deleted file) still runs what imports it.
+ */
+export function opaqueScopes(file: string, unresolved: readonly string[], all: readonly Workspace[]): string[] {
+  const own = workspaceOf(file, all)?.dir ?? file.split("/")[0]!;
+  const scopes = new Set<string>();
+  for (const specifier of unresolved) {
+    const engine = /^@jgengine\/([^/]+)/.exec(specifier);
+    scopes.add(engine === null ? `${own}/` : `packages/${engine[1]}/`);
+  }
+  return [...scopes].sort();
+}
+
+/** Root files every unit's result can depend on: the toolchain and the compiler settings. */
+export const ROOT_INPUTS = ["package.json", "bun.lock", "bunfig.toml", "tsconfig.base.json", "tsconfig.json"];
+
+/** Workspaces whose tests stay inside their own directory and imports; repo tooling tests read the whole tree. */
+const CONTAINED = /^(packages\/(?!jgengine$)[^/]+|games\/(?!scripts$|shared$)[^/]+)$/;
+
+function sourcesUnder(graph: ImportGraph, dir: string): string[] {
+  return [...graph.files].filter((file) => file.startsWith(`${dir}/`) && SOURCE_FILE.test(file));
+}
+
+/**
+ * The files whose bytes decide a unit: what `entries` import, directly or not; every non-source
+ * file in its workspace (scene data, manifests, fixtures it may read from disk); and the root
+ * configs. A unit outside a contained workspace (a repo script's test) reads the whole tree.
+ * Nothing here names the base commit, so a rebase that only brings in other work leaves a unit
+ * these files do not cover still fresh.
+ */
+export function unitInputs(graph: ImportGraph, entries: readonly string[], workspace: string | null, extraDirs: readonly string[] = []): string[] {
+  if (workspace === null || !CONTAINED.test(workspace)) return [WHOLE_TREE];
+  const found = closure(graph, entries);
+  for (const dir of [workspace, ...extraDirs]) {
+    for (const file of graph.files) if (file.startsWith(`${dir}/`) && (!SOURCE_FILE.test(file) || DECLARATION.test(file))) found.add(file);
+  }
+  for (const file of ROOT_INPUTS) if (graph.files.has(file)) found.add(file);
+  return [...found].sort();
+}
+
 /** What `bun run verify:fast` runs for this change. */
 export function buildPlan(input: {
   changed: readonly string[];
+  /** Paths the branch deleted: whatever imported them is reached too. */
+  deleted?: readonly string[];
   testFiles: readonly string[];
   workspaces: readonly Workspace[];
-  readText: (path: string) => string;
-  resolveSpecifier: (specifier: string, from: string) => string[];
+  graph: ImportGraph;
   /** Changed paths that need no test (pure renames). */
   exempt?: readonly string[];
 }): Plan {
   const changed = [...new Set(input.changed)].sort();
+  const deleted = [...new Set(input.deleted ?? [])].sort();
   const exempt = new Set(input.exempt ?? []);
   const runtime = changed.filter((path) => isRuntimeSource(path) && !exempt.has(path));
-  const importedBy = importers(runtime, input.testFiles, input.readText, input.resolveSpecifier);
-  const tests = new Set<string>();
-  for (const file of changed) {
-    for (const test of ownTests(file, input.testFiles)) tests.add(test);
+  const touchedPaths = [...changed.filter((path) => !exempt.has(path)), ...deleted];
+
+  // unit (any file) -> the changed paths its import closure contains.
+  const reachedBy = new Map<string, Set<string>>();
+  const credit = (from: Iterable<string>, paths: readonly string[]): void => {
+    for (const file of reverseReach(input.graph, from)) {
+      let into = reachedBy.get(file);
+      if (into === undefined) reachedBy.set(file, (into = new Set()));
+      for (const path of paths) into.add(path);
+    }
+  };
+  for (const path of touchedPaths) credit([path], [path]);
+  for (const [file, unresolved] of input.graph.opaque) {
+    const scopes = opaqueScopes(file, unresolved, input.workspaces);
+    const matched = touchedPaths.filter((path) => scopes.some((scope) => path.startsWith(scope)));
+    if (matched.length > 0) credit([file], matched);
   }
-  for (const reachable of importedBy.values()) for (const test of reachable) tests.add(test);
+  const testedBy = new Map<string, string[]>();
+  for (const test of input.testFiles) {
+    for (const path of reachedBy.get(test) ?? []) testedBy.set(path, [...(testedBy.get(path) ?? []), test]);
+  }
+
+  const tests = new Set<string>();
+  for (const file of changed) for (const test of ownTests(file, input.testFiles)) tests.add(test);
+  for (const test of input.testFiles) if (reachedBy.has(test)) tests.add(test);
 
   const typechecks: string[] = [];
-  for (const file of changed) {
+  for (const file of touchedPaths) {
     const workspace = workspaceOf(file, input.workspaces);
     if (workspace?.checkTypes === true && !typechecks.includes(workspace.dir)) typechecks.push(workspace.dir);
   }
   // `scripts/` is not a workspace but carries its own tsconfig and `check-types`; a script type
   // error used to reach CI because no step here ran it.
-  if (!typechecks.includes("scripts") && changed.some((path) => path.startsWith("scripts/") && SOURCE_FILE.test(path) && !DECLARATION.test(path))) {
+  if (!typechecks.includes("scripts") && touchedPaths.some((path) => path.startsWith("scripts/") && SOURCE_FILE.test(path) && !DECLARATION.test(path))) {
     typechecks.push("scripts");
   }
 
-  // A game is reached by its own files and by every engine package it depends on: an engine
-  // change runs the type-check and tests of each game that imports the changed package.
-  const changedPackages = new Set(
-    changed
-      .filter((path) => /^packages\/[^/]+\//.test(path) && !isTestFile(path))
-      .map((path) => workspaceOf(path, input.workspaces)?.name)
-      .filter((name): name is string => name !== undefined),
-  );
+  // A game is reached by its own files and by every engine file its import graph contains: an
+  // engine change type-checks each game whose program includes it. A game's own change also runs
+  // its whole suite, since its tests read its scene and data files from disk.
   for (const workspace of input.workspaces) {
     if (!GAME_DIR.test(workspace.dir)) continue;
-    const touched = changed.some((path) => path.startsWith(`${workspace.dir}/`));
-    const imports = (workspace.dependsOn ?? []).some((name) => changedPackages.has(name));
+    const prefix = `${workspace.dir}/`;
+    const touched = touchedPaths.some((path) => path.startsWith(prefix));
+    const imports = !touched && [...reachedBy.keys()].some((file) => file.startsWith(prefix) && !isTestFile(file));
     if (!touched && !imports) continue;
     if (workspace.checkTypes && !typechecks.includes(workspace.dir)) typechecks.push(workspace.dir);
-    for (const test of input.testFiles) if (test.startsWith(`${workspace.dir}/`)) tests.add(test);
+    if (touched) for (const test of input.testFiles) if (test.startsWith(prefix)) tests.add(test);
   }
 
-  // A file no test names is still covered when its package's whole suite runs: that is the suite
+  // A file no test reaches is still covered when its package's whole suite runs: that is the suite
   // CI runs for it. Only a file outside every tested package (a root script) stays unattributed.
   const unattributed: string[] = [];
   const suites: string[] = [];
   for (const path of runtime) {
-    if (ownTests(path, input.testFiles).length > 0 || (importedBy.get(path) ?? []).length > 0) continue;
+    if (ownTests(path, input.testFiles).length > 0 || (testedBy.get(path) ?? []).length > 0) continue;
     const workspace = workspaceOf(path, input.workspaces);
     const suite = workspace === null ? [] : input.testFiles.filter((test) => test.startsWith(`${workspace.dir}/`));
     if (suite.length === 0) {
@@ -441,14 +465,24 @@ export function buildPlan(input: {
     if (!suites.includes(workspace!.dir)) suites.push(workspace!.dir);
   }
 
+  const reached = new Set(reachedBy.keys());
+  const boots = bootsFor(changed, reached);
+
+  const inputs: Record<string, string[]> = {};
+  for (const test of tests) inputs[`test:${test}`] = unitInputs(input.graph, [test], workspaceOf(test, input.workspaces)?.dir ?? null);
+  for (const dir of typechecks) inputs[`typecheck:${dir}`] = unitInputs(input.graph, sourcesUnder(input.graph, dir), dir);
+  for (const game of boots) inputs[`boot:${game}`] = unitInputs(input.graph, sourcesUnder(input.graph, `games/${game}`), `games/${game}`, ["games/shared"]);
+
   return {
     changed,
+    deleted,
     typechecks: typechecks.sort(),
     tests: [...tests].sort(),
     gates: gatesFor(changed),
     unattributed,
     suites: suites.sort(),
-    boots: bootsFor(changed),
+    boots,
+    inputs,
   };
 }
 
@@ -476,27 +510,113 @@ const GATE_COST: Readonly<Record<string, number>> = {
   "check-skill-api": 21,
 };
 
-/** The commands `bun run verify:fast` runs for a plan. `check-skill-api` waits for `--skill-api`. */
-export function fastSteps(plan: Plan, options: { skillApi?: boolean } = {}): Step[] {
+/** Test files above this many per process split across lanes: one `bun test` runs its files one after another. */
+export const TESTS_PER_LANE = 10;
+
+/**
+ * Measured seconds of tests per process. The lanes run the heaviest step first, so chunks this
+ * size pack around the type-checks instead of one long process holding the run's tail.
+ */
+export const TEST_CHUNK_SECONDS = 30;
+
+/** Rough seconds a test file costs when nothing better is known; a browser scenario costs far more. */
+function guessedTestCost(file: string): number {
+  return SHARD_I_MEASURED_COST[file] ?? (/\.browser\.test\./.test(file) ? 15 : 1);
+}
+
+/** Seconds each test file took when it last ran here, read from `bun test`'s junit report. */
+export function junitCosts(xml: string): Record<string, number> {
+  const costs: Record<string, number> = {};
+  // A file's own suite carries `file=` and no `line=`; its describe blocks carry both.
+  for (const match of xml.matchAll(/<testsuite\s[^>]*>/g)) {
+    const tag = match[0];
+    if (/\sline="/.test(tag)) continue;
+    const file = /\sfile="([^"]+)"/.exec(tag)?.[1];
+    const time = Number(/\stime="([^"]+)"/.exec(tag)?.[1]);
+    if (file !== undefined && Number.isFinite(time)) costs[file.replaceAll("\\", "/")] = time;
+  }
+  return costs;
+}
+
+export interface FastOptions {
+  /** Also run `check-skill-api` (lane:close and ship:preflight pass `--skill-api`). */
+  skillApi?: boolean;
+  /** Lanes the steps share; the tests split into at most this many processes. */
+  lanes?: number;
+  /** True when this unit passed before with the same `inputs`; it is not run again. */
+  fresh?: (unit: string, inputs: readonly string[]) => boolean;
+  /** Measured seconds per test file, so the processes split by time rather than by count. */
+  testCosts?: Readonly<Record<string, number>>;
+  /** Where each test process writes its junit report (`<dir>/tests-<n>.xml`), for `testCosts`. */
+  reportDir?: string;
+}
+
+/**
+ * The commands `bun run verify:fast` runs for a plan. `check-skill-api` waits for `--skill-api`.
+ * Every step lists the units it settles (`units`), so a pass is remembered per unit and a unit
+ * whose inputs did not change since it passed is left out.
+ */
+export function fastSteps(plan: Plan, options: FastOptions = {}): Step[] {
+  const fresh = options.fresh ?? ((): boolean => false);
+  const lanes = Math.max(1, options.lanes ?? DEFAULT_JOBS);
+  const unit = (id: string, inputs: readonly string[] = plan.inputs[id] ?? [WHOLE_TREE]): Unit => ({ id, inputs });
   const steps: Step[] = [];
-  for (const dir of plan.typechecks) steps.push({ name: `typecheck ${dir}`, command: ["bun", `--cwd=${dir}`, "run", "check-types"] });
-  const testStep = `test ${plan.tests.length} file(s)`;
-  if (plan.tests.length > 0) steps.push({ name: testStep, command: ["bun", "test", "--timeout", "20000", ...plan.tests] });
+  for (const dir of plan.typechecks) {
+    const settles = unit(`typecheck:${dir}`);
+    if (fresh(settles.id, settles.inputs)) continue;
+    steps.push({ name: `typecheck ${dir}`, command: ["bun", `--cwd=${dir}`, "run", "check-types"], cost: 12, units: [settles] });
+  }
+
+  const tests = plan.tests.map((file) => unit(`test:${file}`)).filter((settles) => !fresh(settles.id, settles.inputs));
+  if (tests.length > 0) {
+    const files = tests.map((settles) => settles.id.slice("test:".length));
+    // Each file also pays its imports, which the junit time leaves out.
+    const cost = Object.fromEntries(files.map((file) => [file, options.testCosts?.[file] !== undefined ? options.testCosts[file]! + 0.5 : guessedTestCost(file)]));
+    const total = files.reduce((sum, file) => sum + cost[file]!, 0);
+    const byCount = Math.min(lanes, Math.ceil(files.length / TESTS_PER_LANE));
+    const byTime = Math.min(lanes * 3, Math.ceil(total / TEST_CHUNK_SECONDS));
+    const parts = Math.min(files.length, Math.max(1, byCount, byTime));
+    const groups = splitByCost(files, cost, parts).filter((group) => group.length > 0);
+    groups.forEach((group, index) => {
+      const label = groups.length === 1 ? `test ${group.length} file(s)` : `test ${group.length} file(s) (${index + 1}/${groups.length})`;
+      steps.push({
+        name: label,
+        command: [
+          "bun",
+          "test",
+          "--timeout",
+          "20000",
+          ...(options.reportDir === undefined ? [] : ["--reporter=junit", `--reporter-outfile=${options.reportDir}/tests-${index + 1}.xml`]),
+          ...[...group].sort(),
+        ],
+        cost: group.reduce((sum, file) => sum + (cost[file] ?? 1), 0),
+        units: tests.filter((settles) => group.includes(settles.id.slice("test:".length))),
+      });
+    });
+  }
+
   const gates = options.skillApi === true ? plan.gates : plan.gates.filter((gate) => gate !== "check-skill-api");
   for (const gate of gates) {
     const extra = GATE_ARGS[gate] ?? [];
-    steps.push({ name: gate, command: ["bun", "run", gate, ...(extra.length > 0 ? ["--", ...extra] : [])], fix: GATE_FIX[gate], cost: GATE_COST[gate] });
+    // A gate reads the whole tree.
+    const settles = unit(`gate:${gate}`, [WHOLE_TREE]);
+    if (fresh(settles.id, settles.inputs)) continue;
+    steps.push({ name: gate, command: ["bun", "run", gate, ...(extra.length > 0 ? ["--", ...extra] : [])], fix: GATE_FIX[gate], cost: GATE_COST[gate], units: [settles] });
   }
-  if (plan.boots.length > 0) {
+
+  const boots = plan.boots.map((game) => unit(`boot:${game}`)).filter((settles) => !fresh(settles.id, settles.inputs));
+  if (boots.length > 0) {
+    const games = boots.map((settles) => settles.id.slice("boot:".length));
     // Link (or, once per machine, download) the packs first, so the boot reads real models.
-    steps.push({ name: `provision ${plan.boots.join(" ")}`, command: ["bun", "games/scripts/provision-assets.ts", ...plan.boots], cost: 2 });
+    steps.push({ name: `provision ${games.join(" ")}`, command: ["bun", "games/scripts/provision-assets.ts", ...games], cost: 2 });
+    // Beside the tests, not after them: the probe's deadline counts from when the page stops
+    // loading, so a busy machine makes it slower, never red.
     steps.push({
-      name: `boot probe ${plan.boots.join(" ")}`,
-      command: ["bun", "games/scripts/capabilities-probe.ts", ...plan.boots],
-      // After the suite: booting beside a 500 s test run starved the page and a late-mounting probe
-      // (harbor-heat's audio) read absent, though it passes on an idle machine.
-      needs: [`provision ${plan.boots.join(" ")}`, ...(plan.tests.length > 0 ? [testStep] : [])],
+      name: `boot probe ${games.join(" ")}`,
+      command: ["bun", "games/scripts/capabilities-probe.ts", ...games],
+      needs: [`provision ${games.join(" ")}`],
       cost: 40,
+      units: boots,
     });
   }
   return steps;
@@ -924,16 +1044,62 @@ async function main(argv: readonly string[]): Promise<number> {
     return failures.length === 0 ? EXIT_VERIFIED : EXIT_FAILED;
   }
 
-  const resolveSpecifier = makeResolver(root);
+  const allWorkspaces = workspaces(root);
+  const tree = repoFiles(root);
+  const graph = buildImportGraph(root, tree, {
+    packages: allWorkspaces.flatMap((workspace) => (workspace.name === undefined ? [] : [{ name: workspace.name, dir: workspace.dir }])),
+  });
   const plan = buildPlan({
     changed,
+    deleted: deletedFiles(root, base),
     testFiles: walkTestFiles(root, [...TEST_ROOTS, "games"]),
-    workspaces: workspaces(root),
-    readText: (path) => readFileSync(join(root, path), "utf8"),
-    resolveSpecifier,
+    workspaces: allWorkspaces,
+    graph,
     exempt: pureRenames(root, base),
   });
-  const steps = fastSteps(plan, { skillApi });
+  const cache = argv.includes("--no-cache")
+    ? null
+    : openPassCache({
+        file: join(root, ".scratch", "verify-fast", "passed.json"),
+        // Unstaged and untracked files are hashed; everything else is the index's own blob id.
+        digest: treeDigests(root, [...names(git(root, ["diff", "--name-only"])), ...names(git(root, ["ls-files", "--others", "--exclude-standard"]))]),
+        tree: () => tree,
+      });
+  const skipped: string[] = [];
+  const costFile = join(root, ".scratch", "verify-fast", "test-costs.json");
+  const reportDir = ".scratch/verify-fast/junit";
+  let testCosts: Record<string, number> = {};
+  try {
+    testCosts = JSON.parse(readFileSync(costFile, "utf8")) as Record<string, number>;
+  } catch {
+    testCosts = {};
+  }
+  rmSync(join(root, reportDir), { recursive: true, force: true });
+  mkdirSync(join(root, reportDir), { recursive: true });
+  const steps = fastSteps(plan, {
+    skillApi,
+    lanes: DEFAULT_JOBS,
+    testCosts,
+    reportDir,
+    fresh: (unit, inputs) => {
+      const hit = cache?.fresh(unit, inputs) === true;
+      if (hit) skipped.push(unit);
+      return hit;
+    },
+  });
+  const remember = (passed: readonly StepResult[]): void => {
+    for (const report of existsSync(join(root, reportDir)) ? readdirSync(join(root, reportDir)) : []) {
+      Object.assign(testCosts, junitCosts(readFileSync(join(root, reportDir, report), "utf8")));
+    }
+    writeFileSync(costFile, `${JSON.stringify(testCosts)}
+`, "utf8");
+    if (cache === null) return;
+    for (const result of passed) {
+      if (!result.ok) continue;
+      for (const settled of steps.find((step) => step.name === result.name)?.units ?? []) cache.record(settled.id, settled.inputs);
+    }
+    cache.save();
+  };
 
   if (json) {
     if (plan.unattributed.length > 0) {
@@ -941,18 +1107,31 @@ async function main(argv: readonly string[]): Promise<number> {
       console.log(JSON.stringify(jsonReport([{ name: "attribution", ok: false, ms: 0 }], Date.now() - started)));
       return EXIT_FAILED;
     }
-    return await jsonRun(steps, { run: (step) => run(step, root), started });
+    const results: StepResult[] = [];
+    const code = await jsonRun(steps, {
+      run: async (step) => {
+        const result = await run(step, root);
+        results.push(result);
+        return result;
+      },
+      started,
+    });
+    remember(results);
+    return code;
   }
 
   const leftOutSkillApi = !skillApi && plan.gates.includes("check-skill-api");
   console.log(
-    `verify:fast against ${base}: ${plan.changed.length} changed file(s), ${plan.tests.length} test file(s), ${plan.gates.length - (leftOutSkillApi ? 1 : 0)} gate(s)`,
+    `verify:fast against ${base}: ${plan.changed.length} changed file(s), ${plan.tests.length} test file(s), ${plan.typechecks.length} type-check(s), ${plan.gates.length - (leftOutSkillApi ? 1 : 0)} gate(s), boot ${plan.boots.join(" ") || "none"}  (planned in ${((Date.now() - started) / 1000).toFixed(1)}s)`,
   );
   if (plan.suites.length > 0) {
     console.log(`verify:fast: whole suite of ${plan.suites.join(", ")}: a changed file there has no test of its own, so its package's tests cover it`);
   }
   if (leftOutSkillApi) {
     console.log("verify:fast: check-skill-api (21 s) is left out here; `--skill-api` runs it, and lane:close and ship:preflight already do.");
+  }
+  if (skipped.length > 0) {
+    console.log(`verify:fast: ${skipped.length} unit(s) passed before with these exact inputs and are not run again (--no-cache runs them): ${summarizeUnits(skipped)}`);
   }
   if (planOnly) {
     printPlan(plan, steps);
@@ -968,6 +1147,7 @@ async function main(argv: readonly string[]): Promise<number> {
   // processes too, so they overlap here: the 21 s skill-api check hides behind the tests
   // instead of adding to them.
   const results = await runSteps(steps, DEFAULT_JOBS, (step) => run(step, root));
+  remember(results);
   for (const result of results) {
     const step = steps.find((candidate) => candidate.name === result.name);
     console.log(`${result.ok ? "PASS" : "FAIL"}  ${result.name}  ${(result.ms / 1000).toFixed(1)}s`);
