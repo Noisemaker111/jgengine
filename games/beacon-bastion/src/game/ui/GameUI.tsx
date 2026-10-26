@@ -1,4 +1,3 @@
-import { useDisplayProfile } from "@jgengine/core/ui/display.view";
 import { useGameFonts } from "@jgengine/core/ui/fonts.view";
 import { useGameContext } from "@jgengine/react/provider";
 import { HudCanvas, HudPanel, useHudLayout } from "@jgengine/shell/gameKit";
@@ -20,12 +19,11 @@ import { BeaconMenu, PauseSigil } from "./menu/BeaconMenu";
 export function GameUI() {
   useGameFonts(GAME_FONTS);
   const ctx = useGameContext();
-  const { compact } = useDisplayProfile();
   const layout = useHudLayout({ storageKey: "beacon-bastion" });
   return (
     <>
       <HudCanvas layout={layout} showDuring={["playing", "ended"]}>
-        <HudPanel id="keep" anchor="top-left" inset={{ x: 16, y: 12 }}>
+        <HudPanel id="keep" anchor="top-left" priority="critical" inset={{ x: 16, y: 12 }}>
           <KeepSigns />
         </HudPanel>
         <HudPanel id="horn" anchor="top-left" order={1} inset={{ x: 16, y: 12 }}>
@@ -34,16 +32,16 @@ export function GameUI() {
         <HudPanel id="wave" anchor="top" inset={{ x: 0, y: 0 }}>
           <WaveBoard />
         </HudPanel>
-        <HudPanel id="pause" anchor="top-right" inset={{ x: 16, y: 12 }}>
+        <HudPanel id="pause" anchor="top-right" priority="critical" inset={{ x: 16, y: 12 }}>
           <PauseSigil onPress={() => pauseRun(ctx)} />
         </HudPanel>
-        <HudPanel id="build-bar" anchor="bottom" inset={{ x: 0, y: 14 }}>
+        <HudPanel id="build-bar" anchor="bottom" priority="critical" inset={{ x: 0, y: 14 }}>
           <BuildBar />
         </HudPanel>
-        <HudPanel id="rites" anchor={compact ? "right" : "bottom-right"} order={compact ? -1 : 0} inset={{ x: 16, y: 14 }}>
+        <HudPanel id="rites" anchor="bottom-right" inset={{ x: 16, y: 14 }}>
           <AbilityStones />
         </HudPanel>
-        <HudPanel id="tower" anchor="right" inset={{ x: 16, y: 0 }}>
+        <HudPanel id="tower" anchor="right" priority="critical" inset={{ x: 16, y: 0 }}>
           <TowerPanel />
         </HudPanel>
         <EndScreens />

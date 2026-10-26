@@ -2,7 +2,7 @@ import { createElement } from "react";
 
 import type { GamePreviewComponent } from "./preview";
 import { HudChromePreview } from "@jgengine/core/hud/hudChromePreview.view";
-import { HudLanesPreview } from "@jgengine/core/hud/hudLanesPreview.view";
+import { HudAutoLayoutPreview } from "@jgengine/core/hud/hudPanelLayoutPreview.view";
 import { HudThemePreview } from "@jgengine/core/hud/hudThemePreview.view";
 import { IconsPreview } from "@jgengine/core/ui/icons/iconsPreview.view";
 import { KitFramesPreview } from "@jgengine/core/ui/kit/kitFramesPreview.view";
@@ -40,10 +40,10 @@ export interface PreviewFixture {
  * declares.
  */
 export const PREVIEW_FIXTURES: Record<string, PreviewFixture> = {
-  HudLanesPreview: {
-    name: "HudLanesPreview",
-    description: "Two HUD blocks stacked in one lane, a second lane beside it, and the mirrored right-hand lane.",
-    component: HudLanesPreview,
+  HudAutoLayoutPreview: {
+    name: "HudAutoLayoutPreview",
+    description: "Five HUD panels crowding two top corners, placed without overlap at any screen size.",
+    component: HudAutoLayoutPreview,
   },
   ScrollRailPreview: { name: "ScrollRailPreview", description: "Reachable caller-owned settings categories in shared scrolling chrome.", component: ScrollRailPreview },
   HudChromePreview: {

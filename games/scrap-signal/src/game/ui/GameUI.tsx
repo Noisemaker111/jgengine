@@ -44,38 +44,38 @@ export function GameUI() {
     <OverlayHostContext.Provider value={overlay}>
     <HudCanvas layout={layout} className={`ss-hud ${profile.compact ? "compact" : ""}`}>
       <Operations />
-      <HudPanel id="overdrive" anchor="left" order={-1} compact="keep" interactive={true}>
+      <HudPanel id="overdrive" anchor="left" order={-1} chip="overdrive" interactive={true}>
         <OverdriveCard />
       </HudPanel>
 
       {/* A live Overdrive run takes the mission log's place: the clock is the only objective. */}
       {inRun ? null : (
-        <HudPanel id="missions" anchor="left" compact="keep" interactive={false}>
+        <HudPanel id="missions" anchor="left" chip="missions" interactive={false}>
           <MissionTracker />
         </HudPanel>
       )}
 
-      <HudPanel id="field-loot" anchor="left" order={1} compact="keep" interactive={true}>
+      <HudPanel id="field-loot" anchor="left" order={1} chip="stash" interactive={true}>
         <FieldGearPanel />
       </HudPanel>
 
-      <HudPanel id="cash" anchor="top-right" order={0} compact="keep" interactive={false}>
+      <HudPanel id="cash" anchor="top-right" order={0} priority="critical" interactive={false}>
         <CashPlate />
       </HudPanel>
 
-      <HudPanel id="cores" anchor="top-right" order={2} compact="keep" interactive={false}>
+      <HudPanel id="cores" anchor="top-right" order={2} priority="critical" interactive={false}>
         <CoresPlate />
       </HudPanel>
 
-      <HudPanel id="zone-banner" anchor="top" order={1} compact="keep" interactive={false}>
+      <HudPanel id="zone-banner" anchor="top" order={1} interactive={false}>
         <ZoneBanner />
       </HudPanel>
 
-      <HudPanel id="echo" anchor="bottom" order={1} compact="hide" interactive={false}>
+      <HudPanel id="echo" anchor="bottom" order={1} priority="tertiary" chip="echo" interactive={false}>
         <EchoBox />
       </HudPanel>
 
-      <HudPanel id="loot-toasts" anchor="top-right" order={3} compact="hide" interactive={false}>
+      <HudPanel id="loot-toasts" anchor="top-right" order={3} priority="tertiary" chip="loot" interactive={false}>
         <ToastStack
           action="loot.granted"
           className="ss-toasts"
@@ -93,21 +93,19 @@ export function GameUI() {
         />
       </HudPanel>
 
-      <HudPanel id="item-card" anchor="right" compact="hide" interactive={false}>
+      <HudPanel id="item-card" anchor="right" priority="tertiary" chip="item" interactive={false}>
         <ItemCard />
       </HudPanel>
 
-      {/* On a phone the stick and the action cluster own the bottom corners: the wrist unit moves up
-          to the top-left corner and the cartridges sit in the free bottom centre. */}
-      <HudPanel id="vitals" anchor={profile.compact ? "top-left" : "bottom-left"} order={profile.compact ? -1 : 0} compact="keep" interactive={false}>
+      <HudPanel id="vitals" anchor="bottom-left" priority="critical" interactive={false}>
         <VitalsPlate combat={combat} />
       </HudPanel>
 
-      <HudPanel id="hotbar" anchor="bottom" order={0} compact="keep" interactive={false}>
+      <HudPanel id="hotbar" anchor="bottom" order={0} priority="critical" interactive={false}>
         <WeaponHotbar combat={combat} />
       </HudPanel>
 
-      <HudPanel id="ammo" anchor="bottom-right" compact="keep" interactive={false}>
+      <HudPanel id="ammo" anchor="bottom-right" priority="critical" interactive={false}>
         <AmmoPlate combat={combat} />
       </HudPanel>
 

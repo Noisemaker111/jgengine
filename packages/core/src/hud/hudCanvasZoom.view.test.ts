@@ -6,9 +6,9 @@ import { buildBrowserFixture, findChromeExecutable } from "../../../../scripts/b
 import { gotoFixture, installPublicPackages } from "../../../../scripts/browser-test-fixture";
 
 /**
- * `HudCanvas` zooms the whole HUD on compact displays. Lane blocks must still reach the real right and
- * bottom edges: they once measured the lane frame in on-screen pixels and then placed blocks inside the
- * zoom, which left a dead band of about 100 px at 844x390 with `compactScale={0.86}`.
+ * `HudCanvas` zooms the whole HUD on compact displays. Panels must still reach the real right and
+ * bottom edges: they once measured the frame in on-screen pixels and then placed blocks inside the
+ * zoom, which left a dead band of about 100 px at 844x390.
  */
 setDefaultTimeout(30_000);
 const root = resolve(import.meta.dir, "../../../..");
@@ -23,13 +23,12 @@ beforeAll(async () => {
   await Bun.write(`${scratch}/fixture.tsx`, `
     import React from 'react';import {createRoot} from 'react-dom/client';
     import {HudCanvas,HudPanel,useHudLayout} from '@jgengine/core/hud/hudLayout.view';
-    const zoom=Number(new URLSearchParams(location.search).get('zoom')??'1');
     const box=(w,h)=><div style={{width:w,height:h,background:'#345'}}/>;
-    function Fixture(){const layout=useHudLayout();return <HudCanvas layout={layout} editChord={false} compactScale={zoom}>
-      <HudPanel id="kit" anchor="bottom-right" lane="kit" width={120} height={40}>{box(120,40)}</HudPanel>
-      <HudPanel id="air" anchor="bottom-left" lane="air">{box(100,30)}</HudPanel>
-      <HudPanel id="badge" anchor="top-right" lane="badge">{box(90,24)}</HudPanel>
-      <HudPanel id="depth" anchor="top-right" lane="badge" order={1}>{box(90,24)}</HudPanel>
+    function Fixture(){const layout=useHudLayout();return <HudCanvas layout={layout} editChord={false} >
+      <HudPanel id="kit" anchor="bottom-right" width={120} height={40}>{box(120,40)}</HudPanel>
+      <HudPanel id="air" anchor="bottom-left">{box(100,30)}</HudPanel>
+      <HudPanel id="badge" anchor="top-right">{box(90,24)}</HudPanel>
+      <HudPanel id="depth" anchor="top-right" order={1}>{box(90,24)}</HudPanel>
     </HudCanvas>}
     createRoot(document.getElementById('root')).render(<Fixture/>);
   `);
@@ -43,10 +42,10 @@ afterAll(async () => { await browser?.close(); server?.stop(true); await rm(scra
 
 type Edges = Record<"kit" | "air" | "badge" | "depth", { left: number; top: number; right: number; bottom: number }>;
 
-async function edgesAt(width: number, height: number, zoom: number): Promise<Edges> {
+async function edgesAt(width: number, height: number): Promise<Edges> {
   await page.setViewportSize({ width, height });
-  await gotoFixture(page, `http://127.0.0.1:${server.port}/?zoom=${zoom}`, () => page.locator('[data-hud-panel="depth"]').waitFor());
-  // Let the lane frame and the measured block sizes settle (two layout passes).
+  await gotoFixture(page, `http://127.0.0.1:${server.port}/`, () => page.locator('[data-hud-panel="depth"]').waitFor());
+  // Let the frame and the measured block sizes settle (two layout passes).
   await page.waitForFunction(() => {
     const kit = document.querySelector('[data-hud-panel="kit"]')?.getBoundingClientRect();
     const air = document.querySelector('[data-hud-panel="air"]')?.getBoundingClientRect();
@@ -65,10 +64,10 @@ async function edgesAt(width: number, height: number, zoom: number): Promise<Edg
 
 // A compact HUD keeps a 10 px edge pad in its own pixels, which the zoom shrinks on screen.
 for (const [width, height] of [[844, 390], [390, 844]] as const) {
-  test(`lane blocks reach the real edges at ${width}x${height} with compactScale 0.86`, async () => {
-    const zoom = 0.86;
+  test(`panels reach the real edges at ${width}x${height} under the compact zoom`, async () => {
+    const zoom = 0.85;
     const pad = 10 * zoom;
-    const edges = await edgesAt(width, height, zoom);
+    const edges = await edgesAt(width, height);
     expect(edges.kit.right).toBeCloseTo(width - pad, 0);
     expect(edges.kit.bottom).toBeCloseTo(height - pad, 0);
     expect(edges.air.left).toBeCloseTo(pad, 0);
@@ -83,7 +82,7 @@ for (const [width, height] of [[844, 390], [390, 844]] as const) {
 }
 
 test("an unzoomed desktop HUD keeps its 16 px edge pad", async () => {
-  const edges = await edgesAt(1600, 900, 0.86);
+  const edges = await edgesAt(1600, 900);
   expect(edges.kit.right).toBeCloseTo(1600 - 16, 0);
   expect(edges.kit.bottom).toBeCloseTo(900 - 16, 0);
   expect(edges.air.left).toBeCloseTo(16, 0);

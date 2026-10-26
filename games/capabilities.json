@@ -4159,6 +4159,28 @@
       "intent": "number-row key codes for a run of numbered actions (hotbar, build menu, tools)"
     },
     {
+      "id": "hud-auto-layout",
+      "packages": [
+        "@jgengine/core"
+      ],
+      "module": "@jgengine/core/hud/hudPanelLayout",
+      "domain": "hud",
+      "gameFacing": false,
+      "probe": null,
+      "intent": "place HUD panels by anchor and priority so none overlap at any screen size"
+    },
+    {
+      "id": "hud-auto-layout-preview",
+      "packages": [
+        "@jgengine/core"
+      ],
+      "module": "@jgengine/core/hud/hudPanelLayoutPreview.view",
+      "domain": "hud",
+      "gameFacing": false,
+      "probe": null,
+      "intent": "crowded HUD corners placed without overlap at any screen size"
+    },
+    {
       "id": "hud-button",
       "packages": [
         "@jgengine/core"
@@ -4278,17 +4300,6 @@
       "gameFacing": false,
       "probe": null,
       "intent": "one listener for hover/press/activate/open/close from every engine HUD primitive"
-    },
-    {
-      "id": "hud-lanes",
-      "packages": [
-        "@jgengine/core"
-      ],
-      "module": "@jgengine/core/hud/hudLanes",
-      "domain": "hud",
-      "gameFacing": false,
-      "probe": null,
-      "intent": "lay HUD blocks out in non-overlapping anchored lanes"
     },
     {
       "id": "hud-layout",

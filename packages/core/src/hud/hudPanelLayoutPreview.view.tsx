@@ -13,14 +13,13 @@ function Chip({ label, value }: { label: string; value: string }) {
 }
 
 /**
- * The same shape Deepward's top-left HUD uses — two blocks that used to arrange
- * themselves into each other. Both declare `lane="status"`, so the shell stacks
- * them; the second lane sits beside the first and the right-hand lane mirrors it.
- * Screenshots at any viewport without a block landing on a neighbour.
+ * Five panels crowding two top corners, the shape that used to arrange blocks into each other. The
+ * canvas stacks each corner, slides what does not fit beside it, and folds the lowest priority into a
+ * toggle on a small screen. Screenshots at any viewport without a block landing on a neighbour.
  *
- * @capability hud-lanes two HUD blocks stacked in one lane, plus a second lane beside it
+ * @capability hud-auto-layout-preview crowded HUD corners placed without overlap at any screen size
  */
-export function HudLanesPreview({ className }: { className?: string }) {
+export function HudAutoLayoutPreview({ className }: { className?: string }) {
   const layout = useHudLayout();
   return (
     <div
@@ -35,7 +34,7 @@ export function HudLanesPreview({ className }: { className?: string }) {
     >
       <HudThemeRoot>
         <HudCanvas layout={layout} editChord={false}>
-          <HudPanel id="vitals" lane="status" anchor="top-left" width={260} height={104}>
+          <HudPanel id="vitals" anchor="top-left" width={260} height={104}>
             <HudFrame title="Warden · Lv 12" padding={10}>
               <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
                 <Chip label="HP" value="78 / 100" />
@@ -44,7 +43,7 @@ export function HudLanesPreview({ className }: { className?: string }) {
               </div>
             </HudFrame>
           </HudPanel>
-          <HudPanel id="quest-log" lane="status" anchor="top-left" order={1} width={260} height={132}>
+          <HudPanel id="quest-log" anchor="top-left" order={1} width={260} height={132}>
             <HudSurface title="Expedition" padding={10}>
               <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
                 <Chip label="Reach the drowned keep" value="1 / 3" />
@@ -53,7 +52,7 @@ export function HudLanesPreview({ className }: { className?: string }) {
               </div>
             </HudSurface>
           </HudPanel>
-          <HudPanel id="party" lane="roster" anchor="top-left" width={190} height={248}>
+          <HudPanel id="party" anchor="top-left" order={2} priority="tertiary" width={190} height={248}>
             <HudSurface title="Party" padding={10}>
               <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
                 <Chip label="Mara" value="Stable" />
@@ -63,7 +62,7 @@ export function HudLanesPreview({ className }: { className?: string }) {
               </div>
             </HudSurface>
           </HudPanel>
-          <HudPanel id="radar" lane="radar" anchor="top-right" width={180} height={180}>
+          <HudPanel id="radar" anchor="top-right" width={180} height={180}>
             <HudSurface title="Survey" padding={10}>
               <div
                 style={{
@@ -75,7 +74,7 @@ export function HudLanesPreview({ className }: { className?: string }) {
               />
             </HudSurface>
           </HudPanel>
-          <HudPanel id="hint" lane="radar" anchor="top-right" order={1} width={180} height={64}>
+          <HudPanel id="hint" anchor="top-right" order={1} width={180} height={64}>
             <HudSurface padding={10}>
               <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
                 <Chip label="Hold" value="Lantern up" />

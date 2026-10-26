@@ -361,6 +361,14 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `holdToggleActive` (function) · `import { holdToggleActive } from "@jgengine/core/settings/accessibilitySettings"`
 
+## hud-auto-layout — place HUD panels by anchor and priority so none overlap at any screen size
+
+- `arrangeHudPanels` (function) · `import { arrangeHudPanels } from "@jgengine/react"`
+
+## hud-auto-layout-preview — crowded HUD corners placed without overlap at any screen size
+
+- `HudAutoLayoutPreview` (function) · `import { HudAutoLayoutPreview } from "@jgengine/core/hud/hudPanelLayoutPreview.view"`
+
 ## hud-button — themed button with hover lift, press scale, focus ring, disabled state, and an interaction cue seam
 
 - `HudButton` (const) · `import { HudButton } from "@jgengine/core/hud/hudButton.view"`
@@ -400,11 +408,6 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 ## hud-interact — one listener for hover/press/activate/open/close from every engine HUD primitive
 
 - `HudInteractProvider` (function) · `import { HudInteractProvider } from "@jgengine/core/hud/hudInteract.view"`
-
-## hud-lanes — two HUD blocks stacked in one lane, plus a second lane beside it
-
-- `HudLanesPreview` (function) · `import { HudLanesPreview } from "@jgengine/core/hud/hudLanesPreview.view"`
-- `resolveHudLanes` (function) · `import { resolveHudLanes } from "@jgengine/react"`
 
 ## hud-layout — persistent, live-editable HUD panel layout state for `HudCanvas`
 

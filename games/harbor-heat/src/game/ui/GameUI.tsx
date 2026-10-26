@@ -32,9 +32,7 @@ export function GameUI() {
   useGameFonts(GAME_FONTS);
   const layout = useHudLayout({ storageKey: "harbor-heat" });
   const started = useGameStarted();
-  const room = useRoom();
-  const compact = room !== "wide";
-  const short = room === "short";
+  const compact = useRoom() !== "wide";
   const paused = useStore(sessionStore, (session) => session.paused);
   useLootNotices();
   return (
@@ -42,18 +40,16 @@ export function GameUI() {
       <HarborMenu />
       <SessionUI />
       {started && !paused ? (
-        <HudCanvas layout={layout} className={`z-20 hh-hud ${compact ? "hh-hud-compact" : ""} ${short ? "hh-hud-short" : ""}`}>
-          <HudPanel id="objective" anchor="top-left" compact="keep"><Objective /></HudPanel>
-          <HudPanel id="pause" anchor="top-right" order={-1} compact="keep"><div className="hh-hudkeys"><PhoneButton /><PauseButton /></div></HudPanel>
-          <HudPanel id="status" anchor="top-right" compact="keep" interactive={false}><StatusPanel /></HudPanel>
-          {/* On a phone the top edge belongs to the pager, so the scanner hangs under the cash instead. */}
-          <HudPanel id="wanted" anchor={compact ? "top-right" : "top"} order={compact ? 1 : 0} compact="keep" interactive={false}><WantedStars /></HudPanel>
-          {/* A landscape phone gives most of its height to the thumb controls, so there the chart, belt and dash hang from the top edge. */}
-          <HudPanel id="minimap" anchor={short ? "top-left" : "bottom-left"} order={short ? 1 : 0} compact="keep" interactive={false}><CityMinimap /></HudPanel>
-          <HudPanel id="hotbar" anchor={short ? "top" : "bottom"} compact="keep"><BeltHotbar /></HudPanel>
-          <HudPanel id="speedo" anchor={short ? "top-right" : "bottom-right"} order={short ? 2 : 0} compact="keep" interactive={false}><Speedo /></HudPanel>
-          <HudPanel id="radio" anchor={short ? "top-right" : "bottom-right"} order={short ? 3 : -1} compact="keep"><RadioReadout /></HudPanel>
-          <HudPanel id="phone" anchor="right" compact="keep"><PhonePanel /></HudPanel>
+        <HudCanvas layout={layout} className={`z-20 hh-hud ${compact ? "hh-hud-compact" : ""}`}>
+          <HudPanel id="objective" anchor="top-left"><Objective /></HudPanel>
+          <HudPanel id="pause" anchor="top-right" order={-1} priority="critical"><div className="hh-hudkeys"><PhoneButton /><PauseButton /></div></HudPanel>
+          <HudPanel id="status" anchor="top-right" priority="critical" interactive={false}><StatusPanel /></HudPanel>
+          <HudPanel id="wanted" anchor="top" interactive={false}><WantedStars /></HudPanel>
+          <HudPanel id="minimap" anchor="bottom-left" chip="map" interactive={false}><CityMinimap /></HudPanel>
+          <HudPanel id="hotbar" anchor="bottom" priority="critical"><BeltHotbar /></HudPanel>
+          <HudPanel id="speedo" anchor="bottom-right" priority="tertiary" interactive={false}><Speedo /></HudPanel>
+          <HudPanel id="radio" anchor="bottom-right" order={-1} priority="tertiary"><RadioReadout /></HudPanel>
+          <HudPanel id="phone" anchor="right" priority="critical"><PhonePanel /></HudPanel>
         </HudCanvas>
       ) : null}
       {/* Counters and talk are full-screen moments over the HUD, laid out at their own phone sizes. */}
