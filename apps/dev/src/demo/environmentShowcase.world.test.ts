@@ -1,7 +1,7 @@
 import { describe, expect, test } from "bun:test";
 
 import { summarizeEnvironment } from "@jgengine/core/world/environmentSummary";
-import { resolveTerrainDetail } from "@jgengine/core/world/terrain";
+import { resolveTerrainDetail } from "@jgengine/core/terrain/terrain";
 
 import { showcaseEnvironment } from "./environmentShowcase";
 

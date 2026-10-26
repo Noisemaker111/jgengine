@@ -8,7 +8,7 @@ import {
   terrainBoundsFromDocument,
 } from "./environment";
 import type { EditorDocument, EditorMarker } from "./types";
-import { createTerrainSnapshot } from "../world/terraform";
+import { createTerrainSnapshot } from "../terrain/terraform";
 
 function marker(id: string, kind: string, x: number, z: number): EditorMarker {
   return { id, kind, position: { x, y: 0, z } };

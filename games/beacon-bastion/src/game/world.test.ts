@@ -1,6 +1,6 @@
 import { describe, expect, test } from "bun:test";
 import { summarizeEnvironment } from "@jgengine/core/world/environmentSummary";
-import { TERRAIN_MATERIAL_PALETTES } from "@jgengine/core/world/terrain";
+import { TERRAIN_MATERIAL_PALETTES } from "@jgengine/core/terrain/terrain";
 
 import { editorLayers } from "../editorLayers";
 import { world } from "../world";

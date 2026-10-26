@@ -1,6 +1,6 @@
 import type { EditorVec3 } from "@jgengine/core/editor/index";
-import type { TerrainField } from "@jgengine/core/world/terrain";
-import { editableTerrainFromSnapshot, type TerraformSnapshot } from "@jgengine/core/world/terraform";
+import type { TerrainField } from "@jgengine/core/terrain/terrain";
+import { editableTerrainFromSnapshot, type TerraformSnapshot } from "@jgengine/core/terrain/terraform";
 import type { GizmoMode, EditorSnapMode } from "./uiStore";
 
 /** Compose authored sculpt offsets over the same base field as the terrain preview. @internal */

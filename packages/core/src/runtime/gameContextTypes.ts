@@ -21,7 +21,7 @@ import type { CommandDefinition, CommandResult } from "../commands/commandRegist
 import type { ChargeOptions as WalletChargeOptions } from "../economy/wallet";
 import type { Cosmetics } from "../game/cosmetics";
 import type { GameDefinition } from "../game/defineGame";
-import type { TerrainField } from "../world/terrain";
+import type { TerrainField } from "../terrain/terrain";
 import type { WorldSolids } from "../world/worldSolids";
 import type { GameEventMap, GameEvents, VfxKind } from "../game/events";
 import type { VfxInstanceStore } from "../vfx/vfxInstance";

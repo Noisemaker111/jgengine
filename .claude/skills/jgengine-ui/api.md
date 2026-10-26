@@ -3609,7 +3609,7 @@
 - `ResolvedTerrainSize` (interface): interface ResolvedTerrainSize { width: number; depth: number } — ⚠ undocumented
 - `TerrainArea` (type): type TerrainArea = number | readonly [width: number, depth: number] — ⚠ undocumented
 - `TerrainHeightSampler` (type): type TerrainHeightSampler = (x: number, z: number) => number — ⚠ undocumented
-- `TerrainPaletteSampler` (type): type TerrainPaletteSampler = (x: number, z: number) => { low: string; high: string; waterline?: string } — Per-position palette override for multi-biome ground coloring — `createTerrainPaletteSampler` from `@jgengine/core/world/terrain` returns exactly this shape.
+- `TerrainPaletteSampler` (type): type TerrainPaletteSampler = (x: number, z: number) => { low: string; high: string; waterline?: string } — Per-position palette override for multi-biome ground coloring — `createTerrainPaletteSampler` from `@jgengine/core/terrain/terrain` returns exactly this shape.
 - `TerrainSurfaceColorOptions` (interface): interface TerrainSurfaceColorOptions — Slope/noise surface shading laid over the height lerp so untextured ground reads like terrain instead of a smooth two-tone gradient. All knobs are optional with sane defaults; every field is a pure function of vertex position (+ `seed`), so the coloring is stable across rebuilds and tests.
 - `TerrainVertexColorOptions` (interface): interface TerrainVertexColorOptions { low?: THREE.ColorRepresentation; high?: THREE.ColorRepresentation; waterline?: THREE.ColorRepresentation; waterlineHeight?: number } — ⚠ undocumented
 

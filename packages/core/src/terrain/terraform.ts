@@ -1,4 +1,4 @@
-import type { Aabb, Vec2 } from "./geometry";
+import type { Aabb, Vec2 } from "../world/geometry";
 import { fractalNoise, FLAT_FIELD, withNormal, type FractalNoiseConfig, type TerrainField, type TerrainNormal } from "./terrain";
 
 /** A sculpt operation kind: heightfield brushes plus the surface-paint brush. */
@@ -37,6 +37,7 @@ export interface TerraformEdit {
   heightLimit?: TerraformHeightLimit;
 }
 
+/** Grid and starting ground for {@link createEditableTerrain}: world bounds, an optional base field to sculpt on, and the cell size. */
 export interface EditableTerrainConfig {
   bounds: Aabb;
   base?: TerrainField;
@@ -72,6 +73,7 @@ export interface TerrainMaterialLayer {
   materialUrl?: string;
 }
 
+/** Plain JSON of a sculpted terrain: grid size, per-cell height offsets, painted surfaces and material layers. Saved in scene documents. */
 export interface TerraformSnapshot {
   bounds: Aabb;
   cellSize: number;
@@ -143,6 +145,7 @@ export interface TerrainSurfaceRule {
   maxHeight?: number;
 }
 
+/** A sculptable heightfield: a `TerrainField` that brushes raise, lower, smooth and paint, with snapshot and undo support. */
 export interface EditableTerrain extends TerrainField {
   readonly cols: number;
   readonly rows: number;
@@ -216,6 +219,7 @@ function clampRange(value: number, min: number | undefined, max: number | undefi
   return value;
 }
 
+/** Build a flat (or base-field) editable terrain over `config.bounds`, ready for brushes. */
 export function createEditableTerrain(config: EditableTerrainConfig): EditableTerrain {
   const base = config.base ?? FLAT_FIELD;
   const bounds = config.bounds;
@@ -1012,6 +1016,7 @@ export function revertDeltaFromSnapshot(snapshot: TerraformSnapshot, delta: Terr
   return { ...snapshot, offsets };
 }
 
+/** Starting radius, strength, falloff and paint surface for {@link createTerraformBrush}. */
 export interface TerraformBrushConfig {
   radius?: number;
   strength?: number;
@@ -1019,6 +1024,7 @@ export interface TerraformBrushConfig {
   surface?: string;
 }
 
+/** A held sculpt tool: raise, lower, flatten or paint at a point with its current radius and strength. */
 export interface TerraformBrush {
   raise(center: Vec2): number;
   lower(center: Vec2): number;
@@ -1038,6 +1044,7 @@ export interface TerraformBrushState {
   strength: number;
 }
 
+/** Make a brush that edits `terrain` through its `apply`; each stroke returns how many cells changed. */
 export function createTerraformBrush(
   terrain: Pick<EditableTerrain, "apply">,
   config: TerraformBrushConfig = {},

@@ -1,9 +1,9 @@
 import * as THREE from "three";
 
 import type { TerrainEnvironmentDescriptor } from "@jgengine/core/world/features";
-import { createTerrainPaletteSampler, resolveTerrainPalette, type TerrainField } from "@jgengine/core/world/terrain";
-import { editableTerrainFromSnapshot, type TerraformSnapshot } from "@jgengine/core/world/terraform";
-import { createTerrainPaintColorSampler } from "../terrain/terrainPaintColor";
+import { createTerrainPaletteSampler, resolveTerrainPalette, type TerrainField } from "@jgengine/core/terrain/terrain";
+import { editableTerrainFromSnapshot, type TerraformSnapshot } from "@jgengine/core/terrain/terraform";
+import { createTerrainPaintColorSampler } from "./terrainPaintColor";
 
 /**
  * Terrain base color at a world XZ — authored paint first, otherwise the regional palette lerped

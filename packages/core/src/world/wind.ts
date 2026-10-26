@@ -1,4 +1,4 @@
-import { fractalNoise, seedFrom, valueNoise } from "./terrain";
+import { fractalNoise, seedFrom, valueNoise } from "../terrain/terrain";
 
 export type WindVector = readonly [number, number];
 

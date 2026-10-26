@@ -18,7 +18,7 @@ import {
   type EnvironmentField,
   type HeatSource,
 } from "@jgengine/core/world/envField";
-import { resolveTerrainField } from "@jgengine/core/world/terrain";
+import { resolveTerrainField } from "@jgengine/core/terrain/terrain";
 import {
   createFireGrid,
   resolveWeather,

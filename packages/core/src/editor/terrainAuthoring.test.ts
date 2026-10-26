@@ -1,7 +1,7 @@
 import { expect, test } from "bun:test";
 import { createEditorSession } from "./commands";
 import { editorDocumentBounds, normalizeEditorLayers } from "./document";
-import { createTerrainSnapshot, editableTerrainFromSnapshot } from "../world/terraform";
+import { createTerrainSnapshot, editableTerrainFromSnapshot } from "../terrain/terraform";
 
 test("terrain-only documents frame their footprint and authored relief", () => {
   const terrain = editableTerrainFromSnapshot(createTerrainSnapshot({ bounds: { minX: -12, minZ: -8, maxX: 12, maxZ: 8 }, cellSize: 2 }));

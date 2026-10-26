@@ -1830,8 +1830,8 @@
       "packages": [
         "@jgengine/core"
       ],
-      "module": "@jgengine/core/world/terrainGuides",
-      "domain": "world",
+      "module": "@jgengine/core/terrain/terrainGuides",
+      "domain": "terrain",
       "gameFacing": false,
       "probe": null,
       "intent": "readable auto-spacing for elevation contours"
@@ -2934,8 +2934,8 @@
       "packages": [
         "@jgengine/core"
       ],
-      "module": "@jgengine/core/world/terrainGuides",
-      "domain": "world",
+      "module": "@jgengine/core/terrain/terrainGuides",
+      "domain": "terrain",
       "gameFacing": false,
       "probe": null,
       "intent": "cursor height and delta-from-reference feedback"
@@ -2945,8 +2945,8 @@
       "packages": [
         "@jgengine/core"
       ],
-      "module": "@jgengine/core/world/terrainGuides",
-      "domain": "world",
+      "module": "@jgengine/core/terrain/terrainGuides",
+      "domain": "terrain",
       "gameFacing": false,
       "probe": null,
       "intent": "selection min/max/mean and relief over a region"
@@ -6964,8 +6964,8 @@
       "packages": [
         "@jgengine/core"
       ],
-      "module": "@jgengine/core/world/terrain",
-      "domain": "world",
+      "module": "@jgengine/core/terrain/terrain",
+      "domain": "terrain",
       "gameFacing": false,
       "probe": null,
       "intent": "apply flatten/grade/carve/retaining path profiles to a terrain field"
@@ -9323,8 +9323,8 @@
       "packages": [
         "@jgengine/core"
       ],
-      "module": "@jgengine/core/world/terrainGuides",
-      "domain": "world",
+      "module": "@jgengine/core/terrain/terrainGuides",
+      "domain": "terrain",
       "gameFacing": false,
       "probe": null,
       "intent": "lift an XZ polyline onto sculpted terrain"
@@ -9334,8 +9334,8 @@
       "packages": [
         "@jgengine/core"
       ],
-      "module": "@jgengine/core/world/terrainGuides",
-      "domain": "world",
+      "module": "@jgengine/core/terrain/terrainGuides",
+      "domain": "terrain",
       "gameFacing": false,
       "probe": null,
       "intent": "terrain-following reference grid that is not occluded by relief"
@@ -9345,8 +9345,8 @@
       "packages": [
         "@jgengine/core"
       ],
-      "module": "@jgengine/core/world/terrainGuides",
-      "domain": "world",
+      "module": "@jgengine/core/terrain/terrainGuides",
+      "domain": "terrain",
       "gameFacing": false,
       "probe": null,
       "intent": "surface-following placement guide ring"
@@ -9477,8 +9477,8 @@
       "packages": [
         "@jgengine/core"
       ],
-      "module": "@jgengine/core/world/terrainGuides",
-      "domain": "world",
+      "module": "@jgengine/core/terrain/terrainGuides",
+      "domain": "terrain",
       "gameFacing": false,
       "probe": null,
       "intent": "iso-elevation contour lines that drape on sculpted terrain"
@@ -9488,8 +9488,8 @@
       "packages": [
         "@jgengine/core"
       ],
-      "module": "@jgengine/core/world/terrainGuides",
-      "domain": "world",
+      "module": "@jgengine/core/terrain/terrainGuides",
+      "domain": "terrain",
       "gameFacing": false,
       "probe": null,
       "intent": "one-call adaptive contours for a terrain field"
@@ -9510,8 +9510,8 @@
       "packages": [
         "@jgengine/core"
       ],
-      "module": "@jgengine/core/world/terrain",
-      "domain": "world",
+      "module": "@jgengine/core/terrain/terrain",
+      "domain": "terrain",
       "gameFacing": false,
       "probe": null,
       "intent": "pick a point on a heightfield along a camera/pointer ray"
@@ -10097,8 +10097,8 @@
       "packages": [
         "@jgengine/core"
       ],
-      "module": "@jgengine/core/movement/terrainGrade",
-      "domain": "movement",
+      "module": "@jgengine/core/terrain/terrainGrade",
+      "domain": "terrain",
       "gameFacing": false,
       "probe": null,
       "intent": "constrain sampled heightfield ascent with axis sliding and a configurable terrain-policy sampler"

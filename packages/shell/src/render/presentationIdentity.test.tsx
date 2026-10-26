@@ -5,7 +5,7 @@ import * as THREE from "three";
 import { EffectComposer } from "three-stdlib";
 
 import { createSettingsStore } from "@jgengine/core/settings/settingsModel";
-import { resolveTerrainDetail } from "@jgengine/core/world/terrain";
+import { resolveTerrainDetail } from "@jgengine/core/terrain/terrain";
 import type { GameLookInput, ResolvedGameLook } from "@jgengine/core/render/lookPreset";
 import type { GraphicsProfile } from "@jgengine/core/settings/graphicsProfile";
 import type { PostProcessingConfig } from "@jgengine/core/render/postProcessing";

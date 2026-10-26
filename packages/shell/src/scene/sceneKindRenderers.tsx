@@ -3,7 +3,7 @@ import type { ReactElement } from "react";
 import type { EditorDocument } from "@jgengine/core/editor/index";
 import type { AssetCatalog } from "@jgengine/core/scene/assetCatalog";
 import type { SceneKindObject } from "@jgengine/core/scene/sceneKinds";
-import type { TerrainField } from "@jgengine/core/world/terrain";
+import type { TerrainField } from "@jgengine/core/terrain/terrain";
 
 /** Context a scene-kind renderer receives alongside the matching document objects. */
 export interface SceneKindRenderContext {

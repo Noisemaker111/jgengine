@@ -1,6 +1,6 @@
 import type { PhysicsConfig } from "@jgengine/core/game/defineGame";
 import { environmentContentFromDocument } from "@jgengine/core/editor/environment";
-import { resolveEnvironmentField, type TerrainField } from "@jgengine/core/world/terrain";
+import { resolveEnvironmentField, type TerrainField } from "@jgengine/core/terrain/terrain";
 import { environment, sky, terrain, type WorldFeature } from "@jgengine/core/world/features";
 
 import { editorLayers } from "./editorLayers";

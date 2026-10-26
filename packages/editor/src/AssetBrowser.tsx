@@ -3,7 +3,7 @@ import { useMemo, useState } from "react";
 import { rolesFromClips } from "@jgengine/core/game/clipRoles";
 import type { EditorSession } from "@jgengine/core/editor/index";
 
-import { TERRAIN_MATERIALS } from "./uiStore";
+import { TERRAIN_PAINT_PRESETS } from "@jgengine/core/terrain/terrainPaint";
 
 /** A searchable, placeable asset shown in the editor's asset browser panel. */
 export interface EditorAssetEntry {
@@ -55,7 +55,7 @@ export function decodeAssetDragPayload(raw: string): EditorAssetEntry | null {
 function MaterialsPalette() {
   return (
     <div className="flex flex-wrap gap-1 border-b border-white/[0.08] pb-2">
-      {TERRAIN_MATERIALS.map((material) => (
+      {TERRAIN_PAINT_PRESETS.map((material) => (
         <div
           key={material.id}
           draggable

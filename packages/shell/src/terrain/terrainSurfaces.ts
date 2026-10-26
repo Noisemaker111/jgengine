@@ -1,6 +1,6 @@
 import * as THREE from "three";
-import { TERRAIN_MATERIAL_COLORS } from "@jgengine/core/editor/terrainMaterials";
-import type { TerrainMaterialLayer } from "@jgengine/core/world/terraform";
+import { TERRAIN_PAINT_COLORS } from "@jgengine/core/terrain/terrainPaint";
+import type { TerrainMaterialLayer } from "@jgengine/core/terrain/terraform";
 
 import type { TerrainPaintSource } from "./terrainPaintColor";
 
@@ -83,7 +83,7 @@ function slotFor(surface: string, layer: TerrainMaterialLayer | undefined): Terr
   const surfaceClass = terrainSurfaceClass(surface);
   const tiling = layer?.tiling;
   return {
-    color: new THREE.Color(layer?.tint ?? TERRAIN_MATERIAL_COLORS[surface] ?? "#7c7f86"),
+    color: new THREE.Color(layer?.tint ?? TERRAIN_PAINT_COLORS[surface] ?? "#7c7f86"),
     surfaceClass,
     classIndex: CLASS_INDEX[surfaceClass],
     roughness: layer?.roughness ?? CLASS_ROUGHNESS[surfaceClass],

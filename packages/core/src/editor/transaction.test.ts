@@ -2,8 +2,8 @@ import { describe, expect, test } from "bun:test";
 import { createEditorSession, type EditorCommand } from "./commands";
 import { decodeEditorDocument, normalizeEditorLayers } from "./document";
 import { applyDocumentPatch, createDocumentLiveSync } from "./liveSync";
-import { createTerrainSnapshot, editableTerrainFromSnapshot } from "../world/terraform";
-import { flatField } from "../world/terrain";
+import { createTerrainSnapshot, editableTerrainFromSnapshot } from "../terrain/terraform";
+import { flatField } from "../terrain/terrain";
 
 const marker = (id: string) => ({ id, kind: "prop", position: { x: 0, y: 0, z: 0 } });
 const seed = () => normalizeEditorLayers({ markers: [marker("root"), { ...marker("locked"), locked: true }] });

@@ -10,7 +10,7 @@ import { distanceToRing, pointInPolygon, polygonArea, ringBounds } from "../worl
 import { scatter } from "./scatter";
 import { SCATTER_INSTANCE_BUDGET } from "./scatterCoverage";
 import type { SceneDocumentLike, ScenePathLike } from "../world/sceneShapes";
-import type { TerrainNormal } from "../world/terrain";
+import type { TerrainNormal } from "../terrain/terrain";
 
 /** The editor path kind that marks a closed polyline as a foliage/scatter region. */
 export const SCATTER_PATH_KIND = "scatter";

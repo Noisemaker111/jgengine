@@ -18,7 +18,7 @@
  * switchback a kart is on) is the caller's `hint`, the previous fix it got back.
  */
 import type { Checkpoint, RaceFork } from "../game/race";
-import type { PathRetaining, TerrainPathProfile } from "../world/pathTerrain";
+import type { PathRetaining, TerrainPathProfile } from "../terrain/pathTerrain";
 
 /** An `[x, z]` world point. */
 export type CourseVec2 = readonly [number, number];

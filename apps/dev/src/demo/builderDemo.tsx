@@ -5,8 +5,8 @@ import { defineGameDefinition } from "@jgengine/core/game/defineGame";
 import type { GameContext } from "@jgengine/core/runtime/gameContext";
 import { createAssetCatalog } from "@jgengine/core/scene/assetCatalog";
 import type { Aabb } from "@jgengine/core/world/geometry";
-import { noiseField } from "@jgengine/core/world/terrain";
-import { createEditableTerrain, createTerraformBrush } from "@jgengine/core/world/terraform";
+import { noiseField } from "@jgengine/core/terrain/terrain";
+import { createEditableTerrain, createTerraformBrush } from "@jgengine/core/terrain/terraform";
 import {
   createPlacementController,
   type PlacementController,
@@ -18,7 +18,7 @@ import {
   type PlacedStructure,
 } from "@jgengine/core/placement/placedStructureStore";
 import { placeAssetFromCommit, toStructureInput } from "@jgengine/core/placement/placeAsset";
-import type { TerraformMode } from "@jgengine/core/world/terraform";
+import type { TerraformMode } from "@jgengine/core/terrain/terraform";
 
 import { createPointerService } from "@jgengine/shell/pointer/pointerService";
 import { EditableGround } from "@jgengine/shell/terrain/EditableGround";

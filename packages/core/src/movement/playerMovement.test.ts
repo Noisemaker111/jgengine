@@ -7,7 +7,7 @@ import { fittedObjectColliders } from "../scene/colliders";
 import { encodeCollisionMesh, type CollisionMeshSource } from "../scene/collisionMesh";
 import { createGameContext, type GameContext, type GameContextContent } from "../runtime/gameContext";
 import type { InputFrame } from "../runtime/inputSnapshot";
-import type { TerrainField } from "../world/terrain";
+import type { TerrainField } from "../terrain/terrain";
 import {
   playerMovementHeading,
   playerMovementTelemetry,

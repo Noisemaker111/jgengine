@@ -7,7 +7,7 @@ import {
   applySurfaceDeltaToSnapshot,
   applyWeightDeltaToSnapshot,
   editableTerrainFromSnapshot,
-} from "../world/terraform";
+} from "../terrain/terraform";
 import { patchUiPanel, removeUiPanel } from "../hud/hudDocument";
 import {
   cloneEditorDocument,

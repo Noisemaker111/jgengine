@@ -272,4 +272,3 @@ export type { CsvGridImportOptions } from "./gridAdapters";
 /** Options for exporting a grid layer as CSV. */
 export type { CsvGridExportOptions } from "./gridAdapters";
 
-export { TERRAIN_MATERIALS, TERRAIN_MATERIAL_COLORS, type TerrainMaterial } from "./terrainMaterials";

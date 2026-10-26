@@ -299,7 +299,7 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 ## contour-interval — readable auto-spacing for elevation contours
 
-- `chooseContourInterval` (function) · `import { chooseContourInterval } from "@jgengine/core/world"`
+- `chooseContourInterval` (function) · `import { chooseContourInterval } from "@jgengine/core/terrain/terrainGuides"`
 
 ## countdown-timers — named countdown/countup timer set on an injected clock — round timers, respawn clocks, ability cooldown/charge; read remaining/elapsed/progress + expiry, snapshot/restore
 
@@ -388,11 +388,11 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 ## elevation-readout — cursor height and delta-from-reference feedback
 
-- `sampleElevation` (function) · `import { sampleElevation } from "@jgengine/core/world"`
+- `sampleElevation` (function) · `import { sampleElevation } from "@jgengine/core/terrain/terrainGuides"`
 
 ## elevation-summary — selection min/max/mean and relief over a region
 
-- `summarizeElevation` (function) · `import { summarizeElevation } from "@jgengine/core/world"`
+- `summarizeElevation` (function) · `import { summarizeElevation } from "@jgengine/core/terrain/terrainGuides"`
 
 ## engine-layers — layered engine audio: rpm-keyed samples crossfaded, with on-load and off-load sets picked by engine load
 
@@ -741,8 +741,8 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 ## path-terrain — apply flatten/grade/carve/retaining path profiles to a terrain field
 
-- `applyPathProfiles` (function) · `import { applyPathProfiles } from "@jgengine/core/world"`
-- `withPathProfiles` (function) · `import { withPathProfiles } from "@jgengine/core/world"`
+- `applyPathProfiles` (function) · `import { applyPathProfiles } from "@jgengine/core/terrain/terrain"`
+- `withPathProfiles` (function) · `import { withPathProfiles } from "@jgengine/core/terrain/pathTerrain"`
 
 ## patrol-order — waypoint-route order that cycles a path, looping or completing at the end
 
@@ -1006,15 +1006,15 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 ## surface-drape — lift an XZ polyline onto sculpted terrain
 
-- `drapePolyline` (function) · `import { drapePolyline } from "@jgengine/core/world"`
+- `drapePolyline` (function) · `import { drapePolyline } from "@jgengine/core/terrain/terrainGuides"`
 
 ## surface-grid — terrain-following reference grid that is not occluded by relief
 
-- `surfaceGridLines` (function) · `import { surfaceGridLines } from "@jgengine/core/world"`
+- `surfaceGridLines` (function) · `import { surfaceGridLines } from "@jgengine/core/terrain/terrainGuides"`
 
 ## surface-ring — surface-following placement guide ring
 
-- `surfaceRing` (function) · `import { surfaceRing } from "@jgengine/core/world"`
+- `surfaceRing` (function) · `import { surfaceRing } from "@jgengine/core/terrain/terrainGuides"`
 
 ## sync-authored-objects — synchronize edited catalog prop poses, elevation and removal through the existing object store
 
@@ -1042,15 +1042,15 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 ## terrain-contours — iso-elevation contour lines that drape on sculpted terrain
 
-- `extractContours` (function) · `import { extractContours } from "@jgengine/core/world"`
+- `extractContours` (function) · `import { extractContours } from "@jgengine/core/terrain/terrainGuides"`
 
 ## terrain-guides — one-call adaptive contours for a terrain field
 
-- `terrainContourGuides` (function) · `import { terrainContourGuides } from "@jgengine/core/world"`
+- `terrainContourGuides` (function) · `import { terrainContourGuides } from "@jgengine/core/terrain/terrainGuides"`
 
 ## terrain-raycast — pick a point on a heightfield along a camera/pointer ray
 
-- `raycastHeightField` (function) · `import { raycastHeightField } from "@jgengine/core/world/terrain"`
+- `raycastHeightField` (function) · `import { raycastHeightField } from "@jgengine/core/terrain/terrain"`
 
 ## territory-cell-chunk — Map ownership cells to persisted world chunks.
 
@@ -1112,7 +1112,7 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 ## uphill-grade-step — constrain sampled heightfield ascent with axis sliding and a configurable terrain-policy sampler
 
-- `resolveTerrainGradeStep` (function) · `import { resolveTerrainGradeStep } from "@jgengine/core/movement/terrainGrade"`
+- `resolveTerrainGradeStep` (function) · `import { resolveTerrainGradeStep } from "@jgengine/core/terrain/terrainGrade"`
 
 ## use-camera-shake — React hook reading a camera-shake controller's live trauma and kind
 

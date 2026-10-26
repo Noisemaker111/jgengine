@@ -4,7 +4,7 @@ import {
   withNormal,
   type FractalNoiseConfig,
   type TerrainField,
-} from "./terrain";
+} from "../terrain/terrain";
 
 export type Rgb = readonly [number, number, number];
 export type ColorInput = string | Rgb;

@@ -1,5 +1,5 @@
 import { isRegionField, type RegionField } from "@jgengine/core/world/regions";
-import type { TerrainField } from "@jgengine/core/world/terrain";
+import type { TerrainField } from "@jgengine/core/terrain/terrain";
 
 export interface MapBakeBounds {
   minX: number;

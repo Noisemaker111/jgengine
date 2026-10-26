@@ -1,5 +1,5 @@
 import { runToEnd, type SlicedJob } from "@jgengine/core/run/slicedWork";
-import { noiseField, type NoiseFieldConfig, type TerrainField } from "@jgengine/core/world/terrain";
+import { noiseField, type NoiseFieldConfig, type TerrainField } from "@jgengine/core/terrain/terrain";
 import * as THREE from "three";
 
 import { hashNoise2, type TerrainSeed } from "./random";
@@ -160,7 +160,7 @@ export function createProceduralTerrainSampler(config: ProceduralTerrainConfig =
   return noiseField(toNoiseFieldConfig(config)).sampleHeight;
 }
 
-/** Per-position palette override for multi-biome ground coloring — `createTerrainPaletteSampler` from `@jgengine/core/world/terrain` returns exactly this shape. */
+/** Per-position palette override for multi-biome ground coloring — `createTerrainPaletteSampler` from `@jgengine/core/terrain/terrain` returns exactly this shape. */
 export type TerrainPaletteSampler = (x: number, z: number) => { low: string; high: string; waterline?: string };
 
 export interface FieldGroundOptions {

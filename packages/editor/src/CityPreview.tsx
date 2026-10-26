@@ -2,8 +2,8 @@ import { memo, useMemo } from "react";
 
 import type { EditorSession } from "@jgengine/core/editor/index";
 import { CITY_KIND } from "@jgengine/core/city/cityKind";
-import { editableTerrainFromSnapshot } from "@jgengine/core/world/terraform";
-import type { TerrainField } from "@jgengine/core/world/terrain";
+import { editableTerrainFromSnapshot } from "@jgengine/core/terrain/terraform";
+import type { TerrainField } from "@jgengine/core/terrain/terrain";
 import type { SceneKindObject } from "@jgengine/core/scene/sceneKinds";
 import { useGameContext } from "@jgengine/react/provider";
 import { registerBuiltinSceneKindRenderers } from "@jgengine/shell/scene/builtinSceneKindRenderers";

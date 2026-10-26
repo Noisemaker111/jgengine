@@ -6,7 +6,7 @@ import {
   resolveTerrainField,
   resolveTerrainPalette,
   TERRAIN_MATERIAL_PALETTES,
-} from "@jgengine/core/world/terrain";
+} from "@jgengine/core/terrain/terrain";
 import { GRASS_DEFAULTS } from "@jgengine/core/world/grassKind";
 
 import { bakeGrassNode, resolveGrassBake } from "../grass/grassBake";

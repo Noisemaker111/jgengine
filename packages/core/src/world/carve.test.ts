@@ -1,7 +1,7 @@
 import { describe, expect, test } from "bun:test";
 
 import { CarvableField, carvableTerrain, EMPTY_VOXEL, VoxelVolume, type VoxelMaterialTable } from "./carve";
-import { flatField, noiseField } from "./terrain";
+import { flatField, noiseField } from "../terrain/terrain";
 
 describe("VoxelVolume", () => {
   test("starts solid and carve clears a sphere of cells", () => {

@@ -20,7 +20,7 @@ import {
   beginTerraformStroke,
   createTerrainSnapshot,
   editableTerrainFromSnapshot,
-} from "../packages/core/src/world/terraform";
+} from "../packages/core/src/terrain/terraform";
 
 /**
  * Editor MVP loop, end to end and browserless: author a marker + a route path + a scatter region +

@@ -1,4 +1,4 @@
-import { groundFieldFor } from "@jgengine/core/world/terrain";
+import { groundFieldFor } from "@jgengine/core/terrain/terrain";
 import type { Waypoint } from "@jgengine/core/nav/pathFollow";
 
 import { world } from "../../world";

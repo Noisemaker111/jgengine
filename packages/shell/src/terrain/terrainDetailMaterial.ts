@@ -1,7 +1,7 @@
 import * as THREE from "three";
 
 import type { GraphicsQuality } from "@jgengine/core/settings/settingsModel";
-import type { ResolvedTerrainDetail } from "@jgengine/core/world/terrain";
+import type { ResolvedTerrainDetail } from "@jgengine/core/terrain/terrain";
 
 import { NOISE_GLSL, PAINT_PARS_GLSL, SURFACE_BUMP_NORMAL_GLSL, SURFACE_FUNCTIONS_GLSL, surfaceNoiseUniforms } from "./terrainSurfaceShader";
 import type { TerrainPaintTextures } from "./terrainSurfaces";

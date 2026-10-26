@@ -1,4 +1,4 @@
-import type { TerraformMode } from "@jgengine/core/world/terraform";
+import type { TerraformMode } from "@jgengine/core/terrain/terraform";
 
 export interface TerraformBrushCursorProps {
   center: readonly [number, number] | null;

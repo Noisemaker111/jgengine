@@ -230,7 +230,7 @@ describe("test mapping", () => {
 
   test("a type-only import is an edge: a changed type can break what imports it", () => {
     const graph = fixtureGraph({
-      "packages/shell/src/render/World.test.ts": 'import type { Terrain } from "@jgengine/core/world/terrain";',
+      "packages/shell/src/render/World.test.ts": 'import type { Terrain } from "@jgengine/core/terrain/terrain";',
       "packages/core/src/world/terrain.ts": "export interface Terrain {}",
     });
     const plan = verifyPlan({ changed: ["packages/core/src/world/terrain.ts"], testFiles: tests, workspaces: fakeWorkspaces, graph });

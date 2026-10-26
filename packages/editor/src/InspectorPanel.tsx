@@ -54,7 +54,7 @@ import {
 import { listParentCandidates } from "./parentCandidates";
 import type { EditorHostApi } from "./session";
 import type { EditorUiStore } from "./uiStore";
-import { TERRAIN_MATERIALS } from "./uiStore";
+import { TERRAIN_PAINT_PRESETS } from "@jgengine/core/terrain/terrainPaint";
 import { shallowArrayEqual, useStoreSelector } from "./useStoreSelector";
 import { AxisNumberField, FieldRow, SectionAction } from "./shell/fields";
 import { Icon, kindIcon } from "./shell/icons";
@@ -311,7 +311,7 @@ function ComponentAddBar({
               }}
             >
               <option value="">+ Material…</option>
-              {TERRAIN_MATERIALS.map((material) => (
+              {TERRAIN_PAINT_PRESETS.map((material) => (
                 <option key={material.id} value={material.id}>
                   {material.label}
                 </option>
@@ -581,7 +581,7 @@ function MaterialsTab({
             <>
               <span
                 className="h-3.5 w-3.5 rounded-full ring-1 ring-inset ring-white/20"
-                style={{ backgroundColor: TERRAIN_MATERIALS.find((material) => material.id === current)?.color ?? "#888" }}
+                style={{ backgroundColor: TERRAIN_PAINT_PRESETS.find((material) => material.id === current)?.color ?? "#888" }}
               />
               {current}
             </>
@@ -592,7 +592,7 @@ function MaterialsTab({
       </div>
       <div className="text-[10px] text-neutral-500">Palette</div>
       <div className="flex flex-wrap gap-1.5">
-        {TERRAIN_MATERIALS.map((material) => (
+        {TERRAIN_PAINT_PRESETS.map((material) => (
           <button
             key={material.id}
             type="button"

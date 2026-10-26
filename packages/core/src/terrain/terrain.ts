@@ -14,10 +14,10 @@ import type {
   TerrainMaterialRegion,
   WorldBounds,
   WorldFeature,
-} from "./features";
-import type { AvoidZone } from "./geometry";
+} from "../world/features";
+import type { AvoidZone } from "../world/geometry";
 import { type TerrainPathProfile, withPathProfiles } from "./pathTerrain";
-import { buildPolylineIndex } from "./polylineIndex";
+import { buildPolylineIndex } from "../world/polylineIndex";
 import { buildSpatialBuckets } from "../spatial/spatialBuckets";
 import type { TerraformSnapshot } from "./terraform";
 
@@ -140,6 +140,7 @@ function fieldFromHeight(
   };
 }
 
+/** Level ground at height 0 everywhere. */
 export const FLAT_FIELD: TerrainField = {
   sampleHeight: () => 0,
   sampleNormal: () => [0, 1, 0] as const,
@@ -186,6 +187,7 @@ export function noiseField(config: NoiseFieldConfig = {}): TerrainField {
   });
 }
 
+/** Seed, amplitude, frequency and bounds for gentle rolling-hill ground. */
 export interface RollingFieldConfig {
   seed?: string | number;
   amplitude?: number;
@@ -205,6 +207,7 @@ export function rollingField(config: RollingFieldConfig = {}): TerrainField {
   });
 }
 
+/** Seed and bounds for the arena layout: a plateau, hills and a water basin. */
 export interface ArenaFieldConfig {
   seed?: string | number;
   bounds?: WorldBounds;
@@ -213,6 +216,7 @@ export interface ArenaFieldConfig {
 const ARENA_PLATEAU_HEIGHT = 6;
 const ARENA_HILL_HEIGHT = 4.2;
 const ARENA_BASIN_DEPTH = 2.6;
+/** Water surface height the arena field's basin fills to. */
 export const ARENA_WATER_LEVEL = -0.9;
 
 function smoothstep(edge0: number, edge1: number, value: number): number {
@@ -484,6 +488,7 @@ export function resolveEnvironmentField(feature: EnvironmentWorldFeature): Terra
     : roadDrapedField(cleared, feature.roads);
 }
 
+/** Which way the ground falls at a point and how steeply. */
 export interface TerrainSlopeSample {
   /** Unit XZ direction pointing downhill; `[0, 0]` on level ground. */
   downhill: readonly [number, number];
@@ -630,14 +635,17 @@ export function raycastHeightField(
   return null;
 }
 
+/** Ground colors for one terrain material: low ground, high ground and the waterline band. */
 export interface TerrainPalette {
   low: string;
   high: string;
   waterline: string;
 }
 
+/** The terrain material a world gets when it names none. */
 export const DEFAULT_TERRAIN_MATERIAL: TerrainMaterial = "grass";
 
+/** Built-in ground colors for each named terrain material. */
 export const TERRAIN_MATERIAL_PALETTES: Record<TerrainMaterial, TerrainPalette> = {
   grass: { low: "#30402c", high: "#7f8b50", waterline: "#1d4c6e" },
   sand: { low: "#9c8354", high: "#e0c98a", waterline: "#2f6f8f" },
@@ -1054,6 +1062,7 @@ function withFlattenMasks(
   };
 }
 
+/** A grid of height samples (row-major) stretched over world bounds, with scale and base height. */
 export interface HeightMapFieldConfig {
   columns: number;
   rows: number;
@@ -1173,10 +1182,12 @@ export function snapToGround(
   return [x, field.sampleHeight(x, z) + offset, z];
 }
 
+/** Anything with a world position that can be dropped onto the ground. */
 export interface GroundSnapTarget {
   position: readonly [number, number, number];
 }
 
+/** The entity lookup and pose setter ground snapping needs. */
 export interface GroundSnapEntityStore {
   get(id: string): GroundSnapTarget | null;
   setPose(id: string, pose: { position?: readonly [number, number, number] }): boolean;
@@ -1196,6 +1207,7 @@ export function snapEntityToGround(
   return entities.setPose(id, { position: snapToGround(field, entity.position, offset) });
 }
 
+/** Steepest rise over run a walker climbs by default (about 31 degrees). */
 export const DEFAULT_MAX_WALK_SLOPE = 0.6;
 
 /** Zeroes out a movement step's x or z component where it would climb steeper than `maxSlope`.

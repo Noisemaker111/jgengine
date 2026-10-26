@@ -1,9 +1,9 @@
 import { describe, expect, test } from "bun:test";
 import { placementGround, pathSegmentDistance, selectionGizmoMode, snapPlacement } from "./authoringPlacement";
 
-import { createEditableTerrain } from "@jgengine/core/world/terraform";
-import { flatField } from "@jgengine/core/world/terrain";
-import { withPathProfiles } from "@jgengine/core/world/pathTerrain";
+import { createEditableTerrain } from "@jgengine/core/terrain/terraform";
+import { flatField } from "@jgengine/core/terrain/terrain";
+import { withPathProfiles } from "@jgengine/core/terrain/pathTerrain";
 
 describe("viewport authoring", () => {
   test("grid samples marker, zone and path heights while other modes preserve hits", () => {

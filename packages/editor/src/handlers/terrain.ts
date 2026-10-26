@@ -5,7 +5,7 @@ import {
   type TerraformEdit,
   type TerrainMaterialLayer,
   type TerrainSurfaceRule,
-} from "@jgengine/core/world/terraform";
+} from "@jgengine/core/terrain/terraform";
 import {
   resolveScatter,
   resolveScatterRegion,
@@ -15,7 +15,7 @@ import {
   type ScatterTerrain,
 } from "@jgengine/core/scatter/scatterRegion";
 
-import { TERRAIN_MATERIALS } from "../uiStore";
+import { TERRAIN_PAINT_PRESETS } from "@jgengine/core/terrain/terrainPaint";
 import { libraryMaterialAsset } from "@jgengine/assets/catalogs/materialLibrary";
 import type { HandlerTable } from "./context";
 
@@ -156,7 +156,7 @@ export const terrainHandlers: Pick<
     ctx.session.dispatch({ type: "paintTerrain", delta });
     return { ok: true, result: { changed: delta.indices.length } };
   },
-  terrain_materials: () => ({ ok: true, result: { materials: TERRAIN_MATERIALS } }),
+  terrain_materials: () => ({ ok: true, result: { materials: TERRAIN_PAINT_PRESETS } }),
   terrain_layers: (ctx) => {
     const terrain = ctx.session.getState().document.terrain;
     return { ok: true, result: { layers: terrain?.layers ?? [] } };

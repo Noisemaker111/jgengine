@@ -1,8 +1,8 @@
 import { describe, expect, test } from "bun:test";
 
 import { gateTimingMs } from "../../../../scripts/timing-budget";
-import type { TerrainMaterialMaps } from "./features";
-import { environment, island, road, terrain } from "./features";
+import type { TerrainMaterialMaps } from "../world/features";
+import { environment, island, road, terrain } from "../world/features";
 import { buildRoadRibbon, isOnRoad } from "../roads/roads";
 import {
   arenaField,

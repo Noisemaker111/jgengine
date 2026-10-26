@@ -1,5 +1,5 @@
 import { SECONDS_PER_GAME_DAY } from "../time/gameClock";
-import type { TerrainField } from "./terrain";
+import type { TerrainField } from "../terrain/terrain";
 
 /** A sky-occluding footprint — a roof, dense canopy, a cave mouth. `shade` 0..1 = fraction of sky blocked. */
 export interface OccluderRect {

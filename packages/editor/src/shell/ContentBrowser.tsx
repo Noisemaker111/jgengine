@@ -8,7 +8,7 @@ import {
   encodeAssetDragPayload,
   type EditorAssetEntry,
 } from "../AssetBrowser";
-import { TERRAIN_MATERIALS } from "../uiStore";
+import { TERRAIN_PAINT_PRESETS } from "@jgengine/core/terrain/terrainPaint";
 import { AssetThumbnail } from "./AssetThumbnail";
 import { Icon, type IconName } from "./icons";
 import type { BrowserViewMode } from "./layoutStore";
@@ -68,7 +68,7 @@ export function ContentBrowser({
         icon: ASSET_KIND_ICON[kind as EditorAssetEntry["kind"]] ?? "cube",
         count,
       })),
-      { id: "materials", label: "Materials", icon: "sphere", count: TERRAIN_MATERIALS.length },
+      { id: "materials", label: "Materials", icon: "sphere", count: TERRAIN_PAINT_PRESETS.length },
     ];
   }, [assets]);
 
@@ -200,7 +200,7 @@ export function ContentBrowser({
           <div className="min-h-0 min-w-0 flex-1 overflow-auto p-2">
             {showMaterials ? (
               <div className="flex flex-wrap gap-1.5">
-                {TERRAIN_MATERIALS.map((material) => (
+                {TERRAIN_PAINT_PRESETS.map((material) => (
                   <div
                     key={material.id}
                     draggable
@@ -347,7 +347,7 @@ export function ContentBrowser({
 
         <div className="flex h-7 shrink-0 items-center gap-2 border-t border-white/[0.06] px-2 text-[10px] text-neutral-600">
           <span className="tabular-nums">
-            {showMaterials ? `${TERRAIN_MATERIALS.length} materials` : `${filtered.length} of ${assets.length} assets`}
+            {showMaterials ? `${TERRAIN_PAINT_PRESETS.length} materials` : `${filtered.length} of ${assets.length} assets`}
           </span>
           {selected !== null ? <span className="truncate text-neutral-500">{selected.id} selected</span> : null}
           {canImport && !showMaterials ? (

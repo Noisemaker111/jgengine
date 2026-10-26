@@ -31,8 +31,8 @@ import {
   createTerrainSnapshot,
   editableTerrainFromSnapshot,
   migrateTerrainSnapshot,
-} from "../world/terraform";
-import { flatField } from "../world/terrain";
+} from "../terrain/terraform";
+import { flatField } from "../terrain/terrain";
 import { resolveScatter, SCATTER_PATH_KIND } from "../scatter/scatterRegion";
 
 describe("editor document", () => {

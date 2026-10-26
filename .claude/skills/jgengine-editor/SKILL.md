@@ -52,7 +52,7 @@ Build each playtest through `createPlayable` from the captured current document,
 
 ## Traps
 
-- Selection and camera state are not authored world data. Terrain-readability guides (contours, surface-draped grid, elevation HUD) are editor visualization built from the live heightfield via headless `@jgengine/core/world/terrainGuides`; their toggles persist as editor prefs, never scene content.
+- Selection and camera state are not authored world data. Terrain-readability guides (contours, surface-draped grid, elevation HUD) are editor visualization built from the live heightfield via headless `@jgengine/core/terrain/terrainGuides`; their toggles persist as editor prefs, never scene content.
 - Runtime-generated decoration does not become editor-owned merely because it is visual; decide ownership explicitly.
 - Asset-facing, units, pivot, footprint, and placement policy belong in asset/catalog metadata, not corrective game transforms.
 - Paths and markers should drive both rendering and gameplay from the same document.

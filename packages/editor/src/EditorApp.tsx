@@ -5,7 +5,7 @@ import { editorDocumentBounds, findEditorMarker } from "@jgengine/core/editor/in
 import { getSaveEndpoint } from "@jgengine/core/devtools/saveEndpoint";
 import type { WorldOverlayProps } from "@jgengine/core/game/playableGame";
 import type { WorldFeature } from "@jgengine/core/world/features";
-import type { GuideRegion } from "@jgengine/core/world/terrainGuides";
+import type { GuideRegion } from "@jgengine/core/terrain/terrainGuides";
 import type { EditorUiPanelLayout } from "@jgengine/core/hud/hudDocument";
 import { listActiveHudLayouts, subscribeActiveHudLayouts } from "@jgengine/core/hud/hudLayout";
 import { HudLayoutPersistProvider } from "@jgengine/core/hud/hudLayoutPersist.view";

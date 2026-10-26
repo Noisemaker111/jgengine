@@ -5,7 +5,7 @@ import type {
   EditorSession,
   EditorSessionState,
 } from "@jgengine/core/editor/index";
-import type { TerrainField } from "@jgengine/core/world/terrain";
+import type { TerrainField } from "@jgengine/core/terrain/terrain";
 import type { EditorBridgeRequest, EditorBridgeResponse, EditorHostApi } from "../session";
 
 /** Outcome of a guarded dispatch: whether it mutated the session, plus the resulting state. */

@@ -18,7 +18,7 @@ import { createAssetCatalog } from "@jgengine/core/scene/assetCatalog";
 import { environment, grass, terrain } from "@jgengine/core/world/features";
 import { createFogField, type FogField } from "@jgengine/core/world/fog";
 import { createMarkerSet, type MarkerSet } from "@jgengine/core/world/markers";
-import { resolveTerrainField, type TerrainField } from "@jgengine/core/world/terrain";
+import { resolveTerrainField, type TerrainField } from "@jgengine/core/terrain/terrain";
 import { createWaypointStore, type WaypointStore } from "@jgengine/core/world/waypoints";
 import { createAnnotationLayer, type AnnotationLayer } from "@jgengine/core/world/mapAnnotations";
 import { Compass, FullscreenMap, MapLegend, Minimap, WaypointArrow } from "@jgengine/react/map";

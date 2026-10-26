@@ -3,9 +3,9 @@ import * as THREE from "three";
 import { createEmptyEditorDocument } from "@jgengine/core/editor/document";
 import { environmentContentFromDocument } from "@jgengine/core/editor/environment";
 import { environment, terrain } from "@jgengine/core/world/features";
-import { resolveEnvironmentField } from "@jgengine/core/world/terrain";
-import { createEditableTerrain, editableTerrainFromSnapshot } from "@jgengine/core/world/terraform";
-import { terrainGroundColorSampler } from "../environment/terrainGroundColor";
+import { resolveEnvironmentField } from "@jgengine/core/terrain/terrain";
+import { createEditableTerrain, editableTerrainFromSnapshot } from "@jgengine/core/terrain/terraform";
+import { terrainGroundColorSampler } from "./terrainGroundColor";
 import { createFieldGroundGeometry } from "./terrainMath";
 import { createTerrainPaintColorSampler } from "./terrainPaintColor";
 

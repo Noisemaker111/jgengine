@@ -1,6 +1,6 @@
-import { createEditableTerrain } from "@jgengine/core/world/terraform";
+import { createEditableTerrain } from "@jgengine/core/terrain/terraform";
 import { environment, terrain } from "@jgengine/core/world/features";
-import type { TerrainMaterialLayer } from "@jgengine/core/world/terraform";
+import type { TerrainMaterialLayer } from "@jgengine/core/terrain/terraform";
 import type { PlayableGame } from "@jgengine/shell/registry";
 import { EnvironmentScene } from "@jgengine/shell/environment/EnvironmentScene";
 import { libraryMaterialAsset } from "@jgengine/assets/catalogs/materialLibrary";
