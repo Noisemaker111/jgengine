@@ -1,7 +1,7 @@
 import { expect, test } from "bun:test";
 import { createEmptyPlayerRow, createRuntimeSnapshot } from "../runtime/snapshot";
 import { claimTerritory, createTerritory, placeWithTerritory, planFootprintClaims, territoryFootprintCells, territoryOwnerOf, territoryChunkKeys } from "./territory";
-import { validatePlacement } from "./placement";
+import { validatePlacement } from "../placement/placement";
 function initial() { return createRuntimeSnapshot({ gameId: "test", serverId: "world", players: { a: { ...createEmptyPlayerRow("a"), economy: { cash: 100 } }, b: createEmptyPlayerRow("b") } }); }
 test("claim costs grow once per unique cell and persist across chunks", () => {
   const before = initial();

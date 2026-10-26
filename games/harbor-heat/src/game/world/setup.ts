@@ -4,7 +4,7 @@ import { perContext } from "@jgengine/core/runtime/perContext";
 import { patrol } from "@jgengine/core/scene/behaviors";
 import type { Waypoint } from "@jgengine/core/nav/pathFollow";
 import type { EntityColliderSet } from "@jgengine/core/scene/colliders";
-import { cityLots, cityRoadWidth, tuneCityLayout, type CityLayout } from "@jgengine/core/world/cityLayout";
+import { cityLots, cityRoadWidth, tuneCityLayout, type CityLayout } from "@jgengine/core/city/cityLayout";
 import { placeAuthoredObjectsFromDocument } from "@jgengine/core/world/authoredObjects";
 import { nearestOnPath } from "@jgengine/core/roads/roads";
 import { furnitureSpots, parkingSpots, sidewalkPoint } from "@jgengine/core/roads/streets";

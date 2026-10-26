@@ -865,7 +865,7 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 ## placement-ghost — render valid/invalid placement preview mesh
 
-- `PlacementGhost` (function) · `import { PlacementGhost } from "@jgengine/shell/structures"`
+- `PlacementGhost` (function) · `import { PlacementGhost } from "@jgengine/shell/placement"`
 
 ## play-script — write a game's behaviour as a tick-based script with declarative assertions instead of playing it in a browser
 
@@ -1072,7 +1072,7 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 ## transform-gizmo — in-game select/move/rotate/scale gizmo
 
-- `TransformGizmo` (const) · `import { TransformGizmo } from "@jgengine/shell/structures"`
+- `TransformGizmo` (const) · `import { TransformGizmo } from "@jgengine/shell/placement"`
 
 ## triangle-attribution — per-model triangle table with instance counts, for perf probes
 

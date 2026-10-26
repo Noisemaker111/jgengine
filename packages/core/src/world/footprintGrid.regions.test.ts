@@ -2,7 +2,7 @@ import { expect, test } from "bun:test";
 import * as footprints from "./footprintGrid";
 import type { MergedRegion, RegionFootprint } from "./footprintGrid";
 import { footprintCells } from "./buildSockets";
-import { validatePlacement } from "./placement";
+import { validatePlacement } from "../placement/placement";
 
 const { canMerge, mergeFootprints, splitRegion, createFootprintGrid, footprintObstacles } = footprints;
 const cell = (col: number, row = 0) => ({ col, row });

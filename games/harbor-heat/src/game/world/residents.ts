@@ -17,7 +17,7 @@ import { createNavGrid, findPath, type NavGrid, type NavPoint } from "@jgengine/
 import { editorLayers } from "../../editorLayers";
 import { fearAt, PANIC_FEAR } from "../cityRuntime";
 import { createResidentAgents, residentAgentStore, type ResidentAgentSystem } from "./residentAgents";
-import { cityRoadWidth, type CityLayout } from "@jgengine/core/world/cityLayout";
+import { cityRoadWidth, type CityLayout } from "@jgengine/core/city/cityLayout";
 import { nearestOnPath } from "@jgengine/core/roads/roads";
 
 import { cityLayout, LOT_ROADS } from "./cityLayout";

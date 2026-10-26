@@ -1,4 +1,4 @@
-import { defineBuildingKit } from "@jgengine/core/world/buildingKit";
+import { defineBuildingKit } from "@jgengine/core/buildings/buildingKit";
 
 /**
  * Salvage-yard facades: the generator's walls, windows, doors and roofs stay, while the parts that

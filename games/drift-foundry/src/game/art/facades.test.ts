@@ -1,5 +1,5 @@
 import { expect, test } from "bun:test";
-import { resolveBuildingKitPart } from "@jgengine/core/world/buildingKit";
+import { resolveBuildingKitPart } from "@jgengine/core/buildings/buildingKit";
 import { DRIFT_SOUNDS } from "../audio";
 import { SALVAGE_FACADE_KIT } from "./facades";
 

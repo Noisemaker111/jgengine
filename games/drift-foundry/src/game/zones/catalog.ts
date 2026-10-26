@@ -1,4 +1,4 @@
-import type { BuildingPaletteOverrides, BuildingStyle } from "@jgengine/core/world/buildings";
+import type { BuildingPaletteOverrides, BuildingStyle } from "@jgengine/core/buildings/buildings";
 import type { BiomeFog, BiomeSky, TerrainColors } from "@jgengine/core/world/features";
 import { libraryFacade } from "../world/librarySurface";
 import { EXIT_Z, ZONE_A_END, ZONE_B_END } from "../run/constants";

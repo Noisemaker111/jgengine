@@ -1,6 +1,6 @@
 import { describe, expect, test } from "bun:test";
 
-import { generateCity } from "@jgengine/core/world/cityGenerator";
+import { generateCity } from "@jgengine/core/city/cityGenerator";
 import { extractCircuitRoute, type CircuitRoute } from "@jgengine/core/roads/raceCircuit";
 import { buildRaceDressing, cityRevealState } from "./cityScene";
 

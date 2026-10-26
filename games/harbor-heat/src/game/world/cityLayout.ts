@@ -5,7 +5,7 @@ import {
   type CityLotRoad,
   type CityRoadSpec,
   type CityZone,
-} from "@jgengine/core/world/cityLayout";
+} from "@jgengine/core/city/cityLayout";
 
 import { districtAt, ROADS, SHORE_X } from "./districts";
 

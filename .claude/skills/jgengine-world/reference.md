@@ -5,12 +5,12 @@ Reference module for the [`jgengine-world` API](SKILL.md) skill. Load this when 
 ## World = place (the definition of a world)
 
 A world is the place a game happens in — substrate + laws — declared with `world()` from
-`@jgengine/core/world/place`. It is never a coded diorama: sky look, foliage scatter, props, and
+`@jgengine/core/placement/place`. It is never a coded diorama: sky look, foliage scatter, props, and
 sculpt are scene content authored in the editor (`jgengine-editor`), and the engine renders its
 default sky when the document has none.
 
 ```ts
-import { world } from "@jgengine/core/world/place";
+import { world } from "@jgengine/core/placement/place";
 
 export const overworld = world({
   id: "overworld",                                      // place identity: saves, seeds, switching
@@ -148,12 +148,12 @@ The `survival/` domain — decay-over-time meters and per-part health, both feed
 - **Moodles** (`survival/moodle`): the shared status stack, distinct from raw bars. `stackMoodles(...groups)` folds meter, ailment, and buff `Moodle[]` into one worst-first display (same-id stacks add, worst severity wins). `createMoodleStack()` holds timed buffs (`add({ id, label, duration })` — Valheim's concurrent food buffs) and expires them on `tick(dt)`.
 - **Multi-region health** (`survival/regionHealth`): `createMultiRegionHealth({ regions, ailments })` → `MultiRegionHealth` gives per-part pools (head/thorax/arms/legs, Tarkov/DayZ style) — `damage(regionId, amount)` scales by `vulnerability` and kills when a `vital` part empties; a stacking **ailment queue** (`applyAilment`, `tick(dt)` drains like bleed) carries per-injury treatment (`treat(itemId)` clears wounds via bandage/tourniquet/splint). `ailmentMoodles()` shares the moodle display with the meters (#78 + #90).
 ### Interactive building & terraform (renderer-free tools)
-Turn data-only placement into the build tooling of Valheim/Enshrouded/The Sims/Fortnite/Dinkum. Pure `@jgengine/core/world` math + `@jgengine/shell/structures` render (`PlacementGhost`, `TransformGizmo`); terraform brush via `shell/terrain/*`. Demo: `apps/dev` `builder-sandbox`.
+Turn data-only placement into the build tooling of Valheim/Enshrouded/The Sims/Fortnite/Dinkum. Pure `@jgengine/core/world` math + `@jgengine/shell/buildings` render (`PlacementGhost`, `TransformGizmo`); terraform brush via `shell/terrain/*`. Demo: `apps/dev` `builder-sandbox`.
 | Primitive | Answers |
 |-----------|---------|
 | `createPlacementController({ footprint, rules, snapMode, grid })` | Owns the ghost: `hover(hit)` → `PlacementPreview` (`valid` tint wraps `validatePlacement`), `rotate()`, `setSnapMode`/`cycleSnapMode` (`"grid"`/`"free"`/`"surface"`), `commit()` → `PlacementCommit` (`rotationY` via `quarterTurnsToRotationY`). Feed it `pointer.worldHit()`. |
 | `placeAssetFromCommit(commit, assetId, opts?)` / `resolvePlaceAsset` | **One place-asset verb** for editor `place_asset` and in-game builds → `PlaceAssetResult`. `toStructureInput(result)` → structure store; `toEditorMarker(result)` → scene-document marker. |
-| `PlacementGhost` / `TransformGizmo` (`@jgengine/shell/structures`) | Ghost preview (valid/invalid tint). Runtime select/move/rotate/scale gizmo — editor `SelectionGizmo` mounts the same `TransformGizmo`. |
+| `PlacementGhost` / `TransformGizmo` (`@jgengine/shell/buildings`) | Ghost preview (valid/invalid tint). Runtime select/move/rotate/scale gizmo — editor `SelectionGizmo` mounts the same `TransformGizmo`. |
 | `createBuildSocketCatalog({ pieces, rules }).snapNearest(placed, type, cursor, { snapDistance })` | Build-piece sockets (`world/buildSockets`) — the one snap a build cursor lands on across every placed piece, nearest mate point within `snapDistance`; `resolveSnaps` lists every valid snap onto one piece, `worldSockets` expands its sockets to world space. |
 | `solveSupport(pieces, links, { maxDistance })` → `SupportResult` | Walks the connector graph to any `grounded` piece: `supported` stays, `unsupported` collapses, `distance` (hops-to-ground) drives the white→red decay tint. `toDebrisBodies(pieces, unsupported)` → `AddBodyOptions[]` for the `PhysicsWorld` debris sink. |
 | `createWallDrawTool({ snap, closeTolerance })` | Drag wall points → auto-encloses when the path returns to the start (`isEnclosed`), `footprint()` derives the room `EnclosedFootprint`, `roof()` auto-fits a hip/gable/flat `RoofPlan`. `createSurfacePaint()` stores per-tile floor/wall surfaces. |

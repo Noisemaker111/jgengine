@@ -7,7 +7,7 @@ import {
   type EditorMarker,
   type EditorPath,
 } from "@jgengine/core/editor/index";
-import { resolvePlaceAsset, toEditorMarker } from "@jgengine/core/world/placeAsset";
+import { resolvePlaceAsset, toEditorMarker } from "@jgengine/core/placement/placeAsset";
 import { findSchemaPreset, getSceneKind, validateParams } from "@jgengine/core/scene/sceneKinds";
 
 import { EDITOR_RUN_MODES } from "../session";

@@ -14,8 +14,8 @@ import { registerGrassKind } from "../world/grassKind";
 import { registerSoilKind } from "../world/soilKind";
 import { registerPoleLineKind } from "../world/poleLineKind";
 import { registerDecalKind } from "../world/decalKind";
-import { registerBuildingGenerator } from "../world/buildingGenerator";
-import { registerCityKind } from "../world/cityKind";
+import { registerBuildingGenerator } from "../buildings/buildingGenerator";
+import { registerCityKind } from "../city/cityKind";
 import { describeScatterCoverage, densityCoverage } from "../scatter/scatterCoverage";
 import { registerSceneKind, type ParamSchema } from "./sceneKinds";
 

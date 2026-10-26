@@ -9,7 +9,7 @@ bound art.
 ## Bind a pack to slots
 
 ```ts
-import { defineBuildingKit } from "@jgengine/core/world/buildingKit";
+import { defineBuildingKit } from "@jgengine/core/buildings/buildingKit";
 
 const kit = defineBuildingKit({
   id: "settlement-clean",
@@ -63,8 +63,8 @@ unevenly and one wall model dominates. When you drive the generator directly,
 feed the kit's own counts back in:
 
 ```ts
-import { buildingKitVariantCounts } from "@jgengine/core/world/buildingKit";
-import { generateBuilding } from "@jgengine/core/world/buildings";
+import { buildingKitVariantCounts } from "@jgengine/core/buildings/buildingKit";
+import { generateBuilding } from "@jgengine/core/buildings/buildings";
 
 generateBuilding({ seed: "town-1", variants: buildingKitVariantCounts(kit) });
 ```

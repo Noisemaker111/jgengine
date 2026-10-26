@@ -91,7 +91,7 @@
     "packages/core/src/visibility/visibilitySystem.ts#createVisibilitySystem",
     "packages/core/src/world/cellStates.ts#createCellStateGrid",
     "packages/core/src/world/fog.ts#createFogField",
-    "packages/core/src/world/placementController.ts#createPlacementController",
+    "packages/core/src/placement/placementController.ts#createPlacementController",
     "packages/core/src/world/sharedAnnotations.ts#createSharedAnnotations",
     "packages/core/src/world/visibilityField.ts#createVisibilityField",
     "packages/core/src/world/voxelField.ts#createVoxelField",

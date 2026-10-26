@@ -1081,8 +1081,8 @@
       "packages": [
         "@jgengine/core"
       ],
-      "module": "@jgengine/core/world/buildings",
-      "domain": "world",
+      "module": "@jgengine/core/buildings/buildings",
+      "domain": "buildings",
       "gameFacing": false,
       "probe": null,
       "intent": "generate seeded buildings as placed facade parts — bays, floors, roof, decor"
@@ -1092,8 +1092,8 @@
       "packages": [
         "@jgengine/core"
       ],
-      "module": "@jgengine/core/world/buildingKit",
-      "domain": "world",
+      "module": "@jgengine/core/buildings/buildingKit",
+      "domain": "buildings",
       "gameFacing": false,
       "probe": null,
       "intent": "bind generated facade part slots to caller models and editor-authored named materials"
@@ -1103,8 +1103,8 @@
       "packages": [
         "@jgengine/core"
       ],
-      "module": "@jgengine/core/world/buildingLots",
-      "domain": "world",
+      "module": "@jgengine/core/buildings/buildingLots",
+      "domain": "buildings",
       "gameFacing": false,
       "probe": null,
       "intent": "derive street-facing building lots from road frontage"
@@ -1424,19 +1424,19 @@
       "packages": [
         "@jgengine/core"
       ],
-      "module": "@jgengine/core/world/polygon",
-      "domain": "world",
+      "module": "@jgengine/core/city/cityKind",
+      "domain": "city",
       "gameFacing": false,
       "probe": null,
-      "intent": "polygon math for road-derived blocks, parcels, and buildable footprints"
+      "intent": "editor-authorable procedural city district (streets, zoning, buildings, furniture)"
     },
     {
       "id": "city-generator",
       "packages": [
         "@jgengine/core"
       ],
-      "module": "@jgengine/core/world/cityGenerator",
-      "domain": "world",
+      "module": "@jgengine/core/city/cityGenerator",
+      "domain": "city",
       "gameFacing": false,
       "probe": null,
       "intent": "compose a deterministic city — street network, blocks, street-fronting plots of varied size — from one seed"
@@ -1446,8 +1446,8 @@
       "packages": [
         "@jgengine/core"
       ],
-      "module": "@jgengine/core/world/cityLayout",
-      "domain": "world",
+      "module": "@jgengine/core/city/cityLayout",
+      "domain": "city",
       "gameFacing": false,
       "probe": null,
       "intent": "one street, sidewalk, kerb and lot layout with real-world defaults and live sliders"
@@ -1457,8 +1457,8 @@
       "packages": [
         "@jgengine/core"
       ],
-      "module": "@jgengine/core/world/cityLayout",
-      "domain": "world",
+      "module": "@jgengine/core/city/cityLayout",
+      "domain": "city",
       "gameFacing": false,
       "probe": null,
       "intent": "live dev-runner sliders for every city layout number"
@@ -1468,8 +1468,8 @@
       "packages": [
         "@jgengine/core"
       ],
-      "module": "@jgengine/core/world/cityLayout",
-      "domain": "world",
+      "module": "@jgengine/core/city/cityLayout",
+      "domain": "city",
       "gameFacing": false,
       "probe": null,
       "intent": "a city layout a game sets once and sliders change live"
@@ -1479,8 +1479,8 @@
       "packages": [
         "@jgengine/core"
       ],
-      "module": "@jgengine/core/world/cityLayout",
-      "domain": "world",
+      "module": "@jgengine/core/city/cityLayout",
+      "domain": "city",
       "gameFacing": false,
       "probe": null,
       "intent": "lay zoned building lots, corners and driveways from one city layout"
@@ -7090,8 +7090,8 @@
       "packages": [
         "@jgengine/core"
       ],
-      "module": "@jgengine/core/world/placeAsset",
-      "domain": "world",
+      "module": "@jgengine/core/placement/placeAsset",
+      "domain": "placement",
       "gameFacing": false,
       "probe": null,
       "intent": "resolve a placement commit into a shared asset placement payload"
@@ -7134,8 +7134,8 @@
       "packages": [
         "@jgengine/core"
       ],
-      "module": "@jgengine/core/world/placementController",
-      "domain": "world",
+      "module": "@jgengine/core/placement/placementController",
+      "domain": "placement",
       "gameFacing": false,
       "probe": null,
       "intent": "interactive build-mode ghost preview and commit"
@@ -7145,8 +7145,8 @@
       "packages": [
         "@jgengine/shell"
       ],
-      "module": "@jgengine/shell/structures/PlacementGhost",
-      "domain": "structures",
+      "module": "@jgengine/shell/placement/PlacementGhost",
+      "domain": "placement",
       "gameFacing": false,
       "probe": null,
       "intent": "render valid/invalid placement preview mesh"
@@ -7156,8 +7156,8 @@
       "packages": [
         "@jgengine/core"
       ],
-      "module": "@jgengine/core/world/placement",
-      "domain": "world",
+      "module": "@jgengine/core/placement/placement",
+      "domain": "placement",
       "gameFacing": false,
       "probe": null,
       "intent": "grid/surface footprint validity for build mode"
@@ -9748,8 +9748,8 @@
       "packages": [
         "@jgengine/shell"
       ],
-      "module": "@jgengine/shell/structures/TransformGizmo",
-      "domain": "structures",
+      "module": "@jgengine/shell/placement/TransformGizmo",
+      "domain": "placement",
       "gameFacing": false,
       "probe": null,
       "intent": "in-game select/move/rotate/scale gizmo"
@@ -11047,8 +11047,8 @@
       "packages": [
         "@jgengine/core"
       ],
-      "module": "@jgengine/core/world/place",
-      "domain": "world",
+      "module": "@jgengine/core/placement/place",
+      "domain": "placement",
       "gameFacing": false,
       "probe": null,
       "intent": "declare the place a game happens in — flat/round/voxel/board ground, surface laws, per-place physics"
@@ -11069,8 +11069,8 @@
       "packages": [
         "@jgengine/core"
       ],
-      "module": "@jgengine/core/world/place",
-      "domain": "world",
+      "module": "@jgengine/core/placement/place",
+      "domain": "placement",
       "gameFacing": false,
       "probe": null,
       "intent": "derive a deterministic generator/scatter seed from world id + save/run seed"

@@ -1,5 +1,5 @@
 import { findLibraryMaterial, libraryMaterialMaps } from "@jgengine/assets/catalogs/materialLibrary";
-import type { BuildingSurfaceMaterial } from "@jgengine/core/world/buildings";
+import type { BuildingSurfaceMaterial } from "@jgengine/core/buildings/buildings";
 
 /** Where `assets pull` writes a library material's maps, matching the root catalog's basePath. */
 const MATERIAL_BASE = "/materials";

@@ -10,7 +10,7 @@ import { registerBuiltinSceneKinds } from "@jgengine/core/scene/builtinSceneKind
 import { registerGrassFieldRenderer } from "./GrassFieldRenderer";
 import { registerWaterRenderer } from "../water/WaterRenderer";
 import { registerSoilPatchRenderer } from "./SoilPatchRenderer";
-import { registerCityRenderer } from "./CityRenderer";
+import { registerCityRenderer } from "../city/CityRenderer";
 import { registerPoleLineRenderer } from "./PoleLineRenderer";
 import { registerDecalRenderer } from "./DecalRenderer";
 

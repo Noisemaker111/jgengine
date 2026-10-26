@@ -43,8 +43,8 @@ Summed Gerstner waves, crest-driven foam, and Fresnel water color were shaped fr
 `GeneratedBuilding` renders the seeded facade/roof kit produced by `generateBuilding` in `@jgengine/core`:
 
 ```tsx
-import { GeneratedBuilding } from "@jgengine/shell/structures/GeneratedBuilding";
-import { generateBuilding } from "@jgengine/core/world/buildings";
+import { GeneratedBuilding } from "@jgengine/shell/buildings/GeneratedBuilding";
+import { generateBuilding } from "@jgengine/core/buildings/buildings";
 
 <GeneratedBuilding building={generateBuilding({ seed: "block-a", floors: 6 })} />;
 ```
@@ -52,7 +52,7 @@ import { generateBuilding } from "@jgengine/core/world/buildings";
 Building parts are batched into one `InstancedMesh` per part kind, so a whole building costs about a dozen draw calls regardless of part count. `InstancedBuildings` batches many buildings together the same way — a full district in one pass — and is what `EnvironmentScene` uses for `building()` world features:
 
 ```tsx
-import { InstancedBuildings } from "@jgengine/shell/structures/GeneratedBuilding";
+import { InstancedBuildings } from "@jgengine/shell/buildings/GeneratedBuilding";
 import { building } from "@jgengine/core/world/features";
 import { resolveStructureBuildings } from "@jgengine/core/world/environmentSummary";
 

@@ -71,7 +71,7 @@ describe("check-street-rule-parity", () => {
     const result = checkStreetRuleParity({ generator: GENERATOR, cityKind: drifted, streetsHandler: STREETS_HANDLER });
     expect(result.ok).toBe(false);
     expect(result.gaps).toEqual([
-      { file: "packages/core/src/world/cityKind.ts", site: "netRules", missing: ["elevation"] },
+      { file: "packages/core/src/city/cityKind.ts", site: "netRules", missing: ["elevation"] },
     ]);
   });
 
@@ -101,7 +101,7 @@ describe("check-street-rule-parity", () => {
     const root = fileURLToPath(new URL("..", import.meta.url));
     const read = (rel: string): string => readFileSync(join(root, rel), "utf8");
     expect(streetRuleMembers(read("packages/core/src/roads/streetGenerator.ts"))).toContain("compactness");
-    expect(netRulesKeys(read("packages/core/src/world/cityKind.ts"))).toContain("compactness");
+    expect(netRulesKeys(read("packages/core/src/city/cityKind.ts"))).toContain("compactness");
     expect(ruleKeyList(read("packages/editor/src/handlers/streets.ts"))).toContain("compactness");
   });
 });

@@ -5,7 +5,7 @@ import {
   footprintObstacles,
   hasValidAdjacency,
 } from "@jgengine/core/world/footprintGrid";
-import { validatePlacement } from "@jgengine/core/world/placement";
+import { validatePlacement } from "@jgengine/core/placement/placement";
 
 describe("footprint grid", () => {
   test("cellsFor covers a footprint centered on origin, honoring quarter turns", () => {

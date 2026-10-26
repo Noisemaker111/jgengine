@@ -110,6 +110,8 @@ export {
   type NoteEvent,
 } from "./audio/music";
 export { type NoiseVoice, type SynthPatch, type ToneVoice } from "./audio/synth";
+export { buildingIndex, type BuildingIndex } from "./buildings/buildingIndex";
+export { type BuildingPaletteOverrides, type BuildingStyle } from "./buildings/buildings";
 export {
   createCameraShake,
   type CameraShakeConfig,
@@ -117,6 +119,70 @@ export {
   type CameraShakeOffset,
   type CameraShakeSnapshot,
 } from "./camera/shake/cameraShake";
+export { type CityBlockKind } from "./city/cityBlocks";
+export {
+  CITY_FILLER_CLASSES,
+  CITY_LANDMARK_CLASSES,
+  CITY_LOT_CLASSES,
+  CITY_TREE_SPECIES,
+  type CityFillerClass,
+  type CityLandmarkClass,
+  type CityLotClass,
+  type CityLotPiece,
+  type CityPieceRole,
+  type CityPieceShape,
+  type CityTreeSpecies,
+  type CityZoneBand,
+  type CityZoneProfile,
+} from "./city/cityContent";
+export {
+  CITY_PLOT_TIERS,
+  DEFAULT_BLOCK_FILL,
+  DEFAULT_CITY_LEVEL_BIAS,
+  DEFAULT_CITY_ZONE_MIXES,
+  DEFAULT_LANDMARK_SHARE,
+  LANDMARK_HARD_CAP,
+  deriveCityPlots,
+  generateCity,
+  resolveCityLotContent,
+  type CityContentOptions,
+  type CityContentOverrides,
+  type CityGeneratorOptions,
+  type CityLevelClassBias,
+  type CityPlot,
+  type CityPlotFrontage,
+  type CityPlotOptions,
+  type CityPlotResult,
+  type CityPlotTier,
+  type CityZoneMixes,
+  type GeneratedCity,
+  type MassingFootprint,
+  type ResolvedCityLot,
+} from "./city/cityGenerator";
+export {
+  CITY_DEFAULTS,
+  CITY_KIND,
+  CITY_SCHEMA,
+  CITY_ZONE_KIND,
+  CITY_ZONE_SCHEMA,
+  resolveCityObject,
+  type CityBlock,
+  type CityBridge,
+  type CityDriveway,
+  type CityHedge,
+  type CityIntersection,
+  type CityLight,
+  type CityLot,
+  type CityParcel,
+  type CityParcelFrontageOut,
+  type CityPark,
+  type CityParking,
+  type CityResolveContext,
+  type CityRules,
+  type CityStreet,
+  type CityTree,
+  type ResolvedCity,
+} from "./city/cityKind";
 export { createFactionGraph, createFactionRoster, type FactionDef } from "./faction/factions";
 export {
   DEFAULT_REPUTATION_TIERS,
@@ -422,6 +488,44 @@ export {
 } from "./physics/vehicleParts";
 export { VEHICLE_STYLES, vehicleTuning, type VehicleSpec, type VehicleSpecGearbox } from "./physics/vehicleSpec";
 export {
+  isPlaceWorld,
+  resolveWorldPhysics,
+  seedForPlace,
+  world,
+  type BoardGround,
+  type BoardGroundSize,
+  type FlatGround,
+  type FlatGroundSize,
+  type GroundConfig,
+  type GroundGenerator,
+  type GroundMode,
+  type PlaceConfig,
+  type PlaceWorldFeature,
+  type ResolvedGround,
+  type RoundGround,
+  type RoundGroundSize,
+  type SurfaceLaws,
+  type VoxelGround,
+  type VoxelGroundSize,
+} from "./placement/place";
+export {
+  placeAssetFromCommit,
+  resolvePlaceAsset,
+  toEditorMarker,
+  toStructureInput,
+  type PlaceAssetResult,
+} from "./placement/placeAsset";
+export { createPlacedStructureStore, type PlacedStructure } from "./placement/placedStructureStore";
+export { validatePlacement, type PlacementRules } from "./placement/placement";
+export {
+  createPlacementController,
+  quarterTurnsToRotationY,
+  type PlacementCommit,
+  type PlacementController,
+  type PlacementPreview,
+  type SnapMode,
+} from "./placement/placementController";
+export {
   GROUND_DECAL_LAYERS,
   buildJunctionSurface,
   buildRoadRibbon,
@@ -725,74 +829,8 @@ export {
   resolveAuthoredObjects,
 } from "./world/authoredObjects";
 export { createContributionPool, createPlotPermissions, type BuildRole } from "./world/buildPermissions";
-export { buildingIndex, type BuildingIndex } from "./world/buildingIndex";
-export { type BuildingPaletteOverrides, type BuildingStyle } from "./world/buildings";
 export { CarvableField, VoxelVolume, carvableTerrain, type VoxelMaterial } from "./world/carve";
 export { catenaryCurve, sagCurve } from "./world/catenary";
-export { type CityBlockKind } from "./world/cityBlocks";
-export {
-  CITY_FILLER_CLASSES,
-  CITY_LANDMARK_CLASSES,
-  CITY_LOT_CLASSES,
-  CITY_TREE_SPECIES,
-  type CityFillerClass,
-  type CityLandmarkClass,
-  type CityLotClass,
-  type CityLotPiece,
-  type CityPieceRole,
-  type CityPieceShape,
-  type CityTreeSpecies,
-  type CityZoneBand,
-  type CityZoneProfile,
-} from "./world/cityContent";
-export {
-  CITY_PLOT_TIERS,
-  DEFAULT_BLOCK_FILL,
-  DEFAULT_CITY_LEVEL_BIAS,
-  DEFAULT_CITY_ZONE_MIXES,
-  DEFAULT_LANDMARK_SHARE,
-  LANDMARK_HARD_CAP,
-  deriveCityPlots,
-  generateCity,
-  resolveCityLotContent,
-  type CityContentOptions,
-  type CityContentOverrides,
-  type CityGeneratorOptions,
-  type CityLevelClassBias,
-  type CityPlot,
-  type CityPlotFrontage,
-  type CityPlotOptions,
-  type CityPlotResult,
-  type CityPlotTier,
-  type CityZoneMixes,
-  type GeneratedCity,
-  type MassingFootprint,
-  type ResolvedCityLot,
-} from "./world/cityGenerator";
-export {
-  CITY_DEFAULTS,
-  CITY_KIND,
-  CITY_SCHEMA,
-  CITY_ZONE_KIND,
-  CITY_ZONE_SCHEMA,
-  resolveCityObject,
-  type CityBlock,
-  type CityBridge,
-  type CityDriveway,
-  type CityHedge,
-  type CityIntersection,
-  type CityLight,
-  type CityLot,
-  type CityParcel,
-  type CityParcelFrontageOut,
-  type CityPark,
-  type CityParking,
-  type CityResolveContext,
-  type CityRules,
-  type CityStreet,
-  type CityTree,
-  type ResolvedCity,
-} from "./world/cityKind";
 export { createEnvironmentField, type EnvironmentField, type HeatSource } from "./world/envField";
 export { resolveStructureBuildings, summarizeEnvironment } from "./world/environmentSummary";
 export {
@@ -919,44 +957,6 @@ export {
   type PathRetaining,
   type TerrainPathProfile,
 } from "./world/pathTerrain";
-export {
-  isPlaceWorld,
-  resolveWorldPhysics,
-  seedForPlace,
-  world,
-  type BoardGround,
-  type BoardGroundSize,
-  type FlatGround,
-  type FlatGroundSize,
-  type GroundConfig,
-  type GroundGenerator,
-  type GroundMode,
-  type PlaceConfig,
-  type PlaceWorldFeature,
-  type ResolvedGround,
-  type RoundGround,
-  type RoundGroundSize,
-  type SurfaceLaws,
-  type VoxelGround,
-  type VoxelGroundSize,
-} from "./world/place";
-export {
-  placeAssetFromCommit,
-  resolvePlaceAsset,
-  toEditorMarker,
-  toStructureInput,
-  type PlaceAssetResult,
-} from "./world/placeAsset";
-export { createPlacedStructureStore, type PlacedStructure } from "./world/placedStructureStore";
-export { validatePlacement, type PlacementRules } from "./world/placement";
-export {
-  createPlacementController,
-  quarterTurnsToRotationY,
-  type PlacementCommit,
-  type PlacementController,
-  type PlacementPreview,
-  type SnapMode,
-} from "./world/placementController";
 export { POLE_LINE_SCHEMA, resolvePoleLine, type ResolvedPoleLine } from "./world/poleLineKind";
 export { pointInPolygon, polygonArea } from "./world/polygon";
 export { composeRealm } from "./world/realm";

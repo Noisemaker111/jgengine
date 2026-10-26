@@ -1,4 +1,4 @@
-import { defineBuildingKit, type BuildingKit, type BuildingKitPart } from "@jgengine/core/world/buildingKit";
+import { defineBuildingKit, type BuildingKit, type BuildingKitPart } from "@jgengine/core/buildings/buildingKit";
 
 import { assets } from "../assets";
 
