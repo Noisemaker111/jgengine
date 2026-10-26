@@ -1193,6 +1193,7 @@
     "./sky/VolumetricClouds",
     "./sky/skyBands",
     "./sky/skyLightingPolicy",
+    "./sky/skySun",
     "./sky/sunShadowMath",
     "./terrain",
     "./terrain/CarvedTerrain",
