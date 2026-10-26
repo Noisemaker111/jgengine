@@ -85,13 +85,14 @@ export function advanceCropDay(def: CropDef, state: CropTileState): CropTileStat
   return rested;
 }
 
-export interface HarvestResult {
+/** The tile state after a harvest, and the item it yielded (null when nothing was ripe). */
+export interface CropHarvest {
   state: CropTileState;
   yield: RecipeItem | null;
 }
 
 /** @internal */
-export function harvestCrop(def: CropDef, state: CropTileState): HarvestResult {
+export function harvestCrop(def: CropDef, state: CropTileState): CropHarvest {
   if (!state.harvestable || state.cropId === null) return { state, yield: null };
   const produce = def.harvest ?? { itemId: state.cropId, count: 1 };
   if (def.regrowDays !== undefined && def.regrowDays > 0) {

@@ -40,7 +40,7 @@ import {
   type EditorUiStore,
   type GizmoPivot,
   type GizmoSpace,
-  type SnapMode,
+  type EditorSnapMode,
 } from "./uiStore";
 import { useF2Chord } from "./useF2Chord";
 import { shallowArrayEqual, useStoreSelector } from "./useStoreSelector";
@@ -108,7 +108,7 @@ interface StoredEditorPrefs {
   visibility?: Record<string, boolean>;
   gizmoSpace?: GizmoSpace;
   gizmoPivot?: GizmoPivot;
-  snapMode?: SnapMode;
+  snapMode?: EditorSnapMode;
   gridSize?: number;
   rotationSnapDeg?: number | null;
   scaleSnap?: number | null;

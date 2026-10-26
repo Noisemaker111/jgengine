@@ -1,10 +1,6 @@
-export interface Vec3 {
-  x: number;
-  y: number;
-  z: number;
-}
+import type { Xyz } from "../math/xyz";
 
-export interface PositionSample extends Vec3 {
+export interface PositionSample extends Xyz {
   t: number;
 }
 
@@ -29,7 +25,7 @@ export class PositionHistory {
     this.maxSamples = config.maxSamples ?? DEFAULT_MAX_SAMPLES;
   }
 
-  record(entityId: string, t: number, position: Vec3): void {
+  record(entityId: string, t: number, position: Xyz): void {
     let track = this.tracks.get(entityId);
     if (track === undefined) {
       track = [];
@@ -69,7 +65,7 @@ export class PositionHistory {
     return this.tracks.get(entityId) ?? [];
   }
 
-  sampleAt(entityId: string, t: number): Vec3 | null {
+  sampleAt(entityId: string, t: number): Xyz | null {
     const track = this.tracks.get(entityId);
     if (track === undefined || track.length === 0) return null;
     const first = track[0]!;
@@ -117,8 +113,8 @@ export function rewindTimestamp(nowMs: number, rttMs: number, interpDelayMs: num
 }
 
 export interface HitscanRay {
-  origin: Vec3;
-  direction: Vec3;
+  origin: Xyz;
+  direction: Xyz;
   maxDistance?: number;
 }
 
@@ -130,17 +126,17 @@ export interface HitscanTarget {
 export interface HitscanHit {
   entityId: string;
   distance: number;
-  point: Vec3;
+  point: Xyz;
 }
 
-function normalize(v: Vec3): Vec3 | null {
+function normalize(v: Xyz): Xyz | null {
   const len = Math.sqrt(v.x * v.x + v.y * v.y + v.z * v.z);
   if (len === 0) return null;
   return { x: v.x / len, y: v.y / len, z: v.z / len };
 }
 
 /** @internal */
-export function raySphereDistance(ray: HitscanRay, center: Vec3, radius: number): number | null {
+export function raySphereDistance(ray: HitscanRay, center: Xyz, radius: number): number | null {
   const dir = normalize(ray.direction);
   if (dir === null) return null;
   const ox = ray.origin.x - center.x;

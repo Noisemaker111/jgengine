@@ -9,7 +9,7 @@ import {
   towardValue,
   type NumericBounds,
 } from "@jgengine/core/relation/keyedValues";
-import { crossThresholds, type ThresholdBoundary } from "@jgengine/core/relation/thresholds";
+import { crossThresholds, type ThresholdBoundary } from "@jgengine/core/threshold/thresholds";
 
 const BOUNDS: NumericBounds = { min: -100, max: 100 };
 

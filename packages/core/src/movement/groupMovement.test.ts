@@ -1,13 +1,8 @@
 import { describe, expect, test } from "bun:test";
 
 import { resolveLocalAvoidance, type AvoidanceAgent } from "@jgengine/core/movement/avoidance";
-import {
-  assignFormationSlots,
-  facingYaw,
-  placeFormation,
-  wedgeFormation,
-  type Vec2,
-} from "@jgengine/core/movement/formation";
+import { assignFormationSlots, facingYaw, placeFormation, wedgeFormation } from "@jgengine/core/movement/formation";
+import type { Vec2 } from "@jgengine/core/world/geometry";
 
 /**
  * Adoption probe: the three group-movement seams composed as a game would use

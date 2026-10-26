@@ -5,7 +5,7 @@ Next.js is the **client + reads** host. It renders the game shell in a client co
 shared Postgres via `@jgengine/sql`.
 
 **The authoritative WebSocket host stays a standalone process** (`examples/express-host` or any
-`createGameHost` embedding). Next's serverless model cannot own a stateful tick loop — do not
+`createGameServerHost` embedding). Next's serverless model cannot own a stateful tick loop — do not
 try to run `createGameWsServer` inside a route handler.
 
 ```sh

@@ -150,9 +150,9 @@
 - `CropCatalog` (type): type CropCatalog = (cropId: string) => CropDef | null — ⚠ undocumented
 - `CropDef` (interface): interface CropDef { id: string; stages: readonly number[]; regrowDays?: number; needsDailyWater?: boolean; harvest?: RecipeItem } — ⚠ undocumented
 - `CropField` (interface): interface CropField { get(coord: TileCoord): CropTileState; till(coord: TileCoord, pattern?: TilePattern): TileCoord[]; plant(coord: TileCoord, cropId: string): boolean; water(coord: TileCoord, pattern?: TilePattern): TileCoord[]; harvest(coord: TileCoord): Re… — ⚠ undocumented
+- `CropHarvest` (interface): interface CropHarvest — The tile state after a harvest, and the item it yielded (null when nothing was ripe).
 - `CropTileState` (interface): interface CropTileState { soil: SoilState; watered: boolean; cropId: string | null; stage: number; stageProgress: number; harvestable: boolean } — ⚠ undocumented
 - `DayTicker` (interface): interface DayTicker { tick(currentDay: number): number; day(): number } — ⚠ undocumented
-- `HarvestResult` (interface): interface HarvestResult { state: CropTileState; yield: RecipeItem | null } — ⚠ undocumented
 - `SoilState` (type): type SoilState = "untilled" | "tilled" — ⚠ undocumented
 - `TileCoord` (type): type TileCoord = readonly [number, number] — ⚠ undocumented
 - `TilePattern` (type): type TilePattern = readonly TileCoord[] — ⚠ undocumented
@@ -631,7 +631,6 @@
 - `CombatTelegraphEvent` (interface): interface CombatTelegraphEvent { id: number; shape: TelegraphShape; position: [number, number, number]; dir?: number; windupMs: number; kind: string } — ⚠ undocumented
 - `CombatVfxEvent` (interface): interface CombatVfxEvent — A transient sprite-particle effect the shell renders once and expires — one burst of `kind`, tinted `color`, anchored at `from` (and `to` for travel/beam effects).
 - `CommandRefusedEvent` (interface): interface CommandRefusedEvent — A command run through `ctx.game.commands` (or a bound host) was refused. `reason` is the machine code; `message` is the player-facing text the command's `validate` returned, when it gave one.
-- `CosmeticsChangedEvent` (interface): interface CosmeticsChangedEvent { userId: string; slots: Record<string, string> } — ⚠ undocumented
 - `DamageAppliedEvent` (interface): interface DamageAppliedEvent — One application of damage to one target: what hit it, for how much, and where its health stands. `target` is always the thing that took the blow, so a hero and a keep hit in the same frame raise two separate events and a HUD reads only the one whose `target` it owns.
 - `DeathReason` (type): type DeathReason = | { kind: "player_kill"; killerUserId: string; source?: string; via?: { item?: string } } | { kind: "environment"; source: string; attacker?: string } | { kind: "self"; source: string } — Why an entity died — who or what gets credit, for drop/command rules and the `entity.died` event. `source` names what dealt it: a player kill's killer instance id, or the hazard/item of an environment death; `attacker` carries the non-player entity's instance id when one dealt it.
 - `EmotePlayedEvent` (interface): interface EmotePlayedEvent { from: string; emoteId: string; at: readonly [number, number, number]; recipients: readonly string[] } — ⚠ undocumented
@@ -639,14 +638,12 @@
 - `EntityDiedEvent` (interface): interface EntityDiedEvent { instanceId: string; catalogId: string; userId?: string; displayName?: string; reason: DeathReason; source?: string; position: [number, number, number]; serverId?: string; kept?: true } — ⚠ undocumented · used by `deathRemovesEntity` (@jgengine/core/combat/death): Whether a death took the entity out of the scene.
 - `EntityFloatTextEvent` (interface): interface EntityFloatTextEvent { instanceId?: string; position: [number, number, number]; text: string; kind: string; amount?: number; hitType?: string; element?: string; crit?: boolean; scale?: number } — ⚠ undocumented
 - `FeedbackCueEvent` (interface): interface FeedbackCueEvent — A gameplay moment the game announces itself, for the moments no engine event covers (a wave starting, a scripted beat). The shell reacts with the cue's sound, rumble, camera kick and caption.
-- `FormChangedEvent` (interface): interface FormChangedEvent { instanceId: string; formId: string | null } — ⚠ undocumented
 - `GameEventHandler` (type): type GameEventHandler<TPayload> = (payload: TPayload) => void — ⚠ undocumented
 - `GameEventMap` (interface): interface GameEventMap { "entity.died": EntityDiedEvent; "combat.damage": DamageAppliedEvent; "entity.floatText": EntityFloatTextEvent; "combat.telegraph": CombatTelegraphEvent; "combat.vfx": CombatVfxEvent; "combat.vfxInstance": CombatVfxInstanceEvent; "combat.t… — ⚠ undocumented · used by `createGameEvents`: A typed publish/subscribe bus for gameplay events that systems and HUDs subscribe to.
 - `GameEvents` (interface): interface GameEvents<TMap extends GameEventMap = GameEventMap> { on<TName extends keyof TMap>(name: TName, handler: GameEventHandler<TMap[TName]>): () => void; subscribe<TName extends keyof TMap>(name: TName, handler: GameEventHandler<TMap[TName]>): () => void; emit<TName extends keyof TMap>(name: TNam… — ⚠ undocumented · used by `createGameEvents`: A typed publish/subscribe bus for gameplay events that systems and HUDs subscribe to.
 - `InventoryAddedEvent` (interface): interface InventoryAddedEvent { userId: string; item: string; count: number; source?: string } — ⚠ undocumented
 - `LootDrop` (interface): interface LootDrop — One granted reward: an inventory `item` id or a `currency` id, plus how many. Named because every consumer of `loot.granted` needs it — a toast renderer, a loot log, a session summary — and each one that re-declares the shape inline is a cast the compiler cannot check.
 - `LootGrantedEvent` (interface): interface LootGrantedEvent { userId: string; drops: LootDrop[]; source?: string } — ⚠ undocumented
-- `PossessionSwappedEvent` (interface): interface PossessionSwappedEvent { userId: string; entityId: string; previousEntityId: string } — ⚠ undocumented
 - `ProjectileSettledEvent` (interface): interface ProjectileSettledEvent — Exactly-once projectile result for shot-specific game policy and presentation.
 - `QuestAcceptedEvent` (interface): interface QuestAcceptedEvent { userId: string; questId: string } — ⚠ undocumented
 - `QuestCompletedEvent` (interface): interface QuestCompletedEvent { userId: string; questId: string } — ⚠ undocumented
@@ -764,9 +761,9 @@
 
 ## @jgengine/core/game/objectives
 
+- `ObjectiveDirection` (type): type ObjectiveDirection = "atLeast" | "atMost" — Whether a metric must reach up to a target or stay down under it.
 - `ObjectiveStatus` (interface): interface ObjectiveStatus — Evaluated state of one {@link ThresholdObjective} against a current metric value.
 - `ObjectiveSummary` (interface): interface ObjectiveSummary — Rolled-up state across a set of objectives.
-- `ThresholdDirection` (type): type ThresholdDirection = "atLeast" | "atMost" — Whether a metric must reach up to a target or stay down under it.
 - `ThresholdObjective` (interface): interface ThresholdObjective — A live-metric goal: hit `target` from the required `direction` (defaults to `atLeast`).
 - `evaluateObjective` (function): function evaluateObjective(objective: ThresholdObjective, value: number): ObjectiveStatus — Evaluate a single live-metric objective: is `value` at least (or at most) the target, and how far along. Unlike an event counter, this reads a continuously-changing metric — population, approval, pollution — the objective shape city-builders and management sims track every tick.
 - `evaluateObjectives` (function): function evaluateObjectives(objectives: readonly ThresholdObjective[], values: Readonly<Record<string, number>> | ((id: string) => number)): ObjectiveSummary — Evaluate every objective against current metric values (a lookup map or function) and roll them up into a met-count, completion flag, and mean progress — the brief/charter panel every sim renders.
@@ -871,7 +868,7 @@
 - `NoticePresentationConfig` (interface): interface NoticePresentationConfig extends NoticeFeedConfig — How the shell presents `ctx.game.notices`; every field is optional.
 - `ObjectStyle` (interface): interface ObjectStyle { color?: string; opacity?: number; hidden?: boolean } — ⚠ undocumented
 - `ObserverCameraConfig` (interface): interface ObserverCameraConfig — Detached spectator/photo cam (#120) — binds to any entity or fixed point, never reads player input.
-- `PlayableGame` (interface): interface PlayableGame<TUi = unknown, TWorldOverlay = unknown, TRenderEntity = never, TRenderObject = never, TViewmodel = unknown, TOverlay = TWorldOverlay> { game: GameDefinition; content: GameContextContent; loop: Required<Omit<GameLoop<GameContext>, "onPlayerLeave">> & Pick<GameLoop<GameContext>, "onPlayerLeave">; GameUI: TUi; presentation?: "3d" | "hud"; WorldOverlay?: TOverlay; environment… — ⚠ undocumented · used by `defineGame` (@jgengine/shell/defineGame): The one public authoring entry point: compose engine fields (systems, world, physics, input) and presentation fields (camera, HUD, audio, au…
+- `PlayableGameContract` (interface): interface PlayableGameContract<TUi = unknown, TWorldOverlay = unknown, TRenderEntity = never, TRenderObject = never, TViewmodel = unknown, TOverlay = TWorldOverlay> — The renderer-agnostic game contract, generic over its UI and render types; shell's `PlayableGame` fills them with React components.
 - `PlayerFovConfig` (interface): interface PlayerFovConfig — Player-facing FOV preference applied across every perspective camera rig. Orthographic projections ignore it.
 - `PlayerMovementConfig` (interface): interface PlayerMovementConfig — Movement-control levers for the shell-driven local player walk controller.
 - `PointLightingConfig` (interface): interface PointLightingConfig — A bounded dynamic point light in world space.
@@ -1045,9 +1042,9 @@
 
 - `AssetAction` (type): type AssetAction = "inventory" | "use" | "command" — Per-asset action gated by rank on group-owned assets.
 - `AssetOwnership` (type): type AssetOwnership = { scope: "group" } | { scope: "personal"; memberId: string } — Who inside the group owns an asset: the group as a whole, or a specific member personally.
-- `AssetRef` (interface): interface AssetRef — Opaque reference to a shared thing (structure, creature, container) by kind + id.
 - `Tribe` (interface): interface Tribe — A shared-ownership group — a tribe, guild, clan, or company — as one first-class aggregate. Unifies ranked membership, group-vs-personal asset ownership, mutual alliances, and a bounded event log that otherwise have to be hand-assembled from parties, factions, build permissions, and per-owner rosters.
 - `TribeAssetRecord` (interface): interface TribeAssetRecord — An asset (structure/creature) owned within a tribe — group-shared or held by one member.
+- `TribeAssetRef` (interface): interface TribeAssetRef — Opaque reference to a shared thing (structure, creature, container) by kind + id.
 - `TribeConfig` (interface): interface TribeConfig — Construction options for {@link createTribe}: id, founder, rank ladder, and log cap.
 - `TribeEvent` (interface): interface TribeEvent — One entry in a tribe's bounded event log. Optional fields present only when meaningful.
 - `TribeEventType` (type): type TribeEventType = | "member-added" | "member-removed" | "member-left" | "rank-changed" | "founder-transferred" | "asset-registered" | "asset-unregistered" | "alliance-formed" | "alliance-broken" — The kind of change recorded in a tribe's event log (membership, ownership, or alliance).
@@ -1435,7 +1432,7 @@
 - `PhysicsConfig` (interface): interface PhysicsConfig — World gravity and jump tuning, plus the optional rigid-body backend and character capsule.
 - `PingCategory` (type): type PingCategory = string — ⚠ undocumented · used by `DEFAULT_PING_CATEGORIES`: Content-agnostic default ping wheel: enemy / loot / location / danger.
 - `PingSystem` (interface): interface PingSystem { classify(hit: PointerHit): PingCategory; buildPayload(from: string, hit: PointerHit, category?: PingCategory): PingPayload; broadcast(payload: PingPayload): MapMarker; ping(from: string, hit: PointerHit, category?: PingCategory): PingPayl… — ⚠ undocumented · used by `createPingSystem`: Contextual ping/marker communication between teammates, classified by what was pinged.
-- `PlayableGame` (interface): interface PlayableGame<TUi = unknown, TWorldOverlay = unknown, TRenderEntity = never, TRenderObject = never, TViewmodel = unknown, TOverlay = TWorldOverlay> { game: GameDefinition; content: GameContextContent; loop: Required<Omit<GameLoop<GameContext>, "onPlayerLeave">> & Pick<GameLoop<GameContext>, "onPlayerLeave">; GameUI: TUi; presentation?: "3d" | "hud"; WorldOverlay?: TOverlay; environment… — ⚠ undocumented · used by `defineGame` (@jgengine/shell/defineGame): The one public authoring entry point: compose engine fields (systems, world, physics, input) and presentation fields (camera, HUD, audio, au…
+- `PlayableGameContract` (interface): interface PlayableGameContract<TUi = unknown, TWorldOverlay = unknown, TRenderEntity = never, TRenderObject = never, TViewmodel = unknown, TOverlay = TWorldOverlay> — The renderer-agnostic game contract, generic over its UI and render types; shell's `PlayableGame` fills them with React components.
 - `PointerAxisState` (interface): interface PointerAxisState { x: number; y: number; active: boolean } — ⚠ undocumented · used by `normalizePointerToAxis`: Normalize client coordinates against a surface rect into a `PointerAxisState`, clamped to `[-1, 1]` per axis.
 - `PointerConfig` (interface): interface PointerConfig — Mouse/touch pointer bindings for `defineGame({ pointer })`.
 - `PointerHit` (interface): interface PointerHit — Renderer-free result of a screen→world raycast. The shell's pointer service produces this from the cursor; core-side gameplay (item.use aim, click-to-move, ground-target abilities, pings) consumes it without touching three.js.
@@ -1990,23 +1987,23 @@
 ## @jgengine/core/inventory/shapedGrid
 
 - `Cell` (type): type Cell = readonly [number, number] — ⚠ undocumented · used by `canPlace`: Check bounds and overlap for a discrete footprint, optionally ignoring the item being moved.
-- `Footprint` (type): type Footprint = readonly Cell[] — ⚠ undocumented · used by `canPlace`: Check bounds and overlap for a discrete footprint, optionally ignoring the item being moved.
+- `CellFootprint` (type): type CellFootprint = readonly Cell[] — The grid cells a shaped item covers, relative to its anchor.
 - `GridAdjacencyQuery` (interface): interface GridAdjacencyQuery { cellsOf(id: string): readonly Cell[]; neighborsOf(id: string): readonly string[]; touching(idA: string, idB: string): boolean; adjacentCells(cells: readonly Cell[]): readonly Cell[] } — ⚠ undocumented
-- `Placement` (interface): interface Placement<T> { id: string; value: T; footprint: Footprint; origin: Cell; rotation: Rotation } — ⚠ undocumented
+- `Placement` (interface): interface Placement<T> { id: string; value: T; footprint: CellFootprint; origin: Cell; rotation: Rotation } — ⚠ undocumented
 - `Rotation` (type): type Rotation = 0 | 1 | 2 | 3 — ⚠ undocumented · used by `canPlace`: Check bounds and overlap for a discrete footprint, optionally ignoring the item being moved.
 - `ShapedFitRejection` (type): type ShapedFitRejection = "duplicate-id" | "invalid-footprint" | "too-large" | "no-space" | "budget-exceeded" — Why a first-fit placement failed: the footprint cannot fit an empty board at any offered rotation (`too-large`), the board is genuinely full (`no-space`), or the search hit its budget.
 - `ShapedFitResult` (type): type ShapedFitResult<T> = | { status: "ok"; grid: ShapedGrid<T>; origin: Cell; rotation: Rotation; checks: number } | { status: "rejected"; reason: ShapedFitRejection; detail: string; checks: number } — A placed board, or a refusal that names why the item does not fit.
 - `ShapedGrid` (interface): interface ShapedGrid<T> { readonly width: number; readonly height: number; readonly placements: readonly Placement<T>[] } — ⚠ undocumented · used by `canPlace`: Check bounds and overlap for a discrete footprint, optionally ignoring the item being moved.
-- `ShapedItem` (interface): interface ShapedItem<T> { id: string; value: T; footprint: Footprint } — ⚠ undocumented · used by `fitShapedItem`: Place a shaped item at the first legal spot, or say why it does not fit.
+- `ShapedItem` (interface): interface ShapedItem<T> { id: string; value: T; footprint: CellFootprint } — ⚠ undocumented · used by `fitShapedItem`: Place a shaped item at the first legal spot, or say why it does not fit.
 - `ShapedPlaceResult` (interface): interface ShapedPlaceResult<T> { status: "ok"; grid: ShapedGrid<T> } — ⚠ undocumented
 - `ShapedPlacementSearchOptions` (interface): interface ShapedPlacementSearchOptions — Search policy: rotation order first, then rows and columns; the work budget counts candidate origins.
 - `ShapedPlacementSearchResult` (type): type ShapedPlacementSearchResult = | { status: "found"; origin: Cell; rotation: Rotation; checks: number } | { status: "no-space"; checks: number } | { status: "budget-exceeded"; checks: number } — A detached placement, a completed no-fit search, or an incomplete search that reached its budget.
 - `ShapedRejected` (interface): interface ShapedRejected { status: "rejected"; reason: ShapedRejection; detail?: string } — ⚠ undocumented
 - `ShapedRejection` (type): type ShapedRejection = "out-of-bounds" | "overlap" | "duplicate-id" | "unknown-id" | "invalid-footprint" | "invalid-origin" — ⚠ undocumented · used by `canPlace`: Check bounds and overlap for a discrete footprint, optionally ignoring the item being moved.
 - `ShapedResult` (type): type ShapedResult<T> = ShapedPlaceResult<T> | ShapedRejected — ⚠ undocumented · used by `moveShaped`: Move or rotate one placement, ignoring its current cells during overlap checks.
-- `canPlace` (function): function canPlace<T>(grid: ShapedGrid<T>, footprint: Footprint, origin: Cell, rotation: Rotation, ignoreId?: string): ShapedRejection | null — Check bounds and overlap for a discrete footprint, optionally ignoring the item being moved.
+- `canPlace` (function): function canPlace<T>(grid: ShapedGrid<T>, footprint: CellFootprint, origin: Cell, rotation: Rotation, ignoreId?: string): ShapedRejection | null — Check bounds and overlap for a discrete footprint, optionally ignoring the item being moved.
 - `createShapedGrid` (function): function createShapedGrid<T>(width: number, height: number): ShapedGrid<T> — An immutable spatial inventory board holding caller-defined multi-cell items.
-- `findShapedPlacement` (function): function findShapedPlacement<T>(grid: ShapedGrid<T>, footprint: Footprint, options: ShapedPlacementSearchOptions = {}): ShapedPlacementSearchResult — Find the first legal placement without mutating the board; occupancy is indexed once per search.
+- `findShapedPlacement` (function): function findShapedPlacement<T>(grid: ShapedGrid<T>, footprint: CellFootprint, options: ShapedPlacementSearchOptions = {}): ShapedPlacementSearchResult — Find the first legal placement without mutating the board; occupancy is indexed once per search.
 - `fitShapedItem` (function): function fitShapedItem<T>(grid: ShapedGrid<T>, item: ShapedItem<T>, options: ShapedPlacementSearchOptions = {}): ShapedFitResult<T> — Place a shaped item at the first legal spot, or say why it does not fit. Distinguishes an item that can never fit the board (`too-large`, with its footprint and the board size in `detail`) from a full board (`no-space`) and an exhausted search (`budget-exceeded`, not a full bag).
 - `moveShaped` (function): function moveShaped<T>(grid: ShapedGrid<T>, id: string, origin: Cell, rotation?: Rotation): ShapedResult<T> — Move or rotate one placement, ignoring its current cells during overlap checks.
 - `placeShaped` (function): function placeShaped<T>(grid: ShapedGrid<T>, item: ShapedItem<T>, origin: Cell, rotation: Rotation = 0): ShapedResult<T> — Place a caller-defined item without mutating the source board; duplicate ids reject.
@@ -2642,15 +2639,6 @@
 - `setValue` (function): function setValue(record: Record<string, number>, key: string, value: number, bounds?: NumericBounds): number — Set `key` to `value` (clamped to `bounds`), writing the record in place. Returns the stored value.
 - `towardValue` (function): function towardValue(record: Record<string, number>, key: string, target: number, maxDelta: number, bounds?: NumericBounds): number — Step `key` toward `target` by at most `maxDelta` without overshooting, then clamp to `bounds`. Writes in place and returns the stored value.
 
-## @jgengine/core/relation/thresholds
-
-- `CrossThresholdsOptions` (interface): interface CrossThresholdsOptions — Exact-boundary and dead-band policy for {@link crossThresholds}.
-- `ThresholdBoundary` (interface): interface ThresholdBoundary<Id = string> — A labelled cut point on the value axis. `Id` is caller-owned (string, enum, or a policy object).
-- `ThresholdCrossing` (interface): interface ThresholdCrossing<Id = string> — A single boundary transition between a `before` and `after` value.
-- `ThresholdDirection` (type): type ThresholdDirection = "up" | "down" — Generic threshold-crossing detection over ordered numeric boundaries.
-- `crossThresholds` (function): function crossThresholds<Id>(boundaries: readonly ThresholdBoundary<Id>[], before: number, after: number, options: CrossThresholdsOptions = {}): ThresholdCrossing<Id>[] — Report every boundary crossed moving from `before` to `after`.
-- `tierAt` (function): function tierAt<Id>(boundaries: readonly ThresholdBoundary<Id>[], value: number, options: { readonly inclusive?: boolean } = {}): ThresholdBoundary<Id> | null — The highest boundary at-or-below `value` — the band the value currently sits in. Returns `null` when `value` is below every boundary. Boundaries need not be sorted.
-
 ## @jgengine/core/rules/predicate
 
 - `Predicate` (type): type Predicate = | { readonly all: readonly Predicate[] } | { readonly any: readonly Predicate[] } | { readonly not: Predicate } | { readonly eq: readonly [PredicatePath, PredicateValue] } | { readonly ne: readonly [PredicatePath, PredicateValue] } | { readonly gt: readonly [PredicatePath, number] }… — One node of the predicate tree. Combinators (`all`/`any`/`not`) nest; leaf comparators read a dot path from the facts and compare it. `has` passes when the path resolves to a non-nullish value.
@@ -3009,6 +2997,26 @@
 - `TacticalGridSnapshot` (interface): interface TacticalGridSnapshot { blocked: string[]; occupants: Record<string, string> } — ⚠ undocumented
 - `TacticalGridWorldConfig` (interface): interface TacticalGridWorldConfig — Maps abstract `[col, row]` tiles onto world-space `[x, z]`, mirroring `navGrid`'s bounds+cellSize convention.
 - `Tile` (type): type Tile = readonly [number, number] — ⚠ undocumented
+
+## @jgengine/core/threshold/thresholdTracker
+
+- `CrossingDirection` (type): type CrossingDirection = "falling" | "rising" — The direction a crossing moved: `falling` = value decreased past the mark, `rising` = increased past it.
+- `CrossingPolicy` (type): type CrossingPolicy = "once" | "repeat" — Whether a threshold may fire repeatedly (`repeat`) or at most once per direction (`once`).
+- `CrossingTrigger` (type): type CrossingTrigger = "falling" | "rising" | "both" — Which directions should emit crossings.
+- `ThresholdCrossingConfig` (interface): interface ThresholdCrossingConfig — Caller configuration for a threshold tracker.
+- `ThresholdTracker` (interface): interface ThresholdTracker — A stateful crossing tracker over one numeric source.
+- `ThresholdTrackerCrossing` (interface): interface ThresholdTrackerCrossing — One emitted crossing: which threshold, which way, and the value span that produced it.
+- `ThresholdTrackerSnapshot` (interface): interface ThresholdTrackerSnapshot — Serializable tracker state for save/load.
+- `createThresholdTracker` (function): function createThresholdTracker(config: ThresholdCrossingConfig): ThresholdTracker — Track a numeric source against named thresholds and emit ordered crossing events with direction, hysteresis, once/repeat policy, and skipped-threshold handling. Deterministic and serializable; drives phase transitions, armor breaks, resource warnings, and any other threshold consumer.
+
+## @jgengine/core/threshold/thresholds
+
+- `CrossThresholdsOptions` (interface): interface CrossThresholdsOptions — Exact-boundary and dead-band policy for {@link crossThresholds}.
+- `ThresholdBoundary` (interface): interface ThresholdBoundary<Id = string> — A labelled cut point on the value axis. `Id` is caller-owned (string, enum, or a policy object).
+- `ThresholdCrossing` (interface): interface ThresholdCrossing<Id = string> — A single boundary transition between a `before` and `after` value.
+- `ThresholdDirection` (type): type ThresholdDirection = "up" | "down" — Generic threshold-crossing detection over ordered numeric boundaries.
+- `crossThresholds` (function): function crossThresholds<Id>(boundaries: readonly ThresholdBoundary<Id>[], before: number, after: number, options: CrossThresholdsOptions = {}): ThresholdCrossing<Id>[] — Report every boundary crossed moving from `before` to `after`.
+- `tierAt` (function): function tierAt<Id>(boundaries: readonly ThresholdBoundary<Id>[], value: number, options: { readonly inclusive?: boolean } = {}): ThresholdBoundary<Id> | null — The highest boundary at-or-below `value` — the band the value currently sits in. Returns `null` when `value` is below every boundary. Boundaries need not be sorted.
 
 ## @jgengine/core/turn/commit
 

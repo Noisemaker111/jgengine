@@ -1,14 +1,6 @@
 import type { GameContext } from "@jgengine/core/runtime/gameContext";
-import {
-  assignFormationSlots,
-  boxFormation,
-  facingYaw,
-  lineFormation,
-  placeFormation,
-  wedgeFormation,
-  type FormationSlotGenerator,
-  type Vec2,
-} from "@jgengine/core/movement/formation";
+import { assignFormationSlots, boxFormation, facingYaw, lineFormation, placeFormation, wedgeFormation, type FormationSlotGenerator } from "@jgengine/core/movement/formation";
+import type { Vec2 } from "@jgengine/core/world/geometry";
 
 import { combatantDef } from "./catalog";
 import { session, type UnitRuntime } from "./session";

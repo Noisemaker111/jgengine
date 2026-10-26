@@ -128,7 +128,7 @@ export {
 } from "./combat/magazine";
 export {
   createProjectileSystem,
-  type ObjectRaycastHit,
+  type ProjectileObjectHit,
   type ProjectileSystemDeps,
   type RaycastHit,
 } from "./combat/projectiles";
@@ -250,17 +250,6 @@ export {
 } from "./combat/statusRuntime";
 export { type TelegraphConfig, type TelegraphShape } from "./combat/telegraph";
 export {
-  createThresholdTracker,
-  type CrossingDirection,
-  type CrossingPolicy,
-  type CrossingTrigger,
-  type ThresholdCrossing,
-  type ThresholdCrossingConfig,
-  type ThresholdMark,
-  type ThresholdTracker,
-  type ThresholdTrackerSnapshot,
-} from "./combat/thresholdCrossings";
-export {
   DEFAULT_VFX_PRESET,
   resolveVfxPreset,
   vfxPresets,
@@ -312,7 +301,7 @@ export {
   type WeaponSystemState,
   type WeaponTickResult,
 } from "./combat/weaponSystem";
-export { createAccumulatorMeter, tierAt, type MeterAddResult } from "./stats/accumulatorMeter";
+export { createAccumulatorMeter, type MeterAddResult } from "./stats/accumulatorMeter";
 export { createEventMeter, type EventMeter, type EventMeterFeedResult } from "./stats/eventMeter";
 export { rollCheck, type CheckAdvantage, type CheckResult } from "./stats/rollCheck";
 export { createStats, type Stats, type StatsSnapshot } from "./stats/statModifiers";
@@ -328,6 +317,16 @@ export {
   type StatPoolInput,
   type StatPoolPatch,
 } from "./stats/statPool";
+export {
+  createThresholdTracker,
+  type CrossingDirection,
+  type CrossingPolicy,
+  type CrossingTrigger,
+  type ThresholdCrossingConfig,
+  type ThresholdTracker,
+  type ThresholdTrackerCrossing,
+  type ThresholdTrackerSnapshot,
+} from "./threshold/thresholdTracker";
 export {
   BUILTIN_COMPLETION_PREDICATES,
   BUILTIN_SPAWN_PROVIDERS,

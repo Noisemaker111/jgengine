@@ -38,6 +38,7 @@ import {
 import type { CommandDef, CommandScope } from "@jgengine/core/runtime/commandRunner";
 import { SERVER_ONLY_COMMAND_REASON, commandScopeEscape, scopeWithActor } from "@jgengine/core/runtime/commandRunner";
 import type { GameRuntime } from "@jgengine/core/runtime/gameRuntime";
+import type { RunCommandArgs } from "@jgengine/core/runtime/transport";
 import { createGameRuntime, initialPlayerState } from "@jgengine/core/runtime/gameRuntime";
 import type { GameServerRecord, LeaderboardIncrement, PlayerProfileRecord } from "@jgengine/core/runtime/hostPersistence";
 import {
@@ -57,6 +58,7 @@ import {
   validateSlotsPerServer,
   withJoinedMember,
   withoutMember,
+  MAX_SESSION_ID_LENGTH,
   type MatchmakingMode,
 } from "@jgengine/core/runtime/hostPolicy";
 import type { SaveConfig } from "@jgengine/core/save/saveConfig";
@@ -292,8 +294,6 @@ async function memberRow(ctx: JGQueryCtx | JGMutationCtx, serverId: GenericId<"j
 
 /** Most live client sessions one shared-topology membership remembers; the oldest drop first. */
 export const MAX_MEMBER_SESSIONS = 16;
-/** Longest accepted client `sessionId`. */
-export const MAX_SESSION_ID_LENGTH = 128;
 
 function withSession(sessionIds: readonly string[] | undefined, sessionId: string): string[] {
   return [...(sessionIds ?? []).filter((id) => id !== sessionId), sessionId].slice(-MAX_MEMBER_SESSIONS);
@@ -665,10 +665,7 @@ export const JG_RUNTIME_TICK_MS = 1_000;
 export type RunCommandOutcome = { ok: true } | { ok: false; reason: string };
 
 /** Arguments of the `runCommand` mutation, and of the equivalent {@link GameServerHelpers.runCommand} helper. */
-export type RunCommandArgs = {
-  serverId: string;
-  command: string;
-  input: unknown;
+export type ConvexRunCommandArgs = RunCommandArgs & {
   externalId?: string;
   /**
    * How much of the server to hydrate before applying the command. Overrides whatever the
@@ -737,7 +734,7 @@ export type GameServerHelpers = {
    * Apply a command as the actor. Refuses non-members with "Not a member of this server"; host
    * mutations acting for a user who might have no live session call {@link ensureJoined} first.
    */
-  runCommand: (ctx: JGMutationCtx, args: RunCommandArgs) => Promise<RunCommandOutcome>;
+  runCommand: (ctx: JGMutationCtx, args: ConvexRunCommandArgs) => Promise<RunCommandOutcome>;
   /**
    * Join a trusted, already-authorized actor through the same path as the `joinServer` mutation.
    * Idempotent: an existing member of `serverId` returns at once. Pins no client session, so it never

@@ -10,7 +10,7 @@
  * (inverse mass; `0` = immovable anchor/obstacle) are honored.
  */
 
-import type { Vec2 } from "./formation";
+import type { Vec2 } from "../world/geometry";
 
 /** A circular agent that avoidance may push on the XZ plane. */
 export interface AvoidanceAgent {

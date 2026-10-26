@@ -1,6 +1,6 @@
 import type { BackdropConfig, LightingConfig } from "../game/playableGame";
 import type { SkyEnvironmentConfig } from "../world/features";
-import { moodForSkyPreset, resolveMood, type Mood, type MoodConfig, type ResolvedMood } from "./lookMood";
+import { moodForSkyPreset, resolveMood, type LookMood, type MoodConfig, type ResolvedMood } from "./lookMood";
 import type { PostProcessingConfig } from "./postProcessing";
 
 /**
@@ -23,7 +23,7 @@ export const LOOK_PRESETS: readonly LookPreset[] = ["neutral", "photoreal", "cin
 export interface GameLookInput {
   look?: LookPreset;
   /** Lighting mood; see {@link resolveGameLook} for when an unset mood is filled in. */
-  mood?: Mood;
+  mood?: LookMood;
   lighting?: LightingConfig;
   backdrop?: BackdropConfig;
   postProcessing?: PostProcessingConfig;
@@ -170,7 +170,7 @@ const SKY_FILL_BASELINE = 0.6;
  * intensity controls keep steering the scene under a mood: the key light stands where the dome's
  * sun is, and `sunIntensity`/`ambientIntensity` scale the key and the fill from their defaults.
  */
-function steeredMood(mood: Mood, steer: SkyEnvironmentConfig | undefined): ResolvedMood {
+function steeredMood(mood: LookMood, steer: SkyEnvironmentConfig | undefined): ResolvedMood {
   const config: MoodConfig = typeof mood === "string" ? { preset: mood } : mood;
   const sun = steer?.sun === undefined ? config.sun : { ...config.sun, ...definedFields(steer.sun) };
   const resolved = resolveMood(sun === undefined ? config : { ...config, sun });
@@ -190,7 +190,7 @@ function steeredMood(mood: Mood, steer: SkyEnvironmentConfig | undefined): Resol
 }
 
 /** Post fields a mood's own tokens set; unlike the preset's values, they win over the style. */
-function moodTokenPost(mood: Mood | undefined, gradeOn: boolean): PostProcessingConfig | undefined {
+function moodTokenPost(mood: LookMood | undefined, gradeOn: boolean): PostProcessingConfig | undefined {
   if (mood === undefined || typeof mood === "string") return undefined;
   const saturation = gradeOn ? mood.saturation : undefined;
   if (mood.exposure === undefined && saturation === undefined) return undefined;
@@ -236,7 +236,7 @@ export function resolveGameLook(input: GameLookInput): ResolvedGameLook {
   const authoredSky = input.backdrop?.sky;
   const sceneSky = authoredSky ?? overlaySky(input.worldSky, input.documentSky);
   const implicit = input.mood === undefined && styled && !authorsLightRig(input.lighting) && sceneSky?.timeOfDay !== true;
-  const moodSpec: Mood | undefined = input.mood ?? (implicit ? moodForSkyPreset(sceneSky?.preset) : undefined);
+  const moodSpec: LookMood | undefined = input.mood ?? (implicit ? moodForSkyPreset(sceneSky?.preset) : undefined);
   const mood = moodSpec === undefined ? undefined : steeredMood(moodSpec, input.mood === undefined ? sceneSky : (authoredSky ?? input.documentSky));
 
   let sky: SkyEnvironmentConfig | undefined;

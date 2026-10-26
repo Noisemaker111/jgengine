@@ -1,15 +1,7 @@
 import { describe, expect, test } from "bun:test";
 
-import {
-  assignFormationSlots,
-  boxFormation,
-  circleFormation,
-  facingYaw,
-  lineFormation,
-  placeFormation,
-  wedgeFormation,
-  type Vec2,
-} from "@jgengine/core/movement/formation";
+import { assignFormationSlots, boxFormation, circleFormation, facingYaw, lineFormation, placeFormation, wedgeFormation } from "@jgengine/core/movement/formation";
+import type { Vec2 } from "@jgengine/core/world/geometry";
 
 describe("placeFormation", () => {
   test("facing north (+z) leaves local offsets axis-aligned", () => {

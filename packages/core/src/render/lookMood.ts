@@ -47,7 +47,7 @@ export interface MoodConfig {
 }
 
 /** A mood: a preset name, or a preset with token overrides. */
-export type Mood = MoodPreset | MoodConfig;
+export type LookMood = MoodPreset | MoodConfig;
 
 type Rgb = readonly [number, number, number];
 
@@ -197,7 +197,7 @@ function directionToward(azimuth: number, elevation: number, distance: number): 
   return [Math.sin(az) * flat, Math.sin(el) * distance, -Math.cos(az) * flat];
 }
 
-function moodTokens(mood: Mood): { tokens: MoodTokens; config: MoodConfig } {
+function moodTokens(mood: LookMood): { tokens: MoodTokens; config: MoodConfig } {
   const config: MoodConfig = typeof mood === "string" ? { preset: mood } : mood;
   return { tokens: MOODS[config.preset ?? "day"], config };
 }
@@ -208,7 +208,7 @@ function moodTokens(mood: Mood): { tokens: MoodTokens; config: MoodConfig } {
  * sun; a cool bounce opposite it keeps shadowed sides readable; the haze matches the horizon.
  * @capability lighting-mood expand a mood preset and its token overrides into lighting, sky, haze and grade
  */
-export function resolveMood(mood: Mood): ResolvedMood {
+export function resolveMood(mood: LookMood): ResolvedMood {
   const { tokens, config } = moodTokens(mood);
   const sun: Required<MoodSun> = { ...tokens.sun, ...stripUndefined(config.sun ?? {}) };
   const skyColor = config.skyColor ?? tokens.zenith;

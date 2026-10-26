@@ -15,15 +15,15 @@ import {
   removeShaped,
   rotateFootprint,
   type Cell,
-  type Footprint,
+  type CellFootprint,
 } from "@jgengine/core/inventory/shapedGrid";
 
-const ell: Footprint = [
+const ell: CellFootprint = [
   [0, 0],
   [0, 1],
   [1, 1],
 ];
-const single: Footprint = [[0, 0]];
+const single: CellFootprint = [[0, 0]];
 
 function keys(cells: readonly Cell[]): string[] {
   return cells.map(([c, r]) => `${c},${r}`).sort();
@@ -166,7 +166,7 @@ describe("discrete shaped-grid inputs", () => {
 
   test("empty, fractional, and nonfinite footprints and origins cannot place", () => {
     const grid = createShapedGrid(4, 3);
-    for (const footprint of [[], [[0.5, 0]], [[NaN, 0]], [[0, Infinity]]] as Footprint[]) {
+    for (const footprint of [[], [[0.5, 0]], [[NaN, 0]], [[0, Infinity]]] as CellFootprint[]) {
       expect(canPlace(grid, footprint, [0, 0], 0)).toBe("invalid-footprint");
     }
     for (const origin of [[0.5, 0], [NaN, 0], [0, Infinity]] as Cell[]) {
@@ -184,7 +184,7 @@ describe("discrete shaped-grid inputs", () => {
 });
 
 describe("ordered bounded placement search", () => {
-  const rifle: Footprint = [[0, 0], [1, 0], [2, 0]];
+  const rifle: CellFootprint = [[0, 0], [1, 0], [2, 0]];
 
   test("Deepward tries unrotated row-major positions before rotating", () => {
     const grid = createShapedGrid(4, 3);
@@ -228,7 +228,7 @@ describe("ordered bounded placement search", () => {
 });
 
 describe("first-fit placement that names why an item does not fit", () => {
-  const rifle: Footprint = [[0, 0], [1, 0], [2, 0]];
+  const rifle: CellFootprint = [[0, 0], [1, 0], [2, 0]];
 
   test("places a fitting item and reports the origin, rotation and work spent", () => {
     const result = fitShapedItem(createShapedGrid(4, 2), { id: "rifle", value: "rifle", footprint: rifle });

@@ -276,7 +276,7 @@ export {
   type ModelMaterialOverride,
   type ObjectStyle,
   type ObserverCameraConfig,
-  type PlayableGame,
+  type PlayableGameContract,
   type PointerConfig,
   type RtsCameraConfig,
   type ShoulderCameraConfig,
@@ -677,14 +677,6 @@ export {
   type PairKeyOptions,
 } from "./relation/keyedValues";
 export {
-  crossThresholds,
-  tierAt,
-  type CrossThresholdsOptions,
-  type ThresholdBoundary,
-  type ThresholdCrossing,
-  type ThresholdDirection,
-} from "./relation/thresholds";
-export {
   evaluatePredicate,
   readPath,
   type Predicate,
@@ -837,6 +829,14 @@ export {
 } from "./survival/decayMeter";
 export { createMoodleStack, stackMoodles, type Moodle, type MoodleStack } from "./survival/moodle";
 export { createMultiRegionHealth, type MultiRegionHealth } from "./survival/regionHealth";
+export {
+  crossThresholds,
+  tierAt,
+  type CrossThresholdsOptions,
+  type ThresholdBoundary,
+  type ThresholdCrossing,
+  type ThresholdDirection,
+} from "./threshold/thresholds";
 export { createCommitController } from "./turn/commit";
 export { createIntentBoard } from "./turn/intent";
 export { createTurnLoop, type TurnLoop } from "./turn/turnLoop";

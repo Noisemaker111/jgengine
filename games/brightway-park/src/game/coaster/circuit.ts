@@ -1,4 +1,4 @@
-import { pathLength } from "@jgengine/core/nav/pathFollow";
+import { followPathLength } from "@jgengine/core/nav/pathFollow";
 
 import { GRID } from "../catalog";
 
@@ -187,7 +187,7 @@ export function buildCoasterCircuit(pieces: readonly TrackPoint[], station: read
   if (best.length === 0) return OPEN;
 
   const waypoints = best.map((index) => pieces[index]!);
-  const length = pathLength({ waypoints, speed: CHAIN_SPEED, loop: bestClosed });
+  const length = followPathLength({ waypoints, speed: CHAIN_SPEED, loop: bestClosed });
 
   let degreesTurned = 0;
   let corners = 0;

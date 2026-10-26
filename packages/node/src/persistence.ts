@@ -5,7 +5,7 @@ import { join } from "node:path";
 import type {
   GameServerRecord,
   HostPersistence,
-  LeaderboardRow,
+  StoredLeaderboardRow,
   PlayerProfileRecord,
   WorldChunkRecord,
 } from "@jgengine/core/runtime/hostPersistence";
@@ -99,8 +99,8 @@ export function filePersistence(dir: string, now: () => number = Date.now): Host
     return ready;
   };
 
-  const loadLeaderboard = async (): Promise<Map<string, LeaderboardRow>> => {
-    const rows = (await readJson<LeaderboardRow[]>(leaderboardPath)) ?? [];
+  const loadLeaderboard = async (): Promise<Map<string, StoredLeaderboardRow>> => {
+    const rows = (await readJson<StoredLeaderboardRow[]>(leaderboardPath)) ?? [];
     return new Map(rows.map((row) => [leaderboardRowKey(row), row]));
   };
 

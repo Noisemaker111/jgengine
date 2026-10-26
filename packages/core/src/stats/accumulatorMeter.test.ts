@@ -1,5 +1,6 @@
 import { describe, expect, test } from "bun:test";
-import { createAccumulatorMeter, tierAt } from "@jgengine/core/stats/accumulatorMeter";
+import { createAccumulatorMeter } from "@jgengine/core/stats/accumulatorMeter";
+import { tierAt } from "@jgengine/core/threshold/thresholds";
 
 describe("accumulatorMeter", () => {
   test("fills toward max and reports fraction", () => {
@@ -53,8 +54,8 @@ describe("accumulatorMeter", () => {
       { id: "silver", at: 20 },
       { id: "gold", at: 30 },
     ];
-    expect(tierAt(0, tiers)).toBeNull();
-    expect(tierAt(25, tiers)).toBe("silver");
+    expect(tierAt(tiers, 0)).toBeNull();
+    expect(tierAt(tiers, 25)?.id).toBe("silver");
     const meter = createAccumulatorMeter({ max: 100, tiers });
     expect(meter.add(15).tier).toBe("bronze");
     const jump = meter.add(10);

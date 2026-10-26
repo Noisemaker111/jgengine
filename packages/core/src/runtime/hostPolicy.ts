@@ -1,5 +1,6 @@
 import { normalizeJoinCode } from "../multiplayer/matchmaking";
-import type { GameServerStatus, SessionVisibility } from "./hostPersistence";
+import type { SessionVisibility } from "../multiplayer/matchmaking";
+import type { GameServerStatus } from "./hostPersistence";
 
 /**
  * Room-topology ceiling on `slotsPerServer`; shared membership uses indexed rows instead.
@@ -11,6 +12,9 @@ import type { GameServerStatus, SessionVisibility } from "./hostPersistence";
  * inside those limits. A world that needs more concurrent players needs more than one server row.
  */
 export const JG_MAX_MEMBERS_PER_SERVER = 256;
+
+/** Longest accepted client join/leave `sessionId`, in UTF-16 code units. */
+export const MAX_SESSION_ID_LENGTH = 128;
 
 /** Whether a `slotsPerServer` value is a capacity a single hosted server row can actually hold. */
 export function validateSlotsPerServer(

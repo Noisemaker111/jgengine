@@ -1,7 +1,7 @@
 import { expect, test } from "bun:test";
 import { defineGameDefinition } from "@jgengine/core/game/defineGame";
 import { createHostedWorldSessionAsync } from "@jgengine/core/runtime/hostedWorldSession";
-import { createGameHost, memoryPersistence, type GameHost } from "./host";
+import { createGameServerHost, memoryPersistence, type GameServerHost } from "./host";
 import { createHostRouter } from "./hostRouter";
 import { createWorldGameHost } from "./worldHost";
 
@@ -14,7 +14,7 @@ function deferred() {
 async function delayedHost(kind: "world" | "reducer") {
   const started = deferred();
   const released = deferred();
-  let host: GameHost;
+  let host: GameServerHost;
   let serverId = "world";
   let otherId = "other";
   if (kind === "world") {
@@ -27,7 +27,7 @@ async function delayedHost(kind: "world" | "reducer") {
     }) });
   } else {
     const persistence = memoryPersistence();
-    const original = createGameHost({ persistence, slotsPerServer: 1 });
+    const original = createGameServerHost({ persistence, slotsPerServer: 1 });
     serverId = (await original.joinServer({ userId: "seed", gameId: "world" })).serverId;
     await original.leaveServer({ userId: "seed", serverId });
     otherId = (await original.joinServer({ userId: "seed", gameId: "world" })).serverId;
@@ -35,7 +35,7 @@ async function delayedHost(kind: "world" | "reducer") {
     await original.stop();
     const load = persistence.loadServer;
     persistence.loadServer = async id => { started.resolve(); await released.promise; return load(id); };
-    host = createGameHost({ persistence, slotsPerServer: 1 });
+    host = createGameServerHost({ persistence, slotsPerServer: 1 });
   }
   return { host, serverId, otherId, started, released };
 }
@@ -181,7 +181,7 @@ for (const kind of ["world", "reducer"] as const) {
 
 test("a code join completing after disconnect releases its admitted membership", async () => {
   const persistence = memoryPersistence();
-  const original = createGameHost({ persistence, slotsPerServer: 1 });
+  const original = createGameServerHost({ persistence, slotsPerServer: 1 });
   const { serverId } = await original.joinServer({ userId: "seed", gameId: "world", attributes: { visibility: "private", joinCode: "invite" } });
   await original.leaveServer({ userId: "seed", serverId });
   await original.stop();
@@ -189,7 +189,7 @@ test("a code join completing after disconnect releases its admitted membership",
   const released = deferred();
   const load = persistence.loadServer;
   persistence.loadServer = async id => { started.resolve(); await released.promise; return load(id); };
-  const host = createGameHost({ persistence, slotsPerServer: 1 });
+  const host = createGameServerHost({ persistence, slotsPerServer: 1 });
   const router = createHostRouter({ host, allowAnonymous: true, graceMs: 0 });
   const connection = router.connect({ send() {}, close() {} });
   connection.handleRaw(JSON.stringify({ v: 1, t: "hello", id: 1, userId: "departed" }));

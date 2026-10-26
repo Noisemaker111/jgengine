@@ -700,7 +700,7 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 ## path-length — total polyline distance for progress math and seeding
 
-- `pathLength` (function) · `import { pathLength } from "@jgengine/core/world"`
+- `followPathLength` (function) · `import { followPathLength } from "@jgengine/core/world"`
 
 ## path-terrain — apply flatten/grade/carve/retaining path profiles to a terrain field
 

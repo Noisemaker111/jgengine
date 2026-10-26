@@ -1,7 +1,7 @@
 import { expect, test } from "bun:test";
 
 import type { CommandAuthorize, CommandCatalog, CommandLimits } from "./commandMiddleware";
-import { createGameHost, memoryPersistence, type GameHost, type HostChangeEvent } from "./host";
+import { createGameServerHost, memoryPersistence, type GameServerHost, type HostChangeEvent } from "./host";
 import { createHostRouter, loopbackPipe, MAX_QUEUED_MESSAGES, type HostRouter } from "./hostRouter";
 import { createWsBackend, type WsBackend } from "./createWsBackend";
 import type { WsChatMessage, WsPresenceRow, WsServerMessage } from "./protocol";
@@ -39,13 +39,13 @@ function startStack(options: {
   validate?: CommandCatalog;
   graceMs?: number;
 } = {}): {
-  host: GameHost;
+  host: GameServerHost;
   router: HostRouter;
   backends: WsBackend[];
   connect: (userId: string) => WsBackend;
   shutdown: () => Promise<void>;
 } {
-  const host = createGameHost({
+  const host = createGameServerHost({
     persistence: memoryPersistence(),
     allowedFeedActions: options.allowedFeedActions,
   });
@@ -78,7 +78,7 @@ function startStack(options: {
 }
 
 async function delayedWorldStack() {
-  const host = createGameHost({ persistence: memoryPersistence() });
+  const host = createGameServerHost({ persistence: memoryPersistence() });
   let notify: (event: HostChangeEvent) => void = () => {};
   host.subscribe = (listener) => { notify = listener; return () => {}; };
   const pulls = channel<{
@@ -137,7 +137,7 @@ function worldBaseline(revision: number): WorldSyncFrame {
 }
 
 test("router close fences deferred authentication, queued joins, and new connections", async () => {
-  const host = createGameHost({ persistence: memoryPersistence() });
+  const host = createGameServerHost({ persistence: memoryPersistence() });
   let began!: () => void;
   let release!: () => void;
   const started = new Promise<void>(resolve => { began = resolve; });
@@ -392,7 +392,7 @@ test("loopback: engine.ping command replies ok", async () => {
 });
 
 test("loopback: server subscribers pull diffs and can request a baseline after a missed revision", async () => {
-  const host = createGameHost({ persistence: memoryPersistence() });
+  const host = createGameServerHost({ persistence: memoryPersistence() });
   const baseline: WorldSyncFrame = {
     kind: "baseline",
     revision: 1,
@@ -684,7 +684,7 @@ test("loopback: disconnect leaves the server and reclaims the slot", async () =>
 });
 
 test("loopback: decode failure with id replies an error instead of hanging", async () => {
-  const host = createGameHost({ persistence: memoryPersistence() });
+  const host = createGameServerHost({ persistence: memoryPersistence() });
   const router = createHostRouter({ host });
   try {
     const replies = channel<string>();
@@ -712,7 +712,7 @@ test("loopback: decode failure with id replies an error instead of hanging", asy
 test("loopback: concurrent frames on one socket are serialized", async () => {
   let active = 0;
   let maxActive = 0;
-  const host = createGameHost({ persistence: memoryPersistence() });
+  const host = createGameServerHost({ persistence: memoryPersistence() });
   const router = createHostRouter({
     host,
     authenticate: async ({ userId }) => {
@@ -745,7 +745,7 @@ test("loopback: concurrent frames on one socket are serialized", async () => {
 
 test("loopback: a flood of frames past the queue bound gets rejected instead of piling up", async () => {
   let released: (() => void) | undefined;
-  const host = createGameHost({ persistence: memoryPersistence() });
+  const host = createGameServerHost({ persistence: memoryPersistence() });
   const router = createHostRouter({
     host,
     authenticate: ({ userId }) =>
@@ -787,7 +787,7 @@ test("loopback: a flood of frames past the queue bound gets rejected instead of 
 });
 
 test("security: anonymous hello rejected without allowAnonymous or authenticate", async () => {
-  const host = createGameHost({ persistence: memoryPersistence() });
+  const host = createGameServerHost({ persistence: memoryPersistence() });
   const router = createHostRouter({ host });
   const backend = createWsBackend({ userId: "mallory", pipe: loopbackPipe(router) });
   try {
@@ -800,7 +800,7 @@ test("security: anonymous hello rejected without allowAnonymous or authenticate"
 });
 
 test("security: second hello on a live connection is rejected", async () => {
-  const host = createGameHost({ persistence: memoryPersistence() });
+  const host = createGameServerHost({ persistence: memoryPersistence() });
   const router = createHostRouter({ host, allowAnonymous: true });
   const replies = channel<unknown>();
   const connection = router.connect({
@@ -820,7 +820,7 @@ test("security: second hello on a live connection is rejected", async () => {
 });
 
 test("security: single-session lock evicts the older connection for the same userId", async () => {
-  const host = createGameHost({ persistence: memoryPersistence() });
+  const host = createGameServerHost({ persistence: memoryPersistence() });
   const router = createHostRouter({ host, allowAnonymous: true, singleSession: true });
   const closed: string[] = [];
   const makeConn = (label: string) => {

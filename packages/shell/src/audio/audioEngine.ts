@@ -8,6 +8,7 @@ import { reverbZoneAt, type AudioReverbConfig, type ReverbPreset } from "@jgengi
 import { patchDuration, type SynthPatch } from "@jgengine/core/audio/synth";
 import { createVoiceAllocator, type VoiceAllocator, type VoiceAllocatorConfig } from "@jgengine/core/audio/voiceAllocator";
 import { createDisposer } from "@jgengine/core/game/defineGame";
+import type { Xyz } from "@jgengine/core/math/xyz";
 
 import { clampLoopCutoff, clampLoopGain, clampLoopRate, MIN_LOOP_CUTOFF, MAX_LOOP_CUTOFF } from "./loopParams";
 import { MusicDirector, type CrossfadeOptions } from "./musicDirector";
@@ -24,25 +25,19 @@ const BED_SMOOTH_TC = 0.08;
 /** Ducking ramps over ~30 ms: fast enough to feel like a cut, slow enough not to click. */
 const DUCK_SMOOTH_TC = 0.03;
 
-const ZERO_VELOCITY: Vec3 = { x: 0, y: 0, z: 0 };
+const ZERO_VELOCITY: Xyz = { x: 0, y: 0, z: 0 };
 
 /** One-shot occlusion budget: at most this many line tests per window. */
 const ONE_SHOT_TESTS_PER_WINDOW = 6;
 const ONE_SHOT_WINDOW_MS = 100;
 
-export interface Vec3 {
-  x: number;
-  y: number;
-  z: number;
-}
-
 /** Position and orientation for a spatial-audio listener. */
 export interface ListenerPose {
-  position: Vec3;
-  forward: Vec3;
-  up: Vec3;
+  position: Xyz;
+  forward: Xyz;
+  up: Xyz;
   /** World velocity of the listener, for doppler on loops whose sound declares `doppler`. Default zero. */
-  velocity?: Vec3;
+  velocity?: Xyz;
 }
 
 export interface AudioSceneConfig {
@@ -93,7 +88,7 @@ export interface AudioSpatialStats {
 export interface AudioEmitterHandle {
   /** Whether playback is reserved or playing; false after stop, stealing, failed load, or natural end. Optional for legacy hosts. */
   isPlaying?(): boolean;
-  setPosition(position: Vec3): void;
+  setPosition(position: Xyz): void;
   /** Live pitch of a retained loop: `rate` multiplies the authored playback rate (1 = authored), clamped to 0.25–4 and ramped ~20 ms to avoid zipper noise (#1051). */
   setRate(rate: number): void;
   /** Live volume of a retained loop: `gain` scales the source (0–1), clamped and ramped ~20 ms (#1051). */
@@ -103,7 +98,7 @@ export interface AudioEmitterHandle {
   /** Live highpass cutoff of a retained loop in Hz, clamped and ramped like rate. */
   setHighpass(hz: number): void;
   /** Emitter world velocity for doppler; ignored unless the sound declares `doppler`. */
-  setVelocity(velocity: Vec3): void;
+  setVelocity(velocity: Xyz): void;
   /** Geometry occlusion, 0 (clear line) to 1 (fully blocked): scales the loop's gain and darkens it, composed with the game's own gain and filter. */
   setOcclusion(amount: number): void;
   stop(): void;
@@ -130,7 +125,7 @@ export interface AudioOcclusionStats {
   /** Mean milliseconds per test, or 0 before the first test. */
   perTestMs: number;
   /** Endpoints and result of the newest test, for a probe explaining what the engine actually asked. */
-  lastTest: { from: Vec3; to: Vec3; blocked: boolean } | null;
+  lastTest: { from: Xyz; to: Xyz; blocked: boolean } | null;
 }
 
 /** Current ambience mix, by zone id. */
@@ -143,7 +138,7 @@ export interface AudioAmbienceState {
 
 export interface AudioEngine {
   /** Full listener orientation, or a legacy position using forward -Z and up +Y. */
-  setListenerPose(pose: ListenerPose | Vec3): void;
+  setListenerPose(pose: ListenerPose | Xyz): void;
   /** Retune the SFX budget and optional admission policy, stopping the lowest-priority oldest voices first. */
   setVoiceLimit(maxTotal: number, overflow?: VoiceAllocatorConfig["overflow"]): void;
   /**
@@ -151,9 +146,9 @@ export interface AudioEngine {
    * held in a small bounded queue and played when {@link resume} succeeds instead of being dropped
    * silently. Allocation happens per played cue, never per frame.
    */
-  play(soundId: string, position?: Vec3): void;
-  playOneShot(soundId: string, position?: Vec3): void;
-  playLoop(soundId: string, position?: Vec3): AudioEmitterHandle | null;
+  play(soundId: string, position?: Xyz): void;
+  playOneShot(soundId: string, position?: Xyz): void;
+  playLoop(soundId: string, position?: Xyz): AudioEmitterHandle | null;
   /** Crossfade the procedural soundtrack to `themeId` (null fades out). No-op when no `music` catalog is configured. */
   playMusic(themeId: string | null, options?: CrossfadeOptions): void;
   /** Say a line on the speech channel at the speech bus's level; silently dropped with no system voice. */
@@ -166,7 +161,7 @@ export interface AudioEngine {
    * Install the scene's blocking-geometry test (`from` listener, `to` emitter), or null to stop
    * testing. The engine owns the per-tick budget; tests never run outside it.
    */
-  setOcclusionSource(blocked: ((from: Vec3, to: Vec3) => boolean) | null): void;
+  setOcclusionSource(blocked: ((from: Xyz, to: Xyz) => boolean) | null): void;
   /** Cumulative occlusion cost, for a capture probe or a perf readout. */
   occlusionStats(): AudioOcclusionStats;
   /**
@@ -263,13 +258,13 @@ function setAudioParam(param: AudioParam | undefined, value: number): void {
   param.value = value;
 }
 
-function setPannerPosition(panner: PannerNode, position: Vec3): void {
+function setPannerPosition(panner: PannerNode, position: Xyz): void {
   setAudioParam(panner.positionX, position.x);
   setAudioParam(panner.positionY, position.y);
   setAudioParam(panner.positionZ, position.z);
 }
 
-function createPanner(context: BaseAudioContext, spatial: NonNullable<SoundDef["spatial"]>, position: Vec3): PannerNode {
+function createPanner(context: BaseAudioContext, spatial: NonNullable<SoundDef["spatial"]>, position: Xyz): PannerNode {
   const panner = context.createPanner();
   try {
     panner.panningModel = spatial.panning === "hrtf" ? "HRTF" : "equalpower";
@@ -292,7 +287,7 @@ function createPanner(context: BaseAudioContext, spatial: NonNullable<SoundDef["
  * A panner that only places a sound left/right/behind: no distance law (rolloff 0), so the sound's
  * own `falloff` keeps owning how loud it is.
  */
-function createPanOnly(context: BaseAudioContext, model: "hrtf" | "equalpower", position: Vec3): PannerNode {
+function createPanOnly(context: BaseAudioContext, model: "hrtf" | "equalpower", position: Xyz): PannerNode {
   const panner = context.createPanner();
   panner.panningModel = model === "hrtf" ? "HRTF" : "equalpower";
   panner.distanceModel = "linear";
@@ -355,7 +350,7 @@ export function createAudioEngine(config: AudioSceneConfig = {}): AudioEngine {
   }
 
   /** The default panner for a positioned sound with no `spatial` block, or null. */
-  function defaultPanner(sound: SoundDef, positioned: boolean, at: Vec3): PannerNode | null {
+  function defaultPanner(sound: SoundDef, positioned: boolean, at: Xyz): PannerNode | null {
     if (!positioned || sound.positional === false || sound.spatial !== undefined || panningModel === "off") return null;
     try {
       const panner = createPanOnly(context, panningModel, at);
@@ -567,8 +562,8 @@ export function createAudioEngine(config: AudioSceneConfig = {}): AudioEngine {
     return pending;
   }
 
-  let listenerPosition: Vec3 = { x: 0, y: 0, z: 0 };
-  let listenerVelocity: Vec3 = { x: 0, y: 0, z: 0 };
+  let listenerPosition: Xyz = { x: 0, y: 0, z: 0 };
+  let listenerVelocity: Xyz = { x: 0, y: 0, z: 0 };
   const nyquist = context.sampleRate / 2;
   const activeSpatialUpdaters = new Set<() => void>();
   // A Web Audio setter costs real time per call, so a listener pose that has not moved writes nothing (#2174).
@@ -583,13 +578,13 @@ export function createAudioEngine(config: AudioSceneConfig = {}): AudioEngine {
   }
 
   const occlusionConfig: ResolvedAudioOcclusionConfig = resolveOcclusionConfig(config.occlusion);
-  let occlusionBlocked: ((from: Vec3, to: Vec3) => boolean) | null = null;
+  let occlusionBlocked: ((from: Xyz, to: Xyz) => boolean) | null = null;
   let occlusionTestsLeft = occlusionConfig.maxTestsPerTick;
   const occlusionStatsState: {
     tests: number;
     blocked: number;
     testMs: number;
-    lastTest: { from: Vec3; to: Vec3; blocked: boolean } | null;
+    lastTest: { from: Xyz; to: Xyz; blocked: boolean } | null;
   } = { tests: 0, blocked: 0, testMs: 0, lastTest: null };
 
   interface OcclusionTarget {
@@ -633,7 +628,7 @@ export function createAudioEngine(config: AudioSceneConfig = {}): AudioEngine {
     target.set(runOcclusionTest(occlusionBlocked, target) ? 1 : 0);
   }
 
-  function runOcclusionTest(test: (from: Vec3, to: Vec3) => boolean, at: Vec3): boolean {
+  function runOcclusionTest(test: (from: Xyz, to: Xyz) => boolean, at: Xyz): boolean {
     const started = clockMs();
     let blocked = false;
     const from = { x: listenerPosition.x, y: listenerPosition.y, z: listenerPosition.z };
@@ -654,7 +649,7 @@ export function createAudioEngine(config: AudioSceneConfig = {}): AudioEngine {
   // wall muffles its first few shots per window and lets the rest through on distance alone.
   let oneShotWindowStart = -Infinity;
   let oneShotTestsInWindow = 0;
-  function oneShotOccluded(sound: SoundDef, positioned: boolean, at: Vec3): boolean {
+  function oneShotOccluded(sound: SoundDef, positioned: boolean, at: Xyz): boolean {
     if (!positioned || sound.positional === false || occlusionBlocked === null || occlusionConfig.maxTestsPerTick <= 0) return false;
     const distance = distance3(at, listenerPosition);
     if (distance < 1 || distance > occlusionConfig.maxDistance) return false;
@@ -769,7 +764,7 @@ export function createAudioEngine(config: AudioSceneConfig = {}): AudioEngine {
     return state === undefined || state === "running";
   }
 
-  function queueCue(soundId: string, position: Vec3 | undefined): void {
+  function queueCue(soundId: string, position: Xyz | undefined): void {
     let slot;
     if (pendingCount < MAX_PENDING_CUES) {
       slot = pendingCues[(pendingHead + pendingCount) % MAX_PENDING_CUES]!;
@@ -799,7 +794,7 @@ export function createAudioEngine(config: AudioSceneConfig = {}): AudioEngine {
     }
   }
 
-  function playCue(soundId: string, position: Vec3 | undefined): void {
+  function playCue(soundId: string, position: Xyz | undefined): void {
     if (disposed) return;
     if (!contextRunning()) {
       queueCue(soundId, position);
@@ -854,7 +849,7 @@ export function createAudioEngine(config: AudioSceneConfig = {}): AudioEngine {
     return level;
   }
 
-  function playInternal(soundId: string, position: Vec3 | undefined, loop: boolean): AudioEmitterHandle | null {
+  function playInternal(soundId: string, position: Xyz | undefined, loop: boolean): AudioEmitterHandle | null {
     if (disposed) return null;
     const sound = sounds[soundId];
     if (sound === undefined || (sound.synth === undefined && sound.url === undefined)) return null;
@@ -939,7 +934,7 @@ export function createAudioEngine(config: AudioSceneConfig = {}): AudioEngine {
     sound: SoundDef,
     bus: GainNode,
     bufferPromise: Promise<AudioBuffer | null>,
-    initialPosition: Vec3,
+    initialPosition: Xyz,
     loop: boolean,
     voiceId: number,
     startedPositioned: boolean,
@@ -955,7 +950,7 @@ export function createAudioEngine(config: AudioSceneConfig = {}): AudioEngine {
     let currentLowpass = MAX_LOOP_CUTOFF;
     let currentHighpass = MIN_LOOP_CUTOFF;
     let currentOcclusion = 0;
-    let currentVelocity: Vec3 = { x: 0, y: 0, z: 0 };
+    let currentVelocity: Xyz = { x: 0, y: 0, z: 0 };
     const dopplerFactor = loop ? sound.doppler ?? 0 : 0;
     let sourceNode: AudioBufferSourceNode | null = null;
     let lowpassNode: BiquadFilterNode | null = null;

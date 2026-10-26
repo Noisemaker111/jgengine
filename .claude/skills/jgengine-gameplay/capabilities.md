@@ -787,6 +787,10 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `talentTreeViewFrom` (function) · `import { talentTreeViewFrom } from "@jgengine/core/gameplay"`
 
+## threshold-crossings — emit ordered crossing events as a numeric source passes named thresholds with hysteresis and once/repeat policy
+
+- `createThresholdTracker` (function) · `import { createThresholdTracker } from "@jgengine/core/threshold/thresholdTracker"`
+
 ## tick-work — advance jobs over time, completing work and emitting typed lifecycle events
 
 - `tick` (function) · `import { tick } from "@jgengine/core/gameplay"`

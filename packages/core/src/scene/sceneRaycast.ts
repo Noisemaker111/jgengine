@@ -68,7 +68,8 @@ export interface TerrainRaycastSource {
   sampleHeight(x: number, z: number): number;
 }
 
-export interface WallSegment {
+/** A wall segment the scene raycast tests against, extruded vertically around its centre. */
+export interface RaycastWall {
   id: string;
   /** Segment endpoints on the XZ plane; extruded by halfHeight along Y around yCenter. */
   a: readonly [number, number];
@@ -82,7 +83,7 @@ export interface SceneRaycastDeps {
   entities?: SceneEntityQuerySource;
   objects?: SceneObjectQuerySource;
   terrain?: TerrainRaycastSource;
-  walls?: readonly WallSegment[];
+  walls?: readonly RaycastWall[];
   /** Indexed geometry returns physical, non-damage wall hits with instance id `world-solid`. */
   solids?: Pick<WorldSolids, "inBox" | "inRay">;
 }
@@ -221,7 +222,7 @@ function pushColliderHits(
   }
 }
 
-function wallAabb(wall: WallSegment): { min: EntityPosition; max: EntityPosition; center: EntityPosition } {
+function wallAabb(wall: RaycastWall): { min: EntityPosition; max: EntityPosition; center: EntityPosition } {
   const thickness = wall.thickness ?? 0.25;
   const halfHeight = wall.halfHeight ?? 1.5;
   const yCenter = wall.yCenter ?? halfHeight;

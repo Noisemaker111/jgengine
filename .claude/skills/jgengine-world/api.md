@@ -168,12 +168,12 @@
 
 ## @jgengine/core/ai/jobBoard
 
-- `Job` (interface): interface Job { id: string; station: NavPoint; work: number; priority: number; arriveRadius: number; repeat: boolean; worker: string | null } — ⚠ undocumented · used by `activeJobs` (@jgengine/core/gameplay): Jobs currently progressing.
 - `JobBoard` (interface): interface JobBoard { post(job: JobDef): string; cancel(jobId: string): boolean; assign(workerId: string, jobId: string): boolean; claim(workerId: string): string | null; release(workerId: string): void; advance(workerId: string, dt: number, ctx: JobTickContex… — ⚠ undocumented
 - `JobDef` (interface): interface JobDef { id?: string; station: NavPoint; work: number; priority?: number; arriveRadius?: number; repeat?: boolean } — ⚠ undocumented
 - `JobPhase` (type): type JobPhase = "idle" | "travelling" | "working" | "done" — ⚠ undocumented
 - `JobReport` (interface): interface JobReport { jobId: string; workerId: string; cycle: number } — ⚠ undocumented
 - `JobTickContext` (interface): interface JobTickContext { distanceToStation: number } — ⚠ undocumented
+- `StationJob` (interface): interface StationJob — A unit of work at a station that a worker walks to and works off.
 - `WorkerState` (interface): interface WorkerState { jobId: string | null; phase: JobPhase; worked: number; cycles: number } — ⚠ undocumented
 
 ## @jgengine/core/ai/laneSelect
@@ -368,7 +368,6 @@
 - `Quat` (type): type Quat = readonly [number, number, number, number] — A quaternion in `(x, y, z, w)` order.
 - `TwoBoneInput` (interface): interface TwoBoneInput — Inputs for {@link solveTwoBone}.
 - `TwoBoneOutput` (interface): interface TwoBoneOutput — Reused output buffers filled by {@link solveTwoBone}.
-- `Vec3` (type): type Vec3 = readonly [number, number, number] — A three-dimensional point or direction represented without a renderer dependency.
 - `lookAt` (function): function lookAt(input: LookAtInput): Quat — Returns a quaternion that points a +Z bone from `from` toward `target`, with optional yaw and pitch limits.
 - `multiplyQuaternions` (function): function multiplyQuaternions(a: Quat, b: Quat): Quat — The product of two quaternions (`a` applied after `b`), both as `[x, y, z, w]`.
 - `quaternionFromUnitVectors` (function): function quaternionFromUnitVectors(from: Vec3, to: Vec3): Quat — The shortest rotation taking one unit direction to another, as a quaternion. Parallel directions give the identity; opposite directions give a half turn about a perpendicular axis. Returns the identity for a zero-length input.
@@ -965,6 +964,10 @@
 - `resolveMaterialAppearance` (function): function resolveMaterialAppearance(sample: EnvironmentSample, baseline: MaterialAppearanceBaseline, policy: MaterialAppearancePolicy = {}): MaterialAppearanceResponse — Resolve one surface from an immutable dry baseline, avoiding cumulative drift. Wetness already includes field shelter; neither exposure nor sheltered is multiplied into it again. No accumulation or drying simulation.
 - `sampleMaterialAppearance` (function): function sampleMaterialAppearance(field: Pick<EnvironmentField, "sample">, target: MaterialAppearanceTarget, baseline: MaterialAppearanceBaseline, policy: MaterialAppearancePolicy = {}): MaterialAppearanceResponse — Exactly one field sample per target; no traversal, subscription, hidden tick, or full-world scan.
 
+## @jgengine/core/math/xyz
+
+- `Xyz` (interface): interface Xyz — A point or direction as named `x`/`y`/`z` fields, for wire and audio code that reads fields rather than tuple slots.
+
 ## @jgengine/core/movement/avatarGait
 
 - `DEFAULT_GAIT_TUNING` (const): const DEFAULT_GAIT_TUNING: GaitTuning — ⚠ undocumented
@@ -1007,7 +1010,6 @@
 - `FormationSlotGenerator` (type): type FormationSlotGenerator = (count: number) => Vec2[] — Produces `count` slot offsets in the group's local frame — `[right, forward]` where `+forward` points where the group faces. Index order is the slot order; a generator must be pure (same `count` → same offsets) so placement stays deterministic. Sample generators below cover common shapes; games pass their own for anything else (crowds, convoys, sports positions) with no engine edit.
 - `LineFormationOptions` (interface): interface LineFormationOptions — Options for {@link lineFormation}.
 - `SlotAssignmentOptions` (interface): interface SlotAssignmentOptions — Tuning for {@link assignFormationSlots}' stable, low-churn matching.
-- `Vec2` (type): type Vec2 = readonly [number, number] — A point or offset on the XZ ground plane: `[x, z]`.
 - `WedgeFormationOptions` (interface): interface WedgeFormationOptions — Options for {@link wedgeFormation}.
 - `assignFormationSlots` (function): function assignFormationSlots(members: readonly Vec2[], slots: readonly Vec2[], options: SlotAssignmentOptions = {}): number[] — Match `members` to `slots` by a deterministic greedy nearest assignment: every (member, slot) pair is ranked by squared travel distance (minus a stickiness bonus for a member's previous slot) and assigned in order while both ends are free. Returns `assignment[member] = slot`, or `-1` for members left unmatched when there are fewer slots than members. Ties break by member then slot index, so the result is stable across runs and independent of input ordering — the property replay and lockstep multiplayer rely on. Groups are bounded, so the `O(members·slots·log)` sort is fine; this is not a per-frame whole-world pass.
 - `boxFormation` (function): function boxFormation(options: BoxFormationOptions): FormationSlotGenerator — A rectangular grid centered on the destination, front row toward `+forward` — a marching block or a phalanx. Rows fill front-to-back, left-to-right.
@@ -1221,7 +1223,7 @@
 
 ## @jgengine/core/nav/pathFollow
 
-- `HeightSampler` (interface): interface HeightSampler { sampleHeight(x: number, z: number): number } — ⚠ undocumented · used by `drapePolyline` (@jgengine/core/world): Drapes an XZ polyline onto the surface: subdivides each span to at most `spacing` and lifts every vertex to `sampleHeight + offset`, returni…
+- `HeightSource` (interface): interface HeightSource — Anything that reports ground height at an XZ point, such as a terrain heightfield.
 - `PathFollowConfig` (interface): interface PathFollowConfig { waypoints: readonly Waypoint[]; speed: number; loop?: boolean } — ⚠ undocumented · used by `advancePathFollow`: Advance a path-follower by `speed * dt` along its authored polyline.
 - `PathFollowProgress` (interface): interface PathFollowProgress — Read-only progress readout for inspection/debug tooling, produced by {@link pathFollowProgress}.
 - `PathFollowState` (interface): interface PathFollowState { position: Waypoint; target: number; heading: number; done: boolean; distanceTravelled: number } — ⚠ undocumented · used by `advancePathFollow`: Advance a path-follower by `speed * dt` along its authored polyline.
@@ -1229,10 +1231,10 @@
 - `Waypoint` (type): type Waypoint = readonly [number, number, number] — ⚠ undocumented · used by `planSolidRoute` (@jgengine/core/nav/solidRoute): Plan an exact-endpoint local route over indexed movement boxes using the shared nav grid.
 - `advancePathFollow` (function): function advancePathFollow(config: PathFollowConfig, state: PathFollowState, dt: number): PathFollowState — Advance a path-follower by `speed * dt` along its authored polyline. Pure — returns the next state. Crosses multiple waypoints in one step, loops when configured, and reports `done` at the end of a non-looping path. No navmesh required (#52); feed it a navmesh route via `pathFromNav` for click-to-move (#51).
 - `createPathFollow` (function): function createPathFollow(config: PathFollowConfig): PathFollowState — ⚠ undocumented
+- `followPathLength` (function): function followPathLength(config: PathFollowConfig): number — Total world-distance of a path — sum of every segment, including the wrap segment back to the first waypoint when `loop` is set. Zero for a degenerate (0- or 1-waypoint) path.
 - `pathFollowProgress` (function): function pathFollowProgress(config: PathFollowConfig, state: PathFollowState): PathFollowProgress — Read a follower's current progress in every semantic form — the inverse of {@link pathFollowSeek}, for editor/debug inspection and progress HUDs. Pure and allocation-light.
-- `pathFollowSeek` (function): function pathFollowSeek(config: PathFollowConfig, target: PathProgress): PathFollowState — Place a follower at a semantic {@link PathProgress} without simulating from the start — the seek adapter behavior lifecycles use to seed distributed phases and restore serialized routes. Pure; returns a fresh {@link PathFollowState} whose `heading` gives travel direction. Looping paths wrap the distance; non-looping paths clamp to `[0, pathLength]` and report `done` at the end.
-- `pathFromNav` (function): function pathFromNav(points: readonly NavPoint[], elevation: number | HeightSampler = 0, offset = 0): Waypoint[] — ⚠ undocumented
-- `pathLength` (function): function pathLength(config: PathFollowConfig): number — Total world-distance of a path — sum of every segment, including the wrap segment back to the first waypoint when `loop` is set. Zero for a degenerate (0- or 1-waypoint) path.
+- `pathFollowSeek` (function): function pathFollowSeek(config: PathFollowConfig, target: PathProgress): PathFollowState — Place a follower at a semantic {@link PathProgress} without simulating from the start — the seek adapter behavior lifecycles use to seed distributed phases and restore serialized routes. Pure; returns a fresh {@link PathFollowState} whose `heading` gives travel direction. Looping paths wrap the distance; non-looping paths clamp to `[0, followPathLength]` and report `done` at the end.
+- `pathFromNav` (function): function pathFromNav(points: readonly NavPoint[], elevation: number | HeightSource = 0, offset = 0): Waypoint[] — ⚠ undocumented
 
 ## @jgengine/core/nav/railGraph
 
@@ -2033,16 +2035,16 @@
 
 ## @jgengine/core/scene/sceneRaycast
 
+- `RaycastWall` (interface): interface RaycastWall — A wall segment the scene raycast tests against, extruded vertically around its centre.
 - `SceneEntityQuerySource` (interface): interface SceneEntityQuerySource { list(): readonly {id: string; position: EntityPosition; rotationY: number; name?: string}[]; collidersOf?(instanceId: string): EntityColliderSet | null | undefined; inRadius?(center: EntityPosition, radius: number): readonly string[]; get… — ⚠ undocumented
 - `SceneObjectQuerySource` (interface): interface SceneObjectQuerySource { list(): readonly SceneObject[]; inBox?(min: EntityPosition, max: EntityPosition): readonly SceneObject[]; collidersOf?(instanceId: string): EntityColliderSet | null | undefined; halfExtentsOf?(catalogId: string): EntityPosition | null | u… — ⚠ undocumented
 - `SceneRaycastApi` (interface): interface SceneRaycastApi { raycast(input: SceneRaycastInput): SceneRaycastHit | null; raycastAll(input: SceneRaycastInput): SceneRaycastHit[] } — ⚠ undocumented · used by `sceneCameraQuery` (@jgengine/shell/camera): `CameraCollisionQuery` over the scene's existing collision query (`ctx.scene.raycast`), which already reads world solids, scene-object colli…
-- `SceneRaycastDeps` (interface): interface SceneRaycastDeps { entities?: SceneEntityQuerySource; objects?: SceneObjectQuerySource; terrain?: TerrainRaycastSource; walls?: readonly WallSegment[]; solids?: Pick<WorldSolids, "inBox" | "inRay"> } — ⚠ undocumented
+- `SceneRaycastDeps` (interface): interface SceneRaycastDeps { entities?: SceneEntityQuerySource; objects?: SceneObjectQuerySource; terrain?: TerrainRaycastSource; walls?: readonly RaycastWall[]; solids?: Pick<WorldSolids, "inBox" | "inRay"> } — ⚠ undocumented
 - `SceneRaycastFilter` (interface): interface SceneRaycastFilter { entities?: boolean; objects?: boolean; terrain?: boolean; walls?: boolean } — ⚠ undocumented
 - `SceneRaycastHit` (interface): interface SceneRaycastHit { targetKind: SceneRaycastTargetKind; instanceId: string; catalogId?: string; colliderName: string; purpose: ColliderPurpose; damageEligible: boolean; blocks: boolean; distance: number; point: EntityPosition; normal: EntityPosition } — ⚠ undocumented · used by `firstImpact`: First impact: nearest hit that blocks, or nearest hit if none block.
 - `SceneRaycastInput` (interface): interface SceneRaycastInput { origin: EntityPosition; direction: EntityPosition; maxDistance: number; excludeInstanceIds?: ReadonlySet<string> | readonly string[]; filter?: SceneRaycastFilter; accept?: (hit: SceneRaycastHit) => boolean } — ⚠ undocumented
 - `SceneRaycastTargetKind` (type): type SceneRaycastTargetKind = "entity" | "object" | "terrain" | "wall" — ⚠ undocumented
 - `TerrainRaycastSource` (interface): interface TerrainRaycastSource { sampleHeight(x: number, z: number): number } — ⚠ undocumented
-- `WallSegment` (interface): interface WallSegment { id: string; a: readonly [number, number]; b: readonly [number, number]; yCenter?: number; halfHeight?: number; thickness?: number } — ⚠ undocumented · used by `wallSolids` (@jgengine/core/world/worldSolids): One oriented solid per wall segment (see `wallSegments` in `world/walls`).
 - `createSceneRaycast` (function): function createSceneRaycast(deps: SceneRaycastDeps): SceneRaycastApi — ⚠ undocumented
 - `firstImpact` (function): function firstImpact(hits: readonly SceneRaycastHit[]): SceneRaycastHit | null — First impact: nearest hit that blocks, or nearest hit if none block.
 - `hitsUntilBlocked` (function): function hitsUntilBlocked(hits: readonly SceneRaycastHit[]): SceneRaycastHit[] — Hits up to and including the first blocking collider (damage hitboxes before a wall stay).
@@ -2218,12 +2220,12 @@
 ## @jgengine/core/time/beatClock
 
 - `BeatAccuracyTier` (interface): interface BeatAccuracyTier { id: string; windowSec: number } — ⚠ undocumented
+- `BeatBufferedAction` (interface): interface BeatBufferedAction<T> — An action queued on a beat buffer, with when it was pressed and the beat it fires on.
 - `BeatClock` (interface): interface BeatClock { advance(gameDt: number): BeatSnapshot; snapshot(): BeatSnapshot; now(): number; beatDurationSec(): number; bpm(): number } — ⚠ undocumented
 - `BeatClockConfig` (interface): interface BeatClockConfig { bpm: number; beatsPerBar?: number } — ⚠ undocumented
 - `BeatInputBuffer` (interface): interface BeatInputBuffer<T> { buffer(action: T, nowSec: number): number; advance(nowSec: number): T[]; pendingCount(): number; clear(): void } — ⚠ undocumented
 - `BeatJudgement` (interface): interface BeatJudgement { tier: string; deltaSec: number } — ⚠ undocumented
 - `BeatSnapshot` (interface): interface BeatSnapshot { beat: number; beatIndex: number; bar: number; beatInBar: number; phase: number } — ⚠ undocumented
-- `BufferedAction` (interface): interface BufferedAction<T> { action: T; bufferedAtSec: number; fireAtSec: number } — ⚠ undocumented
 - `DEFAULT_BEAT_TIERS` (const): const DEFAULT_BEAT_TIERS: readonly BeatAccuracyTier[] — ⚠ undocumented
 
 ## @jgengine/core/time/calendarClock
@@ -2728,7 +2730,6 @@
 - `InterestState` (type): type InterestState = "active" | "dormant" — Interest scheduling: the scale primitive that lets far-away agents sleep instead of running acquisition and pathing every frame. A per-agent gate decides — from proximity to the nearest interest source plus explicit wake signals — whether this tick does expensive work, at what cadence, with hysteresis so it never thrashes at the boundary and deterministic staggering so a thousand siblings do not all wake on the same frame. State is a plain serializable object; the caller drives it from a bounded spatial query, never a full-world scan.
 - `InterestTier` (interface): interface InterestTier — A distance-keyed cadence tier: nearer agents tick faster, farther-but-awake agents tick slower.
 - `IntersectionStreet` (interface): interface IntersectionStreet — One street to trim + mesh through {@link buildTrimmedIntersections}.
-- `Job` (interface): interface Job — ⚠ undocumented · used by `activeJobs` (@jgengine/core/gameplay): Jobs currently progressing.
 - `JobDef` (interface): interface JobDef { id?: string; station: NavPoint; work: number; priority?: number; arriveRadius?: number; repeat?: boolean } — ⚠ undocumented
 - `JobReport` (interface): interface JobReport { jobId: string; workerId: string; cycle: number } — ⚠ undocumented
 - `JunctionApproach` (interface): interface JunctionApproach — One approach feeding {@link buildJunctionSurface}: the exact draped corner vertices a ribbon ends at.
@@ -3024,6 +3025,7 @@
 - `StatCatalog` (type): type StatCatalog = Record<string, { max: number; min?: number; current?: number }> — ⚠ undocumented
 - `StatValue` (interface): interface StatValue extends StatPool — Native entity-stat name retained as a compatibility bridge to the portable pool model.
 - `Station` (interface): interface Station — ⚠ undocumented
+- `StationJob` (interface): interface StationJob — A unit of work at a station that a worker walks to and works off.
 - `StoredScreenEffect` (interface): interface StoredScreenEffect — A persisted effect record (all spec fields resolved plus its start time and id).
 - `StratifiedOptions` (interface): interface StratifiedOptions — Inputs for {@link sampleStratified}: a grid over `area` with one jittered point per cell.
 - `StructureGraph` (class): class StructureGraph — A structural-integrity graph over a building — nodes are pieces (walls, beams, floors), edges are load-bearing connections, some nodes are anchored foundations. `damage`/`damageEdge` wear pieces and connections down; when a piece shatters or an edge severs, the graph recomputes which pieces still reach an anchor and hands back every newly-disconnected piece as one `CollapseEvent`. Feed that to `toDebris` to sink the fallen pieces into a `PhysicsWorld` as rigid bodies ("The Finals" smooth destruction, Rainbow Six walls). Coarse by design: it replicates the collapse event, not per fragment.
@@ -3339,6 +3341,7 @@
 - `findSchemaPreset` (function): function findSchemaPreset(schema: ParamSchema, id: string): ParamPreset | undefined — Look up a schema preset by id, or undefined — the seam `apply_preset` and games resolve bundles through.
 - `firstImpact` (function): function firstImpact(hits: readonly SceneRaycastHit[]): SceneRaycastHit | null — First impact: nearest hit that blocks, or nearest hit if none block.
 - `flat` (function): function flat(): WorldFeature — Declares an empty flat world — the minimal `WorldFeature` for games with no terrain of their own.
+- `followPathLength` (function): function followPathLength(config: PathFollowConfig): number — Total world-distance of a path — sum of every segment, including the wrap segment back to the first waypoint when `loop` is set. Zero for a degenerate (0- or 1-waypoint) path.
 - `footprintObstacles` (function): function footprintObstacles(grid: FootprintGrid): PlacementObstacle[] — Bridges live reservations into `world/placement`'s `PlacementRules.obstacles` so `validatePlacement`/`createPlacementController` see the grid's committed footprints unchanged.
 - `furnitureSpots` (function): function furnitureSpots(road: RoadEnvironmentDescriptor, options: FurnitureSpotOptions = {}): readonly FurnitureSpot[] — Evenly spaced street-furniture anchors along a road's curb lines — streetlights, palms, signs, hydrants, benches. Each spot sits just outside the asphalt (plus `outset`), faces away from the street, and alternates sides by default so lights stagger like a real avenue. This is the answer to "where do I put it": furniture is an asset of the street, never a hand-typed coordinate.
 - `gauge` (function): function gauge(gaugeId: string): GaugePromptDisplay — ⚠ undocumented
@@ -3388,9 +3391,8 @@
 - `parseRotationPolicy` (function): function parseRotationPolicy(raw: unknown): PlacementRotationPolicy — Parse an untrusted rotation policy (from a scene document or catalog JSON) into a valid {@link PlacementRotationPolicy}, defaulting to `free` when absent or malformed. The lenient companion to {@link validateAssetSpace} for the read path.
 - `partsBounds` (function): function partsBounds(parts: readonly GeneratedPart[]): GeneratedAsset["bounds"] — Compute bounds from parts (each part is an axis-aligned box at its center) — a helper generators return so callers can frame/ground the asset without re-deriving it.
 - `pathFollowProgress` (function): function pathFollowProgress(config: PathFollowConfig, state: PathFollowState): PathFollowProgress — Read a follower's current progress in every semantic form — the inverse of {@link pathFollowSeek}, for editor/debug inspection and progress HUDs. Pure and allocation-light.
-- `pathFollowSeek` (function): function pathFollowSeek(config: PathFollowConfig, target: PathProgress): PathFollowState — Place a follower at a semantic {@link PathProgress} without simulating from the start — the seek adapter behavior lifecycles use to seed distributed phases and restore serialized routes. Pure; returns a fresh {@link PathFollowState} whose `heading` gives travel direction. Looping paths wrap the distance; non-looping paths clamp to `[0, pathLength]` and report `done` at the end.
-- `pathFromNav` (function): function pathFromNav(points: readonly NavPoint[], elevation: number | HeightSampler = 0, offset = 0): Waypoint[] — ⚠ undocumented
-- `pathLength` (function): function pathLength(config: PathFollowConfig): number — Total world-distance of a path — sum of every segment, including the wrap segment back to the first waypoint when `loop` is set. Zero for a degenerate (0- or 1-waypoint) path.
+- `pathFollowSeek` (function): function pathFollowSeek(config: PathFollowConfig, target: PathProgress): PathFollowState — Place a follower at a semantic {@link PathProgress} without simulating from the start — the seek adapter behavior lifecycles use to seed distributed phases and restore serialized routes. Pure; returns a fresh {@link PathFollowState} whose `heading` gives travel direction. Looping paths wrap the distance; non-looping paths clamp to `[0, followPathLength]` and report `done` at the end.
+- `pathFromNav` (function): function pathFromNav(points: readonly NavPoint[], elevation: number | HeightSource = 0, offset = 0): Waypoint[] — ⚠ undocumented
 - `patrol` (function): function patrol({ waypoints, speed, loop = true, startProgress, groundClamp, }: { waypoints: readonly Waypoint[]; speed: number; loop?: boolean; startProgress?: PathProgress; groundClamp?: boolean; }): PatrolBehavior — ⚠ undocumented
 - `pendingQteStep` (function): function pendingQteStep(steps: readonly QteStep[], elapsedSeconds: number): QteStep | null — ⚠ undocumented
 - `pickSpawnPoint` (function): function pickSpawnPoint(options: SpawnPointSelectionOptions): NavPoint | null — Selects a candidate spawn point using a semantic distance preference and caller-supplied randomness.
@@ -3519,6 +3521,7 @@
 - `waterSurface` (function): function waterSurface(config: WaterSurfaceConfig = {}): WaterSurface — ⚠ undocumented
 - `waterSurfaceConfigFromDescriptor` (function): function waterSurfaceConfigFromDescriptor(descriptor: OceanEnvironmentDescriptor, waves?: number): WaterSurfaceConfig — The wave config an `ocean()` descriptor describes, for the CPU surface and the drawn water alike.
 - `waterSurfaceFromDescriptor` (function): function waterSurfaceFromDescriptor(descriptor: OceanEnvironmentDescriptor, waves?: number): WaterSurface — ⚠ undocumented
+- `waypointAnchor` (function): function waypointAnchor(entry: WaypointEntry): readonly [number, number, number] — The world-space `[x, y, z]` anchor of a waypoint, for projecting it to the screen.
 - `wedgeFormation` (function): function wedgeFormation(options: WedgeFormationOptions): FormationSlotGenerator — A "V"/arrowhead with the apex at the destination and arms trailing back — a flying-wedge charge or a goose skein. Slot 0 is the tip; later slots alternate right then left, each rank stepping one `spacing` outward and backward.
 - `weightedRegion` (function): function weightedRegion<P extends SamplePoint>(entries: readonly WeightedRegionEntry<P>[]): SampleRegion<P> — A composite that first picks one member by weight, then delegates to its sampler — the "weighted subregions" distribution policy. `contains` is true when any member contains the point.
 - `windField` (function): function windField(config: WindFieldConfig = {}): WindField — ⚠ undocumented
@@ -3702,7 +3705,6 @@
 - `DEFAULT_BUILDING_CONFIG` (const): const DEFAULT_BUILDING_CONFIG: BuildingConfig — ⚠ undocumented
 - `DEFAULT_BUILDING_STYLE` (const): const DEFAULT_BUILDING_STYLE: BuildingStyle — ⚠ undocumented
 - `GeneratedBuilding` (interface): interface GeneratedBuilding { id: string; seed: BuildingSeed; center: Vec2; footprint: Footprint; floors: number; floorHeight: number; bounds: Aabb; parts: readonly BuildingPartPlacement[]; rotationY?: number } — ⚠ undocumented · used by `generateBuilding`: Generate one building as a flat list of placed facade parts: bays × floors per facade, a ground row, corners, and a roof, with every decorat…
-- `Vec3` (type): type Vec3 = readonly [number, number, number] — ⚠ undocumented · used by `coverPoints` (@jgengine/core/ai/tacticalQueries): Returns boundary locations that are hidden from a threat.
 - `buildingSurfaceColor` (function): function buildingSurfaceColor(surface: BuildingSurface | undefined, fallback = "#808080"): string — The flat colour of a surface: the hex itself, or a material's `color`, else `fallback`.
 - `createBuildingConfig` (function): function createBuildingConfig(input: BuildingConfigInput = {}): BuildingConfig — Fill a partial building description out to a complete {@link BuildingConfig}, clamping counts and probabilities. Use it to inspect or adjust the resolved shape before generating.
 - `generateBuilding` (function): function generateBuilding(input: BuildingConfigInput = {}): GeneratedBuilding — Generate one building as a flat list of placed facade parts: bays × floors per facade, a ground row, corners, and a roof, with every decorative part rolled from `probabilities` and every part tagged with a `kit` slot the renderer binds to a model (see `world/buildingKit`). Deterministic from `seed`.
@@ -4654,6 +4656,7 @@
 - `WaypointStore` (interface): interface WaypointStore — Player-owned waypoint layer — place/track/clear pins, mirror to a `MarkerSet`, and read guide-arrow data.
 - `WaypointStoreDeps` (interface): interface WaypointStoreDeps — Construction options for {@link createWaypointStore}.
 - `createWaypointStore` (function): function createWaypointStore(deps: WaypointStoreDeps = {}): WaypointStore — Player-owned waypoint layer: place/track/clear pins, mirror them into a shared `MarkerSet` (so `Minimap`/`WorldMap`/`Compass` render them for free), and read bearing/distance guidance for an on-screen arrow to the tracked one. State is plain data — `snapshot()`/`restore()` round-trip through any save blob.
+- `waypointAnchor` (function): function waypointAnchor(entry: WaypointEntry): readonly [number, number, number] — The world-space `[x, y, z]` anchor of a waypoint, for projecting it to the screen.
 
 ## @jgengine/core/world/weather
 

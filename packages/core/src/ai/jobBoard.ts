@@ -11,7 +11,8 @@ export interface JobDef {
   repeat?: boolean;
 }
 
-export interface Job {
+/** A unit of work at a station that a worker walks to and works off. */
+export interface StationJob {
   id: string;
   station: NavPoint;
   work: number;
@@ -48,10 +49,10 @@ export interface JobBoard {
   worker(workerId: string): WorkerState;
   station(workerId: string): NavPoint | null;
   jobOf(workerId: string): string | null;
-  get(jobId: string): Job | null;
-  queued(): readonly Job[];
-  active(): readonly Job[];
-  list(): readonly Job[];
+  get(jobId: string): StationJob | null;
+  queued(): readonly StationJob[];
+  active(): readonly StationJob[];
+  list(): readonly StationJob[];
 }
 
 const DEFAULT_ARRIVE_RADIUS = 0.75;
@@ -62,7 +63,7 @@ function idleWorker(): WorkerState {
 
 /** @internal */
 export function createJobBoard(): JobBoard {
-  const jobs = new Map<string, Job>();
+  const jobs = new Map<string, StationJob>();
   const workers = new Map<string, WorkerState>();
   let counter = 1;
 
@@ -75,7 +76,7 @@ export function createJobBoard(): JobBoard {
     return state;
   }
 
-  function begin(workerId: string, job: Job): void {
+  function begin(workerId: string, job: StationJob): void {
     const state = workerState(workerId);
     job.worker = workerId;
     state.jobId = job.id;
@@ -126,7 +127,7 @@ export function createJobBoard(): JobBoard {
     claim(workerId) {
       const existing = workerState(workerId);
       if (existing.jobId !== null && jobs.has(existing.jobId)) return existing.jobId;
-      let best: Job | null = null;
+      let best: StationJob | null = null;
       for (const job of jobs.values()) {
         if (job.worker !== null) continue;
         if (best === null || job.priority > best.priority) best = job;

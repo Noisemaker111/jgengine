@@ -1,5 +1,7 @@
 import { describe, expect, test } from "bun:test";
-import {
+import { vec3 } from "./vec3";
+
+const {
   add,
   cross,
   distance,
@@ -12,7 +14,7 @@ import {
   normalize,
   scale,
   sub,
-} from "./vec3";
+} = vec3;
 
 describe("vec3 arithmetic", () => {
   test("add/sub/scale/negate", () => {

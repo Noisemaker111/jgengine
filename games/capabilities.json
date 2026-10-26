@@ -813,6 +813,17 @@
       "intent": "Reject invalid weather profiles, schedules, zones and wind before authoring mutations."
     },
     {
+      "id": "authoritative-host",
+      "packages": [
+        "@jgengine/ws"
+      ],
+      "module": "@jgengine/ws/host",
+      "domain": "authoritative-host",
+      "gameFacing": false,
+      "probe": null,
+      "intent": "run authoritative game servers with sessions, ticking and persistence behind any transport"
+    },
+    {
       "id": "auto-scroll",
       "packages": [
         "@jgengine/react"
@@ -2528,8 +2539,8 @@
       "packages": [
         "@jgengine/core"
       ],
-      "module": "@jgengine/core/relation/thresholds",
-      "domain": "relation",
+      "module": "@jgengine/core/threshold/thresholds",
+      "domain": "threshold",
       "gameFacing": false,
       "probe": null,
       "intent": "fire-once threshold/milestone/tier crossings when a value moves"
@@ -7820,8 +7831,8 @@
       "packages": [
         "@jgengine/core"
       ],
-      "module": "@jgengine/core/relation/thresholds",
-      "domain": "relation",
+      "module": "@jgengine/core/threshold/thresholds",
+      "domain": "threshold",
       "gameFacing": false,
       "probe": null,
       "intent": "the current tier/band label for a keyed or scalar value"
@@ -9601,8 +9612,8 @@
       "packages": [
         "@jgengine/core"
       ],
-      "module": "@jgengine/core/combat/thresholdCrossings",
-      "domain": "combat",
+      "module": "@jgengine/core/threshold/thresholdTracker",
+      "domain": "threshold",
       "gameFacing": false,
       "probe": null,
       "intent": "emit ordered crossing events as a numeric source passes named thresholds with hysteresis and once/repeat policy"
@@ -10358,7 +10369,7 @@
       "domain": "use-waypoints",
       "gameFacing": false,
       "probe": null,
-      "intent": "React binding that returns a waypoint tracker's live list (or a passthrough array)"
+      "intent": "React binding that returns a waypoint store's live list (or a passthrough array)"
     },
     {
       "id": "utility-brain",

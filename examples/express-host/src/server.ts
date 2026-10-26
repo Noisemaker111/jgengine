@@ -4,7 +4,7 @@ import express from "express";
 
 import type { GameRuntime } from "@jgengine/core/runtime/gameRuntime";
 import type { HostPersistence } from "@jgengine/core/runtime/hostPersistence";
-import { createGameHost } from "@jgengine/node/host";
+import { createGameServerHost } from "@jgengine/node/host";
 import { filePersistence, memoryPersistence } from "@jgengine/node/persistence";
 import { toNodeHandler } from "@jgengine/node/webHandler";
 import { createGameWsServer } from "@jgengine/node/wsServer";
@@ -32,7 +32,7 @@ async function persistenceFromEnv(): Promise<HostPersistence> {
 }
 
 const persistence = await persistenceFromEnv();
-const host = createGameHost({ runtimes: GAME_RUNTIMES, persistence });
+const host = createGameServerHost({ runtimes: GAME_RUNTIMES, persistence });
 host.start();
 
 const app = express();

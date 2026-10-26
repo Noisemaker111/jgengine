@@ -129,7 +129,8 @@ export function nextBeatTime(nowSec: number, beatDurationSec: number, epsilon = 
   return Math.ceil(beatIndex) * beatDurationSec;
 }
 
-export interface BufferedAction<T> {
+/** An action queued on a beat buffer, with when it was pressed and the beat it fires on. */
+export interface BeatBufferedAction<T> {
   action: T;
   bufferedAtSec: number;
   fireAtSec: number;
@@ -146,7 +147,7 @@ export interface BeatInputBuffer<T> {
 
 /** @internal */
 export function createBeatInputBuffer<T>(beatDurationSec: number): BeatInputBuffer<T> {
-  const pending: BufferedAction<T>[] = [];
+  const pending: BeatBufferedAction<T>[] = [];
 
   return {
     buffer(action, nowSec) {
@@ -156,7 +157,7 @@ export function createBeatInputBuffer<T>(beatDurationSec: number): BeatInputBuff
     },
     advance(nowSec) {
       const due: T[] = [];
-      const remaining: BufferedAction<T>[] = [];
+      const remaining: BeatBufferedAction<T>[] = [];
       for (const entry of pending) {
         if (entry.fireAtSec <= nowSec + QUANTIZE_EPSILON) due.push(entry.action);
         else remaining.push(entry);

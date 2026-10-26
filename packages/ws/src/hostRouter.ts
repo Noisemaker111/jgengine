@@ -23,7 +23,7 @@ import {
   type HostCommandOp,
 } from "./commandMiddleware";
 import { DEFAULT_COMMAND_LIMITS } from "./commandMiddleware";
-import type { GameHost, HostChangeEvent } from "./host";
+import type { GameServerHost, HostChangeEvent } from "./host";
 import type { TransportPipeFactory } from "./pipe";
 import {
   decodeWsClientMessage,
@@ -46,7 +46,7 @@ export type HostRouterAuthenticate = (args: {
 }) => Promise<string | null> | string | null;
 
 export type HostRouterOptions = {
-  host: GameHost;
+  host: GameServerHost;
   authenticate?: HostRouterAuthenticate;
   allowAnonymous?: boolean;
   singleSession?: boolean;

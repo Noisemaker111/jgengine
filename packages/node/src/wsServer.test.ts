@@ -8,7 +8,7 @@ import type { VoiceParticipant } from "@jgengine/core/multiplayer/voiceContract"
 import { createWsBackend, type WsBackend } from "@jgengine/ws/createWsBackend";
 import type { WsChatMessage, WsPresenceRow } from "@jgengine/ws/protocol";
 
-import { createGameHost, type GameHost } from "./host";
+import { createGameServerHost, type GameServerHost } from "./host";
 import { memoryPersistence } from "./persistence";
 import { createTestRuntime } from "./testFixtures";
 import { createGameWsServer, type GameWsServer } from "./wsServer";
@@ -46,14 +46,14 @@ async function startStack(options: {
     keepAliveRefreshMs: number;
   };
 } = {}): Promise<{
-  host: GameHost;
+  host: GameServerHost;
   server: GameWsServer;
   url: string;
   backends: WsBackend[];
   connect: (userId: string) => WsBackend;
   shutdown: () => Promise<void>;
 }> {
-  const host = createGameHost({
+  const host = createGameServerHost({
     runtimes: [createTestRuntime()],
     persistence: memoryPersistence(),
     allowedFeedActions: options.allowedFeedActions ?? ["kill"],
@@ -181,7 +181,7 @@ test("feed pushes fan out to subscribed members", async () => {
 });
 
 test("mounts on an existing http server at a path", async () => {
-  const host = createGameHost({ runtimes: [createTestRuntime()], persistence: memoryPersistence() });
+  const host = createGameServerHost({ runtimes: [createTestRuntime()], persistence: memoryPersistence() });
   const httpServer = createServer((_req, res) => {
     res.writeHead(200, { "content-type": "application/json" });
     res.end(JSON.stringify({ ok: true }));
@@ -414,7 +414,7 @@ test("matchmaking: create private coded lobby, browse public, join by code over 
 
 test("lag comp: the ws host retains presence history and rewinds to an interpolated position", async () => {
   let clock = 0;
-  const host = createGameHost({ runtimes: [createTestRuntime()], persistence: memoryPersistence() });
+  const host = createGameServerHost({ runtimes: [createTestRuntime()], persistence: memoryPersistence() });
   const server = createGameWsServer({
     host,
     port: 0,

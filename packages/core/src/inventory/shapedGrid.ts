@@ -1,17 +1,18 @@
 export type Cell = readonly [number, number];
-export type Footprint = readonly Cell[];
+/** The grid cells a shaped item covers, relative to its anchor. */
+export type CellFootprint = readonly Cell[];
 export type Rotation = 0 | 1 | 2 | 3;
 
 export interface ShapedItem<T> {
   id: string;
   value: T;
-  footprint: Footprint;
+  footprint: CellFootprint;
 }
 
 export interface Placement<T> {
   id: string;
   value: T;
-  footprint: Footprint;
+  footprint: CellFootprint;
   origin: Cell;
   rotation: Rotation;
 }
@@ -40,7 +41,7 @@ function cellKey(cell: Cell): string {
 }
 
 /** @internal */
-export function normalizeFootprint(footprint: Footprint): Footprint {
+export function normalizeFootprint(footprint: CellFootprint): CellFootprint {
   if (footprint.length === 0) return [];
   let minC = Infinity;
   let minR = Infinity;
@@ -63,7 +64,7 @@ export function normalizeFootprint(footprint: Footprint): Footprint {
 }
 
 /** @internal */
-export function rotateFootprint(footprint: Footprint, rotation: Rotation): Footprint {
+export function rotateFootprint(footprint: CellFootprint, rotation: Rotation): CellFootprint {
   const turns = ((rotation % 4) + 4) % 4;
   let cells = footprint.map(([c, r]): Cell => [c, r]);
   for (let i = 0; i < turns; i++) {
@@ -74,7 +75,7 @@ export function rotateFootprint(footprint: Footprint, rotation: Rotation): Footp
 
 /** @internal */
 export function occupiedCells(
-  footprint: Footprint,
+  footprint: CellFootprint,
   origin: Cell,
   rotation: Rotation,
 ): Cell[] {
@@ -102,7 +103,7 @@ function validCell(cell: Cell): boolean {
   return Number.isSafeInteger(cell[0]) && Number.isSafeInteger(cell[1]);
 }
 
-function validFootprint(footprint: Footprint): boolean {
+function validFootprint(footprint: CellFootprint): boolean {
   return footprint.length > 0 && footprint.every(validCell);
 }
 
@@ -131,7 +132,7 @@ function occupancyMap<T>(grid: ShapedGrid<T>, ignoreId?: string): Map<string, st
  */
 export function canPlace<T>(
   grid: ShapedGrid<T>,
-  footprint: Footprint,
+  footprint: CellFootprint,
   origin: Cell,
   rotation: Rotation,
   ignoreId?: string,
@@ -171,7 +172,7 @@ export type ShapedPlacementSearchResult =
  */
 export function findShapedPlacement<T>(
   grid: ShapedGrid<T>,
-  footprint: Footprint,
+  footprint: CellFootprint,
   options: ShapedPlacementSearchOptions = {},
 ): ShapedPlacementSearchResult {
   requireDimensions(grid.width, grid.height);
@@ -232,7 +233,7 @@ export type ShapedFitResult<T> =
   | { status: "ok"; grid: ShapedGrid<T>; origin: Cell; rotation: Rotation; checks: number }
   | { status: "rejected"; reason: ShapedFitRejection; detail: string; checks: number };
 
-function footprintBounds(footprint: Footprint): { width: number; height: number } {
+function footprintBounds(footprint: CellFootprint): { width: number; height: number } {
   let width = 0;
   let height = 0;
   for (const [c, r] of footprint) {

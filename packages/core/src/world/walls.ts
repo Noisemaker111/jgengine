@@ -1,3 +1,4 @@
+import { polygonArea } from "./cityGeometry";
 import { footprintAabb, type Aabb, type Vec2 } from "./geometry";
 
 export type WallVec3 = readonly [number, number, number];
@@ -61,17 +62,6 @@ export function enclosePath(points: readonly Vec2[], tolerance = 0.5): readonly 
   if (points.length < 3) return points;
   if (!isEnclosed(points, tolerance)) return points;
   return points.slice(0, points.length - 1);
-}
-
-/** @internal */
-export function polygonArea(polygon: readonly Vec2[]): number {
-  let sum = 0;
-  for (let index = 0; index < polygon.length; index += 1) {
-    const a = polygon[index]!;
-    const b = polygon[(index + 1) % polygon.length]!;
-    sum += a[0] * b[1] - b[0] * a[1];
-  }
-  return Math.abs(sum) / 2;
 }
 
 /** @internal */

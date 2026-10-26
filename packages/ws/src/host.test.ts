@@ -3,7 +3,7 @@ import { expect, test } from "bun:test";
 import { createGameRuntime } from "@jgengine/core/runtime/gameRuntime";
 import type { GameRuntimeSnapshot } from "@jgengine/core/runtime/snapshot";
 
-import { createGameHost, memoryPersistence, OP_LEDGER_LIMIT } from "./host";
+import { createGameServerHost, memoryPersistence, OP_LEDGER_LIMIT } from "./host";
 
 function deferred<T>(): { promise: Promise<T>; resolve: (value: T) => void } {
   let resolve: (value: T) => void = () => {};
@@ -35,7 +35,7 @@ function coinsRuntime() {
 test("server-only commands run only when the host call is trusted", async () => {
   const buy = coinsRuntime();
   const runtime = createGameRuntime({ gameId: "vault", save: "none", commands: { grant: { access: "server", validate: () => null, apply: snapshot => snapshot } } });
-  const host = createGameHost({ persistence: memoryPersistence(), runtimes: [buy, runtime] });
+  const host = createGameServerHost({ persistence: memoryPersistence(), runtimes: [buy, runtime] });
   const { serverId } = await host.joinServer({ userId: "alice", gameId: "vault" });
   expect(await host.runCommand({ userId: "alice", serverId, command: "grant", input: {} })).toEqual({ ok: false, reason: "Command is server-only" });
   expect(await host.runCommand({ userId: "alice", serverId, command: "grant", input: {}, trusted: true })).toEqual({ ok: true });
@@ -46,7 +46,7 @@ function coinsOf(view: { serverState: unknown } | null): number {
 }
 
 test("private server is absent from listOpenServers", async () => {
-  const host = createGameHost({ persistence: memoryPersistence() });
+  const host = createGameServerHost({ persistence: memoryPersistence() });
   const { serverId: publicId } = await host.joinServer({ userId: "alice", gameId: "demo" });
   const { serverId: privateId } = await host.joinServer({
     userId: "bob",
@@ -60,7 +60,7 @@ test("private server is absent from listOpenServers", async () => {
 });
 
 test("private server is absent from browseServers", async () => {
-  const host = createGameHost({ persistence: memoryPersistence() });
+  const host = createGameServerHost({ persistence: memoryPersistence() });
   await host.joinServer({ userId: "alice", gameId: "demo" });
   await host.joinServer({
     userId: "bob",
@@ -73,7 +73,7 @@ test("private server is absent from browseServers", async () => {
 });
 
 test("a direct-serverId join to a private server without the code is rejected", async () => {
-  const host = createGameHost({ persistence: memoryPersistence() });
+  const host = createGameServerHost({ persistence: memoryPersistence() });
   const { serverId } = await host.joinServer({
     userId: "bob",
     gameId: "demo",
@@ -90,7 +90,7 @@ test("a direct-serverId join to a private server without the code is rejected", 
 });
 
 test("a direct-serverId join to a private server with the correct code is accepted", async () => {
-  const host = createGameHost({ persistence: memoryPersistence() });
+  const host = createGameServerHost({ persistence: memoryPersistence() });
   const { serverId } = await host.joinServer({
     userId: "bob",
     gameId: "demo",
@@ -103,7 +103,7 @@ test("a direct-serverId join to a private server with the correct code is accept
 });
 
 test("an existing member can rejoin a private server directly without a code", async () => {
-  const host = createGameHost({ persistence: memoryPersistence() });
+  const host = createGameServerHost({ persistence: memoryPersistence() });
   const { serverId } = await host.joinServer({
     userId: "bob",
     gameId: "demo",
@@ -115,7 +115,7 @@ test("an existing member can rejoin a private server directly without a code", a
 });
 
 test("joinByCode resolves a private server by its code", async () => {
-  const host = createGameHost({ persistence: memoryPersistence() });
+  const host = createGameServerHost({ persistence: memoryPersistence() });
   const { serverId } = await host.joinServer({
     userId: "bob",
     gameId: "demo",
@@ -127,7 +127,7 @@ test("joinByCode resolves a private server by its code", async () => {
 });
 
 test("direct-serverId join to a public server needs no code", async () => {
-  const host = createGameHost({ persistence: memoryPersistence() });
+  const host = createGameServerHost({ persistence: memoryPersistence() });
   const { serverId } = await host.joinServer({ userId: "alice", gameId: "demo" });
 
   const rejoined = await host.joinServer({ userId: "bob", gameId: "demo", serverId });
@@ -135,7 +135,7 @@ test("direct-serverId join to a public server needs no code", async () => {
 });
 
 test("a replayed op ID after a lost reply mutates once and both calls resolve", async () => {
-  const host = createGameHost({ persistence: memoryPersistence(), runtimes: [coinsRuntime()] });
+  const host = createGameServerHost({ persistence: memoryPersistence(), runtimes: [coinsRuntime()] });
   const { serverId } = await host.joinServer({ userId: "alice", gameId: "shop" });
 
   const envelope = { qty: 1, __jgWsOpId: "op-1" };
@@ -148,7 +148,7 @@ test("a replayed op ID after a lost reply mutates once and both calls resolve", 
 });
 
 test("two distinct op IDs each apply their own mutation", async () => {
-  const host = createGameHost({ persistence: memoryPersistence(), runtimes: [coinsRuntime()] });
+  const host = createGameServerHost({ persistence: memoryPersistence(), runtimes: [coinsRuntime()] });
   const { serverId } = await host.joinServer({ userId: "alice", gameId: "shop" });
 
   await host.runCommand({ userId: "alice", serverId, command: "buy", input: { __jgWsOpId: "op-1" } });
@@ -158,7 +158,7 @@ test("two distinct op IDs each apply their own mutation", async () => {
 });
 
 test("the op ledger evicts the oldest ID once past its bound", async () => {
-  const host = createGameHost({ persistence: memoryPersistence(), runtimes: [coinsRuntime()] });
+  const host = createGameServerHost({ persistence: memoryPersistence(), runtimes: [coinsRuntime()] });
   const { serverId } = await host.joinServer({ userId: "alice", gameId: "shop" });
 
   for (let i = 0; i < OP_LEDGER_LIMIT; i++) {
@@ -182,7 +182,7 @@ test("the op ledger evicts the oldest ID once past its bound", async () => {
 });
 
 test("two concurrent writers on the same room both apply, no update lost to a stale snapshot read", async () => {
-  const host = createGameHost({ persistence: memoryPersistence(), runtimes: [coinsRuntime()] });
+  const host = createGameServerHost({ persistence: memoryPersistence(), runtimes: [coinsRuntime()] });
   const { serverId } = await host.joinServer({ userId: "alice", gameId: "shop" });
   await host.joinServer({ userId: "bob", gameId: "shop", serverId });
 
@@ -197,7 +197,7 @@ test("two concurrent writers on the same room both apply, no update lost to a st
 });
 
 test("a burst of concurrent runCommand calls from one player serializes through the host queue", async () => {
-  const host = createGameHost({ persistence: memoryPersistence(), runtimes: [coinsRuntime()] });
+  const host = createGameServerHost({ persistence: memoryPersistence(), runtimes: [coinsRuntime()] });
   const { serverId } = await host.joinServer({ userId: "alice", gameId: "shop" });
 
   const results = await Promise.all(
@@ -209,7 +209,7 @@ test("a burst of concurrent runCommand calls from one player serializes through 
 });
 
 test("a concurrent join and runCommand on a fresh server never race past server creation", async () => {
-  const host = createGameHost({ persistence: memoryPersistence(), runtimes: [coinsRuntime()] });
+  const host = createGameServerHost({ persistence: memoryPersistence(), runtimes: [coinsRuntime()] });
 
   const { serverId } = await host.joinServer({ userId: "alice", gameId: "shop" });
   const [joinResult, commandResult] = await Promise.all([
@@ -237,7 +237,7 @@ test("a stalled mutation in one room does not block another room's mutation", as
     },
   };
 
-  const host = createGameHost({ persistence, allowedFeedActions: ["slow", "fast"] });
+  const host = createGameServerHost({ persistence, allowedFeedActions: ["slow", "fast"] });
   const { serverId: roomA } = await host.joinServer({ userId: "alice", gameId: "demo" });
   const { serverId: roomB } = await host.joinServer({ userId: "bob", gameId: "demo" });
   slowServerId = roomA;
@@ -259,7 +259,7 @@ test("a stalled mutation in one room does not block another room's mutation", as
 });
 
 test("mutations submitted to the same room stay ordered even without an await between calls", async () => {
-  const host = createGameHost({ persistence: memoryPersistence(), runtimes: [coinsRuntime()] });
+  const host = createGameServerHost({ persistence: memoryPersistence(), runtimes: [coinsRuntime()] });
   const { serverId } = await host.joinServer({ userId: "alice", gameId: "shop" });
 
   const order: string[] = [];
@@ -282,7 +282,7 @@ test("mutations submitted to the same room stay ordered even without an await be
 });
 
 test("leaving a server forgets its op ledger", async () => {
-  const host = createGameHost({ persistence: memoryPersistence(), runtimes: [coinsRuntime()] });
+  const host = createGameServerHost({ persistence: memoryPersistence(), runtimes: [coinsRuntime()] });
   const { serverId } = await host.joinServer({ userId: "alice", gameId: "shop" });
 
   await host.runCommand({ userId: "alice", serverId, command: "buy", input: { __jgWsOpId: "op-1" } });

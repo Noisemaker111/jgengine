@@ -5,7 +5,7 @@ import {
   pathFollowProgress,
   pathFollowSeek,
   pathFromNav,
-  pathLength,
+  followPathLength,
   type PathFollowConfig,
 } from "@jgengine/core/nav/pathFollow";
 
@@ -136,9 +136,9 @@ const SQUARE: PathFollowConfig = {
 };
 
 describe("pathFollow semantic progress adapter", () => {
-  test("pathLength sums every segment including the loop wrap", () => {
-    expect(pathLength(SQUARE)).toBeCloseTo(40);
-    expect(pathLength({ ...SQUARE, loop: false })).toBeCloseTo(30);
+  test("followPathLength sums every segment including the loop wrap", () => {
+    expect(followPathLength(SQUARE)).toBeCloseTo(40);
+    expect(followPathLength({ ...SQUARE, loop: false })).toBeCloseTo(30);
   });
 
   test("seek by normalized fraction lands mid-path with travel heading", () => {

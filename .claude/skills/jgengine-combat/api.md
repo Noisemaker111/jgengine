@@ -110,7 +110,6 @@
 - `MagazineSnapshot` (interface): interface MagazineSnapshot — Complete serializable state for a {@link Magazine}; `reserve: null` means infinite reserve.
 - `MatchupOutputs` (interface): interface MatchupOutputs — The independent, typed outputs a channel-vs-trait matchup can scale. Every field is an optional multiplier that defaults to `1` (identity), so a matchup entry names only the axes it bends. `impact` scales the direct hit, `applyChance` the odds a status lands, `magnitude` and `duration` the applied status itself, and `extra` carries any further caller-defined scalar (knockback, stagger, heat) the engine forwards without interpreting.
 - `MeterAddResult` (interface): interface MeterAddResult { value: number; fired: boolean; overflow: number; tier: string | null; tierChanged: boolean } — ⚠ undocumented
-- `ObjectRaycastHit` (interface): interface ObjectRaycastHit — ⚠ undocumented
 - `OnDeathSpec` (interface): interface OnDeathSpec — Catalog `onDeath` for an entity: loot tables to roll, `dropMode: "world"` to scatter drops on the ground (rendered with loot beams) instead of granting them into the killer's bag, and commands to run. Fires only when the entity dies through `ctx.scene.entity.effect`, not a raw `stats.delta`.
 - `PendingDamage` (interface): interface PendingDamage — Ordered, inspectable damage-resolution interception (#931).
 - `PhaseCompletionRef` (interface): interface PhaseCompletionRef — Reference to a registered completion predicate: a `kind` naming the evaluator plus opaque `params` the evaluator reads. The sequence core never interprets `params`; the predicate registered under `kind` does.
@@ -119,8 +118,9 @@
 - `PhaseSpawnRef` (interface): interface PhaseSpawnRef — Reference to a registered spawn provider invoked when a phase is entered: a `kind` naming the provider plus opaque `params`. Spawning is one optional node adapter — a phase without `spawn` simply emits no spawn requests.
 - `PhaseStatus` (type): type PhaseStatus = "pending" | "active" | "complete" — Lifecycle status of one phase in an encounter sequence: waiting to run, currently running, or finished. Groups and leaves share the same three states.
 - `PredicateContext` (interface): interface PredicateContext — Evaluation context a completion predicate receives for the node under test.
+- `ProjectileObjectHit` (interface): interface ProjectileObjectHit — A projectile raycast that struck a placed object rather than an entity.
 - `ProjectileSystemDeps` (interface): interface ProjectileSystemDeps { effects: EffectSystem; spatial: CombatSpatialDeps; getStat(itemId: string, stat: string): number | null; raycast?: Raycast; sceneRaycast?: SceneRaycastApi; objects?: ProjectileObjectsDeps; entityCollidersOf?(instanceId: string): EntityCol… — ⚠ undocumented · used by `createProjectileSystem`: Spawn and advance projectiles each frame, resolving travel, lifetime, and hits.
-- `RaycastHit` (type): type RaycastHit = EntityRaycastHit | ObjectRaycastHit — ⚠ undocumented
+- `RaycastHit` (type): type RaycastHit = EntityRaycastHit | ProjectileObjectHit — ⚠ undocumented
 - `ReceiveMap` (type): type ReceiveMap = Record<string, ReceiveRule> — ⚠ undocumented
 - `ReceivedDamageResult` (interface): interface ReceivedDamageResult — The full, provenance-rich outcome of running received modifiers over one hit.
 - `ReceivedModifier` (interface): interface ReceivedModifier — One serializable receiver-side rule: an optional predicate, a policy, and an ordering key.
@@ -197,10 +197,9 @@
 - `TelegraphShape` (type): type TelegraphShape = | { kind: "circle"; radius: number } | { kind: "ring"; radius: number; innerRadius: number } | { kind: "cone"; radius: number; angle: number } | { kind: "line"; length: number; width: number } — ⚠ undocumented
 - `ThreatReadOptions` (interface): interface ThreatReadOptions — Bounds for {@link threatsFromMemory}.
 - `ThreatReading` (interface): interface ThreatReading extends CoverThreat — One remembered enemy with its age, so a role can treat a stale sighting differently.
-- `ThresholdCrossing` (interface): interface ThresholdCrossing — One emitted crossing: which threshold, which way, and the value span that produced it.
 - `ThresholdCrossingConfig` (interface): interface ThresholdCrossingConfig — Caller configuration for a threshold tracker.
-- `ThresholdMark` (interface): interface ThresholdMark — Generic numeric threshold-crossing tracker (#931).
 - `ThresholdTracker` (interface): interface ThresholdTracker — A stateful crossing tracker over one numeric source.
+- `ThresholdTrackerCrossing` (interface): interface ThresholdTrackerCrossing — One emitted crossing: which threshold, which way, and the value span that produced it.
 - `ThresholdTrackerSnapshot` (interface): interface ThresholdTrackerSnapshot — Serializable tracker state for save/load.
 - `TimeToKill` (interface): interface TimeToKill — A quoted time to kill for one fixed hit against one health pool.
 - `UnknownDamageTypeError` (class): class UnknownDamageTypeError extends Error — Raised when a hit names a damage type the table does not define, rather than silently dealing 1×.
@@ -327,7 +326,6 @@
 - `startEncounter` (function): function startEncounter<TData>(config: EncounterSequenceConfig<TData>, state: EncounterSequenceState<TData>, ctx: EncounterContext = {}): EncounterStep<TData> — Start a created encounter: enter the first root phase, descending to its first leaf, and return the initial enter/spawn events. A no-op (with no events) on an already-started or empty encounter. Mutates and returns `state`.
 - `statusEffectRemainingFraction` (function): function statusEffectRemainingFraction(view: StatusEffectView): number — Fraction of the countdown still remaining, clamped to `[0,1]` — the value a countdown ring fills to. Returns `0` when the duration is non-positive. Pure; safe to call every frame.
 - `threatsFromMemory` (function): function threatsFromMemory(perception: PerceptionService, observerId: string, nowMs: number, options: ThreatReadOptions = {}): ThreatReading[] — Read one member's threat list out of its perception memory — the only source of threat. Sorted by confidence, then recency, then id, and bounded by `max`, so a crowded memory cannot grow the tick.
-- `tierAt` (function): function tierAt(value: number, tiers: readonly MeterTier[]): string | null — The highest tier id whose `at` threshold `value` has reached, or `null` below every tier — the pure lookup `createAccumulatorMeter`/`createEventMeter` call on every `add`/`tick`.
 - `toStatusEffectView` (function): function toStatusEffectView(instance: StatusInstance, options?: StatusEffectViewOptions): StatusEffectView — Map one live {@link StatusInstance} to a serializable {@link StatusEffectView} for a HUD row. Pure: no clock, no allocation beyond the returned view. The `durationMs` option supplies the ring denominator the instance does not carry; without it the ring reads full.
 - `toStatusEffectViews` (function): function toStatusEffectViews(instances: readonly StatusInstance[], options?: StatusEffectViewOptions): StatusEffectView[] — Map a list of live statuses (a target's carried {@link StatusInstance}s) to ordered HUD views. Pure and allocation-bounded — one pass, one view per input — so a status bar can render straight off the existing status model's snapshot without re-deriving ring math or timers.
 - `typeBypassesArmor` (function): function typeBypassesArmor(table: DamageTableDef, type: string): boolean — Whether armor points reduce this damage type.
@@ -655,9 +653,9 @@
 
 - `EntityRaycastHit` (interface): interface EntityRaycastHit { kind: "entity"; instanceId: string; distance: number; at: EntityPosition; colliderName?: string; damageEligible?: boolean; blocks?: boolean } — ⚠ undocumented
 - `LiveProjectile` (interface): interface LiveProjectile — Detached pose of one active projectile pellet for presentation.
-- `ObjectRaycastHit` (interface): interface ObjectRaycastHit { kind: "object"; instanceId: string; catalogId: string; distance: number; at: EntityPosition; colliderName?: string; damageEligible?: boolean; blocks?: boolean } — ⚠ undocumented
 - `ProjectileFlightState` (interface): interface ProjectileFlightState — Serializable motion state of one projectile pellet.
 - `ProjectileHit` (type): type ProjectileHit = | { kind: "entity"; instanceId: string; distance: number; colliderName?: string; damageEligible?: boolean; } | { kind: "object"; instanceId: string; catalogId: string; distance: number; colliderName?: string; damageEligible?: boolean; } — ⚠ undocumented
+- `ProjectileObjectHit` (interface): interface ProjectileObjectHit — A projectile raycast that struck a placed object rather than an entity.
 - `ProjectileObjectsDeps` (interface): interface ProjectileObjectsDeps { list(): readonly {instanceId: string; catalogId: string; position: readonly [number, number, number]; rotationY?: number;}[]; inBox?(min: EntityPosition, max: EntityPosition): readonly {instanceId: string; catalogId: string; position: rea… — ⚠ undocumented
 - `ProjectilePrediction` (interface): interface ProjectilePrediction { hits: ProjectileHit[]; blocked?: boolean; origin?: EntityPosition; direction?: EntityPosition; firstImpact?: ProjectileHit | null } — ⚠ undocumented
 - `ProjectileSettleReport` (interface): interface ProjectileSettleReport — Exactly-once settlement with launch identity and actual applied effects.
@@ -670,7 +668,7 @@
 - `ProjectileTravelDeps` (interface): interface ProjectileTravelDeps — Authoritative clock, collision and environmental acceleration providers.
 - `ProjectileTravelImpact` (interface): interface ProjectileTravelImpact — Nearest contact returned by a live segment sweep.
 - `Raycast` (type): type Raycast = (from: string, aim: Aim, range: number, originPolicy?: ShotOriginPolicy) => RaycastHit[] — ⚠ undocumented
-- `RaycastHit` (type): type RaycastHit = EntityRaycastHit | ObjectRaycastHit — ⚠ undocumented
+- `RaycastHit` (type): type RaycastHit = EntityRaycastHit | ProjectileObjectHit — ⚠ undocumented
 - `SettleResult` (type): type SettleResult = | { status: "settled"; shotId: string; at: [number, number, number]; hits: EffectResult[]; origin?: [number, number, number]; } | { status: "rejected"; shotId: string; reason: string } — ⚠ undocumented
 - `createProjectileSystem` (function): function createProjectileSystem(deps: ProjectileSystemDeps): ProjectileSystem — Spawn and advance projectiles each frame, resolving travel, lifetime, and hits.
 
@@ -831,18 +829,6 @@
 - `TelegraphConfig` (interface): interface TelegraphConfig { shape: TelegraphShape; at: EntityPosition; dir?: number; windupMs?: number; turns?: number; kind?: string } — ⚠ undocumented
 - `TelegraphShape` (type): type TelegraphShape = | { kind: "circle"; radius: number } | { kind: "ring"; radius: number; innerRadius: number } | { kind: "cone"; radius: number; angle: number } | { kind: "line"; length: number; width: number } — ⚠ undocumented
 
-## @jgengine/core/combat/thresholdCrossings
-
-- `CrossingDirection` (type): type CrossingDirection = "falling" | "rising" — The direction a crossing moved: `falling` = value decreased past the mark, `rising` = increased past it.
-- `CrossingPolicy` (type): type CrossingPolicy = "once" | "repeat" — Whether a threshold may fire repeatedly (`repeat`) or at most once per direction (`once`).
-- `CrossingTrigger` (type): type CrossingTrigger = "falling" | "rising" | "both" — Which directions should emit crossings.
-- `ThresholdCrossing` (interface): interface ThresholdCrossing — One emitted crossing: which threshold, which way, and the value span that produced it.
-- `ThresholdCrossingConfig` (interface): interface ThresholdCrossingConfig — Caller configuration for a threshold tracker.
-- `ThresholdMark` (interface): interface ThresholdMark — Generic numeric threshold-crossing tracker (#931).
-- `ThresholdTracker` (interface): interface ThresholdTracker — A stateful crossing tracker over one numeric source.
-- `ThresholdTrackerSnapshot` (interface): interface ThresholdTrackerSnapshot — Serializable tracker state for save/load.
-- `createThresholdTracker` (function): function createThresholdTracker(config: ThresholdCrossingConfig): ThresholdTracker — Track a numeric source against named thresholds and emit ordered crossing events with direction, hysteresis, once/repeat policy, and skipped-threshold handling. Deterministic and serializable; drives phase transitions, armor breaks, resource warnings, and any other threshold consumer.
-
 ## @jgengine/core/combat/vfxPresets
 
 - `DEFAULT_VFX_PRESET` (const): const DEFAULT_VFX_PRESET: VfxPresetName — The fallback flavor used when a `vfx()` call names an unknown preset — so a typo still shows a spark instead of nothing.
@@ -941,9 +927,8 @@
 - `AccumulatorMeterState` (interface): interface AccumulatorMeterState — Mutable meter value, hold latch, and time since the last gain.
 - `MeterAddResult` (interface): interface MeterAddResult { value: number; fired: boolean; overflow: number; tier: string | null; tierChanged: boolean } — ⚠ undocumented
 - `MeterMode` (type): type MeterMode = "hold" | "reset" — ⚠ undocumented
-- `MeterTier` (interface): interface MeterTier { id: string; at: number } — ⚠ undocumented · used by `tierAt`: The highest tier id whose `at` threshold `value` has reached, or `null` below every tier — the pure lookup `createAccumulatorMeter`/`createE…
+- `MeterTier` (interface): interface MeterTier { id: string; at: number } — ⚠ undocumented
 - `createAccumulatorMeter` (function): function createAccumulatorMeter(config: AccumulatorMeterConfig): AccumulatorMeter — A raw accumulating gauge that crosses named tier thresholds as a value builds, with optional decay — the primitive under charge, rage, and combo meters.
-- `tierAt` (function): function tierAt(value: number, tiers: readonly MeterTier[]): string | null — The highest tier id whose `at` threshold `value` has reached, or `null` below every tier — the pure lookup `createAccumulatorMeter`/`createEventMeter` call on every `add`/`tick`.
 
 ## @jgengine/core/stats/eventMeter
 

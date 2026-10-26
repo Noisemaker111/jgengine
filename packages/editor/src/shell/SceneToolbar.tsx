@@ -12,7 +12,7 @@ import {
   type GizmoPivot,
   type GizmoSpace,
   type PlacementTool,
-  type SnapMode,
+  type EditorSnapMode,
 } from "../uiStore";
 import { Icon } from "./icons";
 import { BORDER, FOCUS_RING, MICRO_LABEL } from "./theme";
@@ -148,7 +148,7 @@ export function SceneToolbar({
   gizmoMode: GizmoMode;
   gizmoSpace: GizmoSpace;
   gizmoPivot: GizmoPivot;
-  snapMode: SnapMode;
+  snapMode: EditorSnapMode;
   gridSize: number;
   rotationSnapDeg: number | null;
   scaleSnap: number | null;
@@ -162,7 +162,7 @@ export function SceneToolbar({
   onSetGizmoMode: (mode: GizmoMode) => void;
   onSetGizmoSpace: (space: GizmoSpace) => void;
   onSetGizmoPivot: (pivot: GizmoPivot) => void;
-  onSetSnapMode: (mode: SnapMode) => void;
+  onSetSnapMode: (mode: EditorSnapMode) => void;
   onSetGridSize: (size: number) => void;
   onSetRotationSnapDeg: (deg: number | null) => void;
   onSetScaleSnap: (snap: number | null) => void;
@@ -180,7 +180,7 @@ export function SceneToolbar({
   const [addOpen, setAddOpen] = useState(false);
   const [snapOpen, setSnapOpen] = useState(false);
   const [pivotOpen, setPivotOpen] = useState(false);
-  const lastSnapRef = useRef<Exclude<SnapMode, "off">>("ground");
+  const lastSnapRef = useRef<Exclude<EditorSnapMode, "off">>("ground");
   if (snapMode !== "off") lastSnapRef.current = snapMode;
 
   // Recomputed every render (opening the menu rerenders): studios may register after the chrome

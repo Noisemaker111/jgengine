@@ -1,7 +1,7 @@
 import { WELL_KNOWN_MARKER_KINDS } from "@jgengine/core/editor/index";
 import { listSceneKinds } from "@jgengine/core/scene/sceneKinds";
 
-import type { GizmoMode, PlacementTool, SnapMode } from "../uiStore";
+import type { GizmoMode, PlacementTool, EditorSnapMode } from "../uiStore";
 import type { BottomDockTab } from "./layoutStore";
 
 /** One executable command-palette entry. */
@@ -29,7 +29,7 @@ export interface PaletteContext {
   toggleContours(): void;
   toggleSurfaceGrid(): void;
   toggleElevation(): void;
-  setSnapMode(mode: SnapMode): void;
+  setSnapMode(mode: EditorSnapMode): void;
   frameAll(): void;
   frameSelection(): void;
   undo(): void;

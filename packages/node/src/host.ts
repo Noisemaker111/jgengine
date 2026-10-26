@@ -1,7 +1,7 @@
 export {
-  createGameHost,
+  createGameServerHost,
   memoryPersistence,
-  type GameHost,
-  type GameHostOptions,
+  type GameServerHost,
+  type GameServerHostOptions,
   type HostChangeEvent,
 } from "@jgengine/ws/host";

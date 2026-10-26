@@ -4,6 +4,10 @@
 
 Reach for these before hand-rolling. Each row is *the thing you need* → *the primitive that already does it*.
 
+## authoritative-host — run authoritative game servers with sessions, ticking and persistence behind any transport
+
+- `createGameServerHost` (function) · `import { createGameServerHost } from "@jgengine/ws"`
+
 ## client-error-reporting — Accept authenticated bounded diagnostics with cooldown and retention sweeps.
 
 - `createClientErrorFunctions` (function) · `import { createClientErrorFunctions } from "@jgengine/convex"`

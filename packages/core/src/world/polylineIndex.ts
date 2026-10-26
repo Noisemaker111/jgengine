@@ -11,7 +11,7 @@ import type { Vec2 } from "./geometry";
 import { buildSpatialBuckets } from "../spatial/spatialBuckets";
 
 /** Where the polyline comes closest to the query, within the query's bound. @internal */
-export interface PolylineHit {
+export interface PolylineIndexHit {
   /** Index of the winning segment, i.e. the one from `points[segment]` to `points[segment + 1]`. */
   segment: number;
   /** Position along that segment, 0..1. */
@@ -25,7 +25,7 @@ export interface PolylineHit {
 /** @internal */
 export interface PolylineIndex {
   /** Exact nearest segment sample within `limit`, or null when the polyline stays farther away. */
-  nearest(x: number, z: number, limit: number): PolylineHit | null;
+  nearest(x: number, z: number, limit: number): PolylineIndexHit | null;
   /** Segments tested by the most recent query — the bounded-work invariant tests assert on. */
   examined(): number;
 }

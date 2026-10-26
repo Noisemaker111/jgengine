@@ -1,7 +1,6 @@
 import { describe, expect, it } from "bun:test";
 
 import {
-  createWaypointTracker,
   layoutScreenMarker,
   type ScreenMarkerLayout,
 } from "./screenMarkers";
@@ -65,80 +64,5 @@ describe("layoutScreenMarker", () => {
     expect(Number.isNaN(out.x)).toBe(false);
     expect(Number.isNaN(out.y)).toBe(false);
     expect(Number.isNaN(out.angle)).toBe(false);
-  });
-});
-
-describe("createWaypointTracker", () => {
-  it("sets, gets, and lists waypoints in insertion order", () => {
-    const tracker = createWaypointTracker();
-    tracker.set({ id: "a", position: [1, 0, 2], kind: "objective" });
-    tracker.set({ id: "b", position: [3, 0, 4], kind: "loot", label: "Cache" });
-    expect(tracker.size()).toBe(2);
-    expect(tracker.get("b")?.label).toBe("Cache");
-    expect(tracker.all().map((w) => w.id)).toEqual(["a", "b"]);
-  });
-
-  it("replaces a waypoint on set with the same id", () => {
-    const tracker = createWaypointTracker();
-    tracker.set({ id: "a", position: [1, 0, 2], kind: "objective" });
-    tracker.set({ id: "a", position: [9, 0, 9], kind: "ally" });
-    expect(tracker.size()).toBe(1);
-    expect(tracker.get("a")?.kind).toBe("ally");
-    expect(tracker.get("a")?.position).toEqual([9, 0, 9]);
-  });
-
-  it("removes and clears", () => {
-    const tracker = createWaypointTracker();
-    tracker.set({ id: "a", position: [0, 0, 0], kind: "objective" });
-    tracker.set({ id: "b", position: [0, 0, 0], kind: "loot" });
-    tracker.remove("a");
-    expect(tracker.get("a")).toBeUndefined();
-    expect(tracker.size()).toBe(1);
-    tracker.clear();
-    expect(tracker.size()).toBe(0);
-  });
-
-  it("notifies subscribers on set/remove/clear and stops after unsubscribe", () => {
-    const tracker = createWaypointTracker();
-    let calls = 0;
-    const unsub = tracker.subscribe(() => {
-      calls += 1;
-    });
-    tracker.set({ id: "a", position: [0, 0, 0], kind: "objective" });
-    tracker.remove("a");
-    tracker.set({ id: "b", position: [0, 0, 0], kind: "loot" });
-    tracker.clear();
-    expect(calls).toBe(4);
-    unsub();
-    tracker.set({ id: "c", position: [0, 0, 0], kind: "objective" });
-    expect(calls).toBe(4);
-  });
-
-  it("does not notify when removing an absent id or clearing an empty set", () => {
-    const tracker = createWaypointTracker();
-    let calls = 0;
-    tracker.subscribe(() => {
-      calls += 1;
-    });
-    tracker.remove("nope");
-    tracker.clear();
-    expect(calls).toBe(0);
-  });
-
-  it("round-trips through snapshot/restore", () => {
-    const tracker = createWaypointTracker();
-    tracker.set({ id: "a", position: [1, 2, 3], kind: "objective", label: "Extract" });
-    tracker.set({ id: "b", position: [4, 5, 6], kind: "ally" });
-    const snap = JSON.parse(JSON.stringify(tracker.snapshot())) as ReturnType<typeof tracker.snapshot>;
-
-    const restored = createWaypointTracker();
-    let notified = 0;
-    restored.subscribe(() => {
-      notified += 1;
-    });
-    restored.restore(snap);
-    expect(notified).toBe(1);
-    expect(restored.all()).toEqual(tracker.all());
-    expect(restored.get("a")?.label).toBe("Extract");
   });
 });

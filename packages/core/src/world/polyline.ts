@@ -1,5 +1,7 @@
 import type { Vec2 } from "./geometry";
-import { distance, lerp, normalize, perp, sub } from "./vec2";
+import { vec2 } from "./vec2";
+
+const { distance, lerp, normalize, perp, sub } = vec2;
 
 /** A polyline prepared for repeated distance/fraction sampling, with cumulative arc-length precomputed. */
 export interface Polyline {

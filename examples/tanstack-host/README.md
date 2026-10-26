@@ -8,7 +8,7 @@ compare `src/routes/api.$.ts` and `src/lib/persistence.ts` to their Next.js equi
 `examples/next-host`.
 
 **The authoritative WebSocket host stays a standalone process** (`examples/express-host` or any
-`createGameHost` embedding). A Vite/Nitro server route cannot own a stateful tick loop — do not
+`createGameServerHost` embedding). A Vite/Nitro server route cannot own a stateful tick loop — do not
 try to run `createGameWsServer` inside a server route.
 
 ## The two glue files

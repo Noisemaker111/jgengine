@@ -75,7 +75,7 @@ export type {
   GameContextRace,
   GameContextTurn,
   GameContextWorld,
-  HitReactionInput,
+  EntityHitReactionInput,
   MoveTowardCommitOptions,
   SceneEntityContext,
   SceneObjectContext,

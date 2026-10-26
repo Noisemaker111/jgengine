@@ -107,7 +107,7 @@ export function parseGridCellKey(key: string): { col: number; row: number } | nu
  * True when `col,row` falls inside the layer's declared bounds.
  * @capability editor-grids Bounds-check a grid coordinate before reading or writing it.
  */
-export function inGridBounds(layer: EditorGridLayer, col: number, row: number): boolean {
+export function inLayerBounds(layer: EditorGridLayer, col: number, row: number): boolean {
   return col >= 0 && row >= 0 && col < layer.cols && row < layer.rows;
 }
 
@@ -117,7 +117,7 @@ export function inGridBounds(layer: EditorGridLayer, col: number, row: number): 
  * @capability editor-grids Read a grid cell's value id.
  */
 export function getGridCell(layer: EditorGridLayer, col: number, row: number): string {
-  if (!inGridBounds(layer, col, row)) return gridEmptyValue(layer);
+  if (!inLayerBounds(layer, col, row)) return gridEmptyValue(layer);
   return layer.cells[gridCellKey(col, row)] ?? gridEmptyValue(layer);
 }
 
@@ -142,7 +142,7 @@ export function setGridCell(
   row: number,
   value: string,
 ): EditorGridLayer {
-  if (!inGridBounds(layer, col, row)) return layer;
+  if (!inLayerBounds(layer, col, row)) return layer;
   const empty = gridEmptyValue(layer);
   const key = gridCellKey(col, row);
   const cells = { ...layer.cells };
@@ -177,7 +177,7 @@ export function paintGridCells(
   const cells = { ...layer.cells };
   let changed = false;
   for (const edit of edits) {
-    if (!inGridBounds(layer, edit.col, edit.row)) continue;
+    if (!inLayerBounds(layer, edit.col, edit.row)) continue;
     const key = gridCellKey(edit.col, edit.row);
     if (edit.value === empty) {
       if (key in cells) {
@@ -227,7 +227,7 @@ export function floodFillGrid(
   row: number,
   value: string,
 ): EditorGridLayer {
-  if (!inGridBounds(layer, col, row)) return layer;
+  if (!inLayerBounds(layer, col, row)) return layer;
   const target = getGridCell(layer, col, row);
   if (target === value) return layer;
   const edits: EditorGridCellEdit[] = [];
@@ -235,7 +235,7 @@ export function floodFillGrid(
   const stack: Array<[number, number]> = [[col, row]];
   while (stack.length > 0) {
     const [c, r] = stack.pop()!;
-    if (!inGridBounds(layer, c, r)) continue;
+    if (!inLayerBounds(layer, c, r)) continue;
     const key = gridCellKey(c, r);
     if (seen.has(key)) continue;
     seen.add(key);
@@ -271,7 +271,7 @@ export function gridCellEntries(layer: EditorGridLayer): EditorGridCell[] {
   const out: EditorGridCell[] = [];
   for (const [key, value] of Object.entries(layer.cells)) {
     const parsed = parseGridCellKey(key);
-    if (parsed === null || !inGridBounds(layer, parsed.col, parsed.row)) continue;
+    if (parsed === null || !inLayerBounds(layer, parsed.col, parsed.row)) continue;
     out.push({ col: parsed.col, row: parsed.row, value });
   }
   out.sort((a, b) => a.row - b.row || a.col - b.col);
@@ -296,7 +296,7 @@ export function gridCellCount(layer: EditorGridLayer): number {
   for (const [key, value] of Object.entries(layer.cells)) {
     if (value === gridEmptyValue(layer)) continue;
     const parsed = parseGridCellKey(key);
-    if (parsed !== null && inGridBounds(layer, parsed.col, parsed.row)) count += 1;
+    if (parsed !== null && inLayerBounds(layer, parsed.col, parsed.row)) count += 1;
   }
   return count;
 }

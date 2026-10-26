@@ -4,11 +4,7 @@ import { useCallback, useRef, useState, type ReactNode } from "react";
 import * as THREE from "three";
 
 import { defineGameDefinition } from "@jgengine/core/game/defineGame";
-import {
-  createWaypointTracker,
-  type Waypoint,
-  type WaypointTracker,
-} from "@jgengine/core/ui/screenMarkers";
+import { createWaypointStore, waypointAnchor, type WaypointEntry, type WaypointStore } from "@jgengine/core/world/waypoints";
 import type { GameContext, GameContextEntityEntry } from "@jgengine/core/runtime/gameContext";
 import { createAssetCatalog } from "@jgengine/core/scene/assetCatalog";
 import { environment, grass, terrain } from "@jgengine/core/world/features";
@@ -28,14 +24,14 @@ const KIND_COLORS: Record<string, string> = {
   extraction: "#f472b6",
 };
 
-// The shared tracker the world overlay renders. Waypoints are spread around and
+// The shared store the world overlay renders. Waypoints are spread around and
 // well behind the camera so some project on-screen (pins) and some off-screen
 // (edge arrows with distances).
-const waypoints: WaypointTracker = createWaypointTracker();
-waypoints.set({ id: "obj", position: [4, 1.5, -6], kind: "objective", label: "Objective" });
-waypoints.set({ id: "loot", position: [-9, 1, 4], kind: "loot", label: "Supply cache" });
-waypoints.set({ id: "ally", position: [46, 1, -38], kind: "ally", label: "Ally" });
-waypoints.set({ id: "extract", position: [8, 1, 90], kind: "extraction", label: "Extraction" });
+const waypoints: WaypointStore = createWaypointStore();
+waypoints.place([4, -6], { id: "obj", height: 1.5, kind: "objective", label: "Objective" });
+waypoints.place([-9, 4], { id: "loot", height: 1, kind: "loot", label: "Supply cache" });
+waypoints.place([46, -38], { id: "ally", height: 1, kind: "ally", label: "Ally" });
+waypoints.place([8, 90], { id: "extract", height: 1, kind: "extraction", label: "Extraction" });
 
 const terrainFeature = environment({
   terrain: terrain({ bounds: { w: 120, d: 120 }, height: 2.5, frequency: 0.03, seed: "waypoints" }),
@@ -72,7 +68,7 @@ function pinToCenter(
  * waypoint through the shell world projection, and renders the screen-space
  * {@link WaypointMarkers}. Distance is the 3D camera→waypoint distance.
  */
-function WaypointOverlay({ tracker }: { tracker: WaypointTracker }): ReactNode {
+function WaypointOverlay({ tracker }: { tracker: WaypointStore }): ReactNode {
   const camera = useThree((state) => state.camera);
   const size = useThree((state) => state.size);
   const project = useWorldProjection();
@@ -81,10 +77,7 @@ function WaypointOverlay({ tracker }: { tracker: WaypointTracker }): ReactNode {
 
   const scratch = useRef(new THREE.Vector3());
   const distanceOf = useCallback(
-    (waypoint: Waypoint) =>
-      camera.position.distanceTo(
-        scratch.current.set(waypoint.position[0], waypoint.position[1], waypoint.position[2]),
-      ),
+    (waypoint: WaypointEntry) => camera.position.distanceTo(scratch.current.set(...waypointAnchor(waypoint))),
     [camera],
   );
 

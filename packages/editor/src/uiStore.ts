@@ -74,7 +74,7 @@ export type GizmoSpace = "world" | "local";
 export type GizmoPivot = "origin" | "center" | "median";
 
 /** How gizmo drags land: stick to terrain height, quantize to a grid, or free. */
-export type SnapMode = "ground" | "grid" | "off";
+export type EditorSnapMode = "ground" | "grid" | "off";
 
 /** Editor viewport camera projection — perspective (default) or orthographic top-down-friendly view. */
 export type CameraProjectionMode = "perspective" | "orthographic";
@@ -107,7 +107,7 @@ export interface EditorUiState {
   gizmoSpace: GizmoSpace;
   /** Multi-select gizmo pivot policy. */
   gizmoPivot: GizmoPivot;
-  snapMode: SnapMode;
+  snapMode: EditorSnapMode;
   gridSize: number;
   /** Rotation snap increment in degrees; `null` rotates freely. */
   rotationSnapDeg: number | null;

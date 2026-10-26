@@ -14,13 +14,7 @@
  * e.g. installing an immunity interceptor from `combat/damage/damageInterceptors`.
  */
 
-/** A named threshold on the numeric source. */
-export interface ThresholdMark {
-  /** Stable identifier emitted on crossing and used in the fired-once ledger. */
-  id: string;
-  /** The value at which this threshold sits. */
-  at: number;
-}
+import type { ThresholdBoundary } from "./thresholds";
 
 /** The direction a crossing moved: `falling` = value decreased past the mark, `rising` = increased past it. */
 export type CrossingDirection = "falling" | "rising";
@@ -34,7 +28,7 @@ export type CrossingPolicy = "once" | "repeat";
 /** Caller configuration for a threshold tracker. */
 export interface ThresholdCrossingConfig {
   /** Thresholds to watch; order is irrelevant, the tracker sorts by `at`. */
-  thresholds: readonly ThresholdMark[];
+  thresholds: readonly ThresholdBoundary[];
   /** Directions that emit crossings; defaults to `"both"`. */
   trigger?: CrossingTrigger;
   /** Symmetric dead-band around each mark that a value must fully clear to flip sides; defaults to `0`. */
@@ -46,7 +40,7 @@ export interface ThresholdCrossingConfig {
 }
 
 /** One emitted crossing: which threshold, which way, and the value span that produced it. */
-export interface ThresholdCrossing {
+export interface ThresholdTrackerCrossing {
   /** The crossed threshold's id. */
   id: string;
   /** The crossed threshold's value. */
@@ -72,7 +66,7 @@ export interface ThresholdTrackerSnapshot {
 /** A stateful crossing tracker over one numeric source. */
 export interface ThresholdTracker {
   /** Observe a new value and return the crossings it produced, in travel order. */
-  update(value: number): ThresholdCrossing[];
+  update(value: number): ThresholdTrackerCrossing[];
   /** The last observed value, or `null` before the first `update`/seed. */
   value(): number | null;
   /** Clear the fired ledger; reseed sides from `initial` if given, else await the next `update`. */
@@ -127,7 +121,7 @@ export function createThresholdTracker(config: ThresholdCrossingConfig): Thresho
         return [];
       }
       const from = last;
-      const crossings: ThresholdCrossing[] = [];
+      const crossings: ThresholdTrackerCrossing[] = [];
       for (const mark of marks) {
         const side = sides.get(mark.id);
         if (side === undefined) {

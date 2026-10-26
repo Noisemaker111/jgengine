@@ -6,6 +6,7 @@ import type {
   TransportRunCommandResult,
 } from "@jgengine/core/runtime/transport";
 import type { PlayerPose } from "@jgengine/core/multiplayer/poseSyncGate";
+import { MAX_SESSION_ID_LENGTH } from "@jgengine/core/runtime/hostPolicy";
 import type { SessionAttributes } from "@jgengine/core/runtime/hostPersistence";
 import type { MatchFilter, SessionListing } from "@jgengine/core/multiplayer/matchmaking";
 
@@ -13,8 +14,6 @@ export const WS_PROTOCOL_VERSION = 1;
 
 /** Max length of a `runCommand` command name, in UTF-16 code units. */
 export const MAX_COMMAND_LENGTH = 4_096;
-/** Max length of a join/leave `sessionId`, in UTF-16 code units. */
-export const MAX_SESSION_ID_LENGTH = 128;
 /** Max length of a `pushFeed` action name, in UTF-16 code units. */
 export const MAX_FEED_ACTION_LENGTH = 256;
 /** Max serialized size of a `pushFeed` entry payload, in bytes. */

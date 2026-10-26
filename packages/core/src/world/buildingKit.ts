@@ -4,7 +4,8 @@
  * bindings, the renderer loads them.
  */
 import { parseMaterialAssignments, validateMaterialAssignments, type MaterialAsset, type MaterialAssignment } from "../material/materialAsset";
-import type { BuildingKitSlot, BuildingPartKind, BuildingSurfaceMaterial, BuildingVariantCounts, Vec3 } from "./buildings";
+import type { BuildingKitSlot, BuildingPartKind, BuildingSurfaceMaterial, BuildingVariantCounts } from "./buildings";
+import type { Vec3 } from "./geometry";
 
 /**
  * How a kit model's native bounds are mapped onto the slot box `BuildingPartPlacement.scale`

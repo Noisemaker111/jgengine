@@ -12,6 +12,13 @@ export interface WaypointEntry {
   position: WorldXZ;
   kind: string;
   label?: string;
+  /** World Y of the pin's anchor, for screen markers that project it in 3D. Default 0. */
+  height?: number;
+}
+
+/** The world-space `[x, y, z]` anchor of a waypoint, for projecting it to the screen. */
+export function waypointAnchor(entry: WaypointEntry): readonly [number, number, number] {
+  return [entry.position[0], entry.height ?? 0, entry.position[1]];
 }
 
 /** Direction/range to the tracked waypoint, for an on-screen guide arrow. */
@@ -34,7 +41,7 @@ export interface WaypointSnapshot {
 /** Player-owned waypoint layer — place/track/clear pins, mirror to a `MarkerSet`, and read guide-arrow data. */
 export interface WaypointStore {
   /** Drop a waypoint at a world-XZ point. Returns its id; `track: true` makes it the followed one. */
-  place(position: WorldXZ, options?: { id?: string; kind?: string; label?: string; track?: boolean }): string;
+  place(position: WorldXZ, options?: { id?: string; kind?: string; label?: string; height?: number; track?: boolean }): string;
   remove(id: string): boolean;
   clear(): void;
   list(): readonly WaypointEntry[];
@@ -93,7 +100,7 @@ export function createWaypointStore(deps: WaypointStoreDeps = {}): WaypointStore
     markers.add({
       id: entry.id,
       kind: entry.kind,
-      position: [entry.position[0], 0, entry.position[1]],
+      position: waypointAnchor(entry),
       ...(entry.label !== undefined ? { label: entry.label } : {}),
       meta: { waypoint: true },
     });
@@ -111,6 +118,7 @@ export function createWaypointStore(deps: WaypointStoreDeps = {}): WaypointStore
         position: [position[0], position[1]],
         kind: options.kind ?? defaultKind,
         ...(options.label !== undefined ? { label: options.label } : {}),
+        ...(options.height !== undefined ? { height: options.height } : {}),
       };
       entries.set(id, entry);
       mirror(entry);
@@ -180,6 +188,7 @@ export function createWaypointStore(deps: WaypointStoreDeps = {}): WaypointStore
           position: [entry.position[0], entry.position[1]],
           kind: entry.kind,
           ...(entry.label !== undefined ? { label: entry.label } : {}),
+          ...(entry.height !== undefined ? { height: entry.height } : {}),
         };
         entries.set(restored.id, restored);
         mirror(restored);

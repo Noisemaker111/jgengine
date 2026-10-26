@@ -18,7 +18,7 @@ import type { PostProcessingConfig } from "../render/postProcessing";
 import type { EnvironmentSource } from "../render/environment";
 import type { SpriteAtlas } from "../assets/spriteAtlas";
 import type { LookPreset } from "../render/lookPreset";
-import type { Mood } from "../render/lookMood";
+import type { LookMood } from "../render/lookMood";
 import type { AmbientLifeConfig } from "../render/ambientLife";
 import type { GamepadFeelConfig } from "../input/gamepadModel";
 import type { LocalPlayersConfig } from "../runtime/localPlayers";
@@ -778,7 +778,8 @@ export interface GameCaptureConfig {
   probe?: (ctx: GameContext) => Record<string, number>;
 }
 
-export interface PlayableGame<
+/** The renderer-agnostic game contract, generic over its UI and render types; shell's `PlayableGame` fills them with React components. */
+export interface PlayableGameContract<
   TUi = unknown,
   TWorldOverlay = unknown,
   TRenderEntity = never,
@@ -955,7 +956,7 @@ export interface PlayableGame<
    * exposure, saturation, contrast, shadows }` to move a few tokens. Composes with `look`; explicit `lighting`,
    * `backdrop` and `postProcessing` fields still win.
    */
-  mood?: Mood;
+  mood?: LookMood;
   /** Birds overhead, litter in wind and steam from vents, driven by weather and time of day. Birds are on by default outdoors; `false` turns all of it off. */
   ambientLife?: AmbientLifeConfig | false;
   /** Declarative ambient/directional/hemisphere lighting (#207.5); replaces the shell's hardcoded default lights when present, regardless of world kind. */
