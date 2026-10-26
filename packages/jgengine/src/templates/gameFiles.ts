@@ -39,7 +39,7 @@ export const ASSETS_PULL_HINT = "npx @jgengine/assets pull starter";
  * `.js?url` imports are bundler-only, and the pre-bundler's esbuild cannot read them (the dev server
  * dies on first load). Vite serves them unbundled instead, where `?url` works.
  */
-export const UNBUNDLED_ENGINE_MODULES = ["@jgengine/shell/render/decoderFiles"] as const;
+export const UNBUNDLED_ENGINE_MODULES = ["@jgengine/core/assets/decoderFiles.draw"] as const;
 
 /** The `optimizeDeps` line of a standalone game's or editor workspace's `vite.config.ts`. */
 export const standaloneOptimizeDeps = `  // Engine files with \`.js?url\` imports, which Vite's dependency pre-bundler cannot read.
