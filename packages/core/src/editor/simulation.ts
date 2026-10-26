@@ -1,10 +1,10 @@
 import { validateForceField, type ForceFieldConfig } from "../physics/forceVolume";
-import type { AuthoredWeatherConfig } from "../world/authoredWeather";
-import { validateAuthoredWeather } from "../world/authoredWeather";
+import type { AuthoredWeatherConfig } from "@jgengine/core/weather/authoredWeather";
+import { validateAuthoredWeather } from "@jgengine/core/weather/authoredWeather";
 import { validateEmitterConfig, type EmitterConfig } from "../vfx/particles";
 import { effectNames } from "../vfx/effectLibrary";
 import { validateParticleAttachOptions, type ParticleAttachOptions } from "../vfx/particleDirector";
-import type { FireGridConfig } from "../world/weather";
+import type { FireGridConfig } from "@jgengine/core/weather/weather";
 import type { FlockConfig } from "../ai/flock";
 import type { EditorDocument, EditorVec3 } from "./types";
 

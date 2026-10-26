@@ -25,11 +25,11 @@ import {
   type FireGrid,
   type WeatherModifierTable,
   type WeatherState,
-} from "@jgengine/core/world/weather";
+} from "@jgengine/core/weather/weather";
 import { useEngineState, type ReadableEngineStore } from "@jgengine/react/engineStore";
 
 import { EnvironmentScene } from "@jgengine/shell/environment/EnvironmentScene";
-import { FireSpreadLayer } from "@jgengine/shell/weather/FireSpreadLayer";
+import { FireSpreadLayer } from "@jgengine/core/weather/FireSpreadLayer.draw";
 import type { PlayableGame } from "@jgengine/shell/registry";
 
 const HERO = "survivor";

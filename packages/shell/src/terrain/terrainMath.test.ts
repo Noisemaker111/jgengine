@@ -7,9 +7,9 @@ import {
   resolveTerrainPalette,
   TERRAIN_MATERIAL_PALETTES,
 } from "@jgengine/core/terrain/terrain";
-import { GRASS_DEFAULTS } from "@jgengine/core/world/grassKind";
+import { GRASS_DEFAULTS } from "@jgengine/core/grass/grassKind";
 
-import { bakeGrassNode, resolveGrassBake } from "../grass/grassBake";
+import { bakeGrassNode, resolveGrassBake } from "@jgengine/core/grass/grassBake.draw";
 import { seededRng } from "@jgengine/core/random/rng";
 import {
   createFieldGroundGeometry,

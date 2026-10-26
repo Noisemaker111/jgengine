@@ -213,6 +213,7 @@ export {
   type FreeFlightStep,
   type FreeFlightTuning,
 } from "./flight/freeFlight";
+export { GRASS_SCHEMA } from "./grass/grassKind";
 export {
   controlGroupKey,
   resolveControlGroupIntent,
@@ -798,6 +799,14 @@ export {
   type WaveView,
 } from "./waves/waveRunner";
 export {
+  createFireGrid,
+  resolveWeather,
+  type FireGrid,
+  type ResolvedWeather,
+  type WeatherModifierTable,
+  type WeatherState,
+} from "./weather/weather";
+export {
   markerCatalogId,
   placeAuthoredObjects,
   placeAuthoredObjectsFromDocument,
@@ -874,7 +883,6 @@ export {
   type RegionWorkBudget,
 } from "./world/footprintGrid";
 export { type Aabb, type AvoidZone, type Vec3 } from "./world/geometry";
-export { GRASS_SCHEMA } from "./world/grassKind";
 export { resolveGridInstances } from "./world/gridInstances";
 export { grounded } from "./world/grounded";
 export {
@@ -994,12 +1002,4 @@ export {
   type WaypointStore,
   type WaypointStoreDeps,
 } from "./world/waypoints";
-export {
-  createFireGrid,
-  resolveWeather,
-  type FireGrid,
-  type ResolvedWeather,
-  type WeatherModifierTable,
-  type WeatherState,
-} from "./world/weather";
 export { windField, type WindField } from "./world/wind";

@@ -784,8 +784,8 @@
       "packages": [
         "@jgengine/core"
       ],
-      "module": "@jgengine/core/world/authoredWeather",
-      "domain": "world",
+      "module": "@jgengine/core/weather/authoredWeather",
+      "domain": "weather",
       "gameFacing": false,
       "probe": null,
       "intent": "Sample scheduled precipitation and local wind from one authored document and simulation clock."
@@ -793,9 +793,9 @@
     {
       "id": "authored-weather-rendering",
       "packages": [
-        "@jgengine/shell"
+        "@jgengine/core"
       ],
-      "module": "@jgengine/shell/weather/AuthoredWeatherLayer",
+      "module": "@jgengine/core/weather/AuthoredWeatherLayer.draw",
       "domain": "weather",
       "gameFacing": false,
       "probe": null,
@@ -806,8 +806,8 @@
       "packages": [
         "@jgengine/core"
       ],
-      "module": "@jgengine/core/world/authoredWeather",
-      "domain": "world",
+      "module": "@jgengine/core/weather/authoredWeather",
+      "domain": "weather",
       "gameFacing": false,
       "probe": null,
       "intent": "Reject invalid weather profiles, schedules, zones and wind before authoring mutations."
@@ -2392,10 +2392,9 @@
     {
       "id": "day-night-sky",
       "packages": [
-        "@jgengine/core",
-        "@jgengine/shell"
+        "@jgengine/core"
       ],
-      "module": "@jgengine/shell/sky/Daylight",
+      "module": "@jgengine/core/sky/Daylight.draw",
       "domain": "sky",
       "gameFacing": false,
       "probe": null,
@@ -3866,8 +3865,8 @@
       "packages": [
         "@jgengine/core"
       ],
-      "module": "@jgengine/core/world/grassKind",
-      "domain": "world",
+      "module": "@jgengine/core/grass/grassKind",
+      "domain": "grass",
       "gameFacing": false,
       "probe": null,
       "intent": "editor-authorable GPU grass patch"
@@ -7704,9 +7703,9 @@
     {
       "id": "rain-ground-ripples",
       "packages": [
-        "@jgengine/shell"
+        "@jgengine/core"
       ],
-      "module": "@jgengine/shell/weather/RainImpactField",
+      "module": "@jgengine/core/weather/RainImpactField.draw",
       "domain": "weather",
       "gameFacing": false,
       "probe": null,
@@ -10797,9 +10796,9 @@
     {
       "id": "weather-dust",
       "packages": [
-        "@jgengine/shell"
+        "@jgengine/core"
       ],
-      "module": "@jgengine/shell/weather/DustField",
+      "module": "@jgengine/core/weather/DustField.draw",
       "domain": "weather",
       "gameFacing": false,
       "probe": null,
@@ -10810,8 +10809,8 @@
       "packages": [
         "@jgengine/core"
       ],
-      "module": "@jgengine/core/world/authoredWeather",
-      "domain": "world",
+      "module": "@jgengine/core/weather/authoredWeather",
+      "domain": "weather",
       "gameFacing": false,
       "probe": null,
       "intent": "Connect authored precipitation and temperature changes to spatial environment queries."
@@ -10821,8 +10820,8 @@
       "packages": [
         "@jgengine/core"
       ],
-      "module": "@jgengine/core/world/authoredWeather",
-      "domain": "world",
+      "module": "@jgengine/core/weather/authoredWeather",
+      "domain": "weather",
       "gameFacing": false,
       "probe": null,
       "intent": "Persist and retune bounded surface wetness, snow, temperature and exposure independently of rendering."

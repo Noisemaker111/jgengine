@@ -182,11 +182,15 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 ## authored-weather — Sample scheduled precipitation and local wind from one authored document and simulation clock.
 
-- `createAuthoredWeather` (function) · `import { createAuthoredWeather } from "@jgengine/core/world/authoredWeather"`
+- `createAuthoredWeather` (function) · `import { createAuthoredWeather } from "@jgengine/core/weather/authoredWeather"`
+
+## authored-weather-rendering — Render authored weather from shared gameplay samples, simulation time and shelter volumes.
+
+- `AuthoredWeatherLayer` (function) · `import { AuthoredWeatherLayer } from "@jgengine/core/weather/AuthoredWeatherLayer.draw"`
 
 ## authored-weather-validation — Reject invalid weather profiles, schedules, zones and wind before authoring mutations.
 
-- `validateAuthoredWeather` (function) · `import { validateAuthoredWeather } from "@jgengine/core/world/authoredWeather"`
+- `validateAuthoredWeather` (function) · `import { validateAuthoredWeather } from "@jgengine/core/weather/authoredWeather"`
 
 ## auto-target-cycle — step a player-chosen targeting priority to the next allowed policy
 
@@ -353,8 +357,9 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `createDayNightCycle` (function) · `import { createDayNightCycle } from "@jgengine/core/world"`
 
-## day-night-sky — read authored lighting as the day cycle's noon keyframe
+## day-night-sky — one sky for a fixed look, a day-night cycle, biome bands and authored lights
 
+- `Sky` (function) · `import { Sky } from "@jgengine/core/sky/Daylight.draw"`
 - `skyNoonKeyframes` (function) · `import { skyNoonKeyframes } from "@jgengine/core/sky/skyOwnedLighting"`
 - `splitSkyOwnedLighting` (function) · `import { splitSkyOwnedLighting } from "@jgengine/core/sky/skyOwnedLighting"`
 
@@ -872,6 +877,10 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `createRadio` (function) · `import { createRadio } from "@jgengine/core/audio/radio"`
 
+## rain-ground-ripples — Render bounded rain impacts on exposed terrain using the shared precipitation clock.
+
+- `RainImpactField` (function) · `import { RainImpactField } from "@jgengine/core/weather/RainImpactField.draw"`
+
 ## rapier-physics-backend — native capsules, shapecasts, rotation, CCD, joints, and collision queries
 
 - `createRapierBackend` (function) · `import { createRapierBackend } from "@jgengine/rapier"`
@@ -1226,13 +1235,17 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `createWaypointStore` (function) · `import { createWaypointStore } from "@jgengine/core/world"`
 
+## weather-dust — airborne particulate that turns still air into visible wind
+
+- `DustField` (function) · `import { DustField } from "@jgengine/core/weather/DustField.draw"`
+
 ## weather-environment-field — Connect authored precipitation and temperature changes to spatial environment queries.
 
-- `createWeatherEnvironmentField` (function) · `import { createWeatherEnvironmentField } from "@jgengine/core/world/authoredWeather"`
+- `createWeatherEnvironmentField` (function) · `import { createWeatherEnvironmentField } from "@jgengine/core/weather/authoredWeather"`
 
 ## weather-surface-accumulation — Persist and retune bounded surface wetness, snow, temperature and exposure independently of rendering.
 
-- `createWeatherExposure` (function) · `import { createWeatherExposure } from "@jgengine/core/world/authoredWeather"`
+- `createWeatherExposure` (function) · `import { createWeatherExposure } from "@jgengine/core/weather/authoredWeather"`
 
 ## world-environment — compose editor/preset-derived outdoor dressing — terrain, weather, water, structures — into a legacy environment feature
 

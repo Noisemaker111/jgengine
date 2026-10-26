@@ -1,5 +1,5 @@
 import { createEnvironmentField, type EnvironmentField, type EnvironmentFieldConfig } from "./envField";
-import type { WeatherState } from "./weather";
+import type { WeatherState } from "@jgengine/core/weather/weather";
 
 /** The recomposable environment parameters a realm card can override. */
 export interface RealmEnvironmentParams {

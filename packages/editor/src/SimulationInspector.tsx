@@ -3,7 +3,7 @@ import { useState } from "react";
 import type { EditorSession } from "@jgengine/core/editor/commands";
 import type { EditorSimulation } from "@jgengine/core/editor/simulation";
 import { effectNames } from "@jgengine/core/vfx/effectLibrary";
-import type { AuthoredWeatherConfig, AuthoredWeatherMode } from "@jgengine/core/world/authoredWeather";
+import type { AuthoredWeatherConfig, AuthoredWeatherMode } from "@jgengine/core/weather/authoredWeather";
 import { useStoreSelector } from "./useStoreSelector";
 
 const modes: AuthoredWeatherMode[] = ["clear", "rain", "snow", "mixed", "dust"];

@@ -1,5 +1,5 @@
 import { AuthoredFlocks } from "../world/AuthoredFlocks";
-import { AuthoredWeatherLayer } from "../weather/AuthoredWeatherLayer";
+import { AuthoredWeatherLayer } from "@jgengine/core/weather/AuthoredWeatherLayer.draw";
 import { Fragment, useCallback, useEffect, useMemo, useRef, useSyncExternalStore } from "react";
 
 import type { EditorDocument, EditorMarker, EditorPath, EditorVolume } from "@jgengine/core/editor/index";

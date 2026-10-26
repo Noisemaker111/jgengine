@@ -1,4 +1,4 @@
-import { biomeBandsForSky } from "./sky/skyBands";
+import { biomeBandsForSky } from "@jgengine/core/sky/skyBands";
 import { Canvas } from "@react-three/fiber";
 import {
   useMemo,
@@ -88,7 +88,7 @@ import { Sky } from "./environment";
 import { bearingFromDirection } from "@jgengine/core/sky/daylightCycle";
 import type { DaylightModulation } from "./render/SceneLighting";
 import { colorGradeFromDocument, lightProbesFromDocument } from "@jgengine/core/editor/environment";
-import { resolveSkyLightOwnership, skyEmitsLights } from "./sky/skyLightingPolicy";
+import { resolveSkyLightOwnership, skyEmitsLights } from "@jgengine/core/sky/skyLightingPolicy";
 import { EnvironmentScene } from "./environment/EnvironmentScene";
 import { PointerProbe } from "@jgengine/core/input/PointerProbe.draw";
 import { MarqueeBox, ContextMenuView } from "@jgengine/core/input/PointerOverlays.view";

@@ -10,7 +10,7 @@
  */
 import { SCATTER_PATH_KIND } from "../scatter/scatterRegion";
 import { registerWaterKind } from "../water/waterKind";
-import { registerGrassKind } from "../world/grassKind";
+import { registerGrassKind } from "@jgengine/core/grass/grassKind";
 import { registerSoilKind } from "../world/soilKind";
 import { registerPoleLineKind } from "../world/poleLineKind";
 import { registerDecalKind } from "../world/decalKind";

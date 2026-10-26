@@ -1,5 +1,5 @@
 export { CarvedTerrain, type CarvedTerrainProps } from "./CarvedTerrain";
-export { GrassPatch, type GrassPatchProps } from "../grass/GrassPatch";
+export { GrassPatch, type GrassPatchProps } from "@jgengine/core/grass/GrassPatch.draw";
 export {
   bakeGrassNode,
   createGrassTuftTemplate,
@@ -11,9 +11,9 @@ export {
   type GrassTufts,
   type GrassTuftTemplate,
   type ResolvedGrassBake,
-} from "../grass/grassBake";
-export { createGrassMaterial, type GrassMaterialHandle, type GrassShaderUniforms } from "../grass/grassMaterial";
-export { GRASS_SCREEN_DENSITY, GrassStream, type GrassStreamOptions, type GrassStreamStats } from "../grass/grassStream";
+} from "@jgengine/core/grass/grassBake.draw";
+export { createGrassMaterial, type GrassMaterialHandle, type GrassShaderUniforms } from "@jgengine/core/grass/grassMaterial.draw";
+export { GRASS_SCREEN_DENSITY, GrassStream, type GrassStreamOptions, type GrassStreamStats } from "@jgengine/core/grass/grassStream.draw";
 export { ProceduralGround, type ProceduralGroundProps } from "./ProceduralGround";
 export { EditableGround, type EditableGroundProps } from "./EditableGround";
 export {
