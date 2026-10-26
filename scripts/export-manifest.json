@@ -104,6 +104,8 @@
     "./audio/synthEngine.view",
     "./audio/voiceAllocator",
     "./authoring",
+    "./basebuilding/BaseStructures.draw",
+    "./basebuilding/baseBuilding",
     "./behaviour/behaviour",
     "./behaviour/behaviour.draw",
     "./behaviour/behaviourAttach.draw",

@@ -78,6 +78,7 @@ export interface PlacedStructure {
   owner: string | null;
 }
 
+/** Why a plan cannot be placed: an unknown piece, something in the way, nothing to stand on, or ground too steep. */
 export type StructurePlanBlock = "unknown-piece" | "overlap" | "no-support" | "too-steep";
 
 /** Where a piece would go for a cursor, and whether it may. */

@@ -888,6 +888,28 @@
       "intent": "trim flat ambient under IBL and add a key light to directionless lighting"
     },
     {
+      "id": "base-building",
+      "packages": [
+        "@jgengine/core"
+      ],
+      "module": "@jgengine/core/basebuilding/baseBuilding",
+      "domain": "basebuilding",
+      "gameFacing": false,
+      "probe": null,
+      "intent": "snap-together base pieces with tiers, health, support collapse, doors, overlap rejection and collision solids"
+    },
+    {
+      "id": "base-structures-draw",
+      "packages": [
+        "@jgengine/core"
+      ],
+      "module": "@jgengine/core/basebuilding/BaseStructures.draw",
+      "domain": "basebuilding",
+      "gameFacing": false,
+      "probe": null,
+      "intent": "render placed base pieces and the snap build ghost"
+    },
+    {
       "id": "behavior-actions",
       "packages": [
         "@jgengine/core"

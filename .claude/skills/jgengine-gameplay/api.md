@@ -95,6 +95,32 @@
 - `UtilityTunables` (interface): interface UtilityTunables — In-play dials that stay reachable through {@link UtilityBrain.retune}.
 - `createAgentSystem` (function): function createAgentSystem(config: AgentSystemConfig): AgentSystem — One call for a whole cast: a game hands over its needs, options, mood weights, schedules and one target selector, and gets back a running system with a single `tick(dt)` and a save blob that goes into the game's own save.
 
+## @jgengine/core/basebuilding/BaseStructures.draw
+
+- `BaseStructures` (function): function BaseStructures({ building, colorOf, ghost, validColor = "#34d399", invalidColor = "#f87171" }: BaseStructuresProps): React.JSX.Element — Draws a base-building model: every placed piece as its solid boxes, darkened as it loses health, plus the build ghost tinted valid or invalid. Re-renders only when the model's version moves or the ghost changes.
+- `BaseStructuresProps` (interface): interface BaseStructuresProps — Props for {@link BaseStructures}.
+
+## @jgengine/core/basebuilding/baseBuilding
+
+- `BaseBuilding` (interface): interface BaseBuilding — Handle returned by {@link createBaseBuilding}.
+- `BaseBuildingConfig` (interface): interface BaseBuildingConfig — Everything a base-building model is made from.
+- `BaseBuildingState` (interface): interface BaseBuildingState — Serializable contents of a {@link BaseBuilding}.
+- `BaseVec3` (type): type BaseVec3 = readonly [number, number, number] — A `[x, y, z]` triple in metres.
+- `PlacedStructure` (interface): interface PlacedStructure — A piece standing in the world. `rotationY` uses the engine's entity convention.
+- `StructureBox` (interface): interface StructureBox — One solid box of a piece, in the piece's local space (origin at the piece's snap origin).
+- `StructureDamage` (interface): interface StructureDamage extends StructureRemoval — Result of {@link BaseBuilding.damage}.
+- `StructureGroundRule` (interface): interface StructureGroundRule — Where a shape may stand without snapping to another piece.
+- `StructureHit` (interface): interface StructureHit — A piece hit by {@link BaseBuilding.raycast}.
+- `StructurePieceDef` (interface): interface StructurePieceDef — One buildable piece: a shape in a tier with its hit points.
+- `StructurePlan` (interface): interface StructurePlan — Where a piece would go for a cursor, and whether it may.
+- `StructurePlanBlock` (type): type StructurePlanBlock = "unknown-piece" | "overlap" | "no-support" | "too-steep" — Why a plan cannot be placed: an unknown piece, something in the way, nothing to stand on, or ground too steep.
+- `StructurePlanOptions` (interface): interface StructurePlanOptions — Options for {@link BaseBuilding.plan}.
+- `StructureRemoval` (interface): interface StructureRemoval — What a removal or a destroying blow took down: the piece itself first, then everything that lost support.
+- `StructureShapeDef` (interface): interface StructureShapeDef — A piece shape: its solid boxes (the same boxes collide, raycast and draw), its snap sockets and where it may stand. Socket positions are local; socket `yaw` follows `placement/buildSockets` (the angle `atan2(z, x)` of the socket's outward direction).
+- `StructureTierDef` (interface): interface StructureTierDef — A material tier: how much of each damage class reaches its pieces.
+- `StructureWorldBox` (interface): interface StructureWorldBox — A world box of a placed or planned piece, ready for a mesh or a solid.
+- `createBaseBuilding` (function): function createBaseBuilding(config: BaseBuildingConfig): BaseBuilding — Snap-together base building: pieces of a shape and a material tier, snapped socket to socket through `placement/buildSockets` or stood on terrain, refused when they overlap what stands, held up by a support graph that drops whatever loses its last path to the ground, damaged per tier and damage class, with doors that swing and solids that collide. Pure and serializable; the game owns items, costs and input, `BaseStructures.draw` draws it.
+
 ## @jgengine/core/behaviour/behaviour
 
 - `Behaviour` (class): class Behaviour — Subclass and override the lifecycle hooks. A behaviour only joins the per-frame update dispatch if it actually overrides `onUpdate` (prototype-identity check at each activation), so hook-only behaviours cost nothing per frame.

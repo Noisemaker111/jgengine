@@ -3221,7 +3221,7 @@
 ## @jgengine/core/scene/entityStore
 
 - `EntityBlackboard` (interface): interface EntityBlackboard — Per-entity scratch and cooldown timers, auto-cleared on despawn (#533.8) — the home for AI state (next-shot-at, alert level) that would otherwise be smuggled through the serializable `meta` or a hand-pruned module-level map. Keys share one namespace per entity: `arm`/`ready`/`remaining` store a deadline under a key, `get`/`set` store arbitrary scratch.
-- `EntityMovement` (interface): interface EntityMovement { walkSpeed?: number; frozen?: boolean } — ⚠ undocumented
+- `EntityMovement` (interface): interface EntityMovement { walkSpeed?: number; runMultiplier?: number; frozen?: boolean } — ⚠ undocumented
 - `EntityPose` (interface): interface EntityPose { position: SpawnPositionInput; rotationY?: number; rotationX?: number; rotationZ?: number; dt?: number } — ⚠ undocumented
 - `EntityPosition` (type): type EntityPosition = readonly [number, number, number] — ⚠ undocumented · used by `resolveSourceWalkerStep` (@jgengine/core/movement/solidObstacles): {@link resolveWalkerStep} with no `GameContext`: gather plus slide against a bare {@link SolidObstacleSource} and a caller-owned {@link Obst…
 - `EntityRole` (type): type EntityRole = "player" | "npc" | "prop" — ⚠ undocumented
@@ -4271,7 +4271,7 @@
 
 - `ANNOTATION_FEED_ACTION` (const): const ANNOTATION_FEED_ACTION: "map.annotation" — Feed action shared drawings ride by default (pair with the party feed, like pings).
 - `AUTO_TARGET_POLICIES` (const): const AUTO_TARGET_POLICIES: readonly AutoTargetPolicy[] — Every policy, in the order a "cycle targeting" button steps through them.
-- `Aabb` (interface): interface Aabb { minX: number; minZ: number; maxX: number; maxZ: number } — ⚠ undocumented · used by `rectRegion`: An axis-aligned rectangle on the XZ plane.
+- `Aabb` (interface): interface Aabb — ⚠ undocumented · used by `rectRegion`: An axis-aligned rectangle on the XZ plane.
 - `AcquisitionEnvelope` (type): type AcquisitionEnvelope = number | ((selfId: string, candidateId: string) => number) — Composable target acquisition: the "which enemy do I lock onto?" decision split into the independent concerns every aggro system tangles together — a bounded candidate provider, an eligibility filter, a per-pair acquisition envelope (dynamic range), a perception/LOS gate, scoring, deterministic tie-break, and retention hysteresis. This owns *policy*; threat, brains, and movement stay separate. Feed `candidates` a spatial-index query, never a full-world scan.
 - `AcquisitionPolicy` (interface): interface AcquisitionPolicy — A fully composed acquisition policy. Every concern is an independent, injectable seam; the only required pieces are the bounded `candidates` provider and the `distance` metric. Omit the rest to fall back to the thin default — a static/unbounded range, everything eligible and perceptible, nearest-wins scoring, id tie-break, no hysteresis — which matches a plain proximity aggro radius.
 - `AcquisitionResult` (interface): interface AcquisitionResult — Outcome of one acquisition pass.
@@ -4619,7 +4619,7 @@
 - `PlaceAssetResult` (interface): interface PlaceAssetResult — Shared place-asset verb: one resolved payload for editor `place_asset` and in-game build-mode commits. Convert with {@link toStructureInput} / {@link toEditorMarker}.
 - `PlaceConfig` (interface): interface PlaceConfig — Input to {@link world}: place identity, substrate, and the laws of this place.
 - `PlaceWorldFeature` (interface): interface PlaceWorldFeature — A declared place — the `world()` result carried on `GameDefinition.world`.
-- `PlacedStructure` (interface): interface PlacedStructure { id: string; catalogId: string; position: StructureVec3; rotationY: number; plotId?: string; data?: Readonly<Record<string, unknown>> } — ⚠ undocumented
+- `PlacedStructure` (interface): interface PlacedStructure — ⚠ undocumented
 - `PlacementCommit` (interface): interface PlacementCommit { center: Vec2; y: number; rotationY: number; quarterTurns: number; footprint: Footprint; aabb: Aabb; slotId?: string } — ⚠ undocumented · used by `placeAssetFromCommit`: Bridge a {@link PlacementCommit} into the shared place-asset verb.
 - `PlacementController` (interface): interface PlacementController { hover(hit: PlacementHit): PlacementPreview; current(): PlacementPreview | null; rotate(steps?: number): PlacementPreview | null; setSnapMode(mode: SnapMode): PlacementPreview | null; cycleSnapMode(): SnapMode; setFootprint(footprint: Foot… — ⚠ undocumented · used by `createPlacementController`: Headless placement ghost: hover → valid/invalid preview, rotate, grid/free/surface snap, commit.
 - `PlacementPreview` (interface): interface PlacementPreview { center: Vec2; y: number; quarterTurns: number; footprint: Footprint; aabb: Aabb; valid: boolean; reason?: "out-of-bounds" | "overlap" | "no-slot" | "territory.blocked"; snapMode: SnapMode; normal: PlacementVec3; slotId?: string } — ⚠ undocumented

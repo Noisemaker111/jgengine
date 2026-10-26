@@ -41,6 +41,14 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `createAuctionBook` (function) · `import { createAuctionBook } from "@jgengine/core/gameplay"`
 
+## base-building — snap-together base pieces with tiers, health, support collapse, doors, overlap rejection and collision solids
+
+- `createBaseBuilding` (function) · `import { createBaseBuilding } from "@jgengine/core/basebuilding/baseBuilding"`
+
+## base-structures-draw — render placed base pieces and the snap build ghost
+
+- `BaseStructures` (function) · `import { BaseStructures } from "@jgengine/core/basebuilding/BaseStructures.draw"`
+
 ## best-record — persist personal-best times/scores with safe storage fallback
 
 - `createRecordBook` (function) · `import { createRecordBook } from "@jgengine/core/gameplay"`
