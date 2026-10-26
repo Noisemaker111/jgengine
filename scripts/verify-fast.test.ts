@@ -320,9 +320,10 @@ describe("static gates", () => {
     expect(gates).not.toContain("skills");
   });
 
-  test("a skill or doc change pays the skill gates", () => {
-    expect(gatesFor([".claude/skills/workflow/SKILL.md"])).toContain("skills");
+  test("a skill or doc change pays the stage-skills gate, and no lane pays the housekeeping ones", () => {
+    expect(gatesFor([".claude/skills/workflow/SKILL.md"])).toContain("stage-skills");
     expect(gatesFor(["README.md"])).toContain("stage-skills");
+    for (const gate of ["skills", "fixture-location", "orphan-ratchet"]) expect(gatesFor(["scripts/x.ts", "README.md"])).not.toContain(gate);
   });
 
   test("a scripts change pays the capture hygiene gate", () => {
