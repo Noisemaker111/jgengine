@@ -3,7 +3,7 @@ import { spawnSync } from "node:child_process";
 import { mkdirSync, rmSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { fileURLToPath } from "node:url";
-import { checkReleaseAncestor, cutChangelog, fastForwardMain, lockstepBullet, mirrorEntry, nextReleaseVersion, parseSections, sectionLines, splitComment, unknownFlag, waitRequest } from "./release";
+import { checkReleaseAncestor, cutChangelog, fastForwardMain, lockstepBullet, mirrorEntry, nextReleaseVersion, parseSections, sectionLines, splitComment, startReleaseBranch, unknownFlag, waitRequest } from "./release";
 
 describe("--wait", () => {
   test("alone it cuts, lands and waits; with a version it only waits on that version", () => {
@@ -200,6 +200,84 @@ describe("release ancestor guard", () => {
       const accepted = spawnWithin("bun", [script, "--cwd", repo.dir, "--ref", "beta"], ROOT);
       expect(accepted.status).toBe(0);
       expect(accepted.stdout).toContain("check-release-ancestor ok");
+    } finally {
+      repo.done();
+    }
+  });
+});
+
+/** A repository whose origin/beta holds packages/core at `version`, with the checkout on beta. */
+function releaseRepo(name: string, version: string): Fixture {
+  const repo = makeRepo(name);
+  mkdirSync(join(repo.dir, "packages", "core"), { recursive: true });
+  repo.commit("packages/core/package.json", `${JSON.stringify({ version })}\n`, `core ${version}`);
+  repo.git("update-ref", "refs/remotes/origin/beta", "HEAD");
+  return repo;
+}
+
+describe("startReleaseBranch", () => {
+  test("from the beta checkout the cut goes on release/<version>, and beta is never committed to", () => {
+    const repo = releaseRepo("start-beta", "0.46.0");
+    try {
+      const betaBefore = repo.git("rev-parse", "beta");
+      expect(startReleaseBranch({ cwd: repo.dir })).toEqual({ ok: true, branch: "release/0.47.0", from: "beta" });
+      repo.commit("CHANGELOG.md", "## 0.47.0\n", "Release 0.47.0");
+      expect(repo.git("rev-parse", "--abbrev-ref", "HEAD")).toBe("release/0.47.0");
+      expect(repo.git("rev-parse", "beta")).toBe(betaBefore);
+      expect(repo.git("rev-list", "--count", "origin/beta..release/0.47.0")).toBe("1");
+    } finally {
+      repo.done();
+    }
+  });
+
+  test("a checkout behind origin/beta cuts from origin/beta", () => {
+    const repo = releaseRepo("start-behind", "0.46.0");
+    try {
+      repo.git("checkout", "-q", "-b", "merged");
+      repo.commit("merged.txt", "merged\n", "core: merged since the checkout");
+      const tip = repo.git("rev-parse", "HEAD");
+      repo.git("update-ref", "refs/remotes/origin/beta", tip);
+      repo.git("checkout", "-q", "beta");
+      expect(startReleaseBranch({ cwd: repo.dir }).ok).toBe(true);
+      expect(repo.git("rev-parse", "HEAD")).toBe(tip);
+    } finally {
+      repo.done();
+    }
+  });
+
+  test("a detached checkout records its commit as where it came from", () => {
+    const repo = releaseRepo("start-detached", "0.46.0");
+    try {
+      const sha = repo.git("rev-parse", "HEAD");
+      repo.git("checkout", "-q", "--detach");
+      expect(startReleaseBranch({ cwd: repo.dir })).toEqual({ ok: true, branch: "release/0.47.0", from: sha });
+    } finally {
+      repo.done();
+    }
+  });
+
+  test("refuses uncommitted changes before switching anything", () => {
+    const repo = releaseRepo("start-dirty", "0.46.0");
+    try {
+      writeFileSync(join(repo.dir, "base.txt"), "edited\n");
+      const start = startReleaseBranch({ cwd: repo.dir });
+      expect(start.ok).toBe(false);
+      if (!start.ok) expect(start.reason).toContain("uncommitted changes");
+      expect(repo.git("rev-parse", "--abbrev-ref", "HEAD")).toBe("beta");
+    } finally {
+      repo.done();
+    }
+  });
+
+  test("refuses a release branch that already holds commits origin/beta does not have", () => {
+    const repo = releaseRepo("start-taken", "0.46.0");
+    try {
+      repo.git("checkout", "-q", "-b", "release/0.47.0");
+      repo.commit("half-cut.txt", "x\n", "half a cut");
+      repo.git("checkout", "-q", "beta");
+      const start = startReleaseBranch({ cwd: repo.dir });
+      expect(start.ok).toBe(false);
+      if (!start.ok) expect(start.reason).toContain("already has 1 commit");
     } finally {
       repo.done();
     }
