@@ -4,7 +4,7 @@ import { useGame, useGameStore } from "@jgengine/react/hooks";
 import { useGameContext } from "@jgengine/react/provider";
 
 import { itemDef, itemLabel } from "../data/items";
-import type { Screen } from "../screens";
+import type { SurvivorScreen } from "../screens";
 import { BAG, craftable, HOTBAR } from "../survivor";
 import { useSurvivor } from "./Hud";
 import { ItemIcon, itemIcon } from "./ItemIcon";
@@ -26,10 +26,10 @@ const PANEL: CSSProperties = {
 
 const HEADING: CSSProperties = { fontSize: 12, letterSpacing: "0.14em", textTransform: "uppercase", color: "#8fd3e2", fontWeight: 800 };
 
-function Tabs({ tab }: { tab: Screen }): ReactNode {
+function Tabs({ tab }: { tab: SurvivorScreen }): ReactNode {
   const ctx = useGameContext();
   const view = useSurvivor();
-  const button = (id: Screen, label: string, badge: number) => (
+  const button = (id: SurvivorScreen, label: string, badge: number) => (
     <button
       key={id}
       data-tab={id}
@@ -58,7 +58,7 @@ function Tabs({ tab }: { tab: Screen }): ReactNode {
   );
 }
 
-function setScreen(ctx: ReturnType<typeof useGameContext>, screen: Screen): void {
+function setScreen(ctx: ReturnType<typeof useGameContext>, screen: SurvivorScreen): void {
   void ctx.game.commands.run("screen", { screen });
 }
 
@@ -253,7 +253,7 @@ function Engrams(): ReactNode {
 }
 
 /** ARK's full-screen survivor panel over the world. */
-export function InventoryScreen({ tab }: { tab: Screen }): ReactNode {
+export function InventoryScreen({ tab }: { tab: SurvivorScreen }): ReactNode {
   const ctx = useGameContext();
   const [, force] = useState(0);
   useEffect(() => {

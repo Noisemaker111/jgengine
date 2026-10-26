@@ -2,21 +2,21 @@ import type { GameContext } from "@jgengine/core/runtime/gameContext";
 import { perContext } from "@jgengine/core/runtime/perContext";
 
 /** Which full-screen survivor panel is open: ARK's inventory (with crafting and stats) or the engram list. */
-export type Screen = "inventory" | "engrams";
+export type SurvivorScreen = "inventory" | "engrams";
 
-const open = perContext((_ctx: GameContext) => ({ screen: null as Screen | null }));
+const open = perContext((_ctx: GameContext) => ({ screen: null as SurvivorScreen | null }));
 
-export function openScreen(ctx: GameContext): Screen | null {
+export function openScreen(ctx: GameContext): SurvivorScreen | null {
   return open(ctx).screen;
 }
 
-export function toggleScreen(ctx: GameContext, screen: Screen | null): void {
+export function toggleScreen(ctx: GameContext, screen: SurvivorScreen | null): void {
   const state = open(ctx);
   state.screen = state.screen === screen ? null : screen;
   ctx.touch();
 }
 
-export function setScreen(ctx: GameContext, screen: Screen | null): void {
+export function setScreen(ctx: GameContext, screen: SurvivorScreen | null): void {
   open(ctx).screen = screen;
   ctx.touch();
 }

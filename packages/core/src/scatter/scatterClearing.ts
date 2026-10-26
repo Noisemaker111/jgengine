@@ -11,8 +11,12 @@ export interface ScatterClearing {
   hidden(): ReadonlySet<string>;
   /** Hide (`true`) or show (`false`) one placement. */
   set(id: string, hidden: boolean): void;
+  /** The hidden ids as a plain list, for a save. */
+  snapshot(): string[];
   /** Replace the whole hidden set (a load). */
-  replace(ids: Iterable<string>): void;
+  restore(ids: Iterable<string>): void;
+  /** Show every placement again. */
+  reset(): void;
   subscribe(listener: () => void): () => void;
 }
 
@@ -37,8 +41,14 @@ export function createScatterClearing(): ScatterClearing {
       hidden = next;
       emit();
     },
-    replace(ids) {
+    snapshot: () => [...hidden],
+    restore(ids) {
       hidden = new Set(ids);
+      emit();
+    },
+    reset() {
+      if (hidden.size === 0) return;
+      hidden = new Set();
       emit();
     },
     subscribe(listener) {

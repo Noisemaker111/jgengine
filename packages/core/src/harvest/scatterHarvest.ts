@@ -115,7 +115,7 @@ export function createScatterHarvest(config: ScatterHarvestConfig): ScatterHarve
   let field = build();
 
   const syncClearing = (): void => {
-    config.clearing?.replace(field.ids().filter((id) => field.isDepleted(id)));
+    config.clearing?.restore(field.ids().filter((id) => field.isDepleted(id)));
   };
 
   const target = (strike: Omit<HarvestStrike, "tool" | "multiplier">): HarvestPlacement | null => {

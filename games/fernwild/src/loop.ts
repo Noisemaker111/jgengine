@@ -5,7 +5,7 @@ import { defineSystem } from "@jgengine/shell/gameKit";
 import { editorLayers } from "./editorLayers";
 import { LEVEL_STATS } from "./game/data/survivor";
 import { BAG, cancelCraft, consume, HOTBAR_SLOTS, learn, levelStat, resetSurvivor, selectSlot, setUpSurvivor, shuttle, startCraft, survivorSave, swing, tickSurvivor, use } from "./game/survivor";
-import { setScreen, toggleScreen, type Screen } from "./game/screens";
+import { setScreen, toggleScreen, type SurvivorScreen } from "./game/screens";
 
 const ORIGIN: [number, number, number] = [0, 0, 0];
 
@@ -26,7 +26,7 @@ export const systems = [
       });
       commands.define("harvest", { apply: (state) => (use(state), state) });
       commands.define("inventory", { apply: (state) => (toggleScreen(state, "inventory"), state) });
-      commands.define<{ screen: Screen | null }>("screen", { apply: (state, input) => (setScreen(state, input.screen), state) });
+      commands.define<{ screen: SurvivorScreen | null }>("screen", { apply: (state, input) => (setScreen(state, input.screen), state) });
       for (let slot = 0; slot < HOTBAR_SLOTS; slot += 1) {
         commands.define(`slot${slot + 1}`, { apply: (state) => (selectSlot(state, slot), state) });
       }
