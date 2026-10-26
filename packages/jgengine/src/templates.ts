@@ -71,7 +71,7 @@ export function gameTemplate(options: TemplateOptions): TemplateFile[] {
     markers: [{ id: "player_spawn", kind: "player_spawn", position: { x: 0, y: 0, z: 0 } }],
     environment: STARTER_ENVIRONMENT,
   };
-  const sceneDoc = scene ?? (options.sceneMode === "starter" ? undefined : emptyScene);
+  const sceneDoc = scene ?? (options.sceneMode === "empty" ? emptyScene : undefined);
   const baseSceneContents = sceneDoc ? `${JSON.stringify(sceneDoc, null, 2)}\n` : editorSceneJson;
   // A promoted --from-scene document keeps whatever ground its author made.
   const seedsTerrain = world && (options.ground ?? "terrain") === "terrain" && scene === undefined;

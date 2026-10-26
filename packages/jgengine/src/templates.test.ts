@@ -178,7 +178,7 @@ describe("gameTemplate canonical shape (mirrors gameShape.ts)", () => {
     // Models are pulled, not shipped in the package — a scaffold that skipped the pull otherwise
     // renders placeholder primitives with nothing on the page explaining why.
     const agents = fileOf(render("standalone"), "AGENTS.md");
-    expect(agents).toContain("npx assets pull starter");
+    expect(agents).toContain("npx @jgengine/assets pull starter");
     expect(agents).toContain("public/models");
   });
 
@@ -244,7 +244,7 @@ describe("gameTemplate canonical shape (mirrors gameShape.ts)", () => {
         markers: { kind: string; catalogId?: string }[];
       };
       expect(scene.markers.some((marker) => marker.kind === "player_spawn")).toBe(true);
-      expect(scene.markers.some((marker) => marker.catalogId !== undefined)).toBe(false);
+      expect(scene.markers.some((marker) => marker.catalogId !== undefined)).toBe(true);
       expect(fileOf(files, "src/editorLayers.ts")).toContain("normalizeEditorLayers");
       expect(fileOf(files, "src/game.config.ts")).toContain("editorLayers,");
       expect(fileOf(files, "src/index.tsx")).toContain("editorLayers");
@@ -252,8 +252,15 @@ describe("gameTemplate canonical shape (mirrors gameShape.ts)", () => {
       expect(fileOf(files, "src/index.css")).toContain('@import "./style.css"');
     });
 
-    test(`${variant}: starter scaffold authors a zero-code "reach the goal to win" via systems`, () => {
-      const files = render(variant, { sceneMode: "starter" });
+    test(`${variant}: --scene empty ships only the player spawn`, () => {
+      const scene = JSON.parse(fileOf(render(variant, { sceneMode: "empty" }), "src/editor.scene.json")) as {
+        markers: { kind: string }[];
+      };
+      expect(scene.markers.map((marker) => marker.kind)).toEqual(["player_spawn"]);
+    });
+
+    test(`${variant}: the default scaffold authors a zero-code "reach the goal to win" via systems`, () => {
+      const files = render(variant);
       const scene = JSON.parse(fileOf(files, "src/editor.scene.json")) as {
         markers: { kind: string; meta?: { on?: string; action?: string } }[];
       };

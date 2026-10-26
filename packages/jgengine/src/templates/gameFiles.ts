@@ -26,6 +26,25 @@ const engineAliases = `[
           { find: /^@jgengine\\/assets\\/(.*)$/, replacement: \`\${engineSrc("assets")}/$1\` },
         ]`;
 
+/**
+ * The one command that fills `public/models` for a scaffolded game. `starter` is a meta-id the
+ * assets CLI resolves to every pack the starter catalog needs. It names the package, not its `assets`
+ * bin: npx only finds a bare bin through npm's own `.bin` shims, which bun and pnpm installs do not
+ * write on Windows, so `npx assets` there asks the registry for an unrelated package.
+ */
+export const ASSETS_PULL_HINT = "npx @jgengine/assets pull starter";
+
+/**
+ * Engine modules a game on the npm packages keeps out of Vite's dependency pre-bundling: their
+ * `.js?url` imports are bundler-only, and the pre-bundler's esbuild cannot read them (the dev server
+ * dies on first load). Vite serves them unbundled instead, where `?url` works.
+ */
+export const UNBUNDLED_ENGINE_MODULES = ["@jgengine/shell/render/decoderFiles"] as const;
+
+/** The `optimizeDeps` line of a standalone game's or editor workspace's `vite.config.ts`. */
+export const standaloneOptimizeDeps = `  // Engine files with \`.js?url\` imports, which Vite's dependency pre-bundler cannot read.
+  optimizeDeps: { exclude: ${JSON.stringify(UNBUNDLED_ENGINE_MODULES)} },`;
+
 // A standalone project saves through the packaged @jgengine/node preset. An in-repo game runs on
 // the games' shared wiring (games/shared): engine source aliases with one copy of each peer, asset
 // provisioning, and an idle exit; the dev runner (apps/dev) serves its F2 saves.
@@ -59,6 +78,7 @@ export default defineConfig({
   plugins: [react(), tailwindcss(), standaloneSavePlugin()],
   clearScreen: false,
   build: { target: "es2022" },
+${standaloneOptimizeDeps}
   resolve: {
     extensions: [".ts", ".tsx", ".mjs", ".js", ".jsx", ".json"],
     alias: existsSync(engineSrc("core"))
@@ -687,7 +707,7 @@ Title it \`[BUG] …\` for wrong behavior or \`[FEATURE] …\` for a missing cap
   variant === "in-repo" ? " (engine source under packages/)" : " (dist under node_modules)"
 }, or the HUD — and the F2+E editor chrome mounted into this same page — is silently unstyled.
 - Visual claims are screenshot-judged, by you, harshly — flat untextured ground and an empty horizon fail. Prove content with \`bun test\`, prove looks with your eyes (\`jgengine-verify\` skill).
-- Models live in \`public/models\`, pulled — not shipped inside the package. \`jgengine create\` pulls them for you; if that was skipped (offline, \`--no-assets\`, \`--no-install\`) run \`npx assets pull starter\` in this folder, or every \`asset:\` id falls back to an untextured placeholder primitive and fails the bar above.
+- Models live in \`public/models\`, pulled — not shipped inside the package. \`jgengine create\` pulls them for you; if that was skipped (offline, \`--no-assets\`, \`--no-install\`) run \`${ASSETS_PULL_HINT}\` in this folder, or every \`asset:\` id falls back to an untextured placeholder primitive and fails the bar above.
 - Screenshots: \`bun run shoot\` (\`npx jgengine shoot\`) captures the running game to \`shots/shot.png\` with the jgengine CLI's own harness — it starts the dev server if needed, forces a real viewport so the WebGL canvas is not stuck at 300x150, waits for an honest frame, and works headless. Add \`--device mobile\`, \`--out shots/hud.png\`, \`--settle <ms>\`, or \`--url <page>\`; \`--help\` for all flags. Do **not** rely on a browser tool's "screenshot" button for the 3D canvas — it captures before the GPU draws.
 - Play & test from the CLI: \`bun run drive\` (\`npx jgengine drive\`) drives the running game headlessly — ordered \`--click "TEXT"\`, \`--click-at 240,180\` (CSS viewport pixels; \`--right-click-at\` for right-click orders), \`--double-click "TEXT"\`, \`--fill "Label=value"\`, \`--key KeyW:2500\` (or \`mouse0:1200\` to hold a mouse button over the play canvas), \`--wait <ms>\`, \`--shot <name>\`, and \`--rpc '{"method":"agent_status"}'\` steps, plus \`--playtest --strict\` for a progress/softlock verdict off the game's \`capture.probe\`; \`--help\` for all flags. **Never hand-roll a Playwright/Puppeteer/CDP script to play or test this game** — if drive cannot express what you need, that is an engine gap: file it upstream (see below).
 `;

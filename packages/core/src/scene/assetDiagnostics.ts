@@ -121,7 +121,7 @@ export function pullTargetForUrl(url: string): string | null {
 function missingFix(url: string): string {
   const target = pullTargetForUrl(url);
   if (target === null) return "Check the path: nothing under models/, materials/ or sprites/ provides it.";
-  return `Run \`bun run games:provision\` in the jgengine repo (it links ${target} from the shared asset store, downloading it once if no checkout has it), or \`npx assets pull ${target}\` in your own game.`;
+  return `Run \`bun run games:provision\` in the jgengine repo (it links ${target} from the shared asset store, downloading it once if no checkout has it), or \`npx @jgengine/assets pull ${target}\` in your own game.`;
 }
 
 function describe(logicalId: string | undefined, url: string): string {

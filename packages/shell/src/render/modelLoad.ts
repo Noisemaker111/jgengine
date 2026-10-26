@@ -401,10 +401,12 @@ let bundledPending: Promise<void> | undefined;
 /**
  * Loads the list of bundled decoder URLs (`decoderFiles.ts`) on first need. It is imported
  * dynamically because its `?url` imports exist only in a bundler: importing the engine in plain
- * Node (a test, a tool) must not load them.
+ * Node (a test, a tool) must not load them. It is imported by package name so a game's Vite config
+ * can leave it out of dependency pre-bundling (`optimizeDeps.exclude`), whose esbuild cannot read a
+ * `.js?url` import and kills the dev server.
  */
 function bundledDecodersReady(): Promise<void> {
-  bundledPending ??= import("./decoderFiles").then((module) => {
+  bundledPending ??= import("@jgengine/shell/render/decoderFiles").then((module) => {
     Object.assign(bundledUrls, module.DECODER_FILES);
   });
   return bundledPending;
