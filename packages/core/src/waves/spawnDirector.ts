@@ -1,6 +1,7 @@
 import type { NavPoint } from "../nav/navGrid";
 import { randomSeedFrom, stepRandomSeed, type RandomSeed } from "../random/rng";
 
+/** One kind a wave can spend budget on: its cost, pick weight and the first wave it may appear in. */
 export interface SpawnEntry {
   id: string;
   cost: number;
@@ -8,6 +9,7 @@ export interface SpawnEntry {
   minWave?: number;
 }
 
+/** One wave: the budget it opens with, the kinds it may buy, and how long it runs or how fast it refills. */
 export interface WaveManifest {
   budget: number;
   entries: readonly SpawnEntry[];
@@ -15,6 +17,7 @@ export interface WaveManifest {
   budgetPerSecond?: number;
 }
 
+/** The whole wave plan plus the pacing knobs: alive cap, escalation, alert and per-player budget, looping and spawn points. */
 export interface SpawnDirectorConfig {
   waves: readonly WaveManifest[];
   maxAlive?: number;
@@ -29,6 +32,7 @@ export interface SpawnDirectorConfig {
   spawnPointBias?: number;
 }
 
+/** Where the director is: current wave, clocks, spare budget, alert level and spawn counts. Serializable. */
 export interface SpawnDirectorState {
   wave: number;
   elapsed: number;
@@ -42,12 +46,14 @@ export interface SpawnDirectorState {
   done: boolean;
 }
 
+/** What the director reads from the world each step: how many are alive and where the players are. */
 export interface DirectorContext {
   alive: number;
   players?: number;
   playerPositions?: readonly NavPoint[];
 }
 
+/** One spawn the caller should perform: which entry, what it cost, which wave, and where. */
 export interface SpawnRequest {
   entryId: string;
   cost: number;
@@ -82,6 +88,7 @@ export interface SpawnPointSelectionOptions {
   biasStrength?: SpawnPointBiasStrength;
 }
 
+/** One director step: the next state and the spawns to perform. */
 export interface DirectorStep {
   state: SpawnDirectorState;
   spawns: SpawnRequest[];
@@ -94,6 +101,7 @@ function clamp01(value: number): number {
   return value < 0 ? 0 : value > 1 ? 1 : value;
 }
 
+/** A fresh director at the first wave with that wave's budget. */
 export function createSpawnDirectorState(config: SpawnDirectorConfig): SpawnDirectorState {
   const first = config.waves[0];
   return {
@@ -109,10 +117,12 @@ export function createSpawnDirectorState(config: SpawnDirectorConfig): SpawnDire
   };
 }
 
+/** Raise the alert level (clamped to 0..1), which adds budget while it decays. */
 export function raiseAlert(state: SpawnDirectorState, amount: number): SpawnDirectorState {
   return { ...state, alert: clamp01(state.alert + amount) };
 }
 
+/** Move to the next wave (or loop, or finish), resetting the wave clock and budget. */
 export function advanceWave(config: SpawnDirectorConfig, state: SpawnDirectorState): SpawnDirectorState {
   const loop = config.loop ?? false;
   const lastIndex = config.waves.length - 1;
@@ -153,6 +163,7 @@ function pickEntry(
   return { entry: affordable[affordable.length - 1]!, rng: nextRng };
 }
 
+/** Advance the director by `dt` seconds: earn budget, spend it on spawns under the alive cap, and roll waves over. */
 export function advanceSpawnDirector(
   config: SpawnDirectorConfig,
   state: SpawnDirectorState,

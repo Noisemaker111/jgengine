@@ -2345,18 +2345,18 @@
 
 ## @jgengine/core/mission/quest
 
-- `QuestAcceptOptions` (interface): interface QuestAcceptOptions { hasUnlock?(id: string): boolean } — ⚠ undocumented
-- `QuestDef` (interface): interface QuestDef { id: string; title: string; description?: string; giver?: string; turnIn?: string; requires?: string[]; objectives: QuestObjective[]; rewards?: QuestRewards } — ⚠ undocumented · used by `createQuestEvaluator`: The quest log: accept, progress from game events, complete and snapshot quests.
-- `QuestEvaluator` (interface): interface QuestEvaluator { has(questId: string): boolean; get(questId: string): QuestDef | null; canAccept(state: readonly QuestSnapshotEntry[], questId: string, options?: QuestAcceptOptions): {reason: string} | null; accept(state: readonly QuestSnapshotEntry[], qu… — ⚠ undocumented · used by `createQuestEvaluator`: The quest log: accept, progress from game events, complete and snapshot quests.
-- `QuestInstance` (interface): interface QuestInstance { questId: string; status: QuestStatus; objectives: QuestObjectiveProgress[] } — ⚠ undocumented · used by `describeTrackedQuest`: Join a quest's static {@link QuestDef} with a player's live {@link QuestInstance} into a flat, renderer-free view a HUD tracker draws (title…
-- `QuestJournal` (interface): interface QuestJournal { register(catalog: readonly QuestDef[] | Record<string, QuestDef>): void; has(questId: string): boolean; canAccept(userId: string, questId: string): {reason: string} | null; accept(userId: string, questId: string): {reason: string} | null;… — ⚠ undocumented · used by `createQuestJournal`: Track accepted quests and their per-objective progress, granting rewards on completion.
-- `QuestJournalDeps` (interface): interface QuestJournalDeps { events: GameEvents; rewards: {grantXp(userId: string, amount: number): void; grantEconomy(userId: string, currencyId: string, amount: number): void; grantItem(userId: string, inventoryId: string, itemId: string, count: number): {reason: s… — ⚠ undocumented · used by `createQuestJournal`: Track accepted quests and their per-objective progress, granting rewards on completion.
-- `QuestObjective` (interface): interface QuestObjective { id: string; kind: "kill" | "collect" | string; target?: string; item?: string; count: number; partyShare?: {radius: number; credit: "all" | "tagger"} } — ⚠ undocumented · used by `defaultObjectiveLabel`: Default objective label: a readable "verb count noun" from a {@link QuestObjective}.
-- `QuestObjectiveProgress` (interface): interface QuestObjectiveProgress { id: string; kind: string; count: number; progress: number; complete: boolean } — ⚠ undocumented
-- `QuestRewards` (interface): interface QuestRewards { xp?: {amount: number}; economy?: Record<string, number>; items?: {item: string; count: number; inventory: string}[]; unlocks?: string[]; quests?: string[] } — ⚠ undocumented · used by `applyQuestRewards`: Apply items before XP, currency, and unlocks.
-- `QuestSnapshotEntry` (type): type QuestSnapshotEntry = { questId: string; status: QuestStatus; progress: Record<string, number>; } — ⚠ undocumented
-- `QuestStatus` (type): type QuestStatus = "active" | "completed" — ⚠ undocumented
-- `QuestTurnIn` (interface): interface QuestTurnIn { state: QuestSnapshotEntry[]; rewards: QuestRewards | null } — ⚠ undocumented
+- `QuestAcceptOptions` (interface): interface QuestAcceptOptions — Options for accepting a quest: how to read unlocks its prerequisites name.
+- `QuestDef` (interface): interface QuestDef — An authored quest: id, title, giver, objectives, rewards and prerequisites.
+- `QuestEvaluator` (interface): interface QuestEvaluator — The pure quest log over a catalog: accept, apply events, complete and list quests from a snapshot.
+- `QuestInstance` (interface): interface QuestInstance — One accepted quest and its per-objective progress.
+- `QuestJournal` (interface): interface QuestJournal — A player's quest log wired to game events: accept, progress, turn in, snapshot and restore.
+- `QuestJournalDeps` (interface): interface QuestJournalDeps — What a quest journal needs from the game: its events and the reward appliers.
+- `QuestObjective` (interface): interface QuestObjective — One quest objective: a kind (kill, collect, …), its target or item, how many, and optional party sharing.
+- `QuestObjectiveProgress` (interface): interface QuestObjectiveProgress — Progress on one objective: the count so far against what it needs.
+- `QuestRewards` (interface): interface QuestRewards — What finishing a quest grants: XP, currency, items, unlocks and follow-up quests.
+- `QuestSnapshotEntry` (type): type QuestSnapshotEntry = { questId: string; status: QuestStatus; progress: Record<string, number>; } — One quest in a saved journal: id, status and plain progress counts.
+- `QuestStatus` (type): type QuestStatus = "active" | "completed" — Where an accepted quest is: still active or completed.
+- `QuestTurnIn` (interface): interface QuestTurnIn — The result of turning a quest in: the next journal state and the rewards it granted, if any.
 - `TrackedObjectiveView` (interface): interface TrackedObjectiveView — One objective as a tracker/HUD reads it — label + progress toward its count.
 - `TrackedQuestView` (interface): interface TrackedQuestView — A quest as a tracker/HUD reads it — title, status, and per-objective progress.
 - `applyQuestRewards` (function): function applyQuestRewards(rewards: QuestRewards, appliers: { grantXp?(amount: number): void; grantEconomy?(currencyId: string, amount: number): void; grantItem?(inventoryId: string, itemId: string, count: number): { reason: string } | null | void; /** Grant every item, or reject without writes. Tak… — Apply items before XP, currency, and unlocks. Multiple items require an all-or-reject `grantItems` callback; legacy single-item appliers remain supported. Rejected callbacks must make no writes. Arbitrary callback side effects or thrown exceptions cannot be rolled back by this helper.

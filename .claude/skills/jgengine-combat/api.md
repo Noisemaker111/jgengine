@@ -1048,21 +1048,21 @@
 
 ## @jgengine/core/waves/spawnDirector
 
-- `DirectorContext` (interface): interface DirectorContext { alive: number; players?: number; playerPositions?: readonly NavPoint[] } — ⚠ undocumented
-- `DirectorStep` (interface): interface DirectorStep { state: SpawnDirectorState; spawns: SpawnRequest[] } — ⚠ undocumented
-- `SpawnDirectorConfig` (interface): interface SpawnDirectorConfig { waves: readonly WaveManifest[]; maxAlive?: number; escalationPerSecond?: number; alertBudgetPerSecond?: number; alertDecayPerSecond?: number; playerBudgetPerSecond?: number; maxSpawnsPerTick?: number; loop?: boolean; seed?: number; spawnP… — ⚠ undocumented
-- `SpawnDirectorState` (interface): interface SpawnDirectorState { wave: number; elapsed: number; waveElapsed: number; budget: number; alert: number; spawnedThisWave: number; spawnedTotal: number; rng: RandomSeed; done: boolean } — ⚠ undocumented
-- `SpawnEntry` (interface): interface SpawnEntry { id: string; cost: number; weight?: number; minWave?: number } — ⚠ undocumented
+- `DirectorContext` (interface): interface DirectorContext — What the director reads from the world each step: how many are alive and where the players are.
+- `DirectorStep` (interface): interface DirectorStep — One director step: the next state and the spawns to perform.
+- `SpawnDirectorConfig` (interface): interface SpawnDirectorConfig — The whole wave plan plus the pacing knobs: alive cap, escalation, alert and per-player budget, looping and spawn points.
+- `SpawnDirectorState` (interface): interface SpawnDirectorState — Where the director is: current wave, clocks, spare budget, alert level and spawn counts. Serializable.
+- `SpawnEntry` (interface): interface SpawnEntry — One kind a wave can spend budget on: its cost, pick weight and the first wave it may appear in.
 - `SpawnPointBiasStrength` (type): type SpawnPointBiasStrength = "subtle" | "moderate" | "strong" — How strongly `distanceBias` weights candidates by distance from `avoid` — a named intent, not a weighting exponent.
 - `SpawnPointDistanceBias` (type): type SpawnPointDistanceBias = "near" | "far" | "none" — Preference for picking a spawn point relative to `avoid` positions: closer, farther, or unweighted.
 - `SpawnPointSelectionOptions` (interface): interface SpawnPointSelectionOptions — Semantic options for selecting a spawn point without exposing weighting internals.
-- `SpawnRequest` (interface): interface SpawnRequest { entryId: string; cost: number; wave: number; point?: NavPoint; laneId?: number } — ⚠ undocumented
-- `WaveManifest` (interface): interface WaveManifest { budget: number; entries: readonly SpawnEntry[]; duration?: number; budgetPerSecond?: number } — ⚠ undocumented
-- `advanceSpawnDirector` (function): function advanceSpawnDirector(config: SpawnDirectorConfig, state: SpawnDirectorState, dt: number, ctx: DirectorContext): DirectorStep — ⚠ undocumented
-- `advanceWave` (function): function advanceWave(config: SpawnDirectorConfig, state: SpawnDirectorState): SpawnDirectorState — ⚠ undocumented
-- `createSpawnDirectorState` (function): function createSpawnDirectorState(config: SpawnDirectorConfig): SpawnDirectorState — ⚠ undocumented
+- `SpawnRequest` (interface): interface SpawnRequest — One spawn the caller should perform: which entry, what it cost, which wave, and where.
+- `WaveManifest` (interface): interface WaveManifest — One wave: the budget it opens with, the kinds it may buy, and how long it runs or how fast it refills.
+- `advanceSpawnDirector` (function): function advanceSpawnDirector(config: SpawnDirectorConfig, state: SpawnDirectorState, dt: number, ctx: DirectorContext): DirectorStep — Advance the director by `dt` seconds: earn budget, spend it on spawns under the alive cap, and roll waves over.
+- `advanceWave` (function): function advanceWave(config: SpawnDirectorConfig, state: SpawnDirectorState): SpawnDirectorState — Move to the next wave (or loop, or finish), resetting the wave clock and budget.
+- `createSpawnDirectorState` (function): function createSpawnDirectorState(config: SpawnDirectorConfig): SpawnDirectorState — A fresh director at the first wave with that wave's budget.
 - `pickSpawnPoint` (function): function pickSpawnPoint(options: SpawnPointSelectionOptions): NavPoint | null — Selects a candidate spawn point using a semantic distance preference and caller-supplied randomness.
-- `raiseAlert` (function): function raiseAlert(state: SpawnDirectorState, amount: number): SpawnDirectorState — ⚠ undocumented
+- `raiseAlert` (function): function raiseAlert(state: SpawnDirectorState, amount: number): SpawnDirectorState — Raise the alert level (clamped to 0..1), which adds budget while it decays.
 
 ## @jgengine/core/waves/spawnPoint
 
