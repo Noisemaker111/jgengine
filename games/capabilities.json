@@ -844,6 +844,17 @@
       "intent": "run authoritative game servers with sessions, ticking and persistence behind any transport"
     },
     {
+      "id": "auto-rig",
+      "packages": [
+        "@jgengine/core"
+      ],
+      "module": "@jgengine/core/creatureBody/autoRig",
+      "domain": "creatureBody",
+      "gameFacing": false,
+      "probe": null,
+      "intent": "turn a static animal model (any downloaded GLB) into an animated, skinned creature with idle, walk, run, attack and death"
+    },
+    {
       "id": "auto-scroll",
       "packages": [
         "@jgengine/react"
@@ -2161,6 +2172,17 @@
       "gameFacing": false,
       "probe": null,
       "intent": "wild creatures that graze, flee, defend and hunt by temperament, and tamed ones that follow, stay and fight on order"
+    },
+    {
+      "id": "creature-gait",
+      "packages": [
+        "@jgengine/core"
+      ],
+      "module": "@jgengine/core/creatureBody/gait",
+      "domain": "creatureBody",
+      "gameFacing": false,
+      "probe": null,
+      "intent": "idle, walk, run, attack and death clips for any limb-and-tail creature rig"
     },
     {
       "id": "creature-temperament",
@@ -3954,6 +3976,17 @@
       "gameFacing": false,
       "probe": null,
       "intent": "load generated GLB bytes through the normal model loader with no file on disk"
+    },
+    {
+      "id": "glb-read",
+      "packages": [
+        "@jgengine/core"
+      ],
+      "module": "@jgengine/core/creatureBody/glbRead",
+      "domain": "creatureBody",
+      "gameFacing": false,
+      "probe": null,
+      "intent": "take a static GLB apart into model-space triangles, materials and textures"
     },
     {
       "id": "glb-write",
