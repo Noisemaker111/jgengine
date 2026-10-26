@@ -7519,6 +7519,17 @@
       "intent": "track accepted quests and their per-objective progress"
     },
     {
+      "id": "quest-objective-label",
+      "packages": [
+        "@jgengine/core"
+      ],
+      "module": "@jgengine/core/mission/quest",
+      "domain": "mission",
+      "gameFacing": false,
+      "probe": null,
+      "intent": "readable default label for a quest objective in a tracker"
+    },
+    {
       "id": "quest-rewards",
       "packages": [
         "@jgengine/core"

@@ -490,7 +490,11 @@ export interface TrackedQuestView {
   objectives: TrackedObjectiveView[];
 }
 
-/** Default objective label: a readable "verb count noun" from a {@link QuestObjective}. */
+/**
+ * Default objective label: a readable "verb count noun" from a {@link QuestObjective}.
+ *
+ * @capability quest-objective-label readable default label for a quest objective in a tracker
+ */
 export function defaultObjectiveLabel(objective: QuestObjective): string {
   const noun = objective.target ?? objective.item ?? objective.id;
   const verb = objective.kind === "kill" ? "Defeat" : objective.kind === "collect" ? "Collect" : objective.kind;

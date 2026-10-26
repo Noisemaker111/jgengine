@@ -590,7 +590,11 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 ## quest-log — track accepted quests and their objective progress from game events
 
 - `createQuestEvaluator` (function) · `import { createQuestEvaluator } from "@jgengine/core/mission/quest"`
-- `createQuestJournal` (function) · `import { createQuestJournal } from "@jgengine/core/gameplay"`
+- `createQuestJournal` (function) · `import { createQuestJournal } from "@jgengine/core/mission/quest"`
+
+## quest-objective-label — readable default label for a quest objective in a tracker
+
+- `defaultObjectiveLabel` (function) · `import { defaultObjectiveLabel } from "@jgengine/core/mission/quest"`
 
 ## quest-rewards — grant a quest or mission reward bundle: items, XP, currency and unlocks
 
@@ -598,7 +602,7 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 ## quest-tracker-view — join a QuestDef + live QuestInstance into a flat labelled view for a quest/objective HUD tracker
 
-- `describeTrackedQuest` (function) · `import { describeTrackedQuest } from "@jgengine/core/gameplay"`
+- `describeTrackedQuest` (function) · `import { describeTrackedQuest } from "@jgengine/core/mission/quest"`
 
 ## race-placements — look up one racer's place + win/lose within a finish order
 
