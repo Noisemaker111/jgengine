@@ -1,6 +1,7 @@
 import * as THREE from "three";
 
 import type { SurfaceDetailLevel } from "@jgengine/core/settings/graphicsProfile";
+import { SURFACE_BUMP_NORMAL_GLSL } from "@jgengine/core/terrain/terrainSurfaceShader.draw";
 
 const ORIGINAL_KEY = "jgSurfaceOriginal";
 const OPT_OUT_KEY = "jgSurfaceDetail";
@@ -68,23 +69,13 @@ const ROUGHNESS_MAIN = /* glsl */ `
 #include <roughnessmap_fragment>
 roughnessFactor = clamp(roughnessFactor + ((jgMid - 0.5) * 0.24 + (jgFine - 0.5) * 0.12 + jgWear * 0.08) * jgSurfStrength, 0.04, 1.0);`;
 
-// Mikkelsen's screen-space bump with unnormalized frame vectors, so the height is in metres and the
-// slope reads the same at every distance; fades before the grain aliases.
+// The shared screen-space bump over object-space grain; fades before the grain aliases.
 const NORMAL_MAIN = /* glsl */ `
 #include <normal_fragment_maps>
 {
   float jgGrainFade = 1.0 - smoothstep(0.12, 0.4, jgFootprint * 34.0);
-  float jgHeight = (jgMid * 0.012 + jgFine * 0.006 + jgSurfNoise(vJgSurfPos * 34.0 + 41.0) * 0.003 * jgGrainFade) * jgSurfStrength;
-  vec3 jgDpdx = dFdx(-vViewPosition);
-  vec3 jgDpdy = dFdy(-vViewPosition);
-  vec3 jgR1 = cross(jgDpdy, normal);
-  vec3 jgR2 = cross(normal, jgDpdx);
-  float jgDet = dot(jgDpdx, jgR1) * faceDirection;
-  vec3 jgGrad = sign(jgDet) * (dFdx(jgHeight) * jgR1 + dFdy(jgHeight) * jgR2);
-  vec3 jgBumped = abs(jgDet) * normal - jgGrad;
-  float jgLength2 = dot(jgBumped, jgBumped);
-  // A degenerate pixel frame (det 0, edge-on or helper lanes) would normalize zero into NaN, which bloom spreads across the frame.
-  if (jgLength2 > 1e-30 && jgLength2 < 1e30) normal = jgBumped * inversesqrt(jgLength2);
+  float jgBumpH = (jgMid * 0.012 + jgFine * 0.006 + jgSurfNoise(vJgSurfPos * 34.0 + 41.0) * 0.003 * jgGrainFade) * jgSurfStrength;
+${SURFACE_BUMP_NORMAL_GLSL}
 }`;
 
 // Cheap cavity: down-facing and mottled-dark spots receive less sky, which grounds a form without an AO pass.

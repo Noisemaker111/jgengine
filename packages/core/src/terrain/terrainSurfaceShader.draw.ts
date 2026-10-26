@@ -304,7 +304,11 @@ export const SURFACE_BUMP_NORMAL_GLSL = /* glsl */ `
   vec3 jgR2 = cross(normal, jgSigX);
   float jgDet = dot(jgSigX, jgR1) * faceDirection;
   vec3 jgGrad = sign(jgDet) * (jgDh.x * jgR1 + jgDh.y * jgR2);
-  normal = normalize(abs(jgDet) * normal - jgGrad);
+  vec3 jgBumped = abs(jgDet) * normal - jgGrad;
+  float jgBumpLength2 = dot(jgBumped, jgBumped);
+  // A shading normal in the pixel's own plane (a wet puddle's flat normal seen edge-on) makes det 0 and
+  // the bump vector zero; normalizing that is NaN, and bloom spreads one NaN pixel across half the frame.
+  if (jgBumpLength2 > 1e-30 && jgBumpLength2 < 1e30) normal = jgBumped * inversesqrt(jgBumpLength2);
 }
 #endif
 `;
