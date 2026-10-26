@@ -103,6 +103,30 @@ function isDrawable(object: Object3D): object is Drawable {
   return candidate.isMesh === true || candidate.isPoints === true || candidate.isLine === true || candidate.isSprite === true;
 }
 
+/**
+ * What a frame drawn now would link a program on the main thread for: a visible drawable whose
+ * material has no program yet, or one the driver is still building. The first draw of either
+ * waits for the link inside the frame, which is the freeze a Play press used to cause.
+ * @internal
+ */
+export function firstUnlinkedDrawable(renderer: Pick<ShaderWarmupRenderer, "properties">, scene: Object3D, camera: Camera): Object3D | null {
+  const properties = renderer.properties;
+  if (properties === undefined) return null;
+  let found: Object3D | null = null;
+  scene.traverseVisible((object) => {
+    if (found !== null || !isDrawable(object) || !object.layers.test(camera.layers)) return;
+    for (const material of Array.isArray(object.material) ? object.material : [object.material]) {
+      if (material == null || (material as Material).visible === false) continue;
+      const program = (properties.get(material as object) as { currentProgram?: unknown } | undefined)?.currentProgram;
+      if (program == null || !programReady(program)) {
+        found = object;
+        return;
+      }
+    }
+  });
+  return found;
+}
+
 /** Knobs for {@link planFirstFrame}; the defaults are what a normal load wants. @internal */
 export interface FirstFramePlanOptions {
   /** Bounding-sphere growth for the view test, so a prop just offscreen stays in the plan. */
@@ -758,6 +782,14 @@ export const SHADER_WARMUP_DEFAULTS = {
    * the reveal the background sends one per flush, which stays inside a frame.
    */
   texturesPerBatch: 4,
+  /** How long {@link ShaderWarmup.prepare} works behind the last frame before the cover returns. */
+  prepareCoverMs: 400,
+  /**
+   * How long after the reveal, a lifted cover or a prepare the frame loop checks each frame for
+   * content it would have to link mid-frame (a level the Play press spawns from the game loop).
+   * Each check walks the visible scene, so it runs for a while after a change, not forever.
+   */
+  watchMs: 6_000,
 } as const;
 
 /** Options for {@link createShaderWarmup}; the clock, sleep and loader signal are injectable for tests. */
@@ -801,8 +833,34 @@ export interface ShaderWarmup {
   /** Resolves when warm, capped or failed; never rejects. */
   done: Promise<ShaderWarmupState>;
   state(): ShaderWarmupState;
+  /**
+   * Compile what was mounted since the reveal before the next frame shows it: the view a Play
+   * button opens, say, while the menu still covers the canvas. Rounds run until nothing new links
+   * and the model loader is idle; it resolves at once when nothing is new. The cover returns only
+   * when this takes longer than {@link SHADER_WARMUP_DEFAULTS.prepareCoverMs}.
+   */
+  prepare(): Promise<void>;
   /** Stop after the round in flight and stop waiting; used when the view unmounts. */
   cancel(): void;
+}
+
+const sceneWarmups = new WeakMap<Object3D, ShaderWarmup>();
+
+/** Makes `warmup` the one {@link prepareSceneView} asks for `scene`, until the returned function runs. @internal */
+export function registerSceneWarmup(scene: Object3D, warmup: ShaderWarmup): () => void {
+  sceneWarmups.set(scene, warmup);
+  return () => {
+    if (sceneWarmups.get(scene) === warmup) sceneWarmups.delete(scene);
+  };
+}
+
+/**
+ * Compile what the scene gained while the canvas was covered, before the frame loop shows it:
+ * see {@link ShaderWarmup.prepare}. Resolves at once for a scene with no warmup.
+ * @internal
+ */
+export function prepareSceneView(scene: Object3D): Promise<void> {
+  return sceneWarmups.get(scene)?.prepare() ?? Promise.resolve();
 }
 
 /**
@@ -833,6 +891,9 @@ export function createShaderWarmup(options: ShaderWarmupOptions): ShaderWarmup {
   const startedAt = now();
   let state: ShaderWarmupState = { phase: "waiting", rounds: 0, programs: 0, planned: 0, deferred: 0, progress: 0, elapsedMs: 0 };
   let cancelled = false;
+  /** When the cover now up went up: the load, or the prepare that brought it back. */
+  let coverSince = startedAt;
+  let preparingView = false;
 
   const programs = (): number => options.renderer.info?.programs?.length ?? 0;
 
@@ -870,7 +931,9 @@ export function createShaderWarmup(options: ShaderWarmupOptions): ShaderWarmup {
 
   const publish = (next: Partial<ShaderWarmupState>): void => {
     const phase = state.phase;
-    state = { ...state, ...next, elapsedMs: Math.round(now() - startedAt) };
+    state = { ...state, ...next, elapsedMs: Math.round(now() - coverSince) };
+    // A prepare covers only what it links now; nothing waits behind it.
+    if (preparingView) state.deferred = 0;
     // Phase changes land on the performance timeline, so a load trace shows when the cover lifted.
     if (state.phase !== phase) markTimeline(`jg:warmup:${state.phase}`, state);
     options.onState?.(state);
@@ -1316,17 +1379,54 @@ export function createShaderWarmup(options: ShaderWarmupOptions): ShaderWarmup {
     return true;
   };
 
+  let backgroundDone: Promise<void> = Promise.resolve();
   const done = (async (): Promise<ShaderWarmupState> => {
     if (!(await covered())) {
       releaseScratch();
       return state;
     }
-    void background().finally(releaseScratch);
+    backgroundDone = background().finally(releaseScratch);
     return state;
   })();
 
+  let preparing: Promise<void> | null = null;
+  const prepare = (): Promise<void> => {
+    preparing ??= (async () => {
+      if ((await done).phase !== "ready") return;
+      await backgroundDone;
+      const deadline = now() + planBudgetMs;
+      await awaitHolds(deadline);
+      coverSince = now();
+      preparingView = true;
+      queued = 0;
+      linked = 0;
+      const cover = setTimeout(() => {
+        if (!cancelled) publish({ phase: "compiling", progress: 0 });
+      }, SHADER_WARMUP_DEFAULTS.prepareCoverMs);
+      try {
+        let previous = programs();
+        while (!cancelled && now() < deadline) {
+          if ((await round(deadline)) === "error") break;
+          const grew = programs() > previous;
+          previous = programs();
+          // Content the press started loading mounts when it lands; wait for it rather than link it mid-frame.
+          if (!grew && loaderQuiet(pollMs)) break;
+          await sleep(pollMs);
+        }
+      } finally {
+        clearTimeout(cover);
+        preparingView = false;
+        releaseScratch();
+        if (state.phase !== "ready") publish({ phase: "ready", progress: 1 });
+        preparing = null;
+      }
+    })();
+    return preparing;
+  };
+
   return {
     done,
+    prepare,
     state: () => state,
     cancel: () => {
       cancelled = true;

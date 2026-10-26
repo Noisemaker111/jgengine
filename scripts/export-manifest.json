@@ -1148,6 +1148,7 @@
     "./render/shaderWarmup",
     "./render/shadowCasters",
     "./render/shadowTiers",
+    "./render/sharedModelImages",
     "./render/spriteRender",
     "./render/stableTextureSet",
     "./render/staticTransforms",

@@ -25,6 +25,7 @@ import {
   recordManagerLoadError,
   recordModelTriangles,
   setModelTriangleBudget,
+  singlePassModelMaterials,
 } from "./modelLoad";
 
 function stubResponse(body: Uint8Array, init: { status?: number; contentType?: string; statusText?: string }): Response {
@@ -287,5 +288,19 @@ describe("missing models are named", () => {
     expect((globalThis as { __jgengineMissingModels?: unknown }).__jgengineMissingModels).toEqual(modelLoadFallbacks());
     expect((gltf as unknown as GLTF).userData.jgengineMissingModel).toBe("pack/Crate");
     expect(told).toBe(1);
+  });
+});
+
+describe("singlePassModelMaterials", () => {
+  test("see-through double-sided panes draw in one pass; opaque and one-sided materials are left alone", () => {
+    const glass = new THREE.MeshStandardMaterial({ transparent: true, side: THREE.DoubleSide });
+    const leaves = new THREE.MeshStandardMaterial({ side: THREE.DoubleSide });
+    const bottle = new THREE.MeshStandardMaterial({ transparent: true });
+    const root = new THREE.Group();
+    for (const material of [glass, leaves, bottle]) root.add(new THREE.Mesh(new THREE.BoxGeometry(), material));
+    singlePassModelMaterials(root);
+    expect(glass.forceSinglePass).toBe(true);
+    expect(leaves.forceSinglePass).toBe(false);
+    expect(bottle.forceSinglePass).toBe(false);
   });
 });

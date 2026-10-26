@@ -3211,7 +3211,7 @@
 
 - `HeldDraw` (interface): interface HeldDraw — A draw the hold swallowed: what it would have drawn, from where, into what, with what override.
 - `HoldDrawsOptions` (interface): interface HoldDrawsOptions — Options for {@link holdDraws}.
-- `SHADER_WARMUP_DEFAULTS` (const): const SHADER_WARMUP_DEFAULTS: { readonly quietMs: 250; readonly planBudgetMs: 120000; readonly stallMs: 30000; readonly planFloorMs: 1500; readonly pollMs: 100; readonly backgroundMs: 2000; readonly backgroundEveryMs: 250; readonly programsPerBatch: 12; readonly texturesPerBatch: 4; } — Defaults sized to cover one load: the covered wait is the driver's link time, not a guess.
+- `SHADER_WARMUP_DEFAULTS` (const): const SHADER_WARMUP_DEFAULTS: { readonly quietMs: 250; readonly planBudgetMs: 120000; readonly stallMs: 30000; readonly planFloorMs: 1500; readonly pollMs: 100; readonly backgroundMs: 2000; readonly backgroundEveryMs: 250; readonly programsPerBatch: 12; readonly texturesPerBatch: 4; readonly prepare… — Defaults sized to cover one load: the covered wait is the driver's link time, not a guess.
 - `ShaderWarmup` (interface): interface ShaderWarmup — A warmup in flight: its promise, its latest state, and a way to stop it.
 - `ShaderWarmupOptions` (interface): interface ShaderWarmupOptions — Options for {@link createShaderWarmup}; the clock, sleep and loader signal are injectable for tests.
 - `ShaderWarmupRenderer` (interface): interface ShaderWarmupRenderer — The renderer surface the warmup needs; a real `WebGLRenderer` satisfies it.
