@@ -1,7 +1,10 @@
 import { useFrame, type ThreeElements } from "@react-three/fiber";
 import { useEffect, useMemo, useRef } from "react";
 import * as THREE from "three";
+import { useOptionalGameContext } from "@jgengine/react/provider";
+
 import { useDisposable } from "../render/useDisposable";
+import { skySunDirection } from "../sky/skySun";
 import { createOceanConfig, type OceanConfig, type ResolvedOceanConfig } from "./OceanConfig";
 import { createOceanMaterial, syncOceanMaterial } from "./OceanMaterial";
 
@@ -45,9 +48,14 @@ export function Ocean({ config, depthAt, ...meshProps }: OceanProps) {
     elapsedRef.current = 0;
   }, [material]);
 
-  useFrame((_, delta) => {
-    elapsedRef.current += delta * resolved.timeScale;
-    syncOceanMaterial(material, resolved, elapsedRef.current);
+  const ctx = useOptionalGameContext();
+  useFrame((state, delta) => {
+    // Waves run on the game clock, so they stop when the game pauses and line up with the water
+    // surface buoyancy samples; before any game time has passed (a title screen) or with no game
+    // (an editor preview) they run on real time.
+    const advanced = ctx?.time.advancedSeconds?.();
+    elapsedRef.current = advanced !== undefined && advanced > 0 ? advanced * resolved.timeScale : elapsedRef.current + delta * resolved.timeScale;
+    syncOceanMaterial(material, resolved, elapsedRef.current, skySunDirection(state.scene));
   });
 
   return <mesh {...meshProps} geometry={geometry} material={material} />;

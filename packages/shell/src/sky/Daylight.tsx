@@ -17,6 +17,7 @@ import {
   DEFAULT_DAY_SUN_INTENSITY,
   SKY_PRESET_DAY_FRACTION,
 } from "@jgengine/core/sky/daylightCycle";
+import { publishSkySun } from "./skySun";
 import { SUN_SHADOW, sunLightPosition, sunShadowFocus } from "./sunShadowMath";
 import { VolumetricClouds } from "./VolumetricClouds";
 
@@ -486,8 +487,12 @@ export function Sky({ sky, clock, lights = true, modulation, bands = NO_BANDS, f
   const [moonUp, syncMoon] = useMoonAboveHorizon(initial.moonIntensity > 0);
 
   useFrame((state) => {
-    if (!timeOfDay && !banded) return;
+    if (!timeOfDay && !banded) {
+      publishSkySun(state.scene, initial.sunPosition);
+      return;
+    }
     const base = timeOfDay ? daylightStateAt(clock!.calendar().dayFraction, sky) : initial;
+    publishSkySun(state.scene, base.sunPosition);
     syncMoon(base.moonIntensity);
     const z = state.camera.position.z;
     const fog = banded ? fogSampler(z) : null;

@@ -3692,6 +3692,10 @@
 
 - `SkyLightOwnership` (type): type SkyLightOwnership = "authored" | "sky-default" — Policy for composing sky backdrops with `PlayableGame.lighting`: - authored lighting present → sky renders dome + fog only; lights stay game-owned - no authored lighting → sky may emit its default sun/hemisphere with the dome Time-of-day never rewrites configured lights; it only drives sky colors/fog (and sky-owned lights when the game did not author lighting).
 
+## @jgengine/shell/sky/skySun
+
+- `SkySunDirection` (type): type SkySunDirection = readonly [number, number, number] — World-space direction toward the sun, as the mounted sky last placed it.
+
 ## @jgengine/shell/terrain
 
 - `ALL_TERRAIN_SURFACE_CLASSES` (const): const ALL_TERRAIN_SURFACE_CLASSES: 511 — Compile every surface response, for an editor viewport whose paint can change to any surface.
@@ -4009,12 +4013,12 @@
 - `OceanMaterialUniforms` (interface): interface OceanMaterialUniforms { uTime: {value: number}; uWaveDirections: {value: THREE.Vector2[]}; uWaveParams: {value: THREE.Vector4[]}; uChoppiness: {value: number}; uWaveCount: {value: number}; uShallowColor: {value: THREE.Color}; uDeepColor: {value: THREE.Color}; uC… — ⚠ undocumented
 - `OceanProps` (interface): interface OceanProps extends Omit<ThreeElements["mesh"], "args" | "children" | "geometry" | "material"> { config?: OceanConfig; depthAt?: (x: number, z: number) => number } — ⚠ undocumented
 - `OceanQualityPreset` (type): type OceanQualityPreset = "low" | "medium" | "high" | "ultra" — ⚠ undocumented
-- `OceanShaderMaterial` (type): type OceanShaderMaterial = THREE.ShaderMaterial & { uniforms: OceanMaterialUniforms } — ⚠ undocumented
+- `OceanShaderMaterial` (type): type OceanShaderMaterial = THREE.ShaderMaterial & { uniforms: OceanMaterialUniforms } — ⚠ undocumented · used by `syncOceanMaterial`: Write the config and the frame's clock into the material.
 - `ResolvedOceanColorConfig` (interface): interface ResolvedOceanColorConfig { shallow: THREE.ColorRepresentation; deep: THREE.ColorRepresentation; crest: THREE.ColorRepresentation; foam: THREE.ColorRepresentation; opacity: number; fresnelStrength: number; horizonBlend: number; depthRange: number; sparkle: number } — ⚠ undocumented
-- `ResolvedOceanConfig` (interface): interface ResolvedOceanConfig { quality: OceanQualityPreset; size: number; depth: number; resolution: number; choppiness: number; timeScale: number; color: ResolvedOceanColorConfig; foam: ResolvedOceanFoamConfig; waves: readonly GerstnerWave[] } — ⚠ undocumented
+- `ResolvedOceanConfig` (interface): interface ResolvedOceanConfig { quality: OceanQualityPreset; size: number; depth: number; resolution: number; choppiness: number; timeScale: number; color: ResolvedOceanColorConfig; foam: ResolvedOceanFoamConfig; waves: readonly GerstnerWave[] } — ⚠ undocumented · used by `syncOceanMaterial`: Write the config and the frame's clock into the material.
 - `ResolvedOceanFoamConfig` (interface): interface ResolvedOceanFoamConfig { crestThreshold: number; softness: number; intensity: number; coverage: number; shoreWidth: number } — ⚠ undocumented
 - `createOceanMaterial` (function): function createOceanMaterial(config: ResolvedOceanConfig): OceanShaderMaterial — ⚠ undocumented
-- `syncOceanMaterial` (function): function syncOceanMaterial(material: OceanShaderMaterial, config: ResolvedOceanConfig, elapsedSeconds: number): void — ⚠ undocumented
+- `syncOceanMaterial` (function): function syncOceanMaterial(material: OceanShaderMaterial, config: ResolvedOceanConfig, elapsedSeconds: number, sunDirection?: readonly [number, number, number]): void — Write the config and the frame's clock into the material. `sunDirection` is where the sky put the sun: glints follow it, and fade out as it sets so a night sea does not sparkle. Without a sky the fixed day heading is used.
 
 ## @jgengine/shell/water
 
@@ -4028,12 +4032,12 @@
 - `OceanMaterialUniforms` (interface): interface OceanMaterialUniforms { uTime: {value: number}; uWaveDirections: {value: THREE.Vector2[]}; uWaveParams: {value: THREE.Vector4[]}; uChoppiness: {value: number}; uWaveCount: {value: number}; uShallowColor: {value: THREE.Color}; uDeepColor: {value: THREE.Color}; uC… — ⚠ undocumented
 - `OceanProps` (interface): interface OceanProps extends Omit<ThreeElements["mesh"], "args" | "children" | "geometry" | "material"> { config?: OceanConfig; depthAt?: (x: number, z: number) => number } — ⚠ undocumented
 - `OceanQualityPreset` (type): type OceanQualityPreset = "low" | "medium" | "high" | "ultra" — ⚠ undocumented
-- `OceanShaderMaterial` (type): type OceanShaderMaterial = THREE.ShaderMaterial & { uniforms: OceanMaterialUniforms } — ⚠ undocumented
+- `OceanShaderMaterial` (type): type OceanShaderMaterial = THREE.ShaderMaterial & { uniforms: OceanMaterialUniforms } — ⚠ undocumented · used by `syncOceanMaterial`: Write the config and the frame's clock into the material.
 - `ResolvedOceanColorConfig` (interface): interface ResolvedOceanColorConfig { shallow: THREE.ColorRepresentation; deep: THREE.ColorRepresentation; crest: THREE.ColorRepresentation; foam: THREE.ColorRepresentation; opacity: number; fresnelStrength: number; horizonBlend: number; depthRange: number; sparkle: number } — ⚠ undocumented
-- `ResolvedOceanConfig` (interface): interface ResolvedOceanConfig { quality: OceanQualityPreset; size: number; depth: number; resolution: number; choppiness: number; timeScale: number; color: ResolvedOceanColorConfig; foam: ResolvedOceanFoamConfig; waves: readonly GerstnerWave[] } — ⚠ undocumented
+- `ResolvedOceanConfig` (interface): interface ResolvedOceanConfig { quality: OceanQualityPreset; size: number; depth: number; resolution: number; choppiness: number; timeScale: number; color: ResolvedOceanColorConfig; foam: ResolvedOceanFoamConfig; waves: readonly GerstnerWave[] } — ⚠ undocumented · used by `syncOceanMaterial`: Write the config and the frame's clock into the material.
 - `ResolvedOceanFoamConfig` (interface): interface ResolvedOceanFoamConfig { crestThreshold: number; softness: number; intensity: number; coverage: number; shoreWidth: number } — ⚠ undocumented
 - `createOceanMaterial` (function): function createOceanMaterial(config: ResolvedOceanConfig): OceanShaderMaterial — ⚠ undocumented
-- `syncOceanMaterial` (function): function syncOceanMaterial(material: OceanShaderMaterial, config: ResolvedOceanConfig, elapsedSeconds: number): void — ⚠ undocumented
+- `syncOceanMaterial` (function): function syncOceanMaterial(material: OceanShaderMaterial, config: ResolvedOceanConfig, elapsedSeconds: number, sunDirection?: readonly [number, number, number]): void — Write the config and the frame's clock into the material. `sunDirection` is where the sky put the sun: glints follow it, and fade out as it sets so a night sea does not sparkle. Without a sky the fixed day heading is used.
 
 ## @jgengine/shell/water/Ocean
 
@@ -4050,15 +4054,15 @@
 - `OceanFoamConfig` (interface): interface OceanFoamConfig { crestThreshold?: number; softness?: number; intensity?: number; coverage?: number; shoreWidth?: number } — ⚠ undocumented
 - `OceanQualityPreset` (type): type OceanQualityPreset = "low" | "medium" | "high" | "ultra" — ⚠ undocumented
 - `ResolvedOceanColorConfig` (interface): interface ResolvedOceanColorConfig { shallow: THREE.ColorRepresentation; deep: THREE.ColorRepresentation; crest: THREE.ColorRepresentation; foam: THREE.ColorRepresentation; opacity: number; fresnelStrength: number; horizonBlend: number; depthRange: number; sparkle: number } — ⚠ undocumented
-- `ResolvedOceanConfig` (interface): interface ResolvedOceanConfig { quality: OceanQualityPreset; size: number; depth: number; resolution: number; choppiness: number; timeScale: number; color: ResolvedOceanColorConfig; foam: ResolvedOceanFoamConfig; waves: readonly GerstnerWave[] } — ⚠ undocumented
+- `ResolvedOceanConfig` (interface): interface ResolvedOceanConfig { quality: OceanQualityPreset; size: number; depth: number; resolution: number; choppiness: number; timeScale: number; color: ResolvedOceanColorConfig; foam: ResolvedOceanFoamConfig; waves: readonly GerstnerWave[] } — ⚠ undocumented · used by `syncOceanMaterial` (@jgengine/shell/water): Write the config and the frame's clock into the material.
 - `ResolvedOceanFoamConfig` (interface): interface ResolvedOceanFoamConfig { crestThreshold: number; softness: number; intensity: number; coverage: number; shoreWidth: number } — ⚠ undocumented
 
 ## @jgengine/shell/water/OceanMaterial
 
 - `OceanMaterialUniforms` (interface): interface OceanMaterialUniforms { uTime: {value: number}; uWaveDirections: {value: THREE.Vector2[]}; uWaveParams: {value: THREE.Vector4[]}; uChoppiness: {value: number}; uWaveCount: {value: number}; uShallowColor: {value: THREE.Color}; uDeepColor: {value: THREE.Color}; uC… — ⚠ undocumented
-- `OceanShaderMaterial` (type): type OceanShaderMaterial = THREE.ShaderMaterial & { uniforms: OceanMaterialUniforms } — ⚠ undocumented
+- `OceanShaderMaterial` (type): type OceanShaderMaterial = THREE.ShaderMaterial & { uniforms: OceanMaterialUniforms } — ⚠ undocumented · used by `syncOceanMaterial`: Write the config and the frame's clock into the material.
 - `createOceanMaterial` (function): function createOceanMaterial(config: ResolvedOceanConfig): OceanShaderMaterial — ⚠ undocumented
-- `syncOceanMaterial` (function): function syncOceanMaterial(material: OceanShaderMaterial, config: ResolvedOceanConfig, elapsedSeconds: number): void — ⚠ undocumented
+- `syncOceanMaterial` (function): function syncOceanMaterial(material: OceanShaderMaterial, config: ResolvedOceanConfig, elapsedSeconds: number, sunDirection?: readonly [number, number, number]): void — Write the config and the frame's clock into the material. `sunDirection` is where the sky put the sun: glints follow it, and fade out as it sets so a night sea does not sparkle. Without a sky the fixed day heading is used.
 
 ## @jgengine/shell/water/OceanShader
 
