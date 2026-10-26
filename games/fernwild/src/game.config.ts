@@ -1,4 +1,4 @@
-import { authoredSpawnPosition, authoredSpawnRotation } from "@jgengine/core/world/authoredSpawn";
+import { authoredSpawnRotation } from "@jgengine/core/world/authoredSpawn";
 import { createGameFlowSystem } from "@jgengine/core/game/gameFlow";
 import { DEFAULT_WALK_CODES, defineGame } from "@jgengine/shell/gameKit";
 
@@ -18,7 +18,6 @@ import { BaseWorld } from "./game/ui/BaseWorld";
 import { onNewPlayer, systems } from "./loop";
 import { time, world } from "./world";
 
-const SPAWN = authoredSpawnPosition(editorLayers) ?? [0, 0, 0];
 const SPAWN_YAW = authoredSpawnRotation(editorLayers);
 
 export const game = defineGame({
@@ -76,8 +75,6 @@ export const game = defineGame({
         x: Math.round((me?.position[0] ?? 0) * 10) / 10,
         z: Math.round((me?.position[2] ?? 0) * 10) / 10,
         yaw: Math.round((me?.rotationY ?? 0) * 100) / 100,
-        // Metres walked from the spawn along the way it faces, so flows survive the spawn moving.
-        ahead: Math.round((((me?.position[0] ?? SPAWN[0]) - SPAWN[0]) * Math.sin(SPAWN_YAW) + ((me?.position[2] ?? SPAWN[2]) - SPAWN[2]) * Math.cos(SPAWN_YAW)) * 10) / 10,
         level: view.level,
         aimStrike: view.aim.strike === null ? 0 : 1,
         aimPick: view.aim.pick === null ? 0 : 1,
@@ -114,9 +111,19 @@ export const game = defineGame({
         ghostSnapped: base.ghost?.mode === "snap" ? 1 : 0,
         aimedStructureHealth: base.aimed?.health ?? 0,
         doorsOpen: base.open,
+        // Metres the survivor stands past the first foundation's centre and past the first doorframe, along the
+        // spawn facing: negative is short of it.
+        pastFloor: pastAlongSpawn(me?.position, base.floor),
+        pastDoor: pastAlongSpawn(me?.position, base.doorway),
         // Hotbar slot in hand, 1-based; 0 bare-handed.
         holding: view.activeSlot === null ? 0 : view.activeSlot + 1,
       };
     },
   },
 });
+
+/** Metres `at` lies past `mark` along the spawn facing, to a decimetre; 0 when either is missing. */
+function pastAlongSpawn(at: readonly number[] | undefined, mark: readonly number[] | null): number {
+  if (at === undefined || mark === null) return 0;
+  return Math.round(((at[0]! - mark[0]!) * Math.sin(SPAWN_YAW) + (at[2]! - mark[2]!) * Math.cos(SPAWN_YAW)) * 10) / 10;
+}
