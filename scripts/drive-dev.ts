@@ -79,6 +79,7 @@ import { focusGameSurface, holdComplete } from "./gameSurfaceFocus";
 import { framesFromTimeline, thinFrames, type TimedPng } from "./apng";
 import { assembleGif } from "./gif";
 import { assembleMp4 } from "./video";
+import { driveShotPath, shotsDir } from "./shotPath";
 
 type Step = CaptureStep;
 
@@ -191,8 +192,8 @@ Script a drive:
   A mismatch stops the run there — no later key, click or shot — and prints the index,
   the expression, the expected and actual value, and the elapsed ms. Assert arrival
   ("the skirmish started, four units present"), never that a click happened.
-  "shot" is a bare name: it lands in <game>/docs/<name>.png, never an absolute path,
-  and a site target lands in apps/web/docs/. Coordinates are [x, y] numbers.
+  "shot" is a bare name: it lands in the ignored shots/<game>/<name>.png (a site
+  target in shots/site/), never an absolute path. Coordinates are [x, y] numbers.
   "waitFor": "<expression>" is sugar for a step with only a before condition.
   Aim steps: "moveMouse": [x, y] hovers the pointer at CSS viewport pixels; "look": [dx, dy]
   turns a pointer-locked view by that many pixels of mouse movement (the step takes pointer
@@ -246,9 +247,9 @@ Warm capture (started for you; no lane starts the daemon by hand):
   bun run drive <game> --click START --shot after --connect <port> --quick
 `;
 
-/** The game (or site) project a run targets: its flows, docs/ and evidence live under it. */
+/** The game (or site) project a run targets: its flows and evidence live under it; shots go in shots/. */
 function projectDirOf(args: Args): string {
-  // A game served from another checkout keeps its flows and docs there too.
+  // A game served from another checkout keeps its flows there too.
   if (args.gameDir !== null) return resolve(args.gameDir);
   return driveProjectDir(
     { game: args.game, ...(args.site === undefined ? {} : { site: args.site }), external: args.game === "url" },
@@ -380,7 +381,6 @@ function parseArgs(argv: string[]): Args {  // `--headed` is parsed here, not in
   if (args.stepsFile !== undefined || args.flow !== undefined) {
     rejectMixedStepFlags("drive", quick.argv, CAPTURE_FLAGS);
     const projectDir = projectDirOf(args);
-    const docs = join(projectDir, "docs");
     const flows = flowSource(join(projectDir, "proofs", "flows"));
     let raw: unknown;
     let source: string;
@@ -402,7 +402,7 @@ function parseArgs(argv: string[]): Args {  // `--headed` is parsed here, not in
       }
       source = resolve(args.stepsFile!);
     }
-    args.steps = parseStepFile(raw, source, { flows }).map((step) => step.kind === "shot" ? { ...step, out: join(docs, step.name + ".png") } : step);
+    args.steps = parseStepFile(raw, source, { flows }).map((step) => step.kind === "shot" ? { ...step, out: driveShotPath(shotsDir(join(import.meta.dir, "..")), args.game, step.name) } : step);
   }
   if (
     args.stepsFile === undefined &&

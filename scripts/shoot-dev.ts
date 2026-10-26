@@ -46,6 +46,7 @@ import {
   type SizeMode,
 } from "./browser-lib";
 import { decodePng } from "./png-reader";
+import { shootOutPath } from "./shotPath";
 import { clearOriginStorage } from "./capture-storage";
 import { headRevision } from "./captureRevision";
 import { engineRecord, resolveEngineIdentity, type EngineRecord } from "./engineIdentity";
@@ -278,7 +279,7 @@ function devicesFor(arg: DeviceArg): Device[] {
 
 function outPathFor(args: Args, device: Device, outDir: string): string {
   if (args.out !== undefined) {
-    const resolved = resolve(args.out);
+    const resolved = shootOutPath(args.out, outDir);
     if (args.device !== "both") return resolved;
     if (device === "desktop") return resolved;
     const dot = resolved.lastIndexOf(".");
