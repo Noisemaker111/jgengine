@@ -26,6 +26,59 @@ At publish, rename this heading to the new version and mirror the entries into
 `packages/core/src/meta/changelog.ts` (the typed `CHANGELOG` export).
 -->
 
+## 0.48.0
+
+### Migrate
+
+- **Bump lockstep SDK packages to `^0.48.0`:** `@jgengine/{core,rapier,react,ws,node,sql,convex,shell,editor,assets,navbake}`. CLI `jgengine` is `0.45.0`; `@jgengine/github` is `0.35.0`.
+- A standalone game made before this release: run `jgengine sync` to get the new `optimizeDeps` line in `vite.config.ts`, or `bun dev` stops on `Cannot read file: …draco_decoder.js?url`.
+- `@jgengine/shell/render/EntityPreview` → `@jgengine/core/render/EntityPreview.draw`
+- `@jgengine/shell/render/SceneModels` → `@jgengine/core/model/SceneModels.draw`
+- `@jgengine/shell/render/SceneWarmupGate` → `@jgengine/core/scene/SceneWarmupGate.draw`
+- `@jgengine/shell/render/assetBase` → `@jgengine/core/assets/assetBase.draw`
+- `@jgengine/shell/render/authoredGrade` → `@jgengine/core/render/authoredGrade`
+- `@jgengine/shell/render/decoderFiles` → `@jgengine/core/assets/decoderFiles.draw`
+- `@jgengine/shell/render/decoderUrls` → `@jgengine/core/assets/decoderUrls`
+- `@jgengine/shell/render/displayColor` → `@jgengine/core/render/displayColor.draw`
+- `@jgengine/shell/render/measureBounds` → `@jgengine/core/model/measureBounds.draw`
+- `@jgengine/shell/render/measureCollisionMesh` → `@jgengine/core/model/measureCollisionMesh.draw`
+- `@jgengine/shell/render/modelAssets` → `@jgengine/core/model/modelAssets`
+- `@jgengine/shell/render/modelBindPose` → `@jgengine/core/model/modelBindPose.draw`
+- `@jgengine/shell/render/modelLoad` → `@jgengine/core/model/modelLoad.draw`
+- `@jgengine/shell/render/modelMeshMerge` → `@jgengine/core/model/modelMeshMerge.draw`
+- `@jgengine/shell/render/modelNodeVisibility` → `@jgengine/core/model/modelNodeVisibility.draw`
+- `@jgengine/shell/render/modelRender` → `@jgengine/core/model/modelRender.draw`
+- `@jgengine/shell/render/modelScan` → `@jgengine/core/model/modelScan.draw`
+- `@jgengine/shell/render/modelSurface` → `@jgengine/core/model/modelSurface.draw`
+- `@jgengine/shell/render/modelWind` → `@jgengine/core/model/modelWind.draw`
+- `@jgengine/shell/render/presentationLook` → `@jgengine/core/render/presentationLook.draw`
+- `@jgengine/shell/render/projectedOverdraw` → `@jgengine/core/render/projectedOverdraw.draw`
+- `@jgengine/shell/render/resolveModel` → `@jgengine/core/model/resolveModel`
+- `@jgengine/shell/render/rigNode` → `@jgengine/core/model/rigNode.draw`
+- `@jgengine/shell/render/sceneCaptureRequest` → `@jgengine/core/scene/sceneCaptureRequest.draw`
+- `@jgengine/shell/render/sceneCapture` → `@jgengine/core/scene/sceneCapture.draw`
+- `@jgengine/shell/render/shaderWarmup` → `@jgengine/core/render/shaderWarmup.draw`
+- `@jgengine/shell/render/sharedModelImages` → `@jgengine/core/model/sharedModelImages.draw`
+- `@jgengine/shell/render/spriteRender` → `@jgengine/core/render/spriteRender.draw`
+- `@jgengine/shell/render/staticTransforms` → `@jgengine/core/model/staticTransforms.draw`
+- `@jgengine/shell/render/submittedDraws` → `@jgengine/core/render/submittedDraws.draw`
+- `@jgengine/shell/render/triangleAttribution` → `@jgengine/core/render/triangleAttribution.draw`
+- `@jgengine/shell/render/useDisposable` → `@jgengine/core/render/useDisposable.draw`
+- `@jgengine/shell/render/useFrameWhile` → `@jgengine/core/render/useFrameWhile.draw`
+- `@jgengine/shell/render/useModelInstance` → `@jgengine/core/model/useModelInstance.draw`
+- `@jgengine/shell/render/useSlicedValue` → `@jgengine/core/render/useSlicedValue.draw`
+
+### Changed
+
+- `create` scaffolds the starter scene by default (trees, crates and a goal to walk to); `--scene empty` gives just the ground and the player.
+
+### Fixed
+
+- `bun dev` on a game using the npm packages no longer dies on first load. Vite's dependency pre-bundler could not read the engine's `.js?url` decoder imports; the decoder module is now imported by package name and the template's `vite.config.ts` keeps it out of pre-bundling.
+- `jgengine create` pulls the starter models itself again when dependencies were installed with bun or pnpm: it runs the `@jgengine/assets` CLI directly instead of looking for npm's `assets.cmd` shim.
+- The model-pull command printed by `create`, the game's AGENTS.md and missing-model messages is `npx @jgengine/assets pull <pack>`, which works after any package manager's install (`npx assets` asked the registry for an unrelated package when bun or pnpm had installed).
+- The builder template runs its world offline when no `VITE_CONVEX_URL` is set, instead of a blank "connect this world" page.
+
 ## 0.47.0
 
 ### Migrate
