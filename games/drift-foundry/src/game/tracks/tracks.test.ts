@@ -1,6 +1,6 @@
 import { describe, expect, test } from "bun:test";
 
-import { MAIN_ROUTE } from "@jgengine/core/world/routeCourse";
+import { MAIN_ROUTE } from "@jgengine/core/roads/routeCourse";
 
 import { CAREER_KEY, newCareer } from "../career";
 import { YARD_EVENTS } from "../events/catalog";

@@ -1,6 +1,6 @@
 import { seededStreams } from "@jgengine/core/random/rng";
 import type { GameContext } from "@jgengine/core/runtime/gameContext";
-import { MAIN_ROUTE } from "@jgengine/core/world/routeCourse";
+import { MAIN_ROUTE } from "@jgengine/core/roads/routeCourse";
 import { scatter } from "@jgengine/core/world/scatter";
 
 import {

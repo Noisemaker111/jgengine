@@ -19,7 +19,7 @@ import type {
   WorldBounds,
 } from "./features";
 import type { Aabb } from "./geometry";
-import { pathLength } from "./roads";
+import { polylineLength } from "../roads/roads";
 import { resolveTerrainField, resolveTerrainPalette, type TerrainPalette } from "./terrain";
 
 /**
@@ -296,7 +296,7 @@ export function summarizeEnvironment(feature: EnvironmentWorldFeature): Environm
   const roads: RoadSummary[] = (feature.roads ?? []).map((entry) => ({
     points: entry.path.length,
     width: entry.width,
-    length: pathLength(entry.path),
+    length: polylineLength(entry.path),
   }));
 
   const buildings = structures.reduce((sum, entry) => sum + entry.buildings, 0);

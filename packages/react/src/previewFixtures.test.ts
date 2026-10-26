@@ -2,7 +2,7 @@ import { describe, expect, test } from "bun:test";
 
 import { HudThemePreview } from "./hud/hudThemePreview";
 import { IconsPreview } from "./iconsPreview";
-import { StreetGeometryPreview } from "./streetGeometryPreview";
+import { StreetGeometryPreview } from "./roads/streetGeometryPreview";
 import {
   PREVIEW_FIXTURES,
   previewFixtureNames,

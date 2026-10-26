@@ -28,8 +28,8 @@ import {
   type RoadJunctionInput,
   type RoadPoint,
   type RoadRibbon,
-} from "@jgengine/core/world/roads";
-import { offsetPath } from "@jgengine/core/world/streets";
+  offsetPath,
+} from "@jgengine/core/roads/roads";
 import { triangulatePolygon, triangulateRingBand } from "@jgengine/core/world/cityGeometry";
 import {
   resolveCityObject,
@@ -55,7 +55,7 @@ import { buildScatterProxy } from "../scatter/scatterProxies";
 import { InstancedBuildings, type InstancedBuildingPlacement } from "../structures/GeneratedBuilding";
 import { getBuildingKit } from "../structures/buildingKitRegistry";
 import { createCityWindowMaterial } from "./cityWindowMaterial";
-import { createSurfaceRibbonMaterial } from "../terrain/surfaceRibbonMaterial";
+import { createSurfaceRibbonMaterial } from "../roads/surfaceRibbonMaterial";
 import { applyGroundEdgeFade, buildGroundCoverageMask, createGroundEdgeFade } from "../terrain/groundEdgeFade";
 import { useTerrainQuality } from "../terrain/terrainQuality";
 import { registerSceneKindRenderer, type SceneKindRenderContext } from "./sceneKindRenderers";

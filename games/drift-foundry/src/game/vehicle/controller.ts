@@ -2,7 +2,7 @@ import { NEUTRAL_AXIS } from "@jgengine/core/input/axisInput";
 import { tickDrivableVehicle } from "@jgengine/core/physics/drivableVehicle";
 import type { TireMarks } from "@jgengine/core/physics/tireMarks";
 import { createVehicleDynamics, type VehicleDynamics, type VehicleDynamicsModifiers, type VehicleDynamicsTuning } from "@jgengine/core/physics/vehicleDynamics";
-import type { CourseFix } from "@jgengine/core/world/routeCourse";
+import type { CourseFix } from "@jgengine/core/roads/routeCourse";
 
 import { blockedZ, courseBlock } from "../route/gates";
 import { CORRIDOR_DRIVE_HALF_WIDTH } from "../run/constants";

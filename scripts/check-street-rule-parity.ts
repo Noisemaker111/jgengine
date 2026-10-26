@@ -16,7 +16,7 @@ import { Project, SyntaxKind } from "ts-morph";
  * to the interface fails this gate until every consumer carries it.
  */
 
-const GENERATOR = "packages/core/src/world/streetGenerator.ts";
+const GENERATOR = "packages/core/src/roads/streetGenerator.ts";
 const CITY_KIND = "packages/core/src/world/cityKind.ts";
 const STREETS_HANDLER = "packages/editor/src/handlers/streets.ts";
 

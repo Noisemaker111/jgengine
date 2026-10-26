@@ -2,7 +2,7 @@ import { describe, expect, test } from "bun:test";
 import * as THREE from "three";
 
 import { applyGroundEdgeFade, buildGroundCoverageMask, createGroundEdgeFade, type GroundCoverageMask } from "./groundEdgeFade";
-import { createSurfaceRibbonMaterial } from "./surfaceRibbonMaterial";
+import { createSurfaceRibbonMaterial } from "../roads/surfaceRibbonMaterial";
 
 /** A flat XZ rectangle as two triangles. */
 const rect = (x0: number, z0: number, x1: number, z1: number): THREE.BufferGeometry => {

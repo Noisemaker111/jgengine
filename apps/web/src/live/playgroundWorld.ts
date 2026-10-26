@@ -7,7 +7,7 @@ import * as THREE from "three";
 import { OrbitControls } from "three/examples/jsm/controls/OrbitControls.js";
 
 import type { GeneratedCity } from "@jgengine/core/world/cityGenerator";
-import type { CircuitRoute } from "@jgengine/core/world/raceCircuit";
+import type { CircuitRoute } from "@jgengine/core/roads/raceCircuit";
 import { buildCityModel, buildGround, makeElevationField, type CityModel, type CityPalette } from "./cityScene";
 import { disposeObject, mountLive, type LiveHandle } from "./mount";
 

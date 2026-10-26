@@ -18,14 +18,14 @@ import {
 } from "@jgengine/core/world/authoredObjects";
 import { syncAuthoredSolids } from "@jgengine/core/world/authoredSolids";
 import type { RoadEnvironmentDescriptor } from "@jgengine/core/world/features";
-import { pathRoad } from "@jgengine/core/world/pathRoads";
+import { pathRoad } from "@jgengine/core/roads/pathRoads";
 import { isScatterPath, resolveScatter } from "@jgengine/core/world/scatterRegion";
 import type { TerrainField } from "@jgengine/core/world/terrain";
 
 import { getAssetGenerator } from "@jgengine/core/scene/assetGenerator";
 import { useGameContext } from "@jgengine/react/provider";
 
-import { Roads } from "../environment/RoadRibbons";
+import { Roads } from "../roads/RoadRibbons";
 
 import { createModelMapResolver } from "../render/resolveModel";
 import { InstancedScatter } from "../scatter/InstancedScatter";

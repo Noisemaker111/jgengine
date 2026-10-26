@@ -270,67 +270,16 @@ export function buildRoadRibbon(
   return { positions, indices };
 }
 
-/** A circular exclusion zone: dashes whose midpoint falls inside are dropped (e.g. junction patches). */
-export interface DashExclusion {
-  center: RoadPoint;
-  radius: number;
-}
-
-/**
- * Build a flat, ground-draped disc patch centered on `center` — a triangle fan of `segments` sides
- * (default 16), every vertex draped at `sampleHeight + elevation`.
- *
- * @deprecated This floats a disc slightly above the crossing ribbons, which still overlaps and
- * z-fights them. Prefer {@link buildJunctionSurface} (with {@link trimPathAtJunctions}, or the
- * all-in-one {@link buildTrimmedIntersections}): it trims the ribbons back to the junction boundary
- * and welds one seam-shared surface, with no overlap and no floating disc. Kept so existing callers
- * don't break this round.
- */
-export function buildJunctionPatch(
-  center: RoadPoint,
-  radius: number,
-  sampleHeight: (x: number, z: number) => number,
-  options: { elevation?: number; segments?: number } = {},
-): RoadRibbon {
-  const elevation = options.elevation ?? GROUND_DECAL_LAYERS.junction;
-  const segments = Math.max(3, Math.floor(options.segments ?? 16));
-  if (radius <= 0) return { positions: new Float32Array(0), indices: new Uint32Array(0) };
-  const [cx, cz] = center;
-  // Center vertex + one ring vertex per segment.
-  const positions = new Float32Array((segments + 1) * 3);
-  positions[0] = cx;
-  positions[1] = sampleHeight(cx, cz) + elevation;
-  positions[2] = cz;
-  for (let i = 0; i < segments; i += 1) {
-    const angle = (i / segments) * Math.PI * 2;
-    const x = cx + Math.cos(angle) * radius;
-    const z = cz + Math.sin(angle) * radius;
-    const base = (i + 1) * 3;
-    positions[base] = x;
-    positions[base + 1] = sampleHeight(x, z) + elevation;
-    positions[base + 2] = z;
-  }
-  const indices = new Uint32Array(segments * 3);
-  for (let i = 0; i < segments; i += 1) {
-    indices[i * 3] = 0;
-    indices[i * 3 + 1] = i + 1;
-    indices[i * 3 + 2] = ((i + 1) % segments) + 1;
-  }
-  return { positions, indices };
-}
-
 /**
  * Split a centerline into dash sub-polylines for lane markings: `dashLength` of painted line,
  * `gapLength` of asphalt, repeated along the path's arc length. Feed each returned sub-path back
- * through {@link buildRoadRibbon} with a thin width to mesh the dashes. Pass `exclude` circles
- * (junction patches) to interrupt the center line through intersections — any dash whose midpoint
- * lands inside an exclusion is dropped.
+ * through {@link buildRoadRibbon} with a thin width to mesh the dashes. Trim the centerline at
+ * junctions first ({@link buildTrimmedIntersections}) so dashes stop at the crossing.
  */
 export function dashSegments(
   path: readonly RoadPoint[],
   dashLength = 3,
   gapLength = 3,
-  exclude: readonly DashExclusion[] = [],
 ): readonly (readonly RoadPoint[])[] {
   if (path.length < 2 || dashLength <= 0 || gapLength < 0) return [];
   const cumulative: number[] = [0];
@@ -360,24 +309,6 @@ export function dashSegments(
     if (end - start < 1e-6) break;
     const a = pointAt(start);
     const b = pointAt(end);
-    if (exclude.length > 0) {
-      const mx = (a[0] + b[0]) / 2;
-      const mz = (a[1] + b[1]) / 2;
-      let excluded = false;
-      for (let e = 0; e < exclude.length; e += 1) {
-        const zone = exclude[e]!;
-        const dx = mx - zone.center[0];
-        const dz = mz - zone.center[1];
-        if (dx * dx + dz * dz <= zone.radius * zone.radius) {
-          excluded = true;
-          break;
-        }
-      }
-      if (excluded) {
-        if (period <= 0) break;
-        continue;
-      }
-    }
     dashes.push([a, b]);
     if (period <= 0) break;
   }
@@ -425,8 +356,8 @@ export function isOnRoad(path: readonly RoadPoint[], width: number, x: number, z
   return sample !== null && sample.distance <= width / 2;
 }
 
-/** Total arc length of a centerline in world units. */
-export function pathLength(path: readonly RoadPoint[]): number {
+/** Total arc length of a centerline in world units. @internal */
+export function polylineLength(path: readonly RoadPoint[]): number {
   let total = 0;
   for (let i = 0; i < path.length - 1; i += 1) {
     const a = path[i]!;
@@ -456,6 +387,8 @@ export interface RoadJunctionInput {
   x: number;
   z: number;
   arms: readonly { angle: number; width: number }[];
+  /** Lift of this junction's welded surface above the ground. Default: `options.elevation`, else {@link GROUND_DECAL_LAYERS}.junction. */
+  elevation?: number;
 }
 
 /** Tunables shared by {@link trimPathAtJunctions}, {@link buildJunctionSurface}, and {@link buildTrimmedIntersections}. */
@@ -681,7 +614,7 @@ export function trimPathAtJunctions(
     }
 
     // Clamp so the two aprons never cross: leave a sliver of ribbon between adjacent junctions.
-    const runLen = pathLength(sub);
+    const runLen = polylineLength(sub);
     const avail = Math.max(0, runLen - 1e-4);
     if (startApron + endApron > avail) {
       const total = startApron + endApron || 1;
@@ -699,7 +632,7 @@ export function trimPathAtJunctions(
       sub = kept;
     }
     if (endApron > 1e-9 && sub.length >= 2) {
-      const target = pathLength(sub) - endApron;
+      const target = polylineLength(sub) - endApron;
       const { point, segment, tangent } = pointAtArcLength(sub, target);
       const { left, right } = cornerPair(point, tangent, half);
       cuts.push({
@@ -717,136 +650,8 @@ export function trimPathAtJunctions(
       sub = kept;
     }
 
-    if (sub.length >= 2 && pathLength(sub) > 1e-6) result.push({ path: sub, cuts });
+    if (sub.length >= 2 && polylineLength(sub) > 1e-6) result.push({ path: sub, cuts });
   }
-  return result;
-}
-
-/** Options for {@link trimBandAtJunctions} — junction geometry tunables plus a band-specific clearance. */
-export interface BandTrimOptions extends JunctionGeometryOptions {
-  /** Extra outward clearance added to every junction's apron radius before cutting the band. Default 0. */
-  clearance?: number;
-}
-
-/**
- * Cut an offset band (a polyline running PARALLEL to a street — e.g. a sidewalk from
- * `Street.sidewalks.{left,right}`) out of every junction's apron, so the band stops at the crossing
- * instead of sailing straight through it. Unlike {@link trimPathAtJunctions} the band never passes
- * through a node, so it is clipped by DISTANCE: each junction contributes a circular apron of radius
- * `max arm half-width + apronMargin + bandWidth/2 + clearance` (plus a small curb-return allowance),
- * and any part of the band inside any apron circle is removed, splitting the band into the sub-paths
- * that survive outside. Entry/exit points land exactly on the apron boundary. A band that never
- * enters an apron passes through as a single untouched copy.
- *
- * Pure geometry, deterministic, bounded by the band-vertex and junction counts.
- *
- * @example
- * ```ts
- * // Same `junctions` you fed the roads; trim both sidewalks of a street around every node.
- * const left = trimBandAtJunctions(street.sidewalks.left, street.sidewalkWidth, junctions);
- * const right = trimBandAtJunctions(street.sidewalks.right, street.sidewalkWidth, junctions);
- * for (const sub of [...left, ...right]) meshes.push(buildRoadRibbon(sub, street.sidewalkWidth, sampleHeight));
- * ```
- *
- * @capability world-intersections trim offset sidewalk/parallel bands around junction aprons
- */
-export function trimBandAtJunctions(
-  bandPath: readonly RoadPoint[],
-  bandWidth: number,
-  junctions: readonly RoadJunctionInput[],
-  options: BandTrimOptions = {},
-): RoadPoint[][] {
-  if (bandPath.length < 2) return [];
-  const curbReturnRadius = options.curbReturnRadius ?? 2;
-  const margin = options.apronMargin ?? 0.25;
-  const clearance = options.clearance ?? 0;
-  const half = Math.max(0, bandWidth) / 2;
-
-  interface Circle {
-    x: number;
-    z: number;
-    r2: number;
-  }
-  const circles: Circle[] = [];
-  for (let ji = 0; ji < junctions.length; ji += 1) {
-    const j = junctions[ji]!;
-    let maxHalf = 0;
-    let minWidth = Infinity;
-    for (let a = 0; a < j.arms.length; a += 1) {
-      maxHalf = Math.max(maxHalf, j.arms[a]!.width / 2);
-      minWidth = Math.min(minWidth, j.arms[a]!.width);
-    }
-    // Small curb allowance (not the full return) so parallel bands clear exterior corner arcs.
-    const curbAllow = Math.min(curbReturnRadius, 0.35 * (Number.isFinite(minWidth) ? minWidth : 0));
-    const r = maxHalf + margin + half + clearance + curbAllow;
-    if (r > 0) circles.push({ x: j.x, z: j.z, r2: r * r });
-  }
-  const copy = (): RoadPoint[] => bandPath.map((p) => [p[0], p[1]] as RoadPoint);
-  if (circles.length === 0) return [copy()];
-
-  const insideAny = (x: number, z: number): boolean => {
-    for (let c = 0; c < circles.length; c += 1) {
-      const dx = x - circles[c]!.x;
-      const dz = z - circles[c]!.z;
-      if (dx * dx + dz * dz < circles[c]!.r2) return true;
-    }
-    return false;
-  };
-
-  const result: RoadPoint[][] = [];
-  let cur: RoadPoint[] = [];
-  const eps = 1e-9;
-  const pushPoint = (p: RoadPoint): void => {
-    const last = cur[cur.length - 1];
-    if (last === undefined || Math.hypot(last[0] - p[0], last[1] - p[1]) > eps) cur.push(p);
-  };
-  const closeSub = (): void => {
-    if (cur.length >= 2 && pathLength(cur) > eps) result.push(cur);
-    cur = [];
-  };
-
-  for (let i = 0; i < bandPath.length - 1; i += 1) {
-    const a = bandPath[i]!;
-    const b = bandPath[i + 1]!;
-    const dx = b[0] - a[0];
-    const dz = b[1] - a[1];
-    // Every boundary crossing t in (0,1) where the segment meets a circle edge.
-    const ts: number[] = [0, 1];
-    for (let c = 0; c < circles.length; c += 1) {
-      const circle = circles[c]!;
-      const fx = a[0] - circle.x;
-      const fz = a[1] - circle.z;
-      const A = dx * dx + dz * dz;
-      if (A < eps) continue;
-      const B = 2 * (fx * dx + fz * dz);
-      const C = fx * fx + fz * fz - circle.r2;
-      const disc = B * B - 4 * A * C;
-      if (disc <= 0) continue;
-      const sq = Math.sqrt(disc);
-      const t0 = (-B - sq) / (2 * A);
-      const t1 = (-B + sq) / (2 * A);
-      if (t0 > eps && t0 < 1 - eps) ts.push(t0);
-      if (t1 > eps && t1 < 1 - eps) ts.push(t1);
-    }
-    ts.sort((p, q) => p - q);
-    for (let s = 0; s < ts.length - 1; s += 1) {
-      const t0 = ts[s]!;
-      const t1 = ts[s + 1]!;
-      if (t1 - t0 < eps) continue;
-      const tm = (t0 + t1) / 2;
-      const mx = a[0] + dx * tm;
-      const mz = a[1] + dz * tm;
-      if (insideAny(mx, mz)) {
-        closeSub(); // this piece is inside an apron — drop it and break continuity
-        continue;
-      }
-      const p0: RoadPoint = [a[0] + dx * t0, a[1] + dz * t0];
-      const p1: RoadPoint = [a[0] + dx * t1, a[1] + dz * t1];
-      pushPoint(p0);
-      pushPoint(p1);
-    }
-  }
-  closeSub();
   return result;
 }
 
@@ -874,52 +679,6 @@ export interface JunctionApproach {
   sidewalkWidths?: IntersectionSidewalkWidths;
   /** Lane-paint declaration inherited from the source street. */
   markings?: IntersectionMarkingIntent;
-}
-
-/**
- * Build a tangent-continuous centerline through a two-arm junction. This is the shared path for
- * paint, medians, curbs, or other linear dressing that should follow a bend but stop at crossings.
- * Returns `null` for anything other than exactly two approaches.
- * @capability world-intersections connect linear road dressing through two-arm bends
- */
-export function buildJunctionConnector(
-  junction: { x: number; z: number },
-  approaches: readonly JunctionApproach[],
-  segments = 8,
-): RoadPoint[] | null {
-  if (approaches.length !== 2) return null;
-  const a = approaches[0]!.center;
-  const b = approaches[1]!.center;
-  const aRadius = Math.hypot(a[0] - junction.x, a[1] - junction.z);
-  const bRadius = Math.hypot(b[0] - junction.x, b[1] - junction.z);
-  let adx = approaches[0]!.direction?.[0] ?? a[0] - junction.x;
-  let adz = approaches[0]!.direction?.[1] ?? a[1] - junction.z;
-  let bdx = approaches[1]!.direction?.[0] ?? b[0] - junction.x;
-  let bdz = approaches[1]!.direction?.[1] ?? b[1] - junction.z;
-  const al = Math.hypot(adx, adz);
-  const bl = Math.hypot(bdx, bdz);
-  if (al < 1e-6 || bl < 1e-6) return null;
-  adx /= al;
-  adz /= al;
-  bdx /= bl;
-  bdz /= bl;
-  const chord = Math.hypot(b[0] - a[0], b[1] - a[1]);
-  const handle = Math.min(aRadius, bRadius, chord * 0.45);
-  const c1x = a[0] - adx * handle;
-  const c1z = a[1] - adz * handle;
-  const c2x = b[0] - bdx * handle;
-  const c2z = b[1] - bdz * handle;
-  const count = Math.max(2, Math.min(64, Math.floor(Number.isFinite(segments) ? segments : 8)));
-  const path: RoadPoint[] = [];
-  for (let i = 0; i <= count; i += 1) {
-    const t = i / count;
-    const u = 1 - t;
-    path.push([
-      u * u * u * a[0] + 3 * u * u * t * c1x + 3 * u * t * t * c2x + t * t * t * b[0],
-      u * u * u * a[1] + 3 * u * u * t * c1z + 3 * u * t * t * c2z + t * t * t * b[1],
-    ]);
-  }
-  return path;
 }
 
 /**
@@ -1239,6 +998,8 @@ export interface IntersectionMarkingIntent {
   lines?: readonly IntersectionMarkingLine[];
   /** Emit a transverse stop line at this street's multi-arm approaches. Default false. */
   stopLine?: boolean;
+  /** Emit a zebra crosswalk just outside the stop line at this street's multi-arm approaches. Default false. */
+  crosswalk?: boolean;
 }
 
 /** One street to trim + mesh through {@link buildTrimmedIntersections}. */
@@ -1251,6 +1012,8 @@ export interface IntersectionStreet {
   sidewalks?: IntersectionSidewalkWidths;
   /** Optional lane-paint declaration. Omission preserves the previous pavement-only output. */
   markings?: IntersectionMarkingIntent;
+  /** Lift of this street's ribbon above the ground. Default: `options.elevation`, else {@link GROUND_DECAL_LAYERS}.road. */
+  elevation?: number;
 }
 
 /** Renderer-ready output of {@link buildTrimmedIntersections}: trimmed ribbons + welded junction surfaces. */
@@ -1279,7 +1042,11 @@ export interface TrimmedIntersections {
   sidewalkApronJunctionIndices: number[];
 }
 
-function offsetPath(path: readonly RoadPoint[], offset: number): RoadPoint[] {
+/**
+ * Offset a centerline sideways by a signed distance along its local perpendicular: the building block
+ * for lanes, curb lines and sidewalk paths. Positive offsets fall on the left of travel.
+ */
+export function offsetPath(path: readonly RoadPoint[], offset: number): RoadPoint[] {
   const out = new Array<RoadPoint>(path.length);
   for (let i = 0; i < path.length; i += 1) {
     const [nx, nz] = normalAt(path, i);
@@ -1493,10 +1260,42 @@ function buildSidewalkApron(
 }
 
 /**
+ * A street path with every junction that lands mid-segment inserted as a real vertex, so
+ * {@link trimPathAtJunctions} (which matches junctions to path vertices) cuts there too. Crossings
+ * found by `findRoadJunctions` fall between authored vertices.
+ */
+function insertJunctionNodes(path: readonly RoadPoint[], junctions: readonly RoadJunctionInput[], tolerance = 1e-3): RoadPoint[] {
+  const out: RoadPoint[] = [[path[0]![0], path[0]![1]]];
+  for (let i = 0; i < path.length - 1; i += 1) {
+    const a = path[i]!;
+    const b = path[i + 1]!;
+    const abx = b[0] - a[0];
+    const abz = b[1] - a[1];
+    const lengthSq = abx * abx + abz * abz;
+    if (lengthSq > 1e-12) {
+      const hits: { t: number; x: number; z: number }[] = [];
+      for (const j of junctions) {
+        const t = ((j.x - a[0]) * abx + (j.z - a[1]) * abz) / lengthSq;
+        if (t <= 1e-6 || t >= 1 - 1e-6) continue;
+        if (Math.hypot(j.x - (a[0] + abx * t), j.z - (a[1] + abz * t)) <= tolerance) hits.push({ t, x: j.x, z: j.z });
+      }
+      hits.sort((u, v) => u.t - v.t);
+      for (const hit of hits) {
+        const prev = out[out.length - 1]!;
+        if (Math.hypot(prev[0] - hit.x, prev[1] - hit.z) > 1e-6) out.push([hit.x, hit.z]);
+      }
+    }
+    out.push([b[0], b[1]]);
+  }
+  return out;
+}
+
+/**
  * Trim a set of streets against a set of junctions and weld the crossing surfaces in one call — the
  * ergonomic entry the shell/playground consume for meshing.
  *
- * Each street is trimmed by {@link trimPathAtJunctions} (through-streets split in two), each surviving
+ * A junction that lands mid-segment on a street is inserted as a vertex first. Each street is then
+ * trimmed by {@link trimPathAtJunctions} (through-streets split in two), each surviving
  * sub-path is meshed with {@link buildRoadRibbon}, and every junction that any ribbon actually ends
  * at gets one {@link buildJunctionSurface}. The junction's boundary vertices are read back BITWISE
  * from the ribbons' terminal cross-sections, so ribbon and surface share the exact same floats at
@@ -1523,11 +1322,13 @@ export function buildTrimmedIntersections(
 
   for (let s = 0; s < streets.length; s += 1) {
     const street = streets[s]!;
-    const subs = trimPathAtJunctions(street.path, street.width, junctions, options);
+    if (street.path.length < 2 || street.width <= 0) continue;
+    const streetElevation = street.elevation ?? ribbonElevation;
+    const subs = trimPathAtJunctions(insertJunctionNodes(street.path, junctions), street.width, junctions, options);
     for (let r = 0; r < subs.length; r += 1) {
       const tr = subs[r]!;
       const ribbon = buildRoadRibbon(tr.path, street.width, sampleHeight, {
-        elevation: ribbonElevation,
+        elevation: streetElevation,
         maxSegmentLength: options.maxSegmentLength,
       });
       if (ribbon.positions.length < 12) continue; // degenerate — no terminal cross-section to weld
@@ -1540,10 +1341,10 @@ export function buildTrimmedIntersections(
       const leftSidewalk = Math.max(0, street.sidewalks?.left ?? 0);
       const rightSidewalk = Math.max(0, street.sidewalks?.right ?? 0);
       if (leftSidewalk > 0) {
-        sidewalks.push(buildRoadSidewalk(ribbon, "left", leftSidewalk, sampleHeight, ribbonElevation));
+        sidewalks.push(buildRoadSidewalk(ribbon, "left", leftSidewalk, sampleHeight, streetElevation));
       }
       if (rightSidewalk > 0) {
-        sidewalks.push(buildRoadSidewalk(ribbon, "right", rightSidewalk, sampleHeight, ribbonElevation));
+        sidewalks.push(buildRoadSidewalk(ribbon, "right", rightSidewalk, sampleHeight, streetElevation));
       }
       const numPoints = ribbon.positions.length / 6;
       for (let c = 0; c < tr.cuts.length; c += 1) {
@@ -1580,7 +1381,7 @@ export function buildTrimmedIntersections(
     const ji = sortedIndices[i]!;
     const j = junctions[ji]!;
     const approaches = approachesByJunction.get(ji)!;
-    const surface = buildJunctionSurface(j, approaches, sampleHeight, options);
+    const surface = buildJunctionSurface(j, approaches, sampleHeight, j.elevation === undefined ? options : { ...options, elevation: j.elevation });
     junctionSurfaces.push(surface);
     const apron = buildSidewalkApron(j, surface, approaches, sampleHeight, ribbonElevation);
     if (apron.indices.length > 0) {
@@ -1616,6 +1417,14 @@ export interface IntersectionMarkingOptions {
   stopLineWidth?: number;
   /** Gap left between a stop line and each pavement edge. Default 0.5. */
   stopLineEdgeClearance?: number;
+  /** Zebra bars per crosswalk. Default 5. */
+  crosswalkBars?: number;
+  /** Width of one zebra bar. Default 0.55. */
+  crosswalkBarWidth?: number;
+  /** Depth of a crosswalk along travel. Default 2.4. */
+  crosswalkDepth?: number;
+  /** Gap between the stop line and the crosswalk. Default 0.4. */
+  crosswalkGap?: number;
   /** Samples in a degree-2 marking connector. Default 8. */
   connectorSegments?: number;
   /** Painted dash length. Omit or use zero for a solid line. */
@@ -1667,7 +1476,8 @@ function buildOffsetConnector(
  * Mesh the paint declared on streets passed to {@link buildTrimmedIntersections}. Longitudinal
  * ribbons follow the trimmed road paths. At degree-2 nodes corresponding lines are joined by a
  * tangent-continuous cubic (signed offsets are preserved); at multi-arm nodes lines deliberately
- * stop short of the mouth and optional transverse stop lines make that termination readable.
+ * stop short of the mouth and optional transverse stop lines and zebra crosswalks make that termination
+ * readable.
  * @capability world-intersections connect sidewalks and lane guidance through generated intersections
  */
 export function buildIntersectionMarkings(
@@ -1679,6 +1489,10 @@ export function buildIntersectionMarkings(
   const lineWidth = options.lineWidth ?? 0.15;
   const stopLineWidth = options.stopLineWidth ?? 0.35;
   const edgeClearance = Math.max(0, options.stopLineEdgeClearance ?? 0.5);
+  const crosswalkBars = Math.max(1, Math.floor(options.crosswalkBars ?? 5));
+  const crosswalkBarWidth = Math.max(0.01, options.crosswalkBarWidth ?? 0.55);
+  const crosswalkDepth = Math.max(0, options.crosswalkDepth ?? 2.4);
+  const crosswalkGap = Math.max(0, options.crosswalkGap ?? 0.4);
   const elevation = options.elevation ?? GROUND_DECAL_LAYERS.marking;
   const requestedStep = options.maxSegmentLength ?? 4;
   const maxSegmentLength = Number.isFinite(requestedStep)
@@ -1718,14 +1532,14 @@ export function buildIntersectionMarkings(
           else endClearance = mouthClearance;
         }
       }
-      const length = pathLength(path);
+      const length = polylineLength(path);
       if (startClearance + endClearance >= length - 1e-6) continue;
       if (startClearance > 0) {
         const cut = pointAtArcLength(path, startClearance);
         path = [cut.point, ...path.slice(cut.segment + 1)];
       }
       if (endClearance > 0) {
-        const cut = pointAtArcLength(path, pathLength(path) - endClearance);
+        const cut = pointAtArcLength(path, polylineLength(path) - endClearance);
         path = [...path.slice(0, cut.segment + 1), cut.point];
       }
       appendLongitudinal(path, line.width ?? lineWidth);
@@ -1775,6 +1589,23 @@ export function buildIntersectionMarkings(
       const nz = ap.direction[0];
       const path: RoadPoint[] = [[cx - nx * half, cz - nz * half], [cx + nx * half, cz + nz * half]];
       ribbons.push(buildRoadRibbon(path, stopLineWidth, sampleHeight, { elevation, maxSegmentLength }));
+    }
+    for (const ap of approaches) {
+      if (!ap.markings?.crosswalk || ap.direction === undefined || ap.width === undefined) continue;
+      const near = mouthClearance + stopLineWidth / 2 + crosswalkGap;
+      const usable = ap.width * 0.84;
+      const nx = -ap.direction[1];
+      const nz = ap.direction[0];
+      for (let bar = 0; bar < crosswalkBars; bar += 1) {
+        const offset = (crosswalkBars === 1 ? 0 : bar / (crosswalkBars - 1) - 0.5) * usable;
+        const bx = ap.center[0] + nx * offset;
+        const bz = ap.center[1] + nz * offset;
+        const path: RoadPoint[] = [
+          [bx + ap.direction[0] * near, bz + ap.direction[1] * near],
+          [bx + ap.direction[0] * (near + crosswalkDepth), bz + ap.direction[1] * (near + crosswalkDepth)],
+        ];
+        ribbons.push(buildRoadRibbon(path, crosswalkBarWidth, sampleHeight, { elevation, maxSegmentLength }));
+      }
     }
   }
   return ribbons;

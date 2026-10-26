@@ -17,8 +17,8 @@ import type {
   CityFillerClass,
   CityLandmarkClass,
 } from "@jgengine/core/world/cityContent";
-import { circuitKerbs, type CircuitRoute } from "@jgengine/core/world/raceCircuit";
-import type { Street, StreetLevel } from "@jgengine/core/world/streetGenerator";
+import { circuitKerbs, type CircuitRoute } from "@jgengine/core/roads/raceCircuit";
+import type { Street, StreetLevel } from "@jgengine/core/roads/streetGenerator";
 import {
   buildIntersectionMarkings,
   buildRoadRibbon,
@@ -26,7 +26,7 @@ import {
   GROUND_DECAL_LAYERS,
   type IntersectionStreet,
   type RoadRibbon,
-} from "@jgengine/core/world/roads";
+} from "@jgengine/core/roads/roads";
 import { seededStreams } from "@jgengine/core/random/rng";
 
 export interface CityPalette {
@@ -1591,7 +1591,7 @@ function pushSealBlock(
  * edged racing ribbon over the streets it follows, core-derived kerbs through every corner, a
  * checkered start/finish, painted grid boxes, and a striped barrier across each sealed side street.
  * Two merged, vertex-colored meshes — flat decals and standing barriers — so the whole race is two
- * draw calls. Corner geometry belongs to `@jgengine/core/world/raceCircuit`; nothing is re-derived here.
+ * draw calls. Corner geometry belongs to `@jgengine/core/roads/raceCircuit`; nothing is re-derived here.
  */
 export function buildRaceDressing(route: CircuitRoute, sampleHeight: (x: number, z: number) => number): THREE.Mesh[] {
   const points = route.centerline;

@@ -10,7 +10,7 @@ import {
 } from "@jgengine/core/ai/driver";
 import { seededRng, type SeededRng } from "@jgengine/core/random/rng";
 
-import { MAIN_ROUTE } from "@jgengine/core/world/routeCourse";
+import { MAIN_ROUTE } from "@jgengine/core/roads/routeCourse";
 
 import { tuningFrom, type KartTuning } from "../parts/build";
 import { partById, type PartIconId } from "../parts/catalog";

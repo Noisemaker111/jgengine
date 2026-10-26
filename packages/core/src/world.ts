@@ -413,6 +413,31 @@ export {
 } from "./physics/vehicleParts";
 export { VEHICLE_STYLES, vehicleTuning, type VehicleSpec, type VehicleSpecGearbox } from "./physics/vehicleSpec";
 export {
+  GROUND_DECAL_LAYERS,
+  buildJunctionSurface,
+  buildRoadRibbon,
+  buildTrimmedIntersections,
+  dashSegments,
+  offsetPath,
+  trimPathAtJunctions,
+  type IntersectionStreet,
+  type JunctionApproach,
+  type JunctionGeometryOptions,
+  type RoadCut,
+  type RoadJunctionInput,
+  type TrimmedIntersections,
+  type TrimmedRoad,
+} from "./roads/roads";
+export {
+  distanceToRoadEdge,
+  furnitureSpots,
+  parkingSpots,
+  roadSurfaceSampler,
+  sidewalkPoint,
+  sidewalkWidthOf,
+  type RoadSurfaceOptions,
+} from "./roads/streets";
+export {
   type ObjectSlotRejection,
   type ObjectSlotResult,
   type ObjectSlotTransfer,
@@ -907,23 +932,6 @@ export {
 export { POLE_LINE_SCHEMA, resolvePoleLine, type ResolvedPoleLine } from "./world/poleLineKind";
 export { composeRealm } from "./world/realm";
 export { createRegionField, isRegionField, type RegionField } from "./world/regions";
-export {
-  GROUND_DECAL_LAYERS,
-  buildJunctionSurface,
-  buildRoadRibbon,
-  buildTrimmedIntersections,
-  dashSegments,
-  trimBandAtJunctions,
-  trimPathAtJunctions,
-  type BandTrimOptions,
-  type IntersectionStreet,
-  type JunctionApproach,
-  type JunctionGeometryOptions,
-  type RoadCut,
-  type RoadJunctionInput,
-  type TrimmedIntersections,
-  type TrimmedRoad,
-} from "./world/roads";
 export { scatter, type ScatterPoint } from "./world/scatter";
 export {
   CITY_BUILDING_BUDGET,
@@ -995,17 +1003,6 @@ export {
   type VolumeDistribution,
   type WeightedRegionEntry,
 } from "./world/spatialSample";
-export {
-  distanceToRoadEdge,
-  furnitureSpots,
-  laneCenters,
-  offsetPath,
-  parkingSpots,
-  roadSurfaceSampler,
-  sidewalkPoint,
-  sidewalkWidthOf,
-  type RoadSurfaceOptions,
-} from "./world/streets";
 export { solveSupport, toDebrisBodies, type SupportResult } from "./world/support";
 export {
   applyDeltaToSnapshot,

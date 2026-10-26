@@ -78,16 +78,6 @@ export {
 } from "./terrainSurfaces";
 export { TerrainQualityContext, useTerrainQuality } from "./terrainQuality";
 export {
-  createSurfaceRibbonMaterial,
-  resolvePathSurface,
-  RIBBON_FRAME_ATTRIBUTE,
-  ribbonEdgeMargin,
-  ribbonSurfaceFrame,
-  useSurfaceRibbonMaterial,
-  type RibbonSurfaceStyle,
-  type SurfaceRibbonMaterialOptions,
-} from "./surfaceRibbonMaterial";
-export {
   applyGroundEdgeFade,
   buildGroundCoverageMask,
   createGroundEdgeFade,

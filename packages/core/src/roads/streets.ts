@@ -1,49 +1,5 @@
-import type { RoadEnvironmentDescriptor } from "./features";
-import { pathLength, type DashExclusion, type RoadPoint } from "./roads";
-
-function normalAt(path: readonly RoadPoint[], index: number): readonly [number, number] {
-  const prev = path[Math.max(0, index - 1)]!;
-  const next = path[Math.min(path.length - 1, index + 1)]!;
-  const dx = next[0] - prev[0];
-  const dz = next[1] - prev[1];
-  const length = Math.hypot(dx, dz) || 1;
-  return [-dz / length, dx / length];
-}
-
-/**
- * Offset a centerline sideways by a signed distance along its local perpendicular — the
- * building block for lanes, curb lines, and sidewalk paths. Positive offsets fall on the
- * left of the direction of travel, negative on the right.
- */
-export function offsetPath(path: readonly RoadPoint[], offset: number): readonly RoadPoint[] {
-  return path.map((point, index) => {
-    const [nx, nz] = normalAt(path, index);
-    return [point[0] + nx * offset, point[1] + nz * offset] as const;
-  });
-}
-
-/** A directed lane derived from a road: an offset centerline plus its direction of travel. */
-export interface StreetLane {
-  /** Lane centerline, ordered in the direction of travel. */
-  path: readonly RoadPoint[];
-  /** "forward" runs with the road's declared path order; "reverse" runs against it. */
-  direction: "forward" | "reverse";
-}
-
-/**
- * Two right-hand-traffic lane centerlines for a road — each offset a quarter of the drivable
- * width from the center and ordered in its direction of travel. Feed a lane's `path` straight
- * into `nav/pathFollow` for traffic AI, or use its endpoints as directed car spawn points.
- */
-export function laneCenters(road: RoadEnvironmentDescriptor): readonly [StreetLane, StreetLane] {
-  const laneOffset = road.width / 4;
-  const forward = offsetPath(road.path, -laneOffset);
-  const reverse = offsetPath(road.path, laneOffset);
-  return [
-    { path: forward, direction: "forward" },
-    { path: [...reverse].reverse(), direction: "reverse" },
-  ];
-}
+import type { RoadEnvironmentDescriptor } from "../world/features";
+import { offsetPath, polylineLength, type RoadPoint } from "./roads";
 
 /** Resolved sidewalk band widths for a road; zero when the road declares no sidewalk. */
 export function sidewalkWidthOf(road: RoadEnvironmentDescriptor): number {
@@ -118,7 +74,7 @@ export function furnitureSpots(
   const stagger = options.stagger ?? true;
   const outset = options.outset ?? 0;
   if (spacing <= 0) return [];
-  const total = pathLength(road.path);
+  const total = polylineLength(road.path);
   const curbOffset = road.width / 2 + 0.6 + outset;
   const spots: FurnitureSpot[] = [];
   let index = 0;
@@ -170,7 +126,7 @@ export function parkingSpots(
   const spacing = options.spacing ?? 18;
   const sides = options.sides ?? "both";
   if (spacing <= 0) return [];
-  const total = pathLength(road.path);
+  const total = polylineLength(road.path);
   const edgeOffset = road.width / 2 - 1.2;
   const spots: ParkingSpot[] = [];
   for (let along = spacing; along < total - spacing / 2; along += spacing) {
@@ -272,28 +228,13 @@ export function sidewalkPoint(
   const paths = sidewalkPaths(road);
   const path = side === "left" ? paths[0] : paths[1];
   if (path === undefined) return null;
-  const along = Math.max(0, Math.min(1, fraction)) * pathLength(path);
+  const along = Math.max(0, Math.min(1, fraction)) * polylineLength(path);
   return pointAlong(path, along).point;
 }
 
-/**
- * The two curb lines of a road — offset polylines running along the outer edge of the asphalt on
- * each side. Mesh these with a thin darker ribbon to give the road a curb/edge strip instead of a
- * hard asphalt-to-terrain seam. `inset` (default 0) nudges the line inward off the raw edge so the
- * strip straddles the border.
- */
-export function curbPaths(
-  road: RoadEnvironmentDescriptor,
-  inset = 0,
-): readonly [readonly RoadPoint[], readonly RoadPoint[]] {
-  const edge = road.width / 2 - inset;
-  return [offsetPath(road.path, edge), offsetPath(road.path, -edge)];
-}
-
 // ---------------------------------------------------------------------------
-// Road junctions: welding intersections, interrupting markings, stop lines and
-// crosswalks. Junction detection is a multi-road seam so it lives here alongside
-// the other cross-road helpers; the disc-patch geometry lives in `roads.ts`.
+// Road junctions: where authored roads cross. The welded surfaces and their paint are
+// built from these by `buildTrimmedIntersections` / `buildIntersectionMarkings` in `roads.ts`.
 // ---------------------------------------------------------------------------
 
 /** A single arm of a junction: the road width plus the outward direction the road leaves the center. */
@@ -509,85 +450,4 @@ function findNear(candidates: JunctionCandidate[], p: RoadPoint, mergeSq: number
     if (dx * dx + dz * dz <= mergeSq) return c;
   }
   return null;
-}
-
-/** Circular marking-exclusion zones for the junctions, sized to hide the center line under each patch. */
-export function junctionExclusions(
-  junctions: readonly RoadJunction[],
-  pad = 0.5,
-): readonly DashExclusion[] {
-  return junctions.map((j) => ({ center: j.center, radius: j.radius + pad }));
-}
-
-/** Options for {@link junctionMarkings}. */
-export interface JunctionMarkingOptions {
-  /** Emit a stop-line bar across each approach. Default true. */
-  stopLines?: boolean;
-  /** Emit crosswalk bars at each approach. Default true. */
-  crosswalks?: boolean;
-  /** Number of zebra bars per crosswalk. Default 5. */
-  crosswalkBars?: number;
-  /** Clear gap outside the patch before markings start. Default 0.6. */
-  gap?: number;
-  /** Depth (along travel) of the crosswalk band. Default 2.4. */
-  crosswalkDepth?: number;
-}
-
-/** Thin marking polylines for a junction: stop-line bars and crosswalk bars, ready for {@link buildRoadRibbon}. */
-export interface JunctionMarkings {
-  /** One bar per approach, perpendicular to travel just outside the patch. */
-  stopLines: readonly (readonly RoadPoint[])[];
-  /** Continental (parallel-to-travel) zebra bars, `crosswalkBars` per approach. */
-  crosswalkBars: readonly (readonly RoadPoint[])[];
-}
-
-/**
- * Data-driven junction entry markings: a stop-line bar across each approach and a band of crosswalk
- * bars just outside the welded patch. Each returned polyline is a thin centerline meant to be meshed
- * with {@link buildRoadRibbon} at a small width. Fully skippable per-feature via the options.
- */
-export function junctionMarkings(
-  junction: RoadJunction,
-  options: JunctionMarkingOptions = {},
-): JunctionMarkings {
-  const wantStop = options.stopLines ?? true;
-  const wantCross = options.crosswalks ?? true;
-  const barCount = Math.max(1, Math.floor(options.crosswalkBars ?? 5));
-  const gap = options.gap ?? 0.6;
-  const depth = options.crosswalkDepth ?? 2.4;
-  const [cx, cz] = junction.center;
-  const stopLines: (readonly RoadPoint[])[] = [];
-  const crosswalkBars: (readonly RoadPoint[])[] = [];
-  for (const approach of junction.approaches) {
-    const [dx, dz] = approach.direction;
-    // Across-the-road axis, perpendicular to travel.
-    const ax = -dz;
-    const az = dx;
-    const half = approach.width / 2;
-    const stopDist = junction.radius + gap;
-    if (wantStop) {
-      const px = cx + dx * stopDist;
-      const pz = cz + dz * stopDist;
-      stopLines.push([
-        [px + ax * half, pz + az * half],
-        [px - ax * half, pz - az * half],
-      ]);
-    }
-    if (wantCross) {
-      const near = stopDist + 0.4;
-      const barWidth = half * 2 * 0.16;
-      const usable = half * 2 - barWidth;
-      for (let b = 0; b < barCount; b += 1) {
-        const frac = barCount === 1 ? 0 : b / (barCount - 1) - 0.5;
-        const offset = frac * usable;
-        const bx = cx + ax * offset;
-        const bz = cz + az * offset;
-        crosswalkBars.push([
-          [bx + dx * near, bz + dz * near],
-          [bx + dx * (near + depth), bz + dz * (near + depth)],
-        ]);
-      }
-    }
-  }
-  return { stopLines, crosswalkBars };
 }

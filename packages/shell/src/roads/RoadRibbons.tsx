@@ -2,18 +2,18 @@ import { Fragment, useMemo } from "react";
 import { BufferAttribute, BufferGeometry, Color, DoubleSide } from "three";
 import { isAsphaltSurface, type RoadEnvironmentDescriptor, type TerrainDetailMaterialConfig } from "@jgengine/core/world/features";
 import {
-  buildJunctionSurface,
+  buildIntersectionMarkings,
   buildRoadRibbon,
+  buildTrimmedIntersections,
   dashSegments,
   GROUND_DECAL_LAYERS,
+  offsetPath,
   roundPathCorners,
-  trimPathAtJunctions,
-  type JunctionApproach,
   type RoadJunctionInput,
   type RoadPoint,
   type RoadRibbon,
-} from "@jgengine/core/world/roads";
-import { findRoadJunctions, offsetPath, sidewalkWidthOf, type RoadJunction } from "@jgengine/core/world/streets";
+} from "@jgengine/core/roads/roads";
+import { findRoadJunctions, sidewalkWidthOf, type RoadJunction } from "@jgengine/core/roads/streets";
 import type { TerrainField } from "@jgengine/core/world/terrain";
 
 import { useSurfaceScan, type SurfaceScanTextures } from "../render/surfaceScanTextures";
@@ -26,7 +26,7 @@ import {
   ribbonSurfaceFrame,
   useSurfaceRibbonMaterial,
   type RibbonSurfaceScan,
-} from "../terrain/surfaceRibbonMaterial";
+} from "./surfaceRibbonMaterial";
 import { useTerrainQuality } from "../terrain/terrainQuality";
 
 /**
@@ -169,47 +169,8 @@ export function roadJunctionInput(junction: RoadJunction): RoadJunctionInput {
       angle: Math.atan2(approach.direction[0], approach.direction[1]),
       width: approach.width,
     })),
+    elevation: junction.elevation,
   };
-}
-
-/**
- * Split every path segment at the junction centers that fall on it, inserting the junction point as
- * a real vertex so {@link trimPathAtJunctions} (which matches junctions to path vertices) can cut the
- * ribbon back there. Authored road crossings from `findRoadJunctions` land mid-segment, not on the
- * hand-authored vertices, so without this the trimmer would never see them.
- * @internal
- */
-export function insertJunctionNodes(
-  path: readonly RoadPoint[],
-  junctions: readonly RoadJunctionInput[],
-  tolerance = 1e-3,
-): RoadPoint[] {
-  if (path.length < 2) return path.map((p) => [p[0], p[1]] as RoadPoint);
-  const out: RoadPoint[] = [[path[0]![0], path[0]![1]]];
-  for (let i = 0; i < path.length - 1; i += 1) {
-    const a = path[i]!;
-    const b = path[i + 1]!;
-    const abx = b[0] - a[0];
-    const abz = b[1] - a[1];
-    const lengthSq = abx * abx + abz * abz;
-    if (lengthSq > 1e-12) {
-      const hits: { t: number; x: number; z: number }[] = [];
-      for (const j of junctions) {
-        const t = ((j.x - a[0]) * abx + (j.z - a[1]) * abz) / lengthSq;
-        if (t <= 1e-6 || t >= 1 - 1e-6) continue; // coincident with an existing vertex — already covered
-        const px = a[0] + abx * t;
-        const pz = a[1] + abz * t;
-        if (Math.hypot(j.x - px, j.z - pz) <= tolerance) hits.push({ t, x: j.x, z: j.z });
-      }
-      hits.sort((u, v) => u.t - v.t);
-      for (const hit of hits) {
-        const prev = out[out.length - 1]!;
-        if (Math.hypot(prev[0] - hit.x, prev[1] - hit.z) > 1e-6) out.push([hit.x, hit.z]);
-      }
-    }
-    out.push([b[0], b[1]]);
-  }
-  return out;
 }
 
 /** One welded asphalt junction surface plus the color it should render in. */
@@ -224,62 +185,47 @@ export interface AuthoredRoadNetwork {
   roadPaths: RoadPoint[][][];
   /** One welded surface per junction that at least one trimmed ribbon actually ends at. */
   junctionSurfaces: JunctionSurface[];
+  /** Stop lines and zebra crosswalks at every multi-arm junction mouth, when paint was asked for. */
+  junctionPaint: RoadRibbon[];
 }
 
+/** Stop-line width of authored crossings, metres. */
+const STOP_LINE_WIDTH = 0.5;
+
 /**
- * Trim every authored road back to its junction boundaries and weld one surface into each crossing —
- * the drop-in replacement for the old "full ribbons + floating disc" model. Each road's path gets its
- * junction crossings inserted as vertices, is trimmed by {@link trimPathAtJunctions} (a through-road
- * splits in two), and the terminal cross-section corners feed {@link buildJunctionSurface}. Ribbon
- * corners drape at the road's own authored `elevation`, so each welded corner meets the ribbon end at
- * the exact same height (seam-shared, per {@link GROUND_DECAL_LAYERS}); the surface interior drapes at
- * the junction's representative elevation. Pure geometry, so the shell just meshes the result.
+ * Trim every authored road back to its junction boundaries and weld one surface into each crossing,
+ * through the core's one intersection builder ({@link buildTrimmedIntersections}): ribbon corners
+ * drape at the road's own `elevation`, each surface at its junction's. With `paint`, every multi-arm
+ * mouth gets a stop line and a zebra crosswalk ({@link buildIntersectionMarkings}).
  * @internal
  */
 export function buildAuthoredRoadNetwork(
   roads: readonly RoadEnvironmentDescriptor[],
   junctions: readonly RoadJunction[],
   sampleHeight: (x: number, z: number) => number,
+  { paint = false }: { paint?: boolean } = {},
 ): AuthoredRoadNetwork {
-  const inputs = junctions.map(roadJunctionInput);
-  const roadPaths: RoadPoint[][][] = [];
-  const approachesByJunction = new Map<number, JunctionApproach[]>();
-
-  for (const road of roads) {
-    if (road.path.length < 2 || road.width <= 0) {
-      roadPaths.push([]);
-      continue;
-    }
-    const noded = insertJunctionNodes(road.path, inputs);
-    const subs = trimPathAtJunctions(noded, road.width, inputs);
-    roadPaths.push(subs.map((sub) => sub.path));
-    for (const sub of subs) {
-      for (const cut of sub.cuts) {
-        const approach: JunctionApproach = {
-          center: cut.center,
-          left: [cut.left[0], sampleHeight(cut.left[0], cut.left[1]) + road.elevation, cut.left[1]],
-          right: [cut.right[0], sampleHeight(cut.right[0], cut.right[1]) + road.elevation, cut.right[1]],
-        };
-        const list = approachesByJunction.get(cut.junctionIndex);
-        if (list) list.push(approach);
-        else approachesByJunction.set(cut.junctionIndex, [approach]);
-      }
-    }
-  }
-
-  const junctionSurfaces: JunctionSurface[] = [];
-  for (const ji of [...approachesByJunction.keys()].sort((p, q) => p - q)) {
-    const junction = junctions[ji]!;
-    const ribbon = buildJunctionSurface(
-      { x: junction.center[0], z: junction.center[1] },
-      approachesByJunction.get(ji)!,
-      sampleHeight,
-      { elevation: junction.elevation },
-    );
-    junctionSurfaces.push({ color: junction.color, ribbon });
-  }
-
-  return { roadPaths, junctionSurfaces };
+  const intersections = buildTrimmedIntersections(
+    roads.map((road) => ({
+      path: road.path,
+      width: road.width,
+      elevation: road.elevation,
+      ...(paint && road.markings !== false ? { markings: { stopLine: true, crosswalk: true } } : {}),
+    })),
+    junctions.map(roadJunctionInput),
+    sampleHeight,
+  );
+  const roadPaths: RoadPoint[][][] = roads.map(() => []);
+  intersections.trimmed.forEach((trimmed, index) => roadPaths[intersections.trimmedStreetIndices[index]!]!.push(trimmed.path));
+  const junctionSurfaces = intersections.junctions.map((ribbon, index) => ({
+    color: junctions[intersections.junctionIndices[index]!]!.color,
+    ribbon,
+  }));
+  const paintElevation = junctions.reduce((top, junction) => Math.max(top, junction.elevation), 0) + MARKING_LIFT;
+  const junctionPaint = paint
+    ? buildIntersectionMarkings(intersections, sampleHeight, { elevation: paintElevation, stopLineWidth: STOP_LINE_WIDTH })
+    : [];
+  return { roadPaths, junctionSurfaces, junctionPaint };
 }
 
 /**
@@ -499,8 +445,11 @@ function surfaceGroup(road: RoadEnvironmentDescriptor): string {
 
 function RoadGroup({ roads, field, group }: { roads: readonly RoadEnvironmentDescriptor[]; field: TerrainField; group: string }) {
   const junctions = useMemo(() => findRoadJunctions(roads), [roads]);
-  const network = useMemo(() => buildAuthoredRoadNetwork(roads, junctions, (x, z) => field.sampleHeight(x, z)), [roads, junctions, field]);
   const paved = group === "paved";
+  const network = useMemo(
+    () => buildAuthoredRoadNetwork(roads, junctions, (x, z) => field.sampleHeight(x, z), { paint: paved }),
+    [roads, junctions, field, paved],
+  );
   return (
     <>
       {roads.map((entry, index) => (
@@ -508,8 +457,7 @@ function RoadGroup({ roads, field, group }: { roads: readonly RoadEnvironmentDes
       ))}
       <RoadJunctions
         surfaces={network.junctionSurfaces}
-        junctions={paved ? junctions : []}
-        field={field}
+        paint={network.junctionPaint}
         surfaceDetail={group !== "flat"}
         surface={paved || group === "flat" ? "road" : group}
         scan={roads.find((road) => road.materials?.road !== undefined)?.materials?.road}

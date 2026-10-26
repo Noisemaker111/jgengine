@@ -18,7 +18,7 @@ import { editorLayers } from "../../editorLayers";
 import { fearAt, PANIC_FEAR } from "../cityRuntime";
 import { createResidentAgents, residentAgentStore, type ResidentAgentSystem } from "./residentAgents";
 import { cityRoadWidth, type CityLayout } from "@jgengine/core/world/cityLayout";
-import { nearestOnPath } from "@jgengine/core/world/roads";
+import { nearestOnPath } from "@jgengine/core/roads/roads";
 
 import { cityLayout, LOT_ROADS } from "./cityLayout";
 import { onCityRelaid, type BuildingFootprintXZ } from "./setup";

@@ -1,10 +1,10 @@
 import { describe, expect, test } from "bun:test";
-import { findRoadJunctions } from "@jgengine/core/world/streets";
+import { findRoadJunctions } from "@jgengine/core/roads/streets";
 import type { RoadEnvironmentDescriptor } from "@jgengine/core/world/features";
 
 import { Color } from "three";
 
-import { buildAuthoredRoadNetwork, buildKerbFaces, gutterColor, insertJunctionNodes, roadJunctionInput } from "./RoadRibbons";
+import { buildAuthoredRoadNetwork, buildKerbFaces, gutterColor, roadJunctionInput } from "./RoadRibbons";
 
 function road(path: readonly (readonly [number, number])[], width = 8): RoadEnvironmentDescriptor {
   return {
@@ -38,22 +38,27 @@ describe("roadJunctionInput", () => {
   });
 });
 
-describe("insertJunctionNodes", () => {
-  test("splits a segment at a mid-span junction, inserting the exact node", () => {
-    const noded = insertJunctionNodes(
-      [[-20, 0], [20, 0]],
-      [{ x: 0, z: 0, arms: [] }],
-    );
-    expect(noded).toEqual([[-20, 0], [0, 0], [20, 0]]);
+describe("buildAuthoredRoadNetwork paint", () => {
+  test("paved roads get stop lines and zebra crosswalks at each approach; unpaved get none", () => {
+    const roads = [road([[-30, 0], [30, 0]]), road([[0, -30], [0, 30]])];
+    const junctions = findRoadJunctions(roads);
+    expect(buildAuthoredRoadNetwork(roads, junctions, flat).junctionPaint.length).toBe(0);
+    const painted = buildAuthoredRoadNetwork(roads, junctions, flat, { paint: true });
+    // Four approaches, each one stop line plus five crosswalk bars.
+    expect(painted.junctionPaint.length).toBe(4 * (1 + 5));
+    const top = Math.max(...junctions.map((junction) => junction.elevation));
+    for (const ribbon of painted.junctionPaint) {
+      for (let i = 1; i < ribbon.positions.length; i += 3) expect(ribbon.positions[i]!).toBeGreaterThan(top);
+    }
   });
 
-  test("does not duplicate a node already at a vertex", () => {
-    const noded = insertJunctionNodes(
-      [[0, 0], [20, 0]],
-      [{ x: 0, z: 0, arms: [] }],
-    );
-    expect(noded).toEqual([[0, 0], [20, 0]]);
+  test("a road authored with markings off gets no stop line or crosswalk at its mouths", () => {
+    const plain = { ...road([[-30, 0], [30, 0]]), markings: false } as RoadEnvironmentDescriptor;
+    const roads = [plain, road([[0, -30], [0, 30]])];
+    const painted = buildAuthoredRoadNetwork(roads, findRoadJunctions(roads), flat, { paint: true });
+    expect(painted.junctionPaint.length).toBe(2 * (1 + 5));
   });
+
 });
 
 describe("buildAuthoredRoadNetwork", () => {

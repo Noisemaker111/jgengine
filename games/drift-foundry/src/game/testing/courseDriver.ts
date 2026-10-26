@@ -1,5 +1,5 @@
 import { steerToward } from "@jgengine/core/movement/steering";
-import { MAIN_ROUTE, type CourseVec2 } from "@jgengine/core/world/routeCourse";
+import { MAIN_ROUTE, type CourseVec2 } from "@jgengine/core/roads/routeCourse";
 
 import type { RunSession, SessionSnapshot } from "../run/session";
 import { ROW_SIX_TRACK, trackById, type Track } from "../tracks/catalog";

@@ -1,23 +1,21 @@
 import { describe, expect, test } from "bun:test";
-import { DEFAULT_ROAD_SCAN, environment, road } from "./features";
-import { summarizeEnvironment } from "./environmentSummary";
+import { DEFAULT_ROAD_SCAN, environment, road } from "../world/features";
+import { summarizeEnvironment } from "../world/environmentSummary";
 import {
   GROUND_DECAL_LAYERS,
   buildIntersectionMarkings,
-  buildJunctionConnector,
-  buildJunctionPatch,
   buildJunctionSurface,
   buildRoadRibbon,
   buildTrimmedIntersections,
   dashSegments,
   isOnRoad,
   nearestOnPath,
-  pathLength,
+  polylineLength,
   roundPathCorners,
-  trimBandAtJunctions,
   trimPathAtJunctions,
   type JunctionApproach,
   type RoadJunctionInput,
+  type RoadPoint,
 } from "./roads";
 
 const flat = () => 0;
@@ -63,19 +61,6 @@ describe("world/roads", () => {
     expect(first[first.length - 1]![0]).toBeCloseTo(3);
   });
 
-  test("dashSegments drops dashes whose midpoint falls inside a junction exclusion", () => {
-    const full = dashSegments([[0, 0], [60, 0]], 3, 3);
-    const clipped = dashSegments([[0, 0], [60, 0]], 3, 3, [{ center: [30, 0], radius: 8 }]);
-    expect(clipped.length).toBeLessThan(full.length);
-    // No surviving dash has its midpoint within the excluded circle.
-    for (const dash of clipped) {
-      const a = dash[0]!;
-      const b = dash[dash.length - 1]!;
-      const mid: readonly [number, number] = [(a[0] + b[0]) / 2, (a[1] + b[1]) / 2];
-      expect(Math.hypot(mid[0] - 30, mid[1] - 0)).toBeGreaterThan(8);
-    }
-  });
-
   test("center-line dash ribbon stays centered on the path regardless of width", () => {
     for (const width of [0.3, 1, 4]) {
       const ribbon = buildRoadRibbon([[0, 0], [20, 0]], width, () => 0, { maxSegmentLength: 20 });
@@ -89,27 +74,6 @@ describe("world/roads", () => {
     }
   });
 
-  test("buildJunctionPatch drapes a bounded disc fan centered on the crossing", () => {
-    const patch = buildJunctionPatch([10, 20], 5, (x, z) => x * 0.1 + z * 0.05, {
-      elevation: 0.2,
-      segments: 12,
-    });
-    // Center vertex + one ring vertex per segment.
-    expect(patch.positions.length).toBe((12 + 1) * 3);
-    expect(patch.indices.length).toBe(12 * 3);
-    // Center vertex sits at the junction center, draped + elevation.
-    expect(patch.positions[0]).toBeCloseTo(10, 6);
-    expect(patch.positions[2]).toBeCloseTo(20, 6);
-    expect(patch.positions[1]).toBeCloseTo(10 * 0.1 + 20 * 0.05 + 0.2, 6);
-    // Every ring vertex lies within `radius` of the center in XZ.
-    for (let i = 1; i <= 12; i += 1) {
-      const dx = patch.positions[i * 3]! - 10;
-      const dz = patch.positions[i * 3 + 2]! - 20;
-      expect(Math.hypot(dx, dz)).toBeLessThanOrEqual(5 + 1e-6);
-    }
-    // Degenerate radius yields no geometry.
-    expect(buildJunctionPatch([0, 0], 0, () => 0).positions.length).toBe(0);
-  });
 
   test("nearestOnPath and isOnRoad answer proximity queries", () => {
     const path = [[0, 0], [100, 0]] as const;
@@ -119,7 +83,7 @@ describe("world/roads", () => {
     expect(sample?.tangent[0]).toBeCloseTo(1);
     expect(isOnRoad(path, 8, 50, 3)).toBe(true);
     expect(isOnRoad(path, 8, 50, 5)).toBe(false);
-    expect(pathLength(path)).toBe(100);
+    expect(polylineLength(path)).toBe(100);
   });
 
   test("environment() carries roads and summarizeEnvironment counts them", () => {
@@ -280,7 +244,50 @@ describe("buildJunctionSurface", () => {
 });
 
 describe("buildTrimmedIntersections", () => {
-  test("exposes approaches and connects linear dressing smoothly through a two-arm turn", () => {
+  const cross: RoadJunctionInput = { x: 0, z: 0, arms: [{ angle: 0, width: 8 }, { angle: Math.PI / 2, width: 8 }, { angle: Math.PI, width: 8 }, { angle: -Math.PI / 2, width: 8 }] };
+
+  test("a junction mid-span of a straight segment splits that street into two trimmed sub-paths", () => {
+    const result = buildTrimmedIntersections(
+      [{ path: [[-30, 0], [30, 0]], width: 8 }, { path: [[0, -30], [0, 30]], width: 8 }],
+      [cross],
+      flat,
+    );
+    expect(result.trimmedStreetIndices.filter((s) => s === 0).length).toBe(2);
+    expect(result.trimmedStreetIndices.filter((s) => s === 1).length).toBe(2);
+    for (const piece of result.trimmed) for (const [x, z] of piece.path) expect(Math.hypot(x, z)).toBeGreaterThan(1);
+    expect(result.junctions.length).toBe(1);
+  });
+
+  test("per-street and per-junction elevation lift their own ribbons", () => {
+    const result = buildTrimmedIntersections(
+      [{ path: [[-30, 0], [30, 0]], width: 8, elevation: 0.1 }, { path: [[0, -30], [0, 30]], width: 8, elevation: 0.3 }],
+      [{ ...cross, elevation: 0.5 }],
+      flat,
+    );
+    result.ribbons.forEach((ribbon, i) => {
+      expect(ribbon.positions[1]).toBeCloseTo(result.trimmedStreetIndices[i] === 0 ? 0.1 : 0.3, 5);
+    });
+    expect(result.junctions[0]!.positions[1]).toBeCloseTo(0.5, 5);
+  });
+
+  test("crosswalk intent adds zebra bars beyond the stop line at multi-arm approaches only", () => {
+    const streets = (crosswalk: boolean) => [
+      { path: [[-30, 0], [30, 0]] as RoadPoint[], width: 8, markings: { stopLine: true, crosswalk } },
+      { path: [[0, -30], [0, 30]] as RoadPoint[], width: 8, markings: { stopLine: true, crosswalk } },
+    ];
+    const plain = buildIntersectionMarkings(buildTrimmedIntersections(streets(false), [cross], flat), flat);
+    const zebra = buildIntersectionMarkings(buildTrimmedIntersections(streets(true), [cross], flat), flat, { crosswalkBars: 3 });
+    expect(plain.length).toBe(4);
+    expect(zebra.length).toBe(4 + 4 * 3);
+    const nearest = (ribbon: { positions: ArrayLike<number> }) => {
+      let best = Infinity;
+      for (let i = 0; i < ribbon.positions.length; i += 3) best = Math.min(best, Math.hypot(ribbon.positions[i]!, ribbon.positions[i + 2]!));
+      return best;
+    };
+    const stopReach = Math.max(...plain.map(nearest));
+    for (const bar of zebra.slice(4)) expect(nearest(bar)).toBeGreaterThan(stopReach);
+  });
+  test("exposes approaches for a two-arm turn", () => {
     const turn: RoadJunctionInput = {
       x: 0,
       z: 0,
@@ -292,12 +299,6 @@ describe("buildTrimmedIntersections", () => {
       flatH,
     );
     expect(result.junctionApproaches.length).toBe(1);
-    const connector = buildJunctionConnector(turn, result.junctionApproaches[0]!, 10)!;
-    expect(connector.length).toBe(11);
-    expect(connector[0]).toEqual(result.junctionApproaches[0]![0]!.center);
-    expect(connector[connector.length - 1]).toEqual(result.junctionApproaches[0]![1]!.center);
-    expect(connector.some(([x, z]) => x > 0 && z > 0)).toBe(true);
-    expect(buildJunctionConnector(turn, [...result.junctionApproaches[0]!, result.junctionApproaches[0]![0]!])).toBeNull();
   });
 
   test("a two-arm right-angle turn rounds both curbs without a diagonal cap", () => {
@@ -788,63 +789,6 @@ describe("buildJunctionSurface simple-boundary triangulation (defect 2: shards)"
   }
 });
 
-describe("trimBandAtJunctions (defect 3: sidewalk/parallel-band trimming)", () => {
-  test("a band parallel to a through-road is cut into two sub-paths around a 4-way junction", () => {
-    // radius = maxHalf(4) + margin(0.25) + bandHalf(1.5) + curbAllow(min(2, 0.35*8)=2) = 7.75.
-    const band: [number, number][] = [
-      [-40, 6],
-      [40, 6],
-    ];
-    const subs = trimBandAtJunctions(band, 3, [crossJunction(8)]);
-    expect(subs.length).toBe(2);
-    const r = 4 + 0.25 + 1.5 + 2;
-    const boundaryX = Math.sqrt(r * r - 36);
-    const near = subs.find((s) => s[0]![0] < 0)!;
-    const far = subs.find((s) => s[0]![0] >= 0)!;
-    expect(near[near.length - 1]![0]).toBeCloseTo(-boundaryX, 6);
-    expect(far[0]![0]).toBeCloseTo(boundaryX, 6);
-    for (const sub of subs) {
-      for (const p of sub) expect(Math.hypot(p[0], p[1])).toBeGreaterThan(r - 1e-6);
-    }
-  });
-
-  test("a band far from every junction passes through untouched", () => {
-    const band: [number, number][] = [
-      [-40, 100],
-      [40, 100],
-    ];
-    const subs = trimBandAtJunctions(band, 3, [crossJunction(8)]);
-    expect(subs.length).toBe(1);
-    expect(subs[0]).toEqual([
-      [-40, 100],
-      [40, 100],
-    ]);
-  });
-
-  test("clearance widens the apron, moving the cut farther out", () => {
-    const band: [number, number][] = [
-      [-40, 6],
-      [40, 6],
-    ];
-    const tight = trimBandAtJunctions(band, 3, [crossJunction(8)]);
-    const wide = trimBandAtJunctions(band, 3, [crossJunction(8)], { clearance: 5 });
-    const tightGap = tight.find((s) => s[0]![0] >= 0)![0]![0];
-    const wideGap = wide.find((s) => s[0]![0] >= 0)![0]![0];
-    expect(wideGap).toBeGreaterThan(tightGap);
-  });
-
-  test("no junctions leaves the band intact", () => {
-    const band: [number, number][] = [
-      [0, 0],
-      [10, 0],
-      [20, 5],
-    ];
-    const subs = trimBandAtJunctions(band, 3, []);
-    expect(subs.length).toBe(1);
-    expect(subs[0]!.length).toBe(3);
-  });
-});
-
 describe("shared intersection dressing geometry", () => {
   const armPath = (angle: number, length = 40): readonly [readonly [number, number], readonly [number, number]] => [
     [0, 0],
@@ -965,7 +909,6 @@ describe("shared intersection dressing geometry", () => {
       [{ x: 0, z: 0, arms: [{ angle: 0, width: 8 }, { angle: Math.PI / 2, width: 8 }] }],
       flatH,
     );
-    expect(buildJunctionConnector({ x: 0, z: 0 }, result.junctionApproaches[0]!, Infinity)!.length).toBe(9);
     const paint = buildIntersectionMarkings(result, flatH, { connectorSegments: Infinity, maxSegmentLength: 0 });
     expect(paint.length).toBe(3);
     expect(paint.reduce((sum, mesh) => sum + mesh.positions.length, 0)).toBeLessThan(10_000);

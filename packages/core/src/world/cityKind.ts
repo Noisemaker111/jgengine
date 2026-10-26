@@ -59,12 +59,12 @@ import {
   type CircuitGate,
   type CircuitRoute,
   type CircuitSealKind,
-} from "./raceCircuit";
-import { furnitureSpots, parkingSpots } from "./streets";
+} from "../roads/raceCircuit";
+import { furnitureSpots, parkingSpots } from "../roads/streets";
 import { CITY_BUILDING_BUDGET, budgetWarning, placedCoverage } from "./scatterCoverage";
 import type { RoadEnvironmentDescriptor } from "./features";
 import type { WorldSolid } from "./worldSolids";
-import type { RoadPoint } from "./roads";
+import type { RoadPoint } from "../roads/roads";
 import {
   generateStreets,
   streetNetworkMode,
@@ -73,7 +73,7 @@ import {
   type StreetNetwork,
   type StreetNetworkRules,
   type Street,
-} from "./streetGenerator";
+} from "../roads/streetGenerator";
 import {
   buildablePolygon,
   carveCorridors,

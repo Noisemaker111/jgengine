@@ -7,7 +7,7 @@ import {
   resolveCityLotContent,
 } from "./cityGenerator";
 import { CITY_LANDMARK_CLASSES, CITY_LOT_CLASSES, type CityLandmarkClass, type CityLotClass } from "./cityContent";
-import { isOnRoad, nearestOnPath } from "./roads";
+import { isOnRoad, nearestOnPath } from "../roads/roads";
 
 describe("cityGenerator — plot-first city", () => {
   const city = generateCity({ seed: "spec-city", content: true }, 300, 300);

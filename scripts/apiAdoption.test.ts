@@ -48,6 +48,6 @@ describe("API adoption evidence", () => {
 
   test("curated barrels do not duplicate the underlying declaration gate", () => {
     expect(isCanonicalDeclarationImport("@jgengine/core/world")).toBe(false);
-    expect(isCanonicalDeclarationImport("@jgengine/core/world/roads")).toBe(true);
+    expect(isCanonicalDeclarationImport("@jgengine/core/roads/roads")).toBe(true);
   });
 });

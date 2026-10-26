@@ -1,4 +1,4 @@
-import { MAIN_ROUTE, type CourseFix } from "@jgengine/core/world/routeCourse";
+import { MAIN_ROUTE, type CourseFix } from "@jgengine/core/roads/routeCourse";
 
 import type { KartTuning } from "../parts/build";
 import { ROW_SIX_TRACK, type Track } from "../tracks/catalog";

@@ -41,7 +41,7 @@ Read from `src/game/{run,parts,route,compactor,vehicle}`. Numbers are what the b
     12 m closer, or the night crew brings both surges 6 s earlier and 0.6 m/s harder. Same seed and
     same run count, same sequence.
   - [x] Tracks. Six layouts in `src/game/tracks/`, each built with `buildRouteCourse`
-    (`@jgengine/core/world/routeCourse`) on rolling yard ground: one shortcut branch, timed or standing
+    (`@jgengine/core/roads/routeCourse`) on rolling yard ground: one shortcut branch, timed or standing
     hazard spans, its own sky/fog/ground band and props from the JGengine model library.
     Slag River (690 m, molten channels and slick spill, LADLE BRIDGE shortcut 123–251 m, dusk red-orange),
     Flooded Quarry (792 m, standing water and a deep pool on the PIT WADE cut 459–576 m, grey rain),

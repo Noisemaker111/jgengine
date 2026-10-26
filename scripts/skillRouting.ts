@@ -53,6 +53,7 @@ export const CORE_DOMAIN_SKILLS: Record<string, string> = {
   puzzle: "jgengine-gameplay",
   random: "jgengine-gameplay",
   relation: "jgengine-gameplay",
+  roads: "jgengine-world",
   render: "jgengine-ui",
   rules: "jgengine-gameplay",
   run: "jgengine-gameplay",

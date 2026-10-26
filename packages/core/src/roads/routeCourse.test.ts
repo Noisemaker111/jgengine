@@ -1,7 +1,7 @@
 import { describe, expect, test } from "bun:test";
 
 import { createRaceState, everyoneFinishes, raceTrack } from "@jgengine/core/game/race";
-import { buildRouteCourse, MAIN_ROUTE, type RouteCourseSpec } from "@jgengine/core/world/routeCourse";
+import { buildRouteCourse, MAIN_ROUTE, type RouteCourseSpec } from "@jgengine/core/roads/routeCourse";
 
 const HALF = Math.PI / 2;
 
