@@ -3,7 +3,7 @@ import { useEffect, useReducer, type CSSProperties, type ReactNode } from "react
 import type { RebindRow, RebindSession } from "@jgengine/core/input/rebindSession";
 
 import { Keycap } from "../keyHint";
-import { hudType } from "../hud/hudTokens";
+import { hudType } from "@jgengine/core/hud/hudTokens";
 
 /**
  * Subscribe to a rebind session and re-render on every change (capture, reset,

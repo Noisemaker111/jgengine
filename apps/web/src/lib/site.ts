@@ -26,7 +26,7 @@ export const PACKAGE_LAYERS: { label: string; note: string; packages: string[] }
   },
   {
     label: "Foundation",
-    note: "zero dependencies",
+    note: "feature folders; model files have zero dependencies",
     packages: ["@jgengine/core"],
   },
 ];
@@ -34,7 +34,7 @@ export const PACKAGE_LAYERS: { label: string; note: string; packages: string[] }
 export const ASSETS_PACKAGE_NAME = "@jgengine/assets";
 
 export const PACKAGES: { name: string; blurb: string }[] = [
-  { name: "@jgengine/core", blurb: "The engine SDK: runtime, state store, scene, combat, loot, quests, economy. Zero deps." },
+  { name: "@jgengine/core", blurb: "The engine SDK: runtime, state store, scene, combat, HUD, save, loot, quests, economy; model files have zero deps." },
   { name: "@jgengine/react", blurb: "React UI layer: GameProvider, hooks, headless primitives." },
   { name: "@jgengine/shell", blurb: "R3F canvas, orbit + first-person camera, input, HUD mounting, GameUiPreview." },
   { name: "@jgengine/ws", blurb: "Browser-safe WebSocket client backend: protocol codec, createWsBackend." },

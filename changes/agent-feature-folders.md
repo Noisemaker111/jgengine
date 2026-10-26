@@ -1,0 +1,7 @@
+### Migrate
+
+- Each engine feature is now one folder in `@jgengine/core` holding its model, React view and three.js draw files; the file name says the layer (`name.ts` model, `name.view.tsx` view, `name.draw.tsx` draw). The `@jgengine/react` root barrel still exports the same names. Update deep imports:
+  - HUD: `@jgengine/react/hud/<file>` → `@jgengine/core/hud/<file>.view` for `actionHud`, `comboMeter`, `hudButton`, `hudChromePreview`, `hudFrame`, `hudInteract`, `hudLanesPreview`, `hudLayout`, `hudLayoutPersist`, `hudReadouts`, `hudSkin`, `hudSkinPreview`, `hudSurface`, `hudTheme`, `hudThemePreview`, `hudThemeRoot`, `hudViewport`, `kitHud`, `selectionHud`, `statusEffectBar`, `waveHud`; `@jgengine/react/hud/hudLanes` → `@jgengine/core/hud/hudLanes`; `@jgengine/react/hud/hudTokens` → `@jgengine/core/hud/hudTokens`.
+  - HUD draw: `@jgengine/shell/hud/<file>` → `@jgengine/core/hud/<file>.draw` for `FrustumSensorHud`, `HudOnlyDriver`, `ShellHudPresentation`, `ViewportHuds`, `WorldHud`; `@jgengine/shell/hud/HiddenStateProbeHud` → `@jgengine/core/hud/HiddenStateProbeHud.view`.
+  - Save: `@jgengine/react/save/{saveSlots,saveStore,saveThumbnail}` → `@jgengine/core/save/{saveSlots,saveStore,saveThumbnail}.view`.
+- `@jgengine/core` lists `react`, `react-dom`, `three`, `@react-three/fiber`, `@react-three/drei`, `three-stdlib`, `@jgengine/react` and `@jgengine/shell` as optional peers: a `.view` or `.draw` import needs them; model imports need nothing.

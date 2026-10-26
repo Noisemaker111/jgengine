@@ -1,7 +1,7 @@
 import { useMemo, useState, type CSSProperties, type ReactNode } from "react";
 
 import type { CodexEntryView } from "@jgengine/core/game/codex";
-import { hudType } from "./hud/hudTokens";
+import { hudType } from "@jgengine/core/hud/hudTokens";
 
 /** Props for {@link CodexPanel}. */
 export interface CodexProps {

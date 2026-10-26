@@ -8,7 +8,7 @@ import type { WorldFeature } from "@jgengine/core/world/features";
 import type { GuideRegion } from "@jgengine/core/world/terrainGuides";
 import type { EditorUiPanelLayout } from "@jgengine/core/hud/hudDocument";
 import { listActiveHudLayouts, subscribeActiveHudLayouts } from "@jgengine/core/hud/hudLayout";
-import { HudLayoutPersistProvider } from "@jgengine/react/hud/hudLayoutPersist";
+import { HudLayoutPersistProvider } from "@jgengine/core/hud/hudLayoutPersist.view";
 import { useGameContext } from "@jgengine/react/provider";
 import { GamePlayerShell } from "@jgengine/shell/GamePlayerShell";
 import type { PlayableGame } from "@jgengine/shell/registry";

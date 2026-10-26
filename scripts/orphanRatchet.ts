@@ -17,15 +17,20 @@ export function parseBaseline(text: string): string[] {
   return value as string[];
 }
 
+/** The packages a feature folder spans: a file moving between them (shell → core) keeps its identity. */
+const ENGINE_PACKAGES = new Set(["@jgengine/core", "@jgengine/react", "@jgengine/shell"]);
+
 /**
  * `@jgengine/core/hud/hudScale#rectOverflow` → `@jgengine/core#rectOverflow`. An exported name has one
  * definition engine-wide (check-concept-homes), so package plus name is the symbol's identity, and a
- * file moving between folders is the same orphan, not a new one.
+ * file moving between folders is the same orphan, not a new one. Core, react and shell count as one
+ * package, since a feature folder in core gathers files from all three.
  */
 export function orphanIdentity(key: string): string {
   const hash = key.indexOf("#");
   const module = hash < 0 ? key : key.slice(0, hash);
-  const pkg = /^(@[^/]+\/[^/]+)/.exec(module)?.[1] ?? module;
+  const found = /^(@[^/]+\/[^/]+)/.exec(module)?.[1] ?? module;
+  const pkg = ENGINE_PACKAGES.has(found) ? "@jgengine/engine" : found;
   return hash < 0 ? pkg : `${pkg}${key.slice(hash)}`;
 }
 

@@ -7,6 +7,6 @@
     "noUnusedParameters": true,
     "noFallthroughCasesInSwitch": true
   },
-  "include": ["src"],
+  "include": ["src", "../core/src/**/*.draw.ts", "../core/src/**/*.draw.tsx"],
   "exclude": ["src/**/*.test.ts", "src/**/*.test.tsx"]
 }

@@ -1,6 +1,6 @@
 import { useState } from "react";
 
-import { HudOverlay } from "@jgengine/react/hud/hudThemeRoot";
+import { HudOverlay } from "@jgengine/core/hud/hudThemeRoot.view";
 import { useSettings } from "@jgengine/react/settings/settings";
 
 import { QuickControls } from "./QuickControls";

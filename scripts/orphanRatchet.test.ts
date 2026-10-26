@@ -43,8 +43,14 @@ describe("orphan baseline shrink-only ratchet", () => {
   });
 
   test("the same name in another package is still new", () => {
-    const committed = [...REFERENCE, "@jgengine/react/a#Foo"];
-    expect(orphanRatchetViolations(REFERENCE, committed).added).toEqual(["@jgengine/react/a#Foo"]);
+    const committed = [...REFERENCE, "@jgengine/node/a#Foo"];
+    expect(orphanRatchetViolations(REFERENCE, committed).added).toEqual(["@jgengine/node/a#Foo"]);
+  });
+
+  test("a file moving from react or shell into a core feature folder is the same orphan", () => {
+    const reference = ["@jgengine/shell/hud/HudOnlyDriver#HudOnlyDriver", "@jgengine/react/hud/kitHud#KitHint"];
+    const committed = ["@jgengine/core/hud/HudOnlyDriver.draw#HudOnlyDriver", "@jgengine/core/hud/kitHud.view#KitHint"];
+    expect(orphanRatchetViolations(reference, committed).ok).toBe(true);
   });
 
   test("parseBaseline rejects non-string-array baselines", () => {

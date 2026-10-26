@@ -1,6 +1,6 @@
 import { useInsertionEffect } from "react";
 
-import { HUD_FONT_STACK } from "./hud/hudTokens";
+import { HUD_FONT_STACK } from "@jgengine/core/hud/hudTokens";
 
 const ms = (speed: "fast" | "base" | "slow", fallback: number) =>
   `calc(var(--jg-motion-${speed}, ${fallback}ms) * var(--jg-motion-scale, 1))`;

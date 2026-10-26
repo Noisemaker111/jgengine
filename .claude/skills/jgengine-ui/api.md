@@ -35,6 +35,78 @@
 - `SpeedUnit` (type): type SpeedUnit = "kmh" | "mph" | "knots" | "ms" — Target unit for {@link formatSpeed}: km/h, mph, knots, or raw m/s.
 - `formatSpeed` (function): function formatSpeed(metersPerSecond: number, options: SpeedFormat = {}): string — Format a speed given in meters/second as a HUD-ready string in km/h, mph, knots, or m/s — the one conversion table every speedometer and telemetry readout should share.
 
+## @jgengine/core/hud/FrustumSensorHud.draw
+
+- `FrustumSensorProbeOptions` (interface): interface FrustumSensorProbeOptions extends FramingConfig { subjectIds: readonly string[]; subjectRadius?: number } — ⚠ undocumented · used by `FrustumSensorReadout`: Renders inside the Canvas (needs the live camera via `useFrame`/`useThree`) but portals a real HTML readout via drei's `Html fullscreen` — a…
+- `FrustumSensorReadout` (function): function FrustumSensorReadout(props: FrustumSensorProbeOptions & { wrapperClassName?: string; className?: string }): React.JSX.Element — Renders inside the Canvas (needs the live camera via `useFrame`/`useThree`) but portals a real HTML readout via drei's `Html fullscreen` — a photo-mode "is this subject framed" HUD.
+- `frustumSampleDisplayEqual` (function): function frustumSampleDisplayEqual(a: FrustumSample | null, b: FrustumSample | null): boolean — ⚠ undocumented
+- `useFrustumSensor` (function): function useFrustumSensor(options: FrustumSensorProbeOptions): FrustumSample | null — ⚠ undocumented
+
+## @jgengine/core/hud/HiddenStateProbeHud.view
+
+- `SensorReadoutMeter` (function): function SensorReadoutMeter({ label, reading, className }: SensorReadoutMeterProps): React.JSX.Element — A handheld-sensor readout: needle strength bar + the raw reading, or a "no signal" idle state.
+- `SensorReadoutMeterProps` (interface): interface SensorReadoutMeterProps { label: string; reading: ReturnType<typeof probeHiddenState>; className?: string } — ⚠ undocumented · used by `SensorReadoutMeter`: A handheld-sensor readout: needle strength bar + the raw reading, or a "no signal" idle state.
+- `useHiddenStateProbe` (function): function useHiddenStateProbe(origin: EntityPosition, sources: readonly HiddenStateSource[], options: SensorProbeOptions): SensorReading | null — Reads a hidden zone/entity state variable in range (EMF / thermometer / geiger style sensor verb, #116).
+
+## @jgengine/core/hud/HudOnlyDriver.draw
+
+- `HudOnlyDriver` (function): function HudOnlyDriver({ ctx, multiplayer, serverIdRef, playable, tracker, pointerAxisRef, gateRef, onRuntimeError, }: { ctx: GameContext; multiplayer: ShellMultiplayer | null; serverIdRef: { current: string | null }; playable: PlayableGame; tracker: ActionStateTracker<string>; pointerAxisRef: { cur… — Drives a HUD-only page: steps the sim with no 3D canvas so a capture can render just the game UI.
+
+## @jgengine/core/hud/ViewportHuds.draw
+
+- `ViewportHuds` (function): function ViewportHuds({ ctx, config, children, }: { ctx: GameContext; config?: ViewportsConfig; children: (slot: LocalPlayerSlot, viewport: ViewportDef) => ReactNode; }): React.JSX.Element — One absolutely-positioned HUD root per viewport, laid over the canvas: render each seat's own health, prompts or score with `children(slot)`. Pass the same `viewports` config the game gave `defineGame`.
+
+## @jgengine/core/hud/WorldHud.draw
+
+- `NameplateSample` (interface): interface NameplateSample — Projected nameplate with optional health and distance from the render camera.
+- `ProjectileTracers` (function): function ProjectileTracers({ lifeMs = 200 }: { lifeMs?: number }): React.JSX.Element — ⚠ undocumented
+- `Reticle` (function): function Reticle({ className }: { className?: string }): React.JSX.Element — ⚠ undocumented
+- `WorldBarSample` (interface): interface WorldBarSample — ⚠ undocumented
+- `WorldEntityBars` (function): function WorldEntityBars({ statId, height = 2.2, roles, resolveRole, maxDistance, occlude = true, tickMs = 80, maxSamples = 64, }: { statId: string; height?: number; roles?: readonly CatalogEntityRole[]; resolveRole?: (entity: SceneEntity) => CatalogEntityRole | undefined; /** Hide bars beyond this … — ⚠ undocumented
+- `WorldFloatText` (function): function WorldFloatText({ height = 1.9, lifeMs = 950 }: { height?: number; lifeMs?: number }): React.JSX.Element — ⚠ undocumented
+- `WorldNameplates` (function): function WorldNameplates({ statId = "health", height = 2.3, roles, resolveRole, maxDistance, occlude = true, tickMs = 120, maxSamples = 64, resolveName, showHealth = true, className, nameplateClassName, nameClassName, barClassName, fillClassName, renderNameplate, }: WorldNameplatesProps): React.JSX.… — Billboarded name + 78×6px HP bar over every nearby non-local entity that passes `roles`/`maxDistance` — headless (className/data-* slots on every part, `renderNameplate` for a full swap), turned on declaratively via `defineGame({ nameplates })` rather than mounted by hand.
+- `WorldNameplatesProps` (interface): interface WorldNameplatesProps — Props for `WorldNameplates` — entity filter, refresh rate, and headless className/render hooks.
+- `WorldObjectHighlights` (function): function WorldObjectHighlights({ color = "#facc15", radius, y = 0.05 }: WorldObjectHighlightsProps): React.JSX.Element — Ground ring over every `ctx.scene.object.selection`-ed placed object — the object-layer counterpart to `WorldEntityBars`/`WorldNameplates`. Mount it once in the game's scene (headless: no defaults are imposed beyond a visible ring) instead of hand-rolling a selection highlight through `WorldOverlay` against external state.
+- `WorldObjectHighlightsProps` (interface): interface WorldObjectHighlightsProps — Props for {@link WorldObjectHighlights}.
+- `WorldTelegraphs` (function): function WorldTelegraphs(): React.JSX.Element — ⚠ undocumented
+- `startFromMuzzle` (function): function startFromMuzzle(ctx: GameContext, from: string, camera: THREE.Camera, start: THREE.Vector3): void — Where a shot's tracer visibly starts. The rule origin (eye or fixed muzzle offset) decides what is hit; the line starts at the shooter's gun: a first-person viewmodel's registered muzzle, else the bottom-right of the view where a held gun sits, and for anyone seen from outside, their registered hand or barrel. Exported for tests.
+
+## @jgengine/core/hud/actionHud.view
+
+- `ActionBar` (function): function ActionBar({ defs, look = "slots", columns, layout = "grid", wrap, hotkeys, itemSize, ariaLabel = "Actions", onActivate, renderItem, progress = [], trailing, prompt, wrapAt, className, style, }: ActionBarProps): ReactNode — The one action bar: an ability bar, a build strip, a tool or seed picker. It resolves `defs` through {@link useActionBar} (availability, cooldowns, costs, hotkeys, focus) and draws them in the `look` asked for — `slots` for cooldown abilities, `kit` for a build strip in the active UI kit — with orders in progress as meters, a trailing note, and the interact prompt above. Games that need bespoke chrome compose the hook with {@link ActionBarChrome} or read the model directly.
+- `ActionBarChrome` (function): function ActionBarChrome({ model, layout = "grid", itemSize = 52, gap = 6, ariaLabel = "Actions", renderItem, className, style, }: { model: ActionBarModel; layout?: "grid" | "list"; itemSize?: number; gap?: number; ariaLabel?: string; renderItem?: (action: ResolvedAction, ctx: ActionItemContext) => … — The composable RENDERER: lay the model's actions out as a `grid` or `list` toolbar with roving tabindex, arrow-key navigation, and a moved DOM focus. `renderItem` swaps per-item chrome; omit it for {@link ActionButton}. A radial or bespoke UI can skip this entirely and read the model. Purely a wiring/behavior layer — no panel skin — so a game art-directs freely.
+- `ActionBarKeyResult` (interface): interface ActionBarKeyResult — The intent a key press resolves to over an action bar: move focus, activate, or ignore.
+- `ActionBarModel` (interface): interface ActionBarModel — The live action-bar model returned by {@link useActionBar}.
+- `ActionBarProps` (interface): interface ActionBarProps — Props for {@link ActionBar}.
+- `ActionButton` (function): function ActionButton({ action, focused = false, hovered = false, size = 52, showHotkey = true, tabIndex, buttonRef, onActivate, onFocus, onHover, renderIcon, cue, onInteract, className, style, }: { action: ResolvedAction; /** Feedback cue name (default the action id), rendered as `data-jg-cue`. */ … — The default per-item chrome — a cooldown-aware action button with hotkey cap, cost line, radial cooldown wipe, and full rest/hover/focus/pressed/active/disabled states. Accessible: it is a real `<button>` with `aria-disabled`, `aria-pressed` for toggles, `aria-keyshortcuts`, and a native `title` describing why it is blocked. Swap it via `ActionBarChrome`'s `renderItem`, or drop it into a radial layout yourself.
+- `ActionItemContext` (interface): interface ActionItemContext — Render context passed to a custom {@link ActionBarChrome} item renderer.
+- `ActionKeyEvent` (interface): interface ActionKeyEvent — A minimal keyboard-event shape — a real `KeyboardEvent`/React synthetic satisfies it.
+- `ActionProgress` (interface): interface ActionProgress — A build or work order in progress, drawn as a small meter after an {@link ActionBar}'s buttons.
+- `ActionTooltip` (function): function ActionTooltip({ content, className, style, }: { content: TooltipContent; className?: string; style?: CSSProperties; }): React.JSX.Element — Render {@link TooltipContent} (from `actionTooltip`) as a styled block: title, subtitle, body, hotkey, cost lines, cooldown, and a warning footer of blocking notes. Drop it inside a {@link Popover} for an action's hover/focus description.
+- `Popover` (function): function Popover({ open, anchorRef, side = "top", gap = 8, role = "tooltip", id, children, className, style, }: { open: boolean; anchorRef: { current: HTMLElement | null }; side?: PopoverSide; gap?: number; role?: string; id?: string; children: ReactNode; className?: string; style?: CSSProperties; }… — An accessible popover shell positioned by the pure {@link placePopover} math — flips and clamps against the viewport, renders nothing while closed, and defaults to `role="tooltip"`. Reuse it for an action's hover/focus description or any anchored panel.
+- `UseActionBarOptions` (interface): interface UseActionBarOptions — Options for {@link useActionBar}.
+- `actionBarKeyAction` (function): function actionBarKeyAction(actions: readonly ResolvedAction[], focusedId: string | null, columns: number, key: string, options?: { wrap?: boolean }): ActionBarKeyResult — Pure keyboard/controller resolver for an action bar: arrows/Home/End move grid focus, Enter/Space activate the focused action, and any other single key routes through {@link actionByHotkey}. Returns the resulting intent without touching the DOM, so it unit-tests headless and `useActionBar` is a thin shell over it.
+- `actionFromAbilitySlot` (function): function actionFromAbilitySlot(slot: AbilitySlotSnapshot, extra?: Partial<ActionDef> & { resourceId?: string }): ActionDef — Composable React renderers over the headless action view model (`@jgengine/core/ui/actionModel`) — the data/renderer/chrome split for an RTS command card, an ability action bar, a build menu, or a radial. `useActionBar` is the DATA/HOOK layer (resolution + focus/hover/keyboard/hotkey), `ActionBarChrome` is the composable RENDERER (swap `renderItem` for custom chrome, or ignore it and consume the model directly for a radial), and `ActionBar` is the batteries-included default. A game swaps renderer or chrome without forking the logic. Layout, dimensions, hotkeys, and catalog-id mapping stay caller-owned.
+- `useActionBar` (function): function useActionBar(defs: readonly ActionDef[], options?: UseActionBarOptions): ActionBarModel — The DATA/HOOK layer: resolve `defs` into a live view model with focus, hover, keyboard grid navigation, and hotkey activation. Rendering-agnostic — feed the returned model to {@link ActionBarChrome}, or read it directly to lay out a radial or a bespoke card.
+
+## @jgengine/core/hud/comboMeter.view
+
+- `ComboMeterHud` (function): function ComboMeterHud({ meter, tierColors, theme, animate = true, hideWhenEmpty = true, barWidth = 220, className, style, }: ComboMeterHudProps): ReactNode — A drop-in HUD for a core {@link ComboMeter}: the big live combo count ("×12"), the current free-string tier label, the derived score multiplier, and a draining window bar (reusing the shared atomic bar) that empties as the decay window runs out and re-fills on every hit. The active tier's color — supplied by the game via `tierColors`, keyed on the free-string tier id the model never interprets — drives the count glow, the label, and the bar fill, so a game reskins the escalation ("good" → "great" → "savage") without the engine hardcoding any tier meaning. Presentation only: all counting, timing, tiers, and the multiplier live in the core model.
+- `ComboMeterHudProps` (interface): interface ComboMeterHudProps — Props for {@link ComboMeterHud}.
+- `ComboMeterTheme` (interface): interface ComboMeterTheme — Reskin tokens for {@link ComboMeterHud}.
+- `useComboMeter` (function): function useComboMeter(meter: ComboMeter, animate = true): ComboMeterView — Subscribe to a combo meter and re-render it each animation frame so the decay window bar drains live, returning the pooled view to draw right now. Reading the view each frame advances the meter's clock and fires window expiry, so a combo that times out visibly drops even with no further hits. The returned object is the model's pooled view — read its fields immediately, do not retain it.
+
+## @jgengine/core/hud/hudButton.view
+
+- `HudButton` (const): const HudButton: React.ForwardRefExoticComponent<HudButtonProps & React.RefAttributes<HTMLButtonElement>> — Themed HUD button: reads the `HudTheme` slot, accent, elevation, motion, and state tokens, and gets hover lift, press scale, a focus-visible ring, and a disabled state from the engine stylesheet. `className` and `style` restyle it per game. Interactions report to `onInteract` and the nearest `HudInteractProvider`.
+- `HudButtonProps` (interface): interface HudButtonProps extends Omit<ButtonHTMLAttributes<HTMLButtonElement>, "type"> — Props for {@link HudButton}: native button attributes plus theme-driven variant, size, and feedback hooks.
+- `HudButtonSize` (type): type HudButtonSize = "sm" | "md" | "lg" | "icon" — Size of a {@link HudButton}; `icon` is a 28px square.
+- `HudButtonVariant` (type): type HudButtonVariant = "secondary" | "primary" | "danger" | "ghost" — Visual weight of a {@link HudButton}.
+
+## @jgengine/core/hud/hudChromePreview.view
+
+- `HudChromePreview` (function): function HudChromePreview({ className }: { className?: string }): React.JSX.Element — The shared HUD chrome under the shell's default root theme, from static values: a glass frame with vitals and a counter, an action bar, a window, a confirm dialog, a pause menu, and the button variants. Screenshots identically; the before/after evidence for theme and primitive changes.
+
 ## @jgengine/core/hud/hudDocument
 
 - `EditorUiDocument` (interface): interface EditorUiDocument — Scene-document HUD section: panel id → layout. Single source of truth for placement.
@@ -48,6 +120,33 @@
 - `resizePanelSize` (function): function resizePanelSize(current: HudSize, delta: { dw: number; dh: number }, axes: HudResizeAxes, limits?: { minWidth?: number; maxWidth?: number; minHeight?: number; maxHeight?: number; }): HudSize — Semantic resize: apply pixel deltas only on growable axes, clamped to min/max. Never scales content — callers reflow layout size (track length, list rows).
 - `resolveHudPanelLayout` (function): function resolveHudPanelLayout(docPanel: EditorUiPanelLayout | undefined, fallback: HudPanelFallback): ResolvedHudPanelLayout — Resolve a panel's layout: document entry wins field-by-field over TSX fallback. TSX props are fallback-only — the scene document is the source of truth once authored.
 
+## @jgengine/core/hud/hudFrame.view
+
+- `HudFrame` (function): function HudFrame({ variation = "glass", shape = "rounded", title, aside, padding, width, interactive, className, style, children, }: HudFrameProps): ReactNode — Optional framed panel primitive — a single `<div data-hud-frame>` with a `glass`, `plate`, `retro`, or `themed` skin, optional `title`/`aside` header, and caller `style` merged last. Shared building block for demos and token-themed widgets; games own product chrome and art direction (see AGENTS.md).
+- `HudFrameProps` (interface): interface HudFrameProps — Props for {@link HudFrame}.
+- `HudFrameShape` (type): type HudFrameShape = "rounded" | "circle" | "square" — Frame corner shape — `rounded` (the variation's default radius), `circle` (fully round), or `square` (no radius).
+- `HudFrameVariation` (type): type HudFrameVariation = "glass" | "plate" | "retro" | "themed" — Frame skin — `glass` (the shared dark-glass panel), `plate` (a heavier opaque plate), `retro` (a hard black-outlined frame), or `themed` (driven by the `--jg-frame-*` `HudTheme` tokens).
+
+## @jgengine/core/hud/hudInteract.view
+
+- `HudInteractEvent` (interface): interface HudInteractEvent — One interaction reported by an engine HUD primitive to an `onInteract` listener.
+- `HudInteractKind` (type): type HudInteractKind = "hover" | "press" | "activate" | "focus" | "open" | "close" — What happened to an engine HUD primitive.
+- `HudInteractListener` (type): type HudInteractListener = (event: HudInteractEvent) => void — Listener for {@link HudInteractEvent}s.
+- `HudInteractProvider` (function): function HudInteractProvider({ onInteract, children }: { onInteract: HudInteractListener; children?: ReactNode }): ReactNode — Routes interactions from every engine HUD primitive below it (buttons, panels, windows, action slots) to one listener — the seam a UI sound or haptics system hooks without per-button wiring. Primitives also expose `data-jg-cue` and a per-instance `onInteract`.
+- `useHudInteract` (function): function useHudInteract(source: string, cue?: string, onInteract?: HudInteractListener): (kind: HudInteractKind) => void — Returns a reporter that calls the instance listener, then the nearest {@link HudInteractProvider}.
+
+## @jgengine/core/hud/hudLanes
+
+- `HudLaneConfig` (interface): interface HudLaneConfig — How the shell lays out lanes.
+- `HudLaneLayout` (interface): interface HudLaneLayout — The resolved layout of every claimed block.
+- `HudLanePlacement` (interface): interface HudLanePlacement — One block's resolved placement.
+- `HudLaneSlot` (interface): interface HudLaneSlot — One HUD block's claim on a lane. Two blocks that name the same `anchor` and `lane` stack in `order` order; a lane is a column, so lanes in the same anchor sit side by side. The shell resolves every claim into a rectangle, which is what keeps blocks from arranging themselves into each other.
+- `resolveHudLanes` (function): function resolveHudLanes(slots: readonly HudLaneSlot[], viewport: HudSize, config: HudLaneConfig = {}): HudLaneLayout — Resolve lane claims into non-overlapping rectangles for one frame.
+
+## @jgengine/core/hud/hudLanesPreview.view
+
+- `HudLanesPreview` (function): function HudLanesPreview({ className }: { className?: string }): React.JSX.Element — The same shape Deepward's top-left HUD uses — two blocks that used to arrange themselves into each other. Both declare `lane="status"`, so the shell stacks them; the second lane sits beside the first and the right-hand lane mirrors it. Screenshots at any viewport without a block landing on a neighbour.
+
 ## @jgengine/core/hud/hudLayout
 
 - `HUD_ANCHOR_FRACTIONS` (const): const HUD_ANCHOR_FRACTIONS: Record<HudAnchor, { fx: number; fy: number }> — ⚠ undocumented
@@ -59,6 +158,28 @@
 - `HudPlacement` (interface): interface HudPlacement { anchor: HudAnchor; dx: number; dy: number } — ⚠ undocumented
 - `HudRect` (interface): interface HudRect { x: number; y: number; width: number; height: number } — ⚠ undocumented · used by `hudBlockRegion` (@jgengine/core/hud/hudPriority): A rendered HUD block (`{ x, y, width, height }`, as `HudCanvas` measures it or `resolveHudLanes` places it) as a `forbid` HUD region, so HUD…
 - `HudSize` (interface): interface HudSize { width: number; height: number } — ⚠ undocumented · used by `resizePanelSize` (@jgengine/core/hud/hudDocument): Semantic resize: apply pixel deltas only on growable axes, clamped to min/max.
+
+## @jgengine/core/hud/hudLayout.view
+
+- `HUD_CORNER_WIDTH` (const): const HUD_CORNER_WIDTH: 248 — The widest a corner card draws, at the 1600x900 design size the HUD scales from.
+- `HudCanvas` (function): function HudCanvas({ layout, editChord, compactScale, showDuring, className, style, children, }: { layout: HudLayoutStore; editChord?: HudEditChord | false; /** Zoom applied to the whole HUD on compact displays. Default 0.85. */ compactScale?: number; /** Opt-in play-phase gate: render the HUD only … — Full-viewport HUD surface. Panels declared with `HudPanel` flow into nine anchor regions and stack automatically with a gap — no per-panel pixel offsets, no manual clearance for sibling panels, the touch-control dock (`--jg-hud-dock-clearance`), or device safe areas. On compact displays the whole surface scales down and each panel applies its `compact` behavior.
+- `HudCompactMode` (type): type HudCompactMode = "keep" | "chip" | "hide" — How a panel behaves on compact (phone-scale) displays. `keep` stays visible at the global compact scale, `chip` collapses to a small tap-to-expand pill, `hide` unmounts entirely.
+- `HudEditChord` (interface): interface HudEditChord { hold: string; press: string } — ⚠ undocumented · used by `HudCanvas`: Full-viewport HUD surface.
+- `HudFade` (function): function HudFade({ watch, idleMs = 3500, dimTo = 0.18, hold = false, children, className, style }: HudFadeProps): ReactNode — A HUD group that steps back when nothing is happening: it fades after a quiet spell and comes back the moment a watched value changes, so the world fills the screen and the HUD speaks only when it has news. Hovering it also brings it back.
+- `HudFadeProps` (interface): interface HudFadeProps — Props for {@link HudFade}.
+- `HudPanel` (function): function HudPanel({ id, anchor = "top-left", lane, order, compact: compactMode = "keep", chip, interactive, inset, locked, showDuring, priority, mobileBehavior, allowOverlapWith, collisionGroup, region = true, width, height, type, className, style, children, }: { id: string; anchor?: HudAnchor; /** … — A HUD block that lives in one of the nine anchor regions. Panels sharing a region stack outward from the screen edge in ascending `order`. On fine pointers panels stay draggable through the edit chord; a dragged panel leaves the flow and keeps its custom placement. On compact displays custom placements are ignored and the `compact` behavior applies.
+- `HudSlot` (type): type HudSlot = "topLeft" | "top" | "topRight" | "left" | "right" | "bottomLeft" | "bottom" | "bottomRight" — The eight edge slots of {@link HudSlots}.
+- `HudSlots` (function): function HudSlots({ storageKey, slots, overlay, showDuring = DEFAULT_SLOT_PHASES }: HudSlotsProps): ReactNode — The play HUD in one line: a few small panels pinned to the screen's edges, scaled from a 1600x900 design to any window and movable by the player (the layout is remembered per `storageKey`). Keep it to a handful of slots; the world is the picture.
+- `HudSlotsProps` (interface): interface HudSlotsProps — Props for {@link HudSlots}.
+- `hudVisibleInPhase` (function): function hudVisibleInPhase(showDuring: readonly GamePhase[] | undefined, phase: GamePhase): boolean — Whether a HUD element opted into `showDuring` is visible in the current phase; `undefined` = always visible (default).
+- `useHudAwake` (function): function useHudAwake(watch: readonly unknown[], idleMs = 3500, hold = false): boolean — Whether a HUD group should be at full strength: true for `idleMs` after any watched value changes, and whenever `hold` is set.
+- `useHudLayout` (function): function useHudLayout(options?: { storageKey?: string; snap?: number; locked?: boolean; /** * Scene-document `ui` section — source of truth for panel placement/size. * When provided, hydrates the layout store (and wins over legacy localStorage). */ documentUi?: EditorUiDocument; /** * When true (def… — Layout state for `HudCanvas` — panel placements, edit-mode drag/resize, and per-game persistence.
+
+## @jgengine/core/hud/hudLayoutPersist.view
+
+- `HudLayoutPersist` (type): type HudLayoutPersist = (id: string, panel: EditorUiPanelLayout) => void — Host-owned callback that commits one HUD panel layout into the scene document (typically an undoable `setUiPanel` dispatch). Injected by the editor so product UI never reaches for editor globals.
+- `HudLayoutPersistProvider` (function): function HudLayoutPersistProvider({ onPanelCommit, children, }: { onPanelCommit: HudLayoutPersist; children?: ReactNode; }): React.JSX.Element — Provides {@link HudLayoutPersist} / `onPanelCommit` to descendant `useHudLayout` calls. Mount around game UI when a host can accept document UI patches (editor). Absent provider → canvas moves/resizes are no-ops for document writes.
+- `useHudLayoutPersist` (function): function useHudLayoutPersist(): HudLayoutPersist | null — Injected panel-commit port, or `null` when no host has provided one.
 
 ## @jgengine/core/hud/hudPriority
 
@@ -79,6 +200,14 @@
 - `formatLayoutCollisions` (function): function formatLayoutCollisions(collisions: readonly LayoutCollision[], viewport?: HudSize): string — Human-readable diagnostic block for a set of collisions (empty string when there are none), naming the viewport they collided at when given.
 - `hudBlockRegion` (function): function hudBlockRegion(id: string, rect: HudRect): LayoutRegion — A rendered HUD block (`{ x, y, width, height }`, as `HudCanvas` measures it or `resolveHudLanes` places it) as a `forbid` HUD region, so HUD blocks check for overlap through {@link detectLayoutCollisions} like every other region.
 
+## @jgengine/core/hud/hudReadouts.view
+
+- `Clock` (function): function Clock({ format = "24h", showDay = true, controls = false, style, className, }: { format?: "24h" | "12h"; showDay?: boolean; controls?: boolean; style?: CSSProperties; className?: string; }): React.JSX.Element — A time-of-day clock reading the sim calendar — `Day N · HH:MM`, 24h or 12h. `controls` adds pause + the game's speed multipliers as clickable pills (the "fast-forward" bar), off by default so a game opts into letting the player scrub time.
+- `Coins` (function): function Coins({ currencyId, icon = "🪙", style, className, }: { currencyId: string; icon?: ReactNode; style?: CSSProperties; className?: string; }): React.JSX.Element — A currency counter — an icon (emoji/char, default a coin) plus the live amount for `currencyId`. *
+- `Crosshair` (function): function Crosshair({ size = 18, gap = 5, thickness = 2, color = "rgba(255,255,255,0.85)", style, className, }: { size?: number; gap?: number; thickness?: number; color?: string; style?: CSSProperties; className?: string; }): React.JSX.Element — A minimal center crosshair reticle — four ticks around a gap. Purely presentational.
+- `Hotbar` (function): function Hotbar({ inventoryId, activeSlot, keys, slotSize = 46, itemIcon, style, className, }: { inventoryId: string; activeSlot?: number; keys?: readonly string[]; slotSize?: number; /** Caller-supplied item id → icon registry; return null/undefined to fall back to the default glyph. */ itemIcon?: … — A numbered hotbar bound to an inventory — painted iconed slots (a `GameIcon` glyph over a school-keyed gradient with a count badge, #1035), an active-slot highlight, and a keycap per slot. Place it and pass the `inventoryId`; `activeSlot` highlights the equipped one. Supply `itemIcon` to map your item ids to your own glyphs — the default resolves a `GameIcon` from the item id.
+- `Speedometer` (function): function Speedometer({ entityId, scale = 3.6, unit = "km/h", max = 60, size = 96, style, className, }: { entityId?: string; scale?: number; unit?: string; max?: number; size?: number; style?: CSSProperties; className?: string; }): React.JSX.Element — A speedometer for an entity (defaults to the local player) — an SVG arc gauge + a digital readout. `scale` converts world units/second to your display unit (3.6 → km/h, 2.237 → mph); `max` sets the gauge's top of scale.
+
 ## @jgengine/core/hud/hudScale
 
 - `DEFAULT_HUD_DESIGN_SIZE` (const): const DEFAULT_HUD_DESIGN_SIZE: HudSize — ⚠ undocumented
@@ -92,6 +221,120 @@
 - `overflowingPanels` (function): function overflowingPanels(panels: readonly { id: string; rect: HudRect }[], viewport: HudSize, tolerance = 1.5): HudOverflow[] — Every panel rect that escapes the viewport — the data behind the HUD overflow gate. A rect is only reported when it is partly visible *and* crosses an edge; a fully off-screen (closed/hidden) surface is skipped, so parked drawers and unopened menus never raise a false alarm.
 - `rectOverflow` (function): function rectOverflow(rect: HudRect, viewport: HudSize, tolerance = 1.5): Omit<HudOverflow, "id"> | null — Non-null when any edge of `rect` falls outside `viewport` by more than `tolerance` px; each field is the overflow distance past that edge (0 when inside).
 - `resolveHudFit` (function): function resolveHudFit(config: HudViewportConfig | undefined, mobile: boolean): Required<HudFitConfig> — ⚠ undocumented
+
+## @jgengine/core/hud/hudSkin.view
+
+- `HudSkin` (interface): interface HudSkin — A game-authored visual skin layered over a {@link HudTheme}.
+- `HudSkinMaterial` (interface): interface HudSkinMaterial — Optional raster-backed materials for shared HUD chrome.
+- `hudSkinVars` (function): function hudSkinVars(skin?: HudSkin): CSSProperties — Converts a skin into the CSS variables consumed by shared HUD components.
+- `useHudFont` (function): function useHudFont(skin?: HudSkin): boolean — Loads a skin font in browsers and reports when it is available.
+
+## @jgengine/core/hud/hudSkinPreview.view
+
+- `HudSkinPreview` (function): function HudSkinPreview({ className }: { className?: string }): React.JSX.Element — Procedural two-skin fixture for visual regression captures.
+
+## @jgengine/core/hud/hudSurface.view
+
+- `HudSurface` (const): const HudSurface: React.ForwardRefExoticComponent<HudSurfaceProps & React.RefAttributes<HTMLElement>> — Themed panel/window frame over the `HudTheme` frame, elevation, and motion tokens. It enters with a short rise-and-fade and stays mounted through its exit when `open` turns false (`data-state="open" | "closed"`); reduced motion skips both. Padding comes from `--jg-panel-padding`, and the engine rules sit in a cascade layer, so a game's `className` restyles it without `!important`. Not the `HudCanvas` layout slot (`HudPanel` in `@jgengine/core/hud/hudLayout.view`).
+- `HudSurfaceElement` (type): type HudSurfaceElement = "div" | "section" | "aside" | "nav" | "header" | "footer" | "article" | "main" | "form" | "dialog" — Block elements a {@link HudSurface} can render as, so it can be a landmark.
+- `HudSurfaceElevation` (type): type HudSurfaceElevation = "raised" | "overlay" | "modal" — Shadow height of a {@link HudSurface}.
+- `HudSurfaceProps` (interface): interface HudSurfaceProps extends Omit<HTMLAttributes<HTMLElement>, "title"> — Props for {@link HudSurface}.
+
+## @jgengine/core/hud/hudTheme.view
+
+- `HUD_THEME_PRESETS` (const): const HUD_THEME_PRESETS: { "arcane-stone": HudTheme; "survival-wood": HudTheme; "military-flat": HudTheme; "sleek-hex": HudTheme; "elemental-circle": HudTheme; "sandbox-slot": HudTheme; ember: HudTheme; synthwave: HudTheme; fieldkit: HudTheme; } — Built-in theme presets for demos/scaffold only — not product identity; games author their own theme.
+- `HudSkin` (interface): interface HudSkin — A game-authored visual skin layered over a {@link HudTheme}.
+- `HudTheme` (interface): interface HudTheme — A full HUD theme. Author one with {@link hudTheme} or {@link deriveHudTheme}.
+- `HudThemeElevation` (interface): interface HudThemeElevation — Layered `box-shadow` stacks by height, plus the inner top highlight a lit panel edge gets.
+- `HudThemeFont` (interface): interface HudThemeFont — Typography roles. Any CSS `font-family` list.
+- `HudThemeFrame` (interface): interface HudThemeFrame — Frame material + shape tokens (panels, `HudFrame variation="themed"`).
+- `HudThemeMotion` (interface): interface HudThemeMotion — Motion durations and easings. Blocks multiply durations by `--jg-motion-scale`, which the engine stylesheet sets to 0 under `prefers-reduced-motion` or `[data-reduced-motion="true"]`.
+- `HudThemeOverrides` (interface): interface HudThemeOverrides — Per-group partial overrides accepted by {@link hudTheme}.
+- `HudThemePalette` (interface): interface HudThemePalette — `HudTheme` (#1034, #1573): one token object that restyles every shared token-driven building block at once — the atomic bars (#1033), frames, slots, the minimap ring, and the chrome the registry blocks read (surfaces, edges, text, status colors, fonts, rarity). `hudThemeVars(theme)` emits the whole `--jg-*` vocabulary, so setting a **game-authored** theme on any HUD ancestor re-skins `packages/react` primitives and `registry/jgengine` components together. Purely CSS-token driven (no image assets). Tokens are not a finished UI: every game still owns composition, skin, and art direction (see AGENTS.md). Built-in presets are demo/scaffold starting points only.
+- `HudThemePreset` (type): type HudThemePreset = keyof typeof HUD_THEME_PRESETS — Built-in demo/scaffold theme preset name — not a game identity.
+- `HudThemeRarity` (interface): interface HudThemeRarity — Item-rarity coloring shared by loot cards, tooltips, and inventory slots.
+- `HudThemeSeed` (interface): interface HudThemeSeed — Seed colors for {@link deriveHudTheme}. Only `accent` and `surface` are required.
+- `HudThemeSlot` (interface): interface HudThemeSlot — Action/inventory slot tokens.
+- `HudThemeSpace` (interface): interface HudThemeSpace — Spacing steps (any CSS length).
+- `HudThemeState` (interface): interface HudThemeState — Interactive-state tokens shared by every engine button, slot, and window.
+- `HudThemeStatus` (interface): interface HudThemeStatus — Semantic status colors — outcome, threat, and relationship coloring.
+- `HudThemeSurface` (interface): interface HudThemeSurface — Chrome surfaces, edges, and text — what panels, overlays, and menus are built out of.
+- `HudThemeType` (interface): interface HudThemeType — Type scale (any CSS length). `min` is the readability floor every engine block clamps to; `xs` is the smallest step a block uses, so it never drops below `min`.
+- `defaultHudTheme` (const): const defaultHudTheme: HudTheme — The engine's default HUD look, applied by the shell at the HUD root of every game that does not opt out: a strong system UI font stack, layered translucent panels with a lit top rim and crisp hairline borders, a 12px type floor, and motion that honours reduced-motion. Games override any part with their own theme on a HUD ancestor.
+- `deriveHudTheme` (function): function deriveHudTheme(seed: HudThemeSeed): HudTheme — Derives a coherent full theme from an accent/surface pair — shades, edges, dim text, frames, and slots all fall out of the seed, so a game gets one consistent look across the `packages/react` primitives and the `registry/jgengine` blocks without naming 50 tokens. Hex seeds only (`#rgb` or `#rrggbb`).
+- `hudSkinVars` (function): function hudSkinVars(skin?: HudSkin): CSSProperties — Converts a skin into the CSS variables consumed by shared HUD components.
+- `hudTheme` (function): function hudTheme(overrides: HudThemeOverrides): HudTheme — Builds a full {@link HudTheme} from per-group partials, filling the rest from {@link defaultHudTheme}. Reach for this when a game wants to name exact values; use {@link deriveHudTheme} when a seed color pair is enough.
+- `hudThemeVars` (function): function hudThemeVars(theme: HudTheme): CSSProperties — Emits theme CSS properties, resetting inherited skins when absent. Spread onto a HUD ancestor.
+- `resolveHudTheme` (function): function resolveHudTheme(theme?: HudThemePreset | HudTheme): HudTheme — Resolves a preset name (or a full theme) to a `HudTheme`; falls back to the default theme.
+
+## @jgengine/core/hud/hudThemePreview.view
+
+- `HudThemePreview` (function): function HudThemePreview({ className }: { className?: string }): React.JSX.Element — Renders the default theme plus every genre preset as a deterministic matrix.
+
+## @jgengine/core/hud/hudThemeRoot.view
+
+- `HudThemeRoot` (function): function HudThemeRoot({ theme, accessibility, children, }: { theme?: HudTheme | false; accessibility?: Partial<AccessibilityState>; children?: ReactNode; }): ReactNode — The HUD root the shell mounts around every `GameUI`: a layout-free (`display: contents`) `[data-jg-hud]` element carrying the theme's `--jg-*` variables, plus the engine stylesheet. Unset `theme` applies {@link defaultHudTheme}; a game's own theme on any descendant still wins by inheritance. `false` opts out of the default theme and the generic HUD control defaults; the keyframes stay so engine blocks still animate.
+
+## @jgengine/core/hud/hudTokens
+
+- `HUD_FOCUS_RING` (const): const HUD_FOCUS_RING: "var(--jg-focus-ring, 0 0 0 2px #0a0c10, 0 0 0 4px var(--jg-accent, #38bdf8))" — Focus ring `box-shadow` reference.
+- `HUD_FONT_STACK` (const): const HUD_FONT_STACK: "\"Inter Variable\", Inter, \"SF Pro Text\", -apple-system, BlinkMacSystemFont, \"Segoe UI Variable Text\", \"Segoe UI\", Roboto, \"Helvetica Neue\", Arial, sans-serif" — UI sans stack used when no theme supplies `--jg-font-body`.
+- `HudEase` (type): type HudEase = "ease" | "easeOut" | "spring" — Motion easing.
+- `HudElevation` (type): type HudElevation = "raised" | "overlay" | "modal" — Shadow stack height.
+- `HudMotionSpeed` (type): type HudMotionSpeed = "fast" | "base" | "slow" — Motion duration step.
+- `HudSpaceStep` (type): type HudSpaceStep = "xs" | "sm" | "md" | "lg" | "xl" — Spacing step.
+- `HudTypeStep` (type): type HudTypeStep = "xs" | "sm" | "md" | "lg" | "xl" | "xxl" | "display" — Inline-style accessors for the `HudTheme` scale tokens (#1034): each returns a `var(--jg-*)` reference with the default theme's value as fallback, so a block reads the active theme when one is applied and still renders the default look outside the shell.
+- `hudDuration` (function): function hudDuration(speed: HudMotionSpeed = "fast"): string — Duration reference scaled by `--jg-motion-scale` (0 under reduced motion).
+- `hudEase` (function): function hudEase(ease: HudEase = "ease"): string — Easing reference.
+- `hudElevation` (function): function hudElevation(level: HudElevation = "raised"): string — `box-shadow` reference for a height, with the lit top rim layered in.
+- `hudFont` (const): const hudFont: { readonly body: "var(--jg-font-body, \"Inter Variable\", Inter, \"SF Pro Text\", -apple-system, BlinkMacSystemFont, \"Segoe UI Variable Text\", \"Segoe UI\", Roboto, \"Helvetica Neue\", Arial, sans-serif)"; readonly display: "var(--jg-font-display, \"Inter Variable\", Inter, \"SF Pro… — Font-family references for each theme role.
+- `hudSpace` (function): function hudSpace(step: HudSpaceStep): string — Spacing reference for a step, e.g. `padding: hudSpace("sm")`.
+- `hudTransition` (function): function hudTransition(properties: string | readonly string[], speed: HudMotionSpeed = "fast", ease: HudEase = "ease"): string — `transition` value for the given properties at one speed and easing, honouring reduced motion.
+- `hudType` (function): function hudType(step: HudTypeStep): string — Font-size reference for a type-scale step, e.g. `fontSize: hudType("xs")`.
+
+## @jgengine/core/hud/hudViewport.view
+
+- `HudViewportContextValue` (interface): interface HudViewportContextValue { fitEnabled: boolean; config: HudViewportConfig | undefined; userScale: number } — ⚠ undocumented
+- `HudViewportProvider` (function): function HudViewportProvider({ platforms, config, userScale, children, }: { platforms: readonly HudPlatform[] | undefined; config: HudViewportConfig | undefined; userScale?: number; children?: ReactNode; }): React.JSX.Element — Mounted by the shell around `GameUI` so every `HudCanvas` inside the game picks up the game's `platforms`/`hudFit` declaration and the player's UI scale setting without any game-side wiring.
+- `useHudViewport` (function): function useHudViewport(): HudViewportContextValue | null — ⚠ undocumented
+
+## @jgengine/core/hud/kitHud.view
+
+- `KitCount` (function): function KitCount({ value, label, id, detail, detailBad = false }: KitCountProps): ReactNode — A number and its word, side by side: the HUD's resource readout.
+- `KitCountProps` (interface): interface KitCountProps — The play-HUD readouts every game repeats, drawn from the active UI kit's parts: resource counts, a vitals card with the current objective under it, the wave clock and a hint strip. Each is plain layout over `KitPanel`/`KitMeter`, so the kit (and a game's `customizeKit` tokens) decides the look and a game never re-lays these out by hand. The build/action bar is `ActionBar` with `look="kit"` (`./actionHud.view`).
+- `KitCounts` (function): function KitCounts({ children }: { children?: ReactNode }): ReactNode — A row of {@link KitCount}s with even gaps.
+- `KitHint` (function): function KitHint({ text, tone = "accent", banner }: KitHintProps): ReactNode — The one-line hint across the top of a HUD — what the held tool does, why work stopped — plus the phase banner that shares its slot.
+- `KitHintProps` (interface): interface KitHintProps — Props for {@link KitHint}.
+- `KitVital` (interface): interface KitVital — One meter on a {@link KitVitals} card.
+- `KitVitals` (function): function KitVitals({ eyebrow, title, vitals = [], children, objective, width = HUD_CORNER_WIDTH }: KitVitalsProps): ReactNode — The corner card of a play HUD: the game's name, the player's (and what they protect's) meters, and the labeled objective under it. Passes pointer events through to the world.
+- `KitVitalsObjective` (interface): interface KitVitalsObjective — The current objective under a {@link KitVitals} card: who asks, what, and the one step.
+- `KitVitalsProps` (interface): interface KitVitalsProps — Props for {@link KitVitals}.
+- `KitWaveClock` (function): function KitWaveClock({ text, detail, alarm = false, banner }: KitWaveClockProps): ReactNode — The wave clock across the top of a defense HUD: how long until the next wave or how many are left, a note on what to do, and the banner when a wave arrives.
+- `KitWaveClockProps` (interface): interface KitWaveClockProps — Props for {@link KitWaveClock}.
+
+## @jgengine/core/hud/selectionHud.view
+
+- `EntityPortrait` (function): function EntityPortrait({ entity, selected = false, size = 44, vitalId = "health", tabIndex, onSelect, renderIcon, className, style, }: { entity: EntitySummaryDef; selected?: boolean; size?: number; vitalId?: string; tabIndex?: number; onSelect?: (id: string) => void; renderIcon?: (entity: EntitySum… — A selectable entity portrait tile — icon/initials, an optional thin health strip, and complete selected/hover/focus states as a real `<button>` (`aria-pressed`). The unit-of-a-selection chrome; swap the face via `renderIcon`. Accessible and keyboard-focusable.
+- `SelectionCollectionChrome` (function): function SelectionCollectionChrome({ model, itemSize = 44, gap = 4, windowSize, scroll = 0, ariaLabel = "Selection", renderMember, renderGroup, onGroupSelect, className, style, }: { model: SelectionModel; itemSize?: number; gap?: number; /** Cap the mounted portraits; the model virtualizes past this… — The composable RENDERER for the member collection: a portrait strip for a small selection, or the same-kind group chips once the model is `grouped`. Roving tabindex + arrow-key focus. Swap `renderMember`/`renderGroup` for custom chrome, or read the model and lay it out yourself. No panel skin — a behavior/accessibility layer only.
+- `SelectionGroupChip` (function): function SelectionGroupChip({ group, onSelect, renderIcon, className, style, }: { group: SelectionGroup; onSelect?: (group: SelectionGroup) => void; renderIcon?: (group: SelectionGroup) => ReactNode; className?: string; style?: CSSProperties; }): React.JSX.Element — A same-kind selection chip — icon plus count — for the grouped large-selection view. The default chrome {@link SelectionCollectionChrome} renders per group; swap it via `renderGroup`.
+- `SelectionKeyEvent` (interface): interface SelectionKeyEvent — A minimal keyboard-event shape — a real `KeyboardEvent`/React synthetic satisfies it.
+- `SelectionModel` (interface): interface SelectionModel — The live selection model returned by {@link useSelectionView}.
+- `SelectionPanel` (function): function SelectionPanel({ members, model: providedModel, groupThreshold, labelOf, windowSize, renderPrimary, renderMember, renderVital, onFocusChange, className, style, }: { members?: readonly EntitySummaryDef[]; model?: SelectionModel; groupThreshold?: number; labelOf?: (kind: string) => string; wi… — Convenience composition: skinned glass panel with the primary member's name, tags and kit meters beside {@link SelectionCollectionChrome} for the rest — demos/scaffold only, not a finished game face. Pass `members` (or a prebuilt `model`); swap sub-renderers or compose the headless pieces under game-owned chrome for product UI.
+- `UseSelectionViewOptions` (interface): interface UseSelectionViewOptions — Options for {@link useSelectionView}.
+- `useSelectionView` (function): function useSelectionView(members: readonly EntitySummaryDef[], options?: UseSelectionViewOptions): SelectionModel — The DATA/HOOK layer: summarize a selected-entity list into a live model with a focused primary, ordered members, same-kind groups, keyboard focus stepping, and a virtualization window. Rendering-agnostic — feed it to {@link SelectionPanel} or read the `view` directly.
+
+## @jgengine/core/hud/statusEffectBar.view
+
+- `StatusEffectBar` (function): function StatusEffectBar({ effects, size = 44, gap = 8, iconFor, colorFor, schoolFor, labelFor, showTimer = true, ringWidth = 3, className, style, }: StatusEffectBarProps): ReactNode — A horizontal timeline of active status effects — one countdown-ring icon per effect. Presentation only and pure over its `effects` prop, so it renders straight off the status model's snapshot. `kind` is a free string the game styles (icon / color / label); the component never interprets buff-vs-debuff semantics. Ring, track, and frame read `HudTheme` tokens, so a theme change reskins the whole row.
+- `StatusEffectBarProps` (interface): interface StatusEffectBarProps — Props for {@link StatusEffectBar}.
+- `StatusIconResolver` (type): type StatusIconResolver = (kind: string) => GameIconName | ReactNode | null — `StatusEffectBar` (#status-effect-hud): a drop-in timeline HUD row that renders active buffs/debuffs as painted icons, each wrapped in a radial countdown ring and a stack-count badge, driven straight off the engine's existing status model (`StatusInstance` → `StatusEffectView`). A game passes its live effect views and gets a polished, reskinnable effect bar — no re-deriving ring math or timers. `kind` is a free string the game styles: the component never interprets buff-vs-debuff semantics, it only maps `kind` to an icon/color/label the game can fully override. Ring, track, and frame read `HudTheme` tokens (`--jg-accent`, `--jg-slot-*`), so a theme change reskins the whole row.
+
+## @jgengine/core/hud/waveHud.view
+
+- `WaveHud` (function): function WaveHud({ runner, theme, variation = "plate", width = 260, className, style }: WaveHudProps): ReactNode — A drop-in wave/spawn HUD panel over a {@link WaveRunner}: a big "WAVE N" label, a wave-progress bar (the shared {@link KitMeter}), and the live spawned / total, budget, and alert readouts — the visible face of "the brain behind WAVE 3". It subscribes to the runner and re-renders on change; the game drives the runner's clock. Reskin with {@link WaveHudTheme} and the active UI kit. When the final wave finishes it shows a "WAVES CLEARED" state. Presentation only: the schedule, budget, and RNG live in the core model, and spawn `kind`s are never read.
+- `WaveHudProps` (interface): interface WaveHudProps — Props for {@link WaveHud}.
+- `WaveHudTheme` (interface): interface WaveHudTheme — Reskin tokens for {@link WaveHud}. All optional; each falls back to a sensible default.
+- `useWaveRunner` (function): function useWaveRunner(runner: WaveRunner): WaveView — Subscribe to a {@link WaveRunner} and re-render whenever it notifies (wave, budget, spawns, alert change). Returns the runner's pooled {@link WaveView}. The runner is driven by the game/demo (call `runner.update(dt)`), not by this hook.
 
 ## @jgengine/core/i18n/i18n
 
@@ -316,7 +559,7 @@
 - `AccessibilityState` (interface): interface AccessibilityState — Serializable accessibility preferences a game reads to adapt its presentation.
 - `AccessibilityStore` (interface): interface AccessibilityStore — Observable, serializable accessibility-preferences store.
 - `ActionCooldown` (interface): interface ActionCooldown — Cooldown state for an action, expressed so a radial sweep or countdown can render directly.
-- `ActionCost` (interface): interface ActionCost — Headless view model for a contextual action collection — the data layer behind an RTS command card, an ability action bar, a build menu, or a radial. It carries *what the buttons mean* (label, hotkey, cost, cooldown, disabled reasons, toggle state) with zero rendering opinion, so a game keeps layout, dimensions, hotkeys, catalog-id mapping, renderer, and chrome caller-owned. The React renderers in `@jgengine/react/hud/actionHud` consume this; a game can swap either without forking the logic here.
+- `ActionCost` (interface): interface ActionCost — Headless view model for a contextual action collection — the data layer behind an RTS command card, an ability action bar, a build menu, or a radial. It carries *what the buttons mean* (label, hotkey, cost, cooldown, disabled reasons, toggle state) with zero rendering opinion, so a game keeps layout, dimensions, hotkeys, catalog-id mapping, renderer, and chrome caller-owned. The React renderers in `@jgengine/core/hud/actionHud.view` consume this; a game can swap either without forking the logic here.
 - `ActionDef` (interface): interface ActionDef — A caller-authored contextual action — the DATA input to the model. Every field except `id` is optional so a build button, a stance toggle, and a cooldown ability all use the same shape. Catalog-id mapping (turning `icon`/`label` into art and copy) stays caller-owned.
 - `ActionReason` (interface): interface ActionReason — A single blocking reason: a stable machine `code` plus caller-facing `message`.
 - `BUILT_IN_SETTING_CATEGORIES` (const): const BUILT_IN_SETTING_CATEGORIES: readonly BuiltInSettingCategory[] — ⚠ undocumented
@@ -338,7 +581,7 @@
 - `EditorUiDocument` (interface): interface EditorUiDocument — Scene-document HUD section: panel id → layout. Single source of truth for placement.
 - `EditorUiPanelLayout` (interface): interface EditorUiPanelLayout — Authored layout for one HUD panel inside `editor.scene.json` → `ui.panels`.
 - `EntitySummaryDef` (interface): interface EntitySummaryDef — A caller-provided summary of one selectable entity — the DATA input. `kind` is the grouping key used to bucket a large selection (unit type, catalog id); `icon` is a portrait id the renderer resolves. Only `id` is required.
-- `EntityVital` (interface): interface EntityVital — Headless view model for a multi-entity selection — the data layer behind an RTS selection panel, a party frame, or a squad summary. It turns a caller-owned list of selected entity summaries into a primary detail focus, an ordered member strip, and same-kind buckets for large selections, with focus/hover and virtualization helpers. No rendering opinion: the React renderers in `@jgengine/react/hud/selectionHud` consume this and a game supplies the entity data from wherever it lives (a `createSelectionSet`, a roster, a marquee query).
+- `EntityVital` (interface): interface EntityVital — Headless view model for a multi-entity selection — the data layer behind an RTS selection panel, a party frame, or a squad summary. It turns a caller-owned list of selected entity summaries into a primary detail focus, an ordered member strip, and same-kind buckets for large selections, with focus/hover and virtualization helpers. No rendering opinion: the React renderers in `@jgengine/core/hud/selectionHud.view` consume this and a game supplies the entity data from wherever it lives (a `createSelectionSet`, a roster, a marquee query).
 - `FocusDirection` (type): type FocusDirection = "left" | "right" | "up" | "down" | "next" | "prev" | "first" | "last" — A focus move for keyboard/controller grid navigation over an action collection.
 - `GRAPHICS_QUALITY_DPR` (const): const GRAPHICS_QUALITY_DPR: Record<GraphicsQuality, number> — Device-pixel-ratio ceiling per quality tier — the shell's `Canvas` dpr cap.
 - `GRAPHICS_QUALITY_OPTIONS` (const): const GRAPHICS_QUALITY_OPTIONS: readonly SettingOption[] — ⚠ undocumented
@@ -522,7 +765,7 @@
 ## @jgengine/core/ui/actionModel
 
 - `ActionCooldown` (interface): interface ActionCooldown — Cooldown state for an action, expressed so a radial sweep or countdown can render directly.
-- `ActionCost` (interface): interface ActionCost — Headless view model for a contextual action collection — the data layer behind an RTS command card, an ability action bar, a build menu, or a radial. It carries *what the buttons mean* (label, hotkey, cost, cooldown, disabled reasons, toggle state) with zero rendering opinion, so a game keeps layout, dimensions, hotkeys, catalog-id mapping, renderer, and chrome caller-owned. The React renderers in `@jgengine/react/hud/actionHud` consume this; a game can swap either without forking the logic here.
+- `ActionCost` (interface): interface ActionCost — Headless view model for a contextual action collection — the data layer behind an RTS command card, an ability action bar, a build menu, or a radial. It carries *what the buttons mean* (label, hotkey, cost, cooldown, disabled reasons, toggle state) with zero rendering opinion, so a game keeps layout, dimensions, hotkeys, catalog-id mapping, renderer, and chrome caller-owned. The React renderers in `@jgengine/core/hud/actionHud.view` consume this; a game can swap either without forking the logic here.
 - `ActionDef` (interface): interface ActionDef — A caller-authored contextual action — the DATA input to the model. Every field except `id` is optional so a build button, a stance toggle, and a cooldown ability all use the same shape. Catalog-id mapping (turning `icon`/`label` into art and copy) stays caller-owned.
 - `ActionReason` (interface): interface ActionReason — A single blocking reason: a stable machine `code` plus caller-facing `message`.
 - `FocusDirection` (type): type FocusDirection = "left" | "right" | "up" | "down" | "next" | "prev" | "first" | "last" — A focus move for keyboard/controller grid navigation over an action collection.
@@ -620,7 +863,7 @@
 ## @jgengine/core/ui/selectionModel
 
 - `EntitySummaryDef` (interface): interface EntitySummaryDef — A caller-provided summary of one selectable entity — the DATA input. `kind` is the grouping key used to bucket a large selection (unit type, catalog id); `icon` is a portrait id the renderer resolves. Only `id` is required.
-- `EntityVital` (interface): interface EntityVital — Headless view model for a multi-entity selection — the data layer behind an RTS selection panel, a party frame, or a squad summary. It turns a caller-owned list of selected entity summaries into a primary detail focus, an ordered member strip, and same-kind buckets for large selections, with focus/hover and virtualization helpers. No rendering opinion: the React renderers in `@jgengine/react/hud/selectionHud` consume this and a game supplies the entity data from wherever it lives (a `createSelectionSet`, a roster, a marquee query).
+- `EntityVital` (interface): interface EntityVital — Headless view model for a multi-entity selection — the data layer behind an RTS selection panel, a party frame, or a squad summary. It turns a caller-owned list of selected entity summaries into a primary detail focus, an ordered member strip, and same-kind buckets for large selections, with focus/hover and virtualization helpers. No rendering opinion: the React renderers in `@jgengine/core/hud/selectionHud.view` consume this and a game supplies the entity data from wherever it lives (a `createSelectionSet`, a roster, a marquee query).
 - `SelectionFocusDirection` (type): type SelectionFocusDirection = "next" | "prev" | "first" | "last" — A 1-D focus move within the selection member strip.
 - `SelectionGroup` (interface): interface SelectionGroup — A bucket of same-`kind` entities in a large selection — the RTS "12 Marines" control chip.
 - `SelectionView` (interface): interface SelectionView — A resolved multi-selection view model. `primary` is the focused entity's full detail; `members` is the stable-order strip; `groups` buckets members by kind (count-desc, then label) for the portrait-overflow case; `grouped` is the hint that the selection is large enough to prefer groups over per-member portraits.
@@ -806,7 +1049,7 @@
 - `Hotbar` (function): function Hotbar({ inventoryId, activeSlot, keys, slotSize = 46, itemIcon, style, className, }: { inventoryId: string; activeSlot?: number; keys?: readonly string[]; slotSize?: number; /** Caller-supplied item id → icon registry; return null/undefined to fall back to the default glyph. */ itemIcon?: … — A numbered hotbar bound to an inventory — painted iconed slots (a `GameIcon` glyph over a school-keyed gradient with a count badge, #1035), an active-slot highlight, and a keycap per slot. Place it and pass the `inventoryId`; `activeSlot` highlights the equipped one. Supply `itemIcon` to map your item ids to your own glyphs — the default resolves a `GameIcon` from the item id.
 - `HudCanvas` (function): function HudCanvas({ layout, editChord, compactScale, showDuring, className, style, children, }: { layout: HudLayoutStore; editChord?: HudEditChord | false; /** Zoom applied to the whole HUD on compact displays. Default 0.85. */ compactScale?: number; /** Opt-in play-phase gate: render the HUD only … — Full-viewport HUD surface. Panels declared with `HudPanel` flow into nine anchor regions and stack automatically with a gap — no per-panel pixel offsets, no manual clearance for sibling panels, the touch-control dock (`--jg-hud-dock-clearance`), or device safe areas. On compact displays the whole surface scales down and each panel applies its `compact` behavior.
 - `HudCompactMode` (type): type HudCompactMode = "keep" | "chip" | "hide" — How a panel behaves on compact (phone-scale) displays. `keep` stays visible at the global compact scale, `chip` collapses to a small tap-to-expand pill, `hide` unmounts entirely.
-- `HudEditChord` (interface): interface HudEditChord { hold: string; press: string } — ⚠ undocumented · used by `HudCanvas`: Full-viewport HUD surface.
+- `HudEditChord` (interface): interface HudEditChord — ⚠ undocumented · used by `HudCanvas`: Full-viewport HUD surface.
 - `HudFade` (function): function HudFade({ watch, idleMs = 3500, dimTo = 0.18, hold = false, children, className, style }: HudFadeProps): ReactNode — A HUD group that steps back when nothing is happening: it fades after a quiet spell and comes back the moment a watched value changes, so the world fills the screen and the HUD speaks only when it has news. Hovering it also brings it back.
 - `HudFadeProps` (interface): interface HudFadeProps — Props for {@link HudFade}.
 - `HudFrame` (function): function HudFrame({ variation = "glass", shape = "rounded", title, aside, padding, width, interactive, className, style, children, }: HudFrameProps): ReactNode — Optional framed panel primitive — a single `<div data-hud-frame>` with a `glass`, `plate`, `retro`, or `themed` skin, optional `title`/`aside` header, and caller `style` merged last. Shared building block for demos and token-themed widgets; games own product chrome and art direction (see AGENTS.md).
@@ -843,7 +1086,7 @@
 - `HudThemeStatus` (interface): interface HudThemeStatus — Semantic status colors — outcome, threat, and relationship coloring.
 - `HudThemeSurface` (interface): interface HudThemeSurface — Chrome surfaces, edges, and text — what panels, overlays, and menus are built out of.
 - `HudThemeType` (interface): interface HudThemeType — Type scale (any CSS length). `min` is the readability floor every engine block clamps to; `xs` is the smallest step a block uses, so it never drops below `min`.
-- `HudViewportContextValue` (interface): interface HudViewportContextValue { fitEnabled: boolean; config: HudViewportConfig | undefined; userScale: number } — ⚠ undocumented
+- `HudViewportContextValue` (interface): interface HudViewportContextValue — ⚠ undocumented
 - `HudViewportProvider` (function): function HudViewportProvider({ platforms, config, userScale, children, }: { platforms: readonly HudPlatform[] | undefined; config: HudViewportConfig | undefined; userScale?: number; children?: ReactNode; }): React.JSX.Element — Mounted by the shell around `GameUI` so every `HudCanvas` inside the game picks up the game's `platforms`/`hudFit` declaration and the player's UI scale setting without any game-side wiring.
 - `I18nProvider` (function): function I18nProvider({ i18n, children }: { i18n: I18n; children: ReactNode }): ReactNode — Provide an {@link I18n} instance to the tree so `useT`/`useLocale` can read it.
 - `IconSchool` (type): type IconSchool = | "fire" | "frost" | "arcane" | "nature" | "holy" | "tech" | "shadow" | "steel" | "neutral" — `IconTreatment` (#1035): a procedural painted-icon face — a glyph over a school-keyed radial gradient, with a vignette inset shadow, a top gloss highlight, and optional count/keycap badges. Turns the engine's flat white `GameIcon` glyphs (and game-icons.net SVGs) into painted ability / item icons that read as AAA slots, not debug UI. Theme-aware: the frame reads the `--jg-slot-*` and `--jg-accent` `HudTheme` tokens (#1034), so a theme change re-skins every treated icon.
@@ -1596,213 +1839,6 @@
 - `useWorldInvites` (function): function useWorldInvites(): WorldInvite[] — ⚠ undocumented
 - `useWorldItems` (function): function useWorldItems(): readonly WorldItemRecord[] — Live dropped-item records: the returned list keeps one identity until an item spawns, is picked up or is removed. `worldItem.list()` allocates a new array per call and the shared store signal fires on every pose write, so a raw read re-rendered every marker each frame (#2175). A marker reads its own live pose imperatively (useFrame).
 
-## @jgengine/react/hud/actionHud
-
-- `ActionBar` (function): function ActionBar({ defs, look = "slots", columns, layout = "grid", wrap, hotkeys, itemSize, ariaLabel = "Actions", onActivate, renderItem, progress = [], trailing, prompt, wrapAt, className, style, }: ActionBarProps): ReactNode — The one action bar: an ability bar, a build strip, a tool or seed picker. It resolves `defs` through {@link useActionBar} (availability, cooldowns, costs, hotkeys, focus) and draws them in the `look` asked for — `slots` for cooldown abilities, `kit` for a build strip in the active UI kit — with orders in progress as meters, a trailing note, and the interact prompt above. Games that need bespoke chrome compose the hook with {@link ActionBarChrome} or read the model directly.
-- `ActionBarChrome` (function): function ActionBarChrome({ model, layout = "grid", itemSize = 52, gap = 6, ariaLabel = "Actions", renderItem, className, style, }: { model: ActionBarModel; layout?: "grid" | "list"; itemSize?: number; gap?: number; ariaLabel?: string; renderItem?: (action: ResolvedAction, ctx: ActionItemContext) => … — The composable RENDERER: lay the model's actions out as a `grid` or `list` toolbar with roving tabindex, arrow-key navigation, and a moved DOM focus. `renderItem` swaps per-item chrome; omit it for {@link ActionButton}. A radial or bespoke UI can skip this entirely and read the model. Purely a wiring/behavior layer — no panel skin — so a game art-directs freely.
-- `ActionBarKeyResult` (interface): interface ActionBarKeyResult — The intent a key press resolves to over an action bar: move focus, activate, or ignore.
-- `ActionBarModel` (interface): interface ActionBarModel — The live action-bar model returned by {@link useActionBar}.
-- `ActionBarProps` (interface): interface ActionBarProps — Props for {@link ActionBar}.
-- `ActionButton` (function): function ActionButton({ action, focused = false, hovered = false, size = 52, showHotkey = true, tabIndex, buttonRef, onActivate, onFocus, onHover, renderIcon, cue, onInteract, className, style, }: { action: ResolvedAction; /** Feedback cue name (default the action id), rendered as `data-jg-cue`. */ … — The default per-item chrome — a cooldown-aware action button with hotkey cap, cost line, radial cooldown wipe, and full rest/hover/focus/pressed/active/disabled states. Accessible: it is a real `<button>` with `aria-disabled`, `aria-pressed` for toggles, `aria-keyshortcuts`, and a native `title` describing why it is blocked. Swap it via `ActionBarChrome`'s `renderItem`, or drop it into a radial layout yourself.
-- `ActionItemContext` (interface): interface ActionItemContext — Render context passed to a custom {@link ActionBarChrome} item renderer.
-- `ActionKeyEvent` (interface): interface ActionKeyEvent — A minimal keyboard-event shape — a real `KeyboardEvent`/React synthetic satisfies it.
-- `ActionProgress` (interface): interface ActionProgress — A build or work order in progress, drawn as a small meter after an {@link ActionBar}'s buttons.
-- `ActionTooltip` (function): function ActionTooltip({ content, className, style, }: { content: TooltipContent; className?: string; style?: CSSProperties; }): React.JSX.Element — Render {@link TooltipContent} (from `actionTooltip`) as a styled block: title, subtitle, body, hotkey, cost lines, cooldown, and a warning footer of blocking notes. Drop it inside a {@link Popover} for an action's hover/focus description.
-- `Popover` (function): function Popover({ open, anchorRef, side = "top", gap = 8, role = "tooltip", id, children, className, style, }: { open: boolean; anchorRef: { current: HTMLElement | null }; side?: PopoverSide; gap?: number; role?: string; id?: string; children: ReactNode; className?: string; style?: CSSProperties; }… — An accessible popover shell positioned by the pure {@link placePopover} math — flips and clamps against the viewport, renders nothing while closed, and defaults to `role="tooltip"`. Reuse it for an action's hover/focus description or any anchored panel.
-- `UseActionBarOptions` (interface): interface UseActionBarOptions — Options for {@link useActionBar}.
-- `actionBarKeyAction` (function): function actionBarKeyAction(actions: readonly ResolvedAction[], focusedId: string | null, columns: number, key: string, options?: { wrap?: boolean }): ActionBarKeyResult — Pure keyboard/controller resolver for an action bar: arrows/Home/End move grid focus, Enter/Space activate the focused action, and any other single key routes through {@link actionByHotkey}. Returns the resulting intent without touching the DOM, so it unit-tests headless and `useActionBar` is a thin shell over it.
-- `actionFromAbilitySlot` (function): function actionFromAbilitySlot(slot: AbilitySlotSnapshot, extra?: Partial<ActionDef> & { resourceId?: string }): ActionDef — Composable React renderers over the headless action view model (`@jgengine/core/ui/actionModel`) — the data/renderer/chrome split for an RTS command card, an ability action bar, a build menu, or a radial. `useActionBar` is the DATA/HOOK layer (resolution + focus/hover/keyboard/hotkey), `ActionBarChrome` is the composable RENDERER (swap `renderItem` for custom chrome, or ignore it and consume the model directly for a radial), and `ActionBar` is the batteries-included default. A game swaps renderer or chrome without forking the logic. Layout, dimensions, hotkeys, and catalog-id mapping stay caller-owned.
-- `useActionBar` (function): function useActionBar(defs: readonly ActionDef[], options?: UseActionBarOptions): ActionBarModel — The DATA/HOOK layer: resolve `defs` into a live view model with focus, hover, keyboard grid navigation, and hotkey activation. Rendering-agnostic — feed the returned model to {@link ActionBarChrome}, or read it directly to lay out a radial or a bespoke card.
-
-## @jgengine/react/hud/comboMeter
-
-- `ComboMeterHud` (function): function ComboMeterHud({ meter, tierColors, theme, animate = true, hideWhenEmpty = true, barWidth = 220, className, style, }: ComboMeterHudProps): ReactNode — A drop-in HUD for a core {@link ComboMeter}: the big live combo count ("×12"), the current free-string tier label, the derived score multiplier, and a draining window bar (reusing the shared atomic bar) that empties as the decay window runs out and re-fills on every hit. The active tier's color — supplied by the game via `tierColors`, keyed on the free-string tier id the model never interprets — drives the count glow, the label, and the bar fill, so a game reskins the escalation ("good" → "great" → "savage") without the engine hardcoding any tier meaning. Presentation only: all counting, timing, tiers, and the multiplier live in the core model.
-- `ComboMeterHudProps` (interface): interface ComboMeterHudProps — Props for {@link ComboMeterHud}.
-- `ComboMeterTheme` (interface): interface ComboMeterTheme — Reskin tokens for {@link ComboMeterHud}.
-- `useComboMeter` (function): function useComboMeter(meter: ComboMeter, animate = true): ComboMeterView — Subscribe to a combo meter and re-render it each animation frame so the decay window bar drains live, returning the pooled view to draw right now. Reading the view each frame advances the meter's clock and fires window expiry, so a combo that times out visibly drops even with no further hits. The returned object is the model's pooled view — read its fields immediately, do not retain it.
-
-## @jgengine/react/hud/hudButton
-
-- `HudButton` (const): const HudButton: React.ForwardRefExoticComponent<HudButtonProps & React.RefAttributes<HTMLButtonElement>> — Themed HUD button: reads the `HudTheme` slot, accent, elevation, motion, and state tokens, and gets hover lift, press scale, a focus-visible ring, and a disabled state from the engine stylesheet. `className` and `style` restyle it per game. Interactions report to `onInteract` and the nearest `HudInteractProvider`.
-- `HudButtonProps` (interface): interface HudButtonProps extends Omit<ButtonHTMLAttributes<HTMLButtonElement>, "type"> — Props for {@link HudButton}: native button attributes plus theme-driven variant, size, and feedback hooks.
-- `HudButtonSize` (type): type HudButtonSize = "sm" | "md" | "lg" | "icon" — Size of a {@link HudButton}; `icon` is a 28px square.
-- `HudButtonVariant` (type): type HudButtonVariant = "secondary" | "primary" | "danger" | "ghost" — Visual weight of a {@link HudButton}.
-
-## @jgengine/react/hud/hudChromePreview
-
-- `HudChromePreview` (function): function HudChromePreview({ className }: { className?: string }): React.JSX.Element — The shared HUD chrome under the shell's default root theme, from static values: a glass frame with vitals and a counter, an action bar, a window, a confirm dialog, a pause menu, and the button variants. Screenshots identically; the before/after evidence for theme and primitive changes.
-
-## @jgengine/react/hud/hudFrame
-
-- `HudFrame` (function): function HudFrame({ variation = "glass", shape = "rounded", title, aside, padding, width, interactive, className, style, children, }: HudFrameProps): ReactNode — Optional framed panel primitive — a single `<div data-hud-frame>` with a `glass`, `plate`, `retro`, or `themed` skin, optional `title`/`aside` header, and caller `style` merged last. Shared building block for demos and token-themed widgets; games own product chrome and art direction (see AGENTS.md).
-- `HudFrameProps` (interface): interface HudFrameProps — Props for {@link HudFrame}.
-- `HudFrameShape` (type): type HudFrameShape = "rounded" | "circle" | "square" — Frame corner shape — `rounded` (the variation's default radius), `circle` (fully round), or `square` (no radius).
-- `HudFrameVariation` (type): type HudFrameVariation = "glass" | "plate" | "retro" | "themed" — Frame skin — `glass` (the shared dark-glass panel), `plate` (a heavier opaque plate), `retro` (a hard black-outlined frame), or `themed` (driven by the `--jg-frame-*` `HudTheme` tokens).
-
-## @jgengine/react/hud/hudInteract
-
-- `HudInteractEvent` (interface): interface HudInteractEvent — One interaction reported by an engine HUD primitive to an `onInteract` listener.
-- `HudInteractKind` (type): type HudInteractKind = "hover" | "press" | "activate" | "focus" | "open" | "close" — What happened to an engine HUD primitive.
-- `HudInteractListener` (type): type HudInteractListener = (event: HudInteractEvent) => void — Listener for {@link HudInteractEvent}s.
-- `HudInteractProvider` (function): function HudInteractProvider({ onInteract, children }: { onInteract: HudInteractListener; children?: ReactNode }): ReactNode — Routes interactions from every engine HUD primitive below it (buttons, panels, windows, action slots) to one listener — the seam a UI sound or haptics system hooks without per-button wiring. Primitives also expose `data-jg-cue` and a per-instance `onInteract`.
-- `useHudInteract` (function): function useHudInteract(source: string, cue?: string, onInteract?: HudInteractListener): (kind: HudInteractKind) => void — Returns a reporter that calls the instance listener, then the nearest {@link HudInteractProvider}.
-
-## @jgengine/react/hud/hudLanes
-
-- `HudLaneConfig` (interface): interface HudLaneConfig — How the shell lays out lanes.
-- `HudLaneLayout` (interface): interface HudLaneLayout — The resolved layout of every claimed block.
-- `HudLanePlacement` (interface): interface HudLanePlacement — One block's resolved placement.
-- `HudLaneSlot` (interface): interface HudLaneSlot — One HUD block's claim on a lane. Two blocks that name the same `anchor` and `lane` stack in `order` order; a lane is a column, so lanes in the same anchor sit side by side. The shell resolves every claim into a rectangle, which is what keeps blocks from arranging themselves into each other.
-- `resolveHudLanes` (function): function resolveHudLanes(slots: readonly HudLaneSlot[], viewport: HudSize, config: HudLaneConfig = {}): HudLaneLayout — Resolve lane claims into non-overlapping rectangles for one frame.
-
-## @jgengine/react/hud/hudLanesPreview
-
-- `HudLanesPreview` (function): function HudLanesPreview({ className }: { className?: string }): React.JSX.Element — The same shape Deepward's top-left HUD uses — two blocks that used to arrange themselves into each other. Both declare `lane="status"`, so the shell stacks them; the second lane sits beside the first and the right-hand lane mirrors it. Screenshots at any viewport without a block landing on a neighbour.
-
-## @jgengine/react/hud/hudLayout
-
-- `HUD_CORNER_WIDTH` (const): const HUD_CORNER_WIDTH: 248 — The widest a corner card draws, at the 1600x900 design size the HUD scales from.
-- `HudCanvas` (function): function HudCanvas({ layout, editChord, compactScale, showDuring, className, style, children, }: { layout: HudLayoutStore; editChord?: HudEditChord | false; /** Zoom applied to the whole HUD on compact displays. Default 0.85. */ compactScale?: number; /** Opt-in play-phase gate: render the HUD only … — Full-viewport HUD surface. Panels declared with `HudPanel` flow into nine anchor regions and stack automatically with a gap — no per-panel pixel offsets, no manual clearance for sibling panels, the touch-control dock (`--jg-hud-dock-clearance`), or device safe areas. On compact displays the whole surface scales down and each panel applies its `compact` behavior.
-- `HudCompactMode` (type): type HudCompactMode = "keep" | "chip" | "hide" — How a panel behaves on compact (phone-scale) displays. `keep` stays visible at the global compact scale, `chip` collapses to a small tap-to-expand pill, `hide` unmounts entirely.
-- `HudEditChord` (interface): interface HudEditChord { hold: string; press: string } — ⚠ undocumented · used by `HudCanvas`: Full-viewport HUD surface.
-- `HudFade` (function): function HudFade({ watch, idleMs = 3500, dimTo = 0.18, hold = false, children, className, style }: HudFadeProps): ReactNode — A HUD group that steps back when nothing is happening: it fades after a quiet spell and comes back the moment a watched value changes, so the world fills the screen and the HUD speaks only when it has news. Hovering it also brings it back.
-- `HudFadeProps` (interface): interface HudFadeProps — Props for {@link HudFade}.
-- `HudPanel` (function): function HudPanel({ id, anchor = "top-left", lane, order, compact: compactMode = "keep", chip, interactive, inset, locked, showDuring, priority, mobileBehavior, allowOverlapWith, collisionGroup, region = true, width, height, type, className, style, children, }: { id: string; anchor?: HudAnchor; /** … — A HUD block that lives in one of the nine anchor regions. Panels sharing a region stack outward from the screen edge in ascending `order`. On fine pointers panels stay draggable through the edit chord; a dragged panel leaves the flow and keeps its custom placement. On compact displays custom placements are ignored and the `compact` behavior applies.
-- `HudSlot` (type): type HudSlot = "topLeft" | "top" | "topRight" | "left" | "right" | "bottomLeft" | "bottom" | "bottomRight" — The eight edge slots of {@link HudSlots}.
-- `HudSlots` (function): function HudSlots({ storageKey, slots, overlay, showDuring = DEFAULT_SLOT_PHASES }: HudSlotsProps): ReactNode — The play HUD in one line: a few small panels pinned to the screen's edges, scaled from a 1600x900 design to any window and movable by the player (the layout is remembered per `storageKey`). Keep it to a handful of slots; the world is the picture.
-- `HudSlotsProps` (interface): interface HudSlotsProps — Props for {@link HudSlots}.
-- `hudVisibleInPhase` (function): function hudVisibleInPhase(showDuring: readonly GamePhase[] | undefined, phase: GamePhase): boolean — Whether a HUD element opted into `showDuring` is visible in the current phase; `undefined` = always visible (default).
-- `useHudAwake` (function): function useHudAwake(watch: readonly unknown[], idleMs = 3500, hold = false): boolean — Whether a HUD group should be at full strength: true for `idleMs` after any watched value changes, and whenever `hold` is set.
-- `useHudLayout` (function): function useHudLayout(options?: { storageKey?: string; snap?: number; locked?: boolean; /** * Scene-document `ui` section — source of truth for panel placement/size. * When provided, hydrates the layout store (and wins over legacy localStorage). */ documentUi?: EditorUiDocument; /** * When true (def… — Layout state for `HudCanvas` — panel placements, edit-mode drag/resize, and per-game persistence.
-
-## @jgengine/react/hud/hudLayoutPersist
-
-- `HudLayoutPersist` (type): type HudLayoutPersist = (id: string, panel: EditorUiPanelLayout) => void — Host-owned callback that commits one HUD panel layout into the scene document (typically an undoable `setUiPanel` dispatch). Injected by the editor so product UI never reaches for editor globals.
-- `HudLayoutPersistProvider` (function): function HudLayoutPersistProvider({ onPanelCommit, children, }: { onPanelCommit: HudLayoutPersist; children?: ReactNode; }): React.JSX.Element — Provides {@link HudLayoutPersist} / `onPanelCommit` to descendant `useHudLayout` calls. Mount around game UI when a host can accept document UI patches (editor). Absent provider → canvas moves/resizes are no-ops for document writes.
-- `useHudLayoutPersist` (function): function useHudLayoutPersist(): HudLayoutPersist | null — Injected panel-commit port, or `null` when no host has provided one.
-
-## @jgengine/react/hud/hudReadouts
-
-- `Clock` (function): function Clock({ format = "24h", showDay = true, controls = false, style, className, }: { format?: "24h" | "12h"; showDay?: boolean; controls?: boolean; style?: CSSProperties; className?: string; }): React.JSX.Element — A time-of-day clock reading the sim calendar — `Day N · HH:MM`, 24h or 12h. `controls` adds pause + the game's speed multipliers as clickable pills (the "fast-forward" bar), off by default so a game opts into letting the player scrub time.
-- `Coins` (function): function Coins({ currencyId, icon = "🪙", style, className, }: { currencyId: string; icon?: ReactNode; style?: CSSProperties; className?: string; }): React.JSX.Element — A currency counter — an icon (emoji/char, default a coin) plus the live amount for `currencyId`. *
-- `Crosshair` (function): function Crosshair({ size = 18, gap = 5, thickness = 2, color = "rgba(255,255,255,0.85)", style, className, }: { size?: number; gap?: number; thickness?: number; color?: string; style?: CSSProperties; className?: string; }): React.JSX.Element — A minimal center crosshair reticle — four ticks around a gap. Purely presentational.
-- `Hotbar` (function): function Hotbar({ inventoryId, activeSlot, keys, slotSize = 46, itemIcon, style, className, }: { inventoryId: string; activeSlot?: number; keys?: readonly string[]; slotSize?: number; /** Caller-supplied item id → icon registry; return null/undefined to fall back to the default glyph. */ itemIcon?: … — A numbered hotbar bound to an inventory — painted iconed slots (a `GameIcon` glyph over a school-keyed gradient with a count badge, #1035), an active-slot highlight, and a keycap per slot. Place it and pass the `inventoryId`; `activeSlot` highlights the equipped one. Supply `itemIcon` to map your item ids to your own glyphs — the default resolves a `GameIcon` from the item id.
-- `Speedometer` (function): function Speedometer({ entityId, scale = 3.6, unit = "km/h", max = 60, size = 96, style, className, }: { entityId?: string; scale?: number; unit?: string; max?: number; size?: number; style?: CSSProperties; className?: string; }): React.JSX.Element — A speedometer for an entity (defaults to the local player) — an SVG arc gauge + a digital readout. `scale` converts world units/second to your display unit (3.6 → km/h, 2.237 → mph); `max` sets the gauge's top of scale.
-
-## @jgengine/react/hud/hudSkin
-
-- `HudSkin` (interface): interface HudSkin — A game-authored visual skin layered over a {@link HudTheme}.
-- `HudSkinMaterial` (interface): interface HudSkinMaterial — Optional raster-backed materials for shared HUD chrome.
-- `hudSkinVars` (function): function hudSkinVars(skin?: HudSkin): CSSProperties — Converts a skin into the CSS variables consumed by shared HUD components.
-- `useHudFont` (function): function useHudFont(skin?: HudSkin): boolean — Loads a skin font in browsers and reports when it is available.
-
-## @jgengine/react/hud/hudSkinPreview
-
-- `HudSkinPreview` (function): function HudSkinPreview({ className }: { className?: string }): React.JSX.Element — Procedural two-skin fixture for visual regression captures.
-
-## @jgengine/react/hud/hudSurface
-
-- `HudSurface` (const): const HudSurface: React.ForwardRefExoticComponent<HudSurfaceProps & React.RefAttributes<HTMLElement>> — Themed panel/window frame over the `HudTheme` frame, elevation, and motion tokens. It enters with a short rise-and-fade and stays mounted through its exit when `open` turns false (`data-state="open" | "closed"`); reduced motion skips both. Padding comes from `--jg-panel-padding`, and the engine rules sit in a cascade layer, so a game's `className` restyles it without `!important`. Not the `HudCanvas` layout slot (`HudPanel` in `@jgengine/react/hud/hudLayout`).
-- `HudSurfaceElement` (type): type HudSurfaceElement = "div" | "section" | "aside" | "nav" | "header" | "footer" | "article" | "main" | "form" | "dialog" — Block elements a {@link HudSurface} can render as, so it can be a landmark.
-- `HudSurfaceElevation` (type): type HudSurfaceElevation = "raised" | "overlay" | "modal" — Shadow height of a {@link HudSurface}.
-- `HudSurfaceProps` (interface): interface HudSurfaceProps extends Omit<HTMLAttributes<HTMLElement>, "title"> — Props for {@link HudSurface}.
-
-## @jgengine/react/hud/hudTheme
-
-- `HUD_THEME_PRESETS` (const): const HUD_THEME_PRESETS: { "arcane-stone": HudTheme; "survival-wood": HudTheme; "military-flat": HudTheme; "sleek-hex": HudTheme; "elemental-circle": HudTheme; "sandbox-slot": HudTheme; ember: HudTheme; synthwave: HudTheme; fieldkit: HudTheme; } — Built-in theme presets for demos/scaffold only — not product identity; games author their own theme.
-- `HudSkin` (interface): interface HudSkin — A game-authored visual skin layered over a {@link HudTheme}.
-- `HudTheme` (interface): interface HudTheme — A full HUD theme. Author one with {@link hudTheme} or {@link deriveHudTheme}.
-- `HudThemeElevation` (interface): interface HudThemeElevation — Layered `box-shadow` stacks by height, plus the inner top highlight a lit panel edge gets.
-- `HudThemeFont` (interface): interface HudThemeFont — Typography roles. Any CSS `font-family` list.
-- `HudThemeFrame` (interface): interface HudThemeFrame — Frame material + shape tokens (panels, `HudFrame variation="themed"`).
-- `HudThemeMotion` (interface): interface HudThemeMotion — Motion durations and easings. Blocks multiply durations by `--jg-motion-scale`, which the engine stylesheet sets to 0 under `prefers-reduced-motion` or `[data-reduced-motion="true"]`.
-- `HudThemeOverrides` (interface): interface HudThemeOverrides — Per-group partial overrides accepted by {@link hudTheme}.
-- `HudThemePalette` (interface): interface HudThemePalette — `HudTheme` (#1034, #1573): one token object that restyles every shared token-driven building block at once — the atomic bars (#1033), frames, slots, the minimap ring, and the chrome the registry blocks read (surfaces, edges, text, status colors, fonts, rarity). `hudThemeVars(theme)` emits the whole `--jg-*` vocabulary, so setting a **game-authored** theme on any HUD ancestor re-skins `packages/react` primitives and `registry/jgengine` components together. Purely CSS-token driven (no image assets). Tokens are not a finished UI: every game still owns composition, skin, and art direction (see AGENTS.md). Built-in presets are demo/scaffold starting points only.
-- `HudThemePreset` (type): type HudThemePreset = keyof typeof HUD_THEME_PRESETS — Built-in demo/scaffold theme preset name — not a game identity.
-- `HudThemeRarity` (interface): interface HudThemeRarity — Item-rarity coloring shared by loot cards, tooltips, and inventory slots.
-- `HudThemeSeed` (interface): interface HudThemeSeed — Seed colors for {@link deriveHudTheme}. Only `accent` and `surface` are required.
-- `HudThemeSlot` (interface): interface HudThemeSlot — Action/inventory slot tokens.
-- `HudThemeSpace` (interface): interface HudThemeSpace — Spacing steps (any CSS length).
-- `HudThemeState` (interface): interface HudThemeState — Interactive-state tokens shared by every engine button, slot, and window.
-- `HudThemeStatus` (interface): interface HudThemeStatus — Semantic status colors — outcome, threat, and relationship coloring.
-- `HudThemeSurface` (interface): interface HudThemeSurface — Chrome surfaces, edges, and text — what panels, overlays, and menus are built out of.
-- `HudThemeType` (interface): interface HudThemeType — Type scale (any CSS length). `min` is the readability floor every engine block clamps to; `xs` is the smallest step a block uses, so it never drops below `min`.
-- `defaultHudTheme` (const): const defaultHudTheme: HudTheme — The engine's default HUD look, applied by the shell at the HUD root of every game that does not opt out: a strong system UI font stack, layered translucent panels with a lit top rim and crisp hairline borders, a 12px type floor, and motion that honours reduced-motion. Games override any part with their own theme on a HUD ancestor.
-- `deriveHudTheme` (function): function deriveHudTheme(seed: HudThemeSeed): HudTheme — Derives a coherent full theme from an accent/surface pair — shades, edges, dim text, frames, and slots all fall out of the seed, so a game gets one consistent look across the `packages/react` primitives and the `registry/jgengine` blocks without naming 50 tokens. Hex seeds only (`#rgb` or `#rrggbb`).
-- `hudSkinVars` (function): function hudSkinVars(skin?: HudSkin): CSSProperties — Converts a skin into the CSS variables consumed by shared HUD components.
-- `hudTheme` (function): function hudTheme(overrides: HudThemeOverrides): HudTheme — Builds a full {@link HudTheme} from per-group partials, filling the rest from {@link defaultHudTheme}. Reach for this when a game wants to name exact values; use {@link deriveHudTheme} when a seed color pair is enough.
-- `hudThemeVars` (function): function hudThemeVars(theme: HudTheme): CSSProperties — Emits theme CSS properties, resetting inherited skins when absent. Spread onto a HUD ancestor.
-- `resolveHudTheme` (function): function resolveHudTheme(theme?: HudThemePreset | HudTheme): HudTheme — Resolves a preset name (or a full theme) to a `HudTheme`; falls back to the default theme.
-
-## @jgengine/react/hud/hudThemePreview
-
-- `HudThemePreview` (function): function HudThemePreview({ className }: { className?: string }): React.JSX.Element — Renders the default theme plus every genre preset as a deterministic matrix.
-
-## @jgengine/react/hud/hudThemeRoot
-
-- `HudThemeRoot` (function): function HudThemeRoot({ theme, accessibility, children, }: { theme?: HudTheme | false; accessibility?: Partial<AccessibilityState>; children?: ReactNode; }): ReactNode — The HUD root the shell mounts around every `GameUI`: a layout-free (`display: contents`) `[data-jg-hud]` element carrying the theme's `--jg-*` variables, plus the engine stylesheet. Unset `theme` applies {@link defaultHudTheme}; a game's own theme on any descendant still wins by inheritance. `false` opts out of the default theme and the generic HUD control defaults; the keyframes stay so engine blocks still animate.
-
-## @jgengine/react/hud/hudTokens
-
-- `HUD_FOCUS_RING` (const): const HUD_FOCUS_RING: "var(--jg-focus-ring, 0 0 0 2px #0a0c10, 0 0 0 4px var(--jg-accent, #38bdf8))" — Focus ring `box-shadow` reference.
-- `HUD_FONT_STACK` (const): const HUD_FONT_STACK: "\"Inter Variable\", Inter, \"SF Pro Text\", -apple-system, BlinkMacSystemFont, \"Segoe UI Variable Text\", \"Segoe UI\", Roboto, \"Helvetica Neue\", Arial, sans-serif" — UI sans stack used when no theme supplies `--jg-font-body`.
-- `HudEase` (type): type HudEase = "ease" | "easeOut" | "spring" — Motion easing.
-- `HudElevation` (type): type HudElevation = "raised" | "overlay" | "modal" — Shadow stack height.
-- `HudMotionSpeed` (type): type HudMotionSpeed = "fast" | "base" | "slow" — Motion duration step.
-- `HudSpaceStep` (type): type HudSpaceStep = "xs" | "sm" | "md" | "lg" | "xl" — Spacing step.
-- `HudTypeStep` (type): type HudTypeStep = "xs" | "sm" | "md" | "lg" | "xl" | "xxl" | "display" — Inline-style accessors for the `HudTheme` scale tokens (#1034): each returns a `var(--jg-*)` reference with the default theme's value as fallback, so a block reads the active theme when one is applied and still renders the default look outside the shell.
-- `hudDuration` (function): function hudDuration(speed: HudMotionSpeed = "fast"): string — Duration reference scaled by `--jg-motion-scale` (0 under reduced motion).
-- `hudEase` (function): function hudEase(ease: HudEase = "ease"): string — Easing reference.
-- `hudElevation` (function): function hudElevation(level: HudElevation = "raised"): string — `box-shadow` reference for a height, with the lit top rim layered in.
-- `hudFont` (const): const hudFont: { readonly body: "var(--jg-font-body, \"Inter Variable\", Inter, \"SF Pro Text\", -apple-system, BlinkMacSystemFont, \"Segoe UI Variable Text\", \"Segoe UI\", Roboto, \"Helvetica Neue\", Arial, sans-serif)"; readonly display: "var(--jg-font-display, \"Inter Variable\", Inter, \"SF Pro… — Font-family references for each theme role.
-- `hudSpace` (function): function hudSpace(step: HudSpaceStep): string — Spacing reference for a step, e.g. `padding: hudSpace("sm")`.
-- `hudTransition` (function): function hudTransition(properties: string | readonly string[], speed: HudMotionSpeed = "fast", ease: HudEase = "ease"): string — `transition` value for the given properties at one speed and easing, honouring reduced motion.
-- `hudType` (function): function hudType(step: HudTypeStep): string — Font-size reference for a type-scale step, e.g. `fontSize: hudType("xs")`.
-
-## @jgengine/react/hud/hudViewport
-
-- `HudViewportContextValue` (interface): interface HudViewportContextValue { fitEnabled: boolean; config: HudViewportConfig | undefined; userScale: number } — ⚠ undocumented
-- `HudViewportProvider` (function): function HudViewportProvider({ platforms, config, userScale, children, }: { platforms: readonly HudPlatform[] | undefined; config: HudViewportConfig | undefined; userScale?: number; children?: ReactNode; }): React.JSX.Element — Mounted by the shell around `GameUI` so every `HudCanvas` inside the game picks up the game's `platforms`/`hudFit` declaration and the player's UI scale setting without any game-side wiring.
-- `useHudViewport` (function): function useHudViewport(): HudViewportContextValue | null — ⚠ undocumented
-
-## @jgengine/react/hud/kitHud
-
-- `KitCount` (function): function KitCount({ value, label, id, detail, detailBad = false }: KitCountProps): ReactNode — A number and its word, side by side: the HUD's resource readout.
-- `KitCountProps` (interface): interface KitCountProps — The play-HUD readouts every game repeats, drawn from the active UI kit's parts: resource counts, a vitals card with the current objective under it, the wave clock and a hint strip. Each is plain layout over `KitPanel`/`KitMeter`, so the kit (and a game's `customizeKit` tokens) decides the look and a game never re-lays these out by hand. The build/action bar is `ActionBar` with `look="kit"` (`./actionHud`).
-- `KitCounts` (function): function KitCounts({ children }: { children?: ReactNode }): ReactNode — A row of {@link KitCount}s with even gaps.
-- `KitHint` (function): function KitHint({ text, tone = "accent", banner }: KitHintProps): ReactNode — The one-line hint across the top of a HUD — what the held tool does, why work stopped — plus the phase banner that shares its slot.
-- `KitHintProps` (interface): interface KitHintProps — Props for {@link KitHint}.
-- `KitVital` (interface): interface KitVital — One meter on a {@link KitVitals} card.
-- `KitVitals` (function): function KitVitals({ eyebrow, title, vitals = [], children, objective, width = HUD_CORNER_WIDTH }: KitVitalsProps): ReactNode — The corner card of a play HUD: the game's name, the player's (and what they protect's) meters, and the labeled objective under it. Passes pointer events through to the world.
-- `KitVitalsObjective` (interface): interface KitVitalsObjective — The current objective under a {@link KitVitals} card: who asks, what, and the one step.
-- `KitVitalsProps` (interface): interface KitVitalsProps — Props for {@link KitVitals}.
-- `KitWaveClock` (function): function KitWaveClock({ text, detail, alarm = false, banner }: KitWaveClockProps): ReactNode — The wave clock across the top of a defense HUD: how long until the next wave or how many are left, a note on what to do, and the banner when a wave arrives.
-- `KitWaveClockProps` (interface): interface KitWaveClockProps — Props for {@link KitWaveClock}.
-
-## @jgengine/react/hud/selectionHud
-
-- `EntityPortrait` (function): function EntityPortrait({ entity, selected = false, size = 44, vitalId = "health", tabIndex, onSelect, renderIcon, className, style, }: { entity: EntitySummaryDef; selected?: boolean; size?: number; vitalId?: string; tabIndex?: number; onSelect?: (id: string) => void; renderIcon?: (entity: EntitySum… — A selectable entity portrait tile — icon/initials, an optional thin health strip, and complete selected/hover/focus states as a real `<button>` (`aria-pressed`). The unit-of-a-selection chrome; swap the face via `renderIcon`. Accessible and keyboard-focusable.
-- `SelectionCollectionChrome` (function): function SelectionCollectionChrome({ model, itemSize = 44, gap = 4, windowSize, scroll = 0, ariaLabel = "Selection", renderMember, renderGroup, onGroupSelect, className, style, }: { model: SelectionModel; itemSize?: number; gap?: number; /** Cap the mounted portraits; the model virtualizes past this… — The composable RENDERER for the member collection: a portrait strip for a small selection, or the same-kind group chips once the model is `grouped`. Roving tabindex + arrow-key focus. Swap `renderMember`/`renderGroup` for custom chrome, or read the model and lay it out yourself. No panel skin — a behavior/accessibility layer only.
-- `SelectionGroupChip` (function): function SelectionGroupChip({ group, onSelect, renderIcon, className, style, }: { group: SelectionGroup; onSelect?: (group: SelectionGroup) => void; renderIcon?: (group: SelectionGroup) => ReactNode; className?: string; style?: CSSProperties; }): React.JSX.Element — A same-kind selection chip — icon plus count — for the grouped large-selection view. The default chrome {@link SelectionCollectionChrome} renders per group; swap it via `renderGroup`.
-- `SelectionKeyEvent` (interface): interface SelectionKeyEvent — A minimal keyboard-event shape — a real `KeyboardEvent`/React synthetic satisfies it.
-- `SelectionModel` (interface): interface SelectionModel — The live selection model returned by {@link useSelectionView}.
-- `SelectionPanel` (function): function SelectionPanel({ members, model: providedModel, groupThreshold, labelOf, windowSize, renderPrimary, renderMember, renderVital, onFocusChange, className, style, }: { members?: readonly EntitySummaryDef[]; model?: SelectionModel; groupThreshold?: number; labelOf?: (kind: string) => string; wi… — Convenience composition: skinned glass panel with the primary member's name, tags and kit meters beside {@link SelectionCollectionChrome} for the rest — demos/scaffold only, not a finished game face. Pass `members` (or a prebuilt `model`); swap sub-renderers or compose the headless pieces under game-owned chrome for product UI.
-- `UseSelectionViewOptions` (interface): interface UseSelectionViewOptions — Options for {@link useSelectionView}.
-- `useSelectionView` (function): function useSelectionView(members: readonly EntitySummaryDef[], options?: UseSelectionViewOptions): SelectionModel — The DATA/HOOK layer: summarize a selected-entity list into a live model with a focused primary, ordered members, same-kind groups, keyboard focus stepping, and a virtualization window. Rendering-agnostic — feed it to {@link SelectionPanel} or read the `view` directly.
-
-## @jgengine/react/hud/statusEffectBar
-
-- `StatusEffectBar` (function): function StatusEffectBar({ effects, size = 44, gap = 8, iconFor, colorFor, schoolFor, labelFor, showTimer = true, ringWidth = 3, className, style, }: StatusEffectBarProps): ReactNode — A horizontal timeline of active status effects — one countdown-ring icon per effect. Presentation only and pure over its `effects` prop, so it renders straight off the status model's snapshot. `kind` is a free string the game styles (icon / color / label); the component never interprets buff-vs-debuff semantics. Ring, track, and frame read `HudTheme` tokens, so a theme change reskins the whole row.
-- `StatusEffectBarProps` (interface): interface StatusEffectBarProps — Props for {@link StatusEffectBar}.
-- `StatusIconResolver` (type): type StatusIconResolver = (kind: string) => GameIconName | ReactNode | null — `StatusEffectBar` (#status-effect-hud): a drop-in timeline HUD row that renders active buffs/debuffs as painted icons, each wrapped in a radial countdown ring and a stack-count badge, driven straight off the engine's existing status model (`StatusInstance` → `StatusEffectView`). A game passes its live effect views and gets a polished, reskinnable effect bar — no re-deriving ring math or timers. `kind` is a free string the game styles: the component never interprets buff-vs-debuff semantics, it only maps `kind` to an icon/color/label the game can fully override. Ring, track, and frame read `HudTheme` tokens (`--jg-accent`, `--jg-slot-*`), so a theme change reskins the whole row.
-
-## @jgengine/react/hud/waveHud
-
-- `WaveHud` (function): function WaveHud({ runner, theme, variation = "plate", width = 260, className, style }: WaveHudProps): ReactNode — A drop-in wave/spawn HUD panel over a {@link WaveRunner}: a big "WAVE N" label, a wave-progress bar (the shared {@link KitMeter}), and the live spawned / total, budget, and alert readouts — the visible face of "the brain behind WAVE 3". It subscribes to the runner and re-renders on change; the game drives the runner's clock. Reskin with {@link WaveHudTheme} and the active UI kit. When the final wave finishes it shows a "WAVES CLEARED" state. Presentation only: the schedule, budget, and RNG live in the core model, and spawn `kind`s are never read.
-- `WaveHudProps` (interface): interface WaveHudProps — Props for {@link WaveHud}.
-- `WaveHudTheme` (interface): interface WaveHudTheme — Reskin tokens for {@link WaveHud}. All optional; each falls back to a sensible default.
-- `useWaveRunner` (function): function useWaveRunner(runner: WaveRunner): WaveView — Subscribe to a {@link WaveRunner} and re-render whenever it notifies (wave, budget, spawns, alert change). Returns the runner's pooled {@link WaveView}. The runner is driven by the game/demo (call `runner.update(dt)`), not by this hook.
-
 ## @jgengine/react/i18n
 
 - `I18nProvider` (function): function I18nProvider({ i18n, children }: { i18n: I18n; children: ReactNode }): ReactNode — Provide an {@link I18n} instance to the tree so `useT`/`useLocale` can read it.
@@ -2129,21 +2165,6 @@
 ## @jgengine/react/rotateDevice
 
 - `RotateDeviceScreen` (function): function RotateDeviceScreen({ title = "Turn your device", description, requiredOrientation = "landscape", accent = "var(--jg-accent, #8ea2ff)", icon, className, style, }: { /** Short headline. */ title?: string; /** One concise explanatory line. Defaults from `requiredOrientation`. */ description?: … — Full-viewport, non-dismissible rotate-device gate shown when a game requires an orientation the device isn't in.
-
-## @jgengine/react/save/saveSlots
-
-- `relativeSavedAt` (function): function relativeSavedAt(savedAt: number, nowMs = Date.now()): string — Turn a `savedAt` timestamp into a compact relative label ("just now", "4m ago", "2d ago"). Presentation-only helper — the model stores raw ms.
-- `useSaveSlots` (function): function useSaveSlots(model: SaveSlots): SaveSlotMeta[] — Subscribe to a {@link SaveSlots} index and re-render on any change (write, clear, rename, restore). Returns the live list of slots in menu order. Wire it into a save-select screen and mutate the model in event handlers — the menu re-renders itself.
-
-## @jgengine/react/save/saveStore
-
-- `SaveStoreView` (interface): interface SaveStoreView<T> — The reactive slice of a {@link SaveStore} returned by {@link useSaveStore} — the live value plus bound save actions, all re-rendering on change.
-- `useSaveStore` (function): function useSaveStore<T>(store: SaveStore<T>, options?: { load?: boolean }): SaveStoreView<T> — Bind a {@link SaveStore} to React: returns the live `value` and `status` and re-renders whenever either changes. By default it calls `load()` once on mount (pass `{ load: false }` to hydrate yourself). The same hook works for offline (localStorage) and cloud (Convex/DB) saves — only the store's backend differs.
-
-## @jgengine/react/save/saveThumbnail
-
-- `SaveThumbnailOptions` (interface): interface SaveThumbnailOptions — How {@link shrinkCapture} sizes and encodes a capture.
-- `shrinkCapture` (function): function shrinkCapture(capture: string | null, options: SaveThumbnailOptions = {}): Promise<string | null> — Downscale a captured frame (a data URL from `captureCanvas`) to a save-card thumbnail. Resolves to the thumbnail data URL, or `null` when the capture could not be decoded (a blank or tainted frame).
 
 ## @jgengine/react/scoreboard
 
@@ -2958,42 +2979,6 @@
 
 - `PAD_HAPTIC_EFFECT_MS` (const): const PAD_HAPTIC_EFFECT_MS: 120 — How long each rumble command lasts; refreshed before it runs out so a held level feels continuous.
 - `PadHapticState` (interface): interface PadHapticState — Last command sent to one pad.
-
-## @jgengine/shell/hud/FrustumSensorHud
-
-- `FrustumSensorProbeOptions` (interface): interface FrustumSensorProbeOptions extends FramingConfig { subjectIds: readonly string[]; subjectRadius?: number } — ⚠ undocumented · used by `FrustumSensorReadout`: Renders inside the Canvas (needs the live camera via `useFrame`/`useThree`) but portals a real HTML readout via drei's `Html fullscreen` — a…
-- `FrustumSensorReadout` (function): function FrustumSensorReadout(props: FrustumSensorProbeOptions & { wrapperClassName?: string; className?: string }): React.JSX.Element — Renders inside the Canvas (needs the live camera via `useFrame`/`useThree`) but portals a real HTML readout via drei's `Html fullscreen` — a photo-mode "is this subject framed" HUD.
-- `frustumSampleDisplayEqual` (function): function frustumSampleDisplayEqual(a: FrustumSample | null, b: FrustumSample | null): boolean — ⚠ undocumented
-- `useFrustumSensor` (function): function useFrustumSensor(options: FrustumSensorProbeOptions): FrustumSample | null — ⚠ undocumented
-
-## @jgengine/shell/hud/HiddenStateProbeHud
-
-- `SensorReadoutMeter` (function): function SensorReadoutMeter({ label, reading, className }: SensorReadoutMeterProps): React.JSX.Element — A handheld-sensor readout: needle strength bar + the raw reading, or a "no signal" idle state.
-- `SensorReadoutMeterProps` (interface): interface SensorReadoutMeterProps { label: string; reading: ReturnType<typeof probeHiddenState>; className?: string } — ⚠ undocumented · used by `SensorReadoutMeter`: A handheld-sensor readout: needle strength bar + the raw reading, or a "no signal" idle state.
-- `useHiddenStateProbe` (function): function useHiddenStateProbe(origin: EntityPosition, sources: readonly HiddenStateSource[], options: SensorProbeOptions): SensorReading | null — Reads a hidden zone/entity state variable in range (EMF / thermometer / geiger style sensor verb, #116).
-
-## @jgengine/shell/hud/HudOnlyDriver
-
-- `HudOnlyDriver` (function): function HudOnlyDriver({ ctx, multiplayer, serverIdRef, playable, tracker, pointerAxisRef, gateRef, onRuntimeError, }: { ctx: GameContext; multiplayer: ShellMultiplayer | null; serverIdRef: { current: string | null }; playable: PlayableGame; tracker: ActionStateTracker<string>; pointerAxisRef: { cur… — Drives a HUD-only page: steps the sim with no 3D canvas so a capture can render just the game UI.
-
-## @jgengine/shell/hud/ViewportHuds
-
-- `ViewportHuds` (function): function ViewportHuds({ ctx, config, children, }: { ctx: GameContext; config?: ViewportsConfig; children: (slot: LocalPlayerSlot, viewport: ViewportDef) => ReactNode; }): React.JSX.Element — One absolutely-positioned HUD root per viewport, laid over the canvas: render each seat's own health, prompts or score with `children(slot)`. Pass the same `viewports` config the game gave `defineGame`.
-
-## @jgengine/shell/hud/WorldHud
-
-- `NameplateSample` (interface): interface NameplateSample — Projected nameplate with optional health and distance from the render camera.
-- `ProjectileTracers` (function): function ProjectileTracers({ lifeMs = 200 }: { lifeMs?: number }): React.JSX.Element — ⚠ undocumented
-- `Reticle` (function): function Reticle({ className }: { className?: string }): React.JSX.Element — ⚠ undocumented
-- `WorldBarSample` (interface): interface WorldBarSample { entityId?: string; x: number; y: number; percent: number; pxPerMeter?: number } — ⚠ undocumented
-- `WorldEntityBars` (function): function WorldEntityBars({ statId, height = 2.2, roles, resolveRole, maxDistance, occlude = true, tickMs = 80, maxSamples = 64, }: { statId: string; height?: number; roles?: readonly CatalogEntityRole[]; resolveRole?: (entity: SceneEntity) => CatalogEntityRole | undefined; /** Hide bars beyond this … — ⚠ undocumented
-- `WorldFloatText` (function): function WorldFloatText({ height = 1.9, lifeMs = 950 }: { height?: number; lifeMs?: number }): React.JSX.Element — ⚠ undocumented
-- `WorldNameplates` (function): function WorldNameplates({ statId = "health", height = 2.3, roles, resolveRole, maxDistance, occlude = true, tickMs = 120, maxSamples = 64, resolveName, showHealth = true, className, nameplateClassName, nameClassName, barClassName, fillClassName, renderNameplate, }: WorldNameplatesProps): React.JSX.… — Billboarded name + 78×6px HP bar over every nearby non-local entity that passes `roles`/`maxDistance` — headless (className/data-* slots on every part, `renderNameplate` for a full swap), turned on declaratively via `defineGame({ nameplates })` rather than mounted by hand.
-- `WorldNameplatesProps` (interface): interface WorldNameplatesProps — Props for `WorldNameplates` — entity filter, refresh rate, and headless className/render hooks.
-- `WorldObjectHighlights` (function): function WorldObjectHighlights({ color = "#facc15", radius, y = 0.05 }: WorldObjectHighlightsProps): React.JSX.Element — Ground ring over every `ctx.scene.object.selection`-ed placed object — the object-layer counterpart to `WorldEntityBars`/`WorldNameplates`. Mount it once in the game's scene (headless: no defaults are imposed beyond a visible ring) instead of hand-rolling a selection highlight through `WorldOverlay` against external state.
-- `WorldObjectHighlightsProps` (interface): interface WorldObjectHighlightsProps — Props for {@link WorldObjectHighlights}.
-- `WorldTelegraphs` (function): function WorldTelegraphs(): React.JSX.Element — ⚠ undocumented
-- `startFromMuzzle` (function): function startFromMuzzle(ctx: GameContext, from: string, camera: THREE.Camera, start: THREE.Vector3): void — Where a shot's tracer visibly starts. The rule origin (eye or fixed muzzle offset) decides what is hit; the line starts at the shooter's gun: a first-person viewmodel's registered muzzle, else the bottom-right of the view where a held gun sits, and for anyone seen from outside, their registered hand or barrel. Exported for tests.
 
 ## @jgengine/shell/input/gamepadMerge
 

@@ -1,4 +1,4 @@
-import { WorldNameplates, type NameplateSample } from "@jgengine/shell/hud/WorldHud";
+import { WorldNameplates, type NameplateSample } from "@jgengine/core/hud/WorldHud.draw";
 import { SceneCaptureBinding } from "@jgengine/shell/render/sceneCapture";
 import { registerSceneCapture } from "@jgengine/shell/render/sceneCaptureRequest";
 

@@ -3,7 +3,7 @@ import { useCallback } from "react";
 import { UI_CUES, uiCueSoundId, type UiCue } from "@jgengine/core/audio/uiCues";
 import type { GameContext } from "@jgengine/core/runtime/gameContext";
 
-import type { HudInteractEvent } from "./hud/hudInteract";
+import type { HudInteractEvent } from "@jgengine/core/hud/hudInteract.view";
 import { useOptionalGameContext } from "./provider";
 
 export type { UiCue } from "@jgengine/core/audio/uiCues";

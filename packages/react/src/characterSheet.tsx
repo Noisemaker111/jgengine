@@ -1,8 +1,8 @@
 import { type CSSProperties, type ReactNode } from "react";
 
 import { EquipmentSlots, type SlotItem } from "./inventory/slots";
-import { HudFrame, type HudFrameVariation } from "./hud/hudFrame";
-import { hudType } from "./hud/hudTokens";
+import { HudFrame, type HudFrameVariation } from "@jgengine/core/hud/hudFrame.view";
+import { hudType } from "@jgengine/core/hud/hudTokens";
 
 /**
  * Character-sheet / paperdoll composition (#1033 follow-up): a drop-in `<CharacterSheet>` that

@@ -3,7 +3,7 @@ import { GameCursor } from "@jgengine/react/gameCursor";
 import { KitButton, KitPanel } from "@jgengine/react/uiKitRoot";
 import { GameIcon } from "@jgengine/react/gameIcons";
 import { useMenuNav } from "@jgengine/react/menu/menuNav";
-import { relativeSavedAt } from "@jgengine/react/save/saveSlots";
+import { relativeSavedAt } from "@jgengine/core/save/saveSlots.view";
 import type { SaveSlotMeta } from "@jgengine/core/save/saveSlots";
 
 import { KEEP_LABEL } from "../../save";

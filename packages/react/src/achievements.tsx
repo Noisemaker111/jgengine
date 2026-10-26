@@ -1,7 +1,7 @@
 import { useSyncExternalStore, type CSSProperties, type ReactNode } from "react";
 
 import type { AchievementTracker, AchievementView } from "@jgengine/core/game/achievements";
-import { hudType } from "./hud/hudTokens";
+import { hudType } from "@jgengine/core/hud/hudTokens";
 
 /**
  * Subscribe a component to an achievement tracker's live view list. The list

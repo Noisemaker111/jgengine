@@ -18,7 +18,7 @@ beforeAll(async () => {
   for (const peer of ["@react-three/fiber", "@react-three/drei", "three", "three-stdlib"]) await symlink(resolve(import.meta.dir, "../node_modules", peer), `${dir}/node_modules/${peer}`, "dir");
   await Bun.write(`${dir}/fixture.tsx`, `
     import React from 'react';import {createRoot} from 'react-dom/client';
-    import {defineGame} from '@jgengine/shell/gameKit';import {ShellHudPresentation} from '@jgengine/shell/hud/ShellHudPresentation';
+    import {defineGame} from '@jgengine/shell/gameKit';import {ShellHudPresentation} from '@jgengine/core/hud/ShellHudPresentation.draw';
     import {SettingsTrigger,useSettings} from '@jgengine/react/settings/settings';
     import {createGameContext} from '@jgengine/core/runtime/gameContext';import {createActionStateTracker} from '@jgengine/core/input/actionBindings';
     import {createSettingsStore,BUILT_IN_SETTING_CATEGORIES} from '@jgengine/core/settings/settingsModel';

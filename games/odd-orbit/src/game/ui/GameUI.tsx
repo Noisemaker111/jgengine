@@ -3,7 +3,7 @@ import { HudCanvas, HudPanel, useHudLayout, useDisplayProfile, usePanels } from 
 import { useGameFonts } from "@jgengine/react/gameFonts";
 import { KitPanel } from "@jgengine/react/uiKitRoot";
 import { GameIcon } from "@jgengine/react/gameIcons";
-import { HudButton } from "@jgengine/react/hud/hudButton";
+import { HudButton } from "@jgengine/core/hud/hudButton.view";
 import { useGame, useSceneObjects } from "@jgengine/react/hooks";
 import { useStore } from "@jgengine/react/store";
 import { GAME_FONTS } from "../../art/fonts/fonts";

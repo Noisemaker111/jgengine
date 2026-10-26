@@ -26,16 +26,17 @@ Code comments default to none. Exported public API keeps tight JSDoc (it generat
 - **Respect layering** ([README.md](README.md#layering)). `core` never depends on frameworks, rendering, browser, backend or game code.
 - **Scale by default.** Serializable state, injected deterministic randomness, bounded work, allocation-aware hot paths, no full-world per-frame scans, no single-player-only contracts.
 - **Stateful primitives keep state, storage and policy reachable.** A `create*` factory with mutable state exposes `snapshot()`/`state()` and `restore()`/`reset()` (`cards/cardPile.ts`), takes storage as an injected interface (`game/keyValueStore.ts`), and keeps play-time values retunable (`vehicleDynamics.ts` `retune`). `check stateful-ratchet` enforces the first.
-- **Games own their UI composition; the engine ships the parts.** Inventory, windows, vitals, action bars, currency and minimaps are `packages/*` blocks (`HudSlots` plus `@jgengine/react/hud/kitHud`) reskinned with the UI kit's tokens. Every game has its own look, a real main menu, a settings surface and in-game credits.
+- **Games own their UI composition; the engine ships the parts.** Inventory, windows, vitals, action bars, currency and minimaps are `packages/*` blocks (`HudSlots` plus `@jgengine/core/hud/kitHud.view`) reskinned with the UI kit's tokens. Every game has its own look, a real main menu, a settings surface and in-game credits.
 - **Never use Kenney assets.** Prefer Quaternius or KayKit (3D), game-icons.net (icons), ambientCG (PBR).
 - **Ports copy behavior and data, not implementation.** Credit sources in `CREDITS.md` and, for player-facing work, in the HUD and website.
 
 ## Layout
 
-- **One concept, one folder per layer, same name in each.** `core` holds the model, `shell` draws it, `react` shows it as UI, `editor` authors it: `packages/core/src/camera/shake/`, `packages/shell/src/camera/shake/`, `packages/react/src/camera/shake/`. A layer the concept does not need has no folder. A sub-concept nests in its parent's folder in every layer.
+- **One feature, one folder.** A feature's model, view, draw code and tests live together in `packages/core/src/<feature>/`; the file name says the layer: `hudLayout.ts` (model), `kitHud.view.tsx` (React UI), `WorldHud.draw.tsx` (three.js). A sub-feature nests in its parent's folder. `check layers` enforces the layers ([README.md](README.md#layering)).
+- Concepts not yet moved home (world and render: terrain, water, sky, roads, scatter, materials, LOD, camera rigs, …) still keep one folder per package, same name in each: `packages/core/src/sky/`, `packages/shell/src/sky/`. Moving one home is a move like any other: its files go in the core folder named for their layer.
 - **Names say what the thing is**: `notificationCenter.ts`, not `store.ts` or `utils.ts`. One exported name has one definition engine-wide.
-- **The folders are the map.** No hand-kept concept list; `bun run find <words>` reads folders, exports and doc lines and names the home folder in each layer. Moving a concept home: move its files, delete duplicates, fix every importer and game in the same PR.
-- `check concept-homes` (in `verify:fast` and CI) fails a branch that adds an exported name already defined elsewhere (a game export named like an engine export counts: import the engine's, or give the game's thing its own name), or a file named for a concept outside that concept's folder (`// home-ok: <reason>` exempts one). `--all` prints today's duplicates as a worklist.
+- **The folders are the map.** No hand-kept concept list; `bun run find <words>` reads folders, exports and doc lines and names the feature folder (and, for a concept not yet moved, its folder in each package). Moving a concept home: move its files, delete duplicates, fix every importer and game in the same PR.
+- `check concept-homes` (in `verify:fast` and CI) fails a branch that adds an exported name already defined elsewhere (a game export named like an engine export counts: import the engine's, or give the game's thing its own name), or a file named for a concept outside that concept's folder, including a react or shell file for a feature whose folder already holds view or draw files (`// home-ok: <reason>` exempts one). `--all` prints today's duplicates as a worklist.
 
 ## Game changes improve the framework
 

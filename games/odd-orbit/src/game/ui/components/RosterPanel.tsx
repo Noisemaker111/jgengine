@@ -1,5 +1,5 @@
 import { GameIcon } from "@jgengine/react/gameIcons";
-import { HudFade } from "@jgengine/react/hud/hudLayout";
+import { HudFade } from "@jgengine/core/hud/hudLayout.view";
 import { useGame } from "@jgengine/react/hooks";
 import { useStore } from "@jgengine/react/store";
 import { bodyColor } from "../../creatures/bodyPlan";

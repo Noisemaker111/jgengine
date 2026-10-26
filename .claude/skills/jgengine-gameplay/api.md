@@ -1076,7 +1076,7 @@
 - `AchievementView` (interface): interface AchievementView extends AchievementDef — A definition plus its live unlock/progress state — what UI renders.
 - `ActionCodes` (type): type ActionCodes<TCode extends string = string> = | readonly TCode[] | { hold?: readonly TCode[]; toggle?: readonly TCode[]; repeatMs?: number } — ⚠ undocumented
 - `ActionCodesMap` (type): type ActionCodesMap<TAction extends string = string, TCode extends string = string> = Record< TAction, ActionCodes<TCode> > — Maps each game action name to the input codes (hold/toggle keys, repeat rate) that trigger it. In a `defineGame({ input })`, pressing an action runs the same-named command with `{ yaw, pitch, aim, held }`; `repeatMs` re-fires it while held (automatic weapons), with `held: true` on those re-fires so one binding can drive a single-shot pistol (ignore `held`) and an automatic rifle (accept it).
-- `ActionStateTracker` (interface): interface ActionStateTracker<TAction extends string> { handleDown(code: string): TAction | null; handleUp(code: string): TAction | null; isDown(action: TAction): boolean; wasPressed(action: TAction): boolean; endFrame(): void; reset(): void; rebind(map: ActionStateBindingMap<TAction, string>)… — ⚠ undocumented · used by `HudOnlyDriver` (@jgengine/shell/hud/HudOnlyDriver): Drives a HUD-only page: steps the sim with no 3D canvas so a capture can render just the game UI.
+- `ActionStateTracker` (interface): interface ActionStateTracker<TAction extends string> { handleDown(code: string): TAction | null; handleUp(code: string): TAction | null; isDown(action: TAction): boolean; wasPressed(action: TAction): boolean; endFrame(): void; reset(): void; rebind(map: ActionStateBindingMap<TAction, string>)… — ⚠ undocumented · used by `HudOnlyDriver` (@jgengine/core/hud/HudOnlyDriver.draw): Drives a HUD-only page: steps the sim with no 3D canvas so a capture can render just the game UI.
 - `ActiveEffect` (interface): interface ActiveEffect — A live timed effect an engine is tracking until it expires or is cleaned up.
 - `AdvanceOptions` (interface): interface AdvanceOptions — Per-advance settings: the policy pipeline, caller context, rounding, and safety bounds.
 - `AdvanceResult` (interface): interface AdvanceResult — The outcome of {@link advanceLedger}: the new ledger plus applied transactions and events.
@@ -2711,6 +2711,11 @@
 - `SaveSlotsSnapshot` (interface): interface SaveSlotsSnapshot — Serializable state of a {@link SaveSlots} index, for save/restore.
 - `createSaveSlots` (function): function createSaveSlots(config: SaveSlotsConfig = {}): SaveSlots — Create a {@link SaveSlots} index — the serializable, observable list of save/profile slot metadata a save-select menu renders. It is a thin companion to `createSaveStore`: the store owns the real save payload keyed by slot, this owns only the display fields (name, empty, last-saved, and a free-string `meta` bag) the menu shows. `write` stamps a slot saved on the injected clock, `clear` empties one, `rename` relabels one, `mostRecent()` returns the newest non-empty slot to power a "Continue" button, and `list()` feeds the New / Continue / Load / Delete grid. `meta` keys are free strings the game owns — the model never interprets them — and `snapshot`/`restore` round-trips the whole index through a save.
 
+## @jgengine/core/save/saveSlots.view
+
+- `relativeSavedAt` (function): function relativeSavedAt(savedAt: number, nowMs = Date.now()): string — Turn a `savedAt` timestamp into a compact relative label ("just now", "4m ago", "2d ago"). Presentation-only helper — the model stores raw ms.
+- `useSaveSlots` (function): function useSaveSlots(model: SaveSlots): SaveSlotMeta[] — Subscribe to a {@link SaveSlots} index and re-render on any change (write, clear, rename, restore). Returns the live list of slots in menu order. Wire it into a save-select screen and mutate the model in event handlers — the menu re-renders itself.
+
 ## @jgengine/core/save/saveStore
 
 - `SaveAutoConfig` (interface): interface SaveAutoConfig — Autosave cadence: debounce writes `debounceMs` after the last edit, but never wait longer than `maxWaitMs` while edits keep coming (`0` removes the ceiling). `autosave: true` uses `{ debounceMs: 1000, maxWaitMs: 15000 }`.
@@ -2724,6 +2729,16 @@
 - `localSaveBackend` (function): function localSaveBackend(storage?: KeyValueStorage | null, policy: KeyValueStorageErrorPolicy = {}): SaveBackend — A {@link SaveBackend} over a synchronous {@link KeyValueStorage} — the browser's `localStorage` by default (offline, on-device saves), a test stub, or `null` for a no-op backend. Default fallback ignores failures; `errorMode: "throw"` rejects failed operations and unavailable storage, so SaveStore status/onError can report them. Use {@link memorySaveBackend} for deliberate ephemeral persistence.
 - `memorySaveBackend` (function): function memorySaveBackend(): SaveBackend — A memory-only {@link SaveBackend} — saves survive a reload only within the same session. For tests, SSR, or a "no persistence" mode that still exercises the same save code path.
 - `remoteSaveBackend` (function): function remoteSaveBackend(backend: SaveBackend): SaveBackend — Adopt any async `read`/`write`/`remove` trio as a {@link SaveBackend} — the seam for cloud saves backed by a database, an HTTP endpoint, or Convex (see `@jgengine/convex/convexSaveBackend`). Reads/writes may reject; the save store surfaces the failure as `"error"` status instead of throwing.
+
+## @jgengine/core/save/saveStore.view
+
+- `SaveStoreView` (interface): interface SaveStoreView<T> — The reactive slice of a {@link SaveStore} returned by {@link useSaveStore} — the live value plus bound save actions, all re-rendering on change.
+- `useSaveStore` (function): function useSaveStore<T>(store: SaveStore<T>, options?: { load?: boolean }): SaveStoreView<T> — Bind a {@link SaveStore} to React: returns the live `value` and `status` and re-renders whenever either changes. By default it calls `load()` once on mount (pass `{ load: false }` to hydrate yourself). The same hook works for offline (localStorage) and cloud (Convex/DB) saves — only the store's backend differs.
+
+## @jgengine/core/save/saveThumbnail.view
+
+- `SaveThumbnailOptions` (interface): interface SaveThumbnailOptions — How {@link shrinkCapture} sizes and encodes a capture.
+- `shrinkCapture` (function): function shrinkCapture(capture: string | null, options: SaveThumbnailOptions = {}): Promise<string | null> — Downscale a captured frame (a data URL from `captureCanvas`) to a save-card thumbnail. Resolves to the thumbnail data URL, or `null` when the capture could not be decoded (a blank or tainted frame).
 
 ## @jgengine/core/save/snapshotSave
 

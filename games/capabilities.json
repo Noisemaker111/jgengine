@@ -93,9 +93,9 @@
     {
       "id": "action-bar",
       "packages": [
-        "@jgengine/react"
+        "@jgengine/core"
       ],
-      "module": "@jgengine/react/hud/actionHud",
+      "module": "@jgengine/core/hud/actionHud.view",
       "domain": "hud",
       "gameFacing": false,
       "probe": null,
@@ -104,9 +104,9 @@
     {
       "id": "action-bar-chrome",
       "packages": [
-        "@jgengine/react"
+        "@jgengine/core"
       ],
-      "module": "@jgengine/react/hud/actionHud",
+      "module": "@jgengine/core/hud/actionHud.view",
       "domain": "hud",
       "gameFacing": false,
       "probe": null,
@@ -115,9 +115,9 @@
     {
       "id": "action-bar-model",
       "packages": [
-        "@jgengine/react"
+        "@jgengine/core"
       ],
-      "module": "@jgengine/react/hud/actionHud",
+      "module": "@jgengine/core/hud/actionHud.view",
       "domain": "hud",
       "gameFacing": false,
       "probe": null,
@@ -137,9 +137,9 @@
     {
       "id": "action-button",
       "packages": [
-        "@jgengine/react"
+        "@jgengine/core"
       ],
-      "module": "@jgengine/react/hud/actionHud",
+      "module": "@jgengine/core/hud/actionHud.view",
       "domain": "hud",
       "gameFacing": false,
       "probe": null,
@@ -159,9 +159,9 @@
     {
       "id": "action-from-ability-slot",
       "packages": [
-        "@jgengine/react"
+        "@jgengine/core"
       ],
-      "module": "@jgengine/react/hud/actionHud",
+      "module": "@jgengine/core/hud/actionHud.view",
       "domain": "hud",
       "gameFacing": false,
       "probe": null,
@@ -181,9 +181,9 @@
     {
       "id": "action-tooltip",
       "packages": [
-        "@jgengine/react"
+        "@jgengine/core"
       ],
-      "module": "@jgengine/react/hud/actionHud",
+      "module": "@jgengine/core/hud/actionHud.view",
       "domain": "hud",
       "gameFacing": false,
       "probe": null,
@@ -1686,9 +1686,9 @@
     {
       "id": "combo-meter-hud",
       "packages": [
-        "@jgengine/react"
+        "@jgengine/core"
       ],
-      "module": "@jgengine/react/hud/comboMeter",
+      "module": "@jgengine/core/hud/comboMeter.view",
       "domain": "hud",
       "gameFacing": false,
       "probe": null,
@@ -3187,9 +3187,9 @@
     {
       "id": "entity-portrait",
       "packages": [
-        "@jgengine/react"
+        "@jgengine/core"
       ],
-      "module": "@jgengine/react/hud/selectionHud",
+      "module": "@jgengine/core/hud/selectionHud.view",
       "domain": "hud",
       "gameFacing": false,
       "probe": null,
@@ -4175,9 +4175,9 @@
     {
       "id": "hud-button",
       "packages": [
-        "@jgengine/react"
+        "@jgengine/core"
       ],
-      "module": "@jgengine/react/hud/hudButton",
+      "module": "@jgengine/core/hud/hudButton.view",
       "domain": "hud",
       "gameFacing": false,
       "probe": null,
@@ -4186,9 +4186,9 @@
     {
       "id": "hud-canvas",
       "packages": [
-        "@jgengine/react"
+        "@jgengine/core"
       ],
-      "module": "@jgengine/react/hud/hudLayout",
+      "module": "@jgengine/core/hud/hudLayout.view",
       "domain": "hud",
       "gameFacing": false,
       "probe": null,
@@ -4197,9 +4197,9 @@
     {
       "id": "hud-clock",
       "packages": [
-        "@jgengine/react"
+        "@jgengine/core"
       ],
-      "module": "@jgengine/react/hud/hudReadouts",
+      "module": "@jgengine/core/hud/hudReadouts.view",
       "domain": "hud",
       "gameFacing": false,
       "probe": null,
@@ -4208,9 +4208,9 @@
     {
       "id": "hud-coins",
       "packages": [
-        "@jgengine/react"
+        "@jgengine/core"
       ],
-      "module": "@jgengine/react/hud/hudReadouts",
+      "module": "@jgengine/core/hud/hudReadouts.view",
       "domain": "hud",
       "gameFacing": false,
       "probe": null,
@@ -4219,9 +4219,9 @@
     {
       "id": "hud-components",
       "packages": [
-        "@jgengine/react"
+        "@jgengine/core"
       ],
-      "module": "@jgengine/react/hud/hudReadouts",
+      "module": "@jgengine/core/hud/hudReadouts.view",
       "domain": "hud",
       "gameFacing": false,
       "probe": null,
@@ -4230,9 +4230,9 @@
     {
       "id": "hud-fade",
       "packages": [
-        "@jgengine/react"
+        "@jgengine/core"
       ],
-      "module": "@jgengine/react/hud/hudLayout",
+      "module": "@jgengine/core/hud/hudLayout.view",
       "domain": "hud",
       "gameFacing": false,
       "probe": null,
@@ -4241,9 +4241,9 @@
     {
       "id": "hud-frame",
       "packages": [
-        "@jgengine/react"
+        "@jgengine/core"
       ],
-      "module": "@jgengine/react/hud/hudFrame",
+      "module": "@jgengine/core/hud/hudFrame.view",
       "domain": "hud",
       "gameFacing": false,
       "probe": null,
@@ -4252,9 +4252,9 @@
     {
       "id": "hud-hotbar",
       "packages": [
-        "@jgengine/react"
+        "@jgengine/core"
       ],
-      "module": "@jgengine/react/hud/hudReadouts",
+      "module": "@jgengine/core/hud/hudReadouts.view",
       "domain": "hud",
       "gameFacing": false,
       "probe": null,
@@ -4274,9 +4274,9 @@
     {
       "id": "hud-idle",
       "packages": [
-        "@jgengine/react"
+        "@jgengine/core"
       ],
-      "module": "@jgengine/react/hud/hudLayout",
+      "module": "@jgengine/core/hud/hudLayout.view",
       "domain": "hud",
       "gameFacing": false,
       "probe": null,
@@ -4285,9 +4285,9 @@
     {
       "id": "hud-interact",
       "packages": [
-        "@jgengine/react"
+        "@jgengine/core"
       ],
-      "module": "@jgengine/react/hud/hudInteract",
+      "module": "@jgengine/core/hud/hudInteract.view",
       "domain": "hud",
       "gameFacing": false,
       "probe": null,
@@ -4296,9 +4296,9 @@
     {
       "id": "hud-lanes",
       "packages": [
-        "@jgengine/react"
+        "@jgengine/core"
       ],
-      "module": "@jgengine/react/hud/hudLanes",
+      "module": "@jgengine/core/hud/hudLanes",
       "domain": "hud",
       "gameFacing": false,
       "probe": null,
@@ -4307,9 +4307,9 @@
     {
       "id": "hud-layout",
       "packages": [
-        "@jgengine/react"
+        "@jgengine/core"
       ],
-      "module": "@jgengine/react/hud/hudLayout",
+      "module": "@jgengine/core/hud/hudLayout.view",
       "domain": "hud",
       "gameFacing": false,
       "probe": null,
@@ -4318,9 +4318,9 @@
     {
       "id": "hud-layout-persist",
       "packages": [
-        "@jgengine/react"
+        "@jgengine/core"
       ],
-      "module": "@jgengine/react/hud/hudLayoutPersist",
+      "module": "@jgengine/core/hud/hudLayoutPersist.view",
       "domain": "hud",
       "gameFacing": false,
       "probe": null,
@@ -4329,9 +4329,9 @@
     {
       "id": "hud-layout-persist-hook",
       "packages": [
-        "@jgengine/react"
+        "@jgengine/core"
       ],
-      "module": "@jgengine/react/hud/hudLayoutPersist",
+      "module": "@jgengine/core/hud/hudLayoutPersist.view",
       "domain": "hud",
       "gameFacing": false,
       "probe": null,
@@ -4340,9 +4340,9 @@
     {
       "id": "hud-panel",
       "packages": [
-        "@jgengine/react"
+        "@jgengine/core"
       ],
-      "module": "@jgengine/react/hud/hudLayout",
+      "module": "@jgengine/core/hud/hudLayout.view",
       "domain": "hud",
       "gameFacing": false,
       "probe": null,
@@ -4351,20 +4351,21 @@
     {
       "id": "hud-slots",
       "packages": [
+        "@jgengine/core",
         "@jgengine/react"
       ],
-      "module": "@jgengine/react/hud/hudLayout",
-      "domain": "hud",
+      "module": "@jgengine/react/inventory/slots",
+      "domain": "inventory",
       "gameFacing": false,
       "probe": null,
-      "intent": "a play HUD of edge-pinned, player-movable panels in one component"
+      "intent": "atomic themed equipment/weapon/armor/potion slot grids with painted icons"
     },
     {
       "id": "hud-surface",
       "packages": [
-        "@jgengine/react"
+        "@jgengine/core"
       ],
-      "module": "@jgengine/react/hud/hudSurface",
+      "module": "@jgengine/core/hud/hudSurface.view",
       "domain": "hud",
       "gameFacing": false,
       "probe": null,
@@ -4373,9 +4374,9 @@
     {
       "id": "hud-theme",
       "packages": [
-        "@jgengine/react"
+        "@jgengine/core"
       ],
-      "module": "@jgengine/react/hud/hudTheme",
+      "module": "@jgengine/core/hud/hudTheme.view",
       "domain": "hud",
       "gameFacing": false,
       "probe": null,
@@ -4384,9 +4385,9 @@
     {
       "id": "hud-theme-author",
       "packages": [
-        "@jgengine/react"
+        "@jgengine/core"
       ],
-      "module": "@jgengine/react/hud/hudTheme",
+      "module": "@jgengine/core/hud/hudTheme.view",
       "domain": "hud",
       "gameFacing": false,
       "probe": null,
@@ -4395,9 +4396,9 @@
     {
       "id": "hud-theme-derive",
       "packages": [
-        "@jgengine/react"
+        "@jgengine/core"
       ],
-      "module": "@jgengine/react/hud/hudTheme",
+      "module": "@jgengine/core/hud/hudTheme.view",
       "domain": "hud",
       "gameFacing": false,
       "probe": null,
@@ -4406,9 +4407,9 @@
     {
       "id": "hud-theme-root",
       "packages": [
-        "@jgengine/react"
+        "@jgengine/core"
       ],
-      "module": "@jgengine/react/hud/hudThemeRoot",
+      "module": "@jgengine/core/hud/hudThemeRoot.view",
       "domain": "hud",
       "gameFacing": false,
       "probe": null,
@@ -4428,9 +4429,9 @@
     {
       "id": "hud-tokens",
       "packages": [
-        "@jgengine/react"
+        "@jgengine/core"
       ],
-      "module": "@jgengine/react/hud/hudTokens",
+      "module": "@jgengine/core/hud/hudTokens",
       "domain": "hud",
       "gameFacing": false,
       "probe": null,
@@ -4935,9 +4936,9 @@
     {
       "id": "kit-count",
       "packages": [
-        "@jgengine/react"
+        "@jgengine/core"
       ],
-      "module": "@jgengine/react/hud/kitHud",
+      "module": "@jgengine/core/hud/kitHud.view",
       "domain": "hud",
       "gameFacing": false,
       "probe": null,
@@ -4946,9 +4947,9 @@
     {
       "id": "kit-counts",
       "packages": [
-        "@jgengine/react"
+        "@jgengine/core"
       ],
-      "module": "@jgengine/react/hud/kitHud",
+      "module": "@jgengine/core/hud/kitHud.view",
       "domain": "hud",
       "gameFacing": false,
       "probe": null,
@@ -4979,9 +4980,9 @@
     {
       "id": "kit-hint",
       "packages": [
-        "@jgengine/react"
+        "@jgengine/core"
       ],
-      "module": "@jgengine/react/hud/kitHud",
+      "module": "@jgengine/core/hud/kitHud.view",
       "domain": "hud",
       "gameFacing": false,
       "probe": null,
@@ -5067,9 +5068,9 @@
     {
       "id": "kit-vitals",
       "packages": [
-        "@jgengine/react"
+        "@jgengine/core"
       ],
-      "module": "@jgengine/react/hud/kitHud",
+      "module": "@jgengine/core/hud/kitHud.view",
       "domain": "hud",
       "gameFacing": false,
       "probe": null,
@@ -5078,9 +5079,9 @@
     {
       "id": "kit-wave-clock",
       "packages": [
-        "@jgengine/react"
+        "@jgengine/core"
       ],
-      "module": "@jgengine/react/hud/kitHud",
+      "module": "@jgengine/core/hud/kitHud.view",
       "domain": "hud",
       "gameFacing": false,
       "probe": null,
@@ -6393,9 +6394,9 @@
     {
       "id": "nameplates",
       "packages": [
-        "@jgengine/shell"
+        "@jgengine/core"
       ],
-      "module": "@jgengine/shell/hud/WorldHud",
+      "module": "@jgengine/core/hud/WorldHud.draw",
       "domain": "hud",
       "gameFacing": false,
       "probe": null,
@@ -7334,9 +7335,9 @@
     {
       "id": "popover",
       "packages": [
-        "@jgengine/react"
+        "@jgengine/core"
       ],
-      "module": "@jgengine/react/hud/actionHud",
+      "module": "@jgengine/core/hud/actionHud.view",
       "domain": "hud",
       "gameFacing": false,
       "probe": null,
@@ -8310,9 +8311,9 @@
     {
       "id": "selection-collection",
       "packages": [
-        "@jgengine/react"
+        "@jgengine/core"
       ],
-      "module": "@jgengine/react/hud/selectionHud",
+      "module": "@jgengine/core/hud/selectionHud.view",
       "domain": "hud",
       "gameFacing": false,
       "probe": null,
@@ -8321,9 +8322,9 @@
     {
       "id": "selection-group-chip",
       "packages": [
-        "@jgengine/react"
+        "@jgengine/core"
       ],
-      "module": "@jgengine/react/hud/selectionHud",
+      "module": "@jgengine/core/hud/selectionHud.view",
       "domain": "hud",
       "gameFacing": false,
       "probe": null,
@@ -8332,9 +8333,9 @@
     {
       "id": "selection-model",
       "packages": [
-        "@jgengine/react"
+        "@jgengine/core"
       ],
-      "module": "@jgengine/react/hud/selectionHud",
+      "module": "@jgengine/core/hud/selectionHud.view",
       "domain": "hud",
       "gameFacing": false,
       "probe": null,
@@ -8343,9 +8344,9 @@
     {
       "id": "selection-panel",
       "packages": [
-        "@jgengine/react"
+        "@jgengine/core"
       ],
-      "module": "@jgengine/react/hud/selectionHud",
+      "module": "@jgengine/core/hud/selectionHud.view",
       "domain": "hud",
       "gameFacing": false,
       "probe": null,
@@ -8533,9 +8534,9 @@
     {
       "id": "shrink-capture",
       "packages": [
-        "@jgengine/react"
+        "@jgengine/core"
       ],
-      "module": "@jgengine/react/save/saveThumbnail",
+      "module": "@jgengine/core/save/saveThumbnail.view",
       "domain": "save",
       "gameFacing": false,
       "probe": null,
@@ -8931,9 +8932,9 @@
     {
       "id": "split-screen-hud",
       "packages": [
-        "@jgengine/shell"
+        "@jgengine/core"
       ],
-      "module": "@jgengine/shell/hud/ViewportHuds",
+      "module": "@jgengine/core/hud/ViewportHuds.draw",
       "domain": "hud",
       "gameFacing": false,
       "probe": null,
@@ -9175,9 +9176,9 @@
     {
       "id": "status-effect-bar",
       "packages": [
-        "@jgengine/react"
+        "@jgengine/core"
       ],
-      "module": "@jgengine/react/hud/statusEffectBar",
+      "module": "@jgengine/core/hud/statusEffectBar.view",
       "domain": "hud",
       "gameFacing": false,
       "probe": null,
@@ -10132,9 +10133,9 @@
     {
       "id": "use-combo-meter",
       "packages": [
-        "@jgengine/react"
+        "@jgengine/core"
       ],
-      "module": "@jgengine/react/hud/comboMeter",
+      "module": "@jgengine/core/hud/comboMeter.view",
       "domain": "hud",
       "gameFacing": false,
       "probe": null,
@@ -10286,9 +10287,9 @@
     {
       "id": "use-save-slots",
       "packages": [
-        "@jgengine/react"
+        "@jgengine/core"
       ],
-      "module": "@jgengine/react/save/saveSlots",
+      "module": "@jgengine/core/save/saveSlots.view",
       "domain": "save",
       "gameFacing": false,
       "probe": null,
@@ -10352,9 +10353,9 @@
     {
       "id": "use-wave-runner",
       "packages": [
-        "@jgengine/react"
+        "@jgengine/core"
       ],
-      "module": "@jgengine/react/hud/waveHud",
+      "module": "@jgengine/core/hud/waveHud.view",
       "domain": "hud",
       "gameFacing": false,
       "probe": null,
@@ -10613,9 +10614,9 @@
     {
       "id": "wave-hud",
       "packages": [
-        "@jgengine/react"
+        "@jgengine/core"
       ],
-      "module": "@jgengine/react/hud/waveHud",
+      "module": "@jgengine/core/hud/waveHud.view",
       "domain": "hud",
       "gameFacing": false,
       "probe": null,
@@ -11012,9 +11013,9 @@
     {
       "id": "world-object-highlights",
       "packages": [
-        "@jgengine/shell"
+        "@jgengine/core"
       ],
-      "module": "@jgengine/shell/hud/WorldHud",
+      "module": "@jgengine/core/hud/WorldHud.draw",
       "domain": "hud",
       "gameFacing": false,
       "probe": null,

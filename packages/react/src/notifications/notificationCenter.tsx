@@ -1,7 +1,7 @@
 import { useSyncExternalStore, type CSSProperties, type ReactNode } from "react";
 
 import type { NotificationEntry, NotificationStore } from "@jgengine/core/notifications/notificationCenter";
-import { hudType } from "../hud/hudTokens";
+import { hudType } from "@jgengine/core/hud/hudTokens";
 
 /**
  * Subscribe to a notification store's live list.

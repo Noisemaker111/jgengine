@@ -137,7 +137,7 @@ export const overworld = world({
 const PROS = [
   {
     title: "One language, from sim to shader",
-    body: "Pure TypeScript. @jgengine/core imports nothing — no React, no renderer, no backend — and every layer above earns its dependencies through a one-directional chain.",
+    body: "Pure TypeScript. Each feature is one folder whose model files import nothing — no React, no renderer, no backend — with its React view and three.js draw files beside them, and a check keeps each layer to its own dependencies.",
   },
   {
     title: "Multiplayer & persistence from day one",

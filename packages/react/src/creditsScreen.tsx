@@ -1,7 +1,7 @@
 import { type CSSProperties, type ReactNode } from "react";
 
 import type { CreditsDocument, CreditsEntry } from "@jgengine/core/game/credits";
-import { hudType } from "./hud/hudTokens";
+import { hudType } from "@jgengine/core/hud/hudTokens";
 
 /**
  * Renders a {@link CreditsDocument} as headed sections of credited lines. Skinned entirely through

@@ -1,6 +1,6 @@
 import { describe, expect, test } from "bun:test";
 
-import { HudThemePreview } from "./hud/hudThemePreview";
+import { HudThemePreview } from "@jgengine/core/hud/hudThemePreview.view";
 import { IconsPreview } from "./iconsPreview";
 import { StreetGeometryPreview } from "./roads/streetGeometryPreview";
 import {

@@ -6,7 +6,7 @@ import type { SpawnRequest } from "@jgengine/core/waves/spawnDirector";
 import type { GameContext, GameContextEntityEntry } from "@jgengine/core/runtime/gameContext";
 import { createAssetCatalog } from "@jgengine/core/scene/assetCatalog";
 import { environment, grass, terrain } from "@jgengine/core/world/features";
-import { WaveHud } from "@jgengine/react/hud/waveHud";
+import { WaveHud } from "@jgengine/core/hud/waveHud.view";
 
 import { EnvironmentScene } from "@jgengine/shell/environment/EnvironmentScene";
 import type { PlayableGame } from "@jgengine/shell/registry";

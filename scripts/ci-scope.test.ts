@@ -56,8 +56,8 @@ describe("game scope", () => {
   });
 
   test("a mixed diff takes the heaviest verdict", () => {
-    expect(gameScope(["packages/react/src/hud/hudTheme.ts", "packages/core/src/sim/population.ts"]).scope).toBe("full");
-    expect(gameScope(["README.md", "packages/react/src/hud/hudTheme.ts"]).scope).toBe("surface");
+    expect(gameScope(["packages/core/src/hud/hudTheme.view.ts", "packages/core/src/sim/population.ts"]).scope).toBe("full");
+    expect(gameScope(["README.md", "packages/core/src/hud/hudTheme.view.ts"]).scope).toBe("surface");
     expect(gameScope(["changes/a.md", "README.md"]).scope).toBe("none");
   });
 

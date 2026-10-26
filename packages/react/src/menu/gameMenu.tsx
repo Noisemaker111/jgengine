@@ -9,7 +9,7 @@ import {
 import { useReducedMotion } from "../accessibility";
 import { createGameMenuSound, type GameMenuSound } from "./gameMenuSound";
 import { useGameViewportLayout } from "../gameViewport";
-import { hudDuration, hudEase, hudFont, hudType } from "../hud/hudTokens";
+import { hudDuration, hudEase, hudFont, hudType } from "@jgengine/core/hud/hudTokens";
 import { useMenuNav } from "./menuNav";
 import { kitHudBridge, KitMenu, KitPanel, useHasUiKit } from "../uiKitRoot";
 

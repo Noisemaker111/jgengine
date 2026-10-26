@@ -1,6 +1,6 @@
 import { GameIcon } from "@jgengine/react/gameIcons";
 import { useCurrency, useEntityStat, useGame, useGameStore, usePlayer } from "@jgengine/react/hooks";
-import { HudButton } from "@jgengine/react/hud/hudButton";
+import { HudButton } from "@jgengine/core/hud/hudButton.view";
 import { useStore } from "@jgengine/react/store";
 
 import { RIFT_REROLL_CORES, riftBoard, riftLeaveSeconds, riftMutatorsFor, riftStore, riftTerminalOpenStore } from "../../rift/rift";

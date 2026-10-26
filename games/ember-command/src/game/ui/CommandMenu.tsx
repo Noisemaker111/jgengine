@@ -6,7 +6,7 @@ import { GameIcon } from "@jgengine/react/gameIcons";
 import { useGame } from "@jgengine/react/hooks";
 import { useMenuNav } from "@jgengine/react/menu/menuNav";
 import { useGameContext } from "@jgengine/react/provider";
-import { relativeSavedAt, useSaveSlots } from "@jgengine/react/save/saveSlots";
+import { relativeSavedAt, useSaveSlots } from "@jgengine/core/save/saveSlots.view";
 import { useSettings } from "@jgengine/react/settings/settings";
 import { SettingsSection, SettingsTabs } from "@jgengine/react/settings/settingsBlocks";
 import type { SaveSlotMeta } from "@jgengine/core/save/saveSlots";

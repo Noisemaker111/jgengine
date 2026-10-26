@@ -1,7 +1,7 @@
 {
   "name": "@jgengine/core",
   "version": "0.45.0",
-  "description": "jgengine core — pure-TypeScript game framework SDK (npm @jgengine/core). Entity stores, commands, combat, inventory, multiplayer seams. Zero dependencies. Not an ECS. Agent skills ship in the tarball. https://jgengine.com",
+  "description": "jgengine core — the engine's feature folders (npm @jgengine/core). Each feature keeps its model, React view (*.view) and three.js draw (*.draw) files together; model files have zero dependencies, so server code imports them alone. Not an ECS. Agent skills ship in the tarball. https://jgengine.com",
   "keywords": [
     "jgengine",
     "agent-first",
@@ -60,9 +60,56 @@
     }
   },
   "scripts": {
-    "build": "tsgo -p tsconfig.build.json && bun ../../scripts/fix-extensions.ts dist",
+    "build": "bun ../../scripts/build-engine.ts",
     "check-types": "tsgo --noEmit -p tsconfig.json",
     "test": "bun test src"
+  },
+  "peerDependencies": {
+    "@jgengine/react": "^0.45.0",
+    "@jgengine/shell": "^0.45.0",
+    "@react-three/drei": "^10.0.0",
+    "@react-three/fiber": "^9.0.0",
+    "react": "^19.0.0",
+    "react-dom": "^19.0.0",
+    "three": ">=0.170.0",
+    "three-stdlib": "^2.0.0"
+  },
+  "peerDependenciesMeta": {
+    "@jgengine/react": {
+      "optional": true
+    },
+    "@jgengine/shell": {
+      "optional": true
+    },
+    "@react-three/drei": {
+      "optional": true
+    },
+    "@react-three/fiber": {
+      "optional": true
+    },
+    "react": {
+      "optional": true
+    },
+    "react-dom": {
+      "optional": true
+    },
+    "three": {
+      "optional": true
+    },
+    "three-stdlib": {
+      "optional": true
+    }
+  },
+  "devDependencies": {
+    "@react-three/drei": "catalog:",
+    "@react-three/fiber": "catalog:",
+    "@types/react": "catalog:",
+    "@types/react-dom": "catalog:",
+    "@types/three": "catalog:",
+    "react": "catalog:",
+    "react-dom": "catalog:",
+    "three": "catalog:",
+    "three-stdlib": "catalog:"
   },
   "publishConfig": {
     "access": "public"

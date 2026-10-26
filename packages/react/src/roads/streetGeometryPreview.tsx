@@ -5,7 +5,7 @@ import {
   type RoadJunctionInput,
   type RoadRibbon,
 } from "@jgengine/core/roads/roads";
-import { hudType } from "../hud/hudTokens";
+import { hudType } from "@jgengine/core/hud/hudTokens";
 
 interface PreviewCase {
   name: string;
