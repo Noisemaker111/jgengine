@@ -4,6 +4,7 @@ import { defineSystem } from "@jgengine/shell/gameKit";
 
 import { editorLayers } from "./editorLayers";
 import { baseSave, demolish, resetBase, rotateBuild, tickBase, useStructure } from "./game/base";
+import { cavesOf, cavesSave, resetCaves, takeArtifact } from "./game/caves";
 import { closeCreature, creaturesSave, feedNarcotic, forceTame, giveTameXp, giveToCreature, levelTame, mountBite, resetCreatures, setTamingSpeed, spawnCreature, takeFromCreature, tickCreatures, unsaddle, useCreature, whistle } from "./game/creatures";
 import { TAME_STATS } from "./game/data/species";
 import { LEVEL_STATS, SURVIVOR } from "./game/data/survivor";
@@ -103,6 +104,16 @@ export const systems = [
     save: baseSave,
     reset: resetBase,
   }),
+  defineSystem({
+    id: "caves",
+    create(ctx) {
+      // The rock is laid out and made solid as the world starts, not on the first step inside.
+      cavesOf(ctx);
+      ctx.game.commands.define("takeArtifact", { apply: (state) => (takeArtifact(state), state) });
+    },
+    save: cavesSave,
+    reset: resetCaves,
+  }),
 ];
 
 interface Cheat {
@@ -119,6 +130,8 @@ interface Cheat {
   tameXp?: number;
   /** Move these items' stacks from the bag to the hotbar, in order (the double-click, for proofs). */
   toHotbar?: string[];
+  /** Stand `back` metres outside a cave's mouth (negative: that far inside), facing in, the camera behind. */
+  goto?: { cave: string; back?: number };
 }
 
 function cheat(ctx: GameContext, input: Cheat): void {
@@ -137,6 +150,20 @@ function cheat(ctx: GameContext, input: Cheat): void {
     const cos = Math.cos(me.rotationY);
     const at = [me.position[0] + sin * distance - cos * side, me.position[2] + cos * distance + sin * side] as const;
     spawnCreature(ctx, input.summon.species, at, input.summon.level === undefined ? {} : { level: input.summon.level });
+  }
+  const cave = input.goto === undefined ? undefined : cavesOf(ctx).find((entry) => entry.id === input.goto!.cave);
+  if (cave !== undefined && me !== null) {
+    // Facing from the mouth towards the chamber, the way someone walking in looks.
+    const mouth = cave.layout.path[0]!;
+    const deep = cave.layout.chamber.center;
+    const length = Math.hypot(deep[0] - mouth[0], deep[1] - mouth[1]) || 1;
+    const along = [(deep[0] - mouth[0]) / length, (deep[1] - mouth[1]) / length] as const;
+    const back = input.goto!.back ?? 4;
+    const x = mouth![0] - along[0] * back;
+    const z = mouth![1] - along[1] * back;
+    const facing = Math.atan2(along[0], along[1]);
+    ctx.scene.entity.setPose(me.id, { position: [x, ctx.world.groundHeightAt(x, z), z], rotationY: facing });
+    ctx.camera.turnTo(facing);
   }
   if (input.forceTame === true) forceTame(ctx);
   if (input.tameXp !== undefined) giveTameXp(ctx, input.tameXp);

@@ -5,6 +5,7 @@ import { DEFAULT_WALK_CODES, defineGame } from "@jgengine/shell/gameKit";
 import { editorLayers } from "./editorLayers";
 import { assets } from "./game/assets";
 import { basePrompts, baseView } from "./game/base";
+import { cavePrompts, cavesOf, cavesView } from "./game/caves";
 import { creaturePrompts, creaturesView } from "./game/creatures";
 import { content } from "./game/content";
 import { itemTraits } from "./game/data/items";
@@ -63,7 +64,7 @@ export const game = defineGame({
   sceneScatterBudget: 40_000,
   persist: { mode: "manual" },
   // The camera starts behind the survivor on the authored spawn facing, so you wash up looking inland.
-  prompts: (ctx) => [...survivorPrompts(ctx), ...creaturePrompts(ctx), ...basePrompts(ctx)],
+  prompts: (ctx) => [...survivorPrompts(ctx), ...creaturePrompts(ctx), ...basePrompts(ctx), ...cavePrompts(ctx)],
   camera: { perspective: "third", initialYaw: authoredSpawnRotation(editorLayers), frustum: { far: 2400 } },
   capture: {
     play: [{ name: "start", input: {} }],
@@ -71,6 +72,7 @@ export const game = defineGame({
       const view = survivorView(ctx);
       const creatures = creaturesView(ctx);
       const base = baseView(ctx);
+      const caves = cavesView(ctx);
       const me = ctx.scene.entity.get(ctx.player.userId);
       return {
         x: Math.round((me?.position[0] ?? 0) * 10) / 10,
@@ -122,6 +124,13 @@ export const game = defineGame({
         acrossDoor: acrossSpawn(me?.position, base.doorway),
         // Metres the survivor stands right of where it woke, across the spawn facing.
         acrossSpawn: acrossSpawn(me?.position, SPAWN_AT),
+        // Metres into the cave the survivor stands in, to a decimetre; -1 outside every cave.
+        caveDepth: caves.inside === null ? -1 : Math.round(caves.inside.depth * 10) / 10,
+        // Artifacts carried in the bag and on the hotbar, and pedestals still holding one.
+        artifacts: cavesOf(ctx).reduce((sum, cave) => sum + ctx.player.inventory.count(BAG, cave.artifact) + ctx.player.inventory.count(HOTBAR, cave.artifact), 0),
+        pedestals: caves.caves.filter((cave) => cave.artifact !== null).length,
+        // 1 while an artifact's pedestal is in reach, so E would take it.
+        atPedestal: cavePrompts(ctx).length > 0 ? 1 : 0,
         // Hotbar slot in hand, 1-based; 0 bare-handed.
         holding: view.activeSlot === null ? 0 : view.activeSlot + 1,
       };

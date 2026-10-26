@@ -1,0 +1,16 @@
+{
+  "steps": [
+    { "waitFor": "typeof __jgProbe === 'function' && __jgProbe().pedestals === 8", "timeoutMs": 60000, "note": "arrival: all eight caves laid out, each artifact on its pedestal" },
+    { "rpc": { "method": "run_command", "name": "cheat", "input": { "goto": { "cave": "cave_lower_south_cave", "back": 6 } } }, "note": "ARK's admin teleport: stand six metres outside the lower south cave's mouth, facing in, the camera swung round behind" },
+    { "key": "KeyW", "ms": 60, "until": { "is": "Math.abs(__jgProbe().yaw - 2.75) < 0.15", "timeoutMs": 3000 }, "note": "short steps until the survivor faces where the camera, swung round by the teleport on its next frame, looks: down the tunnel" },
+    { "assert": "__jgProbe().caveDepth", "is": -1, "note": "still outside, in front of the mouth" },
+    { "shot": "fernwild-cave-mouth", "note": "the mouth in the hillside, crystals glowing inside" },
+    { "key": "KeyW", "ms": 200, "until": { "is": "__jgProbe().caveDepth > 12", "timeoutMs": 8000 }, "note": "walk in" },
+    { "shot": "fernwild-cave-tunnel", "note": "inside the arched tunnel, lit by the crystals on its walls" },
+    { "key": "KeyW", "ms": 200, "until": { "is": "__jgProbe().atPedestal === 1", "timeoutMs": 15000 }, "note": "on down the winding tunnel to the pedestal in the chamber" },
+    { "shot": "fernwild-cave-chamber", "note": "the chamber and the glowing artifact on its pedestal" },
+    { "key": "KeyE", "until": { "is": "__jgProbe().artifacts === 1", "timeoutMs": 3000 }, "note": "take it" },
+    { "assert": "__jgProbe().pedestals", "is": 7, "note": "that pedestal is empty now" },
+    { "shot": "fernwild-cave-artifact", "note": "the artifact taken: the notice, and the bare pedestal" }
+  ]
+}

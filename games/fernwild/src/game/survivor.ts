@@ -125,7 +125,7 @@ function encumbrance(ctx: GameContext, survivor: Survivor) {
 }
 
 /** Put items in the bag; whatever does not fit is lost with a notice (ARK drops a bag; that comes with death loot). */
-function give(ctx: GameContext, itemId: string, count: number): number {
+export function give(ctx: GameContext, itemId: string, count: number): number {
   if (count <= 0) return 0;
   const put = ctx.player.inventory.put(BAG, itemId, count);
   if (put.status !== "ok") {

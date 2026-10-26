@@ -1218,6 +1218,17 @@
       "intent": "let author decor pass through the orbit spring-arm; a child opts back in with jgCameraCollide"
     },
     {
+      "id": "camera-turn-to",
+      "packages": [
+        "@jgengine/core"
+      ],
+      "module": "@jgengine/core/runtime/cameraDirector",
+      "domain": "runtime",
+      "gameFacing": false,
+      "probe": null,
+      "intent": "point the player's camera along a heading once, e.g. after teleporting them"
+    },
+    {
       "id": "cancel-scheduled-rule",
       "packages": [
         "@jgengine/core"
@@ -1370,6 +1381,39 @@
       "gameFacing": false,
       "probe": null,
       "intent": "sagging cable curve between two anchors"
+    },
+    {
+      "id": "cave-draw",
+      "packages": [
+        "@jgengine/core"
+      ],
+      "module": "@jgengine/core/cave/Cave.draw",
+      "domain": "cave",
+      "gameFacing": false,
+      "probe": null,
+      "intent": "draw a cave's rock from its layout"
+    },
+    {
+      "id": "cave-layout",
+      "packages": [
+        "@jgengine/core"
+      ],
+      "module": "@jgengine/core/cave/caveLayout",
+      "domain": "cave",
+      "gameFacing": false,
+      "probe": null,
+      "intent": "a walkable cave (tunnel and chamber) from a centreline: collision, spawn spots, inside test"
+    },
+    {
+      "id": "cave-mesh",
+      "packages": [
+        "@jgengine/core"
+      ],
+      "module": "@jgengine/core/cave/caveMesh",
+      "domain": "cave",
+      "gameFacing": false,
+      "probe": null,
+      "intent": "triangle meshes for a cave's inside and the hill around it, from its layout"
     },
     {
       "id": "cell-grid",
