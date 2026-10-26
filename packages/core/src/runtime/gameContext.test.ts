@@ -8,7 +8,7 @@ import { createAssetCatalog } from "../scene/assetCatalog";
 import { encodeCollisionMesh, type CollisionMeshData, type CollisionMeshSource } from "../scene/collisionMesh";
 import { defineStore } from "../store/defineStore";
 import { resetRngFallbackWarnings } from "../random/resolveRng";
-import { createDamageRuntime } from "../combat/damageRuntime";
+import { createDamageRuntime } from "../combat/damage/damageRuntime";
 import { environment, terrain } from "../world/features";
 import { resolveTerrainField } from "../world/terrain";
 import { createGameContext, type GameContextContent } from "./gameContext";

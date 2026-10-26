@@ -232,4 +232,4 @@ your existing `defineStore` and clock. The [expedition recipe](recipes/expeditio
 keeps bounded offline catch-up, finite supplies, return/death, capacity and RNG
 continuity in one plain saveable state. Authored encounters, hazard/supply policy,
 loot tables, quality ramps and text remain caller-owned; use `timeScaledRarity`
-(`game/lootModifiers`) for elapsed-time odds with pipeline provenance.
+(`loot/lootModifiers`) for elapsed-time odds with pipeline provenance.

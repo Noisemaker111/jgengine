@@ -213,6 +213,7 @@
 - `WeaponAmmo` (interface): interface WeaponAmmo — Ammo and cadence as a HUD or a test reads them.
 - `WeaponBurstDef` (interface): interface WeaponBurstDef — Shots one trigger pull commits to. A burst finishes even if the trigger is released.
 - `WeaponContact` (interface): interface WeaponContact — Where one pellet met the caller's world.
+- `WeaponCounters` (interface): interface WeaponCounters — Lifetime ammo economy and resolution counters.
 - `WeaponDamageDef` (interface): interface WeaponDamageDef — What one pellet does when it reaches a registered damage target.
 - `WeaponDefinition` (interface): interface WeaponDefinition — One weapon as plain data: cadence, fire mode, delivery, magazine, feel and damage. Nothing here is a function, so a generator can roll it, a save can store it, and two weapons differ by their fields.
 - `WeaponFalloffDef` (interface): interface WeaponFalloffDef — Linear damage falloff between two distances.
@@ -229,7 +230,6 @@
 - `WeaponRuntime` (interface): interface WeaponRuntime<TAim, THit> — A composed weapon fire controller: a {@link FireCadence} gate, an optional {@link Magazine}, the caller's raycast, and portable {@link resolveDamageHit} damage resolution wired together. The caller retains ownership of models, animations, muzzle flash, audio, input, camera, aiming, and the raycaster itself.
 - `WeaponRuntimeConfig` (interface): interface WeaponRuntimeConfig<TAim, THit> — Configuration for {@link createWeaponRuntime}. Everything time/ammo-related is plain data; the two callbacks are where the caller keeps ownership of aiming, its own raycaster/projectile query, and how a hit maps to damage. There is deliberately no default weapon, projectile, or damage table here — those are game content.
 - `WeaponShotRecord` (interface): interface WeaponShotRecord — One fired shot: the cone it fired into, the kick it took, and where each pellet went.
-- `WeaponStats` (interface): interface WeaponStats — Lifetime ammo economy and resolution counters.
 - `WeaponSystem` (interface): interface WeaponSystem — A weapon as the game drives it: base aim in, shots and resolved impacts out. Fire mode, cadence, handling, delivery, magazine and damage all come from one {@link WeaponDefinition}; the game owns input, the muzzle, and the world query.
 - `WeaponSystemDeps` (interface): interface WeaponSystemDeps — Everything the runtime is allowed to reach: RNG, the damage model, the muzzle, and the world query.
 - `WeaponSystemState` (interface): interface WeaponSystemState — Serializable runtime state: aim, handling, ammo, trigger, pellets and counters.
@@ -442,7 +442,7 @@
 - `scoreCoverPoint` (function): function scoreCoverPoint(point: CoverPoint, query: CoverQuery): CoverChoice | null — Score one stand point against the threats the member remembers. `hidden` is the confidence-weighted share of remembered threats that cannot see the point, so a point that hides from the shooter that matters scores over one that hides from a fading one. Returns `null` when nothing it can hide from is worth considering.
 - `selectCover` (function): function selectCover(points: readonly CoverPoint[], query: CoverQuery): CoverChoice | null — The best of `points` under one {@link CoverQuery}, ties broken by point id. Pass the candidate set the injected query already bounded; this scores what it is given.
 
-## @jgengine/core/combat/damageInterceptors
+## @jgengine/core/combat/damage/damageInterceptors
 
 - `AntiOneShotConfig` (interface): interface AntiOneShotConfig — Caller data for the anti-one-shot composition: "cannot cross lethal while above X, leave Y, then recover for Z".
 - `AntiOneShotPolicy` (interface): interface AntiOneShotPolicy — The anti-one-shot policy: an interceptor plus its serializable recovery-immunity state.
@@ -462,7 +462,7 @@
 - `createImmunityWindow` (function): function createImmunityWindow(id = "immunity"): ImmunityWindow — A per-target immunity/invulnerability window as an ordinary damage policy — granted and cleared by state transitions (i-frames, phase invuln), rejecting damage while active. Deterministic (time is passed in) and serializable.
 - `resolveDamage` (function): function resolveDamage(interceptors: readonly DamageInterceptor[], pending: PendingDamage, ctx: InterceptContext): DamageResolution — Run one pending damage application through an ordered interceptor list before lethality resolves, returning the final applications, any deferred ones, and full provenance. Pure and deterministic; bounded by `MAX_INTERCEPT_STEPS`.
 
-## @jgengine/core/combat/damageMatchup
+## @jgengine/core/combat/damage/damageMatchup
 
 - `DamageChannelId` (type): type DamageChannelId = string — Caller-owned id for a damage channel — `"fire"`, `"ballistic"`, `"physical"`, `"corrosive"`. The engine never branches on the value; a channel is whatever a game's data declares.
 - `DamageMatchup` (interface): interface DamageMatchup<TChannel extends string = DamageChannelId, TTrait extends string = TargetTraitId> — A serializable, data-defined matchup table: `channel → trait → outputs`. When a hit's channel meets a target carrying several traits, every matching entry's outputs multiply together, so axes compose independently (a trait can halve impact yet double status duration). `default` applies for a channel/trait pair the table does not mention.
@@ -472,13 +472,13 @@
 - `TargetTraitId` (type): type TargetTraitId = string — Caller-owned id for a target trait — `"armored"`, `"fleshy"`, `"wet"`, `"boss"`. Traits are the receiver-side facets a matchup scores a channel against.
 - `resolveMatchup` (function): function resolveMatchup<TChannel extends string = DamageChannelId, TTrait extends string = TargetTraitId>(matchup: DamageMatchup<TChannel, TTrait>, channel: TChannel | string, targetTraits: readonly (TTrait | string)[]): ResolvedMatchup — Resolve a channel against a target's traits into independent, multiplied outputs. Pure and order-independent: every trait the channel has an entry for contributes, its axes multiplying into the running product; unmatched traits are skipped, and when nothing matches the table's `default` (or identity) is used. Bounded by the trait count — no world scan.
 
-## @jgengine/core/combat/damageResolution
+## @jgengine/core/combat/damage/damageResolution
 
 - `DamageHitInput` (interface): interface DamageHitInput — One data-defined damage hit: a channel, a base impact, the target's traits and carried statuses, and the caller-owned matchup/received/status data that shapes the outcome. Everything is serializable; the only non-data input is the injected `rng`, so authority can resolve a hit and replicate the returned instances.
 - `DamageHitResolution` (interface): interface DamageHitResolution — The full, provenance-rich result of resolving a hit — every stage kept for UI and debugging. `impact` is the final number to drain; `matchup`, `received`, and `status` expose exactly how it got there. Authority applies `impact` (plus `received.redirects`/`conversions`) and the returned status `instance`; nothing here mutates game state.
 - `resolveDamageHit` (function): function resolveDamageHit(input: DamageHitInput): DamageHitResolution — Resolve a full damage hit through the data-defined pipeline: score the channel against the target's traits ({@link resolveMatchup}), scale base impact by the matchup's `impact` axis, run receiver-side modifiers ({@link resolveReceivedDamage}), then roll status application scaled by the matchup's `applyChance`/`magnitude`/`duration` axes ({@link resolveStatusApplication}). Pure and deterministic given a seeded `rng`; returns full provenance and never mutates state, so it is safe to run on the authority and replicate the results.
 
-## @jgengine/core/combat/damageRuntime
+## @jgengine/core/combat/damage/damageRuntime
 
 - `DamageRuntime` (interface): interface DamageRuntime — A damage model: registered targets, the table/zones/statuses they are hit with, and carried status state. `hit` resolves a blow, `tick` runs status effects, `timeToKill` quotes a fight, and `table` reads the whole chart. State is plain data, so a save, a replay, or a worker can move it.
 - `DamageRuntimeConfig` (interface): interface DamageRuntimeConfig — Everything the model reads: the table, the zones, the status definitions, and the RNG.
@@ -492,7 +492,7 @@
 - `UnknownTargetProfileError` (class): class UnknownTargetProfileError extends Error — Raised when a hit names a target that was never registered — a wiring error, not a 0-damage hit.
 - `createDamageRuntime` (function): function createDamageRuntime(config: DamageRuntimeConfig): DamageRuntime — Build a damage model from data. The number a hit lands is `base × zone multiplier × type multiplier × (1 − armor mitigation)`; statuses tick through the same table and armor, so a burn on an armored target is mitigated like a bullet. Every application — a hit or a status tick — is announced as `combat.damage` carrying the target, source, type, amount, absorbed, remaining health, a lethal flag and, when `positionOf` or the hit names one, where the blow landed, so a HUD names the blow and a cue pans instead of guessing.
 
-## @jgengine/core/combat/damageTable
+## @jgengine/core/combat/damage/damageTable
 
 - `ArmorConfig` (interface): interface ArmorConfig — The armor curve: `mitigation = armor / (armor + halfValue)`. Naming the half value instead of a percentage per point is what makes a generated gun's armor number readable — armor equal to `halfValue` halves the hit, and mitigation approaches the cap without ever reaching it.
 - `DEFAULT_ARMOR_HALF_VALUE` (const): const DEFAULT_ARMOR_HALF_VALUE: 100 — Default armor points at which a hit is halved.
@@ -509,6 +509,34 @@
 - `resolveTableDamage` (function): function resolveTableDamage(table: DamageTableDef, input: { type: string; resistance: string; armor?: number; base?: number }): DamageTableRow — Resolve one hit through the table: type multiplier, then armor mitigation, and the base scaled by both. Formula order matters only for the numbers a UI shows — the product is the same.
 - `typeBypassesArmor` (function): function typeBypassesArmor(table: DamageTableDef, type: string): boolean — Whether armor points reduce this damage type.
 - `typeMultiplier` (function): function typeMultiplier(table: DamageTableDef, type: string, resistance: string): number — The type × resistance multiplier for one class, before armor. An unknown type throws; an unknown resistance class uses the table's `defaultMultiplier`, since target classes may be narrower than the table's coverage.
+
+## @jgengine/core/combat/damage/landDamage
+
+- `LandAreaDamageInput` (interface): interface LandAreaDamageInput — One area payload: every body inside `radius` of `at` takes its share of `base`.
+- `LandDamageInput` (interface): interface LandDamageInput extends DamageRuntimeHitInput — One blow to land: a {@link DamageRuntime} hit plus who struck it and what the kill feed credits.
+- `LandedDamage` (interface): interface LandedDamage — What one landed blow did: the runtime's full resolution and the amount the world received.
+- `landAreaDamage` (function): function landAreaDamage(ctx: GameContext, runtime: DamageRuntime, input: LandAreaDamageInput, prepare: (instanceId: string) => boolean = (instanceId) => runtime.target(instanceId) !== null): LandedDamage[] — Land an area payload: select bodies with the shared area query (radius, falloff, the world's `canReceive("damage")` gate), then land each share through {@link landDamage}. `prepare` runs per selected body before its hit and returns false to skip one (an unprofiled kind), which is where a game registers a profile lazily.
+- `landDamage` (function): function landDamage(ctx: GameContext, runtime: DamageRuntime, input: LandDamageInput): LandedDamage — Resolve one blow through a damage runtime and land it through the world's `damage` effect, so stat pool absorption, spillover, death and the kill feed stay the engine's. A zero result lands nothing. The target must already carry a profile (`runtime.registerTarget`); an unprofiled one throws, so a hit on something nobody wired fails loudly instead of dealing its base number.
+
+## @jgengine/core/combat/damage/receivedDamage
+
+- `DamageContext` (interface): interface DamageContext — The facts a received-damage modifier predicates over: the incoming `channel`, who dealt it, the statuses the target currently carries, and any caller tags. All caller-owned strings; the engine never assigns meaning to a channel, source, status, or tag.
+- `DamageDivert` (interface): interface DamageDivert — A portion of the hit sent elsewhere by a `redirect`/`convert` policy.
+- `DamagePredicate` (interface): interface DamagePredicate — A typed predicate over a {@link DamageContext}. Every listed facet must match (AND); a facet matches when the context value is in the list (channels/sources) or shares any member (targetStatuses/tags). An empty predicate matches every hit.
+- `ReceivedDamageInput` (interface): interface ReceivedDamageInput — The incoming amount, its {@link DamageContext}, and the receiver's modifier list to run over it.
+- `ReceivedDamageResult` (interface): interface ReceivedDamageResult — The full, provenance-rich outcome of running received modifiers over one hit.
+- `ReceivedModifier` (interface): interface ReceivedModifier — One serializable receiver-side rule: an optional predicate, a policy, and an ordering key.
+- `ReceivedPolicy` (type): type ReceivedPolicy = | { kind: "scale"; factor: number } | { kind: "flat"; delta: number } | { kind: "cap"; max: number } | { kind: "floor"; min: number } | { kind: "convert"; toChannel: DamageChannelId; portion?: number } | { kind: "redirect"; toTarget: string; portion?: number } | { kind: "immune… — What a matched modifier does to the incoming amount. Amplification is one policy beside reduction — both are `scale` (factor `> 1` amplifies, `< 1` reduces). `cap`/`floor` clamp, `flat` adds/subtracts, `convert` moves a portion to another channel on the same target, `redirect` moves a portion to another target, and `immune` zeroes the hit outright.
+- `ReceivedStep` (interface): interface ReceivedStep — One recorded transformation — the provenance a UI or debugger reads to explain a final number.
+- `resolveReceivedDamage` (function): function resolveReceivedDamage(input: ReceivedDamageInput): ReceivedDamageResult — Run receiver-side modifiers over an incoming hit, in ascending `order`, recording every step. Amplification, reduction, caps, conversion, redirection, and immunity are all data — the engine applies whichever policies the target's modifiers declare and never branches on channel names. Pure over serializable data with bounded work (one pass over the modifier list); an `immune` policy short-circuits the remaining modifiers.
+
+## @jgengine/core/combat/damage/resistance
+
+- `ResistVerdict` (type): type ResistVerdict = "immune" | "resist" | "normal" | "vulnerable" — ⚠ undocumented
+- `ResistanceMatrix` (interface): interface ResistanceMatrix<TCategory extends string = string, TProperty extends string = string> { categories: Partial<Record<TCategory, Partial<Record<TProperty, ResistVerdict>>>>; categoryIds?: readonly TCategory[]; propertyIds?: readonly TProperty[]; multipliers?: Partial<Record<ResistVerdict, number>>; default?: ResistVerdict; unkn… — ⚠ undocumented
+- `ResistanceResult` (interface): interface ResistanceResult { verdict: ResistVerdict; multiplier: number; immune: boolean } — ⚠ undocumented
+- `resistanceScale` (function): function resistanceScale<TCategory extends string = string, TProperty extends string = string>(matrix: ResistanceMatrix<TCategory, TProperty>, category: TCategory | string, targetProperties: readonly (TProperty | string)[]): number — ⚠ undocumented
+- `resolveResistance` (function): function resolveResistance<TCategory extends string = string, TProperty extends string = string>(matrix: ResistanceMatrix<TCategory, TProperty>, category: TCategory | string, targetProperties: readonly (TProperty | string)[]): ResistanceResult — ⚠ undocumented
 
 ## @jgengine/core/combat/death
 
@@ -676,18 +704,6 @@
 - `SettleResult` (type): type SettleResult = | { status: "settled"; shotId: string; at: [number, number, number]; hits: EffectResult[]; origin?: [number, number, number]; } | { status: "rejected"; shotId: string; reason: string } — ⚠ undocumented
 - `createProjectileSystem` (function): function createProjectileSystem(deps: ProjectileSystemDeps): ProjectileSystem — Spawn and advance projectiles each frame, resolving travel, lifetime, and hits.
 
-## @jgengine/core/combat/receivedDamage
-
-- `DamageContext` (interface): interface DamageContext — The facts a received-damage modifier predicates over: the incoming `channel`, who dealt it, the statuses the target currently carries, and any caller tags. All caller-owned strings; the engine never assigns meaning to a channel, source, status, or tag.
-- `DamageDivert` (interface): interface DamageDivert — A portion of the hit sent elsewhere by a `redirect`/`convert` policy.
-- `DamagePredicate` (interface): interface DamagePredicate — A typed predicate over a {@link DamageContext}. Every listed facet must match (AND); a facet matches when the context value is in the list (channels/sources) or shares any member (targetStatuses/tags). An empty predicate matches every hit.
-- `ReceivedDamageInput` (interface): interface ReceivedDamageInput — The incoming amount, its {@link DamageContext}, and the receiver's modifier list to run over it.
-- `ReceivedDamageResult` (interface): interface ReceivedDamageResult — The full, provenance-rich outcome of running received modifiers over one hit.
-- `ReceivedModifier` (interface): interface ReceivedModifier — One serializable receiver-side rule: an optional predicate, a policy, and an ordering key.
-- `ReceivedPolicy` (type): type ReceivedPolicy = | { kind: "scale"; factor: number } | { kind: "flat"; delta: number } | { kind: "cap"; max: number } | { kind: "floor"; min: number } | { kind: "convert"; toChannel: DamageChannelId; portion?: number } | { kind: "redirect"; toTarget: string; portion?: number } | { kind: "immune… — What a matched modifier does to the incoming amount. Amplification is one policy beside reduction — both are `scale` (factor `> 1` amplifies, `< 1` reduces). `cap`/`floor` clamp, `flat` adds/subtracts, `convert` moves a portion to another channel on the same target, `redirect` moves a portion to another target, and `immune` zeroes the hit outright.
-- `ReceivedStep` (interface): interface ReceivedStep — One recorded transformation — the provenance a UI or debugger reads to explain a final number.
-- `resolveReceivedDamage` (function): function resolveReceivedDamage(input: ReceivedDamageInput): ReceivedDamageResult — Run receiver-side modifiers over an incoming hit, in ascending `order`, recording every step. Amplification, reduction, caps, conversion, redirection, and immunity are all data — the engine applies whichever policies the target's modifiers declare and never branches on channel names. Pure over serializable data with bounded work (one pass over the modifier list); an `immune` policy short-circuits the remaining modifiers.
-
 ## @jgengine/core/combat/regenShield
 
 - `RegenShield` (interface): interface RegenShield — A shield pool that stops regenerating for `regenDelayMs` after every hit, then refills at `regenPerSecond` — the delayed-regen primitive that replaces snapshot-comparing stat values per tick to detect "damage taken" (#536.3). `damage` resets the grace timer; `tick` counts it down and regenerates once it elapses.
@@ -710,16 +726,6 @@
 - `applyRenderAnimationEvent` (function): function applyRenderAnimationEvent(cues: EntityRenderCues, event: string): EntityRenderCues — Applies a `entity.animation` event (`"fire"` / `"reload"` / `"reloadEnd"`, or any game-defined name) to the cue set. Unknown event names are a no-op.
 - `applyRenderDeathEvent` (function): function applyRenderDeathEvent(cues: EntityRenderCues): EntityRenderCues — Marks the cue set dead after `entity.died`; sticky for the lifetime of the render component.
 - `applyRenderHitEvent` (function): function applyRenderHitEvent(cues: EntityRenderCues): EntityRenderCues — Marks a `combat.hitReaction` pulse; the caller clears `hit` again after its own pulse window.
-
-## @jgengine/core/combat/resistance
-
-- `ResistVerdict` (type): type ResistVerdict = "immune" | "resist" | "normal" | "vulnerable" — ⚠ undocumented
-- `ResistanceMatrix` (interface): interface ResistanceMatrix<TCategory extends string = string, TProperty extends string = string> { categories: Partial<Record<TCategory, Partial<Record<TProperty, ResistVerdict>>>>; categoryIds?: readonly TCategory[]; propertyIds?: readonly TProperty[]; multipliers?: Partial<Record<ResistVerdict, number>>; default?: ResistVerdict; unkn… — ⚠ undocumented
-- `ResistanceResult` (interface): interface ResistanceResult { verdict: ResistVerdict; multiplier: number; immune: boolean } — ⚠ undocumented
-- `UnknownResistanceCategoryError` (class): class UnknownResistanceCategoryError extends Error — ⚠ undocumented
-- `UnknownResistancePropertyError` (class): class UnknownResistancePropertyError extends Error — ⚠ undocumented
-- `resistanceScale` (function): function resistanceScale<TCategory extends string = string, TProperty extends string = string>(matrix: ResistanceMatrix<TCategory, TProperty>, category: TCategory | string, targetProperties: readonly (TProperty | string)[]): number — ⚠ undocumented
-- `resolveResistance` (function): function resolveResistance<TCategory extends string = string, TProperty extends string = string>(matrix: ResistanceMatrix<TCategory, TProperty>, category: TCategory | string, targetProperties: readonly (TProperty | string)[]): ResistanceResult — ⚠ undocumented
 
 ## @jgengine/core/combat/resourcePool
 
@@ -946,12 +952,12 @@
 - `WeaponAim` (interface): interface WeaponAim — Current aim with recoil applied.
 - `WeaponAmmo` (interface): interface WeaponAmmo — Ammo and cadence as a HUD or a test reads them.
 - `WeaponContact` (interface): interface WeaponContact — Where one pellet met the caller's world.
+- `WeaponCounters` (interface): interface WeaponCounters — Lifetime ammo economy and resolution counters.
 - `WeaponImpact` (interface): interface WeaponImpact — One resolved hit, with the damage runtime's full provenance.
 - `WeaponImpactContext` (interface): interface WeaponImpactContext — Read-only facts about the hit handed to `damageFor`.
 - `WeaponProjectileView` (interface): interface WeaponProjectileView — A pellet alive in flight, for presentation or prediction.
 - `WeaponReloadState` (type): type WeaponReloadState = "idle" | "reloading" | "interrupted" — `idle`, `reloading`, or `interrupted` after `interruptReload()` kept the progress.
 - `WeaponShotRecord` (interface): interface WeaponShotRecord — One fired shot: the cone it fired into, the kick it took, and where each pellet went.
-- `WeaponStats` (interface): interface WeaponStats — Lifetime ammo economy and resolution counters.
 - `WeaponSystem` (interface): interface WeaponSystem — A weapon as the game drives it: base aim in, shots and resolved impacts out. Fire mode, cadence, handling, delivery, magazine and damage all come from one {@link WeaponDefinition}; the game owns input, the muzzle, and the world query.
 - `WeaponSystemDeps` (interface): interface WeaponSystemDeps — Everything the runtime is allowed to reach: RNG, the damage model, the muzzle, and the world query.
 - `WeaponSystemState` (interface): interface WeaponSystemState — Serializable runtime state: aim, handling, ammo, trigger, pellets and counters.

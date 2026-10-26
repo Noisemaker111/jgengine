@@ -28,7 +28,7 @@ import type { StatValue } from "@jgengine/core/scene/entityStats";
 import type { SceneEntity } from "@jgengine/core/scene/entityStore";
 import type { SceneObject } from "@jgengine/core/scene/objectStore";
 import type { RosterEntry } from "@jgengine/core/scene/roster";
-import type { WorldItemRecord } from "@jgengine/core/game/worldItem";
+import type { WorldItemRecord } from "@jgengine/core/loot/groundItem";
 import type { ClockSnapshot, SimClock } from "@jgengine/core/time/simClock";
 import {
   resolveActivePrompt,

@@ -1,7 +1,7 @@
 import { describe, expect, test } from "bun:test";
 import { createGameContext, type GameContext } from "@jgengine/core/runtime/gameContext";
-import { readDamageTable } from "@jgengine/core/combat/damageTable";
-import { UnknownTargetProfileError } from "@jgengine/core/combat/damageRuntime";
+import { readDamageTable } from "@jgengine/core/combat/damage/damageTable";
+import { UnknownTargetProfileError } from "@jgengine/core/combat/damage/damageRuntime";
 
 import { game } from "../../game.config";
 import { loop } from "../../loop";

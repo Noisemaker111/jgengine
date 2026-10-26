@@ -1,7 +1,7 @@
 import { beforeEach, describe, expect, test } from "bun:test";
-import { createDamageRuntime, UnknownTargetProfileError } from "@jgengine/core/combat/damageRuntime";
-import { readDamageTable } from "@jgengine/core/combat/damageTable";
-import { formatDamageTable } from "@jgengine/core/combat/damageTable";
+import { createDamageRuntime, UnknownTargetProfileError } from "@jgengine/core/combat/damage/damageRuntime";
+import { readDamageTable } from "@jgengine/core/combat/damage/damageTable";
+import { formatDamageTable } from "@jgengine/core/combat/damage/damageTable";
 
 import { resetCharacterState } from "../characters";
 import type { GunDef, GunElement } from "../handroll/guns";

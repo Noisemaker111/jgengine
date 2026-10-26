@@ -1,6 +1,6 @@
 import type { GameContext } from "@jgengine/core/runtime/gameContext";
 import type { PositionedPrompt } from "@jgengine/core/interaction/proximityPrompt";
-import type { RarityStyle } from "@jgengine/core/game/worldItem";
+import type { RarityStyle } from "@jgengine/core/loot/groundItem";
 import { defineGame } from "@jgengine/shell/defineGame";
 import { findEditorMarker } from "@jgengine/core/editor/document";
 import { buildScrapSignalEditorLayers } from "./editorLayers";

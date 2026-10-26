@@ -226,6 +226,14 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 - `impactPresets` (const) · `import { impactPresets } from "@jgengine/core/combat"`
 - `resolveHitReaction` (function) · `import { resolveHitReaction } from "@jgengine/core/combat"`
 
+## land-area-damage — radius damage with falloff resolved through a damage chart per body
+
+- `landAreaDamage` (function) · `import { landAreaDamage } from "@jgengine/core/combat/damage/landDamage"`
+
+## land-damage — resolve a hit through a damage chart and apply it to the world as one damage effect
+
+- `landDamage` (function) · `import { landDamage } from "@jgengine/core/combat/damage/landDamage"`
+
 ## magazine — a weapon magazine with capacity, timed reload, and reserve-pool interaction
 
 - `createMagazine` (function) · `import { createMagazine } from "@jgengine/core/combat"`

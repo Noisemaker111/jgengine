@@ -2,7 +2,7 @@ import { describe, expect, test } from "bun:test";
 
 import { createPoliceResponse } from "../ai/policeResponse";
 import { createUtilityBrain } from "../ai/utilityBrain";
-import { createDamageRuntime } from "../combat/damageRuntime";
+import { createDamageRuntime } from "../combat/damage/damageRuntime";
 import { createLoanBook } from "../economy/loanBook";
 import { createMarket } from "../economy/market";
 import { createTransactionLedger } from "../economy/transactionLedger";

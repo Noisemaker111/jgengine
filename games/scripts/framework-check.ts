@@ -118,7 +118,7 @@ const SHARED_RUN_LOOP = /from\s+"@jgengine\/core\/run\/sessionLoop"/;
  * DamageTableDef` fed to `createDamageRuntime`. That table is content, so a table constant is only
  * engine-shaped in a module that does not adopt the shared damage or status model.
  */
-const ADOPTS_DAMAGE_MODEL = /from\s+"@jgengine\/core\/combat\/(?:damageTable|damageRuntime|damageResolution|statusRuntime|statusApplication|resistance)"/;
+const ADOPTS_DAMAGE_MODEL = /from\s+"@jgengine\/core\/combat\/(?:damage\/(?:damageTable|damageRuntime|damageResolution|resistance|landDamage)|statusRuntime|statusApplication)"/;
 const DAMAGE_TABLE_CONST = /\b(?:const|let|var)\s+\w*(?:Damage|DAMAGE|Status|STATUS)_?(?:Table|TABLE|Matrix|MATRIX|Chart|CHART)\b/;
 
 /** A file the runner can execute. Anything else - a JSON flow, a note, an asset - is never an engine. */

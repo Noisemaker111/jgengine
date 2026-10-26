@@ -1,4 +1,4 @@
-import { lootTable } from "@jgengine/core/game/lootTable";
+import { lootTable } from "@jgengine/core/loot/lootTable";
 
 export const lootTables = [
   lootTable({

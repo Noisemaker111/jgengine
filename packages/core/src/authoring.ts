@@ -22,7 +22,7 @@ export {
   type LootTableDef,
   type LootEntry,
   type Drop,
-} from "./game/lootTable";
+} from "./loot/lootTable";
 
 export {
   biomes,

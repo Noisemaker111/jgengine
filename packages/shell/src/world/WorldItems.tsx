@@ -3,7 +3,7 @@ import { useMemo, useRef } from "react";
 import { useFrame } from "@react-three/fiber";
 import type { Group } from "three";
 import type { WorldItemRenderConfig } from "@jgengine/core/game/playableGame";
-import { resolveWorldItemPresentation } from "@jgengine/core/game/worldItem";
+import { resolveWorldItemPresentation } from "@jgengine/core/loot/groundItem";
 import { useGameContext } from "@jgengine/react/provider";
 import { useWorldItems } from "@jgengine/react/hooks";
 import { emptyPoseMemo, writePoseIfChanged, type PoseMemo } from "./entityPose";

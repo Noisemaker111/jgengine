@@ -1,4 +1,4 @@
-import { assertDamageTable, resolveTableDamage, typeMultiplier, type DamageTableDef } from "@jgengine/core/combat/damageTable";
+import { assertDamageTable, resolveTableDamage, typeMultiplier, type DamageTableDef } from "@jgengine/core/combat/damage/damageTable";
 
 /** What a tower's shot is made of. */
 export type DamageType = "pierce" | "blast" | "frost" | "arcane";

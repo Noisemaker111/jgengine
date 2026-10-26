@@ -18,7 +18,7 @@ import type { InputFrame } from "@jgengine/core/runtime/hostedGameRunner";
 import { advanceBehaviors } from "@jgengine/core/scene/behaviorRuntime";
 import { resolveActivePrompt } from "@jgengine/core/interaction/proximityPrompt";
 import type { PointerAxisState } from "@jgengine/core/input/pointerAxis";
-import { DEFAULT_PICKUP_RADIUS } from "@jgengine/core/game/worldItem";
+import { DEFAULT_PICKUP_RADIUS } from "@jgengine/core/loot/groundItem";
 import { playControlsActive } from "@jgengine/core/game/controlGate";
 import { devtools } from "@jgengine/core/devtools/devtools";
 import type { ActionStateTracker } from "@jgengine/core/input/actionBindings";

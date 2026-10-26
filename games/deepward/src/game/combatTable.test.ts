@@ -1,6 +1,6 @@
 import { expect, test } from "bun:test";
-import { readDamageTable } from "@jgengine/core/combat/damageTable";
-import { UnknownTargetProfileError } from "@jgengine/core/combat/damageRuntime";
+import { readDamageTable } from "@jgengine/core/combat/damage/damageTable";
+import { UnknownTargetProfileError } from "@jgengine/core/combat/damage/damageRuntime";
 import { createDeepwardDamage, DAMAGE_TABLE, FITTER_HEALTH, rifleDefinition, sidearmDefinition, weaponReadout } from "./combat";
 import { rollItem, weaponStats } from "./items";
 import { newDive } from "./state";

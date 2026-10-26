@@ -351,7 +351,7 @@
       "packages": [
         "@jgengine/core"
       ],
-      "module": "@jgengine/core/combat/damageInterceptors",
+      "module": "@jgengine/core/combat/damage/damageInterceptors",
       "domain": "combat",
       "gameFacing": false,
       "probe": null,
@@ -428,7 +428,7 @@
       "packages": [
         "@jgengine/core"
       ],
-      "module": "@jgengine/core/combat/damageTable",
+      "module": "@jgengine/core/combat/damage/damageTable",
       "domain": "combat",
       "gameFacing": false,
       "probe": null,
@@ -439,7 +439,7 @@
       "packages": [
         "@jgengine/core"
       ],
-      "module": "@jgengine/core/combat/damageTable",
+      "module": "@jgengine/core/combat/damage/damageTable",
       "domain": "combat",
       "gameFacing": false,
       "probe": null,
@@ -2182,7 +2182,7 @@
       "packages": [
         "@jgengine/core"
       ],
-      "module": "@jgengine/core/combat/damageInterceptors",
+      "module": "@jgengine/core/combat/damage/damageInterceptors",
       "domain": "combat",
       "gameFacing": false,
       "probe": null,
@@ -2215,7 +2215,7 @@
       "packages": [
         "@jgengine/core"
       ],
-      "module": "@jgengine/core/combat/damageResolution",
+      "module": "@jgengine/core/combat/damage/damageResolution",
       "domain": "combat",
       "gameFacing": false,
       "probe": null,
@@ -2226,7 +2226,7 @@
       "packages": [
         "@jgengine/core"
       ],
-      "module": "@jgengine/core/combat/damageInterceptors",
+      "module": "@jgengine/core/combat/damage/damageInterceptors",
       "domain": "combat",
       "gameFacing": false,
       "probe": null,
@@ -2237,7 +2237,7 @@
       "packages": [
         "@jgengine/core"
       ],
-      "module": "@jgengine/core/combat/damageMatchup",
+      "module": "@jgengine/core/combat/damage/damageMatchup",
       "domain": "combat",
       "gameFacing": false,
       "probe": null,
@@ -2248,7 +2248,7 @@
       "packages": [
         "@jgengine/core"
       ],
-      "module": "@jgengine/core/combat/damageInterceptors",
+      "module": "@jgengine/core/combat/damage/damageInterceptors",
       "domain": "combat",
       "gameFacing": false,
       "probe": null,
@@ -2259,7 +2259,7 @@
       "packages": [
         "@jgengine/core"
       ],
-      "module": "@jgengine/core/combat/damageRuntime",
+      "module": "@jgengine/core/combat/damage/damageRuntime",
       "domain": "damage table",
       "gameFacing": true,
       "probe": {
@@ -2272,7 +2272,7 @@
       "packages": [
         "@jgengine/core"
       ],
-      "module": "@jgengine/core/combat/damageTable",
+      "module": "@jgengine/core/combat/damage/damageTable",
       "domain": "combat",
       "gameFacing": false,
       "probe": null,
@@ -2283,7 +2283,7 @@
       "packages": [
         "@jgengine/core"
       ],
-      "module": "@jgengine/core/combat/damageTable",
+      "module": "@jgengine/core/combat/damage/damageTable",
       "domain": "combat",
       "gameFacing": false,
       "probe": null,
@@ -2294,7 +2294,7 @@
       "packages": [
         "@jgengine/core"
       ],
-      "module": "@jgengine/core/combat/damageTable",
+      "module": "@jgengine/core/combat/damage/damageTable",
       "domain": "combat",
       "gameFacing": false,
       "probe": null,
@@ -2305,7 +2305,7 @@
       "packages": [
         "@jgengine/core"
       ],
-      "module": "@jgengine/core/combat/damageTable",
+      "module": "@jgengine/core/combat/damage/damageTable",
       "domain": "combat",
       "gameFacing": false,
       "probe": null,
@@ -2316,7 +2316,7 @@
       "packages": [
         "@jgengine/core"
       ],
-      "module": "@jgengine/core/combat/damageTable",
+      "module": "@jgengine/core/combat/damage/damageTable",
       "domain": "combat",
       "gameFacing": false,
       "probe": null,
@@ -2327,7 +2327,7 @@
       "packages": [
         "@jgengine/core"
       ],
-      "module": "@jgengine/core/combat/damageRuntime",
+      "module": "@jgengine/core/combat/damage/damageRuntime",
       "domain": "damage table",
       "gameFacing": true,
       "probe": {
@@ -2340,7 +2340,7 @@
       "packages": [
         "@jgengine/core"
       ],
-      "module": "@jgengine/core/combat/damageTable",
+      "module": "@jgengine/core/combat/damage/damageTable",
       "domain": "combat",
       "gameFacing": false,
       "probe": null,
@@ -2351,7 +2351,7 @@
       "packages": [
         "@jgengine/core"
       ],
-      "module": "@jgengine/core/combat/damageTable",
+      "module": "@jgengine/core/combat/damage/damageTable",
       "domain": "combat",
       "gameFacing": false,
       "probe": null,
@@ -3820,6 +3820,17 @@
       "intent": "inspect native material slots, packed maps, attribution and compatibility"
     },
     {
+      "id": "grant-drops",
+      "packages": [
+        "@jgengine/core"
+      ],
+      "module": "@jgengine/core/loot/lootTable",
+      "domain": "loot",
+      "gameFacing": false,
+      "probe": null,
+      "intent": "deliver rolled loot drops into inventory and currency"
+    },
+    {
       "id": "grapple-swing",
       "packages": [
         "@jgengine/core"
@@ -4419,7 +4430,7 @@
       "packages": [
         "@jgengine/core"
       ],
-      "module": "@jgengine/core/combat/damageInterceptors",
+      "module": "@jgengine/core/combat/damage/damageInterceptors",
       "domain": "combat",
       "gameFacing": false,
       "probe": null,
@@ -5065,6 +5076,28 @@
       "intent": "a HUD wave clock — countdown or enemies left, a note, and the wave banner"
     },
     {
+      "id": "land-area-damage",
+      "packages": [
+        "@jgengine/core"
+      ],
+      "module": "@jgengine/core/combat/damage/landDamage",
+      "domain": "combat",
+      "gameFacing": false,
+      "probe": null,
+      "intent": "radius damage with falloff resolved through a damage chart per body"
+    },
+    {
+      "id": "land-damage",
+      "packages": [
+        "@jgengine/core"
+      ],
+      "module": "@jgengine/core/combat/damage/landDamage",
+      "domain": "combat",
+      "gameFacing": false,
+      "probe": null,
+      "intent": "resolve a hit through a damage chart and apply it to the world as one damage effect"
+    },
+    {
       "id": "lane-board",
       "packages": [
         "@jgengine/core"
@@ -5425,8 +5458,8 @@
       "packages": [
         "@jgengine/core"
       ],
-      "module": "@jgengine/core/game/worldItem",
-      "domain": "game",
+      "module": "@jgengine/core/loot/groundItem",
+      "domain": "loot",
       "gameFacing": false,
       "probe": null,
       "intent": "rarity-colored loot beams and labels on dropped items via defineGame({ worldItem: { rarityStyle, beamHeight } })"
@@ -5449,8 +5482,8 @@
       "packages": [
         "@jgengine/core"
       ],
-      "module": "@jgengine/core/game/lootFilter",
-      "domain": "game",
+      "module": "@jgengine/core/loot/lootFilter",
+      "domain": "loot",
       "gameFacing": false,
       "probe": null,
       "intent": "filter and highlight drops by rarity/name rules"
@@ -5473,8 +5506,8 @@
       "packages": [
         "@jgengine/core"
       ],
-      "module": "@jgengine/core/game/lootPipeline",
-      "domain": "game",
+      "module": "@jgengine/core/loot/lootPipeline",
+      "domain": "loot",
       "gameFacing": false,
       "probe": null,
       "intent": "validate a composable loot-resolution pipeline definition"
@@ -5510,8 +5543,8 @@
       "packages": [
         "@jgengine/core"
       ],
-      "module": "@jgengine/core/game/lootTable",
-      "domain": "game",
+      "module": "@jgengine/core/loot/lootTable",
+      "domain": "loot",
       "gameFacing": false,
       "probe": null,
       "intent": "register loot tables and roll weighted randomized drops"
@@ -7633,7 +7666,7 @@
       "packages": [
         "@jgengine/core"
       ],
-      "module": "@jgengine/core/combat/receivedDamage",
+      "module": "@jgengine/core/combat/damage/receivedDamage",
       "domain": "combat",
       "gameFacing": false,
       "probe": null,
@@ -9513,8 +9546,8 @@
       "packages": [
         "@jgengine/core"
       ],
-      "module": "@jgengine/core/game/lootModifiers",
-      "domain": "game",
+      "module": "@jgengine/core/loot/lootModifiers",
+      "domain": "loot",
       "gameFacing": false,
       "probe": null,
       "intent": "shape loot odds by elapsed hours with caller-authored curves and pipeline provenance"

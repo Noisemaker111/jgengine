@@ -34,7 +34,7 @@ import {
   type ScreenRect,
 } from "@jgengine/core/scene/selection";
 import type { SceneEntity } from "@jgengine/core/scene/entityStore";
-import { DEFAULT_PICKUP_RADIUS } from "@jgengine/core/game/worldItem";
+import { DEFAULT_PICKUP_RADIUS } from "@jgengine/core/loot/groundItem";
 import type { PointerConfig } from "@jgengine/core/game/playableGame";
 import { CAMERA_FRUSTUM_DEFAULTS } from "@jgengine/core/game/playableGame";
 import { pixelPerfectFrustum, snapPixelPerfectPosition } from "@jgengine/core/game/pixelPerfect";

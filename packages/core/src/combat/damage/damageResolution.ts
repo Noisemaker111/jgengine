@@ -17,7 +17,7 @@ import {
   type StatusApplicationSpec,
   type StatusImmunity,
   type StatusInstance,
-} from "./statusApplication";
+} from "../statusApplication";
 
 /**
  * One data-defined damage hit: a channel, a base impact, the target's traits and carried statuses,

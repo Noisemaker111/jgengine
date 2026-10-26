@@ -92,14 +92,22 @@ function resolveCount(count: number | [number, number], rng: () => number): numb
   return min + Math.floor(rng() * (max - min + 1));
 }
 
-function pickEntry(entries: LootEntry[], rng: () => number): LootEntry {
-  const total = entries.reduce((sum, entry) => sum + (entry.weight ?? 0), 0);
+/**
+ * Pick one entry by weight on half-open intervals (`roll < 0`), the order every loot roller consumes
+ * `rng` in, so a table and a pipeline stage over the same entries drop the same thing. Returns the
+ * last candidate on float drift and `undefined` when nothing has weight.
+ *
+ * @internal
+ */
+export function pickLootWeighted<T>(candidates: readonly T[], weightOf: (candidate: T) => number, rng: () => number): T | undefined {
+  const total = candidates.reduce((sum, candidate) => sum + weightOf(candidate), 0);
+  if (candidates.length === 0) return undefined;
   let roll = rng() * total;
-  for (const entry of entries) {
-    roll -= entry.weight ?? 0;
-    if (roll < 0) return entry;
+  for (const candidate of candidates) {
+    roll -= weightOf(candidate);
+    if (roll < 0) return candidate;
   }
-  return entries[entries.length - 1];
+  return candidates[candidates.length - 1];
 }
 
 function rollEntry(entry: LootEntry, rng: () => number): Drop {
@@ -151,7 +159,7 @@ export function createLootRegistry(options: LootRegistryOptions = {}): LootRegis
             if (rng() < (entry.chance ?? 0)) drops.push(rollEntry(entry, rng));
           }
         } else {
-          drops.push(rollEntry(pickEntry(table.entries, rng), rng));
+          drops.push(rollEntry(pickLootWeighted(table.entries, (entry) => entry.weight ?? 0, rng)!, rng));
         }
       }
       return drops;
@@ -177,6 +185,11 @@ export function lootTable(def: LootTableDef): LootTableDef {
   return def;
 }
 
+/**
+ * Hand rolled drops to their owner: items to inventory, currency to the economy.
+ *
+ * @capability grant-drops deliver rolled loot drops into inventory and currency
+ */
 export function grantDrops(
   drops: Drop[],
   appliers: {

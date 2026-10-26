@@ -2,8 +2,8 @@ import { describe, expect, test } from "bun:test";
 
 import { devtools } from "../devtools/devtools";
 import { seededRng } from "../random/rng";
-import { createDamageRuntime, type DamageRuntime } from "./damageRuntime";
-import type { DamageTableDef } from "./damageTable";
+import { createDamageRuntime, type DamageRuntime } from "./damage/damageRuntime";
+import type { DamageTableDef } from "./damage/damageTable";
 import type { HitZoneTable } from "./hitZones";
 import type { WeaponDefinition } from "./weaponDefinition";
 import { createWeaponSystem, type WeaponSystem, type WeaponSystemDeps } from "./weaponSystem";

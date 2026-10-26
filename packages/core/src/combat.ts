@@ -54,7 +54,7 @@ export {
   type InterceptDecision,
   type InterceptRecord,
   type PendingDamage,
-} from "./combat/damageInterceptors";
+} from "./combat/damage/damageInterceptors";
 export {
   resolveMatchup,
   type DamageChannelId,
@@ -62,8 +62,8 @@ export {
   type MatchupOutputs,
   type ResolvedMatchup,
   type TargetTraitId,
-} from "./combat/damageMatchup";
-export { resolveDamageHit, type DamageHitInput, type DamageHitResolution } from "./combat/damageResolution";
+} from "./combat/damage/damageMatchup";
+export { resolveDamageHit, type DamageHitInput, type DamageHitResolution } from "./combat/damage/damageResolution";
 export {
   UnknownTargetProfileError,
   createDamageRuntime,
@@ -75,7 +75,7 @@ export {
   type DamageStatusRequest,
   type TargetProfile,
   type TimeToKill,
-} from "./combat/damageRuntime";
+} from "./combat/damage/damageRuntime";
 export {
   DEFAULT_ARMOR_HALF_VALUE,
   DEFAULT_MAX_MITIGATION,
@@ -92,7 +92,16 @@ export {
   type DamageTableDef,
   type DamageTableRow,
   type DamageTypeDef,
-} from "./combat/damageTable";
+} from "./combat/damage/damageTable";
+export {
+  resolveReceivedDamage,
+  type DamageContext,
+  type DamagePredicate,
+  type ReceivedDamageResult,
+  type ReceivedModifier,
+  type ReceivedPolicy,
+} from "./combat/damage/receivedDamage";
+export { resistanceScale, resolveResistance } from "./combat/damage/resistance";
 export { createDeathSystem, type OnDeathSpec } from "./combat/death";
 export { type DeathReason } from "./combat/deathReason";
 export { createDefensiveWindow, resolveDefense, type DefenseResolution } from "./combat/defensiveWindow";
@@ -152,14 +161,6 @@ export {
   type ProjectileSystemDeps,
   type RaycastHit,
 } from "./combat/projectiles";
-export {
-  resolveReceivedDamage,
-  type DamageContext,
-  type DamagePredicate,
-  type ReceivedDamageResult,
-  type ReceivedModifier,
-  type ReceivedPolicy,
-} from "./combat/receivedDamage";
 export { createRegenShield } from "./combat/regenShield";
 export {
   DEFAULT_FIRE_PULSE_SECONDS,
@@ -172,7 +173,6 @@ export {
   type EntityRenderCues,
   type RenderCueTuning,
 } from "./combat/renderCues";
-export { resistanceScale, resolveResistance } from "./combat/resistance";
 export { createResourcePool, type ResourcePool } from "./combat/resourcePool";
 export {
   allocateRewards,
@@ -330,12 +330,12 @@ export {
   type WeaponAim,
   type WeaponAmmo,
   type WeaponContact,
+  type WeaponCounters,
   type WeaponImpact,
   type WeaponImpactContext,
   type WeaponProjectileView,
   type WeaponReloadState,
   type WeaponShotRecord,
-  type WeaponStats,
   type WeaponSystem,
   type WeaponSystemDeps,
   type WeaponSystemState,

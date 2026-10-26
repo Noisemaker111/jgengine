@@ -1,4 +1,4 @@
-import { resolveDamageHit, type DamageHitInput, type DamageHitResolution } from "./damageResolution";
+import { resolveDamageHit, type DamageHitInput, type DamageHitResolution } from "./damage/damageResolution";
 import { createMagazine, type Magazine, type MagazineConfig } from "./magazine";
 
 /** Tuning for {@link createFireCadence}: the minimum interval between actions and whether it starts ready. */

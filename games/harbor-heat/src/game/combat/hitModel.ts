@@ -2,10 +2,10 @@ import {
   createDamageRuntime,
   type DamageRuntime,
   type DamageRuntimeResolution,
-} from "@jgengine/core/combat/damageRuntime";
-import type { DamageTableDef } from "@jgengine/core/combat/damageTable";
+} from "@jgengine/core/combat/damage/damageRuntime";
+import type { DamageTableDef } from "@jgengine/core/combat/damage/damageTable";
 import type { HitZoneTable } from "@jgengine/core/combat/hitZones";
-import { resolveAreaTargets } from "@jgengine/core/combat/effects";
+import { landAreaDamage, landDamage } from "@jgengine/core/combat/damage/landDamage";
 import { perContext } from "@jgengine/core/runtime/perContext";
 import type { GameContext } from "@jgengine/core/runtime/gameContext";
 import { ENEMIES } from "../entities/enemies/catalog";
@@ -112,26 +112,21 @@ export function registerAsTarget(ctx: GameContext, instanceId: string): boolean 
 }
 
 /**
- * Resolve one blow through the chart and land it through the engine's effect system, so stat-pool
- * absorption, ordered spillover, death and the kill feed stay the engine's. Returns the resolution, or
- * null when the target takes no damage.
+ * Resolve one blow through the chart and land it through the engine's effect system. Returns the
+ * resolution, or null when the target takes no damage.
  */
 export function landHit(
   ctx: GameContext,
   input: { from: string; to: string; type: string; base: number; position?: readonly [number, number, number] },
 ): DamageRuntimeResolution | null {
   if (!registerAsTarget(ctx, input.to)) return null;
-  const resolution = harborDamage(ctx).hit({
+  return landDamage(ctx, harborDamage(ctx), {
+    source: input.from,
     target: input.to,
     type: input.type,
     base: input.base,
-    source: input.from,
     ...(input.position === undefined ? {} : { position: input.position }),
-  });
-  if (resolution.damage > 0) {
-    ctx.scene.entity.effect({ from: input.from, to: input.to, effect: "damage", via: { amount: resolution.damage } });
-  }
-  return resolution;
+  }).resolution;
 }
 
 /** Land one weapon pellet on one target. */
@@ -146,39 +141,19 @@ export function landWeaponHit(
 
 /**
  * Land a blast: each body inside the radius takes its share of one payload on the shared linear
- * falloff, resolved through the chart like any other hit. Target selection and the falloff are the
- * shared area query, not a second copy of the arithmetic.
- *
- * Harbor injects no line-of-sight occluder, so the engine's own area effect never blocked a blast on
- * a wall and neither does this - the point-source check is the open-field default, while an entity
- * source keeps whatever the entity query says.
+ * falloff, resolved through the chart like any other hit. Harbor injects no occluder, so no wall
+ * blocks a blast.
  */
 export function landBlast(
   ctx: GameContext,
   input: { from: string; at: readonly [number, number, number]; radius: number; type: string; base: number },
 ): DamageRuntimeResolution[] {
-  const spatial = {
-    inRadius: (center: readonly [number, number, number], radius: number) => ctx.scene.entity.inRadius(center, radius),
-    hasLineOfSight: (from: readonly [number, number, number] | string, to: string) =>
-      typeof from === "string" ? ctx.scene.entity.hasLineOfSight(from, to) : true,
-    positionOf: (instanceId: string) => ctx.scene.entity.get(instanceId)?.position,
-  };
-  const targets = resolveAreaTargets(spatial, { at: input.at, radius: input.radius, falloff: "linear" }, (instanceId) =>
-    ctx.scene.entity.canReceive(instanceId, "damage") === null,
-  );
-
-  const landed: DamageRuntimeResolution[] = [];
-  for (const target of targets) {
-    const resolution = landHit(ctx, {
-      from: input.from,
-      to: target.instanceId,
-      type: input.type,
-      base: input.base * target.scale,
-      position: input.at,
-    });
-    if (resolution !== null) landed.push(resolution);
-  }
-  return landed;
+  return landAreaDamage(
+    ctx,
+    harborDamage(ctx),
+    { source: input.from, at: input.at, radius: input.radius, type: input.type, base: input.base },
+    (instanceId) => registerAsTarget(ctx, instanceId),
+  ).map((landed) => landed.resolution);
 }
 
 /** Land a thrown weapon's explosion, with the payload read from the weapon's own chart row. */

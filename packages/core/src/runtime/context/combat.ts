@@ -8,7 +8,7 @@ import { createProjectileSystem, type ProjectileSystem, type ProjectileTravelDep
 import type { PhysicsConfig } from "../../game/defineGame";
 import type { GameEvents } from "../../game/events";
 import { createVfxInstanceStore, type VfxInstanceStore } from "../../game/vfxInstance";
-import type { LootRegistry } from "../../game/lootTable";
+import type { LootRegistry } from "../../loot/lootTable";
 import { colliderBounds, colliderWorldCenter, defaultEntityColliders, resolveColliders, type EntityColliderSet, type ResolvedCollider } from "../../scene/colliders";
 import { raycastCollisionMesh } from "../../scene/collisionMesh";
 import { sweepMovingBounds, sweepMovingSphere } from "../../physics/ballisticSweep";
@@ -21,7 +21,7 @@ import type { SceneRaycastApi, SceneRaycastInput } from "../../scene/sceneRaycas
 import type { WeaponStats } from "../../item/weapon";
 import type { SimClock } from "../../time/simClock";
 import { notifyAfter } from "../../store/changeSignal";
-import type { WorldItemRecord, WorldItemSpawnInput } from "../../game/worldItem";
+import type { WorldItemRecord, WorldItemSpawnInput } from "../../loot/groundItem";
 import type {
   GameContextContent,
   GameContextEntityEntry,

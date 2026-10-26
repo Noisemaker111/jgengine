@@ -1,5 +1,5 @@
 import { describe, expect, test } from "bun:test";
-import { resolveTableDamage } from "@jgengine/core/combat/damageTable";
+import { resolveTableDamage } from "@jgengine/core/combat/damage/damageTable";
 import { seededRng } from "@jgengine/core/random/rng";
 import {
   type GunDef,

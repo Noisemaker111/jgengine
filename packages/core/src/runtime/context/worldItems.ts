@@ -5,8 +5,8 @@ import {
   type WorldItemRecord,
   type WorldItemSpawnInput,
   type WorldItemStore,
-} from "../../game/worldItem";
-import type { Drop } from "../../game/lootTable";
+} from "../../loot/groundItem";
+import type { Drop } from "../../loot/lootTable";
 import type { EntityStore } from "../../scene/entityStore";
 import { notifyAfter } from "../../store/changeSignal";
 import type { WorldItemPickupResult } from "../gameContext";

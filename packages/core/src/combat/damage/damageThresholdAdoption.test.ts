@@ -5,7 +5,7 @@ import {
   createDamagePipeline,
   createImmunityWindow,
 } from "./damageInterceptors";
-import { createThresholdTracker } from "./thresholdCrossings";
+import { createThresholdTracker } from "../thresholdCrossings";
 
 /**
  * Executable first-adopter proof for #931: the interception seam and the

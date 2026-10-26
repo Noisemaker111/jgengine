@@ -148,7 +148,7 @@ export function reset(): void {
 describe("adoption is not an offence", () => {
   test("an inline type import of a shared damage table is adoption, not a definition", () => {
     const lines = [
-      `import { resolveTableDamage, type DamageTableDef } from "@jgengine/core/combat/damageTable";`,
+      `import { resolveTableDamage, type DamageTableDef } from "@jgengine/core/combat/damage/damageTable";`,
       `export const RAIDER_DAMAGE: DamageTableDef = { types: [{ id: "pierce", vs: { bone: 0.6 } }] };`,
       `export function hit(base: number): number {`,
       `  return resolveTableDamage(RAIDER_DAMAGE, { type: "pierce", resistance: "bone", armor: 0, base }).damage ?? 0;`,
@@ -213,8 +213,8 @@ describe("damage: the table is the system, the tuning wrapper is not", () => {
   });
 
   test("an authored table typed by the shared model passes: three games do exactly this", () => {
-    const HARBOR = `import type { DamageTableDef } from "@jgengine/core/combat/damageTable";
-import { createDamageRuntime } from "@jgengine/core/combat/damageRuntime";
+    const HARBOR = `import type { DamageTableDef } from "@jgengine/core/combat/damage/damageTable";
+import { createDamageRuntime } from "@jgengine/core/combat/damage/damageRuntime";
 
 export const DAMAGE_TABLE: DamageTableDef = {
   types: [{ id: "ballistic", vs: { flesh: 1, chassis: 1 } }],

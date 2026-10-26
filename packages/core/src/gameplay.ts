@@ -228,26 +228,6 @@ export {
 } from "./game/leaderboardRank";
 export { createLevelSequence, type LevelSequence } from "./game/levelSequence";
 export { createLoadouts, type LoadoutDef } from "./game/loadout";
-export { evaluateLootFilter, lootFilter, type LootFilterRule } from "./game/lootFilter";
-export { timeScaledRarity, type TimeScaledRarityOptions } from "./game/lootModifiers";
-export {
-  createLootPipeline,
-  defineLootPipeline,
-  type LootDropProvenance,
-  type LootModifier,
-  type LootPipeline,
-  type LootPipelineDef,
-  type LootPipelineDeps,
-  type LootPlanEntry,
-  type LootResolution,
-  type LootResolveContext,
-  type LootRollPlan,
-  type LootStage,
-  type LootStageKind,
-  type LootStageStatus,
-  type LootStageTrace,
-} from "./game/lootPipeline";
-export { createLootRegistry, lootTable, type Drop, type LootTableDef } from "./game/lootTable";
 export { resolveOneShotClip } from "./game/modelAnimation";
 export { evaluateObjective } from "./game/objectives";
 export {
@@ -387,12 +367,6 @@ export {
   type VfxInstanceStore,
   type VfxInstanceStoreOptions,
 } from "./game/vfxInstance";
-export {
-  DEFAULT_PICKUP_RADIUS,
-  WORLD_ITEM_ENTITY_NAME,
-  type RarityStyle,
-  type WorldItemRecord,
-} from "./game/worldItem";
 export { type ActionCodes, type ActionCodesMap, type ActionStateTracker } from "./input/actionBindings";
 export { NEUTRAL_AXIS, type AxisBindingMap, type AxisChannelConfig, type AxisInput } from "./input/axisInput";
 export {
@@ -529,6 +503,13 @@ export {
 } from "./item/useBehavior";
 export { createWeaponStats } from "./item/weapon";
 export {
+  DEFAULT_PICKUP_RADIUS,
+  WORLD_ITEM_ENTITY_NAME,
+  type RarityStyle,
+  type WorldItemRecord,
+} from "./loot/groundItem";
+export { evaluateLootFilter, lootFilter, type LootFilterRule } from "./loot/lootFilter";
+export {
   MAX_LOOT_AFFIXES,
   assertLootCatalog,
   compareLootItems,
@@ -554,6 +535,25 @@ export {
   type LootStatDelta,
   type LootValidationIssue,
 } from "./loot/lootGen";
+export { timeScaledRarity, type TimeScaledRarityOptions } from "./loot/lootModifiers";
+export {
+  createLootPipeline,
+  defineLootPipeline,
+  type LootDropProvenance,
+  type LootModifier,
+  type LootPipeline,
+  type LootPipelineDef,
+  type LootPipelineDeps,
+  type LootPlanEntry,
+  type LootResolution,
+  type LootResolveContext,
+  type LootRollPlan,
+  type LootStage,
+  type LootStageKind,
+  type LootStageStatus,
+  type LootStageTrace,
+} from "./loot/lootPipeline";
+export { createLootRegistry, lootTable, type Drop, type LootTableDef } from "./loot/lootTable";
 export { lootWeaponDefinition, type LootWeaponProjection, type LootWeaponStatMap } from "./loot/lootWeapon";
 export {
   chaseMission,

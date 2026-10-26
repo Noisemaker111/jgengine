@@ -1,5 +1,8 @@
 export type ResistVerdict = "immune" | "resist" | "normal" | "vulnerable";
 
+/** Thrown for a damage category the matrix does not declare.
+ * @internal
+ */
 export class UnknownResistanceCategoryError extends Error {
   readonly category: string;
 
@@ -10,6 +13,9 @@ export class UnknownResistanceCategoryError extends Error {
   }
 }
 
+/** Thrown for a target property the matrix does not declare.
+ * @internal
+ */
 export class UnknownResistancePropertyError extends Error {
   readonly category: string;
   readonly property: string;

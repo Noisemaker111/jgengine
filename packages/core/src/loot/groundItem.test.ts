@@ -8,9 +8,9 @@ import {
   selectNearestWorldItem,
   type RarityStyle,
   type WorldItemStoreDeps,
-} from "@jgengine/core/game/worldItem";
-import type { LootFilterRule } from "@jgengine/core/game/lootFilter";
-import type { Drop } from "@jgengine/core/game/lootTable";
+} from "@jgengine/core/loot/groundItem";
+import type { LootFilterRule } from "@jgengine/core/loot/lootFilter";
+import type { Drop } from "@jgengine/core/loot/lootTable";
 
 function fixedRng(...values: number[]): () => number {
   let index = 0;
