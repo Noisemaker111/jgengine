@@ -16,3 +16,4 @@ Bends: none.
 
 - Distant skinned creatures drew at the wrong size: the character crowd measured a skinned mesh by its node transform instead of its bones, so a boar normalised to 1.9 m stood about 9 m tall past the crowd distance. The bake now measures exactly as the full model path does.
 - A skinned model with no clips (a Rocketbox duck) baked into the crowd lying on its side at its raw quantized size; static crowd copies now bake each vertex at its skin-applied bind pose.
+- The stray-browser sweep killed a dead run's Chrome and removed its profile at once; on Windows a folder whose files Chrome still held stays until Chrome has exited, so the sweep's test failed now and then under a loaded verify. The real kill now waits for the browser to exit before removing its profile. (Seen failing twice in `verify:fast`; not reproduced on demand, so the fix rests on the cause, not on a red-then-green run.)
