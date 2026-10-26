@@ -19,7 +19,7 @@ Games run the engine source in `packages/` from the same commit, never a publish
 
 ## Capability adoption
 
-`capabilities.json` is generated from the engine's game-facing capabilities (`bun run gen games-ledger`). Each game's `<game>/capabilities.json` answers every one:
+`capabilities.json` is generated from the engine's game-facing capabilities (`bun run gen games-ledger`). Each game answers every one in the `capabilities` section of its `jgengine.json`; `bun run jgengine sync` seeds the section for a new game and adds each newly arrived capability as a TODO decline:
 
 - **adopted** - the game runs the shared system.
 - **not-applicable** - the domain does not exist in this game; the reason names the domain.

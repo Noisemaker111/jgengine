@@ -1,6 +1,6 @@
 # Saltwick
 
-Grow a garden, cast a line, and settle into the slow life by the sea. Made with `bun run games:new` from: "cozy fishing village". Start it with `bun --cwd=games/saltwick run dev` from the repository root.
+Grow a garden, cast a line, and settle into the slow life by the sea. First generated from the idea: "cozy fishing village". Start it with `bun --cwd=games/saltwick run dev` from the repository root.
 
 ## Design checklist
 

@@ -30,14 +30,14 @@ export interface TemplateOptions {
    * scene test is tailored to what this document actually ships.
    */
   scene?: EditorSceneDoc;
-  /** Additionally scaffold world.ts + game/assets.ts + game/models.ts (`create --world`). Default false. */
+  /** Additionally scaffold world.ts + game/assets.ts + game/models.ts (every 3d template). */
   world?: boolean;
   /** Ship the authored scene document + editor wiring. Default true; `create --no-editor` drops it. */
   editor?: boolean;
   player?: string;
   ground?: "flat" | "terrain";
   sceneMode?: "empty" | "starter";
-  /** `"2d"` scaffolds a board game with no 3D scene, editor document, or models (`create --2d`). Default `"3d"`. */
+  /** `"2d"` scaffolds a board game with no 3D scene, editor document, or models (`create --template 2d`). Default `"3d"`. */
   dimension?: "2d" | "3d";
 }
 

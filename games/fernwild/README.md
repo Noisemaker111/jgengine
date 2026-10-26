@@ -1,6 +1,6 @@
 # Fernwild
 
-Tame the wild. Raise a camp. Outlast the hunt. Made with `bun run games:new` from: "ARK-like dinosaur survival: tame dinos, build a base, craft and survive". Start it with `bun --cwd=games/fernwild run dev` from the repository root.
+Tame the wild. Raise a camp. Outlast the hunt. First generated from the idea: "ARK-like dinosaur survival: tame dinos, build a base, craft and survive". Start it with `bun --cwd=games/fernwild run dev` from the repository root.
 
 ## Design checklist
 

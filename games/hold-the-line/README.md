@@ -1,6 +1,6 @@
 # Hold the Line
 
-Scavenge by day. Fortify by dusk. Live through the night. Made with `bun run games:new` from: "zombie survival: scavenge by day, fortify your safehouse, nights get harder". Start it with `bun --cwd=games/hold-the-line run dev` from the repository root.
+Scavenge by day. Fortify by dusk. Live through the night. First generated from the idea: "zombie survival: scavenge by day, fortify your safehouse, nights get harder". Start it with `bun --cwd=games/hold-the-line run dev` from the repository root.
 
 ## Design checklist
 

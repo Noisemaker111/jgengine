@@ -3,7 +3,9 @@ import { existsSync, mkdirSync, readdirSync, readFileSync, statSync, writeFileSy
 import { dirname, join, relative, resolve, sep } from "node:path";
 
 import { cliVersion, findWorkspaceRoot, flag, hasFlag, isEngineMonorepo, pickPackageManager, sdkVersion } from "./pkg";
+import { GAME_TEMPLATES, type GameTemplate, PROJECT_CONFIG_FILE, renderProjectConfig } from "./projectConfig";
 import { installSkills } from "./skills";
+import { applySync, planSync, syncContext } from "./sync";
 import { type EditorSceneDoc, gameTemplate, parseCreateName, type TemplateVariant } from "./templates";
 
 /** @internal */
@@ -73,12 +75,8 @@ export function readPromotedScene(pathArg: string): EditorSceneDoc {
   return { version: 1, ...scene, markers };
 }
 
-const VALUE_FLAGS = new Set(["--pm", "--shape", "--from-scene", "--player", "--ground", "--scene"]);
+const VALUE_FLAGS = new Set(["--pm", "--template", "--from-scene", "--player", "--ground", "--scene"]);
 const BOOLEAN_FLAGS = new Set([
-  "--2d",
-  "--3d",
-  "--world",
-  "--no-world",
   "--no-editor",
   "--in-repo",
   "--standalone",
@@ -89,15 +87,16 @@ const BOOLEAN_FLAGS = new Set([
 
 const CREATE_USAGE = `usage: jgengine create "<Game Name>" [flags]
 
-  --3d                       a 3D world: terrain, sky, player model, editor scene (default)
-  --2d                       a board game drawn by GameUI: no 3D scene, editor, or models
-                             (grid, card, and tile games); takes none of the 3D flags below
+  --template 3d|2d|builder   3d: a world with terrain, sky, player model and editor scene (default)
+                             2d: a board game drawn by GameUI, no 3D scene, editor or models
+                             (grid, card and tile games); takes none of the 3D flags below
+                             builder: a 3d world players build in together, on Convex
   --player <asset id>        starter player model (default asset:person_casual)
   --ground terrain|flat      starter ground (default terrain)
   --scene empty|starter      empty scene, or the old starter props (default empty)
   --from-scene <folder>      promote an authored editor.scene.json into the game
-  --shape shared-world-builder
-  --no-world | --no-editor   drop the world runtime or the editor scene files
+  --no-editor                drop the editor scene files
+  The game's jgengine.json records what it is and uses; edit it, then run jgengine sync.
   --in-repo | --standalone   force the variant (auto-detected from the cwd)
   --no-install | --no-skills | --no-assets
   --pm bun|npm|pnpm`;
@@ -171,8 +170,20 @@ function runAssetsPull(targetDir: string): boolean {
   return result.status === 0;
 }
 
+/** The new game's `jgengine.json`: its template, and the engine packages the template put in package.json. */
+function writeProjectConfig(targetDir: string, game: { id: string; name: string; template: GameTemplate; editor: boolean }): void {
+  const manifest = JSON.parse(readFileSync(join(targetDir, "package.json"), "utf8")) as { dependencies?: Record<string, string> };
+  const engine = Object.keys(manifest.dependencies ?? {})
+    .filter((name) => name.startsWith("@jgengine/"))
+    .map((name) => name.slice("@jgengine/".length));
+  writeFileSync(
+    join(targetDir, PROJECT_CONFIG_FILE),
+    renderProjectConfig({ name: game.name, id: game.id, template: game.template, ...(game.template === "2d" ? {} : { editor: game.editor }), engine }),
+  );
+}
+
 /** @internal */
-export function runCreate(argv: string[]): number {
+export async function runCreate(argv: string[]): Promise<number> {
   if (argv.includes("--help") || argv.includes("-h")) {
     console.log(CREATE_USAGE);
     return 0;
@@ -192,25 +203,23 @@ export function runCreate(argv: string[]): number {
   let folderName: string;
   let id: string;
   try {
-    const shape = flag(argv, "shape");
-    if (shape !== undefined && shape !== "shared-world-builder") throw new Error(`Unknown --shape: ${shape}`);
+    const template = (flag(argv, "template") ?? "3d") as GameTemplate;
+    if (!GAME_TEMPLATES.includes(template)) throw new Error(`--template must be one of ${GAME_TEMPLATES.join(", ")} (got ${template})`);
+    const shape = template === "builder" ? ("shared-world-builder" as const) : undefined;
     const sceneArg = flag(argv, "from-scene");
     const player = flag(argv, "player");
     const ground = flag(argv, "ground") ?? "terrain";
     const sceneMode = flag(argv, "scene") ?? "empty";
     if (ground !== "flat" && ground !== "terrain") throw new Error(`--ground must be flat or terrain (got ${ground})`);
     if (sceneMode !== "empty" && sceneMode !== "starter") throw new Error(`--scene must be empty or starter (got ${sceneMode})`);
-    const dimension = hasFlag(argv, "2d") ? "2d" : "3d";
+    const dimension = template === "2d" ? "2d" : "3d";
     if (dimension === "2d") {
-      if (hasFlag(argv, "3d")) throw new Error("pick one of --2d or --3d");
-      const threeDOnly = ["player", "ground", "scene", "from-scene", "shape"].filter((name) => flag(argv, name) !== undefined);
-      const threeDSwitches = ["world", "no-world", "no-editor"].filter((name) => hasFlag(argv, name));
-      const clash = [...threeDOnly, ...threeDSwitches];
-      if (clash.length > 0) throw new Error(`--2d has no 3D scene; drop ${clash.map((name) => `--${name}`).join(", ")}`);
+      const threeDOnly = ["player", "ground", "scene", "from-scene"].filter((name) => flag(argv, name) !== undefined);
+      const clash = [...threeDOnly, ...(hasFlag(argv, "no-editor") ? ["no-editor"] : [])];
+      if (clash.length > 0) throw new Error(`--template 2d has no 3D scene; drop ${clash.map((name) => `--${name}`).join(", ")}`);
     }
     const scene = sceneArg !== undefined ? readPromotedScene(sceneArg) : undefined;
-    // `--world` stays accepted (and is now the default); `--no-world` is the opt-out, matching --no-editor.
-    const world = dimension === "3d" && !hasFlag(argv, "no-world");
+    const world = dimension === "3d";
     const editor = dimension === "3d" && !hasFlag(argv, "no-editor");
     if (!editor && scene !== undefined) {
       console.error("error: --from-scene needs the editor scaffold — drop --no-editor");
@@ -260,7 +269,9 @@ export function runCreate(argv: string[]): number {
 
     const engineVersion = sdkVersion();
     writeGame(targetDir, id, displayName, variant, scene, { world, editor, player, ground, sceneMode, shape, dimension });
-    console.log(`created ${displayName} (${variant}) → ${targetDir}`);
+    writeProjectConfig(targetDir, { id, name: displayName, template, editor });
+    applySync(targetDir, planSync(targetDir, await syncContext(targetDir)));
+    console.log(`created ${displayName} (${template}, ${variant}) → ${targetDir}`);
     console.log(`  folder ${folderName}  package ${id}  name "${displayName}"`);
     if (variant === "standalone") {
       console.log(`  scaffolding @jgengine/* ^${engineVersion} (jgengine CLI ${cliVersion()})`);
@@ -292,7 +303,7 @@ export function runCreate(argv: string[]): number {
     }
 
     // Starter models are not shipped inside @jgengine/assets (it publishes dist + an `assets` CLI),
-    // so a --world scaffold points at /models with nothing behind it until they are pulled. Do it
+    // so a 3d scaffold points at /models with nothing behind it until they are pulled. Do it
     // here so the default scaffold actually renders textured content rather than placeholders.
     // Needs node_modules for the `assets` bin, and never fails the scaffold: offline, proxied and
     // air-gapped machines get the exact command instead of a dead create.

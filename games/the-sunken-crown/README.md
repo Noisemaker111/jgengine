@@ -1,6 +1,6 @@
 # The Sunken Crown
 
-Walk the old roads. Wake the ruins. Learn to fly. Made with `bun run games:new` from: "explore ancient ruins and find relics that let you glide". Start it with `bun --cwd=games/the-sunken-crown run dev` from the repository root.
+Walk the old roads. Wake the ruins. Learn to fly. First generated from the idea: "explore ancient ruins and find relics that let you glide". Start it with `bun --cwd=games/the-sunken-crown run dev` from the repository root.
 
 ## Design checklist
 

@@ -143,6 +143,6 @@ describe("games in this repo", () => {
 
   test("prose and engine tooling check no game", () => {
     expect(gameScope(["README.md", "scripts/lane-close.ts"], workspace).gameChecks).toEqual([]);
-    expect(gameScope(["games/docs/new-game.md"], workspace).scope).toBe("none");
+    expect(gameScope(["games/docs/notes.md"], workspace).scope).toBe("none");
   });
 });

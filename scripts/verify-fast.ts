@@ -334,6 +334,7 @@ export function gatesFor(changed: readonly string[]): string[] {
   if (changed.some((path) => path.startsWith("games/") || /^packages\/[^/]+\/src\//.test(path))) {
     gates.add("games-ledger");
     gates.add("games-capabilities");
+    gates.add("games-sync");
   }
   if (changed.some((path) => /\.(md|mdx)$/i.test(path) || path.startsWith(".claude/skills/"))) gates.add("stage-skills");
   return [...gates];

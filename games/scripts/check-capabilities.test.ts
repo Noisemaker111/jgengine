@@ -97,8 +97,8 @@ describe("missing declaration", () => {
 
   test("a missing declaration file fails with the generating command", () => {
     const report = checkDeclarations(ledger, [{ game: "ember", declaration: null }]);
-    expect(report.problems[0]!.message).toContain("ember/capabilities.json is missing");
-    expect(report.problems[0]!.message).toContain("games:capabilities declare");
+    expect(report.problems[0]!.message).toContain("ember/jgengine.json has no capabilities");
+    expect(report.problems[0]!.message).toContain("bun run jgengine sync");
   });
 });
 
@@ -560,7 +560,7 @@ function fixture(options: {
     mkdirSync(join(root, game, "src"), { recursive: true });
     writeFileSync(join(root, game, "package.json"), `${JSON.stringify({ name: `@games/${game}` })}\n`);
     writeFileSync(join(root, game, "src", "game.config.ts"), "export {};\n");
-    writeFileSync(join(root, game, "capabilities.json"), `${JSON.stringify(declaration, null, 2)}\n`);
+    writeFileSync(join(root, game, "jgengine.json"), `${JSON.stringify({ capabilities: declaration }, null, 2)}\n`);
   }
   return root;
 }

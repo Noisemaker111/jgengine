@@ -9,15 +9,16 @@
  * engine's own inventory and is out of the gate's scope.
  *
  * `capabilities.json` is generated from the engine source in `packages/` by
- * `bun run gen games-ledger`; each game's `capabilities.json` is generated once
- * by `bun run games:capabilities declare` and then owned by that game.
+ * `bun run gen games-ledger`. Each game answers it in the `capabilities` section of its
+ * `jgengine.json`: `jgengine sync` seeds the section and adds each newly arrived capability as
+ * a TODO decline; the game's owner writes the answers.
  */
 import { existsSync, readdirSync, readFileSync, statSync } from "node:fs";
 import { join, relative } from "node:path";
 
 export const DECLINE_MIN = 20;
 export const LEDGER_FILE = "capabilities.json";
-export const DECLARATION_FILE = "capabilities.json";
+export const DECLARATION_FILE = "jgengine.json";
 
 /**
  * Which of the two real answers a game gave. `not-applicable` means the capability
@@ -326,7 +327,8 @@ export function gameDirs(root: string): string[] {
 export function readDeclaration(root: string, game: string): Declaration | null {
   const path = join(root, game, DECLARATION_FILE);
   if (!existsSync(path)) return null;
-  return JSON.parse(readFileSync(path, "utf8")) as Declaration;
+  const config = JSON.parse(readFileSync(path, "utf8")) as { capabilities?: Declaration };
+  return config.capabilities ?? null;
 }
 
 export function declarationPath(root: string, game: string): string {
@@ -482,8 +484,29 @@ export function seedDeclaration(root: string, game: string, ledger: Ledger): Dec
   return seedFromEvidence(ledger, evidence, (entry) => moduleApiNames(root, entry), hasAudioConfig);
 }
 
-export function renderDeclaration(declaration: Declaration): string {
-  const ordered: Declaration = {
+/**
+ * The declaration `jgengine sync` writes: seeded from source when the game has none, otherwise the
+ * game's own answers with every game-facing capability it has not answered added as a TODO decline
+ * (which fails the gate until the owner answers it) and every id the ledger no longer has removed.
+ * A game whose answers are complete gets its declaration back unchanged.
+ */
+export function syncDeclaration(root: string, game: string, ledger: Ledger, current: Declaration | null): Declaration {
+  if (current === null) return orderDeclaration(seedDeclaration(root, game, ledger));
+  const known = new Set(ledger.capabilities.map((entry) => entry.id));
+  const adopts = current.adopts.filter((id) => known.has(id));
+  const declines = Object.fromEntries(Object.entries(current.declines).filter(([id]) => known.has(id)));
+  for (const entry of ledger.capabilities) {
+    if (!entry.gameFacing || adopts.includes(entry.id) || entry.id in declines) continue;
+    declines[entry.id] = {
+      kind: "not-applicable",
+      reason: `TODO: say why this game needs no ${entry.domain}, or record it as debt with its issue.`,
+    };
+  }
+  return orderDeclaration({ ...current, adopts, declines });
+}
+
+export function orderDeclaration(declaration: Declaration): Declaration {
+  return {
     adopts: [...declaration.adopts].sort(),
     ...(declaration.probes === undefined
       ? {}
@@ -496,7 +519,6 @@ export function renderDeclaration(declaration: Declaration): string {
         }),
     declines: Object.fromEntries(Object.entries(declaration.declines).sort(([a], [b]) => (a < b ? -1 : 1))),
   };
-  return `${JSON.stringify(ordered, null, 2)}\n`;
 }
 
 export function renderLedger(ledger: Ledger): string {
@@ -576,7 +598,7 @@ export function checkDeclarations(
         game,
         capability: "*",
         module: "*",
-        message: `${game}/capabilities.json is missing - run bun run games:capabilities declare ${game}`,
+        message: `${game}/jgengine.json has no capabilities - run bun run jgengine sync`,
       });
       continue;
     }

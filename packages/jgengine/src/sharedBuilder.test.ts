@@ -49,9 +49,9 @@ test("generated runtime scopes claims and accrues fractional income without a lo
   expect(claim.snapshot.players.alice!.economy.cash).toBe(99.005);
 });
 
-test("create parses --shape before the name and rejects unknown shapes", () => {
+test("create parses --template before the name and rejects unknown templates", async () => {
   const root = mkdtempSync(join(tmpdir(), "jg-shared-create-"));
   const flags = ["--no-install", "--no-skills", "--no-assets", "--standalone"];
-  expect(runCreate(["--shape", "shared-world-builder", join(root, "Shared World"), ...flags])).toBe(0);
-  expect(runCreate([join(root, "Other"), "--shape", "unknown", ...flags])).toBe(1);
+  expect(await runCreate(["--template", "builder", join(root, "Shared World"), ...flags])).toBe(0);
+  expect(await runCreate([join(root, "Other"), "--template", "unknown", ...flags])).toBe(1);
 });

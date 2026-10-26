@@ -1,6 +1,6 @@
 # Orbit Watch
 
-Hold the relay. Lasers on the pads, the swarm on the lanes. Made with `bun run games:new` from: "orbital tower defense". Start it with `bun --cwd=games/orbit-watch run dev` from the repository root.
+Hold the relay. Lasers on the pads, the swarm on the lanes. First generated from the idea: "orbital tower defense". Start it with `bun --cwd=games/orbit-watch run dev` from the repository root.
 
 ## Design checklist
 

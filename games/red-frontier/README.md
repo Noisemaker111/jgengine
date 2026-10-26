@@ -1,6 +1,6 @@
 # Red Frontier
 
-A crew, a lander and red dust to the horizon. Mine it, grow food, hold off what comes out of the craters. Made with `bun run games:new` from: "frontier colony on mars". Start it with `bun --cwd=games/red-frontier run dev` from the repository root.
+A crew, a lander and red dust to the horizon. Mine it, grow food, hold off what comes out of the craters. First generated from the idea: "frontier colony on mars". Start it with `bun --cwd=games/red-frontier run dev` from the repository root.
 
 ## Design checklist
 
