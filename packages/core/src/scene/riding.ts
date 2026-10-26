@@ -6,6 +6,7 @@ import { MountController, type MountedRider } from "./mount";
 /** Where the rider sits on a mount, in the mount's frame: right, up, forward (metres). */
 export type SeatOffset = readonly [number, number, number];
 
+/** Whether a ride started, and why not when it did not. */
 export type RideResult = { ok: true } | { ok: false; reason: string };
 
 /**

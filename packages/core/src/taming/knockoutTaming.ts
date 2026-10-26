@@ -74,22 +74,34 @@ export interface TamingFeeder {
   take(itemId: string): boolean;
 }
 
-/** Interpolate a level-1 / level-30 pair to `level`. */
+/**
+ * Interpolate a level-1 / level-30 pair to `level`.
+ * @capability knockout-taming knock a creature out with torpor and tame it by feeding, with taming effectiveness and bonus levels
+ */
 export function tamingScale(at1: number, at30: number, level: number): number {
   return lerp(at1, at30, (level - 1) / 29);
 }
 
-/** Max torpor at `level`. */
+/**
+ * Max torpor at `level`.
+ * @capability knockout-taming knock a creature out with torpor and tame it by feeding, with taming effectiveness and bonus levels
+ */
 export function maxTorpor(config: KnockoutTamingConfig, level: number): number {
   return config.torpor.base + config.torpor.perLevel * (level - 1);
 }
 
-/** Taming effectiveness from spent weights: 1 at a perfect tame. */
+/**
+ * Taming effectiveness from spent weights: 1 at a perfect tame.
+ * @capability knockout-taming knock a creature out with torpor and tame it by feeding, with taming effectiveness and bonus levels
+ */
 export function tamingEffectiveness(state: TamingState): number {
   return 1 / (1 + state.spent);
 }
 
-/** ARK's bonus levels: half the wild level, scaled by effectiveness, floored. */
+/**
+ * ARK's bonus levels: half the wild level, scaled by effectiveness, floored.
+ * @capability knockout-taming knock a creature out with torpor and tame it by feeding, with taming effectiveness and bonus levels
+ */
 export function bonusLevels(level: number, effectiveness: number): number {
   return Math.floor((level * effectiveness) / 2);
 }
@@ -98,7 +110,10 @@ function freshState(level: number): TamingState {
   return { level, torpor: 0, unconscious: false, progress: 0, spent: 0, nextMeal: 0, dosing: [] };
 }
 
-/** Seconds between meals of `food` at `level`: the table's time spread over its count. */
+/**
+ * Seconds between meals of `food` at `level`: the table's time spread over its count.
+ * @capability knockout-taming knock a creature out with torpor and tame it by feeding, with taming effectiveness and bonus levels
+ */
 export function mealInterval(food: TamingFood, level: number): number {
   return tamingScale(food.secondsAt1, food.secondsAt30, level) / Math.max(1, tamingScale(food.countAt1, food.countAt30, level));
 }
@@ -136,6 +151,10 @@ export interface KnockoutTaming {
   reset(): void;
 }
 
+/**
+ * Track torpor and taming for every downed creature of the given species: hits add torpor, held food feeds it.
+ * @capability knockout-taming knock a creature out with torpor and tame it by feeding, with taming effectiveness and bonus levels
+ */
 export function createKnockoutTaming(species: Readonly<Record<string, KnockoutTamingConfig>>): KnockoutTaming {
   const tracked = new Map<string, { species: string; state: TamingState }>();
   const configOf = (id: string) => {

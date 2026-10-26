@@ -150,19 +150,19 @@
       },
       "nav-crowd": {
         "kind": "not-applicable",
-        "reason": "Dinos steer straight at their goal and veer around trunks and rocks; no baked nav mesh crowd."
+        "reason": "No navigation crowd: dinos steer straight at their goal and veer around trunks and rocks."
       },
       "nav-runtime": {
         "kind": "not-applicable",
-        "reason": "Dinos steer locally around solids; no baked nav mesh to route on yet."
+        "reason": "No navigation mesh to route on yet: dinos steer locally around solids."
       },
       "navmesh-from-scene": {
         "kind": "not-applicable",
-        "reason": "No nav mesh is baked from the island; creatures steer locally around solids."
+        "reason": "No navigation mesh is baked from the island; creatures steer locally around solids."
       },
       "near-agents": {
         "kind": "not-applicable",
-        "reason": "Creatures are driven one by one by the creature driver; there are no residents with needs and utility brains."
+        "reason": "No agent loop: creatures are driven one by one by the creature driver, with no needs-driven residents."
       },
       "offscreen-world": {
         "kind": "not-applicable",
@@ -190,7 +190,7 @@
       },
       "rvo-avoidance": {
         "kind": "not-applicable",
-        "reason": "Herds are two or three animals; they steer around solids, not around each other."
+        "reason": "No crowd steering: herds are two or three animals that steer around solids, not around each other."
       },
       "session-loop": {
         "kind": "not-applicable",
@@ -202,11 +202,11 @@
       },
       "squad-combat": {
         "kind": "not-applicable",
-        "reason": "No squads; tamed dinos follow, stay and fight their owner's fight through the companion roster."
+        "reason": "No squad combat: tamed dinos follow, stay and fight their owner's fight through the companion roster."
       },
       "status-runtime": {
         "kind": "not-applicable",
-        "reason": "Torpor and narcotics are knockout taming's own meters; hungry, thirsty, hot and cold are survivor vitals flags."
+        "reason": "No status effects yet: torpor and narcotics are knockout taming's meters; hunger, thirst, heat and cold are survivor vitals flags."
       },
       "status-unknown": {
         "kind": "not-applicable",
@@ -226,7 +226,7 @@
       },
       "utility-brain": {
         "kind": "not-applicable",
-        "reason": "ARK creatures act on their temperament (creature-temperament), not on need appeal."
+        "reason": "No agent loop: ARK creatures act on their temperament (creature-temperament), not on need appeal."
       },
       "vehicle-damage": {
         "kind": "not-applicable",
@@ -242,7 +242,7 @@
       },
       "weapon-system": {
         "kind": "not-applicable",
-        "reason": "Only melee tools and the club so far; slingshot, bow and tranq arrows join a later PR."
+        "reason": "No weapon runtime yet: only melee tools and the club; slingshot, bow and tranq arrows join a later PR."
       }
     }
   }

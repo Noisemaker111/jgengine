@@ -3211,6 +3211,22 @@
 - `TalentTreeConfig` (interface): interface TalentTreeConfig<TStat extends string = string> { nodes: readonly TalentNodeDef<TStat>[]; points?: number } — ⚠ undocumented
 - `createTalentTree` (function): function createTalentTree<TStat extends string = string>(config: TalentTreeConfig<TStat>): TalentTree<TStat> — ⚠ undocumented
 
+## @jgengine/core/taming/knockoutTaming
+
+- `KnockoutTaming` (interface): interface KnockoutTaming — Knockout taming for a world of creatures: hits and narcotics pile torpor on, a full bar knocks the creature out, it eats what you put in its inventory on its own clock, each meal fills the taming bar by one table-count's worth and costs effectiveness, and it wakes (losing the tame) if torpor drains away first. The numbers are the species' taming table, not a formula to tune.
+- `KnockoutTamingConfig` (interface): interface KnockoutTamingConfig — A species' knockout taming rules: its torpor, how it wakes, what it eats and in what order.
+- `Narcotic` (interface): interface Narcotic — Torpor the survivor can force into a downed creature: a narcotic's amount spread over seconds.
+- `TamingEvent` (type): type TamingEvent = | { type: "knockedOut" } | { type: "ate"; itemId: string } | { type: "woke" } | { type: "tamed"; effectiveness: number; bonusLevels: number } — What changed this tick.
+- `TamingFeeder` (interface): interface TamingFeeder — The food it would eat now from what it holds, and how much a meal of it is worth.
+- `TamingFood` (interface): interface TamingFood — How one food tames one species, read straight off a taming table: how many it takes and how long it takes at level 1 and at level 30. Between and past those levels the count and time scale linearly, which is how ARK-style tables grow.
+- `TamingState` (interface): interface TamingState — One downed or wild creature's taming progress. Plain data, JSON round-trips.
+- `bonusLevels` (function): function bonusLevels(level: number, effectiveness: number): number — ARK's bonus levels: half the wild level, scaled by effectiveness, floored.
+- `createKnockoutTaming` (function): function createKnockoutTaming(species: Readonly<Record<string, KnockoutTamingConfig>>): KnockoutTaming — Track torpor and taming for every downed creature of the given species: hits add torpor, held food feeds it.
+- `maxTorpor` (function): function maxTorpor(config: KnockoutTamingConfig, level: number): number — Max torpor at `level`.
+- `mealInterval` (function): function mealInterval(food: TamingFood, level: number): number — Seconds between meals of `food` at `level`: the table's time spread over its count.
+- `tamingEffectiveness` (function): function tamingEffectiveness(state: TamingState): number — Taming effectiveness from spent weights: 1 at a perfect tame.
+- `tamingScale` (function): function tamingScale(at1: number, at30: number, level: number): number — Interpolate a level-1 / level-30 pair to `level`.
+
 ## @jgengine/core/threshold/thresholdTracker
 
 - `CrossingDirection` (type): type CrossingDirection = "falling" | "rising" — The direction a crossing moved: `falling` = value decreased past the mark, `rising` = increased past it.

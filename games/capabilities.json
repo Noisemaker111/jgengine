@@ -2064,6 +2064,17 @@
       "intent": "deterministic stat inheritance, mutation, and lineage genetics for taming games"
     },
     {
+      "id": "creature-driver",
+      "packages": [
+        "@jgengine/core"
+      ],
+      "module": "@jgengine/core/ai/creatureDriver",
+      "domain": "ai",
+      "gameFacing": false,
+      "probe": null,
+      "intent": "wild creatures that graze, flee, defend and hunt by temperament, and tamed ones that follow, stay and fight on order"
+    },
+    {
       "id": "creature-temperament",
       "packages": [
         "@jgengine/core"
@@ -5156,6 +5167,17 @@
       "intent": "a HUD wave clock — countdown or enemies left, a note, and the wave banner"
     },
     {
+      "id": "knockout-taming",
+      "packages": [
+        "@jgengine/core"
+      ],
+      "module": "@jgengine/core/taming/knockoutTaming",
+      "domain": "taming",
+      "gameFacing": false,
+      "probe": null,
+      "intent": "knock a creature out with torpor and tame it by feeding, with taming effectiveness and bonus levels"
+    },
+    {
       "id": "land-area-damage",
       "packages": [
         "@jgengine/core"
@@ -8149,6 +8171,17 @@
         "kind": "devtools"
       },
       "intent": "rides with capacity, cycles, queues, ratings, breakdowns and maintenance"
+    },
+    {
+      "id": "riding",
+      "packages": [
+        "@jgengine/core"
+      ],
+      "module": "@jgengine/core/scene/riding",
+      "domain": "scene",
+      "gameFacing": false,
+      "probe": null,
+      "intent": "ride a tamed creature or vehicle: controls and camera follow the mount, the rider sits on its seat, dismount sets them down beside it"
     },
     {
       "id": "rigid-aircraft",

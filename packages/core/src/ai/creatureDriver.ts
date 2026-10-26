@@ -43,6 +43,7 @@ export interface CreatureDriverState {
   grudge: { id: string; until: number } | null;
 }
 
+/** Knobs for a creature driver: how far creatures see, how long they remember, and what blocks them. */
 export interface CreatureDriverConfig {
   /** How far wild creatures see what they react to, in metres. Default 24. */
   sight?: number;
@@ -101,6 +102,7 @@ function fleeGoal(ctx: GameContext, from: PerceptionPosition, threatId: string |
 /** Headings tried, in order, when the straight step is blocked: ahead, then ever wider either side. */
 const VEERS = [0, Math.PI / 4, -Math.PI / 4, Math.PI / 2, -Math.PI / 2];
 
+/** Drive wild and tamed creatures each tick: temperament for wild ones, follow and stay for tames, bites within body reach, veering around obstacles. */
 export function createCreatureDriver(config: CreatureDriverConfig = {}): CreatureDriver {
   const sight = config.sight ?? 24;
   const memorySeconds = config.memorySeconds ?? 8;

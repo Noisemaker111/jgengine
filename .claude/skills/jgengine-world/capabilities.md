@@ -381,6 +381,10 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `measureCourse` (function) · `import { measureCourse } from "@jgengine/core/physics/handlingProbe"`
 
+## creature-driver — wild creatures that graze, flee, defend and hunt by temperament, and tamed ones that follow, stay and fight on order
+
+- `CreatureDriver` (interface) · `import { CreatureDriver } from "@jgengine/core/ai/creatureDriver"`
+
 ## creature-temperament — passive, territorial and predator creatures that react to what perception senses, including light, noise and scent
 
 - `decideTemperament` (function) · `import { decideTemperament } from "@jgengine/core/ai/temperament"`
@@ -1068,6 +1072,10 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 ## ride-metrics — measure a sprung vehicle's ride — settle time, dive, roll per g, landing bounce
 
 - `measureRide` (function) · `import { measureRide } from "@jgengine/core/physics/handlingProbe"`
+
+## riding — ride a tamed creature or vehicle: controls and camera follow the mount, the rider sits on its seat, dismount sets them down beside it
+
+- `Riding` (interface) · `import { Riding } from "@jgengine/core/scene/riding"`
 
 ## rigid-aircraft — force-and-torque aircraft — lifting surfaces with stall and drag polar, control surfaces, inertia, loops and rolls
 
