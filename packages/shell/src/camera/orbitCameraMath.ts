@@ -1,3 +1,5 @@
+import type { CameraFollowState } from "@jgengine/core/camera/cameraConfig";
+import type { Point3 } from "@jgengine/core/world/geometry";
 /** Horizontal facing derived from an orbit camera orbiting a target on the XZ plane.
  * @internal
  */
@@ -15,22 +17,9 @@ export function orbitYawFromCamera(
 /** Elevation the camera looks along (radians): negative = aiming down, positive = aiming up, 0 = level. Feeds aim.pitch so vertical aim tracks the camera.
  * @internal
  */
-export function cameraLookPitch(camera: Vec3, target: Vec3): number {
+export function cameraLookPitch(camera: Point3, target: Point3): number {
   const horizontal = Math.hypot(target.x - camera.x, target.z - camera.z);
   return Math.atan2(target.y - camera.y, horizontal);
-}
-
-export interface Vec3 {
-  x: number;
-  y: number;
-  z: number;
-}
-
-export interface CameraFollowState {
-  entityId: string;
-  target: Vec3;
-  camera: Vec3;
-  distance: number;
 }
 
 export interface OrbitCameraConfig {
@@ -46,7 +35,7 @@ export interface OrbitCameraConfig {
   /** Signed boom-elevation clamp `[min, max]` (radians): min < 0 dips below the target, max > 0 rises overhead. Maps onto `minPolarAngle`/`maxPolarAngle` (polar = PI/2 − pitch); explicit polar fields win. */
   pitchClamp?: readonly [number, number];
   /** Extra offset applied on top of entity position for the orbit target. */
-  targetOffset?: Partial<Vec3>;
+  targetOffset?: Partial<Point3>;
   /** Keep orbit radius locked while the follow target moves. */
   followLock?: boolean;
   /** When false, orbit target stays fixed (cinematic / debug). Default true. */
@@ -95,7 +84,7 @@ export interface ResolvedOrbitCameraConfig {
   initialHeight: number;
   initialYaw?: number;
   initialPitch?: number;
-  targetOffset?: Partial<Vec3>;
+  targetOffset?: Partial<Point3>;
   followLock: boolean;
   followEnabled: boolean;
   rotateSpeed: number;
@@ -134,8 +123,8 @@ export const GAME_SIM_FRAME_PRIORITY = 0;
 export const ORBIT_CAMERA_FRAME_PRIORITY = -1;
 
 export interface OrbitFollowRuntimeState {
-  target: Vec3;
-  camera: Vec3;
+  target: Point3;
+  camera: Point3;
   lockedDistance: number | null;
 }
 
@@ -188,7 +177,7 @@ export function resolveTargetSmoothing(config: ResolvedOrbitCameraConfig, draggi
 export function resolveFollowTargetFromPosition(
   position: readonly [number, number, number],
   config: Pick<ResolvedOrbitCameraConfig, "targetHeight" | "targetOffset">,
-): Vec3 {
+): Point3 {
   const offset = config.targetOffset;
   return {
     x: position[0] + (offset?.x ?? 0),
@@ -198,7 +187,7 @@ export function resolveFollowTargetFromPosition(
 }
 
 /** @internal */
-export function lerpVec3(from: Vec3, to: Vec3, blend: number): Vec3 {
+export function lerpVec3(from: Point3, to: Point3, blend: number): Point3 {
   return {
     x: from.x + (to.x - from.x) * blend,
     y: from.y + (to.y - from.y) * blend,
@@ -207,7 +196,7 @@ export function lerpVec3(from: Vec3, to: Vec3, blend: number): Vec3 {
 }
 
 /** @internal */
-export function distanceBetween(a: Vec3, b: Vec3): number {
+function distanceBetween(a: Point3, b: Point3): number {
   const dx = a.x - b.x;
   const dy = a.y - b.y;
   const dz = a.z - b.z;
@@ -258,7 +247,7 @@ export function seedOrbitFollowState(input: {
   */
 export function orbitFollowStep(input: {
   state: OrbitFollowRuntimeState;
-  desiredTarget: Vec3;
+  desiredTarget: Point3;
   deltaSeconds: number;
   config: ResolvedOrbitCameraConfig;
   dragging: boolean;
@@ -287,7 +276,7 @@ export function orbitFollowStep(input: {
     const currentDistance = distanceBetween(camera, target);
     if (currentDistance > 0.0001) {
       const scale = lockedDistance / currentDistance;
-      const idealCamera: Vec3 = {
+      const idealCamera: Point3 = {
         x: target.x + (camera.x - target.x) * scale,
         y: target.y + (camera.y - target.y) * scale,
         z: target.z + (camera.z - target.z) * scale,
@@ -311,9 +300,9 @@ export function orbitFollowStep(input: {
  * @internal
  */
 export function cameraFollowStep(input: {
-  camera: Vec3;
-  target: Vec3;
-  previousTarget: Vec3 | null;
+  camera: Point3;
+  target: Point3;
+  previousTarget: Point3 | null;
   lockedDistance: number | null;
 }): CameraFollowState {
   const state: OrbitFollowRuntimeState = {

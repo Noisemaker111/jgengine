@@ -20,7 +20,7 @@ import {
   type MissionView,
 } from "../mission/mission";
 import { cancelJob, createWorkQueue, enqueue, jobProgress, tick as tickQueue, type WorkQueueConfig, type WorkQueueState } from "../work/jobQueue";
-import type { ScenePoint3 } from "../world/sceneShapes";
+import type { Point3 } from "../world/geometry";
 
 /** A fact's value: a number that moves, a name (an owner, a place) or a flag. */
 export type WorldFactValue = number | string | boolean;
@@ -460,7 +460,7 @@ export interface WorldModelStorage {
 /** Hooks that connect a world model to a game: markers, storage, rewards and outputs such as heat. */
 export interface WorldModelOptions {
   /** Marker positions by id, for places that name a `marker` and for mission objectives. */
-  markers?: Readonly<Record<string, ScenePoint3>>;
+  markers?: Readonly<Record<string, Point3>>;
   storage?: WorldModelStorage;
   /** Pay a job's mission rewards (cash, items) through the game's own wallet. */
   onReward?(rewards: MissionRewards, jobId: string): void;

@@ -5,12 +5,13 @@ import type { Group } from "three";
 import { devtools } from "@jgengine/core/devtools/devtools";
 import { DEFAULT_GRAPHICS_PROFILES } from "@jgengine/core/settings/graphicsProfile";
 import type { GraphicsQuality } from "@jgengine/core/settings/settingsModel";
-import { createParticleSystem, type ParticleEvent, type ParticleSystem, type Vec3 } from "@jgengine/core/vfx/particles";
+import { createParticleSystem, type ParticleEvent, type ParticleSystem } from "@jgengine/core/vfx/particles";
 import { planParticleBudget } from "@jgengine/core/vfx/particleBudget";
 import type { ParticleCollisionEffect, ParticleEmitterSpec, ParticleRenderHint } from "@jgengine/core/vfx/particleDirector";
 import { useGameContext } from "@jgengine/react/provider";
 
 import { ParticleField, type ParticleFieldMetrics } from "../vfx/ParticleField";
+import type { Vec3 } from "@jgengine/core/world/geometry";
 
 /** The requested visual pool clamped to the graphics tier. */
 export function resolveParticleBudget(quality: GraphicsQuality, requested: number | undefined, particleCap?: number): number {

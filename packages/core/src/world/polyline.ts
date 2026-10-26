@@ -1,5 +1,13 @@
 import type { Vec2 } from "./geometry";
-import { distance, lerp, normalize, perp, sub } from "./vec2";
+
+const sub = (a: Vec2, b: Vec2): Vec2 => [a[0] - b[0], a[1] - b[1]];
+const distance = (a: Vec2, b: Vec2): number => Math.hypot(a[0] - b[0], a[1] - b[1]);
+const lerp = (a: Vec2, b: Vec2, t: number): Vec2 => [a[0] + (b[0] - a[0]) * t, a[1] + (b[1] - a[1]) * t];
+const perp = (a: Vec2): Vec2 => [-a[1], a[0]];
+function normalize(a: Vec2): Vec2 {
+  const len = Math.hypot(a[0], a[1]);
+  return len < 1e-9 ? [0, 0] : [a[0] / len, a[1] / len];
+}
 
 /** A polyline prepared for repeated distance/fraction sampling, with cumulative arc-length precomputed. */
 export interface Polyline {

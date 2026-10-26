@@ -1,6 +1,6 @@
 import type { GameContext } from "@jgengine/core/runtime/gameContext";
 import type { EntityPosition } from "@jgengine/core/scene/entityStore";
-import { distance } from "@jgengine/core/world/vec3";
+import { distanceBetween } from "@jgengine/core/scene/spatial";
 
 import { councilScale } from "../campaign";
 import { keep, runEnded } from "../keep";
@@ -92,7 +92,7 @@ export function tickAbilities(ctx: GameContext, dt: number): void {
     ctx.scene.entity.vfx({ preset: "explosion", to: [fire.at[0], fire.at[1] + 0.3, fire.at[2]], radius: BEACON_FIRE.radius, durationMs: 600 });
     for (const creep of Array.from(session.creeps.values())) {
       const pose = ctx.scene.entity.get(creep.instanceId)?.position;
-      if (pose === undefined || distance([pose[0], fire.at[1], pose[2]], fire.at) > BEACON_FIRE.radius) continue;
+      if (pose === undefined || distanceBetween([pose[0], fire.at[1], pose[2]], fire.at) > BEACON_FIRE.radius) continue;
       session.statuses.apply(creep.instanceId, "burn", { magnitudeScale: BEACON_FIRE.burn, source: "beacon" });
       scorch(ctx, "beacon", creep.instanceId, damage);
     }

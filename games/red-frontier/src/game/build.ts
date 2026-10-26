@@ -1,4 +1,4 @@
-import { assignFormationSlots, boxFormation, facingYaw, placeFormation, type Vec2 } from "@jgengine/core/movement/formation";
+import { assignFormationSlots, boxFormation, facingYaw, placeFormation } from "@jgengine/core/movement/formation";
 import type { GameContext } from "@jgengine/core/runtime/gameContext";
 import { defineBuildKeys, placePiece } from "@jgengine/core/worldModel/buildTool";
 import { defineSystem } from "@jgengine/shell/gameKit";
@@ -9,6 +9,7 @@ import { tool } from "./hooks";
 import { idea } from "./idea";
 import { cellFor, colonyGrid, planMarkers } from "./places";
 import { colony, fact } from "./spec";
+import type { Vec2 } from "@jgengine/core/world/geometry";
 
 interface OrderInput {
   selection?: readonly string[];

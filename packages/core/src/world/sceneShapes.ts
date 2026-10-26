@@ -1,15 +1,9 @@
-/** A world-space point — structurally compatible with the editor's `EditorVec3`. */
-export interface ScenePoint3 {
-  x: number;
-  y: number;
-  z: number;
-}
-
+import type { Point3 } from "./geometry";
 /** The minimal polyline shape {@link resolveScatterRegion} et al. read; any `EditorPath` satisfies it. */
 export interface ScenePathLike {
   id: string;
   kind: string;
-  points: readonly ScenePoint3[];
+  points: readonly Point3[];
   width?: number;
   meta?: Record<string, unknown>;
 }
@@ -18,7 +12,7 @@ export interface ScenePathLike {
 export interface SceneMarkerLike {
   id: string;
   kind: string;
-  position: ScenePoint3;
+  position: Point3;
   meta?: Record<string, unknown>;
 }
 
@@ -27,11 +21,11 @@ export interface SceneVolumeLike {
   id: string;
   kind: string;
   shape: "sphere" | "cylinder" | "box";
-  center: ScenePoint3;
+  center: Point3;
   radius?: number;
   /** Cylinder height (m); containment and editors use this when shape is `cylinder`. */
   height?: number;
-  halfExtents?: ScenePoint3;
+  halfExtents?: Point3;
   meta?: Record<string, unknown>;
 }
 

@@ -1,3 +1,4 @@
+import type { Vec2 } from "./geometry";
 /**
  * Deterministic 2D polygon math for the `city` studio's block/parcel pipeline: signed areas,
  * point-in-polygon, half-plane clipping, per-edge inward insets (the curb → sidewalk → land and
@@ -9,8 +10,6 @@
  * @capability city-district polygon math for road-derived blocks, parcels, and buildable footprints
  */
 
-/** A 2D point in district-local or world XZ space. */
-export type Vec2 = readonly [number, number];
 
 /** Signed area of a polygon ring (positive = counter-clockwise in XZ). */
 export function polygonSignedArea(ring: readonly Vec2[]): number {

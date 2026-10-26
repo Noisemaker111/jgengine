@@ -7,7 +7,6 @@ import {
   blendShoulder,
   chaseDesiredPosition,
   cinematicSample,
-  clamp,
   crossfadePose,
   leadFollowPoint,
   lockOnPose,
@@ -24,7 +23,6 @@ import {
   seatPose,
   shoulderPose,
   sideScrollFollowBlend,
-  smoothstep,
   smoothYaw,
   speedToFov,
   springArmStep,
@@ -535,16 +533,6 @@ describe("velocityYawTarget", () => {
     expect(moved).toBeLessThan(Math.abs(slip));
     expect(result).toBeGreaterThan(heading);
     expect(result).toBeLessThan(heading + Math.abs(slip));
-  });
-});
-
-describe("helpers", () => {
-  test("clamp and smoothstep behave at the boundaries", () => {
-    expect(clamp(5, 0, 1)).toBe(1);
-    expect(clamp(-5, 0, 1)).toBe(0);
-    expect(smoothstep(0)).toBe(0);
-    expect(smoothstep(1)).toBe(1);
-    expect(near(smoothstep(0.5), 0.5)).toBe(true);
   });
 });
 

@@ -1,3 +1,4 @@
+import type { Vec3 } from "./geometry";
 /**
  * Seeded procedural buildings: a footprint of bays × floors emitted as placed facade parts — walls,
  * windows, storefronts, roof and decor — each tagged with a kit slot `world/buildingKit` binds to a
@@ -6,7 +7,6 @@
 import { footprintAabb, type Aabb, type Footprint, type Vec2 } from "./geometry";
 
 export type BuildingSeed = number | string;
-export type Vec3 = readonly [number, number, number];
 export type BuildingFacade = "front" | "back" | "left" | "right" | "roof";
 export type BuildingPartKind =
   | "wall"

@@ -1,4 +1,4 @@
-import type { CameraRigShakeConfig } from "../camera/shake/cameraShake";
+import type { CameraRigShakeConfig } from "./shake/cameraShake";
 import type { WeaponHandlingFrame } from "../combat/weaponHandling";
 import type { WeaponPresentationTuning } from "../combat/weaponPresentation";
 

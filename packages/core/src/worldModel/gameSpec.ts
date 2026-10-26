@@ -13,7 +13,7 @@ import type { GameContext } from "../runtime/gameContext";
 import { perContext } from "../runtime/perContext";
 import { defineStore, type StoreHandle } from "../store/defineStore";
 import type { EntityRole } from "../scene/entityStore";
-import type { ScenePoint3 } from "../world/sceneShapes";
+import type { Point3 } from "../world/geometry";
 import {
   createWorldModel,
   defineWorldModel,
@@ -46,7 +46,7 @@ export interface GameSpecDecl {
   id: string;
   world: WorldModelDecl;
   /** Marker positions for places, slots and mission objectives (usually `missionMarkers(editorLayers)`). */
-  markers?: Readonly<Record<string, ScenePoint3>> | ((ctx: GameContext) => Readonly<Record<string, ScenePoint3>>);
+  markers?: Readonly<Record<string, Point3>> | ((ctx: GameContext) => Readonly<Record<string, Point3>>);
   /** Code for whatever a declaration names with `hook`. */
   hooks?: Readonly<Record<string, (ctx: GameContext, call: WorldHookCall) => void>>;
   /** Where named ripple outputs go (`heat`, `noise`, `traffic`). */

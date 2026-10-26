@@ -11,7 +11,7 @@ import { devtools } from "../devtools/devtools";
 import { applyQuestRewards, type QuestRewards } from "./quest";
 import { clamp } from "../math/scalar";
 import { resolveRng } from "../random/resolveRng";
-import type { ScenePoint3 } from "../world/sceneShapes";
+import type { Point3 } from "../world/geometry";
 
 /** Where a mission is in its life. */
 export type MissionStatus = "active" | "completed" | "failed";
@@ -214,7 +214,7 @@ export interface MissionDef {
 export interface MissionActorFact {
   /** Defaults to alive. */
   alive?: boolean;
-  position?: ScenePoint3;
+  position?: Point3;
 }
 
 /** Everything the machine reads for one tick. All optional; a mission only touches what it declares. */
@@ -336,7 +336,7 @@ export interface MissionRewardAppliers {
 export interface MissionRuntimeConfig {
   readonly missions: readonly MissionDef[];
   /** Marker positions resolved from the authored scene, by marker id. See `missionMarkers`. */
-  readonly markers?: Readonly<Record<string, ScenePoint3>>;
+  readonly markers?: Readonly<Record<string, Point3>>;
   /** How marker proximity is measured for `reach`, `interact` and `left-area`. Default horizontal. */
   readonly markerProximity?: MissionMarkerProximity;
   /** Actor id used for a `pursue` objective that names no `pursuer`. */
@@ -405,14 +405,14 @@ export const DEFAULT_PURSUE_DISTANCE = 3;
 /** A pursuit escapes at this multiple of its keep-close distance when none is declared. */
 export const DEFAULT_ESCAPE_MULTIPLE = 3;
 
-function distance(a: ScenePoint3, b: ScenePoint3): number {
+function distance(a: Point3, b: Point3): number {
   return Math.hypot(a.x - b.x, a.y - b.y, a.z - b.z);
 }
 
 /** Whether `from` is inside the marker's reach radius under the configured plane — no allocation, no sqrt. */
 function markerWithin(
-  from: ScenePoint3,
-  to: ScenePoint3,
+  from: Point3,
+  to: Point3,
   radius: number,
   plane: MissionMarkerPlane,
   tolerance: number,
@@ -605,7 +605,7 @@ export function createMissionRuntime(config: MissionRuntimeConfig): MissionRunti
     return alive;
   }
 
-  function positionOf(actorId: string | undefined, input: MissionTickInput): ScenePoint3 | undefined {
+  function positionOf(actorId: string | undefined, input: MissionTickInput): Point3 | undefined {
     if (actorId === undefined) return undefined;
     return input.actors?.[actorId]?.position;
   }

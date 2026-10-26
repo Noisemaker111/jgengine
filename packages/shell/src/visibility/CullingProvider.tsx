@@ -4,9 +4,9 @@ import * as THREE from "three";
 import { useGameContext } from "@jgengine/react/provider";
 import type { CameraView } from "@jgengine/core/visibility/frustum";
 import type { VisibilityConfig } from "@jgengine/core/visibility/config";
-import type { Vec3 } from "@jgengine/core/visibility/bounds";
 import { buildCullingDriver } from "./cullingDriver";
 import { CAMERA_POST_FRAME_PRIORITY } from "../camera/cameraRigs";
+import type { Vec3 } from "@jgengine/core/world/geometry";
 
 type VisiblePredicate = (id: string) => boolean;
 

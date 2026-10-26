@@ -1,7 +1,6 @@
 import { beforeEach, describe, expect, test } from "bun:test";
 import type { GameContext } from "@jgengine/core/runtime/gameContext";
 import type { EntityPosition } from "@jgengine/core/scene/entityStore";
-import type { Vec2 } from "@jgengine/core/movement/formation";
 
 import {
   anchorFormation,
@@ -16,6 +15,7 @@ import {
 } from "./formations";
 import { resetSession, session, type UnitRuntime } from "./session";
 import { FORMATION_HOLD_TOLERANCE, FORMATION_SPACING } from "./tuning";
+import type { Vec2 } from "@jgengine/core/world/geometry";
 
 const KINDS: FormationKind[] = ["line", "wedge", "column"];
 

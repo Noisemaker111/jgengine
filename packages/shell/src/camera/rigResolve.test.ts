@@ -3,7 +3,7 @@ import { afterEach, describe, expect, test } from "bun:test";
 import { resolveCaptureCameraConfig, resolveRigKind, resolveRuntimeCameraConfig, turntableAsObserver } from "./rigResolve";
 import { createCameraDirector } from "@jgengine/core/runtime/cameraDirector";
 import { installCaptureCamera } from "@jgengine/core/world/captureCamera";
-import type { GameCameraConfig } from "@jgengine/core/game/cameraConfig";
+import type { GameCameraConfig } from "@jgengine/core/camera/cameraConfig";
 
 describe("resolveRigKind", () => {
   test("infers the turntable rig from its block alone, no explicit rig", () => {

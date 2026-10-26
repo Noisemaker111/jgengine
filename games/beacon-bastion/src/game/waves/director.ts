@@ -4,7 +4,7 @@ import type { EncounterOrder } from "@jgengine/core/waves/encounter";
 import { advanceBoss, createBossState } from "@jgengine/core/ai/director/boss";
 import { evaluatePressure, type PressurePlan } from "@jgengine/core/waves/pressure";
 import { advancePathFollow, createPathFollow, type PathFollowState } from "@jgengine/core/nav/pathFollow";
-import { distance } from "@jgengine/core/world/vec3";
+import { distanceBetween } from "@jgengine/core/scene/spatial";
 
 import { councilScale, difficultyOf } from "../campaign";
 import { creepDef } from "../entities/enemies/catalog";
@@ -165,7 +165,7 @@ function mend(ctx: GameContext, healer: CreepRuntime, dt: number): void {
   for (const other of session.creeps.values()) {
     const pose = ctx.scene.entity.get(other.instanceId)?.position;
     const health = ctx.scene.entity.stats.get(other.instanceId, "health");
-    if (pose === undefined || health === null || distance(at, pose) > heals.radius || health.current >= health.max) continue;
+    if (pose === undefined || health === null || distanceBetween(at, pose) > heals.radius || health.current >= health.max) continue;
     ctx.scene.entity.stats.delta(other.instanceId, "health", health.max * heals.share);
   }
   ctx.scene.entity.vfx({ preset: "heal", to: healer.instanceId, radius: heals.radius, durationMs: 700 });

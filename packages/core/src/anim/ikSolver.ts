@@ -1,5 +1,4 @@
-/** A three-dimensional point or direction represented without a renderer dependency. */
-export type Vec3 = readonly [number, number, number];
+import type { Vec3 } from "../world/geometry";
 /** A mutable three-dimensional tuple used by allocation-aware solver outputs. */
 export type MutableVec3 = [number, number, number];
 /** A quaternion in `(x, y, z, w)` order. */

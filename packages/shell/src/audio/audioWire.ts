@@ -1,4 +1,5 @@
-import type { AudioEmitterHandle, AudioEngine, Vec3 } from "./audioEngine";
+import type { AudioEmitterHandle, AudioEngine } from "./audioEngine";
+import type { Point3 } from "@jgengine/core/world/geometry";
 
 type AudioPlayPayload = { sound: string; at?: readonly [number, number, number] };
 type AudioMusicPayload = { theme: string | null; transpose?: number; offset?: number };
@@ -29,7 +30,7 @@ export type AudioEventBus = {
   on(event: "audio.loopStop", handler: (payload: AudioLoopStopPayload) => void): () => void;
 };
 
-function toVec(at: readonly [number, number, number] | undefined): Vec3 | undefined {
+function toVec(at: readonly [number, number, number] | undefined): Point3 | undefined {
   return at === undefined ? undefined : { x: at[0], y: at[1], z: at[2] };
 }
 

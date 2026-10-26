@@ -1,4 +1,4 @@
-import type { Vec3, RenderBounds, BoundsSpec } from "./bounds";
+import type { RenderBounds, BoundsSpec } from "./bounds";
 import { DEFAULT_BOUNDS, createBoundsCache } from "./bounds";
 import type { BoundsCache } from "./bounds";
 import type { CameraVisibilityContext, CameraKind } from "./camera";
@@ -14,6 +14,7 @@ import { noOcclusion } from "./occlusion";
 import type { VisibilityStats } from "./diagnostics";
 import { createVisibilityStats, resetCullingStats, nowMs } from "./diagnostics";
 import { devtools } from "../devtools/devtools";
+import type { Vec3 } from "../world/geometry";
 
 /**
  * A scene object the visibility system considers. A normal game object already carries a

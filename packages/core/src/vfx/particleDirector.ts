@@ -1,5 +1,6 @@
 import { effectNames, resolveEffect, type EffectOverride } from "./effectLibrary";
-import { validateEmitterConfig, type EmitterConfig, type ParticleEvent, type Vec3 } from "./particles";
+import { validateEmitterConfig, type EmitterConfig, type ParticleEvent } from "./particles";
+import type { Vec3 } from "../world/geometry";
 
 /** How a particle effect composites on screen: `additive` for sparks/fire/glow, `normal` for smoke/dust. */
 export type ParticleBlendHint = "additive" | "normal";

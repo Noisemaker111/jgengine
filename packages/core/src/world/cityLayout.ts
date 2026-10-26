@@ -11,8 +11,9 @@
 import { tunable } from "../devtools/devtools";
 import { seededStreams } from "../random/rng";
 import { deriveBuildingLots, type LotArea, type PlacedBuildingLot, type RoadFrontage } from "./buildingLots";
-import { rectsSeparated, type OrientedRect, type Vec2 } from "./cityGeometry";
+import { rectsSeparated, type OrientedRect } from "./cityGeometry";
 import { road, type LiveRoadSource, type RoadEnvironmentConfig, type RoadEnvironmentDescriptor } from "./features";
+import type { Vec2 } from "./geometry";
 
 /** Street class: an avenue carries `avenueLanes`, a street `streetLanes`. */
 export type CityRoadClass = "avenue" | "street";

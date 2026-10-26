@@ -14,7 +14,8 @@ import {
   type TriggerActionDefinition,
   type TriggerDispatchEvent,
 } from "../scene/authoredTriggers";
-import type { SceneDocumentLike, ScenePoint3 } from "../world/sceneShapes";
+import type { Point3 } from "../world/geometry";
+import type { SceneDocumentLike } from "../world/sceneShapes";
 import type { MissionRuntime } from "./mission";
 
 /**
@@ -22,8 +23,8 @@ import type { MissionRuntime } from "./mission";
  *
  * @capability mission-triggers read authored scene marker positions for positional objectives
  */
-export function missionMarkers(document: SceneDocumentLike): Record<string, ScenePoint3> {
-  const out: Record<string, ScenePoint3> = {};
+export function missionMarkers(document: SceneDocumentLike): Record<string, Point3> {
+  const out: Record<string, Point3> = {};
   for (const marker of document.markers) {
     out[marker.id] = { x: marker.position.x, y: marker.position.y, z: marker.position.z };
   }

@@ -1,4 +1,5 @@
-import type { AudioEmitterHandle, Vec3 } from "./audioEngine";
+import type { AudioEmitterHandle } from "./audioEngine";
+import type { Point3 } from "@jgengine/core/world/geometry";
 
 /** One emitter's live key and position, written in place so a steady frame reads every source without allocating. @internal */
 export interface EmitterPose {
@@ -51,12 +52,12 @@ export function createEmitterTracker(options: {
   sources: EmitterSources;
   /** Read per frame so a remount or a replaced sound map takes effect without rebuilding the tracker. */
   sounds: () => Record<string, string> | undefined;
-  play: (soundId: string, position: Vec3) => AudioEmitterHandle | null;
+  play: (soundId: string, position: Point3) => AudioEmitterHandle | null;
 }): EmitterTracker {
   const entries: Entry[] = [];
   const byId = new Map<string, Entry>();
   const pose: EmitterPose = { key: "", position: [0, 0, 0] };
-  const target: Vec3 = { x: 0, y: 0, z: 0 };
+  const target: Point3 = { x: 0, y: 0, z: 0 };
   let soundsRef: Record<string, string> | undefined;
   let idsRef: readonly string[] | null = null;
   let reconcileNext = false;

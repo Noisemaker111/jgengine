@@ -7,7 +7,6 @@ export {
 export { type BoardSnapshot } from "./multiplayer/combatSnapshot";
 export { createFeedWriteGate, validateFeedWrite, type FeedWriteGate } from "./multiplayer/feedWriteGate";
 export { resolveGuestSession, sessionPlayer, type AuthSession, type PlayerIdentity } from "./multiplayer/identity";
-export { type Vec3 } from "./multiplayer/lagCompensation";
 export {
   browseSessions,
   findByJoinCode,

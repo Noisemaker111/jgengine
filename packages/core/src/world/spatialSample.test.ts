@@ -1,7 +1,7 @@
 import { describe, expect, test } from "bun:test";
 
 import { seededRng } from "../random/rng";
-import type { Aabb, Vec2 } from "./geometry";
+import type { Aabb, Vec2, Vec3 } from "./geometry";
 import {
   annulusRegion,
   boxRegion,
@@ -16,7 +16,6 @@ import {
   shellRegion,
   sphereRegion,
   weightedRegion,
-  type Point3,
 } from "./spatialSample";
 
 const RECT: Aabb = { minX: -50, minZ: -50, maxX: 50, maxZ: 50 };
@@ -311,14 +310,14 @@ describe("3D regions", () => {
   });
 
   test("sphere points stay within radius", () => {
-    const center: Point3 = [1, 2, 3];
+    const center: Vec3 = [1, 2, 3];
     const region = sphereRegion(center, 5, { distribution: "volume" });
     const rng = seededRng("sphere");
     for (let i = 0; i < 100; i += 1) expect(dist(region.sample(rng), center)).toBeLessThanOrEqual(5 + 1e-9);
   });
 
   test("shell points fall inside the shell band", () => {
-    const center: Point3 = [0, 0, 0];
+    const center: Vec3 = [0, 0, 0];
     const region = shellRegion(center, 3, 6);
     const rng = seededRng("shell");
     for (let i = 0; i < 100; i += 1) {

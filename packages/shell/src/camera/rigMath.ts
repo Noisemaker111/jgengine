@@ -8,13 +8,16 @@ import type {
   SideScrollCameraConfig,
   TopDownCameraConfig,
 } from "@jgengine/core/game/playableGame";
+import { lerp, smoothstep } from "@jgengine/core/anim/easing";
 import type { ActionCodes, ActionCodesMap } from "@jgengine/core/input/actionBindings";
+import { clamp } from "@jgengine/core/math/scalar";
 
-import { lerpVec3, smoothBlend, type Vec3 } from "./orbitCameraMath";
+import { lerpVec3, smoothBlend } from "./orbitCameraMath";
+import type { Point3 } from "@jgengine/core/world/geometry";
 
 export interface CameraPose {
-  position: Vec3;
-  lookAt: Vec3;
+  position: Point3;
+  lookAt: Point3;
   fov: number;
 }
 
@@ -43,30 +46,14 @@ export function rtsRotateKeysConflict(input: ActionCodesMap | undefined): boolea
 }
 
 /** @internal */
-export function clamp(value: number, min: number, max: number): number {
-  return value < min ? min : value > max ? max : value;
-}
-
-/** @internal */
-export function lerp(from: number, to: number, blend: number): number {
-  return from + (to - from) * blend;
-}
-
-/** @internal */
-export function smoothstep(t: number): number {
-  const clamped = clamp(t, 0, 1);
-  return clamped * clamped * (3 - 2 * clamped);
-}
-
-/** @internal */
-export function forwardVector(yaw: number): Vec3 {
+export function forwardVector(yaw: number): Point3 {
   return { x: Math.sin(yaw), y: 0, z: Math.cos(yaw) };
 }
 
 /** Screen-right of a yaw: `forward × up` with up = +Y.
  * @internal
  */
-export function rightVector(yaw: number): Vec3 {
+export function rightVector(yaw: number): Point3 {
   return { x: -Math.cos(yaw), y: 0, z: Math.sin(yaw) };
 }
 
@@ -74,7 +61,7 @@ export interface ResolvedTopDown {
   height: number;
   pitch: number;
   yaw: number;
-  offset: Vec3;
+  offset: Point3;
   followSmoothing: number;
 }
 
@@ -100,8 +87,8 @@ export function resolveTopDown(config: TopDownCameraConfig | undefined): Resolve
  * derived so the look angle stays constant as height changes.
   * @internal
   */
-export function topDownPose(follow: Vec3, resolved: ResolvedTopDown, fov: number): CameraPose {
-  const lookAt: Vec3 = {
+export function topDownPose(follow: Point3, resolved: ResolvedTopDown, fov: number): CameraPose {
+  const lookAt: Point3 = {
     x: follow.x + resolved.offset.x,
     y: follow.y + resolved.offset.y,
     z: follow.z + resolved.offset.z,
@@ -125,7 +112,7 @@ export function topDownPose(follow: Vec3, resolved: ResolvedTopDown, fov: number
  * `topDownPose` at the same yaw. Normalized; zero input returns zero.
  * @internal
  */
-export function rtsPanWorldDir(panX: number, panZ: number, yaw: number): Vec3 {
+export function rtsPanWorldDir(panX: number, panZ: number, yaw: number): Point3 {
   const forward = forwardVector(yaw);
   const right = rightVector(yaw);
   const x = panX * right.x + panZ * forward.x;
@@ -140,7 +127,7 @@ export function rtsPanWorldDir(panX: number, panZ: number, yaw: number): Vec3 {
  * @internal
  */
 export function applyRtsCenter(
-  center: Vec3,
+  center: Point3,
   jump: { x: number; z: number } | null,
   bounds: { minX?: number; maxX?: number; minZ?: number; maxZ?: number } | undefined,
 ): void {
@@ -156,7 +143,7 @@ export function applyRtsCenter(
 /** Exponential spring-arm approach toward a desired point (frame-rate independent).
  * @internal
  */
-export function springArmStep(current: Vec3, desired: Vec3, damping: number, dt: number): Vec3 {
+export function springArmStep(current: Point3, desired: Point3, damping: number, dt: number): Point3 {
   return lerpVec3(current, desired, smoothBlend(dt, damping));
 }
 
@@ -192,8 +179,8 @@ export function sideScrollFollowBlend(followSmoothing: number, dt: number): numb
  * raised by `lookHeight`. Axis "x" watches from +z; axis "z" watches from +x.
   * @internal
   */
-export function resolveSideScrollPose(entityPos: Vec3, resolved: ResolvedSideScroll, fov: number): CameraPose {
-  const perpendicular: Vec3 = resolved.axis === "x" ? { x: 0, y: 0, z: 1 } : { x: 1, y: 0, z: 0 };
+export function resolveSideScrollPose(entityPos: Point3, resolved: ResolvedSideScroll, fov: number): CameraPose {
+  const perpendicular: Point3 = resolved.axis === "x" ? { x: 0, y: 0, z: 1 } : { x: 1, y: 0, z: 0 };
   return {
     position: {
       x: entityPos.x + perpendicular.x * resolved.distance,
@@ -222,7 +209,7 @@ export function speedToFov(
 /** Yaw that points from `from` toward `to` on the XZ plane (matches shell forward = (sin, cos)).
  * @internal
  */
-export function yawTo(from: Vec3, to: Vec3): number {
+export function yawTo(from: Point3, to: Point3): number {
   return Math.atan2(to.x - from.x, to.z - from.z);
 }
 
@@ -290,7 +277,7 @@ export function blendShoulder(hip: ResolvedShoulder, ads: ResolvedShoulder, t: n
   * @internal
   */
 export function shoulderPose(
-  follow: Vec3,
+  follow: Point3,
   yaw: number,
   pitch: number,
   sideSign: number,
@@ -298,18 +285,18 @@ export function shoulderPose(
 ): CameraPose {
   const forward = forwardVector(yaw);
   const right = rightVector(yaw);
-  const anchor: Vec3 = {
+  const anchor: Point3 = {
     x: follow.x + right.x * shoulder.shoulderOffset * sideSign,
     y: follow.y + shoulder.heightOffset,
     z: follow.z + right.z * shoulder.shoulderOffset * sideSign,
   };
   const cosPitch = Math.cos(pitch);
-  const position: Vec3 = {
+  const position: Point3 = {
     x: anchor.x - forward.x * shoulder.distance * cosPitch,
     y: anchor.y + Math.sin(pitch) * shoulder.distance,
     z: anchor.z - forward.z * shoulder.distance * cosPitch,
   };
-  const lookAt: Vec3 = {
+  const lookAt: Point3 = {
     x: anchor.x + forward.x * 4 * cosPitch,
     y: anchor.y - Math.sin(pitch) * 4,
     z: anchor.z + forward.z * 4 * cosPitch,
@@ -324,8 +311,8 @@ export function shoulderPose(
   * @internal
   */
 export function lockOnPose(
-  player: Vec3,
-  target: Vec3,
+  player: Point3,
+  target: Point3,
   config: LockOnCameraConfig | undefined,
   fov: number,
 ): { pose: CameraPose; yaw: number } {
@@ -335,12 +322,12 @@ export function lockOnPose(
   const bias = clamp(config?.framingBias ?? 0.5, 0, 1);
   const yaw = yawTo(player, target);
   const back = forwardVector(yaw);
-  const focus: Vec3 = {
+  const focus: Point3 = {
     x: lerp(player.x, target.x, bias),
     y: lerp(player.y, target.y, bias) + lookHeight,
     z: lerp(player.z, target.z, bias),
   };
-  const position: Vec3 = {
+  const position: Point3 = {
     x: player.x - back.x * distance,
     y: player.y + height,
     z: player.z - back.z * distance,
@@ -434,7 +421,7 @@ export function resolveChase(config: ChaseCameraConfig | undefined): ResolvedCha
 /** Velocity-lead the follow point (#286.9): aim `leadTime` seconds along the target's frame velocity, clamped to `leadMax`.
  * @internal
  */
-export function leadFollowPoint(follow: Vec3, previous: Vec3, dt: number, resolved: ResolvedChase): Vec3 {
+export function leadFollowPoint(follow: Point3, previous: Point3, dt: number, resolved: ResolvedChase): Point3 {
   if (dt <= 0) return follow;
   return leadFromVelocity(follow, { x: (follow.x - previous.x) / dt, y: 0, z: (follow.z - previous.z) / dt }, resolved);
 }
@@ -442,7 +429,7 @@ export function leadFollowPoint(follow: Vec3, previous: Vec3, dt: number, resolv
 /** Velocity-lead the follow point along a known planar velocity, clamped to `leadMax`.
  * @internal
  */
-export function leadFromVelocity(follow: Vec3, velocity: Vec3, resolved: ResolvedChase): Vec3 {
+export function leadFromVelocity(follow: Point3, velocity: Point3, resolved: ResolvedChase): Point3 {
   if (resolved.leadTime <= 0) return follow;
   let leadX = velocity.x * resolved.leadTime;
   let leadZ = velocity.z * resolved.leadTime;
@@ -491,8 +478,8 @@ export function resolveObserver(config: ObserverCameraConfig | undefined): Resol
 /** Detached spectator pose: orbits `subject` at a fixed distance/height, never reading player input.
  * @internal
  */
-export function observerPose(subject: Vec3, angle: number, resolved: ResolvedObserver, fov: number): CameraPose {
-  const position: Vec3 = {
+export function observerPose(subject: Point3, angle: number, resolved: ResolvedObserver, fov: number): CameraPose {
+  const position: Point3 = {
     x: subject.x + Math.sin(angle) * resolved.distance,
     y: subject.y + resolved.height,
     z: subject.z + Math.cos(angle) * resolved.distance,
@@ -507,7 +494,7 @@ export function observerPose(subject: Vec3, angle: number, resolved: ResolvedObs
 /** Desired chase-camera position behind a vehicle facing `yaw` (before spring smoothing). `pitch` (nose-up positive) tilts the boom around the vehicle's right axis.
  * @internal
  */
-export function chaseDesiredPosition(follow: Vec3, yaw: number, resolved: ResolvedChase, pitch = 0, distance = resolved.distance): Vec3 {
+export function chaseDesiredPosition(follow: Point3, yaw: number, resolved: ResolvedChase, pitch = 0, distance = resolved.distance): Point3 {
   const offset = chaseBoomOffset(yaw, pitch, distance, resolved.height);
   return { x: follow.x + offset.x, y: follow.y + offset.y, z: follow.z + offset.z };
 }
@@ -515,7 +502,7 @@ export function chaseDesiredPosition(follow: Vec3, yaw: number, resolved: Resolv
 /** Camera offset from the follow point for a boom `distance` back and `height` up, tilted by `pitch` (nose-up positive).
  * @internal
  */
-export function chaseBoomOffset(yaw: number, pitch: number, distance: number, height: number): Vec3 {
+export function chaseBoomOffset(yaw: number, pitch: number, distance: number, height: number): Point3 {
   const forward = forwardVector(yaw);
   const cos = Math.cos(pitch);
   const sin = Math.sin(pitch);
@@ -526,7 +513,7 @@ export function chaseBoomOffset(yaw: number, pitch: number, distance: number, he
 /** Look point ahead of / above a chased vehicle, tilted by `pitch` like the boom.
  * @internal
  */
-export function chaseLookAt(follow: Vec3, yaw: number, resolved: ResolvedChase, pitch = 0): Vec3 {
+export function chaseLookAt(follow: Point3, yaw: number, resolved: ResolvedChase, pitch = 0): Point3 {
   const forward = forwardVector(yaw);
   const cos = Math.cos(pitch);
   const sin = Math.sin(pitch);
@@ -541,10 +528,10 @@ export function chaseLookAt(follow: Vec3, yaw: number, resolved: ResolvedChase, 
 /** Mutable per-rig chase state; {@link stepChase} advances it in place. */
 export interface ChaseRigState {
   /** Smoothed camera offset from the led follow point; springing the offset, not the world position, keeps the boom length at any constant speed. */
-  offset: Vec3 | null;
+  offset: Point3 | null;
   anchorYaw: number | null;
   lastYaw: number | null;
-  lastFollow: Vec3 | null;
+  lastFollow: Point3 | null;
   roll: number;
   pitch: number;
   fov: number | null;
@@ -559,13 +546,13 @@ export function createChaseRigState(): ChaseRigState {
 
 /** What the chase rig reads from its target each frame. */
 export interface ChaseSample {
-  follow: Vec3;
+  follow: Point3;
   /** Body heading (radians). */
   yaw: number;
   /** Body `rotationX` (three.js convention: positive = nose down). */
   bodyPitch: number;
   /** Sim velocity when the entity publishes one; `null` falls back to the frame-to-frame position delta. */
-  velocity: Vec3 | null;
+  velocity: Point3 | null;
   lookBack: boolean;
   /** FOV impulse (degrees) queued since the last frame. */
   fovKick: number;
@@ -583,7 +570,7 @@ export interface ChaseStepResult {
 }
 
 /** Pulls a desired camera position in toward `pivot` when something blocks the boom. */
-export type ChaseBoomClamp = (pivot: Vec3, desired: Vec3) => Vec3;
+export type ChaseBoomClamp = (pivot: Point3, desired: Point3) => Point3;
 
 /**
  * One frame of the chase rig: speed from sim velocity, smoothed FOV plus decaying kicks, drift-lag
@@ -600,7 +587,7 @@ export function stepChase(
 ): ChaseStepResult {
   const { follow, yaw } = sample;
   const last = state.lastFollow ?? follow;
-  const velocity: Vec3 =
+  const velocity: Point3 =
     sample.velocity ?? (dt > 0 ? { x: (follow.x - last.x) / dt, y: 0, z: (follow.z - last.z) / dt } : { x: 0, y: 0, z: 0 });
   state.lastFollow = follow;
   const speed = Math.hypot(velocity.x, velocity.z);
@@ -642,8 +629,8 @@ export function stepChase(
   let offset = snap || state.offset === null ? desiredOffset : springArmStep(state.offset, desiredOffset, resolved.springDamping, dt);
   if (clampBoom !== undefined) {
     const up = chaseLookAt(led, boomYaw, resolved, boomPitch);
-    const pivot: Vec3 = { x: led.x, y: up.y, z: led.z };
-    const wanted: Vec3 = { x: led.x + offset.x, y: led.y + offset.y, z: led.z + offset.z };
+    const pivot: Point3 = { x: led.x, y: up.y, z: led.z };
+    const wanted: Point3 = { x: led.x + offset.x, y: led.y + offset.y, z: led.z + offset.z };
     const allowed = clampBoom(pivot, wanted);
     offset = { x: allowed.x - led.x, y: allowed.y - led.y, z: allowed.z - led.z };
   }
@@ -666,7 +653,7 @@ export function stepChase(
  * `radius`, but never nearer the pivot than `minDistance`. `null` hit returns `desired` unchanged.
  * @internal
  */
-export function clampBoomToHit(pivot: Vec3, desired: Vec3, hitDistance: number | null, radius: number, minDistance: number): Vec3 {
+export function clampBoomToHit(pivot: Point3, desired: Point3, hitDistance: number | null, radius: number, minDistance: number): Point3 {
   if (hitDistance === null) return desired;
   const dx = desired.x - pivot.x;
   const dy = desired.y - pivot.y;
@@ -691,7 +678,7 @@ export function clampBoomToHit(pivot: Vec3, desired: Vec3, hitDistance: number |
  * it stays correct across the ±PI wrap seam.
  * @internal
  */
-export function velocityYawTarget(heading: number, velocity: Vec3, resolved: ResolvedChase): number {
+export function velocityYawTarget(heading: number, velocity: Point3, resolved: ResolvedChase): number {
   if (resolved.velocityYawBlend <= 0) return heading;
   const speed = Math.hypot(velocity.x, velocity.z);
   if (speed < resolved.velocityYawMinSpeed) return heading;
@@ -706,7 +693,7 @@ export function velocityYawTarget(heading: number, velocity: Vec3, resolved: Res
  * @internal
  */
 export function seatPose(
-  follow: Vec3,
+  follow: Point3,
   yaw: number,
   local: { x?: number; y?: number; z?: number },
   fov: number,
@@ -716,7 +703,7 @@ export function seatPose(
   const lx = local.x ?? 0;
   const ly = local.y ?? 1.1;
   const lz = local.z ?? 0.2;
-  const position: Vec3 = {
+  const position: Point3 = {
     x: follow.x + right.x * lx + forward.x * lz,
     y: follow.y + ly,
     z: follow.z + right.z * lx + forward.z * lz,
@@ -794,7 +781,7 @@ export function cinematicSample(
   fallbackFov: number,
 ): CinematicSample {
   if (keyframes.length === 0) {
-    const zero: Vec3 = { x: 0, y: 0, z: 0 };
+    const zero: Point3 = { x: 0, y: 0, z: 0 };
     return { pose: { position: zero, lookAt: zero, fov: fallbackFov }, done: true };
   }
   const first = keyframes[0]!;

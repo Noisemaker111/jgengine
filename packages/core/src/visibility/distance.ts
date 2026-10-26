@@ -1,4 +1,4 @@
-import type { Vec3 } from "./bounds";
+import type { Vec3 } from "../world/geometry";
 
 export function distanceSquared(ax: number, ay: number, az: number, bx: number, by: number, bz: number): number {
   const dx = bx - ax;

@@ -259,11 +259,11 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `createCharacterController` (function) · `import { createCharacterController } from "@jgengine/core/movement/characterController"`
 
-## city-district — polygon math for road-derived blocks, parcels, and buildable footprints
+## city-district — editor-authorable procedural city district (streets, zoning, buildings, furniture)
 
-- `Vec2` (type) · `import { Vec2 } from "@jgengine/core/world/cityGeometry"`
 - `citySolids` (function) · `import { citySolids } from "@jgengine/core/world/cityKind"`
 - `extractGraphBlocks` (function) · `import { extractGraphBlocks } from "@jgengine/core/world/cityBlocks"`
+- `polygonSignedArea` (function) · `import { polygonSignedArea } from "@jgengine/core/world/cityGeometry"`
 - `rectClearsPolyline` (function) · `import { rectClearsPolyline } from "@jgengine/core/world/cityGeometry"`
 - `rectsSeparated` (function) · `import { rectsSeparated } from "@jgengine/core/world/cityGeometry"`
 - `resolveCityObject` (function) · `import { resolveCityObject } from "@jgengine/core/world"`

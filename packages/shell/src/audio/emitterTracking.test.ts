@@ -1,8 +1,9 @@
 import { describe, expect, test } from "bun:test";
 import { createEntityStore } from "@jgengine/core/scene/entityStore";
 import { createObjectStore } from "@jgengine/core/scene/objectStore";
-import type { AudioEmitterHandle, Vec3 } from "./audioEngine";
+import type { AudioEmitterHandle } from "./audioEngine";
 import { createEmitterTracker, type EmitterPose, type EmitterSources } from "./emitterTracking";
+import type { Point3 } from "@jgengine/core/world/geometry";
 
 /** scrap-signal's catalog ids that hum or crackle (`games/scrap-signal/src/game/audio/catalog.ts`). */
 const OBJECT_SOUNDS: Record<string, string> = {
@@ -45,7 +46,7 @@ type Call = { kind: "play" | "move" | "stop"; voice: number; sound: string; x: n
 function fakeEngine() {
   const calls: Call[] = [];
   let started = 0;
-  function playLoop(sound: string, position?: Vec3): AudioEmitterHandle {
+  function playLoop(sound: string, position?: Point3): AudioEmitterHandle {
     const voice = started;
     started += 1;
     calls.push({ kind: "play", voice, sound, x: position?.x ?? 0, y: position?.y ?? 0, z: position?.z ?? 0 });

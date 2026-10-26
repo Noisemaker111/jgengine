@@ -3,6 +3,13 @@ export type Vec2 = readonly [number, number];
 /** A 3D point/vector as an `[x, y, z]` tuple — the engine's zero-allocation spatial primitive. */
 export type Vec3 = readonly [number, number, number];
 
+/** A world-space point as named fields, for code that reads `.x`/`.y`/`.z` rather than a tuple. */
+export interface Point3 {
+  x: number;
+  y: number;
+  z: number;
+}
+
 export interface Footprint {
   w: number;
   d: number;

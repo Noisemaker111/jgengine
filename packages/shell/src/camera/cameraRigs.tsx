@@ -13,14 +13,14 @@ import type {
   SideScrollCameraConfig,
 } from "@jgengine/core/game/playableGame";
 import { snapPixelPerfectPosition } from "@jgengine/core/game/pixelPerfect";
+import { clamp } from "@jgengine/core/math/scalar";
 import type { GameContext } from "@jgengine/core/runtime/gameContext";
 import { usePlayer } from "@jgengine/react/hooks";
 import { useGameContext } from "@jgengine/react/provider";
 
-import { ORBIT_CAMERA_FRAME_PRIORITY, type Vec3 } from "./orbitCameraMath";
+import { ORBIT_CAMERA_FRAME_PRIORITY } from "./orbitCameraMath";
 import {
   cinematicSample,
-  clamp,
   clampBoomToHit,
   createChaseRigState,
   lockOnPose,
@@ -58,6 +58,7 @@ export {
   createCameraBlendScratch,
   type CameraBlendScratch,
 } from "./cameraBlendMath";
+import type { Point3 } from "@jgengine/core/world/geometry";
 
 export const CAMERA_RIG_FRAME_PRIORITY = ORBIT_CAMERA_FRAME_PRIORITY;
 export const CAMERA_POST_FRAME_PRIORITY = ORBIT_CAMERA_FRAME_PRIORITY + 0.5;
@@ -94,7 +95,7 @@ function resolveFollowId(explicit: string | null | undefined, userId: string): s
 }
 
 interface FollowSample {
-  pos: Vec3;
+  pos: Point3;
   yaw: number;
 }
 
@@ -202,7 +203,7 @@ export function TopDownRig(props: RigProps) {
   const config = props.config?.topDown;
   const resolved = useMemo(() => resolveTopDown(config), [config]);
   const { camera, commit, beginTransition } = useCameraCommit(props, followId);
-  const followRef = useRef<Vec3 | null>(null);
+  const followRef = useRef<Point3 | null>(null);
   const zoomRef = useWheelZoom(
     resolved.height,
     (config?.zoom?.min ?? 0.6) * resolved.height,
@@ -217,7 +218,7 @@ export function TopDownRig(props: RigProps) {
     const desired = sample?.pos ?? { x: 0, y: 0, z: 0 };
     const prev = followRef.current ?? desired;
     const blend = 1 - Math.exp(-resolved.followSmoothing * dt);
-    const follow: Vec3 = {
+    const follow: Point3 = {
       x: prev.x + (desired.x - prev.x) * blend,
       y: prev.y + (desired.y - prev.y) * blend,
       z: prev.z + (desired.z - prev.z) * blend,
@@ -239,7 +240,7 @@ export function SideScrollRig(props: RigProps) {
   const config: SideScrollCameraConfig | undefined = props.config?.sideScroll;
   const resolved = useMemo(() => resolveSideScroll(config), [config]);
   const { camera, commit, beginTransition } = useCameraCommit(props, followId);
-  const followRef = useRef<Vec3 | null>(null);
+  const followRef = useRef<Point3 | null>(null);
 
   useEffect(beginTransition, []);
 
@@ -248,7 +249,7 @@ export function SideScrollRig(props: RigProps) {
     const desired = sample?.pos ?? { x: 0, y: 0, z: 0 };
     const prev = followRef.current ?? desired;
     const blend = sideScrollFollowBlend(resolved.followSmoothing, dt);
-    const follow: Vec3 = {
+    const follow: Point3 = {
       x: prev.x + (desired.x - prev.x) * blend,
       y: prev.y + (desired.y - prev.y) * blend,
       z: prev.z + (desired.z - prev.z) * blend,
@@ -307,7 +308,7 @@ export function RtsRig(props: RigProps & { panKeysEnabled?: boolean; rotateKeysE
     [wasdPanEnabled, rotateKeysEnabled],
   );
   const held = useHeldKeys(heldCodes);
-  const centerRef = useRef<Vec3>({
+  const centerRef = useRef<Point3>({
     x: config?.start?.x ?? 0,
     y: 0,
     z: config?.start?.z ?? 0,
@@ -511,7 +512,7 @@ export function LockOnRig(props: RigProps) {
     const player = sample?.pos ?? { x: 0, y: 0, z: 0 };
     const targetId = pickLockTarget(ctx, followId, config);
     const targetEntity = targetId === null ? null : ctx.scene.entity.get(targetId);
-    const target: Vec3 = targetEntity === null
+    const target: Point3 = targetEntity === null
       ? { x: player.x, y: player.y, z: player.z + 1 }
       : { x: targetEntity.position[0], y: targetEntity.position[1], z: targetEntity.position[2] };
 
@@ -553,7 +554,7 @@ export function ChaseRig(props: RigProps) {
     }
 
     const entity = followId === null ? null : ctx.scene.entity.get(followId);
-    const follow: Vec3 = entity === null ? { x: 0, y: 0, z: 0 } : { x: entity.position[0], y: entity.position[1], z: entity.position[2] };
+    const follow: Point3 = entity === null ? { x: 0, y: 0, z: 0 } : { x: entity.position[0], y: entity.position[1], z: entity.position[2] };
     if (!inputSeededRef.current && merged?.headingSource === "input" && view === "chase" && (entity !== null || props.config?.initialYaw !== undefined)) {
       props.yawRef.current = resolveChaseHeading(merged, entity?.rotationY ?? 0, undefined, props.config?.initialYaw);
       inputSeededRef.current = true;
@@ -563,7 +564,7 @@ export function ChaseRig(props: RigProps) {
     const published = v !== undefined && (v[0] !== 0 || v[1] !== 0 || v[2] !== 0);
     const lookBack = resolved.lookBackAction !== null && ctx.input.isDown(resolved.lookBackAction);
     const clampBoom = resolved.collision
-      ? (pivot: Vec3, desired: Vec3) => {
+      ? (pivot: Point3, desired: Point3) => {
           const dx = desired.x - pivot.x;
           const dy = desired.y - pivot.y;
           const dz = desired.z - pivot.z;
@@ -626,7 +627,7 @@ function observerSubject(
   ctx: GameContext,
   config: ObserverCameraConfig | undefined,
   followId: string | null,
-): { subject: Vec3; boundEntityId: string | null } {
+): { subject: Point3; boundEntityId: string | null } {
   const bind = config?.bind ?? (followId !== null ? { kind: "entity" as const, entityId: followId } : undefined);
   if (bind?.kind === "entity") {
     const entity = ctx.scene.entity.get(bind.entityId);

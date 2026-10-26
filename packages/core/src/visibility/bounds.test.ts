@@ -1,13 +1,7 @@
 import { describe, expect, test } from "bun:test";
-import type { BoundsSpec, Vec3 } from "@jgengine/core/visibility/bounds";
-import {
-  resolveBounds,
-  createRenderBounds,
-  createBoundsCache,
-  boundsIntersect,
-  aabbIntersects,
-  expandRenderBounds,
-} from "@jgengine/core/visibility/bounds";
+import type { BoundsSpec } from "@jgengine/core/visibility/bounds";
+import { resolveBounds, createRenderBounds, createBoundsCache, boundsIntersect, aabbIntersects, expandRenderBounds } from "@jgengine/core/visibility/bounds";
+import type { Vec3 } from "../world/geometry";
 
 const origin: Vec3 = [0, 0, 0];
 

@@ -1,3 +1,4 @@
+import type { Vec2 } from "../world/geometry";
 /**
  * Group destination assignment: slot a moving group into a formation around a
  * target point, then match members to slots. Shape is caller data — a
@@ -13,8 +14,6 @@
 
 import { yawForward, yawRight } from "./steering";
 
-/** A point or offset on the XZ ground plane: `[x, z]`. */
-export type Vec2 = readonly [number, number];
 
 /**
  * Produces `count` slot offsets in the group's local frame — `[right, forward]`

@@ -2,7 +2,7 @@ import type { GameContext } from "@jgengine/core/runtime/gameContext";
 import type { EntityPosition } from "@jgengine/core/scene/entityStore";
 import { selectAutoTarget, type AutoTargetPolicy } from "@jgengine/core/scene/autoTarget";
 import { advancePursuit, armPursuit, type PursuitState } from "@jgengine/core/ai/pursuit";
-import { distance } from "@jgengine/core/world/vec3";
+import { distanceBetween } from "@jgengine/core/scene/spatial";
 
 import { editorLayers } from "../../editorLayers";
 import { councilAdd, councilScale, type CouncilStat } from "../campaign";
@@ -37,7 +37,7 @@ export function chooseTarget(
   candidates: readonly TargetCandidate[],
   exclude?: ReadonlySet<string>,
 ): string | null {
-  const inRange = candidates.filter((candidate) => distance(towerPosition, candidate.position) <= range);
+  const inRange = candidates.filter((candidate) => distanceBetween(towerPosition, candidate.position) <= range);
   if (inRange.length === 0) return null;
   const byId = new Map(inRange.map((candidate) => [candidate.id, candidate]));
   return selectAutoTarget(policy, TOWER_ID, {
@@ -45,7 +45,7 @@ export function chooseTarget(
     eligible: exclude === undefined ? undefined : (id) => !exclude.has(id),
     distance: (_from, toId) => {
       const candidate = byId.get(toId);
-      return candidate === undefined ? null : distance(towerPosition, candidate.position);
+      return candidate === undefined ? null : distanceBetween(towerPosition, candidate.position);
     },
     strength: (toId) => byId.get(toId)?.health ?? 0,
     progress: (toId) => byId.get(toId)?.progress ?? 0,
@@ -128,7 +128,7 @@ function chain(volley: Volley, firstId: string, pool: readonly TargetCandidate[]
     let best: number = CHAIN.reach;
     for (const candidate of pool) {
       if (touched.has(candidate.id)) continue;
-      const gap = distance(from, candidate.position);
+      const gap = distanceBetween(from, candidate.position);
       if (gap <= best) {
         best = gap;
         next = candidate;
@@ -200,7 +200,7 @@ export function tickTowers(ctx: GameContext, dt: number): void {
     if (stats.aura > 0) {
       // A glacier heart pulses: every raider in reach is struck and chilled at once.
       for (const candidate of pool) {
-        if (distance(entity.position, candidate.position) > range) continue;
+        if (distanceBetween(entity.position, candidate.position) > range) continue;
         strike(ctx, tower.id, candidate.id, { type: def.damageType, base: volley.damage });
         afflict(volley, candidate.id);
       }

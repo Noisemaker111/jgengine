@@ -1,4 +1,5 @@
-import type { Vec3, RenderBounds } from "./bounds";
+import type { RenderBounds } from "./bounds";
+import type { Vec3 } from "../world/geometry";
 
 /** 3D perspective camera (the default game camera). */
 export interface PerspectiveView {

@@ -3,8 +3,8 @@ import { createVisibilitySystem, type Renderable } from "@jgengine/core/visibili
 import type { CameraView } from "@jgengine/core/visibility/frustum";
 import type { CameraVisibilityContext } from "@jgengine/core/visibility/camera";
 import type { VisibilityConfig } from "@jgengine/core/visibility/config";
-import type { Vec3 } from "@jgengine/core/visibility/bounds";
 import { renderBoundsOf, renderSphere } from "./renderBounds";
+import type { Vec3 } from "@jgengine/core/world/geometry";
 
 type MutableRenderable = { -readonly [Key in keyof Renderable]: Renderable[Key] };
 

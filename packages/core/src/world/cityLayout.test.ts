@@ -2,7 +2,7 @@ import { describe, expect, test } from "bun:test";
 
 import { devtools } from "../devtools/devtools";
 import { deriveBuildingLots } from "./buildingLots";
-import { rectClearsPolyline, rectsSeparated, type Vec2 } from "./cityGeometry";
+import { rectClearsPolyline, rectsSeparated } from "./cityGeometry";
 import {
   US_CITY_LAYOUT,
   cityLaneOffsets,
@@ -15,6 +15,7 @@ import {
   tuneCityLayout,
   type CityLotRoad,
 } from "./cityLayout";
+import type { Vec2 } from "./geometry";
 
 const GRID: CityLotRoad[] = [
   { path: [[0, -120], [0, 120]], roadClass: "avenue" },

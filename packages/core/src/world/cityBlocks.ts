@@ -10,20 +10,9 @@
  *
  * @capability city-district road-derived block polygons, parcel subdivision, buildable footprints
  */
-import {
-  clipHalfPlane,
-  dedupeRing,
-  distanceToRing,
-  ensureCcw,
-  extractSimpleLoop,
-  insetRing,
-  pointInPolygon,
-  polygonArea,
-  polygonMeanWidth,
-  polygonSignedArea,
-  type Vec2,
-} from "./cityGeometry";
+import { clipHalfPlane, dedupeRing, distanceToRing, ensureCcw, extractSimpleLoop, insetRing, pointInPolygon, polygonArea, polygonMeanWidth, polygonSignedArea } from "./cityGeometry";
 import { isProductionEnvironment } from "../devtools/saveEndpoint";
+import type { Vec2 } from "./geometry";
 
 /** How a block (a face of the road graph) is used. */
 export type CityBlockKind = "buildable" | "park" | "plaza" | "field" | "buffer";

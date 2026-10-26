@@ -1,3 +1,4 @@
+import type { Vec2 } from "../world/geometry";
 /**
  * Local collision avoidance: nudge a set of circular agents apart so they stop
  * overlapping, kept deliberately separate from route planning so a game can
@@ -10,7 +11,6 @@
  * (inverse mass; `0` = immovable anchor/obstacle) are honored.
  */
 
-import type { Vec2 } from "./formation";
 
 /** A circular agent that avoidance may push on the XZ plane. */
 export interface AvoidanceAgent {

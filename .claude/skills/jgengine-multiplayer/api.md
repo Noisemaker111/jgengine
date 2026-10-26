@@ -195,7 +195,6 @@
 - `ReplicationPolicy` (interface): interface ReplicationPolicy — Host-side interest/privacy policy — how the authoritative world projects to each viewer over the wire. Unset (the default) means every client receives the whole world, exactly as before. Enabling a field changes only what each client *sees*, never how the host simulates: the game plays identically. The core replication modules read this to attach a {@link SnapshotModule.project} without the engine growing a per-feature branch.
 - `SessionListing` (interface): interface SessionListing { serverId: string; gameId: string; status: SessionStatus; visibility: SessionVisibility; memberCount: number; slotsPerServer: number; label?: string; mode?: string; joinCode?: string; tags?: readonly string[]; updatedAt: number } — ⚠ undocumented · used by `useWorldBrowser` (@jgengine/react): Polls a host-supplied session fetcher (e.g.
 - `SessionVisibility` (type): type SessionVisibility = "public" | "private" — ⚠ undocumented · used by `isAutoJoinCandidate` (@jgengine/core/runtime/hostPolicy): Auto-match candidate when no `serverId` is supplied: already a member, or a public room with free capacity.
-- `Vec3` (interface): interface Vec3 { x: number; y: number; z: number } — ⚠ undocumented · used by `coverPoints` (@jgengine/core/ai/tacticalQueries): Returns boundary locations that are hidden from a threat.
 - `VoiceParticipant` (interface): interface VoiceParticipant { userId: string; streamId?: string } — ⚠ undocumented
 - `VoiceRoute` (interface): interface VoiceRoute { fromUserId: string; channelId: string; gain: number } — ⚠ undocumented
 - `VoiceTransport` (interface): interface VoiceTransport — Signaling seam for voice: who is in a channel and which media stream descriptor they published. The media plane (WebRTC, SFU, or anything else that moves audio bytes) stays behind this seam, host-supplied — the engine never touches it. subscribers delivers the channel roster on every change, starting with the current roster.
@@ -247,12 +246,11 @@
 
 ## @jgengine/core/multiplayer/lagCompensation
 
-- `HitscanHit` (interface): interface HitscanHit { entityId: string; distance: number; point: Vec3 } — ⚠ undocumented
-- `HitscanRay` (interface): interface HitscanRay { origin: Vec3; direction: Vec3; maxDistance?: number } — ⚠ undocumented
+- `HitscanHit` (interface): interface HitscanHit { entityId: string; distance: number; point: Point3 } — ⚠ undocumented
+- `HitscanRay` (interface): interface HitscanRay { origin: Point3; direction: Point3; maxDistance?: number } — ⚠ undocumented
 - `HitscanTarget` (interface): interface HitscanTarget { entityId: string; radius: number } — ⚠ undocumented
 - `PositionHistoryConfig` (interface): interface PositionHistoryConfig { historyMs: number; maxSamples?: number } — ⚠ undocumented
-- `PositionSample` (interface): interface PositionSample extends Vec3 { t: number } — ⚠ undocumented
-- `Vec3` (interface): interface Vec3 { x: number; y: number; z: number } — ⚠ undocumented · used by `coverPoints` (@jgengine/core/ai/tacticalQueries): Returns boundary locations that are hidden from a threat.
+- `PositionSample` (interface): interface PositionSample extends Point3 { t: number } — ⚠ undocumented
 
 ## @jgengine/core/multiplayer/matchmaking
 

@@ -1,7 +1,7 @@
 import type { EnclosureSample, ReverbPreset } from "@jgengine/core/audio/reverb";
 import type { SceneRaycastHit, SceneRaycastInput } from "@jgengine/core/scene/sceneRaycast";
+import type { Point3 } from "@jgengine/core/world/geometry";
 
-import type { Vec3 } from "./audioEngine";
 
 /** Tail length (seconds), how fast it dies (higher = quicker), wet level, and tone (lowpass Hz). */
 const PRESETS: Record<Exclude<ReverbPreset, "none">, { seconds: number; decay: number; wet: number; tone: number }> = {
@@ -104,7 +104,7 @@ const WALL_DIRECTIONS: readonly (readonly [number, number, number])[] = [
  * terrain), to tell a room from open ground. Seven scene queries; the caller decides how often.
  * @internal
  */
-export function sampleEnclosure(source: EnclosureRaycastSource, at: Vec3, reach = 14): EnclosureSample {
+export function sampleEnclosure(source: EnclosureRaycastSource, at: Point3, reach = 14): EnclosureSample {
   const cast = (direction: readonly [number, number, number], maxDistance: number): number | null => {
     const hit = source.raycast({
       origin: [at.x, at.y, at.z],

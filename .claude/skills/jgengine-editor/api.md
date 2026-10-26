@@ -675,11 +675,10 @@
 - `Bounds3` (interface): interface Bounds3 — Axis-aligned bounds as produced by `editorDocumentBounds`.
 - `FrameDistanceOptions` (interface): interface FrameDistanceOptions — Options for {@link frameDistanceForBounds}.
 - `OrbitFrameInput` (interface): interface OrbitFrameInput — Inputs to {@link orbitCameraPosition}.
-- `Vec3` (interface): interface Vec3 — A world-space point the orbit camera looks at.
-- `boundsCenter` (function): function boundsCenter(bounds: Bounds3): Vec3 — Center point of axis-aligned bounds.
+- `boundsCenter` (function): function boundsCenter(bounds: Bounds3): Point3 — Center point of axis-aligned bounds.
 - `clampPitchDeg` (function): function clampPitchDeg(pitchDeg: number): number — Clamp a pitch to the horizon..straight-down range the orbit rig can express.
 - `frameDistanceForBounds` (function): function frameDistanceForBounds(bounds: Bounds3, options: FrameDistanceOptions = {}): number — Distance at which the camera fits the whole `bounds` region into its vertical FOV — the value `camera_frame` uses when a caller asks for an aerial but does not pin an explicit distance, so a district frames itself instead of burying the camera. Uses the region's XZ half-diagonal plus its vertical extent as the radius to cover.
-- `orbitCameraPosition` (function): function orbitCameraPosition(input: OrbitFrameInput): Vec3 — Camera position for an orbit rig framing `target` at the given distance, pitch, and yaw. Pitch is measured up from the horizon (90° = directly overhead); `height`, when provided, replaces the pitch-derived vertical offset. Pure: same inputs always yield the same position.
+- `orbitCameraPosition` (function): function orbitCameraPosition(input: OrbitFrameInput): Point3 — Camera position for an orbit rig framing `target` at the given distance, pitch, and yaw. Pitch is measured up from the horizon (90° = directly overhead); `height`, when provided, replaces the pitch-derived vertical offset. Pure: same inputs always yield the same position.
 
 ## @jgengine/editor/chromeFields
 

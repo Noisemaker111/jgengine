@@ -1,4 +1,4 @@
-import { type Aabb, type Vec2, pointInAabb } from "./geometry";
+import { type Aabb, type Vec2, type Vec3, pointInAabb } from "./geometry";
 import { pointInPolygon, polygonBounds } from "./scatterRegion";
 
 /**
@@ -12,9 +12,6 @@ import { pointInPolygon, polygonBounds } from "./scatterRegion";
  * separation); and {@link samplePoint}/{@link sampleBatch} own *how hard we try* (attempt budget and
  * fallback policy). Nothing silently accepts an invalid point — exhaustion is reported, not hidden.
  */
-
-/** A 3D point `[x, y, z]` — the volume/surface counterpart to {@link Vec2}. */
-export type Point3 = readonly [number, number, number];
 
 /** A sampled point: 2D `[x, z]` or 3D `[x, y, z]`. Every point in one run shares its dimensionality. */
 export type SamplePoint = readonly number[];
@@ -512,8 +509,8 @@ export function customRegion<P extends SamplePoint>(spec: {
  *
  * @capability spatial-region-box sample uniformly within an axis-aligned 3D box
  */
-export function boxRegion(min: Point3, max: Point3): SampleRegion<Point3> {
-  const size: Point3 = [max[0] - min[0], max[1] - min[1], max[2] - min[2]];
+export function boxRegion(min: Vec3, max: Vec3): SampleRegion<Vec3> {
+  const size: Vec3 = [max[0] - min[0], max[1] - min[1], max[2] - min[2]];
   return {
     dimensions: 3,
     isEmpty: !(size[0] > 0) || !(size[1] > 0) || !(size[2] > 0),
@@ -530,7 +527,7 @@ export function boxRegion(min: Point3, max: Point3): SampleRegion<Point3> {
   };
 }
 
-function sphereDirection(rng: () => number): Point3 {
+function sphereDirection(rng: () => number): Vec3 {
   const cosTheta = 1 - 2 * rng();
   const sinTheta = Math.sqrt(Math.max(0, 1 - cosTheta * cosTheta));
   const phi = rng() * TWO_PI;
@@ -549,7 +546,7 @@ function volumeRadius(rng: () => number, inner: number, outer: number, distribut
  *
  * @capability spatial-region-sphere sample within a filled 3D ball, volume- or radius-uniform
  */
-export function sphereRegion(center: Point3, radius: number, options: { distribution?: VolumeDistribution } = {}): SampleRegion<Point3> {
+export function sphereRegion(center: Vec3, radius: number, options: { distribution?: VolumeDistribution } = {}): SampleRegion<Vec3> {
   const distribution = options.distribution ?? "volume";
   const r = Math.max(0, radius);
   return {
@@ -573,11 +570,11 @@ export function sphereRegion(center: Point3, radius: number, options: { distribu
  * @capability spatial-region-shell sample within a 3D spherical shell, volume- or radius-uniform
  */
 export function shellRegion(
-  center: Point3,
+  center: Vec3,
   innerRadius: number,
   outerRadius: number,
   options: { distribution?: VolumeDistribution } = {},
-): SampleRegion<Point3> {
+): SampleRegion<Vec3> {
   const distribution = options.distribution ?? "volume";
   const inner = Math.max(0, Math.min(innerRadius, outerRadius));
   const outer = Math.max(innerRadius, outerRadius, 0);
