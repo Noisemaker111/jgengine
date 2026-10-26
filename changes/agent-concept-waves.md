@@ -1,7 +1,0 @@
-### Migrate
-
-- Waves and spawning live in `waves/`: `@jgengine/core/ai/waveRunner`, `ai/spawnDirector`, `ai/spawnPoint`, `ai/director/encounter`, `ai/director/waveCountdown`, `ai/director/wavePreview`, `ai/director/pressure` and `combat/encounterSequence` → `@jgengine/core/waves/<same name>`. The `waves` folder reads with the combat skill, so `createWaveRunner` and the spawn director now come from the `@jgengine/core/combat` barrel instead of `@jgengine/core/world`.
-- The phase sequencer's types are named for it: `EncounterConfig` → `EncounterSequenceConfig` and `EncounterState` → `EncounterSequenceState` (`waves/encounterSequence`). `EncounterConfig` and `EncounterState` are only the wave encounter's (`waves/encounter`).
-- Quests live beside missions: `@jgengine/core/game/quest` → `@jgengine/core/mission/quest`, `game/questCatalog` → `mission/questCatalog`.
-- `world/connectors` is removed (no adopters); build-piece snapping is `world/buildSockets`. Its cursor snap is `createBuildSocketCatalog(...).snapNearest(placed, type, cursor, { snapDistance })`, which replaces `snapToNearest`.
-- New `placePiece(ctx, world, piece, at)` and `defineBuildKeys(ctx, pieces, use)` (`@jgengine/core/worldModel/buildTool`): place a build piece with on-screen refusals, and bind `build1`..`buildN`. The builder, colony, defense and survival templates (and Briarcrown, Red Frontier, Orbit Watch, Hold the Line, Fernwild) build through them instead of four hand-written copies.
