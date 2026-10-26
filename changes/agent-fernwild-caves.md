@@ -4,6 +4,8 @@ Engine seam: packages/core/src/cave/ (new: a cave's layout from a centreline pat
 
 Prevention: cave layout tests (a point in front of the mouth is outside, depth grows down the tunnel, the rock closes over the tunnel, the floor covers tunnel and chamber and nothing outside), Fernwild's cave tests walk a cave through the real collision and take the artifact, and check that its three dwellers wake in the chamber as the survivor approaches and keep to the cave, the camera tests cover turnTo on the director and the orbit rig, and the fernwild-cave flow drives it in the browser.
 
+Also: the ambience occlusion audio test now puts the real `fetch` back after each test instead of deleting it, which had broken the editor's agent endpoint test whenever the two ran in the same batch.
+
 ### Added
 
 - `caveLayout`, `caveMesh` and `<Cave>` in `@jgengine/core/cave`: describe a cave by its path, width, height, chamber and cover and get its collision, inside/depth queries, rock and floor.

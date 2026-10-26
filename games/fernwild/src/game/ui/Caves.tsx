@@ -5,7 +5,7 @@ import { Cave } from "@jgengine/core/cave/Cave.draw";
 import type { GameContext } from "@jgengine/core/runtime/gameContext";
 import type { WorldOverlayProps } from "@jgengine/core/game/playableGame";
 
-import { artifactHere, cavesOf, cavesView, type IslandCave } from "../caves";
+import { artifactHere, cavesOf, type IslandCave } from "../caves";
 
 /** Hard caves are lit a hotter colour, the rest by pale crystal. */
 const GLOW = { soft: "#7fd6ff", hard: "#ff7a3c" };
@@ -13,8 +13,8 @@ const GLOW = { soft: "#7fd6ff", hard: "#ff7a3c" };
 /** The Island's caves: the rock, glowing crystals down the tunnel and the artifact on its pedestal in each chamber. */
 export function Caves({ ctx }: WorldOverlayProps): ReactNode {
   const ground = ctx.world.groundHeightAt;
-  const caves = cavesView(ctx).caves;
-  const cavesOfView = cavesOf(ctx);
+  // The caves are laid out once per world; only their artifacts come and go, and those draw themselves.
+  const caves = cavesOf(ctx);
   const lights = useMemo(
     () =>
       caves.map((cave) => ({
@@ -23,9 +23,7 @@ export function Caves({ ctx }: WorldOverlayProps): ReactNode {
         pedestal: [cave.layout.chamber.center[0], ground(cave.layout.chamber.center[0], cave.layout.chamber.center[1]), cave.layout.chamber.center[1]] as const,
         glow: cave.hard ? GLOW.hard : GLOW.soft,
       })),
-    // The layouts never change after the world is made; only the artifacts come and go.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    [caves.length, ground],
+    [caves, ground],
   );
   return (
     <>
@@ -46,7 +44,7 @@ export function Caves({ ctx }: WorldOverlayProps): ReactNode {
                 <cylinderGeometry args={[0.7, 0.9, 1, 8]} />
                 <meshStandardMaterial color="#4a4038" roughness={0.9} flatShading />
               </mesh>
-              <Artifact ctx={ctx} cave={cavesOfView[index]!} />
+              <Artifact ctx={ctx} cave={cave} />
             </group>
           </group>
         );
