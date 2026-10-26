@@ -6,7 +6,7 @@ import { environment, grass, terrain } from "@jgengine/core/world/features";
 
 import { EnvironmentScene } from "@jgengine/core/environment/EnvironmentScene.draw";
 import type { PlayableGame } from "@jgengine/shell/registry";
-import { WorldFloatingText } from "@jgengine/shell/vfx/WorldFloatingText";
+import { WorldFloatingText } from "@jgengine/core/hud/floatingTextWorld.draw";
 
 const SCOUT = "scout";
 

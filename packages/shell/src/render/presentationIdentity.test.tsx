@@ -13,7 +13,7 @@ import type { SettingsStore } from "@jgengine/core/settings/settingsModel";
 
 import { useGraphicsSettings, type AppliedGraphicsSettings } from "@jgengine/core/settings/appliedSettings.draw";
 import { createTerrainDetailMaterial } from "@jgengine/core/terrain/terrainDetailMaterial.draw";
-import { PostProcessing } from "../postfx/PostProcessing";
+import { PostProcessing } from "@jgengine/core/postfx/PostProcessing.draw";
 import { usePresentationLook } from "./presentationLook";
 import { useStableTextureSet } from "./stableTextureSet";
 import { useDisposable } from "./useDisposable";

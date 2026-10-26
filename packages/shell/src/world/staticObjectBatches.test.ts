@@ -10,7 +10,7 @@ import { createPointerService, POINTER_OBJECT_INSTANCES_KEY } from "@jgengine/co
 import { measureLocalBounds } from "../render/measureBounds";
 import { measureLocalCollisionTriangles } from "../render/measureCollisionMesh";
 import { resolveObjectModel, type ObjectModelCacheEntry } from "../render/resolveModel";
-import { buildCullingDriver } from "../visibility/cullingDriver";
+import { buildCullingDriver } from "@jgengine/core/visibility/cullingDriver";
 import { canBatchStaticObject, canInstanceStaticScene, countStaticBatchDraws, groupStaticObjects, STATIC_BATCH_CELL, STATIC_BATCH_MESH_KEY, STATIC_BATCH_MIN, incompatibleStaticObjectIds, syncStaticObjectSource, type StaticObjectCandidate } from "./staticObjectBatches";
 
 function candidate(index: number, patch: Partial<StaticObjectCandidate> = {}): StaticObjectCandidate {

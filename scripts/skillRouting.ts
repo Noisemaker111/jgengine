@@ -65,6 +65,7 @@ export const CORE_DOMAIN_SKILLS: Record<string, string> = {
   notifications: "jgengine-gameplay",
   orders: "jgengine-world",
   physics: "jgengine-world",
+  postfx: "jgengine-world",
   procedural: "jgengine-world",
   progression: "jgengine-gameplay",
   puzzle: "jgengine-gameplay",

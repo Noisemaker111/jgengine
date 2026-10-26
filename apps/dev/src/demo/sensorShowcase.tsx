@@ -12,7 +12,7 @@ import { useSessionRecorder } from "@jgengine/core/replay/useSessionRecorder.dra
 import type { PlayableGame } from "@jgengine/shell/registry";
 import { FrustumSensorReadout } from "@jgengine/core/hud/FrustumSensorHud.draw";
 import { SensorReadoutMeter, useHiddenStateProbe } from "@jgengine/core/hud/HiddenStateProbeHud.view";
-import { RevealHighlights, RevealScreenTint } from "@jgengine/shell/vision/RevealVision";
+import { RevealHighlights, RevealScreenTint } from "@jgengine/core/sensor/RevealVision.draw";
 
 const HERO = "hero";
 const CULPRIT = "culprit";

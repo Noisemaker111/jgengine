@@ -3472,8 +3472,7 @@
     {
       "id": "floating-text",
       "packages": [
-        "@jgengine/core",
-        "@jgengine/shell"
+        "@jgengine/core"
       ],
       "module": "@jgengine/core/hud/floatingText",
       "domain": "hud",
@@ -6915,9 +6914,9 @@
     {
       "id": "particle-field",
       "packages": [
-        "@jgengine/shell"
+        "@jgengine/core"
       ],
-      "module": "@jgengine/shell/vfx/ParticleField",
+      "module": "@jgengine/core/vfx/ParticleField.draw",
       "domain": "vfx",
       "gameFacing": false,
       "probe": null,
@@ -7124,12 +7123,23 @@
       "intent": "derive build-piece snap sockets from a model's named attach points"
     },
     {
+      "id": "ping-classify",
+      "packages": [
+        "@jgengine/core"
+      ],
+      "module": "@jgengine/core/map/ping",
+      "domain": "map",
+      "gameFacing": false,
+      "probe": null,
+      "intent": "sort a pointer hit into a ping category (enemy, loot, location, danger) from roles and object categories"
+    },
+    {
       "id": "ping-wheel",
       "packages": [
         "@jgengine/core"
       ],
-      "module": "@jgengine/core/game/ping",
-      "domain": "game",
+      "module": "@jgengine/core/map/ping",
+      "domain": "map",
       "gameFacing": false,
       "probe": null,
       "intent": "contextual ping/marker communication between teammates"
@@ -8337,9 +8347,9 @@
     {
       "id": "screen-effects-overlay",
       "packages": [
-        "@jgengine/shell"
+        "@jgengine/core"
       ],
-      "module": "@jgengine/shell/postfx/ScreenEffectsOverlay",
+      "module": "@jgengine/core/postfx/ScreenEffectsOverlay.draw",
       "domain": "postfx",
       "gameFacing": false,
       "probe": null,
@@ -11158,10 +11168,10 @@
     {
       "id": "world-pings",
       "packages": [
-        "@jgengine/shell"
+        "@jgengine/core"
       ],
-      "module": "@jgengine/shell/world/WorldPings",
-      "domain": "world",
+      "module": "@jgengine/core/map/pingBeacons.draw",
+      "domain": "map",
       "gameFacing": false,
       "probe": null,
       "intent": "in-scene ping markers — a bobbing downward arrowhead, ground ring, and billboarded callout per marker, colored by kind and fading over the marker's lifetime"

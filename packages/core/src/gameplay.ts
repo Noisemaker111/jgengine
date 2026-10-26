@@ -238,13 +238,6 @@ export {
   type ParamSnapshot,
 } from "./game/paramLayers";
 export {
-  DEFAULT_PING_CATEGORIES,
-  PING_FEED_ACTION,
-  createPingSystem,
-  type PingCategory,
-  type PingSystem,
-} from "./game/ping";
-export {
   CAMERA_FRUSTUM_DEFAULTS,
   worldHealthBarAllowsRole,
   type BackdropConfig,
@@ -509,6 +502,13 @@ export {
 } from "./loot/lootPipeline";
 export { createLootRegistry, lootTable, type Drop, type LootTableDef } from "./loot/lootTable";
 export { lootWeaponDefinition, type LootWeaponProjection, type LootWeaponStatMap } from "./loot/lootWeapon";
+export {
+  DEFAULT_PING_CATEGORIES,
+  PING_FEED_ACTION,
+  createPingSystem,
+  type PingCategory,
+  type PingSystem,
+} from "./map/ping";
 export {
   chaseMission,
   defendMission,

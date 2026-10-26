@@ -1705,6 +1705,31 @@
 - `TrackAxis` (interface): interface TrackAxis — A world-space segment defining a linear "track" minimap — points are projected onto the `from`→`to` axis.
 - `trackFraction` (function): function trackFraction(point: WorldXZ | readonly [number, number, number], axis: TrackAxis): number — Project a world point onto the `from`→`to` segment of `axis` and return the clamped 0..1 fraction of how far along the track it lies (0 at `from`, 1 at `to`). The linear analogue of `projectToMinimap` — feeds a horizontal corridor/route progress rail. Accepts XZ (`[x, z]`) or XYZ (`[x, y, z]`) points (index 0 = x, index 2 when length 3 else index 1 = z). A zero-length axis returns 0.
 
+## @jgengine/core/map/ping
+
+- `DEFAULT_PING_CATEGORIES` (const): const DEFAULT_PING_CATEGORIES: Record<PingCategory, PingCategoryDef> — Content-agnostic default ping wheel: enemy / loot / location / danger.
+- `PING_FEED_ACTION` (const): const PING_FEED_ACTION: "party.ping" — Feed action pings ride to the rest of the party.
+- `PingCategory` (type): type PingCategory = string — A ping category id, such as `enemy`, `loot`, `location` or `danger`.
+- `PingCategoryDef` (interface): interface PingCategoryDef — A ping category: the marker kind it drops, its label and its spoken callout.
+- `PingClassifyDeps` (interface): interface PingClassifyDeps — Lookups `classifyPing` uses: an entity's role and an object's ping category.
+- `PingClassifyOptions` (interface): interface PingClassifyOptions — Which roles count as hostile and which category each kind of hit maps to.
+- `PingFeedSink` (interface): interface PingFeedSink — Where pings are pushed for other players, such as the party feed.
+- `PingParty` (interface): interface PingParty — Who shares a player's pings: their party members.
+- `PingPayload` (interface): interface PingPayload — A ping as broadcast: id, sender, category, position, the pinged entity and recipients.
+- `PingSystem` (interface): interface PingSystem — Classify, build and broadcast pings as map markers shared with the party.
+- `PingSystemDeps` (interface): interface PingSystemDeps — What a {@link PingSystem} needs: the marker set, a feed, the party, categories, clock and classify options.
+- `classifyPing` (function): function classifyPing(hit: PointerHit, deps: PingClassifyDeps = {}, options: PingClassifyOptions = {}): PingCategory — Classify what a pointer/aim ray hit into a ping category. Entity hits resolve by catalog role (hostile → enemy, else location); object hits by an optional catalog category tag; open ground is a location ping.
+- `createPingSystem` (function): function createPingSystem(deps: PingSystemDeps): PingSystem — Contextual ping/marker communication between teammates, classified by what was pinged.
+
+## @jgengine/core/map/pingBeacons.draw
+
+- `WorldPings` (function): function WorldPings({ markers, kindStyles, pingsOnly = true, height = 2.4, showCallout = true, renderCallout, }: WorldPingsProps): ReactNode — World-space pings — the in-scene side of a ping/marker: a bobbing downward arrowhead pointing at the spot, a ground ring, and a billboarded callout, colored by marker kind and fading in/out over the marker's lifetime. Reads a `MarkerSet` (typically the one a `createPingSystem` writes to), a marker source, or a static array; mount through `PlayableGame.WorldOverlay`.
+- `WorldPingsProps` (interface): interface WorldPingsProps — Props for {@link WorldPings}.
+
+## @jgengine/core/map/pingPulse
+
+- `PingOpacityInput` (interface): interface PingOpacityInput — Inputs to {@link pingOpacity}.
+
 ## @jgengine/core/map/sharedAnnotations
 
 - `ANNOTATION_FEED_ACTION` (const): const ANNOTATION_FEED_ACTION: "map.annotation" — Feed action shared drawings ride by default (pair with the party feed, like pings).
@@ -2474,6 +2499,27 @@
 - `createPlacementController` (function): function createPlacementController(config: PlacementControllerConfig): PlacementController — Headless placement ghost: hover → valid/invalid preview, rotate, grid/free/surface snap, commit. Pair with `PlacementGhost` (`./PlacementGhost.draw`) and {@link placeAssetFromCommit}.
 - `quarterTurnsToRotationY` (function): function quarterTurnsToRotationY(quarterTurns: number): number — Maps 0–3 quarter turns onto radians for ghost/commit rotation.
 
+## @jgengine/core/postfx/PostProcessing.draw
+
+- `PostProcessing` (function): function PostProcessing({ config, quality = "high", stages }: { config: PostProcessingConfig; quality?: GraphicsQuality; stages?: { ao: boolean; bloom: boolean; dof: boolean; smaa: boolean } }): null — Mounts an `EffectComposer` inside the shell Canvas and takes over rendering (priority-1 `useFrame`, which disables R3F auto-render) to run the configured post chain: RenderPass → GTAO → UnrealBloom → SMAA → exposure meter → OutputPass → Stylize → Grade. Rendered only when `PlayableGame.postProcessing` is set, so games without it draw unchanged.
+
+## @jgengine/core/postfx/ScreenEffectsOverlay.draw
+
+- `ScreenEffectsOverlay` (function): function ScreenEffectsOverlay({ controller, blendMode = "normal", zIndex = 40, animate = true, }: ScreenEffectsOverlayProps): ReactNode — A DOM overlay that renders a {@link ScreenEffectsController} as full-screen color-grade layers over the game canvas — damage vignettes, heal flashes, a sustained low-health pulse — through the shell's postfx overlay layer, so a game gets screen feedback without hand-rolling shader or overlay timing. It subscribes to the model, drives `advance()` on an animation frame (unless the game ticks it), and paints one absolutely-positioned, pointer-transparent layer per active effect at its eased opacity. Presentation only: all timing and state live in the core model, and `kind` is never interpreted here.
+- `ScreenEffectsOverlayProps` (interface): interface ScreenEffectsOverlayProps — Reskin tokens for {@link ScreenEffectsOverlay}.
+
+## @jgengine/core/postfx/atmospherePass.draw
+
+- `MAX_HAZE_LAMPS` (const): const MAX_HAZE_LAMPS: 8 — Point and spot lights the haze glows around at once, nearest the camera first.
+
+## @jgengine/core/postfx/gradeShader.draw
+
+- `createGradePass` (function): function createGradePass(config: GradeConfig = {}): ShaderPass — Build the display-space colour-grade pass and load its optional LUT. Dispose the pass to release its LUT; advance `uniforms.uTime.value` each frame to animate grain.
+
+## @jgengine/core/postfx/postfxOverlay.draw
+
+- `POSTFX_OVERLAY_USERDATA` (const): const POSTFX_OVERLAY_USERDATA: { readonly jgPostfxOverlay: true } — Spread onto a group's `userData` to mark its subtree as a screen/world overlay effect — additive glows, telegraphs, tracers, debug gizmos — that post-processing scene prepasses (GTAO's normal/depth render, DOF's depth render) must skip. Those prepasses render the scene with `overrideMaterial`, which turns transparent overlay quads into opaque stamps in the AO/DOF buffers (visible as black squares over hit sparks). The shell marks its own combat VFX and collision-debug mounts; games mark custom overlay effects the same way.
+
 ## @jgengine/core/procedural
 
 - `Moodle` (interface): interface Moodle — One survival moodle (status icon) — severity, source, and label for HUD chips.
@@ -3087,6 +3133,15 @@
 - `createVehicleSeats` (function): function createVehicleSeats(controller?: MountController): VehicleSeats — Builds a {@link VehicleSeats}, optionally over an existing `MountController` to share its occupancy.
 - `leaveVehicle` (function): function leaveVehicle(ctx: GameContext, seats: VehicleSeats, riderId: string, options: LeaveVehicleOptions = {}): ExitVehicleResult | { ok: false; reason: "unknown_rider" | "unknown_vehicle" } — Apply dismount placement, restore rider movement/visibility and the configured camera rig.
 
+## @jgengine/core/sensor/RevealVision.draw
+
+- `RevealHighlights` (function): function RevealHighlights(props: RevealHighlightsProps): React.JSX.Element | null — Screen-space reveal effect (#115) — highlights tagged entities through occluders (Dark Sight / detective-vision / wallhack style). Renders with `depthTest: false` so the highlight draws over any wall standing between the origin and the revealed entity, rather than the usual depth-sorted scene. Highlights track the origin and their targets every frame while enabled, so a disabled mode costs no renders.
+- `RevealHighlightsProps` (interface): interface RevealHighlightsProps extends RevealVisionOptions — Props for `RevealHighlights`: reveal options, on/off and highlight colour.
+- `RevealScreenTint` (function): function RevealScreenTint({ enabled, color = "rgba(56, 189, 248, 0.16)", className }: RevealScreenTintProps): React.JSX.Element | null — Full-screen desaturating tint that reads as "vision mode is on" (Dark Sight / thermal / detective vision).
+- `RevealScreenTintProps` (interface): interface RevealScreenTintProps — Props for `RevealScreenTint`: on/off, tint colour and class name.
+- `RevealVisionOptions` (interface): interface RevealVisionOptions — Which entities reveal vision finds: origin, radius, wanted tags and how to read an entity's tags.
+- `useRevealHits` (function): function useRevealHits(options: RevealVisionOptions): readonly RevealHit[] — Occlusion-ignoring tagged-entity radius query (#115), bound to the live scene and refreshed on render.
+
 ## @jgengine/core/sensor/concealment
 
 - `ColorHex` (type): type ColorHex = string — ⚠ undocumented
@@ -3102,12 +3157,16 @@
 - `FreezeSubject` (interface): interface FreezeSubject { id: string; groundSpeed: number } — ⚠ undocumented
 - `FreezeViolation` (interface): interface FreezeViolation { id: string; speed: number; movedSeconds: number } — ⚠ undocumented
 
+## @jgengine/core/sensor/frustumSampleEqual
+
+- `frustumSampleDisplayEqual` (function): function frustumSampleDisplayEqual(a: FrustumSample | null, b: FrustumSample | null): boolean — True when two frustum samples would draw the same, so a HUD can skip a re-render.
+
 ## @jgengine/core/sensor/frustumSensor
 
 - `FramingConfig` (interface): interface FramingConfig { idealDistance?: number; centerWeight?: number; sizeWeight?: number } — ⚠ undocumented
 - `FrustumCamera` (interface): interface FrustumCamera { position: EntityPosition; lookAt: EntityPosition; fovDeg?: number; aspect?: number; near?: number; far?: number } — ⚠ undocumented
 - `FrustumProjection` (interface): interface FrustumProjection { inView: boolean; distance: number; screenX: number; screenY: number } — ⚠ undocumented
-- `FrustumSample` (interface): interface FrustumSample { id: string; inView: boolean; distance: number; screenX: number; screenY: number; framing: number; dwellSeconds: number } — ⚠ undocumented
+- `FrustumSample` (interface): interface FrustumSample { id: string; inView: boolean; distance: number; screenX: number; screenY: number; framing: number; dwellSeconds: number } — ⚠ undocumented · used by `frustumSampleDisplayEqual` (@jgengine/core/sensor/frustumSampleEqual): True when two frustum samples would draw the same, so a HUD can skip a re-render.
 - `FrustumSensor` (interface): interface FrustumSensor { tick(camera: FrustumCamera, targets: readonly FrustumTarget[], dt: number): FrustumSample[]; reset(id?: string): void } — ⚠ undocumented
 - `FrustumTarget` (interface): interface FrustumTarget { id: string; position: EntityPosition; radius?: number } — ⚠ undocumented
 
@@ -3134,7 +3193,7 @@
 
 ## @jgengine/core/sensor/revealQuery
 
-- `RevealHit` (interface): interface RevealHit { instanceId: string; distance: number; tags: readonly string[] } — ⚠ undocumented · used by `useRevealHits` (@jgengine/shell/vision/RevealVision): Occlusion-ignoring tagged-entity radius query (#115), bound to the live scene and refreshed on render.
+- `RevealHit` (interface): interface RevealHit { instanceId: string; distance: number; tags: readonly string[] } — ⚠ undocumented · used by `useRevealHits` (@jgengine/core/sensor/RevealVision.draw): Occlusion-ignoring tagged-entity radius query (#115), bound to the live scene and refreshed on render.
 - `RevealQuery` (interface): interface RevealQuery { inRadius(center: EntityPosition | string, radius: number, tags: readonly string[]): RevealHit[] } — ⚠ undocumented
 - `RevealQueryOptions` (interface): interface RevealQueryOptions { resolvePosition: (instanceId: string) => EntityPosition | undefined; resolveTags: (instanceId: string) => readonly string[]; candidates: () => string[] } — ⚠ undocumented
 
@@ -3526,6 +3585,12 @@
 - `TimerStartOptions` (interface): interface TimerStartOptions — Options for {@link TimerSet.start}.
 - `createTimerSet` (function): function createTimerSet(options: TimerSetOptions = {}): TimerSet — Create a serializable set of named countdown / countup timers on an injected clock — one primitive for round timers, respawn clocks, and ability cooldown/charge. Start/pause/resume/stop/reset timers by free-string id, read `{ remainingMs, elapsedMs, durationMs, progress01, running, expired }` for a mm:ss readout or a radial/bar fill, and `poll` for expiry edges. Ids and labels carry no genre meaning; `snapshot`/`restore` round-trip through a save.
 
+## @jgengine/core/vfx/ParticleField.draw
+
+- `ParticleBlending` (type): type ParticleBlending = "additive" | "normal" — How particle fragments composite on screen.
+- `ParticleField` (function): function ParticleField({ system, advance = true, blending = "additive", scale = 300, depthWrite = false, render, metrics }: ParticleFieldProps): ReactElement — Render one pooled simulation through a point cloud or instanced quads. Output selection does not replace spawn, forces, collisions, or deterministic state.
+- `ParticleFieldProps` (interface): interface ParticleFieldProps — Props for the existing pooled particle renderer.
+
 ## @jgengine/core/vfx/effectLibrary
 
 - `DEFAULT_EFFECT` (const): const DEFAULT_EFFECT: "sparks/weld" — The fallback effect used when a play call names an unknown effect — a typo still shows a spark.
@@ -3615,6 +3680,11 @@
 - `VfxInstanceStoreState` (interface): interface VfxInstanceStoreState — Plain JSON state of a {@link VfxInstanceStore}.
 - `createVfxInstanceStore` (function): function createVfxInstanceStore(options: VfxInstanceStoreOptions = {}): VfxInstanceStore — Build a headless retained-VFX registry. The store is the serializable source of truth for long-lived effects (beams, tethers, zones, target lines, looping emitters) that must move and mutate without one-shot re-emit flicker: `upsert` creates or replaces by stable id, `update` nudges dynamic params, `stop` disposes with an optional fade, and `tick` enforces TTL heartbeats. It stays independent of renderer availability, so simulation and tests run without a shell; a wired `onOp` sink turns each op into a `combat.vfxInstance` event the shell binds to render resources.
 
+## @jgengine/core/visibility/CullingProvider.draw
+
+- `CullingProvider` (function): function CullingProvider({ config, drawDistance, children }: { config: VisibilityConfig | undefined; drawDistance?: number; children: ReactNode }): ReactNode — Drives automatic frustum + distance culling for every entity and placed object. It reads the live render camera each frame, updates the engine VisibilitySystem, and exposes a predicate the entity/object markers consult to toggle `group.visible` — objects fully outside the view (plus a conservative preload margin) are never submitted to the renderer, without unmounting them or touching gameplay. UI, sky, terrain, and environment live outside this subtree and are unaffected.
+- `useRenderVisibility` (function): function useRenderVisibility(): MutableRefObject<VisiblePredicate> — Read the current render-visibility predicate. Backward compatible: with no CullingProvider mounted (or culling disabled) it returns an always-visible ref, so a marker that consults it behaves exactly as before this feature existed.
+
 ## @jgengine/core/visibility/assetStreaming
 
 - `AssetLoadResult` (interface): interface AssetLoadResult { readonly bytes?: number; readonly value?: unknown } — ⚠ undocumented
@@ -3661,6 +3731,11 @@
 - `Frustum` (interface): interface Frustum { readonly planes: Float64Array; readonly corners: Float64Array; minX: number; minY: number; minZ: number; maxX: number; maxY: number; maxZ: number } — ⚠ undocumented
 - `OrthographicView` (interface): interface OrthographicView — 2D / orthographic camera (top-down, side-scroller, minimap).
 - `PerspectiveView` (interface): interface PerspectiveView — 3D perspective camera (the default game camera).
+
+## @jgengine/core/visibility/measuredBounds
+
+- `RenderBox` (interface): interface RenderBox — A model's measured local box (entity/object frame, Y up), as the renderer mounted it.
+- `RenderSphere` (interface): interface RenderSphere — A Y-axis-centred sphere that wraps a {@link RenderBox} under any yaw.
 
 ## @jgengine/core/visibility/occlusion
 
@@ -4027,7 +4102,7 @@
 - `FreezeViolation` (interface): interface FreezeViolation { id: string; speed: number; movedSeconds: number } — ⚠ undocumented
 - `Frustum` (interface): interface Frustum { readonly planes: Float64Array; readonly corners: Float64Array; minX: number; minY: number; minZ: number; maxX: number; maxY: number; maxZ: number } — ⚠ undocumented
 - `FrustumProjection` (interface): interface FrustumProjection { inView: boolean; distance: number; screenX: number; screenY: number } — ⚠ undocumented
-- `FrustumSample` (interface): interface FrustumSample { id: string; inView: boolean; distance: number; screenX: number; screenY: number; framing: number; dwellSeconds: number } — ⚠ undocumented
+- `FrustumSample` (interface): interface FrustumSample { id: string; inView: boolean; distance: number; screenX: number; screenY: number; framing: number; dwellSeconds: number } — ⚠ undocumented · used by `frustumSampleDisplayEqual` (@jgengine/core/sensor/frustumSampleEqual): True when two frustum samples would draw the same, so a HUD can skip a re-render.
 - `FrustumSensor` (interface): interface FrustumSensor { tick(camera: FrustumCamera, targets: readonly FrustumTarget[], dt: number): FrustumSample[]; reset(id?: string): void } — ⚠ undocumented
 - `FrustumTarget` (interface): interface FrustumTarget { id: string; position: EntityPosition; radius?: number } — ⚠ undocumented
 - `GRASS_SCHEMA` (const): const GRASS_SCHEMA: ParamSchema — The grass parameter schema — drives the inspector and `meta` parse via the studio seam.
@@ -4256,7 +4331,7 @@
 - `ResolvedPoleLine` (interface): interface ResolvedPoleLine — The renderable payload the resolver returns and the shell renderer consumes.
 - `ResolvedWeather` (interface): interface ResolvedWeather — Every {@link WeatherModifier} field for the current weather, scaled by its intensity.
 - `ResponseCurve` (type): type ResponseCurve = | { readonly kind: "linear"; readonly from: number; readonly to: number } /** Same shape as `linear`, raised to `exponent` (default `2`), so appeal stays flat until it matters. */ | { readonly kind: "quadratic"; readonly from: number; readonly to: number; readonly exponent?: num… — How one need's satisfaction maps to an option's appeal: `1` at `from`, `0` at `to`, clamped outside. Read satisfaction `1` as a full meter; pair with {@link UtilityTerm.invert} when a full meter is what makes the option attractive.
-- `RevealHit` (interface): interface RevealHit { instanceId: string; distance: number; tags: readonly string[] } — ⚠ undocumented · used by `useRevealHits` (@jgengine/shell/vision/RevealVision): Occlusion-ignoring tagged-entity radius query (#115), bound to the live scene and refreshed on render.
+- `RevealHit` (interface): interface RevealHit { instanceId: string; distance: number; tags: readonly string[] } — ⚠ undocumented · used by `useRevealHits` (@jgengine/core/sensor/RevealVision.draw): Occlusion-ignoring tagged-entity radius query (#115), bound to the live scene and refreshed on render.
 - `RevealQuery` (interface): interface RevealQuery { inRadius(center: EntityPosition | string, radius: number, tags: readonly string[]): RevealHit[] } — ⚠ undocumented
 - `RigidAircraft` (interface): interface RigidAircraft — A force-and-torque aircraft on the same tick/snapshot/retune contract as `VehicleDynamics`.
 - `RigidAircraftInput` (interface): interface RigidAircraftInput — Pilot input for one tick.

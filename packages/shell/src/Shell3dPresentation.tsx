@@ -67,7 +67,7 @@ import {
 } from "@jgengine/core/input/selectionGesture";
 import { AudioListener, EntityAudioEmitters, ObjectAudioEmitters } from "@jgengine/core/audio/AudioComponents.draw";
 import type { AudioEngine } from "@jgengine/core/audio/audioEngine.view";
-import { PostProcessing } from "./postfx/PostProcessing";
+import { PostProcessing } from "@jgengine/core/postfx/PostProcessing.draw";
 import { EnvironmentLighting } from "./render/EnvironmentLighting";
 import { worldProbeForQuality } from "./render/worldReflectionProbe";
 import { LivingWorld } from "./render/LivingWorldLayer";
@@ -82,7 +82,7 @@ import {
   resolveRigKind,
   rtsPanKeysConflict,
 } from "./camera";
-import { CullingProvider } from "./visibility/CullingProvider";
+import { CullingProvider } from "@jgengine/core/visibility/CullingProvider.draw";
 import { BuildingRenderBudget } from "@jgengine/core/buildings/BuildingRenderBudget.draw";
 import { Sky } from "@jgengine/core/sky/Daylight.draw";
 import { bearingFromDirection } from "@jgengine/core/sky/daylightCycle";
@@ -124,7 +124,7 @@ import { localPlayers } from "@jgengine/core/runtime/localPlayers";
 import type { RuntimeDiagnostic } from "@jgengine/core/devtools/diagnosticOverlay.view";
 import { createShellKeyHandlers, ShellDebugOverlays, ShellGameUiChrome } from "./ShellChrome";
 import { CombatPresentation } from "@jgengine/core/combat/CombatPresentation.draw";
-import { ParticleEmitters } from "./vfx/ParticleEmitters";
+import { ParticleEmitters } from "@jgengine/core/vfx/ParticleEmitters.draw";
 import { WorldTireMarks } from "./world/WorldTireMarks";
 import { TerrainQualityContext } from "@jgengine/core/terrain/terrainQuality.draw";
 import { detectKtx2Support } from "./render/modelLoad";

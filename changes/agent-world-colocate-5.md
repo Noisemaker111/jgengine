@@ -1,0 +1,31 @@
+Particles, post-processing, render culling and the world feedback pieces live in their `@jgengine/core` feature folders: VFX in `vfx`, post-processing in `postfx`, culling in `visibility`, hit and shot feedback in `combat`, pings in `map`, floating combat text in `hud`, reveal vision in `sensor`.
+
+### Migrate
+- `@jgengine/core/game/ping` → `@jgengine/core/map/ping`
+- `@jgengine/shell/postfx/PostProcessing` → `@jgengine/core/postfx/PostProcessing.draw`
+- `@jgengine/shell/postfx/ScreenEffectsOverlay` → `@jgengine/core/postfx/ScreenEffectsOverlay.draw`
+- `@jgengine/shell/postfx/atmospherePass` → `@jgengine/core/postfx/atmospherePass.draw`
+- `@jgengine/shell/postfx/autoExposure` → `@jgengine/core/postfx/autoExposure.draw`
+- `@jgengine/shell/postfx/contactShadowPass` → `@jgengine/core/postfx/contactShadowPass.draw`
+- `@jgengine/shell/postfx/gradeShader` → `@jgengine/core/postfx/gradeShader.draw`
+- `@jgengine/shell/postfx/postfxOverlay` → `@jgengine/core/postfx/postfxOverlay.draw`
+- `@jgengine/shell/postfx/postfxTierPolicy` → `@jgengine/core/postfx/postfxTierPolicy`
+- `@jgengine/shell/postfx/shadowPrepass` → `@jgengine/core/postfx/shadowPrepass.draw`
+- `@jgengine/shell/postfx/stylizePass` → `@jgengine/core/postfx/stylizePass.draw`
+- `@jgengine/shell/postfx/temporalAaPass` → `@jgengine/core/postfx/temporalAaPass.draw`
+- `@jgengine/shell/vfx/ParticleEmitters` → `@jgengine/core/vfx/ParticleEmitters.draw`
+- `@jgengine/shell/vfx/ParticleField` → `@jgengine/core/vfx/ParticleField.draw`
+- `@jgengine/shell/vfx/RetainedVfx` → `@jgengine/core/vfx/RetainedVfx.draw`
+- `@jgengine/shell/vfx/SpellVfx` → `@jgengine/core/vfx/SpellVfx.draw`
+- `@jgengine/shell/vfx/WorldFloatingText` → `@jgengine/core/hud/floatingTextWorld.draw`
+- `@jgengine/shell/visibility/CullingProvider` → `@jgengine/core/visibility/CullingProvider.draw`
+- `@jgengine/shell/visibility/cullingDriver` → `@jgengine/core/visibility/cullingDriver`
+- `@jgengine/shell/visibility/renderBounds` → `@jgengine/core/visibility/measuredBounds`
+- `@jgengine/shell/vision/RevealVision` → `@jgengine/core/sensor/RevealVision.draw`
+- `@jgengine/shell/vision/frustumSampleEqual` → `@jgengine/core/sensor/frustumSampleEqual`
+- `@jgengine/shell/world/ImpactFeedback` → `@jgengine/core/combat/ImpactFeedback.draw`
+- `@jgengine/shell/world/ShotFeedback` → `@jgengine/core/combat/ShotFeedback.draw`
+- `@jgengine/shell/world/WorldPings` → `@jgengine/core/map/pingBeacons.draw`
+- `@jgengine/shell/world/floatTextStyle` → `@jgengine/core/hud/floatTextStyle`
+- `@jgengine/shell/world/pingPulse` → `@jgengine/core/map/pingPulse`
+- `@jgengine/shell/world/telegraphPulse` → `@jgengine/core/combat/telegraphPulse`
