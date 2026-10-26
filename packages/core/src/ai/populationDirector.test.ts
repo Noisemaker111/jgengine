@@ -77,6 +77,18 @@ describe("createPopulationDirector", () => {
     expect(tick()).toEqual([{ region: "peak", species: "rex" }]);
   });
 
+  test("each region is asked whether it is awake once per tick, however many refills it has queued", () => {
+    const director = createPopulationDirector({
+      regions: [
+        { region: "plains", species: [{ species: "trike", cap: 40 }] },
+        { region: "swamp", species: [{ species: "sarco", cap: 30 }] },
+      ],
+    });
+    const asked: string[] = [];
+    director.tick(1, { isActive: (region) => (asked.push(region), false) });
+    expect(asked.sort()).toEqual(["plains", "swamp"]);
+  });
+
   test("a creature put away with no delay comes back as soon as its region wakes", () => {
     const director = createPopulationDirector({
       respawnDelay: 300,

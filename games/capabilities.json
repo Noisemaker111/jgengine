@@ -2075,6 +2075,28 @@
       "intent": "save and reopen named versioned player creations through injected durable storage"
     },
     {
+      "id": "creature-body",
+      "packages": [
+        "@jgengine/core"
+      ],
+      "module": "@jgengine/core/creatureBody/bodyPlan",
+      "domain": "creatureBody",
+      "gameFacing": false,
+      "probe": null,
+      "intent": "give a creature an animated low-poly body from knobs (torso, legs, neck, head, tail, horns, frill, plates, wings...) without a model file"
+    },
+    {
+      "id": "creature-body-glb",
+      "packages": [
+        "@jgengine/core"
+      ],
+      "module": "@jgengine/core/creatureBody/bodyPlan",
+      "domain": "creatureBody",
+      "gameFacing": false,
+      "probe": null,
+      "intent": "a body plan as a raw node tree and clips, to edit or write out yourself before encoding"
+    },
+    {
       "id": "creature-breeding",
       "packages": [
         "@jgengine/core"
@@ -3877,6 +3899,28 @@
       "gameFacing": false,
       "probe": null,
       "intent": "unlock the audio context on the first pointer/key/touch gesture, so pre-gesture cues play instead of vanishing"
+    },
+    {
+      "id": "glb-data-url",
+      "packages": [
+        "@jgengine/core"
+      ],
+      "module": "@jgengine/core/creatureBody/glbWrite",
+      "domain": "creatureBody",
+      "gameFacing": false,
+      "probe": null,
+      "intent": "load generated GLB bytes through the normal model loader with no file on disk"
+    },
+    {
+      "id": "glb-write",
+      "packages": [
+        "@jgengine/core"
+      ],
+      "module": "@jgengine/core/creatureBody/glbWrite",
+      "domain": "creatureBody",
+      "gameFacing": false,
+      "probe": null,
+      "intent": "write an animated binary glTF from meshes, nodes and clips made in code"
     },
     {
       "id": "glide",

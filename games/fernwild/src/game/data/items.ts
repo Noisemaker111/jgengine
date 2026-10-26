@@ -1,5 +1,6 @@
 import type { ToolProfile } from "@jgengine/core/world/resourceNode";
 
+import { SPECIES } from "./species";
 import { STRUCTURES } from "./structures";
 
 /** What eating or drinking one unit does to the survivor. */
@@ -121,8 +122,9 @@ export const ITEMS: readonly ItemDef[] = [
   { id: "waterskin", label: "Waterskin", kind: "consumable", weight: 0.5, stack: 1, consume: { water: 20 }, note: "Carry a drink with you." },
   { id: "slingshot", label: "Slingshot", kind: "tool", weight: 1, stack: 1, note: "Throws stones that knock creatures out.", tool: { gather: { power: 1, biases: {}, defaultBias: 0 }, reach: 2, damage: 5, torpor: 8, damageClass: "ranged", stamina: 4, cooldown: 1 } },
   ...STRUCTURES.map((entry): ItemDef => ({ id: entry.id, label: entry.label, kind: "structure", weight: entry.weight, stack: 100, note: entry.note })),
-  { id: "phiomia_saddle", label: "Phiomia Saddle", kind: "saddle", weight: 7, stack: 1, note: "Lets you ride a tamed Phiomia." },
-  { id: "raptor_saddle", label: "Raptor Saddle", kind: "saddle", weight: 8, stack: 1, note: "Lets you ride a tamed Raptor." },
+  ...Object.values(SPECIES).flatMap((def): ItemDef[] =>
+    def.saddle === null ? [] : [{ id: def.saddle, label: `${def.label} Saddle`, kind: "saddle", weight: Math.max(4, Math.round(def.weight.base / 40)), stack: 1, note: `Lets you ride a tamed ${def.label}.` }],
+  ),
 ];
 
 const BY_ID = new Map(ITEMS.map((item) => [item.id, item]));

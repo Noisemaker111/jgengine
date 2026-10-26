@@ -470,6 +470,24 @@
 - `verifyData` (function): function verifyData(input: VerifyInput): VerifyResult — ⚠ undocumented
 - `verifyManifest` (function): function verifyManifest(): VerifyResult — ⚠ undocumented
 
+## @jgengine/core/creatureBody/bodyPlan
+
+- `BodyFeatures` (interface): interface BodyFeatures — What sets a species apart. Every length is metres.
+- `BodyPlan` (interface): interface BodyPlan — A creature body described by knobs instead of a mesh: torso, legs, neck, head, tail and the features that tell species apart (horns, frill, back plates, sail, crest, shell, wings...). {@link bodyModel} turns it into an animated low-poly model with Idle, Walk, Run, Attack and Death clips, so a game can field a whole bestiary before (or without) any artist-made models. Lengths are metres in the creature's own frame (+Z forward, +Y up); the model is normalised to a target height when drawn, so only proportions matter.
+- `bodyGlbModel` (function): function bodyGlbModel(plan: BodyPlan): GlbModel — Build a plan's node tree and its clips.
+- `bodyModel` (function): function bodyModel(plan: BodyPlan, targetHeight: number): ModelConfig — A body plan as a drawable, animated model: an embedded GLB (a `data:` URL) the engine loads, scales to `targetHeight` and animates (idle, walk, run, attack, death) like an imported creature. The GLB is built the first time its `url` is read, so a bestiary of bodies costs nothing until a species is actually drawn.
+
+## @jgengine/core/creatureBody/glbWrite
+
+- `GlbClip` (interface): interface GlbClip — A named animation clip.
+- `GlbMaterial` (interface): interface GlbMaterial — A flat-shaded material: base colour (sRGB hex), roughness and optional emissive glow.
+- `GlbModel` (interface): interface GlbModel — Everything a generated model holds.
+- `GlbNode` (interface): interface GlbNode — A node of the model tree: its parent, rest transform and optional mesh parts.
+- `GlbPrimitive` (interface): interface GlbPrimitive — A small glTF 2.0 binary writer for generated models: meshes of indexed triangles with smooth normals, a node tree, flat-colour materials and node animations (rotation and translation keyframes). Enough for a procedural body that the engine's normal model pipeline loads, measures and animates like any imported GLB.
+- `GlbTrack` (interface): interface GlbTrack — One animated property of one node: keyframe times in seconds and a value per key.
+- `encodeGlb` (function): function encodeGlb(model: GlbModel): Uint8Array — Encode a model as GLB bytes. Deterministic: the same model always gives the same bytes.
+- `glbDataUrl` (function): function glbDataUrl(bytes: Uint8Array): string — Bytes as a `data:` URL any model loader fetches like a file.
+
 ## @jgengine/core/material/appearanceSignals.draw
 
 - `RenderMaterialAppearanceBaseline` (interface): interface RenderMaterialAppearanceBaseline extends MaterialAppearanceBaseline — Immutable resolved baseline for one caller-owned assigned material, including its original card exposure.

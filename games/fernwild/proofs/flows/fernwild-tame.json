@@ -1,6 +1,6 @@
 {
   "steps": [
-    { "assert": "__jgProbe().health > 0 && __jgProbe().creatures > 5", "before": { "is": "typeof __jgProbe === 'function' && __jgProbe().creatures > 5", "timeoutMs": 60000 }, "note": "arrival: the beach zones near the survivor wake their dodos and phiomias (ARK's spawn weights); far zones sleep" },
+    { "assert": "__jgProbe().creatures", "is": 19, "before": { "is": "typeof __jgProbe === 'function' && __jgProbe().creatures > 0", "timeoutMs": 60000 }, "note": "arrival: the zones within reach of the beach spawn wake all at once with ARK's species and weights (dodos, phiomias, dilophosaurs, a trike, a parasaur, a stego, a lystro); far zones sleep" },
     { "shot": "fernwild-herds", "note": "dodos grazing inland of the spawn" },
     { "rpc": { "method": "run_command", "name": "cheat", "input": { "xp": 100000, "spend": { "health": 45, "stamina": 8 }, "give": { "wooden_club": 1, "raw_meat": 10, "raptor_saddle": 1 }, "tamingSpeed": 20 } }, "note": "ARK's admin console: a levelled survivor with a club, raw meat and a raptor saddle; taming twenty times faster so the proof is short" },
     { "rpc": { "method": "run_command", "name": "shuttle", "input": { "inventoryId": "inventory", "slot": 0 } }, "note": "the club onto the hotbar" },
@@ -11,6 +11,7 @@
     { "wait": 700 },
     { "shot": "fernwild-raptor", "note": "the raptor charges; its card shows level and health" },
     { "key": "mouse0", "until": { "is": "__jgProbe().aimedDown === 1", "timeoutMs": 30000 }, "note": "club it unconscious: about eighteen hits of torpor" },
+    { "assert": "__jgProbe().aimedGap > 1.5", "note": "it went down where it bit from, a body's length away, never inside the survivor" },
     { "shot": "fernwild-knocked-out", "note": "the raptor down, torpor and taming bars under the crosshair" },
     { "key": "KeyE", "until": { "is": "__jgProbe().screen === 1", "timeoutMs": 3000 }, "note": "access its inventory" },
     { "rpc": { "method": "run_command", "name": "giveCreature", "input": { "inventoryId": "inventory", "slot": 1 } }, "note": "give it the raw meat" },

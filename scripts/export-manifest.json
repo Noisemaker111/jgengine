@@ -231,6 +231,8 @@
     "./crafting/production",
     "./crafting/recipe",
     "./crafting/recipeCatalog",
+    "./creatureBody/bodyPlan",
+    "./creatureBody/glbWrite",
     "./cutscene/cutscene.view",
     "./cutscene/sequenceDirector",
     "./data/DataObjects.draw",

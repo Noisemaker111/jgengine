@@ -96,6 +96,8 @@ export const game = defineGame({
         creatures: creatures.count,
         aimedDown: creatures.aimed?.taming?.unconscious === true ? 1 : 0,
         aimedTorpor: creatures.aimed?.taming?.torpor ?? 0,
+        // Metres between the survivor's and the aimed creature's centres, to a decimetre; 0 with nothing aimed.
+        aimedGap: creatures.aimed === null || me === null ? 0 : Math.round((ctx.scene.entity.distance(me.id, creatures.aimed.id) ?? 0) * 10) / 10,
         down: creatures.down,
         tamed: creatures.tamed,
         riding: creatures.riding === null ? 0 : 1,
@@ -115,12 +117,21 @@ export const game = defineGame({
         // spawn facing: negative is short of it.
         pastFloor: pastAlongSpawn(me?.position, base.floor),
         pastDoor: pastAlongSpawn(me?.position, base.doorway),
+        // Metres the survivor stands right of the first doorframe's centre, across the spawn facing.
+        acrossDoor: acrossSpawn(me?.position, base.doorway),
         // Hotbar slot in hand, 1-based; 0 bare-handed.
         holding: view.activeSlot === null ? 0 : view.activeSlot + 1,
       };
     },
   },
 });
+
+/** Metres `at` lies right of `mark` across the spawn facing, to a centimetre; 0 when either is missing. */
+function acrossSpawn(at: readonly number[] | undefined, mark: readonly number[] | null): number {
+  if (at === undefined || mark === null) return 0;
+  // Looking along the facing (sin, cos), the screen's right is (-cos, sin) in XZ.
+  return Math.round(((at[2]! - mark[2]!) * Math.sin(SPAWN_YAW) - (at[0]! - mark[0]!) * Math.cos(SPAWN_YAW)) * 100) / 100;
+}
 
 /** Metres `at` lies past `mark` along the spawn facing, to a decimetre; 0 when either is missing. */
 function pastAlongSpawn(at: readonly number[] | undefined, mark: readonly number[] | null): number {
