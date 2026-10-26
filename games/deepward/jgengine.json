@@ -1,12 +1,19 @@
 {
   "name": "Deepward",
   "id": "deepward",
+  "template": "3d",
   "engine": [
     "assets",
     "core",
     "editor",
     "react",
     "shell"
+  ],
+  "owns": [
+    "index.html",
+    "src/index.css",
+    "src/index.tsx",
+    "src/main.tsx"
   ],
   "capabilities": {
     "adopts": [

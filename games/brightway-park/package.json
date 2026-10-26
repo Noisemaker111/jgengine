@@ -7,7 +7,9 @@
     "author-models": "node scripts/author-models.mjs",
     "dev": "vite",
     "check-types": "tsgo --noEmit -p tsconfig.json",
-    "test": "bun test src"
+    "test": "bun test src",
+    "drive": "jgengine drive",
+    "shoot": "jgengine shoot"
   },
   "dependencies": {
     "@jgengine/assets": "workspace:*",

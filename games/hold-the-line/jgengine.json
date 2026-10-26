@@ -1,6 +1,7 @@
 {
   "name": "Hold the Line",
   "id": "hold-the-line",
+  "template": "3d",
   "engine": [
     "assets",
     "core",

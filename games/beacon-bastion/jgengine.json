@@ -1,12 +1,16 @@
 {
   "name": "Beacon Bastion",
   "id": "beacon-bastion",
+  "template": "3d",
   "engine": [
     "assets",
     "core",
     "editor",
     "react",
     "shell"
+  ],
+  "owns": [
+    "src/index.tsx"
   ],
   "capabilities": {
     "adopts": [

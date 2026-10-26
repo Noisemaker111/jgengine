@@ -1,4 +1,5 @@
 {
+  "extends": "../tsconfig.base.json",
   "compilerOptions": {
     "target": "ES2022",
     "lib": [
@@ -21,6 +22,5 @@
   ],
   "exclude": [
     "src/**/*.test.ts"
-  ],
-  "extends": "../tsconfig.base.json"
+  ]
 }

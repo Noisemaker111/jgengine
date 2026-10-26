@@ -9,7 +9,9 @@
     "desktop": "jgengine desktop",
     "check-types": "tsgo --noEmit -p tsconfig.json",
     "test": "bun test src",
-    "art:author": "node scripts/author-models.mjs"
+    "art:author": "node scripts/author-models.mjs",
+    "drive": "jgengine drive",
+    "shoot": "jgengine shoot"
   },
   "dependencies": {
     "@jgengine/assets": "workspace:*",

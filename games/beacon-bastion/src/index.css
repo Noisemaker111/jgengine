@@ -1,6 +1,6 @@
-@import "@jgengine/react/styles.css";
 @import "tailwindcss";
+@import "../../../packages/react/src/styles.css";
 @import "./style.css";
-@source "../node_modules/@jgengine/react/dist";
-@source "../node_modules/@jgengine/shell/dist";
-@source "../../registry/jgengine";
+@source "../../../packages/react/src";
+@source "../../../packages/shell/src";
+@source "../../../packages/editor/src";

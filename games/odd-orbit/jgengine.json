@@ -1,12 +1,16 @@
 {
   "name": "Odd Orbit",
   "id": "odd-orbit",
+  "template": "3d",
   "engine": [
     "assets",
     "core",
     "editor",
     "react",
     "shell"
+  ],
+  "owns": [
+    "index.html"
   ],
   "capabilities": {
     "adopts": [

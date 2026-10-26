@@ -26,32 +26,24 @@ const engineAliases = `[
           { find: /^@jgengine\\/assets\\/(.*)$/, replacement: \`\${engineSrc("assets")}/$1\` },
         ]`;
 
-// The two variants differ only in the save middleware: a standalone project uses the packaged
-// @jgengine/node preset; an in-repo game imports the dev runner's source plugin so a fresh
-// monorepo checkout needs no package build before `bun dev`.
+// A standalone project saves through the packaged @jgengine/node preset. An in-repo game runs on
+// the games' shared wiring (games/shared): engine source aliases with one copy of each peer, asset
+// provisioning, and an idle exit; the dev runner (apps/dev) serves its F2 saves.
 const viteConfig = (variant: TemplateVariant) =>
   variant === "in-repo"
-    ? `import { existsSync } from "node:fs";
-import { fileURLToPath } from "node:url";
-import tailwindcss from "@tailwindcss/vite";
+    ? `import tailwindcss from "@tailwindcss/vite";
 import react from "@vitejs/plugin-react";
 import { defineConfig } from "vite";
 
-import { devSavePlugin } from "../../apps/dev/devSavePlugin";
-
-const engineSrc = (pkg: string) => fileURLToPath(new URL(\`../../packages/\${pkg}/src\`, import.meta.url));
-const gamesDir = fileURLToPath(new URL("..", import.meta.url));
+import { viteIdleExit } from "../shared/viteIdleExit";
+import { viteProvisionAssets } from "../shared/provisionAssets";
+import { engineSource } from "../shared/viteEngineSource";
 
 export default defineConfig({
-  plugins: [react(), tailwindcss(), devSavePlugin(gamesDir)],
+  resolve: engineSource(new URL(".", import.meta.url)),
+  plugins: [react(), tailwindcss(), viteIdleExit(), viteProvisionAssets()],
   clearScreen: false,
   build: { target: "es2022" },
-  resolve: {
-    extensions: [".ts", ".tsx", ".mjs", ".js", ".jsx", ".json"],
-    alias: existsSync(engineSrc("core"))
-      ? ${engineAliases}
-      : [],
-  },
 });
 `
     : `import { existsSync } from "node:fs";
@@ -184,22 +176,11 @@ const sharedCompilerOptions = {
   types: ["vite/client"],
 };
 
-export const IN_REPO_TSCONFIG_PATHS: Record<string, string[]> = {
-  "@jgengine/core/*": ["../../packages/core/src/*"],
-  "@jgengine/react": ["../../packages/react/src/index.ts"],
-  "@jgengine/react/*": ["../../packages/react/src/*"],
-  "@jgengine/ws/*": ["../../packages/ws/src/*"],
-  "@jgengine/shell/*": ["../../packages/shell/src/*"],
-  "@jgengine/editor": ["../../packages/editor/src/index.ts"],
-  "@jgengine/editor/*": ["../../packages/editor/src/*"],
-  "@jgengine/assets": ["../../packages/assets/src/index.ts"],
-  "@jgengine/assets/*": ["../../packages/assets/src/*"],
-};
-
+// An in-repo game takes the engine source paths from the repo's tsconfig.base.json (via games/).
 const tsconfigJson = (variant: TemplateVariant) => `${JSON.stringify(
   {
-    compilerOptions:
-      variant === "in-repo" ? { ...sharedCompilerOptions, paths: IN_REPO_TSCONFIG_PATHS } : sharedCompilerOptions,
+    ...(variant === "in-repo" ? { extends: "../tsconfig.base.json" } : {}),
+    compilerOptions: sharedCompilerOptions,
     include: ["src"],
     exclude: ["src/**/*.test.ts"],
   },
@@ -242,26 +223,23 @@ shots/
 
 // GameHost owns the whole editor summon (F2+E / ?mode=editor), the agent bridge hook, and the
 // DEV-guarded save endpoint — main.tsx stays a mount point.
-const mainTsx = (editor: boolean) =>
-  editor
-    ? `import { createRoot } from "react-dom/client";
+// An in-repo game names itself by its folder id, the id the dev runner and world host use.
+const mainTsx = (editor: boolean, variant: TemplateVariant, id: string) => {
+  const props = [
+    "playable={game}",
+    ...(variant === "in-repo" ? [`gameId="${id}"`] : []),
+    ...(editor ? ['editor={() => import("@jgengine/editor")}'] : []),
+  ].join(" ");
+  return `import { createRoot } from "react-dom/client";
 import { GameHost } from "@jgengine/shell/GameHost";
 import { game } from "./game.config";
 import "./index.css";
 
 const root = document.getElementById("root");
 if (root === null) throw new Error("missing #root");
-createRoot(root).render(<GameHost playable={game} editor={() => import("@jgengine/editor")} />);
-`
-    : `import { createRoot } from "react-dom/client";
-import { GameHost } from "@jgengine/shell/GameHost";
-import { game } from "./game.config";
-import "./index.css";
-
-const root = document.getElementById("root");
-if (root === null) throw new Error("missing #root");
-createRoot(root).render(<GameHost playable={game} />);
+createRoot(root).render(<GameHost ${props} />);
 `;
+};
 
 const indexTsx = (editor: boolean) =>
   editor

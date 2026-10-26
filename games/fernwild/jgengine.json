@@ -1,6 +1,7 @@
 {
   "name": "Fernwild",
   "id": "fernwild",
+  "template": "3d",
   "engine": [
     "assets",
     "core",

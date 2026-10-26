@@ -1,6 +1,7 @@
 {
   "name": "Orbit Watch",
   "id": "orbit-watch",
+  "template": "3d",
   "engine": [
     "assets",
     "core",

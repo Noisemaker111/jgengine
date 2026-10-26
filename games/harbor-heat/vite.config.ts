@@ -9,4 +9,6 @@ import { engineSource } from "../shared/viteEngineSource";
 export default defineConfig({
   resolve: engineSource(new URL(".", import.meta.url)),
   plugins: [react(), tailwindcss(), viteIdleExit(), viteProvisionAssets()],
+  clearScreen: false,
+  build: { target: "es2022" },
 });

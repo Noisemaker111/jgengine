@@ -1,12 +1,18 @@
 {
   "name": "Ember Command",
   "id": "ember-command",
+  "template": "3d",
   "engine": [
     "assets",
     "core",
     "editor",
     "react",
     "shell"
+  ],
+  "owns": [
+    "index.html",
+    "src/index.tsx",
+    "vite.config.ts"
   ],
   "capabilities": {
     "adopts": [

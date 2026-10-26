@@ -1,6 +1,7 @@
 {
   "name": "Apex Nights",
   "id": "apex-nights",
+  "template": "3d",
   "engine": [
     "assets",
     "core",

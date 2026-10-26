@@ -1,4 +1,6 @@
 import { describe, expect, test } from "bun:test";
+import { readFileSync } from "node:fs";
+import { join } from "node:path";
 
 import { browserLibMjs, driveMjs, shootMjs } from "./templates/harnessScripts";
 import { isAllowedGameSrcEntry } from "./gameShape";
@@ -7,7 +9,6 @@ import {
   editorScaffold,
   folderNameFromTitle,
   gameTemplate,
-  IN_REPO_TSCONFIG_PATHS,
   packageIdFromFolder,
   parseCreateName,
   type TemplateFile,
@@ -27,13 +28,14 @@ function fileOf(files: TemplateFile[], path: string): string {
   return file.contents;
 }
 
-const THIN_FILES = [
+/** A standalone project carries its own .gitignore and AGENTS.md; an in-repo game has the monorepo's. */
+const PROJECT_FILES = [".gitignore", "AGENTS.md"];
+
+const IN_REPO_THIN_FILES = [
   "index.html",
   "vite.config.ts",
   "package.json",
   "tsconfig.json",
-  ".gitignore",
-  "AGENTS.md",
   "src/art-direction.md",
   "src/index.css",
   "src/style.css",
@@ -47,25 +49,20 @@ const THIN_FILES = [
   "src/game/ui/GameUI.tsx",
 ];
 
+const thinFiles = (variant: "standalone" | "in-repo") => (variant === "in-repo" ? IN_REPO_THIN_FILES : [...IN_REPO_THIN_FILES, ...PROJECT_FILES]);
+
 /** The default set: the thin skeleton plus the world scaffold, which is now on unless --no-world. */
-const WORLD_FILES = [...THIN_FILES, "src/world.ts", "src/game/assets.ts", "src/game/models.ts"];
+const worldFiles = (variant: "standalone" | "in-repo") => [...thinFiles(variant), "src/world.ts", "src/game/assets.ts", "src/game/models.ts"];
 
 describe("gameTemplate canonical shape (mirrors gameShape.ts)", () => {
   for (const variant of ["standalone", "in-repo"] as const) {
     test(`${variant}: default is the editor-first file set plus the world scaffold`, () => {
-      expect(render(variant).map((file) => file.path).sort()).toEqual([...WORLD_FILES].sort());
+      expect(render(variant).map((file) => file.path).sort()).toEqual(worldFiles(variant).sort());
     });
 
-    test(`${variant}: AGENTS.md tells the agent how to restore models if the pull was skipped`, () => {
-      // Models are pulled, not shipped in the package — a scaffold that skipped the pull otherwise
-      // renders placeholder primitives with nothing on the page explaining why.
-      const agents = fileOf(render(variant), "AGENTS.md");
-      expect(agents).toContain("npx assets pull starter");
-      expect(agents).toContain("public/models");
-    });
 
     test(`${variant}: --no-world drops back to exactly the thin editor-first file set`, () => {
-      expect(render(variant, { world: false }).map((file) => file.path).sort()).toEqual([...THIN_FILES].sort());
+      expect(render(variant, { world: false }).map((file) => file.path).sort()).toEqual(thinFiles(variant).sort());
     });
 
     test(`${variant}: src/ holds only the skeleton, everything else under src/game/`, () => {
@@ -140,8 +137,9 @@ describe("gameTemplate canonical shape (mirrors gameShape.ts)", () => {
       expect(pkg.scripts?.shoot).toBe("jgengine shoot");
       expect(pkg.scripts?.drive).toBe("jgengine drive");
       expect(files.some((file) => file.path.startsWith("scripts/"))).toBe(false);
-      // shots/ output is ignored so generated screenshots are never committed.
-      expect(fileOf(files, ".gitignore")).toContain("shots/");
+      // shots/ output is ignored so generated screenshots are never committed (in-repo, by the monorepo's .gitignore).
+      const ignore = variant === "in-repo" ? readFileSync(join(import.meta.dir, "../../../.gitignore"), "utf8") : fileOf(files, ".gitignore");
+      expect(ignore).toContain("shots/");
     });
   }
 
@@ -176,11 +174,24 @@ describe("gameTemplate canonical shape (mirrors gameShape.ts)", () => {
     });
   });
 
-  test("in-repo: tsconfig paths match the exact map doctor requires", () => {
-    const tsconfig = JSON.parse(fileOf(render("in-repo"), "tsconfig.json")) as {
-      compilerOptions: { paths: Record<string, string[]> };
-    };
-    expect(tsconfig.compilerOptions.paths).toEqual(IN_REPO_TSCONFIG_PATHS);
+  test("standalone: AGENTS.md tells the agent how to restore models if the pull was skipped", () => {
+    // Models are pulled, not shipped in the package — a scaffold that skipped the pull otherwise
+    // renders placeholder primitives with nothing on the page explaining why.
+    const agents = fileOf(render("standalone"), "AGENTS.md");
+    expect(agents).toContain("npx assets pull starter");
+    expect(agents).toContain("public/models");
+  });
+
+  test("in-repo: wiring is the games' shared wiring, named by the game's id", () => {
+    const files = render("in-repo");
+    const tsconfig = JSON.parse(fileOf(files, "tsconfig.json")) as { extends?: string; compilerOptions: { paths?: unknown } };
+    expect(tsconfig.extends).toBe("../tsconfig.base.json");
+    expect(tsconfig.compilerOptions.paths).toBeUndefined();
+    const vite = fileOf(files, "vite.config.ts");
+    expect(vite).toContain('from "../shared/viteEngineSource"');
+    expect(vite).toContain("resolve: engineSource(");
+    expect(fileOf(files, "src/main.tsx")).toContain('gameId="probe-game"');
+    expect(fileOf(render("standalone"), "src/main.tsx")).not.toContain("gameId");
   });
 
   test("in-repo: engine deps use workspace protocol and css @source points at engine source", () => {
