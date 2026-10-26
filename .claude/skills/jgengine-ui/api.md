@@ -3592,6 +3592,10 @@
 
 - `SoilPatchEdge` (interface): interface SoilPatchEdge — Optional noise-eroded edge-fade config for {@link createSoilPatchMaterial} — the patch dissolves into the ground at its border.
 
+## @jgengine/shell/terrain/terrainChunks
+
+- `CHUNKED_GROUND_MIN_VERTICES` (const): const CHUNKED_GROUND_MIN_VERTICES: number — Above this many vertices a ground is meshed as LOD tiles instead of one mesh.
+
 ## @jgengine/shell/terrain/terrainDetailMaterial
 
 - `ALL_TERRAIN_SURFACE_CLASSES` (const): const ALL_TERRAIN_SURFACE_CLASSES: 511 — Compile every surface response, for an editor viewport whose paint can change to any surface.

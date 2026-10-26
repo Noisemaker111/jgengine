@@ -83,9 +83,6 @@ export function incompatibleStaticObjectIds(
   });
 }
 
-/** Smallest same-model group worth an instanced draw; below this each prop draws on its own. @internal */
-export const STATIC_BATCH_MIN = 2;
-
 /**
  * Batch cell edge in metres. One InstancedMesh has one bounding sphere, and three frustum-tests it in
  * the shadow pass too, so a batch that spans the whole city submits every camera-visible instance to
@@ -94,19 +91,27 @@ export const STATIC_BATCH_MIN = 2;
  */
 export const STATIC_BATCH_CELL = 128;
 
+/** Smallest same-model group a cell batches on its own. @internal */
+export const STATIC_BATCH_MIN = 2;
+
 /**
  * Groups compatible authored or `scenery` props by model inside {@link STATIC_BATCH_CELL} metres, at
- * least {@link STATIC_BATCH_MIN} of a model. Culling stays per instance: `syncStaticObjectSource`
- * compacts each batch's drawn range against the visibility predicate every frame, and the cell keeps
- * the batch's one bounding sphere small enough that three's own frustum test still rejects it in the
- * shadow pass. Props spread thinner than the minimum in a cell fall back to individual draws.
+ * least {@link STATIC_BATCH_MIN} of a model to a cell. Culling stays per instance:
+ * `syncStaticObjectSource` compacts each batch's drawn range against the visibility predicate every
+ * frame, and the cell keeps the batch's one bounding sphere small enough that three's own frustum
+ * test still rejects it in the shadow pass.
+ *
+ * A prop left alone in its cell joins the nearest batch of its model, and a model with no cell batch
+ * gathers its lone props into one: drawn on its own it would link a second, non-instanced program
+ * for every material the instanced copies already linked. Only a model placed once in the whole
+ * world, or a prop a batch cannot draw, comes back in `singles`.
  * @internal
  */
 export function groupStaticObjects(candidates: readonly StaticObjectCandidate[], previous?: ReadonlyMap<string, StaticObjectBatch>, cell = STATIC_BATCH_CELL): {
   batches: StaticObjectBatch[];
   singles: StaticObjectCandidate[];
 } {
-  const groups = new Map<string, { batch: StaticObjectBatch; candidates: StaticObjectCandidate[] }>();
+  const models = new Map<string, { model: ModelConfig; cells: Map<string, { center: readonly [number, number]; members: StaticObjectCandidate[] }> }>();
   const singles: StaticObjectCandidate[] = [];
   for (const candidate of candidates) {
     const { object, model } = candidate;
@@ -114,23 +119,53 @@ export function groupStaticObjects(candidates: readonly StaticObjectCandidate[],
       singles.push(candidate);
       continue;
     }
-    const key = JSON.stringify([object.catalogId, Math.floor(object.position[0] / cell), Math.floor(object.position[2] / cell), model]);
-    let group = groups.get(key);
-    if (group === undefined) {
-      group = { batch: { key, model, objects: [] }, candidates: [] };
-      groups.set(key, group);
+    const modelKey = JSON.stringify([object.catalogId, model]);
+    let entry = models.get(modelKey);
+    if (entry === undefined) {
+      entry = { model, cells: new Map() };
+      models.set(modelKey, entry);
     }
-    group.batch.objects.push(object);
-    group.candidates.push(candidate);
+    const cellX = Math.floor(object.position[0] / cell);
+    const cellZ = Math.floor(object.position[2] / cell);
+    const cellKey = JSON.stringify([object.catalogId, cellX, cellZ, model]);
+    let members = entry.cells.get(cellKey);
+    if (members === undefined) {
+      members = { center: [(cellX + 0.5) * cell, (cellZ + 0.5) * cell], members: [] };
+      entry.cells.set(cellKey, members);
+    }
+    members.members.push(candidate);
   }
   const batches: StaticObjectBatch[] = [];
-  for (const { batch, candidates: members } of groups.values()) {
-    if (batch.objects.length >= STATIC_BATCH_MIN) {
-      const cached = previous?.get(batch.key);
-      batches.push(cached !== undefined && cached.objects.length === batch.objects.length &&
-        cached.objects.every((object, index) => object.instanceId === batch.objects[index]!.instanceId) ? cached : batch);
+  const keep = (batch: StaticObjectBatch) => {
+    const cached = previous?.get(batch.key);
+    batches.push(cached !== undefined && cached.objects.length === batch.objects.length &&
+      cached.objects.every((object, index) => object.instanceId === batch.objects[index]!.instanceId) ? cached : batch);
+  };
+  for (const { model, cells } of models.values()) {
+    const full: { batch: StaticObjectBatch; center: readonly [number, number] }[] = [];
+    const lone: StaticObjectCandidate[] = [];
+    for (const [key, { center, members }] of cells) {
+      if (members.length >= STATIC_BATCH_MIN) full.push({ batch: { key, model, objects: members.map((member) => member.object) }, center });
+      else lone.push(...members);
     }
-    else singles.push(...members);
+    if (full.length === 0) {
+      if (lone.length >= STATIC_BATCH_MIN) keep({ key: JSON.stringify([lone[0]!.object.catalogId, "lone", model]), model, objects: lone.map((member) => member.object) });
+      else singles.push(...lone);
+      continue;
+    }
+    for (const { object } of lone) {
+      let nearest = full[0]!;
+      let best = Number.POSITIVE_INFINITY;
+      for (const option of full) {
+        const distance = Math.hypot(option.center[0] - object.position[0], option.center[1] - object.position[2]);
+        if (distance < best) {
+          best = distance;
+          nearest = option;
+        }
+      }
+      nearest.batch.objects.push(object);
+    }
+    for (const { batch } of full) keep(batch);
   }
   return { batches, singles };
 }

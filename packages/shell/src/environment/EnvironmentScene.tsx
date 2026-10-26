@@ -1,6 +1,6 @@
 import { oceanColor } from "../water/oceanColor";
 import { waterSurfaceConfigFromDescriptor } from "@jgengine/core/water/waterSurface";
-import { useCallback, useEffect, useMemo, useRef, useState, useSyncExternalStore, type ReactNode } from "react";import { useFrame } from "@react-three/fiber";
+import { useCallback, useEffect, useMemo, useRef, useState, useSyncExternalStore } from "react";import { useFrame } from "@react-three/fiber";
 import { PresentationAssetBoundary } from "../presentationRecovery";
 import { PresentationRecoveredDraw, useRecoverableTexture } from "../presentationRecovery3d";
 import * as THREE from "three";
@@ -125,27 +125,22 @@ function scanRoles(maps: TerrainMaterialMaps): readonly (readonly [keyof Terrain
 }
 
 /**
- * The same ground as {@link TexturedTerrainGround} for a scan the game pulled rather than shipped:
- * the maps load straight through `THREE.TextureLoader`, so a missing one stays a warning instead of
- * a suspense rejection that would take the view down, and the authored procedural ground renders
- * until they answer.
+ * The textured ground material for a scan the game pulled rather than shipped: the maps load straight
+ * through `THREE.TextureLoader`, so a missing one stays a warning instead of a suspense rejection that
+ * would take the view down. `undefined` until they answer (or when one fails); the caller keeps
+ * drawing the same ground mesh with the procedural material until then, so the ground is meshed once.
  */
-function TolerantTerrainGround({
-  detail,
-  layout,
-  layerMaps,
-  fallback,
-}: {
-  detail: ResolvedTerrainDetail;
-  layout: TerrainGroundLayout;
-  layerMaps?: readonly (TerrainLayerMap | undefined)[];
-  fallback: ReactNode;
-}) {
-  const maps = detail.material!.maps;
-  const roles = scanRoles(maps);
+function useTolerantDetailMaterial(
+  detail: ResolvedTerrainDetail | undefined,
+  paint: TerrainPaintTextures | undefined,
+  layerMaps?: readonly (TerrainLayerMap | undefined)[],
+): THREE.Material | undefined {
+  const maps = detail?.material?.maps;
+  const roles = maps === undefined ? [] : scanRoles(maps);
   const key = roles.map(([role, url]) => `${role}:${url}`).join("|");
   const [loaded, setLoaded] = useState<{ key: string; textures?: TerrainDetailMaterialTextures }>({ key });
   useEffect(() => {
+    if (roles.length === 0) return;
     let active = true;
     const textures: Partial<Record<keyof TerrainDetailMaterialTextures, THREE.Texture>> = {};
     let pending = roles.length;
@@ -182,26 +177,13 @@ function TolerantTerrainGround({
   const quality = useTerrainQuality();
   const material = useMemo(
     () =>
-      loaded.key !== key || loaded.textures === undefined
+      detail === undefined || loaded.key !== key || loaded.textures === undefined
         ? undefined
-        : createTerrainDetailMaterial(detail, loaded.textures, { paint: layout.paint, quality, ...(layerMaps === undefined ? {} : { layerMaps }) }).material,
-    [detail, loaded, key, layout.paint, quality, layerMaps],
+        : createTerrainDetailMaterial(detail, loaded.textures, { paint, quality, ...(layerMaps === undefined ? {} : { layerMaps }) }).material,
+    [detail, loaded, key, paint, quality, layerMaps],
   );
   useEffect(() => () => material?.dispose(), [material]);
-  if (material === undefined) return <>{fallback}</>;
-  return (
-    <CarvedTerrain
-      field={layout.field}
-      size={layout.size}
-      segments={layout.segments}
-      colors={layout.colors}
-      heightRange={layout.heightRange}
-      paletteAt={layout.paletteAt}
-      center={layout.center}
-      roughness={0.94}
-      surfaceMaterial={material}
-    />
-  );
+  return material;
 }
 
 
@@ -301,6 +283,12 @@ function TerrainGround({
   );
   useEffect(() => () => proceduralMaterial?.dispose(), [proceduralMaterial]);
 
+  // A pulled scan that may be missing swaps in over the same mesh once its maps answer.
+  const tolerantMaterial = useTolerantDetailMaterial(
+    resolvedDetail?.material !== undefined && resolvedDetail.material.missing !== "fail" ? resolvedDetail : undefined,
+    paint,
+    layerMaps,
+  );
   const proceduralGround = (
     <CarvedTerrain
       field={field}
@@ -312,26 +300,19 @@ function TerrainGround({
       paintColorAt={paintColorAt}
       center={center}
       roughness={0.94}
-      surfaceMaterial={proceduralMaterial}
+      surfaceMaterial={tolerantMaterial ?? proceduralMaterial}
     />
   );
 
-  if (resolvedDetail?.material !== undefined) {
-    const textured = (
-      <TexturedTerrainGround
-        detail={resolvedDetail}
-        layout={{ field, size, segments: terrain.segments, colors, heightRange, paletteAt, paint, center }}
-        {...(layerMaps === undefined ? {} : { layerMaps })}
-      />
-    );
-    if (resolvedDetail.material.missing === "fail") return <PresentationAssetBoundary>{textured}</PresentationAssetBoundary>;
+  if (resolvedDetail?.material?.missing === "fail") {
     return (
-      <TolerantTerrainGround
-        detail={resolvedDetail}
-        layout={{ field, size, segments: terrain.segments, colors, heightRange, paletteAt, paint, center }}
-        {...(layerMaps === undefined ? {} : { layerMaps })}
-        fallback={proceduralGround}
-      />
+      <PresentationAssetBoundary>
+        <TexturedTerrainGround
+          detail={resolvedDetail}
+          layout={{ field, size, segments: terrain.segments, colors, heightRange, paletteAt, paint, center }}
+          {...(layerMaps === undefined ? {} : { layerMaps })}
+        />
+      </PresentationAssetBoundary>
     );
   }
 
