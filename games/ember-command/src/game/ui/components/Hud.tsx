@@ -1,8 +1,7 @@
 import type { CSSProperties, ReactNode, RefObject } from "react";
 import { useLayoutEffect, useRef, useState, useSyncExternalStore } from "react";
-import { HudFade } from "@jgengine/core/hud/hudLayout.view";
+import { HudCanvas, HudFade, HudPanel, useHudLayout } from "@jgengine/core/hud/hudLayout.view";
 import { KitPanel } from "@jgengine/core/ui/kit/uiKitRoot.view";
-import { useRegisterLayoutRegion } from "@jgengine/core/ui/viewport.view";
 import { useEntityStat, useGame } from "@jgengine/react/hooks";
 
 import { hudStore, type ArmyUnit, type HeroKitEntry, type HudSnapshot } from "../../hudStore";
@@ -26,13 +25,6 @@ function isWorker(unit: ArmyUnit): boolean {
 
 function useHud(): HudSnapshot {
   return useSyncExternalStore(hudStore.subscribe, hudStore.get, hudStore.get);
-}
-
-/** Publish a top-of-table sheet as a HUD region, so the shell's notice feed settles below it instead of over it. */
-function useTableRegion(id: string): RefObject<HTMLDivElement | null> {
-  const ref = useRef<HTMLDivElement | null>(null);
-  useRegisterLayoutRegion({ id, kind: "hud", collisionPolicy: "allow" }, ref);
-  return ref;
 }
 
 /**
@@ -76,7 +68,6 @@ function Ledger() {
   const fedOut = hud.foodUsed + hud.foodReserved >= hud.foodCap;
   const keepLow = hud.playerKeepMax > 0 && hud.playerKeepHp / hud.playerKeepMax < 0.4;
   const waveNear = hud.nextWaveIn <= 10;
-  const region = useTableRegion("ec-ledger");
   return (
     <HudFade
       className="ec-stock-fade"
@@ -85,7 +76,6 @@ function Ledger() {
       dimTo={0.62}
       idleMs={4500}
     >
-      <div ref={region}>
       <KitPanel material="paper" tint="#e9dbb7" cut="torn" depth={8} padding="7px 18px 11px" className="ec-stock" aria-label="Ledger">
         <span className="ec-ledger-stores">
           <LedgerEntry icon="gold" value={String(hud.gold)} label={`${hud.gold} gold`} />
@@ -117,7 +107,6 @@ function Ledger() {
           </span>
         </span>
       </KitPanel>
-      </div>
     </HudFade>
   );
 }
@@ -164,7 +153,6 @@ function OrdersNote() {
   const campaign = hud.campaign;
   const live = campaign !== null && campaign.phase === "live";
   const pressing = live && campaign.remaining !== null && campaign.remaining <= 30;
-  const region = useTableRegion("ec-orders");
   return (
     <HudFade
       className="ec-objectives-fade"
@@ -173,7 +161,6 @@ function OrdersNote() {
       dimTo={0.55}
       idleMs={6000}
     >
-      <div ref={region}>
       <KitPanel material="paper" tint="#efe3c6" cut="box" depth={3} padding="12px 14px 12px" className="ec-objectives">
         <i className="ec-pin" aria-hidden />
         {live ? (
@@ -185,7 +172,6 @@ function OrdersNote() {
           </>
         )}
       </KitPanel>
-      </div>
     </HudFade>
   );
 }
@@ -564,33 +550,26 @@ function ProductionLine() {
 }
 
 /** The bottom of the war table: the survey map in its frame, Bram's card with the army tokens, and the command board. */
-function Console() {
-  const hud = useHud();
+function MapPanel() {
   return (
-    <div className="ec-console">
-      <KitPanel material="wood" tint="#5b3b22" cut="chamfer" depth={10} padding="9px 9px 8px" className="ec-map-panel">
-        <span className="ec-map-sheet">
-          <TacticalMinimap />
-          <span className="ec-map-north" aria-hidden>N</span>
-        </span>
-        <FormationTabs />
-      </KitPanel>
+    <KitPanel material="wood" tint="#5b3b22" cut="chamfer" depth={10} padding="9px 9px 8px" className="ec-map-panel">
+      <span className="ec-map-sheet">
+        <TacticalMinimap />
+        <span className="ec-map-north" aria-hidden>N</span>
+      </span>
+      <FormationTabs />
+    </KitPanel>
+  );
+}
 
-      <KitPanel material="paper" tint="#ece0c2" cut="box" depth={3} padding="10px 12px 10px" className="ec-hero-panel">
-        <HeroCard />
-        <ArmyHeader />
-        <ArmyRow />
-        <ProductionLine />
-      </KitPanel>
-
-      <CommandBoard />
-
-      {hud.buildArmed !== null ? (
-        <KitPanel material="paper" cut="ticket" depth={8} padding="6px 16px" className="ec-build-mode">
-          Right-click your side of the field to place the {BUILD_LABELS[hud.buildArmed] ?? "building"}
-        </KitPanel>
-      ) : null}
-    </div>
+function HeroPanel() {
+  return (
+    <KitPanel material="paper" tint="#ece0c2" cut="box" depth={3} padding="10px 12px 10px" className="ec-hero-panel">
+      <HeroCard />
+      <ArmyHeader />
+      <ArmyRow />
+      <ProductionLine />
+    </KitPanel>
   );
 }
 
@@ -633,20 +612,40 @@ function LevelUpWrit({ offer }: { offer: HeroOffer }) {
   );
 }
 
-/** Order reports and refusals go to the engine notice feed (`ctx.game.notices`), which the shell draws. */
-export function RtsHud(): ReactNode {
+/**
+ * The war table's HUD: the ledger and pinned orders along the top, the survey map, Bram's card and the
+ * command board along the bottom, and the wax seal top right. Each sheet is a HUD panel, so the engine
+ * keeps them clear of one another at every screen size. Order reports and refusals go to the engine
+ * notice feed (`ctx.game.notices`), which the shell draws.
+ */
+export function RtsHud({ pause }: { pause: ReactNode }): ReactNode {
   const hud = useHud();
+  const layout = useHudLayout({ storageKey: "ember-command" });
   return (
-    <>
-      <Ledger />
-      <OrdersNote />
-      <Console />
-      {hud.heroOffer !== null && hud.phase === "playing" ? <LevelUpWrit offer={hud.heroOffer} /> : null}
+    <HudCanvas layout={layout} editChord={false}>
+      <HudPanel id="ledger" anchor="top-left" priority="critical"><Ledger /></HudPanel>
+      <HudPanel id="orders" anchor="top-left" order={1} chip="orders"><OrdersNote /></HudPanel>
+      {pause !== null ? <HudPanel id="pause" anchor="top-right" priority="critical">{pause}</HudPanel> : null}
       {hud.rallyArmed || hud.attackMoveArmed ? (
-        <KitPanel material="paper" cut="ticket" depth={8} padding="6px 16px" className="ec-order-mode">
-          {hud.rallyArmed ? "Rally point" : "Attack-move"} · Right-click a destination · Esc to cancel
-        </KitPanel>
+        <HudPanel id="order-mode" anchor="top" priority="critical" interactive={false}>
+          <KitPanel material="paper" cut="ticket" depth={8} padding="6px 16px" className="ec-order-mode">
+            {hud.rallyArmed ? "Rally point" : "Attack-move"} · Right-click a destination · Esc to cancel
+          </KitPanel>
+        </HudPanel>
       ) : null}
-    </>
+      {hud.buildArmed !== null ? (
+        <HudPanel id="build-mode" anchor="top" order={1} priority="critical" interactive={false}>
+          <KitPanel material="paper" cut="ticket" depth={8} padding="6px 16px" className="ec-build-mode">
+            Right-click your side of the field to place the {BUILD_LABELS[hud.buildArmed] ?? "building"}
+          </KitPanel>
+        </HudPanel>
+      ) : null}
+      <HudPanel id="map" anchor="bottom-left" chip="map"><MapPanel /></HudPanel>
+      <HudPanel id="hero" anchor="bottom" priority="critical"><HeroPanel /></HudPanel>
+      <HudPanel id="board" anchor="bottom-right" priority="critical"><CommandBoard /></HudPanel>
+      {hud.heroOffer !== null && hud.phase === "playing" ? (
+        <HudPanel id="levelup" anchor="center" priority="critical"><LevelUpWrit offer={hud.heroOffer} /></HudPanel>
+      ) : null}
+    </HudCanvas>
   );
 }

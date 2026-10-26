@@ -584,10 +584,7 @@ body:has(.ec-front) [data-jg-notices] { visibility: hidden; }
 /* ---- HUD: the war table's trimmings ------------------------------------------------------- */
 
 .ec-pause {
-  position: absolute;
-  top: 10px;
-  right: 14px;
-  z-index: 30;
+  display: block;
   padding: 0;
   border: 0;
   background: none;
@@ -601,11 +598,7 @@ body:has(.ec-front) [data-jg-notices] { visibility: hidden; }
 
 /* The ledger strip: stores, both keeps' walls and the reinforcement clock. */
 .ec-stock-fade {
-  position: absolute;
-  top: 12px;
-  left: 14px;
-  z-index: 20;
-  max-width: calc(100% - 110px);
+  max-width: calc(100vw - 110px);
 }
 .ec-stock > [data-jg-frame-face] {
   display: flex !important;
@@ -680,10 +673,6 @@ body:has(.ec-front) [data-jg-notices] { visibility: hidden; }
 
 /* The order pinned under the ledger. */
 .ec-objectives-fade {
-  position: absolute;
-  top: 82px;
-  left: 18px;
-  z-index: 20;
   width: 270px;
 }
 .ec-objectives { transform: rotate(-0.8deg); }
@@ -715,18 +704,6 @@ body:has(.ec-front) [data-jg-notices] { visibility: hidden; }
 .ec-note-line .ec-ink-bar { flex: 1; }
 
 /* The bottom of the table: map, Bram's card, the command board. */
-.ec-console {
-  position: absolute;
-  left: 50%;
-  bottom: 10px;
-  z-index: 20;
-  display: flex;
-  align-items: flex-end;
-  gap: 12px;
-  transform: translateX(-50%);
-  pointer-events: none;
-}
-.ec-console > * { pointer-events: auto; }
 
 .ec-map-panel > [data-jg-frame-face] { display: flex !important; flex-direction: column; gap: 6px; }
 .ec-map-sheet {
@@ -963,29 +940,10 @@ body:has(.ec-front) [data-jg-notices] { visibility: hidden; }
   color: var(--ec-ink);
   white-space: nowrap;
 }
-.ec-build-mode {
-  position: absolute !important;
-  left: 50%;
-  bottom: calc(100% + 8px);
-  transform: translateX(-50%);
-  pointer-events: none !important;
-}
-.ec-order-mode {
-  position: absolute !important;
-  top: 86px;
-  left: 50%;
-  z-index: 25;
-  transform: translateX(-50%);
-}
 
 .ec-levelup {
-  position: absolute !important;
-  left: 50%;
-  bottom: 260px;
-  z-index: 30;
   width: 500px;
-  transform: translateX(-50%) rotate(-0.4deg);
-  pointer-events: auto;
+  transform: rotate(-0.4deg);
 }
 .ec-levelup > [data-jg-frame-face] { display: flex !important; flex-direction: column; gap: 8px; }
 .ec-levelup .ec-note-eyebrow { font-size: 15px; }
@@ -1068,7 +1026,6 @@ body:has(.ec-front) [data-jg-notices] { visibility: hidden; }
   .ec-front { grid-template-columns: minmax(0, 500px) minmax(0, 1fr); column-gap: 28px; padding-inline: 3vw; }
   .ec-wordmark { font-size: 72px; }
   .ec-desk-foot { padding-inline: 3vw; }
-  .ec-map-panel { display: none; }
 }
 
 @media (max-height: 760px) and (min-width: 701px) {
@@ -1126,10 +1083,9 @@ body:has(.ec-front) [data-jg-notices] { visibility: hidden; }
   }
   .ec-keys { display: none; }
 
-  .ec-pause { top: 6px; right: 6px; }
   .ec-pause svg { width: 50px; height: 50px; }
   /* The ledger keeps two rows: stores and the wave clock, then both keeps' walls. */
-  .ec-stock-fade { top: 6px; left: 6px; max-width: calc(100% - 66px); }
+  .ec-stock-fade { max-width: calc(100vw - 66px); }
   .ec-stock { --jg-gf-padding: 6px 12px 10px !important; }
   .ec-stock > [data-jg-frame-face] { flex-wrap: wrap; gap: 3px 10px; }
   .ec-ledger-stores { gap: 10px; order: 0; }
@@ -1141,13 +1097,12 @@ body:has(.ec-front) [data-jg-notices] { visibility: hidden; }
   .ec-ledger-wave b { font-size: 18px; }
   .ec-ledger-glyph { width: 15px; height: 15px; }
   .ec-ledger-keep-name { font-size: 12px; }
-  .ec-objectives-fade { top: 92px; left: 8px; width: 222px; }
+  .ec-objectives-fade { width: 222px; }
   .ec-objectives { --jg-gf-padding: 10px 12px !important; }
   .ec-note-objective { font-size: 16px; }
   .ec-note-line b { font-size: 17px; }
-  /* Bram's card across the width with the army beneath it, then the board as two rows of eight. */
-  .ec-console { left: 4px; right: 4px; bottom: 4px; flex-direction: column; align-items: stretch; gap: 4px; transform: none; }
-  .ec-hero-panel { width: auto; min-width: 0; }
+  /* A narrower card for Bram, and the board as two rows of eight. */
+  .ec-hero-panel { width: min(330px, calc(100vw - 16px)); }
   .ec-hero-panel { --jg-gf-padding: 8px 10px !important; }
   .ec-hero-panel > [data-jg-frame-face] { gap: 4px; }
   .ec-hero { gap: 10px; }
@@ -1163,15 +1118,14 @@ body:has(.ec-front) [data-jg-notices] { visibility: hidden; }
   .ec-hero-stats { gap: 12px; font-size: 12px; }
   .ec-army-head { font-size: 13px; padding-top: 3px; }
   .ec-army-call { font-size: 13px; }
-  .ec-board { align-self: stretch; }
   .ec-board { --jg-gf-padding: 6px !important; }
-  .ec-board-grid { grid-template-columns: repeat(8, minmax(0, 1fr)); grid-auto-rows: 42px; gap: 3px; }
+  .ec-board-grid { grid-template-columns: repeat(8, 40px); grid-auto-rows: 42px; gap: 3px; }
   .ec-slot-glyph { width: 25px; height: 25px; }
   .ec-slot-foot { font-size: 10px; }
   .ec-slot-key { font-size: 11px; }
   .ec-writ { width: min(290px, calc(100vw - 16px)); }
-  .ec-levelup { width: calc(100vw - 16px); bottom: 250px; }
+  .ec-levelup { width: calc(100vw - 16px); }
   .ec-levelup-picks { grid-template-columns: 1fr; gap: 6px; }
-  .ec-order-mode { top: 150px; font-size: 13px; white-space: normal; text-align: center; width: max-content; max-width: 90vw; }
+  .ec-order-mode { font-size: 13px; white-space: normal; text-align: center; width: max-content; max-width: 90vw; }
   .ec-build-mode { white-space: normal; width: 80vw; text-align: center; font-size: 13px; }
 }
