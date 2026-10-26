@@ -76,18 +76,9 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `AuthoredFlocks` (function) · `import { AuthoredFlocks } from "@jgengine/shell/world/AuthoredFlocks"`
 
-## authored-surface-material — mount an owned PBR surface material on a mesh
-
-- `AuthoredSurfaceMaterial` (function) · `import { AuthoredSurfaceMaterial } from "@jgengine/shell/render/authoredSurfaceMaterial"`
-- `useAuthoredSurfaceMaterial` (function) · `import { useAuthoredSurfaceMaterial } from "@jgengine/shell/render/authoredSurfaceMaterial"`
-
 ## auto-scroll — pin a log/chat/console panel to its newest line as entries arrive — no hand-rolled scrollTop effects
 
 - `useAutoScroll` (function) · `import { useAutoScroll } from "@jgengine/react"`
-
-## balance-ibl-lighting — trim flat ambient under IBL and add a key light to directionless lighting
-
-- `balanceLightingForIbl` (function) · `import { balanceLightingForIbl } from "@jgengine/core/render/lightingBalance"`
 
 ## browser-suspension — observe blur, hidden-page and pointer-lock loss while the game owns pause and input policy
 
@@ -535,10 +526,6 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `detectLayoutCollisions` (function) · `import { detectLayoutCollisions } from "@jgengine/core/hud/hudPriority"`
 
-## light-probes — bake an irradiance volume from authored sky, fill and lamp inputs
-
-- `bakeIrradianceVolume` (function) · `import { bakeIrradianceVolume } from "@jgengine/core/render/lightProbes"`
-
 ## lighting-mood — one field that lights a 3D game: sun, fill, sky, haze and grade that agree
 
 - `MoodPreset` (type) · `import { MoodPreset } from "@jgengine/core/render/lookMood"`
@@ -559,41 +546,6 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 ## map-legend — marker-kind key (glyph + color + label per kind) sharing the map's kindStyles
 
 - `MapLegend` (function) · `import { MapLegend } from "@jgengine/react"`
-
-## material-appearance-signals — update one owned material from wetness and local card exposure without global lighting edits
-
-- `applyMaterialAppearanceSignals` (function) · `import { applyMaterialAppearanceSignals } from "@jgengine/shell/render/materialAppearanceSignals"`
-- `captureMaterialAppearanceBaseline` (function) · `import { captureMaterialAppearanceBaseline } from "@jgengine/shell/render/materialAppearanceSignals"`
-- `restoreMaterialAppearanceBaseline` (function) · `import { restoreMaterialAppearanceBaseline } from "@jgengine/shell/render/materialAppearanceSignals"`
-- `setHairCardLightExposure` (function) · `import { setHairCardLightExposure } from "@jgengine/shell/render/materialAsset"`
-
-## material-assets — render authored physical surfaces, woven detail and approximate hair-card appearance
-
-- `MaterialAssetSurface` (function) · `import { MaterialAssetSurface } from "@jgengine/shell/render/materialAsset"`
-- `applyMaterialAsset` (function) · `import { applyMaterialAsset } from "@jgengine/shell/render/materialAsset"`
-- `applyMaterialAssignments` (function) · `import { applyMaterialAssignments } from "@jgengine/shell/render/materialAsset"`
-- `materialAssetSurface` (function) · `import { materialAssetSurface } from "@jgengine/shell/render/materialAsset"`
-- `useMaterialAssetMaterial` (function) · `import { useMaterialAssetMaterial } from "@jgengine/shell/render/materialAsset"`
-
-## material-resource-metrics — inspect loaded texture byte bounds and physical, coverage and transmission participation
-
-- `materialResourceMetrics` (function) · `import { materialResourceMetrics } from "@jgengine/shell/render/materialAsset"`
-
-## material-slot-selection — preflight native model assignments without allocating or changing imported resources
-
-- `validateMaterialAssignmentTargets` (function) · `import { validateMaterialAssignmentTargets } from "@jgengine/shell/render/materialAsset"`
-
-## material-slots — discover exact imported mesh and material selectors with UV and tangent prerequisites
-
-- `inspectModelMaterialSlots` (function) · `import { inspectModelMaterialSlots } from "@jgengine/shell/render/materialAsset"`
-
-## material-texture-metadata — configure owned map views with semantic color space, packed channels, UV transforms and sampling
-
-- `configureMaterialTexture` (function) · `import { configureMaterialTexture } from "@jgengine/shell/render/materialAsset"`
-
-## material-triplanar — render a material asset on world geometry without UVs
-
-- `useTriplanarAssetMaterial` (function) · `import { useTriplanarAssetMaterial } from "@jgengine/shell/render/triplanarMaterial"`
 
 ## menu-key-intent — resolve a keyboard code to a menu intent (move / confirm / back)
 

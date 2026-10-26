@@ -3,7 +3,7 @@ import * as THREE from "three";
 
 import { DRY_SECONDS, WET_SECONDS, advanceLivingWorld, livingWorld, reportRain, reportWind, resetLivingWorld, stepWetness, wetnessUniform } from "./livingWorld";
 import { birdPresence, flockFocus, gustForWind, steamDensity } from "./LivingWorldLayer";
-import { applyWetness, applyWetnessToScene, takesWetness } from "./wetSurfaces";
+import { applyWetness, applyWetnessToScene, takesWetness } from "@jgengine/core/material/wetSurfaces.draw";
 
 afterEach(resetLivingWorld);
 

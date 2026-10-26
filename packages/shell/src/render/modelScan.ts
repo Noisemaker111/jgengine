@@ -2,8 +2,8 @@ import * as THREE from "three";
 
 import type { TerrainDetailMaterialConfig } from "@jgengine/core/world/features";
 
-import { SURFACE_SCAN_PARS_GLSL, surfaceScanDefines, surfaceScanKeyPart, surfaceScanUniforms } from "./surfaceScanShader";
-import { acquireSurfaceScan, type SurfaceScanTextures } from "./surfaceScanTextures";
+import { SURFACE_SCAN_PARS_GLSL, surfaceScanDefines, surfaceScanKeyPart, surfaceScanUniforms } from "@jgengine/core/material/surfaceScanShader.draw";
+import { acquireSurfaceScan, type SurfaceScanTextures } from "@jgengine/core/material/surfaceScanTextures.draw";
 
 let scanEnabled = true;
 const scanned = new Set<THREE.Material>();

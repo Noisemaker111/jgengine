@@ -16,7 +16,7 @@ import {
 import { findRoadJunctions, sidewalkWidthOf, type RoadJunction } from "@jgengine/core/roads/streets";
 import type { TerrainField } from "@jgengine/core/terrain/terrain";
 
-import { useSurfaceScan, type SurfaceScanTextures } from "@jgengine/shell/render/surfaceScanTextures";
+import { useSurfaceScan, type SurfaceScanTextures } from "@jgengine/core/material/surfaceScanTextures.draw";
 import { RoadJunctions } from "./RoadJunctions.draw";
 import {
   isSoftRibbonSurface,

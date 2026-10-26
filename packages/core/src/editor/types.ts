@@ -6,8 +6,8 @@ import type { EditorUiDocument } from "../hud/hudDocument";
 import type { MinimapBakeBounds } from "@jgengine/core/map/minimapBake";
 import type { TerraformSnapshot } from "../terrain/terraform";
 import type { EditorGridLayer } from "./grid";
-import type { EnvironmentSource } from "../render/environment";
-import type { IrradianceBakeSettings, IrradianceVolume } from "../render/lightProbes";
+import type { EnvironmentSource } from "@jgengine/core/lighting/environmentLighting";
+import type { IrradianceBakeSettings, IrradianceVolume } from "@jgengine/core/lighting/lightProbes";
 import type { PointLightingConfig } from "../game/playableGame";
 /** Runtime point-light shape reused by authored editor light markers. */
 export type { PointLightingConfig } from "../game/playableGame";

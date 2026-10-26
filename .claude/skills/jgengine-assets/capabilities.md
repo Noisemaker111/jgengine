@@ -23,6 +23,11 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `validateAssetReferences` (function) · `import { validateAssetReferences } from "@jgengine/assets"`
 
+## authored-surface-material — mount an owned PBR surface material on a mesh
+
+- `AuthoredSurfaceMaterial` (function) · `import { AuthoredSurfaceMaterial } from "@jgengine/core/material/authoredSurfaceMaterial.draw"`
+- `useAuthoredSurfaceMaterial` (function) · `import { useAuthoredSurfaceMaterial } from "@jgengine/core/material/authoredSurfaceMaterial.draw"`
+
 ## clip-metadata — read a GLB's animation clip names for the asset index at reindex
 
 - `readGlbClips` (function) · `import { readGlbClips } from "@jgengine/assets/dims"`
@@ -76,18 +81,50 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `libraryTerrainMaterial` (function) · `import { libraryTerrainMaterial } from "@jgengine/assets/catalogs/materialLibrary"`
 
+## material-appearance-signals — update one owned material from wetness and local card exposure without global lighting edits
+
+- `applyMaterialAppearanceSignals` (function) · `import { applyMaterialAppearanceSignals } from "@jgengine/core/material/appearanceSignals.draw"`
+- `captureMaterialAppearanceBaseline` (function) · `import { captureMaterialAppearanceBaseline } from "@jgengine/core/material/appearanceSignals.draw"`
+- `restoreMaterialAppearanceBaseline` (function) · `import { restoreMaterialAppearanceBaseline } from "@jgengine/core/material/appearanceSignals.draw"`
+- `setHairCardLightExposure` (function) · `import { setHairCardLightExposure } from "@jgengine/core/material/materialAsset.draw"`
+
+## material-assets — render authored physical surfaces, woven detail and approximate hair-card appearance
+
+- `MaterialAssetSurface` (function) · `import { MaterialAssetSurface } from "@jgengine/core/material/materialAsset.draw"`
+- `applyMaterialAsset` (function) · `import { applyMaterialAsset } from "@jgengine/core/material/materialAsset.draw"`
+- `applyMaterialAssignments` (function) · `import { applyMaterialAssignments } from "@jgengine/core/material/materialAsset.draw"`
+- `materialAssetSurface` (function) · `import { materialAssetSurface } from "@jgengine/core/material/materialAsset.draw"`
+- `useMaterialAssetMaterial` (function) · `import { useMaterialAssetMaterial } from "@jgengine/core/material/materialAsset.draw"`
+
 ## material-feature-requirements — Declare material shader requirements when authors add maps or appearance adapters.
 
 - `materialCapabilitiesForAsset` (function) · `import { materialCapabilitiesForAsset } from "@jgengine/core/material/materialAsset"`
 
+## material-resource-metrics — inspect loaded texture byte bounds and physical, coverage and transmission participation
+
+- `materialResourceMetrics` (function) · `import { materialResourceMetrics } from "@jgengine/core/material/materialAsset.draw"`
+
 ## material-slot-selection — match named meshes and imported material slots independently
 
 - `matchesMaterialSelector` (function) · `import { matchesMaterialSelector } from "@jgengine/core/material/materialAsset"`
+- `validateMaterialAssignmentTargets` (function) · `import { validateMaterialAssignmentTargets } from "@jgengine/core/material/materialAsset.draw"`
 - `validateMaterialAssignments` (function) · `import { validateMaterialAssignments } from "@jgengine/core/material/materialAsset"`
+
+## material-slots — discover exact imported mesh and material selectors with UV and tangent prerequisites
+
+- `inspectModelMaterialSlots` (function) · `import { inspectModelMaterialSlots } from "@jgengine/core/material/materialAsset.draw"`
 
 ## material-surface-validation — diagnose unsupported or physically invalid sparse surface edits
 
 - `validateMaterialSurface` (function) · `import { validateMaterialSurface } from "@jgengine/core/material/materialAsset"`
+
+## material-texture-metadata — configure owned map views with semantic color space, packed channels, UV transforms and sampling
+
+- `configureMaterialTexture` (function) · `import { configureMaterialTexture } from "@jgengine/core/material/materialAsset.draw"`
+
+## material-triplanar — render a material asset on world geometry without UVs
+
+- `useTriplanarAssetMaterial` (function) · `import { useTriplanarAssetMaterial } from "@jgengine/core/material/triplanarMaterial.draw"`
 
 ## model-library — ask for a realistic licensed model by what it is ("street lamp", "office desk")
 

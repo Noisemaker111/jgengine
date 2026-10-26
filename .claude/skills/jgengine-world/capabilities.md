@@ -206,6 +206,10 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `createAxisShaper` (function) · `import { createAxisShaper } from "@jgengine/core/input/axisShaper"`
 
+## balance-ibl-lighting — trim flat ambient under IBL and add a key light to directionless lighting
+
+- `balanceLightingForIbl` (function) · `import { balanceLightingForIbl } from "@jgengine/core/lighting/lightingBalance"`
+
 ## behavior-actions — register named callbacks for decision graph behavior descriptors
 
 - `registerBehaviorActions` (function) · `import { registerBehaviorActions } from "@jgengine/core/world"`
@@ -248,7 +252,7 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 ## build-footprint-cells — grid cells a snapped build piece footprint covers (footprintGrid occupancy bridge)
 
-- `footprintCells` (function) · `import { footprintCells } from "@jgengine/core/world/buildSockets"`
+- `footprintCells` (function) · `import { footprintCells } from "@jgengine/core/placement/buildSockets"`
 
 ## build-requirements — list the unmet prerequisites of an RTS building, unit or research
 
@@ -256,7 +260,7 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 ## build-socket-catalog — data-driven named-socket snap catalog for modular base building
 
-- `createBuildSocketCatalog` (function) · `import { createBuildSocketCatalog } from "@jgengine/core/world/buildSockets"`
+- `createBuildSocketCatalog` (function) · `import { createBuildSocketCatalog } from "@jgengine/core/placement/buildSockets"`
 
 ## build-tech-path — resolve an RTS want into the first missing prerequisite to make instead
 
@@ -347,6 +351,10 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 ## contour-interval — readable auto-spacing for elevation contours
 
 - `chooseContourInterval` (function) · `import { chooseContourInterval } from "@jgengine/core/terrain/terrainGuides"`
+
+## contribution-pool — Players pool resources toward a shared build goal
+
+- `createContributionPool` (function) · `import { createContributionPool } from "@jgengine/core/world"`
 
 ## countdown-timers — named countdown/countup timer set on an injected clock — round timers, respawn clocks, ability cooldown/charge; read remaining/elapsed/progress + expiry, snapshot/restore
 
@@ -682,6 +690,10 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `leaveVehicle` (function) · `import { leaveVehicle } from "@jgengine/core/world"`
 
+## light-probes — bake an irradiance volume from authored sky, fill and lamp inputs
+
+- `bakeIrradianceVolume` (function) · `import { bakeIrradianceVolume } from "@jgengine/core/lighting/lightProbes"`
+
 ## limb-health — per-body-part/region health tracked separately
 
 - `createMultiRegionHealth` (function) · `import { createMultiRegionHealth } from "@jgengine/core/procedural"`
@@ -886,7 +898,7 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 ## piece-sockets-from-model — derive build-piece snap sockets from a model's named attach points
 
-- `pieceSocketsFromModel` (function) · `import { pieceSocketsFromModel } from "@jgengine/core/world/buildSockets"`
+- `pieceSocketsFromModel` (function) · `import { pieceSocketsFromModel } from "@jgengine/core/placement/buildSockets"`
 
 ## ping-classify — sort a pointer hit into a ping category (enemy, loot, location, danger) from roles and object categories
 
@@ -923,6 +935,10 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 ## plan-particle-budget — cap live particles to a graphics tier and drop whole effects lowest-priority-first when over budget
 
 - `planParticleBudget` (function) · `import { planParticleBudget } from "@jgengine/core/vfx/particleBudget"`
+
+## plot-permissions — Owner, editor and guild build rights on a plot
+
+- `createPlotPermissions` (function) · `import { createPlotPermissions } from "@jgengine/core/world"`
 
 ## pole-line — editor-authorable poles + sagging cables along a path
 

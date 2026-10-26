@@ -3,7 +3,7 @@ import { useTexture } from "@react-three/drei";
 import { useLayoutEffect } from "react";
 
 import { usePresentationRetryScope } from "./presentationRecovery";
-import { useStableTextureSet } from "./render/stableTextureSet";
+import { useStableTextureSet } from "@jgengine/core/material/stableTextureSet.draw";
 
 /** Registers exact loader inputs and their cache clear before a load can suspend. @internal */
 export function useRecoverableTexture<T extends string[] | string | Record<string, string>>(input: T) {

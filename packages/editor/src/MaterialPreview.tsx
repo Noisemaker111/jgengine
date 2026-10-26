@@ -2,14 +2,14 @@ import { Canvas, useLoader } from "@react-three/fiber";
 import { Component, Suspense, useEffect, useState, type ReactNode } from "react";
 import * as THREE from "three";
 import type { ModelConfig } from "@jgengine/core/game/playableGame";
-import { inspectModelMaterialSlots, type ModelMaterialSlotInfo } from "@jgengine/shell/render/materialAsset";
+import { inspectModelMaterialSlots, type ModelMaterialSlotInfo } from "@jgengine/core/material/materialAsset.draw";
 import { sharedGltfLoader } from "@jgengine/shell/render/modelLoad";
 import { EntityModel } from "@jgengine/shell/render/SceneModels";
 import { DEFAULT_SUN_ELEVATION_DEG, sunDirectionFromBearing } from "@jgengine/core/sky/daylightCycle";
 import type { MaterialAsset } from "@jgengine/core/material/materialAsset";
 import type { EditorEnvironment } from "@jgengine/core/editor/types";
-import { MaterialAssetSurface } from "@jgengine/shell/render/materialAsset";
-import { EnvironmentLighting } from "@jgengine/shell/render/EnvironmentLighting";
+import { MaterialAssetSurface } from "@jgengine/core/material/materialAsset.draw";
+import { EnvironmentLighting } from "@jgengine/core/lighting/EnvironmentLighting.draw";
 import { INPUT_CLS } from "./shell/theme";
 
 function SlotProbe({ model, onSlots }: { model: ModelConfig; onSlots?: (slots: ModelMaterialSlotInfo[]) => void }) {

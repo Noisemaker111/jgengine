@@ -3,7 +3,7 @@ import { useLoader } from "@react-three/fiber";
 import * as THREE from "three";
 
 import type { MaterialAsset } from "@jgengine/core/material/materialAsset";
-import { useModelMaterialTextures } from "@jgengine/shell/render/materialAsset";
+import { useModelMaterialTextures } from "@jgengine/core/material/materialAsset.draw";
 import { sharedGltfLoader } from "@jgengine/shell/render/modelLoad";
 import {
   buildScatterModelSources,

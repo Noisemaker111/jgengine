@@ -1,7 +1,7 @@
 import { expect, test } from "bun:test";
 import * as footprints from "./footprintGrid";
 import type { MergedRegion, RegionFootprint } from "./footprintGrid";
-import { footprintCells } from "./buildSockets";
+import { footprintCells } from "@jgengine/core/placement/buildSockets";
 import { validatePlacement } from "../placement/placement";
 
 const { canMerge, mergeFootprints, splitRegion, createFootprintGrid, footprintObstacles } = footprints;

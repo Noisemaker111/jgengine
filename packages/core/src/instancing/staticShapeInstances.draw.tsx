@@ -2,7 +2,7 @@ import { Suspense, useLayoutEffect, useMemo, useRef } from "react";
 import * as THREE from "three";
 
 import type { ModelShadowMode } from "@jgengine/core/lod/modelLod";
-import { AuthoredSurfaceMaterial, authoredSurfaceKey, type AuthoredSurfaceConfig, type SurfaceShape } from "@jgengine/shell/render/authoredSurfaceMaterial";
+import { AuthoredSurfaceMaterial, authoredSurfaceKey, type AuthoredSurfaceConfig, type SurfaceShape } from "@jgengine/core/material/authoredSurfaceMaterial.draw";
 import { ModelFallbackBoundary } from "@jgengine/shell/render/SceneModels";
 import { useDisposable } from "@jgengine/shell/render/useDisposable";
 import { composeInstance, uploadInstances } from "./instanceUpload.draw";

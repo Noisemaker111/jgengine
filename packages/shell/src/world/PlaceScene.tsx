@@ -2,7 +2,7 @@ import { useMemo } from "react";
 
 import type { PlaceWorldFeature } from "@jgengine/core/placement/place";
 
-import { DefaultSurface } from "../render/defaultSurface";
+import { DefaultSurface } from "@jgengine/core/material/defaultSurface.draw";
 
 /** Render extent (m) standing in for an `Infinity` flat-ground axis — far past the default fog. */
 const UNBOUNDED_RENDER_EXTENT = 2048;

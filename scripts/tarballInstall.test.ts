@@ -278,7 +278,7 @@ describe.if(built)("clean-consumer resolution of the real tarball (zero-dep pack
         "import { createEmptyEditorDocument, importEditorDocumentJson } from '@jgengine/core/editor/document';",
         "import { modelWithAuthoredMaterials } from '@jgengine/core/editor/materialAuthoring';",
         "import { inspectGltfMaterials } from '@jgengine/assets/gltfMaterials';",
-        "import { applyMaterialAssignments, inspectModelMaterialSlots, materialResourceMetrics } from '@jgengine/shell/render/materialAsset';",
+        "import { applyMaterialAssignments, inspectModelMaterialSlots, materialResourceMetrics } from '@jgengine/core/material/materialAsset.draw';",
         "import { cloneModelScene, disposeModelScene } from '@jgengine/shell/render/modelRender';",
         "import { materialControlGroups } from '@jgengine/editor/materialControls';",
         "const wool = createMaterialTemplate('wool', 'game/wool', 'Original upholstery');",

@@ -3,8 +3,8 @@ import * as THREE from "three";
 
 import type { GraphicsQuality } from "@jgengine/core/settings/settingsModel";
 
-import { SURFACE_SCAN_PARS_GLSL, surfaceScanDefines, surfaceScanKeyPart, surfaceScanUniforms, type SurfaceScanBlend } from "@jgengine/shell/render/surfaceScanShader";
-import type { SurfaceScanTextures } from "@jgengine/shell/render/surfaceScanTextures";
+import { SURFACE_SCAN_PARS_GLSL, surfaceScanDefines, surfaceScanKeyPart, surfaceScanUniforms, type SurfaceScanBlend } from "@jgengine/core/material/surfaceScanShader.draw";
+import type { SurfaceScanTextures } from "@jgengine/core/material/surfaceScanTextures.draw";
 import { NOISE_GLSL, SURFACE_BUMP_NORMAL_GLSL, SURFACE_FUNCTIONS_GLSL, surfaceNoiseUniforms } from "@jgengine/core/terrain/terrainSurfaceShader.draw";
 import { terrainSurfaceClass, terrainSurfaceClassIndex, terrainSurfaceRoughness, type TerrainSurfaceClass } from "@jgengine/core/terrain/terrainSurfaces.draw";
 

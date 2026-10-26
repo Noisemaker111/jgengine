@@ -15,7 +15,7 @@ import type { NoticeFeedConfig } from "../notifications/notices";
 import type { MaterialAsset, MaterialAssignment, MaterialSurfaceParameters, MaterialTextureRole } from "../material/materialAsset";
 import type { EditorCatalogDefinition, EditorDocument } from "../editor/types";
 import type { PostProcessingConfig } from "../render/postProcessing";
-import type { EnvironmentSource } from "../render/environment";
+import type { EnvironmentSource } from "@jgengine/core/lighting/environmentLighting";
 import type { SpriteAtlas } from "../assets/spriteAtlas";
 import type { LookPreset } from "../render/lookPreset";
 import type { LookMood } from "../render/lookMood";

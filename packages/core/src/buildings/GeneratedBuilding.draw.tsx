@@ -11,7 +11,7 @@ import {
 } from "@jgengine/core/buildings/buildings";
 import type { BuildingKit } from "@jgengine/core/buildings/buildingKit";
 
-import type { MaterialOverrideTextures } from "@jgengine/shell/materialOverride";
+import type { MaterialOverrideTextures } from "@jgengine/core/material/materialOverride.draw";
 import { useDisposable } from "@jgengine/shell/render/useDisposable";
 import { BuildingKitBatch } from "./BuildingKitBatch.draw";
 import { useBuildingChunkBudget } from "./BuildingRenderBudget.draw";

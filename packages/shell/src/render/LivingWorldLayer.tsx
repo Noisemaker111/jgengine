@@ -10,7 +10,7 @@ import { advanceLivingWorld, livingWorld, resetLivingWorld } from "./livingWorld
 import { windDirection, windGust } from "./modelWind";
 import { useDisposable } from "./useDisposable";
 import { prepareBeforeWarmup } from "./shaderWarmup";
-import { applyWetnessToScene } from "./wetSurfaces";
+import { applyWetnessToScene } from "@jgengine/core/material/wetSurfaces.draw";
 
 const LIGHT_RESCAN_SECONDS = 1.5;
 const WET_SCAN_SECONDS = 2;

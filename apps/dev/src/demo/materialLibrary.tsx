@@ -3,9 +3,9 @@ import { Suspense, useMemo } from "react";
 import * as THREE from "three";
 
 import type { PlayableGame } from "@jgengine/shell/registry";
-import { EnvironmentLighting } from "@jgengine/shell/render/EnvironmentLighting";
-import { MaterialAssetSurface } from "@jgengine/shell/render/materialAsset";
-import { TriplanarAssetMaterial } from "@jgengine/shell/render/triplanarMaterial";
+import { EnvironmentLighting } from "@jgengine/core/lighting/EnvironmentLighting.draw";
+import { MaterialAssetSurface } from "@jgengine/core/material/materialAsset.draw";
+import { TriplanarAssetMaterial } from "@jgengine/core/material/triplanarMaterial.draw";
 
 import { demoGame } from "./demoGame";
 import { MATERIAL_SHEET_FLAT as FLAT } from "./materialLibraryFlat";

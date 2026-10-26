@@ -17,7 +17,7 @@ import { measureLocalBounds, reportMeasuredBounds } from "./measureBounds";
 import { recordRenderBounds } from "@jgengine/core/visibility/measuredBounds";
 import { measureLocalCollisionTriangles, reportCollisionMeshOnce } from "./measureCollisionMesh";
 import { useModelInstance } from "./useModelInstance";
-import { applyMaterialAssignments, useModelMaterialTextures, MaterialTextureLoader, validateMaterialAssignmentTargets } from "./materialAsset";
+import { applyMaterialAssignments, useModelMaterialTextures, MaterialTextureLoader, validateMaterialAssignmentTargets } from "@jgengine/core/material/materialAsset.draw";
 import { useFootIk } from "./useFootIk";
 import { resolveRigNode } from "./rigNode";
 import { PartMotionRig } from "./PartMotion";
@@ -27,7 +27,7 @@ import { registerEntityBody } from "./CorpseRagdolls";
 import { useTerrainQuality } from "@jgengine/core/terrain/terrainQuality.draw";
 import { syncSpriteFrame } from "./spriteRender";
 import { singleVariantLevel, variantLevelModel } from "@jgengine/core/lod/singleVariantLod.draw";
-import { applyMaterialOverride } from "../materialOverride";
+import { applyMaterialOverride } from "@jgengine/core/material/materialOverride.draw";
 import {
   applyPaintTextureToMaterials,
   cacheStandardMaterials,

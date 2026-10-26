@@ -3,8 +3,8 @@ import * as THREE from "three";
 
 import type { BuildingSurfaceMaps, BuildingSurfaceMaterial } from "@jgengine/core/buildings/buildings";
 
-import type { MaterialOverrideTextures } from "@jgengine/shell/materialOverride";
-import { ImageTextureLoader } from "@jgengine/shell/render/imageTexture";
+import type { MaterialOverrideTextures } from "@jgengine/core/material/materialOverride.draw";
+import { ImageTextureLoader } from "@jgengine/core/material/imageTexture.draw";
 
 const SURFACE_ROLES = ["color", "normal", "roughness", "ao", "metalness"] as const;
 type SurfaceRole = (typeof SURFACE_ROLES)[number];

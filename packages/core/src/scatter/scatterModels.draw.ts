@@ -3,7 +3,7 @@ import * as THREE from "three";
 import type { ModelConfig } from "@jgengine/core/game/playableGame";
 import { parseModelHiddenNodes } from "@jgengine/core/editor/modelNodeVisibility";
 
-import { applyMaterialOverride } from "@jgengine/shell/materialOverride";
+import { applyMaterialOverride } from "@jgengine/core/material/materialOverride.draw";
 import { cloneModelScene, disposeModelScene, ownModelMaterial } from "@jgengine/shell/render/modelRender";
 import { applyModelSurface } from "@jgengine/shell/render/modelSurface";
 import { applyModelWindToScene } from "@jgengine/shell/render/modelWind";

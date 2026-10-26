@@ -24,7 +24,7 @@ import {
 import { useGameContext } from "@jgengine/react/provider";
 import { useSceneEntityIds, useSceneObjectIds, useGameStore, usePlayer, useTarget } from "@jgengine/react/hooks";
 
-import { DefaultSurface, detailMaps } from "../render/defaultSurface";
+import { DefaultSurface, detailMaps } from "@jgengine/core/material/defaultSurface.draw";
 import { useDisposable } from "../render/useDisposable";
 import { WindClock } from "../render/modelWind";
 import { MeasuredBoundsGroup } from "../render/measureBounds";

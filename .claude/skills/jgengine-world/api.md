@@ -1652,6 +1652,37 @@
 - `skillCheckMarkerPosition` (function): function skillCheckMarkerPosition(config: SkillCheckConfig, elapsedSeconds: number): number — ⚠ undocumented
 - `skillCheckZoneAt` (function): function skillCheckZoneAt(config: SkillCheckConfig, elapsedSeconds: number): SkillCheckZone — A timing-bar skill check that succeeds when the moving marker is released inside the target zone.
 
+## @jgengine/core/lighting/CascadedShadows.draw
+
+- `CASCADE_DEPTH_STEP_TEXELS` (const): const CASCADE_DEPTH_STEP_TEXELS: 8 — Depth-axis steps worth of a texel the snapped light may drift before it re-anchors.
+- `CascadeRefreshState` (interface): interface CascadeRefreshState — Per-frame cascade refresh bookkeeping: the centre each map was last rendered with.
+- `CsmMaterialSetup` (interface): interface CsmMaterialSetup — Structural slice of CSM so the patcher is testable without a renderer.
+
+## @jgengine/core/lighting/SceneLighting.draw
+
+- `BackdropFog` (function): function BackdropFog({ fog }: { fog: BackdropConfig["fog"] }): React.JSX.Element | null — Attaches the backdrop's linear or exponential fog to the scene; renders nothing without fog.
+- `ConfiguredLighting` (function): function ConfiguredLighting({ lighting, profile, modulation, }: { lighting: LightingConfig; profile?: GraphicsProfile; /** Day-cycle scaling for the first directional (the sun) and the ambient fill. */ modulation?: DaylightModulation; }): React.JSX.Element — Mounts the game's authored lights (ambient, hemisphere, directional with shadows, point and spot within the light budget) for the active graphics profile.
+- `POINT_LIGHT_BUDGET` (const): const POINT_LIGHT_BUDGET: 8 — Default cap for combined dynamic point and spot lights.
+
+## @jgengine/core/lighting/environmentLighting
+
+- `EnvironmentSource` (type): type EnvironmentSource = | { kind: "gradient"; sky: string; ground: string; sun?: string; intensity?: number } /** Equirectangular HDR or EXR environment map loaded from `url`. */ | { kind: "hdri"; url: string; rotation?: number; intensity?: number } /** Six faces of a cube environment map, in three… — A declarative source for image-based scene lighting.
+
+## @jgengine/core/lighting/lightProbes
+
+- `IrradianceBakeInput` (interface): interface IrradianceBakeInput — Everything a bake needs for one volume: where the grid sits, how much sky reaches it, and what fills the dark.
+- `IrradianceBakeSettings` (interface): interface IrradianceBakeSettings — Authored bake inputs stored beside the samples so a volume can be re-baked without the editor.
+- `IrradianceVolume` (interface): interface IrradianceVolume — One irradiance volume authored on a scene document.
+- `PROBE_STRIDE` (const): const PROBE_STRIDE: number — Floats stored per probe: {@link SH_COEFFICIENTS} × RGB.
+- `SH_COEFFICIENTS` (const): const SH_COEFFICIENTS: 9 — Baked irradiance volume: a grid of second-order (9-coefficient, RGB) spherical-harmonic probes over a box region, sampled at runtime for ambient lighting. It is the datum an interior has that a hemisphere light cannot: a room's fill is its own, not the sky's, and it varies across the space.
+- `bakeIrradianceVolume` (function): function bakeIrradianceVolume(input: IrradianceBakeInput): IrradianceVolume — Bakes an irradiance volume from authored inputs: sky radiance where the region is open, an authored ceiling/floor fill where it is enclosed, plus inverse-square lamp radiance. Each probe projects its directional radiance into L2 SH, so ambient varies across the grid and keeps a lit side instead of flattening to one number.
+
+## @jgengine/core/lighting/lightingBalance
+
+- `DEFAULT_IBL_AMBIENT_SCALE` (const): const DEFAULT_IBL_AMBIENT_SCALE: 0.5 — Ambient multiplier applied under image-based light when `iblAmbientScale` is unset.
+- `FALLBACK_KEY_LIGHT` (const): const FALLBACK_KEY_LIGHT: Readonly<DirectionalLightingConfig> — Soft key added when authored lighting has no directional light: high, off to one side, shadowless.
+- `balanceLightingForIbl` (function): function balanceLightingForIbl(lighting: LightingConfig | undefined): LightingConfig | undefined — Rebalance authored lighting for a scene that also has image-based light: trim the flat ambient term by `iblAmbientScale` (default 0.5) and, when no directional light is authored, add {@link FALLBACK_KEY_LIGHT} tinted by the ambient colour so forms keep a lit and a shaded side. Returns the input unchanged when there is nothing to adjust.
+
 ## @jgengine/core/lod/characterLod
 
 - `CharacterLodPolicy` (interface): interface CharacterLodPolicy — Distance policy a character model's {@link ModelLodConfig} resolves to; every distance is metres.
@@ -2543,6 +2574,41 @@
 - `TransformGizmoSnap` (type): type TransformGizmoSnap = "grid" | "free" | "ground" — Snap policy: grid quantize, free drag, or ground-height sample on release.
 - `TransformGizmoSpace` (type): type TransformGizmoSpace = "world" | "local" — Gizmo handle orientation: world axes, or the target's local (yaw-rotated) axes.
 
+## @jgengine/core/placement/buildPermissions
+
+- `BuildActor` (interface): interface BuildActor — The player asking to build, with their guild if any.
+- `BuildRole` (type): type BuildRole = "owner" | "editor" | "viewer" — A player's build rights on a plot: owner, editor or viewer.
+- `ContributionGoal` (type): type ContributionGoal = Readonly<Record<string, number>> — Resource amounts a shared build needs, keyed by resource id.
+- `ContributionPool` (interface): interface ContributionPool — Shared resource pool players pay into until a build goal is met.
+- `ContributionResult` (interface): interface ContributionResult — What one contribution did: amount accepted, overflow returned and whether the goal is now met.
+- `PlotPermissionConfig` (interface): interface PlotPermissionConfig — Initial owner, guild and per-player roles for one build plot.
+- `PlotPermissionSnapshot` (interface): interface PlotPermissionSnapshot — Serializable copy of a plot's owner, guild and roles.
+- `PlotPermissions` (interface): interface PlotPermissions — Live permissions for one plot: role lookups, edit and view checks, grants, ownership transfer and snapshot/restore.
+- `createContributionPool` (function): function createContributionPool(goal: ContributionGoal): ContributionPool — Creates a shared contribution pool for a build goal.
+- `createPlotPermissions` (function): function createPlotPermissions(config: PlotPermissionConfig): PlotPermissions — Creates the build permissions for one plot.
+
+## @jgengine/core/placement/buildSockets
+
+- `BuildCell` (interface): interface BuildCell — One integer grid cell — structurally the `GridCell` of `world/footprintGrid` (no import needed).
+- `BuildFootprint` (interface): interface BuildFootprint — A rectangular footprint (world units) a piece occupies on the build grid — the occupancy bridge.
+- `BuildPieceDef` (interface): interface BuildPieceDef — A registered piece type: its named sockets and, optionally, the footprint it claims when placed.
+- `BuildSocketCatalog` (interface): interface BuildSocketCatalog — Handle returned by {@link createBuildSocketCatalog}.
+- `BuildSocketCatalogConfig` (interface): interface BuildSocketCatalogConfig — Serializable catalog config; also the shape returned by {@link BuildSocketCatalog.toJSON}.
+- `ConnectionRule` (interface): interface ConnectionRule — Declares that two socket kinds may snap together; `mutual` (default `true`) also allows `b`→`a`.
+- `ModelSocketLike` (interface): interface ModelSocketLike — A `{ name, offset }` attach point — structurally the `ModelSocket` of `scene/modelSockets`.
+- `NearestSnap` (interface): interface NearestSnap extends SnapCandidate — The snap {@link BuildSocketCatalog.snapNearest} picked, with the index of the placed piece it mates onto.
+- `PieceTransform` (interface): interface PieceTransform — World transform of a placed piece: position plus a yaw about +Y.
+- `PlacedPiece` (interface): interface PlacedPiece — An already-placed piece the resolver snaps candidates against.
+- `PlacedSocket` (interface): interface PlacedSocket — A piece's socket resolved into world space.
+- `ResolveSnapsOptions` (interface): interface ResolveSnapsOptions — Options for {@link BuildSocketCatalog.resolveSnaps}.
+- `SnapCandidate` (interface): interface SnapCandidate — A resolved snap: which sockets mate and the world transform that lands the candidate onto the target.
+- `SnapNearestOptions` (interface): interface SnapNearestOptions — Options for {@link BuildSocketCatalog.snapNearest}.
+- `SocketDef` (interface): interface SocketDef — One named socket on a piece: where it sits and which horizontal direction it faces (yaw about Y).
+- `SocketVec3` (type): type SocketVec3 = readonly [number, number, number] — Data-driven modular build-piece snap system: a catalog of piece types, each declaring named sockets (local position + outward facing + a generic "kind"), plus a connection-rule table saying which socket kinds may mate. Given a placed piece and a candidate type it resolves every valid snap — the world transform that lands the candidate's socket exactly on the placed piece's socket, facing back into it. Genre-agnostic: foundation/wall/ceiling/pillar/edge snapping falls out of the catalog data, with no game-specific piece names baked in. Pure and serializable; composes with `world/footprintGrid` occupancy (via an injected `isFree` predicate — never imported) and with `scene/modelSockets` named attach points (via {@link pieceSocketsFromModel}).
+- `createBuildSocketCatalog` (function): function createBuildSocketCatalog(config: BuildSocketCatalogConfig): BuildSocketCatalog — Build a modular snap catalog from piece definitions and a connection-rule table. Resolves the set of valid snap transforms when hovering a candidate piece near a placed one: for every compatible socket pair it computes the world transform that seats the candidate's socket onto the placed socket, oriented to face back into it. Deterministic ordering (nearest a cursor when given, else declaration order) and an optional occupancy predicate keep it drop-in for a build-mode controller.
+- `footprintCells` (function): function footprintCells(position: SocketVec3, footprint: BuildFootprint, yaw = 0, cellSize = 1): BuildCell[] — The grid cells a piece `footprint` centered on `position` (world units) covers, honoring `yaw` (snapped to the nearest quarter turn). Mirrors `world/footprintGrid`'s `cellsFor` so a game can feed the result straight into `grid.isFree`/`grid.reserve` after committing a resolved snap — without this module importing the grid.
+- `pieceSocketsFromModel` (function): function pieceSocketsFromModel(sockets: readonly ModelSocketLike[], kindOf: (name: string) => string, yawOf?: (name: string) => number): SocketDef[] — Turn a model's named attach points (from `scene/modelSockets`' `readNamedSockets`) into {@link SocketDef}s, classifying each into a connection `kind` via `kindOf` and, optionally, an outward `yaw` via `yawOf`. Lets an artist author snap sockets as empties in a GLB instead of by hand in the catalog. Pure and structural — no three.js or scene import.
+
 ## @jgengine/core/placement/place
 
 - `BoardGround` (interface): interface BoardGround — A 2D surface you look at — grid games, solitaire, tabletop. Physics is often zero-gravity or omitted; the game owns the face it draws on the board.
@@ -3024,6 +3090,15 @@
 - `CompanionStatUpgrade` (interface): interface CompanionStatUpgrade — Rule for turning one spent level-point into a stat gain. Absent from config ⇒ the stat can't be upgraded.
 - `createCompanionRoster` (function): function createCompanionRoster(config: CompanionConfig = {}): CompanionRoster — Build a {@link CompanionRoster}. Composes `scene/roster` ownership (via `ownerId`/`sourceId`), `scene/entityStats` for the per-companion stat pool, and {@link resolveCompanionIntent} for `ai/mobBrain`-shaped behavior — turning a captured creature into a loyal, levelling ally.
 - `resolveCompanionIntent` (function): function resolveCompanionIntent(record: CompanionRecord, context: CompanionIntentContext): CompanionIntent — Pure command → intent resolver. Maps a companion's standing order plus this tick's owner position, owner target, and nearby threats into the {@link CompanionIntent} a game feeds into `ai/mobBrain` (or executes directly). Deterministic and allocation-light — no import of the `@internal` brain factory; the two interoperate purely by shape.
+
+## @jgengine/core/scene/decalGeometry.draw
+
+- `DecalDrapeGeometry` (interface): interface DecalDrapeGeometry — Baked vertex/index buffers for one draped ground decal.
+- `DecalDrapeOptions` (interface): interface DecalDrapeOptions — Inputs for {@link createDecalDrapeGeometry}.
+
+## @jgengine/core/scene/decalTexture
+
+- `DecalTextureData` (interface): interface DecalTextureData — Row-major RGBA bytes plus their edge length, ready for a `THREE.DataTexture`.
 
 ## @jgengine/core/scene/entityStats
 
@@ -4104,7 +4179,7 @@
 - `BookmarkRecallMode` (type): type BookmarkRecallMode = "replace" | "merge" — How a recalled bookmark folds into the active selection.
 - `BoundsSpec` (type): type BoundsSpec = | { readonly kind: "sphere"; readonly radius: number; readonly offset?: Vec3 } | { readonly kind: "aabb"; readonly half: Vec3; readonly offset?: Vec3 } | { readonly kind: "rect"; readonly halfWidth: number; readonly halfDepth: number; readonly halfHeight?: number; readonly offset?:… — How a renderable declares its extent. AABB, bounding sphere, and 2D rectangle cover the common cases; `point` is the degenerate zero-size default for objects that never override. `offset` shifts the volume from the object origin (e.g. a tall model whose pivot is at its feet).
 - `BoxFormationOptions` (interface): interface BoxFormationOptions — Options for {@link boxFormation}.
-- `BuildRole` (type): type BuildRole = "owner" | "editor" | "viewer" — ⚠ undocumented
+- `BuildRole` (type): type BuildRole = "owner" | "editor" | "viewer" — A player's build rights on a plot: owner, editor or viewer.
 - `BuildingEnvironmentDescriptor` (type): type BuildingEnvironmentDescriptor = { kind: "building" } & Required< Pick<BuildingEnvironmentConfig, "count" | "footprint" | "stories" | "storyHeight" | "spacing" | "style"> > & Pick<BuildingEnvironmentConfig, "seed" | "position" | "palette" | "probabilities" | "along" | "kit" | "solid"> — ⚠ undocumented · used by `building`: Declares a cluster of procedurally-massed buildings for `environment()` — count, footprint, stories, style.
 - `BuildingIndex` (interface): interface BuildingIndex { readonly buildings: readonly GeneratedBuilding[]; at(point: Vec2): GeneratedBuilding | undefined; within(area: Aabb): GeneratedBuilding[]; nearest(point: Vec2): BuildingHit | undefined; isInside(point: Vec2): boolean; blockers(margin?: nu… — ⚠ undocumented
 - `BuildingPaletteOverrides` (type): type BuildingPaletteOverrides = Partial<BuildingPalette> — ⚠ undocumented
@@ -4729,7 +4804,7 @@
 - `createBodyBind` (function): function createBodyBind(deps: BodyBindDeps): BodyBind — Mirror a sim's body snapshots onto scene entities each tick — spawn on first sight, pose while bound, despawn on drop — replacing a per-body `setPose` loop plus its `despawn`/`spawn` respawn dance.
 - `createBuoyantBody` (function): function createBuoyantBody(world: PhysicsWorld, config: BuoyantBodyConfig): BuoyantBody — ⚠ undocumented
 - `createCameraShake` (function): function createCameraShake(config: CameraShakeConfig = {}): CameraShakeController — A seeded, serializable, trauma-based camera shake / impulse controller. A game calls `add(amount, kind?)` on impacts (a hit, an explosion, a landing) to raise trauma in `[0, 1]`; `update(dt)` bleeds it off over time; and `offset()` returns a pooled `{ x, y, z, pitch, yaw, roll }` kick equal to `trauma^exponent` times per-axis maxima times deterministic seeded value-noise sampled along an internal time cursor. A shell consumer applies that offset to the active camera each frame so the view visibly shakes. Nothing here is genre-specific: `kind` is a free label the game styles, all amplitudes/decay are parameters, and `snapshot`/ `restore` round-trips the shake through a save. Deterministic from `seed`: the same seed and dt sequence reproduce the same offsets.
-- `createContributionPool` (function): function createContributionPool(goal: ContributionGoal): ContributionPool — ⚠ undocumented
+- `createContributionPool` (function): function createContributionPool(goal: ContributionGoal): ContributionPool — Creates a shared contribution pool for a build goal.
 - `createDamageDirectionTracker` (function): function createDamageDirectionTracker(options: DamageDirectionOptions = {}): DamageDirectionTracker — Create a damage-direction tracker: the classic "hit-from" feedback brain. A game calls `registerHit({ angle, intensity, kind })` with the bearing from the player toward the attacker (radians, `0` = front) and the tracker owns the fade timers and eased strength so the renderer just draws an arc per `active()` entry. It is renderer-free and genre-agnostic (the `kind` tag is never interpreted here), allocation-aware (a fixed pool, no per-frame garbage), and fully serializable via `snapshot`/`restore`. Optional angle merging collapses a burst from one direction into a single strong arc.
 - `createDamageModel` (function): function createDamageModel(config: DamageModelConfig): DamageModel — ⚠ undocumented
 - `createDayNightCycle` (function): function createDayNightCycle(options: DayNightCycleOptions): DayNightCycle — Creates a turnkey day-night cycle: a serializable model that advances a normalized day fraction on an injected clock and blends per-keyframe phase labels and tint/light colors. Wire this one model, then drive an existing sky/daylight seam from `sample()` (or drop it straight into a `{ calendar(): { dayFraction } }` seam via `calendar()`) to get a moving day-night cycle with color grading — no hand-rolled clock or lerp. `phase` labels and colors are free-form; the model never interprets their meaning.
@@ -4764,7 +4839,7 @@
 - `createPerception` (function): function createPerception(initial: PerceptionConfig): PerceptionService — Creates a deterministic sight, sound, and damage perception service with expiring target memory. Signals are judged in the order the caller supplies them, never from the wall clock.
 - `createPlacedStructureStore` (function): function createPlacedStructureStore(): PlacedStructureStore — ⚠ undocumented
 - `createPlacementController` (function): function createPlacementController(config: PlacementControllerConfig): PlacementController — Headless placement ghost: hover → valid/invalid preview, rotate, grid/free/surface snap, commit. Pair with `PlacementGhost` (`./PlacementGhost.draw`) and {@link placeAssetFromCommit}.
-- `createPlotPermissions` (function): function createPlotPermissions(config: PlotPermissionConfig): PlotPermissions — ⚠ undocumented
+- `createPlotPermissions` (function): function createPlotPermissions(config: PlotPermissionConfig): PlotPermissions — Creates the build permissions for one plot.
 - `createPoliceResponse` (function): function createPoliceResponse(config: PoliceResponseConfig): PoliceResponse — The wanted level a crime sandbox needs, over the shared heat curve: a crime raises heat only while a witness holds the suspect in view, the heat bleeds on a stated linear curve once the suspect has been out of every witness's sight for `escapeSeconds`, the tier table decides what police do (patrol → investigate → pursue → roadblock), the search area sits where the suspect was last seen and grows while the trail is cold, and a roadblock tier cordons it with authored sites off the lane graph. Heat, tiers and curves are caller policy; witness facts come from `sensor/perception` memory (`sourceId`/`sourceTick` kept), so there is no second sight path.
 - `createPoseState` (function): function createPoseState(resolveAllowed: (instanceId: string) => PoseAllowedStates | null | undefined): PoseState — Stance/pose transitions — stand, crouch, prone — that change the hitbox and movement.
 - `createPromptRegistry` (function): function createPromptRegistry(): PromptRegistry — Create a live, observable interaction-prompt registry over the pure {@link resolveActivePrompt} resolver. Register positioned "press E" prompts, `resolve(playerPosition)` each frame as the hero moves, and read `active()` — the nearest strictly-in-range prompt (higher `priority` beats closer). The set is owned here (register/update/unregister/clear/all); selection stays pure. Subscribers are notified only when the active prompt *changes*, so a HUD does not thrash per frame, and `snapshot`/`restore` round-trip the prompts plus the active id through a save (display payloads are free strings/ids the game owns — the registry never branches on their meaning). Allocation-aware: `all()` and `resolve()` reuse a cached array instead of rebuilding per call.
@@ -5059,41 +5134,6 @@
 - `authoredSpawnPosition` (function): function authoredSpawnPosition(document: AuthoredSpawnDocumentLike, options: AuthoredSpawnOptions = {}): [number, number, number] | null — Position of the authored spawn marker as a spawn-ready `[x, y, z]` tuple, or null when the document has none. Reads the first `player_spawn` marker by default, so dragging the marker in the editor moves where players spawn — no coordinates copied into game code.
 - `authoredSpawnRotation` (function): function authoredSpawnRotation(document: AuthoredSpawnDocumentLike, options: AuthoredSpawnOptions = {}): number — Facing (yaw radians) of the authored spawn marker, or 0 when the document has none — pair with {@link authoredSpawnPosition} to spawn players where and how the editor placed them.
 - `markersOfKind` (function): function markersOfKind<TMarker extends AuthoredSpawnMarkerLike>(document: { markers: readonly TMarker[] }, kind: string): TMarker[] — Every marker of `kind`, in document order — the generic query behind gameplay that references authored markers by kind instead of copying coordinates into code.
-
-## @jgengine/core/world/buildPermissions
-
-- `BuildActor` (interface): interface BuildActor { userId: string; guildId?: string } — ⚠ undocumented
-- `BuildRole` (type): type BuildRole = "owner" | "editor" | "viewer" — ⚠ undocumented
-- `ContributionGoal` (type): type ContributionGoal = Readonly<Record<string, number>> — ⚠ undocumented
-- `ContributionPool` (interface): interface ContributionPool { contribute(userId: string, resource: string, amount: number): ContributionResult; totals(): Readonly<Record<string, number>>; remaining(): Readonly<Record<string, number>>; byContributor(userId: string): Readonly<Record<string, number>>; … — ⚠ undocumented
-- `ContributionResult` (interface): interface ContributionResult { accepted: number; overflow: number; complete: boolean } — ⚠ undocumented
-- `PlotPermissionConfig` (interface): interface PlotPermissionConfig { plotId: string; ownerId: string; guildId?: string; roles?: Readonly<Record<string, BuildRole>>; guildRole?: BuildRole } — ⚠ undocumented
-- `PlotPermissionSnapshot` (interface): interface PlotPermissionSnapshot { plotId: string; ownerId: string; guildId?: string; roles: Readonly<Record<string, BuildRole>>; guildRole?: BuildRole } — ⚠ undocumented
-- `PlotPermissions` (interface): interface PlotPermissions { roleOf(actor: BuildActor): BuildRole | null; canEdit(actor: BuildActor): boolean; canView(actor: BuildActor): boolean; grant(userId: string, role: BuildRole): void; revoke(userId: string): void; setGuild(guildId: string | null, role?: Bui… — ⚠ undocumented
-- `createContributionPool` (function): function createContributionPool(goal: ContributionGoal): ContributionPool — ⚠ undocumented
-- `createPlotPermissions` (function): function createPlotPermissions(config: PlotPermissionConfig): PlotPermissions — ⚠ undocumented
-
-## @jgengine/core/world/buildSockets
-
-- `BuildCell` (interface): interface BuildCell — One integer grid cell — structurally the `GridCell` of `world/footprintGrid` (no import needed).
-- `BuildFootprint` (interface): interface BuildFootprint — A rectangular footprint (world units) a piece occupies on the build grid — the occupancy bridge.
-- `BuildPieceDef` (interface): interface BuildPieceDef — A registered piece type: its named sockets and, optionally, the footprint it claims when placed.
-- `BuildSocketCatalog` (interface): interface BuildSocketCatalog — Handle returned by {@link createBuildSocketCatalog}.
-- `BuildSocketCatalogConfig` (interface): interface BuildSocketCatalogConfig — Serializable catalog config; also the shape returned by {@link BuildSocketCatalog.toJSON}.
-- `ConnectionRule` (interface): interface ConnectionRule — Declares that two socket kinds may snap together; `mutual` (default `true`) also allows `b`→`a`.
-- `ModelSocketLike` (interface): interface ModelSocketLike — A `{ name, offset }` attach point — structurally the `ModelSocket` of `scene/modelSockets`.
-- `NearestSnap` (interface): interface NearestSnap extends SnapCandidate — The snap {@link BuildSocketCatalog.snapNearest} picked, with the index of the placed piece it mates onto.
-- `PieceTransform` (interface): interface PieceTransform — World transform of a placed piece: position plus a yaw about +Y.
-- `PlacedPiece` (interface): interface PlacedPiece — An already-placed piece the resolver snaps candidates against.
-- `PlacedSocket` (interface): interface PlacedSocket — A piece's socket resolved into world space.
-- `ResolveSnapsOptions` (interface): interface ResolveSnapsOptions — Options for {@link BuildSocketCatalog.resolveSnaps}.
-- `SnapCandidate` (interface): interface SnapCandidate — A resolved snap: which sockets mate and the world transform that lands the candidate onto the target.
-- `SnapNearestOptions` (interface): interface SnapNearestOptions — Options for {@link BuildSocketCatalog.snapNearest}.
-- `SocketDef` (interface): interface SocketDef — One named socket on a piece: where it sits and which horizontal direction it faces (yaw about Y).
-- `SocketVec3` (type): type SocketVec3 = readonly [number, number, number] — Data-driven modular build-piece snap system: a catalog of piece types, each declaring named sockets (local position + outward facing + a generic "kind"), plus a connection-rule table saying which socket kinds may mate. Given a placed piece and a candidate type it resolves every valid snap — the world transform that lands the candidate's socket exactly on the placed piece's socket, facing back into it. Genre-agnostic: foundation/wall/ceiling/pillar/edge snapping falls out of the catalog data, with no game-specific piece names baked in. Pure and serializable; composes with `world/footprintGrid` occupancy (via an injected `isFree` predicate — never imported) and with `scene/modelSockets` named attach points (via {@link pieceSocketsFromModel}).
-- `createBuildSocketCatalog` (function): function createBuildSocketCatalog(config: BuildSocketCatalogConfig): BuildSocketCatalog — Build a modular snap catalog from piece definitions and a connection-rule table. Resolves the set of valid snap transforms when hovering a candidate piece near a placed one: for every compatible socket pair it computes the world transform that seats the candidate's socket onto the placed socket, oriented to face back into it. Deterministic ordering (nearest a cursor when given, else declaration order) and an optional occupancy predicate keep it drop-in for a build-mode controller.
-- `footprintCells` (function): function footprintCells(position: SocketVec3, footprint: BuildFootprint, yaw = 0, cellSize = 1): BuildCell[] — The grid cells a piece `footprint` centered on `position` (world units) covers, honoring `yaw` (snapped to the nearest quarter turn). Mirrors `world/footprintGrid`'s `cellsFor` so a game can feed the result straight into `grid.isFree`/`grid.reserve` after committing a resolved snap — without this module importing the grid.
-- `pieceSocketsFromModel` (function): function pieceSocketsFromModel(sockets: readonly ModelSocketLike[], kindOf: (name: string) => string, yawOf?: (name: string) => number): SocketDef[] — Turn a model's named attach points (from `scene/modelSockets`' `readNamedSockets`) into {@link SocketDef}s, classifying each into a connection `kind` via `kindOf` and, optionally, an outward `yaw` via `yawOf`. Lets an artist author snap sockets as empties in a GLB instead of by hand in the catalog. Pure and structural — no three.js or scene import.
 
 ## @jgengine/core/world/captureCamera
 

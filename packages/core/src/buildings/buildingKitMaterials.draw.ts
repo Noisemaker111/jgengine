@@ -1,8 +1,8 @@
 import * as THREE from "three";
 import type { BuildingKitPart } from "@jgengine/core/buildings/buildingKit";
 import { validateMaterialAssignments, type MaterialAsset } from "@jgengine/core/material/materialAsset";
-import type { MaterialOverrideTextures } from "@jgengine/shell/materialOverride";
-import { applyMaterialAssignments, validateMaterialAssignmentTargets } from "@jgengine/shell/render/materialAsset";
+import type { MaterialOverrideTextures } from "@jgengine/core/material/materialOverride.draw";
+import { applyMaterialAssignments, validateMaterialAssignmentTargets } from "@jgengine/core/material/materialAsset.draw";
 import { buildScatterModelSources, disposeScatterModelSources } from "@jgengine/core/scatter/scatterModels.draw";
 import { composeBuildingKitMatrix, type BuildingKitInstance, type BuildingKitModelBounds } from "./buildingKitFit.draw";
 import { applyBuildingSurface, surfaceKey } from "./buildingSurface.draw";

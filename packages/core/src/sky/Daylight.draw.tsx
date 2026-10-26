@@ -9,7 +9,7 @@ import { resolveVolumetricClouds } from "@jgengine/core/sky/volumetricClouds";
 import { warnOnce } from "@jgengine/core/devtools/warnOnce";
 
 import { DisplayColorWriter } from "@jgengine/shell/render/displayColor";
-import type { DaylightModulation } from "@jgengine/shell/render/SceneLighting";
+import type { DaylightModulation } from "@jgengine/core/lighting/SceneLighting.draw";
 import {
   bandFogColor,
   daylightStateAt,

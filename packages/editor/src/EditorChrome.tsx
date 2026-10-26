@@ -20,7 +20,7 @@ import { EditorContextMenu } from "./EditorContextMenu";
 import { ParentPickerMenu } from "./ParentPickerMenu";
 import { modelWithAuthoredMaterials } from "@jgengine/core/editor/materialAuthoring";
 import { modelWithAuthoredNodeVisibility } from "@jgengine/core/editor/modelNodeVisibility";
-import type { ModelMaterialSlotInfo } from "@jgengine/shell/render/materialAsset";
+import type { ModelMaterialSlotInfo } from "@jgengine/core/material/materialAsset.draw";
 import { MaterialPreview } from "./MaterialPreview";
 import { MaterialsWorkspacePanel } from "./MaterialsWorkspacePanel";
 import { PrefabsPanel } from "./PrefabsPanel";
