@@ -14185,6 +14185,950 @@
         "count": 5,
         "radius": 7
       }
+    },
+    {
+      "id": "drop_south_coast_1",
+      "kind": "supply_drop",
+      "position": {
+        "x": -1013.7,
+        "y": 3,
+        "z": 649.5
+      },
+      "meta": {
+        "biome": "south_coast",
+        "tiers": [
+          {
+            "tier": "white",
+            "weight": 3
+          },
+          {
+            "tier": "green",
+            "weight": 1
+          }
+        ]
+      }
+    },
+    {
+      "id": "drop_south_coast_2",
+      "kind": "supply_drop",
+      "position": {
+        "x": 1051.6,
+        "y": 5.6,
+        "z": 792.7
+      },
+      "meta": {
+        "biome": "south_coast",
+        "tiers": [
+          {
+            "tier": "white",
+            "weight": 3
+          },
+          {
+            "tier": "green",
+            "weight": 1
+          }
+        ]
+      }
+    },
+    {
+      "id": "drop_south_coast_3",
+      "kind": "supply_drop",
+      "position": {
+        "x": 37.4,
+        "y": 2,
+        "z": 1112.2
+      },
+      "meta": {
+        "biome": "south_coast",
+        "tiers": [
+          {
+            "tier": "white",
+            "weight": 3
+          },
+          {
+            "tier": "green",
+            "weight": 1
+          }
+        ]
+      }
+    },
+    {
+      "id": "drop_south_coast_4",
+      "kind": "supply_drop",
+      "position": {
+        "x": -595.2,
+        "y": 1.6,
+        "z": 1072.7
+      },
+      "meta": {
+        "biome": "south_coast",
+        "tiers": [
+          {
+            "tier": "white",
+            "weight": 3
+          },
+          {
+            "tier": "green",
+            "weight": 1
+          }
+        ]
+      }
+    },
+    {
+      "id": "drop_south_coast_5",
+      "kind": "supply_drop",
+      "position": {
+        "x": 657.2,
+        "y": 2.5,
+        "z": 1085.2
+      },
+      "meta": {
+        "biome": "south_coast",
+        "tiers": [
+          {
+            "tier": "white",
+            "weight": 3
+          },
+          {
+            "tier": "green",
+            "weight": 1
+          }
+        ]
+      }
+    },
+    {
+      "id": "drop_south_coast_6",
+      "kind": "supply_drop",
+      "position": {
+        "x": -1156.4,
+        "y": 1.6,
+        "z": 1101.4
+      },
+      "meta": {
+        "biome": "south_coast",
+        "tiers": [
+          {
+            "tier": "white",
+            "weight": 3
+          },
+          {
+            "tier": "green",
+            "weight": 1
+          }
+        ]
+      }
+    },
+    {
+      "id": "drop_plains_1",
+      "kind": "supply_drop",
+      "position": {
+        "x": -1045.9,
+        "y": 7.2,
+        "z": -42
+      },
+      "meta": {
+        "biome": "plains",
+        "tiers": [
+          {
+            "tier": "white",
+            "weight": 3
+          },
+          {
+            "tier": "green",
+            "weight": 1
+          }
+        ]
+      }
+    },
+    {
+      "id": "drop_plains_2",
+      "kind": "supply_drop",
+      "position": {
+        "x": 679.8,
+        "y": 4.7,
+        "z": 223
+      },
+      "meta": {
+        "biome": "plains",
+        "tiers": [
+          {
+            "tier": "white",
+            "weight": 3
+          },
+          {
+            "tier": "green",
+            "weight": 1
+          }
+        ]
+      }
+    },
+    {
+      "id": "drop_plains_3",
+      "kind": "supply_drop",
+      "position": {
+        "x": -421.7,
+        "y": 1.5,
+        "z": 958.2
+      },
+      "meta": {
+        "biome": "plains",
+        "tiers": [
+          {
+            "tier": "white",
+            "weight": 3
+          },
+          {
+            "tier": "green",
+            "weight": 1
+          }
+        ]
+      }
+    },
+    {
+      "id": "drop_herbivore_island_1",
+      "kind": "supply_drop",
+      "position": {
+        "x": 1001.6,
+        "y": 2.8,
+        "z": 985.6
+      },
+      "meta": {
+        "biome": "herbivore_island",
+        "tiers": [
+          {
+            "tier": "white",
+            "weight": 2
+          },
+          {
+            "tier": "green",
+            "weight": 2
+          }
+        ]
+      }
+    },
+    {
+      "id": "drop_eastern_forest_1",
+      "kind": "supply_drop",
+      "position": {
+        "x": 1077.8,
+        "y": 4.9,
+        "z": -642.5
+      },
+      "meta": {
+        "biome": "eastern_forest",
+        "tiers": [
+          {
+            "tier": "white",
+            "weight": 1
+          },
+          {
+            "tier": "green",
+            "weight": 3
+          },
+          {
+            "tier": "blue",
+            "weight": 1
+          }
+        ]
+      }
+    },
+    {
+      "id": "drop_eastern_forest_2",
+      "kind": "supply_drop",
+      "position": {
+        "x": 983.8,
+        "y": 6.4,
+        "z": 709.4
+      },
+      "meta": {
+        "biome": "eastern_forest",
+        "tiers": [
+          {
+            "tier": "white",
+            "weight": 1
+          },
+          {
+            "tier": "green",
+            "weight": 3
+          },
+          {
+            "tier": "blue",
+            "weight": 1
+          }
+        ]
+      }
+    },
+    {
+      "id": "drop_eastern_forest_3",
+      "kind": "supply_drop",
+      "position": {
+        "x": 1234.4,
+        "y": 5.9,
+        "z": 25
+      },
+      "meta": {
+        "biome": "eastern_forest",
+        "tiers": [
+          {
+            "tier": "white",
+            "weight": 1
+          },
+          {
+            "tier": "green",
+            "weight": 3
+          },
+          {
+            "tier": "blue",
+            "weight": 1
+          }
+        ]
+      }
+    },
+    {
+      "id": "drop_jungle_1",
+      "kind": "supply_drop",
+      "position": {
+        "x": -748.5,
+        "y": 7.5,
+        "z": -210.4
+      },
+      "meta": {
+        "biome": "jungle",
+        "tiers": [
+          {
+            "tier": "white",
+            "weight": 1
+          },
+          {
+            "tier": "green",
+            "weight": 3
+          },
+          {
+            "tier": "blue",
+            "weight": 1
+          }
+        ]
+      }
+    },
+    {
+      "id": "drop_jungle_2",
+      "kind": "supply_drop",
+      "position": {
+        "x": 693.8,
+        "y": 4.6,
+        "z": 826.5
+      },
+      "meta": {
+        "biome": "jungle",
+        "tiers": [
+          {
+            "tier": "white",
+            "weight": 1
+          },
+          {
+            "tier": "green",
+            "weight": 3
+          },
+          {
+            "tier": "blue",
+            "weight": 1
+          }
+        ]
+      }
+    },
+    {
+      "id": "drop_jungle_3",
+      "kind": "supply_drop",
+      "position": {
+        "x": -665.8,
+        "y": 7.1,
+        "z": 792.4
+      },
+      "meta": {
+        "biome": "jungle",
+        "tiers": [
+          {
+            "tier": "white",
+            "weight": 1
+          },
+          {
+            "tier": "green",
+            "weight": 3
+          },
+          {
+            "tier": "blue",
+            "weight": 1
+          }
+        ]
+      }
+    },
+    {
+      "id": "drop_jungle_4",
+      "kind": "supply_drop",
+      "position": {
+        "x": 236.9,
+        "y": 8.4,
+        "z": -57
+      },
+      "meta": {
+        "biome": "jungle",
+        "tiers": [
+          {
+            "tier": "white",
+            "weight": 1
+          },
+          {
+            "tier": "green",
+            "weight": 3
+          },
+          {
+            "tier": "blue",
+            "weight": 1
+          }
+        ]
+      }
+    },
+    {
+      "id": "drop_jungle_5",
+      "kind": "supply_drop",
+      "position": {
+        "x": 26.5,
+        "y": 6.3,
+        "z": 696.6
+      },
+      "meta": {
+        "biome": "jungle",
+        "tiers": [
+          {
+            "tier": "white",
+            "weight": 1
+          },
+          {
+            "tier": "green",
+            "weight": 3
+          },
+          {
+            "tier": "blue",
+            "weight": 1
+          }
+        ]
+      }
+    },
+    {
+      "id": "drop_jungle_6",
+      "kind": "supply_drop",
+      "position": {
+        "x": -1052.6,
+        "y": 7,
+        "z": 251.7
+      },
+      "meta": {
+        "biome": "jungle",
+        "tiers": [
+          {
+            "tier": "white",
+            "weight": 1
+          },
+          {
+            "tier": "green",
+            "weight": 3
+          },
+          {
+            "tier": "blue",
+            "weight": 1
+          }
+        ]
+      }
+    },
+    {
+      "id": "drop_redwood_1",
+      "kind": "supply_drop",
+      "position": {
+        "x": 479.7,
+        "y": 11,
+        "z": -579.9
+      },
+      "meta": {
+        "biome": "redwood",
+        "tiers": [
+          {
+            "tier": "green",
+            "weight": 1
+          },
+          {
+            "tier": "blue",
+            "weight": 3
+          },
+          {
+            "tier": "purple",
+            "weight": 1
+          }
+        ]
+      }
+    },
+    {
+      "id": "drop_redwood_2",
+      "kind": "supply_drop",
+      "position": {
+        "x": 1228.3,
+        "y": 1.7,
+        "z": -258.2
+      },
+      "meta": {
+        "biome": "redwood",
+        "tiers": [
+          {
+            "tier": "green",
+            "weight": 1
+          },
+          {
+            "tier": "blue",
+            "weight": 3
+          },
+          {
+            "tier": "purple",
+            "weight": 1
+          }
+        ]
+      }
+    },
+    {
+      "id": "drop_redwood_3",
+      "kind": "supply_drop",
+      "position": {
+        "x": 637.9,
+        "y": 9.7,
+        "z": -85.7
+      },
+      "meta": {
+        "biome": "redwood",
+        "tiers": [
+          {
+            "tier": "green",
+            "weight": 1
+          },
+          {
+            "tier": "blue",
+            "weight": 3
+          },
+          {
+            "tier": "purple",
+            "weight": 1
+          }
+        ]
+      }
+    },
+    {
+      "id": "drop_swamp_1",
+      "kind": "supply_drop",
+      "position": {
+        "x": -543.2,
+        "y": 6.3,
+        "z": 266
+      },
+      "meta": {
+        "biome": "swamp",
+        "tiers": [
+          {
+            "tier": "green",
+            "weight": 1
+          },
+          {
+            "tier": "blue",
+            "weight": 3
+          },
+          {
+            "tier": "purple",
+            "weight": 1
+          }
+        ]
+      }
+    },
+    {
+      "id": "drop_swamp_2",
+      "kind": "supply_drop",
+      "position": {
+        "x": -227.4,
+        "y": 10.4,
+        "z": 557.8
+      },
+      "meta": {
+        "biome": "swamp",
+        "tiers": [
+          {
+            "tier": "green",
+            "weight": 1
+          },
+          {
+            "tier": "blue",
+            "weight": 3
+          },
+          {
+            "tier": "purple",
+            "weight": 1
+          }
+        ]
+      }
+    },
+    {
+      "id": "drop_highland_1",
+      "kind": "supply_drop",
+      "position": {
+        "x": 809.9,
+        "y": 1.7,
+        "z": -1097.5
+      },
+      "meta": {
+        "biome": "highland",
+        "tiers": [
+          {
+            "tier": "blue",
+            "weight": 2
+          },
+          {
+            "tier": "purple",
+            "weight": 2
+          },
+          {
+            "tier": "yellow",
+            "weight": 1
+          }
+        ]
+      }
+    },
+    {
+      "id": "drop_highland_2",
+      "kind": "supply_drop",
+      "position": {
+        "x": -1160.1,
+        "y": 5.6,
+        "z": -355.1
+      },
+      "meta": {
+        "biome": "highland",
+        "tiers": [
+          {
+            "tier": "blue",
+            "weight": 2
+          },
+          {
+            "tier": "purple",
+            "weight": 2
+          },
+          {
+            "tier": "yellow",
+            "weight": 1
+          }
+        ]
+      }
+    },
+    {
+      "id": "drop_highland_3",
+      "kind": "supply_drop",
+      "position": {
+        "x": 47.4,
+        "y": 8.4,
+        "z": -346.9
+      },
+      "meta": {
+        "biome": "highland",
+        "tiers": [
+          {
+            "tier": "blue",
+            "weight": 2
+          },
+          {
+            "tier": "purple",
+            "weight": 2
+          },
+          {
+            "tier": "yellow",
+            "weight": 1
+          }
+        ]
+      }
+    },
+    {
+      "id": "drop_highland_4",
+      "kind": "supply_drop",
+      "position": {
+        "x": 80,
+        "y": 19.5,
+        "z": -988.9
+      },
+      "meta": {
+        "biome": "highland",
+        "tiers": [
+          {
+            "tier": "blue",
+            "weight": 2
+          },
+          {
+            "tier": "purple",
+            "weight": 2
+          },
+          {
+            "tier": "yellow",
+            "weight": 1
+          }
+        ]
+      }
+    },
+    {
+      "id": "drop_highland_5",
+      "kind": "supply_drop",
+      "position": {
+        "x": 973.9,
+        "y": 26.9,
+        "z": -527.3
+      },
+      "meta": {
+        "biome": "highland",
+        "tiers": [
+          {
+            "tier": "blue",
+            "weight": 2
+          },
+          {
+            "tier": "purple",
+            "weight": 2
+          },
+          {
+            "tier": "yellow",
+            "weight": 1
+          }
+        ]
+      }
+    },
+    {
+      "id": "drop_volcano_1",
+      "kind": "supply_drop",
+      "position": {
+        "x": -223.1,
+        "y": 3.3,
+        "z": -496.4
+      },
+      "meta": {
+        "biome": "volcano",
+        "tiers": [
+          {
+            "tier": "purple",
+            "weight": 1
+          },
+          {
+            "tier": "yellow",
+            "weight": 2
+          },
+          {
+            "tier": "red",
+            "weight": 1
+          }
+        ]
+      }
+    },
+    {
+      "id": "drop_volcano_2",
+      "kind": "supply_drop",
+      "position": {
+        "x": -510.2,
+        "y": 6.6,
+        "z": 44.8
+      },
+      "meta": {
+        "biome": "volcano",
+        "tiers": [
+          {
+            "tier": "purple",
+            "weight": 1
+          },
+          {
+            "tier": "yellow",
+            "weight": 2
+          },
+          {
+            "tier": "red",
+            "weight": 1
+          }
+        ]
+      }
+    },
+    {
+      "id": "drop_volcano_3",
+      "kind": "supply_drop",
+      "position": {
+        "x": -146.2,
+        "y": 11.9,
+        "z": -217.1
+      },
+      "meta": {
+        "biome": "volcano",
+        "tiers": [
+          {
+            "tier": "purple",
+            "weight": 1
+          },
+          {
+            "tier": "yellow",
+            "weight": 2
+          },
+          {
+            "tier": "red",
+            "weight": 1
+          }
+        ]
+      }
+    },
+    {
+      "id": "drop_snow_1",
+      "kind": "supply_drop",
+      "position": {
+        "x": -962.8,
+        "y": 2.1,
+        "z": -1140.7
+      },
+      "meta": {
+        "biome": "snow",
+        "tiers": [
+          {
+            "tier": "purple",
+            "weight": 1
+          },
+          {
+            "tier": "yellow",
+            "weight": 2
+          },
+          {
+            "tier": "red",
+            "weight": 2
+          }
+        ]
+      }
+    },
+    {
+      "id": "drop_snow_2",
+      "kind": "supply_drop",
+      "position": {
+        "x": 358.6,
+        "y": 21.2,
+        "z": -348.4
+      },
+      "meta": {
+        "biome": "snow",
+        "tiers": [
+          {
+            "tier": "purple",
+            "weight": 1
+          },
+          {
+            "tier": "yellow",
+            "weight": 2
+          },
+          {
+            "tier": "red",
+            "weight": 2
+          }
+        ]
+      }
+    },
+    {
+      "id": "drop_snow_3",
+      "kind": "supply_drop",
+      "position": {
+        "x": -533.7,
+        "y": 9.1,
+        "z": -334.5
+      },
+      "meta": {
+        "biome": "snow",
+        "tiers": [
+          {
+            "tier": "purple",
+            "weight": 1
+          },
+          {
+            "tier": "yellow",
+            "weight": 2
+          },
+          {
+            "tier": "red",
+            "weight": 2
+          }
+        ]
+      }
+    },
+    {
+      "id": "drop_snow_4",
+      "kind": "supply_drop",
+      "position": {
+        "x": -152.1,
+        "y": 2.9,
+        "z": -1141.3
+      },
+      "meta": {
+        "biome": "snow",
+        "tiers": [
+          {
+            "tier": "purple",
+            "weight": 1
+          },
+          {
+            "tier": "yellow",
+            "weight": 2
+          },
+          {
+            "tier": "red",
+            "weight": 2
+          }
+        ]
+      }
+    },
+    {
+      "id": "drop_snow_5",
+      "kind": "supply_drop",
+      "position": {
+        "x": -985.6,
+        "y": 9.2,
+        "z": -583.9
+      },
+      "meta": {
+        "biome": "snow",
+        "tiers": [
+          {
+            "tier": "purple",
+            "weight": 1
+          },
+          {
+            "tier": "yellow",
+            "weight": 2
+          },
+          {
+            "tier": "red",
+            "weight": 2
+          }
+        ]
+      }
+    },
+    {
+      "id": "drop_dead_island_1",
+      "kind": "supply_drop",
+      "position": {
+        "x": 861.9,
+        "y": 1.7,
+        "z": -994
+      },
+      "meta": {
+        "biome": "dead_island",
+        "tiers": [
+          {
+            "tier": "yellow",
+            "weight": 1
+          },
+          {
+            "tier": "red",
+            "weight": 2
+          }
+        ]
+      }
     }
   ],
   "volumes": [],

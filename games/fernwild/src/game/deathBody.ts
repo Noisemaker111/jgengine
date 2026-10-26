@@ -3,7 +3,7 @@ import { createRemainsField, type RemainsField, type RemainsSnapshot, type Remai
 import type { GameContext } from "@jgengine/core/runtime/gameContext";
 import { perContext } from "@jgengine/core/runtime/perContext";
 
-import { BAG, HOTBAR } from "./bags";
+import { BAG, HOTBAR, stow } from "./bags";
 import { itemLabel } from "./data/items";
 
 /**
@@ -40,21 +40,6 @@ function emptyPockets(ctx: GameContext): RemainsStack[] {
 export function leaveBody(ctx: GameContext, at: readonly [number, number, number]): number {
   const left = bodiesOf(ctx).leave({ owner: ctx.player.userId, at, contents: emptyPockets(ctx), now: ctx.time.now() });
   return left === null ? 0 : left.contents.length;
-}
-
-/** Put as many of `count` as fit in the bag, then the hotbar; returns how many went in. */
-function stow(ctx: GameContext, item: string, count: number): number {
-  let stowed = 0;
-  for (const inventoryId of [BAG, HOTBAR]) {
-    let tryCount = count - stowed;
-    while (tryCount > 0) {
-      if (ctx.player.inventory.put(inventoryId, item, tryCount).status === "ok") {
-        stowed += tryCount;
-        tryCount = Math.min(tryCount, count - stowed);
-      } else tryCount = Math.floor(tryCount / 2);
-    }
-  }
-  return stowed;
 }
 
 function bodyNear(ctx: GameContext) {

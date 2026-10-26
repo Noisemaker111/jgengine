@@ -33,6 +33,10 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 - `createAgent` (function) · `import { createAgent } from "@jgengine/core/agents/agent"`
 - `createAgentSystem` (function) · `import { createAgentSystem } from "@jgengine/core/agents/system"`
 
+## airdrops — timed supply crates falling at authored sites, tiered by level, holding rolled loot, expiring when ignored
+
+- `createAirdropField` (function) · `import { createAirdropField } from "@jgengine/core/airdrop/airdrop"`
+
 ## ambient-temperature — air temperature from climate, time of day, weather, altitude, wetness and nearby heat
 
 - `ambientTemperature` (function) · `import { ambientTemperature } from "@jgengine/core/gameplay"`

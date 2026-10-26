@@ -6,8 +6,9 @@ import { baseBuilding, baseGhost, structureColor } from "../base";
 import { Bodies } from "./Bodies";
 import { Caves } from "./Caves";
 import { Obelisks } from "./Obelisks";
+import { SupplyDrops } from "./SupplyDrops";
 
-/** What the game draws into the world: the survivor's base (pieces by tier colour, the build ghost), the obelisks, the caves and fallen survivors' bodies. */
+/** What the game draws into the world: the survivor's base (pieces by tier colour, the build ghost), the obelisks, the caves, fallen survivors' bodies and supply crates. */
 export function BaseWorld({ ctx }: WorldOverlayProps): ReactNode {
   return (
     <>
@@ -15,6 +16,7 @@ export function BaseWorld({ ctx }: WorldOverlayProps): ReactNode {
       <Obelisks ctx={ctx} />
       <Caves ctx={ctx} />
       <Bodies ctx={ctx} />
+      <SupplyDrops ctx={ctx} />
     </>
   );
 }

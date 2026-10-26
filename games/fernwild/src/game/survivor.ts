@@ -90,12 +90,13 @@ function statValue(survivor: Survivor, id: StatId): number {
   return POINTS.value(survivor.points, id);
 }
 
-function level(ctx: GameContext): number {
+/** The survivor's level, 1 at the start. */
+export function survivorLevel(ctx: GameContext): number {
   return ctx.scene.entity.stats.get(ctx.player.userId, "level")?.current ?? 1;
 }
 
 function unspentPoints(ctx: GameContext, survivor: Survivor): number {
-  return POINTS.unspent(survivor.points, level(ctx) - 1);
+  return POINTS.unspent(survivor.points, survivorLevel(ctx) - 1);
 }
 
 /** Push levelled maxes into the vitals and the entity's health pool. */
@@ -108,11 +109,11 @@ function applyMaxes(ctx: GameContext, survivor: Survivor, fill: boolean): void {
 
 export function grantXp(ctx: GameContext, amount: number): void {
   const survivor = survivorOf(ctx);
-  const before = level(ctx);
+  const before = survivorLevel(ctx);
   track.grantXp(ctx.scene.entity.stats, ctx.player.userId, amount, (reached) => {
     ctx.game.notices.push({ text: `Level ${reached}! A stat point and ${survivor.engrams.grantForLevel(reached)} engram points to spend.`, tone: "success" });
   });
-  if (level(ctx) !== before) ctx.scene.entity.floatText({ instanceId: ctx.player.userId, text: "Level up!", kind: "pickup" });
+  if (survivorLevel(ctx) !== before) ctx.scene.entity.floatText({ instanceId: ctx.player.userId, text: "Level up!", kind: "pickup" });
 }
 
 // --- inventory ---------------------------------------------------------------------------
@@ -330,7 +331,7 @@ export function learn(ctx: GameContext, engramId: string): void {
   const survivor = survivorOf(ctx);
   const engram = engramDef(engramId);
   if (engram === null) return;
-  if (engram.level > level(ctx)) {
+  if (engram.level > survivorLevel(ctx)) {
     ctx.game.notices.push({ text: `Needs level ${engram.level}`, tone: "deny" });
     return;
   }
@@ -407,7 +408,7 @@ function finishCraft(ctx: GameContext, spec: CraftSpec): void {
 
 export function levelStat(ctx: GameContext, stat: StatId): void {
   const survivor = survivorOf(ctx);
-  if (!POINTS.spend(survivor.points, stat, level(ctx) - 1)) return;
+  if (!POINTS.spend(survivor.points, stat, survivorLevel(ctx) - 1)) return;
   applyMaxes(ctx, survivor, false);
   const def = LEVEL_STATS.find((entry) => entry.id === stat)!;
   if (["health", "stamina", "oxygen", "food", "water"].includes(stat)) survivor.vitals.change(stat, def.per);
@@ -545,7 +546,7 @@ export function resetSurvivor(ctx: GameContext): void {
 export function survivorView(ctx: GameContext) {
   const survivor = survivorOf(ctx);
   const xp = ctx.scene.entity.stats.get(ctx.player.userId, "xp");
-  const lvl = level(ctx);
+  const lvl = survivorLevel(ctx);
   const load = encumbrance(ctx, survivor);
   const pool = ctx.scene.entity.stats.get(ctx.player.userId, "health");
   const vital = (id: string) => ({ value: Math.round(survivor.vitals.value(id) * 10) / 10, max: survivor.vitals.max(id) });

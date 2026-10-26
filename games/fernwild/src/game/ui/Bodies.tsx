@@ -1,12 +1,9 @@
 import { useReducer, useRef, type ReactNode } from "react";
 import { useFrame } from "@react-three/fiber";
-import { AdditiveBlending } from "three";
 import type { WorldOverlayProps } from "@jgengine/core/game/playableGame";
+import { LightBeam } from "@jgengine/core/map/LightBeam.draw";
 
 import { bodies } from "../deathBody";
-
-/** How tall the beam over a body rises, so it shows over the trees from far off. */
-const BEAM_HEIGHT = 80;
 
 /** Fallen survivors' bodies: a bundle where they fell and a pale beam of light above it to find it by. */
 export function Bodies({ ctx }: WorldOverlayProps): ReactNode {
@@ -30,10 +27,7 @@ export function Bodies({ ctx }: WorldOverlayProps): ReactNode {
             <dodecahedronGeometry args={[0.5, 0]} />
             <meshStandardMaterial color="#6b4a2f" roughness={0.95} flatShading />
           </mesh>
-          <mesh position={[0, BEAM_HEIGHT / 2, 0]}>
-            <cylinderGeometry args={[0.25, 0.25, BEAM_HEIGHT, 10, 1, true]} />
-            <meshBasicMaterial color="#cfe8ff" transparent opacity={0.35} blending={AdditiveBlending} depthWrite={false} toneMapped={false} />
-          </mesh>
+          <LightBeam />
         </group>
       ))}
     </>

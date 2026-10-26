@@ -10,7 +10,7 @@ chains, Frozen Fang and Frozen Tooth in the snow, the redwoods, the swamp, the j
 rivers, with ARK's three obelisks and caves marked. Its 231 creature spawn zones carry ARK's
 species and weights per biome, and resources sit where ARK puts them: metal on the mountains,
 obsidian at the volcano, crystal on the peaks, oil on the frozen shore. Survival, creatures and
-thatch-to-stone building, death and weather are in; supply drops, breeding and the boss come next.
+thatch-to-stone building, death, weather and supply drops are in; breeding and the boss come next.
 
 ## Controls
 
@@ -57,6 +57,13 @@ are drawn.
   a four-hour schedule; the same storm falls as rain on the lowlands and as snow in the snow biome,
   greys the sky and dims the sun. Rain soaks and chills you under open sky; a roof keeps it off, and
   a campfire warms whoever stands by it. The HUD shows the weather and the air above the vitals.
+- **Supply drops.** Crates come down at 38 drop sites across the island, the colour by place as in
+  ARK: white and green on the south beaches, blue in the jungle and redwoods, purple and yellow in the
+  highlands, yellow and red in the snow and on the volcano. Each falls for two minutes under a canopy
+  from 150 m up, with a beam of its colour to find it by, and lasts twenty minutes once down. Only a
+  survivor of the colour's level opens it (white 3, green 15, blue 25, purple 35, yellow 45, red 60);
+  inside are resources, gear and saddles that grow with the colour. An emptied site sends the next
+  crate 10 to 30 minutes later (timings approximate).
 - **Failure states.** Food and water drain; when either empties you lose about 1 HP every 5 seconds
   and torpor rises. Heat and cold drain them faster and hurt past the comfort band. At 0 health you
   wake back on the beach with full vitals.
