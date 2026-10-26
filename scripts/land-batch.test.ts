@@ -298,7 +298,7 @@ slow("--explain names the commit that cannot verify on its own, and checks each 
 test("only the repo's own verifier takes the base flag, and only when a base is known", () => {
   expect(explainCommand("bun run verify:fast", "abc123")).toBe("bun run verify:fast --base abc123");
   expect(explainCommand("bun run verify:fast", "")).toBe("bun run verify:fast");
-  expect(explainCommand("bun run ship:preflight", "abc123")).toBe("bun run ship:preflight");
+  expect(explainCommand("bun run preflight --ship", "abc123")).toBe("bun run preflight --ship");
 });
 
 slow("--explain without a recorded batch says so instead of guessing", () => {

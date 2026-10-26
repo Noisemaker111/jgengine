@@ -3,6 +3,7 @@ import { tmpdir } from "node:os";
 import { dirname, join } from "node:path";
 import { spawn, spawnSync } from "node:child_process";
 import { fileURLToPath } from "node:url";
+import { checkCommand, findCheck } from "./run-stages";
 
 const root = fileURLToPath(new URL("..", import.meta.url));
 const ship = process.argv.includes("--ship");
@@ -110,7 +111,7 @@ if (ship) {
   const status = run("git", ["status", "--porcelain"]);
   if (status !== "")
     failures.push(
-      "worktree is dirty — commit (or stash) the remaining changes, then re-run. ship:preflight checks the committed branch diff, so it runs AFTER you commit, not before",
+      "worktree is dirty — commit (or stash) the remaining changes, then re-run. `preflight --ship` checks the committed branch diff, so it runs AFTER you commit, not before",
     );
 
   // Catch stash-pop / merge conflict markers that leave the tree "clean" but break CI.
@@ -148,29 +149,26 @@ if (ship) {
   const diff = run("git", ["diff", "--stat", "origin/beta...HEAD"]);
   if (diff === "")
     failures.push(
-      "branch has no net diff from origin/beta — commit your work to this branch first (ship:preflight reads committed history, not the working tree), or drop the no-op PR",
+      "branch has no net diff from origin/beta — commit your work to this branch first (`preflight --ship` reads committed history, not the working tree), or drop the no-op PR",
     );
 }
 
-/**
- * Committed generated artifacts CI compares against their generators. All of them read package
- * source, so they run on an unbuilt tree and never compare against a stale dist.
- */
-const GENERATED_CHECKS: readonly { name: string; args: readonly string[] }[] = [
-  { name: "check-export-manifest", args: ["scripts/gen-export-manifest.ts", "--check"] },
-  { name: "check-capabilities", args: ["scripts/gen-capability-index.ts", "--check"] },
-  { name: "check-skill-api", args: ["scripts/gen-skill-api.ts", "--check"] },
-  { name: "check-source-paths", args: ["scripts/sourcePaths.ts", "--check"] },
-];
+/** Check-table rows (scripts/run-stages.ts) as preflight runs them: the same command CI runs. */
+function fromTable(names: readonly string[]): { name: string; args: readonly string[] }[] {
+  return names.map((name) => {
+    const check = findCheck(name);
+    if (check === undefined) throw new Error(`preflight: ${name} is not in the check table (scripts/run-stages.ts)`);
+    return { name: `check ${name}`, args: checkCommand(check).slice(1) };
+  });
+}
 
-/** Cheap source checks CI runs (`quick` job and check-types), so preflight fails where CI would. */
+/** Committed generated artifacts CI compares against their generators. */
+const GENERATED_CHECKS = fromTable(["export-manifest", "capabilities", "skill-api", "source-paths"]);
+
+/** Cheap source checks CI runs (`quick` and `types` jobs), so preflight fails where CI would. */
 const QUICK_CHECKS: readonly { name: string; args: readonly string[] }[] = [
-  { name: "check-stage-skills", args: ["scripts/stage-skills.ts", "--check"] },
-  { name: "check-skills", args: ["scripts/check-skill-sync.ts"] },
-  { name: "check-changelog", args: ["scripts/check-changelog.ts"] },
-  { name: "check-test-spawn-timeouts", args: ["scripts/check-test-spawn-timeouts.ts"] },
+  ...fromTable(["stage-skills", "skills", "changelog", "test-spawn-timeouts", "capture-hygiene"]),
   { name: "browser-test-budget", args: ["scripts/browser-test-budget.ts"] },
-  { name: "check:capture-hygiene", args: ["scripts/check-capture-hygiene.ts"] },
 ];
 
 function runCheck(args: readonly string[]): Promise<{ ok: boolean; output: string }> {
@@ -196,7 +194,7 @@ if (ship) {
   if (stale.length > 0) {
     failures.push(
       `generated files are stale (${stale.map((result) => result.check.name).join(", ")}) — CI will fail. ` +
-        "Run `bun run gen`, commit the result, then re-run ship:preflight.\n" +
+        "Run `bun run gen`, commit the result, then re-run `preflight --ship`.\n" +
         stale.map((result) => `    ${result.check.name}: ${result.output.split("\n").slice(0, 6).join("\n      ")}`).join("\n"),
     );
   }

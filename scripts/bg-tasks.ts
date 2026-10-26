@@ -1,4 +1,4 @@
-// State for `bun run bg:run` / `bun run bg:await`: one folder per task under `.scratch/bg/`, which
+// State for `bun run background start` / `bun run background await`: one folder per task under `.scratch/bg/`, which
 // is ignored, so a background task never shows up in `git status`.
 //
 //   <id>/cmd.txt    the command, as it was handed over

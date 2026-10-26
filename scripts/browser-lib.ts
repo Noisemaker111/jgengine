@@ -22,7 +22,7 @@ import { checkMarkedServer, checkoutIdentity, devServerIdentity, isUp, listMarke
 import { currentStep, describeHang, markStep } from "./hangReport";
 import { localGet } from "./localhostHttp";
 import { computeShotMetrics, deadViewport } from "./shot-metrics";
-import { decodePng } from "./png-reader";
+import { decodePng } from "../packages/assets/src/imageCodec";
 import type { GraphicsTier } from "../packages/jgengine/src/templates/captureArgs";
 
 export { checkoutIdentity, devServerIdentity, isUp };

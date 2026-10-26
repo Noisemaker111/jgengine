@@ -38,9 +38,9 @@ import type { RollupEntry } from "./ci-status";
 
 test("parses flags with values and defaults the base to beta", () => {
   expect(parseArgs([])).toEqual({ base: "beta", commit: false, allow: [], watch: false });
-  expect(parseArgs(["--verify", "bun run ship:preflight"])).toEqual({
+  expect(parseArgs(["--verify", "bun run preflight --ship"])).toEqual({
     base: "beta",
-    verify: "bun run ship:preflight",
+    verify: "bun run preflight --ship",
     commit: false,
     allow: [],
     watch: false,
@@ -447,7 +447,7 @@ test("a rebase that conflicts only in generated files and the lane's change note
     },
   });
   expect(sync).toEqual({ rebased: true, refusal: null });
-  expect(ran).toEqual(["bun run gen", "bun run games:capabilities-sync"]);
+  expect(ran).toEqual(["bun run gen"]);
   expect(readFileSync(join(work, "scripts/export-manifest.json"), "utf8")).toBe('{"exports":["a","lane","other"]}\n');
   expect(readFileSync(join(work, "changes/agent-gen.md"), "utf8")).toContain("- Lane.");
   expect(gitOk(work, ["log", "-1", "--format=%s"])).toBe("Regenerate generated files after rebasing");
@@ -1236,14 +1236,14 @@ test("checks that already failed stop the hand-off, and a failed verify never ar
   const second = handOffIo({ git: scriptedGit().git, gh: unverified.gh, verifyOk: false });
   expect(
     landBranch({
-      args: { base: "beta", commit: false, allow: [], watch: false, verify: "bun run ship:preflight" },
+      args: { base: "beta", commit: false, allow: [], watch: false, verify: "bun run preflight --ship" },
       branch: "agent/lane-x",
       lock: lockPathForTest(),
       io: second.io,
     }),
   ).toBe(EXIT_VERIFY_FAILED);
   expect(unverified.calls.some((call) => call[1] === "merge")).toBe(false);
-  expect(second.logs).toContain("verify bun run ship:preflight");
+  expect(second.logs).toContain("verify bun run preflight --ship");
 });
 
 test("a reused PR keeps its body and gets the Bends section the diff now shows", () => {

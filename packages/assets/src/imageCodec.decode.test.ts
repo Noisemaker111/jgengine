@@ -1,6 +1,6 @@
 import { describe, expect, test } from "bun:test";
 import { deflateSync } from "node:zlib";
-import { decodePng } from "./png-reader";
+import { decodePng } from "./imageCodec";
 
 const SIGNATURE = Uint8Array.from([137, 80, 78, 71, 13, 10, 26, 10]);
 

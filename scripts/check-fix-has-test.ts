@@ -6,7 +6,7 @@
  * A file whose header says a generator owns it is not runtime source: `bun run release` rewrites
  * the changelog mirror from `changes/`, and asking that diff for a test was a wrong answer (#2232).
  *
- *   bun run check:fix-has-test --base origin/beta --body-file .scratch/pr-body.md
+ *   bun run check fix-has-test --base origin/beta --body-file .scratch/pr-body.md
  *
  * Exit 0 pass, 1 runtime paths without a test, 2 the check could not read git or the body file.
  */

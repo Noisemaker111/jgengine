@@ -124,19 +124,19 @@ describe("removal asks the tree, not just the branch", () => {
 describe("the line a lane reads", () => {
   test("names what went", () => {
     expect(summarise({ removed: [candidate("a"), candidate("b")], kept: [] })).toBe(
-      "worktree:reap: removed 2 merged worktrees (a, b)",
+      "worktree reap: removed 2 merged worktrees (a, b)",
     );
   });
 
   test("says nothing to do when nothing was merged", () => {
     expect(summarise({ removed: [], kept: [{ name: "a", reason: "not merged into origin/beta" }] })).toBe(
-      "worktree:reap: no merged worktree to remove",
+      "worktree reap: no merged worktree to remove",
     );
   });
 
   test("names the merged tree it could not take, so a rerun is explained", () => {
     expect(summarise({ removed: [], kept: [{ name: "a", reason: "uncommitted changes" }] })).toBe(
-      "worktree:reap: nothing removed - a (uncommitted changes)",
+      "worktree reap: nothing removed - a (uncommitted changes)",
     );
   });
 });

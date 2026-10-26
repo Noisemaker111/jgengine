@@ -9,7 +9,7 @@ import { resolveDefaultOutputRoot } from "./paths";
  * These cases build a small directory tree on disk to exercise the
  * monorepo-vs-dependency branch of {@link resolveDefaultOutputRoot}, so give
  * them an explicit generous budget rather than the default 5s that a contended
- * `test:all` run can blow past.
+ * `test` run can blow past.
  */
 const HEAVY_CASE_TIMEOUT_MS = 30_000;
 

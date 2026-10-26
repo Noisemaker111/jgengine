@@ -106,14 +106,14 @@ function run(args: readonly string[]) {
 
 test("separates a sleep, a poll loop and a CI watch from ordinary work", () => {
   expect(classifyCommand("Start-Sleep -Seconds 30; gh pr view 1 --json state")).toBe("sleep");
-  expect(classifyCommand("cd repo; sleep 45 && bun run gate")).toBe("sleep");
+  expect(classifyCommand("cd repo; sleep 45 && bun run verify:fast --full")).toBe("sleep");
   expect(classifyCommand("timeout /t 30")).toBe("sleep");
   expect(classifyCommand("for ($i = 0; $i -lt 20; $i++) { gh api repos/o/r/actions/runs | Out-String }")).toBe("sleep");
   expect(classifyCommand("gh run watch 40034094969 --exit-status")).toBe("ci-watch");
   expect(classifyCommand("gh pr checks 160 --watch --interval 20")).toBe("ci-watch");
   expect(classifyCommand("while ($true) { gh pr checks 160 }")).toBe("ci-watch");
   expect(classifyCommand("gh pr checks 160")).toBeNull();
-  expect(classifyCommand("bun run check-types && bun run test:all")).toBeNull();
+  expect(classifyCommand("bun run check-types && bun run test")).toBeNull();
 });
 
 test("a search or a message that mentions a wait is not a wait", () => {
@@ -136,7 +136,7 @@ test("awkward quoting does not swallow a real wait", () => {
     'cd "C:\\repo\\.claude\\worktrees\\lane-d"; (Get-Content src/game/setup.ts -Raw).Replace(\'spawn("ped_city")\',\'spawn("ped_city", { id: "x" })\' + "`n" + \'  spawn("ped_docks")\') | Set-Content -NoNewline src/game/setup.ts; Start-Sleep -Seconds 3; npx jgengine drive --wait 8000';
   expect(classifyCommand(edited)).toBe("sleep");
   expect(classifyCommand('gh pr edit 2245 --body "Moves `scripts/games-ref.txt`, then Start-Sleep -Seconds 9"')).toBeNull();
-  expect(classifyCommand('git commit -aqm "[skip] no sleep here"; bun run test:all')).toBeNull();
+  expect(classifyCommand('git commit -aqm "[skip] no sleep here"; bun run test')).toBeNull();
   expect(classifyCommand('$out = @"\ngh run watch 1\n"@; Start-Sleep -Seconds 2')).toBe("sleep");
 });
 
@@ -144,7 +144,7 @@ test("the wait shapes a shell wrapper or an eval hides are still caught", () => 
   expect(classifyCommand('powershell -Command "Start-Sleep -Seconds 30"')).toBe("sleep");
   expect(classifyCommand("pwsh -c 'Start-Sleep -Seconds 5'")).toBe("sleep");
   expect(classifyCommand('cmd /c "timeout /t 30"')).toBe("sleep");
-  expect(classifyCommand('bash -lc "sleep 12 && bun run gate"')).toBe("sleep");
+  expect(classifyCommand('bash -lc "sleep 12 && bun run verify:fast --full"')).toBe("sleep");
   expect(classifyCommand('bun -e "await Bun.sleep(5000)"')).toBe("sleep");
   expect(classifyCommand('node -e "Atomics.wait(new Int32Array(new SharedArrayBuffer(4)), 0, 0, 5000)"')).toBe("sleep");
   expect(classifyCommand('bun -e "Thread.sleep(5000)"')).toBe("sleep");
@@ -157,7 +157,7 @@ test("measures one session from its stored tool calls", () => {
   const calls: ToolCall[] = [
     { name: "shell", command: "Start-Sleep -Seconds 90; gh run list", startedAt: T0 + 1_000, endedAt: T0 + 91_000, ms: 90_000 },
     { name: "shell", command: "gh run watch 123", startedAt: T0 + 100_000, endedAt: T0 + 130_000, ms: 30_000 },
-    { name: "shell", command: "bun run test:all", startedAt: T0 + 200_000, endedAt: T0 + 290_000, ms: 90_000 },
+    { name: "shell", command: "bun run test", startedAt: T0 + 200_000, endedAt: T0 + 290_000, ms: 90_000 },
   ];
   const audit = auditSession(
     { id: "ses_x", title: "Lane X", directory: "C:/repo", timeCreated: T0, timeUpdated: T0 + 600_000 },
@@ -274,7 +274,7 @@ test("--cwd finds the lane whose own commands name the worktree, and prints why"
   expect(document.attribution.references).toBe(2);
   expect(document.attribution.reason).toContain("attributed ses_work (2 references to");
   // The same reason is printed for a person, so a lane that reads its row also reads why it is its row.
-  expect(result.stderr).toContain(`lane:audit: attributed ses_work (2 references to ${fixture.workDirectory})`);
+  expect(result.stderr).toContain(`lane-audit: attributed ses_work (2 references to ${fixture.workDirectory})`);
 });
 
 test("a worktree no session names exits non-zero naming the path it searched", () => {

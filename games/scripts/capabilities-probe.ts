@@ -8,10 +8,10 @@
  * `window.__jgengine*` readout (`window.__jgengineAudio`, `window.__jgengineRun`),
  * so an adopted system that is merely imported fails here.
  *
- * Capabilities with no probe surface stay at declaration level; `games:check-capabilities`
+ * Capabilities with no probe surface stay at declaration level; `bun run check games-capabilities`
  * lists them. This command only checks modules whose declaration names a probe.
  *
- * Usage: bun run games:capabilities-probe [game...]
+ * Usage: bun run games:capabilities probe [game...]
  */
 import { spawn, spawnSync } from "node:child_process";
 import { existsSync, mkdtempSync, readFileSync, rmSync } from "node:fs";
@@ -353,7 +353,7 @@ const targets = games.filter((game) => {
 });
 
 if (targets.length === 0) {
-  console.log("games:capabilities-probe: nothing to probe - no game declares a boot probe");
+  console.log("games:capabilities probe: nothing to probe - no game declares a boot probe");
   process.exit(0);
 }
 

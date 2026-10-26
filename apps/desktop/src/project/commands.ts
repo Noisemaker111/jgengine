@@ -32,15 +32,15 @@ export function buildShellCommand(action: ProjectAction): ShellCommand {
       }
       if (action.mount === "website") {
         return {
-          label: "dev (website + /play)",
-          argv: ["bun", "run", "dev"],
+          label: "dev:site (website + /play)",
+          argv: ["bun", "run", "dev:site"],
           cwd: "repo",
           stream: true,
         };
       }
       return {
-        label: `dev:runner game=${action.id}`,
-        argv: ["bun", "run", "dev:runner"],
+        label: `dev:games game=${action.id}`,
+        argv: ["bun", "run", "dev:games"],
         cwd: "repo",
         stream: true,
       };
@@ -54,7 +54,7 @@ export function buildShellCommand(action: ProjectAction): ShellCommand {
     case "run-gate":
       return {
         label: "gate",
-        argv: ["bun", "run", "gate"],
+        argv: ["bun", "run", "verify:fast", "--full"],
         cwd: "repo",
         stream: true,
       };

@@ -9,8 +9,8 @@
  * engine's own inventory and is out of the gate's scope.
  *
  * `capabilities.json` is generated from the engine source in `packages/` by
- * `bun run games:capabilities-sync`; each game's `capabilities.json` is generated once
- * by `bun run games:capabilities-declare` and then owned by that game.
+ * `bun run gen games-ledger`; each game's `capabilities.json` is generated once
+ * by `bun run games:capabilities declare` and then owned by that game.
  */
 import { existsSync, readdirSync, readFileSync, statSync } from "node:fs";
 import { join, relative } from "node:path";
@@ -299,7 +299,7 @@ export function deriveLedger(root: string): Ledger {
     .sort((a, b) => (a.id < b.id ? -1 : a.id > b.id ? 1 : 0));
 
   return {
-    generatedBy: "bun run games:capabilities-sync",
+    generatedBy: "bun run gen games-ledger",
     gameFacingRule:
       "Game-facing means the engine package ships a live probe with the capability: a devtools probe name or a window.__jgengine* readout. Every game declares each one: adopt it, or decline it as not-applicable (its domain does not exist here) or debt (this game has the domain and has not adopted the shared system, so an open issue tracks it).",
     capabilities,
@@ -576,7 +576,7 @@ export function checkDeclarations(
         game,
         capability: "*",
         module: "*",
-        message: `${game}/capabilities.json is missing - run bun run games:capabilities-declare ${game}`,
+        message: `${game}/capabilities.json is missing - run bun run games:capabilities declare ${game}`,
       });
       continue;
     }
@@ -591,7 +591,7 @@ export function checkDeclarations(
           game,
           capability: id,
           module: "unknown",
-          message: `${game} adopts "${id}", which is not a capability in capabilities.json - remove it or run bun run games:capabilities-sync`,
+          message: `${game} adopts "${id}", which is not a capability in capabilities.json - remove it or run bun run gen games-ledger`,
         });
         continue;
       }
@@ -622,7 +622,7 @@ export function checkDeclarations(
           game,
           capability: id,
           module: "unknown",
-          message: `${game} declines "${id}", which is not a capability in capabilities.json - remove it or run bun run games:capabilities-sync`,
+          message: `${game} declines "${id}", which is not a capability in capabilities.json - remove it or run bun run gen games-ledger`,
         });
         continue;
       }
@@ -748,7 +748,7 @@ export function checkDeclarations(
           game,
           capability: "*",
           module,
-          message: `${game} names a boot probe for unknown module "${module}" - remove it or run bun run games:capabilities-sync`,
+          message: `${game} names a boot probe for unknown module "${module}" - remove it or run bun run gen games-ledger`,
         });
         continue;
       }

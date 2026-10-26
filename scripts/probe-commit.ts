@@ -5,15 +5,15 @@
  * you named. This runs the whole sequence per probe and always restores the ref
  * it started on, including on failure.
  *
- *   bun run probe <commit> [-- <shoot args>]
- *   bun run probe 7a6de492 -- the-robots --mode play --settle 4000
+ *   bun run shoot --at <commit> [-- <shoot args>]
+ *   bun run shoot --at 7a6de492 -- the-robots --mode play --settle 4000
  */
 import { spawnSync } from "node:child_process";
 import { resolve } from "node:path";
 
 import { shortRevision } from "./captureRevision";
 
-const HELP = `bun run probe <commit> [-- <shoot args>]
+const HELP = `bun run shoot --at <commit> [-- <shoot args>]
 
 Captures <commit> into shots/probe-<commit>.png and restores your original ref.
 
@@ -21,7 +21,7 @@ Captures <commit> into shots/probe-<commit>.png and restores your original ref.
   --help         show this text
 
 Everything after -- is passed to shoot verbatim, so any shoot flag works:
-  bun run probe b523a6f7 -- the-robots --mode play --look 40,120 --settle 4000
+  bun run shoot --at b523a6f7 -- the-robots --mode play --look 40,120 --settle 4000
 `;
 
 function git(args: string[], repoRoot: string): { status: number; stdout: string; stderr: string } {

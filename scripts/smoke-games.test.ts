@@ -31,9 +31,9 @@ describe("ci matrix", () => {
   const workflow = readFileSync(fileURLToPath(new URL("../.github/workflows/ci.yml", import.meta.url)), "utf8");
 
   test("no job boots a game a second time: the frame gate's matrix carries the smoke set", () => {
-    // `bun run smoke` still exists for a local boot, but CI launches each game once, from
+    // `bun scripts/smoke-games.ts` still exists for a local boot, but CI launches each game once, from
     // `perf-game`, whose `measureGame` fails on the same capture handshake.
     expect(workflow).not.toContain("smoke-game:");
-    expect(workflow).not.toContain("bun run smoke --games");
+    expect(workflow).not.toContain("bun scripts/smoke-games.ts --games");
   });
 });

@@ -8,7 +8,7 @@
 //
 // It verifies, lands (staging and committing the lane's work first, with its `changes/`
 // fragment as the message), asks `ci:status` once for the truth about the checks, then
-// reads this session from `lane:audit` and gates on how it spent its own time. A
+// reads this session from `scripts/lane-audit.ts` and gates on how it spent its own time. A
 // lane that slept or watched CI is refused, because neither is needed any more:
 // `ci:status` answers in a second, and a wait on a condition is a command that
 // exits when the condition holds. `--waive "<reason>"` overrides the refusal and
@@ -36,7 +36,7 @@ const LANE_CLOSE_USAGE = {
     { flag: "--queue", detail: "drain the landing queue: rebase and wait once for each queued PR" },
     { flag: "--pr <number>", detail: "the PR to close; default: the open PR for this branch" },
     { flag: "--waive <reason>", detail: "record a reason and let a lane that waited through anyway" },
-    { flag: "--session <id>", detail: "the session lane:audit should account for; default: this one" },
+    { flag: "--session <id>", detail: "the session lane-audit should account for; default: this one" },
   ],
   example: 'bun run lane:close --waive "nightly build really is 20 minutes"',
   exits: [
@@ -92,7 +92,7 @@ function value(argv: readonly string[], at: number, flag: string): string {
   return found;
 }
 
-/** One command a session ran, as `lane:audit` reports it in `longest`. */
+/** One command a session ran, as `scripts/lane-audit.ts` reports it in `longest`. */
 export interface AuditCall {
   command?: string;
   cmd?: string;
@@ -252,7 +252,7 @@ function shapeFailure(path: string, value: unknown, expected: string, keys?: rea
 }
 
 /**
- * Everything `lane:close` reads out of `lane:audit --json`, checked before it is used. The two scripts
+ * Everything `lane:close` reads out of `scripts/lane-audit.ts --json`, checked before it is used. The two scripts
  * drifted apart once already (`calls` is the lane's call count, not its calls), and a TypeError is not
  * a report: a mismatch says which field and what the document actually carried.
  */
@@ -313,7 +313,7 @@ export function ordinal(value: number): string {
 export function placement(session: AuditSession, count: number): string {
   const percentile = session.percentile;
   if (typeof percentile !== "number" || !Number.isFinite(percentile)) {
-    return "percentile not reported by lane:audit";
+    return "percentile not reported by lane-audit";
   }
   const lanes = count === 1 ? "recent lane" : `${count} recent lanes`;
   return `${ordinal(percentile)} percentile of ${lanes}`;
@@ -442,17 +442,17 @@ export function closeLane(args: LaneCloseArgs, io: LaneIo): number {
       ? parsed.error
       : (answer?.message ?? `ci:status exited ${view.status} and printed no status`);
 
-  const audit = io.sh(["run", "lane:audit", "--json", "--cwd", io.cwd, "--hours", "6"], false);
+  const audit = io.sh(["run", "scripts/lane-audit.ts", "--json", "--cwd", io.cwd, "--hours", "6"], false);
   if (audit.status !== 0) {
     io.err(
-      `lane:close: lane:audit did not run (exit ${audit.status}): ${lastLine(audit.stderr) || lastLine(audit.stdout) || "no output"}`,
+      `lane:close: lane-audit did not run (exit ${audit.status}): ${lastLine(audit.stderr) || lastLine(audit.stdout) || "no output"}`,
     );
     io.err("lane:close: cannot check this lane's waiting without it");
   }
   const auditJson = parseJson<unknown>(audit.stdout);
   let report: AuditReport | null = null;
   if ("error" in auditJson) {
-    if (audit.status === 0) io.err(`lane:close: lane:audit output is not JSON (${auditJson.error})`);
+    if (audit.status === 0) io.err(`lane:close: lane-audit output is not JSON (${auditJson.error})`);
   } else {
     const problem = auditShapeProblem(auditJson.value);
     if (problem !== null) {
@@ -528,7 +528,7 @@ export function closeLane(args: LaneCloseArgs, io: LaneIo): number {
   // A merged lane's worktree is a copy nobody will open again. Reaping here keeps
   // `.claude/worktrees` bounded; this lane's own tree stays, since a process
   // cannot delete the directory it runs in, and the next close takes it.
-  const reaped = io.sh(["run", "worktree:reap", "--fetch"], false);
+  const reaped = io.sh(["run", "worktree", "reap", "--fetch"], false);
   const reapLine = lastLine(reaped.stdout);
   if (reapLine.length > 0) io.out(`lane:close: ${reapLine}`);
   return EXIT_CLOSED;

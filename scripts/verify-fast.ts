@@ -24,6 +24,7 @@ import { digestLines, writeStepLog } from "./failure-digest";
 import { FRAME_GAMES, REPRESENTATIVE_GAME, scopePattern } from "./ci-scope";
 import { buildImportGraph, closure, repoFiles, reverseReach, type ImportGraph } from "./import-graph";
 import { openPassCache, treeDigests, WHOLE_TREE } from "./verify-cache";
+import { checkCommand, findCheck, jobChecks } from "./run-stages";
 import { printHelpIfAsked } from "./script-help";
 import { TEST_ROOTS, walkTestFiles } from "./test-shard";
 
@@ -36,7 +37,7 @@ const VERIFY_FAST_USAGE = {
     { flag: "--json", detail: "one { ok, ms, checks } document on stdout" },
     { flag: "--base <ref>", detail: "diff against this ref (default: origin/beta)" },
     { flag: "--jobs <n>", detail: "steps to run at once (default: half the cores, at most 6)" },
-    { flag: "--skill-api", detail: "also run check-skill-api, the 21 s generated api.md check lane:close and ship:preflight run" },
+    { flag: "--skill-api", detail: "also run `check skill-api`, the 21 s generated api.md check lane:close and preflight --ship run" },
     { flag: "--no-cache", detail: "run every unit, including those that passed before with the same inputs" },
   ],
   example: "bun run verify:fast --plan",
@@ -307,36 +308,36 @@ export function ownTests(file: string, testFiles: readonly string[]): string[] {
 /**
  * The `quick` job's cheap static gates that can cover this change. Each of these
  * already runs in CI, so running it here never invents a rule. The steps that launch a
- * browser or scaffold (`check:scaffold-launch`) are left to `--full`.
+ * browser or scaffold (`check scaffold-launch`) are left to `--full`.
  *
  * Both generated-file checks belong here because they are cheap against what a missed
- * one costs: `check-export-manifest` reads package.json and the build tsconfig (0.1 s),
- * and `check-skill-api` parses every package source through ts-morph (21.5 s on this PC,
+ * one costs: `check export-manifest` reads package.json and the build tsconfig (0.1 s),
+ * and `check skill-api` parses every package source through ts-morph (21.5 s on this PC,
  * measured 2026-10-24, and it needs no build - it fails the same without `dist`). The
  * manifest check runs on every package change; `api.md` drift is far more expensive to
- * find, so it waits for `--skill-api`, which `lane:close` and `ship:preflight` pass. The
+ * find, so it waits for `--skill-api`, which `lane:close` and `preflight --ship` pass. The
  * inner loop stays under 5 s and a push still cannot ship a stale generated file.
  */
 export function gatesFor(changed: readonly string[]): string[] {
-  const gates = new Set(["check-artifacts", "check:fixture-location", "check:path-portability", "check-orphan-ratchet", "check:concept-homes"]);
+  const gates = new Set(["artifacts", "fixture-location", "path-portability", "orphan-ratchet", "concept-homes"]);
   const shippedSource = changed.filter((path) => /^packages\/[^/]+\/src\//.test(path) && !isTestFile(path));
-  if (changed.some((path) => path.startsWith("scripts/")) || shippedSource.length > 0) gates.add("check:capture-hygiene");
-  if (shippedSource.length > 0) gates.add("check-changelog");
+  if (changed.some((path) => path.startsWith("scripts/")) || shippedSource.length > 0) gates.add("capture-hygiene");
+  if (shippedSource.length > 0) gates.add("changelog");
   if (changed.some((path) => path.startsWith("packages/"))) {
-    gates.add("check-export-manifest");
-    gates.add("check-skill-api");
+    gates.add("export-manifest");
+    gates.add("skill-api");
   }
   if (changed.some((path) => path.startsWith("games/"))) {
-    for (const gate of ["games:check-framework", "games:check-module-globals", "games:check-save-states", "games:check-design"]) gates.add(gate);
+    for (const gate of ["games-framework", "module-globals", "games-save-states", "games-design"]) gates.add(gate);
   }
   // The `games` CI job runs both on every package or game change; each takes seconds here.
   if (changed.some((path) => path.startsWith("games/") || /^packages\/[^/]+\/src\//.test(path))) {
-    gates.add("games:capabilities-sync");
-    gates.add("games:check-capabilities");
+    gates.add("games-ledger");
+    gates.add("games-capabilities");
   }
   if (changed.some((path) => /\.(md|mdx)$/i.test(path) || path.startsWith(".claude/skills/"))) {
-    gates.add("check-skills");
-    gates.add("check-stage-skills");
+    gates.add("skills");
+    gates.add("stage-skills");
   }
   return [...gates];
 }
@@ -385,7 +386,7 @@ export function unitInputs(graph: ImportGraph, entries: readonly string[], works
 }
 
 /** What `bun run verify:fast` runs for this change. */
-export function buildPlan(input: {
+export function verifyPlan(input: {
   changed: readonly string[];
   /** Paths the branch deleted: whatever imported them is reached too. */
   deleted?: readonly string[];
@@ -493,21 +494,20 @@ export function buildPlan(input: {
  * baselines in one go instead of discovering the next stale file in CI.
  */
 export const GATE_FIX: Readonly<Record<string, string>> = {
-  "check-export-manifest":
+  "export-manifest":
     "bun run gen  (rewrites scripts/export-manifest.json from the public subpaths the build will emit)",
-  "check-skill-api":
+  "skill-api":
     "bun run gen  (rewrites .claude/skills/*/api.md and prunes scripts/api-doc-baseline.json and scripts/api-orphan-baseline.json)",
 };
 
 /** Arguments a gate needs after its script name, as CI passes them. */
 const GATE_ARGS: Readonly<Record<string, readonly string[]>> = {
-  "games:capabilities-sync": ["--check"],
-  "games:check-capabilities": ["--summary"],
+  "games-capabilities": ["--summary"],
 };
 
 /** Rough seconds per gate on this PC (2026-10-24), so the 21 s check starts before the 1 s ones. */
 const GATE_COST: Readonly<Record<string, number>> = {
-  "check-skill-api": 21,
+  "skill-api": 21,
 };
 
 /** Test files above this many per process split across lanes: one `bun test` runs its files one after another. */
@@ -539,7 +539,7 @@ export function junitCosts(xml: string): Record<string, number> {
 }
 
 export interface FastOptions {
-  /** Also run `check-skill-api` (lane:close and ship:preflight pass `--skill-api`). */
+  /** Also run `check skill-api` (lane:close and preflight --ship pass `--skill-api`). */
   skillApi?: boolean;
   /** Lanes the steps share; the tests split into at most this many processes. */
   lanes?: number;
@@ -552,7 +552,7 @@ export interface FastOptions {
 }
 
 /**
- * The commands `bun run verify:fast` runs for a plan. `check-skill-api` waits for `--skill-api`.
+ * The commands `bun run verify:fast` runs for a plan. `check skill-api` waits for `--skill-api`.
  * Every step lists the units it settles (`units`), so a pass is remembered per unit and a unit
  * whose inputs did not change since it passed is left out.
  */
@@ -595,13 +595,15 @@ export function fastSteps(plan: Plan, options: FastOptions = {}): Step[] {
     });
   }
 
-  const gates = options.skillApi === true ? plan.gates : plan.gates.filter((gate) => gate !== "check-skill-api");
+  const gates = options.skillApi === true ? plan.gates : plan.gates.filter((gate) => gate !== "skill-api");
   for (const gate of gates) {
     const extra = GATE_ARGS[gate] ?? [];
     // A gate reads the whole tree.
     const settles = unit(`gate:${gate}`, [WHOLE_TREE]);
     if (fresh(settles.id, settles.inputs)) continue;
-    steps.push({ name: gate, command: ["bun", "run", gate, ...(extra.length > 0 ? ["--", ...extra] : [])], fix: GATE_FIX[gate], cost: GATE_COST[gate], units: [settles] });
+    const check = findCheck(gate);
+    if (check === undefined) throw new Error(`verify:fast: gate ${gate} is not in the check table (scripts/run-stages.ts)`);
+    steps.push({ name: gate, command: [...checkCommand(check), ...extra], fix: GATE_FIX[gate], cost: GATE_COST[gate], units: [settles] });
   }
 
   const boots = plan.boots.map((game) => unit(`boot:${game}`)).filter((settles) => !fresh(settles.id, settles.inputs));
@@ -706,21 +708,18 @@ export function splitByCost(files: readonly string[], cost: Readonly<Record<stri
 export async function fullSteps(root: string, changed: readonly string[]): Promise<Step[]> {
   // Costs are the seconds each step took here at `--jobs 8` (2026-10-23); only start order
   // depends on them. Trivial gates have none.
-  const steps: Step[] = [
-    { name: "check-artifacts", command: ["bun", "run", "check-artifacts"] },
-    { name: "check-stage-skills", command: ["bun", "run", "check-stage-skills"] },
-    { name: "check-skills", command: ["bun", "run", "check-skills"] },
-    { name: "check-changelog", command: ["bun", "run", "check-changelog"] },
-    { name: "build", command: ["bun", "run", "build"], cost: 10 },
-    { name: "check-skill-api", command: ["bun", "run", "check-skill-api"], needs: ["build"], cost: 30, fix: GATE_FIX["check-skill-api"] },
-    { name: "check-orphan-ratchet", command: ["bun", "run", "check-orphan-ratchet"] },
-    { name: "check:concept-homes", command: ["bun", "run", "check:concept-homes"] },
-    { name: "check:fixture-location", command: ["bun", "run", "check:fixture-location"] },
-    { name: "check:path-portability", command: ["bun", "run", "check:path-portability"] },
-    { name: "check:scaffold-launch", command: ["bun", "run", "check:scaffold-launch"], exclusive: true },
-    { name: "check:capture-hygiene", command: ["bun", "run", "check:capture-hygiene"] },
-    { name: "check-export-manifest", command: ["bun", "run", "check-export-manifest"], needs: ["build"], fix: GATE_FIX["check-export-manifest"] },
-  ];
+  const build = { name: "build", command: ["bun", "run", "build"], cost: 10 };
+  const steps: Step[] = [build];
+  for (const check of jobChecks("quick")) {
+    steps.push({
+      name: check.name,
+      command: checkCommand(check),
+      ...(check.needsBuild === true ? { needs: [build.name] } : {}),
+      ...(check.name === "scaffold-launch" ? { exclusive: true } : {}),
+      ...(GATE_COST[check.name] !== undefined ? { cost: GATE_COST[check.name] } : {}),
+      ...(GATE_FIX[check.name] !== undefined ? { fix: GATE_FIX[check.name] } : {}),
+    });
+  }
 
   steps.push({ name: "types (type-shard)", command: ["bun", "scripts/type-shard.ts"], cost: 40 });
 
@@ -735,8 +734,8 @@ export async function fullSteps(root: string, changed: readonly string[]): Promi
 
   steps.push({ name: "web-build", command: ["bun", "--cwd=apps/web", "run", "build"], cost: 40 });
   // The CPU budgets normalize by a calibration run of the same machine, so a neighbour's
-  // build or browser reads as a regression: CI gives bench:cpu its own runner.
-  steps.push({ name: "perf-cpu", command: ["bun", "run", "bench:cpu"], exclusive: true, cost: 15 });
+  // build or browser reads as a regression: CI gives `perf timing` its own runner.
+  steps.push({ name: "perf-cpu", command: ["bun", "scripts/bench-cpu.ts"], exclusive: true, cost: 15 });
   // `windows-tests` (`bun --cwd=packages/jgengine run test`) is not a step here. That job
   // exists in CI because the `test` shards run on ubuntu and cannot see a Windows-only
   // failure; on this machine shard e already runs all 30 of its files, so repeating it cost
@@ -746,10 +745,9 @@ export async function fullSteps(root: string, changed: readonly string[]): Promi
   if (changed.some((path) => heavyPaths(root).test(path))) {
     const { SMOKE_GAMES } = (await import("./smoke-games")) as { SMOKE_GAMES: readonly string[] };
     const { PERF_GATE_GAMES } = (await import("./perf-gate")) as { PERF_GATE_GAMES: readonly string[] };
-    // The smoke games boot one at a time inside one `bun run smoke`, so each keeps its
-    // own step and its own process. The script is called directly: `bun run smoke --games x`
-    // hands the args to scripts/guard.ts, whose win32 pass-through runs the first command
-    // of the `&&` chain and exits 0, so the step "passed" without booting a game.
+    // The smoke games boot one at a time inside one smoke-games run, so each keeps its own step
+    // and its own process. Scripts are called directly, never through a guarded `&&` chain:
+    // scripts/guard.ts's win32 pass-through runs only the chain's first command and exits 0.
     // The frame gate measures games concurrently itself, so one step with every game gives
     // one lane the wall of the slowest game; `--jobs` bounds it for a machine that cannot
     // hold eight browsers.
@@ -758,7 +756,7 @@ export async function fullSteps(root: string, changed: readonly string[]): Promi
     }
     steps.push({
       name: `perf gate (${PERF_GATE_GAMES.length} games)`,
-      command: ["bun", "run", "perf:gate", "--jobs", String(PERF_GATE_GAMES.length)],
+      command: ["bun", "scripts/perf-gate.ts", "--jobs", String(PERF_GATE_GAMES.length)],
       browser: true,
       cost: 100,
     });
@@ -1049,7 +1047,7 @@ async function main(argv: readonly string[]): Promise<number> {
   const graph = buildImportGraph(root, tree, {
     packages: allWorkspaces.flatMap((workspace) => (workspace.name === undefined ? [] : [{ name: workspace.name, dir: workspace.dir }])),
   });
-  const plan = buildPlan({
+  const plan = verifyPlan({
     changed,
     deleted: deletedFiles(root, base),
     testFiles: walkTestFiles(root, [...TEST_ROOTS, "games"]),
@@ -1120,7 +1118,7 @@ async function main(argv: readonly string[]): Promise<number> {
     return code;
   }
 
-  const leftOutSkillApi = !skillApi && plan.gates.includes("check-skill-api");
+  const leftOutSkillApi = !skillApi && plan.gates.includes("skill-api");
   console.log(
     `verify:fast against ${base}: ${plan.changed.length} changed file(s), ${plan.tests.length} test file(s), ${plan.typechecks.length} type-check(s), ${plan.gates.length - (leftOutSkillApi ? 1 : 0)} gate(s), boot ${plan.boots.join(" ") || "none"}  (planned in ${((Date.now() - started) / 1000).toFixed(1)}s)`,
   );
@@ -1128,7 +1126,7 @@ async function main(argv: readonly string[]): Promise<number> {
     console.log(`verify:fast: whole suite of ${plan.suites.join(", ")}: a changed file there has no test of its own, so its package's tests cover it`);
   }
   if (leftOutSkillApi) {
-    console.log("verify:fast: check-skill-api (21 s) is left out here; `--skill-api` runs it, and lane:close and ship:preflight already do.");
+    console.log("verify:fast: check skill-api (21 s) is left out here; `--skill-api` runs it, and lane:close and preflight --ship already do.");
   }
   if (skipped.length > 0) {
     console.log(`verify:fast: ${skipped.length} unit(s) passed before with these exact inputs and are not run again (--no-cache runs them): ${summarizeUnits(skipped)}`);

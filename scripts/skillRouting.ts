@@ -130,7 +130,7 @@ export const INTAKE_ROUTES = {
   multiplayer: ["jgengine-multiplayer"],
 } as const;
 
-/** In-repo intake yardstick for `report:skill-intake` — what a normal game task loads inside this monorepo. The external install policy is {@link MINIMAL_GAME_SKILLS}; domains beyond it load on demand, not by default. */
+/** In-repo intake yardstick for `bun scripts/check-skill-sync.ts --report` — what a normal game task loads inside this monorepo. The external install policy is {@link MINIMAL_GAME_SKILLS}; domains beyond it load on demand, not by default. */
 export const NORMAL_GAME_INTAKE = [
   MAIN,
   "game-design",

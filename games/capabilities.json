@@ -1,5 +1,5 @@
 {
-  "generatedBy": "bun run games:capabilities-sync",
+  "generatedBy": "bun run gen games-ledger",
   "gameFacingRule": "Game-facing means the engine package ships a live probe with the capability: a devtools probe name or a window.__jgengine* readout. Every game declares each one: adopt it, or decline it as not-applicable (its domain does not exist here) or debt (this game has the domain and has not adopted the shared system, so an open issue tracks it).",
   "capabilities": [
     {

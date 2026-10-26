@@ -1,6 +1,6 @@
 import { afterAll, beforeAll, expect, setDefaultTimeout, test } from "bun:test";
 import { mkdir } from "node:fs/promises";
-import { decodePng } from "../../../scripts/png-reader";
+import { decodePng } from "../../assets/src/imageCodec";
 import { computeShotMetrics } from "../../../scripts/shot-metrics";
 import { creatorAppFixture, type CreatorAppSession } from "../../../scripts/creator-app-fixture";
 

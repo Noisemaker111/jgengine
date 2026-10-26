@@ -13,7 +13,7 @@
  *   - neither copy may reach the debugger with `fetch`: Bun sends 127.0.0.1 through
  *     `HTTP_PROXY`, so the handshake is also run with a dead proxy set and must still work.
  *
- *   bun run check:scaffold-launch
+ *   bun run check scaffold-launch
  *
  * Exit 0 agree, 1 drift.
  */

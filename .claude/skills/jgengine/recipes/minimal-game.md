@@ -13,7 +13,7 @@ it should not recreate input, model lifecycle, storage or UI accessibility machi
 
 ## 1. Scaffold
 
-`npx jgengine create <name>` (inside the engine monorepo: `bun run new:game "<id-or-title>"`).
+`npx jgengine create <name>` (inside the engine monorepo: `bun run games:new "<id-or-title>"`).
 The file set is thin and already runs:
 
 - `src/main.tsx` — mounts `GameHost` with `editor={() => import("@jgengine/editor")}`; the

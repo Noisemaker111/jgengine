@@ -20,13 +20,15 @@
 // is judged from its attempts on that commit, so a superseded run that was cancelled
 // is not a failure and a still-running attempt is not a pass.
 import { spawnSync } from "node:child_process";
+import { fileURLToPath } from "node:url";
 
 import { printHelpIfAsked } from "./script-help";
 
 const CI_STATUS_USAGE = {
   summary: "answer where this PR's checks stand right now, in a second, without watching",
-  usage: "bun run ci:status [--pr <number>] [--branch <name>] [--repo <owner/name>] [--json]",
+  usage: "bun run ci:status [--pr <number>] [--branch <name>] [--repo <owner/name>] [--json] | bun run ci:status --sweep [--json]",
   flags: [
+    { flag: "--sweep", detail: "instead: every open PR armed for auto-merge but red, and on which check (exit 1 when any)" },
     { flag: "--pr <number>", detail: "a merged or open PR by number; default: the PR for this branch" },
     { flag: "--branch <name>", detail: "look up the PR for this branch instead of the current one" },
     { flag: "--repo <owner/name>", detail: "another repo; default: the one this checkout names" },
@@ -241,7 +243,7 @@ export function judgeChecks(attempts: readonly CheckAttempt[], headSha?: string)
   return checks;
 }
 
-export function summarize(input: {
+export function summarizeChecks(input: {
   pr: number;
   url: string;
   branch: string;
@@ -383,7 +385,7 @@ export function ask(args: CiStatusArgs, io: CiIo): CiStatus | Refusal {
       message: `PR #${resolved.pr.number} has no checks yet: workflows are queued or none run on this branch`,
     };
   }
-  return summarize({
+  return summarizeChecks({
     pr: resolved.pr.number,
     url: resolved.pr.url ?? "",
     branch: resolved.pr.headRefName ?? "",
@@ -456,6 +458,10 @@ function run(command: string, args: string[]): Run {
 
 function main(argv: readonly string[]): void {
   if (printHelpIfAsked("ci-status", CI_STATUS_USAGE, argv)) process.exit(EXIT_GREEN);
+  if (argv[0] === "--sweep") {
+    const sweep = spawnSync("bun", [fileURLToPath(new URL("./pr-sweep.ts", import.meta.url)), ...argv.slice(1)], { stdio: "inherit" });
+    process.exit(sweep.status ?? 1);
+  }
   const result = cli(argv, {
     gh: (ghArgs) => run("gh", ghArgs),
     git: (gitArgs) => run("git", gitArgs),

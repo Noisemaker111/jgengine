@@ -2,7 +2,7 @@
  * Curated core barrels (`@jgengine/core/<domain>`) — structural guards.
  * Proves each barrel re-exports its domain's intended public surface, stays in
  * sync with the generator, leaks no `@internal`/fixtures, and is wired into
- * package exports. Regenerate barrels with `bun run gen:barrels`.
+ * package exports. Regenerate barrels with `bun run gen barrels`.
  */
 import { describe, expect, test } from "bun:test";
 import { existsSync, readFileSync } from "node:fs";
@@ -54,7 +54,7 @@ describe("core domain barrels", () => {
       });
 
       test(
-        "stays in sync with the generator (run `bun run gen:barrels`)",
+        "stays in sync with the generator (run `bun run gen barrels`)",
         () => {
           // Retired skills keep a frozen hand-curated barrel — generator skips them.
           if (!existsSync(join(root, ".claude", "skills", skill))) return;

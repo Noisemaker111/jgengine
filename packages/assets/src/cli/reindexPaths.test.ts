@@ -9,7 +9,7 @@ import { resolveDefaultOutputRoot, resolveDefaultReindexDir, resolveGeneratedDir
 
 /**
  * The reindex cases build a small model tree on disk and regenerate the barrel,
- * so their wall-time scales with machine load; a full `test:all` run under
+ * so their wall-time scales with machine load; a full `test` run under
  * filesystem/CPU contention can blow past Bun's default 5s per-test budget even
  * though each passes in isolation. Give them an explicit generous budget.
  */

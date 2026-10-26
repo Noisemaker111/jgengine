@@ -98,7 +98,7 @@ describe("missing declaration", () => {
   test("a missing declaration file fails with the generating command", () => {
     const report = checkDeclarations(ledger, [{ game: "ember", declaration: null }]);
     expect(report.problems[0]!.message).toContain("ember/capabilities.json is missing");
-    expect(report.problems[0]!.message).toContain("games:capabilities-declare");
+    expect(report.problems[0]!.message).toContain("games:capabilities declare");
   });
 });
 
@@ -229,7 +229,7 @@ describe("adoption without a probe", () => {
   });
 
   test("proof: a probed claim still fails when the live counters are absent", () => {
-    // The declaration names the global, but the page answers nothing: `games:capabilities-probe` fails it.
+    // The declaration names the global, but the page answers nothing: `bun run games:capabilities probe` fails it.
     expect(windowProbeVerdict("__jgengineRun", undefined)).toContain("__jgengineRun is absent");
     expect(windowProbeVerdict("__jgengineRun", null)).toContain("__jgengineRun is absent");
     expect(windowProbeVerdict("__jgengineRun", {})).toContain("no live counters");
@@ -598,7 +598,7 @@ describe("debt ratchet", () => {
     expect(output).toContain("debt budget is above the tally");
     expect(output).toContain("ember: budget 2, tally 1");
     expect(output).toContain("total: budget 2, tally 1");
-    expect(output).toContain("run bun run games:check-capabilities --write");
+    expect(output).toContain("run bun run check games-capabilities --write");
   });
 
   test("proof 3: a cleared entry with the budget lowered passes, and the trend keeps the old number", () => {
@@ -668,7 +668,7 @@ describe("debt ratchet", () => {
     expect(driftOutput).toContain("Games that must decide before this can pass:");
     expect(driftOutput).toContain('"traffic" (@jgengine/core/nav/traffic): ember, harbour');
 
-    // After games:capabilities-sync the ledger knows the capability and every game
+    // After `bun run gen games-ledger` the ledger knows the capability and every game
     // still owes the answer, which is the failure that must not be silent debt.
     const synced = fixture({
       games: { ember: debtDeclaration(), harbour: harbourDeclaration() },

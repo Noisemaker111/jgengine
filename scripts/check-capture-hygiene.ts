@@ -2,7 +2,7 @@
 // and a crashed run leaves that window there holding gigabytes. `bun run shoot/drive/perf` are
 // headless and sweep stray browsers; a script under `scripts/` or a test must launch headless too.
 //
-//   bun run check:capture-hygiene               # every script and test file
+//   bun run check capture-hygiene               # every script and test file
 //   bun scripts/check-capture-hygiene.ts a.ts    # just these files (used by its own proof)
 import { readFileSync, statSync } from "node:fs";
 import { relative, resolve } from "node:path";

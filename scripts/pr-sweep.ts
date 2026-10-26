@@ -9,9 +9,9 @@ import type { RollupEntry } from "./ci-status";
  * An armed PR with a failed check waits forever: GitHub never merges it and nothing retries, so
  * it rots until someone looks. This makes that state one command with a non-zero exit.
  *
- *   bun run pr:sweep
- *   bun run pr:sweep --json
- *   bun run pr:sweep --repo Noisemaker111/jgengine
+ *   bun run ci:status --sweep
+ *   bun run ci:status --sweep --json
+ *   bun run ci:status --sweep --repo Noisemaker111/jgengine
  */
 
 export interface SweepPr {
@@ -87,23 +87,23 @@ export function sweep(prs: readonly SweepPr[]): SweepReport {
   return { open: prs.length, rows, exitCode: rows.some((row) => row.state.verdict === "red") ? 1 : 0 };
 }
 
-export function label(state: ArmState): string {
+export function armStateLabel(state: ArmState): string {
   return state.verdict === "red" ? "RED " : state.verdict === "wait" ? "wait" : "ok  ";
 }
 
 /** One line per armed PR, then the reasons that line cannot stand alone. */
 export function formatText(report: SweepReport): string[] {
-  const lines = [`pr:sweep: ${report.open} open PR(s), ${report.rows.length} armed for auto-merge`];
+  const lines = [`ci:status --sweep: ${report.open} open PR(s), ${report.rows.length} armed for auto-merge`];
   for (const { pr, state } of report.rows) {
-    lines.push(`  ${label(state)} #${pr.number} ${pr.headRefName} - ${pr.title}`);
+    lines.push(`  ${armStateLabel(state)} #${pr.number} ${pr.headRefName} - ${pr.title}`);
     for (const reason of state.red) lines.push(`         armed and red: ${reason}`);
     for (const reason of state.waiting) lines.push(`         ${reason}`);
   }
   const red = report.rows.filter((row) => row.state.verdict === "red");
   if (red.length > 0) {
-    lines.push(`pr:sweep: ${red.length} armed PR(s) will never merge until fixed: ${red.map((row) => `#${row.pr.number}`).join(", ")}`);
+    lines.push(`ci:status --sweep: ${red.length} armed PR(s) will never merge until fixed: ${red.map((row) => `#${row.pr.number}`).join(", ")}`);
   } else if (report.rows.length > 0) {
-    lines.push("pr:sweep: no armed PR is red");
+    lines.push("ci:status --sweep: no armed PR is red");
   }
   return lines;
 }

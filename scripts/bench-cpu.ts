@@ -11,7 +11,7 @@ import { TIMING_GATE_ENV } from "./timing-budget";
  * in `bun test`. CI runs this in the `perf-cpu` job, never in `test`, because a
  * shared runner throttles and a busy neighbour must not fail a merge.
  *
- *   bun run bench:cpu
+ *   bun run perf timing
  */
 
 export const BENCH_FILES = [

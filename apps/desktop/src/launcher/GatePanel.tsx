@@ -19,7 +19,7 @@ export function GatePanel(props: {
       <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
         <div>
           <h2 className="text-sm font-semibold text-neutral-100">Run gate</h2>
-          <p className="text-[11px] text-neutral-500">bun run gate — streamed output</p>
+          <p className="text-[11px] text-neutral-500">bun run verify:fast --full — streamed output</p>
         </div>
         <div className="flex gap-2">
           <button

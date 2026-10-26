@@ -3,7 +3,7 @@ import { mkdirSync, mkdtempSync, readFileSync, rmSync, symlinkSync, writeFileSyn
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { createRequire } from "node:module";
-import { diagnose } from "./doctor";
+import { diagnoseProject } from "./doctor";
 import { inspectInstalledSdkGraph } from "./compatibility";
 
 function writePackage(root: string, name: string, version: string, extra: object = {}) {
@@ -37,7 +37,7 @@ test("doctor catches a linked consumer's private SDK although the game's direct 
     expect(createRequire(join(game, "package.json")).resolve("@jgengine/core/identity")).toBe(join(root, "node_modules", "@jgengine", "core", "identity.js"));
     expect(createRequire(join(studio, "package.json")).resolve("@jgengine/core/identity")).toBe(join(studio, "node_modules", "@jgengine", "core", "identity.js"));
     const before = readFileSync(join(root, "package.json"), "utf8");
-    const finding = diagnose(game).find(entry => entry.label === "installed SDK dependency identities are coherent");
+    const finding = diagnoseProject(game).find(entry => entry.label === "installed SDK dependency identities are coherent");
     expect(finding?.ok).toBe(false);
     expect(finding?.fix).toContain("@example/studio");
     expect(finding?.fix).toContain("0.18.1");
@@ -144,7 +144,7 @@ test("root catalog reports distinguish uninstalled entries and uninspected works
     expect(absent.nodes).toEqual([]);
     expect(absent.issues).toEqual([]);
     expect(absent.scope.uninstalledCatalogPackages).toEqual(["@jgengine/core", "@jgengine/shell", "@jgengine/ws"]);
-    expect(diagnose(root).some(finding => finding.label === "installed SDK dependency identities not inspected (no installed SDK packages)")).toBe(true);
-    expect(diagnose(root).some(finding => finding.label.includes("workspace leaves not inspected"))).toBe(true);
+    expect(diagnoseProject(root).some(finding => finding.label === "installed SDK dependency identities not inspected (no installed SDK packages)")).toBe(true);
+    expect(diagnoseProject(root).some(finding => finding.label.includes("workspace leaves not inspected"))).toBe(true);
   });
 });

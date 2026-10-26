@@ -76,8 +76,8 @@ function io(script: Script = {}): LaneIo & { lines: { out: string[]; err: string
       if (key.startsWith("run ci:status")) {
         return { ...run([]), stdout: script.ci ?? CI_OK, status: script.ciStatus ?? 0 };
       }
-      if (key.startsWith("run lane:audit")) {
-        return { ...run([]), stdout: script.audit ?? "", stderr: script.auditStatus ? "Script not found lane:audit" : "", status: script.auditStatus ?? 0 };
+      if (key.startsWith("run scripts/lane-audit.ts")) {
+        return { ...run([]), stdout: script.audit ?? "", stderr: script.auditStatus ? "Module not found scripts/lane-audit.ts" : "", status: script.auditStatus ?? 0 };
       }
       if (key.startsWith("gh pr list")) {
         return { ...run([]), stdout: JSON.stringify(script.pr === null ? [] : [{ number: script.pr ?? 2278 }]) };
@@ -317,7 +317,7 @@ describe("lane:close end to end", () => {
   test("no audit is a refusal, not a reassuring zero", () => {
     const fake = io({ auditStatus: 1, audit: "" });
     expect(closeLane({}, fake)).toBe(EXIT_CANNOT_ANSWER);
-    expect(fake.lines.err.join("\n")).toContain("lane:audit did not run");
+    expect(fake.lines.err.join("\n")).toContain("lane-audit did not run");
     expect(fake.lines.out.join("\n")).toContain("span/time: unavailable");
   });
 
@@ -347,7 +347,7 @@ describe("lane:close end to end", () => {
   });
 });
 
-describe("the gate reads what lane:audit actually emits", () => {
+describe("the gate reads what lane-audit actually emits", () => {
   const fixturePath = join(import.meta.dir, "fixtures", "lane-audit-real.json");
   const captured = (): string => readFileSync(fixturePath, "utf8");
 

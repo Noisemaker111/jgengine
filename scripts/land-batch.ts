@@ -17,7 +17,7 @@
 // stops that branch alone.
 //
 // Nothing here waits. It prints what it did and hands the CI question to a one-shot read:
-// `bun run ci:status --branch <base>` (or the run id it names) and `bun run pr:sweep`. If the batch
+// `bun run ci:status --branch <base>` (or the run id it names) and `bun run ci:status --sweep`. If the batch
 // tip comes back red, `--explain` walks the recorded commits in order and names the first one that
 // cannot verify on its own, which is the likely cause.
 import { spawnSync } from "node:child_process";

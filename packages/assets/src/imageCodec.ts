@@ -168,12 +168,15 @@ export function encodeJpeg(image: RgbaImage, quality = 86): Uint8Array {
 }
 
 
+const PNG_SIGNATURE = [137, 80, 78, 71, 13, 10, 26, 10] as const;
+
 /**
  * Decode an 8-bit, non-interlaced PNG (grey, grey+alpha, RGB, RGBA or palette) to top-row-first
  * RGBA, the order glTF textures already use.
  * @internal
  */
 export function decodePng(bytes: Uint8Array): RgbaImage {
+  if (PNG_SIGNATURE.some((byte, index) => bytes[index] !== byte)) throw new Error("decodePng: not a PNG file (bad signature)");
   const view = new DataView(bytes.buffer, bytes.byteOffset, bytes.byteLength);
   let at = 8;
   let width = 0;

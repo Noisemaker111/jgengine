@@ -5,9 +5,9 @@
 //   2. a file the branch adds or moves is named for a concept whose folder exists in that layer,
 //      but sits outside it (`react/src/cameraShakeMeter.tsx` when `react/src/camera/` exists).
 //
-//   bun run check:concept-homes                    diff against origin/beta
-//   bun run check:concept-homes --base <ref>       diff against another base
-//   bun run check:concept-homes --all              report every duplicate export in the repo (exit 0)
+//   bun run check concept-homes                    diff against origin/beta
+//   bun run check concept-homes --base <ref>       diff against another base
+//   bun run check concept-homes --all              report every duplicate export in the repo (exit 0)
 import { spawnSync } from "node:child_process";
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
@@ -25,7 +25,7 @@ const NOT_SOURCE = /\.(test|spec)\.tsx?$|\.d\.ts$|\.fixture\.|(^|\/)fixtures?\/|
 /**
  * Where an exported name must be unique: engine packages, and the apps and scripts that could shadow
  * them. Games are products with their own conventions (`world`, `GameUI`); a game re-implementing an
- * engine primitive is `games:check-framework`'s job.
+ * engine primitive is `check games-framework`'s job.
  */
 const SCANNED = /^(packages\/[^/]+\/src|apps\/[^/]+|scripts)\//;
 const SCOPE = ["packages/*/src/*.ts", "packages/*/src/*.tsx", "apps/*.ts", "apps/*.tsx", "scripts/*.ts"];
@@ -269,12 +269,12 @@ export function reportAll(root: string): Map<string, string[]> {
 
 const USAGE: Usage = {
   summary: "fail when a branch adds an exported name that already exists, or a concept file outside its home folder",
-  usage: "bun run check:concept-homes [--base <ref>] [--all]",
+  usage: "bun run check concept-homes [--base <ref>] [--all]",
   flags: [
     { flag: "--base <ref>", detail: `diff against this ref instead of ${DEFAULT_BASE}` },
     { flag: "--all", detail: "report every clashing export in the repo instead (a worklist; exits 0)" },
   ],
-  example: "bun run check:concept-homes --base origin/beta",
+  example: "bun run check concept-homes --base origin/beta",
   exits: ["0 clean", "1 a duplicate export or a file outside its home", "2 bad flags or git failed"],
 };
 

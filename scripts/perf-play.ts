@@ -30,7 +30,7 @@ import {
   summarizeFrameWindow,
   type FrameWindow,
   type PerfReport,
-  type ProfileEntry as ReportedProfileEntry,
+  type ProfileEntry,
   type ReportLogs,
   type SceneNodeSource,
 } from "../packages/core/src/devtools/report";
@@ -418,8 +418,6 @@ export function parsePerfArgs(argv: readonly string[]): ArgResult {
   return { kind: "run", args: { game, ...(quality === undefined ? {} : { quality }), draft, profile, seconds, telemetry, settings, frameClock, ...(headed ? { headed: true } : {}), ...(cold ? { cold: true } : {}), ...(state === undefined ? {} : { state }), params } };
 }
 
-/** One sampled stack frame reduced to a readable key and its self time. */
-export type ProfileEntry = ReportedProfileEntry;
 
 
 interface ProfileNode {

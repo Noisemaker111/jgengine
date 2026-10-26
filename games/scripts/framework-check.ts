@@ -21,7 +21,7 @@
  *   - a module that runs `@jgengine/core/run/sessionLoop` composes the shared loop, so a local
  *     `RunPhase` there passes: it is adoption debt tracked by an issue, not a second engine.
  *
- * Usage: bun run games:check-framework [--base origin/beta] [--allow "<reason>"]
+ * Usage: bun run check games-framework [--base origin/beta] [--allow "<reason>"]
  */
 import { spawnSync } from "node:child_process";
 import { join } from "node:path";
@@ -250,7 +250,7 @@ async function main(argv: readonly string[]): Promise<number> {
     [
       "",
       "A game that imports and calls a shared system is adoption and passes.",
-      "If this file truly cannot live upstream, rerun with: bun run games:check-framework -- --allow \"<reason>\"",
+      "If this file truly cannot live upstream, rerun with: bun run check games-framework --allow \"<reason>\"",
       "Rule: AGENTS.md -> Framework-first development.",
     ].join("\n"),
   );

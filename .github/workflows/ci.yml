@@ -75,21 +75,21 @@ jobs:
           key: bun-${{ runner.os }}-${{ hashFiles('bun.lock') }}
           restore-keys: bun-${{ runner.os }}-
       - run: bun install --frozen-lockfile
-      - run: bun run check-artifacts
-      - run: bun run check-stage-skills
-      - run: bun run check-skills
+      - run: bun run check artifacts
+      - run: bun run check stage-skills
+      - run: bun run check skills
       - run: git fetch --no-tags origin main
-      - run: bun run check-changelog
+      - run: bun run check changelog
       - run: bun run build
-      - run: bun run check-skill-api
-      - run: bun run check-orphan-ratchet
-      - run: bun run check:fixture-location
+      - run: bun run check skill-api
+      - run: bun run check orphan-ratchet
+      - run: bun run check fixture-location
       # A test that asserts one platform's path separator passes here and fails on the other runner.
-      - run: bun run check:path-portability
+      - run: bun run check path-portability
       # One launch/retry block for the engine and for the scaffold every `jgengine create` ships.
-      - run: bun run check:scaffold-launch
+      - run: bun run check scaffold-launch
       # A hand-rolled capture script must stay headless; `--headed` is the only window.
-      - run: bun run check:capture-hygiene
+      - run: bun run check capture-hygiene
       # A runtime change with no changed test needs a `Prevention: none - <reason>` line in the
       # PR body (#2109's sibling lesson: a fix that leaves no failing test teaches nobody).
       - name: every changed runtime path carries a regression test
@@ -103,7 +103,7 @@ jobs:
             exit 0
           fi
           printf '%s' "$PR_BODY" > "$RUNNER_TEMP/pr-body.txt"
-          bun run check:fix-has-test --base "$BASE_SHA" --body-file "$RUNNER_TEMP/pr-body.txt"
+          bun run check fix-has-test --base "$BASE_SHA" --body-file "$RUNNER_TEMP/pr-body.txt"
       # One concept, one folder per layer: no second definition of an exported name, no concept file
       # outside its home folder. Reads only this change's diff.
       - name: no duplicate export or stray concept file
@@ -111,14 +111,14 @@ jobs:
           EVENT: ${{ github.event_name }}
           BASE_SHA: ${{ github.event.pull_request.base.sha }}
         run: |
-          if [ "$EVENT" = "pull_request" ]; then bun run check:concept-homes --base "$BASE_SHA"; else bun run check:concept-homes --base HEAD^; fi
+          if [ "$EVENT" = "pull_request" ]; then bun run check concept-homes --base "$BASE_SHA"; else bun run check concept-homes --base HEAD^; fi
       # Needs the `bun run build` above.
-      - run: bun run check-export-manifest
+      - run: bun run check export-manifest
 
   # PRs run everything main runs, split into parallel jobs, so squash auto-merge cannot land a red main.
-  # `bun run check-types` ran its independent stages one after another: 59 s on a runner, of
+  # The type-check stages used to run one after another: 59 s on a runner, of
   # which the tsc fan-out was 21 s and three generators 23 s. scripts/type-shard.ts runs the
-  # same stages from the same plan with four in flight, heaviest first, and keeps this one
+  # checks the table in scripts/run-stages.ts gives the `types` job, four in flight, heaviest first, and keeps this one
   # check name. A second job would have paid 15 s of checkout, install and build before its
   # first stage and taken a slot from the 20-job cap.
   types:
@@ -217,12 +217,12 @@ jobs:
           restore-keys: bun-${{ runner.os }}-
       - run: bun install --frozen-lockfile
       - run: git fetch --no-tags origin beta
-      - run: bun run games:check-framework -- --base origin/beta
-      - run: bun run games:check-module-globals
-      - run: bun run games:check-save-states
-      - run: bun run games:check-design
-      - run: bun run games:capabilities-sync -- --check
-      - run: bun run games:check-capabilities -- --summary
+      - run: bun run check games-framework --base origin/beta
+      - run: bun run check module-globals
+      - run: bun run check games-save-states
+      - run: bun run check games-design
+      - run: bun run check games-ledger
+      - run: bun run check games-capabilities --summary
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       - name: type-check the reached games
@@ -251,7 +251,7 @@ jobs:
           echo "game boots run locally in lane:close against the shared asset store; CI boots no game"
 
   # The CPU timing budgets (nav crowd, perception, utility, visibility, off-screen,
-  # flock, paths) assert via `bench:cpu` with JG_TIMING_GATE=1; the unit suite keeps
+  # flock, paths) assert via `perf timing` with JG_TIMING_GATE=1; the unit suite keeps
   # measuring and printing them without a pass/fail ceiling. It needs no browser and
   # takes ~40 s, and core logic in any package can move a budget, so it runs on every
   # PR rather than joining the change-scoped set above.
@@ -269,7 +269,7 @@ jobs:
           key: bun-${{ runner.os }}-${{ hashFiles('bun.lock') }}
           restore-keys: bun-${{ runner.os }}-
       - run: bun install --frozen-lockfile
-      - run: bun run bench:cpu
+      - run: bun run perf timing
 
   # The `perf` check branch protection reads: green when the CPU budgets passed. Frame
   # budgets need a booted game, so they run on the lane's machine, not here.

@@ -8,7 +8,7 @@
  * exports already reviewed into the barrel. Consumer imports and prose do not
  * silently expand public API; add a symbol to the barrel deliberately.
  *
- * Regenerate: `bun run gen:barrels`. Verified by scripts/barrels.test.ts.
+ * Regenerate: `bun run gen barrels`. Verified by scripts/barrels.test.ts.
  */
 import { existsSync, readFileSync, writeFileSync } from "node:fs";
 import { join } from "node:path";

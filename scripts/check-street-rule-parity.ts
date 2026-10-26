@@ -133,7 +133,7 @@ if (import.meta.main) {
         `In ${CITY_KIND}: add a CityRules field, a CITY_DEFAULTS entry that preserves today's output,\n` +
         `a CITY_SCHEMA range, and forward the key in the \`netRules\` literal.\n` +
         `In ${STREETS_HANDLER}: add the key to \`RULE_KEYS\`.\n` +
-        `Rerun: bun run check-street-rule-parity`,
+        `Rerun: bun run check street-rule-parity`,
     );
     process.exit(1);
   }

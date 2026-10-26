@@ -19,7 +19,7 @@
  * or comment renders as a video player regardless of which account posts it.
  * Sessions expire on GitHub's side eventually; on 401/422 refresh the secret.
  *
- *   bun run pr-video shots/vice-isle-collision-half.mp4
+ *   bun scripts/pr-video.ts shots/vice-isle-collision-half.mp4
  *
  * Size limits (GitHub): 10MB video on free plans, 100MB on paid. Formats:
  * mp4, mov, webm (H.264 mp4 is the safe choice — drive --record emits it).
@@ -88,7 +88,7 @@ if (import.meta.main) {
     else if (arg === "--help" || arg === "-h") {
       process.stdout.write(
         "Upload video/image to GitHub user-attachments for INLINE playback in PR bodies.\n\n" +
-          "  bun run pr-video <clip.mp4> [more ...] [--repo owner/repo]\n\n" +
+          "  bun scripts/pr-video.ts <clip.mp4> [more ...] [--repo owner/repo]\n\n" +
           "Needs env GH_SESSION_TOKEN (a github.com user_session cookie of an account\n" +
           "with write access — use a dedicated bot account; see script header).\n" +
           "Paste each printed URL on its own bare line in the PR body/comment.\n",

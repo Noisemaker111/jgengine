@@ -124,9 +124,9 @@ export function scanRepository(root: string): WalkFinding[] {
 
 const USAGE: Usage = {
   summary: "fail a script or lane document that walks a directory tree recursively",
-  usage: "bun run check-recursive-walk [--root <dir>]",
+  usage: "bun run check recursive-walk [--root <dir>]",
   flags: [{ flag: "--root <dir>", detail: "scan this tree instead of the repository (used by the gate's own fixture test)" }],
-  example: "bun run check-recursive-walk",
+  example: "bun run check recursive-walk",
   exits: ["0 no unexempted recursive walk", "1 an offender, with the file, line and replacement"],
 };
 

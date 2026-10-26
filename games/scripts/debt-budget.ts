@@ -4,8 +4,8 @@
  *
  * Debt is the number the ledger exists to bring down, so it may not move back up.
  * This file holds the committed ceiling - one total and one number per game -
- * that `bun run games:check-capabilities --write` seeds from the tally and may only
- * lower. It is the same shape as `scripts/module-globals-baseline.json`: one
+ * that `bun run check games-capabilities --write` seeds from the tally and may only
+ * lower. It is the same shape as `scripts/module-global-baseline.json`: one
  * baseline, one command that may only shrink it.
  *
  * Two failures, both on the way down: a game or the total carrying more debt
@@ -92,7 +92,7 @@ export function parseBudget(source: string): DebtBudget {
   const sum = Object.values(games).reduce((sum, value) => sum + value, 0);
   if (total !== sum) {
     throw new Error(
-      `${BUDGET_REL}: "total" is ${total} but the per-game budgets add up to ${sum} - run bun run games:check-capabilities --write`,
+      `${BUDGET_REL}: "total" is ${total} but the per-game budgets add up to ${sum} - run bun run check games-capabilities --write`,
     );
   }
 
@@ -200,7 +200,7 @@ export function describeBreach(breach: BudgetBreach): string[] {
 
 export function describeStale(stale: StaleBudget): string {
   const where = stale.game === null ? "total" : stale.game;
-  return `${where}: budget ${stale.budget}, tally ${stale.actual} - the budget may only shrink; run bun run games:check-capabilities --write`;
+  return `${where}: budget ${stale.budget}, tally ${stale.actual} - the budget may only shrink; run bun run check games-capabilities --write`;
 }
 
 /** `debt: 43 (budget 43, was 50 on 2026-10-16)` - the one trend line the summary prints. */

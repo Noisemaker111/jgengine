@@ -2,6 +2,7 @@
 //   bun run release              # 0.17.0 -> 0.18.0, cut CHANGELOG, mirror, regen api.md
 //   bun run release --dry-run    # print the plan, write nothing
 //   bun run release --no-gen     # skip the generated-artifact refresh
+//   bun run release --await 0.38.4   # wait for the publish run of an already-cut version (release-await.ts)
 //
 // A release is a milestone, not a step after each change: publish at most about once a day,
 // or when an outside user needs a version. The games in games/ run engine source from the same
@@ -252,6 +253,10 @@ export function ancestorFailureLines(report: AncestorReport): string[] {
 function main(): void {
   const root = fileURLToPath(new URL("..", import.meta.url));
   const args = process.argv.slice(2);
+  if (args[0] === "--await") {
+    const waited = spawnSync("bun", ["scripts/release-await.ts", ...args.slice(1)], { cwd: root, stdio: "inherit" });
+    process.exit(waited.status ?? 1);
+  }
   const dryRun = args.includes("--dry-run");
   const skipGen = args.includes("--no-gen");
   const patchRelease = args.includes("--patch");

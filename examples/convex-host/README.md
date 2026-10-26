@@ -21,7 +21,7 @@ the gate stays green before `bunx convex dev` has generated it.
 Point a game at that URL and run it:
 
 ```sh
-VITE_CONVEX_URL=<url> bun run dev --filter @jgengine-apps/dev
+VITE_CONVEX_URL=<url> bun run dev:site
 ```
 
 or set `VITE_CONVEX_URL` in `apps/dev/.env.local`. Any game whose `game.config.ts` declares

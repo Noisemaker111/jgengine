@@ -5,7 +5,7 @@ import { findReport, gameUrl, parseDebugArgs } from "./debug-report";
 import type { PerfReport } from "../packages/core/src/devtools/report";
 
 /**
- * `bun run debug` is the fast read path, so its argument handling and its choice of
+ * `bun run perf live` is the fast read path, so its argument handling and its choice of
  * server have to be boring: one game, an optional wait, no surprise budget skip, and
  * the report found on whichever dev server has it.
  */
@@ -61,7 +61,7 @@ function report(game = "deepward"): PerfReport {
 const website = { base: "http://127.0.0.1:3001", kind: "website" as const };
 const runner = { base: "http://127.0.0.1:4680", kind: "runner" as const };
 
-describe("bun run debug arguments", () => {
+describe("bun run perf live arguments", () => {
   test("defaults to a 1.5s wait and the budget check", () => {
     expect(parseDebugArgs(["harbor-heat"])).toEqual({ game: "harbor-heat", waitMs: 1_500, budget: true });
   });

@@ -45,7 +45,7 @@ import {
   type Device,
   type SizeMode,
 } from "./browser-lib";
-import { decodePng } from "./png-reader";
+import { decodePng } from "../packages/assets/src/imageCodec";
 import { shootOutPath } from "./shotPath";
 import { clearOriginStorage } from "./capture-storage";
 import { headRevision } from "./captureRevision";

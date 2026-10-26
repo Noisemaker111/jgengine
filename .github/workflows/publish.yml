@@ -6,7 +6,7 @@ name: Publish
 # one environment-sensitive test used to block a release that the PR had already passed (#2279).
 #
 # What a release still proves, and the PR cannot: the packages build from this exact tree
-# (`bun run build`), the published `.d.ts` surface type-checks (`check-types:sdk`), the tree
+# (`bun run build`), the published `.d.ts` surface type-checks (`bun run check --sdk`), the tree
 # carries no source artifacts, the candidate packs into installable tarballs, a real adopter
 # compiles against those tarballs, and every published package installs from the registry.
 on:
@@ -61,11 +61,11 @@ jobs:
       - name: Stage the lockstep changelog into each package
         run: for p in core rapier ws sql navbake react convex node shell assets editor github jgengine; do cp CHANGELOG.md "packages/$p/CHANGELOG.md"; done
       - name: Stage per-package skills
-        run: bun run stage-skills
-      - run: bun run check-artifacts
-      - run: bun run check-release-set
-      - run: bun run build
-      - run: bun run check-types:sdk
+        run: bun scripts/stage-skills.ts
+      - run: bun run check artifacts
+      - run: bun run check release-set
+      # Builds first, then runs the SDK checks against the fresh dist.
+      - run: bun run check --sdk
       - name: Publish packages that are not installable from the registry
         run: |
           # `npm view` reported success for a version whose tarball returned 404 (#2280), and a
@@ -88,4 +88,4 @@ jobs:
             (cd "packages/$p" && npm publish --access public --tag "$tag" --loglevel verbose)
           done
       - name: Verify every published package installs
-        run: bun run check:release-artifacts -- --wait 300
+        run: bun scripts/check-release-artifacts.ts --wait 300

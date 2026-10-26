@@ -4,7 +4,7 @@ import { createReportStore, handleReportPush } from "./devReportPlugin";
 import type { PerfReport } from "../../packages/core/src/devtools/report";
 
 /**
- * The report route is the whole read path for `bun run debug`: a pushed record must
+ * The report route is the whole read path for `bun run perf live`: a pushed record must
  * come back as the record itself, an empty server must say so instead of hanging,
  * and a malformed push must not poison the store.
  */

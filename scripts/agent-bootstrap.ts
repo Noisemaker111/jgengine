@@ -138,7 +138,7 @@ Avoid:
   bun run --cwd packages/<pkg> <script>   # can resolve the wrong root script
 
 Parallel work:
-  bun run agent:worktree -- <name>  →  .claude/worktrees/<name>/ (deps, Games and assets linked; no build)
+  bun run worktree new <name>  →  .claude/worktrees/<name>/ (deps, Games and assets linked; no build)
   Agents sharing one filesystem (local or cloud) use separate worktrees; a lone cloud session branches directly.
 
 Game changes:
@@ -148,7 +148,7 @@ Game changes:
 
 Verify:
   focused package tests and types (from source; no build needed); bun run gen when required
-  bun run ship:preflight after commit; CI runs the full gate
+  bun run preflight --ship after commit; CI runs the full gate
   visual: bun run shoot daemon + shoot <game> only for pixel claims
   arbitrary --url pages declare readiness after an honest frame, never by forcing a ready flag
 `);

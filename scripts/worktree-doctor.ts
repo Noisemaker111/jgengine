@@ -6,9 +6,9 @@
  * later with confusing resolution errors instead of a loud install failure.
  * Nothing in the repo noticed - this does.
  *
- *   bun run worktree:doctor                  table of every worktree, worst first
- *   bun run worktree:doctor --repair         repair broken installs in clean trees, then re-report
- *   bun run worktree:doctor --self           only this tree; exit 1 when its install is broken (ship:preflight)
+ *   bun run worktree doctor                  table of every worktree, worst first
+ *   bun run worktree doctor --repair         repair broken installs in clean trees, then re-report
+ *   bun run worktree doctor --self           only this tree; exit 1 when its install is broken (ship:preflight)
  *
  * Exit code is 1 while any install is still broken. Repair runs only in a clean
  * tree; it never touches a branch, a worktree or uncommitted work.
@@ -369,7 +369,7 @@ export function strayDirectories(worktreesRoot: string, refs: WorktreeRef[]): st
 
 /**
  * Delete this worktree's node_modules directory, never a shared dependency store:
- * `agent:worktree` junctions the root node_modules to the main checkout, and
+ * `worktree new` junctions the root node_modules to the main checkout, and
  * removing that link with a recursive delete would wipe the main checkout too.
  */
 export function removeNodeModules(worktree: string): "unlinked" | "removed" {
@@ -452,10 +452,10 @@ function summary(rows: WorktreeReport[]): string {
 function help(): void {
   console.log(`worktree-doctor: check every agent worktree install
 
-  bun run worktree:doctor              table, worst first
-  bun run worktree:doctor --repair     repair broken installs in clean trees, then re-report
-  bun run worktree:doctor --only <p>   limit --repair to worktrees matching p (substring of repo/name, comma separated)
-  bun run worktree:doctor --self       only this tree; exit 1 when its install is broken
+  bun run worktree doctor              table, worst first
+  bun run worktree doctor --repair     repair broken installs in clean trees, then re-report
+  bun run worktree doctor --only <p>   limit --repair to worktrees matching p (substring of repo/name, comma separated)
+  bun run worktree doctor --self       only this tree; exit 1 when its install is broken
 
 Columns
   INSTALL  node_modules present; "stale" means it predates bun.lock
@@ -499,7 +499,7 @@ if (import.meta.main) {
     if (row.severity >= BROKEN) {
       const detail = row.nodeModules ? row.missingDeps.slice(0, 3).join(", ") : "no node_modules";
       if (installBroken(row)) console.error(`worktree-doctor: ${where} install is broken (${detail})`);
-      if (installBroken(row)) console.error("worktree-doctor: run `bun run worktree:doctor --repair` here, or `bun run agent:bootstrap`");
+      if (installBroken(row)) console.error("worktree-doctor: run `bun run worktree doctor --repair` here, or `bun run agent:bootstrap`");
       process.exit(1);
     }
     console.log(`worktree-doctor: ${where} install ok`);

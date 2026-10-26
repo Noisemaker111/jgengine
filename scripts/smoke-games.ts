@@ -9,8 +9,8 @@
  * <canvas> OR a shape-agnostic `data-jg-frame-ready` marker the shell stamps for
  * hud-presentation games.
  *
- *   bun run smoke                      boot every smoke game in one process
- *   bun run smoke --games deepward     boot one game (CI gives each its own job)
+ *   bun scripts/smoke-games.ts                      boot every smoke game in one process
+ *   bun scripts/smoke-games.ts --games deepward     boot one game (CI gives each its own job)
  */
 import { existsSync } from "node:fs";
 import { join } from "node:path";

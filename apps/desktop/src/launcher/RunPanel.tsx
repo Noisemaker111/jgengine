@@ -9,12 +9,12 @@ const MOUNTS: { id: GameMount; label: string; hint: string }[] = [
   {
     id: "runner",
     label: "Runner",
-    hint: "bun run dev:runner — monorepo /play host",
+    hint: "bun run dev:games — monorepo /play host",
   },
   {
     id: "website",
     label: "Website",
-    hint: "bun run dev — site with embedded /play",
+    hint: "bun run dev:site — site with embedded /play",
   },
 ];
 

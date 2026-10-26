@@ -3,7 +3,7 @@ import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, symlinkSync, 
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { spawnSync } from "node:child_process";
-import { diagnose, runDoctor } from "./doctor";
+import { diagnoseProject, runDoctor } from "./doctor";
 import { inspectWorkspaceSdkInstall } from "./workspaceDoctor";
 
 function manifest(dir: string, data: object) { mkdirSync(dir, { recursive: true }); writeFileSync(join(dir, "package.json"), JSON.stringify(data)); }
@@ -27,7 +27,7 @@ async function fixture(run: (root: string, studio: string) => void | Promise<voi
 
 test.each(["games/*", "*"])("one root command checks distinct workspace consumers under %s and catches one private stale SDK", async pattern => {
   await fixture((root, studio) => {
-    const normal = diagnose(root).find(finding => finding.label === "installed SDK dependency identities are coherent");
+    const normal = diagnoseProject(root).find(finding => finding.label === "installed SDK dependency identities are coherent");
     expect(normal?.ok).toBe(true);
     const before = readFileSync(join(root, "package.json"), "utf8");
     const report = inspectWorkspaceSdkInstall(root);

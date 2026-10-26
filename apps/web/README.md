@@ -35,7 +35,7 @@ bun dev
 The Worker configuration is [`wrangler.jsonc`](wrangler.jsonc). Build and deploy from the repository root:
 
 ```sh
-bun run deploy:cloudflare
+bun --cwd=apps/web run deploy:cloudflare
 ```
 
 The build emits the TanStack Start Worker and static assets under `dist/`. Wrangler follows the generated deployment configuration automatically.

@@ -234,8 +234,8 @@ export function gameTreeHash(repo: string, game: string): { hash: string; head: 
 /** The capture tools' own bytes, so a change to shoot/drive cannot reuse an older proof. */
 export function toolsHash(engine: string): string {
   const hash = createHash("sha256");
-  for (const name of ["shoot-dev.ts", "drive-dev.ts", "png-reader.ts", "servedGame.ts"]) {
-    const path = join(engine, "scripts", name);
+  for (const name of ["scripts/shoot-dev.ts", "scripts/drive-dev.ts", "packages/assets/src/imageCodec.ts", "scripts/servedGame.ts"]) {
+    const path = join(engine, name);
     hash.update(`${name}:`);
     try {
       hash.update(createHash("sha256").update(readFileSync(path)).digest("hex"));
@@ -718,7 +718,7 @@ async function main(): Promise<number> {
     return { ok: result.status === 0, wallMs: Date.now() - startedAt, output: `${result.stdout}\n${result.stderr}`.trim() };
   };
 
-  const png = (await import(pathToFileURL(join(engine, "scripts", "png-reader.ts")).href)) as {
+  const png = (await import(pathToFileURL(join(engine, "packages", "assets", "src", "imageCodec.ts")).href)) as {
     decodePng: (bytes: Uint8Array) => { width: number; height: number; data: Uint8Array };
   };
   const diff = (a: string, b: string): DiffNumbers => diffFrames(png.decodePng(readFileSync(a)), png.decodePng(readFileSync(b)));

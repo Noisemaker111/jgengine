@@ -20,7 +20,7 @@ Before / after (grass: Fernwild, Scrap Signal; roads: Apex Nights, Harbor Heat):
 ![harbor-heat-before](https://raw.githubusercontent.com/Noisemaker111/jgengine/pr-shots/pr-shots/agent/world-unify/harbor-heat-before.png)
 ![harbor-heat-after](https://raw.githubusercontent.com/Noisemaker111/jgengine/pr-shots/pr-shots/agent/world-unify/harbor-heat-after.png)
 
-Perf: Ember Command's triangle ceiling rises to 742,000 from three measured runs (674,722 / 674,734 / 674,734): the floored meadow is ~475k of it. Its linkProgram 4-5 and nodes 1,078 overages reproduce on unmodified origin/beta. Beacon Bastion, Brightway Park and Scrap Signal pass unchanged. All 17 runnable games and the touched demos boot clean (`bun run smoke` + a `shoot` per game).
+Perf: Ember Command's triangle ceiling rises to 742,000 from three measured runs (674,722 / 674,734 / 674,734): the floored meadow is ~475k of it. Its linkProgram 4-5 and nodes 1,078 overages reproduce on unmodified origin/beta. Beacon Bastion, Brightway Park and Scrap Signal pass unchanged. All 17 runnable games and the touched demos boot clean (`bun scripts/smoke-games.ts` + a `shoot` per game).
 
 Regression tests: grassKind density floor, GrassField LOD/blade count, pathRoads, drawnRoadPath (closed loops, no zero-length fillets), roads default scan, buildingLots sidewalks and lane mode, cullingDriver measured bounds, worldReflectionProbe streaming gate.
 

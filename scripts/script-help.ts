@@ -1,6 +1,6 @@
 // One shape for `--help` across the scripts a lane runs. The usage text lives in
 // the script it describes, so the flags and the parser cannot drift apart, and
-// `bun run check:script-help` proves every documented script still answers.
+// `bun run check script-help` proves every documented script still answers.
 export interface UsageFlag {
   flag: string;
   detail: string;
