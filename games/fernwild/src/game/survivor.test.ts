@@ -6,7 +6,8 @@ import { onNewPlayer, systems } from "../loop";
 import { world } from "../world";
 import { content } from "./content";
 import { itemTraits } from "./data/items";
-import { BAG, BAG_SLOTS, HOTBAR, HOTBAR_SLOTS, survivorView } from "./survivor";
+import { BAG, BAG_SLOTS, HOTBAR, HOTBAR_SLOTS } from "./bags";
+import { survivorView } from "./survivor";
 
 /** A survivor on the authored beach with the real island under them and the survivor system installed. */
 function survivorRunner(): HeadlessRunner {

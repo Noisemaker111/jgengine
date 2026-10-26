@@ -45,7 +45,7 @@ const berry = (id: string, label: string, consume: Consume, note: string): ItemD
 
 /** Bare hands: ARK's 8-damage punch, thatch from trees, a little stone from rocks. */
 export const FIST: ToolDef = {
-  gather: { power: 1, biases: { thatch: 1, wood: 0.35, stone: 0.5, flint: 0.25, fiber: 0, meat: 0.5, hide: 0.5 }, defaultBias: 0 },
+  gather: { power: 1, biases: { thatch: 1, wood: 0.35, stone: 0.5, flint: 0.25, fiber: 0, raw_meat: 0.5, hide: 0.5 }, defaultBias: 0 },
   reach: 1.6,
   damage: 8,
   stamina: 5,
@@ -70,6 +70,7 @@ export const ITEMS: readonly ItemDef[] = [
   resource("hide", "Hide", 0.01, 200, "Skin from a carcass."),
   resource("sparkpowder", "Sparkpowder", 0.01, 100, "Ground flint and stone that lights fires."),
   { id: "raw_meat", label: "Raw Meat", kind: "consumable", weight: 0.1, stack: 40, consume: { food: 10, health: -5 }, note: "Edible, barely. Cook it on a campfire." },
+  { id: "raw_prime_meat", label: "Raw Prime Meat", kind: "consumable", weight: 0.1, stack: 20, consume: { food: 15, health: -5 }, note: "The best cut. Carnivores tame fastest on it." },
   { id: "cooked_meat", label: "Cooked Meat", kind: "consumable", weight: 0.1, stack: 40, consume: { food: 20, health: 8 }, note: "Filling and heals a little." },
   { id: "spoiled_meat", label: "Spoiled Meat", kind: "consumable", weight: 0.1, stack: 50, consume: { food: 5, health: -10, torpor: 25 }, note: "Rotten. Good for making narcotics." },
   berry("mejoberry", "Mejoberry", { food: 1.5, water: 0.2 }, "A sweet berry plant-eaters love."),
@@ -82,19 +83,19 @@ export const ITEMS: readonly ItemDef[] = [
   { id: "stimulant", label: "Stimulant", kind: "consumable", weight: 0.1, stack: 100, consume: { stamina: 30, water: -10, torpor: -40 }, note: "Wakes the eater fast." },
   {
     id: "stone_pick", label: "Stone Pick", kind: "tool", weight: 1, stack: 1, note: "Thatch from trees, flint from rocks.",
-    tool: { gather: { power: 1.5, biases: { thatch: 1.6, wood: 0.25, flint: 1.6, stone: 0.35, meat: 1.4, hide: 0.4 }, defaultBias: 0 }, reach: 2.2, damage: 15, stamina: 3, cooldown: 0.7 },
+    tool: { gather: { power: 1.5, biases: { thatch: 1.6, wood: 0.25, flint: 1.6, stone: 0.35, raw_meat: 1.4, hide: 0.4 }, defaultBias: 0 }, reach: 2.2, damage: 15, stamina: 3, cooldown: 0.7 },
   },
   {
     id: "stone_hatchet", label: "Stone Hatchet", kind: "tool", weight: 1, stack: 1, note: "Wood from trees, stone from rocks.",
-    tool: { gather: { power: 1.5, biases: { wood: 2.2, thatch: 0.3, stone: 2.2, flint: 0.25, hide: 1.4, meat: 0.4 }, defaultBias: 0 }, reach: 2.2, damage: 10, stamina: 3, cooldown: 0.7 },
+    tool: { gather: { power: 1.5, biases: { wood: 2.2, thatch: 0.3, stone: 2.2, flint: 0.25, hide: 1.4, raw_meat: 0.4 }, defaultBias: 0 }, reach: 2.2, damage: 10, stamina: 3, cooldown: 0.7 },
   },
   {
     id: "wooden_club", label: "Wooden Club", kind: "tool", weight: 1, stack: 1, note: "Knocks creatures out.",
-    tool: { gather: { power: 1, biases: {}, defaultBias: 0 }, reach: 2.3, damage: 5, torpor: 18, stamina: 6, cooldown: 0.9 },
+    tool: { gather: { power: 1, biases: {}, defaultBias: 0 }, reach: 2.3, damage: 5, torpor: 20, stamina: 6, cooldown: 0.9 },
   },
   {
     id: "spear", label: "Spear", kind: "tool", weight: 2, stack: 1, note: "A long, sharp stick for fighting.",
-    tool: { gather: { power: 1, biases: { meat: 1, hide: 0.5 }, defaultBias: 0 }, reach: 2.8, damage: 25, stamina: 7, cooldown: 0.9 },
+    tool: { gather: { power: 1, biases: { raw_meat: 1, hide: 0.5 }, defaultBias: 0 }, reach: 2.8, damage: 25, stamina: 7, cooldown: 0.9 },
   },
   { id: "torch", label: "Torch", kind: "tool", weight: 0.5, stack: 1, note: "Light and a little warmth.", tool: { gather: { power: 1, biases: {}, defaultBias: 0 }, reach: 1.8, damage: 8, stamina: 5, cooldown: 0.7 } },
   { id: "campfire", label: "Campfire", kind: "structure", weight: 4, stack: 100, note: "Cooks meat and keeps you warm." },
@@ -114,6 +115,7 @@ export const ITEMS: readonly ItemDef[] = [
   { id: "waterskin", label: "Waterskin", kind: "consumable", weight: 0.5, stack: 1, consume: { water: 20 }, note: "Carry a drink with you." },
   { id: "slingshot", label: "Slingshot", kind: "tool", weight: 1, stack: 1, note: "Throws stones that knock creatures out.", tool: { gather: { power: 1, biases: {}, defaultBias: 0 }, reach: 2, damage: 5, torpor: 8, stamina: 4, cooldown: 1 } },
   { id: "phiomia_saddle", label: "Phiomia Saddle", kind: "saddle", weight: 7, stack: 1, note: "Lets you ride a tamed Phiomia." },
+  { id: "raptor_saddle", label: "Raptor Saddle", kind: "saddle", weight: 8, stack: 1, note: "Lets you ride a tamed Raptor." },
 ];
 
 const BY_ID = new Map(ITEMS.map((item) => [item.id, item]));

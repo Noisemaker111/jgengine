@@ -25,6 +25,9 @@ export const SURVIVOR = {
   jumpStamina: 5,
   /** XP per gathering swing that took something (approx). */
   gatherXp: 0.4,
+  /** XP for a kill and for a tame (ARK scales both by the creature; these are flat for now). */
+  killXp: 6,
+  tameXp: 20,
   /** Water per drink from a lake or the sea shallows (approx). */
   drink: 10,
 } as const;

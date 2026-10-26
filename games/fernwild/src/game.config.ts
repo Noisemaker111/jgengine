@@ -4,11 +4,13 @@ import { DEFAULT_WALK_CODES, defineGame } from "@jgengine/shell/gameKit";
 
 import { editorLayers } from "./editorLayers";
 import { assets } from "./game/assets";
+import { creaturePrompts, creaturesView } from "./game/creatures";
 import { content } from "./game/content";
 import { itemTraits } from "./game/data/items";
 import { SURVIVOR } from "./game/data/survivor";
 import { entityModels, objectModels, scatterModels } from "./game/models";
-import { BAG, BAG_SLOTS, canRun, HOTBAR, HOTBAR_SLOTS, survivorPrompts, survivorView } from "./game/survivor";
+import { BAG, BAG_SLOTS, HOTBAR, HOTBAR_SLOTS } from "./game/bags";
+import { canRun, survivorPrompts, survivorView } from "./game/survivor";
 import { openScreen } from "./game/screens";
 import { GameUI } from "./game/ui/GameUI";
 import { onNewPlayer, systems } from "./loop";
@@ -32,6 +34,9 @@ export const game = defineGame({
     sprint: ["ShiftLeft"],
     fire: { hold: ["mouse0"], repeatMs: 250 },
     interact: ["KeyE"],
+    // ARK's whistles: T for follow, U for stay.
+    whistleFollow: ["KeyT"],
+    whistleStay: ["KeyU"],
     inventory: ["KeyI", "Tab"],
     pause: ["Escape", "KeyP"],
     ...Object.fromEntries(Array.from({ length: HOTBAR_SLOTS }, (_, slot) => [`slot${slot + 1}`, [`Digit${(slot + 1) % 10}`]])),
@@ -46,12 +51,13 @@ export const game = defineGame({
   sceneScatterModels: scatterModels,
   persist: { mode: "manual" },
   // The camera starts behind the survivor on the authored spawn facing, so you wash up looking inland.
-  prompts: survivorPrompts,
+  prompts: (ctx) => [...survivorPrompts(ctx), ...creaturePrompts(ctx)],
   camera: { perspective: "third", initialYaw: authoredSpawnRotation(editorLayers), frustum: { far: 2400 } },
   capture: {
     play: [{ name: "start", input: {} }],
     probe: (ctx) => {
       const view = survivorView(ctx);
+      const creatures = creaturesView(ctx);
       const me = ctx.scene.entity.get(ctx.player.userId);
       return {
         x: Math.round((me?.position[0] ?? 0) * 10) / 10,
@@ -75,6 +81,13 @@ export const game = defineGame({
         crafting: view.queue.length,
         screen: openScreen(ctx) === null ? 0 : 1,
         picks: ctx.player.inventory.count(HOTBAR, "stone_pick") + ctx.player.inventory.count(BAG, "stone_pick"),
+        creatures: creatures.count,
+        aimedDown: creatures.aimed?.taming?.unconscious === true ? 1 : 0,
+        aimedTorpor: creatures.aimed?.taming?.torpor ?? 0,
+        down: creatures.down,
+        tamed: creatures.tamed,
+        riding: creatures.riding === null ? 0 : 1,
+        saddled: creatures.aimed?.saddled === true ? 1 : 0,
       };
     },
   },

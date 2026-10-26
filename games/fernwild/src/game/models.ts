@@ -1,3 +1,4 @@
+import { libraryModel } from "@jgengine/assets/catalogs/modelLibrary";
 import type { ModelConfig } from "@jgengine/core/game/playableGame";
 import { resolveModelPlan } from "@jgengine/core/model/resolveModel";
 
@@ -6,10 +7,18 @@ import { assets } from "./assets";
 const NATURE = "/models/imported/quaternius-stylized-nature";
 const nature = (file: string, targetHeight: number): ModelConfig => ({ url: `${NATURE}/${file}.glb`, targetHeight });
 
-/** The survivor; creatures arrive with taming. */
-export const entityModels: Record<string, ModelConfig> = resolveModelPlan(assets, {
-  player: { model: "asset:person_casual", style: { targetHeight: 1.8 } },
-});
+const creature = (file: string, targetHeight: number): ModelConfig => ({ url: `/models/imported/creatures/${file}.glb`, animation: "auto", targetHeight });
+
+/**
+ * The survivor and the creatures. Only the raptor is its real animal; the dodo is a duck and the
+ * phiomia a boar until dinosaur models land (README "Gap to target").
+ */
+export const entityModels: Record<string, ModelConfig> = {
+  ...resolveModelPlan(assets, { player: { model: "asset:person_casual", style: { targetHeight: 1.8 } } }),
+  raptor: creature("velociraptor", 1.7),
+  phiomia: creature("wild_boar", 1.9),
+  dodo: libraryModel("creature/duck", { targetHeight: 0.8 }),
+};
 
 export const objectModels: Record<string, ModelConfig> = {};
 

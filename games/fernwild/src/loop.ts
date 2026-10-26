@@ -3,8 +3,10 @@ import { authoredSpawnPosition, authoredSpawnRotation } from "@jgengine/core/wor
 import { defineSystem } from "@jgengine/shell/gameKit";
 
 import { editorLayers } from "./editorLayers";
-import { LEVEL_STATS } from "./game/data/survivor";
-import { BAG, cancelCraft, consume, HOTBAR_SLOTS, learn, levelStat, resetSurvivor, selectSlot, setUpSurvivor, shuttle, startCraft, survivorSave, swing, tickSurvivor, use } from "./game/survivor";
+import { closeCreature, creaturesSave, feedNarcotic, giveToCreature, mountBite, resetCreatures, setTamingSpeed, spawnCreature, takeFromCreature, tickCreatures, unsaddle, useCreature, whistle } from "./game/creatures";
+import { LEVEL_STATS, SURVIVOR } from "./game/data/survivor";
+import { BAG, HOTBAR_SLOTS } from "./game/bags";
+import { cancelCraft, consume, grantXp, learn, levelStat, resetSurvivor, selectSlot, setUpSurvivor, shuttle, startCraft, survivorSave, swing, tickSurvivor, use } from "./game/survivor";
 import { setScreen, toggleScreen, type SurvivorScreen } from "./game/screens";
 
 const ORIGIN: [number, number, number] = [0, 0, 0];
@@ -20,7 +22,10 @@ export const systems = [
       const commands = ctx.game.commands;
       commands.define<{ aim?: Aim; yaw?: number }>("fire", {
         apply(state, input) {
-          swing(state, input.aim?.yaw ?? input.yaw);
+          // Riding, the click is the mount's bite; on foot, the survivor's swing.
+          const bite = mountBite(state);
+          if (bite === null) swing(state, input.aim?.yaw ?? input.yaw);
+          else if (bite !== "riding" && bite.killed) grantXp(state, SURVIVOR.killXp);
           return state;
         },
       });
@@ -47,7 +52,49 @@ export const systems = [
     save: survivorSave,
     reset: resetSurvivor,
   }),
+  defineSystem({
+    id: "creatures",
+    tick: { type: "fixed", rate: 30 },
+    create(ctx) {
+      const commands = ctx.game.commands;
+      commands.define("creatureUse", { apply: (state) => (useCreature(state), state) });
+      commands.define("closeCreature", { apply: (state) => (closeCreature(state), state) });
+      commands.define("whistleFollow", { apply: (state) => (whistle(state, "follow"), state) });
+      commands.define("whistleStay", { apply: (state) => (whistle(state, "stay"), state) });
+      commands.define<{ inventoryId: string; slot: number }>("giveCreature", { apply: (state, input) => (giveToCreature(state, input.inventoryId, input.slot), state) });
+      commands.define<{ slot: number }>("takeCreature", { apply: (state, input) => (takeFromCreature(state, input.slot), state) });
+      commands.define("unsaddle", { apply: (state) => (unsaddle(state), state) });
+      commands.define<{ itemId: string }>("feedNarcotic", { apply: (state, input) => (feedNarcotic(state, input.itemId), state) });
+      // ARK's admin console, for proofs: give items, levels, a taming speed, a creature in front of you.
+      commands.define<Cheat>("cheat", { apply: (state, input) => (cheat(state, input), state) });
+    },
+    update(ctx, dt) {
+      for (const event of tickCreatures(ctx, dt)) if (event.type === "tamed") grantXp(ctx, SURVIVOR.tameXp);
+    },
+    save: creaturesSave,
+    reset: resetCreatures,
+  }),
 ];
+
+interface Cheat {
+  give?: Record<string, number>;
+  xp?: number;
+  tamingSpeed?: number;
+  /** Spawn a creature this many metres in front of the survivor. */
+  summon?: { species: string; level?: number; distance?: number };
+}
+
+function cheat(ctx: GameContext, input: Cheat): void {
+  for (const [itemId, count] of Object.entries(input.give ?? {})) ctx.player.inventory.put(BAG, itemId, count);
+  if (input.xp !== undefined) grantXp(ctx, input.xp);
+  if (input.tamingSpeed !== undefined) setTamingSpeed(ctx, input.tamingSpeed);
+  const me = ctx.scene.entity.get(ctx.player.userId);
+  if (input.summon !== undefined && me !== null) {
+    const distance = input.summon.distance ?? 4;
+    const at = [me.position[0] + Math.sin(me.rotationY) * distance, me.position[2] + Math.cos(me.rotationY) * distance] as const;
+    spawnCreature(ctx, input.summon.species, at, input.summon.level === undefined ? {} : { level: input.summon.level });
+  }
+}
 
 /** Wake on the authored beach with nothing, like a fresh survivor. */
 export function onNewPlayer(ctx: GameContext): void {

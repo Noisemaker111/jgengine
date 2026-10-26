@@ -1,9 +1,10 @@
 import type { GameContextEntityEntry, GameContextItemEntry } from "@jgengine/core/runtime/gameContext";
 
 import { ITEMS } from "./data/items";
+import { SPECIES } from "./data/species";
 import { MAX_LEVEL, SURVIVOR } from "./data/survivor";
 
-/** Every entity by catalog id: for now the survivor; creatures arrive with taming. */
+/** Every entity by catalog id: the survivor and each species. A creature's body stays where it falls, for harvesting. */
 const entities: Record<string, GameContextEntityEntry> = {
   player: {
     role: "player",
@@ -11,6 +12,18 @@ const entities: Record<string, GameContextEntityEntry> = {
     receive: { damage: { order: ["health"] } },
     movement: { poses: ["standing", "running", "crouch"], walkSpeed: SURVIVOR.walkSpeed },
   },
+  ...Object.fromEntries(
+    Object.values(SPECIES).map((def): [string, GameContextEntityEntry] => [
+      def.id,
+      {
+        role: "npc",
+        stats: { health: { max: def.health.base } },
+        receive: { damage: { order: ["health"] } },
+        onDeath: { keep: true },
+        movement: { walkSpeed: def.walk },
+      },
+    ]),
+  ),
 };
 
 const items: Record<string, GameContextItemEntry> = Object.fromEntries(ITEMS.map((item) => [item.id, {}]));

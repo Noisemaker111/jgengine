@@ -13,17 +13,15 @@ import { createVitals, type Vitals, type VitalsState } from "@jgengine/core/surv
 import { cancelJob, createWorkQueue, enqueue, jobProgress, tick as tickQueue, type WorkQueueConfig, type WorkQueueState } from "@jgengine/core/work/jobQueue";
 
 import { editorLayers } from "../editorLayers";
+import { BAG, BAG_SLOTS, HOTBAR } from "./bags";
 import { ENGRAMS, engramDef, CRAFTING_RECIPES, recipeDef } from "./data/engrams";
 import { gatheredBy, HARVESTABLES } from "./data/harvestables";
 import { command, keybind, proximityPrompt, type PositionedPrompt } from "@jgengine/core/interaction/proximityPrompt";
 import { FIST, itemDef, itemLabel, itemTraits, PICK_UP, type ToolDef } from "./data/items";
+import { strikeCreature } from "./creatures";
 import { openScreen } from "./screens";
 import { COMFORT, ENGRAM_POINTS, LEVEL_STATS, MAX_LEVEL, SURVIVOR, survivorVitals, XP_TO_LEVEL, type LevelStat } from "./data/survivor";
 
-export const BAG = "inventory";
-export const HOTBAR = "hotbar";
-export const BAG_SLOTS = 60;
-export const HOTBAR_SLOTS = 10;
 
 type StatId = LevelStat["id"];
 
@@ -190,6 +188,14 @@ export function swing(ctx: GameContext, yaw?: number): void {
     return;
   }
   survivor.swingReady = now + tool.cooldown;
+  const melee = statValue(survivor, "melee") / 100;
+  const struck = strikeCreature(ctx, ctx.player.userId, yaw ?? me.rotationY, tool, melee);
+  if (struck !== null) {
+    const got = grantGather(ctx, survivor, struck.granted);
+    if (got.length > 0) ctx.scene.entity.floatText({ instanceId: ctx.player.userId, text: `+${got.join(", +")}`, kind: "pickup" });
+    if (struck.killed) grantXp(ctx, SURVIVOR.killXp);
+    return;
+  }
   ensurePlacements(ctx, survivor);
   const hit = survivor.harvest.strike({
     x: me.position[0],
@@ -197,7 +203,7 @@ export function swing(ctx: GameContext, yaw?: number): void {
     yaw: yaw ?? me.rotationY,
     reach: tool.reach,
     tool: tool.gather,
-    multiplier: statValue(survivor, "melee") / 100,
+    multiplier: melee,
     accepts: gatheredBy("strike"),
   });
   if (hit === null) return;
