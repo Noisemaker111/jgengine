@@ -121,7 +121,11 @@ export function refreshCascadesOnTexelStep(
     const snapped = snapCascadeCenter(light.position, lightDirection, cascadeTexelSize(light));
     const known = state.centres[index];
     const moved = known === undefined || known.distanceToSquared(snapped) > 1e-12;
-    const refresh = moved || index < state.floor;
+    // A cascade whose map was never drawn has nothing to keep: three only creates the map in a depth
+    // pass, and a frame whose draw was held (the shader warmup holds draws behind the loading cover)
+    // runs this without one. A map drawn outside a frame (the warmup's) asks for a redraw too. Kept off then, the lit pass samples an empty colour texture through a
+    // shadow sampler, every draw fails, and the scene comes up blank.
+    const refresh = moved || index < state.floor || light.shadow.map === null || light.shadow.needsUpdate;
     light.position.copy(snapped);
     light.target.position.copy(snapped).add(lightDirection);
     light.shadow.autoUpdate = refresh;

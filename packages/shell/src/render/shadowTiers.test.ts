@@ -58,6 +58,8 @@ describe("cascade light texel snapping", () => {
     light.shadow.mapSize.set(2048, 2048);
     light.castShadow = true;
     light.target.position.set(0, 0, 0);
+    // A map a depth pass already drew: a cascade with none refreshes until it has one.
+    light.shadow.map = new THREE.WebGLRenderTarget(1, 1);
     return light;
   };
 

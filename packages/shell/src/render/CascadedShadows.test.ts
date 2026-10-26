@@ -87,7 +87,7 @@ describe("cascade cadence and shadow reach", () => {
         expect(lights[1]!.shadow.autoUpdate).toBe(false);
         expect(lights[2]!.shadow.autoUpdate).toBe(false);
       }
-      for (const light of lights) light.shadow.needsUpdate = false;
+      drawShadowPass(lights);
     }
     // 30 static frames: the player cascade each time, the far pair once at boot.
     expect(state.refreshes).toBe(30 + 2);
@@ -101,11 +101,31 @@ describe("cascade cadence and shadow reach", () => {
       const moved = refreshCascadesOnTexelStep(lights, direction, state);
       const passes = lights.filter((light) => light.shadow.autoUpdate || light.shadow.needsUpdate).length;
       expect(passes).toBe(moved);
-      for (const light of lights) light.shadow.needsUpdate = false;
+      drawShadowPass(lights);
     }
     expect(state.refreshes).toBe(3);
   });
+
+  test("a cascade keeps asking for its depth pass until a frame actually draws one", () => {
+    const lights = Array.from({ length: 3 }, () => new THREE.DirectionalLight());
+    const state = createCascadeRefreshState(1);
+    const direction = new THREE.Vector3(-0.5, -1, -0.4).normalize();
+    // Frames whose draw is held behind the loading cover run the refresh without a depth pass.
+    for (let frame = 0; frame < 5; frame++) refreshCascadesOnTexelStep(lights, direction, state);
+    expect(lights.every((light) => light.shadow.autoUpdate)).toBe(true);
+    drawShadowPass(lights);
+    refreshCascadesOnTexelStep(lights, direction, state);
+    expect(lights.map((light) => light.shadow.autoUpdate)).toEqual([true, false, false]);
+  });
 });
+
+/** What three's depth pass leaves behind: a map on every light it drew. */
+function drawShadowPass(lights: readonly THREE.DirectionalLight[]): void {
+  for (const light of lights) {
+    if (light.shadow.autoUpdate || light.shadow.needsUpdate) light.shadow.map ??= new THREE.WebGLRenderTarget(1, 1);
+    light.shadow.needsUpdate = false;
+  }
+}
 
 describe("CSM lifecycle", () => {
   test("a swapped material is patched before the shader warmup links it, not at its first draw", async () => {

@@ -217,10 +217,21 @@ export function compileSubset(renderer: ShaderWarmupRenderer, scene: Object3D, c
   }
 }
 
+type ShadowLight = Object3D & { castShadow: boolean; shadow: { map: unknown; needsUpdate: boolean } };
+
+function shadowLights(scene: Object3D): ShadowLight[] {
+  const found: ShadowLight[] = [];
+  scene.traverse((object) => {
+    const light = object as Partial<ShadowLight> & { isLight?: boolean };
+    if (light.isLight === true && light.castShadow === true && light.shadow !== undefined) found.push(light as ShadowLight);
+  });
+  return found;
+}
+
 /**
  * Draws the drawables the predicate keeps, once, with everything else lifted out the same way as
  * {@link compileSubset}. Kept objects draw even outside the view, and the shadow pass is skipped
- * so the scene's shadow maps keep what the real frames drew. For drivers that finish a program
+ * so the scene's shadow maps keep what the real frames drew, except for a map no frame made yet. For drivers that finish a program
  * at its first draw: the draw happens here, a few programs at a time, instead of on a shown frame.
  * @internal
  */
@@ -247,9 +258,14 @@ export function drawSubset(renderer: ShaderWarmupRenderer, scene: Object3D, came
   const shadows = renderer.shadowMap;
   const autoUpdate = shadows?.autoUpdate;
   const needsUpdate = shadows?.needsUpdate;
+  // A lit program samples every shadow-casting light's map, and three makes a map only in a depth
+  // pass: drawn before any frame had one, a lit draw binds no depth texture to its shadow sampler,
+  // fails, and finishes nothing. So the first draws make the missing maps, then ask for a real redraw.
+  const casters = shadows === undefined ? [] : shadowLights(scene);
+  const mapless = casters.some((light) => light.shadow.map === null);
   if (shadows !== undefined) {
     shadows.autoUpdate = false;
-    shadows.needsUpdate = false;
+    shadows.needsUpdate = mapless;
   }
   try {
     renderer.render(scene, camera);
@@ -258,6 +274,8 @@ export function drawSubset(renderer: ShaderWarmupRenderer, scene: Object3D, came
       shadows.autoUpdate = autoUpdate;
       shadows.needsUpdate = needsUpdate;
     }
+    // That pass drew only the kept casters into every map it touched: the next frame redraws them.
+    if (mapless) for (const light of casters) light.shadow.needsUpdate = true;
     for (const object of culled) object.frustumCulled = true;
     for (const { parent, index, object } of lifted.sort((a, b) => a.index - b.index)) {
       parent.children.splice(Math.min(index, parent.children.length), 0, object);
