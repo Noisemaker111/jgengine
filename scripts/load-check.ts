@@ -186,7 +186,7 @@ function median(values: readonly (number | null)[]): number | null {
 }
 
 /** The median of each measure over a game's runs, so one slow cold start does not decide. */
-export function summarize(samples: readonly LoadSample[]): LoadSample {
+export function summarizeRuns(samples: readonly LoadSample[]): LoadSample {
   const first = samples[0]!;
   const pick = (key: "firstPaint" | "menuShown" | "worstClick" | "sceneReady" | "playable" | "longestTaskMs" | "blockingMs" | "transferKb") =>
     median(samples.map((sample) => sample[key]));
@@ -258,7 +258,7 @@ export function serveSite(clientDir = join(webRoot, "dist", "client")): { base: 
   const server = Bun.serve({
     port: 0,
     hostname: "127.0.0.1",
-    fetch(request) {
+    fetch: (request) => {
       const { pathname } = new URL(request.url);
       const path = resolve(pathname) ?? (pathname.startsWith("/play/") ? resolveGamePublicFile(pathname.slice("/play".length), gamePublic) : null);
       if (path === null) return new Response("not found", { status: 404 });
@@ -380,7 +380,7 @@ async function main(): Promise<void> {
         console.error(`load: ${game} run ${run + 1}: paint ${cell(sample.firstPaint)} menu ${cell(sample.menuShown)} worst click ${cell(sample.worstClick)} scene ${cell(sample.sceneReady)} playable ${cell(sample.playable)} ms${sample.error === undefined ? "" : ` (${sample.error})`}`);
         samples.push(sample);
       }
-      rows.push(summarize(samples));
+      rows.push(summarizeRuns(samples));
       allSamples.push(...samples);
     }
   } finally {

@@ -45,6 +45,12 @@ test("a second engine definition of a name fails; two scripts or two games may s
   expect(duplicateFailures([added], [added])).toEqual([]);
 });
 
+test("an export the branch committed and then renamed in the working tree is not a duplicate", () => {
+  const committed = { name: "summarize", file: "scripts/load-check.ts" };
+  const elsewhere = { name: "summarize", file: "packages/github/src/analytics.ts" };
+  expect(duplicateFailures([committed], [elsewhere])).toEqual([]);
+});
+
 test("finds every definition of a name in this checkout with one git grep", () => {
   const found = definitionsOf(ROOT, ["smoothstep"]).map((definition) => definition.file).sort();
   expect(found).toEqual(["packages/core/src/anim/easing.ts", "packages/shell/src/camera/rigMath.ts"]);

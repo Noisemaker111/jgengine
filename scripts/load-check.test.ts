@@ -1,7 +1,7 @@
 import { describe, expect, test } from "bun:test";
 
 import { shootCommand, LOAD_GUARD_SECONDS } from "./shoot";
-import { parseLoadArgs, renderTable, siteGames, summarize, type LoadSample } from "./load-check";
+import { parseLoadArgs, renderTable, siteGames, summarizeRuns, type LoadSample } from "./load-check";
 
 const known = ["apex-nights", "hold-the-line", "saltwick"];
 
@@ -34,9 +34,9 @@ describe("parseLoadArgs", () => {
   });
 });
 
-describe("summarize", () => {
+describe("summarizeRuns", () => {
   test("takes each measure's median over the runs and ignores runs that never got there", () => {
-    const row = summarize([sample("saltwick", 400, 9000), sample("saltwick", 200, null), sample("saltwick", 900, 3000)]);
+    const row = summarizeRuns([sample("saltwick", 400, 9000), sample("saltwick", 200, null), sample("saltwick", 900, 3000)]);
     expect(row.worstClick).toBe(400);
     expect(row.playable).toBe(9000);
   });
