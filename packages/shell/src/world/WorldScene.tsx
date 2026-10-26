@@ -45,6 +45,7 @@ import {
 } from "@jgengine/core/lod/characterLod";
 import { resolveEntityModel, resolveObjectModel, type ObjectModelCacheEntry } from "@jgengine/core/model/resolveModel";
 import { useRenderVisibility } from "@jgengine/core/visibility/CullingProvider.draw";
+import { setCulled } from "@jgengine/core/visibility/culledTransforms.draw";
 import { writePoseIfChanged, writeRenderPoseIfChanged, emptyPoseMemo, type PoseMemo } from "@jgengine/core/anim/entityPose";
 import type { RenderPose } from "@jgengine/core/runtime/poseInterpolation";
 import { createSnapshotBuffer, type SnapshotBuffer } from "@jgengine/core/runtime/snapshotBuffer";
@@ -102,7 +103,8 @@ function EntityMarker({
     const live = ctx.scene.entity.get(entityId);
     if (live === null) return;
     writeRenderPoseIfChanged(group, ctx, entityId, live, scratchRef.current, memoRef.current);
-    const shown = live.hidden !== true && visibleRef.current(entityId);
+    const inView = visibleRef.current(entityId);
+    const shown = live.hidden !== true && inView;
     let tier: CharacterLodTier | undefined;
     let batched = false;
     if (crowdModel !== undefined && crowd !== undefined && crowdKind !== undefined && crowdKindReady(crowdKind) && shown) {
@@ -128,6 +130,7 @@ function EntityMarker({
     // rings and the hit test on its rig have to behave as they do when it draws itself.
     if (modelRef.current !== null) modelRef.current.visible = !batched;
     group.visible = shown;
+    setCulled(group, !inView);
   });
 
   useEffect(
@@ -235,6 +238,7 @@ function ObjectMarker({
     if (live === null) return;
     writePoseIfChanged(group, live, memoRef.current);
     group.visible = visibleRef.current(instanceId);
+    setCulled(group, !group.visible);
   });
 
   return (

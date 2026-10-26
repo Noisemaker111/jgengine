@@ -4,7 +4,7 @@ import type { ModelConfig } from "@jgengine/core/game/playableGame";
 import { createObjectStore } from "@jgengine/core/scene/objectStore";
 import { createModelVariantSelector } from "@jgengine/core/lod/modelLod";
 import { buildScatterModelSources, disposeScatterModelSources } from "@jgengine/core/scatter/scatterModels.draw";
-import { countStaticBatchDraws, groupStaticObjects, STATIC_BATCH_MESH_KEY, syncStaticObjectSource, type StaticObjectBatch } from "./staticObjectBatches.draw";
+import { countStaticBatchDraws, groupStaticObjects, STATIC_BATCH_MESH_KEY, gatherStaticMembers, syncStaticObjectSource, type StaticObjectBatch } from "./staticObjectBatches.draw";
 import { LevelSingles, VariantStaticObjects } from "./StaticObjectModels.draw";
 
 const FULL_TRIANGLES = 9134;
@@ -54,10 +54,10 @@ function drawLevels(
     const mesh = new THREE.InstancedMesh(source.geometry, source.material, batch.objects.length);
     mesh.userData[STATIC_BATCH_MESH_KEY] = true;
     scene.add(mesh);
-    syncStaticObjectSource(mesh, source, batch.objects, store.get, () => true, scratch, (live) => {
+    syncStaticObjectSource(mesh, source, gatherStaticMembers(batch.objects, store.get, () => true, (live) => {
       probe.set(live.position[0]!, live.position[1]!, live.position[2]!);
       return selector.level(live.instanceId, cameraPosition.distanceTo(probe)) === index;
-    });
+    }), scratch);
     drawn.push({ count: mesh.count, triangles: triangles[index]! });
     disposeScatterModelSources(harvested.root);
   });

@@ -20,7 +20,7 @@ import { acquireImpostor, IMPOSTOR_MIN_RADIUS, impostorCard, impostorDistance, i
 import { acquireImpostorCardPool, ImpostorCardPool, releaseImpostorCardPool, type ImpostorCardSlice } from "@jgengine/core/lod/impostorCardPool.draw";
 import { useTerrainQuality } from "@jgengine/core/terrain/terrainQuality.draw";
 import { CAMERA_POST_FRAME_PRIORITY } from "@jgengine/core/camera/cameraRigs.draw";
-import { canInstanceStaticScene, countStaticBatchDraws, incompatibleStaticObjectIds, isCompatibleStaticObject, STATIC_BATCH_MESH_KEY, syncStaticObjectSource, type StaticObjectBatch } from "./staticObjectBatches.draw";
+import { canInstanceStaticScene, countStaticBatchDraws, gatherStaticMembers, harvestStaticPieces, incompatibleStaticObjectIds, isCompatibleStaticObject, STATIC_BATCH_MESH_KEY, staticModelPieces, syncStaticObjectSource, type StaticObjectBatch } from "./staticObjectBatches.draw";
 
 /**
  * Report what static object batching is doing to `debug_snapshot().systems`: the grouped batches, the
@@ -62,15 +62,33 @@ function useBatchMembers(batch: StaticObjectBatch): { objects: readonly SceneObj
   return { objects, excluded };
 }
 
-function ObjectSource({ source, objects, batch, assignment, level }: {
-  source: ScatterModelSource;
-  objects: readonly SceneObject[];
-  batch: StaticObjectBatch;
-  assignment?: ReadonlyMap<string, number> | undefined;
-  level?: number | undefined;
-}) {
+/**
+ * The members one batch (or one detail level of it) draws this frame, gathered once before its
+ * sources write their instances. `level` narrows them to the placements `assignment` put on it.
+ */
+function useStaticMembers(batch: StaticObjectBatch, objects: readonly SceneObject[], assignment?: ReadonlyMap<string, number>, level?: number, drawn = true): { current: SceneObject[] } {
   const ctx = useGameContext();
   const visibility = useRenderVisibility();
+  const members = useMemo(() => ({ current: [] as SceneObject[] }), []);
+  useFrame(() => {
+    if (!drawn) return;
+    const accept = assignment !== undefined && level !== undefined
+      ? (live: SceneObject) => assignment.get(live.instanceId) === level
+      : undefined;
+    gatherStaticMembers(objects, (id) => {
+      const object = ctx.scene.object.get(id);
+      return object !== null && object.catalogId === batch.objects[0]!.catalogId &&
+        isCompatibleStaticObject(object, batch.model, ctx.scene.object.catalog(id)) ? object : null;
+    }, visibility.current, accept, members.current);
+  }, CAMERA_POST_FRAME_PRIORITY + 0.15);
+  return members;
+}
+
+function ObjectSource({ source, members, capacity }: {
+  source: ScatterModelSource;
+  members: { current: readonly SceneObject[] };
+  capacity: number;
+}) {
   const ref = useRef<THREE.InstancedMesh>(null);
   const scratch = useMemo(() => new THREE.Object3D(), []);
   const attach = useCallback((mesh: THREE.InstancedMesh | null) => {
@@ -80,19 +98,11 @@ function ObjectSource({ source, objects, batch, assignment, level }: {
   useEffect(() => {
     const mesh = ref.current;
     return () => { mesh?.dispose(); };
-  }, [objects.length, source]);
+  }, [capacity, source]);
   useFrame(() => {
-    if (ref.current === null) return;
-    const accept = assignment !== undefined && level !== undefined
-      ? (live: SceneObject) => assignment.get(live.instanceId) === level
-      : undefined;
-    syncStaticObjectSource(ref.current, source, objects, (id) => {
-      const object = ctx.scene.object.get(id);
-      return object !== null && object.catalogId === batch.objects[0]!.catalogId &&
-        isCompatibleStaticObject(object, batch.model, ctx.scene.object.catalog(id)) ? object : null;
-    }, visibility.current, scratch, accept);
+    if (ref.current !== null) syncStaticObjectSource(ref.current, source, members.current, scratch);
   }, CAMERA_POST_FRAME_PRIORITY + 0.2);
-  return <instancedMesh ref={attach} args={[source.geometry, source.material, objects.length]} userData={{ [STATIC_BATCH_MESH_KEY]: true }} castShadow={source.castShadow} receiveShadow={source.receiveShadow} dispose={null} />;
+  return <instancedMesh ref={attach} args={[source.geometry, source.material, capacity]} userData={{ [STATIC_BATCH_MESH_KEY]: true }} castShadow={source.castShadow} receiveShadow={source.receiveShadow} dispose={null} />;
 }
 
 /** Bounds and collision triangles of one harvested model, measured once however often its batch re-renders. */
@@ -123,15 +133,16 @@ function reportSourceMeasures(ctx: ReturnType<typeof useGameContext>, harvested:
 function LoadedStaticObjects({ batch, single }: { batch: StaticObjectBatch; single: (object: SceneObject) => ReactNode }) {
   const ctx = useGameContext();
   const { objects, excluded } = useBatchMembers(batch);
-  const gltf = useLoader(sharedGltfLoader, batch.model.url);
-  const supported = useMemo(() => canInstanceStaticScene(gltf.scene, gltf.animations), [gltf]);
-  const harvested = useMemo(() => supported ? buildScatterModelSources(gltf.scene, batch.model) : null, [supported, gltf, batch.model]);
-  useEffect(() => () => { if (harvested !== null) disposeScatterModelSources(harvested.root); }, [harvested]);
+  const pieces = useMemo(() => staticModelPieces(batch.model), [batch.model]);
+  const gltfs = useLoader(sharedGltfLoader, pieces.map((piece) => piece.model.url));
+  const harvested = useMemo(() => harvestStaticPieces(pieces, gltfs), [pieces, gltfs]);
+  useEffect(() => () => { if (harvested !== null) for (const root of harvested.roots) disposeScatterModelSources(root); }, [harvested]);
   useEffect(() => {
     if (harvested === null) return;
     reportSourceMeasures(ctx, harvested, batch);
   }, [ctx, harvested, batch]);
   const radius = useMemo(() => harvested === null ? 0 : sourceRadius(harvested.sources), [harvested]);
+  const members = useStaticMembers(batch, objects, undefined, undefined, harvested !== null && radius < IMPOSTOR_MIN_RADIUS);
   if (harvested === null) return <>{batch.objects.map(single)}</>;
   if (radius >= IMPOSTOR_MIN_RADIUS && objects.length > 0) {
     return <>
@@ -140,7 +151,7 @@ function LoadedStaticObjects({ batch, single }: { batch: StaticObjectBatch; sing
     </>;
   }
   return <>
-    {harvested.sources.map((source, index) => objects.length === 0 ? null : <ObjectSource key={index} source={source} objects={objects} batch={batch} />)}
+    {harvested.sources.map((source, index) => objects.length === 0 ? null : <ObjectSource key={index} source={source} members={members} capacity={objects.length} />)}
     {excluded.map((id) => { const live = ctx.scene.object.get(id); return live === null ? null : single(live); })}
   </>;
 }
@@ -223,8 +234,9 @@ function ImpostorStaticObjects({ batch, objects, sources, radius }: {
     slice.ids.length = count;
   }, CAMERA_POST_FRAME_PRIORITY + 0.2);
   useFrame((state) => card?.pool.pack(state.clock.elapsedTime), CAMERA_POST_FRAME_PRIORITY + 0.3);
+  const members = useStaticMembers(batch, objects, assignment, 0);
   return <>
-    {sources.map((source, index) => <ObjectSource key={index} source={source} objects={objects} batch={batch} assignment={assignment} level={0} />)}
+    {sources.map((source, index) => <ObjectSource key={index} source={source} members={members} capacity={objects.length} />)}
   </>;
 }
 
@@ -251,8 +263,9 @@ function VariantLevel({ url, model, batch, objects, level, assignment, measure, 
     if (harvested === null || !measure) return;
     reportSourceMeasures(ctx, harvested, batch);
   }, [ctx, harvested, batch, measure]);
+  const members = useStaticMembers(batch, objects, assignment, level);
   if (harvested === null) return <LevelSingles objects={objects} level={level} assignment={assignment} single={single} />;
-  return <>{harvested.sources.map((source, index) => <ObjectSource key={index} source={source} objects={objects} batch={batch} assignment={assignment} level={level} />)}</>;
+  return <>{harvested.sources.map((source, index) => <ObjectSource key={index} source={source} members={members} capacity={objects.length} />)}</>;
 }
 
 /** Members of one level drawn through the individual renderer, for a level whose asset cannot be instanced. @internal */

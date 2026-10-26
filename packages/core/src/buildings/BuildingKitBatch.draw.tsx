@@ -19,6 +19,7 @@ import { groupBuildingKitInstances, buildBuildingKitSources, validateBuildingKit
 import { useBuildingChunkBudget } from "./BuildingRenderBudget.draw";
 import { partitionInstances, type InstanceChunk } from "@jgengine/core/instancing/instanceChunks.draw";
 import { uploadInstances } from "@jgengine/core/instancing/instanceUpload.draw";
+import { freezeStaticTransforms } from "@jgengine/core/model/staticTransforms.draw";
 
 function KitSourceInstances({
   source,
@@ -47,6 +48,7 @@ function KitSourceChunk({ source, material, chunk }: {
     const mesh = meshRef.current;
     if (mesh === null) return;
     uploadInstances(mesh, chunk.matrices, { bounds: chunk.bounds });
+    freezeStaticTransforms(mesh);
     // Release only this chunk's instance buffers; geometry and materials are shared.
     return () => {
       mesh.dispose();

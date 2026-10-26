@@ -1089,6 +1089,7 @@
     "./visibility/bounds",
     "./visibility/camera",
     "./visibility/config",
+    "./visibility/culledTransforms.draw",
     "./visibility/cullingDriver",
     "./visibility/diagnostics",
     "./visibility/distance",

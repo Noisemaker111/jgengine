@@ -13,7 +13,7 @@ import * as THREE from "three";
  * @capability static-transforms
  */
 export function freezeStaticTransforms(root: THREE.Object3D): void {
-  root.updateMatrixWorld(true);
+  root.updateWorldMatrix(true, true);
   root.traverse((node) => {
     node.matrixAutoUpdate = false;
     node.matrixWorldAutoUpdate = false;

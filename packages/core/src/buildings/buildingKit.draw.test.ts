@@ -13,7 +13,8 @@ import {
   type BuildingKitInstance,
 } from "./buildingKitFit.draw";
 import type { BuildingPartPlacement } from "@jgengine/core/buildings/buildings";
-import type { InstancedBuildingPlacement } from "./GeneratedBuilding.draw";
+import { boxKindCastsShadow, type InstancedBuildingPlacement } from "./GeneratedBuilding.draw";
+import { generateBuilding } from "@jgengine/core/buildings/buildings";
 
 function part(overrides: Partial<BuildingPartPlacement> = {}): BuildingPartPlacement {
   return {
@@ -279,5 +280,24 @@ describe("buildingKitQuarterTurn", () => {
     // The 4.0 run is scaled to the 1.84 bay width, not crushed into the 0.18 depth.
     expect(scale.z).toBeCloseTo(wallSlot[0] / 4.0, 5);
     expect(scale.x).toBeCloseTo(wallSlot[2] / 1.21, 5);
+  });
+});
+
+describe("generated glass shadows", () => {
+  test("every box window and storefront sits inside its wall panel but for a 2.5 cm lip, so only glass without box walls casts", () => {
+    const building = generateBuilding({ id: "block", seed: "glass", floors: 5, baysWide: 4, baysDeep: 3 });
+    const { boxes } = bucketBuildingParts([{ building, position: [30, 0, -12] }], null);
+    const unit = new THREE.Box3(new THREE.Vector3(-0.5, -0.5, -0.5), new THREE.Vector3(0.5, 0.5, 0.5));
+    const walls = (boxes.get("wall") ?? []).map((matrix) => unit.clone().applyMatrix4(matrix));
+    const glass = [...(boxes.get("window") ?? []), ...(boxes.get("storefront") ?? [])];
+    expect(glass.length).toBeGreaterThan(0);
+    for (const matrix of glass) {
+      const pane = unit.clone().applyMatrix4(matrix);
+      expect(walls.some((wall) => wall.clone().expandByScalar(0.025 + 1e-6).containsBox(pane))).toBe(true);
+    }
+    expect(boxKindCastsShadow("window", boxes)).toBe(false);
+    expect(boxKindCastsShadow("storefront", boxes)).toBe(false);
+    expect(boxKindCastsShadow("wall", boxes)).toBe(true);
+    expect(boxKindCastsShadow("window", new Map([["window", glass]]))).toBe(true);
   });
 });

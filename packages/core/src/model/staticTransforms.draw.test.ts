@@ -48,3 +48,11 @@ test("freezing leaves the scene root updating, so later content still mounts cor
   scene.updateMatrixWorld();
   expect(late.getWorldPosition(new THREE.Vector3()).toArray()).toEqual([0, 5, 0]);
 });
+
+test("freezing a node mounted under a parent placed in the same commit bakes the parent's pose", () => {
+  const { scene, mesh } = frozenScene();
+  freezeStaticTransforms(mesh);
+  expect(mesh.matrixWorld.elements.slice(12, 15)).toEqual([6, 1, 0]);
+  scene.updateMatrixWorld();
+  expect(mesh.matrixWorld.elements.slice(12, 15)).toEqual([6, 1, 0]);
+});

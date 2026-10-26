@@ -73,16 +73,32 @@ export function buildingChunkWithinBudget(
   );
 }
 
-/** Distance-gate chunks only; Three retains independent main-camera and shadow-camera frustum tests. @internal */
+/**
+ * Distance-gate chunks only; Three retains independent main-camera and shadow-camera frustum tests.
+ * A chunk's world bounds are measured when it mounts and again only when the scene's own matrix pass
+ * has moved it, so a still city costs one distance test per chunk a frame, not a walk up its parents.
+ * @internal
+ */
 export function useBuildingChunkBudget(meshRef: RefObject<THREE.InstancedMesh | null>, bounds: THREE.Box3): void {
   const policy = useContext(BuildingRenderContext);
-  const scratch = useRef({ box: new THREE.Box3(), sphere: new THREE.Sphere(), camera: new THREE.Vector3() });
+  const scratch = useRef({ box: new THREE.Box3(), sphere: new THREE.Sphere(), camera: new THREE.Vector3(), placed: new THREE.Matrix4(), mesh: null as THREE.InstancedMesh | null, bounds: null as THREE.Box3 | null, frustum: undefined as number | undefined });
   useFrame(({ camera }) => {
     const mesh = meshRef.current;
     if (mesh === null) return;
-    mesh.updateWorldMatrix(true, false);
-    camera.getWorldPosition(scratch.current.camera);
-    mesh.visible = buildingChunkWithinBudget(bounds, mesh.matrixWorld, scratch.current.camera, policy, mesh.visible,
-      scratch.current.box, scratch.current.sphere, mesh.boundingSphere);
+    const chunk = scratch.current;
+    camera.getWorldPosition(chunk.camera);
+    if (chunk.mesh !== mesh || chunk.bounds !== bounds || chunk.frustum !== mesh.boundingSphere?.radius || !chunk.placed.equals(mesh.matrixWorld)) {
+      if (chunk.mesh !== mesh) mesh.updateWorldMatrix(true, false);
+      chunk.mesh = mesh;
+      chunk.bounds = bounds;
+      chunk.placed.copy(mesh.matrixWorld);
+      mesh.visible = buildingChunkWithinBudget(bounds, mesh.matrixWorld, chunk.camera, policy, mesh.visible, chunk.box, chunk.sphere, mesh.boundingSphere);
+      chunk.frustum = mesh.boundingSphere?.radius;
+      return;
+    }
+    if (!policy.enabled) return;
+    const { center, radius } = chunk.sphere;
+    mesh.visible = !culledByDistance(chunk.camera.x, chunk.camera.y, chunk.camera.z, center.x, center.y, center.z,
+      policy.minDistance, policy.maxDistance, radius, mesh.visible ? policy.hysteresis : 0);
   }, CAMERA_POST_FRAME_PRIORITY);
 }
