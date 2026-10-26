@@ -3,7 +3,8 @@ import { authoredSpawnPosition, authoredSpawnRotation } from "@jgengine/core/wor
 import { defineSystem } from "@jgengine/shell/gameKit";
 
 import { editorLayers } from "./editorLayers";
-import { closeCreature, creaturesSave, feedNarcotic, giveToCreature, mountBite, resetCreatures, setTamingSpeed, spawnCreature, takeFromCreature, tickCreatures, unsaddle, useCreature, whistle } from "./game/creatures";
+import { closeCreature, creaturesSave, feedNarcotic, forceTame, giveTameXp, giveToCreature, levelTame, mountBite, resetCreatures, setTamingSpeed, spawnCreature, takeFromCreature, tickCreatures, unsaddle, useCreature, whistle } from "./game/creatures";
+import { TAME_STATS } from "./game/data/species";
 import { LEVEL_STATS, SURVIVOR } from "./game/data/survivor";
 import { BAG, HOTBAR_SLOTS } from "./game/bags";
 import { cancelCraft, consume, grantXp, learn, levelStat, resetSurvivor, selectSlot, setUpSurvivor, shuttle, startCraft, survivorSave, swing, tickSurvivor, use } from "./game/survivor";
@@ -25,7 +26,7 @@ export const systems = [
           // Riding, the click is the mount's bite; on foot, the survivor's swing.
           const bite = mountBite(state);
           if (bite === null) swing(state, input.aim?.yaw ?? input.yaw);
-          else if (bite !== "riding" && bite.killed) grantXp(state, SURVIVOR.killXp);
+          else if (bite !== "riding" && bite.killed) grantXp(state, bite.xp);
           return state;
         },
       });
@@ -63,6 +64,13 @@ export const systems = [
       commands.define("whistleStay", { apply: (state) => (whistle(state, "stay"), state) });
       commands.define<{ inventoryId: string; slot: number }>("giveCreature", { apply: (state, input) => (giveToCreature(state, input.inventoryId, input.slot), state) });
       commands.define<{ slot: number }>("takeCreature", { apply: (state, input) => (takeFromCreature(state, input.slot), state) });
+      commands.define<{ stat: string }>("levelTame", {
+        apply(state, input) {
+          const stat = TAME_STATS.find((entry) => entry.id === input.stat);
+          if (stat !== undefined) levelTame(state, stat.id);
+          return state;
+        },
+      });
       commands.define("unsaddle", { apply: (state) => (unsaddle(state), state) });
       commands.define<{ itemId: string }>("feedNarcotic", { apply: (state, input) => (feedNarcotic(state, input.itemId), state) });
       // ARK's admin console, for proofs: give items, levels, a taming speed, a creature in front of you.
@@ -84,6 +92,10 @@ interface Cheat {
   tamingSpeed?: number;
   /** Spawn a creature this many metres in front of the survivor. */
   summon?: { species: string; level?: number; distance?: number };
+  /** Tame the wild creature in front at once. */
+  forceTame?: boolean;
+  /** XP for the mount under you, or the tame whose inventory is open. */
+  tameXp?: number;
 }
 
 function cheat(ctx: GameContext, input: Cheat): void {
@@ -100,6 +112,8 @@ function cheat(ctx: GameContext, input: Cheat): void {
     const at = [me.position[0] + Math.sin(me.rotationY) * distance, me.position[2] + Math.cos(me.rotationY) * distance] as const;
     spawnCreature(ctx, input.summon.species, at, input.summon.level === undefined ? {} : { level: input.summon.level });
   }
+  if (input.forceTame === true) forceTame(ctx);
+  if (input.tameXp !== undefined) giveTameXp(ctx, input.tameXp);
 }
 
 /** Wake on the authored beach with nothing, like a fresh survivor. */

@@ -18,12 +18,17 @@ export interface SpeciesDef {
   diet: "herbivore" | "carnivore";
   health: StatLine;
   stamina: StatLine;
+  oxygen: StatLine;
   food: StatLine;
   weight: StatLine;
   melee: StatLine;
   /** Walk and sprint in metres per second (ARK units / 100). */
   walk: number;
   sprint: number;
+  /** Stamina a second while ridden at a sprint (ARK's movement table). */
+  sprintStamina: number;
+  /** ARK's base kill XP: a kill gives this x (1 + 0.1 x (level - 1)). */
+  killXp: number;
   /** Bite: damage at level 1, seconds between bites, reach in metres. Null when it never fights. */
   attack: { damage: number; interval: number; reach: number } | null;
   taming: KnockoutTamingConfig;
@@ -66,11 +71,14 @@ export const SPECIES: Readonly<Record<string, SpeciesDef>> = {
     diet: "herbivore",
     health: { base: 40, perLevel: 8 },
     stamina: { base: 100, perLevel: 10 },
+    oxygen: { base: 150, perLevel: 15 },
     food: { base: 450, perLevel: 45 },
     weight: { base: 50, perLevel: 1 },
     melee: { base: 5, perLevel: 0.25 },
     walk: 0.65,
     sprint: 1.37,
+    sprintStamina: 0,
+    killXp: 2,
     attack: null,
     taming: {
       torpor: { base: 30, perLevel: 1.8 },
@@ -88,13 +96,16 @@ export const SPECIES: Readonly<Record<string, SpeciesDef>> = {
     temperament: "skittish",
     diet: "herbivore",
     health: { base: 300, perLevel: 60 },
-    stamina: { base: 150, perLevel: 15 },
-    food: { base: 1500, perLevel: 150 },
-    weight: { base: 300, perLevel: 6 },
-    melee: { base: 8, perLevel: 0.4 },
-    walk: 1.6,
-    sprint: 4.4,
-    attack: { damage: 8, interval: 1.2, reach: 2.2 },
+    stamina: { base: 300, perLevel: 30 },
+    oxygen: { base: 150, perLevel: 15 },
+    food: { base: 3000, perLevel: 300 },
+    weight: { base: 200, perLevel: 4 },
+    melee: { base: 10, perLevel: 0.5 },
+    walk: 1.5,
+    sprint: 5.55,
+    sprintStamina: 20,
+    killXp: 4,
+    attack: { damage: 10, interval: 1.2, reach: 2.2 },
     taming: {
       torpor: { base: 240, perLevel: 14.4 },
       torporDrain: DRAIN,
@@ -112,11 +123,14 @@ export const SPECIES: Readonly<Record<string, SpeciesDef>> = {
     diet: "carnivore",
     health: { base: 200, perLevel: 40 },
     stamina: { base: 150, perLevel: 15 },
+    oxygen: { base: 150, perLevel: 15 },
     food: { base: 1200, perLevel: 120 },
     weight: { base: 140, perLevel: 2.8 },
     melee: { base: 15, perLevel: 0.75 },
     walk: 4.8,
     sprint: 9.94,
+    sprintStamina: 6,
+    killXp: 12,
     attack: { damage: 15, interval: 0.8, reach: 2.2 },
     taming: {
       torpor: { base: 180, perLevel: 10.8 },
@@ -129,6 +143,34 @@ export const SPECIES: Readonly<Record<string, SpeciesDef>> = {
     radius: 0.8,
   },
 };
+
+/** What a tame puts its level-up points into. */
+export type TameStat = "health" | "stamina" | "oxygen" | "food" | "weight" | "melee" | "speed";
+
+/**
+ * ARK's tamed level-ups (wiki, the same for the Island's common species): each point scales the stat
+ * by a fraction of its value when tamed. Melee and speed are percentages, so they start at 100%.
+ */
+export const TAME_STATS: readonly { id: TameStat; label: string; perPoint: number; unit: "" | "%" }[] = [
+  { id: "health", label: "Health", perPoint: 0.054, unit: "" },
+  { id: "stamina", label: "Stamina", perPoint: 0.1, unit: "" },
+  { id: "oxygen", label: "Oxygen", perPoint: 0.1, unit: "" },
+  { id: "food", label: "Food", perPoint: 0.1, unit: "" },
+  { id: "weight", label: "Weight", perPoint: 0.04, unit: "" },
+  { id: "melee", label: "Melee Damage", perPoint: 0.017, unit: "%" },
+  { id: "speed", label: "Movement Speed", perPoint: 0.01, unit: "%" },
+];
+
+/**
+ * ARK's creature levels after taming: up to 88 more, the n-th costing 10 x n XP (10, 20, 30...),
+ * from kills and a passive 0.66 XP a minute.
+ */
+export const TAME_LEVELS = { max: 88, xpStep: 10, passivePerSecond: 0.66 / 60 } as const;
+
+/** XP a kill gives: ARK's base kill XP grown 10% a level. */
+export function killXp(def: SpeciesDef, level: number): number {
+  return def.killXp * (1 + 0.1 * (level - 1));
+}
 
 export function speciesDef(id: string): SpeciesDef | null {
   return SPECIES[id] ?? null;
