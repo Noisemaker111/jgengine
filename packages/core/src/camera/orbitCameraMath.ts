@@ -22,6 +22,7 @@ export function cameraLookPitch(camera: Xyz, target: Xyz): number {
   return Math.atan2(target.y - camera.y, horizontal);
 }
 
+/** Orbit camera tuning: distance limits, target height, initial pose, smoothing, pitch clamp and collision. */
 export interface OrbitCameraConfig {
   minDistance?: number;
   maxDistance?: number;
@@ -98,6 +99,7 @@ export interface ResolvedOrbitCameraConfig {
   collision: ResolvedOrbitCollision;
 }
 
+/** Orbit camera config with the engine defaults. */
 export const DEFAULT_ORBIT_CAMERA: ResolvedOrbitCameraConfig = {
   minDistance: 4,
   maxDistance: 28,
@@ -122,6 +124,7 @@ export const GAME_SIM_FRAME_PRIORITY = 0;
 /** Orbit follow reads the latest entity pose after GAME_SIM_FRAME_PRIORITY. */
 export const ORBIT_CAMERA_FRAME_PRIORITY = -1;
 
+/** Per-frame orbit follow state: smoothed target, camera position and the locked boom distance. */
 export interface OrbitFollowRuntimeState {
   target: Xyz;
   camera: Xyz;

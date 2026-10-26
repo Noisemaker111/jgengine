@@ -2,7 +2,7 @@ import { aimToPoint } from "@jgengine/core/input/pointer";
 import type { GameContext } from "@jgengine/core/runtime/gameContext";
 import { perContext } from "@jgengine/core/runtime/perContext";
 import type { EntityPosition } from "@jgengine/core/scene/entityStore";
-import { cameraShake } from "@jgengine/shell/camera";
+import { cameraShake } from "@jgengine/core/camera/shake/cameraShake";
 import { zoneLevelAt } from "../../world/zones";
 import { enemyWeapons, levelDamageMult, type EnemyDef } from "./catalog";
 

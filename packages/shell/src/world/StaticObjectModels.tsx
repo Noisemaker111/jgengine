@@ -19,7 +19,7 @@ import { useRenderVisibility } from "@jgengine/core/visibility/CullingProvider.d
 import { acquireImpostor, IMPOSTOR_MIN_RADIUS, impostorCard, impostorDistance, impostorSettingsForQuality, impostorSwitch, releaseImpostor, sourceRadius, type ImpostorEntry } from "@jgengine/core/lod/impostor.draw";
 import { acquireImpostorCardPool, ImpostorCardPool, releaseImpostorCardPool, type ImpostorCardSlice } from "@jgengine/core/lod/impostorCardPool.draw";
 import { useTerrainQuality } from "@jgengine/core/terrain/terrainQuality.draw";
-import { CAMERA_POST_FRAME_PRIORITY } from "../camera/cameraRigs";
+import { CAMERA_POST_FRAME_PRIORITY } from "@jgengine/core/camera/cameraRigs.draw";
 import { canInstanceStaticScene, countStaticBatchDraws, incompatibleStaticObjectIds, isCompatibleStaticObject, STATIC_BATCH_MESH_KEY, syncStaticObjectSource, type StaticObjectBatch } from "./staticObjectBatches";
 
 /**

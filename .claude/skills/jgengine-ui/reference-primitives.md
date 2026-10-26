@@ -119,7 +119,7 @@ register its own live muzzle for the shell's tracer presentation:
 import { useEffect, useRef } from "react";
 import { useThree } from "@react-three/fiber";
 import type { Object3D } from "three";
-import { registerFirstPersonMuzzle } from "@jgengine/shell/camera";
+import { registerFirstPersonMuzzle } from "@jgengine/core/camera/customMuzzle.draw";
 
 function CustomRig() {
   const camera = useThree((state) => state.camera);

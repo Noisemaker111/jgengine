@@ -4,7 +4,7 @@ import type { ViewportDef, ViewportsConfig } from "@jgengine/core/game/viewports
 import type { GameContext } from "@jgengine/core/runtime/gameContext";
 import { localPlayers, type LocalPlayerSlot } from "@jgengine/core/runtime/localPlayers";
 
-import { useSeatViewports } from "@jgengine/shell/camera/Viewports";
+import { useSeatViewports } from "@jgengine/core/camera/Viewports.draw";
 
 /**
  * One absolutely-positioned HUD root per viewport, laid over the canvas: render each seat's own

@@ -4,6 +4,7 @@ import type { Xyz } from "@jgengine/core/math/xyz";
 
 export type { InspectionCameraConfig, InspectionZoomAnchor };
 
+/** Inspection camera config with every default filled in. */
 export interface ResolvedInspectionCameraConfig {
   anchor: InspectionZoomAnchor;
   target: Xyz;

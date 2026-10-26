@@ -42,27 +42,24 @@ import {
   type CameraPose,
   type ChaseRigState,
 } from "./rigMath";
-import { usePlayerFov } from "./PlayerFov";
+import { usePlayerFov } from "./PlayerFov.draw";
 import { applyCameraShake, useCameraShake } from "@jgengine/core/camera/shake/shakeChannel.draw";
 import {
   applyCameraBlendStep,
   captureCameraBlendFrom,
   createCameraBlendScratch,
-} from "./cameraBlendMath";
+} from "./cameraBlendMath.draw";
 import { requestRawPointerLock } from "@jgengine/core/input/pointerLock";
 import { resolveChaseHeading } from "./chaseHeading";
 
-export {
-  applyCameraBlendStep,
-  captureCameraBlendFrom,
-  createCameraBlendScratch,
-  type CameraBlendScratch,
-} from "./cameraBlendMath";
 import type { Xyz } from "@jgengine/core/math/xyz";
 
+/** useFrame priority every camera rig commits its pose at, after the game simulation. */
 export const CAMERA_RIG_FRAME_PRIORITY = ORBIT_CAMERA_FRAME_PRIORITY;
+/** useFrame priority for work that must read the camera after the rig moved it this frame (culling, HUD anchors, LOD). */
 export const CAMERA_POST_FRAME_PRIORITY = ORBIT_CAMERA_FRAME_PRIORITY + 0.5;
 
+/** Props shared by every camera rig: look refs, the game's camera config and the followed entity. */
 export interface RigProps {
   yawRef: MutableRefObject<number>;
   pitchRef: MutableRefObject<number>;
@@ -196,6 +193,7 @@ function useWheelZoom(initial: number, min: number, max: number, speed: number):
   return zoomRef;
 }
 
+/** Overhead follow rig at a fixed height and angle. */
 export function TopDownRig(props: RigProps) {
   const { userId } = usePlayer();
   const ctx = useGameContext();
@@ -293,6 +291,7 @@ const RTS_PAN_KEYS = ["KeyW", "KeyA", "KeyS", "KeyD", "ArrowUp", "ArrowDown", "A
 const RTS_WASD_KEYS = new Set(["KeyW", "KeyA", "KeyS", "KeyD"]);
 const RTS_ROTATE_KEYS = new Set(["KeyQ", "KeyE"]);
 
+/** Strategy rig that pans with keys or screen edges, zooms and rotates over the map. */
 export function RtsRig(props: RigProps & { panKeysEnabled?: boolean; rotateKeysEnabled?: boolean }) {
   const { userId } = usePlayer();
   const ctx = useGameContext();
@@ -397,6 +396,7 @@ export function RtsRig(props: RigProps & { panKeysEnabled?: boolean; rotateKeysE
   return null;
 }
 
+/** Over-the-shoulder third-person rig with mouse look and shoulder offset. */
 export function ShoulderRig(props: RigProps) {
   const { userId } = usePlayer();
   const ctx = useGameContext();
@@ -496,6 +496,7 @@ function pickLockTarget(ctx: GameContext, followId: string | null, config: LockO
   return nearest;
 }
 
+/** Rig that frames the player and a locked-on target together. */
 export function LockOnRig(props: RigProps) {
   const { userId } = usePlayer();
   const ctx = useGameContext();
@@ -530,6 +531,7 @@ export function LockOnRig(props: RigProps) {
   return null;
 }
 
+/** Vehicle chase rig that trails behind the followed entity's heading. */
 export function ChaseRig(props: RigProps) {
   const { userId } = usePlayer();
   const ctx = useGameContext();
@@ -669,6 +671,7 @@ export function ObserverRig(props: RigProps) {
   return null;
 }
 
+/** Plays a cinematic keyframe path and calls onComplete when it ends. */
 export function CinematicRig(props: RigProps & { onComplete?: () => void }) {
   const { userId } = usePlayer();
   const followId = resolveFollowId(props.followEntityId, userId);

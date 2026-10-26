@@ -15,8 +15,9 @@ import {
   resolvePlayerFovBounds,
   savePlayerFov,
   type PlayerFovBounds,
-} from "./fovPreference";
+} from "./fovPreference.view";
 
+/** The player's field-of-view preference: current value, bounds, setter and a composer that applies it to a rig's pose FOV. */
 export interface PlayerFovState {
   fov: number;
   bounds: PlayerFovBounds;
@@ -28,6 +29,7 @@ export interface PlayerFovState {
 
 const PlayerFovContext = createContext<PlayerFovState | null>(null);
 
+/** Provides the player's saved FOV preference to the camera rigs and settings UI below it. */
 export function PlayerFovProvider({
   config,
   orthographic,
@@ -80,6 +82,7 @@ export function PlayerFovProvider({
   return <PlayerFovContext.Provider value={value}>{children}</PlayerFovContext.Provider>;
 }
 
+/** Reads the player FOV state from the nearest PlayerFovProvider. */
 export function usePlayerFov(): PlayerFovState {
   const value = useContext(PlayerFovContext);
   if (value === null) {
@@ -96,6 +99,7 @@ export function usePlayerFov(): PlayerFovState {
   return value;
 }
 
+/** Settings slider that changes and saves the player's FOV preference; renders nothing when FOV is disabled. */
 export function PlayerFovSlider() {
   const { fov, setFov, bounds, enabled } = usePlayerFov();
   if (!enabled) return null;

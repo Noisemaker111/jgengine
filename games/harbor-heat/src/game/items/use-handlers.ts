@@ -1,4 +1,4 @@
-import { cameraShake } from "@jgengine/shell/camera";
+import { cameraShake } from "@jgengine/core/camera/shake/cameraShake";
 import type { ItemUseHandler } from "@jgengine/core/item/use";
 import type { GameContext } from "@jgengine/core/runtime/gameContext";
 import { cityEvent } from "../cityRuntime";

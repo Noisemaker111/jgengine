@@ -819,6 +819,53 @@
 - `massingBase` (const): const massingBase: (spec: Pick<MassingSpec, "pilotis" | "height">, cap?: number) => number — ⚠ undocumented
 - `massingFloorCount` (function): function massingFloorCount(spec: Pick<MassingSpec, "pilotis" | "height" | "floorHeight">): number — ⚠ undocumented
 
+## @jgengine/core/camera/GameCameraRig.draw
+
+- `GameCameraRig` (function): function GameCameraRig({ yawRef, pitchRef, config, onDragChange, pointerControls, panKeysEnabled, rotateKeysEnabled, director, viewmodel, }: GameCameraRigProps): React.JSX.Element | null — Mounts the camera rig the game's camera config selects (orbit, first person, top-down, RTS, shoulder, chase, cinematic and the rest).
+- `GameCameraRigProps` (interface): interface GameCameraRigProps — Props for GameCameraRig: shared yaw/pitch refs, the game's camera config and pointer/key control switches.
+
+## @jgengine/core/camera/GameFirstPersonCamera.draw
+
+- `GameFirstPersonCamera` (function): function GameFirstPersonCamera({ yawRef, pitchRef, config, followEntityId, viewmodel, weapon, }: GameFirstPersonCameraProps): React.JSX.Element | null — First-person camera locked to the followed entity's eyes, with mouse look, head bob and the muzzle-tracked viewmodel.
+- `GameFirstPersonCameraProps` (interface): interface GameFirstPersonCameraProps — Props for GameFirstPersonCamera: look refs, first-person config, the followed entity and an optional custom viewmodel.
+- `ViewmodelProps` (interface): interface ViewmodelProps — Props handed to a custom viewmodel component (#542): a live cue ref (velocity/bob/firing/reloading/recoil/hit) for the followed entity, driven from your own `useFrame` — read `cuesRef.current` there rather than storing it as render state.
+- `readFirstPersonMuzzle` (function): function readFirstPersonMuzzle(target: THREE.Vector3, camera?: THREE.Camera): boolean — Presentation muzzle in world space; camera-scoped when supplied, false leaves target unchanged.
+
+## @jgengine/core/camera/GameInspectionCamera.draw
+
+- `GameInspectionCamera` (function): function GameInspectionCamera({ config: configPatch }: GameInspectionCameraProps): React.JSX.Element — Model-viewer / editor rig (#207.7, #866): left-click selects (editor), middle-drag pans, right-drag orbits, scroll zooms toward a configurable anchor. Orbits a fixed `target`; never reads player/entity state.
+- `GameInspectionCameraProps` (interface): interface GameInspectionCameraProps — Props for GameInspectionCamera: the inspection orbit config patch (target, distances, zoom anchor).
+
+## @jgengine/core/camera/GameOrbitCamera.draw
+
+- `CameraFollowListener` (type): type CameraFollowListener = (state: CameraFollowState) => void — Callback that receives the orbit camera's follow state every frame.
+- `GameOrbitCamera` (function): function GameOrbitCamera({ yawRef, pitchRef, config: configPatch, followEntityId, resolveFollowTarget, onDragChange, onCameraFollow, pointerControls = false, }: GameOrbitCameraProps): React.JSX.Element — Third-person orbit camera that follows an entity, with drag-to-orbit, zoom limits and optional collision pull-in.
+- `GameOrbitCameraProps` (interface): interface GameOrbitCameraProps — Props for GameOrbitCamera: yaw/pitch refs, orbit config patch, followed entity and follow-target overrides.
+- `seedOrbitCameraTarget` (function): function seedOrbitCameraTarget(camera: Camera, target: Vector3, distance: number, height: number): void — Seed orbit target before controls mount (demo spawn at origin).
+
+## @jgengine/core/camera/PlayerFov.draw
+
+- `PlayerFovProvider` (function): function PlayerFovProvider({ config, orthographic, children, }: { config?: GameCameraConfig; orthographic: boolean; children: ReactNode; }): React.JSX.Element — Provides the player's saved FOV preference to the camera rigs and settings UI below it.
+- `PlayerFovSlider` (function): function PlayerFovSlider(): React.JSX.Element | null — Settings slider that changes and saves the player's FOV preference; renders nothing when FOV is disabled.
+- `PlayerFovState` (interface): interface PlayerFovState — The player's field-of-view preference: current value, bounds, setter and a composer that applies it to a rig's pose FOV.
+- `usePlayerFov` (function): function usePlayerFov(): PlayerFovState — Reads the player FOV state from the nearest PlayerFovProvider.
+
+## @jgengine/core/camera/cameraBlendMath.draw
+
+- `CameraBlendScratch` (interface): interface CameraBlendScratch — Reusable scratch for blending the camera from one rig's pose to the next: start and goal pose, FOV and timer.
+
+## @jgengine/core/camera/cameraCollision
+
+- `CAMERA_TRANSPARENT_USERDATA` (const): const CAMERA_TRANSPARENT_USERDATA: { readonly jgCameraTransparent: true } — userData applied to the group wrapping author `WorldOverlay` decor so the spring-arm ignores it by default.
+- `CameraClearanceInput` (interface): interface CameraClearanceInput — What a camera asks `clearCameraBoom` each frame: the boom it wants and the surfaces that may stop it.
+- `CameraClearanceResult` (interface): interface CameraClearanceResult — Clear camera position and the boom length to hand back next frame.
+- `CameraCollisionQuery` (interface): interface CameraCollisionQuery — One collision question the camera asks: distance along a ray to the nearest surface that should stop it.
+- `CameraOccluder` (interface): interface CameraOccluder — Minimal structural view of a raycast hit object: its own tags plus a parent link to walk. Keeps this filter free of a three.js import so it stays unit-testable.
+- `CameraPoint` (interface): interface CameraPoint — World-space point for camera boom math, matching the rigs' `Vec3`.
+- `clearCameraBoom` (function): function clearCameraBoom(input: CameraClearanceInput): CameraClearanceResult — Pull a camera in along its boom so it never sits inside world collision. A blocking surface rejects the desired position: the camera moves to `clearance` before it, and onto the pivot when the surface is closer than that (the pivot is inside, so no camera position is clear). Pulling in is immediate — a camera must not spend a frame inside a trunk — while releasing eases back at `releaseRate`, which is what makes the boom read as a spring arm instead of a hard stop.
+- `isCameraOccluderTransparent` (function): function isCameraOccluderTransparent(object: CameraOccluder | null | undefined): boolean — Should the camera spring-arm ignore this raycast hit? Walks the object up its `.parent` chain and honors the nearest camera tag: `jgCameraCollide === true` blocks (opt back in), `jgCameraTransparent === true` passes through. Untagged geometry blocks as before, so engine-owned ground/entities are unaffected.
+- `sceneCameraQuery` (function): function sceneCameraQuery(raycast: SceneRaycastApi["raycast"], options: { entities?: boolean; terrain?: boolean } = {}): CameraCollisionQuery — `CameraCollisionQuery` over the scene's existing collision query (`ctx.scene.raycast`), which already reads world solids, scene-object colliders and walls. Entities and terrain stay out by default: the followed body must not push its own camera, and looking down at the ground must not pull the boom.
+
 ## @jgengine/core/camera/cameraConfig
 
 - `CAMERA_FRUSTUM_DEFAULTS` (const): const CAMERA_FRUSTUM_DEFAULTS: { readonly fov: 55; readonly near: 0.1; readonly far: 300; readonly zoom: 50; } — ⚠ undocumented
@@ -845,6 +892,71 @@
 - `SideScrollCameraConfig` (interface): interface SideScrollCameraConfig — Fixed lateral 2.5D follow (side-on platformer cam): the camera sits perpendicular to the travel axis, tracks the followed entity, and never reads player look input.
 - `TopDownCameraConfig` (interface): interface TopDownCameraConfig — Fixed top-down / isometric rig (#23) — height/pitch/yaw + decoupled follow.
 - `TurntableCameraConfig` (interface): interface TurntableCameraConfig — Turntable / showcase rig — slowly auto-orbits a fixed world point (no player input), the way a museum turntable rotates an object on display. A flat, self-describing spelling of `observer`'s point-orbit mode: `target` names the point directly instead of `bind: { kind: "point", position }`. Set `camera.turntable` and the rig is inferred — you don't also write `rig`.
+
+## @jgengine/core/camera/cameraRigs.draw
+
+- `CAMERA_POST_FRAME_PRIORITY` (const): const CAMERA_POST_FRAME_PRIORITY: number — useFrame priority for work that must read the camera after the rig moved it this frame (culling, HUD anchors, LOD).
+- `CAMERA_RIG_FRAME_PRIORITY` (const): const CAMERA_RIG_FRAME_PRIORITY: -1 — useFrame priority every camera rig commits its pose at, after the game simulation.
+- `ChaseRig` (function): function ChaseRig(props: RigProps): null — Vehicle chase rig that trails behind the followed entity's heading.
+- `CinematicRig` (function): function CinematicRig(props: RigProps & { onComplete?: () => void }): null — Plays a cinematic keyframe path and calls onComplete when it ends.
+- `LockOnRig` (function): function LockOnRig(props: RigProps): null — Rig that frames the player and a locked-on target together.
+- `ObserverRig` (function): function ObserverRig(props: RigProps): null — Detached spectator/photo cam (#120): binds to any entity or fixed point and auto-orbits it, reading no player input at all — the van CCTV / photo-mode / kill-cam rig. Distinct from every other rig, which drives from mouse/keys.
+- `RigProps` (interface): interface RigProps — Props shared by every camera rig: look refs, the game's camera config and the followed entity.
+- `RtsRig` (function): function RtsRig(props: RigProps & { panKeysEnabled?: boolean; rotateKeysEnabled?: boolean }): null — Strategy rig that pans with keys or screen edges, zooms and rotates over the map.
+- `ShoulderRig` (function): function ShoulderRig(props: RigProps): null — Over-the-shoulder third-person rig with mouse look and shoulder offset.
+- `SideScrollRig` (function): function SideScrollRig(props: RigProps): null — Fixed side-on 2.5D follow rig: watches the followed entity from the perpendicular axis, never reading WASD/mouse-look.
+- `TopDownRig` (function): function TopDownRig(props: RigProps): null — Overhead follow rig at a fixed height and angle.
+
+## @jgengine/core/camera/chaseHeading
+
+- `resolveChaseHeading` (function): function resolveChaseHeading(config: Pick<ChaseCameraConfig, "headingSource" | "view"> | undefined, bodyYaw: number, inputYaw: number | undefined, initialYaw?: number): number — Select a chase heading without feeding target facing or camera smoothing back into input-owned yaw. An undefined input yaw seeds from `initialYaw`, or the acquired target's body heading. Seat views always use body heading; omitting `headingSource` preserves body follow.
+
+## @jgengine/core/camera/customMuzzle.draw
+
+- `FirstPersonMuzzleReader` (type): type FirstPersonMuzzleReader = (target: Vector3) => boolean — Writes a live presentation muzzle in world space; false means this rig has no muzzle available.
+- `registerFirstPersonMuzzle` (function): function registerFirstPersonMuzzle(camera: Camera, reader: FirstPersonMuzzleReader): () => void — Register a custom rig's presentation muzzle for its Three.js camera. Newest available custom reader wins over that camera's stock muzzle; call the returned cleanup on unmount.
+
+## @jgengine/core/camera/fovPreference.view
+
+- `PLAYER_FOV_DEFAULT` (const): const PLAYER_FOV_DEFAULT: 55 — Default player FOV in degrees, the engine's base camera frustum FOV.
+- `PLAYER_FOV_MAX` (const): const PLAYER_FOV_MAX: 120 — Highest FOV in degrees a player may pick.
+- `PLAYER_FOV_MIN` (const): const PLAYER_FOV_MIN: 40 — Lowest FOV in degrees a player may pick.
+- `PLAYER_FOV_STORAGE_KEY` (const): const PLAYER_FOV_STORAGE_KEY: "jgengine:player-fov" — Storage key the player FOV preference is saved under.
+- `PlayerFovBounds` (interface): interface PlayerFovBounds — Min, max and default FOV in degrees a game allows its player.
+
+## @jgengine/core/camera/inspectionCameraMath
+
+- `InspectionCameraConfig` (interface): interface InspectionCameraConfig — Model-viewer / inspection rig (#207.7) — orbit + pan + anchored zoom around a fixed point, never reads player input.
+- `InspectionZoomAnchor` (type): type InspectionZoomAnchor = "target" | "cursor" | "center" — How scroll-zoom re-anchors the view for the inspection rig (#207.7): - `target` — dolly toward the orbit target (classic OrbitControls behavior). - `cursor` — dolly toward the point under the pointer. - `center` — dolly toward the viewport center; equivalent to `target` for an OrbitControls-driven rig, since the camera always faces `target` and that point already projects to the exact center of the viewport.
+- `ResolvedInspectionCameraConfig` (interface): interface ResolvedInspectionCameraConfig — Inspection camera config with every default filled in.
+
+## @jgengine/core/camera/orbitCameraMath
+
+- `DEFAULT_ORBIT_CAMERA` (const): const DEFAULT_ORBIT_CAMERA: ResolvedOrbitCameraConfig — Orbit camera config with the engine defaults.
+- `GAME_SIM_FRAME_PRIORITY` (const): const GAME_SIM_FRAME_PRIORITY: 0 — Run simulation/movement before orbit follow so poses are current.
+- `ORBIT_CAMERA_FRAME_PRIORITY` (const): const ORBIT_CAMERA_FRAME_PRIORITY: -1 — Orbit follow reads the latest entity pose after GAME_SIM_FRAME_PRIORITY.
+- `OrbitCameraConfig` (interface): interface OrbitCameraConfig — Orbit camera tuning: distance limits, target height, initial pose, smoothing, pitch clamp and collision.
+- `OrbitCollisionConfig` (interface): interface OrbitCollisionConfig — Spring-arm occlusion config for the orbit rig.
+- `OrbitFollowRuntimeState` (interface): interface OrbitFollowRuntimeState — Per-frame orbit follow state: smoothed target, camera position and the locked boom distance.
+- `ResolvedOrbitCameraConfig` (interface): interface ResolvedOrbitCameraConfig — Fully resolved shell config after merging with DEFAULT_ORBIT_CAMERA.
+- `ResolvedOrbitCollision` (interface): interface ResolvedOrbitCollision — An {@link OrbitCollisionConfig} with every field resolved to a concrete value.
+
+## @jgengine/core/camera/rigMath
+
+- `CameraPose` (interface): interface CameraPose — A camera pose: position, look-at point and FOV in degrees.
+- `ChaseBoomClamp` (type): type ChaseBoomClamp = (pivot: Xyz, desired: Xyz) => Xyz — Pulls a desired camera position in toward `pivot` when something blocks the boom.
+- `ChaseRigState` (interface): interface ChaseRigState — Mutable per-rig chase state; {@link stepChase} advances it in place.
+- `ChaseSample` (interface): interface ChaseSample — What the chase rig reads from its target each frame.
+- `ChaseStepResult` (interface): interface ChaseStepResult — One frame of chase output from {@link stepChase}.
+- `CinematicSample` (interface): interface CinematicSample — One cinematic sample: the pose at that time and whether the path has finished.
+- `DirectorCameraValues` (interface): interface DirectorCameraValues — A CameraDirector's runtime overrides for the followed entity and cinematic.
+- `ResolvedChase` (interface): interface ResolvedChase — Chase rig config with defaults filled in.
+- `ResolvedDirectedCamera` (interface): interface ResolvedDirectedCamera — Follow entity and cinematic after director overrides are merged over the static config.
+- `ResolvedObserver` (interface): interface ResolvedObserver — Observer rig config with defaults filled in.
+- `ResolvedShoulder` (interface): interface ResolvedShoulder — Shoulder rig config with defaults filled in.
+- `ResolvedSideScroll` (interface): interface ResolvedSideScroll — Side-scroll rig config with defaults filled in.
+- `ResolvedTopDown` (interface): interface ResolvedTopDown — Top-down rig config with defaults filled in.
+- `StaticCameraValues` (interface): interface StaticCameraValues — The game's static follow entity and cinematic, used when no director override is active.
 
 ## @jgengine/core/camera/shake/cameraShake
 
@@ -3057,7 +3169,7 @@
 - `RaycastWall` (interface): interface RaycastWall — A wall segment the scene raycast tests against, extruded vertically around its centre.
 - `SceneEntityQuerySource` (interface): interface SceneEntityQuerySource { list(): readonly {id: string; position: EntityPosition; rotationY: number; name?: string}[]; collidersOf?(instanceId: string): EntityColliderSet | null | undefined; inRadius?(center: EntityPosition, radius: number): readonly string[]; get… — ⚠ undocumented
 - `SceneObjectQuerySource` (interface): interface SceneObjectQuerySource { list(): readonly SceneObject[]; inBox?(min: EntityPosition, max: EntityPosition): readonly SceneObject[]; collidersOf?(instanceId: string): EntityColliderSet | null | undefined; halfExtentsOf?(catalogId: string): EntityPosition | null | u… — ⚠ undocumented
-- `SceneRaycastApi` (interface): interface SceneRaycastApi { raycast(input: SceneRaycastInput): SceneRaycastHit | null; raycastAll(input: SceneRaycastInput): SceneRaycastHit[] } — ⚠ undocumented · used by `sceneCameraQuery` (@jgengine/shell/camera): `CameraCollisionQuery` over the scene's existing collision query (`ctx.scene.raycast`), which already reads world solids, scene-object colli…
+- `SceneRaycastApi` (interface): interface SceneRaycastApi { raycast(input: SceneRaycastInput): SceneRaycastHit | null; raycastAll(input: SceneRaycastInput): SceneRaycastHit[] } — ⚠ undocumented · used by `sceneCameraQuery` (@jgengine/core/camera/cameraCollision): `CameraCollisionQuery` over the scene's existing collision query (`ctx.scene.raycast`), which already reads world solids, scene-object colli…
 - `SceneRaycastDeps` (interface): interface SceneRaycastDeps { entities?: SceneEntityQuerySource; objects?: SceneObjectQuerySource; terrain?: TerrainRaycastSource; walls?: readonly RaycastWall[]; solids?: Pick<WorldSolids, "inBox" | "inRay"> } — ⚠ undocumented
 - `SceneRaycastFilter` (interface): interface SceneRaycastFilter { entities?: boolean; objects?: boolean; terrain?: boolean; walls?: boolean } — ⚠ undocumented
 - `SceneRaycastHit` (interface): interface SceneRaycastHit { targetKind: SceneRaycastTargetKind; instanceId: string; catalogId?: string; colliderName: string; purpose: ColliderPurpose; damageEligible: boolean; blocks: boolean; distance: number; point: EntityPosition; normal: EntityPosition } — ⚠ undocumented · used by `firstImpact`: First impact: nearest hit that blocks, or nearest hit if none block.
@@ -4381,7 +4493,7 @@
 - `SceneKindResolveContext` (interface): interface SceneKindResolveContext — Ground sampler + options a resolver may read (terrain height/normal snap).
 - `SceneObject` (interface): interface SceneObject { instanceId: string; catalogId: string; position: EntityPosition; rotationY: number; parentSpace?: string; visual?: ObjectVisual; animation?: ModelAnimationConfig | "auto" | "none"; state?: Record<string, unknown>; slots?: InventoryState } — ⚠ undocumented · used by `fromRuntimeObjectRow` (@jgengine/core/runtime/objectRows): Inverse of {@link toRuntimeObjectRow}: rebuild the live placed object a host persisted.
 - `SceneObjectSlots` (interface): interface SceneObjectSlots — Per-instance container contents for placed objects whose catalog entry declares `slotInventory` — the engine side of "install a GPU into a rack", "put an item in a chest". Contents live on `SceneObject.slots`, so they replicate and save with the object rather than needing a game-owned table keyed by `instanceId`, and every mutation is validated against the declared `accepts` and stack limits.
-- `SceneRaycastApi` (interface): interface SceneRaycastApi { raycast(input: SceneRaycastInput): SceneRaycastHit | null; raycastAll(input: SceneRaycastInput): SceneRaycastHit[] } — ⚠ undocumented · used by `sceneCameraQuery` (@jgengine/shell/camera): `CameraCollisionQuery` over the scene's existing collision query (`ctx.scene.raycast`), which already reads world solids, scene-object colli…
+- `SceneRaycastApi` (interface): interface SceneRaycastApi { raycast(input: SceneRaycastInput): SceneRaycastHit | null; raycastAll(input: SceneRaycastInput): SceneRaycastHit[] } — ⚠ undocumented · used by `sceneCameraQuery` (@jgengine/core/camera/cameraCollision): `CameraCollisionQuery` over the scene's existing collision query (`ctx.scene.raycast`), which already reads world solids, scene-object colli…
 - `SceneRaycastHit` (interface): interface SceneRaycastHit { targetKind: SceneRaycastTargetKind; instanceId: string; catalogId?: string; colliderName: string; purpose: ColliderPurpose; damageEligible: boolean; blocks: boolean; distance: number; point: EntityPosition; normal: EntityPosition } — ⚠ undocumented · used by `firstImpact`: First impact: nearest hit that blocks, or nearest hit if none block.
 - `ScreenEffect` (interface): interface ScreenEffect — A live effect in the current composite: its label, color, region, and the eased opacity `0..1` to draw *right now*. These objects are pooled and reused across {@link ScreenEffectsController.composite} calls — read them, don't retain.
 - `ScreenEffectEasing` (type): type ScreenEffectEasing = "linear" | "easeIn" | "easeOut" | "easeInOut" — How a transient effect's intensity curves from peak to zero over its life.

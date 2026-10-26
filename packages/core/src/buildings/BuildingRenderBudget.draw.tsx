@@ -6,7 +6,7 @@ import type { VisibilityConfig } from "@jgengine/core/visibility/config";
 import { culledByDistance } from "@jgengine/core/visibility/distance";
 import { DEFAULT_CULLING_SETTINGS } from "@jgengine/core/visibility/settings";
 
-import { CAMERA_POST_FRAME_PRIORITY } from "@jgengine/shell/camera/cameraRigs";
+import { CAMERA_POST_FRAME_PRIORITY } from "@jgengine/core/camera/cameraRigs.draw";
 
 /** Resolved shell distance policy for generated facade batches. @internal */
 export interface BuildingRenderPolicy {

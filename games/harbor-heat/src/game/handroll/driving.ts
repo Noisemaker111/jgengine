@@ -1,4 +1,4 @@
-import { cameraShake } from "@jgengine/shell/camera";
+import { cameraShake } from "@jgengine/core/camera/shake/cameraShake";
 import type { GameContext } from "@jgengine/core/runtime/gameContext";
 import type { ChaseCameraTuning } from "@jgengine/core/runtime/cameraDirector";
 import type { AxisBindingMap } from "@jgengine/core/input/axisInput";

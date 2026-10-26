@@ -10,7 +10,7 @@ import { groupInstancesByCell } from "@jgengine/core/instancing/instanceCells";
 import { beginFallbackSeam, reportFallbackSeam } from "@jgengine/core/devtools/fallbackSeams";
 import { createModelVariantSelector, type ModelVariantSelector } from "@jgengine/core/lod/modelLod";
 
-import { CAMERA_POST_FRAME_PRIORITY } from "@jgengine/shell/camera/cameraRigs";
+import { CAMERA_POST_FRAME_PRIORITY } from "@jgengine/core/camera/cameraRigs.draw";
 import { composeInstance, uploadInstances } from "@jgengine/core/instancing/instanceUpload.draw";
 import { LEVEL_PASS_MIN_CAMERA_MOVE, levelPassNeeded } from "@jgengine/core/lod/levelPass.draw";
 import { variantLevelModel } from "@jgengine/core/lod/singleVariantLod.draw";

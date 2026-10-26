@@ -97,22 +97,9 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `observeBrowserSuspension` (function) · `import { observeBrowserSuspension } from "@jgengine/react"`
 
-## camera-clearance — keep any camera out of world collision with a spring-arm pull-in
-
-- `clearCameraBoom` (function) · `import { clearCameraBoom } from "@jgengine/shell/camera"`
-- `sceneCameraQuery` (function) · `import { sceneCameraQuery } from "@jgengine/shell/camera"`
-
-## camera-shake — add trauma to the active camera rig's shake from any game system
-
-- `cameraShake` (function) · `import { cameraShake } from "@jgengine/shell/camera"`
-
 ## camera-shake-meter — HUD readout for a core camera-shake controller — a trauma meter plus current impact-kind label, reskinnable and kind-labelled
 
 - `CameraShakeMeter` (function) · `import { CameraShakeMeter } from "@jgengine/react"`
-
-## camera-transparent-decor — let author decor pass through the orbit spring-arm; a child opts back in with jgCameraCollide
-
-- `isCameraOccluderTransparent` (function) · `import { isCameraOccluderTransparent } from "@jgengine/shell/camera"`
 
 ## canvas-cover — stop world rendering behind a full-screen surface while input, audio, the HUD and the menu keep running
 
@@ -137,10 +124,6 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 ## character-statlist — derived-stat readout — grouped small-caps label→value rows, token-themed
 
 - `StatList` (function) · `import { StatList } from "@jgengine/react"`
-
-## chase-heading — keep camera-relative input heading independent of body facing while retaining vehicle and seat camera follow
-
-- `resolveChaseHeading` (function) · `import { resolveChaseHeading } from "@jgengine/shell/camera/chaseHeading"`
 
 ## clock-format — format a signed time gap like a race split (+/- m:ss.ff)
 
@@ -210,10 +193,6 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 ## current-target — read the player's selected target (click or tab target) to drive a target frame
 
 - `useTarget` (function) · `import { useTarget } from "@jgengine/react"`
-
-## custom-viewmodel-muzzle — align tracer origins with a custom viewmodel's live muzzle without changing authoritative shots
-
-- `registerFirstPersonMuzzle` (function) · `import { registerFirstPersonMuzzle } from "@jgengine/shell/camera"`
 
 ## cutscene-letterbox — reskinnable cinematic letterbox + skip overlay for a cutscene — animated bars, caption/dialogue slot, progress line, Skip button
 

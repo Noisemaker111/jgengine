@@ -10,7 +10,7 @@ import type { CatalogEntityRole } from "@jgengine/core/runtime/gameContext";
 import { useGameStore } from "@jgengine/react/hooks";
 import { useGameContext } from "@jgengine/react/provider";
 import type { GameContext } from "@jgengine/core/runtime/gameContextTypes";
-import { readFirstPersonMuzzle } from "@jgengine/shell/camera/GameFirstPersonCamera";
+import { readFirstPersonMuzzle } from "@jgengine/core/camera/GameFirstPersonCamera.draw";
 import { readEntityMuzzle } from "@jgengine/shell/render/entityMuzzle";
 import { resolveFloatTextStyle } from "@jgengine/core/hud/floatTextStyle";
 import {
@@ -28,7 +28,7 @@ import {
 } from "@jgengine/shell/world/worldBarSamples";
 import { telegraphPulseOpacity } from "@jgengine/core/combat/telegraphPulse";
 import { useRenderVisibility } from "@jgengine/core/visibility/CullingProvider.draw";
-import { CAMERA_POST_FRAME_PRIORITY } from "@jgengine/shell/camera/cameraRigs";
+import { CAMERA_POST_FRAME_PRIORITY } from "@jgengine/core/camera/cameraRigs.draw";
 
 export type { NameplateSample, WorldBarSample } from "@jgengine/shell/world/worldBarSamples";
 export { collectNameplateSamples, collectWorldBarSamples, paintWorldBarSamples } from "@jgengine/shell/world/worldBarSamples";

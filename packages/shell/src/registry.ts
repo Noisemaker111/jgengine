@@ -5,7 +5,7 @@ import type { SceneObject } from "@jgengine/core/scene/objectStore";
 import type { HudTheme } from "@jgengine/core/hud/hudTheme.view";
 import type { UiKit } from "@jgengine/core/ui/kit/uiKit.view";
 import type { UiKitName } from "@jgengine/core/ui/kit/uiKits.view";
-import type { ViewmodelProps } from "./camera/GameFirstPersonCamera";
+import type { ViewmodelProps } from "@jgengine/core/camera/GameFirstPersonCamera.draw";
 
 export type RenderEntity = (entity: SceneEntity) => ReactNode;
 export type RenderObject = (object: SceneObject) => ReactNode;

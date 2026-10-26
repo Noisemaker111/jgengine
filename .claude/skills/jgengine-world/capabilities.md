@@ -277,6 +277,11 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `deriveBuildingLots` (function) · `import { deriveBuildingLots } from "@jgengine/core/buildings/buildingLots"`
 
+## camera-clearance — keep any camera out of world collision with a spring-arm pull-in
+
+- `clearCameraBoom` (function) · `import { clearCameraBoom } from "@jgengine/core/camera/cameraCollision"`
+- `sceneCameraQuery` (function) · `import { sceneCameraQuery } from "@jgengine/core/camera/cameraCollision"`
+
 ## camera-shake — add trauma to the active camera rig's shake from any game system
 
 - `cameraShake` (function) · `import { cameraShake } from "@jgengine/core/camera/shake/cameraShake"`
@@ -285,6 +290,10 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 ## camera-shake-meter — HUD readout for a core camera-shake controller — a trauma meter plus current impact-kind label, reskinnable and kind-labelled
 
 - `CameraShakeMeter` (function) · `import { CameraShakeMeter } from "@jgengine/core/camera/shake/cameraShake.view"`
+
+## camera-transparent-decor — let author decor pass through the orbit spring-arm; a child opts back in with jgCameraCollide
+
+- `isCameraOccluderTransparent` (function) · `import { isCameraOccluderTransparent } from "@jgengine/core/camera/cameraCollision"`
 
 ## caption-feed — bounded, self-expiring, deduped caption lines for the accessibility captions overlay
 
@@ -301,6 +310,10 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 ## character-controller — capsule walk over the physics backend — slide, step-up, slopes, crouch, platforms
 
 - `createCharacterController` (function) · `import { createCharacterController } from "@jgengine/core/movement/characterController"`
+
+## chase-heading — keep camera-relative input heading independent of body facing while retaining vehicle and seat camera follow
+
+- `resolveChaseHeading` (function) · `import { resolveChaseHeading } from "@jgengine/core/camera/chaseHeading"`
 
 ## city-district — editor-authorable procedural city district (streets, zoning, buildings, furniture)
 
@@ -350,6 +363,10 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 ## crouch-prone — stance/pose transitions that change the hitbox
 
 - `createPoseState` (function) · `import { createPoseState } from "@jgengine/core/world"`
+
+## custom-viewmodel-muzzle — align tracer origins with a custom viewmodel's live muzzle without changing authoritative shots
+
+- `registerFirstPersonMuzzle` (function) · `import { registerFirstPersonMuzzle } from "@jgengine/core/camera/customMuzzle.draw"`
 
 ## cutscene-letterbox — reskinnable cinematic letterbox + skip overlay for a cutscene — animated bars, caption/dialogue slot, progress line, Skip button
 
