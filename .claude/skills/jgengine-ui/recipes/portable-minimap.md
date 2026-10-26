@@ -24,7 +24,7 @@ selector the project already uses.
 
 ```tsx
 import { useMemo } from "react";
-import { Minimap } from "@jgengine/react/map";
+import { Minimap } from "@jgengine/core/map/map.view";
 
 interface Unit {
   id: string;
@@ -72,8 +72,8 @@ on every frame.
 
 ```tsx
 import { useMemo } from "react";
-import { createMarkerSource } from "@jgengine/core/world/markers";
-import { Minimap } from "@jgengine/react/map";
+import { createMarkerSource } from "@jgengine/core/map/markers";
+import { Minimap } from "@jgengine/core/map/map.view";
 
 interface Unit {
   id: string;

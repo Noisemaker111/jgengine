@@ -52,6 +52,7 @@ export const CORE_DOMAIN_SKILLS: Record<string, string> = {
   loot: "jgengine-gameplay",
   material: "jgengine-assets",
   math: "jgengine-world",
+  map: "jgengine-world",
   meta: MAIN,
   mission: "jgengine-gameplay",
   worldModel: "jgengine-gameplay",

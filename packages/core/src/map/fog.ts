@@ -1,3 +1,4 @@
+/** World-XZ rectangle a fog field covers. */
 export interface FogBounds {
   minX: number;
   minZ: number;
@@ -5,6 +6,7 @@ export interface FogBounds {
   maxZ: number;
 }
 
+/** Fog field settings: bounds, cell size and the cells revealed at the start. */
 export interface FogConfig {
   bounds: FogBounds;
   cellSize: number;
@@ -12,6 +14,7 @@ export interface FogConfig {
   revealed?: readonly number[];
 }
 
+/** A fog field's grid: size, origin, cell size and row-major revealed flags. */
 export interface FogCells {
   cols: number;
   rows: number;
@@ -50,6 +53,7 @@ function clampInt(value: number, min: number, max: number): number {
   return rounded < min ? min : rounded > max ? max : rounded;
 }
 
+/** Create a fog-of-war field over `bounds`; reveal cells as the player explores. Throws on a non-positive cell size. */
 export function createFogField(config: FogConfig): FogField {
   const { minX, minZ, maxX, maxZ } = config.bounds;
   const cellSize = config.cellSize;

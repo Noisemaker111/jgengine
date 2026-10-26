@@ -1,6 +1,7 @@
 import { isRegionField, type RegionField } from "@jgengine/core/world/regions";
 import type { TerrainField } from "@jgengine/core/terrain/terrain";
 
+/** World-XZ rectangle a terrain map bake covers. */
 export interface MapBakeBounds {
   minX: number;
   minZ: number;
@@ -8,6 +9,7 @@ export interface MapBakeBounds {
   maxZ: number;
 }
 
+/** Terrain map bake settings: resolution and land and water colours. */
 export interface BakeTerrainMapOptions {
   resolution?: number;
   landLow?: readonly [number, number, number];
@@ -15,6 +17,7 @@ export interface BakeTerrainMapOptions {
   water?: readonly [number, number, number];
 }
 
+/** A baked terrain map: an image URL and the world bounds it covers. */
 export interface BakedMap {
   url: string;
   bounds: MapBakeBounds;

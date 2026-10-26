@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
-import { MinimapChrome, useMarkers, type MinimapChromeMarker } from "@jgengine/react/map";
+import { MinimapChrome, useMarkers, type MinimapChromeMarker } from "@jgengine/core/map/map.view";
 import { useLiveMarkers } from "@jgengine/react/hooks";
-import { projectToMinimap, type MinimapView } from "@jgengine/core/world/minimap";
+import { projectToMinimap, type MinimapView } from "@jgengine/core/map/minimap";
 
 import { enemyDrawn, fogLevel, fogSnapshot, FOG_ALPHA, type FogCellsSnapshot } from "../../fog";
 import { session } from "../../session";

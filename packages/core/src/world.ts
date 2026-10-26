@@ -273,6 +273,80 @@ export {
   type ModelVariantSelector,
   type ModelVariantSelectorState,
 } from "./lod/modelLod";
+export {
+  createFastTravelNetwork,
+  type FastTravelNetwork,
+  type FastTravelOptions,
+  type FastTravelSnapshot,
+  type TravelPointDef,
+  type TravelPointView,
+} from "./map/fastTravel";
+export { createFogField, type FogCells, type FogField } from "./map/fog";
+export {
+  createAnnotationLayer,
+  type AnnotationLayer,
+  type AnnotationLayerOptions,
+  type AnnotationSnapshot,
+  type MapNote,
+  type MapShapeAnnotation,
+  type MapStroke,
+} from "./map/mapAnnotations";
+export { mapLayerColor, type MapCellStates, type MapRoute, type MapZone } from "./map/mapLayers";
+export {
+  DEFAULT_MARKER_KINDS,
+  createMarkerSet,
+  createMarkerSource,
+  markerKindStyle,
+  type MapMarker,
+  type MarkerCollection,
+  type MarkerKindStyle,
+  type MarkerSet,
+  type MarkerSource,
+  type MarkerSourceOptions,
+  type MarkerView,
+} from "./map/markers";
+export {
+  bearingToCardinal,
+  clampToMinimapEdge,
+  compassBearing,
+  headingToBearing,
+  projectToMinimap,
+  relativeBearing,
+  unprojectFromMinimap,
+  type Cardinal,
+  type MinimapView,
+  type WorldXZ,
+} from "./map/minimap";
+export {
+  DEFAULT_MINIMAP_PALETTE,
+  bakeMinimapBackground,
+  bakeMinimapImage,
+  encodeBakePng,
+  minimapBakeToPngDataUri,
+  type MinimapBake,
+  type MinimapBakeBounds,
+  type MinimapBakeOptions,
+  type MinimapBakePalette,
+  type MinimapBakeSource,
+  type MinimapBakeZone,
+} from "./map/minimapBake";
+export {
+  ANNOTATION_FEED_ACTION,
+  createSharedAnnotations,
+  type AnnotationBroadcast,
+  type AnnotationFeedSink,
+  type SharedAnnotations,
+  type SharedAnnotationsDeps,
+} from "./map/sharedAnnotations";
+export {
+  createWaypointStore,
+  waypointAnchor,
+  type WaypointEntry,
+  type WaypointGuidance,
+  type WaypointSnapshot,
+  type WaypointStore,
+  type WaypointStoreDeps,
+} from "./map/waypoints";
 export { resolveLocalAvoidance, type AvoidanceAgent, type LocalAvoidanceOptions } from "./movement/avoidance";
 export {
   assignFormationSlots,
@@ -818,14 +892,6 @@ export { catenaryCurve, sagCurve } from "./world/catenary";
 export { createEnvironmentField, type EnvironmentField, type HeatSource } from "./world/envField";
 export { resolveStructureBuildings, summarizeEnvironment } from "./world/environmentSummary";
 export {
-  createFastTravelNetwork,
-  type FastTravelNetwork,
-  type FastTravelOptions,
-  type FastTravelSnapshot,
-  type TravelPointDef,
-  type TravelPointView,
-} from "./world/fastTravel";
-export {
   biomes,
   building,
   environment,
@@ -866,7 +932,6 @@ export {
   type WorldGridCell,
   type WorldGridConfig,
 } from "./world/features";
-export { createFogField, type FogCells, type FogField } from "./world/fog";
 export {
   boundaryNeighbors,
   canMerge,
@@ -885,66 +950,10 @@ export {
 export { type Aabb, type AvoidZone, type Vec3 } from "./world/geometry";
 export { resolveGridInstances } from "./world/gridInstances";
 export { grounded } from "./world/grounded";
-export {
-  createAnnotationLayer,
-  type AnnotationLayer,
-  type AnnotationLayerOptions,
-  type AnnotationSnapshot,
-  type MapNote,
-  type MapShapeAnnotation,
-  type MapStroke,
-} from "./world/mapAnnotations";
-export { mapLayerColor, type MapCellStates, type MapRoute, type MapZone } from "./world/mapLayers";
-export {
-  DEFAULT_MARKER_KINDS,
-  createMarkerSet,
-  createMarkerSource,
-  markerKindStyle,
-  type MapMarker,
-  type MarkerCollection,
-  type MarkerKindStyle,
-  type MarkerSet,
-  type MarkerSource,
-  type MarkerSourceOptions,
-  type MarkerView,
-} from "./world/markers";
-export {
-  bearingToCardinal,
-  clampToMinimapEdge,
-  compassBearing,
-  headingToBearing,
-  projectToMinimap,
-  relativeBearing,
-  unprojectFromMinimap,
-  type Cardinal,
-  type MinimapView,
-  type WorldXZ,
-} from "./world/minimap";
-export {
-  DEFAULT_MINIMAP_PALETTE,
-  bakeMinimapBackground,
-  bakeMinimapImage,
-  encodeBakePng,
-  minimapBakeToPngDataUri,
-  type MinimapBake,
-  type MinimapBakeBounds,
-  type MinimapBakeOptions,
-  type MinimapBakePalette,
-  type MinimapBakeSource,
-  type MinimapBakeZone,
-} from "./world/minimapBake";
 export { POLE_LINE_SCHEMA, resolvePoleLine, type ResolvedPoleLine } from "./world/poleLineKind";
 export { pointInPolygon, polygonArea } from "./world/polygon";
 export { composeRealm } from "./world/realm";
 export { createRegionField, isRegionField, type RegionField } from "./world/regions";
-export {
-  ANNOTATION_FEED_ACTION,
-  createSharedAnnotations,
-  type AnnotationBroadcast,
-  type AnnotationFeedSink,
-  type SharedAnnotations,
-  type SharedAnnotationsDeps,
-} from "./world/sharedAnnotations";
 export { SOIL_KIND, SOIL_SCHEMA, type SoilRules } from "./world/soilKind";
 export {
   annulusRegion,
@@ -993,13 +1002,4 @@ export {
 } from "./world/visibilityField";
 export { createVoxelField, type VoxelFace } from "./world/voxelField";
 export { type EnclosedFootprint, type RoofPlan } from "./world/walls";
-export {
-  createWaypointStore,
-  waypointAnchor,
-  type WaypointEntry,
-  type WaypointGuidance,
-  type WaypointSnapshot,
-  type WaypointStore,
-  type WaypointStoreDeps,
-} from "./world/waypoints";
 export { windField, type WindField } from "./world/wind";

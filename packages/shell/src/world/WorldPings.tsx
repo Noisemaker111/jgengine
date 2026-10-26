@@ -7,8 +7,8 @@ import {
   type MarkerCollection,
   type MarkerKindStyle,
   type MarkerView,
-} from "@jgengine/core/world/markers";
-import { useMarkers } from "@jgengine/react/map";
+} from "@jgengine/core/map/markers";
+import { useMarkers } from "@jgengine/core/map/map.view";
 
 import { pingBobOffset, pingOpacity } from "./pingPulse";
 

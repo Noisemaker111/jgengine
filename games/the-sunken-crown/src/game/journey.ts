@@ -5,7 +5,7 @@ import type { GameContext } from "@jgengine/core/runtime/gameContext";
 import { perContext } from "@jgengine/core/runtime/perContext";
 import { pursue } from "@jgengine/core/scene/behaviors";
 import { authoredSpawnPosition, authoredSpawnRotation } from "@jgengine/core/world/authoredSpawn";
-import { createFastTravelNetwork, type FastTravelNetwork } from "@jgengine/core/world/fastTravel";
+import { createFastTravelNetwork, type FastTravelNetwork } from "@jgengine/core/map/fastTravel";
 import type { WorldHookCall } from "@jgengine/core/worldModel/worldModel";
 import { defineSystem } from "@jgengine/shell/gameKit";
 

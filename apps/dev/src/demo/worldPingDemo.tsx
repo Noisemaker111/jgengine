@@ -14,7 +14,7 @@ import type {
 } from "@jgengine/core/runtime/gameContext";
 import { createAssetCatalog } from "@jgengine/core/scene/assetCatalog";
 import { environment, grass, terrain } from "@jgengine/core/world/features";
-import { createMarkerSet, type MarkerSet } from "@jgengine/core/world/markers";
+import { createMarkerSet, type MarkerSet } from "@jgengine/core/map/markers";
 import { useFeed } from "@jgengine/react/hooks";
 
 import { EnvironmentScene } from "@jgengine/core/environment/EnvironmentScene.draw";

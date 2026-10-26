@@ -3,7 +3,7 @@ import type { MaterialAsset } from "../material/materialAsset";
 import type { StaticPrefabBake } from "./staticPrefab";
 import type { ParamSchema } from "../scene/sceneKinds";
 import type { EditorUiDocument } from "../hud/hudDocument";
-import type { MinimapBakeBounds } from "../world/minimapBake";
+import type { MinimapBakeBounds } from "@jgengine/core/map/minimapBake";
 import type { TerraformSnapshot } from "../terrain/terraform";
 import type { EditorGridLayer } from "./grid";
 import type { EnvironmentSource } from "../render/environment";

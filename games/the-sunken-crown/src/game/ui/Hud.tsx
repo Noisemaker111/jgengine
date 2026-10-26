@@ -1,7 +1,7 @@
 import { useState, type ReactNode } from "react";
 import { resolveActivePrompt } from "@jgengine/core/interaction/proximityPrompt";
 import { useGameStore } from "@jgengine/react/hooks";
-import { Compass } from "@jgengine/react/map";
+import { Compass } from "@jgengine/core/map/map.view";
 import { useGameContext } from "@jgengine/react/provider";
 import { KitBanner, KitResultScreen } from "@jgengine/core/ui/kit/kitFlow.view";
 import { KitCount, KitCounts, KitVitals } from "@jgengine/core/hud/kitHud.view";

@@ -1,7 +1,10 @@
+/** A world `[x, z]` point on the map. */
 export type MapXZ = readonly [number, number];
 
+/** Colour role of a map layer: danger, warning, info, safe or neutral. */
 export type MapLayerTone = "danger" | "warning" | "info" | "safe" | "neutral";
 
+/** A polyline drawn on the map, optionally dashed as a forecast. */
 export interface MapRoute {
   id: string;
   /** World-XZ polyline. */
@@ -15,11 +18,13 @@ export interface MapRoute {
   closed?: boolean;
 }
 
+/** A map zone's shape: circle, rotated rectangle or polygon. */
 export type MapZoneShape =
   | { kind: "circle"; center: MapXZ; radius: number }
   | { kind: "rect"; center: MapXZ; w: number; d: number; rotate?: number }
   | { kind: "polygon"; points: readonly MapXZ[] };
 
+/** A tinted area drawn on the map, optionally dashed as a preview. */
 export interface MapZone {
   id: string;
   shape: MapZoneShape;
@@ -31,6 +36,7 @@ export interface MapZone {
   label?: string;
 }
 
+/** Sparse per-cell tones drawn on the map over a grid. */
 export interface MapCellStates {
   id: string;
   /** World-space center of cell (0, 0). */
@@ -42,7 +48,7 @@ export interface MapCellStates {
 
 /**
  * Renderer-free overlay data for map surfaces (#285.1-2): zones with live + forecast states,
- * route polylines, and per-cell status heatmaps. `@jgengine/react/map`'s `Minimap`/`WorldMap`
+ * route polylines, and per-cell status heatmaps. `@jgengine/core/map/map.view`'s `Minimap`/`WorldMap`
  * take these straight in; `pointInMapZone` answers gameplay queries against the same data,
  * so the HUD and the rules can never disagree about where the storm is.
  */
@@ -74,6 +80,7 @@ export function pointInMapZone(zone: MapZoneShape, x: number, z: number): boolea
   return inside;
 }
 
+/** The colour each {@link MapLayerTone} draws with. */
 export const MAP_LAYER_TONE_COLORS: Record<MapLayerTone, string> = {
   danger: "#ef4444",
   warning: "#f59e0b",
@@ -82,6 +89,7 @@ export const MAP_LAYER_TONE_COLORS: Record<MapLayerTone, string> = {
   neutral: "#a1a1aa",
 };
 
+/** The colour for a tone; neutral when none is given. */
 export function mapLayerColor(tone: MapLayerTone | undefined): string {
   return MAP_LAYER_TONE_COLORS[tone ?? "neutral"];
 }

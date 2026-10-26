@@ -16,17 +16,17 @@ import type {
 } from "@jgengine/core/runtime/gameContext";
 import { createAssetCatalog } from "@jgengine/core/scene/assetCatalog";
 import { environment, grass, terrain } from "@jgengine/core/world/features";
-import { createFogField, type FogField } from "@jgengine/core/world/fog";
-import { createMarkerSet, type MarkerSet } from "@jgengine/core/world/markers";
+import { createFogField, type FogField } from "@jgengine/core/map/fog";
+import { createMarkerSet, type MarkerSet } from "@jgengine/core/map/markers";
 import { resolveTerrainField, type TerrainField } from "@jgengine/core/terrain/terrain";
-import { createWaypointStore, type WaypointStore } from "@jgengine/core/world/waypoints";
-import { createAnnotationLayer, type AnnotationLayer } from "@jgengine/core/world/mapAnnotations";
-import { Compass, FullscreenMap, MapLegend, Minimap, WaypointArrow } from "@jgengine/react/map";
+import { createWaypointStore, type WaypointStore } from "@jgengine/core/map/waypoints";
+import { createAnnotationLayer, type AnnotationLayer } from "@jgengine/core/map/mapAnnotations";
+import { Compass, FullscreenMap, MapLegend, Minimap, WaypointArrow } from "@jgengine/core/map/map.view";
 import { usePlayer, useRafLoop, useSceneEntities, useFeed } from "@jgengine/react/hooks";
 
 import { EnvironmentScene } from "@jgengine/core/environment/EnvironmentScene.draw";
-import { bakeTerrainMap, type BakedMap } from "@jgengine/shell/map/terrainMap";
-import { MapMarkerBeacons } from "@jgengine/shell/map/MapMarkerBeacons";
+import { bakeTerrainMap, type BakedMap } from "@jgengine/core/map/terrainMap.draw";
+import { MapMarkerBeacons } from "@jgengine/core/map/MapMarkerBeacons.draw";
 import type { PlayableGame } from "@jgengine/shell/registry";
 
 const SCOUT = "scout";

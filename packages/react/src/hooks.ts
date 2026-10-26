@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState, useSyncExternalStore, type DependencyList } from "react";
 import { AxisChannel, type AxisChannelConfig } from "@jgengine/core/input/axisInput";
-import { createMarkerSet, type MarkerSet } from "@jgengine/core/world/markers";
+import { createMarkerSet, type MarkerSet } from "@jgengine/core/map/markers";
 import type { GameContext } from "@jgengine/core/runtime/gameContext";
 import { dispatchCommand, type DispatchedCommandResult } from "@jgengine/core/commands/commandDispatch";
 import type { AbilityKit, AbilitySlotSnapshot } from "@jgengine/core/combat/abilityKit";

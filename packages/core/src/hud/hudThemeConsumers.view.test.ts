@@ -2,11 +2,11 @@ import { describe, expect, test } from "bun:test";
 import { createElement } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 
-import { createMarkerSet } from "@jgengine/core/world/markers";
+import { createMarkerSet } from "@jgengine/core/map/markers";
 import { resolveActionCollection } from "@jgengine/core/ui/actionModel";
 
 import { ActionBar, ActionButton } from "./actionHud.view";
-import { Minimap } from "@jgengine/react/map";
+import { Minimap } from "@jgengine/core/map/map.view";
 
 /**
  * #1034 acceptance: one HudTheme drives bars + frames + action slots + minimap ring. The bars/frames

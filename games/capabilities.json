@@ -3343,8 +3343,8 @@
       "packages": [
         "@jgengine/core"
       ],
-      "module": "@jgengine/core/world/fastTravel",
-      "domain": "world",
+      "module": "@jgengine/core/map/fastTravel",
+      "domain": "map",
       "gameFacing": false,
       "probe": null,
       "intent": "network of fast-travel destinations with discovery, distance-sorted queries, nearest lookup, a travel gate, and serializable state"
@@ -3352,10 +3352,10 @@
     {
       "id": "fast-travel-menu",
       "packages": [
-        "@jgengine/react"
+        "@jgengine/core"
       ],
-      "module": "@jgengine/react/fastTravel",
-      "domain": "fast-travel-menu",
+      "module": "@jgengine/core/map/fastTravel.view",
+      "domain": "map",
       "gameFacing": false,
       "probe": null,
       "intent": "discovered-destinations picker grouped by region with distances, a discovery counter, and a travel callback"
@@ -3606,10 +3606,10 @@
     {
       "id": "fullscreen-map",
       "packages": [
-        "@jgengine/react"
+        "@jgengine/core"
       ],
-      "module": "@jgengine/react/map",
-      "domain": "fullscreen-map",
+      "module": "@jgengine/core/map/map.view",
+      "domain": "map",
       "gameFacing": false,
       "probe": null,
       "intent": "fullscreen pan/zoom world-map overlay over WorldMapSurface — wheel-zoom, drag-pan, click-to-place, and a freehand draw tool (onStrokeComplete)"
@@ -5652,8 +5652,8 @@
       "packages": [
         "@jgengine/core"
       ],
-      "module": "@jgengine/core/world/mapAnnotations",
-      "domain": "world",
+      "module": "@jgengine/core/map/mapAnnotations",
+      "domain": "map",
       "gameFacing": false,
       "probe": null,
       "intent": "player-drawn map annotation layer — freehand strokes, area shapes, and pinned notes, projected into the map's routes/zones props and serializable"
@@ -5661,10 +5661,10 @@
     {
       "id": "map-legend",
       "packages": [
-        "@jgengine/react"
+        "@jgengine/core"
       ],
-      "module": "@jgengine/react/map",
-      "domain": "map-legend",
+      "module": "@jgengine/core/map/map.view",
+      "domain": "map",
       "gameFacing": false,
       "probe": null,
       "intent": "marker-kind key (glyph + color + label per kind) sharing the map's kindStyles"
@@ -5993,10 +5993,10 @@
     {
       "id": "minimap",
       "packages": [
-        "@jgengine/react"
+        "@jgengine/core"
       ],
-      "module": "@jgengine/react/map",
-      "domain": "minimap",
+      "module": "@jgengine/core/map/map.view",
+      "domain": "map",
       "gameFacing": false,
       "probe": null,
       "intent": "framed circular minimap with terrain bake, fog, markers, and facing arrow"
@@ -6015,10 +6015,10 @@
     {
       "id": "minimap-chrome",
       "packages": [
-        "@jgengine/react"
+        "@jgengine/core"
       ],
-      "module": "@jgengine/react/map",
-      "domain": "minimap-chrome",
+      "module": "@jgengine/core/map/map.view",
+      "domain": "map",
       "gameFacing": false,
       "probe": null,
       "intent": "ring frame plus edge-clamped, heading-aware marker dots to nest inside a game's own `<svg>`"
@@ -6026,10 +6026,10 @@
     {
       "id": "minimap-panel",
       "packages": [
-        "@jgengine/react"
+        "@jgengine/core"
       ],
-      "module": "@jgengine/react/map",
-      "domain": "minimap-panel",
+      "module": "@jgengine/core/map/map.view",
+      "domain": "map",
       "gameFacing": false,
       "probe": null,
       "intent": "circular minimap with zone label, clock, and compass composed together"
@@ -6039,8 +6039,8 @@
       "packages": [
         "@jgengine/core"
       ],
-      "module": "@jgengine/core/world/minimapTrack",
-      "domain": "world",
+      "module": "@jgengine/core/map/minimapTrack",
+      "domain": "map",
       "gameFacing": false,
       "probe": null,
       "intent": "project a world point to a 0..1 fraction along a linear track axis"
@@ -6048,10 +6048,10 @@
     {
       "id": "minimap-track-hud",
       "packages": [
-        "@jgengine/react"
+        "@jgengine/core"
       ],
-      "module": "@jgengine/react/map",
-      "domain": "minimap-track-hud",
+      "module": "@jgengine/core/map/map.view",
+      "domain": "map",
       "gameFacing": false,
       "probe": null,
       "intent": "horizontal linear track minimap (corridor/route progress) — colored zone spans and gate/player pips positioned by 0..1 fraction, sharing chrome with the radial Minimap"
@@ -7386,8 +7386,8 @@
       "packages": [
         "@jgengine/core"
       ],
-      "module": "@jgengine/core/world/markers",
-      "domain": "world",
+      "module": "@jgengine/core/map/markers",
+      "domain": "map",
       "gameFacing": false,
       "probe": null,
       "intent": "project caller-owned arrays or subscribable stores into cached minimap marker snapshots without a MarkerSet"
@@ -8508,8 +8508,8 @@
       "packages": [
         "@jgengine/core"
       ],
-      "module": "@jgengine/core/world/sharedAnnotations",
-      "domain": "world",
+      "module": "@jgengine/core/map/sharedAnnotations",
+      "domain": "map",
       "gameFacing": false,
       "probe": null,
       "intent": "broadcast local map-drawing edits over the party feed and mirror inbound edits — collaborative annotations over any replicated feed"
@@ -10214,13 +10214,24 @@
     {
       "id": "use-fast-travel",
       "packages": [
-        "@jgengine/react"
+        "@jgengine/core"
       ],
-      "module": "@jgengine/react/fastTravel",
-      "domain": "use-fast-travel",
+      "module": "@jgengine/core/map/fastTravel.view",
+      "domain": "map",
       "gameFacing": false,
       "probe": null,
       "intent": "re-render a component when a fast-travel network's discovery state changes"
+    },
+    {
+      "id": "use-fog",
+      "packages": [
+        "@jgengine/core"
+      ],
+      "module": "@jgengine/core/map/map.view",
+      "domain": "map",
+      "gameFacing": false,
+      "probe": null,
+      "intent": "React binding that returns a fog-of-war field's live cells"
     },
     {
       "id": "use-hold-vs-toggle",
@@ -10401,10 +10412,10 @@
     {
       "id": "use-waypoints",
       "packages": [
-        "@jgengine/react"
+        "@jgengine/core"
       ],
-      "module": "@jgengine/react/waypointMarkers",
-      "domain": "use-waypoints",
+      "module": "@jgengine/core/map/waypointMarkers.view",
+      "domain": "map",
       "gameFacing": false,
       "probe": null,
       "intent": "React binding that returns a waypoint store's live list (or a passthrough array)"
@@ -10684,10 +10695,10 @@
     {
       "id": "waypoint-arrow",
       "packages": [
-        "@jgengine/react"
+        "@jgengine/core"
       ],
-      "module": "@jgengine/react/map",
-      "domain": "waypoint-arrow",
+      "module": "@jgengine/core/map/map.view",
+      "domain": "map",
       "gameFacing": false,
       "probe": null,
       "intent": "on-screen HUD guide arrow to a tracked waypoint, rotated by facing-relative bearing with a distance readout"
@@ -10695,10 +10706,10 @@
     {
       "id": "waypoint-markers",
       "packages": [
-        "@jgengine/react"
+        "@jgengine/core"
       ],
-      "module": "@jgengine/react/waypointMarkers",
-      "domain": "waypoint-markers",
+      "module": "@jgengine/core/map/waypointMarkers.view",
+      "domain": "map",
       "gameFacing": false,
       "probe": null,
       "intent": "overlay rendering world waypoints as on-screen pins and off-screen edge-clamped directional arrows with distance, colored per game-owned kind"
@@ -10708,8 +10719,8 @@
       "packages": [
         "@jgengine/core"
       ],
-      "module": "@jgengine/core/world/waypoints",
-      "domain": "world",
+      "module": "@jgengine/core/map/waypoints",
+      "domain": "map",
       "gameFacing": false,
       "probe": null,
       "intent": "serializable player waypoint layer — place/track/clear pins, mirror to a MarkerSet, and on-screen bearing/distance guidance for the tracked waypoint"
@@ -11035,6 +11046,28 @@
       "gameFacing": false,
       "probe": null,
       "intent": "pick up dropped items: ctx.scene.worldItem nearestInRadius → pickup into the player's inventory"
+    },
+    {
+      "id": "world-map",
+      "packages": [
+        "@jgengine/core"
+      ],
+      "module": "@jgengine/core/map/map.view",
+      "domain": "map",
+      "gameFacing": false,
+      "probe": null,
+      "intent": "framed full-bounds world map panel with terrain background, fog, labelled markers and the player"
+    },
+    {
+      "id": "world-map-surface",
+      "packages": [
+        "@jgengine/core"
+      ],
+      "module": "@jgengine/core/map/map.view",
+      "domain": "map",
+      "gameFacing": false,
+      "probe": null,
+      "intent": "bare top-down map svg with terrain background, fog, layers, labelled markers and player arrow under a viewport transform"
     },
     {
       "id": "world-model",

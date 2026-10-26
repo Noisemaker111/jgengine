@@ -1,6 +1,6 @@
 import { describe, expect, it } from "bun:test";
 import type { PointerHit } from "../input/pointer";
-import { createMarkerSet } from "../world/markers";
+import { createMarkerSet } from "@jgengine/core/map/markers";
 import {
   classifyPing,
   createPingSystem,

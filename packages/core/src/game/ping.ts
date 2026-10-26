@@ -1,5 +1,5 @@
 import type { PointerHit } from "../input/pointer";
-import type { MapMarker, MarkerPosition, MarkerSet } from "../world/markers";
+import type { MapMarker, MarkerPosition, MarkerSet } from "@jgengine/core/map/markers";
 
 export type PingCategory = string;
 

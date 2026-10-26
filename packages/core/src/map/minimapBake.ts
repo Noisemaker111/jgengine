@@ -1,5 +1,5 @@
-import { pointInPolygon } from "./polygon";
-import type { Vec2 } from "./geometry";
+import { pointInPolygon } from "@jgengine/core/world/polygon";
+import type { Vec2 } from "@jgengine/core/world/geometry";
 
 /**
  * Deterministic minimap terrain bake (#1036): rasterize an authored world's terrain (plus optional
@@ -237,7 +237,10 @@ function base64(bytes: Uint8Array): string {
   return out;
 }
 
-/** Encodes an RGBA bake to raw PNG bytes (pure; stored DEFLATE, valid for any decoder). */
+/**
+ * Encodes an RGBA bake to raw PNG bytes (pure; stored DEFLATE, valid for any decoder).
+ * @capability minimap-bake encode a baked minimap as raw PNG bytes to store or ship
+ */
 export function encodeBakePng(bake: MinimapBake): Uint8Array {
   const { width, height, pixels } = bake;
   const ihdr = new Uint8Array(13);
@@ -282,7 +285,10 @@ export function minimapBakeToPngDataUri(bake: MinimapBake): string {
   return `data:image/png;base64,${base64(encodeBakePng(bake))}`;
 }
 
-/** One-call convenience: rasterize a source and return `{ background, mapBounds }` for a minimap. */
+/**
+ * One-call convenience: rasterize a source and return `{ background, mapBounds }` for a minimap.
+ * @capability minimap-bake rasterize terrain and zones straight into a minimap background and bounds
+ */
 export function bakeMinimapBackground(
   source: MinimapBakeSource,
   options: MinimapBakeOptions = {},
