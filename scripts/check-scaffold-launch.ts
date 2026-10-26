@@ -22,7 +22,7 @@ import { existsSync, readFileSync, readdirSync } from "node:fs";
 import { createServer, type Server } from "node:http";
 import { join } from "node:path";
 
-import { gameTemplate } from "../packages/jgengine/src/templates";
+import { browserLibMjs, driveMjs, shootMjs } from "../packages/jgengine/src/templates/harnessScripts";
 import {
   BROWSER_LAUNCH_BLOCK,
   LAUNCH_BLOCK_END,
@@ -32,7 +32,7 @@ import { startBrowser as engineStartBrowser } from "./browser-lib";
 
 const ENGINE_FILE = "scripts/browser-lib.ts";
 const SOURCE_FILE = "packages/jgengine/src/templates/browserLaunch.ts";
-const TEMPLATE_FILE = "packages/jgengine/src/templates/gameFiles.ts";
+const TEMPLATE_FILE = "packages/jgengine/src/templates/harnessScripts.ts";
 
 interface ScenarioResult {
   logs: string[];
@@ -63,15 +63,13 @@ function normalize(line: string): string {
     .replace(/\/tmp\/jg-parity-\d+/g, "<profile>");
 }
 
+/** The harness `jgengine shoot` / `jgengine drive` write out and run for a game project. */
 function scaffoldFiles(): Map<string, string> {
-  const files = gameTemplate({
-    id: "launch-probe",
-    name: "Launch Probe",
-    variant: "standalone",
-    engineVersion: "0.0.0",
-    cliVersion: "0.0.0",
-  });
-  return new Map(files.map((file) => [file.path, file.contents]));
+  return new Map([
+    ["scripts/browser.mjs", browserLibMjs],
+    ["scripts/shoot.mjs", shootMjs],
+    ["scripts/drive.mjs", driveMjs],
+  ]);
 }
 
 async function loadScaffold(browserMjs: string): Promise<Implementation> {
@@ -240,7 +238,7 @@ const REMOTE_FETCH: Record<string, string> = {
   "packages/github/src/source.ts": "api.github.com",
   "packages/jgengine/src/desktop.ts": "the hosted page URL a desktop wrapper opens",
   "packages/jgengine/src/templates/editorWorkspace.ts": "browser-side page script, where HTTP_PROXY is the browser's",
-  "packages/jgengine/src/upgrade.ts": "the npm registry",
+  "packages/jgengine/src/releaseNotes.ts": "the published CHANGELOG.md",
   "packages/shell/src/audio/audioEngine.ts": "asset URLs the page loads",
   "packages/shell/src/devtools/agentBridge.ts": "browser-side bridge to an endpoint the page was handed",
   "packages/shell/src/devtools/frameSampler.ts": "browser-side sampler for an endpoint the page was handed",
@@ -289,7 +287,7 @@ export async function scanForFetchEverywhere(cwd = process.cwd()): Promise<strin
  * The files allowed to name Chrome's debugger flag: the engine's one launcher, and the template
  * that embeds the scaffold's copy of it (which `check-scaffold-launch` compares by hash).
  */
-const LAUNCHERS = new Set(["scripts/browser-lib.ts", "packages/jgengine/src/templates/gameFiles.ts"]);
+const LAUNCHERS = new Set(["scripts/browser-lib.ts", "packages/jgengine/src/templates/harnessScripts.ts"]);
 
 /**
  * `file:line` for a second way to start Chrome. The engine launches through

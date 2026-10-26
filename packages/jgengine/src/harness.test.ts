@@ -5,7 +5,7 @@ import { join } from "node:path";
 import { deflateSync } from "node:zlib";
 
 import { findProjectRoot, materializeHarness, planHarness } from "./harness";
-import { browserLibMjs, shootMjs } from "./templates/gameFiles";
+import { browserLibMjs, shootMjs } from "./templates/harnessScripts";
 
 function makeProject(deps: Record<string, string>, opts: { scripts?: boolean } = {}): string {
   const dir = mkdtempSync(join(tmpdir(), "jg-harness-proj-"));
@@ -54,14 +54,14 @@ describe("materializeHarness", () => {
 });
 
 describe("planHarness", () => {
-  test("delegates to the project's own scripts/<kind>.mjs when present (parity with bun run shoot)", () => {
+  test("runs the CLI's own harness even when the project still has an old scripts/<kind>.mjs copy", () => {
     const root = makeProject({ "@jgengine/core": "^0.14.0" }, { scripts: true });
     try {
       const plan = planHarness("shoot", root);
       expect(plan.ok).toBe(true);
       if (plan.ok) {
-        expect(plan.source).toBe("project");
-        expect(plan.script).toBe(join(root, "scripts", "shoot.mjs"));
+        expect(plan.script).not.toBe(join(root, "scripts", "shoot.mjs"));
+        expect(readFileSync(plan.script, "utf8")).toBe(shootMjs);
         expect(plan.cwd).toBe(root);
       }
     } finally {
@@ -69,13 +69,12 @@ describe("planHarness", () => {
     }
   });
 
-  test("materializes the bundled harness when the project has no scripts/<kind>.mjs", () => {
+  test("materializes the bundled harness in the project", () => {
     const root = makeProject({ "@jgengine/shell": "^0.14.0" });
     try {
       const plan = planHarness("drive", root);
       expect(plan.ok).toBe(true);
       if (plan.ok) {
-        expect(plan.source).toBe("bundled");
         expect(plan.cwd).toBe(root);
         expect(existsSync(plan.script)).toBe(true);
         expect(plan.script.endsWith("drive.mjs")).toBe(true);
@@ -97,7 +96,7 @@ describe("planHarness", () => {
 
       const allowed = planHarness("shoot", dir, { allowNoProject: true });
       expect(allowed.ok).toBe(true);
-      if (allowed.ok) expect(allowed.source).toBe("bundled");
+      if (allowed.ok) expect(allowed.cwd).toBe(dir);
     } finally {
       rmSync(dir, { recursive: true, force: true });
     }

@@ -50,7 +50,7 @@ describe("one Chrome launch path", () => {
   test("a script that spawns its own browser is named, and the two launch owners are not", async () => {
     const root = tree({
       "scripts/browser-lib.ts": "spawn(chrome, [`--remote-debugging-port=${port}`]);\n",
-      "packages/jgengine/src/templates/gameFiles.ts": "const browser = `--remote-debugging-port=${port}`;\n",
+      "packages/jgengine/src/templates/harnessScripts.ts": "const browser = `--remote-debugging-port=${port}`;\n",
       "scripts/quick-shot.ts": "spawn(chrome, [\"--headless=new\", `--remote-debugging-port=${port}`]);\n",
     });
     expect(await scanForSecondLauncher(root)).toEqual(["scripts/quick-shot.ts:1"]);
