@@ -12,3 +12,4 @@ Verification:
 - In Vite's server module runner, the old `saveEndpoint.ts` throws "Dynamic access of import.meta.env is not supported"; the new one returns `isProductionEnvironment() === false` and `proxiedUrl` works.
 - `bun test packages/core/src/devtools packages/core/src/data packages/core/src/random` and `bun run check types`: pass
 - Playground and home page in the web dev server: rendered on the server, no page errors.
+- `packages/core/src/devtools/buildEnv.test.ts`: fails on the old reader (`import.meta as … .env`), passes now; it scans core and shell source so no whole-object `import.meta` read comes back.
