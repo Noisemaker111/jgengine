@@ -24,7 +24,7 @@ import { createAnnotationLayer, type AnnotationLayer } from "@jgengine/core/worl
 import { Compass, FullscreenMap, MapLegend, Minimap, WaypointArrow } from "@jgengine/react/map";
 import { usePlayer, useRafLoop, useSceneEntities, useFeed } from "@jgengine/react/hooks";
 
-import { EnvironmentScene } from "@jgengine/shell/environment/EnvironmentScene";
+import { EnvironmentScene } from "@jgengine/core/environment/EnvironmentScene.draw";
 import { bakeTerrainMap, type BakedMap } from "@jgengine/shell/map/terrainMap";
 import { MapMarkerBeacons } from "@jgengine/shell/map/MapMarkerBeacons";
 import type { PlayableGame } from "@jgengine/shell/registry";

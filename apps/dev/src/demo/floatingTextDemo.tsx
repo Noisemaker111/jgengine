@@ -4,7 +4,7 @@ import { createAssetCatalog } from "@jgengine/core/scene/assetCatalog";
 import { createFloatingTextField, type FloatingTextView } from "@jgengine/core/hud/floatingText";
 import { environment, grass, terrain } from "@jgengine/core/world/features";
 
-import { EnvironmentScene } from "@jgengine/shell/environment/EnvironmentScene";
+import { EnvironmentScene } from "@jgengine/core/environment/EnvironmentScene.draw";
 import type { PlayableGame } from "@jgengine/shell/registry";
 import { WorldFloatingText } from "@jgengine/shell/vfx/WorldFloatingText";
 

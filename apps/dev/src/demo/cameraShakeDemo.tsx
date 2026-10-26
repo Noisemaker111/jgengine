@@ -7,7 +7,7 @@ import { environment, grass, terrain } from "@jgengine/core/world/features";
 import { CameraShakeMeter } from "@jgengine/core/camera/shake/cameraShake.view";
 
 import { defaultCameraShake } from "@jgengine/shell/camera";
-import { EnvironmentScene } from "@jgengine/shell/environment/EnvironmentScene";
+import { EnvironmentScene } from "@jgengine/core/environment/EnvironmentScene.draw";
 import type { PlayableGame } from "@jgengine/shell/registry";
 
 const HERO = "hero";

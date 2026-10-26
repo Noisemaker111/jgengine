@@ -3,7 +3,7 @@ import { type ReactNode } from "react";
 import { importEditorDocumentJson } from "@jgengine/core/editor/document";
 import type { EditorDocument } from "@jgengine/core/editor/index";
 import { environment, sky, terrain } from "@jgengine/core/world/features";
-import { EnvironmentScene } from "@jgengine/shell/environment/EnvironmentScene";
+import { EnvironmentScene } from "@jgengine/core/environment/EnvironmentScene.draw";
 import type { PlayableGame } from "@jgengine/shell/registry";
 
 import { demoGame } from "./demoGame";

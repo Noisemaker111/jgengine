@@ -4,7 +4,7 @@ import * as THREE from "three";
 
 import type { FireGrid } from "@jgengine/core/weather/weather";
 
-import { uploadInstances } from "@jgengine/shell/instancing/instanceUpload";
+import { uploadInstances } from "@jgengine/core/instancing/instanceUpload.draw";
 import { setBillboardQuaternion } from "./fireSpreadPose.draw";
 
 /** Props for {@link FireSpreadLayer}: the fire grid, its cell size and origin, a ground-height sampler and flame look. */

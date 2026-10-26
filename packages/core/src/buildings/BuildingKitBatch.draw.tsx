@@ -9,7 +9,7 @@ import {
   buildScatterModelSources,
   disposeScatterModelSources,
   type ScatterModelSource,
-} from "@jgengine/shell/scatter/scatterModels";
+} from "@jgengine/core/scatter/scatterModels.draw";
 import {
   measureBuildingKitModel,
   type BuildingKitInstance,
@@ -17,8 +17,8 @@ import {
 import { useBuildingSurfaceTextures } from "./buildingSurface.draw";
 import { groupBuildingKitInstances, buildBuildingKitSources, validateBuildingKitSource, type BuildingKitStyleGroup } from "./buildingKitMaterials.draw";
 import { useBuildingChunkBudget } from "./BuildingRenderBudget.draw";
-import { partitionInstances, type InstanceChunk } from "@jgengine/shell/instancing/instanceChunks";
-import { uploadInstances } from "@jgengine/shell/instancing/instanceUpload";
+import { partitionInstances, type InstanceChunk } from "@jgengine/core/instancing/instanceChunks.draw";
+import { uploadInstances } from "@jgengine/core/instancing/instanceUpload.draw";
 
 function KitSourceInstances({
   source,

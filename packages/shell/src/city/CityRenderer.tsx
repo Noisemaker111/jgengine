@@ -51,14 +51,14 @@ import { hashString } from "@jgengine/core/random/rng";
 import { valueNoise } from "@jgengine/core/terrain/terrain";
 import type { SceneKindObject } from "@jgengine/core/scene/sceneKinds";
 
-import { buildScatterProxy } from "../scatter/scatterProxies";
+import { buildScatterProxy } from "@jgengine/core/scatter/scatterProxies.draw";
 import { InstancedBuildings, type InstancedBuildingPlacement } from "@jgengine/core/buildings/GeneratedBuilding.draw";
 import { getBuildingKit } from "@jgengine/core/buildings/buildingKitRegistry";
-import { uploadInstances } from "../instancing/instanceUpload";
+import { uploadInstances } from "@jgengine/core/instancing/instanceUpload.draw";
 import { createCityWindowMaterial } from "./cityWindowMaterial";
 import { createSurfaceRibbonMaterial } from "../roads/surfaceRibbonMaterial";
-import { applyGroundEdgeFade, buildGroundCoverageMask, createGroundEdgeFade } from "../terrain/groundEdgeFade";
-import { useTerrainQuality } from "../terrain/terrainQuality";
+import { applyGroundEdgeFade, buildGroundCoverageMask, createGroundEdgeFade } from "@jgengine/core/terrain/groundEdgeFade.draw";
+import { useTerrainQuality } from "@jgengine/core/terrain/terrainQuality.draw";
 import { registerSceneKindRenderer, type SceneKindRenderContext } from "../scene/sceneKindRenderers";
 import { junctionSurface } from "./cityJunctionSurface";
 

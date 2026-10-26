@@ -984,6 +984,21 @@
 - `SequenceState` (interface): interface SequenceState — A read-only view of the director's playback state, returned by {@link SequenceDirector.state}.
 - `createSequenceDirector` (function): function createSequenceDirector<Payload = unknown>(options: SequenceDirectorOptions<Payload>): SequenceDirector<Payload> — A serializable cutscene / sequence director: an ordered timeline of typed cues (`{ atMs, kind, payload }`) advanced by one injected clock, firing each cue once and in order as its time passes — even across a large seek — with play/pause/ seek/skip/stop controls. The director only *schedules and emits* cues; it never interprets what a `kind` means, so the same primitive drives camera moves, dialogue lines, fades, or any game event. `snapshot`/`restore` round-trip the playhead and which cues have fired. Deterministic (no wall clock beyond the injected `now`) and allocation-free on the tick path.
 
+## @jgengine/core/environment/EnvironmentScene.draw
+
+- `EnvironmentScene` (function): function EnvironmentScene({ feature }: EnvironmentSceneProps): React.JSX.Element — Draw an environment world feature: its sky, ground (terrain, pad or plane), water, weather and lighting.
+- `EnvironmentSceneProps` (interface): interface EnvironmentSceneProps — Props for {@link EnvironmentScene}: the environment world feature to draw.
+
+## @jgengine/core/environment/GroundPad.draw
+
+- `GroundPad` (function): function GroundPad({ pad, field }: GroundPadProps): React.JSX.Element — A flat circular or rectangular pad resting on a terrain field.
+- `GroundPadProps` (interface): interface GroundPadProps — Props for {@link GroundPad}: the pad descriptor and the terrain field it sits on.
+
+## @jgengine/core/environment/groundPadMath
+
+- `PAD_THICKNESS` (const): const PAD_THICKNESS: 0.1 — Thickness in metres of a ground pad slab.
+- `PadShape` (type): type PadShape = { circular: true; radius: number } | { circular: false; width: number; depth: number } — A pad's resolved footprint: a circle with a radius, or a width by depth rectangle.
+
 ## @jgengine/core/faction/factions
 
 - `FactionDef` (interface): interface FactionDef { id: string; relations?: Readonly<Record<string, FactionRelation>>; towardSelf?: FactionRelation; towardOthers?: FactionRelation } — ⚠ undocumented
@@ -1422,11 +1437,30 @@
 - `InstanceCell` (interface): interface InstanceCell<T> — Spatial cells for instanced draws: bucket placements into a uniform XZ grid so a dense field renders as many small draw units instead of one huge mesh. Each cell carries its own bounds, is frustum-culled on its own, and costs nothing offscreen. Pure and deterministic.
 - `groupInstancesByCell` (function): function groupInstancesByCell<T>(items: readonly T[], cellSize: number, at: (item: T) => readonly [number, number]): InstanceCell<T>[] — Bucket `items` into `cellSize`-meter XZ cells by the point `at` returns for each. Empty cells are omitted; cells come out row-major by grid coordinate (z rows, then x) and items keep their input order, so the result is deterministic.
 
+## @jgengine/core/instancing/instanceChunks.draw
+
+- `InstanceChunk` (interface): interface InstanceChunk — A spatially bounded group of final, geometry-local instance matrices: one cullable draw.
+- `PartitionInstancesOptions` (interface): interface PartitionInstancesOptions — Knobs for {@link partitionInstances}.
+- `partitionInstances` (function): function partitionInstances(geometry: THREE.BufferGeometry, matrices: readonly THREE.Matrix4[], options: PartitionInstancesOptions = {}): InstanceChunk[] — Split instance matrices into XZ cells by where each instance's geometry actually lands, so far or offscreen cells are culled as a unit. A batch that already fits one cell stays a single `compact` chunk, even across the grid origin. Instance order is kept within each chunk.
+
+## @jgengine/core/instancing/instanceUpload.draw
+
+- `InstanceColors` (type): type InstanceColors = readonly THREE.Color[] | ((index: number, out: THREE.Color) => void) — Per-instance tint: a ready list of colors, or a writer that fills each one.
+- `InstanceSource` (type): type InstanceSource = readonly THREE.Matrix4[] | { count: number; at(index: number, out: THREE.Matrix4): void } — Instance transforms: a ready list of matrices, or a count plus a writer that fills each one.
+- `InstanceUploadOptions` (interface): interface InstanceUploadOptions — Knobs for {@link uploadInstances}.
+- `composeInstance` (function): function composeInstance(out: THREE.Matrix4, position: readonly [number, number, number], rotation: readonly [number, number, number] | undefined, scale: number | readonly [number, number, number]): THREE.Matrix4 — Compose one instance matrix from a position, Euler rotation (radians) and scale into `out`.
+- `uploadInstances` (function): function uploadInstances(mesh: THREE.InstancedMesh, source: InstanceSource, options: InstanceUploadOptions = {}): void — Write a batch of instances into an `InstancedMesh`: transforms (with an optional model-local matrix), optional colors, the draw count, the upload flags and the culling bounds. The buffers grow when the batch outgrows them. Every instanced renderer in the engine draws through this, so counts reach the draw probes and bounds stay right the same way everywhere.
+
 ## @jgengine/core/instancing/pathInstances
 
 - `PathInstance` (interface): interface PathInstance — One placed transform along a path: grounded position, facing yaw, and its ordinal + arc distance.
 - `PlaceAlongPathOptions` (interface): interface PlaceAlongPathOptions — Options for {@link placeAlongPath}.
 - `placeAlongPath` (function): function placeAlongPath(points: readonly { x: number; z: number }[], options: PlaceAlongPathOptions): PathInstance[] — Evenly place transforms along `points` (XZ polyline). The run length is divided into the whole number of equal spans closest to `spacing`, so instances always land on both endpoints and stay evenly distributed. Returns `spans + 1` instances. Empty for fewer than 2 points.
+
+## @jgengine/core/instancing/staticShapeInstances.draw
+
+- `StaticShapeInstance` (interface): interface StaticShapeInstance — One editor-derived static primitive. A box spans one unit; a cylinder has unit radius and height before scale.
+- `StaticShapeInstances` (function): function StaticShapeInstances({ instances }: { instances: readonly StaticShapeInstance[] }): React.JSX.Element — Batch editor-derived boxes/cylinders by shape, PBR metadata and shadows. Uploads and bounds run only when instances change; map loading stays isolated per draw group.
 
 ## @jgengine/core/interaction/contextMenu
 
@@ -1507,6 +1541,15 @@
 - `evaluateSkillCheck` (function): function evaluateSkillCheck(config: SkillCheckConfig, elapsedSeconds: number): SkillCheckResult — ⚠ undocumented
 - `skillCheckMarkerPosition` (function): function skillCheckMarkerPosition(config: SkillCheckConfig, elapsedSeconds: number): number — ⚠ undocumented
 - `skillCheckZoneAt` (function): function skillCheckZoneAt(config: SkillCheckConfig, elapsedSeconds: number): SkillCheckZone — A timing-bar skill check that succeeds when the moving marker is released inside the target zone.
+
+## @jgengine/core/lod/characterLod
+
+- `CharacterLodPolicy` (interface): interface CharacterLodPolicy — Distance policy a character model's {@link ModelLodConfig} resolves to; every distance is metres.
+- `CharacterLodTier` (type): type CharacterLodTier = "full" | "half" | "quarter" | "crowd" — What a character's distance from the camera costs it this frame.
+- `DEFAULT_CHARACTER_LOD` (const): const DEFAULT_CHARACTER_LOD: CharacterLodPolicy — The engine's default character tiers: full under 15 m, half under 40 m, GPU crowd beyond 25 m.
+- `characterLodInterval` (function): function characterLodInterval(tier: CharacterLodTier): number — Frames between pose updates for a tier: 1, 2, 4, and `0` meaning "never" for the crowd tier.
+- `characterLodTier` (function): function characterLodTier(distance: number, config: ModelLodConfig | undefined, previous?: CharacterLodTier): CharacterLodTier — The tier a character at `distance` falls in. Passing the tier it held last frame applies the crowd hysteresis, so a character walking along the crowd boundary does not swap representation every frame.
+- `characterRigTier` (function): function characterRigTier(distance: number, config: ModelLodConfig | undefined): CharacterLodTier — The tier a character poses its own rig on, ignoring the crowd path. A crowd character whose batch is full falls back to this, so an over-cap crowd draws every member on its own rig instead of dropping the ones past the cap.
 
 ## @jgengine/core/lod/lod
 
@@ -2382,6 +2425,11 @@
 - `sidewalkPoint` (function): function sidewalkPoint(road: RoadEnvironmentDescriptor, side: "left" | "right", fraction: number): RoadPoint | null — A deterministic point on one of a road's sidewalks at a normalized position — `side` picks the band, `fraction` (0..1) picks how far along. The canonical pedestrian spawn helper.
 - `sidewalkWidthOf` (function): function sidewalkWidthOf(road: RoadEnvironmentDescriptor): number — Resolved sidewalk band widths for a road; zero when the road declares no sidewalk.
 
+## @jgengine/core/scatter/InstancedScatter.draw
+
+- `InstancedScatter` (function): function InstancedScatter({ instances, chunkSize = DEFAULT_CHUNK_SIZE, maxInstances = DEFAULT_MAX_INSTANCES, resolveItem, }: InstancedScatterProps): React.JSX.Element | null — Renders resolved {@link ScatterInstance}s grouped into per-chunk, per-species GPU-instanced draws that frustum-cull independently. Species with no `resolveItem` mapping (or a `null` result) render as stylized proxy models (trunked trees, stacked pines, round bushes, faceted rocks, grass tufts); species `resolveItem` resolves to a `ModelConfig` GPU-instance the real catalog GLB instead. The one runtime foliage renderer shared by the editor's scatter preview and games that consume `resolveScatter` — never one node per placement.
+- `InstancedScatterProps` (interface): interface InstancedScatterProps — Props for {@link InstancedScatter}: the resolved instances plus chunking/instance-cap knobs.
+
 ## @jgengine/core/scatter/scatter
 
 - `ScatterArea` (interface): interface ScatterArea { w: number; d: number; center?: Vec2 } — ⚠ undocumented
@@ -2405,6 +2453,10 @@
 - `scatterCoverageSpec` (function): function scatterCoverageSpec(kind: string): ScatterCoverageSpec | null — The coverage spec for a scatterable kind, or `null` when the kind is not scatterable.
 - `scatterFootprintArea` (function): function scatterFootprintArea(object: { points?: readonly { x: number; z: number }[]; halfExtents?: { x: number; z: number }; radius?: number; }): number — Footprint area (m²) of a scatterable object: a closed path polygon (shoelace), a volume box (`halfExtents`), or a disc (`radius`). Structural so it accepts a `SceneKindObject`, an editor volume, or a scatter path without a hard type dependency.
 
+## @jgengine/core/scatter/scatterModels.draw
+
+- `ScatterModelSource` (interface): interface ScatterModelSource — One instanceable draw source harvested from a resolved GLB — geometry stays shared with the loader cache, `localMatrix` bakes the model's own transform (from its scene root) plus scale/anchor normalization.
+
 ## @jgengine/core/scatter/scatterRegion
 
 - `ClearanceOptions` (interface): interface ClearanceOptions — Controls which gameplay objects auto-repel scatter (and, for markers, flatten terrain).
@@ -2426,6 +2478,11 @@
 - `resolveScatterRegion` (function): function resolveScatterRegion(region: ScatterRegion, terrain?: ScatterTerrain, avoid?: AvoidMasks): ScatterInstance[] — Deterministic placements for one scatter region: scatter its polygon footprint at `density` items/m² (respecting `minSpacing`), clip to the polygon, thin near the edge, drop placements outside the slope/height mask, and derive item/scale/yaw from the region id + seed — so the same saved region always grows the same field. Grounds each instance on `terrain` when provided.
 - `scatterRegionEstimate` (function): function scatterRegionEstimate(path: ScenePathLike): { area: number; count: number } — Estimated placement count for a scatter path — density × polygon area, for a live UI readout.
 - `scatterRegionFromPath` (function): function scatterRegionFromPath(path: ScenePathLike): ScatterRegion | null — Builds a resolvable {@link ScatterRegion} from a scatter path (XZ polygon + rules), or null.
+
+## @jgengine/core/scatter/scatterVariants.draw
+
+- `ScatterVariantCamera` (interface): interface ScatterVariantCamera — A camera position the level pass measures from.
+- `ScatterVariantMember` (interface): interface ScatterVariantMember — A scatter placement as the level pass reads it: a stable id and a world position.
 
 ## @jgengine/core/scene/assetCatalog
 
@@ -2953,12 +3010,52 @@
 - `SpatialIndexState` (interface): interface SpatialIndexState — Plain JSON state of a {@link SpatialIndex}. Cells and their ids keep insertion order, so a restored index returns query results in the same order.
 - `createSpatialIndex` (function): function createSpatialIndex(options: SpatialIndexOptions = {}): SpatialIndex — A uniform 3D spatial hash over bounded ids: insert, move and remove them, then query a frustum, a box or a sphere without scanning every entry.
 
+## @jgengine/core/terrain/CarvedTerrain.draw
+
+- `CarvedTerrain` (function): function CarvedTerrain({ field, size, segments, center, colors, heightRange, paletteAt, paintColorAt, roughness = 0.95, metalness = 0, surfaceMaterial, receiveShadow = true, epoch = 0, ...meshProps }: CarvedTerrainProps): React.JSX.Element — Renders a `TerrainField` as a deformed ground mesh — the crater/mound view for destructible terrain. Because the geometry samples `field.sampleHeight`, a `CarvableField.carve(...)` shows as a real bowl once `epoch` changes. Pair with `InstancedBodies` to see debris resting in the crater it blasted.
+- `CarvedTerrainProps` (interface): interface CarvedTerrainProps extends Omit<ThreeElements["mesh"], "args" | "children" | "geometry" | "material"> — Props for `CarvedTerrain`: the terrain field to mesh, its size, resolution, colouring and material settings.
+
+## @jgengine/core/terrain/EditableGround.draw
+
+- `EditableGround` (function): function EditableGround({ terrain, bounds, segments = 96, version = 0, baseColor = "#3f6b3a", surfaceColors = DEFAULT_SURFACE_COLORS, }: EditableGroundProps): React.JSX.Element — Mesh an editable terrain inside its bounds, coloured by each point's painted surface; bump `version` after an edit.
+- `EditableGroundProps` (interface): interface EditableGroundProps — Props for {@link EditableGround}: the editable terrain, the bounds to mesh, resolution, a rebuild version and surface colours.
+
+## @jgengine/core/terrain/ProceduralGround.draw
+
+- `ProceduralGround` (function): function ProceduralGround({ terrain, colors, roughness = 0.94, metalness = 0, receiveShadow = true, ...meshProps }: ProceduralGroundProps): React.JSX.Element — A seeded noise-height ground mesh coloured from low to high ground.
+- `ProceduralGroundProps` (interface): interface ProceduralGroundProps extends Omit<ThreeElements["mesh"], "args" | "children" | "geometry" | "material"> — Props for {@link ProceduralGround}: noise terrain settings, height colours and material settings.
+
+## @jgengine/core/terrain/TerraformBrushCursor.draw
+
+- `TerraformBrushCursor` (function): function TerraformBrushCursor({ center, y = 0.05, radius, mode }: TerraformBrushCursorProps): React.JSX.Element | null — A ground ring showing where a terraform brush will act, coloured by its mode.
+- `TerraformBrushCursorProps` (interface): interface TerraformBrushCursorProps — Props for {@link TerraformBrushCursor}: brush centre (or null to hide), height, radius and terraform mode.
+
+## @jgengine/core/terrain/groundEdgeFade.draw
+
+- `GroundCoverageMask` (interface): interface GroundCoverageMask — How far each point of a merged ground footprint lies inside its outer edge, as a grid over world XZ: `data[row * columns + column]` is 0 on or outside the edge and 255 at `width` metres or more inside. Cell centres sit at `origin + (index + 0.5) * cell`.
+- `GroundCoverageOptions` (interface): interface GroundCoverageOptions — Options for {@link buildGroundCoverageMask}.
+- `GroundEdgeFade` (interface): interface GroundEdgeFade — Shared uniforms for {@link applyGroundEdgeFade}; `setMask` retargets every material using them without a recompile.
+- `applyGroundEdgeFade` (function): function applyGroundEdgeFade<M extends THREE.Material>(material: M, fade: GroundEdgeFade): M — Fade a ground material out at the outer edge of a {@link GroundCoverageMask}: clear on the edge, opaque `width` metres inside, with a noise-broken line. Seams between layers inside the footprint are untouched, so a district keeps crisp road/plaza edges while its outer boundary melts into the terrain. Turns on blending (depth writes stay on); give stacked layers ascending `renderOrder` so lower ones draw first. Chains any existing `onBeforeCompile`, so it composes with `createSurfaceRibbonMaterial` and plain `MeshStandardMaterial`s alike.
+- `buildGroundCoverageMask` (function): function buildGroundCoverageMask(geometries: readonly (THREE.BufferGeometry | null | undefined)[], options: GroundCoverageOptions): GroundCoverageMask | null — Rasterize the XZ footprint of ground meshes (roads, block land, parks…) into a {@link GroundCoverageMask}. Small gaps between layers are closed first, so only the merged footprint's outer edge fades: seams between layers inside it keep their full opacity. Vertical faces (curbs) add nothing. Returns `null` when the meshes cover nothing.
+- `createGroundEdgeFade` (function): function createGroundEdgeFade(): GroundEdgeFade — Uniforms for one faded footprint, shared by every ground material of one district. Starts fully opaque.
+
+## @jgengine/core/terrain/heightfieldGeometry.draw
+
+- `HeightfieldColorFn` (type): type HeightfieldColorFn = (x: number, z: number, height: number, out: THREE.Color) => void — Per-vertex color hook for {@link displaceHeightfieldGeometry}; write the tone into `out`.
+- `HeightfieldDisplaceOptions` (interface): interface HeightfieldDisplaceOptions — Options for {@link displaceHeightfieldGeometry}.
+- `HeightfieldRect` (interface): interface HeightfieldRect — XZ rectangle in world units — matches the shape of a terraform snapshot's `bounds`.
+- `displaceHeightfieldGeometry` (function): function displaceHeightfieldGeometry(geometry: THREE.BufferGeometry, sampleHeight: (x: number, z: number) => number, options: HeightfieldDisplaceOptions): void — Re-samples a `PlaneGeometry(width, depth, segments, segments).rotateX(-π/2)` heightfield mesh from a `sampleHeight` field in place: vertex Y, optional vertex color, grid central-difference normals, and an analytically maintained bounding sphere. With a dirty `region`, the work is O(region vertices) — heights/colors update inside the covering vertex window, normals inside the window plus a one-vertex ring — never a whole-mesh `computeVertexNormals`/`computeBoundingSphere` pass, which is what keeps per-frame brush stamps inside the editor's frame budget. The bounding sphere derives from the fixed plane extents plus a running height range kept on `geometry.userData`; partial passes only expand it, a full pass resets it exactly.
+
 ## @jgengine/core/terrain/pathTerrain
 
 - `PathHeightPolicy` (type): type PathHeightPolicy = | { readonly kind: "sample" } | { readonly kind: "fixed"; readonly height: number } | { readonly kind: "grade"; readonly start: number; readonly end: number } — Where a path corridor drives its centerline height: - `sample` — follow the base terrain under the centerline, so the corridor drapes level across its width while still tracking the hills the path crosses (the natural policy for a road or trail). - `fixed` — hold one constant height for the whole corridor (a level causeway, runway, or dam crest). - `grade` — interpolate linearly from `start` to `end` height along the path's arc length, a constant-slope ramp between two anchors (a switchback, a graded rail bed, an accessibility ramp).
 - `PathRetaining` (interface): interface PathRetaining — Retaining behavior for a path corridor's shoulders. A wall rises only where the corridor already cuts or fills into the surrounding ground by at least `threshold` — gentle stretches stay open — so a road through a canyon gets held banks while the same profile on flat ground does not. The wall fades in smoothly across `taper` above the threshold so it never steps on or off between adjacent samples.
 - `TerrainPathProfile` (interface): interface TerrainPathProfile — A serializable path-driven terrain modifier. The `points` centerline reshapes the heightfield across a corridor of `width`, feathering back to the surrounding ground across `shoulder`. `height` sets the centerline target (sample / fixed / grade); `depth` carves a channel below it (deepest at the centerline, easing to zero at the core edge — rivers and trenches); `retaining` raises walls where the cut/fill exceeds a threshold; `maxCut`/`maxFill` cap how far the ground may move from its base height. All fields are plain data (numbers, string enums, point arrays) so a profile round-trips through the scene document and evaluates identically at author time and runtime.
 - `withPathProfiles` (function): function withPathProfiles(base: (x: number, z: number) => number, profiles: readonly TerrainPathProfile[]): (x: number, z: number) => number — Wraps a height sampler so each authored `TerrainPathProfile` reshapes it. Profiles apply in list order (later profiles compose over earlier ones, so an intersection's last profile wins its core); each reads the running height as its surrounding ground and the original `base` for `sample` centerline heights. The returned sampler is pure and deterministic. Degenerate profiles (fewer than two points, non-positive width or length) are skipped; with no usable profile the original `base` is returned unchanged.
+
+## @jgengine/core/terrain/soilPatchMaterial.draw
+
+- `SoilPatchEdge` (interface): interface SoilPatchEdge — Optional noise-eroded edge-fade config for {@link createSoilPatchMaterial} — the patch dissolves into the ground at its border.
 
 ## @jgengine/core/terrain/terraform
 
@@ -3026,6 +3123,19 @@
 - `applyPathProfiles` (function): function applyPathProfiles(field: TerrainField, profiles: readonly TerrainPathProfile[]): TerrainField — Composes authored path profiles onto a field — the shared seam that turns a scene road/river/ramp path into flattened, graded, carved, or retained ground. Applies after `flatten` masks in `resolveTerrainField` so a corridor grades over already-leveled pads; call it directly to layer profiles onto any field a game builds by hand. Returns the field unchanged when no profile is given.
 - `raycastHeightField` (function): function raycastHeightField(sampleHeight: (x: number, z: number) => number, origin: readonly [number, number, number], direction: readonly [number, number, number], options: HeightFieldRaycastOptions): HeightFieldRayHit | null — Intersects a ray with a `sampleHeight` field by fixed-step raymarching plus bisection — the O(steps) editor/gameplay picking seam that replaces brute-force triangle raycasts against a tessellated ground mesh (tens of thousands of triangle tests per pick on a sculpt-sized grid). The ray is clipped to `bounds` on XZ first, marched at `step`, and the first above→below crossing is bisected. An origin already under the surface hits immediately at entry. Returns null when the clipped ray never crosses the surface.
 
+## @jgengine/core/terrain/terrainChunks.draw
+
+- `CHUNKED_GROUND_MIN_VERTICES` (const): const CHUNKED_GROUND_MIN_VERTICES: number — Above this many vertices a ground is meshed as LOD tiles instead of one mesh.
+
+## @jgengine/core/terrain/terrainDetailMaterial.draw
+
+- `ALL_TERRAIN_SURFACE_CLASSES` (const): const ALL_TERRAIN_SURFACE_CLASSES: 511 — Compile every surface response, for an editor viewport whose paint can change to any surface.
+- `MAX_TERRAIN_LAYER_MAPS` (const): const MAX_TERRAIN_LAYER_MAPS: 4 — At most this many painted layers sample their own scanned map; extra layers keep procedural shading.
+- `TerrainDetailMaterialHandle` (interface): interface TerrainDetailMaterialHandle — The built procedural detail terrain material, ready to mount on the ground mesh.
+- `TerrainDetailMaterialOptions` (interface): interface TerrainDetailMaterialOptions — Surface-pass inputs beyond the resolved detail config.
+- `TerrainDetailMaterialTextures` (interface): interface TerrainDetailMaterialTextures — Loaded PBR textures matching a resolved `ResolvedTerrainDetailMaterial.maps`' roles. The caller (a React component, via `useTexture`/`useLoader`) owns loading and disposal; `core` never touches `THREE.Texture` and this shell function never fetches a URL itself. Omitted AO/roughness skip sampling.
+- `TerrainLayerMap` (interface): interface TerrainLayerMap — One painted layer's scanned color map plus the world metres one tile covers.
+
 ## @jgengine/core/terrain/terrainGrade
 
 - `resolveTerrainGradeStep` (function): function resolveTerrainGradeStep(sampler: { sampleHeight(x: number, z: number): number } | ((x: number, z: number) => number), position: readonly [number, number, number], stepX: number, stepZ: number, maxClimbGrade: number): { stepX: number; stepZ: number } — Constrain an uphill heightfield step by its sampled rise/run grade. Try the full step, then X-only, then Z-only, preserving downhill travel and sliding along a traversable axis. The sampler can represent a game's terrain policy independently of the ground used for feet. This endpoint test also applies while jumping; it is not continuous terrain collision.
@@ -3051,11 +3161,58 @@
 - `surfaceRing` (function): function surfaceRing(sampleHeight: HeightSampler, center: GroundPoint, radius: number, segments = 48, options: DrapeOptions = {}): number[] — A closed circle draped on the surface — the surface-following placement guide ring under a cursor or a selected object. Returns flat `[x, y, z, ...]` world triples forming a loop (last vertex repeats the first). `segments` sets the smoothness of the ring.
 - `terrainContourGuides` (function): function terrainContourGuides(field: Pick<TerrainField, "sampleHeight">, region: GuideRegion, targetLines = 12, resolution = 128): { interval: number; summary: ElevationSummary; contours: ContourLine[] } — Convenience over {@link extractContours} that auto-picks the interval from the field's own relief: summarises the region, chooses a readable interval for `targetLines` bands, and traces the contours — the one call the editor overlay makes to turn a `TerrainField` into ready-to-draw guides. Returns an empty list for flat ground.
 
+## @jgengine/core/terrain/terrainMath.draw
+
+- `FieldGroundOptions` (interface): interface FieldGroundOptions — How to mesh a terrain field: size, resolution, centre, colours, palette, surface shading and paint.
+- `ProceduralTerrainConfig` (interface): interface ProceduralTerrainConfig — Seeded noise terrain settings: size, resolution, seed, height, mound scale, octaves, ridging and base offset.
+- `ResolvedTerrainSegments` (interface): interface ResolvedTerrainSegments — Grid segment counts along x and z.
+- `ResolvedTerrainSize` (interface): interface ResolvedTerrainSize — A {@link TerrainArea} as width and depth.
+- `TerrainArea` (type): type TerrainArea = number | readonly [width: number, depth: number] — A square side length, or a `[width, depth]` pair, in metres.
+- `TerrainHeightSampler` (type): type TerrainHeightSampler = (x: number, z: number) => number — Ground height at a world `x, z`.
+- `TerrainPaletteSampler` (type): type TerrainPaletteSampler = (x: number, z: number) => { low: string; high: string; waterline?: string } — Per-position palette override for multi-biome ground coloring — `createTerrainPaletteSampler` from `@jgengine/core/terrain/terrain` returns exactly this shape.
+- `TerrainSurfaceColorOptions` (interface): interface TerrainSurfaceColorOptions — Slope/noise surface shading laid over the height lerp so untextured ground reads like terrain instead of a smooth two-tone gradient. All knobs are optional with sane defaults; every field is a pure function of vertex position (+ `seed`), so the coloring is stable across rebuilds and tests.
+- `TerrainVertexColorOptions` (interface): interface TerrainVertexColorOptions — Ground colours from low to high, plus an optional waterline colour and height.
+
 ## @jgengine/core/terrain/terrainPaint
 
 - `TERRAIN_PAINT_COLORS` (const): const TERRAIN_PAINT_COLORS: Record<string, string> — Maps every default material id to its render color, for the sculpt mesh's per-cell surface tint.
 - `TERRAIN_PAINT_PRESETS` (const): const TERRAIN_PAINT_PRESETS: readonly TerrainPaintPreset[] — The default terrain paint palette (surface id → color) shared by the panel and the mesh.
 - `TerrainPaintPreset` (interface): interface TerrainPaintPreset — A paintable terrain material layer — a surface id plus the color it renders as.
+
+## @jgengine/core/terrain/terrainPaintColor.draw
+
+- `TerrainPaintColorSampler` (type): type TerrainPaintColorSampler = (x: number, z: number, out: THREE.Color) => boolean — Blends authored paint over the base ground color already in `out`; returns false (leaving `out` untouched) where no painted cell contributes.
+- `TerrainPaintSource` (type): type TerrainPaintSource = Pick<EditableTerrain, "layers" | "weightsAt" | "surfaceAt"> & Partial<Pick<EditableTerrain, "gridBounds" | "cols" | "rows">> — Live authored paint channels needed to sample a terrain's material stack without its heightfield. With the grid fields present, paint is filtered across neighbouring cells instead of snapping to each cell.
+- `createTerrainPaintColorSampler` (function): function createTerrainPaintColorSampler(terrain: TerrainPaintSource): TerrainPaintColorSampler — Shares layer tint, opacity and linear weighted-color blending between editor and runtime ground. Paint lives on a coarse cell grid; when the source exposes that grid, each sample smoothly blends the four surrounding cell centres (unpainted cells contribute the caller's base color in `out`), so painted paths and clearings get soft edges instead of grid-aligned stair steps.
+
+## @jgengine/core/terrain/terrainQuality.draw
+
+- `TerrainQualityContext` (const): const TerrainQualityContext: React.Context<GraphicsQuality> — The player's graphics tier as terrain materials see it; the shell provides it, `high` outside one.
+- `useTerrainQuality` (function): function useTerrainQuality(): GraphicsQuality — Graphics tier for terrain surface shading (`low` takes the cheap path).
+
+## @jgengine/core/terrain/terrainSeed
+
+- `TerrainSeed` (type): type TerrainSeed = number | string — A terrain seed: a number, or a string hashed to one.
+
+## @jgengine/core/terrain/terrainSurfaceShader.draw
+
+- `NOISE_GLSL` (const): const NOISE_GLSL: "\nuniform sampler2D jgNoiseTex;\nvec4 jgLattice(vec2 cell){ return texelFetch(jgNoiseTex, ivec2(floor(cell)) & 255, 0); }\nfloat jgHash(vec2 p){ return jgLattice(p).r; }\nfloat jgVNoise(vec2 p){\n vec2 i = floor(p); vec2 f = fract(p);\n vec2 u = f * f * (3.0 - 2.0 * f);\n i -= 256… — Value noise (`jgHash`, `jgVNoise`, `jgFbm`) every surface chunk builds on, read from {@link surfaceNoiseTexture}: a lattice of random values that the GPU's bilinear filter interpolates, so one noise sample is one texture read. An integer hash per lattice corner (four per 2D sample, eight per 3D) inlined hundreds of times made the terrain program take seconds to compile on Direct3D; the lookup compiles to a fraction of that. Lattice cells are wrapped to the 256-texel tile before the read, so far-out coordinates keep full precision. Needs the `jgNoiseTex` uniform from {@link surfaceNoiseUniforms}.
+- `PAINT_PARS_GLSL` (const): const PAINT_PARS_GLSL: "\nuniform sampler2D uPaintA;\nuniform sampler2D uPaintB;\nuniform vec2 uPaintMin;\nuniform vec2 uPaintCell;\nuniform vec2 uPaintGrid;\nuniform float uPaintWarp;\nuniform vec3 uLayerColor[8];\nuniform float uLayerClass[8];\nuniform float uLayerRough[8];\nuniform float uLayerSc… — Paint-coverage uniforms and the warped, smoothed cell lookup.
+- `SURFACE_BUMP_NORMAL_GLSL` (const): const SURFACE_BUMP_NORMAL_GLSL: "\n#ifndef JG_SURFACE_LOW\n{\n // Bump from the blended surface height (metres) via screen-space derivatives, unnormalised so the\n // tilt is the true world slope of that height field at any distance.\n vec3 jgSigX = dFdx(-vViewPosition);\n vec3 jgSigY = dFdy(-vViewP… — Micro-normal from a surface height `jgBumpH` (metres) via screen-space derivatives; goes after `normal_fragment_maps`. Skipped on the low tier.
+- `SURFACE_FUNCTIONS_GLSL` (const): const SURFACE_FUNCTIONS_GLSL: "\nfloat jgFootprint;\nfloat jgFbm2(vec2 p){ return jgVNoise(p) * 0.62 + jgVNoise(p * 2.03 + 17.3) * 0.38; }\nfloat jgFbm3o(vec2 p){ return (jgVNoise(p) * 0.5 + jgVNoise(p * 2.03 + 17.3) * 0.3 + jgVNoise(p * 4.1 + 5.9) * 0.2); }\nfloat jgBand(float freq){ return 1.0 - s… — GLSL for the terrain surface pass: per-surface procedural ground (grass, dirt, gravel, rock, sand, mud, snow, road) and the height-aware blend between painted layers. Needs `NOISE_GLSL` first. Every octave is gated by `jgBand(frequency)` so detail finer than a pixel fades to its mean instead of shimmering at distance.
+
+## @jgengine/core/terrain/terrainSurfaces.draw
+
+- `MAX_TERRAIN_PAINT_LAYERS` (const): const MAX_TERRAIN_PAINT_LAYERS: 8 — At most this many distinct paint layers reach the GPU; extra layers fold into the last slot.
+- `TerrainPaintSlot` (interface): interface TerrainPaintSlot — One GPU paint slot: authored hue plus the procedural response it renders with.
+- `TerrainPaintTextures` (interface): interface TerrainPaintTextures — GPU-side paint coverage shared by the terrain surface material; `update` after each paint stroke.
+- `TerrainPaintWeights` (interface): interface TerrainPaintWeights — Per-cell paint coverage packed for the shader: two RGBA8 planes holding up to eight layer weights.
+- `TerrainSurfaceClass` (type): type TerrainSurfaceClass = "ground" | "grass" | "dirt" | "gravel" | "rock" | "sand" | "mud" | "snow" | "road" — Procedural ground response the terrain shader renders for a painted surface id.
+- `createTerrainPaintTextures` (function): function createTerrainPaintTextures(weights: TerrainPaintWeights): TerrainPaintTextures — Uploads packed paint coverage ({@link packTerrainPaintWeights}) as two linear-filtered RGBA textures plus per-slot hue, surface class, roughness and pattern scale for the terrain surface material.
+- `packTerrainPaintWeights` (function): function packTerrainPaintWeights(source: TerrainPaintSource, into?: TerrainPaintWeights): TerrainPaintWeights | undefined — Packs a terrain's authored paint (layer stack, blend weights or hard surface ids) into per-cell coverage planes for the terrain surface shader. Returns `undefined` when the source exposes no cell grid. Pass `into` to rewrite an existing buffer in place after a paint stroke.
+- `terrainSurfaceClass` (function): function terrainSurfaceClass(surface: string): TerrainSurfaceClass — Classifies a painted surface id (e.g. `"grass"`, `"dry-grass"`, `"cobble-stone"`) into the procedural ground response the terrain shader draws for it; unknown ids get the generic `"ground"` response.
+- `terrainSurfaceClassIndex` (function): function terrainSurfaceClassIndex(cls: TerrainSurfaceClass): number — Shader index of a surface class (`jgSurface`'s `cls`); bit `1 << index` in a class mask.
+- `terrainSurfaceRoughness` (function): function terrainSurfaceRoughness(cls: TerrainSurfaceClass): number — Default roughness the terrain shades a surface class with.
 
 ## @jgengine/core/time/accrueSince
 

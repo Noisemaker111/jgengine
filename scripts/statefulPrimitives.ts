@@ -9,6 +9,13 @@ import { join, relative } from "node:path";
 
 export const SCANNED_ROOTS = ["packages/core/src", "packages/react/src"] as const;
 
+/**
+ * `.draw.*` files hold three.js resources (textures, GPU gates) rebuilt from model state, never the
+ * state itself; they lived in `@jgengine/shell`, which this scan never covered, before feature
+ * folders brought them into core.
+ */
+const DRAW_FILE = /\.draw\.tsx?$/;
+
 /** Hands the state to the caller. */
 const STATE_OUT = /\n\s+(?:readonly\s+)?(snapshot|state|toJSON|serialize|save|export)\s*[(<]/;
 
@@ -41,7 +48,7 @@ function walk(dir: string, out: string[] = []): string[] {
   for (const entry of readdirSync(dir)) {
     const path = join(dir, entry);
     if (statSync(path).isDirectory()) walk(path, out);
-    else if (/\.tsx?$/.test(entry) && !/\.test\.tsx?$/.test(entry)) out.push(path);
+    else if (/\.tsx?$/.test(entry) && !/\.test\.tsx?$/.test(entry) && !DRAW_FILE.test(entry)) out.push(path);
   }
   return out;
 }

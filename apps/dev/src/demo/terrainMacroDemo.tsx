@@ -1,7 +1,7 @@
 import { libraryTerrainMaterial } from "@jgengine/assets/catalogs/materialLibrary";
 import { environment, terrain } from "@jgengine/core/world/features";
 import type { PlayableGame } from "@jgengine/shell/registry";
-import { EnvironmentScene } from "@jgengine/shell/environment/EnvironmentScene";
+import { EnvironmentScene } from "@jgengine/core/environment/EnvironmentScene.draw";
 
 import { demoGame } from "./demoGame";
 

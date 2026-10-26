@@ -1,0 +1,38 @@
+Terrain, instancing, scatter, LOD and the environment scene each live in one `@jgengine/core` folder, model and draw together (`name.ts` model, `name.draw.tsx` three.js).
+
+### Migrate
+- `@jgengine/shell/environment/EnvironmentScene` → `@jgengine/core/environment/EnvironmentScene.draw`
+- `@jgengine/shell/environment/GroundPad` → `@jgengine/core/environment/GroundPad.draw`
+- `@jgengine/shell/environment/groundPadMath` → `@jgengine/core/environment/groundPadMath`
+- `@jgengine/shell/instancing/instanceChunks` → `@jgengine/core/instancing/instanceChunks.draw`
+- `@jgengine/shell/instancing/instanceUpload` → `@jgengine/core/instancing/instanceUpload.draw`
+- `@jgengine/shell/instancing/staticShapeInstances` → `@jgengine/core/instancing/staticShapeInstances.draw`
+- `@jgengine/shell/lod/characterLod` → `@jgengine/core/lod/characterLod`
+- `@jgengine/shell/lod/impostorCardPool` → `@jgengine/core/lod/impostorCardPool.draw`
+- `@jgengine/shell/lod/impostor` → `@jgengine/core/lod/impostor.draw`
+- `@jgengine/shell/lod/levelPass` → `@jgengine/core/lod/levelPass.draw`
+- `@jgengine/shell/lod/singleVariantLod` → `@jgengine/core/lod/singleVariantLod.draw`
+- `@jgengine/shell/scatter/InstancedScatter` → `@jgengine/core/scatter/InstancedScatter.draw`
+- `@jgengine/shell/scatter/ScatterImpostorField` → `@jgengine/core/scatter/ScatterImpostorField.draw`
+- `@jgengine/shell/scatter/scatterModels` → `@jgengine/core/scatter/scatterModels.draw`
+- `@jgengine/shell/scatter/scatterProxies` → `@jgengine/core/scatter/scatterProxies.draw`
+- `@jgengine/shell/scatter/scatterVariants` → `@jgengine/core/scatter/scatterVariants.draw`
+- `@jgengine/shell/terrain/CarvedTerrain` → `@jgengine/core/terrain/CarvedTerrain.draw`
+- `@jgengine/shell/terrain/EditableGround` → `@jgengine/core/terrain/EditableGround.draw`
+- `@jgengine/shell/terrain/ProceduralGround` → `@jgengine/core/terrain/ProceduralGround.draw`
+- `@jgengine/shell/terrain/TerraformBrushCursor` → `@jgengine/core/terrain/TerraformBrushCursor.draw`
+- `@jgengine/shell/terrain/groundEdgeFade` → `@jgengine/core/terrain/groundEdgeFade.draw`
+- `@jgengine/shell/terrain/heightfieldGeometry` → `@jgengine/core/terrain/heightfieldGeometry.draw`
+- `@jgengine/shell/terrain/random` → `@jgengine/core/terrain/terrainSeed`
+- `@jgengine/shell/terrain/soilPatchMaterial` → `@jgengine/core/terrain/soilPatchMaterial.draw`
+- `@jgengine/shell/terrain/terrainChunks` → `@jgengine/core/terrain/terrainChunks.draw`
+- `@jgengine/shell/terrain/terrainDetailMaterial` → `@jgengine/core/terrain/terrainDetailMaterial.draw`
+- `@jgengine/shell/terrain/terrainGroundColor` → `@jgengine/core/terrain/terrainGroundColor.draw`
+- `@jgengine/shell/terrain/terrainMath` → `@jgengine/core/terrain/terrainMath.draw`
+- `@jgengine/shell/terrain/terrainPaintColor` → `@jgengine/core/terrain/terrainPaintColor.draw`
+- `@jgengine/shell/terrain/terrainQuality` → `@jgengine/core/terrain/terrainQuality.draw`
+- `@jgengine/shell/terrain/terrainSurfaceShader` → `@jgengine/core/terrain/terrainSurfaceShader.draw`
+- `@jgengine/shell/terrain/terrainSurfaces` → `@jgengine/core/terrain/terrainSurfaces.draw`
+- `@jgengine/shell/worldSky` → `@jgengine/core/sky/worldSky`
+- The `@jgengine/shell/terrain`, `@jgengine/shell/scatter` and `@jgengine/shell/environment` barrels are gone: import each name from its file above (grass names from `@jgengine/core/grass/*`, `Sky` from `@jgengine/core/sky/Daylight.draw`, terrain fields from `@jgengine/core/terrain/terrain`).
+- `colorFromId` is no longer exported; it was only used by the world scene.

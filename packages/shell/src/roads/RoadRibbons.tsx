@@ -27,7 +27,7 @@ import {
   useSurfaceRibbonMaterial,
   type RibbonSurfaceScan,
 } from "./surfaceRibbonMaterial";
-import { useTerrainQuality } from "../terrain/terrainQuality";
+import { useTerrainQuality } from "@jgengine/core/terrain/terrainQuality.draw";
 
 /**
  * Decal sub-layers as small lifts above each road's authored base `elevation`, spaced by the

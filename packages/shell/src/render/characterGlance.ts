@@ -3,7 +3,7 @@ import { useLayoutEffect, useMemo, useRef } from "react";
 import * as THREE from "three";
 
 import type { GameContext } from "@jgengine/core/runtime/gameContextTypes";
-import { noteCharacterMotion } from "../lod/characterLod";
+import { noteCharacterMotion } from "@jgengine/core/lod/characterLod";
 import { useFrameWhile } from "./useFrameWhile";
 
 /**

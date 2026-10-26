@@ -13,7 +13,7 @@ import { ContinuePane, CreditsPane, GameMenu, PauseMenu, NewCharacterPane, SaveS
 import { shrinkCapture } from "@jgengine/core/save/saveThumbnail.view";
 import { useSettings } from "@jgengine/core/settings/settings.view";
 import { SettingsSection, SettingsTabs } from "@jgengine/core/settings/settingsBlocks.view";
-import { EnvironmentScene } from "@jgengine/shell/environment/EnvironmentScene";
+import { EnvironmentScene } from "@jgengine/core/environment/EnvironmentScene.draw";
 import { SceneCaptureBinding } from "@jgengine/shell/render/sceneCapture";
 import type { PlayableGame } from "@jgengine/shell/registry";
 

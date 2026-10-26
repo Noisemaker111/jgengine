@@ -8,7 +8,7 @@ import { environment, grass, terrain } from "@jgengine/core/world/features";
 import { PauseMenu } from "@jgengine/core/menu/pauseMenu.view";
 import { ConfirmDialog, ModalHost } from "@jgengine/core/dialog/modals.view";
 
-import { EnvironmentScene } from "@jgengine/shell/environment/EnvironmentScene";
+import { EnvironmentScene } from "@jgengine/core/environment/EnvironmentScene.draw";
 import type { PlayableGame } from "@jgengine/shell/registry";
 
 const HERO = "hero";

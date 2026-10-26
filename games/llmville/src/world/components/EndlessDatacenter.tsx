@@ -27,7 +27,7 @@ import {
 } from "@llmville/game/datacenter/claimMap";
 import { readPlayerPosition } from "@/runtime/playerPosition";
 import type { GameEngine } from "@/runtime/gameEngine";
-import { composeInstance, uploadInstances } from "@jgengine/shell/instancing/instanceUpload";
+import { composeInstance, uploadInstances } from "@jgengine/core/instancing/instanceUpload.draw";
 
 const FLOOR_TILE_SIZE = DATACENTER_FLOOR_TILE_CELLS * CELL_SIZE;
 const FLOOR_SPAN = WORLD_SCENERY_RADIUS * 2;

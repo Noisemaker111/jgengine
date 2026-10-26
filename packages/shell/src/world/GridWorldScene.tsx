@@ -4,7 +4,7 @@ import * as THREE from "three";
 import type { WorldFeature } from "@jgengine/core/world/features";
 import { resolveGridInstances } from "@jgengine/core/world/gridInstances";
 
-import { composeInstance, uploadInstances } from "../instancing/instanceUpload";
+import { composeInstance, uploadInstances } from "@jgengine/core/instancing/instanceUpload.draw";
 import { useDisposable } from "../render/useDisposable";
 import { TileLayerRenderer } from "./TileLayerRenderer";
 

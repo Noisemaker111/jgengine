@@ -6,7 +6,7 @@ import type { GameContext } from "@jgengine/core/runtime/gameContext";
 import { playControlsActive } from "@jgengine/core/game/controlGate";
 import { environment, terrain } from "@jgengine/core/world/features";
 import { useGame, useGameContext, useGameStoreValue } from "@jgengine/react";
-import { EnvironmentScene } from "@jgengine/shell/environment/EnvironmentScene";
+import { EnvironmentScene } from "@jgengine/core/environment/EnvironmentScene.draw";
 import type { PlayableGame } from "@jgengine/shell/registry";
 import { hostedAuthorityDemoGame } from "./hostedAuthorityDemo";
 import type { AuthorityView } from "./hostedAuthority";

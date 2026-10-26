@@ -22,6 +22,7 @@ export const CORE_DOMAIN_SKILLS: Record<string, string> = {
   devtools: MAIN,
   economy: "jgengine-gameplay",
   editor: "jgengine-editor",
+  environment: "jgengine-world",
   faction: "jgengine-world",
   flight: "jgengine-world",
   format: "jgengine-ui",

@@ -28,7 +28,7 @@ import {
 } from "@jgengine/core/weather/weather";
 import { useEngineState, type ReadableEngineStore } from "@jgengine/react/engineStore";
 
-import { EnvironmentScene } from "@jgengine/shell/environment/EnvironmentScene";
+import { EnvironmentScene } from "@jgengine/core/environment/EnvironmentScene.draw";
 import { FireSpreadLayer } from "@jgengine/core/weather/FireSpreadLayer.draw";
 import type { PlayableGame } from "@jgengine/shell/registry";
 

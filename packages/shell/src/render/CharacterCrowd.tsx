@@ -13,7 +13,7 @@ import {
   clearCrowdKind,
   noteCharacterFrame,
   noteCrowdInstances,
-} from "../lod/characterLod";
+} from "@jgengine/core/lod/characterLod";
 import {
   CharacterCrowdRegistry,
   crowdClipsOf,

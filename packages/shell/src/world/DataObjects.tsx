@@ -2,7 +2,7 @@ import { type ThreeEvent, useFrame } from "@react-three/fiber";
 import { useEffect, useMemo, useRef, type ReactNode } from "react";
 import * as THREE from "three";
 
-import { uploadInstances } from "../instancing/instanceUpload";
+import { uploadInstances } from "@jgengine/core/instancing/instanceUpload.draw";
 import { useDisposable } from "../render/useDisposable";
 
 /**

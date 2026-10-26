@@ -17,7 +17,7 @@ import { environment, grass, terrain } from "@jgengine/core/world/features";
 import { createMarkerSet, type MarkerSet } from "@jgengine/core/world/markers";
 import { useFeed } from "@jgengine/react/hooks";
 
-import { EnvironmentScene } from "@jgengine/shell/environment/EnvironmentScene";
+import { EnvironmentScene } from "@jgengine/core/environment/EnvironmentScene.draw";
 import { WorldPings } from "@jgengine/shell/world/WorldPings";
 import type { PlayableGame } from "@jgengine/shell/registry";
 

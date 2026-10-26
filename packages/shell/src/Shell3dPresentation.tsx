@@ -53,7 +53,7 @@ import { GameProvider } from "@jgengine/react/provider";
 import { ColorblindFrame, useColorblindMode } from "@jgengine/core/ui/accessibility.view";
 import { SettingsProvider, type SettingsActionView } from "@jgengine/core/settings/settings.view";
 
-import { resolveWorldSky } from "./worldSky";
+import { resolveWorldSky } from "@jgengine/core/sky/worldSky";
 import { resolveCaptureCameraConfig } from "./camera/rigResolve";
 import { rtsRotateKeysConflict } from "./camera/rigMath";
 import { pointerAimFor, pointerContextMenu, resolvePointerAim } from "@jgengine/core/input/shellPointer.draw";
@@ -84,12 +84,12 @@ import {
 } from "./camera";
 import { CullingProvider } from "./visibility/CullingProvider";
 import { BuildingRenderBudget } from "@jgengine/core/buildings/BuildingRenderBudget.draw";
-import { Sky } from "./environment";
+import { Sky } from "@jgengine/core/sky/Daylight.draw";
 import { bearingFromDirection } from "@jgengine/core/sky/daylightCycle";
 import type { DaylightModulation } from "./render/SceneLighting";
 import { colorGradeFromDocument, lightProbesFromDocument } from "@jgengine/core/editor/environment";
 import { resolveSkyLightOwnership, skyEmitsLights } from "@jgengine/core/sky/skyLightingPolicy";
-import { EnvironmentScene } from "./environment/EnvironmentScene";
+import { EnvironmentScene } from "@jgengine/core/environment/EnvironmentScene.draw";
 import { PointerProbe } from "@jgengine/core/input/PointerProbe.draw";
 import { MarqueeBox, ContextMenuView } from "@jgengine/core/input/PointerOverlays.view";
 import { createPointerService } from "@jgengine/core/input/pointerService.draw";
@@ -126,7 +126,7 @@ import { createShellKeyHandlers, ShellDebugOverlays, ShellGameUiChrome } from ".
 import { CombatPresentation } from "@jgengine/core/combat/CombatPresentation.draw";
 import { ParticleEmitters } from "./vfx/ParticleEmitters";
 import { WorldTireMarks } from "./world/WorldTireMarks";
-import { TerrainQualityContext } from "./terrain/terrainQuality";
+import { TerrainQualityContext } from "@jgengine/core/terrain/terrainQuality.draw";
 import { detectKtx2Support } from "./render/modelLoad";
 import { SceneWarmupCoverLive, SceneWarmupGate, createSceneWarmupStore } from "./render/SceneWarmupGate";
 import {

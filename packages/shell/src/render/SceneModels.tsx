@@ -24,9 +24,9 @@ import { PartMotionRig } from "./PartMotion";
 import { useCharacterGlance } from "./characterGlance";
 import { useEntityMuzzle } from "./entityMuzzle";
 import { registerEntityBody } from "./CorpseRagdolls";
-import { useTerrainQuality } from "../terrain/terrainQuality";
+import { useTerrainQuality } from "@jgengine/core/terrain/terrainQuality.draw";
 import { syncSpriteFrame } from "./spriteRender";
-import { singleVariantLevel, variantLevelModel } from "../lod/singleVariantLod";
+import { singleVariantLevel, variantLevelModel } from "@jgengine/core/lod/singleVariantLod.draw";
 import { applyMaterialOverride } from "../materialOverride";
 import {
   applyPaintTextureToMaterials,

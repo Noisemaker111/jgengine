@@ -15,7 +15,7 @@ import { readNamedSockets, type ModelNode } from "@jgengine/core/scene/modelSock
 import { POLE_LINE_KIND, POLE_LINE_SCHEMA, resolvePoleLine, type Cable, type Pole, type ResolvedPoleLine } from "@jgengine/core/world/poleLineKind";
 import type { SceneKindObject } from "@jgengine/core/scene/sceneKinds";
 
-import { composeInstance, uploadInstances } from "../instancing/instanceUpload";
+import { composeInstance, uploadInstances } from "@jgengine/core/instancing/instanceUpload.draw";
 import { useDisposable } from "../render/useDisposable";
 import { registerSceneKindRenderer, type SceneKindRenderContext } from "./sceneKindRenderers";
 

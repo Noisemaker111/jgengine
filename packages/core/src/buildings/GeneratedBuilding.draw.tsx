@@ -15,8 +15,8 @@ import type { MaterialOverrideTextures } from "@jgengine/shell/materialOverride"
 import { useDisposable } from "@jgengine/shell/render/useDisposable";
 import { BuildingKitBatch } from "./BuildingKitBatch.draw";
 import { useBuildingChunkBudget } from "./BuildingRenderBudget.draw";
-import { partitionInstances, type InstanceChunk } from "@jgengine/shell/instancing/instanceChunks";
-import { uploadInstances } from "@jgengine/shell/instancing/instanceUpload";
+import { partitionInstances, type InstanceChunk } from "@jgengine/core/instancing/instanceChunks.draw";
+import { uploadInstances } from "@jgengine/core/instancing/instanceUpload.draw";
 import { bucketBuildingParts, normalFor, outwardOffset } from "./buildingKitFit.draw";
 import { applyBuildingSurface, useBuildingSurfaceTextures } from "./buildingSurface.draw";
 

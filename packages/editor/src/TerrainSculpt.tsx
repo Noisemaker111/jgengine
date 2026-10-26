@@ -23,20 +23,18 @@ import {
   type TerraformStroke,
 } from "@jgengine/core/terrain/terraform";
 import { useGameContext } from "@jgengine/react/provider";
+import { displaceHeightfieldGeometry } from "@jgengine/core/terrain/heightfieldGeometry.draw";
+import { normalizeHeightBlend } from "@jgengine/core/terrain/terrainMath.draw";
+import { ALL_TERRAIN_SURFACE_CLASSES, createTerrainDetailMaterial } from "@jgengine/core/terrain/terrainDetailMaterial.draw";
+import { createTerrainPaintColorSampler, type TerrainPaintColorSampler } from "@jgengine/core/terrain/terrainPaintColor.draw";
 import {
-  displaceHeightfieldGeometry,
-  normalizeHeightBlend,
-  ALL_TERRAIN_SURFACE_CLASSES,
-  createTerrainDetailMaterial,
-  createTerrainPaintColorSampler,
   createTerrainPaintTextures,
   packTerrainPaintWeights,
-  type TerrainPaintColorSampler,
   type TerrainPaintTextures,
   type TerrainPaintWeights,
-  TerraformBrushCursor,
-  useTerrainQuality,
-} from "@jgengine/shell/terrain";
+} from "@jgengine/core/terrain/terrainSurfaces.draw";
+import { TerraformBrushCursor } from "@jgengine/core/terrain/TerraformBrushCursor.draw";
+import { useTerrainQuality } from "@jgengine/core/terrain/terrainQuality.draw";
 
 import { editorPerfMarks } from "./perfMarks";
 import type { EditorHostApi } from "./session";

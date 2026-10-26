@@ -6,7 +6,7 @@ import * as THREE from "three";
 import { environment, road } from "@jgengine/core/world/features";
 
 import { setSurfaceScanLoader } from "../render/surfaceScanTextures";
-import { EnvironmentScene } from "../environment/EnvironmentScene";
+import { EnvironmentScene } from "@jgengine/core/environment/EnvironmentScene.draw";
 import { JUNCTION_PAINT } from "./RoadJunctions";
 import { mixColor } from "./RoadRibbons";
 
