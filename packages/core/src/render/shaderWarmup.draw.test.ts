@@ -10,6 +10,7 @@ import {
   drawsHeld,
   firstUnlinkedDrawable,
   holdDraws,
+  linkAhead,
   warmupDraws,
   warmupDrawsToTarget,
   warmupWaitsFor,
@@ -292,6 +293,26 @@ describe("createShaderWarmup", () => {
     expect(final.phase).toBe("ready");
     expect(Date.now() - started).toBeGreaterThanOrEqual(1_000);
   }, 10_000);
+
+  test("counts the quiet time from the last link, so a long settle already counts toward it", async () => {
+    let clock = 0;
+    const { warmup } = fixture({
+      linkPerRound: [3],
+      readyAfterPolls: 30,
+      quietMs: 250,
+      pollMs: 100,
+      backgroundMs: 0,
+      now: () => clock,
+      sleep: async (ms) => {
+        clock += ms;
+      },
+    });
+    const final = await warmup.done;
+
+    expect(final.phase).toBe("ready");
+    // The settle waited 300 ms on the driver after the last link: one empty round confirms it.
+    expect(final.rounds).toBe(2);
+  });
 
   test("cancel stops the next round but resolves the promise", async () => {
     let clock = 0;
@@ -1089,5 +1110,23 @@ describe("work that draws the scene for itself", () => {
     undo();
     expect(targets[0]).toBeNull();
     expect(targets[1]).not.toBeNull();
+  });
+});
+
+describe("linkAhead", () => {
+  test("waits for a program another bake queued and the compile reused, then reads it before the draw", async () => {
+    let polls = 0;
+    let read = false;
+    const shared = {
+      isReady: () => polls++ >= 3,
+      getUniforms: () => {
+        read = true;
+      },
+    };
+    const renderer = { info: { programs: [shared] }, compile() {} };
+    await linkAhead(renderer, () => renderer.compile());
+
+    expect(polls).toBeGreaterThan(3);
+    expect(read).toBe(true);
   });
 });

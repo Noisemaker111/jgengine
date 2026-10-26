@@ -2,6 +2,7 @@ import { describe, expect, test } from "bun:test";
 import {
   encodeCollisionMesh,
   prepareCollisionMesh,
+  prepareCollisionMeshSource,
   raycastCollisionMesh,
   voxelizeToBoxes,
   type CollisionMeshData,
@@ -289,5 +290,30 @@ describe("collisionMesh raycast", () => {
     expect(near).toBeNull();
     const far = raycastCollisionMesh(mesh, [1, 0, -5], [0, 0, 1], 5, IDENTITY_POS, 0, 1, NO_TRANSLATE);
     expect(far?.distance).toBeCloseTo(4.7, 1);
+  });
+});
+
+describe("collisionMesh BVH", () => {
+  test("a dense tiled floor full of equal centroids still answers every ray with its own tile", () => {
+    const cells = 120;
+    const height = (i: number, j: number): number => ((i * 7 + j * 13) % 5) * 0.25;
+    const positions: number[] = [];
+    const indices: number[] = [];
+    for (let i = 0; i < cells; i += 1) {
+      for (let j = 0; j < cells; j += 1) {
+        const base = positions.length / 3;
+        const y = height(i, j);
+        positions.push(i, y, j, i + 1, y, j, i, y, j + 1, i + 1, y, j + 1);
+        indices.push(base, base + 2, base + 1, base + 1, base + 2, base + 3);
+      }
+    }
+    const mesh = prepareCollisionMeshSource({ positions: new Float32Array(positions), indices: new Uint32Array(indices) })!;
+    expect(mesh.indices.length / 3).toBe(cells * cells * 2);
+    for (let i = 0; i < cells; i += 1) {
+      for (let j = 0; j < cells; j += 1) {
+        const hit = raycastCollisionMesh(mesh, [i + 0.3, 10, j + 0.6], [0, -1, 0], 20, IDENTITY_POS, 0, 1, NO_TRANSLATE);
+        expect(hit?.distance).toBeCloseTo(10 - height(i, j), 5);
+      }
+    }
   });
 });

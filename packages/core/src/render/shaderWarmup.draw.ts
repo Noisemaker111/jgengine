@@ -718,12 +718,13 @@ export function warmupWaitsFor(scene: Object3D, work: Promise<unknown>): void {
 /**
  * Resolves once the programs `compile` queued have run on the GPU, without a blocking query, so
  * the draw that follows finds them linked. For one-off draws outside the scene warmup, such as the
- * environment bake. @internal
+ * environment bake. A program the compile found already queued by someone else (two bakes share
+ * their filter programs) is waited for too: the draw would otherwise stall on it. @internal
  */
 export async function linkAhead(renderer: ShaderWarmupRenderer, compile: () => void, stop: () => boolean = () => false): Promise<void> {
-  const before = renderer.info?.programs?.length ?? 0;
+  const before = new Set(renderer.info?.programs ?? []);
   compile();
-  const created = renderer.info?.programs?.slice(before) ?? [];
+  const created = (renderer.info?.programs ?? []).filter((program) => !before.has(program) || !programReady(program));
   if (created.length === 0) return;
   try {
   const sleep = (ms: number) => new Promise<void>((resolve) => setTimeout(resolve, ms));
@@ -1275,6 +1276,9 @@ export function createShaderWarmup(options: ShaderWarmupOptions): ShaderWarmup {
     return jobs;
   };
 
+  /** When a covered round last added a program. */
+  let grewAt = now();
+
   /**
    * One covered round: link what the first frame reaches, then what the frame loop drew outside
    * the scene, then everything else mounted, a batch per flush, and wait for the links off the
@@ -1305,6 +1309,8 @@ export function createShaderWarmup(options: ShaderWarmupOptions): ShaderWarmup {
     // A round with nothing new still compiles once, so a renderer that refuses fails the warmup.
     if (jobs.length === 0) jobs.push(() => withFrameTarget(() => compileObjects(options.renderer, options.scene, options.camera, [])));
     if (!(await runJobs(jobs, () => cancelled || now() >= deadline))) return "error";
+    const linked = programs();
+    if (linked > before) grewAt = now();
     const floor = now() + SHADER_WARMUP_DEFAULTS.planFloorMs;
     const settled = await settle(known, Math.max(deadline, floor));
     // Linked is not finished everywhere: draw each program once while still covered. Not while a
@@ -1314,6 +1320,7 @@ export function createShaderWarmup(options: ShaderWarmupOptions): ShaderWarmup {
     const draws = settled ? drawJobs([...objects, ...casters, ...rest], context) : [];
     markTimeline("jg:warmup:draws", { draws: draws.length, uploads: uploads.length });
     if (!(await runJobs([...uploads, ...draws], () => cancelled || now() >= deadline, true))) return "error";
+    if (programs() > linked) grewAt = now();
     publish({ rounds: state.rounds + 1, programs: programs() });
     return "ok";
   };
@@ -1362,7 +1369,7 @@ export function createShaderWarmup(options: ShaderWarmupOptions): ShaderWarmup {
     publish({ phase: "compiling" });
     const deadline = startedAt + planBudgetMs;
     await awaitHolds(deadline);
-    let quietSince = now();
+    grewAt = now();
     let previous = programs();
     while (!cancelled) {
       if ((await round(deadline)) === "error") {
@@ -1372,9 +1379,10 @@ export function createShaderWarmup(options: ShaderWarmupOptions): ShaderWarmup {
       const settled = programs();
       const grew = settled > previous;
       previous = settled;
-      quietSince = grew ? now() : quietSince;
       if (now() >= deadline) break;
-      if (!grew && now() - quietSince >= quietMs && loaderQuiet(quietMs)) break;
+      // Quiet counts from the last link a round queued, not from the round's end: the settle and
+      // draws after it added nothing, so they were quiet time already.
+      if (!grew && now() - grewAt >= quietMs && loaderQuiet(quietMs)) break;
       await sleep(pollMs);
       if (cancelled) break;
     }
