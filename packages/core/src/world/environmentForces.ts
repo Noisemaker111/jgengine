@@ -1,6 +1,6 @@
 import type { GameContext } from "../runtime/gameContextTypes";
 import type { MotionIntents } from "../runtime/motionIntents";
-import type { Vec3 } from "../vfx/particles";
+import type { Vec3 } from "./geometry";
 
 /** The game selects affected players, coupling, target bits and its acceleration limit. */
 export interface EnvironmentMotionTarget {

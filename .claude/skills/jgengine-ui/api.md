@@ -2587,7 +2587,7 @@
 - `GameInspectionCamera` (function): function GameInspectionCamera({ config: configPatch }: GameInspectionCameraProps): React.JSX.Element — Model-viewer / editor rig (#207.7, #866): left-click selects (editor), middle-drag pans, right-drag orbits, scroll zooms toward a configurable anchor. Orbits a fixed `target`; never reads player/entity state.
 - `GameInspectionCameraProps` (interface): interface GameInspectionCameraProps { config?: InspectionCameraConfig } — ⚠ undocumented · used by `GameInspectionCamera`: Model-viewer / editor rig (#207.7, #866): left-click selects (editor), middle-drag pans, right-drag orbits, scroll zooms toward a configurab…
 - `GameOrbitCamera` (function): function GameOrbitCamera({ yawRef, pitchRef, config: configPatch, followEntityId, resolveFollowTarget, onDragChange, onCameraFollow, pointerControls = false, }: GameOrbitCameraProps): React.JSX.Element — ⚠ undocumented
-- `GameOrbitCameraProps` (interface): interface GameOrbitCameraProps { yawRef: MutableRefObject<number>; pitchRef?: MutableRefObject<number>; config?: Partial<OrbitCameraConfig>; followEntityId?: string; resolveFollowTarget?: (entity: SceneEntity) => Vec3; onDragChange?: (dragging: boolean) => void; onCamera… — ⚠ undocumented
+- `GameOrbitCameraProps` (interface): interface GameOrbitCameraProps { yawRef: MutableRefObject<number>; pitchRef?: MutableRefObject<number>; config?: Partial<OrbitCameraConfig>; followEntityId?: string; resolveFollowTarget?: (entity: SceneEntity) => Xyz; onDragChange?: (dragging: boolean) => void; onCameraF… — ⚠ undocumented
 - `PlayerFovProvider` (function): function PlayerFovProvider({ config, orthographic, children, }: { config?: GameCameraConfig; orthographic: boolean; children: ReactNode; }): React.JSX.Element — ⚠ undocumented
 - `PlayerFovSlider` (function): function PlayerFovSlider(): React.JSX.Element | null — ⚠ undocumented
 - `PlayerFovState` (interface): interface PlayerFovState { fov: number; bounds: PlayerFovBounds; enabled: boolean; persist: boolean; setFov: (value: number) => void; compose: (poseFov: number, mode?: "relative" | "absolute") => number } — ⚠ undocumented
@@ -2622,7 +2622,7 @@
 
 - `CameraFollowListener` (type): type CameraFollowListener = (state: CameraFollowState) => void — ⚠ undocumented
 - `GameOrbitCamera` (function): function GameOrbitCamera({ yawRef, pitchRef, config: configPatch, followEntityId, resolveFollowTarget, onDragChange, onCameraFollow, pointerControls = false, }: GameOrbitCameraProps): React.JSX.Element — ⚠ undocumented
-- `GameOrbitCameraProps` (interface): interface GameOrbitCameraProps { yawRef: MutableRefObject<number>; pitchRef?: MutableRefObject<number>; config?: Partial<OrbitCameraConfig>; followEntityId?: string; resolveFollowTarget?: (entity: SceneEntity) => Vec3; onDragChange?: (dragging: boolean) => void; onCamera… — ⚠ undocumented
+- `GameOrbitCameraProps` (interface): interface GameOrbitCameraProps { yawRef: MutableRefObject<number>; pitchRef?: MutableRefObject<number>; config?: Partial<OrbitCameraConfig>; followEntityId?: string; resolveFollowTarget?: (entity: SceneEntity) => Xyz; onDragChange?: (dragging: boolean) => void; onCameraF… — ⚠ undocumented
 - `seedOrbitCameraTarget` (function): function seedOrbitCameraTarget(camera: Camera, target: Vector3, distance: number, height: number): void — Seed orbit target before controls mount (demo spawn at origin).
 
 ## @jgengine/shell/camera/PlayerFov
@@ -2684,25 +2684,23 @@
 
 - `InspectionCameraConfig` (interface): interface InspectionCameraConfig — Model-viewer / inspection rig (#207.7) — orbit + pan + anchored zoom around a fixed point, never reads player input.
 - `InspectionZoomAnchor` (type): type InspectionZoomAnchor = "target" | "cursor" | "center" — How scroll-zoom re-anchors the view for the inspection rig (#207.7): - `target` — dolly toward the orbit target (classic OrbitControls behavior). - `cursor` — dolly toward the point under the pointer. - `center` — dolly toward the viewport center; equivalent to `target` for an OrbitControls-driven rig, since the camera always faces `target` and that point already projects to the exact center of the viewport.
-- `ResolvedInspectionCameraConfig` (interface): interface ResolvedInspectionCameraConfig { anchor: InspectionZoomAnchor; target: Vec3; initialDistance: number; initialPosition: Vec3 | null; minDistance: number; maxDistance: number; minPolarAngle: number; maxPolarAngle: number; pan: boolean; rotateSpeed: number; zoomSpeed: numbe… — ⚠ undocumented
+- `ResolvedInspectionCameraConfig` (interface): interface ResolvedInspectionCameraConfig { anchor: InspectionZoomAnchor; target: Xyz; initialDistance: number; initialPosition: Xyz | null; minDistance: number; maxDistance: number; minPolarAngle: number; maxPolarAngle: number; pan: boolean; rotateSpeed: number; zoomSpeed: number;… — ⚠ undocumented
 
 ## @jgengine/shell/camera/orbitCameraMath
 
-- `CameraFollowState` (interface): interface CameraFollowState { entityId: string; target: Vec3; camera: Vec3; distance: number } — ⚠ undocumented
 - `DEFAULT_ORBIT_CAMERA` (const): const DEFAULT_ORBIT_CAMERA: ResolvedOrbitCameraConfig — ⚠ undocumented
 - `GAME_SIM_FRAME_PRIORITY` (const): const GAME_SIM_FRAME_PRIORITY: 0 — Run simulation/movement before orbit follow so poses are current.
 - `ORBIT_CAMERA_FRAME_PRIORITY` (const): const ORBIT_CAMERA_FRAME_PRIORITY: -1 — Orbit follow reads the latest entity pose after GAME_SIM_FRAME_PRIORITY.
-- `OrbitCameraConfig` (interface): interface OrbitCameraConfig { minDistance?: number; maxDistance?: number; targetHeight?: number; initialDistance?: number; initialHeight?: number; initialYaw?: number; initialPitch?: number; pitchClamp?: readonly [number, number]; targetOffset?: Partial<Vec3>; followL… — ⚠ undocumented
+- `OrbitCameraConfig` (interface): interface OrbitCameraConfig { minDistance?: number; maxDistance?: number; targetHeight?: number; initialDistance?: number; initialHeight?: number; initialYaw?: number; initialPitch?: number; pitchClamp?: readonly [number, number]; targetOffset?: Partial<Xyz>; followLo… — ⚠ undocumented
 - `OrbitCollisionConfig` (interface): interface OrbitCollisionConfig — Spring-arm occlusion config for the orbit rig.
-- `OrbitFollowRuntimeState` (interface): interface OrbitFollowRuntimeState { target: Vec3; camera: Vec3; lockedDistance: number | null } — ⚠ undocumented
+- `OrbitFollowRuntimeState` (interface): interface OrbitFollowRuntimeState { target: Xyz; camera: Xyz; lockedDistance: number | null } — ⚠ undocumented
 - `ResolvedOrbitCameraConfig` (interface): interface ResolvedOrbitCameraConfig — Fully resolved shell config after merging with DEFAULT_ORBIT_CAMERA.
 - `ResolvedOrbitCollision` (interface): interface ResolvedOrbitCollision — An {@link OrbitCollisionConfig} with every field resolved to a concrete value.
-- `Vec3` (interface): interface Vec3 { x: number; y: number; z: number } — ⚠ undocumented · used by `coverPoints` (@jgengine/core/ai/tacticalQueries): Returns boundary locations that are hidden from a threat.
 
 ## @jgengine/shell/camera/rigMath
 
-- `CameraPose` (interface): interface CameraPose { position: Vec3; lookAt: Vec3; fov: number } — ⚠ undocumented
-- `ChaseBoomClamp` (type): type ChaseBoomClamp = (pivot: Vec3, desired: Vec3) => Vec3 — Pulls a desired camera position in toward `pivot` when something blocks the boom.
+- `CameraPose` (interface): interface CameraPose { position: Xyz; lookAt: Xyz; fov: number } — ⚠ undocumented
+- `ChaseBoomClamp` (type): type ChaseBoomClamp = (pivot: Xyz, desired: Xyz) => Xyz — Pulls a desired camera position in toward `pivot` when something blocks the boom.
 - `ChaseRigState` (interface): interface ChaseRigState — Mutable per-rig chase state; {@link stepChase} advances it in place.
 - `ChaseSample` (interface): interface ChaseSample — What the chase rig reads from its target each frame.
 - `ChaseStepResult` (interface): interface ChaseStepResult — One frame of chase output from {@link stepChase}.
@@ -2713,7 +2711,7 @@
 - `ResolvedObserver` (interface): interface ResolvedObserver { distance: number; height: number; lookHeight: number; orbitSpeed: number } — ⚠ undocumented
 - `ResolvedShoulder` (interface): interface ResolvedShoulder { shoulderOffset: number; heightOffset: number; distance: number; fov: number } — ⚠ undocumented
 - `ResolvedSideScroll` (interface): interface ResolvedSideScroll { axis: "x" | "z"; distance: number; height: number; lookHeight: number; followSmoothing: number } — ⚠ undocumented
-- `ResolvedTopDown` (interface): interface ResolvedTopDown { height: number; pitch: number; yaw: number; offset: Vec3; followSmoothing: number } — ⚠ undocumented
+- `ResolvedTopDown` (interface): interface ResolvedTopDown { height: number; pitch: number; yaw: number; offset: Xyz; followSmoothing: number } — ⚠ undocumented
 - `StaticCameraValues` (interface): interface StaticCameraValues { followEntityId?: string | null; cinematic?: CinematicCameraConfig } — ⚠ undocumented
 
 ## @jgengine/shell/camera/shake/shakeChannel

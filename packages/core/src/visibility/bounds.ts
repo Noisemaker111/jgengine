@@ -1,6 +1,5 @@
-import type { EntityPosition } from "../scene/entityStore";
+import type { Vec3 } from "../world/geometry";
 
-export type Vec3 = EntityPosition;
 
 /**
  * World-space bounds a culler tests against. Kept as flat scalars (not tuples) so the

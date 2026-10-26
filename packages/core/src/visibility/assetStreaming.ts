@@ -1,7 +1,7 @@
 import type { StreamingSettings } from "./settings";
 import { DEFAULT_STREAMING_SETTINGS, mergeStreamingSettings } from "./settings";
 import type { VisibilityStats } from "./diagnostics";
-import { nowMs } from "./diagnostics";
+import { nowMs } from "../devtools/frame";
 
 export type AssetLoadState = "queued" | "loading" | "loaded" | "unloaded" | "error";
 

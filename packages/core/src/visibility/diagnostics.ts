@@ -54,8 +54,3 @@ export function resetCullingStats(stats: VisibilityStats): void {
   stats.cullingMs = 0;
 }
 
-/** High-resolution clock that degrades to a monotonic-ish fallback when `performance` is absent. */
-export function nowMs(): number {
-  const perf = (globalThis as { performance?: { now(): number } }).performance;
-  return perf !== undefined ? perf.now() : 0;
-}

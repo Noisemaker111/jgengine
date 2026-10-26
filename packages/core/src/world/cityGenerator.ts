@@ -36,7 +36,7 @@ import {
   type CityZoneBand,
   type CityZoneProfile,
 } from "./cityContent";
-import { fitRectInPolygon, polygonArea, polygonsOverlap, rayDistanceToRing, type Vec2 } from "./cityGeometry";
+import { fitRectInPolygon, polygonArea, polygonsOverlap, rayDistanceToRing } from "./cityGeometry";
 import { isOnRoad, nearestOnPath } from "../roads/roads";
 import { seededStreams } from "../random/rng";
 import type { WeightedParamEntry } from "../scene/sceneKinds";
@@ -47,6 +47,7 @@ import {
   type StreetNetworkContext,
   type StreetNetworkRules,
 } from "../roads/streetGenerator";
+import type { Vec2 } from "./geometry";
 
 /** City-shaped defaults for every street dial except the seed. */
 const CITY_STREET_DEFAULTS: Omit<StreetNetworkRules, "seed"> = {

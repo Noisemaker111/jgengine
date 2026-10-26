@@ -3,7 +3,6 @@ import {
   cameraLookPitch,
   compensatedFov,
   DEFAULT_ORBIT_CAMERA,
-  distanceBetween,
   orbitFollowStep,
   orbitYawFromCamera,
   resolveFollowTargetFromPosition,
@@ -12,6 +11,9 @@ import {
   seedOrbitFollowState,
   smoothBlend,
 } from "./orbitCameraMath";
+
+const distanceBetween = (a: { x: number; y: number; z: number }, b: { x: number; y: number; z: number }) =>
+  Math.hypot(a.x - b.x, a.y - b.y, a.z - b.z);
 
 describe("orbitYawFromCamera", () => {
   test("camera south of target yields forward +Z", () => {

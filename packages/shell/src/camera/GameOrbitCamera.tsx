@@ -15,12 +15,12 @@ import {
   resolveFollowTargetFromPosition,
   resolveOrbitCameraConfig,
   seedOrbitFollowState,
-  type CameraFollowState,
   type OrbitCameraConfig,
   type OrbitFollowRuntimeState,
-  type Vec3,
 } from "./orbitCameraMath";
 import { usePlayerFov } from "./PlayerFov";
+import type { Xyz } from "@jgengine/core/math/xyz";
+import type { CameraFollowState } from "@jgengine/core/camera/cameraConfig";
 
 type OrbitControlsImpl = NonNullable<ComponentRef<typeof OrbitControls>>;
 
@@ -45,7 +45,7 @@ export interface GameOrbitCameraProps {
   config?: Partial<OrbitCameraConfig>;
   followEntityId?: string;
   /** Override orbit target derived from the followed entity. */
-  resolveFollowTarget?: (entity: SceneEntity) => Vec3;
+  resolveFollowTarget?: (entity: SceneEntity) => Xyz;
   onDragChange?: (dragging: boolean) => void;
   onCameraFollow?: CameraFollowListener;
   /** Free the left mouse button for pointer verbs (marquee / click-to-move); orbit moves to the middle button. */
