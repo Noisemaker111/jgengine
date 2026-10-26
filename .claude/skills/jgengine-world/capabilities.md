@@ -735,6 +735,10 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `leaveVehicle` (function) · `import { leaveVehicle } from "@jgengine/core/world"`
 
+## light-beam — a tall glowing column marking a spot so it can be found from far away
+
+- `LightBeam` (function) · `import { LightBeam } from "@jgengine/core/map/LightBeam.draw"`
+
 ## light-probes — bake an irradiance volume from authored sky, fill and lamp inputs
 
 - `bakeIrradianceVolume` (function) · `import { bakeIrradianceVolume } from "@jgengine/core/lighting/lightProbes"`

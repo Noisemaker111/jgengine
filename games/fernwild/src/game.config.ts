@@ -13,6 +13,7 @@ import { itemTraits } from "./game/data/items";
 import { SURVIVOR } from "./game/data/survivor";
 import { entityModels, objectModels, scatterModels } from "./game/models";
 import { BAG, BAG_SLOTS, HOTBAR, HOTBAR_SLOTS } from "./game/bags";
+import { nearestSupplyDrop, supplyDropPrompts } from "./game/supplyDrops";
 import { canRun, survivorPrompts, survivorView } from "./game/survivor";
 import { openScreen } from "./game/screens";
 import { GameUI } from "./game/ui/GameUI";
@@ -65,7 +66,7 @@ export const game = defineGame({
   sceneScatterBudget: 40_000,
   persist: { mode: "manual" },
   // The camera starts behind the survivor on the authored spawn facing, so you wash up looking inland.
-  prompts: (ctx) => [...survivorPrompts(ctx), ...creaturePrompts(ctx), ...basePrompts(ctx), ...cavePrompts(ctx), ...bodyPrompts(ctx)],
+  prompts: (ctx) => [...survivorPrompts(ctx), ...creaturePrompts(ctx), ...basePrompts(ctx), ...cavePrompts(ctx), ...bodyPrompts(ctx), ...supplyDropPrompts(ctx)],
   camera: { perspective: "third", initialYaw: authoredSpawnRotation(editorLayers), frustum: { far: 2400 } },
   capture: {
     play: [{ name: "start", input: {} }],
@@ -75,6 +76,7 @@ export const game = defineGame({
       const base = baseView(ctx);
       const caves = cavesView(ctx);
       const body = bodyView(ctx);
+      const crate = nearestSupplyDrop(ctx);
       const me = ctx.scene.entity.get(ctx.player.userId);
       return {
         x: Math.round((me?.position[0] ?? 0) * 10) / 10,
@@ -149,6 +151,12 @@ export const game = defineGame({
         snow: Math.round(ctx.environment.sample(me?.position[0] ?? 0, me?.position[2] ?? 0).snow * 100),
         // 1 while a roof, ceiling or rock is overhead.
         sheltered: view.sheltered ? 1 : 0,
+        // The nearest supply crate: metres away, metres still to fall (0 once down), 1 once landed; -1, -1, 0 with none.
+        crateDistance: crate === null ? -1 : Math.round(crate.distance),
+        crateAltitude: crate === null ? -1 : Math.round(crate.altitude),
+        crateLanded: crate?.landed === true ? 1 : 0,
+        // 1 while a landed crate is in reach, so E would open it.
+        atCrate: supplyDropPrompts(ctx).length > 0 ? 1 : 0,
       };
     },
   },

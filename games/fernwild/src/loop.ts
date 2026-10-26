@@ -10,6 +10,7 @@ import { closeCreature, creaturesSave, destroyWild, feedNarcotic, forceTame, giv
 import { TAME_STATS } from "./game/data/species";
 import { LEVEL_STATS, SURVIVOR } from "./game/data/survivor";
 import { BAG, HOTBAR } from "./game/bags";
+import { callSupplyDrop, openCrate, resetSupplyDrops, supplyDropsSave, tickSupplyDrops } from "./game/supplyDrops";
 import { cancelCraft, consume, grantXp, heldItem, learn, levelStat, resetSurvivor, selectSlot, setUpSurvivor, shuttle, startCraft, survivorSave, swing, tickSurvivor, use } from "./game/survivor";
 import { setScreen, toggleScreen, type SurvivorScreen } from "./game/screens";
 
@@ -125,6 +126,16 @@ export const systems = [
     save: bodiesSave,
     reset: resetBodies,
   }),
+  defineSystem({
+    id: "supplyDrops",
+    tick: { type: "fixed", rate: 2 },
+    create(ctx) {
+      ctx.game.commands.define("openCrate", { apply: (state) => (openCrate(state), state) });
+    },
+    update: tickSupplyDrops,
+    save: supplyDropsSave,
+    reset: resetSupplyDrops,
+  }),
 ];
 
 interface Cheat {
@@ -149,8 +160,10 @@ interface Cheat {
   destroyWild?: boolean;
   /** ARK's admin settimeofday, as a whole world clock: jump to this many seconds, weather schedule and all. */
   clock?: number;
-  /** ARK's admin SetPlayerPos: stand on the ground at this x, z. */
-  teleport?: readonly [number, number];
+  /** ARK's admin SetPlayerPos: stand on the ground at this x, z, facing this yaw (radians) when given, the camera behind. */
+  teleport?: readonly [number, number] | readonly [number, number, number];
+  /** Send a supply crate from the drop site nearest the survivor, of this tier (true: the site's own odds). */
+  drop?: string | true;
 }
 
 function cheat(ctx: GameContext, input: Cheat): void {
@@ -165,9 +178,11 @@ function cheat(ctx: GameContext, input: Cheat): void {
   if (input.destroyWild === true) destroyWild(ctx);
   if (input.clock !== undefined) ctx.time.hydrate({ ...ctx.time.snapshot(), now: input.clock });
   if (input.teleport !== undefined) {
-    const [x, z] = input.teleport;
-    ctx.scene.entity.setPose(ctx.player.userId, { position: [x, ctx.world.groundHeightAt(x, z) + 0.5, z] });
+    const [x, z, facing] = input.teleport;
+    ctx.scene.entity.setPose(ctx.player.userId, { position: [x, ctx.world.groundHeightAt(x, z) + 0.5, z], ...(facing === undefined ? {} : { rotationY: facing }) });
+    if (facing !== undefined) ctx.camera.turnTo(facing);
   }
+  if (input.drop !== undefined) callSupplyDrop(ctx, input.drop === true ? undefined : input.drop);
   const me = ctx.scene.entity.get(ctx.player.userId);
   if (input.summon !== undefined && me !== null) {
     const distance = input.summon.distance ?? 4;

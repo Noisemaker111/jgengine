@@ -1823,6 +1823,11 @@
 - `ModelVariantSelectorState` (interface): interface ModelVariantSelectorState — Plain JSON state of a {@link ModelVariantSelector}: each id's current level index.
 - `createModelVariantSelector` (function): function createModelVariantSelector(config: ModelVariantLodConfig): ModelVariantSelector — Builds the per-instance distance switch for a model's variant levels.
 
+## @jgengine/core/map/LightBeam.draw
+
+- `LightBeam` (function): function LightBeam({ height = 80, radius = 0.25, color = "#cfe8ff", opacity = 0.35 }: LightBeamProps): ReactNode — A glowing column of light rising from where it is placed, for finding something from afar: a fallen body, a supply crate, an objective. Additive and unlit, so it reads by day and glows at night.
+- `LightBeamProps` (interface): interface LightBeamProps — {@link LightBeam} look.
+
 ## @jgengine/core/map/MapMarkerBeacons.draw
 
 - `MapMarkerBeacons` (function): function MapMarkerBeacons({ markers, kindStyles, height = 5 }: MapMarkerBeaconsProps): React.JSX.Element — World-space beacons for map markers (the visible in-world side of a ping): a floating diamond over a soft light beam, colored by marker kind. Wire it through `PlayableGame.WorldOverlay`.

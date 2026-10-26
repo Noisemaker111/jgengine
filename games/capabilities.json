@@ -302,6 +302,17 @@
       "intent": "measure a vehicle's jumps and air control — apex height and time, double jump, air rotation rates"
     },
     {
+      "id": "airdrops",
+      "packages": [
+        "@jgengine/core"
+      ],
+      "module": "@jgengine/core/airdrop/airdrop",
+      "domain": "airdrop",
+      "gameFacing": false,
+      "probe": null,
+      "intent": "timed supply crates falling at authored sites, tiered by level, holding rolled loot, expiring when ignored"
+    },
+    {
       "id": "ambience-zones",
       "packages": [
         "@jgengine/core"
@@ -5539,6 +5550,17 @@
       "gameFacing": false,
       "probe": null,
       "intent": "declarative start/restart run flow — the engine owns the command glue and phase sync, the game supplies pure state transitions"
+    },
+    {
+      "id": "light-beam",
+      "packages": [
+        "@jgengine/core"
+      ],
+      "module": "@jgengine/core/map/LightBeam.draw",
+      "domain": "map",
+      "gameFacing": false,
+      "probe": null,
+      "intent": "a tall glowing column marking a spot so it can be found from far away"
     },
     {
       "id": "light-probes",

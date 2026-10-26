@@ -1,0 +1,33 @@
+{
+  "steps": [
+    { "waitFor": "typeof __jgProbe === 'function' && __jgProbe().creatures > 0", "timeoutMs": 60000, "note": "arrival on the beach" },
+    { "waitFor": "__jgProbe().crateDistance > 0", "timeoutMs": 5000, "note": "crates are already down or falling across the island" },
+    { "rpc": { "method": "run_command", "name": "cheat", "input": { "clock": 1800, "teleport": [-1013.7, 569.5, 0] } }, "note": "noon, 80 m south of the south coast's first drop site, facing it" },
+    { "rpc": { "method": "run_command", "name": "cheat", "input": { "drop": "white" } }, "note": "a white crate sent from that site" },
+    { "waitFor": "__jgProbe().crateAltitude > 140", "timeoutMs": 3000, "note": "it starts 150 m up" },
+    { "rpc": { "method": "run_command", "name": "cheat", "input": { "clock": 1903 } }, "note": "103 s into its two-minute fall" },
+    { "waitFor": "__jgProbe().crateAltitude > 5 && __jgProbe().crateAltitude < 30", "timeoutMs": 3000, "note": "close to the ground now" },
+    { "assert": "__jgProbe().crateLanded", "is": 0 },
+    { "wait": 1500 },
+    { "shot": "fernwild-drop-falling", "note": "a white crate under its canopy coming down, its beam rising above it" },
+    { "rpc": { "method": "run_command", "name": "cheat", "input": { "clock": 1925 } }, "note": "past its two minutes" },
+    { "waitFor": "__jgProbe().crateLanded === 1 && __jgProbe().crateAltitude === 0", "timeoutMs": 3000, "note": "landed" },
+    { "rpc": { "method": "run_command", "name": "cheat", "input": { "teleport": [-1015.2, 647, 0] } }, "note": "walk up beside it" },
+    { "waitFor": "__jgProbe().atCrate === 1", "timeoutMs": 3000, "note": "E would open it" },
+    { "rpc": { "method": "run_command", "name": "openCrate", "input": {} }, "note": "a level 1 survivor tries it" },
+    { "assert": "__jgProbe().atCrate", "is": 1 },
+    { "wait": 800 },
+    { "shot": "fernwild-drop-locked", "note": "the crate stays shut: White crate, requires level 3" },
+    { "rpc": { "method": "run_command", "name": "cheat", "input": { "xp": 25 } }, "note": "level 3" },
+    { "rpc": { "method": "run_command", "name": "openCrate", "input": {} }, "note": "open it again" },
+    { "waitFor": "__jgProbe().atCrate === 0", "timeoutMs": 3000, "note": "emptied, the crate is gone" },
+    { "wait": 800 },
+    { "shot": "fernwild-drop-opened", "note": "the loot in the survivor's pockets, listed in the notice" },
+    { "rpc": { "method": "run_command", "name": "cheat", "input": { "clock": 3300, "teleport": [-533.7, -374.5, 0] } }, "note": "late evening, 40 m south of a snow-biome drop site" },
+    { "rpc": { "method": "run_command", "name": "cheat", "input": { "drop": "red" } }, "note": "a red crate, level 60" },
+    { "rpc": { "method": "run_command", "name": "cheat", "input": { "clock": 3430 } }, "note": "it lands after dark" },
+    { "waitFor": "__jgProbe().crateLanded === 1", "timeoutMs": 3000 },
+    { "wait": 2000 },
+    { "shot": "fernwild-drop-red-night", "note": "a red beam over the snow at night" }
+  ]
+}

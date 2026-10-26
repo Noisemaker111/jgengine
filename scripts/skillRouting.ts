@@ -8,6 +8,7 @@ export const MAIN = "jgengine";
 export const CORE_DOMAIN_SKILLS: Record<string, string> = {
   agents: "jgengine-gameplay",
   ai: "jgengine-world",
+  airdrop: "jgengine-gameplay",
   anim: "jgengine-world",
   area: "jgengine-world",
   audio: "jgengine-world",
