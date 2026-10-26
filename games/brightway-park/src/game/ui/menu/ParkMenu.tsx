@@ -3,7 +3,7 @@ import { ContinuePane, CreditsPane, SaveSlotsPane } from "@jgengine/react/gameMe
 import { GameMenu, GamePauseMenu } from "@jgengine/react/gameMenu";
 import { useGame, useGameClock, useGameStore } from "@jgengine/react/hooks";
 import { useGameContext } from "@jgengine/react/provider";
-import { useSaveSlots } from "@jgengine/react/saveSlots";
+import { useSaveSlots } from "@jgengine/react/save/saveSlots";
 import { useSettings } from "@jgengine/react/settings";
 import { KitButton } from "@jgengine/react/uiKitRoot";
 

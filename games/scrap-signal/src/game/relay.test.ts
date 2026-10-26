@@ -1,7 +1,7 @@
 import { afterEach, expect, test } from "bun:test";
 import { defineGameDefinition } from "@jgengine/core/game/defineGame";
 import { gamePhase, setGamePhase } from "@jgengine/core/game/gamePhase";
-import { memorySaveBackend } from "@jgengine/core/game/saveStore";
+import { memorySaveBackend } from "@jgengine/core/save/saveStore";
 import { createGameContext } from "@jgengine/core/runtime/gameContext";
 import { createAssetCatalog } from "@jgengine/core/scene/assetCatalog";
 import { content } from "./content";

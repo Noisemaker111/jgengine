@@ -628,9 +628,9 @@ export {
 } from "./vfx/damageDirection";
 export {
   createParticleSystem,
-  type Curve,
   type EmitterConfig,
   type ParticleBuffers,
+  type ParticleCurve,
   type ParticleSnapshot,
   type ParticleSystem,
   type Range,
@@ -936,7 +936,7 @@ export {
   type ScatterCoverageKind,
   type ScatterCoverageSpec,
 } from "./world/scatterCoverage";
-export { pickWeighted, scatterItems, type ScatterInstance } from "./world/scatterItems";
+export { scatterItems, type ScatterInstance } from "./world/scatterItems";
 export {
   SCATTER_PATH_KIND,
   clearanceZonesFrom,

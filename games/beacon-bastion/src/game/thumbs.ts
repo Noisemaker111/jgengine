@@ -1,4 +1,4 @@
-import { shrinkCapture } from "@jgengine/react/saveThumbnail";
+import { shrinkCapture } from "@jgengine/react/save/saveThumbnail";
 
 /**
  * The live frame reader a keep thumbnail comes from. `SceneCaptureBinding` binds it inside the

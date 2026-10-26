@@ -73,7 +73,7 @@ import type { Stats } from "../stats/statModifiers";
 import type { ObservableKeyedStore } from "../store/observableKeyedStore";
 import type { SnapshotModule, SnapshotViewer, WorldSnapshot } from "./worldSnapshot";
 import type { ReplicationPolicy } from "./worldProjection";
-import type { RuntimeSave, RuntimeSaveOptions } from "./runtimeSave";
+import type { RuntimeSave, RuntimeSaveOptions } from "../save/snapshotSave";
 import type { SimClock } from "../time/simClock";
 import type { SimContext } from "./simContext";
 import type { TurnLoop, TurnLoopConfig } from "../turn/turnLoop";

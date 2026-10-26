@@ -3,7 +3,7 @@ import { defineGameDefinition } from "../game/defineGame";
 import { createGameContext } from "../runtime/gameContext";
 import { advanceBehaviors, behaviorControl } from "./behaviorRuntime";
 import { pursue, patrol, type PursueBehavior } from "./behaviors";
-import { memorySaveBackend, type SaveBackend } from "../game/saveStore";
+import { memorySaveBackend, type SaveBackend } from "../save/saveStore";
 
 function context(backend?: SaveBackend, aoiRadius?: number) {
   return createGameContext({ definition: defineGameDefinition({ name: "pursuit", multiplayer: "off", persist: false }),

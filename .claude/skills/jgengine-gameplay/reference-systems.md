@@ -21,7 +21,7 @@ Explicit context `save` options override `persist`.
 
 ## Portable XP and leveling
 
-`leveling` (`@jgengine/core/game/progression`) is usable without a scheduled
+`leveling` (`@jgengine/core/progression/leveling`) is usable without a scheduled
 system or game context. Its `LevelingStatAccess` reads and replaces two
 caller-named pools in an existing store; `grantXp` writes settled XP/threshold
 and level state, then emits every reached level in ascending order. State stays

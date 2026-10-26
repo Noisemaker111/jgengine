@@ -1,7 +1,7 @@
 import { expect, test } from "bun:test";
 import { defineGameDefinition } from "../game/defineGame";
 import type { PersistConfig } from "../game/defineGame";
-import { memorySaveBackend } from "../game/saveStore";
+import { memorySaveBackend } from "../save/saveStore";
 import { createGameContext } from "./gameContext";
 import type { WorldSnapshot } from "./worldSnapshot";
 

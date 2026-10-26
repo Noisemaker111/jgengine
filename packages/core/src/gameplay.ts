@@ -216,17 +216,6 @@ export {
   type TimedFeedEntry,
 } from "./game/feed";
 export { gamePhase, setGamePhase, type GamePhase } from "./game/gamePhase";
-export {
-  GAME_SAVE_VERSION,
-  createGameSave,
-  gameSaveDigest,
-  type GameSave,
-  type GameSaveConfig,
-  type GameSaveDocument,
-  type GameSaveRng,
-  type GameSaveRngState,
-  type GameSaveSystem,
-} from "./game/gameSave";
 export { createKeyValueStore, type KeyValueStorage } from "./game/keyValueStore";
 export { createLeaderboard, type LeaderboardRow, type LeaderboardScope } from "./game/leaderboard";
 export {
@@ -317,15 +306,6 @@ export {
   type WorldOverlayProps,
 } from "./game/playableGame";
 export {
-  curve,
-  evalCurve,
-  leveling,
-  type Curve,
-  type LevelProgress,
-  type LevelingConfig,
-  type LevelingTrack,
-} from "./game/progression";
-export {
   createQuestJournal,
   defaultObjectiveLabel,
   describeTrackedQuest,
@@ -363,25 +343,6 @@ export {
   type RuleSelectionConfig,
 } from "./game/ruleSelection";
 export { createRunDraft, type RunDraft, type RunModifierOffer } from "./game/runDraft";
-export {
-  createSaveSlots,
-  type SaveSlotMeta,
-  type SaveSlotWrite,
-  type SaveSlots,
-  type SaveSlotsConfig,
-  type SaveSlotsSnapshot,
-} from "./game/saveSlots";
-export {
-  createSaveStore,
-  localSaveBackend,
-  memorySaveBackend,
-  remoteSaveBackend,
-  type SaveAutoConfig,
-  type SaveBackend,
-  type SaveStatus,
-  type SaveStore,
-  type SaveTimers,
-} from "./game/saveStore";
 export {
   createSocial,
   type FriendEntry,
@@ -663,6 +624,15 @@ export {
   type GearSlotItem,
 } from "./progression/gearScore";
 export {
+  curve,
+  evalCurve,
+  leveling,
+  type Curve,
+  type LevelProgress,
+  type LevelingConfig,
+  type LevelingTrack,
+} from "./progression/leveling";
+export {
   assertSkillTreeConfig,
   createSkillTree,
   type SkillActiveDef,
@@ -749,6 +719,36 @@ export {
   type TriggeredRuleEngine,
   type TriggeredRuleState,
 } from "./rules/triggeredRules";
+export {
+  GAME_SAVE_VERSION,
+  createGameSave,
+  gameSaveDigest,
+  type GameSave,
+  type GameSaveConfig,
+  type GameSaveDocument,
+  type GameSaveRng,
+  type GameSaveRngState,
+  type GameSaveSystem,
+} from "./save/saveDocument";
+export {
+  createSaveSlots,
+  type SaveSlotMeta,
+  type SaveSlotWrite,
+  type SaveSlots,
+  type SaveSlotsConfig,
+  type SaveSlotsSnapshot,
+} from "./save/saveSlots";
+export {
+  createSaveStore,
+  localSaveBackend,
+  memorySaveBackend,
+  remoteSaveBackend,
+  type SaveAutoConfig,
+  type SaveBackend,
+  type SaveStatus,
+  type SaveStore,
+  type SaveTimers,
+} from "./save/saveStore";
 export { createRing, ringSampleAt, type Ring, type RingConfig, type RingPhase } from "./session/ring";
 export { type RoleSpec } from "./session/roles";
 export { type RoundConfig, type RoundSnapshot } from "./session/roundState";

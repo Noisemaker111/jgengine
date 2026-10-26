@@ -42,7 +42,7 @@
     "@jgengine/core/economy/transactionLedger": [
       "scrap.ledger"
     ],
-    "@jgengine/core/game/gameSave": [
+    "@jgengine/core/save/saveDocument": [
       "scrap.save"
     ],
     "@jgengine/shell/audio/audioProbe": [

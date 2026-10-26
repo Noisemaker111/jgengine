@@ -1,6 +1,6 @@
 import { describe, expect, test } from "bun:test";
 
-import type { LevelingStatAccess } from "../game/progression";
+import type { LevelingStatAccess } from "./leveling";
 import { assertXpCurve, defineXpCurve } from "./xpCurve";
 
 const power = defineXpCurve({ growth: "power", step: 100, growthRate: 1.5, maxLevel: 12, round: "floor" });

@@ -1,7 +1,7 @@
-import { createGameSave, type GameSave, type GameSaveSystem } from "@jgengine/core/game/gameSave";
-import { localSaveBackend } from "@jgengine/core/game/saveStore";
-import { createSaveSlots, type SaveSlots } from "@jgengine/core/game/saveSlots";
-import { gameSaveSlotSource, refreshSaveSlots, type SaveSlotsRefresh } from "@jgengine/core/game/saveSlotIndex";
+import { createGameSave, type GameSave, type GameSaveSystem } from "@jgengine/core/save/saveDocument";
+import { localSaveBackend } from "@jgengine/core/save/saveStore";
+import { createSaveSlots, type SaveSlots } from "@jgengine/core/save/saveSlots";
+import { gameSaveSlotSource, refreshSaveSlots, type SaveSlotsRefresh } from "@jgengine/core/save/saveSlotIndex";
 import type { PathFollowState } from "@jgengine/core/nav/pathFollow";
 import { perContext } from "@jgengine/core/runtime/perContext";
 import type { GameContext } from "@jgengine/core/runtime/gameContext";

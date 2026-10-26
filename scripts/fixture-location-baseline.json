@@ -33,7 +33,6 @@
   "packages/shell/src/hudInputBoundary.test.ts",
   "apps/desktop/project/listGames.test.ts",
   "apps/desktop/project/processManager.test.ts",
-  "apps/dev/devSavePlugin.test.ts",
   "scripts/agent-bootstrap.test.ts",
   "scripts/agent-worktree.test.ts",
   "scripts/browser-fixture-cleanup.test.ts",

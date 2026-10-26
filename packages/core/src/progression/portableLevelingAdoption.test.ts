@@ -1,5 +1,5 @@
 import { describe, expect, test } from "bun:test";
-import { leveling, type LevelingStatAccess } from "./progression";
+import { leveling, type LevelingStatAccess } from "./leveling";
 
 interface SavedPool {
   current: number;

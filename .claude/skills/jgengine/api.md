@@ -494,14 +494,7 @@
 - `HostedWorldStore` (interface): interface HostedWorldStore — Narrow persistence seam for a hosted world — the {@link HostedWorldRecord} counterpart of `HostPersistence`. Backends implement it (memory/file/sql/convex); the session never names one. A stateful host loads once and saves on a cadence; a stateless host reconstructs from `load()` each invocation.
 - `HostedWorldSync` (type): type HostedWorldSync = | { kind: "baseline"; revision: number; snapshot: WorldSnapshot } | { kind: "diff"; diff: WorldDiff } — A client replication pull: a full baseline (first sync / fell behind) or a diff since the client's cursor.
 - `SyncHostedWorldStore` (interface): interface SyncHostedWorldStore — Already-loaded store adapter: synchronous reads, with synchronous or asynchronous writes.
-- `asyncMemoryWorldStore` (function): function asyncMemoryWorldStore(seed?: HostedWorldRecord): HostedWorldStore — Async in-process store for callers exercising the production persistence contract.
 - `createHostedWorldSessionAsync` (function): function createHostedWorldSessionAsync<TAssetRef extends ModelAssetRef, TMultiplayer>(options: Omit<HostedWorldSessionOptions<TAssetRef, TMultiplayer>, "store"> & { store: HostedWorldStore }): Promise<HostedWorldSession> — Build a hosted session from an asynchronous persistence backend.
-
-## @jgengine/core/runtime/hostedWorldStore
-
-- `HostedWorldRecord` (interface): interface HostedWorldRecord — One hosted world's persisted authoritative state — the unit a {@link HostedWorldStore} loads and saves.
-- `HostedWorldStore` (interface): interface HostedWorldStore — Narrow persistence seam for a hosted world — the {@link HostedWorldRecord} counterpart of `HostPersistence`. Backends implement it (memory/file/sql/convex); the session never names one. A stateful host loads once and saves on a cadence; a stateless host reconstructs from `load()` each invocation.
-- `SyncHostedWorldStore` (interface): interface SyncHostedWorldStore — Already-loaded store adapter: synchronous reads, with synchronous or asynchronous writes.
 
 ## @jgengine/core/runtime/inputRecorder
 
@@ -571,21 +564,6 @@
 - `PredictionSnapshot` (type): type PredictionSnapshot<S> = { confirmedTick: number; confirmed: S; predicted: S; records: PredictionRecord<S>[]; } — Serializable prediction state containing the confirmation baseline and pending input history.
 - `PredictionStep` (type): type PredictionStep<S> = (state: S, input: InputFrame, dt: number) => S — Deterministic state transition used to advance one predicted input frame.
 - `createPredictionBuffer` (function): function createPredictionBuffer<S>(config: { initial: S; step: PredictionStep<S>; maxTicks: number; startTick?: number; dt?: number; /** Error above which a caller should snap its rendered pose to the reconciled result. */ snapThreshold?: number; }): PredictionBuffer<S> — Keeps local input predictions ahead of the last server confirmation. Reconciliation replaces the confirmed state and deterministically replays unconfirmed inputs through the supplied step function. `maxTicks` bounds retained work and memory; dropped inputs are folded into the confirmed baseline.
-
-## @jgengine/core/runtime/runtimeSave
-
-- `RuntimeSave` (interface): interface RuntimeSave — Whole-world save/load bound to a live world and a pluggable backend. `save()` captures `target.state()` and writes it; `load()` reads it back and calls `target.restore()`. Older targets use `snapshot()`/`hydrate()`. In `autosave` mode it also writes on a trailing timer while the world keeps changing. Named slots, versioned migration, and offline↔cloud (backend swap) all come for free from the underlying save store.
-- `RuntimeSaveConfig` (interface): interface RuntimeSaveConfig — How {@link createRuntimeSave} is wired — the live world `target`, the `backend` it persists through, and optional mode/slot/versioning/cadence knobs.
-- `RuntimeSaveMode` (type): type RuntimeSaveMode = "autosave" | "manual" — `"autosave"` writes a fresh capture on a trailing timer while the world changes (at most once per `autosaveMs`, so a never-idle world still persists); `"manual"` writes only on an explicit `save()`/`checkpoint()` — the save-point / quest-trigger model.
-- `RuntimeSaveOptions` (type): type RuntimeSaveOptions = Omit<RuntimeSaveConfig, "target"> — {@link RuntimeSaveConfig} without `target` — what a host (`createGameContext`) accepts to build `ctx.game.save` and bind it to the context itself.
-- `RuntimeSaveSlot` (interface): interface RuntimeSaveSlot — One stored slot as a save-select menu reads it: the world document a {@link RuntimeSave.load | load} of that slot would restore, and the wall-clock time (ms) it was written. The document is a plain {@link WorldSnapshot}, so a game reads its own systems out of it (commander, mission, playtime, thumbnail) with the same keys `ctx.state()` writes.
-- `RuntimeSaveTarget` (interface): interface RuntimeSaveTarget — The narrow slice of a live `GameContext` a runtime save reads and writes — a `GameContext` satisfies it directly (`ctx.state`/`ctx.restore`/`ctx.subscribe`). Depending on this instead of the full context keeps the save controller a deep, decoupled module: it captures and restores the *whole* opted-in world without knowing any subsystem.
-- `createRuntimeSave` (function): function createRuntimeSave(config: RuntimeSaveConfig): RuntimeSave — Bridge a live world to a pluggable save backend: whole-state capture/restore with autosave, save points, named slots, and versioned migration — the same call for offline (localStorage) and cloud (Convex), only the `backend` differs. The game keeps control of *when* it saves (the `mode` plus explicit `checkpoint()` calls from quests/areas) and *when* it restores (`load()` on boot), so any save mechanic — continuous autosave, manual save points, checkpoint triggers — is expressible without new engine code.
-
-## @jgengine/core/runtime/save
-
-- `SaveConfig` (type): type SaveConfig = | "none" | { auto: string; scope: SaveScope; } — ⚠ undocumented · used by `persistServerSnapshot` (@jgengine/convex): Write a snapshot back: server row, dirty player profiles, dirty chunks, and drained leaderboard increments, all under `save`.
-- `SaveScope` (type): type SaveScope = "player" | "chunks" | "player+chunks" — ⚠ undocumented
 
 ## @jgengine/core/runtime/simContext
 

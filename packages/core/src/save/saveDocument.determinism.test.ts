@@ -26,7 +26,7 @@ import { createNearAgents } from "../sim/nearAgents";
 import { createOffScreenWorld, type OffScreenResidentSpec } from "../sim/offScreen";
 import { resolveRoutine } from "../sim/routine";
 import { createRideSystem } from "../sim/rides";
-import { createGameSave, type GameSave } from "./gameSave";
+import { createGameSave, type GameSave } from "./saveDocument";
 import { memorySaveBackend, type SaveBackend } from "./saveStore";
 
 const DT = 1 / 30;

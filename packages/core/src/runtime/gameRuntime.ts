@@ -1,4 +1,4 @@
-import type { SaveConfig } from "./save";
+import type { SaveConfig } from "../save/saveConfig";
 import type { CommandAccess, CommandDef, CommandScope } from "./commandRunner";
 import { resolveCommandScope, runCommand } from "./commandRunner";
 import {

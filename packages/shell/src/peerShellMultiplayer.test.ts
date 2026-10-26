@@ -1,7 +1,7 @@
 import { describe, expect, test } from "bun:test";
 import { p2p } from "@jgengine/core/runtime/adapter";
 import { createGameContext, type GameContext } from "@jgengine/core/runtime/gameContext";
-import type { HostedWorldRecord } from "@jgengine/core/runtime/hostedWorldStore";
+import type { HostedWorldRecord } from "@jgengine/core/save/hostedWorldStore";
 import { createWsBackend } from "@jgengine/ws/createWsBackend";
 import { loopbackPipe, type HostRouter } from "@jgengine/ws/hostRouter";
 import { broadcastChannelSignaling, createPeerHost, encodePeerSignal, type PeerSignaling } from "@jgengine/ws/peer";

@@ -2,9 +2,9 @@ import { describe, expect, test } from "bun:test";
 import { createElement } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 
-import { createSaveStore, memorySaveBackend } from "@jgengine/core/game/saveStore";
+import { createSaveStore, memorySaveBackend } from "@jgengine/core/save/saveStore";
 
-import { useSaveStore } from "./save";
+import { useSaveStore } from "./saveStore";
 
 describe("useSaveStore", () => {
   test("renders the live value and status from the store", () => {

@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, test } from "bun:test";
-import { createGameSave } from "@jgengine/core/game/gameSave";
-import { memorySaveBackend } from "@jgengine/core/game/saveStore";
+import { createGameSave } from "@jgengine/core/save/saveDocument";
+import { memorySaveBackend } from "@jgengine/core/save/saveStore";
 import type { HeadlessRunner } from "@jgengine/core/runtime/headlessRunner";
 import { createBossState } from "@jgengine/core/ai/director/boss";
 

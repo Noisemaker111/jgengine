@@ -1,6 +1,6 @@
 import { describe, expect, test } from "bun:test";
 import { createRegionField, type RegionDef } from "@jgengine/core/world/regions";
-import { pickWeighted, scatterItems, type ScatterLayer } from "@jgengine/core/world/scatterItems";
+import { scatterItems, type ScatterLayer } from "@jgengine/core/world/scatterItems";
 
 interface Tag {
   props: readonly ScatterLayer[];
@@ -32,15 +32,5 @@ describe("scatterItems", () => {
   test("honors the max cap", () => {
     const field = createRegionField({ regions: REGIONS, seed: 5 });
     expect(scatterItems(field, AREA, layersFor, { max: 20 }).length).toBeLessThanOrEqual(20);
-  });
-
-  test("pickWeighted respects weights and edges", () => {
-    const entries = [
-      { value: "a", weight: 1 },
-      { value: "b", weight: 3 },
-    ];
-    expect(pickWeighted(entries, 0.1)).toBe("a");
-    expect(pickWeighted(entries, 0.9)).toBe("b");
-    expect(pickWeighted([], 0.5)).toBeNull();
   });
 });

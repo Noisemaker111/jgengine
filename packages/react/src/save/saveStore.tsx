@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useSyncExternalStore } from "react";
 
-import type { SaveStatus, SaveStore } from "@jgengine/core/game/saveStore";
+import type { SaveStatus, SaveStore } from "@jgengine/core/save/saveStore";
 
 /** The reactive slice of a {@link SaveStore} returned by {@link useSaveStore} — the live value plus bound save actions, all re-rendering on change. */
 export interface SaveStoreView<T> {

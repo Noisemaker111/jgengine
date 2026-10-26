@@ -36,9 +36,9 @@ import {
   viewerOrigin,
   visibleEntityIds,
 } from "./worldProjection";
-import { createRuntimeSave, type RuntimeSaveOptions, type RuntimeSaveTarget } from "./runtimeSave";
+import { createRuntimeSave, type RuntimeSaveOptions, type RuntimeSaveTarget } from "../save/snapshotSave";
 import { isOffline } from "./adapter";
-import { localSaveBackend, memorySaveBackend } from "../game/saveStore";
+import { localSaveBackend, memorySaveBackend } from "../save/saveStore";
 import { createSimClock } from "../time/simClock";
 import { createSimContext } from "./simContext";
 import { seededRng } from "../random/rng";

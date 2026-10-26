@@ -1,6 +1,6 @@
 import type { GameContext } from "@jgengine/core/runtime/gameContext";
-import { formatSavePlaytime } from "@jgengine/core/game/saveSlotIndex";
-import { createSaveSlots } from "@jgengine/core/game/saveSlots";
+import { formatSavePlaytime } from "@jgengine/core/save/saveSlotIndex";
+import { createSaveSlots } from "@jgengine/core/save/saveSlots";
 import { requestSceneThumbnail } from "@jgengine/shell/render/sceneCaptureRequest";
 
 import { ORBIT_SLOTS, ORBIT_SLOT_LABEL, orbitProfile, readOrbitSave, writeOrbitSave, type OrbitSave } from "./session/save";

@@ -7,7 +7,7 @@ import {
   type SaveBackend,
   type SaveTimers,
 } from "./saveStore";
-import type { KeyValueStorage, KeyValueStorageFailure } from "./keyValueStore";
+import type { KeyValueStorage, KeyValueStorageFailure } from "../game/keyValueStore";
 
 function memoryStorage(initial: Record<string, string> = {}): KeyValueStorage & { data: Record<string, string> } {
   const data = { ...initial };

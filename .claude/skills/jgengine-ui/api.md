@@ -1025,9 +1025,6 @@
 - `SUITS` (const): const SUITS: readonly Suit[] — Suits in canonical order (clubs, diamonds, hearts, spades).
 - `SaveSlotCard` (function): function SaveSlotCard({ slot, now = Date.now, recent = false, onSelect, onDelete, loadLabel, className, style, }: SaveSlotCardProps): ReactNode — One save slot as a card: a captured thumbnail, the character name, playtime, the game's progress summary and when it was saved — or, for an empty slot, an empty slot with a New Game affordance. Deleting takes two presses: the first swaps the button for a confirm pair, so a mis-click cannot erase a run.
 - `SaveSlotCardProps` (interface): interface SaveSlotCardProps — Props for {@link SaveSlotCard}.
-- `SaveSlotMenu` (function): function SaveSlotMenu({ model, onLoad, onNew, onDelete, onContinue, title = "Select Save", theme, now = Date.now, metaIcons, className, style, }: SaveSlotMenuProps): ReactNode — A drop-in save-select / profile menu that renders a {@link SaveSlots} index as a column of cards. A filled slot shows its name, the free-string `meta` the game supplied as chips, and a relative "saved" time, with Load and Delete actions; an empty slot shows a "New Game" affordance. A top-level Continue button targets the newest save (`model.mostRecent()`). This is a starting-point game-front-end building block — the game owns final art, wording, and layout; reskin it with {@link SaveSlotMenuTheme} or HudTheme CSS vars. Presentation only: all state lives in the core model, and `meta` keys are never interpreted.
-- `SaveSlotMenuProps` (interface): interface SaveSlotMenuProps — Props for {@link SaveSlotMenu}.
-- `SaveSlotMenuTheme` (interface): interface SaveSlotMenuTheme — Reskin tokens for {@link SaveSlotMenu}. All optional — each falls back to a HudTheme var then a neutral default.
 - `SaveSlotsPane` (function): function SaveSlotsPane({ model, onContinue, onLoad, onNew, onDelete, heading = "Save slots", now = Date.now, columns = 2, className, style, }: SaveSlotsPaneProps): ReactNode — The slot grid for a {@link GameMenu} detail pane: Continue over the most recent save, then one card per slot. Arrow keys move between cards, Enter loads, and the grid scrolls inside its own pane rather than the page.
 - `SaveSlotsPaneProps` (interface): interface SaveSlotsPaneProps — Props for {@link SaveSlotsPane}.
 - `SaveStoreView` (interface): interface SaveStoreView<T> — The reactive slice of a {@link SaveStore} returned by {@link useSaveStore} — the live value plus bound save actions, all re-rendering on change.
@@ -2138,22 +2135,19 @@
 
 - `RotateDeviceScreen` (function): function RotateDeviceScreen({ title = "Turn your device", description, requiredOrientation = "landscape", accent = "var(--jg-accent, #8ea2ff)", icon, className, style, }: { /** Short headline. */ title?: string; /** One concise explanatory line. Defaults from `requiredOrientation`. */ description?: … — Full-viewport, non-dismissible rotate-device gate shown when a game requires an orientation the device isn't in.
 
-## @jgengine/react/save
+## @jgengine/react/save/saveSlots
+
+- `relativeSavedAt` (function): function relativeSavedAt(savedAt: number, nowMs = Date.now()): string — Turn a `savedAt` timestamp into a compact relative label ("just now", "4m ago", "2d ago"). Presentation-only helper — the model stores raw ms.
+- `useSaveSlots` (function): function useSaveSlots(model: SaveSlots): SaveSlotMeta[] — Subscribe to a {@link SaveSlots} index and re-render on any change (write, clear, rename, restore). Returns the live list of slots in menu order. Wire it into a save-select screen and mutate the model in event handlers — the menu re-renders itself.
+
+## @jgengine/react/save/saveStore
 
 - `SaveStoreView` (interface): interface SaveStoreView<T> — The reactive slice of a {@link SaveStore} returned by {@link useSaveStore} — the live value plus bound save actions, all re-rendering on change.
 - `useSaveStore` (function): function useSaveStore<T>(store: SaveStore<T>, options?: { load?: boolean }): SaveStoreView<T> — Bind a {@link SaveStore} to React: returns the live `value` and `status` and re-renders whenever either changes. By default it calls `load()` once on mount (pass `{ load: false }` to hydrate yourself). The same hook works for offline (localStorage) and cloud (Convex/DB) saves — only the store's backend differs.
 
-## @jgengine/react/saveSlots
+## @jgengine/react/save/saveThumbnail
 
-- `SaveSlotMenu` (function): function SaveSlotMenu({ model, onLoad, onNew, onDelete, onContinue, title = "Select Save", theme, now = Date.now, metaIcons, className, style, }: SaveSlotMenuProps): ReactNode — A drop-in save-select / profile menu that renders a {@link SaveSlots} index as a column of cards. A filled slot shows its name, the free-string `meta` the game supplied as chips, and a relative "saved" time, with Load and Delete actions; an empty slot shows a "New Game" affordance. A top-level Continue button targets the newest save (`model.mostRecent()`). This is a starting-point game-front-end building block — the game owns final art, wording, and layout; reskin it with {@link SaveSlotMenuTheme} or HudTheme CSS vars. Presentation only: all state lives in the core model, and `meta` keys are never interpreted.
-- `SaveSlotMenuProps` (interface): interface SaveSlotMenuProps — Props for {@link SaveSlotMenu}.
-- `SaveSlotMenuTheme` (interface): interface SaveSlotMenuTheme — Reskin tokens for {@link SaveSlotMenu}. All optional — each falls back to a HudTheme var then a neutral default.
-- `relativeSavedAt` (function): function relativeSavedAt(savedAt: number, nowMs = Date.now()): string — Turn a `savedAt` timestamp into a compact relative label ("just now", "4m ago", "2d ago"). Presentation-only helper — the model stores raw ms.
-- `useSaveSlots` (function): function useSaveSlots(model: SaveSlots): SaveSlotMeta[] — Subscribe to a {@link SaveSlots} index and re-render on any change (write, clear, rename, restore). Returns the live list of slots in menu order. Wire it into a save-select screen and mutate the model in event handlers — the menu re-renders itself.
-
-## @jgengine/react/saveThumbnail
-
-- `SaveThumbnailOptions` (interface): interface SaveThumbnailOptions — Turning a rendered frame into the thumbnail a save card shows. Saves keep a small JPEG/WebP data URL (a couple of KB), not a full-resolution PNG, so a slot index still fits in local storage.
+- `SaveThumbnailOptions` (interface): interface SaveThumbnailOptions — How {@link shrinkCapture} sizes and encodes a capture.
 - `shrinkCapture` (function): function shrinkCapture(capture: string | null, options: SaveThumbnailOptions = {}): Promise<string | null> — Downscale a captured frame (a data URL from `captureCanvas`) to a save-card thumbnail. Resolves to the thumbnail data URL, or `null` when the capture could not be decoded (a blank or tainted frame).
 
 ## @jgengine/react/scoreboard

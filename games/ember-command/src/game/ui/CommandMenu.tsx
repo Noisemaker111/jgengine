@@ -6,10 +6,10 @@ import { GameIcon } from "@jgengine/react/gameIcons";
 import { useGame } from "@jgengine/react/hooks";
 import { useMenuNav } from "@jgengine/react/menuNav";
 import { useGameContext } from "@jgengine/react/provider";
-import { relativeSavedAt, useSaveSlots } from "@jgengine/react/saveSlots";
+import { relativeSavedAt, useSaveSlots } from "@jgengine/react/save/saveSlots";
 import { useSettings } from "@jgengine/react/settings";
 import { SettingsSection, SettingsTabs } from "@jgengine/react/settingsBlocks";
-import type { SaveSlotMeta } from "@jgengine/core/game/saveSlots";
+import type { SaveSlotMeta } from "@jgengine/core/save/saveSlots";
 import { creditsForSourceIds } from "@jgengine/assets/credits";
 import { mergeCredits } from "@jgengine/core/game/credits";
 

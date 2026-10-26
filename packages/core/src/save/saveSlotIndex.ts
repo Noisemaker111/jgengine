@@ -1,4 +1,4 @@
-import type { GameSave, GameSaveDocument } from "./gameSave";
+import type { GameSave, GameSaveDocument } from "./saveDocument";
 import type { SaveSlotMeta, SaveSlots } from "./saveSlots";
 
 /**

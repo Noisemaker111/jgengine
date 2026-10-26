@@ -1,8 +1,9 @@
 import * as THREE from "three";
 
+import { seededRng } from "@jgengine/core/random/rng";
 import { grassBladeDensity, type GrassLook } from "@jgengine/core/world/grassKind";
 
-import { createSeededRandom, hashNoise2, seedToUint32, type TerrainSeed } from "../terrain/random";
+import { hashNoise2, seedToUint32, type TerrainSeed } from "../terrain/random";
 import { resolveTerrainSize, type TerrainArea, type TerrainHeightSampler } from "../terrain/terrainMath";
 
 /** Side of one base grass cell in metres: the unit of seeded tuft generation. Coarser stream nodes cover power-of-two blocks of cells. */
@@ -118,7 +119,7 @@ export interface GrassTuftTemplate {
 export function createGrassTuftTemplate(bake: ResolvedGrassBake): GrassTuftTemplate {
   const { segments, look } = bake;
   const blades = look.tuftBlades;
-  const random = createSeededRandom(`${bake.seed}/tuft`);
+  const random = seededRng(`${bake.seed}/tuft`);
   const position: number[] = [];
   const uv: number[] = [];
   const bladeOffset: number[] = [];
@@ -271,7 +272,7 @@ export function bakeGrassNode(bake: ResolvedGrassBake, level: number, ix: number
       const x0 = -halfW + cx * GRASS_CELL_SIZE, z0 = -halfD + cz * GRASS_CELL_SIZE;
       const w = Math.min(halfW, x0 + GRASS_CELL_SIZE) - x0, d = Math.min(halfD, z0 + GRASS_CELL_SIZE) - z0;
       const full = bake.tuftsPerM2 * Math.max(0, w) * Math.max(0, d);
-      const u = createSeededRandom(`${bake.seed}|${cx}|${cz}`)();
+      const u = seededRng(`${bake.seed}|${cx}|${cz}`)();
       total += cellCount(full, u, share);
       cells.push({ cx, cz, x0, z0, w, d, full });
     }
@@ -289,7 +290,7 @@ export function bakeGrassNode(bake: ResolvedGrassBake, level: number, ix: number
   let maxReach = 0;
   let n = 0;
   for (const cell of cells) {
-    const random = createSeededRandom(`${bake.seed}|${cell.cx}|${cell.cz}`);
+    const random = seededRng(`${bake.seed}|${cell.cx}|${cell.cz}`);
     const u = random();
     const count = cellCount(cell.full, u, share);
     for (let j = 0; j < count; j += 1) {

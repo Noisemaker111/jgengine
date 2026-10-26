@@ -1,4 +1,4 @@
-import { defaultKeyValueStorage, reportStorageFailure, type KeyValueStorage, type KeyValueStorageErrorPolicy } from "./keyValueStore";
+import { defaultKeyValueStorage, reportStorageFailure, type KeyValueStorage, type KeyValueStorageErrorPolicy } from "../game/keyValueStore";
 
 /**
  * The one async storage seam a save store persists through. Every backend

@@ -1,6 +1,6 @@
 import { test, expect } from "bun:test";
 import { createGameRuntime } from "./gameRuntime";
-import { parseSaveAutoMs, saveScopeIncludesPlayer } from "./save";
+import { parseSaveAutoMs, saveScopeIncludesPlayer } from "../save/saveConfig";
 import { createRuntimeSnapshot, markPlayerDirty } from "./snapshot";
 import { runCommand } from "./commandRunner";
 

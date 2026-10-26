@@ -1,5 +1,5 @@
-import { createGameSave, type GameSave, type GameSaveDocument, type GameSaveSystem } from "@jgengine/core/game/gameSave";
-import { localSaveBackend, type SaveBackend } from "@jgengine/core/game/saveStore";
+import { createGameSave, type GameSave, type GameSaveDocument, type GameSaveSystem } from "@jgengine/core/save/saveDocument";
+import { localSaveBackend, type SaveBackend } from "@jgengine/core/save/saveStore";
 import { perContext } from "@jgengine/core/runtime/perContext";
 import type { GameContext } from "@jgengine/core/runtime/gameContext";
 import type { StoreHandle } from "@jgengine/core/store/defineStore";

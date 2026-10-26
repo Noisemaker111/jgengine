@@ -1,9 +1,9 @@
 import { type CSSProperties, type ReactNode, useCallback, useEffect, useState } from "react";
-import { createSaveSlots } from "@jgengine/core/game/saveSlots";
-import { formatSavePlaytime, gameSaveSlotSource, refreshSaveSlots } from "@jgengine/core/game/saveSlotIndex";
+import { createSaveSlots } from "@jgengine/core/save/saveSlots";
+import { formatSavePlaytime, gameSaveSlotSource, refreshSaveSlots } from "@jgengine/core/save/saveSlotIndex";
 import { useGame } from "@jgengine/react/hooks";
 import { useGameContext } from "@jgengine/react/provider";
-import { useSaveSlots } from "@jgengine/react/saveSlots";
+import { useSaveSlots } from "@jgengine/react/save/saveSlots";
 import { useStore } from "@jgengine/react/store";
 
 import { startedStore } from "../../commands";

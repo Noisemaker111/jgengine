@@ -1,5 +1,5 @@
 import { createElement, useEffect, useRef, useState, type CSSProperties, type ReactNode, type Ref } from "react";
-import type { SaveSlotMeta } from "@jgengine/core/game/saveSlots";
+import type { SaveSlotMeta } from "@jgengine/core/save/saveSlots";
 import { GameCursor } from "@jgengine/react/gameCursor";
 import { KitButton, KitPanel } from "@jgengine/react/uiKitRoot";
 import { kitCutPath } from "@jgengine/react/kitFrame";

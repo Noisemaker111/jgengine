@@ -1,10 +1,10 @@
 import { useEffect, useMemo, useState, useSyncExternalStore, type CSSProperties, type ReactNode } from "react";
 
 import { defineGameDefinition } from "@jgengine/core/game/defineGame";
-import { createGameSave } from "@jgengine/core/game/gameSave";
-import { createSaveSlots } from "@jgengine/core/game/saveSlots";
-import { gameSaveSlotSource, refreshSaveSlots } from "@jgengine/core/game/saveSlotIndex";
-import { memorySaveBackend } from "@jgengine/core/game/saveStore";
+import { createGameSave } from "@jgengine/core/save/saveDocument";
+import { createSaveSlots } from "@jgengine/core/save/saveSlots";
+import { gameSaveSlotSource, refreshSaveSlots } from "@jgengine/core/save/saveSlotIndex";
+import { memorySaveBackend } from "@jgengine/core/save/saveStore";
 import { mergeCredits } from "@jgengine/core/game/credits";
 import { createAssetCatalog } from "@jgengine/core/scene/assetCatalog";
 import type { GameContext } from "@jgengine/core/runtime/gameContext";
@@ -14,7 +14,7 @@ import { LoadingScreen } from "@jgengine/react/loadingScreen";
 import { MenuScreen } from "@jgengine/react/menuScreen";
 import { useMenuNav } from "@jgengine/react/menuNav";
 import { PauseMenu } from "@jgengine/react/modals";
-import { SaveSlotMenu } from "@jgengine/react/saveSlots";
+import { SaveSlotsPane } from "@jgengine/react/gameMenuSaves";
 import { useSettings } from "@jgengine/react/settings";
 import { SettingsSection, SettingsTabs } from "@jgengine/react/settingsBlocks";
 import { TitleMenu } from "@jgengine/react/titleMenu";
@@ -231,9 +231,9 @@ function DemoSaves({ open }: { open: boolean }): ReactNode {
           pointerEvents: "auto",
         }}
       >
-        <SaveSlotMenu
+        <SaveSlotsPane
           model={slotIndex}
-          title="Saves"
+          heading="Saves"
           onLoad={(slot) => {
             void save.switchSlot(slot.id).then(() => screenStore.set("play"));
           }}

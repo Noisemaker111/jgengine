@@ -1,4 +1,4 @@
-import type { Curve } from "@jgengine/core/game/progression";
+import type { Curve } from "@jgengine/core/progression/leveling";
 import type { VehicleSpec } from "@jgengine/core/physics/vehicleSpec";
 import { createUpgradeTree, type UpgradeBuy, type UpgradeNodeDef, type UpgradeState } from "@jgengine/core/progression/upgrades";
 import type { GameContext } from "@jgengine/core/runtime/gameContext";

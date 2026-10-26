@@ -7,10 +7,10 @@ import { useViewportScrollLock } from "@jgengine/react/gameMenu";
 import { useGame, useGameClock } from "@jgengine/react/hooks";
 import { useMenuNav } from "@jgengine/react/menuNav";
 import { useGameContext } from "@jgengine/react/provider";
-import { useSaveSlots } from "@jgengine/react/saveSlots";
+import { useSaveSlots } from "@jgengine/react/save/saveSlots";
 import { useStore } from "@jgengine/react/store";
 import { EntityPreview } from "@jgengine/shell/render/EntityPreview";
-import type { SaveSlotMeta } from "@jgengine/core/game/saveSlots";
+import type { SaveSlotMeta } from "@jgengine/core/save/saveSlots";
 import { creditsForSourceIds } from "@jgengine/assets/credits";
 import { mergeCredits } from "@jgengine/core/game/credits";
 

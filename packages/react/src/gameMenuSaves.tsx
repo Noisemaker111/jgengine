@@ -1,12 +1,12 @@
 import { useState, type CSSProperties, type ReactNode } from "react";
 
 import type { CreditsSection } from "@jgengine/core/game/credits";
-import { formatSavePlaytime } from "@jgengine/core/game/saveSlotIndex";
-import type { SaveSlotMeta, SaveSlots } from "@jgengine/core/game/saveSlots";
+import { formatSavePlaytime } from "@jgengine/core/save/saveSlotIndex";
+import type { SaveSlotMeta, SaveSlots } from "@jgengine/core/save/saveSlots";
 
 import { hudDuration, hudEase, hudFont, hudSpace, hudType } from "./hudTokens";
 import { useMenuNav } from "./menuNav";
-import { relativeSavedAt, useSaveSlots } from "./saveSlots";
+import { relativeSavedAt, useSaveSlots } from "./save/saveSlots";
 
 /**
  * The save slot `meta` key a card reads as its thumbnail: a data URL or image URL captured when the

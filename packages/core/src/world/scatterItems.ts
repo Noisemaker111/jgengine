@@ -92,17 +92,3 @@ export function scatterItems<T>(
   }
   return out;
 }
-
-/** Weighted pick from opaque entries; `roll` in [0, 1). Returns null when empty. */
-export function pickWeighted<T>(entries: readonly { value: T; weight: number }[], roll: number): T | null {
-  if (entries.length === 0) return null;
-  let total = 0;
-  for (const entry of entries) total += entry.weight;
-  const pick = roll * total;
-  let acc = 0;
-  for (const entry of entries) {
-    acc += entry.weight;
-    if (pick <= acc) return entry.value;
-  }
-  return entries[entries.length - 1]!.value;
-}

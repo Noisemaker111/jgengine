@@ -1,5 +1,5 @@
-import { createSaveSlots } from "@jgengine/core/game/saveSlots";
-import { formatSavePlaytime } from "@jgengine/core/game/saveSlotIndex";
+import { createSaveSlots } from "@jgengine/core/save/saveSlots";
+import { formatSavePlaytime } from "@jgengine/core/save/saveSlotIndex";
 import { decodeSave, SAVE_KEY, type ParkSave } from "./persistence";
 
 const num = (save: ParkSave, key: string): number => {

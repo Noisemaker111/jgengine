@@ -11,7 +11,7 @@ export interface Range {
 }
 
 /** A per-life start→end curve (linear interpolation from birth to death). */
-export interface Curve {
+export interface ParticleCurve {
   start: number;
   end: number;
 }
@@ -84,13 +84,13 @@ export interface EmitterConfig {
   /** Linear velocity damping per second, `0` (none) to `1` (stop instantly). Default 0. */
   drag?: number;
   /** Particle radius over life. Default `{ start: 1, end: 1 }`. */
-  size?: Curve;
+  size?: ParticleCurve;
   /** `0xRRGGBB` color at birth. Default `0xffffff`. */
   colorStart?: number;
   /** `0xRRGGBB` color at death. Default = `colorStart`. */
   colorEnd?: number;
   /** Opacity over life, each `0..1`. Default `{ start: 1, end: 0 }` (fade out). */
-  alpha?: Curve;
+  alpha?: ParticleCurve;
   /** Seed for deterministic births; retuning it resets future randomness. */
   seed?: string | number;
   /** Shared physical field descriptors, sampled as cosmetic acceleration; at most eight per particle. */

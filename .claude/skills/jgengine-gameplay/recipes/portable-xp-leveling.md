@@ -15,7 +15,7 @@ bun add @jgengine/core
 import {
   leveling,
   type LevelingStatAccess,
-} from "@jgengine/core/game/progression";
+} from "@jgengine/core/progression/leveling";
 ```
 
 ## Caller-owned save data

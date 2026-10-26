@@ -2,7 +2,7 @@ import type { ConvexReactClient } from "convex/react";
 import type { FunctionReference } from "convex/server";
 import { anyApi } from "convex/server";
 
-import { remoteSaveBackend, type SaveBackend } from "@jgengine/core/game/saveStore";
+import { remoteSaveBackend, type SaveBackend } from "@jgengine/core/save/saveStore";
 
 /** The three Convex functions a save backend calls — a `query` that returns the stored string (or `null`) and two `mutation`s. Point them at your app's own module, or lean on the default `saves.*` convention. */
 export interface ConvexSaveFunctions {

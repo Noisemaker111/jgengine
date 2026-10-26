@@ -1,7 +1,7 @@
 import { describe, expect, test } from "bun:test";
 import { createGameContext } from "@jgengine/core/runtime/gameContext";
 import { gamePhase } from "@jgengine/core/game/gamePhase";
-import { memorySaveBackend } from "@jgengine/core/game/saveStore";
+import { memorySaveBackend } from "@jgengine/core/save/saveStore";
 import { game } from "../../game.config";
 import { loop, normalizeAfterRestore } from "../../loop";
 import { content } from "../content";

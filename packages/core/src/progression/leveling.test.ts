@@ -1,5 +1,5 @@
 import { describe, expect, test } from "bun:test";
-import { curve, evalCurve, leveling, type LevelingStatAccess } from "@jgengine/core/game/progression";
+import { curve, evalCurve, leveling, type LevelingStatAccess } from "@jgengine/core/progression/leveling";
 
 describe("evalCurve shapes", () => {
   test("const ignores input", () => {

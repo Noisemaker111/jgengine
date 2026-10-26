@@ -1,14 +1,18 @@
 import { afterEach, describe, expect, test } from "bun:test";
-import { mkdtempSync, mkdirSync, readFileSync, rmSync, writeFileSync } from "node:fs";
-import { tmpdir } from "node:os";
+import { mkdirSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 
-import { EDITOR_SCENE_FILENAME, handleSaveRequest } from "./devSavePlugin";
+import { EDITOR_SCENE_FILENAME, gamesSrcDir, handleSaveRequest } from "./devSavePlugin";
+
+const SCRATCH = join(import.meta.dir, "../../../.scratch");
+mkdirSync(SCRATCH, { recursive: true });
 
 const roots: string[] = [];
+let made = 0;
 
 function makeGamesDir(gameId: string, files: Record<string, string>): string {
-  const root = mkdtempSync(join(tmpdir(), "jg-dev-save-"));
+  const root = join(SCRATCH, `jg-dev-save-${process.pid}-${made++}`);
+  mkdirSync(root, { recursive: true });
   roots.push(root);
   const src = join(root, gameId, "src");
   mkdirSync(src, { recursive: true });
@@ -28,11 +32,11 @@ describe("dev save endpoint", () => {
     const lane = makeGamesDir("beacon-bastion", {});
     const json = JSON.stringify({ version: 1, markers: [], volumes: [], paths: [], annotations: [] });
     const body = JSON.stringify({ kind: "editor-document", gameId: "beacon-bastion", json });
-    const result = handleSaveRequest(gamesDir, body, join(lane, "beacon-bastion"));
+    const result = handleSaveRequest(gamesSrcDir(gamesDir, join(lane, "beacon-bastion")), body);
     expect(result).toMatchObject({ ok: true, path: join(lane, "beacon-bastion", "src", EDITOR_SCENE_FILENAME) });
     expect(readFileSync(join(gamesDir, "beacon-bastion", "src", EDITOR_SCENE_FILENAME), "utf8")).toBe("{}\n");
     // Another game still saves to games/<id>.
-    expect(handleSaveRequest(gamesDir, body, join(lane, "other-game"))).toMatchObject({ ok: true, path: join(gamesDir, "beacon-bastion", "src", EDITOR_SCENE_FILENAME) });
+    expect(handleSaveRequest(gamesSrcDir(gamesDir, join(lane, "other-game")), body)).toMatchObject({ ok: true, path: join(gamesDir, "beacon-bastion", "src", EDITOR_SCENE_FILENAME) });
   });
 
   test("editor document round-trips to games/<id>/src", () => {
@@ -45,7 +49,7 @@ describe("dev save endpoint", () => {
       annotations: [],
     });
     const result = handleSaveRequest(
-      gamesDir,
+      gamesSrcDir(gamesDir),
       JSON.stringify({ kind: "editor-document", gameId: "proving-grounds", json }),
     );
     expect(result.ok).toBe(true);
@@ -59,7 +63,7 @@ describe("dev save endpoint", () => {
     const gamesDir = makeGamesDir("real-game", {});
     for (const gameId of ["missing", "../evil", "a/../../b"]) {
       const result = handleSaveRequest(
-        gamesDir,
+        gamesSrcDir(gamesDir),
         JSON.stringify({ kind: "editor-document", gameId, json: "{}" }),
       );
       expect(result.ok).toBe(false);
@@ -72,7 +76,7 @@ describe("dev save endpoint", () => {
       "tables.ts": `export const ENEMIES = {\n  bandit: { hp: 100, speed: 4 },\n};\n`,
     });
     const result = handleSaveRequest(
-      gamesDir,
+      gamesSrcDir(gamesDir),
       JSON.stringify({
         kind: "tunables",
         gameId: "proving-grounds",

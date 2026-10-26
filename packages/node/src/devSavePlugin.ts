@@ -1,5 +1,5 @@
 import { existsSync, readdirSync, readFileSync, writeFileSync } from "node:fs";
-import { join, resolve } from "node:path";
+import { basename, join, resolve } from "node:path";
 import type { IncomingMessage, ServerResponse } from "node:http";
 
 import { rewriteTunableExport } from "@jgengine/core/devtools/rewriteTunables";
@@ -15,7 +15,26 @@ export const EDITOR_SCENE_FILENAME = "editor.scene.json";
 
 const MAX_BODY_BYTES = 8 * 1024 * 1024;
 
-type SrcDirResolver = (gameId: string) => string | null;
+/** Maps a save request's game id to the game `src/` directory it writes into, or `null` for an unknown game. */
+export type SrcDirResolver = (gameId: string) => string | null;
+
+const GAME_ID_PATTERN = /^[a-z0-9][a-z0-9-]*$/;
+
+/**
+ * `devSavePlugin` resolver for a checkout of many games: `<gamesDir>/<id>/src`, or `<servedDir>/src`
+ * when `servedDir` (the checkout a `--game-dir` run serves) is that game, so a save from a lane's
+ * worktree lands in the worktree.
+ *
+ * @internal
+ */
+export function gamesSrcDir(gamesDir: string, servedDir?: string): SrcDirResolver {
+  const served = servedDir === undefined || servedDir.trim() === "" ? null : servedDir.replace(/[\\/]+$/, "");
+  return (gameId) => {
+    if (!GAME_ID_PATTERN.test(gameId)) return null;
+    const dir = served !== null && basename(served) === gameId ? join(served, "src") : join(gamesDir, gameId, "src");
+    return existsSync(dir) ? dir : null;
+  };
+}
 
 function saveEditorDocument(dir: string, json: string): SaveEndpointResponse {
   const document = importEditorDocumentJson(json);
