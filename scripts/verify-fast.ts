@@ -480,7 +480,8 @@ const GATE_COST: Readonly<Record<string, number>> = {
 export function fastSteps(plan: Plan, options: { skillApi?: boolean } = {}): Step[] {
   const steps: Step[] = [];
   for (const dir of plan.typechecks) steps.push({ name: `typecheck ${dir}`, command: ["bun", `--cwd=${dir}`, "run", "check-types"] });
-  if (plan.tests.length > 0) steps.push({ name: `test ${plan.tests.length} file(s)`, command: ["bun", "test", "--timeout", "20000", ...plan.tests] });
+  const testStep = `test ${plan.tests.length} file(s)`;
+  if (plan.tests.length > 0) steps.push({ name: testStep, command: ["bun", "test", "--timeout", "20000", ...plan.tests] });
   const gates = options.skillApi === true ? plan.gates : plan.gates.filter((gate) => gate !== "check-skill-api");
   for (const gate of gates) {
     const extra = GATE_ARGS[gate] ?? [];
@@ -492,7 +493,9 @@ export function fastSteps(plan: Plan, options: { skillApi?: boolean } = {}): Ste
     steps.push({
       name: `boot probe ${plan.boots.join(" ")}`,
       command: ["bun", "games/scripts/capabilities-probe.ts", ...plan.boots],
-      needs: [`provision ${plan.boots.join(" ")}`],
+      // After the suite: booting beside a 500 s test run starved the page and a late-mounting probe
+      // (harbor-heat's audio) read absent, though it passes on an idle machine.
+      needs: [`provision ${plan.boots.join(" ")}`, ...(plan.tests.length > 0 ? [testStep] : [])],
       cost: 40,
     });
   }

@@ -662,6 +662,8 @@ describe("local boots", () => {
       "bun games/scripts/capabilities-probe.ts scrap-signal",
     ]);
     expect(steps[1]?.needs).toEqual(["provision scrap-signal"]);
+    const withTests = fastSteps({ changed: [], typechecks: [], tests: ["a.test.ts"], gates: [], unattributed: [], suites: [], boots: ["scrap-signal"] });
+    expect(withTests.find((step) => step.name === "boot probe scrap-signal")?.needs).toEqual(["provision scrap-signal", "test 1 file(s)"]);
   });
 
   test("the games job's capability gates run here with CI's arguments", () => {

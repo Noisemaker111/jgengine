@@ -20,6 +20,7 @@ import { spawnSync } from "node:child_process";
 import { readFileSync, rmSync, writeFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import { foldFragments, readFragments } from "./changelog-fragments";
+import { deploySite, publishThenDeploy, runStep } from "./deploy-site";
 import { awaitPublish } from "./release-await";
 
 export interface ChangelogSections {
@@ -318,7 +319,7 @@ function main(): void {
 /**
  * The rest of a release that a lane used to do by hand: commit, hand the PR to `land` (which pushes,
  * opens it and arms auto-merge), wait for the merge, fast-forward `main`, then wait for the Publish
- * run and answer with the version. `--wait` is what keeps a lane out of `Start-Sleep 480; gh run view`.
+ * run, deploy jgengine.com from the released commit, and answer with the version. `--wait` is what keeps a lane out of `Start-Sleep 480; gh run view`.
  */
 async function landAndAwait(root: string, version: string): Promise<never> {
   const git = (args: readonly string[]) => spawnSync("git", [...args], { cwd: root, encoding: "utf8" });
@@ -352,14 +353,12 @@ async function landAndAwait(root: string, version: string): Promise<never> {
     console.error(`release: fast-forwarding main failed: ${forward.error}`);
     process.exit(1);
   }
-  const result = await awaitPublish({
-    version,
-    sha: forward.sha,
-    gh,
-    log: (line) => console.log(line),
-  });
-  console.log(result.line);
-  process.exit(result.code);
+  // The site deploy runs here, not in CI, because its build needs game models.
+  const code = await publishThenDeploy(
+    () => awaitPublish({ version, sha: forward.sha, gh, log: (line) => console.log(line) }),
+    () => deploySite(root, runStep, forward.sha),
+  );
+  process.exit(code);
 }
 
 /**
