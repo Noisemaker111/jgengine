@@ -8,7 +8,7 @@ import type { GameContext } from "@jgengine/core/runtime/gameContextTypes";
 import { parseModelHiddenNodes } from "@jgengine/core/editor/modelNodeVisibility";
 import { createSpriteClipPlayer } from "@jgengine/core/render/sprite2d";
 import { reportFallbackSeam, type FallbackSeam } from "@jgengine/core/devtools/fallbackSeams";
-import { createModelVariantSelector } from "@jgengine/core/world/modelLod";
+import { createModelVariantSelector } from "@jgengine/core/lod/modelLod";
 import { useOptionalGameContext } from "@jgengine/react/provider";
 
 import { detectKtx2Support, sharedGltfLoader } from "./modelLoad";
@@ -26,7 +26,7 @@ import { useEntityMuzzle } from "./entityMuzzle";
 import { registerEntityBody } from "./CorpseRagdolls";
 import { useTerrainQuality } from "../terrain/terrainQuality";
 import { syncSpriteFrame } from "./spriteRender";
-import { singleVariantLevel, variantLevelModel } from "./singleVariantLod";
+import { singleVariantLevel, variantLevelModel } from "../lod/singleVariantLod";
 import { applyMaterialOverride } from "../materialOverride";
 import {
   applyPaintTextureToMaterials,

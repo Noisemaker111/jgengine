@@ -630,18 +630,6 @@
 - `WorldSyncFrame` (type): type WorldSyncFrame = | { kind: "baseline"; revision: number; snapshot: WorldSnapshot } | { kind: "diff"; revision: number; diff: WorldDiff } — A revision-stamped world baseline or compact diff sent to a server-authoritative client.
 - `createTransportSessionId` (function): function createTransportSessionId(): string — Fresh id for one client session's join/leave pair (see {@link GameRuntimeTransport.joinServer}).
 
-## @jgengine/core/runtime/visibility
-
-- `CameraVisibilityContext` (interface): interface CameraVisibilityContext — A camera's position and reach, as seen by the visibility system.
-- `DEFAULT_VISIBILITY_SETTINGS` (const): const DEFAULT_VISIBILITY_SETTINGS: Readonly<VisibilityDefaults> — Default `VisibilityDefaults` a `VisibilitySystem` falls back to when unspecified.
-- `VisibilityBounds` (interface): interface VisibilityBounds — Sphere bounds used for visibility/streaming distance checks.
-- `VisibilityDecision` (interface): interface VisibilityDecision — Result of evaluating one object against the active cameras this tick.
-- `VisibilityDefaults` (interface): interface VisibilityDefaults — Baseline policy settings a `VisibilitySystem` is constructed with.
-- `VisibilityId` (type): type VisibilityId = string | number — Stable identifier for a visibility-tracked object or camera.
-- `VisibilityObject` (interface): interface VisibilityObject — An entity/asset tracked by `VisibilitySystem.evaluate`.
-- `VisibilityOverrides` (interface): interface VisibilityOverrides — Per-object escape hatches that bypass or tune the default visibility policy.
-- `VisibilityPoint` (interface): interface VisibilityPoint — World-space point; `z` is optional for 2D adapters.
-
 ## @jgengine/core/runtime/worldChannel
 
 - `WorldClientFrame` (type): type WorldClientFrame = | { t: "join"; isNew: boolean } | { t: "leave" } | { t: "command"; name: string; input: unknown } | { t: "input"; frame: InputFrame } — Client→host frame: a player's session verbs. What a transport marshals upstream.

@@ -5,7 +5,7 @@ import { Group, type Object3D, type SkinnedMesh } from "three";
 import type { ModelConfig } from "@jgengine/core/game/playableGame";
 import { parseModelHiddenNodes } from "@jgengine/core/editor/modelNodeVisibility";
 
-import { registerCharacterRig, unregisterCharacterRig } from "./characterLod";
+import { registerCharacterRig, unregisterCharacterRig } from "../lod/characterLod";
 import { measureLocalBounds } from "./measureBounds";
 import { detectKtx2Support, sharedGltfLoader } from "./modelLoad";
 import { cloneModelScene, disposeModelScene, modelPlacementTransform } from "./modelRender";

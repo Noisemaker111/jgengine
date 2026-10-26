@@ -13,7 +13,7 @@ import {
   clearCrowdKind,
   noteCharacterFrame,
   noteCrowdInstances,
-} from "./characterLod";
+} from "../lod/characterLod";
 import {
   CharacterCrowdRegistry,
   crowdClipsOf,

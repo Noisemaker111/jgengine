@@ -3059,6 +3059,16 @@
 
 - `InputSink` (interface): interface InputSink — Where the local player's per-frame input goes: discarded in single-player, sent to the authoritative host under `authority: "server"`.
 
+## @jgengine/shell/lod/characterLod
+
+- `CharacterLodPolicy` (interface): interface CharacterLodPolicy — Distance policy a character model's {@link ModelLodConfig} resolves to; every distance is metres.
+- `CharacterLodTier` (type): type CharacterLodTier = "full" | "half" | "quarter" | "crowd" — What a character's distance from the camera costs it this frame.
+- `DEFAULT_CHARACTER_LOD` (const): const DEFAULT_CHARACTER_LOD: CharacterLodPolicy — The engine's default character tiers: full under 15 m, half under 40 m, GPU crowd beyond 25 m.
+- `characterLodInterval` (function): function characterLodInterval(tier: CharacterLodTier): number — Frames between pose updates for a tier: 1, 2, 4, and `0` meaning "never" for the crowd tier.
+- `characterLodRate` (function): function characterLodRate(tier: CharacterLodTier): number — Share of frames a tier poses the rig: 1, 0.5, 0.25, and 0 once the GPU crowd draws it.
+- `characterLodTier` (function): function characterLodTier(distance: number, config: ModelLodConfig | undefined, previous?: CharacterLodTier): CharacterLodTier — The tier a character at `distance` falls in. Passing the tier it held last frame applies the crowd hysteresis, so a character walking along the crowd boundary does not swap representation every frame.
+- `characterRigTier` (function): function characterRigTier(distance: number, config: ModelLodConfig | undefined): CharacterLodTier — The tier a character poses its own rig on, ignoring the crowd path. A crowd character whose batch is full falls back to this, so an over-cap crowd draws every member on its own rig instead of dropping the ones past the cap.
+
 ## @jgengine/shell/map
 
 - `BakeTerrainMapOptions` (interface): interface BakeTerrainMapOptions { resolution?: number; landLow?: readonly [number, number, number]; landHigh?: readonly [number, number, number]; water?: readonly [number, number, number] } — ⚠ undocumented · used by `bakeTerrainMap`: Bake a top-down image of a `TerrainField` (or `RegionField`) over `bounds` for the react `Minimap` / `WorldMap` background.
@@ -3294,16 +3304,6 @@
 - `findGlanceRig` (function): function findGlanceRig(scene: THREE.Object3D): GlanceRig | null — Finds the head (and neck) of a humanoid or animal rig by bone name: KayKit `head`, Mixamo `mixamorigHead`, Rocketbox `Bip01 Head`, Quaternius `Head`. End markers (`HeadTop_End`) are skipped. Returns `null` when no head bone exists.
 - `useCharacterGlance` (function): function useCharacterGlance(scene: THREE.Object3D, enabled: boolean, ctx: GameContext | null, instanceId: string | undefined, maxCameraDistance: number): void — Default glance for a rigged character: its head turns toward the local player when they come close, from any angle in front of it, and turns back when they leave. The local player's own model never glances. `maxCameraDistance` skips the work for characters too far away to read.
 
-## @jgengine/shell/render/characterLod
-
-- `CharacterLodPolicy` (interface): interface CharacterLodPolicy — Distance policy a character model's {@link ModelLodConfig} resolves to; every distance is metres.
-- `CharacterLodTier` (type): type CharacterLodTier = "full" | "half" | "quarter" | "crowd" — What a character's distance from the camera costs it this frame.
-- `DEFAULT_CHARACTER_LOD` (const): const DEFAULT_CHARACTER_LOD: CharacterLodPolicy — The engine's default character tiers: full under 15 m, half under 40 m, GPU crowd beyond 25 m.
-- `characterLodInterval` (function): function characterLodInterval(tier: CharacterLodTier): number — Frames between pose updates for a tier: 1, 2, 4, and `0` meaning "never" for the crowd tier.
-- `characterLodRate` (function): function characterLodRate(tier: CharacterLodTier): number — Share of frames a tier poses the rig: 1, 0.5, 0.25, and 0 once the GPU crowd draws it.
-- `characterLodTier` (function): function characterLodTier(distance: number, config: ModelLodConfig | undefined, previous?: CharacterLodTier): CharacterLodTier — The tier a character at `distance` falls in. Passing the tier it held last frame applies the crowd hysteresis, so a character walking along the crowd boundary does not swap representation every frame.
-- `characterRigTier` (function): function characterRigTier(distance: number, config: ModelLodConfig | undefined): CharacterLodTier — The tier a character poses its own rig on, ignoring the crowd path. A crowd character whose batch is full falls back to this, so an over-cap crowd draws every member on its own rig instead of dropping the ones past the cap.
-
 ## @jgengine/shell/render/crowdBatch
 
 - `poseTimeOffset` (function): function poseTimeOffset(id: string): number — A stable non-zero time offset for a member with no recorded pose, so a crowd is not in lockstep.
@@ -3393,7 +3393,6 @@
 ## @jgengine/shell/render/modelRender
 
 - `MaterialCache` (interface): interface MaterialCache { materials: THREE.MeshStandardMaterial[]; seedColor: THREE.Color } — ⚠ undocumented
-- `ModelShadowMode` (type): type ModelShadowMode = "cast" | "receive" | "both" | "none" — Shadow participation applied to every mesh of a cloned model; mirrors `ModelConfig.shadows`.
 - `PAINT_TEXTURE_SIZE` (const): const PAINT_TEXTURE_SIZE: 512 — ⚠ undocumented
 - `PaintCanvas` (interface): interface PaintCanvas { canvas: HTMLCanvasElement; context: CanvasRenderingContext2D; texture: THREE.CanvasTexture } — ⚠ undocumented
 - `cloneModelScene` (function): function cloneModelScene(source: THREE.Object3D, options?: { cloneMaterials?: boolean; shadows?: ModelShadowMode; surfaceDetail?: boolean }): THREE.Object3D — Clone a model with independent pose and materials, retaining shared geometry and textures.

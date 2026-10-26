@@ -1,6 +1,6 @@
 import { describe, expect, test } from "bun:test";
-import { createLodScheduler } from "@jgengine/core/world/lod";
-import { createModelVariantSelector, DEFAULT_VARIANT_HYSTERESIS } from "@jgengine/core/world/modelLod";
+import { createLodScheduler } from "@jgengine/core/lod/lod";
+import { createModelVariantSelector, DEFAULT_VARIANT_HYSTERESIS } from "@jgengine/core/lod/modelLod";
 
 const PALM = {
   levels: [

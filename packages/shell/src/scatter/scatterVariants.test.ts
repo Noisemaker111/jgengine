@@ -1,8 +1,8 @@
 import { describe, expect, test } from "bun:test";
 import * as THREE from "three";
 import type { ModelConfig } from "@jgengine/core/game/playableGame";
-import { createModelVariantSelector } from "@jgengine/core/world/modelLod";
-import { lodBandIndex } from "@jgengine/core/world/lod";
+import { createModelVariantSelector } from "@jgengine/core/lod/modelLod";
+import { lodBandIndex } from "@jgengine/core/lod/lod";
 import type { ScatterInstance } from "@jgengine/core/world/scatterRegion";
 import { scatterBatchInstances, type ScatterBatch } from "./InstancedScatter";
 import { buildScatterModelSources, disposeScatterModelSources } from "./scatterModels";

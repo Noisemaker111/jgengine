@@ -3,15 +3,13 @@ import { clone as cloneSkinned } from "three/examples/jsm/utils/SkeletonUtils.js
 
 import type { PaintStroke } from "@jgengine/core/scene/paintLayer";
 import type { ModelConfig } from "@jgengine/core/game/playableGame";
+import type { ModelShadowMode } from "@jgengine/core/lod/modelLod";
 
 import { measureLocalBounds, type MeasuredLocalBounds } from "./measureBounds";
 import { copyModelBindPose } from "./modelBindPose";
 import { optOutModelSurface } from "./modelSurface";
 
 export const PAINT_TEXTURE_SIZE = 512;
-
-/** Shadow participation applied to every mesh of a cloned model; mirrors `ModelConfig.shadows`. */
-export type ModelShadowMode = "cast" | "receive" | "both" | "none";
 
 const modelResources = new WeakMap<THREE.Object3D, { materials: Set<THREE.Material>; skeletons: Set<THREE.Skeleton> }>();
 

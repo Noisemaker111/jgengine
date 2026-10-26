@@ -1,5 +1,5 @@
 import type * as THREE from "three";
-import type { ModelVariantSelector } from "@jgengine/core/world/modelLod";
+import type { ModelVariantSelector } from "@jgengine/core/lod/modelLod";
 
 /** A scatter placement as the level pass reads it: a stable id and a world position. */
 export interface ScatterVariantMember {

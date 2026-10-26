@@ -1,10 +1,10 @@
 import { describe, expect, test } from "bun:test";
 import * as THREE from "three";
 import type { ModelConfig, ModelVariantLodConfig } from "@jgengine/core/game/playableGame";
-import { createModelVariantSelector } from "@jgengine/core/world/modelLod";
+import { createModelVariantSelector } from "@jgengine/core/lod/modelLod";
 
-import { attributeTriangles } from "./triangleAttribution";
-import { cloneModelScene } from "./modelRender";
+import { attributeTriangles } from "../render/triangleAttribution";
+import { cloneModelScene } from "../render/modelRender";
 import { buildScatterModelSources, disposeScatterModelSources } from "../scatter/scatterModels";
 import { variantLevelModel, variantLevelShadows } from "./singleVariantLod";
 

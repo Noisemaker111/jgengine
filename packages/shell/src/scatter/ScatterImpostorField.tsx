@@ -3,7 +3,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import * as THREE from "three";
 
 import { CAMERA_POST_FRAME_PRIORITY } from "../camera/cameraRigs";
-import { acquireImpostor, impostorCard, impostorDistance, impostorSettingsForQuality, impostorSwitch, releaseImpostor, type ImpostorEntry } from "../render/impostor";
+import { acquireImpostor, impostorCard, impostorDistance, impostorSettingsForQuality, impostorSwitch, releaseImpostor, type ImpostorEntry } from "../lod/impostor";
 import { submitInstanceCount } from "../render/submittedDraws";
 import { useTerrainQuality } from "../terrain/terrainQuality";
 import type { ScatterBatch } from "./InstancedScatter";

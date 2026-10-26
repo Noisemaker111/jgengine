@@ -1,5 +1,5 @@
 import { describe, expect, test } from "bun:test";
-import { createLodScheduler } from "@jgengine/core/world/lod";
+import { createLodScheduler } from "@jgengine/core/lod/lod";
 
 describe("lod bandIndex", () => {
   test("inclusive maxDistance boundaries and sorts unsorted input", () => {
