@@ -196,7 +196,6 @@
   "@jgengine/shell/diagnostics/RuntimeDiagnostics#GameUiErrorBoundary",
   "@jgengine/shell/diagnostics/RuntimeDiagnostics#logRuntimeError",
   "@jgengine/shell/environment/GroundPad#GroundPad",
-  "@jgengine/shell/environment/RoadRibbons#RoadRibbons",
   "@jgengine/shell/hud/FrustumSensorHud#frustumSampleDisplayEqual",
   "@jgengine/shell/hud/FrustumSensorHud#useFrustumSensor",
   "@jgengine/shell/hud/HudOnlyDriver#HudOnlyDriver",
