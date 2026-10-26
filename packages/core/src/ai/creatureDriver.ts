@@ -98,6 +98,9 @@ function fleeGoal(ctx: GameContext, from: PerceptionPosition, threatId: string |
   return [from[0] + (away[0]! / length) * FLEE_RUN, from[1], from[2] + (away[1]! / length) * FLEE_RUN];
 }
 
+/** Headings tried, in order, when the straight step is blocked: ahead, then ever wider either side. */
+const VEERS = [0, Math.PI / 4, -Math.PI / 4, Math.PI / 2, -Math.PI / 2];
+
 export function createCreatureDriver(config: CreatureDriverConfig = {}): CreatureDriver {
   const sight = config.sight ?? 24;
   const memorySeconds = config.memorySeconds ?? 8;
@@ -114,12 +117,25 @@ export function createCreatureDriver(config: CreatureDriverConfig = {}): Creatur
     const distance = Math.hypot(dx, dz);
     if (distance <= stop + 0.05) return true;
     const length = Math.min(distance - stop, speed * dt);
-    const step = resolveWalkerStep(ctx, entity.position, (dx / distance) * length, (dz / distance) * length, { radius: 0.6 });
-    const nx = px + step.stepX;
-    const nz = pz + step.stepZ;
-    if (config.blocked?.(ctx, nx, nz) === true) return true;
-    ctx.scene.entity.setPose(id, { position: [nx, ctx.world.groundHeightAt(nx, nz), nz], rotationY: Math.atan2(dx, dz), dt });
-    return Math.hypot(step.stepX, step.stepZ) < length * 0.25;
+    const heading = Math.atan2(dx, dz);
+    // Head-on into a trunk or boulder the slide has nothing to slide along: veer around it instead.
+    let best = { stepX: 0, stepZ: 0, heading, score: 0 };
+    for (const veer of VEERS) {
+      const turn = heading + veer;
+      const step = resolveWalkerStep(ctx, entity.position, Math.sin(turn) * length, Math.cos(turn) * length, { radius: 0.6 });
+      if (config.blocked?.(ctx, px + step.stepX, pz + step.stepZ) === true) continue;
+      // Progress toward the goal picks the way around; a sidestep still beats standing still.
+      const moved = Math.hypot(step.stepX, step.stepZ);
+      const score = (step.stepX * dx + step.stepZ * dz) / distance + moved * 0.01;
+      if (score > best.score + 1e-9) best = { ...step, heading: turn, score };
+      if (veer === 0 && moved >= length * 0.75) break;
+    }
+    const moved = Math.hypot(best.stepX, best.stepZ);
+    if (moved === 0) return true;
+    const nx = px + best.stepX;
+    const nz = pz + best.stepZ;
+    ctx.scene.entity.setPose(id, { position: [nx, ctx.world.groundHeightAt(nx, nz), nz], rotationY: best.heading, dt });
+    return moved < length * 0.25;
   };
 
   const face = (ctx: GameContext, id: string, targetId: string): void => {

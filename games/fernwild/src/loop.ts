@@ -79,6 +79,8 @@ export const systems = [
 interface Cheat {
   give?: Record<string, number>;
   xp?: number;
+  /** Spend stat points: stat id → points. */
+  spend?: Record<string, number>;
   tamingSpeed?: number;
   /** Spawn a creature this many metres in front of the survivor. */
   summon?: { species: string; level?: number; distance?: number };
@@ -87,6 +89,10 @@ interface Cheat {
 function cheat(ctx: GameContext, input: Cheat): void {
   for (const [itemId, count] of Object.entries(input.give ?? {})) ctx.player.inventory.put(BAG, itemId, count);
   if (input.xp !== undefined) grantXp(ctx, input.xp);
+  for (const [stat, points] of Object.entries(input.spend ?? {})) {
+    const known = LEVEL_STATS.find((entry) => entry.id === stat);
+    for (let point = 0; known !== undefined && point < points; point += 1) levelStat(ctx, known.id);
+  }
   if (input.tamingSpeed !== undefined) setTamingSpeed(ctx, input.tamingSpeed);
   const me = ctx.scene.entity.get(ctx.player.userId);
   if (input.summon !== undefined && me !== null) {

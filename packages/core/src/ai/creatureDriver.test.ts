@@ -54,6 +54,20 @@ test("an aggressive hunter closes on a survivor it sees and bites on its interva
   expect(bites).toBeLessThanOrEqual(4);
 });
 
+test("a hunter blocked head-on by a trunk veers around it instead of standing behind it", () => {
+  const ctx = world();
+  // A tree trunk right between the raptor and the survivor, square to its line of approach.
+  ctx.world.solids.set("trees", [{ center: [0, 1, 4], halfExtents: [0.6, 1, 0.6] }]);
+  ctx.scene.entity.spawn("raptor", { id: "r1", position: [0, 0, 12], role: "npc" });
+  const driver = createCreatureDriver();
+  driver.add("r1", [0, 0, 12]);
+  const aggressive = { kind: "wild" as const, temperament: { kind: "predator" as const, attackRange: 2, breakAt: 0 } };
+  let bites = 0;
+  run(ctx, 6, (dt) => (bites += driver.step(ctx, "r1", aggressive, HUNTER, dt).struck ? 1 : 0));
+  expect(ctx.scene.entity.distance("r1", "p1")!).toBeLessThanOrEqual(2);
+  expect(bites).toBeGreaterThan(0);
+});
+
 test("a tame follows its owner and holds still when told to stay or knocked out", () => {
   const ctx = world();
   ctx.scene.entity.spawn("raptor", { id: "r1", position: [20, 0, 0], role: "npc" });
