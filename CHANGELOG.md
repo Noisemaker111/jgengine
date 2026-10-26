@@ -26,6 +26,787 @@ At publish, rename this heading to the new version and mirror the entries into
 `packages/core/src/meta/changelog.ts` (the typed `CHANGELOG` export).
 -->
 
+## 0.46.0
+
+### Migrate
+
+- **Bump lockstep SDK packages to `^0.46.0`:** `@jgengine/{core,rapier,react,ws,node,sql,convex,shell,editor,assets,navbake}`. CLI `jgengine` is `0.43.0`; `@jgengine/github` is `0.33.0`.
+- `KitActionBar` (`@jgengine/react/hud/kitHud`) is gone. Use `ActionBar` from `@jgengine/react/hud/actionHud` with `look="kit"`: `actions` → `defs` (`ActionDef`s), `glyph` → `hotkey`, `variant: "primary"`/`pressed` → `active`, `variant: "ghost"` → `disabled`, `title` → `description`, each `onActivate` → one `onActivate(id)`, `kind` dropped (buttons carry `data-action-id`). `progress`, `trailing`, `prompt` and `wrapAt` keep their meaning. Pass `hotkeys={false}` when the game's own bindings fire the actions. `KitActionProgress` → `ActionProgress`.
+- `hudBlockOverlaps`, `formatHudOverlapReport`, `HudBlockOverlap`, `HudBlockBounds` and `HudBlockOverlapOptions` (`@jgengine/react/hud/hudLanes`) are gone. Use `detectLayoutCollisions(blocks.map((b) => hudBlockRegion(b.id, b.rect)), { minArea: 1 })` and `formatLayoutCollisions(collisions, viewport)` from `@jgengine/core/hud/hudPriority`.
+- `generateCity`, `resolveCityLotContent`, `GeneratedCity`, `CityPlot`, `ResolvedCityLot` and the rest of `@jgengine/core/city/cityGenerator` are gone. Use `resolveCityObject({ id, kind: "city", center, halfExtents, meta })`: street dials go in `meta` under their city-rule names (`segmentLength` → `blockSize`, `aspect` → `blockAspect`, `winding` → `curviness`, `width` → `streetWidth`); lot setback → `buildingRoadSetback`, spacing → `buildingSpacing`, `blockFill` → `roadsideOccupancy`, footprint → `lotScale`, `content.landmarks` → `landmarks`. The street graph is on `ResolvedCity.network`.
+- `extractBlocks`, `FabricStreet`, `FabricParams` and `BlockRings` (`@jgengine/core/city/cityBlocks`) are gone. Use `extractGraphBlocks(network.nodes, network.edges, { sidewalkBase, curbMargin })`.
+- `CityFillerClass` and `CITY_FILLER_CLASSES` are gone (nothing placed garages or depots any more).
+- More features are now one folder in `@jgengine/core` (model `name.ts`, view `name.view.tsx`, draw `name.draw.tsx`). The `@jgengine/react` and `@jgengine/shell` root barrels still export the same names. Update deep imports:
+  - Menu: `@jgengine/react/menu/<file>` → `@jgengine/core/menu/<file>.view` for `gameFlowMenus`, `gameMenu`, `gameMenuSaves`, `gameMenuSound`, `menuNav`, `menuRouter`, `menuScreen`, `pauseMenu`, `quickMenu`, `radialMenu`.
+  - Settings: `@jgengine/react/settings/<file>` → `@jgengine/core/settings/<file>.view` for `accessibilitySettings`, `keybindingMenu`, `settings`, `settingsBlocks`; `@jgengine/shell/settings/<file>` → `@jgengine/core/settings/<file>.draw` for `QuickControls`, `SettingsChrome`, `SettingsMenu`, `SettingsRuntime`, `appliedSettings`, `settingsController`.
+  - Dialog: `@jgengine/react/dialog/{dialogBehavior,modals}` → `@jgengine/core/dialog/{dialogBehavior,modals}.view`.
+  - Inventory: `@jgengine/react/inventory/{inventoryGrid,shopGrid,slots}` → `@jgengine/core/inventory/{inventoryGrid,shopGrid,slots}.view`.
+  - Notifications: `@jgengine/react/notifications/{notices,notificationCenter,toastStack}` → `@jgengine/core/notifications/<file>.view`; `@jgengine/shell/notifications/ShellNotices` → `@jgengine/core/notifications/ShellNotices.view`.
+  - Haptics: `@jgengine/shell/haptics/padHaptics` → `@jgengine/core/haptics/padHaptics`; `@jgengine/shell/haptics/hapticsRoute` → `@jgengine/core/haptics/hapticsRoute.view`.
+  - Camera shake: `@jgengine/react/camera/shake/cameraShake` → `@jgengine/core/camera/shake/cameraShake.view`; `@jgengine/shell/camera/shake/<file>` → `@jgengine/core/camera/shake/<file>.draw` for `CameraShakeApplier`, `HitReactionShake`, `shakeChannel`.
+  - Combat: `@jgengine/shell/combat/ProjectileModels` → `@jgengine/core/combat/ProjectileModels.draw`.
+  - Quest tracker: `@jgengine/react/questTracker` → `@jgengine/core/mission/questTracker.view`.
+- The remaining React-side features now live in `@jgengine/core` feature folders, model and view together (`name.ts` model, `name.view.tsx` view). Features that hid in `core/game/` got their own folders: `achievements/`, `codex/`, `dialogue/`, `chat/`, `social/`, `talents/`, `feed/`, `leaderboard/`, `cutscene/`. The `@jgengine/react` root barrel still exports the same names. Update deep imports:
+  - `@jgengine/core/game/achievements` → `@jgengine/core/achievements/achievements`
+  - `@jgengine/react/achievements` → `@jgengine/core/achievements/achievements.view`
+  - `@jgengine/react/tweenNumber` → `@jgengine/core/anim/tweenNumber.view`
+  - `@jgengine/react/cards` → `@jgengine/core/cards/cards.view`
+  - `@jgengine/core/game/chat` → `@jgengine/core/chat/chat`
+  - `@jgengine/react/chat` → `@jgengine/core/chat/chat.view`
+  - `@jgengine/react/chatBubbles` → `@jgengine/core/chat/chatBubbles.view`
+  - `@jgengine/core/game/chatFilter` → `@jgengine/core/chat/chatFilter`
+  - `@jgengine/react/standaloneChatPanel` → `@jgengine/core/chat/standaloneChatPanel.view`
+  - `@jgengine/core/game/codex` → `@jgengine/core/codex/codex`
+  - `@jgengine/react/codex` → `@jgengine/core/codex/codex.view`
+  - `@jgengine/core/vfx/damageDirection` → `@jgengine/core/combat/damage/damageDirection`
+  - `@jgengine/react/damageDirection` → `@jgengine/core/combat/damage/damageDirection.view`
+  - `@jgengine/react/cutscene` → `@jgengine/core/cutscene/cutscene.view`
+  - `@jgengine/core/scene/sequenceDirector` → `@jgengine/core/cutscene/sequenceDirector`
+  - `@jgengine/core/game/dialogue` → `@jgengine/core/dialogue/dialogue`
+  - `@jgengine/core/game/dialogueGraph` → `@jgengine/core/dialogue/dialogueGraph`
+  - `@jgengine/react/dialogueView` → `@jgengine/core/dialogue/dialogueView.view`
+  - `@jgengine/core/game/eventTicker` → `@jgengine/core/feed/eventTicker`
+  - `@jgengine/core/game/feed` → `@jgengine/core/feed/feed`
+  - `@jgengine/react/killFeed` → `@jgengine/core/feed/killFeed.view`
+  - `@jgengine/react/entityFrames` → `@jgengine/core/hud/entityFrames.view`
+  - `@jgengine/core/ui/floatingText` → `@jgengine/core/hud/floatingText`
+  - `@jgengine/react/floatingText` → `@jgengine/core/hud/floatingText.view`
+  - `@jgengine/react/i18n` → `@jgengine/core/i18n/i18n.view`
+  - `@jgengine/react/inputDevice` → `@jgengine/core/input/inputDevice.view`
+  - `@jgengine/react/keyHint` → `@jgengine/core/input/keyHint.view`
+  - `@jgengine/react/interactionPrompt` → `@jgengine/core/interaction/interactionPrompt.view`
+  - `@jgengine/react/skillCheckPaint` → `@jgengine/core/interaction/skillCheckPaint.view`
+  - `@jgengine/react/characterSheet` → `@jgengine/core/inventory/characterSheet.view`
+  - `@jgengine/react/dragLayer` → `@jgengine/core/inventory/dragLayer.view`
+  - `@jgengine/core/game/leaderboard` → `@jgengine/core/leaderboard/leaderboard`
+  - `@jgengine/core/game/leaderboardRank` → `@jgengine/core/leaderboard/leaderboardRank`
+  - `@jgengine/react/scoreboard` → `@jgengine/core/leaderboard/scoreboard.view`
+  - `@jgengine/core/game/credits` → `@jgengine/core/menu/credits`
+  - `@jgengine/react/creditsPanel` → `@jgengine/core/menu/creditsPanel.view`
+  - `@jgengine/react/creditsScreen` → `@jgengine/core/menu/creditsScreen.view`
+  - `@jgengine/react/loadingScreen` → `@jgengine/core/menu/loadingScreen.view`
+  - `@jgengine/react/startScreen` → `@jgengine/core/menu/startScreen.view`
+  - `@jgengine/core/ui/objectiveBanner` → `@jgengine/core/mission/objectiveBanner`
+  - `@jgengine/react/objectiveBanner` → `@jgengine/core/mission/objectiveBanner.view`
+  - `@jgengine/core/game/objectives` → `@jgengine/core/mission/objectives`
+  - `@jgengine/react/identity` → `@jgengine/core/multiplayer/identity.view`
+  - `@jgengine/react/voice` → `@jgengine/core/multiplayer/voice.view`
+  - `@jgengine/react/browserLifecycle` → `@jgengine/core/runtime/browserLifecycle.view`
+  - `@jgengine/react/useServerSession` → `@jgengine/core/session/useServerSession.view`
+  - `@jgengine/core/game/social` → `@jgengine/core/social/social`
+  - `@jgengine/react/social` → `@jgengine/core/social/social.view`
+  - `@jgengine/react/talentTree` → `@jgengine/core/talents/talentTree.view`
+  - `@jgengine/core/game/talentTreeView` → `@jgengine/core/talents/talentTreeView`
+  - `@jgengine/core/game/talents` → `@jgengine/core/talents/talents`
+  - `@jgengine/react/timerReadout` → `@jgengine/core/time/timerReadout.view`
+  - `@jgengine/react/accessibility` → `@jgengine/core/ui/accessibility.view`
+  - `@jgengine/react/canvasCover` → `@jgengine/core/ui/canvasCover.view`
+  - `@jgengine/react/coachMarks` → `@jgengine/core/ui/coachMarks.view`
+  - `@jgengine/react/components` → `@jgengine/core/ui/components.view`
+  - `@jgengine/react/gameCursor` → `@jgengine/core/ui/cursor.view`
+  - `@jgengine/react/display` → `@jgengine/core/ui/display.view`
+  - `@jgengine/react/gameFonts` → `@jgengine/core/ui/fonts.view`
+  - `@jgengine/react/gameIcons` → `@jgengine/core/ui/icons/gameIcons.view`
+  - `@jgengine/react/iconTreatment` → `@jgengine/core/ui/icons/iconTreatment.view`
+  - `@jgengine/react/iconsPreview` → `@jgengine/core/ui/icons/iconsPreview.view`
+  - `@jgengine/react/kitFlow` → `@jgengine/core/ui/kit/kitFlow.view`
+  - `@jgengine/react/kitFrame` → `@jgengine/core/ui/kit/kitFrame.view`
+  - `@jgengine/react/kitFramesPreview` → `@jgengine/core/ui/kit/kitFramesPreview.view`
+  - `@jgengine/react/uiKit` → `@jgengine/core/ui/kit/uiKit.view`
+  - `@jgengine/react/uiKitArcade` → `@jgengine/core/ui/kit/uiKitArcade.view`
+  - `@jgengine/react/uiKitBroadcast` → `@jgengine/core/ui/kit/uiKitBroadcast.view`
+  - `@jgengine/react/uiKitHolo` → `@jgengine/core/ui/kit/uiKitHolo.view`
+  - `@jgengine/react/uiKitInk` → `@jgengine/core/ui/kit/uiKitInk.view`
+  - `@jgengine/react/uiKitPaper` → `@jgengine/core/ui/kit/uiKitPaper.view`
+  - `@jgengine/react/uiKitParchment` → `@jgengine/core/ui/kit/uiKitParchment.view`
+  - `@jgengine/react/uiKitPlain` → `@jgengine/core/ui/kit/uiKitPlain.view`
+  - `@jgengine/react/uiKitRoot` → `@jgengine/core/ui/kit/uiKitRoot.view`
+  - `@jgengine/react/uiKitSignal` → `@jgengine/core/ui/kit/uiKitSignal.view`
+  - `@jgengine/react/uiKitTerminal` → `@jgengine/core/ui/kit/uiKitTerminal.view`
+  - `@jgengine/react/uiKits` → `@jgengine/core/ui/kit/uiKits.view`
+  - `@jgengine/react/uiKitsPreview` → `@jgengine/core/ui/kit/uiKitsPreview.view`
+  - `@jgengine/react/liveBind` → `@jgengine/core/ui/liveBind.view`
+  - `@jgengine/react/panels` → `@jgengine/core/ui/panels.view`
+  - `@jgengine/react/photoMode` → `@jgengine/core/ui/photoMode.view`
+  - `@jgengine/react/presence` → `@jgengine/core/ui/presence.view`
+  - `@jgengine/react/rotateDevice` → `@jgengine/core/ui/rotateDevice.view`
+  - `@jgengine/react/scrollRail` → `@jgengine/core/ui/scrollRail.view`
+  - `@jgengine/react/scrollRailPreview` → `@jgengine/core/ui/scrollRailPreview.view`
+  - `@jgengine/react/gameSlider` → `@jgengine/core/ui/slider.view`
+  - `@jgengine/core/audio/uiCues` → `@jgengine/core/ui/uiCues`
+  - `@jgengine/react/uiCues` → `@jgengine/core/ui/uiCues.view`
+  - `@jgengine/react/useDebouncedCommit` → `@jgengine/core/ui/useDebouncedCommit.view`
+  - `@jgengine/react/gameViewport` → `@jgengine/core/ui/viewport.view`
+- The shell-side features now live in `@jgengine/core` feature folders with their models (`name.ts` model, `name.view.tsx` React, `name.draw.tsx` three.js): `audio/`, `devtools/` (was `diagnostics/` too), `input/` (was `pointer/` and `touch/` too), `replay/` (with the recording buffer and replay loop from `sensor/`), `play/`, `placement/`, `buildings/`, plus the loose shell files for input, commands, multiplayer, movement, behaviour and combat presentation. Command running and dispatch moved from `runtime/` to `commands/`, movement speed from `scene/` to `movement/`, the chat transport contract from `multiplayer/` to `chat/`. Update deep imports:
+  - `@jgengine/shell/play` → `@jgengine/core/play/playRunner.draw` (`runPlayScript`) and `@jgengine/core/play/script` (`createPlayScript`, `PlayScriptSpec`)
+  - `@jgengine/shell/placement` → `@jgengine/core/placement/PlacementGhost.draw` and `@jgengine/core/placement/TransformGizmo.draw`
+  - `@jgengine/shell/buildings` → `@jgengine/core/buildings/GeneratedBuilding.draw`
+  - `cameraShake`, `defaultCameraShake`, `rigShakeConfig` and `CALIBRATED_TRAUMA_DECAY_PER_SECOND` → `@jgengine/core/camera/shake/cameraShake` (the shake model); `@jgengine/core/camera/shake/shakeChannel.draw` keeps the rig hooks and `applyCameraShake`
+  - `@jgengine/core/multiplayer/chatContract` → `@jgengine/core/chat/chatContract`
+  - `@jgengine/core/runtime/commandDispatch` → `@jgengine/core/commands/commandDispatch`
+  - `@jgengine/core/runtime/commandInput` → `@jgengine/core/commands/commandInput`
+  - `@jgengine/core/runtime/commandRunner` → `@jgengine/core/commands/commandRunner`
+  - `@jgengine/core/scene/movementSpeed` → `@jgengine/core/movement/movementSpeed`
+  - `@jgengine/core/sensor/recordingBuffer` → `@jgengine/core/replay/recordingBuffer`
+  - `@jgengine/core/sensor/replayLoop` → `@jgengine/core/replay/replayLoop`
+  - `@jgengine/shell/CombatPresentation` → `@jgengine/core/combat/CombatPresentation.draw`
+  - `@jgengine/shell/JoinGate` → `@jgengine/core/multiplayer/JoinGate.view`
+  - `@jgengine/shell/audio/AudioComponents` → `@jgengine/core/audio/AudioComponents.draw`
+  - `@jgengine/shell/audio/CaptionOverlay` → `@jgengine/core/audio/CaptionOverlay.view`
+  - `@jgengine/shell/audio/FeedbackHost` → `@jgengine/core/audio/FeedbackHost.view`
+  - `@jgengine/shell/audio/adaptiveMusicWire` → `@jgengine/core/audio/adaptiveMusicWire`
+  - `@jgengine/shell/audio/audioEngine` → `@jgengine/core/audio/audioEngine.view`
+  - `@jgengine/shell/audio/audioProbe` → `@jgengine/core/audio/audioProbe.view`
+  - `@jgengine/shell/audio/audioWire` → `@jgengine/core/audio/audioWire.view`
+  - `@jgengine/shell/audio/busMix` → `@jgengine/core/audio/busMix`
+  - `@jgengine/shell/audio/captions` → `@jgengine/core/audio/captions`
+  - `@jgengine/shell/audio/emitterTracking` → `@jgengine/core/audio/emitterTracking.view`
+  - `@jgengine/shell/audio/eventFeedback` → `@jgengine/core/audio/eventFeedback`
+  - `@jgengine/shell/audio/gestureResume` → `@jgengine/core/audio/gestureResume.view`
+  - `@jgengine/shell/audio/listenerAnchor` → `@jgengine/core/audio/listenerAnchor`
+  - `@jgengine/shell/audio/loopParams` → `@jgengine/core/audio/loopParams`
+  - `@jgengine/shell/audio/musicDirector` → `@jgengine/core/audio/musicDirector.view`
+  - `@jgengine/shell/audio/musicVoices` → `@jgengine/core/audio/musicVoices.view`
+  - `@jgengine/shell/audio/occlusion` → `@jgengine/core/audio/occlusionRaycast`
+  - `@jgengine/shell/audio/playableAudio` → `@jgengine/core/audio/playableAudio.draw`
+  - `@jgengine/shell/audio/reverb` → `@jgengine/core/audio/reverbRack.view`
+  - `@jgengine/shell/audio/speech` → `@jgengine/core/audio/speech.view`
+  - `@jgengine/shell/audio/synthEngine` → `@jgengine/core/audio/synthEngine.view`
+  - `@jgengine/shell/behaviourAttach` → `@jgengine/core/behaviour/behaviourAttach.draw`
+  - `@jgengine/shell/behaviourDriver` → `@jgengine/core/behaviour/behaviourDriver`
+  - `@jgengine/shell/behaviour` → `@jgengine/core/behaviour/behaviour.draw`
+  - `@jgengine/shell/boundActionDispatch` → `@jgengine/core/input/boundActionDispatch`
+  - `@jgengine/shell/buildings/BuildingKitBatch` → `@jgengine/core/buildings/BuildingKitBatch.draw`
+  - `@jgengine/shell/buildings/BuildingRenderBudget` → `@jgengine/core/buildings/BuildingRenderBudget.draw`
+  - `@jgengine/shell/buildings/GeneratedBuilding` → `@jgengine/core/buildings/GeneratedBuilding.draw`
+  - `@jgengine/shell/buildings/buildingKitFit` → `@jgengine/core/buildings/buildingKitFit.draw`
+  - `@jgengine/shell/buildings/buildingKitMaterials` → `@jgengine/core/buildings/buildingKitMaterials.draw`
+  - `@jgengine/shell/buildings/buildingKitRegistry` → `@jgengine/core/buildings/buildingKitRegistry`
+  - `@jgengine/shell/buildings/buildingSpatialBatch` → `@jgengine/core/buildings/buildingSpatialBatch.draw`
+  - `@jgengine/shell/buildings/buildingSurface` → `@jgengine/core/buildings/buildingSurface.draw`
+  - `@jgengine/shell/commandSink` → `@jgengine/core/commands/commandSink`
+  - `@jgengine/shell/devtools/ColPanel` → `@jgengine/core/devtools/ColPanel.view`
+  - `@jgengine/shell/devtools/CollisionDebugWorld` → `@jgengine/core/devtools/CollisionDebugWorld.draw`
+  - `@jgengine/shell/devtools/DevtoolsOverlay` → `@jgengine/core/devtools/DevtoolsOverlay.draw`
+  - `@jgengine/shell/devtools/DevtoolsRuntime` → `@jgengine/core/devtools/DevtoolsRuntime.draw`
+  - `@jgengine/shell/devtools/FrameTelemetry` → `@jgengine/core/devtools/FrameTelemetry.draw`
+  - `@jgengine/shell/devtools/KeysPanel` → `@jgengine/core/devtools/KeysPanel.view`
+  - `@jgengine/shell/devtools/LogsPanel` → `@jgengine/core/devtools/LogsPanel.view`
+  - `@jgengine/shell/devtools/MissingModelsNotice` → `@jgengine/core/devtools/MissingModelsNotice.draw`
+  - `@jgengine/shell/devtools/NetPanel` → `@jgengine/core/devtools/NetPanel.draw`
+  - `@jgengine/shell/devtools/PerfPanel` → `@jgengine/core/devtools/PerfPanel.view`
+  - `@jgengine/shell/devtools/TunePanel` → `@jgengine/core/devtools/TunePanel.view`
+  - `@jgengine/shell/devtools/agentBridge` → `@jgengine/core/devtools/agentBridge.draw`
+  - `@jgengine/shell/devtools/collisionDebugMath` → `@jgengine/core/devtools/collisionDebugMath`
+  - `@jgengine/shell/devtools/collisionDebug` → `@jgengine/core/devtools/collisionDebug`
+  - `@jgengine/shell/devtools/devtoolsOverrides` → `@jgengine/core/devtools/devtoolsOverrides.view`
+  - `@jgengine/shell/devtools/devtoolsReports` → `@jgengine/core/devtools/devtoolsReports.draw`
+  - `@jgengine/shell/devtools/frameSampler` → `@jgengine/core/devtools/frameSampler.view`
+  - `@jgengine/shell/devtools/latencyInstrumentation` → `@jgengine/core/devtools/latencyInstrumentation.draw`
+  - `@jgengine/shell/devtools/panelAtoms` → `@jgengine/core/devtools/panelAtoms.view`
+  - `@jgengine/shell/devtools/perfDiagnose` → `@jgengine/core/devtools/perfDiagnose.view`
+  - `@jgengine/shell/devtools/playtestProbe` → `@jgengine/core/devtools/playtestProbe`
+  - `@jgengine/shell/devtools/simStepper` → `@jgengine/core/sim/simStepper`
+  - `@jgengine/shell/diagnostics/FpsCounter` → `@jgengine/core/devtools/FpsCounter.draw`
+  - `@jgengine/shell/diagnostics/RuntimeDiagnostics` → `@jgengine/core/devtools/diagnosticOverlay.view`
+  - `@jgengine/shell/hotbarActions` → `@jgengine/core/input/hotbarActions`
+  - `@jgengine/shell/input/gamepadMerge` → `@jgengine/core/input/gamepadMerge`
+  - `@jgengine/shell/input/gamepadPoll` → `@jgengine/core/input/gamepadPoll`
+  - `@jgengine/shell/input/gamepadSource` → `@jgengine/core/input/gamepadSource.draw`
+  - `@jgengine/shell/input/mouseLook` → `@jgengine/core/input/mouseLook.draw`
+  - `@jgengine/shell/input/pointerLock` → `@jgengine/core/input/pointerLock`
+  - `@jgengine/shell/inputSink` → `@jgengine/core/input/inputSink`
+  - `@jgengine/shell/multiplayer` → `@jgengine/core/multiplayer/multiplayer.draw`
+  - `@jgengine/shell/placement/PlacementGhost` → `@jgengine/core/placement/PlacementGhost.draw`
+  - `@jgengine/shell/placement/TransformGizmo` → `@jgengine/core/placement/TransformGizmo.draw`
+  - `@jgengine/shell/play/run` → `@jgengine/core/play/playRunner.draw`
+  - `@jgengine/shell/play/script` → `@jgengine/core/play/script`
+  - `@jgengine/shell/play/timeline` → `@jgengine/core/play/timeline`
+  - `@jgengine/shell/playSurfaceFocus` → `@jgengine/core/input/surfaceFocus.view`
+  - `@jgengine/shell/pointer/PointerOverlays` → `@jgengine/core/input/PointerOverlays.view`
+  - `@jgengine/shell/pointer/PointerProbe` → `@jgengine/core/input/PointerProbe.draw`
+  - `@jgengine/shell/pointer/contextMenu` → `@jgengine/core/input/secondaryPointer`
+  - `@jgengine/shell/pointer/controlGroupKeys` → `@jgengine/core/input/controlGroupKeys`
+  - `@jgengine/shell/pointer/pointerService` → `@jgengine/core/input/pointerService.draw`
+  - `@jgengine/shell/pointer/selectionGesture` → `@jgengine/core/input/selectionGesture`
+  - `@jgengine/shell/replay/useSessionRecorder` → `@jgengine/core/replay/useSessionRecorder.draw`
+  - `@jgengine/shell/shellControlSuspension` → `@jgengine/core/input/shellControlSuspension`
+  - `@jgengine/shell/shellInputPublication` → `@jgengine/core/input/shellInputPublication`
+  - `@jgengine/shell/shellMovement` → `@jgengine/core/movement/shellMovement`
+  - `@jgengine/shell/shellPointerInput` → `@jgengine/core/input/shellPointerInput`
+  - `@jgengine/shell/shellPointer` → `@jgengine/core/input/shellPointer.draw`
+  - `@jgengine/shell/touch/OrientationHint` → `@jgengine/core/input/OrientationHint.view`
+  - `@jgengine/shell/touch/TouchControlsOverlay` → `@jgengine/core/input/TouchControlsOverlay.view`
+  - `@jgengine/shell/touch/touchClusterLayout` → `@jgengine/core/input/touchClusterLayout`
+  - `@jgengine/shell/touch/touchIcons` → `@jgengine/core/input/touchIcons.view`
+  - `@jgengine/shell/useShellMultiplayerSync` → `@jgengine/core/multiplayer/useShellMultiplayerSync.draw`
+  - `@jgengine/shell/worldSync` → `@jgengine/core/multiplayer/authoritativeSync`
+- The input and audio handles that came from the shell hand their state out and take it back, like every other stateful core handle: `MouseLookTracker.aim()`/`setAim(yaw, pitch)` → `state()`/`setState({ yaw, pitch })`; `PointerService.setCursor(x, y, present)`/`hasCursor()` → `setState({ x, y, present })`/`state().present`.
+- Each engine feature is now one folder in `@jgengine/core` holding its model, React view and three.js draw files; the file name says the layer (`name.ts` model, `name.view.tsx` view, `name.draw.tsx` draw). The `@jgengine/react` root barrel still exports the same names. Update deep imports:
+  - HUD: `@jgengine/react/hud/<file>` → `@jgengine/core/hud/<file>.view` for `actionHud`, `comboMeter`, `hudButton`, `hudChromePreview`, `hudFrame`, `hudInteract`, `hudLanesPreview`, `hudLayout`, `hudLayoutPersist`, `hudReadouts`, `hudSkin`, `hudSkinPreview`, `hudSurface`, `hudTheme`, `hudThemePreview`, `hudThemeRoot`, `hudViewport`, `kitHud`, `selectionHud`, `statusEffectBar`, `waveHud`; `@jgengine/react/hud/hudLanes` → `@jgengine/core/hud/hudLanes`; `@jgengine/react/hud/hudTokens` → `@jgengine/core/hud/hudTokens`.
+  - HUD draw: `@jgengine/shell/hud/<file>` → `@jgengine/core/hud/<file>.draw` for `FrustumSensorHud`, `HudOnlyDriver`, `ShellHudPresentation`, `ViewportHuds`, `WorldHud`; `@jgengine/shell/hud/HiddenStateProbeHud` → `@jgengine/core/hud/HiddenStateProbeHud.view`.
+  - Save: `@jgengine/react/save/{saveSlots,saveStore,saveThumbnail}` → `@jgengine/core/save/{saveSlots,saveStore,saveThumbnail}.view`.
+- `@jgengine/core` lists `react`, `react-dom`, `three`, `@react-three/fiber`, `@react-three/drei`, `three-stdlib`, `@jgengine/react` and `@jgengine/shell` as optional peers: a `.view` or `.draw` import needs them; model imports need nothing.
+- One exported name, one definition. Renamed:
+  - `Mood` in `@jgengine/core/render/lookMood` → `LookMood`; `Mood` is the agent mood in `@jgengine/core/agents/mood`.
+  - `Footprint` in `@jgengine/core/inventory/shapedGrid` → `CellFootprint`; `Footprint` is the `{ w, d }` box in `@jgengine/core/world/geometry`.
+  - `PlayableGame` in `@jgengine/core/game/playableGame` → `PlayableGameContract`; `PlayableGame` is the shell type games use (`@jgengine/shell/registry`).
+  - `@jgengine/ws/host` and `@jgengine/node/host`: `GameHost` → `GameServerHost`, `createGameHost` → `createGameServerHost`, `GameHostOptions` → `GameServerHostOptions`. `GameHost` is the shell component.
+  - `pathLength` in `@jgengine/core/nav/pathFollow` → `followPathLength`; its `HeightSampler` → `HeightSource`.
+  - `Job` in `@jgengine/core/ai/jobBoard` → `StationJob`. `inGridBounds` in `@jgengine/core/editor/grid` → `inLayerBounds`. `SnapMode` in `@jgengine/editor` → `EditorSnapMode`.
+  - `AssetRef` in `@jgengine/core/game/tribe` → `TribeAssetRef`. `BufferedAction` in `@jgengine/core/time/beatClock` → `BeatBufferedAction`. `HarvestResult` in `@jgengine/core/crafting/crop` → `CropHarvest`.
+  - `ObjectRaycastHit` in `@jgengine/core/combat/projectiles` → `ProjectileObjectHit`. `WallSegment` in `@jgengine/core/scene/sceneRaycast` → `RaycastWall`. `PolylineHit` in `@jgengine/core/world/polylineIndex` → `PolylineIndexHit`.
+  - `HitReactionInput` in `@jgengine/core/runtime/gameContext` → `EntityHitReactionInput`. `ThresholdDirection` in `@jgengine/core/game/objectives` → `ObjectiveDirection`.
+  - `LeaderboardRow` in `@jgengine/core/runtime/hostPersistence` → `StoredLeaderboardRow` (the game `LeaderboardRow` plus `gameId` and `updatedAt`). `RunCommandArgs` in `@jgengine/convex/server` → `ConvexRunCommandArgs`.
+  - `FrameTelemetry` interface in `@jgengine/shell/devtools/frameSampler` → `FrameSampler`.
+- `@jgengine/core/world/vec2` and `vec3` export one object each: `vec3.distance(a, b)` instead of `import { distance }`.
+- Thresholds live in `@jgengine/core/threshold/`: `relation/thresholds` → `threshold/thresholds`; `combat/thresholdCrossings` → `threshold/thresholdTracker`, whose `ThresholdMark` is now `ThresholdBoundary` and whose emitted `ThresholdCrossing` is `ThresholdTrackerCrossing`. The accumulator meter's `tierAt` is gone; use `tierAt(tiers, value)?.id` from `threshold/thresholds`.
+- One waypoint store: `createWaypointTracker` and its `Waypoint`/`WaypointTracker` types are removed from `@jgengine/core/ui/screenMarkers`. Use `createWaypointStore` (`@jgengine/core/world/waypoints`); `place([x, z], { height })` sets the screen-marker anchor, and `WaypointMarkers` takes the store.
+- Moved: `MAX_SESSION_ID_LENGTH` → `@jgengine/core/runtime/hostPolicy`. `SessionVisibility` → `@jgengine/core/multiplayer/matchmaking` only. `Vec2` from `movement/formation`, `Vec3` from `anim/ikSolver` and `world/buildings` → `@jgengine/core/world/geometry`. The `{ x, y, z }` `Vec3` of `multiplayer/lagCompensation` and shell audio → `Xyz` (`@jgengine/core/math/xyz`).
+- `CreatorConfig` is no longer re-exported by `@jgengine/editor`; use `CreatorConfig<PlayableGame>` from `@jgengine/core/editor/creatorStorage`.
+- `HudPanel` no longer takes `lane` or `compact`. Every flowing panel is placed by one solver: drop `lane`, replace `compact="hide"` with `priority="tertiary"` (it folds into a toggle when there is no room), and drop `compact="keep"` and `compact="chip"`.
+- `HudCanvas` no longer takes `compactScale`; the canvas picks the zoom.
+- `resolveHudLanes`, `HudLaneSlot`, `HudLanePlacement`, `HudLaneConfig` and `HudLaneLayout` (`@jgengine/core/hud/hudLanes`) are gone. Use `arrangeHudPanels` (`@jgengine/core/hud/hudPanelLayout`).
+- `HudLanesPreview` is now `HudAutoLayoutPreview` (`@jgengine/core/hud/hudPanelLayoutPreview.view`).
+- Pick one `anchor` per panel. A game that switched anchors by screen size can drop the switch.
+- `GameFrame` is gone: pass its `material`/`cut`/`depth`/`tint`/`edge`/`glow` props to `KitPanel` (a panel) or `KitButton` (a button) from `@jgengine/react/uiKitRoot`. `@jgengine/react/gameFrame` is now `@jgengine/react/kitFrame`: `GameMaterial` → `KitMaterial`, `GameCut` → `KitCut`, `GameMaterialLook` → `KitMaterialLook`, `GAME_MATERIALS` → `KIT_MATERIALS`, `gameCutPath` → `kitCutPath`, `gameFrameVars` → `kitFrameVars`; `GameFramesPreview` is `KitFramesPreview`.
+- `HudFade` and `useHudAwake` moved from `@jgengine/react/hudFade` to `@jgengine/react/hud/hudLayout`.
+- `StatBar`, `VitalBar`, `EntitySummary`, `StatMeter`, the `@jgengine/react/bars` bars (`HealthBar`, `ShieldBar`, `ManaBar`, `BossBar`, `AmmoCounter`, `barTokens`, …) and `@jgengine/react/hudPanel` (the old name of `HudSurface`; `HudPanel` now means only the `HudCanvas` slot) are removed. Draw every meter with `KitMeter`; a HUD's vitals card is `KitVitals`.
+- `HudTheme.bar`, `HudSkin.bar` and the `--jg-bar-*` variables are removed; meters take the UI kit's tokens.
+- `jgengine upgrade` is gone. Run `npx jgengine@latest sync` instead: at a game it brings the game to that engine; at a workspace root it moves the root catalog's `@jgengine/*` pins, then syncs every member game. It prints the release notes (Migrate first, then Adopt) for the versions it crossed.
+- Template games no longer carry `scripts/browser.mjs`, `scripts/shoot.mjs` or `scripts/drive.mjs`. Run `jgengine sync` once: it deletes the old copies (unless listed in `owns`) and points the `shoot`/`drive` scripts at `jgengine shoot`/`jgengine drive`.
+- `IN_REPO_TSCONFIG_PATHS` (`jgengine`) is gone, with `doctor`'s "in-repo tsconfig paths" finding: an in-repo game's `tsconfig.json` extends `games/tsconfig.base.json`, which takes the engine source paths from the repo's `tsconfig.base.json`.
+- Settings, dialogs and inventory views each live in one folder per layer. Update deep imports:
+  - `@jgengine/react/{settings,settingsBlocks,accessibilitySettings,keybindingMenu}` → `@jgengine/react/settings/…`.
+  - `@jgengine/react/{modals,dialogBehavior}` → `@jgengine/react/dialog/…`; `@jgengine/core/ui/modalStack` → `@jgengine/core/dialog/modalStack`.
+  - `@jgengine/react/{inventoryGrid,slots,shopGrid}` → `@jgengine/react/inventory/…`.
+- The HUD lives in one folder per layer. Update deep imports:
+  - `@jgengine/react/<file>` → `@jgengine/react/hud/<file>` for `actionHud`, `comboMeter`, `hudButton`, `hudChromePreview`, `hudFrame`, `hudInteract`, `hudLanes`, `hudLanesPreview`, `hudLayout`, `hudLayoutPersist`, `hudSkin`, `hudSkinPreview`, `hudSurface`, `hudTheme`, `hudThemePreview`, `hudThemeRoot`, `hudTokens`, `hudViewport`, `kitHud`, `selectionHud`, `statusEffectBar`, `waveHud`.
+  - `@jgengine/react/hud` → `@jgengine/react/hud/hudReadouts` (`Hotbar`, `Coins`, `Clock`, `Speedometer`, `Crosshair`).
+  - `@jgengine/core/ui/{hudDocument,hudLayout,hudScale}` → `@jgengine/core/hud/…`; `@jgengine/core/ui/gameLayout` → `@jgengine/core/hud/hudPriority`.
+  - `@jgengine/shell/ShellHudPresentation` → `@jgengine/shell/hud/ShellHudPresentation`; `@jgengine/shell/drivers/HudOnlyDriver` → `@jgengine/shell/hud/HudOnlyDriver`; `@jgengine/shell/hud/WorldHud` → `@jgengine/shell/hud/WorldHud`.
+  - `ViewportHuds` moved from `@jgengine/shell/camera/Viewports` to `@jgengine/shell/hud/ViewportHuds`.
+  - `@jgengine/shell/hud/FrustumSensorHud` → `@jgengine/shell/hud/FrustumSensorHud`; `@jgengine/shell/hud/HiddenStateProbeHud` → `@jgengine/shell/hud/HiddenStateProbeHud`.
+- `WaveBanner` is removed; use `KitWaveClock` (`@jgengine/react/hud/kitHud`) with `text` and `detail`.
+- `CurrencyPill` is removed; use `Coins` (`@jgengine/react/hud/hudReadouts`), `icon={null}` for the bare number.
+- One pause menu: `GamePauseMenu` is now `PauseMenu` (`@jgengine/react/menu/pauseMenu`, also exported from `@jgengine/react`), the pause scale of `GameMenu`. The old `PauseMenu` in `@jgengine/react/dialog/modals` (Resume plus `{ id, label, onSelect, danger }` slots) is removed: pass `items: [{ id, label }]` and route them in `onSelect(id)`.
+- `TitleMenu` (`@jgengine/react/titleMenu`) is removed; use `GameMenu` with `logo={{ text }}`.
+- Menus live in one folder per layer. Update deep imports:
+  - `@jgengine/react/{gameMenu,gameMenuSaves,gameMenuSound,menuNav,menuRouter,menuScreen,quickMenu,radialMenu}` → `@jgengine/react/menu/…`.
+  - `@jgengine/core/ui/{menuNav,menuTransition,radialMenu}` → `@jgengine/core/menu/…`.
+- One exported name, one definition. React views that shared a name with their core model are renamed:
+  - `Codex` component → `CodexPanel` (`@jgengine/react/codex`); `Codex` stays the core model type.
+  - `TalentTree` component → `TalentTreePanel` (`@jgengine/react/talentTree`).
+  - `DragState` in `@jgengine/react/dragLayer` → `DragLayerState`.
+  - `usePresence` in `@jgengine/react/presence` (mount/exit timing) → `useMountPresence`; `usePresence` is the social-presence hook in `@jgengine/react/hooks`.
+- `SlotGrid` and `ProximityPrompt` are removed from `@jgengine/react/components`; use `InventoryGrid` or `Hotbar`, and `InteractionPrompt`.
+- `easeOutCubic` is no longer exported from `@jgengine/react/tweenNumber`; import it from `@jgengine/core/anim/easing`.
+- `@jgengine/shell/world/WorldHud` → `@jgengine/shell/hud/WorldHud` (same exports).
+- `@jgengine/shell/vision/FrustumSensorHud` → `@jgengine/shell/hud/FrustumSensorHud` (same exports).
+- `@jgengine/shell/vision/HiddenStateProbeHud` → `@jgengine/shell/hud/HiddenStateProbeHud` (same exports).
+- `@jgengine/core/game/vfxInstance` → `@jgengine/core/vfx/vfxInstance`.
+- Shell VFX moved from `world/` to `vfx/`: `@jgengine/shell/world/WorldParticles` → `@jgengine/shell/vfx/ParticleEmitters` (component `WorldParticles` → `ParticleEmitters`), `@jgengine/shell/world/WorldVfx` → `@jgengine/shell/vfx/SpellVfx` (component `WorldSpellVfx` → `SpellVfx`), `@jgengine/shell/world/RetainedVfx` → `@jgengine/shell/vfx/RetainedVfx`.
+- `resolveParticleBudget` is gone. Pass the tier's per-effect cap to `planParticleBudget(entries, cap, { effectCap })` (`@jgengine/core/vfx/particleBudget`), which clamps each request to it before sharing the total out.
+- Buildings, cities and placement each live in one folder per layer. Update deep imports:
+  - `@jgengine/core/world/{buildings,buildingGenerator,buildingIndex,buildingKit,buildingLots,massing}` → `@jgengine/core/buildings/…`; `@jgengine/shell/structures/{GeneratedBuilding,BuildingKitBatch,BuildingRenderBudget,buildingKitFit,buildingKitMaterials,buildingKitRegistry,buildingSpatialBatch,buildingSurface}` → `@jgengine/shell/buildings/…`. The `@jgengine/shell/structures` barrel is now `@jgengine/shell/buildings`.
+  - `@jgengine/core/world/{cityBlocks,cityContent,cityGenerator,cityKind,cityLayout}` → `@jgengine/core/city/…`; `@jgengine/shell/scene/{CityRenderer,cityJunctionSurface,cityWindowMaterial}` → `@jgengine/shell/city/…`.
+  - `@jgengine/core/world/{place,placeAsset,placement,placementController,placedStructureStore}` → `@jgengine/core/placement/…`; `PlacementGhost` and `TransformGizmo` → `@jgengine/shell/placement/…` (barrel `@jgengine/shell/placement`).
+- Building part types have one definition, in `@jgengine/core/buildings/buildings`: the shell no longer exports its own `BuildingFacade`, `BuildingPartKind` or `BuildingPartPlacement`. Removed the shell `GeneratedBuilding` component, which nothing used (render buildings with `InstancedBuildings`); `GeneratedBuilding` now names only the core data.
+- `CityLot` / `CityDriveway` in `cityLayout` are now `CityLayoutLot` / `CityLayoutDriveway`; `CityLot` and `CityDriveway` name the `city` scene kind's types.
+- `@jgengine/shell/grass/GrassCover` → `@jgengine/core/grass/GrassCover.draw`
+- `@jgengine/shell/scene/GrassFieldRenderer` → `@jgengine/core/grass/GrassFieldRenderer.draw`
+- `@jgengine/shell/grass/GrassPatch` → `@jgengine/core/grass/GrassPatch.draw`
+- `@jgengine/shell/grass/grassBake` → `@jgengine/core/grass/grassBake.draw`
+- `@jgengine/shell/grass/grassCoverGeometry` → `@jgengine/core/grass/grassCoverGeometry.draw`
+- `@jgengine/core/world/grassKind` → `@jgengine/core/grass/grassKind`
+- `@jgengine/shell/grass/grassMaterial` → `@jgengine/core/grass/grassMaterial.draw`
+- `@jgengine/shell/grass/grassStream` → `@jgengine/core/grass/grassStream.draw`
+- `@jgengine/shell/sky/Daylight` → `@jgengine/core/sky/Daylight.draw`
+- `@jgengine/shell/sky/VolumetricClouds` → `@jgengine/core/sky/VolumetricClouds.draw`
+- `@jgengine/shell/sky/skyBands` → `@jgengine/core/sky/skyBands`
+- `@jgengine/shell/sky/skyLightingPolicy` → `@jgengine/core/sky/skyLightingPolicy`
+- `@jgengine/shell/sky/skySun` → `@jgengine/core/sky/skySun.draw`
+- `@jgengine/shell/sky/sunShadowMath` → `@jgengine/core/sky/sunShadowMath`
+- `@jgengine/shell/water/Ocean` → `@jgengine/core/water/Ocean.draw`
+- `@jgengine/shell/water/OceanConfig` → `@jgengine/core/water/OceanConfig.draw`
+- `@jgengine/shell/water/OceanMaterial` → `@jgengine/core/water/OceanMaterial.draw`
+- `@jgengine/shell/water/OceanShader` → `@jgengine/core/water/OceanShader`
+- `@jgengine/shell/water/WaterRenderer` → `@jgengine/core/water/WaterRenderer.draw`
+- `@jgengine/shell/water/oceanColor` → `@jgengine/core/water/oceanColor`
+- `@jgengine/shell/weather/AuthoredWeatherLayer` → `@jgengine/core/weather/AuthoredWeatherLayer.draw`
+- `@jgengine/shell/weather/DustField` → `@jgengine/core/weather/DustField.draw`
+- `@jgengine/shell/weather/FireSpreadLayer` → `@jgengine/core/weather/FireSpreadLayer.draw`
+- `@jgengine/shell/weather/LightningStrike` → `@jgengine/core/weather/LightningStrike.draw`
+- `@jgengine/shell/weather/RainField` → `@jgengine/core/weather/RainField.draw`
+- `@jgengine/shell/weather/RainImpactField` → `@jgengine/core/weather/RainImpactField.draw`
+- `@jgengine/shell/weather/SnowField` → `@jgengine/core/weather/SnowField.draw`
+- `@jgengine/shell/weather/WeatherLayer` → `@jgengine/core/weather/WeatherLayer.draw`
+- `@jgengine/core/world/authoredWeather` → `@jgengine/core/weather/authoredWeather`
+- `@jgengine/shell/weather/fireSpreadPose` → `@jgengine/core/weather/fireSpreadPose.draw`
+- `@jgengine/core/world/weather` → `@jgengine/core/weather/weather`
+- `@jgengine/shell/weather/weatherGeometry` → `@jgengine/core/weather/weatherGeometry.draw`
+- `@jgengine/shell/weather/weatherMath` → `@jgengine/core/weather/weatherMath`
+- `@jgengine/shell/weather/weatherShelter` → `@jgengine/core/weather/weatherShelter.draw`
+- `@jgengine/shell/weather/weatherUniforms` → `@jgengine/core/weather/weatherUniforms.draw`
+
+- `@jgengine/shell/weather` and `@jgengine/shell/water` are gone: import each name from its core file above (`WeatherLayer` from `@jgengine/core/weather/WeatherLayer.draw`, `Ocean` from `@jgengine/core/water/Ocean.draw`).
+- `@jgengine/shell/environment/EnvironmentScene` → `@jgengine/core/environment/EnvironmentScene.draw`
+- `@jgengine/shell/environment/GroundPad` → `@jgengine/core/environment/GroundPad.draw`
+- `@jgengine/shell/environment/groundPadMath` → `@jgengine/core/environment/groundPadMath`
+- `@jgengine/shell/instancing/instanceChunks` → `@jgengine/core/instancing/instanceChunks.draw`
+- `@jgengine/shell/instancing/instanceUpload` → `@jgengine/core/instancing/instanceUpload.draw`
+- `@jgengine/shell/instancing/staticShapeInstances` → `@jgengine/core/instancing/staticShapeInstances.draw`
+- `@jgengine/shell/lod/characterLod` → `@jgengine/core/lod/characterLod`
+- `@jgengine/shell/lod/impostorCardPool` → `@jgengine/core/lod/impostorCardPool.draw`
+- `@jgengine/shell/lod/impostor` → `@jgengine/core/lod/impostor.draw`
+- `@jgengine/shell/lod/levelPass` → `@jgengine/core/lod/levelPass.draw`
+- `@jgengine/shell/lod/singleVariantLod` → `@jgengine/core/lod/singleVariantLod.draw`
+- `@jgengine/shell/scatter/InstancedScatter` → `@jgengine/core/scatter/InstancedScatter.draw`
+- `@jgengine/shell/scatter/ScatterImpostorField` → `@jgengine/core/scatter/ScatterImpostorField.draw`
+- `@jgengine/shell/scatter/scatterModels` → `@jgengine/core/scatter/scatterModels.draw`
+- `@jgengine/shell/scatter/scatterProxies` → `@jgengine/core/scatter/scatterProxies.draw`
+- `@jgengine/shell/scatter/scatterVariants` → `@jgengine/core/scatter/scatterVariants.draw`
+- `@jgengine/shell/terrain/CarvedTerrain` → `@jgengine/core/terrain/CarvedTerrain.draw`
+- `@jgengine/shell/terrain/EditableGround` → `@jgengine/core/terrain/EditableGround.draw`
+- `@jgengine/shell/terrain/ProceduralGround` → `@jgengine/core/terrain/ProceduralGround.draw`
+- `@jgengine/shell/terrain/TerraformBrushCursor` → `@jgengine/core/terrain/TerraformBrushCursor.draw`
+- `@jgengine/shell/terrain/groundEdgeFade` → `@jgengine/core/terrain/groundEdgeFade.draw`
+- `@jgengine/shell/terrain/heightfieldGeometry` → `@jgengine/core/terrain/heightfieldGeometry.draw`
+- `@jgengine/shell/terrain/random` → `@jgengine/core/terrain/terrainSeed`
+- `@jgengine/shell/terrain/soilPatchMaterial` → `@jgengine/core/terrain/soilPatchMaterial.draw`
+- `@jgengine/shell/terrain/terrainChunks` → `@jgengine/core/terrain/terrainChunks.draw`
+- `@jgengine/shell/terrain/terrainDetailMaterial` → `@jgengine/core/terrain/terrainDetailMaterial.draw`
+- `@jgengine/shell/terrain/terrainGroundColor` → `@jgengine/core/terrain/terrainGroundColor.draw`
+- `@jgengine/shell/terrain/terrainMath` → `@jgengine/core/terrain/terrainMath.draw`
+- `@jgengine/shell/terrain/terrainPaintColor` → `@jgengine/core/terrain/terrainPaintColor.draw`
+- `@jgengine/shell/terrain/terrainQuality` → `@jgengine/core/terrain/terrainQuality.draw`
+- `@jgengine/shell/terrain/terrainSurfaceShader` → `@jgengine/core/terrain/terrainSurfaceShader.draw`
+- `@jgengine/shell/terrain/terrainSurfaces` → `@jgengine/core/terrain/terrainSurfaces.draw`
+- `@jgengine/shell/worldSky` → `@jgengine/core/sky/worldSky`
+- The `@jgengine/shell/terrain`, `@jgengine/shell/scatter` and `@jgengine/shell/environment` barrels are gone: import each name from its file above (grass names from `@jgengine/core/grass/*`, `Sky` from `@jgengine/core/sky/Daylight.draw`, terrain fields from `@jgengine/core/terrain/terrain`).
+- `colorFromId` is no longer exported; it was only used by the world scene.
+- `@jgengine/core/world/fastTravel` → `@jgengine/core/map/fastTravel`
+- `@jgengine/core/world/fog` → `@jgengine/core/map/fog`
+- `@jgengine/core/world/mapAnnotations` → `@jgengine/core/map/mapAnnotations`
+- `@jgengine/core/world/mapLayers` → `@jgengine/core/map/mapLayers`
+- `@jgengine/core/world/markers` → `@jgengine/core/map/markers`
+- `@jgengine/core/world/minimapBake` → `@jgengine/core/map/minimapBake`
+- `@jgengine/core/world/minimapTrack` → `@jgengine/core/map/minimapTrack`
+- `@jgengine/core/world/minimap` → `@jgengine/core/map/minimap`
+- `@jgengine/core/world/sharedAnnotations` → `@jgengine/core/map/sharedAnnotations`
+- `@jgengine/core/world/waypoints` → `@jgengine/core/map/waypoints`
+- `@jgengine/react/fastTravel` → `@jgengine/core/map/fastTravel.view`
+- `@jgengine/react/fogOverlay` → `@jgengine/core/map/fogOverlay.view`
+- `@jgengine/react/map` → `@jgengine/core/map/map.view`
+- `@jgengine/react/waypointMarkers` → `@jgengine/core/map/waypointMarkers.view`
+- `@jgengine/shell/map/MapMarkerBeacons` → `@jgengine/core/map/MapMarkerBeacons.draw`
+- `@jgengine/shell/map/terrainMap` → `@jgengine/core/map/terrainMap.draw`
+- The `@jgengine/shell/map` barrel is gone: import `bakeTerrainMap` from `@jgengine/core/map/terrainMap.draw` and `MapMarkerBeacons` from `@jgengine/core/map/MapMarkerBeacons.draw`. The `@jgengine/react` root still exports the map components.
+- `@jgengine/core/hud/hudPanelLayoutPreview.view` → `@jgengine/core/hud/hudLanesPreview.view`
+- `@jgengine/react/roads/streetGeometryPreview` → `@jgengine/core/roads/streetGeometryPreview.view`
+- `@jgengine/react/spriteClipPreview` → `@jgengine/core/render/spriteClipPreview.view`
+- `@jgengine/react/tileLayerPreview` → `@jgengine/core/render/tileLayerPreview.view`
+- `@jgengine/shell/city/CityRenderer` → `@jgengine/core/city/CityRenderer.draw`
+- `@jgengine/shell/city/cityJunctionSurface` → `@jgengine/core/city/cityJunctionSurface`
+- `@jgengine/shell/city/cityWindowMaterial` → `@jgengine/core/city/cityWindowMaterial.draw`
+- `@jgengine/shell/roads/RoadJunctions` → `@jgengine/core/roads/RoadJunctions.draw`
+- `@jgengine/shell/roads/RoadRibbons` → `@jgengine/core/roads/RoadRibbons.draw`
+- `@jgengine/shell/roads/surfaceRibbonMaterial` → `@jgengine/core/roads/surfaceRibbonMaterial.draw`
+- `@jgengine/shell/scene/AuthoredScene` → `@jgengine/core/scene/AuthoredScene.draw`
+- `@jgengine/shell/scene/DecalRenderer` → `@jgengine/core/scene/DecalRenderer.draw`
+- `@jgengine/shell/scene/GeneratedAssetRenderer` → `@jgengine/core/scene/GeneratedAssetRenderer.draw`
+- `@jgengine/shell/scene/PoleLineRenderer` → `@jgengine/core/scene/PoleLineRenderer.draw`
+- `@jgengine/shell/scene/SoilPatchRenderer` → `@jgengine/core/scene/SoilPatchRenderer.draw`
+- `@jgengine/shell/scene/StudioStage` → `@jgengine/core/scene/StudioStage.draw`
+- `@jgengine/shell/scene/builtinSceneKindRenderers` → `@jgengine/core/scene/builtinSceneKindRenderers.draw`
+- `@jgengine/shell/scene/sceneKindRenderers` → `@jgengine/core/scene/sceneKindRenderers.draw`
+- The `@jgengine/shell/scene` barrel is gone: import `AuthoredScene` from `@jgengine/core/scene/AuthoredScene.draw`.
+- Level of detail lives in one folder per layer. Update deep imports:
+  - `@jgengine/core/world/{lod,modelLod}` → `@jgengine/core/lod/…`.
+  - `@jgengine/shell/render/{levelPass,singleVariantLod,characterLod,impostor,impostorCardPool}` → `@jgengine/shell/lod/…`.
+- `ModelShadowMode` has one definition, in `@jgengine/core/lod/modelLod`; `@jgengine/shell/render/modelRender` no longer exports its copy.
+- Removed `@jgengine/core/runtime/visibility` (`VisibilitySystem` class, `CameraVisibilityContext` and friends), which nothing used. Culling is `createVisibilitySystem` in `@jgengine/core/visibility/visibilitySystem`.
+- Roads live in one folder per layer. Update deep imports:
+  - `@jgengine/core/world/{roads,pathRoads,streets,streetGenerator,routeCourse,raceCircuit}` → `@jgengine/core/roads/…`.
+  - `@jgengine/shell/environment/{RoadRibbons,RoadJunctions}` and `@jgengine/shell/terrain/surfaceRibbonMaterial` → `@jgengine/shell/roads/…`; the barrel is `@jgengine/shell/roads`.
+  - `@jgengine/react/streetGeometryPreview` → `@jgengine/react/roads/streetGeometryPreview`.
+- One junction builder: `buildTrimmedIntersections` + `buildIntersectionMarkings`. Removed the older parallel paths:
+  - `buildJunctionPatch` (disc patch), `buildJunctionConnector`, `trimBandAtJunctions`/`BandTrimOptions`, `DashExclusion` and the `exclude` argument of `dashSegments`.
+  - From `streets`: `laneCenters`/`StreetLane`, `curbPaths`, `junctionExclusions`, `junctionMarkings` (use `IntersectionMarkingIntent.crosswalk` / `stopLine`). `offsetPath` now comes from `@jgengine/core/roads/roads`.
+- `pathLength` in the roads module is now `polylineLength` (`@jgengine/core/world` `pathLength` is still the path-follow one). The shell `terrain` barrel no longer re-exports the surface-ribbon material; import it from `@jgengine/shell/roads/surfaceRibbonMaterial`.
+- Scatter lives in one folder per layer: `@jgengine/core/world/{scatter,scatterRegion,scatterCoverage}` → `@jgengine/core/scatter/…` (the shell side is already `@jgengine/shell/scatter`).
+- Removed `@jgengine/core/world/scatterItems` (`scatterItems`, `ScatterLayer` and its `ScatterInstance`), which nothing used. `ScatterInstance` is the scatter-region one.
+- Polygon helpers have one home: `@jgengine/core/world/cityGeometry` → `@jgengine/core/world/polygon`. `scatterRegion` no longer exports `pointInPolygon`, `polygonArea`, `polygonBounds` or `distanceToPolygonEdge`; use `pointInPolygon(ring, x, z)`, `polygonArea`, `ringBounds` and `distanceToRing(ring, x, z)` from `@jgengine/core/world/polygon`.
+- Scatter regions pick their palette item with the shared `pickWeighted` from `@jgengine/core/random/pick`.
+- The sky lives in one folder per layer. Update deep imports:
+  - `@jgengine/core/render/{physicalSky,skyOwnedLighting}`, `@jgengine/core/world/volumetricClouds` and `@jgengine/core/time/dayNightCycle` → `@jgengine/core/sky/…`.
+  - `@jgengine/shell/environment/daylightCycle` → `@jgengine/core/sky/daylightCycle` (pure model, no three.js).
+  - `@jgengine/shell/environment/{Daylight,VolumetricClouds,skyBands,skyLightingPolicy,sunShadowMath}` → `@jgengine/shell/sky/…`. The `@jgengine/shell/environment` barrel still exports `Sky`, `SkyDome` and `VolumetricClouds`.
+- `lerpHexColor` is gone; the day/night models mix colours with `mixHex` from `@jgengine/core/render/color`, which now also reads bare `rrggbb`.
+- Camera and vector types have one definition each:
+  - `Vec3` from `@jgengine/core/vfx/particles` or `@jgengine/core/visibility/bounds`, and `Vec2` from `@jgengine/core/world/polygon` → `@jgengine/core/world/geometry`.
+  - The `{ x, y, z }` `Vec3` of `@jgengine/shell/camera/orbitCameraMath` and `@jgengine/editor/camera/orbitFraming` → `Xyz` from `@jgengine/core/math/xyz`.
+  - Camera config moved: `@jgengine/core/game/cameraConfig` → `@jgengine/core/camera/cameraConfig`. `CameraFollowState` is defined only there; `orbitCameraMath` no longer exports it or `distanceBetween`.
+  - `@jgengine/shell/camera/rigMath` no longer exports `clamp`, `lerp` or `smoothstep`; use `@jgengine/core/math/scalar` and `@jgengine/core/anim/easing`.
+  - `nowMs` is no longer exported from `@jgengine/core/visibility/diagnostics`; use `@jgengine/core/devtools/frame`.
+- `@jgengine/core/world/water` → `@jgengine/core/water/waterSurface`; `@jgengine/core/world/waterKind` → `@jgengine/core/water/waterKind`.
+- `@jgengine/shell/scene/WaterRenderer` → `@jgengine/shell/water/WaterRenderer`; `@jgengine/shell/environment/oceanColor` → `@jgengine/shell/water/oceanColor`.
+- `OceanConfig` wave fields (`amplitude`, `speed`, `direction`, `steepness`, `waveScale`, custom `waves[]`) are gone. Pass `waves: WaterSurfaceConfig` (`waveHeight`, `waveScale`, `waveSpeed`, `waves`, `choppiness`, `direction`, `steepness`), the same config `waterSurface` takes. `DEFAULT_OCEAN_WAVE_SCALE`, `OceanWaveConfig`, `OceanDirectionVector`, `OceanWaveDirection` and `ResolvedOceanWaveConfig` are removed; `ResolvedOceanConfig.waves` is `GerstnerWave[]`.
+
+### Added
+
+- `ActionDef.detail` (`@jgengine/core/ui/actionModel`): the quieter text after the label, a cost line or unlock condition.
+- `ActionBar` takes `look` (`slots` | `kit`), `progress`, `trailing`, `prompt` and `wrapAt`.
+- `hudBlockRegion(id, rect)` (`@jgengine/core/hud/hudPriority`); `formatLayoutCollisions` takes the viewport and its header reads `JGENGINE LAYOUT COLLISION`.
+- `landmarks` city rule (0..0.5, default 0): the share of buildable blocks given whole to one civic landmark (hall, arena, market or campus, picked by zone band). `CityLot.landmark` names it.
+- `ResolvedCity.network`: the street graph the district grew from (plain data).
+- `streetElevationField(rules, hx, hz)` (`@jgengine/core/roads/streetGenerator`): the road-surface field a network was draped over, rebuilt from seed, extents and the elevation dial.
+- `GraphBlockRings.curb` and `GraphBlockEdge.sidewalk`.
+- `AudioEngine.snapshot()`/`restore(next)` hand out and take back the player's mix (master and bus volume and mute, the heard space), and `EventFeedback.snapshot()` with `reset(next)` carries the cue cooldowns into a fresh seam.
+- `arrangeHudPanels` (`@jgengine/core/hud/hudPanelLayout`) places HUD panels by anchor, order and priority so none overlap: stacked panels slide to the nearest free spot, lower priorities fold into a toggle, and the HUD shrinks only when nothing else fits.
+- `HudPanel` `chip` names the toggle a panel folds into on any display. Opening the toggle shows the panel beside it.
+- `useRegisterLayoutRegion` takes a `placement` key; a new key re-measures a region that moved without resizing.
+- `uploadInstances(mesh, source, options)` (`@jgengine/shell/instancing/instanceUpload`): writes a list of matrices or a `{ count, at }` writer into a mesh, grows its buffers when needed, and reports the count to the draw probes. Knobs: `localMatrix` (a model part's own transform), `colors` (list or writer), `bounds` (`"sphere"`, `"boxes"` with `boundsPad`, a known `Box3`, or `"none"`), `dynamic` (per-frame buffers).
+- `composeInstance(out, position, rotation, scale)`: one instance matrix from plain arrays.
+- `partitionInstances(geometry, matrices, { localMatrix, cellSize })` (`@jgengine/shell/instancing/instanceChunks`): splits a batch into XZ cells that cull as units; a batch that fits one cell stays one draw.
+- `groupInstancesByCell(items, cellSize, at)` (`@jgengine/core/instancing/instanceCells`): the plain cell grouping both scatter and buildings use.
+- `bun run shoot --load <game> --guard`: builds only the /play runner (apps/dev reads package source, ~40 s), opens `/play/?game=<id>` in a fresh Chrome profile on the real GPU, and fails when the worst freeze or scene ready is worse than `scripts/load-baseline.json` beyond noise (worst freeze: 1.5x or +400 ms; scene ready: 1.3x or +1.5 s). A failing game gets one more cold run first. Baselines are per GPU; a game without one is skipped with a hint. `--save-baseline` records games. Never runs in CI (it skips when `CI` is set).
+- `verify:fast`: for the games a change boots (render, boot or game changes, per the #2500 scope), a `load guard <game>` step runs alone on the machine, cached by the same inputs as the boot probe.
+- `HudSlots` and `HUD_CORNER_WIDTH` (`@jgengine/react/hud/hudLayout`): a play HUD's eight edge slots on a `HudCanvas`, with the layout saved per game.
+- `@jgengine/react/hud/kitHud`: `KitVitals` (meters plus the labeled objective), `KitWaveClock`, `KitHint`, `KitActionBar` (keyed build/action buttons with costs, progress and the interact prompt), `KitCount` and `KitCounts`.
+- Nine games that were playable but missing from the site (Apex Nights, Briarcrown, Fernwild, Hold the Line, Orbit Watch, Outpost Zero, Red Frontier, Saltwick, The Sunken Crown) get a `games/README.md` row and a cover.
+- Game cards show the one-line idea a game started from, read from its README.
+- `readBuildEnv()` (`@jgengine/core/devtools/saveEndpoint`, internal): the one reader of the bundler's build flags (`DEV`, `PROD`, `NODE_ENV`, `VITE_JGENGINE_DEV_PROXY`), each read by its literal name.
+- `createGameFlowSystem` (`@jgengine/core/game/gameFlow`): title, play, pause and autosave checkpoints as one system, with the `pause` and `start` commands. `openTitle`, `playGame`, `newGame`, `continueGame`, `togglePause` and `saveNow` drive it from menus and result screens.
+- `GameFlowUI` (`@jgengine/react/menu/gameFlowMenus`): the title menu, the HUD while playing and the pause menu over it. The game passes its HUD and its menu words (`name`, `tagline`, `pitch`, `accent`, `controls`, `briefing`, `credits`). `startNewGame` starts a fresh run in a browser page, reloading when a run already played.
+- `planParticleBudget` takes `{ effectCap }`: each request is clamped to it, an entry with no `requested` takes the whole effect cap, and every clamped request keeps at least one particle. An `Infinity` total cap admits every request.
+- `buildTrimmedIntersections` nodes mid-span crossings itself, and takes per-street `elevation` and per-junction `elevation`.
+- `IntersectionMarkingIntent.crosswalk` with `crosswalkBars`, `crosswalkBarWidth`, `crosswalkDepth` and `crosswalkGap` on `buildIntersectionMarkings`: zebra crossings beyond the stop line.
+- `WaterSurfaceConfig.direction` (heading of the longest wave, degrees) and `steepness` (crest sharpness, 0..1 of the no-loop limit).
+- `waterSurfaceConfigFromDescriptor`; `ResolvedWater.surface` carries an authored water volume's wave model.
+
+### Changed
+
+- fernwild, hold-the-line, briarcrown, orbit-watch, red-frontier and saltwick draw their build or seed strip with `ActionBar look="kit"`. In saltwick the seeds you have not picked read as normal buttons instead of greyed out (greyed now only means unavailable).
+
+Verification:
+- `bun test packages/react/src/hud packages/core/src/hud packages/core/src/ui games/deepward/src/game/ui/hudLanes.test.ts`: pass
+- `bun scripts/check-types-all.ts` and the six games' `check-types`: pass
+- fernwild in the browser: the build strip shows each structure with its cost and key, greyed when unaffordable, and clicking one starts building
+
+## Bends
+
+- `kitHud.test.tsx` lost its `KitActionBar` test with the component; the same behaviour (detail text, unaffordable as ghost, meters, prompt above) is asserted on `ActionBar look="kit"` in `actionHud.test.ts`.
+- The `hudBlockOverlaps` tests in `hudLanes.test.ts` now run the same cases through `detectLayoutCollisions`; no case was dropped.
+- City blocks are traced from the exact street graph instead of welding centerlines, so curved and filleted streets still close their blocks. Every city closes more blocks and places more buildings (the default district goes from 184 to 235 lots; Manhattan from 134 to 225). Apex Nights, Briarcrown, Ember Command, Hold the Line and Saltwick place city volumes and get the fuller fabric.
+- Playground: "Lot frontage", "Lot depth" and "Plot variety" become one "Lot scale" dial (`?lotScale=`); "Landmarks" goes up to 0.5.
+
+Verification:
+- `bun test packages/core/src/city packages/core/src/roads packages/core/src/scatter packages/core/src/world apps/web/src/live apps/web/src/routes/-playground.test.ts`: pass
+- `bun run check types`, `check concept-homes --all` (only the known TerrainMaterial): pass
+- Playground in the browser: city and street race grow with buildings, an arena landmark, and the lap with kerbs and barriers
+- `shoot apex-nights` and `shoot hold-the-line`: load and render normally
+
+## Bends
+
+- `cityKind.test.ts` pins the default district's lot counts; the pins move from 184/189 to 235/252 because the fabric now closes more blocks, which is the intended change.
+- `cityLayout.ts` stays: it is Harbor Heat's authored road classes over the shared lot deriver, not a generator.
+- Drop the i-have-adhd plugin from the repo settings; nothing on this PC uses it
+- `check concept-homes` scans `games/*/src`, `games/*/packages/*/src` and `games/shared`. Each game is its own namespace (two games may each have a `Hud`); a clash with an engine export fails. The names a game's entry files hand the engine (`game`, `world`, `editorLayers`, `editorCatalogs`, `uiScenario` in top-level `src/` files) are the contract and pass.
+- Games use the engine where theirs was a copy: `UiKitName` (`@jgengine/react/uiKits`) in the nine idea games, `FogBounds` in ember-command, `Vec2` in beacon-bastion, `clamp` in odd-orbit (`clampNeed` wraps it), and `openTitle` (`@jgengine/core/game/gameFlow`) inside beacon-bastion's `openKeepTitle` and deepward's `openMarrowTitle`.
+- Game-specific things got their own names, e.g. harbor-heat `BeltHotbar`, scrap-signal `WeaponHotbar`, ember-command `TacticalMinimap`/`GlyphIcon`/`factionDamage`, deepward `VisorReticle`/`CommsLine`/`groundDistance`/`tickControls`, brightway-park `CoasterStation`/`tileAt`/`snapToTile`, the idea games' `campWorld`, and llmville's presence aliases (`WorldPresenceTransport`, …), economy (`playerCanAfford`, …) and settings (`GraphicsPreset`).
+- `games/shared`: one `dirHasEntries` in `assetStore.ts`, used by `provisionAssets.ts` (was a private copy, and named like the assets CLI's `isPopulated`).
+
+Verification:
+- `bun scripts/check-concept-homes.ts --all`: no game entries; only the world/render names remain
+- every game's `check-types`: pass
+- `bun test` on the touched games, `games/shared` and `scripts/check-concept-homes.test.ts`: pass
+
+## Bends
+
+- None. The entry-export allowance covers only the five names the template writes into top-level `src/` files; the same name anywhere else in a game still fails (tested).
+- A ground over 66k vertices splits into 128-cell tiles, each a `THREE.LOD` at strides 1/2/4/8/16. Scene load builds only the coarsest level of every tile plus what the camera needs nearby; finer levels build in the background as the camera reaches them. Each level drops a skirt below its edges, so neighbouring tiles at different detail show no crack. Normals come from the sampled heights, so a tile edge lights the same from both sides.
+- A pulled terrain scan that may be missing no longer meshes the ground twice (once for the procedural stand-in, again when its maps load): the same mesh swaps material.
+- A compatible prop alone in its 128 m cell joins the nearest batch of its model, and a model with no cell batch gathers its lone props into one. Drawn as a plain mesh it linked a second, non-instanced program for every material the batched copies already had (harbor-heat start: 112 programs, now 107).
+
+Measured on this RTX 3070 (/play runner, cold, shared machine):
+
+| | before | after |
+|---|---:|---:|
+| drift-foundry ground vertices built for scene ready | 438k (twice with a pulled scan) | ~7k + near tiles |
+| drift-foundry height samples on the main thread | 1.7 s | 1.0 s |
+| drift-foundry scene ready | 9.3–10.9 s | 9.3–10.0 s |
+| harbor-heat programs at start | 112 | 107 |
+
+Ground meshing no longer appears in drift-foundry's long tasks. Its scene ready is now held by shader warmup and model setup, plus the water depth plane and road ribbons sampling the yard's height field (about 1 s of early hitches).
+- `check concept-homes` no longer counts `export const …` lines inside a generator's template literal (assets `indexGen`/`spriteIndexGen`) as definitions.
+
+Verification:
+- `bun scripts/check-concept-homes.ts --all`: 25 names left, all world/render
+- `bun scripts/check-types-all.ts`: 23 dirs, 0 failing; every game's `check-types`: pass
+- `bun test` on threshold, stats, vec2/vec3, waypoints, ui, movement, combat, nav, ws, node, convex, shell audio: 1693 pass
+
+## Bends
+
+- None. The concept-homes template-literal skip removes false positives only (text a generator prints is not a definition); it has its own test.
+- `HudCanvas` places every panel with `arrangeHudPanels` instead of nine independent anchor regions, so panels in different anchors no longer run into each other on phone and tablet screens.
+- Beacon Bastion, Deepward, Harbor Heat, Odd Orbit and Scrap Signal declare one anchor and a priority per panel; their per-size placements are gone.
+- Ember Command draws the ledger, orders note, pause seal, survey map, Bram's card, command board, order hints and level-up writ as `HudCanvas` panels with one anchor and a priority each, instead of hand-placed CSS. The map folds into a toggle when there is no room for it rather than being hidden below 1180px, and the hand-registered layout regions are gone because every panel registers its own.
+- Brightway Park and Drift Foundry draw their HUD as `HudCanvas` panels with one anchor and a priority each, instead of hand-placed CSS. At 800x450 Brightway's build sheet no longer covers the park card, and Drift Foundry's gate sign and compactor bar no longer run into the build rack and route strip. Their per-size position rules are gone.
+- `StaticShapeInstances` moved to `@jgengine/shell/instancing/staticShapeInstances`; `placeAlongPath` moved to `@jgengine/core/instancing/pathInstances`.
+- Scatter, impostor scatter, buildings, building kits, city furniture/trees/vehicles/signals, pole lines, interior decals, fire spread, the living-world flock, `DataObjects`, `GridWorldScene` and `TileLayerRenderer` draw through `uploadInstances`.
+- Beacon Bastion, Deepward and LLMVille import the new homes; Deepward's station batches and LLMVille's endless datacenter upload through `uploadInstances`.
+- Textures load as GPU-compressed KTX2 (Basis UASTC) when the server has a compressed twin. `bun run games:compress` encodes twins of every game's model and material textures into the shared asset store (`.asset-store/.ktx2/`). The step runs on its own, in the background at idle priority, when a game's dev server or the dev runner starts, and never runs in CI. A server without twins sends the original files, so nothing changes in CI or on a fresh clone.
+- The Basis transcoder and the Draco decoder now ship with the game's own build instead of loading from a CDN. `configureModelLoaders()` with no paths uses the bundled copies; passing a folder path still works.
+- Roads and junctions stay hidden until their scanned asphalt has loaded. Before, they linked a procedural program first and then relinked once the scan arrived. Shader warmup also re-applies the scene's shadow and wetness patches to a material swapped in after warmup was planned, so that material links once, already patched.
+- Browser test fixtures understand `?url` imports, the way Vite does.
+
+Measured on this RTX 3070 (/play runner, cold, best of 2):
+
+| | without twins | with twins |
+|---|---:|---:|
+| scrap-signal scene ready | 9.5 s | 8.9 s |
+| apex-nights scene ready | 6.2 s | 5.5 s |
+| scrap-signal 2048² uploads | 16 decoded images on the main thread | 15 compressed uploads, 11 ms in total |
+
+| harbor-heat roads | before | after |
+|---|---:|---:|
+| programs linked | 120–122 | 113 |
+| scene ready | 11.3–16 s | 9.4–10.1 s |
+
+The load guard baselines were tightened wherever a game got faster; none were loosened.
+
+Handed to the world builder: drift-foundry's ground, and models drawn both instanced and plain (the duplicate programs).
+- Models that point at the same texture file share one image: each model file used to decode and upload its own copy, so a kit of forty wall pieces on one trim sheet uploaded that sheet forty times (scrap-signal: 165 uploads of 23 images, about 2.4 s of main thread, now 16 uploads, about 0.16 s).
+- Lifting a menu that covers the canvas (pressing Play) compiles what the scene gained while covered before the frame loop draws again.
+- For a few seconds after the reveal or a lifted cover, a frame that would link a new program mid-draw (a level the Play press spawns from the game loop) is skipped instead: the canvas keeps its last image while the warmup links the new content off the frame, and the loading cover comes back only when that takes over 0.4 s.
+- Ground ribbons and see-through double-sided model materials (window glass, leaf cards) draw in one pass, which drops their second back-face program and draw.
+
+Measured on this RTX 3070 (/play runner, cold, busy shared machine):
+
+| | before | after |
+|---|---:|---:|
+| scrap-signal 2048² texture uploads | 165 (2.4 s main thread) | 16 (0.16 s) |
+| scrap-signal scene ready | 12.0 s | 9.0 s |
+| briarcrown longest freeze after Play | 2.6 s | none over 100 ms (about 0.6 s "Preparing scene" cover) |
+| red-frontier longest freeze after Play | 3.5 s | none over 100 ms |
+| outpost-zero / saltwick / fernwild / orbit-watch after Play | 0.85 / 0.98 / 0.59 / 0.40 s | none over 100 ms |
+| programs (saltwick / briarcrown / harbor-heat) | 89 / 83 / 127 | 82 / 78 / 123 |
+- Terrain and road shaders compile about 5x faster on Direct3D: their noise reads a small shared lattice texture instead of an integer hash the HLSL compiler inlined hundreds of times.
+- The ground mesh builds from a padded height grid sampled once per vertex (no repeated route projections for slopes), and the terrain mounts a shared stand-in until its geometry is ready, so the warmup no longer waits on it.
+- Shader warmup: draws are grouped by the program three actually linked rather than by material, texture uploads happen under the cover for the first view (and only the cut-out maps of off-screen shadow casters), the rest upload one per frame afterwards, and a post-processing chain the covered frame loop never ran is linked under the cover too (`warmupDraws`).
+- Image textures (surface scans, authored material maps, building surfaces, terrain detail maps) decode off the main thread through one `ImageTextureLoader`, so their upload no longer decodes a large JPEG inside `texImage2D`.
+- Grass fills its view over a few frames (8 ms slices, nearest first) instead of baking the whole field in one frame.
+- A cycling sky keeps its moon light mounted (dark by day). Mounting it as the moon crossed the horizon changed every lit program, so the whole scene relinked, an 8 s freeze in saltwick as play starts at dawn.
+- Thousands of idle `useFrame` subscriptions (foot IK, glance, animation, paint) now subscribe only while they have work, through `useFrameWhile`.
+- The surface-scan maps hold the warmup until they load, so it links the scanned road programs rather than the procedural ones they replace.
+
+Cold loads on this RTX 3070 (/play runner, fresh profile, single runs on a shared machine, so about ±20% noise; ms):
+
+| game | scene ready, first measured | before this change | after | worst click before | after |
+|---|---:|---:|---:|---:|---:|
+| apex-nights | 12343 | 16005 | 6153 | 1196 | 364 |
+| beacon-bastion | 11513 | 19153 | 5288 | 1125 | 780 |
+| briarcrown | 8801 | 12740 | 4817 | 973 | 529 |
+| brightway-park | 13879 | 18148 | 5470 | 569 | 490 |
+| deepward | 4467 | 5599 | 4180 | 627 | 536 |
+| drift-foundry | never | 31243 | 9652 | 1945 | 815 |
+| ember-command | 10283 | 15926 | 5214 | 849 | 555 |
+| fernwild | 11172 | 9653 | 5818 | 1372 | 434 |
+| harbor-heat | 29142 | 17006 | 9469 | 798 | 1072 |
+| hold-the-line | 10362 | 13050 | 5743 | 1886 | 416 |
+| odd-orbit | 11590 | 15429 | 6645 | 907 | 589 |
+| orbit-watch | 11224 | 11007 | 4411 | 726 | 490 |
+| outpost-zero | 10124 | 9598 | 4800 | 616 | 459 |
+| red-frontier | 10898 | 10842 | 4149 | 926 | 477 |
+| saltwick | 17563 | 10425 | 5531 | 820 | 362 |
+| scrap-signal | 28709 | 21497 | 11928 | 1544 | 763 |
+| the-sunken-crown | 12275 | 11295 | 6344 | 2019 | 460 |
+
+Still over 6 s: drift-foundry (its ground is 438k vertices and the first view draws about 3,400 objects), scrap-signal (about 165 textures at 2048x2048 to upload, roughly 11 ms each; compressed or smaller textures are the fix) and harbor-heat (121 shader programs). After Play, briarcrown and red-frontier still link a few new materials on the first frame (about 1-2 s).
+- Loading cover progress no longer re-renders the scene. The warmup reported progress through React state in the component that renders the canvas, so every report re-rendered the whole 3D tree (12,000+ components in drift-foundry, several times a second) and starved the warmup it was reporting on. Progress now goes through a small store the cover subscribes to.
+- Placed objects measure their collision mesh once per catalog kind and model, not once per placed instance (drift-foundry walked about 2,000 clones of the same models on load). Batched static props measure each source once and keep their variant levels across membership changes instead of re-measuring every render (harbor-heat).
+- Shader warmup: instanced, batched and skinned meshes are judged in or out of view by the same bounds the renderer culls with, so the first view's programs go first; shadow casters outside the view get their depth programs with the first view and their lit programs after.
+- Ground that is already wet when it loads is patched before the warmup compiles it, instead of compiling dry and then again wet (drift-foundry compiled its 100 KB terrain shader twice, about 3 s each).
+- `bun run shoot --load --guard` and `--save-baseline` stop at scene ready instead of pressing Play and waiting for playable. One game's guard run, build included, takes about 40 s; all 17 games measure in three batches of 1-2.5 minutes with `--no-build`.
+
+Cold loads on this RTX 3070 (/play runner, fresh profile, NVIDIA DXCache cleared before each batch; ms, single runs on a shared machine, so about ±20% noise):
+
+| game | scene ready before | after | worst freeze before | after |
+|---|---:|---:|---:|---:|
+| apex-nights | 12343 | 9960 | 928 | 904 |
+| beacon-bastion | 11513 | 9625 | 739 | 760 |
+| briarcrown | 8801 | 8111 | 531 | 525 |
+| brightway-park | 13879 | 14648 | 543 | 540 |
+| deepward | 4467 | 4477 | 552 | 561 |
+| drift-foundry | never (timed out at 86 s) | 26700 | 2769 | 2182 |
+| ember-command | 10283 | 10158 | 705 | 761 |
+| fernwild | 11172 | 11505 | 1555 | 1340 |
+| harbor-heat | 29142 | 16286 | 1738 | 778 |
+| hold-the-line | 10362 | 10130 | 1558 | 1473 |
+| odd-orbit | 11590 | 14110 | 748 | 675 |
+| orbit-watch | 11224 | 10196 | 864 | 769 |
+| outpost-zero | 10124 | 10373 | 787 | 645 |
+| red-frontier | 10898 | 11194 | 729 | 728 |
+| saltwick | 17563 | 10223 | 816 | 526 |
+| scrap-signal | 28709 | 23176 | 871 | 1016 |
+| the-sunken-crown | 12275 | 9201 | 1952 | 1782 |
+
+Scene ready is still over 5 s for every game but deepward. What is left is the GPU compile itself: ANGLE on Direct3D 11 compiles 50-120 programs per game cold, about 0.3-0.8 s each with several in flight, and a procedural terrain program (about 100 KB of HLSL) takes about 3 s on its own. drift-foundry also waits for its terrain to finish building, about 14 s into the load.
+- Terrain detail shader: each blended slot inlines the procedural surface function once instead of three times (rock, paint layer and base each had their own call), so the terrain program is a third the code for the HLSL compiler. Same pixels.
+- Baselines recorded for deepward and harbor-heat on the RTX 3070.
+
+Guard proof: planting a 2.5 s main-thread stall in deepward's room lights made `bun run shoot --load deepward --guard` exit 1:
+`deepward: worst freeze 2541 ms, baseline 636 ms, limit 1036 ms` and `deepward: scene ready 6407 ms, baseline 4871 ms, limit 6371 ms`.
+
+Cold loads on current beta (site build, fresh profile, NVIDIA DXCache cleared before each game; ms):
+
+| game | worst freeze | scene ready |
+|---|---:|---:|
+| apex-nights | 839 | 10863 |
+| beacon-bastion | 838 | 19448 |
+| briarcrown | 576 | 18059 |
+| brightway-park | 720 | 17949 |
+| deepward | 701 | 5489 |
+| ember-command* | 945 | 26008 |
+| fernwild* | 1266 | 26825 |
+| harbor-heat* | 2405 | 33325 |
+| odd-orbit* | 1076 | 18293 |
+| orbit-watch* | 726 | 10319 |
+| outpost-zero* | 834 | 11332 |
+| red-frontier* | 776 | 11059 |
+
+\* measured while a second load run overlapped on the GPU, so these read slow.
+After (runner build, cold): deepward 636 / 4871, harbor-heat 2168 / 42084 (other agents' test runs shared the machine).
+
+Not done: scene ready is still 10–40 s for most games; the shader compile cost per program and the drift-foundry / harbor-heat main-thread freezes were not traced; drift-foundry, hold-the-line, saltwick, scrap-signal and the-sunken-crown have no clean measurement.
+
+Verification:
+- `bun test scripts/load-check.test.ts scripts/verify-fast.test.ts packages/shell/src/terrain/terrainDetailMaterial.test.ts`: pass
+- `bun run shoot --load deepward --guard` with a planted stall: exit 1 (above)
+
+## Bends
+
+- None.
+
+🤖 Generated with [Claude Code](https://claude.com/claude-code)
+
+Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>
+- `Ocean` (`@jgengine/shell/water`) animates its waves on the game clock (`ctx.time.advancedSeconds()`), so the sea stops when the game pauses, follows slow motion and lines up with the water surface buoyancy samples. Before any game time has passed (a title screen), or with no game (an editor preview), it runs on real time.
+- Ocean glints follow the sun the mounted `Sky` placed, through the day-night cycle, and fade out once the sun sets; without a sky they keep the fixed day heading. `syncOceanMaterial` takes the sun direction as an optional fourth argument.
+- Every game's HUD runs on the one kit: the nine starter games drop their own `HudFrame` copies for `HudSlots` and the `kitHud` blocks, and the seven frame games draw their frames through `KitPanel`/`KitButton`.
+- Home is rebuilt around the builder: one-command start, a HUD that fits phones with touch controls, saves, walking/driving/flying, physics with an optional Rapier backend, systems with knobs, load numbers and agent tooling. Games are proof in the background, not the headline.
+- The home page's code lives in `apps/web/src/snippets/` as real files that `apps/web` check-types compiles against the engine source, so a snippet that stops building fails CI.
+- New theme: Archivo display type, an editor-style grid, orange accent, axis-tick eyebrows; both colour schemes and phone width reviewed. Bricolage Grotesque is replaced by Archivo.
+- Every page's copy rewritten plainly and checked against the code: games, game page, playground, editor, capabilities (now with the blueprints), why, adopt, 404, site title and description.
+- Load numbers on the site come from `scripts/load-baseline.json` (`apps/web/src/lib/siteFacts.ts`), not hand-typed.
+- `isProductionEnvironment` and `proxiedUrl` read their flags through `readBuildEnv`.
+
+Verification:
+- In Vite's server module runner, the old `saveEndpoint.ts` throws "Dynamic access of import.meta.env is not supported"; the new one returns `isProductionEnvironment() === false` and `proxiedUrl` works.
+- `bun test packages/core/src/devtools packages/core/src/data packages/core/src/random` and `bun run check types`: pass
+- Playground and home page in the web dev server: rendered on the server, no page errors.
+- `packages/core/src/devtools/buildEnv.test.ts`: fails on the old reader (`import.meta as … .env`), passes now; it scans core and shell source so no whole-object `import.meta` read comes back.
+- `jgengine sync` takes over everything `upgrade` did: workspace catalog updates (keeping range prefixes, a held editor override and each game's `catalog:` declarations; refusing a downgrade), `--check` for CI, and release notes for the span crossed.
+- `shoot` and `drive` always run the CLI's own bundled harness. When nothing is serving the game, the harness starts the project's vite through its JS entry with the current Node, so it no longer fails with `spawn EINVAL` on Windows.
+- The in-repo template (`jgengine create --in-repo`) writes the games' shared wiring: `vite.config.ts` on `games/shared` (`engineSource`, `viteProvisionAssets`, `viteIdleExit`; it used to import a `devSavePlugin` from `apps/dev` that no longer exists), a `tsconfig.json` that extends `../tsconfig.base.json`, an `index.css` that scans the engine's source (the games scanned `node_modules/@jgengine/*/dist`, which is not built in the repo), and a `main.tsx` that passes `gameId="<id>"`. It no longer writes `.gitignore` or `AGENTS.md`: an in-repo game has the monorepo's.
+- Every in-repo game but llmville sets `"template": "3d"` in `jgengine.json`, so the `games-sync` gate keeps its wiring current. A game lists in `owns` the files that are really its own: a richer `index.html` (description, social tags), `index.tsx` with more entry exports (`editorCatalogs`, `uiScenario`), brightway-park's evidence plugin and ember-command's fixed port in `vite.config.ts`, and deepward's own entry. llmville keeps every file (no template).
+- Games gained the template's `drive` and `shoot` scripts. drift-foundry's two page rules moved from `index.css` to `style.css`.
+
+Verification:
+- `bun packages/jgengine/src/cli/index.ts sync --check games/*`: every game up to date
+- `bun scripts/check-types-all.ts`: 23 dirs, 0 failing
+- `bun test packages/jgengine scripts/scaffold-editor.test.ts`: 387 pass
+- fernwild and odd-orbit run from their own folder (`bun run dev`): styled title menu, fernwild's HUD and build strip in play
+
+## Bends
+
+- `templates.test.ts`: the "in-repo tsconfig paths match the exact map doctor requires" test went with the map; it is replaced by a test that the in-repo wiring extends the base tsconfig, runs on `games/shared` and names the game by id. The AGENTS.md test now runs on the standalone template only, since the in-repo template no longer writes one.
+- Moved to `@jgengine/core/terrain/`: `terrain` (was `world/terrain`), `terraform` (was `world/terraform`), `pathTerrain` (was `world/pathTerrain`), `terrainGuides` (was `world/terrainGuides`), `terrainGrade` (was `movement/terrainGrade`), and `terrainPaint` (was `editor/terrainMaterials`).
+- `terrainGroundColorSampler` moved to `@jgengine/shell/terrain/terrainGroundColor` (was `environment/terrainGroundColor`).
+- The editor's paint palette is `TerrainPaintPreset` / `TERRAIN_PAINT_PRESETS` / `TERRAIN_PAINT_COLORS` (was `TerrainMaterial` / `TERRAIN_MATERIALS` / `TERRAIN_MATERIAL_COLORS`), imported from `@jgengine/core/terrain/terrainPaint`. `@jgengine/core/editor` and `@jgengine/editor` no longer re-export it.
+- Every importer in packages, apps and games points at the new paths. The terrain and road shader work from #2544 (shared noise texture, height-grid ground mesh, grouped warmup) is untouched; only import paths changed.
+- The nine games that carried identical `flow.ts` and `Menus.tsx` copies now use `createGameFlowSystem` and `GameFlowUI`.
+- The API orphan ratchet treats a symbol whose file moved folders as the same entry (package + name), so moving a module no longer needs `@internal` to pass.
+- `bun run shoot --load --guard` reads the scene canvas back over the two seconds after scene ready and fails a scene that shows fewer than 40 coarse colours: `ember-command: the scene drew blank at scene ready (13 colours; 251 WebGL errors logged)`. Drawn scenes show 80-240; plain beta's ember-command and briarcrown showed 11-18 and fail. Each run also logs its colour count and WebGL error count.
+- Baselines re-recorded for all 17 games now that every scene draws (a scene whose draws all failed loaded faster than a real one).
+- Authored `road()` junctions in the shell now use the same builder as generated streets, so paved crossings get stop lines and zebra crossings from one place. A road authored with `markings: false` no longer gets stop lines or zebra bars painted at its crossings (Scrap Signal's dirt roads had them).
+
+### Fixed
+
+- A `HudPanel` that has not been moved takes its `anchor` on every render. It used to keep the anchor it first mounted with, so a game that picks its anchor per display profile stayed where it started after a resize.
+- A layout region is re-measured when the game viewport's DOM changes. A panel that opens beside another one no longer leaves the neighbour's old rectangle in the overlap report.
+- Drift Foundry's `play` and `mid-run` capture staging now hands the wheel to the course autopilot. The capture keeps the sim running while models stream, and the compactor caught the parked kart within seconds, so `shoot drift-foundry --mode play` filmed "caught you" every time.
+- Shell play-surface focus: a key that unmounts the focused control (Escape closing the pause menu) now returns focus to the play surface, the same way a click on an unmounting "Play" button already did. Every game gets it.
+
+Root cause: gameplay keys are read on the shell's focusable wrapper. Closing the pause menu with Escape removed its focused button, Chromium dropped focus to `<body>` without a `focusout`, and the focus reclaim only watched clicks.
+
+Verification:
+- `bun test packages/shell/src/playSurfaceFocus.test.ts`: pass (new test fails without the fix)
+- fernwild in the browser: New Game, Escape opens pause, Escape closes it, focus is back on the play surface, Escape opens pause again (before: focus stayed on `<body>` and pause did not reopen).
+
+## Bends
+
+- None.
+- `jgengine find <feature>` answers by folder and file names once a folder is named for the query: an export that only mentions the word (`MAX_OCEAN_WAVES` for "waves") no longer shows `shell/water` as a home for waves.
+- `shoot` and `drive` `--size half` keep the page's full CSS viewport and halve only the pixel ratio, so a half-size shot lays out exactly like a full one. Before, the 800x450 viewport switched games into their compact HUD and the layout-collision check failed the run (Scrap Signal, Beacon Bastion).
+- `EntityPreview` no longer throws "Cannot read properties of null (reading 'addEventListener')" when it unmounts while react-three-fiber is still creating its canvas (a dialogue or menu that re-mounts a portrait in one beat, e.g. Harbor Heat's Marco dialogue).
+- Web Audio and saved devtools overrides are browser code, so they sit in the view layer (`musicDirector.view`, `synthEngine.view`, `reverbRack.view`, `devtoolsOverrides.view`) and the model type-check no longer needs DOM types.
+- `jgengine find` indexes the checkout once and matches each query against that index, so asking many questions of one checkout costs one read.
+- `GameMenu` (`@jgengine/react/menu/gameMenu`): its focus effect runs a frame after the highlight changes and used to grab focus whenever focus sat outside the menu, so a Tab to a text field (or hovering an item while typing) in that frame lost the field's focus. It now only takes focus when nothing has it. This was the cause of the `menuNav.test` Tab case failing now and then in CI (#2529): with a slow runner, the menu's frame landed after the Tab.
+
+Verification:
+- `bun test packages/react/src/menu/menuNav.test.ts`: 11 pass, three runs in a row
+- the new "hovering the menu while a field has focus" test fails without the fix (focus lands on the body) and passes with it
+- waits are `requestAnimationFrame` frames, not `waitForTimeout`
+
+## Bends
+
+- None. No assertion was relaxed; the timer waits became frame waits and one regression test was added.
+- A shadow-casting light whose shadow map no frame had drawn yet left every lit draw failing (WebGL: "Mismatch between texture format and sampler type"), so the scene showed only its clear colour. The shader warmup holds the frame's draws behind the loading cover, and cascaded shadows took the first held frame as their one refresh, so far cascades never got a map. A cascade now refreshes until it has a map, or when something asks for a redraw.
+- The warmup's own draws ran before any shadow map existed, so every lit warmup draw failed and finished nothing. The first warmup draw now makes the missing maps, and the next real frame redraws them with every caster. WebGL errors on a cold load drop from 230-250 per game to under 50.
+- Ocean and authored water drew a different wave set from the CPU `waterSurface`, so floating bodies bobbed on waves that were not on screen. Both now come from `synthesizeWaves`.
+- Ocean crest foam reads true crest sharpness, so calm ponds no longer foam over.
+
+### Removed
+
+- `buildingSpatialBatch` (replaced by `partitionInstances`), `chunkScatterInstances` / `ScatterChunk` (replaced by `groupInstancesByCell`).
+
+Bends:
+- Left on their own writers: `InstancedBodies` and `SpriteBatch` (per-frame packed-array hot loops over thousands of bodies), `staticObjectBatches` (skips the upload when nothing moved), `ImpostorCardPool` (packs many slices into one shared mesh), `crowdBatch` / `SkinnedInstances` (the crowd concept) and `ImpactFeedback` (combat feedback, another builder's area).
+- `GridWorldScene` now computes a culling sphere where it had none.
+
+Verification:
+- `bun run check types`, `bun run gen` (all stages pass), `bun test packages/shell/src packages/core/src`.
+- Play shots: Apex Nights and Hold the Line (city lamps, trees, cars), Beacon Bastion (authored plot shapes, forest), Deepward (station batches), Fernwild (scatter) all render as before.
+- Load guard passes for Apex Nights, Hold the Line, Deepward, Fernwild and Beacon Bastion (Beacon Bastion failed once while other heavy jobs ran on the machine, then passed twice alone).
+- Unverified: LLMVille's endless datacenter on screen (it needs its Convex backend to run); it type-checks.
+- `jgengine upgrade` (with `--plan`, `--apply`, `--to`, `--json`), with no alias.
+
+## Bends
+
+- `upgrade.test.ts` and `upgradeCatalog.test.ts` are deleted. Their changelog tests moved to `releaseNotes.test.ts`; the catalog cases (bump, `--check`, `catalog:` kept, downgrade refused) are now sync tests.
+- Sync always targets the CLI's own version (`npx jgengine@<version> sync` picks a version). The registry-publication check and the `--to` and `--json` flags from upgrade are dropped.
+- The harness no longer runs a project's own `scripts/shoot.mjs`/`drive.mjs` copy, so `templates.test.ts` and `harness.test.ts` now expect no `scripts/` files and the bundled harness.
+- The harness sources moved from `templates/gameFiles.ts` to `templates/harnessScripts.ts`; `check-scaffold-launch.ts` reads them there.
+- The duplicate `TerrainMaterial` export in `editor/terrainMaterials`.
+
+Bends:
+- `map/terrainMap` (bakes a top-down map image) stays with the map concept; `shell/src/terrain.ts` stays as the package's `@jgengine/shell/terrain` entry.
+- Moved files count as new exports, so 19 terrain and terraform symbols that had no doc line got one.
+
+Verification:
+- `bun run check types`, `bun run gen` (all stages), `bun run check concept-homes --all` (0 duplicates), `bun test packages/core/src packages/shell/src packages/editor/src apps/web/src scripts` (11223 pass, 0 fail).
+- `jgengine find terrain` names one core folder (`packages/core/src/terrain/`) and one shell folder.
+- Standalone editor: created a terrain, the Paint tab lists all eight presets, a grass stroke paints the ground.
+- Play shots of Beacon Bastion, Harbor Heat, Odd Orbit, Scrap Signal and Fernwild render as before; load guard passes for all five (Harbor Heat failed once while the full test suite ran beside it, then passed alone).
+
+### Bends
+
+- Remaining instanced/plain pairs in harbor-heat are vehicles and characters: far ones draw through the baked crowd (its own shader), near ones on their full rig. That is two techniques, not one material compiled twice, so they stay.
+- Making every lone prop a batch of one was tried and dropped: drift-foundry's scene ready went from about 10 s to 19–28 s (per-batch machinery on hundreds of one-prop batches).
+- None.
+
 ## 0.45.0
 
 ### Migrate
