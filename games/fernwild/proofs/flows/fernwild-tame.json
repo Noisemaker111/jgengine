@@ -1,0 +1,28 @@
+{
+  "steps": [
+    { "assert": "__jgProbe().health > 0 && __jgProbe().creatures === 7", "before": { "is": "typeof __jgProbe === 'function' && __jgProbe().creatures === 7", "timeoutMs": 60000 }, "note": "arrival: the beach with its herds awake: dodos, phiomias up the slope, raptors on the ridge" },
+    { "shot": "fernwild-herds", "note": "dodos grazing inland of the spawn" },
+    { "rpc": { "method": "run_command", "name": "cheat", "input": { "xp": 100000, "spend": { "health": 45, "stamina": 8 }, "give": { "wooden_club": 1, "raw_meat": 10, "raptor_saddle": 1 }, "tamingSpeed": 20 } }, "note": "ARK's admin console: a levelled survivor with a club, raw meat and a raptor saddle; taming twenty times faster so the proof is short" },
+    { "rpc": { "method": "run_command", "name": "shuttle", "input": { "inventoryId": "inventory", "slot": 0 } }, "note": "the club onto the hotbar" },
+    { "rpc": { "method": "run_command", "name": "slot1", "input": {} }, "note": "club in hand" },
+    { "key": "KeyD", "ms": 700, "note": "step right onto open sand, clear of the palm by the spawn" },
+    { "key": "KeyW", "ms": 250, "note": "face inland again, where the camera looks" },
+    { "rpc": { "method": "run_command", "name": "cheat", "input": { "summon": { "species": "raptor", "level": 1, "distance": 4 } } }, "note": "a level-1 raptor right in front" },
+    { "wait": 700 },
+    { "shot": "fernwild-raptor", "note": "the raptor charges; its card shows level and health" },
+    { "key": "mouse0", "until": { "is": "__jgProbe().aimedDown === 1", "timeoutMs": 30000 }, "note": "club it unconscious: about eighteen hits of torpor" },
+    { "shot": "fernwild-knocked-out", "note": "the raptor down, torpor and taming bars under the crosshair" },
+    { "key": "KeyE", "until": { "is": "__jgProbe().screen === 1", "timeoutMs": 3000 }, "note": "access its inventory" },
+    { "rpc": { "method": "run_command", "name": "giveCreature", "input": { "inventoryId": "inventory", "slot": 1 } }, "note": "give it the raw meat" },
+    { "wait": 400 },
+    { "shot": "fernwild-feeding", "note": "its inventory holds the meat; it eats on its own clock" },
+    { "waitFor": "__jgProbe().tamed === 1", "timeoutMs": 45000, "note": "tamed after seven meals" },
+    { "rpc": { "method": "run_command", "name": "giveCreature", "input": { "inventoryId": "inventory", "slot": 2 } }, "note": "put the raptor saddle on" },
+    { "waitFor": "__jgProbe().saddled === 1", "timeoutMs": 3000 },
+    { "shot": "fernwild-tamed", "note": "tamed and saddled, with follow and stay orders" },
+    { "rpc": { "method": "run_command", "name": "closeCreature", "input": {} } },
+    { "key": "KeyE", "until": { "is": "__jgProbe().riding === 1", "timeoutMs": 3000 }, "note": "climb on" },
+    { "key": "KeyW", "ms": 2500, "note": "ride inland" },
+    { "shot": "fernwild-riding", "note": "on the raptor's back, the camera on the mount" }
+  ]
+}

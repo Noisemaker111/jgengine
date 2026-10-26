@@ -3,8 +3,10 @@ import { readFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import * as THREE from "three";
 import { GLTFLoader, type GLTF } from "three/examples/jsm/loaders/GLTFLoader.js";
+import { MeshoptDecoder } from "three/examples/jsm/libs/meshopt_decoder.module.js";
 
 import { sampleBoneTexture } from "@jgengine/core/anim/boneTexture";
+import { cloneModelScene, disposeModelScene, modelPlacementTransform } from "@jgengine/core/model/modelRender.draw";
 import { bakeSkinnedCrowd, createCrowdUniforms, patchCrowdMaterial, type BakedSkinnedCrowd } from "./SkinnedInstances.draw";
 
 async function loadKnight(): Promise<GLTF> {
@@ -175,6 +177,48 @@ function rigidCharacter(material: THREE.Material): { scene: THREE.Group; animati
   ]);
   return { scene, animations: [clip] };
 }
+
+describe("bakeSkinnedCrowd on an imported skinned creature", () => {
+  test("a crowd copy is normalised to the same height as the full model", async () => {
+    // The boar's skinned mesh node carries no transform of its own; its bones place every vertex.
+    const file = fileURLToPath(new URL("../../../../apps/dev/public/models/lantern-reach/creatures/wild_boar.glb", import.meta.url));
+    const bytes = readFileSync(file);
+    const warn = console.warn;
+    console.warn = () => {};
+    const gltf = await new GLTFLoader().setMeshoptDecoder(MeshoptDecoder).parseAsync(bytes.buffer.slice(bytes.byteOffset, bytes.byteOffset + bytes.byteLength), "");
+    console.warn = warn;
+    const model = { url: "boar", targetHeight: 1.9 };
+    const instance = cloneModelScene(gltf.scene);
+    const full = modelPlacementTransform(new THREE.Group().add(instance), model);
+    const baked = bakeSkinnedCrowd(gltf, { clips: ["Idle1"] });
+    const crowd = modelPlacementTransform(new THREE.Group(), model, { min: baked.bounds.min.toArray(), max: baked.bounds.max.toArray(), meshCount: 1 });
+    expect(crowd.scale).toBeCloseTo(full.scale, 6);
+    expect(crowd.position[1]).toBeCloseTo(full.position[1], 6);
+    disposeModelScene(instance);
+    baked.dispose();
+  });
+
+  test("a skin with no clips bakes where the model shows it, its bind pose applied", () => {
+    // Like a Rocketbox animal: bound with an identity bind matrix, its bone's inverse bind matrix
+    // turns the Z-up skin upright and scales it, which only skinning applies.
+    const bone = new THREE.Bone();
+    const mesh = new THREE.SkinnedMesh(new THREE.BoxGeometry(1, 1, 6), new THREE.MeshStandardMaterial());
+    const count = mesh.geometry.getAttribute("position").count;
+    mesh.geometry.setAttribute("skinIndex", new THREE.Uint16BufferAttribute(new Uint16Array(count * 4), 4));
+    mesh.geometry.setAttribute("skinWeight", new THREE.Float32BufferAttribute(new Float32Array(count * 4).map((_, i) => (i % 4 === 0 ? 1 : 0)), 4));
+    const upright = new THREE.Matrix4().compose(new THREE.Vector3(), new THREE.Quaternion().setFromEuler(new THREE.Euler(-Math.PI / 2, 0, 0)), new THREE.Vector3(0.5, 0.5, 0.5));
+    const scene = new THREE.Group().add(bone, mesh);
+    scene.updateMatrixWorld(true);
+    mesh.bind(new THREE.Skeleton([bone], [upright]), new THREE.Matrix4());
+    const baked = bakeSkinnedCrowd({ scene, animations: [] });
+    baked.geometry.computeBoundingBox();
+    const drawn = baked.geometry.boundingBox!;
+    // Stood upright, the 6 m length is 3 m tall once halved.
+    expect(drawn.max.y - drawn.min.y).toBeCloseTo(3, 6);
+    expect(baked.bounds.max.y - baked.bounds.min.y).toBeCloseTo(3, 6);
+    baked.dispose();
+  });
+});
 
 describe("bakeSkinnedCrowd on a rig-less character", () => {
   test("merges a node-transform character into one draw and bakes the moving node", () => {

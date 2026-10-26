@@ -33,6 +33,16 @@
 - `missingRequirements` (function): function missingRequirements(catalog: BuildCatalog, id: string, view: Pick<BuildPlannerView, "owned">): string[] — Requirement ids of `id` (its `requires` plus its `producer`) that the view does not own complete. Unknown ids return an empty list.
 - `resolveTechPath` (function): function resolveTechPath(catalog: BuildCatalog, id: string, view: Pick<BuildPlannerView, "owned" | "pending">): TechPathStep — Walk the tech path toward `id`: `ready` names the first thing makeable now (the id itself when nothing is missing, else the deepest unmet prerequisite), `pending` names a prerequisite already queued that the path waits on, `blocked` means an unknown id or a requirement cycle. A prerequisite in progress is skipped in favour of another missing one, so "make 4 knights" builds the stables and the smithy side by side. Cycle-safe.
 
+## @jgengine/core/ai/creatureDriver
+
+- `CreatureBody` (interface): interface CreatureBody — How a creature's body moves and strikes. Speeds are metres per second.
+- `CreatureDriver` (interface): interface CreatureDriver — The legs and teeth under a creature's mind. Wild creatures sense what is near with their own perception, decide with `ai/temperament` (oblivious, skittish, territorial, docile, aggressive are all tunings of it) and graze around home when nothing is happening; tamed ones take a `scene/companion` intent and follow, hold, or fight their owner's fight. The driver then walks, runs, faces and strikes on the scene entity, ground-snapped and slid against solids.
+- `CreatureDriverConfig` (interface): interface CreatureDriverConfig — Knobs for a creature driver: how far creatures see, how long they remember, and what blocks them.
+- `CreatureDriverState` (interface): interface CreatureDriverState — Per-creature runtime: where home is, where it is grazing toward, strike cooldown. Plain data.
+- `CreatureMind` (type): type CreatureMind = | { kind: "wild"; temperament: TemperamentConfig } | { kind: "tamed"; intent: CompanionIntent } | { kind: "still" } — What drives a creature this tick: its own temperament (wild), its owner's standing order (tamed, from `scene/companion`), or nothing at all (knocked out, ridden, dead).
+- `CreatureStep` (interface): interface CreatureStep — What the creature decided and did this tick, for a HUD line, an animation or a debug overlay.
+- `createCreatureDriver` (function): function createCreatureDriver(config: CreatureDriverConfig = {}): CreatureDriver — Drive wild and tamed creatures each tick: temperament for wild ones, follow and stay for tames, bites within body reach, veering around obstacles.
+
 ## @jgengine/core/ai/crowd
 
 - `CrowdField` (interface): interface CrowdField { enter(point: NavPoint): void; leave(point: NavPoint): void; count(point: NavPoint): number; cellCount(col: number, row: number): number; penalty(weight?: number): (col: number, row: number) => number; reset(): void } — ⚠ undocumented
@@ -3298,6 +3308,13 @@
 - `PossessionSnapshot` (interface): interface PossessionSnapshot { owned: Record<string, readonly string[]>; active: Record<string, string> } — ⚠ undocumented
 - `PossessionSwappedEvent` (interface): interface PossessionSwappedEvent { userId: string; entityId: string; previousEntityId: string } — ⚠ undocumented
 - `createPossession` (function): function createPossession(deps: PossessionDeps): Possession — ⚠ undocumented
+
+## @jgengine/core/scene/riding
+
+- `RideResult` (type): type RideResult = { ok: true } | { ok: false; reason: string } — Whether a ride started, and why not when it did not.
+- `Riding` (interface): interface Riding — Riding a creature or vehicle: the player's controls and camera move to the mount (through possession), the rider is frozen and carried on the seat every simulation step, and getting off hands control back and sets the rider down beside it. Seat bookkeeping is `scene/mount`'s.
+- `SeatOffset` (type): type SeatOffset = readonly [number, number, number] — Where the rider sits on a mount, in the mount's frame: right, up, forward (metres).
+- `ridingOf` (const): const ridingOf: (ctx: GameContext) => Riding — The context's one riding service; it carries riders after movement on every simulation step.
 
 ## @jgengine/core/scene/roster
 

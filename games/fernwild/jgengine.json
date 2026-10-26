@@ -17,6 +17,9 @@
       "authored-triggers",
       "collider-autofit",
       "color-grading",
+      "companion-roster",
+      "creature-driver",
+      "creature-temperament",
       "default-drive-codes",
       "default-walk-codes",
       "define-game",
@@ -34,12 +37,17 @@
       "hud-layout",
       "hud-panel",
       "hud-slots",
+      "knockout-taming",
       "light-probes",
       "measured-colliders",
       "measured-hitboxes",
       "minimap-bake",
       "mount-game",
+      "perception-service",
       "pointer-commands",
+      "population-director",
+      "resource-node",
+      "riding",
       "world-convergence",
       "world-environment",
       "world-item-pickup",
@@ -50,7 +58,7 @@
     "declines": {
       "agents": {
         "kind": "not-applicable",
-        "reason": "No creatures roam the island in this survival slice; the dinosaur PR brings the agent loop for wild and tamed dinos."
+        "reason": "Dinos run the creature driver (ARK temperament, senses, follow and stay orders), not a needs-and-mood agent loop."
       },
       "audio-probe": {
         "kind": "not-applicable",
@@ -78,11 +86,11 @@
       },
       "damage-runtime": {
         "kind": "not-applicable",
-        "reason": "Only the survivor takes damage (starvation, heat, cold) through vitals; creature combat and its damage table land with the dinos."
+        "reason": "Hits are flat ARK damage onto the health stat; no damage table, hit zones or armor until the armor pass."
       },
       "damage-target-unknown": {
         "kind": "not-applicable",
-        "reason": "No damage table in the survival slice; fists and tools only gather, they hit nothing that bleeds yet."
+        "reason": "No damage table, so there is no resistance profile for a hit to miss."
       },
       "equipment-slot-inventory": {
         "kind": "not-applicable",
@@ -142,27 +150,23 @@
       },
       "nav-crowd": {
         "kind": "not-applicable",
-        "reason": "Navigation: No herds or packs yet; dino pathing arrives with the creature PR."
+        "reason": "No navigation crowd: dinos steer straight at their goal and veer around trunks and rocks."
       },
       "nav-runtime": {
         "kind": "not-applicable",
-        "reason": "The survivor is player-driven and no creatures path yet; navigation comes with the dinos."
+        "reason": "No navigation mesh to route on yet: dinos steer locally around solids."
       },
       "navmesh-from-scene": {
         "kind": "not-applicable",
-        "reason": "Navigation: No pathing actors in the survival slice, so no navmesh is baked from the island."
+        "reason": "No navigation mesh is baked from the island; creatures steer locally around solids."
       },
       "near-agents": {
         "kind": "not-applicable",
-        "reason": "Agent loop: No creatures yet, so nothing asks which agents are near the survivor; dinos arrive with the creature PR."
+        "reason": "No agent loop: creatures are driven one by one by the creature driver, with no needs-driven residents."
       },
       "offscreen-world": {
         "kind": "not-applicable",
         "reason": "Offscreen simulation: The island is one live scene; nothing simulates offscreen in the survival slice."
-      },
-      "perception-service": {
-        "kind": "not-applicable",
-        "reason": "No creature senses yet; dino aggro and flee perception come with the creature PR."
       },
       "police-response": {
         "kind": "not-applicable",
@@ -186,7 +190,7 @@
       },
       "rvo-avoidance": {
         "kind": "not-applicable",
-        "reason": "Crowd steering: No crowds to steer in the survival slice; dinos come later."
+        "reason": "No crowd steering: herds are two or three animals that steer around solids, not around each other."
       },
       "session-loop": {
         "kind": "not-applicable",
@@ -198,11 +202,11 @@
       },
       "squad-combat": {
         "kind": "not-applicable",
-        "reason": "Squad combat: No squads or teams fight on the island; tamed dino orders come with the creature PR."
+        "reason": "No squad combat: tamed dinos follow, stay and fight their owner's fight through the companion roster."
       },
       "status-runtime": {
         "kind": "not-applicable",
-        "reason": "Status effects: Hungry, thirsty, hot and cold are vitals flags in the survival system; buff and debuff effects come with narcotics on dinos."
+        "reason": "No status effects yet: torpor and narcotics are knockout taming's meters; hunger, thirst, heat and cold are survivor vitals flags."
       },
       "status-unknown": {
         "kind": "not-applicable",
@@ -222,7 +226,7 @@
       },
       "utility-brain": {
         "kind": "not-applicable",
-        "reason": "Agent loop: Dino behaviour (flee, aggro, graze) lands with the creature PR; the survival slice has no thinking actors."
+        "reason": "No agent loop: ARK creatures act on their temperament (creature-temperament), not on need appeal."
       },
       "vehicle-damage": {
         "kind": "not-applicable",
@@ -238,7 +242,7 @@
       },
       "weapon-system": {
         "kind": "not-applicable",
-        "reason": "Weapon runtime: Fists and tools gather resources; spears, slingshots and tranq weapons join the creature PR."
+        "reason": "No weapon runtime yet: only melee tools and the club; slingshot, bow and tranq arrows join a later PR."
       }
     }
   }

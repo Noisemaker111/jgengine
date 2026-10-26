@@ -1023,6 +1023,13 @@ export async function waitForPidExit(pid: number | undefined, timeoutMs = 5_000)
  * exits (EBUSY on Windows), so retry for a few seconds. A profile still locked after that is
  * left for the stale sweep.
  */
+/** Block until `pid` has exited or `timeoutMs` has passed. */
+function waitForExitSync(pid: number, timeoutMs: number): void {
+  const deadline = Date.now() + timeoutMs;
+  const pause = new Int32Array(new SharedArrayBuffer(4));
+  while (pidAlive(pid) && Date.now() < deadline) Atomics.wait(pause, 0, 0, 100);
+}
+
 export function removeProfileDir(userDataDir: string): void {
   ownedProfiles.delete(userDataDir);
   const deadline = Date.now() + 10_000;
@@ -1222,7 +1229,12 @@ export function sweepStrayBrowsers(root = tmpdir(), options: StrayBrowserSweepOp
   const now = options.now ?? Date.now();
   const maxAgeMs = options.maxAgeMs ?? STRAY_BROWSER_MS;
   const isAlive = options.isAlive ?? pidAlive;
-  const kill = options.kill ?? ((pid: number) => killPid(pid, true));
+  // A killed Chrome holds its profile's files until it has exited, and Windows keeps a folder whose
+  // files are still open, so the real kill waits for the exit before the profile is removed.
+  const kill = options.kill ?? ((pid: number) => {
+    killPid(pid, true);
+    waitForExitSync(pid, 10_000);
+  });
   const remove = options.remove ?? removeProfileDir;
   const processes = options.processes ?? listBrowserProcesses();
   const seen = new Set<string>();

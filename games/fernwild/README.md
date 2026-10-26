@@ -4,18 +4,22 @@ ARK: Survival Evolved, rebuilt on JGengine as close to the real game as our own 
 allow: the same survivor stats and levelling, engrams, recipes, gathering and HUD. Start it with
 `bun --cwd=games/fernwild run dev` from the repository root.
 
-This is the survival slice. Dinosaurs, building, the full biome map and the late game land in the
-PRs after it, in that order.
+Survival and creatures are in: dodos, phiomias and raptors live on the island, and you can knock
+one out, tame it by feeding it, saddle it and ride it. Building, the full biome map and the late
+game land in the PRs after it, in that order.
 
 ## Controls
 
 WASD move, Shift sprint, Space jump, left click punch or swing what is in hand, E harvest a bush or
 stones (or drink in water), I or Tab the inventory, 1-0 use or equip a hotbar slot, Esc pause.
+At a creature: E opens a knocked-out or tamed creature's inventory (double-click your items to give
+them), E rides a saddled tame and E again gets off. T whistles your tames to follow, U to stay.
+Riding, WASD steers the mount and left click bites.
 
 ## Design checklist
 
-Numbers live in `src/game/data/` (items, engrams, survivor, harvestables); places live in
-`src/editor.scene.json`.
+Numbers live in `src/game/data/` (items, engrams, survivor, harvestables, species); places and
+herds (`creature_spawn` markers) live in `src/editor.scene.json`.
 
 - **Core loop.** Wake on the south beach with nothing. Punch trees for thatch and a little wood,
   pick bushes for fiber and berries, pick up stones and flint. Open the inventory (I), craft a Stone
@@ -30,7 +34,15 @@ Numbers live in `src/game/data/` (items, engrams, survivor, harvestables); place
     Hatchet at 2, cloth at 3, thatch pieces and Storage Box at 4, Phiomia saddle at 5, Mortar and
     Pestle at 6, Wooden Club at 8.
   - [x] Tools bias the yield like ARK: the pick takes thatch and flint, the hatchet wood and stone.
-  - [ ] Dinosaurs, knock-out taming and saddles (next PR).
+  - [x] Dodo, Phiomia and Raptor with ARK's base stats, per-level gains, speeds, temperaments
+    (oblivious, skittish, aggressive) and taming tables; wild levels 1-30.
+  - [x] Knock-out taming: club torpor (18 hits for a level-1 raptor), torpor drain, food in its
+    inventory eaten on ARK's meal clock, narcotics to keep it under, taming effectiveness and bonus
+    levels; it wakes and the tame is lost if torpor runs out.
+  - [x] Tames stay or follow on whistles and fight what you fight; Phiomia saddle at level 5 and
+    Raptor saddle at 18 (ARK's costs) let you ride them.
+  - [x] Bodies carve into meat and hide by tool (pick for meat, hatchet for hide), and herds refill
+    out of sight.
   - [ ] Thatch, wood and stone building tiers with snap sockets (PR after).
 - **Failure states.** Food and water drain; when either empties you lose about 1 HP every 5 seconds
   and torpor rises. Heat and cold drain them faster and hurt past the comfort band. At 0 health you
@@ -42,12 +54,18 @@ Numbers live in `src/game/data/` (items, engrams, survivor, harvestables); place
   - *ARK: Survival Evolved* - systems 1:1: stats, levelling, engrams, recipes, gathering yields,
     HUD layout and inventory flow. Not affiliated with Studio Wildcard; no ARK art, audio or text.
   - *The Forest* - feel: punching and chopping a dense tree line by hand.
-- **Gap to target.** No dinosaurs, building, caves, weather or other biomes yet; drain and regen
-  rates where ARK publishes none are approximate; trees are stylized stand-ins, not palms.
+- **Gap to target.** No building, caves, weather or other biomes yet; three species of ARK's dozens;
+  the dodo is a duck and the phiomia a boar until dinosaur models are approved; no bolas,
+  slingshot shots or tranq arrows yet, so a raptor is clubbed at close range; ridden creatures have
+  no stamina or levelling of their own yet; drain and regen rates where ARK publishes none are
+  approximate; trees are stylized stand-ins, not palms.
 
-Loop proof: fernwild-loop
+Loop proof: fernwild-loop, fernwild-tame
+
+`fernwild-tame` proves the creature loop: club a raptor unconscious, feed it, saddle it and ride it
+(it uses the admin `cheat` command for levels, items and a faster taming speed).
 
 ## Credits
 
-Nature models: Quaternius Stylized Nature MegaKit, CC0 1.0. Survivor model: the engine's starter
-pack. See [content provenance](../CONTENT-PROVENANCE.md).
+Nature models: Quaternius Stylized Nature MegaKit, CC0 1.0. Raptor and boar: Quaternius animal
+models, CC0 1.0. Duck: Microsoft Rocketbox, MIT. Survivor model: the engine's starter pack. See [content provenance](../CONTENT-PROVENANCE.md).

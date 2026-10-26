@@ -53,7 +53,7 @@ The building block itself (`harbor-heat/src/art/city-block.glb`) is original geo
 | In game | Asset | Author | License | Source |
 | --- | --- | --- | --- | --- |
 | player, residents, contacts, gangs, police, bounty marks (`src/game/world/cast.ts`) | Microsoft Rocketbox avatars (`human/*`: man-casual, man-casual-2, woman-casual, woman-casual-2, jogger, construction-worker, security-guard, businessman, police-officer, soldier) | Microsoft (Rocketbox Studios GmbH) | MIT | https://github.com/microsoft/Microsoft-Rocketbox (commit 0943055d) |
-| `obj_dog`, `obj_dog_shepherd`, `obj_duck` | Rocketbox animals (`creature/dog-beagle`, `creature/dog-shepherd`, `creature/duck`) | Microsoft (Rocketbox Studios GmbH) | MIT | https://github.com/microsoft/Microsoft-Rocketbox (commit 0943055d) |
+| `obj_dog`, `obj_dog_shepherd`, `obj_duck`; Fernwild's dodo (a duck stand-in) | Rocketbox animals (`creature/dog-beagle`, `creature/dog-shepherd`, `creature/duck`) | Microsoft (Rocketbox Studios GmbH) | MIT | https://github.com/microsoft/Microsoft-Rocketbox (commit 0943055d) |
 | `car_compact`, `car_muscle`, `car_sport`, `car_suv`, `car_cop` (repainted; the cruiser adds an original light bar) | CarConcept (`vehicle/sports-car`, logos removed) | Eric Chadwick, Darmstadt Graphics Group GmbH | CC-BY 4.0 | https://github.com/KhronosGroup/glTF-Sample-Assets/tree/main/Models/CarConcept (commit 8f492390) |
 
 The Islander bus (`islander-bus.glb`) and the cruiser's light bar (`hhpd-lightbar.glb`) are original geometry from `harbor-heat/scripts/author-harbor.mjs`. Aircraft, signs, neon, signals and cargo are still KayKit (CC0); the engine's `MODEL_LIBRARY_GAPS` lists the route for each.
@@ -66,6 +66,7 @@ Hold the Line, Fernwild and Apex Nights were first generated from one-sentence i
 | --- | --- | --- | --- |
 | Hold the Line, Apex Nights | KayKit City Builder Bits (`kaykit-city-builder`): buildings, cars, water tower, dumpster | Kay Lousberg | CC0 1.0 |
 | Hold the Line, Fernwild | Quaternius Stylized Nature (`quaternius-stylized-nature`): trees, pines, bushes, ferns, rocks, pebbles, grass | Quaternius | CC0 1.0 |
+| Fernwild | Quaternius animals (`creatures/velociraptor.glb`, `creatures/wild_boar.glb`, the same files as `apps/dev/public/models/lantern-reach/creatures/`): the raptor, and the boar standing in for the phiomia | Quaternius | CC0 1.0 |
 
 ## Bundled fonts
 

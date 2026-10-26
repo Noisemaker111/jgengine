@@ -50,13 +50,14 @@ export const ENGRAMS: readonly EngramDef[] = [
   engram("thatch_door", 4, 3, { wood: 7, fiber: 4, thatch: 5 }, 2),
   engram("thatch_ceiling", 4, 3, { wood: 7, fiber: 4, thatch: 6 }, 2),
   engram("storage_box", 4, 6, { wood: 25, thatch: 20, fiber: 10 }, 5),
-  engram("phiomia_saddle", 5, 6, { hide: 15, fiber: 10 }, 10),
+  engram("phiomia_saddle", 5, 6, { hide: 20, fiber: 15, wood: 5 }, 10),
   engram("slingshot", 5, 6, { hide: 1, wood: 2, fiber: 20 }, 5),
   engram("mortar_and_pestle", 6, 6, { stone: 65, hide: 15 }, 10),
   engram("sparkpowder", 6, 3, { flint: 2, stone: 1 }, 2, { station: "mortar_and_pestle" }),
   engram("narcotic", 6, 6, { narcoberry: 5, spoiled_meat: 1 }, 3, { station: "mortar_and_pestle" }),
   engram("wooden_club", 8, 4, { wood: 4, fiber: 15 }, 5),
   engram("stimulant", 11, 6, { stimberry: 5, sparkpowder: 2 }, 3, { station: "mortar_and_pestle" }),
+  engram("raptor_saddle", 18, 9, { hide: 110, fiber: 65, wood: 20 }, 10),
 ];
 
 /** Station recipes that need no engram: cooking on a campfire. */

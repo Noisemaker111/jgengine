@@ -6,6 +6,7 @@ import { clone as cloneSkinned } from "three/examples/jsm/utils/SkeletonUtils.js
 
 import { planBoneTexture, type BoneTextureLayout } from "@jgengine/core/anim/boneTexture";
 
+import { measureLocalBounds } from "@jgengine/core/model/measureBounds.draw";
 import { floatAttribute } from "@jgengine/core/model/modelMeshMerge.draw";
 import { sharedGltfLoader } from "@jgengine/core/model/modelLoad.draw";
 
@@ -85,6 +86,27 @@ function rigidSlotNode(mesh: THREE.Object3D, root: THREE.Object3D, animated: Rea
   return root;
 }
 
+const skinVertex = new THREE.Vector3();
+
+/**
+ * A static batch has no bone texture to place a skin, so bake each vertex where the model shows it:
+ * skinned at its bind pose, then carried by the mesh's own transform into the root's frame. Normals
+ * follow the mesh transform.
+ */
+function placeStaticSkin(geometry: THREE.BufferGeometry, skinned: THREE.SkinnedMesh, relative: THREE.Matrix4): void {
+  const positions = geometry.getAttribute("position");
+  for (let vertex = 0; vertex < positions.count; vertex += 1) {
+    skinned.getVertexPosition(vertex, skinVertex).applyMatrix4(relative);
+    positions.setXYZ(vertex, skinVertex.x, skinVertex.y, skinVertex.z);
+  }
+  const normals = geometry.getAttribute("normal");
+  const normalMatrix = new THREE.Matrix3().getNormalMatrix(relative);
+  for (let vertex = 0; vertex < normals.count; vertex += 1) {
+    skinVertex.fromBufferAttribute(normals, vertex).applyMatrix3(normalMatrix).normalize();
+    normals.setXYZ(vertex, skinVertex.x, skinVertex.y, skinVertex.z);
+  }
+}
+
 /** Attribute layout two geometries must agree on before their vertices can share a draw. */
 function layoutKey(geometry: THREE.BufferGeometry): string {
   const parts = [geometry.index === null ? "plain" : "indexed"];
@@ -160,8 +182,6 @@ export function bakeSkinnedCrowd(source: SkinnedCrowdSource, options: BakeSkinne
     if (mesh.isMesh !== true || Array.isArray(mesh.material) || mesh.material === undefined) return;
     if (Object.keys(mesh.geometry.morphAttributes).length > 0) throw new Error("bakeSkinnedCrowd: the rig has morph targets");
     if (mesh.geometry.getAttribute("position") === undefined) return;
-    mesh.geometry.computeBoundingBox();
-    if (mesh.geometry.boundingBox !== null) bounds.union(mesh.geometry.boundingBox.clone().applyMatrix4(mesh.matrixWorld));
 
     const skinned = mesh as THREE.SkinnedMesh;
     let part: { geometry: THREE.BufferGeometry; layout: string; material: THREE.Material };
@@ -174,7 +194,8 @@ export function bakeSkinnedCrowd(source: SkinnedCrowdSource, options: BakeSkinne
       const uv = source.getAttribute("uv");
       geometry.setAttribute("uv", uv !== undefined ? floatAttribute(uv) : new THREE.Float32BufferAttribute(new Float32Array(source.getAttribute("position").count * 2), 2));
       if (source.index !== null) geometry.setIndex(source.index.clone());
-      geometry.applyMatrix4(skinned.bindMatrix);
+      if (clips.length > 0) geometry.applyMatrix4(skinned.bindMatrix);
+      else placeStaticSkin(geometry, skinned, new THREE.Matrix4().multiplyMatrices(rootInverse, mesh.matrixWorld));
 
       const skinIndex = source.getAttribute("skinIndex");
       const skinWeight = source.getAttribute("skinWeight");
@@ -233,6 +254,11 @@ export function bakeSkinnedCrowd(source: SkinnedCrowdSource, options: BakeSkinne
     materials.push(group.material.vertexColors ? Object.assign(group.material.clone(), { vertexColors: false }) : group.material);
   }
   if (geometries.length === 0) throw new Error("bakeSkinnedCrowd: the source has no drawable mesh");
+  // Measured exactly as the full model path measures it (skinned meshes at their skin-applied bind
+  // pose), so a crowd copy is normalised to the same height. A skinned mesh's own node transform is
+  // not what places its vertices; its bones are.
+  const measured = measureLocalBounds(root);
+  if (measured !== null) bounds.set(new THREE.Vector3(...measured.min), new THREE.Vector3(...measured.max));
   // The shader transforms a normal by the slot matrix, which is only exact for uniform scale.
   const scale = new THREE.Vector3();
   for (const slot of slots) {

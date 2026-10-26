@@ -5,7 +5,9 @@ import { useGameContext } from "@jgengine/react/provider";
 
 import { itemDef, itemLabel } from "../data/items";
 import type { SurvivorScreen } from "../screens";
-import { BAG, craftable, HOTBAR } from "../survivor";
+import { BAG, HOTBAR } from "../bags";
+import { craftable } from "../survivor";
+import { CreaturePanel } from "./CreatureScreen";
 import { useSurvivor } from "./Hud";
 import { ItemIcon, itemIcon } from "./ItemIcon";
 
@@ -62,8 +64,8 @@ function setScreen(ctx: ReturnType<typeof useGameContext>, screen: SurvivorScree
   void ctx.game.commands.run("screen", { screen });
 }
 
-/** Left: what you carry, ARK's grid with the hotbar row under it. */
-function Carried(): ReactNode {
+/** Left: what you carry, ARK's grid with the hotbar row under it. Beside a creature, double-click gives to it. */
+function Carried({ give = false }: { give?: boolean }): ReactNode {
   const game = useGame();
   const view = useSurvivor();
   return (
@@ -81,13 +83,15 @@ function Carried(): ReactNode {
           size={58}
           itemIcon={itemIcon}
           onActivate={(slot) => {
-            void game.commands.run("shuttle", { inventoryId: BAG, slot });
+            void game.commands.run(give ? "giveCreature" : "shuttle", { inventoryId: BAG, slot });
           }}
         />
       </div>
       <span style={HEADING}>Hotbar</span>
-      <InventoryGrid inventoryId={HOTBAR} columns={10} size={32} itemIcon={itemIcon} onActivate={(slot) => void game.commands.run("shuttle", { inventoryId: HOTBAR, slot })} />
-      <span style={{ fontSize: 11, opacity: 0.7 }}>Double-click moves an item between inventory and hotbar. Number keys use or equip hotbar items.</span>
+      <InventoryGrid inventoryId={HOTBAR} columns={10} size={32} itemIcon={itemIcon} onActivate={(slot) => void game.commands.run(give ? "giveCreature" : "shuttle", { inventoryId: HOTBAR, slot })} />
+      <span style={{ fontSize: 11, opacity: 0.7 }}>
+        {give ? "Double-click gives an item to the creature." : "Double-click moves an item between inventory and hotbar. Number keys use or equip hotbar items."}
+      </span>
     </div>
   );
 }
@@ -268,8 +272,13 @@ export function InventoryScreen({ tab }: { tab: SurvivorScreen }): ReactNode {
         if (event.key === "Escape") void ctx.game.commands.run("screen", { screen: null });
       }}
     >
-      <Tabs tab={tab} />
-      {tab === "inventory" ? (
+      {tab === "creature" ? null : <Tabs tab={tab} />}
+      {tab === "creature" ? (
+        <div style={{ display: "flex", gap: 10, alignItems: "stretch" }}>
+          <Carried give />
+          <CreaturePanel />
+        </div>
+      ) : tab === "inventory" ? (
         <div style={{ display: "flex", gap: 10, alignItems: "stretch" }}>
           <Carried />
           <Stats />

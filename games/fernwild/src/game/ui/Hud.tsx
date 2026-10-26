@@ -4,9 +4,11 @@ import { useGameStore } from "@jgengine/react/hooks";
 import { HudSlots } from "@jgengine/shell/gameKit";
 
 import { openScreen } from "../screens";
-import { HOTBAR, survivorView, type SurvivorView } from "../survivor";
+import { HOTBAR } from "../bags";
+import { survivorView, type SurvivorView } from "../survivor";
 import { itemIcon } from "./ItemIcon";
 import { InventoryScreen } from "./InventoryScreen";
+import { CreatureReadout, useCreatures } from "./CreatureScreen";
 
 const same = <T,>(a: T, b: T) => JSON.stringify(a) === JSON.stringify(b);
 
@@ -108,12 +110,42 @@ function Bar(): ReactNode {
   );
 }
 
+const LOOK: CSSProperties = { position: "absolute", left: "50%", top: "calc(50% + 18px)", transform: "translateX(-50%)", textAlign: "center", color: "#f4efe2", fontSize: 13, fontWeight: 700, textShadow: "0 1px 3px #000", pointerEvents: "none", whiteSpace: "nowrap" };
+
+/** A creature in front: ARK's readout under the crosshair and what E does to it. */
+function CreatureLook(): ReactNode {
+  const { aimed, riding } = useCreatures();
+  if (riding !== null) return null;
+  if (aimed === null) return null;
+  const use = aimed.dead ? "Hit to carve meat and hide" : aimed.tamed ? (aimed.saddled ? "E · Ride" : "E · Access inventory") : aimed.taming?.unconscious === true ? "E · Access inventory" : null;
+  return (
+    <div data-aim-creature="" style={{ ...LOOK, display: "flex", flexDirection: "column", alignItems: "center", gap: 4 }}>
+      <CreatureReadout card={aimed} />
+      {use === null ? null : <div style={{ opacity: 0.9 }}>{use}</div>}
+    </div>
+  );
+}
+
+/** Riding: the mount's health bottom-left and how to get off. */
+function Mount(): ReactNode {
+  const { riding } = useCreatures();
+  if (riding === null) return null;
+  return (
+    <div data-riding={riding.id} style={{ color: "#f2ead8", textShadow: "0 1px 2px #000", display: "flex", flexDirection: "column", gap: 4, pointerEvents: "none" }}>
+      <CreatureReadout card={riding} />
+      <span style={{ fontSize: 12, opacity: 0.85 }}>Click to bite · E to dismount</span>
+    </div>
+  );
+}
+
 /** Under the crosshair, ARK's look-at prompt: what you would hit, and what E picks up. */
 function Prompt(): ReactNode {
   const { aim } = useSurvivor();
+  const { aimed, riding } = useCreatures();
+  if (aimed !== null || riding !== null) return <CreatureLook />;
   if (aim.strike === null && aim.pick === null && !aim.water) return null;
   return (
-    <div data-aim="" style={{ position: "absolute", left: "50%", top: "calc(50% + 18px)", transform: "translateX(-50%)", textAlign: "center", color: "#f4efe2", fontSize: 13, fontWeight: 700, textShadow: "0 1px 3px #000", pointerEvents: "none", whiteSpace: "nowrap" }}>
+    <div data-aim="" style={LOOK}>
       {aim.strike === null ? null : <div>{aim.strike}</div>}
       {aim.pick === null ? null : <div style={{ opacity: 0.9 }}>E · Harvest {aim.pick}</div>}
       {aim.pick === null && aim.water ? <div style={{ opacity: 0.9 }}>E · Drink</div> : null}
@@ -134,5 +166,5 @@ function Screens(): ReactNode {
 
 /** ARK's layout: pools bottom-right, hotbar bottom-centre, gather feed left, crosshair centre. */
 export function Hud(): ReactNode {
-  return <HudSlots storageKey="fernwild" slots={{ left: <Feed />, bottom: <Bar />, bottomRight: <Vitals /> }} overlay={<Screens />} />;
+  return <HudSlots storageKey="fernwild" slots={{ left: <Feed />, bottomLeft: <Mount />, bottom: <Bar />, bottomRight: <Vitals /> }} overlay={<Screens />} />;
 }

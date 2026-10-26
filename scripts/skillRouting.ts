@@ -94,6 +94,7 @@ export const CORE_DOMAIN_SKILLS: Record<string, string> = {
   stats: "jgengine-combat",
   store: "jgengine-gameplay",
   survival: "jgengine-gameplay",
+  taming: "jgengine-gameplay",
   harvest: "jgengine-gameplay",
   tactics: "jgengine-gameplay",
   threshold: "jgengine-gameplay",
