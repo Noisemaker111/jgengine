@@ -45,6 +45,12 @@ export const UNBUNDLED_ENGINE_MODULES = ["@jgengine/core/assets/decoderFiles.dra
 export const standaloneOptimizeDeps = `  // Engine files with \`.js?url\` imports, which Vite's dependency pre-bundler cannot read.
   optimizeDeps: { exclude: ${JSON.stringify(UNBUNDLED_ENGINE_MODULES)} },`;
 
+/** `jgengine desktop` stages its build in `<game>/.jgengine/`; a dev server that watches it reloads on every write there. */
+export const DEV_WATCH_IGNORE = ["**/.jgengine/**"] as const;
+
+/** The `server` line of every generated `vite.config.ts`, so the dev server skips the desktop build folder. */
+export const devServerWatch = `  server: { watch: { ignored: ${JSON.stringify(DEV_WATCH_IGNORE)} } },`;
+
 // A standalone project saves through the packaged @jgengine/node preset. An in-repo game runs on
 // the games' shared wiring (games/shared): engine source aliases with one copy of each peer, asset
 // provisioning, and an idle exit; the dev runner (apps/dev) serves its F2 saves.
@@ -63,6 +69,7 @@ export default defineConfig({
   plugins: [react(), tailwindcss(), viteIdleExit(), viteProvisionAssets()],
   clearScreen: false,
   build: { target: "es2022" },
+${devServerWatch}
 });
 `
     : `import { existsSync } from "node:fs";
@@ -79,6 +86,7 @@ export default defineConfig({
   clearScreen: false,
   build: { target: "es2022" },
 ${standaloneOptimizeDeps}
+${devServerWatch}
   resolve: {
     extensions: [".ts", ".tsx", ".mjs", ".js", ".jsx", ".json"],
     alias: existsSync(engineSrc("core"))
@@ -236,6 +244,7 @@ body,
 const gitignore = `node_modules/
 dist/
 shots/
+.jgengine/
 *.log
 .DS_Store
 `;

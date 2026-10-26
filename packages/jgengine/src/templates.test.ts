@@ -2,7 +2,9 @@ import { describe, expect, test } from "bun:test";
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
 
+import { defaultStagingDir } from "./desktop";
 import { browserLibMjs, driveMjs, shootMjs } from "./templates/harnessScripts";
+import { DEV_WATCH_IGNORE } from "./templates/gameFiles";
 import { isAllowedGameSrcEntry } from "./gameShape";
 import {
   displayNameFromId,
@@ -141,6 +143,15 @@ describe("gameTemplate canonical shape (mirrors gameShape.ts)", () => {
       const ignore = variant === "in-repo" ? readFileSync(join(import.meta.dir, "../../../.gitignore"), "utf8") : fileOf(files, ".gitignore");
       expect(ignore).toContain("shots/");
     });
+
+    test(`${variant}: the dev server ignores the desktop build folder .jgengine/`, () => {
+      const vite = fileOf(render(variant), "vite.config.ts");
+      expect(vite).toContain(`ignored: ${JSON.stringify(DEV_WATCH_IGNORE)}`);
+      const [pattern] = DEV_WATCH_IGNORE;
+      const staged = join(defaultStagingDir("project", "/work/probe-game", "/work/probe-game"), "index.html").replaceAll("\\", "/");
+      expect(new Bun.Glob(pattern).match(staged)).toBe(true);
+      expect(new Bun.Glob(pattern).match("/work/probe-game/src/main.tsx")).toBe(false);
+    });
   }
 
   describe("the shoot/drive harness", () => {
@@ -172,6 +183,13 @@ describe("gameTemplate canonical shape (mirrors gameShape.ts)", () => {
       expect(script).toContain("--playtest");
       expect(script).toContain("softlock");
     });
+  });
+
+  test("standalone: the game's .gitignore keeps the desktop build folder out of git", () => {
+    const [pattern] = DEV_WATCH_IGNORE;
+    const ignore = fileOf(render("standalone"), ".gitignore");
+    expect(ignore).toContain(".jgengine/");
+    expect(new Bun.Glob(pattern).match(".jgengine/desktop/index.html")).toBe(true);
   });
 
   test("standalone: AGENTS.md tells the agent how to restore models if the pull was skipped", () => {

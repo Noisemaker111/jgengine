@@ -1,4 +1,4 @@
-import { standaloneOptimizeDeps } from "./gameFiles";
+import { devServerWatch, standaloneOptimizeDeps } from "./gameFiles";
 import type { TemplateFile } from "./types";
 
 const editorPackageJson = (engineVersion: string) => `${JSON.stringify(
@@ -76,6 +76,7 @@ export default defineConfig({
   plugins: [react(), tailwindcss(), editorHostPlugin({ dir, assetsDir })],
   clearScreen: false,
 ${standaloneOptimizeDeps}
+${devServerWatch}
 });
 `;
 

@@ -110,6 +110,16 @@ describe("jgengine sync", () => {
     expect(after.scripts.drive).toBe("jgengine drive");
     expect(planSync(dir, standalone)).toEqual([]);
   });
+
+  test("a game whose vite.config.ts predates the .jgengine/ watch ignore gets it from sync", async () => {
+    const dir = await createdGame();
+    writeFileSync(join(dir, "vite.config.ts"), "export default {};\n");
+    const writes = planSync(dir, standalone);
+    expect(writes.map((write) => write.path)).toEqual(["vite.config.ts"]);
+    applySync(dir, writes);
+    expect(readFileSync(join(dir, "vite.config.ts"), "utf8")).toContain('ignored: ["**/.jgengine/**"]');
+    expect(planSync(dir, standalone)).toEqual([]);
+  });
 });
 
 describe("jgengine sync at a workspace root", () => {
