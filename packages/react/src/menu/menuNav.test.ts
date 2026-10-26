@@ -91,6 +91,23 @@ async function focused(): Promise<string | null> {
   return page.evaluate(() => document.activeElement?.getAttribute("data-jg-menu-item") ?? null);
 }
 
+/** Let the page paint `count` frames: the gamepad poll and the menu's after-paint focus run once per frame. */
+async function frames(count: number): Promise<void> {
+  await page.evaluate(
+    (n) =>
+      new Promise<void>((done) => {
+        let seen = 0;
+        const step = (): void => {
+          seen += 1;
+          if (seen >= n) done();
+          else requestAnimationFrame(step);
+        };
+        requestAnimationFrame(step);
+      }),
+    count,
+  );
+}
+
 async function picked(): Promise<string> {
   return page.evaluate(() => document.getElementById("picked")?.textContent ?? "");
 }
@@ -135,9 +152,20 @@ describe("menu keyboard navigation", () => {
 
   test("Tab leaves the menu instead of trapping focus", async () => {
     await page.keyboard.press("Tab");
+    // The menu focuses its selection once after its first paint; that must not pull focus back.
+    await frames(3);
     expect(await focused()).toBeNull();
     expect(await page.evaluate(() => document.activeElement?.id)).toBe("typing");
     await page.keyboard.press("ArrowDown");
+    expect(await page.evaluate(() => document.activeElement?.id)).toBe("typing");
+  });
+
+  test("hovering the menu while a field has focus moves the highlight, not the focus", async () => {
+    await page.locator("#typing").focus();
+    await page.mouse.move(1, 1);
+    await page.locator('[data-jg-menu-item="new"]').hover();
+    await page.waitForFunction(() => document.querySelector('[data-jg-menu-item="new"]')?.getAttribute("aria-current") === "true");
+    await frames(3);
     expect(await page.evaluate(() => document.activeElement?.id)).toBe("typing");
   });
 
@@ -154,7 +182,7 @@ describe("menu gamepad navigation", () => {
     await page.evaluate(() => (window as any).fixture.press([13]));
     await page.waitForFunction(() => document.activeElement?.getAttribute("data-jg-menu-item") === "new");
     await page.evaluate(() => (window as any).fixture.press([]));
-    await page.waitForTimeout(60);
+    await frames(3);
     await page.evaluate(() => (window as any).fixture.press([0]));
     await page.waitForFunction(() => document.getElementById("picked")?.textContent === "new");
     expect(await picked()).toBe("new");
@@ -163,7 +191,8 @@ describe("menu gamepad navigation", () => {
   test("a held A confirms once, not once per frame", async () => {
     await page.evaluate(() => (window as any).fixture.press([0]));
     await page.waitForFunction(() => document.getElementById("picked")?.textContent === "continue");
-    await page.waitForTimeout(600);
+    // Held for 40 polls (two-thirds of a second at 60 fps), well past any repeat delay.
+    await frames(40);
     expect(await picked()).toBe("continue");
     await page.evaluate(() => (window as any).fixture.press([]));
   });
