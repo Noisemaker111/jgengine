@@ -3,7 +3,8 @@ import { spawnSync } from "node:child_process";
 import { mkdirSync, rmSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { fileURLToPath } from "node:url";
-import { checkReleaseAncestor, cutChangelog, fastForwardMain, lockstepBullet, mirrorEntry, nextReleaseVersion, parseSections, sectionLines, splitComment, startReleaseBranch, unknownFlag, waitRequest } from "./release";
+import { checkReleaseAncestor, cutChangelog, fastForwardMain, lockstepBullet, mirrorEntry, nextReleaseVersion, parseSections, publishFollowingBeta, sectionLines, splitComment, startReleaseBranch, unknownFlag, waitRequest } from "./release";
+import type { AwaitResult } from "./release-await";
 
 describe("--wait", () => {
   test("alone it cuts, lands and waits; with a version it only waits on that version", () => {
@@ -281,6 +282,88 @@ describe("startReleaseBranch", () => {
     } finally {
       repo.done();
     }
+  });
+});
+
+describe("publishFollowingBeta", () => {
+  const published = (sha: string): AwaitResult => ({ ok: true, line: `published ${sha}`, runId: 1, code: 0 });
+  const refused = (sha: string): AwaitResult => ({ ok: false, line: `refused ${sha}`, runId: 1, code: 1 });
+
+  test("publishes the pushed commit once when it succeeds", async () => {
+    const seen: string[] = [];
+    const out = await publishFollowingBeta({
+      sha: "a",
+      publish: async (sha) => {
+        seen.push(sha);
+        return published(sha);
+      },
+      pushTip: () => ({ ok: true, sha: "a" }),
+      log: () => {},
+    });
+    expect(seen).toEqual(["a"]);
+    expect(out).toMatchObject({ ok: true, sha: "a" });
+  });
+
+  test("publishes beta's new tip when beta moved past the commit that was refused", async () => {
+    const seen: string[] = [];
+    const out = await publishFollowingBeta({
+      sha: "a",
+      publish: async (sha) => {
+        seen.push(sha);
+        return sha === "a" ? refused(sha) : published(sha);
+      },
+      pushTip: () => ({ ok: true, sha: "b" }),
+      log: () => {},
+    });
+    expect(seen).toEqual(["a", "b"]);
+    expect(out).toMatchObject({ ok: true, sha: "b" });
+    expect(out.ok && out.result.ok).toBe(true);
+  });
+
+  test("stops when beta has not moved, so the refusal is the answer", async () => {
+    const seen: string[] = [];
+    const out = await publishFollowingBeta({
+      sha: "a",
+      publish: async (sha) => {
+        seen.push(sha);
+        return refused(sha);
+      },
+      pushTip: () => ({ ok: true, sha: "a" }),
+      log: () => {},
+    });
+    expect(seen).toEqual(["a"]);
+    expect(out.ok && out.result.ok).toBe(false);
+  });
+
+  test("retries at most twice", async () => {
+    const seen: string[] = [];
+    let tips = 0;
+    const out = await publishFollowingBeta({
+      sha: "a",
+      publish: async (sha) => {
+        seen.push(sha);
+        return refused(sha);
+      },
+      pushTip: () => ({ ok: true, sha: `t${++tips}` }),
+      log: () => {},
+    });
+    expect(seen).toEqual(["a", "t1", "t2"]);
+    expect(out.ok && out.result.ok).toBe(false);
+  });
+
+  test("a failed push to main is reported, and nothing more is published", async () => {
+    const seen: string[] = [];
+    const out = await publishFollowingBeta({
+      sha: "a",
+      publish: async (sha) => {
+        seen.push(sha);
+        return refused(sha);
+      },
+      pushTip: () => ({ ok: false, error: "offline" }),
+      log: () => {},
+    });
+    expect(seen).toEqual(["a"]);
+    expect(out).toEqual({ ok: false, error: "fast-forwarding main failed: offline" });
   });
 });
 
