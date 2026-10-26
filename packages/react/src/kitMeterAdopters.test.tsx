@@ -16,7 +16,7 @@ import { KitWaveClock } from "./hud/kitHud";
 import { HudChromePreview } from "./hud/hudChromePreview";
 import { HudSkinPreview } from "./hud/hudSkinPreview";
 import { StatusEffectBar } from "./hud/statusEffectBar";
-import { TalentTree } from "./talentTree";
+import { TalentTreePanel } from "./talentTree";
 import { TimerReadout, TimerRing } from "./timerReadout";
 import { WaveHud } from "./hud/waveHud";
 
@@ -48,7 +48,7 @@ describe("widgets on KitMeter", () => {
     const run = createDialogueRun({ start: "a", nodes: [{ id: "a", speaker: "Mara", text: "Hold the wall." }] });
     expect(render(<DialogueView run={run} />)).toContain("Hold the wall.");
     const tree = createTalentTree({ nodes: [{ id: "grit", maxRank: 2 }], points: 1 });
-    expect(render(<TalentTree tree={tree} nodes={[{ id: "grit", maxRank: 2 }]} />)).toContain("var(--jg-text");
+    expect(render(<TalentTreePanel tree={tree} nodes={[{ id: "grit", maxRank: 2 }]} />)).toContain("var(--jg-text");
     expect(render(<StatusEffectBar effects={[{ id: "burn", kind: "burn", remainingMs: 2000, durationMs: 4000, stacks: 1 }]} />)).toContain("burn");
     const timers = createTimerSet();
     expect(render(<TimerReadout timer={timers} id="round" />)).toContain("var(--jg-text");

@@ -3,7 +3,7 @@ import { forwardRef, useEffect, useRef, type CSSProperties, type HTMLAttributes,
 import { useReducedMotion } from "../accessibility";
 import { useEngineStyles } from "../engineStyles";
 import { useHudInteract, type HudInteractListener } from "./hudInteract";
-import { usePresence } from "../presence";
+import { useMountPresence } from "../presence";
 
 /** Shadow height of a {@link HudSurface}. */
 export type HudSurfaceElevation = "raised" | "overlay" | "modal";
@@ -52,7 +52,7 @@ export const HudSurface = forwardRef<HTMLElement, HudSurfaceProps>(function HudS
   useEngineStyles();
   const reduced = useReducedMotion();
   const shown = open ?? true;
-  const presence = usePresence(shown, reduced ? 0 : EXIT_MS);
+  const presence = useMountPresence(shown, reduced ? 0 : EXIT_MS);
   const report = useHudInteract("panel", cue, onInteract);
   const wasOpen = useRef(shown);
   useEffect(() => {

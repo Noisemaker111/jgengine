@@ -6,8 +6,7 @@ import type {
   GameContextItemEntry,
 } from "@jgengine/core/runtime/gameContext";
 import { createAssetCatalog } from "@jgengine/core/scene/assetCatalog";
-import { SlotGrid } from "@jgengine/react/components";
-import { Coins } from "@jgengine/react/hud/hudReadouts";
+import { Coins, Hotbar } from "@jgengine/react/hud/hudReadouts";
 import { useEntityStat, useFeed, useGameClock, useGameStore, usePlayer, useTarget } from "@jgengine/react/hooks";
 import type { KitTone } from "@jgengine/react/uiKit";
 import { KitMeter } from "@jgengine/react/uiKitRoot";
@@ -224,16 +223,7 @@ function KillFeedPanel() {
 
 function HotbarPanel() {
   return (
-    <SlotGrid
-      inventoryId={HOTBAR}
-      className="flex gap-1.5"
-      renderSlot={(slot, index) => (
-        <div className="w-16 rounded border border-white/20 bg-black/60 px-1.5 py-1 text-center text-[11px]">
-          <span className="text-white/50">{index + 1}</span>
-          <p className="truncate text-white">{slot === null ? "—" : slot.itemId}</p>
-        </div>
-      )}
-    />
+    <Hotbar inventoryId={HOTBAR} />
   );
 }
 

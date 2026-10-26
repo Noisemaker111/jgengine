@@ -15,7 +15,7 @@ import { hudType } from "./hud/hudTokens";
 /** How a node id resolves to display art: a built-in {@link GameIconName}, any node, or `null` for the default. */
 export type TalentIcon = GameIconName | ReactNode | null;
 
-/** Props for {@link TalentTree}. */
+/** Props for {@link TalentTreePanel}. */
 export interface TalentTreeProps<TStat extends string = string> {
   /**
    * A precomputed render view (from `talentTreeView` or `talentTreeViewFrom`). Supply this to drive the
@@ -274,7 +274,7 @@ function TalentNode({
  *
  * @capability talent-tree drop-in skill/talent/upgrade-tree widget — pass `nodes`+`tree` for point-spend or a precomputed `view` for any unlock rule; branch/tier layout, SVG prerequisite edges, learned/available/locked/maxed styling, icon + rank, onLearn
  */
-export function TalentTree<TStat extends string = string>({
+export function TalentTreePanel<TStat extends string = string>({
   view: viewProp,
   nodes,
   tree,
@@ -292,7 +292,7 @@ export function TalentTree<TStat extends string = string>({
   style,
 }: TalentTreeProps<TStat>): ReactNode {
   if (viewProp === undefined && (nodes === undefined || tree === undefined)) {
-    throw new Error("TalentTree requires either a `view` prop or both `nodes` and `tree`.");
+    throw new Error("TalentTreePanel requires either a `view` prop or both `nodes` and `tree`.");
   }
   const view = viewProp ?? talentTreeView(nodes!, tree!);
   const layout = place(view, nodeSize, columnGap, tierGap);

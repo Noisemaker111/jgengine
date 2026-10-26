@@ -2,7 +2,9 @@ import { describe, expect, test } from "bun:test";
 import { createElement } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 
-import { TweenNumber, easeOutCubic, tweenAt } from "./tweenNumber";
+import { easeOutCubic } from "@jgengine/core/anim/easing";
+
+import { TweenNumber, tweenAt } from "./tweenNumber";
 
 describe("tween math", () => {
   test("ease-out cubic is clamped and front-loaded", () => {

@@ -9,7 +9,7 @@ export type PresenceState = "open" | "closed" | "unmounted";
  *
  * @capability presence keep a closing element mounted through its exit transition
  */
-export function usePresence(open: boolean, exitMs: number): PresenceState {
+export function useMountPresence(open: boolean, exitMs: number): PresenceState {
   const [mounted, setMounted] = useState(open);
   useEffect(() => {
     if (open) {

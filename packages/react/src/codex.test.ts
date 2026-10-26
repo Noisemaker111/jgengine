@@ -2,7 +2,7 @@ import { describe, expect, test } from "bun:test";
 import { createElement } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 
-import { Codex } from "./codex";
+import { CodexPanel } from "./codex";
 import { createCodex, type CodexEntryDef } from "@jgengine/core/game/codex";
 
 const ENTRIES: readonly CodexEntryDef[] = [
@@ -17,9 +17,9 @@ function views() {
   return codex.list();
 }
 
-describe("Codex", () => {
+describe("CodexPanel", () => {
   test("renders category tabs, a completion header, and discovered/locked cards", () => {
-    const html = renderToStaticMarkup(createElement(Codex, { entries: views() }));
+    const html = renderToStaticMarkup(createElement(CodexPanel, { entries: views() }));
     expect(html).toContain("data-codex");
     expect(html).toContain('data-codex-tab="Beasts"');
     expect(html).toContain("1/3 discovered");
@@ -30,18 +30,18 @@ describe("Codex", () => {
   });
 
   test("masks a secret, still-undiscovered entry", () => {
-    const html = renderToStaticMarkup(createElement(Codex, { entries: views() }));
+    const html = renderToStaticMarkup(createElement(CodexPanel, { entries: views() }));
     expect(html).toContain("???");
     expect(html).not.toContain("Marsh Wisp");
   });
 
   test("maskSecrets=false reveals the secret name", () => {
-    const html = renderToStaticMarkup(createElement(Codex, { entries: views(), maskSecrets: false }));
+    const html = renderToStaticMarkup(createElement(CodexPanel, { entries: views(), maskSecrets: false }));
     expect(html).toContain("Marsh Wisp");
   });
 
   test("empty entries render the empty label", () => {
-    const html = renderToStaticMarkup(createElement(Codex, { entries: [], emptyLabel: "Nothing here" }));
+    const html = renderToStaticMarkup(createElement(CodexPanel, { entries: [], emptyLabel: "Nothing here" }));
     expect(html).toContain("Nothing here");
     expect(html).toContain("0/0 discovered");
   });

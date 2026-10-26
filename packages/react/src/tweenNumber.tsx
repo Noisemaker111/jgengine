@@ -1,13 +1,8 @@
+import { easeOutCubic } from "@jgengine/core/anim/easing";
 import { useEffect, useRef, useState, type CSSProperties, type ReactNode } from "react";
 
 import { useReducedMotion } from "./accessibility";
 import { useEngineStyles } from "./engineStyles";
-
-/** Ease-out cubic, the default counter curve. */
-export function easeOutCubic(t: number): number {
-  const clamped = Math.min(1, Math.max(0, t));
-  return 1 - (1 - clamped) ** 3;
-}
 
 /** Value at progress `t` (0–1) between `from` and `to` under `ease`. */
 export function tweenAt(from: number, to: number, t: number, ease: (t: number) => number = easeOutCubic): number {

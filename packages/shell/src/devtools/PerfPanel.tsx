@@ -3,7 +3,7 @@ import { useRef } from "react";
 import { devtools, LONG_FRAME_MS, type LongFrameEvent, type PhaseStats } from "@jgengine/core/devtools/devtools";
 import type { GameContext } from "@jgengine/core/runtime/gameContext";
 
-import { ms, SectionLabel, StatRow } from "./panelAtoms";
+import { ms, SectionLabel, PanelStatRow } from "./panelAtoms";
 import { diagnose } from "./perfDiagnose";
 
 const PHASE_BAR_BUDGET_MS = 16.7;
@@ -147,11 +147,11 @@ export function PerfPanel({ ctx }: { ctx: GameContext }) {
       ) : (
         <>
           <FrameBars frames={frame.recentFrameMs} />
-          <StatRow name="fps" value={frame.fps.toFixed(0)} alert={frame.fps < 50} />
-          <StatRow name="frame avg / p95 / max" value={`${ms(frame.avgFrameMs)} / ${ms(frame.p95FrameMs)} / ${ms(frame.maxFrameMs)}`} alert={frame.p95FrameMs > LONG_FRAME_MS} />
-          <StatRow name="sim avg / max" value={`${ms(frame.avgSimMs)} / ${ms(frame.maxSimMs)}`} alert={frame.avgSimMs > 8} />
-          <StatRow name="outside avg / max" value={`${ms(frame.avgOutsideMs)} / ${ms(frame.maxOutsideMs)}`} alert={frame.avgOutsideMs > 12} />
-          <StatRow name={`long frames (of ${frame.samples})`} value={String(frame.longFrames)} alert={frame.longFrames > 5} />
+          <PanelStatRow name="fps" value={frame.fps.toFixed(0)} alert={frame.fps < 50} />
+          <PanelStatRow name="frame avg / p95 / max" value={`${ms(frame.avgFrameMs)} / ${ms(frame.p95FrameMs)} / ${ms(frame.maxFrameMs)}`} alert={frame.p95FrameMs > LONG_FRAME_MS} />
+          <PanelStatRow name="sim avg / max" value={`${ms(frame.avgSimMs)} / ${ms(frame.maxSimMs)}`} alert={frame.avgSimMs > 8} />
+          <PanelStatRow name="outside avg / max" value={`${ms(frame.avgOutsideMs)} / ${ms(frame.maxOutsideMs)}`} alert={frame.avgOutsideMs > 12} />
+          <PanelStatRow name={`long frames (of ${frame.samples})`} value={String(frame.longFrames)} alert={frame.longFrames > 5} />
           {diagnosis !== null ? (
             <div className="rounded border border-amber-500/40 bg-amber-500/10 px-2 py-1.5 text-[10px] leading-snug text-amber-100">
               <span className="font-semibold text-amber-300">Why slow · </span>
@@ -188,16 +188,16 @@ export function PerfPanel({ ctx }: { ctx: GameContext }) {
       {render !== null ? (
         <div className="space-y-1">
           <SectionLabel>render sample</SectionLabel>
-          <StatRow name="draw calls" value={String(render.drawCalls)} alert={render.drawCalls > 1000} />
-          <StatRow name="triangles" value={render.triangles.toLocaleString()} />
-          <StatRow name="geometries / textures" value={`${render.geometries} / ${render.textures}`} />
+          <PanelStatRow name="draw calls" value={String(render.drawCalls)} alert={render.drawCalls > 1000} />
+          <PanelStatRow name="triangles" value={render.triangles.toLocaleString()} />
+          <PanelStatRow name="geometries / textures" value={`${render.geometries} / ${render.textures}`} />
         </div>
       ) : null}
       <div className="space-y-1">
         <SectionLabel>probes</SectionLabel>
-        <StatRow name="state notifies /s" value={rateRef.current.perSecond.toFixed(0)} alert={rateRef.current.perSecond > 90} />
+        <PanelStatRow name="state notifies /s" value={rateRef.current.perSecond.toFixed(0)} alert={rateRef.current.perSecond > 90} />
         {Object.entries(devtools.probes.read()).map(([name, value]) => (
-          <StatRow key={name} name={name} value={String(value)} />
+          <PanelStatRow key={name} name={name} value={String(value)} />
         ))}
       </div>
       <div className="text-[9px] leading-snug text-neutral-600">

@@ -21,7 +21,7 @@ import { HudButton } from "./hud/hudButton";
 import { useHudInteract, type HudInteractListener } from "./hud/hudInteract";
 import { HudSurface } from "./hud/hudSurface";
 import { hudType } from "./hud/hudTokens";
-import { usePresence } from "./presence";
+import { useMountPresence } from "./presence";
 
 /**
  * React chrome over the headless modal stack (`@jgengine/core/ui/modalStack`) — the blocking-overlay
@@ -116,7 +116,7 @@ export function ModalHost({
   const { top: live } = useModalStack(stack);
   const last = useRef<ModalRecord | null>(live);
   if (live !== null) last.current = live;
-  const presence = usePresence(live !== null, useReducedMotion() ? 0 : MODAL_EXIT_MS);
+  const presence = useMountPresence(live !== null, useReducedMotion() ? 0 : MODAL_EXIT_MS);
   const top = live ?? (presence === "closed" ? last.current : null);
   const report = useHudInteract("modal", top?.kind, onInteract);
   const reportedId = useRef<string | null>(null);

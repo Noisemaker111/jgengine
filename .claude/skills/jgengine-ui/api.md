@@ -718,8 +718,8 @@
 - `CoachMarkHostProps` (interface): interface CoachMarkHostProps — Props for {@link CoachMarkHost}.
 - `CoachMarkProps` (interface): interface CoachMarkProps — Props for {@link CoachMark}.
 - `CoachMarkTheme` (interface): interface CoachMarkTheme — Reskin tokens for {@link CoachMarkHost} / {@link CoachMark}.
-- `Codex` (function): function Codex({ entries, title = "Codex", columns = 3, maskSecrets = true, renderIcon, onSelect, emptyLabel = "Nothing discovered yet.", className, style, }: CodexProps): ReactNode — Codex / bestiary gallery — category tabs, a responsive grid of entry cards (discovered vs. locked, secret entries masked until found), and a header summarizing completion. Feed it `codex.list()`; wire `onSelect` to a detail pane.
-- `CodexProps` (interface): interface CodexProps — Props for {@link Codex}.
+- `CodexPanel` (function): function CodexPanel({ entries, title = "Codex", columns = 3, maskSecrets = true, renderIcon, onSelect, emptyLabel = "Nothing discovered yet.", className, style, }: CodexProps): ReactNode — CodexPanel / bestiary gallery — category tabs, a responsive grid of entry cards (discovered vs. locked, secret entries masked until found), and a header summarizing completion. Feed it `codex.list()`; wire `onSelect` to a detail pane.
+- `CodexProps` (interface): interface CodexProps — Props for {@link CodexPanel}.
 - `Coins` (function): function Coins({ currencyId, icon = "🪙", style, className, }: { currencyId: string; icon?: ReactNode; style?: CSSProperties; className?: string; }): React.JSX.Element — A currency counter — an icon (emoji/char, default a coin) plus the live amount for `currencyId`. *
 - `ColorblindFilters` (function): function ColorblindFilters(): ReactNode — Hidden SVG `<defs>` holding the `feColorMatrix` colorblind filters that `filter: url(#jg-cb-<mode>)` references. Mounted by {@link ColorblindFrame}; export it standalone for a root that applies the filter itself.
 - `ColorblindFrame` (function): function ColorblindFrame({ mode = "none", children, className, style }: ColorblindFrameProps): ReactNode — Apply the player's colour-vision mode to one rendered frame: a box carrying `filter: url(#jg-cb-<mode>)` plus the filter defs it references. Put it around the canvas of a 3D game and nothing else — the filter is one compositor pass over that box's pixels, so HUD, menu and caption text outside it keep the contrast and hues the rest of the UI assumes.
@@ -762,9 +762,9 @@
 - `DisplayProfile` (interface): interface DisplayProfile { coarsePointer: boolean; compact: boolean; portrait: boolean } — ⚠ undocumented
 - `DomEventTarget` (interface): interface DomEventTarget — Minimal add/removeEventListener surface accepted by useDomEvent (window, document, elements).
 - `DragGhost` (function): function DragGhost<T>({ layer, className, style, children, }: { layer: DragLayer<T>; className?: string; style?: CSSProperties; children?: (payload: DragPayload<T>) => ReactNode; }): React.JSX.Element | null — ⚠ undocumented
-- `DragLayer` (interface): interface DragLayer<T> { state: DragState<T>; dragging: boolean; pointRef: RefObject<{x: number; y: number}>; beginDrag(payload: {id: string; value: T; rotation?: Rotation}, event: ReactPointerEvent): void; rotate(quarterTurns?: number): void; setTarget(target: s… — ⚠ undocumented · used by `useDragLayer`: Pointer-owned drag state shared by cards and inventory grids.
+- `DragLayer` (interface): interface DragLayer<T> { state: DragLayerState<T>; dragging: boolean; pointRef: RefObject<{x: number; y: number}>; beginDrag(payload: {id: string; value: T; rotation?: Rotation}, event: ReactPointerEvent): void; rotate(quarterTurns?: number): void; setTarget(targ… — ⚠ undocumented · used by `useDragLayer`: Pointer-owned drag state shared by cards and inventory grids.
+- `DragLayerState` (interface): interface DragLayerState<T> — What the drag layer is carrying now: the payload, the pointer and where the drag began.
 - `DragPayload` (interface): interface DragPayload<T> { id: string; value: T; rotation: Rotation } — ⚠ undocumented
-- `DragState` (interface): interface DragState<T> { payload: DragPayload<T> | null; point: {x: number; y: number}; origin: {x: number; y: number}; overTarget: string | null; overCell: Cell | null } — ⚠ undocumented
 - `DraggableCard` (function): function DraggableCard<T>({ id, value, layer, className, children, onRotate, }: { id: string; value: T; layer: DragLayer<T>; className?: string; children?: ReactNode; onRotate?: boolean; }): React.JSX.Element — ⚠ undocumented
 - `DropInfo` (interface): interface DropInfo<T> { payload: DragPayload<T>; target: string | null; cell: Cell | null; point: {x: number; y: number} } — ⚠ undocumented · used by `useDragLayer`: Pointer-owned drag state shared by cards and inventory grids.
 - `DropZone` (function): function DropZone<T>({ id, layer, className, activeClassName, cellSize, children, }: { id: string; layer: DragLayer<T>; className?: string; activeClassName?: string; cellSize?: number; children?: ReactNode; }): React.JSX.Element — ⚠ undocumented
@@ -996,7 +996,6 @@
 - `PresenceDot` (function): function PresenceDot({ userId, className }: { userId: string; className?: string }): React.JSX.Element — ⚠ undocumented
 - `PreviewFixture` (interface): interface PreviewFixture — One entry in the engine preview-fixture registry: a deterministic, engine-level preview component keyed by a stable id.
 - `ProjectEntity` (type): type ProjectEntity = ( worldPosition: readonly [number, number, number], ) => EntityScreenProjection | null — Projects a world position to a screen point, or returns `null` to cull the entry entirely (e.g. outside the frustum). Caller-owned so this seam never depends on a specific camera or renderer.
-- `ProximityPrompt` (function): function ProximityPrompt({ prompt, className, }: { prompt: ProximityPromptDef; className?: string; }): React.JSX.Element — ⚠ undocumented
 - `PushToTalkButton` (function): function PushToTalkButton({ voice, className, children, }: { voice: VoiceState; className?: string; children?: ReactNode; }): React.JSX.Element — ⚠ undocumented
 - `QteTrack` (function): function QteTrack({ steps, startedAt, className, stepClassName, activeClassName, doneClassName, }: { steps: readonly QteStep[]; startedAt: number; className?: string; stepClassName?: string; activeClassName?: string; doneClassName?: string; }): React.JSX.Element — ⚠ undocumented
 - `QuestTracker` (function): function QuestTracker({ quests, title = "Quests", emptyLabel = "No active quests.", maxObjectives, accent = "var(--jg-accent, #facc15)", className, style, }: QuestTrackerProps): ReactNode — Quest / objective tracker HUD — a compact panel of active quests with a title and labelled, progress-barred objectives (checked + struck when complete). Presentation-only over `describeTrackedQuest(def, instance)` views, so it stays decoupled from the `QuestJournal` runtime.
@@ -1049,7 +1048,6 @@
 - `ShopGridTheme` (interface): interface ShopGridTheme — Reskin tokens for {@link ShopGrid}. Falls back to shared `--jg-*` HudTheme tokens, then neutral defaults.
 - `SignOutButton` (function): function SignOutButton({ className, children, }: { className?: string; children?: ReactNode; }): React.JSX.Element | null — ⚠ undocumented
 - `SkillCheckBar` (function): function SkillCheckBar({ config, startedAt, className, trackClassName, zoneClassName, markerClassName, renderStatus, }: { config: SkillCheckConfig; startedAt: number; className?: string; trackClassName?: string; zoneClassName?: string; markerClassName?: string; renderStatus?: (result: SkillCheckResu… — ⚠ undocumented
-- `SlotGrid` (function): function SlotGrid({ inventoryId, className, renderSlot, }: { inventoryId: string; className?: string; renderSlot?: (slot: InventorySlot, index: number) => ReactNode; }): React.JSX.Element — ⚠ undocumented
 - `SlotGridProps` (interface): interface SlotGridProps — Props shared by every atomic slot grid.
 - `SlotItem` (interface): interface SlotItem — Atomic, purpose-named slot grids (#1033): one component per category — `EquipmentSlots`, `WeaponSlots`, `ArmorSlots`, `PotionSlots` — for paperdoll / equip layouts where each grid holds a single gear category. A full multi-category backpack that binds to a live inventory with drag/swap/stack/split is a different, supported shape: reach for `<InventoryGrid>` (`inventoryGrid.tsx`) there, and use these atomic grids for the equip slots around it. Each renders a grid of painted {@link IconTreatment} tiles (glyph + gradient + count badge) for filled slots and a themed placeholder for empty ones, all reading the shared `--jg-slot-*` / `--jg-accent` HudTheme tokens (#1034). Composition stays the game's; the engine ships the grid.
 - `SpeakingIndicator` (function): function SpeakingIndicator({ voice, userId, className, threshold = 0.01, children, }: { voice: VoiceState; userId: string; className?: string; threshold?: number; children?: ReactNode; }): React.JSX.Element — ⚠ undocumented
@@ -1066,8 +1064,8 @@
 - `StreetGeometryPreview` (function): function StreetGeometryPreview({ className }: { className?: string }): React.JSX.Element — Deterministic close-up gallery of the shared road/junction mesh seam.
 - `Suit` (type): type Suit = "clubs" | "diamonds" | "hearts" | "spades" — The four French-deck suits.
 - `TalentIcon` (type): type TalentIcon = GameIconName | ReactNode | null — How a node id resolves to display art: a built-in {@link GameIconName}, any node, or `null` for the default.
-- `TalentTree` (function): function TalentTree<TStat extends string = string>({ view: viewProp, nodes, tree, onLearn, icon, label, branchLabel, title = "Talents", variation = "themed", nodeSize = 54, columnGap = 30, tierGap = 46, showPoints = true, className, style, }: TalentTreeProps<TStat>): ReactNode — Drop-in talent / skill-tree widget over the existing progression model (`@jgengine/core/game/talents` + its `talentTreeView` selector). The game passes its node definitions and a live `createTalentTree` instance; the widget lays nodes out by branch column and prerequisite-depth tier, draws SVG prerequisite edges, styles each node learned/available/locked/maxed, shows an icon + rank badge, and calls `onLearn(nodeId)` when the player clicks a node that is currently allocatable. All layout, edge-drawing, and eligibility come from the model/selector — the widget never re-derives topology. Unskinned and HudTheme-token driven; node ids/branches are opaque game data the game supplies icons and labels for.
-- `TalentTreeProps` (interface): interface TalentTreeProps<TStat extends string = string> — Props for {@link TalentTree}.
+- `TalentTreePanel` (function): function TalentTreePanel<TStat extends string = string>({ view: viewProp, nodes, tree, onLearn, icon, label, branchLabel, title = "Talents", variation = "themed", nodeSize = 54, columnGap = 30, tierGap = 46, showPoints = true, className, style, }: TalentTreeProps<TStat>): ReactNode — Drop-in talent / skill-tree widget over the existing progression model (`@jgengine/core/game/talents` + its `talentTreeView` selector). The game passes its node definitions and a live `createTalentTree` instance; the widget lays nodes out by branch column and prerequisite-depth tier, draws SVG prerequisite edges, styles each node learned/available/locked/maxed, shows an icon + rank badge, and calls `onLearn(nodeId)` when the player clicks a node that is currently allocatable. All layout, edge-drawing, and eligibility come from the model/selector — the widget never re-derives topology. Unskinned and HudTheme-token driven; node ids/branches are opaque game data the game supplies icons and labels for.
+- `TalentTreeProps` (interface): interface TalentTreeProps<TStat extends string = string> — Props for {@link TalentTreePanel}.
 - `TimerFormat` (type): type TimerFormat = "mm:ss" | "m:ss.d" | "ss.d" — Digital text format for a timer readout.
 - `TimerReadout` (function): function TimerReadout({ timer, id, source = "auto", format = "mm:ss", placeholder = "--:--", active = true, className, style, }: TimerReadoutProps): ReactNode — A live digital timer readout (mm:ss / m:ss.d) driven off a {@link TimerSet}. It re-reads every frame and formats remaining or elapsed time — a round clock, a respawn countdown, or an ability charge, all the same widget. HudTheme-skinned via `--jg-text`; reskin with `style` or the theme tokens.
 - `TimerReadoutProps` (interface): interface TimerReadoutProps — Props for {@link TimerReadout}.
@@ -1405,8 +1403,8 @@
 
 ## @jgengine/react/codex
 
-- `Codex` (function): function Codex({ entries, title = "Codex", columns = 3, maskSecrets = true, renderIcon, onSelect, emptyLabel = "Nothing discovered yet.", className, style, }: CodexProps): ReactNode — Codex / bestiary gallery — category tabs, a responsive grid of entry cards (discovered vs. locked, secret entries masked until found), and a header summarizing completion. Feed it `codex.list()`; wire `onSelect` to a detail pane.
-- `CodexProps` (interface): interface CodexProps — Props for {@link Codex}.
+- `CodexPanel` (function): function CodexPanel({ entries, title = "Codex", columns = 3, maskSecrets = true, renderIcon, onSelect, emptyLabel = "Nothing discovered yet.", className, style, }: CodexProps): ReactNode — CodexPanel / bestiary gallery — category tabs, a responsive grid of entry cards (discovered vs. locked, secret entries masked until found), and a header summarizing completion. Feed it `codex.list()`; wire `onSelect` to a detail pane.
+- `CodexProps` (interface): interface CodexProps — Props for {@link CodexPanel}.
 
 ## @jgengine/react/components
 
@@ -1419,11 +1417,9 @@
 - `DialogueLine` (type): type DialogueLine = { speaker: string; text: string } | { choices: readonly DialogueChoice[] } — ⚠ undocumented
 - `KeybindRow` (function): function KeybindRow({ action, keys, className, }: { action: string; keys: readonly string[]; className?: string; }): React.JSX.Element — ⚠ undocumented
 - `LevelUpFlash` (function): function LevelUpFlash({ stat, durationMs = 1600, className, children, renderFlash, }: { stat?: string; durationMs?: number; className?: string; children?: ReactNode; renderFlash?: (event: StatLevelUpEvent) => ReactNode; }): React.JSX.Element | null — ⚠ undocumented
-- `ProximityPrompt` (function): function ProximityPrompt({ prompt, className, }: { prompt: ProximityPromptDef; className?: string; }): React.JSX.Element — ⚠ undocumented
 - `QteTrack` (function): function QteTrack({ steps, startedAt, className, stepClassName, activeClassName, doneClassName, }: { steps: readonly QteStep[]; startedAt: number; className?: string; stepClassName?: string; activeClassName?: string; doneClassName?: string; }): React.JSX.Element — ⚠ undocumented
 - `Screen` (function): function Screen({ id, open = true, className, children, }: { id: string; open?: boolean; className?: string; children?: ReactNode; }): React.JSX.Element | null — ⚠ undocumented
 - `SkillCheckBar` (function): function SkillCheckBar({ config, startedAt, className, trackClassName, zoneClassName, markerClassName, renderStatus, }: { config: SkillCheckConfig; startedAt: number; className?: string; trackClassName?: string; zoneClassName?: string; markerClassName?: string; renderStatus?: (result: SkillCheckResu… — ⚠ undocumented
-- `SlotGrid` (function): function SlotGrid({ inventoryId, className, renderSlot, }: { inventoryId: string; className?: string; renderSlot?: (slot: InventorySlot, index: number) => ReactNode; }): React.JSX.Element — ⚠ undocumented
 - `resolveDialogueInvoke` (function): function resolveDialogueInvoke(choice: DialogueChoice, result: CheckResult | null): { command: string; args?: unknown } | null — ⚠ undocumented
 - `runDialogueChoice` (function): function runDialogueChoice(commands: { run(name: string, input?: unknown): unknown }, choice: DialogueChoice, result: CheckResult | null): void — Route a {@link DialogueBox} choice through the `features.dialogue` bridge: resolve the choice's invoke (honoring a skill-check `result`), run that command, and otherwise close the dialogue — the write side that replaces a per-game `onChoice` that hand-rolls `resolveDialogueInvoke` + `dialogue.close`.
 - `useOpenDialogueId` (function): function useOpenDialogueId(): string | null — The id of the dialogue `ctx.game.dialogue` (or a `talkable(id)` prompt) currently has open, or `null`. The read side of the `features.dialogue` bridge — a panel looks the id up in its own dialogue catalog and renders {@link DialogueBox}, with no per-game open/close store.
@@ -1471,9 +1467,9 @@
 ## @jgengine/react/dragLayer
 
 - `DragGhost` (function): function DragGhost<T>({ layer, className, style, children, }: { layer: DragLayer<T>; className?: string; style?: CSSProperties; children?: (payload: DragPayload<T>) => ReactNode; }): React.JSX.Element | null — ⚠ undocumented
-- `DragLayer` (interface): interface DragLayer<T> { state: DragState<T>; dragging: boolean; pointRef: RefObject<{x: number; y: number}>; beginDrag(payload: {id: string; value: T; rotation?: Rotation}, event: ReactPointerEvent): void; rotate(quarterTurns?: number): void; setTarget(target: s… — ⚠ undocumented · used by `useDragLayer`: Pointer-owned drag state shared by cards and inventory grids.
+- `DragLayer` (interface): interface DragLayer<T> { state: DragLayerState<T>; dragging: boolean; pointRef: RefObject<{x: number; y: number}>; beginDrag(payload: {id: string; value: T; rotation?: Rotation}, event: ReactPointerEvent): void; rotate(quarterTurns?: number): void; setTarget(targ… — ⚠ undocumented · used by `useDragLayer`: Pointer-owned drag state shared by cards and inventory grids.
+- `DragLayerState` (interface): interface DragLayerState<T> — What the drag layer is carrying now: the payload, the pointer and where the drag began.
 - `DragPayload` (interface): interface DragPayload<T> { id: string; value: T; rotation: Rotation } — ⚠ undocumented
-- `DragState` (interface): interface DragState<T> { payload: DragPayload<T> | null; point: {x: number; y: number}; origin: {x: number; y: number}; overTarget: string | null; overCell: Cell | null } — ⚠ undocumented
 - `DraggableCard` (function): function DraggableCard<T>({ id, value, layer, className, children, onRotate, }: { id: string; value: T; layer: DragLayer<T>; className?: string; children?: ReactNode; onRotate?: boolean; }): React.JSX.Element — ⚠ undocumented
 - `DropInfo` (interface): interface DropInfo<T> { payload: DragPayload<T>; target: string | null; cell: Cell | null; point: {x: number; y: number} } — ⚠ undocumented · used by `useDragLayer`: Pointer-owned drag state shared by cards and inventory grids.
 - `DropZone` (function): function DropZone<T>({ id, layer, className, activeClassName, cellSize, children, }: { id: string; layer: DragLayer<T>; className?: string; activeClassName?: string; cellSize?: number; children?: ReactNode; }): React.JSX.Element — ⚠ undocumented
@@ -2126,7 +2122,7 @@
 ## @jgengine/react/presence
 
 - `PresenceState` (type): type PresenceState = "open" | "closed" | "unmounted" — Mount state for an element with an exit transition: `closed` keeps it mounted until the exit ends.
-- `usePresence` (function): function usePresence(open: boolean, exitMs: number): PresenceState — Keeps an element mounted for `exitMs` after `open` turns false, so a `data-state="closed"` exit animation can play. Returns `"unmounted"` once the exit has finished (or at once when `exitMs` is 0).
+- `useMountPresence` (function): function useMountPresence(open: boolean, exitMs: number): PresenceState — Keeps an element mounted for `exitMs` after `open` turns false, so a `data-state="closed"` exit animation can play. Returns `"unmounted"` once the exit has finished (or at once when `exitMs` is 0).
 
 ## @jgengine/react/preview
 
@@ -2276,8 +2272,8 @@
 ## @jgengine/react/talentTree
 
 - `TalentIcon` (type): type TalentIcon = GameIconName | ReactNode | null — How a node id resolves to display art: a built-in {@link GameIconName}, any node, or `null` for the default.
-- `TalentTree` (function): function TalentTree<TStat extends string = string>({ view: viewProp, nodes, tree, onLearn, icon, label, branchLabel, title = "Talents", variation = "themed", nodeSize = 54, columnGap = 30, tierGap = 46, showPoints = true, className, style, }: TalentTreeProps<TStat>): ReactNode — Drop-in talent / skill-tree widget over the existing progression model (`@jgengine/core/game/talents` + its `talentTreeView` selector). The game passes its node definitions and a live `createTalentTree` instance; the widget lays nodes out by branch column and prerequisite-depth tier, draws SVG prerequisite edges, styles each node learned/available/locked/maxed, shows an icon + rank badge, and calls `onLearn(nodeId)` when the player clicks a node that is currently allocatable. All layout, edge-drawing, and eligibility come from the model/selector — the widget never re-derives topology. Unskinned and HudTheme-token driven; node ids/branches are opaque game data the game supplies icons and labels for.
-- `TalentTreeProps` (interface): interface TalentTreeProps<TStat extends string = string> — Props for {@link TalentTree}.
+- `TalentTreePanel` (function): function TalentTreePanel<TStat extends string = string>({ view: viewProp, nodes, tree, onLearn, icon, label, branchLabel, title = "Talents", variation = "themed", nodeSize = 54, columnGap = 30, tierGap = 46, showPoints = true, className, style, }: TalentTreeProps<TStat>): ReactNode — Drop-in talent / skill-tree widget over the existing progression model (`@jgengine/core/game/talents` + its `talentTreeView` selector). The game passes its node definitions and a live `createTalentTree` instance; the widget lays nodes out by branch column and prerequisite-depth tier, draws SVG prerequisite edges, styles each node learned/available/locked/maxed, shows an icon + rank badge, and calls `onLearn(nodeId)` when the player clicks a node that is currently allocatable. All layout, edge-drawing, and eligibility come from the model/selector — the widget never re-derives topology. Unskinned and HudTheme-token driven; node ids/branches are opaque game data the game supplies icons and labels for.
+- `TalentTreeProps` (interface): interface TalentTreeProps<TStat extends string = string> — Props for {@link TalentTreePanel}.
 
 ## @jgengine/react/testFixtures
 
@@ -2304,7 +2300,6 @@
 - `TweenNumber` (function): function TweenNumber({ value, format = defaultFormat, flash = true, durationMs, ease, className, style }: TweenNumberProps): ReactNode — A counter that rolls to each new value and flashes the `--jg-success` / `--jg-danger` color with a small scale pop on the change (`data-jg-delta="up" | "down"`). Tabular digits keep its width stable.
 - `TweenNumberProps` (interface): interface TweenNumberProps extends TweenOptions — Props for {@link TweenNumber}.
 - `TweenOptions` (interface): interface TweenOptions — Options for {@link useTweenedValue}.
-- `easeOutCubic` (function): function easeOutCubic(t: number): number — Ease-out cubic, the default counter curve.
 - `tweenAt` (function): function tweenAt(from: number, to: number, t: number, ease: (t: number) => number = easeOutCubic): number — Value at progress `t` (0–1) between `from` and `to` under `ease`.
 - `useTweenedValue` (function): function useTweenedValue(target: number, options: TweenOptions = {}): number — Animates toward `target` whenever it changes, starting from the currently displayed value, so a counter rolls instead of jumping. Snaps immediately under reduced motion or a non-finite target.
 
@@ -2835,7 +2830,6 @@
 ## @jgengine/shell/devtools/panelAtoms
 
 - `SectionLabel` (function): function SectionLabel({ children }: { children: string }): React.JSX.Element — ⚠ undocumented
-- `StatRow` (function): function StatRow({ name, value, alert }: { name: string; value: string; alert?: boolean }): React.JSX.Element — ⚠ undocumented
 - `ms` (function): function ms(value: number): string — ⚠ undocumented
 
 ## @jgengine/shell/devtools/perfDiagnose

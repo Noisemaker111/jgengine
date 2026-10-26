@@ -3,7 +3,7 @@ import { useMemo, useState, type CSSProperties, type ReactNode } from "react";
 import type { CodexEntryView } from "@jgengine/core/game/codex";
 import { hudType } from "./hud/hudTokens";
 
-/** Props for {@link Codex}. */
+/** Props for {@link CodexPanel}. */
 export interface CodexProps {
   entries: readonly CodexEntryView[];
   title?: string;
@@ -22,14 +22,14 @@ const ALL = "__all";
 const MASK = "???";
 
 /**
- * Codex / bestiary gallery — category tabs, a responsive grid of entry cards
+ * CodexPanel / bestiary gallery — category tabs, a responsive grid of entry cards
  * (discovered vs. locked, secret entries masked until found), and a header
  * summarizing completion. Feed it `codex.list()`; wire `onSelect` to a detail
  * pane.
  *
  * @capability codex-gallery codex/bestiary gallery with category tabs, discovered/locked cards, secret masking, and a completion header
  */
-export function Codex({
+export function CodexPanel({
   entries,
   title = "Codex",
   columns = 3,

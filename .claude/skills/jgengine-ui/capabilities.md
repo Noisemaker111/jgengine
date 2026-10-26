@@ -193,7 +193,7 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 ## codex-gallery — codex/bestiary gallery with category tabs, discovered/locked cards, secret masking, and a completion header
 
-- `Codex` (function) · `import { Codex } from "@jgengine/react"`
+- `CodexPanel` (function) · `import { CodexPanel } from "@jgengine/react"`
 
 ## colorblind-filters — SVG feColorMatrix defs (protanopia/deuteranopia/tritanopia/grayscale) referenced by the accessibility colorblind filter
 
@@ -884,7 +884,7 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 ## presence — keep a closing element mounted through its exit transition
 
-- `usePresence` (function) · `import { usePresence } from "@jgengine/react/presence"`
+- `useMountPresence` (function) · `import { useMountPresence } from "@jgengine/react/presence"`
 
 ## projected-overdraw — sample actual mesh/camera fragment overlap with native coverage and explicit depth/blending/transmission limits
 
@@ -1046,7 +1046,7 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 ## talent-tree — drop-in skill/talent/upgrade-tree widget — pass `nodes`+`tree` for point-spend or a precomputed `view` for any unlock rule; branch/tier layout, SVG prerequisite edges, learned/available/locked/maxed styling, icon + rank, onLearn
 
-- `TalentTree` (function) · `import { TalentTree } from "@jgengine/react"`
+- `TalentTreePanel` (function) · `import { TalentTreePanel } from "@jgengine/react"`
 
 ## terrain-paint-color — sample authored terrain surfaces and blended layers for shared ground rendering
 
