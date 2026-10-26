@@ -15,6 +15,8 @@ const compressScript = fileURLToPath(new URL("../scripts/compress-textures.ts", 
 export interface AssetCatalogs {
   sources: readonly { id: string; kind?: string }[];
   library: readonly { name: string; origin: { provider: string } }[];
+  /** Semantic keys (`asset:person_casual`, `character/rogue`) and the `pack/model` ids they stand for. */
+  aliases?: readonly { key: string; target: string }[];
 }
 
 /** One pack or library model a game references and does not have on disk. */
@@ -38,13 +40,15 @@ function sourceText(dir: string): string {
 
 /**
  * The packs and library models a game's `src/` names that its `public/` lacks. A pack counts as
- * referenced when its id appears as a string literal; generated library models are committed by the
- * game itself, so they never need a pull.
+ * referenced when its id, or an alias that resolves into it (`"asset:person_casual"`), appears as a
+ * string literal; generated library models are committed by the game itself, so they never need a pull.
  */
 export function missingPulls(text: string, publicDir: string, catalogs: AssetCatalogs): PullJob[] {
+  const quoted = (id: string): boolean => text.includes(`"${id}"`) || text.includes(`'${id}'`);
+  const aliased = new Set((catalogs.aliases ?? []).filter((alias) => quoted(alias.key)).map((alias) => alias.target.split("/")[0]!));
   const jobs: PullJob[] = [];
   for (const source of catalogs.sources) {
-    if (!text.includes(`"${source.id}"`) && !text.includes(`'${source.id}'`)) continue;
+    if (!quoted(source.id) && !aliased.has(source.id)) continue;
     const subdir = source.kind === "material" ? "materials" : source.kind === "sprite" ? "sprites" : "models";
     const dir = join(subdir, source.id);
     if (!dirHasEntries(join(publicDir, dir))) jobs.push({ target: source.id, dir });
@@ -73,8 +77,9 @@ async function loadCatalogs(): Promise<AssetCatalogs> {
   const module = (await import(join(assetsDir, "src/index.ts"))) as {
     sources: AssetCatalogs["sources"];
     MODEL_LIBRARY?: AssetCatalogs["library"];
+    aliases?: AssetCatalogs["aliases"];
   };
-  return { sources: module.sources, library: module.MODEL_LIBRARY ?? [] };
+  return { sources: module.sources, library: module.MODEL_LIBRARY ?? [], aliases: module.aliases ?? [] };
 }
 
 function runPull(cwd: string, target: string, outRoot: string): Promise<boolean> {

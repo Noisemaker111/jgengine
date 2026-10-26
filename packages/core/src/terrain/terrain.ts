@@ -19,6 +19,8 @@ import type {
 import type { AvoidZone } from "../world/geometry";
 import { type TerrainPathProfile, withPathProfiles } from "./pathTerrain";
 import { buildPolylineIndex } from "../world/polylineIndex";
+import { distanceToRing, pointInPolygon, polygonSignedArea } from "../world/polygon";
+import type { Vec2 } from "../world/geometry";
 import { buildSpatialBuckets } from "../spatial/spatialBuckets";
 import type { TerraformSnapshot } from "./terraform";
 
@@ -1002,6 +1004,29 @@ function resolveRegionShape(region: TerrainMaterialRegion): {
       maxZ: empty ? -1 : maxZ + limit,
     };
   }
+  if (region.shape === "polygon") {
+    const ring = region.points;
+    const falloff = region.falloff ?? 16;
+    let minX = Number.POSITIVE_INFINITY;
+    let minZ = Number.POSITIVE_INFINITY;
+    let maxX = Number.NEGATIVE_INFINITY;
+    let maxZ = Number.NEGATIVE_INFINITY;
+    for (const point of ring) {
+      minX = Math.min(minX, point[0]);
+      maxX = Math.max(maxX, point[0]);
+      minZ = Math.min(minZ, point[1]);
+      maxZ = Math.max(maxZ, point[1]);
+    }
+    const empty = ring.length < 3;
+    return {
+      falloff,
+      coreDistance: (x, z) => (empty ? Number.POSITIVE_INFINITY : pointInPolygon(ring, x, z) ? 0 : distanceToRing(ring, x, z)),
+      minX: empty ? 0 : minX - falloff,
+      minZ: empty ? 0 : minZ - falloff,
+      maxX: empty ? -1 : maxX + falloff,
+      maxZ: empty ? -1 : maxZ + falloff,
+    };
+  }
   if (region.shape === "rect") {
     const [hx, hz] = region.halfExtents;
     const angle = region.rotationY ?? 0;
@@ -1116,6 +1141,77 @@ export function heightMapField(config: HeightMapFieldConfig): TerrainField {
   );
 }
 
+/**
+ * Signed distance to a set of shore rings, positive inside: exact within `reach` of a shore (through each
+ * ring's segment index, so a sample tests a handful of segments), and `reach` (land) or -Infinity (sea)
+ * beyond it, read from a coarse land grid filled on demand.
+ */
+function outlineSignedDistance(rings: readonly (readonly (readonly [number, number])[])[], reach: number): (x: number, z: number) => number {
+  const shores = rings.map((source) => {
+    const ring = polygonSignedArea(source as readonly Vec2[]) >= 0 ? source : [...source].reverse();
+    const closed = [...ring, ring[0]!] as Vec2[];
+    // Outward normal of each edge of a counter-clockwise ring.
+    const normals = closed.slice(0, -1).map((a, i) => {
+      const b = closed[i + 1]!;
+      const length = Math.hypot(b[0] - a[0], b[1] - a[1]) || 1;
+      return [(b[1] - a[1]) / length, -(b[0] - a[0]) / length] as const;
+    });
+    let minX = Number.POSITIVE_INFINITY;
+    let minZ = Number.POSITIVE_INFINITY;
+    let maxX = Number.NEGATIVE_INFINITY;
+    let maxZ = Number.NEGATIVE_INFINITY;
+    for (const [px, pz] of ring) {
+      minX = Math.min(minX, px);
+      maxX = Math.max(maxX, px);
+      minZ = Math.min(minZ, pz);
+      maxZ = Math.max(maxZ, pz);
+    }
+    return { ring, closed, normals, index: buildPolylineIndex(closed), minX: minX - reach, maxX: maxX + reach, minZ: minZ - reach, maxZ: maxZ + reach };
+  });
+  const minX = Math.min(...shores.map((shore) => shore.minX));
+  const minZ = Math.min(...shores.map((shore) => shore.minZ));
+  const cell = reach / 2;
+  const columns = Math.max(1, Math.ceil((Math.max(...shores.map((shore) => shore.maxX)) - minX) / cell));
+  const rows = Math.max(1, Math.ceil((Math.max(...shores.map((shore) => shore.maxZ)) - minZ) / cell));
+  // 0 unknown, 1 land, 2 sea — filled the first time a far sample lands in the cell.
+  const landGrid = new Uint8Array(columns * rows);
+  const farSide = (x: number, z: number): number => {
+    const column = Math.floor((x - minX) / cell);
+    const row = Math.floor((z - minZ) / cell);
+    if (column < 0 || row < 0 || column >= columns || row >= rows) return Number.NEGATIVE_INFINITY;
+    const key = row * columns + column;
+    if (landGrid[key] === 0) {
+      const cx = minX + (column + 0.5) * cell;
+      const cz = minZ + (row + 0.5) * cell;
+      landGrid[key] = shores.some((shore) => pointInPolygon(shore.ring as readonly Vec2[], cx, cz)) ? 1 : 2;
+    }
+    return landGrid[key] === 1 ? reach : Number.NEGATIVE_INFINITY;
+  };
+  return (x, z) => {
+    let best = Number.NEGATIVE_INFINITY;
+    let near = false;
+    for (const shore of shores) {
+      if (x < shore.minX || x > shore.maxX || z < shore.minZ || z > shore.maxZ) continue;
+      const hit = shore.index.nearest(x, z, reach);
+      if (hit === null) continue;
+      near = true;
+      const normal = shore.normals[hit.segment]!;
+      let nx = normal[0];
+      let nz = normal[1];
+      // At a corner the side is decided by both edges meeting there.
+      if (hit.t <= 1e-9 || hit.t >= 1 - 1e-9) {
+        const count = shore.normals.length;
+        const other = shore.normals[hit.t <= 1e-9 ? (hit.segment - 1 + count) % count : (hit.segment + 1) % count]!;
+        nx += other[0];
+        nz += other[1];
+      }
+      const outside = (x - hit.point[0]) * nx + (z - hit.point[1]) * nz > 0;
+      best = Math.max(best, outside ? -hit.distance : hit.distance);
+    }
+    return near ? best : farSide(x, z);
+  };
+}
+
 function coastHash(seed: string): number {
   let h = 2166136261 >>> 0;
   for (let i = 0; i < seed.length; i += 1) {
@@ -1140,12 +1236,37 @@ function smooth01(t: number): number {
 export function withCoast(height: (x: number, z: number) => number, coast: TerrainCoast): (x: number, z: number) => number {
   const [cx, cz] = coast.center ?? [0, 0];
   const [sx, sz] = coast.stretch ?? [1, 1];
-  const falloff = Math.max(1, coast.falloff ?? coast.radius * 0.25);
+  const rings = (coast.outlines ?? []).filter((ring) => ring.length >= 3);
+  if (rings.length === 0 && coast.radius === undefined) throw new Error("withCoast: a coast needs a radius or at least one outline of three or more points");
+  const radius = coast.radius ?? 0;
+  const falloff = Math.max(1, coast.falloff ?? (rings.length > 0 ? 120 : radius * 0.25));
   const shore = coast.shoreHeight ?? 1;
   const floor = coast.seaFloor ?? -30;
   const shelf = Math.max(1, coast.shelf ?? 120);
   const wobble = coast.wobble ?? 0.25;
   const phase = coastHash(coast.seed ?? "coast");
+  const shape = (inside: number, x: number, z: number): number => {
+    if (inside >= 0) {
+      const land = Math.max(height(x, z), shore);
+      return shore + (land - shore) * smooth01(inside / falloff);
+    }
+    return shore + (floor - shore) * smooth01(-inside / shelf);
+  };
+  if (rings.length > 0) {
+    // Past this distance the outline no longer shapes the ground: land is full height, sea is the floor.
+    const reach = Math.max(falloff, shelf) * (1 + wobble);
+    const signedDistance = outlineSignedDistance(rings, reach);
+    const roughness = wobble * falloff * 0.35;
+    return (x, z) => {
+      const signed = signedDistance(x, z);
+      if (signed === Number.NEGATIVE_INFINITY) return floor;
+      const rough =
+        0.5 * Math.sin(x * 0.011 + phase) * Math.cos(z * 0.009 - phase) +
+        0.3 * Math.sin((x + z) * 0.023 + phase * 1.7) +
+        0.2 * Math.sin((x - z) * 0.047 + phase * 2.3);
+      return shape(signed + roughness * rough, x, z);
+    };
+  }
   return (x, z) => {
     const dx = (x - cx) / sx;
     const dz = (z - cz) / sz;
@@ -1154,13 +1275,8 @@ export function withCoast(height: (x: number, z: number) => number, coast: Terra
       1 +
       wobble *
         (0.55 * Math.sin(angle * 3 + phase) + 0.3 * Math.sin(angle * 7 + phase * 1.7) + 0.15 * Math.sin(angle * 13 + phase * 2.3));
-    const edge = coast.radius * wander;
-    const inside = edge - Math.hypot(dx, dz);
-    if (inside >= 0) {
-      const land = Math.max(height(x, z), shore);
-      return shore + (land - shore) * smooth01(inside / falloff);
-    }
-    return shore + (floor - shore) * smooth01(-inside / shelf);
+    const edge = radius * wander;
+    return shape(edge - Math.hypot(dx, dz), x, z);
   };
 }
 

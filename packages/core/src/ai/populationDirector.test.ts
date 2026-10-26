@@ -61,6 +61,35 @@ describe("createPopulationDirector", () => {
     expect(director.alive("cave", "bat")).toBe(2);
   });
 
+  test("a sleeping region holds its refills until it wakes", () => {
+    const director = createPopulationDirector({
+      regions: [
+        { region: "beach", species: [{ species: "dodo", cap: 2 }] },
+        { region: "peak", species: [{ species: "rex", cap: 1 }] },
+      ],
+    });
+    let awake = new Set(["beach"]);
+    const tick = () => director.tick(1, { isActive: (region) => awake.has(region) });
+    expect(tick().map((request) => request.region)).toEqual(["beach", "beach"]);
+    expect(tick()).toEqual([]);
+    expect(director.alive("peak", "rex")).toBe(0);
+    awake = new Set(["peak"]);
+    expect(tick()).toEqual([{ region: "peak", species: "rex" }]);
+  });
+
+  test("a creature put away with no delay comes back as soon as its region wakes", () => {
+    const director = createPopulationDirector({
+      respawnDelay: 300,
+      regions: [{ region: "jungle", species: [{ species: "raptor", cap: 1 }] }],
+    });
+    director.tick(1);
+    director.notifyRemoved("jungle", "raptor", "raptor_1", { delay: 0 });
+    expect(director.tick(1, { isActive: () => false })).toEqual([]);
+    expect(director.tick(1, { isActive: () => true })).toEqual([{ region: "jungle", species: "raptor" }]);
+    director.notifyRemoved("jungle", "raptor");
+    expect(director.tick(1)).toEqual([]);
+  });
+
   test("per-tick cap bounds output and carries the rest over", () => {
     const director = createPopulationDirector({
       maxSpawnsPerTick: 2,

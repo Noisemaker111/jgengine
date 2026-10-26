@@ -283,6 +283,15 @@ test("an island-sized field grows its chunks so it never splits past the chunk b
   expect(edge).toBeGreaterThan(24);
 });
 
+test("a field over its instance budget thins evenly instead of dropping the regions listed last", async () => {
+  const { capScatterInstances } = await import("./InstancedScatter.draw");
+  const field = Array.from({ length: 1000 }, (_, i) => ({ region: i < 500 ? "north" : "south", i }));
+  const kept = capScatterInstances(field, 100);
+  expect(kept).toHaveLength(100);
+  expect(kept.filter((instance) => instance.region === "south")).toHaveLength(50);
+  expect(capScatterInstances(field, 2000)).toBe(field);
+});
+
 test("hiding a placement rebuilds only the chunk it stood in", async () => {
   const { hideScatterPlacements, scatterBatchInstances } = await import("./InstancedScatter.draw");
   const at = (id: string, x: number) => ({ id, item: "tree", x, y: 0, z: 0, rotationY: 0, scale: 1 });

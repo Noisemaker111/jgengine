@@ -9,6 +9,8 @@ import { content } from "./content";
 import { creaturesView } from "./creatures";
 import { itemTraits } from "./data/items";
 import { openScreen } from "./screens";
+import { editorLayers } from "../editorLayers";
+import { markersOfKind } from "@jgengine/core/world/authoredSpawn";
 
 function islandRunner(): HeadlessRunner {
   const definition = defineGameDefinition({
@@ -32,12 +34,35 @@ const equip = (runner: HeadlessRunner, itemId: string) => {
 };
 const facing = (runner: HeadlessRunner) => runner.ctx.scene.entity.get(runner.userId)!.rotationY;
 
-test("the island's herds wake with the survivor: dodos, phiomias and raptors", () => {
+const wildNames = (runner: HeadlessRunner) => runner.ctx.scene.entity.list().filter((entity) => entity.id !== runner.userId).map((entity) => entity.name);
+const farthest = (runner: HeadlessRunner) => {
+  const me = runner.ctx.scene.entity.get(runner.userId)!.position;
+  return Math.max(...runner.ctx.scene.entity.list().filter((entity) => entity.id !== runner.userId).map((entity) => Math.hypot(entity.position[0] - me[0], entity.position[2] - me[2])));
+};
+
+test("only the herds near the survivor are awake, and they follow the survivor across the island", () => {
   const runner = islandRunner();
   tick(runner, 0.1);
-  expect(creaturesView(runner.ctx).count).toBe(7);
-  const names = new Set(runner.ctx.scene.entity.list().map((entity) => entity.name));
-  for (const species of ["dodo", "phiomia", "raptor"]) expect(names.has(species)).toBe(true);
+  // The south beach wakes with ARK's beach herds: dodos and phiomias, nothing from the far side of the island.
+  const beach = new Set(wildNames(runner));
+  expect(beach.has("dodo")).toBe(true);
+  expect(beach.has("phiomia")).toBe(true);
+  expect(creaturesView(runner.ctx).count).toBeGreaterThan(5);
+  expect(farthest(runner)).toBeLessThan(320);
+
+  // Carried to the farthest jungle zone across the island, the beach herds sleep (they are gone) and the zones there wake.
+  const beachIds = new Set(runner.ctx.scene.entity.list().map((entity) => entity.id).filter((id) => id !== runner.userId));
+  const me0 = runner.ctx.scene.entity.get(runner.userId)!.position;
+  const far = markersOfKind(editorLayers, "creature_spawn")
+    .filter((marker) => marker.meta?.["biome"] === "jungle")
+    .sort((a, b) => Math.hypot(b.position.x - me0[0], b.position.z - me0[2]) - Math.hypot(a.position.x - me0[0], a.position.z - me0[2]))[0]!;
+  expect(Math.hypot(far.position.x - me0[0], far.position.z - me0[2])).toBeGreaterThan(1000);
+  runner.ctx.scene.entity.setPose(runner.userId, { position: [far.position.x, runner.ctx.world.groundHeightAt(far.position.x, far.position.z), far.position.z], rotationY: 0 });
+  tick(runner, 0.2);
+  const there = runner.ctx.scene.entity.list().filter((entity) => entity.id !== runner.userId);
+  expect(there.length).toBeGreaterThan(0);
+  expect(there.some((entity) => beachIds.has(entity.id))).toBe(false);
+  expect(farthest(runner)).toBeLessThan(320);
 });
 
 test("club a raptor unconscious, tame it on raw meat, saddle it and ride it", () => {

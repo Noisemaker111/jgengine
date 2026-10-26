@@ -1,4 +1,4 @@
-import { authoredSpawnRotation } from "@jgengine/core/world/authoredSpawn";
+import { authoredSpawnPosition, authoredSpawnRotation } from "@jgengine/core/world/authoredSpawn";
 import { createGameFlowSystem } from "@jgengine/core/game/gameFlow";
 import { DEFAULT_WALK_CODES, defineGame } from "@jgengine/shell/gameKit";
 
@@ -17,6 +17,9 @@ import { GameUI } from "./game/ui/GameUI";
 import { BaseWorld } from "./game/ui/BaseWorld";
 import { onNewPlayer, systems } from "./loop";
 import { time, world } from "./world";
+
+const SPAWN = authoredSpawnPosition(editorLayers) ?? [0, 0, 0];
+const SPAWN_YAW = authoredSpawnRotation(editorLayers);
 
 export const game = defineGame({
   name: "Fernwild",
@@ -71,6 +74,8 @@ export const game = defineGame({
         x: Math.round((me?.position[0] ?? 0) * 10) / 10,
         z: Math.round((me?.position[2] ?? 0) * 10) / 10,
         yaw: Math.round((me?.rotationY ?? 0) * 100) / 100,
+        // Metres walked from the spawn along the way it faces, so flows survive the spawn moving.
+        ahead: Math.round((((me?.position[0] ?? SPAWN[0]) - SPAWN[0]) * Math.sin(SPAWN_YAW) + ((me?.position[2] ?? SPAWN[2]) - SPAWN[2]) * Math.cos(SPAWN_YAW)) * 10) / 10,
         level: view.level,
         aimStrike: view.aim.strike === null ? 0 : 1,
         aimPick: view.aim.pick === null ? 0 : 1,

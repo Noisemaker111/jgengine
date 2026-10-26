@@ -34,6 +34,22 @@ const rock = (label: string, budget: number, radius: number): Harvestable => ({
   ],
 });
 
+/** A resource rock: struck for its ore plus stone. A pick gets more ore, a hatchet more stone. */
+const ore = (label: string, kind: string, budget: number, radius: number): Harvestable => ({
+  by: "strike",
+  label,
+  budget,
+  radius,
+  respawn: REGROW * 2,
+  resources: [
+    { kind, amount: [1, 2] },
+    { kind: "stone", amount: [0, 1] },
+  ],
+});
+
+/** Plants picked by hand for fiber. */
+const weed = (label: string): Harvestable => ({ by: "pick", label, budget: 2, radius: 0.6, respawn: REGROW / 2, resources: [{ kind: "fiber", amount: [1, 3] }] });
+
 const bush = (label: string, berries: Record<string, number>): Harvestable => ({
   by: "pick",
   label,
@@ -43,7 +59,7 @@ const bush = (label: string, berries: Record<string, number>): Harvestable => ({
   resources: [{ kind: "fiber", amount: [2, 4] }, ...Object.entries(berries).map(([kind, most]) => ({ kind, amount: [0, most] as const }))],
 });
 
-/** Scatter palette item → what it yields. Items not listed (grass, flowers) are scenery. */
+/** Scatter palette item → what it yields. Items not listed (grass) are scenery. */
 export const HARVESTABLES: Readonly<Record<string, Harvestable>> = {
   palm: tree("Tree", 30, 0.5),
   tree: tree("Tree", 40, 0.6),
@@ -56,6 +72,14 @@ export const HARVESTABLES: Readonly<Record<string, Harvestable>> = {
   boulder: rock("Boulder", 30, 1.4),
   boulder2: rock("Boulder", 30, 1.3),
   rock: rock("Rock", 18, 0.9),
+  metal_rock: ore("Metal Rock", "metal", 40, 1.3),
+  obsidian_rock: ore("Obsidian", "obsidian", 30, 1.1),
+  crystal: { ...ore("Crystal", "crystal", 12, 0.7), resources: [{ kind: "crystal", amount: [1, 3] }] },
+  oil_rock: ore("Oil Rock", "oil", 25, 1),
+  flowers: weed("Flowers"),
+  tallgrass: weed("Tall Grass"),
+  plant: weed("Plant"),
+  mushroom: weed("Mushrooms"),
   bush: bush("Bush", { mejoberry: 2, amarberry: 2, azulberry: 2, tintoberry: 2, narcoberry: 1, stimberry: 1 }),
   berrybush: bush("Berry Bush", { mejoberry: 4, amarberry: 3, azulberry: 3, tintoberry: 3, narcoberry: 2, stimberry: 2 }),
   fern: bush("Fern", { tintoberry: 1 }),

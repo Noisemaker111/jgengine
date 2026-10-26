@@ -156,6 +156,13 @@ export interface TerrainPolylineRegion extends TerrainRegionStyle {
   width: number;
 }
 
+/** A palette zone filling a closed outline — a biome drawn as a shape (swamp, snowfield, redwood stand). `falloff` defaults to 16. */
+export interface TerrainPolygonRegion extends TerrainRegionStyle {
+  shape: "polygon";
+  /** Outline vertices in world XZ, at least three; the ring closes itself. */
+  points: readonly EnvironmentVec2[];
+}
+
 /** A rectangular palette zone, optionally rotated about the world y axis — plazas, fields, districts. */
 export interface TerrainRectRegion extends TerrainRegionStyle {
   shape: "rect";
@@ -168,10 +175,10 @@ export interface TerrainRectRegion extends TerrainRegionStyle {
 
 /**
  * A palette zone painted over the base terrain palette. Circle (the default when no `shape` is given),
- * `polyline` ribbons for roads/rivers, and rotatable `rect` districts all paint fully inside their core
- * and blend back across `falloff`; later regions in the list win overlaps.
+ * `polyline` ribbons for roads/rivers, rotatable `rect` districts and `polygon` outlines all paint fully
+ * inside their core and blend back across `falloff`; later regions in the list win overlaps.
  */
-export type TerrainMaterialRegion = TerrainCircleRegion | TerrainPolylineRegion | TerrainRectRegion;
+export type TerrainMaterialRegion = TerrainCircleRegion | TerrainPolylineRegion | TerrainRectRegion | TerrainPolygonRegion;
 
 /** Per-band fog override cross-faded along z by `createBiomeFogSampler`; unset fields fall through to the base sky fog. */
 export interface BiomeFog {
@@ -501,15 +508,23 @@ export type TerrainEnvironmentDescriptor = { kind: "terrain" } & Required<
 > &
   Omit<TerrainEnvironmentConfig, "bounds" | "height">;
 
-/** An island coastline over a terrain: a wobbling shore ring, a beach shelf and a sea floor beyond. */
+/**
+ * An island coastline over a terrain: a wobbling shore, a beach shelf and a sea floor beyond. The shore
+ * is either a ring (`radius`, `stretch`, `center`) or authored `outlines`, one closed ring per landmass.
+ */
 export interface TerrainCoast {
-  /** Island centre `[x, z]`. Default `[0, 0]`. */
+  /** Island centre `[x, z]` of the ring shore. Default `[0, 0]`. */
   center?: readonly [number, number];
-  /** Mean shore distance from the centre in metres. */
-  radius: number;
+  /** Mean shore distance from the centre in metres, for a ring shore. Needed unless `outlines` is set. */
+  radius?: number;
+  /**
+   * Authored shorelines in world XZ, one closed ring per landmass (main island, islets): land is inside a
+   * ring. Replaces the ring shore; `wobble` still roughens the line so a coarse outline reads as coves.
+   */
+  outlines?: readonly (readonly (readonly [number, number])[])[];
   /** Shore stretch per axis `[x, z]` (1 = round). Default `[1, 1]`. */
   stretch?: readonly [number, number];
-  /** Metres over which land falls from full height to the shore. Default `radius * 0.25`. */
+  /** Metres over which land falls from full height to the shore. Default `radius * 0.25`, or 120 with `outlines`. */
   falloff?: number;
   /** Height of the shore line (sand at the water). Default 1. */
   shoreHeight?: number;
