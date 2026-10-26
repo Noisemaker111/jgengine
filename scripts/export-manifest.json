@@ -1455,6 +1455,7 @@
     "./compatibility",
     "./create",
     "./desktop",
+    "./desktopIcons",
     "./doctor",
     "./escapeHtml",
     "./find/capabilities",
