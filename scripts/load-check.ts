@@ -11,6 +11,7 @@ import { chromium, type Frame, type Page } from "playwright-core";
 
 import { gamePublicRoots, resolveGamePublicFile } from "../apps/dev/gamePublicPlugin";
 import { assetStoreRoot } from "../games/shared/assetStore";
+import { provisionGame } from "../games/shared/provisionAssets";
 import { compressedVariant, textureVariantDir } from "../games/shared/textureVariants";
 import { killPid, pickDebugPort, removeProfileDir, startBrowser, waitForPidExit } from "./browser-lib";
 import { printHelpIfAsked } from "./script-help";
@@ -379,6 +380,19 @@ export function serveSite(clientDir = join(webRoot, "dist", "client"), entry = "
   return { base: `http://127.0.0.1:${server.port}`, stop: () => server.stop(true) };
 }
 
+/**
+ * Links or downloads every pack the measured games reference, the same as `games:provision`, so a
+ * fresh worktree never times a game drawing placeholder boxes and flat materials.
+ */
+async function provisionGames(games: readonly string[]): Promise<void> {
+  const failed: string[] = [];
+  for (const game of games) {
+    const result = await provisionGame(join(repoRoot, "games", game), { log: (line) => console.error(`load: ${line}`) });
+    failed.push(...result.failed.map((target) => `${game}: ${target}`));
+  }
+  if (failed.length > 0) throw new Error(`load: could not provision ${failed.join(", ")}; a game without its packs loads unlike the real one`);
+}
+
 async function playFrame(page: Page): Promise<Frame | null> {
   return page.frames().find((frame) => new URL(frame.url(), "http://x").pathname.startsWith("/play")) ?? null;
 }
@@ -486,6 +500,7 @@ async function main(): Promise<number> {
     console.error("load: the load guard needs this PC's GPU and never runs in CI; skipped");
     return 0;
   }
+  await provisionGames(args.games);
   if (args.build) (runner ? buildRunner : buildSite)();
   const outDir = join(repoRoot, ".scratch", "load");
   mkdirSync(outDir, { recursive: true });

@@ -457,6 +457,34 @@ export function voxelizeToBoxes(
 
 const LEAF_TRIANGLES = 4;
 
+/**
+ * Reorder `order[lo..hi]` so the entry at `nth` has its rank by centroid on `axis`, with no larger
+ * centroid before it and no smaller one after. A split only needs the halves, not a sorted run, and
+ * sorting every node's run with a comparator held the main thread for half a second per dense prop.
+ */
+function selectNth(order: Uint32Array, centroids: Float32Array, axis: number, lo: number, hi: number, nth: number): void {
+  const key = (i: number): number => centroids[order[i]! * 3 + axis]!;
+  while (hi > lo) {
+    const pivot = key((lo + hi) >> 1);
+    let i = lo;
+    let j = hi;
+    while (i <= j) {
+      while (key(i) < pivot) i += 1;
+      while (key(j) > pivot) j -= 1;
+      if (i <= j) {
+        const swap = order[i]!;
+        order[i] = order[j]!;
+        order[j] = swap;
+        i += 1;
+        j -= 1;
+      }
+    }
+    if (nth <= j) hi = j;
+    else if (nth >= i) lo = i;
+    else return;
+  }
+}
+
 function buildBvh(
   positions: Float32Array,
   indices: Uint32Array,
@@ -523,8 +551,8 @@ function buildBvh(
     const spanY = maxY - minY;
     const spanZ = maxZ - minZ;
     const axis = spanX >= spanY && spanX >= spanZ ? 0 : spanY >= spanZ ? 1 : 2;
-    triOrder.subarray(start, start + count).sort((a, b) => centroids[a * 3 + axis]! - centroids[b * 3 + axis]!);
     const mid = start + (count >> 1);
+    selectNth(triOrder, centroids, axis, start, start + count - 1, mid);
 
     nodeCount[node] = 0;
     build(start, mid - start);
