@@ -237,7 +237,9 @@ export function createCreatureDriver(config: CreatureDriverConfig = {}): Creatur
       if (state.grudge !== null && state.grudge.until <= ctx.time.now()) state.grudge = null;
       const grudge = state.grudge;
       const health = ctx.scene.entity.stats.get(id, "health");
-      const intent = decideTemperament(mind.temperament, {
+      // It strikes from where its body reaches, so the temperament's charge stops where the bite lands.
+      const temperament = body.attack === null ? mind.temperament : { ...mind.temperament, attackRange: body.attack.reach };
+      const intent = decideTemperament(temperament, {
         position: self.position,
         home: state.home,
         health: health === null || health.max <= 0 ? 1 : health.current / health.max,

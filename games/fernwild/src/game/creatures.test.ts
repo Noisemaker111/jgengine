@@ -44,9 +44,9 @@ test("the island's herds wake with the survivor: dodos, phiomias and raptors", (
 test("club a raptor unconscious, tame it on raw meat, saddle it and ride it", () => {
   const runner = islandRunner();
   tick(runner, 0.1);
-  // A survivor who levelled health and stamina, as anyone taking on a raptor with a club must.
-  runner.ui.tryInvoke("cheat", { xp: 100000, give: { wooden_club: 1, raw_meat: 10, raptor_saddle: 1 }, tamingSpeed: 20 });
-  for (let point = 0; point < 30; point += 1) runner.ui.tryInvoke("levelStat", { stat: point < 22 ? "health" : "stamina" });
+  // A survivor who levelled health and stamina, as anyone taking on a raptor with a club must: it
+  // bites for 15 every 0.8 s while they swing, so they need about 500 health to outlast 18 hits.
+  runner.ui.tryInvoke("cheat", { xp: 100000, give: { wooden_club: 1, raw_meat: 10, raptor_saddle: 1 }, tamingSpeed: 20, spend: { health: 45, stamina: 8 } });
   equip(runner, "wooden_club");
   runner.ui.tryInvoke("cheat", { summon: { species: "raptor", level: 1, distance: 2.5 } });
 
@@ -60,6 +60,10 @@ test("club a raptor unconscious, tame it on raw meat, saddle it and ride it", ()
   expect(hits).toBeGreaterThanOrEqual(18);
   expect(hits).toBeLessThanOrEqual(19);
   expect(creaturesView(runner.ctx).aimed?.taming?.unconscious).toBe(true);
+  // It fought back the whole time, and the survivor outlasted it.
+  const health = runner.ctx.scene.entity.stats.get(runner.userId, "health")!;
+  expect(health.current).toBeGreaterThan(0);
+  expect(health.current).toBeLessThan(health.max - 150);
 
   runner.ui.tryInvoke("creatureUse", {});
   expect(openScreen(runner.ctx)).toBe("creature");

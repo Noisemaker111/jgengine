@@ -60,10 +60,10 @@ herds (`creature_spawn` markers) live in `src/editor.scene.json`.
   no stamina or levelling of their own yet; drain and regen rates where ARK publishes none are
   approximate; trees are stylized stand-ins, not palms.
 
-Loop proof: fernwild-loop
+Loop proof: fernwild-loop, fernwild-tame
 
-The creature loop has its own proof, `fernwild-tame`: club a raptor unconscious, feed it, saddle it
-and ride it (it uses the admin `cheat` command for levels, items and a faster taming speed).
+`fernwild-tame` proves the creature loop: club a raptor unconscious, feed it, saddle it and ride it
+(it uses the admin `cheat` command for levels, items and a faster taming speed).
 
 ## Credits
 

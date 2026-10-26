@@ -54,6 +54,18 @@ test("an aggressive hunter closes on a survivor it sees and bites on its interva
   expect(bites).toBeLessThanOrEqual(4);
 });
 
+test("a hunter charges to where its body reaches, whatever range its temperament was tuned with", () => {
+  const ctx = world();
+  ctx.scene.entity.spawn("raptor", { id: "r1", position: [0, 0, 8], role: "npc" });
+  const driver = createCreatureDriver();
+  driver.add("r1", [0, 0, 8]);
+  // Tuned for a 1 m strike, but this body bites at 2 m: it must not stall in between.
+  const aggressive = { kind: "wild" as const, temperament: { kind: "predator" as const, attackRange: 1, breakAt: 0 } };
+  let bites = 0;
+  run(ctx, 3, (dt) => (bites += driver.step(ctx, "r1", aggressive, HUNTER, dt).struck ? 1 : 0));
+  expect(bites).toBeGreaterThan(0);
+});
+
 test("a hunter blocked head-on by a trunk veers around it instead of standing behind it", () => {
   const ctx = world();
   // A tree trunk right between the raptor and the survivor, square to its line of approach.

@@ -2,6 +2,7 @@ import { createCreatureDriver, type CreatureBody, type CreatureDriverState, type
 import { createPopulationDirector, type PopulationDirector, type PopulationDirectorState } from "@jgengine/core/ai/populationDirector";
 import { command, keybind, proximityPrompt, type PositionedPrompt } from "@jgengine/core/interaction/proximityPrompt";
 import { countItem, createEmptyInventory, putItem, takeItem, type InventoryState } from "@jgengine/core/inventory/inventoryModel";
+import { solidObstaclesNear } from "@jgengine/core/movement/solidObstacles";
 import type { NavPoint } from "@jgengine/core/nav/navGrid";
 import type { GameContext } from "@jgengine/core/runtime/gameContext";
 import { perContext } from "@jgengine/core/runtime/perContext";
@@ -151,13 +152,27 @@ function rollLevel(ctx: GameContext): number {
   return WILD_LEVELS.min + Math.floor(Math.pow(ctx.rng(), 1.6) * (WILD_LEVELS.max - WILD_LEVELS.min + 1));
 }
 
+/** The nearest open ground to `at` a body of `radius` fits on: never inside a trunk or a boulder, never in the sea. */
+function openGround(ctx: GameContext, at: readonly [number, number], radius: number): [number, number, number] | null {
+  for (let ring = 0; ring <= 4; ring += 1) {
+    for (let step = 0; step < (ring === 0 ? 1 : 8); step += 1) {
+      const angle = (step / 8) * Math.PI * 2;
+      const x = at[0] + Math.sin(angle) * ring;
+      const z = at[1] + Math.cos(angle) * ring;
+      const y = ctx.world.groundHeightAt(x, z);
+      if (y >= SHORE && solidObstaclesNear(ctx, [x, y, z], radius, radius).length === 0) return [x, y, z];
+    }
+  }
+  return null;
+}
+
 export function spawnCreature(ctx: GameContext, species: string, at: readonly [number, number], options: { region?: string; level?: number } = {}): string | null {
   const def = speciesDef(species);
-  if (def === null || ctx.world.groundHeightAt(at[0], at[1]) < SHORE) return null;
+  const position = def === null ? null : openGround(ctx, at, def.radius);
+  if (def === null || position === null) return null;
   const world = worldOf(ctx);
   const id = `${species}_${(world.seq += 1)}`;
   const level = options.level ?? rollLevel(ctx);
-  const position: [number, number, number] = [at[0], ctx.world.groundHeightAt(at[0], at[1]), at[1]];
   ctx.scene.entity.spawn(species, { id, position, rotationY: ctx.rng() * Math.PI * 2, role: "npc" });
   const health = maxHealth(def, level);
   ctx.scene.entity.stats.set(id, "health", { max: health, current: health });

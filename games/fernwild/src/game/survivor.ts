@@ -188,6 +188,8 @@ export function swing(ctx: GameContext, yaw?: number): void {
     return;
   }
   survivor.swingReady = now + tool.cooldown;
+  // Like ARK's third-person swing: the survivor turns to where the camera aims before striking.
+  if (yaw !== undefined && yaw !== me.rotationY) ctx.scene.entity.setPose(me.id, { position: me.position, rotationY: yaw });
   const melee = statValue(survivor, "melee") / 100;
   const struck = strikeCreature(ctx, ctx.player.userId, yaw ?? me.rotationY, tool, melee);
   if (struck !== null) {

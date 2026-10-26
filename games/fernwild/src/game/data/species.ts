@@ -139,19 +139,18 @@ export function statAt(line: StatLine, level: number): number {
   return line.base + line.perLevel * (level - 1);
 }
 
-/** ARK temperaments as tunings of the engine's three: oblivious and docile only answer a hit. */
+/** ARK temperaments as tunings of the engine's three: oblivious and docile only answer a hit. Reach comes from the body. */
 export function temperamentOf(def: SpeciesDef): TemperamentConfig {
-  const reach = def.attack?.reach ?? 1.8;
   switch (def.temperament) {
     case "oblivious":
       return { kind: "passive", fleeRange: 0 };
     case "skittish":
       return { kind: "passive", fleeRange: 12 };
     case "docile":
-      return { kind: "territorial", territoryRadius: 0, attackRange: reach, breakAt: 0 };
+      return { kind: "territorial", territoryRadius: 0, breakAt: 0 };
     case "territorial":
-      return { kind: "territorial", territoryRadius: 10, attackRange: reach, breakAt: 0 };
+      return { kind: "territorial", territoryRadius: 10, breakAt: 0 };
     case "aggressive":
-      return { kind: "predator", attackRange: reach, breakAt: 0 };
+      return { kind: "predator", breakAt: 0 };
   }
 }
