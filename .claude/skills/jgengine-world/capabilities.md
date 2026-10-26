@@ -56,7 +56,12 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 - `sampleBoneTexture` (function) · `import { sampleBoneTexture } from "@jgengine/core/anim/boneTexture"`
 - `solveFabrik` (function) · `import { solveFabrik } from "@jgengine/core/anim/ikSolver"`
 - `solveTwoBone` (function) · `import { solveTwoBone } from "@jgengine/core/anim/ikSolver"`
+- `useRagdoll` (function) · `import { useRagdoll } from "@jgengine/core/anim/useRagdoll.draw"`
 - `withActionLayers` (function) · `import { withActionLayers } from "@jgengine/core/anim/actionLayer"`
+
+## animation-motion-params — read resolved player movement into reusable animation graph parameters
+
+- `readModelAnimationParams` (function) · `import { readModelAnimationParams } from "@jgengine/core/anim/useModelAnimation.draw"`
 
 ## area-effect-field — source-following area membership with enter/refresh/leave edges, stacking, and cleanup
 
@@ -150,6 +155,10 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 ## authored-environment — compose authored weather, shelter, accumulation, fire, flocks and effects using one simulation clock
 
 - `createAuthoredSimulation` (function) · `import { createAuthoredSimulation } from "@jgengine/core/world/authoredSimulation"`
+
+## authored-flocks — render authored habitat agents through caller-selected animated species models with velocity orientation and bounded model lifetime
+
+- `AuthoredFlocks` (function) · `import { AuthoredFlocks } from "@jgengine/core/ai/AuthoredFlocks.draw"`
 
 ## authored-objects — place editor markers with catalog ids into the scene, grounded on the terrain
 
@@ -319,6 +328,10 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `createCharacterController` (function) · `import { createCharacterController } from "@jgengine/core/movement/characterController"`
 
+## character-crowd — draw animated or static characters as batched instanced draws instead of posing each skeleton
+
+- `CharacterCrowd` (function) · `import { CharacterCrowd } from "@jgengine/core/anim/CharacterCrowd.draw"`
+
 ## chase-heading — keep camera-relative input heading independent of body facing while retaining vehicle and seat camera follow
 
 - `resolveChaseHeading` (function) · `import { resolveChaseHeading } from "@jgengine/core/camera/chaseHeading"`
@@ -465,6 +478,14 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 ## entity-meta — cast-free narrow of SceneEntity.meta via a type guard
 
 - `entityMetaOf` (function) · `import { entityMetaOf } from "@jgengine/core/world"`
+
+## entity-muzzle — draw a character's or turret's shots leaving from its hand or barrel
+
+- `registerEntityMuzzle` (function) · `import { registerEntityMuzzle } from "@jgengine/core/anim/entityMuzzle.draw"`
+
+## entity-render-cues — live velocity/bob/fire/reload/hit/death cues for a custom renderEntity or viewmodel component
+
+- `useEntityRenderCues` (function) · `import { useEntityRenderCues } from "@jgengine/core/anim/useEntityRenderCues.draw"`
 
 ## environment-motion — apply capped spatial wind and vortex forces to game-selected actors through shared motion intents
 
@@ -666,6 +687,10 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `interestPhase` (function) · `import { interestPhase } from "@jgengine/core/world"`
 
+## interior-dressing — render a planned interior's trims, pipes, cables, lamps and stains in a few instanced draws
+
+- `InteriorDressing` (function) · `import { InteriorDressing } from "@jgengine/core/buildings/InteriorDressing.draw"`
+
 ## key-hint — keyboard/mouse control hint that hides itself on touch
 
 - `KeyHint` (function) · `import { KeyHint } from "@jgengine/core/input/keyHint.view"`
@@ -774,6 +799,10 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 ## minimap-track-hud — horizontal linear track minimap (corridor/route progress) — colored zone spans and gate/player pips positioned by 0..1 fraction, sharing chrome with the radial Minimap
 
 - `MinimapTrack` (function) · `import { MinimapTrack } from "@jgengine/core/map/map.view"`
+
+## model-animation-diagnostics — inspect imported clip mappings, layer masks and root-track compatibility
+
+- `diagnoseModelAnimation` (function) · `import { diagnoseModelAnimation } from "@jgengine/core/anim/useModelAnimation.draw"`
 
 ## model-sockets — named attachment points read from a model
 
@@ -896,6 +925,14 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `runPhysicsBackendConformance` (function) · `import { runPhysicsBackendConformance } from "@jgengine/core/physics/physicsBackendConformance"`
 
+## physics-body-instances — Draw every physics body as one instanced mesh
+
+- `InstancedBodies` (function) · `import { InstancedBodies } from "@jgengine/core/physics/InstancedBodies.draw"`
+
+## physics-joint-lines — Draw a physics world's joints as lines
+
+- `InstancedJoints` (function) · `import { InstancedJoints } from "@jgengine/core/physics/InstancedJoints.draw"`
+
 ## physics-world-backend — the zero-dependency PhysicsWorld solver exposed through the PhysicsBackend seam
 
 - `createPhysicsWorldBackend` (function) · `import { createPhysicsWorldBackend } from "@jgengine/core/physics/physicsWorldBackend"`
@@ -963,6 +1000,10 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 ## portable-marker-source — project caller-owned arrays or subscribable stores into cached minimap marker snapshots without a MarkerSet
 
 - `createMarkerSource` (function) · `import { createMarkerSource } from "@jgengine/core/world"`
+
+## practical-lights — light the planned lamps nearest the camera with a fixed, shadow-capped spot-light pool
+
+- `PracticalLights` (function) · `import { PracticalLights } from "@jgengine/core/buildings/InteriorDressing.draw"`
 
 ## procedural-ground — seeded noise-height ground mesh with low/high/waterline vertex colours for quick natural scenes
 
@@ -1267,6 +1308,10 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 ## territory-footprint — Resolve exactly the ownership cells touched by a placement footprint.
 
 - `territoryFootprintCells` (function) · `import { territoryFootprintCells } from "@jgengine/core/world/territory"`
+
+## territory-overlay — show footprint ownership, claim cost, and affordability
+
+- `TerritoryOverlay` (function) · `import { TerritoryOverlay } from "@jgengine/core/placement/TerritoryOverlay.view"`
 
 ## territory-owner-query — Read a loaded land cell owner for authoritative placement checks.
 

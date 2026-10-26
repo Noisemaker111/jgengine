@@ -7,8 +7,8 @@ import * as THREE from "three";
 import { createEmptyEditorDocument, type EditorDocument } from "@jgengine/core/editor/index";
 import { resolveAuthoredObjects } from "@jgengine/core/world/authoredObjects";
 import { useLiveEditorDocument } from "@jgengine/core/scene/AuthoredScene.draw";
-import { StaticObjectModels, useStaticObjectBatchProbe } from "./StaticObjectModels";
-import { groupStaticObjects, type StaticObjectBatch } from "./staticObjectBatches";
+import { StaticObjectModels, useStaticObjectBatchProbe } from "@jgengine/core/instancing/StaticObjectModels.draw";
+import { groupStaticObjects, type StaticObjectBatch } from "@jgengine/core/instancing/staticObjectBatches.draw";
 import type { AssetCatalog } from "@jgengine/core/scene/assetCatalog";
 import type { SceneEntity } from "@jgengine/core/scene/entityStore";
 import { groundSpeed } from "@jgengine/core/scene/entityStore";
@@ -29,13 +29,13 @@ import { useDisposable } from "@jgengine/core/render/useDisposable.draw";
 import { WindClock } from "@jgengine/core/model/modelWind.draw";
 import { MeasuredBoundsGroup } from "@jgengine/core/model/measureBounds.draw";
 import { EntitySprite, IsolatedEntityModel } from "@jgengine/core/model/SceneModels.draw";
-import { CharacterCrowd } from "../render/CharacterCrowd";
+import { CharacterCrowd } from "@jgengine/core/anim/CharacterCrowd.draw";
 import {
   CharacterCrowdRegistry,
   crowdEligible,
   crowdKindOf,
   crowdKindReady,
-} from "../render/crowdRegistry";
+} from "@jgengine/core/anim/crowdRegistry.draw";
 import {
   characterLodTier,
   characterRigTier,
@@ -45,7 +45,7 @@ import {
 } from "@jgengine/core/lod/characterLod";
 import { resolveEntityModel, resolveObjectModel, type ObjectModelCacheEntry } from "@jgengine/core/model/resolveModel";
 import { useRenderVisibility } from "@jgengine/core/visibility/CullingProvider.draw";
-import { writePoseIfChanged, writeRenderPoseIfChanged, emptyPoseMemo, type PoseMemo } from "./entityPose";
+import { writePoseIfChanged, writeRenderPoseIfChanged, emptyPoseMemo, type PoseMemo } from "@jgengine/core/anim/entityPose";
 import type { RenderPose } from "@jgengine/core/runtime/poseInterpolation";
 import { createSnapshotBuffer, type SnapshotBuffer } from "@jgengine/core/runtime/snapshotBuffer";
 import { POINTER_ENTITY_KEY, POINTER_OBJECT_KEY } from "@jgengine/core/input/pointerService.draw";

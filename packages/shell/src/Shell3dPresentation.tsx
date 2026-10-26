@@ -69,7 +69,7 @@ import type { AudioEngine } from "@jgengine/core/audio/audioEngine.view";
 import { PostProcessing } from "@jgengine/core/postfx/PostProcessing.draw";
 import { EnvironmentLighting } from "@jgengine/core/lighting/EnvironmentLighting.draw";
 import { worldProbeForQuality } from "@jgengine/core/lighting/reflectionProbe.draw";
-import { LivingWorld } from "./render/LivingWorldLayer";
+import { LivingWorld } from "@jgengine/core/weather/LivingWorldLayer.draw";
 import { CollisionDebugWorld } from "@jgengine/core/devtools/CollisionDebugWorld.draw";
 import { DevtoolsRendererProbe } from "@jgengine/core/devtools/DevtoolsOverlay.draw";
 import { FrameTelemetry } from "@jgengine/core/devtools/FrameTelemetry.draw";
@@ -92,7 +92,7 @@ import { isSecondaryDrag, suppressBrowserContextMenu } from "@jgengine/core/inpu
 import { Reticle, WorldEntityBars, WorldNameplates } from "@jgengine/core/hud/WorldHud.draw";
 import { GridWorldScene } from "./world/GridWorldScene";
 import { PlaceScene } from "./world/PlaceScene";
-import { WorldItems } from "./world/WorldItems";
+import { WorldItems } from "@jgengine/core/item/WorldItems.draw";
 import type { ShellMultiplayer } from "@jgengine/core/multiplayer/multiplayer.draw";
 import { defaultHudTheme, hudThemeVars } from "@jgengine/core/hud/hudTheme.view";
 import type { PlayableGame } from "./registry";
@@ -119,7 +119,7 @@ import type { RuntimeDiagnostic } from "@jgengine/core/devtools/diagnosticOverla
 import { createShellKeyHandlers, ShellDebugOverlays, ShellGameUiChrome } from "./ShellChrome";
 import { CombatPresentation } from "@jgengine/core/combat/CombatPresentation.draw";
 import { ParticleEmitters } from "@jgengine/core/vfx/ParticleEmitters.draw";
-import { WorldTireMarks } from "./world/WorldTireMarks";
+import { WorldTireMarks } from "@jgengine/core/vfx/tireMarks.draw";
 import { TerrainQualityContext } from "@jgengine/core/terrain/terrainQuality.draw";
 import { detectKtx2Support } from "@jgengine/core/model/modelLoad.draw";
 import { SceneWarmupCoverLive, SceneWarmupGate, createSceneWarmupStore } from "@jgengine/core/scene/SceneWarmupGate.draw";

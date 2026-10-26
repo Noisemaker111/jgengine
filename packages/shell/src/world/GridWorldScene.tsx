@@ -6,7 +6,7 @@ import { resolveGridInstances } from "@jgengine/core/world/gridInstances";
 
 import { composeInstance, uploadInstances } from "@jgengine/core/instancing/instanceUpload.draw";
 import { useDisposable } from "@jgengine/core/render/useDisposable.draw";
-import { TileLayerRenderer } from "./TileLayerRenderer";
+import { TileLayerRenderer } from "@jgengine/core/render/TileLayerRenderer.draw";
 
 export interface GridWorldSceneProps {
   feature: WorldFeature;

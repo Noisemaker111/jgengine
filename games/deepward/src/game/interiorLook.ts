@@ -1,6 +1,6 @@
 import { findLibraryMaterial, libraryMaterialMaps } from "@jgengine/assets/catalogs/materialLibrary";
 import type { AuthoredSurfaceConfig } from "@jgengine/core/material/authoredSurfaceMaterial.draw";
-import type { InteriorDressingSurfaces } from "@jgengine/shell/render/InteriorDressing";
+import type { InteriorDressingSurfaces } from "@jgengine/core/buildings/InteriorDressing.draw";
 
 import type { Stratum } from "./strata";
 

@@ -14,9 +14,9 @@ import * as THREE from "three";
 import { EnvironmentScene } from "@jgengine/core/environment/EnvironmentScene.draw";
 import { sharedGltfLoader } from "@jgengine/core/model/modelLoad.draw";
 import type { PlayableGame } from "@jgengine/shell/registry";
-import { SkinnedInstances, type CrowdInstance } from "@jgengine/shell/render/SkinnedInstances";
+import { SkinnedInstances, type CrowdInstance } from "@jgengine/core/anim/SkinnedInstances.draw";
 import { cloneModelScene, disposeModelScene } from "@jgengine/core/model/modelRender.draw";
-import { useModelAnimation } from "@jgengine/shell/render/useModelAnimation";
+import { useModelAnimation } from "@jgengine/core/anim/useModelAnimation.draw";
 
 const OBSERVER = "observer";
 const RIGS = ["Knight", "Rogue", "Barbarian", "Mage"] as const;

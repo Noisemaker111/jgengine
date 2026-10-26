@@ -307,7 +307,7 @@ describe("attribution fails loudly", () => {
       expect(isRuntimeSource(path)).toBe(false);
     }
     expect(isRuntimeSource("scripts/land.ts")).toBe(true);
-    expect(isRuntimeSource("packages/shell/src/render/crowdBatch.ts")).toBe(true);
+    expect(isRuntimeSource("packages/core/src/anim/crowdBatch.draw.ts")).toBe(true);
   });
 });
 
@@ -366,14 +366,14 @@ describe("static gates", () => {
 describe("commands", () => {
   test("the fast plan typechecks only the owning package and runs only its tests", () => {
     const plan = verifyPlan({
-      changed: ["packages/shell/src/render/crowdBatch.ts"],
-      testFiles: ["packages/shell/src/render/crowdBatch.test.ts"],
+      changed: ["packages/shell/src/world/WorldScene.tsx"],
+      testFiles: ["packages/shell/src/world/WorldScene.test.ts"],
       workspaces: fakeWorkspaces,
       graph: emptyGraph,
     });
     const steps = fastSteps(plan);
     expect(steps[0]?.command).toEqual(["bun", "--cwd=packages/shell", "run", "check-types"]);
-    expect(steps[1]?.command).toEqual(["bun", "test", "--timeout", "20000", "packages/shell/src/render/crowdBatch.test.ts"]);
+    expect(steps[1]?.command).toEqual(["bun", "test", "--timeout", "20000", "packages/shell/src/world/WorldScene.test.ts"]);
     expect(steps.some((step) => step.command.includes("packages/core"))).toBe(false);
   });
 
@@ -485,9 +485,9 @@ describe("commands", () => {
   });
 
   test("--full adds the frame and smoke gates only for a path that can reach them", async () => {
-    expect(heavyPaths(root).test("packages/shell/src/render/crowdBatch.ts")).toBe(true);
+    expect(heavyPaths(root).test("packages/core/src/anim/crowdBatch.draw.ts")).toBe(true);
     expect(heavyPaths(root).test("scripts/lookArg.ts")).toBe(false);
-    const steps = await fullSteps(root, ["packages/shell/src/render/crowdBatch.ts"]);
+    const steps = await fullSteps(root, ["packages/core/src/anim/crowdBatch.draw.ts"]);
     const names = steps.map((step) => step.name);
     expect(names.some((name) => name.startsWith("smoke "))).toBe(true);
     expect(names.some((name) => name.startsWith("perf gate"))).toBe(true);

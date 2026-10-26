@@ -3,7 +3,7 @@ import { libraryModel } from "@jgengine/assets/catalogs/modelLibrary";
 import type { ModelConfig } from "@jgengine/core/game/playableGame";
 import type { ScatterInstance } from "@jgengine/core/scatter/scatterRegion";
 import type { AuthoredSurfaceConfig } from "@jgengine/core/material/authoredSurfaceMaterial.draw";
-import { InteriorDressing, PracticalLights } from "@jgengine/shell/render/InteriorDressing";
+import { InteriorDressing, PracticalLights } from "@jgengine/core/buildings/InteriorDressing.draw";
 import { StaticShapeInstances, type StaticShapeInstance } from "@jgengine/core/instancing/staticShapeInstances.draw";
 import { InstancedScatter } from "@jgengine/core/scatter/InstancedScatter.draw";
 

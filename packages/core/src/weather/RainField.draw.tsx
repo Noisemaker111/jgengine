@@ -2,7 +2,7 @@ import { useFrame, useThree } from "@react-three/fiber";
 import { useEffect, useMemo } from "react";
 import * as THREE from "three";
 
-import { reportRain, reportWind } from "@jgengine/shell/render/livingWorld";
+import { reportRain, reportWind } from "@jgengine/core/weather/livingWorld.draw";
 
 import { useDisposable } from "@jgengine/core/render/useDisposable.draw";
 import { createWeatherQuadGeometry } from "./weatherGeometry.draw";

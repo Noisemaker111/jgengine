@@ -11,7 +11,7 @@ import { useGameStore } from "@jgengine/react/hooks";
 import { useGameContext } from "@jgengine/react/provider";
 import type { GameContext } from "@jgengine/core/runtime/gameContextTypes";
 import { readFirstPersonMuzzle } from "@jgengine/core/camera/GameFirstPersonCamera.draw";
-import { readEntityMuzzle } from "@jgengine/shell/render/entityMuzzle";
+import { readEntityMuzzle } from "@jgengine/core/anim/entityMuzzle.draw";
 import { resolveFloatTextStyle } from "@jgengine/core/hud/floatTextStyle";
 import {
   collectNameplateSamples,
@@ -25,13 +25,13 @@ import {
   worldNameplateTargetFilter,
   type NameplateSample,
   type WorldBarSample,
-} from "@jgengine/shell/world/worldBarSamples";
+} from "@jgengine/core/hud/barSamples.draw";
 import { telegraphPulseOpacity } from "@jgengine/core/combat/telegraphPulse";
 import { useRenderVisibility } from "@jgengine/core/visibility/CullingProvider.draw";
 import { CAMERA_POST_FRAME_PRIORITY } from "@jgengine/core/camera/cameraRigs.draw";
 
-export type { NameplateSample, WorldBarSample } from "@jgengine/shell/world/worldBarSamples";
-export { collectNameplateSamples, collectWorldBarSamples, paintWorldBarSamples } from "@jgengine/shell/world/worldBarSamples";
+export type { NameplateSample, WorldBarSample } from "@jgengine/core/hud/barSamples.draw";
+export { collectNameplateSamples, collectWorldBarSamples, paintWorldBarSamples } from "@jgengine/core/hud/barSamples.draw";
 export { telegraphPulseOpacity } from "@jgengine/core/combat/telegraphPulse";
 
 function pinOverlayToViewport(

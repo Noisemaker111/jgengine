@@ -7,7 +7,7 @@ import type { ScatterInstance } from "@jgengine/core/scatter/scatterRegion";
 import { scatterBatchInstances, type ScatterBatch } from "@jgengine/core/scatter/InstancedScatter.draw";
 import { buildScatterModelSources, disposeScatterModelSources } from "@jgengine/core/scatter/scatterModels.draw";
 import { scatterVariantTriangles, writeScatterVariantLevel } from "@jgengine/core/scatter/scatterVariants.draw";
-import { countStaticBatchDraws, groupStaticObjects, STATIC_BATCH_MESH_KEY, syncStaticObjectSource } from "@jgengine/shell/world/staticObjectBatches";
+import { countStaticBatchDraws, groupStaticObjects, STATIC_BATCH_MESH_KEY, syncStaticObjectSource } from "@jgengine/core/instancing/staticObjectBatches.draw";
 import { countSubmittedDraws, submitInstanceCount } from "./submittedDraws.draw";
 
 const FULL_TRIANGLES = 9134;

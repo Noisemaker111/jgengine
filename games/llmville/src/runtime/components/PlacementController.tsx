@@ -1,4 +1,4 @@
-import { TerritoryOverlay } from "@jgengine/shell/TerritoryOverlay";
+import { TerritoryOverlay } from "@jgengine/core/placement/TerritoryOverlay.view";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 

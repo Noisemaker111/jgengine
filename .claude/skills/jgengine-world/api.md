@@ -2,6 +2,11 @@
 
 # jgengine-world — exported API surface
 
+## @jgengine/core/ai/AuthoredFlocks.draw
+
+- `AuthoredFlocks` (function): function AuthoredFlocks({ models, assets, forward = [0, 0, -1], maxInstances = 256 }: AuthoredFlocksProps): ReactElement — Render bounded authored habitat agents with game-selected species models. The environment owns movement and lifetime; existing model owners load, animate, and dispose the native GLB. Unmapped species have no substitute geometry.
+- `AuthoredFlocksProps` (interface): interface AuthoredFlocksProps — Caller-owned species models for authored habitat agents.
+
 ## @jgengine/core/ai/buildOrder
 
 - `AttackClock` (interface): interface AttackClock — A running attack clock.
@@ -304,6 +309,25 @@
 - `createUtilityBrain` (function): function createUtilityBrain(config: UtilityBrainConfig): UtilityBrain — Create a utility brain over an existing {@link NeedSet}. The need set is injected, not owned, so the game shows the same hunger the brain scores and persists one copy.
 - `sampleResponseCurve` (function): function sampleResponseCurve(curve: ResponseCurve, satisfaction: number): number — Sample a response curve at a `0..1` satisfaction. Deterministic, allocation-free.
 
+## @jgengine/core/anim/CharacterCrowd.draw
+
+- `CharacterCrowd` (function): function CharacterCrowd({ models, registry, fps = 24, onPick }: CharacterCrowdProps): React.JSX.Element — Draws characters through the GPU batch path: one baked rig per character kind, one instanced draw per material, every member's clip, time offset and speed sampled in the vertex shader. The entity markers decide who is batched (their `lod` tiers and the batch capacity) and write poses into `registry`; this layer owns the bakes, the materials and the instance buffers. Mount it in the same canvas as the entity markers; unmount it to fall back to per-entity rigs.
+- `CharacterCrowdProps` (interface): interface CharacterCrowdProps — Props for {@link CharacterCrowd}.
+
+## @jgengine/core/anim/PartMotion.draw
+
+- `PartMotionRig` (function): function PartMotionRig({ parts, model, instanceId, renderPart, children, }: { parts: readonly ModelPart[]; model: ModelConfig; instanceId?: string; /** Renders one part's model content (the shell passes its part renderer to avoid an import cycle). */ renderPart: (part: ModelPart, index: number) => R… — Procedural motion rig for a rig-less part-composed character (`ModelPart.role` — see `@jgengine/core/game/partAnimation`). Wraps the whole composition in a root group that bobs, breathes, flinches on `combat.hitReaction`, and topples on `entity.died`, while each role-tagged part swings around its authored transform — legs/arms counter-phase from the entity's live movement speed, head counter-sway, tail wag, wing flap. Untagged parts render as static kit pieces. Children are the base model content (primitive, attachments).
+
+## @jgengine/core/anim/SkinnedInstances.draw
+
+- `BakeSkinnedCrowdOptions` (interface): interface BakeSkinnedCrowdOptions — Options for {@link bakeSkinnedCrowd}.
+- `BakedSkinnedCrowd` (interface): interface BakedSkinnedCrowd — A rig baked for instancing: one merged geometry, the bone-matrix texture and its layout.
+- `CrowdInstance` (interface): interface CrowdInstance — One crowd member: where it stands and what it plays.
+- `CrowdUniforms` (interface): interface CrowdUniforms — Uniforms shared by every material of one crowd; `crowdTime` advances once per frame.
+- `SkinnedCrowdSource` (interface): interface SkinnedCrowdSource — A rig to bake: a loaded scene with skinned meshes and its clips.
+- `SkinnedInstances` (function): function SkinnedInstances({ url, instances, clips, once, fps, modelScale = 1, castShadow = true, receiveShadow = true, timeScale = 1, }: SkinnedInstancesProps): React.JSX.Element — Renders many animated copies of one rigged model in a single instanced draw per material: the rig's clips are baked to a bone-matrix texture once, and each instance samples its own clip, time offset and speed on the GPU. For crowds, spectators and distant NPCs; a character that needs blending, IK or attachments stays an entity model.
+- `SkinnedInstancesProps` (interface): interface SkinnedInstancesProps — Props for {@link SkinnedInstances}.
+
 ## @jgengine/core/anim/actionLayer
 
 - `ACTION_REST_STATE` (const): const ACTION_REST_STATE: "rest" — State id of an action layer's resting state.
@@ -346,9 +370,35 @@
 - `planBoneTexture` (function): function planBoneTexture(input: BoneTextureInput): BoneTextureLayout — Plans a bone-matrix texture for a rig's clips. Throws when the rig or the clip set does not fit `maxTextureSize`; lower `fps` or bake fewer clips.
 - `sampleBoneTexture` (function): function sampleBoneTexture(clip: BoneTextureClip, fps: number, time: number, loop: boolean, out?: BoneTextureSample): BoneTextureSample — Finds the baked rows around `time` in a clip, wrapping when `loop` and holding the last pose otherwise. This is the CPU mirror of the crowd shader's lookup.
 
+## @jgengine/core/anim/characterGlance.draw
+
+- `DEFAULT_GLANCE` (const): const DEFAULT_GLANCE: GlanceTuning — Default glance: starts at 7 m, lets go at 8.5 m, head turns up to 65° sideways and 30° up or down.
+- `GlanceRig` (interface): interface GlanceRig — Head and neck bones the glance turns, found by name on the loaded rig.
+- `GlanceState` (interface): interface GlanceState — Carried between frames: the smoothed aim and the faded weight.
+- `GlanceTuning` (interface): interface GlanceTuning — Tuning for the default head turn a rigged character makes toward the local player. Angles are radians, distances metres.
+- `useCharacterGlance` (function): function useCharacterGlance(scene: THREE.Object3D, enabled: boolean, ctx: GameContext | null, instanceId: string | undefined, maxCameraDistance: number): void — Default glance for a rigged character: its head turns toward the local player when they come close, from any angle in front of it, and turns back when they leave. The local player's own model never glances. `maxCameraDistance` skips the work for characters too far away to read.
+
+## @jgengine/core/anim/crowdRegistry.draw
+
+- `CharacterCrowdRegistry` (class): class CharacterCrowdRegistry — The characters the crowd layer is currently drawing, written by their entity markers each frame. It holds poses rather than React state: 71 pedestrians writing matrices must not re-render the world, and the crowd batch reads the same entries back to fill its instance buffers.
+- `crowdEligible` (function): function crowdEligible(model: ModelConfig | undefined): model is ModelConfig — Whether a model can leave its own rig for the GPU crowd path: one whose drawn result a batch can reproduce. A rigged, clip-played, plain model qualifies, and so does a model with no animation at all (a static crowd character) — it has no playback to lose. A model that needs per-entity materials, wind, hidden nodes, IK, attachments or a part composition keeps its own rig.
+- `crowdKindOf` (function): function crowdKindOf(model: ModelConfig): string — The identity a character model shares with every other model the GPU crowd can draw: rig url, height normalization and material tint. Two entity kinds with the same key can share one instanced draw; a different tint or height needs its own.
+
 ## @jgengine/core/anim/easing
 
 - `Easing` (type): type Easing = (t: number) => number — ⚠ undocumented
+
+## @jgengine/core/anim/entityMuzzle.draw
+
+- `EntityMuzzleReader` (type): type EntityMuzzleReader = (target: THREE.Vector3) => boolean — Writes where an entity's shots visibly leave from, in world space; false when it has none right now.
+- `readEntityMuzzle` (function): function readEntityMuzzle(instanceId: string, target: THREE.Vector3): boolean — The visible muzzle of `instanceId` into `target`; false leaves `target` unchanged.
+- `registerEntityMuzzle` (function): function registerEntityMuzzle(instanceId: string, reader: EntityMuzzleReader): () => void — Register where shots fired by `instanceId` visibly leave from (a gun hand, a turret barrel, a staff tip). Tracers and muzzle effects start there instead of at the shot's rule origin; the rule origin still decides what is hit. Returns the cleanup.
+- `useEntityMuzzle` (function): function useEntityMuzzle(scene: THREE.Object3D, instanceId: string | undefined, facingYaw: () => number): void — Register a placed character's visible muzzle: its muzzle node, or a point just in front of its shooting hand along its facing. A model with no hand bone registers nothing.
+
+## @jgengine/core/anim/entityPose
+
+- `PoseSource` (interface): interface PoseSource — An entity's position and yaw to copy onto a drawn object.
+- `PoseWritable` (interface): interface PoseWritable — An object whose position and yaw a pose is written onto, such as a three.js Object3D.
 
 ## @jgengine/core/anim/footPlacement
 
@@ -433,6 +483,31 @@
 - `TweenOptions` (interface): interface TweenOptions — Options for {@link useTweenedValue}.
 - `tweenAt` (function): function tweenAt(from: number, to: number, t: number, ease: (t: number) => number = easeOutCubic): number — Value at progress `t` (0–1) between `from` and `to` under `ease`.
 - `useTweenedValue` (function): function useTweenedValue(target: number, options: TweenOptions = {}): number — Animates toward `target` whenever it changes, starting from the currently displayed value, so a counter rolls instead of jumping. Snaps immediately under reduced motion or a non-finite target.
+
+## @jgengine/core/anim/useEntityRenderCues.draw
+
+- `useEntityRenderCues` (function): function useEntityRenderCues(instanceId: string | undefined, tuning?: RenderCueTuning): MutableRefObject<EntityRenderCues> — Live motion + animation cues for one entity, read from a mutable ref inside your own `useFrame` — no re-render per frame, no diffing the parent group's position, no game-side module map for attack/hit timing. Backs both custom `renderEntity` rigs and a custom first-person viewmodel (#542): call it with `entity.id` / the local player's userId and drive bob/recoil/reload poses from `cuesRef.current` inside the calling component's own `useFrame`.
+
+## @jgengine/core/anim/useFootIk.draw
+
+- `FootIkRig` (interface): interface FootIkRig — Bones resolved once per loaded scene for {@link applyFootIk}.
+- `FootIkState` (interface): interface FootIkState — Per-model state carried between frames: the faded weight and the smoothed pelvis drop.
+- `useFootIk` (function): function useFootIk(scene: THREE.Object3D, config: FootIkConfig | undefined, ctx: GameContext | null, instanceId?: string, groundOffset = 0, options: { quiet?: boolean; maxCameraDistance?: number } = {}): void — Runs foot IK after the model's animation mixer for `ModelConfig.ik`. Ground probes hit terrain and blocking physical objects, never the model's own entity. `groundOffset` is the model-space height its soles rest on (`ModelConfig.y`). `options.quiet` drops the rig diagnostics (the engine's own default IK on a model that never asked for it); `options.maxCameraDistance` skips characters further than that from the camera, fading their correction out.
+
+## @jgengine/core/anim/useModelAnimation.draw
+
+- `GraphPose` (interface): interface GraphPose — A mixer set up to show {@link AnimGraph} output on a rig; see {@link createGraphPose}.
+- `ModelAnimationDiagnostic` (interface): interface ModelAnimationDiagnostic — A repairable mismatch between a model animation config and its imported rig.
+- `ModelMotionStep` (interface): interface ModelMotionStep — One visual sample's measured motion, used to derive the directional locomotion parameters. `dx`/`dz` are world horizontal displacement since the previous sample, `dyaw` the yaw change in radians and `seconds` the time the sample covers.
+- `createGraphPose` (function): function createGraphPose(scene: THREE.Object3D, graph: AnimGraph, clips: THREE.AnimationClip[]): GraphPose — Binds a graph's clips to a rig exactly as `useModelAnimation` does (masked layers get filtered clips, additive layers additive ones) so a host that runs its own `createAnimGraphRuntime`, such as the editor's graph preview, poses the rig from the runtime's output.
+- `diagnoseModelAnimation` (function): function diagnoseModelAnimation(scene: THREE.Object3D, animation: ModelAnimationConfig, clips: readonly THREE.AnimationClip[]): readonly ModelAnimationDiagnostic[] — Checks clip mappings, masked layers and root-motion assumptions without starting a mixer.
+- `readModelAnimationParams` (function): function readModelAnimationParams(ctx: GameContext, instanceId: string, speed: number, out: Record<string, AnimParamValue>, step?: ModelMotionStep): Record<string, AnimParamValue> — Refreshes a caller-owned graph parameter dictionary from authored extras and known physical movement. Grounded, verticalSpeed and crouched use the shared motor's resolved state when available; custom movers retain their authored values. Speed always uses the supplied measured ground speed. Passing `step` derives the directional parameters from the character's own motion: `direction` is the motion's share along the character's right axis, `facing` its share along the facing axis, and `turnRate` its yaw change per second. Derived values override conflicting authored extras. Does not write game state.
+- `useModelAnimation` (function): function useModelAnimation(scene: THREE.Object3D, clips: THREE.AnimationClip[], animationInput: ModelAnimationConfig | "auto" | "none" | undefined, instanceId?: string): void — The engine's model animation driver as a standalone hook — the same mixer `EntityModel` runs, for games that render a cloned scene themselves (custom materials, procedural composition). Handles `"auto"` derivation from the GLB's clip names, speed-driven idle/walk/run crossfades read from the entity's live position when `instanceId` is set, one-shots fired from `entity.animation` / `combat.hitReaction` / `entity.died`, held poses, and the death clamp. With `animation.graph` set, the headless `AnimGraph` runtime owns every clip's time and weight and the mixer only applies them; clip events surface as `animation.event`. Equivalent same-order config data retains playback across rerenders; actual data edits reset it. Entity-bound playback holds while context game time is frozen; unbound previews keep playing.
+
+## @jgengine/core/anim/useRagdoll.draw
+
+- `RagdollOptions` (interface): interface RagdollOptions — What {@link useRagdoll} needs: the rig's bone names, the physics world and what arms it.
+- `useRagdoll` (function): function useRagdoll(scene: THREE.Object3D, options: RagdollOptions): void — Turns a rigged character into a physics ragdoll when `active` goes true: the bones' world poses at that moment become box bodies joined by distance links in `world`, and every frame after, each bone's world position and aim come from its body. The physics bodies carry translation only, so each bone is oriented by rotating its death-pose direction-to-child onto the current one, which is what gives the body a skeleton instead of a pile of boxes.
 
 ## @jgengine/core/area/areaEffectField
 
@@ -726,6 +801,15 @@
 - `InstancedBuildingPlacement` (interface): interface InstancedBuildingPlacement { building: GeneratedBuildingData; position?: readonly [number, number, number]; rotationY?: number; pivot?: readonly [number, number] } — ⚠ undocumented
 - `InstancedBuildings` (function): function InstancedBuildings({ buildings, palette, kit, resolveModelUrl, visibleKinds, }: InstancedBuildingsProps): React.JSX.Element | null — ⚠ undocumented
 - `InstancedBuildingsProps` (interface): interface InstancedBuildingsProps { buildings: readonly InstancedBuildingPlacement[]; palette?: BuildingMaterialPalette; kit?: BuildingKit; resolveModelUrl?: (model: string) => string; visibleKinds?: readonly BuildingPartKind[] } — ⚠ undocumented
+
+## @jgengine/core/buildings/InteriorDressing.draw
+
+- `DEFAULT_INTERIOR_SURFACES` (const): const DEFAULT_INTERIOR_SURFACES: InteriorDressingSurfaces — Plain defaults: grey paint, dull steel, a warm lens.
+- `InteriorDressing` (function): function InteriorDressing({ plan, surfaces, cableColor = "#141414", decalSeed = "interior", decals = true }: InteriorDressingProps): React.JSX.Element — The drawn side of a planned interior: trims, pipes, fittings and lamp housings as static instance batches, every cable as one merged tube, and every stain style as one instanced decal mesh. A whole floor costs a handful of draws however many pieces it has. Pair it with {@link PracticalLights} for the lamps' light.
+- `InteriorDressingProps` (interface): interface InteriorDressingProps — Props for {@link InteriorDressing}.
+- `InteriorDressingSurfaces` (interface): interface InteriorDressingSurfaces — The surface each dressing family wears. Any family left out falls back to a plain painted default.
+- `PracticalLights` (function): function PracticalLights({ fixtures, count = 6, shadowed = 0, color = "#ffe2b0", intensity = 14, distance = 9, angle = 1.05, penumbra = 0.6, reach = 28, every = 8 }: PracticalLightsProps): React.JSX.Element — A fixed pool of spot lights that follows the camera through a planned interior, lighting the lamps nearest the eye and aiming each down and out from its wall. The pool size and shadow count never change, so walking a floor of hundreds of lamps costs the same few lights.
+- `PracticalLightsProps` (interface): interface PracticalLightsProps — Props for {@link PracticalLights}.
 
 ## @jgengine/core/buildings/buildingGenerator
 
@@ -2278,6 +2362,16 @@
 - `createOrderQueue` (function): function createOrderQueue<TCtx, TPayload = unknown>(registry: OrderRegistry<TCtx>, options: OrderQueueOptions<TPayload> = {}): OrderQueue<TCtx, TPayload> — Create a per-entity order queue over a shared kind registry. The queue owns the deterministic lifecycle and preemption policy; the kinds own behavior. Nothing here is random or unbounded: id generation is injected, activation is bounded by the pending count, and a single `tick` advances at most the active order plus one activation.
 - `createOrderRegistry` (function): function createOrderRegistry<TCtx>(): OrderRegistry<TCtx> — Build an empty order-kind registry. Register the built-in compositions from `orders/orderKinds` or your own verbs, then hand it to `createOrderQueue`. One registry is shared by many per-entity queues.
 
+## @jgengine/core/physics/InstancedBodies.draw
+
+- `InstancedBodies` (function): function InstancedBodies({ world, debugTint = false, baseColors, epoch = 0 }: InstancedBodiesProps): React.JSX.Element — Renders a PhysicsWorld's box bodies as a single InstancedMesh — one draw call per batch. Transforms are written directly into `instanceMatrix.array` each frame (bodies never touch the per-entity React path). Reusable by any game: hand it a physics world and go.
+- `InstancedBodiesProps` (interface): interface InstancedBodiesProps — Props for InstancedBodies: the physics world to draw and optional state tinting.
+
+## @jgengine/core/physics/InstancedJoints.draw
+
+- `InstancedJoints` (function): function InstancedJoints({ world, color = "#f5c542" }: InstancedJointsProps): React.JSX.Element — Debug overlay drawing a PhysicsWorld's joints (suspension, ragdoll links, carry tethers) as one LineSegments batch. Endpoints are streamed each frame from `world.readJointSegments`; pair with `InstancedBodies` to see the constraint structure over the bodies.
+- `InstancedJointsProps` (interface): interface InstancedJointsProps — Props for InstancedJoints: the physics world whose joints are drawn and the line color.
+
 ## @jgengine/core/physics/ballisticSweep
 
 - `BallisticSweep` (type): type BallisticSweep = ( origin: readonly [number, number, number], velocity: readonly [number, number, number], gravity: number, maxTime: number, ) => BallisticSweepHit | null — ⚠ undocumented · used by `createBallisticSweep`: Sweeps each short chord of the closed-form arc through live body AABBs, including sleeping bodies.
@@ -2563,6 +2657,11 @@
 
 - `PlacementGhost` (function): function PlacementGhost({ preview, height = 1, validColor = "#34d399", invalidColor = "#f87171", }: PlacementGhostProps): React.JSX.Element | null — Cursor-following build ghost: valid/invalid tint from a placement controller preview.
 - `PlacementGhostProps` (interface): interface PlacementGhostProps — Props for {@link PlacementGhost}: the placement preview to draw and its valid/invalid tint.
+
+## @jgengine/core/placement/TerritoryOverlay.view
+
+- `TerritoryOverlay` (function): function TerritoryOverlay({ cells, cost, affordable, formatCost = String, renderCell, className, style }: { cells: readonly TerritoryPreviewCell[]; cost: number; affordable: boolean; formatCost?: (cost: number) => ReactNode; renderCell?: (cell: TerritoryPreviewCell) => ReactNode; className?: string;… — Placement footprint feedback with inline claim cost and affordability.
+- `TerritoryPreviewCell` (type): type TerritoryPreviewCell = { key: string; x: number; z: number; status: "owned" | "claimable" | "blocked" } — A placement footprint cell and its authoritative preview status.
 
 ## @jgengine/core/placement/TransformGizmo.draw
 
@@ -4106,6 +4205,11 @@
 - `createWeatherEnvironmentField` (function): function createWeatherEnvironmentField(weather: AuthoredWeather, config: Omit<EnvironmentFieldConfig, "rain"> = {}): EnvironmentField — Environment temperature, sunlight and shelter read the same authored precipitation as rendering.
 - `createWeatherExposure` (function): function createWeatherExposure(config: WeatherExposureConfig = {}, storage?: WeatherExposureStorage): WeatherExposure — Bounded surface accumulation shared by gameplay and material adapters, with injected persistence.
 - `validateAuthoredWeather` (function): function validateAuthoredWeather(config: AuthoredWeatherConfig): void — Validate authoring references and work bounds before persisting a weather document.
+
+## @jgengine/core/weather/livingWorld.draw
+
+- `DRY_SECONDS` (const): const DRY_SECONDS: 70 — Seconds of dry weather until soaked surfaces are dry again.
+- `WET_SECONDS` (const): const WET_SECONDS: 14 — Seconds of steady rain until surfaces are soaked.
 
 ## @jgengine/core/weather/weather
 

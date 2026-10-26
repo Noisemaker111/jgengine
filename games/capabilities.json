@@ -337,8 +337,7 @@
     {
       "id": "animation",
       "packages": [
-        "@jgengine/core",
-        "@jgengine/shell"
+        "@jgengine/core"
       ],
       "module": "@jgengine/core/anim/ikSolver",
       "domain": "anim",
@@ -349,10 +348,10 @@
     {
       "id": "animation-motion-params",
       "packages": [
-        "@jgengine/shell"
+        "@jgengine/core"
       ],
-      "module": "@jgengine/shell/render/useModelAnimation",
-      "domain": "render",
+      "module": "@jgengine/core/anim/useModelAnimation.draw",
+      "domain": "anim",
       "gameFacing": false,
       "probe": null,
       "intent": "read resolved player movement into reusable animation graph parameters"
@@ -715,10 +714,10 @@
     {
       "id": "authored-flocks",
       "packages": [
-        "@jgengine/shell"
+        "@jgengine/core"
       ],
-      "module": "@jgengine/shell/world/AuthoredFlocks",
-      "domain": "world",
+      "module": "@jgengine/core/ai/AuthoredFlocks.draw",
+      "domain": "ai",
       "gameFacing": false,
       "probe": null,
       "intent": "render authored habitat agents through caller-selected animated species models with velocity orientation and bounded model lifetime"
@@ -1375,10 +1374,10 @@
     {
       "id": "character-crowd",
       "packages": [
-        "@jgengine/shell"
+        "@jgengine/core"
       ],
-      "module": "@jgengine/shell/render/CharacterCrowd",
-      "domain": "render",
+      "module": "@jgengine/core/anim/CharacterCrowd.draw",
+      "domain": "anim",
       "gameFacing": false,
       "probe": null,
       "intent": "draw animated or static characters as batched instanced draws instead of posing each skeleton"
@@ -3205,10 +3204,10 @@
     {
       "id": "entity-muzzle",
       "packages": [
-        "@jgengine/shell"
+        "@jgengine/core"
       ],
-      "module": "@jgengine/shell/render/entityMuzzle",
-      "domain": "render",
+      "module": "@jgengine/core/anim/entityMuzzle.draw",
+      "domain": "anim",
       "gameFacing": false,
       "probe": null,
       "intent": "draw a character's or turret's shots leaving from its hand or barrel"
@@ -3238,10 +3237,10 @@
     {
       "id": "entity-render-cues",
       "packages": [
-        "@jgengine/shell"
+        "@jgengine/core"
       ],
-      "module": "@jgengine/shell/render/useEntityRenderCues",
-      "domain": "render",
+      "module": "@jgengine/core/anim/useEntityRenderCues.draw",
+      "domain": "anim",
       "gameFacing": false,
       "probe": null,
       "intent": "live velocity/bob/fire/reload/hit/death cues for a custom renderEntity or viewmodel component"
@@ -4697,8 +4696,7 @@
     {
       "id": "interior-dressing",
       "packages": [
-        "@jgengine/core",
-        "@jgengine/shell"
+        "@jgengine/core"
       ],
       "module": "@jgengine/core/world/interiorDressing",
       "domain": "world",
@@ -6194,10 +6192,10 @@
     {
       "id": "model-animation-diagnostics",
       "packages": [
-        "@jgengine/shell"
+        "@jgengine/core"
       ],
-      "module": "@jgengine/shell/render/useModelAnimation",
-      "domain": "render",
+      "module": "@jgengine/core/anim/useModelAnimation.draw",
+      "domain": "anim",
       "gameFacing": false,
       "probe": null,
       "intent": "inspect imported clip mappings, layer masks and root-track compatibility"
@@ -7153,6 +7151,28 @@
       "intent": "the shared test contract a physics adapter runs to prove it matches the seam"
     },
     {
+      "id": "physics-body-instances",
+      "packages": [
+        "@jgengine/core"
+      ],
+      "module": "@jgengine/core/physics/InstancedBodies.draw",
+      "domain": "physics",
+      "gameFacing": false,
+      "probe": null,
+      "intent": "Draw every physics body as one instanced mesh"
+    },
+    {
+      "id": "physics-joint-lines",
+      "packages": [
+        "@jgengine/core"
+      ],
+      "module": "@jgengine/core/physics/InstancedJoints.draw",
+      "domain": "physics",
+      "gameFacing": false,
+      "probe": null,
+      "intent": "Draw a physics world's joints as lines"
+    },
+    {
       "id": "physics-world-backend",
       "packages": [
         "@jgengine/core"
@@ -7511,10 +7531,10 @@
     {
       "id": "practical-lights",
       "packages": [
-        "@jgengine/shell"
+        "@jgengine/core"
       ],
-      "module": "@jgengine/shell/render/InteriorDressing",
-      "domain": "render",
+      "module": "@jgengine/core/buildings/InteriorDressing.draw",
+      "domain": "buildings",
       "gameFacing": false,
       "probe": null,
       "intent": "light the planned lamps nearest the camera with a fixed, shadow-capped spot-light pool"
@@ -9128,6 +9148,17 @@
       "intent": "animate a sprite atlas clip from headless or rendered game code"
     },
     {
+      "id": "sprite-batch",
+      "packages": [
+        "@jgengine/core"
+      ],
+      "module": "@jgengine/core/render/SpriteBatch.draw",
+      "domain": "render",
+      "gameFacing": false,
+      "probe": null,
+      "intent": "Draw many atlas sprites in one instanced draw"
+    },
+    {
       "id": "squad-combat",
       "packages": [
         "@jgengine/core"
@@ -9754,10 +9785,10 @@
     {
       "id": "territory-overlay",
       "packages": [
-        "@jgengine/shell"
+        "@jgengine/core"
       ],
-      "module": "@jgengine/shell/TerritoryOverlay",
-      "domain": "territory-overlay",
+      "module": "@jgengine/core/placement/TerritoryOverlay.view",
+      "domain": "placement",
       "gameFacing": false,
       "probe": null,
       "intent": "show footprint ownership, claim cost, and affordability"
