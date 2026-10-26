@@ -11,4 +11,5 @@ export default defineConfig({
   plugins: [react(), tailwindcss(), viteIdleExit(), viteProvisionAssets()],
   clearScreen: false,
   build: { target: "es2022" },
+  server: { watch: { ignored: ["**/.jgengine/**"] } },
 });
