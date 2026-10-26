@@ -19,3 +19,4 @@
 
 - `jgengine find <words>` answers where a concept lives: its home folder in each layer (core model, shell draw, react view, editor author) with the files and exports in it and the pieces outside it, read from the code itself, next to the shipped capabilities and matching assets. In a game it reads the installed `@jgengine/*` packages. `jgengine find --text <regex>` (or `--in`, `--kind`, `--glob`, `--files`) is a plain ripgrep search.
 - `describeAssetMatch` (`@jgengine/assets`) prints one line for a ranked asset match.
+- `createNavCrowd` and `createSquadCombat` take `clock`, the millisecond clock their re-plan time cap reads (default `performance.now`); a fixed clock makes a seeded run deterministic.

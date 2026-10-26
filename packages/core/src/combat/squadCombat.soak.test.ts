@@ -140,6 +140,8 @@ function sample(visible: boolean, entry: Sampled): void {
   }
 }
 
+const FIXED_CLOCK = (): number => 0;
+
 function runSoak(seed = 2038): {
   defenders: Map<string, Sampled>;
   raiders: Map<string, Sampled>;
@@ -230,10 +232,12 @@ function runSoak(seed = 2038): {
       return resolve(memberId, targetId, DEFENDER_DAMAGE, DEFENDER_ACCURACY);
     },
     rng,
+    // The re-plan time caps read wall-clock time, so a loaded machine would plan less and change the fight.
+    clock: FIXED_CLOCK,
     devtoolsName: "soak.squadCombat",
   });
 
-  const raiderCrowd = createNavCrowd({ nav, speed: 3.2, radius: 0.4, replanBudget: 4, replanMs: 1 });
+  const raiderCrowd = createNavCrowd({ nav, speed: 3.2, radius: 0.4, replanBudget: 4, replanMs: 1, clock: FIXED_CLOCK });
   for (const raider of raiders) raiderCrowd.add(raider.id, { position: raider.position, goal: raider.position });
   const nextRaiderShot = new Map<string, number>(raiders.map((raider) => [raider.id, 0]));
   const raiderGoal = new Map<string, [number, number, number]>(raiders.map((raider) => [raider.id, raider.position]));
