@@ -6,9 +6,9 @@ import { HudAutoLayoutPreview } from "@jgengine/core/hud/hudPanelLayoutPreview.v
 import { HudThemePreview } from "@jgengine/core/hud/hudThemePreview.view";
 import { IconsPreview } from "@jgengine/core/ui/icons/iconsPreview.view";
 import { KitFramesPreview } from "@jgengine/core/ui/kit/kitFramesPreview.view";
-import { StreetGeometryPreview } from "./roads/streetGeometryPreview";
-import { SpriteClipPreview } from "./spriteClipPreview";
-import { TileLayerPreview } from "./tileLayerPreview";
+import { StreetGeometryPreview } from "@jgengine/core/roads/streetGeometryPreview.view";
+import { SpriteClipPreview } from "@jgengine/core/render/spriteClipPreview.view";
+import { TileLayerPreview } from "@jgengine/core/render/tileLayerPreview.view";
 import { HudSkinPreview } from "@jgengine/core/hud/hudSkinPreview.view";
 import { ScrollRailPreview } from "@jgengine/core/ui/scrollRailPreview.view";
 import { UI_KITS, type UiKitName } from "@jgengine/core/ui/kit/uiKits.view";

@@ -9,10 +9,10 @@ import { registerBuiltinSceneKinds } from "@jgengine/core/scene/builtinSceneKind
 
 import { registerGrassFieldRenderer } from "@jgengine/core/grass/GrassFieldRenderer.draw";
 import { registerWaterRenderer } from "@jgengine/core/water/WaterRenderer.draw";
-import { registerSoilPatchRenderer } from "./SoilPatchRenderer";
-import { registerCityRenderer } from "../city/CityRenderer";
-import { registerPoleLineRenderer } from "./PoleLineRenderer";
-import { registerDecalRenderer } from "./DecalRenderer";
+import { registerSoilPatchRenderer } from "./SoilPatchRenderer.draw";
+import { registerCityRenderer } from "@jgengine/core/city/CityRenderer.draw";
+import { registerPoleLineRenderer } from "./PoleLineRenderer.draw";
+import { registerDecalRenderer } from "./DecalRenderer.draw";
 
 let registered = false;
 

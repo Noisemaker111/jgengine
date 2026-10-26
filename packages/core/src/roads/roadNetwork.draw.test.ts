@@ -4,7 +4,7 @@ import type { RoadEnvironmentDescriptor } from "@jgengine/core/world/features";
 
 import { Color } from "three";
 
-import { buildAuthoredRoadNetwork, buildKerbFaces, gutterColor, roadJunctionInput } from "./RoadRibbons";
+import { buildAuthoredRoadNetwork, buildKerbFaces, gutterColor, roadJunctionInput } from "./RoadRibbons.draw";
 
 function road(path: readonly (readonly [number, number])[], width = 8): RoadEnvironmentDescriptor {
   return {

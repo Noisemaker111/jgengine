@@ -11,9 +11,9 @@ import { authoredSpawnPosition } from "@jgengine/core/world/authoredSpawn";
 import type { ModelConfig } from "@jgengine/core/game/playableGame";
 import { GameProvider } from "@jgengine/react/provider";
 
-import { defineGame } from "../defineGame";
-import { AuthoredObjects } from "./AuthoredScene";
-import { resolveObjectModel } from "../render/resolveModel";
+import { defineGame } from "@jgengine/shell/defineGame";
+import { AuthoredObjects } from "./AuthoredScene.draw";
+import { resolveObjectModel } from "@jgengine/shell/render/resolveModel";
 
 function fixture() {
   const document = createEmptyEditorDocument();

@@ -34,7 +34,7 @@ import { useDisposable } from "@jgengine/shell/render/useDisposable";
 import { editableTerrainFromSnapshot, type TerraformSnapshot } from "@jgengine/core/terrain/terraform";
 import { createTerrainPaintColorSampler } from "@jgengine/core/terrain/terrainPaintColor.draw";
 import { GroundPad } from "./GroundPad.draw";
-import { Roads } from "@jgengine/shell/roads/RoadRibbons";
+import { Roads } from "@jgengine/core/roads/RoadRibbons.draw";
 import { terrainGroundColorSampler } from "@jgengine/core/terrain/terrainGroundColor.draw";
 import { InstancedBuildings, type InstancedBuildingPlacement } from "@jgengine/core/buildings/GeneratedBuilding.draw";
 import { GrassPatch } from "@jgengine/core/grass/GrassPatch.draw";

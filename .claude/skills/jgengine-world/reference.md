@@ -59,7 +59,7 @@ projects it triplanar from the model's own geometry, so a palette-atlas kit mode
 city studio ground takes `meta.surfaceDetail: false` on its volume. City ground layers fade out
 where the district's merged footprint meets bare terrain, keeping seams between layers crisp;
 `meta.edgeFade: false` on the volume keeps hard outer edges. Custom ribbons use
-`createSurfaceRibbonMaterial` with `ribbonSurfaceFrame` from `@jgengine/shell/roads/surfaceRibbonMaterial`; custom
+`createSurfaceRibbonMaterial` with `ribbonSurfaceFrame` from `@jgengine/core/roads/surfaceRibbonMaterial.draw`; custom
 ground meshes get the same outer-edge fade from `buildGroundCoverageMask`, `createGroundEdgeFade`
 and `applyGroundEdgeFade` (`@jgengine/core/terrain/groundEdgeFade.draw`).
 

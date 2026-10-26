@@ -55,11 +55,11 @@ import { buildScatterProxy } from "@jgengine/core/scatter/scatterProxies.draw";
 import { InstancedBuildings, type InstancedBuildingPlacement } from "@jgengine/core/buildings/GeneratedBuilding.draw";
 import { getBuildingKit } from "@jgengine/core/buildings/buildingKitRegistry";
 import { uploadInstances } from "@jgengine/core/instancing/instanceUpload.draw";
-import { createCityWindowMaterial } from "./cityWindowMaterial";
-import { createSurfaceRibbonMaterial } from "../roads/surfaceRibbonMaterial";
+import { createCityWindowMaterial } from "./cityWindowMaterial.draw";
+import { createSurfaceRibbonMaterial } from "@jgengine/core/roads/surfaceRibbonMaterial.draw";
 import { applyGroundEdgeFade, buildGroundCoverageMask, createGroundEdgeFade } from "@jgengine/core/terrain/groundEdgeFade.draw";
 import { useTerrainQuality } from "@jgengine/core/terrain/terrainQuality.draw";
-import { registerSceneKindRenderer, type SceneKindRenderContext } from "../scene/sceneKindRenderers";
+import { registerSceneKindRenderer, type SceneKindRenderContext } from "@jgengine/core/scene/sceneKindRenderers.draw";
 import { junctionSurface } from "./cityJunctionSurface";
 
 const ASPHALT_COLOR = "#3a3b3d";

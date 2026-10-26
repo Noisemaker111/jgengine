@@ -76,10 +76,6 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `AuthoredFlocks` (function) · `import { AuthoredFlocks } from "@jgengine/shell/world/AuthoredFlocks"`
 
-## authored-solids — collision for studio-authored world content such as city volumes
-
-- `AuthoredSolids` (function) · `import { AuthoredSolids } from "@jgengine/shell/scene"`
-
 ## authored-surface-material — mount an owned PBR surface material on a mesh
 
 - `AuthoredSurfaceMaterial` (function) · `import { AuthoredSurfaceMaterial } from "@jgengine/shell/render/authoredSurfaceMaterial"`
@@ -948,10 +944,6 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 ## status-effect-bar — timeline HUD row of active statuses — icon + radial countdown ring + stack badge, driven off the status model, HudTheme-skinned
 
 - `StatusEffectBar` (function) · `import { StatusEffectBar } from "@jgengine/react"`
-
-## studio-stage — cinematic lighting rig + backdrop + turntable for parametric studios
-
-- `StudioStage` (function) · `import { StudioStage } from "@jgengine/shell/scene/StudioStage"`
 
 ## talent-tree — drop-in skill/talent/upgrade-tree widget — pass `nodes`+`tree` for point-spend or a precomputed `view` for any unlock rule; branch/tier layout, SVG prerequisite edges, learned/available/locked/maxed styling, icon + rank, onLearn
 

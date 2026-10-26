@@ -151,8 +151,9 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `createAuthoredSimulation` (function) · `import { createAuthoredSimulation } from "@jgengine/core/world/authoredSimulation"`
 
-## authored-objects — marker kinds resolved as entity spawns, not static props
+## authored-objects — place editor markers with catalog ids into the scene, grounded on the terrain
 
+- `AuthoredObjects` (function) · `import { AuthoredObjects } from "@jgengine/core/scene/AuthoredScene.draw"`
 - `ENTITY_MARKER_KINDS` (const) · `import { ENTITY_MARKER_KINDS } from "@jgengine/core/world/authoredObjects"`
 - `markerAnimation` (function) · `import { markerAnimation } from "@jgengine/core/world/authoredObjects"`
 - `markerCatalogId` (function) · `import { markerCatalogId } from "@jgengine/core/world"`
@@ -160,8 +161,13 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 - `resolveAuthoredObjects` (function) · `import { resolveAuthoredObjects } from "@jgengine/core/world"`
 - `resolveAuthoredObjectsWithDiagnostics` (function) · `import { resolveAuthoredObjectsWithDiagnostics } from "@jgengine/core/world/authoredObjects"`
 
+## authored-paths — drape editor-authored paths over live terrain as surfaced ribbons
+
+- `AuthoredPaths` (function) · `import { AuthoredPaths } from "@jgengine/core/scene/AuthoredScene.draw"`
+
 ## authored-solids — collision for studio-authored world content such as city volumes
 
+- `AuthoredSolids` (function) · `import { AuthoredSolids } from "@jgengine/core/scene/AuthoredScene.draw"`
 - `resolveAuthoredSolids` (function) · `import { resolveAuthoredSolids } from "@jgengine/core/world/authoredSolids"`
 - `syncAuthoredSolids` (function) · `import { syncAuthoredSolids } from "@jgengine/core/world/authoredSolids"`
 
@@ -828,6 +834,10 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `followPathLength` (function) · `import { followPathLength } from "@jgengine/core/world"`
 
+## path-surface — pick the procedural surface, edge fade and wear an authored path draws with
+
+- `resolvePathSurface` (function) · `import { resolvePathSurface } from "@jgengine/core/roads/surfaceRibbonMaterial.draw"`
+
 ## path-terrain — apply flatten/grade/carve/retaining path profiles to a terrain field
 
 - `applyPathProfiles` (function) · `import { applyPathProfiles } from "@jgengine/core/terrain/terrain"`
@@ -953,6 +963,10 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `createVfxInstanceStore` (function) · `import { createVfxInstanceStore } from "@jgengine/core/vfx/vfxInstance"`
 
+## ribbon-surface-frame — per-vertex along/across/to-end frame a custom ribbon mesh feeds the surface ribbon material
+
+- `ribbonSurfaceFrame` (function) · `import { ribbonSurfaceFrame } from "@jgengine/core/roads/surfaceRibbonMaterial.draw"`
+
 ## ride-metrics — measure a sprung vehicle's ride — settle time, dive, roll per g, landing bounce
 
 - `measureRide` (function) · `import { measureRide } from "@jgengine/core/physics/handlingProbe"`
@@ -960,6 +974,10 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 ## rigid-aircraft — force-and-torque aircraft — lifting surfaces with stall and drag polar, control surfaces, inertia, loops and rolls
 
 - `createRigidAircraft` (function) · `import { createRigidAircraft } from "@jgengine/core/world"`
+
+## road-ribbons — draw roads, tracks and trails as surfaced ribbons with curbs, sidewalks, lane markings and trimmed junctions
+
+- `RoadRibbons` (function) · `import { RoadRibbons } from "@jgengine/core/roads/RoadRibbons.draw"`
 
 ## route-course — build a branching race course from track pieces: locate, wall clamp, checkpoints, hazard spans, racing lines
 
@@ -1109,6 +1127,10 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `generateStreets` (function) · `import { generateStreets } from "@jgengine/core/roads/streetGenerator"`
 
+## studio-stage — cinematic lighting rig + backdrop + turntable for parametric studios
+
+- `StudioStage` (function) · `import { StudioStage } from "@jgengine/core/scene/StudioStage.draw"`
+
 ## surface-drape — lift an XZ polyline onto sculpted terrain
 
 - `drapePolyline` (function) · `import { drapePolyline } from "@jgengine/core/terrain/terrainGuides"`
@@ -1116,6 +1138,10 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 ## surface-grid — terrain-following reference grid that is not occluded by relief
 
 - `surfaceGridLines` (function) · `import { surfaceGridLines } from "@jgengine/core/terrain/terrainGuides"`
+
+## surface-ribbon-material — React-owned procedural ribbon material (asphalt, dirt, gravel) for a custom road or trail mesh
+
+- `useSurfaceRibbonMaterial` (function) · `import { useSurfaceRibbonMaterial } from "@jgengine/core/roads/surfaceRibbonMaterial.draw"`
 
 ## surface-ring — surface-following placement guide ring
 
@@ -1331,8 +1357,9 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `environment` (function) · `import { environment } from "@jgengine/core/world"`
 
-## world-intersections — connect sidewalks and lane guidance through generated intersections
+## world-intersections — inspect turns and junction meshes in a deterministic preview fixture
 
+- `StreetGeometryPreview` (function) · `import { StreetGeometryPreview } from "@jgengine/core/roads/streetGeometryPreview.view"`
 - `buildIntersectionMarkings` (function) · `import { buildIntersectionMarkings } from "@jgengine/core/roads/roads"`
 - `buildTrimmedIntersections` (function) · `import { buildTrimmedIntersections } from "@jgengine/core/world"`
 

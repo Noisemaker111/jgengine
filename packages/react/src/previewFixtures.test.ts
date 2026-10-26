@@ -2,7 +2,7 @@ import { describe, expect, test } from "bun:test";
 
 import { HudThemePreview } from "@jgengine/core/hud/hudThemePreview.view";
 import { IconsPreview } from "@jgengine/core/ui/icons/iconsPreview.view";
-import { StreetGeometryPreview } from "./roads/streetGeometryPreview";
+import { StreetGeometryPreview } from "@jgengine/core/roads/streetGeometryPreview.view";
 import {
   PREVIEW_FIXTURES,
   previewFixtureNames,

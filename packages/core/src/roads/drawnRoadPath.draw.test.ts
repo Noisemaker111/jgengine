@@ -1,6 +1,6 @@
 import { expect, test } from "bun:test";
 
-import { drawnRoadPath } from "./RoadRibbons";
+import { drawnRoadPath } from "./RoadRibbons.draw";
 
 test("filleted bends never leave a zero-length step for kerbs and sidewalks to spike on", () => {
   // Short segments make neighbouring fillets meet at the same midpoint.

@@ -3,8 +3,8 @@ import * as THREE from "three";
 
 import type { GraphicsQuality } from "@jgengine/core/settings/settingsModel";
 
-import { SURFACE_SCAN_PARS_GLSL, surfaceScanDefines, surfaceScanKeyPart, surfaceScanUniforms, type SurfaceScanBlend } from "../render/surfaceScanShader";
-import type { SurfaceScanTextures } from "../render/surfaceScanTextures";
+import { SURFACE_SCAN_PARS_GLSL, surfaceScanDefines, surfaceScanKeyPart, surfaceScanUniforms, type SurfaceScanBlend } from "@jgengine/shell/render/surfaceScanShader";
+import type { SurfaceScanTextures } from "@jgengine/shell/render/surfaceScanTextures";
 import { NOISE_GLSL, SURFACE_BUMP_NORMAL_GLSL, SURFACE_FUNCTIONS_GLSL, surfaceNoiseUniforms } from "@jgengine/core/terrain/terrainSurfaceShader.draw";
 import { terrainSurfaceClass, terrainSurfaceClassIndex, terrainSurfaceRoughness, type TerrainSurfaceClass } from "@jgengine/core/terrain/terrainSurfaces.draw";
 
@@ -79,6 +79,7 @@ const clamp = (value: number, min: number, max: number): number => Math.min(max,
  * that fades into the terrain and wheel ruts; pavement keeps a near-hard edge and faint tyre lanes.
  * `meta.surfaceDetail: false` (or `meta.surface: false`) returns `null` for the old flat ribbon;
  * `meta.edgeSoftness` scales the fade (0 = hard) and `meta.wear` sets wear 0..1.
+ * @capability path-surface pick the procedural surface, edge fade and wear an authored path draws with
  */
 export function resolvePathSurface(
   kind: string,
@@ -98,7 +99,7 @@ export function resolvePathSurface(
   return { surface, feather, warp, wear };
 }
 
-/** Extra ribbon width (metres, both sides together) a style needs so its fade straddles the authored edge. */
+/** Extra ribbon width (metres, both sides together) a style needs so its fade straddles the authored edge. @internal */
 export function ribbonEdgeMargin(style: Pick<RibbonSurfaceStyle, "feather" | "warp">): number {
   return style.feather + style.warp * 2;
 }
@@ -107,6 +108,7 @@ export function ribbonEdgeMargin(style: Pick<RibbonSurfaceStyle, "feather" | "wa
  * Per-vertex `(along, across, toEnd)` for a ribbon in `buildRoadRibbon`'s layout (left/right vertex
  * pairs down the centreline). Pass several ribbons' position arrays to get one concatenated frame
  * for a merged mesh; each ribbon's distances restart at its own start.
+ * @capability ribbon-surface-frame per-vertex along/across/to-end frame a custom ribbon mesh feeds the surface ribbon material
  */
 export function ribbonSurfaceFrame(ribbons: readonly Float32Array[]): Float32Array {
   const total = ribbons.reduce((sum, positions) => sum + positions.length, 0);
@@ -403,6 +405,7 @@ ${RIBBON_SCAN_AO_GLSL}`,
 /**
  * {@link createSurfaceRibbonMaterial} for a React mesh: rebuilt only when an option changes and
  * disposed on unmount. Pass `null` to get `null` (the caller falls back to a flat material).
+ * @capability surface-ribbon-material React-owned procedural ribbon material (asphalt, dirt, gravel) for a custom road or trail mesh
  */
 export function useSurfaceRibbonMaterial(options: SurfaceRibbonMaterialOptions | null): THREE.MeshStandardMaterial | null {
   const o = options;

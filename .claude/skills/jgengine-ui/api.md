@@ -666,6 +666,10 @@
 - `createSpriteClipPlayer` (function): function createSpriteClipPlayer(atlas: SpriteAtlas): { play(name: string): void; advance(dt: number): void; frame: () => { x: number; y: number; w: number; h: number; pivot?: [number, number] | undefined; } | undefined; snapshot: () => { animation: string; frameIndex: number; elapsed: number; done: … — Create a renderer-independent sprite animation player.
 - `sortingOrder` (function): function sortingOrder(layers: readonly string[], layer: string, offset = 0): number — Resolve a layer name and local offset into a stable render order.
 
+## @jgengine/core/render/tileLayerPreview.view
+
+- `TileLayerPreview` (function): function TileLayerPreview({ className }: { className?: string }): React.JSX.Element — Deterministic canvas-backed tile-layer fixture for textured tile presentation evidence.
+
 ## @jgengine/core/replay/recordingBuffer
 
 - `RecordingBuffer` (interface): interface RecordingBuffer<T> { append(t: number, data: T): void; seek(t: number): RecordingFrame<T> | null; seekPair(t: number): RecordingPair<T>; range(fromT: number, toT: number): RecordingFrame<T>[]; clear(): void; duration(): number; frames(): readonly RecordingFra… — ⚠ undocumented · used by `useSessionRecorder` (@jgengine/core/replay/useSessionRecorder.draw): Session-recording buffer (#120) for replay / photo mode / kill-cam: records an entity's pose on game-time every frame into a `RecordingBuffe…
@@ -2176,10 +2180,6 @@
 - `useGameContext` (function): function useGameContext(): GameContext — ⚠ undocumented
 - `useOptionalGameContext` (function): function useOptionalGameContext(): GameContext | null — The game context if a `GameProvider` is present, otherwise `null` — for chrome that may render outside a running game (showcases, previews).
 
-## @jgengine/react/roads/streetGeometryPreview
-
-- `StreetGeometryPreview` (function): function StreetGeometryPreview({ className }: { className?: string }): React.JSX.Element — Deterministic close-up gallery of the shared road/junction mesh seam.
-
 ## @jgengine/react/selectSnapshot
 
 - `SelectCache` (type): type SelectCache<TSnapshot, TSelected> = { ready: boolean; snapshot: TSnapshot; value: TSelected; } — ⚠ undocumented
@@ -2192,10 +2192,6 @@
 ## @jgengine/react/testFixtures
 
 - `MENU_THEME_STYLE` (const): const MENU_THEME_STYLE: GameMenuStyle — Menu theme tokens passed through the `style` prop with no cast. This file is type-checked and kept out of the build, so the compiler proves the prop accepts `--jg-*` custom properties on every typecheck while nothing ships from here.
-
-## @jgengine/react/tileLayerPreview
-
-- `TileLayerPreview` (function): function TileLayerPreview({ className }: { className?: string }): React.JSX.Element — Deterministic canvas-backed tile-layer fixture for textured tile presentation evidence.
 
 ## @jgengine/shell/GamePhaseStamp
 
@@ -2728,61 +2724,6 @@
 
 - `RagdollOptions` (interface): interface RagdollOptions — What {@link useRagdoll} needs: the rig's bone names, the physics world and what arms it.
 - `useRagdoll` (function): function useRagdoll(scene: THREE.Object3D, options: RagdollOptions): void — Turns a rigged character into a physics ragdoll when `active` goes true: the bones' world poses at that moment become box bodies joined by distance links in `world`, and every frame after, each bone's world position and aim come from its body. The physics bodies carry translation only, so each bone is oriented by rotating its death-pose direction-to-child onto the current one, which is what gives the body a skeleton instead of a pile of boxes.
-
-## @jgengine/shell/roads/RoadRibbons
-
-- `AuthoredRoadNetwork` (interface): interface AuthoredRoadNetwork — Trimmed ribbons for every road plus the welded surfaces that fill the crossings between them.
-- `JunctionSurface` (interface): interface JunctionSurface — One welded asphalt junction surface plus the color it should render in.
-- `RoadRibbons` (function): function RoadRibbons({ road, field, paths, }: { road: RoadEnvironmentDescriptor; field: TerrainField; paths: readonly (readonly RoadPoint[])[]; }): React.JSX.Element | null — Renders one `road()` descriptor from its trimmed centerline sub-paths (cut back at every junction by {@link buildAuthoredRoadNetwork}): an asphalt ribbon, a curb/edge strip along each border, an optional dashed centerline, and optional sidewalks. Because the sub-paths already stop at the junction boundary, every layer naturally ends there — no ribbon ploughs through the crossing and the dashed line no longer needs exclusion circles to skip intersections. The carriageway, curbs and sidewalks shade with the terrain's procedural surfaces (`road.surface`, default asphalt with tyre wear); `surface: false` keeps them flat.
-- `Roads` (function): function Roads({ roads, field }: { roads: readonly RoadEnvironmentDescriptor[]; field: TerrainField }): React.JSX.Element — The engine's one road renderer: `road()` descriptors from an environment and authored editor paths (streets, race tracks, trails, routes) all draw here. Each road is rounded at sharp bends, closed loops rejoin cleanly, crossings of the same surface weld into one junction (paved crossings get stop lines and crosswalks), and each road layers asphalt (scanned by default), gutters, lane paint, kerbs and sidewalks as its descriptor asks; unpaved ground fades into the terrain with soft edges.
-
-## @jgengine/shell/roads/surfaceRibbonMaterial
-
-- `RIBBON_FRAME_ATTRIBUTE` (const): const RIBBON_FRAME_ATTRIBUTE: "jgRibbon" — Vertex attribute {@link ribbonSurfaceFrame} fills: metres along the ribbon, signed metres across it, metres to its far end.
-- `RibbonSurfaceScan` (interface): interface RibbonSurfaceScan extends SurfaceScanBlend — A scanned surface on a ribbon: maps, blend, and whether it tiles in world XZ or along the ribbon.
-- `RibbonSurfaceStyle` (interface): interface RibbonSurfaceStyle — How a ground ribbon (path, road, sidewalk) shades: procedural surface, edge blend and wear.
-- `SurfaceRibbonMaterialOptions` (interface): interface SurfaceRibbonMaterialOptions extends Partial<RibbonSurfaceStyle> — Options for {@link createSurfaceRibbonMaterial}.
-- `createSurfaceRibbonMaterial` (function): function createSurfaceRibbonMaterial(options: SurfaceRibbonMaterialOptions): THREE.MeshStandardMaterial — A `MeshStandardMaterial` that shades a ground ribbon (path, road, sidewalk) with the terrain's own procedural surface functions, so a dirt track or asphalt strip matches painted ground: the authored colour varied by the surface class's grain, roughness and micro-normal, wheel ruts or tyre lanes, and (with `feather > 0`) a noise-warped edge that fades into the terrain. The geometry needs a {@link RIBBON_FRAME_ATTRIBUTE} attribute from {@link ribbonSurfaceFrame}; build it wider by {@link ribbonEdgeMargin} so the fade straddles the authored edge. The caller disposes the material.
-- `resolvePathSurface` (function): function resolvePathSurface(kind: string, width: number, meta: Readonly<Record<string, unknown>> | undefined): RibbonSurfaceStyle | null — Default ribbon look for an authored path: the surface comes from `meta.surface`, else the path kind (`"road"` paves, `"gravel-track"` gravels), else dirt. Soft ground gets a noise-warped edge that fades into the terrain and wheel ruts; pavement keeps a near-hard edge and faint tyre lanes. `meta.surfaceDetail: false` (or `meta.surface: false`) returns `null` for the old flat ribbon; `meta.edgeSoftness` scales the fade (0 = hard) and `meta.wear` sets wear 0..1.
-- `ribbonEdgeMargin` (function): function ribbonEdgeMargin(style: Pick<RibbonSurfaceStyle, "feather" | "warp">): number — Extra ribbon width (metres, both sides together) a style needs so its fade straddles the authored edge.
-- `ribbonSurfaceFrame` (function): function ribbonSurfaceFrame(ribbons: readonly Float32Array[]): Float32Array — Per-vertex `(along, across, toEnd)` for a ribbon in `buildRoadRibbon`'s layout (left/right vertex pairs down the centreline). Pass several ribbons' position arrays to get one concatenated frame for a merged mesh; each ribbon's distances restart at its own start.
-- `useSurfaceRibbonMaterial` (function): function useSurfaceRibbonMaterial(options: SurfaceRibbonMaterialOptions | null): THREE.MeshStandardMaterial | null — {@link createSurfaceRibbonMaterial} for a React mesh: rebuilt only when an option changes and disposed on unmount. Pass `null` to get `null` (the caller falls back to a flat material).
-
-## @jgengine/shell/scene
-
-- `AuthoredObjects` (function): function AuthoredObjects({ document, field, verticalOffset = 0, onExisting = "keep", synchronize = false, excludeKinds, }: AuthoredObjectsProps): null — Places every editor marker with a catalog id into `ctx.scene.object`, grounded on `field`. WorldScene renders them through the game's `objectModels` seam — no bespoke place loop. Pure headless twin: `resolveAuthoredObjects` / `placeAuthoredObjects`.
-- `AuthoredObjectsProps` (interface): interface AuthoredObjectsProps extends ResolveAuthoredObjectsOptions — Props for {@link AuthoredObjects}: document, ground field, and optional lift / onExisting.
-- `AuthoredPaths` (function): function AuthoredPaths({ document, field, kinds, surfaceDetail = true }: AuthoredPathsProps): React.JSX.Element — Renders a document's non-scatter paths (roads, routes, corridors) as ground-draped ribbons — the editor authors the polyline, the engine drapes it over the live terrain at runtime. Width comes from `path.width`, color from `path.meta.color`/`path.color`, and the procedural surface from `path.meta.surface` or the kind (see `resolvePathSurface`). A game never hand-rolls path meshes.
-- `AuthoredPathsProps` (interface): interface AuthoredPathsProps — Props for {@link AuthoredPaths}: the document, the ground field to drape over, and a kind filter.
-- `AuthoredScene` (function): function AuthoredScene({ document, diagnostics = false, field, pathKinds, pathSurfaceDetail = true, scatterModels, flockModels, assets, live = true, placeObjects, groundColorAt, }: AuthoredSceneProps): React.JSX.Element — Renders an editor document's scene content — draped paths plus GPU-instanced foliage — from one mount, grounded on the live `field`. The runtime counterpart to authoring a scene in the editor: drag paths and foliage regions, save `editor.scene.json`, and the game plays them with no bespoke render code. When a live-sync bus is installed (editor host), document patches stream in and re-render automatically — document is authoritative; runtime overrides stay ephemeral unless written back. Terrain/collision come from the world's ground field (`environment({ sculpt })`); place markers with your own entity spawns. Pass `scatterModels`+`assets` to resolve palette items to real catalog GLBs; unmapped items keep the stylized proxy.
-- `AuthoredSceneProps` (interface): interface AuthoredSceneProps — Props for {@link AuthoredScene}: the document to render and the ground field to drape/ground on.
-- `AuthoredSolids` (function): function AuthoredSolids({ document, field }: { document: EditorDocument; field: TerrainField }): null — Writes the document's studio solids (city buildings and any kind with a `solids` hook) into `ctx.world.solids`, so what the studios draw also blocks the player, NPCs and physics.
-
-## @jgengine/shell/scene/AuthoredScene
-
-- `AuthoredObjects` (function): function AuthoredObjects({ document, field, verticalOffset = 0, onExisting = "keep", synchronize = false, excludeKinds, }: AuthoredObjectsProps): null — Places every editor marker with a catalog id into `ctx.scene.object`, grounded on `field`. WorldScene renders them through the game's `objectModels` seam — no bespoke place loop. Pure headless twin: `resolveAuthoredObjects` / `placeAuthoredObjects`.
-- `AuthoredObjectsProps` (interface): interface AuthoredObjectsProps extends ResolveAuthoredObjectsOptions — Props for {@link AuthoredObjects}: document, ground field, and optional lift / onExisting.
-- `AuthoredPaths` (function): function AuthoredPaths({ document, field, kinds, surfaceDetail = true }: AuthoredPathsProps): React.JSX.Element — Renders a document's non-scatter paths (roads, routes, corridors) as ground-draped ribbons — the editor authors the polyline, the engine drapes it over the live terrain at runtime. Width comes from `path.width`, color from `path.meta.color`/`path.color`, and the procedural surface from `path.meta.surface` or the kind (see `resolvePathSurface`). A game never hand-rolls path meshes.
-- `AuthoredPathsProps` (interface): interface AuthoredPathsProps — Props for {@link AuthoredPaths}: the document, the ground field to drape over, and a kind filter.
-- `AuthoredScene` (function): function AuthoredScene({ document, diagnostics = false, field, pathKinds, pathSurfaceDetail = true, scatterModels, flockModels, assets, live = true, placeObjects, groundColorAt, }: AuthoredSceneProps): React.JSX.Element — Renders an editor document's scene content — draped paths plus GPU-instanced foliage — from one mount, grounded on the live `field`. The runtime counterpart to authoring a scene in the editor: drag paths and foliage regions, save `editor.scene.json`, and the game plays them with no bespoke render code. When a live-sync bus is installed (editor host), document patches stream in and re-render automatically — document is authoritative; runtime overrides stay ephemeral unless written back. Terrain/collision come from the world's ground field (`environment({ sculpt })`); place markers with your own entity spawns. Pass `scatterModels`+`assets` to resolve palette items to real catalog GLBs; unmapped items keep the stylized proxy.
-- `AuthoredSceneProps` (interface): interface AuthoredSceneProps — Props for {@link AuthoredScene}: the document to render and the ground field to drape/ground on.
-- `AuthoredSolids` (function): function AuthoredSolids({ document, field }: { document: EditorDocument; field: TerrainField }): null — Writes the document's studio solids (city buildings and any kind with a `solids` hook) into `ctx.world.solids`, so what the studios draw also blocks the player, NPCs and physics.
-
-## @jgengine/shell/scene/GeneratedAssetRenderer
-
-- `GeneratedAssetProps` (interface): interface GeneratedAssetProps — Props for {@link GeneratedAsset}: the placed instance's `meta` (assetId + params + seed) and transform.
-
-## @jgengine/shell/scene/StudioStage
-
-- `StudioMood` (type): type StudioMood = "studio" | "daylight" | "dusk" | "night" — Lighting mood for a {@link StudioStage} — a named 3-point rig + backdrop palette.
-- `StudioStage` (function): function StudioStage({ mood = "studio", backdrop, turntable = 0, environment = true, faceCamera = false, forward = DEFAULT_FORWARD, children, }: StudioStageProps): React.JSX.Element — A reusable cinematic "product-shot" stage — a 3-point lighting rig (key/fill/rim + ambient), a seamless backdrop, and an optional turntable — so any parametric studio renders framed and lit like a hero shot instead of a flat proxy under default light. Pair with `PlayableGame.postProcessing = STUDIO_STAGE_POST` for the full film grade. Set `environment: false` to keep an open-world sky/ground and use it purely as a lighting rig. Set `faceCamera` to auto-orient the declared `forward` toward the camera instead of hand-tuning `rotationY` on the child.
-- `StudioStageProps` (interface): interface StudioStageProps — Props for {@link StudioStage}.
-
-## @jgengine/shell/scene/sceneKindRenderers
-
-- `SceneKindRenderContext` (interface): interface SceneKindRenderContext — Context a scene-kind renderer receives alongside the matching document objects.
-- `SceneKindRenderer` (type): type SceneKindRenderer = (props: { objects: readonly SceneKindObject[]; context: SceneKindRenderContext }) => ReactElement | null — A registered renderer: given every document object of its kind, returns the render tree for them.
-- `registerSceneKindRenderer` (function): function registerSceneKindRenderer(kind: string, renderer: SceneKindRenderer): void — Register the runtime renderer for a scene kind — the shell half of the #809 seam. `AuthoredScene` groups a document's objects by kind and mounts the registered renderer for each, so a new studio renders from the document with no fork of `AuthoredScene`. Idempotent per kind (last wins).
 
 ## @jgengine/shell/shellConstants
 

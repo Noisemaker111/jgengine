@@ -4,10 +4,10 @@ import * as THREE from "three";
 import { resolveDecalObject } from "@jgengine/core/world/decalKind";
 import type { SceneKindObject } from "@jgengine/core/scene/sceneKinds";
 
-import { createDecalDrapeGeometry } from "../render/decalGeometry";
-import { createDecalTexture } from "../render/decalTexture";
-import { useDisposable } from "../render/useDisposable";
-import { registerSceneKindRenderer, type SceneKindRenderContext } from "./sceneKindRenderers";
+import { createDecalDrapeGeometry } from "@jgengine/shell/render/decalGeometry";
+import { createDecalTexture } from "@jgengine/shell/render/decalTexture";
+import { useDisposable } from "@jgengine/shell/render/useDisposable";
+import { registerSceneKindRenderer, type SceneKindRenderContext } from "./sceneKindRenderers.draw";
 
 /** Tilts at or above this stand the decal up on a wall instead of draping it on the ground. */
 const WALL_TILT = 45;

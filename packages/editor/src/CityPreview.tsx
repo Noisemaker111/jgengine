@@ -6,8 +6,8 @@ import { editableTerrainFromSnapshot } from "@jgengine/core/terrain/terraform";
 import type { TerrainField } from "@jgengine/core/terrain/terrain";
 import type { SceneKindObject } from "@jgengine/core/scene/sceneKinds";
 import { useGameContext } from "@jgengine/react/provider";
-import { registerBuiltinSceneKindRenderers } from "@jgengine/shell/scene/builtinSceneKindRenderers";
-import { getSceneKindRenderer } from "@jgengine/shell/scene/sceneKindRenderers";
+import { registerBuiltinSceneKindRenderers } from "@jgengine/core/scene/builtinSceneKindRenderers.draw";
+import { getSceneKindRenderer } from "@jgengine/core/scene/sceneKindRenderers.draw";
 
 import type { EditorHostApi } from "./session";
 import { useStoreSelector } from "./useStoreSelector";
