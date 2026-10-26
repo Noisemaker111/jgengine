@@ -30,6 +30,7 @@ Verification: `bun test packages/jgengine/src` pass; `bun run jgengine sync --ch
 ## Bends
 
 - Deleted three template tests (`world`, `track`, `places` `.test.ts.tmpl`) together with the `games:new` generator they tested.
+- `games/scripts/vite-engine-source.test.ts` no longer checks the deleted `games:new` template's `vite.config.ts`; every game's config is still checked.
 - `games/scripts/check-capabilities.test.ts` and `scripts/ci-scope.test.ts` expectations changed to the new file and message names, not loosened.
 - `packages/jgengine/src/sync.test.ts` builds its games under the OS temp folder (`fixture-location: allow`): a standalone game has to sit outside every workspace.
 - Capability answers are synced only for games in the engine repo's `games/`; an outside game's `jgengine.json` has none (the ledger reads engine source).

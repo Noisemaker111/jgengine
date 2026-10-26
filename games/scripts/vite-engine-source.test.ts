@@ -14,14 +14,13 @@ import { engineSource } from "../shared/viteEngineSource";
 const repo = resolve(import.meta.dir, "..");
 const packagesDir = resolve(repo, "..", "packages");
 const LIVE_GAMES = ["brightway-park", "harbor-heat"] as const;
-const TEMPLATE = join(repo, "scripts/new-game/template/common/vite.config.ts");
 
 function gameViteConfigs(): string[] {
   const games = readdirSync(repo, { withFileTypes: true })
     .filter((entry) => entry.isDirectory())
     .flatMap((entry) => ["vite.config.ts", "vite.config.dev.ts"].map((name) => join(repo, entry.name, name)))
     .filter((file) => existsSync(file));
-  return [...games, TEMPLATE];
+  return games;
 }
 
 async function loadVite(root: string): Promise<typeof import("vite")> {
