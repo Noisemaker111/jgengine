@@ -1181,6 +1181,10 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 - `obstacleFromSolid` (function) · `import { obstacleFromSolid } from "@jgengine/core/movement/solidObstacles"`
 - `solidObstaclesNear` (function) · `import { solidObstaclesNear } from "@jgengine/core/movement/solidObstacles"`
 
+## solid-overhead — test whether a roof, ceiling or rock overhangs a point, from the world's solids
+
+- `solidOverhead` (function) · `import { solidOverhead } from "@jgengine/core/world/overhead"`
+
 ## solid-route — bounded local planning over indexed collision geometry
 
 - `planSolidRoute` (function) · `import { planSolidRoute } from "@jgengine/core/nav/solidRoute"`
@@ -1493,6 +1497,10 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 ## weather-environment-field — Connect authored precipitation and temperature changes to spatial environment queries.
 
 - `createWeatherEnvironmentField` (function) · `import { createWeatherEnvironmentField } from "@jgengine/core/weather/authoredWeather"`
+
+## weather-overcast — grey the sky, dim the sun and hide the stars while rain or snow falls
+
+- `overcastDaylight` (function) · `import { overcastDaylight } from "@jgengine/core/sky/daylightCycle"`
 
 ## weather-surface-accumulation — Persist and retune bounded surface wetness, snow, temperature and exposure independently of rendering.
 

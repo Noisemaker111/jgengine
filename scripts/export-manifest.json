@@ -1158,6 +1158,7 @@
     "./world/grounded",
     "./world/interiorDressing",
     "./world/interiors",
+    "./world/overhead",
     "./world/poleLineKind",
     "./world/polygon",
     "./world/polyline",

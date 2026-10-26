@@ -66,11 +66,14 @@ function BodyLine(): ReactNode {
   );
 }
 
+const WEATHER_WORD: Record<string, string> = { rain: "Rain", snow: "Snow", mixed: "Sleet", dust: "Dust" };
+
 function Vitals(): ReactNode {
   const view = useSurvivor();
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 4, color: "#f2ead8", pointerEvents: "none" }}>
       <div style={{ textAlign: "right", fontSize: 12, opacity: 0.85, textShadow: "0 1px 2px #000" }} data-temperature="">
+        {view.weather === "clear" ? "" : `${WEATHER_WORD[view.weather]}${view.sheltered ? " (sheltered)" : ""} · `}
         {view.temperature}°C{view.comfort === "comfortable" ? "" : ` · ${view.comfort}`}
       </div>
       {view.torpor.value > 0 ? <Gauge id="torpor" label="Torpor" value={view.torpor.value} max={view.torpor.max} /> : null}

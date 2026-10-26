@@ -393,6 +393,12 @@ export interface SkyEnvironmentConfig {
   horizonColor?: string;
   /** Zenith tint at noon; same `timeOfDay` crossfade caveat as `horizonColor`. */
   zenithColor?: string;
+  /**
+   * Under `timeOfDay`, how long the noon sky holds either side of noon, as a fraction of the day:
+   * 0.2 keeps full daylight from about 7:00 to 17:00 and leaves dawn and dusk short. Default 0, which
+   * cross-fades from noon straight toward dusk.
+   */
+  dayHold?: number;
   sunIntensity?: number;
   ambientIntensity?: number;
   /** Authored noon sun colour; the atmosphere reddens it toward the horizon. Default warm white. */
@@ -1014,6 +1020,7 @@ export function sky(config: SkyEnvironmentConfig = {}): SkyEnvironmentDescriptor
     {
       ...(config.horizonColor === undefined ? {} : { horizonColor: config.horizonColor }),
       ...(config.zenithColor === undefined ? {} : { zenithColor: config.zenithColor }),
+      ...(config.dayHold === undefined ? {} : { dayHold: config.dayHold }),
       ...(config.sunIntensity === undefined ? {} : { sunIntensity: config.sunIntensity }),
       ...(config.ambientIntensity === undefined ? {} : { ambientIntensity: config.ambientIntensity }),
       ...(config.sunColor === undefined ? {} : { sunColor: config.sunColor }),

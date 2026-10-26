@@ -8,6 +8,7 @@ import {
   sunDirectionFromBearing,
   DEFAULT_DAY_SUN_INTENSITY,
   daylightStateAt,
+  overcastDaylight,
 } from "./daylightCycle";
 
 describe("daylightStateAt", () => {
@@ -204,5 +205,50 @@ describe("bandFogColor", () => {
   test("under a day cycle the sky owns the fog color", () => {
     expect(bandFogColor({ authored: "#7a4a24", timeOfDay: true, cycle: "#101010", band: "#0e1224" })).toBe("#7a4a24");
     expect(bandFogColor({ authored: undefined, timeOfDay: true, cycle: "#101010", band: "#0e1224" })).toBe("#101010");
+  });
+});
+
+describe("dayHold", () => {
+  const noon = daylightStateAt(0.5);
+  test("the noon sky holds through the afternoon, then dusk comes on its own clock", () => {
+    const held = daylightStateAt(0.68, { dayHold: 0.2 });
+    expect(held.skyTop).toBe(noon.skyTop);
+    expect(held.sunIntensity).toBe(noon.sunIntensity);
+    // Without a hold the afternoon is already most of the way to dusk.
+    expect(daylightStateAt(0.68).skyTop).not.toBe(noon.skyTop);
+    // Dusk and midnight are the same with or without a hold.
+    expect(daylightStateAt(0.75, { dayHold: 0.2 }).skyTop).toBe(daylightStateAt(0.75).skyTop);
+    expect(daylightStateAt(0, { dayHold: 0.2 }).skyTop).toBe(daylightStateAt(0).skyTop);
+  });
+});
+
+describe("overcastDaylight", () => {
+  const channelSpread = (hex: string) => {
+    const value = Number.parseInt(hex.slice(1), 16);
+    const rgb = [(value >> 16) & 0xff, (value >> 8) & 0xff, value & 0xff];
+    return Math.max(...rgb) - Math.min(...rgb);
+  };
+  const brightness = (hex: string) => {
+    const value = Number.parseInt(hex.slice(1), 16);
+    return ((value >> 16) & 0xff) + ((value >> 8) & 0xff) + (value & 0xff);
+  };
+
+  test("a clear sky is untouched; a storm greys the blue and dims the sun", () => {
+    const noon = daylightStateAt(0.5);
+    expect(overcastDaylight(noon, 0)).toBe(noon);
+    const storm = overcastDaylight(noon, 1);
+    expect(channelSpread(storm.skyTop)).toBeLessThan(channelSpread(noon.skyTop) / 3);
+    expect(storm.sunIntensity).toBeCloseTo(noon.sunIntensity * 0.2, 6);
+    expect(storm.ambientIntensity).toBeLessThan(noon.ambientIntensity);
+    expect(storm.background).toBe(storm.skyBottom);
+    // Half the cloud is half way.
+    expect(overcastDaylight(noon, 0.5).sunIntensity).toBeCloseTo(noon.sunIntensity * 0.6, 6);
+  });
+
+  test("a stormy night stays as dark as the night, and hides the stars", () => {
+    const night = daylightStateAt(0);
+    const storm = overcastDaylight(night, 1);
+    expect(brightness(storm.skyTop)).toBeLessThanOrEqual(brightness(night.skyTop));
+    expect(storm.starOpacity).toBe(0);
   });
 });

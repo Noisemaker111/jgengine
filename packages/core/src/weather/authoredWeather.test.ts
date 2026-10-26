@@ -57,6 +57,69 @@ describe("authored weather", () => {
   });
 });
 
+describe("authored weather repeatSeconds", () => {
+  // Clear, a rain shower from 10 s, clear again from 30 s; the whole lap is 40 s.
+  const loop = {
+    initialProfileId: "dry",
+    profiles: [
+      { id: "dry", mode: "clear" as const, intensity: 0 },
+      { id: "rain", mode: "rain" as const, intensity: 1, temperatureOffset: -4 },
+      { id: "drizzle", mode: "rain" as const, intensity: 0.2 },
+    ],
+    schedule: [
+      { atSeconds: 10, profileId: "rain", transitionSeconds: 4 },
+      { atSeconds: 30, profileId: "drizzle", transitionSeconds: 4 },
+    ],
+    repeatSeconds: 40,
+  };
+
+  test("the schedule comes round again every lap, forever", () => {
+    const weather = createAuthoredWeather(loop);
+    for (const lap of [0, 1, 7, 1000]) {
+      expect(weather.sample(0, 0, lap * 40 + 20).rain).toBe(1);
+      expect(weather.sample(0, 0, lap * 40 + 20).temperatureOffset).toBe(-4);
+    }
+    // Without a repeat the last change holds for good.
+    const once = createAuthoredWeather({ ...loop, repeatSeconds: undefined });
+    expect(once.sample(0, 0, 40 * 7 + 20).rain).toBeCloseTo(0.2, 9);
+  });
+
+  test("a later lap starts where the one before ended, so the seam does not jump", () => {
+    const weather = createAuthoredWeather(loop);
+    // The first lap starts dry; it ends in drizzle, and the next lap starts in drizzle too.
+    expect(weather.sample(0, 0, 0).rain).toBe(0);
+    expect(weather.sample(0, 0, 39.999).rain).toBeCloseTo(0.2, 9);
+    expect(weather.sample(0, 0, 40).rain).toBeCloseTo(0.2, 9);
+    expect(weather.sample(0, 0, 80).rain).toBeCloseTo(0.2, 9);
+  });
+
+  test("a lap must outlast the schedule", () => {
+    expect(() => validateAuthoredWeather({ ...loop, repeatSeconds: 33 })).toThrow("outlast");
+    expect(() => validateAuthoredWeather({ ...loop, repeatSeconds: 0 })).toThrow();
+    expect(() => validateAuthoredWeather({ ...loop, repeatSeconds: 35 })).not.toThrow();
+  });
+});
+
+test("a zone that turns precipitation to snow gets the same storm as snow, blending at its edge", () => {
+  const weather = createAuthoredWeather({
+    initialProfileId: "storm",
+    profiles: [{ id: "storm", mode: "rain", intensity: 0.8 }],
+    zones: [{ id: "peaks", center: [100, 0], radius: 20, falloff: 10, precipitationAs: "snow" }],
+  });
+  const lowland = weather.sample(0, 0, 5);
+  expect(lowland.rain).toBeCloseTo(0.8, 9);
+  expect(lowland.snow).toBe(0);
+  const peak = weather.sample(100, 0, 5);
+  expect(peak.mode).toBe("snow");
+  expect(peak.snow).toBeCloseTo(0.8, 9);
+  expect(peak.rain).toBeCloseTo(0, 9);
+  // Halfway through the falloff it is sleet: some of each, the total unchanged.
+  const edge = weather.sample(125, 0, 5);
+  expect(edge.mode).toBe("mixed");
+  expect(edge.rain + edge.snow).toBeCloseTo(0.8, 9);
+  expect(() => validateAuthoredWeather({ zones: [{ id: "x", center: [0, 0], radius: 1, precipitationAs: "hail" as never }] })).toThrow("precipitationAs");
+});
+
 describe("weather surface exposure", () => {
   test("seeded fixed steps preserve accumulation through pause, snapshot and restore", () => {
     const weather = createAuthoredWeather(config);

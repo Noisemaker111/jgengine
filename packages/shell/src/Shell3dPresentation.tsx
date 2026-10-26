@@ -724,6 +724,7 @@ export function Shell3dPresentation({
                       lights={skyEmitsLights(resolveSkyLightOwnership(lighting !== undefined))}
                       {...(authoredDaylight ? { modulation: daylightModulation } : {})}
                       {...(backdrop?.fog === undefined ? {} : { fogRange: backdrop.fog })}
+                      {...(playable.editorLayers?.simulation?.weather === undefined ? {} : { weather: ctx.environment })}
                     />
                   ) : null}
   {irradianceVolumes.length > 0 ? <IrradianceVolumeLighting volumes={irradianceVolumes} /> : null}

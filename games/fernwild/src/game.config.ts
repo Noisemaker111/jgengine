@@ -143,6 +143,12 @@ export const game = defineGame({
         atBody: bodyPrompts(ctx).length > 0 ? 1 : 0,
         // Stacks the survivor carries in the bag and on the hotbar.
         carrying: [BAG, HOTBAR].reduce((sum, id) => sum + ctx.player.inventory.state(id).slots.filter((slot) => slot !== null).length, 0),
+        // Air temperature where the survivor stands, °C, and how hard rain and snow fall there, in percent.
+        temperature: view.temperature,
+        rain: Math.round(ctx.environment.sample(me?.position[0] ?? 0, me?.position[2] ?? 0).rain * 100),
+        snow: Math.round(ctx.environment.sample(me?.position[0] ?? 0, me?.position[2] ?? 0).snow * 100),
+        // 1 while a roof, ceiling or rock is overhead.
+        sheltered: view.sheltered ? 1 : 0,
       };
     },
   },

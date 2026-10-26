@@ -3564,7 +3564,7 @@
 
 ## @jgengine/core/sky/Daylight.draw
 
-- `Sky` (function): function Sky({ sky, clock, lights = true, modulation, bands = NO_BANDS, fogRange }: SkyProps): React.JSX.Element — The engine's one sky: a dome with sun, moon and stars, volumetric clouds when the descriptor asks, the scene fog, and (unless `lights={false}`) the sun, moon and hemisphere fill. It holds the preset's look, follows the world clock under `sky.timeOfDay`, cross-fades through terrain `biomeBands` by camera z, and can drive a game's authored lights through the day via `modulation`. Every frame it rewrites uniforms and light values in place, never remounting.
+- `Sky` (function): function Sky({ sky, clock, lights = true, modulation, bands = NO_BANDS, fogRange, weather }: SkyProps): React.JSX.Element — The engine's one sky: a dome with sun, moon and stars, volumetric clouds when the descriptor asks, the scene fog, and (unless `lights={false}`) the sun, moon and hemisphere fill. It holds the preset's look, follows the world clock under `sky.timeOfDay`, cross-fades through terrain `biomeBands` by camera z, and can drive a game's authored lights through the day via `modulation`. Every frame it rewrites uniforms and light values in place, never remounting.
 - `SkyDomeProps` (interface): interface SkyDomeProps — Props for the gradient sky dome: top and horizon colours, dome radius, gradient shape and an optional sun disc.
 - `SkyProps` (interface): interface SkyProps — Props for {@link Sky}: the sky descriptor, the clock that runs it, who owns the lights, and biome bands.
 
@@ -3589,10 +3589,11 @@
 - `DEFAULT_DAY_SUN_INTENSITY` (const): const DEFAULT_DAY_SUN_INTENSITY: 1 — ⚠ undocumented
 - `DEFAULT_SUN_COLOR` (const): const DEFAULT_SUN_COLOR: "#fff1c9" — Warm-white noon sun used when the game authored no sun tint (the shell's `SUN_COLOR`).
 - `DEFAULT_SUN_ELEVATION_DEG` (const): const DEFAULT_SUN_ELEVATION_DEG: number — The engine arc's noon height: `atan(1 / SUN_DEPTH_RATIO)`, ~68 degrees.
-- `DaylightCycleConfig` (interface): interface DaylightCycleConfig { horizonColor?: string; zenithColor?: string; sunIntensity?: number; ambientIntensity?: number; sun?: SkySunConfig; sunColor?: string; fogColor?: string; moonIntensity?: number; moonColor?: string } — ⚠ undocumented
-- `DaylightState` (interface): interface DaylightState { sunPosition: [number, number, number]; sunIntensity: number; sunColor: string; ambientIntensity: number; skyTop: string; skyBottom: string; background: string; fogColor: string; moonPosition: [number, number, number]; moonIntensity: numbe… — ⚠ undocumented
+- `DaylightCycleConfig` (interface): interface DaylightCycleConfig { horizonColor?: string; zenithColor?: string; dayHold?: number; sunIntensity?: number; ambientIntensity?: number; sun?: SkySunConfig; sunColor?: string; fogColor?: string; moonIntensity?: number; moonColor?: string } — ⚠ undocumented
+- `DaylightState` (interface): interface DaylightState { sunPosition: [number, number, number]; sunIntensity: number; sunColor: string; ambientIntensity: number; skyTop: string; skyBottom: string; background: string; fogColor: string; moonPosition: [number, number, number]; moonIntensity: numbe… — ⚠ undocumented · used by `overcastDaylight`: A daylight state under cloud: `cover` 0 is the clear sky, 1 a full storm.
 - `SKY_PRESET_DAY_FRACTION` (const): const SKY_PRESET_DAY_FRACTION: Record<"day" | "dusk" | "night", number> — ⚠ undocumented
 - `bandFogColor` (function): function bandFogColor(input: { authored: string | undefined; timeOfDay: boolean; cycle: string; band: string }): string — The fog color a biome-banded sky shows at the camera. Without a day cycle the bands own it: the sampled band color, which already falls back to the sky's authored fog between colorless bands. Under a day cycle the sky owns it (its authored fog, else the cycle's), so a fixed noon tint never hangs in a night sky.
+- `overcastDaylight` (function): function overcastDaylight(state: DaylightState, cover: number): DaylightState — A daylight state under cloud: `cover` 0 is the clear sky, 1 a full storm. Dome, horizon and fog turn grey at their own brightness (so a stormy night stays dark), the sun dims to a fifth, the fill a little, and the moon and stars go behind the cloud.
 
 ## @jgengine/core/sky/physicalSky
 
@@ -5423,7 +5424,7 @@
 - `RoadEnvironmentConfig` (interface): interface RoadEnvironmentConfig — Config for {@link road}: a flat asphalt ribbon draped over the terrain along a centerline.
 - `RoadEnvironmentDescriptor` (type): type RoadEnvironmentDescriptor = { kind: "road" } & Required< Pick<RoadEnvironmentConfig, "path" | "width" | "color" | "markings" | "markingColor" | "elevation"> > & { /** Resolved sidewalk band, or `false` when the road has none. `slabs` absent means the 1.5 m default, `kerb` absent the 0.14 m kerb… — Resolved road descriptor produced by {@link road} and rendered by the shell environment scene.
 - `RoadSurfaceScans` (interface): interface RoadSurfaceScans — Scanned surfaces for each layer of a {@link road}; see {@link RoadEnvironmentConfig.materials}.
-- `SkyEnvironmentConfig` (interface): interface SkyEnvironmentConfig { preset?: "day" | "dusk" | "night"; timeOfDay?: boolean; horizonColor?: string; zenithColor?: string; sunIntensity?: number; ambientIntensity?: number; sunColor?: string; fogColor?: string; moonIntensity?: number; moonColor?: string; sun?:… — ⚠ undocumented · used by `skyNoonKeyframes` (@jgengine/core/sky/skyOwnedLighting): The authored `lighting` as the day cycle's **noon keyframes**, filling only the sky fields the game left unset.
+- `SkyEnvironmentConfig` (interface): interface SkyEnvironmentConfig { preset?: "day" | "dusk" | "night"; timeOfDay?: boolean; horizonColor?: string; zenithColor?: string; dayHold?: number; sunIntensity?: number; ambientIntensity?: number; sunColor?: string; fogColor?: string; moonIntensity?: number; moonCol… — ⚠ undocumented · used by `skyNoonKeyframes` (@jgengine/core/sky/skyOwnedLighting): The authored `lighting` as the day cycle's **noon keyframes**, filling only the sky fields the game left unset.
 - `SkyEnvironmentDescriptor` (type): type SkyEnvironmentDescriptor = { kind: "sky" } & Required< Pick<SkyEnvironmentConfig, "preset" | "timeOfDay"> > & Omit<SkyEnvironmentConfig, "preset" | "timeOfDay"> — ⚠ undocumented · used by `biomeBandsForSky` (@jgengine/core/sky/skyBands): The terrain biome bands a sky cross-fades through.
 - `SkySunConfig` (interface): interface SkySunConfig — Where the sun sits, as a compass bearing and a height above the horizon, both in degrees. `azimuth` 0 points toward -Z (north), 90 toward +X (east); `elevation` 90 is straight overhead.
 - `SnowEnvironmentConfig` (interface): interface SnowEnvironmentConfig { area?: EnvironmentArea; position?: EnvironmentVec2; density?: number; speed?: number; flakeSize?: number; drift?: number; wind?: EnvironmentVec2; color?: string; opacity?: number } — ⚠ undocumented · used by `snow`: Declares a snowfall weather effect for `environment()` — area, density, drift, wind, and flake opacity.
@@ -5546,6 +5547,11 @@
 - `InteriorsConfig` (interface): interface InteriorsConfig { exterior?: Exterior; interiors?: readonly Interior[]; radius?: number } — ⚠ undocumented · used by `createInteriors`: Frame conversion and bounded movement across an exterior and its interiors; holds config only, no play state.
 - `SpaceRef` (type): type SpaceRef = { kind: "exterior" } | { kind: "interior"; id: string } — ⚠ undocumented
 - `createInteriors` (function): function createInteriors(config: InteriorsConfig = {}): Interiors — Frame conversion and bounded movement across an exterior and its interiors; holds config only, no play state.
+
+## @jgengine/core/world/overhead
+
+- `OverheadOptions` (interface): interface OverheadOptions — {@link solidOverhead} knobs.
+- `solidOverhead` (function): function solidOverhead(solids: Pick<WorldSolids, "inBox">, at: readonly [number, number, number], options: OverheadOptions = {}): boolean — Whether something solid is overhead: a ceiling, a roof, cave rock, anything in the world's solids straight above `at`, between `clearance` and `reach` over it. What keeps the rain off a survivor and lets a roof count as shelter.
 
 ## @jgengine/core/world/poleLineKind
 

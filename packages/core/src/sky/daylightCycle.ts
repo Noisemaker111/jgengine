@@ -8,11 +8,13 @@ import {
   sunlightColor,
 } from "./physicalSky";
 import { lerp } from "../anim/easing";
-import { mixHex } from "../render/color";
+import { hexToRgb, mixHex, rgbToHex } from "../render/color";
 
 export interface DaylightCycleConfig {
   horizonColor?: string;
   zenithColor?: string;
+  /** How long the noon keyframe holds either side of noon, as a fraction of the day (0 to 0.24). Default 0. */
+  dayHold?: number;
   sunIntensity?: number;
   ambientIntensity?: number;
   /** Fixed sun placement, or the noon placement the day arc swings around. Unset keeps the engine arc. */
@@ -154,7 +156,9 @@ function buildKeyframes(config: DaylightCycleConfig): readonly DaylightKeyframe[
     fog: DUSK_SKY_BOTTOM,
   };
   const midnight: DaylightKeyframe = { ...night, t: 1 };
-  return [night, dawn, day, dusk, midnight];
+  const hold = Math.max(0, Math.min(0.24, config.dayHold ?? 0));
+  if (hold === 0) return [night, dawn, day, dusk, midnight];
+  return [night, dawn, { ...day, t: 0.5 - hold }, { ...day, t: 0.5 + hold }, dusk, midnight];
 }
 
 function wrapFraction(dayFraction: number): number {
@@ -268,4 +272,34 @@ function normalize(v: readonly [number, number, number], fallback: readonly [num
  */
 export function bandFogColor(input: { authored: string | undefined; timeOfDay: boolean; cycle: string; band: string }): string {
   return input.timeOfDay ? (input.authored ?? input.cycle) : input.band;
+}
+
+/** The grey an overcast sky takes over a colour: its own brightness, dimmed and a touch cool. */
+function overcastGrey(hex: string): string {
+  const [r, g, b] = hexToRgb(hex);
+  const luminance = (0.2126 * r + 0.7152 * g + 0.0722 * b) * 0.72;
+  return rgbToHex(luminance * 0.96, luminance, luminance * 1.04);
+}
+
+/**
+ * A daylight state under cloud: `cover` 0 is the clear sky, 1 a full storm. Dome, horizon and fog turn
+ * grey at their own brightness (so a stormy night stays dark), the sun dims to a fifth, the fill a
+ * little, and the moon and stars go behind the cloud.
+ * @capability weather-overcast grey the sky, dim the sun and hide the stars while rain or snow falls
+ */
+export function overcastDaylight(state: DaylightState, cover: number): DaylightState {
+  const t = clamp01(cover);
+  if (t === 0) return state;
+  const skyBottom = mixHex(state.skyBottom, overcastGrey(state.skyBottom), t);
+  return {
+    ...state,
+    skyTop: mixHex(state.skyTop, overcastGrey(state.skyTop), t),
+    skyBottom,
+    background: skyBottom,
+    fogColor: mixHex(state.fogColor, overcastGrey(state.fogColor), t),
+    sunIntensity: state.sunIntensity * (1 - 0.8 * t),
+    ambientIntensity: state.ambientIntensity * (1 - 0.25 * t),
+    moonIntensity: state.moonIntensity * (1 - 0.8 * t),
+    starOpacity: state.starOpacity * (1 - t),
+  };
 }

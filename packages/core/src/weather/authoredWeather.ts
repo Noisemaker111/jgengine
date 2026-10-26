@@ -32,6 +32,11 @@ export interface AuthoredWeatherZone {
   /** Blend distance outside the radius, in metres. */
   falloff?: number;
   weather?: WeatherConditions;
+  /**
+   * Whatever falls here falls as this: a snowy biome turns the schedule's rain to snow while the lowlands get the same
+   * storm as rain. Blends with the zone's falloff.
+   */
+  precipitationAs?: "rain" | "snow";
   wind?: WindFieldConfig;
   /** Local wind points outward from the center; it adds to ambient wind. */
   radial?: boolean;
@@ -44,6 +49,11 @@ export interface AuthoredWeatherConfig {
   initialProfileId?: string;
   /** Ordered absolute times, relative to the simulation clock. */
   schedule?: readonly AuthoredWeatherTransition[];
+  /**
+   * Loop the schedule every this many seconds, forever: a few days of weather authored once keep coming round. Each
+   * later lap starts from where the one before ended, so the seam never jumps. Must outlast the schedule's last change.
+   */
+  repeatSeconds?: number;
   wind?: WindFieldConfig;
   /** Later weather zones blend over earlier ones; wind zones add to ambient wind. */
   zones?: readonly AuthoredWeatherZone[];
@@ -112,7 +122,7 @@ function validateWind(value: WindFieldConfig | undefined): void {
  * @capability authored-weather-validation Reject invalid weather profiles, schedules, zones and wind before authoring mutations.
  */
 export function validateAuthoredWeather(config: AuthoredWeatherConfig): void {
-  objectKeys(config, ["ambient", "profiles", "initialProfileId", "schedule", "wind", "zones"], "weather");
+  objectKeys(config, ["ambient", "profiles", "initialProfileId", "schedule", "repeatSeconds", "wind", "zones"], "weather");
   for (const list of [config.profiles, config.schedule, config.zones]) {
     if (list !== undefined && !Array.isArray(list)) throw new Error("weather profiles, schedule and zones must be arrays");
     if (list !== undefined && list.length > MAX_ENTRIES) throw new Error(`weather lists are limited to ${MAX_ENTRIES} entries`);
@@ -138,9 +148,15 @@ export function validateAuthoredWeather(config: AuthoredWeatherConfig): void {
     if (!ids.has(entry.profileId)) throw new Error(`unknown weather profile: ${entry.profileId}`);
     if (entry.transitionSeconds !== undefined) finite(entry.transitionSeconds, "weather transition duration", 0, MAX_DOMAIN);
   }
+  if (config.repeatSeconds !== undefined) {
+    finite(config.repeatSeconds, "weather repeatSeconds", Number.MIN_VALUE, MAX_DOMAIN);
+    const last = config.schedule?.at(-1);
+    if (last !== undefined && last.atSeconds + (last.transitionSeconds ?? 0) >= config.repeatSeconds) throw new Error("weather repeatSeconds must outlast the schedule's last change");
+  }
   ids.clear();
   for (const zone of config.zones ?? []) {
-    objectKeys(zone, ["id", "center", "radius", "falloff", "weather", "wind", "radial"], "weather zone");
+    objectKeys(zone, ["id", "center", "radius", "falloff", "weather", "precipitationAs", "wind", "radial"], "weather zone");
+    if (zone.precipitationAs !== undefined && zone.precipitationAs !== "rain" && zone.precipitationAs !== "snow") throw new Error(`weather zone precipitationAs must be rain or snow: ${String(zone.precipitationAs)}`);
     identifier(zone.id, "weather zone id");
     if (zone.radial !== undefined && typeof zone.radial !== "boolean") throw new Error("weather zone radial must be boolean");
     if (!zone.id || ids.has(zone.id)) throw new Error(`invalid or duplicate weather zone: ${zone.id}`);
@@ -201,6 +217,10 @@ interface CompiledWeather {
   readonly ambientWind: WindField | null;
   readonly zones: readonly { readonly zone: AuthoredWeatherZone; readonly field: WindField | null }[];
   readonly transitions: readonly CompiledTransition[];
+  /** The loop length, and the schedule as it runs on later laps (starting from where a lap ends). */
+  readonly repeat: number | null;
+  readonly lapStart: Readonly<Blend>;
+  readonly laps: readonly CompiledTransition[];
 }
 
 function scheduledWeather(initial: Readonly<Blend>, transitions: readonly CompiledTransition[], time: number): Readonly<Blend> {
@@ -219,11 +239,19 @@ function compileWeather(source: AuthoredWeatherConfig): CompiledWeather {
   const initial = config.initialProfileId === undefined ? Object.freeze(blendOf(config.ambient ?? CLEAR)) : profiles.get(config.initialProfileId)!;
   const ambientWind = config.wind === undefined ? null : windField(config.wind);
   const zones = (config.zones ?? []).map((zone) => Object.freeze({ zone, field: zone.wind === undefined ? null : windField(zone.wind) }));
-  const transitions: CompiledTransition[] = [];
-  for (const entry of config.schedule ?? []) {
-    transitions.push(Object.freeze({ at: entry.atSeconds, duration: entry.transitionSeconds ?? 0, from: Object.freeze(scheduledWeather(initial, transitions, entry.atSeconds)), to: profiles.get(entry.profileId)! }));
-  }
-  return Object.freeze({ initial, profiles, ambientWind, zones: Object.freeze(zones), transitions: Object.freeze(transitions) });
+  const compile = (start: Readonly<Blend>): readonly CompiledTransition[] => {
+    const list: CompiledTransition[] = [];
+    for (const entry of config.schedule ?? []) {
+      list.push(Object.freeze({ at: entry.atSeconds, duration: entry.transitionSeconds ?? 0, from: Object.freeze(scheduledWeather(start, list, entry.atSeconds)), to: profiles.get(entry.profileId)! }));
+    }
+    return Object.freeze(list);
+  };
+  const transitions = compile(initial);
+  const repeat = config.repeatSeconds ?? null;
+  // A later lap begins as the first one ended.
+  const lapStart = repeat === null ? initial : Object.freeze(scheduledWeather(initial, transitions, repeat));
+  const laps = repeat === null ? transitions : compile(lapStart);
+  return Object.freeze({ initial, profiles, ambientWind, zones: Object.freeze(zones), transitions, repeat, lapStart, laps });
 }
 
 /** Pure authored weather sampling; the caller's simulation clock owns pause, replay and restore.
@@ -236,7 +264,10 @@ export function createAuthoredWeather(source: AuthoredWeatherConfig = {}): Autho
       finite(x, "weather sample x", -MAX_DOMAIN, MAX_DOMAIN);
       finite(z, "weather sample z", -MAX_DOMAIN, MAX_DOMAIN);
       finite(timeSeconds, "weather sample time", 0, MAX_DOMAIN);
-      let value = scheduledWeather(compiled.initial, compiled.transitions, timeSeconds);
+      let value =
+        compiled.repeat === null || timeSeconds < compiled.repeat
+          ? scheduledWeather(compiled.initial, compiled.transitions, timeSeconds)
+          : scheduledWeather(compiled.lapStart, compiled.laps, timeSeconds % compiled.repeat);
       const ambient = compiled.ambientWind?.atPoint(x, z, timeSeconds) ?? [0, 0];
       let wx = ambient[0]!;
       let wz = ambient[1]!;
@@ -249,6 +280,11 @@ export function createAuthoredWeather(source: AuthoredWeatherConfig = {}): Autho
         const t = distance <= zone.radius ? 1 : 1 - (distance - zone.radius) / falloff;
         const weight = t * t * (3 - 2 * t);
         if (zone.weather !== undefined) value = blend(value, blendOf(zone.weather), weight);
+        if (zone.precipitationAs !== undefined) {
+          const falling = value.rain + value.snow;
+          const as = zone.precipitationAs === "snow" ? { ...value, rain: 0, snow: falling } : { ...value, rain: falling, snow: 0 };
+          value = blend(value, as, weight);
+        }
         if (field !== null) {
           const vector = zoneWind(field, zone.radial ?? false, dx, dz, distance, timeSeconds);
           wx += vector[0] * weight;

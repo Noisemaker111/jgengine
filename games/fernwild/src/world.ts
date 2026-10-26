@@ -32,7 +32,8 @@ export const world = environment({
     // The sand band rides a little above the sea so beaches read wide; snow is painted by the snow biomes.
     detail: { waterLevel: 2.6, snowHeight: 10_000, sandColor: "#d8c58f" },
   }),
-  sky: sky({ preset: "day", timeOfDay: true, ...(authored.sky ?? {}) }),
+  // ARK keeps a long blue day; dawn and dusk are short.
+  sky: sky({ preset: "day", timeOfDay: true, dayHold: 0.2, ...(authored.sky ?? {}) }),
   water: [ocean({ bounds: { w: SIZE * 1.6, d: SIZE * 1.6 }, level: SEA_LEVEL, color: "#1a9cb8", waveHeight: 0.35, waveScale: 30, waveSpeed: 0.45 })],
   clearings: authored.clearings,
 });
