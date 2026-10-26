@@ -1,0 +1,13 @@
+{
+  "gpu": "ANGLE (NVIDIA, NVIDIA GeForce RTX 3070 (0x00002484) Direct3D11 vs_5_0 ps_5_0, D3D11)",
+  "games": {
+    "deepward": {
+      "worstClick": 636,
+      "sceneReady": 4871
+    },
+    "harbor-heat": {
+      "worstClick": 2168,
+      "sceneReady": 42084
+    }
+  }
+}

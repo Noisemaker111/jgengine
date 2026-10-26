@@ -210,3 +210,10 @@ test("editor contour strength is a live uniform", () => {
   handle.contour.value = 1;
   expect(shader.uniforms.uContour?.value).toBe(1);
 });
+
+test("each blended slot inlines the procedural surface once, so the terrain program stays small to compile", () => {
+  const fragment = compileFragment();
+  const slot = fragment.slice(fragment.indexOf("JgSurf jgSlot("), fragment.indexOf("vec2 jgWp ="));
+  expect(slot.match(/jgSurface\(/g)?.length).toBe(1);
+  expect(fragment.match(/jgSlot\(/g)?.length).toBe(3);
+});

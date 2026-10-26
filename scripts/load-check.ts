@@ -27,6 +27,8 @@ export const LOAD_USAGE = {
     { flag: "--trace", detail: "save a Chrome performance trace per game next to the results" },
     { flag: "--compare <json>", detail: "a previous results file; the table shows before -> after" },
     { flag: "--timeout s", detail: "give up on a game after this many seconds (default 90)" },
+    { flag: "--guard", detail: "fail when a game loads slower than scripts/load-baseline.json says (runner-only build; verify:fast runs it)" },
+    { flag: "--save-baseline", detail: "measure the games the way --guard does and write them into scripts/load-baseline.json" },
   ],
   example: "bun run shoot --load all --compare .scratch/load/before.json",
 } as const;
@@ -39,6 +41,10 @@ export interface LoadArgs {
   trace: boolean;
   compare: string | null;
   timeoutMs: number;
+  /** Compare against the saved baseline and exit 1 on a regression. */
+  guard: boolean;
+  /** Write this run into the saved baseline. */
+  saveBaseline: boolean;
 }
 
 /** Every game the site lists: a games/<id> folder with a src/index.tsx, llmville aside. */
@@ -50,7 +56,7 @@ export function siteGames(gamesDir = join(repoRoot, "games")): string[] {
 }
 
 export function parseLoadArgs(argv: readonly string[], known: readonly string[]): LoadArgs {
-  const args: LoadArgs = { games: [], runs: 1, build: true, headless: false, trace: false, compare: null, timeoutMs: 90_000 };
+  const args: LoadArgs = { games: [], runs: 1, build: true, headless: false, trace: false, compare: null, timeoutMs: 90_000, guard: false, saveBaseline: false };
   for (let index = 0; index < argv.length; index += 1) {
     const arg = argv[index]!;
     const value = () => {
@@ -65,6 +71,8 @@ export function parseLoadArgs(argv: readonly string[], known: readonly string[])
     else if (arg === "--trace") args.trace = true;
     else if (arg === "--compare") args.compare = value();
     else if (arg === "--timeout") args.timeoutMs = Math.max(5, Number(value())) * 1000;
+    else if (arg === "--guard") args.guard = true;
+    else if (arg === "--save-baseline") args.saveBaseline = true;
     else if (arg.startsWith("--")) throw new Error(`unknown flag ${arg}`);
     else args.games.push(...(arg === "all" ? known : arg.split(",").filter((id) => id.length > 0)));
   }
@@ -100,6 +108,8 @@ export interface LoadSample {
   menuLabel: string | null;
   /** The first console errors and uncaught exceptions, when there were any. */
   pageErrors?: string[];
+  /** The WebGL renderer string: timings are only comparable on the same GPU. */
+  gpu?: string;
   error?: string;
 }
 
@@ -231,6 +241,63 @@ export function renderTable(rows: readonly LoadSample[], before: readonly LoadSa
   return [header, rule, ...body].join("\n");
 }
 
+/** Where `--guard` keeps each game's accepted load on this machine's GPU. */
+export const BASELINE_FILE = join(repoRoot, "scripts", "load-baseline.json");
+
+export interface LoadBaseline {
+  gpu: string;
+  games: Record<string, { worstClick: number | null; sceneReady: number | null }>;
+}
+
+/**
+ * How much slower than its baseline a game may load before the guard fails it. The margins are
+ * run-to-run noise on one PC (a cold profile still varies by about a second), not slack.
+ */
+export const GUARD_LIMITS = {
+  worstClick: { ratio: 1.5, ms: 400, label: "worst freeze" },
+  sceneReady: { ratio: 1.3, ms: 1500, label: "scene ready" },
+} as const;
+
+/** Each way `now` loads worse than `base`, as a sentence; empty when it holds. */
+export function judgeLoad(game: string, base: LoadBaseline["games"][string], now: LoadSample): string[] {
+  if (now.error !== undefined) return [`${game}: ${now.error}`];
+  const failures: string[] = [];
+  for (const key of ["worstClick", "sceneReady"] as const) {
+    const was = base[key];
+    if (was === null) continue;
+    const { ratio, ms, label } = GUARD_LIMITS[key];
+    const limit = Math.round(Math.max(was * ratio, was + ms));
+    const is = now[key];
+    if (is === null) failures.push(`${game}: ${label} never happened (baseline ${was} ms)`);
+    else if (is > limit) failures.push(`${game}: ${label} ${is} ms, baseline ${was} ms, limit ${limit} ms`);
+  }
+  return failures;
+}
+
+/** The better of two runs per measure, so one noisy run cannot fail the guard. */
+export function bestOf(a: LoadSample, b: LoadSample): LoadSample {
+  const min = (x: number | null, y: number | null) => (x === null ? y : y === null ? x : Math.min(x, y));
+  const best: LoadSample = { ...b, worstClick: min(a.worstClick, b.worstClick), sceneReady: min(a.sceneReady, b.sceneReady) };
+  if (a.error === undefined || b.error === undefined) delete best.error;
+  return best;
+}
+
+function readBaseline(): LoadBaseline | null {
+  return existsSync(BASELINE_FILE) ? (JSON.parse(readFileSync(BASELINE_FILE, "utf8")) as LoadBaseline) : null;
+}
+
+/** The /play runner alone (apps/dev reads package source), so the guard skips the site and package builds. */
+const runnerRoot = join(repoRoot, ".scratch", "load", "runner");
+
+function buildRunner(): void {
+  console.error("load: building the /play runner for production…");
+  const result = spawnSync("bun", ["x", "vite", "build", "--base", "/play/", "--outDir", join(runnerRoot, "play"), "--emptyOutDir", "--logLevel", "warn"], {
+    cwd: join(repoRoot, "apps", "dev"),
+    stdio: "inherit",
+  });
+  if (result.status !== 0) throw new Error("load: the /play runner build failed");
+}
+
 function buildSite(): void {
   console.error("load: building the site (apps/web + /play) for production…");
   const result = spawnSync("bun", ["run", "--cwd", webRoot, "build"], { cwd: repoRoot, stdio: "inherit" });
@@ -242,8 +309,8 @@ function buildSite(): void {
  * `<path>/index.html` and the `_headers` cache rules. Every game page is prerendered, so no worker
  * code runs on the path this check measures.
  */
-export function serveSite(clientDir = join(webRoot, "dist", "client")): { base: string; stop: () => void } {
-  if (!existsSync(join(clientDir, "index.html"))) throw new Error("load: no production build in apps/web/dist; drop --no-build");
+export function serveSite(clientDir = join(webRoot, "dist", "client"), entry = "index.html"): { base: string; stop: () => void } {
+  if (!existsSync(join(clientDir, entry))) throw new Error(`load: no production build at ${join(clientDir, entry)}; drop --no-build`);
   const resolve = (pathname: string): string | null => {
     const clean = decodeURIComponent(pathname).replace(/\.\.+/g, "");
     for (const candidate of [clean, `${clean}/index.html`, `${clean}.html`]) {
@@ -275,7 +342,7 @@ async function playFrame(page: Page): Promise<Frame | null> {
   return page.frames().find((frame) => new URL(frame.url(), "http://x").pathname.startsWith("/play")) ?? null;
 }
 
-async function measureOnce(base: string, game: string, args: LoadArgs, shotDir: string): Promise<LoadSample> {
+async function measureOnce(base: string, game: string, path: string, args: LoadArgs, shotDir: string): Promise<LoadSample> {
   const started = await startBrowser({ debugPort: pickDebugPort(), prefix: "jg-load-", headed: !args.headless });
   const browser = await chromium.connectOverCDP(`http://127.0.0.1:${started.debugPort}`);
   const sample: LoadSample = { game, firstPaint: null, menuShown: null, worstClick: null, sceneReady: null, playable: null, longestTaskMs: 0, blockingMs: 0, transferKb: 0, menuLabel: null };
@@ -300,7 +367,7 @@ async function measureOnce(base: string, game: string, args: LoadArgs, shotDir: 
         categories: ["devtools.timeline", "v8.execute", "disabled-by-default-devtools.timeline", "disabled-by-default-devtools.timeline.frame", "disabled-by-default-v8.cpu_profiler", "blink.user_timing", "gpu", "loading"],
       });
     }
-    const navigation = page.goto(`${base}/games/${game}`, { waitUntil: "commit", timeout: args.timeoutMs });
+    const navigation = page.goto(`${base}${path}`, { waitUntil: "commit", timeout: args.timeoutMs });
     await navigation;
     const origin = await page.evaluate(() => performance.timeOrigin);
     const deadline = Date.now() + args.timeoutMs;
@@ -312,7 +379,7 @@ async function measureOnce(base: string, game: string, args: LoadArgs, shotDir: 
       // Play is pressed once the scene behind the menu has settled, or after a long wait.
       const settled = state !== null && (state.sceneReadyAt !== null || (state.menuAt !== null && Date.now() - state.menuAt > PRESS_AFTER_MENU_MS));
       if (state !== null && state.menuBox !== null && !pressed && settled) {
-        const box = await (await frame!.frameElement()).boundingBox();
+        const box = frame === page.mainFrame() ? { x: 0, y: 0 } : await (await frame!.frameElement()).boundingBox();
         if (box !== null) {
           pressed = true;
           // Not awaited: a press into a frozen page only resolves once the page takes it.
@@ -334,6 +401,13 @@ async function measureOnce(base: string, game: string, args: LoadArgs, shotDir: 
       sample.playable = rel(state.playableAt);
       sample.menuLabel = state.menuLabel;
     }
+    sample.gpu = (await page
+      .evaluate(() => {
+        const gl = document.createElement("canvas").getContext("webgl2");
+        const info = gl?.getExtension("WEBGL_debug_renderer_info");
+        return gl && info ? String(gl.getParameter(info.UNMASKED_RENDERER_WEBGL)) : "unknown";
+      })
+      .catch(() => "unknown")) as string;
     const frame = await playFrame(page);
     const tasks = [
       ...(state?.tasks ?? []),
@@ -358,29 +432,57 @@ async function measureOnce(base: string, game: string, args: LoadArgs, shotDir: 
   return sample;
 }
 
-async function main(): Promise<void> {
+async function main(): Promise<number> {
   const argv = process.argv.slice(2);
   printHelpIfAsked("shoot --load", LOAD_USAGE, argv);
   const args = parseLoadArgs(argv, siteGames());
-  if (args.build) buildSite();
+  const runner = args.guard || args.saveBaseline;
+  if (runner && process.env.CI !== undefined) {
+    console.error("load: the load guard needs this PC's GPU and never runs in CI; skipped");
+    return 0;
+  }
+  if (args.build) (runner ? buildRunner : buildSite)();
   const outDir = join(repoRoot, ".scratch", "load");
   mkdirSync(outDir, { recursive: true });
   const stamp = new Date().toISOString().replace(/[:.]/g, "-");
   const runDir = join(outDir, stamp);
   mkdirSync(runDir, { recursive: true });
   const before = args.compare === null ? [] : (JSON.parse(readFileSync(args.compare, "utf8")) as { rows: LoadSample[] }).rows;
-  const server = serveSite();
+  const server = runner ? serveSite(runnerRoot, join("play", "index.html")) : serveSite();
+  const pathOf = (game: string) => (runner ? `/play/?game=${game}` : `/games/${game}`);
+  const baseline = readBaseline();
   const rows: LoadSample[] = [];
   const allSamples: LoadSample[] = [];
+  const failures: string[] = [];
+  const log = (game: string, run: number, sample: LoadSample) =>
+    console.error(`load: ${game} run ${run}: paint ${cell(sample.firstPaint)} menu ${cell(sample.menuShown)} worst click ${cell(sample.worstClick)} scene ${cell(sample.sceneReady)} playable ${cell(sample.playable)} ms${sample.error === undefined ? "" : ` (${sample.error})`}`);
   try {
     for (const game of args.games) {
       const samples: LoadSample[] = [];
       for (let run = 0; run < args.runs; run += 1) {
-        const sample = await measureOnce(server.base, game, args, runDir);
-        console.error(`load: ${game} run ${run + 1}: paint ${cell(sample.firstPaint)} menu ${cell(sample.menuShown)} worst click ${cell(sample.worstClick)} scene ${cell(sample.sceneReady)} playable ${cell(sample.playable)} ms${sample.error === undefined ? "" : ` (${sample.error})`}`);
+        const sample = await measureOnce(server.base, game, pathOf(game), args, runDir);
+        log(game, run + 1, sample);
         samples.push(sample);
       }
-      rows.push(summarizeRuns(samples));
+      let row: LoadSample = { ...summarizeRuns(samples), ...(samples[0]?.gpu === undefined ? {} : { gpu: samples[0].gpu }) };
+      if (args.guard) {
+        const accepted = baseline?.games[game];
+        if (baseline === null || accepted === undefined || baseline.gpu !== row.gpu) {
+          console.error(`load: no baseline for ${game} on ${row.gpu ?? "this GPU"}; record one with: bun run shoot --load ${game} --save-baseline`);
+        } else {
+          let judged = judgeLoad(game, accepted, row);
+          if (judged.length > 0) {
+            // A second cold run before failing: one slow start is noise, two are the change.
+            const again = await measureOnce(server.base, game, pathOf(game), args, runDir);
+            log(game, samples.length + 1, again);
+            samples.push(again);
+            row = bestOf(row, again);
+            judged = judgeLoad(game, accepted, row);
+          }
+          failures.push(...judged);
+        }
+      }
+      rows.push(row);
       allSamples.push(...samples);
     }
   } finally {
@@ -390,8 +492,23 @@ async function main(): Promise<void> {
   writeFileSync(file, `${JSON.stringify({ at: new Date().toISOString(), runs: args.runs, rows, samples: allSamples }, null, 2)}\n`);
   console.log(renderTable(rows, before));
   console.error(`load: results, end-of-run screenshots${args.trace ? " and traces" : ""} in ${runDir}`);
+  if (args.saveBaseline) {
+    const gpu = rows[0]?.gpu ?? "unknown";
+    const games = { ...(baseline !== null && baseline.gpu === gpu ? baseline.games : {}) };
+    for (const row of rows) if (row.error === undefined) games[row.game] = { worstClick: row.worstClick, sceneReady: row.sceneReady };
+    const sorted = Object.fromEntries(Object.entries(games).sort(([a], [b]) => a.localeCompare(b)));
+    writeFileSync(BASELINE_FILE, `${JSON.stringify({ gpu, games: sorted } satisfies LoadBaseline, null, 2)}\n`);
+    console.error(`load: baseline for ${rows.map((row) => row.game).join(", ")} written to scripts/load-baseline.json`);
+  }
+  if (failures.length > 0) {
+    console.error(`load guard: ${failures.length} regression(s) against scripts/load-baseline.json:`);
+    for (const failure of failures) console.error(`  ${failure}`);
+    console.error("load guard: find the slow shader or task with `bun run shoot --load <game> --trace`; a deliberate cost re-records with --save-baseline");
+    return 1;
+  }
+  return 0;
 }
 
 if (import.meta.main) {
-  await main();
+  process.exit(await main());
 }
