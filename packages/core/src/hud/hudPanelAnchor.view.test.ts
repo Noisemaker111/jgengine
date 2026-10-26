@@ -67,7 +67,7 @@ async function placed(): Promise<Record<Id, Placed>> {
     for (const id of ["build", "rites", "tower"]) {
       const el = document.querySelector(`[data-hud-panel="${id}"]`);
       const r = el!.getBoundingClientRect();
-      out[id] = { region: el!.closest("[data-hud-region]")?.getAttribute("data-hud-region") ?? null, left: r.left, top: r.top, right: r.right, bottom: r.bottom };
+      out[id] = { region: el!.getAttribute("data-hud-anchor"), left: r.left, top: r.top, right: r.right, bottom: r.bottom };
     }
     return out as Record<Id, Placed>;
   });

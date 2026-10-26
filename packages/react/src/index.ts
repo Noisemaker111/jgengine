@@ -67,7 +67,7 @@ export * from "@jgengine/core/cards/cards.view";
 export * from "@jgengine/core/hud/actionHud.view";
 export * from "@jgengine/core/hud/selectionHud.view";
 export * from "@jgengine/core/hud/hudLayout.view";
-export * from "@jgengine/core/hud/hudLanes";
+export * from "@jgengine/core/hud/hudPanelLayout";
 export * from "@jgengine/core/hud/hudLayoutPersist.view";
 export * from "@jgengine/core/hud/hudViewport.view";
 export * from "@jgengine/core/ui/viewport.view";

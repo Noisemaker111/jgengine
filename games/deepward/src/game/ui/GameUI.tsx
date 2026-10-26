@@ -1,4 +1,4 @@
-import { useEffect, useState, useSyncExternalStore } from "react";
+import { useEffect, useState } from "react";
 import { HudCanvas, HudPanel, useHudLayout } from "@jgengine/react";
 import { useBrowserSuspension, useDialogBehavior } from "@jgengine/react";
 import { useOptionalGamePhase } from "@jgengine/react/hooks";
@@ -19,7 +19,6 @@ import { counterRows, marrowStanding, OPERATOR, SCRIP, scripJournal } from "../c
 import { ItemMark } from "./ItemMark";
 import { DeepwardMenu } from "./menu/DeepwardMenu";
 import { RECORD_KEY, SAVE_KEY } from "../save";
-import { placement } from "./hudPanels";
 import { ActionPlate, DepthStrip, DiveComputer, Docket, HoldTab, KitCounter, CommsLine, VisorReticle, SearchBar, Visor } from "./VisorHud";
 import { FabricatorSheet } from "./FabricatorSheet";
 import { marrowOf } from "../marrow";
@@ -28,15 +27,6 @@ import { crushDamage, STRATA } from "../strata";
 import { useGameFonts } from "@jgengine/core/ui/fonts.view";
 import { GAME_FONTS } from "../../art/fonts/fonts";
 
-const PORTRAIT = "(max-aspect-ratio: 4/5)";
-/** A tall phone: the visor's readouts move to the top corners so the bottom lane stays free. */
-function usePortrait(): boolean {
-  return useSyncExternalStore(
-    notify => { const query = window.matchMedia(PORTRAIT); query.addEventListener("change", notify); return () => query.removeEventListener("change", notify); },
-    () => window.matchMedia(PORTRAIT).matches,
-    () => false,
-  );
-}
 function grab(): void {
   const canvas = document.querySelector("canvas");
   // The published shell receives keys on its focusable canvas wrapper. A menu
@@ -66,7 +56,6 @@ export function GameUI() {
   useGameFonts(GAME_FONTS);
   const ctx = useGameContext(), view = useStore(viewStore);
   const hud = useHudLayout({ storageKey: "deepward.hud" });
-  const portrait = usePortrait();
   const phase = useOptionalGamePhase();
   const at = useGameStore(state => state.scene.entity.get(state.player.userId)?.position ?? [0, 0, 14] as const);
   const target = useGameStore(nearby);
@@ -137,26 +126,26 @@ export function GameUI() {
     <Visor low={low} hurt={dive !== null && dive.hurt > 0} />
     {dive !== null && dive.hurt > 0 && <div className="dw-hurtwash" aria-hidden="true" />}
     {dive !== null && <VisorReticle hit={dive.flash > 0} />}
-    <HudCanvas layout={hud} editChord={false} compactScale={0.86}>
-      <HudPanel {...placement("shift", portrait)} compact="keep" locked>
+    <HudCanvas layout={hud} editChord={false}>
+      <HudPanel id="shift" anchor="top-right" priority="critical" locked>
         <HoldTab disabled={view.mode !== "home" && view.mode !== "dive"} onPause={() => command("pause")} />
       </HudPanel>
       {dive !== null && <>
-        <HudPanel {...placement("depth", portrait)} compact="keep" interactive={false} locked>
+        <HudPanel id="depth" anchor="top" interactive={false} locked>
           <DepthStrip room={depthRoom} />
         </HudPanel>
-        <HudPanel {...placement("air", portrait)} compact="keep" interactive={false} locked>
+        <HudPanel id="air" anchor="bottom-left" priority="critical" interactive={false} locked>
           <DiveComputer oxygen={dive.oxygen} tank={dive.tankSeconds} health={dive.health} rail={groundDistance(at, EXIT)} sealed={dive.tankSeconds > 110} low={low} hurt={dive.hurt > 0}
             body={body} seal={{ mark: sealMark(view.deep), pressure: STRATA[stratum].pressure, crushing: crushDamage(stratum, sealMark(view.deep)) > 0 }}
             belt={{ ...dive.belt, lamp: dive.lamp }} />
         </HudPanel>
-        <HudPanel {...placement("haul", portrait)} compact="keep" locked>
+        <HudPanel id="haul" anchor="bottom-right" priority="critical" locked>
           <KitCounter weapon={weapon.label} loaded={view.ammo?.loaded ?? null} capacity={view.ammo?.capacity ?? null} reserve={view.ammo?.reserve ?? 0}
             reloading={view.ammo?.reloading ? Math.round((1 - view.ammo.reloadProgress) * 1.3 * 10) / 10 : null}
             items={dive.cache.length} mass={load.mass} capacityWeight={CACHE_WEIGHT} onCache={() => command("cache")} />
         </HudPanel>
       </>}
-      {view.mode === "home" && view.panel === null && <HudPanel {...placement("home", portrait)} compact="keep" interactive={false} locked>
+      {view.mode === "home" && view.panel === null && <HudPanel id="home" anchor="top-left" interactive={false} locked>
         <Docket life={view.home.life} scrip={view.home.bank.banked} stash={view.home.stash.length} returns={view.home.extractions} lost={view.home.deaths}
           standing={`${marrowTier.id} / ${marrowScore}`}
           next={`${goal?.text ?? "Pattern 406 is home."} · ${view.rifleUid === null ? "issue sidearm" : `${prepared?.name ?? "service rifle"} at risk`}`}
@@ -164,10 +153,10 @@ export function GameUI() {
           base={{ food: body.food, water: body.water, power: base.num("marrow.power"), meals: base.num("marrow.food"), flasks: base.num("marrow.water") }}
           last={view.home.last === null ? null : { kind: view.home.last.kind, reason: view.home.last.reason }} />
       </HudPanel>}
-      <HudPanel {...placement("radio", portrait)} compact="keep" interactive={false} locked>
+      <HudPanel id="radio" anchor="bottom" order={1} interactive={false} locked>
         <CommsLine hint={view.hint} error={view.error && view.mode !== "saving" && view.mode !== "blocked" ? view.error : null} />
       </HudPanel>
-      <HudPanel {...placement("prompt", portrait)} compact="keep" locked>
+      <HudPanel id="prompt" anchor="bottom" priority="critical" locked>
         {dive?.channel !== null && dive?.channel !== undefined ? <SearchBar remaining={dive.channel.remaining} total={dive.channel.total ?? 1.4} label={channelLabel[dive.channel.kind ?? "search"]} />
           : target !== null && view.panel === null && !view.paused ? <ActionPlate label={target.label} onAct={() => { command("interact"); const next = viewStore.read(ctx); if (!next.paused && next.panel === null && (next.mode === "home" || next.mode === "dive")) grab(); }} />
           : null}

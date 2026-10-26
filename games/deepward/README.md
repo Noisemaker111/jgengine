@@ -56,11 +56,10 @@ verdict) before either is risked. Dismantling a banked instance pays its
 salvage value once and spends it: the shared ledger refuses to equip, sell or
 pay for that instance again.
 
-The HUD is a `HudCanvas` of lane slabs, not hand-placed offsets: the shift
-plate and the departure docket stack in one top-left lane, buttons and tank in
-the top-right lane, the rail feed at the bottom. `detectLayoutCollisions` reports
-nothing at 1600 × 900 or at 844 × 390, and a panel added to a lane can only
-take free space.
+The HUD is a `HudCanvas` of anchored panels, not hand-placed offsets: the
+dive computer bottom-left, the kit counter bottom-right, the depth strip on the
+brow, the action plate and the radio at the bottom. The canvas places them all
+at once, so no panel lands on another at any screen size.
 
 A lost Life now stops at Halloway's reprint screen. The loss is already saved;
 accept the next Life before moving or departing again. Reloading at this screen

@@ -75,11 +75,11 @@ export function GameUI() {
       {!modal && <>
         <HudPanel id="clock" anchor="top-left" priority="critical"><HouseClock compact={compact} /></HudPanel>
         <HudPanel id="fridge" anchor="top-right" priority="critical"><FridgeMagnets compact={phone} /></HudPanel>
-        {!sheetOpen && <HudPanel id="charter" anchor="top-right" order={1} priority="secondary"><CharterNote compact={phone} /></HudPanel>}
+        {!sheetOpen && <HudPanel id="charter" anchor="top-right" order={1} chip="charter"><CharterNote compact={phone} /></HudPanel>}
         {household.incident != null && household.charter?.review == null && <HudPanel id="transmission" anchor="top" priority="critical"><TransmissionSlip /></HudPanel>}
-        {!(phone && sheetOpen) && <HudPanel id="roster" anchor={phone ? "bottom" : "left"} order={phone ? 1 : 0} priority="critical"><RosterPanel compact={compact} /></HudPanel>}
-        {household.selectedMemberId && !drawer && <HudPanel id="inspector" anchor={phone ? "bottom" : "right"} order={phone ? 2 : 0} priority="secondary"><Inspector /></HudPanel>}
-        {drawer && <HudPanel id="drawer" anchor={phone ? "bottom" : "right"} order={phone ? 2 : 0} priority="secondary">
+        <HudPanel id="roster" anchor="left" priority="critical"><RosterPanel compact={compact} /></HudPanel>
+        {household.selectedMemberId && !drawer && <HudPanel id="inspector" anchor="right" priority="critical"><Inspector /></HudPanel>}
+        {drawer && <HudPanel id="drawer" anchor="right" priority="critical">
           <KitPanel material="paper" cut="box" padding="0" edgeWidth={0} shadow={false} className="orbit-drawer" as="section" aria-label={drawer === "build" ? "Habitat furnishings" : "Daily balance"}>
             <header>
               <span className="orbit-drawer-icon"><GameIcon name={drawer === "build" ? "hammer" : "bread"} size={22} /></span>
@@ -112,7 +112,7 @@ export function GameUI() {
             </div>
           </KitPanel>
         </HudPanel>}
-        <HudPanel id="actions" anchor={landscape ? "bottom-left" : "bottom"} priority="critical">
+        <HudPanel id="actions" anchor="bottom" priority="critical">
           <nav className="orbit-tray" aria-label="Habitat tools">
             <Enamel as="button" tone="butter" radius={20} padding="0" className="orbit-tool" aria-expanded={drawer === "build"} onClick={() => setDrawer(drawer === "build" ? null : "build")}>
               <GameIcon name="hammer" size={22} /><span>Furnish</span>

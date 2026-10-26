@@ -446,11 +446,14 @@ function specKey(spec: LayoutRegionSpec): string {
  * Register the element behind `ref` as a layout region and keep its measured
  * rectangle live (ResizeObserver + viewport changes). No-op outside a
  * `GameViewportProvider`, so a component using it still works in isolation.
+ * Pass a new `placement` whenever the caller moves the element without resizing it,
+ * so the region is measured again where it now sits.
  */
 export function useRegisterLayoutRegion(
   spec: LayoutRegionSpec,
   ref: RefObject<HTMLElement | null>,
   enabled = true,
+  placement?: string,
 ): void {
   const registry = useContext(RegionRegistryContext);
   const specRef = useRef(spec);
@@ -490,5 +493,5 @@ export function useRegisterLayoutRegion(
       }
       registry.remove(specRef.current.id);
     };
-  }, [registry, ref, key, enabled]);
+  }, [registry, ref, key, enabled, placement]);
 }
