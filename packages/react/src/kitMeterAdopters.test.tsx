@@ -1,7 +1,7 @@
 import { describe, expect, test } from "bun:test";
 import { renderToStaticMarkup } from "react-dom/server";
 
-import { createWaveRunner } from "@jgengine/core/ai/waveRunner";
+import { createWaveRunner } from "@jgengine/core/waves/waveRunner";
 import { createComboMeter } from "@jgengine/core/combat/comboMeter";
 import { createDialogueRun } from "@jgengine/core/game/dialogueGraph";
 import { createTalentTree } from "@jgengine/core/game/talents";

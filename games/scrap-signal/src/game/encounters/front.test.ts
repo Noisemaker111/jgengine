@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, test } from "bun:test";
 import { createBossState } from "@jgengine/core/ai/director/boss";
-import { expandWave } from "@jgengine/core/ai/director/encounter";
+import { expandWave } from "@jgengine/core/waves/encounter";
 import type { FighterState } from "@jgengine/core/ai/director/roles";
 
 import { assignFrontDuties, frontPressure, stageFrontBoss, stepForeman } from "./front";

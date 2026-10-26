@@ -1,4 +1,4 @@
-import { createEncounter, type EncounterGroup, type EncounterOrder, type EncounterWave } from "@jgengine/core/ai/director/encounter";
+import { createEncounter, type EncounterGroup, type EncounterOrder, type EncounterWave } from "@jgengine/core/waves/encounter";
 import { gamePhase } from "@jgengine/core/game/gamePhase";
 import { advancePathFollow, createPathFollow, type PathFollowState, type Waypoint } from "@jgengine/core/nav/pathFollow";
 import type { GameContext } from "@jgengine/core/runtime/gameContext";

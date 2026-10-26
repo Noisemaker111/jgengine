@@ -37,6 +37,10 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `createPairKeyCodec` (function) · `import { createPairKeyCodec } from "@jgengine/core/gameplay"`
 
+## build-keys — one numbered build command per build piece
+
+- `defineBuildKeys` (function) · `import { defineBuildKeys } from "@jgengine/core/worldModel/buildTool"`
+
 ## cancel-scheduled-rule — remove a scheduled rule and its cursor entirely
 
 - `cancelRule` (function) · `import { cancelRule } from "@jgengine/core/gameplay"`
@@ -531,6 +535,10 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `createPingSystem` (function) · `import { createPingSystem } from "@jgengine/core/gameplay"`
 
+## place-piece — place a build piece in a world model with on-screen refusals
+
+- `placePiece` (function) · `import { placePiece } from "@jgengine/core/worldModel/buildTool"`
+
 ## pointer-commands — click an entity or the ground to run a command (click-to-target, click-to-move, grab loot, marquee select, Shift/double-click select modifiers, RTS control groups)
 
 - `PointerConfig` (interface) · `import { PointerConfig } from "@jgengine/core/gameplay"`
@@ -577,11 +585,16 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 ## quest-catalog-validation — diagnose authored quest ids, prerequisite and reward references, quantities, and blocked dependencies with caller-declared external unlocks
 
-- `validateQuestCatalog` (function) · `import { validateQuestCatalog } from "@jgengine/core/game/questCatalog"`
+- `validateQuestCatalog` (function) · `import { validateQuestCatalog } from "@jgengine/core/mission/questCatalog"`
 
-## quest-log — track accepted quests and their per-objective progress
+## quest-log — track accepted quests and their objective progress from game events
 
+- `createQuestEvaluator` (function) · `import { createQuestEvaluator } from "@jgengine/core/mission/quest"`
 - `createQuestJournal` (function) · `import { createQuestJournal } from "@jgengine/core/gameplay"`
+
+## quest-rewards — grant a quest or mission reward bundle: items, XP, currency and unlocks
+
+- `applyQuestRewards` (function) · `import { applyQuestRewards } from "@jgengine/core/mission/quest"`
 
 ## quest-tracker-view — join a QuestDef + live QuestInstance into a flat labelled view for a quest/objective HUD tracker
 

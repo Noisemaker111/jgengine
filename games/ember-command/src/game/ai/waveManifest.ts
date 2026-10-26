@@ -1,5 +1,5 @@
-import type { EncounterDefinition } from "@jgengine/core/ai/director/encounter";
-import type { EncounterConfig as PlanConfig } from "@jgengine/core/combat/encounterSequence";
+import type { EncounterDefinition } from "@jgengine/core/waves/encounter";
+import type { EncounterSequenceConfig as PlanConfig } from "@jgengine/core/waves/encounterSequence";
 
 import { ENEMY_WAVE_INTERVAL } from "../tuning";
 

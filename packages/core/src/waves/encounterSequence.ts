@@ -60,9 +60,9 @@ export interface PhaseRuntime {
  * Full serializable encounter state: the working phase tree (including any injected
  * phases), a per-node runtime map, the active path from root to the deepest open node,
  * accumulated time, and whether the sequence has finished. Round-trips through JSON with
- * no behavioral change; the registries live in {@link EncounterConfig}, not here.
+ * no behavioral change; the registries live in {@link EncounterSequenceConfig}, not here.
  */
-export interface EncounterState<TData = unknown> {
+export interface EncounterSequenceState<TData = unknown> {
   roots: EncounterPhase<TData>[];
   nodes: Record<string, PhaseRuntime>;
   /** Ids from a root down to the deepest open node; empty before start and once done. */
@@ -150,16 +150,16 @@ export type EncounterEvent =
 
 /** Result of a step: the (mutated, returned) state and the events emitted this step. */
 export interface EncounterStep<TData = unknown> {
-  state: EncounterState<TData>;
+  state: EncounterSequenceState<TData>;
   events: EncounterEvent[];
 }
 
 /**
  * Non-serializable configuration for an encounter: the authored phase tree plus predicate
- * and spawn-provider registries. Re-supplied alongside a loaded {@link EncounterState}, the
+ * and spawn-provider registries. Re-supplied alongside a loaded {@link EncounterSequenceState}, the
  * way `advanceSpawnDirector` pairs config with state, so the state itself stays pure data.
  */
-export interface EncounterConfig<TData = unknown> {
+export interface EncounterSequenceConfig<TData = unknown> {
   phases: readonly EncounterPhase<TData>[];
   /** Extra predicates, merged over the built-ins (a same-named entry overrides). */
   predicates?: Readonly<Record<string, CompletionPredicate>>;
@@ -198,7 +198,7 @@ function readString(params: Readonly<Record<string, unknown>>, key: string): str
  * marker), `manual`/`flag` (external event via a caller flag), `timer` (phase seconds),
  * `cleared` (tagged entity count drained), `metric` (threshold on a live value), `event`
  * (cumulative event count), and `quorum` (at least N of nested predicates met). Merge your
- * own over these through {@link EncounterConfig.predicates}.
+ * own over these through {@link EncounterSequenceConfig.predicates}.
  *
  * @capability encounter-predicates gate encounter phase completion on timers, cleared spawns, metrics, events, or a quorum of conditions
  */
@@ -250,7 +250,7 @@ export const BUILTIN_COMPLETION_PREDICATES: Readonly<Record<string, CompletionPr
  * Built-in spawn providers. `points` reads a named authored scene point list from context
  * and cycles it to emit `count` requests, keeping coordinates in the scene rather than the
  * sequence. `list` echoes literal requests authored in `params.requests`. Merge your own
- * catalog- or director-backed providers through {@link EncounterConfig.spawnProviders}.
+ * catalog- or director-backed providers through {@link EncounterSequenceConfig.spawnProviders}.
  *
  * @capability encounter-spawn-providers turn an entered encounter phase into spawn requests from authored scene points or an inline list
  */
@@ -293,7 +293,7 @@ function indexTree<TData>(
   }
 }
 
-function ensureRuntime<TData>(state: EncounterState<TData>, id: string): PhaseRuntime {
+function ensureRuntime<TData>(state: EncounterSequenceState<TData>, id: string): PhaseRuntime {
   let runtime = state.nodes[id];
   if (runtime === undefined) {
     runtime = { status: "pending", iteration: 0, enteredAt: state.elapsed };
@@ -310,7 +310,7 @@ function ensureRuntime<TData>(state: EncounterState<TData>, id: string): PhaseRu
  *
  * @capability encounter-state create the serializable starting state of a hierarchical encounter sequence
  */
-export function createEncounterState<TData>(config: EncounterConfig<TData>): EncounterState<TData> {
+export function createEncounterState<TData>(config: EncounterSequenceConfig<TData>): EncounterSequenceState<TData> {
   const ids = new Set<string>();
   collectIds(config.phases, ids);
   const roots = config.phases.map(clone);
@@ -324,7 +324,7 @@ interface TreeAccess<TData> {
   siblingsOf(id: string): readonly EncounterPhase<TData>[];
 }
 
-function access<TData>(state: EncounterState<TData>): TreeAccess<TData> {
+function access<TData>(state: EncounterSequenceState<TData>): TreeAccess<TData> {
   const index = new Map<string, { phase: EncounterPhase<TData>; parent: EncounterPhase<TData> | null }>();
   indexTree(state.roots, null, index);
   return {
@@ -336,7 +336,7 @@ function access<TData>(state: EncounterState<TData>): TreeAccess<TData> {
   };
 }
 
-function resetSubtree<TData>(state: EncounterState<TData>, phase: EncounterPhase<TData>): void {
+function resetSubtree<TData>(state: EncounterSequenceState<TData>, phase: EncounterPhase<TData>): void {
   const runtime = ensureRuntime(state, phase.id);
   runtime.status = "pending";
   if (phase.children !== undefined) for (const child of phase.children) resetSubtree(state, child);
@@ -348,8 +348,8 @@ function resetSubtree<TData>(state: EncounterState<TData>, phase: EncounterPhase
  * as the new cursor. Bounded by tree depth.
  */
 function enterChain<TData>(
-  config: EncounterConfig<TData>,
-  state: EncounterState<TData>,
+  config: EncounterSequenceConfig<TData>,
+  state: EncounterSequenceState<TData>,
   tree: TreeAccess<TData>,
   startId: string,
   ctx: EncounterContext,
@@ -398,8 +398,8 @@ function enterChain<TData>(
  * @capability encounter-start enter the first phase of a hierarchical encounter and emit its opening spawn events
  */
 export function startEncounter<TData>(
-  config: EncounterConfig<TData>,
-  state: EncounterState<TData>,
+  config: EncounterSequenceConfig<TData>,
+  state: EncounterSequenceState<TData>,
   ctx: EncounterContext = {},
 ): EncounterStep<TData> {
   const events: EncounterEvent[] = [];
@@ -411,10 +411,10 @@ export function startEncounter<TData>(
 }
 
 function predicateMet<TData>(
-  config: EncounterConfig<TData>,
+  config: EncounterSequenceConfig<TData>,
   phase: EncounterPhase<TData>,
   runtime: PhaseRuntime,
-  state: EncounterState<TData>,
+  state: EncounterSequenceState<TData>,
   ctx: EncounterContext,
 ): { met: boolean; reason: string } {
   const completion = phase.completion;
@@ -443,8 +443,8 @@ function predicateMet<TData>(
  * @capability encounter-advance step a hierarchical encounter, resolving predicate-gated completion, repeats, and nested advance with lifecycle events
  */
 export function updateEncounter<TData>(
-  config: EncounterConfig<TData>,
-  state: EncounterState<TData>,
+  config: EncounterSequenceConfig<TData>,
+  state: EncounterSequenceState<TData>,
   dt: number,
   ctx: EncounterContext = {},
 ): EncounterStep<TData> {
@@ -505,8 +505,8 @@ export function updateEncounter<TData>(
  * @capability encounter-force-complete externally complete an active encounter phase to drive scripted or failure-retry transitions
  */
 export function forceCompletePhase<TData>(
-  config: EncounterConfig<TData>,
-  state: EncounterState<TData>,
+  config: EncounterSequenceConfig<TData>,
+  state: EncounterSequenceState<TData>,
   ctx: EncounterContext = {},
   phaseId?: string,
 ): EncounterStep<TData> {
@@ -524,7 +524,7 @@ export function forceCompletePhase<TData>(
   if (entry === undefined) return { state, events };
   const originalCompletion = entry.phase.completion;
   entry.phase.completion = { kind: "__forced__" };
-  const forcedConfig: EncounterConfig<TData> = {
+  const forcedConfig: EncounterSequenceConfig<TData> = {
     ...config,
     predicates: { ...config.predicates, __forced__: () => true },
   };
@@ -545,10 +545,10 @@ export function forceCompletePhase<TData>(
  * @capability encounter-inject-phase dynamically insert a phase or branch into a running encounter, e.g. a boss on the final wave
  */
 export function injectPhase<TData>(
-  state: EncounterState<TData>,
+  state: EncounterSequenceState<TData>,
   phase: EncounterPhase<TData>,
   at: PhaseInjectAt,
-): EncounterState<TData> {
+): EncounterSequenceState<TData> {
   const existing = new Set<string>();
   collectIds(state.roots, existing);
   const incoming = new Set<string>();
@@ -587,7 +587,7 @@ export function injectPhase<TData>(
  *
  * @capability encounter-active-phase read the id of the phase an encounter is currently waiting on
  */
-export function activePhaseId<TData>(state: EncounterState<TData>): string | null {
+export function activePhaseId<TData>(state: EncounterSequenceState<TData>): string | null {
   return state.activePath.length > 0 ? state.activePath[state.activePath.length - 1]! : null;
 }
 
@@ -597,7 +597,7 @@ export function activePhaseId<TData>(state: EncounterState<TData>): string | nul
  *
  * @capability encounter-phase-status read whether a specific encounter phase is pending, active, or complete
  */
-export function phaseStatus<TData>(state: EncounterState<TData>, id: string): PhaseStatus | null {
+export function phaseStatus<TData>(state: EncounterSequenceState<TData>, id: string): PhaseStatus | null {
   return state.nodes[id]?.status ?? null;
 }
 
@@ -607,7 +607,7 @@ export function phaseStatus<TData>(state: EncounterState<TData>, id: string): Ph
  *
  * @capability encounter-progress read completed-vs-total progress across a hierarchical encounter for HUD or objective display
  */
-export function encounterProgress<TData>(state: EncounterState<TData>): {
+export function encounterProgress<TData>(state: EncounterSequenceState<TData>): {
   completed: number;
   total: number;
   done: boolean;

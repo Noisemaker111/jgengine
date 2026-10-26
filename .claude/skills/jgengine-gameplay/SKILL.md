@@ -78,7 +78,7 @@ pickup. Declare a stash as its own inventory (`tier: "banked"`) and move items w
 through `<InventoryGrid>` with `<EquipmentSlots>` above it. See
 [inventory, equipment and weight](reference-systems.md#inventory-equipment-and-weight).
 
-Validate generated quest catalogs with `validateQuestCatalog` (`game/questCatalog`).
+Validate generated quest catalogs with `validateQuestCatalog` (`mission/questCatalog`).
 Follow the [quest authoring recipe](recipes/quest-authoring.md) for bounded batches,
 canonical facts, external unlock declarations, and precise repair diagnostics.
 

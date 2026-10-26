@@ -1,10 +1,10 @@
 import type { GameContext } from "@jgengine/core/runtime/gameContext";
 import type { SceneEntity } from "@jgengine/core/scene/entityStore";
-import type { Encounter } from "@jgengine/core/ai/director/encounter";
+import type { Encounter } from "@jgengine/core/waves/encounter";
 import { assignFightIntents, type FightIntent } from "@jgengine/core/ai/director/roles";
-import { evaluatePressure, type PressurePlan, type PressureRule } from "@jgengine/core/ai/director/pressure";
+import { evaluatePressure, type PressurePlan, type PressureRule } from "@jgengine/core/waves/pressure";
 import { createSoundHunt, type SoundHunt } from "@jgengine/core/ai/director/sound";
-import { startEncounter, updateEncounter, phaseStatus } from "@jgengine/core/combat/encounterSequence";
+import { startEncounter, updateEncounter, phaseStatus } from "@jgengine/core/waves/encounterSequence";
 import { createPerception, type PerceptionService } from "@jgengine/core/sensor/perception";
 
 import { combatantDef } from "../catalog";
@@ -16,9 +16,9 @@ import { MARCH_PLAN, WAVE_CYCLE } from "./waveManifest";
 /**
  * The Marauder war effort, driven by engine pieces instead of one scripted order:
  *
- * - `ai/director/encounterSequence` gates the plan: scout, expand, then attack forever.
- * - `ai/director/encounter` authors each attack wave (composition, timing, pressure growth).
- * - `ai/director/pressure` reads the player's health, progress and time for the wave size.
+ * - `waves/encounterSequence` gates the plan: scout, expand, then attack forever.
+ * - `waves/encounter` authors each attack wave (composition, timing, pressure growth).
+ * - `waves/pressure` reads the player's health, progress and time for the wave size.
  * - `ai/director/roles` decides which Marauder holds, which flanks and which pushes, from where the
  *   squad stands right now.
  * - `sensor/perception` + `ai/director/sound` let a scout find the player and a fight pull nearby

@@ -1,4 +1,4 @@
-import type { QuestDef } from "@jgengine/core/game/quest";
+import type { QuestDef } from "@jgengine/core/mission/quest";
 
 export const QUEST_IDS = {
   crashRecovery: "q_crash_recovery",

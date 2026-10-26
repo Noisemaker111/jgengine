@@ -68,6 +68,7 @@ export const CORE_DOMAIN_SKILLS: Record<string, string> = {
   ui: "jgengine-ui",
   vfx: "jgengine-world",
   visibility: "jgengine-world",
+  waves: "jgengine-combat",
   work: "jgengine-gameplay",
   world: "jgengine-world",
 };

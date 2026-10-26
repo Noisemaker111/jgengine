@@ -4,7 +4,7 @@ import { createElement, type ReactElement } from "react";
 import * as THREE from "three";
 import { createAssetCatalog } from "@jgengine/core/scene/assetCatalog";
 import { defineGameDefinition } from "@jgengine/core/game/defineGame";
-import type { QuestDef } from "@jgengine/core/game/quest";
+import type { QuestDef } from "@jgengine/core/mission/quest";
 import { createGameContext, type GameContext } from "@jgengine/core/runtime/gameContext";
 import { GameProvider } from "@jgengine/react/provider";
 import { useFeed, useFriends, useQuestJournal } from "@jgengine/react/hooks";

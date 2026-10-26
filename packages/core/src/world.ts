@@ -46,18 +46,6 @@ export {
   type RvoTunables,
 } from "./ai/rvo";
 export {
-  advanceSpawnDirector,
-  advanceWave,
-  createSpawnDirectorState,
-  pickSpawnPoint,
-  raiseAlert,
-  type SpawnDirectorConfig,
-  type SpawnDirectorState,
-  type SpawnEntry,
-  type SpawnRequest,
-  type WaveManifest,
-} from "./ai/spawnDirector";
-export {
   acquireTarget,
   createTargetAcquirer,
   type AcquisitionEnvelope,
@@ -84,13 +72,6 @@ export {
   type UtilityTerm,
   type UtilityTunables,
 } from "./ai/utilityBrain";
-export {
-  createWaveRunner,
-  type WaveRunner,
-  type WaveRunnerConfig,
-  type WaveSpawnSink,
-  type WaveView,
-} from "./ai/waveRunner";
 export {
   createAreaEffectField,
   type AreaEffectEvent,
@@ -653,6 +634,25 @@ export { distance } from "./visibility/distance";
 export { type CameraView, type Frustum } from "./visibility/frustum";
 export { createVisibilitySystem, type Renderable, type VisibilitySystem } from "./visibility/visibilitySystem";
 export {
+  advanceSpawnDirector,
+  advanceWave,
+  createSpawnDirectorState,
+  pickSpawnPoint,
+  raiseAlert,
+  type SpawnDirectorConfig,
+  type SpawnDirectorState,
+  type SpawnEntry,
+  type SpawnRequest,
+  type WaveManifest,
+} from "./waves/spawnDirector";
+export {
+  createWaveRunner,
+  type WaveRunner,
+  type WaveRunnerConfig,
+  type WaveSpawnSink,
+  type WaveView,
+} from "./waves/waveRunner";
+export {
   markerCatalogId,
   placeAuthoredObjects,
   placeAuthoredObjectsFromDocument,
@@ -727,7 +727,6 @@ export {
   type CityTree,
   type ResolvedCity,
 } from "./world/cityKind";
-export { snapToNearest, socketWorldPosition, socketsCompatible, worldSockets } from "./world/connectors";
 export { createEnvironmentField, type EnvironmentField, type HeatSource } from "./world/envField";
 export { resolveStructureBuildings, summarizeEnvironment } from "./world/environmentSummary";
 export {

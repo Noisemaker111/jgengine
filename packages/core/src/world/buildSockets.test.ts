@@ -167,6 +167,24 @@ describe("resolveSnaps deterministic ordering", () => {
   });
 });
 
+describe("snapNearest", () => {
+  const second: PlacedPiece = { type: "foundation", transform: { position: [10, 0, 0] } };
+
+  test("picks the nearest mate point across every placed piece", () => {
+    const cat = createBuildSocketCatalog(baseCatalog());
+    const snap = cat.snapNearest([foundationAtOrigin, second], "wall", [10, 0, 2.4]);
+    expect(snap?.targetIndex).toBe(1);
+    expect(snap?.targetSocket).toBe("north");
+    expect(snap?.point).toEqual([10, 0, 2]);
+  });
+
+  test("nothing within snapDistance is no snap", () => {
+    const cat = createBuildSocketCatalog(baseCatalog());
+    expect(cat.snapNearest([foundationAtOrigin, second], "wall", [5, 0, 9])).toBeNull();
+    expect(cat.snapNearest([foundationAtOrigin], "wall", [0, 0, 5], { snapDistance: 4 })?.targetSocket).toBe("north");
+  });
+});
+
 describe("footprint occupancy interop", () => {
   test("footprintCells matches a footprintGrid-style cell mapping", () => {
     // wall footprint {4,1} centered at [0,0,2], yaw 0, cellSize 1

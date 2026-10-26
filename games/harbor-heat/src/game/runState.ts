@@ -1,7 +1,7 @@
 import type { GameContext } from "@jgengine/core/runtime/gameContext";
 import { defineStore } from "@jgengine/core/store/defineStore";
-import { createWaveRunner, type WaveRunner } from "@jgengine/core/ai/waveRunner";
-import type { SpawnDirectorState } from "@jgengine/core/ai/spawnDirector";
+import { createWaveRunner, type WaveRunner } from "@jgengine/core/waves/waveRunner";
+import type { SpawnDirectorState } from "@jgengine/core/waves/spawnDirector";
 import { perContext } from "@jgengine/core/runtime/perContext";
 import { DOCK_FIGHT_CENTER } from "./world/districts";
 

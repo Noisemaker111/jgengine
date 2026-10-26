@@ -1,5 +1,5 @@
 import { describe, expect, test } from "bun:test";
-import { expandWave } from "@jgengine/core/ai/director/encounter";
+import { expandWave } from "@jgengine/core/waves/encounter";
 
 import { DIRECTOR_SEED, ENCOUNTER, TOTAL_WAVES } from "./manifest";
 

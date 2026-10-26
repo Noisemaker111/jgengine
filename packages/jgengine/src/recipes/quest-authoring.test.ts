@@ -1,9 +1,9 @@
 import { expect, mock, test } from "bun:test";
-import { validateQuestCatalog } from "../../../core/src/game/questCatalog";
+import { validateQuestCatalog } from "../../../core/src/mission/questCatalog";
 import type { QuestAuthoringFacts } from "./snippets/quest-authoring";
 
 // CLI snippets depend on consumer-installed SDK packages; alias to the real implementation for this test.
-mock.module("@jgengine/core/game/questCatalog", () => ({ validateQuestCatalog }));
+mock.module("@jgengine/core/mission/questCatalog", () => ({ validateQuestCatalog }));
 const { authorQuestBatch } = await import("./snippets/quest-authoring");
 
 const facts: QuestAuthoringFacts = {

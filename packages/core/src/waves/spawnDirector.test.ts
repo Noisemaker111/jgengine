@@ -6,7 +6,7 @@ import {
   pickSpawnPoint,
   raiseAlert,
   type SpawnDirectorConfig,
-} from "@jgengine/core/ai/spawnDirector";
+} from "@jgengine/core/waves/spawnDirector";
 
 const grunt = { id: "grunt", cost: 1 };
 

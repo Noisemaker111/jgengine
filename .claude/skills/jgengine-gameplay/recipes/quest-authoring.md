@@ -14,8 +14,8 @@ batches before structural validation. Keep the existing catalog bounded too;
 partition larger worlds into reviewed dependency-complete catalogs.
 
 ```ts
-import { validateQuestCatalog } from "@jgengine/core/game/questCatalog";
-import type { QuestDef } from "@jgengine/core/game/quest";
+import { validateQuestCatalog } from "@jgengine/core/mission/questCatalog";
+import type { QuestDef } from "@jgengine/core/mission/quest";
 
 function reviewBatch(existing: readonly QuestDef[], generated: readonly QuestDef[]) {
   return validateQuestCatalog([...existing, ...generated], {

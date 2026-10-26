@@ -1,6 +1,6 @@
 import { describe, expect, test } from "bun:test";
 import { defineGameDefinition } from "../game/defineGame";
-import type { QuestRewards } from "../game/quest";
+import type { QuestRewards } from "../mission/quest";
 import { createAssetCatalog } from "../scene/assetCatalog";
 import { createGameContext } from "./gameContext";
 

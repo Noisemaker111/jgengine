@@ -1,5 +1,5 @@
 import { describe, expect, test } from "bun:test";
-import { createGameEvents } from "./events";
+import { createGameEvents } from "../game/events";
 import { createQuestEvaluator, createQuestJournal, type QuestDef, type QuestJournalDeps } from "./quest";
 
 function harness(partyMembersNear?: QuestJournalDeps["partyMembersNear"]) {

@@ -385,18 +385,6 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `summarizeElevation` (function) · `import { summarizeElevation } from "@jgengine/core/world"`
 
-## encounter-expand — turn an authored wave into a deterministic, pressure-adjusted list of timed spawn orders
-
-- `expandWave` (function) · `import { expandWave } from "@jgengine/core/ai/director/encounter"`
-
-## encounter-pressure — bounded difficulty tier read from player health, encounter progress and time
-
-- `evaluatePressure` (function) · `import { evaluatePressure } from "@jgengine/core/ai/director/pressure"`
-
-## encounter-runner — open authored waves, emit their timed orders, and track wave progress through a save
-
-- `createEncounter` (function) · `import { createEncounter } from "@jgengine/core/ai/director/encounter"`
-
 ## engine-layers — layered engine audio: rpm-keyed samples crossfaded, with on-load and off-load sets picked by engine load
 
 - `createEngineLayers` (function) · `import { createEngineLayers } from "@jgengine/core/audio/engineLayers"`
@@ -1108,14 +1096,6 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 ## walker-solid-step-source — slide a step against solid geometry from a pure rules package
 
 - `resolveSourceWalkerStep` (function) · `import { resolveSourceWalkerStep } from "@jgengine/core/movement/solidObstacles"`
-
-## wave-countdown — intermission clock between waves that releases the next one when it runs out and prices calling it early
-
-- `createWaveCountdown` (function) · `import { createWaveCountdown } from "@jgengine/core/ai/director/waveCountdown"`
-
-## wave-preview — summarize an authored wave before it opens: units by first arrival, trait counts and entries used
-
-- `summarizeWave` (function) · `import { summarizeWave } from "@jgengine/core/ai/director/wavePreview"`
 
 ## wave-runner — observable serializable wave/spawn runner over the seeded spawn director — WAVE N, wave progress, budget/alert readout, onSpawn sink, snapshot/restore
 

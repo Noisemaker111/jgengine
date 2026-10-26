@@ -1,9 +1,9 @@
-import type { QuestDef } from "@jgengine/core/game/quest";
+import type { QuestDef } from "@jgengine/core/mission/quest";
 import {
   validateQuestCatalog,
   type QuestCatalogReferenceKind,
   type QuestCatalogValidationOptions,
-} from "@jgengine/core/game/questCatalog";
+} from "@jgengine/core/mission/questCatalog";
 
 export interface QuestAuthoringFacts {
   revision: string;

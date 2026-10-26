@@ -30,7 +30,7 @@ import type { Leaderboard } from "../game/leaderboard";
 import type { Loadouts } from "../game/loadout";
 import type { Drop, LootTableDef } from "../loot/lootTable";
 import type { GameDialogue } from "../game/dialogue";
-import type { QuestJournal } from "../game/quest";
+import type { QuestJournal } from "../mission/quest";
 import type { WorldItemRecord, WorldItemSpawnInput } from "../loot/groundItem";
 import type { Chat } from "../game/chat";
 import type { Social } from "../game/social";

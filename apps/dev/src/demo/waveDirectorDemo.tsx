@@ -1,8 +1,8 @@
 import { useEffect, useReducer, useRef, type CSSProperties, type ReactNode } from "react";
 
 import { defineGameDefinition } from "@jgengine/core/game/defineGame";
-import { createWaveRunner, type WaveRunner } from "@jgengine/core/ai/waveRunner";
-import type { SpawnRequest } from "@jgengine/core/ai/spawnDirector";
+import { createWaveRunner, type WaveRunner } from "@jgengine/core/waves/waveRunner";
+import type { SpawnRequest } from "@jgengine/core/waves/spawnDirector";
 import type { GameContext, GameContextEntityEntry } from "@jgengine/core/runtime/gameContext";
 import { createAssetCatalog } from "@jgengine/core/scene/assetCatalog";
 import { environment, grass, terrain } from "@jgengine/core/world/features";

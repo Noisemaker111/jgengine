@@ -1,6 +1,6 @@
 import { describe, expect, test } from "bun:test";
 
-import { defaultObjectiveLabel, describeTrackedQuest, type QuestDef, type QuestInstance } from "./quest";
+import { defaultObjectiveLabel, describeTrackedQuest, type QuestDef, type QuestInstance } from "../mission/quest";
 
 const DEF: QuestDef = {
   id: "cull-the-pack",

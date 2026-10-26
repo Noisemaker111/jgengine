@@ -32,7 +32,7 @@
     "packages/core/src/game/loadout.ts#createLoadouts",
     "packages/core/src/game/paramLayers.ts#createLayerRegistry",
     "packages/core/src/game/ping.ts#createPingSystem",
-    "packages/core/src/game/quest.ts#createQuestEvaluator",
+    "packages/core/src/mission/quest.ts#createQuestEvaluator",
     "packages/core/src/game/recordBook.ts#createRecordBook",
     "packages/core/src/game/ruleSelection.ts#createRuleRegistry",
     "packages/core/src/game/runDraft.ts#createRunModifierStack",

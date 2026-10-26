@@ -152,6 +152,10 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `updateEncounter` (function) · `import { updateEncounter } from "@jgengine/core/combat"`
 
+## encounter-expand — turn an authored wave into a deterministic, pressure-adjusted list of timed spawn orders
+
+- `expandWave` (function) · `import { expandWave } from "@jgengine/core/waves/encounter"`
+
 ## encounter-force-complete — externally complete an active encounter phase to drive scripted or failure-retry transitions
 
 - `forceCompletePhase` (function) · `import { forceCompletePhase } from "@jgengine/core/combat"`
@@ -168,9 +172,17 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `BUILTIN_COMPLETION_PREDICATES` (const) · `import { BUILTIN_COMPLETION_PREDICATES } from "@jgengine/core/combat"`
 
+## encounter-pressure — bounded difficulty tier read from player health, encounter progress and time
+
+- `evaluatePressure` (function) · `import { evaluatePressure } from "@jgengine/core/waves/pressure"`
+
 ## encounter-progress — read completed-vs-total progress across a hierarchical encounter for HUD or objective display
 
 - `encounterProgress` (function) · `import { encounterProgress } from "@jgengine/core/combat"`
+
+## encounter-runner — open authored waves, emit their timed orders, and track wave progress through a save
+
+- `createEncounter` (function) · `import { createEncounter } from "@jgengine/core/waves/encounter"`
 
 ## encounter-spawn-providers — turn an entered encounter phase into spawn requests from authored scene points or an inline list
 
@@ -360,6 +372,18 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 ## vfx-presets — render a named attack visual (arrow, fireball, lightning, web, slash, shield, heal, explosion) in one call
 
 - `vfxPresets` (const) · `import { vfxPresets } from "@jgengine/core/combat"`
+
+## wave-countdown — intermission clock between waves that releases the next one when it runs out and prices calling it early
+
+- `createWaveCountdown` (function) · `import { createWaveCountdown } from "@jgengine/core/waves/waveCountdown"`
+
+## wave-preview — summarize an authored wave before it opens: units by first arrival, trait counts and entries used
+
+- `summarizeWave` (function) · `import { summarizeWave } from "@jgengine/core/waves/wavePreview"`
+
+## wave-runner — observable serializable wave/spawn runner over the seeded spawn director — WAVE N, wave progress, budget/alert readout, onSpawn sink, snapshot/restore
+
+- `createWaveRunner` (function) · `import { createWaveRunner } from "@jgengine/core/waves/waveRunner"`
 
 ## weapon-cadence — convert a rounds-per-minute weapon rate into the interval a fire gate takes
 

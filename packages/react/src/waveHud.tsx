@@ -1,6 +1,6 @@
 import { useEffect, useReducer, type CSSProperties, type ReactNode } from "react";
 
-import type { WaveRunner, WaveView } from "@jgengine/core/ai/waveRunner";
+import type { WaveRunner, WaveView } from "@jgengine/core/waves/waveRunner";
 
 import { KitMeter } from "./uiKitRoot";
 import { HudFrame, type HudFrameVariation } from "./hudFrame";

@@ -1,6 +1,6 @@
 import type { BossPhase } from "@jgengine/core/ai/director/boss";
-import type { EncounterDefinition, EncounterWave } from "@jgengine/core/ai/director/encounter";
-import type { PressureRule } from "@jgengine/core/ai/director/pressure";
+import type { EncounterDefinition, EncounterWave } from "@jgengine/core/waves/encounter";
+import type { PressureRule } from "@jgengine/core/waves/pressure";
 
 import { FLANK_POINT_KEY, SPAWN_POINT_KEY } from "../world/path";
 import { COMPOSE_FROM_WAVE, composeWaves } from "./composer";

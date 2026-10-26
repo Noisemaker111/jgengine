@@ -1,6 +1,6 @@
 import { describe, expect, test } from "bun:test";
 
-import { createGameEvents } from "./events";
+import { createGameEvents } from "../game/events";
 import { createQuestJournal, type QuestDef, type QuestJournalDeps } from "./quest";
 
 function createHarness(overrides?: Partial<Pick<QuestJournalDeps, "hasUnlock" | "partyMembersNear">>) {

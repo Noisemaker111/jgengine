@@ -3,7 +3,7 @@ import { localSaveBackend, type SaveBackend } from "@jgengine/core/save/saveStor
 import { perContext } from "@jgengine/core/runtime/perContext";
 import type { GameContext } from "@jgengine/core/runtime/gameContext";
 import type { StoreHandle } from "@jgengine/core/store/defineStore";
-import type { SpawnDirectorState } from "@jgengine/core/ai/spawnDirector";
+import type { SpawnDirectorState } from "@jgengine/core/waves/spawnDirector";
 import type { SessionLoopState } from "@jgengine/core/run/sessionLoop";
 
 import { handrollOf } from "./handroll";

@@ -103,6 +103,19 @@ export interface ResolveSnapsOptions {
   isFree?: (cell: BuildCell) => boolean;
 }
 
+/** Options for {@link BuildSocketCatalog.snapNearest}. */
+export interface SnapNearestOptions {
+  /** Farthest a mate point may sit from the cursor and still snap. Default `1.5`. */
+  snapDistance?: number;
+  /** Occupancy predicate, as in {@link ResolveSnapsOptions.isFree}. */
+  isFree?: (cell: BuildCell) => boolean;
+}
+
+/** The snap {@link BuildSocketCatalog.snapNearest} picked, with the index of the placed piece it mates onto. */
+export interface NearestSnap extends SnapCandidate {
+  targetIndex: number;
+}
+
 /** Serializable catalog config; also the shape returned by {@link BuildSocketCatalog.toJSON}. */
 export interface BuildSocketCatalogConfig {
   pieces: readonly BuildPieceDef[];
@@ -124,6 +137,16 @@ export interface BuildSocketCatalog {
   worldSockets(placed: PlacedPiece): PlacedSocket[];
   /** Every valid snap of `candidateType` onto `placed`, ordered deterministically. */
   resolveSnaps(placed: PlacedPiece, candidateType: string, options?: ResolveSnapsOptions): SnapCandidate[];
+  /**
+   * The one snap a build cursor lands on: across every placed piece, the valid snap whose mate point
+   * is nearest `cursor` and within `snapDistance` (default `1.5`), or `null` when nothing is in reach.
+   */
+  snapNearest(
+    placed: readonly PlacedPiece[],
+    candidateType: string,
+    cursor: SocketVec3,
+    options?: SnapNearestOptions,
+  ): NearestSnap | null;
   /** Plain, serializable snapshot — feed straight back into {@link createBuildSocketCatalog}. */
   toJSON(): BuildSocketCatalogConfig;
 }
@@ -259,7 +282,7 @@ export function createBuildSocketCatalog(config: BuildSocketCatalogConfig): Buil
     });
   };
 
-  return {
+  const catalog: BuildSocketCatalog = {
     cellSize,
     has(type) {
       return pieces.has(type);
@@ -323,6 +346,19 @@ export function createBuildSocketCatalog(config: BuildSocketCatalogConfig): Buil
       if (cursor !== undefined) out.sort((x, y) => x.distance - y.distance);
       return out;
     },
+    snapNearest(placed, candidateType, cursor, options = {}) {
+      const snapDistance = options.snapDistance ?? 1.5;
+      let best: NearestSnap | null = null;
+      for (let targetIndex = 0; targetIndex < placed.length; targetIndex += 1) {
+        const nearest = catalog.resolveSnaps(placed[targetIndex]!, candidateType, {
+          cursor,
+          ...(options.isFree === undefined ? {} : { isFree: options.isFree }),
+        })[0];
+        if (nearest === undefined || nearest.distance > snapDistance) continue;
+        if (best === null || nearest.distance < best.distance) best = { ...nearest, targetIndex };
+      }
+      return best;
+    },
     toJSON() {
       return {
         cellSize,
@@ -335,4 +371,5 @@ export function createBuildSocketCatalog(config: BuildSocketCatalogConfig): Buil
       };
     },
   };
+  return catalog;
 }

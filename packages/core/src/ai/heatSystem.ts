@@ -79,7 +79,7 @@ function levelFor(levels: readonly HeatLevelDef[], heat: number): HeatLevelDef |
  * hand-rolls: witness-scoped gain (unseen crimes don't raise heat), proximity-gated decay (still hot
  * while a witness or pursuer is close), tiered pursuer budgets, ring-shaped spawn points around the
  * player, and a stand-down countdown once heat clears so pursuit doesn't vanish instantly. Pure and
- * seeded like `ai/spawnDirector` — the caller owns spawning/despawning the actual entities.
+ * seeded like `waves/spawnDirector` — the caller owns spawning/despawning the actual entities.
   * @internal
   */
 export function createHeatState(config: HeatConfig): HeatState {

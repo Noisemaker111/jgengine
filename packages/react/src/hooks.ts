@@ -7,7 +7,7 @@ import type { AbilityKit, AbilitySlotSnapshot } from "@jgengine/core/combat/abil
 import type { EventMeter } from "@jgengine/core/stats/eventMeter";
 import type { GameEvents } from "@jgengine/core/game/events";
 import type { FeedEntry } from "@jgengine/core/game/feed";
-import type { QuestInstance } from "@jgengine/core/game/quest";
+import type { QuestInstance } from "@jgengine/core/mission/quest";
 import type { ChatMessage } from "@jgengine/core/game/chat";
 import type {
   FriendEntry,

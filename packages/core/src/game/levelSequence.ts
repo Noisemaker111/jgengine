@@ -69,7 +69,7 @@ export interface LevelSequence<TLevelConfig> {
 /**
  * A pure, deterministic level campaign: an ordered list of levels, each with its own opaque config, played
  * through a `start` → (`clear` → `advance`)* → `complete` happy path, with `fail`/`retry` handling per-level
- * attempts. Mirrors the reducer style of `game/race.ts` and `ai/spawnDirector.ts` — no I/O, no timers, just
+ * attempts. Mirrors the reducer style of `game/race.ts` and `waves/spawnDirector.ts` — no I/O, no timers, just
  * state transitions driven by the caller.
  */
 export function createLevelSequence<TLevelConfig>(

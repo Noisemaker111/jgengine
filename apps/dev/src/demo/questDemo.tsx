@@ -1,5 +1,5 @@
 import { defineGameDefinition } from "@jgengine/core/game/defineGame";
-import { createQuestJournal, describeTrackedQuest, type QuestDef, type QuestJournal } from "@jgengine/core/game/quest";
+import { createQuestJournal, describeTrackedQuest, type QuestDef, type QuestJournal } from "@jgengine/core/mission/quest";
 import type { GameContext, GameContextEntityEntry } from "@jgengine/core/runtime/gameContext";
 import { createAssetCatalog } from "@jgengine/core/scene/assetCatalog";
 import { environment, grass, terrain } from "@jgengine/core/world/features";

@@ -1,4 +1,4 @@
-import type { GameEvents } from "./events";
+import type { GameEvents } from "../game/events";
 import { clamp } from "../math/scalar";
 
 export interface QuestObjective {
@@ -577,6 +577,8 @@ export interface QuestEvaluator {
  * Apply items before XP, currency, and unlocks. Multiple items require an all-or-reject `grantItems`
  * callback; legacy single-item appliers remain supported. Rejected callbacks must make no writes.
  * Arbitrary callback side effects or thrown exceptions cannot be rolled back by this helper.
+ *
+ * @capability quest-rewards grant a quest or mission reward bundle: items, XP, currency and unlocks
  */
 export function applyQuestRewards(
   rewards: QuestRewards,
@@ -631,6 +633,11 @@ function toSnapshot(working: WorkingQuests): QuestSnapshotEntry[] {
   }));
 }
 
+/**
+ * The quest log: accept, progress from game events, complete and snapshot quests.
+ *
+ * @capability quest-log track accepted quests and their objective progress from game events
+ */
 export function createQuestEvaluator(
   defs: QuestDef[] | Record<string, QuestDef>,
 ): QuestEvaluator {
