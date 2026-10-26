@@ -4,7 +4,7 @@ const MOUNTS: { id: GameMount; label: string; hint: string }[] = [
   {
     id: "standalone",
     label: "Standalone",
-    hint: "bun run games:<id> — game Vite harness",
+    hint: "bun --cwd=games/<id> run dev — game Vite harness",
   },
   {
     id: "runner",
