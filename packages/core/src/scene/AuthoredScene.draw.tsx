@@ -256,6 +256,8 @@ export interface AuthoredSceneProps {
    * dedicated map even if it shares entries with `entityModels`). Requires `assets`.
    */
   scatterModels?: Record<string, string | ModelConfig>;
+  /** Most scatter instances drawn; past it the foliage thins evenly. Default 20000. */
+  scatterBudget?: number;
   /** Animated models keyed by authored cosmetic habitat species. */
   flockModels?: Record<string, string | ModelConfig>;
   /** Catalog `scatterModels` string ids resolve through; required together with `scatterModels`. */
@@ -294,6 +296,7 @@ export function AuthoredScene({
   pathKinds,
   pathSurfaceDetail = true,
   scatterModels,
+  scatterBudget,
   flockModels,
   assets,
   live = true,
@@ -324,7 +327,7 @@ export function AuthoredScene({
         surfaceDetail={pathSurfaceDetail}
         {...(pathKinds === undefined ? {} : { kinds: pathKinds })}
       />
-      <InstancedScatter instances={instances} hidden={hidden} {...(resolveItem === undefined ? {} : { resolveItem })} />
+      <InstancedScatter instances={instances} hidden={hidden} {...(scatterBudget === undefined ? {} : { maxInstances: scatterBudget })} {...(resolveItem === undefined ? {} : { resolveItem })} />
       <AuthoredStudios
         document={liveDocument}
         context={{

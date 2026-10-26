@@ -89,4 +89,6 @@ speed +1% of its value when tamed. Punches deal ARK's 1.75x their damage as torp
 ## Credits
 
 Nature models: Quaternius Stylized Nature MegaKit, CC0 1.0. Raptor and boar: Quaternius animal
-models, CC0 1.0. Duck: Microsoft Rocketbox, MIT. Survivor model: the engine's starter pack. See [content provenance](../CONTENT-PROVENANCE.md).
+models, CC0 1.0. Duck: Microsoft Rocketbox, MIT. Survivor model: the engine's starter pack. Map
+layout: The Island's landmark coordinates, heights and spawn regions as published on the ARK
+community wiki (ark.wiki.gg), rebuilt as our own shapes; no ARK map art. See [content provenance](../CONTENT-PROVENANCE.md).

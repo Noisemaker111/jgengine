@@ -36,6 +36,8 @@ type PresentationFields = Omit<PlayableGame, "game" | "content" | "loop" | "Game
   scenePlacement?: boolean | ({ verticalOffset?: number } & ResolveAuthoredObjectsOptions);
   /** GLB models for the auto-mounted scene's scatter palette items, keyed by palette item id; string ids resolve through the game's asset catalog. Unmatched items keep the built-in proxy meshes. */
   sceneScatterModels?: Record<string, string | ModelConfig>;
+  /** Most scatter instances the auto-mounted scene draws; past it the foliage thins evenly. Default 20000 — raise it for a whole-island world. */
+  sceneScatterBudget?: number;
   /** Animated species models for cosmetic authored habitats; gameplay actors remain game-owned. */
   sceneFlockModels?: Record<string, string | ModelConfig>;
   /** Visible ground path kinds; omit to draw every non-scatter path, or restrict to keep flight/patrol guides out of world roads. */
@@ -74,6 +76,7 @@ function authoredSceneOverlay(
   diagnostics: boolean,
   placement: boolean | ({ verticalOffset?: number } & ResolveAuthoredObjectsOptions),
   scatterModels: Record<string, string | ModelConfig> | undefined,
+  scatterBudget: number | undefined,
   flockModels: Record<string, string | ModelConfig> | undefined,
   pathKinds: readonly string[] | undefined,
   assets: AssetCatalog,
@@ -95,6 +98,7 @@ function authoredSceneOverlay(
           placeObjects={placement}
           assets={assets}
           {...(scatterModels === undefined ? {} : { scatterModels })}
+          {...(scatterBudget === undefined ? {} : { scatterBudget })}
           {...(flockModels === undefined ? {} : { flockModels })}
           {...(pathKinds === undefined ? {} : { pathKinds })}
           {...(groundColorAt === undefined ? {} : { groundColorAt })}
@@ -128,6 +132,7 @@ export function defineGame<TAssetRef extends ModelAssetRef = ModelAssetRef>(
     editorCatalogs,
     scenePlacement,
     sceneScatterModels,
+    sceneScatterBudget,
     sceneFlockModels,
     scenePathKinds,
     WorldOverlay,
@@ -231,6 +236,7 @@ export function defineGame<TAssetRef extends ModelAssetRef = ModelAssetRef>(
             devtools !== false,
             scenePlacement ?? true,
             sceneScatterModels,
+            sceneScatterBudget,
             sceneFlockModels,
             scenePathKinds,
             game.assets,

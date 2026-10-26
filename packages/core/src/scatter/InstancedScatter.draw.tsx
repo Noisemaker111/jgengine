@@ -23,7 +23,7 @@ import { ScatterImpostorField } from "./ScatterImpostorField.draw";
 
 /** Chunk edge (m): dense fields split into this-sized buckets, each frustum-culled independently. */
 const DEFAULT_CHUNK_SIZE = 24;
-const DEFAULT_MAX_INSTANCES = 200000;
+const DEFAULT_MAX_INSTANCES = 20000;
 /** Most chunks one field splits into; past it chunks grow, so an island costs hundreds of objects, not tens of thousands. */
 const DEFAULT_MAX_CHUNKS = 400;
 

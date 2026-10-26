@@ -174,13 +174,16 @@ export function resolveScatterRegion(
     if (terrain !== undefined) {
       const height = terrain.sampleHeight(point.x, point.z);
       if (height < rules.minHeight || height > rules.maxHeight) continue;
-      const n = terrain.sampleNormal(point.x, point.z);
-      if (rules.maxSlope > 0) {
-        const slope = Math.hypot(n[0], n[2]) / Math.max(n[1], 1e-9);
-        if (slope > rules.maxSlope) continue;
+      // A normal costs several height samples; only rules that read it pay for it.
+      if (rules.maxSlope > 0 || rules.alignToNormal) {
+        const n = terrain.sampleNormal(point.x, point.z);
+        if (rules.maxSlope > 0) {
+          const slope = Math.hypot(n[0], n[2]) / Math.max(n[1], 1e-9);
+          if (slope > rules.maxSlope) continue;
+        }
+        if (rules.alignToNormal) normal = n;
       }
       y = height + rules.verticalOffset;
-      if (rules.alignToNormal) normal = n;
     }
 
     const scaleRoll = hash(`${region.id}:${rules.seed}:scale:${point.index}`);

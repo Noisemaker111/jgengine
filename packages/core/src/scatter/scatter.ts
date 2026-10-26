@@ -61,9 +61,10 @@ export function scatter(config: ScatterConfig): ScatterPoint[] {
   const rng = seededRng(config.seed ?? "scatter");
 
   const useDistance = minDistance > 0;
-  const buckets = new Map<string, Vec2[]>();
-  const bucketKey = (x: number, z: number): string =>
-    `${Math.floor(x / minDistance)}:${Math.floor(z / minDistance)}`;
+  // Spacing buckets keyed by one number per cell: a string key per candidate was most of the cost.
+  const buckets = new Map<number, Vec2[]>();
+  const cellKey = (cx: number, cz: number): number => cx * 1_048_576 + cz;
+  const bucketKey = (x: number, z: number): number => cellKey(Math.floor(x / minDistance), Math.floor(z / minDistance));
 
   const rejectedByAvoid = (point: Vec2): boolean => {
     for (const a of avoid) if (pointInAabb(point, a)) return true;
@@ -77,7 +78,7 @@ export function scatter(config: ScatterConfig): ScatterPoint[] {
     const minSq = minDistance * minDistance;
     for (let dx = -1; dx <= 1; dx++) {
       for (let dz = -1; dz <= 1; dz++) {
-        const nearby = buckets.get(`${cx + dx}:${cz + dz}`);
+        const nearby = buckets.get(cellKey(cx + dx, cz + dz));
         if (!nearby) continue;
         for (const other of nearby) {
           const ex = other[0] - point[0];

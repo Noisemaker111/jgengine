@@ -1173,21 +1173,32 @@ function outlineSignedDistance(rings: readonly (readonly (readonly [number, numb
   const cell = reach / 2;
   const columns = Math.max(1, Math.ceil((Math.max(...shores.map((shore) => shore.maxX)) - minX) / cell));
   const rows = Math.max(1, Math.ceil((Math.max(...shores.map((shore) => shore.maxZ)) - minZ) / cell));
-  // 0 unknown, 1 land, 2 sea — filled the first time a far sample lands in the cell.
-  const landGrid = new Uint8Array(columns * rows);
-  const farSide = (x: number, z: number): number => {
-    const column = Math.floor((x - minX) / cell);
-    const row = Math.floor((z - minZ) / cell);
-    if (column < 0 || row < 0 || column >= columns || row >= rows) return Number.NEGATIVE_INFINITY;
-    const key = row * columns + column;
-    if (landGrid[key] === 0) {
+  // Per cell, filled the first time a sample lands in it: 0 unknown, 1 all land past reach, 2 all sea
+  // past reach, 3 a shore runs within reach of the cell (samples there measure exactly). Most of an
+  // island is far from its shore, so most samples are answered by one array read.
+  const grid = new Uint8Array(columns * rows);
+  const halfDiagonal = cell * Math.SQRT1_2;
+  // Whether each cell's centre is on land (1) or sea (2), for samples past reach inside a near cell.
+  const centreSide = new Uint8Array(columns * rows);
+  const centreOnLand = (key: number, column: number, row: number): boolean => {
+    if (centreSide[key] === 0) {
       const cx = minX + (column + 0.5) * cell;
       const cz = minZ + (row + 0.5) * cell;
-      landGrid[key] = shores.some((shore) => pointInPolygon(shore.ring as readonly Vec2[], cx, cz)) ? 1 : 2;
+      centreSide[key] = shores.some((shore) => pointInPolygon(shore.ring as readonly Vec2[], cx, cz)) ? 1 : 2;
     }
-    return landGrid[key] === 1 ? reach : Number.NEGATIVE_INFINITY;
+    return centreSide[key] === 1;
   };
-  return (x, z) => {
+  const cellState = (column: number, row: number): number => {
+    const key = row * columns + column;
+    if (grid[key] === 0) {
+      const cx = minX + (column + 0.5) * cell;
+      const cz = minZ + (row + 0.5) * cell;
+      const near = shores.some((shore) => shore.index.nearest(cx, cz, reach + halfDiagonal) !== null);
+      grid[key] = near ? 3 : centreOnLand(key, column, row) ? 1 : 2;
+    }
+    return grid[key]!;
+  };
+  const exact = (x: number, z: number): number => {
     let best = Number.NEGATIVE_INFINITY;
     let near = false;
     for (const shore of shores) {
@@ -1208,7 +1219,20 @@ function outlineSignedDistance(rings: readonly (readonly (readonly [number, numb
       const outside = (x - hit.point[0]) * nx + (z - hit.point[1]) * nz > 0;
       best = Math.max(best, outside ? -hit.distance : hit.distance);
     }
-    return near ? best : farSide(x, z);
+    if (near) return best;
+    // Past reach of every shore: the cell centre, under reach away, lies on the same side.
+    const column = Math.floor((x - minX) / cell);
+    const row = Math.floor((z - minZ) / cell);
+    return centreOnLand(row * columns + column, column, row) ? reach : Number.NEGATIVE_INFINITY;
+  };
+  return (x, z) => {
+    const column = Math.floor((x - minX) / cell);
+    const row = Math.floor((z - minZ) / cell);
+    if (column < 0 || row < 0 || column >= columns || row >= rows) return Number.NEGATIVE_INFINITY;
+    const state = cellState(column, row);
+    if (state === 1) return reach;
+    if (state === 2) return Number.NEGATIVE_INFINITY;
+    return exact(x, z);
   };
 }
 

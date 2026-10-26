@@ -59,6 +59,8 @@ export const game = defineGame({
   entityModels,
   objectModels,
   sceneScatterModels: scatterModels,
+  // The whole Island's forests, rocks and ore: about 33k placements, all drawn.
+  sceneScatterBudget: 40_000,
   persist: { mode: "manual" },
   // The camera starts behind the survivor on the authored spawn facing, so you wash up looking inland.
   prompts: (ctx) => [...survivorPrompts(ctx), ...creaturePrompts(ctx), ...basePrompts(ctx)],
