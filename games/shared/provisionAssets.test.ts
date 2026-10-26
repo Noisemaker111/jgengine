@@ -29,6 +29,19 @@ describe("dev provisions what a game references", () => {
   });
 });
 
+describe("an alias pulls the pack it resolves into", () => {
+  test("asset:person_casual in a game's source provisions the character pack behind it", () => {
+    const publicDir = mkdtempSync(join(import.meta.dir, "../../.scratch/jg-provision-"));
+    try {
+      const withAliases = { ...catalogs, sources: [...catalogs.sources, { id: "kaykit-adventurers" }], aliases: [{ key: "asset:person_casual", target: "kaykit-adventurers/Rogue" }] };
+      expect(missingPulls(`player: { model: "asset:person_casual" }`, publicDir, withAliases).map((job) => job.target)).toEqual(["kaykit-adventurers"]);
+      expect(missingPulls(`player: { model: "asset:other" }`, publicDir, withAliases)).toEqual([]);
+    } finally {
+      rmSync(publicDir, { recursive: true, force: true });
+    }
+  });
+});
+
 describe("when dev provisions", () => {
   test("on by default, off in CI, and the override wins either way", () => {
     expect(shouldProvision({})).toBe(true);

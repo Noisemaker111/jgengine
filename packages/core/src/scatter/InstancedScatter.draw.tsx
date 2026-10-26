@@ -48,6 +48,18 @@ export function scatterChunkSize(instances: readonly { x: number; z: number }[],
   return Math.max(chunkSize, Math.ceil(Math.sqrt(((maxX - minX) * (maxZ - minZ)) / Math.max(1, maxChunks))));
 }
 
+/**
+ * At most `max` instances. Over budget the field thins evenly (every region keeps the same share)
+ * instead of being cut off in document order, which would leave whole regions bare. @internal
+ */
+export function capScatterInstances<T>(instances: readonly T[], max: number): readonly T[] {
+  if (instances.length <= max) return instances;
+  const kept: T[] = [];
+  const stride = instances.length / Math.max(1, max);
+  for (let i = 0; i < max; i += 1) kept.push(instances[Math.floor(i * stride)]!);
+  return kept;
+}
+
 /** One instanced draw unit - a single species within a single spatial chunk. @internal */
 export interface ScatterBatch {
   key: string;
@@ -311,7 +323,7 @@ export interface InstancedScatterProps {
   instances: readonly ScatterInstance[];
   /** Chunk edge in meters; dense fields split into independently frustum-culled buckets. Default 24. */
   chunkSize?: number;
-  /** Hard cap on rendered instances. Default 20000. */
+  /** Most instances drawn; past it the field thins evenly. Default 20000. */
   maxInstances?: number;
   /** Most chunks the field splits into; bigger fields get bigger chunks. Default 400. */
   maxChunks?: number;
@@ -340,7 +352,7 @@ export function InstancedScatter({
   resolveItem,
   hidden,
 }: InstancedScatterProps) {
-  const capped = useMemo(() => (instances.length > maxInstances ? instances.slice(0, maxInstances) : instances), [instances, maxInstances]);
+  const capped = useMemo(() => capScatterInstances(instances, maxInstances), [instances, maxInstances]);
   // The grid is sized from every placement, not the shown ones, so clearing a tree never re-chunks the field.
   const edge = useMemo(() => scatterChunkSize(capped, chunkSize, maxChunks), [capped, chunkSize, maxChunks]);
   const allBatches = useMemo(() => scatterBatchInstances(capped, edge), [capped, edge]);

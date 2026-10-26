@@ -49,6 +49,12 @@ export interface PopulationTickContext {
    * request unplaced. When omitted, a candidate is picked uniformly from the roll.
    */
   pickSpawnPoint?(region: string, candidates: readonly NavPoint[], roll: number): NavPoint | null;
+  /**
+   * Whether a region is awake this tick — for a big world, the regions near a player. A sleeping
+   * region keeps its due refill slots queued and spawns nothing until it wakes. Omitted, every region
+   * is awake.
+   */
+  isActive?(region: string): boolean;
 }
 
 /** Live census of alive counts keyed `region -> species -> count`, used to reconcile the director to reality. */
@@ -85,8 +91,12 @@ export interface PopulationDirector {
    * up to the per-tick cap. Only touches the bounded respawn queue — never scans the world.
    */
   tick(dt: number, ctx?: PopulationTickContext): PopulationSpawnRequest[];
-  /** Register that a creature left the region (killed/despawned/tamed), freeing a slot to refill after the delay. */
-  notifyRemoved(region: string, species: string, id?: string): void;
+  /**
+   * Register that a creature left the region (killed/despawned/tamed), freeing a slot to refill after the
+   * delay. `options.delay` overrides it — 0 for a creature put away because its region went to sleep,
+   * so it is back as soon as the region wakes.
+   */
+  notifyRemoved(region: string, species: string, id?: string, options?: { delay?: number }): void;
   /** Register a creature the game introduced itself (not via a request), so caps account for it. */
   notifySpawned(region: string, species: string, id?: string): void;
   /** Snap believed alive counts to a live census and re-queue any deficit toward the caps. */
@@ -229,7 +239,7 @@ export function createPopulationDirector(config: PopulationDirectorConfig): Popu
       const requests: PopulationSpawnRequest[] = [];
       const remaining: PopulationRespawnSlot[] = [];
       for (const slot of state.queue) {
-        if (requests.length >= maxSpawnsPerTick || slot.readyAt > now) {
+        if (requests.length >= maxSpawnsPerTick || slot.readyAt > now || ctx?.isActive?.(slot.region) === false) {
           remaining.push(slot);
           continue;
         }
@@ -247,7 +257,7 @@ export function createPopulationDirector(config: PopulationDirectorConfig): Popu
       return requests;
     },
 
-    notifyRemoved(region, species, _id) {
+    notifyRemoved(region, species, _id, options) {
       const counts = state.alive[region];
       if (counts !== undefined) {
         const current = counts[species] ?? 0;
@@ -256,7 +266,7 @@ export function createPopulationDirector(config: PopulationDirectorConfig): Popu
       const regionConfig = regions.get(region);
       if (regionConfig === undefined) return;
       const next = state.queue.slice();
-      next.push({ region, readyAt: state.elapsed + delayFor(regionConfig) });
+      next.push({ region, readyAt: state.elapsed + (options?.delay ?? delayFor(regionConfig)) });
       state.queue = next;
     },
 

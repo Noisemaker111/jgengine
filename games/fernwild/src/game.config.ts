@@ -18,6 +18,8 @@ import { BaseWorld } from "./game/ui/BaseWorld";
 import { onNewPlayer, systems } from "./loop";
 import { time, world } from "./world";
 
+const SPAWN_YAW = authoredSpawnRotation(editorLayers);
+
 export const game = defineGame({
   name: "Fernwild",
   simulation: { hz: 60 },
@@ -56,6 +58,8 @@ export const game = defineGame({
   entityModels,
   objectModels,
   sceneScatterModels: scatterModels,
+  // The whole Island's forests, rocks and ore: about 33k placements, all drawn.
+  sceneScatterBudget: 40_000,
   persist: { mode: "manual" },
   // The camera starts behind the survivor on the authored spawn facing, so you wash up looking inland.
   prompts: (ctx) => [...survivorPrompts(ctx), ...creaturePrompts(ctx), ...basePrompts(ctx)],
@@ -107,9 +111,19 @@ export const game = defineGame({
         ghostSnapped: base.ghost?.mode === "snap" ? 1 : 0,
         aimedStructureHealth: base.aimed?.health ?? 0,
         doorsOpen: base.open,
+        // Metres the survivor stands past the first foundation's centre and past the first doorframe, along the
+        // spawn facing: negative is short of it.
+        pastFloor: pastAlongSpawn(me?.position, base.floor),
+        pastDoor: pastAlongSpawn(me?.position, base.doorway),
         // Hotbar slot in hand, 1-based; 0 bare-handed.
         holding: view.activeSlot === null ? 0 : view.activeSlot + 1,
       };
     },
   },
 });
+
+/** Metres `at` lies past `mark` along the spawn facing, to a decimetre; 0 when either is missing. */
+function pastAlongSpawn(at: readonly number[] | undefined, mark: readonly number[] | null): number {
+  if (at === undefined || mark === null) return 0;
+  return Math.round(((at[0]! - mark[0]!) * Math.sin(SPAWN_YAW) + (at[2]! - mark[2]!) * Math.cos(SPAWN_YAW)) * 10) / 10;
+}

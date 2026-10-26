@@ -9618,6 +9618,17 @@
       "intent": "surface-following placement guide ring"
     },
     {
+      "id": "survey-terrain",
+      "packages": [
+        "@jgengine/core"
+      ],
+      "module": "@jgengine/core/terrain/surveyTerrain",
+      "domain": "terrain",
+      "gameFacing": false,
+      "probe": null,
+      "intent": "build a real-world-style landmass (shores, summits, chains, rivers, biomes) from authored scene shapes"
+    },
+    {
       "id": "survival-vitals",
       "packages": [
         "@jgengine/core"

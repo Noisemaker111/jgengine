@@ -87,6 +87,8 @@ interface World {
   director: PopulationDirector;
   regions: Map<string, { center: [number, number, number]; radius: number }>;
   steps: Map<string, CreatureStep>;
+  /** Seconds a distant wild creature has waited for its next, coarser step. */
+  idle: Map<string, number>;
   seq: number;
   populated: boolean;
   /** The creature in front of the survivor (or their mount), within reach. */
@@ -102,16 +104,45 @@ interface World {
 
 const TAMING = Object.fromEntries(Object.values(SPECIES).map((def) => [def.id, def.taming]));
 
-/** Each creature_spawn marker in editor.scene.json is a herd: its species, how many, how far they roam. */
+/** Wild creatures farther than this from the survivor think in coarse steps of {@link FAR_STEP} seconds. */
+const NEAR_RANGE = 60;
+const FAR_STEP = 0.25;
+/** Herds wake when the survivor comes this close to their zone and sleep (wild ones vanish) past it. */
+const AWAKE_RANGE = 220;
+
+/** One species in a spawn zone: ARK's relative weight there. */
+interface ZoneSpecies {
+  species: string;
+  weight: number;
+}
+
+/** A zone's `count` split across its species by weight (largest remainder), so a rare one may get none. */
+function shareOut(count: number, listed: readonly ZoneSpecies[]): { species: string; weight: number; cap: number }[] {
+  const total = listed.reduce((sum, entry) => sum + entry.weight, 0);
+  if (total <= 0) return [];
+  const exact = listed.map((entry) => (count * entry.weight) / total);
+  const caps = exact.map(Math.floor);
+  const order = exact.map((value, i) => ({ i, rest: value - caps[i]! })).sort((a, b) => b.rest - a.rest);
+  const left = count - caps.reduce((sum, cap) => sum + cap, 0);
+  for (let k = 0; k < left; k += 1) caps[order[k]!.i]! += 1;
+  return listed.map((entry, i) => ({ species: entry.species, weight: entry.weight, cap: caps[i]! }));
+}
+
+/**
+ * Each creature_spawn marker in editor.scene.json is one of ARK's spawn zones: the species that live
+ * there with their weights, how many at once, how far they roam. Species without a body yet are left
+ * out and their share of the zone stays empty, so a zone holds what ARK puts there and no more.
+ */
 function herds() {
-  return markersOfKind(editorLayers, "creature_spawn").map((marker) => {
-    const meta = (marker.meta ?? {}) as { species?: string; count?: number; radius?: number };
-    const species = meta.species ?? "";
-    if (speciesDef(species) === null) throw new Error(`Fernwild creature_spawn "${marker.id}" names unknown species "${species}"`);
+  return markersOfKind(editorLayers, "creature_spawn").flatMap((marker) => {
+    const meta = (marker.meta ?? {}) as { species?: readonly ZoneSpecies[]; count?: number; radius?: number };
+    const listed = meta.species ?? [];
+    const species = shareOut(meta.count ?? 2, listed).filter((entry) => entry.cap > 0 && speciesDef(entry.species) !== null);
+    if (species.length === 0) return [];
     const radius = meta.radius ?? 14;
     const center: [number, number, number] = [marker.position.x, marker.position.y, marker.position.z];
     const ring: NavPoint[] = Array.from({ length: 8 }, (_, i) => [center[0] + Math.cos((i / 8) * Math.PI * 2) * radius * 0.6, center[2] + Math.sin((i / 8) * Math.PI * 2) * radius * 0.6] as const);
-    return { region: marker.id, species, count: meta.count ?? 2, radius, center, ring };
+    return [{ region: marker.id, species, radius, center, ring }];
   });
 }
 
@@ -124,12 +155,13 @@ const worldOf = perContext((ctx: GameContext): World => {
     roster: createCompanionRoster(),
     carcasses: createResourceNodeField({ nodes: [], resolve: (id) => carcassNode(worldOf(ctx), id), rng: () => ctx.rng() }),
     director: createPopulationDirector({
-      regions: authored.map((herd) => ({ region: herd.region, species: [{ species: herd.species, cap: herd.count }], spawnPoints: herd.ring })),
+      regions: authored.map((herd) => ({ region: herd.region, species: herd.species, spawnPoints: herd.ring })),
       respawnDelay: RESPAWN_SECONDS,
       seed: 7,
     }),
     regions: new Map(authored.map((herd) => [herd.region, { center: herd.center, radius: herd.radius }])),
     steps: new Map(),
+    idle: new Map(),
     seq: 0,
     populated: false,
     aimed: null,
@@ -212,14 +244,26 @@ export function spawnCreature(ctx: GameContext, species: string, at: readonly [n
   return id;
 }
 
-function populate(ctx: GameContext, world: World): void {
-  if (world.populated) return;
-  world.populated = true;
-  for (const herd of herds()) {
-    for (let i = 0; i < herd.count; i += 1) {
-      const point = herd.ring[Math.floor(ctx.rng() * herd.ring.length)]!;
-      if (spawnCreature(ctx, herd.species, point, { region: herd.region }) !== null) world.director.notifySpawned(herd.region, herd.species);
-    }
+/** Whether a herd's zone is near enough to the survivor to be awake. */
+function awake(world: World, region: string, at: readonly [number, number, number] | null): boolean {
+  const zone = world.regions.get(region);
+  if (zone === undefined || at === null) return false;
+  return Math.hypot(zone.center[0] - at[0], zone.center[2] - at[2]) < AWAKE_RANGE + zone.radius;
+}
+
+/** Wild creatures nobody has touched leave when their zone falls asleep; the zone refills when it wakes. */
+function sleepFarHerds(ctx: GameContext, world: World, at: readonly [number, number, number] | null): void {
+  for (const creature of [...world.creatures.values()]) {
+    if (creature.tamed || creature.dead || creature.region === "" || awake(world, creature.region, at)) continue;
+    const taming = world.taming.state(creature.id);
+    if (taming !== null && (taming.torpor > 0 || taming.progress > 0)) continue;
+    world.creatures.delete(creature.id);
+    world.steps.delete(creature.id);
+    world.idle.delete(creature.id);
+    world.taming.forget(creature.id);
+    world.driver.forget(creature.id);
+    ctx.scene.entity.despawn(creature.id);
+    world.director.notifyRemoved(creature.region, creature.species, creature.id, { delay: 0 });
   }
 }
 
@@ -443,7 +487,6 @@ function threatsTo(world: World, ids: readonly string[]): string[] {
 
 export function tickCreatures(ctx: GameContext, dt: number): CreatureEvent[] {
   const world = worldOf(ctx);
-  populate(ctx, world);
   const events: CreatureEvent[] = [];
   const riding = ridingOf(ctx);
   const owner = ctx.scene.entity.get(ctx.player.userId);
@@ -492,13 +535,26 @@ export function tickCreatures(ctx: GameContext, dt: number): CreatureEvent[] {
     }
     const down = world.taming.state(creature.id)?.unconscious === true;
     const ridden = riding.riderOf(creature.id) !== null;
+    // Out past the survivor's notice a wild creature only grazes, so it can think a few times a second.
+    const self = ctx.scene.entity.get(creature.id);
+    const far = !creature.tamed && owner !== null && self !== null && Math.hypot(self.position[0] - owner.position[0], self.position[2] - owner.position[2]) > NEAR_RANGE;
+    let stepDt = dt;
+    if (far) {
+      const waited = (world.idle.get(creature.id) ?? 0) + dt;
+      if (waited < FAR_STEP) {
+        world.idle.set(creature.id, waited);
+        continue;
+      }
+      stepDt = waited;
+    }
+    world.idle.delete(creature.id);
     const record = creature.tamed ? world.roster.get(creature.id) : null;
     const mind = down || ridden
       ? ({ kind: "still" } as const)
       : record !== null
         ? ({ kind: "tamed", intent: world.roster.resolveIntent(creature.id, { ownerPosition: owner?.position ?? null, ownerTargetId: ownerTarget, threats })! } as const)
         : ({ kind: "wild", temperament: temperamentOf(def) } as const);
-    const step = world.driver.step(ctx, creature.id, mind, body(world, creature), dt);
+    const step = world.driver.step(ctx, creature.id, mind, body(world, creature), stepDt);
     world.steps.set(creature.id, step);
     const bitten = step.struck && step.targetId !== null ? world.creatures.get(step.targetId) : undefined;
     if (bitten !== undefined) {
@@ -508,14 +564,17 @@ export function tickCreatures(ctx: GameContext, dt: number): CreatureEvent[] {
     if (creature.growth !== null) tickTame(ctx, creature, ridden, dt);
   }
 
-  for (const request of world.director.tick(dt)) {
+  const here = owner?.position ?? null;
+  sleepFarHerds(ctx, world, here);
+  for (const request of world.director.tick(dt, { isActive: (region) => awake(world, region, here) })) {
     const region = world.regions.get(request.region);
     const point = request.point ?? (region === undefined ? null : ([region.center[0], region.center[2]] as const));
     if (point === null) continue;
-    // A herd never refills in plain view: wait until the survivor has wandered off.
-    const near = owner !== null && Math.hypot(owner.position[0] - point[0], owner.position[2] - point[1]) < 60;
+    // A herd never refills in plain view (the very first fill aside): wait until the survivor has wandered off.
+    const near = world.populated && here !== null && Math.hypot(here[0] - point[0], here[2] - point[1]) < 60;
     if (near || spawnCreature(ctx, request.species, point, { region: request.region }) === null) world.director.notifyRemoved(request.region, request.species);
   }
+  world.populated = true;
 
   world.carcasses.tick(dt);
   const me = ctx.scene.entity.get(actor(ctx));

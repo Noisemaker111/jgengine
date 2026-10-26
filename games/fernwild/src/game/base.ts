@@ -203,6 +203,9 @@ export function baseView(ctx: GameContext) {
     ghost: base.ghost === null ? null : { piece: itemLabel(base.ghost.pieceId), valid: base.ghost.valid, why: base.ghost.reason === undefined ? null : BLOCKED[base.ghost.reason], mode: base.ghost.mode },
     aimed: aimed === null || def === null ? null : { label: def.label, health: Math.ceil(aimed.health), max: def.health, open: aimedDoor(base)?.open === true, door: aimedDoor(base) !== null },
     open: base.building.list().filter((piece) => piece.open).length,
+    /** Where the first foundation and doorframe stand, so a proof can measure the survivor against the hut. */
+    floor: base.building.list().find((piece) => piece.pieceId === "thatch_foundation")?.position ?? null,
+    doorway: base.building.list().find((piece) => piece.pieceId === "thatch_doorframe")?.position ?? null,
   };
 }
 

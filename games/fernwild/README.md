@@ -4,9 +4,13 @@ ARK: Survival Evolved, rebuilt on JGengine as close to the real game as our own 
 allow: the same survivor stats and levelling, engrams, recipes, gathering and HUD. Start it with
 `bun --cwd=games/fernwild run dev` from the repository root.
 
-Survival and creatures are in: dodos, phiomias and raptors live on the island, and you can knock
-one out, tame it by feeding it, saddle it and ride it. Building, the full biome map and the late
-game land in the PRs after it, in that order.
+The map is ARK's The Island at 3/8 scale (30 m a map grid unit, about 2.6 km across): the same
+coastline, Dead Island, South Haven and the Craggs, the volcano, the northern and southern mountain
+chains, Frozen Fang and Frozen Tooth in the snow, the redwoods, the swamp, the jungle and the five
+rivers, with ARK's three obelisks and caves marked. Its 231 creature spawn zones carry ARK's
+species and weights per biome, and resources sit where ARK puts them: metal on the mountains,
+obsidian at the volcano, crystal on the peaks, oil on the frozen shore. Survival, creatures and
+thatch-to-stone building are in; death, weather, supply drops, breeding and the boss come next.
 
 ## Controls
 
@@ -19,7 +23,10 @@ Riding, WASD steers the mount and left click bites.
 ## Design checklist
 
 Numbers live in `src/game/data/` (items, engrams, survivor, harvestables, species); places and
-herds (`creature_spawn` markers) live in `src/editor.scene.json`.
+herds (`creature_spawn` markers) live in `src/editor.scene.json`. The Island is surveyed there too:
+`coast` outlines, `peak` markers, `ridge` and `river` paths, `biome` outlines (engine
+`terrain/surveyTerrain`); `src/world.ts` only says how the plains roll and the ground, sea and sky
+are drawn.
 
 - **Core loop.** Wake on the south beach with nothing. Punch trees for thatch and a little wood,
   pick bushes for fiber and berries, pick up stones and flint. Open the inventory (I), craft a Stone
@@ -54,7 +61,10 @@ herds (`creature_spawn` markers) live in `src/editor.scene.json`.
   - *ARK: Survival Evolved* - systems 1:1: stats, levelling, engrams, recipes, gathering yields,
     HUD layout and inventory flow. Not affiliated with Studio Wildcard; no ARK art, audio or text.
   - *The Forest* - feel: punching and chopping a dense tree line by hand.
-- **Gap to target.** Building has no metal tier, foundations snap edge to edge but not to cliffs, and storage boxes cannot be placed yet; no caves, weather or other biomes yet; three species of ARK's dozens;
+- **Gap to target.** The coastline is fitted to about 230 known wiki map points, so bays and capes are
+  close to ARK's but not exact; caves are marked but not dug. Only dodos, phiomias and raptors have
+  bodies, so a spawn zone fills only their share of ARK's weights and zones with none of them stay
+  empty. Building has no metal tier, foundations snap edge to edge but not to cliffs, and storage boxes cannot be placed yet; no weather yet;
   the dodo is a duck and the phiomia a boar until dinosaur models are approved; no bolas,
   slingshot shots or tranq arrows yet, so a raptor is clubbed (or punched) at close range; a tame's inventory holds slots, not weight;
   drain and regen rates where ARK publishes none are approximate; trees are stylized stand-ins, not
@@ -79,4 +89,6 @@ speed +1% of its value when tamed. Punches deal ARK's 1.75x their damage as torp
 ## Credits
 
 Nature models: Quaternius Stylized Nature MegaKit, CC0 1.0. Raptor and boar: Quaternius animal
-models, CC0 1.0. Duck: Microsoft Rocketbox, MIT. Survivor model: the engine's starter pack. See [content provenance](../CONTENT-PROVENANCE.md).
+models, CC0 1.0. Duck: Microsoft Rocketbox, MIT. Survivor model: the engine's starter pack. Map
+layout: The Island's landmark coordinates, heights and spawn regions as published on the ARK
+community wiki (ark.wiki.gg), rebuilt as our own shapes; no ARK map art. See [content provenance](../CONTENT-PROVENANCE.md).

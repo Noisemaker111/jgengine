@@ -982,6 +982,7 @@
     "./terrain/heightfieldGeometry.draw",
     "./terrain/pathTerrain",
     "./terrain/soilPatchMaterial.draw",
+    "./terrain/surveyTerrain",
     "./terrain/terraform",
     "./terrain/terrain",
     "./terrain/terrainChunks.draw",

@@ -324,6 +324,21 @@ describe("terrain field", () => {
     expect(sampler(100, 0)).toEqual(base);
   });
 
+  test("a polygon region paints inside its outline and blends past it", () => {
+    const sampler = createTerrainPaletteSampler({
+      material: "grass",
+      materialRegions: [{ shape: "polygon", points: [[0, 0], [100, 0], [100, 40], [40, 40], [40, 100], [0, 100]], material: "snow", falloff: 10 }],
+    });
+    const base = resolveTerrainPalette({ material: "grass" });
+    const snow = resolveTerrainPalette({ material: "snow" });
+    expect(sampler(20, 80)).toEqual(snow);
+    expect(sampler(80, 20)).toEqual(snow);
+    expect(sampler(80, 80)).toEqual(base);
+    const edge = sampler(105, 20);
+    expect(edge.low).not.toBe(base.low);
+    expect(edge.low).not.toBe(snow.low);
+  });
+
   test("a rotated rect covers along its local axis", () => {
     const sampler = createTerrainPaletteSampler({
       material: "grass",
@@ -802,5 +817,28 @@ describe("withCoast", () => {
     expect(ground(90, 0)).toBeGreaterThan(1);
     expect(ground(90, 0)).toBeLessThan(20);
     expect(ground(200, 0)).toBe(-30);
+  });
+
+  test("authored outlines make land of every ring and sea between them", () => {
+    const main: [number, number][] = [[-100, -100], [100, -100], [100, 100], [-100, 100]];
+    const islet: [number, number][] = [[200, -20], [240, -20], [240, 20], [200, 20]];
+    const ground = withCoast(() => 20, { outlines: [main, islet], falloff: 20, shoreHeight: 1, seaFloor: -30, shelf: 40, wobble: 0 });
+    expect(ground(0, 0)).toBe(20);
+    expect(ground(100, 0)).toBeCloseTo(1, 5);
+    expect(ground(220, 0)).toBeGreaterThan(1);
+    expect(ground(150, 0)).toBe(-30);
+    expect(ground(1000, 1000)).toBe(-30);
+  });
+
+  test("an L-shaped outline keeps its notch as sea", () => {
+    const ell: [number, number][] = [[0, 0], [300, 0], [300, 100], [100, 100], [100, 300], [0, 300]];
+    const ground = withCoast(() => 20, { outlines: [ell], falloff: 10, shoreHeight: 1, seaFloor: -30, shelf: 30, wobble: 0 });
+    expect(ground(50, 250)).toBe(20);
+    expect(ground(250, 50)).toBe(20);
+    expect(ground(250, 250)).toBe(-30);
+  });
+
+  test("a coast with neither radius nor outline is refused", () => {
+    expect(() => withCoast(() => 0, { outlines: [[[0, 0], [1, 1]]] })).toThrow("radius or at least one outline");
   });
 });
