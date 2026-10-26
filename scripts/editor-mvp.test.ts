@@ -13,7 +13,7 @@ import {
   resolveAuthoredObjects,
 } from "../packages/core/src/world/authoredObjects";
 import { createObjectStore } from "../packages/core/src/scene/objectStore";
-import { buildRoadRibbon } from "../packages/core/src/world/roads";
+import { buildRoadRibbon } from "../packages/core/src/roads/roads";
 import { resolveScatter } from "../packages/core/src/world/scatterRegion";
 import {
   applyDeltaToSnapshot,

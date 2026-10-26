@@ -1,5 +1,5 @@
 import type { EditorPath } from "../editor/types";
-import { road, type RoadEnvironmentDescriptor } from "./features";
+import { road, type RoadEnvironmentDescriptor } from "../world/features";
 import { GROUND_DECAL_LAYERS } from "./roads";
 
 /**

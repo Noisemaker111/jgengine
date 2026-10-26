@@ -1,15 +1,10 @@
 import { describe, expect, test } from "bun:test";
-import { road } from "./features";
-import { isOnRoad } from "./roads";
+import { road } from "../world/features";
+import { isOnRoad, offsetPath } from "./roads";
 import {
-  curbPaths,
   distanceToRoadEdge,
   findRoadJunctions,
   furnitureSpots,
-  junctionExclusions,
-  junctionMarkings,
-  laneCenters,
-  offsetPath,
   parkingSpots,
   roadSurfaceSampler,
   sidewalkPaths,
@@ -24,14 +19,6 @@ describe("world/streets", () => {
     const shifted = offsetPath([[0, 0], [0, 100]], 3);
     expect(shifted[0]![0]).toBeCloseTo(-3);
     expect(shifted[1]![1]).toBeCloseTo(100);
-  });
-
-  test("laneCenters are directed right-hand lanes off the centerline", () => {
-    const [forward, reverse] = laneCenters(avenue);
-    expect(forward.direction).toBe("forward");
-    expect(forward.path[0]![0]).toBeCloseTo(2.5);
-    expect(reverse.path[0]![1]).toBeCloseTo(200);
-    expect(reverse.path[0]![0]).toBeCloseTo(-2.5);
   });
 
   test("sidewalks resolve by default and pave both edges", () => {
@@ -65,21 +52,6 @@ describe("world/streets", () => {
     const midLeft = sidewalkPoint(avenue, "left", 0.5);
     expect(midLeft?.[1]).toBeCloseTo(100);
     expect(Math.abs(midLeft?.[0] ?? 0)).toBeCloseTo(6.3);
-  });
-});
-
-describe("world/streets — curbPaths", () => {
-  test("returns two edge lines straddling the asphalt border", () => {
-    const [left, right] = curbPaths(avenue);
-    // At the raw edge, offset is half-width (10/2 = 5) either side.
-    expect(Math.abs(left[0]![0])).toBeCloseTo(5);
-    expect(Math.abs(right[0]![0])).toBeCloseTo(5);
-    expect(Math.sign(left[0]![0])).not.toBe(Math.sign(right[0]![0]));
-  });
-
-  test("inset pulls the curb line inward off the edge", () => {
-    const [left] = curbPaths(avenue, 1);
-    expect(Math.abs(left[0]![0])).toBeCloseTo(4);
   });
 });
 
@@ -128,44 +100,6 @@ describe("world/streets — findRoadJunctions", () => {
     const a = road({ path: [[0, -50], [0, 50]], width: 8 });
     const b = road({ path: [[20, -50], [20, 50]], width: 8 });
     expect(findRoadJunctions([a, b]).length).toBe(0);
-  });
-
-  test("junctionExclusions cover the patch plus a pad so markings stop under it", () => {
-    const junctions = findRoadJunctions([ns, ew]);
-    const zones = junctionExclusions(junctions, 0.5);
-    expect(zones.length).toBe(1);
-    expect(zones[0]!.radius).toBeCloseTo(junctions[0]!.radius + 0.5);
-  });
-});
-
-describe("world/streets — junctionMarkings", () => {
-  const ns = road({ path: [[0, -50], [0, 50]], width: 10 });
-  const ew = road({ path: [[-50, 0], [50, 0]], width: 10 });
-  const junction = findRoadJunctions([ns, ew])[0]!;
-
-  test("emits one stop line per approach outside the patch", () => {
-    const marks = junctionMarkings(junction, { crosswalks: false });
-    expect(marks.stopLines.length).toBe(junction.approaches.length);
-    expect(marks.crosswalkBars.length).toBe(0);
-    // Each stop-line bar's midpoint sits at least `radius` from the center.
-    for (const bar of marks.stopLines) {
-      const a = bar[0]!;
-      const b = bar[1]!;
-      const mid = Math.hypot((a[0] + b[0]) / 2, (a[1] + b[1]) / 2);
-      expect(mid).toBeGreaterThanOrEqual(junction.radius);
-    }
-  });
-
-  test("emits crosswalkBars per approach and honours the count", () => {
-    const marks = junctionMarkings(junction, { stopLines: false, crosswalkBars: 4 });
-    expect(marks.stopLines.length).toBe(0);
-    expect(marks.crosswalkBars.length).toBe(junction.approaches.length * 4);
-  });
-
-  test("both markings can be skipped entirely", () => {
-    const marks = junctionMarkings(junction, { stopLines: false, crosswalks: false });
-    expect(marks.stopLines.length).toBe(0);
-    expect(marks.crosswalkBars.length).toBe(0);
   });
 });
 

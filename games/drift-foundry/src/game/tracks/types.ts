@@ -1,12 +1,12 @@
 import type { BiomeFog, BiomeSky, OceanPalette, TerrainColors } from "@jgengine/core/world/features";
-import type { CoursePiece, CourseSpanCycle, CourseVec2 } from "@jgengine/core/world/routeCourse";
+import type { CoursePiece, CourseSpanCycle, CourseVec2 } from "@jgengine/core/roads/routeCourse";
 
 import type { PartIconId } from "../parts/catalog";
 import type { TrackZone } from "../zones/catalog";
 
 /**
  * One yard track as authored data. The course itself is the engine's route course
- * (`@jgengine/core/world/routeCourse`): a start, turtle pieces, branches and tagged spans. Everything
+ * (`@jgengine/core/roads/routeCourse`): a start, turtle pieces, branches and tagged spans. Everything
  * the run reads off a track - gates, drops, hazards, zones - is placed in *run metres*: metres along
  * the main line from the start line, so the start line is 0 and the gate is `exitAt`. A branch's run
  * metres are the main-line metres it stands in for, so a shortcut's gate sits "at" the main-line

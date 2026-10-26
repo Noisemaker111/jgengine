@@ -4,7 +4,7 @@ import { perContext } from "@jgengine/core/runtime/perContext";
 import type { EditorDocument } from "@jgengine/core/editor/index";
 import { createTraffic, laneGraphFromDocument, type LaneGraph, type Traffic } from "@jgengine/core/world";
 import { cityRoadWidth, type CityLayout } from "@jgengine/core/world/cityLayout";
-import { nearestOnPath } from "@jgengine/core/world/roads";
+import { nearestOnPath } from "@jgengine/core/roads/roads";
 
 import { editorLayers } from "../../editorLayers";
 import { cityLayout, LOT_ROADS } from "./cityLayout";

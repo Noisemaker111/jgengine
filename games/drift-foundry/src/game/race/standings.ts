@@ -10,7 +10,7 @@ import {
   type RaceState,
 } from "@jgengine/core/game/race";
 
-import { MAIN_ROUTE } from "@jgengine/core/world/routeCourse";
+import { MAIN_ROUTE } from "@jgengine/core/roads/routeCourse";
 
 import { ROUTE_GATES } from "../route/gates";
 import { CORRIDOR_DRIVE_HALF_WIDTH, EXIT_Z } from "../run/constants";

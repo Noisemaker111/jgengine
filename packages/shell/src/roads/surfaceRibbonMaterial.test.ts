@@ -2,7 +2,7 @@ import { describe, expect, test } from "bun:test";
 
 import * as THREE from "three";
 
-import { buildRoadRibbon } from "@jgengine/core/world/roads";
+import { buildRoadRibbon } from "@jgengine/core/roads/roads";
 
 import {
   createSurfaceRibbonMaterial,

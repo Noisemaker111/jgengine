@@ -1,10 +1,10 @@
-import { generateStreets, type StreetNetworkRules, type Street } from "@jgengine/core/world/streetGenerator";
+import { generateStreets, type StreetNetworkRules, type Street } from "@jgengine/core/roads/streetGenerator";
 import type { EditorDocument, EditorPath, EditorVec3, EditorVolume } from "@jgengine/core/editor/index";
 
 import type { HandlerTable } from "./context";
 
 /**
- * Bake the pure `generateStreets` generator (`@jgengine/core/world/streetGenerator`) into the scene
+ * Bake the pure `generateStreets` generator (`@jgengine/core/roads/streetGenerator`) into the scene
  * document as authorable `road`/`route` paths (#1185). The generator answers to sliders and returns
  * volume-local through-streets; this verb transforms those into world-frame {@link EditorPath}s and
  * inserts them as one undoable edit with stable, seed-derived ids so a re-run replaces its own prior

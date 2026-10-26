@@ -6,7 +6,7 @@ import { HudLanesPreview } from "./hud/hudLanesPreview";
 import { HudThemePreview } from "./hud/hudThemePreview";
 import { IconsPreview } from "./iconsPreview";
 import { KitFramesPreview } from "./kitFramesPreview";
-import { StreetGeometryPreview } from "./streetGeometryPreview";
+import { StreetGeometryPreview } from "./roads/streetGeometryPreview";
 import { SpriteClipPreview } from "./spriteClipPreview";
 import { TileLayerPreview } from "./tileLayerPreview";
 import { HudSkinPreview } from "./hud/hudSkinPreview";

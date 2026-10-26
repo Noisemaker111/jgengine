@@ -1,5 +1,5 @@
 import { describe, expect, test } from "bun:test";
-import { GROUND_DECAL_LAYERS } from "@jgengine/core/world/roads";
+import { GROUND_DECAL_LAYERS } from "@jgengine/core/roads/roads";
 
 import { RANGE_RING_WIDTH, rangeRingBand } from "./rangeRing";
 

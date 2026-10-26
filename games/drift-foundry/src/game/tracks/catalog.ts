@@ -8,7 +8,7 @@ import {
   type CourseSpanSpec,
   type CourseVec2,
   type RouteCourse,
-} from "@jgengine/core/world/routeCourse";
+} from "@jgengine/core/roads/routeCourse";
 
 import type { PickupDef } from "../run/pickups";
 import type { RouteGate } from "../route/gates";

@@ -7589,8 +7589,8 @@
       "packages": [
         "@jgengine/core"
       ],
-      "module": "@jgengine/core/world/raceCircuit",
-      "domain": "world",
+      "module": "@jgengine/core/roads/raceCircuit",
+      "domain": "roads",
       "gameFacing": false,
       "probe": null,
       "intent": "lift a closed, sealed-off race lap out of an existing city street network"
@@ -8002,8 +8002,8 @@
       "packages": [
         "@jgengine/core"
       ],
-      "module": "@jgengine/core/world/routeCourse",
-      "domain": "world",
+      "module": "@jgengine/core/roads/routeCourse",
+      "domain": "roads",
       "gameFacing": false,
       "probe": null,
       "intent": "build a branching race course from track pieces: locate, wall clamp, checkpoints, hazard spans, racing lines"
@@ -9258,8 +9258,8 @@
       "packages": [
         "@jgengine/core"
       ],
-      "module": "@jgengine/core/world/streetGenerator",
-      "domain": "world",
+      "module": "@jgengine/core/roads/streetGenerator",
+      "domain": "roads",
       "gameFacing": false,
       "probe": null,
       "intent": "seed-driven procedural streets and race circuits from one slider-driven engine"
@@ -10970,11 +10970,11 @@
         "@jgengine/core",
         "@jgengine/react"
       ],
-      "module": "@jgengine/core/world/roads",
-      "domain": "world",
+      "module": "@jgengine/core/roads/roads",
+      "domain": "roads",
       "gameFacing": false,
       "probe": null,
-      "intent": "trim offset sidewalk/parallel bands around junction aprons"
+      "intent": "trim streets at junctions and weld curb-return crossing surfaces in one call"
     },
     {
       "id": "world-item-pickup",

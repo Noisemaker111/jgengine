@@ -76,7 +76,7 @@ export * from "./display";
 export * from "./map";
 export * from "./preview";
 export * from "./previewFixtures";
-export * from "./streetGeometryPreview";
+export * from "./roads/streetGeometryPreview";
 export * from "./save/saveSlots";
 export * from "./camera/shake/cameraShake";
 export * from "./dialog/dialogBehavior";

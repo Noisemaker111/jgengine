@@ -3,7 +3,7 @@ import {
   GROUND_DECAL_LAYERS,
   type RoadPoint,
   type RoadRibbon,
-} from "@jgengine/core/world/roads";
+} from "@jgengine/core/roads/roads";
 
 /** Painted width of the range band, in world units — a crisp outline, not a filled disc over the route. */
 export const RANGE_RING_WIDTH = 0.45;

@@ -2,14 +2,14 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useMemo, useRef, useState } from "react";
 
 import { generateCity, type GeneratedCity } from "@jgengine/core/world/cityGenerator";
-import { extractCircuitRoute, type CircuitRoute } from "@jgengine/core/world/raceCircuit";
+import { extractCircuitRoute, type CircuitRoute } from "@jgengine/core/roads/raceCircuit";
 import {
   generateStreets,
   streetNetworkMode,
   type StreetNetwork,
   type StreetNetworkMode,
   type StreetNetworkRules,
-} from "@jgengine/core/world/streetGenerator";
+} from "@jgengine/core/roads/streetGenerator";
 import { Page, PageHero } from "../components/Layout";
 import type { PlaygroundWorldHandle } from "../live/playgroundWorld";
 import { seo } from "../lib/seo";

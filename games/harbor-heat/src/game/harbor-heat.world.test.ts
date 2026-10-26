@@ -2,7 +2,7 @@ import { describe, expect, test } from "bun:test";
 import { summarizeEnvironment } from "@jgengine/core/world/environmentSummary";
 import { cityLots } from "@jgengine/core/world/cityLayout";
 import { rectClearsPolyline } from "@jgengine/core/world/cityGeometry";
-import { isOnRoad } from "@jgengine/core/world/roads";
+import { isOnRoad } from "@jgengine/core/roads/roads";
 import { streets, world } from "../world";
 import {
   BOUNTY_SPOTS,

@@ -1,6 +1,6 @@
 import { describe, expect, test } from "bun:test";
 
-import { DEFAULT_ROAD_SCAN } from "./features";
+import { DEFAULT_ROAD_SCAN } from "../world/features";
 import { pathRoad } from "./pathRoads";
 
 const points = [{ x: 0, y: 0, z: 0 }, { x: 40, y: 0, z: 0 }, { x: 40, y: 0, z: 40 }];

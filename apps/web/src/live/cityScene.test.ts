@@ -1,7 +1,7 @@
 import { describe, expect, test } from "bun:test";
 
 import { generateCity } from "@jgengine/core/world/cityGenerator";
-import { extractCircuitRoute, type CircuitRoute } from "@jgengine/core/world/raceCircuit";
+import { extractCircuitRoute, type CircuitRoute } from "@jgengine/core/roads/raceCircuit";
 import { buildRaceDressing, cityRevealState } from "./cityScene";
 
 describe("city road reveal ordering", () => {

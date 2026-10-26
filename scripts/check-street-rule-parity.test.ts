@@ -100,7 +100,7 @@ describe("check-street-rule-parity", () => {
   test("the real files parse — the extractors track the shipped source, not a fixture shape", () => {
     const root = fileURLToPath(new URL("..", import.meta.url));
     const read = (rel: string): string => readFileSync(join(root, rel), "utf8");
-    expect(streetRuleMembers(read("packages/core/src/world/streetGenerator.ts"))).toContain("compactness");
+    expect(streetRuleMembers(read("packages/core/src/roads/streetGenerator.ts"))).toContain("compactness");
     expect(netRulesKeys(read("packages/core/src/world/cityKind.ts"))).toContain("compactness");
     expect(ruleKeyList(read("packages/editor/src/handlers/streets.ts"))).toContain("compactness");
   });

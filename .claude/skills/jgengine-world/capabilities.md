@@ -821,7 +821,7 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 ## route-course — build a branching race course from track pieces: locate, wall clamp, checkpoints, hazard spans, racing lines
 
-- `buildRouteCourse` (function) · `import { buildRouteCourse } from "@jgengine/core/world/routeCourse"`
+- `buildRouteCourse` (function) · `import { buildRouteCourse } from "@jgengine/core/roads/routeCourse"`
 
 ## rts-attack-clock — decide when an RTS AI launches growing attack waves, with a max-wait fallback
 
@@ -961,7 +961,7 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 ## street-generator — build a deterministic street/track graph (nodes, edges, streets, junctions, sidewalks, bridges, tunnels) from sliders
 
-- `generateStreets` (function) · `import { generateStreets } from "@jgengine/core/world/streetGenerator"`
+- `generateStreets` (function) · `import { generateStreets } from "@jgengine/core/roads/streetGenerator"`
 
 ## surface-drape — lift an XZ polyline onto sculpted terrain
 
@@ -1123,10 +1123,8 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 ## world-intersections — connect sidewalks and lane guidance through generated intersections
 
-- `buildIntersectionMarkings` (function) · `import { buildIntersectionMarkings } from "@jgengine/core/world/roads"`
-- `buildJunctionConnector` (function) · `import { buildJunctionConnector } from "@jgengine/core/world/roads"`
+- `buildIntersectionMarkings` (function) · `import { buildIntersectionMarkings } from "@jgengine/core/roads/roads"`
 - `buildTrimmedIntersections` (function) · `import { buildTrimmedIntersections } from "@jgengine/core/world"`
-- `trimBandAtJunctions` (function) · `import { trimBandAtJunctions } from "@jgengine/core/world"`
 
 ## world-physics-colliders — Synchronize terrain and authored static colliders with a physics backend.
 
