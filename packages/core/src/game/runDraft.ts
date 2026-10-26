@@ -1,4 +1,4 @@
-import { pickWeighted } from "../world/scatterItems";
+import { pickWeighted } from "../random/pick";
 import type { StatModifier, StatModifierSet, Stats } from "../stats/statModifiers";
 import { resolveRng } from "../random/resolveRng";
 
@@ -119,13 +119,13 @@ export function createRunDraft<TStat extends string = string, TData = unknown>(
   return {
     present(count, rng = defaultRng) {
       const pool = config.offers.filter((offer) => !stack.atMax(offer.id));
-      const remaining = pool.map((offer) => ({ value: offer, weight: offer.weight }));
+      const remaining = pool.slice();
       const drawn: RunModifierOffer<TStat, TData>[] = [];
       while (drawn.length < count && remaining.length > 0) {
-        const picked = pickWeighted(remaining, rng());
-        if (picked === null) break;
+        const picked = pickWeighted(rng, remaining, (offer) => offer.weight);
+        if (picked === undefined) break;
         drawn.push(picked);
-        const index = remaining.findIndex((entry) => entry.value.id === picked.id);
+        const index = remaining.findIndex((offer) => offer.id === picked.id);
         if (index >= 0) remaining.splice(index, 1);
       }
       return drawn;

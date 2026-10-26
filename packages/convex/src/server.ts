@@ -59,7 +59,7 @@ import {
   withoutMember,
   type MatchmakingMode,
 } from "@jgengine/core/runtime/hostPolicy";
-import type { SaveConfig } from "@jgengine/core/runtime/save";
+import type { SaveConfig } from "@jgengine/core/save/saveConfig";
 import type { GameRuntimeSnapshot, RuntimeChunkRow, RuntimePlayerRow, RuntimeServerRow } from "@jgengine/core/runtime/snapshot";
 import { createEmptyServerRow } from "@jgengine/core/runtime/snapshot";
 import { chunkKeyAt, parseChunkKey, chunkKeysAround, DEFAULT_CHUNK_SIZE } from "@jgengine/core/runtime/worldChunks";

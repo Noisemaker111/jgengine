@@ -1,4 +1,4 @@
-import { evalCurve, leveling, type CurveDef, type LevelProgress, type LevelingTrack } from "../game/progression";
+import { evalCurve, leveling, type CurveDef, type LevelProgress, type LevelingTrack } from "./leveling";
 
 /** Named rule a level threshold grows by. `flat` repeats `step`; `linear` adds `growthRate` per level; `power` uses `level ^ growthRate`; `geometric` multiplies by `growthRate`; `table` reads `table`. */
 export type XpGrowthRule = "flat" | "linear" | "power" | "geometric" | "table";

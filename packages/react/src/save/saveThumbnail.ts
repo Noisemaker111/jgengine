@@ -3,6 +3,9 @@
  * URL (a couple of KB), not a full-resolution PNG, so a slot index still fits in local storage.
  */
 
+/** How long a capture may take to decode before it counts as undecodable. */
+const DECODE_TIMEOUT_MS = 5000;
+
 /** How {@link shrinkCapture} sizes and encodes a capture. */
 export interface SaveThumbnailOptions {
   /** Output width in pixels. Default 320. */
@@ -31,9 +34,17 @@ export async function shrinkCapture(
   const height = options.height ?? 180;
   const image = new Image();
   image.decoding = "sync";
+  // A decoder that never answers (a hung image pipeline) is an undecodable frame, not a stuck save.
   const loaded = await new Promise<boolean>((resolve) => {
-    image.onload = () => resolve(true);
-    image.onerror = () => resolve(false);
+    const timer = setTimeout(() => resolve(false), DECODE_TIMEOUT_MS);
+    image.onload = () => {
+      clearTimeout(timer);
+      resolve(true);
+    };
+    image.onerror = () => {
+      clearTimeout(timer);
+      resolve(false);
+    };
     image.src = capture;
   });
   if (!loaded) return null;

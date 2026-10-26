@@ -1,4 +1,4 @@
-import { pickWeighted } from "../world/scatterItems";
+import { pickWeighted } from "../random/pick";
 
 export type AffixOp = "add" | "mul";
 
@@ -91,7 +91,6 @@ export function createAffixRoller(config: RollerConfig): AffixRoller {
   assertConfig(config);
   const poolById = new Map(config.pools.map((p) => [p.id, p] as const));
   const rarityById = new Map(config.rarities.map((r) => [r.id, r] as const));
-  const rarityEntries = config.rarities.map((value) => ({ value, weight: value.weight }));
 
   function candidatesFor(base: ItemBaseDef, rarity: RarityTier): AffixDef[] {
     const allowed = rarity.pools;
@@ -110,11 +109,8 @@ export function createAffixRoller(config: RollerConfig): AffixRoller {
     const drawn: RolledAffix[] = [];
     const target = Math.min(count, remaining.length);
     for (let i = 0; i < target; i++) {
-      const picked = pickWeighted(
-        remaining.map((value) => ({ value, weight: value.weight })),
-        rng(),
-      );
-      if (picked === null) break;
+      const picked = pickWeighted(rng, remaining, (affix) => affix.weight);
+      if (picked === undefined) break;
       remaining.splice(remaining.indexOf(picked), 1);
       drawn.push({ id: picked.id, stat: picked.stat, op: picked.op ?? "add", value: resolveRoll(picked.roll, rng) });
     }
@@ -155,7 +151,7 @@ export function createAffixRoller(config: RollerConfig): AffixRoller {
 
   return {
     rollRarity(rng) {
-      const picked = pickWeighted(rarityEntries, rng());
+      const picked = pickWeighted(rng, config.rarities, (tier) => tier.weight);
       return picked ?? config.rarities[config.rarities.length - 1]!;
     },
     roll(base, rarityId, rng) {

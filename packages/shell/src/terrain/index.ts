@@ -23,7 +23,7 @@ export {
   type HeightfieldRect,
 } from "./heightfieldGeometry";
 export { TerraformBrushCursor, type TerraformBrushCursorProps } from "./TerraformBrushCursor";
-export { createSeededRandom, hashNoise2, seedToUint32, type TerrainSeed } from "./random";
+export { hashNoise2, seedToUint32, type TerrainSeed } from "./random";
 export {
   createFieldGroundGeometry,
   createProceduralGroundGeometry,

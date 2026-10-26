@@ -2,7 +2,7 @@ import { describe, expect, test } from "bun:test";
 
 import { devtools } from "../devtools/devtools";
 import { seededRng } from "../random/rng";
-import { createGameSave, GAME_SAVE_VERSION, type GameSaveDocument, type GameSaveSystem } from "./gameSave";
+import { createGameSave, GAME_SAVE_VERSION, type GameSaveDocument, type GameSaveSystem } from "./saveDocument";
 import { memorySaveBackend, type SaveBackend, type SaveTimers } from "./saveStore";
 
 /** A recording backend so a test can assert what was written without a real store. */

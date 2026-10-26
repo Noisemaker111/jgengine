@@ -10,7 +10,7 @@ import {
 import { GRASS_DEFAULTS } from "@jgengine/core/world/grassKind";
 
 import { bakeGrassNode, resolveGrassBake } from "../grass/grassBake";
-import { createSeededRandom } from "./random";
+import { seededRng } from "@jgengine/core/random/rng";
 import {
   createFieldGroundGeometry,
   createProceduralGroundGeometry,
@@ -20,9 +20,9 @@ import {
 
 describe("terrain primitives", () => {
   test("seeded random streams are stable", () => {
-    const a = createSeededRandom("field");
-    const b = createSeededRandom("field");
-    const c = createSeededRandom("other");
+    const a = seededRng("field");
+    const b = seededRng("field");
+    const c = seededRng("other");
     expect([a(), a(), a()]).toEqual([b(), b(), b()]);
     expect([a(), a(), a()]).not.toEqual([c(), c(), c()]);
   });

@@ -4,11 +4,11 @@ import { KitButton, KitPanel } from "@jgengine/react/uiKitRoot";
 import { GameMenu, GamePauseMenu } from "@jgengine/react/gameMenu";
 import { useGameStore, useOptionalGamePhase } from "@jgengine/react/hooks";
 import { useGameContext } from "@jgengine/react/provider";
-import { useSaveSlots } from "@jgengine/react/saveSlots";
+import { useSaveSlots } from "@jgengine/react/save/saveSlots";
 import { useSettings } from "@jgengine/react/settings";
 import { SettingsSection, SettingsTabs } from "@jgengine/react/settingsBlocks";
 import { useStore } from "@jgengine/react/store";
-import type { SaveSlotMeta } from "@jgengine/core/game/saveSlots";
+import type { SaveSlotMeta } from "@jgengine/core/save/saveSlots";
 
 import { DEEPWARD_CREDITS } from "../../credits";
 import { loadRecordSlot, beginRecordSlot, openTitle, persistRecord, recordOf, withdrawToTitle, viewStore } from "../../controls";

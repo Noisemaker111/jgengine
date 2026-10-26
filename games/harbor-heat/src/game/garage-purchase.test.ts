@@ -1,6 +1,6 @@
 import { expect, test } from 'bun:test';
 import { defineGameDefinition } from '@jgengine/core/game/defineGame';
-import { memorySaveBackend, type SaveBackend } from '@jgengine/core/game/saveStore';
+import { memorySaveBackend, type SaveBackend } from '@jgengine/core/save/saveStore';
 import { createGameContext, type GameContext } from '@jgengine/core/runtime/gameContext';
 import { content } from './content';
 import { registerCommands } from './commands';

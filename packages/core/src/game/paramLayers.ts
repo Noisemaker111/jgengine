@@ -14,7 +14,7 @@
  * those ids back to layers and reports unknown ids so migration and unknown saved content degrade
  * gracefully rather than throwing.
  */
-import { type Curve, evalCurve } from "./progression";
+import { type Curve, evalCurve } from "../progression/leveling";
 
 /**
  * A single transform applied to one numeric parameter. `set` overrides, `add`/`multiply` accumulate,

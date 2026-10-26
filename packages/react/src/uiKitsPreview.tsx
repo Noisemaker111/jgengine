@@ -1,6 +1,6 @@
 import type { CSSProperties, ReactNode } from "react";
 
-import { createSaveSlots, type SaveSlotMeta } from "@jgengine/core/game/saveSlots";
+import { createSaveSlots, type SaveSlotMeta } from "@jgengine/core/save/saveSlots";
 
 import { GamePauseMenu } from "./gameMenu";
 import { ContinuePane, CreditsPane, SaveSlotsPane } from "./gameMenuSaves";

@@ -1,5 +1,5 @@
 import type { GameContext } from "@jgengine/core/runtime/gameContext";
-import { leveling, type Curve, type LevelingStatAccess } from "@jgengine/core/game/progression";
+import { leveling, type Curve, type LevelingStatAccess } from "@jgengine/core/progression/leveling";
 import type { StatCatalog } from "@jgengine/core/scene/entityStats";
 
 import { combatantDef } from "./catalog";

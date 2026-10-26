@@ -1,4 +1,4 @@
-import { evalCurve, type Curve } from "../game/progression";
+import { evalCurve, type Curve } from "../progression/leveling";
 
 /**
  * How cycles that came due between two {@link advanceLedger} calls are settled:

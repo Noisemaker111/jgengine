@@ -1,12 +1,12 @@
 import { describe, expect, test } from "bun:test";
 
 import { defineGameDefinition } from "../game/defineGame";
-import { localSaveBackend, memorySaveBackend } from "../game/saveStore";
+import { localSaveBackend, memorySaveBackend } from "../save/saveStore";
 import { createAssetCatalog } from "../scene/assetCatalog";
 import { defineStore } from "../store/defineStore";
 import { convex } from "./adapter";
 import { createGameContext } from "./gameContext";
-import { createRuntimeSave } from "./runtimeSave";
+import { createRuntimeSave } from "../save/snapshotSave";
 
 const progress = defineStore<{ level: number }>("save.progress", { level: 1 });
 

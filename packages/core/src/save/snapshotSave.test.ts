@@ -1,7 +1,7 @@
 import { describe, expect, test } from "bun:test";
-import { memorySaveBackend, type SaveBackend, type SaveTimers } from "../game/saveStore";
-import { createRuntimeSave, type RuntimeSaveTarget } from "./runtimeSave";
-import type { WorldSnapshot } from "./worldSnapshot";
+import { memorySaveBackend, type SaveBackend, type SaveTimers } from "./saveStore";
+import { createRuntimeSave, type RuntimeSaveTarget } from "./snapshotSave";
+import type { WorldSnapshot } from "../runtime/worldSnapshot";
 
 /** A stand-in for a live GameContext: a mutable world with snapshot/hydrate/subscribe. */
 function fakeWorld(initial: WorldSnapshot = {}): RuntimeSaveTarget & {

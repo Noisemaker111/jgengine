@@ -33,7 +33,7 @@ beforeAll(async () => {
     import React, { useState } from 'react';
     import { createRoot } from 'react-dom/client';
     import { flushSync } from 'react-dom';
-    import { createSaveSlots } from '../../packages/core/src/game/saveSlots';
+    import { createSaveSlots } from '../../packages/core/src/save/saveSlots';
     import { GameMenu } from '../../packages/react/src/gameMenu';
     import { ContinuePane, SaveSlotsPane } from '../../packages/react/src/gameMenuSaves';
     import { MENU_THEME_STYLE } from '../../packages/react/src/testFixtures';

@@ -6,7 +6,7 @@
  * polls for the binding or waits frames of its own.
  */
 
-import { shrinkCapture, type SaveThumbnailOptions } from "@jgengine/react/saveThumbnail";
+import { shrinkCapture, type SaveThumbnailOptions } from "@jgengine/react/save/saveThumbnail";
 
 /** Reads the current scene frame as an image data URL, or null when the frame cannot be read. */
 export type SceneCapture = () => string | null;

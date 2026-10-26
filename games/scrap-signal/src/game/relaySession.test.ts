@@ -2,7 +2,7 @@ import { afterEach, expect, test } from "bun:test";
 import { createGameContext } from "@jgengine/core/runtime/gameContext";
 import { defineGameDefinition } from "@jgengine/core/game/defineGame";
 import { createAssetCatalog } from "@jgengine/core/scene/assetCatalog";
-import { memorySaveBackend } from "@jgengine/core/game/saveStore";
+import { memorySaveBackend } from "@jgengine/core/save/saveStore";
 import { setGamePhase } from "@jgengine/core/game/gamePhase";
 import { content } from "./content";
 import { lootTables } from "./entities/enemies/loot-tables";

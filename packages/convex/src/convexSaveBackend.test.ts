@@ -1,7 +1,7 @@
 import { describe, expect, test } from "bun:test";
 import type { ConvexReactClient } from "convex/react";
 
-import { createSaveStore } from "@jgengine/core/game/saveStore";
+import { createSaveStore } from "@jgengine/core/save/saveStore";
 
 import { createConvexSaveBackend } from "./convexSaveBackend";
 

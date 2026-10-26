@@ -9,7 +9,7 @@ import { defineConfig, searchForWorkspaceRoot, type ProxyOptions } from "vite";
 import { parseDevProxyTable } from "../../packages/core/src/data/devProxy";
 import { tunableDiscoveryPlugin } from "../../packages/core/src/devtools/transformTunables";
 import { devServerMarkerPlugin } from "../../scripts/devServerMarker";
-import { devSavePlugin } from "./devSavePlugin";
+import { devSavePlugin, gamesSrcDir } from "../../packages/node/src/devSavePlugin";
 import { devReportPlugin } from "./devReportPlugin";
 import { gamePublicPlugin } from "./gamePublicPlugin";
 
@@ -67,7 +67,7 @@ const devProxy: Record<string, string | ProxyOptions> = Object.fromEntries(
 );
 
 export default defineConfig({
-  plugins: [devServerMarkerPlugin({ kind: "runner" }), tunableDiscoveryPlugin(), devSavePlugin(gamesDir, servedGameDir), devReportPlugin(), gamePublicPlugin(servedGameDir, gamesDir, fileURLToPath(new URL("./public", import.meta.url))), react(), tailwindcss()],
+  plugins: [devServerMarkerPlugin({ kind: "runner" }), tunableDiscoveryPlugin(), devSavePlugin(gamesSrcDir(gamesDir, servedGameDir)), devReportPlugin(), gamePublicPlugin(servedGameDir, gamesDir, fileURLToPath(new URL("./public", import.meta.url))), react(), tailwindcss()],
   clearScreen: false,
   build: {
     target: "es2022",

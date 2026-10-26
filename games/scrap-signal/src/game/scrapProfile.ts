@@ -1,5 +1,5 @@
-import type { GameSaveSystem } from "@jgengine/core/game/gameSave";
-import { shrinkCapture } from "@jgengine/react/saveThumbnail";
+import type { GameSaveSystem } from "@jgengine/core/save/saveDocument";
+import { shrinkCapture } from "@jgengine/react/save/saveThumbnail";
 
 /** The live frame a run card shows, read inside the canvas by `SceneCaptureBinding`. */
 const reader: { current: (() => string | null) | null } = { current: null };

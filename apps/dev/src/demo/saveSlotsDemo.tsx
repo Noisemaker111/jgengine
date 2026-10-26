@@ -1,11 +1,11 @@
-import { useMemo, useRef, type CSSProperties, type ReactNode } from "react";
+import { useRef, type CSSProperties, type ReactNode } from "react";
 
 import { defineGameDefinition } from "@jgengine/core/game/defineGame";
-import { createSaveSlots, type SaveSlotMeta } from "@jgengine/core/game/saveSlots";
+import { createSaveSlots, type SaveSlotMeta } from "@jgengine/core/save/saveSlots";
 import type { GameContext, GameContextEntityEntry } from "@jgengine/core/runtime/gameContext";
 import { createAssetCatalog } from "@jgengine/core/scene/assetCatalog";
 import { environment, grass, terrain } from "@jgengine/core/world/features";
-import { SaveSlotMenu } from "@jgengine/react/saveSlots";
+import { SaveSlotsPane } from "@jgengine/react/gameMenuSaves";
 
 import { EnvironmentScene } from "@jgengine/shell/environment/EnvironmentScene";
 import type { PlayableGame } from "@jgengine/shell/registry";
@@ -71,19 +71,13 @@ function SaveSlotsUI(): ReactNode {
   if (modelRef.current === null) modelRef.current = seedSlots();
   const model = modelRef.current;
 
-  const metaIcons = useMemo(
-    () => ({ level: "star" as const, playtime: "hourglass" as const, gold: "coin" as const }),
-    [],
-  );
-
   return (
     <div className="pointer-events-none absolute inset-0 font-sans text-white">
       <div style={scrim}>
-        <SaveSlotMenu
+        <SaveSlotsPane
           model={model}
-          title="Chronicles of Ash — Load Game"
+          heading="Chronicles of Ash — Load Game"
           now={() => NOW}
-          metaIcons={metaIcons}
           onContinue={(slot: SaveSlotMeta) => model.write(slot.id)}
           onLoad={(slot: SaveSlotMeta) => model.write(slot.id)}
           onNew={(slot: SaveSlotMeta) =>

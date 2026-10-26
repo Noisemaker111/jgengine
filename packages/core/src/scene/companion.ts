@@ -84,7 +84,7 @@ export interface CompanionConfig {
   stats?: StatCatalog;
   /** Per-stat upgrade rules consulted by {@link CompanionRoster.spend}. */
   upgrades?: Record<string, CompanionStatUpgrade>;
-  /** Points granted on reaching a given level; default `1` per level. Inject `game/progression` curves here. */
+  /** Points granted on reaching a given level; default `1` per level. Inject `progression/leveling` curves here. */
   pointsPerLevel?: (level: number) => number;
   /** Level ceiling; `levelUp` past it is a no-op. Default `Infinity`. */
   maxLevel?: number;

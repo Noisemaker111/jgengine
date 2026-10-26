@@ -1,4 +1,4 @@
-import { evalCurve, type Curve } from "../game/progression";
+import { evalCurve, type Curve } from "../progression/leveling";
 
 /**
  * Plain, JSON-serializable snapshot of a point pool. `earned` is the lifetime total ever

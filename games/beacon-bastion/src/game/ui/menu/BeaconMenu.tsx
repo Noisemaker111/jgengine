@@ -6,7 +6,7 @@ import { useGamePhase } from "@jgengine/react/hooks";
 import { CreditsPane } from "@jgengine/react/gameMenuSaves";
 import { useMenuNav } from "@jgengine/react/menuNav";
 import { useGameContext } from "@jgengine/react/provider";
-import { useSaveSlots } from "@jgengine/react/saveSlots";
+import { useSaveSlots } from "@jgengine/react/save/saveSlots";
 import { useSettings } from "@jgengine/react/settings";
 
 import { DIFFICULTIES, DIFFICULTY_IDS, setDifficulty, type DifficultyId } from "../../campaign";

@@ -52,6 +52,7 @@ export const CORE_DOMAIN_SKILLS: Record<string, string> = {
   render: "jgengine-ui",
   rules: "jgengine-gameplay",
   run: "jgengine-gameplay",
+  save: "jgengine-gameplay",
   runtime: MAIN,
   scene: "jgengine-world",
   sensor: "jgengine-world",

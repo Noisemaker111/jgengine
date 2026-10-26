@@ -93,7 +93,7 @@ applyStatPoolDelta(access, enemy.id, "health", -result.impact); // -12 vs the ar
     keep: "Player identity, your save schema, your event bus, when XP is granted.",
     get: "grantXp: curve math, rollover, caps, and ordered level-up callbacks with no store to adopt.",
     filename: "xp.ts",
-    code: `import { leveling } from "@jgengine/core/game/progression";
+    code: `import { leveling } from "@jgengine/core/progression/leveling";
 
 const track = leveling({ xpForLevel: { kind: "power", base: 80, exponent: 1.35, round: "floor" }, maxLevel: 20 });
 

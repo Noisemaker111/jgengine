@@ -1,14 +1,14 @@
 import { describe, expect, test } from "bun:test";
 
-import { createGameSave } from "@jgengine/core/game/gameSave";
-import { createSaveSlots } from "@jgengine/core/game/saveSlots";
-import { memorySaveBackend } from "@jgengine/core/game/saveStore";
+import { createGameSave } from "@jgengine/core/save/saveDocument";
+import { createSaveSlots } from "@jgengine/core/save/saveSlots";
+import { memorySaveBackend } from "@jgengine/core/save/saveStore";
 import {
   formatSavePlaytime,
   gameSaveSlotSource,
   refreshSaveSlots,
   saveSlotMeta,
-} from "@jgengine/core/game/saveSlotIndex";
+} from "@jgengine/core/save/saveSlotIndex";
 
 const DOC = {
   version: 1,

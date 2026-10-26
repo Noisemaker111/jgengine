@@ -1,16 +1,16 @@
 import { useEffect, useMemo, useState, useSyncExternalStore, type ReactNode } from "react";
 
 import { defineGameDefinition } from "@jgengine/core/game/defineGame";
-import { createGameSave, type GameSaveDocument } from "@jgengine/core/game/gameSave";
-import { createSaveSlots } from "@jgengine/core/game/saveSlots";
-import { formatSavePlaytime, gameSaveSlotSource, refreshSaveSlots } from "@jgengine/core/game/saveSlotIndex";
-import { localSaveBackend } from "@jgengine/core/game/saveStore";
+import { createGameSave, type GameSaveDocument } from "@jgengine/core/save/saveDocument";
+import { createSaveSlots } from "@jgengine/core/save/saveSlots";
+import { formatSavePlaytime, gameSaveSlotSource, refreshSaveSlots } from "@jgengine/core/save/saveSlotIndex";
+import { localSaveBackend } from "@jgengine/core/save/saveStore";
 import { mergeCredits } from "@jgengine/core/game/credits";
 import { createAssetCatalog } from "@jgengine/core/scene/assetCatalog";
 import type { GameContext } from "@jgengine/core/runtime/gameContext";
 import { environment, grass, terrain } from "@jgengine/core/world/features";
 import { ContinuePane, CreditsPane, GameMenu, GamePauseMenu, NewCharacterPane, SaveSlotsPane } from "@jgengine/react";
-import { shrinkCapture } from "@jgengine/react/saveThumbnail";
+import { shrinkCapture } from "@jgengine/react/save/saveThumbnail";
 import { useSettings } from "@jgengine/react/settings";
 import { SettingsSection, SettingsTabs } from "@jgengine/react/settingsBlocks";
 import { EnvironmentScene } from "@jgengine/shell/environment/EnvironmentScene";

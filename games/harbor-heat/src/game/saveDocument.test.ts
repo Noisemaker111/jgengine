@@ -2,7 +2,7 @@ import { describe, expect, test } from "bun:test";
 import { readdirSync, readFileSync, statSync } from "node:fs";
 import { join } from "node:path";
 import { createGameContext, type GameContext } from "@jgengine/core/runtime/gameContext";
-import { memorySaveBackend, type SaveBackend } from "@jgengine/core/game/saveStore";
+import { memorySaveBackend, type SaveBackend } from "@jgengine/core/save/saveStore";
 
 import { game } from "../game.config";
 import { loop } from "../loop";

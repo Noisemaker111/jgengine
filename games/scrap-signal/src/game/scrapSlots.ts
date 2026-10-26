@@ -1,6 +1,6 @@
 import type { GameContext } from "@jgengine/core/runtime/gameContext";
-import { createSaveSlots } from "@jgengine/core/game/saveSlots";
-import { formatSavePlaytime, gameSaveSlotSource, refreshSaveSlots } from "@jgengine/core/game/saveSlotIndex";
+import { createSaveSlots } from "@jgengine/core/save/saveSlots";
+import { formatSavePlaytime, gameSaveSlotSource, refreshSaveSlots } from "@jgengine/core/save/saveSlotIndex";
 
 import { CHARACTERS } from "./characters";
 import { scrapSave } from "./save";

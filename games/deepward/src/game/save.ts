@@ -1,5 +1,5 @@
-import { createGameSave, GAME_SAVE_VERSION, type GameSave, type GameSaveDocument, type GameSaveSystem } from "@jgengine/core/game/gameSave";
-import { localSaveBackend, type SaveBackend } from "@jgengine/core/game/saveStore";
+import { createGameSave, GAME_SAVE_VERSION, type GameSave, type GameSaveDocument, type GameSaveSystem } from "@jgengine/core/save/saveDocument";
+import { localSaveBackend, type SaveBackend } from "@jgengine/core/save/saveStore";
 import type { WeaponSystemState } from "@jgengine/core/combat/weaponSystem";
 import { createTransactionLedger, type LedgerState } from "@jgengine/core/economy/transactionLedger";
 import type { CareerBankState } from "@jgengine/core/progression/careerBank";

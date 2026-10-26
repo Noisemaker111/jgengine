@@ -53,7 +53,7 @@
     "@jgengine/core/economy/transactionLedger": [
       "harbor.ledger"
     ],
-    "@jgengine/core/game/gameSave": [
+    "@jgengine/core/save/saveDocument": [
       "harbor.save"
     ],
     "@jgengine/core/nav/traffic": [

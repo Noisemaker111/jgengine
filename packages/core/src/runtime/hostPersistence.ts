@@ -1,12 +1,12 @@
 import type { LeaderboardScope } from "../game/leaderboard";
 import type { NormalizedScenarioReset } from "./persistenceScope";
-import type { SaveConfig } from "./save";
+import type { SaveConfig } from "../save/saveConfig";
 import {
   isSaveEnabled,
   parseSaveAutoMs,
   saveScopeIncludesChunks,
   saveScopeIncludesPlayer,
-} from "./save";
+} from "../save/saveConfig";
 import type {
   GameRuntimeSnapshot,
   RuntimeChunkRow,

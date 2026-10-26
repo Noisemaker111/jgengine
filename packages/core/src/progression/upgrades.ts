@@ -1,4 +1,4 @@
-import { evalCurve, type Curve } from "../game/progression";
+import { evalCurve, type Curve } from "./leveling";
 import type { Standing, StandingRequirement } from "./standing";
 
 /**

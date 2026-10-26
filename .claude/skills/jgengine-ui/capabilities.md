@@ -934,10 +934,6 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `SaveSlotCard` (function) · `import { SaveSlotCard } from "@jgengine/react"`
 
-## save-slot-menu — drop-in save-select / profile menu that renders a core save-slots index as New / Continue / Load / Delete cards with free-string meta chips and relative save times, theme-skinnable
-
-- `SaveSlotMenu` (function) · `import { SaveSlotMenu } from "@jgengine/react"`
-
 ## save-slots-pane — slot grid pane for the game menu — Continue newest, per-slot cards, keyboard navigation
 
 - `SaveSlotsPane` (function) · `import { SaveSlotsPane } from "@jgengine/react"`
@@ -1004,7 +1000,7 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 ## shrink-capture — downscale a captured frame to a save-card thumbnail data URL
 
-- `shrinkCapture` (function) · `import { shrinkCapture } from "@jgengine/react/saveThumbnail"`
+- `shrinkCapture` (function) · `import { shrinkCapture } from "@jgengine/react/save/saveThumbnail"`
 
 ## speed-format — render a m/s speed as km/h, mph, knots, or m/s for speedometers and telemetry HUDs
 

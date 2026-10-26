@@ -132,7 +132,7 @@ describe.if(built)("clean-consumer resolution of the real tarball (zero-dep pack
       const script = [
         "import { VERSION } from '@jgengine/core';",
         "import { createEffectSystem } from '@jgengine/core/combat/effects';",
-        "import { leveling } from '@jgengine/core/game/progression';",
+        "import { leveling } from '@jgengine/core/progression/leveling';",
         "import { applyStatPoolDelta, createStatPool } from '@jgengine/core/stats/statPool';",
         "import { createMagazine } from '@jgengine/core/combat/magazine';",
         "import { createStats } from '@jgengine/core/stats/statModifiers';",

@@ -1,4 +1,4 @@
-import { localSaveBackend, type SaveBackend } from "@jgengine/core/game/saveStore";
+import { localSaveBackend, type SaveBackend } from "@jgengine/core/save/saveStore";
 import type { GameContext } from "@jgengine/core/runtime/gameContext";
 import { loadLegacySave } from "../../../shared/legacySave";
 

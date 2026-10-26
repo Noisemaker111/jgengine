@@ -1,7 +1,7 @@
 import { describe, expect, test } from "bun:test";
 import { defineGameDefinition } from "@jgengine/core/game/defineGame";
 import { gamePhase } from "@jgengine/core/game/gamePhase";
-import { memorySaveBackend, type SaveBackend } from "@jgengine/core/game/saveStore";
+import { memorySaveBackend, type SaveBackend } from "@jgengine/core/save/saveStore";
 import { createGameContext, type GameContext } from "@jgengine/core/runtime/gameContext";
 import { createAssetCatalog } from "@jgengine/core/scene/assetCatalog";
 import { bestRaceStore, continueStore, registerCommands, safehouseStore, startedStore } from "./commands";

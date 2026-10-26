@@ -3699,7 +3699,7 @@
       "packages": [
         "@jgengine/core"
       ],
-      "module": "@jgengine/core/game/gameSave",
+      "module": "@jgengine/core/save/saveDocument",
       "domain": "save document",
       "gameFacing": true,
       "probe": {
@@ -3712,7 +3712,7 @@
       "packages": [
         "@jgengine/core"
       ],
-      "module": "@jgengine/core/game/gameSave",
+      "module": "@jgengine/core/save/saveDocument",
       "domain": "save document",
       "gameFacing": true,
       "probe": {
@@ -5157,8 +5157,8 @@
       "packages": [
         "@jgengine/core"
       ],
-      "module": "@jgengine/core/game/progression",
-      "domain": "game",
+      "module": "@jgengine/core/progression/leveling",
+      "domain": "progression",
       "gameFacing": false,
       "probe": null,
       "intent": "grant XP, resolve level-ups against a curve, and write level+xp stats back through a stat adapter"
@@ -5381,8 +5381,8 @@
       "packages": [
         "@jgengine/core"
       ],
-      "module": "@jgengine/core/game/saveStore",
-      "domain": "game",
+      "module": "@jgengine/core/save/saveStore",
+      "domain": "save",
       "gameFacing": false,
       "probe": null,
       "intent": "persist a game to on-device localStorage (offline)"
@@ -7358,8 +7358,8 @@
       "packages": [
         "@jgengine/core"
       ],
-      "module": "@jgengine/core/game/progression",
-      "domain": "game",
+      "module": "@jgengine/core/progression/leveling",
+      "domain": "progression",
       "gameFacing": false,
       "probe": null,
       "intent": "evaluate a level/rank curve (const, linear, power, geometric, steps, piecewise) at a point"
@@ -8002,8 +8002,8 @@
       "packages": [
         "@jgengine/core"
       ],
-      "module": "@jgengine/core/runtime/runtimeSave",
-      "domain": "runtime",
+      "module": "@jgengine/core/save/snapshotSave",
+      "domain": "save",
       "gameFacing": false,
       "probe": null,
       "intent": "save/load the whole game world through a pluggable backend, autosave or save points"
@@ -8037,30 +8037,19 @@
       "packages": [
         "@jgengine/core"
       ],
-      "module": "@jgengine/core/game/saveSlotIndex",
-      "domain": "game",
+      "module": "@jgengine/core/save/saveSlotIndex",
+      "domain": "save",
       "gameFacing": false,
       "probe": null,
       "intent": "refresh a save-select index from the game's save documents"
-    },
-    {
-      "id": "save-slot-menu",
-      "packages": [
-        "@jgengine/react"
-      ],
-      "module": "@jgengine/react/saveSlots",
-      "domain": "save-slot-menu",
-      "gameFacing": false,
-      "probe": null,
-      "intent": "drop-in save-select / profile menu that renders a core save-slots index as New / Continue / Load / Delete cards with free-string meta chips and relative save times, theme-skinnable"
     },
     {
       "id": "save-slot-meta",
       "packages": [
         "@jgengine/core"
       ],
-      "module": "@jgengine/core/game/saveSlotIndex",
-      "domain": "game",
+      "module": "@jgengine/core/save/saveSlotIndex",
+      "domain": "save",
       "gameFacing": false,
       "probe": null,
       "intent": "project a save document onto save-select display metadata"
@@ -8070,8 +8059,8 @@
       "packages": [
         "@jgengine/core"
       ],
-      "module": "@jgengine/core/game/saveSlots",
-      "domain": "game",
+      "module": "@jgengine/core/save/saveSlots",
+      "domain": "save",
       "gameFacing": false,
       "probe": null,
       "intent": "serializable save-slot / profile metadata index — write/clear/rename/mostRecent over free-string per-slot meta, powering New/Continue/Load/Delete menus, with snapshot/restore"
@@ -8447,8 +8436,8 @@
       "packages": [
         "@jgengine/react"
       ],
-      "module": "@jgengine/react/saveThumbnail",
-      "domain": "shrink-capture",
+      "module": "@jgengine/react/save/saveThumbnail",
+      "domain": "save",
       "gameFacing": false,
       "probe": null,
       "intent": "downscale a captured frame to a save-card thumbnail data URL"
@@ -10189,8 +10178,8 @@
       "packages": [
         "@jgengine/react"
       ],
-      "module": "@jgengine/react/saveSlots",
-      "domain": "use-save-slots",
+      "module": "@jgengine/react/save/saveSlots",
+      "domain": "save",
       "gameFacing": false,
       "probe": null,
       "intent": "React hook binding a save-slots metadata index — re-renders on change and returns the ordered slot list"

@@ -9,7 +9,7 @@ For an existing Wayfarer/OddOrbit-style run checkpoint, keep the game's checkpoi
 schema and validation, and replace only its persistence adapter:
 
 ```ts
-import { createSaveStore, localSaveBackend } from "@jgengine/core/game/saveStore";
+import { createSaveStore, localSaveBackend } from "@jgengine/core/save/saveStore";
 
 const checkpoint = createSaveStore({
   key: "my-game:run",

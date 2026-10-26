@@ -3,8 +3,8 @@ import {
   type SaveBackend,
   type SaveStatus,
   type SaveTimers,
-} from "../game/saveStore";
-import type { WorldSnapshot } from "./worldSnapshot";
+} from "./saveStore";
+import type { WorldSnapshot } from "../runtime/worldSnapshot";
 
 /**
  * The narrow slice of a live `GameContext` a runtime save reads and writes — a

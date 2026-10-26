@@ -7,8 +7,8 @@ import type { WorldDiff } from "./worldReplication";
 import type { SnapshotViewer, WorldSnapshot } from "./worldSnapshot";
 import { applyWorldSnapshot, type SnapshotModule } from "./worldSnapshot";
 
-import type { HostedWorldRecord, HostedWorldStore, SyncHostedWorldStore } from "./hostedWorldStore";
-export type { HostedWorldRecord, HostedWorldStore, SyncHostedWorldStore } from "./hostedWorldStore";
+import type { HostedWorldRecord, HostedWorldStore, SyncHostedWorldStore } from "../save/hostedWorldStore";
+export type { HostedWorldRecord, HostedWorldStore, SyncHostedWorldStore } from "../save/hostedWorldStore";
 
 /** @internal Decode the retry envelope shared by authoritative hosts. */
 export function unwrapOpEnvelope(input: unknown): { opId: string; input: unknown } | null {
@@ -30,15 +30,6 @@ export function memoryWorldStore(seed?: HostedWorldRecord): SyncHostedWorldStore
     save(next) {
       record = structuredClone(next);
     },
-  };
-}
-
-/** Async in-process store for callers exercising the production persistence contract. */
-export function asyncMemoryWorldStore(seed?: HostedWorldRecord): HostedWorldStore {
-  let record: HostedWorldRecord | null = seed === undefined ? null : structuredClone(seed);
-  return {
-    async load() { return record === null ? null : structuredClone(record); },
-    async save(next) { record = structuredClone(next); },
   };
 }
 

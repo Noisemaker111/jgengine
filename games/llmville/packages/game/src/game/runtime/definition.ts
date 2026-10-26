@@ -1,6 +1,6 @@
 import { createGameRuntime, type GameRuntime } from "@jgengine/core/runtime/gameRuntime";
 import type { CommandDef } from "@jgengine/core/runtime/commandRunner";
-import type { SaveConfig } from "@jgengine/core/runtime/save";
+import type { SaveConfig } from "@jgengine/core/save/saveConfig";
 import {
   DEFAULT_STARTING_DATA_TOKENS,
   DEFAULT_STARTING_MONEY,

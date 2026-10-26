@@ -214,7 +214,7 @@ entries, and arrears that count once per advance until the loan defaults at
 `maxMissed`. `repay` pays principal early; a save stores terms and progress and
 the schedule is rebuilt on restore.
 
-One document saves the whole world. `createGameSave` (`game/gameSave`) holds one versioned
+One document saves the whole world. `createGameSave` (`save/saveDocument`) holds one versioned
 `GameSaveDocument` with a section per registered system, named slots, caller-policy autosave and a
 `migrate` path, over the same injected `SaveBackend` `createSaveStore` uses. Register each stateful
 system once by `name` with its `snapshot()`/`restore()`; `capture()` builds the document,

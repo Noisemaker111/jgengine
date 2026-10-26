@@ -1,4 +1,4 @@
-import { evalCurve, type Curve } from "@jgengine/core/game/progression";
+import { evalCurve, type Curve } from "@jgengine/core/progression/leveling";
 import { createCareerBank, type CareerBankState } from "@jgengine/core/progression/careerBank";
 import { createGateSet, gateFacts, type GateStatus } from "@jgengine/core/progression/gates";
 import { createStanding, type StandingState } from "@jgengine/core/progression/standing";

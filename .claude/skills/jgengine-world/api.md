@@ -2331,11 +2331,11 @@
 
 ## @jgengine/core/vfx/particles
 
-- `Curve` (interface): interface Curve — A per-life start→end curve (linear interpolation from birth to death).
 - `EmitterConfig` (interface): interface EmitterConfig — A particle emitter: how particles spawn and how each one evolves over its life. Every field is data — no functions — so an emitter is fully serializable and an editor/tunable can drive it. Genre-agnostic: smoke, sparks, rain, magic, dust.
 - `ParticleBuffers` (interface): interface ParticleBuffers — Read-only packed buffers of the live particles, laid out for a renderer to upload directly (Structure-of-Arrays, no per-particle objects). Only the first `count` entries are live; the arrays themselves are reused every frame.
 - `ParticleCollisionConfig` (interface): interface ParticleCollisionConfig — Bounded particle contact policy; a query adapter can replace the fallback horizontal plane.
 - `ParticleCollisionHit` (interface): interface ParticleCollisionHit — One contact from an injected scene query, in simulation coordinates.
+- `ParticleCurve` (interface): interface ParticleCurve — A per-life start→end curve (linear interpolation from birth to death).
 - `ParticleEvent` (interface): interface ParticleEvent — Presentation events never authorize gameplay damage or physical impulses.
 - `ParticleSnapshot` (interface): interface ParticleSnapshot — Serializable simulation state for save/restore and deterministic replay.
 - `ParticleSpawnShape` (interface): interface ParticleSpawnShape — Serializable spawn volume in emitter coordinates; cone widens from its base along +Y.
@@ -2588,7 +2588,6 @@
 - `ControlGroupIntent` (type): type ControlGroupIntent = | { kind: "bind"; key: string } /** Shift+digit: add the current selection to the set saved under `key`. */ | { kind: "append"; key: string } /** Ctrl+digit: save the current selection under `key`. */ | { kind: "bind"; key: string } /** Digit: recall the set saved under `ke… — Optional RTS binding composition over the genre-agnostic selection-bookmark store (`@jgengine/core/scene/selectionBookmarks`). It maps the classic control- group idiom — Ctrl+digit binds, digit recalls, a second digit tap within a window focuses — onto opaque bookmark keys, without pulling input mapping into the store. Games that want a different scheme (named bookmarks, gamepad, touch) skip this and call the store directly.
 - `ControlGroupOptions` (interface): interface ControlGroupOptions — Tuning for the control-group idiom: the double-tap focus window and the bookmark-key namespace.
 - `CueListener` (type): type CueListener<Payload = unknown> = (emitted: EmittedCue<Payload>) => void — A cue listener, called once per cue as it fires. Returns nothing.
-- `Curve` (interface): interface Curve — A per-life start→end curve (linear interpolation from birth to death).
 - `DEFAULT_BLOCK_FILL` (const): const DEFAULT_BLOCK_FILL: 0.45 — Default `blockFill`: gently gapped frontage — plots with breathing room, parks reserved.
 - `DEFAULT_CITY_LEVEL_BIAS` (const): const DEFAULT_CITY_LEVEL_BIAS: CityLevelClassBias — Default street-level bias — boulevards favor big massing, lanes favor small/rural massing.
 - `DEFAULT_CITY_ZONE_MIXES` (const): const DEFAULT_CITY_ZONE_MIXES: CityZoneMixes — Default zoned-metropolis mixes: towers/slabs downtown, slabs+rowhouses mid, houses at the edge.
@@ -2815,6 +2814,7 @@
 - `ParamSchema` (interface): interface ParamSchema — A kind's full parameter surface: an ordered list of fields the inspector renders top-to-bottom.
 - `ParsedParams` (type): type ParsedParams = Record<string, number | boolean | string | WeightedParamEntry[]> — Parsed params after `parseParams`: every schema field present with a validated, defaulted value.
 - `ParticleBuffers` (interface): interface ParticleBuffers — Read-only packed buffers of the live particles, laid out for a renderer to upload directly (Structure-of-Arrays, no per-particle objects). Only the first `count` entries are live; the arrays themselves are reused every frame.
+- `ParticleCurve` (interface): interface ParticleCurve — A per-life start→end curve (linear interpolation from birth to death).
 - `ParticleSnapshot` (interface): interface ParticleSnapshot — Serializable simulation state for save/restore and deterministic replay.
 - `ParticleSystem` (interface): interface ParticleSystem — A live, dt-driven particle simulation.
 - `PathFollowConfig` (interface): interface PathFollowConfig { waypoints: readonly Waypoint[]; speed: number; loop?: boolean } — ⚠ undocumented · used by `advancePathFollow`: Advance a path-follower by `speed * dt` along its authored polyline.
@@ -3357,7 +3357,6 @@
 - `patrol` (function): function patrol({ waypoints, speed, loop = true, startProgress, groundClamp, }: { waypoints: readonly Waypoint[]; speed: number; loop?: boolean; startProgress?: PathProgress; groundClamp?: boolean; }): PatrolBehavior — ⚠ undocumented
 - `pendingQteStep` (function): function pendingQteStep(steps: readonly QteStep[], elapsedSeconds: number): QteStep | null — ⚠ undocumented
 - `pickSpawnPoint` (function): function pickSpawnPoint(options: SpawnPointSelectionOptions): NavPoint | null — Selects a candidate spawn point using a semantic distance preference and caller-supplied randomness.
-- `pickWeighted` (function): function pickWeighted<T>(entries: readonly { value: T; weight: number }[], roll: number): T | null — Weighted pick from opaque entries; `roll` in [0, 1). Returns null when empty.
 - `placeAlongPath` (function): function placeAlongPath(points: readonly { x: number; z: number }[], options: PlaceAlongPathOptions): PathInstance[] — Evenly place transforms along `points` (XZ polyline). The run length is divided into the whole number of equal spans closest to `spacing`, so instances always land on both endpoints and stay evenly distributed. Returns `spans + 1` instances. Empty for fewer than 2 points.
 - `placeAssetFromCommit` (function): function placeAssetFromCommit(commit: PlacementCommit, assetId: string, options: PlaceAssetFromCommitOptions = {}): PlaceAssetResult — Bridge a {@link PlacementCommit} into the shared place-asset verb.
 - `placeAuthoredObjects` (function): function placeAuthoredObjects(store: AuthoredObjectPlaceTarget, objects: readonly AuthoredObject[], sampleHeight: (x: number, z: number) => number, options: PlaceAuthoredObjectsOptions = {}): string[] — Places resolved authored objects into an object store, grounding each on `sampleHeight(x,z)` plus per-object and options vertical offsets. Returns the instance ids that were placed (or kept).
@@ -4440,7 +4439,6 @@
 
 - `ScatterInstance` (interface): interface ScatterInstance { id: string; item: string; x: number; z: number; y: number; scale: number; rotation: number; regionId: string } — ⚠ undocumented · used by `scatterItems`: Deterministically place opaque items across `area`, grounded on a region field.
 - `ScatterLayer` (interface): interface ScatterLayer — One placeable class. `item` is an opaque id the caller maps to a mesh/entity.
-- `pickWeighted` (function): function pickWeighted<T>(entries: readonly { value: T; weight: number }[], roll: number): T | null — Weighted pick from opaque entries; `roll` in [0, 1). Returns null when empty.
 - `scatterItems` (function): function scatterItems<T>(field: RegionField<T>, area: Aabb, layersFor: (sample: RegionSample<T>) => readonly ScatterLayer[], options: { cell?: number; max?: number; saltKey?: number } = {}): ScatterInstance[] — Deterministically place opaque items across `area`, grounded on a region field. For each grid cell it asks `layersFor` which items may appear in that region and rolls one against their densities. The engine never interprets `item` — a game maps it to a mesh or entity. Content scatter (region-driven density) as opposed to `scatter` in `./scatter`, which is renderer-free geometric point distribution.
 
 ## @jgengine/core/world/scatterRegion

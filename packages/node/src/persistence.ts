@@ -16,7 +16,7 @@ import {
   topLeaderboardRows,
   trimFeedEntries,
 } from "@jgengine/core/runtime/hostPersistence";
-import { asyncMemoryWorldStore, type HostedWorldStore } from "@jgengine/core/runtime/hostedWorldSession";
+import { memoryWorldStore, type HostedWorldStore } from "@jgengine/core/runtime/hostedWorldSession";
 
 export { memoryPersistence } from "@jgengine/ws/host";
 
@@ -44,7 +44,8 @@ export function memoryWorldPersistence(): WorldPersistence {
       const key = `${gameId} ${serverId}`;
       const existing = stores.get(key);
       if (existing !== undefined) return existing;
-      const created = asyncMemoryWorldStore();
+      const memory = memoryWorldStore();
+      const created: HostedWorldStore = { load: async () => memory.load(), save: async (record) => memory.save(record) };
       stores.set(key, created);
       return created;
     },

@@ -1,4 +1,4 @@
-import { leveling, type LevelProgress } from "@jgengine/core/game/progression";
+import { leveling, type LevelProgress } from "@jgengine/core/progression/leveling";
 import type { GameContext } from "@jgengine/core/runtime/gameContext";
 
 export const MAX_LEVEL = 30;

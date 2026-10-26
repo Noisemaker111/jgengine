@@ -9,8 +9,8 @@ import { createBoatDynamics } from "../physics/boatDynamics";
 import { tickDrivableVehicle, type DrivableSimStep } from "../physics/drivableVehicle";
 import { resolvePlayerMovementTuning, snapshotPlayerMovement, stepPlayerMovement } from "../movement/playerMovement";
 import { createMountController } from "./mount";
-import { memorySaveBackend } from "../game/saveStore";
-import type { RuntimeSaveOptions } from "../runtime/runtimeSave";
+import { memorySaveBackend } from "../save/saveStore";
+import type { RuntimeSaveOptions } from "../save/snapshotSave";
 
 function fixture(kind: "ground" | "boat" = "ground", save?: RuntimeSaveOptions) {
   const ctx = createGameContext({
