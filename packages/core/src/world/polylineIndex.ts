@@ -30,8 +30,13 @@ export interface PolylineIndex {
   examined(): number;
 }
 
-/** @internal */
-export function buildPolylineIndex(points: readonly Vec2[]): PolylineIndex {
+/**
+ * `reach` is the bound most queries will pass. A caller that always asks within a long bound (a coast
+ * eases its land down across 100 m and more) passes it so the grid's cells are sized for that: a query
+ * then walks a few dozen cells rather than hundreds of cells two segments wide.
+ * @internal
+ */
+export function buildPolylineIndex(points: readonly Vec2[], reach = 0): PolylineIndex {
   const count = Math.max(0, points.length - 1);
   const ax = new Float64Array(count);
   const az = new Float64Array(count);
@@ -57,8 +62,10 @@ export function buildPolylineIndex(points: readonly Vec2[]): PolylineIndex {
   }
   const span = count === 0 ? 1 : Math.max(maxX - minX, maxZ - minZ, 1);
   // Twice the average segment length keeps a typical reach inside one or two cells, so a query tests a
-  // handful of segments; the 256-cell cap bounds memory on a very long, very dense polyline.
-  const buckets = buildSpatialBuckets(Math.max(1, span / 256, (span / Math.max(1, count)) * 2));
+  // handful of segments; the 256-cell cap bounds memory on a very long, very dense polyline; a quarter
+  // of the caller's usual reach keeps a long-bound query to a few dozen cells.
+  const cell = Math.max(1, span / 256, (span / Math.max(1, count)) * 2, reach / 4);
+  const buckets = buildSpatialBuckets(cell);
   for (let i = 0; i < count; i += 1) {
     buckets.insert(i, Math.min(ax[i]!, ax[i]! + abx[i]!), Math.min(az[i]!, az[i]! + abz[i]!), Math.max(ax[i]!, ax[i]! + abx[i]!), Math.max(az[i]!, az[i]! + abz[i]!));
   }
@@ -76,33 +83,45 @@ export function buildPolylineIndex(points: readonly Vec2[]): PolylineIndex {
         examined = 0;
         return null;
       }
-      // A segment closer than `limit` passes through this box, so it is registered in one of its cells.
+      // A segment closer than `r` passes through the box of half-size `r` round the query, so it is
+      // registered in one of that box's cells. Start with a box a couple of cells wide and widen it only
+      // while the best hit so far lies outside it: a query beside the line (the common case) walks a few
+      // cells instead of every cell of a long bound, and the answer is the one the full box gives.
       // Clamping to the polyline's own box keeps an infinite bound from walking an infinite grid.
-      const reach = limit * (1 + 1e-9) + 1e-9;
-      buckets.query(Math.max(minX, x - reach), Math.max(minZ, z - reach), Math.min(maxX, x + reach), Math.min(maxZ, z + reach), candidates);
-      examined = candidates.length;
-      if (candidates.length === 0) return null;
       let bestSegment = -1;
       let bestT = 0;
       let bestDistance = Number.POSITIVE_INFINITY;
       let bestX = 0;
       let bestZ = 0;
-      for (const segment of candidates) {
-        const offsetX = x - ax[segment]!;
-        const offsetZ = z - az[segment]!;
-        const segLengthSq = lengthSq[segment]!;
-        const t = segLengthSq <= 0 ? 0 : Math.max(0, Math.min(1, (offsetX * abx[segment]! + offsetZ * abz[segment]!) / segLengthSq));
-        const px = ax[segment]! + abx[segment]! * t;
-        const pz = az[segment]! + abz[segment]! * t;
-        const distance = Math.hypot(x - px, z - pz);
-        if (distance < bestDistance) {
-          bestDistance = distance;
-          bestSegment = segment;
-          bestT = t;
-          bestX = px;
-          bestZ = pz;
+      examined = 0;
+      for (let r = Math.min(limit, cell * 2); ; r = Math.min(limit, r * 2)) {
+        const reach = r * (1 + 1e-9) + 1e-9;
+        buckets.query(Math.max(minX, x - reach), Math.max(minZ, z - reach), Math.min(maxX, x + reach), Math.min(maxZ, z + reach), candidates);
+        examined += candidates.length;
+        for (const segment of candidates) {
+          const offsetX = x - ax[segment]!;
+          const offsetZ = z - az[segment]!;
+          const segLengthSq = lengthSq[segment]!;
+          const t = segLengthSq <= 0 ? 0 : Math.max(0, Math.min(1, (offsetX * abx[segment]! + offsetZ * abz[segment]!) / segLengthSq));
+          const px = ax[segment]! + abx[segment]! * t;
+          const pz = az[segment]! + abz[segment]! * t;
+          const dx = x - px;
+          const dz = z - pz;
+          // Squared, so the scan takes no root per segment; the winner's distance is measured once below.
+          const distance = dx * dx + dz * dz;
+          // Candidates come sorted, and a wider box revisits every segment of a narrower one, so ties
+          // go to the lowest segment index exactly as one scan of the whole bound would.
+          if (distance < bestDistance || (distance === bestDistance && segment < bestSegment)) {
+            bestDistance = distance;
+            bestSegment = segment;
+            bestT = t;
+            bestX = px;
+            bestZ = pz;
+          }
         }
+        if (bestDistance <= r * r || r >= limit) break;
       }
+      if (bestSegment >= 0) bestDistance = Math.hypot(x - bestX, z - bestZ);
       if (bestSegment < 0 || bestDistance > limit) return null;
       return { segment: bestSegment, t: bestT, distance: bestDistance, point: [bestX, bestZ] };
     },

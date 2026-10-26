@@ -89,6 +89,17 @@ describe("buildPolylineIndex", () => {
     expect(index.examined()).toBeLessThan(20);
   });
 
+  test("a query beside the line with a long bound still examines only the local segments", () => {
+    // A coast asks for the shore within its whole falloff (100 m and more) at every ground sample by the
+    // beach; that must cost the few segments next to the query, not every segment inside the bound.
+    const points: Vec2[] = [];
+    for (let i = 0; i <= 400; i += 1) points.push([i * 10, i % 2 === 0 ? 0 : 20]);
+    const index = buildPolylineIndex(points);
+    const near = index.nearest(points[200]![0], 4, 300);
+    expect(near).not.toBeNull();
+    expect(index.examined()).toBeLessThan(20);
+  });
+
   test("a degenerate polyline has nothing to hit", () => {
     const empty = buildPolylineIndex([]);
     expect(empty.nearest(0, 0, 100)).toBeNull();

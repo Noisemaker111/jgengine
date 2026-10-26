@@ -76,7 +76,19 @@ export function buildSpatialBuckets(cellSize: number): SpatialBuckets {
           }
         }
       }
-      out.sort((a, b) => a - b);
+      // A query returns a few dozen ids at most; insertion sort beats a comparator sort there several times over.
+      if (out.length > 64) out.sort((a, b) => a - b);
+      else {
+        for (let i = 1; i < out.length; i += 1) {
+          const id = out[i]!;
+          let j = i - 1;
+          while (j >= 0 && out[j]! > id) {
+            out[j + 1] = out[j]!;
+            j -= 1;
+          }
+          out[j + 1] = id;
+        }
+      }
       return out;
     },
   };

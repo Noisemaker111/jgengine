@@ -1,4 +1,4 @@
-import { authoredSpawnRotation } from "@jgengine/core/world/authoredSpawn";
+import { authoredSpawnPosition, authoredSpawnRotation } from "@jgengine/core/world/authoredSpawn";
 import { createGameFlowSystem } from "@jgengine/core/game/gameFlow";
 import { DEFAULT_WALK_CODES, defineGame } from "@jgengine/shell/gameKit";
 
@@ -19,6 +19,7 @@ import { onNewPlayer, systems } from "./loop";
 import { time, world } from "./world";
 
 const SPAWN_YAW = authoredSpawnRotation(editorLayers);
+const SPAWN_AT = authoredSpawnPosition(editorLayers);
 
 export const game = defineGame({
   name: "Fernwild",
@@ -119,6 +120,8 @@ export const game = defineGame({
         pastDoor: pastAlongSpawn(me?.position, base.doorway),
         // Metres the survivor stands right of the first doorframe's centre, across the spawn facing.
         acrossDoor: acrossSpawn(me?.position, base.doorway),
+        // Metres the survivor stands right of where it woke, across the spawn facing.
+        acrossSpawn: acrossSpawn(me?.position, SPAWN_AT),
         // Hotbar slot in hand, 1-based; 0 bare-handed.
         holding: view.activeSlot === null ? 0 : view.activeSlot + 1,
       };
