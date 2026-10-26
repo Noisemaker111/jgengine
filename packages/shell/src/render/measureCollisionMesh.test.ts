@@ -4,7 +4,7 @@ import * as THREE from "three";
 import { prepareCollisionMeshSource } from "@jgengine/core/scene/collisionMesh";
 
 import { MEASURE_EXCLUDE_KEY } from "./measureBounds";
-import { measureLocalCollisionTriangles } from "./measureCollisionMesh";
+import { measureLocalCollisionTriangles, reportCollisionMeshOnce } from "./measureCollisionMesh";
 
 function box(width: number, height: number, depth: number): THREE.Mesh {
   return new THREE.Mesh(new THREE.BoxGeometry(width, height, depth), new THREE.MeshStandardMaterial());
@@ -86,5 +86,33 @@ describe("measureLocalCollisionTriangles", () => {
     const root = new THREE.Group();
     root.add(new THREE.Group());
     expect(measureLocalCollisionTriangles(root)).toBeNull();
+  });
+});
+
+describe("reportCollisionMeshOnce", () => {
+  test("measures a kind's mesh once however many instances of the same model mount", () => {
+    const reports: string[] = [];
+    const ctx = {
+      scene: {
+        entity: { reportCollisionMesh: () => true },
+        object: {
+          reportCollisionMesh: (key: string) => {
+            reports.push(key);
+            return true;
+          },
+        },
+      },
+    } as unknown as Parameters<typeof reportCollisionMeshOnce>[0];
+    const mesh = new THREE.Mesh(new THREE.BoxGeometry(1, 1, 1));
+    let measured = 0;
+    const measure = () => {
+      measured += 1;
+      return measureLocalCollisionTriangles(mesh);
+    };
+    for (let instance = 0; instance < 50; instance += 1) reportCollisionMeshOnce(ctx, "object", "crate", "/crate.glb|1", measure);
+    expect(measured).toBe(1);
+    expect(reports).toEqual(["crate"]);
+    reportCollisionMeshOnce(ctx, "object", "crate", "/crate.glb|2", measure);
+    expect(measured).toBe(2);
   });
 });

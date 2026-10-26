@@ -138,3 +138,31 @@ export function reportMeasuredCollisionMesh(
       : ctx.scene.object.reportCollisionMesh(key, triangles);
   if (accepted) map.set(registryKey, { meshCount: triangles.meshCount, triangleCount: triangles.triangleCount });
 }
+
+const measuredFromByContext = new WeakMap<object, Map<string, string>>();
+
+/**
+ * Measure and report a collision mesh once per kind and source: every placed instance of a catalog
+ * object mounts its own clone of the same model, and walking each clone's triangles again only to
+ * find the report already made froze the load for seconds in object-heavy scenes. `source` names
+ * what the triangles come from (model, scale, offset); a different source measures again. @internal
+ */
+export function reportCollisionMeshOnce(
+  ctx: GameContext,
+  target: "entity" | "object",
+  key: string,
+  source: string,
+  measure: () => MeasuredCollisionTriangles | null,
+): void {
+  let map = measuredFromByContext.get(ctx);
+  if (map === undefined) {
+    map = new Map();
+    measuredFromByContext.set(ctx, map);
+  }
+  const registryKey = `${target}:${key}`;
+  if (map.get(registryKey) === source) return;
+  const triangles = measure();
+  if (triangles === null) return;
+  map.set(registryKey, source);
+  reportMeasuredCollisionMesh(ctx, target, key, triangles);
+}

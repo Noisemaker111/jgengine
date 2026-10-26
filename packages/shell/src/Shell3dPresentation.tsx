@@ -128,7 +128,7 @@ import { WorldParticles } from "./world/WorldParticles";
 import { WorldTireMarks } from "./world/WorldTireMarks";
 import { TerrainQualityContext } from "./terrain/terrainQuality";
 import { detectKtx2Support } from "./render/modelLoad";
-import { SCENE_WARMUP_PENDING, SceneWarmupCover, SceneWarmupGate } from "./render/SceneWarmupGate";
+import { SceneWarmupCoverLive, SceneWarmupGate, createSceneWarmupStore } from "./render/SceneWarmupGate";
 import {
   resolvePresentationEffects,
   resolveWorldOverlayBars,
@@ -261,7 +261,7 @@ export function Shell3dPresentation({
 }) {
   const GameUI = playable.GameUI;
   const ktx2SupportDetected = useRef(false);
-  const [warmup, setWarmup] = useState(SCENE_WARMUP_PENDING);
+  const warmup = useMemo(createSceneWarmupStore, []);
   const frameTally = useRef<FrameTally>({ frames: 0 }).current;
   const WorldOverlay = playable.WorldOverlay;
   const pointerService = useMemo(() => createPointerService(), []);
@@ -873,13 +873,13 @@ export function Shell3dPresentation({
                   ) : null}
                   {poster ? null : (
                     <SceneWarmupGate
-                      onState={setWarmup}
+                      onState={warmup.set}
                       sceneDrawsToTarget={!splitScreen && resolvedLook.postProcessing !== undefined && resolvedLook.postProcessing.enabled !== false}
                     />
                   )}
                 </Canvas>
               </ColorblindFrame>
-              <SceneWarmupCover state={warmup} />
+              <SceneWarmupCoverLive store={warmup} />
               {graphics.showFps && !poster ? <FpsCounter tally={frameTally} /> : null}
               {!poster &&
               !orientationGate &&

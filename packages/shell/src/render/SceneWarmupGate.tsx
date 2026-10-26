@@ -1,5 +1,5 @@
 import { addAfterEffect, addEffect, useThree } from "@react-three/fiber";
-import { useEffect } from "react";
+import { useEffect, useSyncExternalStore } from "react";
 
 import { devtools } from "@jgengine/core/devtools/devtools";
 
@@ -7,6 +7,35 @@ import { createShaderWarmup, holdDraws, type HeldDraw, type ShaderWarmupState } 
 
 /** Warmup state before the gate has run, so the loading screen covers the very first frame. @internal */
 export const SCENE_WARMUP_PENDING: ShaderWarmupState = { phase: "waiting", rounds: 0, programs: 0, planned: 0, deferred: 0, progress: 0, elapsedMs: 0 };
+
+/** Warmup progress held outside React state: see {@link createSceneWarmupStore}. @internal */
+export interface SceneWarmupStore {
+  get: () => ShaderWarmupState;
+  set: (state: ShaderWarmupState) => void;
+  subscribe: (listener: () => void) => () => void;
+}
+
+/**
+ * Where the gate reports progress and the cover reads it. Progress lands many times a second while
+ * the scene compiles; held in the component that renders the canvas, each report would re-render the
+ * whole scene tree, thousands of components, and starve the very warmup it reports on.
+ * @internal
+ */
+export function createSceneWarmupStore(): SceneWarmupStore {
+  let state = SCENE_WARMUP_PENDING;
+  const listeners = new Set<() => void>();
+  return {
+    get: () => state,
+    set: (next) => {
+      state = next;
+      for (const listener of listeners) listener();
+    },
+    subscribe: (listener) => {
+      listeners.add(listener);
+      return () => listeners.delete(listener);
+    },
+  };
+}
 
 /**
  * Compiles the mounted scene's shaders behind the loading screen and reports progress to it.
@@ -84,6 +113,12 @@ export function warmupBarShare(state: ShaderWarmupState): number {
 /** Whether the cover is still up: a failed compile releases the frame rather than hiding a broken scene. @internal */
 export function warmupCovering(state: ShaderWarmupState): boolean {
   return state.phase !== "ready" && state.phase !== "failed";
+}
+
+/** The cover, re-rendered on its own as progress lands in the store. @internal */
+export function SceneWarmupCoverLive({ store }: { store: SceneWarmupStore }) {
+  const state = useSyncExternalStore(store.subscribe, store.get, store.get);
+  return <SceneWarmupCover state={state} />;
 }
 
 /**
