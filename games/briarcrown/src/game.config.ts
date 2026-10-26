@@ -1,8 +1,8 @@
+import { createGameFlowSystem } from "@jgengine/core/game/gameFlow";
 import { defineGame } from "@jgengine/shell/gameKit";
 
 import { editorLayers } from "./editorLayers";
 import { content } from "./game/content";
-import { flowSystem } from "./game/flow";
 import { idea } from "./game/idea";
 import { entityModels, objectModels, scatterModels } from "./game/models";
 import { seatMarker } from "./game/places";
@@ -26,7 +26,7 @@ export const game = defineGame({
     demolish: ["Delete", "KeyX"],
     ...Object.fromEntries(idea.buildings.slice(0, 9).map((_, index) => [`build${index + 1}`, [`Digit${index + 1}`]])),
   },
-  systems: [flowSystem, ...systems],
+  systems: [createGameFlowSystem(), ...systems],
   content,
   GameUI,
   editorLayers,

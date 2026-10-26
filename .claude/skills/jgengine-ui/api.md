@@ -1986,6 +1986,13 @@
 - `useFog` (function): function useFog(fog: FogField): ReturnType<FogField["cells"]> — ⚠ undocumented
 - `useMarkers` (function): function useMarkers<TMeta = unknown>(markers: MarkerSet<TMeta>): readonly MapMarker<TMeta>[] — Subscribe to a native marker set or external marker source, or read a static marker array.
 
+## @jgengine/react/menu/gameFlowMenus
+
+- `GameFlowMenuContent` (interface): interface GameFlowMenuContent — What the title and pause menus of {@link GameFlowUI} say: the game's words, keys and credits.
+- `GameFlowUI` (function): function GameFlowUI({ menu, hud }: GameFlowUIProps): ReactNode — A game's whole UI over `createGameFlowSystem`: the title over the standing world, the HUD while playing, and the pause menu over it. The game supplies its HUD and its menu words; the look comes from the UI kit and `menu.accent`.
+- `GameFlowUIProps` (interface): interface GameFlowUIProps — Props for {@link GameFlowUI}.
+- `startNewGame` (function): function startNewGame(ctx: GameContext): Promise<void> — New game in a browser page: a second run reloads the page so nothing from the first carries over.
+
 ## @jgengine/react/menu/gameMenu
 
 - `GameMenu` (function): function GameMenu({ items, initialId, onSelect, onBack, onHighlight, detail, logo, eyebrow, tagline, background, art, secondary, footer, controlHint, sound = true, variant = "title", open = true, reducedMotion, label, className, style, detailClassName, detailStyle, }: GameMenuProps): ReactNode — A game front-end menu: full-bleed over a living background, with a logo, an animated primary list and a detail pane that follows the highlighted verb. One system covers the main menu and the pause menu (`variant="pause"`), keyboard and gamepad navigation come from `useMenuNav`, confirmation ticks are generated (no audio asset), and the document never scrolls while it is open.

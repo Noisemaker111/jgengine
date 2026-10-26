@@ -357,6 +357,10 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `GameCursor` (function) · `import { GameCursor } from "@jgengine/react"`
 
+## game-flow-ui — title, HUD and pause menu wired to the game-flow system — the game passes its HUD and menu words
+
+- `GameFlowUI` (function) · `import { GameFlowUI } from "@jgengine/react/menu/gameFlowMenus"`
+
 ## game-font-stacks — display/body/numeric font stacks for a game's font pairing, with installed fallbacks
 
 - `gameFontStacks` (function) · `import { gameFontStacks } from "@jgengine/react"`
@@ -1014,6 +1018,10 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 ## standalone-chat — render persisted chat with focus controls and visible send failures
 
 - `StandaloneChatPanel` (function) · `import { StandaloneChatPanel } from "@jgengine/react/standaloneChatPanel"`
+
+## start-new-game — start a fresh run from a menu or result screen; reloads the page when a run already played
+
+- `startNewGame` (function) · `import { startNewGame } from "@jgengine/react/menu/gameFlowMenus"`
 
 ## start-screen — headless title/attract overlay the game fills and skins
 

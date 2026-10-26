@@ -678,6 +678,17 @@
 - `pruneFeed` (function): function pruneFeed<T extends TimedFeedEntry>(list: readonly T[], now: number, ttl: number): T[] — Drop feed entries older than `ttl` game-seconds before `now`. Returns the same array reference when nothing expired, so equality checks skip a redundant state write. The tick-time counterpart to {@link appendFeed}'s age bound.
 - `recentFeedEntries` (function): function recentFeedEntries<T>(buffer: readonly FeedEntry<T>[], limit?: number): FeedEntry<T>[] — ⚠ undocumented
 
+## @jgengine/core/game/gameFlow
+
+- `GameFlowOptions` (interface): interface GameFlowOptions — Options for {@link createGameFlowSystem}.
+- `continueGame` (function): function continueGame(ctx: GameContext): Promise<boolean> — Load the save and play it; resolves `false` (and stays put) when there is none.
+- `createGameFlowSystem` (function): function createGameFlowSystem(options: GameFlowOptions = {}): SystemDefinition — Title, play, pause and checkpoints as one system. Boot stops the clock behind the title; the `pause` command (bind it to Esc / P) opens and closes the pause menu; the `start` command leaves the title straight into play, which is what a capture or a drive runs to skip the menu. Pair it with `GameFlowUI` from `@jgengine/react/menu/gameFlowMenus`.
+- `newGame` (function): function newGame(ctx: GameContext, restart?: () => void): Promise<void> — A fresh run: clears the save, then plays. When a run already played in this world, `restart` is called instead so nothing carries over (the browser host passes a page reload).
+- `openTitle` (function): function openTitle(ctx: GameContext): void — Stop the clock and show the title (`"menu"` phase).
+- `playGame` (function): function playGame(ctx: GameContext): void — Start the clock and enter the `"playing"` phase.
+- `saveNow` (function): function saveNow(ctx: GameContext, notice = "Saved"): Promise<void> — Save now and post a "Saved" notice.
+- `togglePause` (function): function togglePause(ctx: GameContext): void — Pause from `"playing"`, resume from `"paused"`; any other phase is left alone.
+
 ## @jgengine/core/game/gamePhase
 
 - `GAME_PHASE_STORE_KEY` (const): const GAME_PHASE_STORE_KEY: "jg.phase" — ⚠ undocumented

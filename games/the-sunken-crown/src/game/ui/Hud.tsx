@@ -8,7 +8,8 @@ import { KitCount, KitCounts, KitVitals } from "@jgengine/react/hud/kitHud";
 import { KitActionPrompt, KitPanel } from "@jgengine/react/uiKitRoot";
 import { HudSlots } from "@jgengine/shell/gameKit";
 
-import { newGame, openTitle } from "../flow";
+import { openTitle } from "@jgengine/core/game/gameFlow";
+import { startNewGame } from "@jgengine/react/menu/gameFlowMenus";
 import { idea } from "../idea";
 import { journeyView } from "../journey";
 import { prompts } from "../prompts";
@@ -134,7 +135,7 @@ function Ending(): ReactNode {
       ]}
       onAction={(id) => {
         if (id === "walk") setWalking(true);
-        else if (id === "new") void newGame(ctx);
+        else if (id === "new") void startNewGame(ctx);
         else if (id === "title") openTitle(ctx);
       }}
     />

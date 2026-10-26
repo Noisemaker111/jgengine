@@ -3651,6 +3651,28 @@
       "intent": "console-style selection cursor (brackets, chevron, bar) that glides to the focused menu item"
     },
     {
+      "id": "game-flow",
+      "packages": [
+        "@jgengine/core"
+      ],
+      "module": "@jgengine/core/game/gameFlow",
+      "domain": "game",
+      "gameFacing": false,
+      "probe": null,
+      "intent": "title, play, pause and autosave checkpoints as one system, with newGame/continueGame/saveNow for menus"
+    },
+    {
+      "id": "game-flow-ui",
+      "packages": [
+        "@jgengine/react"
+      ],
+      "module": "@jgengine/react/menu/gameFlowMenus",
+      "domain": "menu",
+      "gameFacing": false,
+      "probe": null,
+      "intent": "title, HUD and pause menu wired to the game-flow system — the game passes its HUD and menu words"
+    },
+    {
       "id": "game-font-stacks",
       "packages": [
         "@jgengine/react"
@@ -8995,6 +9017,17 @@
       "gameFacing": false,
       "probe": null,
       "intent": "a player steps up onto low ledges and lands ON a jumped-onto asset's top face instead of clipping inside it."
+    },
+    {
+      "id": "start-new-game",
+      "packages": [
+        "@jgengine/react"
+      ],
+      "module": "@jgengine/react/menu/gameFlowMenus",
+      "domain": "menu",
+      "gameFacing": false,
+      "probe": null,
+      "intent": "start a fresh run from a menu or result screen; reloads the page when a run already played"
     },
     {
       "id": "start-screen",

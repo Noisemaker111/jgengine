@@ -7,7 +7,7 @@ import { KitActionBar, KitCount, KitCounts, KitHint, KitVitals } from "@jgengine
 import { KitButton, KitPanel } from "@jgengine/react/uiKitRoot";
 import { HudSlots } from "@jgengine/shell/gameKit";
 
-import { newGame } from "../flow";
+import { startNewGame } from "@jgengine/react/menu/gameFlowMenus";
 import { idea } from "../idea";
 import { realmView } from "../town";
 
@@ -157,7 +157,7 @@ function Ending(): ReactNode {
       ]}
       onAction={(id) => {
         if (id === "keep") ctx.game.commands.run("dismiss", {});
-        else void newGame(ctx);
+        else void startNewGame(ctx);
       }}
     />
   );

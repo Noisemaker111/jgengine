@@ -7,7 +7,7 @@ import { KitActionBar, KitCount, KitCounts, KitHint, KitVitals } from "@jgengine
 import { KitButton, KitPanel } from "@jgengine/react/uiKitRoot";
 import { HudSlots } from "@jgengine/shell/gameKit";
 
-import { newGame } from "../flow";
+import { startNewGame } from "@jgengine/react/menu/gameFlowMenus";
 import { idea } from "../idea";
 import { colonyView } from "../view";
 
@@ -127,7 +127,7 @@ function Ending(): ReactNode {
         { label: idea.colonists.label, value: colony.people },
       ]}
       actions={colony.won ? [{ id: "keep", label: "Keep building", primary: true }, { id: "again", label: "New colony" }] : [{ id: "again", label: "Try again", primary: true }]}
-      onAction={(id) => (id === "keep" ? ctx.game.commands.run("dismiss", {}) : void newGame(ctx))}
+      onAction={(id) => (id === "keep" ? ctx.game.commands.run("dismiss", {}) : void startNewGame(ctx))}
     />
   );
 }
