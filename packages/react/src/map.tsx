@@ -30,7 +30,7 @@ import {
   type MapZone,
 } from "@jgengine/core/world/mapLayers";
 import { createFogDataUrl } from "./fogOverlay";
-import { hudType } from "./hudTokens";
+import { hudType } from "./hud/hudTokens";
 
 type ProjectFn = (x: number, z: number) => { x: number; y: number };
 

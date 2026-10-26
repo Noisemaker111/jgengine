@@ -18,8 +18,8 @@ import {
   type SelectionWindow,
 } from "@jgengine/core/ui/selectionModel";
 import { hudType } from "./hudTokens";
-import type { KitTone } from "./uiKit";
-import { KitMeter } from "./uiKitRoot";
+import type { KitTone } from "../uiKit";
+import { KitMeter } from "../uiKitRoot";
 
 /**
  * Composable React renderers over the headless selection view model

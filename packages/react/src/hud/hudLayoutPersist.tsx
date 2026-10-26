@@ -1,5 +1,5 @@
 import { createContext, useContext, type ReactNode } from "react";
-import type { EditorUiPanelLayout } from "@jgengine/core/ui/hudDocument";
+import type { EditorUiPanelLayout } from "@jgengine/core/hud/hudDocument";
 
 /**
  * Host-owned callback that commits one HUD panel layout into the scene document

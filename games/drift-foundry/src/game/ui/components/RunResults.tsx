@@ -1,5 +1,5 @@
-import { HudButton } from "@jgengine/react/hudButton";
-import { HudSurface } from "@jgengine/react/hudSurface";
+import { HudButton } from "@jgengine/react/hud/hudButton";
+import { HudSurface } from "@jgengine/react/hud/hudSurface";
 import type { SessionSnapshot } from "../../run/session";
 import { PART_SLOTS } from "../../parts/catalog";
 import { PartIcon } from "./PartIcon";

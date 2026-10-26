@@ -1,5 +1,5 @@
 import { gameFontStacks } from "@jgengine/react/gameFonts";
-import { hudTheme } from "@jgengine/react/hudTheme";
+import { hudTheme } from "@jgengine/react/hud/hudTheme";
 import { GAME_FONTS } from "../../art/fonts/fonts";
 
 const FONTS = gameFontStacks(GAME_FONTS);

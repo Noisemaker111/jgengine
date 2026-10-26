@@ -1,5 +1,5 @@
 import { describe, expect, test } from "bun:test";
-import { formatHudOverlapReport, hudBlockOverlaps, resolveHudLanes, type HudLaneSlot } from "@jgengine/react/hudLanes";
+import { formatHudOverlapReport, hudBlockOverlaps, resolveHudLanes, type HudLaneSlot } from "@jgengine/react/hud/hudLanes";
 import { HUD_PANELS, placement } from "./hudPanels";
 
 const VIEWPORTS = [

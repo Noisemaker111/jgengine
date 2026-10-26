@@ -46,7 +46,7 @@ test("a concept folder wins its layer, and stray pieces are listed outside it", 
   const sources: Record<string, string> = {
     "packages/react/src/camera/shake/cameraShake.tsx": "/** Meter. */\nexport function CameraShakeMeter() {}\n",
     "packages/react/src/camera/shake/readout.ts": "export function useCameraShakeReadout() {}\n",
-    "packages/react/src/hudFrame.tsx": "/** Mentions camera shake in passing. */\nexport function HudFrame() {}\n",
+    "packages/react/src/hud/hudFrame.tsx": "/** Mentions camera shake in passing. */\nexport function HudFrame() {}\n",
     "packages/react/src/stray.tsx": "export function CameraShakeLabel() {}\n",
     "packages/core/src/world/notes.ts": "/** Shakes nothing about the camera. */\nexport const unrelated = 1;\n",
   };
@@ -89,8 +89,9 @@ describe("this checkout answers where a concept lives in one call", () => {
     expect(grass.get("core")).toBe("packages/core/src/world/");
     expect(grass.get("shell")).toBe("packages/shell/src/grass/");
     const hud = homeOf("hud");
-    expect(hud.get("core")).toBe("packages/core/src/ui/");
-    expect(hud.get("react")).toBe("packages/react/src/");
+    expect(hud.get("core")).toBe("packages/core/src/hud/");
+    expect(hud.get("shell")).toBe("packages/shell/src/hud/");
+    expect(hud.get("react")).toBe("packages/react/src/hud/");
   });
 });
 

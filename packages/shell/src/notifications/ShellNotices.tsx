@@ -4,7 +4,7 @@ import { NOTICE_TONE_CUES, uiCueSoundId } from "@jgengine/core/audio/uiCues";
 import type { NoticePresentationConfig } from "@jgengine/core/game/playableGame";
 import { attachRefusalNotices } from "@jgengine/core/notifications/notices";
 import type { GameContext } from "@jgengine/core/runtime/gameContext";
-import { HudInteractProvider, type HudInteractEvent } from "@jgengine/react/hudInteract";
+import { HudInteractProvider, type HudInteractEvent } from "@jgengine/react/hud/hudInteract";
 import { NoticeStack } from "@jgengine/react/notifications/notices";
 import { playUiCue, uiCueForInteraction } from "@jgengine/react/uiCues";
 

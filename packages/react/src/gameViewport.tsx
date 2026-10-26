@@ -31,9 +31,9 @@ import {
   type LayoutCollision,
   type LayoutRect,
   type LayoutRegion,
-} from "@jgengine/core/ui/gameLayout";
+} from "@jgengine/core/hud/hudPriority";
 import type { LayoutOrientation } from "@jgengine/core/ui/orientation";
-import type { HudPlatform } from "@jgengine/core/ui/hudScale";
+import type { HudPlatform } from "@jgengine/core/hud/hudScale";
 import { useDisplayProfile } from "./display";
 
 /** A region registration: the full `LayoutRegion` plus the live element (dev outlining), rect measured by the shell/react side. */

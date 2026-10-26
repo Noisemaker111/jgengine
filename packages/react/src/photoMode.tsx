@@ -1,7 +1,7 @@
 import { useSyncExternalStore, type CSSProperties, type ReactNode } from "react";
 
 import type { PhotoModeState, PhotoModeStore } from "@jgengine/core/ui/photoMode";
-import { hudType } from "./hudTokens";
+import { hudType } from "./hud/hudTokens";
 
 /** Subscribe to a photo-mode store's live state. */
 export function usePhotoMode(store: PhotoModeStore): PhotoModeState {

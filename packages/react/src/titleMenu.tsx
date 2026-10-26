@@ -1,7 +1,7 @@
 import type { CSSProperties, ReactNode } from "react";
 
-import { hudSpace, hudType } from "./hudTokens";
-import { HudButton } from "./hudButton";
+import { hudSpace, hudType } from "./hud/hudTokens";
+import { HudButton } from "./hud/hudButton";
 import { useMenuNav } from "./menuNav";
 import { MenuScreen, type MenuScreenScrim, type MenuScreenTransition } from "./menuScreen";
 

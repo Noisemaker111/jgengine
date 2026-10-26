@@ -2,7 +2,7 @@ import { describe, expect, test } from "bun:test";
 import { join } from "node:path";
 import type { ReactNode } from "react";
 
-import { findHudOverlayHost, HUD_OVERLAY_HOST_ATTRIBUTE } from "@jgengine/react/hudThemeRoot";
+import { findHudOverlayHost, HUD_OVERLAY_HOST_ATTRIBUTE } from "@jgengine/react/hud/hudThemeRoot";
 
 import { ShellUiKit } from "../ShellChrome";
 import type { PlayableGame } from "../registry";

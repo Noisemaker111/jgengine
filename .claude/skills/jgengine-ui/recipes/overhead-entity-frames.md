@@ -132,5 +132,5 @@ the render cadence. JGengine owns the projection→offset→cull→stack behavio
   of plates; the nearest are kept.
 - Do not mirror entities into a `GameProvider`/entity store to use this. If the
   game *does* run the JGengine entity store, `WorldNameplates`
-  (`@jgengine/shell/world/WorldHud`) is the store-driven counterpart.
+  (`@jgengine/shell/world/worldOverlays`) is the store-driven counterpart.
 - Keep `renderFrame` cheap — it runs per visible entity per refresh.

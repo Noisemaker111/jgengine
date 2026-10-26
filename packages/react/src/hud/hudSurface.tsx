@@ -1,9 +1,9 @@
 import { forwardRef, useEffect, useRef, type CSSProperties, type HTMLAttributes, type ReactNode } from "react";
 
-import { useReducedMotion } from "./accessibility";
-import { useEngineStyles } from "./engineStyles";
+import { useReducedMotion } from "../accessibility";
+import { useEngineStyles } from "../engineStyles";
 import { useHudInteract, type HudInteractListener } from "./hudInteract";
-import { usePresence } from "./presence";
+import { usePresence } from "../presence";
 
 /** Shadow height of a {@link HudSurface}. */
 export type HudSurfaceElevation = "raised" | "overlay" | "modal";
@@ -41,7 +41,7 @@ const EXIT_MS = 140;
  * a short rise-and-fade and stays mounted through its exit when `open` turns false
  * (`data-state="open" | "closed"`); reduced motion skips both. Padding comes from
  * `--jg-panel-padding`, and the engine rules sit in a cascade layer, so a game's `className`
- * restyles it without `!important`. Not the `HudCanvas` layout slot (`HudPanel` in `@jgengine/react/hudLayout`).
+ * restyles it without `!important`. Not the `HudCanvas` layout slot (`HudPanel` in `@jgengine/react/hud/hudLayout`).
  *
  * @capability hud-surface themed panel frame with elevation, header slots, landmark element, and open/close transitions
  */

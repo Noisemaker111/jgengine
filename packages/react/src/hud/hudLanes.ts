@@ -3,7 +3,7 @@ import {
   type HudAnchor,
   type HudRect,
   type HudSize,
-} from "@jgengine/core/ui/hudLayout";
+} from "@jgengine/core/hud/hudLayout";
 
 /**
  * One HUD block's claim on a lane. Two blocks that name the same `anchor` and

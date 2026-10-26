@@ -9,7 +9,7 @@ import {
 import { formatDistance, type DistanceFormat } from "@jgengine/core/format/distance";
 
 import type { ProjectEntity } from "./entityFrames";
-import { hudType } from "./hudTokens";
+import { hudType } from "./hud/hudTokens";
 
 /**
  * Subscribe to a {@link WaypointTracker} and re-render on every change, returning

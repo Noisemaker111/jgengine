@@ -1,6 +1,6 @@
 import type { ReactNode } from "react";
-import { HudButton } from "@jgengine/react/hudButton";
-import { HudSurface } from "@jgengine/react/hudSurface";
+import { HudButton } from "@jgengine/react/hud/hudButton";
+import { HudSurface } from "@jgengine/react/hud/hudSurface";
 
 /** The dimmed modal sheet every Scrap Signal terminal (vendors, travel, exchange, talents) opens in. */
 export function ScrapPanel({ title, aside, closeLabel = "Close", onClose, wide = false, children }: { title: ReactNode; aside?: ReactNode; closeLabel?: string; onClose: () => void; wide?: boolean; children: ReactNode }) {

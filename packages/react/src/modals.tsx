@@ -17,10 +17,10 @@ import {
 import { useReducedMotion } from "./accessibility";
 import { useDialogBehavior } from "./dialogBehavior";
 import { useEngineStyles } from "./engineStyles";
-import { HudButton } from "./hudButton";
-import { useHudInteract, type HudInteractListener } from "./hudInteract";
-import { HudSurface } from "./hudSurface";
-import { hudType } from "./hudTokens";
+import { HudButton } from "./hud/hudButton";
+import { useHudInteract, type HudInteractListener } from "./hud/hudInteract";
+import { HudSurface } from "./hud/hudSurface";
+import { hudType } from "./hud/hudTokens";
 import { useMenuNav } from "./menuNav";
 import { usePresence } from "./presence";
 

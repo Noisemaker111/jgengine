@@ -1,7 +1,7 @@
 import { useEffect } from "react";
 import { useCurrency, useGame } from "@jgengine/react/hooks";
 import { useStore } from "@jgengine/react/store";
-import { HudButton } from "@jgengine/react/hudButton";
+import { HudButton } from "@jgengine/react/hud/hudButton";
 import { AMMO_LABELS, AMMO_POOLS } from "../../ammo";
 import { gearItems, AMMO_PRICES } from "../../items/gear/catalog";
 import { FERRALON } from "../../palette";

@@ -26,7 +26,7 @@ import type { TouchControlsConfig } from "../input/touchScheme";
 import type { GameSettingsConfig } from "../settings/settingsModel";
 import type { GraphicsProfile } from "../settings/graphicsProfile";
 import type { GameOrientation } from "../ui/orientation";
-import type { HudPlatform, HudViewportConfig } from "../ui/hudScale";
+import type { HudPlatform, HudViewportConfig } from "../hud/hudScale";
 import type { PositionedPrompt } from "../interaction/proximityPrompt";
 import type { ChaseCameraTuning } from "../runtime/cameraDirector";
 import type { CatalogEntityRole, GameContext, GameContextContent } from "../runtime/gameContext";
@@ -863,7 +863,7 @@ export interface PlayableGame<
    * MMO "who's this and how hurt are they" readout. `roles` restricts to entities whose catalog entry
    * declares one of the given roles (default: all); `maxDistance` hides nameplates beyond this many
    * world units from the render camera, and unset derives the range the same way the bars do. Headless: skin every part via `className`/`data-*` hooks
-   * on `WorldNameplates` (`@jgengine/shell/world/WorldHud`) — this flag only turns the readout on and
+   * on `WorldNameplates` (`@jgengine/shell/world/worldOverlays`) — this flag only turns the readout on and
    * scopes which entities it covers. Set `showHealth: false` for a name-only plate when a game already
    * draws the HP bar itself (its own HUD, or `worldHealthBars`) — otherwise the nameplate's built-in bar
    * stacks a second health bar over every entity.

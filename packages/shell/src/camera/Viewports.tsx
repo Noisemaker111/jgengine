@@ -1,5 +1,5 @@
 import { useFrame, useThree } from "@react-three/fiber";
-import { useMemo, useRef, useSyncExternalStore, type ReactNode } from "react";
+import { useMemo, useRef, useSyncExternalStore } from "react";
 import * as THREE from "three";
 
 import type { GameCameraConfig } from "@jgengine/core/game/playableGame";
@@ -145,41 +145,4 @@ export function SplitScreenRenderer({
   }
 
   return null;
-}
-
-/**
- * One absolutely-positioned HUD root per viewport, laid over the canvas: render each seat's own
- * health, prompts or score with `children(slot)`. Pass the same `viewports` config the game gave `defineGame`.
- * @capability split-screen-hud Per-seat HUD roots positioned over each split-screen viewport.
- */
-export function ViewportHuds({
-  ctx,
-  config,
-  children,
-}: {
-  ctx: GameContext;
-  config?: ViewportsConfig;
-  children: (slot: LocalPlayerSlot, viewport: ViewportDef) => ReactNode;
-}) {
-  const viewports = useSeatViewports(ctx, config);
-  const seats = localPlayers(ctx);
-  return (
-    <>
-      {viewports.map((viewport) => {
-        const slot = seats.slot(viewport.slot);
-        if (slot === null) return null;
-        const [x, y, width, height] = viewport.rect;
-        return (
-          <div
-            key={viewport.slot}
-            data-jg-viewport={viewport.slot}
-            className="pointer-events-none absolute overflow-hidden"
-            style={{ left: `${x * 100}%`, top: `${y * 100}%`, width: `${width * 100}%`, height: `${height * 100}%` }}
-          >
-            {children(slot, viewport)}
-          </div>
-        );
-      })}
-    </>
-  );
 }

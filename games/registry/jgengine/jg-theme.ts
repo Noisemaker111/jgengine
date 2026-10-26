@@ -4,7 +4,7 @@ import {
   deriveHudTheme,
   hudThemeVars,
   type HudThemeSeed,
-} from "@jgengine/react/hudTheme";
+} from "@jgengine/react/hud/hudTheme";
 
 export type JgThemeVars = CSSProperties & Record<`--jg-${string}`, string>;
 export const emberVars = hudThemeVars(HUD_THEME_PRESETS.ember) as JgThemeVars;

@@ -16,7 +16,7 @@ import {
 import type { ActionCodesMap } from "@jgengine/core/input/actionBindings";
 import type { GamepadGlyphName } from "@jgengine/core/input/gamepadModel";
 
-import { useHudInteract } from "./hudInteract";
+import { useHudInteract } from "./hud/hudInteract";
 import { actionGlyph, useInputDevice } from "./inputDevice";
 import { KitFrame, type KitFrameLook } from "./kitFrame";
 import {

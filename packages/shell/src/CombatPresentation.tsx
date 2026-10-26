@@ -2,7 +2,7 @@ import {
   ProjectileTracers,
   WorldFloatText,
   WorldTelegraphs,
-} from "./world/WorldHud";
+} from "./world/worldOverlays";
 import { HitReactionShake } from "./camera/shake/HitReactionShake";
 import { WorldSpellVfx } from "./world/WorldVfx";
 import { HitMarkers, MuzzleFlashes } from "./world/ShotFeedback";

@@ -6,7 +6,8 @@ import type {
   GameContextItemEntry,
 } from "@jgengine/core/runtime/gameContext";
 import { createAssetCatalog } from "@jgengine/core/scene/assetCatalog";
-import { CurrencyPill, SlotGrid } from "@jgengine/react/components";
+import { SlotGrid } from "@jgengine/react/components";
+import { Coins } from "@jgengine/react/hud/hudReadouts";
 import { useEntityStat, useFeed, useGameClock, useGameStore, usePlayer, useTarget } from "@jgengine/react/hooks";
 import type { KitTone } from "@jgengine/react/uiKit";
 import { KitMeter } from "@jgengine/react/uiKitRoot";
@@ -280,7 +281,7 @@ function DemoGameUI() {
         <TargetPanel userId={player.userId} />
       </div>
       <div className="absolute right-4 top-4 flex flex-col items-end gap-2">
-        <CurrencyPill currencyId={GOLD} className="rounded bg-black/60 px-2 py-1 text-sm text-amber-300" />
+        <Coins currencyId={GOLD} icon={null} className="rounded bg-black/60 px-2 py-1 text-sm text-amber-300" />
         <KillFeedPanel />
       </div>
       <div className="absolute bottom-4 left-4 w-64">

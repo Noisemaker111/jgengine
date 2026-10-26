@@ -1,4 +1,4 @@
-import { hudTheme } from "@jgengine/react/hudTheme";
+import { hudTheme } from "@jgengine/react/hud/hudTheme";
 
 /** Brightway's seaside midway: deep teal-glass boards, ribbon gold, cream type, soft rounded corners. */
 export const parkTheme = hudTheme({

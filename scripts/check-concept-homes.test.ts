@@ -65,7 +65,7 @@ test("a new file named for a concept with a folder in its layer must sit in that
   const tree = [
     "packages/react/src/camera/shake/cameraShake.tsx",
     "packages/react/src/notifications/notices.tsx",
-    "packages/react/src/hudFrame.tsx",
+    "packages/react/src/hud/hudFrame.tsx",
     "packages/core/src/world/terrain.ts",
   ];
   const layers = layerFolders(tree);
@@ -73,7 +73,7 @@ test("a new file named for a concept with a folder in its layer must sit in that
   expect(homeFor("packages/react/src/camera/cameraFollow.tsx", layers)).toBeNull();
   expect(homeFor("packages/react/src/camera/shake/shakeMeter.tsx", layers)).toBeNull();
   expect(homeFor("packages/react/src/shakeMeter.tsx", layers)).toEqual({ concept: "shake", homes: ["packages/react/src/camera/shake"] });
-  expect(homeFor("packages/react/src/hudLanes.tsx", layers)).toBeNull();
+  expect(homeFor("packages/react/src/hud/hudLanes.tsx", layers)).toBeNull();
   expect(homeFor("packages/react/src/notifications.ts", layers)).toBeNull();
   expect(homeFor("packages/react/src/camera/index.ts", layers)).toBeNull();
   // A concept folder only binds its own layer.

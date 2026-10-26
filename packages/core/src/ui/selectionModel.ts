@@ -3,7 +3,7 @@
  * party frame, or a squad summary. It turns a caller-owned list of selected entity summaries into a
  * primary detail focus, an ordered member strip, and same-kind buckets for large selections, with
  * focus/hover and virtualization helpers. No rendering opinion: the React renderers in
- * `@jgengine/react/selectionHud` consume this and a game supplies the entity data from wherever it
+ * `@jgengine/react/hud/selectionHud` consume this and a game supplies the entity data from wherever it
  * lives (a `createSelectionSet`, a roster, a marquee query).
  */
 

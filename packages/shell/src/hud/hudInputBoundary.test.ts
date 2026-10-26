@@ -3,9 +3,9 @@ import { mkdir, mkdtemp, rm, symlink } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
 import { chromium, type Browser, type BrowserContext, type Page } from "playwright-core";
-import { buildBrowserFixture, findChromeExecutable } from "../../../scripts/browser-lib";
-import { cleanupBrowserFixture } from "../../../scripts/browser-fixture-cleanup";
-import { gotoFixture } from "../../../scripts/browser-test-fixture";
+import { buildBrowserFixture, findChromeExecutable } from "../../../../scripts/browser-lib";
+import { cleanupBrowserFixture } from "../../../../scripts/browser-fixture-cleanup";
+import { gotoFixture } from "../../../../scripts/browser-test-fixture";
 
 setDefaultTimeout(30_000);
 
@@ -39,12 +39,12 @@ beforeAll(async () => {
     await setupStep("link browser peers", async () => {
       await mkdir(`${directory}/node_modules/@react-three`, { recursive: true });
       await Promise.all([
-        ...["react", "react-dom"].map(peer => symlink(resolve(import.meta.dir, "../../react/node_modules", peer), `${directory}/node_modules/${peer}`, "dir")),
-        ...["@react-three/fiber", "@react-three/drei", "three", "three-stdlib"].map(peer => symlink(resolve(import.meta.dir, "../node_modules", peer), `${directory}/node_modules/${peer}`, "dir")),
+        ...["react", "react-dom"].map(peer => symlink(resolve(import.meta.dir, "../../../react/node_modules", peer), `${directory}/node_modules/${peer}`, "dir")),
+        ...["@react-three/fiber", "@react-three/drei", "three", "three-stdlib"].map(peer => symlink(resolve(import.meta.dir, "../../node_modules", peer), `${directory}/node_modules/${peer}`, "dir")),
       ]);
     });
     // Public subpaths resolve to package source through the repo's tsconfig paths: no build or pack.
-    await Bun.write(`${directory}/tsconfig.json`, JSON.stringify({ extends: resolve(import.meta.dir, "../../../tsconfig.base.json") }));
+    await Bun.write(`${directory}/tsconfig.json`, JSON.stringify({ extends: resolve(import.meta.dir, "../../../../tsconfig.base.json") }));
     await Bun.write(`${directory}/fixture.tsx`, `
       import React,{useState} from 'react';import {createRoot} from 'react-dom/client';
       import {InventoryGrid} from '@jgengine/react/inventoryGrid';import {GameProvider} from '@jgengine/react/provider';

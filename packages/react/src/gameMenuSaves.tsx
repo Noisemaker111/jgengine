@@ -4,7 +4,7 @@ import type { CreditsSection } from "@jgengine/core/game/credits";
 import { formatSavePlaytime } from "@jgengine/core/save/saveSlotIndex";
 import type { SaveSlotMeta, SaveSlots } from "@jgengine/core/save/saveSlots";
 
-import { hudDuration, hudEase, hudFont, hudSpace, hudType } from "./hudTokens";
+import { hudDuration, hudEase, hudFont, hudSpace, hudType } from "./hud/hudTokens";
 import { useMenuNav } from "./menuNav";
 import { relativeSavedAt, useSaveSlots } from "./save/saveSlots";
 

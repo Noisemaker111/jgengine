@@ -3,7 +3,7 @@ import { createPortal } from "react-dom";
 
 import type { AccessibilityState } from "@jgengine/core/ui/accessibility";
 
-import { useEngineStyles } from "./engineStyles";
+import { useEngineStyles } from "../engineStyles";
 import { defaultHudTheme, hudThemeVars, type HudTheme } from "./hudTheme";
 
 /**

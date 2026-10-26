@@ -6,7 +6,7 @@ import { gameFontStacks } from "./gameFonts";
 import { KitFramesPreview } from "./kitFramesPreview";
 import { KIT_MATERIALS, kitCutPath, kitFrameVars, type KitCut, type KitMaterial } from "./kitFrame";
 import { GameSlider, snapSliderValue } from "./gameSlider";
-import { HudFade } from "./hudLayout";
+import { HudFade } from "./hud/hudLayout";
 import { KitButton, KitPanel } from "./uiKitRoot";
 
 const CUTS: readonly KitCut[] = ["box", "chamfer", "notch", "slant", "tab", "banner", "shield", "ticket", "torn", "hex"];

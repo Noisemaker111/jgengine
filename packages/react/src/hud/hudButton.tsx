@@ -1,6 +1,6 @@
 import { forwardRef, type ButtonHTMLAttributes, type ReactNode } from "react";
 
-import { useEngineStyles } from "./engineStyles";
+import { useEngineStyles } from "../engineStyles";
 import { useHudInteract, type HudInteractListener } from "./hudInteract";
 
 /** Visual weight of a {@link HudButton}. */

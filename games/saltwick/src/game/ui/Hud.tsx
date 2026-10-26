@@ -3,9 +3,9 @@ import { resolveActivePrompt } from "@jgengine/core/interaction/proximityPrompt"
 import { SkillCheckBar } from "@jgengine/react/components";
 import { useGameStore } from "@jgengine/react/hooks";
 import { useGameContext } from "@jgengine/react/provider";
-import { HUD_CORNER_WIDTH } from "@jgengine/react/hudLayout";
+import { HUD_CORNER_WIDTH } from "@jgengine/react/hud/hudLayout";
 import { KitBanner, KitObjective } from "@jgengine/react/kitFlow";
-import { KitActionBar, KitCount, KitCounts } from "@jgengine/react/kitHud";
+import { KitActionBar, KitCount, KitCounts } from "@jgengine/react/hud/kitHud";
 import { HudSlots } from "@jgengine/shell/gameKit";
 import { KitActionPrompt, KitButton, KitPanel } from "@jgengine/react/uiKitRoot";
 

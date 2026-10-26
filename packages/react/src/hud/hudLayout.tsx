@@ -23,26 +23,26 @@ import {
   type HudLayoutStore,
   type HudRect,
   type HudSize,
-} from "@jgengine/core/ui/hudLayout";
+} from "@jgengine/core/hud/hudLayout";
 import {
   resizePanelSize,
   resolvePanelResize,
   type EditorUiDocument,
   type HudResizeAxes,
-} from "@jgengine/core/ui/hudDocument";
-import { hudScaleForViewport, overflowingPanels, resolveHudFit } from "@jgengine/core/ui/hudScale";
-import type { HudOverflow } from "@jgengine/core/ui/hudScale";
+} from "@jgengine/core/hud/hudDocument";
+import { hudScaleForViewport, overflowingPanels, resolveHudFit } from "@jgengine/core/hud/hudScale";
+import type { HudOverflow } from "@jgengine/core/hud/hudScale";
 import {
   isMobileMode,
   type HudPriority,
   type LayoutCollisionPolicy,
   type MobileHudBehavior,
-} from "@jgengine/core/ui/gameLayout";
+} from "@jgengine/core/hud/hudPriority";
 import type { GamePhase } from "@jgengine/core/game/gamePhase";
-import { useDisplayProfile } from "./display";
-import { useEngineState } from "./engineStore";
-import { useGameLayoutMode, useRegisterLayoutRegion } from "./gameViewport";
-import { useOptionalGamePhase } from "./hooks";
+import { useDisplayProfile } from "../display";
+import { useEngineState } from "../engineStore";
+import { useGameLayoutMode, useRegisterLayoutRegion } from "../gameViewport";
+import { useOptionalGamePhase } from "../hooks";
 import { formatHudOverlapReport, hudBlockOverlaps, resolveHudLanes, type HudLaneSlot } from "./hudLanes";
 import { useHudLayoutPersist } from "./hudLayoutPersist";
 import { useHudViewport } from "./hudViewport";

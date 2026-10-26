@@ -3,8 +3,8 @@ import type { CSSProperties, ReactNode } from "react";
 import type { CreditsDocument } from "@jgengine/core/game/credits";
 
 import { CreditsScreen } from "./creditsScreen";
-import { HudButton } from "./hudButton";
-import { hudSpace, hudType } from "./hudTokens";
+import { HudButton } from "./hud/hudButton";
+import { hudSpace, hudType } from "./hud/hudTokens";
 import { useMenuNav } from "./menuNav";
 import { MenuScreen } from "./menuScreen";
 

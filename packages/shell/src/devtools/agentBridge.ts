@@ -7,13 +7,13 @@ import {
   isHudAnchor,
   listActiveHudLayouts,
   type HudPlacement,
-} from "@jgengine/core/ui/hudLayout";
+} from "@jgengine/core/hud/hudLayout";
 import {
   listHudPanelTypes,
   resolvePanelResize,
   resizePanelSize,
   type EditorUiPanelLayout,
-} from "@jgengine/core/ui/hudDocument";
+} from "@jgengine/core/hud/hudDocument";
 import { buildFullReport, buildLeanReport, summarizeLeanReport } from "./devtoolsReports";
 import { resetFrameTelemetry } from "./frameSampler";
 import { advanceSimulation } from "./simStepper";

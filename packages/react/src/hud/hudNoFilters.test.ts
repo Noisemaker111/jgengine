@@ -7,8 +7,8 @@ import { renderToStaticMarkup } from "react-dom/server";
 import { createPromptRegistry } from "@jgengine/core/interaction/promptRegistry";
 import { keybind, proximityPrompt } from "@jgengine/core/interaction/proximityPrompt";
 
-import { InteractionPrompt } from "./interactionPrompt";
-import { WaypointMarkers } from "./waypointMarkers";
+import { InteractionPrompt } from "../interactionPrompt";
+import { WaypointMarkers } from "../waypointMarkers";
 
 /**
  * Over a live 3D canvas, an element with a CSS `filter` or `backdrop-filter` is re-rendered every
@@ -16,7 +16,7 @@ import { WaypointMarkers } from "./waypointMarkers";
  * from 60 to 32. The kits, the game-UI blocks and the engine's HUD primitives draw rims, shadows and
  * glows as plates and overlays instead; this guard keeps it that way.
  */
-const SRC = import.meta.dir;
+const SRC = join(import.meta.dir, "..");
 
 const KIT_FILES = readdirSync(SRC).filter((name) => /^uiKit[A-Z]\w*\.tsx$/.test(name) && !/Preview|\.test\./.test(name));
 
@@ -27,14 +27,14 @@ const NO_FILTER = [
   "kitFrame.tsx",
   "gameCursor.tsx",
   "gameSlider.tsx",
-  "hudLayout.tsx",
+  "hud/hudLayout.tsx",
   "gameMenu.tsx",
   "gameMenuSaves.tsx",
-  "actionHud.tsx",
-  "selectionHud.tsx",
+  "hud/actionHud.tsx",
+  "hud/selectionHud.tsx",
   "notifications/notices.tsx",
   "notifications/toastStack.tsx",
-  "hudFrame.tsx",
+  "hud/hudFrame.tsx",
   "interactionPrompt.tsx",
   "map.tsx",
   "menuScreen.tsx",
