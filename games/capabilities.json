@@ -10582,8 +10582,8 @@
       "packages": [
         "@jgengine/core"
       ],
-      "module": "@jgengine/core/world/waterKind",
-      "domain": "world",
+      "module": "@jgengine/core/water/waterKind",
+      "domain": "water",
       "gameFacing": false,
       "probe": null,
       "intent": "parametric water surface volume"

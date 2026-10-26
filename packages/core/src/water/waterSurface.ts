@@ -1,4 +1,4 @@
-import type { OceanEnvironmentDescriptor } from "./features";
+import type { OceanEnvironmentDescriptor } from "../world/features";
 
 export type WaterNormal = readonly [number, number, number];
 
@@ -19,6 +19,10 @@ export interface WaterSurfaceConfig {
   waveSpeed?: number;
   waves?: number;
   choppiness?: number;
+  /** Heading of the longest wave in degrees on the XZ plane (0 = +X); the rest fan out around it. Default 0. */
+  direction?: number;
+  /** Crest sharpness as a fraction (0..1) of the steepest no-loop Gerstner crest. Default 0.4. */
+  steepness?: number;
 }
 
 export interface WaterSurface {
@@ -48,9 +52,12 @@ function resolveConfig(config: WaterSurfaceConfig): Required<Omit<WaterSurfaceCo
     waveSpeed: config.waveSpeed ?? 0.55,
     waves: config.waves ?? 4,
     choppiness: config.choppiness ?? 1,
+    direction: config.direction ?? 0,
+    steepness: Math.min(1, Math.max(0, config.steepness ?? 0.4)),
   };
 }
 
+/** The wave set a {@link waterSurface} with this config moves by: the CPU queries and the shell's drawn water read the same list. */
 export function synthesizeWaves(config: WaterSurfaceConfig = {}): GerstnerWave[] {
   const resolved = resolveConfig(config);
   const count = Math.max(0, Math.floor(resolved.waves));
@@ -70,14 +77,14 @@ export function synthesizeWaves(config: WaterSurfaceConfig = {}): GerstnerWave[]
     const wavelength = resolved.waveScale * WAVELENGTH_FALLOFF ** i;
     const k = TWO_PI / wavelength;
 
-    const angle = DIRECTION_SPREAD * (i % 2 === 0 ? 1 : -1) * Math.ceil(i / 2);
+    const angle = (resolved.direction * Math.PI) / 180 + DIRECTION_SPREAD * (i % 2 === 0 ? 1 : -1) * Math.ceil(i / 2);
     const direction: readonly [number, number] = [Math.cos(angle), Math.sin(angle)];
 
     const omega = Math.sqrt(GRAVITY * k) * resolved.waveSpeed;
     const speed = omega / k;
 
     const steepnessLimit = 1 / (k * amplitude * count);
-    const steepness = Math.min(1, Math.max(0, 0.4 * steepnessLimit));
+    const steepness = Math.min(1, Math.max(0, resolved.steepness * steepnessLimit));
 
     waves.push({ direction, wavelength, amplitude, steepness, speed });
   }
@@ -181,16 +188,18 @@ export function waterSurface(config: WaterSurfaceConfig = {}): WaterSurface {
   };
 }
 
-export function waterSurfaceFromDescriptor(
-  descriptor: OceanEnvironmentDescriptor,
-  waves?: number,
-): WaterSurface {
-  return waterSurface({
+/** The wave config an `ocean()` descriptor describes, for the CPU surface and the drawn water alike. */
+export function waterSurfaceConfigFromDescriptor(descriptor: OceanEnvironmentDescriptor, waves?: number): WaterSurfaceConfig {
+  return {
     level: descriptor.level,
     ...(descriptor.levelAt === undefined ? {} : { levelAt: descriptor.levelAt }),
     waveHeight: descriptor.waveHeight,
     waveScale: descriptor.waveScale,
     waveSpeed: descriptor.waveSpeed,
     ...(waves === undefined ? {} : { waves }),
-  });
+  };
+}
+
+export function waterSurfaceFromDescriptor(descriptor: OceanEnvironmentDescriptor, waves?: number): WaterSurface {
+  return waterSurface(waterSurfaceConfigFromDescriptor(descriptor, waves));
 }

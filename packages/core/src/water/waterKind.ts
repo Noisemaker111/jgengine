@@ -4,11 +4,13 @@
  * footprint resolver); the animated shader plane lives in the `shell` renderer, which maps these
  * params onto the existing Ocean material. A scene kind so a pond or moat is dragged in the editor and
  * tuned with sliders, persisted in `editor.scene.json`. Distinct from the infinite `waterSurface`
- * ocean primitive (`./water`) — this is a bounded, editor-authored patch.
+ * ocean primitive (`./waterSurface`) — this is a bounded, editor-authored patch, whose waves are the
+ * same {@link WaterSurfaceConfig} model (`ResolvedWater.surface`).
  *
  * @capability water parametric water surface volume
  */
 import { registerSceneKind, type ParamSchema, type SceneKindObject } from "../scene/sceneKinds";
+import type { WaterSurfaceConfig } from "./waterSurface";
 
 /** The editor volume kind marking a box as a water surface. */
 export const WATER_VOLUME_KIND = "water";
@@ -89,6 +91,18 @@ export interface ResolvedWater {
   /** Full width (X) and depth (Z) of the water plane in meters. */
   size: readonly [number, number];
   rules: WaterRules;
+  /** The wave model at the surface height: hand it to `waterSurface` for buoyancy, and the shell draws the same waves. */
+  surface: WaterSurfaceConfig;
+}
+
+/** The {@link WaterSurfaceConfig} authored water rules describe at surface height `level`. `waveScale` is a frequency here, so the wavelength is its inverse (bounded 2–300 m). */
+function waterRulesSurface(rules: WaterRules, level: number): WaterSurfaceConfig {
+  return {
+    level,
+    waveHeight: rules.waveHeight,
+    waveSpeed: rules.waveSpeed,
+    waveScale: Math.min(300, Math.max(2, 6 / rules.waveScale)),
+  };
 }
 
 /** Reads a numeric field off a possibly-untyped `{x,y,z}`-ish object. */
@@ -114,7 +128,9 @@ export function resolveWaterObject(object: SceneKindObject): ResolvedWater | nul
   const halfY = axis(he?.y) ?? 0;
   const width = Math.max(0.1, halfX * 2);
   const depth = Math.max(0.1, halfZ * 2);
-  return { center: [center.x, center.y + halfY, center.z], size: [width, depth], rules: readWaterRules(meta) };
+  const rules = readWaterRules(meta);
+  const level = center.y + halfY;
+  return { center: [center.x, level, center.z], size: [width, depth], rules, surface: waterRulesSurface(rules, level) };
 }
 
 /** Registers the `water` scene kind (schema + resolver). Called by {@link registerBuiltinSceneKinds}. @internal */

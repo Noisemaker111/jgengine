@@ -1,11 +1,11 @@
 import { describe, expect, test } from "bun:test";
-import type { OceanEnvironmentDescriptor } from "./features";
+import type { OceanEnvironmentDescriptor } from "../world/features";
 import {
   synthesizeWaves,
   waterSurface,
   waterSurfaceFromDescriptor,
   type GerstnerWave,
-} from "./water";
+} from "./waterSurface";
 
 function amplitudeTotal(waves: readonly GerstnerWave[]): number {
   return waves.reduce((sum, wave) => sum + wave.amplitude, 0);
@@ -166,5 +166,20 @@ describe("waterSurfaceFromDescriptor", () => {
       color: "#1d7fa3",
     };
     expect(waterSurfaceFromDescriptor(descriptor, 3).waves).toHaveLength(3);
+  });
+});
+
+describe("wave knobs", () => {
+  test("direction turns the longest wave to that heading", () => {
+    const [first] = synthesizeWaves({ direction: 90 });
+    expect(first!.direction[0]).toBeCloseTo(0, 6);
+    expect(first!.direction[1]).toBeCloseTo(1, 6);
+  });
+
+  test("steepness scales crest sharpness within the no-loop limit", () => {
+    const soft = synthesizeWaves({ steepness: 0.05 });
+    const sharp = synthesizeWaves({ steepness: 0.15 });
+    expect(sharp[0]!.steepness).toBeCloseTo(soft[0]!.steepness * 3, 6);
+    expect(synthesizeWaves({ steepness: 5 })[0]!.steepness).toBeLessThanOrEqual(1);
   });
 });

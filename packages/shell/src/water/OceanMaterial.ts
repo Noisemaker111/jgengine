@@ -7,6 +7,7 @@ export interface OceanMaterialUniforms {
   uWaveDirections: { value: THREE.Vector2[] };
   uWaveParams: { value: THREE.Vector4[] };
   uChoppiness: { value: number };
+  uWaveCount: { value: number };
   uShallowColor: { value: THREE.Color };
   uDeepColor: { value: THREE.Color };
   uCrestColor: { value: THREE.Color };
@@ -41,6 +42,7 @@ export function createOceanMaterial(config: ResolvedOceanConfig): OceanShaderMat
       uWaveDirections: { value: [] },
       uWaveParams: { value: [] },
       uChoppiness: { value: config.choppiness },
+      uWaveCount: { value: config.waves.length },
       uShallowColor: { value: new THREE.Color(config.color.shallow) },
       uDeepColor: { value: new THREE.Color(config.color.deep) },
       uCrestColor: { value: new THREE.Color(config.color.crest) },
@@ -72,6 +74,7 @@ export function syncOceanMaterial(
   material.uniforms.uWaveDirections.value = waveUniforms.directions;
   material.uniforms.uWaveParams.value = waveUniforms.params;
   material.uniforms.uChoppiness.value = config.choppiness;
+  material.uniforms.uWaveCount.value = config.waves.length;
   material.uniforms.uShallowColor.value.set(config.color.shallow);
   material.uniforms.uDeepColor.value.set(config.color.deep);
   material.uniforms.uCrestColor.value.set(config.color.crest);

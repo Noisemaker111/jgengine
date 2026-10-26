@@ -33,3 +33,10 @@ describe("resolveWaterObject", () => {
     expect(resolveWaterObject({ id: "p", kind: "water" })).toBeNull();
   });
 });
+
+describe("authored water waves", () => {
+  test("a volume carries the wave model at its surface height", () => {
+    const resolved = resolveWaterObject({ id: "w", kind: "water", center: { x: 0, y: 2, z: 0 }, radius: 5, meta: { waveHeight: 0.3, waveScale: 0.5 } });
+    expect(resolved!.surface).toEqual({ level: 2, waveHeight: 0.3, waveSpeed: WATER_DEFAULTS.waveSpeed, waveScale: 12 });
+  });
+});

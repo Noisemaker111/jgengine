@@ -5,18 +5,13 @@ export {
   OCEAN_QUALITY_PRESETS,
   buildOceanWaveUniforms,
   createOceanConfig,
-  DEFAULT_OCEAN_WAVE_SCALE,
   type OceanColorConfig,
   type OceanConfig,
-  type OceanDirectionVector,
   type OceanFoamConfig,
   type OceanQualityPreset,
-  type OceanWaveConfig,
-  type OceanWaveDirection,
   type ResolvedOceanColorConfig,
   type ResolvedOceanConfig,
   type ResolvedOceanFoamConfig,
-  type ResolvedOceanWaveConfig,
 } from "./OceanConfig";
 export {
   createOceanMaterial,

@@ -1,6 +1,7 @@
 import { describe, expect, test } from "bun:test";
+import { synthesizeWaves, waterSurface } from "@jgengine/core/water/waterSurface";
+
 import {
-  DEFAULT_OCEAN_WAVE_SCALE,
   MAX_OCEAN_WAVES,
   buildOceanWaveUniforms,
   createOceanConfig,
@@ -29,60 +30,41 @@ describe("createOceanConfig", () => {
     expect(square.depth).toBe(80);
   });
 
-  test("normalizes directions from degrees and vectors", () => {
-    const angled = createOceanConfig({ direction: 90 });
-    expect(angled.direction.x).toBeCloseTo(0);
-    expect(angled.direction.z).toBeCloseTo(1);
-
-    const vector = createOceanConfig({ direction: { x: 3, z: 4 } });
-    expect(vector.direction.x).toBeCloseTo(0.6);
-    expect(vector.direction.z).toBeCloseTo(0.8);
+  test("draws the core water model's waves, so buoyancy rides the drawn swell", () => {
+    const waves = { waveHeight: 0.9, waveScale: 24, waveSpeed: 0.5, direction: 30 };
+    const config = createOceanConfig({ waves });
+    const cpu = waterSurface(waves);
+    expect(config.waves).toEqual(cpu.waves);
+    expect(config.waves).toEqual(synthesizeWaves(waves));
   });
 
-  test("always resolves a fixed shader wave set", () => {
-    const config = createOceanConfig({
-      amplitude: 2,
-      waves: [{ amplitude: 1.5, wavelength: 20, speed: 0.75, direction: 0, steepness: 3 }],
-    });
+  test("caps the wave set at the shader's slots", () => {
+    const config = createOceanConfig({ waves: { waves: 9 } });
     expect(config.waves).toHaveLength(MAX_OCEAN_WAVES);
-    expect(config.waves[0]!.amplitude).toBe(3);
-    expect(config.waves[0]!.wavelength).toBe(20);
-    expect(config.waves[0]!.speed).toBe(0.75);
-    expect(config.waves[0]!.steepness).toBe(1.2);
   });
 
-  test("waveScale sets primary wavelength and changes wave uniforms", () => {
-    const small = createOceanConfig({ waveScale: 8 });
-    const large = createOceanConfig({ waveScale: 40 });
-    expect(small.waveScale).toBe(8);
-    expect(large.waveScale).toBe(40);
+  test("waveScale sets the primary wavelength and the wave uniforms", () => {
+    const small = createOceanConfig({ waves: { waveScale: 8 } });
+    const large = createOceanConfig({ waves: { waveScale: 40 } });
     expect(small.waves[0]!.wavelength).toBeCloseTo(8, 6);
     expect(large.waves[0]!.wavelength).toBeCloseTo(40, 6);
-    expect(small.waves[0]!.wavelength).not.toBe(large.waves[0]!.wavelength);
-
-    const smallUniforms = buildOceanWaveUniforms(small);
-    const largeUniforms = buildOceanWaveUniforms(large);
-    expect(smallUniforms.params[0]!.x).not.toBe(largeUniforms.params[0]!.x);
-    expect(smallUniforms.params[0]!.x).toBeCloseTo((Math.PI * 2) / 8, 6);
-    expect(largeUniforms.params[0]!.x).toBeCloseTo((Math.PI * 2) / 40, 6);
-  });
-
-  test("default waveScale matches core water primary wavelength unit", () => {
-    const config = createOceanConfig();
-    expect(config.waveScale).toBe(DEFAULT_OCEAN_WAVE_SCALE);
-    expect(config.waves[0]!.wavelength).toBeCloseTo(DEFAULT_OCEAN_WAVE_SCALE, 6);
+    expect(buildOceanWaveUniforms(small).params[0]!.x).toBeCloseTo((Math.PI * 2) / 8, 6);
+    expect(buildOceanWaveUniforms(large).params[0]!.x).toBeCloseTo((Math.PI * 2) / 40, 6);
   });
 });
 
 describe("buildOceanWaveUniforms", () => {
-  test("packs directions and shader params", () => {
-    const config = createOceanConfig({ waves: [{ amplitude: 2, wavelength: 8, speed: 1, direction: 0 }] });
+  test("packs the core waves and pads the rest of the slots with still water", () => {
+    const config = createOceanConfig({ waves: { waves: 2, waveScale: 8 } });
     const uniforms = buildOceanWaveUniforms(config);
     expect(uniforms.directions).toHaveLength(MAX_OCEAN_WAVES);
     expect(uniforms.params).toHaveLength(MAX_OCEAN_WAVES);
-    expect(uniforms.directions[0]!.x).toBeCloseTo(1);
-    expect(uniforms.directions[0]!.y).toBeCloseTo(0);
-    expect(uniforms.params[0]!.x).toBeCloseTo((Math.PI * 2) / 8);
-    expect(uniforms.params[0]!.y).toBeCloseTo(2);
+    const first = config.waves[0]!;
+    const k = (Math.PI * 2) / first.wavelength;
+    expect(uniforms.directions[0]!.x).toBeCloseTo(first.direction[0]);
+    expect(uniforms.params[0]!.x).toBeCloseTo(k);
+    expect(uniforms.params[0]!.y).toBeCloseTo(first.amplitude);
+    expect(uniforms.params[0]!.w).toBeCloseTo(first.speed * k);
+    expect(uniforms.params[2]!.y).toBe(0);
   });
 });

@@ -1,7 +1,7 @@
 import { describe, expect, test } from "bun:test";
 import { ocean } from "@jgengine/core/world/features";
 
-import { createOceanConfig } from "../water/OceanConfig";
+import { createOceanConfig } from "./OceanConfig";
 import { oceanColor } from "./oceanColor";
 
 describe("ocean palette", () => {
