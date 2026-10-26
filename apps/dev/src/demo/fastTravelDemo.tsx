@@ -3,9 +3,9 @@ import { useState } from "react";
 import { defineGameDefinition } from "@jgengine/core/game/defineGame";
 import type { GameContext, GameContextEntityEntry } from "@jgengine/core/runtime/gameContext";
 import { createAssetCatalog } from "@jgengine/core/scene/assetCatalog";
-import { createFastTravelNetwork } from "@jgengine/core/world/fastTravel";
+import { createFastTravelNetwork } from "@jgengine/core/map/fastTravel";
 import { environment, grass, terrain } from "@jgengine/core/world/features";
-import { FastTravelMenu } from "@jgengine/react/fastTravel";
+import { FastTravelMenu } from "@jgengine/core/map/fastTravel.view";
 
 import { EnvironmentScene } from "@jgengine/core/environment/EnvironmentScene.draw";
 import type { PlayableGame } from "@jgengine/shell/registry";

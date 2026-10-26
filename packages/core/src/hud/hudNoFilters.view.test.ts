@@ -8,7 +8,7 @@ import { createPromptRegistry } from "@jgengine/core/interaction/promptRegistry"
 import { keybind, proximityPrompt } from "@jgengine/core/interaction/proximityPrompt";
 
 import { InteractionPrompt } from "@jgengine/core/interaction/interactionPrompt.view";
-import { WaypointMarkers } from "@jgengine/react/waypointMarkers";
+import { WaypointMarkers } from "@jgengine/core/map/waypointMarkers.view";
 
 /**
  * Over a live 3D canvas, an element with a CSS `filter` or `backdrop-filter` is re-rendered every
@@ -39,9 +39,9 @@ const NO_FILTER = [
   "packages/core/src/notifications/toastStack.view.tsx",
   "packages/core/src/hud/hudFrame.view.tsx",
   "packages/core/src/interaction/interactionPrompt.view.tsx",
-  "packages/react/src/map.tsx",
+  "packages/core/src/map/map.view.tsx",
   "packages/core/src/menu/menuScreen.view.tsx",
-  "packages/react/src/waypointMarkers.tsx",
+  "packages/core/src/map/waypointMarkers.view.tsx",
 ];
 
 /** The engine stylesheet keeps a hover brighten on HUD buttons, but never a backdrop blur. */

@@ -443,6 +443,10 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `createFastTravelNetwork` (function) · `import { createFastTravelNetwork } from "@jgengine/core/world"`
 
+## fast-travel-menu — discovered-destinations picker grouped by region with distances, a discovery counter, and a travel callback
+
+- `FastTravelMenu` (function) · `import { FastTravelMenu } from "@jgengine/core/map/fastTravel.view"`
+
 ## feedback-cue-sounds — default procedural hit/hurt/kill/pickup/objective/wave/deny reactions on an "sfx" bus, overridable per game
 
 - `withFeedbackCueSounds` (function) · `import { withFeedbackCueSounds } from "@jgengine/core/audio/feedbackCues"`
@@ -522,6 +526,10 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 ## free-flight — camera-relative creative/spectator/noclip/hover flight with correct strafe, sprint, and optional gravity
 
 - `createFreeFlightController` (function) · `import { createFreeFlightController } from "@jgengine/core/world"`
+
+## fullscreen-map — fullscreen pan/zoom world-map overlay over WorldMapSurface — wheel-zoom, drag-pan, click-to-place, and a freehand draw tool (onStrokeComplete)
+
+- `FullscreenMap` (function) · `import { FullscreenMap } from "@jgengine/core/map/map.view"`
 
 ## gamepad-input — Resolve sampled gamepad input into actions with deadzones and response curves.
 
@@ -676,6 +684,10 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `createAnnotationLayer` (function) · `import { createAnnotationLayer } from "@jgengine/core/world"`
 
+## map-legend — marker-kind key (glyph + color + label per kind) sharing the map's kindStyles
+
+- `MapLegend` (function) · `import { MapLegend } from "@jgengine/core/map/map.view"`
+
 ## material-appearance-signals — adapt selected surface response to sampled wetness and local card exposure
 
 - `resolveMaterialAppearance` (function) · `import { resolveMaterialAppearance } from "@jgengine/core/material/appearanceSignals"`
@@ -697,14 +709,32 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `ColliderShape` (type) · `import { ColliderShape } from "@jgengine/core/scene/colliders"`
 
-## minimap-bake — rasterize authored terrain + zones into a top-down minimap image
+## minimap — framed circular minimap with terrain bake, fog, markers, and facing arrow
 
+- `Minimap` (function) · `import { Minimap } from "@jgengine/core/map/map.view"`
+
+## minimap-bake — rasterize terrain and zones straight into a minimap background and bounds
+
+- `bakeMinimapBackground` (function) · `import { bakeMinimapBackground } from "@jgengine/core/world"`
 - `bakeMinimapImage` (function) · `import { bakeMinimapImage } from "@jgengine/core/world"`
+- `encodeBakePng` (function) · `import { encodeBakePng } from "@jgengine/core/world"`
 - `minimapBakeToPngDataUri` (function) · `import { minimapBakeToPngDataUri } from "@jgengine/core/world"`
+
+## minimap-chrome — ring frame plus edge-clamped, heading-aware marker dots to nest inside a game's own `<svg>`
+
+- `MinimapChrome` (function) · `import { MinimapChrome } from "@jgengine/core/map/map.view"`
+
+## minimap-panel — circular minimap with zone label, clock, and compass composed together
+
+- `MinimapPanel` (function) · `import { MinimapPanel } from "@jgengine/core/map/map.view"`
 
 ## minimap-track — project a world point to a 0..1 fraction along a linear track axis
 
-- `trackFraction` (function) · `import { trackFraction } from "@jgengine/core/world/minimapTrack"`
+- `trackFraction` (function) · `import { trackFraction } from "@jgengine/core/map/minimapTrack"`
+
+## minimap-track-hud — horizontal linear track minimap (corridor/route progress) — colored zone spans and gate/player pips positioned by 0..1 fraction, sharing chrome with the radial Minimap
+
+- `MinimapTrack` (function) · `import { MinimapTrack } from "@jgengine/core/map/map.view"`
 
 ## model-sockets — named attachment points read from a model
 
@@ -1201,6 +1231,14 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `useCameraShakeReadout` (function) · `import { useCameraShakeReadout } from "@jgengine/core/camera/shake/cameraShake.view"`
 
+## use-fast-travel — re-render a component when a fast-travel network's discovery state changes
+
+- `useFastTravel` (function) · `import { useFastTravel } from "@jgengine/core/map/fastTravel.view"`
+
+## use-fog — React binding that returns a fog-of-war field's live cells
+
+- `useFog` (function) · `import { useFog } from "@jgengine/core/map/map.view"`
+
 ## use-interaction-prompt — React hook binding a prompt registry to a moving player — resolves the nearest interactable prompt and returns the active one
 
 - `useInteractionPrompt` (function) · `import { useInteractionPrompt } from "@jgengine/core/interaction/interactionPrompt.view"`
@@ -1212,6 +1250,10 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 ## use-timer — React hook binding one timer to a component with a per-frame re-read
 
 - `useTimerRead` (function) · `import { useTimerRead } from "@jgengine/core/time/timerReadout.view"`
+
+## use-waypoints — React binding that returns a waypoint store's live list (or a passthrough array)
+
+- `useWaypoints` (function) · `import { useWaypoints } from "@jgengine/core/map/waypointMarkers.view"`
 
 ## utility-brain — pick actions by decaying-need appeal with response curves, hysteresis and interrupts
 
@@ -1261,6 +1303,14 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `createWaveRunner` (function) · `import { createWaveRunner } from "@jgengine/core/world"`
 
+## waypoint-arrow — on-screen HUD guide arrow to a tracked waypoint, rotated by facing-relative bearing with a distance readout
+
+- `WaypointArrow` (function) · `import { WaypointArrow } from "@jgengine/core/map/map.view"`
+
+## waypoint-markers — overlay rendering world waypoints as on-screen pins and off-screen edge-clamped directional arrows with distance, colored per game-owned kind
+
+- `WaypointMarkers` (function) · `import { WaypointMarkers } from "@jgengine/core/map/waypointMarkers.view"`
+
 ## waypoint-store — serializable player waypoint layer — place/track/clear pins, mirror to a MarkerSet, and on-screen bearing/distance guidance for the tracked waypoint
 
 - `createWaypointStore` (function) · `import { createWaypointStore } from "@jgengine/core/world"`
@@ -1285,6 +1335,14 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `buildIntersectionMarkings` (function) · `import { buildIntersectionMarkings } from "@jgengine/core/roads/roads"`
 - `buildTrimmedIntersections` (function) · `import { buildTrimmedIntersections } from "@jgengine/core/world"`
+
+## world-map — framed full-bounds world map panel with terrain background, fog, labelled markers and the player
+
+- `WorldMap` (function) · `import { WorldMap } from "@jgengine/core/map/map.view"`
+
+## world-map-surface — bare top-down map svg with terrain background, fog, layers, labelled markers and player arrow under a viewport transform
+
+- `WorldMapSurface` (function) · `import { WorldMapSurface } from "@jgengine/core/map/map.view"`
 
 ## world-physics-colliders — Synchronize terrain and authored static colliders with a physics backend.
 

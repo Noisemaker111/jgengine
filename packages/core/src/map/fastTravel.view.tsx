@@ -1,7 +1,7 @@
 import { useEffect, useReducer, type CSSProperties, type ReactNode } from "react";
 
-import type { FastTravelNetwork, TravelPointView } from "@jgengine/core/world/fastTravel";
-import type { WorldXZ } from "@jgengine/core/world/minimap";
+import type { FastTravelNetwork, TravelPointView } from "@jgengine/core/map/fastTravel";
+import type { WorldXZ } from "@jgengine/core/map/minimap";
 import { hudType } from "@jgengine/core/hud/hudTokens";
 
 /**

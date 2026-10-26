@@ -1570,6 +1570,174 @@
 - `ModelVariantSelectorState` (interface): interface ModelVariantSelectorState — Plain JSON state of a {@link ModelVariantSelector}: each id's current level index.
 - `createModelVariantSelector` (function): function createModelVariantSelector(config: ModelVariantLodConfig): ModelVariantSelector — Builds the per-instance distance switch for a model's variant levels.
 
+## @jgengine/core/map/MapMarkerBeacons.draw
+
+- `MapMarkerBeacons` (function): function MapMarkerBeacons({ markers, kindStyles, height = 5 }: MapMarkerBeaconsProps): React.JSX.Element — World-space beacons for map markers (the visible in-world side of a ping): a floating diamond over a soft light beam, colored by marker kind. Wire it through `PlayableGame.WorldOverlay`.
+- `MapMarkerBeaconsProps` (interface): interface MapMarkerBeaconsProps — Props for `MapMarkerBeacons`: the markers to raise as world beacons, kind styles and beacon height.
+
+## @jgengine/core/map/fastTravel
+
+- `FastTravelNetwork` (interface): interface FastTravelNetwork<TMeta = unknown> — A network of fast-travel points with per-player discovery + distance queries.
+- `FastTravelOptions` (interface): interface FastTravelOptions<TMeta = unknown> — Options for {@link createFastTravelNetwork}.
+- `FastTravelSnapshot` (interface): interface FastTravelSnapshot — Serializable discovery state.
+- `TravelPointDef` (interface): interface TravelPointDef<TMeta = unknown> — A fast-travel destination the game defines. Discovery is tracked separately.
+- `TravelPointView` (interface): interface TravelPointView<TMeta = unknown> extends TravelPointDef<TMeta> — A destination plus its discovery state (and distance from a query origin, when given).
+- `createFastTravelNetwork` (function): function createFastTravelNetwork<TMeta = unknown>(options: FastTravelOptions<TMeta>): FastTravelNetwork<TMeta> — A fast-travel network: defined destinations plus per-player discovery, with distance-sorted queries, a `nearest` lookup, a `canTravel` gate, an `onDiscover` seam, and serializable `snapshot`/`restore`. Travel itself is a teleport the game applies to `TravelPointView.position`; this owns the unlock/where-can-I-go state. Points marked `initial` start discovered.
+
+## @jgengine/core/map/fastTravel.view
+
+- `FastTravelMenu` (function): function FastTravelMenu<TMeta = unknown>({ network, from, onTravel, currentId, title = "Fast Travel", emptyLabel = "No destinations discovered yet.", onClose, className, style, }: FastTravelMenuProps<TMeta>): ReactNode — Fast-travel menu — the discovered-destinations list players pick from: points grouped by region, distance-sorted from `from`, each showing icon, name, and distance, with a header counting discovered vs. total. Selecting a row calls `onTravel`; the current location is flagged and not travelable. Bind it to a `createFastTravelNetwork`.
+- `FastTravelMenuProps` (interface): interface FastTravelMenuProps<TMeta = unknown> — Props for {@link FastTravelMenu}.
+- `useFastTravel` (function): function useFastTravel<TMeta = unknown>(network: FastTravelNetwork<TMeta>): FastTravelNetwork<TMeta> — Subscribe a component to a fast-travel network's discovery changes. Returns the network unchanged; the hook only forces a re-render when a point is discovered or the network is restored, so callers can read `destinations`/`list` in render.
+
+## @jgengine/core/map/fog
+
+- `FogBounds` (interface): interface FogBounds — World-XZ rectangle a fog field covers.
+- `FogCells` (interface): interface FogCells — A fog field's grid: size, origin, cell size and row-major revealed flags.
+- `FogConfig` (interface): interface FogConfig — Fog field settings: bounds, cell size and the cells revealed at the start.
+- `FogField` (interface): interface FogField — Reveal-on-event fog of war over a fixed grid. Walking (`revealAlong`) and digging/acting (`reveal`) clear cells; once revealed a cell stays revealed. Pure and renderer-free — the shell/react map draws `cells()`.
+- `createFogField` (function): function createFogField(config: FogConfig): FogField — Create a fog-of-war field over `bounds`; reveal cells as the player explores. Throws on a non-positive cell size.
+
+## @jgengine/core/map/fogOverlay.view
+
+- `FogCellRect` (interface): interface FogCellRect — A fog cell's rectangle in map pixels.
+- `FogPaintSurface` (interface): interface FogPaintSurface — The canvas-2D calls the fog overlay paints with, so tests can pass a fake.
+
+## @jgengine/core/map/map.view
+
+- `Compass` (function): function Compass({ facingYaw, center, markers, width = 340, fov = (Math.PI * 2) / 3, kindStyles = DEFAULT_MARKER_KINDS, className, }: CompassProps): ReactNode — Horizontal compass strip centered on the player's facing direction, with the eight cardinals and optional marker pips from static views, an external source, or a native `MarkerSet`.
+- `CompassProps` (interface): interface CompassProps — Props for `Compass`: the tracked facing yaw, optional centre and markers, strip width and field of view.
+- `FullscreenMap` (function): function FullscreenMap({ open = true, bounds, contentWidth = 900, minScale = 0.5, maxScale = 8, title = "Map", onClose, onWorldClick, tool = "pan", onStrokeComplete, drawTone = "info", drawWidth = 3, children, overlayClassName, overlayStyle, ...surfaceProps }: FullscreenMapProps): ReactNode — Fullscreen pan/zoom world-map overlay — the enlarged "press M" map. Wheel to zoom (toward the cursor), drag to pan, and click to place (wire `onWorldClick` to a waypoint/annotation store). Switch `tool` to `"draw"` to freehand-draw strokes committed to `onStrokeComplete` (wire to `createAnnotationLayer`). Reuses {@link WorldMapSurface} for rendering, so terrain bake, fog, routes, zones, markers, and the player arrow all appear; a drag never fires `onWorldClick`. Compose a {@link MapLegend} or tool palette via `children`.
+- `FullscreenMapProps` (interface): interface FullscreenMapProps extends Omit<WorldMapSurfaceProps, "canvasWidth" | "canvasHeight" | "viewport" | "width" | "height" | "style"> — Props for {@link FullscreenMap}.
+- `MapBounds` (interface): interface MapBounds — World-XZ rectangle a world map shows.
+- `MapLegend` (function): function MapLegend({ kinds, labels, kindStyles = DEFAULT_MARKER_KINDS, title = "Legend", className, style, }: MapLegendProps): ReactNode — Marker-kind key for a map/minimap — glyph + color swatch per kind, labelled. Reads the same `kindStyles` the map renders with, so the legend can never drift from the pins.
+- `MapLegendProps` (interface): interface MapLegendProps — Props for {@link MapLegend}.
+- `MapViewport` (interface): interface MapViewport — Pan/zoom transform applied to a {@link WorldMapSurface}'s content group.
+- `Minimap` (function): function Minimap({ markers, center, worldRadius, fog, size = 176, facingYaw = 0, rotate = false, kindStyles = DEFAULT_MARKER_KINDS, background, mapBounds, routes, zones, cellStates, onWorldClick, className, style, title = "Map", children, }: MinimapProps): ReactNode — Framed circular minimap: optional baked terrain background, reveal-on-event fog overlay, categorized marker icons, and a facing arrow. Reads static marker views, an external marker source, or a native `MarkerSet`; supply your own `kindStyles` palette to reskin. Does not require `GameProvider`.
+- `MinimapChrome` (function): function MinimapChrome({ view, frame = false, frameColor = "rgba(148,163,184,0.4)", frameStrokeWidth = 1.5, cardinalLabel = "N", markers = [], markerColor = "#e2e8f0", markerRadius = 5, className, }: MinimapChromeProps): ReactNode — Headless minimap chrome — nests inside a game's own `<svg>`: an optional ring frame, and edge-clamped marker dots that draw as directional arrows when a marker carries a `heading` (the compass-arrow / player-blip layer ~8 games were re-drawing by hand over `projectToMinimap`/`clampToMinimapEdge`). Renders a bare `<g>` — no background, panel, or title; compose your own content layer (routes, zones, terrain) as sibling SVG nodes for full control of z-order, or call `MinimapChrome` twice (once for `frame`, again for `markers`) to sandwich custom content between the ring and the blips.
+- `MinimapChromeMarker` (interface): interface MinimapChromeMarker — One dot (or, with `heading`, a rotated arrow) drawn by `MinimapChrome`.
+- `MinimapChromeProps` (interface): interface MinimapChromeProps — Props for `MinimapChrome`.
+- `MinimapPanel` (function): function MinimapPanel({ zoneLabel, clock, showCompass = true, compassProps, headerClassName, zoneLabelClassName, clockClassName, compassClassName, children, ...minimapProps }: MinimapPanelProps): ReactNode — Composed circular-minimap chrome: optional zone-label + clock header above the `Minimap`, optional `Compass` strip below. Purely a wiring layer over the existing primitives — the game supplies the zone name and clock text, this only places them; omit either slot and the header disappears.
+- `MinimapPanelProps` (interface): interface MinimapPanelProps extends MinimapProps — Props for `MinimapPanel` — all `MinimapProps` plus the zone-label/clock header and compass slots.
+- `MinimapProps` (interface): interface MinimapProps — Props for `Minimap`: markers, centre, world radius, fog, size, terrain background and look.
+- `MinimapTrack` (function): function MinimapTrack({ spans = [], pips = [], width = "100%", height = 12, railColor = "rgba(255,255,255,0.10)", className, style, children, }: MinimapTrackProps): ReactNode — Horizontal linear track minimap — a rounded progress rail with colored zone `spans` and gate/exit/player `pips` positioned by 0..1 fraction. The structural counterpart to the radial {@link Minimap} for corridor/route games: fractions are supplied by the caller (via core `trackFraction`), so it reads no store and stays presentation-only, sharing chrome with the radial minimap.
+- `MinimapTrackPip` (interface): interface MinimapTrackPip — A point marker on the {@link MinimapTrack} rail at a 0..1 fraction (e.g. a gate, the exit, or the player).
+- `MinimapTrackProps` (interface): interface MinimapTrackProps — Props for {@link MinimapTrack}.
+- `MinimapTrackSpan` (interface): interface MinimapTrackSpan — A colored span across the {@link MinimapTrack} rail, given by 0..1 `start`/`end` fractions (e.g. from core `trackFraction`).
+- `WaypointArrow` (function): function WaypointArrow({ relative, distance, label, formatDistance = (value) => `${Math.round(value)}m`, size = 44, color = "#f59e0b", className, style, }: WaypointArrowProps): ReactNode — On-screen guide arrow to the tracked waypoint — a HUD compass needle rotated by the facing-relative bearing, with an optional label and distance readout. Pair with `WaypointStore.guidance(playerXZ, facingYaw)`.
+- `WaypointArrowProps` (interface): interface WaypointArrowProps — Props for {@link WaypointArrow}.
+- `WorldMap` (function): function WorldMap({ markers, bounds, player, facingYaw = 0, fog, background, width = 520, height, kindStyles = DEFAULT_MARKER_KINDS, routes, zones, cellStates, onWorldClick, className, title = "World Map", onClose, }: WorldMapProps): ReactNode — Full-bounds top-down world map (the "press M" overlay): baked terrain background, reveal-on-event fog, all markers with labels, and the player. Rectangular linear projection over the supplied world `bounds`. Framed panel wrapper over {@link WorldMapSurface}.
+- `WorldMapProps` (interface): interface WorldMapProps — Props for {@link WorldMap}: markers, world bounds, the player and facing, fog, background and layers.
+- `WorldMapSurface` (function): function WorldMapSurface({ markers, bounds, player, facingYaw = 0, fog, background, width = 520, height, kindStyles = DEFAULT_MARKER_KINDS, routes, zones, cellStates, onWorldClick, canvasWidth, canvasHeight, viewport = IDENTITY_VIEWPORT, style, }: WorldMapSurfaceProps): ReactNode — The bare top-down map `<svg>` shared by {@link WorldMap} (framed panel) and {@link FullscreenMap} (pan/zoom overlay): baked terrain background, fog, map layers, markers with labels, and the player arrow, drawn under an optional viewport transform. Rectangular linear projection over the world `bounds`.
+- `WorldMapSurfaceProps` (interface): interface WorldMapSurfaceProps — Props for {@link WorldMapSurface}.
+- `useFog` (function): function useFog(fog: FogField): ReturnType<FogField["cells"]> — Re-render a component when a fog field reveals cells; returns its current cells.
+- `useMarkers` (function): function useMarkers<TMeta = unknown>(markers: MarkerSet<TMeta>): readonly MapMarker<TMeta>[] — Subscribe to a native marker set or external marker source, or read a static marker array.
+
+## @jgengine/core/map/mapAnnotations
+
+- `AnnotationLayer` (interface): interface AnnotationLayer — Player-drawn map annotation layer — strokes, shapes, and notes over caller-owned map data.
+- `AnnotationLayerOptions` (interface): interface AnnotationLayerOptions — Options for {@link createAnnotationLayer}.
+- `AnnotationSnapshot` (interface): interface AnnotationSnapshot — Whole serializable state of an annotation layer — drop into a save blob.
+- `MapNote` (interface): interface MapNote — A text note pinned at a world point.
+- `MapShapeAnnotation` (interface): interface MapShapeAnnotation — A drawn area annotation (circle/rect/polygon), reusing the map-zone shape vocabulary.
+- `MapStroke` (interface): interface MapStroke — A freehand drawn line on the map — a world-XZ polyline.
+- `createAnnotationLayer` (function): function createAnnotationLayer(options: AnnotationLayerOptions = {}): AnnotationLayer — Player-drawn map annotation layer: freehand `strokes`, area `shapes`, and pinned `notes`, all world-XZ and serializable. `routes()`/`zones()` project strokes/shapes into the exact shapes `Minimap`/`WorldMap`/`FullscreenMap` already render via their `routes`/`zones` props, so drawing needs no new renderer. State is plain data; `snapshot`/`restore` round-trip through a save.
+
+## @jgengine/core/map/mapLayers
+
+- `MAP_LAYER_TONE_COLORS` (const): const MAP_LAYER_TONE_COLORS: Record<MapLayerTone, string> — The colour each {@link MapLayerTone} draws with.
+- `MapCellStates` (interface): interface MapCellStates — Sparse per-cell tones drawn on the map over a grid.
+- `MapLayerTone` (type): type MapLayerTone = "danger" | "warning" | "info" | "safe" | "neutral" — Colour role of a map layer: danger, warning, info, safe or neutral.
+- `MapRoute` (interface): interface MapRoute — A polyline drawn on the map, optionally dashed as a forecast.
+- `MapXZ` (type): type MapXZ = readonly [number, number] — A world `[x, z]` point on the map.
+- `MapZone` (interface): interface MapZone — A tinted area drawn on the map, optionally dashed as a preview.
+- `MapZoneShape` (type): type MapZoneShape = | { kind: "circle"; center: MapXZ; radius: number } | { kind: "rect"; center: MapXZ; w: number; d: number; rotate?: number } | { kind: "polygon"; points: readonly MapXZ[] } — A map zone's shape: circle, rotated rectangle or polygon.
+- `mapLayerColor` (function): function mapLayerColor(tone: MapLayerTone | undefined): string — The colour for a tone; neutral when none is given.
+- `pointInMapZone` (function): function pointInMapZone(zone: MapZoneShape, x: number, z: number): boolean — Renderer-free overlay data for map surfaces (#285.1-2): zones with live + forecast states, route polylines, and per-cell status heatmaps. `@jgengine/core/map/map.view`'s `Minimap`/`WorldMap` take these straight in; `pointInMapZone` answers gameplay queries against the same data, so the HUD and the rules can never disagree about where the storm is.
+
+## @jgengine/core/map/markers
+
+- `DEFAULT_MARKER_KINDS` (const): const DEFAULT_MARKER_KINDS: Record<string, MarkerKindStyle> — Built-in marker kinds (player, ally, objective, location, loot, enemy, ...) with colour, glyph and priority.
+- `MapMarker` (interface): interface MapMarker<TMeta = unknown> extends MarkerView<TMeta> — A marker owned by {@link MarkerSet}, including its lifecycle and query fields.
+- `MarkerCollection` (type): type MarkerCollection<TMarker extends MarkerView = MarkerView> = | readonly TMarker[] | MarkerSource<TMarker> | MarkerSet — Marker data accepted by portable consumers: static views, an external source, or a native set.
+- `MarkerInput` (interface): interface MarkerInput<TMeta = unknown> — A marker to add: kind, position and optional id, label, heading, owner, expiry and metadata.
+- `MarkerKindStyle` (interface): interface MarkerKindStyle — Visual descriptor for a marker kind. Games supply their own palette; the engine ships `DEFAULT_MARKER_KINDS` as a content-agnostic starting set that the react minimap/compass read for colors and glyphs.
+- `MarkerPosition` (type): type MarkerPosition = readonly [number, number, number] — A marker's world `[x, y, z]` position.
+- `MarkerQuery` (interface): interface MarkerQuery — Filter for {@link MarkerSet} queries: kind, owner, and a radius around a point.
+- `MarkerSet` (interface): interface MarkerSet<TMeta = unknown> — A live, subscribable set of map markers: add, remove, query and prune expired ones.
+- `MarkerSource` (interface): interface MarkerSource<TMarker extends MarkerView = MarkerView> — Observable marker snapshots owned by an external project. `getSnapshot` must return the same array identity until the source changes and calls its subscribers, matching React's external-store contract.
+- `MarkerSourceOptions` (interface): interface MarkerSourceOptions<TEntity, TMarker extends MarkerView = MarkerView> — Configuration for projecting a caller-owned collection into display-only markers.
+- `MarkerView` (interface): interface MarkerView<TMeta = unknown> — Small, display-only marker shape consumed by map renderers. Existing games can project their own entities to this view without adopting marker lifecycle storage or duplicating them into a {@link MarkerSet}.
+- `createMarkerSet` (function): function createMarkerSet<TMeta = unknown>(now: () => number = Date.now): MarkerSet<TMeta> — Create an empty {@link MarkerSet}; `now` drives marker expiry.
+- `createMarkerSource` (function): function createMarkerSource<TEntity, TMarker extends MarkerView = MarkerView>(options: MarkerSourceOptions<TEntity, TMarker>): MarkerSource<TMarker> — Adapt a caller-owned array/store to an observable marker source. Projection is cached between source changes, so React reads do not copy the collection per frame. The caller retains ownership of entities, updates, persistence, and subscription scheduling.
+- `markerKindStyle` (function): function markerKindStyle(kind: string | undefined, styles: Record<string, MarkerKindStyle> = DEFAULT_MARKER_KINDS): MarkerKindStyle — The style for a marker kind, falling back to a plain dot for unknown kinds.
+
+## @jgengine/core/map/minimap
+
+- `Cardinal` (type): type Cardinal = "N" | "NE" | "E" | "SE" | "S" | "SW" | "W" | "NW" — One of the eight compass points.
+- `MinimapPoint` (interface): interface MinimapPoint — A world point projected onto a minimap: pixel position, distance and whether it falls inside.
+- `MinimapView` (interface): interface MinimapView — What a minimap shows: centre, world radius, pixel size and rotation.
+- `WorldXZ` (type): type WorldXZ = readonly [number, number] — A world `[x, z]` point.
+- `bearingToCardinal` (function): function bearingToCardinal(bearing: number): Cardinal — The nearest compass point to a bearing in radians.
+- `clampToMinimapEdge` (function): function clampToMinimapEdge(point: MinimapPoint, size: number): { x: number; y: number } — Clamp a projected point to the minimap edge, preserving direction (edge markers).
+- `compassBearing` (function): function compassBearing(from: WorldXZ, to: WorldXZ): number — Compass bearing (radians, 0 = map north = −Z, increasing clockwise toward +X = east) from one world XZ point to another. Feeds both the minimap direction and the compass strip.
+- `headingToBearing` (function): function headingToBearing(yaw: number): number — Bearing of an entity facing direction given its `rotationY` (yaw) in radians.
+- `projectToMinimap` (function): function projectToMinimap(world: WorldXZ | readonly [number, number, number], view: MinimapView): MinimapPoint — Project a world XZ (or XYZ) point into minimap pixel space. Origin is the top-left of the `size×size` box; north (−Z) maps to −Y (up). Pass `view.rotate` to spin the map under a fixed north-up player arrow.
+- `relativeBearing` (function): function relativeBearing(bearing: number, reference: number): number — Signed offset of `bearing` from `reference`, wrapped into (−π, π].
+- `unprojectFromMinimap` (function): function unprojectFromMinimap(point: { x: number; y: number }, view: MinimapView): WorldXZ — Invert `projectToMinimap` (#285.6): minimap pixel → world XZ, rotate-aware — click-to-pin, tap-to-ping, drag-to-set-waypoint map interactions.
+
+## @jgengine/core/map/minimapBake
+
+- `DEFAULT_MINIMAP_PALETTE` (const): const DEFAULT_MINIMAP_PALETTE: MinimapBakePalette — The built-in height→color ramp and water color a bake uses when no palette override is given.
+- `MinimapBake` (interface): interface MinimapBake — A baked minimap image: RGBA pixels plus the world bounds they span.
+- `MinimapBakeBounds` (interface): interface MinimapBakeBounds — Deterministic minimap terrain bake (#1036): rasterize an authored world's terrain (plus optional biome zones and water) into a top-down RGBA image and a matching world-bounds rectangle, then encode it as a PNG data URI. The editor runs this as a bake action and stores the result on the scene document; runtime feeds it straight into the existing `Minimap` / `WorldMap` `background` + `mapBounds` props — no new runtime render path, and the same authored world always bakes the same image (safe for verify/CI). Pure: no canvas, no DOM, `core` still imports nothing external.
+- `MinimapBakeOptions` (interface): interface MinimapBakeOptions — Options for {@link bakeMinimapImage}.
+- `MinimapBakePalette` (interface): interface MinimapBakePalette — The height→color ramp and water color used by the bake.
+- `MinimapBakeSource` (interface): interface MinimapBakeSource — The authored world a bake reads — a height sampler, its bounds, and optional zones/water.
+- `MinimapBakeZone` (interface): interface MinimapBakeZone — One biome/region tint painted over the terrain shade where the ground falls inside its polygon.
+- `bakeMinimapBackground` (function): function bakeMinimapBackground(source: MinimapBakeSource, options: MinimapBakeOptions = {}): { background: string; mapBounds: MinimapBakeBounds } — One-call convenience: rasterize a source and return `{ background, mapBounds }` for a minimap.
+- `bakeMinimapImage` (function): function bakeMinimapImage(source: MinimapBakeSource, options: MinimapBakeOptions = {}): MinimapBake — Rasterizes a top-down terrain image: height maps onto a low→high color ramp (normalized over the sampled height range), slope darkens the shade, water fills below `waterLevel`, and each zone polygon tints the ground it covers. Deterministic for a fixed source. The bounds are preserved so a player-centered minimap pans the image correctly.
+- `encodeBakePng` (function): function encodeBakePng(bake: MinimapBake): Uint8Array — Encodes an RGBA bake to raw PNG bytes (pure; stored DEFLATE, valid for any decoder).
+- `minimapBakeToPngDataUri` (function): function minimapBakeToPngDataUri(bake: MinimapBake): string — Encodes a bake as a `data:image/png;base64,...` URI — the exact string the `Minimap` / `WorldMap` `background` prop takes. Deterministic for a fixed bake.
+
+## @jgengine/core/map/minimapTrack
+
+- `TrackAxis` (interface): interface TrackAxis — A world-space segment defining a linear "track" minimap — points are projected onto the `from`→`to` axis.
+- `trackFraction` (function): function trackFraction(point: WorldXZ | readonly [number, number, number], axis: TrackAxis): number — Project a world point onto the `from`→`to` segment of `axis` and return the clamped 0..1 fraction of how far along the track it lies (0 at `from`, 1 at `to`). The linear analogue of `projectToMinimap` — feeds a horizontal corridor/route progress rail. Accepts XZ (`[x, z]`) or XYZ (`[x, y, z]`) points (index 0 = x, index 2 when length 3 else index 1 = z). A zero-length axis returns 0.
+
+## @jgengine/core/map/sharedAnnotations
+
+- `ANNOTATION_FEED_ACTION` (const): const ANNOTATION_FEED_ACTION: "map.annotation" — Feed action shared drawings ride by default (pair with the party feed, like pings).
+- `AnnotationBroadcast` (type): type AnnotationBroadcast = | { op: "stroke"; from: string; id: string; points: readonly WorldXZ[]; tone?: MapLayerTone; width?: number } | { op: "shape"; from: string; id: string; shape: MapZoneShape; tone?: MapLayerTone; label?: string } | { op: "note"; from: string; id: string; position: WorldXZ; … — A serializable map-annotation edit broadcast to other players.
+- `AnnotationFeedSink` (interface): interface AnnotationFeedSink — The feed sink shared annotations push to — an alias of the ping/feed `push` seam.
+- `SharedAnnotations` (interface): interface SharedAnnotations — Local annotation edits that also broadcast, plus `apply` for inbound edits. `add*`/`remove`/`clear` mirror {@link AnnotationLayer} but return globally-unique ids so two clients never collide.
+- `SharedAnnotationsDeps` (interface): interface SharedAnnotationsDeps — Construction options for {@link createSharedAnnotations}.
+- `createSharedAnnotations` (function): function createSharedAnnotations(deps: SharedAnnotationsDeps): SharedAnnotations — Make a map annotation layer collaborative: local `addStroke`/`addShape`/ `addNote`/`remove`/`clear` apply then broadcast a serializable edit over the party feed (the same seam `createPingSystem` uses), and `apply` mirrors inbound edits from other players — dropping our own echoes. Ids are globally unique per client so two players' strokes never collide. Transport-agnostic: wire `feed` to any replicated feed and route received entries into `apply`.
+
+## @jgengine/core/map/terrainMap.draw
+
+- `BakeTerrainMapOptions` (interface): interface BakeTerrainMapOptions — Terrain map bake settings: resolution and land and water colours.
+- `BakedMap` (interface): interface BakedMap — A baked terrain map: an image URL and the world bounds it covers.
+- `MapBakeBounds` (interface): interface MapBakeBounds — World-XZ rectangle a terrain map bake covers.
+- `bakeTerrainMap` (function): function bakeTerrainMap(field: TerrainField, bounds: MapBakeBounds, options: BakeTerrainMapOptions = {}): BakedMap | null — Bake a top-down image of a `TerrainField` (or `RegionField`) over `bounds` for the react `Minimap` / `WorldMap` background. Runs in the browser via a 2D canvas; renderer-side, so it lives in the shell.
+
+## @jgengine/core/map/waypointMarkers.view
+
+- `WaypointMarkerTheme` (interface): interface WaypointMarkerTheme — Reskin tokens for {@link WaypointMarkers}. Per-`kind` color layers on top via `kindColors`.
+- `WaypointMarkers` (function): function WaypointMarkers({ entries, project, viewport, distanceOf, distanceFormat, theme, kindColors, margin = 28, showPinLabels = true, className, style, }: WaypointMarkersProps): ReactNode — Off-screen objective / waypoint markers: an absolutely-positioned overlay that turns a set of world waypoints into on-screen pins and off-screen directional arrows. For each waypoint it calls the caller's `project` to get a screen point, then {@link layoutScreenMarker} to decide: an in-view target renders a pin (and optional label) at its projected spot; an off-screen or behind-camera target renders an arrow clamped to the viewport edge, rotated to point the way, with an optional distance label from `distanceOf`. Color comes from `theme` plus a per-`kind` `kindColors` map the game owns — the model never interprets `kind`. Presentation only: tracking, projection, and distance are all caller-supplied.
+- `WaypointMarkersProps` (interface): interface WaypointMarkersProps — Props for {@link WaypointMarkers}.
+- `useWaypoints` (function): function useWaypoints(source: WaypointStore | readonly WaypointEntry[]): readonly WaypointEntry[] — Subscribe to a {@link WaypointStore} and re-render on every change, returning its current waypoints. Pass a plain array instead and it is returned as-is (no subscription), so a game can drive the host from a store or from its own derived state.
+
+## @jgengine/core/map/waypoints
+
+- `WaypointEntry` (interface): interface WaypointEntry — A single player-placed waypoint. World-XZ only — serializable and renderer-free.
+- `WaypointGuidance` (interface): interface WaypointGuidance — Direction/range to the tracked waypoint, for an on-screen guide arrow.
+- `WaypointSnapshot` (interface): interface WaypointSnapshot — Whole serializable state of a {@link WaypointStore} — drop into a save blob.
+- `WaypointStore` (interface): interface WaypointStore — Player-owned waypoint layer — place/track/clear pins, mirror to a `MarkerSet`, and read guide-arrow data.
+- `WaypointStoreDeps` (interface): interface WaypointStoreDeps — Construction options for {@link createWaypointStore}.
+- `createWaypointStore` (function): function createWaypointStore(deps: WaypointStoreDeps = {}): WaypointStore — Player-owned waypoint layer: place/track/clear pins, mirror them into a shared `MarkerSet` (so `Minimap`/`WorldMap`/`Compass` render them for free), and read bearing/distance guidance for an on-screen arrow to the tracked one. State is plain data — `snapshot()`/`restore()` round-trip through any save blob.
+- `waypointAnchor` (function): function waypointAnchor(entry: WaypointEntry): readonly [number, number, number] — The world-space `[x, y, z]` anchor of a waypoint, for projecting it to the screen.
+
 ## @jgengine/core/material/appearanceSignals
 
 - `MaterialAppearanceBaseline` (interface): interface MaterialAppearanceBaseline — Resolved dry values from one assigned surface, after imported and instance edits. RGB is linear.
@@ -3717,7 +3885,7 @@
 - `CameraShakeSnapshot` (interface): interface CameraShakeSnapshot — Serializable state for save/restore and deterministic replay.
 - `CameraView` (type): type CameraView = PerspectiveView | OrthographicView — ⚠ undocumented
 - `CameraVisibilityContext` (interface): interface CameraVisibilityContext — A camera's contribution to visibility. The VisibilitySystem unions results across every active context: an object stays renderable/loaded if *any* relevant camera needs it. A camera can opt out of driving asset streaming (e.g. a minimap that only needs positions, not loaded meshes) via `influencesStreaming: false`.
-- `Cardinal` (type): type Cardinal = "N" | "NE" | "E" | "SE" | "S" | "SW" | "W" | "NW" — ⚠ undocumented
+- `Cardinal` (type): type Cardinal = "N" | "NE" | "E" | "SE" | "S" | "SW" | "W" | "NW" — One of the eight compass points.
 - `Carryable` (class): class Carryable — A grabbed physics object following a moving hold point through a spring constraint (the pick — a raycast — is the caller's/shell's job; core owns the constraint). Supports shared multi-owner carry (the follow point is the average of owners' hold points), an encumbrance read, and drop/throw. Reuses `PhysicsWorld.springJoint` to a world anchor moved each frame.
 - `CarvableField` (class): class CarvableField implements TerrainField — A `TerrainField` you can write craters and mounds into at runtime — the height-field side of destructible terrain (Helldivers 2 explosion craters, engineer-deposited berms). Wraps a base field and layers smooth radial deformations on top, so `sampleHeight` (and therefore ground-snap, collision, and the shell's terrain mesh) all read the deformed surface. `carve` digs a bowl, `deposit` raises a mound.
 - `CircleFormationOptions` (interface): interface CircleFormationOptions — Options for {@link circleFormation}.
@@ -3759,7 +3927,7 @@
 - `CueListener` (type): type CueListener<Payload = unknown> = (emitted: EmittedCue<Payload>) => void — A cue listener, called once per cue as it fires. Returns nothing.
 - `DEFAULT_FORWARD` (const): const DEFAULT_FORWARD: readonly [number, number, number] — The forward-axis convention: a generator or scene kind declares which way its "front" faces (a bookcase's open/book face, a building's entrance) once, as data, instead of leaving every placement to hand-tuned `rotationY` trial-and-error. `StudioStage`'s `faceCamera` (`@jgengine/shell/scene/ StudioStage`) reads the declared axis to auto-orient a product shot; a placement tool can read the same field to face a freshly dropped asset toward the camera/path by default. `DEFAULT_FORWARD` (+Z) is what a generator/scene-kind gets when it omits `forward` — build your front toward it.
 - `DEFAULT_GRIP_CURVE` (const): const DEFAULT_GRIP_CURVE: GripCurve — A street tire: full grip to slip `0.2`, then it lets go to 55% fully sideways.
-- `DEFAULT_MARKER_KINDS` (const): const DEFAULT_MARKER_KINDS: Record<string, MarkerKindStyle> — ⚠ undocumented
+- `DEFAULT_MARKER_KINDS` (const): const DEFAULT_MARKER_KINDS: Record<string, MarkerKindStyle> — Built-in marker kinds (player, ally, objective, location, loot, enemy, ...) with colour, glyph and priority.
 - `DEFAULT_MINIMAP_PALETTE` (const): const DEFAULT_MINIMAP_PALETTE: MinimapBakePalette — The built-in height→color ramp and water color a bake uses when no palette override is given.
 - `DEFAULT_POLICE_TIERS` (const): const DEFAULT_POLICE_TIERS: readonly PoliceTier[] — The starting tier table: patrol until heat arrives, then investigate, pursue and finally cordon.
 - `DEFAULT_POLICE_TUNING` (const): const DEFAULT_POLICE_TUNING: PoliceTuning — The starting policy: linear decay, a six-second escape and a search area that grows at 2 m/s.
@@ -3794,7 +3962,7 @@
 - `FireGrid` (interface): interface FireGrid — A cellular fire-spread grid stepped by game time; ignite cells and read their state.
 - `FlatGround` (interface): interface FlatGround — A 3D walkable plane/slab. `Infinity` axes are unbounded; no separate "infinite" mode exists.
 - `FlatGroundSize` (interface): interface FlatGroundSize — Size of a `flat` ground: extents in world units. `Infinity` on an axis means unbounded — an endless plain needs no bounds number invented for it. `y` optionally bounds vertical play space.
-- `FogCells` (interface): interface FogCells { cols: number; rows: number; minX: number; minZ: number; cellSize: number; revealed: readonly boolean[]; revealedCount: number } — ⚠ undocumented
+- `FogCells` (interface): interface FogCells — A fog field's grid: size, origin, cell size and row-major revealed flags.
 - `FogField` (interface): interface FogField — Reveal-on-event fog of war over a fixed grid. Walking (`revealAlong`) and digging/acting (`reveal`) clear cells; once revealed a cell stays revealed. Pure and renderer-free — the shell/react map draws `cells()`.
 - `FootprintRegion` (type): type FootprintRegion = RegionFootprint | MergedRegion — A standalone footprint or a pooled region carrying its original contributions.
 - `ForceVolume` (class): class ForceVolume — A trigger region that pushes bodies passing through it — boost pads (`impulse` + `once`), conveyors (`velocity`), fans/wind (`accelerate`). Call `apply` each tick; `once` mode fires only on entry by tracking membership between ticks.
@@ -3870,16 +4038,16 @@
 - `LockTierSpec` (interface): interface LockTierSpec — Difficulty dials for one lock: board size, forgiveness band, gates, fog window, traps.
 - `MOVEMENT_TUNING` (const): const MOVEMENT_TUNING: { readonly standEyeHeight: 1.7; readonly crouchEyeHeight: 1.15; readonly walkSpeedMultiplier: 1.75; readonly runSpeedMultiplier: 2.25; readonly crouchSpeedMultiplier: 0.45; readonly backpedalSpeedMultiplier: 0.65; readonly groundAcceleration: 26; readonly airAcceleration: 12; … — Kinematics + feel tuning for the first-person controller. Centralised here so movement feel lives in one place rather than scattered through the renderer.
 - `MagnitudeOf` (type): type MagnitudeOf<P> = (membership: AreaMembership<P>) => number — Read a comparable magnitude from a membership (e.g. buff strength, damage per tick).
-- `MapCellStates` (interface): interface MapCellStates { id: string; origin: MapXZ; cellSize: number; cells: readonly {col: number; row: number; tone: MapLayerTone; opacity?: number}[] } — ⚠ undocumented
+- `MapCellStates` (interface): interface MapCellStates — Sparse per-cell tones drawn on the map over a grid.
 - `MapMarker` (interface): interface MapMarker<TMeta = unknown> extends MarkerView<TMeta> — A marker owned by {@link MarkerSet}, including its lifecycle and query fields.
 - `MapNote` (interface): interface MapNote — A text note pinned at a world point.
-- `MapRoute` (interface): interface MapRoute { id: string; points: readonly MapXZ[]; tone?: MapLayerTone; forecast?: boolean; width?: number; closed?: boolean } — ⚠ undocumented
+- `MapRoute` (interface): interface MapRoute — A polyline drawn on the map, optionally dashed as a forecast.
 - `MapShapeAnnotation` (interface): interface MapShapeAnnotation — A drawn area annotation (circle/rect/polygon), reusing the map-zone shape vocabulary.
 - `MapStroke` (interface): interface MapStroke — A freehand drawn line on the map — a world-XZ polyline.
-- `MapZone` (interface): interface MapZone { id: string; shape: MapZoneShape; tone?: MapLayerTone; opacity?: number; forecast?: boolean; label?: string } — ⚠ undocumented
+- `MapZone` (interface): interface MapZone — A tinted area drawn on the map, optionally dashed as a preview.
 - `MarkerCollection` (type): type MarkerCollection<TMarker extends MarkerView = MarkerView> = | readonly TMarker[] | MarkerSource<TMarker> | MarkerSet — Marker data accepted by portable consumers: static views, an external source, or a native set.
 - `MarkerKindStyle` (interface): interface MarkerKindStyle — Visual descriptor for a marker kind. Games supply their own palette; the engine ships `DEFAULT_MARKER_KINDS` as a content-agnostic starting set that the react minimap/compass read for colors and glyphs.
-- `MarkerSet` (interface): interface MarkerSet<TMeta = unknown> { add(marker: MarkerInput<TMeta>): string; remove(id: string): boolean; get(id: string): MapMarker<TMeta> | null; list(): readonly MapMarker<TMeta>[]; query(query: MarkerQuery): MapMarker<TMeta>[]; prune(now: number): number; clear(): void;… — ⚠ undocumented · used by `useLiveMarkers` (@jgengine/react): A self-ticking {@link MarkerSet} kept in sync with the live scene: on a heartbeat (default 100ms, and once immediately) it clears the set an…
+- `MarkerSet` (interface): interface MarkerSet<TMeta = unknown> — A live, subscribable set of map markers: add, remove, query and prune expired ones.
 - `MarkerSource` (interface): interface MarkerSource<TMarker extends MarkerView = MarkerView> — Observable marker snapshots owned by an external project. `getSnapshot` must return the same array identity until the source changes and calls its subscribers, matching React's external-store contract.
 - `MarkerSourceOptions` (interface): interface MarkerSourceOptions<TEntity, TMarker extends MarkerView = MarkerView> — Configuration for projecting a caller-owned collection into display-only markers.
 - `MarkerView` (interface): interface MarkerView<TMeta = unknown> — Small, display-only marker shape consumed by map renderers. Existing games can project their own entities to this view without adopting marker lifecycle storage or duplicating them into a {@link MarkerSet}.
@@ -3890,7 +4058,7 @@
 - `MinimapBakePalette` (interface): interface MinimapBakePalette — The height→color ramp and water color used by the bake.
 - `MinimapBakeSource` (interface): interface MinimapBakeSource — The authored world a bake reads — a height sampler, its bounds, and optional zones/water.
 - `MinimapBakeZone` (interface): interface MinimapBakeZone — One biome/region tint painted over the terrain shade where the ground falls inside its polygon.
-- `MinimapView` (interface): interface MinimapView { center: WorldXZ; worldRadius: number; size: number; rotate?: number } — ⚠ undocumented · used by `projectToMinimap`: Project a world XZ (or XYZ) point into minimap pixel space.
+- `MinimapView` (interface): interface MinimapView — What a minimap shows: centre, world radius, pixel size and rotation.
 - `ModelAssetRef` (interface): interface ModelAssetRef { url: string; anchor?: "center" | "origin"; dims?: ModelDims; collisionMesh?: CollisionMeshData; space?: AssetSpace; clips?: readonly string[] } — ⚠ undocumented · used by `createHostedWorldSessionAsync` (@jgengine/core/runtime/hostedWorldSession): Build a hosted session from an asynchronous persistence backend.
 - `ModelDims` (interface): interface ModelDims — Measured horizontal footprint, footprint center, and lowest Y of a model in model space.
 - `ModelNode` (interface): interface ModelNode — Generic named-socket reader for loaded 3D models. Walks a node tree (any object with `.name`, `.position`, and `.children` — structurally satisfied by `THREE.Object3D`) and collects the local offsets of nodes whose name marks an attachment point. Genre-agnostic: wire anchors on a pylon, muzzle/hand mounts on a character, hardpoints on a ship, seat/decal slots on furniture — anything an artist tags with an empty in the GLB. Pure data (no three.js import), so it lives in core.
@@ -4264,7 +4432,7 @@
 - `WorldFeature` (type): type WorldFeature = | PlaceWorldFeature | ({ kind: "biomes" } & BiomesWorldConfig) | ({ kind: "voxel" } & VoxelWorldConfig) | ({ kind: "plots" } & PlotsWorldConfig) | ({ kind: "tilemap" } & TilemapWorldConfig) | EnvironmentWorldFeature | { kind: "flat" } — A declared world shape passed to `defineGame`. The preferred model is the place feature from `world()` (`@jgengine/core/placement/place`): substrate + laws, with all dressing authored in the editor. The remaining members — biomes, voxel grid, plots, tilemap, environment, flat — are the legacy code-declared shapes kept for existing games.
 - `WorldGridCell` (interface): interface WorldGridCell { x: number; z: number; height?: number; color?: string } — ⚠ undocumented
 - `WorldGridConfig` (interface): interface WorldGridConfig — Shared by `biomes()`/`voxel()`/`plots()`/`tilemap()` so the shell can render their declared content as instanced boxes without a hand-written renderer.
-- `WorldXZ` (type): type WorldXZ = readonly [number, number] — ⚠ undocumented · used by `compassBearing`: Compass bearing (radians, 0 = map north = −Z, increasing clockwise toward +X = east) from one world XZ point to another.
+- `WorldXZ` (type): type WorldXZ = readonly [number, number] — A world `[x, z]` point.
 - `acquireTarget` (function): function acquireTarget(policy: AcquisitionPolicy, selfId: string, held: string | null = null): AcquisitionResult — Run one acquisition pass and pick the best target under `policy`. Pass the currently `held` target so retention hysteresis (`switchMargin`, `dropRangeScale`) can keep the lock stable; pass `null` for a cold acquire. Pure and allocation-light — the caller owns the held-target state.
 - `advanceBehaviors` (function): function advanceBehaviors(ctx: GameContext, dt: number): void — Advance every spawned entity carrying a patrol, wander, pursuit or decision graph behavior one tick — the engine reads the descriptor, keeps the per-entity nav state itself, and poses the entity, so ambient traffic and idle NPC routes are register-once (attach the behavior at spawn) instead of a per-game per-frame `advancePathFollow` + `setPose` loop. Instances that are paused or disabled through {@link behaviorControl} retain their state and are skipped. The shell/host call this each frame; a game never does.
 - `advanceFreeFlight` (function): function advanceFreeFlight(state: FreeFlightState, intent: FreeFlightIntent, yaw: number, pitch: number | undefined, dt: number, tuning: FreeFlightTuning, options?: Pick<MotionFrameOptions, "authoritativeStep">): FreeFlightStep — Advance one frame of free-flight kinematics. Horizontal uses yaw-relative strafe (A = left, D = right) — never roll/bank. Vertical is independent of pitch unless `alignWithLook` is true (spectator).
@@ -4280,7 +4448,7 @@
 - `assignFormationSlots` (function): function assignFormationSlots(members: readonly Vec2[], slots: readonly Vec2[], options: SlotAssignmentOptions = {}): number[] — Match `members` to `slots` by a deterministic greedy nearest assignment: every (member, slot) pair is ranked by squared travel distance (minus a stickiness bonus for a member's previous slot) and assigned in order while both ends are free. Returns `assignment[member] = slot`, or `-1` for members left unmatched when there are fewer slots than members. Ties break by member then slot index, so the result is stable across runs and independent of input ordering — the property replay and lockstep multiplayer rely on. Groups are bounded, so the `O(members·slots·log)` sort is fine; this is not a per-frame whole-world pass.
 - `bakeMinimapBackground` (function): function bakeMinimapBackground(source: MinimapBakeSource, options: MinimapBakeOptions = {}): { background: string; mapBounds: MinimapBakeBounds } — One-call convenience: rasterize a source and return `{ background, mapBounds }` for a minimap.
 - `bakeMinimapImage` (function): function bakeMinimapImage(source: MinimapBakeSource, options: MinimapBakeOptions = {}): MinimapBake — Rasterizes a top-down terrain image: height maps onto a low→high color ramp (normalized over the sampled height range), slope darkens the shade, water fills below `waterLevel`, and each zone polygon tints the ground it covers. Deterministic for a fixed source. The bounds are preserved so a player-centered minimap pans the image correctly.
-- `bearingToCardinal` (function): function bearingToCardinal(bearing: number): Cardinal — ⚠ undocumented
+- `bearingToCardinal` (function): function bearingToCardinal(bearing: number): Cardinal — The nearest compass point to a bearing in radians.
 - `behaviorControl` (function): function behaviorControl(ctx: GameContext): BehaviorControl — Obtain the per-context {@link BehaviorControl} surface for suspending, resuming, seeking, serializing, and inspecting behavior instances by entity id — the lifecycle contract games use to hand pose ownership to possession/streaming/staggering code instead of bypassing the behavior runtime.
 - `biomes` (function): function biomes(config: BiomesWorldConfig): WorldFeature — Declares a biome-painted world — the whole-world alternative to a single `environment()` terrain.
 - `boardVehicle` (function): function boardVehicle(ctx: GameContext, seats: VehicleSeats, riderId: string, vehicleId: string, options: BoardVehicleOptions = {}): EnterVehicleResult — Apply an existing seat transition to the explicitly named rider. Motor/input policy stays caller-owned.
@@ -4330,7 +4498,7 @@
 - `createFactionRoster` (function): function createFactionRoster(graph: FactionGraph): FactionRoster — ⚠ undocumented
 - `createFastTravelNetwork` (function): function createFastTravelNetwork<TMeta = unknown>(options: FastTravelOptions<TMeta>): FastTravelNetwork<TMeta> — A fast-travel network: defined destinations plus per-player discovery, with distance-sorted queries, a `nearest` lookup, a `canTravel` gate, an `onDiscover` seam, and serializable `snapshot`/`restore`. Travel itself is a teleport the game applies to `TravelPointView.position`; this owns the unlock/where-can-I-go state. Points marked `initial` start discovered.
 - `createFireGrid` (function): function createFireGrid(config: FireGridConfig): FireGrid — Create a {@link FireGrid}; throws on sizes outside its cell budget.
-- `createFogField` (function): function createFogField(config: FogConfig): FogField — ⚠ undocumented
+- `createFogField` (function): function createFogField(config: FogConfig): FogField — Create a fog-of-war field over `bounds`; reveal cells as the player explores. Throws on a non-positive cell size.
 - `createFootprintGrid` (function): function createFootprintGrid(options: FootprintGridOptions = {}): FootprintGrid — Multi-cell footprint occupancy/reservation on a shared build grid — `world/placementController` only owns the ghost preview; this is the persistent claim a committed placement holds so the next hover's `isFree` check (or another player's, in a shared world) sees it. Bridge into `world/placement`'s `PlacementRules.obstacles` with {@link footprintObstacles} instead of hand-rolling an occupancy map per game.
 - `createFreeFlightController` (function): function createFreeFlightController(initialTuning: FreeFlightTuning, options: { yaw?: number; pitch?: number; state?: FreeFlightState } = {}): FreeFlightController — Totally free flight for any actor — character, camera, drone, or debug rig. Horizontal is always yaw-relative strafe; vertical is jump/crouch. Use `alignWithLook` for a 6DOF spectator that flies where the camera looks.
 - `createFreeFlightState` (function): function createFreeFlightState(): FreeFlightState — Create an empty flight velocity state.
@@ -4341,7 +4509,7 @@
 - `createLaneGraph` (function): function createLaneGraph(config: LaneGraphConfig): LaneGraph — Read handle over the graph resolved once at construction. The build mutates its working set; this object never changes, so a save system rebuilds it from the scene document instead of serializing it.
 - `createLeaderTrail` (function): function createLeaderTrail(config: LeaderTrailConfig): LeaderTrail — A trailing follower formation that chases a leader along its past path — snake/convoy trails.
 - `createLodScheduler` (function): function createLodScheduler(config: LodSchedulerConfig): LodScheduler — ⚠ undocumented
-- `createMarkerSet` (function): function createMarkerSet<TMeta = unknown>(now: () => number = Date.now): MarkerSet<TMeta> — ⚠ undocumented
+- `createMarkerSet` (function): function createMarkerSet<TMeta = unknown>(now: () => number = Date.now): MarkerSet<TMeta> — Create an empty {@link MarkerSet}; `now` drives marker expiry.
 - `createMarkerSource` (function): function createMarkerSource<TEntity, TMarker extends MarkerView = MarkerView>(options: MarkerSourceOptions<TEntity, TMarker>): MarkerSource<TMarker> — Adapt a caller-owned array/store to an observable marker source. Projection is cached between source changes, so React reads do not copy the collection per frame. The caller retains ownership of entities, updates, persistence, and subscription scheduling.
 - `createModelVariantSelector` (function): function createModelVariantSelector(config: ModelVariantLodConfig): ModelVariantSelector — Builds the per-instance distance switch for a model's variant levels.
 - `createMountController` (function): function createMountController(): MountController — ⚠ undocumented
@@ -4444,9 +4612,9 @@
 - `lineFormation` (function): function lineFormation(options: LineFormationOptions): FormationSlotGenerator — A single rank abreast, centered on the destination and facing forward — a skirmish line or a chorus row. Slots run left→right along the group's right axis.
 - `listTriggerActions` (function): function listTriggerActions(target?: TriggerSourceKind): TriggerActionDefinition[] — Every registered action, optionally filtered by target collection.
 - `lodBandIndex` (function): function lodBandIndex(bands: readonly { maxDistance: number }[], distance: number): number — Index of the band `distance` falls in, `-1` past the last band. Bands must already be sorted near to far. The scheduler and `createModelVariantSelector` both read distances through this one function, so simulation throttling and mesh detail cannot disagree about what band an id is in.
-- `mapLayerColor` (function): function mapLayerColor(tone: MapLayerTone | undefined): string — ⚠ undocumented
+- `mapLayerColor` (function): function mapLayerColor(tone: MapLayerTone | undefined): string — The colour for a tone; neutral when none is given.
 - `markerCatalogId` (function): function markerCatalogId(marker: AuthoredObjectMarkerLike): string | null — Catalog id for a marker: first-class `catalogId` field, else `meta.catalogId` migration alias. Returns null when the marker is not an authored catalog prop (spawn, mob, generator, …).
-- `markerKindStyle` (function): function markerKindStyle(kind: string | undefined, styles: Record<string, MarkerKindStyle> = DEFAULT_MARKER_KINDS): MarkerKindStyle — ⚠ undocumented
+- `markerKindStyle` (function): function markerKindStyle(kind: string | undefined, styles: Record<string, MarkerKindStyle> = DEFAULT_MARKER_KINDS): MarkerKindStyle — The style for a marker kind, falling back to a plain dot for unknown kinds.
 - `mergeFootprints` (function): function mergeFootprints(a: FootprintRegion, b: FootprintRegion, id: string, budget: RegionWorkBudget = {}): MergedRegion | null — Pool compatible footprints under caller-owned `id`, retaining original capacities and identities. Returns null for invalid data, kind/tier mismatch, overlap, no cardinal contact or exhausted budget. Does not mutate inputs or grid reservations; costs, merge width and upgrade policy remain caller-owned. Capacity is the ordered JavaScript-number sum of original contributions, independent of cell area.
 - `minimapBakeToPngDataUri` (function): function minimapBakeToPngDataUri(bake: MinimapBake): string — Encodes a bake as a `data:image/png;base64,...` URI — the exact string the `Minimap` / `WorldMap` `background` prop takes. Deterministic for a fixed bake.
 - `mtof` (function): function mtof(midi: number): number — Standard equal-temperament MIDI-to-frequency (A4 = 440 Hz at MIDI 69).
@@ -4762,15 +4930,6 @@
 - `resolveStructureBuildings` (function): function resolveStructureBuildings(descriptor: BuildingEnvironmentDescriptor, roads: readonly RoadFrontage[] = []): GeneratedBuilding[] — The buildings one `building()` descriptor places, always through the one frontage placer ({@link deriveBuildingLots}): along its `along` roads; else, when the world's streets pass through the settlement, along those streets near `position`; else in two rows facing a lane through `position` (`spacing` wide). `roads` are the world's streets: no lot ever stands on their carriageway or sidewalks.
 - `summarizeEnvironment` (function): function summarizeEnvironment(feature: EnvironmentWorldFeature): EnvironmentSummary — ⚠ undocumented
 
-## @jgengine/core/world/fastTravel
-
-- `FastTravelNetwork` (interface): interface FastTravelNetwork<TMeta = unknown> — A network of fast-travel points with per-player discovery + distance queries.
-- `FastTravelOptions` (interface): interface FastTravelOptions<TMeta = unknown> — Options for {@link createFastTravelNetwork}.
-- `FastTravelSnapshot` (interface): interface FastTravelSnapshot — Serializable discovery state.
-- `TravelPointDef` (interface): interface TravelPointDef<TMeta = unknown> — A fast-travel destination the game defines. Discovery is tracked separately.
-- `TravelPointView` (interface): interface TravelPointView<TMeta = unknown> extends TravelPointDef<TMeta> — A destination plus its discovery state (and distance from a query origin, when given).
-- `createFastTravelNetwork` (function): function createFastTravelNetwork<TMeta = unknown>(options: FastTravelOptions<TMeta>): FastTravelNetwork<TMeta> — A fast-travel network: defined destinations plus per-player discovery, with distance-sorted queries, a `nearest` lookup, a `canTravel` gate, an `onDiscover` seam, and serializable `snapshot`/`restore`. Travel itself is a teleport the game applies to `TravelPointView.position`; this owns the unlock/where-can-I-go state. Points marked `initial` start discovered.
-
 ## @jgengine/core/world/features
 
 - `BiomeBand` (interface): interface BiomeBand — A z-ordered ground palette zone — the linear-boundary counterpart to the radial `materialRegions`. Adjacent bands cross-fade into each other across a `fade`-wide window centered on the midpoint z between their centers, so a multi-biome world (vale → marsh → peaks along z) blends its ground color instead of hard-switching. Bands may also carry per-zone `fog`, `sky`, and `weather`. Order the list by ascending `z`.
@@ -4850,14 +5009,6 @@
 - `tilemap` (function): function tilemap(config: TilemapWorldConfig): WorldFeature — Declares a 2D tilemap world from a map string.
 - `voxel` (function): function voxel(config: VoxelWorldConfig): WorldFeature — Declares a voxel-grid world for block-based games.
 
-## @jgengine/core/world/fog
-
-- `FogBounds` (interface): interface FogBounds { minX: number; minZ: number; maxX: number; maxZ: number } — ⚠ undocumented
-- `FogCells` (interface): interface FogCells { cols: number; rows: number; minX: number; minZ: number; cellSize: number; revealed: readonly boolean[]; revealedCount: number } — ⚠ undocumented
-- `FogConfig` (interface): interface FogConfig { bounds: FogBounds; cellSize: number; revealed?: readonly number[] } — ⚠ undocumented
-- `FogField` (interface): interface FogField — Reveal-on-event fog of war over a fixed grid. Walking (`revealAlong`) and digging/acting (`reveal`) clear cells; once revealed a cell stays revealed. Pure and renderer-free — the shell/react map draws `cells()`.
-- `createFogField` (function): function createFogField(config: FogConfig): FogField — ⚠ undocumented
-
 ## @jgengine/core/world/footprintGrid
 
 - `AdjacentCell` (interface): interface AdjacentCell — One occupied neighbor cell reported by {@link boundaryNeighbors}.
@@ -4931,78 +5082,6 @@
 - `InteriorsConfig` (interface): interface InteriorsConfig { exterior?: Exterior; interiors?: readonly Interior[]; radius?: number } — ⚠ undocumented · used by `createInteriors`: Frame conversion and bounded movement across an exterior and its interiors; holds config only, no play state.
 - `SpaceRef` (type): type SpaceRef = { kind: "exterior" } | { kind: "interior"; id: string } — ⚠ undocumented
 - `createInteriors` (function): function createInteriors(config: InteriorsConfig = {}): Interiors — Frame conversion and bounded movement across an exterior and its interiors; holds config only, no play state.
-
-## @jgengine/core/world/mapAnnotations
-
-- `AnnotationLayer` (interface): interface AnnotationLayer — Player-drawn map annotation layer — strokes, shapes, and notes over caller-owned map data.
-- `AnnotationLayerOptions` (interface): interface AnnotationLayerOptions — Options for {@link createAnnotationLayer}.
-- `AnnotationSnapshot` (interface): interface AnnotationSnapshot — Whole serializable state of an annotation layer — drop into a save blob.
-- `MapNote` (interface): interface MapNote — A text note pinned at a world point.
-- `MapShapeAnnotation` (interface): interface MapShapeAnnotation — A drawn area annotation (circle/rect/polygon), reusing the map-zone shape vocabulary.
-- `MapStroke` (interface): interface MapStroke — A freehand drawn line on the map — a world-XZ polyline.
-- `createAnnotationLayer` (function): function createAnnotationLayer(options: AnnotationLayerOptions = {}): AnnotationLayer — Player-drawn map annotation layer: freehand `strokes`, area `shapes`, and pinned `notes`, all world-XZ and serializable. `routes()`/`zones()` project strokes/shapes into the exact shapes `Minimap`/`WorldMap`/`FullscreenMap` already render via their `routes`/`zones` props, so drawing needs no new renderer. State is plain data; `snapshot`/`restore` round-trip through a save.
-
-## @jgengine/core/world/mapLayers
-
-- `MAP_LAYER_TONE_COLORS` (const): const MAP_LAYER_TONE_COLORS: Record<MapLayerTone, string> — ⚠ undocumented
-- `MapCellStates` (interface): interface MapCellStates { id: string; origin: MapXZ; cellSize: number; cells: readonly {col: number; row: number; tone: MapLayerTone; opacity?: number}[] } — ⚠ undocumented
-- `MapLayerTone` (type): type MapLayerTone = "danger" | "warning" | "info" | "safe" | "neutral" — ⚠ undocumented
-- `MapRoute` (interface): interface MapRoute { id: string; points: readonly MapXZ[]; tone?: MapLayerTone; forecast?: boolean; width?: number; closed?: boolean } — ⚠ undocumented
-- `MapXZ` (type): type MapXZ = readonly [number, number] — ⚠ undocumented
-- `MapZone` (interface): interface MapZone { id: string; shape: MapZoneShape; tone?: MapLayerTone; opacity?: number; forecast?: boolean; label?: string } — ⚠ undocumented
-- `MapZoneShape` (type): type MapZoneShape = | { kind: "circle"; center: MapXZ; radius: number } | { kind: "rect"; center: MapXZ; w: number; d: number; rotate?: number } | { kind: "polygon"; points: readonly MapXZ[] } — ⚠ undocumented · used by `pointInMapZone`: Renderer-free overlay data for map surfaces (#285.1-2): zones with live + forecast states, route polylines, and per-cell status heatmaps.
-- `mapLayerColor` (function): function mapLayerColor(tone: MapLayerTone | undefined): string — ⚠ undocumented
-- `pointInMapZone` (function): function pointInMapZone(zone: MapZoneShape, x: number, z: number): boolean — Renderer-free overlay data for map surfaces (#285.1-2): zones with live + forecast states, route polylines, and per-cell status heatmaps. `@jgengine/react/map`'s `Minimap`/`WorldMap` take these straight in; `pointInMapZone` answers gameplay queries against the same data, so the HUD and the rules can never disagree about where the storm is.
-
-## @jgengine/core/world/markers
-
-- `DEFAULT_MARKER_KINDS` (const): const DEFAULT_MARKER_KINDS: Record<string, MarkerKindStyle> — ⚠ undocumented
-- `MapMarker` (interface): interface MapMarker<TMeta = unknown> extends MarkerView<TMeta> — A marker owned by {@link MarkerSet}, including its lifecycle and query fields.
-- `MarkerCollection` (type): type MarkerCollection<TMarker extends MarkerView = MarkerView> = | readonly TMarker[] | MarkerSource<TMarker> | MarkerSet — Marker data accepted by portable consumers: static views, an external source, or a native set.
-- `MarkerInput` (interface): interface MarkerInput<TMeta = unknown> { id?: string; kind: string; position: MarkerPosition; label?: string; heading?: number; owner?: string; createdAt?: number; expiresAt?: number; meta?: TMeta } — ⚠ undocumented
-- `MarkerKindStyle` (interface): interface MarkerKindStyle — Visual descriptor for a marker kind. Games supply their own palette; the engine ships `DEFAULT_MARKER_KINDS` as a content-agnostic starting set that the react minimap/compass read for colors and glyphs.
-- `MarkerPosition` (type): type MarkerPosition = readonly [number, number, number] — ⚠ undocumented
-- `MarkerQuery` (interface): interface MarkerQuery { kind?: string; owner?: string; near?: MarkerPosition; radius?: number } — ⚠ undocumented
-- `MarkerSet` (interface): interface MarkerSet<TMeta = unknown> { add(marker: MarkerInput<TMeta>): string; remove(id: string): boolean; get(id: string): MapMarker<TMeta> | null; list(): readonly MapMarker<TMeta>[]; query(query: MarkerQuery): MapMarker<TMeta>[]; prune(now: number): number; clear(): void;… — ⚠ undocumented · used by `useLiveMarkers` (@jgengine/react): A self-ticking {@link MarkerSet} kept in sync with the live scene: on a heartbeat (default 100ms, and once immediately) it clears the set an…
-- `MarkerSource` (interface): interface MarkerSource<TMarker extends MarkerView = MarkerView> — Observable marker snapshots owned by an external project. `getSnapshot` must return the same array identity until the source changes and calls its subscribers, matching React's external-store contract.
-- `MarkerSourceOptions` (interface): interface MarkerSourceOptions<TEntity, TMarker extends MarkerView = MarkerView> — Configuration for projecting a caller-owned collection into display-only markers.
-- `MarkerView` (interface): interface MarkerView<TMeta = unknown> — Small, display-only marker shape consumed by map renderers. Existing games can project their own entities to this view without adopting marker lifecycle storage or duplicating them into a {@link MarkerSet}.
-- `createMarkerSet` (function): function createMarkerSet<TMeta = unknown>(now: () => number = Date.now): MarkerSet<TMeta> — ⚠ undocumented
-- `createMarkerSource` (function): function createMarkerSource<TEntity, TMarker extends MarkerView = MarkerView>(options: MarkerSourceOptions<TEntity, TMarker>): MarkerSource<TMarker> — Adapt a caller-owned array/store to an observable marker source. Projection is cached between source changes, so React reads do not copy the collection per frame. The caller retains ownership of entities, updates, persistence, and subscription scheduling.
-- `markerKindStyle` (function): function markerKindStyle(kind: string | undefined, styles: Record<string, MarkerKindStyle> = DEFAULT_MARKER_KINDS): MarkerKindStyle — ⚠ undocumented
-
-## @jgengine/core/world/minimap
-
-- `Cardinal` (type): type Cardinal = "N" | "NE" | "E" | "SE" | "S" | "SW" | "W" | "NW" — ⚠ undocumented
-- `MinimapPoint` (interface): interface MinimapPoint { x: number; y: number; distance: number; inside: boolean } — ⚠ undocumented · used by `clampToMinimapEdge`: Clamp a projected point to the minimap edge, preserving direction (edge markers).
-- `MinimapView` (interface): interface MinimapView { center: WorldXZ; worldRadius: number; size: number; rotate?: number } — ⚠ undocumented · used by `projectToMinimap`: Project a world XZ (or XYZ) point into minimap pixel space.
-- `WorldXZ` (type): type WorldXZ = readonly [number, number] — ⚠ undocumented · used by `compassBearing`: Compass bearing (radians, 0 = map north = −Z, increasing clockwise toward +X = east) from one world XZ point to another.
-- `bearingToCardinal` (function): function bearingToCardinal(bearing: number): Cardinal — ⚠ undocumented
-- `clampToMinimapEdge` (function): function clampToMinimapEdge(point: MinimapPoint, size: number): { x: number; y: number } — Clamp a projected point to the minimap edge, preserving direction (edge markers).
-- `compassBearing` (function): function compassBearing(from: WorldXZ, to: WorldXZ): number — Compass bearing (radians, 0 = map north = −Z, increasing clockwise toward +X = east) from one world XZ point to another. Feeds both the minimap direction and the compass strip.
-- `headingToBearing` (function): function headingToBearing(yaw: number): number — Bearing of an entity facing direction given its `rotationY` (yaw) in radians.
-- `projectToMinimap` (function): function projectToMinimap(world: WorldXZ | readonly [number, number, number], view: MinimapView): MinimapPoint — Project a world XZ (or XYZ) point into minimap pixel space. Origin is the top-left of the `size×size` box; north (−Z) maps to −Y (up). Pass `view.rotate` to spin the map under a fixed north-up player arrow.
-- `relativeBearing` (function): function relativeBearing(bearing: number, reference: number): number — Signed offset of `bearing` from `reference`, wrapped into (−π, π].
-- `unprojectFromMinimap` (function): function unprojectFromMinimap(point: { x: number; y: number }, view: MinimapView): WorldXZ — Invert `projectToMinimap` (#285.6): minimap pixel → world XZ, rotate-aware — click-to-pin, tap-to-ping, drag-to-set-waypoint map interactions.
-
-## @jgengine/core/world/minimapBake
-
-- `DEFAULT_MINIMAP_PALETTE` (const): const DEFAULT_MINIMAP_PALETTE: MinimapBakePalette — The built-in height→color ramp and water color a bake uses when no palette override is given.
-- `MinimapBake` (interface): interface MinimapBake — A baked minimap image: RGBA pixels plus the world bounds they span.
-- `MinimapBakeBounds` (interface): interface MinimapBakeBounds — Deterministic minimap terrain bake (#1036): rasterize an authored world's terrain (plus optional biome zones and water) into a top-down RGBA image and a matching world-bounds rectangle, then encode it as a PNG data URI. The editor runs this as a bake action and stores the result on the scene document; runtime feeds it straight into the existing `Minimap` / `WorldMap` `background` + `mapBounds` props — no new runtime render path, and the same authored world always bakes the same image (safe for verify/CI). Pure: no canvas, no DOM, `core` still imports nothing external.
-- `MinimapBakeOptions` (interface): interface MinimapBakeOptions — Options for {@link bakeMinimapImage}.
-- `MinimapBakePalette` (interface): interface MinimapBakePalette — The height→color ramp and water color used by the bake.
-- `MinimapBakeSource` (interface): interface MinimapBakeSource — The authored world a bake reads — a height sampler, its bounds, and optional zones/water.
-- `MinimapBakeZone` (interface): interface MinimapBakeZone — One biome/region tint painted over the terrain shade where the ground falls inside its polygon.
-- `bakeMinimapBackground` (function): function bakeMinimapBackground(source: MinimapBakeSource, options: MinimapBakeOptions = {}): { background: string; mapBounds: MinimapBakeBounds } — One-call convenience: rasterize a source and return `{ background, mapBounds }` for a minimap.
-- `bakeMinimapImage` (function): function bakeMinimapImage(source: MinimapBakeSource, options: MinimapBakeOptions = {}): MinimapBake — Rasterizes a top-down terrain image: height maps onto a low→high color ramp (normalized over the sampled height range), slope darkens the shade, water fills below `waterLevel`, and each zone polygon tints the ground it covers. Deterministic for a fixed source. The bounds are preserved so a player-centered minimap pans the image correctly.
-- `encodeBakePng` (function): function encodeBakePng(bake: MinimapBake): Uint8Array — Encodes an RGBA bake to raw PNG bytes (pure; stored DEFLATE, valid for any decoder).
-- `minimapBakeToPngDataUri` (function): function minimapBakeToPngDataUri(bake: MinimapBake): string — Encodes a bake as a `data:image/png;base64,...` URI — the exact string the `Minimap` / `WorldMap` `background` prop takes. Deterministic for a fixed bake.
-
-## @jgengine/core/world/minimapTrack
-
-- `TrackAxis` (interface): interface TrackAxis — A world-space segment defining a linear "track" minimap — points are projected onto the `from`→`to` axis.
-- `trackFraction` (function): function trackFraction(point: WorldXZ | readonly [number, number, number], axis: TrackAxis): number — Project a world point onto the `from`→`to` segment of `axis` and return the clamped 0..1 fraction of how far along the track it lies (0 at `from`, 1 at `to`). The linear analogue of `projectToMinimap` — feeds a horizontal corridor/route progress rail. Accepts XZ (`[x, z]`) or XYZ (`[x, y, z]`) points (index 0 = x, index 2 when length 3 else index 1 = z). A zero-length axis returns 0.
 
 ## @jgengine/core/world/poleLineKind
 
@@ -5097,15 +5176,6 @@
 - `ClosestOnSegment` (interface): interface ClosestOnSegment — Closest point on segment `a`→`b` to `p`, and the clamped parameter `t` in [0,1] where it lies.
 - `circleVsSegment` (function): function circleVsSegment(center: Vec2, radius: number, a: Vec2, b: Vec2, thickness = 0): CircleSegmentHit | null — Circle (center + `radius`) against a capsule segment `a`→`b` of half-thickness `thickness` (0 for a thin wall). Returns the contact — surface normal, penetration depth, contact point, and the separated center — or `null` when they do not overlap. Endpoints are rounded (the segment is a capsule), so a ball never catches on a corner. Reflect the velocity across `normal` for the bounce; the pure geometry every 2D ball game (pinball, breakout, air hockey) reimplemented per wall, bumper, and paddle.
 - `closestPointOnSegment` (function): function closestPointOnSegment(p: Vec2, a: Vec2, b: Vec2): ClosestOnSegment — Closest point on the segment `a`→`b` to point `p`, with the clamped parameter `t` (0 at `a`, 1 at `b`).
-
-## @jgengine/core/world/sharedAnnotations
-
-- `ANNOTATION_FEED_ACTION` (const): const ANNOTATION_FEED_ACTION: "map.annotation" — Feed action shared drawings ride by default (pair with the party feed, like pings).
-- `AnnotationBroadcast` (type): type AnnotationBroadcast = | { op: "stroke"; from: string; id: string; points: readonly WorldXZ[]; tone?: MapLayerTone; width?: number } | { op: "shape"; from: string; id: string; shape: MapZoneShape; tone?: MapLayerTone; label?: string } | { op: "note"; from: string; id: string; position: WorldXZ; … — A serializable map-annotation edit broadcast to other players.
-- `AnnotationFeedSink` (interface): interface AnnotationFeedSink — The feed sink shared annotations push to — an alias of the ping/feed `push` seam.
-- `SharedAnnotations` (interface): interface SharedAnnotations — Local annotation edits that also broadcast, plus `apply` for inbound edits. `add*`/`remove`/`clear` mirror {@link AnnotationLayer} but return globally-unique ids so two clients never collide.
-- `SharedAnnotationsDeps` (interface): interface SharedAnnotationsDeps — Construction options for {@link createSharedAnnotations}.
-- `createSharedAnnotations` (function): function createSharedAnnotations(deps: SharedAnnotationsDeps): SharedAnnotations — Make a map annotation layer collaborative: local `addStroke`/`addShape`/ `addNote`/`remove`/`clear` apply then broadcast a serializable edit over the party feed (the same seam `createPingSystem` uses), and `apply` mirrors inbound edits from other players — dropping our own echoes. Ids are globally unique per client so two players' strokes never collide. Transport-agnostic: wire `feed` to any replicated feed and route received entries into `apply`.
 
 ## @jgengine/core/world/soilKind
 
@@ -5222,16 +5292,6 @@
 - `WallDrawToolState` (interface): interface WallDrawToolState — Plain JSON state of a {@link WallDrawTool}: the drawn points and whether the loop is closed.
 - `WallSegment` (interface): interface WallSegment { from: Vec2; to: Vec2; length: number; angle: number } — ⚠ undocumented · used by `wallSolids` (@jgengine/core/world/worldSolids): One oriented solid per wall segment (see `wallSegments` in `world/walls`).
 - `WallVec3` (type): type WallVec3 = readonly [number, number, number] — ⚠ undocumented
-
-## @jgengine/core/world/waypoints
-
-- `WaypointEntry` (interface): interface WaypointEntry — A single player-placed waypoint. World-XZ only — serializable and renderer-free.
-- `WaypointGuidance` (interface): interface WaypointGuidance — Direction/range to the tracked waypoint, for an on-screen guide arrow.
-- `WaypointSnapshot` (interface): interface WaypointSnapshot — Whole serializable state of a {@link WaypointStore} — drop into a save blob.
-- `WaypointStore` (interface): interface WaypointStore — Player-owned waypoint layer — place/track/clear pins, mirror to a `MarkerSet`, and read guide-arrow data.
-- `WaypointStoreDeps` (interface): interface WaypointStoreDeps — Construction options for {@link createWaypointStore}.
-- `createWaypointStore` (function): function createWaypointStore(deps: WaypointStoreDeps = {}): WaypointStore — Player-owned waypoint layer: place/track/clear pins, mirror them into a shared `MarkerSet` (so `Minimap`/`WorldMap`/`Compass` render them for free), and read bearing/distance guidance for an on-screen arrow to the tracked one. State is plain data — `snapshot()`/`restore()` round-trip through any save blob.
-- `waypointAnchor` (function): function waypointAnchor(entry: WaypointEntry): readonly [number, number, number] — The world-space `[x, y, z]` anchor of a waypoint, for projecting it to the screen.
 
 ## @jgengine/core/world/wind
 

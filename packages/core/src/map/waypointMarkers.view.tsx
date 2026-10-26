@@ -1,7 +1,7 @@
 import { useReducer, useEffect, type CSSProperties, type ReactNode } from "react";
 
 import { layoutScreenMarker, type ScreenMarkerLayout } from "@jgengine/core/ui/screenMarkers";
-import { waypointAnchor, type WaypointEntry, type WaypointStore } from "@jgengine/core/world/waypoints";
+import { waypointAnchor, type WaypointEntry, type WaypointStore } from "@jgengine/core/map/waypoints";
 import { formatDistance, type DistanceFormat } from "@jgengine/core/format/distance";
 
 import type { ProjectEntity } from "@jgengine/core/hud/entityFrames.view";

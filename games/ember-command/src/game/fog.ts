@@ -1,11 +1,11 @@
-import { createFogField, type FogBounds, type FogCells, type FogField } from "@jgengine/core/world/fog";
+import { createFogField, type FogBounds, type FogCells, type FogField } from "@jgengine/core/map/fog";
 
 import { SIGHT_RADIUS, SIGHT_RADIUS_BUILDING, SIGHT_RADIUS_HERO } from "./tuning";
 
 /**
  * Fog of war, three states deep.
  *
- * The grid is the shared `@jgengine/core/world/fog` field — reveal-on-event cells over the
+ * The grid is the shared `@jgengine/core/map/fog` field — reveal-on-event cells over the
  * battlefield — used twice: one field that only ever grows (what the Vanguard has *explored*) and
  * one that is cleared and refilled every fog tick (what it can *see right now*). A cell is
  *   visible   - inside some friendly sight radius this tick,

@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState, useSyncExternalStore, type CSSProperties, type ReactNode } from "react";
-import type { FogCells, FogField } from "@jgengine/core/world/fog";
+import type { FogCells, FogField } from "@jgengine/core/map/fog";
 import {
   DEFAULT_MARKER_KINDS,
   markerKindStyle,
@@ -9,7 +9,7 @@ import {
   type MarkerSource,
   type MarkerSet,
   type MarkerView,
-} from "@jgengine/core/world/markers";
+} from "@jgengine/core/map/markers";
 import {
   bearingToCardinal,
   clampToMinimapEdge,
@@ -21,15 +21,15 @@ import {
   type Cardinal,
   type MinimapView,
   type WorldXZ,
-} from "@jgengine/core/world/minimap";
+} from "@jgengine/core/map/minimap";
 import {
   mapLayerColor,
   type MapCellStates,
   type MapLayerTone,
   type MapRoute,
   type MapZone,
-} from "@jgengine/core/world/mapLayers";
-import { createFogDataUrl } from "./fogOverlay";
+} from "@jgengine/core/map/mapLayers";
+import { createFogDataUrl } from "./fogOverlay.view";
 import { hudType } from "@jgengine/core/hud/hudTokens";
 
 type ProjectFn = (x: number, z: number) => { x: number; y: number };
@@ -193,10 +193,15 @@ export function useMarkers(markers: MarkerCollection): readonly MarkerView[] {
   return useSyncExternalStore(access.subscribe, access.getSnapshot, access.getServerSnapshot);
 }
 
+/**
+ * Re-render a component when a fog field reveals cells; returns its current cells.
+ * @capability use-fog React binding that returns a fog-of-war field's live cells
+ */
 export function useFog(fog: FogField): ReturnType<FogField["cells"]> {
   return useSyncExternalStore(fog.subscribe, fog.cells, fog.cells);
 }
 
+/** Props for `Minimap`: markers, centre, world radius, fog, size, terrain background and look. */
 export interface MinimapProps {
   /** Static views, an external marker source, or a native JGengine MarkerSet. */
   markers: MarkerCollection;
@@ -226,6 +231,7 @@ export interface MinimapProps {
   children?: ReactNode;
 }
 
+/** World-XZ rectangle a world map shows. */
 export interface MapBounds {
   minX: number;
   minZ: number;
@@ -556,6 +562,7 @@ const COMPASS_TICKS: readonly { cardinal: Cardinal; bearing: number }[] = [
   { cardinal: "NW", bearing: (7 * Math.PI) / 4 },
 ];
 
+/** Props for `Compass`: the tracked facing yaw, optional centre and markers, strip width and field of view. */
 export interface CompassProps {
   /** Facing yaw (`rotationY`, forward = `(sin yaw, cos yaw)`) of the tracked entity — pass it raw, never pre-converted to a bearing. */
   facingYaw: number;
@@ -921,6 +928,7 @@ function WorldMapFogImage({
   return <image href={fogImage} x={0} y={0} width={width} height={mapH} preserveAspectRatio="none" />;
 }
 
+/** Props for {@link WorldMap}: markers, world bounds, the player and facing, fog, background and layers. */
 export interface WorldMapProps {
   /** Static views, an external marker source, or a native JGengine MarkerSet. */
   markers: MarkerCollection;
@@ -987,6 +995,7 @@ export interface WorldMapSurfaceProps {
  * {@link FullscreenMap} (pan/zoom overlay): baked terrain background, fog, map
  * layers, markers with labels, and the player arrow, drawn under an optional
  * viewport transform. Rectangular linear projection over the world `bounds`.
+ * @capability world-map-surface bare top-down map svg with terrain background, fog, layers, labelled markers and player arrow under a viewport transform
  */
 export function WorldMapSurface({
   markers,
@@ -1099,6 +1108,7 @@ export function WorldMapSurface({
  * background, reveal-on-event fog, all markers with labels, and the player.
  * Rectangular linear projection over the supplied world `bounds`. Framed panel
  * wrapper over {@link WorldMapSurface}.
+ * @capability world-map framed full-bounds world map panel with terrain background, fog, labelled markers and the player
  */
 export function WorldMap({
   markers,

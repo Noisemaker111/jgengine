@@ -1066,6 +1066,10 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `useFastTravel` (function) · `import { useFastTravel } from "@jgengine/react"`
 
+## use-fog — React binding that returns a fog-of-war field's live cells
+
+- `useFog` (function) · `import { useFog } from "@jgengine/react"`
+
 ## use-hold-vs-toggle — live hold-or-toggle preference from the shared settings store
 
 - `useHoldVsToggle` (function) · `import { useHoldVsToggle } from "@jgengine/core/settings/accessibilitySettings.view"`
@@ -1149,6 +1153,14 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 ## world-intersections — inspect turns and junction meshes in a deterministic preview fixture
 
 - `StreetGeometryPreview` (function) · `import { StreetGeometryPreview } from "@jgengine/react"`
+
+## world-map — framed full-bounds world map panel with terrain background, fog, labelled markers and the player
+
+- `WorldMap` (function) · `import { WorldMap } from "@jgengine/react"`
+
+## world-map-surface — bare top-down map svg with terrain background, fog, layers, labelled markers and player arrow under a viewport transform
+
+- `WorldMapSurface` (function) · `import { WorldMapSurface } from "@jgengine/react"`
 
 ## world-object-highlights — ground-ring highlight over every selected placed object
 

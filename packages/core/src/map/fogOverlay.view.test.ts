@@ -1,7 +1,7 @@
 import { describe, expect, test } from "bun:test";
-import type { FogCells } from "@jgengine/core/world/fog";
+import type { FogCells } from "@jgengine/core/map/fog";
 
-import { forEachUnrevealedFogCell, paintFogOverlay } from "./fogOverlay";
+import { forEachUnrevealedFogCell, paintFogOverlay } from "./fogOverlay.view";
 
 function cells(partial: Partial<FogCells> & Pick<FogCells, "cols" | "rows" | "revealed">): FogCells {
   return {

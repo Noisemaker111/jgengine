@@ -12,9 +12,9 @@ import {
   WaypointArrow,
   WorldMap,
   type MinimapChromeMarker,
-} from "./map";
-import { createMarkerSet, createMarkerSource } from "@jgengine/core/world/markers";
-import type { MinimapView } from "@jgengine/core/world/minimap";
+} from "./map.view";
+import { createMarkerSet, createMarkerSource } from "@jgengine/core/map/markers";
+import type { MinimapView } from "@jgengine/core/map/minimap";
 
 function renderSvg(props: Parameters<typeof MinimapChrome>[0]): string {
   return renderToStaticMarkup(createElement("svg", null, createElement(MinimapChrome, props)));

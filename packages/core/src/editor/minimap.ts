@@ -5,7 +5,7 @@ import {
   type MinimapBakeBounds,
   type MinimapBakeOptions,
   type MinimapBakeZone,
-} from "../world/minimapBake";
+} from "@jgengine/core/map/minimapBake";
 import { editorDocumentBounds } from "./document";
 import type { EditorDocument, EditorVolume } from "./types";
 

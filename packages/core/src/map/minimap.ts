@@ -1,3 +1,4 @@
+/** A world `[x, z]` point. */
 export type WorldXZ = readonly [number, number];
 
 const TWO_PI = Math.PI * 2;
@@ -22,10 +23,12 @@ export function headingToBearing(yaw: number): number {
   return normalizeAngle(Math.atan2(Math.sin(yaw), -Math.cos(yaw)));
 }
 
+/** One of the eight compass points. */
 export type Cardinal = "N" | "NE" | "E" | "SE" | "S" | "SW" | "W" | "NW";
 
 const CARDINALS: readonly Cardinal[] = ["N", "NE", "E", "SE", "S", "SW", "W", "NW"];
 
+/** The nearest compass point to a bearing in radians. */
 export function bearingToCardinal(bearing: number): Cardinal {
   const index = Math.round(normalizeAngle(bearing) / (Math.PI / 4)) % 8;
   return CARDINALS[index]!;
@@ -39,6 +42,7 @@ export function relativeBearing(bearing: number, reference: number): number {
   return delta;
 }
 
+/** What a minimap shows: centre, world radius, pixel size and rotation. */
 export interface MinimapView {
   /** World XZ at the minimap center (usually the player position). */
   center: WorldXZ;
@@ -54,6 +58,7 @@ export interface MinimapView {
   rotate?: number;
 }
 
+/** A world point projected onto a minimap: pixel position, distance and whether it falls inside. */
 export interface MinimapPoint {
   x: number;
   y: number;

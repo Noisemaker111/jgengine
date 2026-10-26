@@ -1,8 +1,8 @@
 import type { GameContext } from "@jgengine/core/runtime/gameContext";
-import { headingToBearing, projectToMinimap, type MinimapView } from "@jgengine/core/world/minimap";
+import { headingToBearing, projectToMinimap, type MinimapView } from "@jgengine/core/map/minimap";
 import type { WorldBlip } from "@jgengine/core/worldModel/worldModel";
 import { useGameStore } from "@jgengine/react/hooks";
-import { MinimapChrome, type MinimapChromeMarker } from "@jgengine/react/map";
+import { MinimapChrome, type MinimapChromeMarker } from "@jgengine/core/map/map.view";
 import { cityOf } from "../../cityRuntime";
 import { safehouseStore } from "../../commands";
 import { drivingStore, raceStore, wantedStore } from "../../handroll";

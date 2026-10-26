@@ -1,7 +1,7 @@
 import { useEffect, useRef } from "react";
 import { resolveActivePrompt } from "@jgengine/core/interaction/proximityPrompt";
 import type { GameContext } from "@jgengine/core/runtime/gameContext";
-import { compassBearing, headingToBearing, relativeBearing } from "@jgengine/core/world/minimap";
+import { compassBearing, headingToBearing, relativeBearing } from "@jgengine/core/map/minimap";
 import { useGame, useGameStore } from "@jgengine/react/hooks";
 import { GameIcon } from "@jgengine/core/ui/icons/gameIcons.view";
 import { useHudAwake } from "@jgengine/core/hud/hudLayout.view";

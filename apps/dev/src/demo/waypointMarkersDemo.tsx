@@ -4,11 +4,11 @@ import { useCallback, useRef, useState, type ReactNode } from "react";
 import * as THREE from "three";
 
 import { defineGameDefinition } from "@jgengine/core/game/defineGame";
-import { createWaypointStore, waypointAnchor, type WaypointEntry, type WaypointStore } from "@jgengine/core/world/waypoints";
+import { createWaypointStore, waypointAnchor, type WaypointEntry, type WaypointStore } from "@jgengine/core/map/waypoints";
 import type { GameContext, GameContextEntityEntry } from "@jgengine/core/runtime/gameContext";
 import { createAssetCatalog } from "@jgengine/core/scene/assetCatalog";
 import { environment, grass, terrain } from "@jgengine/core/world/features";
-import { WaypointMarkers } from "@jgengine/react/waypointMarkers";
+import { WaypointMarkers } from "@jgengine/core/map/waypointMarkers.view";
 
 import { EnvironmentScene } from "@jgengine/core/environment/EnvironmentScene.draw";
 import { useWorldProjection } from "@jgengine/shell/world/WorldEntityFrames";

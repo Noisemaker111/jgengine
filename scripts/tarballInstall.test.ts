@@ -243,8 +243,8 @@ describe.if(built)("clean-consumer resolution of the real tarball (zero-dep pack
     try {
       linkPeer(consumer, "react");
       const script = [
-        "import { createMarkerSource } from '@jgengine/core/world/markers';",
-        "import { Minimap } from '@jgengine/react/map';",
+        "import { createMarkerSource } from '@jgengine/core/map/markers';",
+        "import { Minimap } from '@jgengine/core/map/map.view';",
         "const units = [{ id: 'u1', x: 2, z: 4 }];",
         "const markers = createMarkerSource({ getSnapshot: () => units, project: (unit) => ({ id: unit.id, position: [unit.x, 0, unit.z] }) });",
         "if (markers.getSnapshot()[0]?.id !== 'u1') throw new Error('portable marker source failed');",

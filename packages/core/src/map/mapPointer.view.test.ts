@@ -2,11 +2,11 @@ import { afterAll, afterEach, beforeAll, beforeEach, expect, setDefaultTimeout, 
 import { mkdir, rm, symlink } from "node:fs/promises";
 import { resolve } from "node:path";
 import { chromium, type Browser, type CDPSession, type Page } from "playwright-core";
-import { buildBrowserFixture, findChromeExecutable } from "../../../scripts/browser-lib";
-import { gotoFixture, installPublicPackages } from "../../../scripts/browser-test-fixture";
+import { buildBrowserFixture, findChromeExecutable } from "../../../../scripts/browser-lib";
+import { gotoFixture, installPublicPackages } from "../../../../scripts/browser-test-fixture";
 
 setDefaultTimeout(30_000);
-const root = resolve(import.meta.dir, "../../..");
+const root = resolve(import.meta.dir, "../../../..");
 const scratch = `${root}/.scratch/fullscreen-map-pointer-test`;
 let browser: Browser, page: Page, input: CDPSession, server: ReturnType<typeof Bun.serve>;
 beforeAll(async () => {
@@ -16,7 +16,7 @@ beforeAll(async () => {
   await installPublicPackages(scratch, ["core", "react"]);
   await Bun.write(`${scratch}/fixture.tsx`, `
     import React,{useState} from 'react';import {createRoot} from 'react-dom/client';import {flushSync} from 'react-dom';
-    import {FullscreenMap,MapLegend} from '@jgengine/react/map';import {createAnnotationLayer} from '@jgengine/core/world/mapAnnotations';
+    import {FullscreenMap,MapLegend} from '@jgengine/core/map/map.view';import {createAnnotationLayer} from '@jgengine/core/map/mapAnnotations';
     const owned=new Map(),types=['pointermove','mouseup','pointercancel'],add=window.addEventListener.bind(window),remove=window.removeEventListener.bind(window);
     window.addEventListener=(type,listener,options)=>{if(types.includes(type)){const set=owned.get(type)??new Set();set.add(listener);owned.set(type,set)}add(type,listener,options)};
     window.removeEventListener=(type,listener,options)=>{owned.get(type)?.delete(listener);remove(type,listener,options)};

@@ -2,8 +2,8 @@ import { describe, expect, test } from "bun:test";
 import { createElement } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 
-import { FastTravelMenu } from "./fastTravel";
-import { createFastTravelNetwork } from "@jgengine/core/world/fastTravel";
+import { FastTravelMenu } from "./fastTravel.view";
+import { createFastTravelNetwork } from "@jgengine/core/map/fastTravel";
 
 function net() {
   return createFastTravelNetwork({

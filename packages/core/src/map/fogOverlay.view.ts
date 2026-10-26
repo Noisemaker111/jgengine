@@ -1,5 +1,6 @@
-import type { FogCells } from "@jgengine/core/world/fog";
+import type { FogCells } from "@jgengine/core/map/fog";
 
+/** A fog cell's rectangle in map pixels. */
 export interface FogCellRect {
   x: number;
   y: number;
@@ -7,6 +8,7 @@ export interface FogCellRect {
   height: number;
 }
 
+/** The canvas-2D calls the fog overlay paints with, so tests can pass a fake. */
 export interface FogPaintSurface {
   fillStyle: string | CanvasGradient | CanvasPattern;
   fillRect(x: number, y: number, width: number, height: number): void;

@@ -36,7 +36,7 @@ const ADOPTIONS: Adoption[] = [
     keep: "Your entity array/ECS/store, your styling and chrome.",
     get: "A framed minimap with categorized markers and a facing arrow — no GameProvider, no three.js.",
     filename: "Minimap.tsx",
-    code: `import { Minimap } from "@jgengine/react/map";
+    code: `import { Minimap } from "@jgengine/core/map/map.view";
 
 // units are YOUR objects — nothing is mirrored into a JGengine store.
 const markers = units.map((u) => ({ id: u.id, position: [u.x, 0, u.z], kind: u.team }));

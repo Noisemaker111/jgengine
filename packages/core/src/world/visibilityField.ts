@@ -1,4 +1,4 @@
-import type { FogBounds } from "./fog";
+import type { FogBounds } from "@jgengine/core/map/fog";
 
 /** Numeric code for a cell no group member has seen, or has fully forgotten. */
 export const VISIBILITY_HIDDEN = 0;
