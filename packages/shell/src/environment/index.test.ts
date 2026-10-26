@@ -1,7 +1,7 @@
 import { expect, test } from "bun:test";
 
 import * as environment from "./index";
-import { VolumetricClouds } from "../sky/VolumetricClouds";
+import { VolumetricClouds } from "@jgengine/core/sky/VolumetricClouds.draw";
 
 test("the sky has one component; the old daylight variants are gone", () => {
   expect(typeof environment.Sky).toBe("function");

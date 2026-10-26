@@ -69,10 +69,12 @@ describe("this checkout answers where a concept lives in one call", () => {
   const index = indexCode(files, (file: CodeFile) => readFileSync(join(root, file.path), "utf8"));
   const homeOf = (query: string) => new Map(locateIn(index, queryTokens(query)).map((home) => [home.layer, home.home]));
 
-  test("grass and hud point at the folders that hold them", () => {
-    const grass = homeOf("grass");
-    expect(grass.get("core")).toBe("packages/core/src/world/");
-    expect(grass.get("shell")).toBe("packages/shell/src/grass/");
+  test("a moved world feature answers with its one feature folder", () => {
+    for (const folder of ["grass", "sky", "water", "weather"]) {
+      const homes = homeOf(folder);
+      expect(homes.get("core")).toBe(`packages/core/src/${folder}/`);
+      expect(homes.get("shell") ?? "").not.toEndWith(`/${folder}/`);
+    }
   });
 
   test("a moved feature answers with its one feature folder", () => {

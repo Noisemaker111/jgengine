@@ -85,10 +85,6 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 - `AuthoredSurfaceMaterial` (function) · `import { AuthoredSurfaceMaterial } from "@jgengine/shell/render/authoredSurfaceMaterial"`
 - `useAuthoredSurfaceMaterial` (function) · `import { useAuthoredSurfaceMaterial } from "@jgengine/shell/render/authoredSurfaceMaterial"`
 
-## authored-weather-rendering — Render authored weather from shared gameplay samples, simulation time and shelter volumes.
-
-- `AuthoredWeatherLayer` (function) · `import { AuthoredWeatherLayer } from "@jgengine/shell/weather"`
-
 ## auto-scroll — pin a log/chat/console panel to its newest line as entries arrive — no hand-rolled scrollTop effects
 
 - `useAutoScroll` (function) · `import { useAutoScroll } from "@jgengine/react"`
@@ -866,10 +862,6 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `useRafLoop` (function) · `import { useRafLoop } from "@jgengine/react"`
 
-## rain-ground-ripples — Render bounded rain impacts on exposed terrain using the shared precipitation clock.
-
-- `RainImpactField` (function) · `import { RainImpactField } from "@jgengine/shell/weather"`
-
 ## request-scene-capture — request the live scene frame, waiting for a late binding and the first painted frame
 
 - `requestSceneCapture` (function) · `import { requestSceneCapture } from "@jgengine/shell/render/sceneCapture"`
@@ -1176,10 +1168,6 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 ## waypoint-markers — overlay rendering world waypoints as on-screen pins and off-screen edge-clamped directional arrows with distance, colored per game-owned kind
 
 - `WaypointMarkers` (function) · `import { WaypointMarkers } from "@jgengine/react"`
-
-## weather-dust — airborne particulate that turns still air into visible wind
-
-- `DustField` (function) · `import { DustField } from "@jgengine/shell/weather"`
 
 ## window — standalone draggable, closable window primitive over HudFrame — no manager required
 

@@ -1,7 +1,7 @@
 import { describe, expect, spyOn, test } from "bun:test";
 
 import { resetWarnOnce } from "../devtools/warnOnce";
-import { GRASS_DEFAULTS, readGrassLook } from "./grassKind";
+import { GRASS_DEFAULTS, readGrassLook } from "@jgengine/core/grass/grassKind";
 
 import {
   biomes,

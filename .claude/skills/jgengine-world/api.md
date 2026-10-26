@@ -1050,6 +1050,62 @@
 - `resolveFreeFlightIntent` (function): function resolveFreeFlightIntent(keys: MovementKeysState, analog: AnalogMoveIntent | null | undefined): FreeFlightIntent — Translate held keys + analog into a free-flight intent. Vertical is `space - (control|c)` so jump ascends and crouch descends — the same keys that walk/jump/crouch use, re-mapped for flight without re-binding.
 - `resolveFreeFlightIntentFromInput` (function): function resolveFreeFlightIntentFromInput(isDown: (action: string) => boolean, value: (action: string) => number, pointer: PointerAxisState | null, bindings?: FreeFlightBindings): FreeFlightIntent — Translate live input (held actions + analog + pointer) into a flight intent using per-profile axis bindings. Unlisted bindings fall back to the defaults above so existing games keep WASD/Space/Ctrl/Shift without declaring anything.
 
+## @jgengine/core/grass/GrassCover.draw
+
+- `GrassCover` (function): function GrassCover({ area, seed, colorBase, colorTip, strength, edgeFeather, heightAt, coverageAt, segments, position, }: GrassCoverProps): React.JSX.Element | null — The turf surface under one authored `grass_field` patch: a ground-draped, edge-feathered mat that turns a bare pavement footprint into grass the blade field stands in. Bounded to one draw and a {@link GRASS_COVER_MAX_SEGMENTS}² grid, so a large park still costs a single mesh.
+- `GrassCoverProps` (interface): interface GrassCoverProps — Props for {@link GrassCover}: one authored patch's footprint, colours and drape samplers.
+
+## @jgengine/core/grass/GrassPatch.draw
+
+- `GrassPatch` (function): function GrassPatch({ look, area, seed, edgeFeather, exclude, heightAt, coverageAt, groundColor, castShadow = false, receiveShadow = true, frustumCulled = true, ...groupProps }: GrassPatchProps): React.JSX.Element — The engine's one grass renderer: a camera-streamed blade field over a turf mat. Work follows the camera — nodes near it bake every tuft, far ones a thinning share, and nothing past the distance where a blade would be under a pixel — so a patch of any size costs what the view shows.
+- `GrassPatchProps` (interface): interface GrassPatchProps extends Omit<ThreeElements["group"], "children"> — Props for {@link GrassPatch}.
+
+## @jgengine/core/grass/grassBake.draw
+
+- `GRASS_CELL_SIZE` (const): const GRASS_CELL_SIZE: 8 — Side of one base grass cell in metres: the unit of seeded tuft generation. Coarser stream nodes cover power-of-two blocks of cells.
+- `GrassBakeOptions` (interface): interface GrassBakeOptions — Inputs for {@link resolveGrassBake}: one patch's look, footprint and ground samplers.
+- `GrassExclusion` (interface): interface GrassExclusion — A rectangle (patch-local XZ) the grass keeps clear — soil patches, water, plazas.
+- `GrassTemplateLod` (interface): interface GrassTemplateLod — One draw-detail level of the tuft template: an index range drawing every blade at `segments`.
+- `GrassTuftTemplate` (interface): interface GrassTuftTemplate — The shared tuft mesh every instance places: `tuftBlades` blades splayed around a root, each a strip of `segments` rows, plus one flower quad that only flowering tufts open. The index buffer holds the strips at full, half and single-segment detail back to back, so a far draw picks a cheaper range of the same vertices.
+- `GrassTufts` (interface): interface GrassTufts — The tufts one stream node draws, sorted by rank. A tuft's rank is its place in its cell's seeded order, so the first `n` tufts are an even thinning of the node: drawing fewer for a far camera just shortens the instance count, and a finer node re-baked nearer the camera regrows the same tufts in the same places.
+- `ResolvedGrassBake` (interface): interface ResolvedGrassBake — A patch ready to bake: the look plus every derived number the bake and stream share.
+- `bakeGrassNode` (function): function bakeGrassNode(bake: ResolvedGrassBake, level: number, ix: number, iz: number, share: number): GrassTufts — Seeded tufts for one stream node at `share` of full detail (0..1]. Each base cell inside the node grows its own seeded sequence, so the result never depends on which node asked or how big it is.
+- `createGrassTuftTemplate` (function): function createGrassTuftTemplate(bake: ResolvedGrassBake): GrassTuftTemplate — Build the shared tuft template for a resolved patch.
+- `grassFieldColors` (function): function grassFieldColors(look: GrassLook): { base: THREE.Color; tip: THREE.Color } — The look's colours after season and dryness, as the turf mat and far field show them. Mirrors the blade shader's colour path at the field's average tone.
+- `grassNodeRect` (function): function grassNodeRect(bake: ResolvedGrassBake, level: number, ix: number, iz: number): [number, number, number, number] — Patch-local XZ rectangle a node covers, clipped to the patch: `[x0, z0, x1, z1]`.
+- `grassTuftsBelow` (function): function grassTuftsBelow(ranks: Float32Array, share: number): number — Number of sorted tufts whose rank is below `share`.
+- `resolveGrassBake` (function): function resolveGrassBake(options: GrassBakeOptions): ResolvedGrassBake — Resolve a patch's bake inputs once; the stream and every node bake read the result.
+
+## @jgengine/core/grass/grassCoverGeometry.draw
+
+- `GRASS_COVER_MAX_SEGMENTS` (const): const GRASS_COVER_MAX_SEGMENTS: 96 — Largest grid a cover mat bakes to, per axis — a 66 m park stays one draw at ~1 m cells.
+- `GRASS_COVER_TILE_METRES` (const): const GRASS_COVER_TILE_METRES: 3 — World metres one cover-texture tile spans; the mat's own grain is sampled in world space.
+- `GrassCoverGeometry` (interface): interface GrassCoverGeometry — Bake result for {@link createGrassCoverGeometry}; empty arrays when the mat is switched off.
+- `GrassCoverGeometryOptions` (interface): interface GrassCoverGeometryOptions — Inputs for {@link createGrassCoverGeometry}.
+
+## @jgengine/core/grass/grassKind
+
+- `GRASS_DEFAULTS` (const): const GRASS_DEFAULTS: GrassLook — Grass defaults: a lush, lightly-swaying summer meadow.
+- `GRASS_FIELD_KIND` (const): const GRASS_FIELD_KIND: "grass_field" — The editor volume kind marking a box as a GPU grass patch.
+- `GRASS_PRESETS` (const): const GRASS_PRESETS: { id: string; label: string; values: { density: number; bladeHeight: number; heightVariation: number; bladeWidth: number; widthVariation: number; profile: number; curvature: number; stiffness: number; tuftSpread: number; tuftBlades: number; baseColor: string; tipColor: string; g… — Starting looks the inspector applies in one click; each is a full knob set, so any can be tweaked from there.
+- `GRASS_SCHEMA` (const): const GRASS_SCHEMA: ParamSchema — The grass parameter schema — drives the inspector and `meta` parse via the studio seam.
+- `GrassLook` (interface): interface GrassLook — Fully-defaulted, clamped grass look, read from a volume's `meta` or a `grass()` config.
+- `ResolvedGrass` (interface): interface ResolvedGrass — A resolved grass patch: world-space area center at ground height, footprint size (XZ), and look.
+- `grassBladeDensity` (function): function grassBladeDensity(look: GrassLook): number — Blades per square metre at full detail. Fullness sets how much of the ground the blades cover, and the count follows from blade size: thin or short blades need more of them to cover the same ground, so no width, height or fullness can leave bare gaps between tufts.
+
+## @jgengine/core/grass/grassMaterial.draw
+
+- `GrassMaterialHandle` (interface): interface GrassMaterialHandle — The grass blade material and the uniforms behind it.
+- `GrassShaderUniforms` (interface): interface GrassShaderUniforms — Uniforms the grass shader reads; the stream rewrites the `uLod` row per camera.
+- `createGrassMaterial` (function): function createGrassMaterial(look: GrassLook, groundColor?: THREE.ColorRepresentation): GrassMaterialHandle — Build the one grass material for a look; `groundColor` is the terrain the roots blend into.
+
+## @jgengine/core/grass/grassStream.draw
+
+- `GRASS_SCREEN_DENSITY` (const): const GRASS_SCREEN_DENSITY: number — Blades per CSS pixel² the field aims for beyond the near zone. Inside the zone every tuft draws; past it the share falls with the square of distance, so the blades on screen stay about constant however far the field runs and however dense the look is.
+- `GrassStream` (class): class GrassStream — Camera-streamed grass for one patch. A quadtree over the patch's base cells splits near the camera and stays coarse far away; each leaf node bakes only the share of tufts its distance needs, so resident and drawn work follow what the camera sees rather than the patch area. Leaves are three meshes under {@link GrassStream.group}; three frustum-culls them per camera, and each draw trims its instance count and segment detail to that camera's distance.
+- `GrassStreamOptions` (interface): interface GrassStreamOptions — Options for {@link GrassStream}.
+- `GrassStreamStats` (interface): interface GrassStreamStats — Per-frame bookkeeping the stream reports, for tests and devtools.
+
 ## @jgengine/core/haptics/haptics
 
 - `HapticChannels` (interface): interface HapticChannels — Named continuous rumble channels for one player, mixed by priority each frame. Game code sets levels from its own telemetry (engine rpm, road surface, impacts); the shell mixes and drives the pad.
@@ -2823,6 +2879,16 @@
 - `VisionTarget` (interface): interface VisionTarget<TId extends string = string> { id: TId; at: VisionPoint } — ⚠ undocumented
 - `VisionWall` (interface): interface VisionWall — Structurally matches `world/walls` `WallSegment` — pass those straight in as occluders.
 
+## @jgengine/core/sky/Daylight.draw
+
+- `Sky` (function): function Sky({ sky, clock, lights = true, modulation, bands = NO_BANDS, fogRange }: SkyProps): React.JSX.Element — The engine's one sky: a dome with sun, moon and stars, volumetric clouds when the descriptor asks, the scene fog, and (unless `lights={false}`) the sun, moon and hemisphere fill. It holds the preset's look, follows the world clock under `sky.timeOfDay`, cross-fades through terrain `biomeBands` by camera z, and can drive a game's authored lights through the day via `modulation`. Every frame it rewrites uniforms and light values in place, never remounting.
+- `SkyDomeProps` (interface): interface SkyDomeProps — Props for the gradient sky dome: top and horizon colours, dome radius, gradient shape and an optional sun disc.
+- `SkyProps` (interface): interface SkyProps — Props for {@link Sky}: the sky descriptor, the clock that runs it, who owns the lights, and biome bands.
+
+## @jgengine/core/sky/VolumetricClouds.draw
+
+- `VolumetricCloudsProps` (interface): interface VolumetricCloudsProps — Props for {@link VolumetricClouds} — fully-resolved cloud rules plus the shared sun direction.
+
 ## @jgengine/core/sky/dayNightCycle
 
 - `DayNightCycle` (interface): interface DayNightCycle — A running, observable, serializable day-night cycle. A presenter renders `sample()`.
@@ -2855,11 +2921,23 @@
 - `starOpacity` (function): function starOpacity(sunElevationDeg: number): number — How visible the stars are: none in daylight, half at the first hint of a set sun, full once it is 6° under.
 - `sunlightColor` (function): function sunlightColor(elevationDeg: number): string — The sun's colour at `elevationDeg`, normalised so its brightest channel is full: white overhead, orange at the horizon, moon-blue once it has set. Intensity stays the authored cycle's job.
 
+## @jgengine/core/sky/skyBands
+
+- `biomeBandsForSky` (function): function biomeBandsForSky(authoredSky: SkyEnvironmentDescriptor | undefined, worldSky: SkyEnvironmentDescriptor | undefined, bands: readonly BiomeBand[] | undefined): readonly BiomeBand[] | undefined — The terrain biome bands a sky cross-fades through. They belong to the world's own sky, so they apply whenever the sky in force is that sky, even after the shell derives a copy of it (a sun bearing taken from the game's lighting, noon keyframes); a look preset's backdrop sky replaces the world's sky and drops them.
+
+## @jgengine/core/sky/skyLightingPolicy
+
+- `SkyLightOwnership` (type): type SkyLightOwnership = "authored" | "sky-default" — Policy for composing sky backdrops with `PlayableGame.lighting`: - authored lighting present → sky renders dome + fog only; lights stay game-owned - no authored lighting → sky may emit its default sun/hemisphere with the dome Time-of-day never rewrites configured lights; it only drives sky colors/fog (and sky-owned lights when the game did not author lighting).
+
 ## @jgengine/core/sky/skyOwnedLighting
 
 - `SkyOwnedLighting` (interface): interface SkyOwnedLighting — Which half of a game's authored `lighting` a time-of-day sky takes over.
 - `skyNoonKeyframes` (function): function skyNoonKeyframes<T extends SkyEnvironmentConfig>(sky: T, lighting: LightingConfig | undefined, fogColor?: string): T — The authored `lighting` as the day cycle's **noon keyframes**, filling only the sky fields the game left unset. A game's midday sun, fill and fog therefore become the peak the cycle scales and cross-fades from, so an authored world gets a sunset and a night without re-authoring the same numbers in the sky. Authored sky fields always win over the lighting config.
 - `splitSkyOwnedLighting` (function): function splitSkyOwnedLighting(lighting: LightingConfig | undefined): SkyOwnedLighting — Splits authored lighting into the sun/ambient terms a time-of-day sky drives and the rest. Returns an empty `sky` when the game authored no lighting, so callers can keep engine defaults.
+
+## @jgengine/core/sky/skySun.draw
+
+- `SkySunDirection` (type): type SkySunDirection = readonly [number, number, number] — World-space direction toward the sun, as the mounted sky last placed it.
 
 ## @jgengine/core/sky/volumetricClouds
 
@@ -3248,6 +3326,40 @@
 - `VisibilitySystemOptions` (interface): interface VisibilitySystemOptions { readonly renderables: () => Iterable<Renderable>; readonly cameras: () => readonly CameraVisibilityContext[]; readonly settings?: Partial<CullingSettings>; readonly sceneOverrides?: ObjectVisibilityOverrides; readonly globalOverrides?: Ob… — ⚠ undocumented
 - `createVisibilitySystem` (function): function createVisibilitySystem(options: VisibilitySystemOptions): VisibilitySystem — ⚠ undocumented
 
+## @jgengine/core/water/Ocean.draw
+
+- `Ocean` (function): function Ocean({ config, depthAt, ...meshProps }: OceanProps): React.JSX.Element — An animated Gerstner-wave ocean sheet; `depthAt` tints shallows and adds shoreline foam.
+- `OceanProps` (interface): interface OceanProps extends Omit<ThreeElements["mesh"], "args" | "children" | "geometry" | "material"> — Props for {@link Ocean}: the ocean config, an optional water-depth sampler for shore colour and foam, and mesh props.
+
+## @jgengine/core/water/OceanConfig.draw
+
+- `DEFAULT_OCEAN_CONFIG` (const): const DEFAULT_OCEAN_CONFIG: ResolvedOceanConfig — The ocean an empty {@link OceanConfig} resolves to: medium quality, teal shallows over deep blue.
+- `MAX_OCEAN_WAVES` (const): const MAX_OCEAN_WAVES: 6 — Waves the ocean shader draws; a longer {@link synthesizeWaves} set keeps its first six.
+- `OCEAN_QUALITY_PRESETS` (const): const OCEAN_QUALITY_PRESETS: Record<OceanQualityPreset, { size: number; resolution: number }> — Sheet size (world units) and vertex resolution for each {@link OceanQualityPreset}.
+- `OceanColorConfig` (interface): interface OceanColorConfig — Ocean body colours: shallow and deep tones, crest and foam colour, opacity, fresnel and sun sparkle.
+- `OceanConfig` (interface): interface OceanConfig — Authored ocean settings; every field is optional and {@link createOceanConfig} fills the rest.
+- `OceanFoamConfig` (interface): interface OceanFoamConfig — Where foam shows on the ocean: wave-crest threshold, softness, intensity, coverage and shoreline width.
+- `OceanQualityPreset` (type): type OceanQualityPreset = "low" | "medium" | "high" | "ultra" — Ocean mesh quality tier; picks the sheet size and vertex resolution from {@link OCEAN_QUALITY_PRESETS}.
+- `ResolvedOceanColorConfig` (interface): interface ResolvedOceanColorConfig — {@link OceanColorConfig} with every field filled in.
+- `ResolvedOceanConfig` (interface): interface ResolvedOceanConfig — {@link OceanConfig} with every field filled in, as the ocean material reads it.
+- `ResolvedOceanFoamConfig` (interface): interface ResolvedOceanFoamConfig — {@link OceanFoamConfig} with every field filled in.
+
+## @jgengine/core/water/OceanMaterial.draw
+
+- `OceanMaterialUniforms` (interface): interface OceanMaterialUniforms — Uniforms the ocean shader reads: time, wave set, colours, foam and depth shading.
+- `OceanShaderMaterial` (type): type OceanShaderMaterial = THREE.ShaderMaterial & { uniforms: OceanMaterialUniforms } — The ocean's `ShaderMaterial`, typed with its {@link OceanMaterialUniforms}.
+- `createOceanMaterial` (function): function createOceanMaterial(config: ResolvedOceanConfig): OceanShaderMaterial — Build the ocean shader material for a resolved config.
+- `syncOceanMaterial` (function): function syncOceanMaterial(material: OceanShaderMaterial, config: ResolvedOceanConfig, elapsedSeconds: number, sunDirection?: readonly [number, number, number]): void — Write the config and the frame's clock into the material. `sunDirection` is where the sky put the sun: glints follow it, and fade out as it sets so a night sea does not sparkle. Without a sky the fixed day heading is used.
+
+## @jgengine/core/water/OceanShader
+
+- `oceanFragmentShader` (const): const oceanFragmentShader: "\nuniform float uTime;\nuniform vec3 uShallowColor;\nuniform vec3 uDeepColor;\nuniform vec3 uCrestColor;\nuniform vec3 uFoamColor;\nuniform float uOpacity;\nuniform float uFresnelStrength;\nuniform float uHorizonBlend;\nuniform float uFoamIntensity;\nuniform float uDepthR… — GLSL fragment shader that colours the ocean by depth, fresnel, crest foam and sun glint.
+- `oceanVertexShader` (const): const oceanVertexShader: "\nuniform float uTime;\nuniform vec2 uWaveDirections[6];\nuniform vec4 uWaveParams[6];\nuniform float uChoppiness;\nuniform float uWaveCount;\nuniform float uFoamThreshold;\nuniform float uFoamSoftness;\nuniform float uFoamCoverage;\n\nattribute float aDepth;\n\nvarying vec… — GLSL vertex shader that displaces the ocean sheet by the summed Gerstner waves.
+
+## @jgengine/core/water/oceanColor
+
+- `oceanColor` (function): function oceanColor(ocean: Pick<OceanEnvironmentDescriptor, "color" | "palette">): { fresnelStrength?: number | undefined; foam?: string | undefined; crest?: string | undefined; deep?: string | undefined; shallow: string; } — The descriptor's colors in the shell Ocean's terms; unset palette fields keep the Ocean default.
+
 ## @jgengine/core/water/waterKind
 
 - `ResolvedWater` (interface): interface ResolvedWater — A resolved water surface: world-space plane center/size (XZ) at surface height `y`, plus its params.
@@ -3266,6 +3378,107 @@
 - `waterSurface` (function): function waterSurface(config: WaterSurfaceConfig = {}): WaterSurface — ⚠ undocumented
 - `waterSurfaceConfigFromDescriptor` (function): function waterSurfaceConfigFromDescriptor(descriptor: OceanEnvironmentDescriptor, waves?: number): WaterSurfaceConfig — The wave config an `ocean()` descriptor describes, for the CPU surface and the drawn water alike.
 - `waterSurfaceFromDescriptor` (function): function waterSurfaceFromDescriptor(descriptor: OceanEnvironmentDescriptor, waves?: number): WaterSurface — ⚠ undocumented
+
+## @jgengine/core/weather/AuthoredWeatherLayer.draw
+
+- `AuthoredWeatherLayer` (function): function AuthoredWeatherLayer({ document, rain, snow, dust, heightAt, diagnostics = false }: AuthoredWeatherLayerProps): React.JSX.Element | null — Render pooled precipitation from the same authored document and clock as gameplay.
+- `AuthoredWeatherLayerProps` (interface): interface AuthoredWeatherLayerProps — Authored weather document and optional precipitation appearance and ground sampling.
+
+## @jgengine/core/weather/DustField.draw
+
+- `DustField` (function): function DustField({ count = DEFAULT_DUST_COUNT, density = DEFAULT_DUST_DENSITY, budget, volume = DEFAULT_VOLUME, wind, origin = DEFAULT_ORIGIN, followCamera = true, speed = 2.4, size = 0.16, sway = 0.5, opacity = 0.3, color = DEFAULT_DUST_COLOR, groundBias = 0.65, timeScale, timeSeconds, seed = 514… — Renders wind-borne particulate as camera-facing motes. Reach for it whenever the air itself should read as weather — a desert gale, ash off a volcano, pollen in a meadow, grain dust in a silo. Compose it through {@link WeatherLayer}'s `"dust"` mode (or `dustAlways` alongside rain and snow) rather than mounting it directly, so it shares one wind and time source with the other layers.
+- `DustFieldProps` (interface): interface DustFieldProps — Wind-borne particulate: dust, sand, ash, pollen, spores. Unlike rain and snow this is not falling — motion is dominated by horizontal wind with a slow vertical bob, and density thins with height so the air near the ground carries the most grit. Any arid, volcanic, or blown-out world needs it.
+
+## @jgengine/core/weather/FireSpreadLayer.draw
+
+- `FireSpreadLayer` (function): function FireSpreadLayer({ grid, cellSize = grid.cellSize, origin = grid.origin, heightAt, flameHeight = 1.6, burningColor = "#ff6a1a", emberColor = "#4a1206", timeSeconds, }: FireSpreadLayerProps): React.JSX.Element — Draw a fire-spread grid as billboarded flames on burning cells and embers on burnt ones.
+- `FireSpreadLayerProps` (interface): interface FireSpreadLayerProps — Props for {@link FireSpreadLayer}: the fire grid, its cell size and origin, a ground-height sampler and flame look.
+
+## @jgengine/core/weather/LightningStrike.draw
+
+- `LightningStrike` (function): function LightningStrike({ origin, target, strikeKey = 0, seed = 451, visible = true, duration = 0.18, color = DEFAULT_COLOR, glow = 2.4, branches = 5, jaggedness = 0.08, impactLight = 26, renderOrder = 20, timeSeconds, startedAt, }: LightningStrikeProps): React.JSX.Element — A jagged, briefly flashing lightning bolt from `origin` to `target`.
+- `LightningStrikeProps` (interface): interface LightningStrikeProps — Props for {@link LightningStrike}: bolt start and end, a key that restarts it, a seed for its shape and visibility.
+
+## @jgengine/core/weather/RainField.draw
+
+- `RainField` (function): function RainField({ count = DEFAULT_RAIN_COUNT, density = DEFAULT_RAIN_DENSITY, budget, volume = DEFAULT_VOLUME, wind, origin = DEFAULT_ORIGIN, followCamera = true, speed = 22, length = 1.35, width = 0.018, opacity = 0.48, color = DEFAULT_RAIN_COLOR, lightning, timeScale, timeSeconds, seed = 11939,… — GPU-animated rain streaks around the camera, sheltered under authored roofs.
+- `RainFieldProps` (interface): interface RainFieldProps — Props for {@link RainField}: drop count, density and budget, area, fall speed, wind and look.
+
+## @jgengine/core/weather/RainImpactField.draw
+
+- `RainImpactField` (function): function RainImpactField({ count = 64, extent = 48, heightAt, exposureAt, seed = 11939, color = "#b8c4d8" }: RainImpactFieldProps): React.JSX.Element — Bounded ground ripples sharing precipitation intensity and authoritative animation time.
+- `RainImpactFieldProps` (interface): interface RainImpactFieldProps — Bounded ripple pool with terrain height and sky exposure query adapters.
+
+## @jgengine/core/weather/SnowField.draw
+
+- `SnowField` (function): function SnowField({ count = DEFAULT_SNOW_COUNT, density = DEFAULT_SNOW_DENSITY, budget, volume = DEFAULT_VOLUME, wind, origin = DEFAULT_ORIGIN, followCamera = true, speed = 3.2, size = 0.11, sway = 0.62, opacity = 0.86, color = DEFAULT_SNOW_COLOR, timeScale, timeSeconds, seed = 72931, renderOrder =… — GPU-animated drifting snowflakes around the camera, sheltered under authored roofs.
+- `SnowFieldProps` (interface): interface SnowFieldProps — Props for {@link SnowField}: flake count, density and budget, area, fall speed, wind and look.
+
+## @jgengine/core/weather/WeatherLayer.draw
+
+- `WeatherLayer` (function): function WeatherLayer({ mode = "clear", intensity = 1, wind, lightning, timeScale, timeSeconds, sample, shelters, metrics, rain, snow, dust, dustAlways = false, impacts, enabled = true, children, }: WeatherLayerProps): React.JSX.Element | null — Draw one weather mode (rain, snow, mixed or dust) with shared wind and clock uniforms.
+- `WeatherLayerMode` (type): type WeatherLayerMode = "clear" | "rain" | "snow" | "mixed" | "dust" — `"mixed"` runs rain and snow together; `"dust"` is airborne particulate and composes with either via `dust`.
+- `WeatherLayerProps` (interface): interface WeatherLayerProps — Props for {@link WeatherLayer}: weather mode, intensity, wind, lightning and clock.
+
+## @jgengine/core/weather/authoredWeather
+
+- `AuthoredWeather` (interface): interface AuthoredWeather — Pure spatial weather queries using the caller’s authoritative simulation clock.
+- `AuthoredWeatherConfig` (interface): interface AuthoredWeatherConfig — Serializable weather lists capped at 256 entries. Wind amplitudes and direction components are bounded to 1e6, gust frequency to 1000 Hz; coordinates and times to 1e12 metres/seconds.
+- `AuthoredWeatherMode` (type): type AuthoredWeatherMode = "clear" | "rain" | "snow" | "mixed" | "dust" — Wind is metres/second along world X,Z; world Y points up. Times are simulation seconds.
+- `AuthoredWeatherProfile` (interface): interface AuthoredWeatherProfile extends WeatherConditions — A named set of conditions referenced by the authored schedule.
+- `AuthoredWeatherSample` (interface): interface AuthoredWeatherSample extends WeatherConditions — Resolved conditions and wind at a world point and absolute simulation time.
+- `AuthoredWeatherTransition` (interface): interface AuthoredWeatherTransition — An absolute simulation-time profile change with an optional continuous blend.
+- `AuthoredWeatherZone` (interface): interface AuthoredWeatherZone — A local weather override and additive wind source centered in world X,Z metres.
+- `WeatherConditions` (interface): interface WeatherConditions — Precipitation intensity, temperature offset in degrees, and normalized lightning brightness.
+- `WeatherExposure` (interface): interface WeatherExposure — Bounded surface accumulation with restoration, live rate tuning and explicit release.
+- `WeatherExposureConfig` (interface): interface WeatherExposureConfig — Surface capacity and normalized wetting, drying, snowfall and melting rates per second.
+- `WeatherExposureSample` (interface): interface WeatherExposureSample — Retained normalized wetness and snow coverage, temperature, and sky exposure.
+- `WeatherExposureSnapshot` (interface): interface WeatherExposureSnapshot — Detached accumulation values keyed by retained surface id.
+- `WeatherExposureStorage` (interface): interface WeatherExposureStorage — Injected persistence for detached surface accumulation snapshots.
+- `WeatherExposureSurface` (interface): interface WeatherExposureSurface — A stable surface id and world X,Z position with explicit sky exposure and temperature.
+- `createAuthoredWeather` (function): function createAuthoredWeather(source: AuthoredWeatherConfig = {}): AuthoredWeather — Pure authored weather sampling; the caller's simulation clock owns pause, replay and restore.
+- `createWeatherEnvironmentField` (function): function createWeatherEnvironmentField(weather: AuthoredWeather, config: Omit<EnvironmentFieldConfig, "rain"> = {}): EnvironmentField — Environment temperature, sunlight and shelter read the same authored precipitation as rendering.
+- `createWeatherExposure` (function): function createWeatherExposure(config: WeatherExposureConfig = {}, storage?: WeatherExposureStorage): WeatherExposure — Bounded surface accumulation shared by gameplay and material adapters, with injected persistence.
+- `validateAuthoredWeather` (function): function validateAuthoredWeather(config: AuthoredWeatherConfig): void — Validate authoring references and work bounds before persisting a weather document.
+
+## @jgengine/core/weather/weather
+
+- `FireCell` (interface): interface FireCell — One fire-grid cell: fuel left, heat and burn state.
+- `FireCellState` (type): type FireCellState = "unburnt" | "burning" | "burnt" — Whether a fire-grid cell has not caught, is burning, or has burnt out.
+- `FireGrid` (interface): interface FireGrid — A cellular fire-spread grid stepped by game time; ignite cells and read their state.
+- `FireGridConfig` (interface): interface FireGridConfig — Size, origin, cell size, fuel and spread settings for {@link createFireGrid}.
+- `FireGridTuning` (type): type FireGridTuning = Pick<FireGridConfig, "ignitionThreshold" | "spreadRate" | "burnRate" | "wind" | "windBias"> — Live fire ignition, spread, consumption and wind policies; grid geometry stays fixed.
+- `FireStepOptions` (interface): interface FireStepOptions — Per-step inputs to a fire grid: spread multiplier, wind and per-cell wetness.
+- `ResolvedWeather` (interface): interface ResolvedWeather — Every {@link WeatherModifier} field for the current weather, scaled by its intensity.
+- `WeatherKind` (type): type WeatherKind = string — A weather kind's name, as a game's {@link WeatherModifierTable} keys it (`"rain"`, `"storm"`, ...).
+- `WeatherKindOf` (type): type WeatherKindOf<TTable extends WeatherModifierTable> = Extract<keyof TTable, string> — The kind names a {@link WeatherModifierTable} defines.
+- `WeatherModifier` (interface): interface WeatherModifier — How one weather kind changes play at full intensity: grip, visibility, structure damage, chill, fire ignition and spread.
+- `WeatherModifierTable` (type): type WeatherModifierTable<K extends string = string> = Record<K, WeatherModifier> — A game's weather kinds, each with its {@link WeatherModifier}.
+- `WeatherState` (interface): interface WeatherState — The weather now: its kind, intensity 0..1 and optional wind.
+- `createFireGrid` (function): function createFireGrid(config: FireGridConfig): FireGrid — Create a {@link FireGrid}; throws on sizes outside its cell budget.
+- `resolveWeather` (function): function resolveWeather<TTable extends WeatherModifierTable>(state: WeatherState, table: TTable): ResolvedWeather — Resolve the current weather against a game's modifier table; throws on a kind the table does not define.
+
+## @jgengine/core/weather/weatherMath
+
+- `DEFAULT_DUST_COUNT` (const): const DEFAULT_DUST_COUNT: 1800 — Mote budget a {@link DustField} allocates before `density` scales it down.
+- `DEFAULT_DUST_DENSITY` (const): const DEFAULT_DUST_DENSITY: 0.4 — Share of {@link DEFAULT_DUST_COUNT} drawn at intensity 1 — dust reads thinner than rain or snow.
+- `DEFAULT_RAIN_COUNT` (const): const DEFAULT_RAIN_COUNT: 2000 — Drop budget a rain field allocates before `density` scales it down.
+- `DEFAULT_RAIN_DENSITY` (const): const DEFAULT_RAIN_DENSITY: 0.45 — Share of {@link DEFAULT_RAIN_COUNT} drawn at intensity 1.
+- `DEFAULT_SNOW_COUNT` (const): const DEFAULT_SNOW_COUNT: 1500 — Flake budget a snow field allocates before `density` scales it down.
+- `DEFAULT_SNOW_DENSITY` (const): const DEFAULT_SNOW_DENSITY: 0.5 — Share of {@link DEFAULT_SNOW_COUNT} drawn at intensity 1.
+- `WeatherSeedAttributes` (interface): interface WeatherSeedAttributes — Per-particle spawn positions and drift offsets a weather field uploads once.
+
+## @jgengine/core/weather/weatherShelter.draw
+
+- `WEATHER_SHELTER_BUDGET` (const): const WEATHER_SHELTER_BUDGET: 32 — Cosmetic roof clipping is bounded independently of authoritative shelter queries.
+- `WeatherShelterUniforms` (interface): interface WeatherShelterUniforms — Reusable buffers for the nearest authored shelters submitted to weather shaders.
+
+## @jgengine/core/weather/weatherUniforms.draw
+
+- `WeatherParticleMetrics` (interface): interface WeatherParticleMetrics — Actual procedural weather submissions and per-frame impact query work.
+- `WeatherUniformOptions` (interface): interface WeatherUniformOptions — Options for the shared weather uniforms: wind, lightning, time scale or an authoritative clock, and an authored weather sampler.
+- `WeatherUniformSet` (interface): interface WeatherUniformSet extends WeatherShelterUniforms — Uniforms every weather field shares: time, wind, lightning flash, rain, snow and dust amounts, and roof shelters.
+- `WeatherVector` (type): type WeatherVector = readonly [number, number, number] — An `[x, y, z]` world vector, such as the wind.
 
 ## @jgengine/core/world
 
@@ -3421,7 +3634,7 @@
 - `FastTravelNetwork` (interface): interface FastTravelNetwork<TMeta = unknown> — A network of fast-travel points with per-player discovery + distance queries.
 - `FastTravelOptions` (interface): interface FastTravelOptions<TMeta = unknown> — Options for {@link createFastTravelNetwork}.
 - `FastTravelSnapshot` (interface): interface FastTravelSnapshot — Serializable discovery state.
-- `FireGrid` (interface): interface FireGrid { readonly cols: number; readonly rows: number; readonly cellSize: number; readonly origin: readonly [number, number]; step(dt: number, options?: FireStepOptions): void; igniteCell(col: number, row: number): void; extinguishCell(col: number… — ⚠ undocumented
+- `FireGrid` (interface): interface FireGrid — A cellular fire-spread grid stepped by game time; ignite cells and read their state.
 - `FlatGround` (interface): interface FlatGround — A 3D walkable plane/slab. `Infinity` axes are unbounded; no separate "infinite" mode exists.
 - `FlatGroundSize` (interface): interface FlatGroundSize — Size of a `flat` ground: extents in world units. `Infinity` on an axis means unbounded — an endless plain needs no bounds number invented for it. `y` optionally bounds vertical play space.
 - `FogCells` (interface): interface FogCells { cols: number; rows: number; minX: number; minZ: number; cellSize: number; revealed: readonly boolean[]; revealedCount: number } — ⚠ undocumented
@@ -3668,7 +3881,7 @@
 - `ResolvedCollider` (interface): interface ResolvedCollider { name: string; purpose: ColliderPurpose; shape: ColliderShape; damageEligible: boolean; blocks: boolean } — ⚠ undocumented
 - `ResolvedGround` (type): type ResolvedGround = FlatGround | RoundGround | VoxelGround | ResolvedBoardGround — A place's ground after `world()` normalization.
 - `ResolvedPoleLine` (interface): interface ResolvedPoleLine — The renderable payload the resolver returns and the shell renderer consumes.
-- `ResolvedWeather` (interface): interface ResolvedWeather { grip: number; visibility: number; structureDamage: number; chill: number; ignition: number; spread: number } — ⚠ undocumented
+- `ResolvedWeather` (interface): interface ResolvedWeather — Every {@link WeatherModifier} field for the current weather, scaled by its intensity.
 - `ResponseCurve` (type): type ResponseCurve = | { readonly kind: "linear"; readonly from: number; readonly to: number } /** Same shape as `linear`, raised to `exponent` (default `2`), so appeal stays flat until it matters. */ | { readonly kind: "quadratic"; readonly from: number; readonly to: number; readonly exponent?: num… — How one need's satisfaction maps to an option's appeal: `1` at `from`, `0` at `to`, clamped outside. Read satisfaction `1` as a full meter; pair with {@link UtilityTerm.invert} when a full meter is what makes the option attractive.
 - `RevealHit` (interface): interface RevealHit { instanceId: string; distance: number; tags: readonly string[] } — ⚠ undocumented · used by `useRevealHits` (@jgengine/shell/vision/RevealVision): Occlusion-ignoring tagged-entity radius query (#115), bound to the live scene and refreshed on render.
 - `RevealQuery` (interface): interface RevealQuery { inRadius(center: EntityPosition | string, radius: number, tags: readonly string[]): RevealHit[] } — ⚠ undocumented
@@ -3748,7 +3961,7 @@
 - `SimClock` (interface): interface SimClock { advance(realDt: number): number; now(): number; advancedSeconds?(): number; snapshot(): ClockSnapshot; hydrate(snapshot: ClockSnapshot): void; calendar(): CalendarTime; isPaused(): boolean; speed(): number; pause(): void; play(): void; to… — ⚠ undocumented · used by `createSimContext` (@jgengine/core/runtime/simContext): Build `ctx.sim` for a context; `createGameContext` calls this from `definition.simulation`.
 - `SkillCheckConfig` (interface): interface SkillCheckConfig { trackWidth: number; zone: SkillCheckZone; markerPeriod: number; window: number; zoneDriftPerSecond?: number } — ⚠ undocumented · used by `skillCheckZoneAt`: A timing-bar skill check that succeeds when the moving marker is released inside the target zone.
 - `SkillCheckResult` (interface): interface SkillCheckResult { success: boolean; timedOut: boolean; markerPosition: number; zone: SkillCheckZone } — ⚠ undocumented
-- `SkyEnvironmentDescriptor` (type): type SkyEnvironmentDescriptor = { kind: "sky" } & Required< Pick<SkyEnvironmentConfig, "preset" | "timeOfDay"> > & Omit<SkyEnvironmentConfig, "preset" | "timeOfDay"> — ⚠ undocumented · used by `biomeBandsForSky` (@jgengine/shell/sky/skyBands): The terrain biome bands a sky cross-fades through.
+- `SkyEnvironmentDescriptor` (type): type SkyEnvironmentDescriptor = { kind: "sky" } & Required< Pick<SkyEnvironmentConfig, "preset" | "timeOfDay"> > & Omit<SkyEnvironmentConfig, "preset" | "timeOfDay"> — ⚠ undocumented · used by `biomeBandsForSky` (@jgengine/core/sky/skyBands): The terrain biome bands a sky cross-fades through.
 - `SlotAssignmentOptions` (interface): interface SlotAssignmentOptions — Tuning for {@link assignFormationSlots}' stable, low-churn matching.
 - `SnapMode` (type): type SnapMode = "grid" | "free" | "surface" — ⚠ undocumented
 - `SnowEnvironmentDescriptor` (type): type SnowEnvironmentDescriptor = { kind: "snow" } & Required< Pick<SnowEnvironmentConfig, "area" | "density" | "speed" | "flakeSize" | "drift" | "wind" | "color" | "opacity"> > — ⚠ undocumented · used by `snow`: Declares a snowfall weather effect for `environment()` — area, density, drift, wind, and flake opacity.
@@ -3885,8 +4098,8 @@
 - `WaypointStore` (interface): interface WaypointStore — Player-owned waypoint layer — place/track/clear pins, mirror to a `MarkerSet`, and read guide-arrow data.
 - `WaypointStoreDeps` (interface): interface WaypointStoreDeps — Construction options for {@link createWaypointStore}.
 - `WeatherEnvironmentDescriptor` (type): type WeatherEnvironmentDescriptor = RainEnvironmentDescriptor | SnowEnvironmentDescriptor — ⚠ undocumented
-- `WeatherModifierTable` (type): type WeatherModifierTable<K extends string = string> = Record<K, WeatherModifier> — ⚠ undocumented
-- `WeatherState` (interface): interface WeatherState { kind: WeatherKind; intensity: number; wind?: WindVector } — ⚠ undocumented
+- `WeatherModifierTable` (type): type WeatherModifierTable<K extends string = string> = Record<K, WeatherModifier> — A game's weather kinds, each with its {@link WeatherModifier}.
+- `WeatherState` (interface): interface WeatherState — The weather now: its kind, intensity 0..1 and optional wind.
 - `WedgeFormationOptions` (interface): interface WedgeFormationOptions — Options for {@link wedgeFormation}.
 - `WeightedParamEntry` (interface): interface WeightedParamEntry — One weighted entry in a `weightedList` param — an item id and its relative spawn weight.
 - `WeightedRegionEntry` (interface): interface WeightedRegionEntry<P extends SamplePoint = SamplePoint> — A weighted member of a {@link weightedRegion} composite.
@@ -3959,7 +4172,7 @@
 - `createFactionGraph` (function): function createFactionGraph(config: FactionGraphConfig): FactionGraph — ⚠ undocumented
 - `createFactionRoster` (function): function createFactionRoster(graph: FactionGraph): FactionRoster — ⚠ undocumented
 - `createFastTravelNetwork` (function): function createFastTravelNetwork<TMeta = unknown>(options: FastTravelOptions<TMeta>): FastTravelNetwork<TMeta> — A fast-travel network: defined destinations plus per-player discovery, with distance-sorted queries, a `nearest` lookup, a `canTravel` gate, an `onDiscover` seam, and serializable `snapshot`/`restore`. Travel itself is a teleport the game applies to `TravelPointView.position`; this owns the unlock/where-can-I-go state. Points marked `initial` start discovered.
-- `createFireGrid` (function): function createFireGrid(config: FireGridConfig): FireGrid — ⚠ undocumented
+- `createFireGrid` (function): function createFireGrid(config: FireGridConfig): FireGrid — Create a {@link FireGrid}; throws on sizes outside its cell budget.
 - `createFogField` (function): function createFogField(config: FogConfig): FogField — ⚠ undocumented
 - `createFootprintGrid` (function): function createFootprintGrid(options: FootprintGridOptions = {}): FootprintGrid — Multi-cell footprint occupancy/reservation on a shared build grid — `world/placementController` only owns the ghost preview; this is the persistent claim a committed placement holds so the next hover's `isFree` check (or another player's, in a shared world) sees it. Bridge into `world/placement`'s `PlacementRules.obstacles` with {@link footprintObstacles} instead of hand-rolling an occupancy map per game.
 - `createFreeFlightController` (function): function createFreeFlightController(initialTuning: FreeFlightTuning, options: { yaw?: number; pitch?: number; state?: FreeFlightState } = {}): FreeFlightController — Totally free flight for any actor — character, camera, drone, or debug rig. Horizontal is always yaw-relative strafe; vertical is jump/crouch. Use `alignWithLook` for a 6DOF spectator that flies where the camera looks.
@@ -4149,7 +4362,7 @@
 - `resolveScatter` (function): function resolveScatter(doc: SceneDocumentLike, terrain?: ScatterTerrain, options: ResolveScatterOptions = {}): ScatterInstance[] — Every scatter region's placements across a document, grounded on `terrain` when provided. Regions honor clearance masks: their own manual `avoid` discs, plus (when the region's `autoAvoid` is on and `options.autoAvoid !== false`) the document-wide discs + path corridors from {@link clearanceMasksFrom} — so foliage auto-clears spawns, plots, and paths without hand-carving the polygon.
 - `resolveScatterRegion` (function): function resolveScatterRegion(region: ScatterRegion, terrain?: ScatterTerrain, avoid?: AvoidMasks): ScatterInstance[] — Deterministic placements for one scatter region: scatter its polygon footprint at `density` items/m² (respecting `minSpacing`), clip to the polygon, thin near the edge, drop placements outside the slope/height mask, and derive item/scale/yaw from the region id + seed — so the same saved region always grows the same field. Grounds each instance on `terrain` when provided.
 - `resolveStructureBuildings` (function): function resolveStructureBuildings(descriptor: BuildingEnvironmentDescriptor, roads: readonly RoadFrontage[] = []): GeneratedBuilding[] — The buildings one `building()` descriptor places, always through the one frontage placer ({@link deriveBuildingLots}): along its `along` roads; else, when the world's streets pass through the settlement, along those streets near `position`; else in two rows facing a lane through `position` (`spacing` wide). `roads` are the world's streets: no lot ever stands on their carriageway or sidewalks.
-- `resolveWeather` (function): function resolveWeather<TTable extends WeatherModifierTable>(state: WeatherState, table: TTable): ResolvedWeather — ⚠ undocumented
+- `resolveWeather` (function): function resolveWeather<TTable extends WeatherModifierTable>(state: WeatherState, table: TTable): ResolvedWeather — Resolve the current weather against a game's modifier table; throws on a kind the table does not define.
 - `resolveWorldPhysics` (function): function resolveWorldPhysics(worldFeature: { kind: string; physics?: PhysicsConfig } | undefined, base: PhysicsConfig | undefined): PhysicsConfig | undefined — Resolves the physics laws in effect for the active world: a place world's own `physics` wins field-by-field over the game-level default. Non-place worlds (and games with no world) keep the game-level config unchanged.
 - `road` (function): function road(config: RoadEnvironmentConfig): RoadEnvironmentDescriptor — Declare a road ribbon for an `environment()` world; the shell drapes and renders it over the terrain.
 - `roadSurfaceSampler` (function): function roadSurfaceSampler(roads: readonly RoadEnvironmentDescriptor[], options: RoadSurfaceOptions = {}): (x: number, z: number) => number — A `surfaceFriction`-compatible sampler (the `(x, z) => grip` hook a kinematic car reads each tick) that turns road geometry into grip (#1051): full `onRoad` grip on the asphalt, a monotonic linear ramp down across a `shoulder`-wide band at the curb, and flat `offRoad` grip beyond it — so a car that clips onto the grass loses bite progressively instead of snapping. Closes over {@link distanceToRoadEdge}, so the returned sampler is itself allocation-free per call.
@@ -4281,27 +4494,6 @@
 - `authoredSpawnPosition` (function): function authoredSpawnPosition(document: AuthoredSpawnDocumentLike, options: AuthoredSpawnOptions = {}): [number, number, number] | null — Position of the authored spawn marker as a spawn-ready `[x, y, z]` tuple, or null when the document has none. Reads the first `player_spawn` marker by default, so dragging the marker in the editor moves where players spawn — no coordinates copied into game code.
 - `authoredSpawnRotation` (function): function authoredSpawnRotation(document: AuthoredSpawnDocumentLike, options: AuthoredSpawnOptions = {}): number — Facing (yaw radians) of the authored spawn marker, or 0 when the document has none — pair with {@link authoredSpawnPosition} to spawn players where and how the editor placed them.
 - `markersOfKind` (function): function markersOfKind<TMarker extends AuthoredSpawnMarkerLike>(document: { markers: readonly TMarker[] }, kind: string): TMarker[] — Every marker of `kind`, in document order — the generic query behind gameplay that references authored markers by kind instead of copying coordinates into code.
-
-## @jgengine/core/world/authoredWeather
-
-- `AuthoredWeather` (interface): interface AuthoredWeather — Pure spatial weather queries using the caller’s authoritative simulation clock.
-- `AuthoredWeatherConfig` (interface): interface AuthoredWeatherConfig — Serializable weather lists capped at 256 entries. Wind amplitudes and direction components are bounded to 1e6, gust frequency to 1000 Hz; coordinates and times to 1e12 metres/seconds.
-- `AuthoredWeatherMode` (type): type AuthoredWeatherMode = "clear" | "rain" | "snow" | "mixed" | "dust" — Wind is metres/second along world X,Z; world Y points up. Times are simulation seconds.
-- `AuthoredWeatherProfile` (interface): interface AuthoredWeatherProfile extends WeatherConditions — A named set of conditions referenced by the authored schedule.
-- `AuthoredWeatherSample` (interface): interface AuthoredWeatherSample extends WeatherConditions — Resolved conditions and wind at a world point and absolute simulation time.
-- `AuthoredWeatherTransition` (interface): interface AuthoredWeatherTransition — An absolute simulation-time profile change with an optional continuous blend.
-- `AuthoredWeatherZone` (interface): interface AuthoredWeatherZone — A local weather override and additive wind source centered in world X,Z metres.
-- `WeatherConditions` (interface): interface WeatherConditions — Precipitation intensity, temperature offset in degrees, and normalized lightning brightness.
-- `WeatherExposure` (interface): interface WeatherExposure — Bounded surface accumulation with restoration, live rate tuning and explicit release.
-- `WeatherExposureConfig` (interface): interface WeatherExposureConfig — Surface capacity and normalized wetting, drying, snowfall and melting rates per second.
-- `WeatherExposureSample` (interface): interface WeatherExposureSample — Retained normalized wetness and snow coverage, temperature, and sky exposure.
-- `WeatherExposureSnapshot` (interface): interface WeatherExposureSnapshot — Detached accumulation values keyed by retained surface id.
-- `WeatherExposureStorage` (interface): interface WeatherExposureStorage — Injected persistence for detached surface accumulation snapshots.
-- `WeatherExposureSurface` (interface): interface WeatherExposureSurface — A stable surface id and world X,Z position with explicit sky exposure and temperature.
-- `createAuthoredWeather` (function): function createAuthoredWeather(source: AuthoredWeatherConfig = {}): AuthoredWeather — Pure authored weather sampling; the caller's simulation clock owns pause, replay and restore.
-- `createWeatherEnvironmentField` (function): function createWeatherEnvironmentField(weather: AuthoredWeather, config: Omit<EnvironmentFieldConfig, "rain"> = {}): EnvironmentField — Environment temperature, sunlight and shelter read the same authored precipitation as rendering.
-- `createWeatherExposure` (function): function createWeatherExposure(config: WeatherExposureConfig = {}, storage?: WeatherExposureStorage): WeatherExposure — Bounded surface accumulation shared by gameplay and material adapters, with injected persistence.
-- `validateAuthoredWeather` (function): function validateAuthoredWeather(config: AuthoredWeatherConfig): void — Validate authoring references and work bounds before persisting a weather document.
 
 ## @jgengine/core/world/buildPermissions
 
@@ -4454,7 +4646,7 @@
 - `RoadEnvironmentDescriptor` (type): type RoadEnvironmentDescriptor = { kind: "road" } & Required< Pick<RoadEnvironmentConfig, "path" | "width" | "color" | "markings" | "markingColor" | "elevation"> > & { /** Resolved sidewalk band, or `false` when the road has none. `slabs` absent means the 1.5 m default, `kerb` absent the 0.14 m kerb… — Resolved road descriptor produced by {@link road} and rendered by the shell environment scene.
 - `RoadSurfaceScans` (interface): interface RoadSurfaceScans — Scanned surfaces for each layer of a {@link road}; see {@link RoadEnvironmentConfig.materials}.
 - `SkyEnvironmentConfig` (interface): interface SkyEnvironmentConfig { preset?: "day" | "dusk" | "night"; timeOfDay?: boolean; horizonColor?: string; zenithColor?: string; sunIntensity?: number; ambientIntensity?: number; sunColor?: string; fogColor?: string; moonIntensity?: number; moonColor?: string; sun?:… — ⚠ undocumented · used by `skyNoonKeyframes` (@jgengine/core/sky/skyOwnedLighting): The authored `lighting` as the day cycle's **noon keyframes**, filling only the sky fields the game left unset.
-- `SkyEnvironmentDescriptor` (type): type SkyEnvironmentDescriptor = { kind: "sky" } & Required< Pick<SkyEnvironmentConfig, "preset" | "timeOfDay"> > & Omit<SkyEnvironmentConfig, "preset" | "timeOfDay"> — ⚠ undocumented · used by `biomeBandsForSky` (@jgengine/shell/sky/skyBands): The terrain biome bands a sky cross-fades through.
+- `SkyEnvironmentDescriptor` (type): type SkyEnvironmentDescriptor = { kind: "sky" } & Required< Pick<SkyEnvironmentConfig, "preset" | "timeOfDay"> > & Omit<SkyEnvironmentConfig, "preset" | "timeOfDay"> — ⚠ undocumented · used by `biomeBandsForSky` (@jgengine/core/sky/skyBands): The terrain biome bands a sky cross-fades through.
 - `SkySunConfig` (interface): interface SkySunConfig — Where the sun sits, as a compass bearing and a height above the horizon, both in degrees. `azimuth` 0 points toward -Z (north), 90 toward +X (east); `elevation` 90 is straight overhead.
 - `SnowEnvironmentConfig` (interface): interface SnowEnvironmentConfig { area?: EnvironmentArea; position?: EnvironmentVec2; density?: number; speed?: number; flakeSize?: number; drift?: number; wind?: EnvironmentVec2; color?: string; opacity?: number } — ⚠ undocumented · used by `snow`: Declares a snowfall weather effect for `environment()` — area, density, drift, wind, and flake opacity.
 - `SnowEnvironmentDescriptor` (type): type SnowEnvironmentDescriptor = { kind: "snow" } & Required< Pick<SnowEnvironmentConfig, "area" | "density" | "speed" | "flakeSize" | "drift" | "wind" | "color" | "opacity"> > — ⚠ undocumented · used by `snow`: Declares a snowfall weather effect for `environment()` — area, density, drift, wind, and flake opacity.
@@ -4542,16 +4734,6 @@
 - `MoveOptions` (interface): interface MoveOptions { bounds?: Aabb; radius?: number } — ⚠ undocumented
 - `Vec2` (type): type Vec2 = readonly [number, number] — ⚠ undocumented · used by `buildablePolygon` (@jgengine/core/city/cityBlocks): Buildable polygon for a parcel: the parcel clipped by the front setback (a half-plane pushed in from the frontage chord), side gaps along bo…
 - `Vec3` (type): type Vec3 = readonly [number, number, number] — A 3D point/vector as an `[x, y, z]` tuple — the engine's zero-allocation spatial primitive.
-
-## @jgengine/core/world/grassKind
-
-- `GRASS_DEFAULTS` (const): const GRASS_DEFAULTS: GrassLook — Grass defaults: a lush, lightly-swaying summer meadow.
-- `GRASS_FIELD_KIND` (const): const GRASS_FIELD_KIND: "grass_field" — The editor volume kind marking a box as a GPU grass patch.
-- `GRASS_PRESETS` (const): const GRASS_PRESETS: { id: string; label: string; values: { density: number; bladeHeight: number; heightVariation: number; bladeWidth: number; widthVariation: number; profile: number; curvature: number; stiffness: number; tuftSpread: number; tuftBlades: number; baseColor: string; tipColor: string; g… — Starting looks the inspector applies in one click; each is a full knob set, so any can be tweaked from there.
-- `GRASS_SCHEMA` (const): const GRASS_SCHEMA: ParamSchema — The grass parameter schema — drives the inspector and `meta` parse via the studio seam.
-- `GrassLook` (interface): interface GrassLook — Fully-defaulted, clamped grass look, read from a volume's `meta` or a `grass()` config.
-- `ResolvedGrass` (interface): interface ResolvedGrass — A resolved grass patch: world-space area center at ground height, footprint size (XZ), and look.
-- `grassBladeDensity` (function): function grassBladeDensity(look: GrassLook): number — Blades per square metre at full detail. Fullness sets how much of the ground the blades cover, and the count follows from blade size: thin or short blades need more of them to cover the same ground, so no width, height or fullness can leave bare gaps between tufts.
 
 ## @jgengine/core/world/gridInstances
 
@@ -4893,23 +5075,6 @@
 - `WaypointStoreDeps` (interface): interface WaypointStoreDeps — Construction options for {@link createWaypointStore}.
 - `createWaypointStore` (function): function createWaypointStore(deps: WaypointStoreDeps = {}): WaypointStore — Player-owned waypoint layer: place/track/clear pins, mirror them into a shared `MarkerSet` (so `Minimap`/`WorldMap`/`Compass` render them for free), and read bearing/distance guidance for an on-screen arrow to the tracked one. State is plain data — `snapshot()`/`restore()` round-trip through any save blob.
 - `waypointAnchor` (function): function waypointAnchor(entry: WaypointEntry): readonly [number, number, number] — The world-space `[x, y, z]` anchor of a waypoint, for projecting it to the screen.
-
-## @jgengine/core/world/weather
-
-- `FireCell` (interface): interface FireCell { fuel: number; heat: number; state: FireCellState } — ⚠ undocumented
-- `FireCellState` (type): type FireCellState = "unburnt" | "burning" | "burnt" — ⚠ undocumented
-- `FireGrid` (interface): interface FireGrid { readonly cols: number; readonly rows: number; readonly cellSize: number; readonly origin: readonly [number, number]; step(dt: number, options?: FireStepOptions): void; igniteCell(col: number, row: number): void; extinguishCell(col: number… — ⚠ undocumented
-- `FireGridConfig` (interface): interface FireGridConfig { cols: number; rows: number; cellSize: number; origin?: readonly [number, number]; fuelAt?: (col: number, row: number) => number; ignitionThreshold?: number; spreadRate?: number; burnRate?: number; wind?: WindVector; windBias?: number; max… — ⚠ undocumented
-- `FireGridTuning` (type): type FireGridTuning = Pick<FireGridConfig, "ignitionThreshold" | "spreadRate" | "burnRate" | "wind" | "windBias"> — Live fire ignition, spread, consumption and wind policies; grid geometry stays fixed.
-- `FireStepOptions` (interface): interface FireStepOptions { spread?: number; wind?: WindVector; windAt?: (x: number, z: number) => WindVector; wetnessAt?: (col: number, row: number) => number; extinguishRate?: number } — ⚠ undocumented
-- `ResolvedWeather` (interface): interface ResolvedWeather { grip: number; visibility: number; structureDamage: number; chill: number; ignition: number; spread: number } — ⚠ undocumented
-- `WeatherKind` (type): type WeatherKind = string — ⚠ undocumented
-- `WeatherKindOf` (type): type WeatherKindOf<TTable extends WeatherModifierTable> = Extract<keyof TTable, string> — ⚠ undocumented
-- `WeatherModifier` (interface): interface WeatherModifier { grip?: number; visibility?: number; structureDamage?: number; chill?: number; ignition?: number; spread?: number } — ⚠ undocumented
-- `WeatherModifierTable` (type): type WeatherModifierTable<K extends string = string> = Record<K, WeatherModifier> — ⚠ undocumented
-- `WeatherState` (interface): interface WeatherState { kind: WeatherKind; intensity: number; wind?: WindVector } — ⚠ undocumented
-- `createFireGrid` (function): function createFireGrid(config: FireGridConfig): FireGrid — ⚠ undocumented
-- `resolveWeather` (function): function resolveWeather<TTable extends WeatherModifierTable>(state: WeatherState, table: TTable): ResolvedWeather — ⚠ undocumented
 
 ## @jgengine/core/world/wind
 

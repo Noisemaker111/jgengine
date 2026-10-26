@@ -1,0 +1,110 @@
+import { useEffect, useMemo, useRef } from "react";
+import { useFrame } from "@react-three/fiber";
+import * as THREE from "three";
+
+import type { FireGrid } from "@jgengine/core/weather/weather";
+
+import { uploadInstances } from "@jgengine/shell/instancing/instanceUpload";
+import { setBillboardQuaternion } from "./fireSpreadPose.draw";
+
+/** Props for {@link FireSpreadLayer}: the fire grid, its cell size and origin, a ground-height sampler and flame look. */
+export interface FireSpreadLayerProps {
+  grid: FireGrid;
+  cellSize?: number;
+  origin?: readonly [number, number];
+  /** Sample ground height so flames sit on terrain; defaults to y=0. */
+  heightAt?: (x: number, z: number) => number;
+  /** Flame quad height. Default 1.6. */
+  flameHeight?: number;
+  burningColor?: THREE.ColorRepresentation;
+  emberColor?: THREE.ColorRepresentation;
+  /** Absolute authoritative simulation clock; use for pause and snapshot restore. */
+  timeSeconds?: () => number;
+}
+
+/** Draw a fire-spread grid as billboarded flames on burning cells and embers on burnt ones. */
+export function FireSpreadLayer({
+  grid,
+  cellSize = grid.cellSize,
+  origin = grid.origin,
+  heightAt,
+  flameHeight = 1.6,
+  burningColor = "#ff6a1a",
+  emberColor = "#4a1206",
+  timeSeconds,
+}: FireSpreadLayerProps) {
+  const flames = useRef<THREE.InstancedMesh>(null);
+  const scorch = useRef<THREE.InstancedMesh>(null);
+  const capacity = grid.cols * grid.rows;
+
+  const flameGeometry = useMemo(() => new THREE.PlaneGeometry(cellSize * 0.9, flameHeight), [cellSize, flameHeight]);
+  const scorchGeometry = useMemo(() => {
+    const geometry = new THREE.PlaneGeometry(cellSize, cellSize);
+    geometry.rotateX(-Math.PI / 2);
+    return geometry;
+  }, [cellSize]);
+  const flameMaterial = useMemo(
+    () => new THREE.MeshBasicMaterial({ color: burningColor, transparent: true, opacity: 0.85, depthWrite: false, side: THREE.DoubleSide }),
+    [burningColor],
+  );
+  const scorchMaterial = useMemo(
+    () => new THREE.MeshBasicMaterial({ color: emberColor, transparent: true, opacity: 0.7, depthWrite: false }),
+    [emberColor],
+  );
+
+  useEffect(
+    () => () => {
+      flameGeometry.dispose();
+      scorchGeometry.dispose();
+      flameMaterial.dispose();
+      scorchMaterial.dispose();
+    },
+    [flameGeometry, scorchGeometry, flameMaterial, scorchMaterial],
+  );
+
+  const flamePool = useMemo<THREE.Matrix4[]>(() => [], []);
+  const scorchPool = useMemo<THREE.Matrix4[]>(() => [], []);
+  const position = useMemo(() => new THREE.Vector3(), []);
+  const quaternion = useMemo(() => new THREE.Quaternion(), []);
+  const identityQuat = useMemo(() => new THREE.Quaternion(), []);
+  const euler = useMemo(() => new THREE.Euler(), []);
+  const scale = useMemo(() => new THREE.Vector3(1, 1, 1), []);
+
+  useFrame((state) => {
+    const flameMesh = flames.current;
+    const scorchMesh = scorch.current;
+    if (flameMesh === null || scorchMesh === null) return;
+    const flicker = 0.85 + 0.15 * Math.sin((timeSeconds?.() ?? state.clock.elapsedTime) * 12);
+    let flameIndex = 0;
+    let scorchIndex = 0;
+    for (let row = 0; row < grid.rows; row += 1) {
+      for (let col = 0; col < grid.cols; col += 1) {
+        const cell = grid.cell(col, row);
+        const x = origin[0] + col * cellSize;
+        const z = origin[1] + row * cellSize;
+        const groundY = heightAt?.(x, z) ?? 0;
+        if (cell.state === "burning") {
+          position.set(x, groundY + flameHeight * 0.5, z);
+          setBillboardQuaternion(quaternion, euler, state.camera.rotation.y);
+          scale.set(1, flicker, 1);
+          (flamePool[flameIndex] ??= new THREE.Matrix4()).compose(position, quaternion, scale);
+          flameIndex += 1;
+        } else if (cell.state === "burnt") {
+          position.set(x, groundY + 0.05, z);
+          scale.set(1, 1, 1);
+          (scorchPool[scorchIndex] ??= new THREE.Matrix4()).compose(position, identityQuat, scale);
+          scorchIndex += 1;
+        }
+      }
+    }
+    uploadInstances(flameMesh, { count: flameIndex, at: (i, out) => out.copy(flamePool[i]!) }, { bounds: "none", dynamic: true });
+    uploadInstances(scorchMesh, { count: scorchIndex, at: (i, out) => out.copy(scorchPool[i]!) }, { bounds: "none", dynamic: true });
+  });
+
+  return (
+    <group>
+      <instancedMesh ref={scorch} args={[scorchGeometry, scorchMaterial, capacity]} frustumCulled={false} renderOrder={5} />
+      <instancedMesh ref={flames} args={[flameGeometry, flameMaterial, capacity]} frustumCulled={false} renderOrder={11} />
+    </group>
+  );
+}

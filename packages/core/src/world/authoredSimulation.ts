@@ -4,8 +4,8 @@ import { sampleForceField } from "../physics/forceVolume";
 import { decodeEditorSimulation, type EditorSimulation } from "../editor/simulation";
 import type { EditorDocument, EditorVolume } from "../editor/types";
 import { createEmptyEditorDocument } from "../editor/document";
-import { createAuthoredWeather, createWeatherExposure, type AuthoredWeatherSample, type WeatherExposure, type WeatherExposureSnapshot, type WeatherExposureSurface } from "./authoredWeather";
-import { createFireGrid, type FireCell, type FireGrid } from "./weather";
+import { createAuthoredWeather, createWeatherExposure, type AuthoredWeatherSample, type WeatherExposure, type WeatherExposureSnapshot, type WeatherExposureSurface } from "@jgengine/core/weather/authoredWeather";
+import { createFireGrid, type FireCell, type FireGrid } from "@jgengine/core/weather/weather";
 import type { EffectRequest, ParticleDirector } from "../vfx/particleDirector";
 import type { Vec3 } from "./geometry";
 

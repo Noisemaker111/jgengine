@@ -6,7 +6,7 @@ import { createAssetCatalog } from "@jgengine/core/scene/assetCatalog";
 import { createDayNightCycle, type DayNightKeyframe } from "@jgengine/core/sky/dayNightCycle";
 import { environment, grass, sky, terrain } from "@jgengine/core/world/features";
 
-import { Sky } from "@jgengine/shell/sky/Daylight";
+import { Sky } from "@jgengine/core/sky/Daylight.draw";
 import { EnvironmentScene } from "@jgengine/shell/environment/EnvironmentScene";
 import type { PlayableGame } from "@jgengine/shell/registry";
 

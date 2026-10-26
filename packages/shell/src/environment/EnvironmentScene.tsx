@@ -1,4 +1,4 @@
-import { oceanColor } from "../water/oceanColor";
+import { oceanColor } from "@jgengine/core/water/oceanColor";
 import { waterSurfaceConfigFromDescriptor } from "@jgengine/core/water/waterSurface";
 import { useCallback, useEffect, useMemo, useRef, useState, useSyncExternalStore } from "react";import { useFrame } from "@react-three/fiber";
 import { PresentationAssetBoundary } from "../presentationRecovery";
@@ -37,7 +37,7 @@ import { GroundPad } from "./GroundPad";
 import { Roads } from "../roads/RoadRibbons";
 import { terrainGroundColorSampler } from "../terrain/terrainGroundColor";
 import { InstancedBuildings, type InstancedBuildingPlacement } from "@jgengine/core/buildings/GeneratedBuilding.draw";
-import { GrassPatch } from "../grass/GrassPatch";
+import { GrassPatch } from "@jgengine/core/grass/GrassPatch.draw";
 import { CarvedTerrain, type CarvedTerrainProps } from "../terrain/CarvedTerrain";
 import { ImageTextureLoader } from "../render/imageTexture";
 import { trackSceneWork } from "../render/modelLoad";
@@ -45,9 +45,9 @@ import { createTerrainDetailMaterial } from "../terrain/terrainDetailMaterial";
 import { MAX_TERRAIN_LAYER_MAPS, type TerrainDetailMaterialTextures, type TerrainLayerMap } from "../terrain/terrainDetailMaterial";
 import { useTerrainQuality } from "../terrain/terrainQuality";
 import { createTerrainPaintTextures, packTerrainPaintWeights, type TerrainPaintTextures } from "../terrain/terrainSurfaces";
-import { Ocean } from "../water/Ocean";
-import { RainField } from "../weather/RainField";
-import { SnowField } from "../weather/SnowField";
+import { Ocean } from "@jgengine/core/water/Ocean.draw";
+import { RainField } from "@jgengine/core/weather/RainField.draw";
+import { SnowField } from "@jgengine/core/weather/SnowField.draw";
 
 export interface EnvironmentSceneProps {
   feature: EnvironmentWorldFeature;

@@ -4,7 +4,7 @@ import { useFrame, useThree } from "@react-three/fiber";
 import { Group, Vector3 } from "three";
 import { useRef, useState } from "react";
 import { useGameContext } from "@jgengine/react/provider";
-import { WeatherLayer } from "@jgengine/shell/weather";
+import { WeatherLayer } from "@jgengine/core/weather/WeatherLayer.draw";
 import { airAt, gust } from "./air";
 import { zoneAt } from "./zones";
 import { equippedGun, gameNow, muzzleFlashVisible, recoilAt } from "../feel";

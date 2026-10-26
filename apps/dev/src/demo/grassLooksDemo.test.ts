@@ -1,6 +1,6 @@
 import { describe, expect, test } from "bun:test";
 
-import { GRASS_PRESETS } from "@jgengine/core/world/grassKind";
+import { GRASS_PRESETS } from "@jgengine/core/grass/grassKind";
 
 import { grassLooksGame } from "./grassLooksDemo";
 

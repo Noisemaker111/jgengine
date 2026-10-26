@@ -15,10 +15,11 @@ const games: GameRegistry = {
 
 Peer deps: `react`, `three`, `@react-three/fiber`, `@react-three/drei`, `three-stdlib`. The shell's HUD classes are Tailwind — add an `@source` entry for `node_modules/@jgengine/shell` in your CSS. Apache-2.0.
 
-Weather primitives are available from `@jgengine/shell/weather` for game scene overlays:
+Weather primitives live in `@jgengine/core/weather` for game scene overlays:
 
 ```tsx
-import { WeatherLayer, LightningStrike } from "@jgengine/shell/weather";
+import { WeatherLayer } from "@jgengine/core/weather/WeatherLayer.draw";
+import { LightningStrike } from "@jgengine/core/weather/LightningStrike.draw";
 
 <WeatherLayer mode="rain" intensity={0.8} wind={[1.5, 0, -0.4]} rain={{ count: 7000 }} />;
 <LightningStrike origin={[0, 22, 0]} target={[4, 0, -6]} strikeKey={stormTick} />;
@@ -28,10 +29,10 @@ import { WeatherLayer, LightningStrike } from "@jgengine/shell/weather";
 
 ## Water
 
-`@jgengine/shell/water` renders the Gerstner ocean surface from `@jgengine/core`:
+`@jgengine/core/water/Ocean.draw` renders the Gerstner ocean surface:
 
 ```tsx
-import { Ocean } from "@jgengine/shell/water";
+import { Ocean } from "@jgengine/core/water/Ocean.draw";
 
 <Ocean />;
 ```
@@ -68,7 +69,7 @@ The component vocabulary (windows, awnings, AC units, clotheslines, storefronts,
 `@jgengine/shell/terrain` exports R3F helpers for shell-local natural scenes:
 
 ```tsx
-import { readGrassLook } from "@jgengine/core/world/grassKind";
+import { readGrassLook } from "@jgengine/core/grass/grassKind";
 import { GrassPatch, ProceduralGround, createProceduralTerrainSampler } from "@jgengine/shell/terrain";
 
 const terrain = { seed: "meadow", size: 48, height: 0.9 };

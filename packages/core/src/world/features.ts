@@ -7,7 +7,7 @@ import type { TerraformSnapshot } from "../terrain/terraform";
 import type { SpriteAtlas } from "../assets/spriteAtlas";
 import type { VolumetricCloudsConfig } from "../sky/volumetricClouds";
 import { warnOnce } from "../devtools/warnOnce";
-import { readGrassLook, type GrassLook } from "./grassKind";
+import { readGrassLook, type GrassLook } from "@jgengine/core/grass/grassKind";
 
 export interface WorldBounds {
   w: number;
