@@ -6,8 +6,8 @@
  *
  * @capability path-instances evenly spaced transforms along a polyline
  */
-import type { Vec2 } from "./geometry";
-import { pointAtDistance, polyline, tangentAtDistance } from "./polyline";
+import type { Vec2 } from "../world/geometry";
+import { pointAtDistance, polyline, tangentAtDistance } from "../world/polyline";
 
 /** One placed transform along a path: grounded position, facing yaw, and its ordinal + arc distance. */
 export interface PathInstance {

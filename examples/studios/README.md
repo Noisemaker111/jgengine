@@ -16,7 +16,7 @@ third-party studio is the identical shape:
 
 ```ts
 import { registerSceneKind } from "@jgengine/core/scene/sceneKinds";
-import { placeAlongPath } from "@jgengine/core/world/pathInstances"; // generic engine primitive
+import { placeAlongPath } from "@jgengine/core/instancing/pathInstances"; // generic engine primitive
 import { sagCurve } from "@jgengine/core/world/catenary";            // generic engine primitive
 
 registerSceneKind({

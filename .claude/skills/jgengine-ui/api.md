@@ -2762,6 +2762,25 @@
 
 - `InputSink` (interface): interface InputSink — Where the local player's per-frame input goes: discarded in single-player, sent to the authoritative host under `authority: "server"`.
 
+## @jgengine/shell/instancing/instanceChunks
+
+- `InstanceChunk` (interface): interface InstanceChunk — A spatially bounded group of final, geometry-local instance matrices: one cullable draw.
+- `PartitionInstancesOptions` (interface): interface PartitionInstancesOptions — Knobs for {@link partitionInstances}.
+- `partitionInstances` (function): function partitionInstances(geometry: THREE.BufferGeometry, matrices: readonly THREE.Matrix4[], options: PartitionInstancesOptions = {}): InstanceChunk[] — Split instance matrices into XZ cells by where each instance's geometry actually lands, so far or offscreen cells are culled as a unit. A batch that already fits one cell stays a single `compact` chunk, even across the grid origin. Instance order is kept within each chunk.
+
+## @jgengine/shell/instancing/instanceUpload
+
+- `InstanceColors` (type): type InstanceColors = readonly THREE.Color[] | ((index: number, out: THREE.Color) => void) — Per-instance tint: a ready list of colors, or a writer that fills each one.
+- `InstanceSource` (type): type InstanceSource = readonly THREE.Matrix4[] | { count: number; at(index: number, out: THREE.Matrix4): void } — Instance transforms: a ready list of matrices, or a count plus a writer that fills each one.
+- `InstanceUploadOptions` (interface): interface InstanceUploadOptions — Knobs for {@link uploadInstances}.
+- `composeInstance` (function): function composeInstance(out: THREE.Matrix4, position: readonly [number, number, number], rotation: readonly [number, number, number] | undefined, scale: number | readonly [number, number, number]): THREE.Matrix4 — Compose one instance matrix from a position, Euler rotation (radians) and scale into `out`.
+- `uploadInstances` (function): function uploadInstances(mesh: THREE.InstancedMesh, source: InstanceSource, options: InstanceUploadOptions = {}): void — Write a batch of instances into an `InstancedMesh`: transforms (with an optional model-local matrix), optional colors, the draw count, the upload flags and the culling bounds. The buffers grow when the batch outgrows them. Every instanced renderer in the engine draws through this, so counts reach the draw probes and bounds stay right the same way everywhere.
+
+## @jgengine/shell/instancing/staticShapeInstances
+
+- `StaticShapeInstance` (interface): interface StaticShapeInstance — One editor-derived static primitive. A box spans one unit; a cylinder has unit radius and height before scale.
+- `StaticShapeInstances` (function): function StaticShapeInstances({ instances }: { instances: readonly StaticShapeInstance[] }): React.JSX.Element — Batch editor-derived boxes/cylinders by shape, PBR metadata and shadows. Uploads and bounds run only when instances change; map loading stays isolated per draw group.
+
 ## @jgengine/shell/lod/characterLod
 
 - `CharacterLodPolicy` (interface): interface CharacterLodPolicy — Distance policy a character model's {@link ModelLodConfig} resolves to; every distance is metres.
@@ -3197,11 +3216,6 @@
 - `ShaderWarmupOptions` (interface): interface ShaderWarmupOptions — Options for {@link createShaderWarmup}; the clock, sleep and loader signal are injectable for tests.
 - `ShaderWarmupRenderer` (interface): interface ShaderWarmupRenderer — The renderer surface the warmup needs; a real `WebGLRenderer` satisfies it.
 - `ShaderWarmupState` (interface): interface ShaderWarmupState — Where the load-time shader warmup is: waiting for the scene to stop growing, compiling a round, finished, or skipped because the renderer refused. The loading screen renders it.
-
-## @jgengine/shell/render/staticShapeInstances
-
-- `StaticShapeInstance` (interface): interface StaticShapeInstance — One editor-derived static primitive. A box spans one unit; a cylinder has unit radius and height before scale.
-- `StaticShapeInstances` (function): function StaticShapeInstances({ instances }: { instances: readonly StaticShapeInstance[] }): React.JSX.Element — Batch editor-derived boxes/cylinders by shape, PBR metadata and shadows. Uploads and bounds run only when instances change; map loading stays isolated per draw group.
 
 ## @jgengine/shell/render/staticTransforms
 
@@ -3865,7 +3879,7 @@
 
 ## @jgengine/shell/world/GridWorldScene
 
-- `GridWorldScene` (function): function GridWorldScene({ feature }: GridWorldSceneProps): React.JSX.Element | null — Data-driven renderer for the `biomes()`/`voxel()`/`plots()`/`tilemap()` world-feature kinds (#207.1): one `InstancedMesh` of extruded, colored boxes built from each feature's declared `cells`, following the same direct-buffer pattern as `InstancedBodies`.
+- `GridWorldScene` (function): function GridWorldScene({ feature }: GridWorldSceneProps): React.JSX.Element | null — Data-driven renderer for the `biomes()`/`voxel()`/`plots()`/`tilemap()` world-feature kinds (#207.1): one `InstancedMesh` of extruded, colored boxes built from each feature's declared `cells`, uploaded through the shared instance upload.
 - `GridWorldSceneProps` (interface): interface GridWorldSceneProps { feature: WorldFeature } — ⚠ undocumented · used by `GridWorldScene`: Data-driven renderer for the `biomes()`/`voxel()`/`plots()`/`tilemap()` world-feature kinds (#207.1): one `InstancedMesh` of extruded, color…
 
 ## @jgengine/shell/world/ImpactFeedback

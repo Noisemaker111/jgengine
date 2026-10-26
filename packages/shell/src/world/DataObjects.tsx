@@ -2,6 +2,7 @@ import { type ThreeEvent, useFrame } from "@react-three/fiber";
 import { useEffect, useMemo, useRef, type ReactNode } from "react";
 import * as THREE from "three";
 
+import { uploadInstances } from "../instancing/instanceUpload";
 import { useDisposable } from "../render/useDisposable";
 
 /**
@@ -95,18 +96,22 @@ export function DataObjects<T>({
     const elapsed = state.clock.elapsedTime - startRef.current;
     const { positions, targets, delays, colors } = layout;
 
-    for (let i = 0; i < capacity; i += 1) {
-      const grown = duration <= 0 ? 1 : clamp01((elapsed - delays[i]!) / duration);
-      const eased = 1 - Math.pow(1 - grown, 3);
-      const h = Math.max(targets[i]! * eased, 0.001);
-      dummy.position.set(positions[i * 2]!, h / 2, positions[i * 2 + 1]!);
-      dummy.scale.set(cellSize, h, cellSize);
-      dummy.updateMatrix();
-      mesh.setMatrixAt(i, dummy.matrix);
-      mesh.setColorAt(i, i === hovered ? hover : colors[i]!);
-    }
-    mesh.instanceMatrix.needsUpdate = true;
-    if (mesh.instanceColor !== null) mesh.instanceColor.needsUpdate = true;
+    uploadInstances(
+      mesh,
+      {
+        count: capacity,
+        at: (i, out) => {
+          const grown = duration <= 0 ? 1 : clamp01((elapsed - delays[i]!) / duration);
+          const eased = 1 - Math.pow(1 - grown, 3);
+          const h = Math.max(targets[i]! * eased, 0.001);
+          dummy.position.set(positions[i * 2]!, h / 2, positions[i * 2 + 1]!);
+          dummy.scale.set(cellSize, h, cellSize);
+          dummy.updateMatrix();
+          out.copy(dummy.matrix);
+        },
+      },
+      { colors: (i, out) => out.copy(i === hovered ? hover : colors[i]!), bounds: "none", dynamic: true },
+    );
   });
 
   function handleMove(event: ThreeEvent<PointerEvent>): void {

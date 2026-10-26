@@ -536,6 +536,10 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `useInputDevice` (function) · `import { useInputDevice } from "@jgengine/core/input/inputDevice.view"`
 
+## instance-cells — bucket instanced placements into cullable XZ grid cells
+
+- `InstanceCell` (interface) · `import { InstanceCell } from "@jgengine/core/instancing/instanceCells"`
+
 ## interaction-prompt — observable nearest-interactable prompt registry over the proximity-prompt resolver — register/resolve/active with priority+range and change-notified snapshot/restore
 
 - `createPromptRegistry` (function) · `import { createPromptRegistry } from "@jgengine/core/world"`

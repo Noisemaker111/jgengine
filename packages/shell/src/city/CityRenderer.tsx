@@ -54,6 +54,7 @@ import type { SceneKindObject } from "@jgengine/core/scene/sceneKinds";
 import { buildScatterProxy } from "../scatter/scatterProxies";
 import { InstancedBuildings, type InstancedBuildingPlacement } from "../buildings/GeneratedBuilding";
 import { getBuildingKit } from "../buildings/buildingKitRegistry";
+import { uploadInstances } from "../instancing/instanceUpload";
 import { createCityWindowMaterial } from "./cityWindowMaterial";
 import { createSurfaceRibbonMaterial } from "../roads/surfaceRibbonMaterial";
 import { applyGroundEdgeFade, buildGroundCoverageMask, createGroundEdgeFade } from "../terrain/groundEdgeFade";
@@ -654,8 +655,7 @@ function OneCity({ object, context }: { object: SceneKindObject; context: SceneK
       const bucket = buckets[key];
       if (bucket.matrices.length === 0) return null;
       const mesh = new THREE.InstancedMesh(geometry, material, bucket.matrices.length);
-      bucket.matrices.forEach((matrix, i) => mesh.setMatrixAt(i, matrix));
-      bucket.colors.forEach((tint, i) => mesh.setColorAt(i, tint));
+      uploadInstances(mesh, bucket.matrices, { colors: bucket.colors, bounds: "none" });
       if (bucket.groundOffsets !== undefined && bucket.facades !== undefined) {
         mesh.geometry = geometry.clone();
         mesh.geometry.setAttribute(
@@ -667,8 +667,6 @@ function OneCity({ object, context }: { object: SceneKindObject; context: SceneK
           new THREE.InstancedBufferAttribute(new Float32Array(bucket.facades), 2),
         );
       }
-      mesh.instanceMatrix.needsUpdate = true;
-      if (mesh.instanceColor !== null) mesh.instanceColor.needsUpdate = true;
       mesh.castShadow = true;
       mesh.receiveShadow = true;
       mesh.frustumCulled = false;
@@ -1280,29 +1278,27 @@ function OneCity({ object, context }: { object: SceneKindObject; context: SceneK
       if (bucket === undefined) bySpecies.set(tree.species, [tree]);
       else bucket.push(tree);
     }
-    const color = new THREE.Color();
     for (const [species, trees] of bySpecies) {
       const geometry = buildScatterProxy(SPECIES_PROXY[species]);
       const material = new THREE.MeshStandardMaterial({ vertexColors: true, roughness: 0.85, metalness: 0 });
       const mesh = new THREE.InstancedMesh(geometry, material, trees.length);
-      const matrix = new THREE.Matrix4();
-      trees.forEach((tree, i) => {
+      const matrices: THREE.Matrix4[] = [];
+      const tints: THREE.Color[] = [];
+      for (const tree of trees) {
         // A second stream off the planting position: `tree.jitter` alone left every canopy the same
         // ball on a stick, so age (girth vs height) and leaf tone vary independently of it.
         const age = (hashString(`tree:${tree.x.toFixed(2)}:${tree.z.toFixed(2)}`) % 1024) / 1024;
         const scale = tree.scale * SPECIES_SCALE[species] * (0.66 + age * 0.78);
         const spread = 0.86 + tree.jitter * 0.34;
-        matrix.compose(
+        const matrix = new THREE.Matrix4().compose(
           new THREE.Vector3(tree.x, sample(tree.x, tree.z) - 0.05, tree.z),
           new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(0, 1, 0), tree.jitter * Math.PI * 2),
           new THREE.Vector3(scale * spread, scale * (0.8 + age * 0.55), scale * spread),
         );
-        mesh.setMatrixAt(i, matrix);
-        color.setRGB(0.74 + age * 0.42, 0.84 + tree.jitter * 0.3, 0.68 + ((age * 5) % 1) * 0.4);
-        mesh.setColorAt(i, color);
-      });
-      mesh.instanceMatrix.needsUpdate = true;
-      if (mesh.instanceColor !== null) mesh.instanceColor.needsUpdate = true;
+        matrices.push(matrix);
+        tints.push(new THREE.Color(0.74 + age * 0.42, 0.84 + tree.jitter * 0.3, 0.68 + ((age * 5) % 1) * 0.4));
+      }
+      uploadInstances(mesh, matrices, { colors: tints, bounds: "none" });
       mesh.castShadow = true;
       mesh.receiveShadow = true;
       mesh.frustumCulled = false;
@@ -1316,30 +1312,31 @@ function OneCity({ object, context }: { object: SceneKindObject; context: SceneK
       const poles = new THREE.InstancedMesh(units.cylinder, poleMaterial, resolved.lights.length);
       const arms = new THREE.InstancedMesh(units.box, poleMaterial, resolved.lights.length);
       const heads = new THREE.InstancedMesh(units.box, headMaterial, resolved.lights.length);
-      const matrix = new THREE.Matrix4();
       const quat = new THREE.Quaternion();
       const upAxis = new THREE.Vector3(0, 1, 0);
-      resolved.lights.forEach((light, i) => {
+      const poleMatrices: THREE.Matrix4[] = [];
+      const armMatrices: THREE.Matrix4[] = [];
+      const headMatrices: THREE.Matrix4[] = [];
+      for (const light of resolved.lights) {
         const y = sample(light.x, light.z);
         const dir: readonly [number, number] = [Math.sin(light.heading), Math.cos(light.heading)];
         quat.setFromAxisAngle(upAxis, light.heading);
-        matrix.compose(new THREE.Vector3(light.x, y, light.z), quat, new THREE.Vector3(0.16, 4.9, 0.16));
-        poles.setMatrixAt(i, matrix);
-        matrix.compose(
+        poleMatrices.push(new THREE.Matrix4().compose(new THREE.Vector3(light.x, y, light.z), quat, new THREE.Vector3(0.16, 4.9, 0.16)));
+        armMatrices.push(new THREE.Matrix4().compose(
           new THREE.Vector3(light.x + dir[0] * 0.7, y + 4.85, light.z + dir[1] * 0.7),
           quat,
           new THREE.Vector3(0.12, 0.12, 1.5),
-        );
-        arms.setMatrixAt(i, matrix);
-        matrix.compose(
+        ));
+        headMatrices.push(new THREE.Matrix4().compose(
           new THREE.Vector3(light.x + dir[0] * 1.35, y + 4.72, light.z + dir[1] * 1.35),
           quat,
           new THREE.Vector3(0.34, 0.18, 0.7),
-        );
-        heads.setMatrixAt(i, matrix);
-      });
+        ));
+      }
+      uploadInstances(poles, poleMatrices, { bounds: "none" });
+      uploadInstances(arms, armMatrices, { bounds: "none" });
+      uploadInstances(heads, headMatrices, { bounds: "none" });
       for (const mesh of [poles, arms, heads]) {
-        mesh.instanceMatrix.needsUpdate = true;
         mesh.castShadow = true;
         mesh.frustumCulled = false;
         meshes.push(mesh);
@@ -1350,24 +1347,19 @@ function OneCity({ object, context }: { object: SceneKindObject; context: SceneK
       const units = unitGeometries();
       const hedgeMaterial = new THREE.MeshStandardMaterial({ color: HEDGE_COLOR, roughness: 0.9, metalness: 0 });
       const hedges = new THREE.InstancedMesh(units.box, hedgeMaterial, resolved.hedges.length);
-      const matrix = new THREE.Matrix4();
       const quat = new THREE.Quaternion();
       const upAxis = new THREE.Vector3(0, 1, 0);
-      const color2 = new THREE.Color();
-      resolved.hedges.forEach((hedge, i) => {
+      const hedgeMatrices: THREE.Matrix4[] = [];
+      for (const hedge of resolved.hedges) {
         const y = sample(hedge.center[0], hedge.center[1]);
         quat.setFromAxisAngle(upAxis, hedge.rotationY);
-        matrix.compose(
+        hedgeMatrices.push(new THREE.Matrix4().compose(
           new THREE.Vector3(hedge.center[0], y + 0.62, hedge.center[1]),
           quat,
           new THREE.Vector3(Math.max(0.4, hedge.size[0]), 1.65, hedge.size[1]),
-        );
-        hedges.setMatrixAt(i, matrix);
-        color2.setScalar(0.85 + ((i * 37) % 10) * 0.03);
-        hedges.setColorAt(i, color2);
-      });
-      hedges.instanceMatrix.needsUpdate = true;
-      if (hedges.instanceColor !== null) hedges.instanceColor.needsUpdate = true;
+        ));
+      }
+      uploadInstances(hedges, hedgeMatrices, { colors: (i, out) => out.setScalar(0.85 + ((i * 37) % 10) * 0.03), bounds: "none" });
       hedges.castShadow = true;
       hedges.receiveShadow = true;
       hedges.frustumCulled = false;
@@ -1381,34 +1373,35 @@ function OneCity({ object, context }: { object: SceneKindObject; context: SceneK
       const bodies = new THREE.InstancedMesh(units.box, paintMaterial, resolved.vehicles.length);
       const cabins = new THREE.InstancedMesh(units.box, glassMaterial, resolved.vehicles.length);
       const roofs = new THREE.InstancedMesh(units.box, paintMaterial, resolved.vehicles.length);
-      const matrix = new THREE.Matrix4();
       const quat = new THREE.Quaternion();
       const upAxis = new THREE.Vector3(0, 1, 0);
-      const paint = new THREE.Color();
-      resolved.vehicles.forEach((vehicle, i) => {
+      const parts = { body: [] as THREE.Matrix4[], cabin: [] as THREE.Matrix4[], roof: [] as THREE.Matrix4[] };
+      const paints: THREE.Color[] = [];
+      for (const vehicle of resolved.vehicles) {
         const shape = VEHICLE_SHAPES[vehicle.kind];
         const base = sample(vehicle.x, vehicle.z) + (vehicle.stall === "lot" ? PARKING_LAYER : ROAD_LAYER);
         const along: readonly [number, number] = [Math.sin(vehicle.rotationY), Math.cos(vehicle.rotationY)];
         quat.setFromAxisAngle(upAxis, vehicle.rotationY);
-        const place = (mesh: THREE.InstancedMesh, size: readonly [number, number, number], y: number, offset: number) => {
-          matrix.compose(
+        const place = (into: THREE.Matrix4[], size: readonly [number, number, number], y: number, offset: number) => {
+          into.push(new THREE.Matrix4().compose(
             new THREE.Vector3(vehicle.x + along[0] * offset, base + y, vehicle.z + along[1] * offset),
             quat,
             new THREE.Vector3(size[0], size[1], size[2]),
-          );
-          mesh.setMatrixAt(i, matrix);
+          ));
         };
-        place(bodies, shape.body, shape.bodyY, 0);
-        place(cabins, shape.cabin, shape.cabinY, shape.cabinAlong);
-        place(roofs, shape.roof, shape.roofY, shape.roofAlong);
-        paint.set(VEHICLE_PAINTS[vehicle.paint % VEHICLE_PAINTS.length]!);
-        paint.multiplyScalar(0.88 + ((hashString(`car:${vehicle.x.toFixed(2)}:${vehicle.z.toFixed(2)}`) % 256) / 256) * 0.26);
-        bodies.setColorAt(i, paint);
-        roofs.setColorAt(i, paint);
-      });
+        place(parts.body, shape.body, shape.bodyY, 0);
+        place(parts.cabin, shape.cabin, shape.cabinY, shape.cabinAlong);
+        place(parts.roof, shape.roof, shape.roofY, shape.roofAlong);
+        paints.push(
+          new THREE.Color(VEHICLE_PAINTS[vehicle.paint % VEHICLE_PAINTS.length]!).multiplyScalar(
+            0.88 + ((hashString(`car:${vehicle.x.toFixed(2)}:${vehicle.z.toFixed(2)}`) % 256) / 256) * 0.26,
+          ),
+        );
+      }
+      uploadInstances(bodies, parts.body, { colors: paints, bounds: "none" });
+      uploadInstances(cabins, parts.cabin, { bounds: "none" });
+      uploadInstances(roofs, parts.roof, { colors: paints, bounds: "none" });
       for (const mesh of [bodies, cabins, roofs]) {
-        mesh.instanceMatrix.needsUpdate = true;
-        if (mesh.instanceColor !== null) mesh.instanceColor.needsUpdate = true;
         mesh.castShadow = true;
         mesh.receiveShadow = true;
         mesh.frustumCulled = false;
@@ -1426,13 +1419,16 @@ function OneCity({ object, context }: { object: SceneKindObject; context: SceneK
       const heads = new THREE.InstancedMesh(units.box, headMaterial, resolved.signals.length);
       const arms = mastCount > 0 ? new THREE.InstancedMesh(units.box, postMaterial, mastCount) : null;
       const lamps = mastCount > 0 ? new THREE.InstancedMesh(units.box, lampMaterial, mastCount * 3) : null;
-      const matrix = new THREE.Matrix4();
       const quat = new THREE.Quaternion();
       const armQuat = new THREE.Quaternion();
       const upAxis = new THREE.Vector3(0, 1, 0);
-      const tint = new THREE.Color();
-      let mast = 0;
-      resolved.signals.forEach((signal, i) => {
+      const postMatrices: THREE.Matrix4[] = [];
+      const headMatrices: THREE.Matrix4[] = [];
+      const headTints: THREE.Color[] = [];
+      const armMatrices: THREE.Matrix4[] = [];
+      const lampMatrices: THREE.Matrix4[] = [];
+      const lampTints: THREE.Color[] = [];
+      for (const signal of resolved.signals) {
         const y = sample(signal.x, signal.z);
         const facing: readonly [number, number] = [Math.sin(signal.heading), Math.cos(signal.heading)];
         // The mast arm reaches to the right of the facing direction — out over the lanes it controls.
@@ -1441,48 +1437,41 @@ function OneCity({ object, context }: { object: SceneKindObject; context: SceneK
         const isSignal = signal.kind === "signal";
         const postHeight = isSignal ? 5.3 : 2.5;
         const thickness = isSignal ? 0.2 : 0.13;
-        matrix.compose(new THREE.Vector3(signal.x, y, signal.z), quat, new THREE.Vector3(thickness, postHeight, thickness));
-        posts.setMatrixAt(i, matrix);
+        postMatrices.push(new THREE.Matrix4().compose(new THREE.Vector3(signal.x, y, signal.z), quat, new THREE.Vector3(thickness, postHeight, thickness)));
         if (!isSignal) {
-          matrix.compose(
+          headMatrices.push(new THREE.Matrix4().compose(
             new THREE.Vector3(signal.x, y + postHeight - 0.2, signal.z),
             quat,
             new THREE.Vector3(0.72, 0.72, 0.07),
-          );
-          heads.setMatrixAt(i, matrix);
-          tint.set(SIGN_FACE_COLOR);
-          heads.setColorAt(i, tint);
-          return;
+          ));
+          headTints.push(new THREE.Color(SIGN_FACE_COLOR));
+          continue;
         }
         const hx = signal.x + overRoad[0] * signal.reach;
         const hz = signal.z + overRoad[1] * signal.reach;
         armQuat.setFromAxisAngle(upAxis, signal.heading + Math.PI / 2);
-        matrix.compose(
+        armMatrices.push(new THREE.Matrix4().compose(
           new THREE.Vector3(signal.x + overRoad[0] * signal.reach * 0.5, y + postHeight - 0.15, signal.z + overRoad[1] * signal.reach * 0.5),
           armQuat,
           new THREE.Vector3(0.14, 0.14, signal.reach),
-        );
-        arms!.setMatrixAt(mast, matrix);
-        matrix.compose(new THREE.Vector3(hx, y + postHeight - 0.72, hz), quat, new THREE.Vector3(0.4, 1.14, 0.3));
-        heads.setMatrixAt(i, matrix);
-        tint.set(SIGNAL_HOUSING_COLOR);
-        heads.setColorAt(i, tint);
+        ));
+        headMatrices.push(new THREE.Matrix4().compose(new THREE.Vector3(hx, y + postHeight - 0.72, hz), quat, new THREE.Vector3(0.4, 1.14, 0.3)));
+        headTints.push(new THREE.Color(SIGNAL_HOUSING_COLOR));
         for (let lamp = 0; lamp < 3; lamp += 1) {
-          matrix.compose(
+          lampMatrices.push(new THREE.Matrix4().compose(
             new THREE.Vector3(hx + facing[0] * 0.17, y + postHeight - 0.36 - lamp * 0.36, hz + facing[1] * 0.17),
             quat,
             new THREE.Vector3(0.22, 0.22, 0.08),
-          );
-          lamps!.setMatrixAt(mast * 3 + lamp, matrix);
-          tint.set(SIGNAL_LAMP_COLORS[lamp]!);
-          lamps!.setColorAt(mast * 3 + lamp, tint);
+          ));
+          lampTints.push(new THREE.Color(SIGNAL_LAMP_COLORS[lamp]!));
         }
-        mast += 1;
-      });
+      }
+      uploadInstances(posts, postMatrices, { bounds: "none" });
+      uploadInstances(heads, headMatrices, { colors: headTints, bounds: "none" });
+      if (arms !== null) uploadInstances(arms, armMatrices, { bounds: "none" });
+      if (lamps !== null) uploadInstances(lamps, lampMatrices, { colors: lampTints, bounds: "none" });
       for (const mesh of [posts, heads, arms, lamps]) {
         if (mesh === null) continue;
-        mesh.instanceMatrix.needsUpdate = true;
-        if (mesh.instanceColor !== null) mesh.instanceColor.needsUpdate = true;
         mesh.castShadow = mesh !== lamps;
         mesh.frustumCulled = false;
         meshes.push(mesh);
@@ -1807,8 +1796,7 @@ function InstancedBoxes({ matrices, color }: { matrices: THREE.Matrix4[]; color:
     const units = unitGeometries();
     const material = new THREE.MeshStandardMaterial({ color, roughness: 0.8, metalness: 0.15 });
     const instanced = new THREE.InstancedMesh(units.box, material, matrices.length);
-    matrices.forEach((matrix, i) => instanced.setMatrixAt(i, matrix));
-    instanced.instanceMatrix.needsUpdate = true;
+    uploadInstances(instanced, matrices, { bounds: "none" });
     instanced.castShadow = true;
     instanced.receiveShadow = true;
     instanced.frustumCulled = false;

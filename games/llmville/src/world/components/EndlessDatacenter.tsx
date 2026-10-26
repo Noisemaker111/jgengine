@@ -8,7 +8,7 @@ import {
   Float32BufferAttribute,
   Group,
   InstancedMesh,
-  Object3D,
+  Matrix4,
   PointLight,
   RepeatWrapping,
 } from "three";
@@ -27,6 +27,7 @@ import {
 } from "@llmville/game/datacenter/claimMap";
 import { readPlayerPosition } from "@/runtime/playerPosition";
 import type { GameEngine } from "@/runtime/gameEngine";
+import { composeInstance, uploadInstances } from "@jgengine/shell/instancing/instanceUpload";
 
 const FLOOR_TILE_SIZE = DATACENTER_FLOOR_TILE_CELLS * CELL_SIZE;
 const FLOOR_SPAN = WORLD_SCENERY_RADIUS * 2;
@@ -48,7 +49,6 @@ const LIGHT_PANEL_WIDTH = 0.44;
 const LIGHT_POOL_LENGTH = LIGHT_PANEL_LENGTH * 1.8;
 const LIGHT_POOL_WIDTH = 3.6;
 
-const scratch = new Object3D();
 
 function snap(value: number, step: number): number {
   return Math.floor(value / step) * step;
@@ -143,57 +143,33 @@ export function EndlessDatacenter({ engine }: { engine: GameEngine }) {
     const shaft = shaftRef.current;
     const base = baseRef.current;
     const capital = capitalRef.current;
+    const columnSide = COLUMN_VIEW_RADIUS * 2 + 1;
+    const columnCenter = (index: number) =>
+      cellToWorldCenter(
+        worldToCell(
+          columnBaseX + (Math.floor(index / columnSide) - COLUMN_VIEW_RADIUS) * COLUMN_STEP,
+          columnBaseZ + ((index % columnSide) - COLUMN_VIEW_RADIUS) * COLUMN_STEP,
+        ),
+      );
+    const atColumns = (y: number, offsetX: number, offsetZ: number) => ({
+      count: columnCount,
+      at: (index: number, out: Matrix4) => {
+        const center = columnCenter(index);
+        out.makeTranslation(center.x + offsetX, y, center.z + offsetZ);
+      },
+    });
     if (shaft && base && capital) {
-      let index = 0;
-      scratch.rotation.set(0, 0, 0);
-      for (let dx = -COLUMN_VIEW_RADIUS; dx <= COLUMN_VIEW_RADIUS; dx++) {
-        for (let dz = -COLUMN_VIEW_RADIUS; dz <= COLUMN_VIEW_RADIUS; dz++) {
-          const center = cellToWorldCenter(
-            worldToCell(columnBaseX + dx * COLUMN_STEP, columnBaseZ + dz * COLUMN_STEP),
-          );
-          scratch.position.set(center.x, DATACENTER_CEILING_HEIGHT / 2, center.z);
-          scratch.updateMatrix();
-          shaft.setMatrixAt(index, scratch.matrix);
-          scratch.position.set(center.x, COLUMN_BASE_HEIGHT / 2, center.z);
-          scratch.updateMatrix();
-          base.setMatrixAt(index, scratch.matrix);
-          scratch.position.set(
-            center.x,
-            DATACENTER_CEILING_HEIGHT - COLUMN_CAPITAL_HEIGHT / 2,
-            center.z,
-          );
-          scratch.updateMatrix();
-          capital.setMatrixAt(index, scratch.matrix);
-          index++;
-        }
-      }
-      shaft.instanceMatrix.needsUpdate = true;
-      base.instanceMatrix.needsUpdate = true;
-      capital.instanceMatrix.needsUpdate = true;
+      uploadInstances(shaft, atColumns(DATACENTER_CEILING_HEIGHT / 2, 0, 0), { bounds: "none" });
+      uploadInstances(base, atColumns(COLUMN_BASE_HEIGHT / 2, 0, 0), { bounds: "none" });
+      uploadInstances(capital, atColumns(DATACENTER_CEILING_HEIGHT - COLUMN_CAPITAL_HEIGHT / 2, 0, 0), { bounds: "none" });
     }
 
     const trayX = trayXRef.current;
     const trayZ = trayZRef.current;
     if (trayX && trayZ) {
-      let index = 0;
-      scratch.rotation.set(0, 0, 0);
       const trayY = DATACENTER_CEILING_HEIGHT - 0.42;
-      for (let dx = -COLUMN_VIEW_RADIUS; dx <= COLUMN_VIEW_RADIUS; dx++) {
-        for (let dz = -COLUMN_VIEW_RADIUS; dz <= COLUMN_VIEW_RADIUS; dz++) {
-          const center = cellToWorldCenter(
-            worldToCell(columnBaseX + dx * COLUMN_STEP, columnBaseZ + dz * COLUMN_STEP),
-          );
-          scratch.position.set(center.x + COLUMN_STEP / 2, trayY, center.z);
-          scratch.updateMatrix();
-          trayX.setMatrixAt(index, scratch.matrix);
-          scratch.position.set(center.x, trayY, center.z + COLUMN_STEP / 2);
-          scratch.updateMatrix();
-          trayZ.setMatrixAt(index, scratch.matrix);
-          index++;
-        }
-      }
-      trayX.instanceMatrix.needsUpdate = true;
-      trayZ.instanceMatrix.needsUpdate = true;
+      uploadInstances(trayX, atColumns(trayY, COLUMN_STEP / 2, 0), { bounds: "none" });
+      uploadInstances(trayZ, atColumns(trayY, 0, COLUMN_STEP / 2), { bounds: "none" });
     }
 
     const strips = stripRef.current;
@@ -201,24 +177,17 @@ export function EndlessDatacenter({ engine }: { engine: GameEngine }) {
     if (strips && pools) {
       const lightBaseX = snap(player.x, LIGHT_PANEL_SPACING);
       const lightBaseZ = snap(player.z, LIGHT_ROW_SPACING);
-      let index = 0;
-      for (let dx = -LIGHT_PANEL_RADIUS; dx <= LIGHT_PANEL_RADIUS; dx++) {
-        for (let dz = -LIGHT_ROW_RADIUS; dz <= LIGHT_ROW_RADIUS; dz++) {
-          const x = lightBaseX + dx * LIGHT_PANEL_SPACING + LIGHT_PANEL_SPACING / 2;
-          const z = lightBaseZ + dz * LIGHT_ROW_SPACING;
-          scratch.rotation.set(0, 0, 0);
-          scratch.position.set(x, DATACENTER_CEILING_HEIGHT - 0.12, z);
-          scratch.updateMatrix();
-          strips.setMatrixAt(index, scratch.matrix);
-          scratch.rotation.set(-Math.PI / 2, 0, 0);
-          scratch.position.set(x, 0.014, z);
-          scratch.updateMatrix();
-          pools.setMatrixAt(index, scratch.matrix);
-          index++;
-        }
-      }
-      strips.instanceMatrix.needsUpdate = true;
-      pools.instanceMatrix.needsUpdate = true;
+      const rowSide = LIGHT_ROW_RADIUS * 2 + 1;
+      const atLights = (y: number, tilt: number) => ({
+        count: (LIGHT_PANEL_RADIUS * 2 + 1) * rowSide,
+        at: (index: number, out: Matrix4) => {
+          const x = lightBaseX + (Math.floor(index / rowSide) - LIGHT_PANEL_RADIUS) * LIGHT_PANEL_SPACING + LIGHT_PANEL_SPACING / 2;
+          const z = lightBaseZ + ((index % rowSide) - LIGHT_ROW_RADIUS) * LIGHT_ROW_SPACING;
+          composeInstance(out, [x, y, z], [tilt, 0, 0], 1);
+        },
+      });
+      uploadInstances(strips, atLights(DATACENTER_CEILING_HEIGHT - 0.12, 0), { bounds: "none" });
+      uploadInstances(pools, atLights(0.014, -Math.PI / 2), { bounds: "none" });
     }
 
     if (shellRef.current) shellRef.current.position.set(anchorX, 0, anchorZ);

@@ -6,7 +6,7 @@
  * drawable and slider-authorable in every editor session and persisted in `editor.scene.json` —
  * promoted from `examples/studios` for studio/editor parity (#1101).
  */
-import { placeAlongPath } from "./pathInstances";
+import { placeAlongPath } from "../instancing/pathInstances";
 import { sagCurve, type Vec3 } from "./catenary";
 import {
   registerSceneKind,

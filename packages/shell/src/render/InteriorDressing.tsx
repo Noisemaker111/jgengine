@@ -7,8 +7,8 @@ import { nearestFixtures, type InteriorDecal, type InteriorDecalStyle, type Inte
 
 import type { AuthoredSurfaceConfig } from "./authoredSurfaceMaterial";
 import { createDecalTexture } from "./decalTexture";
-import { StaticShapeInstances, type StaticShapeInstance } from "./staticShapeInstances";
-import { submitInstanceCount } from "./submittedDraws";
+import { StaticShapeInstances, type StaticShapeInstance } from "../instancing/staticShapeInstances";
+import { uploadInstances } from "../instancing/instanceUpload";
 import { useDisposable } from "./useDisposable";
 
 /** The surface each dressing family wears. Any family left out falls back to a plain painted default. */
@@ -119,23 +119,25 @@ const FORWARD = new THREE.Vector3(0, 0, 1);
 
 /** Write one style's decal transforms: a unit plane turned to face `normal`, spun in its plane, sized. @internal */
 export function writeInteriorDecals(mesh: THREE.InstancedMesh, decals: readonly InteriorDecal[]): void {
-  const matrix = new THREE.Matrix4();
   const position = new THREE.Vector3();
   const scale = new THREE.Vector3();
-  decals.forEach((decal, index) => {
-    decalNormal.set(...decal.normal).normalize();
-    decalTurn.setFromUnitVectors(FORWARD, decalNormal);
-    decalSpin.setFromAxisAngle(FORWARD, decal.spin);
-    decalTurn.multiply(decalSpin);
-    position.set(...decal.position);
-    scale.set(decal.width, decal.height, 1);
-    mesh.setMatrixAt(index, matrix.compose(position, decalTurn, scale));
-    mesh.setColorAt(index, new THREE.Color(decal.opacity, decal.opacity, decal.opacity));
-  });
-  submitInstanceCount(mesh, decals.length);
-  mesh.instanceMatrix.needsUpdate = true;
-  if (mesh.instanceColor !== null) mesh.instanceColor.needsUpdate = true;
-  mesh.computeBoundingSphere();
+  uploadInstances(
+    mesh,
+    {
+      count: decals.length,
+      at: (index, out) => {
+        const decal = decals[index]!;
+        decalNormal.set(...decal.normal).normalize();
+        decalTurn.setFromUnitVectors(FORWARD, decalNormal);
+        decalSpin.setFromAxisAngle(FORWARD, decal.spin);
+        decalTurn.multiply(decalSpin);
+        position.set(...decal.position);
+        scale.set(decal.width, decal.height, 1);
+        out.compose(position, decalTurn, scale);
+      },
+    },
+    { colors: (index, out) => out.setScalar(decals[index]!.opacity) },
+  );
 }
 
 function DecalStyleBatch({ style, decals, seed }: { style: InteriorDecalStyle; decals: readonly InteriorDecal[]; seed: string }) {

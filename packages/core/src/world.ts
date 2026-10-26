@@ -925,7 +925,6 @@ export {
   type MinimapBakeSource,
   type MinimapBakeZone,
 } from "./world/minimapBake";
-export { placeAlongPath } from "./world/pathInstances";
 export {
   withPathProfiles,
   type PathHeightPolicy,

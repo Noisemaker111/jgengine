@@ -1140,6 +1140,18 @@
 - `touchSlotNumber` (function): function touchSlotNumber(action: string): number | null — 1-based slot number for a game-routed slot picker action (`selectSlot2` → 2), or null.
 - `withTouchCodes` (function): function withTouchCodes(map: ActionCodesMap | undefined): ActionCodesMap — Every action gains a synthetic touch code alongside its physical codes.
 
+## @jgengine/core/instancing/instanceCells
+
+- `DEFAULT_INSTANCE_CELL_SIZE` (const): const DEFAULT_INSTANCE_CELL_SIZE: 32 — Cell edge used when a caller passes a non-positive or non-finite size.
+- `InstanceCell` (interface): interface InstanceCell<T> — Spatial cells for instanced draws: bucket placements into a uniform XZ grid so a dense field renders as many small draw units instead of one huge mesh. Each cell carries its own bounds, is frustum-culled on its own, and costs nothing offscreen. Pure and deterministic.
+- `groupInstancesByCell` (function): function groupInstancesByCell<T>(items: readonly T[], cellSize: number, at: (item: T) => readonly [number, number]): InstanceCell<T>[] — Bucket `items` into `cellSize`-meter XZ cells by the point `at` returns for each. Empty cells are omitted; cells come out row-major by grid coordinate (z rows, then x) and items keep their input order, so the result is deterministic.
+
+## @jgengine/core/instancing/pathInstances
+
+- `PathInstance` (interface): interface PathInstance — One placed transform along a path: grounded position, facing yaw, and its ordinal + arc distance.
+- `PlaceAlongPathOptions` (interface): interface PlaceAlongPathOptions — Options for {@link placeAlongPath}.
+- `placeAlongPath` (function): function placeAlongPath(points: readonly { x: number; z: number }[], options: PlaceAlongPathOptions): PathInstance[] — Evenly place transforms along `points` (XZ polyline). The run length is divided into the whole number of equal spans closest to `spacing`, so instances always land on both endpoints and stay evenly distributed. Returns `spans + 1` instances. Empty for fewer than 2 points.
+
 ## @jgengine/core/interaction/contextMenu
 
 - `BuildContextMenuInput` (interface): interface BuildContextMenuInput { kind: ContextTargetKind; targetId: string; verbs: readonly ContextVerb[] | undefined; point?: readonly [number, number, number] } — ⚠ undocumented · used by `buildContextMenu`: Assemble a menu from a target's catalog verbs; null when the target lists none.
@@ -2102,7 +2114,6 @@
 - `ResolveScatterOptions` (interface): interface ResolveScatterOptions extends ClearanceOptions — Extra inputs for {@link resolveScatter}: manual discs plus the auto-clearance toggle/scoping.
 - `SCATTER_DEFAULTS` (const): const SCATTER_DEFAULTS: ScatterRegionRules — Defaults a bare scatter region fills with: sparse grass, lightly spaced.
 - `SCATTER_PATH_KIND` (const): const SCATTER_PATH_KIND: "scatter" — The editor path kind that marks a closed polyline as a foliage/scatter region.
-- `ScatterChunk` (interface): interface ScatterChunk — A spatial bucket of scatter instances — one draw unit the renderer can frustum-cull as a whole.
 - `ScatterInstance` (interface): interface ScatterInstance — A single placed scatter instance — grounded world position plus per-instance variation.
 - `ScatterPaletteEntry` (interface): interface ScatterPaletteEntry — One species/prop in a scatter region's palette, with a relative spawn weight.
 - `ScatterRegion` (interface): interface ScatterRegion — A resolvable scatter region: a closed polygon footprint plus its fill rules.
@@ -3806,7 +3817,6 @@
 - `patrol` (function): function patrol({ waypoints, speed, loop = true, startProgress, groundClamp, }: { waypoints: readonly Waypoint[]; speed: number; loop?: boolean; startProgress?: PathProgress; groundClamp?: boolean; }): PatrolBehavior — ⚠ undocumented
 - `pendingQteStep` (function): function pendingQteStep(steps: readonly QteStep[], elapsedSeconds: number): QteStep | null — ⚠ undocumented
 - `pickSpawnPoint` (function): function pickSpawnPoint(options: SpawnPointSelectionOptions): NavPoint | null — Selects a candidate spawn point using a semantic distance preference and caller-supplied randomness.
-- `placeAlongPath` (function): function placeAlongPath(points: readonly { x: number; z: number }[], options: PlaceAlongPathOptions): PathInstance[] — Evenly place transforms along `points` (XZ polyline). The run length is divided into the whole number of equal spans closest to `spacing`, so instances always land on both endpoints and stay evenly distributed. Returns `spans + 1` instances. Empty for fewer than 2 points.
 - `placeAssetFromCommit` (function): function placeAssetFromCommit(commit: PlacementCommit, assetId: string, options: PlaceAssetFromCommitOptions = {}): PlaceAssetResult — Bridge a {@link PlacementCommit} into the shared place-asset verb.
 - `placeAuthoredObjects` (function): function placeAuthoredObjects(store: AuthoredObjectPlaceTarget, objects: readonly AuthoredObject[], sampleHeight: (x: number, z: number) => number, options: PlaceAuthoredObjectsOptions = {}): string[] — Places resolved authored objects into an object store, grounding each on `sampleHeight(x,z)` plus per-object and options vertical offsets. Returns the instance ids that were placed (or kept).
 - `placeAuthoredObjectsFromDocument` (function): function placeAuthoredObjectsFromDocument(store: AuthoredObjectPlaceTarget, document: AuthoredObjectsDocumentLike, sampleHeight: (x: number, z: number) => number, options: PlaceAuthoredObjectsOptions = {}): string[] — Convenience: resolve a document then place every authored catalog prop.
@@ -4380,12 +4390,6 @@
 
 - `TrackAxis` (interface): interface TrackAxis — A world-space segment defining a linear "track" minimap — points are projected onto the `from`→`to` axis.
 - `trackFraction` (function): function trackFraction(point: WorldXZ | readonly [number, number, number], axis: TrackAxis): number — Project a world point onto the `from`→`to` segment of `axis` and return the clamped 0..1 fraction of how far along the track it lies (0 at `from`, 1 at `to`). The linear analogue of `projectToMinimap` — feeds a horizontal corridor/route progress rail. Accepts XZ (`[x, z]`) or XYZ (`[x, y, z]`) points (index 0 = x, index 2 when length 3 else index 1 = z). A zero-length axis returns 0.
-
-## @jgengine/core/world/pathInstances
-
-- `PathInstance` (interface): interface PathInstance — One placed transform along a path: grounded position, facing yaw, and its ordinal + arc distance.
-- `PlaceAlongPathOptions` (interface): interface PlaceAlongPathOptions — Options for {@link placeAlongPath}.
-- `placeAlongPath` (function): function placeAlongPath(points: readonly { x: number; z: number }[], options: PlaceAlongPathOptions): PathInstance[] — Evenly place transforms along `points` (XZ polyline). The run length is divided into the whole number of equal spans closest to `spacing`, so instances always land on both endpoints and stay evenly distributed. Returns `spans + 1` instances. Empty for fewer than 2 points.
 
 ## @jgengine/core/world/pathTerrain
 

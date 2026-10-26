@@ -5,6 +5,7 @@ import * as THREE from "three";
 import type { TilemapWorldConfig } from "@jgengine/core/world/features";
 import { sortingOrder } from "@jgengine/core/render/sprite2d";
 
+import { uploadInstances } from "../instancing/instanceUpload";
 import { useDisposable } from "../render/useDisposable";
 
 import { resolveTileLayerInstances } from "./tileLayerInstances";
@@ -47,7 +48,6 @@ export function TileLayerRenderer({ config, parallax = [1, 1], pixelated = true 
     geometry.setAttribute("tileUvScale", uvScale);
   }, [geometry, uvOffset, uvScale]);
 
-  const matrix = useMemo(() => new THREE.Matrix4(), []);
   useFrame(() => {
     const mesh = meshRef.current;
     if (mesh === null) return;
@@ -56,20 +56,16 @@ export function TileLayerRenderer({ config, parallax = [1, 1], pixelated = true 
   useEffect(() => {
     const mesh = meshRef.current;
     if (mesh === null) return;
-    mesh.count = instances.length;
-    const array = mesh.instanceMatrix.array as Float32Array;
+    uploadInstances(mesh, { count: instances.length, at: (i, out) => out.makeTranslation(instances[i]!.x, 0, instances[i]!.z) }, { bounds: "none" });
     const offset = uvOffset.array as Float32Array;
     const scale = uvScale.array as Float32Array;
     for (let i = 0; i < instances.length; i += 1) {
-      const instance = instances[i]!;
-      matrix.makeTranslation(instance.x, 0, instance.z).toArray(array, i * 16);
-      offset.set(instance.uvOffset, i * 2);
-      scale.set(instance.uvScale, i * 2);
+      offset.set(instances[i]!.uvOffset, i * 2);
+      scale.set(instances[i]!.uvScale, i * 2);
     }
-    mesh.instanceMatrix.needsUpdate = true;
     uvOffset.needsUpdate = true;
     uvScale.needsUpdate = true;
-  }, [instances, matrix, uvOffset, uvScale]);
+  }, [instances, uvOffset, uvScale]);
 
   if (tileSet === undefined || instances.length === 0) return null;
   return <instancedMesh ref={meshRef} args={[geometry, material, instances.length]} renderOrder={sortingOrder(["ground", "objects", "effects"], config.sortingLayer ?? "ground", 0)} frustumCulled={false} />;

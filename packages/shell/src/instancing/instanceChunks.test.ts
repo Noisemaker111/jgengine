@@ -4,9 +4,18 @@ import { WebGLObjects } from "three/src/renderers/webgl/WebGLObjects.js";
 import { generateBuilding } from "@jgengine/core/buildings/buildings";
 import { defineBuildingKit } from "@jgengine/core/buildings/buildingKit";
 
-import { bucketBuildingParts, composeBuildingKitMatrix, type BuildingKitInstance } from "./buildingKitFit";
-import { applyBuildingChunk, partitionBuildingMatrices } from "./buildingSpatialBatch";
-import { buildingChunkWithinBudget, resolveBuildingRenderPolicy } from "./BuildingRenderBudget";
+import { bucketBuildingParts, composeBuildingKitMatrix, type BuildingKitInstance } from "../buildings/buildingKitFit";
+import { buildingChunkWithinBudget, resolveBuildingRenderPolicy } from "../buildings/BuildingRenderBudget";
+import { partitionInstances, type InstanceChunk } from "./instanceChunks";
+import { uploadInstances } from "./instanceUpload";
+
+/** Upload a chunk the way the building renderer does; the cleanup releases only the instance buffers. */
+function applyChunk(mesh: THREE.InstancedMesh, chunk: InstanceChunk): () => void {
+  uploadInstances(mesh, chunk.matrices, { bounds: chunk.bounds });
+  return () => {
+      mesh.dispose();
+    };
+}
 
 function translation(x: number, y = 0, z = 0): THREE.Matrix4 {
   return new THREE.Matrix4().makeTranslation(x, y, z);
@@ -18,33 +27,33 @@ function vertices(geometry: THREE.BufferGeometry, matrix: THREE.Matrix4): THREE.
     new THREE.Vector3().fromBufferAttribute(attribute, index).applyMatrix4(matrix));
 }
 
-function makeMesh(geometry: THREE.BufferGeometry, material: THREE.Material | THREE.Material[], chunk: ReturnType<typeof partitionBuildingMatrices>[number]) {
+function makeMesh(geometry: THREE.BufferGeometry, material: THREE.Material | THREE.Material[], chunk: InstanceChunk) {
   const mesh = new THREE.InstancedMesh(geometry, material, chunk.matrices.length);
-  applyBuildingChunk(mesh, chunk);
+  applyChunk(mesh, chunk);
   mesh.castShadow = true;
   mesh.receiveShadow = true;
   return mesh;
 }
 
-describe("building spatial chunks", () => {
+describe("instance chunks", () => {
   test("partitions every instance exactly once with stable negative and positive cells", () => {
     const geometry = new THREE.BoxGeometry();
     const matrices = [-65, -1, 0, 63, 64, 900].map((x) => translation(x));
-    const chunks = partitionBuildingMatrices(geometry, matrices);
+    const chunks = partitionInstances(geometry, matrices);
     expect(chunks.map((chunk) => chunk.key)).toEqual(["-2:0", "-1:0", "0:0", "1:0", "14:0"]);
     expect(chunks.flatMap((chunk) => chunk.matrices)).toEqual(matrices);
-    expect(partitionBuildingMatrices(geometry, matrices).map((chunk) => chunk.key)).toEqual(chunks.map((chunk) => chunk.key));
+    expect(partitionInstances(geometry, matrices).map((chunk) => chunk.key)).toEqual(chunks.map((chunk) => chunk.key));
     for (const chunk of chunks) for (const matrix of chunk.matrices) {
       for (const point of vertices(geometry, matrix)) expect(chunk.bounds.containsPoint(point)).toBe(true);
     }
-    expect(() => partitionBuildingMatrices(geometry, matrices, undefined, 0)).toThrow(RangeError);
+    expect(() => partitionInstances(geometry, matrices, { cellSize: 0 })).toThrow(RangeError);
     geometry.dispose();
   });
 
   test("keeps compact batches crossing the grid origin together without changing instance order", () => {
     const geometry = new THREE.BoxGeometry();
     const matrices = [translation(3, 0, 3), translation(-3, 0, -3), translation(2, 0, -2)];
-    const [chunk] = partitionBuildingMatrices(geometry, matrices);
+    const [chunk] = partitionInstances(geometry, matrices);
     expect(chunk!.key).toBe("compact");
     expect(chunk!.matrices).toEqual(matrices);
     expect(chunk!.bounds.min.toArray()).toEqual([-3.5, -0.5, -3.5]);
@@ -69,7 +78,7 @@ describe("building spatial chunks", () => {
       };
       const fitMatrix = composeBuildingKitMatrix(instance, bounds, new THREE.Matrix4());
       const expected = new THREE.Matrix4().multiplyMatrices(fitMatrix, source);
-      const [chunk] = partitionBuildingMatrices(geometry, [fitMatrix, translation(500).multiply(fitMatrix)], source);
+      const [chunk] = partitionInstances(geometry, [fitMatrix, translation(500).multiply(fitMatrix)], { localMatrix: source });
       expect(chunk).toBeDefined();
       expect(chunk!.matrices[0]!.elements).toEqual(expected.elements);
       const transformedBounds = new THREE.Box3();
@@ -90,7 +99,7 @@ describe("building spatial chunks", () => {
     const geometry = new THREE.BoxGeometry(2, 2, 2);
     const material = Array.from({ length: 6 }, (_, index) => new THREE.MeshStandardMaterial({ color: index % 2 ? "#123456" : "#fedcba" }));
     const matrices = [translation(0, 0, -20), translation(5, 0, -20), translation(900, 0, -20), translation(905, 0, -20)];
-    const chunks = partitionBuildingMatrices(geometry, matrices);
+    const chunks = partitionInstances(geometry, matrices);
     const meshes = chunks.map((chunk) => makeMesh(geometry, material, chunk));
     const originalGroups = geometry.groups.map((group) => ({ ...group }));
     const camera = new THREE.PerspectiveCamera(60, 1, 0.1, 2000);
@@ -135,7 +144,7 @@ describe("building spatial chunks", () => {
   test("near offscreen chunks remain shadow casters while a different camera frustum can include them", () => {
     const geometry = new THREE.BoxGeometry(2, 2, 2);
     const material = new THREE.MeshStandardMaterial();
-    const [chunk] = partitionBuildingMatrices(geometry, [translation(20, 0, 10)]);
+    const [chunk] = partitionInstances(geometry, [translation(20, 0, 10)]);
     const mesh = makeMesh(geometry, material, chunk!);
     const main = new THREE.PerspectiveCamera(60, 1, 0.1, 200);
     const shadow = new THREE.OrthographicCamera(-30, 30, 30, -30, 0.1, 200);
@@ -173,7 +182,7 @@ describe("building spatial chunks", () => {
     let retainedTriangles = 0;
     for (const matrices of buckets.boxes.values()) {
       originalTriangles += matrices.length * 12;
-      const chunks = partitionBuildingMatrices(geometry, matrices);
+      const chunks = partitionInstances(geometry, matrices);
       expect(chunks.flatMap((chunk) => chunk.matrices).length).toBe(matrices.length);
       for (const chunk of chunks) {
         const mesh = makeMesh(geometry, material, chunk);
@@ -193,11 +202,11 @@ describe("building spatial chunks", () => {
   test("removing one chunk releases its real Three instance buffers while retaining shared geometry, materials and the other chunk", () => {
     const geometry = new THREE.BoxGeometry();
     const materials = [new THREE.MeshStandardMaterial({ color: "#123456" }), new THREE.MeshStandardMaterial({ color: "#fedcba" })];
-    const chunks = partitionBuildingMatrices(geometry, [translation(0), translation(900)]);
+    const chunks = partitionInstances(geometry, [translation(0), translation(900)]);
     const first = new THREE.InstancedMesh(geometry, materials, 1);
     const second = new THREE.InstancedMesh(geometry, materials, 1);
-    const releaseFirst = applyBuildingChunk(first, chunks[0]!);
-    const releaseSecond = applyBuildingChunk(second, chunks[1]!);
+    const releaseFirst = applyChunk(first, chunks[0]!);
+    const releaseSecond = applyChunk(second, chunks[1]!);
     first.setColorAt(0, new THREE.Color("#ffffff"));
     second.setColorAt(0, new THREE.Color("#ffffff"));
     const resident = new Set<THREE.BufferAttribute>();

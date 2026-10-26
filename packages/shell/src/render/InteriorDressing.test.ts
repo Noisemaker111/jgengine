@@ -4,7 +4,7 @@ import * as THREE from "three";
 import { planInteriorDressing } from "@jgengine/core/world/interiorDressing";
 
 import { DEFAULT_INTERIOR_SURFACES, groupInteriorDecals, interiorCableGeometry, interiorDressingShapes, practicalFlicker, writeInteriorDecals } from "./InteriorDressing";
-import { groupStaticShapeInstances } from "./staticShapeInstances";
+import { groupStaticShapeInstances } from "../instancing/staticShapeInstances";
 
 const plan = planInteriorDressing([{ x: 0, z: 0, w: 12, d: 8 }, { x: 9, z: 2, w: 6, d: 10 }], { seed: "shell", floorY: 0, ceilingY: 4 });
 

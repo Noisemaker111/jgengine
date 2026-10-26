@@ -15,6 +15,7 @@ import { readNamedSockets, type ModelNode } from "@jgengine/core/scene/modelSock
 import { POLE_LINE_KIND, POLE_LINE_SCHEMA, resolvePoleLine, type Cable, type Pole, type ResolvedPoleLine } from "@jgengine/core/world/poleLineKind";
 import type { SceneKindObject } from "@jgengine/core/scene/sceneKinds";
 
+import { composeInstance, uploadInstances } from "../instancing/instanceUpload";
 import { useDisposable } from "../render/useDisposable";
 import { registerSceneKindRenderer, type SceneKindRenderContext } from "./sceneKindRenderers";
 
@@ -181,76 +182,52 @@ function ProxyPoles({
     const brace = braceRef.current;
     const insulator = insulatorRef.current;
     if (trunk === null) return;
-    const matrix = new THREE.Matrix4();
+    const trunks: THREE.Matrix4[] = [];
+    const arms: THREE.Matrix4[] = [];
+    const braces: THREE.Matrix4[] = [];
+    const insulators: THREE.Matrix4[] = [];
     const position = new THREE.Vector3();
     const quaternion = new THREE.Quaternion();
     const euler = new THREE.Euler();
     const scale = new THREE.Vector3(1, 1, 1);
+    const place = (into: THREE.Matrix4[]): void => {
+      into.push(new THREE.Matrix4().compose(position, quaternion, scale));
+    };
     const armY = height - 0.22;
     const half = (wireCount - 1) / 2;
     const braceAngle = Math.atan2(armLength * 0.32, 0.7);
-    poles.forEach((pole, index) => {
+    for (const pole of poles) {
       euler.set(0, pole.yaw, 0);
       quaternion.setFromEuler(euler);
       position.set(pole.position[0], pole.position[1] + height / 2, pole.position[2]);
-      matrix.compose(position, quaternion, scale);
-      trunk.setMatrixAt(index, matrix);
-      if (arm !== null) {
-        position.set(pole.position[0], pole.position[1] + armY, pole.position[2]);
-        matrix.compose(position, quaternion, scale);
-        arm.setMatrixAt(index, matrix);
-      }
-      if (brace !== null) {
-        // Two diagonal braces from the trunk up to the crossarm — the classic A-frame silhouette.
-        const cos = Math.cos(pole.yaw);
-        const sin = Math.sin(pole.yaw);
-        for (let side = 0; side < 2; side += 1) {
-          const direction = side === 0 ? 1 : -1;
-          const lateral = direction * armLength * 0.16;
-          position.set(pole.position[0] + cos * lateral, pole.position[1] + armY - 0.38, pole.position[2] - sin * lateral);
-          euler.set(0, pole.yaw, direction * braceAngle);
-          quaternion.setFromEuler(euler);
-          matrix.compose(position, quaternion, scale);
-          brace.setMatrixAt(index * 2 + side, matrix);
-        }
-        euler.set(0, pole.yaw, 0);
+      place(trunks);
+      position.set(pole.position[0], pole.position[1] + armY, pole.position[2]);
+      place(arms);
+      // Two diagonal braces from the trunk up to the crossarm — the classic A-frame silhouette.
+      const cos = Math.cos(pole.yaw);
+      const sin = Math.sin(pole.yaw);
+      for (let side = 0; side < 2; side += 1) {
+        const direction = side === 0 ? 1 : -1;
+        const lateral = direction * armLength * 0.16;
+        position.set(pole.position[0] + cos * lateral, pole.position[1] + armY - 0.38, pole.position[2] - sin * lateral);
+        euler.set(0, pole.yaw, direction * braceAngle);
         quaternion.setFromEuler(euler);
+        place(braces);
       }
-      if (insulator !== null) {
-        // Insulator pegs sit on the crossarm at each wire's lateral offset (the pole's local X axis
-        // after yaw — the same perpendicular the resolver strings cables along).
-        const cos = Math.cos(pole.yaw);
-        const sin = Math.sin(pole.yaw);
-        for (let w = 0; w < wireCount; w += 1) {
-          const offset = (w - half) * wireSpacing;
-          position.set(
-            pole.position[0] + cos * offset,
-            pole.position[1] + height - 0.08,
-            pole.position[2] - sin * offset,
-          );
-          matrix.compose(position, quaternion, scale);
-          insulator.setMatrixAt(index * wireCount + w, matrix);
-        }
+      euler.set(0, pole.yaw, 0);
+      quaternion.setFromEuler(euler);
+      // Insulator pegs sit on the crossarm at each wire's lateral offset (the pole's local X axis
+      // after yaw — the same perpendicular the resolver strings cables along).
+      for (let w = 0; w < wireCount; w += 1) {
+        const offset = (w - half) * wireSpacing;
+        position.set(pole.position[0] + cos * offset, pole.position[1] + height - 0.08, pole.position[2] - sin * offset);
+        place(insulators);
       }
-    });
-    trunk.count = poles.length;
-    trunk.instanceMatrix.needsUpdate = true;
-    trunk.computeBoundingSphere();
-    if (arm !== null) {
-      arm.count = poles.length;
-      arm.instanceMatrix.needsUpdate = true;
-      arm.computeBoundingSphere();
     }
-    if (brace !== null) {
-      brace.count = poles.length * 2;
-      brace.instanceMatrix.needsUpdate = true;
-      brace.computeBoundingSphere();
-    }
-    if (insulator !== null) {
-      insulator.count = poles.length * wireCount;
-      insulator.instanceMatrix.needsUpdate = true;
-      insulator.computeBoundingSphere();
-    }
+    uploadInstances(trunk, trunks);
+    if (arm !== null) uploadInstances(arm, arms);
+    if (brace !== null) uploadInstances(brace, braces);
+    if (insulator !== null) uploadInstances(insulator, insulators);
   }, [poles, height, wireCount, wireSpacing]);
   return (
     <>
@@ -299,23 +276,11 @@ function ModelPoleSource({ source, poles }: { source: { geometry: THREE.BufferGe
   useEffect(() => {
     const mesh = meshRef.current;
     if (mesh === null) return;
-    const base = new THREE.Matrix4();
-    const composed = new THREE.Matrix4();
-    const position = new THREE.Vector3();
-    const quaternion = new THREE.Quaternion();
-    const euler = new THREE.Euler();
-    const scale = new THREE.Vector3(1, 1, 1);
-    poles.forEach((pole, index) => {
-      position.set(pole.position[0], pole.position[1], pole.position[2]);
-      euler.set(0, pole.yaw, 0);
-      quaternion.setFromEuler(euler);
-      base.compose(position, quaternion, scale);
-      composed.multiplyMatrices(base, source.local);
-      mesh.setMatrixAt(index, composed);
-    });
-    mesh.count = poles.length;
-    mesh.instanceMatrix.needsUpdate = true;
-    mesh.computeBoundingSphere();
+    uploadInstances(
+      mesh,
+      { count: poles.length, at: (index, out) => composeInstance(out, poles[index]!.position, [0, poles[index]!.yaw, 0], 1) },
+      { localMatrix: source.local },
+    );
   }, [poles, source]);
   return <instancedMesh ref={meshRef} args={[source.geometry, source.material, Math.max(1, poles.length)]} castShadow receiveShadow />;
 }

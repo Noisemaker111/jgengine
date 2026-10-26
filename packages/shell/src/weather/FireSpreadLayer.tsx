@@ -3,6 +3,8 @@ import { useFrame } from "@react-three/fiber";
 import * as THREE from "three";
 
 import type { FireGrid } from "@jgengine/core/world/weather";
+
+import { uploadInstances } from "../instancing/instanceUpload";
 import { setBillboardQuaternion } from "./fireSpreadPose";
 
 export interface FireSpreadLayerProps {
@@ -58,7 +60,8 @@ export function FireSpreadLayer({
     [flameGeometry, scorchGeometry, flameMaterial, scorchMaterial],
   );
 
-  const matrix = useMemo(() => new THREE.Matrix4(), []);
+  const flamePool = useMemo<THREE.Matrix4[]>(() => [], []);
+  const scorchPool = useMemo<THREE.Matrix4[]>(() => [], []);
   const position = useMemo(() => new THREE.Vector3(), []);
   const quaternion = useMemo(() => new THREE.Quaternion(), []);
   const identityQuat = useMemo(() => new THREE.Quaternion(), []);
@@ -82,22 +85,18 @@ export function FireSpreadLayer({
           position.set(x, groundY + flameHeight * 0.5, z);
           setBillboardQuaternion(quaternion, euler, state.camera.rotation.y);
           scale.set(1, flicker, 1);
-          matrix.compose(position, quaternion, scale);
-          flameMesh.setMatrixAt(flameIndex, matrix);
+          (flamePool[flameIndex] ??= new THREE.Matrix4()).compose(position, quaternion, scale);
           flameIndex += 1;
         } else if (cell.state === "burnt") {
           position.set(x, groundY + 0.05, z);
           scale.set(1, 1, 1);
-          matrix.compose(position, identityQuat, scale);
-          scorchMesh.setMatrixAt(scorchIndex, matrix);
+          (scorchPool[scorchIndex] ??= new THREE.Matrix4()).compose(position, identityQuat, scale);
           scorchIndex += 1;
         }
       }
     }
-    flameMesh.count = flameIndex;
-    scorchMesh.count = scorchIndex;
-    flameMesh.instanceMatrix.needsUpdate = true;
-    scorchMesh.instanceMatrix.needsUpdate = true;
+    uploadInstances(flameMesh, { count: flameIndex, at: (i, out) => out.copy(flamePool[i]!) }, { bounds: "none", dynamic: true });
+    uploadInstances(scorchMesh, { count: scorchIndex, at: (i, out) => out.copy(scorchPool[i]!) }, { bounds: "none", dynamic: true });
   });
 
   return (
