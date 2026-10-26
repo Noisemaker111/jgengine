@@ -115,16 +115,80 @@ export function firstUnlinkedDrawable(renderer: Pick<ShaderWarmupRenderer, "prop
   let found: Object3D | null = null;
   scene.traverseVisible((object) => {
     if (found !== null || !isDrawable(object) || !object.layers.test(camera.layers)) return;
-    for (const material of Array.isArray(object.material) ? object.material : [object.material]) {
-      if (material == null || (material as Material).visible === false) continue;
-      const program = (properties.get(material as object) as { currentProgram?: unknown } | undefined)?.currentProgram;
-      if (program == null || !programReady(program)) {
-        found = object;
-        return;
-      }
-    }
+    if (linkState(properties, object) !== "linked") found = object;
   });
   return found;
+}
+
+/** Whether a drawable's programs are ready to draw, still building, or not started (`missing`). */
+function linkState(properties: { get(material: object): unknown }, object: Drawable): "linked" | "building" | "missing" {
+  let state: "linked" | "building" | "missing" = "linked";
+  for (const material of Array.isArray(object.material) ? object.material : [object.material]) {
+    if (material == null || (material as Material).visible === false) continue;
+    const program = (properties.get(material as object) as { currentProgram?: unknown } | undefined)?.currentProgram;
+    if (program == null) return "missing";
+    if (!programReady(program)) state = "building";
+  }
+  return state;
+}
+
+/**
+ * After the reveal, a drawable that turns up with no linked program (a part bolted onto a car
+ * mid-race, a model streamed in beside the road) would make the frame that first draws it wait for
+ * the driver's link: a quarter-second freeze each time. Instead each draw of `scene` leaves such a
+ * drawable out and starts its link off the frame, and the drawable appears with the first frame its
+ * program is ready. One that is still not ready after {@link SHADER_WARMUP_DEFAULTS.stallMs} is
+ * drawn anyway, so a driver that never reports completion cannot keep it hidden. `active` says when
+ * to do this; the gate turns it off while it holds whole frames for a newly mounted view. Returns
+ * the undo. @internal
+ */
+export function deferUnlinkedDraws(
+  renderer: ShaderWarmupRenderer & { render: RenderMethod; readonly properties: { get(material: object): unknown } },
+  scene: Object3D,
+  active: () => boolean,
+  now: () => number = () => performance.now(),
+): () => void {
+  const owned = Object.prototype.hasOwnProperty.call(renderer, "render");
+  const previous = renderer.render;
+  const firstSeen = new WeakMap<Object3D, number>();
+  let undone = false;
+  const deferring = function (this: unknown, drawn: never, camera: never): unknown {
+    if (undone || (drawn as Object3D) !== scene || !active()) return previous.call(renderer, drawn, camera);
+    const view = camera as Camera;
+    const missing: Drawable[] = [];
+    const pending: Drawable[] = [];
+    scene.traverseVisible((object) => {
+      if (!isDrawable(object) || !object.layers.test(view.layers)) return;
+      const state = linkState(renderer.properties, object);
+      if (state === "missing") missing.push(object);
+      else if (state === "building") pending.push(object);
+    });
+    const overridden = (scene as Scene).overrideMaterial != null;
+    if (missing.length > 0 && !overridden) compileObjects(renderer, scene, view, missing);
+    const hidden: Object3D[] = [];
+    const at = now();
+    for (const object of missing.length > 0 ? [...pending, ...missing] : pending) {
+      if (linkState(renderer.properties, object) === "linked") continue;
+      const since = firstSeen.get(object) ?? at;
+      firstSeen.set(object, since);
+      if (at - since > SHADER_WARMUP_DEFAULTS.stallMs) continue;
+      object.visible = false;
+      hidden.push(object);
+    }
+    try {
+      return previous.call(renderer, drawn, camera);
+    } finally {
+      for (const object of hidden) object.visible = true;
+    }
+  } as RenderMethod;
+  renderer.render = deferring;
+  return () => {
+    if (undone) return;
+    undone = true;
+    if (renderer.render !== deferring) return;
+    if (owned) renderer.render = previous;
+    else delete (renderer as { render?: unknown }).render;
+  };
 }
 
 /** Knobs for {@link planFirstFrame}; the defaults are what a normal load wants. @internal */
@@ -215,15 +279,22 @@ function inReach(object: Drawable, camera: Camera, frustum: Frustum, margin: num
 }
 
 /**
- * Links the programs of the given drawables, and nothing else, against the scene's lights, fog and
+ * Links the programs of the given drawables, and nothing else, each with its own material unless
+ * `materialOf` names the one it is about to draw with, against the scene's lights, fog and
  * environment. Each is compiled through a {@link standIn} that reads everything off the real object
  * and has no children, so a light parented under a drawable is counted once (from the scene) and
  * the cost is the batch plus one walk for the scene's lights, not a walk of the whole graph.
  * @internal
  */
-export function compileObjects(renderer: ShaderWarmupRenderer, scene: Object3D, camera: Camera, objects: Iterable<Object3D>): void {
+export function compileObjects(
+  renderer: ShaderWarmupRenderer,
+  scene: Object3D,
+  camera: Camera,
+  objects: Iterable<Object3D>,
+  materialOf: (object: Object3D & { material?: unknown }) => unknown = (object) => object.material,
+): void {
   const proxies: Object3D[] = [];
-  for (const object of objects) if (isDrawable(object)) proxies.push(standIn(object, object.material));
+  for (const object of objects) if (isDrawable(object)) proxies.push(standIn(object, materialOf(object)));
   renderer.compile(standInGroup(proxies), camera, scene as Scene);
 }
 

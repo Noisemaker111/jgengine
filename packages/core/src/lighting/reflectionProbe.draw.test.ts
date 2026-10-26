@@ -8,6 +8,7 @@ import {
   PROBE_SETTLE_MS,
   probeDue,
   probeStreamingQuiet,
+  firstReflections,
   reflectsWorld,
   worldProbeForQuality,
 } from "./reflectionProbe.draw";
@@ -57,4 +58,38 @@ test("no capture starts while models are still streaming in", () => {
   // A world that never stops streaming still gets its first reflections, eventually.
   expect(probeStreamingQuiet(0, false, PROBE_FIRST_WAIT_FRAMES - 1)).toBe(false);
   expect(probeStreamingQuiet(0, false, PROBE_FIRST_WAIT_FRAMES)).toBe(true);
+});
+
+test("a capture links each first reflection on a reflecting copy, leaving the scene's materials untouched", () => {
+  const scene = new THREE.Scene();
+  const geometry = new THREE.BoxGeometry();
+  const metal = new THREE.MeshStandardMaterial({ metalness: 1 });
+  metal.onBeforeCompile = () => {};
+  metal.customProgramCacheKey = () => "jg-wet:v1";
+  const matte = new THREE.MeshStandardMaterial({ metalness: 0, roughness: 1 });
+  const single = new THREE.Mesh(geometry, metal);
+  const mixed = new THREE.Mesh(geometry, [matte, metal]);
+  scene.add(single, mixed, new THREE.Mesh(geometry, matte));
+  const texture = new THREE.Texture();
+  const copies = new Map<THREE.Material, THREE.Material>();
+
+  const found = firstReflections(scene, texture, copies);
+
+  expect([...found.keys()]).toEqual([single, mixed]);
+  const copy = found.get(single) as THREE.MeshStandardMaterial;
+  expect(copy).not.toBe(metal);
+  expect(copy.envMap).toBe(texture);
+  expect(copy.onBeforeCompile).toBe(metal.onBeforeCompile);
+  expect(copy.customProgramCacheKey()).toBe("jg-wet:v1");
+  expect(found.get(mixed)).toEqual([matte, copy]);
+  expect(metal.envMap).toBeNull();
+  expect(firstReflections(scene, texture, copies).get(single), "one copy per material, kept between captures").toBe(copy);
+
+  let copyDisposed = false;
+  copy.addEventListener("dispose", () => {
+    copyDisposed = true;
+  });
+  metal.dispose();
+  expect(copyDisposed, "the copy's programs live as long as the material they stand for").toBe(true);
+  expect(copies.size).toBe(0);
 });

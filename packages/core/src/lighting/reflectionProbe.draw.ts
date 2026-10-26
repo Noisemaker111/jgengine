@@ -4,7 +4,7 @@ import type { GraphicsQuality } from "@jgengine/core/settings/settingsModel";
 
 import { modelLoadIdleMs, modelLoadStarts } from "@jgengine/core/model/modelLoad.draw";
 import { linkPmremBake } from "./pmremLink.draw";
-import { drawsHeld } from "@jgengine/core/render/shaderWarmup.draw";
+import { compileObjects, drawsHeld, linkAhead } from "@jgengine/core/render/shaderWarmup.draw";
 
 /** How often and how sharply the world reflection probe captures the scene. @internal */
 export interface WorldProbeSettings {
@@ -115,6 +115,10 @@ export class WorldReflectionProbe {
   /** Whether the filter's programs are linked; a capture waits for it rather than link on the spot. */
   private linked = false;
   private disposed = false;
+  /** Background compile of the reflecting programs for materials this capture reaches first. */
+  private warming: Promise<void> | null = null;
+  private readonly reflectingCopies = new Map<THREE.Material, THREE.Material>();
+  private filtered = false;
 
   constructor(
     private readonly renderer: THREE.WebGLRenderer,
@@ -157,7 +161,7 @@ export class WorldReflectionProbe {
         for (; this.face < FACES; this.face += 1) this.renderFace(scene, this.face);
       }
     }
-    if (this.streaming.starts() !== this.captureStarts) {
+    if (this.face < FACES && this.streaming.starts() !== this.captureStarts) {
       this.face = -1;
       return false;
     }
@@ -166,13 +170,51 @@ export class WorldReflectionProbe {
       this.face += 1;
       return false;
     }
-    this.envTarget = this.pmrem.fromCubemap(this.cubeTarget.texture, this.envTarget);
-    this.assign(scene, this.envTarget.texture);
+    if (this.warming !== null) return false;
+    if (!this.filtered) {
+      this.envTarget = this.pmrem.fromCubemap(this.cubeTarget.texture, this.envTarget);
+      this.filtered = true;
+      // Giving a material its first environment map recompiles it. Mid-game that compile would stall
+      // the frame for a quarter second, so it runs in the background first and the swap reuses it.
+      const warming = this.warm(scene, this.envTarget.texture);
+      if (warming !== null) {
+        this.warming = warming.finally(() => {
+          this.warming = null;
+        });
+        return false;
+      }
+    }
+    this.filtered = false;
+    this.assign(scene, this.envTarget!.texture);
     this.lastPosition = (this.lastPosition ?? new THREE.Vector3()).copy(this.cubeCamera.position);
     this.sinceCapture = 0;
     this.framesSince = 0;
     this.face = -1;
     return true;
+  }
+
+  /**
+   * Link, off the frame, the programs the next {@link assign} would otherwise link inside one: each
+   * drawable about to gain its first environment map is compiled with a reflecting copy of its
+   * material, for the canvas and for a target. Null when no drawable is new to reflecting.
+   */
+  private warm(scene: THREE.Scene, texture: THREE.Texture): Promise<void> | null {
+    const reflecting = firstReflections(scene, texture, this.reflectingCopies);
+    if (reflecting.size === 0) return null;
+    const camera = this.cubeCamera.children[0] as THREE.Camera;
+    const renderer = this.renderer;
+    return linkAhead(
+      renderer,
+      () => {
+        const previous = renderer.getRenderTarget();
+        for (const target of [null, this.cubeTarget]) {
+          renderer.setRenderTarget(target);
+          compileObjects(renderer, scene, camera, reflecting.keys(), (object) => reflecting.get(object));
+        }
+        renderer.setRenderTarget(previous);
+      },
+      () => this.disposed,
+    ).catch(() => {});
   }
 
   /** Points every reflective material without its own map at the capture; the texture is reused across captures. */
@@ -221,8 +263,50 @@ export class WorldReflectionProbe {
       material.needsUpdate = true;
     }
     this.assigned.clear();
+    for (const copy of this.reflectingCopies.values()) copy.dispose();
+    this.reflectingCopies.clear();
     this.cubeTarget.dispose();
     this.envTarget?.dispose();
     this.pmrem.dispose();
   }
+}
+
+/**
+ * Each drawable a capture would give its first environment map, with the material it would then
+ * draw with: a copy of each reflecting material that already holds `texture`, built the way three
+ * keys its program. A copy is kept per material in `copies`, so the programs it linked stay alive
+ * until the material they stand for is disposed. @internal
+ */
+export function firstReflections(
+  scene: THREE.Object3D,
+  texture: THREE.Texture,
+  copies: Map<THREE.Material, THREE.Material>,
+): Map<THREE.Object3D, THREE.Material | THREE.Material[]> {
+  const found = new Map<THREE.Object3D, THREE.Material | THREE.Material[]>();
+  scene.traverse((object) => {
+    const mesh = object as THREE.Mesh;
+    if (!mesh.isMesh) return;
+    const materials = Array.isArray(mesh.material) ? mesh.material : [mesh.material];
+    if (!materials.some((material) => material !== undefined && reflectsWorld(material))) return;
+    const drawn = materials.map((material) => (material === undefined || !reflectsWorld(material) ? material : reflectingCopy(material, texture, copies)));
+    found.set(mesh, Array.isArray(mesh.material) ? drawn : drawn[0]!);
+  });
+  return found;
+}
+
+function reflectingCopy(material: THREE.Material, texture: THREE.Texture, copies: Map<THREE.Material, THREE.Material>): THREE.Material {
+  let copy = copies.get(material) as THREE.MeshStandardMaterial | undefined;
+  if (copy === undefined) {
+    const made = material.clone() as THREE.MeshStandardMaterial;
+    made.onBeforeCompile = material.onBeforeCompile;
+    made.customProgramCacheKey = material.customProgramCacheKey;
+    copies.set(material, made);
+    material.addEventListener("dispose", () => {
+      made.dispose();
+      copies.delete(material);
+    });
+    copy = made;
+  }
+  copy.envMap = texture;
+  return copy;
 }

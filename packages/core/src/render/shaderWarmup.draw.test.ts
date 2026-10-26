@@ -6,6 +6,7 @@ import {
   compileObjects,
   drawSubset,
   createShaderWarmup,
+  deferUnlinkedDraws,
   gpuFence,
   drawsHeld,
   firstUnlinkedDrawable,
@@ -1225,5 +1226,92 @@ describe("sceneRevealed", () => {
     expect(revealed).toBe(true);
     unregister();
     await sceneRevealed(new Scene());
+  });
+});
+
+describe("deferUnlinkedDraws", () => {
+  function deferringFixture() {
+    const programs = new Map<object, { currentProgram?: FakeProgram }>();
+    const ready = new Set<object>();
+    const compiled: string[] = [];
+    const drawn: string[][] = [];
+    const renderer = {
+      properties: { get: (material: object) => programs.get(material) ?? {} },
+      compile(group: Object3D) {
+        for (const proxy of group.children) {
+          const material = (proxy as Mesh).material as Material;
+          compiled.push(material.name);
+          programs.set(material, { currentProgram: { isReady: () => ready.has(material) } });
+        }
+      },
+      render(scene: Scene, _camera: PerspectiveCamera) {
+        const names: string[] = [];
+        scene.traverseVisible((object) => {
+          if ((object as Mesh).isMesh) names.push(((object as Mesh).material as Material).name);
+        });
+        drawn.push(names);
+      },
+    };
+    const scene = new Scene();
+    const camera = new PerspectiveCamera();
+    const add = (name: string, linked: boolean): Mesh => {
+      const mesh = meshAt(0, 0, -5, Object.assign(new MeshBasicMaterial(), { name }));
+      if (linked) {
+        ready.add(mesh.material as object);
+        programs.set(mesh.material as object, { currentProgram: { isReady: () => true } });
+      }
+      scene.add(mesh);
+      return mesh;
+    };
+    return { renderer, scene, camera, add, ready, compiled, drawn };
+  }
+
+  test("a drawable that arrives unlinked is left out of the frame while it links, then drawn", () => {
+    const { renderer, scene, camera, add, ready, compiled, drawn } = deferringFixture();
+    let clock = 0;
+    deferUnlinkedDraws(renderer as never, scene, () => true, () => clock);
+    add("road", true);
+    const part = add("part", false);
+
+    renderer.render(scene, camera);
+    expect(compiled, "the new part's link starts off the frame").toEqual(["part"]);
+    expect(drawn.at(-1), "the frame is drawn without it, not held").toEqual(["road"]);
+    expect(part.visible, "what the game set is put back after the draw").toBe(true);
+
+    clock += 100;
+    renderer.render(scene, camera);
+    expect(compiled, "a link in flight is not started again").toEqual(["part"]);
+    expect(drawn.at(-1)).toEqual(["road"]);
+
+    ready.add(part.material as object);
+    renderer.render(scene, camera);
+    expect(drawn.at(-1), "drawn with the first frame its program is ready").toEqual(["road", "part"]);
+  });
+
+  test("draws everything when inactive, for other scenes, after undo, and once a link has stalled", () => {
+    const { renderer, scene, camera, add, drawn } = deferringFixture();
+    let clock = 0;
+    let active = false;
+    const undo = deferUnlinkedDraws(renderer as never, scene, () => active, () => clock);
+    add("part", false);
+    renderer.render(scene, camera);
+    expect(drawn.at(-1), "the gate's own hold is in charge").toEqual(["part"]);
+
+    active = true;
+    const other = new Scene();
+    other.add(meshAt(0, 0, -5, Object.assign(new MeshBasicMaterial(), { name: "bake" })));
+    renderer.render(other, camera);
+    expect(drawn.at(-1), "a draw of another scene is not touched").toEqual(["bake"]);
+
+    renderer.render(scene, camera);
+    expect(drawn.at(-1)).toEqual([]);
+    clock += SHADER_WARMUP_DEFAULTS.stallMs + 1;
+    renderer.render(scene, camera);
+    expect(drawn.at(-1), "a driver that never reports completion cannot hide it for good").toEqual(["part"]);
+
+    add("late", false);
+    undo();
+    renderer.render(scene, camera);
+    expect(drawn.at(-1)).toEqual(["part", "late"]);
   });
 });
