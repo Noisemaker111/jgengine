@@ -2,8 +2,9 @@ import type { ReactNode } from "react";
 import { resolveActivePrompt } from "@jgengine/core/interaction/proximityPrompt";
 import { useGameStore } from "@jgengine/react/hooks";
 import { useGameContext } from "@jgengine/react/provider";
+import { ActionBar } from "@jgengine/react/hud/actionHud";
 import { KitResultScreen } from "@jgengine/react/kitFlow";
-import { KitActionBar, KitCount, KitCounts, KitVitals, KitWaveClock } from "@jgengine/react/hud/kitHud";
+import { KitCount, KitCounts, KitVitals, KitWaveClock } from "@jgengine/react/hud/kitHud";
 import { KitActionPrompt, KitPanel } from "@jgengine/react/uiKitRoot";
 import { HudSlots } from "@jgengine/shell/gameKit";
 
@@ -76,20 +77,21 @@ function BuildBar(): ReactNode {
   const have = Object.fromEntries(camp.resources.map((resource) => [resource.id, resource.amount]));
   const active = usePrompt();
   return (
-    <KitActionBar
-      kind="build"
+    <ActionBar
+      look="kit"
+      hotkeys={false}
       prompt={active === null ? null : <KitActionPrompt action="interact" label={active} fallbackGlyph="E" />}
-      actions={idea.structures.map((structure, index) => ({
+      defs={idea.structures.map((structure, index) => ({
         id: structure.id,
-        label: `${structure.label} `,
+        label: structure.label,
         detail: Object.entries(structure.cost)
           .map(([id, amount]) => `${amount} ${idea.resources.find((resource) => resource.id === id)?.label ?? id}`)
           .join(" + "),
-        glyph: String(index + 1),
-        variant: Object.entries(structure.cost).some(([id, amount]) => (have[id] ?? 0) < amount) ? "ghost" : "secondary",
-        onActivate: () => ctx.game.commands.run(`build${index + 1}`, {}),
+        hotkey: String(index + 1),
+        disabled: Object.entries(structure.cost).some(([id, amount]) => (have[id] ?? 0) < amount),
       }))}
       progress={camp.building.map((order) => ({ id: order.id, label: order.label, value: order.progress }))}
+      onActivate={(id) => ctx.game.commands.run(`build${idea.structures.findIndex((structure) => structure.id === id) + 1}`, {})}
     />
   );
 }

@@ -6,6 +6,7 @@
  */
 
 import type { LayoutOrientation } from "../ui/orientation";
+import type { HudRect, HudSize } from "./hudLayout";
 
 /** The explicit composition mode a game renders for — not a scaled desktop layout. */
 export type GameLayoutMode = "desktop-wide" | "desktop-compact" | "mobile-landscape" | "mobile-portrait";
@@ -171,7 +172,8 @@ const DEFAULT_MIN_AREA = 64;
  * regions. A pair is skipped when either side's policy is `allow`, when either
  * opts into the other via `allowOverlapWith`, when they share a
  * `collisionGroup`, or when the overlap is below `minArea`.
-  * @internal
+  *
+  * @capability layout-collisions every overlapping pair of registered HUD, control and system regions
   */
 export function detectLayoutCollisions(
   regions: readonly LayoutRegion[],
@@ -200,13 +202,31 @@ function withThousands(n: number): string {
     .replace(/\B(?=(\d{3})+(?!\d))/g, ",");
 }
 
-/** Human-readable diagnostic block for a set of collisions (empty string when there are none).
- * @internal
+/**
+ * Human-readable diagnostic block for a set of collisions (empty string when there are none), naming
+ * the viewport they collided at when given.
+ *
+ * @capability layout-collision-report format the overlapping HUD/control regions for a development console
  */
-export function formatLayoutCollisions(collisions: readonly LayoutCollision[]): string {
+export function formatLayoutCollisions(collisions: readonly LayoutCollision[], viewport?: HudSize): string {
   if (collisions.length === 0) return "";
   const lines = collisions.map((c) => `${c.a} intersects ${c.b} by ${withThousands(c.area)} px²`);
-  return ["JGENGINE MOBILE LAYOUT COLLISION", ...lines].join("\n");
+  const at = viewport === undefined ? "" : ` at ${Math.round(viewport.width)}x${Math.round(viewport.height)}`;
+  return [`JGENGINE LAYOUT COLLISION${at}`, ...lines].join("\n");
+}
+
+/**
+ * A rendered HUD block (`{ x, y, width, height }`, as `HudCanvas` measures it or `resolveHudLanes`
+ * places it) as a `forbid` HUD region, so HUD blocks check for overlap through
+ * {@link detectLayoutCollisions} like every other region.
+ */
+export function hudBlockRegion(id: string, rect: HudRect): LayoutRegion {
+  return {
+    id,
+    kind: "hud",
+    rect: { left: rect.x, top: rect.y, right: rect.x + rect.width, bottom: rect.y + rect.height },
+    collisionPolicy: "forbid",
+  };
 }
 
 /**

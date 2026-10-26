@@ -22,6 +22,7 @@ import {
 import { actionTooltip, placePopover, type PopoverSide, type TooltipContent } from "@jgengine/core/ui/tooltipModel";
 
 import { useEngineStyles } from "../engineStyles";
+import { KitButton, KitMeter, KitPanel } from "../uiKitRoot";
 import { useHudInteract, type HudInteractListener } from "./hudInteract";
 import { HUD_FOCUS_RING, hudElevation, hudFont, hudType } from "./hudTokens";
 import { Keycap } from "../keyHint";
@@ -445,49 +446,141 @@ const PANEL: CSSProperties = {
   boxShadow: "var(--jg-frame-glow, 0 4px 16px rgba(0,0,0,0.35))",
 };
 
+/** A build or work order in progress, drawn as a small meter after an {@link ActionBar}'s buttons. */
+export interface ActionProgress {
+  id: string;
+  label: ReactNode;
+  /** 0..1. */
+  value: number;
+}
+
+/** Props for {@link ActionBar}. */
+export interface ActionBarProps {
+  defs: readonly ActionDef[];
+  /**
+   * `slots` (default): square cooldown slots with hotkey caps, cost lines and a radial wipe — an
+   * ability bar. `kit`: one row of the active UI kit's buttons with the label, the `detail` text and
+   * the key — a build or tool strip. Both read the same `ActionDef`s and route activation the same way.
+   */
+  look?: "slots" | "kit";
+  columns?: number;
+  /** `slots` only: a grid or a vertical list. */
+  layout?: "grid" | "list";
+  wrap?: boolean;
+  /** Set false when the game's own key bindings already fire these actions. Default true. */
+  hotkeys?: boolean;
+  /** `slots` only: slot size in px. */
+  itemSize?: number;
+  ariaLabel?: string;
+  onActivate?: (id: string) => void;
+  /** `slots` only: swap the per-slot chrome. */
+  renderItem?: (action: ResolvedAction, ctx: ActionItemContext) => ReactNode;
+  /** Orders in progress, drawn as meters after the buttons. */
+  progress?: readonly ActionProgress[];
+  /** After the buttons and meters: a count, a note. */
+  trailing?: ReactNode;
+  /** Above the bar: the interact prompt in reach. */
+  prompt?: ReactNode;
+  /** `kit` only: wrap the buttons onto centred rows past this width, in px. Unset keeps one row. */
+  wrapAt?: number;
+  className?: string;
+  style?: CSSProperties;
+}
+
+function ProgressMeters({ progress }: { progress: readonly ActionProgress[] }): ReactNode {
+  return progress.map((order) => <KitMeter key={order.id} label={order.label} value={order.value} max={1} size="sm" style={{ width: 96 }} />);
+}
+
+/** The `kit` look: one strip of kit buttons over the shared action model. */
+function KitActionRow({
+  model,
+  ariaLabel,
+  progress,
+  trailing,
+  wrapAt,
+}: {
+  model: ActionBarModel;
+  ariaLabel: string;
+  progress: readonly ActionProgress[];
+  trailing: ReactNode;
+  wrapAt: number | undefined;
+}): ReactNode {
+  return (
+    <KitPanel variant="strip">
+      <div
+        role="toolbar"
+        aria-label={ariaLabel}
+        data-action-bar=""
+        onKeyDown={model.onKeyDown}
+        style={{ display: "flex", gap: 6, alignItems: "center", ...(wrapAt === undefined ? {} : { flexWrap: "wrap", justifyContent: "center", maxWidth: wrapAt }) }}
+      >
+        {model.actions.map((action) => {
+          const tip = actionTooltip(action);
+          return (
+            <KitButton
+              key={action.id}
+              data-action-id={action.id}
+              size="sm"
+              variant={action.active ? "primary" : action.enabled ? "secondary" : "ghost"}
+              pressed={action.active}
+              glyph={action.hotkey}
+              title={[tip.body ?? tip.title, ...(tip.notes ?? [])].join("\n")}
+              onClick={() => model.activate(action.id)}
+            >
+              {action.label}
+              {action.detail === undefined ? null : <span style={{ opacity: 0.65, marginLeft: 4, fontSize: "0.85em" }}>{action.detail}</span>}
+            </KitButton>
+          );
+        })}
+        <ProgressMeters progress={progress} />
+        {trailing}
+      </div>
+    </KitPanel>
+  );
+}
+
 /**
- * Convenience composition of {@link useActionBar} + glass {@link ActionBarChrome} for demos and
- * scaffolding — not a shipped game face. Pass `defs`, choose `grid`/`list`, and hand it `onActivate`.
- * Games that own their UI compose the headless hook + custom chrome (or swap `renderItem`) instead
- * of shipping this default panel.
+ * The one action bar: an ability bar, a build strip, a tool or seed picker. It resolves `defs`
+ * through {@link useActionBar} (availability, cooldowns, costs, hotkeys, focus) and draws them in
+ * the `look` asked for — `slots` for cooldown abilities, `kit` for a build strip in the active UI
+ * kit — with orders in progress as meters, a trailing note, and the interact prompt above. Games
+ * that need bespoke chrome compose the hook with {@link ActionBarChrome} or read the model directly.
  *
- * @capability action-bar optional skinned action-bar composition over the headless model — games own chrome
+ * @capability action-bar the HUD action bar — abilities with cooldown slots or a kit build strip with costs, progress meters and the interact prompt, over one action model
  */
 export function ActionBar({
   defs,
+  look = "slots",
   columns,
   layout = "grid",
   wrap,
   hotkeys,
   itemSize,
-  ariaLabel,
+  ariaLabel = "Actions",
   onActivate,
   renderItem,
+  progress = [],
+  trailing,
+  prompt,
+  wrapAt,
   className,
   style,
-}: {
-  defs: readonly ActionDef[];
-  columns?: number;
-  layout?: "grid" | "list";
-  wrap?: boolean;
-  hotkeys?: boolean;
-  itemSize?: number;
-  ariaLabel?: string;
-  onActivate?: (id: string) => void;
-  renderItem?: (action: ResolvedAction, ctx: ActionItemContext) => ReactNode;
-  className?: string;
-  style?: CSSProperties;
-}) {
+}: ActionBarProps): ReactNode {
   const model = useActionBar(defs, { columns, wrap, hotkeys, onActivate });
+  const bar =
+    look === "kit" ? (
+      <KitActionRow model={model} ariaLabel={ariaLabel} progress={progress} trailing={trailing} wrapAt={wrapAt} />
+    ) : (
+      <div data-action-panel="" style={{ ...PANEL, display: "inline-flex", gap: 8, alignItems: "center" }}>
+        <ActionBarChrome model={model} layout={layout} itemSize={itemSize} ariaLabel={ariaLabel} renderItem={renderItem} />
+        <ProgressMeters progress={progress} />
+        {trailing}
+      </div>
+    );
   return (
-    <div className={className} data-action-panel="" style={{ ...PANEL, display: "inline-block", ...style }}>
-      <ActionBarChrome
-        model={model}
-        layout={layout}
-        itemSize={itemSize}
-        ariaLabel={ariaLabel}
-        renderItem={renderItem}
-      />
+    <div className={className} style={{ display: "inline-flex", flexDirection: "column", alignItems: "center", gap: 8, ...style }}>
+      {prompt}
+      {bar}
     </div>
   );
 }

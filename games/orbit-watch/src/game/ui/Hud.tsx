@@ -2,8 +2,9 @@ import type { ReactNode } from "react";
 import { useGameStore } from "@jgengine/react/hooks";
 import { useGameContext } from "@jgengine/react/provider";
 import { HUD_CORNER_WIDTH } from "@jgengine/react/hud/hudLayout";
+import { ActionBar } from "@jgengine/react/hud/actionHud";
 import { KitResultScreen } from "@jgengine/react/kitFlow";
-import { KitActionBar, KitCount, KitCounts, KitHint, KitVitals } from "@jgengine/react/hud/kitHud";
+import { KitCount, KitCounts, KitHint, KitVitals } from "@jgengine/react/hud/kitHud";
 import { KitButton, KitMeter, KitPanel } from "@jgengine/react/uiKitRoot";
 import { HudSlots } from "@jgengine/shell/gameKit";
 
@@ -71,23 +72,24 @@ function BuildBar(): ReactNode {
   const ctx = useGameContext();
   const hold = useHold();
   return (
-    <KitActionBar
-      kind="build"
+    <ActionBar
+      look="kit"
+      hotkeys={false}
       wrapAt={1000}
-      actions={idea.towers.map((tower, index) => {
+      defs={idea.towers.map((tower, index) => {
         const open = hold.unlocked[index]?.open ?? true;
         const short = hold.coin < tower.cost;
         return {
           id: tower.id,
           label: tower.label,
           detail: open ? `${tower.cost} ${coin}` : `${idea.wave.toLowerCase()} ${tower.from}`,
-          glyph: index < 9 ? String(index + 1) : undefined,
-          variant: hold.armed === tower.id ? "primary" : short || !open ? "ghost" : "secondary",
-          pressed: hold.armed === tower.id,
-          title: tower.blurb,
-          onActivate: () => ctx.game.commands.run(`build${index + 1}`, {}),
+          ...(index < 9 ? { hotkey: String(index + 1) } : {}),
+          active: hold.armed === tower.id,
+          disabled: short || !open,
+          description: tower.blurb,
         };
       })}
+      onActivate={(id) => ctx.game.commands.run(`build${idea.towers.findIndex((tower) => tower.id === id) + 1}`, {})}
     />
   );
 }

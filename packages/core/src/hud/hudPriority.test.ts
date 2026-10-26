@@ -126,7 +126,8 @@ describe("formatLayoutCollisions", () => {
       { a: "survey-map", b: "pursuit", kindA: "hud", kindB: "hud", area: 14820, severity: "forbid" },
     ]);
     expect(text).toContain("survey-map intersects pursuit by 14,820 px²");
-    expect(text.startsWith("JGENGINE MOBILE LAYOUT COLLISION")).toBe(true);
+    expect(text.startsWith("JGENGINE LAYOUT COLLISION")).toBe(true);
+    expect(formatLayoutCollisions([{ a: "a", b: "b", kindA: "hud", kindB: "hud", area: 1, severity: "forbid" }], { width: 1600, height: 900 })).toContain("at 1600x900");
   });
 });
 

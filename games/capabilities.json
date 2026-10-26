@@ -99,7 +99,7 @@
       "domain": "hud",
       "gameFacing": false,
       "probe": null,
-      "intent": "optional skinned action-bar composition over the headless model — games own chrome"
+      "intent": "the HUD action bar — abilities with cooldown slots or a kit build strip with costs, progress meters and the interact prompt, over one action model"
     },
     {
       "id": "action-bar-chrome",
@@ -4338,17 +4338,6 @@
       "intent": "read the host panel-commit port from a HUD layout widget"
     },
     {
-      "id": "hud-overlap-report",
-      "packages": [
-        "@jgengine/react"
-      ],
-      "module": "@jgengine/react/hud/hudLanes",
-      "domain": "hud",
-      "gameFacing": false,
-      "probe": null,
-      "intent": "name every intersecting pair of rendered HUD blocks"
-    },
-    {
       "id": "hud-panel",
       "packages": [
         "@jgengine/react"
@@ -4900,17 +4889,6 @@
       "intent": "vertical event/kill-feed ticker rendering a core event-ticker as a fading, newest-on-top stack of per-kind iconned, accent-colored rows over HudTheme tokens"
     },
     {
-      "id": "kit-action-bar",
-      "packages": [
-        "@jgengine/react"
-      ],
-      "module": "@jgengine/react/hud/kitHud",
-      "domain": "hud",
-      "gameFacing": false,
-      "probe": null,
-      "intent": "a HUD build/action bar — keyed kit buttons with costs, affordability and the held tool, progress meters, the interact prompt"
-    },
-    {
       "id": "kit-action-glyph",
       "packages": [
         "@jgengine/react"
@@ -5184,6 +5162,28 @@
       "gameFacing": false,
       "probe": null,
       "intent": "wall-clock current/last/best lap timing with splits"
+    },
+    {
+      "id": "layout-collision-report",
+      "packages": [
+        "@jgengine/core"
+      ],
+      "module": "@jgengine/core/hud/hudPriority",
+      "domain": "hud",
+      "gameFacing": false,
+      "probe": null,
+      "intent": "format the overlapping HUD/control regions for a development console"
+    },
+    {
+      "id": "layout-collisions",
+      "packages": [
+        "@jgengine/core"
+      ],
+      "module": "@jgengine/core/hud/hudPriority",
+      "domain": "hud",
+      "gameFacing": false,
+      "probe": null,
+      "intent": "every overlapping pair of registered HUD, control and system regions"
     },
     {
       "id": "leaderboard",

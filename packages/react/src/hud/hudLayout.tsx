@@ -33,6 +33,9 @@ import {
 import { hudScaleForViewport, overflowingPanels, resolveHudFit } from "@jgengine/core/hud/hudScale";
 import type { HudOverflow } from "@jgengine/core/hud/hudScale";
 import {
+  detectLayoutCollisions,
+  formatLayoutCollisions,
+  hudBlockRegion,
   isMobileMode,
   type HudPriority,
   type LayoutCollisionPolicy,
@@ -43,7 +46,7 @@ import { useDisplayProfile } from "../display";
 import { useEngineState } from "../engineStore";
 import { useGameLayoutMode, useRegisterLayoutRegion } from "../gameViewport";
 import { useOptionalGamePhase } from "../hooks";
-import { formatHudOverlapReport, hudBlockOverlaps, resolveHudLanes, type HudLaneSlot } from "./hudLanes";
+import { resolveHudLanes, type HudLaneSlot } from "./hudLanes";
 import { useHudLayoutPersist } from "./hudLayoutPersist";
 import { useHudViewport } from "./hudViewport";
 import { hudFont, hudType } from "./hudTokens";
@@ -689,7 +692,9 @@ export function HudCanvas({
             },
           };
         });
-      const overlapReport = dev ? formatHudOverlapReport(hudBlockOverlaps(blocks), viewportSize) : "";
+      const overlapReport = dev
+        ? formatLayoutCollisions(detectLayoutCollisions(blocks.map((block) => hudBlockRegion(block.id, block.rect)), { minArea: 1 }), viewportSize)
+        : "";
       if (overlapReport !== lastOverlapReport) {
         lastOverlapReport = overlapReport;
         if (overlapReport === "") {

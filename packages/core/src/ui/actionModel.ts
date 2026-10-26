@@ -42,6 +42,8 @@ export interface ActionDef {
   id: string;
   label?: string;
   description?: string;
+  /** The quieter text drawn after the label: a cost line (`5 Wood + 2 Stone`), an unlock condition. */
+  detail?: string;
   /** Icon id / glyph the caller maps to a catalog; the model only carries it through. */
   icon?: string;
   /** Human hotkey label (e.g. `"Q"`, `"1"`). Matched case-insensitively by {@link actionByHotkey}. */
@@ -67,6 +69,7 @@ export interface ResolvedAction {
   id: string;
   label: string;
   description?: string;
+  detail?: string;
   icon?: string;
   hotkey?: string;
   group?: string;
@@ -146,6 +149,7 @@ export function resolveAction(def: ActionDef): ResolvedAction {
     reasons,
   };
   if (def.description !== undefined) resolved.description = def.description;
+  if (def.detail !== undefined) resolved.detail = def.detail;
   if (def.icon !== undefined) resolved.icon = def.icon;
   if (def.hotkey !== undefined) resolved.hotkey = def.hotkey;
   if (def.group !== undefined) resolved.group = def.group;

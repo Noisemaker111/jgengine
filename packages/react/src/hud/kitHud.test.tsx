@@ -2,7 +2,7 @@ import { describe, expect, test } from "bun:test";
 import { renderToStaticMarkup } from "react-dom/server";
 
 import { HUD_CORNER_WIDTH, HudSlots } from "./hudLayout";
-import { KitActionBar, KitCount, KitCounts, KitHint, KitVitals, KitWaveClock } from "./kitHud";
+import { KitCount, KitCounts, KitHint, KitVitals, KitWaveClock } from "./kitHud";
 import { KitButton, KitPanel } from "../uiKitRoot";
 
 describe("kitHud blocks", () => {
@@ -39,21 +39,6 @@ describe("kitHud blocks", () => {
     expect(renderToStaticMarkup(<KitWaveClock text="Night 2 in 30s" detail="N - call it early" alarm />)).toContain("data-wave-clock");
     expect(renderToStaticMarkup(<KitHint text="Placing a Farm" />)).toContain("Placing a Farm");
     expect(renderToStaticMarkup(<KitHint text={null} />)).not.toContain("Placing");
-  });
-
-  test("the action bar marks each button by kind and wraps the prompt above it", () => {
-    const html = renderToStaticMarkup(
-      <KitActionBar
-        kind="build"
-        actions={[{ id: "wall", label: "Wall", detail: "5 wood", glyph: "1", onActivate: () => {} }]}
-        progress={[{ id: "farm", label: "Farm", value: 0.5 }]}
-        prompt={<span>E to open</span>}
-      />,
-    );
-    expect(html).toContain('data-build="wall"');
-    expect(html).toContain("5 wood");
-    expect(html).toContain("E to open");
-    expect(html).toContain('role="meter"');
   });
 });
 

@@ -58,7 +58,7 @@ pay for that instance again.
 
 The HUD is a `HudCanvas` of lane slabs, not hand-placed offsets: the shift
 plate and the departure docket stack in one top-left lane, buttons and tank in
-the top-right lane, the rail feed at the bottom. `hudBlockOverlaps` reports
+the top-right lane, the rail feed at the bottom. `detectLayoutCollisions` reports
 nothing at 1600 × 900 or at 844 × 390, and a panel added to a lane can only
 take free space.
 

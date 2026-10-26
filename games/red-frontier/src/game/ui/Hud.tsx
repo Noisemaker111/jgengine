@@ -2,8 +2,9 @@ import type { ReactNode } from "react";
 import { useGameStore } from "@jgengine/react/hooks";
 import { useGameContext } from "@jgengine/react/provider";
 import { HUD_CORNER_WIDTH } from "@jgengine/react/hud/hudLayout";
+import { ActionBar } from "@jgengine/react/hud/actionHud";
 import { KitResultScreen } from "@jgengine/react/kitFlow";
-import { KitActionBar, KitCount, KitCounts, KitHint, KitVitals } from "@jgengine/react/hud/kitHud";
+import { KitCount, KitCounts, KitHint, KitVitals } from "@jgengine/react/hud/kitHud";
 import { KitButton, KitPanel } from "@jgengine/react/uiKitRoot";
 import { HudSlots } from "@jgengine/shell/gameKit";
 
@@ -94,19 +95,20 @@ function BuildBar(): ReactNode {
   const ctx = useGameContext();
   const colony = useColony();
   return (
-    <KitActionBar
-      kind="build"
+    <ActionBar
+      look="kit"
+      hotkeys={false}
       wrapAt={1040}
-      actions={idea.structures.map((structure, index) => ({
+      defs={idea.structures.map((structure, index) => ({
         id: structure.id,
         label: structure.label,
         detail: costText(structure.cost),
-        glyph: index < 9 ? String(index + 1) : undefined,
-        variant: colony.armed === structure.id ? "primary" : colony.afford[index] !== true ? "ghost" : "secondary",
-        pressed: colony.armed === structure.id,
-        title: structure.blurb,
-        onActivate: () => ctx.game.commands.run(`build${index + 1}`, {}),
+        ...(index < 9 ? { hotkey: String(index + 1) } : {}),
+        active: colony.armed === structure.id,
+          disabled: colony.afford[index] !== true,
+        description: structure.blurb,
       }))}
+      onActivate={(id) => ctx.game.commands.run(`build${idea.structures.findIndex((structure) => structure.id === id) + 1}`, {})}
     />
   );
 }

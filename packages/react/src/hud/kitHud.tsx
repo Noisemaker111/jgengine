@@ -2,14 +2,15 @@ import type { ReactNode } from "react";
 
 import { HUD_CORNER_WIDTH } from "./hudLayout";
 import { KitBanner, KitObjective, type KitBannerProps } from "../kitFlow";
-import type { KitButtonProps, KitTone } from "../uiKit";
-import { KitButton, KitMeter, KitPanel } from "../uiKitRoot";
+import type { KitTone } from "../uiKit";
+import { KitMeter, KitPanel } from "../uiKitRoot";
 
 /**
  * The play-HUD readouts every game repeats, drawn from the active UI kit's parts: resource counts,
- * a vitals card with the current objective under it, the wave clock, a hint strip and the
- * build/action bar. Each is plain layout over `KitPanel`/`KitMeter`/`KitButton`, so the kit (and a
- * game's `customizeKit` tokens) decides the look and a game never re-lays these out by hand.
+ * a vitals card with the current objective under it, the wave clock and a hint strip. Each is plain
+ * layout over `KitPanel`/`KitMeter`, so the kit (and a game's `customizeKit` tokens) decides the look
+ * and a game never re-lays these out by hand. The build/action bar is `ActionBar` with `look="kit"`
+ * (`./actionHud`).
  */
 
 /** Props for {@link KitCount}. */
@@ -174,87 +175,6 @@ export function KitHint({ text, tone = "accent", banner }: KitHintProps): ReactN
         </KitPanel>
       )}
       {banner === undefined ? null : <KitBanner {...banner} />}
-    </div>
-  );
-}
-
-/** One button on a {@link KitActionBar}. */
-export interface KitAction {
-  id: string;
-  label: ReactNode;
-  /** The quieter text after the label: a cost, an unlock condition. */
-  detail?: ReactNode;
-  /** The key that triggers it ("1", "U"). */
-  glyph?: string;
-  /** Default `secondary`; `ghost` reads as unaffordable or locked, `primary` as the held one. */
-  variant?: KitButtonProps["variant"];
-  /** Drawn held down (the tool in hand). */
-  pressed?: boolean;
-  /** Tooltip. */
-  title?: string;
-  onActivate: () => void;
-}
-
-/** A build or work order in progress, drawn as a small meter after the buttons. */
-export interface KitActionProgress {
-  id: string;
-  label: ReactNode;
-  /** 0..1. */
-  value: number;
-}
-
-/** Props for {@link KitActionBar}. */
-export interface KitActionBarProps {
-  actions: readonly KitAction[];
-  /** Marks each button as `data-<kind>="<action id>"` for tests and drives. Default `action`. */
-  kind?: string;
-  progress?: readonly KitActionProgress[];
-  /** After the buttons: a count, a note. */
-  trailing?: ReactNode;
-  /** Above the bar: the interact prompt in reach. */
-  prompt?: ReactNode;
-  /** Wrap the buttons onto several centred rows past this width, in px. Unset keeps one row. */
-  wrapAt?: number;
-}
-
-/**
- * The build or action bar along the bottom of a HUD: one kit button per thing to build or do, with
- * its key, its cost and whether it can be afforded, orders in progress as meters, and the interact
- * prompt above it.
- *
- * @capability kit-action-bar a HUD build/action bar — keyed kit buttons with costs, affordability and the held tool, progress meters, the interact prompt
- */
-export function KitActionBar({ actions, kind = "action", progress = [], trailing, prompt, wrapAt }: KitActionBarProps): ReactNode {
-  const bar = (
-    <KitPanel variant="strip">
-      <div style={{ display: "flex", gap: 6, alignItems: "center", ...(wrapAt === undefined ? {} : { flexWrap: "wrap", justifyContent: "center", maxWidth: wrapAt }) }}>
-        {actions.map((action) => (
-          <KitButton
-            key={action.id}
-            {...{ [`data-${kind}`]: action.id }}
-            size="sm"
-            variant={action.variant ?? "secondary"}
-            pressed={action.pressed}
-            glyph={action.glyph}
-            title={action.title}
-            onClick={action.onActivate}
-          >
-            {action.label}
-            {action.detail === undefined ? null : <span style={{ opacity: 0.65, marginLeft: 4, fontSize: "0.85em" }}>{action.detail}</span>}
-          </KitButton>
-        ))}
-        {progress.map((order) => (
-          <KitMeter key={order.id} label={order.label} value={order.value} max={1} size="sm" style={{ width: 96 }} />
-        ))}
-        {trailing}
-      </div>
-    </KitPanel>
-  );
-  if (prompt === undefined) return bar;
-  return (
-    <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 8 }}>
-      {prompt}
-      {bar}
     </div>
   );
 }
