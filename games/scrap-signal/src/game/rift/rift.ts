@@ -1,4 +1,4 @@
-import { createWaveCountdown, type WaveCountdown } from "@jgengine/core/ai/director/waveCountdown";
+import { createWaveCountdown, type WaveCountdown } from "@jgengine/core/waves/waveCountdown";
 import { gamePhase } from "@jgengine/core/game/gamePhase";
 import { selectRules } from "@jgengine/core/game/ruleSelection";
 import { createMedalBoard, type MedalBoard, type MedalBoardState } from "@jgengine/core/progression/medalBoard";

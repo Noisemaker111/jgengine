@@ -16,10 +16,10 @@ import { newShield, newSpeedStats, resetSession, session, type BossRuntime } fro
 import { freshLegacy, openingKeep, readLegacy, relicLoop, upgradeLegacy, writeLegacy } from "./waves/legacy";
 import { campaign, freshCampaign, readCampaign } from "./campaign";
 import type { AbilityKitState } from "@jgengine/core/combat/abilityKit";
-import type { WaveCountdownState } from "@jgengine/core/ai/director/waveCountdown";
+import type { WaveCountdownState } from "@jgengine/core/waves/waveCountdown";
 import { WARDEN_ID } from "./waves/manifest";
-import type { EncounterState } from "@jgengine/core/ai/director/encounter";
-import type { PressurePlan } from "@jgengine/core/ai/director/pressure";
+import type { EncounterState } from "@jgengine/core/waves/encounter";
+import type { PressurePlan } from "@jgengine/core/waves/pressure";
 import { KEEP_POINT, ROUTES, SPAWN_POINT_KEY } from "./world/path";
 import { captureKeepThumb, keepProfile } from "./thumbs";
 

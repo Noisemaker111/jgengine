@@ -1,5 +1,5 @@
-import { seededRng } from "../../random/rng";
-import type { FightIntent } from "./roles";
+import { seededRng } from "../random/rng";
+import type { FightIntent } from "../ai/director/roles";
 
 /**
  * One authored group inside a wave: what arrives, how many, where from, and when.
@@ -210,8 +210,8 @@ export function expandWave(config: EncounterConfig, waveIndex: number, pressure:
  *
  * This is the composition layer, not a second spawn system: every order names a game-owned `unit`
  * and `entry`, exactly like a `SpawnRequest` names an `entryId`, and the game builds the entity.
- * Pair it with `combat/encounterSequence` when a fight needs scripted phase gates, and with
- * `ai/waveRunner` when a wave should be drawn from a budget instead of authored.
+ * Pair it with `waves/encounterSequence` when a fight needs scripted phase gates, and with
+ * `waves/waveRunner` when a wave should be drawn from a budget instead of authored.
  *
  * Pressure is captured when a wave opens, so a wave's composition cannot change mid-arrival; read
  * `evaluatePressure` when the wave opens and pass the plan in.

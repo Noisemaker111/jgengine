@@ -1,6 +1,6 @@
 import type { BossPhase } from "@jgengine/core/ai/director/boss";
-import type { EncounterDefinition } from "@jgengine/core/ai/director/encounter";
-import type { PressureRule } from "@jgengine/core/ai/director/pressure";
+import type { EncounterDefinition } from "@jgengine/core/waves/encounter";
+import type { PressureRule } from "@jgengine/core/waves/pressure";
 
 /**
  * The Rustflat Front, authored as data.

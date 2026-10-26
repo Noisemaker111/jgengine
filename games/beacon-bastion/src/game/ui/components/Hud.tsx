@@ -3,7 +3,7 @@ import { useGame, useGameStore } from "@jgengine/react/hooks";
 import { KitButton, KitPanel } from "@jgengine/react/uiKitRoot";
 import { GameIcon, type GameIconName } from "@jgengine/react/gameIcons";
 import { actionLabel } from "@jgengine/core/input/actionBindings";
-import { summarizeWave } from "@jgengine/core/ai/director/wavePreview";
+import { summarizeWave } from "@jgengine/core/waves/wavePreview";
 
 import { abilityDef } from "../../combat/abilities";
 import { creepTraits } from "../../entities/enemies/catalog";

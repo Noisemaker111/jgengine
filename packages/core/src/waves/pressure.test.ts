@@ -1,6 +1,6 @@
 import { describe, expect, test } from "bun:test";
 
-import { evaluatePressure, type PressureReading, type PressureRule } from "@jgengine/core/ai/director/pressure";
+import { evaluatePressure, type PressureReading, type PressureRule } from "@jgengine/core/waves/pressure";
 
 const opening: PressureReading = { health: 1, progress: 0, elapsed: 0 };
 const deep: PressureReading = { health: 1, progress: 0.85, elapsed: 260 };

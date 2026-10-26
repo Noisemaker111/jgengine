@@ -54,7 +54,7 @@ import {
   resetMissionState,
 } from "./game/runState";
 import { harborSave, holdSavesUntil, loadHarborSave, saveHarborState } from "./game/save";
-import { createWaveRunner } from "@jgengine/core/ai/waveRunner";
+import { createWaveRunner } from "@jgengine/core/waves/waveRunner";
 import { attachWaveFeedback } from "@jgengine/shell/audio/eventFeedback";
 import { perContext } from "@jgengine/core/runtime/perContext";
 import { registerRadio, tickRadio } from "./game/radio/runtime";

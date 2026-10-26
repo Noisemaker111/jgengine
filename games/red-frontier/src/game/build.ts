@@ -1,5 +1,6 @@
 import { assignFormationSlots, boxFormation, facingYaw, placeFormation, type Vec2 } from "@jgengine/core/movement/formation";
 import type { GameContext } from "@jgengine/core/runtime/gameContext";
+import { defineBuildKeys, placePiece } from "@jgengine/core/worldModel/buildTool";
 import { defineSystem } from "@jgengine/shell/gameKit";
 
 import { editorLayers } from "../editorLayers";
@@ -15,9 +16,6 @@ interface OrderInput {
 }
 
 const grid = colonyGrid(editorLayers);
-const deny = (ctx: GameContext, text: string): void => {
-  ctx.game.notices.push({ text, tone: "deny" });
-};
 
 /** Pick up a structure to place (its number key or its button); the same key puts it down again. */
 export function arm(ctx: GameContext, id: string): void {
@@ -28,12 +26,7 @@ export function arm(ctx: GameContext, id: string): void {
 function placeAt(ctx: GameContext, id: string, x: number, z: number): void {
   const structure = idea.structures.find((entry) => entry.id === id)!;
   const cell = cellFor(grid, x, z, structure.size);
-  if (cell === null) return deny(ctx, "Build inside the colony grounds");
-  const world = colony.of(ctx);
-  const refused = world.canPlace(id, { cell });
-  if (refused !== null) return deny(ctx, refused.message);
-  world.place(id, { cell });
-  ctx.game.notices.push({ text: `${structure.label} going up`, tone: "info" });
+  placePiece(ctx, colony.of(ctx), structure, cell === null ? "Build inside the colony grounds" : { cell });
 }
 
 /** The nearest live thing to a point within `reach`, among `ids`. */
@@ -104,14 +97,7 @@ export const buildSystem = defineSystem({
         return state;
       },
     });
-    idea.structures.forEach((structure, index) => {
-      ctx.game.commands.define(`build${index + 1}`, {
-        apply(state) {
-          arm(state, structure.id);
-          return state;
-        },
-      });
-    });
+    defineBuildKeys(ctx, idea.structures, (state, structure) => arm(state, structure.id));
     ctx.game.commands.define("selectAll", {
       apply(state) {
         state.scene.entity.selection.replace(crew(state).hands.keys());

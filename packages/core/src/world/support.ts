@@ -1,11 +1,11 @@
 import type { AddBodyOptions } from "../physics/physicsWorld";
-import type { ConnectorVec3 } from "./connectors";
+import type { SocketVec3 } from "./buildSockets";
 
 export interface SupportPiece {
   id: string;
   grounded?: boolean;
-  position?: ConnectorVec3;
-  halfExtents?: ConnectorVec3;
+  position?: SocketVec3;
+  halfExtents?: SocketVec3;
   mass?: number;
 }
 

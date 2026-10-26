@@ -1,5 +1,6 @@
 import type { PointerHit } from "@jgengine/core/input/pointer";
 import type { GameContext } from "@jgengine/core/runtime/gameContext";
+import { defineBuildKeys, placePiece } from "@jgengine/core/worldModel/buildTool";
 import { defineSystem } from "@jgengine/shell/gameKit";
 
 import { editorLayers } from "../editorLayers";
@@ -25,12 +26,7 @@ export function arm(ctx: GameContext, id: string | null): void {
 function placeAt(ctx: GameContext, id: string, point: readonly number[]): void {
   const building = idea.buildings.find((entry) => entry.id === id)!;
   const cell = cellFor(grid, point[0]!, point[2]!, building.size);
-  if (cell === null) return deny(ctx, `Build inside the ${idea.seat.label.toLowerCase()}'s grounds`);
-  const world = realm.of(ctx);
-  const refused = world.canPlace(id, { cell });
-  if (refused !== null) return deny(ctx, refused.message);
-  world.place(id, { cell });
-  ctx.game.notices.push({ text: `${building.label} going up`, tone: "info" });
+  placePiece(ctx, realm.of(ctx), building, cell === null ? `Build inside the ${idea.seat.label.toLowerCase()}'s grounds` : { cell });
 }
 
 /** Left click: place what is in hand, else look at the building under the pointer. */
@@ -69,14 +65,7 @@ export const buildSystem = defineSystem({
         return state;
       },
     });
-    idea.buildings.forEach((building, index) => {
-      ctx.game.commands.define(`build${index + 1}`, {
-        apply(state) {
-          arm(state, building.id);
-          return state;
-        },
-      });
-    });
+    defineBuildKeys(ctx, idea.buildings, (state, building) => arm(state, building.id));
     ctx.game.commands.define("upgrade", {
       apply(state) {
         actOnSelected(state, (kind) => `upgrade_${kind}`);

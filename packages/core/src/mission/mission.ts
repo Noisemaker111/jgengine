@@ -8,7 +8,7 @@
  */
 
 import { devtools } from "../devtools/devtools";
-import { applyQuestRewards, type QuestRewards } from "../game/quest";
+import { applyQuestRewards, type QuestRewards } from "./quest";
 import { clamp } from "../math/scalar";
 import { resolveRng } from "../random/resolveRng";
 import type { ScenePoint3 } from "../world/sceneShapes";

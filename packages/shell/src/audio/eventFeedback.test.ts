@@ -4,7 +4,7 @@ import { feedbackCueSoundId } from "@jgengine/core/audio/feedbackCues";
 import { ACCESSIBILITY_SETTING_IDS, readAccessibilitySettings } from "@jgengine/core/settings/accessibilitySettings";
 import { createSettingsStore } from "@jgengine/core/settings/settingsModel";
 import { createGameEvents, type GameEventMap } from "@jgengine/core/game/events";
-import type { WaveRunner } from "@jgengine/core/ai/waveRunner";
+import type { WaveRunner } from "@jgengine/core/waves/waveRunner";
 
 import {
   attachEventFeedback,

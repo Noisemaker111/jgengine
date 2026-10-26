@@ -9,7 +9,7 @@ import {
   phaseStatus,
   startEncounter,
   updateEncounter,
-  type EncounterConfig,
+  type EncounterSequenceConfig,
   type EncounterContext,
   type EncounterEvent,
   type EncounterPhase,
@@ -22,7 +22,7 @@ function idsOf(events: readonly EncounterEvent[], type: EncounterEvent["type"]):
 }
 
 /** A three-wave combat arena: each wave clears its tagged spawns before the next. */
-function arenaConfig(): EncounterConfig<{ label: string }> {
+function arenaConfig(): EncounterSequenceConfig<{ label: string }> {
   return {
     phases: [
       {
@@ -157,7 +157,7 @@ describe("encounter sequence — arena adopter", () => {
 
 describe("encounter sequence — nested groups", () => {
   test("nested completion bubbles up: a group finishes when its children do", () => {
-    const config: EncounterConfig = {
+    const config: EncounterSequenceConfig = {
       phases: [
         {
           id: "act-1",
@@ -187,7 +187,7 @@ describe("encounter sequence — nested groups", () => {
   });
 
   test("a group's own predicate gates completion after its children finish", () => {
-    const config: EncounterConfig = {
+    const config: EncounterSequenceConfig = {
       phases: [
         {
           id: "hold",
@@ -218,7 +218,7 @@ describe("encounter sequence — nested groups", () => {
   test("repeat re-runs a subtree before advancing", () => {
     // A 1s timer resets each iteration (phaseElapsed measured from re-enter), so each
     // update completes exactly one run of the repeating phase.
-    const config: EncounterConfig = {
+    const config: EncounterSequenceConfig = {
       phases: [
         { id: "pulse", repeat: 2, completion: { kind: "timer", params: { seconds: 1 } } },
         { id: "end", completion: { kind: "immediate" } },
@@ -240,7 +240,7 @@ describe("encounter sequence — nested groups", () => {
   });
 
   test("empty group node completes immediately and is skipped", () => {
-    const config: EncounterConfig = {
+    const config: EncounterSequenceConfig = {
       phases: [
         { id: "intro", completion: { kind: "immediate" } },
         { id: "empty", children: [] },
@@ -258,7 +258,7 @@ describe("encounter sequence — nested groups", () => {
 
 describe("encounter sequence — predicates and control", () => {
   test("quorum completes when N of nested predicates are met", () => {
-    const config: EncounterConfig = {
+    const config: EncounterSequenceConfig = {
       phases: [
         {
           id: "objectives",
@@ -285,7 +285,7 @@ describe("encounter sequence — predicates and control", () => {
   });
 
   test("metric predicate advances on a live threshold", () => {
-    const config: EncounterConfig = {
+    const config: EncounterSequenceConfig = {
       phases: [{ id: "defend", completion: { kind: "metric", params: { name: "integrity", target: 50, direction: "atMost" } } }],
     };
     const state = createEncounterState(config);
@@ -312,7 +312,7 @@ describe("encounter sequence — predicates and control", () => {
   });
 
   test("large time delta does not overshoot past a pending predicate", () => {
-    const config: EncounterConfig = {
+    const config: EncounterSequenceConfig = {
       phases: [
         { id: "wait", completion: { kind: "timer", params: { seconds: 5 } } },
         { id: "gate", completion: { kind: "flag" } },
@@ -331,7 +331,7 @@ describe("encounter sequence — non-combat adopter", () => {
   test("a tutorial reuses the primitive with no spawn or combat concepts", () => {
     // Same sequencing primitive drives a scripted tutorial: nested steps, predicate gates,
     // and a dynamically injected hint — zero combat/spawn coupling.
-    const config: EncounterConfig<{ prompt: string }> = {
+    const config: EncounterSequenceConfig<{ prompt: string }> = {
       phases: [
         {
           id: "movement",

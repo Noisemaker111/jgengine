@@ -3,7 +3,7 @@ import { createElement } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 
 import { QuestTracker } from "./questTracker";
-import { describeTrackedQuest, type QuestDef, type QuestInstance, type TrackedQuestView } from "@jgengine/core/game/quest";
+import { describeTrackedQuest, type QuestDef, type QuestInstance, type TrackedQuestView } from "@jgengine/core/mission/quest";
 
 const DEF: QuestDef = {
   id: "cull-the-pack",

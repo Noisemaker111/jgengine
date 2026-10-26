@@ -1,15 +1,15 @@
 import type { PathFollowState } from "@jgengine/core/nav/pathFollow";
 import type { GameContext } from "@jgengine/core/runtime/gameContext";
 import type { BossState } from "@jgengine/core/ai/director/boss";
-import type { Encounter } from "@jgengine/core/ai/director/encounter";
-import type { PressurePlan } from "@jgengine/core/ai/director/pressure";
+import type { Encounter } from "@jgengine/core/waves/encounter";
+import type { PressurePlan } from "@jgengine/core/waves/pressure";
 import { createAbilityKit, type AbilityKit } from "@jgengine/core/combat/abilityKit";
 import { createRegenShield, type RegenShield } from "@jgengine/core/combat/regenShield";
 import { createStatusRuntime, type StatusDef, type StatusRuntime } from "@jgengine/core/combat/statusRuntime";
 import { createStats, type Stats } from "@jgengine/core/stats/statModifiers";
-import { createEncounter } from "@jgengine/core/ai/director/encounter";
-import { evaluatePressure } from "@jgengine/core/ai/director/pressure";
-import { createWaveCountdown, type WaveCountdown } from "@jgengine/core/ai/director/waveCountdown";
+import { createEncounter } from "@jgengine/core/waves/encounter";
+import { evaluatePressure } from "@jgengine/core/waves/pressure";
+import { createWaveCountdown, type WaveCountdown } from "@jgengine/core/waves/waveCountdown";
 import { seededRng } from "@jgengine/shell/gameKit";
 
 import { ABILITIES } from "./combat/abilities";

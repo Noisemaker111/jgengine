@@ -10,7 +10,7 @@ import type { GameFeatures } from "../../game/defineGame";
 import type { GameEvents } from "../../game/events";
 import { createLeaderboard, type LeaderboardRow } from "../../game/leaderboard";
 import { createGameDialogue } from "../../game/dialogue";
-import { createQuestJournal, type QuestSnapshotEntry } from "../../game/quest";
+import { createQuestJournal, type QuestSnapshotEntry } from "../../mission/quest";
 import { createChat, type ChatSnapshot } from "../../game/chat";
 import { type Social, type SocialSnapshot } from "../../game/social";
 import { createTradeSystem } from "../../game/trade";

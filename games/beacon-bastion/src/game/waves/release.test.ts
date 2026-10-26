@@ -2,7 +2,7 @@ import { beforeEach, describe, expect, test } from "bun:test";
 import { defineGameDefinition } from "@jgengine/core/game/defineGame";
 import { gamePhase } from "@jgengine/core/game/gamePhase";
 import { createHeadlessRunner, type HeadlessRunner } from "@jgengine/core/runtime/headlessRunner";
-import { expandWave } from "@jgengine/core/ai/director/encounter";
+import { expandWave } from "@jgengine/core/waves/encounter";
 import { content } from "../content";
 import { BASE_ENTITY_ID, STARTING_GOLD, STARTING_LIVES } from "../entities/base/catalog";
 import { resetSession, session } from "../session";

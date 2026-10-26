@@ -5,7 +5,7 @@ import {
   expandWave,
   type EncounterConfig,
   type EncounterDefinition,
-} from "@jgengine/core/ai/director/encounter";
+} from "@jgengine/core/waves/encounter";
 
 const definition: EncounterDefinition = {
   id: "bastion",

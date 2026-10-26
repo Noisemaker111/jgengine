@@ -83,27 +83,6 @@
 - `bossPhase` (function): function bossPhase(phases: readonly BossPhase[], health: number): BossPhase — The phase a boss fights with at a health fraction. Pure read for a HUD; never mutates.
 - `createBossState` (function): function createBossState(phases: readonly BossPhase[]): BossState — Fresh boss state for a phase list, opening in phase 0 with no tell showing.
 
-## @jgengine/core/ai/director/encounter
-
-- `Encounter` (interface): interface Encounter — Live encounter: opens waves, emits timed spawn orders, and round-trips through a save.
-- `EncounterConfig` (interface): interface EncounterConfig — Construction options for {@link createEncounter}.
-- `EncounterDefinition` (interface): interface EncounterDefinition — A whole encounter, authored as data instead of spawned in game code.
-- `EncounterGroup` (interface): interface EncounterGroup — One authored group inside a wave: what arrives, how many, where from, and when. `unit` and `entry` are game-owned ids — the engine never resolves them.
-- `EncounterOrder` (interface): interface EncounterOrder — One unit the director says should enter now.
-- `EncounterPressure` (interface): interface EncounterPressure — The subset of a pressure plan the encounter layer applies.
-- `EncounterState` (interface): interface EncounterState — Serializable encounter state.
-- `EncounterView` (interface): interface EncounterView — Pooled per-frame readout of where the encounter stands.
-- `EncounterWave` (interface): interface EncounterWave — One authored wave.
-- `createEncounter` (function): function createEncounter(config: EncounterConfig): Encounter — Create a live encounter over an authored definition: open a wave, step its clock, take the orders whose time has come, and close the wave when the game says it is cleared.
-- `expandWave` (function): function expandWave(config: EncounterConfig, waveIndex: number, pressure: EncounterPressure = {}): EncounterOrder[] — Expand one authored wave into the units it sends, at the times it sends them.
-
-## @jgengine/core/ai/director/pressure
-
-- `PressurePlan` (interface): interface PressurePlan — One bounded answer to "how hard now", plus the effects the encounter layer applies.
-- `PressureReading` (interface): interface PressureReading — Encounter pressure: how hard a director leans on a player who is struggling, read from the player's own state, quantized to a tier, and bounded by the rule's cap. The plan is a value, not a callback, so a test can sweep it and a probe can print it.
-- `PressureRule` (interface): interface PressureRule — The weights and window that turn a reading into an index, plus the hard cap.
-- `evaluatePressure` (function): function evaluatePressure(reading: PressureReading, rule: PressureRule = {}): PressurePlan — Turn one reading into a bounded pressure plan.
-
 ## @jgengine/core/ai/director/roles
 
 - `FightIntent` (type): type FightIntent = "retreat" | "hold" | "flank" | "cover" | "assault" — The five duties a fighter can be given in a fight. A duty is *who does what*; the squad role a game dials (range, angles, fire discipline) is *how that duty fights* and stays content.
@@ -133,23 +112,6 @@
 - `StorytellerState` (interface): interface StorytellerState — Serializable storyteller state.
 - `StorytellerView` (interface): interface StorytellerView — The storyteller as a HUD or probe reads it.
 - `createStoryteller` (function): function createStoryteller<R = unknown>(config: StorytellerConfig<R>): Storyteller<R> — Build a storyteller that paces incidents by threat points.
-
-## @jgengine/core/ai/director/waveCountdown
-
-- `EarlyCall` (interface): interface EarlyCall — What an early call did: the wave it released, the seconds it skipped and what that paid.
-- `EarlyCallBonus` (interface): interface EarlyCallBonus — The clock between waves: once a wave has finished arriving, the next one goes out on its own when the intermission runs down, and calling it early pays for the seconds skipped. Tower defense's "send early" economy, a horde mode's breather, an arena's next round: the game decides what a release is and what the bonus buys; this owns the timing and the price.
-- `WaveCountdown` (interface): interface WaveCountdown — The clock between waves: arm it when a wave has arrived, tick it, and release on the tick it runs out.
-- `WaveCountdownConfig` (interface): interface WaveCountdownConfig — How long each intermission runs and what calling a wave early pays.
-- `WaveCountdownState` (interface): interface WaveCountdownState — Serializable clock state.
-- `WaveCountdownView` (interface): interface WaveCountdownView extends WaveCountdownState — The clock as a HUD reads it.
-- `createWaveCountdown` (function): function createWaveCountdown(config: WaveCountdownConfig): WaveCountdown — Build the clock between waves.
-
-## @jgengine/core/ai/director/wavePreview
-
-- `WavePreview` (interface): interface WavePreview — One authored wave summarized for a preview card.
-- `WavePreviewOptions` (interface): interface WavePreviewOptions — How {@link summarizeWave} reads traits and elite groups.
-- `WavePreviewUnit` (interface): interface WavePreviewUnit — One unit in a wave, totalled across its groups.
-- `summarizeWave` (function): function summarizeWave(wave: EncounterWave, options: WavePreviewOptions = {}): WavePreview — Summarize one authored wave for a preview.
 
 ## @jgengine/core/ai/driver
 
@@ -287,29 +249,6 @@
 - `RvoTunables` (interface): interface RvoTunables — Serializable avoidance tuning, retunable in play through {@link RvoCrowd.retune}.
 - `createRvoCrowd` (function): function createRvoCrowd(options: RvoCrowdOptions = {}): RvoCrowd — Reciprocal velocity obstacle avoidance over circular agents. Each nearby pair contributes one or two half-plane constraints on the agent's velocity, and a small linear program picks the velocity closest to the preferred one that satisfies them all. The neighbour search is a uniform grid capped at `maxNeighbors`, so a tick costs the same for 50 agents and 5,000.
 
-## @jgengine/core/ai/spawnDirector
-
-- `DirectorContext` (interface): interface DirectorContext { alive: number; players?: number; playerPositions?: readonly NavPoint[] } — ⚠ undocumented
-- `DirectorStep` (interface): interface DirectorStep { state: SpawnDirectorState; spawns: SpawnRequest[] } — ⚠ undocumented
-- `SpawnDirectorConfig` (interface): interface SpawnDirectorConfig { waves: readonly WaveManifest[]; maxAlive?: number; escalationPerSecond?: number; alertBudgetPerSecond?: number; alertDecayPerSecond?: number; playerBudgetPerSecond?: number; maxSpawnsPerTick?: number; loop?: boolean; seed?: number; spawnP… — ⚠ undocumented
-- `SpawnDirectorState` (interface): interface SpawnDirectorState { wave: number; elapsed: number; waveElapsed: number; budget: number; alert: number; spawnedThisWave: number; spawnedTotal: number; rng: RandomSeed; done: boolean } — ⚠ undocumented
-- `SpawnEntry` (interface): interface SpawnEntry { id: string; cost: number; weight?: number; minWave?: number } — ⚠ undocumented
-- `SpawnPointBiasStrength` (type): type SpawnPointBiasStrength = "subtle" | "moderate" | "strong" — How strongly `distanceBias` weights candidates by distance from `avoid` — a named intent, not a weighting exponent.
-- `SpawnPointDistanceBias` (type): type SpawnPointDistanceBias = "near" | "far" | "none" — Preference for picking a spawn point relative to `avoid` positions: closer, farther, or unweighted.
-- `SpawnPointSelectionOptions` (interface): interface SpawnPointSelectionOptions — Semantic options for selecting a spawn point without exposing weighting internals.
-- `SpawnRequest` (interface): interface SpawnRequest { entryId: string; cost: number; wave: number; point?: NavPoint; laneId?: number } — ⚠ undocumented
-- `WaveManifest` (interface): interface WaveManifest { budget: number; entries: readonly SpawnEntry[]; duration?: number; budgetPerSecond?: number } — ⚠ undocumented
-- `advanceSpawnDirector` (function): function advanceSpawnDirector(config: SpawnDirectorConfig, state: SpawnDirectorState, dt: number, ctx: DirectorContext): DirectorStep — ⚠ undocumented
-- `advanceWave` (function): function advanceWave(config: SpawnDirectorConfig, state: SpawnDirectorState): SpawnDirectorState — ⚠ undocumented
-- `createSpawnDirectorState` (function): function createSpawnDirectorState(config: SpawnDirectorConfig): SpawnDirectorState — ⚠ undocumented
-- `pickSpawnPoint` (function): function pickSpawnPoint(options: SpawnPointSelectionOptions): NavPoint | null — Selects a candidate spawn point using a semantic distance preference and caller-supplied randomness.
-- `raiseAlert` (function): function raiseAlert(state: SpawnDirectorState, amount: number): SpawnDirectorState — ⚠ undocumented
-
-## @jgengine/core/ai/spawnPoint
-
-- `SpawnPointDistanceBias` (type): type SpawnPointDistanceBias = "near" | "far" | "none" — Preference for picking a spawn point relative to `avoid` positions: closer, farther, or unweighted.
-- `SpawnPointSelectionOptions` (interface): interface SpawnPointSelectionOptions — Semantic options for selecting a spawn point without exposing weighting internals.
-
 ## @jgengine/core/ai/tacticalQueries
 
 - `ScoredPosition` (interface): interface ScoredPosition — A candidate position with its deterministic weighted tactical score.
@@ -364,14 +303,6 @@
 - `UtilityTunables` (interface): interface UtilityTunables — In-play dials that stay reachable through {@link UtilityBrain.retune}.
 - `createUtilityBrain` (function): function createUtilityBrain(config: UtilityBrainConfig): UtilityBrain — Create a utility brain over an existing {@link NeedSet}. The need set is injected, not owned, so the game shows the same hunger the brain scores and persists one copy.
 - `sampleResponseCurve` (function): function sampleResponseCurve(curve: ResponseCurve, satisfaction: number): number — Sample a response curve at a `0..1` satisfaction. Deterministic, allocation-free.
-
-## @jgengine/core/ai/waveRunner
-
-- `WaveRunner` (interface): interface WaveRunner — A live, observable, serializable wave/spawn runner over a seeded spawn director.
-- `WaveRunnerConfig` (interface): interface WaveRunnerConfig extends SpawnDirectorConfig — Configuration for {@link createWaveRunner}: the full {@link SpawnDirectorConfig} (escalating waves, budgets, seed, spawn points) plus an optional {@link WaveSpawnSink}. The runner owns the director state — you never pass a `SpawnDirectorState` here.
-- `WaveSpawnSink` (type): type WaveSpawnSink = (request: SpawnRequest) => void — A callback the wave runner hands each {@link SpawnRequest} the underlying spawn director emits. The runner never instantiates entities itself — it forwards the request (a free-string `entryId` "kind", cost, wave, optional point/lane) to the game, which decides what to build. Keeps the runner genre-agnostic.
-- `WaveView` (interface): interface WaveView — A pooled, per-frame readout of the current wave — the "brain behind WAVE 3". Reused across {@link WaveRunner.view} calls (never per-frame allocated), so read it and render it, don't retain it.
-- `createWaveRunner` (function): function createWaveRunner(config: WaveRunnerConfig): WaveRunner — A thin, stateful, observable wrapper around the seeded {@link createSpawnDirectorState} / {@link advanceSpawnDirector} model. It OWNS a {@link SpawnDirectorState}, ticks it from `update(dt, ctx?)`, keeps the new state, and forwards each emitted {@link SpawnRequest} to an optional `onSpawn` sink so the model never instantiates entities. `view()` returns a pooled per-frame readout — the "brain behind WAVE 3": the 1-based wave number, wave progress `0..1`, banked budget, per-wave and total spawn counts, alert, and done flag. `forceNextWave` / `raiseAlert` drive it, `subscribe` observes it, and `snapshot`/`restore` round-trip the plain serializable state object through a save. Nothing here is genre-specific: spawn-entry `kind`s (the director's `entryId`s) stay free strings the runner never interprets.
 
 ## @jgengine/core/anim/actionLayer
 
@@ -2978,10 +2909,10 @@
 - `SoilRules` (interface): interface SoilRules — Fully-defaulted soil params parsed from a volume's `meta`.
 - `SoundDef` (interface): interface SoundDef { id: string; url?: string; synth?: SynthPatch; bus: AudioBusId; gain?: number; loop?: boolean; maxVoices?: number; priority?: number; duck?: {buses?: readonly string[]; amount?: number; seconds?: number;}; positional?: boolean; falloff?: A… — ⚠ undocumented · used by `DEFAULT_FEEDBACK_CUE_SOUNDS` (@jgengine/core/audio/feedbackCues): Short procedural reactions - no samples to load, so every game has impact feedback without authoring audio.
 - `SpatialGrid` (class): class SpatialGrid — A uniform-grid broad-phase over the x/z plane, separate from the rigid-body sim, for cheap same-tick proximity across hundreds–thousands of simple movers (swarm enemies). Rebuild each tick from the caller's own position arrays, then `queryCircle` (enemies hitting the player / an AoE) or `forEachPair` (mutual separation). Both are precise: no false negatives, no false positives beyond the exact distance test.
-- `SpawnDirectorConfig` (interface): interface SpawnDirectorConfig { waves: readonly WaveManifest[]; maxAlive?: number; escalationPerSecond?: number; alertBudgetPerSecond?: number; alertDecayPerSecond?: number; playerBudgetPerSecond?: number; maxSpawnsPerTick?: number; loop?: boolean; seed?: number; spawnP… — ⚠ undocumented
-- `SpawnDirectorState` (interface): interface SpawnDirectorState { wave: number; elapsed: number; waveElapsed: number; budget: number; alert: number; spawnedThisWave: number; spawnedTotal: number; rng: RandomSeed; done: boolean } — ⚠ undocumented
-- `SpawnEntry` (interface): interface SpawnEntry { id: string; cost: number; weight?: number; minWave?: number } — ⚠ undocumented
-- `SpawnRequest` (interface): interface SpawnRequest { entryId: string; cost: number; wave: number; point?: NavPoint; laneId?: number } — ⚠ undocumented
+- `SpawnDirectorConfig` (interface): interface SpawnDirectorConfig — The whole wave plan plus the pacing knobs: alive cap, escalation, alert and per-player budget, looping and spawn points.
+- `SpawnDirectorState` (interface): interface SpawnDirectorState — Where the director is: current wave, clocks, spare budget, alert level and spawn counts. Serializable.
+- `SpawnEntry` (interface): interface SpawnEntry — One kind a wave can spend budget on: its cost, pick weight and the first wave it may appear in.
+- `SpawnRequest` (interface): interface SpawnRequest — One spawn the caller should perform: which entry, what it cost, which wave, and where.
 - `StatCatalog` (type): type StatCatalog = Record<string, { max: number; min?: number; current?: number }> — ⚠ undocumented
 - `StatValue` (interface): interface StatValue extends StatPool — Native entity-stat name retained as a compatibility bridge to the portable pool model.
 - `Station` (interface): interface Station — ⚠ undocumented
@@ -3113,7 +3044,7 @@
 - `WATER_SCHEMA` (const): const WATER_SCHEMA: ParamSchema — The water parameter schema — drives the inspector and `meta` parse via the studio seam.
 - `WaterRules` (interface): interface WaterRules — Fully-defaulted water surface params parsed from a volume's `meta`.
 - `WaterSurface` (interface): interface WaterSurface { readonly level: number; readonly waves: readonly GerstnerWave[]; height(x: number, z: number, time: number): number; normal(x: number, z: number, time: number): WaterNormal; displace(x: number, z: number, time: number): readonly [number, … — ⚠ undocumented
-- `WaveManifest` (interface): interface WaveManifest { budget: number; entries: readonly SpawnEntry[]; duration?: number; budgetPerSecond?: number } — ⚠ undocumented
+- `WaveManifest` (interface): interface WaveManifest — One wave: the budget it opens with, the kinds it may buy, and how long it runs or how fast it refills.
 - `WaveRunner` (interface): interface WaveRunner — A live, observable, serializable wave/spawn runner over a seeded spawn director.
 - `WaveRunnerConfig` (interface): interface WaveRunnerConfig extends SpawnDirectorConfig — Configuration for {@link createWaveRunner}: the full {@link SpawnDirectorConfig} (escalating waves, budgets, seed, spawn points) plus an optional {@link WaveSpawnSink}. The runner owns the director state — you never pass a `SpawnDirectorState` here.
 - `WaveSpawnSink` (type): type WaveSpawnSink = (request: SpawnRequest) => void — A callback the wave runner hands each {@link SpawnRequest} the underlying spawn director emits. The runner never instantiates entities itself — it forwards the request (a free-string `entryId` "kind", cost, wave, optional point/lane) to the game, which decides what to build. Keeps the runner genre-agnostic.
@@ -3140,8 +3071,8 @@
 - `advanceFreeFlight` (function): function advanceFreeFlight(state: FreeFlightState, intent: FreeFlightIntent, yaw: number, pitch: number | undefined, dt: number, tuning: FreeFlightTuning, options?: Pick<MotionFrameOptions, "authoritativeStep">): FreeFlightStep — Advance one frame of free-flight kinematics. Horizontal uses yaw-relative strafe (A = left, D = right) — never roll/bank. Vertical is independent of pitch unless `alignWithLook` is true (spectator).
 - `advanceInterestGate` (function): function advanceInterestGate(state: InterestGateState, config: InterestSchedulerConfig, dt: number, input: InterestGateInput = {}): InterestGateStep — Advance one gate by `dt` seconds against this tick's `input`, mutating `state` in place and returning what the caller should do. Sleeping skips the expensive work (`active: false`) while the gate's timers keep advancing, so state is preserved; a `wake` signal or crossing `wakeRadius` flips it back to active and fires an immediate tick.
 - `advancePathFollow` (function): function advancePathFollow(config: PathFollowConfig, state: PathFollowState, dt: number): PathFollowState — Advance a path-follower by `speed * dt` along its authored polyline. Pure — returns the next state. Crosses multiple waypoints in one step, loops when configured, and reports `done` at the end of a non-looping path. No navmesh required (#52); feed it a navmesh route via `pathFromNav` for click-to-move (#51).
-- `advanceSpawnDirector` (function): function advanceSpawnDirector(config: SpawnDirectorConfig, state: SpawnDirectorState, dt: number, ctx: DirectorContext): DirectorStep — ⚠ undocumented
-- `advanceWave` (function): function advanceWave(config: SpawnDirectorConfig, state: SpawnDirectorState): SpawnDirectorState — ⚠ undocumented
+- `advanceSpawnDirector` (function): function advanceSpawnDirector(config: SpawnDirectorConfig, state: SpawnDirectorState, dt: number, ctx: DirectorContext): DirectorStep — Advance the director by `dt` seconds: earn budget, spend it on spawns under the alive cap, and roll waves over.
+- `advanceWave` (function): function advanceWave(config: SpawnDirectorConfig, state: SpawnDirectorState): SpawnDirectorState — Move to the next wave (or loop, or finish), resetting the wave clock and budget.
 - `aircraftAttitudeQuaternion` (function): function aircraftAttitudeQuaternion(heading: number, pitch: number, bank: number): AircraftQuaternion — Quaternion from heading, nose-up pitch and right bank, rad — the inverse of a step's `heading`/`pitch`/`bank`. Matches three.js `Euler(-pitch, heading, bank, "YXZ")`.
 - `aircraftHeadingQuaternion` (function): function aircraftHeadingQuaternion(heading: number): AircraftQuaternion — Quaternion for a heading about world up, forward `[sin h, 0, cos h]`.
 - `annulusRegion` (function): function annulusRegion(center: Vec2, innerRadius: number, outerRadius: number, options: { distribution?: RadialDistribution } = {}): SampleRegion<Vec2> — A ring (annulus) between `innerRadius` and `outerRadius`. `"area"` fills the band with even density; `"radial"` spreads uniformly in radius. Angle first, then radius.
@@ -3248,7 +3179,7 @@
 - `createSelectionSet` (function): function createSelectionSet(initial?: Iterable<string>): SelectionSet — An ordered, deduplicated set of selected instance ids for RTS unit-command routing.
 - `createSequenceDirector` (function): function createSequenceDirector<Payload = unknown>(options: SequenceDirectorOptions<Payload>): SequenceDirector<Payload> — A serializable cutscene / sequence director: an ordered timeline of typed cues (`{ atMs, kind, payload }`) advanced by one injected clock, firing each cue once and in order as its time passes — even across a large seek — with play/pause/ seek/skip/stop controls. The director only *schedules and emits* cues; it never interprets what a `kind` means, so the same primitive drives camera moves, dialogue lines, fades, or any game event. `snapshot`/`restore` round-trip the playhead and which cues have fired. Deterministic (no wall clock beyond the injected `now`) and allocation-free on the tick path.
 - `createSharedAnnotations` (function): function createSharedAnnotations(deps: SharedAnnotationsDeps): SharedAnnotations — Make a map annotation layer collaborative: local `addStroke`/`addShape`/ `addNote`/`remove`/`clear` apply then broadcast a serializable edit over the party feed (the same seam `createPingSystem` uses), and `apply` mirrors inbound edits from other players — dropping our own echoes. Ids are globally unique per client so two players' strokes never collide. Transport-agnostic: wire `feed` to any replicated feed and route received entries into `apply`.
-- `createSpawnDirectorState` (function): function createSpawnDirectorState(config: SpawnDirectorConfig): SpawnDirectorState — ⚠ undocumented
+- `createSpawnDirectorState` (function): function createSpawnDirectorState(config: SpawnDirectorConfig): SpawnDirectorState — A fresh director at the first wave with that wave's budget.
 - `createStationClaim` (function): function createStationClaim(controller?: MountController): StationClaim — ⚠ undocumented
 - `createTargetAcquirer` (function): function createTargetAcquirer(policy: AcquisitionPolicy): TargetAcquirer — Wrap an {@link AcquisitionPolicy} in a small object that remembers the held target between passes, so callers get retention hysteresis for free without threading the previous target by hand. The only state is the held id (a string) — trivially serializable; round-trip it with {@link TargetAcquirer.hold}.
 - `createTerraformBrush` (function): function createTerraformBrush(terrain: Pick<EditableTerrain, "apply">, config: TerraformBrushConfig = {}): TerraformBrush — ⚠ undocumented
@@ -3379,7 +3310,7 @@
 - `pursue` (function): function pursue(options: Omit<PursueBehavior, "kind">): PursueBehavior — Attach aggro, collision-aware chase, cooldown attack and latched return-to-spawn as data.
 - `quarterTurnsToRotationY` (function): function quarterTurnsToRotationY(quarterTurns: number): number — Maps 0–3 quarter turns onto radians for ghost/commit rotation.
 - `rain` (function): function rain(config: RainEnvironmentConfig = {}): RainEnvironmentDescriptor — Declares a rainfall weather effect for `environment()` — area, density, speed, wind, and drop width/opacity.
-- `raiseAlert` (function): function raiseAlert(state: SpawnDirectorState, amount: number): SpawnDirectorState — ⚠ undocumented
+- `raiseAlert` (function): function raiseAlert(state: SpawnDirectorState, amount: number): SpawnDirectorState — Raise the alert level (clamped to 0..1), which adds budget while it decays.
 - `raycastNav` (function): function raycastNav(mesh: NavMeshData, from: Vec3, to: Vec3): boolean — True when the segment remains over walkable polygons.
 - `readNamedSockets` (function): function readNamedSockets(root: ModelNode, pattern: RegExp = SOCKET_PATTERN): ModelSocket[] — Depth-first collect every socket-named node's local offset, sorted by descending Y then ascending X so socket indices are stable across loads (top first, left-to-right). Empty when the model tags none — callers then fall back to computed offsets. Pass a custom `pattern` for a bespoke naming convention.
 - `readScatterPalette` (function): function readScatterPalette(meta: Record<string, unknown> | undefined): ScatterPaletteEntry[] — Parses a scatter region's palette from meta: a weighted `palette` array, else a single `item`.
@@ -3444,10 +3375,7 @@
 - `sky` (function): function sky(config: SkyEnvironmentConfig = {}): SkyEnvironmentDescriptor — ⚠ undocumented
 - `slopeStepCost` (function): function slopeStepCost(field: { sampleHeight(x: number, z: number): number }, weight = DEFAULT_SLOPE_STEP_WEIGHT): (from: NavPoint, to: NavPoint) => number — `FindPathOptions.stepCost` factory that penalizes steep terrain: cost is `1 + weight * |Δheight| / horizontalDistance`, so with the default weight a 45° slope roughly doubles the step cost.
 - `snapHeading` (function): function snapHeading(degrees: number, increment: number): number — Quantize `degrees` to the nearest multiple of `increment` (both in the `[0, 360)` convention). A non-positive increment is treated as free rotation and only normalizes. The math behind a `snap`-mode {@link PlacementRotationPolicy}.
-- `snapToNearest` (function): function snapToNearest(registry: ConnectorRegistry, placed: readonly PlacedPiece[], movingDef: ConnectorPieceDef, cursor: ConnectorVec3, options: SnapOptions = {}): SnapResult | null — ⚠ undocumented
 - `snow` (function): function snow(config: SnowEnvironmentConfig = {}): SnowEnvironmentDescriptor — Declares a snowfall weather effect for `environment()` — area, density, drift, wind, and flake opacity.
-- `socketWorldPosition` (function): function socketWorldPosition(socket: ConnectorSocket, origin: ConnectorVec3, rotationY: number): ConnectorVec3 — ⚠ undocumented
-- `socketsCompatible` (function): function socketsCompatible(a: ConnectorSocket, b: ConnectorSocket): boolean — ⚠ undocumented
 - `solveLock` (function): function solveLock(spec: LockSpec): boolean — Whether the board has a path from the start row to the bolt seat at all.
 - `solveLockPath` (function): function solveLockPath(spec: LockSpec): number[] | null — Return a concrete row-per-column solution, or null if the board is unsolvable.
 - `solveSupport` (function): function solveSupport(pieces: readonly SupportPiece[], links: readonly SupportLink[], config: SupportConfig = {}): SupportResult — ⚠ undocumented
@@ -3491,7 +3419,6 @@
 - `withPart` (function): function withPart(parts: readonly VehiclePart[], next: VehiclePart): VehiclePart[] — Swap a part into its slot: any part already in `next.slot` is removed and `next` takes its place in the same install position, so the order (and therefore the composed numbers) stays stable across an upgrade.
 - `withPathProfiles` (function): function withPathProfiles(base: (x: number, z: number) => number, profiles: readonly TerrainPathProfile[]): (x: number, z: number) => number — Wraps a height sampler so each authored `TerrainPathProfile` reshapes it. Profiles apply in list order (later profiles compose over earlier ones, so an intersection's last profile wins its core); each reads the running height as its surrounding ground and the original `base` for `sample` centerline heights. The returned sampler is pure and deterministic. Degenerate profiles (fewer than two points, non-positive width or length) are skipped; with no usable profile the original `base` is returned unchanged.
 - `world` (function): function world(config: PlaceConfig): PlaceWorldFeature — Declares the place a game is played in: substrate (`ground`) + laws (`physics`, `ground.surface`). The thin default start — `flat` with `Infinity` axes and default physics, `board` for 2D — is a complete world; dressing it (sky, foliage, props, sculpt) is editor-authored scene content. Multiple worlds per game are first-class: declare one `world()` per place, each with its own id, ground, and physics. Games that are not a spatial place (pure UI/rules) omit `world` entirely.
-- `worldSockets` (function): function worldSockets(def: ConnectorPieceDef, piece: PlacedPiece): WorldSocket[] — ⚠ undocumented
 
 ## @jgengine/core/world/authoredAnimation
 
@@ -3598,11 +3525,13 @@
 - `BuildSocketCatalogConfig` (interface): interface BuildSocketCatalogConfig — Serializable catalog config; also the shape returned by {@link BuildSocketCatalog.toJSON}.
 - `ConnectionRule` (interface): interface ConnectionRule — Declares that two socket kinds may snap together; `mutual` (default `true`) also allows `b`→`a`.
 - `ModelSocketLike` (interface): interface ModelSocketLike — A `{ name, offset }` attach point — structurally the `ModelSocket` of `scene/modelSockets`.
+- `NearestSnap` (interface): interface NearestSnap extends SnapCandidate — The snap {@link BuildSocketCatalog.snapNearest} picked, with the index of the placed piece it mates onto.
 - `PieceTransform` (interface): interface PieceTransform — World transform of a placed piece: position plus a yaw about +Y.
 - `PlacedPiece` (interface): interface PlacedPiece — An already-placed piece the resolver snaps candidates against.
 - `PlacedSocket` (interface): interface PlacedSocket — A piece's socket resolved into world space.
 - `ResolveSnapsOptions` (interface): interface ResolveSnapsOptions — Options for {@link BuildSocketCatalog.resolveSnaps}.
 - `SnapCandidate` (interface): interface SnapCandidate — A resolved snap: which sockets mate and the world transform that lands the candidate onto the target.
+- `SnapNearestOptions` (interface): interface SnapNearestOptions — Options for {@link BuildSocketCatalog.snapNearest}.
 - `SocketDef` (interface): interface SocketDef — One named socket on a piece: where it sits and which horizontal direction it faces (yaw about Y).
 - `SocketVec3` (type): type SocketVec3 = readonly [number, number, number] — Data-driven modular build-piece snap system: a catalog of piece types, each declaring named sockets (local position + outward facing + a generic "kind"), plus a connection-rule table saying which socket kinds may mate. Given a placed piece and a candidate type it resolves every valid snap — the world transform that lands the candidate's socket exactly on the placed piece's socket, facing back into it. Genre-agnostic: foundation/wall/ceiling/pillar/edge snapping falls out of the catalog data, with no game-specific piece names baked in. Pure and serializable; composes with `world/footprintGrid` occupancy (via an injected `isFree` predicate — never imported) and with `scene/modelSockets` named attach points (via {@link pieceSocketsFromModel}).
 - `createBuildSocketCatalog` (function): function createBuildSocketCatalog(config: BuildSocketCatalogConfig): BuildSocketCatalog — Build a modular snap catalog from piece definitions and a connection-rule table. Resolves the set of valid snap transforms when hovering a candidate piece near a placed one: for every compatible socket pair it computes the world transform that seats the candidate's socket onto the placed socket, oriented to face back into it. Deterministic ordering (nearest a cursor when given, else declaration order) and an optional occupancy predicate keep it drop-in for a build-mode controller.
@@ -3865,22 +3794,6 @@
 - `createCityLayout` (function): function createCityLayout(patch: CityLayoutPatch = {}): CityLayoutStore — Create a city layout from US defaults plus the game's patch.
 - `resolveCityLayout` (function): function resolveCityLayout(patch: CityLayoutPatch = {}, base: CityLayout = US_CITY_LAYOUT): CityLayout — Merge a patch over a full layout, clamping every number to its slider range.
 - `tuneCityLayout` (function): function tuneCityLayout(store: CityLayoutStore, options: TuneCityLayoutOptions = {}): void — Register a devtools slider for every number in the layout (and a toggle per zone's driveways); dragging one sets the store, which re-lays whatever listens to it. Registering again keeps the values already dragged, so a hot reload does not snap the sliders back.
-
-## @jgengine/core/world/connectors
-
-- `ConnectorPieceDef` (interface): interface ConnectorPieceDef { kind: string; sockets: readonly ConnectorSocket[] } — ⚠ undocumented
-- `ConnectorRegistry` (type): type ConnectorRegistry = (kind: string) => ConnectorPieceDef | null — ⚠ undocumented
-- `ConnectorSocket` (interface): interface ConnectorSocket { id: string; type: string; offset: ConnectorVec3; accepts?: readonly string[] } — ⚠ undocumented
-- `ConnectorVec3` (type): type ConnectorVec3 = readonly [number, number, number] — ⚠ undocumented
-- `PlacedPiece` (interface): interface PlacedPiece { id: string; kind: string; position: ConnectorVec3; rotationY: number } — ⚠ undocumented
-- `SnapOptions` (interface): interface SnapOptions { snapDistance?: number; rotationY?: number } — ⚠ undocumented
-- `SnapResult` (interface): interface SnapResult { socketId: string; targetPieceId: string; targetSocketId: string; position: ConnectorVec3; rotationY: number; distance: number } — ⚠ undocumented
-- `WorldSocket` (interface): interface WorldSocket { pieceId: string; socket: ConnectorSocket; position: ConnectorVec3 } — ⚠ undocumented
-- `collectWorldSockets` (function): function collectWorldSockets(registry: ConnectorRegistry, pieces: readonly PlacedPiece[]): WorldSocket[] — ⚠ undocumented
-- `snapToNearest` (function): function snapToNearest(registry: ConnectorRegistry, placed: readonly PlacedPiece[], movingDef: ConnectorPieceDef, cursor: ConnectorVec3, options: SnapOptions = {}): SnapResult | null — ⚠ undocumented
-- `socketWorldPosition` (function): function socketWorldPosition(socket: ConnectorSocket, origin: ConnectorVec3, rotationY: number): ConnectorVec3 — ⚠ undocumented
-- `socketsCompatible` (function): function socketsCompatible(a: ConnectorSocket, b: ConnectorSocket): boolean — ⚠ undocumented
-- `worldSockets` (function): function worldSockets(def: ConnectorPieceDef, piece: PlacedPiece): WorldSocket[] — ⚠ undocumented
 
 ## @jgengine/core/world/decalKind
 
@@ -4590,7 +4503,7 @@
 - `DebrisOptions` (interface): interface DebrisOptions { scatter?: number; seed?: number } — ⚠ undocumented
 - `SupportConfig` (interface): interface SupportConfig { maxDistance?: number } — ⚠ undocumented
 - `SupportLink` (interface): interface SupportLink { a: string; b: string } — ⚠ undocumented
-- `SupportPiece` (interface): interface SupportPiece { id: string; grounded?: boolean; position?: ConnectorVec3; halfExtents?: ConnectorVec3; mass?: number } — ⚠ undocumented
+- `SupportPiece` (interface): interface SupportPiece { id: string; grounded?: boolean; position?: SocketVec3; halfExtents?: SocketVec3; mass?: number } — ⚠ undocumented
 - `SupportResult` (interface): interface SupportResult { supported: readonly string[]; unsupported: readonly string[]; distance: Readonly<Record<string, number>> } — ⚠ undocumented
 - `solveSupport` (function): function solveSupport(pieces: readonly SupportPiece[], links: readonly SupportLink[], config: SupportConfig = {}): SupportResult — ⚠ undocumented
 - `toDebrisBodies` (function): function toDebrisBodies(pieces: readonly SupportPiece[], collapsedIds: readonly string[], options: DebrisOptions = {}): AddBodyOptions[] — ⚠ undocumented

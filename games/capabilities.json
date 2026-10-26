@@ -1022,6 +1022,17 @@
       "intent": "grid cells a snapped build piece footprint covers (footprintGrid occupancy bridge)"
     },
     {
+      "id": "build-keys",
+      "packages": [
+        "@jgengine/core"
+      ],
+      "module": "@jgengine/core/worldModel/buildTool",
+      "domain": "worldModel",
+      "gameFacing": false,
+      "probe": null,
+      "intent": "one numbered build command per build piece"
+    },
+    {
       "id": "build-requirements",
       "packages": [
         "@jgengine/core"
@@ -2946,8 +2957,8 @@
       "packages": [
         "@jgengine/core"
       ],
-      "module": "@jgengine/core/combat/encounterSequence",
-      "domain": "combat",
+      "module": "@jgengine/core/waves/encounterSequence",
+      "domain": "waves",
       "gameFacing": false,
       "probe": null,
       "intent": "read the id of the phase an encounter is currently waiting on"
@@ -2957,8 +2968,8 @@
       "packages": [
         "@jgengine/core"
       ],
-      "module": "@jgengine/core/combat/encounterSequence",
-      "domain": "combat",
+      "module": "@jgengine/core/waves/encounterSequence",
+      "domain": "waves",
       "gameFacing": false,
       "probe": null,
       "intent": "step a hierarchical encounter, resolving predicate-gated completion, repeats, and nested advance with lifecycle events"
@@ -2968,8 +2979,8 @@
       "packages": [
         "@jgengine/core"
       ],
-      "module": "@jgengine/core/ai/director/encounter",
-      "domain": "ai",
+      "module": "@jgengine/core/waves/encounter",
+      "domain": "waves",
       "gameFacing": false,
       "probe": null,
       "intent": "turn an authored wave into a deterministic, pressure-adjusted list of timed spawn orders"
@@ -2979,8 +2990,8 @@
       "packages": [
         "@jgengine/core"
       ],
-      "module": "@jgengine/core/combat/encounterSequence",
-      "domain": "combat",
+      "module": "@jgengine/core/waves/encounterSequence",
+      "domain": "waves",
       "gameFacing": false,
       "probe": null,
       "intent": "externally complete an active encounter phase to drive scripted or failure-retry transitions"
@@ -2990,8 +3001,8 @@
       "packages": [
         "@jgengine/core"
       ],
-      "module": "@jgengine/core/combat/encounterSequence",
-      "domain": "combat",
+      "module": "@jgengine/core/waves/encounterSequence",
+      "domain": "waves",
       "gameFacing": false,
       "probe": null,
       "intent": "dynamically insert a phase or branch into a running encounter, e.g. a boss on the final wave"
@@ -3001,8 +3012,8 @@
       "packages": [
         "@jgengine/core"
       ],
-      "module": "@jgengine/core/combat/encounterSequence",
-      "domain": "combat",
+      "module": "@jgengine/core/waves/encounterSequence",
+      "domain": "waves",
       "gameFacing": false,
       "probe": null,
       "intent": "read whether a specific encounter phase is pending, active, or complete"
@@ -3012,8 +3023,8 @@
       "packages": [
         "@jgengine/core"
       ],
-      "module": "@jgengine/core/combat/encounterSequence",
-      "domain": "combat",
+      "module": "@jgengine/core/waves/encounterSequence",
+      "domain": "waves",
       "gameFacing": false,
       "probe": null,
       "intent": "gate encounter phase completion on timers, cleared spawns, metrics, events, or a quorum of conditions"
@@ -3023,8 +3034,8 @@
       "packages": [
         "@jgengine/core"
       ],
-      "module": "@jgengine/core/ai/director/pressure",
-      "domain": "ai",
+      "module": "@jgengine/core/waves/pressure",
+      "domain": "waves",
       "gameFacing": false,
       "probe": null,
       "intent": "bounded difficulty tier read from player health, encounter progress and time"
@@ -3034,8 +3045,8 @@
       "packages": [
         "@jgengine/core"
       ],
-      "module": "@jgengine/core/combat/encounterSequence",
-      "domain": "combat",
+      "module": "@jgengine/core/waves/encounterSequence",
+      "domain": "waves",
       "gameFacing": false,
       "probe": null,
       "intent": "read completed-vs-total progress across a hierarchical encounter for HUD or objective display"
@@ -3045,8 +3056,8 @@
       "packages": [
         "@jgengine/core"
       ],
-      "module": "@jgengine/core/ai/director/encounter",
-      "domain": "ai",
+      "module": "@jgengine/core/waves/encounter",
+      "domain": "waves",
       "gameFacing": false,
       "probe": null,
       "intent": "open authored waves, emit their timed orders, and track wave progress through a save"
@@ -3056,8 +3067,8 @@
       "packages": [
         "@jgengine/core"
       ],
-      "module": "@jgengine/core/combat/encounterSequence",
-      "domain": "combat",
+      "module": "@jgengine/core/waves/encounterSequence",
+      "domain": "waves",
       "gameFacing": false,
       "probe": null,
       "intent": "turn an entered encounter phase into spawn requests from authored scene points or an inline list"
@@ -3067,8 +3078,8 @@
       "packages": [
         "@jgengine/core"
       ],
-      "module": "@jgengine/core/combat/encounterSequence",
-      "domain": "combat",
+      "module": "@jgengine/core/waves/encounterSequence",
+      "domain": "waves",
       "gameFacing": false,
       "probe": null,
       "intent": "enter the first phase of a hierarchical encounter and emit its opening spawn events"
@@ -3078,8 +3089,8 @@
       "packages": [
         "@jgengine/core"
       ],
-      "module": "@jgengine/core/combat/encounterSequence",
-      "domain": "combat",
+      "module": "@jgengine/core/waves/encounterSequence",
+      "domain": "waves",
       "gameFacing": false,
       "probe": null,
       "intent": "create the serializable starting state of a hierarchical encounter sequence"
@@ -7064,6 +7075,17 @@
       "intent": "resolve a placement commit into a shared asset placement payload"
     },
     {
+      "id": "place-piece",
+      "packages": [
+        "@jgengine/core"
+      ],
+      "module": "@jgengine/core/worldModel/buildTool",
+      "domain": "worldModel",
+      "gameFacing": false,
+      "probe": null,
+      "intent": "place a build piece in a world model with on-screen refusals"
+    },
+    {
       "id": "placed-object-rehydrate",
       "packages": [
         "@jgengine/core"
@@ -7479,8 +7501,8 @@
       "packages": [
         "@jgengine/core"
       ],
-      "module": "@jgengine/core/game/questCatalog",
-      "domain": "game",
+      "module": "@jgengine/core/mission/questCatalog",
+      "domain": "mission",
       "gameFacing": false,
       "probe": null,
       "intent": "diagnose authored quest ids, prerequisite and reward references, quantities, and blocked dependencies with caller-declared external unlocks"
@@ -7490,11 +7512,33 @@
       "packages": [
         "@jgengine/core"
       ],
-      "module": "@jgengine/core/game/quest",
-      "domain": "game",
+      "module": "@jgengine/core/mission/quest",
+      "domain": "mission",
       "gameFacing": false,
       "probe": null,
       "intent": "track accepted quests and their per-objective progress"
+    },
+    {
+      "id": "quest-objective-label",
+      "packages": [
+        "@jgengine/core"
+      ],
+      "module": "@jgengine/core/mission/quest",
+      "domain": "mission",
+      "gameFacing": false,
+      "probe": null,
+      "intent": "readable default label for a quest objective in a tracker"
+    },
+    {
+      "id": "quest-rewards",
+      "packages": [
+        "@jgengine/core"
+      ],
+      "module": "@jgengine/core/mission/quest",
+      "domain": "mission",
+      "gameFacing": false,
+      "probe": null,
+      "intent": "grant a quest or mission reward bundle: items, XP, currency and unlocks"
     },
     {
       "id": "quest-tracker",
@@ -7512,8 +7556,8 @@
       "packages": [
         "@jgengine/core"
       ],
-      "module": "@jgengine/core/game/quest",
-      "domain": "game",
+      "module": "@jgengine/core/mission/quest",
+      "domain": "mission",
       "gameFacing": false,
       "probe": null,
       "intent": "join a QuestDef + live QuestInstance into a flat labelled view for a quest/objective HUD tracker"
@@ -10527,8 +10571,8 @@
       "packages": [
         "@jgengine/core"
       ],
-      "module": "@jgengine/core/ai/director/waveCountdown",
-      "domain": "ai",
+      "module": "@jgengine/core/waves/waveCountdown",
+      "domain": "waves",
       "gameFacing": false,
       "probe": null,
       "intent": "intermission clock between waves that releases the next one when it runs out and prices calling it early"
@@ -10549,8 +10593,8 @@
       "packages": [
         "@jgengine/core"
       ],
-      "module": "@jgengine/core/ai/director/wavePreview",
-      "domain": "ai",
+      "module": "@jgengine/core/waves/wavePreview",
+      "domain": "waves",
       "gameFacing": false,
       "probe": null,
       "intent": "summarize an authored wave before it opens: units by first arrival, trait counts and entries used"
@@ -10560,8 +10604,8 @@
       "packages": [
         "@jgengine/core"
       ],
-      "module": "@jgengine/core/ai/waveRunner",
-      "domain": "ai",
+      "module": "@jgengine/core/waves/waveRunner",
+      "domain": "waves",
       "gameFacing": false,
       "probe": null,
       "intent": "observable serializable wave/spawn runner over the seeded spawn director — WAVE N, wave progress, budget/alert readout, onSpawn sink, snapshot/restore"

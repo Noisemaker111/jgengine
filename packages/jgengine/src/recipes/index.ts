@@ -146,12 +146,12 @@ export const game = defineGame({ name: "Quest", systems: [quests] });
 // <GameHost playable={game} />  ·  read ctx.game.quest?.list(userId) for the HUD quest log
 `;
 
-const QUEST_AUTHORING = `import type { QuestDef } from "@jgengine/core/game/quest";
+const QUEST_AUTHORING = `import type { QuestDef } from "@jgengine/core/mission/quest";
 import {
   validateQuestCatalog,
   type QuestCatalogReferenceKind,
   type QuestCatalogValidationOptions,
-} from "@jgengine/core/game/questCatalog";
+} from "@jgengine/core/mission/questCatalog";
 
 export interface QuestAuthoringFacts {
   revision: string;

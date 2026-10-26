@@ -1,8 +1,8 @@
 import type { GameContext } from "@jgengine/core/runtime/gameContext";
 import { setGamePhase } from "@jgengine/core/game/gamePhase";
-import type { EncounterOrder } from "@jgengine/core/ai/director/encounter";
+import type { EncounterOrder } from "@jgengine/core/waves/encounter";
 import { advanceBoss, createBossState } from "@jgengine/core/ai/director/boss";
-import { evaluatePressure, type PressurePlan } from "@jgengine/core/ai/director/pressure";
+import { evaluatePressure, type PressurePlan } from "@jgengine/core/waves/pressure";
 import { advancePathFollow, createPathFollow, type PathFollowState } from "@jgengine/core/nav/pathFollow";
 import { distance } from "@jgengine/core/world/vec3";
 

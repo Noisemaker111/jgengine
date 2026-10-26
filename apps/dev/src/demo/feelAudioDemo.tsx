@@ -1,6 +1,6 @@
 import type { CSSProperties, ReactNode } from "react";
 
-import { createWaveRunner } from "@jgengine/core/ai/waveRunner";
+import { createWaveRunner } from "@jgengine/core/waves/waveRunner";
 import { defineGameDefinition } from "@jgengine/core/game/defineGame";
 import type { GameContext, GameContextEntityEntry } from "@jgengine/core/runtime/gameContext";
 import { createAssetCatalog } from "@jgengine/core/scene/assetCatalog";

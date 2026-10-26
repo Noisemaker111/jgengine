@@ -1,4 +1,4 @@
-import type { PressurePlan, PressureReading } from "@jgengine/core/ai/director/pressure";
+import type { PressurePlan, PressureReading } from "@jgengine/core/waves/pressure";
 import {
   assignFightIntents,
   compositionForIntents,
@@ -6,8 +6,8 @@ import {
   type FighterState,
 } from "@jgengine/core/ai/director/roles";
 import { advanceBoss, createBossState, type BossState, type BossStep } from "@jgengine/core/ai/director/boss";
-import { createEncounter, type Encounter, type EncounterOrder } from "@jgengine/core/ai/director/encounter";
-import { evaluatePressure } from "@jgengine/core/ai/director/pressure";
+import { createEncounter, type Encounter, type EncounterOrder } from "@jgengine/core/waves/encounter";
+import { evaluatePressure } from "@jgengine/core/waves/pressure";
 import {
   coverPointsFromSolids,
   coverPointsNear,

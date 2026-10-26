@@ -1,4 +1,5 @@
 import type { GameContext } from "@jgengine/core/runtime/gameContext";
+import { defineBuildKeys, placePiece } from "@jgengine/core/worldModel/buildTool";
 import { defineSystem } from "@jgengine/shell/gameKit";
 
 import { editorLayers } from "../editorLayers";
@@ -21,24 +22,11 @@ export const buildSystem = defineSystem({
   id: "camp.build",
   tick: { type: "frame" },
   create(ctx) {
-    idea.structures.forEach((structure, index) => {
-      // A refusal is said on screen (not cost, too far out, cell taken) rather than failing silently.
-      ctx.game.commands.define(`build${index + 1}`, {
-        apply(state) {
-          const cell = cellAhead(state);
-          if (cell === null) {
-            state.game.notices.push({ text: `Build inside the camp around the ${idea.home.label.toLowerCase()}`, tone: "deny" });
-            return state;
-          }
-          const refused = camp.of(state).canPlace(structure.id, { cell });
-          if (refused !== null) {
-            state.game.notices.push({ text: refused.message, tone: "deny" });
-            return state;
-          }
-          camp.of(state).place(structure.id, { cell });
-          return state;
-        },
-      });
+    // A refusal is said on screen (not cost, too far out, cell taken) rather than failing silently.
+    defineBuildKeys(ctx, idea.structures, (state, structure) => {
+      const cell = cellAhead(state);
+      const at = cell === null ? `Build inside the camp around the ${idea.home.label.toLowerCase()}` : { cell };
+      placePiece(state, camp.of(state), structure, at, { announce: false });
     });
   },
 });

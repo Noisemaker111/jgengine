@@ -1,7 +1,7 @@
 import { beforeEach, describe, expect, test } from "bun:test";
 import { defineGameDefinition } from "@jgengine/core/game/defineGame";
 import { createGameContext, type GameContext } from "@jgengine/core/runtime/gameContext";
-import { expandWave } from "@jgengine/core/ai/director/encounter";
+import { expandWave } from "@jgengine/core/waves/encounter";
 import { assignFightIntents } from "@jgengine/core/ai/director/roles";
 
 import { content } from "../content";

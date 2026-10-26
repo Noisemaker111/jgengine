@@ -1,11 +1,11 @@
 import { createResourceNodeField, type ResourceNodeField } from "@jgengine/core/world/resourceNode";
 import { activeJobs, queuedJobs, createWorkQueue, type WorkQueueState } from "@jgengine/core/gameplay";
 import type { UnitReservation, UnitTrainingSpec } from "@jgengine/core/work/unitTraining";
-import { createEncounter, type Encounter } from "@jgengine/core/ai/director/encounter";
+import { createEncounter, type Encounter } from "@jgengine/core/waves/encounter";
 import type { SoundHunt } from "@jgengine/core/ai/director/sound";
 import type { PerceptionService } from "@jgengine/core/sensor/perception";
-import { createEncounterState } from "@jgengine/core/combat/encounterSequence";
-import { evaluatePressure } from "@jgengine/core/ai/director/pressure";
+import { createEncounterState } from "@jgengine/core/waves/encounterSequence";
+import { evaluatePressure } from "@jgengine/core/waves/pressure";
 
 import type { EnemyWaveState } from "./ai/director";
 import { MARAUDER_WAVES, MARCH_PLAN } from "./ai/waveManifest";

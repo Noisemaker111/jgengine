@@ -1,5 +1,5 @@
 import { describe, expect, test } from "bun:test";
-import { pickSpawnPoint } from "@jgengine/core/ai/spawnDirector";
+import { pickSpawnPoint } from "@jgengine/core/waves/spawnDirector";
 
 const candidates = [
   [0, 0],

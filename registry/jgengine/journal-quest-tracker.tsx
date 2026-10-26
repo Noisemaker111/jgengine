@@ -1,4 +1,4 @@
-import type { QuestInstance } from "@jgengine/core/game/quest";
+import type { QuestInstance } from "@jgengine/core/mission/quest";
 import { useQuestJournal } from "@jgengine/react/hooks";
 
 import { QuestTracker, type TrackedQuest } from "@/components/ui/quest-tracker";

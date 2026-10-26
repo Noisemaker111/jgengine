@@ -286,16 +286,6 @@ export {
   type WorldOverlayProps,
 } from "./game/playableGame";
 export {
-  createQuestJournal,
-  defaultObjectiveLabel,
-  describeTrackedQuest,
-  type QuestDef,
-  type QuestInstance,
-  type QuestRewards,
-  type TrackedObjectiveView,
-  type TrackedQuestView,
-} from "./game/quest";
-export {
   RaceState,
   createLapTimer,
   createRaceState,

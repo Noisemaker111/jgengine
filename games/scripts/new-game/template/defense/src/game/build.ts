@@ -1,5 +1,6 @@
 import type { PointerHit } from "@jgengine/core/input/pointer";
 import type { GameContext } from "@jgengine/core/runtime/gameContext";
+import { defineBuildKeys, placePiece } from "@jgengine/core/worldModel/buildTool";
 import { defineSystem } from "@jgengine/shell/gameKit";
 
 import { editorLayers } from "../editorLayers";
@@ -32,12 +33,8 @@ function click(ctx: GameContext, input: PointerInput): void {
   if (held.armed !== null) {
     if (point === null) return;
     const pad = padNear(PADS, point[0]!, point[2]!, REACH, (candidate) => world.occupant(candidate.id) === null);
-    if (pad === null) return deny(ctx, "Build on an empty pad beside the lane");
-    const refused = world.canPlace(held.armed, { slot: pad.id });
-    if (refused !== null) return deny(ctx, refused.message);
-    world.place(held.armed, { slot: pad.id });
     const tower = idea.towers.find((entry) => entry.id === held.armed);
-    ctx.game.notices.push({ text: `${tower?.label ?? "Tower"} going up`, tone: "info" });
+    placePiece(ctx, world, { id: held.armed, label: tower?.label ?? "Tower" }, pad === null ? "Build on an empty pad beside the lane" : { slot: pad.id });
     return;
   }
   let picked = input.entity !== null && world.instance(input.entity) !== null ? input.entity : null;
@@ -74,14 +71,7 @@ export const buildSystem = defineSystem({
         return state;
       },
     });
-    idea.towers.forEach((tower, index) => {
-      ctx.game.commands.define(`build${index + 1}`, {
-        apply(state) {
-          arm(state, tower.id);
-          return state;
-        },
-      });
-    });
+    defineBuildKeys(ctx, idea.towers, (state, tower) => arm(state, tower.id));
     ctx.game.commands.define("upgrade", {
       apply(state) {
         actOnSelected(state, (kind) => `upgrade_${kind}`);

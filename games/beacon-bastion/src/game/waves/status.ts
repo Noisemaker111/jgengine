@@ -1,4 +1,4 @@
-import type { EncounterWave } from "@jgengine/core/ai/director/encounter";
+import type { EncounterWave } from "@jgengine/core/waves/encounter";
 
 import { CREEP_CATALOG, creepName } from "../entities/enemies/catalog";
 import { bossProfile } from "./manifest";

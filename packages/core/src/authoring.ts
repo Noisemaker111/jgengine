@@ -47,7 +47,7 @@ export {
   selectSpawnPoint,
   type SpawnPointSelectionOptions,
   type SpawnPointDistanceBias,
-} from "./ai/spawnPoint";
+} from "./waves/spawnPoint";
 
 export { contextVerb } from "./interaction/contextMenu";
 export { type ActionCodesMap } from "./input/actionBindings";
