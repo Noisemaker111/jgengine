@@ -56,14 +56,21 @@ herds (`creature_spawn` markers) live in `src/editor.scene.json`.
   - *The Forest* - feel: punching and chopping a dense tree line by hand.
 - **Gap to target.** No building, caves, weather or other biomes yet; three species of ARK's dozens;
   the dodo is a duck and the phiomia a boar until dinosaur models are approved; no bolas,
-  slingshot shots or tranq arrows yet, so a raptor is clubbed at close range; ridden creatures have
-  no stamina or levelling of their own yet; drain and regen rates where ARK publishes none are
-  approximate; trees are stylized stand-ins, not palms.
+  slingshot shots or tranq arrows yet, so a raptor is clubbed (or punched) at close range; a mount
+  sprints at the survivor's sprint ratio, not its own; a tame's inventory holds slots, not weight;
+  drain and regen rates where ARK publishes none are approximate; trees are stylized stand-ins, not
+  palms.
 
 Loop proof: fernwild-loop, fernwild-tame
 
-`fernwild-tame` proves the creature loop: club a raptor unconscious, feed it, saddle it and ride it
-(it uses the admin `cheat` command for levels, items and a faster taming speed).
+`fernwild-tame` proves the creature loop: club a raptor unconscious, feed it, saddle it, level it
+and spend a point in its stat sheet, ride it and sprint on its stamina (it uses the admin `cheat`
+command for levels, items, tame XP and a faster taming speed).
+
+Tames level as in ARK: up to 88 levels past the tame level, the n-th costing 10 x n XP, from kills
+(ARK's base kill XP, +10% a level) and a passive 0.66 XP a minute. Each level is a point to spend in
+the tame's inventory: health +5.4%, stamina, oxygen and food +10%, weight +4%, melee +1.7%,
+speed +1% of its value when tamed. Punches deal ARK's 1.75x their damage as torpor.
 
 ## Credits
 

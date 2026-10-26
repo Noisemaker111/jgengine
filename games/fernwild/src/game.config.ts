@@ -88,6 +88,11 @@ export const game = defineGame({
         tamed: creatures.tamed,
         riding: creatures.riding === null ? 0 : 1,
         saddled: creatures.aimed?.saddled === true ? 1 : 0,
+        tameLevel: creatures.viewing?.level ?? creatures.riding?.level ?? 0,
+        tamePoints: creatures.viewing?.growth?.unspent ?? 0,
+        tameHealthMax: creatures.viewing?.health.max ?? 0,
+        mountStamina: creatures.riding?.stamina.value ?? 0,
+        mountStaminaMax: creatures.riding?.stamina.max ?? 0,
       };
     },
   },

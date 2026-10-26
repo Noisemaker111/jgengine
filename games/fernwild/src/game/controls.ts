@@ -1,7 +1,7 @@
 /** Keys, as the Controls pane lists them; the bindings live in `game.config.ts`. ARK's PC layout. */
 export const CONTROLS: readonly (readonly [string, string])[] = [
   ["W A S D", "Move"],
-  ["Shift", "Run (costs stamina)"],
+  ["Shift", "Run (costs stamina; your mount's when riding)"],
   ["Space", "Jump"],
   ["Mouse", "Look"],
   ["Left click", "Punch, chop or mine with what is in hand"],

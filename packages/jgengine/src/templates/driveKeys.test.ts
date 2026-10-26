@@ -1,7 +1,7 @@
 import { expect, test } from "bun:test";
 
 import { driveMjs } from "./harnessScripts";
-import { holdDriveInput, type DriveInputDeps } from "./driveSteps";
+import { driveChordEvents, holdDriveInput, type DriveInputDeps } from "./driveSteps";
 import { focusGameSurface, gameSurfaceCenter, holdComplete, mouseButtonForCode } from "./gameSurfaceFocus";
 
 function deps(clock: { t: number }): DriveInputDeps {
@@ -49,4 +49,16 @@ test("releases held keys if frame sampling fails", async () => {
     },
   }, "KeyA", 0, deps({ t: 0 }))).rejects.toThrow("closed page");
   expect(events).toEqual(["keyDown", "keyUp"]);
+});
+
+test("a held Shift reads as Shift: its real key name and code, and keys under it carry the shift bit", () => {
+  expect(driveChordEvents("ShiftLeft+KeyW", "keyDown")).toEqual([
+    { type: "keyDown", code: "ShiftLeft", key: "Shift", windowsVirtualKeyCode: 16, location: 1, modifiers: 8 },
+    { type: "keyDown", code: "KeyW", key: "w", modifiers: 8 },
+  ]);
+  expect(driveChordEvents("ShiftLeft+KeyW", "keyUp")).toEqual([
+    { type: "keyUp", code: "ShiftLeft", key: "Shift", windowsVirtualKeyCode: 16, location: 1, modifiers: 0 },
+    { type: "keyUp", code: "KeyW", key: "w", modifiers: 0 },
+  ]);
+  expect(driveChordEvents("KeyW+KeyD", "keyDown").map((event) => event.modifiers)).toEqual([0, 0]);
 });

@@ -64,7 +64,7 @@ import {
 } from "./capture-preset";
 import { driveInputPointExpr } from "../packages/jgengine/src/templates/driveInput";
 import { CAPTURE_FLAGS, captureFlagHelp, describeFlow, describeStepFile, parseCaptureArgs, parseGraphicsTier, parseStepFile, rejectMixedStepFlags, stepDurationMs, type CaptureStep, type FlowFile, type FlowSource, type GraphicsTier } from "../packages/jgengine/src/templates/captureArgs";
-import { awaitDriveCondition, awaitGameView, conditionMatches, holdDriveInput, type DriveConditionClock, type DriveHoldUntil, type DriveInputDeps, type DriveSession } from "../packages/jgengine/src/templates/driveSteps";
+import { awaitDriveCondition, awaitGameView, conditionMatches, holdDriveInput, sendDriveChord, type DriveConditionClock, type DriveHoldUntil, type DriveInputDeps, type DriveSession } from "../packages/jgengine/src/templates/driveSteps";
 import { acquireDrivePointerLock, aimDriveAt, lookDrivePointer, moveDrivePointer, type DrivePoint } from "../packages/jgengine/src/templates/driveAim";
 import { driveProjectDir, flowSourceFrom, flowsDirOf, listFlowNames, missingFlowsMessage } from "./driveFlows";
 import { evaluateAssertStep, runDriveSteps, type DriveStepRecord } from "./driveRun";
@@ -495,13 +495,6 @@ async function installFrameCounter(session: CdpSession): Promise<void> {
 
 async function readFrames(session: CdpSession): Promise<number> {
   return (await session.evaluate<number>(`globalThis.__jgFrames ?? 0`)) ?? 0;
-}
-
-async function sendKeys(session: CdpSession, chord: string, type: "keyDown" | "keyUp"): Promise<void> {
-  for (const code of chord.split("+")) {
-    const key = code.startsWith("Key") ? code.slice(3).toLowerCase() : code;
-    await session.send("Input.dispatchKeyEvent", { type, code, key });
-  }
 }
 
 const driveDeps = {
@@ -986,7 +979,7 @@ async function driveSession(daemon: ShootDaemonState | null): Promise<number> {
                 // Lockstep hold: the virtual clock guarantees the sim steps under the
                 // held key, so no frame-starvation grace dance is needed.
                 await focusSurface(session);
-                await sendKeys(session, step.code, "keyDown");
+                await sendDriveChord(session, step.code, "keyDown");
                 try {
                   await recorder.advance(step.holdMs);
                   // `until` on the virtual clock: step the sim in short slices until the arrival holds.
@@ -999,7 +992,7 @@ async function driveSession(daemon: ShootDaemonState | null): Promise<number> {
                     }
                   }
                 } finally {
-                  await sendKeys(session, step.code, "keyUp");
+                  await sendDriveChord(session, step.code, "keyUp");
                 }
               } else {
                 await holdKey(session, step.code, step.holdMs, step.until === undefined ? undefined : { ...step.until, label: label + ".until" });
