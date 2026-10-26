@@ -4,7 +4,8 @@ import * as THREE from "three";
 import type { TerrainField } from "@jgengine/core/world/terrain";
 
 import { useDisposable } from "../render/useDisposable";
-import { createFieldGroundGeometry, type FieldGroundOptions } from "./terrainMath";
+import { useSlicedValue } from "../render/useSlicedValue";
+import { fieldGroundGeometryJob, type FieldGroundOptions } from "./terrainMath";
 
 export interface CarvedTerrainProps extends Omit<ThreeElements["mesh"], "args" | "children" | "geometry" | "material"> {
   /** The terrain field to mesh — a `CarvableField` renders its craters and mounds. */
@@ -45,15 +46,21 @@ export function CarvedTerrain({
   epoch = 0,
   ...meshProps
 }: CarvedTerrainProps) {
-  const geometry = useDisposable(
-    () => createFieldGroundGeometry(field, { size, segments, center, colors, heightRange, paletteAt, paintColorAt }),
+  // Meshed in slices after mount: a big field samples the game's height function hundreds of
+  // thousands of times, which inside render froze the page (and the menu over it) for seconds.
+  // The previous mesh stays up while a carve re-meshes.
+  const geometry = useSlicedValue(
+    "terrain",
+    () => fieldGroundGeometryJob(field, { size, segments, center, colors, heightRange, paletteAt, paintColorAt }),
     [field, size, segments, center, colors, heightRange, paletteAt, paintColorAt, epoch],
   );
+  useDisposable(() => geometry ?? [], [geometry]);
   const defaultMaterial = useDisposable(
     () => new THREE.MeshStandardMaterial({ color: "#ffffff", roughness, metalness, vertexColors: true }),
     [metalness, roughness],
   );
   const material = surfaceMaterial ?? defaultMaterial;
 
+  if (geometry === null) return null;
   return <mesh {...meshProps} geometry={geometry} material={material} receiveShadow={receiveShadow} />;
 }

@@ -1,0 +1,397 @@
+// `bun run shoot --load <game|all>`: how fast a game opens on jgengine.com, measured on this PC.
+// It serves a production build of the site (apps/web with the /play runner) and opens
+// /games/<id> in a fresh Chrome profile per game, so the HTTP, code and GPU shader caches are as
+// cold as a first visit. Local only: it needs a real GPU and a window, so CI never runs it.
+import { spawnSync } from "node:child_process";
+import { existsSync, mkdirSync, readdirSync, readFileSync, statSync, writeFileSync } from "node:fs";
+import { join } from "node:path";
+import { fileURLToPath } from "node:url";
+
+import { chromium, type Frame, type Page } from "playwright-core";
+
+import { gamePublicRoots, resolveGamePublicFile } from "../apps/dev/gamePublicPlugin";
+import { killPid, pickDebugPort, removeProfileDir, startBrowser, waitForPidExit } from "./browser-lib";
+import { printHelpIfAsked } from "./script-help";
+
+const repoRoot = fileURLToPath(new URL("..", import.meta.url));
+const webRoot = join(repoRoot, "apps", "web");
+
+export const LOAD_USAGE = {
+  summary: "cold-cache load times per game on a production build of the site (local only, real GPU)",
+  usage: "bun run shoot --load <game|all> [--runs n] [--no-build] [--headless] [--trace] [--compare <json>]",
+  flags: [
+    { flag: "<game|all>", detail: "one games/<id>, a comma list, or all of them" },
+    { flag: "--runs n", detail: "cold runs per game; the median is reported (default 1)" },
+    { flag: "--no-build", detail: "reuse the last production build in apps/web/dist" },
+    { flag: "--headless", detail: "headless Chrome instead of an off-screen window (still the real GPU)" },
+    { flag: "--trace", detail: "save a Chrome performance trace per game next to the results" },
+    { flag: "--compare <json>", detail: "a previous results file; the table shows before -> after" },
+    { flag: "--timeout s", detail: "give up on a game after this many seconds (default 90)" },
+  ],
+  example: "bun run shoot --load all --compare .scratch/load/before.json",
+} as const;
+
+export interface LoadArgs {
+  games: string[];
+  runs: number;
+  build: boolean;
+  headless: boolean;
+  trace: boolean;
+  compare: string | null;
+  timeoutMs: number;
+}
+
+/** Every game the site lists: a games/<id> folder with a src/index.tsx, llmville aside. */
+export function siteGames(gamesDir = join(repoRoot, "games")): string[] {
+  return readdirSync(gamesDir, { withFileTypes: true })
+    .filter((entry) => entry.isDirectory() && entry.name !== "llmville" && existsSync(join(gamesDir, entry.name, "src", "index.tsx")))
+    .map((entry) => entry.name)
+    .sort();
+}
+
+export function parseLoadArgs(argv: readonly string[], known: readonly string[]): LoadArgs {
+  const args: LoadArgs = { games: [], runs: 1, build: true, headless: false, trace: false, compare: null, timeoutMs: 90_000 };
+  for (let index = 0; index < argv.length; index += 1) {
+    const arg = argv[index]!;
+    const value = () => {
+      const next = argv[index + 1];
+      if (next === undefined) throw new Error(`${arg} needs a value`);
+      index += 1;
+      return next;
+    };
+    if (arg === "--runs") args.runs = Math.max(1, Number.parseInt(value(), 10) || 1);
+    else if (arg === "--no-build") args.build = false;
+    else if (arg === "--headless") args.headless = true;
+    else if (arg === "--trace") args.trace = true;
+    else if (arg === "--compare") args.compare = value();
+    else if (arg === "--timeout") args.timeoutMs = Math.max(5, Number(value())) * 1000;
+    else if (arg.startsWith("--")) throw new Error(`unknown flag ${arg}`);
+    else args.games.push(...(arg === "all" ? known : arg.split(",").filter((id) => id.length > 0)));
+  }
+  if (args.games.length === 0) throw new Error("name a game or `all`");
+  const unknown = args.games.filter((id) => !known.includes(id));
+  if (unknown.length > 0) throw new Error(`unknown game ${unknown.join(", ")}; known: ${known.join(", ")}`);
+  args.games = [...new Set(args.games)];
+  return args;
+}
+
+/** One cold open of one game. Times are ms from the site page's navigation start; null = never. */
+export interface LoadSample {
+  game: string;
+  /** First contentful paint of the /play frame. */
+  firstPaint: number | null;
+  /** A menu button is on top and visible. */
+  menuShown: number | null;
+  /**
+   * The worst wait a click on the menu could have had: the longest gap between drawn frames while
+   * the menu was up, or the Play press's own wait for a frame, whichever is longer. A click is
+   * seen only when a frame draws after it, so a frozen frame is a dead button.
+   */
+  worstClick: number | null;
+  /** Loading covers gone and 30 frames in a row under 50 ms, with the menu still up. */
+  sceneReady: number | null;
+  /** The same, after Play was pressed: the player is in the game. */
+  playable: number | null;
+  longestTaskMs: number;
+  /** Sum over main-thread tasks of the time each spent past 50 ms. */
+  blockingMs: number;
+  /** Bytes the page and the frame fetched. */
+  transferKb: number;
+  menuLabel: string | null;
+  /** The first console errors and uncaught exceptions, when there were any. */
+  pageErrors?: string[];
+  error?: string;
+}
+
+/** Runs in every frame before any page script; only the /play frame records. */
+export const PAGE_PROBE = `(() => {
+  if (!location.pathname.startsWith("/play")) return;
+  const epoch = () => performance.timeOrigin + performance.now();
+  const s = (window.__jgLoad = { tasks: [], fcpAt: null, menuAt: null, menuBox: null, menuLabel: null, menuStall: 0, sceneReadyAt: null, pressAt: null, respondedAt: null, playableAt: null });
+  const at = (t) => performance.timeOrigin + t;
+  try {
+    new PerformanceObserver((list) => { for (const e of list.getEntries()) s.tasks.push([Math.round(at(e.startTime)), Math.round(e.duration)]); }).observe({ type: "longtask", buffered: true });
+  } catch {}
+  try {
+    new PerformanceObserver((list) => { for (const e of list.getEntries()) if (e.name === "first-contentful-paint") s.fcpAt = at(e.startTime); }).observe({ type: "paint", buffered: true });
+  } catch {}
+  const PRIMARY = /^(play|start|new game|new run|continue|begin|enter|launch|resume)/i;
+  const onTop = (el) => {
+    const r = el.getBoundingClientRect();
+    if (r.width < 4 || r.height < 4 || r.bottom < 0 || r.right < 0 || r.top > innerHeight || r.left > innerWidth) return null;
+    // The part inside the view: a menu card can run past the bottom of the frame.
+    const left = Math.max(0, r.left), top = Math.max(0, r.top);
+    const seen = { left, top, width: Math.min(innerWidth, r.right) - left, height: Math.min(innerHeight, r.bottom) - top };
+    if (seen.width < 4 || seen.height < 4) return null;
+    const hit = document.elementFromPoint(seen.left + seen.width / 2, seen.top + seen.height / 2);
+    return hit !== null && (hit === el || el.contains(hit)) ? seen : null;
+  };
+  const findMenu = () => {
+    if (s.pressAt !== null || document.body === null) return;
+    const items = [...document.querySelectorAll("[data-jg-menu-item]")];
+    const buttons = items.length > 0 ? items : [...document.querySelectorAll("button")];
+    const enabled = (el) => !el.disabled && el.getAttribute("aria-disabled") !== "true" && el.getAttribute("data-disabled") === null;
+    const shown = buttons.filter(enabled).map((el) => [el, onTop(el)]).filter(([, r]) => r !== null);
+    if (shown.length === 0) return;
+    const [el, r] = shown.find(([el]) => PRIMARY.test((el.textContent || "").trim())) ?? shown[0];
+    if (s.menuAt === null) s.menuAt = epoch();
+    s.menuBox = { x: r.left, y: r.top, w: r.width, h: r.height };
+    s.menuLabel = (el.textContent || "").trim().slice(0, 40);
+  };
+  new MutationObserver(findMenu).observe(document, { subtree: true, childList: true, attributes: true });
+  // A press is what a player feels; a click may never fire when the menu re-renders between
+  // press and release, so the first trusted press counts.
+  addEventListener("pointerdown", (event) => {
+    if (s.pressAt !== null || !event.isTrusted) return;
+    s.pressAt = at(event.timeStamp);
+    requestAnimationFrame(() => requestAnimationFrame(() => { s.respondedAt = epoch(); }));
+  }, true);
+  let last = 0, smooth = 0, runStart = 0;
+  const frame = () => {
+    const now = epoch();
+    findMenu();
+    if (s.menuAt !== null && s.pressAt === null && last !== 0) s.menuStall = Math.max(s.menuStall, now - Math.max(last, s.menuAt));
+    const covered = document.querySelector("[data-shell-code-loading]") !== null || document.querySelector("canvas") === null;
+    if (covered || last === 0 || now - last >= 50) { smooth = 0; runStart = now; }
+    else if (++smooth >= 30) {
+      if (s.pressAt === null && s.sceneReadyAt === null) s.sceneReadyAt = runStart;
+      if (s.pressAt !== null && runStart >= s.pressAt && s.playableAt === null) s.playableAt = runStart;
+    }
+    last = now;
+    if (s.playableAt === null) requestAnimationFrame(frame);
+  };
+  requestAnimationFrame(frame);
+})();`;
+
+interface ProbeState {
+  tasks: [number, number][];
+  fcpAt: number | null;
+  menuAt: number | null;
+  menuBox: { x: number; y: number; w: number; h: number } | null;
+  menuLabel: string | null;
+  menuStall: number;
+  sceneReadyAt: number | null;
+  pressAt: number | null;
+  respondedAt: number | null;
+  playableAt: number | null;
+}
+
+/** How long the menu may wait for the scene to settle before Play is pressed anyway. */
+const PRESS_AFTER_MENU_MS = 60_000;
+
+function median(values: readonly (number | null)[]): number | null {
+  const present = values.filter((value): value is number => value !== null).sort((a, b) => a - b);
+  if (present.length === 0) return null;
+  return present[Math.floor(present.length / 2)]!;
+}
+
+/** The median of each measure over a game's runs, so one slow cold start does not decide. */
+export function summarizeRuns(samples: readonly LoadSample[]): LoadSample {
+  const first = samples[0]!;
+  const pick = (key: "firstPaint" | "menuShown" | "worstClick" | "sceneReady" | "playable" | "longestTaskMs" | "blockingMs" | "transferKb") =>
+    median(samples.map((sample) => sample[key]));
+  return {
+    game: first.game,
+    firstPaint: pick("firstPaint"),
+    menuShown: pick("menuShown"),
+    worstClick: pick("worstClick"),
+    sceneReady: pick("sceneReady"),
+    playable: pick("playable"),
+    longestTaskMs: pick("longestTaskMs") ?? 0,
+    blockingMs: pick("blockingMs") ?? 0,
+    transferKb: pick("transferKb") ?? 0,
+    menuLabel: first.menuLabel,
+    ...(samples.every((sample) => sample.error !== undefined) ? { error: first.error } : {}),
+  };
+}
+
+const COLUMNS = [
+  ["first paint", "firstPaint"],
+  ["menu shown", "menuShown"],
+  ["worst click", "worstClick"],
+  ["scene ready", "sceneReady"],
+  ["playable", "playable"],
+  ["longest task", "longestTaskMs"],
+  ["blocking", "blockingMs"],
+  ["KB", "transferKb"],
+] as const;
+
+const cell = (value: number | null | undefined) => (value === null || value === undefined ? "-" : String(Math.round(value)));
+
+/** A markdown table, with `before -> after` cells when a previous run is given. */
+export function renderTable(rows: readonly LoadSample[], before: readonly LoadSample[] = []): string {
+  const previous = new Map(before.map((row) => [row.game, row]));
+  const header = `| game | ${COLUMNS.map(([label]) => label).join(" | ")} |`;
+  const rule = `|---|${COLUMNS.map(() => "---:").join("|")}|`;
+  const body = rows.map((row) => {
+    const old = previous.get(row.game);
+    const cells = COLUMNS.map(([, key]) => (old === undefined ? cell(row[key]) : `${cell(old[key])} -> ${cell(row[key])}`));
+    return `| ${row.game}${row.error === undefined ? "" : " (error)"} | ${cells.join(" | ")} |`;
+  });
+  return [header, rule, ...body].join("\n");
+}
+
+function buildSite(): void {
+  console.error("load: building the site (apps/web + /play) for production…");
+  const result = spawnSync("bun", ["run", "--cwd", webRoot, "build"], { cwd: repoRoot, stdio: "inherit" });
+  if (result.status !== 0) throw new Error("load: the production build failed");
+}
+
+/**
+ * Serves apps/web's production output the way Cloudflare's asset layer does: prerendered pages as
+ * `<path>/index.html` and the `_headers` cache rules. Every game page is prerendered, so no worker
+ * code runs on the path this check measures.
+ */
+export function serveSite(clientDir = join(webRoot, "dist", "client")): { base: string; stop: () => void } {
+  if (!existsSync(join(clientDir, "index.html"))) throw new Error("load: no production build in apps/web/dist; drop --no-build");
+  const resolve = (pathname: string): string | null => {
+    const clean = decodeURIComponent(pathname).replace(/\.\.+/g, "");
+    for (const candidate of [clean, `${clean}/index.html`, `${clean}.html`]) {
+      const path = join(clientDir, candidate);
+      if (existsSync(path) && statSync(path).isFile()) return path;
+    }
+    return null;
+  };
+  // Game models live in each game's provisioned public/ folder, which the build does not copy;
+  // the runner serves them from there, the same as `bun run drive` does.
+  const gamePublic = gamePublicRoots(undefined, join(repoRoot, "games"));
+  const server = Bun.serve({
+    port: 0,
+    hostname: "127.0.0.1",
+    fetch: (request) => {
+      const { pathname } = new URL(request.url);
+      const path = resolve(pathname) ?? (pathname.startsWith("/play/") ? resolveGamePublicFile(pathname.slice("/play".length), gamePublic) : null);
+      if (path === null) return new Response("not found", { status: 404 });
+      const hashed = pathname.startsWith("/assets/") || pathname.startsWith("/play/assets/");
+      return new Response(Bun.file(path), {
+        headers: { "cache-control": hashed ? "public, max-age=31536000, immutable" : "public, max-age=0, must-revalidate" },
+      });
+    },
+  });
+  return { base: `http://127.0.0.1:${server.port}`, stop: () => server.stop(true) };
+}
+
+async function playFrame(page: Page): Promise<Frame | null> {
+  return page.frames().find((frame) => new URL(frame.url(), "http://x").pathname.startsWith("/play")) ?? null;
+}
+
+async function measureOnce(base: string, game: string, args: LoadArgs, shotDir: string): Promise<LoadSample> {
+  const started = await startBrowser({ debugPort: pickDebugPort(), prefix: "jg-load-", headed: !args.headless });
+  const browser = await chromium.connectOverCDP(`http://127.0.0.1:${started.debugPort}`);
+  const sample: LoadSample = { game, firstPaint: null, menuShown: null, worstClick: null, sceneReady: null, playable: null, longestTaskMs: 0, blockingMs: 0, transferKb: 0, menuLabel: null };
+  try {
+    const context = browser.contexts()[0]!;
+    await context.addInitScript({ content: PAGE_PROBE });
+    const page = context.pages()[0] ?? (await context.newPage());
+    await page.setViewportSize({ width: 1280, height: 720 });
+    const pageErrors: string[] = [];
+    page.on("pageerror", (error) => pageErrors.push(error.message));
+    page.on("console", (message) => {
+      // A failed fetch is named by the response listener below, with its path.
+      if (message.type() === "error" && !message.text().startsWith("Failed to load resource")) pageErrors.push(message.text());
+    });
+    page.on("response", (response) => {
+      if (response.status() >= 400) pageErrors.push(`${response.status()} ${new URL(response.url()).pathname}`);
+    });
+    if (args.trace) {
+      await browser.startTracing(page, {
+        path: join(shotDir, `${game}.trace.json`),
+        screenshots: true,
+        categories: ["devtools.timeline", "v8.execute", "disabled-by-default-devtools.timeline", "disabled-by-default-devtools.timeline.frame", "disabled-by-default-v8.cpu_profiler", "blink.user_timing", "gpu", "loading"],
+      });
+    }
+    const navigation = page.goto(`${base}/games/${game}`, { waitUntil: "commit", timeout: args.timeoutMs });
+    await navigation;
+    const origin = await page.evaluate(() => performance.timeOrigin);
+    const deadline = Date.now() + args.timeoutMs;
+    let pressed = false;
+    let state: ProbeState | null = null;
+    while (Date.now() < deadline) {
+      const frame = await playFrame(page);
+      state = frame === null ? null : await frame.evaluate(() => (window as unknown as { __jgLoad?: ProbeState }).__jgLoad ?? null).catch(() => null);
+      // Play is pressed once the scene behind the menu has settled, or after a long wait.
+      const settled = state !== null && (state.sceneReadyAt !== null || (state.menuAt !== null && Date.now() - state.menuAt > PRESS_AFTER_MENU_MS));
+      if (state !== null && state.menuBox !== null && !pressed && settled) {
+        const box = await (await frame!.frameElement()).boundingBox();
+        if (box !== null) {
+          pressed = true;
+          // Not awaited: a press into a frozen page only resolves once the page takes it.
+          void page.mouse.click(box.x + state.menuBox.x + state.menuBox.w / 2, box.y + state.menuBox.y + state.menuBox.h / 2).catch(() => {});
+        }
+      }
+      if (process.env.JG_LOAD_DEBUG === "1") console.error(`load: ${Date.now() - (deadline - args.timeoutMs)}ms ${JSON.stringify({ ...state, tasks: state?.tasks.length })}`);
+      if (state?.playableAt != null) break;
+      // wait-ok: samples the page's own probe while the game loads
+      await new Promise((resolve) => setTimeout(resolve, 100));
+    }
+    if (state !== null) {
+      const rel = (value: number | null) => (value === null ? null : Math.max(0, Math.round(value - origin)));
+      sample.firstPaint = rel(state.fcpAt);
+      sample.menuShown = rel(state.menuAt);
+      const press = state.pressAt !== null && state.respondedAt !== null ? state.respondedAt - state.pressAt : null;
+      sample.worstClick = state.menuAt === null ? null : Math.round(Math.max(state.menuStall, press ?? 0));
+      sample.sceneReady = rel(state.sceneReadyAt);
+      sample.playable = rel(state.playableAt);
+      sample.menuLabel = state.menuLabel;
+    }
+    const frame = await playFrame(page);
+    const tasks = [
+      ...(state?.tasks ?? []),
+      ...((await page.evaluate(() => performance.getEntriesByType("longtask").map((entry) => Math.round(entry.duration))).catch(() => [])) as number[]).map((duration) => [0, duration] as [number, number]),
+    ];
+    sample.longestTaskMs = Math.max(0, ...tasks.map(([, duration]) => duration));
+    sample.blockingMs = tasks.reduce((sum, [, duration]) => sum + Math.max(0, duration - 50), 0);
+    const bytes = async (target: Page | Frame | null) =>
+      target === null ? 0 : await target.evaluate(() => performance.getEntriesByType("resource").reduce((sum, entry) => sum + ((entry as PerformanceResourceTiming).transferSize || (entry as PerformanceResourceTiming).encodedBodySize || 0), 0)).catch(() => 0);
+    sample.transferKb = Math.round(((await bytes(page)) + (await bytes(frame))) / 1024);
+    await page.screenshot({ path: join(shotDir, `${game}.png`) }).catch(() => {});
+    if (pageErrors.length > 0) sample.pageErrors = pageErrors.slice(0, 40).map((line) => line.slice(0, 300));
+    if (args.trace) await browser.stopTracing();
+  } catch (error) {
+    sample.error = error instanceof Error ? error.message : String(error);
+  } finally {
+    await browser.close().catch(() => {});
+    killPid(started.browser.pid, true);
+    await waitForPidExit(started.browser.pid);
+    removeProfileDir(started.profilePath);
+  }
+  return sample;
+}
+
+async function main(): Promise<void> {
+  const argv = process.argv.slice(2);
+  printHelpIfAsked("shoot --load", LOAD_USAGE, argv);
+  const args = parseLoadArgs(argv, siteGames());
+  if (args.build) buildSite();
+  const outDir = join(repoRoot, ".scratch", "load");
+  mkdirSync(outDir, { recursive: true });
+  const stamp = new Date().toISOString().replace(/[:.]/g, "-");
+  const runDir = join(outDir, stamp);
+  mkdirSync(runDir, { recursive: true });
+  const before = args.compare === null ? [] : (JSON.parse(readFileSync(args.compare, "utf8")) as { rows: LoadSample[] }).rows;
+  const server = serveSite();
+  const rows: LoadSample[] = [];
+  const allSamples: LoadSample[] = [];
+  try {
+    for (const game of args.games) {
+      const samples: LoadSample[] = [];
+      for (let run = 0; run < args.runs; run += 1) {
+        const sample = await measureOnce(server.base, game, args, runDir);
+        console.error(`load: ${game} run ${run + 1}: paint ${cell(sample.firstPaint)} menu ${cell(sample.menuShown)} worst click ${cell(sample.worstClick)} scene ${cell(sample.sceneReady)} playable ${cell(sample.playable)} ms${sample.error === undefined ? "" : ` (${sample.error})`}`);
+        samples.push(sample);
+      }
+      rows.push(summarizeRuns(samples));
+      allSamples.push(...samples);
+    }
+  } finally {
+    server.stop();
+  }
+  const file = join(runDir, "results.json");
+  writeFileSync(file, `${JSON.stringify({ at: new Date().toISOString(), runs: args.runs, rows, samples: allSamples }, null, 2)}\n`);
+  console.log(renderTable(rows, before));
+  console.error(`load: results, end-of-run screenshots${args.trace ? " and traces" : ""} in ${runDir}`);
+}
+
+if (import.meta.main) {
+  await main();
+}

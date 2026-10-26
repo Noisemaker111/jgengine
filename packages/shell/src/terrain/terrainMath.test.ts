@@ -15,6 +15,7 @@ import {
   createFieldGroundGeometry,
   createProceduralGroundGeometry,
   createProceduralTerrainSampler,
+  fieldGroundGeometryJob,
   normalizeHeightBlend,
 } from "./terrainMath";
 
@@ -97,6 +98,22 @@ describe("terrain primitives", () => {
     expect(Array.from(a.attributes.color.array as Float32Array)).toEqual(Array.from(b.attributes.color.array as Float32Array));
     a.dispose();
     b.dispose();
+  });
+
+  test("a field ground meshes in slices, a pause per row of vertices, to the same mesh as in one go", () => {
+    const hill = { sampleHeight: (x: number, z: number) => Math.sin(x) + Math.cos(z), sampleNormal: () => [0, 1, 0] as const };
+    const options = { size: [10, 10] as const, segments: [4, 6] as const };
+    const job = fieldGroundGeometryJob(hill, options);
+    let pauses = 0;
+    let step = job.next();
+    while (step.done !== true) {
+      pauses += 1;
+      step = job.next();
+    }
+    expect(pauses).toBe(7);
+    const whole = createFieldGroundGeometry(hill, options);
+    expect(Array.from(step.value.attributes.position.array)).toEqual(Array.from(whole.attributes.position.array));
+    expect(Array.from(step.value.attributes.color.array)).toEqual(Array.from(whole.attributes.color.array));
   });
 
   test("field ground mottling is seeded and deterministic on flat ground", () => {

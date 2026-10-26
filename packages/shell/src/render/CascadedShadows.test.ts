@@ -4,6 +4,7 @@ import { CSM } from "three/examples/jsm/csm/CSM.js";
 
 import { bindCsmMaterials, cascadeShadowCadence, createCascadeRefreshState, patchSceneMaterials, refreshCascadesOnTexelStep, releaseCascadedShadows, resolveShadowDistance, type CsmMaterialSetup } from "./CascadedShadows";
 import { resolveGraphicsProfile } from "@jgengine/core/settings/graphicsProfile";
+import { createShaderWarmup } from "./shaderWarmup";
 
 function fakeCsm(calls: THREE.Material[]): CsmMaterialSetup {
   return {
@@ -107,6 +108,34 @@ describe("cascade cadence and shadow reach", () => {
 });
 
 describe("CSM lifecycle", () => {
+  test("a swapped material is patched before the shader warmup links it, not at its first draw", async () => {
+    const scene = new THREE.Scene();
+    const calls: THREE.Material[] = [];
+    const unbind = bindCsmMaterials(scene, fakeCsm(calls));
+    const mesh = new THREE.Mesh(new THREE.BoxGeometry(), new THREE.MeshStandardMaterial());
+    mesh.position.set(0, 0, -5);
+    scene.add(mesh);
+    const replacement = new THREE.MeshStandardMaterial();
+    mesh.material = replacement;
+    const linked: THREE.Material[] = [];
+    const renderer = {
+      info: { programs: [] as { isReady(): boolean }[] },
+      compile(root: THREE.Object3D) {
+        root.traverse((object) => {
+          const material = (object as THREE.Mesh).material as THREE.Material | undefined;
+          if (material === undefined || linked.includes(material)) return;
+          // The program is built from what the material is at link time: patched or not.
+          if (calls.includes(material)) linked.push(material);
+          renderer.info.programs.push({ isReady: () => true });
+        });
+      },
+    };
+    const warmup = createShaderWarmup({ renderer, scene, camera: new THREE.PerspectiveCamera(), quietMs: 0, backgroundMs: 0, sleep: async () => {}, loaderQuiet: () => true });
+    await warmup.done;
+    expect(linked).toContain(replacement);
+    unbind();
+  });
+
   test("streamed descendants and replacement materials are patched before drawing, without a frame scan", () => {
     const scene = new THREE.Scene();
     const group = new THREE.Group();

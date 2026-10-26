@@ -1,3 +1,4 @@
+import { runToEnd, type SlicedJob } from "@jgengine/core/run/slicedWork";
 import { noiseField, type NoiseFieldConfig, type TerrainField } from "@jgengine/core/world/terrain";
 import * as THREE from "three";
 
@@ -183,10 +184,18 @@ export interface FieldGroundOptions {
   * @internal
   */
 export function createFieldGroundGeometry(field: TerrainField, options: FieldGroundOptions = {}): THREE.BufferGeometry {
+  return runToEnd(fieldGroundGeometryJob(field, options));
+}
+
+/**
+ * {@link createFieldGroundGeometry} as a sliced job: a large field samples a game's height function
+ * hundreds of thousands of times, which run in one go froze the page for seconds. @internal
+ */
+export function fieldGroundGeometryJob(field: TerrainField, options: FieldGroundOptions = {}): SlicedJob<THREE.BufferGeometry> {
   const size = resolveTerrainSize(options.size);
   const segments = resolveTerrainSegments(options.segments);
   const [cx, cz] = options.center ?? [0, 0];
-  return buildGroundGeometry(size, segments, (x, z) => field.sampleHeight(x, z), {
+  return groundGeometryJob(size, segments, (x, z) => field.sampleHeight(x, z), {
     colors: options.colors ?? {},
     center: [cx, cz],
     heightRange: options.heightRange,
@@ -196,7 +205,12 @@ export function createFieldGroundGeometry(field: TerrainField, options: FieldGro
   });
 }
 
-function buildGroundGeometry(
+function buildGroundGeometry(...args: Parameters<typeof groundGeometryJob>): THREE.BufferGeometry {
+  return runToEnd(groundGeometryJob(...args));
+}
+
+/** Mesh a height sampler into a vertex-coloured ground, pausing after each row of vertices. */
+function* groundGeometryJob(
   size: ResolvedTerrainSize,
   segments: ResolvedTerrainSegments,
   sampler: TerrainHeightSampler,
@@ -208,7 +222,7 @@ function buildGroundGeometry(
     surface?: TerrainSurfaceColorOptions;
     paintColorAt?: (x: number, z: number, out: THREE.Color) => boolean;
   },
-): THREE.BufferGeometry {
+): SlicedJob<THREE.BufferGeometry> {
   const colors = opts.colors;
   const paletteAt = opts.paletteAt;
   const surface = resolveSurfaceColor(opts.surface);
@@ -268,6 +282,7 @@ function buildGroundGeometry(
       uvIndex += 2;
       colorIndex += 3;
     }
+    yield;
   }
   let triangleIndex = 0;
   for (let zIndex = 0; zIndex < segments.z; zIndex += 1) {

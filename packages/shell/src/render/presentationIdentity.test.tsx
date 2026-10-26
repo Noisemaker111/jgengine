@@ -59,16 +59,24 @@ class HeadlessImage {
   }
 }
 
+/** Whether this file put the stand-in `Image` up, so it takes it down again for the files after it. */
+let installedImage = false;
+
 beforeAll(() => {
   const environment = globalThis as typeof globalThis & { IS_REACT_ACT_ENVIRONMENT?: boolean; Image?: unknown };
   environment.IS_REACT_ACT_ENVIRONMENT = true;
-  environment.Image ??= HeadlessImage;
+  if (environment.Image === undefined) {
+    environment.Image = HeadlessImage;
+    installedImage = true;
+  }
   extend(THREE);
 });
 
 afterAll(() => {
-  const environment = globalThis as typeof globalThis & { IS_REACT_ACT_ENVIRONMENT?: boolean };
+  const environment = globalThis as typeof globalThis & { IS_REACT_ACT_ENVIRONMENT?: boolean; Image?: unknown };
   environment.IS_REACT_ACT_ENVIRONMENT = undefined;
+  // An image that never loads would hang a later file's decode until its timeout.
+  if (installedImage) delete environment.Image;
 });
 
 async function mount(textureSource: readonly [THREE.Texture, THREE.Texture]): Promise<Harness> {

@@ -1,16 +1,20 @@
-import { useThree } from "@react-three/fiber";
+import { addAfterEffect, addEffect, useThree } from "@react-three/fiber";
 import { useEffect } from "react";
 
 import { devtools } from "@jgengine/core/devtools/devtools";
 
-import { createShaderWarmup, type ShaderWarmupState } from "./shaderWarmup";
+import { createShaderWarmup, holdDraws, type HeldDraw, type ShaderWarmupState } from "./shaderWarmup";
 
 /** Warmup state before the gate has run, so the loading screen covers the very first frame. @internal */
-export const SCENE_WARMUP_PENDING: ShaderWarmupState = { phase: "waiting", rounds: 0, programs: 0, planned: 0, deferred: 0, elapsedMs: 0 };
+export const SCENE_WARMUP_PENDING: ShaderWarmupState = { phase: "waiting", rounds: 0, programs: 0, planned: 0, deferred: 0, progress: 0, elapsedMs: 0 };
 
 /**
  * Compiles the mounted scene's shaders behind the loading screen and reports progress to it.
  * Mounted inside the canvas, after the world, so the first round sees the world's materials.
+ * The frame loop draws nothing until the warmup reveals: it keeps ticking, but a draw would link
+ * every unready program synchronously on the main thread and freeze the menu above the cover.
+ * What it tried to draw is handed to the warmup, so post passes and override passes are linked
+ * too. Draws outside the loop (an environment bake) still run.
  * @internal
  */
 export function SceneWarmupGate({ onState, sceneDrawsToTarget }: { onState: (state: ShaderWarmupState) => void; sceneDrawsToTarget?: boolean }) {
@@ -22,19 +26,41 @@ export function SceneWarmupGate({ onState, sceneDrawsToTarget }: { onState: (sta
   // the canvas, so the composition passes the answer where it knows it.
   const internal = useThree((state) => state.internal);
   useEffect(() => {
+    let inFrame = false;
+    const enterFrame = addEffect(() => {
+      inFrame = true;
+    });
+    const leaveFrame = addAfterEffect(() => {
+      inFrame = false;
+    });
+    let held: HeldDraw[] = [];
+    const releaseDraws = holdDraws(gl, { holding: () => inFrame, onHeld: (draw) => held.push(draw) });
+    const release = (): void => {
+      releaseDraws();
+      enterFrame();
+      leaveFrame();
+      held = [];
+    };
     const warmup = createShaderWarmup({
       renderer: gl,
       scene,
       camera,
       onState,
       sceneDrawsToTarget: () => sceneDrawsToTarget ?? internal.priority > 0,
+      takeHeldDraws: () => {
+        const taken = held;
+        held = [];
+        return taken;
+      },
     });
+    void warmup.done.then(release);
     const unregister = devtools.probes.register("sceneWarmup", () => {
       const state = warmup.state();
       return `${state.phase}, ${state.rounds} rounds, ${state.programs} programs, ${state.planned} planned, ${state.deferred} deferred, ${state.elapsedMs}ms`;
     });
     return () => {
       warmup.cancel();
+      release();
       unregister();
     };
   }, [gl, scene, camera, onState]);
@@ -47,6 +73,12 @@ export function warmupLabel(state: ShaderWarmupState): string {
     return state.programs === 0 ? "Preparing scene." : `Preparing scene (${state.programs} shaders)`;
   }
   return "Preparing scene.";
+}
+
+/** How full the cover's bar is: a sliver while waiting for the scene, then the share of links the GPU has run. @internal */
+export function warmupBarShare(state: ShaderWarmupState): number {
+  if (state.phase !== "compiling") return 0.05;
+  return Math.max(0.05, Math.min(1, state.progress));
 }
 
 /** Whether the cover is still up: a failed compile releases the frame rather than hiding a broken scene. @internal */
@@ -83,10 +115,10 @@ export function SceneWarmupCover({ state }: { state: ShaderWarmupState }) {
         <div data-shell-warmup-bar aria-hidden="true" style={{ width: 160, height: 3, borderRadius: 2, background: "#1e293b", overflow: "hidden" }}>
           <div
             style={{
-              width: state.phase === "compiling" ? "100%" : "20%",
+              width: `${Math.round(warmupBarShare(state) * 100)}%`,
               height: "100%",
               background: "#38bdf8",
-              opacity: state.phase === "compiling" ? 1 : 0.4,
+              transition: "width 120ms linear",
             }}
           />
         </div>

@@ -119,6 +119,9 @@ export function duplicateFailures(added: readonly Definition[], everywhere: read
     const key = `${definition.name}\0${definition.file}`;
     if (seen.has(key)) continue;
     seen.add(key);
+    // The diff joins committed and uncommitted work, so an export a later edit renamed is still in
+    // it: only a definition the working tree still has can clash.
+    if (!everywhere.some((other) => other.name === definition.name && other.file === definition.file)) continue;
     const others = [...new Set(everywhere.filter((other) => other.name === definition.name && clashes(definition, other)).map((other) => other.file))];
     if (others.length === 0) continue;
     failures.push({

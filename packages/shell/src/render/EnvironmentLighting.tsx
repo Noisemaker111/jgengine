@@ -6,6 +6,8 @@ import { EXRLoader } from "three/examples/jsm/loaders/EXRLoader.js";
 import { RGBELoader } from "three/examples/jsm/loaders/RGBELoader.js";
 import type { EnvironmentSource } from "@jgengine/core/render/environment";
 
+import { linkPmremBake, PMREM_BAKE_CAMERA } from "./pmremLink";
+import { warmupDrawsToTarget, warmupWaitsFor } from "./shaderWarmup";
 import { WorldReflectionProbe, type WorldProbeSettings } from "./worldReflectionProbe";
 
 /** @internal Props for shell {@link EnvironmentLighting}. */
@@ -69,7 +71,10 @@ export function EnvironmentLighting({
     if (worldProbe === null || authoredMap) return;
     const probe = new WorldReflectionProbe(gl, worldProbe);
     probeRef.current = probe;
+    // The probe draws the scene into a cube target, which links the target's programs.
+    const untarget = warmupDrawsToTarget(scene);
     return () => {
+      untarget();
       probeRef.current = null;
       probe.dispose();
     };
@@ -114,40 +119,56 @@ export function EnvironmentLighting({
     try {
       if (source?.kind === "hdri") {
         const Loader = /\.exr(?:$|\?)/i.test(source.url) ? EXRLoader : RGBELoader;
-        new Loader().loadAsync(source.url).then((texture) => {
+        warmupWaitsFor(scene, new Loader().loadAsync(source.url).then((texture) => {
           if (cancelled) { texture.dispose(); return; }
           loadedTexture = texture;
           texture.mapping = THREE.EquirectangularReflectionMapping;
-          apply(pmrem.fromEquirectangular(texture), source.rotation);
+          const size = Math.max(16, ((texture.image as { width?: number } | undefined)?.width ?? 1024) / 4);
+          return linkPmremBake(gl, pmrem, size, () => pmrem.compileEquirectangularShader(), () => cancelled).then(() => {
+            if (!cancelled) apply(pmrem.fromEquirectangular(texture), source.rotation);
+          });
         }).catch((error) => {
           if (cancelled) return;
           reportTextureLoadError(source.url);
           console.warn(`[jgengine] environment illumination failed: ${source.url}`, error);
-        });
+        }));
       } else if (source?.kind === "cube") {
-        new THREE.CubeTextureLoader().loadAsync(source.urls).then((texture) => {
+        warmupWaitsFor(scene, new THREE.CubeTextureLoader().loadAsync(source.urls).then((texture) => {
           if (cancelled) { texture.dispose(); return; }
           loadedTexture = texture;
-          apply(pmrem.fromCubemap(texture));
+          const face = (texture.image as { width?: number; image?: { width?: number } }[] | undefined)?.[0];
+          const size = face?.width ?? face?.image?.width ?? PMREM_SCENE_SIZE;
+          return linkPmremBake(gl, pmrem, size, () => pmrem.compileCubemapShader(), () => cancelled).then(() => {
+            if (!cancelled) apply(pmrem.fromCubemap(texture));
+          });
         }).catch((error) => {
           if (cancelled) return;
           for (const url of source.urls) reportTextureLoadError(url);
           console.warn(`[jgengine] cube environment illumination failed: ${source.urls.join(", ")}`, error);
-        });
+        }));
       } else {
         const probe = buildSkyProbeScene({ skyColor: effective?.sky ?? skyColor, groundColor: effective?.ground ?? groundColor, horizonTint, sunDirection, sunColor: effective?.sun ?? sunColor });
-        try {
-          apply(pmrem.fromScene(probe, 0.04));
-        } finally {
-          disposeScene(probe);
-        }
+        // With a world probe, the sky bake matches its size: a lit program is built for its
+        // environment's size, so a probe that took over at another size would relink every one.
+        const size = worldProbe?.size ?? PMREM_SCENE_SIZE;
+        const baked = linkPmremBake(gl, pmrem, size, () => gl.compile(probe, PMREM_BAKE_CAMERA), () => cancelled)
+          .then(() => {
+            if (!cancelled) apply(pmrem.fromScene(probe, 0.04, 0.1, 100, { size }));
+          })
+          .finally(() => disposeScene(probe));
+        // Every lit material links a different program with an environment map, so the scene's
+        // warmup waits for this one rather than linking programs the first frame never draws.
+        warmupWaitsFor(scene, baked);
+        baked.catch((error: unknown) => {
+          if (!cancelled) console.warn("[jgengine] environment probe bake failed", error);
+        });
       }
     } catch (error) {
       release();
       throw error;
     }
     return release;
-  }, [gl, scene, source, intensity, skyColor, groundColor, horizonTint, sunColor, sunDirection?.[0], sunDirection?.[1], sunDirection?.[2]]);
+  }, [gl, scene, worldProbe?.size, source, intensity, skyColor, groundColor, horizonTint, sunColor, sunDirection?.[0], sunDirection?.[1], sunDirection?.[2]]);
 
   useFrame((state, delta) => {
     const probe = probeRef.current;
@@ -164,6 +185,9 @@ const probeEye = new THREE.Vector3();
 
 /** @internal Default IBL strength for the procedural probe: enough sky fill and sun lobe to model forms. */
 export const DEFAULT_IBL_INTENSITY = 0.45;
+
+/** three's default PMREM size, for a sky bake with no world probe to match. */
+const PMREM_SCENE_SIZE = 256;
 
 /** @internal Fallback probe sun when no directional light is authored: high and off to one side. */
 export const DEFAULT_PROBE_SUN: readonly [number, number, number] = [-0.45, 0.8, 0.35];

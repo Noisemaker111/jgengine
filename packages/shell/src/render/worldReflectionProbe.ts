@@ -3,6 +3,8 @@ import * as THREE from "three";
 import type { GraphicsQuality } from "@jgengine/core/settings/settingsModel";
 
 import { modelLoadIdleMs, modelLoadStarts } from "./modelLoad";
+import { linkPmremBake } from "./pmremLink";
+import { drawsHeld } from "./shaderWarmup";
 
 /** How often and how sharply the world reflection probe captures the scene. @internal */
 export interface WorldProbeSettings {
@@ -110,6 +112,9 @@ export class WorldReflectionProbe {
   private framesSince = 0;
   private captureStarts = 0;
   private readonly assigned = new Set<THREE.MeshStandardMaterial>();
+  /** Whether the filter's programs are linked; a capture waits for it rather than link on the spot. */
+  private linked = false;
+  private disposed = false;
 
   constructor(
     private readonly renderer: THREE.WebGLRenderer,
@@ -119,6 +124,9 @@ export class WorldReflectionProbe {
     this.cubeTarget = new THREE.WebGLCubeRenderTarget(settings.size, { type: THREE.HalfFloatType, generateMipmaps: false });
     this.cubeCamera = new THREE.CubeCamera(0.3, 600, this.cubeTarget);
     this.pmrem = new THREE.PMREMGenerator(renderer);
+    void linkPmremBake(renderer, this.pmrem, settings.size, () => this.pmrem.compileCubemapShader(), () => this.disposed).then(() => {
+      this.linked = true;
+    });
   }
 
   /** The filtered environment from the last finished capture, or null before the first one. */
@@ -134,6 +142,8 @@ export class WorldReflectionProbe {
   step(scene: THREE.Scene, eye: THREE.Vector3, delta: number): boolean {
     this.sinceCapture += delta;
     this.framesSince += 1;
+    // While the shader warmup holds the frame's draws, a face would draw nothing: wait it out.
+    if (!this.linked || drawsHeld(this.renderer)) return false;
     if (this.face < 0) {
       if (!probeDue(this.lastPosition, eye, this.sinceCapture, this.settings, this.framesSince)) return false;
       if (!probeStreamingQuiet(this.streaming.idleMs(), this.lastPosition !== null, this.framesSince)) return false;
@@ -203,6 +213,7 @@ export class WorldReflectionProbe {
   }
 
   dispose(): void {
+    this.disposed = true;
     const texture = this.envTarget?.texture;
     for (const material of this.assigned) {
       if (material.envMap !== texture) continue;

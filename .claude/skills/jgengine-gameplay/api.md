@@ -2689,6 +2689,14 @@
 - `createSessionLoop` (function): function createSessionLoop<T = never, I = void, R = void>(config: SessionLoopConfig<T, I, R> = {}): SessionLoop<T, I, R> — The shared shape of a game session, with the game's own rules supplied as config: a session opens, it may carry a quantity, its boundary closes it, and the game's `settle` callback decides what happens to what it carried. A park day, a night shift and a wave are the same base with a different `settle`, a different `kind` and, where nothing is at stake, `carries: false`.
 - `installSessionProbe` (function): function installSessionProbe<T, I, R>(loop: SessionLoop<T, I, R>): () => void — Publish the loop's own readout on `window.__jgengineRun`, so a capture or devtools probe can state which session is live, its phase, what it carries and the option it offers. Reads only; it never starts, closes or changes a session. Returns the uninstaller.
 
+## @jgengine/core/run/slicedWork
+
+- `SlicedJob` (type): type SlicedJob<T> = Generator<void, T, void> — A long build split into slices, so the thread that runs it can answer input between them. The job is a generator that `yield`s wherever it is safe to pause; the runner keeps calling it until a slice has used its budget, then hands the thread back before the next slice.
+- `SlicedRun` (interface): interface SlicedRun<T> — A sliced job in flight.
+- `SlicedWorkCancelled` (class): class SlicedWorkCancelled extends Error — What a cancelled run rejects with, so a caller can tell it from a failure.
+- `SlicedWorkOptions` (interface): interface SlicedWorkOptions — Options for {@link runSliced}; the clock and the yield are injectable for tests.
+- `runToEnd` (function): function runToEnd<T>(job: SlicedJob<T>): T — Run a job to the end on the spot, for callers that need the value now (tests, tools, SSR).
+
 ## @jgengine/core/save/hostedWorldStore
 
 - `HostedWorldRecord` (interface): interface HostedWorldRecord — One hosted world's persisted authoritative state — the unit a {@link HostedWorldStore} loads and saves.
