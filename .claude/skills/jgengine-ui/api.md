@@ -74,7 +74,6 @@
 - `HudViewportConfig` (interface): interface HudViewportConfig extends HudFitConfig — Per-game HUD viewport declaration carried on `PlayableGame.hudFit`; `mobile` overrides the fit on compact displays so the owner can tune the phone layout separately.
 - `hudScaleForViewport` (function): function hudScaleForViewport(fit: Required<HudFitConfig>, viewport: HudSize): number — The one scaling rule for every display: the ratio of the live viewport to the authored design size along the limiting axis, clamped. 1 on a viewport at or above design size; smoothly below 1 down to `minScale` on phones.
 - `overflowingPanels` (function): function overflowingPanels(panels: readonly { id: string; rect: HudRect }[], viewport: HudSize, tolerance = 1.5): HudOverflow[] — Every panel rect that escapes the viewport — the data behind the HUD overflow gate. A rect is only reported when it is partly visible *and* crosses an edge; a fully off-screen (closed/hidden) surface is skipped, so parked drawers and unopened menus never raise a false alarm.
-- `rectOverflow` (function): function rectOverflow(rect: HudRect, viewport: HudSize, tolerance = 1.5): Omit<HudOverflow, "id"> | null — Non-null when any edge of `rect` falls outside `viewport` by more than `tolerance` px; each field is the overflow distance past that edge (0 when inside).
 - `resolveHudFit` (function): function resolveHudFit(config: HudViewportConfig | undefined, mobile: boolean): Required<HudFitConfig> — ⚠ undocumented
 
 ## @jgengine/core/i18n/i18n
@@ -3005,10 +3004,6 @@
 - `PAD_HAPTIC_EFFECT_MS` (const): const PAD_HAPTIC_EFFECT_MS: 120 — How long each rumble command lasts; refreshed before it runs out so a held level feels continuous.
 - `PadHapticState` (interface): interface PadHapticState — Last command sent to one pad.
 
-## @jgengine/shell/hud/HudOnlyDriver
-
-- `HudOnlyDriver` (function): function HudOnlyDriver({ ctx, multiplayer, serverIdRef, playable, tracker, pointerAxisRef, gateRef, onRuntimeError, }: { ctx: GameContext; multiplayer: ShellMultiplayer | null; serverIdRef: { current: string | null }; playable: PlayableGame; tracker: ActionStateTracker<string>; pointerAxisRef: { cur… — ⚠ undocumented
-
 ## @jgengine/shell/hud/ViewportHuds
 
 - `ViewportHuds` (function): function ViewportHuds({ ctx, config, children, }: { ctx: GameContext; config?: ViewportsConfig; children: (slot: LocalPlayerSlot, viewport: ViewportDef) => ReactNode; }): React.JSX.Element — One absolutely-positioned HUD root per viewport, laid over the canvas: render each seat's own health, prompts or score with `children(slot)`. Pass the same `viewports` config the game gave `defineGame`.
@@ -4037,14 +4032,14 @@
 - `RenderBox` (interface): interface RenderBox — A model's measured local box (entity/object frame, Y up), as the renderer mounted it.
 - `RenderSphere` (interface): interface RenderSphere — A Y-axis-centred sphere that wraps a {@link RenderBox} under any yaw.
 
-## @jgengine/shell/vision/FrustumSensor
+## @jgengine/shell/vision/FrustumSensorHud
 
 - `FrustumSensorProbeOptions` (interface): interface FrustumSensorProbeOptions extends FramingConfig { subjectIds: readonly string[]; subjectRadius?: number } — ⚠ undocumented · used by `FrustumSensorReadout`: Renders inside the Canvas (needs the live camera via `useFrame`/`useThree`) but portals a real HTML readout via drei's `Html fullscreen` — a…
 - `FrustumSensorReadout` (function): function FrustumSensorReadout(props: FrustumSensorProbeOptions & { wrapperClassName?: string; className?: string }): React.JSX.Element — Renders inside the Canvas (needs the live camera via `useFrame`/`useThree`) but portals a real HTML readout via drei's `Html fullscreen` — a photo-mode "is this subject framed" HUD.
 - `frustumSampleDisplayEqual` (function): function frustumSampleDisplayEqual(a: FrustumSample | null, b: FrustumSample | null): boolean — ⚠ undocumented
 - `useFrustumSensor` (function): function useFrustumSensor(options: FrustumSensorProbeOptions): FrustumSample | null — ⚠ undocumented
 
-## @jgengine/shell/vision/HiddenStateProbe
+## @jgengine/shell/vision/HiddenStateProbeHud
 
 - `SensorReadoutMeter` (function): function SensorReadoutMeter({ label, reading, className }: SensorReadoutMeterProps): React.JSX.Element — A handheld-sensor readout: needle strength bar + the raw reading, or a "no signal" idle state.
 - `SensorReadoutMeterProps` (interface): interface SensorReadoutMeterProps { label: string; reading: ReturnType<typeof probeHiddenState>; className?: string } — ⚠ undocumented · used by `SensorReadoutMeter`: A handheld-sensor readout: needle strength bar + the raw reading, or a "no signal" idle state.
@@ -4283,6 +4278,21 @@
 - `projectWorldToScreen` (function): function projectWorldToScreen(scratch: THREE.Vector3, camera: THREE.Camera, worldPosition: readonly [number, number, number], width: number, height: number): EntityScreenProjection — Pure world→screen projection: NDC via `camera.project`, mapped to CSS pixels. `behind` is set when the point falls outside the near/far clip range (NDC z beyond [-1, 1]), which covers positions behind the camera. Exposed for tests and for callers wiring their own frame loop around a bare THREE camera.
 - `useWorldProjection` (function): function useWorldProjection(): ProjectEntity — Returns a {@link ProjectEntity} bound to the live R3F camera and canvas size — the world→screen half of the data-first entity-frame seam. Call the returned function with a world position to get a CSS-pixel screen point (or `null`/`behind` when the point is outside the frustum). Reads the camera fresh on every call, so sample it inside a frame loop. Games that already own their entities use this to feed `@jgengine/react`'s `EntityFrames` without mirroring state into a store.
 
+## @jgengine/shell/world/WorldHud
+
+- `NameplateSample` (interface): interface NameplateSample — Projected nameplate with optional health and distance from the render camera.
+- `ProjectileTracers` (function): function ProjectileTracers({ lifeMs = 200 }: { lifeMs?: number }): React.JSX.Element — ⚠ undocumented
+- `Reticle` (function): function Reticle({ className }: { className?: string }): React.JSX.Element — ⚠ undocumented
+- `WorldBarSample` (interface): interface WorldBarSample { entityId?: string; x: number; y: number; percent: number; pxPerMeter?: number } — ⚠ undocumented
+- `WorldEntityBars` (function): function WorldEntityBars({ statId, height = 2.2, roles, resolveRole, maxDistance, occlude = true, tickMs = 80, maxSamples = 64, }: { statId: string; height?: number; roles?: readonly CatalogEntityRole[]; resolveRole?: (entity: SceneEntity) => CatalogEntityRole | undefined; /** Hide bars beyond this … — ⚠ undocumented
+- `WorldFloatText` (function): function WorldFloatText({ height = 1.9, lifeMs = 950 }: { height?: number; lifeMs?: number }): React.JSX.Element — ⚠ undocumented
+- `WorldNameplates` (function): function WorldNameplates({ statId = "health", height = 2.3, roles, resolveRole, maxDistance, occlude = true, tickMs = 120, maxSamples = 64, resolveName, showHealth = true, className, nameplateClassName, nameClassName, barClassName, fillClassName, renderNameplate, }: WorldNameplatesProps): React.JSX.… — Billboarded name + 78×6px HP bar over every nearby non-local entity that passes `roles`/`maxDistance` — headless (className/data-* slots on every part, `renderNameplate` for a full swap), turned on declaratively via `defineGame({ nameplates })` rather than mounted by hand.
+- `WorldNameplatesProps` (interface): interface WorldNameplatesProps — Props for `WorldNameplates` — entity filter, refresh rate, and headless className/render hooks.
+- `WorldObjectHighlights` (function): function WorldObjectHighlights({ color = "#facc15", radius, y = 0.05 }: WorldObjectHighlightsProps): React.JSX.Element — Ground ring over every `ctx.scene.object.selection`-ed placed object — the object-layer counterpart to `WorldEntityBars`/`WorldNameplates`. Mount it once in the game's scene (headless: no defaults are imposed beyond a visible ring) instead of hand-rolling a selection highlight through `WorldOverlay` against external state.
+- `WorldObjectHighlightsProps` (interface): interface WorldObjectHighlightsProps — Props for {@link WorldObjectHighlights}.
+- `WorldTelegraphs` (function): function WorldTelegraphs(): React.JSX.Element — ⚠ undocumented
+- `startFromMuzzle` (function): function startFromMuzzle(ctx: GameContext, from: string, camera: THREE.Camera, start: THREE.Vector3): void — Where a shot's tracer visibly starts. The rule origin (eye or fixed muzzle offset) decides what is hit; the line starts at the shooter's gun: a first-person viewmodel's registered muzzle, else the bottom-right of the view where a held gun sits, and for anyone seen from outside, their registered hand or barrel. Exported for tests.
+
 ## @jgengine/shell/world/WorldItems
 
 - `WorldItems` (function): function WorldItems({ config }: { config?: WorldItemRenderConfig }): React.JSX.Element — Rarity→beam/color/label render binding + loot-filter overlay (#32/#33) for every dropped `worldItem`.
@@ -4330,21 +4340,6 @@
 - `WorldBarSample` (interface): interface WorldBarSample { entityId?: string; x: number; y: number; percent: number; pxPerMeter?: number } — ⚠ undocumented
 - `WorldOverlayCamera` (interface): interface WorldOverlayCamera — Render camera matrices; world translation supplies the overlay's viewpoint.
 - `WorldOverlaySampleOptions` (interface): interface WorldOverlaySampleOptions — Sampling policy shared by health bars and nameplates.
-
-## @jgengine/shell/world/worldOverlays
-
-- `NameplateSample` (interface): interface NameplateSample — Projected nameplate with optional health and distance from the render camera.
-- `ProjectileTracers` (function): function ProjectileTracers({ lifeMs = 200 }: { lifeMs?: number }): React.JSX.Element — ⚠ undocumented
-- `Reticle` (function): function Reticle({ className }: { className?: string }): React.JSX.Element — ⚠ undocumented
-- `WorldBarSample` (interface): interface WorldBarSample { entityId?: string; x: number; y: number; percent: number; pxPerMeter?: number } — ⚠ undocumented
-- `WorldEntityBars` (function): function WorldEntityBars({ statId, height = 2.2, roles, resolveRole, maxDistance, occlude = true, tickMs = 80, maxSamples = 64, }: { statId: string; height?: number; roles?: readonly CatalogEntityRole[]; resolveRole?: (entity: SceneEntity) => CatalogEntityRole | undefined; /** Hide bars beyond this … — ⚠ undocumented
-- `WorldFloatText` (function): function WorldFloatText({ height = 1.9, lifeMs = 950 }: { height?: number; lifeMs?: number }): React.JSX.Element — ⚠ undocumented
-- `WorldNameplates` (function): function WorldNameplates({ statId = "health", height = 2.3, roles, resolveRole, maxDistance, occlude = true, tickMs = 120, maxSamples = 64, resolveName, showHealth = true, className, nameplateClassName, nameClassName, barClassName, fillClassName, renderNameplate, }: WorldNameplatesProps): React.JSX.… — Billboarded name + 78×6px HP bar over every nearby non-local entity that passes `roles`/`maxDistance` — headless (className/data-* slots on every part, `renderNameplate` for a full swap), turned on declaratively via `defineGame({ nameplates })` rather than mounted by hand.
-- `WorldNameplatesProps` (interface): interface WorldNameplatesProps — Props for `WorldNameplates` — entity filter, refresh rate, and headless className/render hooks.
-- `WorldObjectHighlights` (function): function WorldObjectHighlights({ color = "#facc15", radius, y = 0.05 }: WorldObjectHighlightsProps): React.JSX.Element — Ground ring over every `ctx.scene.object.selection`-ed placed object — the object-layer counterpart to `WorldEntityBars`/`WorldNameplates`. Mount it once in the game's scene (headless: no defaults are imposed beyond a visible ring) instead of hand-rolling a selection highlight through `WorldOverlay` against external state.
-- `WorldObjectHighlightsProps` (interface): interface WorldObjectHighlightsProps — Props for {@link WorldObjectHighlights}.
-- `WorldTelegraphs` (function): function WorldTelegraphs(): React.JSX.Element — ⚠ undocumented
-- `startFromMuzzle` (function): function startFromMuzzle(ctx: GameContext, from: string, camera: THREE.Camera, start: THREE.Vector3): void — Where a shot's tracer visibly starts. The rule origin (eye or fixed muzzle offset) decides what is hit; the line starts at the shooter's gun: a first-person viewmodel's registered muzzle, else the bottom-right of the view where a held gun sits, and for anyone seen from outside, their registered hand or barrel. Exported for tests.
 
 ## @jgengine/shell/worldSync
 

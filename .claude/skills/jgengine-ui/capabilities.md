@@ -774,7 +774,7 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 ## nameplates — billboarded name + HP bar over nearby entities
 
-- `WorldNameplates` (function) · `import { WorldNameplates } from "@jgengine/shell/world/worldOverlays"`
+- `WorldNameplates` (function) · `import { WorldNameplates } from "@jgengine/shell/world/WorldHud"`
 
 ## new-character-pane — character creation pane — name field, palette and avatar choice, start action
 
@@ -1270,7 +1270,7 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 ## world-object-highlights — ground-ring highlight over every selected placed object
 
-- `WorldObjectHighlights` (function) · `import { WorldObjectHighlights } from "@jgengine/shell/world/worldOverlays"`
+- `WorldObjectHighlights` (function) · `import { WorldObjectHighlights } from "@jgengine/shell/world/WorldHud"`
 
 ## world-pings — in-scene ping markers — a bobbing downward arrowhead, ground ring, and billboarded callout per marker, colored by kind and fading over the marker's lifetime
 

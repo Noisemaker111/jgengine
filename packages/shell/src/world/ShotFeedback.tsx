@@ -8,7 +8,7 @@ import type { GameContext } from "@jgengine/core/runtime/gameContextTypes";
 import { useAccessibilitySettings } from "@jgengine/react/accessibilitySettings";
 import { useGameContext } from "@jgengine/react/provider";
 
-import { startFromMuzzle } from "./worldOverlays";
+import { startFromMuzzle } from "./WorldHud";
 
 /** Whether `source` is the local player or what they currently drive. Exported for tests. @internal */
 export function isLocalSource(ctx: GameContext, source: string | undefined): boolean {

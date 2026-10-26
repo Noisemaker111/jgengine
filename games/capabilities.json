@@ -6373,7 +6373,7 @@
       "packages": [
         "@jgengine/shell"
       ],
-      "module": "@jgengine/shell/world/worldOverlays",
+      "module": "@jgengine/shell/world/WorldHud",
       "domain": "world",
       "gameFacing": false,
       "probe": null,
@@ -10992,7 +10992,7 @@
       "packages": [
         "@jgengine/shell"
       ],
-      "module": "@jgengine/shell/world/worldOverlays",
+      "module": "@jgengine/shell/world/WorldHud",
       "domain": "world",
       "gameFacing": false,
       "probe": null,
