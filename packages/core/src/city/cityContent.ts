@@ -36,17 +36,6 @@ export const CITY_LOT_CLASSES: readonly CityLotClass[] = [
   "silo",
 ];
 
-/**
- * Filler classes used ONLY by the block-interior fill pass (`resolveCityLotContent` at a high
- * `blockFill`). They are deliberately kept OUT of {@link CITY_LOT_CLASSES} so a zone mix can never
- * weight them onto street frontage — they exist to pack the backs of Manhattan-style blocks with
- * parking structures and warehouses/depots, mixed in with ordinary zone classes.
- */
-export type CityFillerClass = "garage" | "depot";
-
-/** All filler classes, for validation and interior-pass allow-lists. */
-export const CITY_FILLER_CLASSES: readonly CityFillerClass[] = ["garage", "depot"];
-
 /** Zone band a lot falls in: dense core, middle ring, or the district edge. */
 export type CityZoneBand = "core" | "mid" | "edge";
 
@@ -87,23 +76,19 @@ interface ClassProfile {
   spacingFactor: number;
   /** Floor-count range before the district floor clamp. */
   floors: readonly [number, number];
-  /** Whether deep blocks may host a second back row of this class. */
-  backRow: boolean;
 }
 
-const CLASS_PROFILES: Record<CityLotClass | CityFillerClass, ClassProfile> = {
-  tower: { width: [14, 22], depth: [12, 20], setbackFactor: 0.15, spacingFactor: 0.35, floors: [12, 34], backRow: true },
-  slab: { width: [12, 20], depth: [10, 16], setbackFactor: 0.2, spacingFactor: 0.4, floors: [4, 9], backRow: true },
-  shop: { width: [8, 14], depth: [8, 12], setbackFactor: 0.05, spacingFactor: 0.15, floors: [1, 2], backRow: true },
-  rowhouse: { width: [5.5, 8], depth: [9, 13], setbackFactor: 0.2, spacingFactor: 0.05, floors: [2, 3], backRow: true },
-  house: { width: [9, 12], depth: [8, 11], setbackFactor: 1, spacingFactor: 1, floors: [1, 2], backRow: true },
-  mansion: { width: [18, 26], depth: [14, 20], setbackFactor: 2, spacingFactor: 1.6, floors: [2, 3], backRow: false },
-  farmhouse: { width: [11, 14], depth: [9, 12], setbackFactor: 2.8, spacingFactor: 4, floors: [2, 2], backRow: false },
-  barn: { width: [12, 16], depth: [9, 13], setbackFactor: 3.6, spacingFactor: 5, floors: [1, 1], backRow: false },
-  silo: { width: [5, 6], depth: [5, 6], setbackFactor: 4, spacingFactor: 3, floors: [1, 1], backRow: false },
+const CLASS_PROFILES: Record<CityLotClass, ClassProfile> = {
+  tower: { width: [14, 22], depth: [12, 20], setbackFactor: 0.15, spacingFactor: 0.35, floors: [12, 34] },
+  slab: { width: [12, 20], depth: [10, 16], setbackFactor: 0.2, spacingFactor: 0.4, floors: [4, 9] },
+  shop: { width: [8, 14], depth: [8, 12], setbackFactor: 0.05, spacingFactor: 0.15, floors: [1, 2] },
+  rowhouse: { width: [5.5, 8], depth: [9, 13], setbackFactor: 0.2, spacingFactor: 0.05, floors: [2, 3] },
+  house: { width: [9, 12], depth: [8, 11], setbackFactor: 1, spacingFactor: 1, floors: [1, 2] },
+  mansion: { width: [18, 26], depth: [14, 20], setbackFactor: 2, spacingFactor: 1.6, floors: [2, 3] },
+  farmhouse: { width: [11, 14], depth: [9, 12], setbackFactor: 2.8, spacingFactor: 4, floors: [2, 2] },
+  barn: { width: [12, 16], depth: [9, 13], setbackFactor: 3.6, spacingFactor: 5, floors: [1, 1] },
+  silo: { width: [5, 6], depth: [5, 6], setbackFactor: 4, spacingFactor: 3, floors: [1, 1] },
   // Interior-fill fillers: broad, plain footprints that pack the backs of dense blocks.
-  garage: { width: [16, 24], depth: [14, 20], setbackFactor: 0.2, spacingFactor: 0.3, floors: [2, 6], backRow: true },
-  depot: { width: [18, 28], depth: [16, 24], setbackFactor: 0.25, spacingFactor: 0.35, floors: [1, 2], backRow: true },
 };
 
 /**
@@ -121,7 +106,6 @@ export interface ClassPlacement {
   setback: number;
   gap: number;
   floors: number;
-  backRow: boolean;
 }
 
 function range(rng: () => number, [lo, hi]: readonly [number, number]): number {
@@ -135,7 +119,7 @@ function range(rng: () => number, [lo, hi]: readonly [number, number]): number {
  * @internal
  */
 export function rollClassPlacement(
-  cls: CityLotClass | CityFillerClass,
+  cls: CityLotClass,
   rng: () => number,
   lotScale: number,
   floorsMin: number,
@@ -154,7 +138,6 @@ export function rollClassPlacement(
     setback: setbackBase * profile.setbackFactor * (0.9 + rng() * 0.2),
     gap: Math.max(0.2, spacingBase * profile.spacingFactor * (0.7 + rng() * 0.6)),
     floors: Math.max(floorsMin, Math.min(floorsMax, floors)),
-    backRow: profile.backRow,
   };
 }
 
@@ -334,7 +317,7 @@ function streetLevel(
  * @internal
  */
 export function buildLotPieces(
-  cls: CityLotClass | CityFillerClass,
+  cls: CityLotClass,
   width: number,
   depth: number,
   floors: number,
@@ -496,37 +479,18 @@ export function buildLotPieces(
       }
       return pieces;
     }
-    case "garage": {
-      // Parking structure: a plain banded box (the window bands read as deck slots) with a flat cap.
-      pieces.push(box([0, 0, 0], [width, H, depth], "wall", { grounded: true, banded: true }));
-      flatRoofTop(pieces, width * 1.02, depth * 1.02, H, rng);
-      return pieces;
-    }
-    case "depot": {
-      // Warehouse/depot: a low broad box under a shallow gable, with an optional loading canopy.
-      const bw = width * 0.98;
-      const bd = depth * 0.96;
-      pieces.push(box([0, 0, 0], [bw, H, bd], "wall", { grounded: true }));
-      const roofH = Math.min(2.4 + rng() * 1.6, bd * 0.28);
-      pieces.push(gable([0, H, 0], [bw, roofH, bd]));
-      if (rng() < 0.5) {
-        pieces.push(box([0, Math.min(H - 0.4, 2.6), bd / 2 - 0.4], [bw * 0.55, 0.4, 0.8], "accent"));
-      }
-      return pieces;
-    }
   }
 }
 
 // ---------------------------------------------------------------------------
 // Landmarks — block-scale buildings placed by the landmark pass, NOT rolled per lot.
-// They merge a cluster of adjacent frontage lots into ONE oversized parcel, so a city gets a
-// handful of stadium/mall/campus/civic-hall footprints several times larger than their neighbours.
+// Each takes a whole block, so a city gets a handful of stadium/mall/campus/civic-hall footprints
+// several times larger than their neighbours.
 // ---------------------------------------------------------------------------
 
 /**
  * A block-scale landmark class. Unlike {@link CityLotClass} these are never weighted into a zone
- * mix — the landmark pass in `resolveCityLotContent` picks clusters of adjacent lots and stamps one
- * of these over them. Each expresses with the same four piece shapes (box/gable/cylinder/dome) at a
+ * mix — the city kind's landmark pass (the `landmarks` rule) gives one a whole buildable block. Each expresses with the same four piece shapes (box/gable/cylinder/dome) at a
  * much larger footprint (~40–90 m).
  */
 export type CityLandmarkClass = "hall" | "arena" | "market" | "campus";
@@ -548,6 +512,35 @@ const LANDMARK_PROFILES: Record<CityLandmarkClass, LandmarkProfile> = {
   market: { floors: [1, 2], minDepthFactor: 0.6 },
   campus: { floors: [3, 6], minDepthFactor: 0.7 },
 };
+
+/** Which landmark classes each zone band favours (weighted), like the zone mixes. */
+const LANDMARK_ZONE_MIX: Record<CityZoneBand, readonly { cls: CityLandmarkClass; weight: number }[]> = {
+  core: [
+    { cls: "hall", weight: 3 },
+    { cls: "arena", weight: 1 },
+    { cls: "market", weight: 1 },
+  ],
+  mid: [
+    { cls: "arena", weight: 2 },
+    { cls: "campus", weight: 2 },
+    { cls: "market", weight: 2 },
+  ],
+  edge: [
+    { cls: "campus", weight: 2 },
+    { cls: "arena", weight: 1 },
+  ],
+};
+
+/** Weighted pick of the landmark class a block in `zone` gets, from a roll in [0, 1). @internal */
+export function pickLandmarkClass(zone: CityZoneBand, roll: number): CityLandmarkClass {
+  const entries = LANDMARK_ZONE_MIX[zone];
+  let cursor = roll * entries.reduce((sum, entry) => sum + entry.weight, 0);
+  for (const entry of entries) {
+    cursor -= entry.weight;
+    if (cursor <= 0) return entry.cls;
+  }
+  return entries[entries.length - 1]!.cls;
+}
 
 /** Minimum depth-into-block factor for a landmark class (the pass grows shallow clusters to this). @internal */
 export function landmarkMinDepthFactor(cls: CityLandmarkClass): number {

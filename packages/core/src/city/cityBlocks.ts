@@ -1,6 +1,6 @@
 /**
- * Block-first city fabric for the `city` studio: turns the synthesized street network into a
- * planar graph, extracts its faces as CLOSED BLOCK POLYGONS (a curved street yields a curved
+ * Block-first city fabric for the `city` studio: traces the street network's exact graph and
+ * extracts its faces as CLOSED BLOCK POLYGONS (a curved street yields a curved
  * block edge, a diagonal one a diagonal edge), insets each block by its bordering roads'
  * half-widths into curb and land rings (the sidewalk band lives between them), classifies every
  * block (buildable, park, plaza, field, buffer sliver), subdivides buildable block frontage into
@@ -10,8 +10,7 @@
  *
  * @capability city-district road-derived block polygons, parcel subdivision, buildable footprints
  */
-import { clipHalfPlane, dedupeRing, distanceToRing, ensureCcw, extractSimpleLoop, insetRing, pointInPolygon, polygonArea, polygonMeanWidth, polygonSignedArea } from "../world/polygon";
-import { isProductionEnvironment } from "../devtools/saveEndpoint";
+import { clipHalfPlane, distanceToRing, extractSimpleLoop, insetRing, pointInPolygon, polygonArea, polygonMeanWidth, polygonSignedArea } from "../world/polygon";
 import type { Vec2 } from "../world/geometry";
 
 /** How a block (a face of the road graph) is used. */
@@ -61,52 +60,13 @@ export interface CityParcelLocal {
   kind: CityParcelKind;
 }
 
-/** Minimal street shape the fabric needs (matches cityKind's LocalStreet). */
-export interface FabricStreet {
-  points: readonly (readonly [number, number])[];
-  width: number;
-  level: "boulevard" | "avenue" | "street" | "lane";
-  sidewalk: boolean;
-}
-
 const MAX_BLOCKS = 420;
-const WELD_RADIUS = 1.4;
 
-// Proximity welding (WELD_RADIUS) assumes near-collinear / aligned centerlines. Wandered and
-// arc-filleted streets weld into a degenerate face set: a real case went 38 streets → 2 faces
-// with no signal. These constants gate a dev-mode collapse warning. A connected road grid has
-// bounded faces on the order of its street count (Euler: bounded faces = edges − nodes + 1), so
-// faces far below the street count means welding ate the topology, not that the district is sparse.
-// COLLAPSE_MIN_STREETS avoids false positives on genuinely tiny inputs (a handful of crossings
-// legitimately yields few faces); COLLAPSE_RATIO_DIVISOR flags only a gross collapse — with 8
-// streets it fires under 2 faces, with 38 streets under 9 (the 38 → 2 case triggers, a healthy
-// grid where faces ≥ street count never does).
-const COLLAPSE_MIN_STREETS = 8;
-const COLLAPSE_RATIO_DIVISOR = 4;
-const RIM_SNAP = 6;
-
-interface GraphNode {
-  x: number;
-  z: number;
-  /** Outgoing half-edge ids. */
-  out: number[];
-}
-
-interface HalfEdge {
-  from: number;
-  to: number;
-  /** Polyline from `from` to `to` inclusive. */
-  pts: Vec2[];
-  street: number;
-  /** Id of the opposite half-edge. */
-  twin: number;
-  /** Departure angle at `from`. */
-  angle: number;
-  visited: boolean;
-}
+/** Street hierarchy level a block edge carries (matches `StreetLevel`). */
+type FabricLevel = "boulevard" | "avenue" | "street" | "lane";
 
 /** Sidewalk band width by street hierarchy (base = the district's street-level width). */
-export function sidewalkWidthFor(level: FabricStreet["level"], base: number): number {
+export function sidewalkWidthFor(level: FabricLevel, base: number): number {
   switch (level) {
     case "boulevard":
       return base * 1.6;
@@ -117,421 +77,6 @@ export function sidewalkWidthFor(level: FabricStreet["level"], base: number): nu
     case "lane":
       return base * 0.75;
   }
-}
-
-function segIntersect(a: Vec2, b: Vec2, c: Vec2, d: Vec2): { t: number; u: number; x: number; z: number } | null {
-  const rx = b[0] - a[0];
-  const rz = b[1] - a[1];
-  const sx = d[0] - c[0];
-  const sz = d[1] - c[1];
-  const denom = rx * sz - rz * sx;
-  if (Math.abs(denom) < 1e-12) return null;
-  const t = ((c[0] - a[0]) * sz - (c[1] - a[1]) * sx) / denom;
-  const u = ((c[0] - a[0]) * rz - (c[1] - a[1]) * rx) / denom;
-  if (t < -1e-9 || t > 1 + 1e-9 || u < -1e-9 || u > 1 + 1e-9) return null;
-  return { t: Math.max(0, Math.min(1, t)), u: Math.max(0, Math.min(1, u)), x: a[0] + rx * t, z: a[1] + rz * t };
-}
-
-interface SplitPoint {
-  seg: number;
-  t: number;
-  x: number;
-  z: number;
-}
-
-/**
- * Build the planar road graph: split every street polyline at its crossings with other streets,
- * weld endpoints into shared nodes, extend near-rim ends onto the district boundary, close the
- * boundary as edges, and prune dangling chains (dead ends can't border a closed face). Returns
- * the half-edge structure plus the pruned dead-end chains (cul-de-sacs) for corridor carving.
- */
-function buildGraph(
-  streets: readonly FabricStreet[],
-  hx: number,
-  hz: number,
-): { nodes: GraphNode[]; halves: HalfEdge[]; deadEnds: { pts: Vec2[]; width: number }[] } {
-  // --- 1. collect crossings per street segment (spatial hash to bound pair tests) ---
-  const cell = 14;
-  const buckets = new Map<string, { street: number; seg: number; a: Vec2; b: Vec2 }[]>();
-  const segsOf: { a: Vec2; b: Vec2 }[][] = [];
-  for (let s = 0; s < streets.length; s += 1) {
-    const pts = streets[s]!.points;
-    const segs: { a: Vec2; b: Vec2 }[] = [];
-    for (let i = 0; i + 1 < pts.length; i += 1) {
-      const a: Vec2 = [pts[i]![0], pts[i]![1]];
-      const b: Vec2 = [pts[i + 1]![0], pts[i + 1]![1]];
-      segs.push({ a, b });
-      const minX = Math.min(a[0], b[0]);
-      const maxX = Math.max(a[0], b[0]);
-      const minZ = Math.min(a[1], b[1]);
-      const maxZ = Math.max(a[1], b[1]);
-      for (let cx = Math.floor(minX / cell); cx <= Math.floor(maxX / cell); cx += 1) {
-        for (let cz = Math.floor(minZ / cell); cz <= Math.floor(maxZ / cell); cz += 1) {
-          const key = `${cx}:${cz}`;
-          const bucket = buckets.get(key);
-          const entry = { street: s, seg: i, a, b };
-          if (bucket === undefined) buckets.set(key, [entry]);
-          else bucket.push(entry);
-        }
-      }
-    }
-    segsOf.push(segs);
-  }
-  const splits: SplitPoint[][] = streets.map(() => []);
-  const seen = new Set<string>();
-  for (const bucket of buckets.values()) {
-    for (let i = 0; i < bucket.length; i += 1) {
-      for (let j = i + 1; j < bucket.length; j += 1) {
-        const p = bucket[i]!;
-        const q = bucket[j]!;
-        if (p.street === q.street) continue;
-        const pairKey = `${p.street}:${p.seg}:${q.street}:${q.seg}`;
-        if (seen.has(pairKey)) continue;
-        seen.add(pairKey);
-        const hit = segIntersect(p.a, p.b, q.a, q.b);
-        if (hit === null) continue;
-        splits[p.street]!.push({ seg: p.seg, t: hit.t, x: hit.x, z: hit.z });
-        splits[q.street]!.push({ seg: q.seg, t: hit.u, x: hit.x, z: hit.z });
-      }
-    }
-  }
-
-  // --- 2. weld nodes ---
-  const nodes: GraphNode[] = [];
-  const nodeGrid = new Map<string, number[]>();
-  const nodeAt = (x: number, z: number): number => {
-    const gx = Math.floor(x / 4);
-    const gz = Math.floor(z / 4);
-    for (let i = gx - 1; i <= gx + 1; i += 1) {
-      for (let j = gz - 1; j <= gz + 1; j += 1) {
-        const bucket = nodeGrid.get(`${i}:${j}`);
-        if (bucket === undefined) continue;
-        for (const id of bucket) {
-          const node = nodes[id]!;
-          if (Math.hypot(node.x - x, node.z - z) <= WELD_RADIUS) return id;
-        }
-      }
-    }
-    const id = nodes.length;
-    nodes.push({ x, z, out: [] });
-    const key = `${gx}:${gz}`;
-    const bucket = nodeGrid.get(key);
-    if (bucket === undefined) nodeGrid.set(key, [id]);
-    else bucket.push(id);
-    return id;
-  };
-
-  // --- 3. split streets into chains between crossing nodes ---
-  interface Chain {
-    pts: Vec2[];
-    street: number;
-  }
-  const chains: Chain[] = [];
-  for (let s = 0; s < streets.length; s += 1) {
-    const pts = streets[s]!.points;
-    if (pts.length < 2) continue;
-    const cuts = splits[s]!;
-    cuts.sort((a, b) => (a.seg === b.seg ? a.t - b.t : a.seg - b.seg));
-    let current: Vec2[] = [[pts[0]![0], pts[0]![1]]];
-    let cutIdx = 0;
-    for (let i = 0; i + 1 < pts.length; i += 1) {
-      while (cutIdx < cuts.length && cuts[cutIdx]!.seg === i) {
-        const cut = cuts[cutIdx]!;
-        cutIdx += 1;
-        const point: Vec2 = [cut.x, cut.z];
-        const last = current[current.length - 1]!;
-        if (Math.hypot(last[0] - point[0], last[1] - point[1]) > 0.05) current.push(point);
-        if (current.length >= 2) chains.push({ pts: current, street: s });
-        current = [point];
-      }
-      const next: Vec2 = [pts[i + 1]![0], pts[i + 1]![1]];
-      const last = current[current.length - 1]!;
-      if (Math.hypot(last[0] - next[0], last[1] - next[1]) > 0.05) current.push(next);
-    }
-    if (current.length >= 2) chains.push({ pts: current, street: s });
-  }
-
-  // --- 4. snap near-rim chain ends onto the boundary rectangle ---
-  const snapRim = (p: Vec2): Vec2 | null => {
-    const dxs = [Math.abs(p[0] + hx), Math.abs(p[0] - hx), Math.abs(p[1] + hz), Math.abs(p[1] - hz)];
-    const nearest = Math.min(...dxs);
-    if (nearest > RIM_SNAP) return null;
-    if (nearest === dxs[0]) return [-hx, Math.max(-hz, Math.min(hz, p[1]))];
-    if (nearest === dxs[1]) return [hx, Math.max(-hz, Math.min(hz, p[1]))];
-    if (nearest === dxs[2]) return [Math.max(-hx, Math.min(hx, p[0])), -hz];
-    return [Math.max(-hx, Math.min(hx, p[0])), hz];
-  };
-
-  interface Edge {
-    from: number;
-    to: number;
-    pts: Vec2[];
-    street: number;
-    width: number;
-  }
-  const edges: Edge[] = [];
-  const rimNodeIds = new Set<number>();
-  for (const chain of chains) {
-    const first = chain.pts[0]!;
-    const last = chain.pts[chain.pts.length - 1]!;
-    let start = first;
-    let end = last;
-    const rimStart = snapRim(first);
-    const rimEnd = snapRim(last);
-    const pts = chain.pts.map((p) => p);
-    if (rimStart !== null) {
-      start = rimStart;
-      pts[0] = rimStart;
-    }
-    if (rimEnd !== null) {
-      end = rimEnd;
-      pts[pts.length - 1] = rimEnd;
-    }
-    const from = nodeAt(start[0], start[1]);
-    const to = nodeAt(end[0], end[1]);
-    if (from === to && chain.pts.length < 4) continue;
-    pts[0] = [nodes[from]!.x, nodes[from]!.z];
-    pts[pts.length - 1] = [nodes[to]!.x, nodes[to]!.z];
-    if (rimStart !== null) rimNodeIds.add(from);
-    if (rimEnd !== null) rimNodeIds.add(to);
-    edges.push({ from, to, pts: dedupePolyline(pts), street: chain.street, width: streets[chain.street]!.width });
-  }
-
-  // --- 5. boundary edges: corners + rim nodes, walked around the perimeter ---
-  const corners = [nodeAt(-hx, -hz), nodeAt(hx, -hz), nodeAt(hx, hz), nodeAt(-hx, hz)];
-  rimNodeIds.add(corners[0]!);
-  rimNodeIds.add(corners[1]!);
-  rimNodeIds.add(corners[2]!);
-  rimNodeIds.add(corners[3]!);
-  const perimParam = (id: number): number => {
-    const node = nodes[id]!;
-    const x = node.x;
-    const z = node.z;
-    // Walk: bottom (z=-hz, x -hx→hx), right (x=hx, z -hz→hz), top (z=hz, x hx→-hx), left.
-    if (Math.abs(z + hz) <= RIM_SNAP + 0.01 && Math.abs(x) <= hx + 0.01) return x + hx;
-    if (Math.abs(x - hx) <= RIM_SNAP + 0.01) return 2 * hx + (z + hz);
-    if (Math.abs(z - hz) <= RIM_SNAP + 0.01) return 2 * hx + 2 * hz + (hx - x);
-    return 4 * hx + 2 * hz + (hz - z);
-  };
-  const rimSorted = [...rimNodeIds].sort((a, b) => perimParam(a) - perimParam(b));
-  for (let i = 0; i < rimSorted.length; i += 1) {
-    const from = rimSorted[i]!;
-    const to = rimSorted[(i + 1) % rimSorted.length]!;
-    if (from === to) continue;
-    const a: Vec2 = [nodes[from]!.x, nodes[from]!.z];
-    const b: Vec2 = [nodes[to]!.x, nodes[to]!.z];
-    // Insert the corner(s) the arc passes so boundary edges stay on the rectangle.
-    const pts: Vec2[] = [a];
-    const pa = perimParam(from);
-    let pb = perimParam(to);
-    if (pb <= pa) pb += 4 * hx + 4 * hz;
-    const cornerParams: { p: number; at: Vec2 }[] = [
-      { p: 2 * hx, at: [hx, -hz] },
-      { p: 2 * hx + 2 * hz, at: [hx, hz] },
-      { p: 4 * hx + 2 * hz, at: [-hx, hz] },
-      { p: 4 * hx + 4 * hz, at: [-hx, -hz] },
-      { p: 6 * hx + 4 * hz, at: [hx, -hz] },
-    ];
-    for (const corner of cornerParams) {
-      if (corner.p > pa + 0.01 && corner.p < pb - 0.01) pts.push(corner.at);
-    }
-    pts.push(b);
-    edges.push({ from, to, pts: dedupePolyline(pts), street: -1, width: 0 });
-  }
-
-  // --- 6. prune dangling chains (dead ends) so every remaining edge borders two faces ---
-  const degree = new Map<number, number>();
-  for (const edge of edges) {
-    degree.set(edge.from, (degree.get(edge.from) ?? 0) + 1);
-    degree.set(edge.to, (degree.get(edge.to) ?? 0) + 1);
-  }
-  const alive = edges.map(() => true);
-  let pruned = true;
-  const deadEnds: { pts: Vec2[]; width: number }[] = [];
-  while (pruned) {
-    pruned = false;
-    for (let i = 0; i < edges.length; i += 1) {
-      if (!alive[i]) continue;
-      const edge = edges[i]!;
-      if ((degree.get(edge.from) ?? 0) === 1 || (degree.get(edge.to) ?? 0) === 1) {
-        alive[i] = false;
-        if (edge.street >= 0) deadEnds.push({ pts: edge.pts, width: edge.width });
-        degree.set(edge.from, (degree.get(edge.from) ?? 1) - 1);
-        degree.set(edge.to, (degree.get(edge.to) ?? 1) - 1);
-        pruned = true;
-      }
-    }
-  }
-
-  // --- 7. half-edge structure with angular ordering ---
-  const halves: HalfEdge[] = [];
-  for (let i = 0; i < edges.length; i += 1) {
-    if (!alive[i]) continue;
-    const edge = edges[i]!;
-    if (edge.pts.length < 2) continue;
-    const fwdAngle = Math.atan2(edge.pts[1]![1] - edge.pts[0]![1], edge.pts[1]![0] - edge.pts[0]![0]);
-    const n = edge.pts.length;
-    const revAngle = Math.atan2(edge.pts[n - 2]![1] - edge.pts[n - 1]![1], edge.pts[n - 2]![0] - edge.pts[n - 1]![0]);
-    const a = halves.length;
-    const b = a + 1;
-    halves.push({ from: edge.from, to: edge.to, pts: edge.pts, street: edge.street, twin: b, angle: fwdAngle, visited: false });
-    halves.push({ from: edge.to, to: edge.from, pts: [...edge.pts].reverse(), street: edge.street, twin: a, angle: revAngle, visited: false });
-    nodes[edge.from]!.out.push(a);
-    nodes[edge.to]!.out.push(b);
-  }
-  for (const node of nodes) node.out.sort((a, b) => halves[a]!.angle - halves[b]!.angle);
-  return { nodes, halves, deadEnds };
-}
-
-function dedupePolyline(pts: readonly Vec2[]): Vec2[] {
-  const out: Vec2[] = [];
-  for (const p of pts) {
-    const prev = out[out.length - 1];
-    if (prev !== undefined && Math.hypot(prev[0] - p[0], prev[1] - p[1]) < 0.05) continue;
-    out.push(p);
-  }
-  return out;
-}
-
-/** One extracted face: closed centerline polygon + the street index along each polygon edge. */
-export interface GraphFace {
-  polygon: Vec2[];
-  streets: number[];
-}
-
-/** Trace interior (CCW) faces of the half-edge graph. */
-function extractFaces(nodes: GraphNode[], halves: HalfEdge[]): GraphFace[] {
-  const faces: GraphFace[] = [];
-  for (let start = 0; start < halves.length; start += 1) {
-    if (halves[start]!.visited) continue;
-    const polygon: Vec2[] = [];
-    const streets: number[] = [];
-    let current = start;
-    let guard = 0;
-    while (guard < halves.length + 4) {
-      guard += 1;
-      const half = halves[current]!;
-      if (half.visited) break;
-      half.visited = true;
-      for (let i = 0; i + 1 < half.pts.length; i += 1) {
-        polygon.push(half.pts[i]!);
-        streets.push(half.street);
-      }
-      // Next: at the destination node, rotate clockwise from the twin.
-      const node = nodes[half.to]!;
-      const idx = node.out.indexOf(half.twin);
-      if (idx < 0) break;
-      current = node.out[(idx - 1 + node.out.length) % node.out.length]!;
-      if (current === start) {
-        if (polygon.length >= 3 && polygonSignedArea(polygon) > 1) faces.push({ polygon, streets });
-        break;
-      }
-    }
-  }
-  return faces;
-}
-
-/** Everything block extraction needs from the district rules. */
-export interface FabricParams {
-  streetWidthBase: number;
-  /** Base sidewalk band width in meters at "street" hierarchy level. */
-  sidewalkBase: number;
-  /** Curb strip between pavement edge and sidewalk, meters. */
-  curbMargin: number;
-}
-
-/** A block's derived rings plus the sidewalk band (outer = curb line, inner = land line). */
-export interface BlockRings {
-  face: Vec2[];
-  faceStreets: number[];
-  curb: Vec2[];
-  land: Vec2[];
-}
-
-/**
- * Extract closed blocks from the street network: planar faces of the graph, each inset to its
- * curb ring (pavement edge) and land ring (behind the sidewalk band). Faces that collapse under
- * the inset come back with an empty `land` and are the caller's slivers/buffers.
- */
-export function extractBlocks(
-  streets: readonly FabricStreet[],
-  hx: number,
-  hz: number,
-  params: FabricParams,
-): { blocks: BlockRings[]; deadEnds: { pts: Vec2[]; width: number }[] } {
-  const { nodes, halves, deadEnds } = buildGraph(streets, hx, hz);
-  const faces = extractFaces(nodes, halves);
-  warnOnImplausibleCollapse(streets.length, faces.length);
-  faces.sort((a, b) => polygonArea(b.polygon) - polygonArea(a.polygon));
-  const blocks: BlockRings[] = [];
-  for (const face of faces) {
-    if (blocks.length >= MAX_BLOCKS) break;
-    const ring = dedupeRing(face.polygon, 0.02);
-    if (ring.length < 3) continue;
-    // dedupeRing may drop vertices; rebuild the street map by nearest original vertex.
-    const streetsPerEdge: number[] = [];
-    for (let i = 0; i < ring.length; i += 1) {
-      const v = ring[i]!;
-      let best = 0;
-      let bestDist = Infinity;
-      for (let j = 0; j < face.polygon.length; j += 1) {
-        const o = face.polygon[j]!;
-        const d = Math.hypot(o[0] - v[0], o[1] - v[1]);
-        if (d < bestDist) {
-          bestDist = d;
-          best = j;
-        }
-      }
-      streetsPerEdge.push(face.streets[best] ?? -1);
-    }
-    const ccw = ensureCcw(ring);
-    const flipped = ccw[0] !== ring[0] || ccw[1] !== ring[1];
-    const edgeStreets = flipped ? remapReversedEdgeStreets(streetsPerEdge) : streetsPerEdge;
-    const curbDist = ccw.map((_, i) => {
-      const s = edgeStreets[i] ?? -1;
-      return s >= 0 ? streets[s]!.width / 2 + params.curbMargin : 0.8;
-    });
-    const landDist = ccw.map((_, i) => {
-      const s = edgeStreets[i] ?? -1;
-      if (s < 0) return 0.8;
-      const street = streets[s]!;
-      const walk = street.sidewalk ? sidewalkWidthFor(street.level, params.sidewalkBase) : 0;
-      return street.width / 2 + params.curbMargin + walk;
-    });
-    const curb = insetRing(ccw, curbDist);
-    const land = curb.length >= 3 ? insetRing(ccw, landDist) : [];
-    blocks.push({ face: ccw, faceStreets: edgeStreets, curb, land });
-  }
-  return { blocks, deadEnds };
-}
-
-/**
- * Dev-mode guard: warn when {@link extractBlocks} extracts implausibly few faces for the street
- * count — the silent-collapse failure mode where proximity welding folds wandered / arc-filleted
- * centerlines into a degenerate face set (see issue #1502: 38 streets → 2 faces). No-ops in a
- * production build. Points at {@link extractGraphBlocks}, which traces faces from the exact street
- * graph and is robust against the centerlines that defeat welding.
- */
-function warnOnImplausibleCollapse(streetCount: number, faceCount: number): void {
-  if (isProductionEnvironment() || typeof console === "undefined") return;
-  if (streetCount < COLLAPSE_MIN_STREETS) return;
-  if (faceCount >= streetCount / COLLAPSE_RATIO_DIVISOR) return;
-  console.warn(
-    `[jgengine:extractBlocks] ${streetCount} streets extracted only ${faceCount} block face(s) — ` +
-      "implausibly few, likely a silent proximity-welding collapse on wandered / arc-filleted " +
-      "centerlines (the WELD_RADIUS heuristic assumes near-aligned streets). The fabric will look " +
-      "empty rather than error. Trace blocks from the exact street graph with extractGraphBlocks() " +
-      "instead, which is robust against centerlines that defeat welding.",
-  );
-}
-
-/** Reverse per-edge street labels when a ring got rewound to CCW. */
-function remapReversedEdgeStreets(streetsPerEdge: readonly number[]): number[] {
-  const n = streetsPerEdge.length;
-  const out: number[] = new Array(n).fill(-1);
-  // Edge i of the reversed ring (v'_i = v_{n-1-i}) runs v_{n-1-i} → v_{n-2-i}: original edge n-2-i.
-  for (let i = 0; i < n; i += 1) out[i] = streetsPerEdge[(2 * n - 2 - i) % n]!;
-  return out;
 }
 
 /** Minimal node/edge shapes {@link extractGraphBlocks} needs (matches `StreetNetwork.nodes`/`edges`). */
@@ -547,15 +92,19 @@ export interface GraphBlockEdge {
   b: number;
   points: readonly (readonly [number, number])[];
   width: number;
-  level: FabricStreet["level"];
+  level: FabricLevel;
   /** Owning street index, carried through to pruned dead-end corridors so callers can line them. */
   street?: number;
+  /** Whether a sidewalk band runs along this edge. Default: every level but `lane`. */
+  sidewalk?: boolean;
 }
 
 /** One block from {@link extractGraphBlocks}: the face polygon and its inset land ring. */
 export interface GraphBlockRings {
   /** Face polygon on road CENTERLINES (as traced, interior faces CCW). */
   face: Vec2[];
+  /** Curb ring: face inset by each bordering edge's half width + curb margin (the pavement edge). */
+  curb: Vec2[];
   /** Land ring: face inset by each bordering edge's half width + curb margin + sidewalk band. */
   land: Vec2[];
 }
@@ -574,7 +123,7 @@ export function extractGraphBlocks(
   nodes: readonly GraphBlockNode[],
   edges: readonly GraphBlockEdge[],
   params: { sidewalkBase: number; curbMargin: number },
-): { blocks: GraphBlockRings[]; deadEnds: { pts: Vec2[]; width: number; level: FabricStreet["level"]; street?: number }[] } {
+): { blocks: GraphBlockRings[]; deadEnds: { pts: Vec2[]; width: number; level: FabricLevel; street?: number }[] } {
   // --- prune dangling chains: an edge touching a degree-1 node can't border a closed face ---
   const degree = new Array<number>(nodes.length).fill(0);
   const alive = edges.map((e) => e.a !== e.b && e.points.length >= 2);
@@ -583,7 +132,7 @@ export function extractGraphBlocks(
     degree[e.a] += 1;
     degree[e.b] += 1;
   });
-  const deadEnds: { pts: Vec2[]; width: number; level: FabricStreet["level"]; street?: number }[] = [];
+  const deadEnds: { pts: Vec2[]; width: number; level: FabricLevel; street?: number }[] = [];
   let pruned = true;
   while (pruned) {
     pruned = false;
@@ -679,13 +228,15 @@ export function extractGraphBlocks(
     }
     if (ring.length < 3) continue;
 
+    const curbDist = ring.map((_, i) => edges[ringEdge[i]!]!.width / 2 + params.curbMargin);
     const dist = ring.map((_, i) => {
       const e = edges[ringEdge[i]!]!;
-      const walk = e.level === "lane" ? 0 : sidewalkWidthFor(e.level, params.sidewalkBase);
-      return e.width / 2 + params.curbMargin + walk;
+      const walk = (e.sidewalk ?? e.level !== "lane") ? sidewalkWidthFor(e.level, params.sidewalkBase) : 0;
+      return curbDist[i]! + walk;
     });
-    const land = insetRing(ring, dist);
-    blocks.push({ face: ring, land });
+    const curb = insetRing(ring, curbDist);
+    const land = curb.length >= 3 ? insetRing(ring, dist) : [];
+    blocks.push({ face: ring, curb, land });
   }
   blocks.sort((a, b) => polygonArea(b.land) - polygonArea(a.land));
   return { blocks, deadEnds };

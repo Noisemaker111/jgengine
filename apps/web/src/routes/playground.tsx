@@ -1,10 +1,11 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useMemo, useRef, useState } from "react";
 
-import { generateCity, type GeneratedCity } from "@jgengine/core/city/cityGenerator";
+import { resolveCityObject, type CityLot } from "@jgengine/core/city/cityKind";
 import { extractCircuitRoute, type CircuitRoute } from "@jgengine/core/roads/raceCircuit";
 import {
   generateStreets,
+  streetElevationField,
   streetNetworkMode,
   type StreetNetwork,
   type StreetNetworkMode,
@@ -42,11 +43,9 @@ interface Dials {
   roadWidth: number;
   minCurveRadius: number;
   boulevards: number;
-  lotW: number;
-  lotD: number;
+  lotScale: number;
   setback: number;
   spacing: number;
-  variety: number;
   landmarks: number;
   blockFill: number;
   elevation: number;
@@ -81,11 +80,9 @@ export const DEFAULTS: Dials = {
   roadWidth: 9,
   minCurveRadius: 18,
   boulevards: 0.2,
-  lotW: 12,
-  lotD: 10,
+  lotScale: 1,
   setback: 3,
   spacing: 2,
-  variety: 0.5,
   landmarks: 0.08,
   blockFill: 0.45,
   elevation: 0.35,
@@ -186,9 +183,15 @@ export function playgroundStreetRules(dials: Dials): Omit<StreetNetworkRules, "s
   };
 }
 
+/** The city the playground draws: the street graph plus the buildings the city kind placed on it. */
+export interface PlaygroundCity {
+  network: StreetNetwork;
+  lots: readonly CityLot[];
+}
+
 export interface PlaygroundResult {
   network: StreetNetwork;
-  city: GeneratedCity | null;
+  city: PlaygroundCity | null;
   /** The lap lifted out of `network` in race mode; null in other modes or when no cycle exists. */
   route: CircuitRoute | null;
   /** What the sliders actually asked the generator for, independent of the chosen preset. */
@@ -196,7 +199,7 @@ export interface PlaygroundResult {
 }
 
 /**
- * Grow whatever the dials describe. `city` and `race` share one `generateCity` call — race then lifts
+ * Grow whatever the dials describe. `city` and `race` share one city-kind resolve — race then lifts
  * a sealed lap out of that same network — so the race is a section of the city, never a second world.
  */
 export function growPlayground(mode: Mode, dials: Dials): PlaygroundResult {
@@ -205,36 +208,57 @@ export function growPlayground(mode: Mode, dials: Dials): PlaygroundResult {
   if (mode === "circuit") {
     return { network: generateStreets({ seed: dials.seed, ...streets }, dials.size, dials.size), city: null, route: null, topology };
   }
-  const city = generateCity(
-    {
+  // The same `city` scene kind the editor and games place: the playground's dials are its rules.
+  const resolved = resolveCityObject({
+    id: "playground",
+    kind: "city",
+    center: { x: 0, y: 0, z: 0 },
+    halfExtents: { x: dials.size, y: 1, z: dials.size },
+    meta: {
       seed: dials.seed,
-      streets,
-      lots: {
-        // The city plotter already emits deterministic small/medium/large/grand tiers from this
-        // scale hint. Passing building-lot variant arrays here is invalid and yields an empty city.
-        footprint: { w: dials.lotW, d: dials.lotD },
-        setback: dials.setback,
-        spacing: dials.spacing,
-        variety: dials.variety,
-      },
-      content: { landmarks: dials.landmarks, blockFill: dials.blockFill },
+      gridness: streets.gridness,
+      loopiness: streets.loopiness,
+      connectivity: streets.connectivity,
+      branching: streets.branching,
+      deadEnds: streets.deadEnds,
+      blockSize: streets.segmentLength,
+      blockAspect: streets.aspect,
+      curviness: streets.winding,
+      minCurveRadius: streets.minCurveRadius,
+      minTurnAngle: streets.minTurnAngle,
+      maxTurnAngle: streets.maxTurnAngle,
+      streetWidth: streets.width,
+      boulevards: streets.boulevards,
+      sidewalkWidth: streets.sidewalkWidth,
+      elevation: streets.elevation,
+      maxGrade: streets.maxGrade,
+      compactness: streets.compactness,
+      lotScale: dials.lotScale,
+      buildingRoadSetback: dials.setback,
+      buildingSpacing: dials.spacing,
+      roadsideOccupancy: dials.blockFill,
+      landmarks: dials.landmarks,
     },
-    dials.size,
-    dials.size,
-  );
+  });
+  const elevationAt = streetElevationField({ seed: dials.seed, elevation: streets.elevation }, dials.size, dials.size);
+  const network =
+    resolved?.network === undefined
+      ? generateStreets({ seed: dials.seed, ...streets }, dials.size, dials.size)
+      : { ...resolved.network, ...(elevationAt === undefined ? {} : { elevationAt }) };
+  const city: PlaygroundCity = { network, lots: resolved?.lots ?? [] };
   const route =
     mode === "race"
       ? // `minCornerRadius` stays on the core default: it is the racing line's drivability floor, and a
         // junction can only be rounded inside the street's own width — feeding it the street fillet
         // radius rejects every lap an ordinary city can offer.
-        extractCircuitRoute(city.network, {
+        extractCircuitRoute(network, {
           seed: dials.seed,
           lapLength: dials.lapLength,
           arterialBias: dials.arterialBias,
           checkpoints: dials.checkpoints,
         })
       : null;
-  return { network: city.network, city, route, topology };
+  return { network, city, route, topology };
 }
 
 const LEVEL_COLOR: Record<string, string> = {
@@ -397,7 +421,7 @@ function StreetsSvg({
   size,
 }: {
   network: StreetNetwork;
-  city: GeneratedCity | null;
+  city: PlaygroundCity | null;
   route: CircuitRoute | null;
   size: number;
 }) {
@@ -501,10 +525,10 @@ function StreetsSvg({
       {city?.lots.map((lot, i) => (
         <rect
           key={`l${i}`}
-          x={toX(lot.center[0]) - lot.footprint.w / 2}
-          y={toZ(lot.center[1]) - lot.footprint.d / 2}
-          width={lot.footprint.w}
-          height={lot.footprint.d}
+          x={toX(lot.center[0]) - lot.size[0] / 2}
+          y={toZ(lot.center[1]) - lot.size[1] / 2}
+          width={lot.size[0]}
+          height={lot.size[1]}
           transform={`rotate(${(-lot.rotationY * 180) / Math.PI} ${toX(lot.center[0])} ${toZ(lot.center[1])})`}
           fill="#34d399"
           opacity={0.55}
@@ -633,12 +657,10 @@ const DIAL_RANGES = {
   lapLength: [400, 6000],
   arterialBias: [0, 1],
   checkpoints: [4, 24],
-  lotW: [8, 24],
-  lotD: [6, 24],
+  lotScale: [0.5, 2.5],
   setback: [1, 10],
   spacing: [0, 8],
-  variety: [0, 1],
-  landmarks: [0, 0.2],
+  landmarks: [0, 0.5],
   blockFill: [0, 1],
   elevation: [0, 1],
   trackDensity: [0, 1],
@@ -692,11 +714,9 @@ export function parsePlaygroundQuery(search: string): PlaygroundQuery {
     "lapLength",
     "arterialBias",
     "checkpoints",
-    "lotW",
-    "lotD",
+    "lotScale",
     "setback",
     "spacing",
-    "variety",
     "landmarks",
     "elevation",
     "trackDensity",
@@ -824,7 +844,7 @@ function Playground() {
     if (!worldReady) return;
     const world = worldRef.current;
     if (world === null) return;
-    const city = result.city ?? { network: result.network, lots: [], plots: [], parks: [] };
+    const city = result.city ?? { network: result.network, lots: [] };
     const focusIndex = Math.max(-1, Math.min(result.network.junctions.length - 1, Math.floor(dials.focusJunction)));
     const focus = focusIndex >= 0 ? result.network.junctions[focusIndex] : undefined;
     const camera =
@@ -954,12 +974,10 @@ function Playground() {
           {mode !== "circuit" && (
             <>
               <GroupLabel>Plots and buildings</GroupLabel>
-              <Slider label="Lot frontage" value={dials.lotW} min={8} max={24} step={1} onChange={(v) => set({ lotW: v })} />
-              <Slider label="Lot depth" value={dials.lotD} min={6} max={24} step={1} onChange={(v) => set({ lotD: v })} />
+              <Slider label="Lot scale" value={dials.lotScale} min={0.5} max={2.5} step={0.05} onChange={(v) => set({ lotScale: v })} />
               <Slider label="Sidewalk setback" value={dials.setback} min={1} max={10} step={1} onChange={(v) => set({ setback: v })} />
               <Slider label="Plot spacing" value={dials.spacing} min={0} max={8} step={0.5} onChange={(v) => set({ spacing: v })} />
-              <Slider label="Plot variety" value={dials.variety} min={0} max={1} step={0.05} onChange={(v) => set({ variety: v })} />
-              <Slider label="Landmarks" value={dials.landmarks} min={0} max={0.2} step={0.01} onChange={(v) => set({ landmarks: v })} />
+              <Slider label="Landmarks" value={dials.landmarks} min={0} max={0.5} step={0.01} onChange={(v) => set({ landmarks: v })} />
               <Slider label="Block fill" value={dials.blockFill} min={0} max={1} step={0.05} onChange={(v) => set({ blockFill: v })} />
             </>
           )}
@@ -992,7 +1010,7 @@ function Playground() {
             </p>
             {mode === "city" && (
               <p>
-                <span className="text-accent-text">{result.city?.lotContent?.length ?? result.city?.lots.length ?? 0}</span>{" "}
+                <span className="text-accent-text">{result.city?.lots.length ?? 0}</span>{" "}
                 buildings on street-fronting plots.
               </p>
             )}

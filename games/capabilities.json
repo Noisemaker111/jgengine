@@ -1431,17 +1431,6 @@
       "intent": "editor-authorable procedural city district (streets, zoning, buildings, furniture)"
     },
     {
-      "id": "city-generator",
-      "packages": [
-        "@jgengine/core"
-      ],
-      "module": "@jgengine/core/city/cityGenerator",
-      "domain": "city",
-      "gameFacing": false,
-      "probe": null,
-      "intent": "compose a deterministic city — street network, blocks, street-fronting plots of varied size — from one seed"
-    },
-    {
       "id": "city-layout",
       "packages": [
         "@jgengine/core"

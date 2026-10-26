@@ -1,20 +1,18 @@
 /**
- * The playground's 3D viewer: the dials regenerate a GeneratedCity (or a
+ * The playground's 3D viewer: the dials regenerate a resolved city (or a
  * closed circuit) and this module rebuilds the merged city model around an
  * orbit camera. First build grows in; slider drags rebuild instantly.
  */
 import * as THREE from "three";
 import { OrbitControls } from "three/examples/jsm/controls/OrbitControls.js";
 
-import type { GeneratedCity } from "@jgengine/core/city/cityGenerator";
 import type { CircuitRoute } from "@jgengine/core/roads/raceCircuit";
-import { buildCityModel, buildGround, makeElevationField, type CityModel, type CityPalette } from "./cityScene";
+import { buildCityModel, buildGround, makeElevationField, type CityModel, type CityModelSource, type CityPalette } from "./cityScene";
 import { disposeObject, mountLive, type LiveHandle } from "./mount";
 
 const INK = 0x04060c;
 
 const PALETTE: CityPalette = {
-  building: 0x38465c,
   streets: { boulevard: 0x33465f, avenue: 0x2a3a50, street: 0x223043, lane: 0x1a2534 },
   glow: 0x34d399,
   windowWarm: 0xffd9a0,
@@ -32,7 +30,7 @@ const PALETTE: CityPalette = {
 
 export interface PlaygroundWorldHandle {
   setCity(
-    city: GeneratedCity,
+    city: CityModelSource,
     options: {
       seed: string;
       heightScale?: number;

@@ -3,16 +3,17 @@ import { describe, expect, test } from "bun:test";
 import {
   buildablePolygon,
   cutParcel,
-  extractBlocks,
+  extractGraphBlocks,
   isSliverBlock,
   RingWalker,
   sidewalkWidthFor,
-  type FabricStreet,
+  type GraphBlockEdge,
+  type GraphBlockNode,
 } from "./cityBlocks";
 import { clipHalfPlane, fitRectInPolygon, insetRing, insetRingUniform, pointInPolygon, polygonArea, polygonSignedArea, rayDistanceToRing, rectInsidePolygon, ringSelfIntersects } from "../world/polygon";
 import type { Vec2 } from "../world/geometry";
 
-const PARAMS = { streetWidthBase: 7, sidewalkBase: 1.9, curbMargin: 0.35 };
+const PARAMS = { sidewalkBase: 1.9, curbMargin: 0.35 };
 
 function straight(a: Vec2, b: Vec2, n = 8): [number, number][] {
   const pts: [number, number][] = [];
@@ -20,8 +21,26 @@ function straight(a: Vec2, b: Vec2, n = 8): [number, number][] {
   return pts;
 }
 
-function street(points: [number, number][], width = 7): FabricStreet {
-  return { points, width, level: "street", sidewalk: true };
+const LINES = [-90, -30, 30, 90];
+
+/** A 4×4 lattice street graph (3×3 closed blocks); `bend` swaps in a curved centerline per edge. */
+function lattice(bend?: (a: Vec2, b: Vec2) => [number, number][] | null): { nodes: GraphBlockNode[]; edges: GraphBlockEdge[] } {
+  const nodes: GraphBlockNode[] = [];
+  for (const z of LINES) for (const x of LINES) nodes.push({ x, z });
+  const id = (ix: number, iz: number) => iz * LINES.length + ix;
+  const edges: GraphBlockEdge[] = [];
+  const add = (a: number, b: number) => {
+    const pa: Vec2 = [nodes[a]!.x, nodes[a]!.z];
+    const pb: Vec2 = [nodes[b]!.x, nodes[b]!.z];
+    edges.push({ a, b, points: bend?.(pa, pb) ?? straight(pa, pb), width: 7, level: "street" });
+  };
+  for (let iz = 0; iz < LINES.length; iz += 1) {
+    for (let ix = 0; ix < LINES.length; ix += 1) {
+      if (ix + 1 < LINES.length) add(id(ix, iz), id(ix + 1, iz));
+      if (iz + 1 < LINES.length) add(id(ix, iz), id(ix, iz + 1));
+    }
+  }
+  return { nodes, edges };
 }
 
 describe("cityGeometry primitives", () => {
@@ -88,51 +107,51 @@ describe("cityGeometry primitives", () => {
   });
 });
 
-describe("extractBlocks", () => {
-  test("a 2×2 street grid yields nine blocks with closed curb and land rings", () => {
-    const streets: FabricStreet[] = [
-      street(straight([-100, -30], [100, -30])),
-      street(straight([-100, 30], [100, 30])),
-      street(straight([-30, -100], [-30, 100])),
-      street(straight([30, -100], [30, 100])),
-    ];
-    const { blocks } = extractBlocks(streets, 100, 100, PARAMS);
+describe("extractGraphBlocks", () => {
+  test("a 4×4 street lattice yields nine blocks with closed curb and land rings", () => {
+    const { nodes, edges } = lattice();
+    const { blocks } = extractGraphBlocks(nodes, edges, PARAMS);
     expect(blocks.length).toBe(9);
     for (const block of blocks) {
-      expect(block.face.length).toBeGreaterThanOrEqual(3);
       expect(block.curb.length).toBeGreaterThanOrEqual(3);
       expect(block.land.length).toBeGreaterThanOrEqual(3);
       expect(ringSelfIntersects(block.land)).toBe(false);
-      // Land sits strictly inside the face, behind curb + sidewalk.
-      expect(polygonArea(block.land)).toBeLessThan(polygonArea(block.face));
-      for (const [x, z] of block.land) expect(pointInPolygon(block.face, x, z)).toBe(true);
+      // Face ⊃ curb ⊃ land: the sidewalk band lies between curb and land.
+      expect(polygonArea(block.curb)).toBeLessThan(polygonArea(block.face));
+      expect(polygonArea(block.land)).toBeLessThan(polygonArea(block.curb));
+      for (const [x, z] of block.land) expect(pointInPolygon(block.curb, x, z)).toBe(true);
     }
-    // The center block spans (-30,-30)..(30,30) on centerlines; its land ring must be inset by
-    // half street width (3.5) + curb margin + sidewalk from every side.
-    const center = blocks.find((b) => b.land.every(([x, z]) => Math.abs(x) < 30 && Math.abs(z) < 30) && polygonArea(b.land) > 1500);
-    expect(center).toBeDefined();
-    for (const [x, z] of center!.land) {
-      expect(Math.abs(x)).toBeLessThan(30 - 3.5 - PARAMS.curbMargin - 1.8);
-      expect(Math.abs(z)).toBeLessThan(30 - 3.5 - PARAMS.curbMargin - 1.8);
+    // The center block spans (-30,-30)..(30,30) on centerlines: curb at half width + margin, land
+    // behind the sidewalk too.
+    const center = blocks.find((b) => b.face.every(([x, z]) => Math.abs(x) <= 30 && Math.abs(z) <= 30))!;
+    for (const [x, z] of center.curb) expect(Math.max(Math.abs(x), Math.abs(z))).toBeCloseTo(30 - 3.5 - PARAMS.curbMargin, 3);
+    for (const [x, z] of center.land) expect(Math.max(Math.abs(x), Math.abs(z))).toBeLessThan(30 - 3.5 - PARAMS.curbMargin - 1.8);
+  });
+
+  test("an edge without a sidewalk leaves its land at the curb", () => {
+    const { nodes, edges } = lattice();
+    const walked = extractGraphBlocks(nodes, edges, PARAMS).blocks;
+    const bare = extractGraphBlocks(nodes, edges.map((e) => ({ ...e, sidewalk: false })), PARAMS).blocks;
+    for (let i = 0; i < bare.length; i += 1) {
+      expect(polygonArea(bare[i]!.land)).toBeCloseTo(polygonArea(bare[i]!.curb), 6);
+      expect(polygonArea(bare[i]!.land)).toBeGreaterThan(polygonArea(walked[i]!.land));
     }
   });
 
-  test("a curved street produces a curved (non-axis-aligned) block edge", () => {
-    const curve: [number, number][] = [];
-    for (let x = -100; x <= 100; x += 8) curve.push([x, 20 * Math.sin((x / 200) * Math.PI)]);
-    const streets: FabricStreet[] = [
-      street(curve),
-      street(straight([-100, 60], [100, 60])),
-      street(straight([-60, -100], [-60, 100])),
-      street(straight([60, -100], [60, 100])),
-    ];
-    const { blocks } = extractBlocks(streets, 100, 100, PARAMS);
-    // The block between the curve and the straight north street must carry the curve: many
-    // distinct edge headings, not just the four axis directions.
-    const between = blocks.find((b) => b.land.length > 6 && b.land.some(([x, z]) => Math.abs(x) < 30 && z > 5 && z < 55));
-    expect(between).toBeDefined();
+  test("curved, wandering centerlines still close every block and carry the curve", () => {
+    // Centerlines that wander off the straight node-to-node line (the case proximity welding
+    // used to collapse) still trace through the exact graph.
+    const { nodes, edges } = lattice((a, b) => {
+      const pts = straight(a, b, 12);
+      return pts.map(([x, z], i) => {
+        const bulge = 6 * Math.sin((i / 12) * Math.PI);
+        return a[1] === b[1] ? [x, z + bulge] : [x + bulge, z];
+      });
+    });
+    const { blocks } = extractGraphBlocks(nodes, edges, PARAMS);
+    expect(blocks.length).toBe(9);
     const headings = new Set<number>();
-    const ring = between!.land;
+    const ring = blocks[0]!.land;
     for (let i = 0; i < ring.length; i += 1) {
       const [ax, az] = ring[i]!;
       const [bx, bz] = ring[(i + 1) % ring.length]!;
@@ -141,61 +160,13 @@ describe("extractBlocks", () => {
     expect(headings.size).toBeGreaterThan(4);
   });
 
-  test("warns (dev-mode) when wandered centerlines collapse into implausibly few faces", () => {
-    // Ten arc-filleted streets that wander enough to defeat proximity welding — their intended
-    // crossings never register, so no closed blocks form (issue #1502: 38 streets → 2 faces).
-    const wandered: FabricStreet[] = [];
-    for (let k = 0; k < 10; k += 1) {
-      const base = -90 + k * 20;
-      const pts: [number, number][] = [];
-      for (let x = -100; x <= 100; x += 10) pts.push([x, base + 6 * Math.sin(x / 25 + k)]);
-      wandered.push(street(pts));
-    }
-    const original = console.warn;
-    let message = "";
-    console.warn = (...args: unknown[]) => {
-      message = String(args[0]);
-    };
-    try {
-      const { blocks } = extractBlocks(wandered, 120, 120, PARAMS);
-      // Symptom of the collapse: many streets, almost no blocks.
-      expect(blocks.length).toBeLessThan(wandered.length / 4);
-      expect(message).toContain("[jgengine:extractBlocks]");
-      expect(message).toContain("extractGraphBlocks");
-    } finally {
-      console.warn = original;
-    }
-  });
-
-  test("does not warn on a well-formed grid (no false positive)", () => {
-    const grid: FabricStreet[] = [];
-    for (const z of [-90, -30, 30, 90]) grid.push(street(straight([-120, z], [120, z])));
-    for (const x of [-90, -30, 30, 90]) grid.push(street(straight([x, -120], [x, 120])));
-    const original = console.warn;
-    let warned = false;
-    console.warn = () => {
-      warned = true;
-    };
-    try {
-      const { blocks } = extractBlocks(grid, 130, 130, PARAMS);
-      // A 4×4 grid (8 streets) yields a plausible face count — no collapse signal.
-      expect(blocks.length).toBeGreaterThanOrEqual(9);
-      expect(warned).toBe(false);
-    } finally {
-      console.warn = original;
-    }
-  });
-
   test("dead-end streets are pruned into corridors, not faces", () => {
-    const streets: FabricStreet[] = [
-      street(straight([-100, 0], [100, 0])),
-      street(straight([0, -100], [0, 100])),
-      // Dangling stub that connects on one end only.
-      street(straight([20, 0], [20, 40])),
-    ];
-    const { blocks, deadEnds } = extractBlocks(streets, 100, 100, PARAMS);
-    expect(deadEnds.length).toBeGreaterThan(0);
-    expect(blocks.length).toBe(4);
+    const { nodes, edges } = lattice();
+    nodes.push({ x: 0, z: 0 });
+    edges.push({ a: 5, b: nodes.length - 1, points: straight([-30, -30], [0, 0]), width: 6, level: "lane" });
+    const { blocks, deadEnds } = extractGraphBlocks(nodes, edges, PARAMS);
+    expect(deadEnds.length).toBe(1);
+    expect(blocks.length).toBe(9);
   });
 });
 

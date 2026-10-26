@@ -48,7 +48,7 @@ export const BLUEPRINTS: readonly Blueprint[] = [
     gameId: "harbor-heat",
     blocks: [
       "jgengine-world/street-generator",
-      "jgengine-world/city-generator",
+      "jgengine-world/city-district",
       "jgengine-world/vehicle-dynamics",
       "jgengine-world/ai-driver",
       "jgengine-world/population-director",
