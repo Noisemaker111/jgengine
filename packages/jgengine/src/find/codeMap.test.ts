@@ -87,7 +87,7 @@ describe("this checkout answers where a concept lives in one call", () => {
   test("grass and hud point at the folders that hold them", () => {
     const grass = homeOf("grass");
     expect(grass.get("core")).toBe("packages/core/src/world/");
-    expect(grass.get("shell")).toBe("packages/shell/src/terrain/");
+    expect(grass.get("shell")).toBe("packages/shell/src/grass/");
     const hud = homeOf("hud");
     expect(hud.get("core")).toBe("packages/core/src/ui/");
     expect(hud.get("react")).toBe("packages/react/src/");
