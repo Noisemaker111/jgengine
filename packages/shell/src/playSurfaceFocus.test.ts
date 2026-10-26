@@ -1,5 +1,5 @@
 import { describe, expect, test } from "bun:test";
-import { shouldReclaimPlayFocus, shouldReturnPlayFocus } from "./playSurfaceFocus";
+import { installPlayFocusReclaim, shouldReclaimPlayFocus, shouldReturnPlayFocus } from "./playSurfaceFocus";
 
 const el = (isConnected: boolean) => ({ isConnected }) as Element;
 const body = el(true);
@@ -53,5 +53,28 @@ describe("shouldReturnPlayFocus", () => {
     expect(shouldReturnPlayFocus(button, node([]), surface, true)).toBe(false);
     expect(shouldReturnPlayFocus(button, button, { contains: () => false } as unknown as Element, true)).toBe(false);
     expect(shouldReturnPlayFocus(null, button, surface, true)).toBe(false);
+  });
+});
+describe("installPlayFocusReclaim", () => {
+  test("a key that unmounts the focused menu (Escape closing pause) returns focus to the play surface", async () => {
+    const listeners = new Map<string, (event: unknown) => void>();
+    const body = { isConnected: true } as Element;
+    const button = { isConnected: true } as { isConnected: boolean } & Element;
+    let focused = 0;
+    const surface = { isConnected: true, focus: () => (focused += 1) } as unknown as HTMLElement;
+    const doc = {
+      body,
+      activeElement: button as Element | null,
+      addEventListener: (type: string, listener: (event: unknown) => void) => listeners.set(type, listener),
+      removeEventListener: (type: string) => listeners.delete(type),
+    };
+    const dispose = installPlayFocusReclaim(doc as unknown as Document, () => surface);
+    listeners.get("keydown")!({ code: "Escape" });
+    button.isConnected = false;
+    doc.activeElement = body;
+    await new Promise((resolve) => setTimeout(resolve, 5));
+    expect(focused).toBe(1);
+    dispose();
+    expect(listeners.size).toBe(0);
   });
 });

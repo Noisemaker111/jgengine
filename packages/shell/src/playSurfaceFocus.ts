@@ -29,7 +29,7 @@ export function shouldReturnPlayFocus(clicked: Element | null, active: Element |
 }
 
 /**
- * Watches clicks (pointer, Enter or Space on a button) and, right after the click's update commits, returns focus to `surface()` if the clicked control unmounted and focus fell to the body, or if a pointer click left focus on a HUD button (see {@link shouldReturnPlayFocus}).
+ * Watches clicks (pointer, Enter or Space on a button) and keys (Escape closing a menu) and, right after the update commits, returns focus to `surface()` if the clicked control unmounted and focus fell to the body, or if a pointer click left focus on a HUD button (see {@link shouldReturnPlayFocus}).
  * Chromium moves focus to `<body>` on removal without a `focusout`, so the click is the hook.
  * Returns the cleanup.
  * @internal
@@ -51,9 +51,25 @@ export function installPlayFocusReclaim(doc: Document, surface: () => HTMLElemen
       }
     });
   };
+  // A key can unmount the focused control too: Escape closing the pause menu drops focus to <body>,
+  // and the next Escape never reaches the play surface. Watch the element that had focus at key-down.
+  let keyTimer: ReturnType<typeof setTimeout> | undefined;
+  const onKeyDown = () => {
+    const focused = doc.activeElement;
+    if (focused === null || focused === doc.body) return;
+    clearTimeout(keyTimer);
+    keyTimer = setTimeout(() => {
+      const target = surface();
+      if (target === null || !target.isConnected) return;
+      if (shouldReclaimPlayFocus(focused, doc.activeElement, doc.body)) target.focus({ preventScroll: true });
+    });
+  };
   doc.addEventListener("click", onClick, true);
+  doc.addEventListener("keydown", onKeyDown, true);
   return () => {
     clearTimeout(timer);
+    clearTimeout(keyTimer);
     doc.removeEventListener("click", onClick, true);
+    doc.removeEventListener("keydown", onKeyDown, true);
   };
 }
