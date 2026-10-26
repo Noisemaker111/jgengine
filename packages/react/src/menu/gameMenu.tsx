@@ -361,14 +361,14 @@ export function GameMenu({
     nav.setActive(initialId);
   }, [initialId, disabled, nav.activeId, nav.setActive]);
   // The first pass can run before item refs exist, so focus the selection once after paint when the
-  // menu owns an idle document. Arrow keys then land on the menu itself instead of the page.
+  // menu owns an idle document. Arrow keys then land on the menu itself instead of the page. Focus the
+  // player already moved (Tab to a field, a click elsewhere) in that frame stays where they put it.
   useEffect(() => {
     if (!open) return;
     if (typeof requestAnimationFrame !== "function") return;
     const frame = requestAnimationFrame(() => {
       const active = typeof document === "undefined" ? null : (document.activeElement as HTMLElement | null);
-      const insideMenu = active !== null && typeof active.closest === "function" && active.closest("[data-jg-game-menu]") !== null;
-      if (insideMenu && active !== document.body) return;
+      if (active !== null && active !== document.body) return;
       const target = document.querySelector<HTMLElement>("[data-jg-game-menu] [data-jg-menu-item][aria-current='true']");
       target?.focus({ preventScroll: true });
     });
