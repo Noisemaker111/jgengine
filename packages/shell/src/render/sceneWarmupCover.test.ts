@@ -1,6 +1,6 @@
 import { describe, expect, test } from "bun:test";
 
-import { SCENE_WARMUP_PENDING, SceneWarmupCover } from "./SceneWarmupGate";
+import { SCENE_WARMUP_PENDING, SceneWarmupCover, warmupBarShare } from "./SceneWarmupGate";
 
 function textOf(node: unknown): string {
   if (node === null || node === undefined || node === false) return "";
@@ -27,18 +27,24 @@ describe("SceneWarmupCover", () => {
   });
 
   test("reports the shader count while compiling", () => {
-    const { markup } = render({ phase: "compiling", rounds: 0, programs: 12, planned: 40, deferred: 0, elapsedMs: 900 });
+    const { markup } = render({ phase: "compiling", rounds: 0, programs: 12, planned: 40, deferred: 0, progress: 0.3, elapsedMs: 900 });
     expect(markup).toContain("Preparing scene (12 shaders)");
   });
 
   test("names the work left for the background instead of hiding it", () => {
-    const { markup } = render({ phase: "compiling", rounds: 1, programs: 20, planned: 40, deferred: 60, elapsedMs: 1_400 });
+    const { markup } = render({ phase: "compiling", rounds: 1, programs: 20, planned: 40, deferred: 60, progress: 0.5, elapsedMs: 1_400 });
     expect(markup).toContain("60 more prepare after this");
     expect(markup).toContain("1.4s");
   });
 
   test("leaves the frame alone once warm or after a failed compile", () => {
-    expect(render({ phase: "ready", rounds: 2, programs: 40, planned: 40, deferred: 0, elapsedMs: 2_400 }).cover).toBeNull();
-    expect(render({ phase: "failed", rounds: 0, programs: 0, planned: 0, deferred: 0, elapsedMs: 30 }).cover).toBeNull();
+    expect(render({ phase: "ready", rounds: 2, programs: 40, planned: 40, deferred: 0, progress: 0.3, elapsedMs: 2_400 }).cover).toBeNull();
+    expect(render({ phase: "failed", rounds: 0, programs: 0, planned: 0, deferred: 0, progress: 0.3, elapsedMs: 30 }).cover).toBeNull();
+  });
+
+  test("the bar fills with the share of links the GPU has run, never empty while covered", () => {
+    expect(warmupBarShare(SCENE_WARMUP_PENDING)).toBe(0.05);
+    expect(warmupBarShare({ phase: "compiling", rounds: 0, programs: 12, planned: 40, deferred: 0, progress: 0.5, elapsedMs: 900 })).toBe(0.5);
+    expect(warmupBarShare({ phase: "compiling", rounds: 0, programs: 0, planned: 40, deferred: 0, progress: 0, elapsedMs: 10 })).toBe(0.05);
   });
 });

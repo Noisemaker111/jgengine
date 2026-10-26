@@ -1,9 +1,17 @@
 import { describe, expect, test } from "bun:test";
-import { BoxGeometry, Group, Mesh, MeshBasicMaterial, Object3D, PerspectiveCamera, Scene } from "three";
+import { BoxGeometry, DirectionalLight, Group, Mesh, MeshBasicMaterial, MeshDepthMaterial, MeshNormalMaterial, Object3D, OrthographicCamera, PerspectiveCamera, Scene, type Material } from "three";
 
 import {
+  batchByProgram,
   compileSubset,
+  drawSubset,
   createShaderWarmup,
+  gpuFence,
+  drawsHeld,
+  holdDraws,
+  warmupDrawsToTarget,
+  warmupWaitsFor,
+  type HeldDraw,
   planFirstFrame,
   SHADER_WARMUP_DEFAULTS,
   type ShaderWarmupOptions,
@@ -288,9 +296,10 @@ describe("createShaderWarmup", () => {
         renderer.info.programs.push({ isReady: () => true });
       },
     };
+    const scene = new Scene();
     const warmup = createShaderWarmup({
       renderer,
-      scene: new Scene(),
+      scene,
       camera: new PerspectiveCamera(),
       quietMs: 0,
       backgroundMs: 500,
@@ -302,7 +311,10 @@ describe("createShaderWarmup", () => {
       loaderQuiet: () => true,
       loaderStarts: () => 0,
       onState: (state) => {
-        if (state.phase === "ready" && compilesAtReveal === -1) compilesAtReveal = compiles.length;
+        if (state.phase !== "ready" || compilesAtReveal !== -1) return;
+        compilesAtReveal = compiles.length;
+        // A model that lands after the reveal: the background links it.
+        scene.add(meshAt(0, 0, -5));
       },
     });
     const final = await warmup.done;
@@ -419,5 +431,401 @@ describe("createShaderWarmup frame target", () => {
 
     expect(final.phase).toBe("failed");
     expect(bound).toBe(canvas);
+  });
+});
+
+describe("batchByProgram", () => {
+  test("puts at most the batch size of distinct materials in a flush, and every drawable in one batch", () => {
+    const shared = new MeshBasicMaterial();
+    const objects = [meshAt(0, 0, 0, shared), meshAt(1, 0, 0, shared), meshAt(2), meshAt(3), meshAt(4), new Group()];
+    const batches = batchByProgram(objects, 2);
+
+    expect(batches).toHaveLength(2);
+    expect([...batches[0]!]).toEqual([objects[0]!, objects[1]!, objects[2]!]);
+    expect([...batches[1]!]).toEqual([objects[3]!, objects[4]!]);
+  });
+});
+
+describe("gpuFence", () => {
+  test("polls a zero-timeout fence until the GPU reports it signalled, then frees it", async () => {
+    const calls: string[] = [];
+    let polls = 0;
+    const gl = {
+      SYNC_GPU_COMMANDS_COMPLETE: 1,
+      ALREADY_SIGNALED: 2,
+      CONDITION_SATISFIED: 3,
+      WAIT_FAILED: 4,
+      fenceSync: () => (calls.push("fence"), { id: 1 }),
+      flush: () => calls.push("flush"),
+      clientWaitSync: (_sync: unknown, _flags: number, timeout: number) => {
+        calls.push(`wait:${timeout}`);
+        return ++polls >= 3 ? 2 : 5;
+      },
+      deleteSync: () => calls.push("delete"),
+    };
+    await gpuFence(gl, async () => {}, () => false);
+
+    expect(calls).toEqual(["fence", "flush", "wait:0", "wait:0", "wait:0", "delete"]);
+  });
+
+  test("without a WebGL2 context it only yields", async () => {
+    let slept = 0;
+    await gpuFence({}, async () => {
+      slept += 1;
+    }, () => false);
+    expect(slept).toBe(1);
+  });
+});
+
+describe("holdDraws", () => {
+  test("stops draws until released, then restores the renderer's own method", () => {
+    let draws = 0;
+    class FakeRenderer {
+      render() {
+        draws += 1;
+      }
+    }
+    const renderer = new FakeRenderer();
+    const release = holdDraws(renderer);
+    renderer.render();
+    expect(draws).toBe(0);
+    release();
+    renderer.render();
+    expect(draws).toBe(1);
+    expect(Object.prototype.hasOwnProperty.call(renderer, "render")).toBe(false);
+  });
+
+  test("holds only while asked, reports what it held, and passes through under a later wrapper", () => {
+    const drawn: Object3D[] = [];
+    const renderer = {
+      render(scene: Object3D) {
+        drawn.push(scene);
+      },
+      getRenderTarget: () => "target",
+    };
+    let holding = true;
+    const held: HeldDraw[] = [];
+    const release = holdDraws(renderer as never, { holding: () => holding, onHeld: (draw) => held.push(draw) });
+    const scene = new Scene();
+    scene.overrideMaterial = new MeshNormalMaterial();
+    const camera = new PerspectiveCamera();
+    renderer.render(scene);
+    (renderer.render as (scene: Object3D, camera: PerspectiveCamera) => void)(scene, camera);
+    expect(drawn).toEqual([]);
+    expect(held[1]).toEqual({ object: scene, camera, target: "target", override: scene.overrideMaterial, material: null });
+    holding = false;
+    const bake = new Scene();
+    renderer.render(bake);
+    expect(drawn).toEqual([bake]);
+    // Something wraps render after the hold: release leaves the wrapper and the hold passes through.
+    holding = true;
+    const inner = renderer.render;
+    const wrapper = (target: Object3D) => inner.call(renderer, target);
+    renderer.render = wrapper;
+    release();
+    renderer.render(scene);
+    expect(renderer.render).toBe(wrapper);
+    expect(drawn).toEqual([bake, scene]);
+  });
+});
+
+describe("createShaderWarmup links what the first frame draws outside the scene's own materials", () => {
+  function linkingRenderer() {
+    const compiled: { root: Object3D; materials: Material[]; target: unknown; lightsFrom: Object3D | undefined }[] = [];
+    let bound: unknown = null;
+    const linked = new Set<string>();
+    const renderer = {
+      info: { programs: [] as FakeProgram[] },
+      shadowMap: { enabled: true },
+      getRenderTarget: () => bound,
+      setRenderTarget: (target: unknown) => {
+        bound = target;
+      },
+      compile(root: Object3D, _camera: unknown, lightsFrom?: Object3D) {
+        const materials: Material[] = [];
+        root.traverse((object) => {
+          const material = (object as Mesh).material as Material | Material[] | undefined;
+          if (material !== undefined) materials.push(...(Array.isArray(material) ? material : [material]));
+        });
+        compiled.push({ root, materials, target: bound, lightsFrom });
+        // One program per material and target, the way a cached link would come back.
+        for (const material of materials) {
+          const key = `${material.uuid}|${String(bound)}`;
+          if (linked.has(key)) continue;
+          linked.add(key);
+          renderer.info.programs.push({ isReady: () => true });
+        }
+      },
+    };
+    return { renderer, compiled };
+  }
+
+  test("post-processing quads and an override-material pass held by the frame loop are linked against their own targets", async () => {
+    const scene = new Scene();
+    const mesh = meshAt(0, 0, -5);
+    scene.add(mesh);
+    const camera = new PerspectiveCamera();
+    const { renderer, compiled } = linkingRenderer();
+    const blur = new MeshBasicMaterial();
+    const blend = new MeshBasicMaterial();
+    const quad = new Mesh(new BoxGeometry(), blur);
+    const normals = new MeshNormalMaterial();
+    const quadCamera = new OrthographicCamera();
+    // One quad drawn with two materials, the way a pass chain swaps a full-screen quad's material.
+    let draws: HeldDraw[] = [
+      { object: scene, camera, target: "scene-target", override: null, material: null },
+      { object: scene, camera, target: "normal-target", override: normals, material: null },
+      { object: quad, camera: quadCamera, target: "blur-target", override: null, material: blur },
+      { object: quad, camera: quadCamera, target: null, override: null, material: blend },
+      { object: quad, camera: quadCamera, target: null, override: null, material: blend },
+    ];
+    quad.material = new MeshBasicMaterial();
+    const warmup = createShaderWarmup({
+      renderer,
+      scene,
+      camera,
+      quietMs: 0,
+      backgroundMs: 0,
+      sleep: async () => {},
+      loaderQuiet: () => true,
+      takeHeldDraws: () => {
+        const taken = draws;
+        draws = [];
+        return taken;
+      },
+    });
+    await warmup.done;
+
+    const quadLinks = compiled.filter((entry) => Object.getPrototypeOf(entry.root) === quad);
+    expect(quadLinks.map((entry) => [entry.materials[0], entry.target])).toEqual([
+      [blur, "blur-target"],
+      [blend, null],
+    ]);
+    const overrideLinks = compiled.filter((entry) => entry.materials.includes(normals));
+    expect(overrideLinks).toHaveLength(1);
+    expect(overrideLinks[0]!.target).toBe("normal-target");
+    expect(overrideLinks[0]!.lightsFrom).toBe(scene);
+    // The stand-in reads the real mesh's geometry but never moves the real mesh or its material.
+    expect(mesh.parent).toBe(scene);
+    expect(mesh.material).toBeInstanceOf(MeshBasicMaterial);
+  });
+
+  test("shadow casters link the depth program the shadow pass draws them with, into a target", async () => {
+    const scene = new Scene();
+    const caster = meshAt(0, 0, -5);
+    caster.castShadow = true;
+    const plain = meshAt(1, 0, -5);
+    scene.add(caster, plain);
+    const sun = new DirectionalLight();
+    sun.castShadow = true;
+    scene.add(sun);
+    const { renderer, compiled } = linkingRenderer();
+    const warmup = createShaderWarmup({ renderer, scene, camera: new PerspectiveCamera(), quietMs: 0, backgroundMs: 0, sleep: async () => {}, loaderQuiet: () => true });
+    await warmup.done;
+
+    const depthLinks = compiled.filter((entry) => entry.materials.some((material) => material instanceof MeshDepthMaterial));
+    expect(depthLinks).toHaveLength(1);
+    expect(depthLinks[0]!.materials).toHaveLength(1);
+    expect(depthLinks[0]!.target).not.toBeNull();
+    // The shadow pass draws with the frame's lights but none of the scene's fog or environment.
+    expect(depthLinks[0]!.root.children).toContain(sun);
+    expect(depthLinks[0]!.lightsFrom).not.toBe(scene);
+  });
+
+  test("waits for work that changes every program, such as the environment bake, before the first link", async () => {
+    const scene = new Scene();
+    scene.add(meshAt(0, 0, -5));
+    const { renderer, compiled } = linkingRenderer();
+    let finishBake: () => void = () => {};
+    warmupWaitsFor(scene, new Promise<void>((resolve) => (finishBake = resolve)));
+    const warmup = createShaderWarmup({ renderer, scene, camera: new PerspectiveCamera(), quietMs: 0, backgroundMs: 0, loaderQuiet: () => true });
+    await new Promise((resolve) => setTimeout(resolve, 20));
+    expect(compiled).toHaveLength(0);
+    finishBake();
+    await warmup.done;
+    expect(compiled.length).toBeGreaterThan(0);
+  });
+});
+
+describe("createShaderWarmup batching", () => {
+  test("links a big first frame a few programs per flush with a fence between flushes", async () => {
+    const scene = new Scene();
+    for (let i = 0; i < 7; i += 1) scene.add(meshAt(0, 0, -5 - i));
+    const camera = new PerspectiveCamera();
+    const flushes: number[] = [];
+    let fences = 0;
+    const renderer = {
+      info: { programs: [] as FakeProgram[] },
+      compile(root: Object3D) {
+        let drawables = 0;
+        root.traverse((object) => {
+          if ((object as Mesh).isMesh) drawables += 1;
+        });
+        flushes.push(drawables);
+        for (let i = 0; i < drawables; i += 1) renderer.info.programs.push({ isReady: () => true });
+      },
+      getContext: () => ({
+        SYNC_GPU_COMMANDS_COMPLETE: 1,
+        ALREADY_SIGNALED: 2,
+        CONDITION_SATISFIED: 3,
+        WAIT_FAILED: 4,
+        fenceSync: () => (fences += 1, {}),
+        flush() {},
+        clientWaitSync: () => 2,
+        deleteSync() {},
+      }),
+    };
+    const warmup = createShaderWarmup({ renderer, scene, camera, quietMs: 0, backgroundMs: 0, programsPerBatch: 3, sleep: async () => {}, loaderQuiet: () => true });
+    const final = await warmup.done;
+
+    expect(final.phase).toBe("ready");
+    expect(flushes.slice(0, 3)).toEqual([3, 3, 1]);
+    expect(fences).toBeGreaterThanOrEqual(3);
+  });
+});
+
+describe("drawing each program once while covered", () => {
+  test("drawSubset draws only the kept drawables, even offscreen, and leaves shadows and culling as they were", () => {
+    const scene = new Scene();
+    const kept = meshAt(0, 0, 50);
+    const other = meshAt(0, 0, -5);
+    scene.add(kept, other);
+    const shadowMap = { enabled: true, autoUpdate: true, needsUpdate: false };
+    const seen: { drawables: Object3D[]; culled: boolean[]; shadowsLive: boolean }[] = [];
+    const renderer = {
+      shadowMap,
+      compile() {},
+      render(root: Object3D) {
+        const drawables: Object3D[] = [];
+        root.traverse((object) => {
+          if ((object as Mesh).isMesh) drawables.push(object);
+        });
+        seen.push({ drawables, culled: drawables.map((object) => object.frustumCulled), shadowsLive: shadowMap.autoUpdate || shadowMap.needsUpdate });
+      },
+    };
+    drawSubset(renderer, scene, new PerspectiveCamera(), (object) => object === kept);
+    expect(seen).toEqual([{ drawables: [kept], culled: [false], shadowsLive: false }]);
+    expect(scene.children).toEqual([kept, other]);
+    expect(kept.frustumCulled).toBe(true);
+    expect(shadowMap).toEqual({ enabled: true, autoUpdate: true, needsUpdate: false });
+  });
+
+  test("the warmup draws each linked program once per vertex layout before it reveals, a batch of programs per draw", async () => {
+    const scene = new Scene();
+    const shared = new MeshBasicMaterial();
+    const a = meshAt(0, 0, -5, shared);
+    const b = meshAt(1, 0, -5, shared);
+    const c = meshAt(2, 0, -5);
+    scene.add(a, b, c);
+    const draws: Object3D[][] = [];
+    let revealedAfter = -1;
+    const renderer = {
+      info: { programs: [] as FakeProgram[] },
+      compile(root: Object3D) {
+        root.traverse((object) => {
+          if ((object as Mesh).isMesh && renderer.info.programs.length < 2) renderer.info.programs.push({ isReady: () => true });
+        });
+      },
+      render(root: Object3D) {
+        const drawables: Object3D[] = [];
+        root.traverse((object) => {
+          if ((object as Mesh).isMesh) drawables.push(object);
+        });
+        draws.push(drawables);
+      },
+    };
+    const warmup = createShaderWarmup({
+      renderer,
+      scene,
+      camera: new PerspectiveCamera(),
+      quietMs: 0,
+      backgroundMs: 0,
+      sleep: async () => {},
+      loaderQuiet: () => true,
+      onState: (state) => {
+        if (state.phase === "ready" && revealedAfter === -1) revealedAfter = draws.length;
+      },
+    });
+    await warmup.done;
+    // Two programs (the shared material, and c's) in one batch, same box layout: one draw of a and
+    // c, since b adds no new program or layout.
+    expect(draws).toEqual([[a, c]]);
+    expect(revealedAfter).toBe(1);
+  });
+
+  test("a linked program has its uniforms read once it is ready, and nothing is drawn while one still builds", async () => {
+    const scene = new Scene();
+    const a = meshAt(0, 0, -5);
+    const c = meshAt(2, 0, -5);
+    scene.add(a, c);
+    const fetched: number[] = [];
+    let draws = 0;
+    let clock = 0;
+    const renderer = {
+      info: { programs: [] as (FakeProgram & { getUniforms(): void })[] },
+      compile(root: Object3D) {
+        root.traverse((object) => {
+          if (!(object as Mesh).isMesh || renderer.info.programs.length >= 2) return;
+          const id = renderer.info.programs.length;
+          // The second program never finishes, like a huge shader on a cold driver cache.
+          renderer.info.programs.push({ isReady: () => id === 0, getUniforms: () => fetched.push(id) });
+        });
+      },
+      render() {
+        draws += 1;
+      },
+    };
+    const warmup = createShaderWarmup({
+      renderer,
+      scene,
+      camera: new PerspectiveCamera(),
+      quietMs: 0,
+      backgroundMs: 0,
+      planBudgetMs: 100,
+      sleep: async () => {},
+      now: () => (clock += 25),
+      loaderQuiet: () => true,
+    });
+    await warmup.done;
+    expect(fetched).toEqual([0]);
+    expect(draws).toBe(0);
+  });
+});
+
+describe("work that draws the scene for itself", () => {
+  test("drawsHeld answers whether a draw now would be swallowed, and stops after release", () => {
+    const renderer = { render() {} };
+    let holding = true;
+    const release = holdDraws(renderer, { holding: () => holding });
+    expect(drawsHeld(renderer)).toBe(true);
+    holding = false;
+    expect(drawsHeld(renderer)).toBe(false);
+    holding = true;
+    release();
+    expect(drawsHeld(renderer)).toBe(false);
+  });
+
+  test("a scene drawn into a target as well as the canvas links both sets of programs", async () => {
+    const scene = new Scene();
+    scene.add(meshAt(0, 0, -5));
+    const targets: unknown[] = [];
+    let bound: unknown = null;
+    const renderer = {
+      info: { programs: [] as FakeProgram[] },
+      getRenderTarget: () => bound,
+      setRenderTarget: (target: unknown) => {
+        bound = target;
+      },
+      compile() {
+        targets.push(bound);
+        if (renderer.info.programs.length < 2) renderer.info.programs.push({ isReady: () => true });
+      },
+    };
+    const undo = warmupDrawsToTarget(scene);
+    const warmup = createShaderWarmup({ renderer, scene, camera: new PerspectiveCamera(), quietMs: 0, backgroundMs: 0, sleep: async () => {}, loaderQuiet: () => true });
+    await warmup.done;
+    undo();
+    expect(targets[0]).toBeNull();
+    expect(targets[1]).not.toBeNull();
   });
 });

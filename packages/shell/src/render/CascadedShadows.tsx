@@ -5,6 +5,7 @@ import { CSM } from "three/examples/jsm/csm/CSM.js";
 
 import type { DirectionalLightingConfig } from "@jgengine/core/game/playableGame";
 import type { GraphicsProfile } from "@jgengine/core/settings/graphicsProfile";
+import { prepareBeforeWarmup } from "./shaderWarmup";
 import { resolveCascadeCount, resolveShadowMapSize } from "./shadowTiers";
 import type { DaylightModulation } from "./SceneLighting";
 
@@ -269,6 +270,8 @@ function setupMaterial(material: THREE.Material, csm: CsmMaterialSetup): void {
 /** Patch streamed meshes on attachment and material replacement without scanning the world each frame. @internal */
 export function bindCsmMaterials(scene: THREE.Scene, csm: CsmMaterialSetup): () => void {
   const nodes = new Map<THREE.Object3D, () => void>();
+  /** Per mesh: patch again if its material was swapped since the last look. */
+  const swapChecks = new Set<() => void>();
   const materials = new Map<THREE.Material, () => void>();
   const patch = (material: THREE.Material) => {
     if (!isStandardMaterial(material) || materials.has(material)) return;
@@ -311,27 +314,38 @@ export function bindCsmMaterials(scene: THREE.Scene, csm: CsmMaterialSetup): () 
     // more than the authored hook. Re-patching only on a change keeps the swap detection.
     let lastMaterial: THREE.Material | THREE.Material[] | undefined;
     const mesh = node as THREE.Mesh;
-    const before: typeof prior = function (this: THREE.Object3D, ...args) {
-      prior.apply(this, args);
+    const checkSwap = () => {
       if (mesh.material === lastMaterial) return;
       lastMaterial = mesh.material;
       patchMesh(mesh);
+    };
+    const before: typeof prior = function (this: THREE.Object3D, ...args) {
+      prior.apply(this, args);
+      checkSwap();
     };
     node.addEventListener("childadded", added);
     node.addEventListener("childremoved", removed);
     if (mesh.isMesh) {
       lastMaterial = mesh.material;
       node.onBeforeRender = before;
+      swapChecks.add(checkSwap);
     }
     nodes.set(node, () => {
       node.removeEventListener("childadded", added);
       node.removeEventListener("childremoved", removed);
       if (node.onBeforeRender === before) node.onBeforeRender = prior;
+      swapChecks.delete(checkSwap);
     });
     for (const child of node.children) attach(child);
   };
   attach(scene);
+  // A swap is otherwise only seen at the mesh's first draw, which would link the patched program
+  // on that frame; the shader warmup looks first, so it links the program the draw will use.
+  const unprepare = prepareBeforeWarmup(scene, () => {
+    for (const check of swapChecks) check();
+  });
   return () => {
+    unprepare();
     detach(scene);
     for (const release of materials.values()) release();
   };

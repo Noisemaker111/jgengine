@@ -38,6 +38,7 @@ import { terrainGroundColorSampler } from "./terrainGroundColor";
 import { InstancedBuildings, type InstancedBuildingPlacement } from "../structures/GeneratedBuilding";
 import { GrassPatch } from "../grass/GrassPatch";
 import { CarvedTerrain, type CarvedTerrainProps } from "../terrain/CarvedTerrain";
+import { trackSceneWork } from "../render/modelLoad";
 import { createTerrainDetailMaterial } from "../terrain/terrainDetailMaterial";
 import { MAX_TERRAIN_LAYER_MAPS, type TerrainDetailMaterialTextures, type TerrainLayerMap } from "../terrain/terrainDetailMaterial";
 import { useTerrainQuality } from "../terrain/terrainQuality";
@@ -147,6 +148,9 @@ function TolerantTerrainGround({
     const textures: Partial<Record<keyof TerrainDetailMaterialTextures, THREE.Texture>> = {};
     let pending = roles.length;
     const loader = new THREE.TextureLoader();
+    // Loading until the maps answer: the textured ground is another program, which the shader
+    // warmup links while the cover is up only if it knows the procedural ground is not the last.
+    const done = trackSceneWork("terrain-detail-maps");
     for (const [role, url] of roles) {
       loader.load(url, (texture) => {
         if (!active) { texture.dispose(); return; }
@@ -155,16 +159,21 @@ function TolerantTerrainGround({
         texture.wrapT = THREE.RepeatWrapping;
         textures[role] = texture;
         pending -= 1;
-        if (pending === 0) setLoaded({ key, textures: textures as TerrainDetailMaterialTextures });
+        if (pending === 0) {
+          setLoaded({ key, textures: textures as TerrainDetailMaterialTextures });
+          done();
+        }
       }, undefined, () => {
         if (!active) return;
         active = false;
+        done();
         console.warn(`[jgengine] terrain detail maps did not load (${url}) — keeping the procedural ground. Pull the game's asset packs (\`bun run provision\`) to restore them.`);
         setLoaded({ key });
       });
     }
     return () => {
       active = false;
+      done();
       for (const texture of Object.values(textures)) texture?.dispose();
     };
   }, [key]);

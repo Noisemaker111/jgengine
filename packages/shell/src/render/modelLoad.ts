@@ -451,3 +451,22 @@ export function modelLoadStarts(): number {
 export const sharedGltfLoader = new DiagnosticGLTFLoader(modelLoadingManager);
 sharedGltfLoader.setMeshoptDecoder(MeshoptDecoder);
 configureModelLoaders();
+
+let sceneWorkSerial = 0;
+
+/**
+ * Count a scene build that is still running (a sliced grass bake, a streamed chunk) as loading,
+ * until the returned function runs. It joins the shared model queue, so {@link modelLoadIdleMs},
+ * {@link modelLoadStarts}, capture settle waits and the shader warmup all wait for it like a model.
+ * @internal
+ */
+export function trackSceneWork(label: string): () => void {
+  const item = `scene-work:${label}#${(sceneWorkSerial += 1)}`;
+  modelLoadingManager.itemStart(item);
+  let ended = false;
+  return () => {
+    if (ended) return;
+    ended = true;
+    modelLoadingManager.itemEnd(item);
+  };
+}
