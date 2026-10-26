@@ -322,9 +322,13 @@ export function RoadRibbons({
 
   const quality = useTerrainQuality();
   const scanned = detailed && quality !== "low";
-  const roadScan = ribbonScan(road.materials?.road, useSurfaceScan(road.materials?.road?.maps, scanned), "world");
-  const sidewalkScan = ribbonScan(road.materials?.sidewalk, useSurfaceScan(road.materials?.sidewalk?.maps, scanned), "frame");
-  const curbScan = ribbonScan(road.materials?.curb, useSurfaceScan(road.materials?.curb?.maps, scanned), "frame");
+  const roadScanState = useSurfaceScan(road.materials?.road?.maps, scanned);
+  const sidewalkScanState = useSurfaceScan(road.materials?.sidewalk?.maps, scanned);
+  const curbScanState = useSurfaceScan(road.materials?.curb?.maps, scanned);
+  const roadScan = ribbonScan(road.materials?.road, roadScanState.textures, "world");
+  const sidewalkScan = ribbonScan(road.materials?.sidewalk, sidewalkScanState.textures, "frame");
+  const curbScan = ribbonScan(road.materials?.curb, curbScanState.textures, "frame");
+  const scansPending = roadScanState.pending || sidewalkScanState.pending || curbScanState.pending;
   const asphaltMaterial = useSurfaceRibbonMaterial(
     style === null
       ? null
@@ -376,7 +380,9 @@ export function RoadRibbons({
 
   if (asphalt === null) return null;
   return (
-    <group>
+    // Hidden until its scans answer: the cover is up meanwhile, and a visible road would have the
+    // warmup link its procedural programs only for the scanned ones to replace them.
+    <group visible={!scansPending}>
       <mesh geometry={asphalt} receiveShadow {...(asphaltMaterial === null ? {} : { material: asphaltMaterial })}>
         {asphaltMaterial === null ? <meshStandardMaterial color={road.color} roughness={0.95} metalness={0} side={DoubleSide} /> : null}
       </mesh>

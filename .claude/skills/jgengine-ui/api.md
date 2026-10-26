@@ -2763,7 +2763,7 @@
 - `DEFAULT_MODEL_TRIANGLE_BUDGET` (const): const DEFAULT_MODEL_TRIANGLE_BUDGET: 100000 — Per-model triangle ceiling before the loader warns. A prop is a few thousand triangles; a hero rig tens of thousands.
 - `HeavyModelRecord` (interface): interface HeavyModelRecord — One over-budget model as {@link heavyModels} reports it: the URL the loader fetched, its triangle count, and the budget it exceeded.
 - `MissingModelRecord` (interface): interface MissingModelRecord — A model the loader could not load and replaced with a placeholder box.
-- `ModelLoaderConfig` (interface): interface ModelLoaderConfig — CDN-backed decoder configuration for compressed model and texture assets.
+- `ModelLoaderConfig` (interface): interface ModelLoaderConfig — Where the Draco decoder and KTX2 (Basis) transcoder load from. Left out, each comes from the game's own build (`decoderFiles.ts`); a path is a folder holding three's decoder files.
 - `configureModelLoaders` (function): function configureModelLoaders(options: ModelLoaderConfig = {}): Readonly<Required<ModelLoaderConfig>> — Configures shared Draco and KTX2 loaders. Repeated calls with the same paths are no-ops.
 - `detectKtx2Support` (function): function detectKtx2Support(renderer: THREE.WebGLRenderer): void — Detects GPU support for the configured KTX2 transcoder after a renderer exists.
 - `heavyModels` (function): function heavyModels(): readonly HeavyModelRecord[] — Every model the shared loader resolved whose triangle count exceeds the budget, in load order. A heavy prop is invisible in a screenshot and only shows up as a slow frame, so the loader measures each GLB as it lands and this exposes the verdict for `debug_snapshot` probes and smoke tests to assert against.
@@ -2856,8 +2856,9 @@
 ## @jgengine/shell/render/surfaceScanTextures
 
 - `SurfaceScanLoader` (type): type SurfaceScanLoader = (url: string, onLoad: (texture: THREE.Texture) => void, onError: () => void) => void — Loads one map; the default goes through {@link ImageTextureLoader}.
+- `SurfaceScanState` (interface): interface SurfaceScanState — A scan's maps as a component sees them.
 - `SurfaceScanTextures` (interface): interface SurfaceScanTextures — Decoded maps of one scanned surface, shared by every material that tiles it.
-- `useSurfaceScan` (function): function useSurfaceScan(maps: TerrainMaterialMaps | undefined, enabled = true): SurfaceScanTextures | null — React handle on a scan's maps: `null` while loading, after a load failure, or when `maps` is undefined or `enabled` is false (the `low` tier). Every component naming the same URLs shares one decode. The scene's shader warmup waits for the maps, so it links the scanned programs the first frame draws rather than the procedural ones they replace a moment later.
+- `useSurfaceScan` (function): function useSurfaceScan(maps: TerrainMaterialMaps | undefined, enabled = true): SurfaceScanState — React handle on a scan's maps. `maps` undefined or `enabled` false (the `low` tier) asks for none and is never pending. Every component naming the same URLs shares one decode. The scene's shader warmup waits for the maps, and a caller hides its surface while `pending`, so the warmup links only the scanned programs the first frame draws, not the procedural ones they replace.
 
 ## @jgengine/shell/render/testFixtures/proceduralTileLayer
 

@@ -74,9 +74,12 @@ describe("surface scan textures", () => {
     const warn = spyOn(console, "warn").mockImplementation(() => {});
     let changes = 0;
     const handle = acquireSurfaceScan({ color: "/m/b/color.jpg", normal: "/m/b/normal.jpg" }, () => (changes += 1));
+    expect(handle.failed()).toBe(false);
     loader.fail("/m/b/normal.jpg");
     loader.resolveAll();
     expect(handle.current()).toBeNull();
+    // Failed, not pending: the caller draws its procedural surface instead of waiting.
+    expect(handle.failed()).toBe(true);
     expect(changes).toBe(1);
     expect(warn).toHaveBeenCalledTimes(1);
     expect(String(warn.mock.calls[0]?.[0])).toContain("/m/b/normal.jpg");

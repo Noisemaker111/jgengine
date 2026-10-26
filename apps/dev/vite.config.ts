@@ -9,6 +9,7 @@ import { defineConfig, searchForWorkspaceRoot, type Plugin, type ProxyOptions } 
 import { parseDevProxyTable } from "../../packages/core/src/data/devProxy";
 import { tunableDiscoveryPlugin } from "../../packages/core/src/devtools/transformTunables";
 import { devServerMarkerPlugin } from "../../scripts/devServerMarker";
+import { startTextureCompression } from "../../games/shared/provisionAssets";
 import { devReportPlugin } from "./devReportPlugin";
 import { gamePublicPlugin } from "./gamePublicPlugin";
 
@@ -32,6 +33,17 @@ function devSave(servedDir: string | undefined): Plugin {
     async configureServer(server) {
       const save = (await server.ssrLoadModule(devSaveModule)) as typeof import("../../packages/node/src/devSavePlugin");
       save.devSavePlugin(save.gamesSrcDir(gamesDir, servedDir)).configureServer(server);
+    },
+  };
+}
+
+/** Encode the games' KTX2 texture twins in the background; `gamePublicPlugin` serves each as it lands. */
+function textureCompression(): Plugin {
+  return {
+    name: "jgengine-texture-compression",
+    apply: "serve",
+    configureServer() {
+      startTextureCompression(gamesDir);
     },
   };
 }
@@ -84,7 +96,7 @@ const devProxy: Record<string, string | ProxyOptions> = Object.fromEntries(
 );
 
 export default defineConfig({
-  plugins: [devServerMarkerPlugin({ kind: "runner" }), tunableDiscoveryPlugin(), devSave(servedGameDir), devReportPlugin(), gamePublicPlugin(servedGameDir, gamesDir, fileURLToPath(new URL("./public", import.meta.url))), react(), tailwindcss()],
+  plugins: [devServerMarkerPlugin({ kind: "runner" }), tunableDiscoveryPlugin(), devSave(servedGameDir), devReportPlugin(), gamePublicPlugin(servedGameDir, gamesDir, fileURLToPath(new URL("./public", import.meta.url))), textureCompression(), react(), tailwindcss()],
   clearScreen: false,
   build: {
     target: "es2022",

@@ -3,6 +3,7 @@ import { mkdirSync, mkdtempSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 
+import { contentKey, imageVariantName } from "../../games/shared/textureVariants";
 import { gamePublicRoots, resolveGamePublicFile } from "./gamePublicPlugin";
 
 function fixture() {
@@ -40,5 +41,18 @@ describe("a game's provisioned models reach the dev runner", () => {
     expect(resolveGamePublicFile("/../secret.txt", roots)).toBeNull();
     expect(resolveGamePublicFile("/models/%2e%2e/%2e%2e/secret.txt", roots)).toBeNull();
     expect(resolveGamePublicFile("/models", roots)).toBeNull();
+  });
+
+  test("an image asked for as KTX2 resolves to its twin once one is encoded", () => {
+    const { root, runner } = fixture();
+    const variants = join(root, ".ktx2");
+    mkdirSync(variants);
+    writeFileSync(join(runner, "models", "color.png"), "png");
+    const original = join(runner, "models", "color.png");
+    expect(resolveGamePublicFile("/models/color.png?ktx2=color,top", [runner], variants)).toBe(original);
+    const twin = join(variants, imageVariantName(contentKey(new TextEncoder().encode("png")), { role: "color", orient: "top" }));
+    writeFileSync(twin, "ktx2");
+    expect(resolveGamePublicFile("/models/color.png?ktx2=color,top", [runner], variants)).toBe(twin);
+    expect(resolveGamePublicFile("/models/color.png", [runner], variants)).toBe(original);
   });
 });

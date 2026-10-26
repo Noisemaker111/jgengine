@@ -1,12 +1,15 @@
 import { spawn } from "node:child_process";
-import { existsSync, readdirSync, readFileSync, statSync } from "node:fs";
-import { basename, join, resolve } from "node:path";
+import { createReadStream, existsSync, readdirSync, readFileSync, statSync } from "node:fs";
+import type { IncomingMessage, ServerResponse } from "node:http";
+import { basename, extname, join, normalize, resolve, sep } from "node:path";
 import { fileURLToPath } from "node:url";
 
 import { assetStoreRoot, dirHasEntries, linkFromStore, mainCheckoutOf, seedCandidates, seedStore } from "./assetStore";
+import { compressedVariant, textureVariantDir } from "./textureVariants";
 
 const assetsDir = fileURLToPath(new URL("../../packages/assets", import.meta.url));
 const provisionScript = fileURLToPath(new URL("../scripts/provision-assets.ts", import.meta.url));
+const compressScript = fileURLToPath(new URL("../scripts/compress-textures.ts", import.meta.url));
 
 /** The asset catalogs a game's source is matched against. */
 export interface AssetCatalogs {
@@ -146,16 +149,62 @@ export function shouldProvision(env: Readonly<Record<string, string | undefined>
 }
 
 /**
+ * Encode the KTX2 twins of these games' textures (every game when `games` is empty) in a detached,
+ * idle-priority process (`games:compress`), so a dev server starts at once and serves the twins
+ * from the load after they land. Skipped wherever provisioning is (CI).
+ */
+export function startTextureCompression(cwd: string, games: readonly string[] = []): void {
+  if (!shouldProvision(process.env)) return;
+  try {
+    spawn("bun", [compressScript, ...games], { cwd, detached: true, stdio: "ignore", windowsHide: true }).unref();
+  } catch {
+    // No bun on PATH: the originals keep serving.
+  }
+}
+
+/** Connect middleware answering a `public/` request with its KTX2 twin when the store has one (`textureVariants.ts`). */
+export function textureVariantMiddleware(publicDir: string, variantDir: string) {
+  const base = resolve(publicDir);
+  return (req: IncomingMessage, res: ServerResponse, next: () => void): void => {
+    if (req.method !== "GET" && req.method !== "HEAD") return next();
+    const [target = ""] = (req.url ?? "").split("#", 1);
+    const query = target.indexOf("?");
+    let file: string;
+    try {
+      file = resolve(base, normalize(decodeURIComponent(query < 0 ? target : target.slice(0, query))).replace(/^[\\/]+/, ""));
+    } catch {
+      return next();
+    }
+    if (!file.startsWith(base + sep) || !existsSync(file) || !statSync(file).isFile()) return next();
+    const variant = compressedVariant(file, query < 0 ? "" : target.slice(query + 1), variantDir);
+    if (variant === null) return next();
+    const types: Record<string, string> = { ".ktx2": "image/ktx2", ".glb": "model/gltf-binary", ".gltf": "model/gltf+json" };
+    res.statusCode = 200;
+    res.setHeader("Content-Type", types[extname(variant)] ?? "application/octet-stream");
+    res.setHeader("Content-Length", String(statSync(variant).size));
+    if (req.method === "HEAD") return void res.end();
+    createReadStream(variant).pipe(res);
+  };
+}
+
+/**
  * Dev-only Vite plugin: before the game's dev server starts, pull any asset pack the game
  * references and does not have yet, so `bun run dev` on a fresh checkout shows real models instead
  * of placeholder boxes. `JG_DEV_PROVISION=0` skips it (offline work); CI skips it unless
- * `JG_DEV_PROVISION=1`, since a check booting a dev server must not wait on downloads.
+ * `JG_DEV_PROVISION=1`, since a check booting a dev server must not wait on downloads. Once the
+ * game is provisioned its textures' KTX2 twins are encoded in the background and served as they land.
  */
-export function viteProvisionAssets(): { name: string; apply: "serve"; configureServer(server: { config: { root: string } }): Promise<void> } {
+export function viteProvisionAssets(): {
+  name: string;
+  apply: "serve";
+  configureServer(server: { config: { root: string; publicDir: string }; middlewares: { use(handler: ReturnType<typeof textureVariantMiddleware>): void } }): Promise<void>;
+} {
   return {
     name: "jg-dev-provision-assets",
     apply: "serve",
     async configureServer(server) {
+      const repoRoot = resolve(server.config.root, "..", "..");
+      if (server.config.publicDir) server.middlewares.use(textureVariantMiddleware(server.config.publicDir, textureVariantDir(assetStoreRoot(repoRoot))));
       if (!shouldProvision(process.env)) return;
       // Vite runs under Node, which cannot load the asset catalogs' TypeScript source, so the work
       // runs in Bun: the same `games:provision` a lane would type.
@@ -166,6 +215,7 @@ export function viteProvisionAssets(): { name: string; apply: "serve"; configure
         child.once("exit", (code) => resolve(code === 0));
       });
       if (!ok) console.error(`dev: some models are not on disk and will show as named MISSING boxes; run: bun run games:provision ${game}`);
+      startTextureCompression(server.config.root, [game]);
     },
   };
 }

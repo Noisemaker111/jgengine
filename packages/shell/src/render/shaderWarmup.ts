@@ -1068,7 +1068,12 @@ export function createShaderWarmup(options: ShaderWarmupOptions): ShaderWarmup {
     for (const { target, linked } of variants()) {
       const due = list.filter((object) => isDrawable(object) && linked.get(object) !== stamp(object));
       for (const batch of batchByProgram(due, programsPerBatch)) {
+        const members = [...batch];
+        const planned = members.map(stamp);
         jobs.push(() => {
+          // A material swapped in since the plan (a scan landing mid-round) has not met the scene's
+          // patches (cascaded shadows, wetness) yet; linked now, it would be linked again patched.
+          if (members.some((object, index) => stamp(object) !== planned[index])) runPreparers(options.scene);
           withTarget(target, () => compileObjects(options.renderer, options.scene, options.camera, batch));
           for (const object of batch) linked.set(object, stamp(object));
         });

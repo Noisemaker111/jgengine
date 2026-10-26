@@ -59,6 +59,7 @@
     "release": "bun scripts/release.ts",
     "deploy:site": "bun scripts/deploy-site.ts",
     "games:provision": "bun games/scripts/provision-assets.ts",
+    "games:compress": "bun games/scripts/compress-textures.ts",
     "games:capabilities": "bun games/scripts/capabilities-tools.ts"
   },
   "devDependencies": {
@@ -66,6 +67,8 @@
     "@types/bun": "^1.4.4",
     "@typescript/native-preview": "^7.0.0-dev.20260705.1",
     "gifenc": "^1.0.3",
+    "jpeg-js": "0.4.4",
+    "ktx2-encoder": "0.6.0",
     "playwright-core": "^1.50.0",
     "ts-morph": "^28.0.0",
     "typescript": "^5.9.3",

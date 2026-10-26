@@ -382,30 +382,117 @@ export class DiagnosticGLTFLoader extends GLTFLoader {
   }
 }
 
-/** CDN-backed decoder configuration for compressed model and texture assets. */
+/**
+ * Where the Draco decoder and KTX2 (Basis) transcoder load from. Left out, each comes from the
+ * game's own build (`decoderFiles.ts`); a path is a folder holding three's decoder files.
+ */
 export interface ModelLoaderConfig {
   dracoDecoderPath?: string;
   ktx2TranscoderPath?: string;
 }
 
-const DEFAULT_DRACO_DECODER_PATH = "https://cdn.jsdelivr.net/npm/three@0.182.0/examples/jsm/libs/draco/";
-const DEFAULT_KTX2_TRANSCODER_PATH = "https://cdn.jsdelivr.net/npm/three@0.182.0/examples/jsm/libs/basis/";
+/** The decoder path meaning "the copy bundled with the build". */
+const BUNDLED_DECODERS = "";
+
+/** The bundled decoder files' URLs, filled in by {@link bundledDecodersReady}. */
+const bundledUrls: Record<string, string> = {};
+let bundledPending: Promise<void> | undefined;
+
+/**
+ * Loads the list of bundled decoder URLs (`decoderFiles.ts`) on first need. It is imported
+ * dynamically because its `?url` imports exist only in a bundler: importing the engine in plain
+ * Node (a test, a tool) must not load them.
+ */
+function bundledDecodersReady(): Promise<void> {
+  bundledPending ??= import("./decoderFiles").then((module) => {
+    Object.assign(bundledUrls, module.DECODER_FILES);
+  });
+  return bundledPending;
+}
+
+/**
+ * A loading manager that answers the decoder file names with their bundled URLs and hands
+ * everything else (and its progress) to `THREE.DefaultLoadingManager`, as the loaders' default
+ * manager would.
+ */
+function bundledDecoderManager(): THREE.LoadingManager {
+  const base = THREE.DefaultLoadingManager;
+  const manager = new THREE.LoadingManager();
+  manager.resolveURL = (url) => bundledUrls[url] ?? base.resolveURL(url);
+  manager.itemStart = (url) => base.itemStart(url);
+  manager.itemEnd = (url) => base.itemEnd(url);
+  manager.itemError = (url) => base.itemError(url);
+  manager.getHandler = (file) => base.getHandler(file);
+  return manager;
+}
+
+type LibraryLoader = { _loadLibrary(url: string, responseType: string): Promise<unknown> };
+
+/** A Draco loader whose decoder files come from the build: each fetch waits for their URLs. */
+class BundledDRACOLoader extends DRACOLoader {
+  constructor() {
+    super(bundledDecoderManager());
+    this.setDecoderPath(BUNDLED_DECODERS);
+    const load = (DRACOLoader.prototype as unknown as LibraryLoader)._loadLibrary;
+    (this as unknown as LibraryLoader)._loadLibrary = (url, responseType) => bundledDecodersReady().then(() => load.call(this, url, responseType));
+  }
+}
+
+/**
+ * A KTX2 loader that holds a load until a renderer has told it which GPU formats to transcode to,
+ * instead of throwing: model and map loads can start (a preload, a cached texture group) before
+ * the canvas reports its renderer.
+ */
+class RendererKTX2Loader extends KTX2Loader {
+  private markDetected!: () => void;
+  readonly detected = new Promise<void>((resolve) => {
+    this.markDetected = resolve;
+  });
+  isDetected = false;
+
+  /** `bundled`: the transcoder comes from the build, so detection also waits for its URLs. */
+  constructor(private readonly bundled: boolean) {
+    super(bundled ? bundledDecoderManager() : undefined);
+  }
+
+  override detectSupport(renderer: THREE.WebGLRenderer): this {
+    super.detectSupport(renderer);
+    const ready = this.bundled ? bundledDecodersReady() : Promise.resolve();
+    // A failed import still releases the held loads, so they report the missing transcoder.
+    void ready.catch(() => {}).then(() => {
+      this.isDetected = true;
+      this.markDetected();
+    });
+    return this;
+  }
+
+  override load(url: string, onLoad: (texture: THREE.CompressedTexture) => void, onProgress?: (event: ProgressEvent) => void, onError?: (error: unknown) => void): void {
+    if (this.isDetected) return super.load(url, onLoad, onProgress, onError);
+    void this.detected.then(() => super.load(url, onLoad, onProgress, onError));
+  }
+
+  override parse(buffer: ArrayBuffer, onLoad?: (texture: THREE.CompressedTexture) => void, onError?: (error: unknown) => void): void {
+    if (this.isDetected) return super.parse(buffer, onLoad, onError);
+    void this.detected.then(() => super.parse(buffer, onLoad, onError));
+  }
+}
 
 let configuredModelLoaders: Readonly<Required<ModelLoaderConfig>> | undefined;
-let ktx2Loader: KTX2Loader | undefined;
+let ktx2Loader: RendererKTX2Loader | undefined;
 const ktx2DetectedRenderers = new WeakMap<THREE.WebGLRenderer, KTX2Loader>();
 
 /** Configures shared Draco and KTX2 loaders. Repeated calls with the same paths are no-ops. */
 export function configureModelLoaders(options: ModelLoaderConfig = {}): Readonly<Required<ModelLoaderConfig>> {
   const next = {
-    dracoDecoderPath: options.dracoDecoderPath ?? DEFAULT_DRACO_DECODER_PATH,
-    ktx2TranscoderPath: options.ktx2TranscoderPath ?? DEFAULT_KTX2_TRANSCODER_PATH,
+    dracoDecoderPath: options.dracoDecoderPath ?? BUNDLED_DECODERS,
+    ktx2TranscoderPath: options.ktx2TranscoderPath ?? BUNDLED_DECODERS,
   };
   if (configuredModelLoaders?.dracoDecoderPath === next.dracoDecoderPath && configuredModelLoaders.ktx2TranscoderPath === next.ktx2TranscoderPath) {
     return configuredModelLoaders;
   }
-  const draco = new DRACOLoader().setDecoderPath(next.dracoDecoderPath);
-  ktx2Loader = new KTX2Loader().setTranscoderPath(next.ktx2TranscoderPath);
+  const draco = next.dracoDecoderPath === BUNDLED_DECODERS ? new BundledDRACOLoader() : new DRACOLoader().setDecoderPath(next.dracoDecoderPath);
+  ktx2Loader?.dispose();
+  ktx2Loader = new RendererKTX2Loader(next.ktx2TranscoderPath === BUNDLED_DECODERS).setTranscoderPath(next.ktx2TranscoderPath);
   sharedGltfLoader.setDRACOLoader(draco);
   sharedGltfLoader.setKTX2Loader(ktx2Loader);
   configuredModelLoaders = next;
@@ -418,6 +505,11 @@ export function detectKtx2Support(renderer: THREE.WebGLRenderer): void {
   if (ktx2DetectedRenderers.get(renderer) === ktx2Loader) return;
   ktx2Loader?.detectSupport(renderer);
   ktx2DetectedRenderers.set(renderer, ktx2Loader!);
+}
+
+/** Whether a renderer has told the shared KTX2 transcoder its GPU formats, so a KTX2 map can be asked for. @internal */
+export function ktx2Detected(): boolean {
+  return ktx2Loader?.isDetected === true;
 }
 
 /** Shared transcoder for authored material maps; GPU support is detected by the canvas. @internal */
