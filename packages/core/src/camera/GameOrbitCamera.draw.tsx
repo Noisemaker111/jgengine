@@ -11,6 +11,7 @@ import {
   compensatedFov,
   ORBIT_CAMERA_FRAME_PRIORITY,
   orbitFollowStep,
+  orbitTurnTo,
   orbitYawFromCamera,
   resolveFollowTargetFromPosition,
   resolveOrbitCameraConfig,
@@ -96,6 +97,11 @@ export function GameOrbitCamera({
       controls.target.set(runtimeRef.current.target.x, runtimeRef.current.target.y, runtimeRef.current.target.z);
     }
 
+    const turn = ctx.camera.takeTurnTo();
+    if (turn !== null) {
+      runtimeRef.current = orbitTurnTo(runtimeRef.current, turn);
+      camera.position.set(runtimeRef.current.camera.x, runtimeRef.current.camera.y, runtimeRef.current.camera.z);
+    }
     const runtime = runtimeRef.current;
     const previousTarget = runtime.target;
     const desiredTarget = resolveFollowTarget?.(entity) ?? resolveFollowTargetFromPosition(entity.position, config);

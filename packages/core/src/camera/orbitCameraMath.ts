@@ -131,6 +131,19 @@ export interface OrbitFollowRuntimeState {
   lockedDistance: number | null;
 }
 
+/**
+ * Swing an orbit camera round its target onto a heading (the {@link orbitYawFromCamera} convention), keeping
+ * its distance and height: what `ctx.camera.turnTo` does to the third-person camera after a teleport.
+ * @internal
+ */
+export function orbitTurnTo(state: OrbitFollowRuntimeState, yaw: number): OrbitFollowRuntimeState {
+  const horizontal = Math.hypot(state.camera.x - state.target.x, state.camera.z - state.target.z);
+  return {
+    ...state,
+    camera: { x: state.target.x - horizontal * Math.sin(yaw), y: state.camera.y, z: state.target.z - horizontal * Math.cos(yaw) },
+  };
+}
+
 /** Frame-rate independent exponential smoothing factor in [0, 1].
  * @internal
  */

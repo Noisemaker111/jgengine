@@ -4,6 +4,7 @@ import {
   compensatedFov,
   DEFAULT_ORBIT_CAMERA,
   orbitFollowStep,
+  orbitTurnTo,
   orbitYawFromCamera,
   resolveFollowTargetFromPosition,
   resolveOrbitCameraConfig,
@@ -22,6 +23,17 @@ describe("orbitYawFromCamera", () => {
 
   test("camera west of target yields forward +X", () => {
     expect(orbitYawFromCamera(-10, 0, 0, 0)).toBeCloseTo(Math.PI / 2);
+  });
+});
+
+describe("orbitTurnTo", () => {
+  test("swings the camera round its target onto the heading, keeping distance and height", () => {
+    const state = { target: { x: 5, y: 2, z: 5 }, camera: { x: 5, y: 6, z: -5 }, lockedDistance: null };
+    const turned = orbitTurnTo(state, 2.45);
+    expect(orbitYawFromCamera(turned.camera.x, turned.camera.z, 5, 5)).toBeCloseTo(2.45, 9);
+    expect(Math.hypot(turned.camera.x - 5, turned.camera.z - 5)).toBeCloseTo(10, 9);
+    expect(turned.camera.y).toBe(6);
+    expect(turned.target).toEqual(state.target);
   });
 });
 

@@ -447,6 +447,8 @@ export function ShoulderRig(props: RigProps) {
   }, [domElement, sensitivity, props.yawRef, props.pitchRef]);
 
   useFrame((_, dt) => {
+    const turn = ctx.camera.takeTurnTo();
+    if (turn !== null) props.yawRef.current = turn;
     const sample = readFollow(ctx, followId);
     const follow = sample?.pos ?? { x: 0, y: 0, z: 0 };
     const weapon = followId === null ? null : (props.config?.weapon?.(followId) ?? null);
@@ -561,6 +563,8 @@ export function ChaseRig(props: RigProps) {
       props.yawRef.current = resolveChaseHeading(merged, entity?.rotationY ?? 0, undefined, props.config?.initialYaw);
       inputSeededRef.current = true;
     }
+    const turn = ctx.camera.takeTurnTo();
+    if (turn !== null) props.yawRef.current = turn;
     const yaw = resolveChaseHeading(merged, entity?.rotationY ?? 0, props.yawRef.current);
     const v = entity?.velocity;
     const published = v !== undefined && (v[0] !== 0 || v[1] !== 0 || v[2] !== 0);

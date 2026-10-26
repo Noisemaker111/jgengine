@@ -13959,115 +13959,231 @@
       }
     },
     {
-      "id": "cave_central_cave",
-      "kind": "cave",
-      "label": "Central Cave",
+      "id": "creature_spawn_cave_central_cave",
+      "kind": "creature_spawn",
+      "label": "Central Cave dwellers",
       "position": {
-        "x": -93,
-        "y": 5.8,
-        "z": -255
+        "x": -135.9,
+        "y": 0,
+        "z": -246.5
       },
       "meta": {
-        "lat": 41.5,
-        "lon": 46.9
+        "species": [
+          {
+            "species": "araneo",
+            "weight": 30
+          },
+          {
+            "species": "pulmonoscorpius",
+            "weight": 20
+          },
+          {
+            "species": "titanoboa",
+            "weight": 10
+          }
+        ],
+        "count": 3,
+        "radius": 7
       }
     },
     {
-      "id": "cave_north_west_cave",
-      "kind": "cave",
-      "label": "North West Cave",
+      "id": "creature_spawn_cave_north_west_cave",
+      "kind": "creature_spawn",
+      "label": "North West Cave dwellers",
       "position": {
-        "x": -930,
-        "y": 4.6,
-        "z": -924
+        "x": -972.9,
+        "y": 0,
+        "z": -932.5
       },
       "meta": {
-        "lat": 19.2,
-        "lon": 19
+        "species": [
+          {
+            "species": "araneo",
+            "weight": 25
+          },
+          {
+            "species": "megalania",
+            "weight": 20
+          },
+          {
+            "species": "pulmonoscorpius",
+            "weight": 15
+          }
+        ],
+        "count": 3,
+        "radius": 7
       }
     },
     {
-      "id": "cave_lower_south_cave",
-      "kind": "cave",
-      "label": "Lower South Cave",
+      "id": "creature_spawn_cave_lower_south_cave",
+      "kind": "creature_spawn",
+      "label": "Lower South Cave dwellers",
       "position": {
-        "x": 105,
-        "y": 6.9,
-        "z": 906
+        "x": 121.7,
+        "y": 0,
+        "z": 865.6
       },
       "meta": {
-        "lat": 80.2,
-        "lon": 53.5
+        "species": [
+          {
+            "species": "araneo",
+            "weight": 30
+          },
+          {
+            "species": "arthropleura",
+            "weight": 20
+          },
+          {
+            "species": "pulmonoscorpius",
+            "weight": 15
+          }
+        ],
+        "count": 3,
+        "radius": 7
       }
     },
     {
-      "id": "cave_north_east_cave",
-      "kind": "cave",
-      "label": "North East Cave",
+      "id": "creature_spawn_cave_north_east_cave",
+      "kind": "creature_spawn",
+      "label": "North East Cave dwellers",
       "position": {
-        "x": 1088.4,
-        "y": 7.1,
-        "z": -1107.3
+        "x": 1104.6,
+        "y": 0,
+        "z": -1131.5
       },
       "meta": {
-        "lat": 14.7,
-        "lon": 85.4
+        "species": [
+          {
+            "species": "megalania",
+            "weight": 25
+          },
+          {
+            "species": "araneo",
+            "weight": 20
+          },
+          {
+            "species": "arthropleura",
+            "weight": 20
+          }
+        ],
+        "count": 5,
+        "radius": 7
       }
     },
     {
-      "id": "cave_upper_south_cave",
-      "kind": "cave",
-      "label": "Upper South Cave",
+      "id": "creature_spawn_cave_upper_south_cave",
+      "kind": "creature_spawn",
+      "label": "Upper South Cave dwellers",
       "position": {
-        "x": 183,
-        "y": 3.8,
-        "z": 549
+        "x": 152.1,
+        "y": 0,
+        "z": 579.9
       },
       "meta": {
-        "lat": 68.3,
-        "lon": 56.1
+        "species": [
+          {
+            "species": "sarco",
+            "weight": 20
+          },
+          {
+            "species": "titanoboa",
+            "weight": 20
+          },
+          {
+            "species": "megalania",
+            "weight": 15
+          }
+        ],
+        "count": 3,
+        "radius": 7
       }
     },
     {
-      "id": "cave_lava_cave",
-      "kind": "cave",
-      "label": "Lava Cave",
+      "id": "creature_spawn_cave_lava_cave",
+      "kind": "creature_spawn",
+      "label": "Lava Cave dwellers",
       "position": {
-        "x": 1083,
-        "y": 6.9,
-        "z": 618
+        "x": 1041.8,
+        "y": 0,
+        "z": 576.8
       },
       "meta": {
-        "lat": 70.6,
-        "lon": 86.1
+        "species": [
+          {
+            "species": "arthropleura",
+            "weight": 25
+          },
+          {
+            "species": "megalania",
+            "weight": 20
+          },
+          {
+            "species": "pulmonoscorpius",
+            "weight": 15
+          }
+        ],
+        "count": 5,
+        "radius": 7
       }
     },
     {
-      "id": "cave_swamp_cave",
-      "kind": "cave",
-      "label": "Swamp Cave",
+      "id": "creature_spawn_cave_swamp_cave",
+      "kind": "creature_spawn",
+      "label": "Swamp Cave dwellers",
       "position": {
-        "x": -384,
-        "y": 10.3,
-        "z": 378
+        "x": -353.1,
+        "y": 0,
+        "z": 408.9
       },
       "meta": {
-        "lat": 62.6,
-        "lon": 37.2
+        "species": [
+          {
+            "species": "titanoboa",
+            "weight": 25
+          },
+          {
+            "species": "sarco",
+            "weight": 20
+          },
+          {
+            "species": "araneo",
+            "weight": 15
+          },
+          {
+            "species": "megalania",
+            "weight": 10
+          }
+        ],
+        "count": 3,
+        "radius": 7
       }
     },
     {
-      "id": "cave_snow_cave",
-      "kind": "cave",
-      "label": "Snow Cave",
+      "id": "creature_spawn_cave_snow_cave",
+      "kind": "creature_spawn",
+      "label": "Snow Cave dwellers",
       "position": {
-        "x": -540,
-        "y": 7,
-        "z": -618
+        "x": -545.7,
+        "y": 0,
+        "z": -646.6
       },
       "meta": {
-        "lat": 29.4,
-        "lon": 32
+        "species": [
+          {
+            "species": "direwolf",
+            "weight": 25
+          },
+          {
+            "species": "megalania",
+            "weight": 15
+          },
+          {
+            "species": "araneo",
+            "weight": 15
+          }
+        ],
+        "count": 5,
+        "radius": 7
       }
     }
   ],
@@ -37497,6 +37613,350 @@
             "weight": 1
           }
         ]
+      }
+    },
+    {
+      "id": "cave_central_cave",
+      "kind": "cave",
+      "label": "Central Cave",
+      "width": 7,
+      "points": [
+        {
+          "x": -93,
+          "y": 0,
+          "z": -255
+        },
+        {
+          "x": -104.2,
+          "y": 0,
+          "z": -256.2
+        },
+        {
+          "x": -114.1,
+          "y": 0,
+          "z": -250.8
+        },
+        {
+          "x": -124.7,
+          "y": 0,
+          "z": -247
+        },
+        {
+          "x": -135.9,
+          "y": 0,
+          "z": -246.5
+        }
+      ],
+      "meta": {
+        "lat": 41.5,
+        "lon": 46.9,
+        "artifact": "artifact_clever",
+        "height": 6,
+        "chamber": 12,
+        "cover": 6,
+        "hard": false,
+        "clearance": 16
+      }
+    },
+    {
+      "id": "cave_north_west_cave",
+      "kind": "cave",
+      "label": "North West Cave",
+      "width": 7,
+      "points": [
+        {
+          "x": -930,
+          "y": 0,
+          "z": -924
+        },
+        {
+          "x": -939.9,
+          "y": 0,
+          "z": -929.4
+        },
+        {
+          "x": -951.1,
+          "y": 0,
+          "z": -928.2
+        },
+        {
+          "x": -962.3,
+          "y": 0,
+          "z": -928.7
+        },
+        {
+          "x": -972.9,
+          "y": 0,
+          "z": -932.5
+        }
+      ],
+      "meta": {
+        "lat": 19.2,
+        "lon": 19,
+        "artifact": "artifact_skylord",
+        "height": 6,
+        "chamber": 12,
+        "cover": 6,
+        "hard": false,
+        "clearance": 16
+      }
+    },
+    {
+      "id": "cave_lower_south_cave",
+      "kind": "cave",
+      "label": "Lower South Cave",
+      "width": 7,
+      "points": [
+        {
+          "x": 105,
+          "y": 0,
+          "z": 906
+        },
+        {
+          "x": 112.2,
+          "y": 0,
+          "z": 897.3
+        },
+        {
+          "x": 113.2,
+          "y": 0,
+          "z": 886.1
+        },
+        {
+          "x": 115.9,
+          "y": 0,
+          "z": 875.2
+        },
+        {
+          "x": 121.7,
+          "y": 0,
+          "z": 865.6
+        }
+      ],
+      "meta": {
+        "lat": 80.2,
+        "lon": 53.5,
+        "artifact": "artifact_hunter",
+        "height": 6,
+        "chamber": 12,
+        "cover": 6,
+        "hard": false,
+        "clearance": 16
+      }
+    },
+    {
+      "id": "cave_north_east_cave",
+      "kind": "cave",
+      "label": "North East Cave",
+      "width": 7,
+      "points": [
+        {
+          "x": 1088.4,
+          "y": 0,
+          "z": -1107.3
+        },
+        {
+          "x": 1094.2,
+          "y": 0,
+          "z": -1112
+        },
+        {
+          "x": 1096.4,
+          "y": 0,
+          "z": -1119.2
+        },
+        {
+          "x": 1099.5,
+          "y": 0,
+          "z": -1126
+        },
+        {
+          "x": 1104.6,
+          "y": 0,
+          "z": -1131.5
+        }
+      ],
+      "meta": {
+        "lat": 14.7,
+        "lon": 85.4,
+        "artifact": "artifact_devourer",
+        "height": 6,
+        "chamber": 12,
+        "cover": 6,
+        "hard": true,
+        "clearance": 16
+      }
+    },
+    {
+      "id": "cave_upper_south_cave",
+      "kind": "cave",
+      "label": "Upper South Cave",
+      "width": 7,
+      "points": [
+        {
+          "x": 183,
+          "y": 0,
+          "z": 549
+        },
+        {
+          "x": 173,
+          "y": 0,
+          "z": 554.2
+        },
+        {
+          "x": 167.8,
+          "y": 0,
+          "z": 564.2
+        },
+        {
+          "x": 161.1,
+          "y": 0,
+          "z": 573.3
+        },
+        {
+          "x": 152.1,
+          "y": 0,
+          "z": 579.9
+        }
+      ],
+      "meta": {
+        "lat": 68.3,
+        "lon": 56.1,
+        "artifact": "artifact_pack",
+        "height": 6,
+        "chamber": 12,
+        "cover": 6,
+        "hard": false,
+        "clearance": 16
+      }
+    },
+    {
+      "id": "cave_lava_cave",
+      "kind": "cave",
+      "label": "Lava Cave",
+      "width": 7,
+      "points": [
+        {
+          "x": 1083,
+          "y": 0,
+          "z": 618
+        },
+        {
+          "x": 1076,
+          "y": 0,
+          "z": 604.7
+        },
+        {
+          "x": 1062.7,
+          "y": 0,
+          "z": 597.7
+        },
+        {
+          "x": 1050.7,
+          "y": 0,
+          "z": 588.8
+        },
+        {
+          "x": 1041.8,
+          "y": 0,
+          "z": 576.8
+        }
+      ],
+      "meta": {
+        "lat": 70.6,
+        "lon": 86.1,
+        "artifact": "artifact_massive",
+        "height": 6,
+        "chamber": 12,
+        "cover": 6,
+        "hard": true,
+        "clearance": 16
+      }
+    },
+    {
+      "id": "cave_swamp_cave",
+      "kind": "cave",
+      "label": "Swamp Cave",
+      "width": 7,
+      "points": [
+        {
+          "x": -384,
+          "y": 0,
+          "z": 378
+        },
+        {
+          "x": -378.8,
+          "y": 0,
+          "z": 388
+        },
+        {
+          "x": -368.8,
+          "y": 0,
+          "z": 393.2
+        },
+        {
+          "x": -359.7,
+          "y": 0,
+          "z": 399.9
+        },
+        {
+          "x": -353.1,
+          "y": 0,
+          "z": 408.9
+        }
+      ],
+      "meta": {
+        "lat": 62.6,
+        "lon": 37.2,
+        "artifact": "artifact_immune",
+        "height": 6,
+        "chamber": 12,
+        "cover": 6,
+        "hard": false,
+        "clearance": 16
+      }
+    },
+    {
+      "id": "cave_snow_cave",
+      "kind": "cave",
+      "label": "Snow Cave",
+      "width": 7,
+      "points": [
+        {
+          "x": -540,
+          "y": 0,
+          "z": -618
+        },
+        {
+          "x": -539.2,
+          "y": 0,
+          "z": -625.5
+        },
+        {
+          "x": -542.8,
+          "y": 0,
+          "z": -632.1
+        },
+        {
+          "x": -545.3,
+          "y": 0,
+          "z": -639.1
+        },
+        {
+          "x": -545.7,
+          "y": 0,
+          "z": -646.6
+        }
+      ],
+      "meta": {
+        "lat": 29.4,
+        "lon": 32,
+        "artifact": "artifact_strong",
+        "height": 6,
+        "chamber": 12,
+        "cover": 6,
+        "hard": true,
+        "clearance": 16
       }
     }
   ],

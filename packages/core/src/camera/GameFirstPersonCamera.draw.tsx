@@ -99,6 +99,8 @@ export function GameFirstPersonCamera({
   useFrame((_, dt) => {
     const entity = ctx.scene.entity.get(followId);
     if (entity === null) return;
+    const turn = ctx.camera.takeTurnTo();
+    if (turn !== null) yawRef.current = turn;
     if (!seededRef.current) {
       seededRef.current = true;
       yawRef.current = entity.rotationY;

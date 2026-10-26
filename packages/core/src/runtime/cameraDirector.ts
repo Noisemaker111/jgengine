@@ -196,6 +196,15 @@ export interface CameraDirector {
   panTo(point: { x: number; z: number }): void;
   /** Drain the point queued by {@link CameraDirector.panTo}, or null; the shell's RTS rig calls this once per frame. */
   takePanTo(): { x: number; z: number } | null;
+  /**
+   * Queue a one-shot turn of the following camera (orbit, chase, shoulder, first person) onto a heading in
+   * `rotationY` terms — after a teleport, a respawn or a cutscene, so the player looks where their body
+   * faces. A later call before the next frame wins. Transient: not part of {@link CameraDirector.snapshot}.
+   * @capability camera-turn-to point the player's camera along a heading once, e.g. after teleporting them
+   */
+  turnTo(yaw: number): void;
+  /** Drain the heading queued by {@link CameraDirector.turnTo}, or null; the mounted rig calls this once per frame. */
+  takeTurnTo(): number | null;
   snapshot(): CameraDirectorSnapshot;
   /** Invalid state throws before changing any camera field. */
   restore(state: CameraDirectorSnapshot): void;
@@ -213,6 +222,7 @@ export function createCameraDirector(): CameraDirector {
   let rigOverride: CameraRigOverride | null = null;
   let pendingFovKick = 0;
   let pendingPan: { x: number; z: number } | null = null;
+  let pendingTurn: number | null = null;
 
   function notify(): void {
     for (const listener of listeners) listener();
@@ -256,6 +266,14 @@ export function createCameraDirector(): CameraDirector {
       pendingPan = null;
       return pan;
     },
+    turnTo(yaw) {
+      if (Number.isFinite(yaw)) pendingTurn = yaw;
+    },
+    takeTurnTo() {
+      const turn = pendingTurn;
+      pendingTurn = null;
+      return turn;
+    },
     snapshot: () => JSON.parse(JSON.stringify({ ...(followEntity === undefined ? {} : { followEntityId: followEntity }), rig: rigOverride, cinematic: cinematicConfig, chase: chaseTuningPatch }, (_key, value) => {
       if (value === Infinity) return { $cameraNumber: "Infinity" };
       if (typeof value === "number" && !Number.isFinite(value)) throw new Error("invalid camera number");
@@ -270,6 +288,7 @@ export function createCameraDirector(): CameraDirector {
       chaseTuningPatch = decoded.chase;
       pendingFovKick = 0;
       pendingPan = null;
+      pendingTurn = null;
       notify();
     },
     reset() {
@@ -279,6 +298,7 @@ export function createCameraDirector(): CameraDirector {
       chaseTuningPatch = null;
       pendingFovKick = 0;
       pendingPan = null;
+      pendingTurn = null;
       notify();
     },
     subscribe(listener) {

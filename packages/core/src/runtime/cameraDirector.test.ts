@@ -28,6 +28,21 @@ describe("camera director FOV kicks", () => {
     expect(director.snapshot()).toEqual({ rig: null, cinematic: null, chase: null });
   });
 
+  test("turnTo queues one heading, the latest wins, draining clears it, and a pan never drains it", () => {
+    const director = createCameraDirector();
+    expect(director.takeTurnTo()).toBeNull();
+    director.turnTo(1);
+    director.turnTo(Number.NaN);
+    director.turnTo(2.45);
+    director.panTo({ x: 1, z: 1 });
+    expect(director.takePanTo()).toEqual({ x: 1, z: 1 });
+    expect(director.takeTurnTo()).toBe(2.45);
+    expect(director.takeTurnTo()).toBeNull();
+    director.turnTo(1);
+    director.reset();
+    expect(director.takeTurnTo()).toBeNull();
+  });
+
   test("carries a view switch through chase tuning", () => {
     const director = createCameraDirector();
     director.setChaseTuning({ distance: 8, view: "hood" });
