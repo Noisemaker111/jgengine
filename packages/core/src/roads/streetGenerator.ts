@@ -816,18 +816,60 @@ function loopSelfClearing(poly: StreetVec2[], clearance: number, gapMin: number)
   }
   const cum: number[] = [0];
   for (let i = 0; i < n; i += 1) cum.push(cum[i]! + seg[i]!);
+  if (!(clearance > 0)) return true;
+  // A uniform grid with one clearance per cell. Two edges closer than `clearance` always share a cell
+  // once the earlier one is grown by `clearance`, so only those pairs need the exact distance; every
+  // pair left out is farther apart than `clearance`, so the answer matches checking all pairs.
+  let minX = Infinity;
+  let minZ = Infinity;
+  let maxX = -Infinity;
+  let maxZ = -Infinity;
+  for (const p of poly) {
+    minX = Math.min(minX, p[0]);
+    minZ = Math.min(minZ, p[1]);
+    maxX = Math.max(maxX, p[0]);
+    maxZ = Math.max(maxZ, p[1]);
+  }
+  const col = (x: number): number => Math.floor((x - minX) / clearance);
+  const row = (z: number): number => Math.floor((z - minZ) / clearance);
+  const cols = col(maxX) + 1;
+  const rows = row(maxZ) + 1;
+  const cellKey = (c: number, r: number): number => c * rows + r;
+  const edgesIn = new Map<number, number[]>();
+  for (let i = 0; i < n; i += 1) {
+    const a = poly[i]!;
+    const b = poly[(i + 1) % n]!;
+    for (let c = col(Math.min(a[0], b[0])); c <= col(Math.max(a[0], b[0])); c += 1) {
+      for (let r = row(Math.min(a[1], b[1])); r <= row(Math.max(a[1], b[1])); r += 1) {
+        const key = cellKey(c, r);
+        const list = edgesIn.get(key);
+        if (list === undefined) edgesIn.set(key, [i]);
+        else list.push(i);
+      }
+    }
+  }
+  const lastQuery = new Int32Array(n);
   for (let i = 0; i < n; i += 1) {
     const a1 = poly[i]!;
     const a2 = poly[(i + 1) % n]!;
-    for (let j = i + 1; j < n; j += 1) {
-      // Edge-to-edge arc-length gap along the loop (0 for edges sharing a vertex, incl. the wrap).
-      const forwardGap = cum[j]! - cum[i + 1]!;
-      const backwardGap = perimeter - cum[j + 1]! + cum[i]!;
-      const arcGap = Math.min(forwardGap, backwardGap);
-      if (arcGap <= gapMin) continue; // same corner / neighboring corners — not a fold-back
-      const b1 = poly[j]!;
-      const b2 = poly[(j + 1) % n]!;
-      if (segSegDistance(a1, a2, b1, b2) < clearance) return false;
+    const c0 = Math.max(0, col(Math.min(a1[0], a2[0]) - clearance));
+    const c1 = Math.min(cols - 1, col(Math.max(a1[0], a2[0]) + clearance));
+    const r0 = Math.max(0, row(Math.min(a1[1], a2[1]) - clearance));
+    const r1 = Math.min(rows - 1, row(Math.max(a1[1], a2[1]) + clearance));
+    for (let c = c0; c <= c1; c += 1) {
+      for (let r = r0; r <= r1; r += 1) {
+        const list = edgesIn.get(cellKey(c, r));
+        if (list === undefined) continue;
+        for (const j of list) {
+          if (j <= i || lastQuery[j] === i + 1) continue;
+          lastQuery[j] = i + 1;
+          // Edge-to-edge arc-length gap along the loop (0 for edges sharing a vertex, incl. the wrap).
+          const forwardGap = cum[j]! - cum[i + 1]!;
+          const backwardGap = perimeter - cum[j + 1]! + cum[i]!;
+          if (Math.min(forwardGap, backwardGap) <= gapMin) continue; // same corner / neighboring corners
+          if (segSegDistance(a1, a2, poly[j]!, poly[(j + 1) % n]!) < clearance) return false;
+        }
+      }
     }
   }
   return true;
@@ -1956,20 +1998,23 @@ function levelForStreets(
   return levels;
 }
 
-/** Nearest distance from a point to a polyline (for keeping sidewalk vertices off the road surface). */
-function pointPolylineDist(px: number, pz: number, line: readonly StreetVec2[]): number {
-  let best = Infinity;
+/** True when some segment of the polyline lies closer than `reach` to the point (keeps sidewalk vertices off the road surface). */
+function pointNearPolyline(px: number, pz: number, line: readonly StreetVec2[], reach: number): boolean {
   for (let i = 0; i + 1 < line.length; i += 1) {
     const a = line[i]!;
     const b = line[i + 1]!;
+    // A segment whose box lies beyond `reach` on either axis cannot be that close, so skip its distance.
+    if (
+      Math.min(a[0], b[0]) - px > reach || px - Math.max(a[0], b[0]) > reach ||
+      Math.min(a[1], b[1]) - pz > reach || pz - Math.max(a[1], b[1]) > reach
+    ) continue;
     const abx = b[0] - a[0];
     const abz = b[1] - a[1];
     const l2 = abx * abx + abz * abz;
     const t = l2 === 0 ? 0 : Math.max(0, Math.min(1, ((px - a[0]) * abx + (pz - a[1]) * abz) / l2));
-    const d = Math.hypot(px - (a[0] + abx * t), pz - (a[1] + abz * t));
-    if (d < best) best = d;
+    if (Math.hypot(px - (a[0] + abx * t), pz - (a[1] + abz * t)) < reach) return true;
   }
-  return best;
+  return false;
 }
 
 /** 2D segment/segment proper-intersection test (shared endpoints don't count). */
@@ -2068,7 +2113,7 @@ function weldOffset(raw: StreetVec2[], centerline: readonly StreetVec2[], absd: 
       kept.push(pts[i]!);
       continue;
     }
-    if (pointPolylineDist(pts[i]![0], pts[i]![1], centerline) < floor) continue; // welded away
+    if (pointNearPolyline(pts[i]![0], pts[i]![1], centerline, floor)) continue; // welded away
     kept.push(pts[i]!);
   }
   pts = kept;
