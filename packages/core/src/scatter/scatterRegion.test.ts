@@ -263,3 +263,32 @@ describe("path corridor clearance", () => {
     expect(instances.some((i) => Math.abs(i.z) > 8)).toBe(true);
   });
 });
+
+describe("resolveScatter sharing", () => {
+  test("the renderer and gameplay get one placement list for one document and ground", () => {
+    const doc = { markers: [], volumes: [], paths: [{ id: "f", kind: "scatter", points: [{ x: 0, y: 0, z: 0 }, { x: 20, y: 0, z: 0 }, { x: 20, y: 0, z: 20 }, { x: 0, y: 0, z: 20 }], meta: { density: 0.2, seed: "s" } }] };
+    const ground = flatField();
+    expect(resolveScatter(doc, ground)).toBe(resolveScatter(doc, ground));
+    expect(resolveScatter(doc, ground, { autoAvoid: false })).not.toBe(resolveScatter(doc, ground));
+  });
+});
+
+test("an island-sized field grows its chunks so it never splits past the chunk budget", async () => {
+  const { scatterChunkSize } = await import("./InstancedScatter.draw");
+  const small = [{ x: 0, z: 0 }, { x: 100, z: 100 }];
+  expect(scatterChunkSize(small, 24, 400)).toBe(24);
+  const island = [{ x: -1000, z: -800 }, { x: 1000, z: 800 }];
+  const edge = scatterChunkSize(island, 24, 400);
+  expect(Math.ceil(2000 / edge) * Math.ceil(1600 / edge)).toBeLessThanOrEqual(441);
+  expect(edge).toBeGreaterThan(24);
+});
+
+test("hiding a placement rebuilds only the chunk it stood in", async () => {
+  const { hideScatterPlacements, scatterBatchInstances } = await import("./InstancedScatter.draw");
+  const at = (id: string, x: number) => ({ id, item: "tree", x, y: 0, z: 0, rotationY: 0, scale: 1 });
+  const batches = scatterBatchInstances([at("a", 1), at("b", 2), at("c", 100)] as never, 24);
+  const shown = hideScatterPlacements(batches, new Set(["a"]));
+  expect(shown).toHaveLength(2);
+  expect(shown.find((batch) => batch.instances.some((instance) => instance.id === "c"))).toBe(batches.find((batch) => batch.instances.some((instance) => instance.id === "c")));
+  expect(shown.flatMap((batch) => batch.instances.map((instance) => instance.id)).sort()).toEqual(["b", "c"]);
+});

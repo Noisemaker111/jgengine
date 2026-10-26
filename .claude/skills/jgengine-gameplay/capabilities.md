@@ -33,6 +33,10 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 - `createAgent` (function) · `import { createAgent } from "@jgengine/core/agents/agent"`
 - `createAgentSystem` (function) · `import { createAgentSystem } from "@jgengine/core/agents/system"`
 
+## ambient-temperature — air temperature from climate, time of day, weather, altitude, wetness and nearby heat
+
+- `ambientTemperature` (function) · `import { ambientTemperature } from "@jgengine/core/gameplay"`
+
 ## auction-book — timed bid auctions with escrowed bids, buyout, anti-snipe close extension, and collection-box settlement
 
 - `createAuctionBook` (function) · `import { createAuctionBook } from "@jgengine/core/gameplay"`
@@ -40,6 +44,10 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 ## best-record — persist personal-best times/scores with safe storage fallback
 
 - `createRecordBook` (function) · `import { createRecordBook } from "@jgengine/core/gameplay"`
+
+## body-temperature — hypothermia and hyperthermia from ambient temperature, insulation and fortitude, as vital drain and exposure damage
+
+- `bodyComfort` (function) · `import { bodyComfort } from "@jgengine/core/gameplay"`
 
 ## build — a serializable directed/undirected pair key that resists delimiter collisions
 
@@ -754,6 +762,10 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `createSaveSlots` (function) · `import { createSaveSlots } from "@jgengine/core/gameplay"`
 
+## scatter-harvest — strike scatter trees, rocks and bushes for tool-biased resources; spent ones vanish and regrow
+
+- `createScatterHarvest` (function) · `import { createScatterHarvest } from "@jgengine/core/harvest/scatterHarvest"`
+
 ## scoreboard — pure tie-aware ranking selector over the leaderboard model — standard/dense ranks, local-entry highlight, top-N, medal tokens for a reskinnable table
 
 - `rankLeaderboard` (function) · `import { rankLeaderboard } from "@jgengine/core/gameplay"`
@@ -847,6 +859,10 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 ## supply-demand-pricing — price goods from finite stock and live demand on a stated curve
 
 - `createMarket` (function) · `import { createMarket } from "@jgengine/core/gameplay"`
+
+## survival-vitals — linked survival meters — drain, delayed regen that costs other vitals, starvation links and knockout-style flags
+
+- `createVitals` (function) · `import { createVitals } from "@jgengine/core/gameplay"`
 
 ## system-schedule — compile fixed/frame/interval system ticks into deterministic ordered stages
 

@@ -1,255 +1,98 @@
 {
   "steps": [
     {
-      "assert": "/Washed ashore/i.test(document.body.innerText)",
+      "assert": "__jgProbe().health === 100 && __jgProbe().level === 1",
       "before": {
-        "is": "/Washed ashore/i.test(document.body.innerText)",
+        "is": "typeof __jgProbe === 'function' && __jgProbe().health > 0",
         "timeoutMs": 60000
       },
-      "note": "arrival: a run is up and the first story beat started by itself"
+      "note": "arrival: a fresh level-1 survivor washed up on the south beach"
+    },
+    {
+      "shot": "fernwild-beach",
+      "note": "spawn on the beach, looking inland at a palm"
+    },
+    {
+      "assert": "__jgProbe().aimStrike === 1 && __jgProbe().aimPick === 1",
+      "note": "arrival: a palm is in punching reach and beach stones lie at your feet"
+    },
+    {
+      "key": "mouse0",
+      "ms": 4000,
+      "after": {
+        "is": "__jgProbe().thatch >= 10 && __jgProbe().wood >= 1",
+        "timeoutMs": 6000
+      },
+      "note": "punch the palm: thatch and a little wood, like ARK's bare hands"
+    },
+    {
+      "shot": "fernwild-punched",
+      "note": "the gather feed and float text show what the fist got"
+    },
+    {
+      "key": "KeyE",
+      "ms": 120,
+      "after": {
+        "is": "__jgProbe().stone >= 1",
+        "timeoutMs": 3000
+      },
+      "note": "pick up stones by hand"
+    },
+    {
+      "key": "KeyI",
+      "ms": 120,
+      "after": {
+        "is": "__jgProbe().screen === 1",
+        "timeoutMs": 3000
+      },
+      "note": "open the survivor inventory"
+    },
+    {
+      "click": "Stone Pick",
+      "after": {
+        "is": "__jgProbe().crafting >= 1 || __jgProbe().picks >= 1",
+        "timeoutMs": 3000
+      },
+      "note": "craft a Stone Pick from 1 wood, 1 stone and 10 thatch"
+    },
+    {
+      "shot": "fernwild-crafting",
+      "note": "the inventory, stats and crafting queue"
+    },
+    {
+      "assert": "__jgProbe().picks >= 1",
+      "before": {
+        "is": "__jgProbe().picks >= 1",
+        "timeoutMs": 20000
+      },
+      "note": "arrival: the pick is made and sits in the hotbar"
+    },
+    {
+      "key": "KeyI",
+      "ms": 120,
+      "after": {
+        "is": "__jgProbe().screen === 0",
+        "timeoutMs": 3000
+      },
+      "note": "close the inventory"
     },
     {
       "key": "Digit1",
       "ms": 120,
+      "note": "equip the Stone Pick from hotbar slot 1"
+    },
+    {
+      "key": "mouse0",
+      "ms": 3000,
       "after": {
-        "is": "__jgProbe().built >= 1",
-        "timeoutMs": 8000
+        "is": "__jgProbe().thatch >= 8",
+        "timeoutMs": 5000
       },
-      "note": "build a palisade in front of you"
+      "note": "the pick strips thatch faster than a fist"
     },
     {
-      "key": "KeyN",
-      "ms": 120,
-      "after": {
-        "is": "__jgProbe().wave >= 1",
-        "timeoutMs": 10000
-      },
-      "note": "call the first hunt early"
-    },
-    {
-      "assert": "__jgProbe().alive > 0",
-      "note": "arrival: the hunt spawned at the lairs, read from the game's own session"
-    },
-    {
-      "wait": 25000
-    },
-    {
-      "key": "mouse0",
-      "ms": 120
-    },
-    {
-      "wait": 400
-    },
-    {
-      "key": "mouse0",
-      "ms": 120
-    },
-    {
-      "wait": 400
-    },
-    {
-      "key": "mouse0",
-      "ms": 120
-    },
-    {
-      "wait": 400
-    },
-    {
-      "key": "mouse0",
-      "ms": 120
-    },
-    {
-      "wait": 400
-    },
-    {
-      "key": "mouse0",
-      "ms": 120
-    },
-    {
-      "wait": 400
-    },
-    {
-      "key": "mouse0",
-      "ms": 120
-    },
-    {
-      "wait": 400
-    },
-    {
-      "key": "mouse0",
-      "ms": 120
-    },
-    {
-      "wait": 400
-    },
-    {
-      "key": "mouse0",
-      "ms": 120
-    },
-    {
-      "wait": 400
-    },
-    {
-      "key": "mouse0",
-      "ms": 120
-    },
-    {
-      "wait": 400
-    },
-    {
-      "key": "mouse0",
-      "ms": 120
-    },
-    {
-      "wait": 400
-    },
-    {
-      "key": "mouse0",
-      "ms": 120
-    },
-    {
-      "wait": 400
-    },
-    {
-      "key": "mouse0",
-      "ms": 120
-    },
-    {
-      "wait": 400
-    },
-    {
-      "key": "mouse0",
-      "ms": 120
-    },
-    {
-      "wait": 400
-    },
-    {
-      "key": "mouse0",
-      "ms": 120
-    },
-    {
-      "wait": 400
-    },
-    {
-      "key": "mouse0",
-      "ms": 120
-    },
-    {
-      "wait": 400
-    },
-    {
-      "key": "mouse0",
-      "ms": 120
-    },
-    {
-      "wait": 400
-    },
-    {
-      "key": "mouse0",
-      "ms": 120
-    },
-    {
-      "wait": 400
-    },
-    {
-      "key": "mouse0",
-      "ms": 120
-    },
-    {
-      "wait": 400
-    },
-    {
-      "key": "mouse0",
-      "ms": 120
-    },
-    {
-      "wait": 400
-    },
-    {
-      "key": "mouse0",
-      "ms": 120
-    },
-    {
-      "wait": 400
-    },
-    {
-      "key": "mouse0",
-      "ms": 120
-    },
-    {
-      "wait": 400
-    },
-    {
-      "key": "mouse0",
-      "ms": 120
-    },
-    {
-      "wait": 400
-    },
-    {
-      "key": "mouse0",
-      "ms": 120
-    },
-    {
-      "wait": 400
-    },
-    {
-      "key": "mouse0",
-      "ms": 120
-    },
-    {
-      "wait": 400
-    },
-    {
-      "key": "mouse0",
-      "ms": 120
-    },
-    {
-      "wait": 400
-    },
-    {
-      "key": "mouse0",
-      "ms": 120
-    },
-    {
-      "wait": 400
-    },
-    {
-      "key": "mouse0",
-      "ms": 120
-    },
-    {
-      "wait": 400
-    },
-    {
-      "key": "mouse0",
-      "ms": 120
-    },
-    {
-      "wait": 400
-    },
-    {
-      "key": "mouse0",
-      "ms": 120
-    },
-    {
-      "wait": 400
-    },
-    {
-      "key": "mouse0",
-      "ms": 120
-    },
-    {
-      "wait": 400
-    },
-    {
-      "assert": "__jgProbe().alive < 3",
-      "before": {
-        "is": "__jgProbe().alive < 3",
-        "timeoutMs": 30000
-      },
-      "note": "arrival: swings landed and attackers fell, so the fight is real and not only the spawn"
+      "shot": "fernwild-pick",
+      "note": "the pick in hand, the hotbar slot lit"
     }
   ]
 }

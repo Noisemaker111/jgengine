@@ -407,6 +407,29 @@ export function resolveScatter(
   doc: SceneDocumentLike,
   terrain?: ScatterTerrain,
   options: ResolveScatterOptions = {},
+): readonly ScatterInstance[] {
+  // The renderer and gameplay (harvest, navigation) resolve the same document on the same ground;
+  // a plain call shares one result instead of placing every tree twice.
+  const plain = Object.keys(options).length === 0;
+  const byTerrain = plain ? resolvedScatter.get(doc) : undefined;
+  const cached = byTerrain?.get(terrain ?? NO_TERRAIN);
+  if (cached !== undefined) return cached;
+  const resolved = resolveScatterUncached(doc, terrain, options);
+  if (plain) {
+    const map = byTerrain ?? new WeakMap<object, readonly ScatterInstance[]>();
+    map.set(terrain ?? NO_TERRAIN, resolved);
+    resolvedScatter.set(doc, map);
+  }
+  return resolved;
+}
+
+const NO_TERRAIN = {};
+const resolvedScatter = new WeakMap<object, WeakMap<object, readonly ScatterInstance[]>>();
+
+function resolveScatterUncached(
+  doc: SceneDocumentLike,
+  terrain: ScatterTerrain | undefined,
+  options: ResolveScatterOptions,
 ): ScatterInstance[] {
   const baseDiscs = options.avoid ?? [];
   const auto: AvoidMasks =

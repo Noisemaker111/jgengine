@@ -5,6 +5,7 @@ import type { TerrainMaterialMaps } from "../world/features";
 import { environment, island, road, terrain } from "../world/features";
 import { buildRoadRibbon, isOnRoad } from "../roads/roads";
 import {
+  withCoast,
   arenaField,
   composeIslandFields,
   createBiomeBandSampler,
@@ -790,5 +791,16 @@ describe("live road drape", () => {
     width = 10;
     for (const listener of listeners) listener();
     expect(field.sampleHeight(0, 4)).toBeCloseTo(flat + 0.2, 5);
+  });
+});
+
+describe("withCoast", () => {
+  test("keeps land inside the shore and sinks the sea floor beyond", () => {
+    const ground = withCoast(() => 20, { radius: 100, falloff: 20, shoreHeight: 1, seaFloor: -30, shelf: 50, wobble: 0 });
+    expect(ground(0, 0)).toBe(20);
+    expect(ground(100, 0)).toBeCloseTo(1, 5);
+    expect(ground(90, 0)).toBeGreaterThan(1);
+    expect(ground(90, 0)).toBeLessThan(20);
+    expect(ground(200, 0)).toBe(-30);
   });
 });

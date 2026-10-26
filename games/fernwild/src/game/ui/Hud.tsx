@@ -1,137 +1,138 @@
-import type { ReactNode } from "react";
-import { resolveActivePrompt } from "@jgengine/core/interaction/proximityPrompt";
+import type { CSSProperties, ReactNode } from "react";
+import { Hotbar } from "@jgengine/core/hud/hudReadouts.view";
 import { useGameStore } from "@jgengine/react/hooks";
-import { useGameContext } from "@jgengine/react/provider";
-import { ActionBar } from "@jgengine/core/hud/actionHud.view";
-import { KitResultScreen } from "@jgengine/core/ui/kit/kitFlow.view";
-import { KitCount, KitCounts, KitVitals, KitWaveClock } from "@jgengine/core/hud/kitHud.view";
-import { KitActionPrompt, KitPanel } from "@jgengine/core/ui/kit/uiKitRoot.view";
 import { HudSlots } from "@jgengine/shell/gameKit";
 
-import { continueGame } from "@jgengine/core/game/gameFlow";
-import { startNewGame } from "@jgengine/core/menu/gameFlowMenus.view";
-import { idea } from "../idea";
-import { campView, prompts } from "../prompts";
+import { openScreen } from "../screens";
+import { HOTBAR, survivorView, type SurvivorView } from "../survivor";
+import { itemIcon } from "./ItemIcon";
+import { InventoryScreen } from "./InventoryScreen";
 
 const same = <T,>(a: T, b: T) => JSON.stringify(a) === JSON.stringify(b);
 
-function useCamp() {
-  return useGameStore(campView, same);
+export function useSurvivor(): SurvivorView {
+  return useGameStore(survivorView, same);
 }
 
-function useHealth(id: string): { current: number; max: number } {
-  return useGameStore((ctx) => {
-    const stat = ctx.scene.entity.stats.get(id, "health");
-    return stat === null ? { current: 0, max: 1 } : { current: Math.round(stat.current), max: stat.max };
-  }, same);
+const COLORS = {
+  health: "#d8483f",
+  stamina: "#e7c84a",
+  food: "#d98a3a",
+  water: "#3fa0e0",
+  oxygen: "#9ad7f0",
+  weight: "#b9b0a0",
+  torpor: "#a45fd6",
+  xp: "#7ad06a",
+} as const;
+
+/** ARK's bottom-right column: one round gauge per pool, filling from the bottom, number beside it. */
+function Gauge({ id, label, value, max, warn }: { id: keyof typeof COLORS; label: string; value: number; max: number; warn?: boolean }): ReactNode {
+  const fill = max > 0 ? Math.max(0, Math.min(1, value / max)) : 0;
+  const color = COLORS[id];
+  return (
+    <div data-vital={id} style={{ display: "flex", alignItems: "center", gap: 8, justifyContent: "flex-end" }}>
+      <span style={{ fontSize: 12, fontVariantNumeric: "tabular-nums", opacity: 0.9, textShadow: "0 1px 2px #000" }}>
+        {label} {Math.floor(value)}/{Math.round(max)}
+      </span>
+      <div
+        style={{
+          width: 30,
+          height: 30,
+          borderRadius: "50%",
+          border: `2px solid ${warn === true ? "#ff5a4a" : "#0008"}`,
+          background: `linear-gradient(to top, ${color} ${fill * 100}%, #1a1712cc ${fill * 100}%)`,
+          boxShadow: "0 1px 4px #0009",
+        }}
+      />
+    </div>
+  );
 }
 
 function Vitals(): ReactNode {
-  const ctx = useGameContext();
-  const camp = useCamp();
-  const hero = useHealth(ctx.player.userId);
-  const home = useHealth("home");
-  const beat = idea.beats.find((entry) => entry.id === camp.mission?.missionId) ?? null;
-  const title = beat?.title ?? camp.next?.text ?? "";
+  const view = useSurvivor();
   return (
-    <KitVitals
-      eyebrow={idea.name}
-      vitals={[
-        { label: "You", value: hero.current, max: hero.max, lowAt: 0.35 },
-        { label: idea.home.label, value: home.current, max: home.max, tone: "accent", lowAt: 0.35 },
-      ]}
-      objective={beat === null && camp.next === null ? null : { id: beat?.id, label: idea.guide.name, title, goal: beat?.goal }}
+    <div style={{ display: "flex", flexDirection: "column", gap: 4, color: "#f2ead8", pointerEvents: "none" }}>
+      <div style={{ textAlign: "right", fontSize: 12, opacity: 0.85, textShadow: "0 1px 2px #000" }} data-temperature="">
+        {view.temperature}°C · {view.comfort === "comfortable" ? "" : view.comfort}
+      </div>
+      {view.torpor.value > 0 ? <Gauge id="torpor" label="Torpor" value={view.torpor.value} max={view.torpor.max} /> : null}
+      <Gauge id="health" label="Health" value={view.health.value} max={view.health.max} warn={view.health.value <= 30} />
+      <Gauge id="stamina" label="Stamina" value={view.stamina.value} max={view.stamina.max} />
+      <Gauge id="food" label="Food" value={view.food.value} max={view.food.max} warn={view.flags.includes("hungry")} />
+      <Gauge id="water" label="Water" value={view.water.value} max={view.water.max} warn={view.flags.includes("thirsty")} />
+      <Gauge id="weight" label="Weight" value={view.weight.value} max={view.weight.max} warn={view.encumbered} />
+      <Gauge id="xp" label={`Level ${view.level}`} value={view.xp - view.xpFrom} max={Math.max(1, view.xpNext - view.xpFrom)} />
+      {view.statPoints > 0 ? (
+        <div data-levelup="" style={{ textAlign: "right", color: "#9ef08a", fontWeight: 800, fontSize: 13, textShadow: "0 1px 2px #000" }}>
+          ▲ Level up — press I
+        </div>
+      ) : null}
+    </div>
+  );
+}
+
+const crosshair: CSSProperties = {
+  position: "absolute",
+  left: "50%",
+  top: "50%",
+  width: 6,
+  height: 6,
+  marginLeft: -3,
+  marginTop: -3,
+  borderRadius: "50%",
+  background: "#fff",
+  boxShadow: "0 0 0 1px #0008",
+  pointerEvents: "none",
+};
+
+/** The gather feed, ARK's "+3 Thatch" on the left. */
+function Feed(): ReactNode {
+  const view = useSurvivor();
+  return view.gain === null ? null : (
+    <div data-gain="" style={{ color: "#f4efe2", fontWeight: 700, fontSize: 15, textShadow: "0 1px 3px #000", pointerEvents: "none" }}>
+      +{view.gain}
+    </div>
+  );
+}
+
+function Bar(): ReactNode {
+  const view = useSurvivor();
+  return (
+    <Hotbar
+      inventoryId={HOTBAR}
+      {...(view.activeSlot === null ? {} : { activeSlot: view.activeSlot })}
+      keys={["1", "2", "3", "4", "5", "6", "7", "8", "9", "0"]}
+      itemIcon={itemIcon}
+      slotSize={48}
     />
   );
 }
 
-function Stockpile(): ReactNode {
-  const camp = useCamp();
+/** Under the crosshair, ARK's look-at prompt: what you would hit, and what E picks up. */
+function Prompt(): ReactNode {
+  const { aim } = useSurvivor();
+  if (aim.strike === null && aim.pick === null && !aim.water) return null;
   return (
-    <KitPanel variant="strip">
-      <KitCounts>
-        {camp.resources.map((resource) => (
-          <KitCount key={resource.id} id={resource.id} value={resource.amount} label={resource.label} />
-        ))}
-        {idea.allies.length > 0 ? <KitCount id="tamed" value={camp.tamed} label="tamed" /> : null}
-      </KitCounts>
-    </KitPanel>
+    <div data-aim="" style={{ position: "absolute", left: "50%", top: "calc(50% + 18px)", transform: "translateX(-50%)", textAlign: "center", color: "#f4efe2", fontSize: 13, fontWeight: 700, textShadow: "0 1px 3px #000", pointerEvents: "none", whiteSpace: "nowrap" }}>
+      {aim.strike === null ? null : <div>{aim.strike}</div>}
+      {aim.pick === null ? null : <div style={{ opacity: 0.9 }}>E · Harvest {aim.pick}</div>}
+      {aim.pick === null && aim.water ? <div style={{ opacity: 0.9 }}>E · Drink</div> : null}
+    </div>
   );
 }
 
-function WaveClock(): ReactNode {
-  const camp = useCamp();
+function Screens(): ReactNode {
+  const screen = useGameStore(openScreen);
   return (
-    <KitWaveClock
-      alarm={camp.raiding}
-      text={camp.raiding ? `${idea.wave} ${camp.wave} - ${camp.alive} left` : `${idea.wave} ${camp.wave + 1} in ${camp.duskIn}s`}
-      detail={camp.raiding ? `held ${camp.held}` : "N - call it early"}
-      banner={{ cue: camp.raiding ? camp.wave : null, title: `${idea.wave} ${camp.wave}`, subtitle: `Hold ${idea.home.label}`, tone: "bad" }}
-    />
+    <>
+      <div style={crosshair} />
+      {screen === null ? <Prompt /> : null}
+      {screen === null ? null : <InventoryScreen tab={screen} />}
+    </>
   );
 }
 
-function BuildBar(): ReactNode {
-  const ctx = useGameContext();
-  const camp = useCamp();
-  const have = Object.fromEntries(camp.resources.map((resource) => [resource.id, resource.amount]));
-  const active = usePrompt();
-  return (
-    <ActionBar
-      look="kit"
-      hotkeys={false}
-      prompt={active === null ? null : <KitActionPrompt action="interact" label={active} fallbackGlyph="E" />}
-      defs={idea.structures.map((structure, index) => ({
-        id: structure.id,
-        label: structure.label,
-        detail: Object.entries(structure.cost)
-          .map(([id, amount]) => `${amount} ${idea.resources.find((resource) => resource.id === id)?.label ?? id}`)
-          .join(" + "),
-        hotkey: String(index + 1),
-        disabled: Object.entries(structure.cost).some(([id, amount]) => (have[id] ?? 0) < amount),
-      }))}
-      progress={camp.building.map((order) => ({ id: order.id, label: order.label, value: order.progress }))}
-      onActivate={(id) => ctx.game.commands.run(`build${idea.structures.findIndex((structure) => structure.id === id) + 1}`, {})}
-    />
-  );
-}
-
-function usePrompt(): string | null {
-  return useGameStore((ctx) => {
-    const me = ctx.scene.entity.get(ctx.player.userId);
-    if (me === null) return null;
-    const hit = resolveActivePrompt({ x: me.position[0], z: me.position[2] }, prompts(ctx));
-    return hit === null || hit.prompt.display.kind !== "keybind" ? null : (hit.prompt.display.label ?? null);
-  });
-}
-
-function Ending(): ReactNode {
-  const ctx = useGameContext();
-  const camp = useCamp();
-  return (
-    <KitResultScreen
-      open={camp.fallen}
-      tone="bad"
-      eyebrow={`${idea.wave} ${camp.wave}`}
-      title={`${idea.home.label} has fallen`}
-      summary={`You held ${camp.held} ${idea.wave.toLowerCase()}${camp.held === 1 ? "" : "s"}.`}
-      stats={[
-        { label: `${idea.wave}s held`, value: camp.held },
-        { label: "Tamed", value: camp.tamed },
-      ]}
-      actions={[
-        { id: "retry", label: "Back to the last save", primary: true },
-        { id: "new", label: "New game" },
-      ]}
-      onAction={(id) => {
-        if (id === "retry") void continueGame(ctx);
-        else void startNewGame(ctx);
-      }}
-    />
-  );
-}
-
-/** Everything on screen while playing: four small panels at the edges, the end card over them. */
+/** ARK's layout: pools bottom-right, hotbar bottom-centre, gather feed left, crosshair centre. */
 export function Hud(): ReactNode {
-  return <HudSlots storageKey={idea.id} slots={{ topLeft: <Vitals />, top: <WaveClock />, topRight: <Stockpile />, bottom: <BuildBar /> }} overlay={<Ending />} />;
+  return <HudSlots storageKey="fernwild" slots={{ left: <Feed />, bottom: <Bar />, bottomRight: <Vitals /> }} overlay={<Screens />} />;
 }

@@ -797,6 +797,15 @@ export {
   type WorldInviteTarget,
 } from "./social/social";
 export {
+  ambientTemperature,
+  bodyComfort,
+  type AmbientInput,
+  type BodyComfort,
+  type ComfortBand,
+  type ComfortConfig,
+  type Insulation,
+} from "./survival/bodyTemperature";
+export {
   decayMeterMoodles,
   decayMeterSnapshot,
   decayMeterState,
@@ -808,6 +817,17 @@ export {
 } from "./survival/decayMeter";
 export { createMoodleStack, stackMoodles, type Moodle, type MoodleStack } from "./survival/moodle";
 export { createMultiRegionHealth, type MultiRegionHealth } from "./survival/regionHealth";
+export {
+  createVitals,
+  type VitalDef,
+  type VitalFlag,
+  type VitalFlagChange,
+  type VitalLink,
+  type VitalRateModifier,
+  type Vitals,
+  type VitalsState,
+  type VitalsTickOptions,
+} from "./survival/vitals";
 export {
   talentTreeView,
   talentTreeViewFrom,

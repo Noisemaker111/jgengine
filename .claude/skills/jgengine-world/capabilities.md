@@ -1029,6 +1029,10 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `createRvoCrowd` (function) · `import { createRvoCrowd } from "@jgengine/core/world"`
 
+## scatter-clearing — hide and restore individual scatter placements at runtime — felled trees, mined rocks
+
+- `createScatterClearing` (function) · `import { createScatterClearing } from "@jgengine/core/scatter/scatterClearing"`
+
 ## scatter-coverage — shared density/budget semantics for scatterable kinds
 
 - `ScatterCoverageKind` (type) · `import { ScatterCoverageKind } from "@jgengine/core/world"`
@@ -1203,6 +1207,10 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 ## targeted-order — pursue-a-target order with leash/standoff that ends when the target is gone
 
 - `defineTargetedOrder` (function) · `import { defineTargetedOrder } from "@jgengine/core/world"`
+
+## terrain-coast — shape any terrain into an island landmass with beaches, bays and a sea floor
+
+- `withCoast` (function) · `import { withCoast } from "@jgengine/core/terrain/terrain"`
 
 ## terrain-contours — iso-elevation contour lines that drape on sculpted terrain
 

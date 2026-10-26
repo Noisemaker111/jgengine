@@ -35,7 +35,7 @@ export const ScatterPreview = memo(function ScatterPreview({ api }: { api: Edito
     return { sampleHeight: baseGround.sampleHeight, sampleNormal: baseGround.sampleNormal };
   }, [snapshot, baseGround]);
 
-  const instances = useMemo<ScatterInstance[]>(
+  const instances = useMemo<readonly ScatterInstance[]>(
     () => resolveScatter({ markers, volumes, paths }, terrain),
     [markers, volumes, paths, terrain],
   );
