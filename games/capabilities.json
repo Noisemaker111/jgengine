@@ -192,9 +192,9 @@
     {
       "id": "adjust-setting-row",
       "packages": [
-        "@jgengine/react"
+        "@jgengine/core"
       ],
-      "module": "@jgengine/react/settings/settingsBlocks",
+      "module": "@jgengine/core/settings/settingsBlocks.view",
       "domain": "settings",
       "gameFacing": false,
       "probe": null,
@@ -1134,8 +1134,7 @@
     {
       "id": "camera-shake",
       "packages": [
-        "@jgengine/core",
-        "@jgengine/shell"
+        "@jgengine/core"
       ],
       "module": "@jgengine/core/camera/shake/cameraShake",
       "domain": "camera",
@@ -1146,9 +1145,9 @@
     {
       "id": "camera-shake-meter",
       "packages": [
-        "@jgengine/react"
+        "@jgengine/core"
       ],
-      "module": "@jgengine/react/camera/shake/cameraShake",
+      "module": "@jgengine/core/camera/shake/cameraShake.view",
       "domain": "camera",
       "gameFacing": false,
       "probe": null,
@@ -1763,9 +1762,9 @@
     {
       "id": "confirm-dialog",
       "packages": [
-        "@jgengine/react"
+        "@jgengine/core"
       ],
-      "module": "@jgengine/react/dialog/modals",
+      "module": "@jgengine/core/dialog/modals.view",
       "domain": "dialog",
       "gameFacing": false,
       "probe": null,
@@ -1818,9 +1817,9 @@
     {
       "id": "continue-pane",
       "packages": [
-        "@jgengine/react"
+        "@jgengine/core"
       ],
-      "module": "@jgengine/react/menu/gameMenuSaves",
+      "module": "@jgengine/core/menu/gameMenuSaves.view",
       "domain": "menu",
       "gameFacing": false,
       "probe": null,
@@ -2070,9 +2069,9 @@
     {
       "id": "credits-pane",
       "packages": [
-        "@jgengine/react"
+        "@jgengine/core"
       ],
-      "module": "@jgengine/react/menu/gameMenuSaves",
+      "module": "@jgengine/core/menu/gameMenuSaves.view",
       "domain": "menu",
       "gameFacing": false,
       "probe": null,
@@ -2548,9 +2547,9 @@
     {
       "id": "dialog-behavior",
       "packages": [
-        "@jgengine/react"
+        "@jgengine/core"
       ],
-      "module": "@jgengine/react/dialog/dialogBehavior",
+      "module": "@jgengine/core/dialog/dialogBehavior.view",
       "domain": "dialog",
       "gameFacing": false,
       "probe": null,
@@ -3664,9 +3663,9 @@
     {
       "id": "game-flow-ui",
       "packages": [
-        "@jgengine/react"
+        "@jgengine/core"
       ],
-      "module": "@jgengine/react/menu/gameFlowMenus",
+      "module": "@jgengine/core/menu/gameFlowMenus.view",
       "domain": "menu",
       "gameFacing": false,
       "probe": null,
@@ -3708,9 +3707,9 @@
     {
       "id": "game-menu",
       "packages": [
-        "@jgengine/react"
+        "@jgengine/core"
       ],
-      "module": "@jgengine/react/menu/gameMenu",
+      "module": "@jgengine/core/menu/gameMenu.view",
       "domain": "menu",
       "gameFacing": false,
       "probe": null,
@@ -3954,9 +3953,9 @@
     {
       "id": "haptics-route",
       "packages": [
-        "@jgengine/shell"
+        "@jgengine/core"
       ],
-      "module": "@jgengine/shell/haptics/hapticsRoute",
+      "module": "@jgengine/core/haptics/hapticsRoute.view",
       "domain": "haptics",
       "gameFacing": false,
       "probe": null,
@@ -4340,14 +4339,13 @@
     {
       "id": "hud-slots",
       "packages": [
-        "@jgengine/core",
-        "@jgengine/react"
+        "@jgengine/core"
       ],
-      "module": "@jgengine/react/inventory/slots",
-      "domain": "inventory",
+      "module": "@jgengine/core/hud/hudLayout.view",
+      "domain": "hud",
       "gameFacing": false,
       "probe": null,
-      "intent": "atomic themed equipment/weapon/armor/potion slot grids with painted icons"
+      "intent": "a play HUD of edge-pinned, player-movable panels in one component"
     },
     {
       "id": "hud-surface",
@@ -4639,9 +4637,9 @@
     {
       "id": "inventory-grid-hud",
       "packages": [
-        "@jgengine/react"
+        "@jgengine/core"
       ],
-      "module": "@jgengine/react/inventory/inventoryGrid",
+      "module": "@jgengine/core/inventory/inventoryGrid.view",
       "domain": "inventory",
       "gameFacing": false,
       "probe": null,
@@ -4848,9 +4846,9 @@
     {
       "id": "keybinding-menu",
       "packages": [
-        "@jgengine/react"
+        "@jgengine/core"
       ],
-      "module": "@jgengine/react/settings/keybindingMenu",
+      "module": "@jgengine/core/settings/keybindingMenu.view",
       "domain": "settings",
       "gameFacing": false,
       "probe": null,
@@ -5832,9 +5830,9 @@
     {
       "id": "menu-router",
       "packages": [
-        "@jgengine/react"
+        "@jgengine/core"
       ],
-      "module": "@jgengine/react/menu/menuRouter",
+      "module": "@jgengine/core/menu/menuRouter.view",
       "domain": "menu",
       "gameFacing": false,
       "probe": null,
@@ -5843,9 +5841,9 @@
     {
       "id": "menu-screen",
       "packages": [
-        "@jgengine/react"
+        "@jgengine/core"
       ],
-      "module": "@jgengine/react/menu/menuScreen",
+      "module": "@jgengine/core/menu/menuScreen.view",
       "domain": "menu",
       "gameFacing": false,
       "probe": null,
@@ -5854,9 +5852,9 @@
     {
       "id": "menu-sound",
       "packages": [
-        "@jgengine/react"
+        "@jgengine/core"
       ],
-      "module": "@jgengine/react/menu/gameMenuSound",
+      "module": "@jgengine/core/menu/gameMenuSound.view",
       "domain": "menu",
       "gameFacing": false,
       "probe": null,
@@ -5865,9 +5863,9 @@
     {
       "id": "menu-stack-reducer",
       "packages": [
-        "@jgengine/react"
+        "@jgengine/core"
       ],
-      "module": "@jgengine/react/menu/menuRouter",
+      "module": "@jgengine/core/menu/menuRouter.view",
       "domain": "menu",
       "gameFacing": false,
       "probe": null,
@@ -6093,9 +6091,9 @@
     {
       "id": "modal-host",
       "packages": [
-        "@jgengine/react"
+        "@jgengine/core"
       ],
-      "module": "@jgengine/react/dialog/modals",
+      "module": "@jgengine/core/dialog/modals.view",
       "domain": "dialog",
       "gameFacing": false,
       "probe": null,
@@ -6512,9 +6510,9 @@
     {
       "id": "new-character-pane",
       "packages": [
-        "@jgengine/react"
+        "@jgengine/core"
       ],
-      "module": "@jgengine/react/menu/gameMenuSaves",
+      "module": "@jgengine/core/menu/gameMenuSaves.view",
       "domain": "menu",
       "gameFacing": false,
       "probe": null,
@@ -6523,8 +6521,7 @@
     {
       "id": "notice-feed",
       "packages": [
-        "@jgengine/core",
-        "@jgengine/react"
+        "@jgengine/core"
       ],
       "module": "@jgengine/core/game/feed",
       "domain": "game",
@@ -6535,9 +6532,9 @@
     {
       "id": "notification-bell",
       "packages": [
-        "@jgengine/react"
+        "@jgengine/core"
       ],
-      "module": "@jgengine/react/notifications/notificationCenter",
+      "module": "@jgengine/core/notifications/notificationCenter.view",
       "domain": "notifications",
       "gameFacing": false,
       "probe": null,
@@ -6557,9 +6554,9 @@
     {
       "id": "notification-center-panel",
       "packages": [
-        "@jgengine/react"
+        "@jgengine/core"
       ],
-      "module": "@jgengine/react/notifications/notificationCenter",
+      "module": "@jgengine/core/notifications/notificationCenter.view",
       "domain": "notifications",
       "gameFacing": false,
       "probe": null,
@@ -6955,9 +6952,9 @@
     {
       "id": "pause-menu",
       "packages": [
-        "@jgengine/react"
+        "@jgengine/core"
       ],
-      "module": "@jgengine/react/menu/pauseMenu",
+      "module": "@jgengine/core/menu/pauseMenu.view",
       "domain": "menu",
       "gameFacing": false,
       "probe": null,
@@ -7445,9 +7442,9 @@
     {
       "id": "projectile-models",
       "packages": [
-        "@jgengine/shell"
+        "@jgengine/core"
       ],
-      "module": "@jgengine/shell/combat/ProjectileModels",
+      "module": "@jgengine/core/combat/ProjectileModels.draw",
       "domain": "combat",
       "gameFacing": false,
       "probe": null,
@@ -7555,10 +7552,10 @@
     {
       "id": "quest-tracker",
       "packages": [
-        "@jgengine/react"
+        "@jgengine/core"
       ],
-      "module": "@jgengine/react/questTracker",
-      "domain": "quest-tracker",
+      "module": "@jgengine/core/mission/questTracker.view",
+      "domain": "mission",
       "gameFacing": false,
       "probe": null,
       "intent": "compact quest/objective HUD tracker — titles + labelled objective progress from describeTrackedQuest views"
@@ -7577,9 +7574,9 @@
     {
       "id": "quick-menu",
       "packages": [
-        "@jgengine/react"
+        "@jgengine/core"
       ],
-      "module": "@jgengine/react/menu/quickMenu",
+      "module": "@jgengine/core/menu/quickMenu.view",
       "domain": "menu",
       "gameFacing": false,
       "probe": null,
@@ -7632,9 +7629,9 @@
     {
       "id": "radial-menu",
       "packages": [
-        "@jgengine/react"
+        "@jgengine/core"
       ],
-      "module": "@jgengine/react/menu/radialMenu",
+      "module": "@jgengine/core/menu/radialMenu.view",
       "domain": "menu",
       "gameFacing": false,
       "probe": null,
@@ -8113,9 +8110,9 @@
     {
       "id": "save-slot-card",
       "packages": [
-        "@jgengine/react"
+        "@jgengine/core"
       ],
-      "module": "@jgengine/react/menu/gameMenuSaves",
+      "module": "@jgengine/core/menu/gameMenuSaves.view",
       "domain": "menu",
       "gameFacing": false,
       "probe": null,
@@ -8157,9 +8154,9 @@
     {
       "id": "save-slots-pane",
       "packages": [
-        "@jgengine/react"
+        "@jgengine/core"
       ],
-      "module": "@jgengine/react/menu/gameMenuSaves",
+      "module": "@jgengine/core/menu/gameMenuSaves.view",
       "domain": "menu",
       "gameFacing": false,
       "probe": null,
@@ -8391,9 +8388,9 @@
     {
       "id": "settings-keybind-row",
       "packages": [
-        "@jgengine/react"
+        "@jgengine/core"
       ],
-      "module": "@jgengine/react/settings/settingsBlocks",
+      "module": "@jgengine/core/settings/settingsBlocks.view",
       "domain": "settings",
       "gameFacing": false,
       "probe": null,
@@ -8402,9 +8399,9 @@
     {
       "id": "settings-section",
       "packages": [
-        "@jgengine/react"
+        "@jgengine/core"
       ],
-      "module": "@jgengine/react/settings/settingsBlocks",
+      "module": "@jgengine/core/settings/settingsBlocks.view",
       "domain": "settings",
       "gameFacing": false,
       "probe": null,
@@ -8413,9 +8410,9 @@
     {
       "id": "settings-slider",
       "packages": [
-        "@jgengine/react"
+        "@jgengine/core"
       ],
-      "module": "@jgengine/react/settings/settingsBlocks",
+      "module": "@jgengine/core/settings/settingsBlocks.view",
       "domain": "settings",
       "gameFacing": false,
       "probe": null,
@@ -8424,9 +8421,9 @@
     {
       "id": "settings-tabs",
       "packages": [
-        "@jgengine/react"
+        "@jgengine/core"
       ],
-      "module": "@jgengine/react/settings/settingsBlocks",
+      "module": "@jgengine/core/settings/settingsBlocks.view",
       "domain": "settings",
       "gameFacing": false,
       "probe": null,
@@ -8490,9 +8487,9 @@
     {
       "id": "shop-grid-host",
       "packages": [
-        "@jgengine/react"
+        "@jgengine/core"
       ],
-      "module": "@jgengine/react/inventory/shopGrid",
+      "module": "@jgengine/core/inventory/shopGrid.view",
       "domain": "inventory",
       "gameFacing": false,
       "probe": null,
@@ -9022,9 +9019,9 @@
     {
       "id": "start-new-game",
       "packages": [
-        "@jgengine/react"
+        "@jgengine/core"
       ],
-      "module": "@jgengine/react/menu/gameFlowMenus",
+      "module": "@jgengine/core/menu/gameFlowMenus.view",
       "domain": "menu",
       "gameFacing": false,
       "probe": null,
@@ -10078,9 +10075,9 @@
     {
       "id": "use-accessibility-rows",
       "packages": [
-        "@jgengine/react"
+        "@jgengine/core"
       ],
-      "module": "@jgengine/react/settings/accessibilitySettings",
+      "module": "@jgengine/core/settings/accessibilitySettings.view",
       "domain": "settings",
       "gameFacing": false,
       "probe": null,
@@ -10089,9 +10086,9 @@
     {
       "id": "use-accessibility-settings",
       "packages": [
-        "@jgengine/react"
+        "@jgengine/core"
       ],
-      "module": "@jgengine/react/settings/accessibilitySettings",
+      "module": "@jgengine/core/settings/accessibilitySettings.view",
       "domain": "settings",
       "gameFacing": false,
       "probe": null,
@@ -10100,9 +10097,9 @@
     {
       "id": "use-camera-shake",
       "packages": [
-        "@jgengine/react"
+        "@jgengine/core"
       ],
-      "module": "@jgengine/react/camera/shake/cameraShake",
+      "module": "@jgengine/core/camera/shake/cameraShake.view",
       "domain": "camera",
       "gameFacing": false,
       "probe": null,
@@ -10177,9 +10174,9 @@
     {
       "id": "use-hold-vs-toggle",
       "packages": [
-        "@jgengine/react"
+        "@jgengine/core"
       ],
-      "module": "@jgengine/react/settings/accessibilitySettings",
+      "module": "@jgengine/core/settings/accessibilitySettings.view",
       "domain": "settings",
       "gameFacing": false,
       "probe": null,
@@ -10199,9 +10196,9 @@
     {
       "id": "use-menu-nav",
       "packages": [
-        "@jgengine/react"
+        "@jgengine/core"
       ],
-      "module": "@jgengine/react/menu/menuNav",
+      "module": "@jgengine/core/menu/menuNav.view",
       "domain": "menu",
       "gameFacing": false,
       "probe": null,
@@ -10210,9 +10207,9 @@
     {
       "id": "use-modal-stack",
       "packages": [
-        "@jgengine/react"
+        "@jgengine/core"
       ],
-      "module": "@jgengine/react/dialog/modals",
+      "module": "@jgengine/core/dialog/modals.view",
       "domain": "dialog",
       "gameFacing": false,
       "probe": null,
@@ -10221,9 +10218,9 @@
     {
       "id": "use-notice-list",
       "packages": [
-        "@jgengine/react"
+        "@jgengine/core"
       ],
-      "module": "@jgengine/react/notifications/notices",
+      "module": "@jgengine/core/notifications/notices.view",
       "domain": "notifications",
       "gameFacing": false,
       "probe": null,
@@ -10232,9 +10229,9 @@
     {
       "id": "use-notifications",
       "packages": [
-        "@jgengine/react"
+        "@jgengine/core"
       ],
-      "module": "@jgengine/react/notifications/notificationCenter",
+      "module": "@jgengine/core/notifications/notificationCenter.view",
       "domain": "notifications",
       "gameFacing": false,
       "probe": null,
@@ -10265,9 +10262,9 @@
     {
       "id": "use-rebind-session",
       "packages": [
-        "@jgengine/react"
+        "@jgengine/core"
       ],
-      "module": "@jgengine/react/settings/keybindingMenu",
+      "module": "@jgengine/core/settings/keybindingMenu.view",
       "domain": "settings",
       "gameFacing": false,
       "probe": null,
@@ -10298,9 +10295,9 @@
     {
       "id": "use-shop-stock",
       "packages": [
-        "@jgengine/react"
+        "@jgengine/core"
       ],
-      "module": "@jgengine/react/inventory/shopGrid",
+      "module": "@jgengine/core/inventory/shopGrid.view",
       "domain": "inventory",
       "gameFacing": false,
       "probe": null,
@@ -10331,9 +10328,9 @@
     {
       "id": "use-viewport-scroll-lock",
       "packages": [
-        "@jgengine/react"
+        "@jgengine/core"
       ],
-      "module": "@jgengine/react/menu/gameMenu",
+      "module": "@jgengine/core/menu/gameMenu.view",
       "domain": "menu",
       "gameFacing": false,
       "probe": null,

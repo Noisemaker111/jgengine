@@ -2,7 +2,7 @@ import { describe, expect, test } from "bun:test";
 import { createElement } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 
-import { GameMenu } from "./menu/gameMenu";
+import { GameMenu } from "@jgengine/core/menu/gameMenu.view";
 import { MENU_THEME_STYLE } from "./testFixtures";
 
 /**

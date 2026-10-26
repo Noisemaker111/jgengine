@@ -10,7 +10,7 @@ import {
   type EquipSlot,
   type StatRow,
 } from "./characterSheet";
-import type { SlotItem } from "./inventory/slots";
+import type { SlotItem } from "@jgengine/core/inventory/slots.view";
 
 /** Recursively invoke hook-free function components down to host nodes, collecting every element with an `onClick`. */
 function collectClickable(node: unknown, out: ReactElement[] = []): ReactElement[] {

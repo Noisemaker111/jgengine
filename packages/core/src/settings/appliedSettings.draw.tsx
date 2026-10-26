@@ -1,0 +1,115 @@
+import { useCallback, useEffect, useMemo, useRef, useSyncExternalStore } from "react";
+
+import type { AudioBusDef } from "@jgengine/core/audio/audioFalloff";
+import {
+  busVolumeSettingId,
+  DEFAULT_MASTER_VOLUME,
+  DEFAULT_UI_SCALE,
+  SETTING_IDS,
+  UI_SCALE_MAX,
+  UI_SCALE_MIN,
+  type GraphicsQuality,
+  type SettingsStore,
+} from "@jgengine/core/settings/settingsModel";
+import type { GraphicsProfile } from "@jgengine/core/settings/graphicsProfile";
+import { readGraphicsSettings, type GraphicsProfileOverrides } from "@jgengine/core/settings/graphicsSettings";
+import { readFrameRateLimit } from "@jgengine/core/settings/frameRateLimit";
+
+import {
+  DEFAULT_TOUCH_JOYSTICK_VARIANT,
+  TOUCH_JOYSTICK_VARIANTS,
+  TOUCH_STYLES,
+  type TouchJoystickVariant,
+  type TouchStyle,
+} from "@jgengine/core/input/touchScheme";
+
+import type { AudioEngine } from "@jgengine/shell/audio/audioEngine";
+import { busMuteSettingId, MASTER_MUTE_SETTING_ID } from "@jgengine/shell/audio/busMix";
+
+/** Sentinel Controls value meaning "defer to the game's suggested touch skin". */
+export const TOUCH_STYLE_AUTO = "auto";
+
+/** Shell-internal: binds the SettingsStore touch-style choice to the touch renderer. @internal */
+export function useTouchStyle(store: SettingsStore, fallback: TouchStyle): TouchStyle {
+  useSettingsRevision(store);
+  const raw = store.get(SETTING_IDS.touchStyle, TOUCH_STYLE_AUTO);
+  return TOUCH_STYLES.includes(raw as TouchStyle) ? (raw as TouchStyle) : fallback;
+}
+
+/** Shell-internal: binds the SettingsStore joystick-variant choice (fixed vs floating) to the touch renderer. @internal */
+export function useTouchJoystickVariant(store: SettingsStore): TouchJoystickVariant {
+  useSettingsRevision(store);
+  const raw = store.get(SETTING_IDS.touchJoystick, DEFAULT_TOUCH_JOYSTICK_VARIANT);
+  return TOUCH_JOYSTICK_VARIANTS.includes(raw as TouchJoystickVariant)
+    ? (raw as TouchJoystickVariant)
+    : DEFAULT_TOUCH_JOYSTICK_VARIANT;
+}
+
+export function useSettingsRevision(store: SettingsStore): number {
+  const versionRef = useRef(0);
+  const subscribe = useCallback(
+    (onStoreChange: () => void) =>
+      store.subscribe(() => {
+        versionRef.current += 1;
+        onStoreChange();
+      }),
+    [store],
+  );
+  const getVersion = useCallback(() => versionRef.current, []);
+  return useSyncExternalStore(subscribe, getVersion, getVersion);
+}
+
+/** The player's graphics choices as the shell applies them. */
+export interface AppliedGraphicsSettings {
+  shadows: boolean;
+  dpr: number;
+  uiScale: number;
+  quality: GraphicsQuality;
+  profile: GraphicsProfile;
+  /** Frames-per-second cap; 0 renders every display refresh. */
+  frameRateLimit: number;
+  showFps: boolean;
+}
+
+export function useGraphicsSettings(
+  store: SettingsStore,
+  shadowsDefault: boolean,
+  overrides?: GraphicsProfileOverrides,
+): AppliedGraphicsSettings {
+  const rev = useSettingsRevision(store);
+  // Effects rebuild on identity change; a fresh object each render recompiled the post chain every frame.
+  return useMemo(() => {
+    const { quality, profile } = readGraphicsSettings(store, overrides);
+    const rawUiScale = store.get(SETTING_IDS.graphicsUiScale, DEFAULT_UI_SCALE);
+    return {
+      shadows: store.get(SETTING_IDS.graphicsShadows, shadowsDefault),
+      dpr: profile.renderScale,
+      uiScale: Math.min(UI_SCALE_MAX, Math.max(UI_SCALE_MIN, rawUiScale)),
+      quality,
+      profile,
+      frameRateLimit: readFrameRateLimit(store),
+      showFps: store.get(SETTING_IDS.graphicsShowFps, false),
+    };
+  }, [store, rev, shadowsDefault, overrides]);
+}
+
+export function AudioSettingsBridge({
+  store,
+  engine,
+  buses,
+}: {
+  store: SettingsStore;
+  engine: AudioEngine;
+  buses: Record<string, AudioBusDef> | undefined;
+}): null {
+  const rev = useSettingsRevision(store);
+  useEffect(() => {
+    engine.setMasterGain(store.get(SETTING_IDS.masterVolume, DEFAULT_MASTER_VOLUME));
+    engine.setMasterMute(Boolean(store.get(MASTER_MUTE_SETTING_ID, false)));
+    for (const bus of Object.values(buses ?? {})) {
+      engine.setBusGain(bus.id, store.get(busVolumeSettingId(bus.id), bus.gain ?? 1));
+      engine.setBusMute(bus.id, Boolean(store.get(busMuteSettingId(bus.id), false)));
+    }
+  }, [store, engine, buses, rev]);
+  return null;
+}

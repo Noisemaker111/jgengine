@@ -3,7 +3,7 @@ import {
   WorldFloatText,
   WorldTelegraphs,
 } from "@jgengine/core/hud/WorldHud.draw";
-import { HitReactionShake } from "./camera/shake/HitReactionShake";
+import { HitReactionShake } from "@jgengine/core/camera/shake/HitReactionShake.draw";
 import { SpellVfx } from "./vfx/SpellVfx";
 import { HitMarkers, MuzzleFlashes } from "./world/ShotFeedback";
 import { RetainedVfx } from "./vfx/RetainedVfx";

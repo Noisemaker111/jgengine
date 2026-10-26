@@ -724,6 +724,20 @@
 - `CameraShakeSnapshot` (interface): interface CameraShakeSnapshot — Serializable state for save/restore and deterministic replay.
 - `createCameraShake` (function): function createCameraShake(config: CameraShakeConfig = {}): CameraShakeController — A seeded, serializable, trauma-based camera shake / impulse controller. A game calls `add(amount, kind?)` on impacts (a hit, an explosion, a landing) to raise trauma in `[0, 1]`; `update(dt)` bleeds it off over time; and `offset()` returns a pooled `{ x, y, z, pitch, yaw, roll }` kick equal to `trauma^exponent` times per-axis maxima times deterministic seeded value-noise sampled along an internal time cursor. A shell consumer applies that offset to the active camera each frame so the view visibly shakes. Nothing here is genre-specific: `kind` is a free label the game styles, all amplitudes/decay are parameters, and `snapshot`/ `restore` round-trips the shake through a save. Deterministic from `seed`: the same seed and dt sequence reproduce the same offsets.
 
+## @jgengine/core/camera/shake/cameraShake.view
+
+- `CameraShakeMeter` (function): function CameraShakeMeter({ controller, title = "CAMERA SHAKE", kindLabels, variation = "glass", className, style, }: CameraShakeMeterProps): ReactNode — A drop-in HUD panel that visualizes a core {@link CameraShakeController}: a trauma meter (reusing the shared {@link KitMeter}) plus a live percentage and the current impact `kind` label. Presentation only — it reads the controller and never interprets `kind`, mapping it through `kindLabels` for display. The shell camera rig applies the same controller's `offset()` to the camera; this panel is the on-screen readout of how much shake is in flight.
+- `CameraShakeMeterProps` (interface): interface CameraShakeMeterProps — Props for {@link CameraShakeMeter}.
+- `CameraShakeReadout` (interface): interface CameraShakeReadout — A live read of a camera-shake controller: current trauma `0..1` and the last game-owned `kind`.
+- `useCameraShakeReadout` (function): function useCameraShakeReadout(controller: CameraShakeController): CameraShakeReadout — Subscribe to a camera-shake controller and re-render on every change (add / decay / clear). It only reads: the camera rig that applies the shake is what advances it. Returns the current trauma + kind for a HUD readout.
+
+## @jgengine/core/camera/shake/shakeChannel.draw
+
+- `CALIBRATED_TRAUMA_DECAY_PER_SECOND` (const): const CALIBRATED_TRAUMA_DECAY_PER_SECOND: 1.4 — Trauma decay the engine's impact presets are calibrated against, trauma/second.
+- `CameraShakeContext` (const): const CameraShakeContext: React.Context<CameraShakeController> — Override which controller the rigs below apply; defaults to {@link defaultCameraShake}.
+- `cameraShake` (function): function cameraShake(amplitude: number, decayPerSecond?: number): void — Add camera trauma from anywhere. `decayPerSecond`, when given, retunes how fast it bleeds off.
+- `defaultCameraShake` (const): const defaultCameraShake: CameraShakeController — The one camera-shake controller the rigs apply. Game systems with no React context (a `loop.onTick` reacting to `entity.died`) feed it through {@link cameraShake}; a rig reads it through {@link useCameraShake}. It is the core `createCameraShake` model, so a demo or test can drive the same controller directly.
+
 ## @jgengine/core/city/cityBlocks
 
 - `CityBlockKind` (type): type CityBlockKind = "buildable" | "park" | "plaza" | "field" | "buffer" — How a block (a face of the road graph) is used.
@@ -894,6 +908,18 @@
 - `HapticLevel` (interface): interface HapticLevel — Motor intensities, each `0..1`: `strong` is the low-frequency motor, `weak` the high-frequency one.
 - `HapticPulse` (interface): interface HapticPulse extends HapticLevel — A decaying one-shot on a channel: starts at `strong`/`weak` and fades to zero over `ms`.
 - `createHapticChannels` (function): function createHapticChannels(options: HapticChannelsOptions = {}): HapticChannels — Per-player haptic channels mixed by priority.
+
+## @jgengine/core/haptics/hapticsRoute.view
+
+- `HapticsRoute` (interface): interface HapticsRoute — Route haptic pulses to whatever the player can feel them on.
+- `HapticsRouteOptions` (interface): interface HapticsRouteOptions — The browser reach of {@link createHapticsRoute}; injected so the route runs headless.
+- `HapticsSink` (type): type HapticsSink = "gamepad" | "vibration" | "none" — Where a pulse actually landed: a gamepad, the device's own motor, or nowhere.
+- `createHapticsRoute` (function): function createHapticsRoute(pad: (pulse: HapticPulse) => void, options: HapticsRouteOptions = {}): HapticsRoute — One pulse in, whichever motor the player has: a connected gamepad takes it through the haptic channels the gamepad loop already drives, and a phone with no pad falls back to `navigator.vibrate`. Pad presence is cached and refreshed on connection events, so a hit never asks the browser for its pad list. Reduced motion does not silence this: see `eventFeedback`.
+
+## @jgengine/core/haptics/padHaptics
+
+- `PAD_HAPTIC_EFFECT_MS` (const): const PAD_HAPTIC_EFFECT_MS: 120 — How long each rumble command lasts; refreshed before it runs out so a held level feels continuous.
+- `PadHapticState` (interface): interface PadHapticState — Last command sent to one pad.
 
 ## @jgengine/core/input/actionBindings
 

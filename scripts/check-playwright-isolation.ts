@@ -8,8 +8,8 @@ import { spawnSync } from "node:child_process";
 import { fileURLToPath } from "node:url";
 
 const FILES = [
-  "packages/react/src/menu/menuNav.test.ts",
-  "packages/react/src/settings/settingsSection.test.ts",
+  "packages/core/src/menu/menuNav.view.test.ts",
+  "packages/core/src/settings/settingsSection.view.test.ts",
   "packages/shell/src/settingsBoundary.test.ts",
 ];
 /** Evidence that a browser was reaped or a test errored, even when the exit code says otherwise. */

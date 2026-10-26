@@ -1,7 +1,7 @@
 /**
  * Headless focus-order model for a game front-end menu: a list or grid of item ids, one focused
  * item, and the keyboard/gamepad intents that move between them. It holds no React state, no DOM and
- * no look — `@jgengine/react/menu/menuNav` binds it to a container and real focus, and each game decides
+ * no look — `@jgengine/core/menu/menuNav.view` binds it to a container and real focus, and each game decides
  * what the items are and where they sit.
  */
 

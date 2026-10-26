@@ -1,4 +1,4 @@
-import type { GameMenuStyle } from "./menu/gameMenu";
+import type { GameMenuStyle } from "@jgengine/core/menu/gameMenu.view";
 
 /**
  * Menu theme tokens passed through the `style` prop with no cast. This file is type-checked and kept

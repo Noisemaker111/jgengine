@@ -19,7 +19,7 @@ import {
   routeGamepads,
   stepGamepadPoll,
 } from "./gamepadPoll";
-import { PAD_HAPTIC_EFFECT_MS, emptyPadHapticState, stepPadHaptics, type PadHapticState } from "../haptics/padHaptics";
+import { PAD_HAPTIC_EFFECT_MS, emptyPadHapticState, stepPadHaptics, type PadHapticState } from "@jgengine/core/haptics/padHaptics";
 export { mergeGamepadFrame, mergeGamepadInput } from "./gamepadMerge";
 
 const NO_PADS: readonly (Gamepad | null)[] = [];

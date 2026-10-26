@@ -9,7 +9,7 @@ import { KitActionPrompt, KitPanel } from "@jgengine/react/uiKitRoot";
 import { HudSlots } from "@jgengine/shell/gameKit";
 
 import { continueGame } from "@jgengine/core/game/gameFlow";
-import { startNewGame } from "@jgengine/react/menu/gameFlowMenus";
+import { startNewGame } from "@jgengine/core/menu/gameFlowMenus.view";
 import { idea } from "../idea";
 import { campView, prompts } from "../prompts";
 

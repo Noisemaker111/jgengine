@@ -1,14 +1,14 @@
 import { type ReactNode, useCallback, useEffect, useRef, useState, useSyncExternalStore } from "react";
-import { CreditsPane } from "@jgengine/react/menu/gameMenuSaves";
+import { CreditsPane } from "@jgengine/core/menu/gameMenuSaves.view";
 import { KitButton, KitPanel } from "@jgengine/react/uiKitRoot";
 import { GameCursor } from "@jgengine/react/gameCursor";
 import { GameIcon } from "@jgengine/react/gameIcons";
 import { useGame } from "@jgengine/react/hooks";
-import { useMenuNav } from "@jgengine/react/menu/menuNav";
+import { useMenuNav } from "@jgengine/core/menu/menuNav.view";
 import { useGameContext } from "@jgengine/react/provider";
 import { relativeSavedAt, useSaveSlots } from "@jgengine/core/save/saveSlots.view";
-import { useSettings } from "@jgengine/react/settings/settings";
-import { SettingsSection, SettingsTabs } from "@jgengine/react/settings/settingsBlocks";
+import { useSettings } from "@jgengine/core/settings/settings.view";
+import { SettingsSection, SettingsTabs } from "@jgengine/core/settings/settingsBlocks.view";
 import type { SaveSlotMeta } from "@jgengine/core/save/saveSlots";
 import { creditsForSourceIds } from "@jgengine/assets/credits";
 import { mergeCredits } from "@jgengine/core/game/credits";

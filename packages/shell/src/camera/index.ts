@@ -14,7 +14,7 @@ export {
   usePlayerFov,
   type PlayerFovState,
 } from "./PlayerFov";
-export { CameraShakeContext, cameraShake, defaultCameraShake, useCameraShake } from "./shake/shakeChannel";
+export { CameraShakeContext, cameraShake, defaultCameraShake, useCameraShake } from "@jgengine/core/camera/shake/shakeChannel.draw";
 export { rtsPanKeysConflict } from "./rigMath";
 export { GAME_SIM_FRAME_PRIORITY } from "./orbitCameraMath";
 export {

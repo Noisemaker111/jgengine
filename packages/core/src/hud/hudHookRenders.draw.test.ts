@@ -57,7 +57,7 @@ async function write(change: () => void): Promise<void> {
 
 let renders = 0;
 
-/** Stands where `ToastStack` (`packages/react/src/notifications/toastStack.tsx`) reads the feed. */
+/** Stands where `ToastStack` (`packages/core/src/notifications/toastStack.view.tsx`) reads the feed. */
 function ToastRows() {
   const entries = useFeed({ action: "entity.died", limit: 5 });
   renders += 1;

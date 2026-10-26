@@ -2,10 +2,10 @@ import type { CSSProperties, ReactNode } from "react";
 
 import { createSaveSlots, type SaveSlotMeta } from "@jgengine/core/save/saveSlots";
 
-import { PauseMenu } from "./menu/pauseMenu";
-import { ContinuePane, CreditsPane, SaveSlotsPane } from "./menu/gameMenuSaves";
-import type { SettingsCategoryView } from "./settings/settings";
-import { SettingsSection, SettingsTabs } from "./settings/settingsBlocks";
+import { PauseMenu } from "@jgengine/core/menu/pauseMenu.view";
+import { ContinuePane, CreditsPane, SaveSlotsPane } from "@jgengine/core/menu/gameMenuSaves.view";
+import type { SettingsCategoryView } from "@jgengine/core/settings/settings.view";
+import { SettingsSection, SettingsTabs } from "@jgengine/core/settings/settingsBlocks.view";
 import type { UiKit } from "./uiKit";
 import { KitButton, KitMenu, KitMeter, KitMinimapFrame, KitPanel, KitPrompt, KitToast, UiKitRoot } from "./uiKitRoot";
 import { UI_KITS, type UiKitName } from "./uiKits";

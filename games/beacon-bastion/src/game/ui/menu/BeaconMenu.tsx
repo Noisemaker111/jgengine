@@ -3,11 +3,11 @@ import { GameCursor } from "@jgengine/react/gameCursor";
 import { KitButton, KitPanel } from "@jgengine/react/uiKitRoot";
 import { GameIcon } from "@jgengine/react/gameIcons";
 import { useGamePhase } from "@jgengine/react/hooks";
-import { CreditsPane } from "@jgengine/react/menu/gameMenuSaves";
-import { useMenuNav } from "@jgengine/react/menu/menuNav";
+import { CreditsPane } from "@jgengine/core/menu/gameMenuSaves.view";
+import { useMenuNav } from "@jgengine/core/menu/menuNav.view";
 import { useGameContext } from "@jgengine/react/provider";
 import { useSaveSlots } from "@jgengine/core/save/saveSlots.view";
-import { useSettings } from "@jgengine/react/settings/settings";
+import { useSettings } from "@jgengine/core/settings/settings.view";
 
 import { DIFFICULTIES, DIFFICULTY_IDS, setDifficulty, type DifficultyId } from "../../campaign";
 import { BEACON_CREDITS } from "../../credits";

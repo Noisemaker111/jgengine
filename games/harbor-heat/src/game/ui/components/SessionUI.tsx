@@ -1,7 +1,7 @@
 import { useEffect } from "react";
 import { useGame } from "@jgengine/react/hooks";
 import { useGameContext } from "@jgengine/react/provider";
-import { useSettings } from "@jgengine/react/settings/settings";
+import { useSettings } from "@jgengine/core/settings/settings.view";
 import { useStore } from "@jgengine/react/store";
 import { awayStore } from "../../away";
 import { startedStore } from "../../commands";

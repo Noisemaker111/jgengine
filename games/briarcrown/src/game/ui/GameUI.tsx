@@ -1,5 +1,5 @@
 import type { ReactNode } from "react";
-import { GameFlowUI } from "@jgengine/react/menu/gameFlowMenus";
+import { GameFlowUI } from "@jgengine/core/menu/gameFlowMenus.view";
 
 import { BRIEFING, CONTROLS, CREDITS } from "../controls";
 import { idea } from "../idea";

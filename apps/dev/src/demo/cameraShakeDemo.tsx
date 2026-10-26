@@ -4,7 +4,7 @@ import { defineGameDefinition } from "@jgengine/core/game/defineGame";
 import type { GameContext, GameContextEntityEntry } from "@jgengine/core/runtime/gameContext";
 import { createAssetCatalog } from "@jgengine/core/scene/assetCatalog";
 import { environment, grass, terrain } from "@jgengine/core/world/features";
-import { CameraShakeMeter } from "@jgengine/react/camera/shake/cameraShake";
+import { CameraShakeMeter } from "@jgengine/core/camera/shake/cameraShake.view";
 
 import { defaultCameraShake } from "@jgengine/shell/camera";
 import { EnvironmentScene } from "@jgengine/shell/environment/EnvironmentScene";

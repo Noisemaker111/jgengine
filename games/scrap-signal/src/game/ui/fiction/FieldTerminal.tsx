@@ -3,7 +3,7 @@ import { useDisplayProfile } from "@jgengine/react";
 import { GameCursor } from "@jgengine/react/gameCursor";
 import { GameIcon } from "@jgengine/react/gameIcons";
 import { useCurrency, useEntityStat, usePlayer } from "@jgengine/react/hooks";
-import { useMenuNav } from "@jgengine/react/menu/menuNav";
+import { useMenuNav } from "@jgengine/core/menu/menuNav.view";
 import { useStore } from "@jgengine/react/store";
 import { CHARACTERS } from "../../characters";
 import { characterIdStore } from "../../stores";

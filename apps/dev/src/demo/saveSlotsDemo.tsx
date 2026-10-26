@@ -5,7 +5,7 @@ import { createSaveSlots, type SaveSlotMeta } from "@jgengine/core/save/saveSlot
 import type { GameContext, GameContextEntityEntry } from "@jgengine/core/runtime/gameContext";
 import { createAssetCatalog } from "@jgengine/core/scene/assetCatalog";
 import { environment, grass, terrain } from "@jgengine/core/world/features";
-import { SaveSlotsPane } from "@jgengine/react/menu/gameMenuSaves";
+import { SaveSlotsPane } from "@jgengine/core/menu/gameMenuSaves.view";
 
 import { EnvironmentScene } from "@jgengine/shell/environment/EnvironmentScene";
 import type { PlayableGame } from "@jgengine/shell/registry";

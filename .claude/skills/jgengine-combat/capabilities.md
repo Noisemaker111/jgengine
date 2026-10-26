@@ -262,6 +262,10 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `applyStatPoolDelta` (function) · `import { applyStatPoolDelta } from "@jgengine/core/combat"`
 
+## projectile-models — render authoritative projectile flights with caller models or opt-in shaft/head geometry, velocity orientation, bounded instances, and settlement cleanup
+
+- `ProjectileModels` (function) · `import { ProjectileModels } from "@jgengine/core/combat/ProjectileModels.draw"`
+
 ## projectiles — spawn and advance projectiles with travel and hit resolution
 
 - `createProjectileSystem` (function) · `import { createProjectileSystem } from "@jgengine/core/combat"`

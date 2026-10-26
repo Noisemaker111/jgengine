@@ -247,9 +247,14 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `deriveBuildingLots` (function) · `import { deriveBuildingLots } from "@jgengine/core/buildings/buildingLots"`
 
-## camera-shake — seeded serializable trauma-based camera shake/impulse controller (hit/explosion/landing juice) with pooled per-frame translation+rotation offset and snapshot/restore
+## camera-shake — add trauma to the active camera rig's shake from any game system
 
+- `cameraShake` (function) · `import { cameraShake } from "@jgengine/core/camera/shake/shakeChannel.draw"`
 - `createCameraShake` (function) · `import { createCameraShake } from "@jgengine/core/world"`
+
+## camera-shake-meter — HUD readout for a core camera-shake controller — a trauma meter plus current impact-kind label, reskinnable and kind-labelled
+
+- `CameraShakeMeter` (function) · `import { CameraShakeMeter } from "@jgengine/core/camera/shake/cameraShake.view"`
 
 ## capture — force a framed capture camera over a game that owns its camera
 
@@ -502,6 +507,10 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 ## haptics — Continuous gamepad rumble from named channels (engine, road, impact) mixed by priority, plus fading pulses.
 
 - `createHapticChannels` (function) · `import { createHapticChannels } from "@jgengine/core/haptics/haptics"`
+
+## haptics-route — send a feedback pulse to the gamepad when one is connected, else to the phone's vibration motor
+
+- `createHapticsRoute` (function) · `import { createHapticsRoute } from "@jgengine/core/haptics/hapticsRoute.view"`
 
 ## hold-order — stand-ground order that holds position until preempted or canceled
 
@@ -1060,6 +1069,10 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 ## uphill-grade-step — constrain sampled heightfield ascent with axis sliding and a configurable terrain-policy sampler
 
 - `resolveTerrainGradeStep` (function) · `import { resolveTerrainGradeStep } from "@jgengine/core/movement/terrainGrade"`
+
+## use-camera-shake — React hook reading a camera-shake controller's live trauma and kind
+
+- `useCameraShakeReadout` (function) · `import { useCameraShakeReadout } from "@jgengine/core/camera/shake/cameraShake.view"`
 
 ## utility-brain — pick actions by decaying-need appeal with response curves, hysteresis and interrupts
 

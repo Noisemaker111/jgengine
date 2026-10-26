@@ -7,7 +7,7 @@ import { defineGameDefinition } from "@jgengine/core/game/defineGame";
 import { createAssetCatalog } from "@jgengine/core/scene/assetCatalog";
 import { createGameContext } from "@jgengine/core/runtime/gameContext";
 import { createSettingsStore, type GameSettingsConfig } from "@jgengine/core/settings/settingsModel";
-import { SettingsTrigger, useSettings, useSettingsStore, type SettingsController } from "@jgengine/react/settings/settings";
+import { SettingsTrigger, useSettings, useSettingsStore, type SettingsController } from "@jgengine/core/settings/settings.view";
 import { createAudioEngine } from "@jgengine/shell/audio/audioEngine";
 import type { PlayableGame } from "@jgengine/shell/registry";
 

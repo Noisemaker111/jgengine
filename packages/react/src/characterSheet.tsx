@@ -1,6 +1,6 @@
 import { type CSSProperties, type ReactNode } from "react";
 
-import { EquipmentSlots, type SlotItem } from "./inventory/slots";
+import { EquipmentSlots, type SlotItem } from "@jgengine/core/inventory/slots.view";
 import { HudFrame, type HudFrameVariation } from "@jgengine/core/hud/hudFrame.view";
 import { hudType } from "@jgengine/core/hud/hudTokens";
 

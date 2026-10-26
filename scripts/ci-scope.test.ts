@@ -32,7 +32,7 @@ describe("game scope", () => {
 
   test("a shared surface boots the one representative game, not all eight", () => {
     for (const path of [
-      "packages/react/src/menu/gameMenu.tsx",
+      "packages/core/src/menu/gameMenu.view.tsx",
       "packages/core/src/combat/projectiles.ts",
       "packages/core/src/run/sessionLoop.ts",
       "packages/editor/src/CreatorApp.tsx",
@@ -68,14 +68,14 @@ describe("game scope", () => {
 
   test("the local verify:fast pattern is the same list", () => {
     const pattern = scopePattern();
-    expect(pattern.test("packages/react/src/menu/gameMenu.tsx")).toBe(true);
+    expect(pattern.test("packages/core/src/menu/gameMenu.view.tsx")).toBe(true);
     expect(pattern.test("packages/core/src/sim/population.ts")).toBe(true);
     expect(pattern.test("scripts/lookArg.ts")).toBe(false);
     expect(pattern.test("README.md")).toBe(false);
   });
 
   test("a verdict says what it decided and why", () => {
-    expect(gameScope(["packages/react/src/menu/gameMenu.tsx"]).reason).toContain("packages/react/src/menu/gameMenu.tsx");
+    expect(gameScope(["packages/core/src/menu/gameMenu.view.tsx"]).reason).toContain("packages/core/src/menu/gameMenu.view.tsx");
     expect(gameScope(["changes/a.md"]).reason).toContain("no runtime change");
   });
 });

@@ -6,10 +6,10 @@ import { devtools } from "@jgengine/core/devtools/devtools";
 import { IMPACT_PROFILES, impactClassFor, type ImpactClass, type ImpactProfile } from "@jgengine/core/combat/impactProfile";
 import type { GameContext } from "@jgengine/core/runtime/gameContextTypes";
 import type { GraphicsQuality } from "@jgengine/core/settings/settingsModel";
-import { useAccessibilitySettings } from "@jgengine/react/settings/accessibilitySettings";
+import { useAccessibilitySettings } from "@jgengine/core/settings/accessibilitySettings.view";
 import { useGameContext } from "@jgengine/react/provider";
 
-import { cameraShake } from "../camera/shake/shakeChannel";
+import { cameraShake } from "@jgengine/core/camera/shake/shakeChannel.draw";
 import { useTerrainQuality } from "../terrain/terrainQuality";
 
 /** What {@link ImpactFeedback} reacts with; every field defaults on. */

@@ -16,7 +16,7 @@ describe("check-hud-tokens", () => {
   });
 
   test("the kit-pane opt-in tokens are read only with a theme-token fallback", async () => {
-    const settings = await Bun.file(join(root, "packages/react/src/settings/settingsBlocks.tsx")).text();
+    const settings = await Bun.file(join(root, "packages/core/src/settings/settingsBlocks.view.tsx")).text();
     for (const match of settings.matchAll(/var\(--jg-(on-accent|accent-text), ([^)]*)/g)) expect(match[2]!.startsWith("var(--jg-")).toBe(true);
     expect(settings).toContain("var(--jg-on-accent, var(--jg-surface-deep");
   });

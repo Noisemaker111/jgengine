@@ -1,16 +1,16 @@
 import { useEffect, useMemo, useRef, type ReactNode } from "react";
 
 import type { GameContext } from "@jgengine/core/runtime/gameContext";
-import { useAccessibilitySettings } from "@jgengine/react/settings/accessibilitySettings";
+import { useAccessibilitySettings } from "@jgengine/core/settings/accessibilitySettings.view";
 
-import { cameraShake } from "../camera/shake/shakeChannel";
+import { cameraShake } from "@jgengine/core/camera/shake/shakeChannel.draw";
 import type { AudioEngine } from "./audioEngine";
 import { installAudioProbe } from "./audioProbe";
 import { CaptionOverlay } from "./CaptionOverlay";
 import { createCaptionFeed } from "./captions";
 import { attachEventFeedback, createEventFeedback, type EventFeedback } from "./eventFeedback";
 import { installGestureResume } from "./gestureResume";
-import { createHapticsRoute } from "../haptics/hapticsRoute";
+import { createHapticsRoute } from "@jgengine/core/haptics/hapticsRoute.view";
 
 /**
  * Mounts the engine's feel layer for one game: announced events become a sound, a gamepad pulse, a

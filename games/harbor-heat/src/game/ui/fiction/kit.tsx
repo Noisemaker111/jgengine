@@ -1,6 +1,6 @@
 import { useEffect, useRef, useSyncExternalStore, type CSSProperties, type ReactNode } from "react";
 import { useDisplayProfile } from "@jgengine/react/display";
-import { createGameMenuSound, type GameMenuSound } from "@jgengine/react/menu/gameMenuSound";
+import { createGameMenuSound, type GameMenuSound } from "@jgengine/core/menu/gameMenuSound.view";
 import { useGameContext } from "@jgengine/react/provider";
 import { activeTouchControlsMode, setTouchControlsMode } from "@jgengine/core/input/touchControlsMode";
 

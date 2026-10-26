@@ -2,7 +2,7 @@ import { Fragment, type CSSProperties, type ReactNode } from "react";
 import { actionLabel, type ActionCodesMap } from "@jgengine/core/input/actionBindings";
 import { useDisplayProfile } from "./display";
 import { Keycap } from "./keyHint";
-import { SettingsTrigger } from "./settings/settings";
+import { SettingsTrigger } from "@jgengine/core/settings/settings.view";
 
 /**
  * One row of a control legend. Name the game action(s) whose bound key(s) to

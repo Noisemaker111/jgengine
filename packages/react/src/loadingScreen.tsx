@@ -4,8 +4,8 @@ import { createTipRotation, type TipRotation } from "@jgengine/core/ui/loadingTi
 import { menuIntentForKey } from "@jgengine/core/menu/menuNav";
 
 import { hudSpace, hudType } from "@jgengine/core/hud/hudTokens";
-import { useMenuNav } from "./menu/menuNav";
-import { MenuScreen, type MenuScreenScrim } from "./menu/menuScreen";
+import { useMenuNav } from "@jgengine/core/menu/menuNav.view";
+import { MenuScreen, type MenuScreenScrim } from "@jgengine/core/menu/menuScreen.view";
 
 /** Props for {@link LoadingScreen}. */
 export interface LoadingScreenProps {

@@ -5,8 +5,8 @@ import { createModalStack, MODAL_CONFIRM } from "@jgengine/core/dialog/modalStac
 import type { GameContext, GameContextEntityEntry } from "@jgengine/core/runtime/gameContext";
 import { createAssetCatalog } from "@jgengine/core/scene/assetCatalog";
 import { environment, grass, terrain } from "@jgengine/core/world/features";
-import { PauseMenu } from "@jgengine/react/menu/pauseMenu";
-import { ConfirmDialog, ModalHost } from "@jgengine/react/dialog/modals";
+import { PauseMenu } from "@jgengine/core/menu/pauseMenu.view";
+import { ConfirmDialog, ModalHost } from "@jgengine/core/dialog/modals.view";
 
 import { EnvironmentScene } from "@jgengine/shell/environment/EnvironmentScene";
 import type { PlayableGame } from "@jgengine/shell/registry";
