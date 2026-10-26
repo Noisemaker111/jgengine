@@ -5,7 +5,7 @@ import * as THREE from "three";
 
 import { GrassCover } from "./GrassCover.draw";
 import { registerGrassFieldRenderer } from "@jgengine/core/grass/GrassFieldRenderer.draw";
-import { getSceneKindRenderer, type SceneKindRenderContext } from "@jgengine/shell/scene/sceneKindRenderers";
+import { getSceneKindRenderer, type SceneKindRenderContext } from "@jgengine/core/scene/sceneKindRenderers.draw";
 
 async function mounted(camera: THREE.Camera, element: ReactElement, run: (scene: THREE.Scene) => Promise<void> | void) {
   const environment = globalThis as typeof globalThis & { IS_REACT_ACT_ENVIRONMENT?: boolean };

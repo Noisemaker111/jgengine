@@ -9,7 +9,7 @@ import {
   resolvePathSurface,
   ribbonEdgeMargin,
   ribbonSurfaceFrame,
-} from "./surfaceRibbonMaterial";
+} from "./surfaceRibbonMaterial.draw";
 
 describe("resolvePathSurface", () => {
   test("routes default to dirt with a soft edge and ruts", () => {

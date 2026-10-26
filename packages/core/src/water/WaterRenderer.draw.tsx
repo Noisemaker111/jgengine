@@ -5,7 +5,7 @@ import type { SceneKindObject } from "@jgengine/core/scene/sceneKinds";
 
 import { Ocean } from "./Ocean.draw";
 import type { OceanConfig } from "./OceanConfig.draw";
-import { registerSceneKindRenderer, type SceneKindRenderContext } from "@jgengine/shell/scene/sceneKindRenderers";
+import { registerSceneKindRenderer, type SceneKindRenderContext } from "@jgengine/core/scene/sceneKindRenderers.draw";
 
 /** Map the editor-authored water params onto the shell Ocean shader config. */
 function toOceanConfig({ rules, size, surface }: ResolvedWater, depthRange: number): OceanConfig {

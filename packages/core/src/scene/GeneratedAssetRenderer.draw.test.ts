@@ -3,7 +3,7 @@ import { act, createRoot, extend } from "@react-three/fiber";
 import { createElement, Suspense } from "react";
 import * as THREE from "three";
 import { registerAssetGenerator } from "@jgengine/core/scene/assetGenerator";
-import { GeneratedAssetInstance } from "./GeneratedAssetRenderer";
+import { GeneratedAssetInstance } from "./GeneratedAssetRenderer.draw";
 
 test("authored generator rendering retains transforms, material defaults, clamps and color draws", async () => {
   const environment = globalThis as typeof globalThis & { IS_REACT_ACT_ENVIRONMENT?: boolean };

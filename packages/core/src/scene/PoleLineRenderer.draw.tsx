@@ -16,8 +16,8 @@ import { POLE_LINE_KIND, POLE_LINE_SCHEMA, resolvePoleLine, type Cable, type Pol
 import type { SceneKindObject } from "@jgengine/core/scene/sceneKinds";
 
 import { composeInstance, uploadInstances } from "@jgengine/core/instancing/instanceUpload.draw";
-import { useDisposable } from "../render/useDisposable";
-import { registerSceneKindRenderer, type SceneKindRenderContext } from "./sceneKindRenderers";
+import { useDisposable } from "@jgengine/shell/render/useDisposable";
+import { registerSceneKindRenderer, type SceneKindRenderContext } from "./sceneKindRenderers.draw";
 
 function Cables({ cables }: { cables: readonly Cable[] }) {
   const geometry = useMemo(() => {

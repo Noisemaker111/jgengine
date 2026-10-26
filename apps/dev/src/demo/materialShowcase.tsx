@@ -8,7 +8,7 @@ import { EnvironmentLighting } from "@jgengine/shell/render/EnvironmentLighting"
 import { MaterialAssetSurface } from "@jgengine/shell/render/materialAsset";
 import { HairCards } from "@jgengine/shell/render/HairCards";
 import { IsolatedEntityModel } from "@jgengine/shell/render/SceneModels";
-import { useLiveEditorDocument } from "@jgengine/shell/scene/AuthoredScene";
+import { useLiveEditorDocument } from "@jgengine/core/scene/AuthoredScene.draw";
 import type { PlayableGame } from "@jgengine/shell/registry";
 import source from "./materialShowcase.scene.json";
 import { demoGame } from "./demoGame";

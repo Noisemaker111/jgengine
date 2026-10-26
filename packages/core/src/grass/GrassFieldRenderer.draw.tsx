@@ -8,7 +8,7 @@ import { masksInfluence } from "@jgengine/core/world/geometry";
 
 import { GrassPatch } from "@jgengine/core/grass/GrassPatch.draw";
 import type { GrassExclusion } from "@jgengine/core/grass/grassBake.draw";
-import { registerSceneKindRenderer, type SceneKindRenderContext } from "@jgengine/shell/scene/sceneKindRenderers";
+import { registerSceneKindRenderer, type SceneKindRenderContext } from "@jgengine/core/scene/sceneKindRenderers.draw";
 
 /** Volume kinds turf yields to — blades never grow through cracked soil or out of open water. */
 const GRASS_YIELDS_TO = new Set(["soil", "water"]);

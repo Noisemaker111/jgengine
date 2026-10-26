@@ -16,7 +16,7 @@ export const Route = createFileRoute("/editor")({
   component: Editor,
 });
 
-const AUTHORED_SCENE = `import { AuthoredScene } from "@jgengine/shell/scene";
+const AUTHORED_SCENE = `import { AuthoredScene } from "@jgengine/core/scene/AuthoredScene.draw";
 
 // Everything you placed in the editor — paths draped on terrain,
 // foliage instanced, gameplay spots — renders from one document.

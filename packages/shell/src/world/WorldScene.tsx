@@ -6,7 +6,7 @@ import * as THREE from "three";
 
 import { createEmptyEditorDocument, type EditorDocument } from "@jgengine/core/editor/index";
 import { resolveAuthoredObjects } from "@jgengine/core/world/authoredObjects";
-import { useLiveEditorDocument } from "../scene/AuthoredScene";
+import { useLiveEditorDocument } from "@jgengine/core/scene/AuthoredScene.draw";
 import { StaticObjectModels, useStaticObjectBatchProbe } from "./StaticObjectModels";
 import { groupStaticObjects, type StaticObjectBatch } from "./staticObjectBatches";
 import type { AssetCatalog } from "@jgengine/core/scene/assetCatalog";

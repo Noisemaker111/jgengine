@@ -1,4 +1,4 @@
-import { AuthoredFlocks } from "../world/AuthoredFlocks";
+import { AuthoredFlocks } from "@jgengine/shell/world/AuthoredFlocks";
 import { AuthoredWeatherLayer } from "@jgengine/core/weather/AuthoredWeatherLayer.draw";
 import { Fragment, useCallback, useEffect, useMemo, useRef, useSyncExternalStore } from "react";
 
@@ -25,13 +25,13 @@ import type { TerrainField } from "@jgengine/core/terrain/terrain";
 import { getAssetGenerator } from "@jgengine/core/scene/assetGenerator";
 import { useGameContext } from "@jgengine/react/provider";
 
-import { Roads } from "../roads/RoadRibbons";
+import { Roads } from "@jgengine/core/roads/RoadRibbons.draw";
 
-import { createModelMapResolver } from "../render/resolveModel";
+import { createModelMapResolver } from "@jgengine/shell/render/resolveModel";
 import { InstancedScatter } from "@jgengine/core/scatter/InstancedScatter.draw";
-import { GeneratedAssetInstance } from "./GeneratedAssetRenderer";
-import { registerBuiltinSceneKindRenderers } from "./builtinSceneKindRenderers";
-import { getSceneKindRenderer, type SceneKindRenderContext } from "./sceneKindRenderers";
+import { GeneratedAssetInstance } from "./GeneratedAssetRenderer.draw";
+import { registerBuiltinSceneKindRenderers } from "./builtinSceneKindRenderers.draw";
+import { getSceneKindRenderer, type SceneKindRenderContext } from "./sceneKindRenderers.draw";
 
 const noopSubscribe = (): (() => void) => () => undefined;
 
@@ -150,6 +150,7 @@ export interface AuthoredPathsProps {
  * editor authors the polyline, the engine drapes it over the live terrain at runtime. Width comes
  * from `path.width`, color from `path.meta.color`/`path.color`, and the procedural surface from
  * `path.meta.surface` or the kind (see `resolvePathSurface`). A game never hand-rolls path meshes.
+ * @capability authored-paths drape editor-authored paths over live terrain as surfaced ribbons
  */
 export function AuthoredPaths({ document, field, kinds, surfaceDetail = true }: AuthoredPathsProps) {
   const roads = useMemo(
@@ -182,6 +183,7 @@ export interface AuthoredObjectsProps extends ResolveAuthoredObjectsOptions {
  * Places every editor marker with a catalog id into `ctx.scene.object`, grounded on `field`.
  * WorldScene renders them through the game's `objectModels` seam — no bespoke place loop. Pure
  * headless twin: `resolveAuthoredObjects` / `placeAuthoredObjects`.
+ * @capability authored-objects place editor markers with catalog ids into the scene, grounded on the terrain
  */
 export function AuthoredObjects({
   document,

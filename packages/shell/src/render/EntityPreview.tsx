@@ -4,7 +4,7 @@ import type { CSSProperties, ReactNode } from "react";
 import type { ModelConfig } from "@jgengine/core/game/playableGame";
 import { GameContextBridge, useOptionalGameContext } from "@jgengine/react/provider";
 
-import { StudioStage, type StudioMood } from "../scene/StudioStage";
+import { StudioStage, type StudioMood } from "@jgengine/core/scene/StudioStage.draw";
 import { IsolatedEntityModel } from "./SceneModels";
 
 /** Props for {@link EntityPreview}. */

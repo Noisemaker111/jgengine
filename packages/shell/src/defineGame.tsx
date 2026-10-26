@@ -21,7 +21,7 @@ import type { ResolveAuthoredObjectsOptions } from "@jgengine/core/world/authore
 import { EnvironmentScene } from "@jgengine/core/environment/EnvironmentScene.draw";
 import { terrainGroundColorSampler } from "@jgengine/core/terrain/terrainGroundColor.draw";
 import type { PlayableGame } from "./registry";
-import { AuthoredScene } from "./scene/AuthoredScene";
+import { AuthoredScene } from "@jgengine/core/scene/AuthoredScene.draw";
 
 type EngineFields<TAssetRef extends ModelAssetRef> = Omit<
   GameDefinitionConfig<TAssetRef>,

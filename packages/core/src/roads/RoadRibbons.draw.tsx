@@ -16,8 +16,8 @@ import {
 import { findRoadJunctions, sidewalkWidthOf, type RoadJunction } from "@jgengine/core/roads/streets";
 import type { TerrainField } from "@jgengine/core/terrain/terrain";
 
-import { useSurfaceScan, type SurfaceScanTextures } from "../render/surfaceScanTextures";
-import { RoadJunctions } from "./RoadJunctions";
+import { useSurfaceScan, type SurfaceScanTextures } from "@jgengine/shell/render/surfaceScanTextures";
+import { RoadJunctions } from "./RoadJunctions.draw";
 import {
   isSoftRibbonSurface,
   resolvePathSurface,
@@ -26,7 +26,7 @@ import {
   ribbonSurfaceFrame,
   useSurfaceRibbonMaterial,
   type RibbonSurfaceScan,
-} from "./surfaceRibbonMaterial";
+} from "./surfaceRibbonMaterial.draw";
 import { useTerrainQuality } from "@jgengine/core/terrain/terrainQuality.draw";
 
 /**
@@ -236,6 +236,7 @@ export function buildAuthoredRoadNetwork(
  * the dashed line no longer needs exclusion circles to skip intersections. The carriageway, curbs and
  * sidewalks shade with the terrain's procedural surfaces (`road.surface`, default asphalt with tyre
  * wear); `surface: false` keeps them flat.
+ * @capability road-ribbons draw roads, tracks and trails as surfaced ribbons with curbs, sidewalks, lane markings and trimmed junctions
  */
 export function RoadRibbons({
   road,

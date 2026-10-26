@@ -76,7 +76,7 @@ export * from "@jgengine/core/ui/display.view";
 export * from "@jgengine/core/map/map.view";
 export * from "./preview";
 export * from "./previewFixtures";
-export * from "./roads/streetGeometryPreview";
+export * from "@jgengine/core/roads/streetGeometryPreview.view";
 export * from "@jgengine/core/save/saveSlots.view";
 export * from "@jgengine/core/camera/shake/cameraShake.view";
 export * from "@jgengine/core/dialog/dialogBehavior.view";

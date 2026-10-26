@@ -3,8 +3,8 @@ import { useMemo } from "react";
 import { resolveGeneratorAsset } from "@jgengine/core/scene/assetGenerator";
 import { STUDIO_STAGE_POST } from "@jgengine/core/render/postProcessing";
 import { flat } from "@jgengine/core/world/features";
-import { GeneratedAssetInstance } from "@jgengine/shell/scene/GeneratedAssetRenderer";
-import { StudioStage } from "@jgengine/shell/scene/StudioStage";
+import { GeneratedAssetInstance } from "@jgengine/core/scene/GeneratedAssetRenderer.draw";
+import { StudioStage } from "@jgengine/core/scene/StudioStage.draw";
 import { defineGame } from "@jgengine/shell/defineGame";
 
 import { registerBookcaseStudio } from "@jgengine-examples/studios";

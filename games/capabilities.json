@@ -735,10 +735,20 @@
       "intent": "place catalog mesh props from an editor document"
     },
     {
+      "id": "authored-paths",
+      "packages": [
+        "@jgengine/core"
+      ],
+      "module": "@jgengine/core/scene/AuthoredScene.draw",
+      "domain": "scene",
+      "gameFacing": false,
+      "probe": null,
+      "intent": "drape editor-authored paths over live terrain as surfaced ribbons"
+    },
+    {
       "id": "authored-solids",
       "packages": [
-        "@jgengine/core",
-        "@jgengine/shell"
+        "@jgengine/core"
       ],
       "module": "@jgengine/core/world/authoredSolids",
       "domain": "world",
@@ -6969,6 +6979,17 @@
       "intent": "total polyline distance for progress math and seeding"
     },
     {
+      "id": "path-surface",
+      "packages": [
+        "@jgengine/core"
+      ],
+      "module": "@jgengine/core/roads/surfaceRibbonMaterial.draw",
+      "domain": "roads",
+      "gameFacing": false,
+      "probe": null,
+      "intent": "pick the procedural surface, edge fade and wear an authored path draws with"
+    },
+    {
       "id": "path-terrain",
       "packages": [
         "@jgengine/core"
@@ -7976,6 +7997,17 @@
       "intent": "distribute reward results among multiplayer participants deterministically"
     },
     {
+      "id": "ribbon-surface-frame",
+      "packages": [
+        "@jgengine/core"
+      ],
+      "module": "@jgengine/core/roads/surfaceRibbonMaterial.draw",
+      "domain": "roads",
+      "gameFacing": false,
+      "probe": null,
+      "intent": "per-vertex along/across/to-end frame a custom ribbon mesh feeds the surface ribbon material"
+    },
+    {
       "id": "ride-appeal",
       "packages": [
         "@jgengine/core"
@@ -8035,6 +8067,17 @@
       "gameFacing": false,
       "probe": null,
       "intent": "force-and-torque aircraft — lifting surfaces with stall and drag polar, control surfaces, inertia, loops and rolls"
+    },
+    {
+      "id": "road-ribbons",
+      "packages": [
+        "@jgengine/core"
+      ],
+      "module": "@jgengine/core/roads/RoadRibbons.draw",
+      "domain": "roads",
+      "gameFacing": false,
+      "probe": null,
+      "intent": "draw roads, tracks and trails as surfaced ribbons with curbs, sidewalks, lane markings and trimmed junctions"
     },
     {
       "id": "role-assign",
@@ -9317,9 +9360,9 @@
     {
       "id": "studio-stage",
       "packages": [
-        "@jgengine/shell"
+        "@jgengine/core"
       ],
-      "module": "@jgengine/shell/scene/StudioStage",
+      "module": "@jgengine/core/scene/StudioStage.draw",
       "domain": "scene",
       "gameFacing": false,
       "probe": null,
@@ -9359,6 +9402,17 @@
       "gameFacing": false,
       "probe": null,
       "intent": "terrain-following reference grid that is not occluded by relief"
+    },
+    {
+      "id": "surface-ribbon-material",
+      "packages": [
+        "@jgengine/core"
+      ],
+      "module": "@jgengine/core/roads/surfaceRibbonMaterial.draw",
+      "domain": "roads",
+      "gameFacing": false,
+      "probe": null,
+      "intent": "React-owned procedural ribbon material (asphalt, dirt, gravel) for a custom road or trail mesh"
     },
     {
       "id": "surface-ring",
@@ -11027,8 +11081,7 @@
     {
       "id": "world-intersections",
       "packages": [
-        "@jgengine/core",
-        "@jgengine/react"
+        "@jgengine/core"
       ],
       "module": "@jgengine/core/roads/roads",
       "domain": "roads",
