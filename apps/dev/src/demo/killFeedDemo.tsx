@@ -1,11 +1,11 @@
 import { useEffect, type CSSProperties, type ReactNode } from "react";
 
 import { defineGameDefinition } from "@jgengine/core/game/defineGame";
-import { createEventTicker } from "@jgengine/core/game/eventTicker";
+import { createEventTicker } from "@jgengine/core/feed/eventTicker";
 import type { GameContext, GameContextEntityEntry } from "@jgengine/core/runtime/gameContext";
 import { createAssetCatalog } from "@jgengine/core/scene/assetCatalog";
 import { environment, grass, terrain } from "@jgengine/core/world/features";
-import { KillFeed, type KillFeedKindStyle } from "@jgengine/react/killFeed";
+import { KillFeed, type KillFeedKindStyle } from "@jgengine/core/feed/killFeed.view";
 
 import { EnvironmentScene } from "@jgengine/shell/environment/EnvironmentScene";
 import type { PlayableGame } from "@jgengine/shell/registry";

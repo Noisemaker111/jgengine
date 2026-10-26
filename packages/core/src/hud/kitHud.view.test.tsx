@@ -3,7 +3,7 @@ import { renderToStaticMarkup } from "react-dom/server";
 
 import { HUD_CORNER_WIDTH, HudSlots } from "./hudLayout.view";
 import { KitCount, KitCounts, KitHint, KitVitals, KitWaveClock } from "./kitHud.view";
-import { KitButton, KitPanel } from "@jgengine/react/uiKitRoot";
+import { KitButton, KitPanel } from "@jgengine/core/ui/kit/uiKitRoot.view";
 
 describe("kitHud blocks", () => {
   test("a count marks itself and shows its rate", () => {

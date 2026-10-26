@@ -1,4 +1,4 @@
-import type { CodexSnapshot } from "@jgengine/core/game/codex";
+import type { CodexSnapshot } from "@jgengine/core/codex/codex";
 import type { NeedSnapshot } from "@jgengine/core/sim/needs";
 import type { WorldModel, WorldModelState } from "@jgengine/core/worldModel/worldModel";
 import { GEAR, type Gear } from "./fabricator";

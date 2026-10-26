@@ -242,6 +242,23 @@
 - `resolveGuestSession` (function): function resolveGuestSession(seed?: string): AuthSession — ⚠ undocumented
 - `sessionPlayer` (function): function sessionPlayer(session: AuthSession): PlayerIdentity — ⚠ undocumented
 
+## @jgengine/core/multiplayer/identity.view
+
+- `BetterAuthSessionState` (interface): interface BetterAuthSessionState { data: {user: BetterAuthUserShape} | null | undefined; isPending: boolean } — ⚠ undocumented
+- `BetterAuthUserShape` (interface): interface BetterAuthUserShape { id: string; name?: string | null; email?: string | null; image?: string | null } — ⚠ undocumented
+- `ClerkUserShape` (interface): interface ClerkUserShape { id: string; fullName?: string | null; username?: string | null; imageUrl?: string | null; primaryEmailAddress?: {emailAddress: string} | null; createdAt?: Date | null; lastSignInAt?: Date | null } — ⚠ undocumented
+- `ClerkUserState` (interface): interface ClerkUserState { isLoaded: boolean; isSignedIn: boolean | undefined; user: ClerkUserShape | null | undefined } — ⚠ undocumented
+- `GameIdentityProvider` (function): function GameIdentityProvider({ source, children, }: { source: IdentitySource; children?: ReactNode; }): React.JSX.Element — ⚠ undocumented
+- `IdentitySource` (interface): interface IdentitySource { session: AuthSession | null; isLoading: boolean; signOut?: () => void } — ⚠ undocumented
+- `RequireSession` (function): function RequireSession({ fallback, loading, children, }: { fallback?: ReactNode; loading?: ReactNode; children?: ReactNode; }): React.JSX.Element — ⚠ undocumented
+- `SignOutButton` (function): function SignOutButton({ className, children, }: { className?: string; children?: ReactNode; }): React.JSX.Element | null — ⚠ undocumented
+- `UserBadge` (function): function UserBadge({ className, avatarClassName, nameClassName, renderBadge, }: { className?: string; avatarClassName?: string; nameClassName?: string; renderBadge?: (session: AuthSession) => ReactNode; }): React.JSX.Element | null — ⚠ undocumented
+- `betterAuthIdentity` (function): function betterAuthIdentity(state: BetterAuthSessionState, options?: { signOut?: () => void }): IdentitySource — ⚠ undocumented
+- `clerkIdentity` (function): function clerkIdentity(state: ClerkUserState, options?: { signOut?: () => void }): IdentitySource — ⚠ undocumented
+- `guestIdentity` (function): function guestIdentity(seed?: string): IdentitySource — ⚠ undocumented
+- `useAuthedPlayer` (function): function useAuthedPlayer(options?: { guestSeed?: string }): PlayerIdentity | null — ⚠ undocumented
+- `useSession` (function): function useSession(): IdentitySource — ⚠ undocumented
+
 ## @jgengine/core/multiplayer/lagCompensation
 
 - `HitscanHit` (interface): interface HitscanHit { entityId: string; distance: number; point: Xyz } — ⚠ undocumented
@@ -303,6 +320,16 @@
 - `CommitRoundConfig` (interface): interface CommitRoundConfig { participants: readonly string[]; allowReseal?: boolean } — ⚠ undocumented
 - `SealResult` (type): type SealResult = | { ok: true; allSealed: boolean } | { ok: false; reason: "unknown_participant" | "already_sealed" | "already_revealed" } — ⚠ undocumented
 - `SealedCommit` (interface): interface SealedCommit<TAction> { playerId: string; action: TAction; sealedAt: number } — ⚠ undocumented
+
+## @jgengine/core/multiplayer/voice.view
+
+- `MicToggle` (function): function MicToggle({ voice, className, mutedLabel, unmutedLabel, }: { voice: VoiceState; className?: string; mutedLabel?: ReactNode; unmutedLabel?: ReactNode; }): React.JSX.Element — ⚠ undocumented
+- `PushToTalkButton` (function): function PushToTalkButton({ voice, className, children, }: { voice: VoiceState; className?: string; children?: ReactNode; }): React.JSX.Element — ⚠ undocumented
+- `SpeakingIndicator` (function): function SpeakingIndicator({ voice, userId, className, threshold = 0.01, children, }: { voice: VoiceState; userId: string; className?: string; threshold?: number; children?: ReactNode; }): React.JSX.Element — ⚠ undocumented
+- `UseVoiceOptions` (interface): interface UseVoiceOptions { transport?: VoiceTransport; channelId?: string; mode?: PushToTalkMode; resolveRoutes?: () => readonly VoiceRoute[]; getUserMedia?: (constraints: MediaStreamConstraints) => Promise<MediaStream> } — ⚠ undocumented · used by `useVoice`: Mic capture + push-to-talk + channel roster over the VoiceTransport signaling seam.
+- `VoiceRoster` (function): function VoiceRoster({ voice, className, participantClassName, renderParticipant, }: { voice: VoiceState; className?: string; participantClassName?: string; renderParticipant?: (participant: VoiceParticipant, gain: number) => ReactNode; }): React.JSX.Element — ⚠ undocumented
+- `VoiceState` (interface): interface VoiceState { supported: boolean; micStream: MediaStream | null; micError: string | null; requestMic(): Promise<boolean>; transmitting: boolean; status: PushToTalkStatus; mode: PushToTalkMode; setMode(mode: PushToTalkMode): void; muted: boolean; setMut… — ⚠ undocumented · used by `useVoice`: Mic capture + push-to-talk + channel roster over the VoiceTransport signaling seam.
+- `useVoice` (function): function useVoice(options?: UseVoiceOptions): VoiceState — Mic capture + push-to-talk + channel roster over the VoiceTransport signaling seam. Transmission gates the captured tracks' `enabled` flag; the media plane that actually moves audio bytes (WebRTC/SFU) stays behind the transport, host-supplied. Call once per voice channel and hand the returned state to the voice components.
 
 ## @jgengine/core/multiplayer/voiceContract
 

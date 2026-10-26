@@ -2,7 +2,7 @@ import { useEffect, useReducer, type CSSProperties, type ReactNode } from "react
 
 import type { RebindRow, RebindSession } from "@jgengine/core/input/rebindSession";
 
-import { Keycap } from "@jgengine/react/keyHint";
+import { Keycap } from "@jgengine/core/input/keyHint.view";
 import { hudType } from "@jgengine/core/hud/hudTokens";
 
 /**

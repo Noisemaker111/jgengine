@@ -8,7 +8,7 @@ import type { AudioReverbConfig } from "../audio/reverb";
 import type { MusicTheme } from "../audio/music";
 import type { ModelShadowMode, ModelVariantLodConfig } from "../lod/modelLod";
 export type { ModelShadowMode, ModelVariantConfig, ModelVariantLodConfig } from "../lod/modelLod";
-import type { UiCueOverrides } from "../audio/uiCues";
+import type { UiCueOverrides } from "../ui/uiCues";
 import type { FeedbackCueOverrides } from "../audio/feedbackCues";
 import type { NoticeFeedConfig } from "../notifications/notices";
 

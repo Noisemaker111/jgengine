@@ -1,4 +1,4 @@
-import type { LeaderboardScope } from "@jgengine/core/game/leaderboard";
+import type { LeaderboardScope } from "@jgengine/core/leaderboard/leaderboard";
 import { useLeaderboard } from "@jgengine/react/hooks";
 
 import { RankList, type RankEntry } from "@/components/ui/rank-list";

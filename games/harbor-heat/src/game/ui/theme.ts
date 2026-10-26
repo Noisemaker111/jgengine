@@ -1,7 +1,7 @@
-import { gameFontStacks } from "@jgengine/react/gameFonts";
+import { gameFontStacks } from "@jgengine/core/ui/fonts.view";
 import { hudTheme } from "@jgengine/core/hud/hudTheme.view";
-import { customizeKit } from "@jgengine/react/uiKit";
-import { UI_KITS } from "@jgengine/react/uiKits";
+import { customizeKit } from "@jgengine/core/ui/kit/uiKit.view";
+import { UI_KITS } from "@jgengine/core/ui/kit/uiKits.view";
 import { GAME_FONTS } from "../../art/fonts/fonts";
 
 /** Bangers on every sign and number, Barlow for reading: the boulevard's two faces. */

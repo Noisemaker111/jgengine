@@ -2,7 +2,7 @@ import { useMemo } from "react";
 import { useMutation, useQuery } from "convex/react";
 import type { FunctionReference } from "convex/server";
 
-import type { ChatMessage } from "@jgengine/core/game/chat";
+import type { ChatMessage } from "@jgengine/core/chat/chat";
 import type {
   ChatActions,
   ChatSendOutcome,

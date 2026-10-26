@@ -1,9 +1,9 @@
 import { forwardRef, useEffect, useRef, type CSSProperties, type HTMLAttributes, type ReactNode } from "react";
 
-import { useReducedMotion } from "@jgengine/react/accessibility";
+import { useReducedMotion } from "@jgengine/core/ui/accessibility.view";
 import { useEngineStyles } from "@jgengine/react/engineStyles";
 import { useHudInteract, type HudInteractListener } from "./hudInteract.view";
-import { useMountPresence } from "@jgengine/react/presence";
+import { useMountPresence } from "@jgengine/core/ui/presence.view";
 
 /** Shadow height of a {@link HudSurface}. */
 export type HudSurfaceElevation = "raised" | "overlay" | "modal";

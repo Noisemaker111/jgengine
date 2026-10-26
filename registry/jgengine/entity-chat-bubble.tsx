@@ -1,4 +1,4 @@
-import { useEntityChatBubble } from "@jgengine/react/chatBubbles";
+import { useEntityChatBubble } from "@jgengine/core/chat/chatBubbles.view";
 
 import { ChatBubble } from "@/components/ui/chat-bubble";
 

@@ -1,11 +1,11 @@
 import { useSyncExternalStore } from "react";
 
 import { defineGameDefinition } from "@jgengine/core/game/defineGame";
-import { createCodex, type CodexEntryDef } from "@jgengine/core/game/codex";
+import { createCodex, type CodexEntryDef } from "@jgengine/core/codex/codex";
 import type { GameContext, GameContextEntityEntry } from "@jgengine/core/runtime/gameContext";
 import { createAssetCatalog } from "@jgengine/core/scene/assetCatalog";
 import { environment, grass, terrain } from "@jgengine/core/world/features";
-import { CodexPanel } from "@jgengine/react/codex";
+import { CodexPanel } from "@jgengine/core/codex/codex.view";
 
 import { EnvironmentScene } from "@jgengine/shell/environment/EnvironmentScene";
 import type { PlayableGame } from "@jgengine/shell/registry";

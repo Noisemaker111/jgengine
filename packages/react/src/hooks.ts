@@ -6,9 +6,9 @@ import { dispatchCommand, type DispatchedCommandResult } from "@jgengine/core/ru
 import type { AbilityKit, AbilitySlotSnapshot } from "@jgengine/core/combat/abilityKit";
 import type { EventMeter } from "@jgengine/core/stats/eventMeter";
 import type { GameEvents } from "@jgengine/core/game/events";
-import type { FeedEntry } from "@jgengine/core/game/feed";
+import type { FeedEntry } from "@jgengine/core/feed/feed";
 import type { QuestInstance } from "@jgengine/core/mission/quest";
-import type { ChatMessage } from "@jgengine/core/game/chat";
+import type { ChatMessage } from "@jgengine/core/chat/chat";
 import type {
   FriendEntry,
   FriendRequestEntry,
@@ -16,13 +16,13 @@ import type {
   PartyMemberEntry,
   PresenceInfo,
   WorldInvite,
-} from "@jgengine/core/game/social";
+} from "@jgengine/core/social/social";
 import {
   browseSessions,
   type MatchFilter,
   type SessionListing,
 } from "@jgengine/core/multiplayer/matchmaking";
-import type { LeaderboardScope } from "@jgengine/core/game/leaderboard";
+import type { LeaderboardScope } from "@jgengine/core/leaderboard/leaderboard";
 import type { InventorySlot } from "@jgengine/core/inventory/inventoryModel";
 import type { StatValue } from "@jgengine/core/scene/entityStats";
 import type { SceneEntity } from "@jgengine/core/scene/entityStore";

@@ -2,8 +2,8 @@ import { Html } from "@react-three/drei";
 import { useFrame, useThree } from "@react-three/fiber";
 import { useState, type CSSProperties } from "react";
 
-import type { FloatingTextField, FloatingTextView } from "@jgengine/core/ui/floatingText";
-import { FloatingText, type FloatingTextLayoutOptions } from "@jgengine/react/floatingText";
+import type { FloatingTextField, FloatingTextView } from "@jgengine/core/hud/floatingText";
+import { FloatingText, type FloatingTextLayoutOptions } from "@jgengine/core/hud/floatingText.view";
 
 import { useWorldProjection } from "../world/WorldEntityFrames";
 

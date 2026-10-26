@@ -1,6 +1,6 @@
-import { IconTreatment } from '@jgengine/react/iconTreatment';
+import { IconTreatment } from '@jgengine/core/ui/icons/iconTreatment.view';
 import { hudTheme } from '@jgengine/core/hud/hudTheme.view';
-import { gameFontStacks } from '@jgengine/react/gameFonts';
+import { gameFontStacks } from '@jgengine/core/ui/fonts.view';
 import { ITEMS, type ItemKind } from '../state';
 import { GAME_FONTS } from '../../art/fonts/fonts';
 

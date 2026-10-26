@@ -2,9 +2,9 @@ import { useMemo, useState } from "react";
 
 import type { GameContext } from "@jgengine/core/runtime/gameContext";
 import type { SessionListing } from "@jgengine/core/multiplayer/matchmaking";
-import type { WorldInviteTarget } from "@jgengine/core/game/social";
+import type { WorldInviteTarget } from "@jgengine/core/social/social";
 import { createLocalVoiceTransport } from "@jgengine/core/multiplayer/voiceContract";
-import { ChatPanel } from "@jgengine/react/chat";
+import { ChatPanel } from "@jgengine/core/chat/chat.view";
 import { usePlayer } from "@jgengine/react/hooks";
 import {
   AddFriendButton,
@@ -20,8 +20,8 @@ import {
   QuickMatchButton,
   WorldBrowser,
   WorldInviteToast,
-} from "@jgengine/react/social";
-import { MicToggle, PushToTalkButton, useVoice, VoiceRoster } from "@jgengine/react/voice";
+} from "@jgengine/core/social/social.view";
+import { MicToggle, PushToTalkButton, useVoice, VoiceRoster } from "@jgengine/core/multiplayer/voice.view";
 
 import type { PlayableGame } from "@jgengine/shell/registry";
 import { demoGame } from "./demoGame";

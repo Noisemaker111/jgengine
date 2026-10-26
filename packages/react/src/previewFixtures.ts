@@ -4,15 +4,15 @@ import type { GamePreviewComponent } from "./preview";
 import { HudChromePreview } from "@jgengine/core/hud/hudChromePreview.view";
 import { HudLanesPreview } from "@jgengine/core/hud/hudLanesPreview.view";
 import { HudThemePreview } from "@jgengine/core/hud/hudThemePreview.view";
-import { IconsPreview } from "./iconsPreview";
-import { KitFramesPreview } from "./kitFramesPreview";
+import { IconsPreview } from "@jgengine/core/ui/icons/iconsPreview.view";
+import { KitFramesPreview } from "@jgengine/core/ui/kit/kitFramesPreview.view";
 import { StreetGeometryPreview } from "./roads/streetGeometryPreview";
 import { SpriteClipPreview } from "./spriteClipPreview";
 import { TileLayerPreview } from "./tileLayerPreview";
 import { HudSkinPreview } from "@jgengine/core/hud/hudSkinPreview.view";
-import { ScrollRailPreview } from "./scrollRailPreview";
-import { UI_KITS, type UiKitName } from "./uiKits";
-import { UiKitMenuPreview, UiKitPreview, UiKitsPreview } from "./uiKitsPreview";
+import { ScrollRailPreview } from "@jgengine/core/ui/scrollRailPreview.view";
+import { UI_KITS, type UiKitName } from "@jgengine/core/ui/kit/uiKits.view";
+import { UiKitMenuPreview, UiKitPreview, UiKitsPreview } from "@jgengine/core/ui/kit/uiKitsPreview.view";
 
 /**
  * One entry in the engine preview-fixture registry: a deterministic, engine-level

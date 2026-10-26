@@ -1,7 +1,7 @@
 import { describe, expect, test } from "bun:test";
 
 import type { GameContext } from "@jgengine/core/runtime/gameContext";
-import { canvasCover } from "@jgengine/react/canvasCover";
+import { canvasCover } from "@jgengine/core/ui/canvasCover.view";
 
 import { applyTimeScale, installAgentBridge, playerPoseReport, waitForEditorHost } from "./agentBridge";
 

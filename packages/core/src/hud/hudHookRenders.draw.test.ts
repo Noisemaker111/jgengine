@@ -71,7 +71,7 @@ function JournalRows() {
   return createElement("group", { userData: { rows: journal.length, progress: journal[0]?.objectives[0]?.progress ?? 0 } });
 }
 
-/** Stands where `FriendsList` (`packages/react/src/social.tsx`) reads friends. */
+/** Stands where `FriendsList` (`packages/core/src/social/social.view.tsx`) reads friends. */
 function FriendRows() {
   const friends = useFriends();
   renders += 1;

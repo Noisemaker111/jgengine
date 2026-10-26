@@ -1,4 +1,4 @@
-import { createTalentTree, type TalentNodeDef, type TalentTree } from "@jgengine/core/game/talents";
+import { createTalentTree, type TalentNodeDef, type TalentTree } from "@jgengine/core/talents/talents";
 
 export type BonusStat =
   | "gunDamage"

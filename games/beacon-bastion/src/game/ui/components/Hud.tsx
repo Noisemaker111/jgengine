@@ -1,7 +1,7 @@
-import { useActionBindings } from "@jgengine/react/uiKitRoot";
+import { useActionBindings } from "@jgengine/core/ui/kit/uiKitRoot.view";
 import { useGame, useGameStore } from "@jgengine/react/hooks";
-import { KitButton, KitPanel } from "@jgengine/react/uiKitRoot";
-import { GameIcon, type GameIconName } from "@jgengine/react/gameIcons";
+import { KitButton, KitPanel } from "@jgengine/core/ui/kit/uiKitRoot.view";
+import { GameIcon, type GameIconName } from "@jgengine/core/ui/icons/gameIcons.view";
 import { actionLabel } from "@jgengine/core/input/actionBindings";
 import { summarizeWave } from "@jgengine/core/waves/wavePreview";
 

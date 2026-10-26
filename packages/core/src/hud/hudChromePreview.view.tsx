@@ -7,9 +7,9 @@ import { HudSurface } from "./hudSurface.view";
 import { HudThemeRoot } from "./hudThemeRoot.view";
 import { PauseMenu } from "@jgengine/core/menu/pauseMenu.view";
 import { ConfirmDialog } from "@jgengine/core/dialog/modals.view";
-import { Window } from "@jgengine/react/panels";
-import { TweenNumber } from "@jgengine/react/tweenNumber";
-import { KitMeter } from "@jgengine/react/uiKitRoot";
+import { Window } from "@jgengine/core/ui/panels.view";
+import { TweenNumber } from "@jgengine/core/anim/tweenNumber.view";
+import { KitMeter } from "@jgengine/core/ui/kit/uiKitRoot.view";
 
 const ACTIONS = [
   resolveAction({ id: "slash", label: "Slash", icon: "⚔", hotkey: "1" }),

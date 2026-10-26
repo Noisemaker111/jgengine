@@ -2,6 +2,24 @@
 
 # jgengine-gameplay — exported API surface
 
+## @jgengine/core/achievements/achievements
+
+- `AchievementDef` (interface): interface AchievementDef — Definition of one achievement. Content-agnostic — the game supplies names, targets, and icons.
+- `AchievementSnapshot` (interface): interface AchievementSnapshot — Whole serializable state of a tracker — drop into a save blob.
+- `AchievementTracker` (interface): interface AchievementTracker — Live achievement state over a fixed definition set — drives progress, unlocks, score, and a UI view list.
+- `AchievementTrackerOptions` (interface): interface AchievementTrackerOptions — Options for {@link createAchievementTracker}.
+- `AchievementUnlock` (interface): interface AchievementUnlock — Emitted the instant an achievement unlocks — wire to a toast, feed, or sound.
+- `AchievementView` (interface): interface AchievementView extends AchievementDef — A definition plus its live unlock/progress state — what UI renders.
+- `createAchievementTracker` (function): function createAchievementTracker(options: AchievementTrackerOptions): AchievementTracker — Tracks achievement/trophy unlocks over caller-driven events — counter goals (`progress`/`setProgress`) and boolean flags (`unlock`) — with score, completion, an `onUnlock` seam, and serializable `snapshot`/`restore`. State is plain data; the view list keeps a stable identity between changes so React can read it through `useSyncExternalStore` without re-projecting every frame.
+
+## @jgengine/core/achievements/achievements.view
+
+- `AchievementGallery` (function): function AchievementGallery({ achievements, title = "Achievements", maskSecrets = true, renderIcon, columns = 2, emptyLabel = "No achievements yet.", className, style, }: AchievementGalleryProps): ReactNode — Achievement/trophy gallery — a responsive grid of cards showing unlocked vs. locked state, a progress bar for counter achievements, and a header summary of completion and score. Secret+locked entries mask their name/description. Feed it `useAchievements(tracker)`.
+- `AchievementGalleryProps` (interface): interface AchievementGalleryProps — Props for {@link AchievementGallery}.
+- `AchievementToast` (function): function AchievementToast({ name, description, icon, points, heading = "Achievement Unlocked", className, style, }: AchievementToastProps): ReactNode — The unlock-moment banner — icon, "Achievement Unlocked" heading, name, and optional points. Purely presentational; pair the game's `onUnlock` seam with a toast queue and render one of these per entry.
+- `AchievementToastProps` (interface): interface AchievementToastProps — Props for {@link AchievementToast}.
+- `useAchievements` (function): function useAchievements(tracker: AchievementTracker): readonly AchievementView[] — Subscribe a component to an achievement tracker's live view list. The list keeps a stable identity between changes, so this re-renders only on unlock or progress — not every frame.
+
 ## @jgengine/core/agents/agent
 
 - `Agent` (interface): interface Agent — Needs, mood, schedule and a chosen action, in one object a game ticks.
@@ -116,7 +134,7 @@
 
 - `CardPile` (interface): interface CardPile { state(): CardPileState; zones(): readonly ZoneName[]; count(zone: ZoneName): number; peek(zone: ZoneName, n?: number): readonly string[]; zoneOf(cardId: string): ZoneName | null; shuffle(zone: ZoneName | undefined, seed: string | number):… — ⚠ undocumented
 - `CardPileConfig` (interface): interface CardPileConfig { zones: readonly ZoneName[]; drawFrom?: ZoneName; discardTo?: ZoneName; handZone?: ZoneName; handLimit?: number; reshuffleFrom?: ZoneName; onChange?: () => void } — ⚠ undocumented
-- `CardPileState` (interface): interface CardPileState { readonly zones: Readonly<Record<ZoneName, readonly string[]>> } — ⚠ undocumented · used by `CardStack` (@jgengine/react): `StackedPile` bound to a headless `CardPileState` zone: reads the ordered card ids from `pile.zones[zone]` and resolves each to a `PlayingCa…
+- `CardPileState` (interface): interface CardPileState { readonly zones: Readonly<Record<ZoneName, readonly string[]>> } — ⚠ undocumented · used by `CardStack` (@jgengine/core/cards/cards.view): `StackedPile` bound to a headless `CardPileState` zone: reads the ordered card ids from `pile.zones[zone]` and resolves each to a `PlayingCa…
 - `DrawResult` (interface): interface DrawResult { state: CardPileState; drawn: readonly string[]; reshuffled: boolean } — ⚠ undocumented
 - `PileMoveRejected` (interface): interface PileMoveRejected { status: "rejected"; reason: PileRejection; detail?: string } — ⚠ undocumented
 - `PileMoveResult` (interface): interface PileMoveResult { status: "ok"; state: CardPileState } — ⚠ undocumented
@@ -134,6 +152,18 @@
 - `shuffleZone` (function): function shuffleZone(state: CardPileState, zone: ZoneName, seed: string | number): CardPileState — ⚠ undocumented
 - `zoneOf` (function): function zoneOf(state: CardPileState, cardId: string): ZoneName | null — ⚠ undocumented
 
+## @jgengine/core/cards/cards.view
+
+- `CardFace` (function): function CardFace({ rank, suit, faceDown = false, width = 64, height = 90, className, style, children, }: { rank: Rank; suit: Suit; faceDown?: boolean; width?: number; height?: number; className?: string; style?: CSSProperties; children?: ReactNode; }): React.JSX.Element — A single playing-card face: rank + suit pips, or a patterned back when `faceDown`.
+- `CardStack` (function): function CardStack({ pile, zone, cardOf, ...rest }: { pile: CardPileState; zone: string; cardOf: (id: string) => PlayingCard; } & Omit<Parameters<typeof StackedPile>[0], "cards">): React.JSX.Element — `StackedPile` bound to a headless `CardPileState` zone: reads the ordered card ids from `pile.zones[zone]` and resolves each to a `PlayingCard` via `cardOf`.
+- `PlayingCard` (interface): interface PlayingCard — A single card in a stack: an id plus its face and orientation.
+- `RANKS` (const): const RANKS: readonly Rank[] — Ranks in ascending order, ace low.
+- `Rank` (type): type Rank = "A" | "2" | "3" | "4" | "5" | "6" | "7" | "8" | "9" | "10" | "J" | "Q" | "K" — A playing-card rank, ace through king.
+- `SUITS` (const): const SUITS: readonly Suit[] — Suits in canonical order (clubs, diamonds, hearts, spades).
+- `StackedPile` (function): function StackedPile({ cards, faceDown, offsetX = 0, offsetY = 20, cardWidth = 64, cardHeight = 90, layer, dropId, draggableFrom = 0, className, cardClassName, onCardClick, renderOverlay, }: { cards: readonly PlayingCard[]; faceDown?: boolean; offsetX?: number; offsetY?: number; cardWidth?: number; … — An overlapping fan of `CardFace`s. Plain-props: pass `cards`. Optional drag: pass a `layer` to make each card a `DraggableCard`, and `dropId` to wrap the pile in a `DropZone`.
+- `Suit` (type): type Suit = "clubs" | "diamonds" | "hearts" | "spades" — The four French-deck suits.
+- `isRedSuit` (function): function isRedSuit(suit: Suit): boolean — True for the red suits (hearts, diamonds).
+
 ## @jgengine/core/cards/modifierPipeline
 
 - `Modifier` (interface): interface Modifier<V> { id: string; source?: string; apply: (value: V, context: PipelineContext<V>) => V } — ⚠ undocumented
@@ -143,6 +173,72 @@
 - `TraceStep` (interface): interface TraceStep<V> { id: string; source?: string; index: number; before: V; after: V; changed: boolean } — ⚠ undocumented
 - `createModifierPipeline` (function): function createModifierPipeline<V>(initial: readonly Modifier<V>[] = [], equals: (a: V, b: V) => boolean = Object.is): ModifierPipeline<V> — ⚠ undocumented
 - `runPipeline` (function): function runPipeline<V>(base: V, modifiers: readonly Modifier<V>[], equals: (a: V, b: V) => boolean = Object.is): PipelineResult<V> — ⚠ undocumented
+
+## @jgengine/core/chat/chat
+
+- `Chat` (interface): interface Chat { register(def: ChatChannelDef): void; channels(): ChatChannelDef[]; send(fromUserId: string, body: string): ChatSendResult; send(fromUserId: string, channelId: string, body: string): ChatSendResult; recent(options?: {limit?: number; channe… — ⚠ undocumented
+- `ChatChannelDef` (interface): interface ChatChannelDef { id: string; kind: ChatChannelKind; radius?: number; historyLimit?: number; rateLimit?: ChatRateLimit } — ⚠ undocumented
+- `ChatChannelKind` (type): type ChatChannelKind = "global" | "party" | "proximity" — ⚠ undocumented
+- `ChatDeps` (interface): interface ChatDeps { events: GameEvents; now?: () => number; party?: {membersOf(userId: string): string[]}; proximity?: EmotesDeps; blockedBy?: (userId: string) => readonly string[]; maxBodyLength?: number; defaultRateLimit?: ChatRateLimit; filter?: ChatFilte… — ⚠ undocumented
+- `ChatMessage` (interface): interface ChatMessage { id: string; channelId: string; fromUserId: string; body: string; at: number } — ⚠ undocumented · used by `ChatPanel` (@jgengine/core/chat/chat.view): Chat behavior over a game context or externally supplied server messages.
+- `ChatRateLimit` (interface): interface ChatRateLimit { count: number; perMs: number } — ⚠ undocumented
+- `ChatRateLimiter` (interface): interface ChatRateLimiter { allow(key: string, atMs: number): boolean; snapshot(): Record<string, number[]>; restore(state: Record<string, number[]>): void } — ⚠ undocumented
+- `ChatRecipients` (type): type ChatRecipients = readonly string[] | "all" — ⚠ undocumented
+- `ChatSendResult` (type): type ChatSendResult = | { message: ChatMessage; recipients: ChatRecipients } | { reason: string } — ⚠ undocumented
+- `ChatSnapshot` (interface): interface ChatSnapshot { messages: Record<string, ChatMessage[]>; counter: number; rateWindows?: Record<string, Record<string, number[]>> } — ⚠ undocumented
+- `ChatValidation` (type): type ChatValidation = { ok: true; text: string } | { ok: false; reason: string } — Sanitized chat text or a displayable validation failure.
+- `DEFAULT_CHAT_BODY_LENGTH` (const): const DEFAULT_CHAT_BODY_LENGTH: 240 — ⚠ undocumented
+- `DEFAULT_CHAT_HISTORY_LIMIT` (const): const DEFAULT_CHAT_HISTORY_LIMIT: 100 — ⚠ undocumented
+- `DEFAULT_CHAT_RATE_LIMIT` (const): const DEFAULT_CHAT_RATE_LIMIT: ChatRateLimit — ⚠ undocumented
+- `DEFAULT_PROXIMITY_CHAT_RADIUS` (const): const DEFAULT_PROXIMITY_CHAT_RADIUS: 20 — ⚠ undocumented
+- `WHISPER_CHANNEL_PREFIX` (const): const WHISPER_CHANNEL_PREFIX: "whisper:" — ⚠ undocumented
+- `createChat` (function): function createChat(deps: ChatDeps): Chat — ⚠ undocumented
+- `createChatRateLimiter` (function): function createChatRateLimiter(limit: ChatRateLimit): ChatRateLimiter — ⚠ undocumented
+- `validateChatMessage` (function): function validateChatMessage(value: unknown, options: { maxLength?: number } = {}): ChatValidation — Strip control characters and enforce the shared chat message policy before storage or broadcast.
+- `whisperChannelId` (function): function whisperChannelId(a: string, b: string): string — ⚠ undocumented
+
+## @jgengine/core/chat/chat.view
+
+- `ChannelTabs` (function): function ChannelTabs({ channels, active, onSelect, className, tabClassName, activeTabClassName, renderTab, }: { channels?: readonly string[]; active: string; onSelect: (channelId: string) => void; className?: string; tabClassName?: string; activeTabClassName?: string; renderTab?: (channelId: string,… — ⚠ undocumented
+- `ChatInput` (function): function ChatInput({ channelId, className, inputClassName, buttonClassName, placeholder, sendLabel, onSent, onRejected, }: { channelId: string; className?: string; inputClassName?: string; buttonClassName?: string; placeholder?: string; sendLabel?: ReactNode; onSent?: (message: ChatMessage) => void;… — ⚠ undocumented
+- `ChatLog` (function): function ChatLog({ channelId, limit, className, messageClassName, ownMessageClassName, renderMessage, }: { channelId: string; limit?: number; className?: string; messageClassName?: string; ownMessageClassName?: string; renderMessage?: (message: ChatMessage) => ReactNode; }): React.JSX.Element — ⚠ undocumented
+- `ChatPanel` (function): function ChatPanel<T extends ChatMessage = ChatMessage>(props: Parameters<typeof ContextChatPanel>[0] | StandaloneChatPanelProps<T>): React.JSX.Element — Chat behavior over a game context or externally supplied server messages.
+- `chatTransportFromSync` (function): function chatTransportFromSync(sync: ChatSync): ChatTransport — Lifts a callback-style ChatSync (e.g. createWsBackend().chatSyncFor(serverId)) into the hook-shaped ChatTransport contract. Create once per sync — outside render or inside useMemo — so subscriptions survive re-renders.
+
+## @jgengine/core/chat/chatBubbles.view
+
+- `ChatBubble` (interface): interface ChatBubble { id: string; fromUserId: string; body: string; at: number } — ⚠ undocumented
+- `ChatBubblesOptions` (interface): interface ChatBubblesOptions { channelId?: string; ttlMs?: number; limit?: number } — ⚠ undocumented
+- `latestChatBubbles` (function): function latestChatBubbles(messages: readonly ChatMessage[], nowMs: number, ttlMs: number): ChatBubble[] — ⚠ undocumented
+- `useChatBubbles` (function): function useChatBubbles(options?: ChatBubblesOptions): readonly ChatBubble[] — ⚠ undocumented
+- `useEntityChatBubble` (function): function useEntityChatBubble(instanceId: string, options?: ChatBubblesOptions): ChatBubble | null — ⚠ undocumented
+
+## @jgengine/core/chat/chatFilter
+
+- `ChatFilter` (interface): interface ChatFilter { apply(body: string): ChatFilterResult } — ⚠ undocumented
+- `ChatFilterConfig` (interface): interface ChatFilterConfig { blockedWords: readonly string[]; mode?: "mask" | "reject"; mask?: string } — ⚠ undocumented
+- `ChatFilterResult` (interface): interface ChatFilterResult { ok: boolean; body: string; matched: readonly string[] } — ⚠ undocumented
+- `createChatFilter` (function): function createChatFilter(config: ChatFilterConfig): ChatFilter — ⚠ undocumented
+- `normalizeChatText` (function): function normalizeChatText(text: string): string — ⚠ undocumented
+
+## @jgengine/core/chat/standaloneChatPanel.view
+
+- `StandaloneChatPanel` (function): function StandaloneChatPanel<T extends ChatMessage>({ messages, userId, onSend, className, logClassName, inputClassName, inputFieldClassName, messageClassName, ownMessageClassName, style, defaultExpanded = false, collapsedLimit = 3, limit = 50, maxLength = DEFAULT_CHAT_BODY_LENGTH, hotkeysEnabled = … — Headless chat interaction for external message stores. Prefer the ChatPanel entrypoint.
+- `StandaloneChatPanelProps` (interface): interface StandaloneChatPanelProps<T extends ChatMessage = ChatMessage> — Message-store inputs and caller-owned styling for standalone chat.
+
+## @jgengine/core/codex/codex
+
+- `Codex` (interface): interface Codex<TMeta = unknown> — A codex/bestiary of defined entries with per-player discovery tracking.
+- `CodexEntryDef` (interface): interface CodexEntryDef<TMeta = unknown> — A codex/bestiary/lorebook entry the game defines. Discovery state is tracked separately.
+- `CodexEntryView` (interface): interface CodexEntryView<TMeta = unknown> extends CodexEntryDef<TMeta> — A definition plus its discovery state — what UI renders.
+- `CodexOptions` (interface): interface CodexOptions<TMeta = unknown> — Options for {@link createCodex}.
+- `CodexSnapshot` (interface): interface CodexSnapshot — Serializable discovery state — a save blob.
+- `createCodex` (function): function createCodex<TMeta = unknown>(options: CodexOptions<TMeta>): Codex<TMeta> — A codex / bestiary / lorebook: a fixed set of defined entries plus per-player discovery tracking, fragment scanning (learn an entry after N scans), with categories, secret masking, completion, an `onDiscover` seam, and serializable `snapshot`/`restore`. The view `list()` keeps a stable identity between changes so React reads it through `useSyncExternalStore` without re-projecting each frame.
+
+## @jgengine/core/codex/codex.view
+
+- `CodexPanel` (function): function CodexPanel({ entries, title = "Codex", columns = 3, maskSecrets = true, renderIcon, onSelect, emptyLabel = "Nothing discovered yet.", className, style, }: CodexProps): ReactNode — CodexPanel / bestiary gallery — category tabs, a responsive grid of entry cards (discovered vs. locked, secret entries masked until found), and a header summarizing completion. Feed it `codex.list()`; wire `onSelect` to a detail pane.
+- `CodexProps` (interface): interface CodexProps — Props for {@link CodexPanel}.
 
 ## @jgengine/core/crafting/crop
 
@@ -230,6 +326,34 @@
 
 - `JsonDataSourceOptions` (type): type JsonDataSourceOptions = DataSourceOptions & Omit<FetchJsonOptions, "signal"> — ⚠ undocumented
 - `createJsonDataSource` (function): function createJsonDataSource<T>(url: string, options: JsonDataSourceOptions = {}): DataSource<T> — ⚠ undocumented
+
+## @jgengine/core/dialogue/dialogue
+
+- `DIALOGUE_STORE_KEY` (const): const DIALOGUE_STORE_KEY: "jg.dialogue" — Store slot holding the id of the dialogue currently open, or absent when none is showing.
+- `GameDialogue` (interface): interface GameDialogue — `ctx.game.dialogue` — the blessed open/close bridge for the `talkable`/`dialogue.open` prompt flow. A game opts in with `features.dialogue`, and the runtime both builds this surface and auto-registers the `dialogue.open`/`dialogue.close` commands a `talkable(id)` prompt dispatches, so no game re-implements the store, the command pair, or the open/close bookkeeping. React reads the open id via `useOpenDialogueId`.
+- `createGameDialogue` (function): function createGameDialogue(store: DialogueStore): GameDialogue — Build a {@link GameDialogue} over one keyed-store slot. Writes flow through the reactive store, so opening or closing bumps `ctx.version()` and a `useOpenDialogueId` selector re-renders.
+- `dialogueSlot` (const): const dialogueSlot: StoreHandle<string | undefined> — Typed handle onto the open-dialogue slot — React reads it via `useOpenDialogueId`; game code uses `ctx.game.dialogue`.
+
+## @jgengine/core/dialogue/dialogueGraph
+
+- `DialogueGraph` (interface): interface DialogueGraph — A serializable branching conversation: a start node id and the nodes it can reach.
+- `DialogueGraphChoice` (interface): interface DialogueGraphChoice — One selectable response on a conversation node — the text a player clicks and the node it advances to. `kind` is a free style tag the presenter interprets; the model never reads it (no genre baked in).
+- `DialogueGraphIssue` (interface): interface DialogueGraphIssue — A structural authoring issue, located in the original graph's node/choice arrays.
+- `DialogueGraphNode` (interface): interface DialogueGraphNode — One conversation node: who is speaking, the line they say, and the branches out of it. `speaker`/`speakerKind`/`portrait` are opaque display data — the model never interprets them.
+- `DialogueGraphSnapshot` (interface): interface DialogueGraphSnapshot — Serializable run state — the current node id and the ids already visited.
+- `DialogueGraphView` (interface): interface DialogueGraphView — The render-ready snapshot of a conversation at one node — everything a view needs to draw speaker, line, and choice buttons, with no traversal logic in the component.
+- `DialogueRun` (interface): interface DialogueRun — An observable walk through a {@link DialogueGraph}: current view, choose to advance, serialize.
+- `DialogueRunOptions` (interface): interface DialogueRunOptions — Options for {@link createDialogueRun}.
+- `createDialogueRun` (function): function createDialogueRun(graph: DialogueGraph, options: DialogueRunOptions = {}): DialogueRun — Walk a branching {@link DialogueGraph}: hold the current node, expose its render-ready view, and advance by choosing one of the current node's responses (each choice names the node it leads to; a choice with no `to` ends the conversation). Purely a serializable model — a React host renders `current()` and calls `choose(index)` — so no game re-implements node lookup, choice-to-node traversal, or "am I at the end" bookkeeping. `snapshot`/`restore` round-trip the run through a save.
+- `selectDialogueView` (function): function selectDialogueView(graph: DialogueGraph, nodeId: string): DialogueGraphView | null — Project a {@link DialogueGraph} node id to its render-ready {@link DialogueGraphView} — the pure "current view" selector a stateless renderer reads (speaker, line, choices, done). Returns `null` when the id is not in the graph. No traversal or mutation.
+- `validateDialogueGraph` (function): function validateDialogueGraph(graph: DialogueGraph): DialogueGraphIssue[] — Check authored dialogue references, reachability, and routes to an ending in O(nodes + choices). A node without choices, or a choice with no target, is an ending. Loops with an exit are valid. Duplicate ids and missing references are errors; unreachable nodes and closed loops are warnings because games may jump to nodes or intentionally keep conversations open. Topology uses the first node for each id, matching {@link selectDialogueView}. This does not evaluate story semantics.
+
+## @jgengine/core/dialogue/dialogueView.view
+
+- `DialogueView` (function): function DialogueView({ run, renderPortrait, onChoose, onClose, closeLabel = "Close", theme, className, style, speakerClassName, textClassName, choicesClassName, choiceClassName, }: DialogueViewProps): ReactNode — A drop-in branching-conversation view over a {@link DialogueRun}: renders the current node's speaker name (+ an optional portrait slot), the line, and a list of clickable response choices that advance the conversation — the game passes its dialogue graph and gets working node traversal and choice state with no hand-rolled walk. A choice with a destination advances the run; a terminal choice (or the Close control on a choiceless node) fires `onClose`. Speaker/choice `kind` are free strings surfaced as `data-*` attributes for the game to style; the view never interprets them. HudTheme-skinned via `--jg-*` tokens; reskin further with {@link DialogueViewTheme}.
+- `DialogueViewProps` (interface): interface DialogueViewProps — Props for {@link DialogueView}.
+- `DialogueViewTheme` (interface): interface DialogueViewTheme — Reskin tokens for {@link DialogueView}. Each defaults to a HudTheme `--jg-*` token.
+- `useDialogueRun` (function): function useDialogueRun(run: DialogueRun): DialogueGraphView | null — Subscribe to a {@link DialogueRun} and re-render on every advance / jump / reset, returning the current node view (or `null` if the run's node id is unknown).
 
 ## @jgengine/core/economy/auctionBook
 
@@ -407,15 +531,36 @@
 - `grant` (function): function grant(state: WalletState, currency: string | CurrencyDefinition, amount: number): WalletState — ⚠ undocumented
 - `isOverdrawn` (function): function isOverdrawn(state: WalletState, currency: string | CurrencyDefinition): boolean — True once `balance(state, currency)` has gone negative under an overdraft-enabled charge.
 
-## @jgengine/core/game/achievements
+## @jgengine/core/feed/eventTicker
 
-- `AchievementDef` (interface): interface AchievementDef — Definition of one achievement. Content-agnostic — the game supplies names, targets, and icons.
-- `AchievementSnapshot` (interface): interface AchievementSnapshot — Whole serializable state of a tracker — drop into a save blob.
-- `AchievementTracker` (interface): interface AchievementTracker — Live achievement state over a fixed definition set — drives progress, unlocks, score, and a UI view list.
-- `AchievementTrackerOptions` (interface): interface AchievementTrackerOptions — Options for {@link createAchievementTracker}.
-- `AchievementUnlock` (interface): interface AchievementUnlock — Emitted the instant an achievement unlocks — wire to a toast, feed, or sound.
-- `AchievementView` (interface): interface AchievementView extends AchievementDef — A definition plus its live unlock/progress state — what UI renders.
-- `createAchievementTracker` (function): function createAchievementTracker(options: AchievementTrackerOptions): AchievementTracker — Tracks achievement/trophy unlocks over caller-driven events — counter goals (`progress`/`setProgress`) and boolean flags (`unlock`) — with score, completion, an `onUnlock` seam, and serializable `snapshot`/`restore`. State is plain data; the view list keeps a stable identity between changes so React can read it through `useSyncExternalStore` without re-projecting every frame.
+- `EventTicker` (interface): interface EventTicker — A live, observable event/kill-feed ticker.
+- `EventTickerEntry` (interface): interface EventTickerEntry extends TimedFeedEntry — A stored ticker entry — an {@link EventTickerInput} stamped with an id and clock time.
+- `EventTickerInput` (interface): interface EventTickerInput — One event pushed onto the ticker. `kind` and `icon` are free strings the game owns and the model never interprets — they only ride through to the renderer so a game can color, icon, and group each entry however it likes ("kill", "assist", "info", …).
+- `EventTickerOptions` (interface): interface EventTickerOptions — Options for {@link createEventTicker}.
+- `EventTickerSnapshot` (interface): interface EventTickerSnapshot — Serializable state of the ticker, for save/restore.
+- `EventTickerView` (interface): interface EventTickerView extends EventTickerEntry — A live ticker entry as handed to the renderer: the stored entry plus a `fade` value `0..1` (age / `ttlMs`) — `0` for a fresh entry, approaching `1` as it nears expiry — so the UI can drop opacity as an entry ages out. `fade` is always `0` when no `ttlMs` is configured.
+- `createEventTicker` (function): function createEventTicker(config: EventTickerOptions = {}): EventTicker — A thin, serializable, observable event/kill-feed ticker over the flat {@link appendFeed} / {@link pruneFeed} feed helpers: a single rolling, count-capped, time-fading list of free-string entries. A game calls `push({ kind, text, icon? })` and the ticker stamps and caps it; `recent()` prunes expired entries and returns the live list newest-first, each with a `fade` `0..1` (age / `ttlMs`) for the renderer to drop opacity as entries age out. Nothing here is genre-specific: `kind`, `text`, and `icon` are free strings the game owns and styles, and the model never interprets them. `snapshot`/`restore` round-trips the buffer through a save, re-anchoring ages so fades resume correctly.
+
+## @jgengine/core/feed/feed
+
+- `FeedEntry` (interface): interface FeedEntry<T = unknown> { at: number; data: T } — ⚠ undocumented · used by `ToastStack` (@jgengine/core/notifications/toastStack.view): Render `ctx.game.feed`'s entries for `action` as a newest-first toast stack.
+- `FeedWindow` (interface): interface FeedWindow — Bounds for {@link appendFeed} / {@link pruneFeed}: newest-`limit` cap and/or `ttl` age window.
+- `GameFeed` (interface): interface GameFeed { bind<TName extends keyof GameEventMap>(action: TName, events: GameEvents): () => void; push(action: string, entry: unknown): void; recent(action: string, options?: {limit?: number}): FeedEntry[]; subscribe(action: string, listener: (entry… — ⚠ undocumented · used by `createGameFeed`: A rolling per-action feed of recent gameplay events, bindable to the event bus — the HUD ticker and killfeed history.
+- `GameFeedOptions` (interface): interface GameFeedOptions { limit?: number } — ⚠ undocumented · used by `createGameFeed`: A rolling per-action feed of recent gameplay events, bindable to the event bus — the HUD ticker and killfeed history.
+- `TimedFeedEntry` (interface): interface TimedFeedEntry — Any feed entry carrying a game-time (or wall-clock) `at` stamp for age-based pruning.
+- `appendFeed` (function): function appendFeed<T extends TimedFeedEntry>(list: readonly T[], entry: T, options?: FeedWindow): T[] — Append `entry` to a flat, serializable feed list, then bound it by age (`ttl`, relative to the appended entry's `at`) and/or count (`limit`, newest kept). Works on the game's own flat entry shape — anything with an `at` stamp — so `{ id, text, tone, at }`-style notice lists and event logs drop into serialized state with no `{ at, data }` envelope. Returns a new array.
+- `appendFeedEntry` (function): function appendFeedEntry<T>(buffer: readonly FeedEntry<T>[], entry: FeedEntry<T>, limit: number): FeedEntry<T>[] — ⚠ undocumented
+- `createGameFeed` (function): function createGameFeed(options?: GameFeedOptions): GameFeed — A rolling per-action feed of recent gameplay events, bindable to the event bus — the HUD ticker and killfeed history.
+- `pruneFeed` (function): function pruneFeed<T extends TimedFeedEntry>(list: readonly T[], now: number, ttl: number): T[] — Drop feed entries older than `ttl` game-seconds before `now`. Returns the same array reference when nothing expired, so equality checks skip a redundant state write. The tick-time counterpart to {@link appendFeed}'s age bound.
+- `recentFeedEntries` (function): function recentFeedEntries<T>(buffer: readonly FeedEntry<T>[], limit?: number): FeedEntry<T>[] — ⚠ undocumented
+
+## @jgengine/core/feed/killFeed.view
+
+- `KillFeed` (function): function KillFeed({ ticker, kindStyles, theme, iconSize = 18, animate = true, zIndex = 40, className, style, }: KillFeedProps): ReactNode — A vertical event/kill-feed ticker: renders an {@link EventTicker}'s recent entries as a stack of rows, newest on top, each with its `fade` `0..1` mapped to opacity so entries dim and drop as they age out. Each row shows an optional per-kind (or per-entry) {@link GameIcon} and a per-kind accent color from `kindStyles`, styled with HudTheme tokens. Presentation only: all capping/timing lives in the core ticker, and the free-string `kind`/`text`/`icon` are never interpreted here — a game colors and icons each variant via `kindStyles`.
+- `KillFeedKindStyle` (interface): interface KillFeedKindStyle — Per-`kind` styling for a kill-feed row — accent color and an optional icon.
+- `KillFeedProps` (interface): interface KillFeedProps — Props for {@link KillFeed}.
+- `KillFeedTheme` (interface): interface KillFeedTheme — Reskin tokens for {@link KillFeed}.
+- `useEventTicker` (function): function useEventTicker(ticker: EventTicker, animate = true): EventTickerView[] — Subscribe to an event ticker and re-render it on an animation frame (unless the game already ticks it), returning the live entries newest-first with `fade` applied. Driving the frame loop is what makes entries visibly fade and drop as they age out.
 
 ## @jgengine/core/game/breeding
 
@@ -436,37 +581,6 @@
 - `maturationStage` (function): function maturationStage(elapsed: number, duration: number, stages: readonly MaturationStage[]): string — Resolve the maturation stage for an elapsed time against a duration. Computes the clamped `elapsed / duration` fraction and returns the id of the last stage whose `at` threshold has been reached (boundaries inclusive). Stages need not be pre-sorted. Returns `""` when no stage qualifies (e.g. an empty list or all thresholds above the current fraction).
 - `tickIncubation` (function): function tickIncubation(state: IncubationState, temperature: number, dt: number, config: IncubationConfig): IncubationState — Advance incubation one tick. While `temperature` is within `[minTemp, maxTemp]` the embryo makes progress (`elapsed += dt`) and keeps its health; outside the range it makes no progress and loses `healthLossPerTick * dt` health (clamped at `0`). Pure — returns a new state, never mutates the input.
 
-## @jgengine/core/game/chat
-
-- `Chat` (interface): interface Chat { register(def: ChatChannelDef): void; channels(): ChatChannelDef[]; send(fromUserId: string, body: string): ChatSendResult; send(fromUserId: string, channelId: string, body: string): ChatSendResult; recent(options?: {limit?: number; channe… — ⚠ undocumented
-- `ChatChannelDef` (interface): interface ChatChannelDef { id: string; kind: ChatChannelKind; radius?: number; historyLimit?: number; rateLimit?: ChatRateLimit } — ⚠ undocumented
-- `ChatChannelKind` (type): type ChatChannelKind = "global" | "party" | "proximity" — ⚠ undocumented
-- `ChatDeps` (interface): interface ChatDeps { events: GameEvents; now?: () => number; party?: {membersOf(userId: string): string[]}; proximity?: EmotesDeps; blockedBy?: (userId: string) => readonly string[]; maxBodyLength?: number; defaultRateLimit?: ChatRateLimit; filter?: ChatFilte… — ⚠ undocumented
-- `ChatMessage` (interface): interface ChatMessage { id: string; channelId: string; fromUserId: string; body: string; at: number } — ⚠ undocumented · used by `createConvexChatTransport` (@jgengine/convex): Wires a game's Convex chat functions into the engine's ChatTransport contract: one live query per subscribed channel (the channel's recent h…
-- `ChatRateLimit` (interface): interface ChatRateLimit { count: number; perMs: number } — ⚠ undocumented
-- `ChatRateLimiter` (interface): interface ChatRateLimiter { allow(key: string, atMs: number): boolean; snapshot(): Record<string, number[]>; restore(state: Record<string, number[]>): void } — ⚠ undocumented
-- `ChatRecipients` (type): type ChatRecipients = readonly string[] | "all" — ⚠ undocumented
-- `ChatSendResult` (type): type ChatSendResult = | { message: ChatMessage; recipients: ChatRecipients } | { reason: string } — ⚠ undocumented
-- `ChatSnapshot` (interface): interface ChatSnapshot { messages: Record<string, ChatMessage[]>; counter: number; rateWindows?: Record<string, Record<string, number[]>> } — ⚠ undocumented
-- `ChatValidation` (type): type ChatValidation = { ok: true; text: string } | { ok: false; reason: string } — Sanitized chat text or a displayable validation failure.
-- `DEFAULT_CHAT_BODY_LENGTH` (const): const DEFAULT_CHAT_BODY_LENGTH: 240 — ⚠ undocumented
-- `DEFAULT_CHAT_HISTORY_LIMIT` (const): const DEFAULT_CHAT_HISTORY_LIMIT: 100 — ⚠ undocumented
-- `DEFAULT_CHAT_RATE_LIMIT` (const): const DEFAULT_CHAT_RATE_LIMIT: ChatRateLimit — ⚠ undocumented
-- `DEFAULT_PROXIMITY_CHAT_RADIUS` (const): const DEFAULT_PROXIMITY_CHAT_RADIUS: 20 — ⚠ undocumented
-- `WHISPER_CHANNEL_PREFIX` (const): const WHISPER_CHANNEL_PREFIX: "whisper:" — ⚠ undocumented
-- `createChat` (function): function createChat(deps: ChatDeps): Chat — ⚠ undocumented
-- `createChatRateLimiter` (function): function createChatRateLimiter(limit: ChatRateLimit): ChatRateLimiter — ⚠ undocumented
-- `validateChatMessage` (function): function validateChatMessage(value: unknown, options: { maxLength?: number } = {}): ChatValidation — Strip control characters and enforce the shared chat message policy before storage or broadcast.
-- `whisperChannelId` (function): function whisperChannelId(a: string, b: string): string — ⚠ undocumented
-
-## @jgengine/core/game/chatFilter
-
-- `ChatFilter` (interface): interface ChatFilter { apply(body: string): ChatFilterResult } — ⚠ undocumented
-- `ChatFilterConfig` (interface): interface ChatFilterConfig { blockedWords: readonly string[]; mode?: "mask" | "reject"; mask?: string } — ⚠ undocumented
-- `ChatFilterResult` (interface): interface ChatFilterResult { ok: boolean; body: string; matched: readonly string[] } — ⚠ undocumented
-- `createChatFilter` (function): function createChatFilter(config: ChatFilterConfig): ChatFilter — ⚠ undocumented
-- `normalizeChatText` (function): function normalizeChatText(text: string): string — ⚠ undocumented
-
 ## @jgengine/core/game/clipRoles
 
 - `ClipRole` (type): type ClipRole = | "idle" | "walk" | "run" | "strafe" | "backward" | "attack" | "hit" | "death" | "jump" | "spawn" | "interact" | "cheer" — Semantic animation roles a GLB clip name can map to. Rigged packs name the same motion differently (`Idle` / `Walking_A` / `Armature|Run`); roles are the pack-agnostic vocabulary the engine defaults from.
@@ -476,15 +590,6 @@
 - `defaultAnimationForClips` (function): function defaultAnimationForClips(clips: readonly string[], table: ClipRoleTable = DEFAULT_CLIP_ROLE_TABLE): ModelAnimationConfig | undefined — Build the default `ModelConfig.animation` for a rigged asset from its catalog clip names: speed-driven idle/walk/run states plus hit/death/attack one-shots where identifiable, and the lateral/backward states when the pack names them (KayKit's `Running_Strafe_Left`, `Walking_Backwards`). Returns `undefined` when no idle clip is identifiable - an ambiguous rig renders its bind pose rather than guessing. Walk falls back to idle when the pack has no walk clip.
 - `resolveAnimationConfig` (function): function resolveAnimationConfig(animation: ModelAnimationConfig | "auto" | "none" | undefined, clips: readonly string[] | undefined, table: ClipRoleTable = DEFAULT_CLIP_ROLE_TABLE): ModelAnimationConfig | undefined — Collapse `ModelConfig.animation`'s widened union to a concrete playback config: explicit configs pass through, `"none"`/absent render the bind pose, and `"auto"` derives states and one-shots from the model's clip names via {@link defaultAnimationForClips}. The shell calls this with the loaded GLB's actual clip names, so `"auto"` works on any rigged model — catalog-resolved ids are stamped `"auto"` automatically. An object with `auto: true` derives the same defaults, then replaces each explicitly supplied field whole, including empty maps.
 - `rolesFromClips` (function): function rolesFromClips(clips: readonly string[], table: ClipRoleTable = DEFAULT_CLIP_ROLE_TABLE): Partial<Record<ClipRole, string[]>> — Group a GLB's clip names by role. Each role's variants are sorted simplest-first — fewest name tokens, then lexicographic — so the canonical variant (`Idle` over `2H_Melee_Idle`, KayKit `Walking_A` over `Walking_B`) is always first: stable output for the same clip set regardless of source order.
-
-## @jgengine/core/game/codex
-
-- `Codex` (interface): interface Codex<TMeta = unknown> — A codex/bestiary of defined entries with per-player discovery tracking.
-- `CodexEntryDef` (interface): interface CodexEntryDef<TMeta = unknown> — A codex/bestiary/lorebook entry the game defines. Discovery state is tracked separately.
-- `CodexEntryView` (interface): interface CodexEntryView<TMeta = unknown> extends CodexEntryDef<TMeta> — A definition plus its discovery state — what UI renders.
-- `CodexOptions` (interface): interface CodexOptions<TMeta = unknown> — Options for {@link createCodex}.
-- `CodexSnapshot` (interface): interface CodexSnapshot — Serializable discovery state — a save blob.
-- `createCodex` (function): function createCodex<TMeta = unknown>(options: CodexOptions<TMeta>): Codex<TMeta> — A codex / bestiary / lorebook: a fixed set of defined entries plus per-player discovery tracking, fragment scanning (learn an entry after N scans), with categories, secret masking, completion, an `onDiscover` seam, and serializable `snapshot`/`restore`. The view `list()` keeps a stable identity between changes so React reads it through `useSyncExternalStore` without re-projecting each frame.
 
 ## @jgengine/core/game/connectedPlayers
 
@@ -522,14 +627,6 @@
 - `CosmeticsEvents` (interface): interface CosmeticsEvents { emit(name: "cosmetics.changed", payload: CosmeticsChangedEvent): void } — ⚠ undocumented
 - `createCosmetics` (function): function createCosmetics(deps: CosmeticsDeps = {}): Cosmetics — Equip cosmetic skins and customizations by slot, independent of gameplay stats.
 
-## @jgengine/core/game/credits
-
-- `CreditsDocument` (interface): interface CreditsDocument — Everything a credits screen shows. `notice` is the closing line (a license summary, a thank-you).
-- `CreditsEntry` (interface): interface CreditsEntry — One credited line — a person, a studio, an asset pack, a tool.
-- `CreditsSection` (interface): interface CreditsSection — A titled group of entries — "Design", "Music", "3D Assets".
-- `groupCredits` (function): function groupCredits<T>(items: readonly T[], heading: (item: T) => string, entry: (item: T) => CreditsEntry): CreditsSection[] — Groups entries into sections by a caller-supplied key — the shape most generated credits arrive in (a flat list of things used, grouped by license, provider, or role). Section order follows first appearance, so a stable input gives a stable screen.
-- `mergeCredits` (function): function mergeCredits(...documents: readonly (CreditsDocument | null | undefined)[]): CreditsDocument — Merges credit documents into one, concatenating same-heading sections in first-seen order and dropping exact duplicate entries. Use it to fold generated credits (asset packs, dependencies) into the game's hand-authored ones without curating the overlap by hand.
-
 ## @jgengine/core/game/defineGame
 
 - `GameDefinition` (interface): interface GameDefinition<TAssetRef extends ModelAssetRef = ModelAssetRef, TMultiplayer = unknown> — Fully-resolved game description produced by {@link defineGameDefinition} — assets, scene, and opted-in subsystems.
@@ -552,37 +649,6 @@
 - `SystemEventHandlers` (type): type SystemEventHandlers = { readonly [eventName: string]: (ctx: GameContext, event: unknown) => void; } — Event name → handler. Payload is the engine event shape for that name.
 - `SystemTick` (type): type SystemTick = | { type: "fixed"; /** Steps per game-second. Default 60. */ rate?: number; stage?: string; after?: string | readonly string[]; before?: string | readonly string[]; } | { type: "frame"; stage?: string; after?: string | readonly string[]; before?: string | readonly string[]; } | { t… — How a system is scheduled. Omit `tick` (or use only `events`) for event-driven systems. Multiple systems may share the same channel; order within a channel is deterministic by stage then optional `before`/`after` constraints — never import order.
 - `defineSystem` (function): function defineSystem(definition: SystemDefinition): SystemDefinition — Declare a composable game system. Pure data + hooks — the engine compiles the schedule and installs lifecycle when the game boots.
-
-## @jgengine/core/game/dialogue
-
-- `DIALOGUE_STORE_KEY` (const): const DIALOGUE_STORE_KEY: "jg.dialogue" — Store slot holding the id of the dialogue currently open, or absent when none is showing.
-- `GameDialogue` (interface): interface GameDialogue — `ctx.game.dialogue` — the blessed open/close bridge for the `talkable`/`dialogue.open` prompt flow. A game opts in with `features.dialogue`, and the runtime both builds this surface and auto-registers the `dialogue.open`/`dialogue.close` commands a `talkable(id)` prompt dispatches, so no game re-implements the store, the command pair, or the open/close bookkeeping. React reads the open id via `useOpenDialogueId`.
-- `createGameDialogue` (function): function createGameDialogue(store: DialogueStore): GameDialogue — Build a {@link GameDialogue} over one keyed-store slot. Writes flow through the reactive store, so opening or closing bumps `ctx.version()` and a `useOpenDialogueId` selector re-renders.
-- `dialogueSlot` (const): const dialogueSlot: StoreHandle<string | undefined> — Typed handle onto the open-dialogue slot — React reads it via `useOpenDialogueId`; game code uses `ctx.game.dialogue`.
-
-## @jgengine/core/game/dialogueGraph
-
-- `DialogueGraph` (interface): interface DialogueGraph — A serializable branching conversation: a start node id and the nodes it can reach.
-- `DialogueGraphChoice` (interface): interface DialogueGraphChoice — One selectable response on a conversation node — the text a player clicks and the node it advances to. `kind` is a free style tag the presenter interprets; the model never reads it (no genre baked in).
-- `DialogueGraphIssue` (interface): interface DialogueGraphIssue — A structural authoring issue, located in the original graph's node/choice arrays.
-- `DialogueGraphNode` (interface): interface DialogueGraphNode — One conversation node: who is speaking, the line they say, and the branches out of it. `speaker`/`speakerKind`/`portrait` are opaque display data — the model never interprets them.
-- `DialogueGraphSnapshot` (interface): interface DialogueGraphSnapshot — Serializable run state — the current node id and the ids already visited.
-- `DialogueGraphView` (interface): interface DialogueGraphView — The render-ready snapshot of a conversation at one node — everything a view needs to draw speaker, line, and choice buttons, with no traversal logic in the component.
-- `DialogueRun` (interface): interface DialogueRun — An observable walk through a {@link DialogueGraph}: current view, choose to advance, serialize.
-- `DialogueRunOptions` (interface): interface DialogueRunOptions — Options for {@link createDialogueRun}.
-- `createDialogueRun` (function): function createDialogueRun(graph: DialogueGraph, options: DialogueRunOptions = {}): DialogueRun — Walk a branching {@link DialogueGraph}: hold the current node, expose its render-ready view, and advance by choosing one of the current node's responses (each choice names the node it leads to; a choice with no `to` ends the conversation). Purely a serializable model — a React host renders `current()` and calls `choose(index)` — so no game re-implements node lookup, choice-to-node traversal, or "am I at the end" bookkeeping. `snapshot`/`restore` round-trip the run through a save.
-- `selectDialogueView` (function): function selectDialogueView(graph: DialogueGraph, nodeId: string): DialogueGraphView | null — Project a {@link DialogueGraph} node id to its render-ready {@link DialogueGraphView} — the pure "current view" selector a stateless renderer reads (speaker, line, choices, done). Returns `null` when the id is not in the graph. No traversal or mutation.
-- `validateDialogueGraph` (function): function validateDialogueGraph(graph: DialogueGraph): DialogueGraphIssue[] — Check authored dialogue references, reachability, and routes to an ending in O(nodes + choices). A node without choices, or a choice with no target, is an ending. Loops with an exit are valid. Duplicate ids and missing references are errors; unreachable nodes and closed loops are warnings because games may jump to nodes or intentionally keep conversations open. Topology uses the first node for each id, matching {@link selectDialogueView}. This does not evaluate story semantics.
-
-## @jgengine/core/game/eventTicker
-
-- `EventTicker` (interface): interface EventTicker — A live, observable event/kill-feed ticker.
-- `EventTickerEntry` (interface): interface EventTickerEntry extends TimedFeedEntry — A stored ticker entry — an {@link EventTickerInput} stamped with an id and clock time.
-- `EventTickerInput` (interface): interface EventTickerInput — One event pushed onto the ticker. `kind` and `icon` are free strings the game owns and the model never interprets — they only ride through to the renderer so a game can color, icon, and group each entry however it likes ("kill", "assist", "info", …).
-- `EventTickerOptions` (interface): interface EventTickerOptions — Options for {@link createEventTicker}.
-- `EventTickerSnapshot` (interface): interface EventTickerSnapshot — Serializable state of the ticker, for save/restore.
-- `EventTickerView` (interface): interface EventTickerView extends EventTickerEntry — A live ticker entry as handed to the renderer: the stored entry plus a `fade` value `0..1` (age / `ttlMs`) — `0` for a fresh entry, approaching `1` as it nears expiry — so the UI can drop opacity as an entry ages out. `fade` is always `0` when no `ttlMs` is configured.
-- `createEventTicker` (function): function createEventTicker(config: EventTickerOptions = {}): EventTicker — A thin, serializable, observable event/kill-feed ticker over the flat {@link appendFeed} / {@link pruneFeed} feed helpers: a single rolling, count-capped, time-fading list of free-string entries. A game calls `push({ kind, text, icon? })` and the ticker stamps and caps it; `recent()` prunes expired entries and returns the live list newest-first, each with a `fade` `0..1` (age / `ttlMs`) for the renderer to drop opacity as entries age out. Nothing here is genre-specific: `kind`, `text`, and `icon` are free strings the game owns and styles, and the model never interprets them. `snapshot`/`restore` round-trips the buffer through a save, re-anchoring ages so fades resume correctly.
 
 ## @jgengine/core/game/events
 
@@ -635,19 +701,6 @@
 - `createGameEvents` (function): function createGameEvents<TMap extends GameEventMap = GameEventMap>(): GameEvents<TMap> — A typed publish/subscribe bus for gameplay events that systems and HUDs subscribe to.
 - `lootDropsOf` (function): function lootDropsOf(data: unknown): readonly LootDrop[] — Read the drops out of a `loot.granted` payload that arrived as `unknown` — a `FeedEntry.data`, a replicated event, a persisted log row. Returns `[]` for anything that is not shaped like a loot grant, so a renderer never has to guard the payload itself: `entry.data as { drops?: ... }` is the cast four separate call sites were writing, and the one that omitted the `| undefined` would have thrown on a payload-less entry.
 
-## @jgengine/core/game/feed
-
-- `FeedEntry` (interface): interface FeedEntry<T = unknown> { at: number; data: T } — ⚠ undocumented · used by `ToastStack` (@jgengine/core/notifications/toastStack.view): Render `ctx.game.feed`'s entries for `action` as a newest-first toast stack.
-- `FeedWindow` (interface): interface FeedWindow — Bounds for {@link appendFeed} / {@link pruneFeed}: newest-`limit` cap and/or `ttl` age window.
-- `GameFeed` (interface): interface GameFeed { bind<TName extends keyof GameEventMap>(action: TName, events: GameEvents): () => void; push(action: string, entry: unknown): void; recent(action: string, options?: {limit?: number}): FeedEntry[]; subscribe(action: string, listener: (entry… — ⚠ undocumented · used by `createGameFeed`: A rolling per-action feed of recent gameplay events, bindable to the event bus — the HUD ticker and killfeed history.
-- `GameFeedOptions` (interface): interface GameFeedOptions { limit?: number } — ⚠ undocumented · used by `createGameFeed`: A rolling per-action feed of recent gameplay events, bindable to the event bus — the HUD ticker and killfeed history.
-- `TimedFeedEntry` (interface): interface TimedFeedEntry — Any feed entry carrying a game-time (or wall-clock) `at` stamp for age-based pruning.
-- `appendFeed` (function): function appendFeed<T extends TimedFeedEntry>(list: readonly T[], entry: T, options?: FeedWindow): T[] — Append `entry` to a flat, serializable feed list, then bound it by age (`ttl`, relative to the appended entry's `at`) and/or count (`limit`, newest kept). Works on the game's own flat entry shape — anything with an `at` stamp — so `{ id, text, tone, at }`-style notice lists and event logs drop into serialized state with no `{ at, data }` envelope. Returns a new array.
-- `appendFeedEntry` (function): function appendFeedEntry<T>(buffer: readonly FeedEntry<T>[], entry: FeedEntry<T>, limit: number): FeedEntry<T>[] — ⚠ undocumented
-- `createGameFeed` (function): function createGameFeed(options?: GameFeedOptions): GameFeed — A rolling per-action feed of recent gameplay events, bindable to the event bus — the HUD ticker and killfeed history.
-- `pruneFeed` (function): function pruneFeed<T extends TimedFeedEntry>(list: readonly T[], now: number, ttl: number): T[] — Drop feed entries older than `ttl` game-seconds before `now`. Returns the same array reference when nothing expired, so equality checks skip a redundant state write. The tick-time counterpart to {@link appendFeed}'s age bound.
-- `recentFeedEntries` (function): function recentFeedEntries<T>(buffer: readonly FeedEntry<T>[], limit?: number): FeedEntry<T>[] — ⚠ undocumented
-
 ## @jgengine/core/game/gameFlow
 
 - `GameFlowOptions` (interface): interface GameFlowOptions — Options for {@link createGameFlowSystem}.
@@ -676,24 +729,6 @@
 - `KeyValueStoreConfig` (interface): interface KeyValueStoreConfig<T> extends KeyValueStorageErrorPolicy — Config for {@link createKeyValueStore}: the storage `key`, the `initial` value used before anything is saved, an optional `storage` backend (defaults to `localStorage`, pass `null` for memory-only), and optional custom `serialize`/`deserialize` (default JSON).
 - `createKeyValueStore` (function): function createKeyValueStore<T>(config: KeyValueStoreConfig<T>): KeyValueStore<T> — A mutable local save cell through {@link KeyValueStorage}. Default fallback keeps session state on failure; `errorMode: "throw"` exposes failed reads/writes/removals through the original error. `storage: null` deliberately uses memory only.
 - `defaultKeyValueStorage` (function): function defaultKeyValueStorage(onError?: (error: unknown) => void): KeyValueStorage | null — The ambient `localStorage` when available, otherwise `null`. An optional observer receives denied getter errors; it may rethrow to reject fallback. Never references the DOM `Storage` type, so it is safe in core.
-
-## @jgengine/core/game/leaderboard
-
-- `IncrementResult` (type): type IncrementResult = { status: "ok"; value: number } | { status: "rejected"; reason: "not-tracked" } — ⚠ undocumented
-- `Leaderboard` (interface): interface Leaderboard { track(def: LeaderboardTrackDef): void; tracked(): {stat: string; scope: LeaderboardScope}[]; increment(userId: string, stat: string, options: {scope: LeaderboardScope; serverId?: string; by?: number}): IncrementResult; getTop(stat: string… — ⚠ undocumented · used by `createLeaderboard`: Ranked score tracking across global, server, and per-profile scopes, with top-N queries and per-profile lookups.
-- `LeaderboardRow` (interface): interface LeaderboardRow { stat: string; scope: LeaderboardScope; serverId?: string; userId: string; value: number } — ⚠ undocumented · used by `createLeaderboard`: Ranked score tracking across global, server, and per-profile scopes, with top-N queries and per-profile lookups.
-- `LeaderboardScope` (type): type LeaderboardScope = "global" | "server" | "profile" — ⚠ undocumented
-- `LeaderboardTrackDef` (interface): interface LeaderboardTrackDef { stat?: string; currency?: string; scope: LeaderboardScope } — ⚠ undocumented
-- `createLeaderboard` (function): function createLeaderboard(sink?: { onIncrement?(row: LeaderboardRow): void }): Leaderboard — Ranked score tracking across global, server, and per-profile scopes, with top-N queries and per-profile lookups.
-
-## @jgengine/core/game/leaderboardRank
-
-- `RankLeaderboardOptions` (interface): interface RankLeaderboardOptions — Options for {@link rankLeaderboard}. All optional.
-- `RankableRow` (interface): interface RankableRow — A single input score to rank. Accepts the raw shape produced by {@link LeaderboardRow} (a `LeaderboardRow` is assignable to this) as well as a minimal `{ userId, value }` pair with an optional display `label` the game owns.
-- `RankedEntry` (interface): interface RankedEntry — One render-ready row of the ranked table produced by {@link rankLeaderboard}.
-- `TieMode` (type): type TieMode = "standard" | "dense" — How equal scores share ranks: - `"standard"` (competition ranking): ties share a rank and the next distinct score skips ahead — `1, 2, 2, 4`. - `"dense"`: ties share a rank and the next distinct score is the very next integer — `1, 2, 2, 3`.
-- `medalFor` (function): function medalFor(rank: number): "gold" | "silver" | "bronze" | null — A free-string medal token for the top-three ranks — `"gold"` (1), `"silver"` (2), `"bronze"` (3) — or `null` for any other rank. It is a semantic token, not a color: the UI maps it to an icon/color/theme, and the model never styles. Feed it a {@link RankedEntry.rank}.
-- `rankLeaderboard` (function): function rankLeaderboard(rows: readonly RankableRow[], options: RankLeaderboardOptions = {}): RankedEntry[] — Turn raw leaderboard rows into a render-ready ranked table. Pure and allocation-bounded: it sorts a copy by `value` (descending by default), assigns 1-based ranks with correct tie handling (`"standard"` → `1, 2, 2, 4`; `"dense"` → `1, 2, 2, 3`), flags rows that share a score (`isTie`), marks the local player (`isLocal`, via `highlightUserId`), and finally applies `limit`. Sorting is stable, so rows with equal scores keep their input order. Nothing here styles or branches on game meaning — pair it with {@link medalFor} and a game-owned theme to render a reskinnable scoreboard. Accepts a {@link LeaderboardRow}`[]` straight from `leaderboard.snapshot()`/`getTop()` since those satisfy {@link RankableRow}.
 
 ## @jgengine/core/game/levelSequence
 
@@ -731,15 +766,6 @@
 - `NarrativeIssue` (interface): interface NarrativeIssue — A repair diagnostic with a JSON-pointer location in the candidate batch.
 - `freezeNarrativeCanon` (function): function freezeNarrativeCanon(canon: NarrativeCanon): NarrativeCanon — Detach and freeze reviewed canon before passing it to an asynchronous authoring callback. Duplicate character/event ids and an empty revision throw; facts retain exact caller values.
 - `validateNarrativeBatch` (function): function validateNarrativeBatch(canon: NarrativeCanon, batch: NarrativeBatch, limits: NarrativeBatchLimits): NarrativeIssue[] — Check a typed candidate against caller budgets, canon revision, explicit claims and graph topology. Stops at the first exceeded budget before topology work; stale revisions also stop immediately. Claims check exact fact values and the declared strict event order, never prose, speaker labels, motivations, branch consequences or story quality. O(canon + bounded nodes + choices + claims). Validate/parse external JSON before calling; this is not an untrusted JSON decoder.
-
-## @jgengine/core/game/objectives
-
-- `ObjectiveDirection` (type): type ObjectiveDirection = "atLeast" | "atMost" — Whether a metric must reach up to a target or stay down under it.
-- `ObjectiveStatus` (interface): interface ObjectiveStatus — Evaluated state of one {@link ThresholdObjective} against a current metric value.
-- `ObjectiveSummary` (interface): interface ObjectiveSummary — Rolled-up state across a set of objectives.
-- `ThresholdObjective` (interface): interface ThresholdObjective — A live-metric goal: hit `target` from the required `direction` (defaults to `atLeast`).
-- `evaluateObjective` (function): function evaluateObjective(objective: ThresholdObjective, value: number): ObjectiveStatus — Evaluate a single live-metric objective: is `value` at least (or at most) the target, and how far along. Unlike an event counter, this reads a continuously-changing metric — population, approval, pollution — the objective shape city-builders and management sims track every tick.
-- `evaluateObjectives` (function): function evaluateObjectives(objectives: readonly ThresholdObjective[], values: Readonly<Record<string, number>> | ((id: string) => number)): ObjectiveSummary — Evaluate every objective against current metric values (a lookup map or function) and roll them up into a met-count, completion flag, and mean progress — the brief/charter panel every sim renders.
 
 ## @jgengine/core/game/paramLayers
 
@@ -931,33 +957,6 @@
 - `HistoryStep` (interface): interface HistoryStep<T> — The snapshot an undo/redo restores plus the advanced stacks.
 - `SnapshotHistory` (interface): interface SnapshotHistory<T> — Stateful undo/redo handle over {@link HistoryStacks}, holding the stacks in a closure.
 
-## @jgengine/core/game/social
-
-- `DEFAULT_EMOTE_RADIUS` (const): const DEFAULT_EMOTE_RADIUS: 20 — ⚠ undocumented
-- `EmoteBroadcastResult` (interface): interface EmoteBroadcastResult { from: string; emoteId: string; at: readonly [number, number, number]; recipients: readonly string[] } — ⚠ undocumented
-- `EmoteEntityLookup` (interface): interface EmoteEntityLookup { get(id: string): {position: readonly [number, number, number]; role: string} | null } — ⚠ undocumented
-- `EmoteSpatialLookup` (interface): interface EmoteSpatialLookup { inRadius(center: readonly [number, number, number], radius: number, filter?: (id: string) => boolean): readonly string[] } — ⚠ undocumented
-- `Emotes` (interface): interface Emotes { play(fromUserId: string, emoteId: string, radius?: number): EmoteBroadcastResult | {reason: string} } — ⚠ undocumented
-- `EmotesDeps` (interface): interface EmotesDeps { entities: EmoteEntityLookup; spatial: EmoteSpatialLookup } — ⚠ undocumented
-- `FriendEntry` (interface): interface FriendEntry { userId: string; online: boolean } — ⚠ undocumented · used by `useFriends` (@jgengine/react): The local player's friends with their presence: the list keeps one identity until a request is accepted, a friend is removed or a friend's p…
-- `FriendRequestEntry` (interface): interface FriendRequestEntry { requestId: string; fromUserId: string } — ⚠ undocumented
-- `Friends` (interface): interface Friends { canRequest(fromUserId: string, toUserId: string): {reason: string} | null; request(fromUserId: string, toUserId: string): {requestId: string} | {reason: string}; accept(userId: string, requestId: string): {reason: string} | null; decline(… — ⚠ undocumented
-- `FriendsSnapshot` (interface): interface FriendsSnapshot { friends: string[]; blocked: string[] } — ⚠ undocumented
-- `Party` (interface): interface Party { register(config: PartyConfig): void; canInvite(fromUserId: string, toUserId: string): {reason: string} | null; invite(fromUserId: string, toUserId: string): {inviteId: string} | {reason: string}; accept(userId: string, inviteId: string): … — ⚠ undocumented
-- `PartyConfig` (interface): interface PartyConfig { maxMembers: number; inviteTtlMs?: number } — ⚠ undocumented
-- `PartyInviteEntry` (interface): interface PartyInviteEntry { inviteId: string; fromUserId: string; createdAt: number } — ⚠ undocumented
-- `PartyMemberEntry` (interface): interface PartyMemberEntry { userId: string; role: PartyRole } — ⚠ undocumented
-- `PartyRole` (type): type PartyRole = "leader" | "member" — ⚠ undocumented
-- `PresenceInfo` (interface): interface PresenceInfo { online: boolean; serverId?: string; zoneId?: string; instanceId?: string } — ⚠ undocumented
-- `Social` (interface): interface Social { friends: Friends; party: Party; presence: {get(userId: string): PresenceInfo}; emotes: Emotes; worldInvites: WorldInvites; snapshot(): SocialSnapshot; hydrate(data: SocialSnapshot): void } — ⚠ undocumented · used by `createSocial`: Emotes and lightweight social interactions between nearby players.
-- `SocialDeps` (interface): interface SocialDeps { events: GameEvents; presence?: (userId: string) => PresenceInfo; now?: () => number; emotes?: EmotesDeps; worldInviteTtlMs?: number } — ⚠ undocumented · used by `createSocial`: Emotes and lightweight social interactions between nearby players.
-- `SocialPartySnapshot` (interface): interface SocialPartySnapshot — One party's replicated membership — id, current leader, and ordered member ids.
-- `SocialSnapshot` (interface): interface SocialSnapshot — Full friends/party/world-invite state as one serializable baseline — the host→client replication payload behind the `social` snapshot module. Presence and emotes are derived from live deps, not stored.
-- `WorldInvite` (interface): interface WorldInvite extends WorldInviteTarget { id: string; fromUserId: string; toUserId: string; createdAt: number } — ⚠ undocumented
-- `WorldInviteTarget` (interface): interface WorldInviteTarget { serverId: string; joinCode?: string } — ⚠ undocumented
-- `WorldInvites` (interface): interface WorldInvites { canInvite(fromUserId: string, toUserId: string): {reason: string} | null; invite(fromUserId: string, toUserId: string, target: WorldInviteTarget): {inviteId: string} | {reason: string}; accept(userId: string, inviteId: string): {target: W… — ⚠ undocumented
-- `createSocial` (function): function createSocial(deps: SocialDeps): Social — Emotes and lightweight social interactions between nearby players.
-
 ## @jgengine/core/game/spawnPoints
 
 - `RespawnTarget` (interface): interface RespawnTarget { setPose(id: string, pose: EntityPose): boolean } — ⚠ undocumented
@@ -975,29 +974,6 @@
 - `DEFAULT_FIXED_STAGES` (const): const DEFAULT_FIXED_STAGES: readonly ["input", "movement", "combat", "ai", "activities", "cleanup"] — Default fixed-sim stage order — systems pick a stage; most need only this.
 - `DEFAULT_FRAME_STAGES` (const): const DEFAULT_FRAME_STAGES: readonly ["input", "movement", "combat", "ai", "activities", "cleanup", "animation", "camera", "effects"] — Default frame stage order. Gameplay stages mirror the fixed table so once-per-frame systems (`type: "frame"`) can pick `combat`/`ai`/… without falling into the unknown-stage bucket; presentation stages follow.
 - `compileSystemSchedule` (function): function compileSystemSchedule(systems: readonly SystemDefinition[], options?: CompileSystemScheduleOptions): CompiledSystemSchedule — Compile system definitions into a deterministic schedule. Validates unique ids, `dependsOn`, and before/after cycles.
-
-## @jgengine/core/game/talentTreeView
-
-- `TalentEdgeView` (interface): interface TalentEdgeView — One prerequisite edge into a node — the source node, the rank it demands, and whether that is met.
-- `TalentNodeState` (type): type TalentNodeState = "locked" | "available" | "learned" | "maxed" — Render state of a talent node, derived from its rank and prerequisite satisfaction. - `locked` — rank 0 and at least one prerequisite unmet; cannot be trained yet. - `available` — rank 0, every prerequisite met; ready to take a first point. - `learned` — at least one rank invested, but below `maxRank`. - `maxed` — fully invested (`rank === maxRank`).
-- `TalentNodeStatus` (interface): interface TalentNodeStatus — Per-node status a game supplies to build a view from *any* unlock rule — not just point-spend. A game computes these from whatever it wants (a currency threshold, a level, a quest flag, a skill-point pool, nothing at all) so the same widget renders a buy-with-points talent tree, a money-gated upgrade tree, or a condition-unlocked ability web without changing the renderer.
-- `TalentNodeView` (interface): interface TalentNodeView — A per-node view for rendering: grid placement (tier/branch), rank, state, and inbound prerequisite edges.
-- `TalentPointTotals` (interface): interface TalentPointTotals — Optional overall point totals for the view header; omit (or 0) for trees that spend no point currency.
-- `TalentTreeView` (interface): interface TalentTreeView — A whole-tree render view: placed nodes plus branch/tier extents and point totals.
-- `talentTreeView` (function): function talentTreeView<TStat extends string = string>(nodes: readonly TalentNodeDef<TStat>[], tree: TalentTree<TStat>): TalentTreeView — Project the existing talent model (`createTalentTree`) into a flat, serializable render view: every node placed by branch + prerequisite-depth tier, tagged learned/available/locked/maxed, with its inbound prerequisite edges (and whether each is met) and whether a point can be spent right now. It is a pure read over the node defs plus a live {@link TalentTree}, so a React/canvas widget can lay out nodes, draw edges, and gate clicks without re-deriving topology or re-interpreting eligibility. The model still owns allocation, requirements, and point rules — this only reshapes them for drawing, and never interprets what a node *means* (ids, branches, and ranks stay opaque game data). This is the point-spend adapter over {@link talentTreeViewFrom}; pass a custom status to that builder instead to drive the tree from a currency, level, or any other unlock rule.
-- `talentTreeViewFrom` (function): function talentTreeViewFrom<TStat extends string = string>(nodes: readonly TalentNodeDef<TStat>[], status: (node: TalentNodeDef<TStat>) => TalentNodeStatus, totals?: TalentPointTotals): TalentTreeView — Build a flat, serializable render view of a node graph from a caller-supplied per-node status, decoupled from any particular progression model. For each node the game returns its `rank` and whether it is `allocatable` *right now* under whatever rule it likes — a skill-point pool, a cash threshold, a level gate, a quest flag, or nothing. The builder places every node by branch + prerequisite-depth tier, tags it learned/available/locked/maxed (`available` when rank 0 and every prerequisite is met — see below), and resolves inbound prerequisite edges (each `met` when the source node's supplied rank meets the demand). This is the general escape hatch behind {@link talentTreeView}: it lets the same widget render a buy-with-points talent tree, a money-gated upgrade tree, or a condition-unlocked ability web without the renderer changing. It never interprets what a node *means* — ids, branches, and ranks stay opaque game data.
-
-## @jgengine/core/game/talents
-
-- `ResolvedTalents` (interface): interface ResolvedTalents<TStat extends string = string> { stats: StatModifierSet<TStat>; abilities: readonly string[] } — ⚠ undocumented
-- `TalentAllocateReason` (type): type TalentAllocateReason = "unknown-node" | "max-rank" | "no-points" | "requires" | "branch-points" — ⚠ undocumented
-- `TalentAllocateResult` (type): type TalentAllocateResult = { ok: true } | { ok: false; reason: TalentAllocateReason } — ⚠ undocumented
-- `TalentNodeDef` (interface): interface TalentNodeDef<TStat extends string = string> { id: string; branch?: string; maxRank: number; requires?: readonly TalentRequirement[]; requiresPointsInBranch?: number; modifiersPerRank?: StatModifierSet<TStat>; grantsAbilities?: readonly string[] } — ⚠ undocumented · used by `talentTreeView` (@jgengine/core/game/talentTreeView): Project the existing talent model (`createTalentTree`) into a flat, serializable render view: every node placed by branch + prerequisite-dep…
-- `TalentRequirement` (type): type TalentRequirement = string | { nodeId: string; rank: number } — ⚠ undocumented
-- `TalentSnapshot` (interface): interface TalentSnapshot { points: number; ranks: Record<string, number> } — ⚠ undocumented
-- `TalentTree` (interface): interface TalentTree<TStat extends string = string> { rank(nodeId: string): number; pointsAvailable(): number; pointsSpent(): number; pointsInBranch(branch: string): number; grantPoints(amount: number): void; canAllocate(nodeId: string): TalentAllocateResult; allocate(nodeId: string): Talent… — ⚠ undocumented · used by `talentTreeView` (@jgengine/core/game/talentTreeView): Project the existing talent model (`createTalentTree`) into a flat, serializable render view: every node placed by branch + prerequisite-dep…
-- `TalentTreeConfig` (interface): interface TalentTreeConfig<TStat extends string = string> { nodes: readonly TalentNodeDef<TStat>[]; points?: number } — ⚠ undocumented
-- `createTalentTree` (function): function createTalentTree<TStat extends string = string>(config: TalentTreeConfig<TStat>): TalentTree<TStat> — ⚠ undocumented
 
 ## @jgengine/core/game/trade
 
@@ -1088,7 +1064,7 @@
 - `CancelResult` (type): type CancelResult<TSpec, TReserve = undefined> = | { readonly ok: true; readonly state: WorkQueueState<TSpec, TReserve>; readonly job: Job<TSpec, TReserve>; readonly refund: TReserve | null; } | { readonly ok: false; readonly state: WorkQueueState<TSpec, TReserve>; readonly reason: string } — Outcome of {@link cancelJob}, carrying the removed job and its computed refund.
 - `CandidatePlacement` (interface): interface CandidatePlacement — A part proposed for a slot during generation, before it is committed to an identity. Used by the backtracking contract to test a placement in isolation.
 - `CardPile` (interface): interface CardPile { state(): CardPileState; zones(): readonly ZoneName[]; count(zone: ZoneName): number; peek(zone: ZoneName, n?: number): readonly string[]; zoneOf(cardId: string): ZoneName | null; shuffle(zone: ZoneName | undefined, seed: string | number):… — ⚠ undocumented
-- `CardPileState` (interface): interface CardPileState { readonly zones: Readonly<Record<ZoneName, readonly string[]>> } — ⚠ undocumented · used by `CardStack` (@jgengine/react): `StackedPile` bound to a headless `CardPileState` zone: reads the ordered card ids from `pile.zones[zone]` and resolves each to a `PlayingCa…
+- `CardPileState` (interface): interface CardPileState { readonly zones: Readonly<Record<ZoneName, readonly string[]>> } — ⚠ undocumented · used by `CardStack` (@jgengine/core/cards/cards.view): `StackedPile` bound to a headless `CardPileState` zone: reads the ordered card ids from `pile.zones[zone]` and resolves each to a `PlayingCa…
 - `CatchUpPolicy` (type): type CatchUpPolicy = "each" | "sum" | "skip" — How cycles that came due between two {@link advanceLedger} calls are settled: - `"each"` — replay every missed cycle as its own transaction (bounded by the limits below); - `"sum"` — collapse the missed cycles into one transaction of the combined amount; - `"skip"` — apply only the most recent cycle and discard the rest (idle income that does not bank).
 - `Cell` (type): type Cell = readonly [number, number] — ⚠ undocumented · used by `canPlace` (@jgengine/core/inventory/shapedGrid): Check bounds and overlap for a discrete footprint, optionally ignoring the item being moved.
 - `CellGrid` (interface): interface CellGrid<T> — A fixed-size 2D board of cells, row-major from the top-left; `null` is an empty cell. Plain data, so it serializes and restores as-is.
@@ -1098,7 +1074,7 @@
 - `ChaseCameraConfig` (interface): interface ChaseCameraConfig — Speed-reactive vehicle chase rig (#27) — speed→FOV, spring arm, procedural shake, interior views.
 - `ChaseMissionOptions` (interface): interface ChaseMissionOptions extends ComposedMissionOptions — Options for {@link chaseMission}: a target kept close until it is caught.
 - `Chat` (interface): interface Chat { register(def: ChatChannelDef): void; channels(): ChatChannelDef[]; send(fromUserId: string, body: string): ChatSendResult; send(fromUserId: string, channelId: string, body: string): ChatSendResult; recent(options?: {limit?: number; channe… — ⚠ undocumented
-- `ChatMessage` (interface): interface ChatMessage { id: string; channelId: string; fromUserId: string; body: string; at: number } — ⚠ undocumented · used by `createConvexChatTransport` (@jgengine/convex): Wires a game's Convex chat functions into the engine's ChatTransport contract: one live query per subscribed channel (the channel's recent h…
+- `ChatMessage` (interface): interface ChatMessage { id: string; channelId: string; fromUserId: string; body: string; at: number } — ⚠ undocumented · used by `ChatPanel` (@jgengine/core/chat/chat.view): Chat behavior over a game context or externally supplied server messages.
 - `ChatRateLimit` (interface): interface ChatRateLimit { count: number; perMs: number } — ⚠ undocumented
 - `ChatSendResult` (type): type ChatSendResult = | { message: ChatMessage; recipients: ChatRecipients } | { reason: string } — ⚠ undocumented
 - `CinematicCameraConfig` (interface): interface CinematicCameraConfig — Scripted keyframe / path player (#29). When set it overrides the active rig.
@@ -1898,6 +1874,32 @@
 - `carriedEntries` (function): function carriedEntries(states: readonly InventoryState[]): LoadEntry[] — Every filled stack in the given inventories as load entries, in slot order. Only the inventories the caller passes count, so a stash left out of the list adds no weight.
 - `characterLoad` (function): function characterLoad(input: CharacterLoadInput): CharacterLoad — Weigh a character: carried stacks plus worn gear against a capacity, resolved into the shared encumbrance bands. Movement reads `moveMultiplier`, `canSprint`, `canJump` and `immobile`; pickup gates read `remaining` or {@link canCarry}. The stash is not part of `carried`, so it adds nothing.
 
+## @jgengine/core/inventory/characterSheet.view
+
+- `CharacterSheet` (function): function CharacterSheet({ slots, stats, name, subtitle, portrait, header, title = "Character", variation = "themed", slotSize, onSlotActivate, className, style, }: CharacterSheetProps): ReactNode — Drop-in character sheet: a {@link HudFrame} wrapping an optional name/subtitle/portrait header, the equip-slot {@link Paperdoll}, and the derived-stat {@link StatList}. The game supplies slots, stats, header content, and the activation callback, and owns the window that toggles it (this component does not manage its own open/close). Pure composition over existing primitives and HudTheme tokens.
+- `CharacterSheetProps` (interface): interface CharacterSheetProps — Props for {@link CharacterSheet}.
+- `DefaultEquipSlotId` (type): type DefaultEquipSlotId = | "head" | "chest" | "hands" | "legs" | "feet" | "mainHand" | "offHand" | "ring1" | "ring2" | "trinket" — Slot ids used by {@link defaultEquipLayout}'s convenience arrangement.
+- `EquipSlot` (interface): interface EquipSlot — One named equip slot: a stable `id`, a display `label`, its worn `item` (or `null` = empty), and where it sits.
+- `EquipSlotLayout` (type): type EquipSlotLayout = readonly EquipSlot[] — An ordered set of equip slots that make up a paperdoll. Caller-supplied; see {@link defaultEquipLayout}.
+- `EquipSlotPosition` (type): type EquipSlotPosition = "left" | "right" | "bottom" — Character-sheet / paperdoll composition (#1033 follow-up): a drop-in `<CharacterSheet>` that arranges caller-supplied equip slots as a paperdoll around a portrait and lists derived stats, all inside a {@link HudFrame}. It reuses the atomic slot rendering ({@link EquipmentSlots}) and the shared `--jg-slot-*` / `--jg-accent` HudTheme tokens (#1034) — the game owns which slots and which stats matter (both are props), the skin, and the window that toggles it open/closed. No genre list is baked in; {@link defaultEquipLayout} is a convenience arrangement the game can override wholesale.
+- `Paperdoll` (function): function Paperdoll({ slots, portrait, slotSize = 44, onSlotActivate, className, style }: PaperdollProps): ReactNode — Arranges caller-supplied equip slots as a paperdoll — worn gear in two flanking columns around a center `portrait` (or a silhouette placeholder), with any `bottom` slots in a row beneath it. Each slot reuses the atomic {@link EquipmentSlots} tile (filled icon or themed empty placeholder), carries a label, and is a focusable `role="group"` with an `aria-label`; `onSlotActivate` fires on click/Enter/Space so games can wire drag or an equip picker. Composition and skin stay the game's.
+- `PaperdollProps` (interface): interface PaperdollProps — Props for {@link Paperdoll}.
+- `StatList` (function): function StatList({ stats, className, style }: StatListProps): ReactNode — Renders derived character stats as clean small-caps label→value rows, token-themed. Rows carrying a `group` field are bucketed under a small uppercase header (consecutive same-group rows share one). Pure and prop-driven — the game supplies the rows (from `useEntityStat`/derived values); the engine ships no stat list of its own.
+- `StatListProps` (interface): interface StatListProps — Props for {@link StatList}.
+- `StatRow` (interface): interface StatRow — One derived-stat row. `group` optionally buckets rows under a small header.
+- `defaultEquipLayout` (function): function defaultEquipLayout(items: Partial<Record<DefaultEquipSlotId, SlotItem | null>> = {}): EquipSlot[] — A sensible default paperdoll arrangement — worn armor down the left flank, held gear and jewelry down the right — that the game fills by passing worn items keyed by slot id. Every id is optional; unfilled slots render empty. Games that need a different slot set pass their own {@link EquipSlotLayout}.
+
+## @jgengine/core/inventory/dragLayer.view
+
+- `DragGhost` (function): function DragGhost<T>({ layer, className, style, children, }: { layer: DragLayer<T>; className?: string; style?: CSSProperties; children?: (payload: DragPayload<T>) => ReactNode; }): React.JSX.Element | null — ⚠ undocumented
+- `DragLayer` (interface): interface DragLayer<T> { state: DragLayerState<T>; dragging: boolean; pointRef: RefObject<{x: number; y: number}>; beginDrag(payload: {id: string; value: T; rotation?: Rotation}, event: ReactPointerEvent): void; rotate(quarterTurns?: number): void; setTarget(targ… — ⚠ undocumented · used by `useDragLayer`: Pointer-owned drag state shared by cards and inventory grids.
+- `DragLayerState` (interface): interface DragLayerState<T> — What the drag layer is carrying now: the payload, the pointer and where the drag began.
+- `DragPayload` (interface): interface DragPayload<T> { id: string; value: T; rotation: Rotation } — ⚠ undocumented
+- `DraggableCard` (function): function DraggableCard<T>({ id, value, layer, className, children, onRotate, }: { id: string; value: T; layer: DragLayer<T>; className?: string; children?: ReactNode; onRotate?: boolean; }): React.JSX.Element — ⚠ undocumented
+- `DropInfo` (interface): interface DropInfo<T> { payload: DragPayload<T>; target: string | null; cell: Cell | null; point: {x: number; y: number} } — ⚠ undocumented · used by `useDragLayer`: Pointer-owned drag state shared by cards and inventory grids.
+- `DropZone` (function): function DropZone<T>({ id, layer, className, activeClassName, cellSize, children, }: { id: string; layer: DragLayer<T>; className?: string; activeClassName?: string; cellSize?: number; children?: ReactNode; }): React.JSX.Element — ⚠ undocumented
+- `useDragLayer` (function): function useDragLayer<T>(options?: { onDrop?: (info: DropInfo<T>) => void; }): DragLayer<T> — Pointer-owned drag state shared by cards and inventory grids. Registered DropZones are hit-tested through pointer capture; release finishes once, while cancellation, blur and unmount release ownership. Callers own drop policy, rotation and presentation; pointer movement paints the ghost without rerendering it.
+
 ## @jgengine/core/inventory/encumbrance
 
 - `EncumbranceConfig` (interface): interface EncumbranceConfig — Tuning for where the encumbrance bands sit and how hard the carrier is slowed. Both fields are load *fractions* / multipliers in `0..1`, never absolute mass.
@@ -2147,6 +2149,31 @@
 - `createWeaponStats` (function): function createWeaponStats(resolveEntry: (itemId: string) => WeaponEntry | null | undefined): WeaponStats — Resolve per-weapon stat values — damage, fire rate, spread — for combat math.
 - `getWeaponStat` (function): function getWeaponStat(entry: WeaponEntry | null | undefined, stat: string): number | null — ⚠ undocumented
 
+## @jgengine/core/leaderboard/leaderboard
+
+- `IncrementResult` (type): type IncrementResult = { status: "ok"; value: number } | { status: "rejected"; reason: "not-tracked" } — ⚠ undocumented
+- `Leaderboard` (interface): interface Leaderboard { track(def: LeaderboardTrackDef): void; tracked(): {stat: string; scope: LeaderboardScope}[]; increment(userId: string, stat: string, options: {scope: LeaderboardScope; serverId?: string; by?: number}): IncrementResult; getTop(stat: string… — ⚠ undocumented · used by `createLeaderboard`: Ranked score tracking across global, server, and per-profile scopes, with top-N queries and per-profile lookups.
+- `LeaderboardRow` (interface): interface LeaderboardRow { stat: string; scope: LeaderboardScope; serverId?: string; userId: string; value: number } — ⚠ undocumented · used by `createLeaderboard`: Ranked score tracking across global, server, and per-profile scopes, with top-N queries and per-profile lookups.
+- `LeaderboardScope` (type): type LeaderboardScope = "global" | "server" | "profile" — ⚠ undocumented
+- `LeaderboardTrackDef` (interface): interface LeaderboardTrackDef { stat?: string; currency?: string; scope: LeaderboardScope } — ⚠ undocumented
+- `createLeaderboard` (function): function createLeaderboard(sink?: { onIncrement?(row: LeaderboardRow): void }): Leaderboard — Ranked score tracking across global, server, and per-profile scopes, with top-N queries and per-profile lookups.
+
+## @jgengine/core/leaderboard/leaderboardRank
+
+- `RankLeaderboardOptions` (interface): interface RankLeaderboardOptions — Options for {@link rankLeaderboard}. All optional.
+- `RankableRow` (interface): interface RankableRow — A single input score to rank. Accepts the raw shape produced by {@link LeaderboardRow} (a `LeaderboardRow` is assignable to this) as well as a minimal `{ userId, value }` pair with an optional display `label` the game owns.
+- `RankedEntry` (interface): interface RankedEntry — One render-ready row of the ranked table produced by {@link rankLeaderboard}.
+- `TieMode` (type): type TieMode = "standard" | "dense" — How equal scores share ranks: - `"standard"` (competition ranking): ties share a rank and the next distinct score skips ahead — `1, 2, 2, 4`. - `"dense"`: ties share a rank and the next distinct score is the very next integer — `1, 2, 2, 3`.
+- `medalFor` (function): function medalFor(rank: number): "gold" | "silver" | "bronze" | null — A free-string medal token for the top-three ranks — `"gold"` (1), `"silver"` (2), `"bronze"` (3) — or `null` for any other rank. It is a semantic token, not a color: the UI maps it to an icon/color/theme, and the model never styles. Feed it a {@link RankedEntry.rank}.
+- `rankLeaderboard` (function): function rankLeaderboard(rows: readonly RankableRow[], options: RankLeaderboardOptions = {}): RankedEntry[] — Turn raw leaderboard rows into a render-ready ranked table. Pure and allocation-bounded: it sorts a copy by `value` (descending by default), assigns 1-based ranks with correct tie handling (`"standard"` → `1, 2, 2, 4`; `"dense"` → `1, 2, 2, 3`), flags rows that share a score (`isTie`), marks the local player (`isLocal`, via `highlightUserId`), and finally applies `limit`. Sorting is stable, so rows with equal scores keep their input order. Nothing here styles or branches on game meaning — pair it with {@link medalFor} and a game-owned theme to render a reskinnable scoreboard. Accepts a {@link LeaderboardRow}`[]` straight from `leaderboard.snapshot()`/`getTop()` since those satisfy {@link RankableRow}.
+
+## @jgengine/core/leaderboard/scoreboard.view
+
+- `MedalToken` (type): type MedalToken = "gold" | "silver" | "bronze" — The medal tokens {@link medalFor} emits for the podium.
+- `Scoreboard` (function): function Scoreboard({ entries, rows, options, title, scoreLabel = "Score", nameFor, formatScore, medalIcon, theme, className, style, }: ScoreboardProps): ReactNode — A reskinnable ranked-score table for the {@link rankLeaderboard} selector: a rank column (medal icon/color for the top three via {@link medalFor}, otherwise the number), a name column, and a score column. The local player's row (`isLocal`) is washed and accented so "you" stands out. Feed it already-ranked `entries`, or raw `rows` plus `options` and it ranks them for you. All colors and spacing come from {@link ScoreboardTheme} / HudTheme `--jg-*` tokens — the component reads the model and never styles by game meaning.
+- `ScoreboardProps` (interface): interface ScoreboardProps — Props for {@link Scoreboard}. Pass either `entries` (already ranked) or `rows` + `options`.
+- `ScoreboardTheme` (interface): interface ScoreboardTheme — Reskin tokens for {@link Scoreboard}. Every color/spacing value reads a `--jg-*` token first.
+
 ## @jgengine/core/loot/drop
 
 - `EquippedComparison` (interface): interface EquippedComparison — What a HUD renders when a drop lands: per-stat deltas against the worn item and one verdict.
@@ -2329,6 +2356,33 @@
 - `createMissionRuntime` (function): function createMissionRuntime(config: MissionRuntimeConfig): MissionRuntime — Run missions as a state machine. One mission is active at a time; `tick` advances it against the world the caller supplies, moving through objectives on completion, branching on facts, and landing in a named fail state on a fail condition, an expiry or a `minSurvivors` breach. Completion pays rewards through {@link applyMissionRewards} appliers the caller wires, and a mission's `next` chains the follow-up. Escort, chase and defend are compositions of the same objective kinds (`compositions.ts`), never three bespoke systems.
 - `isCounterObjective` (function): function isCounterObjective(kind: MissionObjectiveKind): boolean — True when an objective kind completes from a counter rather than a world condition — the test the counter-only lint is built on.
 - `validateMissionCatalog` (function): function validateMissionCatalog(missions: readonly MissionDef[], options: MissionValidationOptions = {}): MissionIssue[] — Validate a mission catalog without mutation: duplicate ids, unknown branch/next targets, unknown fail states and markers, per-kind required fields, unreachable objectives, and the counter-only rule — a mission that has a completion path made entirely of `kill`/`collect` objectives is an error, because it can be won on a counter alone.
+
+## @jgengine/core/mission/objectiveBanner
+
+- `ObjectiveBannerAnnouncement` (interface): interface ObjectiveBannerAnnouncement — One announcement request handed to {@link ObjectiveBannerController.announce}.
+- `ObjectiveBannerController` (interface): interface ObjectiveBannerController — A live, clock-driven objective/stage banner controller.
+- `ObjectiveBannerOptions` (interface): interface ObjectiveBannerOptions — Options for {@link createObjectiveBanner}.
+- `ObjectiveBannerPhase` (type): type ObjectiveBannerPhase = "in" | "hold" | "out" — Which part of its life a banner is in: flying `"in"`, holding centered, or fading `"out"`. Progress `0..1` (see {@link ObjectiveBannerView.progress}) runs within whichever phase is active — the renderer maps phase + progress to opacity/scale/translate however it likes.
+- `ObjectiveBannerSnapshot` (interface): interface ObjectiveBannerSnapshot — Serializable state of the queue and the active banner, for save/restore.
+- `ObjectiveBannerView` (interface): interface ObjectiveBannerView — The banner to draw right now: its content, the game-owned `kind`, the current {@link ObjectiveBannerPhase}, and `progress` `0..1` through that phase. This object is pooled and overwritten on the next {@link ObjectiveBannerController.current} call — read it, don't retain it.
+- `StoredObjectiveBanner` (interface): interface StoredObjectiveBanner — A persisted banner record — all announcement fields resolved, plus id and schedule.
+- `createObjectiveBanner` (function): function createObjectiveBanner(options: ObjectiveBannerOptions = {}): ObjectiveBannerController — A serializable, clock-driven stage/objective banner controller: the classic transient centered title stamp ("WAVE 3", "VICTORY", "OBJECTIVE COMPLETE"). A game calls `announce({ title, subtitle?, kind? })` and the controller queues it, flies it in, holds it, and fades it out on an injected clock — one banner at a time — exposing the current banner plus its phase (in/hold/out) and `progress` `0..1` for a renderer to animate opacity/scale/translate. Nothing here is genre-specific: `kind` is a free label the game owns and styles, and all timings are parameters. Call `advance()` each frame; `current()` returns the pooled view to draw; `snapshot`/`restore` round-trips the queue through a save.
+
+## @jgengine/core/mission/objectiveBanner.view
+
+- `ObjectiveBannerHost` (function): function ObjectiveBannerHost({ controller, theme, kindThemes, animate = true, dismissOnClick = false, zIndex = 50, className, style, }: ObjectiveBannerHostProps): ReactNode — A full-screen overlay that renders an {@link ObjectiveBannerController} as the classic transient centered title stamp — "WAVE 3", "VICTORY", "OBJECTIVE COMPLETE" — flying in, holding, and fading out. It subscribes to the model, drives `advance()` on an animation frame (unless the game ticks it), and maps the current banner's phase + progress to opacity/scale/translate. Reskin the base look with {@link ObjectiveBannerTheme} and color each variant via `kindThemes` keyed on the game-owned `kind`. Presentation only: all timing and queueing live in the core model, and `kind` is never interpreted here.
+- `ObjectiveBannerHostProps` (interface): interface ObjectiveBannerHostProps — Props for {@link ObjectiveBannerHost}.
+- `ObjectiveBannerTheme` (interface): interface ObjectiveBannerTheme — Reskin tokens for {@link ObjectiveBannerHost}. Per-`kind` overrides layer on top.
+- `useObjectiveBanner` (function): function useObjectiveBanner(controller: ObjectiveBannerController, animate = true): ObjectiveBannerView | null — Subscribe to a banner controller, drive its clock on an animation frame (unless the game already ticks it), and return the banner to draw right now — or `null` when idle. Re-renders every frame while a banner is animating.
+
+## @jgengine/core/mission/objectives
+
+- `ObjectiveDirection` (type): type ObjectiveDirection = "atLeast" | "atMost" — Whether a metric must reach up to a target or stay down under it.
+- `ObjectiveStatus` (interface): interface ObjectiveStatus — Evaluated state of one {@link ThresholdObjective} against a current metric value.
+- `ObjectiveSummary` (interface): interface ObjectiveSummary — Rolled-up state across a set of objectives.
+- `ThresholdObjective` (interface): interface ThresholdObjective — A live-metric goal: hit `target` from the required `direction` (defaults to `atLeast`).
+- `evaluateObjective` (function): function evaluateObjective(objective: ThresholdObjective, value: number): ObjectiveStatus — Evaluate a single live-metric objective: is `value` at least (or at most) the target, and how far along. Unlike an event counter, this reads a continuously-changing metric — population, approval, pollution — the objective shape city-builders and management sims track every tick.
+- `evaluateObjectives` (function): function evaluateObjectives(objectives: readonly ThresholdObjective[], values: Readonly<Record<string, number>> | ((id: string) => number)): ObjectiveSummary — Evaluate every objective against current metric values (a lookup map or function) and roll them up into a met-count, completion flag, and mean progress — the brief/charter panel every sim renders.
 
 ## @jgengine/core/mission/quest
 
@@ -2834,6 +2888,10 @@
 - `RoundState` (interface): interface RoundState<TPhase extends string = RoundPhase> { tick(dt: number): RoundEvent<TPhase>[]; concludeRound(winner: string): RoundEvent<TPhase>[]; evaluate(): RoundEvent<TPhase>[]; onPhaseEnd(hook: PhaseEndHook<TPhase>): () => void; phase(): TPhase; round(): number; timeLeft(): number; score… — ⚠ undocumented
 - `RoundTeam` (interface): interface RoundTeam — A team entry with an optional role tag (e.g. "attacker", "defender") retrievable via `RoundState.roleOf`.
 
+## @jgengine/core/session/useServerSession.view
+
+- `useServerSession` (function): function useServerSession(transport: GameRuntimeTransport, gameId: string, preferredServerId?: string): { retry: () => void; serverId: string | null; status: "joining" | "joined" | "failed"; failureReason: string | null; } — Joins a host and exposes a retryable blocking state until membership is confirmed.
+
 ## @jgengine/core/sim/nearAgents
 
 - `NearAgentSnapshot` (interface): interface NearAgentSnapshot — Serializable state of one near agent: where it walks, what it needs, what it last chose.
@@ -2932,6 +2990,51 @@
 - `RoutineTimeline` (interface): interface RoutineTimeline — An authored day resolved against time: arrival times after walking, departures early enough to make the next stop, and a phase for any instant. Pure — there is no state to tick, so a far agent and a loaded save read the same day from the same clock.
 - `resolveRoutine` (function): function resolveRoutine(config: RoutineConfig): RoutineTimeline — Resolve an authored routine into a timeline driven by the world clock.
 
+## @jgengine/core/social/social
+
+- `DEFAULT_EMOTE_RADIUS` (const): const DEFAULT_EMOTE_RADIUS: 20 — ⚠ undocumented
+- `EmoteBroadcastResult` (interface): interface EmoteBroadcastResult { from: string; emoteId: string; at: readonly [number, number, number]; recipients: readonly string[] } — ⚠ undocumented
+- `EmoteEntityLookup` (interface): interface EmoteEntityLookup { get(id: string): {position: readonly [number, number, number]; role: string} | null } — ⚠ undocumented
+- `EmoteSpatialLookup` (interface): interface EmoteSpatialLookup { inRadius(center: readonly [number, number, number], radius: number, filter?: (id: string) => boolean): readonly string[] } — ⚠ undocumented
+- `Emotes` (interface): interface Emotes { play(fromUserId: string, emoteId: string, radius?: number): EmoteBroadcastResult | {reason: string} } — ⚠ undocumented
+- `EmotesDeps` (interface): interface EmotesDeps { entities: EmoteEntityLookup; spatial: EmoteSpatialLookup } — ⚠ undocumented
+- `FriendEntry` (interface): interface FriendEntry { userId: string; online: boolean } — ⚠ undocumented · used by `useFriends` (@jgengine/react): The local player's friends with their presence: the list keeps one identity until a request is accepted, a friend is removed or a friend's p…
+- `FriendRequestEntry` (interface): interface FriendRequestEntry { requestId: string; fromUserId: string } — ⚠ undocumented
+- `Friends` (interface): interface Friends { canRequest(fromUserId: string, toUserId: string): {reason: string} | null; request(fromUserId: string, toUserId: string): {requestId: string} | {reason: string}; accept(userId: string, requestId: string): {reason: string} | null; decline(… — ⚠ undocumented
+- `FriendsSnapshot` (interface): interface FriendsSnapshot { friends: string[]; blocked: string[] } — ⚠ undocumented
+- `Party` (interface): interface Party { register(config: PartyConfig): void; canInvite(fromUserId: string, toUserId: string): {reason: string} | null; invite(fromUserId: string, toUserId: string): {inviteId: string} | {reason: string}; accept(userId: string, inviteId: string): … — ⚠ undocumented
+- `PartyConfig` (interface): interface PartyConfig { maxMembers: number; inviteTtlMs?: number } — ⚠ undocumented
+- `PartyInviteEntry` (interface): interface PartyInviteEntry { inviteId: string; fromUserId: string; createdAt: number } — ⚠ undocumented
+- `PartyMemberEntry` (interface): interface PartyMemberEntry { userId: string; role: PartyRole } — ⚠ undocumented
+- `PartyRole` (type): type PartyRole = "leader" | "member" — ⚠ undocumented
+- `PresenceInfo` (interface): interface PresenceInfo { online: boolean; serverId?: string; zoneId?: string; instanceId?: string } — ⚠ undocumented
+- `Social` (interface): interface Social { friends: Friends; party: Party; presence: {get(userId: string): PresenceInfo}; emotes: Emotes; worldInvites: WorldInvites; snapshot(): SocialSnapshot; hydrate(data: SocialSnapshot): void } — ⚠ undocumented · used by `createSocial`: Emotes and lightweight social interactions between nearby players.
+- `SocialDeps` (interface): interface SocialDeps { events: GameEvents; presence?: (userId: string) => PresenceInfo; now?: () => number; emotes?: EmotesDeps; worldInviteTtlMs?: number } — ⚠ undocumented · used by `createSocial`: Emotes and lightweight social interactions between nearby players.
+- `SocialPartySnapshot` (interface): interface SocialPartySnapshot — One party's replicated membership — id, current leader, and ordered member ids.
+- `SocialSnapshot` (interface): interface SocialSnapshot — Full friends/party/world-invite state as one serializable baseline — the host→client replication payload behind the `social` snapshot module. Presence and emotes are derived from live deps, not stored.
+- `WorldInvite` (interface): interface WorldInvite extends WorldInviteTarget { id: string; fromUserId: string; toUserId: string; createdAt: number } — ⚠ undocumented
+- `WorldInviteTarget` (interface): interface WorldInviteTarget { serverId: string; joinCode?: string } — ⚠ undocumented
+- `WorldInvites` (interface): interface WorldInvites { canInvite(fromUserId: string, toUserId: string): {reason: string} | null; invite(fromUserId: string, toUserId: string, target: WorldInviteTarget): {inviteId: string} | {reason: string}; accept(userId: string, inviteId: string): {target: W… — ⚠ undocumented
+- `createSocial` (function): function createSocial(deps: SocialDeps): Social — Emotes and lightweight social interactions between nearby players.
+
+## @jgengine/core/social/social.view
+
+- `AddFriendButton` (function): function AddFriendButton({ toUserId, className, children, onRequested, onRejected, }: { toUserId: string; className?: string; children?: ReactNode; onRequested?: (requestId: string) => void; onRejected?: (reason: string) => void; }): React.JSX.Element | null — ⚠ undocumented
+- `EmoteWheel` (function): function EmoteWheel({ emotes, radius, open = true, className, emoteClassName, onPlayed, onRejected, renderEmote, }: { emotes: readonly string[]; radius?: number; open?: boolean; className?: string; emoteClassName?: string; onPlayed?: (emoteId: string) => void; onRejected?: (reason: string) => void; … — ⚠ undocumented
+- `FriendRequestsList` (function): function FriendRequestsList({ className, rowClassName, acceptClassName, declineClassName, emptyState, renderRequest, }: { className?: string; rowClassName?: string; acceptClassName?: string; declineClassName?: string; emptyState?: ReactNode; renderRequest?: (request: FriendRequestEntry) => ReactNode… — ⚠ undocumented
+- `FriendRow` (function): function FriendRow({ friend, className, dotClassName, children, }: { friend: FriendEntry; className?: string; dotClassName?: string; children?: ReactNode; }): React.JSX.Element — ⚠ undocumented
+- `FriendsList` (function): function FriendsList({ className, rowClassName, dotClassName, emptyState, renderFriend, }: { className?: string; rowClassName?: string; dotClassName?: string; emptyState?: ReactNode; renderFriend?: (friend: FriendEntry) => ReactNode; }): React.JSX.Element — ⚠ undocumented
+- `InviteToWorldButton` (function): function InviteToWorldButton({ toUserId, target, className, children, onInvited, onRejected, }: { toUserId: string; target: WorldInviteTarget; className?: string; children?: ReactNode; onInvited?: (inviteId: string) => void; onRejected?: (reason: string) => void; }): React.JSX.Element | null — ⚠ undocumented
+- `JoinByCode` (function): function JoinByCode({ onJoin, className, inputClassName, buttonClassName, placeholder, children, }: { onJoin: (code: string) => void; className?: string; inputClassName?: string; buttonClassName?: string; placeholder?: string; children?: ReactNode; }): React.JSX.Element — ⚠ undocumented
+- `LeavePartyButton` (function): function LeavePartyButton({ className, children, }: { className?: string; children?: ReactNode; }): React.JSX.Element | null — ⚠ undocumented
+- `PartyFrame` (function): function PartyFrame({ className, rowClassName, dotClassName, emptyState, renderMember, }: { className?: string; rowClassName?: string; dotClassName?: string; emptyState?: ReactNode; renderMember?: (member: PartyMemberEntry) => ReactNode; }): React.JSX.Element — ⚠ undocumented
+- `PartyInviteToast` (function): function PartyInviteToast({ className, acceptClassName, declineClassName, renderInvite, }: { className?: string; acceptClassName?: string; declineClassName?: string; renderInvite?: (invite: PartyInviteEntry) => ReactNode; }): React.JSX.Element | null — ⚠ undocumented
+- `PartyMemberRow` (function): function PartyMemberRow({ member, className, dotClassName, children, }: { member: PartyMemberEntry; className?: string; dotClassName?: string; children?: ReactNode; }): React.JSX.Element — ⚠ undocumented
+- `PresenceDot` (function): function PresenceDot({ userId, className }: { userId: string; className?: string }): React.JSX.Element — ⚠ undocumented
+- `QuickMatchButton` (function): function QuickMatchButton({ listings, onJoin, onNoMatch, filter, className, children, }: { listings: readonly SessionListing[]; onJoin: (listing: SessionListing) => void; onNoMatch?: () => void; filter?: MatchFilter; className?: string; children?: ReactNode; }): React.JSX.Element — ⚠ undocumented
+- `WorldBrowser` (function): function WorldBrowser({ listings, onJoin, className, rowClassName, joinClassName, emptyState, renderListing, }: { listings: readonly SessionListing[]; onJoin: (listing: SessionListing) => void; className?: string; rowClassName?: string; joinClassName?: string; emptyState?: ReactNode; renderListing?:… — ⚠ undocumented
+- `WorldInviteToast` (function): function WorldInviteToast({ className, acceptClassName, declineClassName, onAccepted, renderInvite, }: { className?: string; acceptClassName?: string; declineClassName?: string; onAccepted: (target: WorldInviteTarget) => void; renderInvite?: (invite: WorldInvite) => ReactNode; }): React.JSX.Element … — ⚠ undocumented
+
 ## @jgengine/core/store/defineKeyedStore
 
 - `KeyedStoreHandle` (interface): interface KeyedStoreHandle<T> — A typed, cast-free handle onto a per-owner keyed family of slots on the reactive game store (`ctx.game.store`) — the {@link StoreHandle} shape widened with an `id` (userId, instanceId, …) so one definition covers every owner instead of one `defineStore` call per key. `keyFor` composes the underlying store key from the id; call sites never see it. Writes flow through the engine store, so they bump `ctx.version()`, serialize into a {@link WorldSnapshot}, and replay under host authority — the same guarantees a hand-rolled `` `prefix:${id}` `` string plus `store.get(key) as T` gives up.
@@ -3019,6 +3122,35 @@
 - `TacticalGridSnapshot` (interface): interface TacticalGridSnapshot { blocked: string[]; occupants: Record<string, string> } — ⚠ undocumented
 - `TacticalGridWorldConfig` (interface): interface TacticalGridWorldConfig — Maps abstract `[col, row]` tiles onto world-space `[x, z]`, mirroring `navGrid`'s bounds+cellSize convention.
 - `Tile` (type): type Tile = readonly [number, number] — ⚠ undocumented
+
+## @jgengine/core/talents/talentTree.view
+
+- `TalentIcon` (type): type TalentIcon = GameIconName | ReactNode | null — How a node id resolves to display art: a built-in {@link GameIconName}, any node, or `null` for the default.
+- `TalentTreePanel` (function): function TalentTreePanel<TStat extends string = string>({ view: viewProp, nodes, tree, onLearn, icon, label, branchLabel, title = "Talents", variation = "themed", nodeSize = 54, columnGap = 30, tierGap = 46, showPoints = true, className, style, }: TalentTreeProps<TStat>): ReactNode — Drop-in talent / skill-tree widget over the existing progression model (`@jgengine/core/talents/talents` + its `talentTreeView` selector). The game passes its node definitions and a live `createTalentTree` instance; the widget lays nodes out by branch column and prerequisite-depth tier, draws SVG prerequisite edges, styles each node learned/available/locked/maxed, shows an icon + rank badge, and calls `onLearn(nodeId)` when the player clicks a node that is currently allocatable. All layout, edge-drawing, and eligibility come from the model/selector — the widget never re-derives topology. Unskinned and HudTheme-token driven; node ids/branches are opaque game data the game supplies icons and labels for.
+- `TalentTreeProps` (interface): interface TalentTreeProps<TStat extends string = string> — Props for {@link TalentTreePanel}.
+
+## @jgengine/core/talents/talentTreeView
+
+- `TalentEdgeView` (interface): interface TalentEdgeView — One prerequisite edge into a node — the source node, the rank it demands, and whether that is met.
+- `TalentNodeState` (type): type TalentNodeState = "locked" | "available" | "learned" | "maxed" — Render state of a talent node, derived from its rank and prerequisite satisfaction. - `locked` — rank 0 and at least one prerequisite unmet; cannot be trained yet. - `available` — rank 0, every prerequisite met; ready to take a first point. - `learned` — at least one rank invested, but below `maxRank`. - `maxed` — fully invested (`rank === maxRank`).
+- `TalentNodeStatus` (interface): interface TalentNodeStatus — Per-node status a game supplies to build a view from *any* unlock rule — not just point-spend. A game computes these from whatever it wants (a currency threshold, a level, a quest flag, a skill-point pool, nothing at all) so the same widget renders a buy-with-points talent tree, a money-gated upgrade tree, or a condition-unlocked ability web without changing the renderer.
+- `TalentNodeView` (interface): interface TalentNodeView — A per-node view for rendering: grid placement (tier/branch), rank, state, and inbound prerequisite edges.
+- `TalentPointTotals` (interface): interface TalentPointTotals — Optional overall point totals for the view header; omit (or 0) for trees that spend no point currency.
+- `TalentTreeView` (interface): interface TalentTreeView — A whole-tree render view: placed nodes plus branch/tier extents and point totals.
+- `talentTreeView` (function): function talentTreeView<TStat extends string = string>(nodes: readonly TalentNodeDef<TStat>[], tree: TalentTree<TStat>): TalentTreeView — Project the existing talent model (`createTalentTree`) into a flat, serializable render view: every node placed by branch + prerequisite-depth tier, tagged learned/available/locked/maxed, with its inbound prerequisite edges (and whether each is met) and whether a point can be spent right now. It is a pure read over the node defs plus a live {@link TalentTree}, so a React/canvas widget can lay out nodes, draw edges, and gate clicks without re-deriving topology or re-interpreting eligibility. The model still owns allocation, requirements, and point rules — this only reshapes them for drawing, and never interprets what a node *means* (ids, branches, and ranks stay opaque game data). This is the point-spend adapter over {@link talentTreeViewFrom}; pass a custom status to that builder instead to drive the tree from a currency, level, or any other unlock rule.
+- `talentTreeViewFrom` (function): function talentTreeViewFrom<TStat extends string = string>(nodes: readonly TalentNodeDef<TStat>[], status: (node: TalentNodeDef<TStat>) => TalentNodeStatus, totals?: TalentPointTotals): TalentTreeView — Build a flat, serializable render view of a node graph from a caller-supplied per-node status, decoupled from any particular progression model. For each node the game returns its `rank` and whether it is `allocatable` *right now* under whatever rule it likes — a skill-point pool, a cash threshold, a level gate, a quest flag, or nothing. The builder places every node by branch + prerequisite-depth tier, tags it learned/available/locked/maxed (`available` when rank 0 and every prerequisite is met — see below), and resolves inbound prerequisite edges (each `met` when the source node's supplied rank meets the demand). This is the general escape hatch behind {@link talentTreeView}: it lets the same widget render a buy-with-points talent tree, a money-gated upgrade tree, or a condition-unlocked ability web without the renderer changing. It never interprets what a node *means* — ids, branches, and ranks stay opaque game data.
+
+## @jgengine/core/talents/talents
+
+- `ResolvedTalents` (interface): interface ResolvedTalents<TStat extends string = string> { stats: StatModifierSet<TStat>; abilities: readonly string[] } — ⚠ undocumented
+- `TalentAllocateReason` (type): type TalentAllocateReason = "unknown-node" | "max-rank" | "no-points" | "requires" | "branch-points" — ⚠ undocumented
+- `TalentAllocateResult` (type): type TalentAllocateResult = { ok: true } | { ok: false; reason: TalentAllocateReason } — ⚠ undocumented
+- `TalentNodeDef` (interface): interface TalentNodeDef<TStat extends string = string> { id: string; branch?: string; maxRank: number; requires?: readonly TalentRequirement[]; requiresPointsInBranch?: number; modifiersPerRank?: StatModifierSet<TStat>; grantsAbilities?: readonly string[] } — ⚠ undocumented · used by `talentTreeView` (@jgengine/core/gameplay): Project the existing talent model (`createTalentTree`) into a flat, serializable render view: every node placed by branch + prerequisite-dep…
+- `TalentRequirement` (type): type TalentRequirement = string | { nodeId: string; rank: number } — ⚠ undocumented
+- `TalentSnapshot` (interface): interface TalentSnapshot { points: number; ranks: Record<string, number> } — ⚠ undocumented
+- `TalentTree` (interface): interface TalentTree<TStat extends string = string> { rank(nodeId: string): number; pointsAvailable(): number; pointsSpent(): number; pointsInBranch(branch: string): number; grantPoints(amount: number): void; canAllocate(nodeId: string): TalentAllocateResult; allocate(nodeId: string): Talent… — ⚠ undocumented · used by `talentTreeView` (@jgengine/core/gameplay): Project the existing talent model (`createTalentTree`) into a flat, serializable render view: every node placed by branch + prerequisite-dep…
+- `TalentTreeConfig` (interface): interface TalentTreeConfig<TStat extends string = string> { nodes: readonly TalentNodeDef<TStat>[]; points?: number } — ⚠ undocumented
+- `createTalentTree` (function): function createTalentTree<TStat extends string = string>(config: TalentTreeConfig<TStat>): TalentTree<TStat> — ⚠ undocumented
 
 ## @jgengine/core/threshold/thresholdTracker
 

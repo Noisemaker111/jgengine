@@ -1,14 +1,14 @@
 import type { ReactNode } from "react";
 import { resolveActivePrompt } from "@jgengine/core/interaction/proximityPrompt";
-import { SkillCheckBar } from "@jgengine/react/components";
+import { SkillCheckBar } from "@jgengine/core/ui/components.view";
 import { useGameStore } from "@jgengine/react/hooks";
 import { useGameContext } from "@jgengine/react/provider";
 import { HUD_CORNER_WIDTH } from "@jgengine/core/hud/hudLayout.view";
 import { ActionBar } from "@jgengine/core/hud/actionHud.view";
-import { KitBanner, KitObjective } from "@jgengine/react/kitFlow";
+import { KitBanner, KitObjective } from "@jgengine/core/ui/kit/kitFlow.view";
 import { KitCount, KitCounts } from "@jgengine/core/hud/kitHud.view";
 import { HudSlots } from "@jgengine/shell/gameKit";
-import { KitActionPrompt, KitButton, KitPanel } from "@jgengine/react/uiKitRoot";
+import { KitActionPrompt, KitButton, KitPanel } from "@jgengine/core/ui/kit/uiKitRoot.view";
 
 import { idea } from "../idea";
 import { farmView, prompts } from "../prompts";

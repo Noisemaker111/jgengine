@@ -3,9 +3,9 @@ import { resolveActivePrompt } from "@jgengine/core/interaction/proximityPrompt"
 import { useGameStore } from "@jgengine/react/hooks";
 import { useGameContext } from "@jgengine/react/provider";
 import { ActionBar } from "@jgengine/core/hud/actionHud.view";
-import { KitResultScreen } from "@jgengine/react/kitFlow";
+import { KitResultScreen } from "@jgengine/core/ui/kit/kitFlow.view";
 import { KitCount, KitCounts, KitVitals, KitWaveClock } from "@jgengine/core/hud/kitHud.view";
-import { KitActionPrompt, KitPanel } from "@jgengine/react/uiKitRoot";
+import { KitActionPrompt, KitPanel } from "@jgengine/core/ui/kit/uiKitRoot.view";
 import { HudSlots } from "@jgengine/shell/gameKit";
 
 import { continueGame } from "@jgengine/core/game/gameFlow";

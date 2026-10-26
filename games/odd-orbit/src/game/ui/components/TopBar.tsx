@@ -1,5 +1,5 @@
-import { GameIcon } from "@jgengine/react/gameIcons";
-import { KitPanel } from "@jgengine/react/uiKitRoot";
+import { GameIcon } from "@jgengine/core/ui/icons/gameIcons.view";
+import { KitPanel } from "@jgengine/core/ui/kit/uiKitRoot.view";
 import { HudFade } from "@jgengine/core/hud/hudLayout.view";
 import { useGame, useGameClock, useSceneObjects } from "@jgengine/react/hooks";
 import { useStore } from "@jgengine/react/store";

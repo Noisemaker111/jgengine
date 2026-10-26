@@ -1,6 +1,6 @@
 import { createContext, useContext, useMemo, type ReactNode } from "react";
 import { useConvex } from "convex/react";
-import { useServerSession } from "@jgengine/react/useServerSession";
+import { useServerSession } from "@jgengine/core/session/useServerSession.view";
 import { createConvexGameTransport } from "@jgengine/convex/createConvexGameTransport";
 import { api } from "@llmville/backend/convex/_generated/api";
 import type { Id } from "@llmville/backend/convex/_generated/dataModel";

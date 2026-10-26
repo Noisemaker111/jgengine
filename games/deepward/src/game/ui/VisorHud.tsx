@@ -1,6 +1,6 @@
 import type { CSSProperties, ReactNode } from "react";
-import { GameIcon } from "@jgengine/react/gameIcons";
-import { KitButton, KitPanel } from "@jgengine/react/uiKitRoot";
+import { GameIcon } from "@jgengine/core/ui/icons/gameIcons.view";
+import { KitButton, KitPanel } from "@jgengine/core/ui/kit/uiKitRoot.view";
 import { HudFade } from "@jgengine/core/hud/hudLayout.view";
 
 /*

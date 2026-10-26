@@ -3,7 +3,7 @@ import { type CSSProperties } from "react";
 import { HudFrame } from "./hudFrame.view";
 import { HUD_THEME_PRESETS, defaultHudTheme, hudThemeVars, type HudTheme } from "./hudTheme.view";
 import { hudType } from "./hudTokens";
-import { KitMeter } from "@jgengine/react/uiKitRoot";
+import { KitMeter } from "@jgengine/core/ui/kit/uiKitRoot.view";
 
 /**
  * A deterministic preset matrix for {@link HudTheme} (#1034): every genre preset × (kit meters + a themed

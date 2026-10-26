@@ -1,4 +1,4 @@
-import { Canvas } from "@react-three/fiber";
+import { Canvas, events as pointerEvents } from "@react-three/fiber";
 import type { CSSProperties, ReactNode } from "react";
 
 import type { ModelConfig } from "@jgengine/core/game/playableGame";
@@ -46,6 +46,16 @@ export interface EntityPreviewProps {
 }
 
 /**
+ * R3F pointer events, minus the crash when a preview unmounts while R3F is still creating it: R3F
+ * configures the root asynchronously, then connects events to the wrapper div, which is null by then.
+ * A dialogue or menu that opens and re-mounts a portrait in one beat hit this.
+ */
+function previewEvents(store: Parameters<typeof pointerEvents>[0]): ReturnType<typeof pointerEvents> {
+  const handlers = pointerEvents(store);
+  return { ...handlers, connect: (target: HTMLElement | null) => (target === null ? undefined : handlers.connect?.(target)) };
+}
+
+/**
  * Drop-in live 3D preview of a single entity — the character-screen portrait, unit inspector, or loadout
  * viewer. It owns all the plumbing a game would otherwise re-derive by hand: a nested `<Canvas>`, the
  * {@link GameContextBridge} that carries the running `GameContext` across the R3F reconciler boundary (so
@@ -88,6 +98,7 @@ export function EntityPreview({
         dpr={dpr}
         camera={{ position: cameraPosition, fov }}
         gl={{ preserveDrawingBuffer: true }}
+        events={previewEvents}
         style={{ touchAction: "none" }}
       >
         <GameContextBridge context={ctx}>

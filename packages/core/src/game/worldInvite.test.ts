@@ -1,7 +1,7 @@
 import { describe, expect, test } from "bun:test";
 
 import { createGameEvents } from "./events";
-import { createSocial } from "./social";
+import { createSocial } from "../social/social";
 
 function inviteId(result: { inviteId: string } | { reason: string }): string {
   if (!("inviteId" in result)) throw new Error(result.reason);

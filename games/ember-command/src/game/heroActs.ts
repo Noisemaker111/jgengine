@@ -1,9 +1,9 @@
 import type { GameContext } from "@jgengine/core/runtime/gameContext";
 import type { AbilityCastReason, AbilitySlotSnapshot } from "@jgengine/core/combat/abilityKit";
 import { createAbilityKit } from "@jgengine/core/combat/abilityKit";
-import { createTalentTree, type TalentTree } from "@jgengine/core/game/talents";
+import { createTalentTree, type TalentTree } from "@jgengine/core/talents/talents";
 import { createStats, type Stats } from "@jgengine/core/stats/statModifiers";
-import type { TalentNodeView } from "@jgengine/core/game/talentTreeView";
+import type { TalentNodeView } from "@jgengine/core/talents/talentTreeView";
 
 import { isHostile } from "./catalog";
 import { HERO_ID, heroLevel, heroTrack, MANA_REGEN } from "./hero";
@@ -30,7 +30,7 @@ import { factionDamage } from "./upgrades";
  *   cooling slot, and `retuneSlot` is how a pick makes them recharge faster);
  * - `@jgengine/core/stats/statModifiers` owns the timed line buffs the banner and the ward ride
  *   (`addSource` with an expiry, resolved on read);
- * - `@jgengine/core/game/talents` owns the picks (points, one rank per pick, the ability and stat
+ * - `@jgengine/core/talents/talents` owns the picks (points, one rank per pick, the ability and stat
  *   resolution), and `heroPicks.ts` owns the offers this vale makes.
  *
  * Battle state (cooldowns, buffs, the live tree) rides `session` and dies with the battle; the picked

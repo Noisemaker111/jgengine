@@ -1,5 +1,5 @@
 import type { CSSProperties } from "react";
-import { GameIcon } from "@jgengine/react/gameIcons";
+import { GameIcon } from "@jgengine/core/ui/icons/gameIcons.view";
 import { HudFade } from "@jgengine/core/hud/hudLayout.view";
 import { useEntityStat, useGameStore, useInventory, usePlayer } from "@jgengine/react/hooks";
 import { useGameContext } from "@jgengine/react/provider";

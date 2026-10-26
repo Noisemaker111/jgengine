@@ -1,13 +1,13 @@
 import { type ReactNode, useEffect, useState } from "react";
 import { parkedRunMetres } from "../../run/progress";
 import { ContinuePane, CreditsPane } from "@jgengine/core/menu/gameMenuSaves.view";
-import { KitPanel } from "@jgengine/react/uiKitRoot";
+import { KitPanel } from "@jgengine/core/ui/kit/uiKitRoot.view";
 import { GameMenu } from "@jgengine/core/menu/gameMenu.view";
 import { PauseMenu } from "@jgengine/core/menu/pauseMenu.view";
 import { useGameContext } from "@jgengine/react/provider";
 import { useSettings } from "@jgengine/core/settings/settings.view";
 import { SettingsSection, SettingsTabs } from "@jgengine/core/settings/settingsBlocks.view";
-import { gameFontStacks } from "@jgengine/react/gameFonts";
+import { gameFontStacks } from "@jgengine/core/ui/fonts.view";
 import { GAME_FONTS } from "../../../art/fonts/fonts";
 import { plate } from "../DashHud";
 import { PartIcon } from "../components/PartIcon";

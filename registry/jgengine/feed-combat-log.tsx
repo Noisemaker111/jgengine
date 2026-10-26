@@ -1,4 +1,4 @@
-import type { FeedEntry } from "@jgengine/core/game/feed";
+import type { FeedEntry } from "@jgengine/core/feed/feed";
 import { useFeed } from "@jgengine/react/hooks";
 
 import { CombatLogPanel, type CombatLogLine } from "@/components/ui/combat-log-panel";

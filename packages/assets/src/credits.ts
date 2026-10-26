@@ -1,4 +1,4 @@
-import { type CreditsDocument, type CreditsSection, groupCredits } from "@jgengine/core/game/credits";
+import { type CreditsDocument, type CreditsSection, groupCredits } from "@jgengine/core/menu/credits";
 
 import { generatedIndex } from "./generated";
 import type { AssetSource } from "./manifest";

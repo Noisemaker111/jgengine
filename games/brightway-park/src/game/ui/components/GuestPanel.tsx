@@ -1,6 +1,6 @@
 import { useGameStore } from "@jgengine/react/hooks";
 import { useGameContext } from "@jgengine/react/provider";
-import { KitMeter, KitPanel } from "@jgengine/react/uiKitRoot";
+import { KitMeter, KitPanel } from "@jgengine/core/ui/kit/uiKitRoot.view";
 
 import { parkObject } from "../../park";
 import { session } from "../../session";

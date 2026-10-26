@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { useGame, useGameStore } from "@jgengine/react/hooks";
 import { useGameContext } from "@jgengine/react/provider";
 import { useStore } from "@jgengine/react/store";
-import { KitActionPrompt, KitButton, KitPanel } from "@jgengine/react/uiKitRoot";
+import { KitActionPrompt, KitButton, KitPanel } from "@jgengine/core/ui/kit/uiKitRoot.view";
 
 import {
   BUILDABLES,

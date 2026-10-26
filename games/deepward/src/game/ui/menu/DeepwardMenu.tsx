@@ -1,6 +1,6 @@
 import { type ReactNode, useCallback, useEffect, useState } from "react";
 import { ContinuePane, CreditsPane, SaveSlotsPane } from "@jgengine/core/menu/gameMenuSaves.view";
-import { KitButton, KitPanel } from "@jgengine/react/uiKitRoot";
+import { KitButton, KitPanel } from "@jgengine/core/ui/kit/uiKitRoot.view";
 import { GameMenu } from "@jgengine/core/menu/gameMenu.view";
 import { PauseMenu } from "@jgengine/core/menu/pauseMenu.view";
 import { useGameStore, useOptionalGamePhase } from "@jgengine/react/hooks";

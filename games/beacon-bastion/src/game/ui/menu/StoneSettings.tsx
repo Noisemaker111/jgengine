@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useSettings } from "@jgengine/core/settings/settings.view";
-import { KitButton, KitPanel } from "@jgengine/react/uiKitRoot";
+import { KitButton, KitPanel } from "@jgengine/core/ui/kit/uiKitRoot.view";
 import { SettingsSection, SettingsTabs } from "@jgengine/core/settings/settingsBlocks.view";
 
 /**

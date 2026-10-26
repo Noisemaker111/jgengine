@@ -1,8 +1,8 @@
 import type { ReactNode } from "react";
-import { GameCursor } from "@jgengine/react/gameCursor";
-import { gameFontStacks } from "@jgengine/react/gameFonts";
-import { customizeKit, type KitMenuProps, type KitPanelProps } from "@jgengine/react/uiKit";
-import { UI_KITS } from "@jgengine/react/uiKits";
+import { GameCursor } from "@jgengine/core/ui/cursor.view";
+import { gameFontStacks } from "@jgengine/core/ui/fonts.view";
+import { customizeKit, type KitMenuProps, type KitPanelProps } from "@jgengine/core/ui/kit/uiKit.view";
+import { UI_KITS } from "@jgengine/core/ui/kit/uiKits.view";
 import { GAME_FONTS } from "../../../art/fonts/fonts";
 
 const FONTS = gameFontStacks(GAME_FONTS);

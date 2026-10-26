@@ -10,11 +10,11 @@ import type {
   PresencePoseRow,
   PresenceSync,
 } from "@jgengine/core/runtime/transport";
-import type { ChatMessage } from "@jgengine/core/game/chat";
+import type { ChatMessage } from "@jgengine/core/chat/chat";
 import type { ChatSendOutcome, ChatSync } from "@jgengine/core/multiplayer/chatContract";
 import { createPoseSyncGate, type PoseSyncTuning } from "@jgengine/core/multiplayer/poseSyncGate";
 import { chunkKeyAt } from "@jgengine/core/runtime/worldChunks";
-import type { LeaderboardScope } from "@jgengine/core/game/leaderboard";
+import type { LeaderboardScope } from "@jgengine/core/leaderboard/leaderboard";
 
 /** Structural client seam avoids requiring the engine and game to share a class instance type. */
 export type ConvexGameClient = Pick<ConvexReactClient, "mutation" | "watchQuery">;

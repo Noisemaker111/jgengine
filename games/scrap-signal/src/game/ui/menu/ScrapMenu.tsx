@@ -1,6 +1,6 @@
 import { type ReactNode, useEffect, useRef, useState, useSyncExternalStore } from "react";
 import { useCanvasCover } from "@jgengine/react";
-import { CreditsPanel } from "@jgengine/react/creditsPanel";
+import { CreditsPanel } from "@jgengine/core/menu/creditsPanel.view";
 import { useGame } from "@jgengine/react/hooks";
 import { useGameContext } from "@jgengine/react/provider";
 import { useSaveSlots } from "@jgengine/core/save/saveSlots.view";

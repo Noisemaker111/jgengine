@@ -7,7 +7,7 @@ import { createServer } from "node:http";
 import type { AddressInfo } from "node:net";
 import { deflateSync } from "node:zlib";
 
-import { CAPTURE_HOLD_KEY } from "../packages/react/src/browserLifecycle";
+import { CAPTURE_HOLD_KEY } from "../packages/core/src/runtime/browserLifecycle.view";
 import {
   type CdpSession,
   CAPTURE_HOLD_SOURCE,

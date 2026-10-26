@@ -5,7 +5,7 @@ import type { GameContext, GameContextEntityEntry } from "@jgengine/core/runtime
 import { createAssetCatalog } from "@jgengine/core/scene/assetCatalog";
 import { environment, grass, terrain } from "@jgengine/core/world/features";
 import { createPhotoModeStore } from "@jgengine/core/ui/photoMode";
-import { PhotoModeControls, usePhotoMode } from "@jgengine/react/photoMode";
+import { PhotoModeControls, usePhotoMode } from "@jgengine/core/ui/photoMode.view";
 
 import { EnvironmentScene } from "@jgengine/shell/environment/EnvironmentScene";
 import { SceneCaptureBinding, downloadImage } from "@jgengine/shell/render/sceneCapture";

@@ -2,7 +2,7 @@ import { useEffect, useReducer, type CSSProperties, type ReactNode } from "react
 
 import type { WaveRunner, WaveView } from "@jgengine/core/waves/waveRunner";
 
-import { KitMeter } from "@jgengine/react/uiKitRoot";
+import { KitMeter } from "@jgengine/core/ui/kit/uiKitRoot.view";
 import { HudFrame, type HudFrameVariation } from "./hudFrame.view";
 import { hudType } from "./hudTokens";
 

@@ -5,8 +5,8 @@ import { useAccessibilitySettings } from "@jgengine/core/settings/accessibilityS
 import { HudOverlayHost, HudThemeRoot } from "@jgengine/core/hud/hudThemeRoot.view";
 import { HudViewportProvider } from "@jgengine/core/hud/hudViewport.view";
 import { GameProvider } from "@jgengine/react/provider";
-import { kitHudBridge, UiKitRoot } from "@jgengine/react/uiKitRoot";
-import { resolveUiKit } from "@jgengine/react/uiKits";
+import { kitHudBridge, UiKitRoot } from "@jgengine/core/ui/kit/uiKitRoot.view";
+import { resolveUiKit } from "@jgengine/core/ui/kit/uiKits.view";
 
 import {
   DiagnosticOverlay,

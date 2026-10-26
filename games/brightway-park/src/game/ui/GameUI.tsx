@@ -1,9 +1,9 @@
 import { type CSSProperties, useRef, useState } from "react";
-import { useRegisterLayoutRegion } from "@jgengine/react/gameViewport";
+import { useRegisterLayoutRegion } from "@jgengine/core/ui/viewport.view";
 import { useGame, useGameClock, useGameStore } from "@jgengine/react/hooks";
 import { useGameContext } from "@jgengine/react/provider";
-import { usePanels } from "@jgengine/react/panels";
-import { KitButton } from "@jgengine/react/uiKitRoot";
+import { usePanels } from "@jgengine/core/ui/panels.view";
+import { KitButton } from "@jgengine/core/ui/kit/uiKitRoot.view";
 
 import { BuildBar } from "./components/BuildBar";
 import { CameraPad } from "./components/CameraPad";

@@ -1,4 +1,4 @@
-import { appendFeed } from "../game/feed";
+import { appendFeed } from "../feed/feed";
 import type { LootPipeline, LootResolution } from "../loot/lootPipeline";
 import type { Drop } from "../loot/lootTable";
 import { hashString, randomSeedFrom, stepRandomSeed, type RandomSeed } from "../random/rng";

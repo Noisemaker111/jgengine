@@ -1,6 +1,6 @@
 import { useEffect, useRef } from "react";
-import { useInputDevice } from "@jgengine/react/inputDevice";
-import { KitButton } from "@jgengine/react/uiKitRoot";
+import { useInputDevice } from "@jgengine/core/input/inputDevice.view";
+import { KitButton } from "@jgengine/core/ui/kit/uiKitRoot.view";
 
 /** Touch-only camera keys: they feed the published RTS rig's existing DOM input boundary. */
 export function CameraPad() {

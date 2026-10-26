@@ -19,7 +19,7 @@ bun add @jgengine/core @jgengine/react
 bun add @jgengine/shell
 ```
 
-`@jgengine/react/entityFrames` imports neither Three.js nor React Three Fiber and
+`@jgengine/core/hud/entityFrames.view` imports neither Three.js nor React Three Fiber and
 needs no `GameProvider`. The `@jgengine/shell` piece is a thin R3F convenience.
 
 ## R3F game: one component from your own entity array
@@ -31,7 +31,7 @@ name. Projection, culling, and stacking come for free.
 
 ```tsx
 import { WorldEntityFrames } from "@jgengine/shell/world/WorldEntityFrames";
-import { KitMeter } from "@jgengine/react/uiKitRoot";
+import { KitMeter } from "@jgengine/core/ui/kit/uiKitRoot.view";
 
 interface Enemy {
   id: string;
@@ -87,8 +87,8 @@ screen point — return `null`, or `{ behind: true }`, to cull an entry. `depth`
 (larger = farther) drives stacking.
 
 ```tsx
-import { EntityFrames, type ProjectEntity } from "@jgengine/react/entityFrames";
-import { KitMeter } from "@jgengine/react/uiKitRoot";
+import { EntityFrames, type ProjectEntity } from "@jgengine/core/hud/entityFrames.view";
+import { KitMeter } from "@jgengine/core/ui/kit/uiKitRoot.view";
 
 const project: ProjectEntity = (world) => {
   const screen = myCamera.worldToScreen(world); // your renderer's projection

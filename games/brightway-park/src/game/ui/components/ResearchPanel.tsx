@@ -1,5 +1,5 @@
 import { useGame } from "@jgengine/react/hooks";
-import { KitButton, KitMeter, KitPanel } from "@jgengine/react/uiKitRoot";
+import { KitButton, KitMeter, KitPanel } from "@jgengine/core/ui/kit/uiKitRoot.view";
 
 import { BUILDABLES, RIDE_GROUPS, RIDE_GROUP_LABEL, type BuildableDef } from "../../objects/catalog";
 import { researched } from "../../park";

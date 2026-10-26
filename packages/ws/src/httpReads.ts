@@ -1,4 +1,4 @@
-import type { LeaderboardScope } from "@jgengine/core/game/leaderboard";
+import type { LeaderboardScope } from "@jgengine/core/leaderboard/leaderboard";
 import type { GameRuntimePlayerView } from "@jgengine/core/runtime/transport";
 import type { LeaderboardEntry, ServerListing } from "@jgengine/core/runtime/hostPersistence";
 

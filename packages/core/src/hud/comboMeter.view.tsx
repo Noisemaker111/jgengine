@@ -2,7 +2,7 @@ import { useEffect, useReducer, useRef, type CSSProperties, type ReactNode } fro
 
 import type { ComboMeter, ComboMeterView } from "@jgengine/core/combat/comboMeter";
 
-import { KitMeter } from "@jgengine/react/uiKitRoot";
+import { KitMeter } from "@jgengine/core/ui/kit/uiKitRoot.view";
 
 /**
  * Subscribe to a combo meter and re-render it each animation frame so the decay

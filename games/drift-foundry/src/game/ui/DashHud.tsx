@@ -1,7 +1,7 @@
 import type { CSSProperties, ReactNode } from "react";
-import { type KitMaterial } from "@jgengine/react/kitFrame";
-import { KitButton, KitPanel } from "@jgengine/react/uiKitRoot";
-import { GameIcon, type GameIconName } from "@jgengine/react/gameIcons";
+import { type KitMaterial } from "@jgengine/core/ui/kit/kitFrame.view";
+import { KitButton, KitPanel } from "@jgengine/core/ui/kit/uiKitRoot.view";
+import { GameIcon, type GameIconName } from "@jgengine/core/ui/icons/gameIcons.view";
 import { HudFade } from "@jgengine/core/hud/hudLayout.view";
 import type { RaceSnapshot } from "../race/standings";
 import type { DriftFoundryPartDef, PartSlotId } from "../parts/catalog";

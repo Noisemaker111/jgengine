@@ -1,9 +1,9 @@
 import type { ReactNode } from "react";
 
 import { HUD_CORNER_WIDTH } from "./hudLayout.view";
-import { KitBanner, KitObjective, type KitBannerProps } from "@jgengine/react/kitFlow";
-import type { KitTone } from "@jgengine/react/uiKit";
-import { KitMeter, KitPanel } from "@jgengine/react/uiKitRoot";
+import { KitBanner, KitObjective, type KitBannerProps } from "@jgengine/core/ui/kit/kitFlow.view";
+import type { KitTone } from "@jgengine/core/ui/kit/uiKit.view";
+import { KitMeter, KitPanel } from "@jgengine/core/ui/kit/uiKitRoot.view";
 
 /**
  * The play-HUD readouts every game repeats, drawn from the active UI kit's parts: resource counts,

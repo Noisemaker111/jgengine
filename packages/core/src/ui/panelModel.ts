@@ -3,7 +3,7 @@
  * WoW-style UI where B opens the bag, C the character sheet, and ESC closes the topmost window. It
  * carries *which panels are open*, their focus/z stacking order, per-panel position overrides, and
  * exclusive-group membership, with zero rendering opinion. The React chrome in
- * `@jgengine/react/panels` consumes this; a game keeps layout, skin, keybinds, and window content
+ * `@jgengine/core/ui/panels.view` consumes this; a game keeps layout, skin, keybinds, and window content
  * caller-owned. Pure and immutable: every reducer returns a new state and never mutates its input.
  */
 

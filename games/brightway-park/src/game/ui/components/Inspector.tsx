@@ -1,7 +1,7 @@
 import { Fragment, type ReactNode } from "react";
 import { useGame, useGameStore } from "@jgengine/react/hooks";
 import { useGameContext } from "@jgengine/react/provider";
-import { KitButton, KitMeter, KitPanel } from "@jgengine/react/uiKitRoot";
+import { KitButton, KitMeter, KitPanel } from "@jgengine/core/ui/kit/uiKitRoot.view";
 
 import { session } from "../../session";
 import { guestRidePreference, rideFit, rideThrill } from "../../sim/rideExperience";

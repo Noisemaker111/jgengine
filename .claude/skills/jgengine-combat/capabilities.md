@@ -72,6 +72,14 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `createDamageClamp` (function) · `import { createDamageClamp } from "@jgengine/core/combat"`
 
+## damage-direction — serializable hit-from damage-direction indicator brain — pooled directional arcs that flare on `registerHit(angle, intensity)` and fade on an injected clock, with optional same-direction merging
+
+- `createDamageDirectionTracker` (function) · `import { createDamageDirectionTracker } from "@jgengine/core/combat/damage/damageDirection"`
+
+## damage-direction-overlay — drop-in hit-from damage-direction overlay — SVG arcs flaring around a center reticle toward each recent hit and fading over time, colored per `kind`/HudTheme, pointer-events none
+
+- `DamageDirectionOverlay` (function) · `import { DamageDirectionOverlay } from "@jgengine/core/combat/damage/damageDirection.view"`
+
 ## damage-hit — resolve a full data-defined damage hit — matchup, impact, receiver modifiers, and status application — with provenance
 
 - `resolveDamageHit` (function) · `import { resolveDamageHit } from "@jgengine/core/combat"`
@@ -368,6 +376,10 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 ## threshold-crossings — emit ordered crossing events as a numeric source passes named thresholds with hysteresis and once/repeat policy
 
 - `createThresholdTracker` (function) · `import { createThresholdTracker } from "@jgengine/core/combat"`
+
+## use-damage-direction — React hook that animates a damage-direction tracker's fade with requestAnimationFrame and re-renders its live indicators
+
+- `useDamageDirection` (function) · `import { useDamageDirection } from "@jgengine/core/combat/damage/damageDirection.view"`
 
 ## vfx-preset-resolve — turn a named attack flavor into concrete vfx kind/color/duration with per-field overrides
 

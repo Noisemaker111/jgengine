@@ -157,6 +157,24 @@ export {
   type CityTree,
   type ResolvedCity,
 } from "./city/cityKind";
+export {
+  createDamageDirectionTracker,
+  type DamageDirectionOptions,
+  type DamageDirectionSnapshot,
+  type DamageDirectionTracker,
+  type DamageIndicator,
+  type HitInput,
+} from "./combat/damage/damageDirection";
+export {
+  createSequenceDirector,
+  type CueListener,
+  type EmittedCue,
+  type SequenceCue,
+  type SequenceDirector,
+  type SequenceDirectorOptions,
+  type SequenceSnapshot,
+  type SequenceState,
+} from "./cutscene/sequenceDirector";
 export { createFactionGraph, createFactionRoster, type FactionDef } from "./faction/factions";
 export {
   DEFAULT_REPUTATION_TIERS,
@@ -669,16 +687,6 @@ export {
   type SelectionBookmarks,
   type SelectionPruneResult,
 } from "./scene/selectionBookmarks";
-export {
-  createSequenceDirector,
-  type CueListener,
-  type EmittedCue,
-  type SequenceCue,
-  type SequenceDirector,
-  type SequenceDirectorOptions,
-  type SequenceSnapshot,
-  type SequenceState,
-} from "./scene/sequenceDirector";
 export { type Aim } from "./scene/spatial";
 export { createStationClaim, type Station } from "./scene/stationClaim";
 export {
@@ -737,14 +745,6 @@ export {
   type TimerSnapshot,
   type TimerStartOptions,
 } from "./time/timerSet";
-export {
-  createDamageDirectionTracker,
-  type DamageDirectionOptions,
-  type DamageDirectionSnapshot,
-  type DamageDirectionTracker,
-  type DamageIndicator,
-  type HitInput,
-} from "./vfx/damageDirection";
 export {
   createParticleSystem,
   type EmitterConfig,

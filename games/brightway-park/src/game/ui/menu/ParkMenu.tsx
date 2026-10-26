@@ -6,7 +6,7 @@ import { useGame, useGameClock, useGameStore } from "@jgengine/react/hooks";
 import { useGameContext } from "@jgengine/react/provider";
 import { useSaveSlots } from "@jgengine/core/save/saveSlots.view";
 import { useSettings } from "@jgengine/core/settings/settings.view";
-import { KitButton } from "@jgengine/react/uiKitRoot";
+import { KitButton } from "@jgengine/core/ui/kit/uiKitRoot.view";
 
 import { captureParkThumb, parkProfile } from "../../parkProfile";
 import { parkSlots, refreshParkSlot } from "../../parkSlot";

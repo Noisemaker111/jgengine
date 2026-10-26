@@ -3,9 +3,9 @@ import { useGameStore } from "@jgengine/react/hooks";
 import { useGameContext } from "@jgengine/react/provider";
 import { HUD_CORNER_WIDTH } from "@jgengine/core/hud/hudLayout.view";
 import { ActionBar } from "@jgengine/core/hud/actionHud.view";
-import { KitResultScreen } from "@jgengine/react/kitFlow";
+import { KitResultScreen } from "@jgengine/core/ui/kit/kitFlow.view";
 import { KitCount, KitCounts, KitHint, KitVitals } from "@jgengine/core/hud/kitHud.view";
-import { KitButton, KitPanel } from "@jgengine/react/uiKitRoot";
+import { KitButton, KitPanel } from "@jgengine/core/ui/kit/uiKitRoot.view";
 import { HudSlots } from "@jgengine/shell/gameKit";
 
 import { startNewGame } from "@jgengine/core/menu/gameFlowMenus.view";

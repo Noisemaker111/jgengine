@@ -1,5 +1,5 @@
 // A copy-in current/max vital bar for shadcn projects. Inside a jgengine game use `KitMeter` from
-// `@jgengine/react/uiKitRoot`, which the active UI kit themes.
+// `@jgengine/core/ui/kit/uiKitRoot.view`, which the active UI kit themes.
 import type { CSSProperties } from "react";
 
 export interface VitalValue {

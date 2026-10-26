@@ -3,7 +3,7 @@ import type { GameContext, GameContextEntityEntry } from "@jgengine/core/runtime
 import { createAssetCatalog } from "@jgengine/core/scene/assetCatalog";
 import { environment, grass, terrain } from "@jgengine/core/world/features";
 import { useGame, useGameStoreValue } from "@jgengine/react/hooks";
-import { useUiCue } from "@jgengine/react/uiCues";
+import { useUiCue } from "@jgengine/core/ui/uiCues.view";
 
 import { EnvironmentScene } from "@jgengine/shell/environment/EnvironmentScene";
 import type { PlayableGame } from "@jgengine/shell/registry";

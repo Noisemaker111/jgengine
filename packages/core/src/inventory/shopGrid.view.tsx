@@ -3,7 +3,7 @@ import { useEffect, useReducer, type CSSProperties, type ReactNode } from "react
 import { balance, type WalletState } from "@jgengine/core/economy/wallet";
 import type { ShopPrice, ShopStock, ShopStockEntry } from "@jgengine/core/economy/shopStock";
 
-import { GameIcon, iconForItemId, type GameIconName } from "@jgengine/react/gameIcons";
+import { GameIcon, iconForItemId, type GameIconName } from "@jgengine/core/ui/icons/gameIcons.view";
 import { HudFrame } from "@jgengine/core/hud/hudFrame.view";
 import { hudType } from "@jgengine/core/hud/hudTokens";
 

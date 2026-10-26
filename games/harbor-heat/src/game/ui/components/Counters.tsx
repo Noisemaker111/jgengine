@@ -1,5 +1,5 @@
 import type { GameContext } from "@jgengine/core/runtime/gameContext";
-import { runDialogueChoice, useOpenDialogueId, type DialogueDef } from "@jgengine/react/components";
+import { runDialogueChoice, useOpenDialogueId, type DialogueDef } from "@jgengine/core/ui/components.view";
 import { useCurrency, useEntityStat, useGame, useGameStore, useInventory, usePlayer } from "@jgengine/react/hooks";
 import { useStore } from "@jgengine/react/store";
 import { cityOf } from "../../cityRuntime";

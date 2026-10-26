@@ -22,7 +22,7 @@ import {
   type TouchScheme,
   type TouchStyle,
 } from "@jgengine/core/input/touchScheme";
-import { useRegisterLayoutRegion } from "@jgengine/react/gameViewport";
+import { useRegisterLayoutRegion } from "@jgengine/core/ui/viewport.view";
 
 import {
   DEFAULT_TOUCH_SHORT_SIDE,

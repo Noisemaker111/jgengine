@@ -6,10 +6,10 @@ import type { GameDefinition, GameFeatures, PersistConfig } from "../game/define
 import { groundFieldFor } from "../world/terrain";
 import { createWorldSolids, structureSolids } from "../world/worldSolids";
 import { createGameEvents, type GameEventMap, type GameEvents } from "../game/events";
-import { createGameFeed } from "../game/feed";
+import { createGameFeed } from "../feed/feed";
 import { setGamePhase } from "../game/gamePhase";
 import { createLootRegistry, grantDrops } from "../loot/lootTable";
-import { createSocial, type Social } from "../game/social";
+import { createSocial, type Social } from "../social/social";
 import { splitStack } from "../inventory/inventoryModel";
 import { createItemUse } from "../item/use";
 import { createWeaponStats } from "../item/weapon";

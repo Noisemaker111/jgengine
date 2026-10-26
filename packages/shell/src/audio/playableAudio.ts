@@ -1,7 +1,7 @@
 import type { AudioBusDef, SoundDef } from "@jgengine/core/audio/audioFalloff";
 import { withFeedbackCueSounds } from "@jgengine/core/audio/feedbackCues";
-import { withUiCueSounds, type UiCueOverrides } from "@jgengine/core/audio/uiCues";
-import { resolveUiKit } from "@jgengine/react/uiKits";
+import { withUiCueSounds, type UiCueOverrides } from "@jgengine/core/ui/uiCues";
+import { resolveUiKit } from "@jgengine/core/ui/kit/uiKits.view";
 
 import type { PlayableGame } from "../registry";
 

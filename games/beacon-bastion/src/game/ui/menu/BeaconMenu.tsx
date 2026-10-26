@@ -1,7 +1,7 @@
 import { type ReactNode, useCallback, useEffect, useState } from "react";
-import { GameCursor } from "@jgengine/react/gameCursor";
-import { KitButton, KitPanel } from "@jgengine/react/uiKitRoot";
-import { GameIcon } from "@jgengine/react/gameIcons";
+import { GameCursor } from "@jgengine/core/ui/cursor.view";
+import { KitButton, KitPanel } from "@jgengine/core/ui/kit/uiKitRoot.view";
+import { GameIcon } from "@jgengine/core/ui/icons/gameIcons.view";
 import { useGamePhase } from "@jgengine/react/hooks";
 import { CreditsPane } from "@jgengine/core/menu/gameMenuSaves.view";
 import { useMenuNav } from "@jgengine/core/menu/menuNav.view";

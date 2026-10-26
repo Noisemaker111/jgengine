@@ -111,6 +111,35 @@
 - `ComboMeterTheme` (interface): interface ComboMeterTheme — Reskin tokens for {@link ComboMeterHud}.
 - `useComboMeter` (function): function useComboMeter(meter: ComboMeter, animate = true): ComboMeterView — Subscribe to a combo meter and re-render it each animation frame so the decay window bar drains live, returning the pooled view to draw right now. Reading the view each frame advances the meter's clock and fires window expiry, so a combo that times out visibly drops even with no further hits. The returned object is the model's pooled view — read its fields immediately, do not retain it.
 
+## @jgengine/core/hud/entityFrames.view
+
+- `EntityFrameEntry` (interface): interface EntityFrameEntry — The minimum an entry must carry; games extend it with their own display data.
+- `EntityFrameLayoutOptions` (interface): interface EntityFrameLayoutOptions — Anchoring, culling, and stacking options shared by the layout core and component.
+- `EntityFramePlacement` (interface): interface EntityFramePlacement<E extends EntityFrameEntry> — One entry resolved to a screen placement, ready to render.
+- `EntityFrames` (function): function EntityFrames<E extends EntityFrameEntry>({ entries, project, renderFrame, className, style, anchorTransform = "translate(-50%, -100%)", ...layout }: EntityFramesProps<E>): React.JSX.Element — Absolutely-positioned overlay that renders a caller-composed frame over every on-screen entry. Drop it inside `HudCanvas` (or any positioned ancestor) and feed it fresh `entries`/`project` each frame. Every part carries `data-*` hooks (`data-entity-frames`, `data-entity-frame="<id>"`) for tests and skins.
+- `EntityFramesProps` (interface): interface EntityFramesProps<E extends EntityFrameEntry> extends EntityFrameLayoutOptions — Props for {@link EntityFrames}.
+- `EntityScreenProjection` (interface): interface EntityScreenProjection — World-anchored entity frames — a data-first seam for floating overhead UI (enemy nameplates + health bars, interaction prompts, objective pips) that tracks entities in the 3D world. The game keeps owning its entities: it passes a plain array of `{ id, worldPosition }` entries and a `project` function that turns a world position into a screen point, and composes each frame's markup itself (typically a `KitMeter` plus a name) drawn by the active UI kit. This primitive owns only the reusable behavior: projecting, offsetting, culling entries that are off-screen or behind the camera, and stacking nearer entities above farther ones.
+- `ProjectEntity` (type): type ProjectEntity = ( worldPosition: readonly [number, number, number], ) => EntityScreenProjection | null — Projects a world position to a screen point, or returns `null` to cull the entry entirely (e.g. outside the frustum). Caller-owned so this seam never depends on a specific camera or renderer.
+- `layoutEntityFrames` (function): function layoutEntityFrames<E extends EntityFrameEntry>(entries: readonly E[], project: ProjectEntity, options: EntityFrameLayoutOptions = {}): EntityFramePlacement<E>[] — Pure layout core: projects each entry, drops the ones behind the camera, off-screen (when `viewport` is set), or beyond `maxCount`, and returns the survivors sorted farthest-first so nearer frames render last (on top). Stable for equal depths via `id`. No React, no DOM — unit-testable in isolation.
+
+## @jgengine/core/hud/floatingText
+
+- `FloatingTextDef` (interface): interface FloatingTextDef — One text pop to spawn: what to say, where in the world, and how it moves and fades. Everything but `position` and `text` is optional and falls back to the field's defaults. `kind` is a free-form tag (`"damage"`, `"heal"`, `"crit"`, `"xp"`, `"gold"`, `"bark"`, …) the presentation layer styles — the model never interprets it, so nothing here is combat- or genre-specific.
+- `FloatingTextField` (interface): interface FloatingTextField — A live, dt-driven field of world-anchored floating text.
+- `FloatingTextFieldConfig` (interface): interface FloatingTextFieldConfig — Construction options for {@link createFloatingTextField}.
+- `FloatingTextPosition` (type): type FloatingTextPosition = readonly [number, number, number] — A world-space anchor `[x, y, z]` a floating-text entry rises from.
+- `FloatingTextSnapshot` (interface): interface FloatingTextSnapshot — Serializable state for save/restore and deterministic replay.
+- `FloatingTextView` (interface): interface FloatingTextView — A live entry resolved for rendering: current world position and fade/scale over life.
+- `createFloatingTextField` (function): function createFloatingTextField(config: FloatingTextFieldConfig = {}): FloatingTextField — A generic, allocation-aware field of world-anchored floating text: damage numbers, heals, crits, XP/gold gains, status pops, dialogue barks — anything a game wants to say at a point in the world for a moment. It is dt-driven (call `update(dt)` each frame) and deterministic: the only randomness is the horizontal drift jitter, which flows from the injected `seed`, so the same seed and the same emit/update sequence reproduce identical motion, and `snapshot`/`restore` round-trips the live pool. The model owns only the spawn → rise/drift → fade → reap lifecycle: `kind` is a free string and `color` a passthrough hint, so nothing here couples to combat or any genre. Presentation (projecting each entry to the screen and styling it per `kind`) lives in `@jgengine/react`'s `FloatingText`.
+
+## @jgengine/core/hud/floatingText.view
+
+- `FloatingText` (function): function FloatingText({ entries, project, styleFor, fontSizePx = 20, className, style, renderEntry, ...layout }: FloatingTextProps): React.JSX.Element — Absolutely-positioned overlay that renders every on-screen floating-text entry as text with its color, current alpha, and pop-in scale. Drop it inside a positioned ancestor (e.g. an `<Html fullscreen>` overlay or `HudCanvas`) and feed it fresh `entries`/`project` each frame. Every part carries `data-*` hooks (`data-floating-text`, `data-floating-text-entry="<id>"`, `data-kind="<kind>"`) for tests and skins.
+- `FloatingTextLayoutOptions` (interface): interface FloatingTextLayoutOptions — Anchoring and culling options shared by the layout core and the component.
+- `FloatingTextPlacement` (interface): interface FloatingTextPlacement — World-anchored floating text — the presentation half of the data-first `@jgengine/core/hud/floatingText` seam. The game keeps owning the simulation: it passes the field's `active()` views plus a `project` function (world → screen), exactly the transport {@link ./entityFrames!EntityFrames} uses, so an R3F game gets it for free from `useWorldProjection`. This component owns only the reusable presentation: projecting each entry, culling ones behind the camera or off-screen, and rendering absolutely-positioned text with the entry's color, current alpha, and pop-in scale — reskinnable per `kind` through `styleFor`.
+- `FloatingTextProps` (interface): interface FloatingTextProps extends FloatingTextLayoutOptions — Props for {@link FloatingText}.
+- `layoutFloatingText` (function): function layoutFloatingText(views: readonly FloatingTextView[], project: ProjectEntity, options: FloatingTextLayoutOptions = {}): FloatingTextPlacement[] — Pure layout core: projects each view, drops the ones behind the camera or (when `viewport` is set) off-screen, and returns the survivors sorted farthest-first so nearer text paints on top. No React, no DOM — unit-testable.
+
 ## @jgengine/core/hud/hudButton.view
 
 - `HudButton` (const): const HudButton: React.ForwardRefExoticComponent<HudButtonProps & React.RefAttributes<HTMLButtonElement>> — Themed HUD button: reads the `HudTheme` slot, accent, elevation, motion, and state tokens, and gets hover lift, press scale, a focus-visible ring, and a disabled state from the engine stylesheet. `className` and `style` restyle it per game. Interactions report to `onInteract` and the nearest `HudInteractProvider`.
@@ -362,6 +391,32 @@
 - `createI18n` (function): function createI18n(options: I18nOptions): I18n — Create a translator over a message catalog: active-locale lookup with a fallback-locale chain, `{param}` interpolation, and `Intl.PluralRules`-based pluralization. Observable (`subscribe`) so React re-renders on `setLocale`; the catalog is caller-owned static data, the locale is the only state.
 - `interpolate` (function): function interpolate(template: string, params?: TParams): string — Replace `{name}` placeholders in `template` with `params[name]`. Unknown placeholders are left intact. Pure and locale-independent.
 
+## @jgengine/core/i18n/i18n.view
+
+- `I18nProvider` (function): function I18nProvider({ i18n, children }: { i18n: I18n; children: ReactNode }): ReactNode — Provide an {@link I18n} instance to the tree so `useT`/`useLocale` can read it.
+- `Trans` (function): function Trans({ k, params }: { k: string; params?: TParams }): ReactNode — Render a translated message inline: `<Trans k="hud.score" params={{ value }} />`.
+- `useI18n` (function): function useI18n(): I18n — Read the current {@link I18n} from context; throws when no {@link I18nProvider} is above.
+- `useLocale` (function): function useLocale(): Locale — Subscribe to the active locale — re-renders on `setLocale`.
+- `usePlural` (function): function usePlural(): (key: string, count: number, params?: TParams) => string — Return the plural-aware translator bound to the current locale.
+- `useT` (function): function useT(): (key: string, params?: TParams) => string — Return the translator bound to the current locale; the component re-renders when `setLocale` is called, so returned strings stay live.
+
+## @jgengine/core/menu/credits
+
+- `CreditsDocument` (interface): interface CreditsDocument — Everything a credits screen shows. `notice` is the closing line (a license summary, a thank-you).
+- `CreditsEntry` (interface): interface CreditsEntry — One credited line — a person, a studio, an asset pack, a tool.
+- `CreditsSection` (interface): interface CreditsSection — A titled group of entries — "Design", "Music", "3D Assets".
+- `groupCredits` (function): function groupCredits<T>(items: readonly T[], heading: (item: T) => string, entry: (item: T) => CreditsEntry): CreditsSection[] — Groups entries into sections by a caller-supplied key — the shape most generated credits arrive in (a flat list of things used, grouped by license, provider, or role). Section order follows first appearance, so a stable input gives a stable screen.
+- `mergeCredits` (function): function mergeCredits(...documents: readonly (CreditsDocument | null | undefined)[]): CreditsDocument — Merges credit documents into one, concatenating same-heading sections in first-seen order and dropping exact duplicate entries. Use it to fold generated credits (asset packs, dependencies) into the game's hand-authored ones without curating the overlap by hand.
+
+## @jgengine/core/menu/creditsPanel.view
+
+- `CreditsPanel` (function): function CreditsPanel({ document, onBack, title = "Credits", backLabel = "Back", open = true, backdrop, className, style, contentClassName, contentStyle, }: CreditsPanelProps): ReactNode — A reachable credits screen: the generated or hand-authored {@link CreditsDocument} in a scrollable panel over the scene, with one back affordance that keyboard and gamepad both reach. The game owns the backdrop and the wording; the block keeps the lines HudTheme-skinned and the exit working.
+- `CreditsPanelProps` (interface): interface CreditsPanelProps — Props for {@link CreditsPanel}.
+
+## @jgengine/core/menu/creditsScreen.view
+
+- `CreditsScreen` (function): function CreditsScreen({ document, className, style, renderEntry, }: { document: CreditsDocument; className?: string; style?: CSSProperties; renderEntry?: (entry: CreditsEntry, index: number) => ReactNode; }): ReactNode — Renders a {@link CreditsDocument} as headed sections of credited lines. Skinned entirely through the `--jg-*` HudTheme tokens, so it inherits the game's look from the surrounding theme block; pass `renderEntry` to art-direct the line itself. Links render only when an entry carries `href`, and always open in a new tab with `noreferrer`.
+
 ## @jgengine/core/menu/gameFlowMenus.view
 
 - `GameFlowMenuContent` (interface): interface GameFlowMenuContent — What the title and pause menus of {@link GameFlowUI} say: the game's words, keys and credits.
@@ -404,6 +459,11 @@
 - `GameMenuSoundKind` (type): type GameMenuSoundKind = "move" | "confirm" | "back" — The short, quiet click a menu makes when the selection moves or is confirmed. Generated with an oscillator instead of shipped as an audio file, so a game gets menu feedback without authoring a sound and the whole thing unmounts with the screen.
 - `GameMenuSoundState` (interface): interface GameMenuSoundState — The sound player's readable state: on/off, gain, and whether audio is actually running.
 - `createGameMenuSound` (function): function createGameMenuSound(config: GameMenuSoundConfig = {}): GameMenuSound — A tiny WebAudio click generator for menu feedback: one oscillator burst per tick, created on the first play (so a browser autoplay policy does not log an error at mount) and reused after.
+
+## @jgengine/core/menu/loadingScreen.view
+
+- `LoadingScreen` (function): function LoadingScreen({ progress, title = "Loading", tips, tipIntervalMs = 6000, ready = false, onReady, onSkip, backdrop, scrim = "blur", children, open = true, reducedMotion, onClosed, className, style, contentClassName, contentStyle, }: LoadingScreenProps): ReactNode — A loading screen with a progress bar and a rotating tip. Progress is a real 0–1 value from the game's loader (or indeterminate), tips come from the game and cycle deterministically, and a `ready` screen accepts any key, a gamepad A/Cross or a click. It reads HudTheme tokens and keeps a live scene visible behind a blur, so loading a level looks like the game rather than a blank page.
+- `LoadingScreenProps` (interface): interface LoadingScreenProps — Props for {@link LoadingScreen}.
 
 ## @jgengine/core/menu/menuNav
 
@@ -481,6 +541,13 @@
 - `RadialMenu` (function): function RadialMenu({ options, open = true, onSelect, onClose, size = 300, innerRadius = 52, arc, highlightIndex, accent = "var(--jg-accent, #38bdf8)", className, style, }: RadialMenuProps): ReactNode — Radial / quick menu (weapon or emote wheel) — a ring or partial `arc` of selectable wedges the player points at with the mouse (or a stick). Pointer angle drives the highlight via core `radialIndexFromVector`; click/confirm fires `onSelect`, the neutral hub closes. Options carry optional hotkeys, count badges, cooldowns, and submenu markers. The game supplies icons/labels and skins it.
 - `RadialMenuOption` (interface): interface RadialMenuOption — One selectable entry on a radial/quick menu (weapon or emote wheel).
 - `RadialMenuProps` (interface): interface RadialMenuProps — Props for {@link RadialMenu}.
+
+## @jgengine/core/menu/startScreen.view
+
+- `ControlHint` (interface): interface ControlHint — One row of a control legend. Name the game action(s) whose bound key(s) to show (`action`) so the glyphs come straight from the keybind map — never re-typed — or give literal `keys` for controls that live outside the map (`"Mouse"`, `"LMB"`). `label` says what the control does.
+- `ControlsList` (function): function ControlsList({ bindings, controls, hideOnCoarsePointer = true, separator = " / ", className, rowClassName, keysClassName, keyClassName, separatorClassName, labelClassName, renderKey, renderRow, }: { bindings?: ActionCodesMap; controls: readonly ControlHint[]; hideOnCoarsePointer?: boolean; … — Renders a controls legend whose key glyphs come from the game's keybind map, so bindings live in one place and never drift from a hand-typed table. Hides itself on coarse-pointer devices (a touchscreen has no keyboard) via the same `data-jg-kbd-hint` marker as `KeyHint`. Headless: every part carries a `className` slot and `data-*` hook; pass `renderKey`/`renderRow` to fully own the markup.
+- `StartScreen` (function): function StartScreen({ open = true, className, style, children, settings, settingsPlacement = "top-right", settingsClassName, settingsWrapperClassName, }: { open?: boolean; className?: string; style?: CSSProperties; children?: ReactNode; settings?: boolean | ReactNode; settingsPlacement?: StartScree… — Composable title/attract-screen scaffold: a full-bleed `data-jg-menu` overlay that positions and centers the game's own content, with an opt-in settings corner. It imposes no look — the game supplies the title, art, and buttons as children and styles the container through `className`/`style` (per the composable-chrome rule: a placement hook, not a mandated menu).
+- `StartScreenCorner` (type): type StartScreenCorner = "top-left" | "top-right" | "bottom-left" | "bottom-right" — Which corner of a `StartScreen` the opt-in settings slot is pinned to.
 
 ## @jgengine/core/render/ambientLife
 
@@ -816,7 +883,7 @@
 - `ObjectiveBannerSnapshot` (interface): interface ObjectiveBannerSnapshot — Serializable state of the queue and the active banner, for save/restore.
 - `ObjectiveBannerView` (interface): interface ObjectiveBannerView — The banner to draw right now: its content, the game-owned `kind`, the current {@link ObjectiveBannerPhase}, and `progress` `0..1` through that phase. This object is pooled and overwritten on the next {@link ObjectiveBannerController.current} call — read it, don't retain it.
 - `PanelDef` (interface): interface PanelDef — A caller-authored panel/window declaration — the DATA input to the model. Only `id` is required so a bag, a character sheet, and a one-off dialog all share the shape.
-- `PanelPosition` (interface): interface PanelPosition — Headless, serializable model for a set of player-toggled windows/panels — the data layer behind a WoW-style UI where B opens the bag, C the character sheet, and ESC closes the topmost window. It carries *which panels are open*, their focus/z stacking order, per-panel position overrides, and exclusive-group membership, with zero rendering opinion. The React chrome in `@jgengine/react/panels` consumes this; a game keeps layout, skin, keybinds, and window content caller-owned. Pure and immutable: every reducer returns a new state and never mutates its input.
+- `PanelPosition` (interface): interface PanelPosition — Headless, serializable model for a set of player-toggled windows/panels — the data layer behind a WoW-style UI where B opens the bag, C the character sheet, and ESC closes the topmost window. It carries *which panels are open*, their focus/z stacking order, per-panel position overrides, and exclusive-group membership, with zero rendering opinion. The React chrome in `@jgengine/core/ui/panels.view` consumes this; a game keeps layout, skin, keybinds, and window content caller-owned. Pure and immutable: every reducer returns a new state and never mutates its input.
 - `PanelState` (interface): interface PanelState — Serializable state for a set of panels: which are `open`, their `z` focus stack (higher renders on top), optional per-panel `pos` overrides, and the `meta` registry (group/closable) captured from the defs so the reducers below need no defs argument. Plain JSON — persist and rehydrate it freely.
 - `PhotoModeState` (interface): interface PhotoModeState — Serializable photo-mode preferences a game reads to compose its capture UI.
 - `PhotoModeStore` (interface): interface PhotoModeStore — Observable photo-mode store — genre-agnostic state a game binds its capture flow to.
@@ -939,6 +1006,17 @@
 - `createAccessibilityStore` (function): function createAccessibilityStore(initial: Partial<AccessibilityState> = {}): AccessibilityStore — Serializable, observable store of accessibility preferences (reduced motion, high contrast, text scale, colorblind mode, captions). Genre-agnostic plumbing like input rebinding — a game binds these to its settings UI and adapts its presentation; `snapshot`/`restore` round-trip through a save or settings blob.
 - `reducedMotionDuration` (function): function reducedMotionDuration(state: AccessibilityState, ms: number, reduced = 0): number — Return `ms` when motion is allowed, or `reduced` (default 0) when `reducedMotion` is set — the animation-duration gate.
 
+## @jgengine/core/ui/accessibility.view
+
+- `AccessibilityProvider` (function): function AccessibilityProvider({ store, children, className, style, }: { store: AccessibilityStore; children: ReactNode; className?: string; style?: CSSProperties; }): ReactNode — Apply accessibility preferences to a subtree: exposes `--jg-text-scale` for text to scale off, and sets `data-reduced-motion` / `data-high-contrast` / `data-colorblind` / `data-captions` for CSS to respond to. Reads a `createAccessibilityStore` and re-renders on change; provides the state to `useAccessibility`.
+- `ColorblindFilters` (function): function ColorblindFilters(): ReactNode — Hidden SVG `<defs>` holding the `feColorMatrix` colorblind filters that `filter: url(#jg-cb-<mode>)` references. Mounted by {@link ColorblindFrame}; export it standalone for a root that applies the filter itself.
+- `ColorblindFrame` (function): function ColorblindFrame({ mode = "none", children, className, style }: ColorblindFrameProps): ReactNode — Apply the player's colour-vision mode to one rendered frame: a box carrying `filter: url(#jg-cb-<mode>)` plus the filter defs it references. Put it around the canvas of a 3D game and nothing else — the filter is one compositor pass over that box's pixels, so HUD, menu and caption text outside it keep the contrast and hues the rest of the UI assumes.
+- `ColorblindFrameProps` (interface): interface ColorblindFrameProps — Props for {@link ColorblindFrame}.
+- `useAccessibility` (function): function useAccessibility(): AccessibilityContextValue — Read the live accessibility state + its store; throws without an {@link AccessibilityProvider} above.
+- `useColorblindMode` (function): function useColorblindMode(store: SettingsStore): ColorblindMode — The live colour-vision mode from a settings store — the same store the settings rows write, so the frame follows the player's choice the moment they pick it. Pass the store the shell owns; read `useAccessibilitySettings().colorblind` instead when a `SettingsProvider` is above the caller.
+- `usePrefersReducedMotion` (function): function usePrefersReducedMotion(): boolean — OS "reduce motion" preference (`prefers-reduced-motion: reduce`) as a live boolean — SSR-safe (defaults false). Use it to seed an accessibility store's `reducedMotion` default.
+- `useReducedMotion` (function): function useReducedMotion(): boolean — True when motion should be skipped: the OS `prefers-reduced-motion` preference, or the nearest {@link AccessibilityProvider}'s `reducedMotion` setting. Works without a provider.
+
 ## @jgengine/core/ui/actionModel
 
 - `ActionCooldown` (interface): interface ActionCooldown — Cooldown state for an action, expressed so a radial sweep or countdown can render directly.
@@ -956,6 +1034,13 @@
 - `resolveAction` (function): function resolveAction(def: ActionDef): ResolvedAction — Resolve one {@link ActionDef} into a {@link ResolvedAction}: normalize label, compute `enabled`, and order the blocking `reasons`. Pure — the same input always yields the same view model.
 - `resolveActionCollection` (function): function resolveActionCollection(defs: readonly ActionDef[]): ResolvedAction[] — Resolve an ordered list of actions, preserving input order.
 
+## @jgengine/core/ui/canvasCover.view
+
+- `CanvasCover` (interface): interface CanvasCover — A page-wide declaration that some surface paints over the whole game canvas.
+- `canvasCover` (const): const canvasCover: CanvasCover — The page's canvas cover. A full-screen menu (or a game's own opaque overlay) holds it; the shell stops drawing the world, its shadow passes and postfx while it is held, and draws again from the untouched scene when it lifts. A translucent scrim or a side panel must not hold it — anything the scene shows through has to keep drawing.
+- `useCanvasCover` (function): function useCanvasCover(declared: boolean): void — Declare the canvas fully covered while `declared` is true, and release on unmount.
+- `useCanvasCovered` (function): function useCanvasCovered(): boolean — True while a surface covers the canvas.
+
 ## @jgengine/core/ui/coachMarks
 
 - `CoachMarkPlacement` (type): type CoachMarkPlacement = "top" | "bottom" | "left" | "right" | "center" — Where a coach-mark callout sits relative to its anchor (or `"center"` for an unanchored callout).
@@ -966,15 +1051,213 @@
 - `CoachMarkView` (interface): interface CoachMarkView — The active step plus its position, returned by {@link CoachMarkSequence.current}.
 - `createCoachMarkSequence` (function): function createCoachMarkSequence(options: CoachMarkSequenceOptions): CoachMarkSequence — An onboarding coach-mark run: an ordered sequence of hint steps, each shown as a centered callout or anchored to a UI element, with a persisted "seen" set so completed onboarding stays done across sessions, and data-first condition gating so a step waits until its trigger id is satisfied. Advance/skip/dismiss drive it; `snapshot`/`restore` round-trip the seen set through a save. Purely a model — a React host renders `current()`.
 
-## @jgengine/core/ui/floatingText
+## @jgengine/core/ui/coachMarks.view
 
-- `FloatingTextDef` (interface): interface FloatingTextDef — One text pop to spawn: what to say, where in the world, and how it moves and fades. Everything but `position` and `text` is optional and falls back to the field's defaults. `kind` is a free-form tag (`"damage"`, `"heal"`, `"crit"`, `"xp"`, `"gold"`, `"bark"`, …) the presentation layer styles — the model never interprets it, so nothing here is combat- or genre-specific.
-- `FloatingTextField` (interface): interface FloatingTextField — A live, dt-driven field of world-anchored floating text.
-- `FloatingTextFieldConfig` (interface): interface FloatingTextFieldConfig — Construction options for {@link createFloatingTextField}.
-- `FloatingTextPosition` (type): type FloatingTextPosition = readonly [number, number, number] — A world-space anchor `[x, y, z]` a floating-text entry rises from.
-- `FloatingTextSnapshot` (interface): interface FloatingTextSnapshot — Serializable state for save/restore and deterministic replay.
-- `FloatingTextView` (interface): interface FloatingTextView — A live entry resolved for rendering: current world position and fade/scale over life.
-- `createFloatingTextField` (function): function createFloatingTextField(config: FloatingTextFieldConfig = {}): FloatingTextField — A generic, allocation-aware field of world-anchored floating text: damage numbers, heals, crits, XP/gold gains, status pops, dialogue barks — anything a game wants to say at a point in the world for a moment. It is dt-driven (call `update(dt)` each frame) and deterministic: the only randomness is the horizontal drift jitter, which flows from the injected `seed`, so the same seed and the same emit/update sequence reproduce identical motion, and `snapshot`/`restore` round-trips the live pool. The model owns only the spawn → rise/drift → fade → reap lifecycle: `kind` is a free string and `color` a passthrough hint, so nothing here couples to combat or any genre. Presentation (projecting each entry to the screen and styling it per `kind`) lives in `@jgengine/react`'s `FloatingText`.
+- `CoachMark` (function): function CoachMark({ view, positionStyle, onNext, onSkip, nextLabel = "Next", doneLabel = "Got it", skipLabel = "Skip tour", theme, className, style, }: CoachMarkProps): ReactNode — A single coach-mark callout — title, body, an "N of M" counter, a Next/Got-it button, and a Skip-tour link. Presentation-only; position it with `positionStyle` or drop it into {@link CoachMarkHost}. Reskin via {@link CoachMarkTheme}.
+- `CoachMarkHost` (function): function CoachMarkHost({ sequence, resolveAnchor, showBackdrop = true, onComplete, nextLabel, doneLabel, skipLabel, theme, className, style, }: CoachMarkHostProps): ReactNode — Full-screen coach-mark host: watches a sequence, positions the current step's callout beside its anchored element (or centered when unanchored) via `getBoundingClientRect`, and draws an optional dimmed backdrop with a spotlight cutout around the anchor. Next advances, Skip ends the tour — both persist so hints never re-show. Reskin with {@link CoachMarkTheme}.
+- `CoachMarkHostProps` (interface): interface CoachMarkHostProps — Props for {@link CoachMarkHost}.
+- `CoachMarkProps` (interface): interface CoachMarkProps — Props for {@link CoachMark}.
+- `CoachMarkTheme` (interface): interface CoachMarkTheme — Reskin tokens for {@link CoachMarkHost} / {@link CoachMark}.
+- `useCoachMarks` (function): function useCoachMarks(sequence: CoachMarkSequence): CoachMarkView | null — Subscribe to a coach-mark sequence and re-render on every change, returning the current step view (or `null` when the tour is complete or waiting on a gate).
+
+## @jgengine/core/ui/components.view
+
+- `CaptureOdds` (function): function CaptureOdds({ chance, className, fillClassName, }: { chance: number; className?: string; fillClassName?: string; }): React.JSX.Element — ⚠ undocumented
+- `DeathScreen` (function): function DeathScreen({ statId = "health", open, className, children, }: { statId?: string; open?: boolean; className?: string; children?: ReactNode; }): React.JSX.Element — ⚠ undocumented
+- `DialogueBox` (function): function DialogueBox({ dialogue, onChoice, rng, className, lineClassName, speakerClassName, choicesClassName, choiceClassName, checkClassName, }: { dialogue: DialogueDef; onChoice?: (choice: DialogueChoice, result: CheckResult | null) => void; rng?: () => number; className?: string; lineClassName?: … — ⚠ undocumented
+- `DialogueCheck` (interface): interface DialogueCheck { label?: string; modifier: number; dc: number; advantage?: CheckAdvantage } — ⚠ undocumented
+- `DialogueChoice` (interface): interface DialogueChoice { label: string; invoke: {command: string; args?: unknown} | null; check?: DialogueCheck; onSuccess?: {command: string; args?: unknown} | null; onFailure?: {command: string; args?: unknown} | null } — ⚠ undocumented · used by `runDialogueChoice`: Route a {@link DialogueBox} choice through the `features.dialogue` bridge: resolve the choice's invoke (honoring a skill-check `result`), ru…
+- `DialogueDef` (interface): interface DialogueDef { id: string; lines: readonly DialogueLine[] } — ⚠ undocumented
+- `DialogueLine` (type): type DialogueLine = { speaker: string; text: string } | { choices: readonly DialogueChoice[] } — ⚠ undocumented
+- `KeybindRow` (function): function KeybindRow({ action, keys, className, }: { action: string; keys: readonly string[]; className?: string; }): React.JSX.Element — ⚠ undocumented
+- `LevelUpFlash` (function): function LevelUpFlash({ stat, durationMs = 1600, className, children, renderFlash, }: { stat?: string; durationMs?: number; className?: string; children?: ReactNode; renderFlash?: (event: StatLevelUpEvent) => ReactNode; }): React.JSX.Element | null — ⚠ undocumented
+- `QteTrack` (function): function QteTrack({ steps, startedAt, className, stepClassName, activeClassName, doneClassName, }: { steps: readonly QteStep[]; startedAt: number; className?: string; stepClassName?: string; activeClassName?: string; doneClassName?: string; }): React.JSX.Element — ⚠ undocumented
+- `Screen` (function): function Screen({ id, open = true, className, children, }: { id: string; open?: boolean; className?: string; children?: ReactNode; }): React.JSX.Element | null — ⚠ undocumented
+- `SkillCheckBar` (function): function SkillCheckBar({ config, startedAt, className, trackClassName, zoneClassName, markerClassName, renderStatus, }: { config: SkillCheckConfig; startedAt: number; className?: string; trackClassName?: string; zoneClassName?: string; markerClassName?: string; renderStatus?: (result: SkillCheckResu… — ⚠ undocumented
+- `resolveDialogueInvoke` (function): function resolveDialogueInvoke(choice: DialogueChoice, result: CheckResult | null): { command: string; args?: unknown } | null — ⚠ undocumented
+- `runDialogueChoice` (function): function runDialogueChoice(commands: { run(name: string, input?: unknown): unknown }, choice: DialogueChoice, result: CheckResult | null): void — Route a {@link DialogueBox} choice through the `features.dialogue` bridge: resolve the choice's invoke (honoring a skill-check `result`), run that command, and otherwise close the dialogue — the write side that replaces a per-game `onChoice` that hand-rolls `resolveDialogueInvoke` + `dialogue.close`.
+- `useOpenDialogueId` (function): function useOpenDialogueId(): string | null — The id of the dialogue `ctx.game.dialogue` (or a `talkable(id)` prompt) currently has open, or `null`. The read side of the `features.dialogue` bridge — a panel looks the id up in its own dialogue catalog and renders {@link DialogueBox}, with no per-game open/close store.
+
+## @jgengine/core/ui/cursor.view
+
+- `GameCursor` (function): function GameCursor({ variant = "brackets", color, gap = 6, thickness = 3, arm = 14, className, style }: GameCursorProps): ReactNode — A game-style selection cursor for a menu: corner brackets, a pointer or a bar that glides to whichever item the keyboard, gamepad or mouse selects, instead of a browser focus ring. Drop it inside the menu's positioned container; it follows the `useMenuNav` current item, then focus, then the hovered control, and hides when nothing is selected. Reduced motion makes it jump.
+- `GameCursorProps` (interface): interface GameCursorProps — Props for {@link GameCursor}.
+- `GameCursorStyle` (type): type GameCursorStyle = "brackets" | "chevron" | "bar" | "diamond" | "frame" — How the cursor marks the selected item.
+- `gameCursorTarget` (function): function gameCursorTarget(scope: ParentNode, hovered: Element | null): Element | null — The item the cursor should sit on inside `scope`, or null.
+
+## @jgengine/core/ui/display.view
+
+- `DisplayProfile` (interface): interface DisplayProfile { coarsePointer: boolean; compact: boolean; portrait: boolean } — ⚠ undocumented
+
+## @jgengine/core/ui/fonts.view
+
+- `GameFontFace` (interface): interface GameFontFace — One font file a game ships (an OFL or other licensed TTF/WOFF2 bundled with the game).
+- `GameFontPairing` (interface): interface GameFontPairing — The pair of fonts that gives a game its voice: a display face for titles and numbers, a body face for reading.
+- `gameFontStacks` (function): function gameFontStacks(pairing: GameFontPairing): { fontDisplay: string; fontBody: string; fontNumeric: string } — The CSS font stacks for a pairing, with installed fallbacks, ready for a `hudTheme` or a kit: `{ fontDisplay, fontBody, fontNumeric }`.
+- `loadGameFonts` (function): function loadGameFonts(faces: readonly GameFontFace[]): void — Registers `faces` with the document's font set once each and starts loading them. Safe on the server.
+- `useGameFonts` (function): function useGameFonts(fonts: GameFontPairing | readonly GameFontFace[]): void — Loads a game's bundled fonts (its display and body faces) so titles, HUD numbers and menus use them instead of the browser's default sans. Pair it with {@link gameFontStacks} for the CSS.
+
+## @jgengine/core/ui/icons/gameIcons.view
+
+- `GAME_ICON_NAMES` (const): const GAME_ICON_NAMES: readonly ["sword", "dagger", "axe", "hammer", "bow", "arrow", "staff", "wand", "spear", "crossbow", "gun", "bomb", "shield", "helmet", "chestplate", "boots", "gauntlet", "ring", "amulet", "cloak", "backpack", "torch", "potionRed", "potionBlue", "scroll", "tome", "meat", "bread… — ⚠ undocumented
+- `GameIcon` (function): function GameIcon({ name, size = 24, color, className, }: { name: GameIconName; size?: number; color?: string; className?: string; }): React.JSX.Element — ⚠ undocumented
+- `GameIconName` (type): type GameIconName = (typeof GAME_ICON_NAMES)[number] — ⚠ undocumented · used by `iconForAction`: Control glyph for a semantic action name (`hardDrop`, `sprint`, `shiftLeft`), or null when no rule matches.
+- `iconForAction` (function): function iconForAction(action: string): GameIconName | null — Control glyph for a semantic action name (`hardDrop`, `sprint`, `shiftLeft`), or null when no rule matches.
+- `iconForItemId` (function): function iconForItemId(itemId: string): GameIconName | null — ⚠ undocumented
+- `isGameIconName` (function): function isGameIconName(value: string): value is GameIconName — ⚠ undocumented
+
+## @jgengine/core/ui/icons/iconTreatment.view
+
+- `IconSchool` (type): type IconSchool = | "fire" | "frost" | "arcane" | "nature" | "holy" | "tech" | "shadow" | "steel" | "neutral" — `IconTreatment` (#1035): a procedural painted-icon face — a glyph over a school-keyed radial gradient, with a vignette inset shadow, a top gloss highlight, and optional count/keycap badges. Turns the engine's flat white `GameIcon` glyphs (and game-icons.net SVGs) into painted ability / item icons that read as AAA slots, not debug UI. Theme-aware: the frame reads the `--jg-slot-*` and `--jg-accent` `HudTheme` tokens (#1034), so a theme change re-skins every treated icon.
+- `IconTreatment` (function): function IconTreatment({ icon, glyph, school = "neutral", size = 44, count, keycap, active = false, className, style, }: IconTreatmentProps): React.JSX.Element — A painted icon face — gradient + vignette + gloss behind a glyph, with count/keycap badges.
+- `IconTreatmentProps` (interface): interface IconTreatmentProps — Props for {@link IconTreatment}.
+- `schoolForAction` (function): function schoolForAction(action: string): IconSchool — Infers an {@link IconSchool} from an action id (keyword match); `neutral` when nothing matches.
+- `schoolForItem` (function): function schoolForItem(itemId: string): IconSchool — Infers an {@link IconSchool} from an item id (keyword match); `neutral` when nothing matches.
+- `treatedActionIcon` (function): function treatedActionIcon(action: { id?: string; label?: string; icon?: ReactNode }, size = 40): ReactNode — A ready-made `ActionButton` `renderIcon` that paints the action's `GameIcon` with a treatment.
+- `treatedItemIcon` (function): function treatedItemIcon(itemId: string, options: { size?: number; count?: number; keycap?: string } = {}): ReactNode — Maps an item id to a treated icon — resolves a `GameIcon` glyph and an inferred school.
+
+## @jgengine/core/ui/icons/iconsPreview.view
+
+- `IconsPreview` (function): function IconsPreview({ className }: { className?: string }): React.JSX.Element — Renders the school-gradient row and a treated-icon hotbar — the deterministic #1035 fixture.
+
+## @jgengine/core/ui/kit/kitFlow.view
+
+- `KitBanner` (function): function KitBanner({ cue, title, subtitle, tone, ms = 2400, initial = false, className, style }: KitBannerProps): ReactNode — A big moment banner in the active kit — "Day 2 · Gates open", "Wave 3", "Run started" — shown for a couple of seconds whenever `cue` changes, so phase changes read as transitions instead of a toast.
+- `KitBannerProps` (interface): interface KitBannerProps — Props for {@link KitBanner}.
+- `KitDeadlineStage` (type): type KitDeadlineStage = "calm" | "warn" | "urgent" — How urgent a deadline is: `calm` above half, `warn` below half, `urgent` in the last stretch.
+- `KitObjective` (function): function KitObjective({ title, eyebrow, steps, distance, bearing, deadline, urgentAt, hint, hintAfter = 12, progressKey, prompt, className, style, }: KitObjectiveProps): ReactNode — The one card that tells the player what to do next: a short goal, distance with a direction arrow, an optional checklist and countdown, and the next action as a device-correct prompt. The countdown warns before it runs out (warn tone under half, urgent tone and a cue near the end) and a hint appears when the player has been stuck for a while, so a run never fails without warning and a new player is never left guessing.
+- `KitObjectiveDeadline` (interface): interface KitObjectiveDeadline — A countdown on an objective.
+- `KitObjectiveProps` (interface): interface KitObjectiveProps — Props for {@link KitObjective}.
+- `KitObjectiveStep` (interface): interface KitObjectiveStep — One line of a {@link KitObjective} checklist.
+- `KitResultAction` (interface): interface KitResultAction — One choice on a {@link KitResultScreen}.
+- `KitResultScreen` (function): function KitResultScreen({ open, tone = "neutral", eyebrow, title, summary, stats, actions, onAction, onBack, className, style }: KitResultScreenProps): ReactNode — The end of a run, a day or a level, in the active kit: a scrim, a dialog with what happened, a short tally and the next choices, navigable by keyboard, gamepad and touch. It animates in and out with the kit's motion and plays its open/close cues, so a loss reads as a moment instead of an abrupt cut.
+- `KitResultScreenProps` (interface): interface KitResultScreenProps — Props for {@link KitResultScreen}.
+- `KitResultStat` (interface): interface KitResultStat — One row of a {@link KitResultScreen} tally.
+- `deadlineStage` (function): function deadlineStage(deadline: KitObjectiveDeadline, urgentAt?: number): KitDeadlineStage — The stage of a deadline: `urgent` at or under `urgentAt` seconds (default the larger of 10 s and a quarter of the total), `warn` under half, otherwise `calm`.
+- `formatCountdown` (function): function formatCountdown(seconds: number): string — `m:ss` for a countdown in seconds.
+
+## @jgengine/core/ui/kit/kitFrame.view
+
+- `KIT_MATERIALS` (const): const KIT_MATERIALS: Readonly<Record<KitMaterial, KitMaterialLook>> — The built-in materials. A game reads one to match its own pieces (`KIT_MATERIALS.wood.ink`), or passes `tint` / `edge` to a material `KitPanel` or `KitButton` to recolour one.
+- `KitCut` (type): type KitCut = "box" | "chamfer" | "notch" | "slant" | "tab" | "banner" | "shield" | "ticket" | "torn" | "hex" — The frame's silhouette. Every cut is a clip path in pixels, so corners stay the same size at any panel size.
+- `KitFrameLook` (interface): interface KitFrameLook — How a material surface looks: what it is made of, its silhouette and rim. Give `material` to a `KitPanel` or `KitButton` and it draws as that object instead of in the kit's own language.
+- `KitMaterial` (type): type KitMaterial = "steel" | "brass" | "hull" | "wood" | "stone" | "paper" | "enamel" | "glass" | "carbon" | "leather" — What a frame is made of. Every material is a generated texture (SVG turbulence and lighting, no downloaded art) under real lighting, so a panel reads as an object in the game's world instead of a web page's flat or blurred rectangle.
+- `KitMaterialLook` (interface): interface KitMaterialLook — Everything a material decides: its texture, base colour, lighting, text colour and default edge.
+- `kitCutPath` (function): function kitCutPath(cut: KitCut, depth = 14): string — The clip path for a cut at a corner size of `depth` pixels.
+- `kitFrameVars` (function): function kitFrameVars({ material = "steel", cut = "chamfer", depth = 14, tint, edge, edgeWidth = 2, glow, padding, }: Partial<KitFrameLook> = {}): CSSProperties — The CSS variables that dress a material frame. A material `KitPanel`/`KitButton` sets them; spread them on your own element (with `data-jg-frame` on it and `data-jg-frame-face` on its single child) to dress one by hand. Add `data-shadow` for the cast shadow or `data-glow` for the lit ring. It also installs the frame stylesheet, so a hand-dressed element looks right even when no material panel has mounted yet (a HUD that starts in play, with no menu before it).
+
+## @jgengine/core/ui/kit/kitFramesPreview.view
+
+- `KitFramesPreview` (function): function KitFramesPreview({ className }: { className?: string }): ReactNode — Contact sheet for the game-UI building blocks: every material and cut, game buttons with each cursor, and the drawn sliders, over a sunset backdrop.
+
+## @jgengine/core/ui/kit/uiKit.view
+
+- `KitButtonProps` (interface): interface KitButtonProps extends Omit<ButtonHTMLAttributes<HTMLButtonElement>, "type"> — A button in the kit's language. Every native button attribute passes through to the root `<button>`.
+- `KitDevice` (type): type KitDevice = "keyboard" | "gamepad" | "touch" — The input device a prompt is drawn for.
+- `KitMenuItem` (interface): interface KitMenuItem — One verb in a {@link KitMenuProps} list.
+- `KitMenuProps` (interface): interface KitMenuProps — A list of verbs with one highlighted: title screen, pause, a choice. Navigation belongs to the host.
+- `KitMeterProps` (interface): interface KitMeterProps — A value against a maximum: health, a timer, progress.
+- `KitMinimapFrameProps` (interface): interface KitMinimapFrameProps — The frame around a minimap or radar. The map itself is the child, drawn inside the frame's window.
+- `KitPanelProps` (interface): interface KitPanelProps extends Omit<HTMLAttributes<HTMLElement>, "title"> — A surface that holds content. Kits must not draw it as a plain filled rounded rectangle.
+- `KitPromptProps` (interface): interface KitPromptProps — "Press this to do that": the contextual prompt, drawn for the device the player is using.
+- `KitToastProps` (interface): interface KitToastProps — A short-lived message.
+- `KitTone` (type): type KitTone = "neutral" | "accent" | "good" | "warn" | "bad" — The meaning a kit component carries; each kit draws it in its own language.
+- `UI_KIT_PARTS` (const): const UI_KIT_PARTS: readonly UiKitPart[] — Every part a kit must implement.
+- `UiKit` (interface): interface UiKit — A complete UI language: shapes, framing, type, motion, sound and the seven parts. A game picks one with `defineGame({ uiKit: "ink" })` and reshapes it with {@link customizeKit}.
+- `UiKitComponents` (interface): interface UiKitComponents — The seven parts every kit ships, so switching kits never breaks a game.
+- `UiKitCustomization` (interface): interface UiKitCustomization — What a game changes when it reshapes a kit.
+- `UiKitMotion` (interface): interface UiKitMotion — How a kit's surfaces enter and leave.
+- `UiKitPart` (type): type UiKitPart = keyof UiKitComponents — The names of {@link UiKitComponents}.
+- `UiKitTokens` (interface): interface UiKitTokens — The tokens every kit fills, so a game reshapes any kit with the same keys. Each becomes a `--kit-<kebab-name>` CSS variable on the kit root (`fontDisplay` → `--kit-font-display`). Kit-specific extras ride the index signature and land the same way.
+- `customizeKit` (function): function customizeKit(base: UiKit, changes: UiKitCustomization): UiKit — Reshape a kit for one game: new tokens, a few swapped parts, extra CSS, other sounds. Everything not given stays the base kit's, so a customized kit is still complete.
+- `kitCueSound` (function): function kitCueSound(cue: UiCue, def: Omit<SoundDef, "id" | "bus" | "positional">): SoundDef — A kit's UI cue patch on the `ui` bus, for {@link UiKit.sounds}.
+- `meterFraction` (function): function meterFraction(value: number, max = 1): number — Fill 0..1 for a meter, clamped; `max <= 0` reads as empty.
+- `meterSegmentsLit` (function): function meterSegmentsLit(value: number, max = 1, segments = 10): number — Cell states for a segmented meter: how many of `segments` are lit for `value / max`.
+- `missingKitParts` (function): function missingKitParts(kit: Pick<UiKit, "components">): UiKitPart[] — Parts a kit is missing, for tests and dev checks. Empty when the kit is complete.
+- `uiKitVars` (function): function uiKitVars(kit: UiKit): CSSProperties — The `--kit-*` CSS variables for a kit's tokens and motion, for the kit root's `style`.
+
+## @jgengine/core/ui/kit/uiKitArcade.view
+
+- `arcadeKit` (const): const arcadeKit: UiKit — Cabinet: a retro 8-bit arcade and JRPG. Stepped pixel borders, JRPG windows with title tabs, chunky depth buttons, heart meters, score-popup toasts and chiptune blips.
+
+## @jgengine/core/ui/kit/uiKitBroadcast.view
+
+- `broadcastKit` (const): const broadcastKit: UiKit — Prime Time: sports TV graphics. Skewed navy slabs with team stripes, a score-bug header, a breaking-news band, ticker chevrons, a tote-board menu, shot-clock rings and wipe-in lower thirds.
+
+## @jgengine/core/ui/kit/uiKitHolo.view
+
+- `holoKit` (const): const holoKit: UiKit — Vector: an angular sci-fi hologram. Chamfered glass with scanlines and bracket corners, hex data tags, radar frames with degree bezels, projection-in motion and tone-sweep sounds.
+
+## @jgengine/core/ui/kit/uiKitInk.view
+
+- `inkKit` (const): const inkKit: UiKit — Inkline: a comic-book caper. Heavy wobbly ink outlines, hard offset shadows, halftone dots, skewed caption tabs, speech-balloon toasts and jagged shout bursts; panels pop in with overshoot.
+
+## @jgengine/core/ui/kit/uiKitPaper.view
+
+- `paperKit` (const): const paperKit: UiKit — Fair Day: paper, cardboard and stickers. Torn paper notes held by washi tape, kraft cards, carnival ticket buttons with notched ends, sticker titles with die-cut white rims, highlighter meters on a ruler, luggage-tag toasts and a folded leaflet map; panels are placed by hand and peel away.
+
+## @jgengine/core/ui/kit/uiKitParchment.view
+
+- `parchmentKit` (const): const parchmentKit: UiKit — Grimoire: painterly fantasy parchment. Stained paper with torn or rolled edges, gold filigree corners, serif small caps, wax seals, glass vial meters, rune pips, a gold compass rim and unfurling banners.
+
+## @jgengine/core/ui/kit/uiKitPlain.view
+
+- `plainKit` (const): const plainKit: UiKit — The fallback kit outside any `UiKitRoot`: quiet, neutral parts so kit components always render. Games pick a real kit with `defineGame({ uiKit })`.
+
+## @jgengine/core/ui/kit/uiKitRoot.view
+
+- `ActionBindingsProvider` (function): function ActionBindingsProvider({ bindings, children }: { bindings: ActionCodesMap; children?: ReactNode }): ReactNode — Hands the game's live input bindings (its `input` map with the player's rebinds applied) to every key hint below. The shell mounts it around each game, so HUD labels follow a rebind with no game code.
+- `KitActionPrompt` (function): function KitActionPrompt({ action, label, progress, tone, onActivate, fallbackGlyph, className, style }: KitActionPromptProps): ReactNode — "Press E to take the parcel", drawn by the active kit with the right glyph for the device the player is using: the bound key, the bound pad button, or a tap target on touch. Renders nothing when the action is not bound on that device and no `fallbackGlyph` is given.
+- `KitActionPromptProps` (interface): interface KitActionPromptProps — Props for {@link KitActionPrompt}.
+- `KitButton` (function): function KitButton(props: KitButtonHostProps): ReactNode — The active kit's button. Hover, press and activate report to the nearest `HudInteractProvider`, so the shell's UI cues sound without wiring. Give `material` (and optionally `cut`, `tint`, `edge`, …) and it is a game button made of that material instead, lifting on hover and sinking on press:
+- `KitButtonHostProps` (type): type KitButtonHostProps = (KitButtonProps & { cue?: string; material?: undefined }) | KitMaterialButtonProps — Props for {@link KitButton}: the kit's button, or a material one when `material` is set.
+- `KitMaterialButtonProps` (interface): interface KitMaterialButtonProps extends KitFrameLook, Omit<ButtonHTMLAttributes<HTMLButtonElement>, "type" | "color"> — A {@link KitButton} made of a material instead of drawn by the kit: every native button attribute passes through.
+- `KitMaterialPanelProps` (interface): interface KitMaterialPanelProps extends KitFrameLook, Omit<HTMLAttributes<HTMLElement>, "color"> — A {@link KitPanel} made of a material instead of drawn by the kit; it holds its children as given.
+- `KitMenu` (function): function KitMenu(props: KitMenuProps): ReactNode — The active kit's menu list. Navigation comes from `useMenuNav`.
+- `KitMeter` (function): function KitMeter(props: KitMeterProps): ReactNode — The active kit's meter.
+- `KitMinimapFrame` (function): function KitMinimapFrame(props: KitMinimapFrameProps): ReactNode — The active kit's minimap frame.
+- `KitPanel` (function): function KitPanel(props: KitPanelHostProps): ReactNode — The active kit's panel. Give `open` to animate it in and out with the kit's own motion. Give `material` (and optionally `cut`, `tint`, `edge`, `glow`, …) and it is a surface made of that material instead — steel, brass, hull plate, wood, stone, paper, enamel, glass, carbon or leather — so a panel reads as an object in the game's world:
+- `KitPanelHostProps` (type): type KitPanelHostProps = (KitPanelProps & { open?: boolean; material?: undefined }) | KitMaterialPanelProps — Props for {@link KitPanel}: the kit panel's props plus an `open` flag that plays enter and exit motion, or a material panel.
+- `KitPrompt` (function): function KitPrompt(props: Omit<KitPromptProps, "device"> & { device?: KitPromptProps["device"] }): ReactNode — The active kit's prompt with an explicit glyph. Prefer {@link KitActionPrompt}, which picks the glyph per device.
+- `KitToast` (function): function KitToast(props: KitToastProps): ReactNode — The active kit's toast.
+- `UiKitRoot` (function): function UiKitRoot({ kit, bindings, glyphSet = "xbox", children, className, style, box = false }: UiKitRootProps): ReactNode — Puts a UI kit in charge of everything below it: injects its stylesheet, sets its `--kit-*` tokens and makes `KitButton`, `KitPanel`, `KitMeter`, `KitPrompt`, `KitToast`, `KitMenu` and `KitMinimapFrame` draw in its language. The shell mounts it for `defineGame({ uiKit })`; nest another to show a second kit.
+- `UiKitRootProps` (interface): interface UiKitRootProps — Props for {@link UiKitRoot}.
+- `UiKitScope` (function): function UiKitScope({ children }: { children?: ReactNode }): ReactNode — Re-applies the nearest kit's root (tokens and `data-jg-kit`) — wrap content you portal outside the kit root so it keeps the kit's look.
+- `ensureUiKitStyles` (function): function ensureUiKitStyles(kit: UiKit, doc: Document | undefined = typeof document === "undefined" ? undefined : document): void — Inserts a kit's stylesheet into the document once. Safe to call repeatedly and during SSR (no-op).
+- `useActionBindings` (function): function useActionBindings(): ActionCodesMap — The game's live input bindings, rebinds included: feed it to `actionLabel(bindings, action)` for a key hint in a list, or use {@link useActionGlyph} for one action. Empty outside a shell.
+- `useActionGlyph` (function): function useActionGlyph(action: string, fallback?: string): string | undefined — The key hint for `action` on the device the player is using, from the kit root's live bindings — the bound key on keyboard, the pad button on gamepad, or `fallback` when unbound. On touch it is `undefined`: the button itself is the tap target. Put it on a button (`<KitButton glyph={useActionGlyph("pause", "P")}>`) so key hints never go stale after a rebind.
+- `useHasUiKit` (function): function useHasUiKit(): boolean — True when a {@link UiKitRoot} is above: engine screens switch to kit parts only then.
+- `useKitPresence` (function): function useKitPresence(open: boolean, exitMs: number): { mounted: boolean; leaving: boolean } — Keeps something mounted through its exit motion: `leaving` turns true when `open` goes false, and `mounted` turns false `exitMs` later.
+- `useUiKit` (function): function useUiKit(): UiKit — The kit in charge here: the nearest {@link UiKitRoot}'s, or the plain fallback kit outside one.
+
+## @jgengine/core/ui/kit/uiKitSignal.view
+
+- `signalKit` (const): const signalKit: UiKit — Wayfinder: in-world signage. Enamel road-sign plates with keylines and rivets, arrow and blade signs, route-marker shields, LED departure boards and lamp bulbs, with split-flap flips and clacks.
+
+## @jgengine/core/ui/kit/uiKitTerminal.view
+
+- `terminalKit` (const): const terminalKit: UiKit — Mainframe: a brutalist phosphor terminal. Monospace everywhere, uppercase labels, double-ruled frames with the title set into the rule, ASCII meters, log-line toasts and a block cursor.
+
+## @jgengine/core/ui/kit/uiKits.view
+
+- `UI_KITS` (const): const UI_KITS: Readonly<Record<UiKitName, UiKit>> — The eight built-in UI kits, each a complete visual language with every part: `ink` comic caper, `paper` cardboard and stickers, `parchment` painterly fantasy, `terminal` brutalist console, `holo` angular sci-fi hologram, `broadcast` sports TV graphics, `arcade` retro pixel cabinet, `signal` in-world signage and departure boards.
+- `UiKitName` (type): type UiKitName = "ink" | "paper" | "parchment" | "terminal" | "holo" | "broadcast" | "arcade" | "signal" — The built-in kit names a game can pick with `defineGame({ uiKit: "<name>" })`.
+- `resolveUiKit` (function): function resolveUiKit(kit: UiKitName | UiKit): UiKit — A built-in kit by name, or a kit object as given (for example from `customizeKit`).
+
+## @jgengine/core/ui/kit/uiKitsPreview.view
+
+- `KitSpecimen` (function): function KitSpecimen({ kit, className, style }: { kit: UiKit; className?: string; style?: CSSProperties }): ReactNode — Every kit part on a busy game-like backdrop, so one picture shows a kit's whole language.
+- `UiKitMenuPreview` (function): function UiKitMenuPreview({ kit, pane = "settings", className }: { kit: UiKit; pane?: UiKitMenuPreviewPane; className?: string }): ReactNode — A kit's pause menu with one of the engine's own panes in it (settings, credits, continue or saves), so one picture shows that engine panes read in the kit's colours and type.
+- `UiKitMenuPreviewPane` (type): type UiKitMenuPreviewPane = "settings" | "credits" | "continue" | "saves" — The engine panes a kit's menu can host, for {@link UiKitMenuPreview}.
+- `UiKitPreview` (function): function UiKitPreview({ kit, className }: { kit: UiKit; className?: string }): ReactNode — One kit, large: the specimen plus its dialog and strip, for working on a single kit.
+- `UiKitsPreview` (function): function UiKitsPreview({ className }: { className?: string }): ReactNode — Contact sheet: all eight built-in UI kits side by side, every part each.
+
+## @jgengine/core/ui/liveBind.view
+
+- `LiveText` (function): function LiveText({ get, format, className, style, }: { get: () => number | string; format?: (value: number | string) => string; className?: string; style?: CSSProperties; }): React.JSX.Element — ⚠ undocumented
+- `frameBindSubscriberCount` (function): function frameBindSubscriberCount(): number — ⚠ undocumented
+- `subscribeFrameBind` (function): function subscribeFrameBind(subscriber: FrameSubscriber): () => void — ⚠ undocumented
+- `useFrameBind` (function): function useFrameBind<T, E extends Element = Element>(ref: { current: E | null }, get: () => T, apply: (value: T, element: E) => void): void — ⚠ undocumented
 
 ## @jgengine/core/ui/loadingTips
 
@@ -982,17 +1265,6 @@
 - `TipRotationConfig` (interface): interface TipRotationConfig — The tip rotation behind a loading screen: a deterministic shuffle of the game's tips, shown one at a time, cycling without repeating until the list is exhausted. Deterministic for a given seed, so a capture or a test sees the same first tip every run. Presentation-free — the loading block owns the look and the timer.
 - `TipRotationSnapshot` (interface): interface TipRotationSnapshot — Serializable rotation state.
 - `createTipRotation` (function): function createTipRotation(config: TipRotationConfig): TipRotation — Create a {@link TipRotation} over the game's tips. Order is a seeded shuffle; `next()` walks it and wraps, so every tip is seen once per cycle instead of a random repeat.
-
-## @jgengine/core/ui/objectiveBanner
-
-- `ObjectiveBannerAnnouncement` (interface): interface ObjectiveBannerAnnouncement — One announcement request handed to {@link ObjectiveBannerController.announce}.
-- `ObjectiveBannerController` (interface): interface ObjectiveBannerController — A live, clock-driven objective/stage banner controller.
-- `ObjectiveBannerOptions` (interface): interface ObjectiveBannerOptions — Options for {@link createObjectiveBanner}.
-- `ObjectiveBannerPhase` (type): type ObjectiveBannerPhase = "in" | "hold" | "out" — Which part of its life a banner is in: flying `"in"`, holding centered, or fading `"out"`. Progress `0..1` (see {@link ObjectiveBannerView.progress}) runs within whichever phase is active — the renderer maps phase + progress to opacity/scale/translate however it likes.
-- `ObjectiveBannerSnapshot` (interface): interface ObjectiveBannerSnapshot — Serializable state of the queue and the active banner, for save/restore.
-- `ObjectiveBannerView` (interface): interface ObjectiveBannerView — The banner to draw right now: its content, the game-owned `kind`, the current {@link ObjectiveBannerPhase}, and `progress` `0..1` through that phase. This object is pooled and overwritten on the next {@link ObjectiveBannerController.current} call — read it, don't retain it.
-- `StoredObjectiveBanner` (interface): interface StoredObjectiveBanner — A persisted banner record — all announcement fields resolved, plus id and schedule.
-- `createObjectiveBanner` (function): function createObjectiveBanner(options: ObjectiveBannerOptions = {}): ObjectiveBannerController — A serializable, clock-driven stage/objective banner controller: the classic transient centered title stamp ("WAVE 3", "VICTORY", "OBJECTIVE COMPLETE"). A game calls `announce({ title, subtitle?, kind? })` and the controller queues it, flies it in, holds it, and fades it out on an injected clock — one banner at a time — exposing the current banner plus its phase (in/hold/out) and `progress` `0..1` for a renderer to animate opacity/scale/translate. Nothing here is genre-specific: `kind` is a free label the game owns and styles, and all timings are parameters. Call `advance()` each frame; `current()` returns the pooled view to draw; `snapshot`/`restore` round-trips the queue through a save.
 
 ## @jgengine/core/ui/orientation
 
@@ -1009,7 +1281,7 @@
 ## @jgengine/core/ui/panelModel
 
 - `PanelDef` (interface): interface PanelDef — A caller-authored panel/window declaration — the DATA input to the model. Only `id` is required so a bag, a character sheet, and a one-off dialog all share the shape.
-- `PanelPosition` (interface): interface PanelPosition — Headless, serializable model for a set of player-toggled windows/panels — the data layer behind a WoW-style UI where B opens the bag, C the character sheet, and ESC closes the topmost window. It carries *which panels are open*, their focus/z stacking order, per-panel position overrides, and exclusive-group membership, with zero rendering opinion. The React chrome in `@jgengine/react/panels` consumes this; a game keeps layout, skin, keybinds, and window content caller-owned. Pure and immutable: every reducer returns a new state and never mutates its input.
+- `PanelPosition` (interface): interface PanelPosition — Headless, serializable model for a set of player-toggled windows/panels — the data layer behind a WoW-style UI where B opens the bag, C the character sheet, and ESC closes the topmost window. It carries *which panels are open*, their focus/z stacking order, per-panel position overrides, and exclusive-group membership, with zero rendering opinion. The React chrome in `@jgengine/core/ui/panels.view` consumes this; a game keeps layout, skin, keybinds, and window content caller-owned. Pure and immutable: every reducer returns a new state and never mutates its input.
 - `PanelState` (interface): interface PanelState — Serializable state for a set of panels: which are `open`, their `z` focus stack (higher renders on top), optional per-panel `pos` overrides, and the `meta` registry (group/closable) captured from the defs so the reducers below need no defs argument. Plain JSON — persist and rehydrate it freely.
 - `closePanel` (function): function closePanel(state: PanelState, id: string): PanelState — Close panel `id`. No-op if it is already closed. Its position override is kept so reopening restores the last placement.
 - `closeTopPanel` (function): function closeTopPanel(state: PanelState): PanelState — Close the topmost closable open panel — the ESC handler. Skips panels pinned with `closable: false` and returns the same state when nothing closable is open.
@@ -1022,12 +1294,37 @@
 - `panelByHotkey` (function): function panelByHotkey(defs: readonly PanelDef[], code: string): string | null — Find the panel whose `hotkey` matches `code`, case-insensitively — the keybind router. `code` may be a `KeyboardEvent.code` (`"KeyB"`) or key (`"b"`); it is compared verbatim to each def's `hotkey`, so author the hotkey in whichever form the caller feeds in. Returns the first match's id, or null.
 - `togglePanel` (function): function togglePanel(state: PanelState, id: string): PanelState — Toggle panel `id` — open it (with group exclusivity) if closed, close it if open. The one-key behavior behind a keybind like `B` for the bag.
 
+## @jgengine/core/ui/panels.view
+
+- `PanelHost` (function): function PanelHost({ manager, render, panels, variation, shape, width, zIndexBase = 40, className, windowClassName, windowStyle, bodyStyle, onInteract, }: { manager: PanelsManager; /** Called as windows open and close (`cue` is `panel:<id>`) — the seam a UI sound system hooks. */ onInteract?: HudInt… — Renders the open panels of a {@link usePanels} manager as absolutely-positioned, draggable, closable windows in z-order — the WoW window layer. Each window uses {@link HudFrame} chrome, is dragged by its title bar, raises focus on pointer-down, and gets its content from the `render` prop (or a `panels` map). Accessible: every window is a `role="dialog"` with an `aria-label` and a focusable close button; ESC-close is wired by the manager. Unskinned — art-direct via `HudTheme` tokens and the `variation`.
+- `PanelKeyResult` (interface): interface PanelKeyResult — React chrome over the headless panel/window model (`@jgengine/core/ui/panelModel`) — the toggleable, draggable, z-stacked windows a WoW-style UI is made of (B for bag, C for character, ESC to close). `usePanels` is the DATA/HOOK layer (open/close/toggle/focus + a keybind listener), `PanelHost` renders the open windows in z-order, and `Window` is a standalone one-off window. All unskinned and token-driven: games reskin via `HudTheme` tokens and by swapping the `HudFrame` variation.
+- `PanelsManager` (interface): interface PanelsManager — The live panel manager returned by {@link usePanels} and consumed by {@link PanelHost}.
+- `UsePanelsOptions` (interface): interface UsePanelsOptions — Options for {@link usePanels}.
+- `Window` (function): function Window({ title, ariaLabel, closable = true, onClose, x, y, onMove, z, width, variation, shape, className, style, bodyStyle, cue, onInteract, children, }: { title: ReactNode; ariaLabel?: string; closable?: boolean; /** Feedback cue name, rendered as `data-jg-cue` and passed to `onInteract`. … — A single standalone window — title bar, close button, and title-bar drag over {@link HudFrame} chrome — usable without the {@link usePanels} manager for a one-off dialog. Position is uncontrolled (seeded by `x`/`y`) unless both `x`/`y` and `onMove` are supplied, in which case the caller owns placement. Accessible: `role="dialog"` with an `aria-label` and a focusable close button.
+- `panelKeyAction` (function): function panelKeyAction(defs: readonly PanelDef[], state: PanelState, event: { code?: string; key?: string }): PanelKeyResult — Pure keybind resolver for a panel set: ESC resolves to `closeTop` when a closable window is open, and any other key routes through {@link panelByHotkey} (trying `code` then `key`) to a `toggle`. Returns the intent without touching the DOM, so it unit-tests headless and `usePanels` is a thin shell over it.
+- `usePanels` (function): function usePanels(defs: readonly PanelDef[], options?: UsePanelsOptions): PanelsManager — The DATA/HOOK layer: wrap the core panel model in state and install a window keybind listener — per-panel hotkeys toggle their window and ESC closes the topmost closable one. Hotkeys are ignored while the player is typing in an input/textarea/contenteditable. The listener is cleaned up on unmount and SSR-safe (armed in an effect). Feed the returned manager to {@link PanelHost}, or drive a bespoke window layout from it directly.
+
 ## @jgengine/core/ui/photoMode
 
 - `DEFAULT_PHOTO_MODE` (const): const DEFAULT_PHOTO_MODE: PhotoModeState — The out-of-the-box photo-mode state: not active, HUD hidden when it engages.
 - `PhotoModeState` (interface): interface PhotoModeState — Serializable photo-mode preferences a game reads to compose its capture UI.
 - `PhotoModeStore` (interface): interface PhotoModeStore — Observable photo-mode store — genre-agnostic state a game binds its capture flow to.
 - `createPhotoModeStore` (function): function createPhotoModeStore(initial: Partial<PhotoModeState> = {}): PhotoModeStore — Serializable, observable photo-mode state (active + hide-HUD). Genre-agnostic plumbing — a game engages it to free its camera and hide gameplay chrome for a clean capture, and reads `hideHud` to conditionally render its HUD. Pair with React `PhotoModeControls` and shell `captureCanvas`.
+
+## @jgengine/core/ui/photoMode.view
+
+- `PhotoModeControls` (function): function PhotoModeControls({ store, onCapture, className, style }: PhotoModeControlsProps): ReactNode — Photo-mode toolbar — a hide/show-HUD toggle, a capture button, and an exit button, bound to a `createPhotoModeStore`. Presentation-only: the game wires `onCapture` to shell `captureCanvas`/`downloadImage` and reads `hideHud` to drop its gameplay HUD.
+- `PhotoModeControlsProps` (interface): interface PhotoModeControlsProps — Props for {@link PhotoModeControls}.
+- `usePhotoMode` (function): function usePhotoMode(store: PhotoModeStore): PhotoModeState — Subscribe to a photo-mode store's live state.
+
+## @jgengine/core/ui/presence.view
+
+- `PresenceState` (type): type PresenceState = "open" | "closed" | "unmounted" — Mount state for an element with an exit transition: `closed` keeps it mounted until the exit ends.
+- `useMountPresence` (function): function useMountPresence(open: boolean, exitMs: number): PresenceState — Keeps an element mounted for `exitMs` after `open` turns false, so a `data-state="closed"` exit animation can play. Returns `"unmounted"` once the exit has finished (or at once when `exitMs` is 0).
+
+## @jgengine/core/ui/rotateDevice.view
+
+- `RotateDeviceScreen` (function): function RotateDeviceScreen({ title = "Turn your device", description, requiredOrientation = "landscape", accent = "var(--jg-accent, #8ea2ff)", icon, className, style, }: { /** Short headline. */ title?: string; /** One concise explanatory line. Defaults from `requiredOrientation`. */ description?: … — Full-viewport, non-dismissible rotate-device gate shown when a game requires an orientation the device isn't in.
 
 ## @jgengine/core/ui/screenMarkers
 
@@ -1036,6 +1333,11 @@
 - `ScreenMarkerViewport` (interface): interface ScreenMarkerViewport — The `{ width, height }` of the viewport the marker is laid out within (CSS px).
 - `ScreenProjection` (interface): interface ScreenProjection — A world position projected to screen space by the caller's camera. This is the minimal shape {@link layoutScreenMarker} consumes — deliberately a structural subset of `@jgengine/react`'s `EntityScreenProjection` (and what its `ProjectEntity`/`useWorldProjection` produce), mirrored here because `core` imports nothing higher. Feed it straight from a world→screen projector.
 - `layoutScreenMarker` (function): function layoutScreenMarker(projection: ScreenProjection, viewport: ScreenMarkerViewport, options: ScreenMarkerOptions = {}): ScreenMarkerLayout — Pure, allocation-aware screen-marker math: given a projected target point, the viewport, and a `margin`, decide whether the target is on-screen and where to draw its marker. An on-screen point passes straight through (`onScreen: true`). An off-screen — or behind-camera — point is CLAMPED to the viewport edge (inset by `margin`) with `angle` set to the bearing from screen center toward the target, so a caller can pin an arrow to the frame edge and rotate it to point the way. Behind-camera projections have mirrored coordinates, so the bearing is flipped to face the true direction. This is the edge-clamp/arrow half that `layoutEntityFrames` lacks (it culls off-screen entries instead). No allocation when an `out` object is supplied — reuse one across a whole frame's waypoints.
+
+## @jgengine/core/ui/scrollRail.view
+
+- `ScrollRail` (function): function ScrollRail({ children, label, className, style, gap = 6 }: ScrollRailProps): React.JSX.Element — Native horizontal scrolling with overflow-only navigation and automatic focus reveal. Callers own item markup, selection, keyboard semantics, and skin through HudTheme or style.
+- `ScrollRailProps` (interface): interface ScrollRailProps — Props for caller-composed horizontally scrolling controls.
 
 ## @jgengine/core/ui/selectionModel
 
@@ -1049,6 +1351,12 @@
 - `moveSelectionFocus` (function): function moveSelectionFocus(count: number, current: number, dir: SelectionFocusDirection): number — Pure next-focus math for the selection strip: step the focus index by one member (wrapping), or jump to an end. `-1` (no focus) steps to the first/last member. Returns `-1` for an empty selection.
 - `selectionWindow` (function): function selectionWindow(members: readonly EntitySummaryDef[], scroll: number, size: number): SelectionWindow — Compute a virtualization window over a large selection: a `size`-length slice starting near `scroll`, clamped so the window never runs past the end. Render only `items`, offsetting by `start * itemSize`, to keep a thousand-unit selection from mounting a thousand portraits.
 - `summarizeSelection` (function): function summarizeSelection(members: readonly EntitySummaryDef[], options?: SummarizeSelectionOptions): SelectionView — Summarize a selected-entity list into a {@link SelectionView}: resolve the primary focus, keep the ordered members, and bucket them by `kind`. Pure and stable — deterministic group ordering and a clamped focus index, so it is safe to call every render and to assert on in a test.
+
+## @jgengine/core/ui/slider.view
+
+- `GameSlider` (function): function GameSlider({ value, min = 0, max = 1, step = 0.01, onChange, onCommit, label, valueText, variant = "groove", pips = 10, disabled = false, className, style, }: GameSliderProps): ReactNode — A slider drawn as part of the game (a cut groove with a knurled knob, or lit pips), never the browser's range input. Full keyboard (arrows, Page Up/Down, Home/End), pointer drag and screen reader support through `role="slider"`.
+- `GameSliderProps` (interface): interface GameSliderProps — Props for {@link GameSlider}.
+- `snapSliderValue` (function): function snapSliderValue(raw: number, min: number, max: number, step: number): number — Snaps `raw` to `step` from `min` and clamps it to the range, without float noise.
 
 ## @jgengine/core/ui/swingTimer
 
@@ -1069,6 +1377,44 @@
 - `UiSize` (interface): interface UiSize — A width/height pair (pixels).
 - `actionTooltip` (function): function actionTooltip(action: ResolvedAction): TooltipContent — Build {@link TooltipContent} from a {@link ResolvedAction}: title from the label, the group as a subtitle, the description as the body, and the blocking reasons as warning notes. The single place an action's tooltip copy is assembled, so every renderer shows the same thing.
 - `placePopover` (function): function placePopover(anchor: UiRect, content: UiSize, viewport: UiSize, options?: PopoverOptions): PopoverPlacement — Position a popover/tooltip of `content` size against its `anchor` rectangle inside `viewport`: open on the `preferred` side, flip to the opposite when that side lacks room and the opposite has more, then clamp the top-left so the box stays fully on screen (respecting `margin`). Pure and deterministic — no DOM reads — so it is SSR-safe and unit-testable, and the React tooltip is a thin shell over it.
+
+## @jgengine/core/ui/uiCues
+
+- `DEFAULT_UI_CUE_SOUNDS` (const): const DEFAULT_UI_CUE_SOUNDS: Readonly<Record<UiCue, SoundDef>> — Short, soft procedural patches: no samples to load, quiet enough to sit under game audio.
+- `NOTICE_TONE_CUES` (const): const NOTICE_TONE_CUES: Readonly<Record<NoticeTone, UiCue>> — The cue a notice of each tone plays when it appears.
+- `UI_CUES` (const): const UI_CUES: readonly UiCue[] — Every {@link UiCue}, in a stable order.
+- `UI_CUE_BUS` (const): const UI_CUE_BUS: "ui" — Bus the default UI cues mix through; the settings menu shows its volume.
+- `UiCue` (type): type UiCue = "click" | "hover" | "open" | "close" | "confirm" | "deny" | "notify" — Interface sound cues every game gets: press, hover, panel open/close, confirm, refusal, notification.
+- `UiCueOverrides` (type): type UiCueOverrides = false | Partial<Record<UiCue, SoundDef | false>> — Per-cue override: a replacement sound, or `false` to silence that cue. `false` for the whole map silences all.
+- `uiCueSoundId` (function): function uiCueSoundId(cue: UiCue): string — Catalog id a cue plays under: `ui.click`, `ui.deny`, ... A game sound with that id replaces the default.
+- `withUiCueSounds` (function): function withUiCueSounds(sounds: Readonly<Record<string, SoundDef>> | undefined, buses: Readonly<Record<string, AudioBusDef>> | undefined, overrides?: UiCueOverrides): { sounds: Record<string, SoundDef>; buses: Record<string, AudioBusDef> | undefined } — Merge the default UI cue patches into a game's sound catalog. A game sound already named `ui.<cue>` wins, then `overrides`, then the default. Adds the `ui` bus (gain 0.8) when the game did not declare one.
+
+## @jgengine/core/ui/uiCues.view
+
+- `UiCue` (type): type UiCue = "click" | "hover" | "open" | "close" | "confirm" | "deny" | "notify" — Interface sound cues every game gets: press, hover, panel open/close, confirm, refusal, notification.
+- `playUiCue` (function): function playUiCue(ctx: Pick<GameContext, "game"> | null, cue: UiCue): void — Play UI cue `cue` through the game's audio seam (`ui.<cue>` in the shell catalog). No-op outside a game.
+- `uiCueForInteraction` (function): function uiCueForInteraction(event: HudInteractEvent): UiCue | null — The UI cue an engine HUD primitive interaction plays, or `null` for none: activating plays the primitive's `cue` when it names a {@link UiCue} (e.g. `cue="confirm"`), else `click`; hovering a button or action slot plays `hover`; panels and windows play `open`/`close`. Press and focus are silent.
+- `useUiCue` (function): function useUiCue(): (cue: UiCue) => void — Returns a stable `cue(name)` that plays a UI sound: click, hover, open, close, confirm, deny, notify. The shell ships soft procedural defaults on the "ui" bus (volume in Settings, muted with master); a game replaces one by declaring `audio.sounds["ui.click"]` or `audio.uiCues`. Safe outside a GameProvider.
+
+## @jgengine/core/ui/useDebouncedCommit.view
+
+- `DebounceTimer` (interface): interface DebounceTimer — Injectable timer seam so the controller is testable with a manual clock.
+- `DebouncedCommit` (interface): interface DebouncedCommit<T> — Live-mirrored, trailing-debounced commit binding for a single control value.
+- `useDebouncedCommit` (function): function useDebouncedCommit<T>(value: T, commit: (value: T) => void, delayMs = 180): DebouncedCommit<T> — See {@link DebouncedCommit}. `commit` and `delayMs` may change between renders (kept in refs); the binding identity stays stable except when `value` (the local mirror) changes.
+
+## @jgengine/core/ui/viewport.view
+
+- `GameViewportProvider` (function): function GameViewportProvider({ platforms, className, style, children, }: { platforms?: readonly HudPlatform[]; className?: string; style?: CSSProperties; children?: ReactNode; }): React.JSX.Element — Provides the shared game viewport layout to everything it wraps. Mount it once around the whole game presentation (world, HUD, controls, system UI) so every subsystem reads one coordinated geometry and registers its rect for collision detection. Publishes live `--jg-viewport-*` / `--jg-visual-viewport-*` / `--jg-safe-*` CSS variables on its root.
+- `LayoutRegionSpec` (type): type LayoutRegionSpec = Omit<LayoutRegion, "rect"> — A region descriptor without its measured rectangle — the caller supplies geometry through `useRegisterLayoutRegion`.
+- `RegionRecord` (interface): interface RegionRecord extends LayoutRegion — A region registration: the full `LayoutRegion` plus the live element (dev outlining), rect measured by the shell/react side.
+- `ViewportMetrics` (interface): interface ViewportMetrics — Live viewport rectangles: the layout viewport and the visible `visualViewport`.
+- `useGameLayoutMode` (function): function useGameLayoutMode(): GameLayoutMode — The resolved explicit composition mode (`desktop-wide` … `mobile-portrait`).
+- `useGameOrientation` (function): function useGameOrientation(): LayoutOrientation — The live device orientation.
+- `useGameViewportLayout` (function): function useGameViewportLayout(): GameViewportLayout — The live shared viewport layout. Returns a neutral default outside a `GameViewportProvider` so it never throws in previews.
+- `useLayoutCollisions` (function): function useLayoutCollisions(): readonly LayoutCollision[] — Live forbidden/warned region collisions (empty outside a provider).
+- `useRegisterLayoutRegion` (function): function useRegisterLayoutRegion(spec: LayoutRegionSpec, ref: RefObject<HTMLElement | null>, enabled = true): void — Register the element behind `ref` as a layout region and keep its measured rectangle live (ResizeObserver + viewport changes). No-op outside a `GameViewportProvider`, so a component using it still works in isolation.
+- `useReservedControlZones` (function): function useReservedControlZones(): readonly LayoutRect[] — Rectangles reserved by touch controls and system UI — HUD placement should avoid these.
+- `useViewportMetrics` (function): function useViewportMetrics(): ViewportMetrics — Live visible viewport, tracking `window.visualViewport` (mobile browser chrome, pinch-zoom) with a layout-viewport fallback.
 
 ## @jgengine/react
 
@@ -1091,8 +1437,8 @@
 - `ActionTooltip` (function): function ActionTooltip({ content, className, style, }: { content: TooltipContent; className?: string; style?: CSSProperties; }): React.JSX.Element — Render {@link TooltipContent} (from `actionTooltip`) as a styled block: title, subtitle, body, hotkey, cost lines, cooldown, and a warning footer of blocking notes. Drop it inside a {@link Popover} for an action's hover/focus description.
 - `AddFriendButton` (function): function AddFriendButton({ toUserId, className, children, onRequested, onRejected, }: { toUserId: string; className?: string; children?: ReactNode; onRequested?: (requestId: string) => void; onRejected?: (reason: string) => void; }): React.JSX.Element | null — ⚠ undocumented
 - `ArmorSlots` (function): function ArmorSlots(props: SlotGridProps): React.JSX.Element — Armor piece slots.
-- `BetterAuthSessionState` (interface): interface BetterAuthSessionState { data: {user: BetterAuthUserShape} | null | undefined; isPending: boolean } — ⚠ undocumented
-- `BetterAuthUserShape` (interface): interface BetterAuthUserShape { id: string; name?: string | null; email?: string | null; image?: string | null } — ⚠ undocumented
+- `BetterAuthSessionState` (interface): interface BetterAuthSessionState — ⚠ undocumented
+- `BetterAuthUserShape` (interface): interface BetterAuthUserShape — ⚠ undocumented
 - `BrowserSuspensionOptions` (interface): interface BrowserSuspensionOptions — Select suspension events; all are observed by default. No callback runs on attachment.
 - `BrowserSuspensionReason` (type): type BrowserSuspensionReason = "blur" | "hidden" | "pointer-lock-lost" — Browser events that can interrupt active play. The caller decides whether to pause.
 - `BrowserSuspensionSources` (interface): interface BrowserSuspensionSources — Event sources for a browser window, an iframe, or a test.
@@ -1107,13 +1453,13 @@
 - `ChannelTabs` (function): function ChannelTabs({ channels, active, onSelect, className, tabClassName, activeTabClassName, renderTab, }: { channels?: readonly string[]; active: string; onSelect: (channelId: string) => void; className?: string; tabClassName?: string; activeTabClassName?: string; renderTab?: (channelId: string,… — ⚠ undocumented
 - `CharacterSheet` (function): function CharacterSheet({ slots, stats, name, subtitle, portrait, header, title = "Character", variation = "themed", slotSize, onSlotActivate, className, style, }: CharacterSheetProps): ReactNode — Drop-in character sheet: a {@link HudFrame} wrapping an optional name/subtitle/portrait header, the equip-slot {@link Paperdoll}, and the derived-stat {@link StatList}. The game supplies slots, stats, header content, and the activation callback, and owns the window that toggles it (this component does not manage its own open/close). Pure composition over existing primitives and HudTheme tokens.
 - `CharacterSheetProps` (interface): interface CharacterSheetProps — Props for {@link CharacterSheet}.
-- `ChatBubble` (interface): interface ChatBubble { id: string; fromUserId: string; body: string; at: number } — ⚠ undocumented
-- `ChatBubblesOptions` (interface): interface ChatBubblesOptions { channelId?: string; ttlMs?: number; limit?: number } — ⚠ undocumented
+- `ChatBubble` (interface): interface ChatBubble — ⚠ undocumented
+- `ChatBubblesOptions` (interface): interface ChatBubblesOptions — ⚠ undocumented
 - `ChatInput` (function): function ChatInput({ channelId, className, inputClassName, buttonClassName, placeholder, sendLabel, onSent, onRejected, }: { channelId: string; className?: string; inputClassName?: string; buttonClassName?: string; placeholder?: string; sendLabel?: ReactNode; onSent?: (message: ChatMessage) => void;… — ⚠ undocumented
 - `ChatLog` (function): function ChatLog({ channelId, limit, className, messageClassName, ownMessageClassName, renderMessage, }: { channelId: string; limit?: number; className?: string; messageClassName?: string; ownMessageClassName?: string; renderMessage?: (message: ChatMessage) => ReactNode; }): React.JSX.Element — ⚠ undocumented
 - `ChatPanel` (function): function ChatPanel<T extends ChatMessage = ChatMessage>(props: Parameters<typeof ContextChatPanel>[0] | StandaloneChatPanelProps<T>): React.JSX.Element — Chat behavior over a game context or externally supplied server messages.
-- `ClerkUserShape` (interface): interface ClerkUserShape { id: string; fullName?: string | null; username?: string | null; imageUrl?: string | null; primaryEmailAddress?: {emailAddress: string} | null; createdAt?: Date | null; lastSignInAt?: Date | null } — ⚠ undocumented
-- `ClerkUserState` (interface): interface ClerkUserState { isLoaded: boolean; isSignedIn: boolean | undefined; user: ClerkUserShape | null | undefined } — ⚠ undocumented
+- `ClerkUserShape` (interface): interface ClerkUserShape — ⚠ undocumented
+- `ClerkUserState` (interface): interface ClerkUserState — ⚠ undocumented
 - `Clock` (function): function Clock({ format = "24h", showDay = true, controls = false, style, className, }: { format?: "24h" | "12h"; showDay?: boolean; controls?: boolean; style?: CSSProperties; className?: string; }): React.JSX.Element — A time-of-day clock reading the sim calendar — `Day N · HH:MM`, 24h or 12h. `controls` adds pause + the game's speed multipliers as clickable pills (the "fast-forward" bar), off by default so a game opts into letting the player scrub time.
 - `CoachMark` (function): function CoachMark({ view, positionStyle, onNext, onSkip, nextLabel = "Next", doneLabel = "Got it", skipLabel = "Skip tour", theme, className, style, }: CoachMarkProps): ReactNode — A single coach-mark callout — title, body, an "N of M" counter, a Next/Got-it button, and a Skip-tour link. Presentation-only; position it with `positionStyle` or drop it into {@link CoachMarkHost}. Reskin via {@link CoachMarkTheme}.
 - `CoachMarkHost` (function): function CoachMarkHost({ sequence, resolveAnchor, showBackdrop = true, onComplete, nextLabel, doneLabel, skipLabel, theme, className, style, }: CoachMarkHostProps): ReactNode — Full-screen coach-mark host: watches a sequence, positions the current step's callout beside its anchored element (or centered when unanchored) via `getBoundingClientRect`, and draws an optional dimmed backdrop with a spotlight cutout around the anchor. Next advances, Skip ends the tour — both persist so hints never re-show. Reskin with {@link CoachMarkTheme}.
@@ -1154,21 +1500,21 @@
 - `DefaultEquipSlotId` (type): type DefaultEquipSlotId = | "head" | "chest" | "hands" | "legs" | "feet" | "mainHand" | "offHand" | "ring1" | "ring2" | "trinket" — Slot ids used by {@link defaultEquipLayout}'s convenience arrangement.
 - `DialogBehaviorOptions` (interface): interface DialogBehaviorOptions — Options for controlled dialog focus behavior; callers own markup, state, and close policy.
 - `DialogueBox` (function): function DialogueBox({ dialogue, onChoice, rng, className, lineClassName, speakerClassName, choicesClassName, choiceClassName, checkClassName, }: { dialogue: DialogueDef; onChoice?: (choice: DialogueChoice, result: CheckResult | null) => void; rng?: () => number; className?: string; lineClassName?: … — ⚠ undocumented
-- `DialogueCheck` (interface): interface DialogueCheck { label?: string; modifier: number; dc: number; advantage?: CheckAdvantage } — ⚠ undocumented
-- `DialogueChoice` (interface): interface DialogueChoice { label: string; invoke: {command: string; args?: unknown} | null; check?: DialogueCheck; onSuccess?: {command: string; args?: unknown} | null; onFailure?: {command: string; args?: unknown} | null } — ⚠ undocumented · used by `runDialogueChoice`: Route a {@link DialogueBox} choice through the `features.dialogue` bridge: resolve the choice's invoke (honoring a skill-check `result`), ru…
-- `DialogueDef` (interface): interface DialogueDef { id: string; lines: readonly DialogueLine[] } — ⚠ undocumented
+- `DialogueCheck` (interface): interface DialogueCheck — ⚠ undocumented
+- `DialogueChoice` (interface): interface DialogueChoice — ⚠ undocumented · used by `runDialogueChoice`: Route a {@link DialogueBox} choice through the `features.dialogue` bridge: resolve the choice's invoke (honoring a skill-check `result`), ru…
+- `DialogueDef` (interface): interface DialogueDef — ⚠ undocumented
 - `DialogueLine` (type): type DialogueLine = { speaker: string; text: string } | { choices: readonly DialogueChoice[] } — ⚠ undocumented
 - `DialogueView` (function): function DialogueView({ run, renderPortrait, onChoose, onClose, closeLabel = "Close", theme, className, style, speakerClassName, textClassName, choicesClassName, choiceClassName, }: DialogueViewProps): ReactNode — A drop-in branching-conversation view over a {@link DialogueRun}: renders the current node's speaker name (+ an optional portrait slot), the line, and a list of clickable response choices that advance the conversation — the game passes its dialogue graph and gets working node traversal and choice state with no hand-rolled walk. A choice with a destination advances the run; a terminal choice (or the Close control on a choiceless node) fires `onClose`. Speaker/choice `kind` are free strings surfaced as `data-*` attributes for the game to style; the view never interprets them. HudTheme-skinned via `--jg-*` tokens; reskin further with {@link DialogueViewTheme}.
 - `DialogueViewProps` (interface): interface DialogueViewProps — Props for {@link DialogueView}.
 - `DialogueViewTheme` (interface): interface DialogueViewTheme — Reskin tokens for {@link DialogueView}. Each defaults to a HudTheme `--jg-*` token.
-- `DisplayProfile` (interface): interface DisplayProfile { coarsePointer: boolean; compact: boolean; portrait: boolean } — ⚠ undocumented
+- `DisplayProfile` (interface): interface DisplayProfile — ⚠ undocumented
 - `DomEventTarget` (interface): interface DomEventTarget — Minimal add/removeEventListener surface accepted by useDomEvent (window, document, elements).
 - `DragGhost` (function): function DragGhost<T>({ layer, className, style, children, }: { layer: DragLayer<T>; className?: string; style?: CSSProperties; children?: (payload: DragPayload<T>) => ReactNode; }): React.JSX.Element | null — ⚠ undocumented
-- `DragLayer` (interface): interface DragLayer<T> { state: DragLayerState<T>; dragging: boolean; pointRef: RefObject<{x: number; y: number}>; beginDrag(payload: {id: string; value: T; rotation?: Rotation}, event: ReactPointerEvent): void; rotate(quarterTurns?: number): void; setTarget(targ… — ⚠ undocumented · used by `useDragLayer`: Pointer-owned drag state shared by cards and inventory grids.
+- `DragLayer` (interface): interface DragLayer<T> — ⚠ undocumented · used by `useDragLayer`: Pointer-owned drag state shared by cards and inventory grids.
 - `DragLayerState` (interface): interface DragLayerState<T> — What the drag layer is carrying now: the payload, the pointer and where the drag began.
-- `DragPayload` (interface): interface DragPayload<T> { id: string; value: T; rotation: Rotation } — ⚠ undocumented
+- `DragPayload` (interface): interface DragPayload<T> — ⚠ undocumented
 - `DraggableCard` (function): function DraggableCard<T>({ id, value, layer, className, children, onRotate, }: { id: string; value: T; layer: DragLayer<T>; className?: string; children?: ReactNode; onRotate?: boolean; }): React.JSX.Element — ⚠ undocumented
-- `DropInfo` (interface): interface DropInfo<T> { payload: DragPayload<T>; target: string | null; cell: Cell | null; point: {x: number; y: number} } — ⚠ undocumented · used by `useDragLayer`: Pointer-owned drag state shared by cards and inventory grids.
+- `DropInfo` (interface): interface DropInfo<T> — ⚠ undocumented · used by `useDragLayer`: Pointer-owned drag state shared by cards and inventory grids.
 - `DropZone` (function): function DropZone<T>({ id, layer, className, activeClassName, cellSize, children, }: { id: string; layer: DragLayer<T>; className?: string; activeClassName?: string; cellSize?: number; children?: ReactNode; }): React.JSX.Element — ⚠ undocumented
 - `EmoteWheel` (function): function EmoteWheel({ emotes, radius, open = true, className, emoteClassName, onPlayed, onRejected, renderEmote, }: { emotes: readonly string[]; radius?: number; open?: boolean; className?: string; emoteClassName?: string; onPlayed?: (emoteId: string) => void; onRejected?: (reason: string) => void; … — ⚠ undocumented
 - `EntityFrameEntry` (interface): interface EntityFrameEntry — The minimum an entry must carry; games extend it with their own display data.
@@ -1188,7 +1534,7 @@
 - `FastTravelMenuProps` (interface): interface FastTravelMenuProps<TMeta = unknown> — Props for {@link FastTravelMenu}.
 - `FloatingText` (function): function FloatingText({ entries, project, styleFor, fontSizePx = 20, className, style, renderEntry, ...layout }: FloatingTextProps): React.JSX.Element — Absolutely-positioned overlay that renders every on-screen floating-text entry as text with its color, current alpha, and pop-in scale. Drop it inside a positioned ancestor (e.g. an `<Html fullscreen>` overlay or `HudCanvas`) and feed it fresh `entries`/`project` each frame. Every part carries `data-*` hooks (`data-floating-text`, `data-floating-text-entry="<id>"`, `data-kind="<kind>"`) for tests and skins.
 - `FloatingTextLayoutOptions` (interface): interface FloatingTextLayoutOptions — Anchoring and culling options shared by the layout core and the component.
-- `FloatingTextPlacement` (interface): interface FloatingTextPlacement — World-anchored floating text — the presentation half of the data-first `@jgengine/core/ui/floatingText` seam. The game keeps owning the simulation: it passes the field's `active()` views plus a `project` function (world → screen), exactly the transport {@link ./entityFrames!EntityFrames} uses, so an R3F game gets it for free from `useWorldProjection`. This component owns only the reusable presentation: projecting each entry, culling ones behind the camera or off-screen, and rendering absolutely-positioned text with the entry's color, current alpha, and pop-in scale — reskinnable per `kind` through `styleFor`.
+- `FloatingTextPlacement` (interface): interface FloatingTextPlacement — World-anchored floating text — the presentation half of the data-first `@jgengine/core/hud/floatingText` seam. The game keeps owning the simulation: it passes the field's `active()` views plus a `project` function (world → screen), exactly the transport {@link ./entityFrames!EntityFrames} uses, so an R3F game gets it for free from `useWorldProjection`. This component owns only the reusable presentation: projecting each entry, culling ones behind the camera or off-screen, and rendering absolutely-positioned text with the entry's color, current alpha, and pop-in scale — reskinnable per `kind` through `styleFor`.
 - `FloatingTextProps` (interface): interface FloatingTextProps extends FloatingTextLayoutOptions — Props for {@link FloatingText}.
 - `FriendRequestsList` (function): function FriendRequestsList({ className, rowClassName, acceptClassName, declineClassName, emptyState, renderRequest, }: { className?: string; rowClassName?: string; acceptClassName?: string; declineClassName?: string; emptyState?: ReactNode; renderRequest?: (request: FriendRequestEntry) => ReactNode… — ⚠ undocumented
 - `FriendRow` (function): function FriendRow({ friend, className, dotClassName, children, }: { friend: FriendEntry; className?: string; dotClassName?: string; children?: ReactNode; }): React.JSX.Element — ⚠ undocumented
@@ -1270,7 +1616,7 @@
 - `IconTreatment` (function): function IconTreatment({ icon, glyph, school = "neutral", size = 44, count, keycap, active = false, className, style, }: IconTreatmentProps): React.JSX.Element — A painted icon face — gradient + vignette + gloss behind a glyph, with count/keycap badges.
 - `IconTreatmentProps` (interface): interface IconTreatmentProps — Props for {@link IconTreatment}.
 - `IconsPreview` (function): function IconsPreview({ className }: { className?: string }): React.JSX.Element — Renders the school-gradient row and a treated-icon hotbar — the deterministic #1035 fixture.
-- `IdentitySource` (interface): interface IdentitySource { session: AuthSession | null; isLoading: boolean; signOut?: () => void } — ⚠ undocumented
+- `IdentitySource` (interface): interface IdentitySource — ⚠ undocumented
 - `InputDevice` (type): type InputDevice = "keyboard" | "gamepad" | "touch" — The device the player last used: drives which glyph a prompt shows.
 - `InteractionPrompt` (function): function InteractionPrompt({ registry, playerPosition, theme, accentFor, keyFor, gaugeProgress, anchor = "bottom-center", zIndex = 40, className, style, }: InteractionPromptProps): ReactNode — A screen-anchored "Press E to …" interaction callout that renders the active prompt of a {@link PromptRegistry}. It subscribes to the registry and — when given `playerPosition` — re-resolves as the hero moves, showing the nearest in-range interactable and switching to a closer/higher-priority one as they cross radii. Each display kind renders as itself: a `keybind` shows a key cap plus its label ("Press [E] Open"), a `gauge` shows a hold bar filling with `gaugeProgress`, and a `label` shows plain text. Presentation only — the registry never branches on a prompt's meaning; the game colors each via `accentFor` and maps action ids to key glyphs via `keyFor`. HudTheme-skinnable through `--jg-accent` and {@link InteractionPromptTheme}.
 - `InteractionPromptAnchor` (type): type InteractionPromptAnchor = "bottom-center" | "top-center" | "center" — Where the callout sits over the scene.
@@ -1463,7 +1809,7 @@
 - `StreetGeometryPreview` (function): function StreetGeometryPreview({ className }: { className?: string }): React.JSX.Element — Deterministic close-up gallery of the shared road/junction mesh seam.
 - `Suit` (type): type Suit = "clubs" | "diamonds" | "hearts" | "spades" — The four French-deck suits.
 - `TalentIcon` (type): type TalentIcon = GameIconName | ReactNode | null — How a node id resolves to display art: a built-in {@link GameIconName}, any node, or `null` for the default.
-- `TalentTreePanel` (function): function TalentTreePanel<TStat extends string = string>({ view: viewProp, nodes, tree, onLearn, icon, label, branchLabel, title = "Talents", variation = "themed", nodeSize = 54, columnGap = 30, tierGap = 46, showPoints = true, className, style, }: TalentTreeProps<TStat>): ReactNode — Drop-in talent / skill-tree widget over the existing progression model (`@jgengine/core/game/talents` + its `talentTreeView` selector). The game passes its node definitions and a live `createTalentTree` instance; the widget lays nodes out by branch column and prerequisite-depth tier, draws SVG prerequisite edges, styles each node learned/available/locked/maxed, shows an icon + rank badge, and calls `onLearn(nodeId)` when the player clicks a node that is currently allocatable. All layout, edge-drawing, and eligibility come from the model/selector — the widget never re-derives topology. Unskinned and HudTheme-token driven; node ids/branches are opaque game data the game supplies icons and labels for.
+- `TalentTreePanel` (function): function TalentTreePanel<TStat extends string = string>({ view: viewProp, nodes, tree, onLearn, icon, label, branchLabel, title = "Talents", variation = "themed", nodeSize = 54, columnGap = 30, tierGap = 46, showPoints = true, className, style, }: TalentTreeProps<TStat>): ReactNode — Drop-in talent / skill-tree widget over the existing progression model (`@jgengine/core/talents/talents` + its `talentTreeView` selector). The game passes its node definitions and a live `createTalentTree` instance; the widget lays nodes out by branch column and prerequisite-depth tier, draws SVG prerequisite edges, styles each node learned/available/locked/maxed, shows an icon + rank badge, and calls `onLearn(nodeId)` when the player clicks a node that is currently allocatable. All layout, edge-drawing, and eligibility come from the model/selector — the widget never re-derives topology. Unskinned and HudTheme-token driven; node ids/branches are opaque game data the game supplies icons and labels for.
 - `TalentTreeProps` (interface): interface TalentTreeProps<TStat extends string = string> — Props for {@link TalentTreePanel}.
 - `TimerFormat` (type): type TimerFormat = "mm:ss" | "m:ss.d" | "ss.d" — Digital text format for a timer readout.
 - `TimerReadout` (function): function TimerReadout({ timer, id, source = "auto", format = "mm:ss", placeholder = "--:--", active = true, className, style, }: TimerReadoutProps): ReactNode — A live digital timer readout (mm:ss / m:ss.d) driven off a {@link TimerSet}. It re-reads every frame and formats remaining or elapsed time — a round clock, a respawn countdown, or an ability charge, all the same widget. HudTheme-skinned via `--jg-text`; reskin with `style` or the theme tokens.
@@ -1494,11 +1840,11 @@
 - `UseMenuNavOptions` (interface): interface UseMenuNavOptions — How {@link useMenuNav} is wired.
 - `UsePanelsOptions` (interface): interface UsePanelsOptions — Options for {@link usePanels}.
 - `UseSelectionViewOptions` (interface): interface UseSelectionViewOptions — Options for {@link useSelectionView}.
-- `UseVoiceOptions` (interface): interface UseVoiceOptions { transport?: VoiceTransport; channelId?: string; mode?: PushToTalkMode; resolveRoutes?: () => readonly VoiceRoute[]; getUserMedia?: (constraints: MediaStreamConstraints) => Promise<MediaStream> } — ⚠ undocumented · used by `useVoice`: Mic capture + push-to-talk + channel roster over the VoiceTransport signaling seam.
+- `UseVoiceOptions` (interface): interface UseVoiceOptions — ⚠ undocumented · used by `useVoice`: Mic capture + push-to-talk + channel roster over the VoiceTransport signaling seam.
 - `UserBadge` (function): function UserBadge({ className, avatarClassName, nameClassName, renderBadge, }: { className?: string; avatarClassName?: string; nameClassName?: string; renderBadge?: (session: AuthSession) => ReactNode; }): React.JSX.Element | null — ⚠ undocumented
 - `ViewportMetrics` (interface): interface ViewportMetrics — Live viewport rectangles: the layout viewport and the visible `visualViewport`.
 - `VoiceRoster` (function): function VoiceRoster({ voice, className, participantClassName, renderParticipant, }: { voice: VoiceState; className?: string; participantClassName?: string; renderParticipant?: (participant: VoiceParticipant, gain: number) => ReactNode; }): React.JSX.Element — ⚠ undocumented
-- `VoiceState` (interface): interface VoiceState { supported: boolean; micStream: MediaStream | null; micError: string | null; requestMic(): Promise<boolean>; transmitting: boolean; status: PushToTalkStatus; mode: PushToTalkMode; setMode(mode: PushToTalkMode): void; muted: boolean; setMut… — ⚠ undocumented · used by `useVoice`: Mic capture + push-to-talk + channel roster over the VoiceTransport signaling seam.
+- `VoiceState` (interface): interface VoiceState — ⚠ undocumented · used by `useVoice`: Mic capture + push-to-talk + channel roster over the VoiceTransport signaling seam.
 - `WaveHud` (function): function WaveHud({ runner, theme, variation = "plate", width = 260, className, style }: WaveHudProps): ReactNode — A drop-in wave/spawn HUD panel over a {@link WaveRunner}: a big "WAVE N" label, a wave-progress bar (the shared {@link KitMeter}), and the live spawned / total, budget, and alert readouts — the visible face of "the brain behind WAVE 3". It subscribes to the runner and re-renders on change; the game drives the runner's clock. Reskin with {@link WaveHudTheme} and the active UI kit. When the final wave finishes it shows a "WAVES CLEARED" state. Presentation only: the schedule, budget, and RNG live in the core model, and spawn `kind`s are never read.
 - `WaveHudProps` (interface): interface WaveHudProps — Props for {@link WaveHud}.
 - `WaveHudTheme` (interface): interface WaveHudTheme — Reskin tokens for {@link WaveHud}. All optional; each falls back to a sensible default.
@@ -1698,162 +2044,6 @@
 - `useWorldInvites` (function): function useWorldInvites(): WorldInvite[] — ⚠ undocumented
 - `useWorldItems` (function): function useWorldItems(): readonly WorldItemRecord[] — Live dropped-item records: the returned list keeps one identity until an item spawns, is picked up or is removed. `worldItem.list()` allocates a new array per call and the shared store signal fires on every pose write, so a raw read re-rendered every marker each frame (#2175). A marker reads its own live pose imperatively (useFrame).
 
-## @jgengine/react/accessibility
-
-- `AccessibilityProvider` (function): function AccessibilityProvider({ store, children, className, style, }: { store: AccessibilityStore; children: ReactNode; className?: string; style?: CSSProperties; }): ReactNode — Apply accessibility preferences to a subtree: exposes `--jg-text-scale` for text to scale off, and sets `data-reduced-motion` / `data-high-contrast` / `data-colorblind` / `data-captions` for CSS to respond to. Reads a `createAccessibilityStore` and re-renders on change; provides the state to `useAccessibility`.
-- `ColorblindFilters` (function): function ColorblindFilters(): ReactNode — Hidden SVG `<defs>` holding the `feColorMatrix` colorblind filters that `filter: url(#jg-cb-<mode>)` references. Mounted by {@link ColorblindFrame}; export it standalone for a root that applies the filter itself.
-- `ColorblindFrame` (function): function ColorblindFrame({ mode = "none", children, className, style }: ColorblindFrameProps): ReactNode — Apply the player's colour-vision mode to one rendered frame: a box carrying `filter: url(#jg-cb-<mode>)` plus the filter defs it references. Put it around the canvas of a 3D game and nothing else — the filter is one compositor pass over that box's pixels, so HUD, menu and caption text outside it keep the contrast and hues the rest of the UI assumes.
-- `ColorblindFrameProps` (interface): interface ColorblindFrameProps — Props for {@link ColorblindFrame}.
-- `useAccessibility` (function): function useAccessibility(): AccessibilityContextValue — Read the live accessibility state + its store; throws without an {@link AccessibilityProvider} above.
-- `useColorblindMode` (function): function useColorblindMode(store: SettingsStore): ColorblindMode — The live colour-vision mode from a settings store — the same store the settings rows write, so the frame follows the player's choice the moment they pick it. Pass the store the shell owns; read `useAccessibilitySettings().colorblind` instead when a `SettingsProvider` is above the caller.
-- `usePrefersReducedMotion` (function): function usePrefersReducedMotion(): boolean — OS "reduce motion" preference (`prefers-reduced-motion: reduce`) as a live boolean — SSR-safe (defaults false). Use it to seed an accessibility store's `reducedMotion` default.
-- `useReducedMotion` (function): function useReducedMotion(): boolean — True when motion should be skipped: the OS `prefers-reduced-motion` preference, or the nearest {@link AccessibilityProvider}'s `reducedMotion` setting. Works without a provider.
-
-## @jgengine/react/achievements
-
-- `AchievementGallery` (function): function AchievementGallery({ achievements, title = "Achievements", maskSecrets = true, renderIcon, columns = 2, emptyLabel = "No achievements yet.", className, style, }: AchievementGalleryProps): ReactNode — Achievement/trophy gallery — a responsive grid of cards showing unlocked vs. locked state, a progress bar for counter achievements, and a header summary of completion and score. Secret+locked entries mask their name/description. Feed it `useAchievements(tracker)`.
-- `AchievementGalleryProps` (interface): interface AchievementGalleryProps — Props for {@link AchievementGallery}.
-- `AchievementToast` (function): function AchievementToast({ name, description, icon, points, heading = "Achievement Unlocked", className, style, }: AchievementToastProps): ReactNode — The unlock-moment banner — icon, "Achievement Unlocked" heading, name, and optional points. Purely presentational; pair the game's `onUnlock` seam with a toast queue and render one of these per entry.
-- `AchievementToastProps` (interface): interface AchievementToastProps — Props for {@link AchievementToast}.
-- `useAchievements` (function): function useAchievements(tracker: AchievementTracker): readonly AchievementView[] — Subscribe a component to an achievement tracker's live view list. The list keeps a stable identity between changes, so this re-renders only on unlock or progress — not every frame.
-
-## @jgengine/react/browserLifecycle
-
-- `BrowserSuspensionOptions` (interface): interface BrowserSuspensionOptions — Select suspension events; all are observed by default. No callback runs on attachment.
-- `BrowserSuspensionReason` (type): type BrowserSuspensionReason = "blur" | "hidden" | "pointer-lock-lost" — Browser events that can interrupt active play. The caller decides whether to pause.
-- `BrowserSuspensionSources` (interface): interface BrowserSuspensionSources — Event sources for a browser window, an iframe, or a test.
-- `CAPTURE_HOLD_KEY` (const): const CAPTURE_HOLD_KEY: "__jgengineCaptureHold" — Global a capture or drive host sets to `true` at document start. While it holds, window blur and a hidden page do not suspend play: a capture window loses focus and visibility whenever another window on the machine comes forward, and a drive that boots paused proves nothing.
-- `observeBrowserSuspension` (function): function observeBrowserSuspension(onSuspend: (reason: BrowserSuspensionReason) => void, options: BrowserSuspensionOptions = {}, sources: BrowserSuspensionSources | null = typeof window === "undefined" || typeof document === "undefined" ? null : { window, document }): () => void — Observe interruption events until detached. Lock loss requires a preceding lock; SSR attaches nothing. Blur and hidden are ignored while a capture host holds play ({@link CAPTURE_HOLD_KEY}).
-- `useBrowserSuspension` (function): function useBrowserSuspension(onSuspend: (reason: BrowserSuspensionReason) => void, options: BrowserSuspensionOptions = {}): void — Observe browser interruptions while mounted, invoking the latest callback without replacing listeners.
-
-## @jgengine/react/canvasCover
-
-- `CanvasCover` (interface): interface CanvasCover — A page-wide declaration that some surface paints over the whole game canvas.
-- `canvasCover` (const): const canvasCover: CanvasCover — The page's canvas cover. A full-screen menu (or a game's own opaque overlay) holds it; the shell stops drawing the world, its shadow passes and postfx while it is held, and draws again from the untouched scene when it lifts. A translucent scrim or a side panel must not hold it — anything the scene shows through has to keep drawing.
-- `useCanvasCover` (function): function useCanvasCover(declared: boolean): void — Declare the canvas fully covered while `declared` is true, and release on unmount.
-- `useCanvasCovered` (function): function useCanvasCovered(): boolean — True while a surface covers the canvas.
-
-## @jgengine/react/cards
-
-- `CardFace` (function): function CardFace({ rank, suit, faceDown = false, width = 64, height = 90, className, style, children, }: { rank: Rank; suit: Suit; faceDown?: boolean; width?: number; height?: number; className?: string; style?: CSSProperties; children?: ReactNode; }): React.JSX.Element — A single playing-card face: rank + suit pips, or a patterned back when `faceDown`.
-- `CardStack` (function): function CardStack({ pile, zone, cardOf, ...rest }: { pile: CardPileState; zone: string; cardOf: (id: string) => PlayingCard; } & Omit<Parameters<typeof StackedPile>[0], "cards">): React.JSX.Element — `StackedPile` bound to a headless `CardPileState` zone: reads the ordered card ids from `pile.zones[zone]` and resolves each to a `PlayingCard` via `cardOf`.
-- `PlayingCard` (interface): interface PlayingCard — A single card in a stack: an id plus its face and orientation.
-- `RANKS` (const): const RANKS: readonly Rank[] — Ranks in ascending order, ace low.
-- `Rank` (type): type Rank = "A" | "2" | "3" | "4" | "5" | "6" | "7" | "8" | "9" | "10" | "J" | "Q" | "K" — A playing-card rank, ace through king.
-- `SUITS` (const): const SUITS: readonly Suit[] — Suits in canonical order (clubs, diamonds, hearts, spades).
-- `StackedPile` (function): function StackedPile({ cards, faceDown, offsetX = 0, offsetY = 20, cardWidth = 64, cardHeight = 90, layer, dropId, draggableFrom = 0, className, cardClassName, onCardClick, renderOverlay, }: { cards: readonly PlayingCard[]; faceDown?: boolean; offsetX?: number; offsetY?: number; cardWidth?: number; … — An overlapping fan of `CardFace`s. Plain-props: pass `cards`. Optional drag: pass a `layer` to make each card a `DraggableCard`, and `dropId` to wrap the pile in a `DropZone`.
-- `Suit` (type): type Suit = "clubs" | "diamonds" | "hearts" | "spades" — The four French-deck suits.
-- `isRedSuit` (function): function isRedSuit(suit: Suit): boolean — True for the red suits (hearts, diamonds).
-
-## @jgengine/react/characterSheet
-
-- `CharacterSheet` (function): function CharacterSheet({ slots, stats, name, subtitle, portrait, header, title = "Character", variation = "themed", slotSize, onSlotActivate, className, style, }: CharacterSheetProps): ReactNode — Drop-in character sheet: a {@link HudFrame} wrapping an optional name/subtitle/portrait header, the equip-slot {@link Paperdoll}, and the derived-stat {@link StatList}. The game supplies slots, stats, header content, and the activation callback, and owns the window that toggles it (this component does not manage its own open/close). Pure composition over existing primitives and HudTheme tokens.
-- `CharacterSheetProps` (interface): interface CharacterSheetProps — Props for {@link CharacterSheet}.
-- `DefaultEquipSlotId` (type): type DefaultEquipSlotId = | "head" | "chest" | "hands" | "legs" | "feet" | "mainHand" | "offHand" | "ring1" | "ring2" | "trinket" — Slot ids used by {@link defaultEquipLayout}'s convenience arrangement.
-- `EquipSlot` (interface): interface EquipSlot — One named equip slot: a stable `id`, a display `label`, its worn `item` (or `null` = empty), and where it sits.
-- `EquipSlotLayout` (type): type EquipSlotLayout = readonly EquipSlot[] — An ordered set of equip slots that make up a paperdoll. Caller-supplied; see {@link defaultEquipLayout}.
-- `EquipSlotPosition` (type): type EquipSlotPosition = "left" | "right" | "bottom" — Character-sheet / paperdoll composition (#1033 follow-up): a drop-in `<CharacterSheet>` that arranges caller-supplied equip slots as a paperdoll around a portrait and lists derived stats, all inside a {@link HudFrame}. It reuses the atomic slot rendering ({@link EquipmentSlots}) and the shared `--jg-slot-*` / `--jg-accent` HudTheme tokens (#1034) — the game owns which slots and which stats matter (both are props), the skin, and the window that toggles it open/closed. No genre list is baked in; {@link defaultEquipLayout} is a convenience arrangement the game can override wholesale.
-- `Paperdoll` (function): function Paperdoll({ slots, portrait, slotSize = 44, onSlotActivate, className, style }: PaperdollProps): ReactNode — Arranges caller-supplied equip slots as a paperdoll — worn gear in two flanking columns around a center `portrait` (or a silhouette placeholder), with any `bottom` slots in a row beneath it. Each slot reuses the atomic {@link EquipmentSlots} tile (filled icon or themed empty placeholder), carries a label, and is a focusable `role="group"` with an `aria-label`; `onSlotActivate` fires on click/Enter/Space so games can wire drag or an equip picker. Composition and skin stay the game's.
-- `PaperdollProps` (interface): interface PaperdollProps — Props for {@link Paperdoll}.
-- `StatList` (function): function StatList({ stats, className, style }: StatListProps): ReactNode — Renders derived character stats as clean small-caps label→value rows, token-themed. Rows carrying a `group` field are bucketed under a small uppercase header (consecutive same-group rows share one). Pure and prop-driven — the game supplies the rows (from `useEntityStat`/derived values); the engine ships no stat list of its own.
-- `StatListProps` (interface): interface StatListProps — Props for {@link StatList}.
-- `StatRow` (interface): interface StatRow — One derived-stat row. `group` optionally buckets rows under a small header.
-- `defaultEquipLayout` (function): function defaultEquipLayout(items: Partial<Record<DefaultEquipSlotId, SlotItem | null>> = {}): EquipSlot[] — A sensible default paperdoll arrangement — worn armor down the left flank, held gear and jewelry down the right — that the game fills by passing worn items keyed by slot id. Every id is optional; unfilled slots render empty. Games that need a different slot set pass their own {@link EquipSlotLayout}.
-
-## @jgengine/react/chat
-
-- `ChannelTabs` (function): function ChannelTabs({ channels, active, onSelect, className, tabClassName, activeTabClassName, renderTab, }: { channels?: readonly string[]; active: string; onSelect: (channelId: string) => void; className?: string; tabClassName?: string; activeTabClassName?: string; renderTab?: (channelId: string,… — ⚠ undocumented
-- `ChatInput` (function): function ChatInput({ channelId, className, inputClassName, buttonClassName, placeholder, sendLabel, onSent, onRejected, }: { channelId: string; className?: string; inputClassName?: string; buttonClassName?: string; placeholder?: string; sendLabel?: ReactNode; onSent?: (message: ChatMessage) => void;… — ⚠ undocumented
-- `ChatLog` (function): function ChatLog({ channelId, limit, className, messageClassName, ownMessageClassName, renderMessage, }: { channelId: string; limit?: number; className?: string; messageClassName?: string; ownMessageClassName?: string; renderMessage?: (message: ChatMessage) => ReactNode; }): React.JSX.Element — ⚠ undocumented
-- `ChatPanel` (function): function ChatPanel<T extends ChatMessage = ChatMessage>(props: Parameters<typeof ContextChatPanel>[0] | StandaloneChatPanelProps<T>): React.JSX.Element — Chat behavior over a game context or externally supplied server messages.
-- `chatTransportFromSync` (function): function chatTransportFromSync(sync: ChatSync): ChatTransport — Lifts a callback-style ChatSync (e.g. createWsBackend().chatSyncFor(serverId)) into the hook-shaped ChatTransport contract. Create once per sync — outside render or inside useMemo — so subscriptions survive re-renders.
-
-## @jgengine/react/chatBubbles
-
-- `ChatBubble` (interface): interface ChatBubble { id: string; fromUserId: string; body: string; at: number } — ⚠ undocumented
-- `ChatBubblesOptions` (interface): interface ChatBubblesOptions { channelId?: string; ttlMs?: number; limit?: number } — ⚠ undocumented
-- `latestChatBubbles` (function): function latestChatBubbles(messages: readonly ChatMessage[], nowMs: number, ttlMs: number): ChatBubble[] — ⚠ undocumented
-- `useChatBubbles` (function): function useChatBubbles(options?: ChatBubblesOptions): readonly ChatBubble[] — ⚠ undocumented
-- `useEntityChatBubble` (function): function useEntityChatBubble(instanceId: string, options?: ChatBubblesOptions): ChatBubble | null — ⚠ undocumented
-
-## @jgengine/react/coachMarks
-
-- `CoachMark` (function): function CoachMark({ view, positionStyle, onNext, onSkip, nextLabel = "Next", doneLabel = "Got it", skipLabel = "Skip tour", theme, className, style, }: CoachMarkProps): ReactNode — A single coach-mark callout — title, body, an "N of M" counter, a Next/Got-it button, and a Skip-tour link. Presentation-only; position it with `positionStyle` or drop it into {@link CoachMarkHost}. Reskin via {@link CoachMarkTheme}.
-- `CoachMarkHost` (function): function CoachMarkHost({ sequence, resolveAnchor, showBackdrop = true, onComplete, nextLabel, doneLabel, skipLabel, theme, className, style, }: CoachMarkHostProps): ReactNode — Full-screen coach-mark host: watches a sequence, positions the current step's callout beside its anchored element (or centered when unanchored) via `getBoundingClientRect`, and draws an optional dimmed backdrop with a spotlight cutout around the anchor. Next advances, Skip ends the tour — both persist so hints never re-show. Reskin with {@link CoachMarkTheme}.
-- `CoachMarkHostProps` (interface): interface CoachMarkHostProps — Props for {@link CoachMarkHost}.
-- `CoachMarkProps` (interface): interface CoachMarkProps — Props for {@link CoachMark}.
-- `CoachMarkTheme` (interface): interface CoachMarkTheme — Reskin tokens for {@link CoachMarkHost} / {@link CoachMark}.
-- `useCoachMarks` (function): function useCoachMarks(sequence: CoachMarkSequence): CoachMarkView | null — Subscribe to a coach-mark sequence and re-render on every change, returning the current step view (or `null` when the tour is complete or waiting on a gate).
-
-## @jgengine/react/codex
-
-- `CodexPanel` (function): function CodexPanel({ entries, title = "Codex", columns = 3, maskSecrets = true, renderIcon, onSelect, emptyLabel = "Nothing discovered yet.", className, style, }: CodexProps): ReactNode — CodexPanel / bestiary gallery — category tabs, a responsive grid of entry cards (discovered vs. locked, secret entries masked until found), and a header summarizing completion. Feed it `codex.list()`; wire `onSelect` to a detail pane.
-- `CodexProps` (interface): interface CodexProps — Props for {@link CodexPanel}.
-
-## @jgengine/react/components
-
-- `CaptureOdds` (function): function CaptureOdds({ chance, className, fillClassName, }: { chance: number; className?: string; fillClassName?: string; }): React.JSX.Element — ⚠ undocumented
-- `DeathScreen` (function): function DeathScreen({ statId = "health", open, className, children, }: { statId?: string; open?: boolean; className?: string; children?: ReactNode; }): React.JSX.Element — ⚠ undocumented
-- `DialogueBox` (function): function DialogueBox({ dialogue, onChoice, rng, className, lineClassName, speakerClassName, choicesClassName, choiceClassName, checkClassName, }: { dialogue: DialogueDef; onChoice?: (choice: DialogueChoice, result: CheckResult | null) => void; rng?: () => number; className?: string; lineClassName?: … — ⚠ undocumented
-- `DialogueCheck` (interface): interface DialogueCheck { label?: string; modifier: number; dc: number; advantage?: CheckAdvantage } — ⚠ undocumented
-- `DialogueChoice` (interface): interface DialogueChoice { label: string; invoke: {command: string; args?: unknown} | null; check?: DialogueCheck; onSuccess?: {command: string; args?: unknown} | null; onFailure?: {command: string; args?: unknown} | null } — ⚠ undocumented · used by `runDialogueChoice`: Route a {@link DialogueBox} choice through the `features.dialogue` bridge: resolve the choice's invoke (honoring a skill-check `result`), ru…
-- `DialogueDef` (interface): interface DialogueDef { id: string; lines: readonly DialogueLine[] } — ⚠ undocumented
-- `DialogueLine` (type): type DialogueLine = { speaker: string; text: string } | { choices: readonly DialogueChoice[] } — ⚠ undocumented
-- `KeybindRow` (function): function KeybindRow({ action, keys, className, }: { action: string; keys: readonly string[]; className?: string; }): React.JSX.Element — ⚠ undocumented
-- `LevelUpFlash` (function): function LevelUpFlash({ stat, durationMs = 1600, className, children, renderFlash, }: { stat?: string; durationMs?: number; className?: string; children?: ReactNode; renderFlash?: (event: StatLevelUpEvent) => ReactNode; }): React.JSX.Element | null — ⚠ undocumented
-- `QteTrack` (function): function QteTrack({ steps, startedAt, className, stepClassName, activeClassName, doneClassName, }: { steps: readonly QteStep[]; startedAt: number; className?: string; stepClassName?: string; activeClassName?: string; doneClassName?: string; }): React.JSX.Element — ⚠ undocumented
-- `Screen` (function): function Screen({ id, open = true, className, children, }: { id: string; open?: boolean; className?: string; children?: ReactNode; }): React.JSX.Element | null — ⚠ undocumented
-- `SkillCheckBar` (function): function SkillCheckBar({ config, startedAt, className, trackClassName, zoneClassName, markerClassName, renderStatus, }: { config: SkillCheckConfig; startedAt: number; className?: string; trackClassName?: string; zoneClassName?: string; markerClassName?: string; renderStatus?: (result: SkillCheckResu… — ⚠ undocumented
-- `resolveDialogueInvoke` (function): function resolveDialogueInvoke(choice: DialogueChoice, result: CheckResult | null): { command: string; args?: unknown } | null — ⚠ undocumented
-- `runDialogueChoice` (function): function runDialogueChoice(commands: { run(name: string, input?: unknown): unknown }, choice: DialogueChoice, result: CheckResult | null): void — Route a {@link DialogueBox} choice through the `features.dialogue` bridge: resolve the choice's invoke (honoring a skill-check `result`), run that command, and otherwise close the dialogue — the write side that replaces a per-game `onChoice` that hand-rolls `resolveDialogueInvoke` + `dialogue.close`.
-- `useOpenDialogueId` (function): function useOpenDialogueId(): string | null — The id of the dialogue `ctx.game.dialogue` (or a `talkable(id)` prompt) currently has open, or `null`. The read side of the `features.dialogue` bridge — a panel looks the id up in its own dialogue catalog and renders {@link DialogueBox}, with no per-game open/close store.
-
-## @jgengine/react/creditsPanel
-
-- `CreditsPanel` (function): function CreditsPanel({ document, onBack, title = "Credits", backLabel = "Back", open = true, backdrop, className, style, contentClassName, contentStyle, }: CreditsPanelProps): ReactNode — A reachable credits screen: the generated or hand-authored {@link CreditsDocument} in a scrollable panel over the scene, with one back affordance that keyboard and gamepad both reach. The game owns the backdrop and the wording; the block keeps the lines HudTheme-skinned and the exit working.
-- `CreditsPanelProps` (interface): interface CreditsPanelProps — Props for {@link CreditsPanel}.
-
-## @jgengine/react/creditsScreen
-
-- `CreditsScreen` (function): function CreditsScreen({ document, className, style, renderEntry, }: { document: CreditsDocument; className?: string; style?: CSSProperties; renderEntry?: (entry: CreditsEntry, index: number) => ReactNode; }): ReactNode — Renders a {@link CreditsDocument} as headed sections of credited lines. Skinned entirely through the `--jg-*` HudTheme tokens, so it inherits the game's look from the surrounding theme block; pass `renderEntry` to art-direct the line itself. Links render only when an entry carries `href`, and always open in a new tab with `noreferrer`.
-
-## @jgengine/react/cutscene
-
-- `CutsceneLetterbox` (function): function CutsceneLetterbox({ active, caption, onSkip, skipLabel = "Skip", progress, theme, className, style, }: CutsceneLetterboxProps): ReactNode — A drop-in cinematic letterbox overlay: black bars slide in top and bottom while a cutscene is `active`, an optional caption/dialogue line sits above the lower bar with an optional progress line, and a Skip button rides the top bar. Presentation only — it never touches the director; wire `active`/`caption`/`progress`/`onSkip` from {@link useSequenceDirector} and your `onCue` handler. Reskin via {@link CutsceneLetterboxTheme}.
-- `CutsceneLetterboxProps` (interface): interface CutsceneLetterboxProps — Props for {@link CutsceneLetterbox}.
-- `CutsceneLetterboxTheme` (interface): interface CutsceneLetterboxTheme — Reskin tokens for {@link CutsceneLetterbox}.
-- `SequenceDirectorBinding` (interface): interface SequenceDirectorBinding extends SequenceState — The live playback state plus bound controls returned by {@link useSequenceDirector}.
-- `useSequenceDirector` (function): function useSequenceDirector(director: SequenceDirector): SequenceDirectorBinding — Bind a {@link SequenceDirector} to a component: subscribe to its state, and while it is playing run a `requestAnimationFrame` loop that ticks the director each frame off the same injected clock — so a game drops in one hook and the cutscene advances itself. Returns the current playback state (playhead, progress, playing/done) plus bound `play`/`pause`/`skip`/`seek`/`stop`. Cue side effects belong on `director.onCue`, not here — the hook never interprets a cue.
-
-## @jgengine/react/damageDirection
-
-- `DamageDirectionOverlay` (function): function DamageDirectionOverlay({ tracker, colors, showReticle = true, theme, className, style, }: DamageDirectionOverlayProps): ReactNode — A drop-in "hit-from" overlay: transient red (by default) arcs that flare around a center reticle in the direction each recent hit came from and fade out over time, driven entirely by a {@link DamageDirectionTracker}. Opacity and outward push scale with each indicator's eased intensity; color comes from the hit's `kind` (via `colors`) or the theme's danger color. Renders full-screen, `pointer-events: none`, so it never intercepts input — a game drops it into its HUD and calls `tracker.registerHit(...)` on damage. Reskin via {@link DamageDirectionTheme}.
-- `DamageDirectionOverlayProps` (interface): interface DamageDirectionOverlayProps — Props for {@link DamageDirectionOverlay}.
-- `DamageDirectionTheme` (interface): interface DamageDirectionTheme — Reskin tokens for {@link DamageDirectionOverlay}.
-- `useDamageDirection` (function): function useDamageDirection(tracker: DamageDirectionTracker): readonly DamageIndicator[] — Subscribe to a damage-direction tracker and animate. Because indicators fade continuously on a clock (not just on discrete events), this drives a `requestAnimationFrame` loop while any indicator is live and stops when the screen is clear, then wakes again on the next hit. Returns the tracker's current `active()` array (reused between frames — copy if you retain it).
-
-## @jgengine/react/dialogueView
-
-- `DialogueView` (function): function DialogueView({ run, renderPortrait, onChoose, onClose, closeLabel = "Close", theme, className, style, speakerClassName, textClassName, choicesClassName, choiceClassName, }: DialogueViewProps): ReactNode — A drop-in branching-conversation view over a {@link DialogueRun}: renders the current node's speaker name (+ an optional portrait slot), the line, and a list of clickable response choices that advance the conversation — the game passes its dialogue graph and gets working node traversal and choice state with no hand-rolled walk. A choice with a destination advances the run; a terminal choice (or the Close control on a choiceless node) fires `onClose`. Speaker/choice `kind` are free strings surfaced as `data-*` attributes for the game to style; the view never interprets them. HudTheme-skinned via `--jg-*` tokens; reskin further with {@link DialogueViewTheme}.
-- `DialogueViewProps` (interface): interface DialogueViewProps — Props for {@link DialogueView}.
-- `DialogueViewTheme` (interface): interface DialogueViewTheme — Reskin tokens for {@link DialogueView}. Each defaults to a HudTheme `--jg-*` token.
-- `useDialogueRun` (function): function useDialogueRun(run: DialogueRun): DialogueGraphView | null — Subscribe to a {@link DialogueRun} and re-render on every advance / jump / reset, returning the current node view (or `null` if the run's node id is unknown).
-
-## @jgengine/react/display
-
-- `DisplayProfile` (interface): interface DisplayProfile { coarsePointer: boolean; compact: boolean; portrait: boolean } — ⚠ undocumented
-
-## @jgengine/react/dragLayer
-
-- `DragGhost` (function): function DragGhost<T>({ layer, className, style, children, }: { layer: DragLayer<T>; className?: string; style?: CSSProperties; children?: (payload: DragPayload<T>) => ReactNode; }): React.JSX.Element | null — ⚠ undocumented
-- `DragLayer` (interface): interface DragLayer<T> { state: DragLayerState<T>; dragging: boolean; pointRef: RefObject<{x: number; y: number}>; beginDrag(payload: {id: string; value: T; rotation?: Rotation}, event: ReactPointerEvent): void; rotate(quarterTurns?: number): void; setTarget(targ… — ⚠ undocumented · used by `useDragLayer`: Pointer-owned drag state shared by cards and inventory grids.
-- `DragLayerState` (interface): interface DragLayerState<T> — What the drag layer is carrying now: the payload, the pointer and where the drag began.
-- `DragPayload` (interface): interface DragPayload<T> { id: string; value: T; rotation: Rotation } — ⚠ undocumented
-- `DraggableCard` (function): function DraggableCard<T>({ id, value, layer, className, children, onRotate, }: { id: string; value: T; layer: DragLayer<T>; className?: string; children?: ReactNode; onRotate?: boolean; }): React.JSX.Element — ⚠ undocumented
-- `DropInfo` (interface): interface DropInfo<T> { payload: DragPayload<T>; target: string | null; cell: Cell | null; point: {x: number; y: number} } — ⚠ undocumented · used by `useDragLayer`: Pointer-owned drag state shared by cards and inventory grids.
-- `DropZone` (function): function DropZone<T>({ id, layer, className, activeClassName, cellSize, children, }: { id: string; layer: DragLayer<T>; className?: string; activeClassName?: string; cellSize?: number; children?: ReactNode; }): React.JSX.Element — ⚠ undocumented
-- `useDragLayer` (function): function useDragLayer<T>(options?: { onDrop?: (info: DropInfo<T>) => void; }): DragLayer<T> — Pointer-owned drag state shared by cards and inventory grids. Registered DropZones are hit-tested through pointer capture; release finishes once, while cancellation, blur and unmount release ownership. Callers own drop policy, rotation and presentation; pointer movement paints the ghost without rerendering it.
-
 ## @jgengine/react/engineStore
 
 - `EventfulEngineStore` (interface): interface EventfulEngineStore<TEventMap extends object> { on<K extends keyof TEventMap>(eventName: K, listener: (payload: TEventMap[K]) => void): () => void } — ⚠ undocumented
@@ -1865,79 +2055,16 @@
 - `ensureEngineStyles` (function): function ensureEngineStyles(doc: Document | undefined = typeof document === "undefined" ? undefined : document): void — Injects {@link ENGINE_STYLESHEET} into `doc` once. Safe to call repeatedly and during SSR (no-op).
 - `useEngineStyles` (function): function useEngineStyles(): void — Ensures the engine stylesheet is in the document before the calling component paints. Engine primitives call it, so they animate and show interaction states even outside the shell.
 
-## @jgengine/react/entityFrames
-
-- `EntityFrameEntry` (interface): interface EntityFrameEntry — The minimum an entry must carry; games extend it with their own display data.
-- `EntityFrameLayoutOptions` (interface): interface EntityFrameLayoutOptions — Anchoring, culling, and stacking options shared by the layout core and component.
-- `EntityFramePlacement` (interface): interface EntityFramePlacement<E extends EntityFrameEntry> — One entry resolved to a screen placement, ready to render.
-- `EntityFrames` (function): function EntityFrames<E extends EntityFrameEntry>({ entries, project, renderFrame, className, style, anchorTransform = "translate(-50%, -100%)", ...layout }: EntityFramesProps<E>): React.JSX.Element — Absolutely-positioned overlay that renders a caller-composed frame over every on-screen entry. Drop it inside `HudCanvas` (or any positioned ancestor) and feed it fresh `entries`/`project` each frame. Every part carries `data-*` hooks (`data-entity-frames`, `data-entity-frame="<id>"`) for tests and skins.
-- `EntityFramesProps` (interface): interface EntityFramesProps<E extends EntityFrameEntry> extends EntityFrameLayoutOptions — Props for {@link EntityFrames}.
-- `EntityScreenProjection` (interface): interface EntityScreenProjection — World-anchored entity frames — a data-first seam for floating overhead UI (enemy nameplates + health bars, interaction prompts, objective pips) that tracks entities in the 3D world. The game keeps owning its entities: it passes a plain array of `{ id, worldPosition }` entries and a `project` function that turns a world position into a screen point, and composes each frame's markup itself (typically a `KitMeter` plus a name) drawn by the active UI kit. This primitive owns only the reusable behavior: projecting, offsetting, culling entries that are off-screen or behind the camera, and stacking nearer entities above farther ones.
-- `ProjectEntity` (type): type ProjectEntity = ( worldPosition: readonly [number, number, number], ) => EntityScreenProjection | null — Projects a world position to a screen point, or returns `null` to cull the entry entirely (e.g. outside the frustum). Caller-owned so this seam never depends on a specific camera or renderer.
-- `layoutEntityFrames` (function): function layoutEntityFrames<E extends EntityFrameEntry>(entries: readonly E[], project: ProjectEntity, options: EntityFrameLayoutOptions = {}): EntityFramePlacement<E>[] — Pure layout core: projects each entry, drops the ones behind the camera, off-screen (when `viewport` is set), or beyond `maxCount`, and returns the survivors sorted farthest-first so nearer frames render last (on top). Stable for equal depths via `id`. No React, no DOM — unit-testable in isolation.
-
 ## @jgengine/react/fastTravel
 
 - `FastTravelMenu` (function): function FastTravelMenu<TMeta = unknown>({ network, from, onTravel, currentId, title = "Fast Travel", emptyLabel = "No destinations discovered yet.", onClose, className, style, }: FastTravelMenuProps<TMeta>): ReactNode — Fast-travel menu — the discovered-destinations list players pick from: points grouped by region, distance-sorted from `from`, each showing icon, name, and distance, with a header counting discovered vs. total. Selecting a row calls `onTravel`; the current location is flagged and not travelable. Bind it to a `createFastTravelNetwork`.
 - `FastTravelMenuProps` (interface): interface FastTravelMenuProps<TMeta = unknown> — Props for {@link FastTravelMenu}.
 - `useFastTravel` (function): function useFastTravel<TMeta = unknown>(network: FastTravelNetwork<TMeta>): FastTravelNetwork<TMeta> — Subscribe a component to a fast-travel network's discovery changes. Returns the network unchanged; the hook only forces a re-render when a point is discovered or the network is restored, so callers can read `destinations`/`list` in render.
 
-## @jgengine/react/floatingText
-
-- `FloatingText` (function): function FloatingText({ entries, project, styleFor, fontSizePx = 20, className, style, renderEntry, ...layout }: FloatingTextProps): React.JSX.Element — Absolutely-positioned overlay that renders every on-screen floating-text entry as text with its color, current alpha, and pop-in scale. Drop it inside a positioned ancestor (e.g. an `<Html fullscreen>` overlay or `HudCanvas`) and feed it fresh `entries`/`project` each frame. Every part carries `data-*` hooks (`data-floating-text`, `data-floating-text-entry="<id>"`, `data-kind="<kind>"`) for tests and skins.
-- `FloatingTextLayoutOptions` (interface): interface FloatingTextLayoutOptions — Anchoring and culling options shared by the layout core and the component.
-- `FloatingTextPlacement` (interface): interface FloatingTextPlacement — World-anchored floating text — the presentation half of the data-first `@jgengine/core/ui/floatingText` seam. The game keeps owning the simulation: it passes the field's `active()` views plus a `project` function (world → screen), exactly the transport {@link ./entityFrames!EntityFrames} uses, so an R3F game gets it for free from `useWorldProjection`. This component owns only the reusable presentation: projecting each entry, culling ones behind the camera or off-screen, and rendering absolutely-positioned text with the entry's color, current alpha, and pop-in scale — reskinnable per `kind` through `styleFor`.
-- `FloatingTextProps` (interface): interface FloatingTextProps extends FloatingTextLayoutOptions — Props for {@link FloatingText}.
-- `layoutFloatingText` (function): function layoutFloatingText(views: readonly FloatingTextView[], project: ProjectEntity, options: FloatingTextLayoutOptions = {}): FloatingTextPlacement[] — Pure layout core: projects each view, drops the ones behind the camera or (when `viewport` is set) off-screen, and returns the survivors sorted farthest-first so nearer text paints on top. No React, no DOM — unit-testable.
-
 ## @jgengine/react/fogOverlay
 
 - `FogCellRect` (interface): interface FogCellRect { x: number; y: number; width: number; height: number } — ⚠ undocumented
 - `FogPaintSurface` (interface): interface FogPaintSurface { fillStyle: string | CanvasGradient | CanvasPattern; fillRect(x: number, y: number, width: number, height: number): void; clearRect(x: number, y: number, width: number, height: number): void } — ⚠ undocumented
-
-## @jgengine/react/gameCursor
-
-- `GameCursor` (function): function GameCursor({ variant = "brackets", color, gap = 6, thickness = 3, arm = 14, className, style }: GameCursorProps): ReactNode — A game-style selection cursor for a menu: corner brackets, a pointer or a bar that glides to whichever item the keyboard, gamepad or mouse selects, instead of a browser focus ring. Drop it inside the menu's positioned container; it follows the `useMenuNav` current item, then focus, then the hovered control, and hides when nothing is selected. Reduced motion makes it jump.
-- `GameCursorProps` (interface): interface GameCursorProps — Props for {@link GameCursor}.
-- `GameCursorStyle` (type): type GameCursorStyle = "brackets" | "chevron" | "bar" | "diamond" | "frame" — How the cursor marks the selected item.
-- `gameCursorTarget` (function): function gameCursorTarget(scope: ParentNode, hovered: Element | null): Element | null — The item the cursor should sit on inside `scope`, or null.
-
-## @jgengine/react/gameFonts
-
-- `GameFontFace` (interface): interface GameFontFace — One font file a game ships (an OFL or other licensed TTF/WOFF2 bundled with the game).
-- `GameFontPairing` (interface): interface GameFontPairing — The pair of fonts that gives a game its voice: a display face for titles and numbers, a body face for reading.
-- `gameFontStacks` (function): function gameFontStacks(pairing: GameFontPairing): { fontDisplay: string; fontBody: string; fontNumeric: string } — The CSS font stacks for a pairing, with installed fallbacks, ready for a `hudTheme` or a kit: `{ fontDisplay, fontBody, fontNumeric }`.
-- `loadGameFonts` (function): function loadGameFonts(faces: readonly GameFontFace[]): void — Registers `faces` with the document's font set once each and starts loading them. Safe on the server.
-- `useGameFonts` (function): function useGameFonts(fonts: GameFontPairing | readonly GameFontFace[]): void — Loads a game's bundled fonts (its display and body faces) so titles, HUD numbers and menus use them instead of the browser's default sans. Pair it with {@link gameFontStacks} for the CSS.
-
-## @jgengine/react/gameIcons
-
-- `GAME_ICON_NAMES` (const): const GAME_ICON_NAMES: readonly ["sword", "dagger", "axe", "hammer", "bow", "arrow", "staff", "wand", "spear", "crossbow", "gun", "bomb", "shield", "helmet", "chestplate", "boots", "gauntlet", "ring", "amulet", "cloak", "backpack", "torch", "potionRed", "potionBlue", "scroll", "tome", "meat", "bread… — ⚠ undocumented
-- `GameIcon` (function): function GameIcon({ name, size = 24, color, className, }: { name: GameIconName; size?: number; color?: string; className?: string; }): React.JSX.Element — ⚠ undocumented
-- `GameIconName` (type): type GameIconName = (typeof GAME_ICON_NAMES)[number] — ⚠ undocumented · used by `iconForAction`: Control glyph for a semantic action name (`hardDrop`, `sprint`, `shiftLeft`), or null when no rule matches.
-- `iconForAction` (function): function iconForAction(action: string): GameIconName | null — Control glyph for a semantic action name (`hardDrop`, `sprint`, `shiftLeft`), or null when no rule matches.
-- `iconForItemId` (function): function iconForItemId(itemId: string): GameIconName | null — ⚠ undocumented
-- `isGameIconName` (function): function isGameIconName(value: string): value is GameIconName — ⚠ undocumented
-
-## @jgengine/react/gameSlider
-
-- `GameSlider` (function): function GameSlider({ value, min = 0, max = 1, step = 0.01, onChange, onCommit, label, valueText, variant = "groove", pips = 10, disabled = false, className, style, }: GameSliderProps): ReactNode — A slider drawn as part of the game (a cut groove with a knurled knob, or lit pips), never the browser's range input. Full keyboard (arrows, Page Up/Down, Home/End), pointer drag and screen reader support through `role="slider"`.
-- `GameSliderProps` (interface): interface GameSliderProps — Props for {@link GameSlider}.
-- `snapSliderValue` (function): function snapSliderValue(raw: number, min: number, max: number, step: number): number — Snaps `raw` to `step` from `min` and clamps it to the range, without float noise.
-
-## @jgengine/react/gameViewport
-
-- `GameViewportProvider` (function): function GameViewportProvider({ platforms, className, style, children, }: { platforms?: readonly HudPlatform[]; className?: string; style?: CSSProperties; children?: ReactNode; }): React.JSX.Element — Provides the shared game viewport layout to everything it wraps. Mount it once around the whole game presentation (world, HUD, controls, system UI) so every subsystem reads one coordinated geometry and registers its rect for collision detection. Publishes live `--jg-viewport-*` / `--jg-visual-viewport-*` / `--jg-safe-*` CSS variables on its root.
-- `LayoutRegionSpec` (type): type LayoutRegionSpec = Omit<LayoutRegion, "rect"> — A region descriptor without its measured rectangle — the caller supplies geometry through `useRegisterLayoutRegion`.
-- `RegionRecord` (interface): interface RegionRecord extends LayoutRegion — A region registration: the full `LayoutRegion` plus the live element (dev outlining), rect measured by the shell/react side.
-- `ViewportMetrics` (interface): interface ViewportMetrics — Live viewport rectangles: the layout viewport and the visible `visualViewport`.
-- `useGameLayoutMode` (function): function useGameLayoutMode(): GameLayoutMode — The resolved explicit composition mode (`desktop-wide` … `mobile-portrait`).
-- `useGameOrientation` (function): function useGameOrientation(): LayoutOrientation — The live device orientation.
-- `useGameViewportLayout` (function): function useGameViewportLayout(): GameViewportLayout — The live shared viewport layout. Returns a neutral default outside a `GameViewportProvider` so it never throws in previews.
-- `useLayoutCollisions` (function): function useLayoutCollisions(): readonly LayoutCollision[] — Live forbidden/warned region collisions (empty outside a provider).
-- `useRegisterLayoutRegion` (function): function useRegisterLayoutRegion(spec: LayoutRegionSpec, ref: RefObject<HTMLElement | null>, enabled = true): void — Register the element behind `ref` as a layout region and keep its measured rectangle live (ResizeObserver + viewport changes). No-op outside a `GameViewportProvider`, so a component using it still works in isolation.
-- `useReservedControlZones` (function): function useReservedControlZones(): readonly LayoutRect[] — Rectangles reserved by touch controls and system UI — HUD placement should avoid these.
-- `useViewportMetrics` (function): function useViewportMetrics(): ViewportMetrics — Live visible viewport, tracking `window.visualViewport` (mobile browser chrome, pinch-zoom) with a layout-viewport fallback.
 
 ## @jgengine/react/hooks
 
@@ -1994,117 +2121,6 @@
 - `useWorldInvites` (function): function useWorldInvites(): WorldInvite[] — ⚠ undocumented
 - `useWorldItems` (function): function useWorldItems(): readonly WorldItemRecord[] — Live dropped-item records: the returned list keeps one identity until an item spawns, is picked up or is removed. `worldItem.list()` allocates a new array per call and the shared store signal fires on every pose write, so a raw read re-rendered every marker each frame (#2175). A marker reads its own live pose imperatively (useFrame).
 
-## @jgengine/react/i18n
-
-- `I18nProvider` (function): function I18nProvider({ i18n, children }: { i18n: I18n; children: ReactNode }): ReactNode — Provide an {@link I18n} instance to the tree so `useT`/`useLocale` can read it.
-- `Trans` (function): function Trans({ k, params }: { k: string; params?: TParams }): ReactNode — Render a translated message inline: `<Trans k="hud.score" params={{ value }} />`.
-- `useI18n` (function): function useI18n(): I18n — Read the current {@link I18n} from context; throws when no {@link I18nProvider} is above.
-- `useLocale` (function): function useLocale(): Locale — Subscribe to the active locale — re-renders on `setLocale`.
-- `usePlural` (function): function usePlural(): (key: string, count: number, params?: TParams) => string — Return the plural-aware translator bound to the current locale.
-- `useT` (function): function useT(): (key: string, params?: TParams) => string — Return the translator bound to the current locale; the component re-renders when `setLocale` is called, so returned strings stay live.
-
-## @jgengine/react/iconTreatment
-
-- `IconSchool` (type): type IconSchool = | "fire" | "frost" | "arcane" | "nature" | "holy" | "tech" | "shadow" | "steel" | "neutral" — `IconTreatment` (#1035): a procedural painted-icon face — a glyph over a school-keyed radial gradient, with a vignette inset shadow, a top gloss highlight, and optional count/keycap badges. Turns the engine's flat white `GameIcon` glyphs (and game-icons.net SVGs) into painted ability / item icons that read as AAA slots, not debug UI. Theme-aware: the frame reads the `--jg-slot-*` and `--jg-accent` `HudTheme` tokens (#1034), so a theme change re-skins every treated icon.
-- `IconTreatment` (function): function IconTreatment({ icon, glyph, school = "neutral", size = 44, count, keycap, active = false, className, style, }: IconTreatmentProps): React.JSX.Element — A painted icon face — gradient + vignette + gloss behind a glyph, with count/keycap badges.
-- `IconTreatmentProps` (interface): interface IconTreatmentProps — Props for {@link IconTreatment}.
-- `schoolForAction` (function): function schoolForAction(action: string): IconSchool — Infers an {@link IconSchool} from an action id (keyword match); `neutral` when nothing matches.
-- `schoolForItem` (function): function schoolForItem(itemId: string): IconSchool — Infers an {@link IconSchool} from an item id (keyword match); `neutral` when nothing matches.
-- `treatedActionIcon` (function): function treatedActionIcon(action: { id?: string; label?: string; icon?: ReactNode }, size = 40): ReactNode — A ready-made `ActionButton` `renderIcon` that paints the action's `GameIcon` with a treatment.
-- `treatedItemIcon` (function): function treatedItemIcon(itemId: string, options: { size?: number; count?: number; keycap?: string } = {}): ReactNode — Maps an item id to a treated icon — resolves a `GameIcon` glyph and an inferred school.
-
-## @jgengine/react/iconsPreview
-
-- `IconsPreview` (function): function IconsPreview({ className }: { className?: string }): React.JSX.Element — Renders the school-gradient row and a treated-icon hotbar — the deterministic #1035 fixture.
-
-## @jgengine/react/identity
-
-- `BetterAuthSessionState` (interface): interface BetterAuthSessionState { data: {user: BetterAuthUserShape} | null | undefined; isPending: boolean } — ⚠ undocumented
-- `BetterAuthUserShape` (interface): interface BetterAuthUserShape { id: string; name?: string | null; email?: string | null; image?: string | null } — ⚠ undocumented
-- `ClerkUserShape` (interface): interface ClerkUserShape { id: string; fullName?: string | null; username?: string | null; imageUrl?: string | null; primaryEmailAddress?: {emailAddress: string} | null; createdAt?: Date | null; lastSignInAt?: Date | null } — ⚠ undocumented
-- `ClerkUserState` (interface): interface ClerkUserState { isLoaded: boolean; isSignedIn: boolean | undefined; user: ClerkUserShape | null | undefined } — ⚠ undocumented
-- `GameIdentityProvider` (function): function GameIdentityProvider({ source, children, }: { source: IdentitySource; children?: ReactNode; }): React.JSX.Element — ⚠ undocumented
-- `IdentitySource` (interface): interface IdentitySource { session: AuthSession | null; isLoading: boolean; signOut?: () => void } — ⚠ undocumented
-- `RequireSession` (function): function RequireSession({ fallback, loading, children, }: { fallback?: ReactNode; loading?: ReactNode; children?: ReactNode; }): React.JSX.Element — ⚠ undocumented
-- `SignOutButton` (function): function SignOutButton({ className, children, }: { className?: string; children?: ReactNode; }): React.JSX.Element | null — ⚠ undocumented
-- `UserBadge` (function): function UserBadge({ className, avatarClassName, nameClassName, renderBadge, }: { className?: string; avatarClassName?: string; nameClassName?: string; renderBadge?: (session: AuthSession) => ReactNode; }): React.JSX.Element | null — ⚠ undocumented
-- `betterAuthIdentity` (function): function betterAuthIdentity(state: BetterAuthSessionState, options?: { signOut?: () => void }): IdentitySource — ⚠ undocumented
-- `clerkIdentity` (function): function clerkIdentity(state: ClerkUserState, options?: { signOut?: () => void }): IdentitySource — ⚠ undocumented
-- `guestIdentity` (function): function guestIdentity(seed?: string): IdentitySource — ⚠ undocumented
-- `useAuthedPlayer` (function): function useAuthedPlayer(options?: { guestSeed?: string }): PlayerIdentity | null — ⚠ undocumented
-- `useSession` (function): function useSession(): IdentitySource — ⚠ undocumented
-
-## @jgengine/react/inputDevice
-
-- `InputDevice` (type): type InputDevice = "keyboard" | "gamepad" | "touch" — The device the player last used: drives which glyph a prompt shows.
-- `actionGlyph` (function): function actionGlyph(map: ActionCodesMap, action: string, device: InputDevice, glyphSet: GamepadGlyphName = "xbox"): string | null — The glyph to show for `action` on `device`: the first keyboard/mouse code on keyboard, the first pad code on gamepad (in `glyphSet`'s names), `"Tap"` on touch. Null when nothing is bound for that device.
-- `getInputDevice` (function): function getInputDevice(): InputDevice — The device the player last used, without subscribing.
-- `setInputDevice` (function): function setInputDevice(device: InputDevice): void — Report the device the player just used. The shell's own input calls it; a game rarely needs to.
-- `useInputDevice` (function): function useInputDevice(): InputDevice — The device the player is using right now — keyboard/mouse, gamepad or touch — switching the moment they touch another one. Prompts use it to show `E`, `A` or a tap target.
-
-## @jgengine/react/interactionPrompt
-
-- `InteractionPrompt` (function): function InteractionPrompt({ registry, playerPosition, theme, accentFor, keyFor, gaugeProgress, anchor = "bottom-center", zIndex = 40, className, style, }: InteractionPromptProps): ReactNode — A screen-anchored "Press E to …" interaction callout that renders the active prompt of a {@link PromptRegistry}. It subscribes to the registry and — when given `playerPosition` — re-resolves as the hero moves, showing the nearest in-range interactable and switching to a closer/higher-priority one as they cross radii. Each display kind renders as itself: a `keybind` shows a key cap plus its label ("Press [E] Open"), a `gauge` shows a hold bar filling with `gaugeProgress`, and a `label` shows plain text. Presentation only — the registry never branches on a prompt's meaning; the game colors each via `accentFor` and maps action ids to key glyphs via `keyFor`. HudTheme-skinnable through `--jg-accent` and {@link InteractionPromptTheme}.
-- `InteractionPromptAnchor` (type): type InteractionPromptAnchor = "bottom-center" | "top-center" | "center" — Where the callout sits over the scene.
-- `InteractionPromptProps` (interface): interface InteractionPromptProps — Props for {@link InteractionPrompt}.
-- `InteractionPromptTheme` (interface): interface InteractionPromptTheme — Reskin tokens for {@link InteractionPrompt}.
-- `useInteractionPrompt` (function): function useInteractionPrompt(registry: PromptRegistry, playerPosition: PromptPoint): PositionedPrompt | null — Subscribe to a {@link PromptRegistry} and re-`resolve` it whenever the player moves, returning the prompt to draw right now — or `null` when the player is out of range of every interactable. The registry notifies only on active-prompt *changes*, so this re-renders on transitions rather than every frame the hero moves. Feed it the player's `{ x, z }` position each frame; identical positions do no work.
-
-## @jgengine/react/keyHint
-
-- `KeyHint` (function): function KeyHint({ children, className, style, }: { children: ReactNode; className?: string; style?: CSSProperties; }): React.JSX.Element | null — Wraps a keyboard/mouse control hint (a cap plus what it does). Renders nothing on coarse-pointer devices — a touchscreen has no keyboard, so the hint is noise and only fights the on-screen controls for space. The `data-jg-kbd-hint` marker is also hidden by an engine stylesheet as a hydration-safe backstop, so a hint stays hidden on touch even before this component's effect runs. Put the touch equivalent (a `TouchControls` dock, a tappable button) on the coarse branch instead.
-- `Keycap` (function): function Keycap({ children, className, style, }: { children: ReactNode; className?: string; style?: CSSProperties; }): React.JSX.Element — A single keyboard/mouse key rendered as a cap. Tagged `data-jg-kbd` so tooling can find it; on its own it stays visible (hiding a lone cap would strand its label). Wrap keys + their meaning in `KeyHint` to make the whole hint vanish on touch.
-
-## @jgengine/react/killFeed
-
-- `KillFeed` (function): function KillFeed({ ticker, kindStyles, theme, iconSize = 18, animate = true, zIndex = 40, className, style, }: KillFeedProps): ReactNode — A vertical event/kill-feed ticker: renders an {@link EventTicker}'s recent entries as a stack of rows, newest on top, each with its `fade` `0..1` mapped to opacity so entries dim and drop as they age out. Each row shows an optional per-kind (or per-entry) {@link GameIcon} and a per-kind accent color from `kindStyles`, styled with HudTheme tokens. Presentation only: all capping/timing lives in the core ticker, and the free-string `kind`/`text`/`icon` are never interpreted here — a game colors and icons each variant via `kindStyles`.
-- `KillFeedKindStyle` (interface): interface KillFeedKindStyle — Per-`kind` styling for a kill-feed row — accent color and an optional icon.
-- `KillFeedProps` (interface): interface KillFeedProps — Props for {@link KillFeed}.
-- `KillFeedTheme` (interface): interface KillFeedTheme — Reskin tokens for {@link KillFeed}.
-- `useEventTicker` (function): function useEventTicker(ticker: EventTicker, animate = true): EventTickerView[] — Subscribe to an event ticker and re-render it on an animation frame (unless the game already ticks it), returning the live entries newest-first with `fade` applied. Driving the frame loop is what makes entries visibly fade and drop as they age out.
-
-## @jgengine/react/kitFlow
-
-- `KitBanner` (function): function KitBanner({ cue, title, subtitle, tone, ms = 2400, initial = false, className, style }: KitBannerProps): ReactNode — A big moment banner in the active kit — "Day 2 · Gates open", "Wave 3", "Run started" — shown for a couple of seconds whenever `cue` changes, so phase changes read as transitions instead of a toast.
-- `KitBannerProps` (interface): interface KitBannerProps — Props for {@link KitBanner}.
-- `KitDeadlineStage` (type): type KitDeadlineStage = "calm" | "warn" | "urgent" — How urgent a deadline is: `calm` above half, `warn` below half, `urgent` in the last stretch.
-- `KitObjective` (function): function KitObjective({ title, eyebrow, steps, distance, bearing, deadline, urgentAt, hint, hintAfter = 12, progressKey, prompt, className, style, }: KitObjectiveProps): ReactNode — The one card that tells the player what to do next: a short goal, distance with a direction arrow, an optional checklist and countdown, and the next action as a device-correct prompt. The countdown warns before it runs out (warn tone under half, urgent tone and a cue near the end) and a hint appears when the player has been stuck for a while, so a run never fails without warning and a new player is never left guessing.
-- `KitObjectiveDeadline` (interface): interface KitObjectiveDeadline — A countdown on an objective.
-- `KitObjectiveProps` (interface): interface KitObjectiveProps — Props for {@link KitObjective}.
-- `KitObjectiveStep` (interface): interface KitObjectiveStep — One line of a {@link KitObjective} checklist.
-- `KitResultAction` (interface): interface KitResultAction — One choice on a {@link KitResultScreen}.
-- `KitResultScreen` (function): function KitResultScreen({ open, tone = "neutral", eyebrow, title, summary, stats, actions, onAction, onBack, className, style }: KitResultScreenProps): ReactNode — The end of a run, a day or a level, in the active kit: a scrim, a dialog with what happened, a short tally and the next choices, navigable by keyboard, gamepad and touch. It animates in and out with the kit's motion and plays its open/close cues, so a loss reads as a moment instead of an abrupt cut.
-- `KitResultScreenProps` (interface): interface KitResultScreenProps — Props for {@link KitResultScreen}.
-- `KitResultStat` (interface): interface KitResultStat — One row of a {@link KitResultScreen} tally.
-- `deadlineStage` (function): function deadlineStage(deadline: KitObjectiveDeadline, urgentAt?: number): KitDeadlineStage — The stage of a deadline: `urgent` at or under `urgentAt` seconds (default the larger of 10 s and a quarter of the total), `warn` under half, otherwise `calm`.
-- `formatCountdown` (function): function formatCountdown(seconds: number): string — `m:ss` for a countdown in seconds.
-
-## @jgengine/react/kitFrame
-
-- `KIT_MATERIALS` (const): const KIT_MATERIALS: Readonly<Record<KitMaterial, KitMaterialLook>> — The built-in materials. A game reads one to match its own pieces (`KIT_MATERIALS.wood.ink`), or passes `tint` / `edge` to a material `KitPanel` or `KitButton` to recolour one.
-- `KitCut` (type): type KitCut = "box" | "chamfer" | "notch" | "slant" | "tab" | "banner" | "shield" | "ticket" | "torn" | "hex" — The frame's silhouette. Every cut is a clip path in pixels, so corners stay the same size at any panel size.
-- `KitFrameLook` (interface): interface KitFrameLook — How a material surface looks: what it is made of, its silhouette and rim. Give `material` to a `KitPanel` or `KitButton` and it draws as that object instead of in the kit's own language.
-- `KitMaterial` (type): type KitMaterial = "steel" | "brass" | "hull" | "wood" | "stone" | "paper" | "enamel" | "glass" | "carbon" | "leather" — What a frame is made of. Every material is a generated texture (SVG turbulence and lighting, no downloaded art) under real lighting, so a panel reads as an object in the game's world instead of a web page's flat or blurred rectangle.
-- `KitMaterialLook` (interface): interface KitMaterialLook — Everything a material decides: its texture, base colour, lighting, text colour and default edge.
-- `kitCutPath` (function): function kitCutPath(cut: KitCut, depth = 14): string — The clip path for a cut at a corner size of `depth` pixels.
-- `kitFrameVars` (function): function kitFrameVars({ material = "steel", cut = "chamfer", depth = 14, tint, edge, edgeWidth = 2, glow, padding, }: Partial<KitFrameLook> = {}): CSSProperties — The CSS variables that dress a material frame. A material `KitPanel`/`KitButton` sets them; spread them on your own element (with `data-jg-frame` on it and `data-jg-frame-face` on its single child) to dress one by hand. Add `data-shadow` for the cast shadow or `data-glow` for the lit ring. It also installs the frame stylesheet, so a hand-dressed element looks right even when no material panel has mounted yet (a HUD that starts in play, with no menu before it).
-
-## @jgengine/react/kitFramesPreview
-
-- `KitFramesPreview` (function): function KitFramesPreview({ className }: { className?: string }): ReactNode — Contact sheet for the game-UI building blocks: every material and cut, game buttons with each cursor, and the drawn sliders, over a sunset backdrop.
-
-## @jgengine/react/liveBind
-
-- `LiveText` (function): function LiveText({ get, format, className, style, }: { get: () => number | string; format?: (value: number | string) => string; className?: string; style?: CSSProperties; }): React.JSX.Element — ⚠ undocumented
-- `frameBindSubscriberCount` (function): function frameBindSubscriberCount(): number — ⚠ undocumented
-- `subscribeFrameBind` (function): function subscribeFrameBind(subscriber: FrameSubscriber): () => void — ⚠ undocumented
-- `useFrameBind` (function): function useFrameBind<T, E extends Element = Element>(ref: { current: E | null }, get: () => T, apply: (value: T, element: E) => void): void — ⚠ undocumented
-
-## @jgengine/react/loadingScreen
-
-- `LoadingScreen` (function): function LoadingScreen({ progress, title = "Loading", tips, tipIntervalMs = 6000, ready = false, onReady, onSkip, backdrop, scrim = "blur", children, open = true, reducedMotion, onClosed, className, style, contentClassName, contentStyle, }: LoadingScreenProps): ReactNode — A loading screen with a progress bar and a rotating tip. Progress is a real 0–1 value from the game's loader (or indeterminate), tips come from the game and cycle deterministically, and a `ready` screen accepts any key, a gamepad A/Cross or a click. It reads HudTheme tokens and keeps a live scene visible behind a blur, so loading a level looks like the game rather than a blank page.
-- `LoadingScreenProps` (interface): interface LoadingScreenProps — Props for {@link LoadingScreen}.
-
 ## @jgengine/react/map
 
 - `Compass` (function): function Compass({ facingYaw, center, markers, width = 340, fov = (Math.PI * 2) / 3, kindStyles = DEFAULT_MARKER_KINDS, className, }: CompassProps): ReactNode — Horizontal compass strip centered on the player's facing direction, with the eight cardinals and optional marker pips from static views, an external source, or a native `MarkerSet`.
@@ -2135,34 +2151,6 @@
 - `useFog` (function): function useFog(fog: FogField): ReturnType<FogField["cells"]> — ⚠ undocumented
 - `useMarkers` (function): function useMarkers<TMeta = unknown>(markers: MarkerSet<TMeta>): readonly MapMarker<TMeta>[] — Subscribe to a native marker set or external marker source, or read a static marker array.
 
-## @jgengine/react/objectiveBanner
-
-- `ObjectiveBannerHost` (function): function ObjectiveBannerHost({ controller, theme, kindThemes, animate = true, dismissOnClick = false, zIndex = 50, className, style, }: ObjectiveBannerHostProps): ReactNode — A full-screen overlay that renders an {@link ObjectiveBannerController} as the classic transient centered title stamp — "WAVE 3", "VICTORY", "OBJECTIVE COMPLETE" — flying in, holding, and fading out. It subscribes to the model, drives `advance()` on an animation frame (unless the game ticks it), and maps the current banner's phase + progress to opacity/scale/translate. Reskin the base look with {@link ObjectiveBannerTheme} and color each variant via `kindThemes` keyed on the game-owned `kind`. Presentation only: all timing and queueing live in the core model, and `kind` is never interpreted here.
-- `ObjectiveBannerHostProps` (interface): interface ObjectiveBannerHostProps — Props for {@link ObjectiveBannerHost}.
-- `ObjectiveBannerTheme` (interface): interface ObjectiveBannerTheme — Reskin tokens for {@link ObjectiveBannerHost}. Per-`kind` overrides layer on top.
-- `useObjectiveBanner` (function): function useObjectiveBanner(controller: ObjectiveBannerController, animate = true): ObjectiveBannerView | null — Subscribe to a banner controller, drive its clock on an animation frame (unless the game already ticks it), and return the banner to draw right now — or `null` when idle. Re-renders every frame while a banner is animating.
-
-## @jgengine/react/panels
-
-- `PanelHost` (function): function PanelHost({ manager, render, panels, variation, shape, width, zIndexBase = 40, className, windowClassName, windowStyle, bodyStyle, onInteract, }: { manager: PanelsManager; /** Called as windows open and close (`cue` is `panel:<id>`) — the seam a UI sound system hooks. */ onInteract?: HudInt… — Renders the open panels of a {@link usePanels} manager as absolutely-positioned, draggable, closable windows in z-order — the WoW window layer. Each window uses {@link HudFrame} chrome, is dragged by its title bar, raises focus on pointer-down, and gets its content from the `render` prop (or a `panels` map). Accessible: every window is a `role="dialog"` with an `aria-label` and a focusable close button; ESC-close is wired by the manager. Unskinned — art-direct via `HudTheme` tokens and the `variation`.
-- `PanelKeyResult` (interface): interface PanelKeyResult — React chrome over the headless panel/window model (`@jgengine/core/ui/panelModel`) — the toggleable, draggable, z-stacked windows a WoW-style UI is made of (B for bag, C for character, ESC to close). `usePanels` is the DATA/HOOK layer (open/close/toggle/focus + a keybind listener), `PanelHost` renders the open windows in z-order, and `Window` is a standalone one-off window. All unskinned and token-driven: games reskin via `HudTheme` tokens and by swapping the `HudFrame` variation.
-- `PanelsManager` (interface): interface PanelsManager — The live panel manager returned by {@link usePanels} and consumed by {@link PanelHost}.
-- `UsePanelsOptions` (interface): interface UsePanelsOptions — Options for {@link usePanels}.
-- `Window` (function): function Window({ title, ariaLabel, closable = true, onClose, x, y, onMove, z, width, variation, shape, className, style, bodyStyle, cue, onInteract, children, }: { title: ReactNode; ariaLabel?: string; closable?: boolean; /** Feedback cue name, rendered as `data-jg-cue` and passed to `onInteract`. … — A single standalone window — title bar, close button, and title-bar drag over {@link HudFrame} chrome — usable without the {@link usePanels} manager for a one-off dialog. Position is uncontrolled (seeded by `x`/`y`) unless both `x`/`y` and `onMove` are supplied, in which case the caller owns placement. Accessible: `role="dialog"` with an `aria-label` and a focusable close button.
-- `panelKeyAction` (function): function panelKeyAction(defs: readonly PanelDef[], state: PanelState, event: { code?: string; key?: string }): PanelKeyResult — Pure keybind resolver for a panel set: ESC resolves to `closeTop` when a closable window is open, and any other key routes through {@link panelByHotkey} (trying `code` then `key`) to a `toggle`. Returns the intent without touching the DOM, so it unit-tests headless and `usePanels` is a thin shell over it.
-- `usePanels` (function): function usePanels(defs: readonly PanelDef[], options?: UsePanelsOptions): PanelsManager — The DATA/HOOK layer: wrap the core panel model in state and install a window keybind listener — per-panel hotkeys toggle their window and ESC closes the topmost closable one. Hotkeys are ignored while the player is typing in an input/textarea/contenteditable. The listener is cleaned up on unmount and SSR-safe (armed in an effect). Feed the returned manager to {@link PanelHost}, or drive a bespoke window layout from it directly.
-
-## @jgengine/react/photoMode
-
-- `PhotoModeControls` (function): function PhotoModeControls({ store, onCapture, className, style }: PhotoModeControlsProps): ReactNode — Photo-mode toolbar — a hide/show-HUD toggle, a capture button, and an exit button, bound to a `createPhotoModeStore`. Presentation-only: the game wires `onCapture` to shell `captureCanvas`/`downloadImage` and reads `hideHud` to drop its gameplay HUD.
-- `PhotoModeControlsProps` (interface): interface PhotoModeControlsProps — Props for {@link PhotoModeControls}.
-- `usePhotoMode` (function): function usePhotoMode(store: PhotoModeStore): PhotoModeState — Subscribe to a photo-mode store's live state.
-
-## @jgengine/react/presence
-
-- `PresenceState` (type): type PresenceState = "open" | "closed" | "unmounted" — Mount state for an element with an exit transition: `closed` keeps it mounted until the exit ends.
-- `useMountPresence` (function): function useMountPresence(open: boolean, exitMs: number): PresenceState — Keeps an element mounted for `exitMs` after `open` turns false, so a `data-state="closed"` exit animation can play. Returns `"unmounted"` once the exit has finished (or at once when `exitMs` is 0).
-
 ## @jgengine/react/preview
 
 - `GamePreviewComponent` (type): type GamePreviewComponent = ComponentType<GamePreviewProps> — ⚠ undocumented
@@ -2187,66 +2175,14 @@
 
 - `StreetGeometryPreview` (function): function StreetGeometryPreview({ className }: { className?: string }): React.JSX.Element — Deterministic close-up gallery of the shared road/junction mesh seam.
 
-## @jgengine/react/rotateDevice
-
-- `RotateDeviceScreen` (function): function RotateDeviceScreen({ title = "Turn your device", description, requiredOrientation = "landscape", accent = "var(--jg-accent, #8ea2ff)", icon, className, style, }: { /** Short headline. */ title?: string; /** One concise explanatory line. Defaults from `requiredOrientation`. */ description?: … — Full-viewport, non-dismissible rotate-device gate shown when a game requires an orientation the device isn't in.
-
-## @jgengine/react/scoreboard
-
-- `MedalToken` (type): type MedalToken = "gold" | "silver" | "bronze" — The medal tokens {@link medalFor} emits for the podium.
-- `Scoreboard` (function): function Scoreboard({ entries, rows, options, title, scoreLabel = "Score", nameFor, formatScore, medalIcon, theme, className, style, }: ScoreboardProps): ReactNode — A reskinnable ranked-score table for the {@link rankLeaderboard} selector: a rank column (medal icon/color for the top three via {@link medalFor}, otherwise the number), a name column, and a score column. The local player's row (`isLocal`) is washed and accented so "you" stands out. Feed it already-ranked `entries`, or raw `rows` plus `options` and it ranks them for you. All colors and spacing come from {@link ScoreboardTheme} / HudTheme `--jg-*` tokens — the component reads the model and never styles by game meaning.
-- `ScoreboardProps` (interface): interface ScoreboardProps — Props for {@link Scoreboard}. Pass either `entries` (already ranked) or `rows` + `options`.
-- `ScoreboardTheme` (interface): interface ScoreboardTheme — Reskin tokens for {@link Scoreboard}. Every color/spacing value reads a `--jg-*` token first.
-
-## @jgengine/react/scrollRail
-
-- `ScrollRail` (function): function ScrollRail({ children, label, className, style, gap = 6 }: ScrollRailProps): React.JSX.Element — Native horizontal scrolling with overflow-only navigation and automatic focus reveal. Callers own item markup, selection, keyboard semantics, and skin through HudTheme or style.
-- `ScrollRailProps` (interface): interface ScrollRailProps — Props for caller-composed horizontally scrolling controls.
-
 ## @jgengine/react/selectSnapshot
 
 - `SelectCache` (type): type SelectCache<TSnapshot, TSelected> = { ready: boolean; snapshot: TSnapshot; value: TSelected; } — ⚠ undocumented
-
-## @jgengine/react/social
-
-- `AddFriendButton` (function): function AddFriendButton({ toUserId, className, children, onRequested, onRejected, }: { toUserId: string; className?: string; children?: ReactNode; onRequested?: (requestId: string) => void; onRejected?: (reason: string) => void; }): React.JSX.Element | null — ⚠ undocumented
-- `EmoteWheel` (function): function EmoteWheel({ emotes, radius, open = true, className, emoteClassName, onPlayed, onRejected, renderEmote, }: { emotes: readonly string[]; radius?: number; open?: boolean; className?: string; emoteClassName?: string; onPlayed?: (emoteId: string) => void; onRejected?: (reason: string) => void; … — ⚠ undocumented
-- `FriendRequestsList` (function): function FriendRequestsList({ className, rowClassName, acceptClassName, declineClassName, emptyState, renderRequest, }: { className?: string; rowClassName?: string; acceptClassName?: string; declineClassName?: string; emptyState?: ReactNode; renderRequest?: (request: FriendRequestEntry) => ReactNode… — ⚠ undocumented
-- `FriendRow` (function): function FriendRow({ friend, className, dotClassName, children, }: { friend: FriendEntry; className?: string; dotClassName?: string; children?: ReactNode; }): React.JSX.Element — ⚠ undocumented
-- `FriendsList` (function): function FriendsList({ className, rowClassName, dotClassName, emptyState, renderFriend, }: { className?: string; rowClassName?: string; dotClassName?: string; emptyState?: ReactNode; renderFriend?: (friend: FriendEntry) => ReactNode; }): React.JSX.Element — ⚠ undocumented
-- `InviteToWorldButton` (function): function InviteToWorldButton({ toUserId, target, className, children, onInvited, onRejected, }: { toUserId: string; target: WorldInviteTarget; className?: string; children?: ReactNode; onInvited?: (inviteId: string) => void; onRejected?: (reason: string) => void; }): React.JSX.Element | null — ⚠ undocumented
-- `JoinByCode` (function): function JoinByCode({ onJoin, className, inputClassName, buttonClassName, placeholder, children, }: { onJoin: (code: string) => void; className?: string; inputClassName?: string; buttonClassName?: string; placeholder?: string; children?: ReactNode; }): React.JSX.Element — ⚠ undocumented
-- `LeavePartyButton` (function): function LeavePartyButton({ className, children, }: { className?: string; children?: ReactNode; }): React.JSX.Element | null — ⚠ undocumented
-- `PartyFrame` (function): function PartyFrame({ className, rowClassName, dotClassName, emptyState, renderMember, }: { className?: string; rowClassName?: string; dotClassName?: string; emptyState?: ReactNode; renderMember?: (member: PartyMemberEntry) => ReactNode; }): React.JSX.Element — ⚠ undocumented
-- `PartyInviteToast` (function): function PartyInviteToast({ className, acceptClassName, declineClassName, renderInvite, }: { className?: string; acceptClassName?: string; declineClassName?: string; renderInvite?: (invite: PartyInviteEntry) => ReactNode; }): React.JSX.Element | null — ⚠ undocumented
-- `PartyMemberRow` (function): function PartyMemberRow({ member, className, dotClassName, children, }: { member: PartyMemberEntry; className?: string; dotClassName?: string; children?: ReactNode; }): React.JSX.Element — ⚠ undocumented
-- `PresenceDot` (function): function PresenceDot({ userId, className }: { userId: string; className?: string }): React.JSX.Element — ⚠ undocumented
-- `QuickMatchButton` (function): function QuickMatchButton({ listings, onJoin, onNoMatch, filter, className, children, }: { listings: readonly SessionListing[]; onJoin: (listing: SessionListing) => void; onNoMatch?: () => void; filter?: MatchFilter; className?: string; children?: ReactNode; }): React.JSX.Element — ⚠ undocumented
-- `WorldBrowser` (function): function WorldBrowser({ listings, onJoin, className, rowClassName, joinClassName, emptyState, renderListing, }: { listings: readonly SessionListing[]; onJoin: (listing: SessionListing) => void; className?: string; rowClassName?: string; joinClassName?: string; emptyState?: ReactNode; renderListing?:… — ⚠ undocumented
-- `WorldInviteToast` (function): function WorldInviteToast({ className, acceptClassName, declineClassName, onAccepted, renderInvite, }: { className?: string; acceptClassName?: string; declineClassName?: string; onAccepted: (target: WorldInviteTarget) => void; renderInvite?: (invite: WorldInvite) => ReactNode; }): React.JSX.Element … — ⚠ undocumented
-
-## @jgengine/react/standaloneChatPanel
-
-- `StandaloneChatPanel` (function): function StandaloneChatPanel<T extends ChatMessage>({ messages, userId, onSend, className, logClassName, inputClassName, inputFieldClassName, messageClassName, ownMessageClassName, style, defaultExpanded = false, collapsedLimit = 3, limit = 50, maxLength = DEFAULT_CHAT_BODY_LENGTH, hotkeysEnabled = … — Headless chat interaction for external message stores. Prefer the ChatPanel entrypoint.
-- `StandaloneChatPanelProps` (interface): interface StandaloneChatPanelProps<T extends ChatMessage = ChatMessage> — Message-store inputs and caller-owned styling for standalone chat.
-
-## @jgengine/react/startScreen
-
-- `ControlHint` (interface): interface ControlHint — One row of a control legend. Name the game action(s) whose bound key(s) to show (`action`) so the glyphs come straight from the keybind map — never re-typed — or give literal `keys` for controls that live outside the map (`"Mouse"`, `"LMB"`). `label` says what the control does.
-- `ControlsList` (function): function ControlsList({ bindings, controls, hideOnCoarsePointer = true, separator = " / ", className, rowClassName, keysClassName, keyClassName, separatorClassName, labelClassName, renderKey, renderRow, }: { bindings?: ActionCodesMap; controls: readonly ControlHint[]; hideOnCoarsePointer?: boolean; … — Renders a controls legend whose key glyphs come from the game's keybind map, so bindings live in one place and never drift from a hand-typed table. Hides itself on coarse-pointer devices (a touchscreen has no keyboard) via the same `data-jg-kbd-hint` marker as `KeyHint`. Headless: every part carries a `className` slot and `data-*` hook; pass `renderKey`/`renderRow` to fully own the markup.
-- `StartScreen` (function): function StartScreen({ open = true, className, style, children, settings, settingsPlacement = "top-right", settingsClassName, settingsWrapperClassName, }: { open?: boolean; className?: string; style?: CSSProperties; children?: ReactNode; settings?: boolean | ReactNode; settingsPlacement?: StartScree… — Composable title/attract-screen scaffold: a full-bleed `data-jg-menu` overlay that positions and centers the game's own content, with an opt-in settings corner. It imposes no look — the game supplies the title, art, and buttons as children and styles the container through `className`/`style` (per the composable-chrome rule: a placement hook, not a mandated menu).
-- `StartScreenCorner` (type): type StartScreenCorner = "top-left" | "top-right" | "bottom-left" | "bottom-right" — Which corner of a `StartScreen` the opt-in settings slot is pinned to.
 
 ## @jgengine/react/store
 
 - `useKeyedStore` (function): function useKeyedStore<T>(handle: KeyedStoreHandle<T>, id: string): T — Subscribe a component to one owner's slot of a typed keyed-family store defined with `defineKeyedStore`. Returns the current value for `id` (or the definition's initial before any write for that id), re-rendering only when that owner's slot changes — the cast-free, boilerplate-free replacement for a hand-written `useGameStore((ctx) => ctx.game.store.get(`prefix:${id}`) as T)`.
 - `useStore` (function): function useStore<T>(handle: StoreHandle<T>): T — Subscribe a component to a typed store slot defined with `defineStore`. Returns the current value (or the definition's initial before any write), re-rendering only when the slot changes — the cast-free, boilerplate-free replacement for a hand-written `useGameStore((ctx) => ctx.game.store.get(KEY) as T)`.
-
-## @jgengine/react/talentTree
-
-- `TalentIcon` (type): type TalentIcon = GameIconName | ReactNode | null — How a node id resolves to display art: a built-in {@link GameIconName}, any node, or `null` for the default.
-- `TalentTreePanel` (function): function TalentTreePanel<TStat extends string = string>({ view: viewProp, nodes, tree, onLearn, icon, label, branchLabel, title = "Talents", variation = "themed", nodeSize = 54, columnGap = 30, tierGap = 46, showPoints = true, className, style, }: TalentTreeProps<TStat>): ReactNode — Drop-in talent / skill-tree widget over the existing progression model (`@jgengine/core/game/talents` + its `talentTreeView` selector). The game passes its node definitions and a live `createTalentTree` instance; the widget lays nodes out by branch column and prerequisite-depth tier, draws SVG prerequisite edges, styles each node learned/available/locked/maxed, shows an icon + rank badge, and calls `onLearn(nodeId)` when the player clicks a node that is currently allocatable. All layout, edge-drawing, and eligibility come from the model/selector — the widget never re-derives topology. Unskinned and HudTheme-token driven; node ids/branches are opaque game data the game supplies icons and labels for.
-- `TalentTreeProps` (interface): interface TalentTreeProps<TStat extends string = string> — Props for {@link TalentTreePanel}.
 
 ## @jgengine/react/testFixtures
 
@@ -2255,155 +2191,6 @@
 ## @jgengine/react/tileLayerPreview
 
 - `TileLayerPreview` (function): function TileLayerPreview({ className }: { className?: string }): React.JSX.Element — Deterministic canvas-backed tile-layer fixture for textured tile presentation evidence.
-
-## @jgengine/react/timerReadout
-
-- `TimerFormat` (type): type TimerFormat = "mm:ss" | "m:ss.d" | "ss.d" — Digital text format for a timer readout.
-- `TimerReadout` (function): function TimerReadout({ timer, id, source = "auto", format = "mm:ss", placeholder = "--:--", active = true, className, style, }: TimerReadoutProps): ReactNode — A live digital timer readout (mm:ss / m:ss.d) driven off a {@link TimerSet}. It re-reads every frame and formats remaining or elapsed time — a round clock, a respawn countdown, or an ability charge, all the same widget. HudTheme-skinned via `--jg-text`; reskin with `style` or the theme tokens.
-- `TimerReadoutProps` (interface): interface TimerReadoutProps — Props for {@link TimerReadout}.
-- `TimerReadoutSource` (type): type TimerReadoutSource = "auto" | "remaining" | "elapsed" — Which value a readout leads with. `"auto"` follows the timer's direction — remaining for a countdown, elapsed for a countup charge.
-- `TimerRing` (function): function TimerRing({ timer, id, size = 72, thickness = 8, mode = "fill", color = "var(--jg-accent, #38bdf8)", trackColor = "var(--jg-surface-deep, rgba(148,163,184,0.25))", children, active = true, className, style, }: TimerRingProps): ReactNode — A radial charge/cooldown ring driven off a {@link TimerSet}'s `progress01`. Re-reads every frame and sweeps an SVG arc as the timer advances — ability charge, cooldown wipe, respawn ring, capture progress, all the same widget. `mode` chooses filling vs. draining; center `children` can hold a readout. HudTheme-skinned via `--jg-accent` / `--jg-surface-deep`.
-- `TimerRingProps` (interface): interface TimerRingProps — Props for {@link TimerRing}.
-- `formatTimerMs` (function): function formatTimerMs(ms: number, format: TimerFormat = "mm:ss"): string — Format a millisecond duration as digital timer text — `mm:ss` (default), `m:ss.d` (with tenths), or `ss.d` (seconds + tenths). Negative inputs clamp to zero. No genre meaning: the same helper serves a round clock, a respawn countdown, or an ability charge readout.
-- `useTimerRead` (function): function useTimerRead(timer: TimerSet, id: string, active = true): TimerRead | null — Subscribe to a single timer and re-read it every animation frame while mounted, so a HUD readout stays live without the game hand-rolling interval math. Reuses one read object (allocation-aware). Returns `null` for an unknown id. Pass `active={false}` to freeze the per-frame tick (e.g. an off-screen HUD).
-
-## @jgengine/react/tweenNumber
-
-- `TweenDelta` (type): type TweenDelta = "up" | "down" — Direction of the last change, for the delta flash.
-- `TweenNumber` (function): function TweenNumber({ value, format = defaultFormat, flash = true, durationMs, ease, className, style }: TweenNumberProps): ReactNode — A counter that rolls to each new value and flashes the `--jg-success` / `--jg-danger` color with a small scale pop on the change (`data-jg-delta="up" | "down"`). Tabular digits keep its width stable.
-- `TweenNumberProps` (interface): interface TweenNumberProps extends TweenOptions — Props for {@link TweenNumber}.
-- `TweenOptions` (interface): interface TweenOptions — Options for {@link useTweenedValue}.
-- `tweenAt` (function): function tweenAt(from: number, to: number, t: number, ease: (t: number) => number = easeOutCubic): number — Value at progress `t` (0–1) between `from` and `to` under `ease`.
-- `useTweenedValue` (function): function useTweenedValue(target: number, options: TweenOptions = {}): number — Animates toward `target` whenever it changes, starting from the currently displayed value, so a counter rolls instead of jumping. Snaps immediately under reduced motion or a non-finite target.
-
-## @jgengine/react/uiCues
-
-- `UiCue` (type): type UiCue = "click" | "hover" | "open" | "close" | "confirm" | "deny" | "notify" — Interface sound cues every game gets: press, hover, panel open/close, confirm, refusal, notification.
-- `playUiCue` (function): function playUiCue(ctx: Pick<GameContext, "game"> | null, cue: UiCue): void — Play UI cue `cue` through the game's audio seam (`ui.<cue>` in the shell catalog). No-op outside a game.
-- `uiCueForInteraction` (function): function uiCueForInteraction(event: HudInteractEvent): UiCue | null — The UI cue an engine HUD primitive interaction plays, or `null` for none: activating plays the primitive's `cue` when it names a {@link UiCue} (e.g. `cue="confirm"`), else `click`; hovering a button or action slot plays `hover`; panels and windows play `open`/`close`. Press and focus are silent.
-- `useUiCue` (function): function useUiCue(): (cue: UiCue) => void — Returns a stable `cue(name)` that plays a UI sound: click, hover, open, close, confirm, deny, notify. The shell ships soft procedural defaults on the "ui" bus (volume in Settings, muted with master); a game replaces one by declaring `audio.sounds["ui.click"]` or `audio.uiCues`. Safe outside a GameProvider.
-
-## @jgengine/react/uiKit
-
-- `KitButtonProps` (interface): interface KitButtonProps extends Omit<ButtonHTMLAttributes<HTMLButtonElement>, "type"> — A button in the kit's language. Every native button attribute passes through to the root `<button>`.
-- `KitDevice` (type): type KitDevice = "keyboard" | "gamepad" | "touch" — The input device a prompt is drawn for.
-- `KitMenuItem` (interface): interface KitMenuItem — One verb in a {@link KitMenuProps} list.
-- `KitMenuProps` (interface): interface KitMenuProps — A list of verbs with one highlighted: title screen, pause, a choice. Navigation belongs to the host.
-- `KitMeterProps` (interface): interface KitMeterProps — A value against a maximum: health, a timer, progress.
-- `KitMinimapFrameProps` (interface): interface KitMinimapFrameProps — The frame around a minimap or radar. The map itself is the child, drawn inside the frame's window.
-- `KitPanelProps` (interface): interface KitPanelProps extends Omit<HTMLAttributes<HTMLElement>, "title"> — A surface that holds content. Kits must not draw it as a plain filled rounded rectangle.
-- `KitPromptProps` (interface): interface KitPromptProps — "Press this to do that": the contextual prompt, drawn for the device the player is using.
-- `KitToastProps` (interface): interface KitToastProps — A short-lived message.
-- `KitTone` (type): type KitTone = "neutral" | "accent" | "good" | "warn" | "bad" — The meaning a kit component carries; each kit draws it in its own language.
-- `UI_KIT_PARTS` (const): const UI_KIT_PARTS: readonly UiKitPart[] — Every part a kit must implement.
-- `UiKit` (interface): interface UiKit — A complete UI language: shapes, framing, type, motion, sound and the seven parts. A game picks one with `defineGame({ uiKit: "ink" })` and reshapes it with {@link customizeKit}.
-- `UiKitComponents` (interface): interface UiKitComponents — The seven parts every kit ships, so switching kits never breaks a game.
-- `UiKitCustomization` (interface): interface UiKitCustomization — What a game changes when it reshapes a kit.
-- `UiKitMotion` (interface): interface UiKitMotion — How a kit's surfaces enter and leave.
-- `UiKitPart` (type): type UiKitPart = keyof UiKitComponents — The names of {@link UiKitComponents}.
-- `UiKitTokens` (interface): interface UiKitTokens — The tokens every kit fills, so a game reshapes any kit with the same keys. Each becomes a `--kit-<kebab-name>` CSS variable on the kit root (`fontDisplay` → `--kit-font-display`). Kit-specific extras ride the index signature and land the same way.
-- `customizeKit` (function): function customizeKit(base: UiKit, changes: UiKitCustomization): UiKit — Reshape a kit for one game: new tokens, a few swapped parts, extra CSS, other sounds. Everything not given stays the base kit's, so a customized kit is still complete.
-- `kitCueSound` (function): function kitCueSound(cue: UiCue, def: Omit<SoundDef, "id" | "bus" | "positional">): SoundDef — A kit's UI cue patch on the `ui` bus, for {@link UiKit.sounds}.
-- `meterFraction` (function): function meterFraction(value: number, max = 1): number — Fill 0..1 for a meter, clamped; `max <= 0` reads as empty.
-- `meterSegmentsLit` (function): function meterSegmentsLit(value: number, max = 1, segments = 10): number — Cell states for a segmented meter: how many of `segments` are lit for `value / max`.
-- `missingKitParts` (function): function missingKitParts(kit: Pick<UiKit, "components">): UiKitPart[] — Parts a kit is missing, for tests and dev checks. Empty when the kit is complete.
-- `uiKitVars` (function): function uiKitVars(kit: UiKit): CSSProperties — The `--kit-*` CSS variables for a kit's tokens and motion, for the kit root's `style`.
-
-## @jgengine/react/uiKitArcade
-
-- `arcadeKit` (const): const arcadeKit: UiKit — Cabinet: a retro 8-bit arcade and JRPG. Stepped pixel borders, JRPG windows with title tabs, chunky depth buttons, heart meters, score-popup toasts and chiptune blips.
-
-## @jgengine/react/uiKitBroadcast
-
-- `broadcastKit` (const): const broadcastKit: UiKit — Prime Time: sports TV graphics. Skewed navy slabs with team stripes, a score-bug header, a breaking-news band, ticker chevrons, a tote-board menu, shot-clock rings and wipe-in lower thirds.
-
-## @jgengine/react/uiKitHolo
-
-- `holoKit` (const): const holoKit: UiKit — Vector: an angular sci-fi hologram. Chamfered glass with scanlines and bracket corners, hex data tags, radar frames with degree bezels, projection-in motion and tone-sweep sounds.
-
-## @jgengine/react/uiKitInk
-
-- `inkKit` (const): const inkKit: UiKit — Inkline: a comic-book caper. Heavy wobbly ink outlines, hard offset shadows, halftone dots, skewed caption tabs, speech-balloon toasts and jagged shout bursts; panels pop in with overshoot.
-
-## @jgengine/react/uiKitPaper
-
-- `paperKit` (const): const paperKit: UiKit — Fair Day: paper, cardboard and stickers. Torn paper notes held by washi tape, kraft cards, carnival ticket buttons with notched ends, sticker titles with die-cut white rims, highlighter meters on a ruler, luggage-tag toasts and a folded leaflet map; panels are placed by hand and peel away.
-
-## @jgengine/react/uiKitParchment
-
-- `parchmentKit` (const): const parchmentKit: UiKit — Grimoire: painterly fantasy parchment. Stained paper with torn or rolled edges, gold filigree corners, serif small caps, wax seals, glass vial meters, rune pips, a gold compass rim and unfurling banners.
-
-## @jgengine/react/uiKitPlain
-
-- `plainKit` (const): const plainKit: UiKit — The fallback kit outside any `UiKitRoot`: quiet, neutral parts so kit components always render. Games pick a real kit with `defineGame({ uiKit })`.
-
-## @jgengine/react/uiKitRoot
-
-- `ActionBindingsProvider` (function): function ActionBindingsProvider({ bindings, children }: { bindings: ActionCodesMap; children?: ReactNode }): ReactNode — Hands the game's live input bindings (its `input` map with the player's rebinds applied) to every key hint below. The shell mounts it around each game, so HUD labels follow a rebind with no game code.
-- `KitActionPrompt` (function): function KitActionPrompt({ action, label, progress, tone, onActivate, fallbackGlyph, className, style }: KitActionPromptProps): ReactNode — "Press E to take the parcel", drawn by the active kit with the right glyph for the device the player is using: the bound key, the bound pad button, or a tap target on touch. Renders nothing when the action is not bound on that device and no `fallbackGlyph` is given.
-- `KitActionPromptProps` (interface): interface KitActionPromptProps — Props for {@link KitActionPrompt}.
-- `KitButton` (function): function KitButton(props: KitButtonHostProps): ReactNode — The active kit's button. Hover, press and activate report to the nearest `HudInteractProvider`, so the shell's UI cues sound without wiring. Give `material` (and optionally `cut`, `tint`, `edge`, …) and it is a game button made of that material instead, lifting on hover and sinking on press:
-- `KitButtonHostProps` (type): type KitButtonHostProps = (KitButtonProps & { cue?: string; material?: undefined }) | KitMaterialButtonProps — Props for {@link KitButton}: the kit's button, or a material one when `material` is set.
-- `KitMaterialButtonProps` (interface): interface KitMaterialButtonProps extends KitFrameLook, Omit<ButtonHTMLAttributes<HTMLButtonElement>, "type" | "color"> — A {@link KitButton} made of a material instead of drawn by the kit: every native button attribute passes through.
-- `KitMaterialPanelProps` (interface): interface KitMaterialPanelProps extends KitFrameLook, Omit<HTMLAttributes<HTMLElement>, "color"> — A {@link KitPanel} made of a material instead of drawn by the kit; it holds its children as given.
-- `KitMenu` (function): function KitMenu(props: KitMenuProps): ReactNode — The active kit's menu list. Navigation comes from `useMenuNav`.
-- `KitMeter` (function): function KitMeter(props: KitMeterProps): ReactNode — The active kit's meter.
-- `KitMinimapFrame` (function): function KitMinimapFrame(props: KitMinimapFrameProps): ReactNode — The active kit's minimap frame.
-- `KitPanel` (function): function KitPanel(props: KitPanelHostProps): ReactNode — The active kit's panel. Give `open` to animate it in and out with the kit's own motion. Give `material` (and optionally `cut`, `tint`, `edge`, `glow`, …) and it is a surface made of that material instead — steel, brass, hull plate, wood, stone, paper, enamel, glass, carbon or leather — so a panel reads as an object in the game's world:
-- `KitPanelHostProps` (type): type KitPanelHostProps = (KitPanelProps & { open?: boolean; material?: undefined }) | KitMaterialPanelProps — Props for {@link KitPanel}: the kit panel's props plus an `open` flag that plays enter and exit motion, or a material panel.
-- `KitPrompt` (function): function KitPrompt(props: Omit<KitPromptProps, "device"> & { device?: KitPromptProps["device"] }): ReactNode — The active kit's prompt with an explicit glyph. Prefer {@link KitActionPrompt}, which picks the glyph per device.
-- `KitToast` (function): function KitToast(props: KitToastProps): ReactNode — The active kit's toast.
-- `UiKitRoot` (function): function UiKitRoot({ kit, bindings, glyphSet = "xbox", children, className, style, box = false }: UiKitRootProps): ReactNode — Puts a UI kit in charge of everything below it: injects its stylesheet, sets its `--kit-*` tokens and makes `KitButton`, `KitPanel`, `KitMeter`, `KitPrompt`, `KitToast`, `KitMenu` and `KitMinimapFrame` draw in its language. The shell mounts it for `defineGame({ uiKit })`; nest another to show a second kit.
-- `UiKitRootProps` (interface): interface UiKitRootProps — Props for {@link UiKitRoot}.
-- `UiKitScope` (function): function UiKitScope({ children }: { children?: ReactNode }): ReactNode — Re-applies the nearest kit's root (tokens and `data-jg-kit`) — wrap content you portal outside the kit root so it keeps the kit's look.
-- `ensureUiKitStyles` (function): function ensureUiKitStyles(kit: UiKit, doc: Document | undefined = typeof document === "undefined" ? undefined : document): void — Inserts a kit's stylesheet into the document once. Safe to call repeatedly and during SSR (no-op).
-- `useActionBindings` (function): function useActionBindings(): ActionCodesMap — The game's live input bindings, rebinds included: feed it to `actionLabel(bindings, action)` for a key hint in a list, or use {@link useActionGlyph} for one action. Empty outside a shell.
-- `useActionGlyph` (function): function useActionGlyph(action: string, fallback?: string): string | undefined — The key hint for `action` on the device the player is using, from the kit root's live bindings — the bound key on keyboard, the pad button on gamepad, or `fallback` when unbound. On touch it is `undefined`: the button itself is the tap target. Put it on a button (`<KitButton glyph={useActionGlyph("pause", "P")}>`) so key hints never go stale after a rebind.
-- `useHasUiKit` (function): function useHasUiKit(): boolean — True when a {@link UiKitRoot} is above: engine screens switch to kit parts only then.
-- `useKitPresence` (function): function useKitPresence(open: boolean, exitMs: number): { mounted: boolean; leaving: boolean } — Keeps something mounted through its exit motion: `leaving` turns true when `open` goes false, and `mounted` turns false `exitMs` later.
-- `useUiKit` (function): function useUiKit(): UiKit — The kit in charge here: the nearest {@link UiKitRoot}'s, or the plain fallback kit outside one.
-
-## @jgengine/react/uiKitSignal
-
-- `signalKit` (const): const signalKit: UiKit — Wayfinder: in-world signage. Enamel road-sign plates with keylines and rivets, arrow and blade signs, route-marker shields, LED departure boards and lamp bulbs, with split-flap flips and clacks.
-
-## @jgengine/react/uiKitTerminal
-
-- `terminalKit` (const): const terminalKit: UiKit — Mainframe: a brutalist phosphor terminal. Monospace everywhere, uppercase labels, double-ruled frames with the title set into the rule, ASCII meters, log-line toasts and a block cursor.
-
-## @jgengine/react/uiKits
-
-- `UI_KITS` (const): const UI_KITS: Readonly<Record<UiKitName, UiKit>> — The eight built-in UI kits, each a complete visual language with every part: `ink` comic caper, `paper` cardboard and stickers, `parchment` painterly fantasy, `terminal` brutalist console, `holo` angular sci-fi hologram, `broadcast` sports TV graphics, `arcade` retro pixel cabinet, `signal` in-world signage and departure boards.
-- `UiKitName` (type): type UiKitName = "ink" | "paper" | "parchment" | "terminal" | "holo" | "broadcast" | "arcade" | "signal" — The built-in kit names a game can pick with `defineGame({ uiKit: "<name>" })`.
-- `resolveUiKit` (function): function resolveUiKit(kit: UiKitName | UiKit): UiKit — A built-in kit by name, or a kit object as given (for example from `customizeKit`).
-
-## @jgengine/react/uiKitsPreview
-
-- `KitSpecimen` (function): function KitSpecimen({ kit, className, style }: { kit: UiKit; className?: string; style?: CSSProperties }): ReactNode — Every kit part on a busy game-like backdrop, so one picture shows a kit's whole language.
-- `UiKitMenuPreview` (function): function UiKitMenuPreview({ kit, pane = "settings", className }: { kit: UiKit; pane?: UiKitMenuPreviewPane; className?: string }): ReactNode — A kit's pause menu with one of the engine's own panes in it (settings, credits, continue or saves), so one picture shows that engine panes read in the kit's colours and type.
-- `UiKitMenuPreviewPane` (type): type UiKitMenuPreviewPane = "settings" | "credits" | "continue" | "saves" — The engine panes a kit's menu can host, for {@link UiKitMenuPreview}.
-- `UiKitPreview` (function): function UiKitPreview({ kit, className }: { kit: UiKit; className?: string }): ReactNode — One kit, large: the specimen plus its dialog and strip, for working on a single kit.
-- `UiKitsPreview` (function): function UiKitsPreview({ className }: { className?: string }): ReactNode — Contact sheet: all eight built-in UI kits side by side, every part each.
-
-## @jgengine/react/useDebouncedCommit
-
-- `DebounceTimer` (interface): interface DebounceTimer — Injectable timer seam so the controller is testable with a manual clock.
-- `DebouncedCommit` (interface): interface DebouncedCommit<T> — Live-mirrored, trailing-debounced commit binding for a single control value.
-- `useDebouncedCommit` (function): function useDebouncedCommit<T>(value: T, commit: (value: T) => void, delayMs = 180): DebouncedCommit<T> — See {@link DebouncedCommit}. `commit` and `delayMs` may change between renders (kept in refs); the binding identity stays stable except when `value` (the local mirror) changes.
-
-## @jgengine/react/useServerSession
-
-- `useServerSession` (function): function useServerSession(transport: GameRuntimeTransport, gameId: string, preferredServerId?: string): { retry: () => void; serverId: string | null; status: "joining" | "joined" | "failed"; failureReason: string | null; } — Joins a host and exposes a retryable blocking state until membership is confirmed.
-
-## @jgengine/react/voice
-
-- `MicToggle` (function): function MicToggle({ voice, className, mutedLabel, unmutedLabel, }: { voice: VoiceState; className?: string; mutedLabel?: ReactNode; unmutedLabel?: ReactNode; }): React.JSX.Element — ⚠ undocumented
-- `PushToTalkButton` (function): function PushToTalkButton({ voice, className, children, }: { voice: VoiceState; className?: string; children?: ReactNode; }): React.JSX.Element — ⚠ undocumented
-- `SpeakingIndicator` (function): function SpeakingIndicator({ voice, userId, className, threshold = 0.01, children, }: { voice: VoiceState; userId: string; className?: string; threshold?: number; children?: ReactNode; }): React.JSX.Element — ⚠ undocumented
-- `UseVoiceOptions` (interface): interface UseVoiceOptions { transport?: VoiceTransport; channelId?: string; mode?: PushToTalkMode; resolveRoutes?: () => readonly VoiceRoute[]; getUserMedia?: (constraints: MediaStreamConstraints) => Promise<MediaStream> } — ⚠ undocumented · used by `useVoice`: Mic capture + push-to-talk + channel roster over the VoiceTransport signaling seam.
-- `VoiceRoster` (function): function VoiceRoster({ voice, className, participantClassName, renderParticipant, }: { voice: VoiceState; className?: string; participantClassName?: string; renderParticipant?: (participant: VoiceParticipant, gain: number) => ReactNode; }): React.JSX.Element — ⚠ undocumented
-- `VoiceState` (interface): interface VoiceState { supported: boolean; micStream: MediaStream | null; micError: string | null; requestMic(): Promise<boolean>; transmitting: boolean; status: PushToTalkStatus; mode: PushToTalkMode; setMode(mode: PushToTalkMode): void; muted: boolean; setMut… — ⚠ undocumented · used by `useVoice`: Mic capture + push-to-talk + channel roster over the VoiceTransport signaling seam.
-- `useVoice` (function): function useVoice(options?: UseVoiceOptions): VoiceState — Mic capture + push-to-talk + channel roster over the VoiceTransport signaling seam. Transmission gates the captured tracks' `enabled` flag; the media plane that actually moves audio bytes (WebRTC/SFU) stays behind the transport, host-supplied. Call once per voice channel and hand the returned state to the voice components.
 
 ## @jgengine/react/waypointMarkers
 

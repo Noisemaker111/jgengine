@@ -2,7 +2,7 @@ import { useRef } from "react";
 import type { GameContext } from "@jgengine/core/runtime/gameContext";
 import { useGame, useGameStore } from "@jgengine/react/hooks";
 import { useGameContext } from "@jgengine/react/provider";
-import { KitBanner, KitResultScreen } from "@jgengine/react/kitFlow";
+import { KitBanner, KitResultScreen } from "@jgengine/core/ui/kit/kitFlow.view";
 
 import { park } from "../../park";
 import { scenarioView } from "../../parkReset";

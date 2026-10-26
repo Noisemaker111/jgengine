@@ -22,10 +22,10 @@ import {
 import { actionTooltip, placePopover, type PopoverSide, type TooltipContent } from "@jgengine/core/ui/tooltipModel";
 
 import { useEngineStyles } from "@jgengine/react/engineStyles";
-import { KitButton, KitMeter, KitPanel } from "@jgengine/react/uiKitRoot";
+import { KitButton, KitMeter, KitPanel } from "@jgengine/core/ui/kit/uiKitRoot.view";
 import { useHudInteract, type HudInteractListener } from "./hudInteract.view";
 import { HUD_FOCUS_RING, hudElevation, hudFont, hudType } from "./hudTokens";
-import { Keycap } from "@jgengine/react/keyHint";
+import { Keycap } from "@jgengine/core/input/keyHint.view";
 
 /**
  * Composable React renderers over the headless action view model (`@jgengine/core/ui/actionModel`) —

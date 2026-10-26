@@ -1,8 +1,8 @@
 import { useGame, useGameStore } from "@jgengine/react/hooks";
 import { useGameContext } from "@jgengine/react/provider";
-import { KitObjective } from "@jgengine/react/kitFlow";
-import { KitButton, KitMeter, KitPanel } from "@jgengine/react/uiKitRoot";
-import type { KitTone } from "@jgengine/react/uiKit";
+import { KitObjective } from "@jgengine/core/ui/kit/kitFlow.view";
+import { KitButton, KitMeter, KitPanel } from "@jgengine/core/ui/kit/uiKitRoot.view";
+import type { KitTone } from "@jgengine/core/ui/kit/uiKit.view";
 
 import { guestCap } from "../../catalog";
 import { LOAN, parkMetrics } from "../../park";

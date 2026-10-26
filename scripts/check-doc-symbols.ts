@@ -11,7 +11,7 @@ import { Node, Project } from "ts-morph";
  * import *path* a doc names is a real published subpath. Nothing, however,
  * proved that the *symbols* pulled from that path actually exist — so fictional
  * APIs (`applyToMyHealthStore`, `createWsBackend({ gameId })`, invented UI
- * components, `createPushToTalk` misattributed to `@jgengine/react/voice`) slid
+ * components, `createPushToTalk` misattributed to `@jgengine/core/multiplayer/voice.view`) slid
  * into skill docs and the marketing samples unchallenged.
  *
  * This gate closes that hole. It extracts `import { X, Y as Z } from

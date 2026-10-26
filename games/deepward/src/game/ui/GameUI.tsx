@@ -25,7 +25,7 @@ import { FabricatorSheet } from "./FabricatorSheet";
 import { marrowOf } from "../marrow";
 import { nextGoal, sealMark } from "../deep";
 import { crushDamage, STRATA } from "../strata";
-import { useGameFonts } from "@jgengine/react/gameFonts";
+import { useGameFonts } from "@jgengine/core/ui/fonts.view";
 import { GAME_FONTS } from "../../art/fonts/fonts";
 
 const PORTRAIT = "(max-aspect-ratio: 4/5)";

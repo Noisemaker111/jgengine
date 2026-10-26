@@ -84,6 +84,15 @@ describe("this checkout answers where a concept lives in one call", () => {
       ["menu", "menu"],
       ["settings", "settings"],
       ["inventory", "inventory"],
+      ["achievements", "achievements"],
+      ["codex", "codex"],
+      ["dialogue", "dialogue"],
+      ["chat", "chat"],
+      ["talents", "talents"],
+      ["leaderboard", "leaderboard"],
+      ["cutscene", "cutscene"],
+      ["damage direction", "combat/damage"],
+      ["ui kit", "ui/kit"],
     ];
     for (const [query, folder] of features) {
       const homes = homeOf(query);

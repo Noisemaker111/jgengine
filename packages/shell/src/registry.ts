@@ -3,8 +3,8 @@ import type { PlayableGameContract, WorldOverlayProps } from "@jgengine/core/gam
 import type { SceneEntity } from "@jgengine/core/scene/entityStore";
 import type { SceneObject } from "@jgengine/core/scene/objectStore";
 import type { HudTheme } from "@jgengine/core/hud/hudTheme.view";
-import type { UiKit } from "@jgengine/react/uiKit";
-import type { UiKitName } from "@jgengine/react/uiKits";
+import type { UiKit } from "@jgengine/core/ui/kit/uiKit.view";
+import type { UiKitName } from "@jgengine/core/ui/kit/uiKits.view";
 import type { ViewmodelProps } from "./camera/GameFirstPersonCamera";
 
 export type RenderEntity = (entity: SceneEntity) => ReactNode;

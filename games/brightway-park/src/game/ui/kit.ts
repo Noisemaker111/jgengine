@@ -1,5 +1,5 @@
-import { customizeKit } from "@jgengine/react/uiKit";
-import { UI_KITS } from "@jgengine/react/uiKits";
+import { customizeKit } from "@jgengine/core/ui/kit/uiKit.view";
+import { UI_KITS } from "@jgengine/core/ui/kit/uiKits.view";
 
 /**
  * Brightway's fair-day paper, recut from the park sign: cream ticket stock, teal sign-plate stickers

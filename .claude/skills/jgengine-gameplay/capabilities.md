@@ -4,6 +4,14 @@
 
 Reach for these before hand-rolling. Each row is *the thing you need* → *the primitive that already does it*.
 
+## achievement-gallery — responsive achievement/trophy grid with unlocked/locked state, counter progress bars, secret masking, and a completion/score header
+
+- `AchievementGallery` (function) · `import { AchievementGallery } from "@jgengine/core/achievements/achievements.view"`
+
+## achievement-toast — unlock-moment banner (icon, heading, name, points) for an achievement toast queue
+
+- `AchievementToast` (function) · `import { AchievementToast } from "@jgengine/core/achievements/achievements.view"`
+
 ## achievements — track achievement/trophy unlocks over counter goals and boolean flags, with score, completion, an onUnlock seam, and serializable snapshot/restore
 
 - `createAchievementTracker` (function) · `import { createAchievementTracker } from "@jgengine/core/gameplay"`
@@ -68,6 +76,18 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `createCellGrid` (function) · `import { createCellGrid } from "@jgengine/core/puzzle/cellGrid"`
 
+## character-paperdoll — equip-slot paperdoll — flanking columns around a portrait, activatable slots
+
+- `Paperdoll` (function) · `import { Paperdoll } from "@jgengine/core/inventory/characterSheet.view"`
+
+## character-sheet — drop-in paperdoll + derived-stat sheet in a HudFrame — game supplies slots/stats
+
+- `CharacterSheet` (function) · `import { CharacterSheet } from "@jgengine/core/inventory/characterSheet.view"`
+
+## character-statlist — derived-stat readout — grouped small-caps label→value rows, token-themed
+
+- `StatList` (function) · `import { StatList } from "@jgengine/core/inventory/characterSheet.view"`
+
 ## clip-roles — map a rigged asset's pack-specific clip name to its semantic animation role
 
 - `classifyClip` (function) · `import { classifyClip } from "@jgengine/core/game/clipRoles"`
@@ -76,6 +96,10 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 ## codex — codex/bestiary/lorebook of defined entries with discovery tracking, fragment scans, categories, secret masking, completion, an onDiscover seam, and serializable state
 
 - `createCodex` (function) · `import { createCodex } from "@jgengine/core/gameplay"`
+
+## codex-gallery — codex/bestiary gallery with category tabs, discovered/locked cards, secret masking, and a completion header
+
+- `CodexPanel` (function) · `import { CodexPanel } from "@jgengine/core/codex/codex.view"`
 
 ## compose-game-loop — fold composable systems into the game loop without a manual tick fan-out
 
@@ -145,7 +169,7 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 ## dialogue-graph-validation — diagnose duplicate ids, broken branches, unreachable dialogue, and nodes without a route to an ending before play
 
-- `validateDialogueGraph` (function) · `import { validateDialogueGraph } from "@jgengine/core/game/dialogueGraph"`
+- `validateDialogueGraph` (function) · `import { validateDialogueGraph } from "@jgengine/core/dialogue/dialogueGraph"`
 
 ## dialogue-graph-view — select a conversation node's render-ready view (speaker, line, branching choices) from a serializable dialogue graph
 
@@ -154,6 +178,14 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 ## dialogue-run — walk a serializable branching dialogue graph — current node view, choose-to-advance traversal, visited history, snapshot/restore
 
 - `createDialogueRun` (function) · `import { createDialogueRun } from "@jgengine/core/gameplay"`
+
+## dialogue-view — drop-in branching conversation UI — speaker + portrait slot, current line, clickable response choices that advance a DialogueRun
+
+- `DialogueView` (function) · `import { DialogueView } from "@jgengine/core/dialogue/dialogueView.view"`
+
+## drag-layer — composable pointer-owned drag, drop targets and cancellation for custom cards and inventory UI
+
+- `useDragLayer` (function) · `import { useDragLayer } from "@jgengine/core/inventory/dragLayer.view"`
 
 ## durability — track item wear, breakage, and repair
 
@@ -231,10 +263,6 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 ## grant-drops — deliver rolled loot drops into inventory and currency
 
 - `grantDrops` (function) · `import { grantDrops } from "@jgengine/core/loot/lootTable"`
-
-## group-credits — turn a flat list of credited things into ordered credit sections
-
-- `groupCredits` (function) · `import { groupCredits } from "@jgengine/core/game/credits"`
 
 ## hud-slots — atomic themed equipment/weapon/armor/potion slot grids with painted icons
 
@@ -333,6 +361,10 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `createRebindSession` (function) · `import { createRebindSession } from "@jgengine/core/gameplay"`
 
+## kill-feed — vertical event/kill-feed ticker rendering a core event-ticker as a fading, newest-on-top stack of per-kind iconned, accent-colored rows over HudTheme tokens
+
+- `KillFeed` (function) · `import { KillFeed } from "@jgengine/core/feed/killFeed.view"`
+
 ## lap-splits — per-lap durations from a cumulative split book
 
 - `lapDurations` (function) · `import { lapDurations } from "@jgengine/core/gameplay"`
@@ -430,10 +462,6 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `createMedalBoard` (function) · `import { createMedalBoard } from "@jgengine/core/progression/medalBoard"`
 
-## merge-credits — fold generated and hand-authored credit documents into one, deduped by entry
-
-- `mergeCredits` (function) · `import { mergeCredits } from "@jgengine/core/game/credits"`
-
 ## mission-compositions — build escort, chase and defend missions from the shared objective kinds
 
 - `chaseMission` (function) · `import { chaseMission } from "@jgengine/core/gameplay"`
@@ -516,6 +544,14 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 ## notification-center-panel — scrollable notification log with kind markers, read tracking, relative time, and mark-all-read/clear
 
 - `NotificationCenter` (function) · `import { NotificationCenter } from "@jgengine/core/notifications/notificationCenter.view"`
+
+## objective-banner — serializable, clock-driven stage/objective banner queue — flies a big transient centered title + optional subtitle in, holds, and fades out one at a time, with phase + progress for animation, free-string kinds the game styles, and snapshot/restore
+
+- `createObjectiveBanner` (function) · `import { createObjectiveBanner } from "@jgengine/core/mission/objectiveBanner"`
+
+## objective-banner-host — full-screen overlay that renders a core objective-banner controller as a fly-in / hold / fade-out centered title + subtitle stamp, theme- and per-kind-skinnable
+
+- `ObjectiveBannerHost` (function) · `import { ObjectiveBannerHost } from "@jgengine/core/mission/objectiveBanner.view"`
 
 ## objectives — check progress of a threshold objective against a live metric
 
@@ -722,9 +758,17 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `rankLeaderboard` (function) · `import { rankLeaderboard } from "@jgengine/core/gameplay"`
 
+## scoreboard-table — reskinnable ranked-score / leaderboard table over the rankLeaderboard selector — medal-colored podium, local-row highlight, HudTheme-token driven
+
+- `Scoreboard` (function) · `import { Scoreboard } from "@jgengine/core/leaderboard/scoreboard.view"`
+
 ## seeded-random — injected deterministic randomness for game logic — never `Math.random` in a simulation
 
 - `seededRng` (function) · `import { seededRng } from "@jgengine/core/gameplay"`
+
+## server-session — join a multiplayer host with status, retry, and teardown
+
+- `useServerSession` (function) · `import { useServerSession } from "@jgengine/core/session/useServerSession.view"`
 
 ## session-loop — open and close a game session, settle the quantity it carried and optionally draw the next session's authored option
 
@@ -784,6 +828,10 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `stationOutputRate` (function) · `import { stationOutputRate } from "@jgengine/core/gameplay"`
 
+## standalone-chat — render persisted chat with focus controls and visible send failures
+
+- `StandaloneChatPanel` (function) · `import { StandaloneChatPanel } from "@jgengine/core/chat/standaloneChatPanel.view"`
+
 ## standing — per-track standing moved by authored outcomes, with tiers and one snapshot
 
 - `createStanding` (function) · `import { createStanding } from "@jgengine/core/progression/standing"`
@@ -803,6 +851,10 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 ## system-schedule — compile fixed/frame/interval system ticks into deterministic ordered stages
 
 - `compileSystemSchedule` (function) · `import { compileSystemSchedule } from "@jgengine/core/gameplay"`
+
+## talent-tree — drop-in skill/talent/upgrade-tree widget — pass `nodes`+`tree` for point-spend or a precomputed `view` for any unlock rule; branch/tier layout, SVG prerequisite edges, learned/available/locked/maxed styling, icon + rank, onLearn
+
+- `TalentTreePanel` (function) · `import { TalentTreePanel } from "@jgengine/core/talents/talentTree.view"`
 
 ## talent-tree-view — flatten a talent tree into a placed, per-node render view — branch/tier layout, learned/available/locked/maxed state, prerequisite edges
 
@@ -888,6 +940,14 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `createUpgradeTree` (function) · `import { createUpgradeTree } from "@jgengine/core/progression/upgrades"`
 
+## use-dialogue-run — React hook binding a branching dialogue run to a component — re-renders as the player advances the conversation
+
+- `useDialogueRun` (function) · `import { useDialogueRun } from "@jgengine/core/dialogue/dialogueView.view"`
+
+## use-event-ticker — React hook binding an event-ticker — re-renders per frame so entries fade and drop live, returning the current newest-first views
+
+- `useEventTicker` (function) · `import { useEventTicker } from "@jgengine/core/feed/killFeed.view"`
+
 ## use-notice-list — read the live notice feed in a game's own notice view
 
 - `useNoticeList` (function) · `import { useNoticeList } from "@jgengine/core/notifications/notices.view"`
@@ -895,6 +955,10 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 ## use-notifications — read a notification store's live list in a game's own inbox view
 
 - `useNotifications` (function) · `import { useNotifications } from "@jgengine/core/notifications/notificationCenter.view"`
+
+## use-objective-banner — React hook binding an objective-banner controller — advances its clock per frame and returns the current banner view
+
+- `useObjectiveBanner` (function) · `import { useObjectiveBanner } from "@jgengine/core/mission/objectiveBanner.view"`
 
 ## use-save-slots — React hook binding a save-slots metadata index — re-renders on change and returns the ordered slot list
 

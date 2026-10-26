@@ -4,7 +4,7 @@ import {
   statModifierContributions,
   type StatGraphDef,
 } from "@jgengine/core/progression/statGraph";
-import { createTalentTree } from "@jgengine/core/game/talents";
+import { createTalentTree } from "@jgengine/core/talents/talents";
 import { balance, charge, createEmptyWallet, grant, type WalletState } from "@jgengine/core/economy/wallet";
 
 describe("stat graph — core seam", () => {

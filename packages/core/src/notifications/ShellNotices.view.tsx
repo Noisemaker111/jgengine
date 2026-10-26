@@ -1,12 +1,12 @@
 import { useCallback, useEffect, type ReactNode } from "react";
 
-import { NOTICE_TONE_CUES, uiCueSoundId } from "@jgengine/core/audio/uiCues";
+import { NOTICE_TONE_CUES, uiCueSoundId } from "@jgengine/core/ui/uiCues";
 import type { NoticePresentationConfig } from "@jgengine/core/game/playableGame";
 import { attachRefusalNotices } from "@jgengine/core/notifications/notices";
 import type { GameContext } from "@jgengine/core/runtime/gameContext";
 import { HudInteractProvider, type HudInteractEvent } from "@jgengine/core/hud/hudInteract.view";
 import { NoticeStack } from "@jgengine/core/notifications/notices.view";
-import { playUiCue, uiCueForInteraction } from "@jgengine/react/uiCues";
+import { playUiCue, uiCueForInteraction } from "@jgengine/core/ui/uiCues.view";
 
 /**
  * Wire `ctx.game.notices` for the player: refused commands with a `message` become deny notices, each new

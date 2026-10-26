@@ -5,7 +5,7 @@ import { renderToStaticMarkup } from "react-dom/server";
 import { createNoticeFeed, type Notice } from "@jgengine/core/notifications/notices";
 
 import { NoticeStack, noticeAvoidShift, reconcileShown } from "./notices.view";
-import { playUiCue } from "@jgengine/react/uiCues";
+import { playUiCue } from "@jgengine/core/ui/uiCues.view";
 
 function notice(id: string, count = 1): Notice {
   return { id, text: id, tone: "info", key: id, count, at: 0, expiresAt: 1 };

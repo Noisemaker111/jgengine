@@ -1,4 +1,4 @@
-import { gameFontStacks } from "@jgengine/react/gameFonts";
+import { gameFontStacks } from "@jgengine/core/ui/fonts.view";
 import { hudTheme } from "@jgengine/core/hud/hudTheme.view";
 import { GAME_FONTS } from "../../art/fonts/fonts";
 import { FERRALON } from "../palette";

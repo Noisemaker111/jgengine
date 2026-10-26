@@ -7,7 +7,7 @@ import { renderToStaticMarkup } from "react-dom/server";
 import { createPromptRegistry } from "@jgengine/core/interaction/promptRegistry";
 import { keybind, proximityPrompt } from "@jgengine/core/interaction/proximityPrompt";
 
-import { InteractionPrompt } from "@jgengine/react/interactionPrompt";
+import { InteractionPrompt } from "@jgengine/core/interaction/interactionPrompt.view";
 import { WaypointMarkers } from "@jgengine/react/waypointMarkers";
 
 /**
@@ -17,19 +17,19 @@ import { WaypointMarkers } from "@jgengine/react/waypointMarkers";
  * glows as plates and overlays instead; this guard keeps it that way.
  */
 const REPO = join(import.meta.dir, "../../../..");
-const REACT_SRC = "packages/react/src";
+const KIT_SRC = "packages/core/src/ui/kit";
 
-const KIT_FILES = readdirSync(join(REPO, REACT_SRC))
-  .filter((name) => /^uiKit[A-Z]\w*\.tsx$/.test(name) && !/Preview|\.test\./.test(name))
-  .map((name) => `${REACT_SRC}/${name}`);
+const KIT_FILES = readdirSync(join(REPO, KIT_SRC))
+  .filter((name) => /^uiKit[A-Z]\w*\.view\.tsx$/.test(name) && !/Preview|\.test\./.test(name))
+  .map((name) => `${KIT_SRC}/${name}`);
 
 /** Kits, game-UI blocks and HUD primitives: no `filter` (other than `none`) and no `backdrop-filter`. */
 const NO_FILTER = [
   ...KIT_FILES,
-  "packages/react/src/uiKit.ts",
-  "packages/react/src/kitFrame.tsx",
-  "packages/react/src/gameCursor.tsx",
-  "packages/react/src/gameSlider.tsx",
+  "packages/core/src/ui/kit/uiKit.view.ts",
+  "packages/core/src/ui/kit/kitFrame.view.tsx",
+  "packages/core/src/ui/cursor.view.tsx",
+  "packages/core/src/ui/slider.view.tsx",
   "packages/core/src/hud/hudLayout.view.tsx",
   "packages/core/src/menu/gameMenu.view.tsx",
   "packages/core/src/menu/gameMenuSaves.view.tsx",
@@ -38,7 +38,7 @@ const NO_FILTER = [
   "packages/core/src/notifications/notices.view.tsx",
   "packages/core/src/notifications/toastStack.view.tsx",
   "packages/core/src/hud/hudFrame.view.tsx",
-  "packages/react/src/interactionPrompt.tsx",
+  "packages/core/src/interaction/interactionPrompt.view.tsx",
   "packages/react/src/map.tsx",
   "packages/core/src/menu/menuScreen.view.tsx",
   "packages/react/src/waypointMarkers.tsx",

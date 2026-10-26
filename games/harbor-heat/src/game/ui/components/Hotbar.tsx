@@ -1,9 +1,9 @@
-import { useActionBindings } from "@jgengine/react/uiKitRoot";
-import { iconForItemId } from "@jgengine/react/gameIcons";
+import { useActionBindings } from "@jgengine/core/ui/kit/uiKitRoot.view";
+import { iconForItemId } from "@jgengine/core/ui/icons/gameIcons.view";
 import { HudFade } from "@jgengine/core/hud/hudLayout.view";
 import { useEntityStat, useGame, useInventory, usePlayer } from "@jgengine/react/hooks";
-import { IconTreatment, schoolForItem } from "@jgengine/react/iconTreatment";
-import { actionGlyph, useInputDevice } from "@jgengine/react/inputDevice";
+import { IconTreatment, schoolForItem } from "@jgengine/core/ui/icons/iconTreatment.view";
+import { actionGlyph, useInputDevice } from "@jgengine/core/input/inputDevice.view";
 import { useStore } from "@jgengine/react/store";
 import { slotStore } from "../../commands";
 import { ITEM_LABELS } from "../../content";

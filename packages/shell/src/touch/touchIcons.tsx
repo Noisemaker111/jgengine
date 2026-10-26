@@ -1,7 +1,7 @@
 import type { ReactNode } from "react";
 
 import type { TouchButton } from "@jgengine/core/input/touchScheme";
-import { GameIcon, iconForAction, isGameIconName, type GameIconName } from "@jgengine/react/gameIcons";
+import { GameIcon, iconForAction, isGameIconName, type GameIconName } from "@jgengine/core/ui/icons/gameIcons.view";
 
 /** Shooter verbs the shared `GameIcon` catalog has no glyph for. Same 24-unit, `currentColor` style. */
 const TOUCH_GLYPHS = {

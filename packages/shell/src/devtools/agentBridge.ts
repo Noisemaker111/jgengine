@@ -1,6 +1,6 @@
 import { devtools } from "@jgengine/core/devtools/devtools";
 import { getSaveEndpoint } from "@jgengine/core/devtools/saveEndpoint";
-import { canvasCover } from "@jgengine/react/canvasCover";
+import { canvasCover } from "@jgengine/core/ui/canvasCover.view";
 import type { GameContext } from "@jgengine/core/runtime/gameContext";
 import type { PlayableGame } from "../registry";
 import {

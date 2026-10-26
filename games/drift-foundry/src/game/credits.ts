@@ -1,5 +1,5 @@
 import { creditsForSourceIds } from "@jgengine/assets/credits";
-import { mergeCredits } from "@jgengine/core/game/credits";
+import { mergeCredits } from "@jgengine/core/menu/credits";
 
 import { TRACK_LIBRARY_CREDITS } from "./art/trackModels";
 import { ASSET_SOURCE_IDS } from "./assets";
