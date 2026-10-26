@@ -1,6 +1,6 @@
 import { describe, expect, test } from "bun:test";
 
-import { SCENE_WARMUP_PENDING, SceneWarmupCover, warmupBarShare } from "./SceneWarmupGate";
+import { SCENE_WARMUP_PENDING, SceneWarmupCover, createSceneWarmupStore, warmupBarShare } from "./SceneWarmupGate";
 
 function textOf(node: unknown): string {
   if (node === null || node === undefined || node === false) return "";
@@ -46,5 +46,23 @@ describe("SceneWarmupCover", () => {
     expect(warmupBarShare(SCENE_WARMUP_PENDING)).toBe(0.05);
     expect(warmupBarShare({ phase: "compiling", rounds: 0, programs: 12, planned: 40, deferred: 0, progress: 0.5, elapsedMs: 900 })).toBe(0.5);
     expect(warmupBarShare({ phase: "compiling", rounds: 0, programs: 0, planned: 40, deferred: 0, progress: 0, elapsedMs: 10 })).toBe(0.05);
+  });
+});
+
+describe("createSceneWarmupStore", () => {
+  test("hands progress to the cover's subscription, not to the component that renders the canvas", () => {
+    const store = createSceneWarmupStore();
+    expect(store.get()).toBe(SCENE_WARMUP_PENDING);
+    let heard = 0;
+    const stop = store.subscribe(() => {
+      heard += 1;
+    });
+    const compiling = { ...SCENE_WARMUP_PENDING, phase: "compiling" as const, progress: 0.5 };
+    store.set(compiling);
+    expect(store.get()).toBe(compiling);
+    expect(heard).toBe(1);
+    stop();
+    store.set(SCENE_WARMUP_PENDING);
+    expect(heard).toBe(1);
   });
 });

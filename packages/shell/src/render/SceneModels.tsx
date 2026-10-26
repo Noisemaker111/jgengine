@@ -15,7 +15,7 @@ import { detectKtx2Support, sharedGltfLoader } from "./modelLoad";
 import { modelAssetRequests } from "./modelAssets";
 import { measureLocalBounds, reportMeasuredBounds } from "./measureBounds";
 import { recordRenderBounds } from "../visibility/renderBounds";
-import { measureLocalCollisionTriangles, reportMeasuredCollisionMesh } from "./measureCollisionMesh";
+import { measureLocalCollisionTriangles, reportCollisionMeshOnce } from "./measureCollisionMesh";
 import { useModelInstance } from "./useModelInstance";
 import { applyMaterialAssignments, useModelMaterialTextures, MaterialTextureLoader, validateMaterialAssignmentTargets } from "./materialAsset";
 import { useFootIk } from "./useFootIk";
@@ -348,12 +348,11 @@ export function EntityModel({
   // (fitted or measured) to a hitbox that raycasts the model's own triangles.
   useLayoutEffect(() => {
     if (ctx === null || measureTarget === undefined || measureKey === undefined) return;
-    const triangles = measureLocalCollisionTriangles(scene, {
-      scale,
-      offset: [positionX, positionY, positionZ],
-    });
-    if (triangles !== null) reportMeasuredCollisionMesh(ctx, measureTarget, measureKey, triangles);
-  }, [ctx, scene, scale, positionX, positionY, positionZ, measureTarget, measureKey]);
+    const source = `${model.url}|${model.hiddenNodes ?? ""}|${scale}|${positionX},${positionY},${positionZ}`;
+    reportCollisionMeshOnce(ctx, measureTarget, measureKey, source, () =>
+      measureLocalCollisionTriangles(scene, { scale, offset: [positionX, positionY, positionZ] }),
+    );
+  }, [ctx, scene, scale, positionX, positionY, positionZ, measureTarget, measureKey, model.url, model.hiddenNodes]);
 
   const engineMotion = useEngineCharacterMotion(model, ctx, instanceId);
   useFootIk(scene, engineMotion ? "auto" : model.ik === "none" ? undefined : model.ik, ctx, instanceId, baseY, engineMotion ? ENGINE_IK_OPTIONS : undefined);

@@ -9,7 +9,6 @@ import {
   Scene,
   MeshDistanceMaterial,
   Sphere,
-  Vector3,
   WebGLRenderTarget,
   type BufferGeometry,
   type Camera,
@@ -108,8 +107,13 @@ export interface FirstFramePlanOptions {
 
 /** Which drawables the first frame can reach, so the cover waits for those and no others. @internal */
 export interface FirstFramePlan {
-  /** Drawables compiled before the first frame is shown. */
+  /** Drawables the first frame shows: their own programs are compiled before it is shown. */
   objects: ReadonlySet<Object3D>;
+  /**
+   * Shadow casters outside the view: the first frame's shadow pass draws them, so their depth
+   * programs go with the first view's, and their lit programs follow with the rest.
+   */
+  casters: ReadonlySet<Object3D>;
   /** How many drawables the plan covers. */
   reachable: number;
   /** Drawables outside the first frame's reach, for the background compile. */
@@ -121,6 +125,7 @@ const DEFAULT_VIEW_MARGIN = 1.4;
 /**
  * The drawables the first frame can reach: shown, on a layer the camera renders, and either
  * inside the view or a shadow caster, which the shadow pass draws without the camera seeing it.
+ * A caster outside the view needs only its depth program for that frame, so it is kept apart.
  *
  * An object just outside the frame still counts, because a turned camera makes it visible before
  * any background compile finishes; the view is grown by {@link FirstFramePlanOptions.viewMargin}.
@@ -134,32 +139,51 @@ export function planFirstFrame(scene: Object3D, camera: Camera, options: FirstFr
   frustum.setFromProjectionMatrix(new Matrix4().multiplyMatrices(camera.projectionMatrix, camera.matrixWorldInverse));
 
   const objects = new Set<Object3D>();
+  const casters = new Set<Object3D>();
   let deferred = 0;
   const visit = (object: Object3D, shownByParent: boolean): void => {
     const shown = shownByParent && object.visible;
     if (isDrawable(object)) {
-      if (shown && inReach(object, camera, frustum, margin)) objects.add(object);
-      else deferred += 1;
+      const reach = shown ? inReach(object, camera, frustum, margin) : null;
+      if (reach === "view") objects.add(object);
+      else {
+        if (reach === "caster") casters.add(object);
+        deferred += 1;
+      }
     }
     for (const child of object.children) visit(child, shown);
   };
   visit(scene, true);
-  return { objects, reachable: objects.size, deferred };
+  return { objects, casters, reachable: objects.size, deferred };
 }
 
-function inReach(object: Drawable, camera: Camera, frustum: Frustum, margin: number): boolean {
-  if (!object.layers.test(camera.layers)) return false;
-  if (object.frustumCulled === false) return true;
+/**
+ * The local sphere the renderer culls a drawable with: an instanced, batched or skinned mesh's
+ * own sphere covers every instance or pose, where its geometry's covers only one.
+ */
+function cullingSphere(object: Drawable): Sphere | null {
+  const own = object as { boundingSphere?: Sphere | null; computeBoundingSphere?: () => void };
+  if (own.boundingSphere !== undefined && typeof own.computeBoundingSphere === "function") {
+    if (own.boundingSphere === null) own.computeBoundingSphere();
+    return own.boundingSphere ?? null;
+  }
   const geometry = object.geometry;
   if (geometry !== undefined && geometry.boundingSphere === null) geometry.computeBoundingSphere();
-  const sphere = geometry?.boundingSphere ?? null;
-  if (sphere === null) return true;
-  // A caster outside the view is still drawn by the shadow pass, so its program is needed too.
-  if (object.castShadow === true) return true;
-  const position = object.getWorldPosition(new Vector3());
-  const grown = new Sphere().copy(sphere).translate(position);
-  grown.radius = sphere.radius * margin;
-  return frustum.intersectsSphere(grown);
+  return geometry?.boundingSphere ?? null;
+}
+
+function inReach(object: Drawable, camera: Camera, frustum: Frustum, margin: number): "view" | "caster" | null {
+  if (!object.layers.test(camera.layers)) return null;
+  if (object.frustumCulled === false) return "view";
+  const sphere = cullingSphere(object);
+  if (sphere === null) return "view";
+  // The same sphere the renderer culls with, so the plan never drops what the frame then draws.
+  object.updateWorldMatrix(true, false);
+  const grown = new Sphere().copy(sphere).applyMatrix4(object.matrixWorld);
+  grown.radius *= margin;
+  if (frustum.intersectsSphere(grown)) return "view";
+  // A caster outside the view is still drawn by the shadow pass, with its depth program.
+  return object.castShadow === true ? "caster" : null;
 }
 
 /**
@@ -1020,12 +1044,16 @@ export function createShaderWarmup(options: ShaderWarmupOptions): ShaderWarmup {
     const known = programSet();
     const context = readContext();
     const objects = [...plan.objects];
+    const casters = [...plan.casters];
     const rest: Object3D[] = [];
     options.scene.traverse((object) => {
-      if (isDrawable(object) && !plan.objects.has(object)) rest.push(object);
+      if (isDrawable(object) && !plan.objects.has(object) && !plan.casters.has(object)) rest.push(object);
     });
-    const firstFrame = [...sceneJobs(objects, context), ...shadowJobs(objects, context), ...heldJobs(objects)];
-    const later = [...sceneJobs(rest, context), ...shadowJobs(rest, context)];
+    // The first view goes first: its lit programs, and depth programs for every caster the shadow
+    // pass reaches. The rest is compiled under the cover too, after it: a menu camera that drifts
+    // or orbits turns to it while the menu is up, and linking it then stalls the menu.
+    const firstFrame = [...sceneJobs(objects, context), ...shadowJobs([...objects, ...casters], context), ...heldJobs(objects)];
+    const later = [...sceneJobs([...casters, ...rest], context), ...shadowJobs(rest, context)];
     const jobs = [...firstFrame, ...later];
     markTimeline("jg:warmup:round", { firstFrame: firstFrame.length, later: later.length, programs: before });
     // A round with nothing new still compiles once, so a renderer that refuses fails the warmup.
@@ -1035,7 +1063,7 @@ export function createShaderWarmup(options: ShaderWarmupOptions): ShaderWarmup {
     const settled = await settle(known, Math.max(deadline, floor));
     // Linked is not finished everywhere: draw each program once while still covered. Not while a
     // program is still building, though: its draw would hold the thread until the driver is done.
-    const draws = settled ? drawJobs([...objects, ...rest], context) : [];
+    const draws = settled ? drawJobs([...objects, ...casters, ...rest], context) : [];
     markTimeline("jg:warmup:draws", { draws: draws.length });
     if (!(await runJobs(draws, () => cancelled || now() >= deadline, true))) return "error";
     publish({ rounds: state.rounds + 1, programs: programs() });

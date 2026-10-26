@@ -388,6 +388,8 @@ async function measureOnce(base: string, game: string, path: string, args: LoadA
       }
       if (process.env.JG_LOAD_DEBUG === "1") console.error(`load: ${Date.now() - (deadline - args.timeoutMs)}ms ${JSON.stringify({ ...state, tasks: state?.tasks.length })}`);
       if (state?.playableAt != null) break;
+      // The guard judges the menu and the scene behind it, so it stops at scene ready.
+      if ((args.guard || args.saveBaseline) && state?.sceneReadyAt != null) break;
       // wait-ok: samples the page's own probe while the game loads
       await new Promise((resolve) => setTimeout(resolve, 100));
     }

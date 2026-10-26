@@ -95,6 +95,31 @@ function ObjectSource({ source, objects, batch, assignment, level }: {
   return <instancedMesh ref={attach} args={[source.geometry, source.material, objects.length]} userData={{ [STATIC_BATCH_MESH_KEY]: true }} castShadow={source.castShadow} receiveShadow={source.receiveShadow} dispose={null} />;
 }
 
+/** Bounds and collision triangles of one harvested model, measured once however often its batch re-renders. */
+const sourceMeasures = new WeakMap<object, { bounds: ReturnType<typeof measureLocalBounds>; triangles: ReturnType<typeof measureLocalCollisionTriangles> }>();
+
+function reportSourceMeasures(ctx: ReturnType<typeof useGameContext>, harvested: { sources: readonly ScatterModelSource[] }, batch: StaticObjectBatch): void {
+  let measured = sourceMeasures.get(harvested);
+  if (measured === undefined) {
+    const root = new THREE.Group();
+    for (const source of harvested.sources) {
+      const mesh = new THREE.Mesh(source.geometry, source.material);
+      mesh.matrixAutoUpdate = false;
+      mesh.matrix.copy(source.localMatrix);
+      root.add(mesh);
+    }
+    measured = { bounds: measureLocalBounds(root), triangles: measureLocalCollisionTriangles(root) };
+    sourceMeasures.set(harvested, measured);
+  }
+  const key = batch.objects[0]!.catalogId;
+  if (measured.bounds !== null) {
+    recordRenderBounds(ctx, "object", key, measured.bounds);
+    // Index dims keep priority for colliders; culling always uses what was really mounted.
+    if (batch.model.dims?.maxY === undefined) reportMeasuredBounds(ctx, "object", key, measured.bounds);
+  }
+  if (measured.triangles !== null) reportMeasuredCollisionMesh(ctx, "object", key, measured.triangles);
+}
+
 function LoadedStaticObjects({ batch, single }: { batch: StaticObjectBatch; single: (object: SceneObject) => ReactNode }) {
   const ctx = useGameContext();
   const { objects, excluded } = useBatchMembers(batch);
@@ -104,22 +129,7 @@ function LoadedStaticObjects({ batch, single }: { batch: StaticObjectBatch; sing
   useEffect(() => () => { if (harvested !== null) disposeScatterModelSources(harvested.root); }, [harvested]);
   useEffect(() => {
     if (harvested === null) return;
-    const root = new THREE.Group();
-    for (const source of harvested.sources) {
-      const mesh = new THREE.Mesh(source.geometry, source.material);
-      mesh.matrixAutoUpdate = false;
-      mesh.matrix.copy(source.localMatrix);
-      root.add(mesh);
-    }
-    const key = batch.objects[0]!.catalogId;
-    const bounds = measureLocalBounds(root);
-    if (bounds !== null) {
-      recordRenderBounds(ctx, "object", key, bounds);
-      // Index dims keep priority for colliders; culling always uses what was really mounted.
-      if (batch.model.dims?.maxY === undefined) reportMeasuredBounds(ctx, "object", key, bounds);
-    }
-    const triangles = measureLocalCollisionTriangles(root);
-    if (triangles !== null) reportMeasuredCollisionMesh(ctx, "object", key, triangles);
+    reportSourceMeasures(ctx, harvested, batch);
   }, [ctx, harvested, batch]);
   const radius = useMemo(() => harvested === null ? 0 : sourceRadius(harvested.sources), [harvested]);
   if (harvested === null) return <>{batch.objects.map(single)}</>;
@@ -239,22 +249,7 @@ function VariantLevel({ url, model, batch, objects, level, assignment, measure, 
   useEffect(() => () => { if (harvested !== null) disposeScatterModelSources(harvested.root); }, [harvested]);
   useEffect(() => {
     if (harvested === null || !measure) return;
-    const root = new THREE.Group();
-    for (const source of harvested.sources) {
-      const mesh = new THREE.Mesh(source.geometry, source.material);
-      mesh.matrixAutoUpdate = false;
-      mesh.matrix.copy(source.localMatrix);
-      root.add(mesh);
-    }
-    const key = batch.objects[0]!.catalogId;
-    const bounds = measureLocalBounds(root);
-    if (bounds !== null) {
-      recordRenderBounds(ctx, "object", key, bounds);
-      // Index dims keep priority for colliders; culling always uses what was really mounted.
-      if (batch.model.dims?.maxY === undefined) reportMeasuredBounds(ctx, "object", key, bounds);
-    }
-    const triangles = measureLocalCollisionTriangles(root);
-    if (triangles !== null) reportMeasuredCollisionMesh(ctx, "object", key, triangles);
+    reportSourceMeasures(ctx, harvested, batch);
   }, [ctx, harvested, batch, measure]);
   if (harvested === null) return <LevelSingles objects={objects} level={level} assignment={assignment} single={single} />;
   return <>{harvested.sources.map((source, index) => <ObjectSource key={index} source={source} objects={objects} batch={batch} assignment={assignment} level={level} />)}</>;
@@ -297,6 +292,9 @@ export function VariantStaticObjects({ batch, single }: { batch: StaticObjectBat
   const assignment = useMemo(() => new Map<string, number>(), []);
   const camera = useMemo(() => new THREE.Vector3(), []);
   const probe = useMemo(() => new THREE.Vector3(), []);
+  // One model per level for the batch's life: a fresh object each render rebuilt every level's
+  // instanced sources and re-measured its collision triangles on every membership change.
+  const levelModels = useMemo(() => levels.map((_, index) => variantLevelModel(batch.model, index)), [batch.model, levels]);
   const members = useRef<readonly SceneObject[]>(objects);
   const revision = useRef(-1);
   const activeSelector = useRef(selector);
@@ -323,7 +321,7 @@ export function VariantStaticObjects({ batch, single }: { batch: StaticObjectBat
       <VariantLevel
         key={`${level.url}:${index}`}
         url={level.url}
-        model={variantLevelModel(batch.model, index)}
+        model={levelModels[index]!}
         batch={batch}
         objects={objects}
         level={index}

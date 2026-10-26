@@ -1,5 +1,5 @@
 import { describe, expect, test } from "bun:test";
-import { BoxGeometry, DirectionalLight, Group, Mesh, MeshBasicMaterial, MeshDepthMaterial, MeshNormalMaterial, Object3D, OrthographicCamera, PerspectiveCamera, Scene, type Material } from "three";
+import { BoxGeometry, DirectionalLight, Group, InstancedMesh, Matrix4, Mesh, MeshBasicMaterial, MeshDepthMaterial, MeshNormalMaterial, Object3D, OrthographicCamera, PerspectiveCamera, Scene, type Material } from "three";
 
 import {
   batchByProgram,
@@ -123,14 +123,30 @@ describe("planFirstFrame", () => {
     expect(planFirstFrame(scene, camera).reachable).toBe(0);
   });
 
-  test("keeps shadow casters the camera has not turned to yet, because the shadow pass draws them", () => {
+  test("keeps shadow casters the camera has not turned to yet apart: the shadow pass needs only their depth programs", () => {
     const scene = new Scene();
     const caster = meshAt(0, 0, 60);
     caster.castShadow = true;
-    scene.add(caster);
+    const behind = meshAt(0, 0, 60);
+    scene.add(caster, behind);
     const camera = new PerspectiveCamera(55, 16 / 9, 0.1, 200);
 
-    expect(planFirstFrame(scene, camera).objects.has(caster)).toBe(true);
+    const plan = planFirstFrame(scene, camera);
+    expect(plan.casters.has(caster)).toBe(true);
+    expect(plan.objects.has(caster)).toBe(false);
+    expect(plan.casters.has(behind)).toBe(false);
+  });
+
+  test("keeps an instanced mesh whose instances reach the view though its origin does not", () => {
+    const scene = new Scene();
+    const cars = new InstancedMesh(new BoxGeometry(1, 1, 1), new MeshBasicMaterial(), 2);
+    cars.position.set(0, 0, 60);
+    cars.setMatrixAt(0, new Matrix4());
+    cars.setMatrixAt(1, new Matrix4().makeTranslation(0, 0, -120));
+    scene.add(cars);
+    const camera = new PerspectiveCamera(55, 16 / 9, 0.1, 200);
+
+    expect(planFirstFrame(scene, camera).objects.has(cars)).toBe(true);
   });
 
   test("keeps unsullied drawables such as a sky dome", () => {

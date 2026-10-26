@@ -8,6 +8,7 @@ import { findKeyLight, towardLight } from "../postfx/contactShadowPass";
 import { advanceLivingWorld, livingWorld, resetLivingWorld } from "./livingWorld";
 import { windDirection, windGust } from "./modelWind";
 import { useDisposable } from "./useDisposable";
+import { prepareBeforeWarmup } from "./shaderWarmup";
 import { applyWetnessToScene } from "./wetSurfaces";
 
 const LIGHT_RESCAN_SECONDS = 1.5;
@@ -43,6 +44,15 @@ function LivingWorldDriver() {
     resetLivingWorld();
     windGust.value = 1;
   }, []);
+  // Ground that loads while it is already wet is patched before the warmup links it, so it is
+  // compiled once as wet ground instead of once dry and again a scan later.
+  useEffect(
+    () =>
+      prepareBeforeWarmup(scene, () => {
+        if (livingWorld.wetness > 0) applyWetnessToScene(scene);
+      }),
+    [scene],
+  );
   useFrame((_, delta) => {
     sinceScan.current += delta;
     if (sinceScan.current >= LIGHT_RESCAN_SECONDS || light.current?.parent === null) {
