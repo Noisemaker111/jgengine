@@ -9,8 +9,12 @@ import {
   statSync,
   writeFileSync,
 } from "node:fs";
-import { dirname, isAbsolute, join, resolve } from "node:path";
+import { homedir } from "node:os";
+import { dirname, extname, join, resolve } from "node:path";
 
+import { decodePng } from "@jgengine/assets/imageCodec";
+
+import { buildDesktopIcons, DESKTOP_ICON_FILES } from "./desktopIcons";
 import { escapeHtml } from "./escapeHtml";
 import { flag, hasFlag, readPackageJson } from "./pkg";
 import { displayNameFromId, GAME_ID_PATTERN } from "./templates";
@@ -45,6 +49,8 @@ export interface DesktopPlan {
   stagingDir: string;
   metadata: DesktopMetadata;
   iconSource: string | null;
+  /** Set when a project icon was found but could not be read, so the jgengine mark is used. */
+  iconWarning: string | null;
   frontendDist: string;
 }
 
@@ -66,14 +72,9 @@ const VALUE_FLAGS = new Set(["--url", "--name", "--id", "--version", "--icon", "
 const DEFAULT_VERSION = "0.1.0";
 
 const DESKTOP_CSP =
-  "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https:; font-src 'self' data:; media-src 'self' blob: https:; connect-src 'self' ws: wss: https:; worker-src 'self' blob:; object-src 'none'; base-uri 'self'; frame-src 'none'; frame-ancestors 'none'";
+  "default-src 'self'; script-src 'self' 'wasm-unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https:; font-src 'self' data:; media-src 'self' blob: https:; connect-src 'self' data: blob: ws: wss: https:; worker-src 'self' blob:; object-src 'none'; base-uri 'self'; frame-src 'none'; frame-ancestors 'none'";
 
 const ALLOWED_REMOTE_HOSTS = new Set(["localhost", "127.0.0.1", "::1", "jgengine.com"]);
-
-const MINIMAL_PNG = Buffer.from(
-  "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg==",
-  "base64",
-);
 
 const DESKTOP_USAGE = `usage: jgengine desktop [projectDir] [options]
 
@@ -88,7 +89,7 @@ options:
   --name <title>      product / window title (default: package name or host)
   --id <reverse.dns>  bundle identifier (default: com.jgengine.<slug>)
   --version <semver>  app version (default: package.json version or ${DEFAULT_VERSION})
-  --icon <path.png>   window/installer icon (default: public/icon.png or embedded)
+  --icon <path.png>   window/installer icon, any square-ish PNG (default: see below)
   --out <dir>         staging directory (default: <project>/.jgengine/desktop)
   --dry-run           generate staging + config only; skip toolchain + Rust build
   --skip-frontend-build  reuse existing dist/ (local mode; for tests)
@@ -100,7 +101,14 @@ defaults (deterministic):
   name     package.json name → title case, or URL hostname
   id       com.jgengine.<alphanumeric slug from name>
   version  package.json "version" or ${DEFAULT_VERSION}
-  icon     <project>/public/icon.png, else <project>/icon.png, else embedded PNG
+  icon     public/icon.png, icon.png, public/cover.png or cover.png in the project
+           (centre-cropped), else the jgengine mark; icon.ico and every size are generated
+
+output:
+  <staging>/<Name>.exe              the game itself; runs without installing
+  <staging>/<Name>_<ver>_x64-setup.exe  the NSIS installer
+  Rust builds share one cargo target dir (CARGO_TARGET_DIR, default
+  %LOCALAPPDATA%/jgengine/desktop-target), so only the first game compiles Tauri.
 `;
 
 /** @internal */
@@ -354,10 +362,25 @@ export function resolveIconSource(projectDir: string | null, explicit: string | 
     return path;
   }
   if (projectDir === null) return null;
-  for (const candidate of [join(projectDir, "public", "icon.png"), join(projectDir, "icon.png")]) {
+  for (const candidate of [
+    join(projectDir, "public", "icon.png"),
+    join(projectDir, "icon.png"),
+    join(projectDir, "public", "cover.png"),
+    join(projectDir, "cover.png"),
+  ]) {
     if (existsSync(candidate)) return candidate;
   }
   return null;
+}
+
+function iconError(path: string): string | null {
+  if (extname(path).toLowerCase() !== ".png") return `icon must be a PNG: ${path}`;
+  try {
+    decodePng(readFileSync(path));
+    return null;
+  } catch (error) {
+    return `unreadable icon ${path}: ${error instanceof Error ? error.message : String(error)}`;
+  }
 }
 
 /** @internal */
@@ -391,6 +414,8 @@ export function buildPlan(args: DesktopArgs, cwd: string = process.cwd()): Deskt
     if (args.icon !== undefined && iconSource === null) {
       return { error: `icon not found: ${args.icon}` };
     }
+    const urlIconError = iconSource === null ? null : iconError(iconSource);
+    if (urlIconError !== null) return { error: urlIconError };
     return {
       mode: "url",
       projectDir: null,
@@ -398,6 +423,7 @@ export function buildPlan(args: DesktopArgs, cwd: string = process.cwd()): Deskt
       stagingDir,
       metadata,
       iconSource,
+      iconWarning: null,
       frontendDist: validated.url.toString(),
     };
   }
@@ -415,10 +441,13 @@ export function buildPlan(args: DesktopArgs, cwd: string = process.cwd()): Deskt
   });
   if ("error" in metadata) return metadata;
   const stagingDir = resolve(args.outDir ?? defaultStagingDir("project", projectDir, cwd));
-  const iconSource = resolveIconSource(projectDir, args.icon);
-  if (args.icon !== undefined && iconSource === null) {
+  const found = resolveIconSource(projectDir, args.icon);
+  if (args.icon !== undefined && found === null) {
     return { error: `icon not found: ${args.icon}` };
   }
+  const projectIconError = found === null ? null : iconError(found);
+  if (projectIconError !== null && args.icon !== undefined) return { error: projectIconError };
+  const iconSource = projectIconError === null ? found : null;
   return {
     mode: "project",
     projectDir,
@@ -426,6 +455,7 @@ export function buildPlan(args: DesktopArgs, cwd: string = process.cwd()): Deskt
     stagingDir,
     metadata,
     iconSource,
+    iconWarning: projectIconError,
     frontendDist: "../dist",
   };
 }
@@ -462,7 +492,7 @@ function tauriConf(plan: DesktopPlan): string {
       bundle: {
         active: true,
         targets: ["nsis"],
-        icon: ["icons/32x32.png", "icons/128x128.png", "icons/icon.png"],
+        icon: DESKTOP_ICON_FILES.map((name) => `icons/${name}`),
       },
     },
     null,
@@ -484,7 +514,9 @@ crate-type = ["staticlib", "cdylib", "rlib"]
 tauri-build = { version = "2", features = [] }
 
 [dependencies]
-tauri = { version = "2", features = [] }
+# Without "compression": game assets are mostly already-compressed models and textures, and brotli over
+# them at build time costs minutes per game. The NSIS installer compresses the whole app anyway.
+tauri = { version = "2", default-features = false, features = ["wry", "common-controls-v6", "dynamic-acl", "x11", "dbus"] }
 serde = { version = "1", features = ["derive"] }
 serde_json = "1"
 `;
@@ -550,8 +582,8 @@ function stagingPackageJson(productName: string): string {
 
 function writeIconSet(iconsDir: string, source: string | null): void {
   mkdirSync(iconsDir, { recursive: true });
-  const bytes = source !== null ? readFileSync(source) : MINIMAL_PNG;
-  for (const name of ["32x32.png", "128x128.png", "icon.png"]) {
+  const files = buildDesktopIcons(source === null ? null : readFileSync(source));
+  for (const [name, bytes] of Object.entries(files)) {
     writeFileSync(join(iconsDir, name), bytes);
   }
 }
@@ -705,24 +737,48 @@ export function copyFrontendDist(distDir: string, stagingDir: string): void {
 }
 
 /** @internal */
-export function findNsisArtifact(stagingDir: string): string | null {
-  const nsisDir = join(stagingDir, "src-tauri", "target", "release", "bundle", "nsis");
-  if (!existsSync(nsisDir)) return null;
-  const exes = readdirSync(nsisDir)
-    .filter((name) => name.toLowerCase().endsWith(".exe"))
-    .map((name) => join(nsisDir, name));
-  if (exes.length === 0) return null;
-  exes.sort();
-  return exes[exes.length - 1]!;
+export function desktopTargetDir(env: NodeJS.ProcessEnv = process.env): string {
+  const explicit = env.CARGO_TARGET_DIR;
+  if (explicit !== undefined && explicit.length > 0) return resolve(explicit);
+  const base = env.LOCALAPPDATA ?? join(homedir(), ".cache");
+  return join(base, "jgengine", "desktop-target");
 }
 
 /** @internal */
-export function runTauriNsisBuild(stagingDir: string): { ok: true; artifact: string } | { ok: false; error: string } {
+export function artifactFileName(productName: string): string {
+  const cleaned = productName.replace(/[<>:"/\\|?*\u0000-\u001f]/g, "").trim();
+  return cleaned.length > 0 ? cleaned : "game";
+}
+
+/** @internal */
+export function findNsisArtifact(targetDir: string, metadata: DesktopMetadata): string | null {
+  const nsisDir = join(targetDir, "release", "bundle", "nsis");
+  if (!existsSync(nsisDir)) return null;
+  const prefix = `${metadata.productName}_${metadata.version}_`.toLowerCase();
+  const exe = readdirSync(nsisDir).find(
+    (name) => name.toLowerCase().startsWith(prefix) && name.toLowerCase().endsWith("-setup.exe"),
+  );
+  return exe === undefined ? null : join(nsisDir, exe);
+}
+
+/** @internal */
+export interface DesktopArtifacts {
+  app: string;
+  installer: string;
+}
+
+/** @internal */
+export function runTauriNsisBuild(
+  stagingDir: string,
+  metadata: DesktopMetadata,
+): { ok: true; artifacts: DesktopArtifacts } | { ok: false; error: string } {
+  const targetDir = desktopTargetDir();
+  console.log(`  cargo target ${targetDir} (shared; later games reuse the compiled Tauri)`);
   const result = spawnSync("npx", ["--yes", "@tauri-apps/cli@2", "build", "--bundles", "nsis"], {
     cwd: stagingDir,
     stdio: "inherit",
     shell: process.platform === "win32",
-    env: process.env,
+    env: { ...process.env, CARGO_TARGET_DIR: targetDir },
   });
   if (result.status !== 0) {
     return {
@@ -731,11 +787,18 @@ export function runTauriNsisBuild(stagingDir: string): { ok: true; artifact: str
         "tauri build failed — if the linker is missing on Windows, install Visual Studio Build Tools with the Desktop development with C++ workload",
     };
   }
-  const artifact = findNsisArtifact(stagingDir);
-  if (artifact === null) {
-    return { ok: false, error: `NSIS installer not found under ${join(stagingDir, "src-tauri", "target", "release", "bundle", "nsis")}` };
+  const crate = crateNameFromIdentifier(metadata.identifier);
+  const builtApp = join(targetDir, "release", `${crate}.exe`);
+  if (!existsSync(builtApp)) return { ok: false, error: `game executable not found: ${builtApp}` };
+  const builtInstaller = findNsisArtifact(targetDir, metadata);
+  if (builtInstaller === null) {
+    return { ok: false, error: `NSIS installer not found under ${join(targetDir, "release", "bundle", "nsis")}` };
   }
-  return { ok: true, artifact };
+  const app = join(stagingDir, `${artifactFileName(metadata.productName)}.exe`);
+  const installer = join(stagingDir, builtInstaller.slice(dirname(builtInstaller).length + 1));
+  cpSync(builtApp, app);
+  cpSync(builtInstaller, installer);
+  return { ok: true, artifacts: { app, installer } };
 }
 
 /** @internal */
@@ -799,6 +862,7 @@ export async function runDesktopAsync(argv: string[], cwd: string = process.cwd(
     }
   }
 
+  if (plan.iconWarning !== null) console.warn(`warning: ${plan.iconWarning}; using the jgengine mark`);
   console.log(`staging Tauri project → ${plan.stagingDir}`);
   const stage = writeStaging(plan);
 
@@ -831,15 +895,15 @@ export async function runDesktopAsync(argv: string[], cwd: string = process.cwd(
     return 0;
   }
 
-  console.log("building NSIS installer with Tauri…");
-  const built = runTauriNsisBuild(plan.stagingDir);
+  console.log("building the game .exe and NSIS installer with Tauri…");
+  const built = runTauriNsisBuild(plan.stagingDir, plan.metadata);
   if (!built.ok) {
     console.error(`error: ${built.error}`);
     return 1;
   }
 
-  const artifactPath = isAbsolute(built.artifact) ? built.artifact : resolve(built.artifact);
-  console.log(`\ninstaller ready:\n  ${artifactPath}`);
+  console.log(`\ngame ready (runs without installing):\n  ${built.artifacts.app}`);
+  console.log(`installer:\n  ${built.artifacts.installer}`);
   return 0;
 }
 
