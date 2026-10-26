@@ -14,7 +14,7 @@ const originalFetch = globalThis.fetch;
 
 /**
  * These cases do real zip decode + GLB extraction + filesystem writes, so their
- * wall-time scales with machine load. Under a full `test:all` run the default 5s
+ * wall-time scales with machine load. Under a full `test` run the default 5s
  * per-test budget can be exceeded on a contended box even though each passes in
  * isolation, surfacing as a spurious timeout rather than a regression. Give every
  * case an explicit generous budget so contention slows them without failing them.

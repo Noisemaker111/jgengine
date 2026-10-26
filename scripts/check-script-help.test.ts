@@ -5,7 +5,7 @@ import { fileURLToPath } from "node:url";
 
 import { describe, expect, test } from "bun:test";
 
-import { audit, declaresHelp, scriptFilesIn, targetFile } from "./check-script-help";
+import { audit, declaresHelp, repoTableCommands, scriptFilesIn, targetFile } from "./check-script-help";
 
 const checkoutRoot = fileURLToPath(new URL("..", import.meta.url));
 const scratch = join(checkoutRoot, ".scratch");
@@ -150,8 +150,11 @@ describe("audit", () => {
   });
 
   test("this repository passes its own gate", () => {
-    const result = audit({ root: checkoutRoot });
+    const result = audit({ root: checkoutRoot, tableCommands: repoTableCommands() });
     expect(result.failures).toEqual([]);
+    // The tables reach scripts package.json no longer names: every check is still probed.
+    expect(result.probes.some((probe) => probe.scripts.includes("check recipes"))).toBe(true);
+    expect(result.probes.some((probe) => probe.scripts.includes("worktree new"))).toBe(true);
     expect(result.ok).toBe(true);
   });
 });

@@ -11,7 +11,7 @@ import type { PerfReport } from "../packages/core/src/devtools/report";
  * that game's budget. No browser launch, no CDP, no second process: the page
  * pushes to the dev server's route about once a second, and this fetches the newest.
  *
- *   bun run debug <game> [--wait ms] [--no-budget]
+ *   bun run perf live <game> [--wait ms] [--no-budget]
  *
  * The record printed to stdout is exactly what `bun run perf <game>` prints. Notes
  * and the budget verdict go to stderr, so the JSON can be piped.
@@ -26,7 +26,7 @@ export interface DebugArgs {
   budget: boolean;
 }
 
-const USAGE = `usage: bun run debug <game> [--wait ms] [--no-budget]
+const USAGE = `usage: bun run perf live <game> [--wait ms] [--no-budget]
 
   <game>            game id already open in a browser (for example harbor-heat)
   --wait            how long to wait for a report when none has arrived (default ${DEFAULT_WAIT_MS} ms)

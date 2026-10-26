@@ -1,18 +1,15 @@
 import { fileURLToPath } from "node:url";
 
 import { findModuleGlobals } from "./moduleGlobalState";
-import { ignoredGames, referenceGames, warnIgnoredGames } from "./games-scope";
 import { runRatchet } from "./ratchet";
 
-const root = fileURLToPath(new URL("..", import.meta.url));
-
-const games = referenceGames(root);
-warnIgnoredGames("check-module-globals", ignoredGames(root, games));
+// Every game under games/, not only the reference set: module state in any game breaks a server
+// host running two sessions, so no game is exempt.
 runRatchet(
   {
     name: "check-module-globals",
     baselineRel: "scripts/module-global-baseline.json",
-    scan: (scanRoot) => findModuleGlobals(scanRoot, games),
+    scan: (scanRoot) => findModuleGlobals(scanRoot),
     guidance:
       "Module scope is shared by every GameContext in the process, so a server host running two\n" +
       "sessions, split-screen, and a test suite all read the same value. Put per-run or per-player\n" +

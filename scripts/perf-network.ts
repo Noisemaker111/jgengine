@@ -7,7 +7,7 @@ import { type CdpSession, ensureDevServer, openPageSession, withBrowserSession }
 /**
  * Per-game network audit, printed as one JSON line per game.
  *
- *   bun run perf:network <game...> [--seconds n] [--all] [--json out.jsonl]
+ *   bun run perf network <game...> [--seconds n] [--all] [--json out.jsonl]
  *
  * Each game is loaded in play mode, left running for `--seconds`, then reloaded
  * with the cache on. Bytes and requests come from CDP `Network` events, so a
@@ -27,7 +27,7 @@ export const ALL_GAMES = [
   "deepward",
 ] as const;
 
-const USAGE = `usage: bun run perf:network <game...> [--seconds n] [--all] [--json path]
+const USAGE = `usage: bun run perf network <game...> [--seconds n] [--all] [--json path]
 
   <game...>       one or more game ids from games/
   --all           every reference game (${ALL_GAMES.join(", ")})

@@ -8,7 +8,7 @@
 // a change note (`changes/<branch>.md`) is the lane's own, so it keeps the lane's copy.
 import type { Run } from "./land";
 
-/** Files a generator writes; `bun run gen` and `games:capabilities-sync` rewrite every one. */
+/** Files a generator writes; `bun run gen` rewrites every one. */
 export const GENERATED_PATHS: readonly RegExp[] = [
   /^\.claude\/skills\/[^/]+\/(api|capabilities)\.md$/,
   /^scripts\/(export-manifest|api-doc-baseline|api-orphan-baseline)\.json$/,
@@ -19,10 +19,7 @@ export const GENERATED_PATHS: readonly RegExp[] = [
 export const LANE_OWNED_PATHS: readonly RegExp[] = [/^changes\/[^/]+\.md$/];
 
 /** The commands that rewrite `GENERATED_PATHS` from source, in order. */
-export const REGENERATE: readonly (readonly string[])[] = [
-  ["bun", "run", "gen"],
-  ["bun", "run", "games:capabilities-sync"],
-];
+export const REGENERATE: readonly (readonly string[])[] = [["bun", "run", "gen"]];
 
 export const REGENERATED_SUBJECT = "Regenerate generated files after rebasing";
 

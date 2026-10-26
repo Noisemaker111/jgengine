@@ -2,8 +2,8 @@
  * Host one in-repo game as an authoritative ws world server for local
  * two-client testing:
  *
- *   bun run host <gameId>              # ws://localhost:8080/ws
- *   PORT=9000 bun run host <gameId>
+ *   bun run host:game <gameId>              # ws://localhost:8080/ws
+ *   PORT=9000 bun run host:game <gameId>
  *
  * Point two GamePlayerShell clients at the printed ws URL (VITE_JG_WS_URL for
  * the dev runner) and they share one server-authoritative world.
@@ -18,7 +18,7 @@ import { createWorldGameServer } from "@jgengine/node/worldServer";
 
 const gameId = process.argv[2];
 if (gameId === undefined) {
-  console.error("usage: bun run host <gameId>");
+  console.error("usage: bun run host:game <gameId>");
   process.exit(1);
 }
 

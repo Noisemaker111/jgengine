@@ -57,7 +57,7 @@ test("starting a task returns an id at once and hands the supervisor a detached 
   const dir = checkout();
   const spawned: string[][] = [];
   const id = startTask({
-    command: "bun run verify:full",
+    command: "bun run verify:fast --full",
     checkout: dir,
     id: "20261023-204501-abc",
     spawnDetached: (file, args) => spawned.push([file, ...args]),
@@ -66,14 +66,14 @@ test("starting a task returns an id at once and hands the supervisor a detached 
   expect(id).toBe("20261023-204501-abc");
   expect(spawned.length).toBe(1);
   expect(spawned[0]!.join(" ")).toContain("--supervise");
-  expect(spawned[0]!.slice(-1)[0]).toBe("bun run verify:full");
-  expect(readCommand(taskDir(dir, id))).toBe("bun run verify:full");
+  expect(spawned[0]!.slice(-1)[0]).toBe("bun run verify:fast --full");
+  expect(readCommand(taskDir(dir, id))).toBe("bun run verify:fast --full");
   expect(existsSync(join(taskDir(dir, id), "out.log"))).toBe(false);
 });
 
 test("bun's argument separator is not part of the command", () => {
-  expect(commandFrom(["--", "bun", "run", "verify:full"])).toBe("bun run verify:full");
-  expect(commandFrom(["bun", "run", "verify:full"])).toBe("bun run verify:full");
+  expect(commandFrom(["--", "bun", "run", "verify:fast", "--full"])).toBe("bun run verify:fast --full");
+  expect(commandFrom(["bun", "run", "verify:fast", "--full"])).toBe("bun run verify:fast --full");
   expect(commandFrom(["--"])).toBe("");
 });
 
@@ -104,7 +104,7 @@ test("awaiting hands the task directory to the wait, and reports the code it set
   const dir = checkout();
   const task = taskDir(dir, "20261023-204501-abc");
   mkdirSync(task, { recursive: true });
-  writeFileSync(join(task, "cmd.txt"), "bun run verify:full\n");
+  writeFileSync(join(task, "cmd.txt"), "bun run verify:fast --full\n");
   writeFileSync(join(task, "out.log"), "");
 
   const asked: string[] = [];
@@ -138,7 +138,7 @@ test("a lost runner is answered, not waited for forever", async () => {
   const dir = checkout();
   const task = taskDir(dir, "20261023-204501-abc");
   mkdirSync(task, { recursive: true });
-  writeFileSync(join(task, "cmd.txt"), "bun run verify:full\n");
+  writeFileSync(join(task, "cmd.txt"), "bun run verify:fast --full\n");
   writeFileSync(join(task, "out.log"), "started\n");
   writeFileSync(join(task, "runner"), "999999\n");
 
@@ -175,7 +175,7 @@ test("the wait is the exit event: it returns as soon as the task exits, not on t
 
 test("the documented commands run a real command in the background and report it", () => {
   const started = Bun.spawnSync({
-    cmd: [process.execPath, "run", "bg:run", "--", "echo bg-cli-one & exit 4"],
+    cmd: [process.execPath, "run", "background", "start", "--", "echo bg-cli-one & exit 4"],
     cwd: root,
     timeout: 60_000,
     stdout: "pipe",
@@ -186,7 +186,7 @@ test("the documented commands run a real command in the background and report it
   made.add(taskDir(root, id));
 
   const awaited = Bun.spawnSync({
-    cmd: [process.execPath, "run", "bg:await", id],
+    cmd: [process.execPath, "run", "background", "await", id],
     cwd: root,
     timeout: 60_000,
     stdout: "pipe",
@@ -195,7 +195,7 @@ test("the documented commands run a real command in the background and report it
   const text = awaited.stdout.toString();
 
   expect(text).toContain("bg-cli-one");
-  expect(text).toContain(`bg:await: ${id} exited 4`);
+  expect(text).toContain(`background await: ${id} exited 4`);
   expect(awaited.exitCode).toBe(4);
   expect(readOutput(taskDir(root, id))).toContain("bg-cli-one");
 });

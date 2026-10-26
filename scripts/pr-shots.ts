@@ -13,9 +13,9 @@ import { findDuplicateShots } from "./shotProvenance";
  * builds a commit against `pr-shots` with a detached index, and pushes it — the working branch,
  * HEAD, and index are never touched. Prints the raw.githubusercontent URLs to paste into a PR body.
  *
- *   bun run pr-shots shots/foo-play.png shots/foo-ui.png
- *   bun run pr-shots --branch claude/123-thing --dir claude/123-thing shots/*.png
- *   bun run pr-shots --dry shots/foo.png        # print URLs, push nothing
+ *   bun run pr:shots shots/foo-play.png shots/foo-ui.png
+ *   bun run pr:shots --branch claude/123-thing --dir claude/123-thing shots/*.png
+ *   bun run pr:shots --dry shots/foo.png        # print URLs, push nothing
  */
 
 const ARCHIVE_BRANCH = "pr-shots";
@@ -76,7 +76,7 @@ function printHelp(): void {
     [
       "Publish PR screenshots to the pr-shots archive branch.",
       "",
-      "  bun run pr-shots <file.png> [more.png ...]",
+      "  bun run pr:shots <file.png> [more.png ...]",
       "",
       "Flags:",
       "  --branch <name>   PR branch these shots belong to (default: current branch)",

@@ -2,9 +2,9 @@
 // packages/*/package.json versions, their `@jgengine/*` dependency ranges, and the
 // `VERSION` mirror in packages/core/src/meta/changelog.ts.
 //
-//   bun run version:prerelease            # 0.14.0 -> 0.15.0-next.0, 0.15.0-next.0 -> 0.15.0-next.1
-//   bun run version:prerelease -- --id rc # ...-rc.0
-//   bun run version:release               # 0.15.0-next.2 -> 0.15.0 (stable, npm latest)
+//   bun scripts/set-version.ts            # 0.14.0 -> 0.15.0-next.0, 0.15.0-next.0 -> 0.15.0-next.1
+//   bun scripts/set-version.ts --id rc # ...-rc.0
+//   bun scripts/set-version.ts --release               # 0.15.0-next.2 -> 0.15.0 (stable, npm latest)
 //   bun scripts/set-version.ts --check    # fail if anything is out of step
 import { readFileSync, writeFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";

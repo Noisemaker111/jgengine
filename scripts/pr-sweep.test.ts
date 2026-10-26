@@ -195,15 +195,15 @@ describe("the sweep report", () => {
     expect(report.rows.map((row) => row.pr.number)).toEqual([2330, 2331, 2332]);
     expect(report.exitCode).toBe(1);
     const lines = formatText(report);
-    expect(lines[0]).toBe("pr:sweep: 4 open PR(s), 3 armed for auto-merge");
+    expect(lines[0]).toBe("ci:status --sweep: 4 open PR(s), 3 armed for auto-merge");
     expect(lines.filter((line) => line.startsWith("  RED "))).toEqual(["  RED  #2332 agent/lane-release-integrity - release: make shipping an unimportable version impossible"]);
     expect(lines).toContain("         armed and red: test (f) failure https://example.test/run");
-    expect(lines.at(-1)).toBe("pr:sweep: 1 armed PR(s) will never merge until fixed: #2332");
+    expect(lines.at(-1)).toBe("ci:status --sweep: 1 armed PR(s) will never merge until fixed: #2332");
   });
 
   test("an all-clean sweep exits zero", () => {
     const report = sweep([pr({ number: 2330, statusCheckRollup: rollup2330() })]);
     expect(report.exitCode).toBe(0);
-    expect(formatText(report).at(-1)).toBe("pr:sweep: no armed PR is red");
+    expect(formatText(report).at(-1)).toBe("ci:status --sweep: no armed PR is red");
   });
 });

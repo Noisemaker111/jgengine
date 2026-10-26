@@ -1,8 +1,8 @@
 import { expect, test } from "bun:test";
 import { readFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
-import { PLANS, type Stage } from "./run-stages";
-import { CONCURRENCY, ordered, PLAN, planStages, PROVEN_IN_QUICK, runPool, runTypes, WEIGHT } from "./type-shard";
+import { type Stage } from "./run-stages";
+import { CONCURRENCY, ordered, PLAN, planStages, PROVEN_IN_QUICK, runPool, runTypes, typesPlan, WEIGHT } from "./type-shard";
 
 const stage = (name: string, needs: readonly string[] = ["ensure-ready"]): Stage => ({
   name,
@@ -44,31 +44,31 @@ test("a stage whose prerequisite failed is skipped, never reported as passing", 
 });
 
 test("the heaviest measured stages start first so they overlap the rest", () => {
-  const names = ordered(PLANS["check-types"]!).map((entry) => entry.name);
-  expect(names.slice(0, 4)).toEqual(["check-types-all", "check-skill-api", "check-capabilities", "check-doc-symbols"]);
+  const names = ordered(typesPlan()).map((entry) => entry.name);
+  expect(names.slice(0, 4)).toEqual(["types", "skill-api", "capabilities", "doc-symbols"]);
 });
 
 test("a wide stage runs after the shared lanes, not beside them", async () => {
-  const stages = [stage("ensure-ready", []), stage("cheap"), stage("check-types-all")];
+  const stages = [stage("ensure-ready", []), stage("cheap"), stage("types")];
   const order: string[] = [];
   await runTypes(stages, async (entry) => {
     order.push(entry.name);
     return true;
   });
-  expect(order).toEqual(["ensure-ready", "cheap", "check-types-all"]);
+  expect(order).toEqual(["ensure-ready", "cheap", "types"]);
 });
 
 test("every weight names a stage the plan still has, so a rename cannot silently reorder nothing", () => {
-  const names = new Set(PLANS["check-types"]!.map((entry) => entry.name));
+  const names = new Set(typesPlan().map((entry) => entry.name));
   for (const name of Object.keys(WEIGHT)) expect(names.has(name)).toBe(true);
 });
 
-test("the plan is the check-types plan and nothing is dropped from it", () => {
-  expect(PLAN).toBe("check-types");
-  const stages = PLANS[PLAN]!;
+test("the plan is the types job of the check table and nothing is dropped from it", () => {
+  expect(PLAN).toBe("types");
+  const stages = typesPlan();
   expect(stages.length).toBeGreaterThan(20);
   expect(stages[0]!.name).toBe("ensure-ready");
-  expect(stages.at(-1)!.name).toBe("check-types-all");
+  expect(stages.at(-1)!.name).toBe("types");
   expect(CONCURRENCY).toBeGreaterThan(1);
 });
 
@@ -83,13 +83,13 @@ test("a stage this job skips is still run by the quick job, so it cannot leave t
   expect(quick).toContain("bun run build");
   for (const [name, command] of Object.entries(PROVEN_IN_QUICK)) {
     expect(quick).toContain(command);
-    expect(PLANS[PLAN]!.some((stage) => stage.name === name)).toBe(true);
+    expect(typesPlan().some((stage) => stage.name === name)).toBe(true);
   }
 });
 
 test("the stages this job runs are the plan minus what quick proved, and none of them vanish", () => {
-  const stages = planStages(PLANS[PLAN]!);
-  expect(stages.map((stage) => stage.name)).not.toContain("check-skill-api");
-  expect(stages.length).toBe(PLANS[PLAN]!.length - Object.keys(PROVEN_IN_QUICK).length);
-  expect(stages.some((stage) => stage.name === "check-types-all")).toBe(true);
+  const stages = planStages(typesPlan());
+  expect(stages.map((stage) => stage.name)).not.toContain("skill-api");
+  expect(stages.length).toBe(typesPlan().length - Object.keys(PROVEN_IN_QUICK).length);
+  expect(stages.some((stage) => stage.name === "types")).toBe(true);
 });

@@ -1,5 +1,5 @@
 /**
- * Wall-clock ceilings for CPU benchmarks, gated only by `bun run bench:cpu`
+ * Wall-clock ceilings for CPU benchmarks, gated only by `bun run perf timing`
  * (CI's `perf` job), never by the unit suite. A shared runner throttles
  * mid-test - the nav crowd suite measured 0.90 ms ticks, then a 4.5 ms p50 on
  * the same run - so a ceiling on the median fails a merge for the runner's

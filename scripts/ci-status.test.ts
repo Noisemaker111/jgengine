@@ -16,7 +16,7 @@ import {
   normalizeCheck,
   parseArgs,
   runIdFrom,
-  summarize,
+  summarizeChecks,
   verdictOf,
   type CiIo,
   type RollupEntry,
@@ -177,7 +177,7 @@ describe("judging one commit's attempts", () => {
 
 describe("one query, one answer", () => {
   test("--json carries the verdict, the counts, the run id and every check", () => {
-    const status = summarize({
+    const status = summarizeChecks({
       pr: 2274,
       url: "https://github.com/o/r/pull/2274",
       branch: "agent/x",
@@ -203,7 +203,7 @@ describe("one query, one answer", () => {
 
   test("the text names each check and the verdict", () => {
     const text = formatText(
-      summarize({ pr: 1, url: "", branch: "agent/x", state: "OPEN", rollup: ROLLUP, wallMs: 1200 }),
+      summarizeChecks({ pr: 1, url: "", branch: "agent/x", state: "OPEN", rollup: ROLLUP, wallMs: 1200 }),
     );
     expect(text).toContain("pass quick");
     expect(text).toContain("wait gate (IN_PROGRESS)");
@@ -213,7 +213,7 @@ describe("one query, one answer", () => {
 
   test("a failing check is named in the verdict, not left to the table", () => {
     const text = formatText(
-      summarize({
+      summarizeChecks({
         pr: 1,
         url: "",
         branch: "agent/x",
@@ -266,9 +266,9 @@ describe("honest refusals", () => {
 
   test("verdicts map to distinct exit codes", () => {
     const base = { pr: 1, url: "", branch: "b", state: "OPEN", wallMs: 1 };
-    expect(exitCodeFor(summarize({ ...base, rollup: [ROLLUP[0]!] }))).toBe(EXIT_GREEN);
-    expect(exitCodeFor(summarize({ ...base, rollup: [{ state: "FAILURE" }] }))).toBe(EXIT_FAILED);
-    expect(exitCodeFor(summarize({ ...base, rollup: ROLLUP }))).toBe(EXIT_PENDING);
+    expect(exitCodeFor(summarizeChecks({ ...base, rollup: [ROLLUP[0]!] }))).toBe(EXIT_GREEN);
+    expect(exitCodeFor(summarizeChecks({ ...base, rollup: [{ state: "FAILURE" }] }))).toBe(EXIT_FAILED);
+    expect(exitCodeFor(summarizeChecks({ ...base, rollup: ROLLUP }))).toBe(EXIT_PENDING);
   });
 
   test("the command prints the refusal and exits non-zero, json or not", () => {

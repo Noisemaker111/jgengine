@@ -3,7 +3,7 @@
 //   bun scripts/land.ts                    # bun run lane:close runs this; call it directly only from release.ts
 //   bun run lane:close                       # verify:fast, then the line below
 //   bun scripts/land.ts --commit                    # stage, commit, push, open, arm
-//   bun scripts/land.ts --verify "bun run ship:preflight"
+//   bun scripts/land.ts --verify "bun run preflight --ship"
 //   bun scripts/land.ts --title "Menus" --body-file .scratch/body.md
 //
 // `--commit` is what lets a lane end with one command: it stages this worktree's
@@ -77,7 +77,7 @@ const LAND_USAGE = {
   flags: [
     { flag: "--title <title>", detail: "PR title when land opens a PR" },
     { flag: "--body-file <path>", detail: "PR body from this file; wins over a changes/ fragment" },
-    { flag: "--verify <command>", detail: "command to run before arming, e.g. \"bun run ship:preflight\"" },
+    { flag: "--verify <command>", detail: "command to run before arming, e.g. \"bun run preflight --ship\"" },
     { flag: "--base <branch>", detail: "branch to land into (default: beta)" },
     { flag: "--watch", detail: "deprecated: watch the checks here instead of leaving waiting to land:queue" },
   ],
@@ -302,7 +302,7 @@ export function fragmentBody(text: string): string {
 }
 
 /** What `--commit` did, so the landing can print it and a test can read it. */
-export interface CommitOutcome {
+export interface LaneCommitOutcome {
   kind: "committed" | "clean" | "failed";
   /** The fragment the message and the PR body come from. */
   fragment?: string;
@@ -394,7 +394,7 @@ export interface CommitOptions {
  * written from its commit summary, so the message, the PR body and `changes/` cannot disagree. Another
  * lane's fragment in the shared directory is never used.
  */
-export function commitLane(options: CommitOptions): CommitOutcome {
+export function commitLane(options: CommitOptions): LaneCommitOutcome {
   const { base, branch, git: runGit } = options;
   const checkout = options.checkout ?? root;
   const read = options.read ?? ((path: string) => readFileSync(path, "utf8"));
@@ -432,12 +432,20 @@ export function commitLane(options: CommitOptions): CommitOutcome {
     return { kind: "failed", code: EXIT_COULD_NOT_MERGE, why: `refused ${blocked.length} file(s) this lane did not author`, refused: blocked };
   }
 
-  const summary = firstLine(runGit(["log", "-1", "--format=%s"]).stdout) || branch;
+  // The branch's own newest commit, never HEAD: on a lane with no commit yet HEAD is the base's
+  // merge commit, and its subject would become this lane's message, PR title and changelog line.
+  const summary = firstLine(runGit(["log", "-1", "--format=%s", `origin/${base}..HEAD`]).stdout);
   const candidates = new Set([...diffPaths(base, runGit), ...stagedPaths].map((path) => basename(normalizePath(path))));
   const files = options.files ?? (() => fragmentFiles());
   const own = files().filter((file) => candidates.has(basename(file.path)));
   let fragment = pickFragment(own, branch);
   let created = false;
+
+  if (fragment === null && summary.length === 0) {
+    const name = `changes/${branch.replace(/\//g, "-")}.md`;
+    refuse(`land: this branch has no commit and no ${name}; write ${name} (its first bullet is the commit message and the PR body), then close again`);
+    return { kind: "failed", code: EXIT_COULD_NOT_MERGE, why: `no ${name} and no commit of this branch to write one from` };
+  }
 
   if (fragment === null) {
     const path = join(checkout, "changes", `${branch.replace(/\//g, "-")}.md`);

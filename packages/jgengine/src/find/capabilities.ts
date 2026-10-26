@@ -161,7 +161,7 @@ export function renderFindJsonResults(matches: readonly CapabilityEntry[], query
 /**
  * Locate the staged `skills/` directory that ships inside this CLI's tarball. In a published consumer
  * that is `node_modules/jgengine/skills`; in the monorepo it is `packages/jgengine/skills` (populated by
- * `bun run stage-skills`). Resolves by walking up from this module to the `jgengine` package root.
+ * `bun scripts/stage-skills.ts`). Resolves by walking up from this module to the `jgengine` package root.
  */
 export function resolveSkillsDir(fromDir: string = dirname(fileURLToPath(import.meta.url))): string | null {
   const packageRoot = findUp(fromDir, (dir) => existsSync(join(dir, "skills")) && existsSync(join(dir, "package.json")));

@@ -22,7 +22,7 @@ Play across machines on the same network with no cloud host at all:
 
 ```sh
 bun examples/express-host/src/server.ts   # host process, ws://<your-ip>:8080/ws
-bun run dev                               # apps/dev now listens on the network (server: { host: true })
+bun run dev:site                          # apps/dev now listens on the network (server: { host: true })
 ```
 
 Other machines on the LAN open `http://<your-ip>:5173/?game=<id>`. A game declaring `multiplayer: lan()`

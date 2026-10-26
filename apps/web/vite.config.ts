@@ -260,7 +260,7 @@ export default defineConfig({
   plugins: [
     cloudflare({ viteEnvironment: { name: "ssr" } }),
     tailwindcss(),
-    // Dev only: publish this server (so `bun run debug <game>` finds it) and accept the
+    // Dev only: publish this server (so `bun run perf live <game>` finds it) and accept the
     // in-page perf report a game pushes from the /play runner it serves.
     devServerMarkerPlugin({ kind: "website" }),
     devReportPlugin(),

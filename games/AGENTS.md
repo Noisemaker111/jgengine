@@ -15,19 +15,19 @@ Games run the engine source in `packages/` from the same commit, never a publish
 
 **Size signal.** A game module that owns a state machine, reducer, scheduler, resource pool, pathfinder, damage or status table, spawn director or progression curve is an engine system in the wrong place. If it would pass roughly 50 lines, or a second game would want it, file the engine seam first: name `packages/<pkg>/src/<file>`, the API needed and two adopting games, under [epic #2312](https://github.com/Noisemaker111/jgengine/issues/2312).
 
-**Seam line.** Every PR body carries `Engine seam: packages/shell/src/render/x.ts (adopts #1234)` or `Engine seam: none - authored content only`. `bun run games:check-framework` fails a new engine-shaped module in a game; `-- --allow "<reason>"` only when you can say why it cannot live upstream.
+**Seam line.** Every PR body carries `Engine seam: packages/shell/src/render/x.ts (adopts #1234)` or `Engine seam: none - authored content only`. `bun run check games-framework` fails a new engine-shaped module in a game; `-- --allow "<reason>"` only when you can say why it cannot live upstream.
 
 ## Capability adoption
 
-`capabilities.json` is generated from the engine's game-facing capabilities (`bun run games:capabilities-sync`). Each game's `<game>/capabilities.json` answers every one:
+`capabilities.json` is generated from the engine's game-facing capabilities (`bun run gen games-ledger`). Each game's `<game>/capabilities.json` answers every one:
 
 - **adopted** - the game runs the shared system.
 - **not-applicable** - the domain does not exist in this game; the reason names the domain.
 - **debt** - the game has the domain but not the shared system; the reason names the gap and an open issue in this repo.
 
-Reasons are 20+ specific characters, never copied between games. `bun run games:check-capabilities` fails missing, thin or template reasons, ownerless or closed-issue debt, and a stale ledger; `--summary` prints the per-game table. `bun run games:capabilities-probe` boots games that name a probe and checks the system reports live counters; name a probe only for a system mounted at boot.
+Reasons are 20+ specific characters, never copied between games. `bun run check games-capabilities` fails missing, thin or template reasons, ownerless or closed-issue debt, and a stale ledger; `--summary` prints the per-game table. `bun run games:capabilities probe` boots games that name a probe and checks the system reports live counters; name a probe only for a system mounted at boot.
 
-**Debt only goes down.** `scripts/debt-budget.json` holds a total and per-game ceiling. The gate fails when debt exceeds a ceiling or a ceiling sits above the tally; clearing debt lowers its budget with `bun run games:check-capabilities --write`, which never raises one.
+**Debt only goes down.** `scripts/debt-budget.json` holds a total and per-game ceiling. The gate fails when debt exceeds a ceiling or a ceiling sits above the tally; clearing debt lowers its budget with `bun run check games-capabilities --write`, which never raises one.
 
 ## Where the work is defined
 

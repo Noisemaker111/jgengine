@@ -4,7 +4,7 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 
 import { writeGame } from "./create";
-import { diagnose } from "./doctor";
+import { diagnoseProject } from "./doctor";
 import { sdkVersion } from "./pkg";
 
 function scaffold(): string {
@@ -16,12 +16,12 @@ function scaffold(): string {
 }
 
 function failingLabels(dir: string): string[] {
-  return diagnose(dir)
+  return diagnoseProject(dir)
     .filter((finding) => !finding.ok)
     .map((finding) => finding.label);
 }
 
-describe("diagnose", () => {
+describe("diagnoseProject", () => {
   test("checks resolved catalog drift and recognizes a hoisted SDK install", () => {
     const root = mkdtempSync(join(tmpdir(), "jgengine-doctor-catalog-"));
     const project = join(root, "games", "probe");
@@ -34,7 +34,7 @@ describe("diagnose", () => {
     try {
       const workspace = { packages: ["games/*"], catalog: { "@jgengine/core": "0.18.1", "@jgengine/react": "0.18.0" } };
       writeFileSync(manifest, JSON.stringify({ workspaces: workspace }));
-      const findings = diagnose(project);
+      const findings = diagnoseProject(project);
       expect(findings.find(entry => entry.label === "@jgengine/* catalogs resolve")?.ok).toBe(true);
       expect(findings.find(entry => entry.label === "engine installed in node_modules")?.ok).toBe(true);
       const alignment = findings.find(entry => entry.label === "@jgengine/* versions aligned");
@@ -45,7 +45,7 @@ describe("diagnose", () => {
       writeFileSync(manifest, JSON.stringify({ workspaces: workspace }));
       expect(failingLabels(project)).not.toContain("@jgengine/* versions aligned");
       writeFileSync(manifest, JSON.stringify({ workspaces: { packages: ["games/*"], catalog: null } }));
-      const missing = diagnose(project);
+      const missing = diagnoseProject(project);
       expect(missing.find(entry => entry.label === "@jgengine/* catalogs resolve")?.ok).toBe(false);
       expect(missing.find(entry => entry.label === "@jgengine/* versions aligned")?.ok).toBe(false);
       expect(missing.find(entry => entry.label === "@jgengine/* catalogs resolve")?.fix).toContain(manifest);
@@ -63,7 +63,7 @@ describe("diagnose", () => {
     const [major, minor] = sdkVersion().split(".");
     const newer = `${major}.${Number(minor) + 1}.0`;
     writeFileSync(installed, JSON.stringify({ version: newer }));
-    const finding = diagnose(dir).find(entry => entry.label === "running CLI supports installed SDK minor");
+    const finding = diagnoseProject(dir).find(entry => entry.label === "running CLI supports installed SDK minor");
     expect(finding?.ok).toBe(false);
     expect(finding?.fix).toContain(`@jgengine/core@${newer}`);
     writeFileSync(installed, JSON.stringify({ version: `${major}.${minor}.99` }));

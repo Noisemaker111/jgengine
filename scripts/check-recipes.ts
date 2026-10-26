@@ -75,7 +75,7 @@ for (const file of files) {
       const spec = match[1]!;
       if (!validSpecifiers.has(spec)) {
         problems.push(
-          `${rel(file)}:${lineNo + 1}: import "${spec}" is not a published subpath (check scripts/export-manifest.json; regenerate with bun run gen:export-manifest)`,
+          `${rel(file)}:${lineNo + 1}: import "${spec}" is not a published subpath (check scripts/export-manifest.json; regenerate with bun run gen export-manifest)`,
         );
       }
     }

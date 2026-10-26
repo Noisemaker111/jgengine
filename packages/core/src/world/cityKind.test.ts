@@ -40,7 +40,7 @@ describe("readCityRules", () => {
 
   // A city street net and a closed race circuit are the same generator at opposite slider extremes,
   // so every dial the generator answers to must have a city rule behind it. `Record` over the whole
-  // key set makes this exhaustive at type-check time; `check-street-rule-parity` is the CI gate.
+  // key set makes this exhaustive at type-check time; `check street-rule-parity` is the CI gate.
   const DIAL_TO_RULE: Record<keyof Required<StreetNetworkRules>, keyof CityRules> = {
     seed: "seed",
     outline: "outline",

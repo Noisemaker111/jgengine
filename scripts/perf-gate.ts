@@ -20,11 +20,11 @@ import { runPool } from "./type-shard";
  * counts exceed the game's budget or when the frame loop still allocates GL
  * objects after warmup.
  *
- *   bun run perf:gate [--games a,b] [--seconds n] [--quality draft|full]
+ *   bun run perf gate [--games a,b] [--seconds n] [--quality draft|full]
  *
  * Frame times are deliberately not gated: CI runners are slow and shared, so
  * only counts a build controls — draws, triangles, scene nodes and post-warmup
- * GL allocations — decide pass or fail. `bun run debug <game>` reads the same
+ * GL allocations — decide pass or fail. `bun run perf live <game>` reads the same
  * budget through the same verdict logic, from a game already open in a browser.
  *
  * Games are measured a few at a time rather than one after another: eight games
@@ -130,7 +130,7 @@ export function parseGateArgs(argv: readonly string[]): GateArgs {
   return { games, ...(quality === undefined ? {} : { quality }), draft, seconds, jobs };
 }
 
-const USAGE = `usage: bun run perf:gate [--games a,b] [--seconds n] [--quality low|medium|high|ultra] [--draft] [--jobs n]
+const USAGE = `usage: bun run perf gate [--games a,b] [--seconds n] [--quality low|medium|high|ultra] [--draft] [--jobs n]
 
   --games           comma-separated game ids (default: the 8 reference games)
   --seconds         measured window per game (default ${DEFAULT_SECONDS})

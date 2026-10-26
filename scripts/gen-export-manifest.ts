@@ -14,7 +14,7 @@ if (check) {
   if (current !== next) {
     console.error(
       "export-manifest.json is out of date. The set of importable public subpaths drifted.\n" +
-        "Run `bun run gen:export-manifest` and review the diff — a new subpath is a new public API.",
+        "Run `bun run gen export-manifest` and review the diff — a new subpath is a new public API.",
     );
     process.exit(1);
   }

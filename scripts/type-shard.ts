@@ -1,9 +1,9 @@
-// The CI `types` job runs this: the same stages as `bun run check-types`, with the
+// The CI `types` job runs this: every check whose table row names the `types` job, with the
 // independent ones in flight together instead of one after another.
 //
 // Measured on a runner (2026-10-23, ubuntu 4 vCPU, run 39896431876): the whole plan was 59 s,
-// of which the tsc fan-out was 21 s, `check-skill-api` 10.5 s, `check-capabilities` 9.7 s,
-// `check-doc-symbols` 3.2 s, every other stage under 1 s together, and the rest was 24 bun
+// of which the tsc fan-out was 21 s, `check skill-api` 10.5 s, `check capabilities` 9.7 s,
+// `check doc-symbols` 3.2 s, every other stage under 1 s together, and the rest was 24 bun
 // startups. The three of those that matter do not read each other, so they overlap; that is
 // what makes this faster than adding jobs, because a second job pays 15 s of checkout, install
 // and build before its first stage runs.
@@ -11,15 +11,20 @@
 //   bun scripts/type-shard.ts             # every stage, four at a time
 //   bun scripts/type-shard.ts --check     # stage names and how many run in flight
 //
-// The stage list is `PLANS["check-types"]` itself, not a copy: `scripts/type-shard.test.ts`
-// fails if this file ever runs a different set, and each failing stage is reported with the
-// same re-run hint `bun run check-types` gives.
-import { PLANS, rerunHint, fixHint, type Stage, type StageResult } from "./run-stages";
+// The stage list is `typesPlan()`, built from the check table in `scripts/run-stages.ts`, not a
+// copy: a check joins this job by naming it there, and each failing stage is reported with the
+// same re-run hint `bun run check <name>` gives.
+import { checkPlan, fixHint, jobChecks, rerunHint, type Stage, type StageOutcome } from "./run-stages";
 import { fileURLToPath } from "node:url";
 
 const root = fileURLToPath(new URL("..", import.meta.url));
 
-export const PLAN = "check-types";
+export const PLAN = "types";
+
+/** The stages of the CI `types` job: ensure-ready, then every check the table gives that job. */
+export function typesPlan(): Stage[] {
+  return checkPlan(jobChecks("types"), false);
+}
 /**
  * Two stages at a time. Four was measured first and bought 5 s: a 4-vCPU runner starves
  * four CPU-bound stages and the tsc fan-out's own eight children, so the whole plan took 54 s
@@ -29,12 +34,12 @@ export const PLAN = "check-types";
 export const CONCURRENCY = 2;
 
 /**
- * Stages whose own command already fans out across every core. Measured: `check-types-all`
+ * Stages whose own command already fans out across every core. Measured: `check types`
  * runs 23 typechecked dirs (22 workspaces plus `scripts/`) over 8 tsgo processes, and
  * overlapping it with one generator stretched that generator from 9.7 s to 43.7 s while the
  * fan-out went from 21 s to 31.5 s - so these run alone, after the shared lanes are done.
  */
-export const EXCLUSIVE = new Set(["check-types-all"]);
+export const EXCLUSIVE = new Set(["types"]);
 
 /**
  * Stages the `quick` job already proves on the same commit, so this job does not pay them a
@@ -43,7 +48,7 @@ export const EXCLUSIVE = new Set(["check-types-all"]);
  * leave the gate by being skipped here.
  */
 export const PROVEN_IN_QUICK: Readonly<Record<string, string>> = {
-  "check-skill-api": "bun run check-skill-api",
+  "skill-api": "bun run check skill-api",
 };
 
 /** The stages this job runs: the plan minus what `quick` already proved. */
@@ -59,10 +64,10 @@ export function planStages(stages: readonly Stage[]): Stage[] {
  * only costs overlap - the longest stage starting late - never correctness.
  */
 export const WEIGHT: Readonly<Record<string, number>> = {
-  "check-types-all": 21,
-  "check-skill-api": 10.5,
-  "check-capabilities": 9.7,
-  "check-doc-symbols": 3.2,
+  types: 21,
+  "skill-api": 10.5,
+  capabilities: 9.7,
+  "doc-symbols": 3.2,
 };
 
 /** Plan order, except that the measured-heavy stages start first so they overlap the rest. */
@@ -93,9 +98,9 @@ export async function runTypes(
   stages: readonly Stage[],
   run: (stage: Stage) => Promise<boolean>,
   concurrency: number = CONCURRENCY,
-): Promise<StageResult[]> {
+): Promise<StageOutcome[]> {
   const failed = new Set<string>();
-  const results = new Map<string, StageResult>();
+  const results = new Map<string, StageOutcome>();
   const record = (stage: Stage, ok: boolean): void => {
     if (!ok) failed.add(stage.name);
     results.set(stage.name, { name: stage.name, state: ok ? "passed" : "failed" });
@@ -132,7 +137,7 @@ async function spawnStage(stage: Stage): Promise<boolean> {
 }
 
 if (import.meta.main) {
-  const stages = planStages(PLANS[PLAN]!);
+  const stages = planStages(typesPlan());
   if (process.argv.includes("--check")) {
     const first = stages.filter((entry) => (entry.needs ?? []).length === 0);
     const rest = stages.filter((entry) => (entry.needs ?? []).length > 0 && !EXCLUSIVE.has(entry.name));

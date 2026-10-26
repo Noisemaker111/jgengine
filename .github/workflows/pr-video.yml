@@ -3,9 +3,9 @@
 # renders with GitHub's NATIVE inline video player.
 #
 # Why a workflow: cloud agent sessions sit behind an egress gateway that only
-# allows repository-scoped GitHub endpoints, so `bun run pr-video` cannot reach
+# allows repository-scoped GitHub endpoints, so `bun scripts/pr-video.ts` cannot reach
 # the github.com/user-attachments upload flow from there. Actions runners have
-# open egress — agents push the clip with `bun run pr-shots`, then dispatch
+# open egress — agents push the clip with `bun run pr:shots`, then dispatch
 # this workflow (workflow_dispatch / actions_run_trigger MCP).
 #
 # Requires the GH_SESSION_TOKEN repository Actions secret: a github.com

@@ -29,5 +29,5 @@ const baseline = new Set<string>(games.length && existsSync(baselinePath) ? JSON
 const added = gaps.filter((gap) => !baseline.has(gap));
 const stale = [...baseline].filter((gap) => !gaps.includes(gap));
 for (const gap of added) console.error(`check-art-direction: ${gap}`);
-if (stale.length) console.error(`check-art-direction: baseline entries no longer apply — run bun run check-art-direction --write\n  ${stale.join("\n  ")}`);
+if (stale.length) console.error(`check-art-direction: baseline entries no longer apply — run bun run check art-direction --write\n  ${stale.join("\n  ")}`);
 process.exit(added.length || stale.length ? 1 : 0);

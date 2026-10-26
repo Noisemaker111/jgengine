@@ -20,7 +20,7 @@ import {
 } from "./devServerMarker";
 
 /**
- * The marker is how `bun run debug` finds the dev server Jon started with `bun dev`:
+ * The marker is how `bun run perf live` finds the dev server Jon started with `bun dev`:
  * a write at listen, a read by the CLI, and a removal that never touches another
  * checkout's marker on the same port.
  */

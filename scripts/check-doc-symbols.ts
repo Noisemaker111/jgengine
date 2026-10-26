@@ -7,7 +7,7 @@ import { Node, Project } from "ts-morph";
 /**
  * Integrity gate for documented *symbol names*.
  *
- * `check-recipes` and `check-skill-sync` already prove that every `@jgengine/*`
+ * `check recipes` and `check skills` already prove that every `@jgengine/*`
  * import *path* a doc names is a real published subpath. Nothing, however,
  * proved that the *symbols* pulled from that path actually exist — so fictional
  * APIs (`applyToMyHealthStore`, `createWsBackend({ gameId })`, invented UI
@@ -19,7 +19,7 @@ import { Node, Project } from "ts-morph";
  *
  *  1. hand-written skill markdown under `.claude/skills/ ** / *.md` (the
  *     generated `api.md` / `capabilities.md` are trustworthy by construction and
- *     skipped, mirroring `check-skill-sync`);
+ *     skipped, mirroring `check skills`);
  *  2. the ``code:`` marketing/code template literals in
  *     `apps/web/src/routes/ ** / *.tsx` (scanned wholesale — real top-of-file
  *     imports there compile, so they pass, and the sample literals are the

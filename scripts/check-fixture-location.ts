@@ -6,8 +6,8 @@
  * Existing offenders are baselined in `scripts/fixture-location-baseline.json`; the list only
  * shrinks. A line can be exempted with `// fixture-location: allow <reason>` on it or the line above.
  *
- *   bun run check:fixture-location
- *   bun run check:fixture-location --write
+ *   bun run check fixture-location
+ *   bun run check fixture-location --write
  */
 import { readdirSync, readFileSync, statSync } from "node:fs";
 import { join, relative, sep } from "node:path";

@@ -28,15 +28,15 @@ describe("project commands", () => {
       stream: true,
     });
     expect(buildShellCommand({ kind: "start-game", id: "starhome", mount: "website" }).argv).toEqual(
-      ["bun", "run", "dev"],
+      ["bun", "run", "dev:site"],
     );
     expect(buildShellCommand({ kind: "start-game", id: "starhome", mount: "runner" }).argv).toEqual(
-      ["bun", "run", "dev:runner"],
+      ["bun", "run", "dev:games"],
     );
   });
 
-  test("run-gate uses the root gate script", () => {
-    expect(buildShellCommand({ kind: "run-gate" }).argv).toEqual(["bun", "run", "gate"]);
+  test("run-gate runs the full verify", () => {
+    expect(buildShellCommand({ kind: "run-gate" }).argv).toEqual(["bun", "run", "verify:fast", "--full"]);
   });
 
   test("open paths stay on existing query/route contracts", () => {

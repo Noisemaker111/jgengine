@@ -1,7 +1,7 @@
 /**
  * Create a ready git worktree for parallel agent work, local or cloud.
  *
- *   bun run agent:worktree -- <name> [branch]
+ *   bun run worktree new <name> [branch]
  *
  * Path: <main checkout>/.claude/worktrees/<name> (gitignored), even when run from
  * inside another worktree. Branch: agent/<name> or the second argument, from origin/beta.
@@ -259,7 +259,7 @@ if (import.meta.main) {
   const mainRoot = dirname(commonDir);
   const resolved = worktreeTarget(mainRoot, name);
   if ("error" in resolved) {
-    console.error(`agent-worktree: ${resolved.error}\nusage: bun run agent:worktree -- <name> [branch]`);
+    console.error(`agent-worktree: ${resolved.error}\nusage: bun run worktree new <name> [branch]`);
     process.exit(1);
   }
   const target = resolved.path;
@@ -279,7 +279,7 @@ if (import.meta.main) {
 
   // A lane that ended without `lane:close` still leaves its worktree behind, so a
   // new lane takes the merged ones with it. Unmerged and dirty trees stay.
-  const reaped = Bun.spawnSync(["bun", "run", "worktree:reap", "--skip", target], {
+  const reaped = Bun.spawnSync(["bun", "run", "worktree", "reap", "--skip", target], {
     cwd: mainRoot,
     stdout: "pipe",
     stderr: "pipe",

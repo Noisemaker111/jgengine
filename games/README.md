@@ -48,13 +48,13 @@ bun --cwd=games/harbor-heat run dev # or another game id
 ```
 
 `bun run games:provision <game-id>` does one game. Packs live once per machine in the main checkout's `.asset-store/` (`JG_ASSET_STORE` overrides); each game's `public/<kind>/<id>` is a link into it, the store is seeded from any copy a checkout already pulled, and only a pack no checkout has is downloaded. CI never downloads packs or boots games; `verify:fast` boots them locally. A test that reads model files from `public/` uses `assetTest` and `missingServed` from `games/shared/assetTest.ts`: it skips in CI and, on a machine without the packs, names each missing file and the fix. A pack counts as referenced when its source
-id appears in the game's `src/`. `bun run games:check-types` and `bun run games:test` check every game.
+id appears in the game's `src/`. `bun --filter="@games/*" run check-types` and `bun test games` check every game.
 
 ## Design checklist and loop proofs
 
 Every game's README states the same six-section design checklist (core loop, progression, failure
 states, minute 5 → hour 5, references, gap to target) and ends it with one `Loop proof:` line naming
-the flow that proves the stated loop. `bun run games:check-design` (also run by CI) fails a game that
+the flow that proves the stated loop. `bun run check games-design` (also run by CI) fails a game that
 is missing a section, names a flow whose `<game>/proofs/flows/<name>.json` is absent or does not
 parse, or ships a flow with no arrival assert. A name marked `TODO` is a promised flow nobody has
 written: it is reported, and `--strict` fails it.

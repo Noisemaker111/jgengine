@@ -340,7 +340,7 @@ function main(argv: string[]): number {
         `authored game are the same violation with no scoreable coordinates and are caught independently.\n` +
         `Three shrinking baselines pin today's known offenders so main stays green while the per-game\n` +
         `migrations land; all may only lose entries, never gain them. After a migration reseed with\n` +
-        `  bun run check-content-gate --update\n` +
+        `  bun run check content-gate --update\n` +
         `and commit the trimmed baselines. Genuinely procedural / geometry-free games declare their\n` +
         `runtime-only content in games/<id>/src/scene-ownership.json (a SceneOwnershipManifest) instead of a\n` +
         `game-name exemption; the manifest is validated by the scene-ownership boundary in @jgengine/core.\n`,

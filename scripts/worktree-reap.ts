@@ -12,13 +12,13 @@ import { parseWorktreeList, type WorktreeRef } from "./worktree-doctor";
 
 const WORKTREE_REAP_USAGE = {
   summary: "remove worktrees whose branch merged into origin/beta and whose tree is clean",
-  usage: "bun run worktree:reap [--dry-run] [--fetch]",
+  usage: "bun run worktree reap [--dry-run] [--fetch]",
   flags: [
     { flag: "--dry-run", detail: "print what would go, remove nothing" },
     { flag: "--fetch", detail: "fetch origin/beta first, so a merge that just landed counts" },
     { flag: "--skip <path>", detail: "never remove this worktree (repeatable); the caller's own directory is always skipped" },
   ],
-  example: "bun run worktree:reap --dry-run",
+  example: "bun run worktree reap --dry-run",
 } as const;
 
 export interface ReapCandidate {
@@ -123,13 +123,13 @@ export function summarise(result: { removed: ReapCandidate[]; kept: { name: stri
   if (result.removed.length === 0) {
     const merged = result.kept.filter((row) => row.reason !== "not merged into origin/beta");
     return merged.length === 0
-      ? "worktree:reap: no merged worktree to remove"
-      : `worktree:reap: nothing removed - ${merged.map((row) => `${row.name} (${row.reason})`).join(", ")}`;
+      ? "worktree reap: no merged worktree to remove"
+      : `worktree reap: nothing removed - ${merged.map((row) => `${row.name} (${row.reason})`).join(", ")}`;
   }
   const names = result.removed.map((row) => row.name);
   const held = result.kept.filter((row) => row.reason === "uncommitted changes" || row.reason === "in use");
   const tail = held.length === 0 ? "" : `; kept ${held.map((row) => `${row.name} (${row.reason})`).join(", ")}`;
-  return `worktree:reap: removed ${names.length} merged worktree${names.length === 1 ? "" : "s"} (${names.join(", ")})${tail}`;
+  return `worktree reap: removed ${names.length} merged worktree${names.length === 1 ? "" : "s"} (${names.join(", ")})${tail}`;
 }
 
 function git(cwd: string, args: string[]): { ok: boolean; stdout: string } {
@@ -160,7 +160,7 @@ function main(argv: readonly string[]): void {
 
   const common = git(process.cwd(), ["rev-parse", "--path-format=absolute", "--git-common-dir"]);
   if (!common.ok) {
-    console.error("worktree:reap: not in a git checkout");
+    console.error("worktree reap: not in a git checkout");
     process.exit(1);
   }
   const mainRoot = dirname(common.stdout.trim());
@@ -168,7 +168,7 @@ function main(argv: readonly string[]): void {
 
   const listed = git(mainRoot, ["worktree", "list", "--porcelain"]);
   if (!listed.ok) {
-    console.error("worktree:reap: could not read the worktree list");
+    console.error("worktree reap: could not read the worktree list");
     process.exit(1);
   }
   const selection = selectReap({

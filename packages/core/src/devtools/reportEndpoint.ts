@@ -2,7 +2,7 @@ import type { PerfReport } from "./report";
 
 /**
  * The dev-only route a running game pushes its in-page report to, and that
- * `bun run debug <game>` reads back. One process: the page gathers, the dev server
+ * `bun run perf live <game>` reads back. One process: the page gathers, the dev server
  * holds the newest record per game, the CLI fetches it. Nothing here ships in a
  * production build — the Vite plugin mounts it under `apply: "serve"`.
  */

@@ -1,8 +1,8 @@
 /**
  * Every game's save states, encoded and decoded: one command, one report.
  *
- *   bun run games:check-save-states            # every registered game
- *   bun run games:check-save-states --verbose  # list each game's fields and values
+ *   bun run check games-save-states            # every registered game
+ *   bun run check games-save-states --verbose  # list each game's fields and values
  *
  * ## The rule
  *

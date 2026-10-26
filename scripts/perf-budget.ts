@@ -5,8 +5,8 @@ import { join, relative } from "node:path";
 import type { PerfReport } from "../packages/core/src/devtools/report";
 
 /**
- * The budget files and the verdict logic, shared by the CI gate (`bun run perf:gate`)
- * and the in-page report reader (`bun run debug <game>`), so one command cannot pass
+ * The budget files and the verdict logic, shared by the CI gate (`bun run perf gate`)
+ * and the in-page report reader (`bun run perf live <game>`), so one command cannot pass
  * where the other fails. Frame times are deliberately not gated: CI runners are slow
  * and shared, so only counts a build controls decide pass or fail. Draws are gated
  * whole-frame (`drawsFrame`), because a single pass is a third of the work a frame does.

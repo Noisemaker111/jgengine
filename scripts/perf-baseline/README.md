@@ -74,7 +74,7 @@ the counts that survive slow hardware and are the ones to compare later.
   Not gated today; worth a look in A3.3.
 - **Scrap Signal's draws/triangles/nodes are not reproducible.** Three runs at
   the same commit: 264/667,626/961 (`bun run perf`), 312/844,202/2,045
-  (`bun run perf:gate`), and 745/1,811,446/7,631 (the `baseline` string in
+  (`bun run perf gate`), and 745/1,811,446/7,631 (the `baseline` string in
   [../perf-budget.json](../perf-budget.json)). The world streams in after play
   starts, so a fixed 6 s window catches a different amount each time. Its 820
   draw budget is fragile until A3.2 settles the stream.

@@ -4,7 +4,7 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 
 import { readPromotedScene, registerRootGameScript, runCreate, writeGame } from "./create";
-import { diagnose } from "./doctor";
+import { diagnoseProject } from "./doctor";
 import { cliVersion, sdkVersion } from "./pkg";
 import { parseCreateName } from "./templates";
 
@@ -55,7 +55,7 @@ describe("writeGame", () => {
       writeFileSync(join(installed, "package.json"), JSON.stringify({ name, version: sdkVersion() }));
     }
 
-    const failures = diagnose(dir).filter(
+    const failures = diagnoseProject(dir).filter(
       (finding) =>
         !finding.ok && !finding.label.includes("art-direction") && !finding.label.includes("skeleton") && !finding.label.includes("has sound"),
     );

@@ -145,7 +145,7 @@ function send(res: ServerResponse, status: number, body: object): void {
 
 /**
  * Dev-only Vite middleware: the page pushes its in-page report here and
- * `bun run debug <game>` reads it back as the same JSON `bun run perf` prints.
+ * `bun run perf live <game>` reads it back as the same JSON `bun run perf` prints.
  */
 export function devReportPlugin(options: { store?: ReportStore } = {}): {
   name: string;

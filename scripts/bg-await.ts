@@ -1,4 +1,4 @@
-// `bun run bg:await <id>`: block until the task `bg:run` started exits, then print its whole output
+// `bun run background await <id>`: block until the task `background start` started exits, then print its whole output
 // and its exit code.
 //
 // The harness's own background execution is the first choice where it exists (an OpenCode shell call
@@ -20,7 +20,7 @@ export const EXIT_NO_TASK = 4;
 export const EXIT_LOST = 5;
 export const EXIT_TIMEOUT = 6;
 
-/** How often a waiting `bg:await` asks whether the runner is still alive; the exit itself is an event. */
+/** How often a waiting `background await` asks whether the runner is still alive; the exit itself is an event. */
 export const BEAT_MS = 2_000;
 
 export interface AwaitOptions {
@@ -39,12 +39,12 @@ export function awaitTask(options: AwaitOptions): Promise<number> {
   const { id, err } = options;
   const checkout = options.checkout ?? root;
   if (!TASK_ID.test(id)) {
-    err(`bg:await: "${id}" is not a task id`);
+    err(`background await: "${id}" is not a task id`);
     return Promise.resolve(EXIT_NO_TASK);
   }
   const dir = taskDir(checkout, id);
   if (!existsSync(dir)) {
-    err(`bg:await: no task ${id} in ${checkout}. A task lives until someone deletes ${dir}`);
+    err(`background await: no task ${id} in ${checkout}. A task lives until someone deletes ${dir}`);
     return Promise.resolve(EXIT_NO_TASK);
   }
   const untilExit =
@@ -54,16 +54,16 @@ export function awaitTask(options: AwaitOptions): Promise<number> {
     let code = readExit(dir);
     if (code === null) {
       const command = readCommand(dir);
-      err(`bg:await: waiting for ${id}${command.length > 0 ? ` (${command})` : ""}`);
+      err(`background await: waiting for ${id}${command.length > 0 ? ` (${command})` : ""}`);
       code = await untilExit(dir, id);
     }
     const text = readOutput(dir);
     if (text.length > 0) options.write(text.endsWith("\n") ? text : `${text}\n`);
     if (code === null) {
-      err(`bg:await: ${id} never reported an exit code`);
+      err(`background await: ${id} never reported an exit code`);
       return EXIT_LOST;
     }
-    options.write(`bg:await: ${id} exited ${code}\n`);
+    options.write(`background await: ${id} exited ${code}\n`);
     return code;
   })();
 }
@@ -106,13 +106,13 @@ function waitForExit(
       }
       const runner = readRunner(dir);
       if (runner !== null && !alive(runner)) {
-        err(`bg:await: the runner for ${id} is gone and left no exit code`);
+        err(`background await: the runner for ${id} is gone and left no exit code`);
         finish(null);
       }
     }, BEAT_MS);
     if (timeoutMs !== undefined) {
       deadline = setTimeout(() => {
-        err(`bg:await: ${id} was still running after ${Math.round(timeoutMs / 1000)}s; it keeps running`);
+        err(`background await: ${id} was still running after ${Math.round(timeoutMs / 1000)}s; it keeps running`);
         finish(null);
       }, timeoutMs);
     }
@@ -135,7 +135,7 @@ export function parseAwaitArgs(argv: readonly string[]): { id: string; timeoutMs
     else if (id === null) id = arg;
     else throw new Error(`unexpected argument ${arg}`);
   }
-  if (id === null) throw new Error("usage: bun run bg:await <id> [--timeout <seconds>]");
+  if (id === null) throw new Error("usage: bun run background await <id> [--timeout <seconds>]");
   return { id, timeoutMs };
 }
 
@@ -144,7 +144,7 @@ async function main(argv: readonly string[]): Promise<void> {
   try {
     args = parseAwaitArgs(argv);
   } catch (error) {
-    console.error(`bg:await: ${(error as Error).message}`);
+    console.error(`background await: ${(error as Error).message}`);
     process.exit(EXIT_NO_TASK);
   }
   const code = await awaitTask({

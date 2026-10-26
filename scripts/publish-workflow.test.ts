@@ -1,4 +1,5 @@
 import { describe, expect, test } from "bun:test";
+import { parseCheckArgs } from "./run-stages";
 import { readFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 
@@ -33,15 +34,17 @@ describe("publish workflow", () => {
 
   test("keeps every check a release alone can make", () => {
     for (const step of [
-      "bun run check-artifacts",
-      "bun run check-release-set",
-      "bun run check-types:sdk",
-      "bun run check:release-artifacts",
-      "bun run build",
+      "bun run check artifacts",
+      "bun run check release-set",
+      "bun run check --sdk",
+      "bun scripts/check-release-artifacts.ts",
       "bun scripts/check-release-ancestor.ts",
     ]) {
       expect(workflow).toContain(step);
     }
+    // `check --sdk` builds the packages before the checks that read dist.
+    const sdk = parseCheckArgs(["--sdk"]);
+    expect(sdk.kind === "plan" && sdk.stages.some((stage) => stage.name === "build")).toBe(true);
   });
 });
 

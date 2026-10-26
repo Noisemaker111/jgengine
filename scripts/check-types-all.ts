@@ -1,6 +1,8 @@
 import { existsSync, readdirSync, readFileSync } from "node:fs";
 import { join } from "node:path";
 
+import { printHelpIfAsked } from "./script-help";
+
 const ROOTS = ["packages", "apps", "examples"];
 /**
  * Dirs that are not workspaces but carry their own tsconfig and `check-types`: the repository's
@@ -67,4 +69,13 @@ async function main(): Promise<number> {
   return failures.length > 0 ? 1 : 0;
 }
 
-if (import.meta.main) process.exit(await main());
+if (import.meta.main) {
+  const usage = {
+    summary: "type-check every workspace (and scripts/) that has its own check-types script, eight at a time",
+    usage: "bun run check types",
+    flags: [],
+    example: "bun run check types",
+  };
+  if (printHelpIfAsked("check-types-all", usage)) process.exit(0);
+  process.exit(await main());
+}

@@ -2,7 +2,8 @@
 // be the truth about that script: a name it guessed, or a script that never got a
 // usage block, is invisible until the guess fails inside someone's transcript.
 //
-// This walks every package.json script that names a file in `scripts/`, proves the
+// This walks every package.json script, check, generator and verb that names a file in
+// `scripts/` (the tables in run-stages.ts and the verb dispatchers), proves the
 // file answers `--help` with a usage block and exit 0 inside its own timeout, and
 // fails on the two silent cases: a script the package names but the repo no longer
 // has, and a script with no usage block that no one has recorded yet.
@@ -10,7 +11,12 @@ import { spawnSync } from "node:child_process";
 import { existsSync, readFileSync, writeFileSync } from "node:fs";
 import { basename, join, resolve } from "node:path";
 
+import { BACKGROUND } from "./background";
+import { PERF } from "./perf";
+import { CHECKS, checkCommand, GEN_TARGETS } from "./run-stages";
 import { printHelpIfAsked } from "./script-help";
+import type { VerbTable } from "./subcommands";
+import { WORKTREE } from "./worktree";
 
 export const EXIT_PASS = 0;
 export const EXIT_FAIL = 1;
@@ -46,6 +52,8 @@ export interface AuditOptions {
   root: string;
   baseline?: string[];
   timeoutMs?: number;
+  /** Commands reached through a table rather than package.json, by the name a lane types. */
+  tableCommands?: Readonly<Record<string, string>>;
   /** Test seam: replaces `bun <file> --help`. */
   run?: (file: string) => { status: number | null; stdout: string; stderr: string; ms: number };
 }
@@ -73,9 +81,24 @@ export function targetFile(command: string): string | null {
   return inner[0] ?? files[0] ?? null;
 }
 
-export function targets(packageJson: { scripts?: Record<string, string> }): Target[] {
+/** Every check, generator and verb this repo's tables name, as the command each one runs. */
+export function repoTableCommands(): Record<string, string> {
+  const commands: Record<string, string> = {};
+  for (const check of CHECKS) commands[`check ${check.name}`] = checkCommand(check).join(" ");
+  for (const target of GEN_TARGETS) commands[`gen ${target.name}`] = `bun ${target.script}`;
+  const tables: readonly VerbTable[] = [WORKTREE, BACKGROUND, PERF];
+  for (const table of tables) {
+    for (const [verb, entry] of Object.entries(table.verbs)) commands[`${table.name} ${verb}`] = `bun ${entry.script}`;
+  }
+  return commands;
+}
+
+export function targets(
+  packageJson: { scripts?: Record<string, string> },
+  tableCommands: Readonly<Record<string, string>> = {},
+): Target[] {
   const byFile = new Map<string, Target>();
-  for (const [name, command] of Object.entries(packageJson.scripts ?? {})) {
+  for (const [name, command] of [...Object.entries(packageJson.scripts ?? {}), ...Object.entries(tableCommands)]) {
     const file = targetFile(command);
     if (file === null) continue;
     const target = byFile.get(file) ?? { file, scripts: [] };
@@ -85,9 +108,9 @@ export function targets(packageJson: { scripts?: Record<string, string> }): Targ
   return [...byFile.values()].sort((a, b) => a.file.localeCompare(b.file));
 }
 
-/** A file declares help when it calls the shared helper or handles `--help` itself. */
+/** A file declares help when it calls the shared helper, dispatches verbs, or handles `--help` itself. */
 export function declaresHelp(source: string): boolean {
-  return source.includes("printHelpIfAsked(") || /["']--help["']/.test(source);
+  return source.includes("printHelpIfAsked(") || source.includes("runVerb(") || /["']--help["']/.test(source);
 }
 
 
@@ -122,7 +145,7 @@ export function audit(options: AuditOptions): Audit {
   const undocumented: string[] = [];
   const stale: string[] = [];
 
-  for (const target of targets(packageJson)) {
+  for (const target of targets(packageJson, options.tableCommands)) {
     const path = join(root, "scripts", target.file);
     if (!existsSync(path)) {
       missing.push(target.file);
@@ -149,9 +172,13 @@ export function audit(options: AuditOptions): Audit {
     }
     const result = run(target.file);
     const name = basename(target.file).replace(/\.(ts|mjs|js)$/, "");
-    const normalized = result.stdout.toLowerCase().replace(/[:-]/g, "-");
+    // A usage block names its file or the command a lane types for it (`perf gate`, `check recipes`).
+    const normalize = (text: string) => text.toLowerCase().replace(/[: -]/g, "-");
+    const normalized = normalize(result.stdout);
     const answered =
-      result.status === 0 && result.stdout.trim().length > 0 && normalized.includes(name.toLowerCase().replace(/[:-]/g, "-"));
+      result.status === 0 &&
+      result.stdout.trim().length > 0 &&
+      [name, ...target.scripts].some((named) => normalized.includes(normalize(named)));
     const detail = answered
       ? ""
       : result.status === 0
@@ -189,7 +216,7 @@ function firstLine(text: string): string {
 
 export function formatAudit(result: Audit, packageScriptCount: number): string {
   const lines = [
-    `check:script-help: ${packageScriptCount} package script(s) -> ${result.probes.length + result.missing.length} script file(s)`,
+    `check script-help: ${packageScriptCount} package script(s) -> ${result.probes.length + result.missing.length} script file(s)`,
   ];
   for (const probe of result.probes) {
     const mark = probe.outcome === "pass" ? "PASS" : probe.outcome === "reported" ? "TODO" : "FAIL";
@@ -208,8 +235,8 @@ export function formatAudit(result: Audit, packageScriptCount: number): string {
   if (result.stale.length > 0) {
     lines.push("", `Prune these from ${BASELINE}, they answer --help now: ${result.stale.join(" ")}`);
   }
-  if (result.ok) lines.push("", "check:script-help: PASS");
-  else lines.push("", ...result.failures.map((line) => `check:script-help: FAIL ${line}`));
+  if (result.ok) lines.push("", "check script-help: PASS");
+  else lines.push("", ...result.failures.map((line) => `check script-help: FAIL ${line}`));
   return lines.join("\n");
 }
 
@@ -221,8 +248,8 @@ function readBaseline(root: string): string[] {
 }
 
 const USAGE = {
-  summary: "prove every package.json script that points into scripts/ answers `--help`",
-  usage: "bun run check:script-help [--json] [--root <dir>] [--write-baseline]",
+  summary: "prove every package.json script, check, generator and verb that points into scripts/ answers `--help`",
+  usage: "bun run check script-help [--json] [--root <dir>] [--write-baseline]",
   flags: [
     { flag: "--json", detail: "print the audit as one document on stdout" },
     { flag: "--root <dir>", detail: "audit another checkout (default: this one)" },
@@ -231,7 +258,7 @@ const USAGE = {
       detail: `record today's undocumented script files in ${BASELINE}; fails are still fails`,
     },
   ],
-  example: "bun run check:script-help --json",
+  example: "bun run check script-help --json",
   exits: ["0 every documented script answers --help and nothing new is undocumented", "1 a help probe failed, a named script is missing, or a script has no usage block and is not recorded"],
 } as const;
 
@@ -241,14 +268,14 @@ function main(argv: readonly string[]): number {
   const packageJson = JSON.parse(readFileSync(join(resolve(root), "package.json"), "utf8")) as {
     scripts?: Record<string, string>;
   };
-  const result = audit({ root, baseline: readBaseline(resolve(root)) });
+  const result = audit({ root, baseline: readBaseline(resolve(root)), tableCommands: repoTableCommands() });
   if (argv.includes("--write-baseline")) {
     const recorded = [...new Set([...readBaseline(resolve(root)), ...result.probes.filter((probe) => probe.outcome !== "pass").map((probe) => probe.file)])].sort();
     writeFileSync(
       join(resolve(root), BASELINE),
       `${JSON.stringify(
         {
-          why: "Script files that predate `--help`. Each needs printHelpIfAsked(...) from scripts/script-help.ts; a new script file without one fails check:script-help.",
+          why: "Script files that predate `--help`. Each needs printHelpIfAsked(...) from scripts/script-help.ts; a new script file without one fails `bun run check script-help`.",
           undocumented: recorded,
         },
         null,

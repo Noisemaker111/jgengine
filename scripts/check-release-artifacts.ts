@@ -4,10 +4,10 @@
  * version, every subpath the checkout exposes must resolve to a real file in the tarball,
  * and the main entry must `import()`.
  *
- *   bun run check:release-artifacts            # the checkout's own version
- *   bun run check:release-artifacts 0.35.0
- *   bun run check:release-artifacts 0.35.0 --only core,shell
- *   bun run check:release-artifacts --published @jgengine/shell@0.35.0
+ *   bun scripts/check-release-artifacts.ts            # the checkout's own version
+ *   bun scripts/check-release-artifacts.ts 0.35.0
+ *   bun scripts/check-release-artifacts.ts 0.35.0 --only core,shell
+ *   bun scripts/check-release-artifacts.ts --published @jgengine/shell@0.35.0
  *
  * `--published` exits 0 only when a consumer could install the package. The publish workflow
  * uses it in place of `npm view`, so metadata without a tarball counts as unpublished and is

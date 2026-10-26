@@ -5,7 +5,7 @@
  * a reviewer reads names exactly what arrived. `--check` fails when the checked
  * ledger is behind the engine source; CI runs it.
  *
- * Usage: bun run games:capabilities-sync [--check]
+ * Usage: bun run gen games-ledger [--check]
  */
 import { readFileSync, writeFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
@@ -19,7 +19,7 @@ const installed = deriveLedger(root);
 if (!check) {
   writeFileSync(`${root}/${LEDGER_FILE}`, renderLedger(installed));
   console.log(
-    `games:capabilities-sync OK - ${installed.capabilities.filter((entry) => entry.gameFacing).length} game-facing of ${installed.capabilities.length} capabilities from the engine source`,
+    `games-ledger OK - ${installed.capabilities.filter((entry) => entry.gameFacing).length} game-facing of ${installed.capabilities.length} capabilities from the engine source`,
   );
   process.exit(0);
 }
@@ -28,19 +28,19 @@ let committed: Ledger;
 try {
   committed = JSON.parse(readFileSync(`${root}/${LEDGER_FILE}`, "utf8")) as Ledger;
 } catch {
-  console.error(`games:capabilities-sync FAIL - ${LEDGER_FILE} is missing or unreadable; run bun run games:capabilities-sync`);
+  console.error(`games-ledger FAIL - ${LEDGER_FILE} is missing or unreadable; run bun run gen games-ledger`);
   process.exit(1);
 }
 
 const drift = ledgerDrift(committed, installed);
 if (drift.length === 0) {
-  console.log(`games:capabilities-sync OK - ${LEDGER_FILE} matches the engine source`);
+  console.log(`games-ledger OK - ${LEDGER_FILE} matches the engine source`);
   process.exit(0);
 }
 
-console.error(`games:capabilities-sync FAIL - ${LEDGER_FILE} is behind the engine source:`);
+console.error(`games-ledger FAIL - ${LEDGER_FILE} is behind the engine source:`);
 for (const line of drift) console.error(`  ${line}`);
 console.error("");
-console.error("Run: bun run games:capabilities-sync");
+console.error("Run: bun run gen games-ledger");
 console.error("Then declare each new capability in every game's capabilities.json (adopt or decline).");
 process.exit(1);

@@ -2,8 +2,8 @@
 // and answer with the version it published.
 //
 //   bun run release --wait          # cut, land and wait, answering with the published version
-//   bun run release:await 0.38.4    # wait for the publish run of an already-cut version
-//   bun run release:await --run 40107700057 --version 0.38.4
+//   bun run release --await 0.38.4    # wait for the publish run of an already-cut version
+//   bun run release --await --run 40107700057 --version 0.38.4
 //
 // A release lane spent 265 minutes in 24 h in `Start-Sleep 480; gh run view …; npm view …` loops. The
 // wait is real — publishing is asynchronous — so this owns it in one bounded place, reports the run it
@@ -287,13 +287,13 @@ export async function awaitPublish(options: AwaitOptions): Promise<AwaitResult> 
 
 export const RELEASE_AWAIT_USAGE = {
   summary: "wait for a release's Publish run and answer with the version it published",
-  usage: "bun run release:await [<version>] [--run <id>] [--sha <commit>] [--version <x.y.z>]",
+  usage: "bun run release --await [<version>] [--run <id>] [--sha <commit>] [--version <x.y.z>]",
   flags: [
     { flag: "--run <id>", detail: "wait on one publish run by id instead of the one for main's head" },
     { flag: "--sha <commit>", detail: "the commit Publish ran on; default: origin/main's head" },
     { flag: "--version <x.y.z>", detail: "the version to expect; default: packages/core's own" },
   ],
-  example: "bun run release:await 0.38.4",
+  example: "bun run release --await 0.38.4",
   exits: ["0 the version is on npm, and the line names the run", "1 the run failed, did not start, or npm disagreed"],
 } as const;
 

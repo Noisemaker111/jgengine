@@ -7,7 +7,7 @@ import { describe, expect, test } from "bun:test";
 
 import {
   bootsFor,
-  buildPlan,
+  verifyPlan,
   MAX_BOOTS,
   changedFiles,
   fastSteps,
@@ -129,7 +129,7 @@ describe("workspace mapping", () => {
 
   test("root scripts belong to no workspace, so their typecheck is the repo's own scripts config", () => {
     expect(workspaceOf("scripts/verify-fast.ts", fakeWorkspaces)).toBeNull();
-    const plan = buildPlan({
+    const plan = verifyPlan({
       changed: ["scripts/verify-fast.ts"],
       testFiles: [],
       workspaces: fakeWorkspaces,
@@ -224,7 +224,7 @@ describe("test mapping", () => {
         "packages/core/src/game/loop.ts": "export const tick = 1;",
       },
     );
-    const plan = buildPlan({ changed: ["packages/core/src/world/terrain.ts"], testFiles: tests, workspaces: fakeWorkspaces, graph });
+    const plan = verifyPlan({ changed: ["packages/core/src/world/terrain.ts"], testFiles: tests, workspaces: fakeWorkspaces, graph });
     expect(plan.tests).toEqual(["packages/core/src/world/terrain.test.ts", "packages/shell/src/render/World.test.ts"]);
   });
 
@@ -233,7 +233,7 @@ describe("test mapping", () => {
       "packages/shell/src/render/World.test.ts": 'import type { Terrain } from "@jgengine/core/world/terrain";',
       "packages/core/src/world/terrain.ts": "export interface Terrain {}",
     });
-    const plan = buildPlan({ changed: ["packages/core/src/world/terrain.ts"], testFiles: tests, workspaces: fakeWorkspaces, graph });
+    const plan = verifyPlan({ changed: ["packages/core/src/world/terrain.ts"], testFiles: tests, workspaces: fakeWorkspaces, graph });
     expect(plan.tests).toContain("packages/shell/src/render/World.test.ts");
   });
 
@@ -242,19 +242,19 @@ describe("test mapping", () => {
       "packages/shell/src/render/World.test.ts": 'const mod = await import("@jgengine/core/world/" + name);\nimport { x } from "@jgengine/core/world/missing";',
     });
     expect(opaqueScopes("packages/shell/src/render/World.test.ts", ["@jgengine/core/world/missing", "./gone"], fakeWorkspaces)).toEqual(["packages/core/", "packages/shell/"]);
-    expect(buildPlan({ changed: ["packages/core/src/world/terrain.ts"], testFiles: tests, workspaces: fakeWorkspaces, graph }).tests).toContain("packages/shell/src/render/World.test.ts");
-    expect(buildPlan({ changed: ["apps/dev/src/x.ts"], testFiles: tests, workspaces: fakeWorkspaces, graph }).tests).not.toContain("packages/shell/src/render/World.test.ts");
+    expect(verifyPlan({ changed: ["packages/core/src/world/terrain.ts"], testFiles: tests, workspaces: fakeWorkspaces, graph }).tests).toContain("packages/shell/src/render/World.test.ts");
+    expect(verifyPlan({ changed: ["apps/dev/src/x.ts"], testFiles: tests, workspaces: fakeWorkspaces, graph }).tests).not.toContain("packages/shell/src/render/World.test.ts");
   });
 
   test("a deleted file reaches whatever still imports it", () => {
     const graph = fixtureGraph({ "packages/core/src/world/terrain.test.ts": 'import { sample } from "./terrain";' });
-    const plan = buildPlan({ changed: [], deleted: ["packages/core/src/world/terrain.ts"], testFiles: tests, workspaces: fakeWorkspaces, graph });
+    const plan = verifyPlan({ changed: [], deleted: ["packages/core/src/world/terrain.ts"], testFiles: tests, workspaces: fakeWorkspaces, graph });
     expect(plan.tests).toEqual(["packages/core/src/world/terrain.test.ts"]);
     expect(plan.typechecks).toEqual(["packages/core"]);
   });
 
   test("the real tree maps a core file to the test beside it", () => {
-    const plan = buildPlan({
+    const plan = verifyPlan({
       changed: ["packages/core/src/world/terrain.ts"],
       testFiles: ["packages/core/src/world/terrain.test.ts", "packages/core/src/world/city.test.ts"],
       workspaces: fakeWorkspaces,
@@ -268,7 +268,7 @@ describe("test mapping", () => {
 
 describe("attribution fails loudly", () => {
   test("a package file no test names is covered by running its package's suite", () => {
-    const plan = buildPlan({
+    const plan = verifyPlan({
       changed: ["packages/core/src/world/terrain.ts", "packages/core/src/world/unreachable.ts"],
       testFiles: ["packages/core/src/world/terrain.test.ts", "packages/core/src/other.test.ts", "packages/react/src/a.test.ts"],
       workspaces: fakeWorkspaces,
@@ -281,7 +281,7 @@ describe("attribution fails loudly", () => {
   });
 
   test("a root script no test reaches is reported, not passed", () => {
-    const plan = buildPlan({
+    const plan = verifyPlan({
       changed: ["scripts/unreachable.ts"],
       testFiles: ["scripts/other.test.ts"],
       workspaces: fakeWorkspaces,
@@ -291,7 +291,7 @@ describe("attribution fails loudly", () => {
   });
 
   test("a pure rename and a demo never need a test", () => {
-    const plan = buildPlan({
+    const plan = verifyPlan({
       changed: ["scripts/moved.ts", "apps/dev/src/demo/scene.tsx"],
       testFiles: [],
       workspaces: fakeWorkspaces,
@@ -314,39 +314,39 @@ describe("attribution fails loudly", () => {
 describe("static gates", () => {
   test("a package source change pays the changelog and artifact gates", () => {
     const gates = gatesFor(["packages/core/src/world/terrain.ts"]);
-    expect(gates).toContain("check-changelog");
-    expect(gates).toContain("check-artifacts");
-    expect(gates).toContain("check:concept-homes");
-    expect(gates).not.toContain("check-skills");
+    expect(gates).toContain("changelog");
+    expect(gates).toContain("artifacts");
+    expect(gates).toContain("concept-homes");
+    expect(gates).not.toContain("skills");
   });
 
   test("a skill or doc change pays the skill gates", () => {
-    expect(gatesFor([".claude/skills/workflow/SKILL.md"])).toContain("check-skills");
-    expect(gatesFor(["README.md"])).toContain("check-stage-skills");
+    expect(gatesFor([".claude/skills/workflow/SKILL.md"])).toContain("skills");
+    expect(gatesFor(["README.md"])).toContain("stage-skills");
   });
 
   test("a scripts change pays the capture hygiene gate", () => {
-    expect(gatesFor(["scripts/lookArg.ts"])).toContain("check:capture-hygiene");
+    expect(gatesFor(["scripts/lookArg.ts"])).toContain("capture-hygiene");
   });
 
   test("a package change pays both generated-file checks, so a stale manifest or api.md fails here", () => {
     const gates = gatesFor(["packages/core/src/world/terrain.ts"]);
-    expect(gates).toContain("check-export-manifest");
-    expect(gates).toContain("check-skill-api");
+    expect(gates).toContain("export-manifest");
+    expect(gates).toContain("skill-api");
   });
 
   test("a change that cannot touch the public API does not pay the generated-file checks", () => {
-    expect(gatesFor(["scripts/lookArg.ts"])).not.toContain("check-export-manifest");
-    expect(gatesFor([".claude/skills/workflow/SKILL.md"])).not.toContain("check-skill-api");
+    expect(gatesFor(["scripts/lookArg.ts"])).not.toContain("export-manifest");
+    expect(gatesFor([".claude/skills/workflow/SKILL.md"])).not.toContain("skill-api");
   });
 
   test("a stale generated file names the command that rewrites it, not just the failure", () => {
-    const steps = fastSteps({ ...emptyPlan, changed: ["packages/core/src/world/terrain.ts"], gates: ["check-export-manifest", "check-skill-api"] });
-    const manifest = steps.find((step) => step.name === "check-export-manifest");
+    const steps = fastSteps({ ...emptyPlan, changed: ["packages/core/src/world/terrain.ts"], gates: ["export-manifest", "skill-api"] });
+    const manifest = steps.find((step) => step.name === "export-manifest");
     const skillApi = fastSteps(
-      { ...emptyPlan, changed: ["packages/core/src/world/terrain.ts"], gates: ["check-skill-api"] },
+      { ...emptyPlan, changed: ["packages/core/src/world/terrain.ts"], gates: ["skill-api"] },
       { skillApi: true },
-    ).find((step) => step.name === "check-skill-api");
+    ).find((step) => step.name === "skill-api");
     expect(manifest?.fix).toContain("bun run gen");
     expect(manifest?.fix).toContain("scripts/export-manifest.json");
     expect(skillApi?.fix).toContain("bun run gen");
@@ -354,17 +354,17 @@ describe("static gates", () => {
   });
 
   test("the inner loop leaves the 21 s generated check out unless --skill-api asks for it", () => {
-    const plan: Plan = { ...emptyPlan, changed: ["packages/core/src/world/terrain.ts"], gates: ["check-artifacts", "check-export-manifest", "check-skill-api"] };
+    const plan: Plan = { ...emptyPlan, changed: ["packages/core/src/world/terrain.ts"], gates: ["artifacts", "export-manifest", "skill-api"] };
     const byDefault = fastSteps(plan).map((step) => step.name);
-    expect(byDefault).not.toContain("check-skill-api");
-    expect(byDefault).toContain("check-export-manifest");
-    expect(fastSteps(plan, { skillApi: true }).map((step) => step.name)).toContain("check-skill-api");
+    expect(byDefault).not.toContain("skill-api");
+    expect(byDefault).toContain("export-manifest");
+    expect(fastSteps(plan, { skillApi: true }).map((step) => step.name)).toContain("skill-api");
   });
 });
 
 describe("commands", () => {
   test("the fast plan typechecks only the owning package and runs only its tests", () => {
-    const plan = buildPlan({
+    const plan = verifyPlan({
       changed: ["packages/shell/src/render/crowdBatch.ts"],
       testFiles: ["packages/shell/src/render/crowdBatch.test.ts"],
       workspaces: fakeWorkspaces,
@@ -414,11 +414,11 @@ describe("commands", () => {
       changed: ["packages/core/src/a.ts"],
       typechecks: ["packages/core"],
       tests: ["packages/core/src/a.test.ts", "packages/core/src/b.test.ts"],
-      gates: ["check-artifacts"],
+      gates: ["artifacts"],
       boots: ["harbor-heat"],
       inputs: { "test:packages/core/src/a.test.ts": ["packages/core/src/a.ts"], "test:packages/core/src/b.test.ts": [] },
     };
-    const passed = new Set(["test:packages/core/src/b.test.ts", "gate:check-artifacts", "boot:harbor-heat"]);
+    const passed = new Set(["test:packages/core/src/b.test.ts", "gate:artifacts", "boot:harbor-heat"]);
     const steps = fastSteps(plan, { fresh: (unit) => passed.has(unit) });
     expect(steps.map((step) => step.name)).toEqual(["typecheck packages/core", "test 1 file(s)"]);
     expect(steps[1]?.command.slice(4)).toEqual(["packages/core/src/a.test.ts"]);
@@ -436,7 +436,7 @@ describe("commands", () => {
       },
       ["packages/shell/src/scene.json", "packages/core/src/data.json", "bun.lock"],
     );
-    const plan = buildPlan({
+    const plan = verifyPlan({
       changed: ["packages/core/src/terrain.ts", "packages/core/src/loop.ts"],
       testFiles: ["packages/shell/src/World.test.ts", "scripts/x.test.ts"],
       workspaces: fakeWorkspaces,
@@ -456,7 +456,7 @@ describe("commands", () => {
   test("--full runs the quick job, the types job, every test shard and the other jobs", async () => {
     const steps = await fullSteps(root, ["README.md"]);
     const names = steps.map((step) => step.name);
-    for (const name of ["check-artifacts", "build", "check-export-manifest", "types (type-shard)", "web-build", "perf-cpu"]) {
+    for (const name of ["artifacts", "build", "export-manifest", "types (type-shard)", "web-build", "perf-cpu"]) {
       expect(names).toContain(name);
     }
     for (const shard of ["a", "b", "c", "d", "e", "f", "g", "h"]) expect(names).toContain(`test shard ${shard}`);
@@ -503,7 +503,7 @@ describe("commands", () => {
   test("the frame gate step measures all eight games at once rather than in one lane per game", async () => {
     const steps = await fullSteps(root, ["packages/core/src/render/frame.ts"]);
     const perf = steps.find((step) => step.name.startsWith("perf gate"));
-    expect(perf?.command).toEqual(["bun", "run", "perf:gate", "--jobs", "8"]);
+    expect(perf?.command).toEqual(["bun", "scripts/perf-gate.ts", "--jobs", "8"]);
   });
 
   test("the heaviest runnable step starts first, so the longest one does not end the run", async () => {
@@ -519,8 +519,8 @@ describe("commands", () => {
     const steps = await fullSteps(root, ["README.md"]);
     const byName = new Map(steps.map((step) => [step.name, step]));
     expect(byName.get("build")?.needs).toBeUndefined();
-    expect(byName.get("check-skill-api")?.needs).toEqual(["build"]);
-    expect(byName.get("check-export-manifest")?.needs).toEqual(["build"]);
+    expect(byName.get("skill-api")?.needs).toEqual(["build"]);
+    expect(byName.get("export-manifest")?.needs).toEqual(["build"]);
     const shardHalves = steps.filter((step) => step.name.startsWith("test shard i"));
     for (const step of shardHalves) expect(step.needs).toEqual(["build"]);
   });
@@ -634,7 +634,7 @@ describe("parallel steps", () => {
   test("the timing and launch-handshake steps own the machine, so load cannot read as a regression", async () => {
     const steps = await fullSteps(root, ["README.md"]);
     const exclusive = steps.filter((step) => step.exclusive === true).map((step) => step.name);
-    expect(exclusive.sort()).toEqual(["check:scaffold-launch", "perf-cpu"]);
+    expect(exclusive.sort()).toEqual(["perf-cpu", "scaffold-launch"]);
   });
 });
 
@@ -660,7 +660,7 @@ describe("--json", () => {
   test("a passing fixture prints one document and exits 0", async () => {
     const { code, stdout } = await drive({
       "typecheck packages/core": { ok: true, ms: 1200 },
-      "check-artifacts": { ok: true, ms: 30 },
+      "artifacts": { ok: true, ms: 30 },
     });
     expect(code).toBe(0);
     expect(stdout).toHaveLength(1);
@@ -671,22 +671,22 @@ describe("--json", () => {
     expect(document.ms).toBeGreaterThanOrEqual(0);
     expect(document.checks).toEqual([
       { name: "typecheck packages/core", ok: true, ms: 1200 },
-      { name: "check-artifacts", ok: true, ms: 30 },
+      { name: "artifacts", ok: true, ms: 30 },
     ]);
   });
 
   test("a failing fixture names the check, keeps stdout to one document and exits 1", async () => {
     const { code, stdout, stderr } = await drive({
-      "check-artifacts": { ok: true, ms: 30 },
-      "check-changelog": { ok: false, ms: 40, output: "missing entry for packages/core" },
+      "artifacts": { ok: true, ms: 30 },
+      "changelog": { ok: false, ms: 40, output: "missing entry for packages/core" },
     });
     expect(code).toBe(1);
     expect(stdout).toHaveLength(1);
     const document = JSON.parse(stdout[0]!);
     expect(document.ok).toBe(false);
     expect(document.checks).toEqual([
-      { name: "check-artifacts", ok: true, ms: 30 },
-      { name: "check-changelog", ok: false, ms: 40 },
+      { name: "artifacts", ok: true, ms: 30 },
+      { name: "changelog", ok: false, ms: 40 },
     ]);
     expect(stderr).toEqual(["missing entry for packages/core"]);
   });
@@ -715,7 +715,7 @@ describe("--json", () => {
   test("a passing fixture prints one document and exits 0", async () => {
     const { code, stdout } = await drive({
       "typecheck packages/core": { ok: true, ms: 1200 },
-      "check-artifacts": { ok: true, ms: 30 },
+      "artifacts": { ok: true, ms: 30 },
     });
     expect(code).toBe(0);
     expect(stdout).toHaveLength(1);
@@ -726,22 +726,22 @@ describe("--json", () => {
     expect(document.ms).toBeGreaterThanOrEqual(0);
     expect(document.checks).toEqual([
       { name: "typecheck packages/core", ok: true, ms: 1200 },
-      { name: "check-artifacts", ok: true, ms: 30 },
+      { name: "artifacts", ok: true, ms: 30 },
     ]);
   });
 
   test("a failing fixture names the check, keeps stdout to one document and exits 1", async () => {
     const { code, stdout, stderr } = await drive({
-      "check-artifacts": { ok: true, ms: 30 },
-      "check-changelog": { ok: false, ms: 40, output: "missing entry for packages/core" },
+      "artifacts": { ok: true, ms: 30 },
+      "changelog": { ok: false, ms: 40, output: "missing entry for packages/core" },
     });
     expect(code).toBe(1);
     expect(stdout).toHaveLength(1);
     const document = JSON.parse(stdout[0]!);
     expect(document.ok).toBe(false);
     expect(document.checks).toEqual([
-      { name: "check-artifacts", ok: true, ms: 30 },
-      { name: "check-changelog", ok: false, ms: 40 },
+      { name: "artifacts", ok: true, ms: 30 },
+      { name: "changelog", ok: false, ms: 40 },
     ]);
     expect(stderr).toEqual(["missing entry for packages/core"]);
   });
@@ -781,7 +781,7 @@ describe("local boots", () => {
 
   test("the games job's capability gates run here with CI's arguments", () => {
     const steps = fastSteps({ ...emptyPlan, gates: gatesFor(["games/x/src/a.ts"]) });
-    expect(steps.map((step) => step.command.join(" "))).toContain("bun run games:capabilities-sync -- --check");
-    expect(steps.map((step) => step.command.join(" "))).toContain("bun run games:check-capabilities -- --summary");
+    expect(steps.map((step) => step.command.join(" "))).toContain("bun games/scripts/capabilities-sync.ts --check");
+    expect(steps.map((step) => step.command.join(" "))).toContain("bun games/scripts/check-capabilities.ts --summary");
   });
 });

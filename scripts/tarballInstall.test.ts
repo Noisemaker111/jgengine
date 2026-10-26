@@ -9,7 +9,7 @@ import {
   isForbiddenSubpath,
   packageDir,
   publishedPackages,
-  readPackageJson,
+  readPublishedManifest,
 } from "./exportManifest";
 
 const built = publishedPackages.every((pkg) => distExists(pkg));
@@ -73,7 +73,7 @@ function packedFiles(pkg: (typeof publishedPackages)[number]): string[] {
 }
 
 function explicitExportTargets(pkg: (typeof publishedPackages)[number]): string[] {
-  const exportsMap = readPackageJson(pkg).exports ?? {};
+  const exportsMap = readPublishedManifest(pkg).exports ?? {};
   const targets: string[] = [];
   for (const [key, value] of Object.entries(exportsMap)) {
     if (key.includes("*")) continue;

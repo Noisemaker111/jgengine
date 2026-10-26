@@ -15,7 +15,7 @@ bun examples/express-host/src/server.ts
 
 # terminal 2 — client
 VITE_JG_WS_URL=ws://localhost:8080/ws bun --cwd=games/YOUR_GAME_ID run dev
-# or: bun run dev:runner  →  http://localhost:5173/?game=YOUR_GAME_ID
+# or: bun run dev:games  →  http://localhost:5173/?game=YOUR_GAME_ID
 ```
 
 LAN: `multiplayer: lan()` derives `ws://<page-host>:8080/ws` automatically when the express host is on the same machine network. Deploy notes: `examples/express-host/DEPLOY.md`.

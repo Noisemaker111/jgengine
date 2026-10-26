@@ -12,14 +12,14 @@ import {
   isForbiddenSubpath,
   publishedPackages,
   readManifest,
-  readPackageJson,
+  readPublishedManifest,
 } from "./exportManifest";
 
 describe("published export manifest", () => {
   const manifest = readManifest();
 
   test("every published package has a reviewed set of public subpaths", () => {
-    const names = publishedPackages.map((pkg) => readPackageJson(pkg).name);
+    const names = publishedPackages.map((pkg) => readPublishedManifest(pkg).name);
     expect(Object.keys(manifest).sort()).toEqual([...names].sort());
     for (const subpaths of Object.values(manifest)) {
       expect(subpaths.length).toBeGreaterThan(0);
@@ -38,7 +38,7 @@ describe("published export manifest", () => {
   });
 
   test("@jgengine/node no longer exposes its test fixtures subpath", () => {
-    const node = readPackageJson("node").name;
+    const node = readPublishedManifest("node").name;
     expect(manifest[node]).not.toContain("./testFixtures");
     expect(computeExposedSubpaths("node")).not.toContain("./testFixtures");
   });

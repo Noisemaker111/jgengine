@@ -9,7 +9,7 @@ import { servedGameDir } from "./servedGame";
 
 /**
  * The marker every checkout's dev server writes, so a command can find a server
- * that is already running instead of launching one. `bun run debug` depends on it:
+ * that is already running instead of launching one. `bun run perf live` depends on it:
  * reading a live game's report must never start a process of its own.
  *
  * Three writers publish it: `scripts/browser-lib.ts` when it launches a server for a
@@ -235,7 +235,7 @@ export function checkoutIdentity(cwd = process.cwd()): string {
 export interface RunningDevServer {
   port: number;
   base: string;
-  /** Which config published it: the website (`bun dev`) or the game runner (`dev:runner`, captures). */
+  /** Which config published it: the website (`bun dev`) or the game runner (`dev:games`, captures). */
   kind: "website" | "runner";
   head?: string;
 }
@@ -244,7 +244,7 @@ export interface RunningDevServer {
  * Every dev server already serving this checkout, website first. A marker whose server
  * does not answer is skipped, never deleted: a live server can look dead during a slow
  * boot, and a deleted marker would hide it from every later read. Never starts a
- * server — a `bun run debug` that launched its own would have no game to read.
+ * server — a `bun run perf live` that launched its own would have no game to read.
  */
 export async function listRunningDevServers(cwd = process.cwd(), dir = tmpdir()): Promise<RunningDevServer[]> {
   const identity = checkoutIdentity(cwd);

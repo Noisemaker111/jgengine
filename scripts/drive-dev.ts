@@ -70,7 +70,7 @@ import { driveProjectDir, flowSourceFrom, flowsDirOf, listFlowNames, missingFlow
 import { evaluateAssertStep, runDriveSteps, type DriveStepRecord } from "./driveRun";
 import { gameSurfaceCenter, mouseButtonForCode } from "../packages/jgengine/src/templates/gameSurfaceFocus";
 import { dispatchClickAt, parseClickAt } from "../packages/jgengine/src/clickInput";
-import { decodePng } from "./png-reader";
+import { decodePng } from "../packages/assets/src/imageCodec";
 import { engineRecord, resolveEngineIdentity, type EngineRecord } from "./engineIdentity";
 import { shotSignature } from "./shot-metrics";
 import { buildShotRecord, clearShotTarget, describeReplacement, writeShotRecord, type PreviousShot } from "./shotProvenance";

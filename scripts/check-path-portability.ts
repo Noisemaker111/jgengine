@@ -10,7 +10,7 @@
  * function under test consumes) or genuinely POSIX-only (a git path, which is always `/`) is named in
  * `scripts/path-portability-allow.json` with a reason, and that list is printed on every run.
  *
- *   bun run check:path-portability
+ *   bun run check path-portability
  */
 import { existsSync, readdirSync, readFileSync, statSync } from "node:fs";
 import { join, relative } from "node:path";
@@ -172,7 +172,7 @@ export interface AllowEntry {
   reason: string;
 }
 
-export interface Finding extends PathHit {
+export interface PortabilityFinding extends PathHit {
   file: string;
   reason: string | null;
 }
@@ -217,9 +217,9 @@ export function readAllowlist(root: string): AllowEntry[] {
 }
 
 /** Every separator assertion in the repository, with the allowlist entry that explains it or null. */
-export function scanPathPortability(root: string): Finding[] {
+export function scanPathPortability(root: string): PortabilityFinding[] {
   const allow = readAllowlist(root);
-  const findings: Finding[] = [];
+  const findings: PortabilityFinding[] = [];
   for (const dir of ROOTS) {
     for (const path of walk(join(root, dir)).sort()) {
       const file = relative(root, path).split("\\").join("/");
@@ -234,7 +234,7 @@ export function scanPathPortability(root: string): Finding[] {
 }
 
 /** An allowlist entry that no longer matches is stale: it must be removed rather than kept as a blanket. */
-export function staleAllowlist(root: string, findings: readonly Finding[]): AllowEntry[] {
+export function staleAllowlist(root: string, findings: readonly PortabilityFinding[]): AllowEntry[] {
   return readAllowlist(root).filter(
     (entry) => !findings.some((finding) => finding.file === entry.file && finding.text.includes(entry.match)),
   );
@@ -248,9 +248,9 @@ export const GUIDANCE =
 
 const USAGE: Usage = {
   summary: "fail a test that asserts one platform's path separator",
-  usage: "bun run check:path-portability [--root <dir>]",
+  usage: "bun run check path-portability [--root <dir>]",
   flags: [{ flag: "--root <dir>", detail: "scan this tree instead of the repository (used by the gate's own fixture test)" }],
-  example: "bun run check:path-portability",
+  example: "bun run check path-portability",
   exits: ["0 no unallowlisted separator assertion", "1 an offender, or a stale allowlist entry", "2 --root has no value"],
 };
 

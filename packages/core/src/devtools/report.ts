@@ -3,7 +3,7 @@ import type { DevtoolsLogLevel, SystemProbeReading } from "./types";
 
 /**
  * The one perf record shape. `bun run perf` (CDP, out of process) and the in-page
- * telemetry report (`window.__JG.report()`, the dev-server route, `bun run debug`)
+ * telemetry report (`window.__JG.report()`, the dev-server route, `bun run perf live`)
  * both produce exactly this object, so a budget check and a diff read either one.
  */
 
@@ -106,7 +106,7 @@ export interface ReportTelemetry {
   heapBytes: number | null;
 }
 
-/** One measured window of one game: the record `bun run perf`, `window.__JG.report()` and `bun run debug` print. */
+/** One measured window of one game: the record `bun run perf`, `window.__JG.report()` and `bun run perf live` print. */
 export interface PerfReport {
   game: string;
   gpu: string;

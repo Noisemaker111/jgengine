@@ -63,7 +63,8 @@ describe("CUTLIST surface diet", () => {
     const scripts = (JSON.parse(readFileSync(join(root, "package.json"), "utf8")) as { scripts: Record<string, string> }).scripts;
     expect(readme).toMatch(/createGameContext/);
     const named = [...readme.matchAll(/bun run (games:[\w-]+)/g)].map((match) => match[1]!);
-    expect(named).toContain("games:test");
+    expect(named).toContain("games:provision");
+    expect(readme).toContain("bun test games");
     for (const script of named) expect(Object.keys(scripts)).toContain(script);
     expect(readme).not.toMatch(/createGameRuntime/);
     expect(readme).not.toMatch(/games:voxel-mine/);

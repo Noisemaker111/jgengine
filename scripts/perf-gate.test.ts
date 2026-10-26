@@ -169,12 +169,12 @@ describe("loadBudget", () => {
 
   test("the standalone game copy is the whole entry, not a table keyed by game id", () => {
     const root = tempRoot();
-    writeGameBudget(root, "deepward", { drawsFrame: 90, triangles: 56100, nodes: 170, baseline: "2026-10-22 bun run perf:gate" });
+    writeGameBudget(root, "deepward", { drawsFrame: 90, triangles: 56100, nodes: 170, baseline: "2026-10-22 bun run perf gate" });
     expect(loadBudget("deepward", root).budget).toEqual({
       drawsFrame: 90,
       triangles: 56100,
       nodes: 170,
-      baseline: "2026-10-22 bun run perf:gate",
+      baseline: "2026-10-22 bun run perf gate",
     });
   });
 

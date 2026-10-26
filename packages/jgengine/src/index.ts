@@ -13,6 +13,6 @@ export {
   writeStaging,
 } from "./desktop";
 export type { DesktopArgs, DesktopMetadata, DesktopPlan, StageResult, ToolchainReport } from "./desktop";
-export { diagnose, runDoctor } from "./doctor";
+export { diagnoseProject, runDoctor } from "./doctor";
 export type { Finding } from "./doctor";
 export { cliVersion } from "./pkg";

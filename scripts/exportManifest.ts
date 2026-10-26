@@ -39,7 +39,7 @@ export function packageDir(pkg: PublishedPackage): string {
   return join(repoRoot, "packages", pkg);
 }
 
-export function readPackageJson(pkg: PublishedPackage): PackageJson {
+export function readPublishedManifest(pkg: PublishedPackage): PackageJson {
   return JSON.parse(readFileSync(join(packageDir(pkg), "package.json"), "utf8")) as PackageJson;
 }
 
@@ -91,7 +91,7 @@ export function distExists(pkg: PublishedPackage): boolean {
 }
 
 export function computeExposedSubpaths(pkg: PublishedPackage): string[] {
-  return exposedSubpathsForPackageDir(packageDir(pkg), readPackageJson(pkg).exports ?? {});
+  return exposedSubpathsForPackageDir(packageDir(pkg), readPublishedManifest(pkg).exports ?? {});
 }
 
 // The build's emit set, mirrored from tsconfig.build.json include/exclude/rootDir.
@@ -210,7 +210,7 @@ export function emittedFilesForPackageDir(pkgDir: string, cfg = readBuildTsconfi
 export function computeManifest(): Record<string, string[]> {
   const manifest: Record<string, string[]> = {};
   for (const pkg of publishedPackages) {
-    manifest[readPackageJson(pkg).name] = computeExposedSubpaths(pkg);
+    manifest[readPublishedManifest(pkg).name] = computeExposedSubpaths(pkg);
   }
   return manifest;
 }

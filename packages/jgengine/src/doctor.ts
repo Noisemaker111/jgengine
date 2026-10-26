@@ -46,7 +46,7 @@ function unguardedSaveEndpointCallers(srcDir: string): string[] {
 }
 
 /** @internal */
-export function diagnose(dir: string): Finding[] {
+export function diagnoseProject(dir: string): Finding[] {
   const findings: Finding[] = [];
   const pkg = readPackageJson(join(dir, "package.json"));
   if (pkg === null) {
@@ -274,7 +274,7 @@ export function diagnose(dir: string): Finding[] {
 export function runDoctor(argv: string[]): number {
   if (argv.includes("--workspace")) return runWorkspaceDoctor(argv);
   const dir = resolve(argv.find((arg) => !arg.startsWith("--")) ?? ".");
-  const findings = diagnose(dir);
+  const findings = diagnoseProject(dir);
   for (const finding of findings) {
     if (finding.ok) {
       console.log(`  ✓ ${finding.label}`);

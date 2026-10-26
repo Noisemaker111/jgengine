@@ -18,7 +18,7 @@
  * TODO line rather than a failure, so the four games still to be covered can be cut as their own
  * lanes; `--strict` fails them, which is the state this gate is aiming at.
  *
- * Usage: bun run games:check-design [--strict] [--root <dir>]
+ * Usage: bun run check games-design [--strict] [--root <dir>]
  */
 import { existsSync, readdirSync, readFileSync } from "node:fs";
 import { join } from "node:path";

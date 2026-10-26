@@ -28,7 +28,7 @@ import { printHelpIfAsked } from "./script-help";
 
 const LANE_AUDIT_USAGE = {
   summary: "account every child session in a time window: work, waiting, and the slowest commands",
-  usage: "bun run lane:audit [--hours <n>] [--db <path>] [--claude <dir>] [--cwd <dir>] [--json] [--fail-on-waiting]",
+  usage: "bun scripts/lane-audit.ts [--hours <n>] [--db <path>] [--claude <dir>] [--cwd <dir>] [--json] [--fail-on-waiting]",
   flags: [
     { flag: "--hours <n>", detail: "window to account, in hours (default: 40)" },
     { flag: "--db <path>", detail: "OpenCode database, else OPENCODE_DB, else the user-data default" },
@@ -37,7 +37,7 @@ const LANE_AUDIT_USAGE = {
     { flag: "--json", detail: "the same numbers as one document on stdout" },
     { flag: "--fail-on-waiting", detail: "exit 2 when any selected session slept, polled or watched CI" },
   ],
-  example: "bun run lane:audit --hours 40 --cwd .claude/worktrees/lane-x",
+  example: "bun scripts/lane-audit.ts --hours 40 --cwd .claude/worktrees/lane-x",
   exits: ["0 reported", "1 nothing to report (no database, no session)", "2 --fail-on-waiting found a sleep or CI watch"],
 } as const;
 
@@ -295,7 +295,7 @@ export interface RankedAudit extends SessionAudit {
 }
 
 /** One candidate lane and the evidence for and against calling it this worktree's lane. */
-export interface LaneCandidate {
+export interface AuditedLane {
   readonly id: string;
   readonly title: string;
   readonly directory: string;
@@ -316,7 +316,7 @@ export interface LaneAttribution {
   readonly ambiguous: boolean;
   /** One line naming the session and the evidence, printed wherever the resolution is used. */
   readonly reason: string;
-  readonly candidates: readonly LaneCandidate[];
+  readonly candidates: readonly AuditedLane[];
 }
 
 export interface LaneSession {
@@ -527,7 +527,7 @@ export function countReferences(texts: readonly string[], target: string): numbe
   return count;
 }
 
-function candidateOf(session: LaneSession, references: number): LaneCandidate {
+function candidateOf(session: LaneSession, references: number): AuditedLane {
   return {
     id: session.id,
     title: session.title,
@@ -990,13 +990,13 @@ function main(argv: readonly string[]): number {
   try {
     args = parseArgs(argv);
   } catch (error) {
-    console.error(`lane:audit: ${(error as Error).message}`);
+    console.error(`lane-audit: ${(error as Error).message}`);
     return 1;
   }
   if (args.database !== undefined && !existsSync(resolve(args.database))) {
     const tried = [`${resolve(args.database)} (missing)`, ...resolveDatabase().tried];
     console.error(
-      `lane:audit: no database at ${resolve(args.database)}.\n` +
+      `lane-audit: no database at ${resolve(args.database)}.\n` +
         `tried:\n${tried.map((entry) => `  ${entry}`).join("\n")}\n` +
         "pass --db <path> or set OPENCODE_DB to a database with session_v2 and session_message rows.",
     );
@@ -1033,7 +1033,7 @@ function main(argv: readonly string[]): number {
   if (sources.length === 0) {
     const tried = [...resolveDatabase().tried, `${claudeDir ?? claudeProjectsDir()} (no Claude Code transcripts)`];
     console.error(
-      "lane:audit: no session store found.\n" +
+      "lane-audit: no session store found.\n" +
         `tried:\n${tried.map((entry) => `  ${entry}`).join("\n")}\n` +
         "pass --db <path> (OpenCode) or --claude <dir> (Claude Code projects).",
     );
@@ -1041,7 +1041,7 @@ function main(argv: readonly string[]): number {
   }
   const source = sources.join(" + ");
   const report = auditRecords(sessions, calls, { cwd: args.cwd === undefined ? undefined : cwdFilter(args.cwd) });
-  if (report.attribution !== undefined) console.error(`lane:audit: ${report.attribution.reason}`);
+  if (report.attribution !== undefined) console.error(`lane-audit: ${report.attribution.reason}`);
   if (report.sessions.length === 0) {
     const searched =
       report.attribution === undefined
@@ -1050,7 +1050,7 @@ function main(argv: readonly string[]): number {
           "\nA child session records the directory of the agent that spawned it, so the worktree it worked in" +
           "\nis only visible in its own commands; pass --cwd <worktree> and make sure its calls name that path.";
     console.error(
-      `lane:audit: no sessions ${report.attribution === undefined ? `in the last ${args.hours}h` : `found for ${args.cwd} in the last ${args.hours}h`} (${source}).${searched}`,
+      `lane-audit: no sessions ${report.attribution === undefined ? `in the last ${args.hours}h` : `found for ${args.cwd} in the last ${args.hours}h`} (${source}).${searched}`,
     );
     return 1;
   }
@@ -1060,7 +1060,7 @@ function main(argv: readonly string[]): number {
   if (offending.length === 0) return 0;
   for (const offline of describeWaits(offending)) console.error(`waiting call: ${offline}`);
   console.error(
-    `lane:audit: ${offending.length} of ${report.sessions.length} session(s) waited on a clock.` +
+    `lane-audit: ${offending.length} of ${report.sessions.length} session(s) waited on a clock.` +
       "\nA sleep or a CI watch is never necessary: start the work and ask once later with" +
       "\n`gh run list`, or check `gh pr checks <n>` without the watch flag.",
   );

@@ -1,7 +1,7 @@
 /**
  * Every GLB a game ships resolves its textures where the GLB is served.
  *
- *   bun run games:check-glb-textures
+ *   bun run check games-glb-textures
  *
  * A GLB names its textures by URL, and the browser resolves a relative one against the URL the
  * GLB itself came from. A texture 404 does not fail the model load - the GLB parses, the meshes

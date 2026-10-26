@@ -53,7 +53,7 @@ const localDir = join(pkgRoot, "local");
 const CDN_BASE = "https://cdn.jsdelivr.net/gh/Noisemaker111/jgengine@main/packages/assets/local";
 
 /** @internal */
-export function flag(argv: string[], name: string): string | undefined {
+function flag(argv: string[], name: string): string | undefined {
   const index = argv.indexOf(`--${name}`);
   return index >= 0 ? argv[index + 1] : undefined;
 }

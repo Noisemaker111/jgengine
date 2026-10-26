@@ -3,7 +3,7 @@
  * boilerplate, debt has no open owner, `capabilities.json` is behind the installed
  * packages, or the adoption debt is above its committed budget.
  *
- * This is the adoption half of "build it once in the engine". `games:check-framework`
+ * This is the adoption half of "build it once in the engine". `check games-framework`
  * stops new handrolled systems; this notices a shipped capability that no game
  * adopted or declined, and keeps "this game has no such domain" separate from
  * "we have not adopted it yet", which is the debt the ledger exists to surface.
@@ -11,19 +11,19 @@
  * Adopting is not gated on a probe: any capability in the ledger can be adopted,
  * and the summary counts `adopted (verified)` apart from `adopted (declared)`.
  * Verified means the game named a boot probe for a capability that ships one;
- * `games:capabilities-probe` is what proves those counters live on a running page.
+ * `bun run games:capabilities probe` is what proves those counters live on a running page.
  *
  * `scripts/debt-budget.json` makes that debt a ratchet: a total and a per-game
  * ceiling that `--write` seeds from the tally and may only lower. More debt than
  * the budget fails, and a budget above the tally fails too, so clearing an entry
  * has to take its budget with it. The summary's last line is the trend.
  *
- * Usage: bun run games:check-capabilities [--summary] [--write] [--no-ledger] [--no-issues]
+ * Usage: bun run check games-capabilities [--summary] [--write] [--no-ledger] [--no-issues]
  * `--summary` also prints the per-game adopted / not-applicable / debt table, which
  * CI keeps in the job log. `--write` re-seeds the debt budget from the tally and
  * only ever shrinks it. `--no-issues` skips reading the debt issues in this repo
  * (offline work only; the gate cannot prove an owner without them).
- * `games:capabilities-probe` proves the adopted systems actually run; this check only
+ * `bun run games:capabilities probe` proves the adopted systems actually run; this check only
  * reads declarations.
  */
 import { execFileSync } from "node:child_process";
@@ -150,7 +150,7 @@ export function runCheck(options: CheckOptions): number {
   try {
     committed = JSON.parse(readFileSync(`${root}/${LEDGER_FILE}`, "utf8")) as Ledger;
   } catch {
-    sink.error(`capability check: FAIL - ${LEDGER_FILE} is missing; run bun run games:capabilities-sync`);
+    sink.error(`capability check: FAIL - ${LEDGER_FILE} is missing; run bun run gen games-ledger`);
     return 1;
   }
 
@@ -195,7 +195,7 @@ export function runCheck(options: CheckOptions): number {
         }
       }
       sink.error("");
-      sink.error("Run bun run games:capabilities-sync, then declare each new capability in every game.");
+      sink.error("Run bun run gen games-ledger, then declare each new capability in every game.");
     }
   }
 
@@ -226,7 +226,7 @@ export function runCheck(options: CheckOptions): number {
   if (budget === null && !write) {
     sink.error("");
     sink.error(`capability check: FAIL - ${BUDGET_REL} is missing; it is the committed debt budget.`);
-    sink.error("Create it once from the current tally with: bun run games:check-capabilities --write");
+    sink.error("Create it once from the current tally with: bun run check games-capabilities --write");
     failed = true;
   }
 

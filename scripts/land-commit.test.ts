@@ -1,5 +1,5 @@
 import { afterEach, expect, test } from "bun:test";
-import { mkdirSync, readdirSync, readFileSync, rmSync, writeFileSync } from "node:fs";
+import { existsSync, mkdirSync, readdirSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 
 import {
@@ -140,7 +140,7 @@ test("nothing to commit is not a failure: the tree is left alone", () => {
   expect(gitOk(work, ["log", "-1", "--format=%s"])).toBe("already done");
 });
 
-test("a fragment another lane left is not used; this branch writes its own from the commit summary", () => {
+test("a fragment another lane left is not used; this branch writes its own from its own commit", () => {
   const { work } = originWithBeta();
   mkdirSync(join(work, "changes"), { recursive: true });
   writeFileSync(join(work, "changes", "other-lane.md"), "### Added\n\n- Someone else's work.\n");
@@ -148,6 +148,7 @@ test("a fragment another lane left is not used; this branch writes its own from 
   gitOk(work, ["commit", "-q", "-m", "someone else's note"]);
   gitOk(work, ["push", "-q", "origin", "beta"]);
   gitOk(work, ["checkout", "-q", "-b", "agent/lane-x"]);
+  gitOk(work, ["commit", "-q", "--allow-empty", "-m", "my own work"]);
   writeFileSync(join(work, "shared.txt"), "one\nmine\n");
 
   const log: string[] = [];
@@ -156,12 +157,26 @@ test("a fragment another lane left is not used; this branch writes its own from 
   expect(outcome.kind).toBe("committed");
   expect(outcome.created).toBe(true);
   expect(outcome.fragment).toBe("changes/agent-lane-x.md");
-  expect(outcome.subject).toBe("someone else's note");
-  expect(readFileSync(join(work, "changes", "agent-lane-x.md"), "utf8")).toBe(
-    "### Changed\n\n- someone else's note\n",
-  );
+  expect(outcome.subject).toBe("my own work");
+  expect(readFileSync(join(work, "changes", "agent-lane-x.md"), "utf8")).toBe("### Changed\n\n- my own work\n");
   expect(gitOk(work, ["log", "-1", "--format=%b"])).not.toContain("Someone else's work");
   expect(log).toContain("no changes/ fragment in this branch's diff; wrote agent-lane-x.md from the commit summary");
+});
+
+test("a lane with no commit and no fragment is refused, never given the base's merge subject", () => {
+  const { work } = originWithBeta();
+  gitOk(work, ["commit", "-q", "--allow-empty", "-m", "Merge pull request #1 from someone/else"]);
+  gitOk(work, ["push", "-q", "origin", "beta"]);
+  gitOk(work, ["checkout", "-q", "-b", "agent/lane-x"]);
+  writeFileSync(join(work, "shared.txt"), "one\nmine\n");
+
+  const log: string[] = [];
+  const outcome = commitIn(work, log);
+
+  expect(outcome.kind).toBe("failed");
+  expect(existsSync(join(work, "changes", "agent-lane-x.md"))).toBe(false);
+  expect(log.join("\n")).toContain("write changes/agent-lane-x.md");
+  expect(gitOk(work, ["log", "-1", "--format=%s"])).toBe("Merge pull request #1 from someone/else");
 });
 
 function scriptedGit(options: {

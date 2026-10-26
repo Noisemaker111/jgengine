@@ -40,8 +40,8 @@ describe("findBends", () => {
   });
 
   test("a removed CI step is a disabled check; setup steps are not", () => {
-    const bends = findBends(diff(".github/workflows/ci.yml", ["      - run: bun run check-skills", "      - run: bun install --frozen-lockfile"], []));
-    expect(bends.map((bend) => bend.detail)).toEqual(["CI step removed: - run: bun run check-skills"]);
+    const bends = findBends(diff(".github/workflows/ci.yml", ["      - run: bun run check skills", "      - run: bun install --frozen-lockfile"], []));
+    expect(bends.map((bend) => bend.detail)).toEqual(["CI step removed: - run: bun run check skills"]);
   });
 
   test("a rule written in a string or a regex is not the rule applied", () => {
