@@ -5,6 +5,7 @@ import { join } from "node:path";
 import { parseCapabilityIndex } from "./capabilityIndex";
 import { parseGameReadme } from "./gameReadme";
 import { BLUEPRINTS } from "./blueprints";
+import { SYSTEMS } from "./systems";
 
 const skillsDir = join(import.meta.dir, "../../../../.claude/skills");
 
@@ -50,6 +51,14 @@ describe("parseCapabilityIndex", () => {
     const keys = new Set(loadAll().map((row) => `${row.skill}/${row.key}`));
     for (const blueprint of BLUEPRINTS) {
       for (const ref of blueprint.blocks) expect(keys.has(ref)).toBe(true);
+    }
+  });
+
+  test("every landing-page system names a real capability or feature folder", () => {
+    const keys = new Set(loadAll().map((row) => `${row.skill}/${row.key}`));
+    for (const system of SYSTEMS) {
+      if (system.ref !== undefined) expect({ ref: system.ref, real: keys.has(system.ref) }).toEqual({ ref: system.ref, real: true });
+      else expect(existsSync(join(import.meta.dir, "../../../..", system.home!))).toBe(true);
     }
   });
 });

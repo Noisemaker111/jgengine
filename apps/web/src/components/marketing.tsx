@@ -81,7 +81,7 @@ export function CodeBlock({
 }) {
   const border = tone === "good" ? "border-accent/40" : tone === "bad" ? "border-line" : "border-line";
   return (
-    <div className={`code-surface overflow-hidden rounded-2xl border ${border} ${className}`}>
+    <div className={`code-surface overflow-hidden rounded-lg border ${border} ${className}`}>
       {(filename !== undefined || copy) && (
         <div className="flex items-center justify-between gap-3 border-b border-line px-4 py-2">
           <span className="flex min-w-0 items-center gap-2 font-mono text-[11px] text-faint">
@@ -187,7 +187,7 @@ export function ProsCons({
           ))}
         </ul>
       </div>
-      <div className="rounded-2xl border border-dashed border-line-strong p-6 sm:p-7">
+      <div className="rounded-lg border border-dashed border-line-strong p-6 sm:p-7">
         <p className="font-mono text-[0.72rem] font-medium uppercase tracking-[0.16em] text-faint">{consTitle}</p>
         <ul className="mt-6 space-y-5">
           {cons.map((item) => (
@@ -209,10 +209,10 @@ export function ProsCons({
 export function FeatureCard({ glyph, title, children }: { glyph: string; title: string; children: ReactNode }) {
   return (
     <div className="card p-5">
-      <div className="grid h-10 w-10 place-items-center rounded-xl border border-line bg-bg text-lg" aria-hidden>
+      <p className="font-mono text-xs text-accent-text" aria-hidden>
         {glyph}
-      </div>
-      <h3 className="font-display mt-4 text-lg font-semibold tracking-tight text-fg">{title}</h3>
+      </p>
+      <h3 className="font-display mt-3 text-lg font-bold text-fg">{title}</h3>
       <p className="mt-1.5 text-sm leading-relaxed text-muted">{children}</p>
     </div>
   );

@@ -1,9 +1,9 @@
 export const SITE_URL = "https://jgengine.com";
 export const REPO_URL = "https://github.com/Noisemaker111/jgengine";
 
-export const SITE_TITLE = "JGengine — Make your world";
+export const SITE_TITLE = "jgengine — build three.js games 10x faster";
 export const SITE_DESCRIPTION =
-  "An open-source TypeScript game framework for coding agents. Build your own worlds, combat, multiplayer, and gameplay. Explore real games, then start with an idea.";
+  "An open-source TypeScript engine on three.js. A HUD that fits phones, touch controls, saves, walking, driving and flying, physics, terrain, grass, cities, combat and multiplayer are built in. Start a game with one command.";
 
 /** The only human interface outside this monorepo: say this to any coding agent. */
 export const ENTRY_PROMPT = "Make a game that ... with jgengine";

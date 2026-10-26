@@ -7,7 +7,7 @@ import { seo } from "../lib/seo";
 export const Route = createFileRoute("/adopt")({
   head: () =>
     seo({
-      title: "Drop JGengine into your existing game",
+      title: "Use one jgengine system in the game you already have",
       description:
         "Bring one JGengine system — minimap, health, damage, XP — into a game you already have, without adopting its renderer, entity store, React provider, or game loop. The adapter, the tradeoffs, and the actual code.",
       path: "/adopt",
@@ -16,7 +16,6 @@ export const Route = createFileRoute("/adopt")({
 });
 
 type Adoption = {
-  glyph: string;
   domain: string;
   title: string;
   blurb: string;
@@ -28,7 +27,6 @@ type Adoption = {
 
 const ADOPTIONS: Adoption[] = [
   {
-    glyph: "🗺️",
     domain: "Minimap",
     title: "Render a minimap from the array you already have",
     blurb:
@@ -44,7 +42,6 @@ const markers = units.map((u) => ({ id: u.id, position: [u.x, 0, u.z], kind: u.t
 <Minimap markers={markers} center={[cam.x, cam.z]} worldRadius={120} />;`,
   },
   {
-    glyph: "❤️",
     domain: "Health & resources",
     title: "Health, shields, mana — over your own state",
     blurb:
@@ -63,7 +60,6 @@ const access = {
 const hit = applyStatPoolDelta(access, "hero", "health", -12); // hit.applied === -12`,
   },
   {
-    glyph: "⚔️",
     domain: "Damage",
     title: "Resolve a hit, keep the provenance",
     blurb:
@@ -85,7 +81,6 @@ const result = resolveDamageHit({
 applyStatPoolDelta(access, enemy.id, "health", -result.impact); // -12 vs the armored enemy`,
   },
   {
-    glyph: "✨",
     domain: "XP & leveling",
     title: "XP curves and level-ups on your save format",
     blurb:
@@ -116,27 +111,27 @@ const PROS: { title: string; body: string }[] = [
     body: "State is plain data; time and randomness are injected. The same pieces drop into saves, multiplayer authority, replays, and tests without special-casing.",
   },
   {
-    title: "Tree-shakable, zero-dep core",
-    body: "Direct imports like @jgengine/core/stats/statPool pull only what you touch. The core package has no dependencies of its own.",
+    title: "Pay only for what you import",
+    body: "Direct imports like @jgengine/core/stats/statPool pull only that file and what it uses. Model files import no React, renderer or backend.",
   },
 ];
 
 const CONS: { title: string; body: string }[] = [
   {
     title: "You write the adapter and the wiring",
-    body: "The get/set, the projection, the raycast, and the tick/update call site are yours. It's a few lines, but the SDK deliberately doesn't reach into your world for you.",
+    body: "The get/set, the projection, the raycast and the tick call are yours. It is a few lines, and the engine never reaches into your world on its own.",
   },
   {
     title: "Presentation stays your job",
-    body: "These are calculations, renderers, and mechanics — not a turnkey game. Rendering, input, audio, and persistence remain on your side of the seam.",
+    body: "These are calculations, UI parts and mechanics, not a finished game. Rendering, input, audio and saving stay on your side.",
   },
   {
     title: "Some systems still want native integration",
-    body: "The full runtime, the authoritative multiplayer host, and editor-authored scenes assume a JGengine host. A portable kernel exists underneath where practical, but the drop-in path stops there.",
+    body: "The full runtime, the multiplayer host and editor-authored scenes need a jgengine game. The drop-in path stops there.",
   },
   {
-    title: "Explicit beats magic",
-    body: "You call tick(dt) and apply results yourself. That's more wiring than a black box — and the reason it fits engines you didn't write.",
+    title: "You do the wiring",
+    body: "You call tick(dt) and apply results yourself. That is more wiring than a black box, and it is why the parts fit engines you did not write.",
   },
 ];
 
@@ -153,8 +148,8 @@ const MODES: { label: string; tone: string; body: string }[] = [
   },
   {
     label: "Native integration",
-    tone: "text-violet-300 border-violet-400/30 bg-violet-400/[0.06]",
-    body: "Uses a JGengine host (GameContext, the shell). Reserved for what genuinely needs it, with a portable kernel underneath.",
+    tone: "text-fg border-line-strong bg-raised",
+    body: "Needs a jgengine game (GameContext, the shell). Only for what cannot work any other way.",
   },
 ];
 
@@ -162,22 +157,22 @@ function Adopt() {
   return (
     <Page>
       <PageHero
-        eyebrow="Drop-in adoption"
-        title="Bring one JGengine system into the game you already have."
-        blurb="You don't have to adopt an engine to use its parts. Pull in a minimap, health, damage, or XP — over your own entities, store, and loop — with a single install and a tiny adapter. Here's how each one drops in, and the honest tradeoffs."
+        eyebrow="Use one system"
+        title="Take one part. Keep your game."
+        blurb="You can use a jgengine system without switching engines. A minimap, health pools, damage or XP work over your own entities, store and loop: one install and a few lines of adapter. Here is how each one fits, and what it costs you."
       >
         <div className="flex flex-wrap gap-3">
           <Link
             to="/capabilities"
             className="btn btn-primary"
           >
-            All capabilities →
+            Search the capabilities →
           </Link>
           <Link
             to="/why"
             className="btn btn-secondary"
           >
-            Why JGengine
+            Why jgengine
           </Link>
         </div>
       </PageHero>
@@ -185,11 +180,11 @@ function Adopt() {
       <div className="mx-auto max-w-6xl px-4 sm:px-6">
         <div className="grid gap-3 py-10 sm:grid-cols-3 sm:py-12">
           {[
-            { n: "1", t: "Install one package", b: "bun add @jgengine/core (and @jgengine/react for UI). Zero-dep core." },
-            { n: "2", t: "Write a tiny adapter", b: "A get/set over your store, or one entity → marker projection." },
-            { n: "3", t: "Call it from your loop", b: "Apply results and tick(dt) yourself. Your renderer never changes." },
+            { n: "1", t: "Install one package", b: "bun add @jgengine/core, plus @jgengine/react for the UI parts." },
+            { n: "2", t: "Write a small adapter", b: "A get/set over your store, or one map from your entity to a marker." },
+            { n: "3", t: "Call it from your loop", b: "Apply the result and call tick(dt) yourself. Your renderer stays as it is." },
           ].map((step) => (
-            <div key={step.n} className="rounded-2xl border border-line bg-fg/[0.02] p-5">
+            <div key={step.n} className="card p-5">
               <div className="grid h-8 w-8 place-items-center rounded-lg border border-accent/30 bg-accent/[0.08] font-mono text-sm text-accent-text">
                 {step.n}
               </div>
@@ -206,9 +201,7 @@ function Adopt() {
             <section key={cap.title} className="grid items-center gap-6 lg:grid-cols-2 lg:gap-12">
               <div className={`min-w-0 ${i % 2 === 1 ? "lg:order-2" : ""}`}>
                 <p className="flex items-center gap-2.5 font-mono text-xs uppercase tracking-[0.2em] text-accent-text">
-                  <span className="grid h-7 w-7 place-items-center rounded-lg border border-line bg-fg/[0.03] text-sm">
-                    {cap.glyph}
-                  </span>
+                  <span className="text-faint">{String(i + 1).padStart(2, "0")}</span>
                   {cap.domain}
                 </p>
                 <h2 className="font-display mt-4 text-balance text-2xl font-bold tracking-tight text-fg">{cap.title}</h2>
@@ -235,12 +228,11 @@ function Adopt() {
       <section className="relative border-t border-line">
         <div className="mx-auto max-w-6xl px-4 py-16 sm:px-6 sm:py-20">
           <SectionHeading
-            eyebrow="The tradeoffs"
+            eyebrow="Trade-offs"
             title="What you get, and what you take on."
-            blurb="Drop-in adoption is a deliberate deal: a tiny surface and total ownership of your world, in exchange for wiring the SDK deliberately doesn't do for you."
           />
           <div className="mt-10 grid gap-6 lg:grid-cols-2">
-            <div className="rounded-2xl border border-accent/20 bg-accent/[0.03] p-6">
+            <div className="rounded-lg border border-accent/20 bg-accent/[0.03] p-6">
               <p className="font-mono text-xs uppercase tracking-[0.2em] text-accent-text">Why it's worth it</p>
               <ul className="mt-5 space-y-5">
                 {PROS.map((p) => (
@@ -256,13 +248,13 @@ function Adopt() {
                 ))}
               </ul>
             </div>
-            <div className="rounded-2xl border border-amber-400/20 bg-amber-400/[0.03] p-6">
-              <p className="font-mono text-xs uppercase tracking-[0.2em] text-amber-300/90">What you take on</p>
+            <div className="rounded-lg border border-dashed border-line-strong p-6">
+              <p className="font-mono text-xs uppercase tracking-[0.2em] text-faint">What you take on</p>
               <ul className="mt-5 space-y-5">
                 {CONS.map((c) => (
                   <li key={c.title}>
                     <p className="flex gap-2.5 font-semibold text-fg">
-                      <span className="text-amber-400/90" aria-hidden>
+                      <span className="text-faint" aria-hidden>
                         −
                       </span>
                       {c.title}
@@ -281,19 +273,18 @@ function Adopt() {
           <SectionHeading
             eyebrow="How to read a capability"
             title="Every system is one of three modes."
-            blurb="Before you adopt one, you know exactly how deep it reaches into your project."
+            blurb="Each capability says which one it is, so you know how far it reaches into your project before you add it."
           />
           <div className="mt-8 grid gap-4 sm:grid-cols-3">
             {MODES.map((m) => (
-              <div key={m.label} className={`rounded-2xl border p-5 ${m.tone}`}>
+              <div key={m.label} className={`rounded-lg border p-5 ${m.tone}`}>
                 <p className="font-mono text-sm font-semibold">{m.label}</p>
                 <p className="mt-2 text-sm leading-relaxed text-muted/90">{m.body}</p>
               </div>
             ))}
           </div>
           <p className="mt-8 text-sm text-faint">
-            More drop-in systems land as they're built — inventory, quests, weapon plumbing, and multiplayer plumbing follow the
-            same adapter shape.
+            The four above are written up here. Search the capabilities page for more that work the same way.
           </p>
         </div>
       </section>

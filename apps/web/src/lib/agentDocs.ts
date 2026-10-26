@@ -18,7 +18,12 @@ const RULES = [
 ] as const;
 
 const COMMANDS: readonly [string, string][] = [
-  [`create "<Game Name>"`, "Scaffold a playable base + install agent skills"],
+  [`create "<Game Name>"`, "Scaffold a playable base + install agent skills; writes jgengine.json"],
+  ["sync [dir...]", "Make the game match its jgengine.json and the running engine: @jgengine deps, template files; prints release notes crossed (--check changes nothing)"],
+  ["find <words>", "Where a concept lives: its folder, exports and shipped capabilities — check before hand-rolling"],
+  ["recipe [name]", "Print a vetted, type-checked wired snippet (combat, loot, quests, vehicles, co-op …)"],
+  ["shoot", "Screenshot the current game headlessly (WebGL-safe) to shots/shot.png"],
+  ["drive", "Play/test the game headlessly: ordered clicks, keys, waits and shots; --playtest --strict for a softlock verdict"],
   ["editor [dir]", "Open the standalone 3D scene editor; Ctrl+S writes editor.scene.json back"],
   ["desktop [dir]", "Ship a Windows NSIS installer for a project or --url"],
   ["skills -p | -g", "Re-install agent skills (project / global)"],
@@ -44,10 +49,11 @@ ${RULES.map((rule) => `- ${rule}`).join("\n")}
 ## Docs
 
 - [Agent brief](${SITE_URL}/llms-full.txt): the full agent-facing guide — quickstart, CLI commands, package set, verification
-- [Capabilities](${SITE_URL}/capabilities): every engine system shown as the real code you write
-- [Why JGengine](${SITE_URL}/why): the honest pitch — what it is great at and what it is not
+- [Capabilities](${SITE_URL}/capabilities): every shipped capability with its import line
+- [Games](${SITE_URL}/games): the games built on the engine, playable in the browser
+- [Why jgengine](${SITE_URL}/why): what it is good at and where it falls short
 - [Editor](${SITE_URL}/editor): the standalone 3D scene editor
-- [Adopt](${SITE_URL}/adopt): drop single JGengine systems into an existing game
+- [Adopt](${SITE_URL}/adopt): use single jgengine systems inside an existing game
 
 ## Source & packages
 
@@ -104,9 +110,9 @@ A scaffolded game ships verification scripts (\`bun run shoot\` for screenshots)
 
 ## More
 
-- ${SITE_URL}/capabilities — every system with the real code you write
-- ${SITE_URL}/why — the honest pitch, pros and cons
-- ${SITE_URL}/adopt — using single JGengine systems inside an existing game
+- ${SITE_URL}/capabilities — every shipped capability with its import line
+- ${SITE_URL}/why — strengths and trade-offs
+- ${SITE_URL}/adopt — using single jgengine systems inside an existing game
 - ${REPO_URL}/blob/main/CHANGELOG.md — consumer-facing changes (also typed data at \`@jgengine/core/meta/changelog\`)
 `;
 }

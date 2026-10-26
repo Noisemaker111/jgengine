@@ -20,7 +20,7 @@ export const Route = createFileRoute("/playground")({
     seo({
       title: "Playground — grow a 3D city, a circuit, or a street race from one seed",
       description:
-        "Live in-browser street generator: one slider set grows a whole 3D city — streets, building lots — a closed race circuit at the other end of the same dials, or a street race lifted out of the city and sealed off. Deterministic from a seed, the same engine JGengine's editor bakes into scene documents.",
+        "Drag sliders and grow a 3D city, a race circuit, or a street race through the city, live in your browser. It is jgengine's street generator: same seed and sliders, same world, in the editor and in a game.",
       path: "/playground",
     }),
   component: Playground,
@@ -900,12 +900,12 @@ function Playground() {
       {!query.inspect && (
         <PageHero
           eyebrow="Playground"
-          title="One slider set: a city, a circuit, or a street race through the city"
-          blurb="This is the live street generator that ships in @jgengine/core, rendered in full 3D: streets, frontage building lots, a sealed-off racing lap. The three buttons are presets over the same dials — a city and a race track are opposite corners of one space, and a street race is a section of the city with barriers dropped in. Every drag regrows it deterministically — same seed and sliders, same world, in the browser, in the editor, and in a shipped game."
+          title="Grow a city with sliders."
+          blurb="This is the street generator from @jgengine/core, drawn in 3D: streets, building lots and a closed racing lap. City, circuit and street race are presets over the same sliders. Every drag regrows the world, and the same seed and sliders give the same world here, in the editor and in a game."
         />
       )}
       <div className={query.inspect ? "fixed inset-0 z-50 bg-[#0b1017]" : "mx-auto grid max-w-6xl gap-6 px-6 pb-24 lg:grid-cols-[320px_1fr]"}>
-        <div className={query.inspect ? "hidden" : "space-y-5 rounded-2xl border border-line bg-fg/[0.02] p-5"}>
+        <div className={query.inspect ? "hidden" : "space-y-5 rounded-lg border border-line bg-fg/[0.02] p-5"}>
           <div>
             <p className="mb-2 text-[11px] uppercase tracking-wide text-faint">Preset — moves the shared sliders</p>
             <div className="flex gap-2">
@@ -1022,7 +1022,7 @@ function Playground() {
             )}
             {mode === "race" &&
               (lap === null ? (
-                <p className="text-amber-300/80">
+                <p className="text-accent-text">
                   No drivable cycle in this city — raise Loopiness or Connectivity until a lap can close.
                 </p>
               ) : (
@@ -1041,7 +1041,7 @@ function Playground() {
             </code>
           </div>
         </div>
-        <div data-theme="dark" className={query.inspect ? "absolute inset-0 overflow-hidden bg-[#0b1017]" : "relative min-h-[420px] overflow-hidden rounded-2xl border border-line bg-[#0b1017] lg:min-h-[560px]"}>
+        <div data-theme="dark" className={query.inspect ? "absolute inset-0 overflow-hidden bg-[#0b1017]" : "relative min-h-[420px] overflow-hidden rounded-lg border border-line bg-[#0b1017] lg:min-h-[560px]"}>
           <div
             ref={viewerHost}
             className={`absolute inset-0 transition-opacity duration-500 ${

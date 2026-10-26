@@ -135,7 +135,7 @@ export function LiveSpecimen({ specimen }: { specimen: SpecimenKey }) {
 
   return (
     <div className="flex flex-col gap-4">
-      <div data-theme="dark" className="relative aspect-[16/10] overflow-hidden rounded-2xl border border-line bg-sunken">
+      <div data-theme="dark" className="relative aspect-[16/10] overflow-hidden rounded-lg border border-line bg-sunken">
         <div ref={hostRef} className="absolute inset-0" aria-hidden />
         {ready && !failed && (
           <span className="pointer-events-none absolute left-3 top-3 inline-flex items-center gap-1.5 rounded-full border border-line bg-bg/75 px-2.5 py-1 font-mono text-[10px] text-fg backdrop-blur-sm">

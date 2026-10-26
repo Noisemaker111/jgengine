@@ -3,15 +3,16 @@ import { Link, createFileRoute } from "@tanstack/react-router";
 import { CommandBlock } from "../components/Copy";
 import { Page, PageHero, SectionHeading } from "../components/Layout";
 import { CodeBlock, ProsCons, VersusBlock } from "../components/marketing";
+import { GAME_IDS } from "../lib/games";
 import { seo } from "../lib/seo";
 import { ENTRY_PROMPT } from "../lib/site";
 
 export const Route = createFileRoute("/why")({
   head: () =>
     seo({
-      title: "Why JGengine — a TypeScript game engine SDK, honestly",
+      title: "Why jgengine — what it does well, and what it doesn't",
       description:
-        "What JGengine is good at, what it isn't, and the difference between hand-rolling a world and authoring one on the SDK. Pure TypeScript, multiplayer from day one, editor-first.",
+        "What jgengine is good at, where it falls short, and what a world costs by hand versus on the engine. TypeScript, multiplayer built in, scenes authored in a 3D editor.",
       path: "/why",
     }),
   component: Why,
@@ -136,43 +137,43 @@ export const overworld = world({
 
 const PROS = [
   {
-    title: "One language, from sim to shader",
-    body: "Pure TypeScript. Each feature is one folder whose model files import nothing — no React, no renderer, no backend — with its React view and three.js draw files beside them, and a check keeps each layer to its own dependencies.",
+    title: "The hard systems are already written",
+    body: "Terrain, GPU grass, force-based vehicles, procedural cities, navmesh AI, combat, waves, saves and server-authoritative multiplayer ship in the engine. A game turns them on and sets their options.",
   },
   {
-    title: "Multiplayer & persistence from day one",
-    body: "An authoritative host, WebSocket / WebRTC / loopback transports over one protocol, and Postgres or Convex persistence are seams in the SDK — not a rewrite you bolt on at the end.",
+    title: `${GAME_IDS.length} games keep it honest`,
+    body: "Every engine change runs against the games in the same repo. A change that breaks one fixes it in the same pull request, and a load guard fails a change that makes a game open slower.",
   },
   {
-    title: "Author scenes in a real 3D editor",
-    body: "Place spawns, sculpt terrain, scatter foliage, lay paths — save editor.scene.json and render it generically. Runs embedded in a game or fully standalone on any folder.",
+    title: "Coding agents can drive it end to end",
+    body: "create installs the skills, find points at the right folder, recipe prints wired snippets, and shoot and drive let the agent screenshot and play what it built.",
   },
   {
-    title: "Genre-agnostic primitives",
-    body: "Combat, loot, quests, economy, crafting, turns, inventory — opt in per game. Built for the next ten games, so game N+1 is data plus glue.",
+    title: "Worlds are authored, not hardcoded",
+    body: "Spawns, terrain, foliage, roads and zones live in one editor.scene.json made in the 3D editor. The renderer and the gameplay read the same document.",
   },
   {
-    title: "Agent-native by design",
-    body: "Focused skills let a coding agent build the whole game from a prompt — intake, the right API domains, and a browserless verification gate, no docs to paste.",
+    title: "One language from rules to rendering",
+    body: "TypeScript throughout. Game rules sit in model files with no React, renderer or backend imports, so they run the same in the browser, on a server and in tests.",
   },
 ];
 
 const CONS = [
   {
-    title: "Apache-2.0 — keep the NOTICE",
-    body: "The published packages are Apache-2.0: commercial and closed-source use is fine. The one string attached — keep the NOTICE crediting jgengine.com in what you ship.",
+    title: "Web only",
+    body: "Games render with three.js and React Three Fiber in the browser. No consoles, no native mobile builds, and no packaged desktop build yet.",
   },
   {
-    title: "Opinionated render shell",
-    body: "The renderer is React Three Fiber + three.js. If you need a native AAA pipeline, a non-web target, or your own engine, this isn't that.",
+    title: "Young and moving fast",
+    body: "The API changes as the games need it. Breaking changes get a version bump and a migration note, but expect churn between versions.",
   },
   {
-    title: "Young and moving",
-    body: "The API surface is still evolving. Primitives are extracted as real games need them, which means occasional churn between versions.",
+    title: "Gameplay is code",
+    body: "The editor handles scenes and the HUD layout. Rules, systems and UI are TypeScript that you or your agent write.",
   },
   {
-    title: "An SDK, not a no-code studio",
-    body: "You (or your agent) write TypeScript. There's a 3D editor for scenes, but gameplay is code — this is a toolkit, not a drag-and-drop game maker.",
+    title: "Keep the NOTICE",
+    body: "Apache-2.0: commercial and closed-source use is fine. Ship the license and the NOTICE file that credits jgengine.com.",
   },
 ];
 
@@ -180,22 +181,23 @@ function Why() {
   return (
     <Page>
       <PageHero
-        eyebrow="Why JGengine"
-        title="The boilerplate belongs in the engine, not your game."
-        blurb="Most game code is the same plumbing rebuilt per project — a world, a loop, an authoritative host, a scene you place by hand. JGengine makes that the SDK's job so your game is the part that's actually yours. Here's what that buys you, and where the line is."
+        eyebrow="Why jgengine"
+        title="Write the game, not the plumbing."
+        blurb="Most game code is the same work redone every project: a world, a loop, a server, saves, a HUD that fits the screen. jgengine does that part, so your code is the part that makes your game different. Here is what you get and where it stops."
       >
         <div className="flex flex-wrap gap-3">
           <Link
-            to="/capabilities"
+            to="/"
+            hash="features"
             className="btn btn-primary"
           >
-            See the capabilities →
+            See what it does →
           </Link>
           <Link
-            to="/editor"
+            to="/capabilities"
             className="btn btn-secondary"
           >
-            The 3D editor
+            Search the capabilities
           </Link>
         </div>
       </PageHero>
@@ -203,16 +205,16 @@ function Why() {
       <section className="relative border-t border-line">
         <div className="mx-auto max-w-6xl px-4 py-16 sm:px-6 sm:py-20">
           <SectionHeading
-            eyebrow="Hand-rolled vs. authored"
-            title="Same meadow. One of these you maintain forever."
-            blurb="Building a world by hand means owning the noise, the instancing, the culling, and the collision — then rebuilding it for the next game. On the SDK the world is a thin place declaration, the meadow is content you author in the 3D editor, and every consumer reads the same document."
+            eyebrow="By hand vs. on the engine"
+            title="The same meadow, twice."
+            blurb="By hand you own the noise, the instancing, the culling and the collision, and you write them again for the next game. On jgengine the world is a short declaration and the meadow is a scene you paint in the editor."
           />
           <div className="mt-10">
             <VersusBlock
               before={WORLD_BEFORE}
               after={WORLD_AFTER}
-              beforeNote="~90 lines — the whole thing, nothing elided"
-              afterNote="a place declaration + an authored scene, reusable"
+              beforeNote="about 90 lines, nothing left out"
+              afterNote="a world declaration plus an authored scene"
             />
           </div>
         </div>
@@ -221,9 +223,8 @@ function Why() {
       <section className="relative border-t border-line">
         <div className="mx-auto max-w-6xl px-4 py-16 sm:px-6 sm:py-20">
           <SectionHeading
-            eyebrow="The honest cut"
-            title="Strengths, and the trade-offs we won't hide"
-            blurb="A tool that claims no downsides is selling something. Here's the real shape of it."
+            eyebrow="Trade-offs"
+            title="Where it is strong, and where it is not"
           />
           <div className="mt-10">
             <ProsCons pros={PROS} cons={CONS} />
@@ -235,22 +236,22 @@ function Why() {
         <div className="mx-auto max-w-6xl px-4 py-16 sm:px-6 sm:py-20">
           <SectionHeading
             eyebrow="Who it's for"
-            title="Reach for jgengine when…"
+            title="Is it a fit?"
           />
           <div className="mt-10 grid gap-5 sm:grid-cols-2">
             <div className="card p-6 sm:p-7">
               <p className="eyebrow">Good fit</p>
               <p className="mt-4 leading-relaxed text-muted">
-                You want a <span className="font-semibold text-fg">multiplayer-capable web game</span> in TypeScript
-                without hand-building a netcode stack, a scene editor and ten gameplay systems first, and you are happy
-                to drive it with a coding agent.
+                You want a <span className="font-semibold text-fg">3D game that runs in the browser</span>, maybe
+                multiplayer, and you would rather start from working terrain, vehicles, combat and saves than write them.
+                You are happy to build it with a coding agent.
               </p>
             </div>
-            <div className="rounded-2xl border border-dashed border-line-strong p-6 sm:p-7">
+            <div className="rounded-lg border border-dashed border-line-strong p-6 sm:p-7">
               <p className="font-mono text-[0.72rem] font-medium uppercase tracking-[0.16em] text-faint">Look elsewhere</p>
               <p className="mt-4 leading-relaxed text-muted">
-                If you need a native or console target, a no-code editor, or an engine with a decade of API
-                stability. We'd rather you know now.
+                You need a console or native mobile build, a drag-and-drop game maker, or an API that will not change
+                for years.
               </p>
             </div>
           </div>
@@ -258,14 +259,13 @@ function Why() {
       </section>
 
       <section className="relative overflow-hidden border-t border-line">
-        <div className="bg-dots bg-dots-fade pointer-events-none absolute inset-0" aria-hidden />
+        <div className="bg-grid bg-grid-fade pointer-events-none absolute inset-0" aria-hidden />
         <div className="relative mx-auto max-w-3xl px-4 py-20 text-center sm:px-6 sm:py-24">
-          <h2 className="font-display text-balance text-4xl font-bold leading-none tracking-[-0.03em] text-fg sm:text-5xl">
-            Try it in one prompt.
+          <h2 className="font-display text-balance text-4xl font-extrabold leading-none text-fg sm:text-5xl">
+            Try it with one prompt.
           </h2>
           <p className="mx-auto mt-4 max-w-xl text-pretty text-muted">
-            Paste this into any coding agent. If it doesn't fit your project, you'll know within one build —
-            not one month.
+            Paste this into a coding agent with your idea in the gap. One build tells you whether it fits.
           </p>
           <div className="mx-auto mt-8 max-w-xl">
             <CommandBlock command={ENTRY_PROMPT} kind="prompt" />

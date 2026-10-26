@@ -4,7 +4,7 @@ import { HeadContent, Outlet, Scripts, createRootRoute } from "@tanstack/react-r
 import { SITE_DESCRIPTION, SITE_TITLE, SITE_URL } from "../lib/site";
 import { THEME_INIT_SCRIPT } from "../lib/theme";
 import appCss from "../styles.css?url";
-import displayWoff2 from "@fontsource-variable/bricolage-grotesque/files/bricolage-grotesque-latin-wght-normal.woff2?url";
+import displayWoff2 from "@fontsource-variable/archivo/files/archivo-latin-wdth-normal.woff2?url";
 import interWoff2 from "@fontsource-variable/inter/files/inter-latin-wght-normal.woff2?url";
 import monoWoff2 from "@fontsource-variable/jetbrains-mono/files/jetbrains-mono-latin-wght-normal.woff2?url";
 
@@ -46,8 +46,8 @@ export const Route = createRootRoute({
       { name: "twitter:title", content: TITLE },
       { name: "twitter:description", content: DESCRIPTION },
       { name: "twitter:image", content: OG_IMAGE },
-      { name: "theme-color", content: "#111310", media: "(prefers-color-scheme: dark)" },
-      { name: "theme-color", content: "#f1f2e9", media: "(prefers-color-scheme: light)" },
+      { name: "theme-color", content: "#0a0c0f", media: "(prefers-color-scheme: dark)" },
+      { name: "theme-color", content: "#f2f3f5", media: "(prefers-color-scheme: light)" },
     ],
     links: [
       { rel: "preload", href: displayWoff2, as: "font", type: "font/woff2", crossOrigin: "anonymous" },
