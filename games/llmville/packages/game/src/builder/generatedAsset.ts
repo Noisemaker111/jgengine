@@ -21,7 +21,7 @@ export type GeneratedAssetParseResult =
 
 export function sanitizeGeneratedAsset(value: unknown): GeneratedAssetParseResult {
   if (!isRecord(value)) return { ok: false, error: "Agent output was not a JSON object." };
-  const root = value.type === "group" ? value : { type: "group", children: [value] };
+  const root = value["type"] === "group" ? value : { type: "group", children: [value] };
   const counter = { primitives: 0 };
   const item = sanitizeNode(root, 0, counter);
   if (counter.primitives > MAX_PRIMITIVES) {
@@ -43,47 +43,48 @@ function sanitizeNode(
   counter: { primitives: number },
 ): DecorItemSpec | null {
   if (!isRecord(value)) return null;
-  if (value.type === "group") {
-    if (depth >= MAX_GROUP_DEPTH || !Array.isArray(value.children)) return null;
-    const children = value.children
+  const { type, children: rawChildren, position, rotation: rawRotation, args, color, roughness, metalness, emissive: rawEmissive, emissiveIntensity } = value;
+  if (type === "group") {
+    if (depth >= MAX_GROUP_DEPTH || !Array.isArray(rawChildren)) return null;
+    const children = rawChildren
       .map((child) => sanitizeNode(child, depth + 1, counter))
       .filter((child): child is DecorItemSpec => child !== null);
     if (children.length === 0) return null;
     const group: DecorItemSpec = {
       type: "group",
-      position: sanitizeTuple3(value.position, MAX_OFFSET) ?? [0, 0, 0],
+      position: sanitizeTuple3(position, MAX_OFFSET) ?? [0, 0, 0],
       children,
       castShadow: true,
       receiveShadow: true,
     };
-    const rotation = sanitizeTuple3(value.rotation, Math.PI * 2);
+    const rotation = sanitizeTuple3(rawRotation, Math.PI * 2);
     if (rotation && rotation.some((part) => part !== 0)) group.rotation = rotation;
     return group;
   }
 
-  if (!isPrimitiveType(value.type)) return null;
+  if (!isPrimitiveType(type)) return null;
   counter.primitives += 1;
   if (counter.primitives > MAX_PRIMITIVES) return null;
 
   const spec: DecorItemSpec = {
-    type: value.type,
+    type,
     assetType: "primitive",
-    args: sanitizeArgs(value.type, value.args),
-    position: sanitizeTuple3(value.position, MAX_OFFSET) ?? [0, 0, 0],
-    color: sanitizeColor(value.color) ?? DEFAULT_COLOR,
-    roughness: clamp(asFiniteNumber(value.roughness) ?? 0.8, 0, 1),
-    metalness: clamp(asFiniteNumber(value.metalness) ?? 0.05, 0, 1),
+    args: sanitizeArgs(type, args),
+    position: sanitizeTuple3(position, MAX_OFFSET) ?? [0, 0, 0],
+    color: sanitizeColor(color) ?? DEFAULT_COLOR,
+    roughness: clamp(asFiniteNumber(roughness) ?? 0.8, 0, 1),
+    metalness: clamp(asFiniteNumber(metalness) ?? 0.05, 0, 1),
     castShadow: true,
     receiveShadow: true,
   };
-  const rotation = sanitizeTuple3(value.rotation, Math.PI * 2);
+  const rotation = sanitizeTuple3(rawRotation, Math.PI * 2);
   if (rotation && rotation.some((part) => part !== 0)) spec.rotation = rotation;
-  const emissive = sanitizeColor(value.emissive);
+  const emissive = sanitizeColor(rawEmissive);
   if (emissive) {
     spec.emissive = emissive;
-    spec.emissiveIntensity = clamp(asFiniteNumber(value.emissiveIntensity) ?? 0.4, 0, 4);
+    spec.emissiveIntensity = clamp(asFiniteNumber(emissiveIntensity) ?? 0.4, 0, 4);
   }
-  if (value.type === "plane") spec.doubleSide = true;
+  if (type === "plane") spec.doubleSide = true;
   return spec;
 }
 

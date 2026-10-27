@@ -10,10 +10,10 @@ import type { GridFootprint, RoomBounds } from "@llmville/game/world/grid";
 export function resolveModelKeyBoundsXZ(input: {
   modelKey: string;
   instancePosition: [number, number, number];
-  instanceRotation?: [number, number, number];
-  placementDirection?: CardinalDirection;
-  footprint?: GridFootprint;
-  instanceScale?: number | [number, number, number];
+  instanceRotation?: [number, number, number] | undefined;
+  placementDirection?: CardinalDirection | undefined;
+  footprint?: GridFootprint | undefined;
+  instanceScale?: number | [number, number, number] | undefined;
 }): RoomBounds | null {
   const native = WORLD_MODEL_NATIVE_EXTENTS[input.modelKey];
   if (!native) return null;

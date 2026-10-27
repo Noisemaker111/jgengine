@@ -12,6 +12,7 @@ import { getWorldModelAsset, type WorldModelAsset } from "@llmville/game/world/w
 import type { GridFootprint, MapGridSpec } from "@llmville/game/world/grid";
 import { getProceduralProp, ProceduralProp } from "@/world/diorama/props";
 
+import { definedFields } from "@jgengine/core/data/definedFields";
 import { SceneModel } from "@/scene/components/SceneModel";
 
 /**
@@ -44,7 +45,7 @@ function DecorNode({
   modelLoadingFallback,
 }: {
   spec: DecorItemSpec;
-  grid?: MapGridSpec | null;
+  grid?: MapGridSpec | null | undefined;
   modelLoadingFallback: ModelLoadingFallback;
 }) {
   const modelId = getDecorModelId(spec);
@@ -123,7 +124,7 @@ function DecorNode({
   return <DecorFallbackNode spec={spec} grid={grid} />;
 }
 
-function DecorFallbackNode({ spec, grid }: { spec: DecorItemSpec; grid?: MapGridSpec | null }) {
+function DecorFallbackNode({ spec, grid }: { spec: DecorItemSpec; grid?: MapGridSpec | null | undefined }) {
   const position = getDecorWorldPosition(spec, grid);
   const rotation = getDecorRotation(spec);
   const scale = typeof spec.scale === "number" ? [spec.scale, spec.scale, spec.scale] as [number, number, number] : spec.scale;
@@ -133,8 +134,7 @@ function DecorFallbackNode({ spec, grid }: { spec: DecorItemSpec; grid?: MapGrid
     return (
       <group
         position={position}
-        rotation={rotation}
-        scale={scale}
+        {...definedFields({ rotation, scale })}
       >
         {spec.children?.map((child, index) => (
           <DecorFallbackNode key={index} spec={child} grid={grid} />
@@ -146,8 +146,7 @@ function DecorFallbackNode({ spec, grid }: { spec: DecorItemSpec; grid?: MapGrid
   return (
     <mesh
       position={position}
-      rotation={rotation}
-      scale={scale}
+      {...definedFields({ rotation, scale })}
       castShadow={spec.castShadow ?? false}
       receiveShadow={spec.receiveShadow ?? false}
     >
@@ -156,8 +155,7 @@ function DecorFallbackNode({ spec, grid }: { spec: DecorItemSpec; grid?: MapGrid
                 color={fallbackColor}
                 roughness={spec.roughness ?? 0.8}
                 metalness={spec.metalness ?? 0}
-                emissive={spec.emissive}
-                emissiveIntensity={spec.emissiveIntensity}
+                {...definedFields({ emissive: spec.emissive, emissiveIntensity: spec.emissiveIntensity })}
                 side={spec.doubleSide ? 2 : 0}
             />
         </mesh>
@@ -177,11 +175,11 @@ function DecorModelContent({
   diagnosticKey: string;
   asset: WorldModelAsset;
   position: [number, number, number];
-  rotation?: [number, number, number];
-  scale?: [number, number, number] | number;
+  rotation?: [number, number, number] | undefined;
+  scale?: [number, number, number] | number | undefined;
   castShadow: boolean;
   receiveShadow: boolean;
-  footprint?: GridFootprint;
+  footprint?: GridFootprint | undefined;
 }) {
   useEffect(() => {
     clearWorldModelDiagnostic(diagnosticKey);

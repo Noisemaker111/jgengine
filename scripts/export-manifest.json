@@ -253,6 +253,7 @@
     "./cutscene/sequenceDirector",
     "./data/DataObjects.draw",
     "./data/dataSource",
+    "./data/definedFields",
     "./data/definedOnly",
     "./data/devProxy",
     "./data/fetchJson",

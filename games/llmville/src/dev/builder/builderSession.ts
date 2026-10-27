@@ -12,6 +12,7 @@ import type { BuilderSelectionRef } from "@llmville/game/builder/document";
 import type { BuilderEditingScope } from "@/dev/builder/builderEditingScene";
 import { defaultPlaceableForCategory, findPlaceableItem } from "@/dev/builder/builderPlaceableCatalog";
 import type { MapData } from "@llmville/game/world/mapTypes";
+import { isRecord } from "@jgengine/core/data/untyped";
 
 export const BUILDER_SESSION_STORAGE_KEY = "llmville.dev.builder.session";
 export const BUILDER_SESSION_VERSION = 1;
@@ -47,10 +48,6 @@ const VALID_SCOPES = new Set<BuilderEditingScope>(["room", "isolated"]);
 const VALID_TABS = new Set<BuilderPropertiesTab>(["tool", "scene", "save"]);
 const MAX_PERSISTED_UNDO = 20;
 
-function isRecord(value: unknown): value is Record<string, unknown> {
-  return typeof value === "object" && value !== null;
-}
-
 function sanitizeSelectedRefs(
   refs: readonly BuilderSelectionRef[],
   mapData: MapData,
@@ -78,28 +75,34 @@ function sanitizeEditingPlacedDecorId(
 }
 
 function parseSessionSnapshot(raw: unknown): BuilderSessionSnapshot | null {
-  if (!isRecord(raw) || raw.v !== BUILDER_SESSION_VERSION) return null;
-  if (typeof raw.savedAt !== "number") return null;
-  if (!VALID_TOOLS.has(raw.tool as BuilderTool)) return null;
-  if (!VALID_ITEM_TYPES.has(raw.itemType as BuilderItemType)) return null;
-  if (!VALID_SCOPES.has(raw.editingScope as BuilderEditingScope)) return null;
-  if (typeof raw.selectedPlaceableId !== "string") return null;
-  if (!isRecord(raw.mapData)) return null;
-  if (!Array.isArray(raw.selectedRefs)) return null;
-  if (!VALID_TABS.has(raw.propertiesTab as BuilderPropertiesTab)) return null;
+  if (!isRecord(raw)) return null;
+  const {
+    v, savedAt, tool, itemType, editingScope, selectedPlaceableId, mapData, selectedRefs, propertiesTab,
+    activePlacement, activeMaterialKey, placementSource, primitive, selectedCatalogModelKey, roomDraft,
+    groupDraft, aiDraftPrompt, editingLibraryEntryId, editingPlacedDecorId, undoStack,
+  } = raw;
+  if (v !== BUILDER_SESSION_VERSION) return null;
+  if (typeof savedAt !== "number") return null;
+  if (!VALID_TOOLS.has(tool as BuilderTool)) return null;
+  if (!VALID_ITEM_TYPES.has(itemType as BuilderItemType)) return null;
+  if (!VALID_SCOPES.has(editingScope as BuilderEditingScope)) return null;
+  if (typeof selectedPlaceableId !== "string") return null;
+  if (!isRecord(mapData)) return null;
+  if (!Array.isArray(selectedRefs)) return null;
+  if (!VALID_TABS.has(propertiesTab as BuilderPropertiesTab)) return null;
 
   return {
     v: BUILDER_SESSION_VERSION,
-    savedAt: raw.savedAt,
-    tool: raw.tool as BuilderTool,
-    itemType: raw.itemType as BuilderItemType,
-    selectedPlaceableId: raw.selectedPlaceableId,
-    editingScope: raw.editingScope as BuilderEditingScope,
-    activePlacement: (raw.activePlacement as BuilderActivePlacement | null) ?? null,
-    selectedRefs: raw.selectedRefs as BuilderSelectionRef[],
-    activeMaterialKey: typeof raw.activeMaterialKey === "string" ? raw.activeMaterialKey : "preset:accent-teal",
-    placementSource: raw.placementSource === "catalog" ? "catalog" : "primitive",
-    primitive: (raw.primitive as BuilderPrimitiveDraft) ?? {
+    savedAt,
+    tool: tool as BuilderTool,
+    itemType: itemType as BuilderItemType,
+    selectedPlaceableId,
+    editingScope: editingScope as BuilderEditingScope,
+    activePlacement: (activePlacement as BuilderActivePlacement | null) ?? null,
+    selectedRefs: selectedRefs as BuilderSelectionRef[],
+    activeMaterialKey: typeof activeMaterialKey === "string" ? activeMaterialKey : "preset:accent-teal",
+    placementSource: placementSource === "catalog" ? "catalog" : "primitive",
+    primitive: (primitive as BuilderPrimitiveDraft) ?? {
       kind: "box",
       width: 1,
       height: 1,
@@ -107,18 +110,18 @@ function parseSessionSnapshot(raw: unknown): BuilderSessionSnapshot | null {
       radius: 0.5,
       segments: 24,
     },
-    selectedCatalogModelKey: typeof raw.selectedCatalogModelKey === "string"
-      ? raw.selectedCatalogModelKey
+    selectedCatalogModelKey: typeof selectedCatalogModelKey === "string"
+      ? selectedCatalogModelKey
       : "potted_plant",
-    roomDraft: raw.roomDraft as BuilderRoomDraft,
-    groupDraft: raw.groupDraft as BuilderGroupDraft,
-    aiDraftPrompt: typeof raw.aiDraftPrompt === "string" ? raw.aiDraftPrompt : "",
-    editingLibraryEntryId: typeof raw.editingLibraryEntryId === "string" ? raw.editingLibraryEntryId : null,
-    editingPlacedDecorId: typeof raw.editingPlacedDecorId === "string" ? raw.editingPlacedDecorId : null,
-    propertiesTab: raw.propertiesTab as BuilderPropertiesTab,
-    mapData: raw.mapData as unknown as MapData,
-    undoStack: Array.isArray(raw.undoStack)
-      ? raw.undoStack.filter((entry): entry is string => typeof entry === "string").slice(-MAX_PERSISTED_UNDO)
+    roomDraft: roomDraft as BuilderRoomDraft,
+    groupDraft: groupDraft as BuilderGroupDraft,
+    aiDraftPrompt: typeof aiDraftPrompt === "string" ? aiDraftPrompt : "",
+    editingLibraryEntryId: typeof editingLibraryEntryId === "string" ? editingLibraryEntryId : null,
+    editingPlacedDecorId: typeof editingPlacedDecorId === "string" ? editingPlacedDecorId : null,
+    propertiesTab: propertiesTab as BuilderPropertiesTab,
+    mapData: mapData as unknown as MapData,
+    undoStack: Array.isArray(undoStack)
+      ? undoStack.filter((entry): entry is string => typeof entry === "string").slice(-MAX_PERSISTED_UNDO)
       : [],
   };
 }

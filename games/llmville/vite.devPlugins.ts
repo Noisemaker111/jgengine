@@ -1,6 +1,7 @@
 import fs from "node:fs/promises";
 import path from "node:path";
 import type { Plugin } from "vite";
+import { isRecord } from "@jgengine/core/data/untyped";
 
 import { buildBuilderAgentPlaybook, buildBuilderDiscoveryManifest } from "./builderAgentPlaybook";
 import {
@@ -18,9 +19,6 @@ const builderLibraryPath = path.resolve(__dirname, "public/dev-assets/builder-li
 const builderRecentPath = path.resolve(__dirname, "public/dev-assets/builder-recent.json");
 const builderSourceLibraryPath = path.resolve(__dirname, "src/dev/builder/assetLibrary.ts");
 
-function isRecord(value: unknown): value is Record<string, unknown> {
-  return typeof value === "object" && value !== null && !Array.isArray(value);
-}
 
 /** The entry type has a single source of truth in `builderLibrary.ts` — only data is generated here. */
 function serializeBuilderSourceLibrary(entries: unknown[]): string {
@@ -34,18 +32,21 @@ export const DEV_BUILDER_ASSET_LIBRARY: readonly BuilderAssetLibraryEntry[] = ${
 
 function parseSourceLibraryRequest(body: string): unknown[] {
   const parsed = JSON.parse(body) as unknown;
-  if (!isRecord(parsed) || !Array.isArray(parsed.entries)) {
+  const entries = isRecord(parsed) ? parsed["entries"] : undefined;
+  if (!Array.isArray(entries)) {
     throw new Error("Request body must be JSON with an entries array.");
   }
-  for (const entry of parsed.entries) {
-    if (!isRecord(entry) || typeof entry.id !== "string" || typeof entry.label !== "string") {
+  for (const entry of entries) {
+    if (!isRecord(entry)) throw new Error("Every source asset entry must include string id and label.");
+    const { id, label, kind } = entry;
+    if (typeof id !== "string" || typeof label !== "string") {
       throw new Error("Every source asset entry must include string id and label.");
     }
-    if (entry.kind !== "group" && entry.kind !== "place" && entry.kind !== "street") {
-      throw new Error(`Source asset ${entry.id} has invalid kind.`);
+    if (kind !== "group" && kind !== "place" && kind !== "street") {
+      throw new Error(`Source asset ${id} has invalid kind.`);
     }
   }
-  return parsed.entries;
+  return entries;
 }
 
 function builderAgentPlugin(): Plugin {
@@ -264,7 +265,7 @@ function builderExecutorApiPlugin(): Plugin {
         }
         // `server.middlewares.use(prefix, fn)` strips the matched prefix off
         // `request.url`, leaving just the method segment (e.g. "/moveSelection").
-        const method = decodeURIComponent((request.url ?? "").split("?")[0].replace(/^\/+/, ""));
+        const method = decodeURIComponent(((request.url ?? "").split("?")[0] ?? "").replace(/^\/+/, ""));
         if (!method) {
           next();
           return;
@@ -551,8 +552,9 @@ async function loadSourceLibraryFromDisk(): Promise<unknown[]> {
   try {
     const raw = await fs.readFile(builderSourceLibraryPath, "utf8");
     const match = /DEV_BUILDER_ASSET_LIBRARY[^[]*(\[[\s\S]*?\])\s*;/.exec(raw);
-    if (!match) return [];
-    return JSON.parse(match[1]) as unknown[];
+    const list = match?.[1];
+    if (list === undefined) return [];
+    return JSON.parse(list) as unknown[];
   } catch {
     return [];
   }
@@ -569,10 +571,11 @@ async function persistBuilderLibraryJson(entries: unknown[]): Promise<void> {
 }
 
 function mergeSourceLibraryEntry(entries: unknown[], entry: unknown): unknown[] {
-  if (!isRecord(entry) || typeof entry.id !== "string") return entries;
-  const replaced = entries.some((candidate) => isRecord(candidate) && candidate.id === entry.id);
+  const id = isRecord(entry) ? entry["id"] : undefined;
+  if (typeof id !== "string") return entries;
+  const replaced = entries.some((candidate) => isRecord(candidate) && candidate["id"] === id);
   return replaced
-    ? entries.map((candidate) => (isRecord(candidate) && candidate.id === entry.id ? entry : candidate))
+    ? entries.map((candidate) => (isRecord(candidate) && candidate["id"] === id ? entry : candidate))
     : [...entries, entry];
 }
 
@@ -695,21 +698,22 @@ function builderScenePlugin(): Plugin {
           }
 
           const mapData = isRecord(sceneState.mapData) ? { ...sceneState.mapData } : {};
-          const decor = Array.isArray(mapData.decor) ? [...mapData.decor] : [];
+          const existing = mapData["decor"];
+          const decor = Array.isArray(existing) ? [...existing] : [];
           const placed: unknown[] = [];
 
           for (const raw of items) {
             if (!isRecord(raw)) continue;
             const item = { ...raw };
-            if (!item.id) {
-              const used = new Set(decor.map((d: unknown) => isRecord(d) && typeof d.id === "string" ? d.id : ""));
+            if (!item["id"]) {
+              const used = new Set(decor.map((d: unknown) => (isRecord(d) && typeof d["id"] === "string" ? d["id"] : "")));
               let id = `agent_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`;
               let suffix = 2;
               while (used.has(id)) {
                 id = `agent_${Date.now()}_${suffix}_${Math.random().toString(36).slice(2, 5)}`;
                 suffix += 1;
               }
-              item.id = id;
+              item["id"] = id;
             }
             decor.push(item);
             placed.push(item);
@@ -741,10 +745,12 @@ function builderScenePlugin(): Plugin {
           }
           const ids = new Set(body.ids.filter((id): id is string => typeof id === "string"));
           const mapData = isRecord(sceneState.mapData) ? { ...sceneState.mapData } : {};
-          const decor = Array.isArray(mapData.decor)
-            ? mapData.decor.filter((d: unknown) => {
+          const existing = mapData["decor"];
+          const decor = Array.isArray(existing)
+            ? existing.filter((d: unknown) => {
               if (!isRecord(d)) return true;
-              return typeof d.id !== "string" || !ids.has(d.id);
+              const id = d["id"];
+              return typeof id !== "string" || !ids.has(id);
             })
             : [];
 
@@ -766,7 +772,7 @@ function builderScenePlugin(): Plugin {
         }
         void (async () => {
           const raw = await readJsonBody(request) as { id?: unknown; position?: unknown; rotation?: unknown };
-          if (!isRecord(raw) || typeof raw.id !== "string" || !Array.isArray(raw.position) || raw.position.length < 3) {
+          if (!isRecord(raw) || typeof raw["id"] !== "string" || !Array.isArray(raw["position"]) || raw["position"].length < 3) {
             response.statusCode = 400;
             response.setHeader("content-type", "application/json");
             response.end(JSON.stringify({ error: "Body must contain { id, position: [x,y,z], rotation?: [x,y,z] }" }));
@@ -774,11 +780,12 @@ function builderScenePlugin(): Plugin {
           }
           const body = raw as { id: string; position: unknown[]; rotation?: unknown };
           const mapData = isRecord(sceneState.mapData) ? { ...sceneState.mapData } : {};
-          const decor = Array.isArray(mapData.decor) ? mapData.decor.map((d: unknown) => {
-            if (!isRecord(d) || d.id !== body.id) return d;
+          const existing = mapData["decor"];
+          const decor = Array.isArray(existing) ? existing.map((d: unknown) => {
+            if (!isRecord(d) || d["id"] !== body.id) return d;
             const next: Record<string, unknown> = { ...d, position: body.position.slice(0, 3) };
             if (Array.isArray(body.rotation) && body.rotation.length >= 3) {
-              next.rotation = body.rotation.slice(0, 3);
+              next["rotation"] = body.rotation.slice(0, 3);
             }
             return next;
           }) : [];
@@ -1037,7 +1044,7 @@ function builderScreenshotPlugin(): Plugin {
         if (pathname === "/request" && request.method === "POST") {
           void (async () => {
             const body = await readJsonBody(request).catch(() => ({}));
-            const angles = parseCaptureAngles(isRecord(body) ? body.angles : undefined);
+            const angles = parseCaptureAngles(isRecord(body) ? body["angles"] : undefined);
             if (!angles) {
               response.statusCode = 400;
               response.setHeader("content-type", "application/json");

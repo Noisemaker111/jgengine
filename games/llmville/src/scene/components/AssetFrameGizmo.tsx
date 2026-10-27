@@ -17,10 +17,10 @@ export function useShowAssetFrames(): boolean {
 }
 
 interface AssetFrameGizmoProps {
-  footprint?: GridFootprint;
-  direction?: 0 | 1 | 2 | 3;
-  label?: string;
-  showForwardArrow?: boolean;
+  footprint?: GridFootprint | undefined;
+  direction?: 0 | 1 | 2 | 3 | undefined;
+  label?: string | undefined;
+  showForwardArrow?: boolean | undefined;
 }
 
 export function AssetFrameGizmo({

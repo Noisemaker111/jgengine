@@ -13,17 +13,17 @@ const _loggedAssets = new Set<string>();
 
 interface SceneModelProps {
   asset: WorldModelAsset;
-  position?: [number, number, number];
-  rotation?: [number, number, number];
-  scale?: [number, number, number] | number;
-  placementDirection?: 0 | 1 | 2 | 3;
-  castShadow?: boolean;
-  receiveShadow?: boolean;
+  position?: [number, number, number] | undefined;
+  rotation?: [number, number, number] | undefined;
+  scale?: [number, number, number] | number | undefined;
+  placementDirection?: 0 | 1 | 2 | 3 | undefined;
+  castShadow?: boolean | undefined;
+  receiveShadow?: boolean | undefined;
   /** Optional footprint override from the placement spec (e.g. in map decor).
    *  If provided, used for fitFootprint instead of asset.footprint.
    *  This allows per-placement sizing.
    */
-  footprint?: GridFootprint;
+  footprint?: GridFootprint | undefined;
 }
 
 function applyShadowFlags(root: Object3D, castShadow: boolean, receiveShadow: boolean) {

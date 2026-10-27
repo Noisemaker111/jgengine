@@ -42,22 +42,22 @@ export interface MeasuredAssetExtents extends AssetBoundsMeters {
 }
 
 export interface AssetTransformInput {
-  frame?: AssetFrame;
-  footprint?: GridFootprint;
-  placementDirection?: CardinalDirection;
+  frame?: AssetFrame | undefined;
+  footprint?: GridFootprint | undefined;
+  placementDirection?: CardinalDirection | undefined;
   /** Measured from loaded GLB — preferred for fitFootprint. */
-  measuredExtents?: MeasuredAssetExtents;
-  instanceRotation?: [number, number, number];
-  instanceScale?: number | [number, number, number];
-  instancePosition?: [number, number, number];
+  measuredExtents?: MeasuredAssetExtents | undefined;
+  instanceRotation?: [number, number, number] | undefined;
+  instanceScale?: number | [number, number, number] | undefined;
+  instancePosition?: [number, number, number] | undefined;
   /** @deprecated Use frame.correction */
-  baseRotation?: [number, number, number];
+  baseRotation?: [number, number, number] | undefined;
   /** @deprecated Use frame.offset */
-  basePosition?: [number, number, number];
+  basePosition?: [number, number, number] | undefined;
   /** @deprecated Use frame.scale */
-  baseScale?: number | [number, number, number];
+  baseScale?: number | [number, number, number] | undefined;
   /** @deprecated Use frame.scale */
-  defaultScale?: [number, number, number] | number;
+  defaultScale?: [number, number, number] | number | undefined;
 }
 
 export interface ResolvedAssetTransform {

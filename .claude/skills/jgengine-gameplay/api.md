@@ -405,6 +405,11 @@
 - `RefreshOptions` (interface): interface RefreshOptions { force?: boolean } — ⚠ undocumented
 - `createDataSource` (function): function createDataSource<T>(load: (signal: AbortSignal) => Promise<T>, options: DataSourceOptions = {}): DataSource<T> — ⚠ undocumented
 
+## @jgengine/core/data/definedFields
+
+- `DefinedFields` (type): type DefinedFields<T> = { [K in keyof T]?: T[K] & ({} | null) } — Passing optional values on to something that takes optional fields. With exact optional property types, a field set to `undefined` is not the same as a field left out, so a value that may be missing has to be dropped rather than passed as `undefined`.
+- `definedFields` (function): function definedFields<T extends object>(fields: T): DefinedFields<T> — `fields` without the entries whose value is `undefined`, typed so the result spreads into props or options that take those fields as optional: `<mesh {...definedFields({ rotation, scale })} />`.
+
 ## @jgengine/core/data/definedOnly
 
 - `DefinedOnly` (type): type DefinedOnly<T extends object> = { [K in keyof T as undefined extends T[K] ? never : K]: T[K]; } & { [K in keyof T as undefined extends T[K] ? K : never]?: Exclude<T[K], undefined>; } — `T` after dropping its undefined fields: a field that may be `undefined` becomes optional and never `undefined`; a field that is always defined stays required.

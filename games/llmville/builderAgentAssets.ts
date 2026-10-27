@@ -1,6 +1,7 @@
 /**
  * Helpers for the agent-facing POST /__llmville-builder/assets endpoint.
  */
+import { isRecord } from "@jgengine/core/data/untyped";
 
 export interface BuilderAgentAssetRequest {
   id: string;
@@ -22,7 +23,7 @@ export interface BuilderAgentAssetLibraryEntry {
   label: string;
   tags: string[];
   kind: "group";
-  footprint?: { width: number; depth: number };
+  footprint?: { width: number; depth: number } | undefined;
   decor: Record<string, unknown>;
   prompt?: string;
   suggestedPath?: string;
@@ -30,49 +31,45 @@ export interface BuilderAgentAssetLibraryEntry {
 }
 
 export function parseAgentAssetRequest(body: unknown): BuilderAgentAssetRequest | null {
-  if (typeof body !== "object" || body === null) return null;
-  const record = body as Record<string, unknown>;
-  if (typeof record.id !== "string" || record.id.trim().length === 0) return null;
-  if (typeof record.label !== "string" || record.label.trim().length === 0) return null;
-  if (typeof record.decor !== "object" || record.decor === null) return null;
-  const decor = record.decor as Record<string, unknown>;
-  if (typeof decor.type !== "string") return null;
+  if (!isRecord(body)) return null;
+  const { id, label, decor, tags: rawTags, footprint: rawFootprint, prompt, suggestedPath, promotedModelKey, save, verify } = body;
+  if (typeof id !== "string" || id.trim().length === 0) return null;
+  if (typeof label !== "string" || label.trim().length === 0) return null;
+  if (!isRecord(decor)) return null;
+  if (typeof decor["type"] !== "string") return null;
 
-  const tags = Array.isArray(record.tags)
-    ? record.tags.filter((tag): tag is string => typeof tag === "string")
+  const tags = Array.isArray(rawTags)
+    ? rawTags.filter((tag): tag is string => typeof tag === "string")
     : ["prop"];
 
-  const footprint = isFootprint(record.footprint)
-    ? record.footprint
-    : isFootprint(decor.footprint)
-      ? decor.footprint
+  const decorFootprint = decor["footprint"];
+  const footprint = isFootprint(rawFootprint)
+    ? rawFootprint
+    : isFootprint(decorFootprint)
+      ? decorFootprint
       : { width: 1, depth: 1 };
+  const decorId = decor["id"];
 
   return {
-    id: record.id.trim(),
-    label: record.label.trim(),
+    id: id.trim(),
+    label: label.trim(),
     tags,
     decor: {
       ...decor,
-      id: typeof decor.id === "string" ? decor.id : record.id.trim(),
+      id: typeof decorId === "string" ? decorId : id.trim(),
       footprint,
     },
     footprint,
-    ...(typeof record.prompt === "string" ? { prompt: record.prompt } : {}),
-    ...(typeof record.suggestedPath === "string" ? { suggestedPath: record.suggestedPath } : {}),
-    ...(typeof record.promotedModelKey === "string" ? { promotedModelKey: record.promotedModelKey } : {}),
-    save: record.save !== false,
-    verify: record.verify !== false,
+    ...(typeof prompt === "string" ? { prompt } : {}),
+    ...(typeof suggestedPath === "string" ? { suggestedPath } : {}),
+    ...(typeof promotedModelKey === "string" ? { promotedModelKey } : {}),
+    save: save !== false,
+    verify: verify !== false,
   };
 }
 
 function isFootprint(value: unknown): value is { width: number; depth: number } {
-  return (
-    typeof value === "object"
-    && value !== null
-    && typeof (value as { width: unknown }).width === "number"
-    && typeof (value as { depth: unknown }).depth === "number"
-  );
+  return isRecord(value) && typeof value["width"] === "number" && typeof value["depth"] === "number";
 }
 
 export function buildAgentAssetLibraryEntry(request: BuilderAgentAssetRequest): BuilderAgentAssetLibraryEntry {
@@ -92,7 +89,7 @@ export function buildAgentAssetLibraryEntry(request: BuilderAgentAssetRequest): 
 
 /** Isolated 50 m stage with a single decor item centered for agent editing. */
 export function buildIsolatedAgentAssetScene(decor: Record<string, unknown>): Record<string, unknown> {
-  const position = Array.isArray(decor.position) ? decor.position : [0, 0, 0];
+  const position = Array.isArray(decor["position"]) ? decor["position"] : [0, 0, 0];
   return {
     tier: "garage",
     version: 1,
