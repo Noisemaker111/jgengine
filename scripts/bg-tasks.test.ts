@@ -1,6 +1,8 @@
 import { afterEach, expect, test } from "bun:test";
-import { existsSync, mkdirSync, readdirSync, rmSync, statSync, writeFileSync } from "node:fs";
+import { existsSync, mkdirSync, readdirSync, statSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
+
+import { removeDirSync } from "./removeDir";
 
 import { awaitTask, parseAwaitArgs, EXIT_LOST, EXIT_NO_TASK } from "./bg-await";
 import { commandFrom, startTask } from "./bg-run";
@@ -39,7 +41,7 @@ afterEach(async () => {
       // wait-ok: waits on the runner process ending (the event), bounded so a stuck runner cannot hang the suite
       for (let turn = 0; pid !== null && alive(pid) && turn < 600; turn += 1) await Bun.sleep(50);
     }
-    rmSync(dir, { recursive: true, force: true, maxRetries: 10, retryDelay: 200 });
+    removeDirSync(dir);
   }
   made.clear();
 });

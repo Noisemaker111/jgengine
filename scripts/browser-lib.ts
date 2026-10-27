@@ -22,6 +22,7 @@ import { checkMarkedServer, checkoutIdentity, devServerIdentity, isUp, listMarke
 import { currentStep, describeHang, markStep } from "./hangReport";
 import { localGet } from "./localhostHttp";
 import { computeShotMetrics, deadViewport } from "./shot-metrics";
+import { removeDirSync } from "./removeDir";
 import { decodePng } from "../packages/assets/src/imageCodec";
 import type { GraphicsTier } from "../packages/jgengine/src/templates/captureArgs";
 
@@ -1029,11 +1030,6 @@ export async function waitForPidExit(pid: number | undefined, timeoutMs = 5_000)
   }
 }
 
-/**
- * Chrome's renderers and crash handler release profile files a moment after the browser pid
- * exits (EBUSY on Windows), so retry for a few seconds. A profile still locked after that is
- * left for the stale sweep.
- */
 /** Block until `pid` has exited or `timeoutMs` has passed. */
 function waitForExitSync(pid: number, timeoutMs: number): void {
   const deadline = Date.now() + timeoutMs;
@@ -1041,23 +1037,19 @@ function waitForExitSync(pid: number, timeoutMs: number): void {
   while (pidAlive(pid) && Date.now() < deadline) Atomics.wait(pause, 0, 0, 100);
 }
 
+/**
+ * Chrome's renderers and crash handler release profile files a moment after the browser pid
+ * exits (EBUSY on Windows), so the delete retries for a few seconds. A profile still locked after
+ * that is left for the stale sweep.
+ */
 export function removeProfileDir(userDataDir: string): void {
   ownedProfiles.delete(userDataDir);
-  const deadline = Date.now() + 10_000;
-  const pause = new Int32Array(new SharedArrayBuffer(4));
-  for (;;) {
-    try {
-      rmSync(userDataDir, { recursive: true, force: true });
-      return;
-    } catch (error) {
-      if (Date.now() >= deadline) {
-        console.error(
-          `browser: could not remove profile ${userDataDir} (${error instanceof Error ? error.message : String(error)}); a later sweep removes it`,
-        );
-        return;
-      }
-      Atomics.wait(pause, 0, 0, 200);
-    }
+  try {
+    removeDirSync(userDataDir);
+  } catch (error) {
+    console.error(
+      `browser: could not remove profile ${userDataDir} (${error instanceof Error ? error.message : String(error)}); a later sweep removes it`,
+    );
   }
 }
 

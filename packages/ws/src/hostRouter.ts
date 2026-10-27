@@ -64,7 +64,14 @@ export type HostRouterOptions = {
   now?: () => number;
   /** How long a disconnected membership remains reclaimable. Defaults to 15 seconds. */
   graceMs?: number;
+  /** Starts a grace-window timer and returns its cancel; tests pass one they fire by hand. */
+  scheduleTimer?: (run: () => void, ms: number) => () => void;
 };
+
+function realTimer(run: () => void, ms: number): () => void {
+  const timer = setTimeout(run, ms);
+  return () => clearTimeout(timer);
+}
 
 export type HostRouterTransport = {
   send: (data: string) => void;
@@ -163,6 +170,7 @@ export function createHostRouter(options: HostRouterOptions): HostRouter {
   const host = options.host;
   const now = options.now ?? Date.now;
   const graceMs = options.graceMs ?? DEFAULT_GRACE_MS;
+  const schedule = options.scheduleTimer ?? realTimer;
   const poseRules = options.poseRules ?? DEFAULT_POSE_RULES;
   const allowAnonymous = options.allowAnonymous === true;
   const singleSession = options.singleSession !== false;
@@ -180,7 +188,8 @@ export function createHostRouter(options: HostRouterOptions): HostRouter {
   };
   const sessionsByUserId = new Map<string, Connection>();
   const resumeTokens = new Map<string, string>();
-  const pendingLeaves = new Map<string, ReturnType<typeof setTimeout>>();
+  /** Each pending leave's cancel, by user and server. */
+  const pendingLeaves = new Map<string, () => void>();
   const ticketKey = (userId: string, serverId: string) => `${userId}|${serverId}`;
   const ticketFor = (userId: string, serverId: string): ResumeTicket => {
     const token = resumeTokens.get(userId) ?? crypto.randomUUID();
@@ -189,9 +198,9 @@ export function createHostRouter(options: HostRouterOptions): HostRouter {
   };
   const clearPendingLeave = (userId: string, serverId: string) => {
     const key = ticketKey(userId, serverId);
-    const timer = pendingLeaves.get(key);
-    if (timer === undefined) return;
-    clearTimeout(timer);
+    const cancel = pendingLeaves.get(key);
+    if (cancel === undefined) return;
+    cancel();
     pendingLeaves.delete(key);
   };
   const heldByOtherConnection = (self: Connection, userId: string, serverId: string): boolean => {
@@ -203,7 +212,7 @@ export function createHostRouter(options: HostRouterOptions): HostRouter {
   const scheduleLeave = (connection: Connection, userId: string, serverId: string) => {
     clearPendingLeave(userId, serverId);
     const key = ticketKey(userId, serverId);
-    pendingLeaves.set(key, setTimeout(() => {
+    pendingLeaves.set(key, schedule(() => {
       pendingLeaves.delete(key);
       void track((async () => {
         const admissions = [...connections]
@@ -930,7 +939,7 @@ export function createHostRouter(options: HostRouterOptions): HostRouter {
       if (closed) return;
       closed = true;
       unsubscribeHost();
-      for (const timer of pendingLeaves.values()) clearTimeout(timer);
+      for (const cancel of pendingLeaves.values()) cancel();
       pendingLeaves.clear();
       connections.clear();
       subscribers.clear();

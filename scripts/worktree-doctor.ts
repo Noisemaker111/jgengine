@@ -16,6 +16,7 @@
 import { existsSync, lstatSync, readFileSync, readdirSync, rmSync, statfsSync, statSync, unlinkSync } from "node:fs";
 import { basename, dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
+import { removeDirSync } from "./removeDir";
 
 
 export interface WorktreeRef {
@@ -382,7 +383,7 @@ export function removeNodeModules(worktree: string): "unlinked" | "removed" {
     }
     return "unlinked";
   }
-  rmSync(path, { recursive: true, force: true, maxRetries: 5, retryDelay: 200 });
+  removeDirSync(path, 1_000);
   return "removed";
 }
 

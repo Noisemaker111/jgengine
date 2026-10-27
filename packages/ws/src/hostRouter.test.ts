@@ -4,6 +4,7 @@ import type { CommandAuthorize, CommandCatalog, CommandLimits } from "./commandM
 import { createGameServerHost, memoryPersistence, type GameServerHost, type HostChangeEvent } from "./host";
 import { createHostRouter, loopbackPipe, MAX_QUEUED_MESSAGES, type HostRouter } from "./hostRouter";
 import { createWsBackend, type WsBackend } from "./createWsBackend";
+import { manualTimers } from "./testFixtures";
 import type { WsChatMessage, WsPresenceRow, WsServerMessage } from "./protocol";
 import type { WorldSyncFrame } from "@jgengine/core/runtime/transport";
 
@@ -38,6 +39,7 @@ function startStack(options: {
   authorize?: CommandAuthorize;
   validate?: CommandCatalog;
   graceMs?: number;
+  timers?: ReturnType<typeof manualTimers>;
 } = {}): {
   host: GameServerHost;
   router: HostRouter;
@@ -58,6 +60,7 @@ function startStack(options: {
     authorize: options.authorize,
     validate: options.validate,
     graceMs: options.graceMs,
+    ...(options.timers === undefined ? {} : { scheduleTimer: options.timers.scheduleTimer }),
   });
   const backends: WsBackend[] = [];
   return {
@@ -360,12 +363,14 @@ test("loopback: spectators can join and receive server updates but cannot run co
 });
 
 test("loopback: reconnect within the grace window keeps the player entity", async () => {
-  const stack = startStack({ graceMs: 50 });
+  const timers = manualTimers();
+  const stack = startStack({ graceMs: 50, timers });
   try {
     const alice = stack.connect("alice");
     const joined = await alice.transport.joinServer({ gameId: "test-game" });
     alice.close();
-    await new Promise((resolve) => setTimeout(resolve, 5));
+    await stack.router.drain();
+    expect(timers.pending()).toEqual([50]);
     const reconnected = stack.connect("alice");
     const result = await reconnected.transport.runCommand({
       serverId: joined.serverId,
@@ -373,6 +378,8 @@ test("loopback: reconnect within the grace window keeps the player entity", asyn
       input: null,
     });
     expect(result).toEqual({ ok: true });
+    // Still inside the window: the leave is waiting, never run.
+    expect(timers.pending()).toEqual([50]);
     expect(await stack.host.isMember({ userId: "alice", serverId: joined.serverId })).toBe(true);
   } finally {
     await stack.shutdown();

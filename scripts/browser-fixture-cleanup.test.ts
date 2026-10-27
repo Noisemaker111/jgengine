@@ -1,8 +1,9 @@
 import { expect, test } from "bun:test";
-import { mkdtemp, rm, stat, writeFile } from "node:fs/promises";
+import { mkdtemp, stat, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { cleanupBrowserFixture, ownBrowserProcess } from "./browser-fixture-cleanup";
+import { removeDir } from "./removeDir";
 
 test("owned force kill drains a held response, HTTP server and scratch without awaiting graceful close", async () => {
   const scratch = await mkdtemp(join(tmpdir(), "browser-fixture-cleanup-"));
@@ -29,7 +30,7 @@ test("owned force kill drains a held response, HTTP server and scratch without a
     ownedBrowserProcess: owned,
     browser: { close: owned.close },
     server: { stop: async (force) => { expect(force).toBe(true); await server.stop(force); stopped = true; } },
-    removeScratch: async () => { await rm(scratch, { recursive: true, force: true }); removed = true; },
+    removeScratch: async () => { await removeDir(scratch); removed = true; },
   });
   try {
     // Let immediately settled cleanup operations run; no timeout or browser launch.
@@ -47,7 +48,7 @@ test("owned force kill drains a held response, HTTP server and scratch without a
     releaseGraceful();
     await cleanup;
     await server.stop(true);
-    await rm(scratch, { recursive: true, force: true });
+    await removeDir(scratch);
     await request;
   }
 });

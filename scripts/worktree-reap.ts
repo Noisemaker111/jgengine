@@ -4,9 +4,10 @@
 // the next install half-linked. This reaps a worktree when its branch has reached
 // `origin/beta` and its tree has nothing uncommitted. Committed work is never at
 // risk: removing a worktree deletes files, not branches.
-import { existsSync, realpathSync, rmSync } from "node:fs";
+import { existsSync, realpathSync } from "node:fs";
 import { basename, dirname, resolve, sep } from "node:path";
 
+import { removeDirSync } from "./removeDir";
 import { printHelpIfAsked } from "./script-help";
 import { parseWorktreeList, type WorktreeRef } from "./worktree-doctor";
 
@@ -193,7 +194,7 @@ function main(argv: readonly string[]): void {
     exists: (path) => existsSync(path),
     isClean: (path) => git(path, ["status", "--porcelain", "--untracked-files=no"]).stdout.trim() === "",
     remove: (path) => {
-      rmSync(path, { recursive: true, force: true, maxRetries: 2 });
+      removeDirSync(path, 1_000);
       return !existsSync(path);
     },
   });

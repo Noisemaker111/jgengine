@@ -81,9 +81,16 @@ async function flush(): Promise<void> {
   for (let index = 0; index < 4; index += 1) await new Promise((resolve) => setTimeout(resolve, 0));
 }
 
+// Every test file shares one process: deleting `fetch` here broke the next file that fetched.
+const realFetch = globalThis.fetch;
+const scope: { window?: unknown } = globalThis;
+const hadWindow = "window" in scope;
+const realWindow = scope.window;
+
 afterEach(() => {
-  delete (globalThis as any).window;
-  delete (globalThis as any).fetch;
+  if (hadWindow) scope.window = realWindow;
+  else delete scope.window;
+  globalThis.fetch = realFetch;
 });
 
 describe("scrap-signal ambience zones", () => {

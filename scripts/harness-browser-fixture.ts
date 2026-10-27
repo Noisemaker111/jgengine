@@ -1,10 +1,11 @@
 // Shared setup for the two harness browser test files. Each file runs in its own process, so
 // each materializes its own harness copy and cleans it up; the helpers and the fixture page a
 // canonical drive scenario serves live here so both files prove the same page.
-import { mkdtempSync, rmSync, writeFileSync } from "node:fs";
+import { mkdtempSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
 import { materializeHarness } from "../packages/jgengine/src/harness";
+import { removeDirSync } from "./removeDir";
 
 const repoRoot = resolve(import.meta.dir, "..");
 
@@ -23,14 +24,15 @@ export const hasChrome = ((): boolean => {
 })();
 
 export function cleanupHarness(): void {
-  rmSync(harnessDir, { recursive: true, force: true });
+  removeDirSync(harnessDir);
 }
 
 /** A scratch project that declares the dependency the harness CLI resolves against. */
 export function harnessProject(prefix: string): { dir: string; dispose: () => void } {
   const dir = mkdtempSync(join(tmpdir(), prefix));
   writeFileSync(join(dir, "package.json"), JSON.stringify({ dependencies: { "@jgengine/shell": "*" } }));
-  return { dir, dispose: () => rmSync(dir, { recursive: true, force: true }) };
+  // A drive's browser can still hold a file here for a moment after the drive is stopped.
+  return { dir, dispose: () => removeDirSync(dir) };
 }
 
 export type Report = { coarse: boolean; fine: boolean; touchPoints: number; width: number; height: number };

@@ -1,12 +1,13 @@
 // Setup shared by the two creator browser tests in packages/editor. Each test file pays
 // its own copy - packing the packages, compiling the stylesheet, booting Chromium - so a
 // file holds one scenario and the two halves of the old single scenario time separately.
-import { mkdir, readdir, rm, symlink } from "node:fs/promises";
+import { mkdir, readdir, symlink } from "node:fs/promises";
 import { resolve } from "node:path";
 import { chromium, type Browser, type Page } from "playwright-core";
 import { buildBrowserFixture, chromeGraphicsArgs, findChromeExecutable, killPid } from "./browser-lib";
 import { cleanupBrowserFixture, ownBrowserProcess, type OwnedBrowserProcess } from "./browser-fixture-cleanup";
 import { installPublicPackages } from "./browser-test-fixture";
+import { removeDir } from "./removeDir";
 
 const repoRoot = resolve(import.meta.dir, "..");
 const editorRoot = resolve(repoRoot, "packages/editor");
@@ -41,7 +42,7 @@ export function creatorAppFixture(name: string): CreatorAppFixture {
 
   async function start(): Promise<CreatorAppSession> {
     const errors: string[] = [];
-    await rm(scratch, { recursive: true, force: true });
+    await removeDir(scratch);
     await mkdir(`${scratch}/node_modules/@jgengine`, { recursive: true });
     for (const peer of ["react", "react-dom", "three"]) await symlink(resolve(editorRoot, "node_modules", peer), `${scratch}/node_modules/${peer}`, "dir");
     const store = resolve(repoRoot, "node_modules/.bun");
@@ -124,7 +125,8 @@ export function creatorAppFixture(name: string): CreatorAppFixture {
       ownedBrowserProcess,
       browser,
       server: session.server,
-      removeScratch: () => rm(scratch, { recursive: true, force: true }),
+      // The killed browser can still hold a served file here for a moment on Windows.
+      removeScratch: () => removeDir(scratch),
     });
   }
 

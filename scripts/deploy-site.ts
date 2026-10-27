@@ -4,12 +4,13 @@
 // That worktree is removed afterwards, pass or fail. `bun run release --wait` runs it after the Publish
 // run succeeds; `bun run deploy:site` runs it alone, for HEAD.
 import { spawnSync } from "node:child_process";
-import { lstatSync, rmSync } from "node:fs";
+import { lstatSync } from "node:fs";
 import { join } from "node:path";
 import { fileURLToPath } from "node:url";
 
 import { mainCheckoutRoot } from "./agent-worktree";
 import { removeNodeModules } from "./worktree-doctor";
+import { removeDirSync } from "./removeDir";
 import { printHelpIfAsked } from "./script-help";
 
 const DEPLOY_SITE_USAGE = {
@@ -106,7 +107,7 @@ function lexists(path: string): boolean {
 function removeSiteWorktree(mainRoot: string, worktree: string, run: RunStep): boolean {
   if (lexists(worktree)) {
     if (lexists(join(worktree, "node_modules"))) removeNodeModules(worktree);
-    rmSync(worktree, { recursive: true, force: true, maxRetries: 2 });
+    removeDirSync(worktree, 1_000);
   }
   run(["git", "worktree", "prune"], mainRoot);
   return !lexists(worktree);
