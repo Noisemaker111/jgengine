@@ -60,3 +60,6 @@ apps/web/.wrangler/
 
 # The shared asset store every checkout links pulled packs from (packages/assets/src/assetStore.ts).
 /.asset-store/
+
+# Web pages `bun run data-table` fetched, kept in the main checkout for every worktree.
+.web-cache/
