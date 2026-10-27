@@ -13,7 +13,8 @@ import { engineRoot } from "../find/codeMap";
 export const PLAN_FILE = "PLAN.md";
 const FEATURES = "## Features";
 const COVERAGE = "## Engine coverage";
-const GAPS = "## Gaps";
+/** The generated section listing features the engine does not cover yet; a game's gap to target. */
+export const PLAN_GAPS_HEADING = "## Gaps";
 const MILESTONES = "## Milestones";
 const GENERATED = "<!-- written by `jgengine plan` from the Features list; edit the list, then run it again -->";
 
@@ -139,7 +140,7 @@ export function newPlan(title: string, brief: string): string {
     "",
     COVERAGE,
     "",
-    GAPS,
+    PLAN_GAPS_HEADING,
     "",
     MILESTONES,
     "",
@@ -156,7 +157,7 @@ export function refreshPlan(markdown: string, sources: HasSources): { text: stri
   const answers = answerHas(features.map((feature) => feature.query), sources);
   const { coverage, gaps } = renderCoverage(features, answers);
   let text = replaceSection(markdown, COVERAGE, coverage, MILESTONES);
-  text = replaceSection(text, GAPS, gaps, MILESTONES);
+  text = replaceSection(text, PLAN_GAPS_HEADING, gaps, MILESTONES);
   return { text: `${text.trimEnd()}\n`, features, answers };
 }
 
