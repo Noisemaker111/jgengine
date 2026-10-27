@@ -28,11 +28,11 @@ While implementing, record friction as it happens:
 
 After each shipped fix, answer from the actual diff, not memory:
 
-0. **Root-cause reinforcement check.** For a bugfix, a class of bug still open for other games is symptom work; the first output is the missing upstream contract, default, warning or gate check (AGENTS.md, bugfix PR body).
-1. **Size check.** Most gaps here are ~20-line concepts. Count files touched and lines changed. A small concept that required edits in many places is itself a finding — name the missing seam, wrong default, or missing generator that forced the spread.
-2. **Exact-diff replay.** If this same diff arrived tomorrow, what one upstream change would halve it? Candidates: a new primitive, a better default, a codegen step, a skill or capability-index fix, a test harness.
+0. **Root-cause reinforcement check.** For a bugfix, a class of bug still open for other games is symptom work; the first output is the missing upstream contract, default or warning (AGENTS.md, bugfix PR body).
+1. **Size check.** Most gaps here are ~20-line concepts. Count files touched and lines changed. A small concept that required edits in many places is itself a finding — name the missing seam or wrong default that forced the spread.
+2. **Exact-diff replay.** If this same diff arrived tomorrow, what one upstream change would halve it? Candidates: a new primitive, a better default, a skill fix, a test harness.
 3. **Act now.** A seam fix that shares the issue's verification story lands in the same PR. Anything larger becomes a concise `[FEATURE]` issue — and jumps to the front of the queue when it would pay for itself within this pass.
-4. **Adoption check.** Identify the required published version, the root catalog update and the local code it supersedes. Verify the packaged export and preserve game behavior when deleting the workaround. A beta merge, shorter file or passing unit suite alone does not establish adoption.
+4. **Adoption check.** Name the local code the engine change supersedes and delete it in the same PR; games run the engine source from the same commit. Preserve game behavior when deleting the workaround. A shorter file or passing unit suite alone does not establish adoption.
 5. **Reuse check.** Exercise a differently composed consumer when applicable. Keep art, rules and policy configurable; do not solve reuse by making games identical.
 
 Carry the answers forward: each retrospective sets the friction target for the next issue at roughly half the previous one. The same friction appearing twice means stop working symptoms and fix the seam before taking the next issue.

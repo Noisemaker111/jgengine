@@ -25,6 +25,6 @@ Write plain numbered steps in the order work happens. Each delivers a concrete p
 
 ## Several games
 
-Apply the steps to every named game independently. Keep a plan and evidence for each; never mark the portfolio improved because one game passes. Find shared defects once, assign their engine owner, and adopt the published fix without copying it into eight games. Delegate independent game work with disjoint ownership when repository instructions authorize it. Coordinate shared dependencies and landing in one place.
+Apply the steps to every named game independently. Keep a plan and evidence for each; never mark the portfolio improved because one game passes. Find shared defects once, assign their engine owner, and adopt the engine fix without copying it into eight games. Delegate independent game work with disjoint ownership when repository instructions authorize it. Coordinate shared dependencies and landing in one place.
 
 Start with a complete representative improvement in each game, then expand only the mechanics that survive play. Preserve the player's existing saves or document a deliberate migration. When a capability or tool is missing, name the exact gap, complete independent work and keep the dependent step visibly open; do not silently substitute hardcoded world content or claim a finished game.

@@ -161,7 +161,29 @@ test("a fragment another lane left is not used; this branch writes its own from 
   expect(outcome.subject).toBe("my own work");
   expect(readFileSync(join(work, "changes", "agent-lane-x.md"), "utf8")).toBe("my own work\n\n### Changed\n\n- my own work\n");
   expect(gitOk(work, ["log", "-1", "--format=%b"])).not.toContain("Someone else's work");
-  expect(log).toContain("wrote agent-lane-x.md from the branch's commit subjects");
+  expect(log).toContain("wrote agent-lane-x.md from the branch's commit messages");
+});
+
+test("the commit's body reaches the note it writes, so the PR body carries the why and its Closes line", () => {
+  const { work } = originWithBeta();
+  gitOk(work, ["checkout", "-q", "-b", "agent/lane-x"]);
+  gitOk(work, [
+    "commit",
+    "-q",
+    "--allow-empty",
+    "-m",
+    "Carry the body",
+    "-m",
+    "Subjects alone said what, never why.\n\nCloses #12\n\nCo-Authored-By: Claude <noreply@anthropic.com>",
+  ]);
+  writeFileSync(join(work, "shared.txt"), "one\nmine\n");
+
+  const outcome = commitIn(work);
+
+  expect(outcome).toMatchObject({ kind: "committed", created: true, subject: "Carry the body" });
+  expect(readFileSync(join(work, "changes", "agent-lane-x.md"), "utf8")).toBe(
+    "Carry the body\n\nCloses #12\n\n### Changed\n\n- Carry the body\n- Subjects alone said what, never why.\n",
+  );
 });
 
 test("-m writes the note: sections from prefixes, the API the diff added, the seam a game change leaned on", () => {
@@ -303,9 +325,6 @@ function scriptedGh(): { gh: Gh; calls: string[][] } {
 function handOffIo(git: (args: string[]) => Run, gh: Gh): { io: LandIo; logs: string[]; errors: string[] } {
   const logs: string[] = [];
   const errors: string[] = [];
-  const ignite = (what: string) => () => {
-    throw new Error(`land must not ${what} before handing the PR over`);
-  };
   return {
     logs,
     errors,
@@ -313,8 +332,6 @@ function handOffIo(git: (args: string[]) => Run, gh: Gh): { io: LandIo; logs: st
       git,
       gh,
       verify: () => true,
-      watch: ignite("watch checks"),
-      sleep: ignite("sleep"),
       log: (line) => logs.push(line),
       error: (line) => errors.push(line),
     },
@@ -329,7 +346,7 @@ test("land --commit commits with the branch fragment, then hands the PR over in 
   const { io, logs } = handOffIo(git, gh);
 
   const code = landBranch({
-    args: { base: "beta", commit: true, allow: [], messages: [], watch: false },
+    args: { base: "beta", commit: true, allow: [], messages: [] },
     branch: "agent/lane-x",
     lock: join(SCRATCH, `lock-${crypto.randomUUID()}.lock`),
     io,
@@ -352,7 +369,7 @@ test("land --commit with nothing to commit lands what the branch already has", (
   const { io, logs } = handOffIo(git, gh);
 
   const code = landBranch({
-    args: { base: "beta", commit: true, allow: [], messages: [], watch: false },
+    args: { base: "beta", commit: true, allow: [], messages: [] },
     branch: "agent/lane-x",
     lock: join(SCRATCH, `lock-${crypto.randomUUID()}.lock`),
     io,
@@ -373,7 +390,7 @@ test("a failed commit stops the landing before anything is pushed", () => {
     args[0] === "commit" ? { status: 1, stdout: "", stderr: "nothing added to commit" } : git(args);
 
   const code = landBranch({
-    args: { base: "beta", commit: true, allow: [], messages: [], watch: false },
+    args: { base: "beta", commit: true, allow: [], messages: [] },
     branch: "agent/lane-x",
     lock: join(SCRATCH, `lock-${crypto.randomUUID()}.lock`),
     io: { ...io, git: failing },
@@ -387,10 +404,10 @@ test("a failed commit stops the landing before anything is pushed", () => {
 
 test("--commit skips the dirty-tree refusal that stops a plain landing", () => {
   const dirty = " M scripts/land.ts\n";
-  expect(refusalFor({ base: "beta", commit: false, allow: [], messages: [], watch: false }, "agent/x", dirty)).toContain("dirty tree");
-  expect(refusalFor({ base: "beta", commit: true, allow: [], messages: [], watch: false }, "agent/x", dirty)).toBeNull();
-  expect(refusalFor({ base: "beta", commit: true, allow: [], messages: [], watch: false }, "beta", dirty)).toContain("refusing to land beta");
-  expect(parseArgs(["--commit"])).toEqual({ base: "beta", commit: true, allow: [], messages: [], watch: false });
+  expect(refusalFor({ base: "beta", commit: false, allow: [], messages: [] }, "agent/x", dirty)).toContain("dirty tree");
+  expect(refusalFor({ base: "beta", commit: true, allow: [], messages: [] }, "agent/x", dirty)).toBeNull();
+  expect(refusalFor({ base: "beta", commit: true, allow: [], messages: [] }, "beta", dirty)).toContain("refusing to land beta");
+  expect(parseArgs(["--commit"])).toEqual({ base: "beta", commit: true, allow: [], messages: [] });
 });
 
 test("a scratch artifact, an ignored path, a stray lockfile and a stranger's new fragment are refused", () => {
@@ -446,7 +463,7 @@ test("--commit prints every path it will commit, and refuses the whole set with 
   const { io, logs, errors } = handOffIo(git, gh);
 
   const code = landBranch({
-    args: { base: "beta", commit: true, allow: [], messages: [], watch: false },
+    args: { base: "beta", commit: true, allow: [], messages: [] },
     branch: "agent/lane-one-command",
     lock: join(SCRATCH, `lock-${crypto.randomUUID()}.lock`),
     io,
@@ -476,7 +493,7 @@ test("--allow keeps one refused file on purpose", () => {
   const { io } = handOffIo(git, gh);
 
   const code = landBranch({
-    args: { base: "beta", commit: true, allow: ["bun.lock", "changes/agent-lane-x.md"], messages: [], watch: false },
+    args: { base: "beta", commit: true, allow: ["bun.lock", "changes/agent-lane-x.md"], messages: [] },
     branch: "agent/lane-one-command",
     lock: join(SCRATCH, `lock-${crypto.randomUUID()}.lock`),
     io,

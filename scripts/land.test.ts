@@ -7,7 +7,6 @@ import {
   EXIT_LANDED,
   EXIT_VERIFY_FAILED,
   LOCK_STALE_MS,
-  MERGE_ATTEMPTS,
   QUEUE_LABEL,
   acquireLock,
   baseMoved,
@@ -29,7 +28,8 @@ import {
   pickFragment,
   staleReason,
   ownFragments,
-  subjectsBody,
+  commitsBody,
+  noteLines,
   syncOntoBase,
 } from "./land";
 import type { FragmentFile, Gh, GhCheck, LandIo, LockWait, Run } from "./land";
@@ -37,14 +37,13 @@ import { attemptsOf, judgeChecks } from "./ci-status";
 import type { RollupEntry } from "./ci-status";
 
 test("parses flags with values and defaults the base to beta", () => {
-  expect(parseArgs([])).toEqual({ base: "beta", commit: false, allow: [], messages: [], watch: false });
+  expect(parseArgs([])).toEqual({ base: "beta", commit: false, allow: [], messages: [] });
   expect(parseArgs(["--verify", "bun run preflight --ship"])).toEqual({
     base: "beta",
     verify: "bun run preflight --ship",
     commit: false,
     allow: [],
     messages: [],
-    watch: false,
   });
   expect(parseArgs(["--title", "Menus", "--body-file", ".scratch/body.md", "--base", "beta"])).toEqual({
     base: "beta",
@@ -53,12 +52,17 @@ test("parses flags with values and defaults the base to beta", () => {
     commit: false,
     allow: [],
     messages: [],
-    watch: false,
   });
-  expect(parseArgs(["--watch"]).watch).toBe(true);
   expect(parseArgs(["--commit"]).commit).toBe(true);
   expect(parseArgs(["-m", "Wolves hunt", "--message", "Fixed: dens"]).messages).toEqual(["Wolves hunt", "Fixed: dens"]);
   expect(() => parseArgs(["-m"])).toThrow("-m needs a value");
+});
+
+test("noteLines turns whole commit messages into note lines: subject, body lines unbulleted, trailers dropped", () => {
+  expect(
+    noteLines(["Carry the body\n\n- Subjects alone said what.\n* The body says why.\n\nCloses #12\n\nCo-Authored-By: Claude <noreply@anthropic.com>", "Second commit"]),
+  ).toEqual(["Carry the body", "Subjects alone said what.", "The body says why.", "Closes #12", "Second commit"]);
+  expect(noteLines([])).toEqual([]);
 });
 
 test("rejects a flag without a value and an unknown flag instead of guessing", () => {
@@ -121,17 +125,6 @@ const OWN: FragmentFile = {
   mtimeMs: 100,
 };
 
-test("a note this run rewrote from -m replaces a reused PR's body; a kept note does not", () => {
-  const options = {
-    branch: "agent/lane-x",
-    summary: "the last commit",
-    files: () => [OWN],
-    added: () => ["changes/agent-lane-x.md"],
-  };
-  expect(landBody({ ...options, args: { base: "beta", messages: ["The fragment."] } }).explicit).toBe(true);
-  expect(landBody({ ...options, args: { base: "beta", messages: [] } }).explicit).toBe(false);
-});
-
 test("a fragment another lane left in changes/ never reaches this PR's body", () => {
   const logged: string[] = [];
   const body = landBody({
@@ -149,7 +142,7 @@ test("a fragment another lane left in changes/ never reaches this PR's body", ()
   ]);
 });
 
-test("with no fragment of its own the body lists the branch's commit subjects, never a stranger's note", () => {
+test("with no fragment of its own the body carries the branch's commit messages, bodies included, never a stranger's note", () => {
   const logged: string[] = [];
   const body = landBody({
     args: { base: "beta" },
@@ -157,13 +150,26 @@ test("with no fragment of its own the body lists the branch's commit subjects, n
     summary: "the last commit",
     files: () => [FOREIGN],
     added: () => ["scripts/land.ts"],
-    subjects: () => ["Add the resolver", "Test it"],
+    commits: () => ["Add the resolver\n\nIt reads the manifest first.\nOld callers keep working.", "Test it"],
     log: (line) => logged.push(line),
   });
-  expect(body.text).toBe("Changed on this branch:\n- Add the resolver\n- Test it");
+  expect(body.text).toBe(
+    "Changed on this branch:\n- Add the resolver\n\n  It reads the manifest first.\n  Old callers keep working.\n- Test it",
+  );
   expect(body.text).not.toContain("stranger");
   expect(logged).toContain("ignoring changes/agent-lane-someone-else.md: this branch's diff against origin/beta does not add it");
-  expect(logged).toContain("no changes/ fragment in this branch's diff; body lists its 2 commit subject(s)");
+  expect(logged).toContain("no changes/ fragment in this branch's diff; body carries its 2 commit message(s)");
+});
+
+test("a note this run rewrote from -m replaces a reused PR's body; a kept note does not", () => {
+  const options = {
+    branch: "agent/lane-x",
+    summary: "the last commit",
+    files: () => [OWN],
+    added: () => ["changes/agent-lane-x.md"],
+  };
+  expect(landBody({ ...options, args: { base: "beta", messages: ["The fragment."] } }).explicit).toBe(true);
+  expect(landBody({ ...options, args: { base: "beta", messages: [] } }).explicit).toBe(false);
 });
 
 test("a blank body file falls back to the branch's own fragment and does not claim to be explicit", () => {
@@ -185,7 +191,7 @@ test("with no fragment and no commits the one-line summary is the body", () => {
     summary: " the last commit ",
     files: () => [],
     added: () => [],
-    subjects: () => [],
+    commits: () => [],
   });
   expect(body).toEqual({ text: "the last commit", explicit: false });
 });
@@ -238,8 +244,9 @@ test("fragments are split by what the diff adds, not by which one is newest", ()
   expect(split.own.map((file) => file.path)).toEqual([OWN.path]);
   expect(split.ignored.map((file) => file.path)).toEqual([FOREIGN.path]);
   expect(ownFragments([FOREIGN], ["changes/README.md"])).toEqual({ own: [], ignored: [FOREIGN] });
-  expect(subjectsBody([" one ", "", "two"])).toBe("Changed on this branch:\n- one\n- two");
-  expect(subjectsBody([])).toBe("");
+  expect(commitsBody([" one ", "", "two"])).toBe("Changed on this branch:\n- one\n- two");
+  expect(commitsBody(["one\n\nwhy one\n"])).toBe("Changed on this branch:\n- one\n\n  why one");
+  expect(commitsBody([])).toBe("");
 });
 
 test("a reused PR keeps a body land was not given, and one that already matches is not rewritten", () => {
@@ -718,7 +725,7 @@ test("only a moved base, not a failing check, sends a merge back to rebase", () 
  * performs a real merge into the throwaway remote.
  */
 const HARNESS = `
-import { appendFileSync, existsSync, writeFileSync } from "node:fs";
+import { appendFileSync, writeFileSync } from "node:fs";
 import { spawnSync } from "node:child_process";
 const cfg = JSON.parse(process.env.LAND_TEST_CONFIG);
 const land = await import("./scripts/land.ts");
@@ -730,11 +737,9 @@ const gitAt = (cwd) => (args) => {
 const lane = gitAt(cfg.clone);
 const bare = gitAt(cfg.bare);
 const server = gitAt(cfg.server);
-const partner = cfg.moveBase === null ? null : gitAt(cfg.moveBase);
 const ok = { status: 0, stdout: "", stderr: "" };
 const pause = (ms) => Atomics.wait(new Int32Array(new SharedArrayBuffer(4)), 0, 0, ms);
 let created = false;
-let moved = false;
 const url = "https://example.test/" + cfg.number;
 const gh = (args) => {
   const joined = args.join(" ");
@@ -753,7 +758,6 @@ const gh = (args) => {
   }
   if (joined.startsWith("pr view")) return { status: 0, stdout: JSON.stringify({ state: "MERGED", url }), stderr: "" };
   if (joined.startsWith("pr edit")) return ok;
-  if (joined.startsWith("pr checks") && joined.includes("--watch")) return ok;
   if (joined.startsWith("pr checks")) return { status: 0, stdout: JSON.stringify([{ name: "ci", state: "SUCCESS", bucket: "pass" }]), stderr: "" };
   if (joined.startsWith("pr merge")) {
     at("MERGE-START");
@@ -777,7 +781,7 @@ const gh = (args) => {
 const waits = [];
 at("START");
 const code = land.landBranch({
-  args: { base: "beta", commit: false, allow: [], verify: cfg.verify, watch: true },
+  args: { base: "beta", commit: false, allow: [], messages: [], verify: cfg.verify },
   branch: cfg.branch,
   lock: cfg.lock,
   waits,
@@ -785,31 +789,6 @@ const code = land.landBranch({
     git: lane,
     gh,
     verify: () => cfg.verifyOk,
-    watch: () => {
-      at("WATCH-START");
-      if (cfg.watchPeers.length > 0) {
-        // Event, not timer: this watch ends only once every peer landing is watching too, so the
-        // watches overlap however slow the machine is, and a lock held across watching deadlocks
-        // here instead of passing by luck.
-        writeFileSync(cfg.events + ".watching", "");
-        const deadline = Date.now() + cfg.watchMs;
-        while (!cfg.watchPeers.every((peer) => existsSync(peer + ".watching"))) {
-          if (Date.now() > deadline) { at("WATCH-ALONE"); break; }
-          pause(20);
-        }
-      } else pause(cfg.watchMs);
-      at("WATCH-END");
-      if (partner !== null && !moved) {
-        moved = true;
-        partner(["pull", "-q", "--rebase", "origin", "beta"]);
-        writeFileSync(cfg.moveBase + "/moved.txt", "moved\\n");
-        partner(["add", "-A"]);
-        partner(["commit", "-q", "-m", "beta moves on"]);
-        partner(["push", "-q", "origin", "beta"]);
-        at("BASE-MOVED");
-      }
-    },
-    sleep: pause,
     log: (line) => at("LOG " + line),
     error: (line) => at("ERR " + line),
   },
@@ -838,8 +817,8 @@ interface Landing {
 }
 
 /** A bare origin, a clone that plays GitHub's merge, and one branch per lane. */
-function landingRepo(names: readonly string[]): { bare: string; server: string; lanes: Lane[]; partner: string } {
-  const { bare, work, partner } = originWithBeta();
+function landingRepo(names: readonly string[]): { bare: string; server: string; lanes: Lane[] } {
+  const { bare, work } = originWithBeta();
   const home = dirname(work);
   const server = join(home, "server");
   gitOk(home, ["clone", "-q", bare, server]);
@@ -851,7 +830,7 @@ function landingRepo(names: readonly string[]): { bare: string; server: string; 
     commit(clone, `${name}.txt`, `${name}\n`, `${name} work`);
     return { clone, branch };
   });
-  return { bare, server, lanes, partner };
+  return { bare, server, lanes };
 }
 
 function runDir(): string {
@@ -867,15 +846,10 @@ function startLanding(options: {
   server: string;
   lock: string;
   number: number;
-  watchMs: number;
   mergeMs?: number;
   strictBase?: boolean;
-  moveBase?: string;
   verify?: string;
   verifyOk?: boolean;
-  /** Event logs of landings this one's watch waits for (see the harness's watch). */
-  watchPeers?: readonly string[];
-  /** Fixes the event log path, so a peer can name it before this landing starts. */
   dir?: string;
 }): Promise<Landing> {
   const dir = options.dir ?? runDir();
@@ -888,13 +862,10 @@ function startLanding(options: {
     server: options.server,
     lock: options.lock,
     number: options.number,
-    watchMs: options.watchMs,
     mergeMs: options.mergeMs ?? 150,
     strictBase: options.strictBase ?? true,
-    moveBase: options.moveBase ?? null,
     verify: options.verify ?? undefined,
     verifyOk: options.verifyOk ?? true,
-    watchPeers: options.watchPeers ?? [],
     events,
     out,
   };
@@ -952,30 +923,19 @@ function printLanding(label: string, landing: Landing): void {
   for (const line of landing.logs) console.log(`  land: ${line}`);
 }
 
-test("two landings watch their checks at once and only queue for the lock", async () => {
-  // Each watch ends when the other landing is watching too (the harness's barrier), so the test
-  // reads the order of events, never wall-clock spans that a loaded machine stretches. The cap only
-  // bounds a broken lock that serialises watching: that watch ends alone and the test fails.
-  const WATCH_CAP_MS = 60_000;
+test("two landings at once both hand over, and the lock keeps their arming apart", async () => {
   const pair = landingRepo(["a", "b"]);
   const lock = join(dirname(pair.lanes[0]!.clone), "land.lock");
-  const [aDir, bDir] = [runDir(), runDir()];
-  const [aEvents, bEvents] = [join(aDir, "events.log"), join(bDir, "events.log")];
-  const shared = { bare: pair.bare, server: pair.server, lock, watchMs: WATCH_CAP_MS, strictBase: false };
+  const shared = { bare: pair.bare, server: pair.server, lock, strictBase: false };
   const [a, b] = await Promise.all([
-    startLanding({ ...shared, lane: pair.lanes[0]!, number: 2, dir: aDir, watchPeers: [bEvents] }),
-    startLanding({ ...shared, lane: pair.lanes[1]!, number: 3, dir: bDir, watchPeers: [aEvents] }),
+    startLanding({ ...shared, lane: pair.lanes[0]!, number: 2 }),
+    startLanding({ ...shared, lane: pair.lanes[1]!, number: 3 }),
   ]);
   printLanding("landing a", a);
   printLanding("landing b", b);
 
   expect(a.code).toBe(0);
   expect(b.code).toBe(0);
-  expect(a.events.some((event) => event.label === "WATCH-ALONE")).toBe(false);
-  expect(b.events.some((event) => event.label === "WATCH-ALONE")).toBe(false);
-
-  const [aWatch, bWatch] = [windows(a.events, "WATCH-START", "WATCH-END")[0]!, windows(b.events, "WATCH-START", "WATCH-END")[0]!];
-  expect(overlap(aWatch, bWatch)).toBeGreaterThanOrEqual(0);
 
   const [aMerge, bMerge] = [windows(a.events, "MERGE-START", "MERGE-END")[0]!, windows(b.events, "MERGE-START", "MERGE-END")[0]!];
   expect(overlap(aMerge, bMerge)).toBeLessThanOrEqual(0);
@@ -996,7 +956,6 @@ test("a landing that queues prints what it waited for, and its summary splits wa
     server: repo.server,
     lock,
     number: 4,
-    watchMs: 200,
   });
   printLanding("landing behind a holder", landing);
 
@@ -1008,35 +967,6 @@ test("a landing that queues prints what it waited for, and its summary splits wa
   await holder.child.exited;
 }, 120_000);
 
-test("a base that moves between the push and the merge is rebased, and the landing is not lost", async () => {
-  const repo = landingRepo(["mover"]);
-  const lock = join(dirname(repo.lanes[0]!.clone), "land.lock");
-  const landing = await startLanding({
-    lane: repo.lanes[0]!,
-    bare: repo.bare,
-    server: repo.server,
-    lock,
-    number: 5,
-    watchMs: 200,
-    moveBase: repo.partner,
-  });
-  printLanding("landing on a base that moved", landing);
-
-  expect(landing.code).toBe(0);
-  expect(landing.logs).toContainEqual(
-    expect.stringMatching(new RegExp(`^merge refused because origin/beta moved .*attempt 2 of ${MERGE_ATTEMPTS}\\)$`)),
-  );
-  expect(windows(landing.events, "WATCH-START", "WATCH-END").length).toBe(2);
-  expect(windows(landing.events, "MERGE-START", "MERGE-END").length).toBe(2);
-
-  const beta = gitOk(repo.bare, ["rev-parse", "refs/heads/beta"]);
-  const branchTip = gitOk(repo.bare, ["rev-parse", "refs/heads/agent/mover"]);
-  const movedCommit = gitOk(repo.partner, ["rev-parse", "HEAD"]);
-  expect(gitIn(repo.bare, ["merge-base", "--is-ancestor", branchTip, beta]).status).toBe(0);
-  expect(gitIn(repo.bare, ["merge-base", "--is-ancestor", movedCommit, beta]).status).toBe(0);
-  expect(gitOk(repo.bare, ["rev-parse", "refs/heads/agent/mover^"])).toBe(movedCommit);
-}, 120_000);
-
 test("a failed verify stops the landing before it merges", async () => {
   const repo = landingRepo(["unverified"]);
   const landing = await startLanding({
@@ -1045,14 +975,12 @@ test("a failed verify stops the landing before it merges", async () => {
     server: repo.server,
     lock: join(dirname(repo.lanes[0]!.clone), "land.lock"),
     number: 6,
-    watchMs: 200,
     verify: "the-command",
     verifyOk: false,
   });
 
   expect(landing.code).toBe(EXIT_VERIFY_FAILED);
   expect(landing.logs).toContain("verify the-command");
-  expect(landing.logs[0]).toContain("--watch is deprecated");
   expect(landing.errors).toContain("verify failed: the-command");
   expect(windows(landing.events, "MERGE-START", "MERGE-END").length).toBe(0);
 }, 120_000);
@@ -1103,7 +1031,7 @@ function handOffGh(options: { autoMerge?: Run; label?: Run; rollup?: RollupEntry
   return { gh, calls };
 }
 
-/** An io whose watch and sleep ignite, so any polling on the default path fails the test loudly. */
+/** An io that records what a hand-off prints. */
 function handOffIo(parts: { git: (args: string[]) => Run; gh: Gh; verifyOk?: boolean }): {
   io: LandIo;
   logs: string[];
@@ -1111,16 +1039,11 @@ function handOffIo(parts: { git: (args: string[]) => Run; gh: Gh; verifyOk?: boo
 } {
   const logs: string[] = [];
   const errors: string[] = [];
-  const ignite = (what: string) => () => {
-    throw new Error(`land must not ${what} before handing the PR over`);
-  };
   return {
     io: {
       git: parts.git,
       gh: parts.gh,
       verify: () => parts.verifyOk ?? true,
-      watch: ignite("watch checks"),
-      sleep: ignite("sleep"),
       log: (line) => logs.push(line),
       error: (line) => errors.push(line),
     },
@@ -1129,12 +1052,12 @@ function handOffIo(parts: { git: (args: string[]) => Run; gh: Gh; verifyOk?: boo
   };
 }
 
-test("land hands the PR over in one pass: no watch, no sleep, the URL and the status command", () => {
+test("land hands the PR over in one pass: the URL and the status command", () => {
   const { git } = scriptedGit();
   const { gh, calls } = handOffGh();
   const { io, logs } = handOffIo({ git, gh });
 
-  const code = landBranch({ args: { base: "beta", commit: false, allow: [], messages: [], watch: false }, branch: "agent/lane-x", lock: lockPathForTest(), io });
+  const code = landBranch({ args: { base: "beta", commit: false, allow: [], messages: [] }, branch: "agent/lane-x", lock: lockPathForTest(), io });
 
   expect(code).toBe(EXIT_LANDED);
   expect(calls).toContainEqual(["pr", "merge", "4242", "--auto", "--merge"]);
@@ -1150,7 +1073,7 @@ test("an auto-merge the repo refuses labels the PR for the queue instead of fail
   const { gh, calls } = handOffGh({ autoMerge: { status: 1, stdout: "", stderr: "auto-merge is not allowed here" } });
   const { io, logs } = handOffIo({ git, gh });
 
-  const code = landBranch({ args: { base: "beta", commit: false, allow: [], messages: [], watch: false }, branch: "agent/lane-x", lock: lockPathForTest(), io });
+  const code = landBranch({ args: { base: "beta", commit: false, allow: [], messages: [] }, branch: "agent/lane-x", lock: lockPathForTest(), io });
 
   expect(code).toBe(EXIT_LANDED);
   expect(calls).toContainEqual(["pr", "edit", "4242", "--add-label", QUEUE_LABEL]);
@@ -1171,7 +1094,7 @@ test("a base that moved before the hand-off is rebased and armed again, without 
   };
   const { io, logs } = handOffIo({ git, gh: arming });
 
-  const code = landBranch({ args: { base: "beta", commit: false, allow: [], messages: [], watch: false }, branch: "agent/lane-x", lock: lockPathForTest(), io });
+  const code = landBranch({ args: { base: "beta", commit: false, allow: [], messages: [] }, branch: "agent/lane-x", lock: lockPathForTest(), io });
 
   expect(code).toBe(EXIT_LANDED);
   expect(attempts).toBe(2);
@@ -1192,7 +1115,7 @@ test("a cancelled attempt from a superseded run is not a failure: the pass on th
   const { gh, calls } = handOffGh({ rollup: superseded });
   const { io, logs, errors } = handOffIo({ git: scriptedGit().git, gh });
 
-  const code = landBranch({ args: { base: "beta", commit: false, allow: [], messages: [], watch: false }, branch: "agent/lane-x", lock: lockPathForTest(), io });
+  const code = landBranch({ args: { base: "beta", commit: false, allow: [], messages: [] }, branch: "agent/lane-x", lock: lockPathForTest(), io });
 
   expect(code).toBe(EXIT_LANDED);
   expect(errors).toEqual([]);
@@ -1228,7 +1151,7 @@ test("checks still running are reported as running, with how many and the run, n
   const { gh, calls } = handOffGh({ rollup: running });
   const { io, logs, errors } = handOffIo({ git: scriptedGit().git, gh });
 
-  const code = landBranch({ args: { base: "beta", commit: false, allow: [], messages: [], watch: false }, branch: "agent/lane-x", lock: lockPathForTest(), io });
+  const code = landBranch({ args: { base: "beta", commit: false, allow: [], messages: [] }, branch: "agent/lane-x", lock: lockPathForTest(), io });
 
   expect(code).toBe(EXIT_LANDED);
   expect(errors).toEqual([]);
@@ -1241,7 +1164,7 @@ test("checks that already failed stop the hand-off, and a failed verify never ar
   const failedChecks = handOffGh({ rollup: failing });
   const first = handOffIo({ git: scriptedGit().git, gh: failedChecks.gh });
   expect(
-    landBranch({ args: { base: "beta", commit: false, allow: [], messages: [], watch: false }, branch: "agent/lane-x", lock: lockPathForTest(), io: first.io }),
+    landBranch({ args: { base: "beta", commit: false, allow: [], messages: [] }, branch: "agent/lane-x", lock: lockPathForTest(), io: first.io }),
   ).toBe(EXIT_CHECKS_FAILED);
   expect(failedChecks.calls.some((call) => call[1] === "merge")).toBe(false);
   expect(first.errors).toContain("checks failed: test (ui)");
@@ -1251,7 +1174,7 @@ test("checks that already failed stop the hand-off, and a failed verify never ar
   const second = handOffIo({ git: scriptedGit().git, gh: unverified.gh, verifyOk: false });
   expect(
     landBranch({
-      args: { base: "beta", commit: false, allow: [], messages: [], watch: false, verify: "bun run preflight --ship" },
+      args: { base: "beta", commit: false, allow: [], messages: [], verify: "bun run preflight --ship" },
       branch: "agent/lane-x",
       lock: lockPathForTest(),
       io: second.io,

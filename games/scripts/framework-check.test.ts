@@ -99,6 +99,15 @@ export function reset(): void {
     expect(seamAdvice(seams[0]!)).toContain("#2312");
   });
 
+  test("a first-line `// framework-ok: <reason>` exempts the file; the marker without a reason does not", () => {
+    const path = "ember-command/src/game/missionPhase.ts";
+    expect(engineSeams(path, `// framework-ok: authored campaign flow, no second adopter\n${pad(STATE_MACHINE)}`)).toEqual([]);
+    expect(engineSeams(path, `// framework-ok:\n${pad(STATE_MACHINE)}`).map((seam) => seam.name)).toEqual(["state machine"]);
+    expect(engineSeams(path, `${pad(STATE_MACHINE)}\n// framework-ok: too late, not the first line\n`).map((seam) => seam.name)).toEqual([
+      "state machine",
+    ]);
+  });
+
   test("the other engine systems are named too", () => {
     const pad = (source: string): string => {
       const lines: string[] = [source];

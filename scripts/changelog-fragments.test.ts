@@ -41,6 +41,21 @@ test("folds fragment bullets into matching and new sections in canonical order",
   expect(sectionLines(next, "## 0.17.0").join("\n")).toContain("Older note.");
 });
 
+test("a fragment's Bends section is PR-body material and never reaches the changelog", () => {
+  const next = foldFragments(MARKDOWN, [
+    "### Fixed\n\n- The fix.\n\n## Bends\n\n- Deleted a stale assertion.\n\n### Added\n\n- The export.\n",
+    "### Changed\n\n- The change.\n\n### Bends\n\n- None.\n",
+  ]);
+  const unreleased = sectionLines(next, "## [Unreleased]").join("\n");
+  expect(unreleased).not.toContain("Bends");
+  expect(unreleased).not.toContain("stale assertion");
+  expect(unreleased).not.toContain("None.");
+  expect(unreleased).toContain("### Fixed\n\n- The fix.");
+  const sections = parseSections(splitComment(sectionLines(next, "## [Unreleased]")).body);
+  expect(sections.added).toEqual(["The export."]);
+  expect(sections.changed).toEqual(["Existing note.", "The change.", "The fix."]);
+});
+
 test("no fragments leaves the document untouched; a headingless fragment throws", () => {
   expect(foldFragments(MARKDOWN, [])).toBe(MARKDOWN);
   expect(() => foldFragments(MARKDOWN, ["- no heading"])).toThrow();

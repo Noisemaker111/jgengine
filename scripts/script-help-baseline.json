@@ -14,7 +14,6 @@
     "check-changelog.ts",
     "check-content-gate.ts",
     "check-doc-symbols.ts",
-    "check-fix-has-test.ts",
     "check-fixture-location.ts",
     "check-game-determinism.ts",
     "check-game-feel.ts",

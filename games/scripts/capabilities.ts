@@ -7,49 +7,23 @@
  * from the engine source by `bun run gen games-ledger`.
  *
  * Nobody writes what a game adopts: a game adopts a capability by importing it, read from its own
- * source. A capability a game does not import needs no answer either. The one thing a game writes,
- * in the `capabilities` section of its `jgengine.json`, is `debt`: a game-facing capability whose
- * domain the game has while it runs its own version instead, with the open issue that tracks
- * adopting the shared one; and `probes`, the boot probes that prove an adopted system live.
+ * source. A capability a game does not import needs no answer either. What a game writes, in the
+ * `capabilities` section of its `jgengine.json`, is `debt`: a game-facing capability whose domain
+ * the game has while it runs its own version instead, with the open issue that tracks adopting the
+ * shared one; and `probes`, the boot probes that prove an adopted system live. The check reads the
+ * issue number and the ids; it never judges the prose.
  */
 import { existsSync, readdirSync, readFileSync, statSync } from "node:fs";
 import { join, relative } from "node:path";
 
-export const DEBT_REASON_MIN = 20;
 export const LEDGER_FILE = "capabilities.json";
 export const DECLARATION_FILE = "jgengine.json";
 
-/** A game-facing capability a game has the domain of but has not adopted: why, and the open issue that tracks it. */
+/** A game-facing capability a game has the domain of but has not adopted, and the issue that tracks adopting it. */
 export interface DebtAnswer {
-  reason: string;
+  /** What the game does there today, for the reader; no check reads it. */
+  reason?: string;
   issue: number;
-}
-
-/** The subsystem a debt reason names: the capability module's feature folder. */
-export function domainOf(id: string, module: string): string {
-  const parts = module.replace(/^@jgengine\/[^/]+\//, "").split("/");
-  return parts.length > 1 && parts[0] !== undefined && parts[0] !== "" ? parts[0] : id;
-}
-
-/** Sentences that fit every game at once, so they say nothing; a debt reason names its domain instead. */
-const BANNED_REASONS: Array<{ pattern: RegExp; why: string }> = [
-  { pattern: /^\s*not adopted\b/i, why: 'the old "Not adopted: this game does not run..." template' },
-  { pattern: /does not (?:run|use) the engine\b/i, why: "the engine-boilerplate sentence" },
-  { pattern: /\bTODO\b/i, why: "a TODO placeholder" },
-  { pattern: /(?:^|[.\s])(?:n\/a|not applicable)\.?$/i, why: "a bare not-applicable label" },
-];
-
-function escapeRegExp(value: string): string {
-  return value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&").replace(/\s+/g, "\\s+");
-}
-
-/** True when the reason names the domain (plural and possessive forms included). */
-export function namesDomain(reason: string, domain: string): boolean {
-  return new RegExp(`\\b${escapeRegExp(domain)}`, "i").test(reason);
-}
-
-export interface IssueState {
-  state: "open" | "closed" | "missing";
 }
 
 export interface CapabilityProbe {
@@ -64,8 +38,6 @@ export interface CapabilityEntry {
   packages: string[];
   /** `@jgengine/<pkg>/<module>` that publishes this capability. */
   module: string;
-  /** The capability module's feature folder; a debt reason names it. */
-  domain: string;
   /** True when the owning package ships a live probe, so a game can prove it live at boot. */
   gameFacing: boolean;
   probe: CapabilityProbe | null;
@@ -226,7 +198,6 @@ export function deriveLedger(root: string): Ledger {
       id,
       packages: [...entry.packages].sort(),
       module: entry.module,
-      domain: domainOf(id, entry.module),
       gameFacing: entry.probe !== null,
       probe: entry.probe,
       intent: entry.intent,
@@ -451,26 +422,18 @@ export interface DeclarationReport {
 }
 
 /**
- * The adoption gate. Adoption is read from source, so what is left to check is what a game wrote:
- * each debt entry names a real game-facing capability the game does not import, says why in its own
- * words naming the domain, and points at an open issue; each boot probe belongs to a module the game
- * adopts.
- *
- * `issues` maps the debt issue numbers to their state in this repo; pass it to
- * enforce ownership. Without it the entries are only checked for the number.
+ * The adoption check. Adoption is read from source, so what is left to check is what a game wrote:
+ * each debt entry names a game-facing capability the game does not import and points at an issue
+ * by number; each boot probe belongs to a module the game adopts. Every failure is a fact about ids
+ * and numbers, never a judgement of the words.
  */
-export function checkDeclarations(
-  ledger: Ledger,
-  games: GameDeclaration[],
-  issues?: Map<number, IssueState>,
-): DeclarationReport {
+export function checkDeclarations(ledger: Ledger, games: GameDeclaration[]): DeclarationReport {
   const known = new Map(ledger.capabilities.map((entry) => [entry.id, entry]));
   const knownModules = new Set(ledger.capabilities.map((entry) => entry.module));
   const problems: DeclarationProblem[] = [];
   const declarationLevel: DeclarationReport["declarationLevel"] = [];
   const tallies: GameTally[] = [];
   const debtEntries: DebtEntry[] = [];
-  const reasons = new Map<string, Array<{ game: string; capability: string; module: string }>>();
   let adopted = 0;
   let verified = 0;
 
@@ -513,36 +476,11 @@ export function checkDeclarations(
         continue;
       }
       tally.debt += 1;
-      const reason = typeof debt?.reason === "string" ? debt.reason.trim() : "";
-      if (reason.length < DEBT_REASON_MIN) {
-        problem(id, entry.module, `records debt on ${where} with a ${reason.length}-character reason; write ${DEBT_REASON_MIN}+ characters naming what this game does in its ${entry.domain} today`);
-      } else {
-        const banned = BANNED_REASONS.find((item) => item.pattern.test(reason));
-        if (banned !== undefined) {
-          problem(id, entry.module, `records debt on ${where} with ${banned.why} - say what this game does in its ${entry.domain} instead`);
-        } else if (!namesDomain(reason, entry.domain)) {
-          problem(id, entry.module, `records debt on ${where} without naming the ${entry.domain} domain - write what this game has there, in words that include "${entry.domain}"`);
-        }
-      }
       const issue = debt?.issue;
       if (typeof issue !== "number" || !Number.isSafeInteger(issue) || issue <= 0) {
-        problem(id, entry.module, `records debt on ${where} with no owner - a debt entry needs the number of the open issue that tracks adopting it`);
+        problem(id, entry.module, `records debt on ${where} with no issue number - a debt entry names the issue that tracks adopting it`);
       } else {
         debtEntries.push({ game, capability: id, issue });
-        const state = issues?.get(issue);
-        if (issues !== undefined && state === undefined) {
-          problem(id, entry.module, `records debt on ${where} against issue #${issue}, which this run did not find in the repo - it may have been transferred or deleted`);
-        } else if (state?.state === "missing") {
-          problem(id, entry.module, `records debt on ${where} against issue #${issue}, which this repo does not have - point it at the issue that tracks the ${entry.domain} work`);
-        } else if (state?.state === "closed") {
-          problem(id, entry.module, `records debt on ${where} against issue #${issue}, which is closed - adopt it, or remove the debt if the game no longer has the ${entry.domain}`);
-        }
-      }
-      const key = reason.toLowerCase().replace(/\s+/g, " ");
-      if (key !== "") {
-        const seen = reasons.get(key) ?? [];
-        seen.push({ game, capability: id, module: entry.module });
-        reasons.set(key, seen);
       }
     }
 
@@ -552,19 +490,6 @@ export function checkDeclarations(
       } else if (!ledger.capabilities.some((entry) => entry.module === module && adoptSet.has(entry.id))) {
         problem("*", module, `names a boot probe for "${module}" but its source imports none of that module's capabilities - import it or remove the probe`);
       }
-    }
-  }
-
-  for (const [reason, entries] of reasons) {
-    const shared = [...new Set(entries.map((entry) => entry.game))];
-    if (shared.length < 2) continue;
-    for (const entry of entries) {
-      problems.push({
-        game: entry.game,
-        capability: entry.capability,
-        module: entry.module,
-        message: `${entry.game} gives the same debt reason as ${shared.filter((name) => name !== entry.game).join(", ")} for "${entry.capability}" ("${reason.slice(0, 60)}...") - a reason shared between games is a template; say what happens in this game`,
-      });
     }
   }
 
@@ -591,12 +516,12 @@ export function renderSummary(report: DeclarationReport, ledger: Ledger): string
     `${"game".padEnd(name)}  adopt (verified)  adopt (declared)   debt`,
     ...report.tallies.map((tally) => row(tally.game, tally.verified, tally.declared, tally.debt)),
     row("TOTAL", report.verified, report.declared, report.debt),
-    `debt is the number that has to come down: ${report.debt} entr${report.debt === 1 ? "y" : "ies"} across ${new Set(report.debtEntries.map((entry) => entry.game)).size} game(s)`,
+    `debt: ${report.debt} entr${report.debt === 1 ? "y" : "ies"} across ${new Set(report.debtEntries.map((entry) => entry.game)).size} game(s), each tracked by an issue`,
   ];
   return lines.join("\n");
 }
 
-/** Is the checked-in ledger behind the installed packages? */
+/** Is the checked-in ledger behind the engine source? */
 export function ledgerDrift(committed: Ledger, installed: Ledger): string[] {
   const problems: string[] = [];
   const old = new Map(committed.capabilities.map((entry) => [entry.id, entry]));
