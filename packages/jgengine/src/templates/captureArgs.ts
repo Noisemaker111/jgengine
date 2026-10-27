@@ -46,11 +46,10 @@ const RUNNER = "needs the engine dev runner";
 
 /** The single source of truth for shoot/drive flags, help text and host support. */
 export const CAPTURE_FLAGS: readonly CaptureFlag[] = [
-  { flag: "--steps", tools: ["drive"], value: "required", arg: "<file>", engineOnly: "needs the engine dev runner to land shots in the game's docs/ folder", help: "run a JSON step file; cannot be mixed with step flags (see \"Script a drive\")" },
-  { flag: "--check", tools: ["drive"], value: "none", engineOnly: "needs the engine dev runner to resolve the step file", help: "with --steps or --flow: parse, print the resolved steps with their durations, exit without a browser" },
-  { flag: "--flow", tools: ["drive"], value: "required", arg: "<name>", engineOnly: "needs the engine dev runner to read <game>/proofs/flows/", help: "run a named flow from <game>/proofs/flows/<name>.json; --flows lists them" },
-  { flag: "--flows", tools: ["drive"], value: "none", engineOnly: "needs the engine dev runner to list <game>/proofs/flows/", help: "list the game's named flows with their step counts and what they assert, then exit" },
-  { flag: "--log", tools: ["drive"], value: "required", arg: "<path>", engineOnly: "needs the engine dev runner to write the run log", help: "also write one JSONL line per step: { index, name, kind, ms, pass, detail }" },
+  { flag: "--flow", tools: ["drive"], value: "required", arg: "<name>", engineOnly: "needs the engine dev runner to load <game>/proofs/flows/", help: "play the TypeScript flow <game>/proofs/flows/<name>.flow.ts: headless (no browser, game time) unless it sets browser: true or you pass --browser; --flows lists them" },
+  { flag: "--flows", tools: ["drive"], value: "none", engineOnly: "needs the engine dev runner to list <game>/proofs/flows/", help: "list the game's flows and whether each runs headless or in the browser, then exit" },
+  { flag: "--browser", tools: ["drive"], value: "none", engineOnly: "needs the engine dev runner to play a flow", help: "with --flow: play a headless flow in the browser instead (for shots, video or a renderer check)" },
+  { flag: "--log", tools: ["drive"], value: "required", arg: "<path>", engineOnly: "needs the engine dev runner to write the run log", help: "also write one JSONL line per step: { index, name, kind?, ms, pass, detail? }" },
   { flag: "--click", tools: ["drive"], value: "required", step: true, arg: "<text>", help: "click the first settled, enabled element containing this text (or aria-label)" },
   { flag: "--double-click", tools: ["drive"], value: "required", step: true, arg: "<text>", help: "double-click an actionable text target" },
   { flag: "--click-at", tools: ["drive"], value: "required", step: true, arg: "<x,y>", help: "native left click at CSS viewport pixels (canvas targets, map orders)" },
@@ -107,74 +106,18 @@ export const CAPTURE_FLAGS: readonly CaptureFlag[] = [
   { flag: "--record-width", tools: ["drive"], value: "required", arg: "<px>", engineOnly: "needs the engine's video encoder", help: "screencast max width in realtime mode (default 640)" },
 ];
 
-/** What a step must observe before it runs and after it ran; both are polled page expressions. */
-export interface CaptureCondition {
-  /** Page expression, evaluated as an async function so a bridge call can answer it. */
-  is: string;
-  /** Deep-equal value that counts as a match; omitted means any truthy result matches. */
-  value?: unknown;
-  /** Poll cap; defaults to {@link DRIVE_CONDITION_TIMEOUT_MS}. */
-  timeoutMs?: number;
-  /** Why this condition exists, echoed in the step log. */
-  note?: string;
-}
-
-/** One ordered drive interaction. */
-export type CaptureStep = (
+/** One ordered drive interaction from the command line. */
+export type CaptureStep =
   | { kind: "click"; text: string }
   | { kind: "double-click"; text: string }
   | { kind: "click-at"; spec: string; button: "left" | "right" }
-  | { kind: "move-mouse"; x: number; y: number }
-  | { kind: "look"; dx: number; dy: number }
-  | { kind: "aim-at"; expression: string; tolerancePx: number }
   | { kind: "fill"; label: string; value: string }
-  | { kind: "key"; code: string; holdMs: number; until?: CaptureCondition }
+  | { kind: "key"; code: string; holdMs: number }
   | { kind: "wait"; ms: number }
-  | { kind: "waitFor"; expression: string; timeoutMs: number }
   | { kind: "reload" }
   | { kind: "shot"; name: string; out?: string }
   | { kind: "rpc"; json: string; summarized: boolean }
-  | { kind: "probe"; name: string }
-  | { kind: "assert"; expression: string; expected: unknown; note?: string }
-) & {
-  /** Polled until true, then the step runs. */
-  before?: CaptureCondition;
-  /** Polled until true, then the step counts as passed. */
-  after?: CaptureCondition;
-};
-
-/** A step starts the instant its postcondition holds; no guessed sleep in between. */
-export const DRIVE_CONDITION_TIMEOUT_MS = 15_000;
-/** How often a condition is re-evaluated while it is failing. */
-export const DRIVE_CONDITION_POLL_MS = 50;
-/** How close `aimAt` must bring the target to the crosshair before the step counts as aimed. */
-export const AIM_TOLERANCE_PX = 6;
-
-/** The step kinds a JSON step file accepts, in the order the help lists them. */
-export function driveStepKinds(): string[] {
-  return ["click", "doubleClick", "clickAt", "rightClickAt", "moveMouse", "look", "aimAt", "fill", "key", "wait", "waitFor", "reload", "shot", "rpc", "probe", "assert", "flow"];
-}
-
-/** A named flow file's parsed JSON and the path its errors name. */
-export interface FlowFile {
-  readonly json: unknown;
-  readonly source: string;
-}
-
-/** Resolve a bare flow name to its file; the runner owns the folder, the parser owns expansion. */
-export type FlowSource = (name: string) => FlowFile | undefined;
-
-/** How many flows deep an include may nest before the run refuses the script. */
-export const DRIVE_FLOW_MAX_DEPTH = 4;
-
-/** Parser inputs for a run that can include named flows. */
-export interface ParseStepOptions {
-  /** Resolver for `{ "flow": "<name>" }`. Without one, an include is an error. */
-  flows?: FlowSource;
-  /** Flow names already open, outermost first: a repeat in this list is a cycle. */
-  stack?: readonly string[];
-}
-
+  | { kind: "probe"; name: string };
 
 /** Parsed command line: session options keyed by flag name without dashes, ordered steps, bare positionals. */
 export interface ParsedCaptureArgs {
@@ -297,293 +240,25 @@ export function parseCaptureArgs(tool: CaptureTool, argv: readonly string[], fla
   return out;
 }
 
-function valueType(value: unknown): string {
-  if (value === null) return "null";
-  if (Array.isArray(value)) return "an array";
-  return "a " + typeof value;
-}
-
-function coordinatePair(path: string, value: unknown): string {
-  if (Array.isArray(value) && value.length === 2 && value.every((part) => typeof part === "number" && Number.isFinite(part))) {
-    return value[0] + "," + value[1];
-  }
-  throw new Error(path + ": expected [x, y] numbers, got " + JSON.stringify(value));
-}
-
-function conditionAt(path: string, value: unknown): CaptureCondition {
-  if (value === null || typeof value !== "object" || Array.isArray(value)) throw new Error(path + ": expected {\"is\": \"<page expression>\", \"value\": <expected>, \"timeoutMs\": <n>, \"note\": \"<why>\"}, got " + JSON.stringify(value));
-  const raw = value as Record<string, unknown>;
-  for (const key of Object.keys(raw)) {
-    if (key !== "is" && key !== "value" && key !== "timeoutMs" && key !== "note") throw new Error(path + ": unknown condition field \"" + key + "\" (valid: is, value, timeoutMs, note)");
-  }
-  if (typeof raw.is !== "string" || raw.is.trim() === "") throw new Error(path + ": \"is\" must be the page expression to wait for");
-  if (raw.timeoutMs !== undefined && (typeof raw.timeoutMs !== "number" || !Number.isFinite(raw.timeoutMs) || raw.timeoutMs <= 0)) {
-    throw new Error(path + ": timeoutMs must be a positive number of milliseconds, got " + JSON.stringify(raw.timeoutMs));
-  }
-  if (raw.note !== undefined && typeof raw.note !== "string") throw new Error(path + ": note must be a string");
-  return {
-    is: raw.is,
-    ...(raw.value === undefined ? {} : { value: raw.value }),
-    ...(raw.timeoutMs === undefined ? {} : { timeoutMs: raw.timeoutMs }),
-    ...(raw.note === undefined ? {} : { note: raw.note }),
-  };
-}
-
-const DRIVE_KEY_CODES = [
-  ...Array.from({ length: 26 }, (_, i) => "Key" + String.fromCharCode(65 + i)),
-  ...Array.from({ length: 10 }, (_, i) => "Digit" + i),
-  ...Array.from({ length: 10 }, (_, i) => "Numpad" + i),
-  ...Array.from({ length: 12 }, (_, i) => "F" + (i + 1)),
-  "Backquote", "Minus", "Equal", "BracketLeft", "BracketRight", "Backslash", "Semicolon", "Quote", "Comma", "Period", "Slash",
-  "Space", "Enter", "Tab", "Escape", "Backspace", "Delete", "Insert", "Home", "End", "PageUp", "PageDown",
-  "ArrowUp", "ArrowDown", "ArrowLeft", "ArrowRight", "CapsLock",
-  "ShiftLeft", "ShiftRight", "ControlLeft", "ControlRight", "AltLeft", "AltRight", "MetaLeft", "MetaRight",
-  "mouse0", "mouse1", "mouse2",
-];
-
-function keyChordAt(path: string, value: unknown): string {
-  if (typeof value !== "string" || value.trim() === "") throw new Error(path + ": expected a key code such as \"KeyH\", got " + JSON.stringify(value));
-  const unknown = value.split("+").find((code) => !DRIVE_KEY_CODES.includes(code));
-  if (unknown !== undefined) {
-    throw new Error(
-      path + ": unknown key code \"" + unknown + "\" (valid: KeyA-KeyZ, Digit0-Digit9, F1-F12, ShiftLeft, Space, Escape, mouse0-mouse2, and \"+\" chords of those)",
-    );
-  }
-  return value;
-}
-
-function nonnegativeAt(path: string, value: unknown, fallback?: number): number {
-  if (value === undefined && fallback !== undefined) return fallback;
-  if (typeof value !== "number" || !Number.isFinite(value) || value < 0) throw new Error(path + ": expected a nonnegative number of milliseconds, got " + JSON.stringify(value));
-  return value;
-}
-
-function shotNameAt(path: string, value: unknown): string {
-  if (typeof value !== "string" || value.trim() === "") throw new Error(path + ": expected a shot name such as \"formation-line\", got " + JSON.stringify(value));
-  if (value.includes("/") || value.includes("\\") || value.endsWith(".png")) {
-    throw new Error(path + ": a shot is a bare name; it lands in the game's docs/ folder (drop the folder and .png: \"" + value + "\")");
-  }
-  return value;
-}
-
-/**
- * Parse a drive step file — `{ "steps": [ ... ] }` — into the same {@link CaptureStep} list the
- * flags produce, so one executor runs both. Every error names `steps[i]` and the field, and the
- * whole file parses before anything runs, so a half-read script can never drive a game.
- *
- * `source` names the file in errors (the path the caller read). A `{ "flow": "<name>" }` include
- * expands in place through `options.flows`, at most {@link DRIVE_FLOW_MAX_DEPTH} flows deep, and a
- * name already open is rejected as a cycle.
- */
-export function parseStepFile(input: unknown, source: string, options: ParseStepOptions = {}): CaptureStep[] {
-  const kinds = driveStepKinds();
-  if (input === null || typeof input !== "object" || Array.isArray(input)) {
-    throw new Error(source + ": expected {\"steps\":[...]}, got " + valueType(input));
-  }
-  const top = input as Record<string, unknown>;
-  for (const key of Object.keys(top)) {
-    if (key !== "steps") throw new Error(source + ": unknown top-level field \"" + key + "\" (valid: steps)");
-  }
-  if (!Array.isArray(top.steps)) throw new Error(source + ": expected {\"steps\":[...]}, got " + valueType(top.steps));
-  if (top.steps.length === 0) throw new Error(source + ": the steps list is empty, so the run would prove nothing");
-  const modifiers = ["before", "after", "until", "ms", "timeoutMs", "tolerancePx", "note", "is"];
-  return top.steps.flatMap((raw, index) => {
-    const at = "steps[" + index + "]";
-    if (raw === null || typeof raw !== "object" || Array.isArray(raw)) throw new Error(at + ": expected a step object, got " + valueType(raw));
-    const step = raw as Record<string, unknown>;
-    const actions = Object.keys(step).filter((key) => kinds.includes(key));
-    const unknown = Object.keys(step).find((key) => !kinds.includes(key) && !modifiers.includes(key));
-    if (unknown !== undefined) throw new Error(at + ": unknown step kind \"" + unknown + "\" (valid: " + kinds.join(", ") + ")");
-    if (actions.length === 0) throw new Error(at + ": one step kind is required (valid: " + kinds.join(", ") + ")");
-    if (actions.length > 1) throw new Error(at + ": one step kind per object, got " + actions.join(" and "));
-    const kind = actions[0]!;
-    const value = step[kind];
-    if (step.is !== undefined && kind !== "assert") throw new Error(at + ": \"is\" is the assert expectation, so it cannot sit on a " + kind + " step");
-    if (step.tolerancePx !== undefined && kind !== "aimAt") throw new Error(at + ": \"tolerancePx\" sizes an aimAt target, so it cannot sit on a " + kind + " step");
-    if (step.until !== undefined && kind !== "key") throw new Error(at + ": \"until\" releases a held key, so it cannot sit on a " + kind + " step");
-    if (step.ms !== undefined && kind !== "key") throw new Error(at + ": \"ms\" is a key step's hold length, so the runner ignores it on a " + kind + " step; a step that waits states a condition (waitFor) or caps one in before / after");
-    if (step.timeoutMs !== undefined && kind !== "waitFor") {
-      throw new Error(at + ": \"timeoutMs\" is waitFor's own poll cap, so the runner ignores it on a " + kind + " step; cap a condition inside before / after { \"timeoutMs\": n }");
-    }
-    if (kind === "flow") return expandFlow(flowNameAt(at + ".flow", value), at, source, options, step);
-    const before = step.before === undefined ? undefined : conditionAt(at + ".before", step.before);
-    const after = step.after === undefined ? undefined : conditionAt(at + ".after", step.after);
-    const conditions = { ...(before === undefined ? {} : { before }), ...(after === undefined ? {} : { after }) };
-    const shape = (action: CaptureStep): CaptureStep => ({ ...action, ...conditions });
-    switch (kind) {
-      case "click":
-      case "doubleClick": {
-        const text = typeof value === "string" ? value : "";
-        if (text.trim() === "") throw new Error(at + "." + kind + ": expected the text to click, got " + JSON.stringify(value));
-        return [shape({ kind: kind === "click" ? "click" : "double-click", text })];
-      }
-      case "clickAt":
-      case "rightClickAt":
-        return [shape({ kind: "click-at", spec: coordinatePair(at + "." + kind, value), button: kind === "rightClickAt" ? "right" : "left" })];
-      case "moveMouse": {
-        const [x, y] = coordinatePair(at + ".moveMouse", value).split(",").map(Number) as [number, number];
-        return [shape({ kind: "move-mouse", x, y })];
-      }
-      case "look": {
-        const [dx, dy] = coordinatePair(at + ".look", value).split(",").map(Number) as [number, number];
-        return [shape({ kind: "look", dx, dy })];
-      }
-      case "aimAt": {
-        if (typeof value !== "string" || value.trim() === "") {
-          throw new Error(at + ".aimAt: expected the page expression that returns the target's screen point { x, y }, got " + JSON.stringify(value));
-        }
-        const tolerance = step.tolerancePx;
-        if (tolerance !== undefined && (typeof tolerance !== "number" || !Number.isFinite(tolerance) || tolerance <= 0)) {
-          throw new Error(at + ".tolerancePx: expected a positive number of CSS pixels, got " + JSON.stringify(tolerance));
-        }
-        return [shape({ kind: "aim-at", expression: value, tolerancePx: tolerance ?? AIM_TOLERANCE_PX })];
-      }
-      case "fill": {
-        if (value === null || typeof value !== "object" || Array.isArray(value)) throw new Error(at + ".fill: expected {\"label\": \"<label>\", \"value\": \"<text>\"}, got " + JSON.stringify(value));
-        const field = value as Record<string, unknown>;
-        if (typeof field.label !== "string" || field.label.trim() === "") throw new Error(at + ".fill.label: expected the field's accessible label");
-        if (typeof field.value !== "string") throw new Error(at + ".fill.value: expected the text to type");
-        return [shape({ kind: "fill", label: field.label, value: field.value })];
-      }
-      case "key": {
-        const code = keyChordAt(at + ".key", value);
-        if (step.until === undefined) return [shape({ kind: "key", code, holdMs: nonnegativeAt(at + ".ms", step.ms, 1000) })];
-        // With `until` the hold ends on arrival; `ms` is only a minimum, so it defaults to none.
-        return [shape({ kind: "key", code, holdMs: nonnegativeAt(at + ".ms", step.ms, 0), until: conditionAt(at + ".until", step.until) })];
-      }
-      case "wait":
-        return [shape({ kind: "wait", ms: nonnegativeAt(at + ".wait", value) })];
-      case "waitFor": {
-        if (typeof value !== "string" || value.trim() === "") throw new Error(at + ".waitFor: expected the page expression to wait for, got " + JSON.stringify(value));
-        return [shape({ kind: "waitFor", expression: value, timeoutMs: nonnegativeAt(at + ".timeoutMs", step.timeoutMs, DRIVE_CONDITION_TIMEOUT_MS) })];
-      }
-      case "reload":
-        if (value !== true) throw new Error(at + ".reload: expected true");
-        return [shape({ kind: "reload" })];
-      case "shot":
-        return [shape({ kind: "shot", name: shotNameAt(at + ".shot", value) })];
-      case "rpc": {
-        if (value === null || typeof value !== "object" || Array.isArray(value)) throw new Error(at + ".rpc: expected a bridge request object such as {\"method\":\"agent_status\"}, got " + JSON.stringify(value));
-        const request = value as Record<string, unknown>;
-        if (typeof request.method !== "string" || request.method === "") throw new Error(at + ".rpc: expected a request with a method");
-        const summarized = request.method === "debug_snapshot" && request.detail === undefined;
-        const body = summarized ? JSON.stringify({ ...request, detail: "summary" }) : JSON.stringify(request);
-        return [shape({ kind: "rpc", json: body, summarized })];
-      }
-      case "probe":
-        return [shape({ kind: "probe", name: value === undefined ? "probe" : String(value) })];
-      case "assert": {
-        if (typeof value !== "string" || value.trim() === "") throw new Error(at + ".assert: expected the page expression to check, got " + JSON.stringify(value));
-        if (step.note !== undefined && typeof step.note !== "string") throw new Error(at + ".note: expected a string, got " + valueType(step.note));
-        return [shape({
-          kind: "assert",
-          expression: value,
-          expected: step.is === undefined ? true : step.is,
-          ...(step.note === undefined ? {} : { note: step.note as string }),
-        })];
-      }
-      default:
-        throw new Error(at + ": unknown step kind \"" + kind + "\" (valid: " + kinds.join(", ") + ")");
-    }
-  });
-}
-
-function flowNameAt(path: string, value: unknown): string {
-  if (typeof value !== "string" || value.trim() === "") throw new Error(path + ": expected a flow name such as \"to-skirmish\", got " + JSON.stringify(value));
-  if (value.includes("/") || value.includes("\\") || value.endsWith(".json")) {
-    throw new Error(path + ": a flow is a bare name; it lives at <game>/proofs/flows/<name>.json (got \"" + value + "\")");
-  }
-  return value;
-}
-
-/** Resolve one `{ "flow": name }` include into its steps, refusing a cycle or a fifth level. */
-function expandFlow(name: string, at: string, includeSource: string, options: ParseStepOptions, step: Record<string, unknown>): CaptureStep[] {
-  const extra = ["before", "after", "ms", "timeoutMs", "tolerancePx", "note", "is"].filter((key) => step[key] !== undefined);
-  if (extra.length > 0) throw new Error(at + ".flow: an include carries no fields of its own (got " + extra.join(", ") + "); put them on the flow's steps");
-  const stack = options.stack ?? [];
-  if (stack.includes(name)) throw new Error(at + ".flow: flow cycle by name: " + [...stack, name].join(" -> "));
-  if (stack.length + 1 > DRIVE_FLOW_MAX_DEPTH) {
-    throw new Error(at + ".flow: flows nest at most " + DRIVE_FLOW_MAX_DEPTH + " deep, and this include is level " + (stack.length + 1) + " (" + [...stack, name].join(" -> ") + ")");
-  }
-  if (options.flows === undefined) throw new Error(at + ".flow: \"" + name + "\" needs a flow folder, and this run reads one file only");
-  let file: FlowFile | undefined;
-  try {
-    file = options.flows(name);
-  } catch (error) {
-    throw new Error(at + ".flow: " + (error instanceof Error ? error.message : String(error)));
-  }
-  if (file === undefined) throw new Error(at + ".flow: no flow named \"" + name + "\" beside " + includeSource);
-  try {
-    return parseStepFile(file.json, file.source, { flows: options.flows, stack: [...stack, name] });
-  } catch (error) {
-    const message = error instanceof Error ? error.message : String(error);
-    throw new Error(message.startsWith(file.source) ? message : file.source + " " + message);
-  }
-}
-
-/** How long a step can hold the run: its action plus the cap on each condition. */
+/** How long a step can hold the run: a key's hold or a wait's pause. */
 export function stepDurationMs(step: CaptureStep): number {
-  const own = step.kind === "key" ? Math.max(step.holdMs, step.until === undefined ? 0 : step.until.timeoutMs ?? DRIVE_CONDITION_TIMEOUT_MS) : step.kind === "wait" ? step.ms : step.kind === "waitFor" ? step.timeoutMs : 0;
-  const before = step.before === undefined ? 0 : step.before.timeoutMs ?? DRIVE_CONDITION_TIMEOUT_MS;
-  const after = step.after === undefined ? 0 : step.after.timeoutMs ?? DRIVE_CONDITION_TIMEOUT_MS;
-  return own + before + after;
+  return step.kind === "key" ? step.holdMs : step.kind === "wait" ? step.ms : 0;
 }
 
-/** One line of `--check`: what the step is, what it waits for, its worst-case duration. */
+/** One line of the step log: what the step is. */
 export function describeStep(step: CaptureStep): string {
   switch (step.kind) {
     case "click": return "click \"" + step.text + "\"";
     case "double-click": return "doubleClick \"" + step.text + "\"";
     case "click-at": return (step.button === "right" ? "rightClickAt " : "clickAt ") + step.spec;
-    case "move-mouse": return "moveMouse " + step.x + "," + step.y;
-    case "look": return "look " + step.dx + "," + step.dy + " px";
-    case "aim-at": return "aimAt " + JSON.stringify(step.expression) + " within " + step.tolerancePx + "px";
     case "fill": return "fill \"" + step.label + "\" = \"" + step.value + "\"";
-    case "key": return "key " + step.code + (step.until === undefined ? " " + step.holdMs + "ms" : " until " + step.until.is);
-    case "wait": return "wait " + step.ms + "ms (last resort: a guessed sleep)";
-    case "waitFor": return "waitFor " + step.expression;
+    case "key": return "key " + step.code + " " + step.holdMs + "ms";
+    case "wait": return "wait " + step.ms + "ms";
     case "reload": return "reload";
     case "shot": return "shot " + step.name + (step.out === undefined ? "" : " -> " + step.out);
     case "rpc": return "rpc " + step.json;
     case "probe": return "probe " + step.name;
-    case "assert": return "assert " + JSON.stringify(step.expression) + " is " + JSON.stringify(step.expected);
   }
-}
-
-/**
- * One `--flows` line: what the flow does and what it asserts, so an agent picks the existing route
- * instead of regenerating it from clicks. A flow with no assert says so.
- */
-export function describeFlow(name: string, steps: readonly CaptureStep[]): string {
-  const says = (expression: string): string => (expression.length <= 60 ? expression : expression.slice(0, 57) + "…");
-  const asserts = steps
-    .filter((step): step is Extract<CaptureStep, { kind: "assert" }> => step.kind === "assert")
-    .map((step) => says(step.expression) + (step.expected === true ? "" : " is " + JSON.stringify(step.expected)));
-  const shots = steps.filter((step) => step.kind === "shot").length;
-  return name + ": " + steps.length + " step(s), " + shots + " shot(s), " + (asserts.length === 0 ? "asserts nothing (a click route proves no arrival)" : "asserts " + asserts.join("; "));
-}
-
-/** The `--check` report: every resolved step, its condition caps and the total worst case. */
-export function describeStepFile(steps: readonly CaptureStep[], source: string): string {
-  const lines = steps.map((step, index) => {
-    const waits = [
-      step.before === undefined ? "" : " before<=" + (step.before.timeoutMs ?? DRIVE_CONDITION_TIMEOUT_MS) + "ms",
-      step.after === undefined ? "" : " after<=" + (step.after.timeoutMs ?? DRIVE_CONDITION_TIMEOUT_MS) + "ms",
-    ].join("");
-    return "  #" + (index + 1) + " " + describeStep(step) + waits + " (" + stepDurationMs(step) + "ms cap)";
-  });
-  const total = steps.reduce((sum, step) => sum + stepDurationMs(step), 0);
-  return [source + ": " + steps.length + " step(s), " + total + "ms worst case", ...lines].join("\n");
-}
-
-/**
- * Throw when a step file is mixed with step flags, naming each flag: a script's order lives in the
- * file, and a half-flag/half-file run is a silent argument to the wrong executor.
- */
-export function rejectMixedStepFlags(tool: CaptureTool, argv: readonly string[], flags: readonly CaptureFlag[]): void {
-  const mixed = flags.filter((entry) => entry.step === true && argv.includes(entry.flag)).map((entry) => entry.flag);
-  if (mixed.length === 0) return;
-  throw new Error(tool + ": --steps runs a step file, so drop the step flags (" + mixed.join(", ") + "); the file owns the order");
 }
 
 /**

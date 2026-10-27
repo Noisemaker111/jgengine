@@ -4,8 +4,10 @@
  * checkout: a lane on a fresh games worktree must find `<cwd>/<game>/proofs/flows`, and a game with
  * no flow folder must say so instead of running nothing.
  */
+import { existsSync, readdirSync } from "node:fs";
 import { basename, join } from "node:path";
-import type { FlowFile, FlowSource } from "../packages/jgengine/src/templates/captureArgs";
+import { pathToFileURL } from "node:url";
+import { isProofFlow, type ProofFlow } from "../packages/core/src/play/flow";
 import { servedGameDir } from "./servedGame";
 
 /** What a run points at: a game id, a managed app route, or an external URL. */
@@ -47,6 +49,9 @@ export function flowsDirOf(projectDir: string): string {
   return join(projectDir, "proofs", "flows");
 }
 
+/** The file extension of a TypeScript proof flow. */
+export const FLOW_EXTENSION = ".flow.ts";
+
 /** Flow names in a folder, sorted; empty when there is no folder (a game with no flows yet). */
 export function listFlowNames(dir: string, readdir: (dir: string) => string[]): string[] {
   let entries: string[];
@@ -55,29 +60,33 @@ export function listFlowNames(dir: string, readdir: (dir: string) => string[]): 
   } catch {
     return [];
   }
-  return entries.filter((name) => name.endsWith(".json")).map((name) => name.slice(0, -".json".length)).sort();
+  return entries.filter((name) => name.endsWith(FLOW_EXTENSION)).map((name) => name.slice(0, -FLOW_EXTENSION.length)).sort();
 }
 
 /** What a run says when a game has no flow folder: the folder, and what to write in it. */
 export function missingFlowsMessage(dir: string): string {
-  return "no flows at " + dir + " — write <game>/proofs/flows/<name>.json with the route and the arrival it asserts";
+  return "no flows at " + dir + " — write <game>/proofs/flows/<name>" + FLOW_EXTENSION + " with defineFlow: the route and the arrival it expects";
 }
 
-/** Read a named flow; a missing name lists the ones that do exist, so the next agent picks a route instead of guessing. */
-export function flowSourceFrom(dir: string, read: (path: string) => string, names: () => string[]): FlowSource {
-  return (name: string): FlowFile | undefined => {
-    const path = join(dir, name + ".json");
-    let text: string;
-    try {
-      text = read(path);
-    } catch {
-      const available = names();
-      throw new Error("no flow named \"" + name + "\" in " + dir + " (" + (available.length === 0 ? missingFlowsMessage(dir) : "available: " + available.join(", ")) + ")");
-    }
-    try {
-      return { json: JSON.parse(text), source: path };
-    } catch (error) {
-      throw new Error("flow \"" + name + "\" at " + path + " is not valid JSON (" + (error instanceof Error ? error.message : String(error)) + ")");
-    }
-  };
+/**
+ * The file a named flow lives in. A missing name lists the ones that do exist, so the next agent picks
+ * a route instead of guessing; a path or extension is refused, because a flow is named, not located.
+ */
+export function flowFileOf(dir: string, name: string, exists: (path: string) => boolean, names: () => string[]): string {
+  if (name.includes("/") || name.includes("\\") || name.endsWith(".ts") || name.endsWith(".json")) {
+    throw new Error("--flow takes a bare name; the file lives at " + join(dir, "<name>" + FLOW_EXTENSION) + " (got \"" + name + "\")");
+  }
+  const path = join(dir, name + FLOW_EXTENSION);
+  if (exists(path)) return path;
+  const available = names();
+  throw new Error("no flow named \"" + name + "\" in " + dir + " (" + (available.length === 0 ? missingFlowsMessage(dir) : "available: " + available.join(", ")) + ")");
+}
+
+/** Import a named flow and check its default export is a `defineFlow` result. */
+export async function loadFlow(dir: string, name: string): Promise<ProofFlow> {
+  const path = flowFileOf(dir, name, existsSync, () => listFlowNames(dir, (folder) => readdirSync(folder)));
+  const module: unknown = await import(pathToFileURL(path).href);
+  const flow = typeof module === "object" && module !== null && "default" in module ? module.default : undefined;
+  if (!isProofFlow(flow)) throw new Error(path + " must export default defineFlow(game, { run })");
+  return flow;
 }

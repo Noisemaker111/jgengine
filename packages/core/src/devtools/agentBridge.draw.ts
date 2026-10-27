@@ -17,6 +17,7 @@ import {
 import { buildFullReport, buildLeanReport, summarizeLeanReport } from "./devtoolsReports.draw";
 import { resetFrameTelemetry } from "./frameSampler.view";
 import { advanceSimulation } from "../sim/simStepper";
+import { teleportPlayer } from "../movement/teleport";
 
 /** One RPC call into the agent bridge: a verb name plus its verb-specific fields. */
 export type AgentBridgeRequest = { method: string } & Record<string, unknown>;
@@ -217,6 +218,25 @@ export function installAgentBridge(options: {
         const ctx = getContext();
         if (ctx === null) return { ok: false, error: "no game context yet" };
         return applyTimeScale(ctx, request.scale);
+      }
+      case "camera_heading": {
+        const ctx = getContext();
+        if (ctx === null) return { ok: false, error: "no game context yet" };
+        const yaw = request.yaw;
+        if (typeof yaw !== "number" || !Number.isFinite(yaw)) return { ok: false, error: "camera_heading needs { yaw } in radians" };
+        ctx.camera.turnTo(yaw);
+        return { ok: true, yaw };
+      }
+      case "teleport": {
+        const ctx = getContext();
+        if (ctx === null) return { ok: false, error: "no game context yet" };
+        const { x, z, y, yaw } = request;
+        const optional = (value: unknown): value is number | undefined => value === undefined || (typeof value === "number" && Number.isFinite(value));
+        if (typeof x !== "number" || typeof z !== "number" || !Number.isFinite(x) || !Number.isFinite(z) || !optional(y) || !optional(yaw)) {
+          return { ok: false, error: "teleport needs { x, z, y?, yaw? } as finite numbers" };
+        }
+        const moved = teleportPlayer(ctx, ctx.player.userId, { x, z, ...(y === undefined ? {} : { y }), ...(yaw === undefined ? {} : { yaw }) });
+        return moved === null ? { ok: false, error: "no local player entity yet" } : { ok: true, entity: moved };
       }
       case "sim_advance": {
         const seconds = request.seconds;

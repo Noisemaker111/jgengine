@@ -1,7 +1,7 @@
 import { describe, expect, test } from "bun:test";
 
-import { parseStepFile, type CaptureStep } from "../packages/jgengine/src/templates/captureArgs";
-import { AssertionMismatch, evaluateAssertStep, runDriveSteps, type DriveStepRecord } from "./driveRun";
+import { parseCaptureArgs, CAPTURE_FLAGS, type CaptureStep } from "../packages/jgengine/src/templates/captureArgs";
+import { runDriveSteps, type DriveStepRecord } from "./driveRun";
 
 /** A run host that records what the loop did, so the test reads behaviour rather than stdout. */
 function harness(behaviour: (step: CaptureStep) => Promise<string>) {
@@ -29,64 +29,38 @@ function harness(behaviour: (step: CaptureStep) => Promise<string>) {
   };
 }
 
-const steps = parseStepFile({
-  steps: [
-    { click: "Free skirmish" },
-    { assert: "skirmish.started" },
-    { shot: "after" },
-    { key: "KeyH", ms: 120 },
-  ],
-}, "proof.json");
+const steps = parseCaptureArgs("drive", ["--click", "Free skirmish", "--probe", "start", "--shot", "after", "--key", "KeyH:120"], CAPTURE_FLAGS).steps;
 
 describe("runDriveSteps", () => {
-  test("a failing assert stops the run: later steps never execute", async () => {
+  test("a failing step stops the run, and only then are the steps printed", async () => {
     const host = harness(async (step) => {
-      if (step.kind === "assert") throw new AssertionMismatch(false, "assert \"skirmish.started\" is true, actual false");
+      if (step.kind === "probe") throw new Error("no probe");
       return "";
     });
-    await expect(runDriveSteps(steps, host.deps)).rejects.toThrow("skirmish.started");
-    expect(host.ran.map((step) => step.kind)).toEqual(["click", "assert"]);
-    expect(host.lines).toContain("#2 assert \"skirmish.started\" is true FAIL actual=false 26ms");
+    await expect(runDriveSteps(steps, host.deps)).rejects.toThrow("no probe");
+    expect(host.ran.map((step) => step.kind)).toEqual(["click", "probe"]);
+    expect(host.lines[0]).toBe("#1 click \"Free skirmish\" ok 26ms");
+    expect(host.lines[1]).toBe("#2 probe start FAIL 26ms — no probe");
+    expect(host.lines.at(-1)).toMatch(/^drive: FAILED at step 2 of 4 after \d+ms, tier n\/a$/);
     expect(host.records.map((entry) => ({ index: entry.index, pass: entry.pass }))).toEqual([
       { index: 1, pass: true },
       { index: 2, pass: false },
     ]);
   });
 
-  test("a failing condition before the next step also stops at that step", async () => {
-    const host = harness(async (step) => {
-      if (step.kind === "shot") throw new Error("steps[2].before: \"hud.ready\" did not become true within 15000ms");
-      return "";
-    });
-    await expect(runDriveSteps(steps, host.deps)).rejects.toThrow("did not become true");
-    expect(host.ran.map((step) => step.kind)).toEqual(["click", "assert", "shot"]);
-    expect(host.lines.some((line) => line.startsWith("#3 shot after FAIL") && line.includes("did not become true"))).toBe(true);
-  });
-
   test("a step that never returns fails at its budget, naming itself", async () => {
-    const host = harness(async (step) => (step.kind === "assert" ? new Promise<string>(() => {}) : ""));
-    await expect(runDriveSteps(steps, { ...host.deps, stepTimeoutMs: () => 20 })).rejects.toThrow(/drive step #2 assert .* hung: no result after 0s/);
-    expect(host.lines.some((line) => line.startsWith("#2 assert") && line.includes("FAIL") && line.includes("hung"))).toBe(true);
+    const host = harness(async (step) => (step.kind === "probe" ? new Promise<string>(() => {}) : ""));
+    await expect(runDriveSteps(steps, { ...host.deps, stepTimeoutMs: () => 20 })).rejects.toThrow(/drive step #2 probe .* hung: no result after 0s/);
+    expect(host.lines.some((line) => line.startsWith("#2 probe") && line.includes("FAIL") && line.includes("hung"))).toBe(true);
   });
 
-  test("the step summary states the graphics tier the page resolved", async () => {
+  test("a passing run prints one line with the tier, and one JSONL row per step", async () => {
     const host = harness(async () => "");
-    await runDriveSteps(steps, { ...host.deps, tier: "ultra" });
-    expect(host.lines.at(-1)).toBe("  tier     ultra");
-  });
-
-  test("one log line and one JSONL row per executed step, ending with the summary", async () => {
-    const host = harness(async (step) => (step.kind === "key" ? "before 18ms after 21ms" : ""));
-    const summary = await runDriveSteps(steps, host.deps);
+    const summary = await runDriveSteps(steps, { ...host.deps, tier: "ultra" });
     expect(summary).toEqual({ passed: 4, failed: 0, wallMs: expect.any(Number), virtualMs: 0 });
-    expect(host.lines[0]).toBe("#1 click \"Free skirmish\" ok total 26ms");
-    expect(host.lines[3]).toBe("#4 key KeyH 120ms ok before 18ms after 21ms total 26ms");
-    expect(host.lines.slice(-6)).toEqual(["drive: step summary", "  passed   4", "  failed   0", expect.stringContaining("  wall     "), "  virtual  0ms", "  tier     n/a"]);
-    const parsed = host.records.map((entry) => JSON.parse(JSON.stringify(entry)) as DriveStepRecord);
-    expect(parsed).toHaveLength(parsed.length);
-    expect(parsed).toHaveLength(4);
-    expect(parsed.map((entry) => Object.keys(entry))).toEqual(Array.from({ length: 4 }, () => ["index", "name", "kind", "ms", "pass", "detail"]));
-    expect(parsed[1]).toMatchObject({ index: 2, name: "assert \"skirmish.started\" is true", kind: "assert", pass: true });
+    expect(host.lines).toHaveLength(1);
+    expect(host.lines[0]).toMatch(/^drive: 4 step\(s\) passed in \d+ms, tier ultra$/);
+    expect(host.records.map((entry) => Object.keys(entry))).toEqual(Array.from({ length: 4 }, () => ["index", "name", "kind", "ms", "pass", "detail"]));
   });
 
   test("the summary reports virtual time for a lockstep run", async () => {
@@ -101,28 +75,6 @@ describe("runDriveSteps", () => {
       virtualNow: () => virtual,
     });
     expect(summary.virtualMs).toBe(1200);
-  });
-});
-
-describe("evaluateAssertStep", () => {
-  const page = (value: unknown) => ({
-    evaluate: async () => value,
-  });
-
-  test("passes on the expected value and fails with the actual one otherwise", async () => {
-    const step = parseStepFile({ steps: [{ assert: "skirmish.units.length", is: 4, note: "four units" }] }, "proof.json")[0]!;
-    if (step.kind !== "assert") throw new Error("expected an assert step");
-    expect(await evaluateAssertStep(page(4), step)).toBe(4);
-    await expect(evaluateAssertStep(page(3), step)).rejects.toThrow("assert \"skirmish.units.length\" is 4, actual 3 — four units");
-    await expect(evaluateAssertStep(page(3), step)).rejects.toBeInstanceOf(AssertionMismatch);
-    await expect(evaluateAssertStep({ evaluate: async () => { throw new Error("ReferenceError: skirmish is not defined"); } }, step))
-      .rejects.toThrow("threw ReferenceError: skirmish is not defined");
-  });
-
-  test("matches strictly, so a truthy value is not a pass for true", async () => {
-    const step = parseStepFile({ steps: [{ assert: "menu.buttons.length" }] }, "proof.json")[0]!;
-    if (step.kind !== "assert") throw new Error("expected an assert step");
-    await expect(evaluateAssertStep(page(2), step)).rejects.toBeInstanceOf(AssertionMismatch);
-    expect(await evaluateAssertStep(page(true), step)).toBe(true);
+    expect(host.lines[0]).toContain("1200ms virtual");
   });
 });
