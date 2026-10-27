@@ -18,9 +18,9 @@ export function isFiniteNumber(value: unknown): value is number {
 
 /**
  * `value` as a map whose every entry passes `entry`, or `null` when it is not an object or any entry
- * fails. A saved `{ id: score }` table reads back as `recordOf(saved, isFiniteNumber)`.
+ * fails. A saved `{ id: score }` table reads back as `typedRecord(saved, isFiniteNumber)`.
  */
-export function recordOf<T>(value: unknown, entry: (item: unknown) => item is T): Record<string, T> | null {
+export function typedRecord<T>(value: unknown, entry: (item: unknown) => item is T): Record<string, T> | null {
   if (!isRecord(value)) return null;
   const out: Record<string, T> = {};
   for (const [key, item] of Object.entries(value)) {

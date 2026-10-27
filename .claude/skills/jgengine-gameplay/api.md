@@ -431,6 +431,12 @@
 - `JsonDataSourceOptions` (type): type JsonDataSourceOptions = DataSourceOptions & Omit<FetchJsonOptions, "signal"> — ⚠ undocumented
 - `createJsonDataSource` (function): function createJsonDataSource<T>(url: string, options: JsonDataSourceOptions = {}): DataSource<T> — ⚠ undocumented
 
+## @jgengine/core/data/untyped
+
+- `isFiniteNumber` (function): function isFiniteNumber(value: unknown): value is number — True for a number that is not NaN or infinite.
+- `isRecord` (function): function isRecord(value: unknown): value is Readonly<Record<string, unknown>> — Reading a value whose shape is not known yet: parsed JSON, a save from an older build, a message off the wire. Narrow it with these instead of casting, read its fields with brackets, and build the typed value from the pieces that checked out.
+- `recordOf` (function): function recordOf<T>(value: unknown, entry: (item: unknown) => item is T): Record<string, T> | null — `value` as a map whose every entry passes `entry`, or `null` when it is not an object or any entry fails. A saved `{ id: score }` table reads back as `recordOf(saved, isFiniteNumber)`.
+
 ## @jgengine/core/data/withField
 
 - `OptionalKey` (type): type OptionalKey<T> = { [K in keyof T]-?: {} extends Pick<T, K> ? K : never }[keyof T] — The keys of `T` that may be left out.
@@ -943,7 +949,7 @@
 - `ModelAnimationConfig` (interface): interface ModelAnimationConfig — Rig playback for a `ModelConfig`'s GLTF animation clips — looping idles, one-shots, and held poses.
 - `ModelAnimationStates` (interface): interface ModelAnimationStates — Movement-state clip set for `ModelAnimationConfig.states`: the shell reads the entity's live speed each frame and crossfades between these clips, so a walking mob animates without any game-side driver.
 - `ModelAttachment` (interface): interface ModelAttachment — Parents a prop/weapon model to a named bone or node on the host model's rig — a sword on `handslot.r`, a spellbook offhand — following the bone's animated transform each frame.
-- `ModelConfig` (interface): interface ModelConfig { url: string; scale?: number; targetHeight?: number; y?: number; anchor?: "center" | "origin"; dims?: ModelDims; collisionMesh?: CollisionMeshData; material?: ModelMaterialOverride; surfaceDetail?: boolean; wind?: ModelWindConfig | false; … — ⚠ undocumented · used by `PartMotionRig` (@jgengine/core/anim/PartMotion.draw): Procedural motion rig for a rig-less part-composed character (`ModelPart.role` — see `@jgengine/core/game/partAnimation`).
+- `ModelConfig` (interface): interface ModelConfig { url: string; scale?: number; targetHeight?: number; y?: number; anchor?: "center" | "origin"; dims?: ModelDims | undefined; collisionMesh?: CollisionMeshData; material?: ModelMaterialOverride; surfaceDetail?: boolean; wind?: ModelWindConf… — ⚠ undocumented · used by `PartMotionRig` (@jgengine/core/anim/PartMotion.draw): Procedural motion rig for a rig-less part-composed character (`ModelPart.role` — see `@jgengine/core/game/partAnimation`).
 - `ModelIkConfig` (interface): interface ModelIkConfig — Bone names and limits for {@link ModelConfig.ik}.
 - `ModelLodConfig` (interface): interface ModelLodConfig — Distance tiers for one character model. Distances are metres from the camera; every field is data so a game can set its own thresholds per model and retune them without touching the engine.
 - `ModelLookAtConfig` (interface): interface ModelLookAtConfig — {@link ModelIkConfig.lookAt}: the bone that turns, and what it turns toward.
@@ -1415,7 +1421,7 @@
 - `MissionView` (interface): interface MissionView — Pooled per-frame readout a HUD tracker renders.
 - `MissionWorldEvent` (interface): interface MissionWorldEvent — One thing that happened in the world this tick, reported by the game. A constrained objective counts matching events and an `event` fail condition reacts to them, so the machine judges the world instead of the game polling its own counters.
 - `MissionWorldEventKind` (type): type MissionWorldEventKind = "kill" | "collect" | "deliver" — What a reported world event is.
-- `ModelConfig` (interface): interface ModelConfig { url: string; scale?: number; targetHeight?: number; y?: number; anchor?: "center" | "origin"; dims?: ModelDims; collisionMesh?: CollisionMeshData; material?: ModelMaterialOverride; surfaceDetail?: boolean; wind?: ModelWindConfig | false; … — ⚠ undocumented · used by `PartMotionRig` (@jgengine/core/anim/PartMotion.draw): Procedural motion rig for a rig-less part-composed character (`ModelPart.role` — see `@jgengine/core/game/partAnimation`).
+- `ModelConfig` (interface): interface ModelConfig { url: string; scale?: number; targetHeight?: number; y?: number; anchor?: "center" | "origin"; dims?: ModelDims | undefined; collisionMesh?: CollisionMeshData; material?: ModelMaterialOverride; surfaceDetail?: boolean; wind?: ModelWindConf… — ⚠ undocumented · used by `PartMotionRig` (@jgengine/core/anim/PartMotion.draw): Procedural motion rig for a rig-less part-composed character (`ModelPart.role` — see `@jgengine/core/game/partAnimation`).
 - `ModelMaterialMaps` (interface): interface ModelMaterialMaps extends Partial<Record<MaterialTextureRole, string>> — Real PBR map URLs (e.g. `buildMaterialCatalog(...).resolve(id)!.maps` from `@jgengine/assets`) layered onto a model's material — the seam for texturing an otherwise-flat/untextured GLB. Any supported MaterialTextureRole may be omitted to keep the model's own map. Physical roles use the renderer's physical material; map URLs and response parameters remain caller-owned.
 - `ModelMaterialOverride` (interface): interface ModelMaterialOverride extends MaterialSurfaceParameters — Per-entity PBR material override (#151.3) applied to every standard or physical material in the model's cloned scene graph.
 - `ModularItemDef` (interface): interface ModularItemDef { id: string; baseStats: Record<string, number>; slots: readonly MountSlotDef[] } — ⚠ undocumented
@@ -2940,6 +2946,8 @@
 - `SaveSlotsConfig` (interface): interface SaveSlotsConfig — How a {@link createSaveSlots} index is wired.
 - `SaveSlotsSnapshot` (interface): interface SaveSlotsSnapshot — Serializable state of a {@link SaveSlots} index, for save/restore.
 - `createSaveSlots` (function): function createSaveSlots(config: SaveSlotsConfig = {}): SaveSlots — Create a {@link SaveSlots} index — the serializable, observable list of save/profile slot metadata a save-select menu renders. It is a thin companion to `createSaveStore`: the store owns the real save payload keyed by slot, this owns only the display fields (name, empty, last-saved, and a free-string `meta` bag) the menu shows. `write` stamps a slot saved on the injected clock, `clear` empties one, `rename` relabels one, `mostRecent()` returns the newest non-empty slot to power a "Continue" button, and `list()` feeds the New / Continue / Load / Delete grid. `meta` keys are free strings the game owns — the model never interprets them — and `snapshot`/`restore` round-trips the whole index through a save.
+- `slotNumber` (function): function slotNumber(slot: SaveSlotMeta, key: string): number | null — A slot's number chip under `key`, or `null` when it is missing or text.
+- `slotText` (function): function slotText(slot: SaveSlotMeta, key: string): string | null — A slot's text chip under `key`, or `null` when it is missing, empty or a number.
 
 ## @jgengine/core/save/saveSlots.view
 

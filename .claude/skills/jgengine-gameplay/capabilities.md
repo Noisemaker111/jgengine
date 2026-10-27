@@ -990,6 +990,10 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `createUnlockCatalog` (function) · `import { createUnlockCatalog } from "@jgengine/core/gameplay"`
 
+## untyped-read — narrow parsed JSON, old saves and other unknown values to records and typed maps without casts
+
+- `isRecord` (function) · `import { isRecord } from "@jgengine/core/data/untyped"`
+
 ## upgrade-options — list the next upgrade steps a placed thing can take, priced and checked by the world
 
 - `upgradeOptions` (function) · `import { upgradeOptions } from "@jgengine/core/worldModel/upgradePaths"`

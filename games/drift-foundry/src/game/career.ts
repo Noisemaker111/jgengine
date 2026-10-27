@@ -1,4 +1,4 @@
-import { isFiniteNumber, isRecord, recordOf } from "@jgengine/core/data/untyped";
+import { isFiniteNumber, isRecord, typedRecord } from "@jgengine/core/data/untyped";
 import type { Curve } from "@jgengine/core/progression/leveling";
 import { createCareerBank, type CareerBankState } from "@jgengine/core/progression/careerBank";
 import { createGateSet, gateFacts } from "@jgengine/core/progression/gates";
@@ -156,7 +156,7 @@ export function saveCareer(career: CareerSave, storage?: CareerStorage): boolean
 const amount = (value: unknown): value is number => isFiniteNumber(value) && value >= 0;
 const count = (value: unknown): value is number => typeof value === "number" && Number.isSafeInteger(value) && value >= 0;
 const scoreRow = (value: unknown): value is Record<string, number> => {
-  const row = recordOf(value, isFiniteNumber);
+  const row = typedRecord(value, isFiniteNumber);
   return row !== null && Object.keys(row).every((track) => track === "yard");
 };
 
@@ -171,14 +171,14 @@ function readBank(value: unknown): CareerBankState | null {
 /** Saved standing, or null unless every record is a yard score. */
 function readStanding(value: unknown): StandingState | null {
   if (!isRecord(value)) return null;
-  const records = recordOf(value["records"], scoreRow);
+  const records = typedRecord(value["records"], scoreRow);
   return records === null ? null : { records };
 }
 
 /** Saved ladder ranks, or null unless every rank is a real slot within its ladder. */
 function readLadders(value: unknown): UpgradeState | null {
   if (!isRecord(value)) return null;
-  const ranks = recordOf(value["ranks"], count);
+  const ranks = typedRecord(value["ranks"], count);
   if (ranks === null) return null;
   const fits = Object.entries(ranks).every(([slot, rank]) => {
     const ladder = PART_SLOTS.find((id) => id === slot);
@@ -190,7 +190,7 @@ function readLadders(value: unknown): UpgradeState | null {
 /** Saved medal bests, or null when there are none to keep. */
 function readMedals(value: unknown): MedalBoardState | null {
   if (!isRecord(value)) return null;
-  const best = recordOf(value["best"], isFiniteNumber);
+  const best = typedRecord(value["best"], isFiniteNumber);
   return best === null ? null : { best };
 }
 

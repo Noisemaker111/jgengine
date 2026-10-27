@@ -1,6 +1,6 @@
 import { describe, expect, test } from "bun:test";
 
-import { isFiniteNumber, isRecord, recordOf } from "./untyped";
+import { isFiniteNumber, isRecord, typedRecord } from "./untyped";
 
 describe("untyped reads", () => {
   test("a record is a plain object, not null or a list", () => {
@@ -18,9 +18,9 @@ describe("untyped reads", () => {
   });
 
   test("a typed map keeps every entry or refuses the whole value", () => {
-    expect(recordOf({ a: 1, b: 2 }, isFiniteNumber)).toEqual({ a: 1, b: 2 });
-    expect(recordOf({ a: 1, b: "2" }, isFiniteNumber)).toBeNull();
-    expect(recordOf([1, 2], isFiniteNumber)).toBeNull();
-    expect(recordOf({}, isFiniteNumber)).toEqual({});
+    expect(typedRecord({ a: 1, b: 2 }, isFiniteNumber)).toEqual({ a: 1, b: 2 });
+    expect(typedRecord({ a: 1, b: "2" }, isFiniteNumber)).toBeNull();
+    expect(typedRecord([1, 2], isFiniteNumber)).toBeNull();
+    expect(typedRecord({}, isFiniteNumber)).toEqual({});
   });
 });

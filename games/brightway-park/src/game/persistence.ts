@@ -1,5 +1,5 @@
 import type { AgentSnapshot } from "@jgengine/core/agents/agent";
-import { isFiniteNumber, isRecord, recordOf } from "@jgengine/core/data/untyped";
+import { isFiniteNumber, isRecord, typedRecord } from "@jgengine/core/data/untyped";
 import type { GameContext } from "@jgengine/core/runtime/gameContext";
 import type { ClockSnapshot } from "@jgengine/core/time/simClock";
 import type { RideSystemSnapshot } from "@jgengine/core/sim/rides";
@@ -59,9 +59,9 @@ function validAgent(value: unknown): value is AgentSnapshot {
   if (!record(value) || !record(value["mood"]) || !record(value["brain"]) || !record(value["action"])) return false;
   const needs = value["needs"];
   if (!record(needs)) return false;
-  if (recordOf(needs["values"], finite) === null) return false;
-  if (recordOf(needs["rates"], finite) === null) return false;
-  if (recordOf(needs["modifiers"], finite) === null) return false;
+  if (typedRecord(needs["values"], finite) === null) return false;
+  if (typedRecord(needs["rates"], finite) === null) return false;
+  if (typedRecord(needs["modifiers"], finite) === null) return false;
   if (typeof value["far"] !== "boolean") return false;
   const mark = value["scheduleMark"];
   if (mark !== null && typeof mark !== "string") return false;
