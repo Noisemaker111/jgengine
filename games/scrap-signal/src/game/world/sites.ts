@@ -20,6 +20,7 @@ const riggVendor = requiredSite("vendor_rigg");
 const sparxVendor = requiredSite("vendor_sparx");
 const blackMarket = requiredSite("vendor_black_market");
 const rebuild = requiredSite("rebuild_station");
+const vault = requiredSite("vault_coretown");
 
 export const CORETOWN = hub.center;
 
@@ -49,6 +50,9 @@ export const BLACK_MARKET_POS: EntityPosition = [
   blackMarket.position.y,
   blackMarket.position.z,
 ];
+
+/** The Coretown vault: the bank where guns you are not carrying wait for you. */
+export const VAULT_POS: EntityPosition = [vault.position.x, vault.position.y, vault.position.z];
 
 export const REBUILD_STATION: EntityPosition = [rebuild.position.x, rebuild.position.y, rebuild.position.z];
 

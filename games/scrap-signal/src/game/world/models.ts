@@ -284,6 +284,14 @@ export const objectModels: Record<string, ModelConfig> = resolveModelPlan(assets
       material: { color: "#2a1f3a", ...PANEL, emissive: "#8a2be2", emissiveIntensity: 0.3 },
     },
   },
+  vault: {
+    model: `${SCIFI}/Prop_ItemHolder`,
+    fallbackModel: `${SCIFI}/Prop_Computer`,
+    style: {
+      scale: 2.4,
+      material: { color: MACHINE.iron, ...PANEL, emissive: "#e0b34a", emissiveIntensity: 0.45 },
+    },
+  },
   // Scale 4 put single boulders at building size, close enough to the camera to hide whole enemy
   // groups behind one rock. Stratified map so they carry the same layered banding as the cliffs.
   rock_spire: {

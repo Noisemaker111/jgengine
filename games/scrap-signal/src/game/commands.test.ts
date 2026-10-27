@@ -83,6 +83,33 @@ describe("scrap-signal chests", () => {
   });
 });
 
+describe("scrap-signal vault", () => {
+  test("a stored gun leaves its slot and comes back into a free open slot", () => {
+    const ctx = bootContext();
+    journal(ctx).accept("p1", QUEST_IDS.firstGun);
+    ctx.game.commands.run("chest.openRed", { instanceId: CRASH_CHEST });
+    const pistol = onlyDrop(ctx);
+    ctx.scene.entity.update("p1", { position: pistol.position });
+    ctx.game.commands.run("pickup", {});
+
+    ctx.game.commands.run("vault.deposit", { slot: 0 });
+    expect(ctx.player.inventory.state("hotbar").slots[0]).toBeNull();
+    expect(ctx.player.inventory.count("vault", pistol.itemId)).toBe(1);
+
+    ctx.game.commands.run("vault.withdraw", { itemId: pistol.itemId });
+    expect(ctx.player.inventory.state("hotbar").slots[0]?.itemId).toBe(pistol.itemId);
+    expect(ctx.player.inventory.count("vault", pistol.itemId)).toBe(0);
+  });
+
+  test("nothing comes out while every open weapon slot is full", () => {
+    const ctx = bootContext();
+    ctx.player.inventory.put("vault", "spare", 1);
+    ctx.game.commands.run("vault.withdraw", { itemId: "spare" });
+    expect(ctx.player.inventory.count("vault", "spare")).toBe(1);
+    expect(ctx.game.notices.list().map((notice) => notice.tone)).toEqual(["deny"]);
+  });
+});
+
 describe("scrap-signal weapon slots", () => {
   test("slot 1 opens with the first gun; the other slots stay locked", () => {
     const ctx = bootContext();

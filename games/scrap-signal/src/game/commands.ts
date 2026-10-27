@@ -13,7 +13,7 @@ import { captureScrapThumb, scrapProfile } from "./scrapProfile";
 import { refreshScrapSlots } from "./scrapSlots";
 import { noteEquipped } from "./feel";
 import { gunById, rollGun, startReload, reservePhase } from "./handroll";
-import { equipFieldGun, salvageFieldGun, bankFieldHaul } from "./items/fieldGear";
+import { depositGun, vaultOpenStore, withdrawGun } from "./items/vault";
 import { playerDef } from "./entities/players/catalog";
 import { session } from "./session";
 import { noteGunHeld } from "./progression/discovery";
@@ -289,25 +289,27 @@ export function registerCommands(ctx: GameContext): void {
     },
   });
 
-  ctx.game.commands.define<{ dropId?: string }>("loot.equip", {
-    apply(state: GameContext, input) {
-      if (input.dropId !== undefined) equipFieldGun(state, input.dropId);
-    },
-  });
-
-  ctx.game.commands.define<{ dropId?: string }>("loot.salvage", {
-    apply(state: GameContext, input) {
-      if (input.dropId === undefined) return;
-      const yieldOut = salvageFieldGun(state, input.dropId);
-      if (yieldOut === null) return;
-      state.game.notices.push({ text: `Salvaged for ${yieldOut.amount} cores.`, tone: "success" });
-    },
-  });
-
-  ctx.game.commands.define("loot.bank", {
+  ctx.game.commands.define("vault.open", {
     apply(state: GameContext) {
-      const moved = bankFieldHaul(state);
-      state.game.notices.push({ text: `${moved} gun(s) banked.`, tone: "success" });
+      vaultOpenStore.write(state, true);
+    },
+  });
+
+  ctx.game.commands.define("vault.close", {
+    apply(state: GameContext) {
+      vaultOpenStore.clear(state);
+    },
+  });
+
+  ctx.game.commands.define<{ slot?: number }>("vault.deposit", {
+    apply(state: GameContext, input) {
+      if (typeof input.slot === "number") depositGun(state, input.slot);
+    },
+  });
+
+  ctx.game.commands.define<{ itemId?: string }>("vault.withdraw", {
+    apply(state: GameContext, input) {
+      if (input.itemId !== undefined) withdrawGun(state, input.itemId);
     },
   });
 

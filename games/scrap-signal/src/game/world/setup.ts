@@ -12,6 +12,7 @@ import {
   RIGG_VENDOR_POS,
   TRAVEL_STATIONS,
   SPARX_VENDOR_POS,
+  VAULT_POS,
   ZONES,
   zoneLevelAt,
 } from "./sites";
@@ -166,6 +167,7 @@ export function setupWorld(ctx: GameContext): void {
   place("vendor_rigg", RIGG_VENDOR_POS[0], RIGG_VENDOR_POS[2], "vendor_rigg_1");
   place("vendor_sparx", SPARX_VENDOR_POS[0], SPARX_VENDOR_POS[2], "vendor_sparx_1");
   place("black_market", BLACK_MARKET_POS[0], BLACK_MARKET_POS[2], "black_market_1");
+  place("vault", VAULT_POS[0], VAULT_POS[2], "vault_1");
   for (const station of TRAVEL_STATIONS) {
     place("fast_travel", station.x, station.z, `travel_${station.zoneId}`);
   }

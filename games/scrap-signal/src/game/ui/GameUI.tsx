@@ -16,7 +16,7 @@ import { VitalsPlate } from "./components/Vitals";
 import { AmmoPlate, WeaponHotbar, ItemCard } from "./components/Weapon";
 import { BlackMarketPanel, EchoBox, CoresPlate, TravelPanel, ReactorEnding, ZoneBanner } from "./components/World";
 import { Operations } from "./components/Operations";
-import { FieldGearPanel } from "./components/FieldGearPanel";
+import { VaultPanel } from "./components/VaultPanel";
 import { OverdriveCard, OverdriveTerminal } from "./components/Overdrive";
 import { riftStore } from "../rift/rift";
 import { GAME_FONTS } from "../../art/fonts/fonts";
@@ -55,10 +55,6 @@ export function GameUI() {
           <MissionTracker />
         </HudPanel>
       )}
-
-      <HudPanel id="field-loot" anchor="left" order={1} chip="stash" interactive={true}>
-        <FieldGearPanel />
-      </HudPanel>
 
       <HudPanel id="cash" anchor="top-right" order={0} priority="critical" interactive={false}>
         <CashPlate />
@@ -115,6 +111,7 @@ export function GameUI() {
       <ReserveOverlay />
       <VendorPanel />
       <NpcDialog />
+      <VaultPanel />
       <TalentsPanel />
       <TravelPanel />
       <BlackMarketPanel />
