@@ -1,6 +1,6 @@
 import { Html } from "@react-three/drei";
 import { useFrame, useThree } from "@react-three/fiber";
-import { useState, type CSSProperties } from "react";
+import { useRef, useState, type CSSProperties } from "react";
 
 import type { FloatingTextField, FloatingTextView } from "@jgengine/core/hud/floatingText";
 import { FloatingText, type FloatingTextLayoutOptions } from "@jgengine/core/hud/floatingText.view";
@@ -55,10 +55,15 @@ export function WorldFloatingText({
   const size = useThree((state) => state.size);
   const project = useWorldProjection();
   const [, setTick] = useState(0);
+  const showing = useRef(false);
   useFrame((_, delta) => {
     if (advance) field.update(Math.min(delta, 0.1));
-    // Re-render every frame so projected positions follow the camera and the sim.
-    setTick((n) => n + 1);
+    // Re-render every frame while text floats, so projected positions follow the camera and the
+    // sim; with nothing up, an idle frame (and the shader warmup behind the cover) costs no React work.
+    const active = field.active().length > 0;
+    if (!active && !showing.current) return;
+    showing.current = active;
+    setTick((n) => (n + 1) % 1_000_000);
   });
   return (
     <Html fullscreen calculatePosition={pinToViewport} zIndexRange={[20, 0]} style={{ pointerEvents: "none" }}>

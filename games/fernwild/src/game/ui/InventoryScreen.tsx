@@ -1,5 +1,6 @@
 import { useEffect, useState, type CSSProperties, type ReactNode } from "react";
 import { InventoryGrid } from "@jgengine/core/inventory/inventoryGrid.view";
+import { onboardingLock } from "@jgengine/core/onboarding/onboardingSystem";
 import { useGame, useGameStore } from "@jgengine/react/hooks";
 import { useGameContext } from "@jgengine/react/provider";
 
@@ -211,8 +212,14 @@ function Crafting(): ReactNode {
 function Engrams(): ReactNode {
   const game = useGame();
   const view = useSurvivor();
+  const lockedBy = useGameStore((ctx) => onboardingLock(ctx, "learn"));
   return (
     <div style={{ ...PANEL, width: 760 }}>
+      {lockedBy === null ? null : (
+        <span data-engrams-locked="" style={{ fontSize: 13, color: "#e7c84a" }}>
+          Learning opens after: {lockedBy}
+        </span>
+      )}
       <div style={{ display: "flex", justifyContent: "space-between" }}>
         <span style={HEADING}>Engrams</span>
         <span data-engram-points="" style={{ fontSize: 13 }}>
@@ -222,7 +229,7 @@ function Engrams(): ReactNode {
       <div style={{ display: "grid", gridTemplateColumns: "repeat(6, 1fr)", gap: 6, overflowY: "auto", maxHeight: "60vh" }}>
         {view.engrams.map((engram) => {
           const open = engram.level <= view.level;
-          const affordable = open && !engram.learned && view.engramPoints >= engram.points;
+          const affordable = open && lockedBy === null && !engram.learned && view.engramPoints >= engram.points;
           return (
             <button
               key={engram.id}

@@ -1,5 +1,5 @@
 import { createAuthoredSimulation, type AuthoredSimulationSnapshot } from "../world/authoredSimulation";
-import { createCommandRegistry, type CommandResult } from "../commands/commandRegistry";
+import { createCommandRegistry, type CommandRejection, type CommandResult } from "../commands/commandRegistry";
 import { createNoticeFeed } from "../notifications/notices";
 import { type Cosmetics } from "../game/cosmetics";
 import type { GameDefinition, GameFeatures, PersistConfig } from "../game/defineGame";
@@ -187,6 +187,14 @@ export function createGameContext<TAssetRef extends ModelAssetRef, TMultiplayer>
   };
 
   const commandRegistry = createCommandRegistry<GameContext>();
+  const commandGates = new Set<(name: string) => CommandRejection | null>();
+  const runGated = (name: string, input: unknown): CommandResult<GameContext> => {
+    for (const check of commandGates) {
+      const refusal = check(name);
+      if (refusal !== null) return refusal.message === undefined ? { status: "rejected", reason: refusal.reason } : { status: "rejected", reason: refusal.reason, message: refusal.message };
+    }
+    return commandRegistry.run(ctx, name, input);
+  };
   const announceRefusal = (command: string, result: CommandResult<GameContext>, actor: string | null): void => {
     if (result.status !== "rejected") return;
     events.emit("command.refused", result.message === undefined
@@ -594,7 +602,7 @@ export function createGameContext<TAssetRef extends ModelAssetRef, TMultiplayer>
         has: commandRegistry.has,
         names: commandRegistry.names,
         run(name, input) {
-          const result = commandRegistry.run(ctx, name, input);
+          const result = runGated(name, input);
           signal.notify();
           announceRefusal(name, result, null);
           return result;
@@ -603,7 +611,7 @@ export function createGameContext<TAssetRef extends ModelAssetRef, TMultiplayer>
           const previous = actingUserId;
           actingUserId = actorUserId;
           try {
-            const result = commandRegistry.run(ctx, name, input);
+            const result = runGated(name, input);
             signal.notify();
             announceRefusal(name, result, actorUserId);
             return result;
@@ -612,6 +620,10 @@ export function createGameContext<TAssetRef extends ModelAssetRef, TMultiplayer>
           }
         },
         actor: () => actingUserId,
+        gate(check) {
+          commandGates.add(check);
+          return () => void commandGates.delete(check);
+        },
       },
       events,
       notices,

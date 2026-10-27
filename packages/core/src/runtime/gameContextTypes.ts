@@ -17,7 +17,7 @@ import type { ProjectileSystem } from "../combat/projectiles";
 import type { HitReaction, HitReactionConfig, ImpactPresetName } from "../combat/hitReaction";
 import type { VfxPresetName } from "../combat/vfxPresets";
 import type { TelegraphShape } from "../combat/telegraph";
-import type { CommandDefinition, CommandResult } from "../commands/commandRegistry";
+import type { CommandDefinition, CommandRejection, CommandResult } from "../commands/commandRegistry";
 import type { ChargeOptions as WalletChargeOptions } from "../economy/wallet";
 import type { Cosmetics } from "../game/cosmetics";
 import type { GameDefinition } from "../game/defineGame";
@@ -433,6 +433,12 @@ export interface GameContextCommands {
   runAs(actorUserId: string, name: string, input: unknown): CommandResult<GameContext>;
   /** The user a command is running on behalf of, or `null` outside a {@link runAs} call — commands default to `ctx.player.userId` when this is `null`. */
   actor(): string | null;
+  /**
+   * Refuse commands before they run, whatever their own `validate` says: `check` sees each command
+   * name and returns a refusal or `null`. The refusal goes out as `command.refused` like any other.
+   * Returns the function that removes the gate. Onboarding locks are built on this.
+   */
+  gate(check: (name: string) => CommandRejection | null): () => void;
 }
 
 export interface GameContextFeed extends Omit<GameFeed, "bind"> {

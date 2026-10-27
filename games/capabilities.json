@@ -6395,6 +6395,56 @@
       "intent": "make a killed enemy drop loot on the ground or into the killer's bag via catalog onDeath"
     },
     {
+      "id": "onboarding",
+      "packages": [
+        "@jgengine/core"
+      ],
+      "module": "@jgengine/core/onboarding/onboardingSystem",
+      "gameFacing": false,
+      "probe": null,
+      "intent": "declared tutorial steps that point at world things (arrow, minimap marker, waypoint), complete from events or conditions, lock commands until done, grant on completion, skip and save — as a separate tutorial level, a teaching start area or hints blended into stage one"
+    },
+    {
+      "id": "onboarding-banner",
+      "packages": [
+        "@jgengine/core"
+      ],
+      "module": "@jgengine/core/onboarding/onboarding.view",
+      "gameFacing": false,
+      "probe": null,
+      "intent": "announces each finished onboarding step and the next one on the objective banner"
+    },
+    {
+      "id": "onboarding-hud",
+      "packages": [
+        "@jgengine/core"
+      ],
+      "module": "@jgengine/core/onboarding/onboarding.view",
+      "gameFacing": false,
+      "probe": null,
+      "intent": "onboarding steps in the quest tracker with Next and Skip"
+    },
+    {
+      "id": "onboarding-lock",
+      "packages": [
+        "@jgengine/core"
+      ],
+      "module": "@jgengine/core/onboarding/onboardingSystem",
+      "gameFacing": false,
+      "probe": null,
+      "intent": "which onboarding step still locks a command or UI id, so a HUD can grey it out"
+    },
+    {
+      "id": "onboarding-pointer",
+      "packages": [
+        "@jgengine/core"
+      ],
+      "module": "@jgengine/core/onboarding/OnboardingPointer.draw",
+      "gameFacing": false,
+      "probe": null,
+      "intent": "on-screen pin or edge arrow with distance to the current onboarding step's target"
+    },
+    {
       "id": "online-player-batches",
       "packages": [
         "@jgengine/convex"
