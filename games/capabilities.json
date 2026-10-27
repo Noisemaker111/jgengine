@@ -3839,6 +3839,16 @@
       "intent": "send a feedback pulse to the gamepad when one is connected, else to the phone's vibration motor"
     },
     {
+      "id": "headless-flow",
+      "packages": [
+        "@jgengine/core"
+      ],
+      "module": "@jgengine/core/play/headlessFlow.draw",
+      "gameFacing": false,
+      "probe": null,
+      "intent": "play a game's TypeScript proof flow headless in seconds, with typed keys and probe checks"
+    },
+    {
       "id": "headless-runner",
       "packages": [
         "@jgengine/core"
@@ -6887,6 +6897,16 @@
       "intent": "write a game's behaviour as a tick-based script with declarative assertions instead of playing it in a browser"
     },
     {
+      "id": "play-session",
+      "packages": [
+        "@jgengine/core"
+      ],
+      "module": "@jgengine/core/play/playSession.draw",
+      "gameFacing": false,
+      "probe": null,
+      "intent": "tick a real game headless the way the shell does, with held actions, prompts and hotbar"
+    },
+    {
       "id": "player-creator",
       "packages": [
         "@jgengine/editor"
@@ -7159,6 +7179,16 @@
       "gameFacing": false,
       "probe": null,
       "intent": "spawn and advance projectiles with travel and hit resolution"
+    },
+    {
+      "id": "proof-flow",
+      "packages": [
+        "@jgengine/core"
+      ],
+      "module": "@jgengine/core/play/flow",
+      "gameFacing": false,
+      "probe": null,
+      "intent": "write a game's proof route in TypeScript with typed keys and probe checks; it runs headless or in the browser"
     },
     {
       "id": "proximity-prompt",

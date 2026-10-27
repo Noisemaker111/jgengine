@@ -159,12 +159,16 @@ export function defineFlow<TProbe extends ProbeReadings>(
   return { kind: "jgengine-flow", game, browser: false, state: spec.state, run: (flow) => spec.run(flow) };
 }
 
-/** Whether a module's default export is a {@link ProofFlow}. */
+/** Whether a module's default export is a {@link ProofFlow}.
+ * @internal the drive runner's loader check
+ */
 export function isProofFlow(value: unknown): value is ProofFlow {
   return typeof value === "object" && value !== null && "kind" in value && value.kind === "jgengine-flow";
 }
 
-/** The keys of a {@link FlowKeys}, in press order. */
+/** The keys of a {@link FlowKeys}, in press order.
+ * @internal
+ */
 export function flowKeyList(keys: FlowKeys): readonly FlowKey[] {
   return typeof keys === "string" ? [keys] : keys;
 }
