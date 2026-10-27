@@ -53,6 +53,7 @@ import { engineRecord, resolveEngineIdentity, type EngineRecord } from "./engine
 import { externalCaptureUrl } from "./captureTarget";
 import { assertOneTarget, serveGameDir, splitGameDir } from "./servedGame";
 import { assertQuickIsIterationOnly, quickProfile, quickSuffix, quickTimingLine, splitQuickFlag } from "./capture-preset";
+import { detail } from "./verbosity";
 import { CAPTURE_FLAGS, captureFlagHelp, parseCaptureArgs, parseGraphicsTier, type GraphicsTier } from "../packages/jgengine/src/templates/captureArgs";
 import { applyLookSearchParams, parseLookAim } from "./lookArg";
 import {
@@ -459,7 +460,7 @@ async function shootOne(
     if (renderer === null) {
       throw new Error("shoot: the launched Chrome has no WebGL2 - every frame would be an empty canvas; fix the launch flags before capturing");
     }
-    console.error(`shoot: webgl2 ${renderer}`);
+    detail(`shoot: webgl2 ${renderer}`);
     const viewportSize = { width: args.width, height: args.height };
     await applyDevice(session, device, args.size, viewportSize);
     mark("device");
@@ -569,7 +570,7 @@ async function shootOne(
     }
     mark("inspect");
     const total = (performance.now() - startedAt) / 1_000;
-    console.error(
+    detail(
       args.quick
         ? quickTimingLine("shoot", {
             seconds: total,
@@ -667,7 +668,7 @@ async function resolveTarget(daemon: ShootDaemonState | null): Promise<ShootTarg
   if (daemon !== null) {
     const target = await withStepDeadline("start or reuse the dev server", SERVER_STEP_MS, () =>
       ensureDaemonTarget(daemon, args.site !== undefined ? "web" : "dev"));
-    console.error(`shoot: attached to daemon — chrome :${daemon.chromePort}, target ${target.base}`);
+    detail(`shoot: attached to daemon — chrome :${daemon.chromePort}, target ${target.base}`);
     return { devBase: target.base, server: null, serverPid: undefined, attachedDaemon: true };
   }
   const server = await withStepDeadline("start or reuse the dev server", SERVER_STEP_MS, () =>

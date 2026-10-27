@@ -20,16 +20,18 @@ import { fileURLToPath } from "node:url";
 
 import { assertCheckoutReady } from "./checkout-ready";
 import { printHelpIfAsked } from "./script-help";
+import { isVerbose, takeVerboseFlag } from "./verbosity";
 
 const LANE_CLOSE_USAGE = {
   summary: "verify, land, ask the checks once, and print the lane report",
-  usage: "bun run lane:close [-m <message> ...] [--pr <number>] [--allow <path>] | --batch <branch ...> | --queue",
+  usage: "bun run lane:close [-m <message> ...] [--pr <number>] [--allow <path>] [--verbose] | --batch <branch ...> | --queue",
   flags: [
     { flag: "-m, --message <text>", detail: "what changed, in plain words; repeatable. Prefix `Fixed:`, `Added:`, `Removed:` or `Migrate:` for that changelog heading (default Changed). Becomes changes/<branch>.md, the commit message and the PR body" },
     { flag: "--batch <branch ...>", detail: "land several finished branches as one push instead (the rest of the arguments go to the batch; --help there lists them)" },
     { flag: "--queue", detail: "drain the landing queue: rebase and wait once for each queued PR" },
     { flag: "--pr <number>", detail: "the PR to close; default: the open PR for this branch" },
     { flag: "--allow <path>", detail: "a path land --commit may take although its guards refuse it; repeatable" },
+    { flag: "--verbose", detail: "also print each stage, every pass and every committed path (by default the failures, the summaries and the report)" },
   ],
   example: 'bun run lane:close -m "Wolves hunt in packs" -m "Fixed: a tamed wolf no longer despawns at night"',
   exits: [
@@ -146,14 +148,16 @@ export function closeLane(args: LaneCloseArgs, io: LaneIo): number {
   // committed derived file (a stale manifest, api.md or ledger was the most common reason a lane
   // failed to land, and the fix was always `bun run gen`), then runs the type-checks and gates.
   // A type error used to surface only after the whole test suite. land --commit stages what gen rewrote.
-  io.out(`lane:close: ${branch} — preflight (gen, type-checks, gates)`);
+  // The stage lines are progress, kept for --verbose; each stage's own failure names the stage.
+  const stage = isVerbose(io.env) ? io.out : (): void => {};
+  stage(`lane:close: ${branch} — preflight (gen, type-checks, gates)`);
   const preflight = io.sh(["run", "preflight"], true);
   if (preflight.status !== 0) {
     io.err(`lane:close: preflight failed (exit ${preflight.status}); nothing landed, no tests run. Fix what it names and close again.`);
     return EXIT_VERIFY_FAILED;
   }
   // The type-checks and gates that just passed are remembered by their inputs, so this runs the tests and boots.
-  io.out(`lane:close: ${branch} — verify:fast (tests and boots)`);
+  stage(`lane:close: ${branch} — verify:fast (tests and boots)`);
   const verified = io.sh(["run", "verify:fast"], true);
   if (verified.status !== 0) {
     io.err(
@@ -163,7 +167,7 @@ export function closeLane(args: LaneCloseArgs, io: LaneIo): number {
     return EXIT_VERIFY_FAILED;
   }
 
-  io.out("lane:close: land --commit");
+  stage("lane:close: land --commit");
   const landArgs = [
     "run",
     "scripts/land.ts",
@@ -228,7 +232,7 @@ export function closeLane(args: LaneCloseArgs, io: LaneIo): number {
   // cannot delete the directory it runs in, and the next close takes it.
   const reaped = io.sh(["run", "worktree", "reap", "--fetch"], false);
   const reapLine = lastLine(reaped.stdout);
-  if (reapLine.length > 0) io.out(`lane:close: ${reapLine}`);
+  if (reapLine.length > 0) stage(`lane:close: ${reapLine}`);
   return EXIT_CLOSED;
 }
 
@@ -272,7 +276,8 @@ export function landingMode(argv: readonly string[]): { script: string; rest: st
   return null;
 }
 
-function main(argv: readonly string[]): void {
+function main(rawArgv: readonly string[]): void {
+  const argv = takeVerboseFlag(rawArgv);
   const mode = landingMode(argv);
   if (mode !== null) {
     const run = spawnSync(process.execPath, [mode.script, ...mode.rest], { cwd: root, stdio: "inherit" });

@@ -25,6 +25,7 @@ import { computeShotMetrics, deadViewport } from "./shot-metrics";
 import { removeDirSync } from "./removeDir";
 import { decodePng } from "../packages/assets/src/imageCodec";
 import type { GraphicsTier } from "../packages/jgengine/src/templates/captureArgs";
+import { detail } from "./verbosity";
 
 export { checkoutIdentity, devServerIdentity, isUp };
 
@@ -1388,7 +1389,8 @@ export function sweepCaptureProfiles(root = tmpdir(), options: SweepOptions = {}
   });
   const removed = sweepStaleProfiles(root, now, ageMs);
   if (pressure || removed > 0 || strays.killed > 0 || strays.profilesRemoved > 0) {
-    const log = options.log ?? ((line: string) => console.error(line));
+    // A short disk is a warning; a routine sweep is housekeeping, printed under --verbose.
+    const log = options.log ?? (pressure ? (line: string) => console.error(line) : detail);
     const killed = strays.killed > 0 ? `killed ${strays.killed} stray browser(s) whose run had died, removed ${strays.profilesRemoved} profile(s); ` : "";
     log(
       pressure

@@ -15,11 +15,15 @@ import { spawnSync } from "node:child_process";
 import { fileURLToPath } from "node:url";
 
 import { printHelpIfAsked } from "./script-help";
+import { isVerbose, takeVerboseFlag } from "./verbosity";
 
 const PREFLIGHT_USAGE = {
   summary: "the cheap checks lane:close runs first: install, conflict markers, gen, type-checks and gates",
-  usage: "bun run preflight [--no-gen]",
-  flags: [{ flag: "--no-gen", detail: "check the install only, without gen or verify:fast (what agent:bootstrap runs)" }],
+  usage: "bun run preflight [--no-gen] [--verbose]",
+  flags: [
+    { flag: "--no-gen", detail: "check the install only, without gen or verify:fast (what agent:bootstrap runs)" },
+    { flag: "--verbose", detail: "stream every step's output (by default a step's output prints only when it fails)" },
+  ],
   example: "bun run preflight",
   exits: ["0 every cheap check passed", "1 a check failed; the output names it and the fix"],
 } as const;
@@ -123,13 +127,26 @@ function conflictProblems(): string[] {
   return problems;
 }
 
+/**
+ * Run one step. Under --verbose it streams; otherwise its output is held and printed only when the
+ * step fails, so a passing preflight is one line and a failing one shows everything the step said.
+ */
 function step(label: string, args: string[]): boolean {
-  console.log(`preflight: ${label}`);
-  const run = spawnSync(process.execPath, args, { cwd: root, stdio: "inherit" });
-  return run.status === 0;
+  if (isVerbose()) {
+    console.log(`preflight: ${label}`);
+    return spawnSync(process.execPath, args, { cwd: root, stdio: "inherit" }).status === 0;
+  }
+  const run = spawnSync(process.execPath, args, { cwd: root, encoding: "utf8", stdio: ["ignore", "pipe", "pipe"], maxBuffer: 256 * 1024 * 1024 });
+  if (run.status === 0) return true;
+  console.error(`preflight: ${label} failed:`);
+  if ((run.stdout ?? "").length > 0) process.stdout.write(run.stdout);
+  if ((run.stderr ?? "").length > 0) process.stderr.write(run.stderr);
+  if (run.error !== undefined) console.error(String(run.error));
+  return false;
 }
 
-function main(argv: readonly string[]): number {
+function main(rawArgv: readonly string[]): number {
+  const argv = takeVerboseFlag(rawArgv);
   if (printHelpIfAsked("agent-preflight", PREFLIGHT_USAGE, argv)) return 0;
   const unknown = argv.filter((arg) => arg !== "--no-gen");
   if (unknown.length > 0) {

@@ -52,6 +52,7 @@ import {
 import { brokerEnabled } from "./devBroker";
 import { brokerCaptureTurn, brokerChrome } from "./devBrokerClient";
 import { localOk } from "./localhostHttp";
+import { detail } from "./verbosity";
 
 export interface ShootDaemonState {
   identity: string;
@@ -280,9 +281,9 @@ export interface AcquireWarmCaptureOptions {
 
 /**
  * The one decision every capture lane makes: attach to the daemon, start it, or
- * boot alone. Prints exactly one line saying which happened and how long it took,
- * and never waits on a daemon that is not there — a failure to provide one is a
- * printed fallback to the direct launch, not a retry.
+ * boot alone. Says which happened and how long it took: a routine reuse or start only
+ * under --verbose, a fallback always. It never waits on a daemon that is not there — a
+ * failure to provide one is a printed fallback to the direct launch, not a retry.
  */
 export async function acquireWarmCapture(options: AcquireWarmCaptureOptions = {}): Promise<WarmCapture> {
   const cwd = options.cwd ?? process.cwd();
@@ -291,14 +292,15 @@ export async function acquireWarmCapture(options: AcquireWarmCaptureOptions = {}
   const probe = options.probe ?? attachDaemon;
   const start = options.start ?? ((root: string) => startDaemon({ cwd: root }));
   const stop = options.stop ?? ((root: string) => stopDaemon({ cwd: root }));
-  const done = (daemon: ShootDaemonState | null, mode: WarmCapture["mode"], line: string): WarmCapture => {
-    console.error(line);
+  const done = (daemon: ShootDaemonState | null, mode: WarmCapture["mode"], line: string, routine = false): WarmCapture => {
+    if (routine) detail(line);
+    else console.error(line);
     return { daemon, mode, seconds: (performance.now() - startedAt) / 1_000 };
   };
   const elapsed = (): string => ((performance.now() - startedAt) / 1_000).toFixed(1);
 
   if (options.cold === true) {
-    return done(null, "cold", `cold: ${options.because ?? "--cold asked for a clean boot"} — no daemon reused or started`);
+    return done(null, "cold", `cold: ${options.because ?? "--cold asked for a clean boot"} — no daemon reused or started`, true);
   }
 
   const broker = options.broker === undefined ? (brokerEnabled() ? brokerChrome : null) : options.broker;
@@ -313,7 +315,7 @@ export async function acquireWarmCapture(options: AcquireWarmCaptureOptions = {}
           startedAt: new Date().toISOString(),
           broker: true,
         };
-        return done(state, shared.started ? "cold" : "warm", `${shared.started ? "cold: started" : "warm: reused"} the shared browser :${shared.chromePort} (${elapsed()}s)`);
+        return done(state, shared.started ? "cold" : "warm", `${shared.started ? "cold: started" : "warm: reused"} the shared browser :${shared.chromePort} (${elapsed()}s)`, true);
       }
     } catch (error) {
       console.error(`broker: no shared browser (${reason(error)}) — trying this checkout's daemon`);
@@ -339,13 +341,13 @@ export async function acquireWarmCapture(options: AcquireWarmCaptureOptions = {}
         `cold: replaced daemon on :${live.chromePort} serving ${shortRevision(live.head)}, engine is ${shortRevision(current)}`,
       );
     } else {
-      return done(live, "warm", `warm: reused :${live.chromePort} (${elapsed()}s)`);
+      return done(live, "warm", `warm: reused :${live.chromePort} (${elapsed()}s)`, true);
     }
   }
 
   try {
     const state = await start(cwd);
-    return done(state, "cold", `cold: started :${state.chromePort} (${elapsed()}s)`);
+    return done(state, "cold", `cold: started :${state.chromePort} (${elapsed()}s)`, true);
   } catch (error) {
     return done(null, "cold", `cold: daemon unavailable (${reason(error)}) — direct launch, no retry`);
   }

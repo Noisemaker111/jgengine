@@ -145,6 +145,24 @@ test("a fragment another lane left in changes/ never reaches this PR's body", ()
   });
   expect(body).toEqual({ text: "### Changed\n\n- The fragment.", explicit: false });
   expect(body.text).not.toContain("stranger");
+  expect(logged).toEqual([]);
+
+  // Naming the skipped notes is --verbose detail.
+  const before = process.env["JG_VERBOSE"];
+  process.env["JG_VERBOSE"] = "1";
+  try {
+    landBody({
+      args: { base: "beta" },
+      branch: "agent/lane-x",
+      summary: "the last commit",
+      files: () => [FOREIGN, OWN],
+      added: () => ["scripts/land.ts", "changes/agent-lane-x.md"],
+      log: (line) => logged.push(line),
+    });
+  } finally {
+    if (before === undefined) delete process.env["JG_VERBOSE"];
+    else process.env["JG_VERBOSE"] = before;
+  }
   expect(logged).toEqual([
     "ignoring changes/agent-lane-someone-else.md: this branch's diff against origin/beta does not add it",
   ]);
@@ -165,7 +183,6 @@ test("with no fragment of its own the body carries the branch's commit messages,
     "Changed on this branch:\n- Add the resolver\n\n  It reads the manifest first.\n  Old callers keep working.\n- Test it",
   );
   expect(body.text).not.toContain("stranger");
-  expect(logged).toContain("ignoring changes/agent-lane-someone-else.md: this branch's diff against origin/beta does not add it");
   expect(logged).toContain("no changes/ fragment in this branch's diff; body carries its 2 commit message(s)");
 });
 

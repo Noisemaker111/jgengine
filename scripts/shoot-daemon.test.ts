@@ -2,6 +2,7 @@ import { describe, expect, test } from "bun:test";
 import { existsSync, mkdirSync, mkdtempSync, rmSync, unlinkSync, writeFileSync } from "node:fs";
 import { createServer } from "node:http";
 import { localOk } from "./localhostHttp";
+import { VERBOSE_ENV } from "./verbosity";
 import type { AddressInfo } from "node:net";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
@@ -409,10 +410,16 @@ describe("shoot daemon readiness", () => {
   });
 });
 
-/** Collect the lines a lane prints while it decides, so the decision is asserted, not assumed. */
-async function captureStderr<T>(run: () => Promise<T>): Promise<{ value: T; lines: string[] }> {
+/**
+ * Collect the lines a lane prints while it decides, so the decision is asserted, not assumed. These
+ * read the `--verbose` output, where the routine reuse lines print too, unless `verbose` is false.
+ */
+async function captureStderr<T>(run: () => Promise<T>, verbose = true): Promise<{ value: T; lines: string[] }> {
   const lines: string[] = [];
   const original = console.error;
+  const wasVerbose = process.env[VERBOSE_ENV];
+  if (verbose) process.env[VERBOSE_ENV] = "1";
+  else delete process.env[VERBOSE_ENV];
   console.error = (...args: unknown[]) => {
     lines.push(args.map((arg) => String(arg)).join(" "));
   };
@@ -420,8 +427,24 @@ async function captureStderr<T>(run: () => Promise<T>): Promise<{ value: T; line
     return { value: await run(), lines };
   } finally {
     console.error = original;
+    if (wasVerbose === undefined) delete process.env[VERBOSE_ENV];
+    else process.env[VERBOSE_ENV] = wasVerbose;
   }
 }
+
+test("by default a reused browser says nothing, and a fallback still says why", async () => {
+  const reused = await captureStderr(() =>
+    acquireWarmCapture({ broker: null, cold: false, probe: async () => liveState("abc12345"), head: () => "abc12345", stop: async () => false }),
+  false);
+  expect(reused.value.mode).toBe("warm");
+  expect(reused.lines).toEqual([]);
+  const fallback = await captureStderr(() =>
+    acquireWarmCapture({ broker: null, cold: false, probe: async () => { throw new Error("state file unreadable"); }, head: () => "abc12345" }),
+  false);
+  expect(fallback.value.mode).toBe("cold");
+  expect(fallback.lines).toHaveLength(1);
+  expect(fallback.lines[0]).toContain("could not read the daemon (state file unreadable)");
+});
 
 const liveState = (head?: string): ShootDaemonState => ({
   identity: "checkout",
