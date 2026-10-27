@@ -42,7 +42,7 @@ export function nextBill(state: HouseholdState, objects: readonly SceneObject[])
 /** Settle any due midnight bills. Returns the closed day's income when a new day began, else null. */
 export function settleHouseholdDay(state: HouseholdState, objects: readonly SceneObject[], now: number, notices: Pick<NoticeFeed, "push">): number | null {
   const today = Math.floor(now / DAY_LENGTH);
-  const due = state.economy.cursors.upkeep!.nextDueSeconds;
+  const due = state.economy.cursors["upkeep"]!.nextDueSeconds;
   if (due > now) return null;
   const newDay = today > state.day;
   let remainingDebt = state.debt;
@@ -56,12 +56,12 @@ export function settleHouseholdDay(state: HouseholdState, objects: readonly Scen
     }],
     maxCyclesPerRule: 7,
   });
-  const balance = result.ledger.accounts.household?.credits ?? state.credits;
+  const balance = result.ledger.accounts["household"]?.["credits"] ?? state.credits;
   const bill = result.applied.reduce((sum, txn) => sum + txn.amount, 0);
   state.credits = creditAmount(Math.max(0, balance));
   state.debt = creditAmount(remainingDebt + Math.max(0, -balance));
   state.economy = result.ledger;
-  state.economy.accounts.household = { credits: state.credits };
+  state.economy.accounts["household"] = { credits: state.credits };
   if (!newDay) {
     if (state.lastDay !== null) state.lastDay.bill = creditAmount(state.lastDay.bill + bill);
     noteEvent(state, notices, `Outstanding habitat bills ${Math.round(bill)}${state.debt > 0 ? ` · debt ${Math.round(state.debt)}` : " paid"}.`, state.debt > 0 ? "info" : "success");

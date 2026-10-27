@@ -118,7 +118,7 @@ export function AlienMesh({ entity }: { entity: SceneEntity }): ReactNode {
   if (plan === null) return null;
 
   const color = bodyColor(plan, 58);
-  const emissive = mood !== null ? MOOD_COLORS[mood.tier] : "#000000";
+  const emissive = (mood === null ? undefined : MOOD_COLORS[mood.tier]) ?? "#000000";
   const emissiveIntensity = mood !== null ? 0.025 + (mood.score / 100) * 0.06 : 0.025;
   const scale = bodyScale(plan);
   const eyeHeight = ALIEN_HEIGHT * 0.92;

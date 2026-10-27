@@ -54,7 +54,29 @@ export interface OrbitSave {
   /** Absent in saves written before the menu: the card then falls back to the household's own members. */
   profile?: OrbitSaveProfile;
 }
-const object = (value: unknown): value is Record<string, any> => !!value && typeof value === "object" && !Array.isArray(value);
+/**
+ * Every field name this checker reads from stored JSON. Reading a name outside the list is a type
+ * error, so a misspelled field cannot silently read `undefined`.
+ */
+type SavedField =
+  | "accounts" | "action" | "actionUntil" | "answered" | "assignedByPlayer" | "behaviors" | "bloomCrop" | "bodyPlan"
+  | "broken" | "buildTool" | "calendar" | "careers" | "catalogId" | "charter" | "clock" | "company" | "completedShifts"
+  | "concern" | "consolesOfflineUntil" | "credits" | "current" | "cursors" | "day" | "dayHarvest" | "dayIncome"
+  | "deadline" | "debt" | "done" | "dustUntil" | "economy" | "elapsed" | "entities" | "eventSeq" | "eyeCount"
+  | "familiarity" | "fired" | "frozen" | "goal" | "grant" | "harvestToday" | "hazards" | "health" | "household" | "hue"
+  | "hullLeak" | "id" | "illUntil" | "incident" | "instanceId" | "job" | "kind" | "lastDay" | "lastFiredAt"
+  | "lifestyle" | "limbCount" | "limbLength" | "max" | "memberId" | "members" | "met" | "meta" | "metabolism"
+  | "milestones" | "min" | "missed" | "missedShifts" | "movement" | "name" | "needs" | "nextAt" | "nextDueSeconds"
+  | "nextLifeEventAt" | "now" | "nowSeconds" | "objCatalog" | "objId" | "objects" | "order" | "otherId" | "outcome"
+  | "pantry" | "paused" | "playSpeed" | "points" | "position" | "profile" | "ranks" | "reason" | "recent" | "records"
+  | "recovering" | "relationships" | "reliefDay" | "review" | "role" | "rotationX" | "rotationY" | "rotationZ"
+  | "rules" | "savedAt" | "scale" | "seed" | "selectedMemberId" | "shape" | "shiftDay" | "shiftProgress" | "size"
+  | "speed" | "speeds" | "standing" | "stars" | "startSeconds" | "stats" | "story" | "stress" | "strike" | "strikes"
+  | "term" | "termIncome" | "thumbnail" | "timescale" | "traits" | "upkeep" | "velocity" | "version" | "walkSpeed"
+  | "warned" | "withId" | "workToday" | "x" | "z";
+/** A stored JSON object: any key by brackets, the checker's own field names by dot. */
+type Saved = Record<string, any> & { [K in SavedField]?: any };
+const object = (value: unknown): value is Saved => !!value && typeof value === "object" && !Array.isArray(value);
 const number = (value: unknown, min = 0, max = 1_000_000): value is number => typeof value === "number" && Number.isFinite(value) && value >= min && value <= max;
 const integer = (value: unknown, min = 0, max = 1_000_000): value is number => number(value, min, max) && Number.isSafeInteger(value);
 const text = (value: unknown, max = 120): value is string => typeof value === "string" && value.length > 0 && value.length <= max;
@@ -83,7 +105,7 @@ function validEconomy(value: unknown, now: number): boolean {
   const rule = value.rules.upkeep;
   const cursor = value.cursors.upkeep;
   if (!object(rule) || !number(rule.startSeconds, DAY_LENGTH, now + DAY_LENGTH) || rule.startSeconds % DAY_LENGTH !== 0) return false;
-  const canonical = createHouseholdEconomy(rule.startSeconds - DAY_LENGTH).rules.upkeep!;
+  const canonical = createHouseholdEconomy(rule.startSeconds - DAY_LENGTH).rules["upkeep"]!;
   if (!keys(rule, Object.keys(canonical)) || Object.entries(canonical).some(([key, expected]) => rule[key] !== expected)) return false;
   return object(cursor) && keys(cursor, ["nextDueSeconds", "fired", "paused", "done"]) && number(cursor.nextDueSeconds, value.nowSeconds, now + DAY_LENGTH) && integer(cursor.fired) && cursor.nextDueSeconds % DAY_LENGTH === 0 && cursor.fired <= (cursor.nextDueSeconds - rule.startSeconds) / DAY_LENGTH && cursor.paused === false && cursor.done === false;
 }
@@ -153,7 +175,7 @@ function validHazards(z: unknown, now: number): boolean {
 }
 
 /** Standing records: known beings on the three authored tracks, inside the ledger's bounds. */
-function validStanding(h: Record<string, any>): boolean {
+function validStanding(h: Saved): boolean {
   if (!object(h.standing) || !keys(h.standing, ["records"]) || !object(h.standing.records)) return false;
   for (const [actor, row] of Object.entries(h.standing.records)) {
     if (!(h.order as string[]).includes(actor) || !object(row)) return false;
@@ -198,7 +220,7 @@ export function validOrbitSave(value: unknown): value is OrbitSave {
 export function captureOrbitSave(ctx: GameContext): OrbitSave {
   const snapshot = ctx.snapshot();
   return JSON.parse(JSON.stringify({
-    version: 1, household: householdStore.read(ctx), entities: snapshot.entities, objects: snapshot.objects, stats: snapshot.stats,
+    version: 1, household: householdStore.read(ctx), entities: snapshot["entities"], objects: snapshot["objects"], stats: snapshot["stats"],
     clock: ctx.time.snapshot(), profile: { ...orbitProfile },
   })) as OrbitSave;
 }

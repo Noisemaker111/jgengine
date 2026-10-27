@@ -203,6 +203,13 @@ export interface StationPay {
   shifts: number;
 }
 
+/** A post's value at a rung (1-based); a rung the post does not have is a bug, not a zero. */
+function atRung(values: readonly number[], rung: number): number {
+  const value = values[rung - 1];
+  if (value === undefined) throw new Error(`Odd Orbit: no post value for rung ${rung}`);
+  return value;
+}
+
 /** What one being is paid on one station, from their post rung, mastery and shift count. */
 export function stationPayIn(view: CareerView, member: MemberState, station: StationKind): StationPay {
   const career = careerOf(member);
@@ -210,7 +217,7 @@ export function stationPayIn(view: CareerView, member: MemberState, station: Sta
   const native = stationCovers(career, station);
   // A being from an older save already pointed at the other station works it at the base rate:
   // the post premium and its rations are what a career buys, and an order will ask for a rung first.
-  const careerFactor = native ? career.native[rung - 1] : rung === 1 ? 1 : career.cover[rung - 1];
+  const careerFactor = native ? atRung(career.native, rung) : rung === 1 ? 1 : atRung(career.cover, rung);
   const tier = view.standing.tier(member.id, station);
   const level = Math.max(1, MASTERY_TIERS.findIndex((entry) => entry.id === tier.id) + 1);
   const masteryFactor = 1 + MASTERY_PAY_PER_LEVEL * (level - 1);
@@ -220,7 +227,7 @@ export function stationPayIn(view: CareerView, member: MemberState, station: Sta
     masteryLabel: MASTERY_LABEL[tier.id] ?? "I",
     masteryFactor,
     factor: Math.round(careerFactor * masteryFactor * 1000) / 1000,
-    rations: station === "bloom" ? career.rations[rung - 1] : 0,
+    rations: station === "bloom" ? atRung(career.rations, rung) : 0,
     shifts: view.standing.standing(member.id, station),
   };
 }

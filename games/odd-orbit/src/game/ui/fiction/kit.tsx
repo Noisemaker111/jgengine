@@ -38,7 +38,7 @@ export const NEED_ICON: Record<NeedId, GameIconName> = { hunger: "apple", energy
 type EnamelProps = Omit<KitMaterialPanelProps, "material" | "cut" | "tint" | "as" | "ref"> & {
   /** `button` makes it a pressable household control. */
   as?: "button" | KitMaterialPanelProps["as"];
-  disabled?: boolean;
+  disabled?: boolean | undefined;
   type?: "button" | "submit" | "reset";
   tone?: EnamelTone;
   /** A colour outside the household set (a member's own hue). */
@@ -70,7 +70,7 @@ export const Enamel = forwardRef<HTMLElement, EnamelProps>(function Enamel(
     style: { "--orbit-r": `${radius}px`, "--orbit-rim": edge, "--orbit-rim-w": `${edgeWidth}px`, "--orbit-glow": glow, "--jg-gf-ink": text, color: text, ...style } as CSSProperties,
   } as const;
   if (as === "button") return <KitButton ref={ref as Ref<HTMLButtonElement>} {...(rest as Omit<KitMaterialButtonProps, "material">)} {...look} />;
-  return <KitPanel ref={ref} {...(rest as Omit<KitMaterialPanelProps, "material">)} as={as} {...look} />;
+  return <KitPanel ref={ref} {...(rest as Omit<KitMaterialPanelProps, "material">)} {...(as === undefined ? {} : { as })} {...look} />;
 });
 
 /** A paper note held to the habitat wall with a pushpin. */
