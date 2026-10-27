@@ -262,11 +262,19 @@ export function frontStatus(ctx: GameContext): {
 }
 
 /** Numeric form for `capture.probe`, which only carries numbers. */
-export function frontProbe(ctx: GameContext): Record<string, number> {
+export function frontProbe(ctx: GameContext) {
   const status = frontStatus(ctx);
   const phase = status.boss === null ? -1 : FOREMAN_PHASES.findIndex((entry) => entry.id === status.boss);
   const boss = runtimeOf(ctx).boss;
   const health = boss === null ? null : ctx.scene.entity.stats.get(boss.id, "health");
+  const bossBody = boss === null ? null : ctx.scene.entity.get(boss.id);
+  const player = ctx.scene.entity.get(ctx.player.userId);
+  // The heading (the camera's yaw convention: facing sin/cos) from the player to the Foreman, so a flow
+  // can aim at it; 0 while either is missing.
+  const bossHeading =
+    bossBody === null || bossBody === undefined || player === null || player === undefined
+      ? 0
+      : Math.atan2(bossBody.position[0] - player.position[0], bossBody.position[2] - player.position[2]);
   return {
     frontStarted: status.started ? 1 : 0,
     frontCleared: status.cleared ? 1 : 0,
@@ -276,6 +284,7 @@ export function frontProbe(ctx: GameContext): Record<string, number> {
     frontHunting: status.hunting,
     frontBossHealth: health === null ? -1 : Math.round(health.current),
     frontBossMax: health === null ? -1 : Math.round(health.max),
+    frontBossHeading: Math.round(bossHeading * 1000) / 1000,
   };
 }
 

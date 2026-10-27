@@ -154,14 +154,14 @@ describe("game design gate", () => {
     const planned = fixture({
       "planned/README.md": readme("Loop proof: to-start", withoutGap),
       "planned/PLAN.md": "# Planned\n\n## Features\n\n- packs\n\n## Gaps\n\n_None._\n",
-      "planned/proofs/flows/to-start.json": FLOW,
+      "planned/proofs/flows/to-start.flow.ts": FLOW,
     });
     expect(checkGames(planned, ["planned"]).failures).toBe(0);
 
     const unplanned = fixture({
       "unplanned/README.md": readme("Loop proof: to-start", withoutGap),
       "unplanned/PLAN.md": "# Unplanned\n\n## Features\n\n- packs\n",
-      "unplanned/proofs/flows/to-start.json": FLOW,
+      "unplanned/proofs/flows/to-start.flow.ts": FLOW,
     });
     const result = checkGames(unplanned, ["unplanned"]);
     expect(result.failures).toBe(1);

@@ -63,7 +63,7 @@ Outside users are protected by npm versions only: a breaking change gets a semve
 '` when writing files). Scripts spawn System32 `tar.exe`, which takes `C:` paths; GNU tar in Git Bash needs `--force-local`.
 - Search with `bun run find <words>` (where a concept lives) or `bun run find --text <regex> [--in <dir>] [--files]`, never a recursive listing; `check recursive-walk` enforces it (`// walk-ok: <reason>`).
 - One verification pass: `bun run lane:close` runs `gen` and `verify:fast` itself before it lands, so nothing runs by hand before it. While iterating, `bun run verify:fast` is the same check in seconds (exit 2: a changed runtime file reached no test; a file is covered when its package's suite runs, and pure renames and demos need none). It prints each failing file's first error and writes UTF-8 logs to `.scratch/verify-fast/`; it also runs capabilities-sync and boot-probes the games a change reaches, because CI never downloads models or boots a game. It runs what the import graph reaches and skips a unit that passed with the same inputs (`--no-cache` runs all). Run `bun run verify:fast --full` only to reproduce a CI failure.
-- Screenshots back pixel claims: `bun run shoot` or `bun run drive <game> --steps <file>` per `jgengine-verify`, never a hand-rolled Vite app. After two capture failures, report lower-rung evidence.
+- Screenshots back pixel claims: `bun run shoot` or `bun run drive <game> --flow <name>` per `jgengine-verify`, never a hand-rolled Vite app. After two capture failures, report lower-rung evidence.
 
 ## Change governance
 

@@ -46,4 +46,4 @@ Turf proof: `proofs/turf-session.json` (take the Marina, let the furious Carmine
 
 Depth proof: `proofs/depth-session.json` (buy a front, take the Marina, pay Dee, hide in the bay, break a raid, collect, let the city hit back overnight, reopen the wrecked front).
 
-Loop proof: to-chase (run with `--state chase`, the game's own `chase.stage`; the flow drives out of the search area and asserts it grew, so the heat ran and the keypress was not the whole event)
+Loop proof: to-chase (it boots the `chase` state, the game's own `chase.stage`; the flow drives out of the search area and asserts it grew, so the heat ran and the keypress was not the whole event)

@@ -1,6 +1,6 @@
 import type { ProbeReadings } from "@jgengine/core/game/playableGame";
 import type { TeleportTarget } from "@jgengine/core/movement/teleport";
-import type { PlayableGame } from "@jgengine/shell/registry";
+import type { HeadlessPlayable } from "@jgengine/core/runtime/headlessRunner";
 
 type Letter = "A" | "B" | "C" | "D" | "E" | "F" | "G" | "H" | "I" | "J" | "K" | "L" | "M" | "N" | "O" | "P" | "Q" | "R" | "S" | "T" | "U" | "V" | "W" | "X" | "Y" | "Z";
 type Digit = "0" | "1" | "2" | "3" | "4" | "5" | "6" | "7" | "8" | "9";
@@ -120,7 +120,7 @@ export interface BrowserFlowSpec<TProbe extends ProbeReadings> extends FlowSpecB
 /** A defined flow that both runners can play. */
 export interface HeadlessProofFlow<TProbe extends ProbeReadings = ProbeReadings> {
   readonly kind: "jgengine-flow";
-  readonly game: PlayableGame<TProbe>;
+  readonly game: HeadlessPlayable<TProbe>;
   readonly browser: false;
   readonly state: string | undefined;
   run(flow: Flow<TProbe>): Promise<void>;
@@ -130,7 +130,7 @@ export interface HeadlessProofFlow<TProbe extends ProbeReadings = ProbeReadings>
 export interface BrowserProofFlow<TProbe extends ProbeReadings = ProbeReadings> {
   readonly kind: "jgengine-flow";
   /** The game it plays; `null` for an app that is not a `PlayableGame`. */
-  readonly game: PlayableGame<TProbe> | null;
+  readonly game: HeadlessPlayable<TProbe> | null;
   readonly browser: true;
   readonly state: string | undefined;
   run(flow: BrowserFlow<TProbe>): Promise<void>;
@@ -146,10 +146,10 @@ export type ProofFlow<TProbe extends ProbeReadings = ProbeReadings> = HeadlessPr
  *
  * @capability proof-flow write a game's proof route in TypeScript with typed keys and probe checks; it runs headless or in the browser
  */
-export function defineFlow<TProbe extends ProbeReadings>(game: PlayableGame<TProbe>, spec: HeadlessFlowSpec<TProbe>): HeadlessProofFlow<TProbe>;
-export function defineFlow<TProbe extends ProbeReadings>(game: PlayableGame<TProbe> | null, spec: BrowserFlowSpec<TProbe>): BrowserProofFlow<TProbe>;
+export function defineFlow<TProbe extends ProbeReadings>(game: HeadlessPlayable<TProbe>, spec: HeadlessFlowSpec<TProbe>): HeadlessProofFlow<TProbe>;
+export function defineFlow<TProbe extends ProbeReadings>(game: HeadlessPlayable<TProbe> | null, spec: BrowserFlowSpec<TProbe>): BrowserProofFlow<TProbe>;
 export function defineFlow<TProbe extends ProbeReadings>(
-  game: PlayableGame<TProbe> | null,
+  game: HeadlessPlayable<TProbe> | null,
   spec: HeadlessFlowSpec<TProbe> | BrowserFlowSpec<TProbe>,
 ): ProofFlow<TProbe> {
   if (spec.browser === true) {

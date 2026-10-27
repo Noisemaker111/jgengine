@@ -26,27 +26,29 @@ const pad = (source: string): string => {
 };
 
 describe("a flow file is never an engine module", () => {
-  /** The shape a lane wrote: a mission-order flow whose body has arrow functions and the word mission. */
-  const FLOW = `{
-  "steps": [
-    {
-      "assert": "(() => { const run = window.__jgengineRun.read(); return run.kind === 'mission' && run.phase === 'closed'; })()",
-      "before": { "is": "window.__jgengineRun !== undefined", "timeoutMs": 30000 },
-      "note": "arrival: the mission's order was cleared on the shared session loop"
-    }
-  ]
+  /** A proof flow that keeps its own phase while it walks a mission: shaped like a state machine, but a proof. */
+  const FLOW = pad(`import { defineFlow } from "@jgengine/core/play/flow";
+export type Phase = "a" | "b";
+let phase: Phase = "a";
+export function next(): void {
+  phase = "b";
 }
-`;
+export function back(): void {
+  phase = "a";
+}
+export function read(): Phase {
+  return phase;
+}
+`);
 
-  test("to-cleared-mission.json passes now and would have failed before", () => {
-    const path = "games/ember-command/proofs/flows/to-cleared-mission.json";
-    expect(oldRuleWouldFlag(path, FLOW)).toBe(true);
-    expect(engineSeams(path, FLOW)).toEqual([]);
+  test("to-cleared-mission.flow.ts passes, while the same source as a game module is flagged", () => {
+    expect(engineSeams("games/ember-command/src/game/missionPhase.ts", FLOW).map((seam) => seam.name)).toEqual(["state machine"]);
+    expect(engineSeams("games/ember-command/proofs/flows/to-cleared-mission.flow.ts", FLOW)).toEqual([]);
+    expect(oldRuleWouldFlag("games/ember-command/proofs/flows/to-cleared-mission.flow.ts", FLOW)).toBe(true);
   });
 
   test("no non-code file is engine-shaped, whatever it is called", () => {
     for (const path of [
-      "games/ember-command/proofs/flows/to-cleared-mission.json",
       "ember-command/src/systems/mission-director.json",
       "ember-command/docs/state-machine.md",
       "ember-command/src/game/damage-table.csv",
@@ -322,7 +324,9 @@ export function markRespawned(ctx: GameContext): void {
 describe("judging a branch's added files", () => {
   test("only the engine-shaped file is reported, with the seam named", async () => {
     const files = {
-      "games/ember-command/proofs/flows/to-cleared-mission.json": `{ "steps": [ { "assert": "(() => true)()" } ] }`,
+      "games/ember-command/proofs/flows/to-cleared-mission.flow.ts": `import { defineFlow } from "@jgengine/core/play/flow";
+export default defineFlow(null, { browser: true, async run(f) { await f.expectPage("true", "x"); } });
+`,
       "games/ember-command/src/game/campaignSession.ts": `import { useRunSession } from "@jgengine/react";\nexport const use = useRunSession;\n`,
       "games/ember-command/src/game/missionPhase.ts": pad(`export type Phase = "a" | "b";\nlet phase: Phase = "a";\nexport function next(): void {\n  phase = "b";\n}\nexport function back(): void {\n  phase = "a";\n}\nexport function read(): Phase {\n  return phase;\n}\n`),
       "games/shared/src/anything.ts": `export class SpawnDirector { private spawnBudget = 1; }\n`,

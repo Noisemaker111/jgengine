@@ -1,7 +1,7 @@
 import type { GameContext } from "@jgengine/core/runtime/gameContext";
 import { createHeadlessRunner, type HeadlessRunner } from "@jgengine/core/runtime/headlessRunner";
 import { resolveActivePrompt } from "@jgengine/core/interaction/proximityPrompt";
-import type { PlayableGame } from "@jgengine/shell/registry";
+import type { HeadlessPlayable } from "@jgengine/core/runtime/headlessRunner";
 
 import { dispatchBoundAction, RESERVED_INPUT_ACTIONS, shouldFireBoundAction } from "../input/boundActionDispatch";
 import { executeHotbarSlot, findHotbarSlotActions, hotbarIdFor } from "../input/hotbarActions";
@@ -43,7 +43,7 @@ export interface PlaySession {
  *
  * @capability play-session tick a real game headless the way the shell does, with held actions, prompts and hotbar
  */
-export function createPlaySession(playable: PlayableGame, options: PlaySessionOptions = {}): PlaySession {
+export function createPlaySession(playable: HeadlessPlayable, options: PlaySessionOptions = {}): PlaySession {
   const definition = playable.game;
   const dt = options.dt ?? 1 / 60;
   const userId = options.userId ?? "player";

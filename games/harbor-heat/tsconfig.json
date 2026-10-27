@@ -18,7 +18,8 @@
     ]
   },
   "include": [
-    "src"
+    "src",
+    "proofs"
   ],
   "exclude": [
     "src/**/*.test.ts"
