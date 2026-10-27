@@ -10,6 +10,7 @@ import { deflateSync } from "node:zlib";
 import { CAPTURE_HOLD_KEY } from "../packages/core/src/runtime/browserLifecycle.view";
 import {
   type CdpSession,
+  isShaderCompilerChatter,
   CAPTURE_HOLD_SOURCE,
   DEVICES,
   BrowserLaunchError,
@@ -1144,6 +1145,21 @@ describe("stray browser sweep", () => {
     } finally {
       rmSync(root, { recursive: true, force: true });
     }
+  });
+});
+
+describe("the page console a capture echoes", () => {
+  const log = "THREE.WebGLProgram: Program Info Log: (221,86-138): warning X4122: sum of 0.996094 and -2.98545e-017 cannot be represented accurately in double precision";
+
+  test("a compiled shader's driver warnings are chatter", () => {
+    expect(isShaderCompilerChatter(`${log}\n(220,39-65): warning X4122: sum of 1 and -1.49272e-017 cannot be represented accurately in double precision\n`)).toBe(true);
+  });
+
+  test("a shader error, any other warning, or an empty info log still prints", () => {
+    expect(isShaderCompilerChatter(`${log}\n(12,3): error X3004: undeclared identifier 'foo'`)).toBe(false);
+    expect(isShaderCompilerChatter("THREE.WebGLProgram: Shader Error 1282 - VALIDATE_STATUS false")).toBe(false);
+    expect(isShaderCompilerChatter("camera far plane is closer than the terrain")).toBe(false);
+    expect(isShaderCompilerChatter("THREE.WebGLProgram: Program Info Log:")).toBe(false);
   });
 });
 

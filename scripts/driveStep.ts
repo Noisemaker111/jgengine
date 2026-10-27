@@ -11,6 +11,7 @@ import { createBrowserFlow } from "./browserFlow";
 import { clearOriginStorage, installFrameCounter, pageFlowDriver, readProbe } from "./drivePage";
 import { closestHint } from "./closestMatch";
 import { STEP_PAGE_PARAM, isStepPage } from "./devBroker";
+import { detail } from "./verbosity";
 import { createFlowStepper, describeFlowReport, runFlowReport } from "../packages/core/src/play/flowSteps";
 import type { BrowserFlow } from "../packages/core/src/play/flow";
 import type { ProbeReadings } from "../packages/core/src/game/playableGame";
@@ -198,7 +199,7 @@ export async function runLiveSteps(options: LiveStepOptions): Promise<number> {
         await session.evaluate(`globalThis.__jgStepPage = true`);
         booted = true;
       }
-      console.error(booted
+      detail(booted
         ? `drive --step: booted the page in ${((performance.now() - started) / 1000).toFixed(1)}s; it keeps running for the next --step (--fresh boots it again)`
         : `drive --step: resumed the running page`);
 

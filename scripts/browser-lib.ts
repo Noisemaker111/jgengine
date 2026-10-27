@@ -2067,10 +2067,26 @@ export function forwardPageConsole(session: CdpSession, prefix: string): () => v
             : "",
       )
       .filter((part) => part.length > 0)
-      .join(" ")
-      .slice(0, 500);
-    if (text.length > 0) console.error(`${prefix} page ${level}: ${text}`);
+      .join(" ");
+    if (text.length === 0) return;
+    const line = `${prefix} page ${level}: ${text.slice(0, 500)}`;
+    if (isShaderCompilerChatter(text)) detail(line);
+    else console.error(line);
   });
+}
+
+const SHADER_INFO_LOG = "THREE.WebGLProgram: Program Info Log:";
+
+/**
+ * A shader that compiled, with only the GPU driver's own warnings in its info log (on Windows,
+ * Direct3D's `warning X4122: sum ... cannot be represented accurately`). It says nothing about the
+ * game and arrived in screenfuls on every capture, so it is kept for `--verbose`. A log with any
+ * error, and three.js's `Shader Error` report, still print.
+ */
+export function isShaderCompilerChatter(text: string): boolean {
+  if (!text.startsWith(SHADER_INFO_LOG) || /\berror\b/i.test(text)) return false;
+  const lines = text.slice(SHADER_INFO_LOG.length).split("\n").map((row) => row.trim()).filter((row) => row !== "");
+  return lines.length > 0 && lines.every((row) => /\bwarning X\d+:/.test(row));
 }
 
 const CAPTURE_SIGNAL_BINDING = "__jgCaptureSignal";
