@@ -1,7 +1,6 @@
 import { afterEach, beforeEach, describe, expect, test } from "bun:test";
 import { createHeadlessRunner } from "@jgengine/core/runtime/headlessRunner";
 import { game } from "../game.config";
-import { content } from "./content";
 import { DAY_LENGTH } from "./catalog";
 import { session } from "./session";
 import { BUILDABLES } from "./objects/catalog";
@@ -24,7 +23,7 @@ afterEach(() => {
   if (originalStorage) Object.defineProperty(globalThis, "localStorage", originalStorage);
   else Reflect.deleteProperty(globalThis, "localStorage");
 });
-const runner = () => createHeadlessRunner({ definition: game.game, content, loop: game.game.loop, maxStepSeconds: 1 });
+const runner = () => createHeadlessRunner({ game, maxStepSeconds: 1 });
 
 describe("park saves and real command boundaries", () => {
   test("the world store is the save: every store the park writes has a home", () => {

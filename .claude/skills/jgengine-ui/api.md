@@ -2265,7 +2265,7 @@
 ## @jgengine/shell/registry
 
 - `GameRegistry` (type): type GameRegistry = Record<string, () => Promise<PlayableGame>> — ⚠ undocumented
-- `PlayableGame` (type): type PlayableGame = PlayableGameContract< ComponentType, ComponentType, RenderEntity, RenderObject, ComponentType<ViewmodelProps>, ComponentType<WorldOverlayProps> > & { /** HUD theme the shell applies at the `GameUI` root. Unset uses `defaultHudTheme`; `false` opts out of the default theme and the … — The concrete React-bound playable a shell `defineGame` returns and `GameHost` mounts — the one PlayableGame games handle.
+- `PlayableGame` (type): type PlayableGame<TProbe extends ProbeReadings = ProbeReadings> = PlayableGameContract< ComponentType, ComponentType, RenderEntity, RenderObject, ComponentType<ViewmodelProps>, ComponentType<WorldOverlayProps>, TProbe > & { /** HUD theme the shell applies at the `GameUI` root. Unset uses `defaultHud… — The concrete React-bound playable a shell `defineGame` returns and `GameHost` mounts — the one PlayableGame games handle. `TProbe` is what the game's `capture.probe` returns, so a proof flow over `typeof game` names only real probes.
 - `RenderEntity` (type): type RenderEntity = (entity: SceneEntity) => ReactNode — ⚠ undocumented
 - `RenderObject` (type): type RenderObject = (object: SceneObject) => ReactNode — ⚠ undocumented
 - `resolveGameLoader` (function): function resolveGameLoader(registry: GameRegistry, gameId: string, fallbackGameId?: string): (() => Promise<PlayableGame>) | undefined — ⚠ undocumented

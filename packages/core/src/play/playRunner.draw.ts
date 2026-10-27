@@ -6,7 +6,6 @@ import type { Aim } from "@jgengine/core/scene/spatial";
 import { dispatchBoundAction, RESERVED_INPUT_ACTIONS, shouldFireBoundAction } from "../input/boundActionDispatch";
 import { executeHotbarSlot, findHotbarSlotActions, hotbarIdFor } from "../input/hotbarActions";
 import type { PlayableGame } from "@jgengine/shell/registry";
-import { shellDrivesPlayerPose } from "../movement/shellMovement";
 import {
   createPlayScript,
   PLAY_MOVE_ACTIONS,
@@ -124,16 +123,11 @@ export function runPlayScript(
 
   let clockMs = 0;
   const runner: HeadlessRunner = createHeadlessRunner({
-    definition,
-    content: playable.content,
-    loop: playable.loop,
+    game: playable,
     player: { userId: options.userId ?? "player", isNew: true },
     seed: script.seed,
     now: () => clockMs,
     maxStepSeconds: dt,
-    playerMovement: shellDrivesPlayerPose(definition.input),
-    movement: playable.movement,
-    collision: playable.collision,
   });
   const ctx = runner.ctx;
   const playerId = options.userId ?? "player";

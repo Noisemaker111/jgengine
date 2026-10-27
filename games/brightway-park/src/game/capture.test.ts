@@ -2,7 +2,6 @@ import { afterEach, beforeEach, describe, expect, test } from "bun:test";
 import { createHeadlessRunner, type HeadlessRunner } from "@jgengine/core/runtime/headlessRunner";
 
 import { game } from "../game.config";
-import { content } from "./content";
 import { guestCap } from "./catalog";
 import { session } from "./session";
 import { stagePark } from "./capture";
@@ -31,7 +30,7 @@ afterEach(() => {
 function boot(): HeadlessRunner {
   // A fresh boot has no park save to restore; a replayed state must not depend on the last run's.
   records.clear();
-  const runner = createHeadlessRunner({ definition: game.game, content, loop: game.game.loop, maxStepSeconds: 1 });
+  const runner = createHeadlessRunner({ game, maxStepSeconds: 1 });
   runner.ui.invoke("park.start");
   return runner;
 }

@@ -640,6 +640,7 @@
     "./movement/shellMovement",
     "./movement/solidObstacles",
     "./movement/steering",
+    "./movement/teleport",
     "./movement/voxelController",
     "./multiplayer",
     "./multiplayer/JoinGate.view",

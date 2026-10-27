@@ -1,5 +1,5 @@
 import type { ComponentType, ReactNode } from "react";
-import type { PlayableGameContract, WorldOverlayProps } from "@jgengine/core/game/playableGame";
+import type { PlayableGameContract, ProbeReadings, WorldOverlayProps } from "@jgengine/core/game/playableGame";
 import type { SceneEntity } from "@jgengine/core/scene/entityStore";
 import type { SceneObject } from "@jgengine/core/scene/objectStore";
 import type { HudTheme } from "@jgengine/core/hud/hudTheme.view";
@@ -10,14 +10,18 @@ import type { ViewmodelProps } from "@jgengine/core/camera/GameFirstPersonCamera
 export type RenderEntity = (entity: SceneEntity) => ReactNode;
 export type RenderObject = (object: SceneObject) => ReactNode;
 
-/** The concrete React-bound playable a shell `defineGame` returns and `GameHost` mounts — the one PlayableGame games handle. */
-export type PlayableGame = PlayableGameContract<
+/**
+ * The concrete React-bound playable a shell `defineGame` returns and `GameHost` mounts — the one PlayableGame games
+ * handle. `TProbe` is what the game's `capture.probe` returns, so a proof flow over `typeof game` names only real probes.
+ */
+export type PlayableGame<TProbe extends ProbeReadings = ProbeReadings> = PlayableGameContract<
   ComponentType,
   ComponentType,
   RenderEntity,
   RenderObject,
   ComponentType<ViewmodelProps>,
-  ComponentType<WorldOverlayProps>
+  ComponentType<WorldOverlayProps>,
+  TProbe
 > & {
   /** HUD theme the shell applies at the `GameUI` root. Unset uses `defaultHudTheme`; `false` opts out of the default theme and the engine's generic HUD control styling. A theme the game sets inside `GameUI` still wins. */
   hudTheme?: HudTheme | false;

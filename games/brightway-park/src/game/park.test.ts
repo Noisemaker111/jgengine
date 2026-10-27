@@ -2,7 +2,6 @@ import { afterEach, beforeEach, describe, expect, test } from "bun:test";
 import { createHeadlessRunner } from "@jgengine/core/runtime/headlessRunner";
 
 import { game } from "../game.config";
-import { content } from "./content";
 import { DAY_LENGTH } from "./catalog";
 import { BUILDABLES } from "./objects/catalog";
 import { cellFor, LOAN, park, parkMetrics, QUICK_REPAIR } from "./park";
@@ -28,7 +27,7 @@ afterEach(() => {
 
 /** A started park on the composed loop (the world system installed), its gates open mid-morning. */
 function openPark() {
-  const runner = createHeadlessRunner({ definition: game.game, content, loop: game.game.loop, maxStepSeconds: 1 });
+  const runner = createHeadlessRunner({ game, maxStepSeconds: 1 });
   runner.ui.invoke("park.start");
   runner.ctx.time.hydrate({ ...runner.ctx.time.snapshot(), now: DAY_LENGTH * 0.3, paused: false });
   return { runner, w: park.of(runner.ctx) };

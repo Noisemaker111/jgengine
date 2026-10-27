@@ -15,7 +15,7 @@ import { restartDefense } from "./world/setup";
  * Pacing checks: a scripted defense played headless, start to finish, against the real director,
  * towers and economy. They pin the shape of the difficulty curve rather than exact numbers: doing
  * nothing loses, one kind of tower spammed loses to the raiders it can't answer, and a sensible
- * mixed keep holds on Knight without finishing with a fortune it never had to spend.
+ * mixed keep holds on Knight without sitting on gold it could have spent.
  * `BEACON_TRACE=1` prints each wave's walls, purse and towers, and every raider that broke through.
  */
 
@@ -36,7 +36,8 @@ interface Outcome {
   held: boolean;
   wave: number;
   lives: number;
-  gold: number;
+  /** The most gold left in the purse right after the keep went shopping: money it sat on rather than spent. */
+  hoard: number;
   towers: number;
 }
 
@@ -91,6 +92,7 @@ function playDefense(plan: Plan, difficulty: DifficultyId = "knight"): Outcome {
   const built = { next: 0 };
   runner.ui.invoke("wave.send", {});
   let spendIn = 0;
+  let hoard = 0;
   let lastWave = 0;
   const trace: string[] = [];
   for (let t = 0; t < 1500 && !runEnded(keep.of(runner.ctx)); t += DT) {
@@ -112,6 +114,7 @@ function playDefense(plan: Plan, difficulty: DifficultyId = "knight"): Outcome {
     spendIn -= DT;
     if (spendIn <= 0) {
       spend(runner, plan, built);
+      hoard = Math.max(hoard, keep.of(runner.ctx).num("keep.gold"));
       if (plan.rites === true) useRites(runner);
       spendIn = 1;
     }
@@ -122,7 +125,7 @@ function playDefense(plan: Plan, difficulty: DifficultyId = "knight"): Outcome {
     held: world.fact("keep.held") === true,
     wave: session.encounter.view().wave,
     lives: world.num("keep.lives"),
-    gold: world.num("keep.gold"),
+    hoard,
     towers: world.instances().length,
   };
 }
@@ -147,7 +150,7 @@ describe("pacing", () => {
     const outcome = playDefense(MIXED);
     expect(outcome.held).toBe(true);
     expect(outcome.lives).toBeLessThan(20);
-    expect(outcome.gold).toBeLessThan(300);
+    expect(outcome.hoard).toBeLessThan(300);
   });
 
   test("cannons alone can't answer the wraiths", () => {

@@ -8,7 +8,6 @@
  */
 import { createHeadlessRunner } from "@jgengine/core/runtime/headlessRunner";
 import { game } from "../src/game.config";
-import { content } from "../src/game/content";
 import { BUILDABLES, BUILD_IDS } from "../src/game/objects/catalog";
 import { LOT, park } from "../src/game/park";
 import { session } from "../src/game/session";
@@ -22,7 +21,7 @@ Object.defineProperty(globalThis, "localStorage", { configurable: true, value: {
 } });
 
 const minutes = Number(process.argv[2] ?? 30);
-const runner = createHeadlessRunner({ definition: game.game, content, loop: game.game.loop, maxStepSeconds: 1 });
+const runner = createHeadlessRunner({ game, maxStepSeconds: 1 });
 runner.ui.invoke("park.start");
 const w = park.of(runner.ctx);
 const buildable = BUILD_IDS.filter((id) => BUILDABLES[id]!.category === "ride" || BUILDABLES[id]!.category === "stall");
