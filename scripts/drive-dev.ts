@@ -82,6 +82,7 @@ import { framesFromTimeline, thinFrames, type TimedPng } from "./apng";
 import { assembleGif } from "./gif";
 import { assembleMp4 } from "./video";
 import { driveShotPath, shotsDir } from "./shotPath";
+import { detail, takeVerboseFlag } from "./verbosity";
 
 type Step = CaptureStep;
 
@@ -207,6 +208,8 @@ Live steps (try a flow call before writing it into the flow):
   keys or text; a misspelt f.call names the closest calls.
 
 Notes:
+  Output is the result, its warnings and any failure in full; --verbose adds the progress,
+  reuse and timing lines.
   --probe before and after a --key hold proves movement by RPC on a low-fps headless page.
   --record runs LOCKSTEP: game time advances one tick per captured frame, so choreograph
   8-15s of game time. --reuse-storage needs a live daemon or --connect.
@@ -230,7 +233,7 @@ Engine:
 Warm capture (started for you; no lane starts the daemon by hand):
   bun run drive <game> --click START --shot before      # reuses or starts the daemon
   --cold skips the daemon entirely: fresh Chrome and Vite, for evidence runs that
-  must prove a clean boot. Each run prints which happened and how long it took:
+  must prove a clean boot. --verbose prints which happened and how long it took:
     warm: reused :9261 (0.2s)      cold: started :9261 (4.1s)
   bun run drive <game> --click START --shot after --connect <port> --quick
 `;
@@ -553,7 +556,7 @@ async function screenshot(
   if (replacement !== null) console.error(`drive: ${replacement}`);
 }
 
-const live = splitStepFlags(process.argv.slice(2));
+const live = splitStepFlags(takeVerboseFlag(process.argv.slice(2)));
 const args = parseArgs(live.argv);
 if (args.help) {
   console.log(HELP);
@@ -742,7 +745,7 @@ async function driveSession(daemon: ShootDaemonState | null): Promise<number> {
           if (typeof applied !== "string" || applied.length === 0) {
             throw new Error(`--look ${args.look} never reached the camera — the runner reported no applied aim`);
           }
-          console.error(`drive: look applied ${applied}`);
+          detail(`drive: look applied ${applied}`);
         }
         await new Promise((r) => setTimeout(r, 500));
         await installFrameCounter(session);
@@ -1006,7 +1009,7 @@ async function driveSession(daemon: ShootDaemonState | null): Promise<number> {
         }
         if (args.quick) {
           const shotProfile = captureProfile(args.device, args.size, viewport);
-          console.error(
+          detail(
             quickTimingLine("drive", {
               seconds: (performance.now() - startedAt) / 1_000,
               width: Math.round(shotProfile.width * shotProfile.deviceScaleFactor),
