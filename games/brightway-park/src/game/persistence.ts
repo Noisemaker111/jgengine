@@ -235,7 +235,7 @@ export function savePark(ctx: GameContext): void {
   }
 }
 
-/** Put a decoded save into a park that `resetPark(ctx, { seed: false })` just emptied. */
+/** Put a decoded save into a park that `resetPark(ctx, { layout: "blank" })` just emptied. */
 export function applySave(ctx: GameContext, s: ParkSave): void {
   parkProfile.name = s.parkName ?? null;
   parkProfile.thumbnail = s.thumbnail ?? null;

@@ -17,7 +17,7 @@ export function disposeWorld(ctx: GameContext): void {
 export { seedPlacements, type SeedPlacement } from "../parkReset";
 
 export function setupWorld(ctx: GameContext): void {
-  resetPark(ctx, { seed: false });
+  resetPark(ctx, { layout: "blank" });
   registerBuildCommands(ctx);
   if (!restorePark(ctx)) {
     // No save, or one from an older build: a new park, keeping the line that says why.

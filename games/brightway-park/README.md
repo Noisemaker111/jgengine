@@ -9,8 +9,11 @@ rating climbing, and keep the crew on the breakdowns. Runs on engine source; sta
 
 Read from `src/game/{park,catalog,objects,sim,scenarios,milestones,rides}`; the park is one declaration in `park.ts`. Numbers are what the build does now.
 
-- **Core loop.** $10,000 in the till and $10,000 owed to the bank at 0.8% a day, a 150-second day
-  starting at 09:00. Guests arrive through the gate while it is open, pay the entry fee (default $8;
+- **Core loop.** A new park is an empty lot with a two-tile plaza inside a shut gate, $10,000 in the
+  till and $10,000 owed to the bank at 0.8% a day, a 150-second day starting at 09:00. The player
+  lays a path, builds and connects a ride, then opens the gate (it refuses with no ride running).
+  Guests trickle in (about four a minute with one ride, more with rating and appeal) while the gate
+  is open and the park is in its hours, pay the entry fee (default $8;
   the more the park is worth, the more they will pay), then pick a ride or a stall by need, mood, the
   wait they can see and the price. Upkeep and wages run by the second; each midnight restocks the
   stalls (paid per item sold) and takes the loan's interest.

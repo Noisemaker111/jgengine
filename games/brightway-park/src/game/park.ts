@@ -156,6 +156,21 @@ function stallActions(def: BuildableDef): Record<string, WorldActionDecl> {
 
 const kinds: Record<string, WorldKindDecl> = {};
 const actions: Record<string, WorldActionDecl> = {
+  // The gate is the player's: shut on a new lot, opened once a ride runs. Guests come only through it.
+  open_gate: {
+    label: "Open the gate",
+    when: { "park.gate": false, "park.rides_open": { atLeast: 1 } },
+    refuse: "Open a ride first: build one and connect it to the paths",
+    world: { "park.gate": true },
+    note: "The gate is open: the first guests are on their way",
+  },
+  close_gate: {
+    label: "Close the gate",
+    when: { "park.gate": true },
+    refuse: "The gate is already shut",
+    world: { "park.gate": false },
+    note: "The gate is shut: no new guests until it opens again",
+  },
   ticket_up: { label: "Raise the entry ticket", world: { "park.ticket": 1 } },
   ticket_down: { label: "Lower the entry ticket", world: { "park.ticket": -1 } },
   take_loan: {
@@ -264,6 +279,8 @@ export const park = defineGameSpec({
           upkeep_yesterday: 0,
           breakdowns: 0,
           day: 1,
+          // The player's gate: guests come in only while it is open and the park is in its hours (`open`).
+          gate: false,
           open: false,
           loan_owed: { value: LOAN.start, min: 0 },
           bankrupt_days: 0,
