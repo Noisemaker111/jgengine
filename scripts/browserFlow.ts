@@ -7,6 +7,7 @@
 import type { ProbeReadings } from "../packages/core/src/game/playableGame";
 import { FLOW_AIM_TOLERANCE_PX, FLOW_PRESS_MS, FLOW_WAIT_MS, flowKeyList, type BrowserFlow, type FlowCommandResult, type FlowKeys, type ProbeCheck } from "../packages/core/src/play/flow";
 import type { FlowStepper } from "../packages/core/src/play/flowSteps";
+import { closestHint } from "./closestMatch";
 
 /** What the page answers through the agent bridge: `ok` plus the verb's fields, or an error. */
 export type BridgeAnswer = { ok: true; [key: string]: unknown } | { ok: false; error: string };
@@ -46,6 +47,35 @@ function describeCheck(check: { toString(): string }): string {
 
 function keysLabel(keys: FlowKeys): string {
   return flowKeyList(keys).join("+");
+}
+
+/**
+ * Name the probe keys a check reads that the readings do not have, with the closest real keys, so
+ * a misspelt key in an untyped `--step` check says what it meant instead of only "not true".
+ */
+export function probeKeyHint(check: { toString(): string }, readings: ProbeReadings | null): string {
+  if (readings === null) return "";
+  const source = check.toString();
+  const param = /^\s*(?:async\s+)?(?:function\s*\w*\s*)?\(?\s*([A-Za-z_$][\w$]*)\s*[,)=]/.exec(source)?.[1];
+  if (param === undefined) return "";
+  const keys = Object.keys(readings);
+  const read = new Set<string>();
+  for (const match of source.matchAll(new RegExp(`(?<![\\w$.])${param.replace(/\$/g, "\\$")}\\.([A-Za-z_$][\\w$]*)`, "g"))) {
+    if (match[1] !== undefined) read.add(match[1]);
+  }
+  const missing = [...read].filter((key) => !keys.includes(key));
+  return missing
+    .map((key) => {
+      const close = closestHint(key, keys, "keys");
+      return `; the probe has no "${key}"${close === "" ? `; its keys: ${keys.slice(0, 12).join(", ")}` : close}`;
+    })
+    .join("");
+}
+
+/** The visible text lines closest to what `see` looked for. */
+function seeHint(wanted: string | RegExp, body: unknown): string {
+  if (typeof wanted !== "string" || typeof body !== "string") return "";
+  return closestHint(wanted, body.split("\n"), "text on the page");
 }
 
 function sameValue(actual: unknown, expected: unknown): boolean {
@@ -115,13 +145,17 @@ export function createBrowserFlow(driver: BrowserFlowDriver, stepper: FlowSteppe
     waitFor: (check: ProbeCheck<ProbeReadings>, options = {}) =>
       stepper.run(`wait for ${options.note ?? describeCheck(check)}`, async () => {
         // A page still booting has no probe yet: that is "not yet", not a failure.
-        const readings = await waitUntil(() => driver.readProbe(), (value) => value !== null && check(value), options.timeoutMs ?? FLOW_WAIT_MS, options.note ?? describeCheck(check));
-        return readings ?? probe();
+        try {
+          const readings = await waitUntil(() => driver.readProbe(), (value) => value !== null && check(value), options.timeoutMs ?? FLOW_WAIT_MS, options.note ?? describeCheck(check));
+          return readings ?? probe();
+        } catch (error) {
+          throw new Error(`${error instanceof Error ? error.message : String(error)}${probeKeyHint(check, await driver.readProbe())}`);
+        }
       }),
     expect: (check, note) =>
       stepper.run(`expect ${note}`, async () => {
         const readings = await probe();
-        if (!check(readings)) throw new Error(`expected ${note}: ${describeCheck(check)} was false`);
+        if (!check(readings)) throw new Error(`expected ${note}: ${describeCheck(check)} was false${probeKeyHint(check, readings)}`);
         return readings;
       }),
     probe,
@@ -140,7 +174,13 @@ export function createBrowserFlow(driver: BrowserFlowDriver, stepper: FlowSteppe
     see: (text, options = {}) =>
       stepper.run(`see ${String(text)}`, async () => {
         const matches = (body: unknown) => typeof body === "string" && (typeof text === "string" ? body.includes(text) : text.test(body));
-        await waitUntil(() => driver.evaluate("document.body.innerText"), matches, options.timeoutMs ?? FLOW_WAIT_MS, options.note ?? `page text shows ${String(text)}`);
+        try {
+          await waitUntil(() => driver.evaluate("document.body.innerText"), matches, options.timeoutMs ?? FLOW_WAIT_MS, options.note ?? `page text shows ${String(text)}`);
+        } catch (error) {
+          const message = error instanceof Error ? error.message : String(error);
+          // The last value is the whole page text; the closest lines say more than the dump.
+          throw new Error(`${message.replace(/ \(last value [\s\S]*\)$/, "")}${seeHint(text, await driver.evaluate("document.body.innerText"))}`);
+        }
       }),
     page: (expression) => stepper.run(`page ${expression}`, () => page(expression)),
     waitForPage: (expression, options = {}) =>

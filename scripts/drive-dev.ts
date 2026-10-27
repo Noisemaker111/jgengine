@@ -62,24 +62,22 @@ import {
   quickTimingLine,
   splitQuickFlag,
 } from "./capture-preset";
-import { driveInputPointExpr } from "../packages/jgengine/src/templates/driveInput";
 import { CAPTURE_FLAGS, captureFlagHelp, parseCaptureArgs, parseGraphicsTier, stepDurationMs, type CaptureStep, type GraphicsTier } from "../packages/jgengine/src/templates/captureArgs";
-import { awaitGameView, holdDriveInput, sendDriveChord, type DriveHoldUntil, type DriveInputDeps, type DriveSession } from "../packages/jgengine/src/templates/driveSteps";
-import { driveProjectDir, flowFileOf, flowsDirOf, listFlowNames, loadFlow, missingFlowsMessage } from "./driveFlows";
+import { awaitGameView, sendDriveChord } from "../packages/jgengine/src/templates/driveSteps";
+import { driveProjectDir, flowsDirOf, listFlowNames, loadFlow, missingFlowsMessage } from "./driveFlows";
 import { runDriveSteps, type DriveStepRecord } from "./driveRun";
-import { createBrowserFlow, type BridgeAnswer, type BrowserFlowDriver } from "./browserFlow";
-import { acquireDrivePointerLock, aimDriveAt, lookDrivePointer, moveDrivePointer, type DrivePoint } from "./driveAim";
+import { createBrowserFlow } from "./browserFlow";
+import { runLiveSteps, splitStepFlags } from "./driveStep";
+import { clearOriginStorage, clickText, driveDeps, fillField, focusSurface, holdKey, installFrameCounter, pageFlowDriver, readFrames, readProbe, rpc } from "./drivePage";
 import { createFlowStepper, describeFlowReport, runFlowReport, type FlowRunReport } from "../packages/core/src/play/flowSteps";
 import { runFlowHeadless } from "../packages/core/src/play/headlessFlow.draw";
 import type { ProofFlow } from "../packages/core/src/play/flow";
-import { gameSurfaceCenter, mouseButtonForCode } from "../packages/jgengine/src/templates/gameSurfaceFocus";
 import { dispatchClickAt, parseClickAt } from "../packages/jgengine/src/clickInput";
 import { decodePng } from "../packages/assets/src/imageCodec";
 import { engineRecord, resolveEngineIdentity, type EngineRecord } from "./engineIdentity";
 import { shotSignature } from "./shot-metrics";
 import { buildShotRecord, clearShotTarget, describeReplacement, writeShotRecord, type PreviousShot } from "./shotProvenance";
 import { classifyRenderCadence, summarizePlaytest, type ProbeSample } from "./playtest";
-import { focusGameSurface, holdComplete } from "./gameSurfaceFocus";
 import { framesFromTimeline, thinFrames, type TimedPng } from "./apng";
 import { assembleGif } from "./gif";
 import { assembleMp4 } from "./video";
@@ -195,6 +193,18 @@ Flows:
   moveMouse, look, aimAt, fill, see, page, waitForPage, expectPage, reload and rpc. state: "<name>" boots a capture.states entry.
   A passing run prints one line; a failing one prints the step, what it expected, the probe
   readings at that moment and the steps before it.
+
+Live steps (try a flow call before writing it into the flow):
+  bun run drive ember-command --step 'f.click("Pause battle")'
+  bun run drive ember-command --step 'f.see("Paused")' --step 'f.probe()'
+  bun run drive ember-command --fresh --step 'f.waitFor((p) => p.wave >= 1)'
+
+  --step runs one browser-flow call (or statements using f) on a page of the game that stays
+  running in the warm browser, so the next --step carries on from where this one left it and
+  answers in seconds. Repeat --step to run several in order on one page; the first failure stops
+  them. --fresh boots the page again (also --state, --param and the other page options start a
+  new page). A failed click, probe check or page-text check names the closest controls, probe
+  keys or text; a misspelt f.call names the closest calls.
 
 Notes:
   --probe before and after a --key hold proves movement by RPC on a low-fps headless page.
@@ -363,169 +373,6 @@ function parseArgs(argv: string[]): Args {  // `--headed` is parsed here, not in
   return args;
 }
 
-const SETTLE_EPSILON_PX = 0.5;
-const SETTLE_SAMPLES = 3;
-const SETTLE_INTERVAL_MS = 100;
-// Match the portable drive: software GL can queue each DOM sample behind a
-// multi-second rendered frame, even when the control is already actionable.
-const SETTLE_TIMEOUT_MS = 45_000;
-const SETTLE_MAX_SAMPLES = 10;
-
-async function findClickPoint(session: CdpSession, text: string, input = false): Promise<{ x: number; y: number }> {
-  const deadline = Date.now() + SETTLE_TIMEOUT_MS;
-  let last: { x: number; y: number } | null = null;
-  let stableRuns = 0;
-  for (let samples = 0; samples < SETTLE_MAX_SAMPLES && Date.now() < deadline; samples += 1) {
-    let timer: ReturnType<typeof setTimeout> | undefined;
-    const point = (await Promise.race([
-      session.evaluate<{ x: number; y: number } | null>(driveInputPointExpr(text, input)),
-      new Promise<null>((resolve) => { timer = setTimeout(() => resolve(null), Math.max(1, deadline - Date.now())); }),
-    ]).finally(() => { if (timer !== undefined) clearTimeout(timer); })) ?? null;
-    if (Date.now() >= deadline) break;
-    const moved = point !== null && last !== null &&
-      (Math.abs(point.x - last.x) > SETTLE_EPSILON_PX || Math.abs(point.y - last.y) > SETTLE_EPSILON_PX);
-    if (point !== null && last !== null && !moved) {
-      stableRuns += 1;
-      if (stableRuns >= SETTLE_SAMPLES - 1) return point;
-    } else stableRuns = 0;
-    last = point;
-    await new Promise((r) => setTimeout(r, Math.min(deadline - Date.now(), point === null || moved ? 1_000 : SETTLE_INTERVAL_MS)));
-  }
-  throw new Error(`drive: no settled actionable element matching "${text}"`);
-}
-
-async function click(session: CdpSession, text: string, count = 1, input = false): Promise<void> {
-  await session.send("Page.bringToFront");
-  const point = await findClickPoint(session, text, input);
-  for (let clickCount = 1; clickCount <= count; clickCount += 1) {
-    for (const type of ["mousePressed", "mouseReleased"] as const) {
-      await session.send("Input.dispatchMouseEvent", { type, x: point.x, y: point.y, button: "left", clickCount });
-    }
-  }
-}
-
-async function fill(session: CdpSession, label: string, value: string): Promise<void> {
-  await click(session, label, 1, true);
-  if (!await session.evaluate<boolean>(driveInputPointExpr(label, true, true))) {
-    throw new Error(`drive: text field "${label}" did not receive focus`);
-  }
-  await session.send("Input.dispatchKeyEvent", { type: "keyDown", key: "a", code: "KeyA", modifiers: 2, commands: ["selectAll"] });
-  await session.send("Input.dispatchKeyEvent", { type: "keyUp", key: "a", code: "KeyA", modifiers: 2 });
-  await session.send("Input.dispatchKeyEvent", { type: "keyDown", key: "Backspace", code: "Backspace", windowsVirtualKeyCode: 8 });
-  await session.send("Input.dispatchKeyEvent", { type: "keyUp", key: "Backspace", code: "Backspace", windowsVirtualKeyCode: 8 });
-  if (value) await session.send("Input.insertText", { text: value });
-  await session.send("Input.dispatchKeyEvent", { type: "keyDown", key: "Tab", code: "Tab", windowsVirtualKeyCode: 9 });
-  await session.send("Input.dispatchKeyEvent", { type: "keyUp", key: "Tab", code: "Tab", windowsVirtualKeyCode: 9 });
-}
-
-/**
- * Focus the game's key-input surface so CDP keys reach the play-mode handler
- * (a React `onKeyDown` on the `tabIndex` wrapper) instead of `document.body`.
- * Serialises {@link focusGameSurface} into the page. Returns whether a surface
- * became the active element.
- */
-async function focusSurface(session: CdpSession): Promise<boolean> {
-  await session.send("Page.bringToFront");
-  const expression = `(${focusGameSurface.toString()})(document)`;
-  return (await session.evaluate<boolean>(expression)) ?? false;
-}
-
-/** Install a standalone rAF counter so the hold loop can tell when the page
- * actually rendered a frame (one simulation step) under the held key. */
-async function installFrameCounter(session: CdpSession): Promise<void> {
-  await session.evaluate(`(() => {
-    if (globalThis.__jgFrames !== undefined) return;
-    globalThis.__jgFrames = 0;
-    const tick = () => { globalThis.__jgFrames++; requestAnimationFrame(tick); };
-    requestAnimationFrame(tick);
-  })()`);
-}
-
-async function readFrames(session: CdpSession): Promise<number> {
-  return (await session.evaluate<number>(`globalThis.__jgFrames ?? 0`)) ?? 0;
-}
-
-const driveDeps = {
-  focusGameSurface, holdComplete, mouseButtonForCode, gameSurfaceCenter,
-  sleep: (ms: number) => new Promise<void>((r) => setTimeout(r, ms)),
-  now: () => Date.now(),
-} as unknown as DriveInputDeps;
-
-/** Shared with the portable drive.mjs: key, chord or mouse hold that waits for a rendered frame. */
-function holdKey(session: CdpSession, chord: string, holdMs: number, until?: DriveHoldUntil): Promise<void> {
-  return holdDriveInput(session as unknown as DriveSession, chord, holdMs, driveDeps, until);
-}
-
-async function rpc(session: CdpSession, json: string): Promise<void> {
-  JSON.parse(json);
-  const value = await session.evaluate<string>(
-    `(async () => {
-      const host = globalThis.__jgengineAgent ?? globalThis.__jgengineEditorHost;
-      if (host === undefined) return JSON.stringify({ ok: false, error: "no agent bridge or editor host on this page" });
-      return JSON.stringify(await host.handle(${json}));
-    })()`,
-    { awaitPromise: true },
-  );
-  console.log(value ?? JSON.stringify({ ok: false, error: "rpc evaluation returned nothing" }));
-}
-
-/** Call the page's agent bridge and return its answer; a page with no bridge answers `ok: false`. */
-async function bridge(session: CdpSession, request: { method: string } & Record<string, unknown>): Promise<BridgeAnswer> {
-  const raw = await session.evaluate<string>(
-    `(async () => {
-      const host = globalThis.__jgengineAgent;
-      if (host === undefined) return JSON.stringify({ ok: false, error: "no agent bridge on this page" });
-      return JSON.stringify(await host.handle(${JSON.stringify(request)}));
-    })()`,
-    { awaitPromise: true },
-  );
-  const answer: unknown = typeof raw === "string" ? JSON.parse(raw) : null;
-  if (typeof answer !== "object" || answer === null || !("ok" in answer)) return { ok: false, error: "the agent bridge returned nothing" };
-  if (answer.ok === true) return { ...answer, ok: true };
-  return { ok: false, error: "error" in answer && typeof answer.error === "string" ? answer.error : "the agent bridge refused" };
-}
-
-async function readProbe(session: CdpSession): Promise<Record<string, number> | null> {
-  const value = await session.evaluate<Record<string, number> | null>(`(() => {
-      const probe = globalThis.__jgProbe;
-      if (typeof probe !== "function") return null;
-      try {
-        const value = probe();
-        if (value === null || typeof value !== "object") return null;
-        const out = {};
-        for (const key of Object.keys(value)) {
-          const n = value[key];
-          if (typeof n === "number" && Number.isFinite(n)) out[key] = n;
-        }
-        return out;
-      } catch {
-        return null;
-      }
-    })()`);
-  return value ?? null;
-}
-
-/**
- * Clear localStorage / IndexedDB / origin storage for the capture target BEFORE
- * navigating to it, so a game that auto-restores a save boots clean instead of
- * resuming a prior drive's session off a warm/persistent Chrome profile (issue
- * #1505). `Storage.clearDataForOrigin` takes an explicit origin, so it works
- * from the initial `about:blank` page without a round-trip navigation. Best
- * effort: a Chrome build that lacks the verb must not abort the drive.
- */
-async function clearOriginStorage(session: CdpSession, origin: string): Promise<void> {
-  try {
-    await session.send("Storage.clearDataForOrigin", {
-      origin,
-      storageTypes: "local_storage,indexeddb,websql,cache_storage,service_workers",
-    });
-  } catch (error) {
-    console.error(
-      `drive: could not clear ${origin} storage before capture (${error instanceof Error ? error.message : error}) — a restored save may corrupt the probe; pass --reuse-storage to silence`,
-    );
-  }
-}
-
 /**
  * Read the page's live WebGL renderer string and classify it as software GL.
  * Cloud containers run headless Chrome on SwiftShader/ANGLE-software at a tiny
@@ -676,7 +523,7 @@ async function screenshot(
   viewport: ViewportOverride,
   settleWindowMs: number,
 ): Promise<void> {
-  await awaitGameView(session as unknown as DriveSession, settleWindowMs, driveDeps);
+  await awaitGameView(session, settleWindowMs, driveDeps);
   const profile = captureProfile(device, size, viewport);
   const { region } = await readCapturePageState(session);
   const editor = await session.evaluate<boolean>(`document.documentElement.dataset.jgEditor === "1"`);
@@ -706,7 +553,8 @@ async function screenshot(
   if (replacement !== null) console.error(`drive: ${replacement}`);
 }
 
-const args = parseArgs(process.argv.slice(2));
+const live = splitStepFlags(process.argv.slice(2));
+const args = parseArgs(live.argv);
 if (args.help) {
   console.log(HELP);
   process.exit(0);
@@ -762,6 +610,37 @@ sweepCaptureProfiles();
 // A game captured from this checkout pulls the packs it references first, the way its own `dev` does,
 // so a missing model in the shot is a real path bug rather than an unprovisioned checkout.
 if (args.url === undefined && args.site === undefined) await provisionCapturedGame(args.gameDir ?? resolve(import.meta.dir, "../games", args.game));
+
+if (live.steps.length > 0) {
+  const stepFlags = args.steps.filter((step) => !(step.kind === "shot" && step.name === "drive" && step.out === undefined));
+  if (flow !== null || stepFlags.length > 0 || args.record !== undefined || args.playtest) {
+    console.error("drive: --step runs flow calls on the live page; drop --flow, --record, --playtest and the step flags");
+    process.exit(1);
+  }
+  if (args.url !== undefined || args.site !== undefined || args.connect !== undefined || args.cold || args.headed) {
+    console.error("drive: --step runs on a game in the warm browser; drop --url, --site, --connect, --cold and --headed");
+    process.exit(1);
+  }
+  const stepViewport: ViewportOverride = { width: args.width, height: args.height };
+  process.exit(await runLiveSteps({
+    steps: live.steps,
+    fresh: live.fresh,
+    targetUrl,
+    device: args.device,
+    size: args.size,
+    viewport: stepViewport,
+    timeoutMs: args.timeoutMs,
+    reuseStorage: args.reuseStorage,
+    async shot(session, name) {
+      const path = driveShotPath(shotsDir(join(import.meta.dir, "..")), args.game, name);
+      mkdirSync(dirname(path), { recursive: true });
+      await screenshot(session, path, args.size, args.device, true, clearShotTarget(path), stepViewport, args.quick ? QUICK_DRIVE_WINDOW_MS : 60_000);
+    },
+  }).catch((error: unknown) => {
+    console.error(error instanceof Error ? error.message : String(error));
+    return 1;
+  }));
+}
 const startedAt = performance.now();
 
 const outDir = resolve(import.meta.dir, "../shots");
@@ -785,6 +664,27 @@ const clickPoints = new Map<CaptureStep, { x: number; y: number }>();
   }
 }
 if (args.port !== undefined) process.env["JG_DEV_PORT"] = String(args.port);
+
+/** The page a run opens on the dev server at `base`: the game, mode and every option the page reads. */
+function targetUrl(base: string): URL {
+  const url = applyCaptureQuality(driveTargetUrl(args, base), args.quality);
+  url.searchParams.set("capture", "1");
+  if (args.spawn !== undefined && args.spawn.length > 0) url.searchParams.set("spawn", args.spawn);
+  for (const [key, value] of args.params) url.searchParams.set(key, value);
+  if (args.view !== undefined) url.searchParams.set("view", args.view);
+  const state = args.state ?? flow?.state;
+  if (state !== undefined) url.searchParams.set("state", state);
+  if (args.run !== undefined) url.searchParams.set("run", args.run);
+  if (args.style !== undefined) url.searchParams.set("style", args.style);
+  if (args.settle !== undefined) url.searchParams.set("settle", String(args.settle));
+  const aim = parseLookAim(args.look, args.lookFrom, { withNamedView: args.view !== undefined });
+  if (aim !== undefined) {
+    for (const [key, value] of Object.entries(lookSearchParams(aim))) url.searchParams.set(key, value);
+  }
+  if (args.playtest) url.searchParams.set("seed", String(args.seed));
+  return url;
+}
+
 async function driveSession(daemon: ShootDaemonState | null): Promise<number> {
   requireReusableCaptureStorage(args.reuseStorage, args.connect !== undefined, daemon !== null);
   if (args.url !== undefined && !(await isUp(args.url))) {
@@ -828,21 +728,8 @@ async function driveSession(daemon: ShootDaemonState | null): Promise<number> {
         await session.send("Page.enable");
         await session.send("Runtime.enable");
         await applyDevice(session, args.device, args.size, viewport);
-        const url = applyCaptureQuality(driveTargetUrl(args, dev.base), args.quality);
-        url.searchParams.set("capture", "1");
-        if (args.spawn !== undefined && args.spawn.length > 0) url.searchParams.set("spawn", args.spawn);
-        for (const [key, value] of args.params) url.searchParams.set(key, value);
-        if (args.view !== undefined) url.searchParams.set("view", args.view);
-        const state = args.state ?? flow?.state;
-        if (state !== undefined) url.searchParams.set("state", state);
-        if (args.run !== undefined) url.searchParams.set("run", args.run);
-        if (args.style !== undefined) url.searchParams.set("style", args.style);
-        if (args.settle !== undefined) url.searchParams.set("settle", String(args.settle));
+        const url = targetUrl(dev.base);
         const aim = parseLookAim(args.look, args.lookFrom, { withNamedView: args.view !== undefined });
-        if (aim !== undefined) {
-          for (const [key, value] of Object.entries(lookSearchParams(aim))) url.searchParams.set(key, value);
-        }
-        if (args.playtest) url.searchParams.set("seed", String(args.seed));
         if (!args.reuseStorage) await clearOriginStorage(session, new URL(url.toString()).origin);
         markStep(`open ${url.pathname}${url.search}`);
         await navigateCapturePageWithRetry(session, url.toString(), dev.base, args.timeoutMs, 2, { legacyCanvas: args.url !== undefined });
@@ -922,63 +809,8 @@ async function driveSession(daemon: ShootDaemonState | null): Promise<number> {
           screenshot(session, path, args.size, args.device, args.record === undefined, previous, viewport, args.quick ? QUICK_DRIVE_WINDOW_MS : 60_000);
 
         if (flow !== null) {
-          const clock = recorder;
-          const sleep = (ms: number): Promise<void> => (clock === null ? new Promise<void>((r) => setTimeout(r, ms)) : clock.advance(ms));
-          const now = (): number => (clock === null ? Date.now() : clock.virtualNow);
-          let pointer: DrivePoint | null = null;
-          const driver: BrowserFlowDriver = {
-            async hold(chord, minMs, until) {
-              if (clock === null) return holdKey(session, chord, minMs, until);
-              // Lockstep hold: the virtual clock steps the sim under the key, so no frame-starvation grace is needed.
-              await focusSurface(session);
-              await sendDriveChord(session, chord, "keyDown");
-              try {
-                await clock.advance(minMs);
-                if (until !== undefined) {
-                  for (let held = 0; !(await until.check()); held += 100) {
-                    if (held >= until.timeoutMs) throw new Error(until.describe + ": not true after " + until.timeoutMs + "ms of virtual time holding " + chord);
-                    await clock.advance(100);
-                  }
-                }
-              } finally {
-                await sendDriveChord(session, chord, "keyUp");
-              }
-            },
-            async click(text, count) {
-              await click(session, text, count);
-              if (clock !== null) await clock.advance(300);
-            },
-            async clickAt(x, y, button) {
-              await session.send("Page.bringToFront");
-              await dispatchClickAt(session, { x, y }, button);
-              if (clock !== null) await clock.advance(300);
-            },
-            async moveMouse(x, y) {
-              await moveDrivePointer(session, { x, y });
-              pointer = { x, y };
-              if (clock !== null) await clock.advance(300);
-            },
-            async look(dx, dy) {
-              await acquireDrivePointerLock(session);
-              const turned = await lookDrivePointer(session, dx, dy);
-              if (clock !== null) await clock.advance(300);
-              return turned.movement;
-            },
-            async aimAt(expression, tolerancePx) {
-              // An unlocked page is aimed with the plain pointer, so a refused lock is not a failure here.
-              await acquireDrivePointerLock(session).catch(() => false);
-              const aimed = await aimDriveAt(session, pointer, expression, tolerancePx);
-              pointer = aimed.from;
-              if (clock !== null) await clock.advance(300);
-              return { point: aimed.point, moves: aimed.moves };
-            },
-            async fill(label, value) {
-              await fill(session, label, value);
-              if (clock !== null) await clock.advance(300);
-            },
-            evaluate: (expression) => session.evaluate(expression, { awaitPromise: true }),
-            bridge: (request) => bridge(session, request),
-            readProbe: () => readProbe(session),
+          const driver = pageFlowDriver(session, {
+            clock: recorder,
             async reload() {
               await navigateCapturePageWithRetry(session, url.toString(), dev.base, args.timeoutMs, 2, { legacyCanvas: args.url !== undefined });
               await installFrameCounter(session);
@@ -988,9 +820,7 @@ async function driveSession(daemon: ShootDaemonState | null): Promise<number> {
               mkdirSync(dirname(path), { recursive: true });
               await takeShot(path, clearShotTarget(path));
             },
-            sleep,
-            now,
-          };
+          });
           const stepper = createFlowStepper(() => readProbe(session));
           const reports: { label: string; probe: unknown }[] = [];
           const browserFlow = createBrowserFlow(driver, stepper, reports);
@@ -1019,11 +849,11 @@ async function driveSession(daemon: ShootDaemonState | null): Promise<number> {
               }),
           run: async (step) => {
             if (step.kind === "click" || step.kind === "double-click") {
-              await click(session, step.text, step.kind === "double-click" ? 2 : 1);
+              await clickText(session, step.text, step.kind === "double-click" ? 2 : 1);
               // Let the UI react on the virtual clock so the click's effect is in frame.
               if (recorder !== null) await recorder.advance(300);
             } else if (step.kind === "fill") {
-              await fill(session, step.label, step.value);
+              await fillField(session, step.label, step.value);
               if (recorder !== null) await recorder.advance(300);
             } else if (step.kind === "key") {
               if (recorder !== null) {
