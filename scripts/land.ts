@@ -457,7 +457,9 @@ export function commitLane(options: CommitOptions): LaneCommitOutcome {
 
   const dirty = runGit(["status", "--porcelain"]);
   if (dirty.status !== 0) return { kind: "failed", code: EXIT_COULD_NOT_MERGE, why: `git status failed: ${details(dirty)}` };
-  if (dirty.stdout.trim().length === 0) return { kind: "clean" };
+  const messages = (options.messages ?? []).filter((message) => message.trim().length > 0);
+  // A clean tree with -m lines still rewrites the note: a re-close is how a lane rewords its PR.
+  if (dirty.stdout.trim().length === 0 && messages.length === 0) return { kind: "clean" };
 
   const staged = runGit(["add", "-A"]);
   if (staged.status !== 0) return { kind: "failed", code: EXIT_COULD_NOT_MERGE, why: `git add failed: ${details(staged)}` };
@@ -493,7 +495,6 @@ export function commitLane(options: CommitOptions): LaneCommitOutcome {
   const candidates = new Set(changed.map((path) => basename(path)));
   const files = options.files ?? (() => fragmentFiles());
   const own = files().filter((file) => candidates.has(basename(file.path)));
-  const messages = (options.messages ?? []).filter((message) => message.trim().length > 0);
   let fragment = messages.length > 0 ? null : pickFragment(own, branch);
   let created = false;
 
@@ -536,6 +537,8 @@ export function commitLane(options: CommitOptions): LaneCommitOutcome {
     log(`wrote ${basename(path)} from ${messages.length > 0 ? "the -m messages" : "the branch's commit messages"}`);
   }
 
+  // The -m lines may say what the note already says: then there is nothing to commit.
+  if (runGit(["diff", "--cached", "--quiet"]).status === 0) return { kind: "clean" };
   const subject = fragmentSubject(fragment.text) || summary;
   const body = fragmentBody(fragment.text);
   const committed = runGit(body.length > 0 ? ["commit", "-m", subject, "-m", body] : ["commit", "-m", subject]);

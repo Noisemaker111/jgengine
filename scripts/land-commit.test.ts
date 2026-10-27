@@ -141,6 +141,22 @@ test("nothing to commit is not a failure: the tree is left alone", () => {
   expect(gitOk(work, ["log", "-1", "--format=%s"])).toBe("already done");
 });
 
+test("a re-close with new -m lines on a clean tree rewrites the note and commits it; the same lines again commit nothing", () => {
+  const { work } = originWithBeta();
+  gitOk(work, ["checkout", "-q", "-b", "agent/lane-x"]);
+  writeFileSync(join(work, "shared.txt"), "one\nwork\n");
+  expect(commitIn(work, [], ["First wording"]).kind).toBe("committed");
+  expect(gitOk(work, ["status", "--porcelain"])).toBe("");
+
+  const reworded = commitIn(work, [], ["Better wording"]);
+  expect(reworded.kind).toBe("committed");
+  expect(reworded.subject).toBe("Better wording");
+  expect(readFileSync(join(work, "changes", "agent-lane-x.md"), "utf8")).toContain("- Better wording");
+
+  expect(commitIn(work, [], ["Better wording"])).toEqual({ kind: "clean" });
+  expect(gitOk(work, ["log", "-1", "--format=%s"])).toBe("Better wording");
+});
+
 test("a fragment another lane left is not used; this branch writes its own from its own commits", () => {
   const { work } = originWithBeta();
   mkdirSync(join(work, "changes"), { recursive: true });
@@ -296,6 +312,8 @@ function scriptedGit(options: {
     if (joined.startsWith("diff --name-status --cached --diff-filter=A")) {
       return { status: 0, stdout: (options.added ?? []).map((path) => `A\t${path}\n`).join(""), stderr: "" };
     }
+    // Something is always staged by the time land asks: the scripted tree was dirty.
+    if (joined === "diff --cached --quiet") return { status: 1, stdout: "", stderr: "" };
     if (joined.startsWith("check-ignore")) return { status: 0, stdout: (options.ignored ?? []).map((path) => `${path}\n`).join(""), stderr: "" };
     if (joined.startsWith("rev-list")) return { status: 0, stdout: "0\n", stderr: "" };
     return { status: 0, stdout: "", stderr: "" };
