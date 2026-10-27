@@ -1,6 +1,6 @@
 ---
 name: create-game-jg
-description: Start a new JGengine game - agree its direction with the user, map every feature to the engine, write games/<id>/PLAN.md, then create and build it milestone by milestone. The one way to start a game or a big new feature.
+description: Start a new game or big feature - agree direction, write PLAN.md, build by milestones.
 ---
 
 # Create a game
