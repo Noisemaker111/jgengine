@@ -566,7 +566,8 @@ const COMPASS_TICKS: readonly { cardinal: Cardinal; bearing: number }[] = [
 export interface CompassProps {
   /** Facing yaw (`rotationY`, forward = `(sin yaw, cos yaw)`) of the tracked entity — pass it raw, never pre-converted to a bearing. */
   facingYaw: number;
-  center?: WorldXZ;
+  /** Where bearings to markers are measured from; unset while the tracked entity has no position. */
+  center?: WorldXZ | undefined;
   markers?: MarkerCollection;
   width?: number;
   fov?: number;

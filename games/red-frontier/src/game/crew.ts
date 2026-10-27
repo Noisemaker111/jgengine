@@ -169,9 +169,15 @@ export function order(ctx: GameContext, id: string, request: { gather: string } 
   }
 }
 
+/** What a colonist can be doing, as the HUD counts it. */
+export type Doing = "gather" | "fight" | "move" | "idle";
+
 /** What a colonist is doing, for the HUD: its active order's verb, or idle. */
-export function doing(ctx: GameContext, id: string): string {
-  return crew(ctx).hands.get(id)?.queue.active()?.kind ?? "idle";
+export function doing(ctx: GameContext, id: string): Doing {
+  const kind = crew(ctx).hands.get(id)?.queue.active()?.kind;
+  if (kind === undefined) return "idle";
+  if (kind === "gather" || kind === "fight" || kind === "move") return kind;
+  throw new Error(`colonist ${id} has an order of unknown kind "${kind}"`);
 }
 
 /** Every frame: each colonist's orders advance; a raider close by is fought, then work resumes. */

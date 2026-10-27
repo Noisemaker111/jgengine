@@ -295,6 +295,11 @@ export const STARTER_ENVIRONMENT = {
   fog: { color: "#cfe4f5", near: 90, far: 460 },
 } as const;
 
+/** The same sky in `sky()`'s own shape, for a game without the editor: the sun angles nest under `sun`. */
+const STARTER_SKY = (({ sunAzimuth, sunElevation, ...rest }) => ({ ...rest, sun: { azimuth: sunAzimuth, elevation: sunElevation } }))(
+  STARTER_ENVIRONMENT,
+);
+
 const editorSceneJson = `{
   "version": 1,
   "markers": [
@@ -509,7 +514,7 @@ export const world = environment({
     bounds: { w: 960, d: 960 },
 ${TERRAIN_TUNING}
   }),
-  sky: sky(${JSON.stringify(STARTER_ENVIRONMENT)}),
+  sky: sky(${JSON.stringify(STARTER_SKY)}),
 });
 `;
 

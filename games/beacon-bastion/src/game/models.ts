@@ -78,7 +78,7 @@ export const entityModels: Record<string, ModelConfig> = buildEntityModels();
 export const scatterModels: Record<string, string> = {};
 for (const id of [`${NATURE}/Pine_1`, `${NATURE}/Pine_2`, "nature/tree_pine"] as const) {
   if (assets.resolve(id) !== null) {
-    scatterModels.pine = id;
+    scatterModels["pine"] = id;
     break;
   }
 }

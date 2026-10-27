@@ -1,12 +1,11 @@
 import type { EditorDocument } from "@jgengine/core/editor/index";
+import { requireMetaText } from "@jgengine/core/editor/markerMeta";
 
 /**
  * Where things are comes from the authored scene (`editor.scene.json`, edited with F2+E), never from
  * coordinates in code: the base, the outposts and every guard post inside them.
  */
 type Marker = EditorDocument["markers"][number];
-
-const metaOf = (marker: Marker) => (marker.meta ?? {}) as Record<string, unknown>;
 
 export interface Spot {
   x: number;
@@ -28,7 +27,7 @@ export function outpostSpots(doc: EditorDocument): Map<string, Spot> {
   const out = new Map<string, Spot>();
   for (const marker of doc.markers) {
     if (marker.kind !== "outpost") continue;
-    out.set(String(metaOf(marker).outpost), { x: marker.position.x, z: marker.position.z });
+    out.set(requireMetaText(marker, "outpost"), { x: marker.position.x, z: marker.position.z });
   }
   return out;
 }
@@ -46,8 +45,8 @@ export function guardPosts(doc: EditorDocument): GuardPost[] {
     .filter((marker) => marker.kind === "guard")
     .map((marker) => ({
       id: marker.id,
-      outpost: String(metaOf(marker).outpost),
-      enemy: String(metaOf(marker).enemy),
+      outpost: requireMetaText(marker, "outpost"),
+      enemy: requireMetaText(marker, "enemy"),
       x: marker.position.x,
       z: marker.position.z,
       rotationY: marker.rotationY ?? 0,

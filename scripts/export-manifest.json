@@ -331,6 +331,7 @@
     "./editor/gridAdapters",
     "./editor/index",
     "./editor/liveSync",
+    "./editor/markerMeta",
     "./editor/materialAuthoring",
     "./editor/minimap",
     "./editor/modelNodeVisibility",

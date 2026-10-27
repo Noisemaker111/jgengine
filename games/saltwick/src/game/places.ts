@@ -1,4 +1,5 @@
 import type { EditorDocument } from "@jgengine/core/editor/index";
+import { metaNumber, requireMetaText } from "@jgengine/core/editor/markerMeta";
 
 /**
  * Where things are comes from the authored scene (`editor.scene.json`, edited with F2+E), never from
@@ -6,8 +7,6 @@ import type { EditorDocument } from "@jgengine/core/editor/index";
  * fishing spots on the shore, and where villagers and animals wander.
  */
 type Marker = EditorDocument["markers"][number];
-
-const metaOf = (marker: Marker) => (marker.meta ?? {}) as Record<string, unknown>;
 
 export interface Spot {
   id: string;
@@ -33,7 +32,7 @@ export const spawnSpot = (doc: EditorDocument) => one(doc, "player_spawn");
 export function plotSpots(doc: EditorDocument): (Spot & { index: number })[] {
   return doc.markers
     .filter((marker) => marker.kind === "plot")
-    .map((marker) => ({ ...spotOf(marker), index: Number(metaOf(marker).plot ?? 0) }))
+    .map((marker) => ({ ...spotOf(marker), index: metaNumber(marker, "plot", 0) }))
     .sort((a, b) => a.index - b.index);
 }
 
@@ -41,17 +40,17 @@ export const fishingSpots = (doc: EditorDocument): Spot[] => doc.markers.filter(
 
 /** Villagers stand at a `villager` marker naming them in `meta.villager`. */
 export function villagerSpots(doc: EditorDocument): (Spot & { villager: string })[] {
-  return doc.markers.filter((marker) => marker.kind === "villager").map((marker) => ({ ...spotOf(marker), villager: String(metaOf(marker).villager) }));
+  return doc.markers.filter((marker) => marker.kind === "villager").map((marker) => ({ ...spotOf(marker), villager: requireMetaText(marker, "villager") }));
 }
 
 /** Animals graze at `herd` markers; `meta.animal` is the index into `idea.animals`. */
 export function herdSpots(doc: EditorDocument): (Spot & { animal: number })[] {
-  return doc.markers.filter((marker) => marker.kind === "herd").map((marker) => ({ ...spotOf(marker), animal: Number(metaOf(marker).animal ?? 0) }));
+  return doc.markers.filter((marker) => marker.kind === "herd").map((marker) => ({ ...spotOf(marker), animal: metaNumber(marker, "animal", 0) }));
 }
 
 /** Signposts: E at one walks you down the road to the `sign` marker's `meta.to` place (a fishing spot, the market, the farm). */
 export function signSpots(doc: EditorDocument): (Spot & { to: string; label: string })[] {
-  return doc.markers.filter((marker) => marker.kind === "sign").map((marker) => ({ ...spotOf(marker), to: String(metaOf(marker).to), label: marker.label ?? "Signpost" }));
+  return doc.markers.filter((marker) => marker.kind === "sign").map((marker) => ({ ...spotOf(marker), to: requireMetaText(marker, "to"), label: marker.label ?? "Signpost" }));
 }
 
 /** Where a road ends: a marker by id, standing as it faces. */

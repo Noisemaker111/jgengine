@@ -10,7 +10,7 @@ import type { SoundDef } from "@jgengine/core/audio/audioFalloff";
  */
 const WORLD_FALLOFF = { minDistance: 8, maxDistance: 120, curve: "linear" } as const;
 
-export const BEACON_SOUNDS: Record<string, SoundDef> = {
+export const BEACON_SOUNDS = {
   // Tower chosen on the build bar: a short wooden tick.
   select: {
     id: "select",
@@ -141,4 +141,4 @@ export const BEACON_SOUNDS: Record<string, SoundDef> = {
       ],
     },
   },
-};
+} satisfies Record<string, SoundDef>;

@@ -31,7 +31,7 @@ export const game = defineGame({
   server: { mode: "defense" },
   content,
   // A refused build/upgrade reaches the player as a deny notice; its cue is the keep's own "denied" knock.
-  audio: { sounds: BEACON_SOUNDS, uiCues: { deny: BEACON_SOUNDS.denied! } },
+  audio: { sounds: BEACON_SOUNDS, uiCues: { deny: BEACON_SOUNDS.denied } },
   notices: { cap: 3 },
   // The keep's own theme: beacon-fire accent, soot timber surfaces, Cinzel and Alegreya Sans.
   hudTheme: beaconTheme,

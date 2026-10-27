@@ -229,12 +229,12 @@ export function useKitPresence(open: boolean, exitMs: number): { mounted: boolea
 export interface KitMaterialButtonProps extends KitFrameLook, Omit<ButtonHTMLAttributes<HTMLButtonElement>, "type" | "color"> {
   type?: "button" | "submit" | "reset";
   /** UI cue name for hover and activate sounds. Default `"confirm"`. */
-  cue?: string;
+  cue?: string | undefined;
   ref?: Ref<HTMLButtonElement>;
 }
 
 /** Props for {@link KitButton}: the kit's button, or a material one when `material` is set. */
-export type KitButtonHostProps = (KitButtonProps & { cue?: string; material?: undefined }) | KitMaterialButtonProps;
+export type KitButtonHostProps = (KitButtonProps & { cue?: string | undefined; material?: undefined }) | KitMaterialButtonProps;
 
 /**
  * The active kit's button. Hover, press and activate report to the nearest `HudInteractProvider`, so

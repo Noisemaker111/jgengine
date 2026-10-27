@@ -67,12 +67,12 @@ export interface KitVital {
 /** The current objective under a {@link KitVitals} card: who asks, what, and the one step. */
 export interface KitVitalsObjective {
   /** Stable id of the beat; a new id restarts the objective's idle hint. */
-  id?: string;
+  id?: string | undefined;
   /** Who gives it, drawn as the objective's label ("Mara", "The reeve asks"). */
   label: ReactNode;
   title: ReactNode;
   /** The one step to do now; unset draws the title alone. */
-  goal?: ReactNode;
+  goal?: ReactNode | undefined;
 }
 
 /** Props for {@link KitVitals}. */
