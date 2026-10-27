@@ -1,5 +1,19 @@
 // Repeat a targeted Bun test under controlled concurrent load.
 // bun run test:repeat --runs 20 --workers 4 -- packages/ws/src/example.test.ts
+import { printHelpIfAsked } from "./script-help";
+
+const USAGE = {
+  summary: "repeat targeted Bun tests under controlled concurrent load",
+  usage: "bun run test:repeat [--runs <n>] [--workers <n>] [--timeout-ms <n>] [--json] -- <test arguments>",
+  flags: [
+    { flag: "--runs <n>", detail: "number of runs (default 10)" },
+    { flag: "--workers <n>", detail: "maximum simultaneous runs (default 1)" },
+    { flag: "--timeout-ms <n>", detail: "timeout per run in milliseconds (default 120000)" },
+    { flag: "--json", detail: "include every run's output and status in a JSON document" },
+  ],
+  example: "bun run test:repeat --runs 20 --workers 4 -- packages/ws/src/example.test.ts",
+  exits: ["0 every run passed", "1 a run failed, timed out or could not start, or arguments were invalid"],
+} as const;
 export interface RunResult {
   run: number;
   exitCode: number | null;
@@ -57,6 +71,7 @@ export async function runBatch(command: string[], options: Pick<Options, "runs" 
 }
 
 if (import.meta.main) {
+  if (printHelpIfAsked("test:repeat", USAGE)) process.exit(0);
   try {
     const options = parseArgs(process.argv.slice(2));
     const command = [process.execPath, "test", ...options.testArgs];
