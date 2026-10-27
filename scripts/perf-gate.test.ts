@@ -270,7 +270,7 @@ describe("debugPortFor", () => {
     expect(ports).toEqual(PERF_GATE_GAMES.map((_game, index) => DEBUG_PORT_BASE + index));
   });
 
-  test("stays outside the band a capture's pickDebugPort and warm Chrome use, so two runs cannot attach to each other", () => {
+  test("stays outside the band the warm Chrome uses, so two runs cannot attach to each other", () => {
     for (let index = 0; index < PERF_GATE_GAMES.length; index += 1) {
       const port = debugPortFor(index);
       expect(port).toBeGreaterThanOrEqual(9900);

@@ -52,8 +52,8 @@ const WARMUP_MS = 5_000;
 export const DEFAULT_JOBS = 4;
 /**
  * Debug ports for the games in flight, one per slot. Above the 9200-9899 band
- * `pickDebugPort` and the warm Chrome use, so two games in one run - or a game
- * beside a capture - can never attach to each other's browser.
+ * the warm Chrome uses, so two games in one run - or a game beside a warm
+ * capture - can never attach to each other's browser.
  */
 export const DEBUG_PORT_BASE = 9910;
 

@@ -54,6 +54,74 @@ describe("scaffold launch block", () => {
     }
   });
 
+  test("shoot and drive ask the browser for a free port, never one derived from the clock", () => {
+    // Two runs started in the same window once picked the same 9200-band port and one of them
+    // failed its handshake; the port the browser publishes cannot be shared.
+    for (const [name, source] of [["shoot.mjs", shootMjs], ["drive.mjs", driveMjs]] as const) {
+      expect({ name, free: source.includes("startBrowser({ debugPort: 0,") }).toEqual({ name, free: true });
+      expect({ name, derived: /9200|Date\.now\(\) % /.test(source) }).toEqual({ name, derived: false });
+    }
+  });
+
+  test("a free port is read back from the browser and used for the handshake, the page and the result", async () => {
+    const { startBrowser } = await scaffoldBrowser();
+    const endpoint = await liveDebugger();
+    const asked: number[] = [];
+    const waited: number[] = [];
+    const probed: number[] = [];
+    try {
+      const started = await startBrowser({
+        debugPort: 0,
+        readyMs: 1_000,
+        launch: (port: number) => {
+          asked.push(port);
+          return fakeChrome(1);
+        },
+        publishedPort: async () => endpoint.port,
+        waitForDebugger: async (port: number) => {
+          waited.push(port);
+          return 0;
+        },
+        pageProbe: async (port: number) => {
+          probed.push(port);
+        },
+      });
+      expect(asked).toEqual([0]);
+      expect(waited).toEqual([endpoint.port]);
+      expect(probed).toEqual([endpoint.port]);
+      expect(started.debugPort).toBe(endpoint.port);
+    } finally {
+      await endpoint.stop();
+    }
+  });
+
+  test("a browser that never publishes its port fails the endpoint step, and the retry gets a fresh profile", async () => {
+    const { startBrowser, BrowserLaunchError } = await scaffoldBrowser();
+    const profiles: string[] = [];
+    let error: unknown;
+    try {
+      await startBrowser({
+        debugPort: 0,
+        readyMs: 60,
+        log: () => {},
+        launch: () => {
+          const chrome = fakeChrome(profiles.length + 1);
+          profiles.push(chrome.userDataDir);
+          return chrome;
+        },
+        pageProbe: async () => {},
+      });
+    } catch (caught) {
+      error = caught;
+    }
+    expect(error).toBeInstanceOf(BrowserLaunchError);
+    const failure = error as { step: string; attempts: number; message: string };
+    expect(failure.step).toBe("endpoint");
+    expect(failure.attempts).toBe(2);
+    expect(failure.message).toContain("did not publish its debugger port within 120ms");
+    expect(new Set(profiles).size).toBe(2);
+  });
+
   test("the per-attempt wait is tunable through JG_CHROME_READY_MS", async () => {
     const { resolveChromeReadyMs } = await scaffoldBrowser();
     expect(resolveChromeReadyMs({})).toBe(30_000);

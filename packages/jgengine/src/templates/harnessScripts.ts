@@ -202,29 +202,6 @@ export async function isUp(url) {
 
 ${BROWSER_LAUNCH_BLOCK}
 
-/** Wait for a Chrome launched with port 0 to publish its DevTools port, then return that port. */
-export async function waitForDebuggerPort(chrome, timeoutMs) {
-  const deadline = Date.now() + timeoutMs;
-  const portFile = join(chrome.userDataDir, "DevToolsActivePort");
-  while (Date.now() < deadline) {
-    if (chrome.exitCode !== null || chrome.signalCode !== null) {
-      throw new Error("Chrome exited before its debugger came up (" + (chrome.signalCode ?? "code " + chrome.exitCode) + ")");
-    }
-    let port = 0;
-    try {
-      port = parseInt(readFileSync(portFile, "utf8"), 10) || 0;
-    } catch {
-      /* not written yet */
-    }
-    if (port > 0) {
-      await waitForDebugger(port, Math.max(1, deadline - Date.now()));
-      return port;
-    }
-    await sleep(100);
-  }
-  throw new Error("Chrome debugger never published its port in " + chrome.userDataDir);
-}
-
 /** Kill the launched Chrome and server when this process is interrupted, so no browser outlives it. */
 export function shutdownOnSignal(getChrome, server) {
   for (const [signal, code] of [["SIGINT", 130], ["SIGTERM", 143]]) {
@@ -611,14 +588,14 @@ async function main() {
   const outPath = resolve(o.out ?? join("shots", "shot.png"));
 
   const server = await ensureDevServer(o.url ?? base, port);
-  const debugPort = 9200 + Math.floor(Date.now() % 700);
   let chrome = null;
   shutdownOnSignal(() => chrome, server);
 
   let exitCode = 0;
   try {
-    chrome = (await startBrowser({ debugPort, prefix: "jg-shoot-" })).chrome;
-    const session = await openPage(debugPort);
+    const started = await startBrowser({ debugPort: 0, prefix: "jg-shoot-" });
+    chrome = started.chrome;
+    const session = await openPage(started.debugPort);
     try {
       await session.send("Page.enable");
       await session.send("Runtime.enable");
@@ -903,14 +880,14 @@ async function main() {
   const url = target.toString();
 
   const server = await ensureDevServer(args.url ?? base, args.port);
-  const debugPort = 9200 + Math.floor(Date.now() % 700);
   let chrome = null;
   shutdownOnSignal(() => chrome, server);
 
   let exitCode = 0;
   try {
-    chrome = (await startBrowser({ debugPort, prefix: "jg-drive-" })).chrome;
-    const session = await openPage(debugPort);
+    const started = await startBrowser({ debugPort: 0, prefix: "jg-drive-" });
+    chrome = started.chrome;
+    const session = await openPage(started.debugPort);
     try {
       await session.send("Page.enable");
       await session.send("Runtime.enable");

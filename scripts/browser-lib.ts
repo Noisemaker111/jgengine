@@ -605,10 +605,6 @@ export function killProcessTree(child: ChildProcess | null): void {
   killPid(child?.pid, true);
 }
 
-export function pickDebugPort(): number {
-  return 9200 + Math.floor(Math.random() * 700);
-}
-
 /** Default wait for a launched browser to answer on its debugger endpoint. */
 export const DEFAULT_CHROME_READY_MS = 30_000;
 
@@ -1547,6 +1543,7 @@ export interface ChromeLaunchOptions {
 }
 
 export interface StartBrowserOptions<L extends LaunchableBrowser = ChromeProcess> {
+  /** The debugger port to bind, or 0 for a free one the browser picks and publishes in its profile. */
   debugPort: number;
   /** user-data-dir prefix; every attempt gets a fresh profile under it. */
   prefix?: string;
@@ -1561,10 +1558,13 @@ export interface StartBrowserOptions<L extends LaunchableBrowser = ChromeProcess
   headed?: boolean;
   /** Prove the page layer answers; defaults to opening and closing a page target. */
   pageProbe?: (debugPort: number, profilePath: string) => Promise<void>;
+  /** Read the port a browser launched on port 0 published; defaults to its profile's DevToolsActivePort. */
+  publishedPort?: (browser: L, timeoutMs: number) => Promise<number>;
   log?: (line: string) => void;
 }
 
 export interface StartedBrowser<L extends LaunchableBrowser = ChromeProcess> {
+  /** The port the browser answers on: the one asked for, or the one it picked for `debugPort: 0`. */
   debugPort: number;
   browser: L;
   profilePath: string;
@@ -1578,8 +1578,35 @@ async function defaultPageProbe(debugPort: number, profilePath: string): Promise
 }
 
 /**
+ * The port a browser launched on port 0 bound, read from the DevToolsActivePort file in its
+ * profile. A port picked before the launch, however it is picked, is one two runs can pick
+ * together; the one the browser publishes is held by that browser alone.
+ */
+export async function publishedDebugPort(browser: LaunchableBrowser & { exitCode?: number | null }, timeoutMs: number): Promise<number> {
+  const startedAt = Date.now();
+  const portFile = join(browser.userDataDir, "DevToolsActivePort");
+  while (Date.now() - startedAt < timeoutMs) {
+    const exit = browser.exitCode;
+    if (typeof exit === "number") {
+      throw new Error(`the browser process exited (code ${exit}) before publishing its debugger port`);
+    }
+    let port = 0;
+    try {
+      port = parseInt(readFileSync(portFile, "utf8"), 10) || 0;
+    } catch {
+      /* not written yet */
+    }
+    if (port > 0) return port;
+    await new Promise((resolve) => setTimeout(resolve, 50));
+  }
+  throw new Error(`the browser did not publish its debugger port within ${timeoutMs}ms`);
+}
+
+/**
  * The one way a caller starts a browser: spawn it, wait for its debugger endpoint, then
- * prove a page target answers. A transient failure before the page is live — a slow cold
+ * prove a page target answers. `debugPort: 0` lets the browser pick a free port, read back
+ * from its profile, so two runs on one machine never share one; the port used comes back as
+ * `debugPort`. A transient failure before the page is live — a slow cold
  * start, a browser that exits before binding, a target that closed under us — gets exactly
  * one retry with a fresh profile and a doubled wait. A budget, assertion or capture failure
  * happens after this returns and is never retried here.
@@ -1593,6 +1620,7 @@ export async function startBrowser<L extends LaunchableBrowser = ChromeProcess>(
   const launch = options.launch ??
     ((port: number, prefix?: string, launchOptions?: ChromeLaunchOptions) =>
       launchChrome(port, prefix, launchOptions ?? {}) as unknown as L);
+  const publishedPort = options.publishedPort ?? publishedDebugPort;
   const pageProbe = options.pageProbe ?? defaultPageProbe;
   const launchOptions: ChromeLaunchOptions | undefined =
     options.frameClock === undefined && options.headed !== true
@@ -1611,17 +1639,19 @@ export async function startBrowser<L extends LaunchableBrowser = ChromeProcess>(
     try {
       browser = launch(options.debugPort, options.prefix, launchOptions);
       step = "endpoint";
-      await waitForDebugger(options.debugPort, readyMs, {
+      const debugPort = options.debugPort === 0 ? await publishedPort(browser, readyMs) : options.debugPort;
+      const remainingMs = Math.max(1, readyMs - (Date.now() - startedAt));
+      await waitForDebugger(debugPort, remainingMs, {
         browser: browser as { pid?: number; exitCode?: number | null },
         profilePath: browser.userDataDir,
       });
       step = "page";
-      await pageProbe(options.debugPort, browser.userDataDir);
-      launchedProfiles.set(options.debugPort, browser.userDataDir);
+      await pageProbe(debugPort, browser.userDataDir);
+      launchedProfiles.set(debugPort, browser.userDataDir);
       if (attempt > 1) {
         log(`browser: launch recovered on attempt ${attempt} after ${Date.now() - startedAt}ms (profile ${browser.userDataDir})`);
       }
-      return { debugPort: options.debugPort, browser, profilePath: browser.userDataDir, attempts: attempt };
+      return { debugPort, browser, profilePath: browser.userDataDir, attempts: attempt };
     } catch (error) {
       const elapsedMs = Date.now() - startedAt;
       const profilePath = browser?.userDataDir ?? null;
@@ -2406,8 +2436,8 @@ export async function withBrowserSession(
 ): Promise<number> {
   const warmPort = options.warmPort ?? resolveWarmChromePort();
   const attach = options.attach ?? false;
-  const debugPort =
-    options.debugPort ?? options.connect ?? (options.keep ? warmPort : pickDebugPort());
+  // 0 asks the browser for a free port, so two captures on one machine never pick the same one.
+  let debugPort = options.debugPort ?? options.connect ?? (options.keep ? warmPort : 0);
   const leaveWarm = options.leaveWarm ?? options.keep;
   const hardDeadlineMs = options.hardDeadlineMs ?? options.timeoutMs + 120_000;
 
@@ -2440,7 +2470,11 @@ export async function withBrowserSession(
   watchdog.unref();
 
   try {
-    markStep(options.connect !== undefined || attach ? `attach to Chrome :${debugPort}` : `launch Chrome :${debugPort}`);
+    markStep(
+      options.connect !== undefined || attach
+        ? `attach to Chrome :${debugPort}`
+        : `launch Chrome${debugPort === 0 ? " on a free port" : ` :${debugPort}`}`,
+    );
     if (options.connect !== undefined || attach) {
       await waitForDebugger(debugPort, 5_000);
     } else {
@@ -2453,6 +2487,7 @@ export async function withBrowserSession(
         ...(options.headed === true ? { headed: true } : {}),
       });
       chrome = started.browser;
+      debugPort = started.debugPort;
     }
     markStep("run the capture");
     const result = await fn({ debugPort, chrome });

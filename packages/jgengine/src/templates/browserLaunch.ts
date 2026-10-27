@@ -4,8 +4,8 @@ export const LAUNCH_BLOCK_START = "// jg-launch-block:start";
 export const LAUNCH_BLOCK_END = "// jg-launch-block:end";
 
 /**
- * The one Chrome launch path a scaffolded project ships: spawn, debugger endpoint, page
- * target. A transient handshake failure discards that browser and its profile, then retries
+ * The one Chrome launch path a scaffolded project ships: spawn on a free port, read the port
+ * back, debugger endpoint, page target. A transient handshake failure discards that browser and its profile, then retries
  * once with a fresh profile and a doubled wait; `JG_CHROME_READY_MS` sets the per-attempt
  * wait. A configuration error, and anything after the handshake, is reported once, naming
  * the step that failed. `scripts/check-scaffold-launch.ts` fails when this and the engine's
@@ -151,9 +151,34 @@ async function pageTargetProbe(debugPort) {
   session.close();
 }
 
+// A browser launched on port 0 binds a port nobody else holds and writes it to
+// DevToolsActivePort in its profile. Reading it there is what lets two captures run at once:
+// a port picked before the launch, however it is picked, is one two runs can pick together.
+export async function publishedDebugPort(browser, timeoutMs) {
+  const startedAt = Date.now();
+  const portFile = join(browser.userDataDir, "DevToolsActivePort");
+  while (Date.now() - startedAt < timeoutMs) {
+    const exit = browser.exitCode;
+    if (typeof exit === "number") {
+      throw new Error("the browser process exited (code " + exit + ") before publishing its debugger port");
+    }
+    let port = 0;
+    try {
+      port = parseInt(readFileSync(portFile, "utf8"), 10) || 0;
+    } catch {
+      /* not written yet */
+    }
+    if (port > 0) return port;
+    await sleep(50);
+  }
+  throw new Error("the browser did not publish its debugger port within " + timeoutMs + "ms");
+}
+
 /**
  * Start headless Chrome: spawn it, wait for its debugger endpoint, then prove a page target
- * answers. A transient failure before the page is live gets exactly one retry with a fresh
+ * answers. A debugPort of 0 lets the browser pick a free port, read back from its profile, so
+ * two runs on one machine never share one; the port used comes back as debugPort.
+ * A transient failure before the page is live gets exactly one retry with a fresh
  * profile and a doubled wait; the retry is logged. A capture or assertion failure happens
  * after this returns and is never retried here.
  */
@@ -161,6 +186,7 @@ export async function startBrowser(options) {
   let readyMs = options.readyMs ?? resolveChromeReadyMs(options.env ?? process.env);
   const log = options.log ?? ((line) => console.error(line));
   const launch = options.launch ?? launchChrome;
+  const publishedPort = options.publishedPort ?? publishedDebugPort;
   const waitForEndpoint = options.waitForDebugger ?? waitForDebugger;
   const pageProbe = options.pageProbe ?? pageTargetProbe;
   let last = null;
@@ -172,15 +198,17 @@ export async function startBrowser(options) {
     try {
       chrome = launch(options.debugPort, options.prefix);
       step = "endpoint";
-      await waitForEndpoint(options.debugPort, readyMs, { browser: chrome, profilePath: chrome.userDataDir });
+      const debugPort = options.debugPort === 0 ? await publishedPort(chrome, readyMs) : options.debugPort;
+      const remainingMs = Math.max(1, readyMs - (Date.now() - startedAt));
+      await waitForEndpoint(debugPort, remainingMs, { browser: chrome, profilePath: chrome.userDataDir });
       step = "page";
-      await pageProbe(options.debugPort, chrome.userDataDir);
+      await pageProbe(debugPort, chrome.userDataDir);
       if (attempt > 1) {
         log(
           "browser: launch recovered on attempt " + attempt + " after " + (Date.now() - startedAt) + "ms (profile " + chrome.userDataDir + ")",
         );
       }
-      return { debugPort: options.debugPort, chrome: chrome, profilePath: chrome.userDataDir, attempts: attempt };
+      return { debugPort: debugPort, chrome: chrome, profilePath: chrome.userDataDir, attempts: attempt };
     } catch (error) {
       const elapsedMs = Date.now() - startedAt;
       const profilePath = chrome === undefined || chrome === null ? null : chrome.userDataDir;
