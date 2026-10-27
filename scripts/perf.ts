@@ -5,7 +5,7 @@ export const PERF: VerbTable = {
   name: "perf",
   summary: "measure performance: one game's frame report, the frame gate, network, test timing, or an open game",
   verbs: {
-    play: { script: "scripts/perf-play.ts", guardSeconds: 420, detail: "<game>: play it headless and print its frame report (also `bun run perf <game>`)" },
+    play: { script: "scripts/perf-play.ts", guardSeconds: 420, detail: "<game...>: play each headless in one browser and print its frame report (also `bun run perf <game>`)" },
     gate: { script: "scripts/perf-gate.ts", guardSeconds: 1500, detail: "fail when reference games exceed their render budgets after warmup" },
     network: { script: "scripts/perf-network.ts", detail: "<game...>: bytes and requests per game, cold and cached" },
     timing: { script: "scripts/bench-cpu.ts", guardSeconds: 900, detail: "run the test files that carry wall-clock budgets with the budgets enforced" },

@@ -20,6 +20,7 @@ import {
 } from "./browser-lib";
 import { parseGraphicsTier, type GraphicsTier } from "../packages/jgengine/src/templates/captureArgs";
 import { engineRecord, resolveEngineIdentity, type EngineRecord } from "./engineIdentity";
+import { baselinePath, cleanCommitFor, conditionsKey, readBaselineAt, resolveCommit, saveBaseline } from "./perf-baselines";
 import {
   acquireWarmCapture,
   daemonDiedUnder,
@@ -122,7 +123,8 @@ const KNOWN_SETTING_KEYS = [...SETTING_IDS_BY_KEY.keys()].filter((key) => !key.i
 const HARNESS_PARAMS: ReadonlySet<string> = new Set(["game", "capture", "device", "telemetry", "quality", "state"]);
 
 export interface PerfArgs {
-  game: string;
+  /** The games to measure, in order, one after another in one browser. */
+  games: string[];
   /** The tier `--quality` pinned; undefined measures the game's own tier, which the record still names. */
   quality?: GraphicsTier;
   /** `--draft`: the low-tier half-size iteration preset. */
@@ -149,7 +151,7 @@ export interface PerfArgs {
   size: { width: number; height: number };
   /** Where the JSON record goes; the text summary goes to stdout. */
   out?: string;
-  /** A saved record to diff this run against. */
+  /** A saved record to diff this run against, or a git ref whose cached run of each game is the before side. */
   compare?: string;
   /** Print the JSON record to stdout instead of the text summary. */
   json: boolean;
@@ -157,7 +159,7 @@ export interface PerfArgs {
 
 export type ArgResult = { kind: "run"; args: PerfArgs } | { kind: "help" };
 
-const USAGE = `usage: bun run perf <game> [--seconds n] [--path walk|still] [--size WxH] [--compare <before.json>] [--out <file.json>] [--json]
+const USAGE = `usage: bun run perf <game> [<game> ...] [--seconds n] [--path walk|still] [--size WxH] [--compare <ref|before.json>] [--out <file.json>] [--json]
                     [--quality low|medium|high|ultra] [--draft] [--profile] [--telemetry on|off]
                     [--state name] [--param k=v ...] [--set key=value ...] [--capped] [--headed] [--cold]
 
@@ -165,13 +167,19 @@ Plays the game at 1920x1080 on an uncapped frame clock, walking, and prints wher
 p50/p95/p99, main-thread and GPU ms per frame against 60 and 144 Hz, CPU ms per system, GPU ms per
 render pass, draws, triangles, compiles, uploads, the costliest objects and materials, and every hitch
 over 33 ms with its cause. The full record is written as JSON (default .scratch/perf/<game>.json).
-One fix, one run: keep a record, change the code, run again with --compare <kept.json>.
+Several games run one after another in one browser, with a table of all of them at the end. A game
+takes about 30 s and the whole run is stopped at 7 minutes, so split a sweep into batches of ten.
 
-  <game>            game id under games/ (for example harbor-heat)
+A run on a clean tree is kept as the baseline of its commit (.scratch/perf/baselines/), so the
+before side is measured once: run \`bun run perf <game>\` before editing, then after editing run
+\`bun run perf <game> --compare HEAD\`; the before side comes from the cache.
+
+  <game>            game id under games/ (for example harbor-heat); several run in one browser
   --path            walk (default): hold forward and weave left/right while measuring; still: stand
   --size            viewport in CSS pixels (default 1920x1080)
-  --compare         a record an earlier run wrote: print the before/after table under the summary
-  --out             where to write this run's JSON record (default .scratch/perf/<game>.json)
+  --compare         a git ref (HEAD, beta, a commit) whose cached run of each game is the before side,
+                    or a record file an earlier run wrote (one game only): print the before/after table
+  --out             where to write this run's JSON record (default .scratch/perf/<game>.json; one game only)
   --json            print the JSON record to stdout instead of the text summary
   --capped          run on the display's vsync clock instead (frame times become 16.7 ms steps)
   --cold            skip the warm daemon and boot Chrome + Vite directly: fresh caches, larger
@@ -350,7 +358,7 @@ export function droppedOverrides(
 
 export function parsePerfArgs(argv: readonly string[]): ArgResult {
   if (argv.includes("--help") || argv.includes("-h")) return { kind: "help" };
-  let game: string | undefined;
+  const games: string[] = [];
   let quality: GraphicsTier | undefined;
   let draft = false;
   let profile = false;
@@ -463,12 +471,17 @@ export function parsePerfArgs(argv: readonly string[]): ArgResult {
       continue;
     }
     if (arg.startsWith("-")) throw new Error(`unknown flag ${arg}`);
-    if (game !== undefined) throw new Error(`one game per run (got ${game} and ${arg})`);
-    game = arg;
+    if (games.includes(arg)) throw new Error(`${arg} given twice`);
+    games.push(arg);
   }
-  if (game === undefined) throw new Error("a game id is required");
+  if (games.length === 0) throw new Error("a game id is required");
   if (draft && quality !== undefined) throw new Error(`--draft is the iteration preset (low tier, half viewport), so drop it or drop --quality ${quality}`);
-  return { kind: "run", args: { game, ...(quality === undefined ? {} : { quality }), draft, profile, seconds, telemetry, settings, frameClock, path, size, json, ...(out === undefined ? {} : { out }), ...(compare === undefined ? {} : { compare }), ...(headed ? { headed: true } : {}), ...(cold ? { cold: true } : {}), ...(state === undefined ? {} : { state }), params } };
+  if (games.length > 1) {
+    // These name one game's file or scene; a batch writes .scratch/perf/<game>.json per game.
+    if (out !== undefined) throw new Error("--out names one record; a run of several games writes .scratch/perf/<game>.json for each");
+    if (state !== undefined || params.length > 0) throw new Error("--state and --param pin one game's scene; run that game on its own");
+  }
+  return { kind: "run", args: { games, ...(quality === undefined ? {} : { quality }), draft, profile, seconds, telemetry, settings, frameClock, path, size, json, ...(out === undefined ? {} : { out }), ...(compare === undefined ? {} : { compare }), ...(headed ? { headed: true } : {}), ...(cold ? { cold: true } : {}), ...(state === undefined ? {} : { state }), params } };
 }
 
 
@@ -1160,16 +1173,15 @@ async function main(): Promise<void> {
     console.log(USAGE);
     return;
   }
-  const { game, quality, draft, profile, seconds, telemetry, settings, state, params, frameClock, headed, path, size, json } = parsed.args;
-  const outPath = resolve(process.cwd(), parsed.args.out ?? join(repoRoot, ".scratch", "perf", `${game}.json`));
-  // Read the baseline before the run, so a missing or unreadable file fails in a second, not after a minute.
-  const baseline = parsed.args.compare === undefined ? null : readBaseline(parsed.args.compare);
+  const { games, quality, draft, profile, seconds, telemetry, settings, state, params, frameClock, headed, path, size, json } = parsed.args;
+  for (const game of games) {
+    if (!existsSync(join(repoRoot, "games", game, "src", "index.tsx"))) throw new Error(`no game "${game}" in games/`);
+  }
+  const conditions = conditionsKey({ size, quality, draft, frameClock, path, seconds, telemetry, state, params, settings });
+  // Find every before side first, so a missing one fails in a second, not after minutes of measuring.
+  const baselines = resolveBaselines(parsed.args.compare, games, conditions);
 
   sweepCaptureProfiles();
-
-  if (!existsSync(join(repoRoot, "games", game, "src", "index.tsx"))) {
-    throw new Error(`no game "${game}" in games/`);
-  }
 
   // Before any browser: the dev runner serves this checkout's source, so name what it measures.
   const identity = resolveEngineIdentity();
@@ -1187,9 +1199,52 @@ async function main(): Promise<void> {
     cold: parsed.args.cold === true || ownBrowser !== undefined,
     ...(ownBrowser === undefined ? {} : { because: ownBrowser }),
   });
+  const rows: PerfBatchRow[] = [];
+  let pending = [...games];
+
+  /** Measure one game in the browser already running on `debugPort`, then write and print its record. */
+  const measureOne = async (game: string, debugPort: number, base: string): Promise<void> => {
+    const session = await openPageSession(debugPort);
+    try {
+      const measured = await measureGame({ session, base, game, quality, draft, seconds, telemetry, settings, state, params, frameClock, path, size });
+      if (measuredEngine !== null) measured.record.engine = measuredEngine;
+      console.error(`perf: ${game} tier ${measured.record.quality}${draft ? " (draft: low tier, half viewport)" : ""}`);
+      const pin = perfStateLine(state, params);
+      if (pin !== null) console.error(pin);
+      const clock = perfFrameClockLine(frameClock);
+      if (clock !== null) console.error(clock);
+      if (measured.clockProbeMs !== null) {
+        console.error(`perf: blank page ticked at ${measured.clockProbeMs} ms on the uncapped clock`);
+      }
+      if (measured.record.overrides.length > 0) {
+        console.error(`perf: overrides ${measured.record.overrides.join(" ")}`);
+      }
+      const outPath = resolve(process.cwd(), parsed.args.out ?? join(repoRoot, ".scratch", "perf", `${game}.json`));
+      mkdirSync(dirname(outPath), { recursive: true });
+      writeFileSync(outPath, `${JSON.stringify(measured.record, null, 2)}\n`);
+      const commit = cleanCommitFor(repoRoot, game);
+      if (commit !== null) saveBaseline(baselinePath(repoRoot, game, commit, conditions), measured.record);
+      if (json) console.log(JSON.stringify(measured.record, null, 2));
+      else console.log(perfSummaryText(measured.record, baselines.get(game) ?? null));
+      console.error(`perf: record written to ${outPath}${commit === null ? "" : ` (kept as the ${commit} baseline)`}`);
+      if (profile && measured.profile !== null) {
+        printInclusive(aggregateInclusiveTime(measured.profile, measured.profileMs));
+      }
+      if (measured.record.profile?.top.length === 0) console.error("perf: the CPU profile produced no samples");
+      if (measured.record.gl.attached !== true) {
+        console.error("perf: GL allocation counters saw no activity — the WebGL hooks did not attach");
+      }
+      if (measured.record.render.nodes === null) console.error("perf: could not count scene nodes on this page");
+      rows.push({ game, summary: measured.record.breakdown ?? "no frame breakdown" });
+    } finally {
+      await session.close();
+    }
+  };
+
   /**
-   * One measured run against a target: the warm daemon when there is one, otherwise a Vite and
-   * Chrome this run owns. A function so a daemon that dies under a run can be retried cold once.
+   * Measure every game still pending against a target: the warm daemon when there is one,
+   * otherwise a Vite and Chrome this run owns. One browser serves every game, so a batch pays
+   * one launch. A function so a daemon that dies under a run can be retried cold once.
    */
   const runPerf = async (daemon: ShootDaemonState | null): Promise<number> => {
     const server = daemon === null ? await ensureDevServer(repoRoot) : await ensureDaemonTarget(daemon, "dev");
@@ -1207,37 +1262,28 @@ async function main(): Promise<void> {
         turn: brokerTurn(daemon, repoRoot),
       },
       async ({ debugPort }) => {
-        const session = await openPageSession(debugPort);
-        try {
-          const measured = await measureGame({ session, base: server.base, game, quality, draft, seconds, telemetry, settings, state, params, frameClock, path, size });
-          if (measuredEngine !== null) measured.record.engine = measuredEngine;
-          console.error(`perf: tier ${measured.record.quality}${draft ? " (draft: low tier, half viewport)" : ""}`);
-          const pin = perfStateLine(state, params);
-          if (pin !== null) console.error(pin);
-          const clock = perfFrameClockLine(frameClock);
-          if (clock !== null) console.error(clock);
-          if (measured.clockProbeMs !== null) {
-            console.error(`perf: blank page ticked at ${measured.clockProbeMs} ms on the uncapped clock`);
+        const failed: string[] = [];
+        for (let game = pending[0]; game !== undefined; game = pending[0]) {
+          try {
+            await measureOne(game, debugPort, server.base);
+          } catch (error) {
+            const message = error instanceof Error ? error.message : String(error);
+            console.error(`perf: ${game} failed: ${message}`);
+            failed.push(game);
           }
-          if (measured.record.overrides.length > 0) {
-            console.error(`perf: overrides ${measured.record.overrides.join(" ")}`);
-          }
-          mkdirSync(dirname(outPath), { recursive: true });
-          writeFileSync(outPath, `${JSON.stringify(measured.record, null, 2)}\n`);
-          if (json) console.log(JSON.stringify(measured.record, null, 2));
-          else console.log(perfSummaryText(measured.record, baseline));
-          console.error(`perf: record written to ${outPath}`);
-          if (profile && measured.profile !== null) {
-            printInclusive(aggregateInclusiveTime(measured.profile, measured.profileMs));
-          }
-          if (measured.record.profile?.top.length === 0) console.error("perf: the CPU profile produced no samples");
-          if (measured.record.gl.attached !== true) {
-            console.error("perf: GL allocation counters saw no activity — the WebGL hooks did not attach");
-          }
-          if (measured.record.render.nodes === null) console.error("perf: could not count scene nodes on this page");
-        } finally {
-          await session.close();
+          pending = pending.slice(1);
         }
+        pending = failed;
+        // A failure on a borrowed daemon may still get its one cold retry; otherwise this is the end.
+        if (failed.length === 0 || daemon === null) {
+          if (games.length > 1) {
+            for (const game of failed) rows.push({ game, summary: "failed" });
+            console.log(`\n${perfBatchTable(rows)}`);
+          }
+          // The last record is written: nothing left in this run is worth waiting for.
+          armExitAfterResults(failed.length === 0 ? 0 : 1);
+        }
+        return failed.length === 0 ? 0 : 1;
       },
     ));
   };
@@ -1248,25 +1294,89 @@ async function main(): Promise<void> {
   });
   if (warm.daemon !== null && exitCode !== 0 && (await daemonDiedUnder(warm.daemon))) {
     console.error(
-      `cold: the daemon on :${warm.daemon.chromePort} died mid-run — falling back to a direct launch, no retry`,
+      `cold: the daemon on :${warm.daemon.chromePort} died mid-run — falling back to a direct launch for ${pending.join(", ")}, no retry`,
     );
     exitCode = await runPerf(null).catch((error: unknown) => {
       console.error(error instanceof Error ? error.message : error);
       return 1;
     });
   }
-  // Exit explicitly: a browser socket or watcher left open must not hold a finished run for minutes.
   process.exit(exitCode);
 }
 
-/** A record an earlier run wrote, for `--compare`. */
-function readBaseline(path: string): PerfRecord {
-  const text = readFileSync(resolve(process.cwd(), path), "utf8");
-  const record = JSON.parse(text) as PerfRecord;
+/** After the last record is written, closing the browser and dev server gets this long before the process exits anyway. */
+const EXIT_AFTER_RESULTS_MS = 10_000;
+
+/**
+ * Exit once the results are out even if teardown stalls: a run once sat 7 minutes after its last
+ * record. The exit hooks still kill the browser this run launched and delete its profile.
+ */
+function armExitAfterResults(code: number): void {
+  setTimeout(() => {
+    console.error(`perf: results are written; teardown was still running after ${EXIT_AFTER_RESULTS_MS / 1000}s, so exiting without it`);
+    process.exit(code);
+  }, EXIT_AFTER_RESULTS_MS).unref();
+}
+
+/**
+ * The before side of each game's comparison: a record file for a one-game run, or each game's
+ * cached run at a git ref. Throws before anything is measured when one is missing.
+ */
+function resolveBaselines(compare: string | undefined, games: readonly string[], conditions: string): Map<string, PerfRecord> {
+  const baselines = new Map<string, PerfRecord>();
+  if (compare === undefined) return baselines;
+  const file = resolve(process.cwd(), compare);
+  if (existsSync(file)) {
+    const [only, ...rest] = games;
+    if (only === undefined || rest.length > 0) throw new Error(`--compare ${compare} is one record; compare several games against a git ref (--compare HEAD) instead`);
+    baselines.set(only, checkedBaseline(JSON.parse(readFileSync(file, "utf8")) as PerfRecord, compare));
+    return baselines;
+  }
+  const commit = resolveCommit(repoRoot, compare);
+  if (commit === null) throw new Error(`--compare ${compare} is neither a record file nor a git ref`);
+  const missing: string[] = [];
+  for (const game of games) {
+    const record = readBaselineAt<PerfRecord>(baselinePath(repoRoot, game, commit, conditions));
+    if (record === null) missing.push(game);
+    else baselines.set(game, checkedBaseline(record, `the cached ${game} run at ${commit}`));
+  }
+  if (missing.length > 0) {
+    throw new Error(
+      `--compare ${compare}: no cached run at ${commit} with these settings for ${missing.join(", ")}. ` +
+        `Every run on a clean tree is cached, so run \`bun run perf ${missing.join(" ")}\` (same flags) at ${commit} before editing, then compare.`,
+    );
+  }
+  console.error(`perf: before side is the cached run at ${commit} for ${games.join(", ")}; not measured again`);
+  return baselines;
+}
+
+function checkedBaseline(record: PerfRecord, what: string): PerfRecord {
   if (record.breakdown === undefined || record.breakdown === null) {
-    throw new Error(`${path} has no frame breakdown to compare against; it was written before the breakdown existed, or by a page without dev telemetry`);
+    throw new Error(`${what} has no frame breakdown to compare against; it was written before the breakdown existed, or by a page without dev telemetry`);
   }
   return record;
+}
+
+/** One game of a batch: the part of its breakdown the table reads, or why there is none. */
+export interface PerfBatchRow {
+  game: string;
+  summary: Pick<FrameBreakdownSummary, "frame" | "work" | "gpu"> | "failed" | "no frame breakdown";
+}
+
+/** The table a run of several games ends with: frame and cost per game, and how far each is from 144 Hz. */
+export function perfBatchTable(rows: readonly PerfBatchRow[]): string {
+  const lines = ["game                  frame p50  frame p95   cost p50  vs 144 Hz (6.94 ms)"];
+  for (const { game, summary } of rows) {
+    if (typeof summary === "string") {
+      lines.push(`${game.padEnd(20)}  ${summary}`);
+      continue;
+    }
+    const cost = Math.max(summary.work.p50, summary.gpu?.p50 ?? 0);
+    const over = cost - 6.94;
+    const ms = (value: number) => `${value.toFixed(2)} ms`.padStart(9);
+    lines.push(`${game.padEnd(20)}  ${ms(summary.frame.p50)}  ${ms(summary.frame.p95)}  ${ms(cost)}  ${over <= 0 ? "ok" : `${over.toFixed(2)} ms over`}`);
+  }
+  return lines.join("\n");
 }
 
 /** The text a person reads after a run: the breakdown, the run's conditions, and the diff when asked. */

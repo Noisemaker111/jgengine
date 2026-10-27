@@ -9,11 +9,13 @@ import type * as THREE from "three";
  */
 export function visitVisible(root: THREE.Object3D, visit: (node: THREE.Object3D) => void): void {
   const stack: THREE.Object3D[] = [root];
-  while (stack.length > 0) {
-    const node = stack.pop()!;
+  for (let node = stack.pop(); node !== undefined; node = stack.pop()) {
     if (!node.visible) continue;
     visit(node);
     const children = node.children;
-    for (let index = children.length - 1; index >= 0; index -= 1) stack.push(children[index]!);
+    for (let index = children.length - 1; index >= 0; index -= 1) {
+      const child = children[index];
+      if (child !== undefined) stack.push(child);
+    }
   }
 }

@@ -1,4 +1,5 @@
 import type * as THREE from "three";
+import { SkinnedMesh } from "three";
 
 const culled = new WeakSet<THREE.Object3D>();
 
@@ -13,7 +14,7 @@ export function setCulled(node: THREE.Object3D, isCulled: boolean): void {
   else {
     culled.delete(node);
     // Its parent may have moved while the pass skipped it; rebuild the subtree on its way back.
-    (node as THREE.Object3D & Tracked)[LOCAL] = undefined;
+    tracked(node)[LOCAL] = undefined;
   }
 }
 
@@ -21,6 +22,11 @@ const LOCAL = Symbol("jg.localTransform");
 
 interface Tracked {
   [LOCAL]?: Float64Array | undefined;
+}
+
+/** The node with the pass's snapshot slot; a symbol property is the cheapest per-node lookup. */
+function tracked(node: THREE.Object3D): THREE.Object3D & Tracked {
+  return node as THREE.Object3D & Tracked;
 }
 
 // A node's snapshot from the pass that last rebuilt it: what its local matrix was made of (position,
@@ -49,7 +55,7 @@ function writeSignature(node: THREE.Object3D, snapshot: Float64Array, composes: 
     snapshot[9] = s.z;
   } else {
     const elements = node.matrix.elements;
-    for (let index = 0; index < SIGNATURE; index += 1) snapshot[index] = elements[index]!;
+    for (let index = 0; index < SIGNATURE; index += 1) snapshot[index] = elements[index] ?? 0;
   }
 }
 
@@ -85,14 +91,14 @@ function worldChanged(node: THREE.Object3D, snapshot: Float64Array): boolean {
  * parent alive.
  */
 function updateShownNode(node: THREE.Object3D, force: boolean): boolean {
-  const tracked = node as THREE.Object3D & Tracked;
+  const slot = tracked(node);
   const composes = node.matrixAutoUpdate;
   const parent = node.parent === null ? -1 : node.parent.id;
-  let snapshot = tracked[LOCAL];
+  let snapshot = slot[LOCAL];
   let stale: boolean;
   if (snapshot === undefined) {
     snapshot = new Float64Array(SNAPSHOT_SIZE);
-    tracked[LOCAL] = snapshot;
+    slot[LOCAL] = snapshot;
     stale = true;
   } else {
     stale = snapshot[MODE] !== (composes ? 1 : 0) || snapshot[PARENT] !== parent || signatureChanged(node, snapshot, composes) ||
@@ -110,12 +116,11 @@ function updateShownNode(node: THREE.Object3D, force: boolean): boolean {
     if (node.parent === null) node.matrixWorld.copy(node.matrix);
     else node.matrixWorld.multiplyMatrices(node.parent.matrixWorld, node.matrix);
     const world = node.matrixWorld.elements;
-    for (let index = 0; index < 16; index += 1) snapshot[WORLD + index] = world[index]!;
+    for (let index = 0; index < 16; index += 1) snapshot[WORLD + index] = world[index] ?? 0;
     // Three's own SkinnedMesh.updateMatrixWorld does this: an attached skin is posed relative to where
     // the mesh hangs now. Left stale, a character drawn on its own rig is skinned against where it was
     // first mounted and floats away from its body as it moves.
-    const skinned = node as THREE.SkinnedMesh;
-    if (skinned.isSkinnedMesh === true && skinned.bindMode === "attached") skinned.bindMatrixInverse.copy(skinned.matrixWorld).invert();
+    if (node instanceof SkinnedMesh && node.bindMode === "attached") node.bindMatrixInverse.copy(node.matrixWorld).invert();
   }
   node.matrixWorldNeedsUpdate = false;
   return true;
@@ -128,13 +133,12 @@ function updateShownNode(node: THREE.Object3D, force: boolean): boolean {
 function updateShownMatrixWorld(root: THREE.Object3D, force: boolean): void {
   const nodes: THREE.Object3D[] = [root];
   const forced: boolean[] = [force];
-  while (nodes.length > 0) {
-    const node = nodes.pop()!;
-    const childForce = updateShownNode(node, forced.pop()!);
+  for (let node = nodes.pop(); node !== undefined; node = nodes.pop()) {
+    const childForce = updateShownNode(node, forced.pop() === true);
     const children = node.children;
     for (let index = children.length - 1; index >= 0; index -= 1) {
-      const child = children[index]!;
-      if (!child.visible && culled.has(child)) continue;
+      const child = children[index];
+      if (child === undefined || (!child.visible && culled.has(child))) continue;
       nodes.push(child);
       forced.push(childForce);
     }

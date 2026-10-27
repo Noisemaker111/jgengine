@@ -101,8 +101,8 @@ class OverlayAwareGTAOPass extends GTAOPass {
     const aoHeight = Math.max(1, Math.round(height * AO_RESOLUTION));
     this.gtaoRenderTarget.setSize(aoWidth, aoHeight);
     this.pdRenderTarget.setSize(aoWidth, aoHeight);
-    this.gtaoMaterial.uniforms.resolution!.value.set(aoWidth, aoHeight);
-    this.pdMaterial.uniforms.resolution!.value.set(aoWidth, aoHeight);
+    this.gtaoMaterial.uniforms["resolution"]?.value.set(aoWidth, aoHeight);
+    this.pdMaterial.uniforms["resolution"]?.value.set(aoWidth, aoHeight);
   }
 
   override render(
