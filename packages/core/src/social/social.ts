@@ -1,3 +1,4 @@
+// @skill jgengine-gameplay
 import type { GameEventMap, GameEvents } from "../game/events";
 
 export interface PresenceInfo {

@@ -1,3 +1,4 @@
+// @skill jgengine-world
 export interface LodBand {
   maxDistance: number;
   interval: number;

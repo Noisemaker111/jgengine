@@ -1,3 +1,4 @@
+// @skill jgengine-world
 import { useEffect, useState } from "react";
 
 const AUTO_HIDE_MS = 6000;

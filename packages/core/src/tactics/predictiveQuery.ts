@@ -1,3 +1,4 @@
+// @skill jgengine-gameplay
 import {
   resolveAreaTargets,
   type AreaTargetInput,

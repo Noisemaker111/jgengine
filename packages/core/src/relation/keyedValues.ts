@@ -1,3 +1,4 @@
+// @skill jgengine-gameplay
 /**
  * Pure, serialization-friendly numeric operations over a caller-owned record of
  * keyed values, plus delimiter-safe pair-key codecs for directed and undirected

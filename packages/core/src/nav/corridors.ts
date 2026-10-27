@@ -1,3 +1,4 @@
+// @skill jgengine-world
 export type CorridorPoint = readonly [number, number];
 
 export interface CorridorEdge {

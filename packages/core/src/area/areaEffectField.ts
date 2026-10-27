@@ -1,3 +1,4 @@
+// @skill jgengine-world
 /**
  * Continuous area-effect membership: moving sources emit an area that follows them each tick,
  * receivers that move in and out get enter / refresh / leave edges, and membership is cleaned up

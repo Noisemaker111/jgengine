@@ -1,3 +1,4 @@
+// @skill jgengine-gameplay
 /** Linear blend from `a` to `b`. */
 const lerp = (a: number, b: number, t: number): number => a + (b - a) * t;
 

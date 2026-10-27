@@ -1,3 +1,4 @@
+// @skill jgengine-gameplay
 import type { ScatterClearing } from "../scatter/scatterClearing";
 import {
   createResourceNodeField,

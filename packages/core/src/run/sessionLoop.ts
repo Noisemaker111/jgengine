@@ -1,3 +1,4 @@
+// @skill jgengine-gameplay
 import { pickWeighted } from "../random/pick";
 import { seededRng } from "../random/rng";
 

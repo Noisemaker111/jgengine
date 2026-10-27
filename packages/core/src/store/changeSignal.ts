@@ -1,3 +1,4 @@
+// @skill jgengine-gameplay
 /** @internal */
 export interface ChangeSignal {
   subscribe(listener: () => void): () => void;

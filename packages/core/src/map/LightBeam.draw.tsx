@@ -1,3 +1,4 @@
+// @skill jgengine-world
 import type { ReactNode } from "react";
 import { AdditiveBlending } from "three";
 

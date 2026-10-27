@@ -1,3 +1,4 @@
+// @skill jgengine-gameplay
 import { clamp } from "../math/scalar";
 
 /** What sets the air temperature at a spot: its climate plus the hour, the weather, the height and nearby heat. */

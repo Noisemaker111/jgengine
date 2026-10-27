@@ -1,3 +1,4 @@
+// @skill jgengine-world
 /**
  * The reusable order verbs every commandable game re-derives -- move, stop,
  * hold, attack-move, targeted action, patrol -- built as ordinary

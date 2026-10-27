@@ -1,3 +1,4 @@
+// @skill jgengine-world
 import { useEffect, useReducer, type CSSProperties, type ReactNode } from "react";
 
 import type { SequenceDirector, SequenceState } from "@jgengine/core/cutscene/sequenceDirector";

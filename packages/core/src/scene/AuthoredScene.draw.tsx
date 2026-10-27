@@ -1,3 +1,4 @@
+// @skill jgengine-world
 import { AuthoredFlocks } from "@jgengine/core/ai/AuthoredFlocks.draw";
 import { AuthoredWeatherLayer } from "@jgengine/core/weather/AuthoredWeatherLayer.draw";
 import { Fragment, useCallback, useEffect, useMemo, useRef, useSyncExternalStore } from "react";

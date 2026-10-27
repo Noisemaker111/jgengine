@@ -1,5 +1,5 @@
 {
-  "generatedBy": "bun run gen skill-routing; a new core folder takes the skill most of its imports carry",
+  "generatedBy": "bun run gen skill-routing, from each core folder's // @skill tag",
   "domains": {
     "achievements": "jgengine-gameplay",
     "agents": "jgengine-gameplay",
@@ -36,7 +36,6 @@
     "flight": "jgengine-world",
     "format": "jgengine-ui",
     "game": "jgengine-gameplay",
-    "gameplay": "jgengine-gameplay",
     "grass": "jgengine-world",
     "haptics": "jgengine-world",
     "harvest": "jgengine-gameplay",

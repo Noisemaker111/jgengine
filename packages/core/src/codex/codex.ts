@@ -1,3 +1,4 @@
+// @skill jgengine-gameplay
 /** A codex/bestiary/lorebook entry the game defines. Discovery state is tracked separately. */
 export interface CodexEntryDef<TMeta = unknown> {
   id: string;

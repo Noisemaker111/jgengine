@@ -1,3 +1,4 @@
+// @skill jgengine-gameplay
 import { type ThreeEvent, useFrame } from "@react-three/fiber";
 import { useEffect, useMemo, useRef, type ReactNode } from "react";
 import * as THREE from "three";

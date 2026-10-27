@@ -1,3 +1,4 @@
+// @skill jgengine-gameplay
 export type LeaderboardScope = "global" | "server" | "profile";
 
 export interface LeaderboardTrackDef {

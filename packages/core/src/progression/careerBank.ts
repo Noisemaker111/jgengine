@@ -1,3 +1,4 @@
+// @skill jgengine-gameplay
 import { fromMinorUnits, toMinorUnits, type CurrencyDefinition } from "../economy/currency";
 import { charge, createEmptyWallet, grant, type WalletState } from "../economy/wallet";
 

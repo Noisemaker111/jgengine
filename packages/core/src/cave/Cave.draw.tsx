@@ -1,3 +1,4 @@
+// @skill jgengine-world
 import { useEffect, useMemo, type ReactNode } from "react";
 import { BufferAttribute, BufferGeometry, DoubleSide } from "three";
 

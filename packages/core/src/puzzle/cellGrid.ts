@@ -1,3 +1,4 @@
+// @skill jgengine-gameplay
 /** A fixed-size 2D board of cells, row-major from the top-left; `null` is an empty cell. Plain data, so it serializes and restores as-is. */
 export interface CellGrid<T> {
   readonly width: number;

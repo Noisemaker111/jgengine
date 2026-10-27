@@ -1,3 +1,4 @@
+// @skill jgengine-ui
 import { Canvas, events as pointerEvents } from "@react-three/fiber";
 import type { CSSProperties, ReactNode } from "react";
 

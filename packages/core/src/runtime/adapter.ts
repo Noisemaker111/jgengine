@@ -1,3 +1,4 @@
+// @skill jgengine
 export type MultiplayerTopology = "shared" | "lobbies" | "private";
 
 /**

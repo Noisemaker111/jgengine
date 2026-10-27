@@ -1,3 +1,4 @@
+// @skill jgengine-gameplay
 /**
  * Deterministic creature breeding & genetics — a genre-agnostic engine primitive for
  * taming/husbandry games. Everything here operates over plain serializable records so a

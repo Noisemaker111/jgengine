@@ -1,3 +1,4 @@
+// @skill jgengine-gameplay
 import { appendFeed } from "../feed/feed";
 import type { LootPipeline, LootResolution } from "../loot/lootPipeline";
 import type { Drop } from "../loot/lootTable";

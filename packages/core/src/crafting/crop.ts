@@ -1,3 +1,4 @@
+// @skill jgengine-gameplay
 import type { RecipeItem } from "./recipe";
 
 export type SoilState = "untilled" | "tilled";

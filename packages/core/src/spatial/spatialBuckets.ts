@@ -1,3 +1,4 @@
+// @skill jgengine-world
 /**
  * Uniform XZ grid over items with a rectangular footprint: insert once, then ask which items cover a
  * box. One mechanism behind the two sampling hot paths — a corridor's segments and a palette's regions

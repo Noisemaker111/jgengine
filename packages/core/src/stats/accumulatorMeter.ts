@@ -1,3 +1,4 @@
+// @skill jgengine-combat
 import { tierAt } from "../threshold/thresholds";
 
 export interface MeterTier {

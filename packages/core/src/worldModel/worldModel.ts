@@ -1,3 +1,4 @@
+// @skill jgengine-gameplay
 /**
  * One world model a game's systems read instead of each keeping its own copy. People, places,
  * factions and things carry facts; world events ripple into those facts; jobs are missions that

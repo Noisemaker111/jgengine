@@ -1,3 +1,4 @@
+// @skill jgengine-ui
 import { useState, type ReactNode } from "react";
 
 import { useDebouncedCommit } from "@jgengine/core/ui/useDebouncedCommit.view";

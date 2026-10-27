@@ -1,3 +1,4 @@
+// @skill jgengine-ui
 /** A locale tag (e.g. `"en"`, `"es"`, `"ja"`) — a key into a {@link Catalog}. */
 export type Locale = string;
 

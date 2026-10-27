@@ -1,3 +1,4 @@
+// @skill jgengine-editor
 /** The full authored scene: every marker, volume, path, and note for a game. */
 export type { EditorDocument } from "./types";
 /** A sculpted heightfield overlay stored on a document ΓÇö the terraform snapshot of offset deltas. */

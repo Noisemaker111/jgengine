@@ -1,3 +1,4 @@
+// @skill jgengine-ui
 /** Colorblind simulation/daltonization modes the engine ships matrices for. */
 export type ColorblindMode = "none" | "protanopia" | "deuteranopia" | "tritanopia" | "grayscale";
 

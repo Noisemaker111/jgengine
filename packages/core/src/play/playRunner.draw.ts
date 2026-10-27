@@ -1,3 +1,4 @@
+// @skill jgengine-ui
 import type { GameContext } from "@jgengine/core/runtime/gameContext";
 import { createHeadlessRunner, type HeadlessRunner } from "@jgengine/core/runtime/headlessRunner";
 import { resolveActivePrompt } from "@jgengine/core/interaction/proximityPrompt";

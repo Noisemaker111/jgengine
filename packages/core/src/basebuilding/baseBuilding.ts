@@ -1,3 +1,4 @@
+// @skill jgengine-gameplay
 import { createBuildSocketCatalog, type ConnectionRule, type SocketDef } from "../placement/buildSockets";
 import type { WorldSolid } from "../world/worldSolids";
 

@@ -1,3 +1,4 @@
+// @skill jgengine-multiplayer
 import type { ReactNode } from "react";
 
 /**

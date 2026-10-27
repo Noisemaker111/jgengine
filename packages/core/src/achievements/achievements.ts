@@ -1,3 +1,4 @@
+// @skill jgengine-gameplay
 /** Definition of one achievement. Content-agnostic — the game supplies names, targets, and icons. */
 export interface AchievementDef {
   id: string;

@@ -1,3 +1,4 @@
+// @skill jgengine-gameplay
 /**
  * Missions as data: a mission is a graph of objectives a state machine walks, with named fail
  * states, per-objective timers, conditional branches and rewards. Nothing here is a genre kit —

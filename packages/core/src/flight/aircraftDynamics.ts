@@ -1,3 +1,4 @@
+// @skill jgengine-world
 import { uniformGravity, type GravityField } from "../physics/gravityField";
 
 const DEFAULT_SUBSTEP = 1 / 240;

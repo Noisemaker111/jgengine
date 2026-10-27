@@ -1,3 +1,4 @@
+// @skill jgengine-world
 /** A road centerline vertex in world XZ. */
 export type RoadPoint = readonly [number, number];
 

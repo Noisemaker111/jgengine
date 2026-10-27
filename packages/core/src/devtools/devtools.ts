@@ -1,3 +1,4 @@
+// @skill jgengine
 import { createChangeSignal } from "../store/changeSignal";
 import type { TunableOptions } from "./tunableSchema";
 import { createFrameModule, nowMs } from "./frame";

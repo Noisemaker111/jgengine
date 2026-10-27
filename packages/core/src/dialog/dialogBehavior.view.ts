@@ -1,3 +1,4 @@
+// @skill jgengine-ui
 import { useEffect, useRef, type RefObject } from "react";
 
 interface FocusOwner {

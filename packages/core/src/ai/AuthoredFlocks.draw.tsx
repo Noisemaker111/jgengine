@@ -1,3 +1,4 @@
+// @skill jgengine-world
 import { useFrame } from "@react-three/fiber";
 import { useMemo, useRef, useState, type ReactElement } from "react";
 import * as THREE from "three";

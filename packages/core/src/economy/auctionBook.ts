@@ -1,3 +1,4 @@
+// @skill jgengine-gameplay
 import type { ItemStack } from "../inventory/storageTier";
 import type { CollectionBoxSnapshot } from "./listingBook";
 

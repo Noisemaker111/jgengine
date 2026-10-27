@@ -1,3 +1,4 @@
+// @skill jgengine-combat
 import { seededRng } from "../random/rng";
 import type { FightIntent } from "../ai/director/roles";
 
