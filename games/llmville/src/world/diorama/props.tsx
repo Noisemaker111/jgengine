@@ -11,6 +11,7 @@
  */
 
 import type { ComponentType, ReactNode } from "react";
+import { definedFields } from "@jgengine/core/data/definedFields";
 import { getMaterialPreset, MATERIAL_PRESET, type MaterialPreset } from "@/world/diorama/palette";
 
 /** Shared toy-scale geometry reused across procedural props. */
@@ -64,10 +65,7 @@ function Mat({ preset }: { preset: MaterialPreset }) {
       color={p.color}
       roughness={p.roughness}
       metalness={p.metalness}
-      emissive={p.emissive}
-      emissiveIntensity={p.emissiveIntensity}
-      transparent={p.transparent}
-      opacity={p.opacity}
+      {...definedFields({ emissive: p.emissive, emissiveIntensity: p.emissiveIntensity, transparent: p.transparent, opacity: p.opacity })}
     />
   );
 }
@@ -76,8 +74,8 @@ interface BoxProps {
   args: [number, number, number];
   position?: [number, number, number];
   preset: MaterialPreset;
-  castShadow?: boolean;
-  receiveShadow?: boolean;
+  castShadow?: boolean | undefined;
+  receiveShadow?: boolean | undefined;
 }
 
 function Box({ args, position = [0, 0, 0], preset, castShadow = true, receiveShadow = true }: BoxProps) {
@@ -94,13 +92,13 @@ interface CylProps {
   position?: [number, number, number];
   rotation?: [number, number, number];
   preset: MaterialPreset;
-  castShadow?: boolean;
-  receiveShadow?: boolean;
+  castShadow?: boolean | undefined;
+  receiveShadow?: boolean | undefined;
 }
 
 function Cyl({ args, position = [0, 0, 0], rotation, preset, castShadow = true, receiveShadow = true }: CylProps) {
   return (
-    <mesh position={position} rotation={rotation} castShadow={castShadow} receiveShadow={receiveShadow}>
+    <mesh position={position} {...definedFields({ rotation })} castShadow={castShadow} receiveShadow={receiveShadow}>
       <cylinderGeometry args={args} />
       <Mat preset={preset} />
     </mesh>
@@ -182,7 +180,7 @@ function GarageBookshelf({ castShadow, receiveShadow }: PropProps) {
             key={`${shelf}-${i}`}
             args={[BOOK_SPINE_W, BOOK_SPINE_H, PROP_MEDIUM]}
             position={[BOOK_ROW_START_X + i * BOOK_ROW_SPACING, y + PROP_FOOT_H, 0]}
-            preset={spines[(i + shelf) % spines.length]}
+            preset={spines[(i + shelf) % spines.length]!}
             {...s}
           />
         )),
@@ -294,8 +292,8 @@ export function getProceduralProp(modelKey: string): ComponentType<PropProps> | 
 export interface ProceduralPropProps {
   modelKey: string;
   position: [number, number, number];
-  rotation?: [number, number, number];
-  scale?: [number, number, number];
+  rotation?: [number, number, number] | undefined;
+  scale?: [number, number, number] | undefined;
   castShadow?: boolean;
   receiveShadow?: boolean;
   children?: ReactNode;
@@ -312,7 +310,7 @@ export function ProceduralProp({
   const Comp = getProceduralProp(modelKey);
   if (!Comp) return null;
   return (
-    <group position={position} rotation={rotation} scale={scale}>
+    <group position={position} {...definedFields({ rotation, scale })}>
       <Comp castShadow={castShadow} receiveShadow={receiveShadow} />
     </group>
   );

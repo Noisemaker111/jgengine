@@ -1,4 +1,5 @@
 import type { CommandDef, CommandScope } from "@jgengine/core/commands/commandRunner";
+import { definedFields } from "@jgengine/core/data/definedFields";
 import type { GameRuntimeSnapshot } from "@jgengine/core/runtime/snapshot";
 import {
   findPlacedObject,
@@ -64,7 +65,7 @@ function isRackTarget(value: RackTarget | { reason: string }): value is RackTarg
 }
 
 function rackScope(input: unknown, actorUserId: string): CommandScope {
-  const rackInstanceId = isRecord(input) ? readString(input.rackInstanceId) : null;
+  const rackInstanceId = isRecord(input) ? readString(input["rackInstanceId"]) : null;
   return { players: [actorUserId], chunkKeys: rackInstanceId === null ? [] : placedObjectChunkKeys(rackInstanceId) };
 }
 
@@ -76,12 +77,12 @@ export interface MoveRackHardwareCommandInput {
 
 function parseHardwareSource(value: unknown): RackHardwareSource | null {
   if (!isRecord(value)) return null;
-  if (value.kind === "stock") {
-    const hardwareId = readString(value.hardwareId);
+  if (value["kind"] === "stock") {
+    const hardwareId = readString(value["hardwareId"]);
     return hardwareId === null ? null : { kind: "stock", hardwareId };
   }
-  if (value.kind === "slot") {
-    const slot = readNonNegativeInteger(value.slot);
+  if (value["kind"] === "slot") {
+    const slot = readNonNegativeInteger(value["slot"]);
     return slot === null ? null : { kind: "slot", slot };
   }
   return null;
@@ -89,18 +90,18 @@ function parseHardwareSource(value: unknown): RackHardwareSource | null {
 
 function parseHardwareTarget(value: unknown): RackHardwareTarget | null {
   if (!isRecord(value)) return null;
-  if (value.kind === "stock") return { kind: "stock" };
-  if (value.kind !== "slot") return null;
-  if (value.slot === undefined) return { kind: "slot" };
-  const slot = readNonNegativeInteger(value.slot);
+  if (value["kind"] === "stock") return { kind: "stock" };
+  if (value["kind"] !== "slot") return null;
+  if (value["slot"] === undefined) return { kind: "slot" };
+  const slot = readNonNegativeInteger(value["slot"]);
   return slot === null ? null : { kind: "slot", slot };
 }
 
 function parseMoveHardwareInput(input: unknown): MoveRackHardwareCommandInput | null {
   if (!isRecord(input)) return null;
-  const rackInstanceId = readString(input.rackInstanceId);
-  const from = parseHardwareSource(input.from);
-  const to = parseHardwareTarget(input.to);
+  const rackInstanceId = readString(input["rackInstanceId"]);
+  const from = parseHardwareSource(input["from"]);
+  const to = parseHardwareTarget(input["to"]);
   return rackInstanceId === null || from === null || to === null
     ? null
     : { rackInstanceId, from, to };
@@ -164,8 +165,8 @@ export interface InstallRackCoolerCommandInput {
 
 function parseInstallCoolerInput(input: unknown): InstallRackCoolerCommandInput | null {
   if (!isRecord(input)) return null;
-  const rackInstanceId = readString(input.rackInstanceId);
-  const coolerId = readString(input.coolerId);
+  const rackInstanceId = readString(input["rackInstanceId"]);
+  const coolerId = readString(input["coolerId"]);
   return rackInstanceId === null || coolerId === null ? null : { rackInstanceId, coolerId };
 }
 
@@ -219,7 +220,7 @@ export interface UninstallRackCoolerCommandInput {
 
 function parseRackOnlyInput(input: unknown): UninstallRackCoolerCommandInput | null {
   if (!isRecord(input)) return null;
-  const rackInstanceId = readString(input.rackInstanceId);
+  const rackInstanceId = readString(input["rackInstanceId"]);
   return rackInstanceId === null ? null : { rackInstanceId };
 }
 
@@ -266,18 +267,18 @@ export interface AssignRackCardCommandInput {
 
 function parseAssignInput(input: unknown): AssignRackCardCommandInput | null {
   if (!isRecord(input)) return null;
-  const rackInstanceId = readString(input.rackInstanceId);
-  const slotIndex = readNonNegativeInteger(input.slotIndex);
-  if (rackInstanceId === null || slotIndex === null || !isComputeLane(input.lane)) return null;
-  const targetModelId = input.targetModelId === undefined ? undefined : readString(input.targetModelId);
+  const rackInstanceId = readString(input["rackInstanceId"]);
+  const slotIndex = readNonNegativeInteger(input["slotIndex"]);
+  const { lane, targetModelId: rawTargetModelId, targetModelExists } = input;
+  if (rackInstanceId === null || slotIndex === null || !isComputeLane(lane)) return null;
+  const targetModelId = rawTargetModelId === undefined ? undefined : readString(rawTargetModelId);
   if (targetModelId === null) return null;
-  if (input.targetModelExists !== undefined && typeof input.targetModelExists !== "boolean") return null;
+  if (targetModelExists !== undefined && typeof targetModelExists !== "boolean") return null;
   return {
     rackInstanceId,
     slotIndex,
-    lane: input.lane,
-    targetModelId,
-    targetModelExists: input.targetModelExists,
+    lane,
+    ...definedFields({ targetModelId, targetModelExists }),
   };
 }
 
@@ -287,8 +288,7 @@ function assignmentArgs(input: AssignRackCardCommandInput, rack: PlacedRackObjec
     assignments: rack.assignments,
     slotIndex: input.slotIndex,
     lane: input.lane,
-    targetModelId: input.targetModelId,
-    targetModelExists: input.targetModelExists,
+    ...definedFields({ targetModelId: input.targetModelId, targetModelExists: input.targetModelExists }),
   };
 }
 
@@ -324,8 +324,8 @@ export interface UnassignRackCardCommandInput {
 
 function parseUnassignInput(input: unknown): UnassignRackCardCommandInput | null {
   if (!isRecord(input)) return null;
-  const rackInstanceId = readString(input.rackInstanceId);
-  const slotIndex = readNonNegativeInteger(input.slotIndex);
+  const rackInstanceId = readString(input["rackInstanceId"]);
+  const slotIndex = readNonNegativeInteger(input["slotIndex"]);
   return rackInstanceId === null || slotIndex === null ? null : { rackInstanceId, slotIndex };
 }
 
