@@ -37,11 +37,15 @@ export function ParkStatus() {
       footer={<KitButton size="sm" variant={gate ? "ghost" : "primary"} data-hint="gate" disabled={gateRefusal !== null} title={gateRefusal?.message}
         onClick={() => commands.run("brightway.act", { action: gate ? "close_gate" : "open_gate" })}>{gate ? "Close the gate" : "Open the gate"}</KitButton>}>
       <div className="bw-line"><span>{guests} / {guestCap(rating)} guests</span>{down > 0 ? <b data-bad="">{down} {down === 1 ? "ride" : "rides"} down</b> : null}</div>
-      <KitMeter size="sm" label="Mood" value={mood} max={100} readout={`${Math.round(mood)}%`} tone={tone(mood, 50, 35)} />
-      <KitMeter size="sm" label="Clean" value={clean} max={100} readout={`${Math.round(clean)}%`} tone={tone(clean, 60, 40)} />
-      {said ? <ul className="bw-said" aria-label="What guests are saying">
-        {said.split("|").map((entry) => { const [label, count, complaint] = entry.split(":"); return <li key={label} data-bad={complaint === "1" ? "" : undefined}>“{label}” <b>{count}</b></li>; })}
-      </ul> : null}
+      <div className="bw-meters">
+        <KitMeter size="sm" label="Mood" value={mood} max={100} readout={`${Math.round(mood)}%`} tone={tone(mood, 50, 35)} />
+        <KitMeter size="sm" label="Clean" value={clean} max={100} readout={`${Math.round(clean)}%`} tone={tone(clean, 60, 40)} />
+      </div>
+      {/* Always three lines tall, so the goal card below never has to move as thoughts come and go. */}
+      <ul className="bw-said" aria-label="What guests are saying">
+        {said ? said.split("|").map((entry) => { const [label, count, complaint] = entry.split(":"); return <li key={label} data-bad={complaint === "1" ? "" : undefined}>“{label}” <b>{count}</b></li>; })
+          : <li data-quiet="">{guests === 0 ? "No guests yet to say anything" : "Guests are making up their minds"}</li>}
+      </ul>
     </KitPanel>
   );
 }
@@ -57,7 +61,8 @@ export function ParkGoal() {
     const id = w.fact("scenario.id");
     const targets = (typeof id === "string" ? scenarioDef(id) : null)?.targets ?? [];
     const steps = targets.map((t) => ({ id: t.fact, label: `${Math.floor(w.num(t.fact)).toLocaleString()} / ${t.atLeast.toLocaleString()} ${t.label}`, done: scenario.result === "won" || w.num(t.fact) >= t.atLeast }));
-    const hint = m.ridesOpen === 0 ? "Lay a path from the gate, build a ride and connect it." : w.fact("park.gate") !== true ? "Open the gate to let guests in." : "More rides, shops and scenery raise the rating; marketing in the Books brings more guests.";
+    const hint = m.rides === 0 ? "Lay a path from the gate, build a ride and connect it."
+      : m.ridesOpen === 0 ? "No ride is running: connect it, or hire a mechanic to mend it." : w.fact("park.gate") !== true ? "Open the gate to let guests in." : "More rides, shops and scenery raise the rating; marketing in the Books brings more guests.";
     // The deadline in park days, not clock seconds: a scenario runs for months.
     const left = scenario.remaining === null ? "" : ` · ${parkDuration(scenario.remaining)} left`;
     return <KitObjective className="bw-goal" eyebrow={`${scenario.title}${left}`} title={scenario.goal}
