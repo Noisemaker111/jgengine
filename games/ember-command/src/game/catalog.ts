@@ -37,10 +37,22 @@ export interface CombatantDef {
   worker?: boolean;
 }
 
+/** What a price is paid in. */
+export type Resource = "gold" | "lumber";
+
+/** A price in each resource it takes; a resource it does not take is absent. */
+export type Cost = Readonly<Partial<Record<Resource, number>>>;
+
 /** What a producing building can train, its resource cost, and how long it takes. */
 export interface TrainableDef {
-  cost: Record<string, number>;
+  cost: Cost;
   trainSeconds: number;
+}
+
+/** A table looked up by an id that arrives as text (a command payload, a scene entry). */
+function byId<V>(table: Readonly<Record<string, V>>): (id: string) => V | undefined {
+  const entries = new Map(Object.entries(table));
+  return (id) => entries.get(id);
 }
 
 function def(d: Partial<CombatantDef> & Pick<CombatantDef, "id" | "label" | "faction" | "kind">): CombatantDef {
@@ -59,7 +71,7 @@ function def(d: Partial<CombatantDef> & Pick<CombatantDef, "id" | "label" | "fac
   };
 }
 
-export const COMBATANTS: Record<string, CombatantDef> = {
+export const COMBATANTS = {
   // — Vanguard (player) —
   peasant: def({
     id: "peasant", label: "Peasant", faction: "player", kind: "unit",
@@ -109,7 +121,7 @@ export const COMBATANTS: Record<string, CombatantDef> = {
     id: "warcamp", label: "Forward Camp", faction: "enemy", kind: "building",
     maxHealth: 620, scale: 0.85,
   }),
-};
+} satisfies Record<string, CombatantDef>;
 
 /** Decorative props spawned from the scene — no health, not selectable. Forest fill is instanced
  * scatter (see scatterModels); these are the placed hero props: base dressing and resource nodes. */
@@ -124,34 +136,49 @@ export const NODES: Record<string, { resource: string; label: string }> = {
 
 /** What each producing building trains: cost (gold/lumber) and train time. Units past the Peasant
  * require a Barracks (gated in `canTrain`). */
-export const TRAINABLE: Record<string, TrainableDef> = {
+export type TrainableId = "peasant" | "footman" | "rifleman";
+
+export const TRAINABLE: Readonly<Record<TrainableId, TrainableDef>> = {
   peasant: { cost: { gold: 55 }, trainSeconds: 8 },
   footman: { cost: { gold: 80, lumber: 10 }, trainSeconds: 14 },
   rifleman: { cost: { gold: 70, lumber: 20 }, trainSeconds: 16 },
 };
+
+/** What `id` trains like, or undefined when no building trains it. */
+export const trainableDef = byId<TrainableDef>(TRAINABLE);
 
 /** Units a Barracks unlocks (Town Hall only trains Peasants). */
 export const BARRACKS_UNITS = new Set(["footman", "rifleman"]);
 
 /** A player-constructed building: cost, build time, and (for a Farm) the supply it adds. */
 export interface BuildingDef {
-  cost: Record<string, number>;
+  cost: Cost;
   buildSeconds: number;
   supply?: number;
 }
 
-export const BUILDINGS: Record<string, BuildingDef> = {
+export type BuildingId = "barracks" | "farm" | "guard_tower";
+
+export const BUILDINGS: Readonly<Record<BuildingId, BuildingDef>> = {
   barracks: { cost: { gold: 140, lumber: 60 }, buildSeconds: 20 },
   farm: { cost: { gold: 60, lumber: 30 }, buildSeconds: 12, supply: 8 },
   guard_tower: { cost: { gold: 90, lumber: 40 }, buildSeconds: 16 },
 };
 
+/** What building `id` costs and takes, or undefined when the player cannot build it. */
+export const buildingDef = byId<BuildingDef>(BUILDINGS);
+
+/** The resource node `catalogId` places, or undefined when it is not a node. */
+export const nodeDef = byId(NODES);
+
 export function isNode(catalogId: string): boolean {
-  return catalogId in NODES;
+  return nodeDef(catalogId) !== undefined;
 }
 
+const combatantById = byId<CombatantDef>(COMBATANTS);
+
 export function combatantDef(catalogId: string): CombatantDef | null {
-  return COMBATANTS[catalogId] ?? null;
+  return combatantById(catalogId) ?? null;
 }
 
 export function isHostile(a: Faction, b: Faction): boolean {

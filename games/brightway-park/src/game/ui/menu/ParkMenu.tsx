@@ -61,9 +61,9 @@ export function ParkMenu({ reducedMotion, onReducedMotion }: ParkMenuProps): Rea
     <GameMenu label="Brightway Park" initialId={parkFocus.id ?? (recent === null ? "new" : "continue")} eyebrow="Seaside fair · build the midway" logo={LOGO} style={TOKENS}
       tagline="Turn a quiet coastal fair into a blue ribbon park." footer={<span>Brightway Park · day {day}</span>}
       items={[
-        { id: "continue", label: "Continue", hint: recent === null ? "No park on the board" : `${recent.name ?? "Brightway Park"} · day ${String(recent.meta.day ?? day)}`, disabled: recent === null },
+        { id: "continue", label: "Continue", hint: recent === null ? "No park on the board" : `${recent.name ?? "Brightway Park"} · day ${String(recent.meta["day"] ?? day)}`, disabled: recent === null },
         { id: "new", label: "Open the park", hint: recent === null ? "Free play, or pick a scenario" : "Start fresh or pick a scenario" },
-        { id: "saves", label: "Park saves", hint: recent === null ? "Nothing saved yet" : `Day ${String(recent.meta.day ?? 1)} on the board` },
+        { id: "saves", label: "Park saves", hint: recent === null ? "Nothing saved yet" : `Day ${String(recent.meta["day"] ?? 1)} on the board` },
         { id: "settings", label: "Settings", hint: "Motion, sound, controls" },
         { id: "credits", label: "Credits" },
       ]}

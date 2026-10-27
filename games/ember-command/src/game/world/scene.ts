@@ -4,7 +4,7 @@ import type { EntityDiedEvent } from "@jgengine/core/game/events";
 import { setGamePhase } from "@jgengine/core/game/gamePhase";
 
 import { editorLayers } from "../../editorLayers";
-import { BUILDINGS, combatantDef, DECOR, isNode, NODES } from "../catalog";
+import { buildingDef, combatantDef, DECOR, nodeDef } from "../catalog";
 import { flushCampaign, failCampaignOnKeepLost, noteCampaignDeath, resetCampaignProgress, setCampaignMode, startCampaignMission, syncCampaignHud } from "../campaign";
 import { grantHeroXp, heroXpFor } from "../hero";
 import { loadHeroPicks } from "../heroActs";
@@ -75,7 +75,7 @@ function onDied(ctx: GameContext, event: EntityDiedEvent): void {
     grantHeroXp(ctx, heroXpFor(event.catalogId)); // the hero champions the kill
   }
   // A razed Farm lowers the supply cap.
-  const supply = BUILDINGS[event.catalogId]?.supply;
+  const supply = buildingDef(event.catalogId)?.supply;
   if (def.faction === "player" && def.kind === "building" && supply !== undefined) {
     session.supplyCap = Math.max(0, session.supplyCap - supply);
   }
@@ -142,9 +142,10 @@ export function setupSkirmish(ctx: GameContext): void {
       continue;
     }
 
-    if (isNode(catalogId)) {
+    const node = nodeDef(catalogId);
+    if (node !== undefined) {
       ctx.scene.entity.spawn(catalogId, { id: marker.id, position: pos, role: "npc", rotationY: marker.rotationY ?? 0 });
-      session.nodes.set(marker.id, { id: marker.id, resource: NODES[catalogId]!.resource, x: pos[0], z: pos[2] });
+      session.nodes.set(marker.id, { id: marker.id, resource: node.resource, x: pos[0], z: pos[2] });
       continue;
     }
 

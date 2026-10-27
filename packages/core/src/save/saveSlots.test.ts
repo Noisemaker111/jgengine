@@ -1,6 +1,23 @@
 import { describe, expect, test } from "bun:test";
 
-import { createSaveSlots } from "./saveSlots";
+import { createSaveSlots, slotNumber, slotText } from "./saveSlots";
+
+describe("slot chips", () => {
+  const slot = { id: "a", empty: false, meta: { chapter: "Keep", wave: 4, blank: "" } };
+
+  test("text reads only non-empty text", () => {
+    expect(slotText(slot, "chapter")).toBe("Keep");
+    expect(slotText(slot, "wave")).toBeNull();
+    expect(slotText(slot, "blank")).toBeNull();
+    expect(slotText(slot, "missing")).toBeNull();
+  });
+
+  test("number reads only numbers", () => {
+    expect(slotNumber(slot, "wave")).toBe(4);
+    expect(slotNumber(slot, "chapter")).toBeNull();
+    expect(slotNumber(slot, "missing")).toBeNull();
+  });
+});
 
 /** A save-slots index driven by a mutable clock so `savedAt` is deterministic. */
 function clocked(config: Parameters<typeof createSaveSlots>[0] = {}) {

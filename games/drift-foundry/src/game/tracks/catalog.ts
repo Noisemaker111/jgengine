@@ -89,9 +89,10 @@ export function buildTrack(def: TrackDef): Track {
       to: hazard.to + (onMain ? def.origin : 0),
       ...(hazard.offset === undefined ? {} : { offset: hazard.offset }),
       ...(hazard.cycle === undefined ? {} : { cycle: hazard.cycle }),
-      data: { label: hazard.label, push: hazard.push ?? 0, hazard: true },
     };
   });
+  // The course hands spans back by id; the track's own hazard list says what each one is.
+  const hazardById = new Map(def.hazards.map((hazard) => [hazard.id, hazard]));
   const course = buildRouteCourse({ ...base, branches, spans });
   const routeInfo = new Map(course.routes.map((route) => [route.id, route]));
 
@@ -126,9 +127,10 @@ export function buildTrack(def: TrackDef): Track {
     return { id: `pickup_${pickup.partId}`, partId: pickup.partId, route, at: pickup.at, position: [at.x, PICKUP_Y + (corridor ? 0 : at.elevation), at.z] as const };
   });
   const startPoint = point(MAIN_ROUTE, SPAWN_RUN);
-  const hazardSpans = course.spans
-    .filter((span) => span.data?.hazard === true)
-    .map((span) => ({ ...span, kind: span.tag as HazardKind, label: String(span.data?.label ?? span.tag) }));
+  const hazardSpans = course.spans.flatMap((span) => {
+    const hazard = hazardById.get(span.id);
+    return hazard === undefined ? [] : [{ ...span, kind: hazard.kind, label: hazard.label }];
+  });
 
   return {
     def,
@@ -149,8 +151,9 @@ export function buildTrack(def: TrackDef): Track {
     hazardsAt(fix, time) {
       const found: ActiveHazard[] = [];
       for (const span of course.spansAt(fix, time)) {
-        if (span.data?.hazard !== true) continue;
-        found.push({ id: span.id, kind: span.tag as HazardKind, label: String(span.data.label ?? span.tag), push: Number(span.data.push ?? 0) });
+        const hazard = hazardById.get(span.id);
+        if (hazard === undefined) continue;
+        found.push({ id: span.id, kind: hazard.kind, label: hazard.label, push: hazard.push ?? 0 });
       }
       return found;
     },

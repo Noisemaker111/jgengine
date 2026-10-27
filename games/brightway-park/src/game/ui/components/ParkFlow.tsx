@@ -25,7 +25,7 @@ export function ParkFlow() {
   const started = useGameStore(() => session.started);
   const guests = useGameStore(() => session.guests.size);
   const scenario = scenarioView(ctx), id = w.fact("scenario.id"), def = typeof id === "string" ? scenarioDef(id) : null;
-  const scenarioWon = scenario?.result === "won", reward = def?.mission.rewards?.economy?.cash ?? 0;
+  const scenarioWon = scenario?.result === "won", reward = def?.mission.rewards?.economy?.["cash"] ?? 0;
   const open = w.fact("park.open") === true, day = w.num("park.day"), cash = w.num("park.cash"), rating = w.num("park.rating");
   // The night after closing still belongs to that day: the banner must not re-fire at midnight.
   const openDay = useRef(day);

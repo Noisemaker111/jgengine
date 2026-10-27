@@ -24,6 +24,18 @@ export interface SaveSlotMeta {
   meta: Record<string, string | number>;
 }
 
+/** A slot's text chip under `key`, or `null` when it is missing, empty or a number. */
+export function slotText(slot: SaveSlotMeta, key: string): string | null {
+  const value = slot.meta[key];
+  return typeof value === "string" && value.length > 0 ? value : null;
+}
+
+/** A slot's number chip under `key`, or `null` when it is missing or text. */
+export function slotNumber(slot: SaveSlotMeta, key: string): number | null {
+  const value = slot.meta[key];
+  return typeof value === "number" ? value : null;
+}
+
 /** What a {@link SaveSlots.write} stamps onto a slot — a name and/or a fresh `meta` bag. */
 export interface SaveSlotWrite {
   /** Player-facing label for the slot. Omit to keep the existing name. */

@@ -71,12 +71,13 @@ function trackRoads(track: Track): RoadEnvironmentDescriptor[] {
 
 /** The dark shoulder painted under each route, wider than the paving, so the road reads from the air. */
 function trackShoulders(track: Track): TerrainMaterialRegion[] {
+  const shoulder = track.def.ground.low;
   return track.course.routes.map((route) => ({
     shape: "polyline" as const,
     points: routePath(route.points, 4),
     width: track.def.halfWidth * 2 + 10,
     falloff: 10,
-    colors: { low: track.def.ground.low, high: track.def.ground.low, waterline: track.def.ground.low },
+    colors: shoulder === undefined ? {} : { low: shoulder, high: shoulder, waterline: shoulder },
   }));
 }
 

@@ -46,7 +46,7 @@ export interface KitObjectiveProps {
   title: ReactNode;
   eyebrow?: ReactNode | undefined;
   /** Optional checklist; done steps are struck. */
-  steps?: readonly KitObjectiveStep[];
+  steps?: readonly KitObjectiveStep[] | undefined;
   /** Metres to the target; shown as "72 m". */
   distance?: number;
   /**
@@ -54,7 +54,7 @@ export interface KitObjectiveProps {
    * ahead). Shows an arrow so the player never walks the wrong way.
    */
   bearing?: number;
-  deadline?: KitObjectiveDeadline;
+  deadline?: KitObjectiveDeadline | undefined;
   /** Seconds left at which the deadline turns urgent. Default the larger of 10 s and a quarter of the total. */
   urgentAt?: number;
   /** Shown once the player has made no progress for `hintAfter` seconds. */

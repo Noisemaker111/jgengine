@@ -1,3 +1,4 @@
+import { isFiniteNumber, isRecord, recordOf } from "@jgengine/core/data/untyped";
 import type { Curve } from "@jgengine/core/progression/leveling";
 import { createCareerBank, type CareerBankState } from "@jgengine/core/progression/careerBank";
 import { createGateSet, gateFacts } from "@jgengine/core/progression/gates";
@@ -95,9 +96,8 @@ const LEGACY_COURSE = "row-six";
 
 /** Bests kept only for events still on the track they were set on. */
 function sameCourseBests(medals: MedalBoardState, courses: unknown): MedalBoardState {
-  const saved = typeof courses === "object" && courses !== null ? (courses as Record<string, unknown>) : {};
+  const saved = isRecord(courses) ? courses : {};
   const now = eventCourses();
-  if (typeof medals.best !== "object" || medals.best === null) return medals;
   const best: Record<string, number> = {};
   for (const [id, value] of Object.entries(medals.best)) {
     if ((saved[id] ?? LEGACY_COURSE) === now[id]) best[id] = value;
@@ -122,18 +122,20 @@ export function newCareer(): CareerSave {
 
 export function readCareer(storage?: CareerStorage): CareerSave {
   try {
-    const data = JSON.parse(storage?.getItem(CAREER_KEY) ?? "null") as Partial<CareerSave> | null;
-    if (data === null || data.version !== 1) return newCareer();
+    const data: unknown = JSON.parse(storage?.getItem(CAREER_KEY) ?? "null");
+    if (!isRecord(data) || data["version"] !== 1) return newCareer();
     const fresh = newCareer();
+    const medals = readMedals(data["medals"]);
+    const event = data["event"];
     return {
       version: 1,
-      bank: validBank(data.bank) ? data.bank : fresh.bank,
-      standing: validStanding(data.standing) ? data.standing : fresh.standing,
-      ladders: validLadders(data.ladders) ? data.ladders : fresh.ladders,
+      bank: readBank(data["bank"]) ?? fresh.bank,
+      standing: readStanding(data["standing"]) ?? fresh.standing,
+      ladders: readLadders(data["ladders"]) ?? fresh.ladders,
       // A career saved before the calendar has no medals and races the salvage run.
       // An event moved to a new track keeps none of its old bests: they were times on another road.
-      medals: createMedalBoard({ ...MEDAL_BOARD, state: typeof data.medals === "object" && data.medals !== null ? sameCourseBests(data.medals, data.courses) : fresh.medals }).snapshot(),
-      event: typeof data.event === "string" && eventById(data.event) !== null ? data.event : fresh.event,
+      medals: createMedalBoard({ ...MEDAL_BOARD, state: medals === null ? fresh.medals : sameCourseBests(medals, data["courses"]) }).snapshot(),
+      event: typeof event === "string" && eventById(event) !== null ? event : fresh.event,
       courses: fresh.courses,
     };
   } catch {
@@ -151,26 +153,45 @@ export function saveCareer(career: CareerSave, storage?: CareerStorage): boolean
   }
 }
 
-const amount = (value: unknown): value is number => typeof value === "number" && Number.isFinite(value) && value >= 0;
-function validBank(value: unknown): value is CareerBankState {
-  if (typeof value !== "object" || value === null) return false;
-  const bank = value as Record<string, unknown>;
-  return amount(bank.banked) && amount(bank.haul) && amount(bank.deposited) && amount(bank.lost)
-    && amount(bank.bestHaul) && Number.isSafeInteger(bank.runs) && (bank.runs as number) >= 0;
+const amount = (value: unknown): value is number => isFiniteNumber(value) && value >= 0;
+const count = (value: unknown): value is number => typeof value === "number" && Number.isSafeInteger(value) && value >= 0;
+const scoreRow = (value: unknown): value is Record<string, number> => {
+  const row = recordOf(value, isFiniteNumber);
+  return row !== null && Object.keys(row).every((track) => track === "yard");
+};
+
+/** A saved bank, or null when any purse is missing or negative. */
+function readBank(value: unknown): CareerBankState | null {
+  if (!isRecord(value)) return null;
+  const { banked, haul, deposited, lost, bestHaul, runs } = value;
+  if (!amount(banked) || !amount(haul) || !amount(deposited) || !amount(lost) || !amount(bestHaul) || !count(runs)) return null;
+  return { banked, haul, deposited, lost, bestHaul, runs };
 }
-function validStanding(value: unknown): value is StandingState {
-  if (typeof value !== "object" || value === null) return false;
-  const records = (value as { records?: unknown }).records;
-  if (typeof records !== "object" || records === null) return false;
-  return Object.values(records).every((row) => typeof row === "object" && row !== null
-    && Object.entries(row).every(([track, score]) => track === "yard" && typeof score === "number" && Number.isFinite(score)));
+
+/** Saved standing, or null unless every record is a yard score. */
+function readStanding(value: unknown): StandingState | null {
+  if (!isRecord(value)) return null;
+  const records = recordOf(value["records"], scoreRow);
+  return records === null ? null : { records };
 }
-function validLadders(value: unknown): value is UpgradeState {
-  if (typeof value !== "object" || value === null) return false;
-  const ranks = (value as { ranks?: unknown }).ranks;
-  if (typeof ranks !== "object" || ranks === null) return false;
-  return Object.entries(ranks).every(([slot, rank]) => PART_SLOTS.includes(slot as PartSlotId)
-    && Number.isSafeInteger(rank) && (rank as number) >= 0 && (rank as number) <= LADDERS[slot as PartSlotId].length);
+
+/** Saved ladder ranks, or null unless every rank is a real slot within its ladder. */
+function readLadders(value: unknown): UpgradeState | null {
+  if (!isRecord(value)) return null;
+  const ranks = recordOf(value["ranks"], count);
+  if (ranks === null) return null;
+  const fits = Object.entries(ranks).every(([slot, rank]) => {
+    const ladder = PART_SLOTS.find((id) => id === slot);
+    return ladder !== undefined && rank <= LADDERS[ladder].length;
+  });
+  return fits ? { ranks } : null;
+}
+
+/** Saved medal bests, or null when there are none to keep. */
+function readMedals(value: unknown): MedalBoardState | null {
+  if (!isRecord(value)) return null;
+  const best = recordOf(value["best"], isFiniteNumber);
+  return best === null ? null : { best };
 }
 
 /** The career as live handles over its stored state. */
@@ -253,7 +274,7 @@ export function ownedParts(career: CareerSave): DriftFoundryPartDef[] {
 /** Settle a finished run: the haul banks on an escape and is lost to the compactor. */
 export function settleRun(
   career: CareerSave,
-  run: { kind: "escape" | "crushed"; place: number; haul: number; medals?: MedalBoardState },
+  run: { kind: "escape" | "crushed"; place: number; haul: number; medals?: MedalBoardState | undefined },
 ): CareerSave {
   const bank = bankOf(career);
   const standing = standingOf(career);
