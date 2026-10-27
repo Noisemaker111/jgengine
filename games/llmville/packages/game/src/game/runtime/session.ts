@@ -18,15 +18,15 @@ function isSessionPose(value: unknown): value is SessionPose {
   if (typeof value !== "object" || value === null) return false;
   const pose = value as Record<string, unknown>;
   return (
-    isFiniteNumber(pose.x)
-    && isFiniteNumber(pose.y)
-    && isFiniteNumber(pose.z)
-    && isFiniteNumber(pose.rotationY)
+    isFiniteNumber(pose["x"])
+    && isFiniteNumber(pose["y"])
+    && isFiniteNumber(pose["z"])
+    && isFiniteNumber(pose["rotationY"])
   );
 }
 
 export function sessionPoseOf(snapshot: GameRuntimeSnapshot, userId: string): SessionPose | null {
-  const pose = snapshot.players[userId]?.session?.pose;
+  const pose = snapshot.players[userId]?.session?.["pose"];
   return isSessionPose(pose) ? pose : null;
 }
 

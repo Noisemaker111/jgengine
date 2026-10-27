@@ -116,7 +116,13 @@ async function syncPresence(
   rotationPitch?: number,
 ) {
   const bot = presence.kind === "bot";
-  return presenceStore.sync(ctx, presence, position ? { position, rotationY, rotationPitch } : undefined, {
+  return presenceStore.sync(ctx, presence, position
+    ? {
+      position,
+      ...(rotationY === undefined ? {} : { rotationY }),
+      ...(rotationPitch === undefined ? {} : { rotationPitch }),
+    }
+    : undefined, {
     ...(bot ? { rules: { ...WORLD_POSE_RULES, maxSpeed: Number.MAX_VALUE, minIntervalMs: 100 } } : {}),
     ...(!bot ? { onSnapshot: (row: WorldPresenceRecord, now: number) =>
       persistGameWorldSnapshot(ctx, row.homeGameId as Id<"games">, row.position, now) } : {}),
@@ -130,11 +136,13 @@ async function ensurePresenceForActor(
   if (!server) return null;
   const kind = presenceKindForActor(actorExternalId);
   const user = await ctx.db.query("users").withIndex("by_external_id", q => q.eq("externalId", actorExternalId)).unique();
+  const label = preferredPresenceLabel(user);
+  const ownerActorId = kind === "bot" ? ownerFromBotActor(actorExternalId) : undefined;
   const row = await presenceStore.ensure(ctx, {
     serverId: server._id, actorExternalId, homeGameId: gameId, kind, position,
-    ownerActorId: kind === "bot" ? ownerFromBotActor(actorExternalId) : undefined,
+    ...(ownerActorId === undefined ? {} : { ownerActorId }),
     presenceId: kind === "bot" ? actorExternalId : humanPresenceId(actorExternalId),
-    label: preferredPresenceLabel(user) ?? undefined,
+    ...(label === null || label === undefined ? {} : { label }),
   });
   return { presenceId: row.presenceId, position: row.position, rotationY: row.rotationY };
 }

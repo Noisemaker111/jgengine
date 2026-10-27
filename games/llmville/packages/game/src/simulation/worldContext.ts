@@ -49,7 +49,8 @@ function racksEqual(a: readonly EngineWorldRack[], b: readonly EngineWorldRack[]
   if (a.length !== b.length) return false;
   return a.every((rack, index) => {
     const other = b[index];
-    return rack.id === other.id
+    return other !== undefined
+      && rack.id === other.id
       && rack.rackType === other.rackType
       && rack.x === other.x
       && rack.z === other.z
@@ -65,7 +66,8 @@ function placedItemsEqual(
   if (a.length !== b.length) return false;
   return a.every((item, index) => {
     const other = b[index];
-    return item.id === other.id
+    return other !== undefined
+      && item.id === other.id
       && item.itemId === other.itemId
       && item.x === other.x
       && item.y === other.y

@@ -70,7 +70,7 @@ export interface StartHostingInputs {
   existingVendorModelIds: readonly string[];
   totalVramGb: number;
   reputation: number;
-  requestedRevenueShare?: number;
+  requestedRevenueShare?: number | undefined;
 }
 
 export type StartHostingDecision =

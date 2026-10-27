@@ -73,7 +73,7 @@ function buildGeneratedAssetPrompt(request: string): string {
  */
 export function extractJsonObject(text: string): string | null {
   const fenced = /```(?:json)?\s*([\s\S]*?)```/.exec(text);
-  const source = fenced ? fenced[1] : text;
+  const source = fenced?.[1] ?? text;
   const start = source.indexOf("{");
   if (start < 0) return null;
   let depth = 0;
@@ -113,9 +113,9 @@ function parseGeneratedAssetText(text: string): ReturnType<typeof sanitizeGenera
 }
 
 export function agentCandidates(): AgentCandidate[] {
-  const override = process.env.LLMVILLE_BUILDER_AGENT_CMD?.trim();
+  const override = process.env["LLMVILLE_BUILDER_AGENT_CMD"]?.trim();
   if (override) {
-    const [command, ...args] = override.split(/\s+/);
+    const [command = override, ...args] = override.split(/\s+/);
     return [{ label: command, command, args }];
   }
   return opencodeCandidates();
@@ -130,7 +130,7 @@ function opencodeCandidates(): AgentCandidate[] {
   const candidates: AgentCandidate[] = [];
   const knownInstalls = process.platform === "win32"
     ? [
-      process.env.APPDATA ? path.join(process.env.APPDATA, "npm", "opencode.cmd") : null,
+      process.env["APPDATA"] ? path.join(process.env["APPDATA"], "npm", "opencode.cmd") : null,
       path.join(homedir(), ".opencode", "bin", "opencode.exe"),
     ]
     : [

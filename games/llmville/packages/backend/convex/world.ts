@@ -188,6 +188,7 @@ export const deleteWorldGraphChunk = internalMutation({
     continuation: v.optional(bootstrapContinuationValidator),
   },
   handler: async (ctx, args) => {
+    const continuationArg = args.continuation === undefined ? {} : { continuation: args.continuation };
     const scheduleNextWorld = async (nextArgs: {
       gameId: Id<"games">;
       queuedGameIds: Id<"games">[];
@@ -197,13 +198,13 @@ export const deleteWorldGraphChunk = internalMutation({
         externalId: args.externalId,
         tableIndex: 0,
         queuedGameIds: nextArgs.queuedGameIds,
-        continuation: args.continuation,
+        ...continuationArg,
       });
     };
 
     const finishQueueOrBootstrap = async () => {
-      if (args.queuedGameIds.length > 0) {
-        const [next, ...rest] = args.queuedGameIds;
+      const [next, ...rest] = args.queuedGameIds;
+      if (next !== undefined) {
         await scheduleNextWorld({ gameId: next, queuedGameIds: rest });
         return;
       }
@@ -219,7 +220,8 @@ export const deleteWorldGraphChunk = internalMutation({
     const game = await ctx.db.get(args.gameId);
     if (game && game.createdBy !== args.externalId) throw new Error(ERRORS.unauthorized);
 
-    if (args.tableIndex >= WORLD_GRAPH_TABLES.length) {
+    const tableName = WORLD_GRAPH_TABLES[args.tableIndex];
+    if (tableName === undefined) {
       if (game) await ctx.db.delete(args.gameId);
       await finishQueueOrBootstrap();
       return;
@@ -232,7 +234,6 @@ export const deleteWorldGraphChunk = internalMutation({
       for (const pose of poses) await ctx.db.delete(pose._id);
     }
 
-    const tableName = WORLD_GRAPH_TABLES[args.tableIndex];
     const docs = await ctx.db
       .query(tableName)
       .withIndex("by_game_id", (q) => q.eq("gameId", args.gameId))
@@ -244,7 +245,7 @@ export const deleteWorldGraphChunk = internalMutation({
         externalId: args.externalId,
         tableIndex: args.tableIndex + 1,
         queuedGameIds: args.queuedGameIds,
-        continuation: args.continuation,
+        ...continuationArg,
       });
       return;
     }
@@ -257,7 +258,7 @@ export const deleteWorldGraphChunk = internalMutation({
       gameId: args.gameId,
       externalId: args.externalId,
       queuedGameIds: args.queuedGameIds,
-      continuation: args.continuation,
+      ...continuationArg,
     };
 
     if (docs.length === DELETE_WORLD_BATCH) {
@@ -281,14 +282,14 @@ function enqueueWorldGraphDelete(
   gameIds: Id<"games">[],
   continuation?: { displayName: string; avatarId: string },
 ) {
-  if (gameIds.length === 0) return;
   const [first, ...rest] = gameIds;
+  if (first === undefined) return;
   void ctx.scheduler.runAfter(0, internal.world.deleteWorldGraphChunk, {
     gameId: first,
     externalId,
     tableIndex: 0,
     queuedGameIds: rest,
-    continuation: continuation ? { kind: "bootstrap" as const, ...continuation } : undefined,
+    ...(continuation ? { continuation: { kind: "bootstrap" as const, ...continuation } } : {}),
   });
 }
 

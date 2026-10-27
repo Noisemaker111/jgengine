@@ -39,12 +39,13 @@ export interface StartTrainingCommandInput {
 
 function parseStartTrainingInput(input: unknown): StartTrainingCommandInput | null {
   if (!isRecord(input)) return null;
-  const baseModelId = readString(input.baseModelId);
-  const trainingPowerFp16Multiplier = readFiniteNumber(input.trainingPowerFp16Multiplier);
-  const trainingDurationMultiplier = readFiniteNumber(input.trainingDurationMultiplier);
-  const powerCapacityKw = readFiniteNumber(input.powerCapacityKw);
-  const liveModelIds = readStringArray(input.liveModelIds);
-  const now = readFiniteNumber(input.now);
+  const { isUnlocked, overtrainBracket: rawBracket } = input;
+  const baseModelId = readString(input["baseModelId"]);
+  const trainingPowerFp16Multiplier = readFiniteNumber(input["trainingPowerFp16Multiplier"]);
+  const trainingDurationMultiplier = readFiniteNumber(input["trainingDurationMultiplier"]);
+  const powerCapacityKw = readFiniteNumber(input["powerCapacityKw"]);
+  const liveModelIds = readStringArray(input["liveModelIds"]);
+  const now = readFiniteNumber(input["now"]);
   if (
     baseModelId === null
     || trainingPowerFp16Multiplier === null
@@ -55,14 +56,14 @@ function parseStartTrainingInput(input: unknown): StartTrainingCommandInput | nu
   ) {
     return null;
   }
-  if (typeof input.isUnlocked !== "boolean") return null;
-  const overtrainBracket = input.overtrainBracket === undefined || input.overtrainBracket === null
+  if (typeof isUnlocked !== "boolean") return null;
+  const overtrainBracket = rawBracket === undefined || rawBracket === null
     ? null
-    : readFiniteNumber(input.overtrainBracket);
+    : readFiniteNumber(rawBracket);
   return {
     baseModelId,
     overtrainBracket,
-    isUnlocked: input.isUnlocked,
+    isUnlocked,
     trainingPowerFp16Multiplier,
     trainingDurationMultiplier,
     powerCapacityKw,

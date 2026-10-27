@@ -455,7 +455,7 @@ export function buildLicensedBaseServeModel(
     tokensPerToken: base.tokensPerToken,
     paramsB: base.paramsB,
     precision: "fp16",
-    benchmarkScore: base.benchmarkScore,
+    ...(base.benchmarkScore === undefined ? {} : { benchmarkScore: base.benchmarkScore }),
     launchState: "serving",
     baseModelId: base.id,
     isLicensedBaseServe: true,
