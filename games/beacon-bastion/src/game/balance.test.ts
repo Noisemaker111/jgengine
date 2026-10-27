@@ -15,7 +15,7 @@ import { restartDefense } from "./world/setup";
  * Pacing checks: a scripted defense played headless, start to finish, against the real director,
  * towers and economy. They pin the shape of the difficulty curve rather than exact numbers: doing
  * nothing loses, one kind of tower spammed loses to the raiders it can't answer, and a sensible
- * mixed keep holds on Knight without sitting on gold it could have spent.
+ * mixed keep holds on Knight without finishing with a fortune it never had to spend.
  * `BEACON_TRACE=1` prints each wave's walls, purse and towers, and every raider that broke through.
  */
 
@@ -36,8 +36,11 @@ interface Outcome {
   held: boolean;
   wave: number;
   lives: number;
-  /** The most gold left in the purse right after the keep went shopping: money it sat on rather than spent. */
-  hoard: number;
+  /**
+   * The purse when the run ends, less the bounty paid after the keep's last chance to buy: a final
+   * kill lands its pay when nothing can be bought any more, so only gold the keep could have spent counts.
+   */
+  gold: number;
   towers: number;
 }
 
@@ -92,7 +95,8 @@ function playDefense(plan: Plan, difficulty: DifficultyId = "knight"): Outcome {
   const built = { next: 0 };
   runner.ui.invoke("wave.send", {});
   let spendIn = 0;
-  let hoard = 0;
+  // Bounty paid by the last shopping trip: anything paid after it arrived with no trip left to spend it.
+  let bountyAtLastTrip = 0;
   let lastWave = 0;
   const trace: string[] = [];
   for (let t = 0; t < 1500 && !runEnded(keep.of(runner.ctx)); t += DT) {
@@ -113,8 +117,8 @@ function playDefense(plan: Plan, difficulty: DifficultyId = "knight"): Outcome {
     tickTowers(runner.ctx, DT);
     spendIn -= DT;
     if (spendIn <= 0) {
+      bountyAtLastTrip = keep.of(runner.ctx).num("keep.bounty_earned");
       spend(runner, plan, built);
-      hoard = Math.max(hoard, keep.of(runner.ctx).num("keep.gold"));
       if (plan.rites === true) useRites(runner);
       spendIn = 1;
     }
@@ -125,7 +129,7 @@ function playDefense(plan: Plan, difficulty: DifficultyId = "knight"): Outcome {
     held: world.fact("keep.held") === true,
     wave: session.encounter.view().wave,
     lives: world.num("keep.lives"),
-    hoard,
+    gold: world.num("keep.gold") - (world.num("keep.bounty_earned") - bountyAtLastTrip),
     towers: world.instances().length,
   };
 }
@@ -150,7 +154,7 @@ describe("pacing", () => {
     const outcome = playDefense(MIXED);
     expect(outcome.held).toBe(true);
     expect(outcome.lives).toBeLessThan(20);
-    expect(outcome.hoard).toBeLessThan(300);
+    expect(outcome.gold).toBeLessThan(300);
   });
 
   test("cannons alone can't answer the wraiths", () => {
