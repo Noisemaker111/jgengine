@@ -7,6 +7,8 @@ import { registerCommands } from "./commands";
 import { seededRng } from "@jgengine/core/random/rng";
 import { gunById, rollGun } from "./handroll";
 import { inventories } from "./inventories";
+import { AMMO_CRATES, AMMO_RESTOCK_SECONDS } from "./items/ammoCrates";
+import { CHEST_DROP_REACH, chestDropSpot } from "./items/chestDrops";
 import { session } from "./session";
 import type { QuestJournal } from "@jgengine/core/mission/quest";
 import { CRASH_CHEST, QUEST_IDS, quests } from "./quests/catalog";
@@ -47,18 +49,40 @@ function onlyDrop(ctx: GameContext): { itemId: string; position: readonly [numbe
 }
 
 describe("scrap-signal chests", () => {
-  test("an ammo chest pays out once and is empty afterwards", () => {
+  test("an ammo crate pays ammo for the guns you carry, is empty a while, then restocks", () => {
     const ctx = bootContext();
-    ctx.game.commands.run("chest.openAmmo", { instanceId: "ammo_chest_0" });
-    expect(ctx.scene.worldItem.list()).toHaveLength(2);
+    const rng = seededRng("crate-test");
+    ctx.player.inventory.put("hotbar", rollGun(rng, 1, { family: "pistol" }).id, 1, { slot: 0 });
+    ctx.player.inventory.put("hotbar", rollGun(rng, 1, { family: "shotgun" }).id, 1, { slot: 1 });
+    const crate = AMMO_CRATES[0]?.id ?? "";
+    ctx.scene.entity.stats.set("p1", "ammo_pistol", { current: 150, max: 200 });
+    ctx.scene.entity.stats.set("p1", "ammo_shotgun", { current: 4, max: 80 });
+    ctx.game.commands.run("chest.openAmmo", { instanceId: crate });
+    // A pack per carried gun, and a second for the emptiest pool.
+    expect(ctx.scene.worldItem.list().map((item) => item.itemId).sort()).toEqual(["ammo_pistol_pack", "ammo_shotgun_pack", "ammo_shotgun_pack"]);
     expect(ctx.scene.entity.stats.get("p1", "grenades")?.current).toBe(3);
 
-    ctx.game.commands.run("chest.openAmmo", { instanceId: "ammo_chest_0" });
-    expect(ctx.scene.worldItem.list()).toHaveLength(2);
+    ctx.game.commands.run("chest.openAmmo", { instanceId: crate });
+    expect(ctx.scene.worldItem.list()).toHaveLength(3);
     expect(ctx.scene.entity.stats.get("p1", "grenades")?.current).toBe(3);
 
-    ctx.game.commands.run("chest.openAmmo", { instanceId: "ammo_chest_1" });
-    expect(ctx.scene.worldItem.list()).toHaveLength(4);
+    ctx.time.advance(AMMO_RESTOCK_SECONDS);
+    ctx.game.commands.run("chest.openAmmo", { instanceId: crate });
+    expect(ctx.scene.worldItem.list()).toHaveLength(6);
+  });
+
+  test("a chest sets its guns down on the opener's side, clear of the chest", () => {
+    const ctx = bootContext();
+    const chest: [number, number, number] = [10, 0, -4];
+    ctx.scene.entity.update("p1", { position: [chest[0] + 3, chest[1], chest[2]] });
+    const spots = [0, 1].map((index) => chestDropSpot(ctx, chest, index, 2));
+    for (const at of spots) {
+      expect(Math.hypot(at[0] - chest[0], at[2] - chest[2])).toBeGreaterThanOrEqual(CHEST_DROP_REACH - 0.001);
+      expect(at[0]).toBeGreaterThan(chest[0] + 2);
+    }
+    const [first, second] = spots;
+    if (first === undefined || second === undefined) throw new Error("two spots");
+    expect(Math.abs(first[2] - second[2])).toBeGreaterThan(0.5);
   });
 
   test("a red chest pays out once", () => {
@@ -130,16 +154,33 @@ describe("scrap-signal weapon slots", () => {
 });
 
 describe("scrap-signal pickup", () => {
-  test("E takes the gun in front, not the one just dropped underfoot", () => {
-    const ctx = bootContext();
+  test("E takes the gun you stand on, else the one in front, else the nearest", () => {
     const rng = seededRng("pickup-test");
     const underfoot = rollGun(rng, 1, { family: "pistol", rarity: "common" });
     const ahead = rollGun(rng, 1, { family: "smg", rarity: "common" });
-    ctx.scene.worldItem.spawn({ itemId: underfoot.id, position: [0, 0, 0.1] });
-    ctx.scene.worldItem.spawn({ itemId: ahead.id, position: [0.2, 0, 1.8] });
-    ctx.scene.entity.update("p1", { rotationY: 0 });
+    const behind = rollGun(rng, 1, { family: "shotgun", rarity: "common" });
+    const take = (drops: readonly (readonly [string, number])[]): string | undefined => {
+      const ctx = bootContext();
+      for (const [itemId, z] of drops) ctx.scene.worldItem.spawn({ itemId, position: [0.1, 0, z] });
+      ctx.scene.entity.update("p1", { rotationY: 0 });
+      ctx.game.commands.run("pickup", {});
+      return ctx.player.inventory.state("hotbar").slots[0]?.itemId;
+    };
+    expect(take([[ahead.id, 1.8], [underfoot.id, 0.2], [behind.id, -1]])).toBe(underfoot.id);
+    expect(take([[behind.id, -1], [ahead.id, 1.8]])).toBe(ahead.id);
+    expect(take([[behind.id, -1], [ahead.id, -2]])).toBe(behind.id);
+  });
+
+  test("from a pile, E takes the rarest gun, whichever landed first", () => {
+    const ctx = bootContext();
+    const rng = seededRng("pile-test");
+    const plain = rollGun(rng, 1, { family: "pistol", rarity: "common" });
+    const rare = rollGun(rng, 1, { family: "pistol", rarity: "rare" });
+    ctx.scene.worldItem.spawn({ itemId: plain.id, position: [0, 0, 1.2] });
+    ctx.scene.worldItem.spawn({ itemId: rare.id, position: [0, 0, 1.2] });
+    ctx.scene.entity.update("p1", { rotationY: Math.PI });
     ctx.game.commands.run("pickup", {});
-    expect(ctx.player.inventory.state("hotbar").slots[0]?.itemId).toBe(ahead.id);
+    expect(ctx.player.inventory.state("hotbar").slots[0]?.itemId).toBe(rare.id);
   });
 
   test("a swapped-out gun lands behind the player", () => {

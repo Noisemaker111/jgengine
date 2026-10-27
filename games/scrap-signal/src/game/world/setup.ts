@@ -2,8 +2,10 @@ import { seededRng } from "@jgengine/core/random/rng";
 import type { GameContext } from "@jgengine/core/runtime/gameContext";
 import type { EntityPosition } from "@jgengine/core/scene/entityStore";
 import { rememberHome } from "../entities/enemies/ai";
-import { enemyById, levelHealthMult } from "../entities/enemies/catalog";
+import { countsAsKillOf, enemyById, levelHealthMult } from "../entities/enemies/catalog";
 import { findEditorMarker } from "@jgengine/core/editor/document";
+import { AMMO_CRATES } from "../items/ammoCrates";
+import { campDeathsStore } from "../stores";
 import { authoredScene, placeLevel, SIDE_POIS } from "./level";
 import {
   BLACK_MARKET_POS,
@@ -124,10 +126,41 @@ export function moveNpcTo(ctx: GameContext, entityId: string, markerId: string):
   });
 }
 
-export function respawnClusters(ctx: GameContext): void {
-  const playerEntity = ctx.scene.entity.get(ctx.player.userId);
+/**
+ * A kill job just taken: bring back the dead camp members it counts, so a camp cleared earlier is
+ * not an empty marker the player waits at. Members in the player's face stay down, as respawns do.
+ */
+export function respawnForJob(ctx: GameContext, targets: readonly string[]): void {
+  const player = ctx.scene.entity.get(ctx.player.userId);
+  const deaths = { ...campDeathsStore.read(ctx) };
   for (const member of clusterMembers) {
     if (ctx.scene.entity.get(member.id) !== null) continue;
+    if (!targets.some((target) => countsAsKillOf(member.catalogId, target))) continue;
+    if (player !== null && Math.hypot(player.position[0] - member.position[0], player.position[2] - member.position[2]) < 24) continue;
+    delete deaths[member.id];
+    spawnMember(ctx, member);
+  }
+  campDeathsStore.write(ctx, deaths);
+}
+
+/**
+ * Seconds a dead camp member stays dead. Borderlands refills a camp when you come back to the map, not
+ * the moment you turn your back, so a camp you cleared is still clear when the boss behind it wakes.
+ */
+export const CAMP_RESPAWN_SECONDS = 240;
+
+export function respawnClusters(ctx: GameContext): void {
+  const playerEntity = ctx.scene.entity.get(ctx.player.userId);
+  const now = ctx.time.now();
+  const deaths = { ...campDeathsStore.read(ctx) };
+  for (const member of clusterMembers) {
+    if (ctx.scene.entity.get(member.id) !== null) continue;
+    const diedAt = deaths[member.id];
+    if (diedAt === undefined) {
+      deaths[member.id] = now;
+      continue;
+    }
+    if (now - diedAt < CAMP_RESPAWN_SECONDS) continue;
     if (playerEntity !== null) {
       const distance = Math.hypot(
         playerEntity.position[0] - member.position[0],
@@ -135,17 +168,16 @@ export function respawnClusters(ctx: GameContext): void {
       );
       if (distance < 38) continue;
     }
+    delete deaths[member.id];
     spawnMember(ctx, member);
   }
+  campDeathsStore.write(ctx, deaths);
 }
 
 export const RED_CHESTS: readonly { x: number; z: number }[] = ZONES.flatMap((zone) =>
   zone.chests.filter((chest) => chest.kind === "red").map((chest) => ({ x: chest.x, z: chest.z })),
 );
 
-export const AMMO_CHESTS: readonly { x: number; z: number }[] = ZONES.flatMap((zone) =>
-  zone.chests.filter((chest) => chest.kind === "ammo").map((chest) => ({ x: chest.x, z: chest.z })),
-);
 
 export function setupWorld(ctx: GameContext): void {
   const place = (catalogId: string, x: number, z: number, instanceId?: string, rotation?: number) => {
@@ -172,7 +204,7 @@ export function setupWorld(ctx: GameContext): void {
     place("fast_travel", station.x, station.z, `travel_${station.zoneId}`);
   }
   RED_CHESTS.forEach((chest, index) => place("red_chest", chest.x, chest.z, `red_chest_${index}`));
-  AMMO_CHESTS.forEach((chest, index) => place("ammo_chest", chest.x, chest.z, `ammo_chest_${index}`));
+  for (const crate of AMMO_CRATES) place("ammo_chest", crate.x, crate.z, crate.id);
 
   ctx.scene.entity.spawn("bolt", {
     id: "bolt_1",

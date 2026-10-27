@@ -24,6 +24,7 @@ import type { Vec3 } from "@jgengine/core/world/geometry";
 import { gunById, reservePhase } from "../handroll";
 import { enemyById, type EnemyDef } from "../entities/enemies/catalog";
 import { homeOf, rememberHome, tickEnemyAttack } from "../entities/enemies/behavior";
+import { QUEST_IDS } from "../quests/catalog";
 import { authoredScene } from "../world/level";
 import { PLAYER_SPAWN, PLAYER_SPAWN_YAW } from "../world/sites";
 import { createShotHunt } from "./noise";
@@ -638,6 +639,15 @@ function advanceWaves(ctx: GameContext, dt: number): void {
  * One tick of the Rustflat Front: hearing first (a shot is a fact the whole battle shares), then the
  * waves, then one squad pass per crew, then the fighters and the Foreman.
  */
+/**
+ * The front's crews (husk drones, elites, the Foreman) only come for the wreck once Old Tusk is down:
+ * the crash site's first hour is whelps and bruisers, and the shelf's drones are the next zone's news.
+ */
+function frontAwake(ctx: GameContext): boolean {
+  const tusk = ctx.game.quest?.list(ctx.player.userId).find((entry) => entry.questId === QUEST_IDS.oldTusk);
+  return tusk?.status === "completed";
+}
+
 export function tickFront(ctx: GameContext, dt: number): void {
   const runtime = runtimeOf(ctx);
   const player = ctx.scene.entity.get(ctx.player.userId);
@@ -663,7 +673,7 @@ export function tickFront(ctx: GameContext, dt: number): void {
   const centre: Vec3 = [SITE.x, 0, SITE.z];
   const distance = distance2d(player.position, centre);
   if (!runtime.started) {
-    if (distance <= FRONT_ACTIVATION_RADIUS) {
+    if (distance <= FRONT_ACTIVATION_RADIUS && frontAwake(ctx)) {
       runtime.started = true;
       runtime.cover = buildCover(ctx);
       ctx.game.notices.push({ text: "THE RUSTFLAT FRONT — two crews are tearing at the wreck", tone: "warn", ttlMs: 4500 });

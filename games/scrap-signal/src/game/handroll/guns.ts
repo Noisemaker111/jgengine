@@ -13,7 +13,8 @@ export interface GunWeaponStats {
   critChance: number;
   critMult: number;
   pellets?: number;
-  projectile?: { speed: number; fuseTime: number };
+  /** A rocket: flies at this speed and bursts on the first thing it meets. */
+  projectile?: { speed: number };
   explosion?: { radius: number };
 }
 
@@ -118,7 +119,7 @@ export const FAMILY_BASES: readonly FamilyBase[] = [
       fireIntervalMs: 1200,
       critChance: 0.05,
       critMult: 1.5,
-      projectile: { speed: 26, fuseTime: 1.4 },
+      projectile: { speed: 26 },
       explosion: { radius: 4.6 },
     },
   },

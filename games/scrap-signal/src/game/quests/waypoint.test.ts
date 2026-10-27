@@ -5,12 +5,18 @@ import { createGameContext, type GameContext } from "@jgengine/core/runtime/game
 import { createAssetCatalog } from "@jgengine/core/scene/assetCatalog";
 
 import { QUEST_IDS, quests } from "./catalog";
-import { creditObjective } from "./givers";
+import { gunById, restoreMagazines, rollGun } from "../handroll";
+import { AMMO_STAT_IDS } from "../ammo";
+import { AMMO_CRATES } from "../items/ammoCrates";
+import { inventories } from "../inventories";
+import { seededRng } from "@jgengine/core/random/rng";
+import { creditObjective, talkTo } from "./givers";
 import { questWaypoint } from "./waypoint";
+import { ammoCratesOpenedStore } from "../stores";
 
 function bootContext(): GameContext {
   const ctx = createGameContext({
-    definition: defineGameDefinition({ name: "scrap-waypoint-test", assets: createAssetCatalog(), multiplayer: "off", features: { quest: true } }),
+    definition: defineGameDefinition({ name: "scrap-waypoint-test", assets: createAssetCatalog(), multiplayer: "off", features: { quest: true }, inventories }),
     content: {},
     player: { userId: "p1", isNew: true },
   });
@@ -51,6 +57,41 @@ describe("scrap-signal quest marker", () => {
     creditObjective(ctx, "kill", "husk");
     const entry = journal(ctx).list("p1").find((candidate) => candidate.questId === QUEST_IDS.shoreParty);
     expect(entry?.objectives.find((objective) => objective.id === "husks")?.progress).toBe(1);
+  });
+
+  test("a reward gun lands past the giver's talk range, so E picks it up instead of talking", () => {
+    const ctx = bootContext();
+    ctx.scene.entity.update("p1", { position: [5, 0, 7] });
+    journal(ctx).grant("p1", "q_scorched_earth");
+    journal(ctx).progress("p1", "q_scorched_earth", "scorched", 2);
+    talkTo(ctx, "bolt");
+    const [drop] = ctx.scene.worldItem.list();
+    const at = drop === undefined ? undefined : ctx.scene.entity.get(drop.instanceId)?.position;
+    if (drop === undefined || at === undefined) throw new Error("no reward on the ground");
+    expect(gunById(drop.itemId)?.name).toBe("Kindler");
+    expect(Math.hypot(at[0] - 6, at[2] - 8)).toBeGreaterThan(3.2 + 0.5);
+    expect(questWaypoint(ctx)).toMatchObject({ kind: "npc" });
+  });
+
+  test("with every gun empty it points at the nearest stocked ammo crate, ahead of the quest", () => {
+    const ctx = bootContext();
+    const [near, far] = AMMO_CRATES;
+    if (near === undefined || far === undefined) throw new Error("the world needs two ammo crates");
+    ctx.scene.object.place("ammo_chest", near.x, 0, near.z, { instanceId: near.id });
+    ctx.scene.object.place("ammo_chest", far.x, 0, far.z, { instanceId: far.id });
+    ctx.scene.entity.update("p1", { position: [near.x, 0, near.z + 5] });
+    const pistol = rollGun(seededRng("dry"), 1, { family: "pistol", rarity: "common" });
+    ctx.player.inventory.put("hotbar", pistol.id, 1, { slot: 0 });
+    expect(questWaypoint(ctx)).toMatchObject({ kind: "npc" });
+
+    restoreMagazines(ctx, [{ gunId: pistol.id, loaded: 0 }]);
+    expect(questWaypoint(ctx)).toMatchObject({ x: near.x, z: near.z, kind: "chest" });
+
+    ammoCratesOpenedStore.write(ctx, { [near.id]: ctx.time.now() });
+    expect(questWaypoint(ctx)).toMatchObject({ x: far.x, z: far.z, kind: "chest" });
+
+    ctx.scene.entity.stats.set("p1", AMMO_STAT_IDS.pistol, { current: 10, max: 200 });
+    expect(questWaypoint(ctx)).toMatchObject({ kind: "npc" });
   });
 
   test("a finished quest points back at its giver", () => {

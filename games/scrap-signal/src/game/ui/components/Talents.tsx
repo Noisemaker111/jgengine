@@ -50,6 +50,9 @@ export function CharacterCard({ character, onPick }: { character: CharacterDef; 
 
 
 
+/** Points in a branch that open each tier (`requiresPointsInBranch`). */
+const TIERS = [0, 5, 10, 15, 20] as const;
+
 function NodeButton({ node, onSpend }: { node: CharacterNode; onSpend: () => void }) {
   const tree = talentTree();
   if (tree === null) return null;
@@ -103,18 +106,30 @@ export function TalentsPanel() {
                 {branch.flavor} · {tree.pointsInBranch(branch.id)} pts
               </div>
               <div className="flex flex-col gap-1.5">
-                {nodes
-                  .filter((node) => node.branch === branch.id)
-                  .map((node) => (
-                    <NodeButton key={node.id} node={node} onSpend={() => commands.run("talent.spend", { nodeId: node.id })} />
-                  ))}
+                {TIERS.map((tier) => {
+                  const inTier = nodes.filter((node) => node.branch === branch.id && (node.requiresPointsInBranch ?? 0) === tier);
+                  if (inTier.length === 0) return null;
+                  const open = tree.pointsInBranch(branch.id) >= tier;
+                  return (
+                    <div key={tier} className="flex flex-col gap-1">
+                      {tier > 0 ? (
+                        <div className={`text-[9px] font-black uppercase tracking-[0.25em] ${open ? "text-lime-300" : "text-stone-600"}`}>
+                          Tier {tier / 5} · {tier} pts
+                        </div>
+                      ) : null}
+                      {inTier.map((node) => (
+                        <NodeButton key={node.id} node={node} onSpend={() => commands.run("talent.spend", { nodeId: node.id })} />
+                      ))}
+                    </div>
+                  );
+                })}
               </div>
             </div>
           ))}
         </div>
         <div className="mt-3 flex items-center justify-between gap-3">
           <p className="text-[10px] uppercase tracking-wider text-stone-500">
-            Capstones unlock at 10 points in their branch · earn points by leveling up
+            Each tier opens at 5 more points in its branch · the capstone at 20 · earn points by leveling up
           </p>
           <HudButton
             disabled={tree.pointsSpent() === 0 || cash < respecCost(level)}

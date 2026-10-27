@@ -92,17 +92,18 @@ export function tickEnemies(ctx: GameContext, dt: number): void {
       bossSamples.push({ id: entity.id, position: entity.position, level: zoneLevelAt(entity.position[0], entity.position[2]) });
     }
 
+    const playerDistance = distance2d(entity.position, playerPos);
+    const leashed = distance2d(entity.position, anchor) > LEASH_RADIUS;
+    const engaged = !playerDowned && !leashed && playerDistance <= def.aggroRadius;
+
     // A shot pulls a nearby enemy off its post: it walks to where it last heard, and when the
     // memory has faded it goes back to wandering or to its leash. No second give-up timer lives here.
-    const heardAt = huntTargetFor(ctx, entity.id);
+    // Once the player is in reach it fights instead: hearing a shot never stops an enemy attacking.
+    const heardAt = engaged ? null : huntTargetFor(ctx, entity.id);
     if (heardAt !== null && distance2d(anchor, heardAt) <= LEASH_RADIUS) {
       ctx.scene.entity.moveTowardCommit(entity.id, heardAt, { speed: def.walkSpeed, stopDistance: 1.4, dt });
       continue;
     }
-
-    const playerDistance = distance2d(entity.position, playerPos);
-    const leashed = distance2d(entity.position, anchor) > LEASH_RADIUS;
-    const engaged = !playerDowned && !leashed && playerDistance <= def.aggroRadius;
 
     if (engaged !== engagedOf(ctx).has(entity.id)) {
       if (engaged) {

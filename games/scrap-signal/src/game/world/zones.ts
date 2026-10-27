@@ -75,28 +75,33 @@ const ZONE_META: readonly ZoneMeta[] = [
     level: 1,
     settlement: { count: 4, footprint: 6, stories: [1, 1], style: "ruin", palette: { wall: "#8a5c3a", storefront: "#4a3524" } },
     clusters: [
-      { catalogId: "bruiser", count: 4 },
-      { catalogId: "bruiser_brat", count: 5 },
+      { catalogId: "bruiser", count: 6 },
+      { catalogId: "bruiser_brat", count: 10 },
     ],
-    chests: [{ kind: "red" }, { kind: "ammo" }],
+    // The second ammo crate stands in the Monglet Den, for the Old Tusk fight; the second red chest
+    // is the convoy's crate that Bruiser Bash sends you to.
+    chests: [{ kind: "red" }, { kind: "ammo" }, { kind: "ammo" }, { kind: "red" }],
   },
   {
     id: "breakwater_shelf",
     name: "Breakwater Shelf",
     level: 4,
     settlement: { count: 8, footprint: 7, stories: [1, 2], style: "desert", palette: { wall: "#7d8894", storefront: "#3a4450" } },
+    // The landing's camps (husks, marauders) hold only the common stock, so arriving meets the two new
+    // enemies the brief names; the local breeds wait in the far camps their side jobs send you to.
     clusters: [
       { catalogId: "husk", count: 5 },
       { catalogId: "marauder", count: 4 },
-      { catalogId: "nomad", count: 2 },
-      { catalogId: "bruiser", count: 3 },
+      { catalogId: "nomad", count: 4 },
+      { catalogId: "bruiser", count: 5 },
     ],
     squads: [
-      { catalogId: "scorch_husk", count: 2, joins: 0 },
-      { catalogId: "shelf_raider", count: 2, joins: 1 },
+      { catalogId: "scorch_husk", count: 2, joins: 2 },
+      { catalogId: "shelf_raider", count: 2, joins: 3 },
       { catalogId: "tide_bruiser", count: 1, joins: 3 },
     ],
-    chests: [{ kind: "red" }, { kind: "ammo" }],
+    // The last crate stands in the boss's yard, as Borderlands stocks every boss room.
+    chests: [{ kind: "red" }, { kind: "ammo" }, { kind: "ammo" }],
     boss: { catalogId: "captain_rusk", instanceId: "boss_rusk" },
   },
   {
@@ -135,7 +140,7 @@ const ZONE_META: readonly ZoneMeta[] = [
       { catalogId: "crawler_spitter", count: 2, joins: 2 },
       { catalogId: "brood_crawler", count: 1, joins: 3 },
     ],
-    chests: [{ kind: "red" }, { kind: "ammo" }],
+    chests: [{ kind: "red" }, { kind: "ammo" }, { kind: "ammo" }],
     boss: { catalogId: "wreck_maw", instanceId: "boss_wreck_maw" },
   },
   {
@@ -152,7 +157,7 @@ const ZONE_META: readonly ZoneMeta[] = [
     ],
     squads: [
       { catalogId: "shard_crawler", count: 2, joins: 0 },
-      { catalogId: "glass_husk", count: 2, joins: 3 },
+      { catalogId: "glass_husk", count: 2, joins: 1 },
       { catalogId: "glasswind_hauler", count: 1, joins: 4 },
     ],
     chests: [{ kind: "red" }, { kind: "ammo" }],
@@ -173,7 +178,7 @@ const ZONE_META: readonly ZoneMeta[] = [
       { catalogId: "core_crawler", count: 2, joins: 2 },
       { catalogId: "blight_husk", count: 1, joins: 1 },
     ],
-    chests: [{ kind: "red" }, { kind: "red" }, { kind: "ammo" }],
+    chests: [{ kind: "red" }, { kind: "red" }, { kind: "ammo" }, { kind: "ammo" }],
     boss: { catalogId: "foundry_heart", instanceId: "boss_foundry_heart" },
   },
 ];

@@ -21,7 +21,7 @@ import {
   startFrontRun,
 } from "../encounters/front";
 import { FRONT_LEAVE_RADIUS } from "../encounters/waves";
-import { enemyById, levelDamageMult, levelXpFor } from "../entities/enemies/catalog";
+import { ENEMY_TOUGHNESS, enemyById, levelDamageMult, levelXpFor } from "../entities/enemies/catalog";
 import { clearEnemyPower, setEnemyPower } from "../entities/enemies/behavior";
 import { grantXp } from "../progression/curves";
 import {
@@ -219,10 +219,18 @@ function onSpawn(ctx: GameContext, id: string, catalogId: string, position: Enti
   const def = enemyById(catalogId);
   const boss = def?.family === "boss";
   const effect = runtime.effect;
+  // The ladder climbs on its own tiers from the listed numbers, as a boss fight does: a camp's
+  // toughness is not Overdrive's dial.
+  const listed = boss ? 1 : 1 / ENEMY_TOUGHNESS;
+  const shield = ctx.scene.entity.stats.get(id, "shield");
+  if (shield !== null && !boss) {
+    const maxShield = Math.round(shield.max * listed);
+    ctx.scene.entity.stats.set(id, "shield", { max: maxShield, current: maxShield });
+  }
   const health = ctx.scene.entity.stats.get(id, "health");
   let maxHealth = health?.max ?? 0;
   if (health !== null) {
-    maxHealth = Math.max(1, Math.round(health.max * scaling.health * effect.health));
+    maxHealth = Math.max(1, Math.round(health.max * listed * scaling.health * effect.health));
     ctx.scene.entity.stats.set(id, "health", { max: maxHealth });
     ctx.scene.entity.stats.delta(id, "health", maxHealth);
   }

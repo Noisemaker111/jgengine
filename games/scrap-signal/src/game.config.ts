@@ -11,7 +11,7 @@ import { audio, objectSounds } from "./game/audio/catalog";
 import { audioProbe } from "./game/audio/drive";
 import { frontProbe } from "./game/encounters/front";
 import { reserveProbe } from "./game/handroll/reserve";
-import { lookedAtItem } from "./game/commands";
+import { lookedAtItem, STAND_ON } from "./game/commands";
 import { crashSite } from "./game/progression/onboarding";
 import { depthProbe } from "./game/progression/probe";
 import { content } from "./game/content";
@@ -26,7 +26,8 @@ import { scrapTheme } from "./game/ui/theme";
 import { entityModels, objectModels } from "./game/world/models";
 import { FerralonWorldOverlay } from "./game/world/Viewmodel";
 import { NPCS } from "./game/quests/catalog";
-import { AMMO_CHESTS, RED_CHESTS } from "./game/world/setup";
+import { RED_CHESTS } from "./game/world/setup";
+import { AMMO_CRATES } from "./game/items/ammoCrates";
 import {
   BLACK_MARKET_POS,
   RIGG_VENDOR_POS,
@@ -123,13 +124,13 @@ const staticPrompts: readonly PositionedPrompt[] = [
       invoke: { name: "chest.openRed", input: { instanceId: `red_chest_${index}` } },
     },
   })),
-  ...AMMO_CHESTS.map((chest, index) => ({
-    id: `chest:ammo:${index}`,
-    position: { x: chest.x, z: chest.z },
+  ...AMMO_CRATES.map((crate) => ({
+    id: `chest:ammo:${crate.id}`,
+    position: { x: crate.x, z: crate.z },
     prompt: {
       radius: 2.8,
       display: { kind: "keybind", actionId: "interact"} as const,
-      invoke: { name: "chest.openAmmo", input: { instanceId: `ammo_chest_${index}` } },
+      invoke: { name: "chest.openAmmo", input: { instanceId: crate.id } },
     },
   })),
 ];
@@ -162,12 +163,14 @@ function prompts(ctx: GameContext): readonly PositionedPrompt[] {
   if (nearestId === null) return base;
   const itemEntity = ctx.scene.entity.get(nearestId);
   if (itemEntity === null) return base;
+  // A drop under your feet is what E means, even beside someone to talk to; otherwise talking wins.
+  const underfoot = Math.hypot(itemEntity.position[0] - playerEntity.position[0], itemEntity.position[2] - playerEntity.position[2]) < STAND_ON;
   return [
     ...base,
     {
       id: `pickup:${nearestId}`,
       position: { x: itemEntity.position[0], z: itemEntity.position[2] },
-      priority: 1,
+      priority: underfoot ? 3 : 1,
       prompt: {
         radius: 2.8,
         display: { kind: "keybind", actionId: "interact" },

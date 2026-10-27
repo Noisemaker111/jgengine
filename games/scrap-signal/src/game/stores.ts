@@ -16,6 +16,12 @@ export const lastPickupStore = defineStore<{ gunId: string; atMs: number } | nul
 
 export const openedChestsStore = defineStore<readonly string[]>("openedChests", () => []);
 
+/** When each ammo crate was last emptied, in game seconds: a crate restocks a while later. */
+export const ammoCratesOpenedStore = defineStore<Readonly<Record<string, number>>>("ammoCratesOpened", () => ({}));
+
+/** When each camp member was first found dead, in game seconds: a cleared camp stays clear a while. */
+export const campDeathsStore = defineStore<Readonly<Record<string, number>>>("campDeaths", () => ({}));
+
 export const vendorOpenStore = defineStore<string | null>("vendorOpen", null);
 
 /** The last thing someone said over the radio or face to face. */

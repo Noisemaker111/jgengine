@@ -2,11 +2,14 @@ import { giverOffer, type GiverOffer } from "@jgengine/core/mission/questGivers"
 import type { GameContext } from "@jgengine/core/runtime/gameContext";
 import { defineStore } from "@jgengine/core/store/defineStore";
 
+import { seededRng } from "@jgengine/core/random/rng";
+
 import { earn } from "../cash";
+import { rollGun } from "../handroll";
 import { grantXp } from "../progression/curves";
 import { award } from "../progression/unlocks";
 import { speechStore } from "../stores";
-import { moveNpcTo, spawnQuestEnemy } from "../world/setup";
+import { moveNpcTo, respawnForJob, spawnQuestEnemy } from "../world/setup";
 import { NPCS, quests, scrapQuestById, type NpcId, type ScrapObjective, type ScrapQuest } from "./catalog";
 
 /** The conversation on screen: who is talking, and the quest they are offering, if any. */
@@ -59,7 +62,47 @@ function payQuest(ctx: GameContext, quest: ScrapQuest): void {
   if (quest.reward.cash !== undefined) earn(ctx, "cash", quest.reward.cash, "quest-reward", quest.id);
   if (quest.reward.cores !== undefined) earn(ctx, "cores", quest.reward.cores, "quest-reward", quest.id);
   for (const id of quest.reward.unlocks ?? []) award(ctx, id);
+  if (quest.reward.gun !== undefined) giveUniqueGun(ctx, quest.reward.gun, quest);
   ctx.scene.entity.floatText({ instanceId: userId, text: `MISSION COMPLETE · +${quest.reward.xp} XP`, kind: "pickup" });
+}
+
+/** How far from the giver a reward is set down: past the talk prompt's reach, so E takes the gun, not the conversation. */
+const REWARD_CLEARANCE = 4.6;
+
+/**
+ * A quest's unique gun, rolled at the player's level and set down between the player and the giver,
+ * just outside the giver's talk range, to read and take.
+ */
+function giveUniqueGun(ctx: GameContext, name: string, quest: ScrapQuest): void {
+  const me = ctx.scene.entity.get(ctx.player.userId);
+  if (me === null) return;
+  const gun = rollGun(seededRng(`quest-reward:${quest.id}`), playerLevel(ctx), { unique: name });
+  const giver = quest.turnIn === "radio" ? null : ctx.scene.entity.get(NPCS[quest.turnIn].entity);
+  const from = giver?.position ?? me.position;
+  const dx = me.position[0] - from[0];
+  const dz = me.position[2] - from[2];
+  const length = Math.hypot(dx, dz);
+  const [ux, uz] = length > 0.01 ? [dx / length, dz / length] : [Math.sin(me.rotationY ?? 0), Math.cos(me.rotationY ?? 0)];
+  const x = from[0] + ux * REWARD_CLEARANCE;
+  const z = from[2] + uz * REWARD_CLEARANCE;
+  ctx.scene.worldItem.spawn({
+    itemId: gun.id,
+    position: [x, ctx.world.groundHeightAt(x, z), z],
+    rarity: gun.rarity,
+    baseType: gun.family,
+    source: "quest",
+  });
+  ctx.game.notices.push({ text: `Reward: ${gun.name}`, tone: "info" });
+}
+
+/** The level at which `npc` next has work, when the only thing holding it back is the player's level. */
+function nextWorkLevel(ctx: GameContext, npc: NpcId): number | null {
+  const journal = ctx.game.quest;
+  if (journal === undefined) return null;
+  const levels = quests
+    .filter((def) => def.giver === npc && journal.canAccept(ctx.player.userId, def.id) === null)
+    .map((def) => scrapQuestById(def.id)?.minLevel ?? 1);
+  return levels.length === 0 ? null : Math.min(...levels);
 }
 
 function turnIn(ctx: GameContext, quest: ScrapQuest): boolean {
@@ -76,6 +119,7 @@ function accept(ctx: GameContext, quest: ScrapQuest): boolean {
   if (journal === undefined || journal.accept(ctx.player.userId, quest.id) !== null) return false;
   for (const id of quest.opens ?? []) award(ctx, id);
   if (quest.spawn !== undefined) spawnQuestEnemy(ctx, quest.spawn);
+  respawnForJob(ctx, quest.objectives.flatMap((objective) => (objective.kind === "kill" ? [objective.target] : [])));
   if (quest.meetAt !== undefined) moveNpcTo(ctx, NPCS[quest.giver].entity, quest.meetAt);
   say(ctx, NPCS[quest.giver].name, quest.brief);
   ctx.scene.entity.floatText({ instanceId: ctx.player.userId, text: `NEW MISSION · ${quest.title.toUpperCase()}`, kind: "pickup" });
@@ -109,7 +153,13 @@ export function talkTo(ctx: GameContext, npc: NpcId): void {
     return;
   }
   const busy = offer.kind === "busy" ? scrapQuestById(offer.questId) : undefined;
-  const line = busy !== undefined ? `${busy.title}: still out there waiting for you.` : "Nothing for you right now. Come back when you've grown a little.";
+  const waitFor = busy === undefined ? nextWorkLevel(ctx, npc) : null;
+  const line =
+    busy !== undefined
+      ? `${busy.title}: still out there waiting for you.`
+      : waitFor !== null
+        ? `I'll have work for you at level ${waitFor}. Go make some noise until then.`
+        : "Nothing for you right now. Ask me again after the next big job.";
   npcDialogStore.write(ctx, { npc, questId: null, line });
 }
 

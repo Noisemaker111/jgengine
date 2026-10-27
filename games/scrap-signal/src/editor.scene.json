@@ -5281,6 +5281,14 @@
         "role": "guide"
       }
     },
+    { "id": "named_scald", "kind": "named", "position": { "x": -220, "y": 0, "z": 410 }, "color": "#ff5a2e", "label": "Scald" },
+    { "id": "named_gunner_vex", "kind": "named", "position": { "x": -130, "y": 0, "z": 500 }, "color": "#ff5a2e", "label": "Gunner Vex" },
+    { "id": "named_gristle", "kind": "named", "position": { "x": -55, "y": 0, "z": 55 }, "color": "#ff5a2e", "label": "Gristle" },
+    { "id": "named_old_rivet", "kind": "named", "position": { "x": 380, "y": 0, "z": 260 }, "color": "#ff5a2e", "label": "Old Rivet" },
+    { "id": "named_queen_skitter", "kind": "named", "position": { "x": 460, "y": 0, "z": 340 }, "color": "#ff5a2e", "label": "Queen Skitter" },
+    { "id": "named_lady_glass", "kind": "named", "position": { "x": 560, "y": 0, "z": -300 }, "color": "#ff5a2e", "label": "Lady Glass" },
+    { "id": "named_cinderjaw", "kind": "named", "position": { "x": -30, "y": 0, "z": -600 }, "color": "#ff5a2e", "label": "Cinderjaw" },
+    { "id": "named_foreman_krell", "kind": "named", "position": { "x": -140, "y": 0, "z": -520 }, "color": "#ff5a2e", "label": "Foreman Krell" },
     {
       "id": "chest_rustflat_waste_red_0",
       "kind": "chest",
@@ -5311,6 +5319,8 @@
         "zoneId": "rustflat_waste"
       }
     },
+    { "id": "chest_rustflat_waste_red_3", "kind": "chest", "position": { "x": -472, "y": 0, "z": 518 }, "color": "#fbbf24", "label": "red chest (the convoy)", "meta": { "kind": "red", "zoneId": "rustflat_waste" } },
+    { "id": "chest_rustflat_waste_ammo_2", "kind": "chest", "position": { "x": -626, "y": 0, "z": 442 }, "color": "#94a3b8", "label": "ammo chest (Monglet Den)", "meta": { "kind": "ammo", "zoneId": "rustflat_waste" } },
     {
       "id": "travel_rustflat_waste",
       "kind": "travel",
@@ -5355,6 +5365,7 @@
         "zoneId": "breakwater_shelf"
       }
     },
+    { "id": "chest_breakwater_shelf_ammo_2", "kind": "chest", "position": { "x": -78, "y": 0, "z": 546 }, "color": "#94a3b8", "label": "ammo chest (Rusk's yard)", "meta": { "kind": "ammo", "zoneId": "breakwater_shelf" } },
     {
       "id": "boss_rusk",
       "kind": "boss",
@@ -5473,6 +5484,7 @@
         "zoneId": "split_ridge"
       }
     },
+    { "id": "chest_split_ridge_ammo_2", "kind": "chest", "position": { "x": 482, "y": 0, "z": 362 }, "color": "#94a3b8", "label": "ammo chest (the Maw's pit)", "meta": { "kind": "ammo", "zoneId": "split_ridge" } },
     {
       "id": "boss_wreck_maw",
       "kind": "boss",
@@ -5591,6 +5603,7 @@
         "zoneId": "cores_blight"
       }
     },
+    { "id": "chest_cores_blight_ammo_3", "kind": "chest", "position": { "x": -96, "y": 0, "z": -642 }, "color": "#94a3b8", "label": "ammo chest (the Heart's floor)", "meta": { "kind": "ammo", "zoneId": "cores_blight" } },
     {
       "id": "boss_foundry_heart",
       "kind": "boss",
