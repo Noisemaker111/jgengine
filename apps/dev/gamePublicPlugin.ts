@@ -4,7 +4,7 @@ import { dirname, extname, join, normalize, resolve, sep } from "node:path";
 
 import type { Plugin } from "vite";
 
-import { assetStoreRoot } from "../../games/shared/assetStore";
+import { assetStoreRoot } from "../../packages/assets/src/assetStore";
 import { compressedVariant, textureVariantDir } from "../../games/shared/textureVariants";
 
 const TYPES: Readonly<Record<string, string>> = {

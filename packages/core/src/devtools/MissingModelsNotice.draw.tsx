@@ -39,7 +39,7 @@ export function MissingModelsNotice() {
         </div>
       ))}
       {missing.length > shown.length ? <div>+{missing.length - shown.length} more</div> : null}
-      <div style={{ opacity: 0.75, fontWeight: 500 }}>Run bun run games:provision, or fix the path.</div>
+      <div style={{ opacity: 0.75, fontWeight: 500 }}>Run bun run games:provision; never fetched? jgengine assets find &lt;name&gt; --game &lt;dir&gt; --provision</div>
     </div>
   );
 }

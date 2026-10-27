@@ -4,7 +4,7 @@ import type { IncomingMessage, ServerResponse } from "node:http";
 import { basename, extname, join, normalize, resolve, sep } from "node:path";
 import { fileURLToPath } from "node:url";
 
-import { assetStoreRoot, dirHasEntries, linkFromStore, mainCheckoutOf, seedCandidates, seedStore } from "./assetStore";
+import { assetStoreRoot, dirHasEntries, provisionJobs, type ProvisionResult, type PullJob } from "../../packages/assets/src/assetStore";
 import { compressedVariant, textureVariantDir } from "./textureVariants";
 
 const assetsDir = fileURLToPath(new URL("../../packages/assets", import.meta.url));
@@ -17,14 +17,6 @@ export interface AssetCatalogs {
   library: readonly { name: string; origin: { provider: string } }[];
   /** Semantic keys (`asset:person_casual`, `character/rogue`) and the `pack/model` ids they stand for. */
   aliases?: readonly { key: string; target: string }[];
-}
-
-/** One pack or library model a game references and does not have on disk. */
-export interface PullJob {
-  /** The `pull` target: a pack id, or `model:<name>` for a library model. */
-  target: string;
-  /** Where it lands, relative to the game's `public/`. */
-  dir: string;
 }
 
 function sourceText(dir: string): string {
@@ -94,17 +86,6 @@ function runPull(cwd: string, target: string, outRoot: string): Promise<boolean>
   });
 }
 
-export interface ProvisionResult {
-  /** Targets now served from the shared store through a link. */
-  linked: string[];
-  /** Targets downloaded into the store by this call. */
-  pulled: string[];
-  /** Targets a download was tried for and failed. */
-  failed: string[];
-  /** Targets the store lacks and this call was told not to download (`download: false`). */
-  absent: string[];
-}
-
 /**
  * Serve every pack and library model a game references and is missing from the shared asset store
  * (`assetStore.ts`): link it when the store has it, seed the store from a copy any checkout already
@@ -115,35 +96,13 @@ export async function provisionGame(
   gameDir: string,
   options: { log?: (line: string) => void; download?: boolean; env?: Readonly<Record<string, string | undefined>> } = {},
 ): Promise<ProvisionResult> {
-  const log = options.log ?? console.log;
-  const repoRoot = resolve(gameDir, "..", "..");
-  const store = assetStoreRoot(repoRoot, options.env);
-  const roots = [repoRoot, mainCheckoutOf(repoRoot) ?? repoRoot];
   const text = sourceText(join(gameDir, "src"));
   const scene = join(gameDir, "src", "editor.scene.json");
   const sceneText = existsSync(scene) ? readFileSync(scene, "utf8") : "";
   // Paved roads wear the default scanned asphalt even though no source line names its pack.
   const referenced = drawsPavedRoad(text, sceneText) ? `${text}\n"${DEFAULT_ROAD_SCAN_SOURCE}"` : text;
   const jobs = missingPulls(referenced, join(gameDir, "public"), await loadCatalogs());
-  const result: ProvisionResult = { linked: [], pulled: [], failed: [], absent: [] };
-  for (const job of jobs) {
-    const storeDir = join(store, job.dir);
-    if (!seedStore(storeDir, seedCandidates(roots, job.dir))) {
-      if (options.download === false) {
-        result.absent.push(job.target);
-        continue;
-      }
-      log(`${basename(gameDir)}: pulling ${job.target} into the shared asset store ${store}`);
-      if (!(await runPull(gameDir, job.target, store))) {
-        result.failed.push(job.target);
-        continue;
-      }
-      result.pulled.push(job.target);
-    }
-    if (linkFromStore(storeDir, join(gameDir, "public", job.dir))) result.linked.push(job.target);
-    else result.failed.push(job.target);
-  }
-  return result;
+  return provisionJobs(gameDir, jobs, { pull: (target, outRoot) => runPull(gameDir, target, outRoot), log: options.log, download: options.download, env: options.env });
 }
 
 /** Whether a dev server should pull missing assets: on by default, off in CI, `JG_DEV_PROVISION` overrides both. */

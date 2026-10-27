@@ -64,6 +64,10 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `describeAssetMatch` (function) · `import { describeAssetMatch } from "@jgengine/assets"`
 
+## find-assets — look up many asset names at once: licence, game path, on-disk state and where else to look
+
+- `findAssets` (function) · `import { findAssets } from "@jgengine/assets/findAssets"`
+
 ## glb-data-url — load generated GLB bytes through the normal model loader with no file on disk
 
 - `glbDataUrl` (function) · `import { glbDataUrl } from "@jgengine/core/creatureBody/glbWrite"`

@@ -20,6 +20,8 @@ Search [capabilities.md](capabilities.md) before adding a resolver or catalog pa
 5. Preview through the same resolver runtime will use.
 6. Add required credit in the same PR.
 
+Look up every model a game needs in one call: `jgengine assets find raptor "street lamp" knight --game games/<name>` (or `--list names.json`, an array of names or `{ "query", "pick" }`) prints one JSON document. Each name gets its best matches across catalog packs, the realistic library and model files other games already ship, each with licence, the URL the game loads, and whether it is on disk; a weak answer adds the free sources to search (Poly Pizza for low-poly creatures and dinosaurs, Poly Haven for scans). `--provision` puts each confident match (or the named `pick`) into the game: packs and library models are linked from the machine's shared store, pulling only what no checkout has, and another game's file is copied to the same path. Do not copy GLBs by hand.
+
 Reuse import, validation, catalog, and rendering tools to save time. Each game owns its asset selection and visual identity. Source or import licensed assets when the catalog does not fit; do not substitute the same convenient pack into every game. Validate a representative set in the actual scene before filling the world with it. Keep that reviewed palette consistent within the game without treating it as an SDK preset.
 
 ## Reference integrity

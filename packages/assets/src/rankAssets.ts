@@ -71,7 +71,11 @@ function scoreText(needle: string, hay: string): number {
   return Math.min(90, Math.round(sum / tokens.length));
 }
 
-function best(needle: string, ...hays: (string | undefined)[]): number {
+/**
+ * How well `needle` names any of `hays`, 0 (none) to 100 (exact): the score every asset search ranks by.
+ * @internal
+ */
+export function scoreAssetText(needle: string, ...hays: (string | undefined)[]): number {
   let top = 0;
   for (const hay of hays) {
     if (hay === undefined) continue;
@@ -99,7 +103,7 @@ export function rankAssets(query: string, options: RankAssetsOptions = {}): Rank
 
   if (options.kind === undefined || options.kind === "model") {
     for (const entry of generatedIndex) {
-      push(best(q, entry.id, keyFromFile(entry.file), ...entry.categories), {
+      push(scoreAssetText(q, entry.id, keyFromFile(entry.file), ...entry.categories), {
         kind: "model",
         id: entry.id,
         source: entry.source,
@@ -108,7 +112,7 @@ export function rankAssets(query: string, options: RankAssetsOptions = {}): Rank
       });
     }
     for (const alias of aliases) {
-      push(best(q, alias.key, alias.target), {
+      push(scoreAssetText(q, alias.key, alias.target), {
         kind: "model",
         id: alias.target,
         source: sourceOf(alias.target),
@@ -116,7 +120,7 @@ export function rankAssets(query: string, options: RankAssetsOptions = {}): Rank
       });
     }
     for (const single of singles) {
-      push(best(q, single.id, ...single.categories), {
+      push(scoreAssetText(q, single.id, ...single.categories), {
         kind: "model",
         id: single.id,
         source: sourceOf(single.id),
@@ -127,7 +131,7 @@ export function rankAssets(query: string, options: RankAssetsOptions = {}): Rank
 
   if (options.kind === undefined || options.kind === "pack") {
     for (const source of modelSources) {
-      push(best(q, source.id, source.title, source.provider, ...source.categories), {
+      push(scoreAssetText(q, source.id, source.title, source.provider, ...source.categories), {
         kind: "pack",
         source: source.id,
         title: source.title,
@@ -138,7 +142,7 @@ export function rankAssets(query: string, options: RankAssetsOptions = {}): Rank
 
   if (options.kind === undefined || options.kind === "material") {
     for (const source of materialSources) {
-      push(best(q, source.id, source.title, ...source.categories), {
+      push(scoreAssetText(q, source.id, source.title, ...source.categories), {
         kind: "material",
         id: source.id,
         title: source.title,
@@ -148,7 +152,7 @@ export function rankAssets(query: string, options: RankAssetsOptions = {}): Rank
     for (const alias of materialAliases) {
       const target = materialSources.find((source) => source.id === alias.target);
       if (target === undefined) continue;
-      push(best(q, alias.key, alias.target), {
+      push(scoreAssetText(q, alias.key, alias.target), {
         kind: "material",
         id: target.id,
         title: target.title,
@@ -159,7 +163,7 @@ export function rankAssets(query: string, options: RankAssetsOptions = {}): Rank
 
   if (options.kind === undefined || options.kind === "component") {
     for (const component of registryCatalog.components) {
-      push(best(q, component.name, component.title, component.description), {
+      push(scoreAssetText(q, component.name, component.title, component.description), {
         kind: "component",
         name: component.name,
         title: component.title,
@@ -170,13 +174,13 @@ export function rankAssets(query: string, options: RankAssetsOptions = {}): Rank
 
   if (options.kind === undefined || options.kind === "icon") {
     for (const icon of registryCatalog.icons) {
-      push(best(q, icon), { kind: "icon", name: icon });
+      push(scoreAssetText(q, icon), { kind: "icon", name: icon });
     }
   }
 
   if (options.kind === undefined || options.kind === "sprite") {
     for (const entry of generatedSpriteIndex) {
-      push(best(q, entry.id, keyFromSpriteFile(entry.file), ...entry.categories), {
+      push(scoreAssetText(q, entry.id, keyFromSpriteFile(entry.file), ...entry.categories), {
         kind: "sprite",
         id: entry.id,
         source: entry.source,
@@ -187,7 +191,7 @@ export function rankAssets(query: string, options: RankAssetsOptions = {}): Rank
 
   if (options.kind === undefined || options.kind === "spritePack") {
     for (const source of spriteSources) {
-      push(best(q, source.id, source.title, source.provider, ...source.categories), {
+      push(scoreAssetText(q, source.id, source.title, source.provider, ...source.categories), {
         kind: "spritePack",
         source: source.id,
         title: source.title,

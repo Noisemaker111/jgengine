@@ -3589,6 +3589,17 @@
       "intent": "assign hold, flank, cover, assault and retreat duties from live squad state"
     },
     {
+      "id": "find-assets",
+      "packages": [
+        "@jgengine/assets"
+      ],
+      "module": "@jgengine/assets/findAssets",
+      "domain": "find-assets",
+      "gameFacing": false,
+      "probe": null,
+      "intent": "look up many asset names at once: licence, game path, on-disk state and where else to look"
+    },
+    {
       "id": "find-effect",
       "packages": [
         "@jgengine/core"
