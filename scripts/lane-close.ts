@@ -5,14 +5,16 @@
 //   bun run lane:close --pr 2274
 //   bun run lane:close --allow bun.lock  # keep a file the commit guards refuse
 //
-// It verifies, lands (staging and committing the lane's work first, with a `changes/` note written
+// It runs `bun run preflight` (gen, type-checks, gates: the cheap checks, stopping at the first
+// failure), then `verify:fast` for the tests, then lands (staging and committing the lane's work first, with a `changes/` note written
 // from the -m messages, the API the diff changed and its engine seam - see scripts/change-note.ts), asks `ci:status` once for the truth about the checks, and
 // prints a report skeleton a lane can paste instead of writing prose. It exits 1 when
 // verify or land failed and 3 when it cannot answer (no PR, no branch).
 //
 // A PR whose checks have not registered yet is a hand-off, not a failure: the queue
 // owns the wait and `bun run ci:status --pr <n>` answers only later, so the report
-// says so and the lane still exits 0.
+// says so and the lane still exits 0. The queue for that PR starts in the background,
+// and the last line names the one command that prints its outcome.
 import { spawnSync } from "node:child_process";
 import { fileURLToPath } from "node:url";
 
@@ -140,16 +142,18 @@ export function closeLane(args: LaneCloseArgs, io: LaneIo): number {
     return EXIT_CANNOT_ANSWER;
   }
 
-  // Regenerate every committed derived file first: a stale manifest, api.md or capabilities
-  // ledger was the most common reason a finished lane failed to land, and the fix was always
-  // `bun run gen`. land --commit stages what gen rewrote.
-  io.out(`lane:close: ${branch} — gen`);
-  const generated = io.sh(["run", "gen"], true);
-  if (generated.status !== 0) {
-    io.err(`lane:close: gen failed (exit ${generated.status}); nothing landed.`);
+  // The cheap checks first, stopping at the first failure: `bun run preflight` regenerates every
+  // committed derived file (a stale manifest, api.md or ledger was the most common reason a lane
+  // failed to land, and the fix was always `bun run gen`), then runs the type-checks and gates.
+  // A type error used to surface only after the whole test suite. land --commit stages what gen rewrote.
+  io.out(`lane:close: ${branch} — preflight (gen, type-checks, gates)`);
+  const preflight = io.sh(["run", "preflight"], true);
+  if (preflight.status !== 0) {
+    io.err(`lane:close: preflight failed (exit ${preflight.status}); nothing landed, no tests run. Fix what it names and close again.`);
     return EXIT_VERIFY_FAILED;
   }
-  io.out(`lane:close: ${branch} — verify:fast`);
+  // The type-checks and gates that just passed are remembered by their inputs, so this runs the tests and boots.
+  io.out(`lane:close: ${branch} — verify:fast (tests and boots)`);
   const verified = io.sh(["run", "verify:fast"], true);
   if (verified.status !== 0) {
     io.err(
@@ -218,6 +222,7 @@ export function closeLane(args: LaneCloseArgs, io: LaneIo): number {
     io.err(`lane:close: cannot report the checks: ${checksProblem}`);
     return EXIT_CANNOT_ANSWER;
   }
+  if (answer?.state !== "MERGED") io.out(queueInBackground(pr, io));
   // A merged lane's worktree is a copy nobody will open again. Reaping here keeps
   // `.claude/worktrees` bounded; this lane's own tree stays, since a process
   // cannot delete the directory it runs in, and the next close takes it.
@@ -225,6 +230,20 @@ export function closeLane(args: LaneCloseArgs, io: LaneIo): number {
   const reapLine = lastLine(reaped.stdout);
   if (reapLine.length > 0) io.out(`lane:close: ${reapLine}`);
   return EXIT_CLOSED;
+}
+
+/**
+ * Start the queue for this one PR in the background (rebase when the base moved, wait for the
+ * checks, merge) and return the one line that says how to read its outcome. The lane keeps
+ * working instead of sitting in the queue; `background await` blocks only when it asks.
+ */
+export function queueInBackground(pr: number, io: LaneIo): string {
+  const started = io.sh(["run", "background", "start", "bun", "scripts/land-queue.ts", "--pr", String(pr)], false);
+  const id = lastLine(started.stdout);
+  if (started.status !== 0 || id.length === 0) {
+    return `lane:close: #${pr} waits on auto-merge; ask for its checks with bun run ci:status --pr ${pr}`;
+  }
+  return `lane:close: #${pr} lands in the background, so keep working; its one-line outcome: bun run background await ${id}`;
 }
 
 /**

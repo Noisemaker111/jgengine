@@ -3,6 +3,7 @@
 //
 //   bun run lane:close --queue                       # land every ready PR into beta
 //   bun run lane:close --queue --base beta --label land:queue
+//   bun run lane:close --queue --pr 2278             # only that PR; lane:close starts this in the background
 //
 // Ready means auto-merge is armed — which is exactly what `bun run lane:close` does at hand-off — or the
 // PR carries the `land:queue` label, which land adds where the repo will not arm auto-merge. Drafts
@@ -43,16 +44,22 @@ export type Git = (cwd: string, args: string[]) => Run;
 export interface QueueArgs {
   base: string;
   label: string;
+  /** Land only this PR: what `lane:close` starts in the background for the PR it just handed over. */
+  pr?: number;
 }
 
-/** `--base beta` and `--label land:queue`; anything else is a typo. */
+/** `--base beta`, `--label land:queue` and `--pr <n>`; anything else is a typo. */
 export function parseArgs(argv: readonly string[]): QueueArgs {
   const args: QueueArgs = { base: "beta", label: QUEUE_LABEL };
   for (let i = 0; i < argv.length; i += 1) {
     const arg = argv[i];
     if (arg === "--base") args.base = value(argv, (i += 1), arg);
     else if (arg === "--label") args.label = value(argv, (i += 1), arg);
-    else throw new Error(`unknown argument ${arg}`);
+    else if (arg === "--pr") {
+      const pr = Number(value(argv, (i += 1), arg));
+      if (!Number.isInteger(pr) || pr <= 0) throw new Error("--pr needs a PR number");
+      args.pr = pr;
+    } else throw new Error(`unknown argument ${arg}`);
   }
   return args;
 }
@@ -380,8 +387,27 @@ export function landOne(pr: ReadyPr, args: QueueArgs, io: QueueIo): Drained {
   return done("failed", `not merged after ${MERGE_ATTEMPTS} attempts`);
 }
 
+/**
+ * Land one named PR, armed or not, and print one line: what `lane:close` runs in the background so
+ * the lane that handed the PR over keeps working instead of sitting in the queue.
+ */
+export function drainOne(number: number, args: QueueArgs, io: QueueIo): { code: number; drained: Drained[] } {
+  const view = readView(io.gh, number);
+  if (view === null) {
+    io.error(`#${number} could not be read`);
+    return { code: EXIT_SOMETHING_FAILED, drained: [] };
+  }
+  const pr: ReadyPr = { number, url: view.url, branch: view.headRefName, readyAt: io.now(), signal: "auto-merge" };
+  const result = landOne(pr, args, io);
+  const line = formatOutcome(result);
+  if (result.outcome === "failed") io.error(line);
+  else io.log(line);
+  return { code: result.outcome === "landed" ? EXIT_DRAINED : EXIT_SOMETHING_FAILED, drained: [result] };
+}
+
 /** Every ready PR into `base`, in readiness order, one at a time. */
 export function drain(args: QueueArgs, io: QueueIo): { code: number; drained: Drained[] } {
+  if (args.pr !== undefined) return drainOne(args.pr, args, io);
   const startedAt = io.now();
   const listed = io.gh([
     "pr",

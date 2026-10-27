@@ -360,6 +360,24 @@ test("a PR auto-merge already landed is reported as landed without waiting", () 
   expect(calls.some((call) => call[1] === "merge")).toBe(false);
 });
 
+test("--pr lands only that PR, armed or not, and prints one line", () => {
+  expect(parseArgs(["--pr", "61"])).toEqual({ base: "beta", label: "land:queue", pr: 61 });
+  expect(() => parseArgs(["--pr", "x"])).toThrow("--pr needs a PR number");
+  const green = rollup([{ name: "test", conclusion: "SUCCESS" }]);
+  const { gh, calls } = scriptedGh({
+    list: [row({ number: 60, autoMergeRequest: { enabledAt: "2026-10-24T00:00:00Z" } })],
+    views: {
+      61: () => ok(JSON.stringify({ number: 61, url: "u", state: "OPEN", headRefName: "agent/61", mergeStateStatus: "CLEAN", statusCheckRollup: JSON.parse(green) })),
+    },
+  });
+  const out = io({ gh });
+  const result = drain({ base: "beta", label: "land:queue", pr: 61 }, out);
+  expect(result.code).toBe(EXIT_DRAINED);
+  expect(out.lines).toEqual(["#61 agent/61 (auto-merge) landed without waiting"]);
+  expect(calls.some((call) => call[0] === "pr" && call[1] === "list")).toBe(false);
+  expect(calls.some((call) => call[1] === "merge" && call[2] === "61")).toBe(true);
+});
+
 test("formatOutcome names the wait and the run, and never leaves a failed PR looking landed", () => {
   expect(formatOutcome({ pr: pr(1), outcome: "landed", waitedMs: 161_000, runIds: [901], detail: "" })).toBe(
     "#1 agent/1 (auto-merge) landed: waited 2m41s, run 901",

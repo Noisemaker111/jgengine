@@ -22,7 +22,9 @@ const CI_OK = JSON.stringify({
 });
 
 interface Script {
-  gen?: number;
+  preflight?: number;
+  /** What `background start` prints: the task id. */
+  background?: string;
   verify?: number;
   land?: number;
   ci?: string;
@@ -44,7 +46,8 @@ function io(script: Script = {}): LaneIo & { lines: { out: string[]; err: string
     sh: (argv) => {
       const key = argv.join(" ");
       if (key === "git rev-parse --abbrev-ref HEAD") return { ...run(), stdout: `${script.branch ?? "agent/x"}\n` };
-      if (key === "run gen") return { ...run(), status: script.gen ?? 0 };
+      if (key === "run preflight") return { ...run(), status: script.preflight ?? 0 };
+      if (key.startsWith("run background start")) return { ...run(), stdout: script.background ?? "" };
       if (key === "run verify:fast") return { ...run(), status: script.verify ?? 0 };
       if (key === "run scripts/land.ts --commit") return { ...run(), status: script.land ?? 0 };
       if (key.startsWith("run ci:status")) {
@@ -116,7 +119,7 @@ describe("lane:close end to end", () => {
     expect(landed).not.toContain("run scripts/land.ts --commit");
   });
 
-  test("closing regenerates derived files before verifying, so a stale manifest or api.md never lands", () => {
+  test("closing runs preflight (gen, type-checks, gates) before the tests, so a stale manifest or a type error stops it first", () => {
     const calls: string[] = [];
     const fake = io();
     const sh = fake.sh;
@@ -125,12 +128,13 @@ describe("lane:close end to end", () => {
       return sh(argv, inherit);
     };
     closeLane({}, fake);
-    expect(calls.indexOf("run gen")).toBeLessThan(calls.indexOf("run verify:fast"));
+    expect(calls.indexOf("run preflight")).toBeGreaterThan(-1);
+    expect(calls.indexOf("run preflight")).toBeLessThan(calls.indexOf("run verify:fast"));
   });
 
-  test("a gen failure stops before verify and land", () => {
+  test("a preflight failure stops before the tests and land", () => {
     const calls: string[] = [];
-    const fake = io({ gen: 1 });
+    const fake = io({ preflight: 1 });
     const sh = fake.sh;
     fake.sh = (argv, inherit) => {
       calls.push(argv.join(" "));
@@ -138,7 +142,34 @@ describe("lane:close end to end", () => {
     };
     expect(closeLane({}, fake)).toBe(EXIT_VERIFY_FAILED);
     expect(calls).not.toContain("run verify:fast");
-    expect(fake.lines.err.join("\n")).toContain("gen failed");
+    expect(calls).not.toContain("run scripts/land.ts --commit");
+    expect(fake.lines.err.join("\n")).toContain("preflight failed");
+  });
+
+  test("an open PR is queued in the background and the last line says how to read its outcome", () => {
+    const open = JSON.stringify({ ok: true, pr: 2278, state: "OPEN", verdict: "pending", counts: { pass: 0, fail: 0, pending: 5 }, runIds: [] });
+    const calls: string[] = [];
+    const fake = io({ ci: open, background: "20261027-101500-abc\n" });
+    const sh = fake.sh;
+    fake.sh = (argv, inherit) => {
+      calls.push(argv.join(" "));
+      return sh(argv, inherit);
+    };
+    expect(closeLane({}, fake)).toBe(EXIT_CLOSED);
+    expect(calls).toContain("run background start bun scripts/land-queue.ts --pr 2278");
+    expect(fake.lines.out.join("\n")).toContain("bun run background await 20261027-101500-abc");
+  });
+
+  test("a PR that already merged starts no background queue", () => {
+    const calls: string[] = [];
+    const fake = io();
+    const sh = fake.sh;
+    fake.sh = (argv, inherit) => {
+      calls.push(argv.join(" "));
+      return sh(argv, inherit);
+    };
+    closeLane({}, fake);
+    expect(calls.some((call) => call.startsWith("run background start"))).toBe(false);
   });
 
   test("land failing returns its exit code and does not close", () => {

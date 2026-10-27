@@ -2,7 +2,6 @@
   "why": "Script files that predate `--help`. Each needs printHelpIfAsked(...) from scripts/script-help.ts; a new script file without one fails `bun run check script-help`.",
   "undocumented": [
     "agent-bootstrap.ts",
-    "agent-preflight.ts",
     "agent-worktree.ts",
     "authority-fixture.mjs",
     "bench-cpu.ts",

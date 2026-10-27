@@ -8,6 +8,10 @@
 //   bun run verify:fast --full       # everything CI runs; minutes, before landing
 //   bun run verify:fast --plan       # the steps and their commands, nothing run
 //   bun run verify:fast --json       # one { ok, ms, checks } document on stdout
+//   bun run verify:fast --cheap      # only the type-checks and gates: what `bun run preflight` runs
+//
+// The type-checks and gates start before the tests, and the run stops at the first failure: a
+// type error is reported in seconds instead of after minutes of tests that were never the problem.
 //
 // Exit: 0 verified, 1 a step failed, 2 a changed runtime file reached no test (a
 // change this cannot attribute is never a silent pass). With `--json` the exit is
@@ -27,18 +31,20 @@ import { openPassCache, treeDigests, WHOLE_TREE } from "./verify-cache";
 import { checkCommand, findCheck, jobChecks } from "./run-stages";
 import { printHelpIfAsked } from "./script-help";
 import { siteGames } from "./siteGames";
+import { runSteps, type ScheduledStep, type StepResult } from "./stepScheduler";
 import { TEST_ROOTS, walkTestFiles } from "./test-shard";
 
 const VERIFY_FAST_USAGE = {
   summary: "run only the tests and static gates this branch's diff reaches, in seconds",
-  usage: "bun run verify:fast [--full] [--plan] [--json] [--base <ref>] [--jobs <n>] [--skill-api] [--no-cache]",
+  usage: "bun run verify:fast [--full] [--cheap] [--plan] [--json] [--base <ref>] [--jobs <n>] [--skill-api] [--no-cache]",
   flags: [
     { flag: "--full", detail: "what CI runs, not just what this change reaches; minutes, before landing" },
+    { flag: "--cheap", detail: "only the type-checks and gates, no tests or boots; `bun run preflight` runs this" },
     { flag: "--plan", detail: "print the steps and their commands, run nothing" },
     { flag: "--json", detail: "one { ok, ms, checks } document on stdout" },
     { flag: "--base <ref>", detail: "diff against this ref (default: origin/beta)" },
     { flag: "--jobs <n>", detail: "steps to run at once (default: half the cores, at most 6)" },
-    { flag: "--skill-api", detail: "also run `check skill-api`, the 21 s generated api.md check lane:close and preflight --ship run" },
+    { flag: "--skill-api", detail: "also run `check skill-api`, the 21 s generated api.md check (`bun run gen` regenerates it before a landing)" },
     { flag: "--no-cache", detail: "run every unit, including those that passed before with the same inputs" },
   ],
   example: "bun run verify:fast --plan",
@@ -63,11 +69,8 @@ const GAME_DIR = /^games\/[^/]+$/;
 /** Demo scenes exist to be looked at; a test of one would be filler, so they never need one. */
 const DEMO = /(^|\/)demos?\//;
 
-export interface Step {
-  name: string;
+export interface Step extends ScheduledStep {
   command: string[];
-  /** Steps by name that must finish first; a step whose prerequisite failed is reported failed, never green. */
-  needs?: string[];
   /** Starts a browser against the shared dev server, which `--full` boots once for every one of these. */
   browser?: boolean;
   /**
@@ -82,6 +85,8 @@ export interface Step {
    * lanes sit idle. A stale number costs overlap, never correctness.
    */
   cost?: number | undefined;
+  /** A type-check or gate: seconds, and the usual reason a landing fails, so it starts before every test. */
+  first?: boolean;
   /**
    * What to run when this step fails because a committed artifact drifted from its
    * generator. Named with the command and the files it rewrites, because "failed" left
@@ -316,8 +321,9 @@ export function ownTests(file: string, testFiles: readonly string[]): string[] {
  * and `check skill-api` parses every package source through ts-morph (21.5 s on this PC,
  * measured 2026-10-24, and it needs no build - it fails the same without `dist`). The
  * manifest check runs on every package change; `api.md` drift is far more expensive to
- * find, so it waits for `--skill-api`, which `lane:close` and `preflight --ship` pass. The
- * inner loop stays under 5 s and a push still cannot ship a stale generated file.
+ * find, so it waits for `--skill-api`; `preflight` (the first half of `lane:close`) runs
+ * `bun run gen`, which regenerates it. The inner loop stays under 5 s and a push still cannot
+ * ship a stale generated file.
  */
 export function gatesFor(changed: readonly string[]): string[] {
   const gates = new Set(["artifacts", "path-portability", "concept-homes", "layers"]);
@@ -338,6 +344,8 @@ export function gatesFor(changed: readonly string[]): string[] {
     gates.add("games-sync");
   }
   if (changed.some((path) => /\.(md|mdx)$/i.test(path) || path.startsWith(".claude/skills/"))) gates.add("stage-skills");
+  if (changed.some((path) => isTestFile(path))) gates.add("test-spawn-timeouts");
+  if (changed.some((path) => /\.browser\.test\.[cm]?[jt]sx?$/.test(path))) gates.add("browser-test-budget");
   return [...gates];
 }
 
@@ -540,8 +548,10 @@ export function junitCosts(xml: string): Record<string, number> {
 }
 
 export interface FastOptions {
-  /** Also run `check skill-api` (lane:close and preflight --ship pass `--skill-api`). */
+  /** Also run `check skill-api`. */
   skillApi?: boolean;
+  /** Only the type-checks and gates: no tests, boots or load guard. */
+  cheap?: boolean;
   /** Lanes the steps share; the tests split into at most this many processes. */
   lanes?: number;
   /** True when this unit passed before with the same `inputs`; it is not run again. */
@@ -565,7 +575,7 @@ export function fastSteps(plan: Plan, options: FastOptions = {}): Step[] {
   for (const dir of plan.typechecks) {
     const settles = unit(`typecheck:${dir}`);
     if (fresh(settles.id, settles.inputs)) continue;
-    steps.push({ name: `typecheck ${dir}`, command: ["bun", `--cwd=${dir}`, "run", "check-types"], cost: 12, units: [settles] });
+    steps.push({ name: `typecheck ${dir}`, command: ["bun", `--cwd=${dir}`, "run", "check-types"], cost: 12, first: true, units: [settles] });
   }
 
   const tests = plan.tests.map((file) => unit(`test:${file}`)).filter((settles) => !fresh(settles.id, settles.inputs));
@@ -604,7 +614,7 @@ export function fastSteps(plan: Plan, options: FastOptions = {}): Step[] {
     if (fresh(settles.id, settles.inputs)) continue;
     const check = findCheck(gate);
     if (check === undefined) throw new Error(`verify:fast: gate ${gate} is not in the check table (scripts/run-stages.ts)`);
-    steps.push({ name: gate, command: [...checkCommand(check), ...extra], fix: GATE_FIX[gate], cost: GATE_COST[gate], units: [settles] });
+    steps.push({ name: gate, command: [...checkCommand(check), ...extra], fix: GATE_FIX[gate], cost: GATE_COST[gate], first: true, units: [settles] });
   }
 
   const boots = plan.boots.map((game) => unit(`boot:${game}`)).filter((settles) => !fresh(settles.id, settles.inputs));
@@ -639,7 +649,7 @@ export function fastSteps(plan: Plan, options: FastOptions = {}): Step[] {
       units: loads,
     });
   }
-  return steps;
+  return options.cheap === true ? steps.filter((step) => step.first === true) : steps;
 }
 
 /** The paths whose change turns on CI's frame and smoke gates, from the same map the workflow calls. */
@@ -829,117 +839,27 @@ export async function jsonRun(
   return checks.every((check) => check.ok) ? EXIT_VERIFIED : EXIT_FAILED;
 }
 
-export interface StepResult {
-  name: string;
-  ok: boolean;
-  ms: number;
-  output: string;
-  /** Prerequisites that failed, when the step was not run at all. */
-  blockedBy?: string[];
-}
-
-/**
- * Run every step with at most `jobs` in flight, a step starting only once its
- * `needs` have settled, not merely started. A step whose prerequisite failed is
- * reported `blockedBy` and never run, so nothing is skipped silently and its
- * dependants fail too. Results come back in `steps` order whatever finished first.
- */
-export async function runSteps(
-  steps: readonly Step[],
-  jobs: number,
-  run: (step: Step) => Promise<StepResult>,
-): Promise<StepResult[]> {
-  const names = new Set(steps.map((step) => step.name));
-  for (const step of steps) {
-    for (const need of step.needs ?? []) {
-      if (!names.has(need)) throw new Error(`verify:fast: ${step.name} needs ${need}, which is not a step`);
-    }
-  }
-
-  const resolved = new Map<string, (result: StepResult) => void>();
-  const settled = new Map<string, Promise<StepResult>>();
-  for (const step of steps) {
-    settled.set(step.name, new Promise<StepResult>((resolve) => resolved.set(step.name, resolve)));
-  }
-  const results = new Map<string, StepResult>();
-  const pending = [...steps];
-  const inFlight = new Map<string, Promise<StepResult>>();
-  const isDone = (name: string): boolean => results.has(name);
-  /** The heaviest step whose prerequisites are done, so the slowest work starts first. */
-  const runnable = (): number => {
-    let best = -1;
-    for (let index = 0; index < pending.length; index += 1) {
-      const step = pending[index]!;
-      if (!(step.needs ?? []).every(isDone)) continue;
-      if (best < 0 || (step.cost ?? 1) > (pending[best]!.cost ?? 1)) best = index;
-    }
-    return best;
-  };
-
-  const settle = (result: StepResult): void => {
-    results.set(result.name, result);
-    resolved.get(result.name)!(result);
-  };
-
-  const lanes = Math.max(1, Math.min(jobs, pending.length));
-  let machineHeld = false;
-  let turns = 0;
-  await Promise.all(
-    Array.from({ length: lanes }, async () => {
-      for (;;) {
-        // A lane that waits for a prerequisite loops once per turn. Far more turns than
-        // steps means nothing can ever start again, so fail with the state instead of
-        // spinning a core forever.
-        turns += 1;
-        if (turns > 50_000) {
-          throw new Error(
-            `verify:fast: the scheduler stopped making progress; pending ${pending.map((step) => step.name).join(", ")}; ` +
-              `in flight ${[...inFlight.keys()].join(", ")}`,
-          );
-        }
-        const index = runnable();
-        if (index >= 0) {
-          const [step] = pending.splice(index, 1);
-          if (step === undefined) continue;
-          const blockedBy = (step.needs ?? []).filter((need) => results.get(need)?.ok !== true);
-          if (blockedBy.length > 0) {
-            settle({ name: step.name, ok: false, ms: 0, output: `not run: ${blockedBy.join(", ")} failed`, blockedBy });
-            continue;
-          }
-          const wantsMachine = step.exclusive === true;
-          if (inFlight.size > 0 && (wantsMachine || machineHeld)) {
-            pending.unshift(step);
-            await Promise.race([...inFlight.values()]);
-            continue;
-          }
-          if (wantsMachine) machineHeld = true;
-          inFlight.set(step.name, settled.get(step.name)!);
-          const result = await run(step);
-          inFlight.delete(step.name);
-          if (wantsMachine) machineHeld = false;
-          settle(result);
-          continue;
-        }
-        if (pending.length === 0) return;
-        // Only unsettled prerequisites: racing an already-resolved need would return at
-        // once and leave this lane spinning instead of waiting for the one still running.
-        const waiting = pending.flatMap((step) => (step.needs ?? []).filter((need) => !isDone(need)));
-        if (waiting.length === 0) continue;
-        await Promise.race(waiting.map((need) => settled.get(need)!));
-      }
-    }),
-  );
-  return steps.map((step) => results.get(step.name)!);
-}
-
-async function run(step: Step, root: string): Promise<StepResult> {
+async function run(step: Step, root: string, signal?: AbortSignal): Promise<StepResult> {
   const started = Date.now();
+  if (signal?.aborted === true) return { name: step.name, ok: false, ms: 0, output: "stopped before it started", stopped: true };
   const proc = Bun.spawn(step.command, { cwd: root, stdout: "pipe", stderr: "pipe" });
+  // A fail-fast run stops what is still running; a browser or dev server the step started goes with it.
+  let killed = false;
+  const stop = (): void => {
+    killed = true;
+    if (process.platform === "win32") spawnSync("taskkill", ["/pid", String(proc.pid), "/T", "/F"], { stdio: "ignore", windowsHide: true, timeout: 15_000 });
+    else proc.kill("SIGKILL");
+  };
+  signal?.addEventListener("abort", stop, { once: true });
   const [stdout, stderr, code] = await Promise.all([
     new Response(proc.stdout).text(),
     new Response(proc.stderr).text(),
     proc.exited,
   ]);
+  signal?.removeEventListener("abort", stop);
+  if (killed && code !== 0) {
+    return { name: step.name, ok: false, ms: Date.now() - started, output: "stopped: another step failed first", stopped: true };
+  }
   return { name: step.name, ok: code === 0, ms: Date.now() - started, output: `${stdout}${stderr}`.trim() };
 }
 
@@ -994,6 +914,7 @@ async function main(argv: readonly string[]): Promise<number> {
   const planOnly = argv.includes("--plan");
   const json = argv.includes("--json");
   const skillApi = argv.includes("--skill-api");
+  const cheap = argv.includes("--cheap");
   const started = Date.now();
 
   let changed: string[];
@@ -1095,6 +1016,7 @@ async function main(argv: readonly string[]): Promise<number> {
   mkdirSync(join(root, reportDir), { recursive: true });
   const steps = fastSteps(plan, {
     skillApi,
+    cheap,
     lanes: DEFAULT_JOBS,
     testCosts,
     reportDir,
@@ -1141,11 +1063,12 @@ async function main(argv: readonly string[]): Promise<number> {
   console.log(
     `verify:fast against ${base}: ${plan.changed.length} changed file(s), ${plan.tests.length} test file(s), ${plan.typechecks.length} type-check(s), ${plan.gates.length - (leftOutSkillApi ? 1 : 0)} gate(s), boot ${plan.boots.join(" ") || "none"}  (planned in ${((Date.now() - started) / 1000).toFixed(1)}s)`,
   );
+  if (cheap) console.log("verify:fast --cheap: type-checks and gates only; the tests and boots run when lane:close lands");
   if (plan.suites.length > 0) {
     console.log(`verify:fast: whole suite of ${plan.suites.join(", ")}: a changed file there has no test of its own, so its package's tests cover it`);
   }
   if (leftOutSkillApi) {
-    console.log("verify:fast: check skill-api (21 s) is left out here; `--skill-api` runs it, and lane:close and preflight --ship already do.");
+    console.log("verify:fast: check skill-api (21 s) is left out here; `--skill-api` runs it, and the `bun run gen` that lane:close and preflight run regenerates it.");
   }
   if (skipped.length > 0) {
     console.log(`verify:fast: ${skipped.length} unit(s) passed before with these exact inputs and are not run again (--no-cache runs them): ${summarizeUnits(skipped)}`);
@@ -1159,25 +1082,36 @@ async function main(argv: readonly string[]): Promise<number> {
     return EXIT_UNATTRIBUTED;
   }
 
-  const failures: string[] = [];
-  // The gates do not write each other's files and CI's `quick` job runs them as separate
-  // processes too, so they overlap here: the 21 s skill-api check hides behind the tests
-  // instead of adding to them.
-  const results = await runSteps(steps, DEFAULT_JOBS, (step) => run(step, root));
+  // The type-checks and gates start first and the run stops at the first failure, so a type
+  // error or a drifted file is named in seconds and the tests behind it never start. Each
+  // result prints the moment it is known.
+  const results = await runSteps(
+    steps,
+    DEFAULT_JOBS,
+    async (step, signal) => {
+      const result = await run(step, root, signal);
+      if (result.stopped === true) return result;
+      console.log(`${result.ok ? "PASS" : "FAIL"}  ${result.name}  ${(result.ms / 1000).toFixed(1)}s`);
+      if (!result.ok) {
+        if (result.output.length > 0) printFailure(root, result.name, result.output);
+        if (step.fix !== undefined) console.log(`  fix: ${step.fix}`);
+      }
+      return result;
+    },
+    { failFast: true },
+  );
   remember(results);
-  for (const result of results) {
-    const step = steps.find((candidate) => candidate.name === result.name);
-    console.log(`${result.ok ? "PASS" : "FAIL"}  ${result.name}  ${(result.ms / 1000).toFixed(1)}s`);
-    if (result.ok) continue;
-    failures.push(result.name);
-    if (result.output.length > 0 && result.blockedBy === undefined) printFailure(root, result.name, result.output);
-    else if (result.blockedBy !== undefined) console.log(`  ${result.output}`);
-    if (step?.fix !== undefined) console.log(`  fix: ${step.fix}`);
-  }
+  const failures = results.filter((result) => !result.ok && result.blockedBy === undefined && result.stopped !== true).map((result) => result.name);
+  const notRun = results.filter((result) => result.blockedBy !== undefined || result.stopped === true).map((result) => result.name);
   const seconds = (Date.now() - started) / 1000;
-  console.log(`\ntotal ${seconds.toFixed(1)}s — ${steps.length - failures.length} passed, ${failures.length} failed`);
+  const passed = results.length - failures.length - notRun.length;
+  console.log(`\ntotal ${seconds.toFixed(1)}s — ${passed} passed, ${failures.length} failed${notRun.length > 0 ? `, ${notRun.length} not run` : ""}`);
   if (failures.length > 0) {
     console.log(`failed: ${failures.join(", ")}`);
+    if (notRun.length > 0) {
+      const named = notRun.slice(0, 4).join(", ");
+      console.log(`not run, because the run stops at the first failure: ${named}${notRun.length > 4 ? ` and ${notRun.length - 4} more` : ""}`);
+    }
     console.log("verify:fast ran only what this change reaches. `bun run verify:fast --full` runs what CI runs.");
     return EXIT_FAILED;
   }

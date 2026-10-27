@@ -20,16 +20,15 @@ import {
   opaqueScopes,
   ownTests,
   pureRenames,
-  runSteps,
   splitByCost,
   TESTS_PER_LANE,
   workspaceOf,
   workspaces,
   type Plan,
   type Step,
-  type StepResult,
   type Workspace,
 } from "./verify-fast";
+import { runSteps, type StepResult } from "./stepScheduler";
 import { buildImportGraph, specifiers, type ImportGraph } from "./import-graph";
 import { matchingShard, walkTestFiles } from "./test-shard";
 import { REPRESENTATIVE_GAME } from "./ci-scope";
@@ -324,6 +323,30 @@ describe("static gates", () => {
     expect(gatesFor([".claude/skills/workflow/SKILL.md"])).toContain("stage-skills");
     expect(gatesFor(["README.md"])).toContain("stage-skills");
     for (const gate of ["skills", "fixture-location", "orphan-ratchet"]) expect(gatesFor(["scripts/x.ts", "README.md"])).not.toContain(gate);
+  });
+
+  test("a test change pays the spawn-timeout gate, and a browser test the budget gate", () => {
+    expect(gatesFor(["packages/core/src/a.test.ts"])).toContain("test-spawn-timeouts");
+    expect(gatesFor(["packages/core/src/a.test.ts"])).not.toContain("browser-test-budget");
+    expect(gatesFor(["packages/core/src/a.browser.test.ts"])).toContain("browser-test-budget");
+    expect(gatesFor(["packages/core/src/a.ts"])).not.toContain("test-spawn-timeouts");
+  });
+
+  test("--cheap keeps only the type-checks and gates", () => {
+    const plan: Plan = {
+      changed: ["packages/core/src/a.ts"],
+      deleted: [],
+      typechecks: ["packages/core"],
+      tests: ["packages/core/src/a.test.ts"],
+      gates: ["layers"],
+      unattributed: [],
+      suites: [],
+      boots: ["harbor-heat"],
+      inputs: {},
+    };
+    expect(fastSteps(plan, { cheap: true }).map((step) => step.name)).toEqual(["typecheck packages/core", "layers"]);
+    expect(fastSteps(plan).some((step) => step.name.startsWith("test "))).toBe(true);
+    expect(fastSteps(plan).filter((step) => step.first === true).map((step) => step.name)).toEqual(["typecheck packages/core", "layers"]);
   });
 
   test("a scripts change pays the capture hygiene gate", () => {

@@ -2246,7 +2246,7 @@
   "scripts/type-shard.ts": {"nonNull":1},
   "scripts/verify-cache.ts": {"cast":1},
   "scripts/verify-fast.test.ts": {"nonNull":11},
-  "scripts/verify-fast.ts": {"nonNull":14,"cast":7},
+  "scripts/verify-fast.ts": {"nonNull":8,"cast":7},
   "scripts/video.test.ts": {"nonNull":1},
   "scripts/video.ts": {"nonNull":1},
   "scripts/worktree-doctor.test.ts": {"cast":3},

@@ -1,8 +1,10 @@
 import { spawnSync } from "node:child_process";
+import { availableParallelism } from "node:os";
 import { fileURLToPath } from "node:url";
 
 import { digestLines, writeStepLog } from "./failure-digest";
 import { printHelpIfAsked, renderUsage, type Usage } from "./script-help";
+import { runSteps } from "./stepScheduler";
 
 /**
  * The one home of every repository check and every generator: `bun run check [<name>...]` and
@@ -77,6 +79,7 @@ export const CHECKS: readonly CheckDef[] = [
   { name: "street-rule-parity", script: "scripts/check-street-rule-parity.ts", jobs: ["types"] },
   { name: "source-paths", script: "scripts/sourcePaths.ts", args: ["--check"], jobs: ["types"], generated: true },
   { name: "test-spawn-timeouts", script: "scripts/check-test-spawn-timeouts.ts", jobs: ["types"] },
+  { name: "browser-test-budget", script: "scripts/browser-test-budget.ts", jobs: [] },
   { name: "fixture-location", script: "scripts/check-fixture-location.ts", jobs: [] },
   { name: "path-portability", script: "scripts/check-path-portability.ts", jobs: ["types", "quick"] },
   { name: "no-blocking-wait", script: "scripts/check-no-blocking-wait.ts", jobs: ["types"] },
@@ -193,25 +196,25 @@ export interface StageOutcome {
 }
 
 /**
- * Decide each stage's fate in order, given a runner that reports pass/fail.
- * Pure over `run` so the skip/continue policy is testable without spawning.
+ * Decide each stage's fate, given a runner that reports pass/fail. `jobs` stages run at once, each
+ * only after the stages it `needs`; a failure never stops an independent stage. Pure over `run` so
+ * the skip/continue policy is testable without spawning.
  */
-export function runPlan(stages: readonly Stage[], run: (stage: Stage) => boolean): StageOutcome[] {
-  const results: StageOutcome[] = [];
-  const failed = new Set<string>();
-  for (const stage of stages) {
-    const blockedBy = (stage.needs ?? []).filter((need) => failed.has(need));
-    if (blockedBy.length > 0) {
-      // Propagate: anything needing a skipped stage is itself unverified.
-      failed.add(stage.name);
-      results.push({ name: stage.name, state: "skipped", blockedBy });
-      continue;
-    }
-    const ok = run(stage);
-    if (!ok) failed.add(stage.name);
-    results.push({ name: stage.name, state: ok ? "passed" : "failed" });
-  }
-  return results;
+export async function runPlan(
+  stages: readonly Stage[],
+  run: (stage: Stage) => boolean | Promise<boolean>,
+  jobs = 1,
+): Promise<StageOutcome[]> {
+  const results = await runSteps(
+    stages.map((stage) => ({ name: stage.name, needs: stage.needs === undefined ? undefined : [...stage.needs], stage })),
+    jobs,
+    async (step) => ({ name: step.name, ok: await run(step.stage), ms: 0, output: "" }),
+  );
+  return results.map((result): StageOutcome =>
+    result.blockedBy !== undefined
+      ? { name: result.name, state: "skipped", blockedBy: result.blockedBy }
+      : { name: result.name, state: result.ok ? "passed" : "failed" },
+  );
 }
 
 export function rerunHint(stages: readonly Stage[], name: string): string {
@@ -300,35 +303,45 @@ export function parseCheckArgs(argv: readonly string[]): CheckRequest {
   return { kind: "error", message: `check: no check named ${argv[0]} (bun run check --list)` };
 }
 
-function runStages(label: string, stages: readonly Stage[], root: string): number {
+/**
+ * Generators write separate files, so independent targets run side by side (after `barrels`, which
+ * they all read); checks run one at a time in table order, as they always have.
+ */
+export const GEN_JOBS = Math.max(2, Math.min(6, Math.floor(availableParallelism() / 2)));
+
+async function runStages(label: string, stages: readonly Stage[], root: string, jobs: number): Promise<number> {
   const digests: string[] = [];
-  const results = runPlan(stages, (stage) => {
-    console.log(`\n--- ${label} › ${stage.name}`);
-    const result = spawnSync(stage.command, [...stage.args], {
-      cwd: root,
-      stdio: ["ignore", "pipe", "pipe"],
-      encoding: "utf8",
-      maxBuffer: 256 * 1024 * 1024,
-      shell: false,
-    });
-    if (result.error !== undefined) {
-      console.error(`${stage.name}: failed to spawn — ${result.error.message}`);
-      return false;
-    }
-    const output = `${result.stdout ?? ""}${result.stderr ?? ""}`;
-    if (output.trim().length > 0) process.stdout.write(output.endsWith("\n") ? output : `${output}\n`);
-    if (result.status !== 0) {
-      const log = writeStepLog(root, `stages-${label.split(" ")[0]}`, stage.name, output);
-      digests.push(`${stage.name}:`, ...digestLines(output, log));
-    }
-    return result.status === 0;
-  });
+  const results = await runPlan(
+    stages,
+    async (stage) => {
+      const started = Date.now();
+      let output: string;
+      let status: number;
+      try {
+        const proc = Bun.spawn([stage.command, ...stage.args], { cwd: root, stdout: "pipe", stderr: "pipe" });
+        const [stdout, stderr, code] = await Promise.all([new Response(proc.stdout).text(), new Response(proc.stderr).text(), proc.exited]);
+        output = `${stdout}${stderr}`;
+        status = code;
+      } catch (error) {
+        console.error(`${stage.name}: failed to spawn — ${String(error)}`);
+        return false;
+      }
+      console.log(`\n--- ${label} › ${stage.name}  ${((Date.now() - started) / 1000).toFixed(1)}s`);
+      if (output.trim().length > 0) process.stdout.write(output.endsWith("\n") ? output : `${output}\n`);
+      if (status !== 0) {
+        const log = writeStepLog(root, `stages-${label.split(" ")[0]}`, stage.name, output);
+        digests.push(`${stage.name}:`, ...digestLines(output, log));
+      }
+      return status === 0;
+    },
+    jobs,
+  );
   console.log(formatSummary(label, stages, results));
   if (digests.length > 0) console.log(`\nwhat failed, first error per file:\n${digests.join("\n")}`);
   return results.every((result) => result.state === "passed") ? 0 : 1;
 }
 
-function main(argv: readonly string[]): number {
+async function main(argv: readonly string[]): Promise<number> {
   const root = fileURLToPath(new URL("..", import.meta.url));
   const [verb, ...rest] = argv;
   if (verb === "--help" || verb === "-h") {
@@ -359,7 +372,7 @@ ${renderUsage("gen", GEN_USAGE)}`);
       const result = spawnSync("bun", [request.check.script, ...(request.check.args ?? []), ...request.args], { cwd: root, stdio: "inherit" });
       return result.status ?? 1;
     }
-    return runStages(request.label, request.stages, root);
+    return runStages(request.label, request.stages, root, 1);
   }
   if (verb === "gen") {
     if (printHelpIfAsked("gen", GEN_USAGE, rest)) return 0;
@@ -373,10 +386,10 @@ ${renderUsage("gen", GEN_USAGE)}`);
       return 2;
     }
     const targets = rest.length === 0 ? GEN_TARGETS : GEN_TARGETS.filter((target) => rest.includes(target.name));
-    return runStages(rest.length === 0 ? "gen" : `gen ${rest.join(" ")}`, genPlan(targets), root);
+    return runStages(rest.length === 0 ? "gen" : `gen ${rest.join(" ")}`, genPlan(targets), root, GEN_JOBS);
   }
   console.error("usage: bun scripts/run-stages.ts <check|gen> [...] (bun run check --help, bun run gen --help)");
   return 2;
 }
 
-if (import.meta.main) process.exit(main(process.argv.slice(2)));
+if (import.meta.main) process.exit(await main(process.argv.slice(2)));

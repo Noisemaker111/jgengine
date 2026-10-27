@@ -139,7 +139,7 @@ Report each applicable rung as pass/fail with the command or artifact, one line 
 
 These guarded repository scripts exist only in the jgengine monorepo — never expect them in a created project:
 
-- `bun run lane:close` runs `gen` and `verify:fast` before it lands, and PR CI runs the full set; run `bun run verify:fast --full` locally only when changing the gate or reproducing a CI failure.
+- `bun run lane:close` runs `bun run preflight` (gen, type-checks, gates) and then `verify:fast`'s tests before it lands, and PR CI runs the full set; run `bun run verify:fast --full` locally only when changing the gate or reproducing a CI failure.
 - `bun run perf network <game...> [--seconds n] [--all] [--url base]` measures network traffic over a real play session and prints one JSON line per game: play-window bytes, requests, WebSocket frames, reload cache hits, plus the load and reload breakdowns. `--url https://jgengine.com/play/` measures the deployed runner instead of the local dev server; `--dump path` writes every request row for one game.
 - Use guarded scripts (`bun run test`, `bun run verify:fast --full`), not an unbounded bare `bun test` across the repository.
 - Browser unit fixtures use `buildBrowserFixture` from `scripts/browser-lib` to bundle in a fresh Bun process; runner mocks and resolver caches must not affect the browser's module graph.

@@ -14,8 +14,12 @@ import { existsSync, readFileSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { fileURLToPath } from "node:url";
 
-import { extractPackageSurface } from "./apiSurface";
+import { extractPackageSurface, type ApiPackage } from "./apiSurface";
 import { skillForModule } from "./skillRouting";
+
+function coreSurface(root: string): ApiPackage {
+  return extractPackageSurface(join(root, "packages", "core"));
+}
 
 const TYPE_KINDS = new Set(["interface", "type"]);
 
@@ -56,8 +60,8 @@ function existingBarrelExports(root: string, skill: string): Map<string, Set<str
   return exportsByModule;
 }
 
-export function collectBarrelReexports(root: string, skill: string): Reexport[] {
-  const surface = extractPackageSurface(join(root, "packages", "core"));
+/** `surface` is core's export surface; reading it builds a whole TypeScript program, so pass one in for several skills. */
+export function collectBarrelReexports(root: string, skill: string, surface: ApiPackage = coreSurface(root)): Reexport[] {
   const existing = existingBarrelExports(root, skill);
 
   const seen = new Set<string>();
@@ -101,6 +105,7 @@ function safeRead(path: string): string | null {
 
 function main(): void {
   const root = fileURLToPath(new URL("..", import.meta.url));
+  const surface = coreSurface(root);
   for (const { skill, barrel } of CORE_BARRELS) {
     const out = join(root, "packages", "core", "src", `${barrel}.ts`);
     // Retired skills keep a frozen barrel (hand-curated after the skill left) — do not wipe.
@@ -108,7 +113,7 @@ function main(): void {
       console.log(`skipped packages/core/src/${barrel}.ts (skill ${skill} retired — barrel frozen)`);
       continue;
     }
-    const reexports = collectBarrelReexports(root, skill);
+    const reexports = collectBarrelReexports(root, skill, surface);
     const next = renderBarrel(reexports);
     const prev = safeRead(out);
     writeFileSync(out, next);
