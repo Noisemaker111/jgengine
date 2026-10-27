@@ -46,7 +46,7 @@ function BuildSites() {
         if (plot === undefined) return null;
         const height = 0.3 + 2.6 * Number(progressText);
         return (
-          <group key={slot} position={[plot.position[0], plot.position[1], plot.position[2]]}>
+          <group key={plot.id} position={[plot.position[0], plot.position[1], plot.position[2]]}>
             {[[-0.9, -0.9], [0.9, -0.9], [-0.9, 0.9], [0.9, 0.9]].map(([dx, dz]) => (
               <mesh key={`${dx}:${dz}`} position={[dx!, height / 2, dz!]} castShadow>
                 <boxGeometry args={[0.18, height, 0.18]} />

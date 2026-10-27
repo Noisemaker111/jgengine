@@ -1,4 +1,5 @@
 import type { EditorDocument } from "@jgengine/core/editor/index";
+import { metaNumber } from "@jgengine/core/editor/markerMeta";
 import { raceTrack, type RaceTrack } from "@jgengine/core/game/race";
 
 /**
@@ -20,7 +21,7 @@ export function circuitOf(doc: EditorDocument): Circuit {
   const path = (doc.paths ?? []).find((entry) => entry.kind === "track");
   if (path === undefined || path.points.length < 3) throw new Error('editor.scene.json needs a path of kind "track" with at least 3 points');
   const line = path.points.map((point) => [point.x, point.z] as const);
-  const width = Number((path.meta as Record<string, unknown> | undefined)?.width ?? 14);
+  const width = metaNumber(path, "width", 14);
   let length = 0;
   line.forEach((point, index) => {
     const next = line[(index + 1) % line.length]!;

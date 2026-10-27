@@ -293,6 +293,13 @@
 - `runtimeEntityWriteBackCommand` (function): function runtimeEntityWriteBackCommand(document: EditorDocument, entity: RuntimeEntityState): EditorCommand | null — Builds an undoable document command from an ephemeral runtime entity row (write-back). Returns null when there is nothing to promote. Does not mutate document or clear the override — the caller dispatches the command and then clears the override.
 - `subscribeDocumentLiveSyncInstall` (function): function subscribeDocumentLiveSyncInstall(listener: () => void): () => void — Subscribe to install/uninstall of the global live-sync bus (AuthoredScene re-attaches when the editor host mounts over a running game).
 
+## @jgengine/core/editor/markerMeta
+
+- `WithMeta` (interface): interface WithMeta — Typed reads of an authored object's free-form `meta` (a marker's `grid`, a spawn's `enemy`): the scene file is JSON a person edits, so a wrong value fails here naming the object and the key, instead of reaching the game as `NaN` or the text "undefined".
+- `metaNumber` (function): function metaNumber(item: WithMeta, key: string, fallback: number): number — The number `meta[key]` holds (a JSON number, or text that reads as one), or `fallback` when the scene leaves the key out. Any other value fails.
+- `metaText` (function): function metaText(item: WithMeta, key: string): string | undefined — The text `meta[key]` holds, or `undefined` when the scene leaves the key out. A value that is not text fails.
+- `requireMetaText` (function): function requireMetaText(item: WithMeta, key: string): string — The text `meta[key]` must hold: a missing key or a value that is not text fails.
+
 ## @jgengine/core/editor/materialAuthoring
 
 - `authoredMaterialAssignments` (function): function authoredMaterialAssignments(meta: Record<string, unknown> | undefined): MaterialAssignment[] — Read named assignments from authored marker metadata without inferring whole-model overrides.

@@ -1,4 +1,5 @@
 import type { EditorDocument } from "@jgengine/core/editor/index";
+import { metaNumber, requireMetaText } from "@jgengine/core/editor/markerMeta";
 import type { WorldGridDecl } from "@jgengine/core/worldModel/worldModel";
 
 /**
@@ -7,8 +8,6 @@ import type { WorldGridDecl } from "@jgengine/core/worldModel/worldModel";
  * camps raids come out of.
  */
 type Marker = EditorDocument["markers"][number];
-
-const metaOf = (marker: Marker) => (marker.meta ?? {}) as Record<string, unknown>;
 
 export function hqMarker(doc: EditorDocument): Marker {
   const hq = doc.markers.find((marker) => marker.kind === "hq");
@@ -19,8 +18,8 @@ export function hqMarker(doc: EditorDocument): Marker {
 /** The build grid is centred on the headquarters; its size is the marker's `meta.grid` (cells) and `meta.cell` (metres). */
 export function colonyGrid(doc: EditorDocument): WorldGridDecl {
   const hq = hqMarker(doc);
-  const cells = Number(metaOf(hq).grid ?? 30);
-  const cell = Number(metaOf(hq).cell ?? 2);
+  const cells = metaNumber(hq, "grid", 30);
+  const cell = metaNumber(hq, "cell", 2);
   return { cols: cells, rows: cells, cell, origin: [hq.position.x - (cells * cell) / 2, hq.position.z - (cells * cell) / 2] };
 }
 
@@ -42,7 +41,7 @@ export function hqCell(grid: WorldGridDecl, size: readonly [number, number]): [n
 export function nodeMarkers(doc: EditorDocument): { id: string; node: string; x: number; z: number }[] {
   return doc.markers
     .filter((marker) => marker.kind === "node")
-    .map((marker) => ({ id: marker.id, node: String(metaOf(marker).node ?? ""), x: marker.position.x, z: marker.position.z }));
+    .map((marker) => ({ id: marker.id, node: requireMetaText(marker, "node"), x: marker.position.x, z: marker.position.z }));
 }
 
 /** Where raids come from. */
@@ -54,5 +53,5 @@ export function raidCamps(doc: EditorDocument): { x: number; z: number }[] {
 
 /** Starter layout for the capture state: `plan` markers naming a structure in `meta.structure`. */
 export function planMarkers(doc: EditorDocument): { structure: string; x: number; z: number }[] {
-  return doc.markers.filter((marker) => marker.kind === "plan").map((marker) => ({ structure: String(metaOf(marker).structure ?? ""), x: marker.position.x, z: marker.position.z }));
+  return doc.markers.filter((marker) => marker.kind === "plan").map((marker) => ({ structure: requireMetaText(marker, "structure"), x: marker.position.x, z: marker.position.z }));
 }

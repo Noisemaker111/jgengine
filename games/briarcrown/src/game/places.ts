@@ -1,4 +1,5 @@
 import type { EditorDocument } from "@jgengine/core/editor/index";
+import { metaNumber } from "@jgengine/core/editor/markerMeta";
 import type { WorldGridDecl } from "@jgengine/core/worldModel/worldModel";
 
 /**
@@ -6,8 +7,6 @@ import type { WorldGridDecl } from "@jgengine/core/worldModel/worldModel";
  * coordinates in code: the seat the realm starts from and the build grid around it.
  */
 type Marker = EditorDocument["markers"][number];
-
-const metaOf = (marker: Marker) => (marker.meta ?? {}) as Record<string, unknown>;
 
 export function seatMarker(doc: EditorDocument): Marker {
   const seat = doc.markers.find((marker) => marker.kind === "seat");
@@ -18,8 +17,8 @@ export function seatMarker(doc: EditorDocument): Marker {
 /** The build grid is centred on the seat; its size is the seat marker's `meta.grid` (cells) and `meta.cell` (metres). */
 export function realmGrid(doc: EditorDocument): WorldGridDecl {
   const seat = seatMarker(doc);
-  const cells = Number(metaOf(seat).grid ?? 30);
-  const cell = Number(metaOf(seat).cell ?? 2);
+  const cells = metaNumber(seat, "grid", 30);
+  const cell = metaNumber(seat, "cell", 2);
   return { cols: cells, rows: cells, cell, origin: [seat.position.x - (cells * cell) / 2, seat.position.z - (cells * cell) / 2] };
 }
 

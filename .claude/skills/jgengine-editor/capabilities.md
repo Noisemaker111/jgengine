@@ -90,6 +90,10 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 - `materialAuthoringNotes` (function) · `import { materialAuthoringNotes } from "@jgengine/editor/materialControls"`
 - `materialControlGroups` (function) · `import { materialControlGroups } from "@jgengine/editor/materialControls"`
 
+## editor-meta — read a placed object's authored meta as a typed number or text, failing on a wrong value
+
+- `metaNumber` (function) · `import { metaNumber } from "@jgengine/core/editor/markerMeta"`
+
 ## editor-movement — bind live character tuning while preserving distinctive game policy
 
 - `bindAuthoredMovement` (function) · `import { bindAuthoredMovement } from "@jgengine/core/editor/movementCatalog"`

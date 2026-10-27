@@ -42,7 +42,7 @@ export function chooseTarget(
   const byId = new Map(inRange.map((candidate) => [candidate.id, candidate]));
   return selectAutoTarget(policy, TOWER_ID, {
     candidates: () => inRange.map((candidate) => candidate.id),
-    eligible: exclude === undefined ? undefined : (id) => !exclude.has(id),
+    ...(exclude === undefined ? {} : { eligible: (id: string) => !exclude.has(id) }),
     distance: (_from, toId) => {
       const candidate = byId.get(toId);
       return candidate === undefined ? null : vec3.distance(towerPosition, candidate.position);

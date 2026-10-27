@@ -174,7 +174,7 @@ export function validWorldSave(value: unknown): value is WorldModelState {
   const state = value as WorldModelState;
   if (!number(state.time) || typeof state.facts !== "object" || state.facts === null || !Array.isArray(state.log)) return false;
   if (!number(state.facts["keep.gold"]) || !number(state.facts["keep.lives"])) return false;
-  const plots = new Set(Object.keys(keep.def.slots?.plot ?? {}));
+  const plots = new Set(Object.keys(keep.def.slots?.["plot"] ?? {}));
   return Object.values(state.instances ?? {}).every((tower) =>
     typeof tower === "object" && tower !== null && keep.def.kinds?.[tower.kind] !== undefined &&
     typeof tower.slot === "string" && plots.has(tower.slot) && typeof tower.ready === "boolean");
@@ -279,6 +279,13 @@ export function beaconSave(ctx: GameContext): GameSave {
   return save;
 }
 
+/** A non-empty text field of the saved profile system, or `null`. */
+function profileText(profile: unknown, key: "commander" | "thumbnail"): string | null {
+  if (typeof profile !== "object" || profile === null || !(key in profile)) return null;
+  const value: unknown = Reflect.get(profile, key);
+  return typeof value === "string" && value.length > 0 ? value : null;
+}
+
 /** The save-select index the menus render — filled from the documents, never from a flag. */
 export const beaconSlots: SaveSlots = createSaveSlots({
   capacity: KEEP_SLOTS.length,
@@ -289,24 +296,26 @@ export const beaconSlots: SaveSlots = createSaveSlots({
 export function refreshBeaconSlots(ctx: GameContext): Promise<SaveSlotsRefresh> {
   return refreshSaveSlots(gameSaveSlotSource(beaconSave(ctx)), beaconSlots, {
     nameOf: (slot, document) => {
-      const profile = (document.systems.profile ?? {}) as { commander?: string | null };
-      if (typeof profile.commander === "string" && profile.commander.length > 0) return profile.commander;
-      const defense = document.systems.defense;
+      const commander = profileText(document.systems["profile"], "commander");
+      if (commander !== null) return commander;
+      const defense = document.systems["defense"];
       const wave = validDefenseSave(defense) ? defense.encounter.wave + 1 : 1;
       return `${KEEP_LABEL[slot] ?? slot} · wave ${wave}`;
     },
     metaOf: (_slot, document): Record<string, string | number> => {
-      const defense = document.systems.defense;
+      const defense = document.systems["defense"];
       if (!validDefenseSave(defense)) return {};
-      const thumb = (document.systems.profile ?? {}) as { commander?: string | null; thumbnail?: string | null };
-      const world = document.systems.world;
+      const profile = document.systems["profile"];
+      const commander = profileText(profile, "commander");
+      const thumbnail = profileText(profile, "thumbnail");
+      const world = document.systems["world"];
       const facts = validWorldSave(world) ? world.facts : { "keep.gold": defense.gold ?? 0, "keep.lives": defense.lives ?? 0 };
       return {
-        ...(typeof thumb.commander === "string" && thumb.commander.length > 0 ? { character: thumb.commander } : {}),
+        ...(commander === null ? {} : { character: commander }),
         gold: Number(facts["keep.gold"] ?? 0),
         lives: Number(facts["keep.lives"] ?? 0),
         wave: defense.encounter.wave + 1,
-        ...(typeof thumb.thumbnail === "string" && thumb.thumbnail.length > 0 ? { thumbnail: thumb.thumbnail } : {}),
+        ...(thumbnail === null ? {} : { thumbnail }),
       };
     },
   });
