@@ -158,7 +158,8 @@ export interface GenTarget {
  */
 export const GEN_TARGETS: readonly GenTarget[] = [
   { name: "source-paths", script: "scripts/sourcePaths.ts" },
-  { name: "barrels", script: "scripts/gen-barrels.ts" },
+  { name: "skill-routing", script: "scripts/gen-skill-routing.ts" },
+  { name: "barrels", script: "scripts/gen-barrels.ts", after: ["skill-routing"] },
   { name: "capabilities", script: "scripts/gen-capability-index.ts", after: ["barrels"] },
   { name: "skill-api", script: "scripts/gen-skill-api-safe.ts", after: ["barrels"] },
   { name: "export-manifest", script: "scripts/gen-export-manifest.ts", after: ["barrels"] },
