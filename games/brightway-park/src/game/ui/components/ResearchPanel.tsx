@@ -2,7 +2,8 @@ import { useGame } from "@jgengine/react/hooks";
 import { KitButton, KitMeter, KitPanel } from "@jgengine/core/ui/kit/uiKitRoot.view";
 
 import { BUILDABLES, RIDE_GROUPS, RIDE_GROUP_LABEL, type BuildableDef } from "../../objects/catalog";
-import { researched } from "../../park";
+import { parkDuration } from "../../books";
+import { RESEARCH_PACE, researched } from "../../park";
 import { usePark } from "../usePark";
 
 /** The lab's families: every ride group, then shops, theming and staff. */
@@ -32,7 +33,7 @@ export function ResearchPanel({ onClose }: { onClose: () => void }) {
       <p className="bw-blurb">{orders.length === 0 ? "Idle: pick a topic. Each opens after the one before it in its family." : `${orders.length} in the lab`}</p>
       {orders.map((order) => (
         <KitMeter key={order.id} size="sm" label={order.label.replace(/^Research /, "")} value={order.progress} max={1}
-          readout={order.active ? `${Math.ceil(order.remaining)}s` : "waiting"} tone="warn" />
+          readout={order.active ? parkDuration(order.remaining) : "waiting"} tone="warn" />
       ))}
       {families().map((family) => (
         <section key={family.id} className="bw-lab" aria-label={family.label}>
@@ -46,7 +47,7 @@ export function ResearchPanel({ onClose }: { onClose: () => void }) {
               <KitButton key={def.id} size="sm" variant={done || refusal !== null ? "ghost" : "secondary"} disabled={done || inLab || refusal !== null}
                 icon={done ? "✓" : inLab ? "⏳" : refusal !== null ? "🔒" : def.icon} title={refusal?.message ?? def.blurb}
                 onClick={() => commands.run("brightway.act", { action })}
-                glyph={done ? "ready" : inLab ? "in lab" : `$${def.research!.cost.toLocaleString()} · ${def.research!.seconds}s`}>
+                glyph={done ? "ready" : inLab ? "in lab" : `$${(def.research?.cost ?? 0).toLocaleString()} · ${parkDuration((def.research?.seconds ?? 0) * RESEARCH_PACE)}`}>
                 {def.label}
               </KitButton>
             );

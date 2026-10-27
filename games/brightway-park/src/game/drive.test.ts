@@ -3,7 +3,7 @@ import { createHeadlessRunner } from "@jgengine/core/runtime/headlessRunner";
 
 import { game } from "../game.config";
 import { DAY_LENGTH } from "./catalog";
-import { cellFor, LOAN, park } from "./park";
+import { cellFor, LOAN, park, RESEARCH_PACE } from "./park";
 import { accessOf } from "./build/links";
 import { rideView } from "./rides";
 import { session } from "./session";
@@ -70,14 +70,14 @@ test("a player builds and connects a ride, hires staff, researches the mechanic,
   clickBuild("staff_entertainer");
   expect(w.num("n.staff_entertainer")).toBe(1);
 
-  // The mechanic is a lab topic: locked until its research finishes, then hired like the rest.
-  expect(w.canPlace("staff_mechanic")?.reason).toBe("locked");
-  runner.ui.invoke("brightway.act", { action: "research_staff_mechanic" });
-  expect(w.orders("lab").length).toBe(1);
-  for (let t = 0; t < 70; t += 0.5) runner.step(0.5);
-  expect(w.canPlace("staff_mechanic")?.reason).not.toBe("locked");
+  // The mechanic is hired from the start; the Dodgems are a lab topic, locked until research lands.
   clickBuild("staff_mechanic");
   expect(w.num("n.staff_mechanic")).toBe(1);
+  expect(w.canPlace("ride_bumper")?.reason).toBe("locked");
+  runner.ui.invoke("brightway.act", { action: "research_ride_bumper" });
+  expect(w.orders("lab").length).toBe(1);
+  for (let t = 0; t < 60 * RESEARCH_PACE + 5; t += 1) runner.step(1);
+  expect(w.canPlace("ride_bumper")?.reason).not.toBe("locked");
 
   // The bank lends in $1,000 steps.
   const owed = w.num("park.loan_owed");

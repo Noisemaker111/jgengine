@@ -6,7 +6,8 @@ import { KitButton, KitMeter, KitPanel } from "@jgengine/core/ui/kit/uiKitRoot.v
 import { session } from "../../session";
 import { guestRidePreference, rideFit, rideThrill } from "../../sim/rideExperience";
 import { coasterCircuit, rideView, trackPieces } from "../../rides";
-import { fairPrice, parkObject, patrolRadius, PATROL, repairAction, ridePrice, stallPrice, stockOf } from "../../park";
+import { parkDuration } from "../../books";
+import { fairPrice, parkObject, patrolRadius, PATROL, reliability, repairAction, ridePrice, stallPrice, stockOf } from "../../park";
 import { accessOf, connectCost } from "../../build/links";
 import { refundOf } from "../../parkScene";
 import { usePark } from "../usePark";
@@ -50,18 +51,18 @@ export function Inspector() {
   const [phase, riders, queued, waitSeconds, wear, breakdowns, cycles] = ride === "" ? [] : ride.split("|");
   const broken = w.fact(`${obj.id}.broken`) === true;
   const order = w.orders("crew").find((entry) => entry.target === obj.id) ?? null;
-  const repair = def.ride === undefined ? null : repairAction(w, obj.kind);
+  const repair = def.ride === undefined ? null : repairAction(obj.kind);
   const repairCost = repair === null ? 0 : -(w.costOf(repair, obj.id)["park.cash"] ?? 0);
   const repairRefusal = repair === null ? null : w.canAct(repair, obj.id);
   const access = accessOf(ctx, obj.id);
   const shut = access !== null && !access.open;
   const excitement = rideView(obj.id)?.ratings.excitement ?? 0;
-  const crew = order === null ? "waiting for the crew" : order.active ? `crew on it · ${Math.ceil(order.remaining)}s` : "crew queued";
+  const crew = order === null ? (w.num("n.staff_mechanic") < 1 ? "needs a mechanic" : "waiting for the mechanic") : order.active ? `mechanic on it · ${parkDuration(order.remaining)}` : "mechanic queued";
   return (
     <KitPanel variant="card" aria-label={`${def.label} details`} eyebrow={`${def.icon} ${def.category}`} title={def.label} aside={<CloseButton label="Close inspector" />}
       footer={<>
         {def.ride === undefined ? null : broken && order === null
-          ? <KitButton size="sm" variant="primary" disabled={repairRefusal !== null} title={repairRefusal?.message} onClick={() => act(repair!)}>Send the crew · ${repairCost}</KitButton>
+          ? <KitButton size="sm" variant="primary" disabled={repairRefusal !== null} title={repairRefusal?.message} onClick={() => { if (repair !== null) act(repair); }}>Send the mechanic · ${repairCost}</KitButton>
           : <KitButton size="sm" variant="primary" disabled={broken} onClick={() => act(`service_${obj.kind}`)}>Service · ${def.ride.breakdown.serviceCost}</KitButton>}
         <KitButton size="sm" tone="bad" onClick={() => commands.run("build.demolish", { id: obj.id })}>Demolish · +${refundOf(obj.kind)}</KitButton>
       </>}>
@@ -88,7 +89,7 @@ export function Inspector() {
           ["Appeal", broken ? "0 while down" : w.num(`${obj.id}.appeal`).toFixed(1)], ["Upkeep", `$${def.upkeep} / day`]] as [string, string][]),
         ...(def.ride !== undefined ? [["Scenery charm", `+${w.num(`${obj.id}.theme`).toFixed(1)}`]] as [string, string][] : []),
         ...(access?.open && def.ride !== undefined ? [["Queue line", access.line.length > 0 ? `${access.line.length} tiles` : "none · guests wait at the entrance"]] as [string, string][] : []),
-        ...(def.ride !== undefined ? [["In line", `${queued ?? 0} · ${Math.round(Number(waitSeconds ?? 0))}s wait`], ["Since service", `${wear ?? 0} runs`], ["Breakdowns", `${breakdowns ?? 0} in ${cycles ?? 0} runs`], ["Intensity", rideThrill(def.id, circuit).toFixed(1)],
+        ...(def.ride !== undefined ? [["In line", `${queued ?? 0} · ${Math.round(Number(waitSeconds ?? 0))}s wait`], ["Reliability", `${reliability(def, Number(wear ?? 0))}% · ${wear ?? 0} runs since service`], ["Breakdowns", `${breakdowns ?? 0} in ${cycles ?? 0} runs`], ["Intensity", rideThrill(def.id, circuit).toFixed(1)],
           ...["guest_a", "guest_c", "guest_d"].map((kind) => [`${guestRidePreference(kind).label} fit`, `${Math.round(rideFit(kind, def.id, circuit) * 100)}%`])] as [string, string][] : []),
         ...(def.id === "ride_coaster" ? [["Circuit", circuit.closed ? `${circuit.pieces} pieces · ${Math.round(circuit.length)} m · ${circuit.lapSeconds.toFixed(1)} s` : `${tracks} laid · loop open`],
           ["Excitement", `${circuit.excitement.toFixed(1)} · nausea ${circuit.nausea.toFixed(1)}`], ["Drop · pace", `${circuit.drop.toFixed(1)} m · ${circuit.averageSpeed.toFixed(1)} m/s`]] as [string, string][] : []),

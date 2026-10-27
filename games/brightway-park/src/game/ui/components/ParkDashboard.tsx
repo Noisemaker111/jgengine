@@ -5,8 +5,7 @@ import { KitButton, KitMeter, KitPanel } from "@jgengine/core/ui/kit/uiKitRoot.v
 import type { KitTone } from "@jgengine/core/ui/kit/uiKit.view";
 
 import { guestCap } from "../../catalog";
-import { BOOK_LINES, CAMPAIGNS, MONTH_DAYS, monthLabel, parkDateLabel, parkDate, type BookLine } from "../../books";
-import { DAY_LENGTH } from "../../catalog";
+import { BOOK_LINES, CAMPAIGNS, MONTH_DAYS, monthLabel, parkDateLabel, parkDate, parkDuration, type BookLine } from "../../books";
 import { LOAN, linesNet, monthLine, parkMetrics, reportLine } from "../../park";
 import { scenarioView } from "../../parkReset";
 import { rideBoard } from "../../rides";
@@ -113,7 +112,7 @@ export function ParkBooks({ onClose }: { onClose: () => void }) {
       <div className="bw-ads">{CAMPAIGNS.map((c) => {
         const running = ads.find((order) => order.label === c.label);
         return <KitButton key={c.id} size="sm" data-campaign={c.id} disabled={running !== undefined || w.canAct(c.id) !== null} title={c.blurb} onClick={() => act(c.id)}>
-          {running !== undefined ? `${c.label} · ${Math.ceil(running.remaining / DAY_LENGTH)}d left` : `${c.label} · ${money(c.cost)}`}</KitButton>;
+          {running !== undefined ? `${c.label} · ${parkDuration(running.remaining)} left` : `${c.label} · ${money(c.cost)}`}</KitButton>;
       })}</div>
     </KitPanel>
   );

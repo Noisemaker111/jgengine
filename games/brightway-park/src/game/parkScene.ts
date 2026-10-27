@@ -25,6 +25,15 @@ export function spawnObject(ctx: GameContext, instance: WorldInstanceView): void
   ctx.scene.object.place(instance.kind, instance.position[0], y, instance.position[1], { instanceId: instance.id, onExisting: "keep", rotation });
   rethemeRides(ctx);
   relinkPark(ctx);
+  // A new mechanic goes straight to every ride that broke while there was no one to fix it.
+  if (instance.kind === "staff_mechanic") {
+    const busy = new Set(w.orders("crew").map((order) => order.target));
+    for (const ride of w.instances("ride")) {
+      if (w.fact(`${ride.id}.broken`) !== true || busy.has(ride.id)) continue;
+      const repair = repairAction(ride.kind);
+      if (w.canAct(repair, ride.id) === null) w.act(repair, ride.id);
+    }
+  }
 }
 
 /** Every structure the world holds goes on screen: after a load, a reset or a replicated world. */
@@ -58,18 +67,20 @@ export function despawnObject(ctx: GameContext, id: string, refund = 0): void {
   savePark(ctx);
 }
 
-/** A ride broke: mark it down in the world and send the crew if the till can pay for it. */
+/** A ride broke: mark it down in the world and send a mechanic if the park has one and the till can pay. */
 export function dispatchCrew(ctx: GameContext, w: WorldModel, rideId: string): void {
   const instance = w.instance(rideId);
   if (instance === null) return;
   w.set(`${rideId}.broken`, true);
-  const action = repairAction(w, instance.kind);
+  const action = repairAction(instance.kind);
   const refused = w.canAct(action, rideId);
   if (refused === null) {
     w.act(action, rideId);
-    ctx.game.notices.push({ text: `${instance.label} has broken down - the crew is on the way`, tone: "warn" });
+    ctx.game.notices.push({ text: `${instance.label} has broken down - the mechanic is on the way`, tone: "warn" });
+  } else if (w.num("n.staff_mechanic") < 1) {
+    ctx.game.notices.push({ text: `${instance.label} has broken down - hire a mechanic from Staff to fix it`, tone: "warn" });
   } else {
-    ctx.game.notices.push({ text: `${instance.label} has broken down - ${refused.message}. Click it to send the crew.`, tone: "warn" });
+    ctx.game.notices.push({ text: `${instance.label} has broken down - ${refused.message}. Click it to send the mechanic.`, tone: "warn" });
   }
   ctx.game.audio.play("denied");
 }
@@ -78,7 +89,7 @@ export function dispatchCrew(ctx: GameContext, w: WorldModel, rideId: string): v
 export function landed(ctx: GameContext, action: string, target: string | null): void {
   const w = park.of(ctx);
   const decl = w.def.actions?.[action];
-  if (target !== null && (action.startsWith("repair_") || action.startsWith("quickfix_"))) fixRide(target);
+  if (target !== null && action.startsWith("repair_")) fixRide(target);
   if (target !== null && action.startsWith("service_")) serviceRide(target);
   if (decl?.note !== undefined) {
     const line = w.log().at(-1);
@@ -86,7 +97,7 @@ export function landed(ctx: GameContext, action: string, target: string | null):
   }
   const at = target === null ? null : w.instance(target)?.position ?? null;
   if (action.startsWith("ticket_") || action.startsWith("price_") || action === "take_loan") ctx.game.audio.play("ticket");
-  else if (action.startsWith("repair_") || action.startsWith("quickfix_") || action.startsWith("service_")) ctx.game.audio.play("place", at === null ? undefined : [at[0], 0, at[1]]);
+  else if (action.startsWith("repair_") || action.startsWith("service_")) ctx.game.audio.play("place", at === null ? undefined : [at[0], 0, at[1]]);
   else if (action === "repay_loan") ctx.game.audio.play("sell");
   if (!action.startsWith("restock_")) savePark(ctx);
 }

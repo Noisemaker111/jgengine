@@ -5,7 +5,7 @@ import { game } from "../game.config";
 import { DAY_LENGTH } from "./catalog";
 import { BUILDABLES } from "./objects/catalog";
 import { CAMPAIGNS, MONTH_DAYS } from "./books";
-import { cellFor, LOAN, marketingBoost, park, parkMetrics, QUICK_REPAIR } from "./park";
+import { cellFor, LOAN, marketingBoost, park, parkMetrics, reliability, repairAction } from "./park";
 import { demand } from "./sim/rating";
 import { forceBreakdown } from "./capture";
 import { connectPark } from "./build/links";
@@ -94,7 +94,8 @@ describe("Brightway Park as one declaration", () => {
     expect(w.num("park.revenue_today")).toBeGreaterThan(0);
     expect(w.num("park.mood")).toBeGreaterThan(0);
 
-    // Breakdown: the ripple sours the crowd, the ride's appeal leaves the totals, the crew is sent and paid.
+    // Breakdown: the ripple sours the crowd, the ride's appeal leaves the totals, the mechanic is sent and paid.
+    expect(runner.ctx.game.commands.run("brightway.place", { kind: "staff_mechanic", cell: cellFor("staff_mechanic", 40, 40) }).status).toBe("applied");
     const up = parkMetrics(w);
     const target = ratingTarget(up, w.num("park.mood"), w.num("park.guests_today"), w.num("park.litter"));
     const cash = w.num("park.cash");
@@ -134,18 +135,45 @@ describe("Brightway Park as one declaration", () => {
     expect(w.num("park.peak")).toBeGreaterThanOrEqual(w.num("park.rating"));
   }, 30_000);
 
-  test("a mechanic bay sends the quicker crew order", () => {
+  test("a broken ride stays down until the park hires a mechanic, who goes straight to it", () => {
     const { runner, w } = openPark();
-    // The bay is a lab topic: locked until its research lands.
-    expect(runner.ctx.game.commands.run("brightway.place", { kind: "staff_mechanic", cell: cellFor("staff_mechanic", 40, 40) }).status).toBe("rejected");
-    w.set("research.staff_mechanic", true);
-    expect(runner.ctx.game.commands.run("brightway.place", { kind: "staff_mechanic", cell: cellFor("staff_mechanic", 40, 40) }).status).toBe("applied");
-    const ride = w.instances("ride_carousel")[0]!.id;
+    const ride = w.instances("ride_carousel")[0]?.id ?? "";
+    const repairSeconds = BUILDABLES.ride_carousel?.ride?.breakdown.repairSeconds ?? 0;
     forceBreakdown(runner.ctx, ride);
-    const order = w.orders("crew").find((entry) => entry.target === ride)!;
-    expect(order.label).toContain("Repair");
-    expect(order.remaining).toBeCloseTo(Math.round(BUILDABLES.ride_carousel!.ride!.breakdown.repairSeconds * QUICK_REPAIR), 0);
-  });
+    expect(w.orders("crew")).toHaveLength(0);
+    expect(w.canAct(repairAction("ride_carousel"), ride)?.message).toContain("mechanic");
+    expect(runner.ctx.game.notices.list().some((notice) => notice.text.includes("hire a mechanic"))).toBe(true);
+    step(runner, repairSeconds + 5);
+    expect(w.fact(`${ride}.broken`)).toBe(true);
+
+    // The mechanic needs no research: hired from the start, and the first job is the broken ride.
+    expect(runner.ctx.game.commands.run("brightway.place", { kind: "staff_mechanic", cell: cellFor("staff_mechanic", 40, 40) }).status).toBe("applied");
+    step(runner, 1);
+    const order = w.orders("crew").find((entry) => entry.target === ride);
+    expect(order?.label ?? "").toContain("Repair");
+    step(runner, repairSeconds + 1);
+    expect(w.fact(`${ride}.broken`)).toBe(false);
+  }, 30_000);
+
+  test("reliability falls with every run since service; bins catch litter", () => {
+    const carousel = BUILDABLES.ride_carousel;
+    if (carousel === undefined) throw new Error("no carousel");
+    expect(reliability(carousel, 0)).toBeGreaterThan(reliability(carousel, 20));
+    expect(reliability(carousel, 0)).toBeLessThan(100);
+    // The empty lot: no guests dropping litter and no handyman sweeping it, so only the bins move it.
+    const runner = createHeadlessRunner({ game, maxStepSeconds: 1 });
+    resetPark(runner.ctx);
+    runner.ui.invoke("park.start");
+    runner.ctx.time.hydrate({ ...runner.ctx.time.snapshot(), now: DAY_LENGTH * 0.3, paused: false });
+    const w = park.of(runner.ctx);
+    w.set("park.litter", 50);
+    step(runner, 10);
+    expect(w.num("park.litter")).toBe(50);
+    for (let i = 0; i < 4; i += 1) runner.ctx.game.commands.run("brightway.place", { kind: "deco_bin", cell: [2 + i, 2] });
+    expect(w.num("n.deco_bin")).toBe(4);
+    step(runner, 10);
+    expect(w.num("park.litter")).toBeLessThan(50 - 0.1);
+  }, 30_000);
 
   test("the park opens in debt; borrowing is an action; midnight restocks the stalls; the month's close charges interest and files the books", () => {
     const { runner, w } = openPark();
