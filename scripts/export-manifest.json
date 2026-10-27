@@ -1513,7 +1513,6 @@
     "./harness",
     "./index",
     "./pkg",
-    "./plan/plan",
     "./projectConfig",
     "./prototypeLook",
     "./recipes/index",

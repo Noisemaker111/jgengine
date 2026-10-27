@@ -11,7 +11,7 @@ Own the intended player experience and the rules that produce it: fantasy, pilla
 
 Use `level-design` for spatial realization; route implementation to `jgengine-gameplay`, `jgengine-world`, `jgengine-combat`, `jgengine-ui`, `jgengine-multiplayer` once intent is coherent.
 
-For a substantial existing-game quality pass spanning concept, depth, world and presentation, use `game-improvement` to sequence these owners and keep a per-game implementation plan and acceptance evidence.
+For a new game, start with `create-game-jg`, which agrees the direction and writes `PLAN.md` before any code. For a substantial existing-game quality pass spanning concept, depth, world and presentation, use `game-improvement` to sequence these owners and keep a per-game implementation plan and acceptance evidence.
 
 For a greenfield build, read [references/application-playbook.md](references/application-playbook.md) and produce its greenfield contract (promise, pillars, anti-pillars, core decision, and falsifier) before writing code. Audits may read only the playbook's audit sections. Read [references/field-guide.md](references/field-guide.md) when the task needs deeper loop, economy, progression, genre, accessibility, or research guidance.
 

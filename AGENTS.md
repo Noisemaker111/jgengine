@@ -41,7 +41,7 @@ Code comments default to none. Exported public API keeps tight JSDoc (it generat
 
 ## Game changes improve the framework
 
-0. **Plan first.** Before building a game or a big feature, write `games/<id>/PLAN.md`: `bun run jgengine plan <id> --brief "<brief>"`, list every feature the brief implies under `## Features`, run `bun run jgengine plan <id>` again (it fills each feature's engine owner and the gaps), then order `## Milestones`, one PR each. Each PR ticks its milestone; a changed goal changes the plan first. Ask "does the engine have X?" of the plan or of `bun run jgengine has <feature> ...` (one JSON answer for many features), not one search at a time.
+0. **Plan first.** A new game or big feature starts with the [`create-game-jg`](.claude/skills/create-game-jg/SKILL.md) skill: agree the direction with Jon or the user (references, how faithful, breadth, look, scale, players, platforms, what done means), map every feature with one `bun run jgengine has <feature> ...` call, write `games/<id>/PLAN.md` (direction, features with engine owners, gaps as engine work, milestones one PR each), then `jgengine create` and build milestone by milestone. Each PR ticks its milestone; a changed goal changes the plan first.
 1. Separate the game's rules, content and presentation from reusable behavior.
 2. Check engine `beta` before declaring a gap; if the fix exists, adopt it.
 3. Build missing shared behavior upstream with configurable policy, keeping the first adopter's behavior. Do not edit files another session owns.

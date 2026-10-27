@@ -11,7 +11,7 @@ In JGengine, read repository governance and use the existing owners: `game-desig
 
 ## Make the plan
 
-Write plain numbered steps in the order work happens. Each delivers a concrete player-facing result and states how it is checked. Put verified progress above the steps and unfinished work below them. A game's plan is its `PLAN.md` (`jgengine plan <game>`, see the `jgengine` skill): the numbered steps go under `## Milestones`, one PR each, never in the reusable skill. Read [references/quality-checks.md](references/quality-checks.md) for the decision, terrain and completion checks.
+Write plain numbered steps in the order work happens. Each delivers a concrete player-facing result and states how it is checked. Put verified progress above the steps and unfinished work below them. A game's plan is its `PLAN.md` (sections as in the `create-game-jg` skill): the numbered steps go under `## Milestones`, one PR each, never in the reusable skill. Read [references/quality-checks.md](references/quality-checks.md) for the decision, terrain and completion checks.
 
 1. **Establish the actual game.** Drive its opening, objective, failure and retry where possible; inspect its rules, authored scene and installed SDK. Record observations separately from source findings and proposals. Capture the actual play view, including the ground at the normal camera height. Establish what must survive the redesign.
 2. **Give it a clear identity.** Define the player promise, a few observable pillars, the main decision and the experience to avoid. Describe what the player learns and does in the first minute, first objective and representative session. Reject an identity that is only a genre name or marketing sentence.

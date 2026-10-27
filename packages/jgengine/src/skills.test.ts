@@ -43,7 +43,7 @@ describe("parseSkillsArgs", () => {
 
 describe("skill sets", () => {
   test("minimal set is intake + editor + verify + design + ui, a subset of the full set", () => {
-    expect(MINIMAL_GAME_SKILLS).toEqual(["jgengine", "jgengine-editor", "jgengine-verify", "game-design", "jgengine-ui"]);
+    expect(MINIMAL_GAME_SKILLS).toEqual(["jgengine", "create-game-jg", "jgengine-editor", "jgengine-verify", "game-design", "jgengine-ui"]);
     for (const skill of MINIMAL_GAME_SKILLS) {
       expect(GAME_SKILLS).toContain(skill);
     }
