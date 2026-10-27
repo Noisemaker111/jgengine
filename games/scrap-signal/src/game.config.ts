@@ -22,11 +22,10 @@ import { GameUI } from "./game/ui/GameUI";
 import { scrapTheme } from "./game/ui/theme";
 import { entityModels, objectModels } from "./game/world/models";
 import { FerralonWorldOverlay } from "./game/world/Viewmodel";
-import { NPC_PLACEMENTS } from "./game/world/level";
+import { NPCS } from "./game/quests/catalog";
 import { AMMO_CHESTS, RED_CHESTS } from "./game/world/setup";
 import {
   BLACK_MARKET_POS,
-  BOLT_POS,
   RIGG_VENDOR_POS,
   TRAVEL_STATIONS,
   SPARX_VENDOR_POS,
@@ -85,27 +84,6 @@ const staticPrompts: readonly PositionedPrompt[] = [
     },
   },
   {
-    id: "npc:bolt",
-    position: { x: BOLT_POS[0], z: BOLT_POS[2] },
-    prompt: {
-      radius: 3,
-      display: { kind: "keybind", actionId: "interact"},
-      invoke: { name: "vendor.open", input: { vendor: "bolt" } },
-    },
-  },
-  ...NPC_PLACEMENTS.map((npc) => ({
-    id: `npc:${npc.name}`,
-    position: { x: npc.x, z: npc.z },
-    prompt: {
-      radius: 3,
-      display: { kind: "keybind", actionId: "interact" } as const,
-      invoke:
-        npc.name === "gauge"
-          ? { name: "npc.gauge", input: undefined }
-          : { name: "vendor.open", input: { vendor: npc.name === "dr_sparx" ? "sparx" : "rigg" } },
-    },
-  })),
-  {
     id: "vendor:blackmarket",
     position: { x: BLACK_MARKET_POS[0], z: BLACK_MARKET_POS[2] },
     prompt: {
@@ -143,15 +121,36 @@ const staticPrompts: readonly PositionedPrompt[] = [
   })),
 ];
 
+/** A talk prompt on each quest giver, wherever the story has them standing now. */
+function npcPrompts(ctx: GameContext): PositionedPrompt[] {
+  const out: PositionedPrompt[] = [];
+  for (const [npc, info] of Object.entries(NPCS)) {
+    const entity = ctx.scene.entity.get(info.entity);
+    if (entity === null) continue;
+    out.push({
+      id: `npc:${npc}`,
+      position: { x: entity.position[0], z: entity.position[2] },
+      priority: 2,
+      prompt: {
+        radius: 3.2,
+        display: { kind: "keybind", actionId: "interact", label: `Talk to ${info.name}` },
+        invoke: { name: "npc.talk", input: { npc } },
+      },
+    });
+  }
+  return out;
+}
+
 function prompts(ctx: GameContext): readonly PositionedPrompt[] {
+  const base = [...staticPrompts, ...npcPrompts(ctx)];
   const playerEntity = ctx.scene.entity.get(ctx.player.userId);
-  if (playerEntity === null) return staticPrompts;
+  if (playerEntity === null) return base;
   const nearestId = ctx.scene.worldItem.nearestInRadius(playerEntity.position, 2.8);
-  if (nearestId === null) return staticPrompts;
+  if (nearestId === null) return base;
   const itemEntity = ctx.scene.entity.get(nearestId);
-  if (itemEntity === null) return staticPrompts;
+  if (itemEntity === null) return base;
   return [
-    ...staticPrompts,
+    ...base,
     {
       id: `pickup:${nearestId}`,
       position: { x: itemEntity.position[0], z: itemEntity.position[2] },
@@ -215,7 +214,9 @@ export const game = defineGame({
     },
   },
   name: "Scrap Signal",
-  features: { quest: true, trade: true },
+  features: { quest: true, trade: true, unlocks: true },
+  // Borderlands' opening: no gun, no cash, nothing unlocked. Bolt and the crash chest hand out the rest.
+  newGame: { state: { cash: {}, kit: [], unlocked: [], pieces: [], running: [] } },
   assets,
   audio,
   objectSounds,

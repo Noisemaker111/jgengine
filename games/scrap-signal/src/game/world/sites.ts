@@ -34,7 +34,6 @@ export const PLAYER_SPAWN_YAW = authoredSpawnRotation(authoredScene);
 
 export const BOLT_POS: EntityPosition = [bolt.position.x, bolt.position.y, bolt.position.z];
 export const BOLT_YAW = bolt.rotationY ?? 0;
-
 export const RIGG_VENDOR_POS: EntityPosition = [
   riggVendor.position.x,
   riggVendor.position.y,

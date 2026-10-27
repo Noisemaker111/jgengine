@@ -3,7 +3,8 @@ import type { GameContext } from "@jgengine/core/runtime/gameContext";
 import type { EntityPosition } from "@jgengine/core/scene/entityStore";
 import { rememberHome } from "../entities/enemies/ai";
 import { enemyById, levelHealthMult } from "../entities/enemies/catalog";
-import { placeLevel, SIDE_POIS } from "./level";
+import { findEditorMarker } from "@jgengine/core/editor/document";
+import { authoredScene, placeLevel, SIDE_POIS } from "./level";
 import {
   BLACK_MARKET_POS,
   BOLT_POS,
@@ -12,6 +13,7 @@ import {
   TRAVEL_STATIONS,
   SPARX_VENDOR_POS,
   ZONES,
+  zoneLevelAt,
 } from "./sites";
 
 export { PLAYER_SPAWN, PLAYER_SPAWN_YAW } from "./sites";
@@ -93,6 +95,32 @@ function planClusters(ctx: GameContext): void {
       }
     });
   }
+}
+
+/**
+ * Put a quest's enemy in the world at its editor marker, at the level of the zone around it. It is
+ * not a cluster member, so it never respawns once killed.
+ */
+export function spawnQuestEnemy(ctx: GameContext, spawn: { catalogId: string; marker: string; instanceId: string }): void {
+  if (ctx.scene.entity.get(spawn.instanceId) !== null) return;
+  const marker = findEditorMarker(authoredScene, spawn.marker);
+  if (marker === undefined) throw new Error(`editor.scene.json: missing quest marker "${spawn.marker}"`);
+  spawnMember(ctx, {
+    id: spawn.instanceId,
+    catalogId: spawn.catalogId,
+    position: grounded(ctx, marker.position.x, marker.position.z),
+    level: zoneLevelAt(marker.position.x, marker.position.z),
+  });
+}
+
+/** Stand an NPC at an editor marker: where a quest giver waits once the story moves on. */
+export function moveNpcTo(ctx: GameContext, entityId: string, markerId: string): void {
+  const marker = findEditorMarker(authoredScene, markerId);
+  if (marker === undefined) throw new Error(`editor.scene.json: missing NPC marker "${markerId}"`);
+  ctx.scene.entity.update(entityId, {
+    position: grounded(ctx, marker.position.x, marker.position.z),
+    ...(marker.rotationY === undefined ? {} : { rotationY: marker.rotationY }),
+  });
 }
 
 export function respawnClusters(ctx: GameContext): void {

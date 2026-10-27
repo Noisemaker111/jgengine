@@ -24,6 +24,7 @@ export type CashReason =
   | "ammo-purchase"
   | "black-market-upgrade"
   | "gun-of-the-day"
+  | "quest-reward"
   | "reconcile";
 
 export const CASH = "cash";

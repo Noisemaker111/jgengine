@@ -5267,6 +5267,21 @@
       }
     },
     {
+      "id": "bolt_shelf",
+      "kind": "npc",
+      "position": {
+        "x": -184,
+        "y": 0,
+        "z": 446
+      },
+      "rotationY": -1.2,
+      "color": "#60a5fa",
+      "label": "Bolt at the Shelf",
+      "meta": {
+        "role": "guide"
+      }
+    },
+    {
       "id": "chest_rustflat_waste_red_0",
       "kind": "chest",
       "position": {

@@ -3,13 +3,12 @@ import { HudButton } from "@jgengine/core/hud/hudButton.view";
 import { ScrapPanel } from "./ScrapPanel";
 import { useStore } from "@jgengine/react/store";
 import { BLACK_MARKET_UPGRADES, upgradeCost } from "../../commands";
-import { QUEST_ECHOES } from "../../quests/catalog";
 import {
   blackMarketOpenStore,
   blackMarketStore,
   currentZoneStore,
   discoveredStationsStore,
-  echoStore,
+  speechStore,
   travelOpenStore,
   reactorOpenStore,
 } from "../../stores";
@@ -37,10 +36,8 @@ export function ZoneBanner() {
 /** An incoming transmission from a crewmate, on the rig’s radio strip. */
 export function EchoBox() {
   const nowMs = useNowMs();
-  const echo = useStore(echoStore);
-  if (echo === null || nowMs - echo.atMs > 9000) return null;
-  const line = QUEST_ECHOES[echo.questId];
-  if (line === undefined) return null;
+  const line = useStore(speechStore);
+  if (line === null || nowMs - line.atMs > 12000) return null;
   return (
     <Plate material="carbon" cut="notch" depth={10} rim="#2c4d4a" padding="0" className="ss-echo">
       <span className="ss-echo-head"><span className="ss-led on" aria-hidden="true" /><b>ECHO — {line.speaker}</b><Waveform seed={line.speaker.length} /></span>

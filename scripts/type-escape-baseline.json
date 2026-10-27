@@ -593,7 +593,7 @@
   "games/scrap-signal/src/game/world/sites.ts": {"nonNull":1,"cast":1},
   "games/scrap-signal/src/game/world/Viewmodel.tsx": {"cast":4},
   "games/scrap-signal/src/game/world/zones.ts": {"cast":2,"nonNull":4},
-  "games/scrap-signal/src/loop.ts": {"nonNull":7},
+  "games/scrap-signal/src/loop.ts": {"nonNull":2},
   "games/scrap-signal/src/world.ts": {"nonNull":4},
   "games/scripts/capabilities-probe.ts": {"cast":6,"nonNull":2},
   "games/scripts/capabilities-sync.ts": {"cast":1},

@@ -83,6 +83,7 @@ export const CHASSIS: Record<string, ChassisStyle> = {
   loader: { plate: MACHINE.steel, accent: MACHINE.hazard, optic: MACHINE.optic },
   loader_war: { plate: MACHINE.iron, accent: MACHINE.hazard, optic: MACHINE.opticElite },
   elite_loader: { plate: MACHINE.iron, accent: MACHINE.opticElite, optic: MACHINE.opticElite },
+  old_tusk: { plate: MACHINE.iron, accent: MACHINE.rust, optic: MACHINE.opticElite },
   wreck_maw: { plate: MACHINE.scrap, accent: MACHINE.rust, optic: MACHINE.opticElite },
   foreman_maw: { plate: MACHINE.iron, accent: MACHINE.hazard, optic: MACHINE.opticElite },
   captain_rusk: { plate: MACHINE.iron, accent: MACHINE.hazard, optic: MACHINE.opticElite },

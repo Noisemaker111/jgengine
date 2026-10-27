@@ -12,6 +12,7 @@ export interface BossDrop {
 }
 
 export const BOSS_DROPS: readonly BossDrop[] = [
+  { bossId: "old_tusk", boss: "Old Tusk", legendaries: ["Ravager", "Endless"] },
   { bossId: "captain_rusk", boss: "Captain Rusk", legendaries: ["Sixgun", "Vandal"] },
   { bossId: "wreck_maw", boss: "Wreck-Maw", legendaries: ["Sledgehammer", "Chatterbox"] },
   { bossId: "foreman_maw", boss: "The Foreman", legendaries: ["Piledriver", "Flakcannon"] },

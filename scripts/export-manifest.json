@@ -619,6 +619,7 @@
     "./mission/objectives",
     "./mission/quest",
     "./mission/questCatalog",
+    "./mission/questGivers",
     "./mission/questTracker.view",
     "./mission/sideJobs",
     "./mission/triggers",
