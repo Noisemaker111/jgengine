@@ -9,8 +9,8 @@ interface ControlledSettingsDockProps {
   activeTab: SettingsTabId;
   onOpenChange: (nextOpen: boolean) => void;
   onTabChange: (tab: SettingsTabId) => void;
-  headerActionLabel?: string;
-  onHeaderAction?: () => void;
+  headerActionLabel?: string | undefined;
+  onHeaderAction?: (() => void) | undefined;
   /** Floating cog trigger — off when settings live in a main-menu list. */
   showTrigger?: boolean;
 }

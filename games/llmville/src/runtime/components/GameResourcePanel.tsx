@@ -17,7 +17,7 @@ interface GameResourcePanelProps {
   money: number;
   dataTokens: number;
   servingIncomeRate: number;
-  className?: string;
+  className?: string | undefined;
 }
 
 function formatDelta(amount: number, prefix: string, format: (value: number) => string) {

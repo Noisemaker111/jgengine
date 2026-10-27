@@ -135,12 +135,12 @@ export function UiHitTestOverlay() {
   }, []);
 
   const conflicts: DOMRect[] = [];
-  for (let i = 0; i < interactive.length; i++) {
-    for (let j = i + 1; j < interactive.length; j++) {
-      const region = intersection(interactive[i].rect, interactive[j].rect);
+  interactive.forEach((first, i) => {
+    for (const second of interactive.slice(i + 1)) {
+      const region = intersection(first.rect, second.rect);
       if (region) conflicts.push(region);
     }
-  }
+  });
 
   const offscreenCount = layout.filter((box) => box.offscreen).length;
 

@@ -223,8 +223,9 @@ function computeFpsStats(history: readonly number[]): {
     return { min: 0, avg: 0, max: 0, frameMsMin: 0, frameMsMax: 0 };
   }
 
-  let min = history[0];
-  let max = history[0];
+  const [first = 0] = history;
+  let min = first;
+  let max = first;
   let sum = 0;
   for (const fps of history) {
     min = Math.min(min, fps);
@@ -247,7 +248,7 @@ function percentile(sortedValues: readonly number[], ratio: number): number {
     sortedValues.length - 1,
     Math.max(0, Math.floor(ratio * (sortedValues.length - 1))),
   );
-  return sortedValues[index];
+  return sortedValues[index] ?? 0;
 }
 
 function computeFrameTimeStats(frameTimes: readonly number[]): PerformanceFrameTimeStats {

@@ -10,7 +10,7 @@ const SignupScreen = lazy(async () =>
 );
 
 interface SignupSearch {
-  intent?: PlayEntryIntent;
+  intent?: PlayEntryIntent | undefined;
 }
 
 export const Route = createFileRoute("/signup")({

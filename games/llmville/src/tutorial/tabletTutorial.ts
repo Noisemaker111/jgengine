@@ -57,7 +57,7 @@ function starterRackLabel(): string {
 interface GetTabletTutorialObjectiveParams {
   tutorialStage: TutorialStage;
   installedGpus: number;
-  buildInventory?: Record<string, number>;
+  buildInventory?: Record<string, number> | undefined;
   inputMode?: TutorialInputMode;
 }
 
@@ -65,7 +65,7 @@ interface GetTabletTutorialLockParams {
   tutorialStarted: boolean;
   tutorialCompleted: boolean;
   tutorialStage: TutorialStage;
-  buildInventory?: Record<string, number>;
+  buildInventory?: Record<string, number> | undefined;
 }
 
 export function getTabletTutorialLock({

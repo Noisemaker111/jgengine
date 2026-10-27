@@ -40,7 +40,7 @@ export function BaseModelCard({
   /** When this base model is currently being trained, seconds until completion */
   trainingSecondsRemaining?: number | null;
   /** Live preview from installed GPUs and site throttle (replaces static catalog hint). */
-  estimatedTrainingDurationSeconds?: number;
+  estimatedTrainingDurationSeconds?: number | undefined;
 }) {
   const isTrainingThisModel = trainingSecondsRemaining != null;
   return (

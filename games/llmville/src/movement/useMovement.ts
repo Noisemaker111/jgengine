@@ -20,7 +20,7 @@ export interface MovementSceneBindings {
   canMove: boolean;
   playInputTouch: boolean;
   onStepPlayer: (deltaX: number, deltaZ: number) => void;
-  onTouchInteract?: () => void;
+  onTouchInteract?: (() => void) | undefined;
 }
 
 /** Everything a screen needs to wire movement, from one call. */

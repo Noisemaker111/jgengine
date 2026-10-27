@@ -44,7 +44,7 @@ export function deriveTutorialWorldSignals({
   rackPlaced: boolean;
   ownedGpuCount: number;
   installedGpuCount: number;
-  modelCatalog?: ModelCatalogLike | null;
+  modelCatalog?: ModelCatalogLike | null | undefined;
   dataTokens: number;
   /** GPUs dedicated to the scraping lane (per-card model). */
   scrapingGpuCount?: number | null;

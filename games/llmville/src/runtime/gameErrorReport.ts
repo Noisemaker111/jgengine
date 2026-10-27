@@ -1,13 +1,15 @@
+import { definedFields } from "@jgengine/core/data/definedFields";
+
 export type GameErrorKind = "connection" | "bootstrap" | "runtime" | "chunk";
 
 export interface GameErrorReportInput {
   message: string;
-  kind?: GameErrorKind;
-  stack?: string | null;
-  componentStack?: string | null;
-  url?: string;
-  pathname?: string;
-  userAgent?: string;
+  kind?: GameErrorKind | undefined;
+  stack?: string | null | undefined;
+  componentStack?: string | null | undefined;
+  url?: string | undefined;
+  pathname?: string | undefined;
+  userAgent?: string | undefined;
   timestamp?: string;
 }
 
@@ -73,9 +75,11 @@ function formatStackLocation(location: string): string {
 
   for (const { pattern, prefix } of repoPatterns) {
     const match = stripped.match(pattern);
-    if (!match) continue;
-    const path = (prefix ?? "") + match[1].replace(/\\/g, "/");
-    return match[2] ? `${path}:${match[2]}` : path;
+    const file = match?.[1];
+    if (file === undefined) continue;
+    const path = (prefix ?? "") + file.replace(/\\/g, "/");
+    const line = match?.[2];
+    return line ? `${path}:${line}` : path;
   }
 
   return stripped;
@@ -92,17 +96,17 @@ function condenseStackTrace(stack: string, maxFrames = 8): string[] {
 
   for (const rawLine of stack.split("\n")) {
     const trimmed = rawLine.trim();
-    const named = trimmed.match(/^at\s+(.+?)\s+\((.+)\)$/);
-    const anonymous = trimmed.match(/^at\s+(\S.+)$/);
+    const [, namedFn, namedLoc] = trimmed.match(/^at\s+(.+?)\s+\((.+)\)$/) ?? [];
+    const [, anonymousLoc] = trimmed.match(/^at\s+(\S.+)$/) ?? [];
 
     let fn: string;
     let loc: string;
-    if (named) {
-      fn = named[1].replace(/^Object\./, "");
-      loc = named[2];
-    } else if (anonymous && (anonymous[1].includes("/") || anonymous[1].includes("\\"))) {
+    if (namedFn !== undefined && namedLoc !== undefined) {
+      fn = namedFn.replace(/^Object\./, "");
+      loc = namedLoc;
+    } else if (anonymousLoc !== undefined && (anonymousLoc.includes("/") || anonymousLoc.includes("\\"))) {
       fn = "(anonymous)";
-      loc = anonymous[1];
+      loc = anonymousLoc;
     } else {
       continue;
     }
@@ -122,10 +126,8 @@ function condenseComponentStack(componentStack: string, maxFrames = 4): string[]
 
   for (const rawLine of componentStack.split("\n")) {
     const trimmed = rawLine.trim();
-    const match = trimmed.match(/^at\s+(\w+)\s+\((.+)\)$/);
-    if (!match) continue;
-
-    const [, name, loc] = match;
+    const [, name, loc] = trimmed.match(/^at\s+(\w+)\s+\((.+)\)$/) ?? [];
+    if (name === undefined || loc === undefined) continue;
     if (REACT_FRAMEWORK_COMPONENTS.has(name)) continue;
     if (!loc.includes("/src/")) continue;
 
@@ -175,12 +177,14 @@ export function formatGameErrorAgentPrompt(input: GameErrorReportInput): string 
 export function serializeGameErrorReportPayload(input: GameErrorReportInput) {
   return {
     message: input.message,
-    kind: input.kind,
-    stack: input.stack ?? undefined,
-    componentStack: input.componentStack ?? undefined,
-    url: input.url,
-    pathname: input.pathname,
-    userAgent: input.userAgent,
+    ...definedFields({
+      kind: input.kind,
+      stack: input.stack ?? undefined,
+      componentStack: input.componentStack ?? undefined,
+      url: input.url,
+      pathname: input.pathname,
+      userAgent: input.userAgent,
+    }),
     agentPrompt: formatGameErrorAgentPrompt(input),
   };
 }

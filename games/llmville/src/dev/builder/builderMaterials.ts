@@ -33,7 +33,7 @@ const PRESET_MATERIALS: readonly {
   { key: "preset:glass", label: "Glass", category: "object", preset: MATERIAL_PRESET.glass },
 ];
 
-export const BUILDER_MATERIAL_OPTIONS: readonly BuilderMaterialOption[] = [
+export const BUILDER_MATERIAL_OPTIONS: readonly [BuilderMaterialOption, ...BuilderMaterialOption[]] = [
   { key: "garage-floor", label: "Garage floor", category: "floor", color: "#6e7672", roughness: 0.82, metalness: 0.05 },
   { key: "garage-wall", label: "Garage wall", category: "wall", color: "#828c87", roughness: 0.78, metalness: 0.05 },
   { key: "house-floor", label: "House floor", category: "floor", color: "#c39b6b", roughness: 0.72, metalness: 0 },

@@ -330,6 +330,7 @@ class BuilderStoreImpl {
   undo() {
     if (this.state.undoStack.length === 0) return;
     const previous = this.state.undoStack[this.state.undoStack.length - 1];
+    if (previous === undefined) return;
     const snapshot = JSON.parse(previous) as BuilderUndoSnapshot;
     this.setState({
       mapData: refreshMapData(snapshot.mapData),
@@ -925,7 +926,7 @@ class BuilderStoreImpl {
   ungroupSelection() {
     if (this.state.selectedRefs.length !== 1) return;
     const [ref] = this.state.selectedRefs;
-    if (ref.kind !== "decor") return;
+    if (ref?.kind !== "decor") return;
     const result = ungroupDecor(this.state.mapData, ref.id);
     if (!result) return;
     this.replaceMapData(
@@ -938,8 +939,9 @@ class BuilderStoreImpl {
 
   /** Selected group verbatim, or a group composed from the whole selection. */
   private buildGroupForSave(slug: string): DecorItemSpec | null {
-    const selectedGroup = this.state.selectedRefs.length === 1 && this.state.selectedRefs[0].kind === "decor"
-      ? this.state.mapData.decor[findDecorIndexById(this.state.mapData, this.state.selectedRefs[0].id)]
+    const [only] = this.state.selectedRefs;
+    const selectedGroup = this.state.selectedRefs.length === 1 && only?.kind === "decor"
+      ? this.state.mapData.decor[findDecorIndexById(this.state.mapData, only.id)]
       : null;
     if (selectedGroup?.type === "group") return cloneSpec(selectedGroup);
     const materialColor = resolveMaterial(this.state.mapData.environment.wallMaterial).color;
@@ -997,7 +999,7 @@ class BuilderStoreImpl {
     if (entry.kind !== "group") return null;
     if (!this.state.editingPlacedDecorId || this.state.selectedRefs.length !== 1) return null;
     const selected = this.state.selectedRefs[0];
-    if (selected.kind !== "decor" || selected.id !== this.state.editingPlacedDecorId) return null;
+    if (selected?.kind !== "decor" || selected.id !== this.state.editingPlacedDecorId) return null;
     const source = this.state.mapData.decor[findDecorIndexById(this.state.mapData, selected.id)];
     if (!source) return null;
 

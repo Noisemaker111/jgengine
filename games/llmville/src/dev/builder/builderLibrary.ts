@@ -11,7 +11,7 @@ export interface BuilderAssetLibraryEntry {
   label: string;
   tags: string[];
   kind: "group" | "place";
-  footprint?: GridFootprint;
+  footprint?: GridFootprint | undefined;
   decor?: DecorItemSpec;
   place?: MapData;
   prompt?: string;

@@ -136,7 +136,7 @@ function useMentorCarouselSnap(
       for (const card of cards) {
         const cardCenter = card.offsetLeft + card.offsetWidth / 2;
         const distance = Math.abs(center - cardCenter);
-        const id = card.dataset.mentorId as AvatarId | undefined;
+        const id = card.dataset["mentorId"] as AvatarId | undefined;
         if (!id || distance >= closestDistance) continue;
         closestDistance = distance;
         closestId = id;

@@ -51,8 +51,8 @@ export function BuilderIcon({
   size = "md",
 }: {
   id: BuilderIconId;
-  active?: boolean;
-  className?: string;
+  active?: boolean | undefined;
+  className?: string | undefined;
   size?: "sm" | "md" | "lg";
 }) {
   const sizeClass = size === "sm" ? "h-3.5 w-3.5" : size === "lg" ? "h-5 w-5" : "h-4 w-4";

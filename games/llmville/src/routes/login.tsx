@@ -10,7 +10,7 @@ const LoginScreen = lazy(async () =>
 );
 
 interface LoginSearch {
-  intent?: PlayEntryIntent;
+  intent?: PlayEntryIntent | undefined;
 }
 
 export const Route = createFileRoute("/login")({

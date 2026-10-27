@@ -4,7 +4,7 @@ import type { BillType } from "@/economy/events";
 
 const GLYPH_STROKE = "#b8a898";
 
-function GlyphSvg({ className, children }: { className?: string; children: ReactNode }) {
+function GlyphSvg({ className, children }: { className?: string | undefined; children: ReactNode }) {
   return (
     <svg className={className} viewBox="0 0 140 72" xmlns="http://www.w3.org/2000/svg" aria-hidden>
       {children}
@@ -12,7 +12,7 @@ function GlyphSvg({ className, children }: { className?: string; children: React
   );
 }
 
-function ElectricityGlyph({ className }: { className?: string }) {
+function ElectricityGlyph({ className }: { className?: string | undefined }) {
   const s = { stroke: GLYPH_STROKE, fill: "none" as const, strokeLinecap: "round" as const, strokeLinejoin: "round" as const };
   return (
     <GlyphSvg className={className}>
@@ -27,7 +27,7 @@ function ElectricityGlyph({ className }: { className?: string }) {
   );
 }
 
-function WaterGlyph({ className }: { className?: string }) {
+function WaterGlyph({ className }: { className?: string | undefined }) {
   const s = { stroke: GLYPH_STROKE, fill: "none" as const, strokeLinecap: "round" as const, strokeLinejoin: "round" as const };
   return (
     <GlyphSvg className={className}>
@@ -44,7 +44,7 @@ function WaterGlyph({ className }: { className?: string }) {
   );
 }
 
-function RentGlyph({ className }: { className?: string }) {
+function RentGlyph({ className }: { className?: string | undefined }) {
   const s = { stroke: GLYPH_STROKE, fill: "none" as const, strokeLinecap: "round" as const, strokeLinejoin: "round" as const };
   return (
         <GlyphSvg className={className}>
@@ -67,7 +67,7 @@ export function BillCardGlyph({
   className,
 }: {
   billType: BillType;
-  className?: string;
+  className?: string | undefined;
 }) {
   switch (billType) {
     case "electricity":

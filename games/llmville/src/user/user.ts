@@ -37,7 +37,7 @@ export interface AvatarDefinition {
 }
 
 /** Portrait art: `llmville/public/images/*_portrait.png` (3:4 cards). */
-export const AVATARS: readonly AvatarDefinition[] = [
+export const AVATARS: readonly [AvatarDefinition, ...AvatarDefinition[]] = [
   {
     id: "sam_altman",
     name: "Sam Altman",
@@ -243,7 +243,7 @@ export function useProfileScreen({ usernameParam }: UseProfileScreenParams) {
       const trimmedUsername = normalizeProfileUsernameInput(username);
       await updateProfile({
         displayName: trimmedUsername || publicProfile.username,
-        username: trimmedUsername || undefined,
+        ...(trimmedUsername ? { username: trimmedUsername } : {}),
       });
       if (trimmedUsername && trimmedUsername !== normalizedUsername) {
         navigate({ to: "/profile/$username", params: { username: trimmedUsername } });

@@ -174,6 +174,7 @@ export function PerformanceDiagnosticOverlay({ world, className }: PerformanceDi
     }
 
     const fps = snapshot.fpsHistory[historyIndex];
+    if (fps === undefined) return;
     const secondsAgo = snapshot.fpsHistory.length - historyIndex;
     const clampedFps = Math.min(fps, CHART_MAX_FPS);
     setChartHover({

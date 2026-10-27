@@ -17,7 +17,7 @@ export class GameRouteErrorBoundary extends Component<
   GameRouteErrorBoundaryProps,
   GameRouteErrorBoundaryState
 > {
-  state: GameRouteErrorBoundaryState = { report: null };
+  override state: GameRouteErrorBoundaryState = { report: null };
 
   static getDerivedStateFromError(error: unknown): GameRouteErrorBoundaryState {
     const rawMessage = error instanceof Error ? error.message : String(error);
@@ -32,7 +32,7 @@ export class GameRouteErrorBoundary extends Component<
     };
   }
 
-  componentDidCatch(error: unknown, info: ErrorInfo): void {
+  override componentDidCatch(error: unknown, info: ErrorInfo): void {
     console.error("Game route failed to load", error, info.componentStack);
     this.setState((previous) => ({
       report: previous.report
@@ -41,7 +41,7 @@ export class GameRouteErrorBoundary extends Component<
     }));
   }
 
-  render() {
+  override render() {
     if (this.state.report !== null) {
       return <GameConnectionErrorScreen report={this.state.report} message={this.state.report.message} />;
     }

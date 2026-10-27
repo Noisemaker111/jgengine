@@ -22,7 +22,7 @@ if (!rootElement.innerHTML) {
     <ConvexBetterAuthProvider
       client={convexClient}
       authClient={authClient}
-      initialToken={initialConvexToken}
+      initialToken={initialConvexToken ?? null}
     >
       <AuthProvider>
         <RouterProvider router={router} />

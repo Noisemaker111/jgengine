@@ -34,12 +34,12 @@ export interface RuntimeGame {
   buildInventory?: unknown;
   hardwareInventory?: unknown;
   modelCatalog?: Record<string, BaseModelCatalogState> | null;
-  computeAssignments?: ComputeAssignmentMap;
+  computeAssignments?: ComputeAssignmentMap | undefined;
   activeScrapeTier?: ScrapeTierId;
   gameTimeScale?: number;
   servingMode?: ServingModeId;
   coolingInventory?: unknown;
-  researchUnlocks?: ResearchUnlocks;
+  researchUnlocks?: ResearchUnlocks | undefined;
   ownerAvatarId?: string | null;
   tutorialStage?: TutorialStage;
   tutorialWords?: number;

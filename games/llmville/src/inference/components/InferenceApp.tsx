@@ -73,7 +73,7 @@ interface InstalledCard {
   slotIndex: number;
   hardwareModelId: HardwareModelId;
   lane: ComputeLane | null;
-  targetModelId?: string;
+  targetModelId?: string | undefined;
 }
 
 type ChipDragData = { rackId: string; slotIndex: number; hardwareModelId: HardwareModelId };

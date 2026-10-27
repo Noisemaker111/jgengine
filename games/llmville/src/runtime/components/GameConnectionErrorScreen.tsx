@@ -18,9 +18,9 @@ import {
 interface GameConnectionErrorScreenProps {
   message: string;
   homeHref?: string;
-  kind?: GameErrorKind;
+  kind?: GameErrorKind | undefined;
   stack?: string | null;
-  componentStack?: string | null;
+  componentStack?: string | null | undefined;
   report?: GameErrorReportInput;
   onRetry?: () => void;
 }

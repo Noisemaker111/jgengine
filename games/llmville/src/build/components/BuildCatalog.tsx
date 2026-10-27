@@ -17,12 +17,12 @@ import { getResearchTokenCost, isResearchUnlocked, type ResearchUnlocks } from "
 interface BuildCatalogProps {
   money: number;
   dataTokens: number;
-  researchUnlocks?: ResearchUnlocks;
+  researchUnlocks?: ResearchUnlocks | undefined;
   shopItems: readonly ShopCatalogItem[];
   onBuy: (itemId: string, quantity?: number) => Promise<boolean>;
   onUnlockResearch: (itemId: string) => Promise<unknown>;
   ownedQuantities: Record<string, number>;
-  tutorialBench?: { visible: boolean; placed: boolean };
+  tutorialBench?: { visible: boolean; placed: boolean } | undefined;
   showItems?: boolean;
   filterTab: BuildTabId;
 }

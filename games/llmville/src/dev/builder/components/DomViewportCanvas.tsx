@@ -24,7 +24,7 @@ export function DomViewportScrollProvider({
   scrollRef,
   children,
 }: {
-  scrollRef?: RefObject<HTMLElement | null>;
+  scrollRef?: RefObject<HTMLElement | null> | undefined;
   children: ReactNode;
 }) {
   const [isScrolling, setIsScrolling] = useState(false);

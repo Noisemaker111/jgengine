@@ -26,10 +26,10 @@ import { getBaseModelBaselineStatsById } from "@/models/training";
 export type ModelDetailViewMode = "base" | "user";
 
 export interface ModelDetailViewProps {
-  baseModelId?: string | null;
+  baseModelId?: string | null | undefined;
   userModel?: GameUserModel | null;
   initialMode: ModelDetailViewMode;
-  estimatedTrainingDurationSeconds?: number;
+  estimatedTrainingDurationSeconds?: number | undefined;
   onClose: () => void;
   onViewBaseModel?: (baseModelId: string) => void;
   onQuantizeModel?: (modelId: GameUserModel["id"], precision: ComputePrecision) => void | Promise<unknown> | undefined;
@@ -51,7 +51,7 @@ function BaseModelSection({
   estimatedTrainingDurationSeconds,
 }: {
   baseModel: BaseModelDefinition;
-  estimatedTrainingDurationSeconds?: number;
+  estimatedTrainingDurationSeconds?: number | undefined;
 }) {
   const durationLabel =
     estimatedTrainingDurationSeconds !== undefined
@@ -111,10 +111,10 @@ function UserModelSection({
   onQuantizeModel,
 }: {
   model: GameUserModel;
-  baseModel?: BaseModelDefinition;
-  baseModelId?: string | null;
-  onViewBaseModel?: (baseModelId: string) => void;
-  onQuantizeModel?: (modelId: GameUserModel["id"], precision: ComputePrecision) => void | Promise<unknown> | undefined;
+  baseModel?: BaseModelDefinition | undefined;
+  baseModelId?: string | null | undefined;
+  onViewBaseModel?: ((baseModelId: string) => void) | undefined;
+  onQuantizeModel?: ((modelId: GameUserModel["id"], precision: ComputePrecision) => void | Promise<unknown> | undefined) | undefined;
 }) {
   const pmt = moneyPerTokenToPmt(model.moneyPerToken);
   const tps = model.tokensPerSecond;

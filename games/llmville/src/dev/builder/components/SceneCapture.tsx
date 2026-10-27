@@ -25,7 +25,7 @@ const FRAMES_PER_ANGLE = 1 + SETTLE_FRAMES + 1;
 export interface BuilderScreenshotCaptureJob {
   requestId: number;
   angles: readonly BuilderScreenshotAngle[];
-  sceneVersion?: number;
+  sceneVersion?: number | undefined;
 }
 
 function getCameraPositions(floor: { centerX: number; centerZ: number; width: number; depth: number }): Record<
@@ -102,7 +102,7 @@ export function useScreenshotRequestPoller(): {
         const payload = (await response.json()) as {
           requestId?: number | null;
           angles?: BuilderScreenshotAngle[];
-          sceneVersion?: number;
+          sceneVersion?: number | undefined;
         } | null;
         const requestId = payload?.requestId;
         if (
@@ -158,7 +158,7 @@ export function SceneCapturePanel({
   floor: { centerX: number; centerZ: number; width: number; depth: number };
   angles: readonly BuilderScreenshotAngle[];
   requestId?: number;
-  sceneVersion?: number;
+  sceneVersion?: number | undefined;
   onComplete: () => void;
 }) {
   const { camera, gl, scene } = useThree();

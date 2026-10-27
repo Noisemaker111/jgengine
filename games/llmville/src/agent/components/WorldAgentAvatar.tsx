@@ -15,7 +15,7 @@ const AIRBORNE_JUMP_Y = 0.04;
 interface WorldAgentAvatarProps {
   presenceId: string;
   label: string | null;
-  kind?: "human" | "bot";
+  kind?: "human" | "bot" | undefined;
   online?: boolean;
 }
 
@@ -33,10 +33,10 @@ function AvatarMesh({
   headLookRef,
 }: {
   label: string | null;
-  kind?: "human" | "bot";
+  kind?: "human" | "bot" | undefined;
   online?: boolean;
   isWalking?: boolean;
-  headLookRef?: MutableRefObject<{ pitch: number } | null>;
+  headLookRef?: MutableRefObject<{ pitch: number } | null> | undefined;
 }) {
   const displayName = label?.trim() || (kind === "human" ? "Player" : "Bot");
   const badgeClass =

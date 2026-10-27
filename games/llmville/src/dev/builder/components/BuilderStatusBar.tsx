@@ -41,7 +41,7 @@ export function BuilderStatusBar() {
           <BuilderIcon id="select" size="sm" className="h-3 w-3" />
           {state.selectedRefs.length === 0
             ? "Nothing selected"
-            : state.selectedRefs.length === 1
+            : state.selectedRefs.length === 1 && state.selectedRefs[0] !== undefined
               ? labelForRef(state.selectedRefs[0])
               : `${state.selectedRefs.length} selected`}
         </span>
