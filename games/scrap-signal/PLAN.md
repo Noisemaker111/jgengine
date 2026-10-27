@@ -121,7 +121,7 @@ The kinds are counted from the game's data: `quests` is every quest in the catal
 
 - [x] 1. Design brief.
 - [x] 2. The opening: unarmed start, Bolt gives quests one at a time, the crash chest's plain pistol, quests turned in to their giver, Old Tusk as act 1's boss, zones closed until their story quest, rarity tiers and the skill tree opening with level, weapon slots opening with the story.
-- [ ] 3. Gates: element weakness on the target, a bank in Coretown in place of the field stash.
+- [x] 3. Gates: element weakness on the target, a bank in Coretown in place of the field stash.
 - [ ] 4. Content to the budget: quests, enemy types, gun parts and gun models as data.
 - [ ] 5. From-zero proof: ten minutes from a new game through real input; Scrap Signal off the known-failing list.
 - [ ] 6. Onboarding hints in the crash site through the engine onboarding system.

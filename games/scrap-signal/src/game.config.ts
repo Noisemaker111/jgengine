@@ -29,6 +29,7 @@ import {
   RIGG_VENDOR_POS,
   TRAVEL_STATIONS,
   SPARX_VENDOR_POS,
+  VAULT_POS,
 } from "./game/world/sites";
 import { loop } from "./loop";
 import { CLIMB_SLOPE_LIMIT, physics, terrainField, world } from "./world";
@@ -81,6 +82,15 @@ const staticPrompts: readonly PositionedPrompt[] = [
       radius: 3.2,
       display: { kind: "keybind", actionId: "interact"},
       invoke: { name: "vendor.open", input: { vendor: "sparx" } },
+    },
+  },
+  {
+    id: "vault:coretown",
+    position: { x: VAULT_POS[0], z: VAULT_POS[2] },
+    prompt: {
+      radius: 3.2,
+      display: { kind: "keybind", actionId: "interact", label: "Open the vault" },
+      invoke: { name: "vault.open", input: undefined },
     },
   },
   {

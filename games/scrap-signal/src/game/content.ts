@@ -89,6 +89,7 @@ const TRANSIENT_OBJECTS = new Set([
   "vendor_rigg",
   "vendor_sparx",
   "black_market",
+  "vault",
   "rebuild_station",
   "fast_travel",
   "bandit_barrel",

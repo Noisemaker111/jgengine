@@ -5728,6 +5728,17 @@
       "label": "Black Market"
     },
     {
+      "id": "vault_coretown",
+      "kind": "vendor",
+      "position": {
+        "x": -14,
+        "y": 0,
+        "z": 10
+      },
+      "color": "#e0b34a",
+      "label": "Coretown Vault"
+    },
+    {
       "id": "rebuild_station",
       "kind": "travel",
       "position": {

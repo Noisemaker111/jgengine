@@ -52,7 +52,6 @@ import {
 } from "./game/stores";
 import { TRAVEL_STATIONS, zoneAt, zoneLevelAt } from "./game/world/sites";
 import { PLAYER_SPAWN, PLAYER_SPAWN_YAW, respawnClusters, setupWorld } from "./game/world/setup";
-import { bankFieldHaul } from "./game/items/fieldGear";
 
 const dropRng = seededRng("scrap-gun-drops");
 const RESPAWN_SWEEP_SECONDS = 25;
@@ -252,7 +251,6 @@ function tickZoneAndStations(ctx: GameContext, nowMs: number): void {
   const zone = zoneAt(x, z);
   const currentZone = currentZoneStore.read(ctx);
   if (zone !== null && zone.id !== currentZone?.id) {
-    if (currentZone !== null) bankFieldHaul(ctx);
     currentZoneStore.write(ctx, { id: zone.id, name: zone.name, level: zone.level, atMs: nowMs });
     noteZone(ctx, zone.id);
     creditObjective(ctx, "reach", zone.id);

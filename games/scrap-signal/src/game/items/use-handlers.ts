@@ -56,6 +56,10 @@ function landGunHit(ctx: GameContext, from: string, targetId: string, gunId: str
   const { value: outcome, died } = watchDeaths(ctx, () => resolveGunHit(ctx, gun, from, targetId, gun.elementChance + bonus("elementChance"), mods));
   if (outcome.crit) {
     ctx.scene.entity.floatText({ instanceId: targetId, text: "CRITICAL!", kind: "warn" });
+  } else if (outcome.multiplier !== 1) {
+    // The element chart said something about this body: say it where the bullet landed.
+    const strong = outcome.multiplier > 1;
+    ctx.scene.entity.floatText({ instanceId: targetId, text: strong ? `EFFECTIVE vs ${outcome.resistance.toUpperCase()}!` : `RESISTED by ${outcome.resistance.toUpperCase()}`, kind: strong ? "warn" : "info" });
   }
   const killed = (ctx.scene.entity.stats.get(targetId, "health")?.current ?? 1) <= 0;
   noteHit(nowMs, outcome.crit, killed);
