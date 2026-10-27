@@ -63,6 +63,7 @@ export const CORE_BARREL_SKILLS: Record<string, string> = {
 export const SKILL_DIRS = API_SKILL_DIRS;
 
 export const INTAKE_ROUTES = {
+  create: ["create-game-jg", "game-design"],
   design: ["game-design", "level-design"],
   improvement: ["game-improvement", "game-design", "level-design"],
   authoring: ["jgengine-editor", "jgengine-world"],

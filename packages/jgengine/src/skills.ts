@@ -19,15 +19,15 @@ export const API_SKILL_DIRS = [
   "jgengine-editor",
 ] as const;
 
-export const DESIGN_SKILL_DIRS = ["game-design", "level-design", "game-improvement"] as const;
+export const DESIGN_SKILL_DIRS = ["create-game-jg", "game-design", "level-design", "game-improvement"] as const;
 
 /** Agent utilities staged with the full skill set (not part of the low-token minimal create install). */
 export const AGENT_UTILITY_SKILLS = ["jgengine-verify", "ce-handoff"] as const;
 
 export const GAME_SKILLS = [...API_SKILL_DIRS, ...DESIGN_SKILL_DIRS, ...AGENT_UTILITY_SKILLS] as const;
 
-/** The default a created project starts from — intake/routing, editor authoring, verify, and the two skills that keep a game from looking like every other one: the design contract and UI art direction. */
-export const MINIMAL_GAME_SKILLS = ["jgengine", "jgengine-editor", "jgengine-verify", "game-design", "jgengine-ui"] as const;
+/** The default a created project starts from — intake/routing, planning a game, verify, and the two skills that keep a game from looking like every other one: the design contract and UI art direction. */
+export const MINIMAL_GAME_SKILLS = ["jgengine", "create-game-jg", "jgengine-editor", "jgengine-verify", "game-design", "jgengine-ui"] as const;
 
 export type SkillsScope = "global" | "project";
 export type SkillsSet = "minimal" | "all";

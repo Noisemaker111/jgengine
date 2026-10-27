@@ -8,7 +8,6 @@ import { createRequire } from "node:module";
 import { runCreate } from "../create";
 import { runHas } from "../find/has";
 import { runFind } from "../find/runFind";
-import { runPlan } from "../plan/plan";
 import { renderRecipe, renderRecipeList } from "../recipes";
 import { runDesktop } from "../desktop";
 import { runDoctor } from "../doctor";
@@ -65,8 +64,6 @@ usage: jgengine <command> [...args]
                         [--json] [--limit 1..100]; --text <regex> for a plain ripgrep search
   has <feature> ...     does the engine already ship these features? one JSON answer for all
                         (verdict covered|partial|gap, engine folders, capabilities and imports)
-  plan <game> [--brief "<text>"]  write or refresh <game>/PLAN.md: features, the engine owner
-                        of each, the gaps, milestones (one PR each). Run before building a game.
   recipe [name]         print a vetted wired composition (imports + snippet); no name lists them
   skills -p | -g        re-install skills (recovery only — create already installs them)
   doctor [dir]          diagnose version skew, missing peers, unstyled HUD, prototype look, shape drift
@@ -208,9 +205,6 @@ switch (command) {
     break;
   case "has":
     process.exit(runHas(rest));
-    break;
-  case "plan":
-    process.exit(runPlan(rest));
     break;
   case "recipe":
     process.exit(runRecipe(rest));

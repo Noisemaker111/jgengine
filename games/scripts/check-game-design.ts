@@ -24,8 +24,6 @@
 import { existsSync, readdirSync, readFileSync } from "node:fs";
 import { join } from "node:path";
 
-import { PLAN_FILE, PLAN_GAPS_HEADING } from "../../packages/jgengine/src/plan/plan";
-
 import { gameDirs } from "./capabilities";
 
 /** This repo names flow files in lowercase letters, digits and dashes; the Loop proof line uses them. */
@@ -131,8 +129,13 @@ export function checkFlow(game: string, flowName: string, flowsDir: string, io: 
   return { problems: [], asserts: text.match(ARRIVAL)?.length ?? 0 };
 }
 
+/** A game's build plan, written with the `create-game-jg` skill. */
+const PLAN_FILE = "PLAN.md";
+/** The plan section naming the engine work a game still needs: its gap to target. */
+const PLAN_GAPS_HEADING = "## Gaps";
+
 /**
- * A game's `PLAN.md` (`jgengine plan`) states its gap to target in the generated `## Gaps` section and
+ * A game's `PLAN.md` (the `create-game-jg` skill) states its gap to target in its `## Gaps` section and
  * its milestones, so a README need not repeat it.
  */
 function planHasGaps(path: string, io: Io): boolean {

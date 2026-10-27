@@ -7,7 +7,7 @@ description: Route game work to the smallest useful JGengine guidance set.
 
 This skill decides what to load; it is not an engine manual. Package map, commands, layering, and license live in the JGengine README (repo-root [`README.md`](../../../README.md) in the monorepo, [jgengine.com](https://jgengine.com) from a created project); open it when you need one of those facts.
 
-A created project installs only `jgengine`, `jgengine-editor`, `jgengine-verify`, `game-design`, and `jgengine-ui`. Run `npx jgengine skills -p --all` before loading any other domain named below. Those projects do not ship `api.md`; read exact signatures from the `.d.ts` files under `node_modules/@jgengine/<pkg>/dist/`.
+A created project installs only `jgengine`, `create-game-jg`, `jgengine-editor`, `jgengine-verify`, `game-design`, and `jgengine-ui`. Run `npx jgengine skills -p --all` before loading any other domain named below. Those projects do not ship `api.md`; read exact signatures from the `.d.ts` files under `node_modules/@jgengine/<pkg>/dist/`.
 
 Created projects pin their scaffolding CLI as a local devDependency, separately from SDK versions. Run `npx jgengine doctor` after SDK upgrades to check CLI compatibility. Skill installation preserves newer or differing unversioned copies; update the project CLI first, and use `skills -p --force` only when replacement is intended. Each packaged skill install records its CLI and SDK versions in `.jgengine-version.json`.
 
@@ -27,7 +27,7 @@ finished solution.
 
 ## 1. Establish the target
 
-Before building a game or a big feature, plan it: `npx jgengine plan <game> --brief "<brief>"` writes `PLAN.md`; list every feature the brief implies under `## Features` and run `npx jgengine plan <game>` again to fill each feature's engine owner and the gaps; then order `## Milestones`, one PR each, and tick each as it lands. For greenfield builds, also write `src/art-direction.md` before any code.
+A new game or a big new feature starts with the `create-game-jg` skill: agree the direction with the user, map every feature with `jgengine has`, write `PLAN.md`, then `jgengine create` and build it one milestone per PR. Load it before anything below.
 
 Treat the pitch as a unique composition of needs, not a genre to fill in — never reach for a genre kit, preset, archetype, or class template ("default sports car", "default RPG", "default FPS") in the SDK or skills (see [AGENTS.md](../../../AGENTS.md)). Use `game-design` to turn the pitch into a testable player promise, verbs, loops, progression, failure, and completion scenario. Use `level-design` when play depends on authored spaces, routes, encounters, exploration, or spatial pacing. Capture only decisions that change architecture:
 
@@ -38,7 +38,7 @@ Treat the pitch as a unique composition of needs, not a genre to fill in — nev
 - HUD/menu states and **custom** UI art direction (compose shipped building blocks + HudTheme; no unskinned stock face)
 - one observable completion scenario
 
-Pick the dimension first: `create` defaults to a 3D world (terrain, sky, player model, editor scene); a grid, card, tile, or other board game with no 3D scene takes `create --template 2d` (a `board` world drawn by GameUI over `@jgengine/core/puzzle/cellGrid`). `create --template 3d|2d|builder` is the one way to start a game, in this monorepo too (`bun run jgengine create "<Title>"` lands in `games/`); never copy `games/*`. The game's `jgengine.json` says what it is and uses (template, editor, `@jgengine` packages, and in-repo its adoption debt and boot probes). Change what a game uses by editing it, then run `jgengine sync`, which also brings a game up to the running engine: its `@jgengine` versions and its template's shared files (wiring, page, tooling scripts, AGENTS.md). A shared file the game rewrote goes in its `owns` list so sync leaves it alone.
+Start a game only through `create-game-jg` (it picks the template and runs `jgengine create`); never copy `games/*`. The game's `jgengine.json` says what it is and uses (template, editor, `@jgengine` packages, and in-repo its adoption debt and boot probes). Change what a game uses by editing it, then run `jgengine sync`, which also brings a game up to the running engine: its `@jgengine` versions and its template's shared files (wiring, page, tooling scripts, AGENTS.md). A shared file the game rewrote goes in its `owns` list so sync leaves it alone.
 
 For an existing game asked to pick up a new engine release ("jgengine published a new version, grab it"), run `npx jgengine@latest sync` in the project (or at its workspace root): it moves every `@jgengine` pin and catalog entry to that release, refreshes the template's files, and prints every Migrate step and Adopt-worthy addition in between. Install, migrate oldest-first, then work the Adopt lists instead of reconstructing the changelog by hand.
 
