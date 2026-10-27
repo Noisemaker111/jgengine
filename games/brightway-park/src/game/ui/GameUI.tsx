@@ -13,6 +13,8 @@ import { ParkFlow, resultOpen } from "./components/ParkFlow";
 import { ParkMenu } from "./menu/ParkMenu";
 import { BUILD_PANEL, PARK_PANELS, RESEARCH_PANEL } from "./panels";
 import { ResearchPanel } from "./components/ResearchPanel";
+import { ParkHint } from "./components/ParkHint";
+import { currentHint } from "../onboarding";
 import { session } from "../session";
 import { usePark } from "./usePark";
 
@@ -24,7 +26,8 @@ export function GameUI() {
   const started = useGameStore(() => session.started);
   const inspecting = useGameStore((ctx) => session.selectedObject !== null || ctx.scene.entity.selection.list().length > 0);
   // The world holds game over, the ribbon and the scenario result; re-read them when it changes.
-  usePark();
+  const w = usePark();
+  const hinting = currentHint(w) !== null;
   const ctx = useGameContext();
   const [reducedMotion, setReducedMotion] = useState(savedMotion);
   const layout = useHudLayout({ storageKey: "brightway-park" });
@@ -40,11 +43,12 @@ export function GameUI() {
       {started && <HudCanvas layout={layout} editChord={false}>
         <HudPanel id="status" anchor="top-left" priority="critical"><ParkStatus /></HudPanel>
         <HudPanel id="goal" anchor="top-left" order={1} chip="goal"><ParkGoal /></HudPanel>
+        {hinting ? <HudPanel id="hint" anchor="top" priority="critical"><ParkHint /></HudPanel> : null}
         <HudPanel id="time" anchor="top-right" priority="critical">
           <nav className="bw-time" aria-label="Simulation controls">
             <KitButton size="sm" pressed={clock.paused} aria-label="Pause park" onClick={() => commands.run("pauseToggle", {})}>Ⅱ</KitButton>
             {clock.speeds.map((s) => <KitButton key={s} size="sm" pressed={!clock.paused && clock.speed === s} onClick={() => commands.run("park.speed", { speed: s })}>{s}×</KitButton>)}
-            <KitButton size="sm" variant="ghost" pressed={panels.isOpen("build")} icon="🏗" onClick={() => panels.toggle("build")}><span className="bw-wide">Build</span></KitButton>
+            <KitButton size="sm" variant="ghost" data-hint="build" pressed={panels.isOpen("build")} icon="🏗" onClick={() => panels.toggle("build")}><span className="bw-wide">Build</span></KitButton>
             <KitButton size="sm" variant="ghost" pressed={panels.isOpen(RESEARCH_PANEL)} icon="🔬" onClick={() => panels.toggle(RESEARCH_PANEL)}><span className="bw-wide">Lab</span></KitButton>
             <KitButton size="sm" variant="ghost" pressed={panels.isOpen("books")} icon="📒" onClick={() => panels.toggle("books")}><span className="bw-wide">Books</span></KitButton>
           </nav>

@@ -20,6 +20,7 @@ import { useWorldProjection } from "@jgengine/shell/world/WorldEntityFrames";
 import { bindParkCapture } from "../parkProfile";
 import { tileAt, cellCentre, groundAt, isLandTool, LEVEL_HEIGHT, lineCells, raisedCells, rectCells } from "../build/terrain";
 import { landCheck, LINE_KINDS } from "../build/commands";
+import { currentHint } from "../onboarding";
 
 /** Each moving ride part: its own GLB whose origin is the pivot, and how it moves (spin, wheel, swing, drop). */
 type MotionSpec = { model: string; kind: "spin" | "wheel" | "swing" | "drop"; pivot: [number, number, number]; speed: number; amplitude?: number; level?: string };
@@ -202,10 +203,26 @@ function ScreenProbe() {
   },[project,gl,ctx]);
   return null;
 }
+/** The first scenario's hint pointing at a spot on the lot: a bobbing arrow over it. */
+function HintArrow() {
+  const ctx=useGameContext();
+  const reduced=useGameStore(c=>Boolean(c.game.store.get("park.reduced-motion")));
+  const spot=useGameStore(c=>{const w=park.of(c);const p=currentHint(w)?.world?.(w)??null;return p===null?"":`${p[0]},${p[1]}`;});
+  const ref=useRef<Group>(null);
+  useFrame(({clock})=>{if(ref.current)ref.current.position.y=reduced?0:Math.sin(clock.elapsedTime*3)*.6;});
+  if(spot==="")return null;
+  const [x,z]=spot.split(",").map(Number);
+  if(x===undefined||z===undefined)return null;
+  return <group position={[x,groundAt(park.of(ctx),x,z)+6,z]}><group ref={ref}>
+    <mesh rotation={[Math.PI,0,0]} raycast={()=>{}}><coneGeometry args={[1.3,2.6,24]}/><meshStandardMaterial color="#ff5a3c" emissive="#ff5a3c" emissiveIntensity={.35}/></mesh>
+    <mesh position={[0,2.2,0]} raycast={()=>{}}><cylinderGeometry args={[.45,.45,2.2,16]}/><meshStandardMaterial color="#ff5a3c" emissive="#ff5a3c" emissiveIntensity={.35}/></mesh>
+  </group></group>;
+}
 export function BrightwayParkWorldOverlay() {
   return (
     <>
       {import.meta.env.DEV&&<ScreenProbe/>}
+      <HintArrow/>
       <SceneCaptureBinding bind={bindParkCapture} />
       <OverlayBodies />
     </>

@@ -55,6 +55,9 @@ Read from `src/game/{park,catalog,objects,sim,scenarios,milestones,rides}`; the 
   - Three scenarios, each won the moment its targets hold and lost at its deadline or when the
     crowd's mood falls to 15%. Winning one unlocks the next (kept in the browser across new games);
     a new game starts the first. Speeds 1x, 2x, 4x and 8x.
+  - First-scenario hints. A card says the next step and rings the control that does it, with an
+    arrow over the spot on the lot: lay a path from the gate, build a ride, connect it, open the
+    gate; at the first breakdown, hire a mechanic from Staff.
 
     | Scenario | Targets | Deadline | At 1x | Prize |
     | --- | --- | --- | --- | --- |

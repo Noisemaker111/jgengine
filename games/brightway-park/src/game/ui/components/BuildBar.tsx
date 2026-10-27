@@ -75,7 +75,7 @@ export function BuildBar({ onClose, onResearch }: { onClose: () => void; onResea
       {picked !== undefined ? <KitActionPrompt action="clearTool" label={`Done placing ${picked}`} tone="neutral" onActivate={() => commands.run("clearTool", {})} /> : null}
       <KitPanel as="nav" aria-label="Build palette" footer={<span className="bw-hint" data-bad={refusal !== null && picked !== undefined ? "" : undefined}>{detail}</span>}>
         <div className="bw-tabs" role="toolbar" aria-label="Blueprint categories">
-          {CATEGORY_ORDER.map((c) => <KitButton key={c} size="sm" variant="ghost" pressed={category === c} icon={CATEGORY_ICON[c]} aria-label={CATEGORY_LABEL[c]} onClick={() => setCategory(c)}><span className="bw-wide">{CATEGORY_LABEL[c]}</span></KitButton>)}
+          {CATEGORY_ORDER.map((c) => <KitButton key={c} size="sm" variant="ghost" data-build-category={c} pressed={category === c} icon={CATEGORY_ICON[c]} aria-label={CATEGORY_LABEL[c]} onClick={() => setCategory(c)}><span className="bw-wide">{CATEGORY_LABEL[c]}</span></KitButton>)}
           <KitButton size="sm" variant="ghost" icon="↶" aria-label="Undo" title="Undo the last build, demolish or land change (U)" disabled={!undoable} onClick={() => commands.run("build.undo", {})}><span className="bw-wide">Undo</span></KitButton>
           <KitButton size="sm" variant="ghost" icon="🔬" aria-label="Research lab" title="Research new rides, shops and scenery (R)" onClick={onResearch}><span className="bw-wide">Lab</span></KitButton>
           <KitButton size="sm" variant="ghost" cue="close" aria-label="Close build palette" onClick={onClose}>✕</KitButton>
@@ -91,7 +91,7 @@ export function BuildBar({ onClose, onResearch }: { onClose: () => void; onResea
           {items.map((def) => {
             // Locked is the world's word: the kind's `when` reads its lab topic. A locked ticket opens the lab.
             const locked = w.canPlace(def.id)?.reason === "locked";
-            return <KitButton key={def.id} pressed={selected === def.id} variant={selected === def.id ? "primary" : "secondary"} icon={locked ? "🔬" : def.icon}
+            return <KitButton key={def.id} data-build-item={def.id} pressed={selected === def.id} variant={selected === def.id ? "primary" : "secondary"} icon={locked ? "🔬" : def.icon}
               title={locked ? `${def.blurb} (research it in the lab first)` : def.blurb}
               onClick={() => (locked ? onResearch() : commands.run("build.select", { id: def.id }))}
               glyph={locked ? `Lab $${(def.research?.cost ?? 0).toLocaleString()}` : <span data-bad={cash < def.cost ? "" : undefined}>${def.cost.toLocaleString()}</span>}>{def.label}</KitButton>;

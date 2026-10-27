@@ -7,12 +7,17 @@ import { lotScreen } from "./lotScreen";
  * from the gate, a carousel beside it, "Connect it" for its entrance and exit, then the gate opens
  * and the first guests walk in, ride and pay.
  */
+/** A page check: the onboarding card shows this step. */
+const step = (id: string) => `document.querySelector('[data-onboarding-step]')?.getAttribute('data-onboarding-step') === '${id}'`;
+
 export default defineFlow(game, {
   browser: true,
   async run(f) {
     await f.see(/gate shut/i, { timeoutMs: 30000, note: "arrival: a new park opens on the empty lot with its gate shut" });
     await f.see(/Brightway Beginnings/i, { timeoutMs: 5000, note: "arrival: a new game is the first scenario, its goal and deadline on the HUD" });
     await f.see(/by the end of May, Year 1/, { timeoutMs: 5000 });
+    await f.expectPage(step("path"), "hint: the first step says to lay a path in from the gate");
+    await f.expectPage("document.querySelector('[data-bw-pointed]') !== null", "hint: the control that does it is ringed");
     await f.expect((p) => p.guests === 0, "arrival: nobody is inside before the player builds and opens the gate");
     await f.expectPage("document.querySelector('[data-hint=gate]')?.disabled === true", "arrival: the gate will not open with no ride running");
 
@@ -23,12 +28,15 @@ export default defineFlow(game, {
       await f.clickAt(at.x, at.y);
     }
     await f.see("Path built", { timeoutMs: 5000, note: "arrival: a path runs in from the gate, the park's own notice confirming it" });
+    await f.waitForPage(step("ride"), { timeoutMs: 3000 });
+    await f.expectPage("document.querySelector('[data-bw-pointed]')?.matches('[data-build-item=ride_carousel], [data-build-category=ride]') === true", "hint: with the path down, the hint rings the carousel ticket");
 
     // The carousel, beside the new path.
     await f.press("Digit1");
     const plot = await lotScreen(f, 4, 36);
     await f.clickAt(plot.x, plot.y);
     await f.see("Carousel built", { timeoutMs: 5000, note: "arrival: the first ride stands on the lot" });
+    await f.waitForPage(step("connect"), { timeoutMs: 3000 });
 
     // Click the ride to inspect it: shut until it has an entrance and an exit; "Connect it" lays them.
     await f.press("KeyX");
@@ -43,9 +51,12 @@ export default defineFlow(game, {
     await f.expectPage("document.querySelector('.bw-side')?.innerText.includes('Needs an entrance') === true", "arrival: a new ride is shut until it has an entrance and an exit, and says so");
     await f.click("Connect it");
     await f.see("Connected", { timeoutMs: 5000, note: "arrival: Connect it laid the entrance and the exit, so the ride opens" });
+    await f.waitForPage(step("gate"), { timeoutMs: 3000 });
+    await f.expectPage("document.querySelector('[data-bw-pointed]')?.matches('[data-hint=gate]') === true", "hint: with the ride running, the hint rings the gate button");
     await f.shot("brightway-first-ride");
 
     await f.click("Open the gate");
+    await f.waitForPage("document.querySelector('[data-onboarding-step]') === null", { timeoutMs: 3000 });
     await f.see(/gate is open/i, { timeoutMs: 5000, note: "arrival: the player opened the gate" });
     await f.timeScale(4);
     await f.waitFor((p) => p.guests > 0, { timeoutMs: 30000, note: "arrival: the first guests walk in through the gate" });
