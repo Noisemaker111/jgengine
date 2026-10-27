@@ -94,7 +94,24 @@ const ASSET_LITERAL = /["'`](\/[A-Za-z0-9_][A-Za-z0-9_./ -]*\.(?:glb|gltf|bin|pn
 
 /** Every root-absolute asset path a game's text names. */
 export function assetLiterals(text: string): string[] {
-  return [...new Set([...text.matchAll(ASSET_LITERAL)].map((match) => match[1]!))].sort();
+  return [...new Set(captures(text, ASSET_LITERAL))].sort();
+}
+
+/** The first capture group of every match of a global pattern. */
+function captures(text: string, pattern: RegExp): string[] {
+  const found: string[] = [];
+  for (const [, capture] of text.matchAll(pattern)) if (capture !== undefined) found.push(capture);
+  return found;
+}
+
+/** The `uri` of each entry in a glTF `buffers` or `images` array. */
+function entryUris(list: unknown): string[] {
+  if (!Array.isArray(list)) return [];
+  const uris: string[] = [];
+  for (const entry of list) {
+    if (typeof entry === "object" && entry !== null && "uri" in entry && typeof entry.uri === "string") uris.push(entry.uri);
+  }
+  return uris;
 }
 
 function modelJson(file: string): string {
@@ -116,11 +133,11 @@ function foldDots(path: string): string {
 /** The files a `.gltf` or `.glb` loads beside itself (buffers and images it names by path), as root-absolute paths. */
 export function modelSiblings(path: string, file: string): string[] {
   try {
-    const doc = JSON.parse(modelJson(file)) as { buffers?: { uri?: string }[]; images?: { uri?: string }[] };
+    const doc: unknown = JSON.parse(modelJson(file));
+    if (typeof doc !== "object" || doc === null) return [];
     const dir = path.slice(0, path.lastIndexOf("/") + 1);
-    return [...(doc.buffers ?? []), ...(doc.images ?? [])]
-      .map((entry) => entry.uri)
-      .filter((uri): uri is string => uri !== undefined && !uri.startsWith("data:") && !/^[a-z]+:/i.test(uri))
+    return [...entryUris("buffers" in doc ? doc.buffers : undefined), ...entryUris("images" in doc ? doc.images : undefined)]
+      .filter((uri) => !uri.startsWith("data:") && !/^[a-z]+:/i.test(uri))
       .map((uri) => foldDots(`${dir}${decodeURIComponent(uri)}`));
   } catch {
     return [];
@@ -137,11 +154,11 @@ export function gamePrefetchList(text: string, gameFiles: readonly string[], sha
   const own = new Set(gameFiles);
   const paths: string[] = [];
   for (const path of assetLiterals(text)) if (own.has(path) || sharedFiles.has(path)) paths.push(path);
-  const quoted = new Set([...text.matchAll(/["'`]([A-Za-z0-9_./-]+)["'`]/g)].map((match) => match[1]!));
+  const quoted = new Set(captures(text, /["'`]([A-Za-z0-9_./-]+)["'`]/g));
   for (const path of [...own, ...sharedFiles]) {
-    const library = /^\/models\/library\/(.+)\/[^/]+$/.exec(path);
-    const material = /^\/materials\/([^/]+)\/[^/]+$/.exec(path);
-    if ((library !== null && quoted.has(library[1]!)) || (material !== null && quoted.has(material[1]!))) paths.push(path);
+    const library = /^\/models\/library\/(.+)\/[^/]+$/.exec(path)?.[1];
+    const material = /^\/materials\/([^/]+)\/[^/]+$/.exec(path)?.[1];
+    if ((library !== undefined && quoted.has(library)) || (material !== undefined && quoted.has(material))) paths.push(path);
   }
   const all = [...paths];
   for (const path of paths) {
@@ -154,8 +171,8 @@ export function gamePrefetchList(text: string, gameFiles: readonly string[], sha
 
 /** A `/games/<id>/<path>` request split into the game and the path that game asked for. */
 export function splitGamePublicUrl(url: string): { game: string; path: string } | null {
-  const match = new RegExp(`^/${GAME_PUBLIC_FOLDER}/([^/?#]+)(/[^#]*)$`).exec(url);
-  return match === null ? null : { game: decodeURIComponent(match[1]!), path: match[2]! };
+  const [, game, path] = new RegExp(`^/${GAME_PUBLIC_FOLDER}/([^/?#]+)(/[^#]*)$`).exec(url) ?? [];
+  return game === undefined || path === undefined ? null : { game: decodeURIComponent(game), path };
 }
 
 /**

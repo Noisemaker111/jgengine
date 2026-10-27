@@ -45,7 +45,8 @@ export function createBootSequence(onChange?: (state: BootSequenceState) => void
     onChange?.(state);
     for (const listener of listeners) listener();
   };
-  const current = (): BootStep => state.history[state.history.length - 1]!;
+  // A boot's history starts at `open` and only grows, so its last step is always there.
+  const current = (): BootStep => state.history.at(-1) ?? "open";
   onChange?.(state);
   return {
     step: current,
@@ -93,7 +94,7 @@ export function bootSequenceErrors(history: readonly string[], refused: readonly
   const seen = new Set<string>();
   let last = -1;
   for (const step of history) {
-    const at = (BOOT_STEPS as readonly string[]).indexOf(step);
+    const at = BOOT_STEPS.findIndex((known) => known === step);
     if (at < 0) errors.push(`${step} is not a boot screen`);
     else if (seen.has(step)) errors.push(`${step} showed twice`);
     else if (at < last) errors.push(`${step} showed after ${BOOT_STEPS[last]}`);
@@ -112,15 +113,22 @@ export function formatBootSequence(state: BootSequenceState): string {
   return [state.history.join(">"), ...state.refused].join("|");
 }
 
-/** The inverse of {@link formatBootSequence}. @internal */
-export function parseBootSequence(value: string): BootSequenceState {
+/**
+ * The inverse of {@link formatBootSequence}. A stamp read off a page is unchecked, so its history is
+ * plain strings: {@link bootSequenceErrors} names any that is not a boot screen. @internal
+ */
+export function parseBootSequence(value: string): { history: string[]; refused: string[] } {
   const [history = "", ...refused] = value.split("|");
-  return { history: history === "" ? [] : (history.split(">") as BootStep[]), refused };
+  return { history: history === "" ? [] : history.split(">"), refused };
 }
 
+/** Stamp the page's root element. This file also runs in workers and tests, where there is no page. */
 function stampDocument(state: BootSequenceState): void {
-  const page = (globalThis as { document?: { documentElement: { setAttribute: (name: string, value: string) => void } } }).document;
-  page?.documentElement.setAttribute(BOOT_SEQUENCE_ATTRIBUTE, formatBootSequence(state));
+  const page: unknown = Reflect.get(globalThis, "document");
+  if (typeof page !== "object" || page === null || !("documentElement" in page)) return;
+  const root = page.documentElement;
+  if (typeof root !== "object" || root === null || !("setAttribute" in root) || typeof root.setAttribute !== "function") return;
+  root.setAttribute(BOOT_SEQUENCE_ATTRIBUTE, formatBootSequence(state));
 }
 
 /**

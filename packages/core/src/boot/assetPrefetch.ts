@@ -58,8 +58,9 @@ export function createAssetPrefetch(options: {
   };
   const pump = (): void => {
     const run = generation;
-    while (running < concurrency && queue.length > 0) {
-      const item = queue.shift()!;
+    while (running < concurrency) {
+      const item = queue.shift();
+      if (item === undefined) return;
       if (finished.has(item.path)) continue;
       running += 1;
       void fetchFile(resolve(item.path), item.tier)
@@ -100,7 +101,7 @@ export function createAssetPrefetch(options: {
 
 async function defaultFetchFile(url: string, tier: PrefetchTier): Promise<boolean> {
   if (typeof fetch === "undefined") return false;
-  const response = await fetch(url, { priority: tier === "near" ? "auto" : "low" } as RequestInit);
+  const response = await fetch(url, { priority: tier === "near" ? "auto" : "low" });
   await response.arrayBuffer();
   return response.ok;
 }

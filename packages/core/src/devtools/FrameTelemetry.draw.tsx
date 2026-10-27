@@ -12,7 +12,8 @@ import {
   type FrameSampler,
   type GlCounterTotals,
 } from "./frameSampler.view";
-import { installFrameBreakdown, type BreakdownRenderer, type BreakdownStore, type FrameBreakdown } from "./frameBreakdown.draw";
+import type { FrameBreakdown } from "./frameBreakdown";
+import { installFrameBreakdown } from "./frameBreakdown.draw";
 
 /**
  * Mounts the in-page frame sampler for the live 3D scene: it wraps this renderer's
@@ -43,7 +44,7 @@ export function FrameTelemetry({ game, quality }: { game: string; quality: PerfQ
         counters.attached = false;
       }
       try {
-        breakdown = installFrameBreakdown(gl as unknown as BreakdownRenderer, store as unknown as BreakdownStore);
+        breakdown = installFrameBreakdown(gl, store);
       } catch (error) {
         console.warn(`[jgengine:perf] frame breakdown did not install: ${String(error)}`);
       }

@@ -28,8 +28,9 @@ describe("boot sequence", () => {
     boot.enter("loading");
     boot.enter("entering");
     boot.fault("world hid to load");
-    expect(stamps.at(-1)).toBe("open>loading>entering|entering: world hid to load");
-    expect(parseBootSequence(stamps.at(-1)!)).toEqual(boot.snapshot());
+    const stamp = stamps.at(-1) ?? "";
+    expect(stamp).toBe("open>loading>entering|entering: world hid to load");
+    expect(parseBootSequence(stamp)).toEqual(boot.snapshot());
     boot.reset();
     expect(boot.snapshot()).toEqual({ history: ["open"], refused: [] });
   });

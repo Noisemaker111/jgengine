@@ -5,14 +5,19 @@ import { createAssetPrefetch } from "./assetPrefetch";
 function deferred() {
   const pending: { url: string; done: (ok: boolean) => void }[] = [];
   const fetchFile = (url: string) => new Promise<boolean>((resolve) => pending.push({ url, done: resolve }));
-  return { pending, fetchFile };
+  const settle = (index: number, ok: boolean): void => {
+    const entry = pending[index];
+    if (entry === undefined) throw new Error(`no fetch #${index} started`);
+    entry.done(ok);
+  };
+  return { pending, fetchFile, settle };
 }
 
 const flush = () => new Promise((resolve) => setTimeout(resolve, 0));
 
 describe("asset prefetch", () => {
   test("fetches near files before far ones, a few at a time, and reports progress", async () => {
-    const { pending, fetchFile } = deferred();
+    const { pending, fetchFile, settle } = deferred();
     const prefetch = createAssetPrefetch({ fetchFile, resolve: (path) => `/play${path}`, concurrency: 2 });
     prefetch.start([
       { path: "/far.gltf", tier: "far" },
@@ -21,10 +26,10 @@ describe("asset prefetch", () => {
     ]);
     expect(pending.map((entry) => entry.url)).toEqual(["/play/one.glb", "/play/two.glb"]);
     expect(prefetch.nearReady()).toBe(false);
-    pending[0]!.done(true);
+    settle(0, true);
     await flush();
     expect(pending.map((entry) => entry.url)).toEqual(["/play/one.glb", "/play/two.glb", "/play/far.gltf"]);
-    pending[1]!.done(false);
+    settle(1, false);
     await flush();
     expect(prefetch.nearReady()).toBe(true);
     expect(prefetch.state()).toEqual({ total: 3, done: 2, failed: 1, nearTotal: 2, nearDone: 2 });

@@ -77,7 +77,7 @@ describe("each game's own files reach the runner", () => {
     const { root, games } = fixture();
     const split = splitGamePublicUrl("/games/fernwild/models/imported/nature/Bush.glb?v=1");
     expect(split).toEqual({ game: "fernwild", path: "/models/imported/nature/Bush.glb?v=1" });
-    expect(resolvePublicFile(split!.path, join(games, "fernwild", "public"))).toBe(join(games, "fernwild", "public", "models", "imported", "nature", "Bush.glb"));
+    expect(resolvePublicFile(split?.path ?? "", join(games, "fernwild", "public"))).toBe(join(games, "fernwild", "public", "models", "imported", "nature", "Bush.glb"));
     expect(resolvePublicFile("/models/missing.glb", join(games, "fernwild", "public"))).toBeNull();
     expect(resolvePublicFile("/../secret.txt", join(games, "fernwild", "public"))).toBeNull();
     expect(resolvePublicFile("/models/%2e%2e/%2e%2e/%2e%2e/%2e%2e/secret.txt", join(games, "fernwild", "public"))).toBeNull();
