@@ -149,7 +149,7 @@ export function SettingsTrigger({
   children,
   label = "Settings",
 }: {
-  className?: string;
+  className?: string | undefined;
   children?: ReactNode;
   label?: string;
 }) {

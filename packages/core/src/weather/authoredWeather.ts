@@ -46,14 +46,14 @@ export interface AuthoredWeatherZone {
 export interface AuthoredWeatherConfig {
   ambient?: WeatherConditions;
   profiles?: readonly AuthoredWeatherProfile[];
-  initialProfileId?: string;
+  initialProfileId?: string | undefined;
   /** Ordered absolute times, relative to the simulation clock. */
-  schedule?: readonly AuthoredWeatherTransition[];
+  schedule?: readonly AuthoredWeatherTransition[] | undefined;
   /**
    * Loop the schedule every this many seconds, forever: a few days of weather authored once keep coming round. Each
    * later lap starts from where the one before ended, so the seam never jumps. Must outlast the schedule's last change.
    */
-  repeatSeconds?: number;
+  repeatSeconds?: number | undefined;
   wind?: WindFieldConfig;
   /** Later weather zones blend over earlier ones; wind zones add to ambient wind. */
   zones?: readonly AuthoredWeatherZone[];

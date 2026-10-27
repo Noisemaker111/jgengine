@@ -67,10 +67,10 @@ export interface CoachMarkProps {
   positionStyle?: CSSProperties;
   onNext: () => void;
   onSkip: () => void;
-  nextLabel?: string;
-  doneLabel?: string;
-  skipLabel?: string;
-  theme?: CoachMarkTheme;
+  nextLabel?: string | undefined;
+  doneLabel?: string | undefined;
+  skipLabel?: string | undefined;
+  theme?: CoachMarkTheme | undefined;
   className?: string;
   style?: CSSProperties;
 }

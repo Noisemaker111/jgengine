@@ -31,11 +31,11 @@ export type GameServerRecord = {
   serverId: string;
   gameId: string;
   status: GameServerStatus;
-  mode?: string;
+  mode?: string | undefined;
   modeConfig?: unknown;
   label?: string;
-  visibility?: SessionVisibility;
-  joinCode?: string;
+  visibility?: SessionVisibility | undefined;
+  joinCode?: string | undefined;
   tags?: string[];
   memberUserIds: string[];
   slotsPerServer: number;
@@ -44,7 +44,7 @@ export type GameServerRecord = {
   sessionPlayers: Record<string, RuntimePlayerRow>;
   revision: number;
   tickAnchorMs: number;
-  lastSavedAt?: number;
+  lastSavedAt?: number | undefined;
   dirtyAt?: number | undefined;
   createdAt: number;
   updatedAt: number;

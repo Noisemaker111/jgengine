@@ -9,7 +9,7 @@ export interface PresencePoseState {
 export interface IncomingPose {
   position: { x: number; z: number; y?: number };
   rotationY?: number;
-  rotationPitch?: number;
+  rotationPitch?: number | undefined;
   appearance?: Record<string, string>;
 }
 
@@ -166,7 +166,7 @@ export interface ActivePresenceResolution<T> {
 }
 
 /** @internal */
-export function resolveActivePresence<T extends { revokedAt?: number; lastSeenAt?: number }>(
+export function resolveActivePresence<T extends { revokedAt?: number | undefined; lastSeenAt?: number | undefined }>(
   rows: readonly T[],
 ): ActivePresenceResolution<T> {
   const actives = rows.filter((row) => row.revokedAt === undefined);
@@ -187,7 +187,7 @@ export function isPresenceExpired(
 /** Most-recently-seen row across an actor's rows, to reuse instead of inserting a new one.
  * @internal
  */
-export function pickReusablePresence<T extends { lastSeenAt?: number }>(
+export function pickReusablePresence<T extends { lastSeenAt?: number | undefined }>(
   rows: readonly T[],
 ): T | undefined {
   return [...rows].sort((a, b) => (b.lastSeenAt ?? 0) - (a.lastSeenAt ?? 0))[0];

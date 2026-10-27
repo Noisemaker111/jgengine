@@ -135,7 +135,7 @@ function KitDialogs({ kit }: { kit: UiKit }): ReactNode {
 }
 
 /** One kit, large: the specimen plus its dialog and strip, for working on a single kit. */
-export function UiKitPreview({ kit, className }: { kit: UiKit; className?: string }): ReactNode {
+export function UiKitPreview({ kit, className }: { kit: UiKit; className?: string | undefined }): ReactNode {
   return (
     <div className={className} style={{ display: "grid", gridTemplateColumns: "3fr 2fr", width: "100vw", height: "100vh", background: "#0b0d12", gap: 6 }}>
       <KitSpecimen kit={kit} />
@@ -177,7 +177,7 @@ export type UiKitMenuPreviewPane = "settings" | "credits" | "continue" | "saves"
  * A kit's pause menu with one of the engine's own panes in it (settings, credits, continue or saves),
  * so one picture shows that engine panes read in the kit's colours and type.
  */
-export function UiKitMenuPreview({ kit, pane = "settings", className }: { kit: UiKit; pane?: UiKitMenuPreviewPane; className?: string }): ReactNode {
+export function UiKitMenuPreview({ kit, pane = "settings", className }: { kit: UiKit; pane?: UiKitMenuPreviewPane; className?: string | undefined }): ReactNode {
   return (
     <UiKitRoot kit={kit} box className={className} style={{ ...SCENE, width: "100vw", height: "100vh" }}>
       <PauseMenu

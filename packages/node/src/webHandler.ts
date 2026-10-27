@@ -21,7 +21,7 @@ export async function toWebRequest(req: IncomingMessage): Promise<Request> {
       if (buffer.byteLength > 0) body = Uint8Array.from(buffer);
     }
   }
-  return new Request(`http://${host}${req.url ?? "/"}`, { method, headers, body });
+  return new Request(`http://${host}${req.url ?? "/"}`, body === undefined ? { method, headers } : { method, headers, body });
 }
 
 export function toNodeHandler(handler: WebHandler): NodeHandler {

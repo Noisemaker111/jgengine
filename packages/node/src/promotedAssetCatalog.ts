@@ -74,12 +74,12 @@ function serializeEntry(extra: PromotedExtra): string {
 export function upsertCatalogExtra(source: string, extra: PromotedExtra): string {
   const callRe = /\bbuildCatalog\(\s*\{/g;
   const matches = [...source.matchAll(callRe)];
-  if (matches.length !== 1) {
+  const match = matches[0];
+  if (matches.length !== 1 || match === undefined) {
     throw new Error(
       `promotedAssetCatalog: expected exactly one buildCatalog({...}) call, found ${matches.length}`,
     );
   }
-  const match = matches[0];
   // Brace of the options object literal is the last char of the matched `buildCatalog(\s*{`.
   const objOpen = match.index + match[0].length - 1;
   const objClose = matchBracketSpan(source, objOpen);
@@ -87,7 +87,7 @@ export function upsertCatalogExtra(source: string, extra: PromotedExtra): string
 
   // Detect indentation of the object's first inner line to keep emitted code consistent.
   const indentMatch = /\{\s*\n(\s+)\S/.exec(objBody);
-  const indent = indentMatch ? indentMatch[1] : "  ";
+  const indent = indentMatch?.[1] ?? "  ";
 
   const extrasRe = /\bextras\s*:\s*\[/;
   const extrasMatch = extrasRe.exec(objBody);
@@ -137,7 +137,7 @@ function spliceOutExtras(source: string, declStartAbs: number, arrCloseAbs: numb
   if (source[declEndAbs] === ",") declEndAbs++;
   // Swallow leading whitespace/newline before the declaration.
   let start = declStartAbs;
-  while (start > 0 && /[ \t]/.test(source[start - 1])) start--;
+  while (start > 0 && /[ \t]/.test(source[start - 1] ?? "")) start--;
   if (source[start - 1] === "\n") start--;
   return source.slice(0, start) + source.slice(declEndAbs);
 }
@@ -167,7 +167,7 @@ function parseEntryLiteral(literal: string): PromotedExtra {
 /** Reads the `basePath` string literal from a promoted `assets.ts`, defaulting to `/models`. */
 function readBasePath(source: string): string {
   const m = /\bbasePath\s*:\s*["'`]([^"'`]+)["'`]/.exec(source);
-  return m ? m[1] : "/models";
+  return m?.[1] ?? "/models";
 }
 
 /**

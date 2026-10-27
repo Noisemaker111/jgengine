@@ -78,7 +78,7 @@ export function syncManifest(
   }
   const next: Manifest = { ...manifest, dependencies: added ? sortedRecord(dependencies) : dependencies };
   if (Object.keys(templateScripts).length > 0) {
-    next.scripts = { ...(manifest.scripts as Record<string, string> | undefined), ...templateScripts };
+    next["scripts"] = { ...(manifest["scripts"] as Record<string, string> | undefined), ...templateScripts };
   }
   if (manifest.devDependencies !== undefined) {
     next.devDependencies = Object.fromEntries(

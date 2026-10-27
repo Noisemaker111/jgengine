@@ -33,8 +33,8 @@ export type ConvexBackendOptions<
   client: ConvexReactClient;
   gameId: string;
   userId: string;
-  api?: ConvexGameApi;
-  poseTuning?: PoseSyncTuning;
+  api?: ConvexGameApi | undefined;
+  poseTuning?: PoseSyncTuning | undefined;
   presence?: {
     functions: ConvexPresenceFunctions;
     mapRow: (row: TRawPresenceRow) => TPresenceRow;

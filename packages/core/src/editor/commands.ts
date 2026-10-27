@@ -139,7 +139,7 @@ export type EditorCommand =
 
 /** Per-dispatch options; `coalesce` merges consecutive same-key edits into one undo step. */
 export interface EditorDispatchOptions {
-  coalesce?: string;
+  coalesce?: string | undefined;
 }
 
 /** The document plus current selection at a point in editor history. */

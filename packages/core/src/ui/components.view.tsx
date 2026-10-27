@@ -23,7 +23,7 @@ export function Screen({
 }: {
   id: string;
   open?: boolean;
-  className?: string;
+  className?: string | undefined;
   children?: ReactNode;
 }) {
   if (!open) return null;

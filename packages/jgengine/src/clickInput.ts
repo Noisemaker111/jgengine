@@ -7,7 +7,7 @@ export function parseClickAt(spec: string, width: number, height: number): Click
   if (parts.length !== 2 || parts.some(value => !decimal.test(value))) {
     throw new Error("--click-at requires x,y in nonnegative CSS viewport pixels");
   }
-  const [x, y] = parts.map(Number);
+  const [x = Number.NaN, y = Number.NaN] = parts.map(Number);
   if (![x, y].every(Number.isFinite) || !Number.isFinite(width) || !Number.isFinite(height)
     || width <= 0 || height <= 0 || x >= width || y >= height) {
     throw new Error("--click-at must be inside the CSS viewport (" + width + "x" + height + ")");

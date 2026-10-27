@@ -70,7 +70,7 @@ export interface TerrainMaterialLayer {
    */
   material?: string;
   /** Resolved URL of the layer's scanned color map, written by the editor from {@link TerrainMaterialLayer.material}. */
-  materialUrl?: string;
+  materialUrl?: string | undefined;
 }
 
 /** Plain JSON of a sculpted terrain: grid size, per-cell height offsets, painted surfaces and material layers. Saved in scene documents. */

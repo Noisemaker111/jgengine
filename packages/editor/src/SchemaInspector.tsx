@@ -367,7 +367,7 @@ export function SchemaInspector({
   schema: ParamSchema;
   label: string;
   accent?: string;
-  note?: string;
+  note?: string | undefined;
   meta: Record<string, unknown> | undefined;
   onMeta: MetaPatch;
   /** Field keys to omit from this body — hoisted elsewhere (e.g. the density slider in `CoverageSection`). */

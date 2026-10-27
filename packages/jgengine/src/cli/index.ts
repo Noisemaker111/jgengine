@@ -131,7 +131,7 @@ function runEditor(argv: string[]): number {
   let outDir: string | undefined;
   let pmFlag: string | undefined;
   for (let i = 0; i < argv.length; i += 1) {
-    const arg = argv[i];
+    const arg = argv[i] ?? "";
     if (arg === "--assets") assetsDir = argv[(i += 1)];
     else if (arg === "--port") port = argv[(i += 1)];
     else if (arg === "--out") outDir = argv[(i += 1)];

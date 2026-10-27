@@ -36,7 +36,7 @@ function materialLabel(materialId: string): string {
 /** Read the selected model's first usable assignment for workspace initialization. @internal */
 export function initialMaterialAssignment(document: Pick<EditorDocument, "markers" | "materialAssets">, selection: readonly string[]): MaterialAssignment | null {
   const marker = document.markers.find((item) => selection.includes(item.id));
-  const value = marker?.meta?.materialAssignments;
+  const value = marker?.meta?.["materialAssignments"];
   if (!Array.isArray(value)) return null;
   for (const item of value) {
     try {
@@ -66,7 +66,7 @@ export function MaterialsWorkspacePanel({
   session: EditorSession;
   api: EditorHostApi;
   preview?: (asset: MaterialAsset | undefined, mode: "neutral" | "game") => ReactNode;
-  onSave?: () => void;
+  onSave?: (() => void) | undefined;
   materialSlots?: readonly { mesh: string; slot: string; slotIndex: number }[];
   previewError?: string | null;
 }) {
@@ -96,7 +96,7 @@ export function MaterialsWorkspacePanel({
   const activeAsset = assets.find((asset) => asset.id === activeAssetId) ?? assets[0];
   const assignmentErrors: string[] = [];
   const selectedAssignments = document.markers.filter((marker) => selection.includes(marker.id)).flatMap((marker) => {
-    const value = marker.meta?.materialAssignments;
+    const value = marker.meta?.["materialAssignments"];
     if (!Array.isArray(value)) return [];
     try {
       return parseMaterialAssignments(value).map((assignment) => ({ ...assignment, objectId: marker.id, objectName: marker.label ?? marker.id }));

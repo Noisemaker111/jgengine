@@ -18,6 +18,7 @@ import type {
 import type { GenericId } from "convex/values";
 import { ConvexError, v } from "convex/values";
 import { validateChatMessage, type ChatMessage } from "@jgengine/core/chat/chat";
+import { definedOnly } from "@jgengine/core/data/definedOnly";
 import type { LeaderboardScope } from "@jgengine/core/leaderboard/leaderboard";
 import type { ChatSendOutcome } from "@jgengine/core/chat/chatContract";
 import {
@@ -407,10 +408,10 @@ async function serverCapacity(ctx: JGQueryCtx | JGMutationCtx, server: ServerDoc
 async function ensureServerCapacity(ctx: JGMutationCtx, server: ServerDoc) {
   const existing = await serverCapacity(ctx, server);
   if (existing) return existing;
-  const id = await ctx.db.insert("jgServerCapacity", {
+  const id = await ctx.db.insert("jgServerCapacity", definedOnly({
     serverId: server._id, gameId: server.gameId, status: server.status, mode: server.mode,
     memberCount: server.memberCount ?? server.memberUserIds.length, slotsPerServer: server.slotsPerServer,
-  });
+  }));
   return (await ctx.db.get("jgServerCapacity", id))!;
 }
 
@@ -523,7 +524,7 @@ export async function applyLeaderboardIncrements(
     if (existing) {
       await ctx.db.patch(existing._id, { value: existing.value + entry.by, updatedAt: now });
     } else {
-      await ctx.db.insert("jgLeaderboardRows", {
+      await ctx.db.insert("jgLeaderboardRows", definedOnly({
         gameId,
         stat: entry.stat,
         scope: entry.scope,
@@ -531,7 +532,7 @@ export async function applyLeaderboardIncrements(
         userId: entry.userId,
         value: entry.by,
         updatedAt: now,
-      });
+      }));
     }
   }
 }
@@ -618,7 +619,8 @@ export async function persistServerSnapshot(
       await ctx.db.insert("jgWorldChunks", {
         serverId: server._id,
         chunkKey: chunk.chunkKey,
-        ...chunkPatch,
+        snapshot: chunk.snapshot,
+        updatedAt: chunk.updatedAt,
       });
     }
   }
@@ -666,7 +668,7 @@ export type RunCommandOutcome = { ok: true } | { ok: false; reason: string };
 
 /** Arguments of the `runCommand` mutation, and of the equivalent {@link GameServerHelpers.runCommand} helper. */
 export type ConvexRunCommandArgs = RunCommandArgs & {
-  externalId?: string;
+  externalId?: string | undefined;
   /**
    * How much of the server to hydrate before applying the command. Overrides whatever the
    * {@link CommandDef} declares through its own `scope`; omit both to hydrate the whole world.
@@ -684,7 +686,7 @@ export type ConvexRunCommandArgs = RunCommandArgs & {
 /** Server-selection arguments of the `joinServer` mutation, minus the caller identity. */
 type JoinServerArgs = {
   gameId: string;
-  serverId?: GenericId<"jgGameServers">;
+  serverId?: GenericId<"jgGameServers"> | undefined;
   mode?: string;
   modeConfig?: unknown;
   visibility?: "public" | "private";
@@ -836,10 +838,10 @@ export function createGameServerFunctions(options?: {
       const serverId = await ctx.db.insert("jgGameServers", {
         gameId: args.gameId,
         status: "running",
-        mode: args.mode,
+        ...(args.mode === undefined ? {} : { mode: args.mode }),
         modeConfig: args.modeConfig,
         visibility: args.visibility ?? "public",
-        joinCode: args.joinCode,
+        ...(args.joinCode === undefined ? {} : { joinCode: args.joinCode }),
         topology: shared ? "shared" : "rooms",
         memberCount: 0,
         memberUserIds: [],
@@ -1209,7 +1211,7 @@ export function createGameServerFunctions(options?: {
           _id: server._id,
           gameId: server.gameId,
           status: server.status,
-          mode: server.mode,
+          ...(server.mode === undefined ? {} : { mode: server.mode }),
           memberUserIds: server.memberUserIds,
           slotsPerServer: server.slotsPerServer,
           save: server.save,
@@ -1242,7 +1244,7 @@ export function createGameServerFunctions(options?: {
       v.null(),
     ),
     handler: (ctx, args) =>
-      withMember(ctx, mode, args, null, async (server) => ({
+      withMember(ctx, mode, args, null, async (server) => definedOnly({
         _id: server._id,
         gameId: server.gameId,
         status: server.status,
@@ -1266,10 +1268,10 @@ export function createGameServerFunctions(options?: {
       if (capacity) {
         const member = await ctx.db.query("jgServerMembers").withIndex("by_server_and_user", q => q.eq("serverId", args.serverId).eq("userId", actor)).unique();
         if (!member) return null;
-        return { _id: capacity.serverId, gameId: capacity.gameId, status: capacity.status, mode: capacity.mode, memberCount: capacity.memberCount, slotsPerServer: capacity.slotsPerServer };
+        return definedOnly({ _id: capacity.serverId, gameId: capacity.gameId, status: capacity.status, mode: capacity.mode, memberCount: capacity.memberCount, slotsPerServer: capacity.slotsPerServer });
       }
       const server = await requireServerMember(ctx, args.serverId, actor);
-      return server ? { _id: server._id, gameId: server.gameId, status: server.status, mode: server.mode, memberCount: server.memberUserIds.length, slotsPerServer: server.slotsPerServer } : null;
+      return server ? definedOnly({ _id: server._id, gameId: server.gameId, status: server.status, mode: server.mode, memberCount: server.memberUserIds.length, slotsPerServer: server.slotsPerServer }) : null;
     },
   });
 
@@ -1433,7 +1435,7 @@ export function createGameServerFunctions(options?: {
       return Promise.all(rows
         .filter((row) => isListablePublicly(row.visibility))
         .slice(0, limit)
-        .map(async (row) => ({
+        .map(async (row) => definedOnly({
           _id: row._id,
           status: row.status,
           memberCount: (await serverCapacity(ctx, row))?.memberCount ?? row.memberCount ?? row.memberUserIds.length,
@@ -1645,7 +1647,7 @@ export function createPresenceFunctions(options?: {
   /** Where a session with no row starts. Async and ctx-bearing, so a spawn can read the world. */
   resolveSpawn?: (
     ctx: JGMutationCtx,
-    args: { serverId: string; userId: string; kind?: string },
+    args: { serverId: string; userId: string; kind?: string | undefined },
   ) => Promise<{ x: number; y: number; z: number } | null> | { x: number; y: number; z: number } | null;
 }) {
   const mode: JgAuthMode = options?.auth ?? "required";
@@ -1696,7 +1698,7 @@ export function createPresenceFunctions(options?: {
 
         return rows
           .filter((row) => row.revokedAt === undefined && row.updatedAt >= threshold)
-          .map((row) => ({
+          .map((row) => definedOnly({
             userId: row.userId,
             sessionId: row.sessionId,
             kind: row.kind,
@@ -1943,7 +1945,7 @@ export async function sendChatMessage(ctx: JGMutationCtx, args: { serverId: stri
   if (!validation.ok) return validation;
   const gate = await rateLimit(ctx, { key: JSON.stringify(["chat", args.serverId, args.userId]), windowMs: args.minIntervalMs ?? 2000, max: 1 });
   if (!gate.ok) return { ok: false, reason: "rate_limited" };
-  await ctx.db.insert("jgChatMessages", { serverId: args.serverId, channelId: args.channelId ?? "global", userId: args.userId, body: validation.text, authorName: args.authorName, at: Date.now() });
+  await ctx.db.insert("jgChatMessages", definedOnly({ serverId: args.serverId, channelId: args.channelId ?? "global", userId: args.userId, body: validation.text, authorName: args.authorName, at: Date.now() }));
   return { ok: true };
 }
 
@@ -2064,8 +2066,8 @@ export function createChatFunctions(options?: {
         .order("desc")
         .take(historyLimit * 2 + 16);
 
-      for (let i = historyLimit * 2; i < recent.length; i += 1) {
-        await ctx.db.delete(recent[i]._id);
+      for (const stale of recent.slice(historyLimit * 2)) {
+        await ctx.db.delete(stale._id);
       }
 
       return { ok: true };

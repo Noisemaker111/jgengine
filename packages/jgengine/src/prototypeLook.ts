@@ -27,7 +27,7 @@ export interface PrototypeLookVerdict {
   isPrototype: boolean;
   signals: PrototypeLookSignals;
   reasons: string[];
-  fix?: string;
+  fix?: string | undefined;
 }
 
 /**

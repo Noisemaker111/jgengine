@@ -204,7 +204,7 @@ export type EditorBridgeRequest =
   | { method: "batch_set_properties"; ids: string[]; color?: string; label?: string; meta?: Record<string, unknown> }
   | { method: "list_material_assets" }
   | { method: "list_material_slots"; id: string }
-  | { method: "upsert_material_asset"; asset: MaterialAsset; coalesce?: string }
+  | { method: "upsert_material_asset"; asset: MaterialAsset; coalesce?: string | undefined }
   | { method: "remove_material_asset"; id: string }
   | { method: "assign_material_asset"; ids: string[]; materialId: string; selector: MaterialSelector }
   | { method: "clear_material_assets"; ids: string[] }
@@ -436,10 +436,10 @@ export function createEditorHost(options: {
   gameId: string;
   layers: EditorLayersInput | undefined;
   /** Game-exported gameplay catalog definitions (schemas + defaults); seeds document.catalogs. */
-  catalogs?: readonly EditorCatalogDefinition[];
+  catalogs?: readonly EditorCatalogDefinition[] | undefined;
   assets?: readonly EditorAssetInfo[];
   onFocus?: (target: { x: number; y: number; z: number } | null) => void;
-  validateDocument?: (document: EditorDocument) => void;
+  validateDocument?: ((document: EditorDocument) => void) | undefined;
   isolatedPlaytest?: boolean;
   publishGlobal?: boolean;
   persistAssetUrls?: boolean;
@@ -473,7 +473,7 @@ export function createEditorHost(options: {
   const materialSource = (id: string): { sourceUrl?: string; reason?: string } => {
     const marker = session.getState().document.markers.find((item) => item.id === id);
     if (!marker) return { reason: `No authored model marker ${id}.` };
-    const catalogId = marker.catalogId ?? marker.meta?.catalogId;
+    const catalogId = marker.catalogId ?? marker.meta?.["catalogId"];
     const sourceUrl = assets.find((asset) => asset.id === catalogId)?.url;
     return sourceUrl ? { sourceUrl } : { reason: `Marker ${id} has no URL-backed catalog model.` };
   };

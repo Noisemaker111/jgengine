@@ -280,9 +280,9 @@ export function resolveMetadata(input: {
   mode: DesktopMode;
   projectDir: string | null;
   url: URL | null;
-  name?: string;
-  id?: string;
-  version?: string;
+  name?: string | undefined;
+  id?: string | undefined;
+  version?: string | undefined;
 }): DesktopMetadata | { error: string } {
   let productName = input.name?.trim();
   let version = input.version?.trim();
@@ -338,7 +338,7 @@ export function isGameProject(dir: string): { ok: true } | { ok: false; error: s
   const hasIndex = existsSync(join(dir, "index.html"));
   const hasVite = existsSync(join(dir, "vite.config.ts")) || existsSync(join(dir, "vite.config.js"));
   const hasGameConfig = existsSync(join(dir, "src", "game.config.ts"));
-  const hasBuild = pkg.scripts?.build !== undefined;
+  const hasBuild = pkg.scripts?.["build"] !== undefined;
   if (!hasIndex && !hasGameConfig) {
     return {
       ok: false,
@@ -703,7 +703,7 @@ export function buildFrontend(projectDir: string): { ok: true; distDir: string }
   const pkg = readPackageJson(join(projectDir, "package.json"));
   const pm = pickPackageManager(projectDir);
   let status: number | null;
-  if (pkg?.scripts?.build !== undefined) {
+  if (pkg?.scripts?.["build"] !== undefined) {
     const result = spawnSync(pm, ["run", "build"], {
       cwd: projectDir,
       stdio: "inherit",
@@ -738,9 +738,9 @@ export function copyFrontendDist(distDir: string, stagingDir: string): void {
 
 /** @internal */
 export function desktopTargetDir(env: NodeJS.ProcessEnv = process.env): string {
-  const explicit = env.CARGO_TARGET_DIR;
+  const explicit = env["CARGO_TARGET_DIR"];
   if (explicit !== undefined && explicit.length > 0) return resolve(explicit);
-  const base = env.LOCALAPPDATA ?? join(homedir(), ".cache");
+  const base = env["LOCALAPPDATA"] ?? join(homedir(), ".cache");
   return join(base, "jgengine", "desktop-target");
 }
 

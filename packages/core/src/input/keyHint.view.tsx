@@ -15,7 +15,7 @@ export function Keycap({
   style,
 }: {
   children: ReactNode;
-  className?: string;
+  className?: string | undefined;
   style?: CSSProperties;
 }) {
   return (

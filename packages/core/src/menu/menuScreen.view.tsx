@@ -37,10 +37,10 @@ export interface MenuScreenProps {
   role?: string;
   /** Full-bleed layer painted behind the menu content — a live canvas, a poster, or a preview. */
   backdrop?: ReactNode;
-  className?: string;
-  style?: CSSProperties;
-  contentClassName?: string;
-  contentStyle?: CSSProperties;
+  className?: string | undefined;
+  style?: CSSProperties | undefined;
+  contentClassName?: string | undefined;
+  contentStyle?: CSSProperties | undefined;
   children?: ReactNode;
   /** Called once the exit animation finished and the screen unmounted. */
   onClosed?: () => void;

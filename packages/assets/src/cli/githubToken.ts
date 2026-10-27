@@ -22,7 +22,7 @@ const readGhToken: GhTokenReader = () => {
 
 /** `GITHUB_TOKEN`, then `GH_TOKEN`, then the signed-in gh CLI's token; undefined when none exists. */
 export function resolveGithubToken(env: NodeJS.ProcessEnv = process.env, readGh: GhTokenReader = readGhToken): string | undefined {
-  const fromEnv = env.GITHUB_TOKEN ?? env.GH_TOKEN;
+  const fromEnv = env["GITHUB_TOKEN"] ?? env["GH_TOKEN"];
   if (fromEnv !== undefined && fromEnv.trim() !== "") return fromEnv.trim();
   return readGh() ?? undefined;
 }

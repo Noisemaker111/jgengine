@@ -1,6 +1,6 @@
 {
   "extends": "../../tsconfig.base.json",
-  "compilerOptions": { "lib": ["ES2022"], "noUnusedLocals": true, "noUnusedParameters": true, "noFallthroughCasesInSwitch": true },
+  "compilerOptions": { "lib": ["ES2022"], "noUnusedLocals": true, "noUnusedParameters": true, "noFallthroughCasesInSwitch": true, "noUncheckedIndexedAccess": true, "exactOptionalPropertyTypes": true, "noImplicitOverride": true, "noPropertyAccessFromIndexSignature": true, "noImplicitReturns": true },
   "include": ["src"],
   "exclude": ["src/**/*.test.ts"]
 }

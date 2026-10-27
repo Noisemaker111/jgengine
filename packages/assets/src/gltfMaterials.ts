@@ -120,7 +120,7 @@ function binding(json: GLTF.IGLTF, info: GLTF.ITextureInfo, spec: MapSpec, path:
   const imageIndex = extension?.source ?? texture.source;
   const image = imageIndex === undefined ? undefined : json.images?.[imageIndex];
   if (image === undefined || imageIndex === undefined || !Number.isSafeInteger(imageIndex)) throw new Error(`${path}: missing image ${imageIndex}`);
-  const transform = info.extensions?.KHR_texture_transform as { offset?: [number, number]; scale?: [number, number]; rotation?: number; texCoord?: number } | undefined;
+  const transform = info.extensions?.["KHR_texture_transform"] as { offset?: [number, number]; scale?: [number, number]; rotation?: number; texCoord?: number } | undefined;
   const uvSet = transform?.texCoord ?? info.texCoord ?? 0;
   if (!Number.isInteger(uvSet) || uvSet < 0 || uvSet > 3) throw new Error(`${path}: Three.js r182 supports UV sets 0–3; found ${uvSet}`);
   const sampler = texture.sampler === undefined ? undefined : json.samplers?.[texture.sampler];
@@ -191,8 +191,8 @@ export function inspectGltfMaterials(json: GLTF.IGLTF, assetId: string): GltfMat
     const material = primitive.material === undefined ? undefined : materials[primitive.material];
     if (primitive.material !== undefined && material === undefined) throw new Error(`meshes[${meshIndex}].primitives[${primitiveIndex}]: missing material ${primitive.material}`);
     const uvSets = Object.keys(primitive.attributes).flatMap((name) => /^TEXCOORD_\d+$/.test(name) ? [Number(name.slice(9))] : []).sort((a, b) => a - b);
-    const hasNormals = primitive.attributes.NORMAL !== undefined;
-    const hasTangents = primitive.attributes.TANGENT !== undefined;
+    const hasNormals = primitive.attributes["NORMAL"] !== undefined;
+    const hasTangents = primitive.attributes["TANGENT"] !== undefined;
     const path = `meshes[${meshIndex}].primitives[${primitiveIndex}]`;
     for (const texture of material?.textures ?? []) if ((!material?.extensions.includes("KHR_materials_unlit") || texture.role === "color") && !uvSets.includes(texture.metadata.uvSet ?? 0))
       diagnostic("error", "missing-uv", path, `${texture.role} uses missing TEXCOORD_${texture.metadata.uvSet ?? 0}`);

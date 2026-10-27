@@ -133,7 +133,7 @@ const MarkerMesh = memo(function MarkerMesh({
   onSelect: (id: string) => void;
   sharedSphere: THREE.SphereGeometry;
   sharedCone: THREE.ConeGeometry;
-  groundHeightAt?: (x: number, z: number) => number;
+  groundHeightAt?: ((x: number, z: number) => number) | undefined;
 }) {
   const color = colorFor(marker.kind, marker.color);
   const scale = selected ? 1.28 : hovered ? 1.12 : 1;
@@ -236,7 +236,7 @@ const PathRibbon = memo(function PathRibbon({
   hovered: boolean;
   activePointIndex: number | null;
   onSelect: (id: string) => void;
-  groundHeightAt?: (x: number, z: number) => number;
+  groundHeightAt?: ((x: number, z: number) => number) | undefined;
 }) {
   const color = colorFor(path.kind, path.color);
   const yAt = (point: { x: number; y: number; z: number }): number =>
@@ -310,7 +310,7 @@ const NotePin = memo(function NotePin({
   selected: boolean;
   hovered: boolean;
   onSelect: (id: string) => void;
-  groundHeightAt?: (x: number, z: number) => number;
+  groundHeightAt?: ((x: number, z: number) => number) | undefined;
 }) {
   const color = colorFor("note", note.color);
   const baseY = groundHeightAt !== undefined ? groundHeightAt(note.position.x, note.position.z) : note.position.y;

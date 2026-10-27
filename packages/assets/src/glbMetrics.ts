@@ -189,7 +189,7 @@ export function readGlbMetrics(
       throw new Error(`buffer ${index}: missing or truncated bytes`);
     return result.subarray(0, length);
   });
-  const bufferView = (index: number): { bytes: Uint8Array; stride?: number } => {
+  const bufferView = (index: number): { bytes: Uint8Array; stride?: number | undefined } => {
     integer(index, "bufferView index");
     const entry = json.bufferViews?.[index];
     if (entry === undefined) throw new Error(`bufferView ${index}: missing`);
@@ -206,7 +206,7 @@ export function readGlbMetrics(
   const accessor = (
     index: number,
     indices: boolean,
-  ): { count: number; read?: (i: number) => number; maxIndex?: number } => {
+  ): { count: number; read?: ((i: number) => number) | undefined; maxIndex?: number | undefined } => {
     integer(index, "accessor index");
     const entry = json.accessors?.[index];
     if (entry === undefined) throw new Error(`accessor ${index}: missing`);
@@ -310,9 +310,9 @@ export function readGlbMetrics(
   for (const [meshIndex, mesh] of (json.meshes ?? []).entries()) {
     for (const [primitiveIndex, primitive] of mesh.primitives.entries()) {
       const label = `mesh ${meshIndex} primitive ${primitiveIndex}`;
-      if (primitive.extensions?.KHR_draco_mesh_compression !== undefined)
+      if (primitive.extensions?.["KHR_draco_mesh_compression"] !== undefined)
         throw new Error(`${label}: Draco geometry requires a decoder`);
-      const position = primitive.attributes?.POSITION;
+      const position = primitive.attributes?.["POSITION"];
       if (position === undefined) throw new Error(`${label}: missing POSITION`);
       const vertices = accessor(position, false);
       let count = vertices.count;

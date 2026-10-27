@@ -33,7 +33,7 @@ export interface KitPanelProps extends Omit<HTMLAttributes<HTMLElement>, "title"
   /** Right side of the header: a count, a timer, a close button. */
   aside?: ReactNode;
   footer?: ReactNode;
-  tone?: KitTone;
+  tone?: KitTone | undefined;
   /**
    * `hud` a compact in-play block · `card` a menu/detail card · `dialog` a centred modal ·
    * `pane` a GameMenu detail pane · `strip` a one-line band. Default `hud`.

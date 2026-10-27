@@ -39,11 +39,11 @@ export function ChatLog({
   renderMessage,
 }: {
   channelId: string;
-  limit?: number;
-  className?: string;
-  messageClassName?: string;
-  ownMessageClassName?: string;
-  renderMessage?: (message: ChatMessage) => ReactNode;
+  limit?: number | undefined;
+  className?: string | undefined;
+  messageClassName?: string | undefined;
+  ownMessageClassName?: string | undefined;
+  renderMessage?: ((message: ChatMessage) => ReactNode) | undefined;
 }) {
   const ctx = useGameContext();
   const messages = useChat(channelId, limit === undefined ? undefined : { limit });
@@ -87,13 +87,13 @@ export function ChatInput({
   onRejected,
 }: {
   channelId: string;
-  className?: string;
-  inputClassName?: string;
-  buttonClassName?: string;
-  placeholder?: string;
+  className?: string | undefined;
+  inputClassName?: string | undefined;
+  buttonClassName?: string | undefined;
+  placeholder?: string | undefined;
   sendLabel?: ReactNode;
   onSent?: (message: ChatMessage) => void;
-  onRejected?: (reason: string) => void;
+  onRejected?: ((reason: string) => void) | undefined;
 }) {
   const ctx = useGameContext();
   const [value, setValue] = useState("");
@@ -143,10 +143,10 @@ export function ChannelTabs({
   channels?: readonly string[];
   active: string;
   onSelect: (channelId: string) => void;
-  className?: string;
-  tabClassName?: string;
-  activeTabClassName?: string;
-  renderTab?: (channelId: string, isActive: boolean) => ReactNode;
+  className?: string | undefined;
+  tabClassName?: string | undefined;
+  activeTabClassName?: string | undefined;
+  renderTab?: ((channelId: string, isActive: boolean) => ReactNode) | undefined;
 }) {
   const ctx = useGameContext();
   const chat = ctx.game.chat;

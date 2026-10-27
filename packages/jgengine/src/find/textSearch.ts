@@ -24,9 +24,9 @@ export const SKIP_DIRS = [
 
 export interface TextSearchOptions {
   /** Content pattern (ripgrep regex syntax); absent lists files by `--glob`/`--kind` only. */
-  pattern?: string;
+  pattern?: string | undefined;
   /** Directory to search; defaults to the current one. */
-  in?: string;
+  in?: string | undefined;
   /** Extensions without dots, such as `ts,tsx`. */
   kind?: readonly string[];
   /** File name globs, such as `*.test.ts` or `**&#47;core&#47;*.ts`. */

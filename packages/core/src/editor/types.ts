@@ -26,7 +26,7 @@ export interface EditorMarker {
   kind: string;
   position: EditorVec3;
   rotationY?: number;
-  color?: string;
+  color?: string | undefined;
   label?: string;
   /**
    * Catalog object id for a placed prop mesh. Prefer this over `meta.catalogId` for new content;
@@ -57,7 +57,7 @@ export interface EditorVolume {
   radius?: number;
   height?: number;
   halfExtents?: EditorVec3;
-  color?: string;
+  color?: string | undefined;
   label?: string;
   /** Id of the object this one is parented under; moving the parent moves this with it. */
   parentId?: string;
@@ -74,7 +74,7 @@ export interface EditorPath {
   kind: string;
   points: readonly EditorVec3[];
   width?: number;
-  color?: string;
+  color?: string | undefined;
   label?: string;
   /** Id of the object this one is parented under; moving the parent moves this with it. */
   parentId?: string;

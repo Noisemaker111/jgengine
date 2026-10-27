@@ -25,7 +25,7 @@ export interface PlaceAssetResult {
 export interface ResolvePlaceAssetInput {
   assetId: string;
   position: PlaceAssetVec3 | StructureVec3;
-  kind?: string;
+  kind?: string | undefined;
   label?: string;
   rotationY?: number;
   /**
@@ -40,9 +40,9 @@ export interface ResolvePlaceAssetInput {
   color?: string;
   meta?: Readonly<Record<string, unknown>>;
   url?: string;
-  knownKind?: string;
-  knownLabel?: string;
-  knownUrl?: string;
+  knownKind?: string | undefined;
+  knownLabel?: string | undefined;
+  knownUrl?: string | undefined;
 }
 
 /** Optional catalog/label overrides for {@link placeAssetFromCommit}. */

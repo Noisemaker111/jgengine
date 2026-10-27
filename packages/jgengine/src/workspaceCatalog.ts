@@ -48,8 +48,8 @@ export function readWorkspaceCatalog(rootDir: string): WorkspaceCatalog | null {
       catch { throw new Error(`${file}: invalid JSON`); }
       if (!record(manifest)) throw new Error(`${file}: package.json must be an object`);
       // A plain workspaces array has no catalogs: each game pins its own SDK versions.
-      if (record(manifest.workspaces)) {
-        const workspaces = manifest.workspaces;
+      if (record(manifest["workspaces"])) {
+        const workspaces = manifest["workspaces"];
         const entries: CatalogEntry[] = [];
         const collect = (catalog: unknown, path: string[]) => {
           if (!record(catalog)) throw new Error(`${file}: malformed ${path.join(".")}`);
@@ -62,14 +62,14 @@ export function readWorkspaceCatalog(rootDir: string): WorkspaceCatalog | null {
             entries.push({ name, range, catalogSource: path.join("."), path: [...path, name] });
           }
         };
-        if (workspaces.catalog !== undefined) collect(workspaces.catalog, ["workspaces", "catalog"]);
-        if (workspaces.catalogs !== undefined) {
-          if (!record(workspaces.catalogs)) throw new Error(`${file}: malformed workspaces.catalogs`);
-          for (const [name, catalog] of Object.entries(workspaces.catalogs)) collect(catalog, ["workspaces", "catalogs", name]);
+        if (workspaces["catalog"] !== undefined) collect(workspaces["catalog"], ["workspaces", "catalog"]);
+        if (workspaces["catalogs"] !== undefined) {
+          if (!record(workspaces["catalogs"])) throw new Error(`${file}: malformed workspaces.catalogs`);
+          for (const [name, catalog] of Object.entries(workspaces["catalogs"])) collect(catalog, ["workspaces", "catalogs", name]);
         }
         if (entries.length === 0) return null;
-        if (manifest.overrides !== undefined && !record(manifest.overrides)) throw new Error(`${file}: overrides must be an object`);
-        return { root, file, before, entries, overrides: manifest.overrides ?? {} };
+        if (manifest["overrides"] !== undefined && !record(manifest["overrides"])) throw new Error(`${file}: overrides must be an object`);
+        return { root, file, before, entries, overrides: manifest["overrides"] ?? {} };
       }
     }
   }
@@ -80,24 +80,32 @@ function stringLocations(text: string): Map<string, { start: number; end: number
   const tokens = [...text.matchAll(/"(?:\\.|[^"\\])*"|[{}\[\]:,]|-?\d+(?:\.\d+)?(?:[eE][+-]?\d+)?|true|false|null/g)];
   const locations = new Map<string, { start: number; end: number }>();
   let index = 0;
+  const peek = (): string => {
+    const token = tokens[index];
+    if (token === undefined) throw new Error("JSON ended early");
+    return token[0];
+  };
   const visit = (path: string[]) => {
     const token = tokens[index++];
+    if (token === undefined) throw new Error("JSON ended early");
     if (token[0] === "{") {
       const keys = new Set<string>();
-      while (tokens[index][0] !== "}") {
-        const key = JSON.parse(tokens[index++][0]) as string;
+      while (peek() !== "}") {
+        const key: unknown = JSON.parse(peek());
+        index += 1;
+        if (typeof key !== "string") throw new Error(`JSON key at ${path.join(".")} is not a string`);
         if (keys.has(key)) throw new Error(`duplicate JSON key at ${[...path, key].join(".")}`);
         keys.add(key);
         index += 1;
         visit([...path, key]);
-        if (tokens[index][0] === ",") index += 1;
+        if (peek() === ",") index += 1;
       }
       index += 1;
     } else if (token[0] === "[") {
       let item = 0;
-      while (tokens[index][0] !== "]") {
+      while (peek() !== "]") {
         visit([...path, String(item++)]);
-        if (tokens[index][0] === ",") index += 1;
+        if (peek() === ",") index += 1;
       }
       index += 1;
     } else if (token[0].startsWith('"')) {
@@ -128,7 +136,7 @@ export function planCatalogSync(catalog: WorkspaceCatalog, target: string): Cata
     }
     const current = entry.range.replace(/^[\^~]/, "").split(".").map(Number);
     const next = target.split(".").map(Number);
-    const difference = current.map((value, index) => value - next[index]).find(value => value !== 0) ?? 0;
+    const difference = current.map((value, index) => value - (next[index] ?? 0)).find(value => value !== 0) ?? 0;
     if (difference > 0) throw new Error(`${entry.name}: ${entry.range} is newer than published target ${target}; refusing a downgrade; run a newer jgengine`);
     const prefix = /^[\^~]/.exec(entry.range)?.[0] ?? "";
     const to = prefix + target;

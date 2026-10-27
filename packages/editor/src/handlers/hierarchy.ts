@@ -54,7 +54,7 @@ export const hierarchyHandlers: Pick<
   },
   detach_prefab_instance: (ctx, request) => {
     const doc = ctx.session.getState().document;
-    const carries = (item: { meta?: Record<string, unknown> }) => item.meta?.prefabInstanceId === request.instanceId;
+    const carries = (item: { meta?: Record<string, unknown> }) => item.meta?.["prefabInstanceId"] === request.instanceId;
     const hasInstance =
       doc.markers.some(carries) || doc.volumes.some(carries) || doc.paths.some(carries) || doc.annotations.some(carries);
     if (!hasInstance) return { ok: false, error: `prefab instance not found: ${request.instanceId}` };

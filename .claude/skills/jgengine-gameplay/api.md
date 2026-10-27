@@ -239,7 +239,7 @@
 
 ## @jgengine/core/cards/cards.view
 
-- `CardFace` (function): function CardFace({ rank, suit, faceDown = false, width = 64, height = 90, className, style, children, }: { rank: Rank; suit: Suit; faceDown?: boolean; width?: number; height?: number; className?: string; style?: CSSProperties; children?: ReactNode; }): React.JSX.Element — A single playing-card face: rank + suit pips, or a patterned back when `faceDown`.
+- `CardFace` (function): function CardFace({ rank, suit, faceDown = false, width = 64, height = 90, className, style, children, }: { rank: Rank; suit: Suit; faceDown?: boolean | undefined; width?: number; height?: number; className?: string | undefined; style?: CSSProperties; children?: ReactNode; }): React.JSX.Element — A single playing-card face: rank + suit pips, or a patterned back when `faceDown`.
 - `CardStack` (function): function CardStack({ pile, zone, cardOf, ...rest }: { pile: CardPileState; zone: string; cardOf: (id: string) => PlayingCard; } & Omit<Parameters<typeof StackedPile>[0], "cards">): React.JSX.Element — `StackedPile` bound to a headless `CardPileState` zone: reads the ordered card ids from `pile.zones[zone]` and resolves each to a `PlayingCard` via `cardOf`.
 - `PlayingCard` (interface): interface PlayingCard — A single card in a stack: an id plus its face and orientation.
 - `RANKS` (const): const RANKS: readonly Rank[] — Ranks in ascending order, ace low.
@@ -284,9 +284,9 @@
 
 ## @jgengine/core/chat/chat.view
 
-- `ChannelTabs` (function): function ChannelTabs({ channels, active, onSelect, className, tabClassName, activeTabClassName, renderTab, }: { channels?: readonly string[]; active: string; onSelect: (channelId: string) => void; className?: string; tabClassName?: string; activeTabClassName?: string; renderTab?: (channelId: string,… — ⚠ undocumented
-- `ChatInput` (function): function ChatInput({ channelId, className, inputClassName, buttonClassName, placeholder, sendLabel, onSent, onRejected, }: { channelId: string; className?: string; inputClassName?: string; buttonClassName?: string; placeholder?: string; sendLabel?: ReactNode; onSent?: (message: ChatMessage) => void;… — ⚠ undocumented
-- `ChatLog` (function): function ChatLog({ channelId, limit, className, messageClassName, ownMessageClassName, renderMessage, }: { channelId: string; limit?: number; className?: string; messageClassName?: string; ownMessageClassName?: string; renderMessage?: (message: ChatMessage) => ReactNode; }): React.JSX.Element — ⚠ undocumented
+- `ChannelTabs` (function): function ChannelTabs({ channels, active, onSelect, className, tabClassName, activeTabClassName, renderTab, }: { channels?: readonly string[]; active: string; onSelect: (channelId: string) => void; className?: string | undefined; tabClassName?: string | undefined; activeTabClassName?: string | undefi… — ⚠ undocumented
+- `ChatInput` (function): function ChatInput({ channelId, className, inputClassName, buttonClassName, placeholder, sendLabel, onSent, onRejected, }: { channelId: string; className?: string | undefined; inputClassName?: string | undefined; buttonClassName?: string | undefined; placeholder?: string | undefined; sendLabel?: Rea… — ⚠ undocumented
+- `ChatLog` (function): function ChatLog({ channelId, limit, className, messageClassName, ownMessageClassName, renderMessage, }: { channelId: string; limit?: number | undefined; className?: string | undefined; messageClassName?: string | undefined; ownMessageClassName?: string | undefined; renderMessage?: ((message: ChatMe… — ⚠ undocumented
 - `ChatPanel` (function): function ChatPanel<T extends ChatMessage = ChatMessage>(props: Parameters<typeof ContextChatPanel>[0] | StandaloneChatPanelProps<T>): React.JSX.Element — Chat behavior over a game context or externally supplied server messages.
 - `chatTransportFromSync` (function): function chatTransportFromSync(sync: ChatSync): ChatTransport — Lifts a callback-style ChatSync (e.g. createWsBackend().chatSyncFor(serverId)) into the hook-shaped ChatTransport contract. Create once per sync — outside render or inside useMemo — so subscriptions survive re-renders.
 
@@ -405,6 +405,11 @@
 - `RefreshOptions` (interface): interface RefreshOptions { force?: boolean } — ⚠ undocumented
 - `createDataSource` (function): function createDataSource<T>(load: (signal: AbortSignal) => Promise<T>, options: DataSourceOptions = {}): DataSource<T> — ⚠ undocumented
 
+## @jgengine/core/data/definedOnly
+
+- `DefinedOnly` (type): type DefinedOnly<T extends object> = { [K in keyof T as undefined extends T[K] ? never : K]: T[K]; } & { [K in keyof T as undefined extends T[K] ? K : never]?: Exclude<T[K], undefined>; } — `T` after dropping its undefined fields: a field that may be `undefined` becomes optional and never `undefined`; a field that is always defined stays required.
+- `definedOnly` (function): function definedOnly<T extends object>(value: T): DefinedOnly<T> — `value` without its undefined fields, so `{ ...defaults, ...definedOnly(overrides) }` never erases a default with an explicit `undefined`, and a record built from optional inputs can be written where an optional field must be absent rather than `undefined`.
+
 ## @jgengine/core/data/devProxy
 
 - `DEFAULT_DEV_PROXY_PREFIX` (const): const DEFAULT_DEV_PROXY_PREFIX: "/proxy" — ⚠ undocumented
@@ -425,6 +430,11 @@
 
 - `JsonDataSourceOptions` (type): type JsonDataSourceOptions = DataSourceOptions & Omit<FetchJsonOptions, "signal"> — ⚠ undocumented
 - `createJsonDataSource` (function): function createJsonDataSource<T>(url: string, options: JsonDataSourceOptions = {}): DataSource<T> — ⚠ undocumented
+
+## @jgengine/core/data/withField
+
+- `OptionalKey` (type): type OptionalKey<T> = { [K in keyof T]-?: {} extends Pick<T, K> ? K : never }[keyof T] — The keys of `T` that may be left out.
+- `withField` (function): function withField<T extends object, K extends OptionalKey<T>>(row: T, key: K, value: T[K] | undefined): T — A copy of `row` with the optional field `key` set to `value`, or left out when `value` is `undefined`. An editor that clears a field this way stores no `key: undefined`, so the saved document reads the same as one that never had the field.
 
 ## @jgengine/core/dialogue/dialogue
 
@@ -3154,15 +3164,15 @@
 - `AddFriendButton` (function): function AddFriendButton({ toUserId, className, children, onRequested, onRejected, }: { toUserId: string; className?: string; children?: ReactNode; onRequested?: (requestId: string) => void; onRejected?: (reason: string) => void; }): React.JSX.Element | null — ⚠ undocumented
 - `EmoteWheel` (function): function EmoteWheel({ emotes, radius, open = true, className, emoteClassName, onPlayed, onRejected, renderEmote, }: { emotes: readonly string[]; radius?: number; open?: boolean; className?: string; emoteClassName?: string; onPlayed?: (emoteId: string) => void; onRejected?: (reason: string) => void; … — ⚠ undocumented
 - `FriendRequestsList` (function): function FriendRequestsList({ className, rowClassName, acceptClassName, declineClassName, emptyState, renderRequest, }: { className?: string; rowClassName?: string; acceptClassName?: string; declineClassName?: string; emptyState?: ReactNode; renderRequest?: (request: FriendRequestEntry) => ReactNode… — ⚠ undocumented
-- `FriendRow` (function): function FriendRow({ friend, className, dotClassName, children, }: { friend: FriendEntry; className?: string; dotClassName?: string; children?: ReactNode; }): React.JSX.Element — ⚠ undocumented
+- `FriendRow` (function): function FriendRow({ friend, className, dotClassName, children, }: { friend: FriendEntry; className?: string | undefined; dotClassName?: string | undefined; children?: ReactNode; }): React.JSX.Element — ⚠ undocumented
 - `FriendsList` (function): function FriendsList({ className, rowClassName, dotClassName, emptyState, renderFriend, }: { className?: string; rowClassName?: string; dotClassName?: string; emptyState?: ReactNode; renderFriend?: (friend: FriendEntry) => ReactNode; }): React.JSX.Element — ⚠ undocumented
 - `InviteToWorldButton` (function): function InviteToWorldButton({ toUserId, target, className, children, onInvited, onRejected, }: { toUserId: string; target: WorldInviteTarget; className?: string; children?: ReactNode; onInvited?: (inviteId: string) => void; onRejected?: (reason: string) => void; }): React.JSX.Element | null — ⚠ undocumented
 - `JoinByCode` (function): function JoinByCode({ onJoin, className, inputClassName, buttonClassName, placeholder, children, }: { onJoin: (code: string) => void; className?: string; inputClassName?: string; buttonClassName?: string; placeholder?: string; children?: ReactNode; }): React.JSX.Element — ⚠ undocumented
 - `LeavePartyButton` (function): function LeavePartyButton({ className, children, }: { className?: string; children?: ReactNode; }): React.JSX.Element | null — ⚠ undocumented
 - `PartyFrame` (function): function PartyFrame({ className, rowClassName, dotClassName, emptyState, renderMember, }: { className?: string; rowClassName?: string; dotClassName?: string; emptyState?: ReactNode; renderMember?: (member: PartyMemberEntry) => ReactNode; }): React.JSX.Element — ⚠ undocumented
 - `PartyInviteToast` (function): function PartyInviteToast({ className, acceptClassName, declineClassName, renderInvite, }: { className?: string; acceptClassName?: string; declineClassName?: string; renderInvite?: (invite: PartyInviteEntry) => ReactNode; }): React.JSX.Element | null — ⚠ undocumented
-- `PartyMemberRow` (function): function PartyMemberRow({ member, className, dotClassName, children, }: { member: PartyMemberEntry; className?: string; dotClassName?: string; children?: ReactNode; }): React.JSX.Element — ⚠ undocumented
-- `PresenceDot` (function): function PresenceDot({ userId, className }: { userId: string; className?: string }): React.JSX.Element — ⚠ undocumented
+- `PartyMemberRow` (function): function PartyMemberRow({ member, className, dotClassName, children, }: { member: PartyMemberEntry; className?: string | undefined; dotClassName?: string | undefined; children?: ReactNode; }): React.JSX.Element — ⚠ undocumented
+- `PresenceDot` (function): function PresenceDot({ userId, className }: { userId: string; className?: string | undefined }): React.JSX.Element — ⚠ undocumented
 - `QuickMatchButton` (function): function QuickMatchButton({ listings, onJoin, onNoMatch, filter, className, children, }: { listings: readonly SessionListing[]; onJoin: (listing: SessionListing) => void; onNoMatch?: () => void; filter?: MatchFilter; className?: string; children?: ReactNode; }): React.JSX.Element — ⚠ undocumented
 - `WorldBrowser` (function): function WorldBrowser({ listings, onJoin, className, rowClassName, joinClassName, emptyState, renderListing, }: { listings: readonly SessionListing[]; onJoin: (listing: SessionListing) => void; className?: string; rowClassName?: string; joinClassName?: string; emptyState?: ReactNode; renderListing?:… — ⚠ undocumented
 - `WorldInviteToast` (function): function WorldInviteToast({ className, acceptClassName, declineClassName, onAccepted, renderInvite, }: { className?: string; acceptClassName?: string; declineClassName?: string; onAccepted: (target: WorldInviteTarget) => void; renderInvite?: (invite: WorldInvite) => ReactNode; }): React.JSX.Element … — ⚠ undocumented

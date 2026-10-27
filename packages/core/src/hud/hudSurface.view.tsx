@@ -25,7 +25,7 @@ export interface HudSurfaceProps extends Omit<HTMLAttributes<HTMLElement>, "titl
   elevation?: HudSurfaceElevation;
   /** Sets `--jg-panel-padding` (default 12px from the stylesheet), so a game class or media query still overrides it. */
   padding?: number | string;
-  width?: number | string;
+  width?: number | string | undefined;
   /** Accept pointer events. Default `true`. */
   interactive?: boolean;
   /** Feedback cue name, rendered as `data-jg-cue` and passed to `onInteract`. */

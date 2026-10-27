@@ -12,18 +12,18 @@ import { MaterialAssetSurface } from "@jgengine/core/material/materialAsset.draw
 import { EnvironmentLighting } from "@jgengine/core/lighting/EnvironmentLighting.draw";
 import { INPUT_CLS } from "./shell/theme";
 
-function SlotProbe({ model, onSlots }: { model: ModelConfig; onSlots?: (slots: ModelMaterialSlotInfo[]) => void }) {
+function SlotProbe({ model, onSlots }: { model: ModelConfig; onSlots?: ((slots: ModelMaterialSlotInfo[]) => void) | undefined }) {
   const gltf = useLoader(sharedGltfLoader, model.url);
   useEffect(() => { onSlots?.(inspectModelMaterialSlots(gltf.scene)); }, [gltf.scene, onSlots]);
   return null;
 }
 
-function PreviewReady({ onError }: { onError?: (message: string | null) => void }) {
+function PreviewReady({ onError }: { onError?: ((message: string | null) => void) | undefined }) {
   useEffect(() => { onError?.(null); }, [onError]);
   return null;
 }
 
-class PreviewBoundary extends Component<{ children: ReactNode; onError?: (message: string | null) => void }, { failed: boolean }> {
+class PreviewBoundary extends Component<{ children: ReactNode; onError?: ((message: string | null) => void) | undefined }, { failed: boolean }> {
   override state = { failed: false };
   static getDerivedStateFromError() { return { failed: true }; }
   override componentDidCatch(error: unknown) { this.props.onError?.(error instanceof Error ? error.message : String(error)); }
@@ -34,7 +34,7 @@ class PreviewBoundary extends Component<{ children: ReactNode; onError?: (messag
  * Material preview lighting uses an isolated renderer; document settings never modify the game.
  * @internal Mounted by the material workspace.
  */
-export function MaterialPreview({ asset, mode, environment, model, onSlots, onError }: { asset?: MaterialAsset; mode: "neutral" | "game"; environment?: EditorEnvironment; model?: ModelConfig; onSlots?: (slots: ModelMaterialSlotInfo[]) => void; onError?: (message: string | null) => void }) {
+export function MaterialPreview({ asset, mode, environment, model, onSlots, onError }: { asset?: MaterialAsset | undefined; mode: "neutral" | "game"; environment?: EditorEnvironment | undefined; model?: ModelConfig | undefined; onSlots?: (slots: ModelMaterialSlotInfo[]) => void; onError?: (message: string | null) => void }) {
   const [view, setView] = useState<"front" | "grazing" | "back">("front");
   const [orientation, setOrientation] = useState(0);
   const game = mode === "game";

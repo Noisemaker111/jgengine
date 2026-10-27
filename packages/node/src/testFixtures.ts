@@ -61,7 +61,7 @@ export function createTestRuntime(gameId = "test-game"): GameRuntime {
               ...snapshot.players,
               [userId]: {
                 ...player,
-                economy: { ...player.economy, gold: (player.economy.gold ?? 0) + amount },
+                economy: { ...player.economy, gold: (player.economy["gold"] ?? 0) + amount },
               },
             },
             server: {
@@ -81,7 +81,7 @@ export function createTestRuntime(gameId = "test-game"): GameRuntime {
     },
     loop: {
       onTick: (ctx, dtSeconds) => {
-        const uptime = (ctx.snapshot.server.session.uptime as number | undefined) ?? 0;
+        const uptime = (ctx.snapshot.server.session["uptime"] as number | undefined) ?? 0;
         ctx.setSnapshot(
           markServerDirty({
             ...ctx.snapshot,

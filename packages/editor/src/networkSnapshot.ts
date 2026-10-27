@@ -96,7 +96,7 @@ function topologyOf(adapter: MultiplayerAdapterConfig | null): string | undefine
 export function buildEditorNetworkSnapshot(args: {
   gameId: string;
   multiplayer: unknown;
-  presence?: EditorNetworkPresenceInput;
+  presence?: EditorNetworkPresenceInput | undefined;
 }): EditorNetworkSnapshot {
   const adapter = adapterOf(args.multiplayer);
   const adapterKind: EditorNetworkAdapterKind = adapter?.kind ?? "unknown";

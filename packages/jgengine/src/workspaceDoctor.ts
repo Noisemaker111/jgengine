@@ -77,14 +77,14 @@ export function inspectWorkspaceSdkInstall(directory: string, options: Partial<W
       seen.add(actual);
       const graph = inspectInstalledSdkGraph(actual);
       for (const issue of graph.issues) if (issue.kind === "limit") fail(`${actual}: ${issue.message}`);
-      report.projects.push({ name: typeof data.name === "string" ? data.name : basename(actual), directory: actual, manifest: actualFile, graph });
+      report.projects.push({ name: typeof data["name"] === "string" ? data["name"] : basename(actual), directory: actual, manifest: actualFile, graph });
       return { file: actualFile, data, directory: actual };
     } catch (error) { fail(`${file}: ${error instanceof Error ? error.message : String(error)}`); return null; }
   };
   const root = readManifest(report.root, true);
   if (root === null) return report;
-  const workspaces = root.data.workspaces;
-  const patterns = Array.isArray(workspaces) ? workspaces : object(workspaces) ? workspaces.packages : undefined;
+  const workspaces = root.data["workspaces"];
+  const patterns = Array.isArray(workspaces) ? workspaces : object(workspaces) ? workspaces["packages"] : undefined;
   if (!Array.isArray(patterns) || !patterns.every(pattern => typeof pattern === "string")) { fail(`${root.file}: workspaces must be an array or an object with a packages string array`); return report; }
   for (const pattern of patterns as string[]) {
     if (coverage.patternsAttempted >= limits.maxPatterns) { fail(`workspace pattern budget ${limits.maxPatterns} reached; coverage is incomplete`); break; }

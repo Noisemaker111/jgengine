@@ -34,7 +34,7 @@ export interface RadialMenuProps {
   /** Render nothing when false. Default true. */
   open?: boolean;
   onSelect: (id: string) => void;
-  onClose?: () => void;
+  onClose?: (() => void) | undefined;
   /** Diameter in px. Default 300. */
   size?: number;
   /** Neutral inner-hub radius (dead zone) in px. Default 52. */

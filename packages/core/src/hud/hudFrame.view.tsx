@@ -69,7 +69,7 @@ export interface HudFrameProps {
   /** Frame skin (default `glass`). */
   variation?: HudFrameVariation;
   /** Corner shape (default `rounded`). */
-  shape?: HudFrameShape;
+  shape?: HudFrameShape | undefined;
   /** Small uppercase header label rendered at the top-left of the frame. */
   title?: ReactNode;
   /** Header content rendered at the top-right, opposite `title` (e.g. a readout or cardinal). */
@@ -77,13 +77,13 @@ export interface HudFrameProps {
   /** Inner padding of the frame. */
   padding?: number | string;
   /** Fixed frame width. */
-  width?: number | string;
+  width?: number | string | undefined;
   /** Accept pointer events (default off, so the frame never eats clicks meant for the game). */
   interactive?: boolean;
   /** Extra class on the frame element. */
-  className?: string;
+  className?: string | undefined;
   /** Style overrides merged last, so callers can pin exact gradients/colors. */
-  style?: CSSProperties;
+  style?: CSSProperties | undefined;
   /** Frame body. */
   children?: ReactNode;
 }

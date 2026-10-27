@@ -194,7 +194,7 @@ export function sqlPersistence(pool: SqlPool, now: () => number = Date.now): Hos
             [reset.gameId],
           );
           for (const row of servers.rows) {
-            const serverId = String(row.server_id);
+            const serverId = String(row["server_id"]);
             if (reset.wipeChunks) {
               await client.query(`DELETE FROM jg_world_chunks WHERE server_id = $1`, [serverId]);
             }
@@ -215,7 +215,7 @@ export function sqlPersistence(pool: SqlPool, now: () => number = Date.now): Hos
           );
           const at = now();
           for (const row of profiles.rows) {
-            const profile = asJson<PlayerProfileRecord>(row.record);
+            const profile = asJson<PlayerProfileRecord>(row["record"]);
             await upsertProfile(client, applyRunReset(profile, reset.runFields, at));
           }
         }
@@ -227,7 +227,7 @@ export function sqlPersistence(pool: SqlPool, now: () => number = Date.now): Hos
         serverId,
       ]);
       const row = result.rows[0];
-      return row === undefined ? null : asJson<GameServerRecord>(row.record);
+      return row === undefined ? null : asJson<GameServerRecord>(row["record"]);
     },
 
     async saveServer(record) {
@@ -238,7 +238,7 @@ export function sqlPersistence(pool: SqlPool, now: () => number = Date.now): Hos
       const result = await pool.query(`SELECT record FROM jg_game_servers WHERE game_id = $1`, [
         gameId,
       ]);
-      return result.rows.map((row) => asJson<GameServerRecord>(row.record));
+      return result.rows.map((row) => asJson<GameServerRecord>(row["record"]));
     },
 
     async loadProfile({ userId, gameId }) {
@@ -247,7 +247,7 @@ export function sqlPersistence(pool: SqlPool, now: () => number = Date.now): Hos
         [gameId, userId],
       );
       const row = result.rows[0];
-      return row === undefined ? null : asJson<PlayerProfileRecord>(row.record);
+      return row === undefined ? null : asJson<PlayerProfileRecord>(row["record"]);
     },
 
     async saveProfile(record) {
@@ -258,7 +258,7 @@ export function sqlPersistence(pool: SqlPool, now: () => number = Date.now): Hos
       const result = await pool.query(`SELECT record FROM jg_world_chunks WHERE server_id = $1`, [
         serverId,
       ]);
-      return result.rows.map((row) => asJson<WorldChunkRecord>(row.record));
+      return result.rows.map((row) => asJson<WorldChunkRecord>(row["record"]));
     },
 
     async saveChunks(serverId, chunks) {
@@ -283,7 +283,7 @@ export function sqlPersistence(pool: SqlPool, now: () => number = Date.now): Hos
         `SELECT entry FROM jg_feed_entries WHERE server_id = $1 AND action = $2 ORDER BY seq ASC`,
         [serverId, action],
       );
-      return result.rows.map((row) => asJson<unknown>(row.entry));
+      return result.rows.map((row) => asJson<unknown>(row["entry"]));
     },
 
     async appendFeed({ serverId, action, entry }) {
@@ -308,7 +308,7 @@ export function sqlPersistence(pool: SqlPool, now: () => number = Date.now): Hos
           `SELECT entry FROM jg_feed_entries WHERE server_id = $1 AND action = $2 ORDER BY seq ASC`,
           [serverId, action],
         );
-        entries = result.rows.map((row) => asJson<unknown>(row.entry));
+        entries = result.rows.map((row) => asJson<unknown>(row["entry"]));
       });
       return entries;
     },
@@ -334,7 +334,7 @@ export function sqlPersistence(pool: SqlPool, now: () => number = Date.now): Hos
          LIMIT ${limit}`,
         params,
       );
-      return result.rows.map((row) => ({ userId: String(row.user_id), value: Number(row.value) }));
+      return result.rows.map((row) => ({ userId: String(row["user_id"]), value: Number(row["value"]) }));
     },
 
     async getLeaderboardProfile({ gameId, userId }) {
@@ -345,7 +345,7 @@ export function sqlPersistence(pool: SqlPool, now: () => number = Date.now): Hos
       );
       const profile: Record<string, number> = {};
       for (const row of result.rows) {
-        profile[String(row.stat)] = Number(row.value);
+        profile[String(row["stat"])] = Number(row["value"]);
       }
       return profile;
     },

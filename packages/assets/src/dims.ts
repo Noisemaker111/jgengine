@@ -161,7 +161,7 @@ function walk(gltf: GltfJson, nodeIndex: number, parent: Mat4, bounds: Bounds): 
   if (node.mesh !== undefined) {
     const mesh = gltf.meshes?.[node.mesh];
     for (const primitive of mesh?.primitives ?? []) {
-      const accessorIndex = primitive.attributes?.POSITION;
+      const accessorIndex = primitive.attributes?.["POSITION"];
       if (accessorIndex === undefined) continue;
       const accessor = gltf.accessors?.[accessorIndex];
       const min = accessor?.min;
@@ -302,7 +302,7 @@ interface TriangleSoup {
 /** Append one triangle primitive's world-space geometry to the soup; skips non-triangle modes and malformed accessors, appending nothing on failure. */
 function addPrimitive(gltf: GltfJson, bin: Uint8Array, primitive: GltfPrimitive, world: Mat4, soup: TriangleSoup): void {
   if ((primitive.mode ?? MODE_TRIANGLES) !== MODE_TRIANGLES) return;
-  const accessorIndex = primitive.attributes?.POSITION;
+  const accessorIndex = primitive.attributes?.["POSITION"];
   if (accessorIndex === undefined) return;
   const positions = readVec3Accessor(gltf, bin, accessorIndex);
   if (positions === null) return;

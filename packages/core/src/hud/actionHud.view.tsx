@@ -119,13 +119,13 @@ export interface ActionKeyEvent {
 /** Options for {@link useActionBar}. */
 export interface UseActionBarOptions {
   /** Grid width for keyboard focus math and the default grid renderer (default: number of actions). */
-  columns?: number;
+  columns?: number | undefined;
   /** Wrap focus at the grid edges (default false). */
-  wrap?: boolean;
+  wrap?: boolean | undefined;
   /** Fired when an action is activated by click, Enter/Space, or its hotkey. */
-  onActivate?: (id: string) => void;
+  onActivate?: ((id: string) => void) | undefined;
   /** Set false to ignore single-key hotkeys (default true). */
-  hotkeys?: boolean;
+  hotkeys?: boolean | undefined;
 }
 
 /** The live action-bar model returned by {@link useActionBar}. */
@@ -377,10 +377,10 @@ export function ActionBarChrome({
 }: {
   model: ActionBarModel;
   layout?: "grid" | "list";
-  itemSize?: number;
+  itemSize?: number | undefined;
   gap?: number;
   ariaLabel?: string;
-  renderItem?: (action: ResolvedAction, ctx: ActionItemContext) => ReactNode;
+  renderItem?: ((action: ResolvedAction, ctx: ActionItemContext) => ReactNode) | undefined;
   className?: string;
   style?: CSSProperties;
 }) {

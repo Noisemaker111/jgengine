@@ -462,7 +462,7 @@ export const documentHandlers: Pick<
     });
     return { ok: true, result: summarizeEditorSession(ctx.session.getState()) };
   },
-  list_material_assets: (ctx) => ({ ok: true, result: { assets: ctx.session.getState().document.materialAssets ?? [], assignments: ctx.session.getState().document.markers.filter((marker) => marker.meta?.materialAssignments !== undefined).map((marker) => ({ id: marker.id, assignments: marker.meta!.materialAssignments })) } }),
+  list_material_assets: (ctx) => ({ ok: true, result: { assets: ctx.session.getState().document.materialAssets ?? [], assignments: ctx.session.getState().document.markers.filter((marker) => marker.meta?.["materialAssignments"] !== undefined).map((marker) => ({ id: marker.id, assignments: marker.meta!["materialAssignments"] })) } }),
   list_material_slots: (ctx, request) => {
     const inventory = ctx.api.getMaterialSlots(request.id);
     return inventory.status === "ready" ? { ok: true, result: inventory } : { ok: false, result: inventory, error: inventory.status === "loading" ? "Material slots are still loading." : inventory.reason };

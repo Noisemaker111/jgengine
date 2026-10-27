@@ -12,12 +12,13 @@ import {
 
 import { advancedMaterialControls, materialAuthoringNotes, materialControlGroups, prepareMaterialAuthoringEdit, type MaterialControl } from "./materialControls";
 import { CONTROL, FOCUS_RING, INPUT_CLS, MICRO_LABEL } from "./shell/theme";
+import { withField } from "@jgengine/core/data/withField";
 
 /** A callback-driven physical material editor; the host owns persistence, undo and preview rendering. */
 export interface MaterialAssetEditorProps {
   asset: MaterialAsset;
   onChange(asset: MaterialAsset, coalesce?: string): void;
-  preview?: (asset: MaterialAsset, mode: "neutral" | "game") => ReactNode;
+  preview?: ((asset: MaterialAsset, mode: "neutral" | "game") => ReactNode) | undefined;
 }
 
 /**
@@ -122,7 +123,7 @@ function CoverageFields({ surface, onPatch }: { surface: MaterialSurfaceParamete
   </div>;
 }
 
-function PairField({ label, value, fallback, onChange }: { label: string; value?: [number, number]; fallback: [number, number]; onChange(value: [number, number] | undefined): void }) {
+function PairField({ label, value, fallback, onChange }: { label: string; value?: [number, number] | undefined; fallback: [number, number]; onChange(value: [number, number] | undefined): void }) {
   return <div className="space-y-1"><div className="flex items-center justify-between"><span className={MICRO_LABEL}>{label}</span>{value ? <button type="button" className={`${FOCUS_RING} text-[9px]`} onClick={() => onChange(undefined)}>Reset</button> : <span className="text-[9px] text-neutral-600">Inherited</span>}</div><div className="grid grid-cols-2 gap-1">{([0, 1] as const).map((index) => <input key={index} aria-label={`${label} ${index + 1}`} type="number" step="0.01" className={`min-w-0 px-2 py-1 ${INPUT_CLS}`} value={value?.[index] ?? ""} placeholder={String(fallback[index])} onChange={(event) => { const next = Number(event.target.value); if (!event.target.value || !Number.isFinite(next)) return; const pair: [number, number] = [...(value ?? fallback)]; pair[index] = next; onChange(pair); }} />)}</div></div>;
 }
 
@@ -179,7 +180,7 @@ function HairFields({ asset, onChange }: { asset: MaterialAsset; onChange(asset:
   const hair = asset.hair;
   return <div className="space-y-2">
     <label className="block space-y-1"><span className={MICRO_LABEL}>Existing geometry</span><select aria-label="Hair geometry kind" className={`w-full px-2 py-1 ${INPUT_CLS}`} value={hair?.geometry ?? ""} onChange={(event) => { const geometry = event.target.value; if (!geometry) { const next = { ...asset }; delete next.hair; onChange(next); } else onChange({ ...asset, hair: geometry === "strands" ? { geometry: "strands", ...(hair?.strandDirection === undefined ? {} : { strandDirection: hair.strandDirection }) } : { ...hair, geometry: "cards" } }); }}><option value="">No appearance adapter</option><option value="cards">Hair cards</option><option value="strands">Strand mesh</option></select></label>
-    {hair ? <SurfaceField control={{ label: "Strand direction (radians)", kind: "number", fallback: 0, min: -Math.PI, max: Math.PI, step: 0.01 }} value={hair.strandDirection} onChange={(value) => { const next = { ...hair, strandDirection: typeof value === "number" ? value : undefined }; if (value === undefined) delete next.strandDirection; onChange({ ...asset, hair: next }, `material:${asset.id}:hair:direction`); }} /> : null}
+    {hair ? <SurfaceField control={{ label: "Strand direction (radians)", kind: "number", fallback: 0, min: -Math.PI, max: Math.PI, step: 0.01 }} value={hair.strandDirection} onChange={(value) => { const next = withField(hair, "strandDirection", typeof value === "number" ? value : undefined); onChange({ ...asset, hair: next }, `material:${asset.id}:hair:direction`); }} /> : null}
   </div>;
 }
 
@@ -187,12 +188,12 @@ function HairBacklightFields({ asset, onChange }: { asset: MaterialAsset; onChan
   const hair = asset.hair;
   if (hair?.geometry !== "cards") return <p className="text-[10px] text-neutral-500">Backlighting is supported by the hair-card adapter. Select existing card geometry under Strand highlights.</p>;
   return <div className="space-y-2">
-    <SurfaceField control={{ label: "Card backlight strength", kind: "number", fallback: 0.25, min: 0, max: 1, step: 0.01 }} value={hair.backlightStrength} onChange={(value) => { const next = { ...hair, backlightStrength: typeof value === "number" ? value : undefined }; if (value === undefined) delete next.backlightStrength; onChange({ ...asset, hair: next }, `material:${asset.id}:hair:backlight`); }} />
-    <SurfaceField control={{ label: "Card backlight color", kind: "color", fallback: asset.surface.color ?? "#ffffff" }} value={hair.backlightColor} onChange={(value) => { const next = { ...hair, backlightColor: typeof value === "string" ? value : undefined }; if (value === undefined) delete next.backlightColor; onChange({ ...asset, hair: next }, `material:${asset.id}:hair:backlightColor`); }} />
+    <SurfaceField control={{ label: "Card backlight strength", kind: "number", fallback: 0.25, min: 0, max: 1, step: 0.01 }} value={hair.backlightStrength} onChange={(value) => { const next = withField(hair, "backlightStrength", typeof value === "number" ? value : undefined); onChange({ ...asset, hair: next }, `material:${asset.id}:hair:backlight`); }} />
+    <SurfaceField control={{ label: "Card backlight color", kind: "color", fallback: asset.surface.color ?? "#ffffff" }} value={hair.backlightColor} onChange={(value) => { const next = withField(hair, "backlightColor", typeof value === "string" ? value : undefined); onChange({ ...asset, hair: next }, `material:${asset.id}:hair:backlightColor`); }} />
   </div>;
 }
 
-function ProvenanceFields({ label, provenance, onChange }: { label: string; provenance?: MaterialProvenance; onChange(provenance: MaterialProvenance): void }) {
+function ProvenanceFields({ label, provenance, onChange }: { label: string; provenance?: MaterialProvenance | undefined; onChange(provenance: MaterialProvenance): void }) {
   const [draft, setDraft] = useState({ author: provenance?.author ?? "", license: provenance?.license ?? "", sourceUrl: provenance?.sourceUrl ?? "", description: provenance?.description ?? "" });
   const validSource = !draft.sourceUrl.trim() || /^https?:\/\//i.test(draft.sourceUrl.trim());
   return <div className="space-y-2">

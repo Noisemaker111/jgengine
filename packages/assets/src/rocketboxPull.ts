@@ -132,7 +132,7 @@ class RocketboxSource {
     const cached = this.listings.get(dir);
     if (cached !== undefined) return cached;
     const headers: Record<string, string> = { accept: "application/vnd.github+json" };
-    if (this.token !== undefined) headers.authorization = `Bearer ${this.token}`;
+    if (this.token !== undefined) headers["authorization"] = `Bearer ${this.token}`;
     const url = `${ROCKETBOX_API}/${dir.split("/").map(encodeURIComponent).join("/")}?ref=${ROCKETBOX_COMMIT}`;
     const files = (await (await this.getChecked(url, { headers })).json()) as GitHubFile[];
     this.listings.set(dir, files);

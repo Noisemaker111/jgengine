@@ -5,7 +5,7 @@ export type MenuStackAction<Id extends string> =
   | { type: "open"; id: Id }
   | { type: "back" }
   | { type: "replace"; id: Id }
-  | { type: "reset"; id?: Id };
+  | { type: "reset"; id?: Id | undefined };
 
 /**
  * The pure screen-stack transition behind {@link useMenuRouter}. Exported so a game can drive the

@@ -26,7 +26,7 @@ export type AssetMatch =
 /** Narrowing for {@link rankAssets}. */
 export interface RankAssetsOptions {
   /** Restrict results to one kind. */
-  kind?: AssetKind;
+  kind?: AssetKind | undefined;
   /** Cap the number of matches returned (default 12). */
   limit?: number;
 }

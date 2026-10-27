@@ -28,7 +28,7 @@ export { importAssetToHost, loadDroppedAssets, mergeStandaloneAssets } from "./a
 export interface BlankPlayableOptions {
   name?: string;
   assets?: readonly StandaloneAsset[];
-  world?: EnvironmentWorldFeature;
+  world?: EnvironmentWorldFeature | undefined;
 }
 
 /**

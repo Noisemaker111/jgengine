@@ -281,21 +281,21 @@ function WindowView({
 }: {
   title: ReactNode;
   open?: boolean;
-  cue?: string;
-  onInteract?: HudInteractListener;
-  ariaLabel?: string;
+  cue?: string | undefined;
+  onInteract?: HudInteractListener | undefined;
+  ariaLabel?: string | undefined;
   closable: boolean;
-  onClose?: () => void;
+  onClose?: (() => void) | undefined;
   onFocus?: () => void;
   onMove?: (pos: PanelPosition) => void;
   pos: PanelPosition;
-  z?: number;
-  width?: number | string;
-  variation?: HudFrameVariation;
-  shape?: HudFrameShape;
-  className?: string;
-  style?: CSSProperties;
-  bodyStyle?: CSSProperties;
+  z?: number | undefined;
+  width?: number | string | undefined;
+  variation?: HudFrameVariation | undefined;
+  shape?: HudFrameShape | undefined;
+  className?: string | undefined;
+  style?: CSSProperties | undefined;
+  bodyStyle?: CSSProperties | undefined;
   children?: ReactNode;
 }) {
   const retireDrag = useRef<(() => void) | null>(null);

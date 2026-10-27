@@ -355,7 +355,7 @@ export interface ModelConfig {  url: string;
    * and an explicit config always wins. Omitted on a live entity it behaves as `"auto"`, so a rig
    * with an identifiable idle clip never stands in its bind pose; previews keep the bind pose.
    */
-  animation?: ModelAnimationConfig | "auto" | "none";
+  animation?: ModelAnimationConfig | "auto" | "none" | undefined;
   /**
    * Runtime inverse kinematics for a rigged model, applied after the animation mixer each frame.
    * Feet follow slopes and steps while keeping each clip's swing lift, soles never sink below the

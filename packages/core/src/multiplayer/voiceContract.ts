@@ -106,7 +106,7 @@ export interface PushToTalk {
 }
 
 export function createPushToTalk(config?: {
-  mode?: PushToTalkMode;
+  mode?: PushToTalkMode | undefined;
   onChange?: (transmitting: boolean) => void;
 }): PushToTalk {
   let mode: PushToTalkMode = config?.mode ?? "hold";

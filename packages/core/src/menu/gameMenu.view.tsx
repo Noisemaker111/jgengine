@@ -89,7 +89,7 @@ export interface GameMenuProps {
   /** A verb was confirmed (Enter, Space, A, or a click). */
   onSelect: (id: string) => void;
   /** Back (Escape, Backspace, B, Start). On a pause menu this is the resume action. */
-  onBack?: () => void;
+  onBack?: (() => void) | undefined;
   /** The highlighted verb changed — use it to load the detail for `id`. */
   onHighlight?: (id: string | null) => void;
   /** The right-hand pane's content for the highlighted verb. */

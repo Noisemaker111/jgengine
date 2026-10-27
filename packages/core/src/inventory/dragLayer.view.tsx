@@ -70,7 +70,7 @@ export function useDragLayer<T>(options?: {
   const payloadRef = useRef<DragPayload<T> | null>(null);
   const overRef = useRef<{ target: string | null; cell: Cell | null }>({ target: null, cell: null });
   const overElement = useRef<HTMLElement | null>(null);
-  const targets = useRef(new Map<HTMLElement, { id: string; cellSize?: number }>());
+  const targets = useRef(new Map<HTMLElement, { id: string; cellSize?: number | undefined }>());
   const ownerRef = useRef<{ source: HTMLElement; pointerId: number; detach: () => void } | null>(null);
   const latest = useRef(options);
   latest.current = options;
@@ -321,7 +321,7 @@ export function DropZone<T>({
   const active = layer.state.overTarget === id && layer.dragging;
   useEffect(() => {
     const element = ref.current;
-    if (element !== null) return targetRegistries.get(layer.beginDrag)?.(element, id, cellSize);
+    return element === null ? undefined : targetRegistries.get(layer.beginDrag)?.(element, id, cellSize);
   }, [layer.beginDrag, id, cellSize]);
   const composed = useMemo(
     () => [className, active ? activeClassName : undefined].filter(Boolean).join(" ") || undefined,
