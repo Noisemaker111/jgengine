@@ -162,7 +162,7 @@ function PorchTitle({ preferences, onPreference, whileLoading }: Prefs & { while
     initialId: menuFocus.id ?? (recent === null ? "new" : "continue"),
     enabled: !inSettings && !(compact && sheet),
     onConfirm: confirm,
-    onBack: compact && sheet ? () => setSheet(false) : undefined,
+    ...(compact && sheet ? { onBack: () => setSheet(false) } : {}),
   });
   const active = nav.activeId ?? "new";
   useEffect(() => { if (active !== "settings") setInSettings(false); if (active === "careers") refreshOrbitSlots(); }, [active]);
