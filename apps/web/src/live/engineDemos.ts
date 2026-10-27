@@ -28,7 +28,7 @@ export const ENGINE_DEMOS: Record<DemoKey, EngineDemo> = {
     },
     live: {
       values: { fireRepeatMs: { prop: "repeatMs" } },
-      swaps: [{ from: ", locked: true }, // can't be remapped", to: (d) => (d.lockFire ? ", locked: true }, // can't be remapped" : " },") }],
+      swaps: [{ from: ", locked: true }, // can't be remapped", to: (d) => (d["lockFire"] ? ", locked: true }, // can't be remapped" : " },") }],
     },
   },
   projectiles: {
@@ -54,7 +54,7 @@ export const ENGINE_DEMOS: Record<DemoKey, EngineDemo> = {
     },
     live: {
       values: { topSpeed: {}, accel: {}, turnRate: {}, grip: {}, drift: {} },
-      swaps: [{ from: "VEHICLE_STYLES.drift", to: (d) => `VEHICLE_STYLES.${String(d.style)}` }],
+      swaps: [{ from: "VEHICLE_STYLES.drift", to: (d) => `VEHICLE_STYLES.${String(d["style"])}` }],
     },
   },
   grass: {
@@ -70,8 +70,8 @@ export const ENGINE_DEMOS: Record<DemoKey, EngineDemo> = {
     live: {
       values: { autosaveSeconds: { prop: "autosaveMs", format: (v) => formatNumber(Math.round(v * 1000)) } },
       swaps: [
-        { from: "version: 2 },", to: (d) => (d.cloud ? "version: 2, storage: createConvexSaveBackend({ client }) }," : "version: 2 },") },
-        { from: "saves to localStorage", to: (d) => (d.cloud ? "saves to your Convex backend" : "saves to localStorage") },
+        { from: "version: 2 },", to: (d) => (d["cloud"] ? "version: 2, storage: createConvexSaveBackend({ client }) }," : "version: 2 },") },
+        { from: "saves to localStorage", to: (d) => (d["cloud"] ? "saves to your Convex backend" : "saves to localStorage") },
       ],
     },
   },
@@ -80,7 +80,7 @@ export const ENGINE_DEMOS: Record<DemoKey, EngineDemo> = {
     filename: "src/ui/Minimap.tsx",
     lines: { markers: ["const markers = units.map"], center: ["<Minimap markers="] },
     live: {
-      swaps: [{ from: "worldRadius={60} />", to: (d) => `worldRadius={${Number(d.worldRadius ?? 60)}}${d.rotate ? " rotate" : ""} />` }],
+      swaps: [{ from: "worldRadius={60} />", to: (d) => `worldRadius={${Number(d["worldRadius"] ?? 60)}}${d["rotate"] ? " rotate" : ""} />` }],
     },
   },
   health: {
@@ -94,9 +94,9 @@ export const ENGINE_DEMOS: Record<DemoKey, EngineDemo> = {
     },
     live: {
       swaps: [
-        { from: "current: 100, max: 100", to: (d) => `current: ${Number(d.maxHealth ?? 100)}, max: ${Number(d.maxHealth ?? 100)}` },
-        { from: '"health", -12)', to: (d) => `"health", -${Number(d.hitSize ?? 12)})` },
-        { from: '"health", 20)', to: (d) => `"health", ${Number(d.potionSize ?? 20)})` },
+        { from: "current: 100, max: 100", to: (d) => `current: ${Number(d["maxHealth"] ?? 100)}, max: ${Number(d["maxHealth"] ?? 100)}` },
+        { from: '"health", -12)', to: (d) => `"health", -${Number(d["hitSize"] ?? 12)})` },
+        { from: '"health", 20)', to: (d) => `"health", ${Number(d["potionSize"] ?? 20)})` },
       ],
     },
   },
@@ -110,8 +110,8 @@ export const ENGINE_DEMOS: Record<DemoKey, EngineDemo> = {
     },
     live: {
       swaps: [
-        { from: "impact: 24,", to: (d) => `impact: ${Number(d.impact ?? 24)},` },
-        { from: "armored: { impact: 0.5 }", to: (d) => `armored: { impact: ${Number(d.armorFactor ?? 0.5)} }` },
+        { from: "impact: 24,", to: (d) => `impact: ${Number(d["impact"] ?? 24)},` },
+        { from: "armored: { impact: 0.5 }", to: (d) => `armored: { impact: ${Number(d["armorFactor"] ?? 0.5)} }` },
       ],
     },
   },
@@ -121,7 +121,7 @@ export const ENGINE_DEMOS: Record<DemoKey, EngineDemo> = {
     lines: { kill: ["export const onKill"], levelup: ["export const onKill"], curve: ["xpForLevel:"] },
     live: {
       values: { base: {}, exponent: {}, maxLevel: {} },
-      swaps: [{ from: '"p1", 60,', to: (d) => `"p1", ${Number(d.xpPerKill ?? 60)},` }],
+      swaps: [{ from: '"p1", 60,', to: (d) => `"p1", ${Number(d["xpPerKill"] ?? 60)},` }],
     },
   },
   catenary: {
@@ -136,7 +136,7 @@ export const ENGINE_DEMOS: Record<DemoKey, EngineDemo> = {
     lines: {},
     live: {
       values: { seed: {}, frequency: {}, octaves: {} },
-      swaps: [{ from: "ridged: false", to: (d) => `ridged: ${d.ridged === true}` }],
+      swaps: [{ from: "ridged: false", to: (d) => `ridged: ${d["ridged"] === true}` }],
     },
   },
 };

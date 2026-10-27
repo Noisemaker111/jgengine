@@ -47,12 +47,12 @@ export function createHealthSpecimen(container: HTMLElement, trace: Trace): Heal
     },
   };
   const heroHealth = (): StatPool => {
-    const pool = pools.hero?.health;
+    const pool = pools["hero"]?.["health"];
     if (pool === undefined) throw new Error("the hero has no health pool");
     return pool;
   };
   const resetHero = (current: number, max: number) => {
-    pools.hero = { ...pools.hero, health: createStatPool({ current, max }) };
+    pools["hero"] = { ...pools["hero"], health: createStatPool({ current, max }) };
   };
   const popups: Popup[] = [];
   const bolts: Bolt[] = [];

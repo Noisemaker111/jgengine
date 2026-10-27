@@ -79,7 +79,7 @@ const CONFIGS: Record<DemoKey, SpecimenConfig> = {
   catenary: {
     load: async (el) => {
       const s = (await import("../live/specimens/catenary")).createCatenarySpecimen(el);
-      return { setDials: (d) => s.setDials({ slack: Number(d.slack) }), dispose: s.dispose };
+      return { setDials: (d) => s.setDials({ slack: Number(d["slack"]) }), dispose: s.dispose };
     },
     initial: { slack: 0.22 },
     controls: [{ kind: "range", key: "slack", label: "slack", min: 0.02, max: 0.6, step: 0.01 }],
@@ -90,7 +90,7 @@ const CONFIGS: Record<DemoKey, SpecimenConfig> = {
       const s = (await import("../live/specimens/terrain")).createTerrainSpecimen(el);
       return {
         setDials: (d) =>
-          s.setDials({ frequency: Number(d.frequency), octaves: Number(d.octaves), ridged: Boolean(d.ridged), seed: Number(d.seed) }),
+          s.setDials({ frequency: Number(d["frequency"]), octaves: Number(d["octaves"]), ridged: Boolean(d["ridged"]), seed: Number(d["seed"]) }),
         dispose: s.dispose,
       };
     },
@@ -110,12 +110,12 @@ const CONFIGS: Record<DemoKey, SpecimenConfig> = {
       return {
         setDials: (d) =>
           s.setDials({
-            style: isCarStyle(d.style) ? d.style : "drift",
-            topSpeed: Number(d.topSpeed),
-            accel: Number(d.accel),
-            turnRate: Number(d.turnRate),
-            grip: Number(d.grip),
-            drift: Number(d.drift),
+            style: isCarStyle(d["style"]) ? d["style"] : "drift",
+            topSpeed: Number(d["topSpeed"]),
+            accel: Number(d["accel"]),
+            turnRate: Number(d["turnRate"]),
+            grip: Number(d["grip"]),
+            drift: Number(d["drift"]),
           }),
         dispose: s.dispose,
       };
@@ -140,7 +140,7 @@ const CONFIGS: Record<DemoKey, SpecimenConfig> = {
     load: async (el, trace) => {
       const s = (await import("../live/specimens/keys")).createKeysSpecimen(el, trace);
       return {
-        setDials: (d) => s.setDials({ fireRepeatMs: Number(d.fireRepeatMs), lockFire: Boolean(d.lockFire) }),
+        setDials: (d) => s.setDials({ fireRepeatMs: Number(d["fireRepeatMs"]), lockFire: Boolean(d["lockFire"]) }),
         dispose: s.dispose,
       };
     },
@@ -157,7 +157,7 @@ const CONFIGS: Record<DemoKey, SpecimenConfig> = {
     load: async (el, trace) => {
       const s = (await import("../live/specimens/saves")).createSavesSpecimen(el, trace);
       return {
-        setDials: (d) => s.setDials({ autosaveSeconds: Number(d.autosaveSeconds), cloud: Boolean(d.cloud) }),
+        setDials: (d) => s.setDials({ autosaveSeconds: Number(d["autosaveSeconds"]), cloud: Boolean(d["cloud"]) }),
         dispose: s.dispose,
       };
     },
@@ -178,12 +178,12 @@ const CONFIGS: Record<DemoKey, SpecimenConfig> = {
       return {
         setDials: (d) =>
           s.setDials({
-            kind: String(d.kind),
-            speed: Number(d.speed),
-            gravity: Number(d.gravity),
-            pellets: Number(d.pellets),
-            rpm: Number(d.rpm),
-            size: Number(d.size),
+            kind: String(d["kind"]),
+            speed: Number(d["speed"]),
+            gravity: Number(d["gravity"]),
+            pellets: Number(d["pellets"]),
+            rpm: Number(d["rpm"]),
+            size: Number(d["size"]),
           }),
         dispose: s.dispose,
       };
@@ -222,7 +222,7 @@ const CONFIGS: Record<DemoKey, SpecimenConfig> = {
     load: async (el, trace) => {
       const s = (await import("../live/specimens/minimap")).createMinimapSpecimen(el, trace);
       return {
-        setDials: (d) => s.setDials({ worldRadius: Number(d.worldRadius), units: Number(d.units), rotate: Boolean(d.rotate) }),
+        setDials: (d) => s.setDials({ worldRadius: Number(d["worldRadius"]), units: Number(d["units"]), rotate: Boolean(d["rotate"]) }),
         dispose: s.dispose,
       };
     },
@@ -242,7 +242,7 @@ const CONFIGS: Record<DemoKey, SpecimenConfig> = {
     load: async (el, trace) => {
       const s = (await import("../live/specimens/health")).createHealthSpecimen(el, trace);
       return {
-        setDials: (d) => s.setDials({ maxHealth: Number(d.maxHealth), hitSize: Number(d.hitSize), potionSize: Number(d.potionSize) }),
+        setDials: (d) => s.setDials({ maxHealth: Number(d["maxHealth"]), hitSize: Number(d["hitSize"]), potionSize: Number(d["potionSize"]) }),
         dispose: s.dispose,
       };
     },
@@ -258,7 +258,7 @@ const CONFIGS: Record<DemoKey, SpecimenConfig> = {
   damage: {
     load: async (el, trace) => {
       const s = (await import("../live/specimens/damage")).createDamageSpecimen(el, trace);
-      return { setDials: (d) => s.setDials({ impact: Number(d.impact), armorFactor: Number(d.armorFactor) }), dispose: s.dispose };
+      return { setDials: (d) => s.setDials({ impact: Number(d["impact"]), armorFactor: Number(d["armorFactor"]) }), dispose: s.dispose };
     },
     initial: { impact: 24, armorFactor: 0.5 },
     controls: [
@@ -273,7 +273,7 @@ const CONFIGS: Record<DemoKey, SpecimenConfig> = {
       const s = (await import("../live/specimens/xp")).createXpSpecimen(el, trace);
       return {
         setDials: (d) =>
-          s.setDials({ base: Number(d.base), exponent: Number(d.exponent), maxLevel: Number(d.maxLevel), xpPerKill: Number(d.xpPerKill) }),
+          s.setDials({ base: Number(d["base"]), exponent: Number(d["exponent"]), maxLevel: Number(d["maxLevel"]), xpPerKill: Number(d["xpPerKill"]) }),
         dispose: s.dispose,
       };
     },
@@ -324,7 +324,7 @@ export function LiveSpecimen({ specimen, trace, onDials, layout = "stack" }: Liv
     if (host === null) return;
     let cancelled = false;
     let created: SpecimenInstance | null = null;
-    document.documentElement.dataset.jgCapture = "pending";
+    document.documentElement.dataset["jgCapture"] = "pending";
     config
       .load(host, traceRef.current)
       .then((instance) => {
@@ -336,11 +336,11 @@ export function LiveSpecimen({ specimen, trace, onDials, layout = "stack" }: Liv
         instanceRef.current = instance;
         setReady(true);
         // Screenshot tooling (jgengine-verify) waits for this flag.
-        document.documentElement.dataset.jgCapture = "ready";
+        document.documentElement.dataset["jgCapture"] = "ready";
       })
       .catch(() => {
         if (!cancelled) setFailed(true);
-        document.documentElement.dataset.jgCapture = "ready";
+        document.documentElement.dataset["jgCapture"] = "ready";
       });
     return () => {
       cancelled = true;

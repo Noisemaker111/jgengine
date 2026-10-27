@@ -118,7 +118,7 @@ export function CodeBlock({
   copy?: boolean;
   className?: string;
   /** A running demo; the lines doing what it does right now light up. */
-  trace?: { channel: Trace; lines: TraceLines };
+  trace?: { channel: Trace; lines: TraceLines } | undefined;
 }) {
   const border = tone === "good" ? "border-accent/40" : tone === "bad" ? "border-line" : "border-line";
   const lit = useLitLines(code, trace);

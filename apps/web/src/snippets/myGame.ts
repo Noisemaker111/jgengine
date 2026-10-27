@@ -8,7 +8,7 @@ export function openDoor(ctx: GameContext): void {
 }
 
 export function shoot(ctx: GameContext, input: { aim?: { yaw: number; pitch: number } }): void {
-  ctx.item.use.use({ from: ctx.player.userId, itemId: "rifle", aim: input.aim });
+  ctx.item.use.use({ from: ctx.player.userId, itemId: "rifle", ...(input.aim && { aim: input.aim }) });
 }
 
 let inventoryOpen = false;

@@ -150,7 +150,7 @@ export function createMinimapSpecimen(container: HTMLElement, trace: Trace): Min
     ctx.save();
     ctx.translate(sx(hero.x), sy(hero.z));
     ctx.rotate(hero.yaw);
-    ctx.fillStyle = DEFAULT_MARKER_KINDS.player?.color ?? "#fff";
+    ctx.fillStyle = DEFAULT_MARKER_KINDS["player"]?.color ?? "#fff";
     ctx.beginPath();
     ctx.moveTo(0, -9);
     ctx.lineTo(6, 6);
