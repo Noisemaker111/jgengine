@@ -19,12 +19,18 @@
  * TODO line rather than a failure, so the four games still to be covered can be cut as their own
  * lanes; `--strict` fails them, which is the state this gate is aiming at.
  *
- * Usage: bun run check games-design [--strict] [--root <dir>]
+ * Every game also carries a design brief in its `PLAN.md` (`designBrief.ts` says what it holds). A
+ * game without a complete one fails, unless `depth-known-failing.json` lists it for `brief`; that
+ * list only shrinks (`knownFailing.ts`), checked against `--base` (default origin/beta).
+ *
+ * Usage: bun run check games-design [--strict] [--root <dir>] [--base <ref>]
  */
 import { existsSync, readdirSync, readFileSync } from "node:fs";
 import { join } from "node:path";
 
 import { gameDirs } from "./capabilities";
+import { readDesignBrief, type BriefRead } from "./designBrief";
+import { addedSinceBase, judge, readBaseKnownFailing, readKnownFailing, verdictLines, type BaseList, type KnownFailing } from "./knownFailing";
 
 /** This repo names flow files in lowercase letters, digits and dashes; the Loop proof line uses them. */
 const FLOW_NAME = /^[a-z0-9][a-z0-9-]*$/;
@@ -89,6 +95,8 @@ export interface GameInspection {
   todos: string[];
   /** Flows the README names that exist and expect an arrival. */
   proven: string[];
+  /** What the `PLAN.md` design brief is missing; empty when it is complete. */
+  briefProblems: string[];
 }
 
 type Read = (path: string) => string;
@@ -150,12 +158,15 @@ export function inspectGame(root: string, game: string, io: Io = realIo): GameIn
   const proven: string[] = [];
   const dir = join(root, game);
   const readme = join(dir, "README.md");
+  const planPath = join(dir, PLAN_FILE);
+  const brief: BriefRead = io.exists(planPath) ? readDesignBrief(io.read(planPath)) : { ok: false, problems: ["has no PLAN.md with a design brief"] };
+  const briefProblems = brief.ok ? [] : brief.problems;
 
   if (!io.exists(readme)) {
-    return { game, problems: [`${game} has no README.md with a design checklist`], todos, proven };
+    return { game, problems: [`${game} has no README.md with a design checklist`], todos, proven, briefProblems };
   }
   const text = io.read(readme);
-  const planned = planHasGaps(join(dir, PLAN_FILE), io);
+  const planned = planHasGaps(planPath, io);
   for (const section of SECTIONS) {
     if (section.id === "gap-to-target" && planned) continue;
     if (!section.pattern.test(text)) problems.push(`${game} README is missing the "${section.label}" section of the design checklist`);
@@ -164,7 +175,7 @@ export function inspectGame(root: string, game: string, io: Io = realIo): GameIn
   const proof = readLoopProof(text);
   if (!proof.ok) {
     problems.push(`${game} README ${proof.problem}`);
-    return { game, problems, todos, proven };
+    return { game, problems, todos, proven, briefProblems };
   }
 
   const flowsDir = join(dir, "proofs", "flows");
@@ -194,7 +205,7 @@ export function inspectGame(root: string, game: string, io: Io = realIo): GameIn
       }
     }
   }
-  return { game, problems, todos, proven };
+  return { game, problems, todos, proven, briefProblems };
 }
 
 export interface CheckResult {
@@ -203,8 +214,11 @@ export interface CheckResult {
   todos: number;
 }
 
-/** Check every game directory under `root`; `strict` turns the TODO lines into failures. */
-export function checkGames(root: string, games: string[], io: Io = realIo, strict = false): CheckResult {
+/**
+ * Check every game directory under `root`; `strict` turns the TODO lines into failures. `known` is the
+ * shrink-only list of games whose brief is still missing.
+ */
+export function checkGames(root: string, games: string[], io: Io = realIo, strict = false, known: KnownFailing = new Map()): CheckResult {
   const lines: string[] = [];
   let failures = 0;
   let todos = 0;
@@ -214,6 +228,13 @@ export function checkGames(root: string, games: string[], io: Io = realIo, stric
     for (const problem of result.problems) {
       failures += 1;
       lines.push(`game-design: FAIL - ${problem}`);
+    }
+    const brief = verdictLines("game-design", game, "brief", judge(game, "brief", result.briefProblems, known));
+    if (brief.failed) {
+      failures += brief.lines.length;
+      lines.push(...brief.lines);
+    } else if (!brief.lines.every((line) => line.includes(": OK - "))) {
+      lines.push(...brief.lines);
     }
     for (const name of result.todos) {
       todos += 1;
@@ -244,9 +265,17 @@ export function runCli(argv: string[], root: string, log: (line: string) => void
   const strict = argv.includes("--strict");
   const at = argv.indexOf("--root");
   const target = at >= 0 ? (argv[at + 1] ?? root) : root;
-  const result = checkGames(target, gameDirs(target), realIo, strict);
+  const baseAt = argv.indexOf("--base");
+  const base = baseAt >= 0 ? (argv[baseAt + 1] ?? "origin/beta") : "origin/beta";
+  const known = readKnownFailing(target);
+  // An empty list adds nothing, so there is nothing to compare.
+  const baseList: BaseList = known.size === 0 ? { kind: "new" } : readBaseKnownFailing(target, base);
+  if (baseList.kind === "unreadable") log(`game-design: NOTE - the known-failing list was not compared with ${base}: ${baseList.why}`);
+  const added = addedSinceBase(known, baseList, ["brief"]);
+  for (const problem of added) log(`game-design: FAIL - ${problem}`);
+  const result = checkGames(target, gameDirs(target), realIo, strict, known);
   for (const line of result.lines) log(line);
-  return result.failures === 0 ? 0 : 1;
+  return result.failures === 0 && added.length === 0 ? 0 : 1;
 }
 
 // The games folder is this script's parent, wherever it is run from: `bun run check` runs it from the

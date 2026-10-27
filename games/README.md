@@ -61,6 +61,15 @@ id appears in the game's `src/`. `bun --filter="@games/*" run check-types` and `
 
 ## Design checklist and loop proofs
 
+Every game starts from a design brief in its `PLAN.md`, written before code: the core loop (30
+seconds), session loop (10 minutes) and long loop (hours), what the player has at second 0 and why,
+the first 10 minutes beat by beat with what each teaches or unlocks, a content budget, the systems
+and the onboarding style. [`scripts/designBrief.ts`](scripts/designBrief.ts) holds its exact shape
+and [`scripts/briefExample.ts`](scripts/briefExample.ts) a complete one. `bun run check games-design`
+fails a game without a complete brief. Games that had none when the rule landed are listed, with
+the reason, in [`scripts/depth-known-failing.json`](scripts/depth-known-failing.json); that list
+only shrinks: a listed game that passes must leave it, and a new entry fails the check.
+
 Every game's README states the same six-section design checklist (core loop, progression, failure
 states, minute 5 → hour 5, references, gap to target) and ends it with one `Loop proof:` line naming
 the flow that proves the stated loop. Progression is written as what the player gets over hours, in
