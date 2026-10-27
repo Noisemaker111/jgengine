@@ -1,6 +1,6 @@
 ---
 name: create-game-jg
-description: Start a new game or big feature - agree direction, write PLAN.md and its design brief, build the next 10 minutes of play per milestone.
+description: Start a new game or big feature - agree direction, write its design brief, build.
 ---
 
 # Create a game
