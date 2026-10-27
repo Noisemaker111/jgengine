@@ -78,32 +78,32 @@ function parseBudgetEntry(raw: unknown, game: string, source: string): PerfBudge
     throw new Error(`perf gate: ${source} has no budget object for "${game}"`);
   }
   const entry = raw as Record<string, unknown>;
-  if (entry.drawsFrame === undefined && entry.draws !== undefined) {
+  if (entry["drawsFrame"] === undefined && entry["draws"] !== undefined) {
     // A game's own file can be older than this gate. Its `draws` budget was the renderer counter
     // accumulated over a frame, so comparing it to drawsFrame is the same measurement; it is just
     // single-sampled and stale, which the run says out loud instead of hiding.
     return {
-      drawsFrame: budgetNumber(entry.draws, game, "draws", source),
+      drawsFrame: budgetNumber(entry["draws"], game, "draws", source),
       legacyDraws: true,
-      triangles: budgetNumber(entry.triangles, game, "triangles", source),
-      nodes: budgetNumber(entry.nodes, game, "nodes", source),
-      ...(entry.programsLinked === undefined
+      triangles: budgetNumber(entry["triangles"], game, "triangles", source),
+      nodes: budgetNumber(entry["nodes"], game, "nodes", source),
+      ...(entry["programsLinked"] === undefined
         ? {}
-        : { programsLinked: budgetNumber(entry.programsLinked, game, "programsLinked", source) }),
-      ...(typeof entry.baseline === "string" ? { baseline: entry.baseline } : {}),
+        : { programsLinked: budgetNumber(entry["programsLinked"], game, "programsLinked", source) }),
+      ...(typeof entry["baseline"] === "string" ? { baseline: entry["baseline"] } : {}),
     };
   }
   return {
-    drawsFrame: budgetNumber(entry.drawsFrame, game, "drawsFrame", source),
-    triangles: budgetNumber(entry.triangles, game, "triangles", source),
-    nodes: budgetNumber(entry.nodes, game, "nodes", source),
-    ...(entry.previousDraws === undefined
+    drawsFrame: budgetNumber(entry["drawsFrame"], game, "drawsFrame", source),
+    triangles: budgetNumber(entry["triangles"], game, "triangles", source),
+    nodes: budgetNumber(entry["nodes"], game, "nodes", source),
+    ...(entry["previousDraws"] === undefined
       ? {}
-      : { previousDraws: budgetNumber(entry.previousDraws, game, "previousDraws", source) }),
-    ...(entry.programsLinked === undefined
+      : { previousDraws: budgetNumber(entry["previousDraws"], game, "previousDraws", source) }),
+    ...(entry["programsLinked"] === undefined
       ? {}
-      : { programsLinked: budgetNumber(entry.programsLinked, game, "programsLinked", source) }),
-    ...(typeof entry.baseline === "string" ? { baseline: entry.baseline } : {}),
+      : { programsLinked: budgetNumber(entry["programsLinked"], game, "programsLinked", source) }),
+    ...(typeof entry["baseline"] === "string" ? { baseline: entry["baseline"] } : {}),
   };
 }
 

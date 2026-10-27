@@ -12,7 +12,7 @@ const params = new URLSearchParams(typeof window === "undefined" ? "" : window.l
 const procedural = params.get("procedural") === "1";
 
 /** What `set_terrain_layers` writes: the authored library name plus the URL the editor resolved it to. */
-function layerMap(name: string): { material?: string; materialUrl?: string } {
+function layerMap(name: string): { material?: string; materialUrl?: string | undefined } {
   if (procedural) return {};
   return { material: name, materialUrl: libraryMaterialAsset(name).textures?.color?.url };
 }

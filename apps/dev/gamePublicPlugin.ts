@@ -207,6 +207,7 @@ export function gamePublicPlugin(servedGameDir: string | undefined, gamesDir: st
     },
     resolveId(id) {
       if (id === GAME_PUBLIC_MODULE || id.startsWith(`${GAME_PUBLIC_MODULE}/`)) return `\0${id}`;
+      return null;
     },
     load(id) {
       if (id === resolvedIndex) return gamePublicIndexModule([...dirs.keys()]);

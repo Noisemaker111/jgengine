@@ -119,7 +119,7 @@ export interface LoadSample {
   /** The WebGL renderer string: timings are only comparable on the same GPU. */
   gpu?: string;
   /** The screens the game showed, in order (`open>loading>menu>playing`), as the engine recorded them. */
-  boot?: string;
+  boot?: string | undefined;
   /** Files the game asked for that the server did not have. */
   missingFiles?: string[];
   error?: string;
@@ -505,7 +505,7 @@ async function measureOnce(base: string, game: string, path: string, args: LoadA
           void page.mouse.click(box.x + state.menuBox.x + state.menuBox.w / 2, box.y + state.menuBox.y + state.menuBox.h / 2).catch(() => {});
         }
       }
-      if (process.env.JG_LOAD_DEBUG === "1") console.error(`load: ${Date.now() - (deadline - args.timeoutMs)}ms ${JSON.stringify({ ...state, tasks: state?.tasks.length })}`);
+      if (process.env["JG_LOAD_DEBUG"] === "1") console.error(`load: ${Date.now() - (deadline - args.timeoutMs)}ms ${JSON.stringify({ ...state, tasks: state?.tasks.length })}`);
       if (state?.playableAt != null && state.revealDone) break;
       // The guard judges the menu and the scene behind it, so it stops once the scene is read and its first two seconds timed.
       if ((args.guard || args.saveBaseline) && state?.sceneReadyAt != null && state.sceneSampled && state.revealDone) break;
@@ -564,7 +564,7 @@ async function main(): Promise<number> {
   printHelpIfAsked("shoot --load", LOAD_USAGE, argv);
   const args = parseLoadArgs(argv, siteGames());
   const runner = args.guard || args.saveBaseline;
-  if (runner && process.env.CI !== undefined) {
+  if (runner && process.env["CI"] !== undefined) {
     console.error("load: the load guard needs this PC's GPU and never runs in CI; skipped");
     return 0;
   }

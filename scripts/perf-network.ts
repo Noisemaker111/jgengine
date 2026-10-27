@@ -105,11 +105,11 @@ class NetworkRecorder {
   attach(session: CdpSession): void {
     this.unsubscribers.push(
       session.on("Network.requestWillBeSent", (params) => {
-        const requestId = String(params.requestId ?? "");
-        const request = params.request as { url?: string; method?: string } | undefined;
+        const requestId = String(params["requestId"] ?? "");
+        const request = params["request"] as { url?: string; method?: string } | undefined;
         const url = request?.url ?? "";
         if (url.startsWith("data:") || url.startsWith("blob:")) return;
-        const type = String(params.type ?? "Other");
+        const type = String(params["type"] ?? "Other");
         this.rows.set(requestId, {
           url,
           method: request?.method ?? "GET",
@@ -128,9 +128,9 @@ class NetworkRecorder {
         bump(tally.types, type);
       }),
       session.on("Network.responseReceived", (params) => {
-        const requestId = String(params.requestId ?? "");
+        const requestId = String(params["requestId"] ?? "");
         const row = this.rows.get(requestId);
-        const response = params.response as
+        const response = params["response"] as
           | { status?: number; headers?: Record<string, unknown>; fromDiskCache?: boolean; fromMemoryCache?: boolean }
           | undefined;
         if (row === undefined || response === undefined) return;
@@ -146,26 +146,26 @@ class NetworkRecorder {
         if (cached) this.markCacheHit(requestId, row.phase);
       }),
       session.on("Network.requestServedFromCache", (params) => {
-        const requestId = String(params.requestId ?? "");
+        const requestId = String(params["requestId"] ?? "");
         const row = this.rows.get(requestId);
         if (row === undefined) return;
         row.cached = true;
         this.markCacheHit(requestId, row.phase);
       }),
       session.on("Network.loadingFinished", (params) => {
-        const requestId = String(params.requestId ?? "");
+        const requestId = String(params["requestId"] ?? "");
         const row = this.rows.get(requestId);
         if (row === undefined) return;
-        const encoded = typeof params.encodedDataLength === "number" ? params.encodedDataLength : 0;
+        const encoded = typeof params["encodedDataLength"] === "number" ? params["encodedDataLength"] : 0;
         row.bytes = encoded;
         this.totals[row.phase].bytes += encoded;
         if (isDevOnly(row.url)) this.totals[row.phase].devBytes += encoded;
         if (row.contentLength !== null && row.contentLength > 1024 && encoded <= 1024) this.markCacheHit(requestId, row.phase);
       }),
       session.on("Network.loadingFailed", (params) => {
-        const row = this.rows.get(String(params.requestId ?? ""));
+        const row = this.rows.get(String(params["requestId"] ?? ""));
         if (row === undefined) return;
-        this.failuresByUrl.set(row.url, String(params.errorText ?? params.blockedReason ?? "failed"));
+        this.failuresByUrl.set(row.url, String(params["errorText"] ?? params["blockedReason"] ?? "failed"));
       }),
       session.on("Network.webSocketCreated", () => {
         this.ws.connections += 1;
@@ -255,7 +255,7 @@ class NetworkRecorder {
 }
 
 function frameBytes(params: Record<string, unknown>): number {
-  const response = params.response as { payloadData?: string } | undefined;
+  const response = params["response"] as { payloadData?: string } | undefined;
   return response?.payloadData?.length ?? 0;
 }
 
@@ -263,7 +263,7 @@ function round(n: number): number {
   return Math.round(n);
 }
 
-export function parseArgs(argv: readonly string[]): { games: string[]; seconds: number; json?: string; timeoutSeconds: number; dump?: string; url?: string } {
+export function parseArgs(argv: readonly string[]): { games: string[]; seconds: number; json?: string | undefined; timeoutSeconds: number; dump?: string; url?: string } {
   const games: string[] = [];
   let seconds = 120;
   let json: string | undefined;

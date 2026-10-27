@@ -103,7 +103,7 @@ export function CombatFloatLayer({
 }: {
   entries: readonly CombatFloatEntry[];
   durationMs?: number;
-  className?: string;
+  className?: string | undefined;
 }) {
   return (
     <div

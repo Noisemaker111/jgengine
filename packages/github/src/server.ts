@@ -126,7 +126,7 @@ async function fetchViaScrape(user: string): Promise<ContributionsWire> {
 }
 
 /** Server-side: fetch a user's contribution calendar via GraphQL (with token) or HTML scrape. */
-export function resolveContributions(user: string, options: { token?: string } = {}): Promise<ContributionsWire> {
+export function resolveContributions(user: string, options: { token?: string | undefined } = {}): Promise<ContributionsWire> {
   return options.token ? fetchViaGraphQL(user, options.token) : fetchViaScrape(user);
 }
 
@@ -134,7 +134,7 @@ export function resolveContributions(user: string, options: { token?: string } =
  * Turnkey proxy handler — mount at any route in any Web-`Response` server (Nitro,
  * workers, Deno). Reads `?user=`, validates, proxies GitHub, returns JSON + CORS.
  */
-export function githubContributionsHandler(options: { token?: string } = {}): (request: Request) => Promise<Response> {
+export function githubContributionsHandler(options: { token?: string | undefined } = {}): (request: Request) => Promise<Response> {
   return async (request) => {
     const user = new URL(request.url).searchParams.get("user");
     if (!user || !USERNAME_PATTERN.test(user)) {
@@ -151,7 +151,7 @@ export function githubContributionsHandler(options: { token?: string } = {}): (r
 
 export interface GitHubProxyOptions {
   /** Server-side token; forwarded as `Authorization: Bearer` so private/authed reads work. */
-  token?: string;
+  token?: string | undefined;
   /**
    * REST path allowlist — return true to forward a `?path=` GET. Every path is
    * rejected (403) unless this says otherwise; omitting it denies everything.

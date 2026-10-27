@@ -46,14 +46,14 @@ export function VitalBar({
   style,
 }: {
   value: VitalValue;
-  tone?: VitalTone;
-  label?: string;
-  width?: number | string;
-  height?: number;
-  lean?: number;
-  segments?: number;
-  showNumbers?: boolean;
-  className?: string;
+  tone?: VitalTone | undefined;
+  label?: string | undefined;
+  width?: number | string | undefined;
+  height?: number | undefined;
+  lean?: number | undefined;
+  segments?: number | undefined;
+  showNumbers?: boolean | undefined;
+  className?: string | undefined;
   style?: CSSProperties;
 }) {
   const colors = TONES[tone];

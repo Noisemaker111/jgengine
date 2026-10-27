@@ -9,7 +9,7 @@ import { provisionGame } from "../games/shared/provisionAssets";
  * `JG_DEV_PROVISION=0` skips it.
  */
 export async function provisionCapturedGame(gameDir: string, log: (line: string) => void = (line) => console.error(`capture: ${line}`)): Promise<void> {
-  if (process.env.JG_DEV_PROVISION === "0" || !existsSync(join(gameDir, "src")) || !existsSync(join(gameDir, "package.json"))) return;
+  if (process.env["JG_DEV_PROVISION"] === "0" || !existsSync(join(gameDir, "src")) || !existsSync(join(gameDir, "package.json"))) return;
   const { failed } = await provisionGame(gameDir, { log });
   if (failed.length > 0) log(`could not pull ${failed.join(", ")} - the run fails if those models are drawn`);
 }

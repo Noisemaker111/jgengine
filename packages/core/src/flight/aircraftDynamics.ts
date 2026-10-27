@@ -197,7 +197,7 @@ export interface RigidAircraftTuning {
   engine?: AircraftEngineTuning;
   rotor?: AircraftRotorTuning;
   motor?: AircraftMotorTuning;
-  assists?: AircraftAssistTuning;
+  assists?: AircraftAssistTuning | undefined;
   /** Actuators per channel; each channel defaults to `{ maxDeflection: 0.35, rate: 2 }`. */
   controls?: { pitch?: AircraftControlChannel; roll?: AircraftControlChannel; yaw?: AircraftControlChannel };
   /** Fuselage drag coefficient × frontal area, m² (default `0`). */

@@ -5,7 +5,7 @@ import type { GameRegistry } from "@jgengine/shell/registry";
 // into this project and point the registry at it:
 const gameRegistry: GameRegistry = {};
 
-const GAME_ID = import.meta.env.VITE_GAME_ID ?? "deepward";
+const GAME_ID = import.meta.env["VITE_GAME_ID"] ?? "deepward";
 
 export default function GameClient() {
   return (

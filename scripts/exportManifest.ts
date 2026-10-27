@@ -47,7 +47,7 @@ function targetString(value: unknown): string | undefined {
   if (typeof value === "string") return value;
   if (value && typeof value === "object") {
     const record = value as Record<string, unknown>;
-    const candidate = record.default ?? record.types;
+    const candidate = record["default"] ?? record["types"];
     if (typeof candidate === "string") return candidate;
   }
   return undefined;
@@ -67,7 +67,7 @@ export function exposedSubpathsForPackageDir(
       const target = targetString(value);
       if (!target) continue;
       const bare = target.replace(/^\.\//, "").replace(/\.d\.ts$|\.js$/, "");
-      const [prefix, suffix = ""] = bare.split("*");
+      const [prefix = "", suffix = ""] = bare.split("*");
       for (const file of emitted) {
         if (file.startsWith(prefix) && file.endsWith(suffix)) {
           const captured = file.slice(prefix.length, file.length - suffix.length);

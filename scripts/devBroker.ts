@@ -32,12 +32,12 @@ export const BROKER_PROTOCOL = 1;
 export type ServerKind = "runner" | "website";
 
 export function brokerPort(env: NodeJS.ProcessEnv = process.env): number {
-  const n = Number(env.JG_BROKER_PORT);
+  const n = Number(env["JG_BROKER_PORT"]);
   return Number.isFinite(n) && n > 0 ? Math.floor(n) : 4498;
 }
 
 export function brokerEnabled(env: NodeJS.ProcessEnv = process.env): boolean {
-  return env.JG_BROKER !== "0";
+  return env["JG_BROKER"] !== "0";
 }
 
 function minutesEnv(env: NodeJS.ProcessEnv, name: string, fallback: number): number {
@@ -174,7 +174,7 @@ export function captureMaxMs(env: NodeJS.ProcessEnv = process.env): number {
 }
 
 export function captureSlots(env: NodeJS.ProcessEnv = process.env): number {
-  const n = Number(env.JG_CAPTURE_SLOTS);
+  const n = Number(env["JG_CAPTURE_SLOTS"]);
   return Number.isFinite(n) && n >= 1 ? Math.floor(n) : 1;
 }
 
@@ -536,18 +536,18 @@ export function serverEnv(base: NodeJS.ProcessEnv, request: ServerRequest, port:
     env[key] = value;
   }
   if (request.gameDir !== null) {
-    env.JG_GAME_DIR = request.gameDir;
-    env.VITE_JG_GAME_DIR = request.gameDir.replace(/\\/g, "/");
+    env["JG_GAME_DIR"] = request.gameDir;
+    env["VITE_JG_GAME_DIR"] = request.gameDir.replace(/\\/g, "/");
   }
-  if (request.kind === "runner") env.JG_DEV_PORT = String(port);
+  if (request.kind === "runner") env["JG_DEV_PORT"] = String(port);
   else {
-    env.JG_WEB_PORT = String(port);
-    env.JG_CAPTURE_SITE = "1";
+    env["JG_WEB_PORT"] = String(port);
+    env["JG_CAPTURE_SITE"] = "1";
   }
   // The server's own watchdog is the backstop for a broker that died: it outlasts the broker's idle
   // window, and exits within a minute once the broker pid is gone.
-  env.JG_DEV_IDLE_MINUTES = String(Math.ceil(idleMs / 60_000) + 10);
-  env.JG_BROKER_PID = String(brokerPid);
+  env["JG_DEV_IDLE_MINUTES"] = String(Math.ceil(idleMs / 60_000) + 10);
+  env["JG_BROKER_PID"] = String(brokerPid);
   return env;
 }
 
@@ -764,24 +764,24 @@ export function brokerHandler(core: BrokerCore, onStop: () => void) {
       if (req.method !== "POST") return send(res, 404, { error: `no route ${req.method} ${url.pathname}` });
       const body = await readBody(req);
       if (url.pathname === "/v1/server") {
-        const kind = body.kind === "website" ? "website" : "runner";
+        const kind = body["kind"] === "website" ? "website" : "runner";
         const request: ServerRequest = {
-          root: text(body.root, "root"),
-          gameDir: typeof body.gameDir === "string" && body.gameDir !== "" ? body.gameDir : null,
+          root: text(body["root"], "root"),
+          gameDir: typeof body["gameDir"] === "string" && body["gameDir"] !== "" ? body["gameDir"] : null,
           kind,
-          fingerprint: typeof body.fingerprint === "string" ? body.fingerprint : "",
-          clientPid: number(body.clientPid, "clientPid"),
-          label: typeof body.label === "string" ? body.label : "client",
-          ...(typeof body.preferredPort === "number" ? { preferredPort: body.preferredPort } : {}),
+          fingerprint: typeof body["fingerprint"] === "string" ? body["fingerprint"] : "",
+          clientPid: number(body["clientPid"], "clientPid"),
+          label: typeof body["label"] === "string" ? body["label"] : "client",
+          ...(typeof body["preferredPort"] === "number" ? { preferredPort: body["preferredPort"] } : {}),
         };
         return send(res, 200, await core.acquireServer(request));
       }
       if (url.pathname === "/v1/chrome") {
-        return send(res, 200, await core.acquireChrome(number(body.clientPid, "clientPid"), String(body.label ?? "client")));
+        return send(res, 200, await core.acquireChrome(number(body["clientPid"], "clientPid"), String(body["label"] ?? "client")));
       }
       if (url.pathname === "/v1/capture") {
-        const waitMs = typeof body.waitMs === "number" && body.waitMs > 0 ? body.waitMs : 5 * 60_000;
-        const turn = core.acquireCapture(number(body.clientPid, "clientPid"), String(body.label ?? "client"), waitMs);
+        const waitMs = typeof body["waitMs"] === "number" && body["waitMs"] > 0 ? body["waitMs"] : 5 * 60_000;
+        const turn = core.acquireCapture(number(body["clientPid"], "clientPid"), String(body["label"] ?? "client"), waitMs);
         // A client that gave up while queued must not be granted a turn nobody will release.
         res.once("close", () => {
           if (!res.writableEnded) turn.cancel();
@@ -792,7 +792,7 @@ export function brokerHandler(core: BrokerCore, onStop: () => void) {
           return send(res, 408, { error: error instanceof Error ? error.message : String(error) });
         }
       }
-      if (url.pathname === "/v1/release") return send(res, 200, { released: core.release(text(body.leaseId, "leaseId")) });
+      if (url.pathname === "/v1/release") return send(res, 200, { released: core.release(text(body["leaseId"], "leaseId")) });
       if (url.pathname === "/v1/stop") {
         send(res, 200, { stopping: true });
         onStop();
@@ -828,7 +828,7 @@ export async function serveBroker(env: NodeJS.ProcessEnv = process.env): Promise
     log: writeLog,
     clearCaches: (root) => void clearViteCaches(root),
     idleMs,
-    maxServers: Number(env.JG_BROKER_MAX_SERVERS) > 0 ? Number(env.JG_BROKER_MAX_SERVERS) : 6,
+    maxServers: Number(env["JG_BROKER_MAX_SERVERS"]) > 0 ? Number(env["JG_BROKER_MAX_SERVERS"]) : 6,
     captureSlots: captureSlots(env),
     captureMaxMs: captureMaxMs(env),
   });
@@ -860,7 +860,7 @@ export async function serveBroker(env: NodeJS.ProcessEnv = process.env): Promise
   writeFileSync(brokerStatePath(port), JSON.stringify({ pid: process.pid, port, protocol: BROKER_PROTOCOL, startedAt: new Date().toISOString() }));
   writeLog(`broker ready on :${port} (pid ${process.pid}, idle ${Math.round(idleMs / 60_000)}m)`);
   for (const signal of ["SIGINT", "SIGTERM", "SIGHUP"] as const) process.once(signal, () => void stop(signal));
-  const sweepMs = Number(env.JG_BROKER_SWEEP_MS) > 0 ? Number(env.JG_BROKER_SWEEP_MS) : 2_000;
+  const sweepMs = Number(env["JG_BROKER_SWEEP_MS"]) > 0 ? Number(env["JG_BROKER_SWEEP_MS"]) : 2_000;
   const timer = setInterval(() => {
     void core.sweep().then((idle) => {
       if (idle) {

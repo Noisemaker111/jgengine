@@ -55,7 +55,7 @@ export type ResolveShellMultiplayerArgs = {
   game: GameDefinition;
   gameId: string;
   url?: string | undefined;
-  userId?: string;
+  userId?: string | undefined;
   force?: boolean;
   feedActions?: string[];
 };

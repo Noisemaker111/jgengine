@@ -53,20 +53,20 @@ export function AbilitySlotButton({
   onActivate,
   className,
 }: {
-  icon?: ReactNode;
+  icon?: ReactNode | undefined;
   /** Human-readable name of the ability/build/spell this slot triggers. Used as the button's accessible name. */
-  label?: string;
+  label?: string | undefined;
   /** Optional cost shown alongside the label in the accessible name, already formatted (e.g. `"50g"`). */
-  cost?: string;
-  keybind?: string;
+  cost?: string | undefined;
+  keybind?: string | undefined;
   size?: number;
-  state?: AbilitySlotState;
-  cooldownFraction?: number;
-  cooldownSeconds?: number;
-  charges?: number;
-  chargesMax?: number;
-  justCast?: boolean;
-  onActivate?: () => void;
+  state?: AbilitySlotState | undefined;
+  cooldownFraction?: number | undefined;
+  cooldownSeconds?: number | undefined;
+  charges?: number | undefined;
+  chargesMax?: number | undefined;
+  justCast?: boolean | undefined;
+  onActivate?: (() => void) | undefined;
   className?: string;
 }) {
   const clamped = clampFraction(cooldownFraction);

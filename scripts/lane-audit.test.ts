@@ -214,7 +214,7 @@ test("--json carries the documented shape and percentile", () => {
     totals: Record<string, number>;
     population: number;
   };
-  expect(document.sessions.map((session) => session.id)).toEqual(["ses_wait", "ses_work"]);
+  expect(document.sessions.map((session) => session["id"])).toEqual(["ses_wait", "ses_work"]);
   const [worst] = document.sessions;
   expect(Object.keys(worst!).sort()).toEqual(
     [
@@ -233,23 +233,23 @@ test("--json carries the documented shape and percentile", () => {
       "waits",
     ].sort(),
   );
-  expect(worst!.title).toBe("Lane: sleepy");
+  expect(worst!["title"]).toBe("Lane: sleepy");
   // A child session records the directory its parent ran in, so this is the repo root, not the lane.
-  expect(worst!.directory).toBe("C:/repo");
-  expect(worst!.spanMs).toBe(600_000);
-  expect(worst!.sleepMs).toBe(180_000);
-  expect(worst!.ciWatchMs).toBe(0);
-  expect(worst!.waitingShare).toBeCloseTo(0.3, 4);
-  expect(worst!.percentile).toBe(100);
-  expect(worst!.calls).toBe(2);
-  expect(worst!.waits).toEqual([
+  expect(worst!["directory"]).toBe("C:/repo");
+  expect(worst!["spanMs"]).toBe(600_000);
+  expect(worst!["sleepMs"]).toBe(180_000);
+  expect(worst!["ciWatchMs"]).toBe(0);
+  expect(worst!["waitingShare"]).toBeCloseTo(0.3, 4);
+  expect(worst!["percentile"]).toBe(100);
+  expect(worst!["calls"]).toBe(2);
+  expect(worst!["waits"]).toEqual([
     { kind: "sleep", ms: 180_000, command: "cd C:/repo/.claude/worktrees/lane-wait; Start-Sleep -Seconds 150; gh pr view 12 --json state" },
   ]);
-  expect(worst!.longest).toEqual([
+  expect(worst!["longest"]).toEqual([
     { ms: 240_000, command: "cd C:/repo/.claude/worktrees/lane-wait; bun run check-types" },
     { ms: 180_000, command: "cd C:/repo/.claude/worktrees/lane-wait; Start-Sleep -Seconds 150; gh pr view 12 --json state" },
   ]);
-  expect(document.sessions[1]!.percentile).toBe(0);
+  expect(document.sessions[1]!["percentile"]).toBe(0);
   expect(document.totals).toEqual({ spanMs: 1_200_000, sleepMs: 180_000, ciWatchMs: 0 });
   expect(document.population).toBe(2);
 });

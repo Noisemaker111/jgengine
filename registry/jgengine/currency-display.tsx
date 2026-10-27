@@ -37,10 +37,10 @@ export function CurrencyDisplay({
   className,
 }: {
   amount: number;
-  symbol?: ReactNode;
-  name?: string;
-  compact?: boolean;
-  className?: string;
+  symbol?: ReactNode | undefined;
+  name?: string | undefined;
+  compact?: boolean | undefined;
+  className?: string | undefined;
 }) {
   return (
     <div className={`inline-flex items-baseline gap-[5px] ${className ?? ""}`} data-jg="currency-display">

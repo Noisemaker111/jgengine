@@ -90,7 +90,7 @@ export interface AwaitOptions {
   gh?: RunGh;
   /** Registry answer, for the final check. */
   npmView?: () => ProcResult;
-  runId?: number;
+  runId?: number | undefined;
   timeoutMs?: number;
   graceMs?: number;
   intervalMs?: number;

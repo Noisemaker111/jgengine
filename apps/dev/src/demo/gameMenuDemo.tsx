@@ -98,9 +98,9 @@ const slotIndex = createSaveSlots({
 });
 const slotOptions = {
   nameOf: (_slot: string, document: GameSaveDocument) =>
-    ((document.systems.meta ?? {}) as { character?: string | null }).character ?? "Wanderer",
+    ((document.systems["meta"] ?? {}) as { character?: string | null }).character ?? "Wanderer",
   metaOf: (_slot: string, document: GameSaveDocument) => {
-    const meta = (document.systems.meta ?? {}) as { character?: string | null; thumbnail?: string | null };
+    const meta = (document.systems["meta"] ?? {}) as { character?: string | null; thumbnail?: string | null };
     return {
       character: meta.character ?? "Wanderer",
       waves: Math.max(1, progress.waves),
@@ -402,7 +402,7 @@ function GameMenuDemoUI(): ReactNode {
           eyebrow="Front-end demo"
           tagline="A live scene behind the menu, a detail pane per verb, and saves that resume a real character."
           items={[
-            { id: "continue", label: "Continue", hint: recent === null ? "No run saved yet" : `${recent.name ?? recent.id} · ${String(recent.meta.playtime ?? "")}`, disabled: recent === null },
+            { id: "continue", label: "Continue", hint: recent === null ? "No run saved yet" : `${recent.name ?? recent.id} · ${String(recent.meta["playtime"] ?? "")}`, disabled: recent === null },
             { id: "new", label: "New defense", hint: "Name a commander and take the wall" },
             { id: "load", label: "Load & save", hint: `${slotIndex.list().filter((slot) => !slot.empty).length} of 3 slots used` },
             { id: "settings", label: "Settings" },

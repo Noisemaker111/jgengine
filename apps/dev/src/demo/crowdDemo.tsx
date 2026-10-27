@@ -116,7 +116,7 @@ function MixerCrowd({ url, instances }: { url: string; instances: readonly Crowd
 function MixerCrowdMember({ source, clips, instance }: { source: THREE.Object3D; clips: THREE.AnimationClip[]; instance: CrowdInstance }) {
   const scene = useMemo(() => cloneModelScene(source, { cloneMaterials: false }), [source]);
   const paused = useStore(crowdPaused);
-  useModelAnimation(scene, clips, { clip: instance.clip, time: instance.timeOffset ?? 0, timeScale: instance.speed ?? 1, paused });
+  useModelAnimation(scene, clips, { ...(instance.clip === undefined ? {} : { clip: instance.clip }), time: instance.timeOffset ?? 0, timeScale: instance.speed ?? 1, paused });
   useEffect(() => () => disposeModelScene(scene), [scene]);
   return <primitive object={scene} position={instance.position} rotation-y={instance.rotationY ?? 0} scale={0.7} dispose={null} />;
 }

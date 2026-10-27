@@ -30,11 +30,11 @@ const urlParams = new URLSearchParams(window.location.search);
 const DEFAULT_GAME_ID = "deepward";
 const GAME_ID =
   urlParams.get("game") ??
-  (import.meta.env.VITE_GAME_ID as string | undefined) ??
+  (import.meta.env["VITE_GAME_ID"] as string | undefined) ??
   null;
 const MODE = urlParams.get("mode") ?? "play";
 const VIEW = urlParams.get("view");
-const WS_URL = import.meta.env.VITE_JG_WS_URL as string | undefined;
+const WS_URL = import.meta.env["VITE_JG_WS_URL"] as string | undefined;
 const SHOW_LAUNCHER = VIEW === "launcher" || GAME_ID === null;
 
 function LauncherChrome() {

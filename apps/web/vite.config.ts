@@ -56,6 +56,7 @@ const gamesIndexPlugin = (): Plugin => ({
   name: "jgengine-games-index",
   resolveId(id) {
     if (id === GAMES_INDEX_ID) return `\0${GAMES_INDEX_ID}`;
+    return null;
   },
   load(id) {
     if (id !== `\0${GAMES_INDEX_ID}`) return;
@@ -174,7 +175,7 @@ const gamesPlayerDevPlugin = (): Plugin => {
       if (restoreFromCache()) {
         ready = true;
         console.log("[games-player] cache hit — serving /play from the cached build");
-      } else if (process.env.JG_CAPTURE_SITE !== "1") {
+      } else if (process.env["JG_CAPTURE_SITE"] !== "1") {
         startBuild();
       } else {
         console.log("[games-player] deferred /play runner build for website capture");

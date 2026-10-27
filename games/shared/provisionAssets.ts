@@ -120,9 +120,9 @@ export async function provisionGame(
 
 /** Whether a dev server should pull missing assets: on by default, off in CI, `JG_DEV_PROVISION` overrides both. */
 export function shouldProvision(env: Readonly<Record<string, string | undefined>>): boolean {
-  if (env.JG_DEV_PROVISION === "0") return false;
-  if (env.JG_DEV_PROVISION === "1") return true;
-  return env.CI === undefined || env.CI === "" || env.CI === "false";
+  if (env["JG_DEV_PROVISION"] === "0") return false;
+  if (env["JG_DEV_PROVISION"] === "1") return true;
+  return env["CI"] === undefined || env["CI"] === "" || env["CI"] === "false";
 }
 
 /**

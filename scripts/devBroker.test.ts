@@ -312,8 +312,8 @@ describe("broker server environment", () => {
     );
     expect(env).toEqual({ PATH: "/bin", JG_WEB_PORT: "5123", JG_CAPTURE_SITE: "1", JG_DEV_IDLE_MINUTES: "20", JG_BROKER_PID: "42" });
     const served = serverEnv({}, request({ gameDir: "C:\\games\\lane\\harbor-heat" }), 4600, 600_000, 42);
-    expect(served.VITE_JG_GAME_DIR).toBe("C:/games/lane/harbor-heat");
-    expect(served.JG_DEV_PORT).toBe("4600");
+    expect(served["VITE_JG_GAME_DIR"]).toBe("C:/games/lane/harbor-heat");
+    expect(served["JG_DEV_PORT"]).toBe("4600");
   });
 });
 

@@ -30,8 +30,8 @@ type SaveEndpointGlobal = typeof globalThis & { [GLOBAL_KEY]?: SaveEndpointInfo 
 export interface BuildEnv {
   DEV?: boolean;
   PROD?: boolean;
-  NODE_ENV?: string;
-  VITE_JGENGINE_DEV_PROXY?: string;
+  NODE_ENV?: string | undefined;
+  VITE_JGENGINE_DEV_PROXY?: string | undefined;
 }
 
 /**

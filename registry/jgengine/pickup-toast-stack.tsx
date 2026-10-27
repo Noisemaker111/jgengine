@@ -85,7 +85,7 @@ export function PickupToastStack({
 }: {
   entries: readonly PickupEntry[];
   limit?: number;
-  className?: string;
+  className?: string | undefined;
 }) {
   const shown = entries.slice(Math.max(0, entries.length - limit)).reverse();
   return (

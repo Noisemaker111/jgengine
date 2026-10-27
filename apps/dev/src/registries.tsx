@@ -62,7 +62,7 @@ function lookCamera(game: PlayableGame, markers: LookMarkers | undefined): GameC
     return undefined;
   }
   const summary = formatAppliedAim(resolution.applied);
-  document.documentElement.dataset.jgLook = summary;
+  document.documentElement.dataset["jgLook"] = summary;
   console.debug("[jgengine:capture] look", summary);
   return resolution.camera;
 }

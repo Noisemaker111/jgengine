@@ -45,7 +45,7 @@ export interface PlaygroundWorldHandle {
       extent?: number;
       /** Deterministic camera override: orbit target XZ, distance, and pitch (degrees). When set it
        *  wins over the automatic framing on every rebuild — the close-up inspection seam. */
-      camera?: { x: number; z: number; radius: number; pitch: number; yaw?: number };
+      camera?: { x: number; z: number; radius: number; pitch: number; yaw?: number } | undefined;
       sidewalks?: boolean;
       sidewalkWidth?: number;
       laneMarkings?: boolean;
@@ -184,20 +184,20 @@ export function createPlaygroundWorld(container: HTMLElement): PlaygroundWorldHa
       // elevation dial (the field is seeded from all of these), so raised roads never clip a stale disc.
       if (
         ground === null ||
-        Math.abs(wantRadius - (ground.userData.radius as number)) > 60 ||
-        ground.userData.seed !== options.seed ||
-        ground.userData.mode !== mode ||
-        ground.userData.elevation !== elevation
+        Math.abs(wantRadius - (ground.userData["radius"] as number)) > 60 ||
+        ground.userData["seed"] !== options.seed ||
+        ground.userData["mode"] !== mode ||
+        ground.userData["elevation"] !== elevation
       ) {
         if (ground !== null) {
           handle.scene.remove(ground);
           disposeObject(ground);
         }
         ground = buildGround(wantRadius, PALETTE.glow, drape ? sampleHeight : undefined);
-        ground.userData.radius = wantRadius;
-        ground.userData.seed = options.seed;
-        ground.userData.mode = mode;
-        ground.userData.elevation = elevation;
+        ground.userData["radius"] = wantRadius;
+        ground.userData["seed"] = options.seed;
+        ground.userData["mode"] = mode;
+        ground.userData["elevation"] = elevation;
         handle.scene.add(ground);
       }
       modelElapsed = 0;

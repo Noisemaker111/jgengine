@@ -9,9 +9,9 @@ export function ChatBubble({
 }: {
   body: string;
   fromLabel?: string;
-  x?: number;
-  y?: number;
-  className?: string;
+  x?: number | undefined;
+  y?: number | undefined;
+  className?: string | undefined;
 }) {
   const positioned = x !== undefined && y !== undefined;
   return (

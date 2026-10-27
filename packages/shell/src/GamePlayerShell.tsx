@@ -129,7 +129,7 @@ export function GamePlayerShell({
   multiplayer?: ShellMultiplayer | null;
   poster?: boolean;
   /** Called once per boot after onInit/onNewPlayer with the live GameContext — a staging seam for screenshots, tests, analytics. */
-  onContextReady?: (ctx: GameContext) => void;
+  onContextReady?: ((ctx: GameContext) => void) | undefined;
 }) {
   const multiplayer = useMemo(
     () => (rawMultiplayer === null ? null : withDevtoolsLatency(rawMultiplayer)),

@@ -415,7 +415,7 @@ const EMPTY_ROSTER: readonly RosterEntry[] = [];
 
 export function useLeaderboard(
   stat: string,
-  options: { scope: LeaderboardScope; limit?: number },
+  options: { scope: LeaderboardScope; limit?: number | undefined },
 ): { userId: string; value: number }[] {
   return useGameStore((ctx) => ctx.game.leaderboard?.getTop(stat, options) ?? EMPTY_LEADERBOARD);
 }

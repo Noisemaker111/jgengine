@@ -48,7 +48,7 @@ export async function readBreakdown(session: CdpSession): Promise<FrameBreakdown
   if (summary === null || summary === undefined) return null;
   const urls = new Map<string, string>();
   const off = session.on("Debugger.scriptParsed", (params) => {
-    urls.set(String(params.scriptId), String(params.url));
+    urls.set(String(params["scriptId"]), String(params["url"]));
   });
   try {
     await session.send("Debugger.enable");
@@ -68,10 +68,10 @@ export async function readBreakdown(session: CdpSession): Promise<FrameBreakdown
 
 async function locateCallback(session: CdpSession, label: string, urls: ReadonlyMap<string, string>): Promise<string | null> {
   const found = await session.send("Runtime.evaluate", { expression: `globalThis.__jgFrameBreakdown?.callbacks()[${JSON.stringify(label)}]` });
-  const objectId = (found.result as { objectId?: string } | undefined)?.objectId;
+  const objectId = (found["result"] as { objectId?: string } | undefined)?.objectId;
   if (objectId === undefined) return null;
   const props = await session.send("Runtime.getProperties", { objectId, ownProperties: false });
-  const internal = (props.internalProperties as { name: string; value?: { value?: { scriptId: string; lineNumber: number } } }[] | undefined) ?? [];
+  const internal = (props["internalProperties"] as { name: string; value?: { value?: { scriptId: string; lineNumber: number } } }[] | undefined) ?? [];
   const where = internal.find((prop) => prop.name === "[[FunctionLocation]]")?.value?.value;
   await session.send("Runtime.releaseObject", { objectId }).catch(() => {});
   if (where === undefined) return null;

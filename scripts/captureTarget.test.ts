@@ -33,7 +33,7 @@ describe("shared drive device profiles", () => {
     expect(sent.find((call) => call.method === "Emulation.setDeviceMetricsOverride")?.params)
       .toEqual({ width: 390, height: 844, deviceScaleFactor: 2, mobile: true });
     expect(sent.find((call) => call.method === "Emulation.setTouchEmulationEnabled")?.params).toEqual({ enabled: true, maxTouchPoints: 5 });
-    expect(sent.find((call) => call.method === "Emulation.setUserAgentOverride")?.params.userAgent).toContain("iPhone");
+    expect(sent.find((call) => call.method === "Emulation.setUserAgentOverride")?.params["userAgent"]).toContain("iPhone");
     const profile = scaleProfile(DEVICES[device], "full");
     expect([profile.width * profile.deviceScaleFactor, profile.height * profile.deviceScaleFactor]).toEqual([780, 1688]);
     expect(screencastCapturesFully(profile)).toBe(false);

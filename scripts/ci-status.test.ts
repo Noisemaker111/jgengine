@@ -186,12 +186,12 @@ describe("one query, one answer", () => {
       wallMs: 640,
     });
     const parsed = JSON.parse(jsonText(status)) as Record<string, unknown>;
-    expect(parsed.ok).toBe(true);
-    expect(parsed.verdict).toBe("pending");
-    expect(parsed.counts).toEqual({ pass: 1, fail: 0, pending: 1 });
-    expect(parsed.runIds).toEqual([4100]);
-    expect(parsed.wallMs).toBe(640);
-    const checks = parsed.checks as Record<string, unknown>[];
+    expect(parsed["ok"]).toBe(true);
+    expect(parsed["verdict"]).toBe("pending");
+    expect(parsed["counts"]).toEqual({ pass: 1, fail: 0, pending: 1 });
+    expect(parsed["runIds"]).toEqual([4100]);
+    expect(parsed["wallMs"]).toBe(640);
+    const checks = parsed["checks"] as Record<string, unknown>[];
     expect(checks[0]).toEqual({
       name: "quick",
       state: "SUCCESS",

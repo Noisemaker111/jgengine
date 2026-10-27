@@ -63,8 +63,8 @@ describe("shoot daemon state file", () => {
   test("same-port checkouts have isolated metadata and locks even under a port override", () => {
     const first = mkdtempSync(join(tmpdir(), "jg-shoot-isolated-a-"));
     const second = mkdtempSync(join(tmpdir(), "jg-shoot-isolated-b-"));
-    const prior = process.env.JG_CHROME_PORT;
-    process.env.JG_CHROME_PORT = "9230";
+    const prior = process.env["JG_CHROME_PORT"];
+    process.env["JG_CHROME_PORT"] = "9230";
     try {
       const firstPath = daemonStatePath(first);
       const secondPath = daemonStatePath(second);
@@ -83,8 +83,8 @@ describe("shoot daemon state file", () => {
     } finally {
       clearDaemonState(first);
       clearDaemonState(second);
-      if (prior === undefined) delete process.env.JG_CHROME_PORT;
-      else process.env.JG_CHROME_PORT = prior;
+      if (prior === undefined) delete process.env["JG_CHROME_PORT"];
+      else process.env["JG_CHROME_PORT"] = prior;
       rmSync(first, { recursive: true, force: true });
       rmSync(second, { recursive: true, force: true });
     }
@@ -277,8 +277,8 @@ describe("shoot daemon readiness", () => {
     const server = createServer((_request, response) => { response.writeHead(200); response.end("{}"); });
     await new Promise<void>(resolve => server.listen(0, "127.0.0.1", resolve));
     const port = (server.address() as AddressInfo).port;
-    const prior = process.env.JG_CHROME_PORT;
-    process.env.JG_CHROME_PORT = String(port);
+    const prior = process.env["JG_CHROME_PORT"];
+    process.env["JG_CHROME_PORT"] = String(port);
     try {
       await expect(startDaemon({ cwd, reapIdle: false })).rejects.toThrow(`explicitly --connect ${port}`);
       expect(readDaemonState(cwd)).toBeNull();
@@ -286,8 +286,8 @@ describe("shoot daemon readiness", () => {
       expect(await localOk(`http://127.0.0.1:${port}/json/version`, 2_000)).toBe(true);
     } finally {
       clearDaemonState(cwd);
-      if (prior === undefined) delete process.env.JG_CHROME_PORT;
-      else process.env.JG_CHROME_PORT = prior;
+      if (prior === undefined) delete process.env["JG_CHROME_PORT"];
+      else process.env["JG_CHROME_PORT"] = prior;
       await new Promise<void>(resolve => server.close(() => resolve()));
       rmSync(cwd, { recursive: true, force: true });
     }

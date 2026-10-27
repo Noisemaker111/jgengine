@@ -49,7 +49,7 @@ export function sectionLines(markdown: string, heading: string): string[] {
   if (start < 0) return [];
   let end = lines.length;
   for (let i = start + 1; i < lines.length; i++) {
-    if (/^## /.test(lines[i])) {
+    if (/^## /.test(lines[i] ?? "")) {
       end = i;
       break;
     }
@@ -87,7 +87,7 @@ export function parseSections(lines: string[]): ChangelogSections {
     const heading = /^###\s+(\w+)/.exec(line);
     if (heading) {
       flush();
-      key = HEADING_TO_KEY[heading[1].toLowerCase()] ?? null;
+      key = HEADING_TO_KEY[(heading[1] ?? "").toLowerCase()] ?? null;
       continue;
     }
     if (/^-\s+/.test(line)) {
@@ -122,7 +122,7 @@ export function cutChangelog(markdown: string, version: string, lockstep: string
   if (start < 0) throw new Error("CHANGELOG.md has no `## [Unreleased]` heading.");
   let end = lines.length;
   for (let i = start + 1; i < lines.length; i++) {
-    if (/^## /.test(lines[i])) {
+    if (/^## /.test(lines[i] ?? "")) {
       end = i;
       break;
     }
@@ -153,8 +153,8 @@ function withLockstep(body: string[], lockstep: string): string[] {
 function trimBlank(lines: string[]): string[] {
   let a = 0;
   let b = lines.length;
-  while (a < b && lines[a].trim() === "") a++;
-  while (b > a && lines[b - 1].trim() === "") b--;
+  while (a < b && lines[a]?.trim() === "") a++;
+  while (b > a && lines[b - 1]?.trim() === "") b--;
   return lines.slice(a, b);
 }
 
@@ -212,7 +212,7 @@ export interface AncestorReport {
 export function checkReleaseAncestor(input: {
   cwd: string;
   ref?: string;
-  target?: string;
+  target?: string | undefined;
   git?: GitRunner;
 }): AncestorReport {
   const git = input.git ?? runGit;
@@ -391,9 +391,9 @@ function main(): void {
 
 export interface WaitRequest {
   /** The version already cut. Absent means cut, land and wait. */
-  version?: string;
-  runId?: number;
-  sha?: string;
+  version?: string | undefined;
+  runId?: number | undefined;
+  sha?: string | undefined;
 }
 
 /** `--wait` cuts, lands and waits; `--wait <version>` only waits on a version already cut. Null without `--wait`. */

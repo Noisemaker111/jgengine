@@ -7,7 +7,7 @@ function el(overrides: Partial<FocusableElement> & { ancestor?: FocusableElement
     focus() {
       self.focused = true;
     },
-    closest: overrides.ancestor === undefined ? undefined : () => overrides.ancestor ?? null,
+    ...(overrides.ancestor === undefined ? {} : { closest: () => overrides.ancestor ?? null }),
     ...overrides,
   };
   return self;

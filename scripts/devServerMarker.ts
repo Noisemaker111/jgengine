@@ -23,7 +23,7 @@ export interface DevServerMarker {
   port: number;
   pid?: number;
   /** Commit this server booted from; absent for markers written before revision keying. */
-  head?: string;
+  head?: string | undefined;
   /** Which config published it; absent on older markers, resolved by probing `/games`. */
   kind?: "website" | "runner";
   /** Host that answers: Vite's default `localhost` can be IPv6-only, where `127.0.0.1` hangs. */
@@ -133,7 +133,7 @@ export interface ServerIdentityReport {
   /** The Vite process itself, never the `bun run` wrapper that launched it. */
   pid: number;
   kind: "website" | "runner";
-  head?: string;
+  head?: string | undefined;
 }
 
 /** The identity a server on `base` reports, or null when it does not answer the route (or is not ours at all). */
@@ -248,7 +248,7 @@ export interface RunningDevServer {
  */
 export async function listRunningDevServers(cwd = process.cwd(), dir = tmpdir()): Promise<RunningDevServer[]> {
   const identity = checkoutIdentity(cwd);
-  const preferredPort = Number(process.env.JG_DEV_PORT);
+  const preferredPort = Number(process.env["JG_DEV_PORT"]);
   const candidates = listMarkers(dir)
     .filter((marker) => marker.identity === identity)
     .sort((a, b) => (b.port === preferredPort ? 1 : 0) - (a.port === preferredPort ? 1 : 0));
@@ -300,7 +300,7 @@ export const DEFAULT_IDLE_EXIT_MINUTES = 20;
 
 /** `JG_DEV_IDLE_MINUTES`, else 20; `0` keeps the server up forever. */
 export function resolveIdleExitMs(env: NodeJS.ProcessEnv = process.env): number {
-  const raw = env.JG_DEV_IDLE_MINUTES;
+  const raw = env["JG_DEV_IDLE_MINUTES"];
   if (raw === undefined || raw.trim() === "") return DEFAULT_IDLE_EXIT_MINUTES * 60_000;
   const minutes = Number(raw);
   return Number.isFinite(minutes) && minutes > 0 ? minutes * 60_000 : 0;
@@ -347,7 +347,7 @@ export function startIdleWatchdog(
   if (httpServer?.on === undefined) return null;
   const now = options.now ?? Date.now;
   const rootExists = options.rootExists ?? existsSync;
-  const ownerPid = options.ownerPid ?? (Number(process.env.JG_BROKER_PID) > 0 ? Number(process.env.JG_BROKER_PID) : undefined);
+  const ownerPid = options.ownerPid ?? (Number(process.env["JG_BROKER_PID"]) > 0 ? Number(process.env["JG_BROKER_PID"]) : undefined);
   const isAlive = options.isAlive ?? ((pid: number) => processAlive(pid));
   const exit =
     options.exit ??

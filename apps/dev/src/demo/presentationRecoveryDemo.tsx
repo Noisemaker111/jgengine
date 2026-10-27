@@ -70,7 +70,7 @@ function RecoveryUI() {
     <p>Host tick <output data-testid="host-tick">{view?.ticks ?? 0}</output> · Copper <output data-testid="copper">{view?.coins ?? 0}</output></p>
     <p>Context <output data-testid="context-lifetime">{preview.id}</output> · <output data-testid="actor">{ctx.player.userId}</output></p>
     <p>WASD moves the courier. Successful texture groups remain cached on retry.</p>
-    <small>Frontend: <output data-testid="frontend-revision">{import.meta.env.VITE_JG_COMPILED_REVISION ?? "development"}</output></small>
+    <small>Frontend: <output data-testid="frontend-revision">{import.meta.env["VITE_JG_COMPILED_REVISION"] ?? "development"}</output></small>
   </aside>;
 }
 export const presentationRecoveryDemoGame: PlayableGame = {

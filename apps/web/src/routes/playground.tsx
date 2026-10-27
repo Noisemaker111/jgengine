@@ -827,8 +827,8 @@ function Playground() {
         setWorldReady(true);
       })
       .catch((error: unknown) => {
-        document.documentElement.dataset.jgCapture = "error";
-        document.documentElement.dataset.jgCaptureError = error instanceof Error ? error.message : String(error);
+        document.documentElement.dataset["jgCapture"] = "error";
+        document.documentElement.dataset["jgCaptureError"] = error instanceof Error ? error.message : String(error);
         setView("map");
       });
     return () => {
@@ -862,7 +862,7 @@ function Playground() {
         viewportHeight: window.innerHeight,
       });
     let cancelled = false;
-    document.documentElement.dataset.jgCapture = "pending";
+    document.documentElement.dataset["jgCapture"] = "pending";
     void world.setCity(city, {
       seed: dials.seed,
       heightScale: mode === "circuit" ? 0.5 : 1,
@@ -880,11 +880,11 @@ function Playground() {
       laneMarkingGap: dials.laneMarkingGap,
       ...(result.route === null ? {} : { route: result.route }),
     }).then(() => {
-      if (!cancelled) document.documentElement.dataset.jgCapture = "ready";
+      if (!cancelled) document.documentElement.dataset["jgCapture"] = "ready";
     }).catch((error: unknown) => {
       if (cancelled) return;
-      document.documentElement.dataset.jgCapture = "error";
-      document.documentElement.dataset.jgCaptureError = error instanceof Error ? error.message : String(error);
+      document.documentElement.dataset["jgCapture"] = "error";
+      document.documentElement.dataset["jgCaptureError"] = error instanceof Error ? error.message : String(error);
     });
     builtOnce.current = true;
     return () => {

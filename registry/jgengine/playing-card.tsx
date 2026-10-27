@@ -37,7 +37,7 @@ export function PlayingCard({
 }: {
   rank: Rank;
   suit: Suit;
-  faceDown?: boolean;
+  faceDown?: boolean | undefined;
   width?: number;
   height?: number;
   className?: string;

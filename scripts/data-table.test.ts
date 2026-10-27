@@ -57,7 +57,7 @@ test("the written file is TypeScript a game imports, and it names its source on 
   await Bun.write(path, text);
   const loaded = (await import(path)) as { creatureStats: { creature: string; healthLevel1: number; healthW: number | null; baseDamage: string }[]; creatureStatsHeadings: Record<string, string> };
   expect(loaded.creatureStats[1]).toEqual({ creature: "Rex & friends", healthLevel1: 1100, healthW: null, baseDamage: "10 / 40" });
-  expect(loaded.creatureStatsHeadings.healthW).toBe("Health +W");
+  expect(loaded.creatureStatsHeadings["healthW"]).toBe("Health +W");
 });
 
 test("a page is fetched once: the second read comes from the cache, --refresh goes back to the network", async () => {

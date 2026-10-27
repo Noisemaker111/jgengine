@@ -244,7 +244,7 @@ export interface StreetNetworkRules {
   sidewalkWidth?: number;
   /** Road-surface relief amplitude, 0..1. 0 (default) = dead flat and byte-identical to a pre-elevation
    *  network; 1 ≈ 22 m of relief across a ~520 m volume (scaled to the footprint). */
-  elevation?: number;
+  elevation?: number | undefined;
   /** Maximum road slope (rise/run) the grade cap enforces on every street's height sequence. Default 0.07. */
   maxGrade?: number;
   /** SPACE-FILLING circuit layout dial, 0..1. 0 (default) = the hull construction (a flowing loop around

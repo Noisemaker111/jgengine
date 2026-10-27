@@ -51,7 +51,7 @@ export function GameUiPreview({
   scenario = defaultUiScenario,
 }: {
   playable: PlayableGame;
-  scenario?: UiPreviewScenario;
+  scenario?: UiPreviewScenario | undefined;
 }) {
   const [ctx, setCtx] = useState<GameContext | null>(null);
   const accessibility = useAccessibilitySettings();

@@ -14,8 +14,8 @@ export function MenuButton({
   className,
 }: {
   label: string;
-  keybind?: string;
-  onActivate?: () => void;
+  keybind?: string | undefined;
+  onActivate?: (() => void) | undefined;
   variant?: "primary" | "ghost" | "danger";
   width?: number | string;
   className?: string;

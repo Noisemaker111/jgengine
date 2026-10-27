@@ -656,7 +656,7 @@ export function formatTable(report: AuditReport, window: { readonly hours: numbe
 export interface AuditOptions {
   readonly hours: number;
   readonly database: string;
-  readonly cwd?: string;
+  readonly cwd?: string | undefined;
   readonly now: number;
 }
 
@@ -781,8 +781,8 @@ export function toJson(report: AuditReport): string {
  * source `lane:close` answered "no session found" for every Claude lane.
  */
 export function claudeProjectsDir(env: NodeJS.ProcessEnv = process.env): string {
-  if (env.CLAUDE_PROJECTS_DIR !== undefined && env.CLAUDE_PROJECTS_DIR !== "") return env.CLAUDE_PROJECTS_DIR;
-  return join(env.CLAUDE_CONFIG_DIR ?? join(homedir(), ".claude"), "projects");
+  if (env["CLAUDE_PROJECTS_DIR"] !== undefined && env["CLAUDE_PROJECTS_DIR"] !== "") return env["CLAUDE_PROJECTS_DIR"];
+  return join(env["CLAUDE_CONFIG_DIR"] ?? join(homedir(), ".claude"), "projects");
 }
 
 /**
@@ -862,7 +862,7 @@ export function claudeSession(text: string, fallbackId: string): { session: Sess
         if (use === undefined) continue;
         started.delete(item.tool_use_id);
         const input = (use.input ?? {}) as Record<string, unknown>;
-        const command = typeof input.command === "string" ? input.command : "";
+        const command = typeof input["command"] === "string" ? input["command"] : "";
         const rest = JSON.stringify(Object.fromEntries(Object.entries(input).filter(([key]) => key !== "command")));
         calls.push({ name: use.name, command, input: rest === "{}" ? "" : rest, startedAt: use.at, endedAt: at, ms: Math.max(0, at - use.at) });
       }
@@ -900,11 +900,11 @@ export function loadClaudeSessions(dir: string, options: { hours: number; now: n
 export function candidateDatabases(env: NodeJS.ProcessEnv = process.env): string[] {
   const home = homedir();
   const candidates = [
-    env.OPENCODE_DB,
-    env.XDG_DATA_HOME === undefined ? undefined : join(env.XDG_DATA_HOME, "opencode/opencode.db"),
+    env["OPENCODE_DB"],
+    env["XDG_DATA_HOME"] === undefined ? undefined : join(env["XDG_DATA_HOME"], "opencode/opencode.db"),
   ];
-  if (env.APPDATA !== undefined) candidates.push(join(env.APPDATA, "opencode/opencode.db"));
-  if (env.LOCALAPPDATA !== undefined) candidates.push(join(env.LOCALAPPDATA, "opencode/opencode.db"));
+  if (env["APPDATA"] !== undefined) candidates.push(join(env["APPDATA"], "opencode/opencode.db"));
+  if (env["LOCALAPPDATA"] !== undefined) candidates.push(join(env["LOCALAPPDATA"], "opencode/opencode.db"));
   candidates.push(join(home, ".local/share/opencode/opencode.db"), join(home, ".config/opencode/opencode.db"));
   return [...new Set(candidates.filter((candidate): candidate is string => typeof candidate === "string" && candidate !== ""))];
 }

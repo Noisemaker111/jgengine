@@ -66,7 +66,7 @@ test("proof: a new folder with no tag gets a guess from how its code reads, writ
     "weather/weather.ts": "/** Rain and snow fall from the sky over the terrain. */\nexport function weatherSky() {}\n",
   });
   const { domains, guessed } = routeProfiles(readProfiles(src), KNOWN, DOCS);
-  expect(domains.weather).toBe("jgengine-world");
+  expect(domains["weather"]).toBe("jgengine-world");
   expect(guessed.map((entry) => entry.profile.name)).toEqual(["weather"]);
   writeTag(guessed[0]!.profile.tagTarget, guessed[0]!.skill);
   expect(readFileSync(join(src, "weather", "weather.ts"), "utf8").split("\n")[0]).toBe("// @skill jgengine-world");

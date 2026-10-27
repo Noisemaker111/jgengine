@@ -18,14 +18,14 @@ export interface RatchetFinding {
   /** How the finding is shown to a human, e.g. `path/to/file.ts:12`. Defaults to `key`. */
   where?: string;
   /** Debt group this finding belongs to; a group can carry a ceiling in the baseline. */
-  group?: string;
+  group?: string | undefined;
 }
 
 export interface RatchetBaseline {
   /** Known offenders, shrink-only. */
   keys: string[];
   /** Most findings a debt group may hold. Lowered as the debt is paid; never raised. */
-  ceilings?: Record<string, number>;
+  ceilings?: Record<string, number> | undefined;
 }
 
 export interface RatchetSpec {

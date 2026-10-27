@@ -3,8 +3,8 @@ import { sources } from "../packages/assets/src/sources";
 import type { AssetSource } from "../packages/assets/src/manifest";
 
 const TAG = "packs";
-const repo = process.env.GITHUB_REPOSITORY ?? "Noisemaker111/jgengine";
-const token = process.env.GITHUB_TOKEN;
+const repo = process.env["GITHUB_REPOSITORY"] ?? "Noisemaker111/jgengine";
+const token = process.env["GITHUB_TOKEN"];
 if (!token) {
   console.error("mirror-assets: GITHUB_TOKEN is required");
   process.exit(1);

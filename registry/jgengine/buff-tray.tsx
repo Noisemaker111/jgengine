@@ -9,11 +9,11 @@ const clampFraction = (value: number) => (Number.isNaN(value) ? 0 : Math.min(1, 
 
 export interface BuffChip {
   id: string;
-  icon?: ReactNode;
-  label?: string;
-  stacks?: number;
-  remainingFraction?: number;
-  kind?: "buff" | "debuff";
+  icon?: ReactNode | undefined;
+  label?: string | undefined;
+  stacks?: number | undefined;
+  remainingFraction?: number | undefined;
+  kind?: "buff" | "debuff" | undefined;
 }
 
 export function BuffTray({
@@ -22,8 +22,8 @@ export function BuffTray({
   className,
 }: {
   buffs: readonly BuffChip[];
-  size?: number;
-  className?: string;
+  size?: number | undefined;
+  className?: string | undefined;
 }) {
   return (
     <div className={`flex gap-[3px] ${className ?? ""}`} data-jg="buff-tray">

@@ -118,8 +118,9 @@ function importedContentBuilders(txt: string): Set<ContentBuilder> {
   const re = /import\s+(?:type\s+)?\{([^}]*)\}\s+from\s+["']([^"']+)["']/g;
   let m: RegExpExecArray | null;
   while ((m = re.exec(txt)) !== null) {
-    if (!FEATURE_MODULE.test(m[2])) continue;
-    for (const raw of m[1].split(",")) {
+    const [, names = "", specifier = ""] = m;
+    if (!FEATURE_MODULE.test(specifier)) continue;
+    for (const raw of names.split(",")) {
       const name = raw.trim().replace(/^type\s+/, "").split(/\s+as\s+/)[0]?.trim() ?? "";
       if ((CONTENT_BUILDERS as readonly string[]).includes(name)) set.add(name as ContentBuilder);
     }

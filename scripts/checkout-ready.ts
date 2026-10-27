@@ -47,7 +47,7 @@ export function checkoutFixText(script: string, root: string, problem: CheckoutP
  * `JG_CHECKOUT_ROOT` points the probe at another checkout for tests.
  */
 export function assertCheckoutReady(script: string, root = process.cwd()): void {
-  const target = process.env.JG_CHECKOUT_ROOT ?? root;
+  const target = process.env["JG_CHECKOUT_ROOT"] ?? root;
   const problem = checkoutProblem(target);
   if (problem === null) return;
   console.error(checkoutFixText(script, target, problem));

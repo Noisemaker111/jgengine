@@ -124,7 +124,7 @@ describe("summarizePlaytest", () => {
     expect(result.probed).toBe(true);
     expect(result.softlocked).toBe(false);
     expect(result.totalProgress).toBeCloseTo(40, 5);
-    expect(result.progressDelta.x).toBeCloseTo(40, 5);
+    expect(result.progressDelta["x"]).toBeCloseTo(40, 5);
     expect(result.framesElapsed).toBe(30);
     expect(result.seed).toBe(7);
   });

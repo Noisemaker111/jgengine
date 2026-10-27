@@ -38,7 +38,7 @@ export interface EngineLayersState {
 /** Per-tick parameters {@link EngineLayers.play} forwards to every layer's loop. */
 export interface EngineLayersPlayOptions {
   at?: readonly [number, number, number];
-  velocity?: readonly [number, number, number];
+  velocity?: readonly [number, number, number] | undefined;
   /** Overall gain multiplier. Default 1. */
   gain?: number;
   lowpass?: number;

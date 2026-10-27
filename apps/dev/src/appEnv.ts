@@ -17,7 +17,7 @@ installAssetBase(import.meta.env?.BASE_URL ?? "/");
 const urlParams = new URLSearchParams(typeof window === "undefined" ? "" : window.location.search);
 
 /** Explicit game only — bare `/` shows the picker so demo is never a silent surprise. */
-export const GAME_ID = urlParams.get("game") ?? (import.meta.env.VITE_GAME_ID as string | undefined) ?? null;
+export const GAME_ID = urlParams.get("game") ?? (import.meta.env["VITE_GAME_ID"] as string | undefined) ?? null;
 /** Gameless scene editor — the site embeds this at /editor via /play/?editor=standalone. */
 export const EDITOR_STANDALONE = urlParams.get("editor") === "standalone";
 export const STATE_PARAM = urlParams.get("state");
@@ -74,8 +74,8 @@ export const resolvedSpawn = (): string | null => viewOverrides.spawn ?? SPAWN;
 export const resolvedState = (): string | null => viewOverrides.state ?? STATE_PARAM;
 export const resolvedRun = (): readonly string[] => viewOverrides.run ?? RUN;
 export const resolvedSettleMs = (): number | undefined => viewOverrides.settleMs;
-export const WS_URL = import.meta.env.VITE_JG_WS_URL as string | undefined;
-export const CONVEX_URL = import.meta.env.VITE_CONVEX_URL as string | undefined;
+export const WS_URL = import.meta.env["VITE_JG_WS_URL"] as string | undefined;
+export const CONVEX_URL = import.meta.env["VITE_CONVEX_URL"] as string | undefined;
 export const P2P_ROLE = urlParams.get("p2p");
 
 if (import.meta.env.DEV && GAME_ID !== null) installSaveEndpoint("/__jgengine/save", GAME_ID);

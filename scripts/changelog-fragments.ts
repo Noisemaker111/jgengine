@@ -20,9 +20,9 @@ export function groupByHeading(lines: string[]): Map<string, string[]> {
   const groups = new Map<string, string[]>();
   let heading: string | null = null;
   for (const line of lines) {
-    const match = /^#{1,3}\s+(\w+)/.exec(line);
-    if (match) {
-      heading = match[1][0].toUpperCase() + match[1].slice(1).toLowerCase();
+    const word = /^#{1,3}\s+(\w+)/.exec(line)?.[1];
+    if (word !== undefined) {
+      heading = word.charAt(0).toUpperCase() + word.slice(1).toLowerCase();
       if (DROPPED_HEADINGS.has(heading)) heading = null;
       else if (!groups.has(heading)) groups.set(heading, []);
       continue;
@@ -41,7 +41,7 @@ export function foldFragments(markdown: string, fragments: string[]): string {
   if (start < 0) throw new Error("CHANGELOG.md has no `## [Unreleased]` heading.");
   let end = lines.length;
   for (let i = start + 1; i < lines.length; i++) {
-    if (/^## /.test(lines[i])) {
+    if (/^## /.test(lines[i] ?? "")) {
       end = i;
       break;
     }
@@ -85,7 +85,7 @@ export function readFragments(root: string): { path: string; text: string }[] {
 function trim(lines: string[]): string[] {
   let a = 0;
   let b = lines.length;
-  while (a < b && lines[a].trim() === "") a++;
-  while (b > a && lines[b - 1].trim() === "") b--;
+  while (a < b && lines[a]?.trim() === "") a++;
+  while (b > a && lines[b - 1]?.trim() === "") b--;
   return lines.slice(a, b);
 }

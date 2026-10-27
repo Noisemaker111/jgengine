@@ -57,16 +57,16 @@ export interface ShootDaemonState {
   identity: string;
   chromePort: number;
   /** Engine commit this daemon's Chrome and Vite booted from; absent on records written before revision keying. */
-  head?: string;
-  devPort?: number;
-  devBase?: string;
-  chromePid?: number;
+  head?: string | undefined;
+  devPort?: number | undefined;
+  devBase?: string | undefined;
+  chromePid?: number | undefined;
   /** Chrome profile, removed when the daemon stops. */
-  userDataDir?: string;
-  devPid?: number;
-  webPort?: number;
-  webBase?: string;
-  webPid?: number;
+  userDataDir?: string | undefined;
+  devPid?: number | undefined;
+  webPort?: number | undefined;
+  webBase?: string | undefined;
+  webPid?: number | undefined;
   /** Game list the dev server was booted against; a mismatch means it is stale. */
   devWorld?: GamesWorld;
   /** Game list the website server was booted against. */
@@ -482,7 +482,7 @@ export async function reapStaleDaemonState(cwd = process.cwd()): Promise<boolean
 
 /** Idle window after which a warm daemon is retired: one hour unless `JG_SHOOT_IDLE_MINUTES` says otherwise. */
 export function idleDaemonMs(env: NodeJS.ProcessEnv = process.env): number {
-  const minutes = Number(env.JG_SHOOT_IDLE_MINUTES ?? "");
+  const minutes = Number(env["JG_SHOOT_IDLE_MINUTES"] ?? "");
   return (Number.isFinite(minutes) && minutes > 0 ? minutes : 60) * 60_000;
 }
 

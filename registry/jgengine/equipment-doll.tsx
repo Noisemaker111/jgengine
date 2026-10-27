@@ -12,7 +12,7 @@ const rarityColor = (rarity: RarityTierName | undefined) => `var(--jg-rarity-${r
 export interface EquipmentSlotSpec {
   id: string;
   label: string;
-  icon?: ReactNode;
+  icon?: ReactNode | undefined;
   rarity?: RarityTierName;
   side: "left" | "right" | "bottom";
 }
@@ -37,7 +37,7 @@ function EquipmentSlotWell({
   onSlotClick,
 }: {
   slot: EquipmentSlotSpec;
-  onSlotClick?: (id: string) => void;
+  onSlotClick?: ((id: string) => void) | undefined;
 }) {
   const color = slot.icon === undefined ? "var(--jg-edge)" : rarityColor(slot.rarity);
   return (

@@ -4,7 +4,7 @@
  * `VITE_JG_GAME_DIR`) adds that one directory beside the glob's games, loaded through the dev
  * server's own module pipeline (`/@fs/<path>`) so the same plugins, aliases and HMR apply.
  */
-const RAW = import.meta.env.VITE_JG_GAME_DIR;
+const RAW = import.meta.env["VITE_JG_GAME_DIR"];
 
 function toPosix(path: string): string {
   return path.replace(/\\/g, "/").replace(/\/+$/, "");

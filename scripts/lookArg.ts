@@ -124,7 +124,7 @@ export function lookSearchParams(aim: LookAim): Record<string, string> {
   const params: Record<string, string> = look.length === 0 ? {} : { look };
   const vantage = [aim.distance, aim.height, aim.angle];
   if (vantage.some((value) => value !== undefined)) {
-    params.lookFrom = vantage.map((value) => (value === undefined ? "" : String(value))).join(",");
+    params["lookFrom"] = vantage.map((value) => (value === undefined ? "" : String(value))).join(",");
   }
   return params;
 }

@@ -13,8 +13,8 @@ export interface ApiExport {
   name: string;
   kind: string;
   signature: string;
-  doc?: string;
-  capabilities?: ApiCapability[];
+  doc?: string | undefined;
+  capabilities?: ApiCapability[] | undefined;
 }
 
 export interface ApiModule {

@@ -11,9 +11,9 @@ const rarityColor = (rarity: RarityTierName | undefined) => `var(--jg-rarity-${r
 
 export interface ItemGridSlot {
   itemId: string | null;
-  count?: number;
-  icon?: ReactNode;
-  rarity?: RarityTierName;
+  count?: number | undefined;
+  icon?: ReactNode | undefined;
+  rarity?: RarityTierName | undefined;
 }
 
 export function ItemGrid({
@@ -24,10 +24,10 @@ export function ItemGrid({
   className,
 }: {
   slots: readonly ItemGridSlot[];
-  columns?: number;
-  slotSize?: number;
-  onSlotClick?: (index: number, itemId: string | null) => void;
-  className?: string;
+  columns?: number | undefined;
+  slotSize?: number | undefined;
+  onSlotClick?: ((index: number, itemId: string | null) => void) | undefined;
+  className?: string | undefined;
 }) {
   return (
     <div

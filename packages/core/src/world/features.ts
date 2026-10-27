@@ -718,7 +718,7 @@ export interface EnvironmentWorldConfig {
    * editor-to-runtime ground seam. The same snapshot in a game's `editorLayers.terrain` renders and
    * collides identically at runtime.
    */
-  sculpt?: TerraformSnapshot;
+  sculpt?: TerraformSnapshot | undefined;
   /**
    * Clearance discs flattened into the ground (spawns, plots, paths) — the terrain half of a
    * clearance zone whose foliage half is scatter's `avoid`. Derive them from a document with

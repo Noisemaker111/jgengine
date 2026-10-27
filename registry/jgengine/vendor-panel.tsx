@@ -18,7 +18,7 @@ function HoverButton({
   className,
   children,
 }: {
-  onClick?: () => void;
+  onClick?: (() => void) | undefined;
   disabled?: boolean;
   style: CSSProperties;
   hoverStyle: CSSProperties;

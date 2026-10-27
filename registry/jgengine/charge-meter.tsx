@@ -17,9 +17,9 @@ export function ChargeMeter({
   fraction: number;
   ready?: boolean;
   tiers?: readonly number[];
-  label?: string;
+  label?: string | undefined;
   width?: number | string;
-  className?: string;
+  className?: string | undefined;
 }) {
   const clamped = clampFraction(fraction);
   return (

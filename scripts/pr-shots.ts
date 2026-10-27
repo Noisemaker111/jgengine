@@ -180,9 +180,9 @@ const gitDir = git(["rev-parse", "--absolute-git-dir"]);
 const indexFile = join(gitDir, `pr-shots-index-${process.pid}`);
 const indexEnv: NodeJS.ProcessEnv = { ...process.env, GIT_INDEX_FILE: indexFile };
 // Drop any accidental GIT_DIR/WORK_TREE overrides that could redirect plumbing.
-delete indexEnv.GIT_DIR;
-delete indexEnv.GIT_WORK_TREE;
-delete indexEnv.GIT_COMMON_DIR;
+delete indexEnv["GIT_DIR"];
+delete indexEnv["GIT_WORK_TREE"];
+delete indexEnv["GIT_COMMON_DIR"];
 
 let commit: string;
 try {

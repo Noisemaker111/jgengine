@@ -77,8 +77,8 @@ export function QuestTracker({
   className,
 }: {
   quests: readonly TrackedQuest[];
-  width?: number;
-  className?: string;
+  width?: number | undefined;
+  className?: string | undefined;
 }) {
   return (
     <div className={`flex flex-col gap-2.5 ${className ?? ""}`} data-jg="quest-tracker" style={{ width }}>

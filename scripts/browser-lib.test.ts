@@ -136,13 +136,13 @@ describe("worktree-scoped ports", () => {
   });
 
   test("JG_DEV_PORT override wins", () => {
-    const prior = process.env.JG_DEV_PORT;
-    process.env.JG_DEV_PORT = "4601";
+    const prior = process.env["JG_DEV_PORT"];
+    process.env["JG_DEV_PORT"] = "4601";
     try {
       expect(resolveDevPort()).toBe(4601);
     } finally {
-      if (prior === undefined) delete process.env.JG_DEV_PORT;
-      else process.env.JG_DEV_PORT = prior;
+      if (prior === undefined) delete process.env["JG_DEV_PORT"];
+      else process.env["JG_DEV_PORT"] = prior;
     }
   });
 
@@ -267,7 +267,7 @@ describe("capture navigation failures", () => {
   });
 
   test("every capture page boots with play held and focus emulated, so a window switch cannot auto-pause it", async () => {
-    const sent: Array<{ method: string; params?: Record<string, unknown> }> = [];
+    const sent: Array<{ method: string; params?: Record<string, unknown> | undefined }> = [];
     const session = fakeSession({ captureStatus: "ready" });
     const send = session.send.bind(session);
     (session as unknown as { send: typeof send }).send = (async (method: string, params?: Record<string, unknown>) => {
@@ -275,10 +275,10 @@ describe("capture navigation failures", () => {
       return send(method as never, params as never);
     }) as typeof send;
     await navigateCapturePage(session, "http://127.0.0.1:5712/?game=deepward", 1_000);
-    const hold = sent.findIndex((call) => call.method === "Page.addScriptToEvaluateOnNewDocument" && call.params?.source === CAPTURE_HOLD_SOURCE);
+    const hold = sent.findIndex((call) => call.method === "Page.addScriptToEvaluateOnNewDocument" && call.params?.["source"] === CAPTURE_HOLD_SOURCE);
     expect(hold).toBeGreaterThanOrEqual(0);
     expect(hold).toBeLessThan(sent.findIndex((call) => call.method === "Page.navigate"));
-    expect(sent.some((call) => call.method === "Emulation.setFocusEmulationEnabled" && call.params?.enabled === true)).toBe(true);
+    expect(sent.some((call) => call.method === "Emulation.setFocusEmulationEnabled" && call.params?.["enabled"] === true)).toBe(true);
     const scope = globalThis as Record<string, unknown>;
     try {
       new Function(CAPTURE_HOLD_SOURCE)();

@@ -195,7 +195,7 @@ export async function brokerChrome(cwd: string, log: (line: string) => void = (l
  * stays under `bun run shoot`'s 420 s guard, so a long queue fails naming the holder, not as a kill.
  */
 export function captureWaitMs(env: NodeJS.ProcessEnv = process.env): number {
-  const minutes = Number(env.JG_CAPTURE_WAIT_MINUTES);
+  const minutes = Number(env["JG_CAPTURE_WAIT_MINUTES"]);
   return (Number.isFinite(minutes) && minutes > 0 ? minutes : 5) * 60_000;
 }
 

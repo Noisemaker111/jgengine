@@ -14,7 +14,7 @@ import { relative } from "node:path";
 import { FRAGMENT_PATTERN, groupByHeading, readFragments } from "./changelog-fragments";
 
 const root = fileURLToPath(new URL("..", import.meta.url));
-const BASE_REF = process.env.CHANGELOG_BASE_REF ?? "origin/main";
+const BASE_REF = process.env["CHANGELOG_BASE_REF"] ?? "origin/main";
 const SKIP_MARKER = "[skip changelog]";
 const SOURCE = /^packages\/[^/]+\/src\/.+/;
 const isNotShipped = (f: string) => /\.(test|spec)\.[tj]sx?$/.test(f) || /\.mdx?$/i.test(f);
@@ -31,7 +31,7 @@ function sectionBlock(text: string, heading: string): string {
   if (start < 0) return "";
   let end = lines.length;
   for (let i = start + 1; i < lines.length; i++) {
-    if (/^## /.test(lines[i])) {
+    if (/^## /.test(lines[i] ?? "")) {
       end = i;
       break;
     }

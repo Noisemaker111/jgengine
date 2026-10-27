@@ -618,19 +618,19 @@ export function buildCityModel(
      *  barriers sealing every side street off the lap. */
     raceRoute?: CircuitRoute;
     /** Render connected pedestrian bands around paved streets. Default true. */
-    sidewalks?: boolean;
+    sidewalks?: boolean | undefined;
     /** Pedestrian band width beyond each carriageway edge. Default 2.2. */
-    sidewalkWidth?: number;
+    sidewalkWidth?: number | undefined;
     /** Render lane guidance and stop lines. Default true. */
-    laneMarkings?: boolean;
+    laneMarkings?: boolean | undefined;
     /** Lane-paint ribbon width. Default 0.18. */
-    laneMarkingWidth?: number;
+    laneMarkingWidth?: number | undefined;
     /** Signed lateral marking offset from the authored centerline. Default 0. */
-    laneMarkingOffset?: number;
+    laneMarkingOffset?: number | undefined;
     /** Painted dash length. Reserved for shared marking style controls. */
-    laneMarkingDash?: number;
+    laneMarkingDash?: number | undefined;
     /** Gap between painted dashes. Reserved for shared marking style controls. */
-    laneMarkingGap?: number;
+    laneMarkingGap?: number | undefined;
     /** Decorative arterial glow independent of physical lane guidance. Default true. */
     centerlineGlow?: boolean;
     /**
@@ -906,7 +906,7 @@ export function buildCityModel(
   // Vertex prelude: grow-in animation + forward the per-building window/flood attrs. `vY` carries the
   // grown local height so the fragment shader can light only a shop's ground floor as a storefront.
   const growVertex = (shader: THREE.WebGLProgramParametersWithUniforms) => {
-    shader.uniforms.uGrow = growUniform;
+    shader.uniforms["uGrow"] = growUniform;
     shader.vertexShader = `attribute float aGrow;
       attribute vec3 aWinTint;
       attribute float aWinDensity;

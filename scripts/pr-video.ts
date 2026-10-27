@@ -64,7 +64,7 @@ function fail(message: string): never {
 async function repositoryId(owner: string, repo: string): Promise<number> {
   // Unauthenticated calls 403 from shared egress IPs (cloud proxies, Actions
   // runners) — authenticate with whatever CI token is around when one is set.
-  const token = process.env.GH_TOKEN ?? process.env.GITHUB_TOKEN;
+  const token = process.env["GH_TOKEN"] ?? process.env["GITHUB_TOKEN"];
   const response = await fetch(`https://api.github.com/repos/${owner}/${repo}`, {
     headers: {
       accept: "application/vnd.github+json",
@@ -105,7 +105,7 @@ if (import.meta.main) {
     }
   }
 
-  const secret = process.env.GH_SESSION_TOKEN;
+  const secret = process.env["GH_SESSION_TOKEN"];
   if (secret === undefined || secret.trim().length === 0) {
     fail(
       "GH_SESSION_TOKEN is not set. GitHub has no token API for attachment uploads —\n" +

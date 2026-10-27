@@ -84,8 +84,8 @@ for (const name of skillDirs) {
     problems.push(`${name}/SKILL.md frontmatter is not valid YAML (${(error as Error).message}); quote values containing ": "`);
   }
   const fields = (parsed ?? {}) as Record<string, unknown>;
-  if (parsed !== undefined && fields.name !== name) problems.push(`${name}/SKILL.md frontmatter name must be "${name}"`);
-  const description = (typeof fields.description === "string" ? fields.description : "").trim();
+  if (parsed !== undefined && fields["name"] !== name) problems.push(`${name}/SKILL.md frontmatter name must be "${name}"`);
+  const description = (typeof fields["description"] === "string" ? fields["description"] : "").trim();
   const descriptionWords = description.split(/\s+/).filter(Boolean).length;
   if (descriptionWords === 0 || descriptionWords > 15) {
     problems.push(`${name} description is ${descriptionWords} words; require 1-15 trigger-oriented words`);

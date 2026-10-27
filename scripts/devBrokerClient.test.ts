@@ -18,13 +18,13 @@ async function freePort(): Promise<number> {
 
 describe("broker client", () => {
   test("JG_BROKER=0 means no broker is asked or started", async () => {
-    const before = process.env.JG_BROKER;
-    process.env.JG_BROKER = "0";
+    const before = process.env["JG_BROKER"];
+    process.env["JG_BROKER"] = "0";
     try {
       expect(await ensureBroker({ log: () => {} })).toBeNull();
     } finally {
-      if (before === undefined) delete process.env.JG_BROKER;
-      else process.env.JG_BROKER = before;
+      if (before === undefined) delete process.env["JG_BROKER"];
+      else process.env["JG_BROKER"] = before;
     }
   });
 
@@ -53,8 +53,8 @@ describe("broker client", () => {
   test("a real broker process answers, refuses a second copy, and stops on request", async () => {
     const port = await freePort();
     const env = { ...process.env, JG_BROKER_PORT: String(port), JG_BROKER: "1" };
-    const before = process.env.JG_BROKER_PORT;
-    process.env.JG_BROKER_PORT = String(port);
+    const before = process.env["JG_BROKER_PORT"];
+    process.env["JG_BROKER_PORT"] = String(port);
     const first = spawn(process.execPath, [join(import.meta.dir, "devBroker.ts"), "serve"], { env, stdio: "ignore", windowsHide: true });
     const firstExit = new Promise<number | null>((resolve) => first.once("exit", resolve));
     try {
@@ -72,8 +72,8 @@ describe("broker client", () => {
       expect(await firstExit).toBe(0);
     } finally {
       first.kill();
-      if (before === undefined) delete process.env.JG_BROKER_PORT;
-      else process.env.JG_BROKER_PORT = before;
+      if (before === undefined) delete process.env["JG_BROKER_PORT"];
+      else process.env["JG_BROKER_PORT"] = before;
     }
   }, 30_000);
 });

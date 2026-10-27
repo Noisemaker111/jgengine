@@ -23,7 +23,7 @@ export interface CiRun {
   status: string;
   conclusion: string | null;
   event: string;
-  url?: string;
+  url?: string | undefined;
 }
 
 export interface CiVerdict {
@@ -92,8 +92,8 @@ const argValue = (name: string): string | undefined => {
 };
 
 if (import.meta.main) {
-  const sha = argValue("--sha") ?? process.env.RELEASE_SHA ?? process.env.GITHUB_SHA;
-  const repo = argValue("--repo") ?? process.env.GITHUB_REPOSITORY;
+  const sha = argValue("--sha") ?? process.env["RELEASE_SHA"] ?? process.env["GITHUB_SHA"];
+  const repo = argValue("--repo") ?? process.env["GITHUB_REPOSITORY"];
   if (sha === undefined || sha === "") {
     console.error("check-release-ci: FAIL - name the commit to publish with --sha <commit>");
     process.exit(1);

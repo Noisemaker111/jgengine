@@ -49,6 +49,7 @@ function packOnce(pkg: (typeof publishedPackages)[number]): PackedArtifact {
     timeout: 120_000,
   });
   const entry = (JSON.parse(out) as Array<{ filename: string; files: PackEntry[] }>)[0];
+  if (entry === undefined) throw new Error(`npm pack printed no entry for ${pkg}`);
   const artifact: PackedArtifact = {
     tgz: join(packCacheDir, entry.filename),
     files: entry.files.map((f) => f.path.replaceAll("\\", "/")),
@@ -78,7 +79,7 @@ function explicitExportTargets(pkg: (typeof publishedPackages)[number]): string[
   for (const [key, value] of Object.entries(exportsMap)) {
     if (key.includes("*")) continue;
     const record = value as Record<string, unknown>;
-    const target = record.default ?? record.types;
+    const target = record["default"] ?? record["types"];
     if (typeof target === "string") targets.push(target.replace(/^\.\//, ""));
   }
   return targets;
