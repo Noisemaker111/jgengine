@@ -7,10 +7,12 @@ import {
   applyCaptureQuality,
   applyDevice,
   assertQualityApplied,
+  cdpField,
   ensureDevServer,
   navigateCapturePage,
   openPageSession,
   readReportedQuality,
+  remoteObjectId,
   sweepCaptureProfiles,
   watchPageExceptions,
   withBrowserSession,
@@ -659,13 +661,14 @@ export function summarizeFrameDraws(frames: readonly number[]): FrameDraws {
   const kept = frames.filter((value) => Number.isFinite(value) && value >= 0);
   if (kept.length === 0) return { frames: 0, min: 0, p50: 0, p95: 0, max: 0 };
   const sorted = [...kept].sort((a, b) => a - b);
-  const at = (fraction: number): number => sorted[Math.min(sorted.length - 1, Math.floor(sorted.length * fraction))]!;
+  // `sorted` is not empty here, so every index below is inside it.
+  const at = (fraction: number): number => sorted[Math.min(sorted.length - 1, Math.floor(sorted.length * fraction))] ?? 0;
   return {
     frames: kept.length,
-    min: sorted[0]!,
+    min: at(0),
     p50: at(0.5),
     p95: at(0.95),
-    max: sorted[sorted.length - 1]!,
+    max: at(1),
   };
 }
 
@@ -747,10 +750,6 @@ interface SceneNodeCount {
   scenes: number;
 }
 
-function remoteObjectId(result: Record<string, unknown>): string | undefined {
-  return (result["result"] as { objectId?: string } | undefined)?.objectId;
-}
-
 /**
  * Count live three.js scene-graph nodes. The page's own sampler counts them from the
  * live scene (`window.__JG.report().render`), which is the same number and does not
@@ -783,7 +782,7 @@ export async function measureSceneNodes(session: CdpSession): Promise<SceneNodeC
       })()`,
       awaitPromise: true,
     });
-    const namespaceId = remoteObjectId(namespace);
+    const namespaceId = remoteObjectId(namespace["result"]);
     if (namespaceId === undefined) return { nodes: null, source: "unavailable", scenes: 0 };
 
     const counted = await countInstances(session, namespaceId, "Scene", "isScene");
@@ -807,11 +806,11 @@ async function countInstances(
     objectId: namespaceId,
     functionDeclaration: `function () { return this.${className} === undefined ? null : this.${className}.prototype }`,
   });
-  const prototypeId = remoteObjectId(prototype);
+  const prototypeId = remoteObjectId(prototype["result"]);
   if (prototypeId === undefined) return { nodes: 0, scenes: 0 };
 
   const found = await session.send("Runtime.queryObjects", { prototypeObjectId: prototypeId });
-  const arrayId = ((found["objects"] ?? {}) as { objectId?: string }).objectId;
+  const arrayId = remoteObjectId(found["objects"]);
   if (arrayId === undefined) return { nodes: 0, scenes: 0 };
 
   const counted = await session.send("Runtime.callFunctionOn", {
@@ -828,8 +827,10 @@ async function countInstances(
     }`,
     returnByValue: true,
   });
-  const value = (counted["result"] as { value?: { scenes?: number; nodes?: number } } | undefined)?.value;
-  return { nodes: value?.nodes ?? 0, scenes: value?.scenes ?? 0 };
+  const value = cdpField(counted["result"], "value");
+  const nodes = cdpField(value, "nodes");
+  const scenes = cdpField(value, "scenes");
+  return { nodes: typeof nodes === "number" ? nodes : 0, scenes: typeof scenes === "number" ? scenes : 0 };
 }
 
 /** Everything one measured window says about a game, as printed by `bun run perf`. */
@@ -1244,8 +1245,9 @@ export function perfSummaryText(record: PerfRecord, baseline: PerfRecord | null)
     lines.push(renderBreakdownText(record.breakdown, record.game));
   }
   lines.push(`run: ${conditions}`);
-  if (baseline !== null && record.breakdown !== null && record.breakdown !== undefined) {
-    lines.push("", compareBreakdowns(baseline.breakdown!, record.breakdown));
+  const before = baseline?.breakdown;
+  if (baseline !== null && before !== null && before !== undefined && record.breakdown !== null && record.breakdown !== undefined) {
+    lines.push("", compareBreakdowns(before, record.breakdown));
     if (baseline.viewport !== record.viewport || baseline.quality !== record.quality || baseline.frameClock !== record.frameClock || baseline.path !== record.path) {
       lines.push(`  note: the runs differ (${baseline.viewport} ${baseline.quality} ${baseline.frameClock} ${baseline.path ?? "still"} before), so the diff mixes in that change`);
     }

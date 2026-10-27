@@ -98,6 +98,24 @@ export interface FrameBreakdownSummary {
   hitches: Hitch[];
 }
 
+/** A running breakdown, as `installFrameBreakdown` returns it and `window.__jgFrameBreakdown` holds it. */
+export interface FrameBreakdown {
+  /** The window so far, or its last `last` frames. */
+  summary(options?: { top?: number; last?: number }): FrameBreakdownSummary;
+  records(): FrameBreakdownRecord[];
+  /** Each `frame#<n>` label with the frame callback it times, so a harness can name its source file. */
+  callbacks(): Record<string, (...args: never[]) => void>;
+  reset(): void;
+  dispose(): void;
+}
+
+declare global {
+  interface Window {
+    /** The installed frame breakdown, for the perf panel and `bun run perf` to read. */
+    __jgFrameBreakdown?: FrameBreakdown;
+  }
+}
+
 const round = (value: number, digits = 2): number => {
   const scale = 10 ** digits;
   return Math.round(value * scale) / scale;
@@ -107,12 +125,13 @@ const round = (value: number, digits = 2): number => {
 export function spread(values: readonly number[]): Spread {
   if (values.length === 0) return { p50: 0, p95: 0, p99: 0, max: 0, avg: 0 };
   const sorted = [...values].sort((a, b) => a - b);
-  const at = (fraction: number) => sorted[Math.min(sorted.length - 1, Math.floor(sorted.length * fraction))]!;
+  // `sorted` is not empty here, so every index below is inside it.
+  const at = (fraction: number) => sorted[Math.min(sorted.length - 1, Math.floor(sorted.length * fraction))] ?? 0;
   return {
     p50: round(at(0.5)),
     p95: round(at(0.95)),
     p99: round(at(0.99)),
-    max: round(sorted[sorted.length - 1]!),
+    max: round(at(1)),
     avg: round(values.reduce((sum, value) => sum + value, 0) / values.length),
   };
 }
@@ -158,15 +177,15 @@ export function summarizeBreakdown(
   options: { programs?: number | null | undefined; top?: number | undefined; hitches?: number | undefined } = {},
 ): FrameBreakdownSummary {
   const top = options.top ?? 12;
-  const resolved = records.filter((record) => record.gpu !== null);
-  const gpuTotals = resolved.map((record) => Object.values(record.gpu!).reduce((sum, ms) => sum + ms, 0));
+  const resolved = records.flatMap((record) => (record.gpu === null ? [] : [record.gpu]));
+  const gpuTotals = resolved.map((gpu) => Object.values(gpu).reduce((sum, ms) => sum + ms, 0));
   let elapsed = 0;
   const hitches: Hitch[] = [];
   for (const record of records) {
     elapsed += record.intervalMs;
     if (record.intervalMs > HITCH_MS) hitches.push({ atS: round(elapsed / 1000, 2), ms: round(record.intervalMs, 1), ...hitchCause(record) });
   }
-  const heaps = records.map((record) => record.heapMb).filter((mb): mb is number => mb !== null);
+  const lastHeap = records.map((record) => record.heapMb).filter((mb): mb is number => mb !== null).at(-1);
   const byCost = (a: DrawCost, b: DrawCost) => b.cpuMs - a.cpuMs || b.triangles - a.triangles;
   const n = Math.max(1, records.length);
   const perFrame = (cost: DrawCost): DrawCost => ({ ...cost, draws: round(cost.draws / n, 1), triangles: Math.round(cost.triangles / n), cpuMs: round(cost.cpuMs / n, 3) });
@@ -177,7 +196,7 @@ export function summarizeBreakdown(
     work: spread(records.map((record) => record.workMs)),
     gpu: resolved.length === 0 ? null : spread(gpuTotals),
     cpu: namedCosts(records.map((record) => record.cpu), top),
-    passes: namedCosts(resolved.map((record) => record.gpu!), top),
+    passes: namedCosts(resolved, top),
     counts: {
       drawsAvg: round(records.reduce((sum, record) => sum + record.draws, 0) / Math.max(1, records.length), 1),
       drawsMax: records.reduce((max, record) => Math.max(max, record.draws), 0),
@@ -188,7 +207,7 @@ export function summarizeBreakdown(
       compileMs: round(records.reduce((sum, record) => sum + record.compileMs, 0), 1),
       uploads: records.reduce((sum, record) => sum + record.uploads, 0),
       uploadMb: round(records.reduce((sum, record) => sum + record.uploadBytes, 0) / 1048576, 1),
-      heapMb: heaps.length === 0 ? null : round(heaps[heaps.length - 1]!, 1),
+      heapMb: lastHeap === undefined ? null : round(lastHeap, 1),
       gcMb: round(records.reduce((sum, record) => sum + record.heapDropMb, 0), 1),
     },
     objects: [...draws.objects].sort(byCost).slice(0, top).map(perFrame),

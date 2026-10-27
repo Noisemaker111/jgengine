@@ -736,6 +736,17 @@ type CdpMessage = {
   error?: { message: string };
 };
 
+/** One field of a CDP answer, read without trusting its shape: `undefined` when it is not there. */
+export function cdpField(value: unknown, key: string): unknown {
+  return typeof value === "object" && value !== null && key in value ? Reflect.get(value, key) : undefined;
+}
+
+/** The `objectId` of a remote object in a CDP answer (`result` of `Runtime.evaluate`, `objects` of `Runtime.queryObjects`). */
+export function remoteObjectId(remote: unknown): string | undefined {
+  const id = cdpField(remote, "objectId");
+  return typeof id === "string" ? id : undefined;
+}
+
 export class CdpSession {
   private nextId = 0;
   private readonly pending = new Map<

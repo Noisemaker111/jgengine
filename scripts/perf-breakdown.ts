@@ -1,7 +1,7 @@
 // The harness half of the frame breakdown (`packages/core/src/devtools/frameBreakdown.ts`): drive a
 // standard path while a window is measured, read the page's breakdown and name its frame callbacks
 // by source line, and diff two records so one fix is one run.
-import type { CdpSession } from "./browser-lib";
+import { cdpField, remoteObjectId, type CdpSession } from "./browser-lib";
 import { fpsAt, type FrameBreakdownSummary, type NamedCost } from "../packages/core/src/devtools/frameBreakdown";
 
 /** How the run moves through the game while it is measured. */
@@ -68,24 +68,33 @@ export async function readBreakdown(session: CdpSession): Promise<FrameBreakdown
 
 async function locateCallback(session: CdpSession, label: string, urls: ReadonlyMap<string, string>): Promise<string | null> {
   const found = await session.send("Runtime.evaluate", { expression: `globalThis.__jgFrameBreakdown?.callbacks()[${JSON.stringify(label)}]` });
-  const objectId = (found["result"] as { objectId?: string } | undefined)?.objectId;
+  const objectId = remoteObjectId(found["result"]);
   if (objectId === undefined) return null;
   const props = await session.send("Runtime.getProperties", { objectId, ownProperties: false });
-  const internal = (props["internalProperties"] as { name: string; value?: { value?: { scriptId: string; lineNumber: number } } }[] | undefined) ?? [];
-  const where = internal.find((prop) => prop.name === "[[FunctionLocation]]")?.value?.value;
+  const internal: unknown = props["internalProperties"];
+  const entries: readonly unknown[] = Array.isArray(internal) ? internal : [];
+  const location = entries.find((prop) => cdpField(prop, "name") === "[[FunctionLocation]]");
+  const where = cdpField(cdpField(location, "value"), "value");
   await session.send("Runtime.releaseObject", { objectId }).catch(() => {});
-  if (where === undefined) return null;
-  const url = urls.get(where.scriptId) ?? "";
+  const scriptId = cdpField(where, "scriptId");
+  const lineNumber = cdpField(where, "lineNumber");
+  if (typeof scriptId !== "string" || typeof lineNumber !== "number") return null;
+  const url = urls.get(scriptId) ?? "";
   const path = url.replace(/^https?:\/\/[^/]+/, "").replace(/\?.*$/, "").replace(/^\/@fs\//, "").replace(/^.*?\/(packages|games|apps)\//, "$1/");
-  return path === "" ? null : `${path}:${where.lineNumber + 1}`;
+  return path === "" ? null : `${path}:${lineNumber + 1}`;
+}
+
+/** A cost's system: its `frame#<n>` or system label, without the source location appended to it. */
+function systemOf(name: string): string {
+  return name.split(" ", 1)[0] ?? name;
 }
 
 const signed = (value: number, digits = 2) => `${value >= 0 ? "+" : ""}${value.toFixed(digits)}`;
 
 function costRows(title: string, before: readonly NamedCost[], after: readonly NamedCost[], top: number): string[] {
-  const base = new Map(before.map((entry) => [entry.name.split(" ")[0]!, entry]));
+  const base = new Map(before.map((entry) => [systemOf(entry.name), entry]));
   const rows = after.slice(0, top).map((entry) => {
-    const was = base.get(entry.name.split(" ")[0]!);
+    const was = base.get(systemOf(entry.name));
     return `  ${entry.name.padEnd(48)} ${entry.avgMs.toFixed(2).padStart(7)} (${was === undefined ? "new" : signed(entry.avgMs - was.avgMs)})`;
   });
   return rows.length === 0 ? [] : [title, ...rows];

@@ -1,10 +1,13 @@
+import type { RenderCallback, RootStore } from "@react-three/fiber";
+import type { WebGLRenderer } from "three";
+
 import { devtools } from "@jgengine/core/devtools/devtools";
 
 import {
   summarizeBreakdown,
   type DrawCost,
+  type FrameBreakdown,
   type FrameBreakdownRecord,
-  type FrameBreakdownSummary,
 } from "./frameBreakdown";
 
 /**
@@ -33,48 +36,6 @@ interface TimerExt {
   GPU_DISJOINT_EXT: number;
 }
 
-interface Gl2 {
-  createQuery(): WebGLQuery | null;
-  deleteQuery(query: WebGLQuery): void;
-  beginQuery(target: number, query: WebGLQuery): void;
-  endQuery(target: number): void;
-  getQueryParameter(query: WebGLQuery, pname: number): unknown;
-  getParameter(pname: number): unknown;
-  getExtension(name: string): unknown;
-  QUERY_RESULT: number;
-  QUERY_RESULT_AVAILABLE: number;
-  LINK_STATUS: number;
-}
-
-/** What the breakdown needs from a three.js WebGLRenderer. */
-export interface BreakdownRenderer {
-  getContext(): unknown;
-  render(scene: unknown, camera: unknown): void;
-  renderBufferDirect(camera: unknown, scene: unknown, geometry: unknown, material: unknown, object: unknown, group: unknown): void;
-  shadowMap: { render(...args: unknown[]): void };
-  info: { programs?: unknown[] | null };
-}
-
-/** What it needs from the r3f store: the subscriber list and the subscribe call. */
-export interface BreakdownStore {
-  getState(): {
-    internal: {
-      subscribers: { ref: { current: Callable }; priority: number }[];
-      subscribe(ref: { current: Callable }, priority: number, store: unknown): () => void;
-    };
-  };
-}
-
-/** A running breakdown. */
-export interface FrameBreakdown {
-  /** The window so far, or its last `last` frames. */
-  summary(options?: { top?: number; last?: number }): FrameBreakdownSummary;
-  records(): FrameBreakdownRecord[];
-  /** Each `frame#<n>` label with the callback it times, so a harness can name its source file. */
-  callbacks(): Record<string, Callable>;
-  reset(): void;
-  dispose(): void;
-}
 
 let active: FrameBreakdown | null = null;
 let activePasses: ((composer: { passes: readonly object[] }) => void) | null = null;
@@ -87,69 +48,90 @@ export function measureComposerPasses(composer: { passes: readonly object[] }): 
   activePasses?.(composer);
 }
 
-const WRAPPED = Symbol("jgBreakdownWrapped");
+/** Post passes and frame callbacks already timed, so a second sighting does not wrap them twice. */
+const wrapped = new WeakSet<object>();
+
+/** One field of a value the engine does not type here (a three.js object, a GL argument); `undefined` off a non-object. */
+function field(value: unknown, key: string): unknown {
+  return typeof value === "object" && value !== null ? Reflect.get(value, key) : undefined;
+}
+
+function numberField(value: unknown, key: string): number | undefined {
+  const read = field(value, key);
+  return typeof read === "number" ? read : undefined;
+}
+
+function nameField(value: unknown, key: string): string | undefined {
+  const read = field(value, key);
+  return typeof read === "string" && read !== "" ? read : undefined;
+}
 
 function heapMb(): number | null {
-  const memory = (performance as { memory?: { usedJSHeapSize?: number } }).memory;
-  return typeof memory?.usedJSHeapSize === "number" ? memory.usedJSHeapSize / 1048576 : null;
+  const used = numberField(Reflect.get(performance, "memory"), "usedJSHeapSize");
+  return used === undefined ? null : used / 1048576;
 }
 
 function uploadBytes(method: string, args: readonly unknown[]): number {
   for (const arg of args) {
     if (ArrayBuffer.isView(arg)) return arg.byteLength;
   }
-  const source = args[args.length - 1] as { width?: number; height?: number; videoWidth?: number; videoHeight?: number } | null;
-  if (source !== null && typeof source === "object") {
-    const width = source.videoWidth ?? source.width ?? 0;
-    const height = source.videoHeight ?? source.height ?? 0;
-    if (width > 0 && height > 0) return width * height * 4;
-  }
-  if (method.startsWith("tex") && typeof args[3] === "number" && typeof args[4] === "number") return (args[3] as number) * (args[4] as number) * 4;
-  if (typeof args[1] === "number") return args[1] as number;
+  const source = args.at(-1);
+  const width = numberField(source, "videoWidth") ?? numberField(source, "width") ?? 0;
+  const height = numberField(source, "videoHeight") ?? numberField(source, "height") ?? 0;
+  if (width > 0 && height > 0) return width * height * 4;
+  const [, size, , texWidth, texHeight] = args;
+  if (method.startsWith("tex") && typeof texWidth === "number" && typeof texHeight === "number") return texWidth * texHeight * 4;
+  if (typeof size === "number") return size;
   return 0;
 }
 
-interface Named {
-  name?: string;
-  type?: string;
-  id?: number;
-  parent?: Named | null;
-}
-
-function labelOf(thing: Named | null | undefined, fallback: string): string {
-  if (thing === null || thing === undefined) return fallback;
-  const name = thing.name !== undefined && thing.name !== "" ? thing.name : (thing.type ?? fallback);
-  return `${name}#${thing.id ?? "?"}`;
+function labelOf(thing: unknown, fallback: string): string {
+  if (typeof thing !== "object" || thing === null) return fallback;
+  return `${nameField(thing, "name") ?? nameField(thing, "type") ?? fallback}#${numberField(thing, "id") ?? "?"}`;
 }
 
 /** "Rock (InstancedMesh, DodecahedronGeometry) in Boulders#41": what a draw is, by its nearest named ancestor. */
-function objectLabel(object: Named | null | undefined, geometry: Named | null | undefined): string {
-  if (object === null || object === undefined) return "object";
-  const own = object.name !== undefined && object.name !== "" ? object.name : null;
-  let ancestor = object.parent ?? null;
-  for (let depth = 0; ancestor !== null && depth < 8 && (ancestor.name === undefined || ancestor.name === ""); depth += 1) ancestor = ancestor.parent ?? null;
-  const kind = `${object.type ?? "Object"}${geometry?.type !== undefined ? `, ${geometry.name !== undefined && geometry.name !== "" ? geometry.name : geometry.type}` : ""}`;
-  const where = ancestor !== null && ancestor.name !== undefined && ancestor.name !== "" ? ` in ${ancestor.name}` : "";
-  return `${own ?? kind.split(",")[0]} (${kind})${where} #${object.id ?? "?"}`;
+function objectLabel(object: unknown, geometry: unknown): string {
+  if (typeof object !== "object" || object === null) return "object";
+  const own = nameField(object, "name");
+  let ancestor = field(object, "parent");
+  for (let depth = 0; typeof ancestor === "object" && ancestor !== null && depth < 8 && nameField(ancestor, "name") === undefined; depth += 1) ancestor = field(ancestor, "parent");
+  const objectType = nameField(object, "type") ?? "Object";
+  const geometryType = nameField(geometry, "type");
+  const kind = `${objectType}${geometryType === undefined ? "" : `, ${nameField(geometry, "name") ?? geometryType}`}`;
+  const ancestorName = nameField(ancestor, "name");
+  const where = ancestorName === undefined ? "" : ` in ${ancestorName}`;
+  return `${own ?? objectType} (${kind})${where} #${numberField(object, "id") ?? "?"}`;
 }
 
 function trianglesOf(geometry: unknown, group: unknown, object: unknown): number {
-  const geo = geometry as { index?: { count: number } | null; attributes?: { position?: { count: number } }; drawRange?: { count: number }; instanceCount?: number } | null;
-  if (geo === null || typeof geo !== "object") return 0;
-  let count = geo.index?.count ?? geo.attributes?.position?.count ?? 0;
-  const range = geo.drawRange?.count;
-  if (typeof range === "number" && Number.isFinite(range)) count = Math.min(count, range);
-  const groupCount = (group as { count?: number } | null)?.count;
-  if (typeof groupCount === "number" && Number.isFinite(groupCount)) count = Math.min(count, groupCount);
-  const instances = (object as { isInstancedMesh?: boolean; count?: number } | null)?.isInstancedMesh === true ? ((object as { count?: number }).count ?? 1) : (geo.instanceCount ?? 1);
+  if (typeof geometry !== "object" || geometry === null) return 0;
+  let count = numberField(field(geometry, "index"), "count") ?? numberField(field(field(geometry, "attributes"), "position"), "count") ?? 0;
+  const range = numberField(field(geometry, "drawRange"), "count");
+  if (range !== undefined && Number.isFinite(range)) count = Math.min(count, range);
+  const groupCount = numberField(group, "count");
+  if (groupCount !== undefined && Number.isFinite(groupCount)) count = Math.min(count, groupCount);
+  const instances = field(object, "isInstancedMesh") === true ? (numberField(object, "count") ?? 1) : (numberField(geometry, "instanceCount") ?? 1);
   return Math.floor(count / 3) * Math.max(1, Number.isFinite(instances) ? instances : 1);
 }
 
+/**
+ * A WebGL2 context with the disjoint timer extension, or `null`: GPU timers need both, and without
+ * them the breakdown still records CPU, compile and upload times.
+ */
+function gpuTimers(context: WebGLRenderingContext | WebGL2RenderingContext): { gl: WebGL2RenderingContext; ext: TimerExt } | null {
+  if (!("createQuery" in context)) return null;
+  const ext: unknown = context.getExtension("EXT_disjoint_timer_query_webgl2");
+  const elapsed = numberField(ext, "TIME_ELAPSED_EXT");
+  const disjoint = numberField(ext, "GPU_DISJOINT_EXT");
+  return elapsed === undefined || disjoint === undefined ? null : { gl: context, ext: { TIME_ELAPSED_EXT: elapsed, GPU_DISJOINT_EXT: disjoint } };
+}
+
 /** Install the breakdown on a renderer and the r3f loop driving it. @internal */
-export function installFrameBreakdown(renderer: BreakdownRenderer, store: BreakdownStore): FrameBreakdown {
+export function installFrameBreakdown(renderer: WebGLRenderer, store: RootStore): FrameBreakdown {
   active?.dispose();
-  const gl = renderer.getContext() as Gl2 & Record<string, unknown>;
-  const ext = (gl.getExtension("EXT_disjoint_timer_query_webgl2") as TimerExt | null) ?? null;
+  const context = renderer.getContext();
+  const timers = gpuTimers(context);
   const restore: (() => void)[] = [];
 
   const records: FrameBreakdownRecord[] = [];
@@ -176,8 +158,9 @@ export function installFrameBreakdown(renderer: BreakdownRenderer, store: Breakd
     cpuStack.push({ label, start: performance.now(), child: 0 });
   };
   const cpuLeave = (excluded = 0): number => {
-    const top = cpuStack.pop()!;
     const end = performance.now();
+    const top = cpuStack.pop();
+    if (top === undefined) return end;
     const total = end - top.start;
     addCpu(top.label, total - top.child - excluded);
     const parent = cpuStack[cpuStack.length - 1];
@@ -185,7 +168,7 @@ export function installFrameBreakdown(renderer: BreakdownRenderer, store: Breakd
     return end;
   };
   const fresh = (): FrameBreakdownRecord => ({
-    intervalMs: 0, workMs: 0, cpu: {}, gpu: ext === null ? null : {}, draws: 0, triangles: 0,
+    intervalMs: 0, workMs: 0, cpu: {}, gpu: timers === null ? null : {}, draws: 0, triangles: 0,
     compiles: 0, compileMs: 0, uploads: 0, uploadBytes: 0, uploadMs: 0, heapMb: null, heapDropMb: 0,
   });
 
@@ -195,21 +178,21 @@ export function installFrameBreakdown(renderer: BreakdownRenderer, store: Breakd
   const pending: { query: WebGLQuery; label: string; record: FrameBreakdownRecord }[] = [];
   const unresolved = new Map<FrameBreakdownRecord, number>();
   const stopTimer = () => {
-    if (ext === null || running === null) return;
-    gl.endQuery(ext.TIME_ELAPSED_EXT);
+    if (timers === null || running === null) return;
+    timers.gl.endQuery(timers.ext.TIME_ELAPSED_EXT);
     pending.push(running);
     unresolved.set(running.record, (unresolved.get(running.record) ?? 0) + 1);
     running = null;
     if (pending.length > MAX_PENDING_QUERIES) {
-      const dropped = pending.shift()!;
-      gl.deleteQuery(dropped.query);
+      const dropped = pending.shift();
+      if (dropped !== undefined) timers.gl.deleteQuery(dropped.query);
     }
   };
   const startTimer = (label: string) => {
-    if (ext === null || current === null) return;
-    const query = gl.createQuery();
+    if (timers === null || current === null) return;
+    const query = timers.gl.createQuery();
     if (query === null) return;
-    gl.beginQuery(ext.TIME_ELAPSED_EXT, query);
+    timers.gl.beginQuery(timers.ext.TIME_ELAPSED_EXT, query);
     running = { query, label, record: current };
   };
   const enterPass = (label: string) => {
@@ -224,7 +207,8 @@ export function installFrameBreakdown(renderer: BreakdownRenderer, store: Breakd
     if (parent !== undefined) startTimer(parent);
   };
   const readTimers = () => {
-    if (ext === null || pending.length === 0) return;
+    if (timers === null || pending.length === 0) return;
+    const { gl, ext } = timers;
     if (gl.getParameter(ext.GPU_DISJOINT_EXT) === true) {
       for (const entry of pending.splice(0)) {
         gl.deleteQuery(entry.query);
@@ -232,8 +216,7 @@ export function installFrameBreakdown(renderer: BreakdownRenderer, store: Breakd
       }
       return;
     }
-    while (pending.length > 0) {
-      const entry = pending[0]!;
+    for (let entry = pending[0]; entry !== undefined; entry = pending[0]) {
       if (gl.getQueryParameter(entry.query, gl.QUERY_RESULT_AVAILABLE) !== true) break;
       pending.shift();
       const ns = Number(gl.getQueryParameter(entry.query, gl.QUERY_RESULT));
@@ -245,36 +228,37 @@ export function installFrameBreakdown(renderer: BreakdownRenderer, store: Breakd
     }
   };
 
-  // Wrap a method in place, keeping a restore.
-  const wrap = <T extends object>(target: T, method: keyof T & string, make: (original: Callable) => Callable) => {
-    const original = target[method] as unknown as Callable;
+  // Wrap a method in place, keeping a restore. The wrapper calls the original on `target`.
+  const wrap = (target: object, method: string, make: (original: Callable) => Callable) => {
+    const original: unknown = Reflect.get(target, method);
     if (typeof original !== "function") return;
-    (target as Record<string, unknown>)[method] = make(original);
+    const call: Callable = (...args) => Reflect.apply(original, target, args);
+    Reflect.set(target, method, make(call));
     restore.push(() => {
-      (target as Record<string, unknown>)[method] = original;
+      Reflect.set(target, method, original);
     });
   };
 
   // Render submission (CPU) and the main pass (GPU); a render inside a post pass belongs to that pass.
   let renderDepth = 0;
-  wrap(renderer, "render", (original) => function (this: unknown, ...args: unknown[]) {
+  wrap(renderer, "render", (original) => (...args) => {
     const outer = renderDepth === 0 && gpuStack.length === 0;
     if (outer) enterPass("main");
     renderDepth += 1;
     if (renderDepth === 1) cpuEnter(`render:${gpuStack[gpuStack.length - 1] ?? "main"}`);
     try {
-      return original.apply(renderer, args);
+      return original(...args);
     } finally {
       if (renderDepth === 1) lastWorkEnd = cpuLeave();
       renderDepth -= 1;
       if (outer) leavePass();
     }
   });
-  wrap(renderer.shadowMap, "render", (original) => function (this: unknown, ...args: unknown[]) {
+  wrap(renderer.shadowMap, "render", (original) => (...args) => {
     enterPass("shadow");
     cpuEnter("render:shadow");
     try {
-      return original.apply(renderer.shadowMap, args);
+      return original(...args);
     } finally {
       cpuLeave();
       leavePass();
@@ -293,10 +277,10 @@ export function installFrameBreakdown(renderer: BreakdownRenderer, store: Breakd
       entry.cpuMs += ms;
     }
   };
-  wrap(renderer, "renderBufferDirect", (original) => function (this: unknown, ...args: unknown[]) {
+  wrap(renderer, "renderBufferDirect", (original) => (...args) => {
     const start = performance.now();
     try {
-      return original.apply(renderer, args);
+      return original(...args);
     } finally {
       const ms = performance.now() - start;
       const triangles = trianglesOf(args[2], args[5], args[4]);
@@ -305,16 +289,16 @@ export function installFrameBreakdown(renderer: BreakdownRenderer, store: Breakd
         current.draws += 1;
         current.triangles += triangles;
       }
-      tally(objects, objectLabel(args[4] as Named, args[2] as Named), triangles, ms, pass);
-      tally(materials, labelOf(args[3] as never, "material"), triangles, ms, pass);
+      tally(objects, objectLabel(args[4], args[2]), triangles, ms, pass);
+      tally(materials, labelOf(args[3], "material"), triangles, ms, pass);
     }
   });
 
   // Shader compiles and links, and uploads, on the context itself.
   const timed = (method: string, onCall: (ms: number, args: unknown[], result: unknown) => void) =>
-    wrap(gl, method, (original) => function (this: unknown, ...args: unknown[]) {
+    wrap(context, method, (original) => (...args) => {
       const start = performance.now();
-      const result = original.apply(gl, args);
+      const result = original(...args);
       onCall(performance.now() - start, args, result);
       return result;
     });
@@ -326,7 +310,7 @@ export function installFrameBreakdown(renderer: BreakdownRenderer, store: Breakd
   for (const method of ["compileShader", "getShaderParameter", "getProgramParameter", "getProgramInfoLog", "getShaderInfoLog"]) {
     timed(method, (ms, args) => {
       if (current === null) return;
-      if (method === "getProgramParameter" && args[1] !== gl.LINK_STATUS) return;
+      if (method === "getProgramParameter" && args[1] !== context.LINK_STATUS) return;
       current.compileMs += ms;
     });
   }
@@ -341,34 +325,34 @@ export function installFrameBreakdown(renderer: BreakdownRenderer, store: Breakd
 
   // Post passes: wrapped per instance the first time a composer is seen with them.
   activePasses = (composer) => {
-    for (const pass of composer.passes as { render?: Callable; name?: string; [WRAPPED]?: true }[]) {
-      if (pass[WRAPPED] === true || typeof pass.render !== "function") continue;
-      const name = pass.name !== undefined && pass.name !== "" ? pass.name : ((pass.constructor as { name?: string }).name ?? "pass");
+    for (const pass of composer.passes) {
+      const render: unknown = Reflect.get(pass, "render");
+      if (wrapped.has(pass) || typeof render !== "function") continue;
+      const name = nameField(pass, "name") ?? pass.constructor.name;
       // The pass that draws the scene is the main pass, whatever the composer calls it.
       const label = /RenderPass$/.test(name) ? "main" : `post:${name.replace(/^_/, "")}`;
-      const original = pass.render;
-      pass[WRAPPED] = true;
-      pass.render = function (this: unknown, ...args: unknown[]) {
+      wrapped.add(pass);
+      Reflect.set(pass, "render", (...args: unknown[]): unknown => {
         enterPass(label);
         cpuEnter(label === "main" ? "pass:main" : label);
         try {
-          return original.apply(pass, args);
+          return Reflect.apply(render, pass, args);
         } finally {
           lastWorkEnd = cpuLeave();
           leavePass();
         }
-      };
+      });
     }
   };
 
   // Frame callbacks: each r3f subscriber timed under a stable label.
   const labels = new WeakMap<object, string>();
-  const callbacks: Record<string, Callable> = {};
+  const callbacks: Record<string, RenderCallback> = {};
   let nextLabel = 0;
   const wrapSubscribers = () => {
     for (const subscription of store.getState().internal.subscribers) {
-      const fn = subscription.ref.current as Callable & { [WRAPPED]?: true };
-      if (fn === undefined || fn[WRAPPED] === true || fn === tick) continue;
+      const fn = subscription.ref.current;
+      if (typeof fn !== "function" || wrapped.has(fn) || fn === tick) continue;
       let label = labels.get(subscription.ref);
       if (label === undefined) {
         label = `frame#${nextLabel}${fn.name !== "" && fn.name !== "anonymous" ? `:${fn.name}` : ""}`;
@@ -377,34 +361,32 @@ export function installFrameBreakdown(renderer: BreakdownRenderer, store: Breakd
       }
       callbacks[label] = fn;
       const named = label;
-      const timedCallback = Object.assign(
-        function (this: unknown, ...args: unknown[]) {
-          const before = devtools.frame.last()?.serial ?? 0;
-          cpuEnter(named);
-          try {
-            return fn.apply(this, args);
-          } finally {
-            const sim = devtools.frame.last();
-            if (sim !== null && sim.serial !== before) {
-              // This callback is the sim driver: its phases are systems of their own.
-              let named = 0;
-              for (const [phase, ms] of Object.entries(sim.phases)) {
-                addCpu(`sim:${phase}`, ms);
-                named += ms;
-              }
-              addCpu("sim:other", sim.simMs - named);
-              cpuLeave(sim.simMs);
-            } else cpuLeave();
-          }
-        },
-        { [WRAPPED]: true as const },
-      );
+      const timedCallback: RenderCallback = (state, delta, frame) => {
+        const before = devtools.frame.last()?.serial ?? 0;
+        cpuEnter(named);
+        try {
+          fn(state, delta, frame);
+        } finally {
+          const sim = devtools.frame.last();
+          if (sim !== null && sim.serial !== before) {
+            // This callback is the sim driver: its phases are systems of their own.
+            let named = 0;
+            for (const [phase, ms] of Object.entries(sim.phases)) {
+              addCpu(`sim:${phase}`, ms);
+              named += ms;
+            }
+            addCpu("sim:other", sim.simMs - named);
+            cpuLeave(sim.simMs);
+          } else cpuLeave();
+        }
+      };
+      wrapped.add(timedCallback);
       subscription.ref.current = timedCallback;
     }
   };
 
   // The first callback of every frame closes the previous frame and opens the next.
-  const tick: Callable = () => {
+  const tick: RenderCallback = () => {
     const now = performance.now();
     readTimers();
     if (current !== null) {
@@ -443,17 +425,17 @@ export function installFrameBreakdown(renderer: BreakdownRenderer, store: Breakd
     },
     dispose() {
       stopTimer();
-      for (const entry of pending.splice(0)) gl.deleteQuery(entry.query);
+      for (const entry of pending.splice(0)) timers?.gl.deleteQuery(entry.query);
       for (const undo of restore.splice(0).reverse()) undo();
       if (active === breakdown) {
         active = null;
         activePasses = null;
       }
-      delete (globalThis as { __jgFrameBreakdown?: unknown }).__jgFrameBreakdown;
+      delete window.__jgFrameBreakdown;
     },
   };
   active = breakdown;
-  (globalThis as { __jgFrameBreakdown?: unknown }).__jgFrameBreakdown = breakdown;
+  window.__jgFrameBreakdown = breakdown;
   return breakdown;
 }
 
