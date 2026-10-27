@@ -78,13 +78,13 @@ test("wake on the beach, punch a tree, pick stones, craft a Stone Pick, level up
 test("a dry throat stops healing and costs about one health every five seconds", () => {
   const runner = survivorRunner();
   // ARK's water lasts about 40 minutes untouched; food outlasts it.
-  // Whole seconds: forty minutes of 50 ms steps runs the whole island 48,000 times and outlasts CI's test timeout.
-  for (let second = 0; second < 2420; second += 1) runner.step(1);
+  // Coarse steps: each step runs the whole island, so forty minutes at 50 ms (48,000 steps), or even at 1 s, outlasts CI's 5 s test timeout.
+  for (let second = 0; second < 2420; second += 2) runner.step(2);
   const view = survivorView(runner.ctx);
   expect(view.flags).toContain("dehydrated");
   expect(view.flags).not.toContain("starving");
   const before = view.health.value;
-  tick(runner, 25);
+  for (let second = 0; second < 25; second += 1) runner.step(1);
   const lost = before - survivorView(runner.ctx).health.value;
   expect(lost).toBeGreaterThan(4);
   expect(lost).toBeLessThan(6.5);
