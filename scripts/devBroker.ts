@@ -711,6 +711,21 @@ async function startRealChrome(): Promise<LaunchedChrome> {
   };
 }
 
+/**
+ * The search parameter on a `drive --step` page. That page stays in the shared browser between
+ * captures, frozen, so the next `--step` resumes the running game instead of booting it again.
+ */
+export const STEP_PAGE_PARAM = "jgStep";
+
+/** Whether a page in the shared browser is a kept `drive --step` page. */
+export function isStepPage(url: string): boolean {
+  try {
+    return new URL(url).searchParams.get(STEP_PAGE_PARAM) === "1";
+  } catch {
+    return false;
+  }
+}
+
 async function closeStrayPages(chromePort: number): Promise<number> {
   try {
     const response = await localRequest(`http://127.0.0.1:${chromePort}/json/list`, { timeoutMs: 3_000 });
@@ -718,7 +733,7 @@ async function closeStrayPages(chromePort: number): Promise<number> {
     const pages = targets.filter((target) => target.type === "page");
     let closed = 0;
     for (const page of pages) {
-      if (page.url === "about:blank") continue;
+      if (page.url === "about:blank" || isStepPage(page.url)) continue;
       await localRequest(`http://127.0.0.1:${chromePort}/json/close/${encodeURIComponent(page.id)}`, { timeoutMs: 3_000 }).catch(() => null);
       closed += 1;
     }
