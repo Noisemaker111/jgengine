@@ -887,6 +887,13 @@
 - `freezeNarrativeCanon` (function): function freezeNarrativeCanon(canon: NarrativeCanon): NarrativeCanon — Detach and freeze reviewed canon before passing it to an asynchronous authoring callback. Duplicate character/event ids and an empty revision throw; facts retain exact caller values.
 - `validateNarrativeBatch` (function): function validateNarrativeBatch(canon: NarrativeCanon, batch: NarrativeBatch, limits: NarrativeBatchLimits): NarrativeIssue[] — Check a typed candidate against caller budgets, canon revision, explicit claims and graph topology. Stops at the first exceeded budget before topology work; stale revisions also stop immediately. Claims check exact fact values and the declared strict event order, never prose, speaker labels, motivations, branch consequences or story quality. O(canon + bounded nodes + choices + claims). Validate/parse external JSON before calling; this is not an untrusted JSON decoder.
 
+## @jgengine/core/game/newGame
+
+- `NewGameConfig` (interface): interface NewGameConfig — A game's new-game declaration, passed as `defineGame({ newGame })`: the {@link NewGameState} plus the hooks that apply its game-owned parts. The engine builds every new game from it and nothing else (a game's `onNewPlayer` that hands out items or money throws), and checks read it from `definition.newGame`.
+- `NewGameKit` (interface): interface NewGameKit — One stack the player holds at second 0.
+- `NewGamePiece` (interface): interface NewGamePiece — One piece already standing in the world at second 0 (a prebuilt ride, a starter hut).
+- `NewGameState` (interface): interface NewGameState — Everything the player has at second 0, as plain data. Empty means empty-handed: no cash, no kit, nothing unlocked, nothing built and nothing working for the player yet.
+
 ## @jgengine/core/game/paramLayers
 
 - `LayerConflict` (interface): interface LayerConflict — A single conflict surfaced by {@link validateLayers}.

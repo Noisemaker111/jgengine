@@ -2,7 +2,7 @@ import { expect, test } from "bun:test";
 import { defineGameDefinition } from "@jgengine/core/game/defineGame";
 import { createHeadlessRunner, type HeadlessRunner } from "@jgengine/core/runtime/headlessRunner";
 
-import { onNewPlayer, systems } from "../loop";
+import { onNewPlayer, survivorStart, systems } from "../loop";
 import { world } from "../world";
 import { content } from "./content";
 import { itemDef, itemTraits } from "./data/items";
@@ -16,6 +16,7 @@ function runner(): HeadlessRunner {
     world,
     inventories: { [BAG]: { slots: BAG_SLOTS, traits: itemTraits }, [HOTBAR]: { slots: HOTBAR_SLOTS, traits: itemTraits } },
     systems,
+    newGame: survivorStart,
     loop: { onNewPlayer },
   });
   // Long steps are allowed so the half-hour respawn wait can be skipped through; walking still steps 0.05 s.

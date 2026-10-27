@@ -373,6 +373,7 @@
     "./game/loadout",
     "./game/modelAnimation",
     "./game/narrativeAuthoring",
+    "./game/newGame",
     "./game/paramLayers",
     "./game/partAnimation",
     "./game/pixelPerfect",

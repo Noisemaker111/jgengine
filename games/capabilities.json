@@ -6273,6 +6273,16 @@
       "intent": "character creation pane — name field, palette and avatar choice, start action"
     },
     {
+      "id": "new-game-state",
+      "packages": [
+        "@jgengine/core"
+      ],
+      "module": "@jgengine/core/game/newGame",
+      "gameFacing": false,
+      "probe": null,
+      "intent": "declare what the player has at second 0 (cash, kit, unlocks, prebuilt pieces, systems that start on their own) as data the engine builds from and checks read"
+    },
+    {
       "id": "notice-feed",
       "packages": [
         "@jgengine/core"

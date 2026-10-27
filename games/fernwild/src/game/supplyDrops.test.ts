@@ -3,7 +3,7 @@ import { defineGameDefinition } from "@jgengine/core/game/defineGame";
 import { createHeadlessRunner, type HeadlessRunner } from "@jgengine/core/runtime/headlessRunner";
 
 import { editorLayers } from "../editorLayers";
-import { onNewPlayer, systems } from "../loop";
+import { onNewPlayer, survivorStart, systems } from "../loop";
 import { time, world } from "../world";
 import { content } from "./content";
 import { itemDef, itemTraits } from "./data/items";
@@ -21,6 +21,7 @@ function runner(): HeadlessRunner {
     authoredDocument: editorLayers,
     inventories: { [BAG]: { slots: BAG_SLOTS, traits: itemTraits }, [HOTBAR]: { slots: HOTBAR_SLOTS, traits: itemTraits } },
     systems,
+    newGame: survivorStart,
     loop: { onNewPlayer },
   });
   return createHeadlessRunner({ definition, content, loop: definition.loop!, playerMovement: true });

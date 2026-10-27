@@ -2,7 +2,7 @@ import { expect, test } from "bun:test";
 import { defineGameDefinition } from "@jgengine/core/game/defineGame";
 import { createHeadlessRunner, type HeadlessRunner } from "@jgengine/core/runtime/headlessRunner";
 
-import { onNewPlayer, systems } from "../loop";
+import { onNewPlayer, survivorStart, systems } from "../loop";
 import { world } from "../world";
 import { baseBuilding, baseView } from "./base";
 import { BAG, BAG_SLOTS, HOTBAR, HOTBAR_SLOTS } from "./bags";
@@ -18,6 +18,7 @@ function runner(): HeadlessRunner {
     world,
     inventories: { [BAG]: { slots: BAG_SLOTS, traits: itemTraits }, [HOTBAR]: { slots: HOTBAR_SLOTS, traits: itemTraits } },
     systems,
+    newGame: survivorStart,
     loop: { onNewPlayer },
   });
   return createHeadlessRunner({ definition, content, loop: definition.loop! });

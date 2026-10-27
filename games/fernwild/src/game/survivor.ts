@@ -80,11 +80,15 @@ const survivorOf = perContext((ctx: GameContext): Survivor => ({
   web: null,
 }));
 
-/** Level-1 engrams are known from the start, like a fresh ARK survivor. */
+/** No engram known; the new-game declaration (`data/start.ts`) teaches the starting ones. */
 function freshEngrams(): UnlockPoints {
-  const engrams = createUnlockPoints({ perLevel: ENGRAM_POINTS });
-  for (const entry of ENGRAMS) if (entry.points === 0) engrams.spend(entry.id, 0);
-  return engrams;
+  return createUnlockPoints({ perLevel: ENGRAM_POINTS });
+}
+
+/** Know an engram without spending points: how the new game hands out the level-1 ones. */
+export function learnFree(ctx: GameContext, engramId: string): void {
+  if (engramDef(engramId) === null) throw new Error(`fernwild: no engram "${engramId}"`);
+  survivorOf(ctx).engrams.spend(engramId, 0);
 }
 
 // --- stats --------------------------------------------------------------------------------
