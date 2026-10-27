@@ -1,11 +1,13 @@
-import { createReadStream, existsSync, readdirSync, statSync } from "node:fs";
+import { copyFileSync, createReadStream, existsSync, linkSync, mkdirSync, readdirSync, readFileSync, statSync } from "node:fs";
 import type { IncomingMessage, ServerResponse } from "node:http";
-import { dirname, extname, join, normalize, resolve, sep } from "node:path";
+import { basename, dirname, extname, join, normalize, resolve, sep } from "node:path";
 
-import type { Plugin } from "vite";
+import type { Plugin, ViteDevServer } from "vite";
 
 import { assetStoreRoot } from "../../packages/assets/src/assetStore";
+import { gameAssetText } from "../../games/shared/provisionAssets";
 import { compressedVariant, textureVariantDir } from "../../games/shared/textureVariants";
+import { prefetchTier, type PrefetchItem } from "../../packages/core/src/boot/prefetchTier";
 
 const TYPES: Readonly<Record<string, string>> = {
   ".gltf": "model/gltf+json",
@@ -23,29 +25,56 @@ const TYPES: Readonly<Record<string, string>> = {
   ".hdr": "application/octet-stream",
 };
 
+/** The folder under the runner's base that serves one game's own `public/` files: `games/<id>/`. */
+export const GAME_PUBLIC_FOLDER = "games";
+
+/** The module the runner imports for a game's file list: `gamePublicFiles[id]()` resolves to its paths. */
+export const GAME_PUBLIC_MODULE = "virtual:jgengine-game-public";
+
 /**
- * The `public/` folders a runner serves after its own: the `--game-dir` game first, then every
- * game under `games/`. A game's provisioned models (`public/models/library/...`) and pulled packs
- * live in its own folder, not in `apps/dev/public`, so without this a game drawn by `bun run drive`
- * shows placeholder boxes where its standalone dev server shows the real models.
+ * Every game's own `public/` folder by game id: each `games/<id>` the runner can load, with the
+ * `--game-dir` game replacing the in-repo copy of the same id. A game's provisioned models and
+ * pulled packs live there, never in the runner's own `public/`.
  */
-export function gamePublicRoots(servedGameDir: string | undefined, gamesDir: string): string[] {
-  const roots: string[] = [];
-  if (servedGameDir !== undefined && servedGameDir !== "") roots.push(join(servedGameDir, "public"));
+export function gamePublicDirs(servedGameDir: string | undefined, gamesDir: string): Map<string, string> {
+  const dirs = new Map<string, string>();
   if (existsSync(gamesDir)) {
-    for (const entry of readdirSync(gamesDir, { withFileTypes: true })) {
-      if (entry.isDirectory() || entry.isSymbolicLink()) roots.push(join(gamesDir, entry.name, "public"));
+    for (const entry of readdirSync(gamesDir, { withFileTypes: true }).sort((a, b) => a.name.localeCompare(b.name))) {
+      if (!entry.isDirectory() && !entry.isSymbolicLink()) continue;
+      if (!existsSync(join(gamesDir, entry.name, "src", "index.tsx"))) continue;
+      const pub = join(gamesDir, entry.name, "public");
+      if (existsSync(pub)) dirs.set(entry.name, pub);
     }
   }
-  return roots.filter((root) => existsSync(root));
+  if (servedGameDir !== undefined && servedGameDir !== "" && existsSync(join(servedGameDir, "public"))) {
+    dirs.set(basename(resolve(servedGameDir)), join(servedGameDir, "public"));
+  }
+  return dirs;
+}
+
+/** Every file under a game's `public/`, as the root-absolute path the game asks for (`/models/a.glb`), links followed. */
+export function listPublicFiles(dir: string): string[] {
+  const out: string[] = [];
+  const walk = (abs: string, rel: string): void => {
+    // walk-ok: a game's public/ folder is the asset tree being listed, not a source search
+    for (const name of readdirSync(abs).sort()) {
+      const path = join(abs, name);
+      const stat = statSync(path, { throwIfNoEntry: false });
+      if (stat === undefined) continue;
+      if (stat.isDirectory()) walk(path, `${rel}/${name}`);
+      else if (stat.isFile()) out.push(`${rel}/${name}`);
+    }
+  };
+  if (existsSync(dir)) walk(dir, "");
+  return out;
 }
 
 /**
- * The file a request path names under the first root that holds it, never escaping a root. With a
- * `variantDir` (the asset store's KTX2 cache, `games/shared/textureVariants.ts`), a model or image
- * that has a GPU-compressed twin there is answered with the twin.
+ * The file a request path names under one root, never escaping it. With a `variantDir` (the asset
+ * store's KTX2 cache, `games/shared/textureVariants.ts`), a model or image that has a GPU-compressed
+ * twin there is answered with the twin.
  */
-export function resolveGamePublicFile(url: string, roots: readonly string[], variantDir?: string): string | null {
+export function resolvePublicFile(url: string, root: string, variantDir?: string): string | null {
   const [target = ""] = url.split("#", 1);
   const query = target.indexOf("?");
   const search = query < 0 ? "" : target.slice(query + 1);
@@ -53,27 +82,161 @@ export function resolveGamePublicFile(url: string, roots: readonly string[], var
   if (!path.startsWith("/") || path.includes("\0")) return null;
   const relative = normalize(path.slice(1));
   if (relative.startsWith("..") || relative === ".") return null;
-  for (const root of roots) {
-    const base = resolve(root);
-    const file = resolve(base, relative);
-    if (file !== base && !file.startsWith(base + sep)) continue;
-    if (existsSync(file) && statSync(file).isFile()) return (variantDir === undefined ? null : compressedVariant(file, search, variantDir)) ?? file;
-  }
-  return null;
+  const base = resolve(root);
+  const file = resolve(base, relative);
+  if (file === base || !file.startsWith(base + sep)) return null;
+  if (!existsSync(file) || !statSync(file).isFile()) return null;
+  return (variantDir === undefined ? null : compressedVariant(file, search, variantDir)) ?? file;
 }
 
-/** Serve game `public/` files the runner's own `public/` (`runnerPublic`, served first) doesn't have. */
-export function gamePublicPlugin(servedGameDir: string | undefined, gamesDir: string, runnerPublic: string): Plugin {
-  const games = gamePublicRoots(servedGameDir, gamesDir);
-  const roots = games.length === 0 ? [] : [runnerPublic, ...games];
+/** A root-absolute asset path written as a string in a game's source or scene: `"/models/a/b.glb"`. */
+const ASSET_LITERAL = /["'`](\/[A-Za-z0-9_][A-Za-z0-9_./ -]*\.(?:glb|gltf|bin|png|jpe?g|webp|ktx2|hdr|exr|mp3|ogg|wav|m4a))["'`]/g;
+
+/** Every root-absolute asset path a game's text names. */
+export function assetLiterals(text: string): string[] {
+  return [...new Set([...text.matchAll(ASSET_LITERAL)].map((match) => match[1]!))].sort();
+}
+
+function modelJson(file: string): string {
+  const bytes = readFileSync(file);
+  // A .glb is a 12-byte header then chunks; its first chunk (length at 12, type at 16) is the glTF JSON.
+  if (bytes.length >= 20 && bytes.toString("latin1", 0, 4) === "glTF") return bytes.toString("utf8", 20, 20 + bytes.readUInt32LE(12));
+  return bytes.toString("utf8");
+}
+
+function foldDots(path: string): string {
+  const out: string[] = [];
+  for (const part of path.split("/")) {
+    if (part === "..") out.pop();
+    else if (part !== ".") out.push(part);
+  }
+  return out.join("/");
+}
+
+/** The files a `.gltf` or `.glb` loads beside itself (buffers and images it names by path), as root-absolute paths. */
+export function modelSiblings(path: string, file: string): string[] {
+  try {
+    const doc = JSON.parse(modelJson(file)) as { buffers?: { uri?: string }[]; images?: { uri?: string }[] };
+    const dir = path.slice(0, path.lastIndexOf("/") + 1);
+    return [...(doc.buffers ?? []), ...(doc.images ?? [])]
+      .map((entry) => entry.uri)
+      .filter((uri): uri is string => uri !== undefined && !uri.startsWith("data:") && !/^[a-z]+:/i.test(uri))
+      .map((uri) => foldDots(`${dir}${decodeURIComponent(uri)}`));
+  } catch {
+    return [];
+  }
+}
+
+/**
+ * The files one game names, in the order the runner fetches them when the game opens: every
+ * asset path its source or scene writes out, the library models and material packs it names by id,
+ * and the files a `.gltf` among them loads, near versions before distance and LOD versions. Files
+ * a pack holds that the game never names are left out, so opening a game never downloads a pack.
+ */
+export function gamePrefetchList(text: string, gameFiles: readonly string[], sharedFiles: ReadonlySet<string>, fileOf: (path: string) => string | null): PrefetchItem[] {
+  const own = new Set(gameFiles);
+  const paths: string[] = [];
+  for (const path of assetLiterals(text)) if (own.has(path) || sharedFiles.has(path)) paths.push(path);
+  const quoted = new Set([...text.matchAll(/["'`]([A-Za-z0-9_./-]+)["'`]/g)].map((match) => match[1]!));
+  for (const path of [...own, ...sharedFiles]) {
+    const library = /^\/models\/library\/(.+)\/[^/]+$/.exec(path);
+    const material = /^\/materials\/([^/]+)\/[^/]+$/.exec(path);
+    if ((library !== null && quoted.has(library[1]!)) || (material !== null && quoted.has(material[1]!))) paths.push(path);
+  }
+  const all = [...paths];
+  for (const path of paths) {
+    if (!path.endsWith(".gltf") && !path.endsWith(".glb")) continue;
+    const file = fileOf(path);
+    if (file !== null) all.push(...modelSiblings(path, file).filter((sibling) => own.has(sibling) || sharedFiles.has(sibling)));
+  }
+  return [...new Set(all)].map((path) => ({ path, tier: prefetchTier(path) }));
+}
+
+/** A `/games/<id>/<path>` request split into the game and the path that game asked for. */
+export function splitGamePublicUrl(url: string): { game: string; path: string } | null {
+  const match = new RegExp(`^/${GAME_PUBLIC_FOLDER}/([^/?#]+)(/[^#]*)$`).exec(url);
+  return match === null ? null : { game: decodeURIComponent(match[1]!), path: match[2]! };
+}
+
+/**
+ * Write every game's `public/` into a production runner build at `<outDir>/games/<id>/`, the folder
+ * {@link GAME_PUBLIC_MODULE} points the game at. Files are hard-linked where the volume allows (the
+ * shared asset store is large), copied otherwise.
+ */
+export function writeGamePublics(outDir: string, dirs: ReadonlyMap<string, string>): number {
+  let written = 0;
+  for (const [game, dir] of dirs) {
+    for (const path of listPublicFiles(dir)) {
+      const from = join(dir, ...path.split("/"));
+      const to = join(outDir, GAME_PUBLIC_FOLDER, game, ...path.split("/"));
+      mkdirSync(dirname(to), { recursive: true });
+      try {
+        linkSync(from, to);
+      } catch {
+        copyFileSync(from, to);
+      }
+      written += 1;
+    }
+  }
+  return written;
+}
+
+/** The runner module that lists each game's own files and what to fetch when it opens, one lazy chunk per game. */
+export function gamePublicIndexModule(games: readonly string[]): string {
+  const entries = games.map((game) => `  ${JSON.stringify(game)}: () => import(${JSON.stringify(`${GAME_PUBLIC_MODULE}/${game}`)}),`);
+  return `export const GAME_PUBLIC_FOLDER = ${JSON.stringify(GAME_PUBLIC_FOLDER)};\nexport const gamePublic = {\n${entries.join("\n")}\n};\n`;
+}
+
+/**
+ * Serves each game's own `public/` to the runner under `games/<id>/`, in dev from the game's folder
+ * and in a production build as files written next to the bundle, and gives the runner each game's
+ * file list (`virtual:jgengine-game-public`) so a game's `/models/…` resolves to its own copy.
+ */
+export function gamePublicPlugin(servedGameDir: string | undefined, gamesDir: string): Plugin {
+  const dirs = gamePublicDirs(servedGameDir, gamesDir);
   const variantDir = textureVariantDir(assetStoreRoot(dirname(resolve(gamesDir))));
+  let outDir = "";
+  let runnerPublic = "";
+  let server: ViteDevServer | undefined;
+  const resolvedIndex = `\0${GAME_PUBLIC_MODULE}`;
   return {
     name: "jgengine-game-public",
-    configureServer(server) {
-      if (roots.length === 0) return;
-      server.middlewares.use((req: IncomingMessage, res: ServerResponse, next: () => void) => {
+    configResolved(config) {
+      outDir = resolve(config.root, config.build.outDir);
+      runnerPublic = config.publicDir;
+    },
+    resolveId(id) {
+      if (id === GAME_PUBLIC_MODULE || id.startsWith(`${GAME_PUBLIC_MODULE}/`)) return `\0${id}`;
+    },
+    load(id) {
+      if (id === resolvedIndex) return gamePublicIndexModule([...dirs.keys()]);
+      if (!id.startsWith(`${resolvedIndex}/`)) return;
+      const dir = dirs.get(id.slice(resolvedIndex.length + 1));
+      const files = dir === undefined ? [] : listPublicFiles(dir);
+      const prefetch = dir === undefined ? [] : gamePrefetchList(gameAssetText(dirname(dir)), files, new Set(listPublicFiles(runnerPublic)), (path) =>
+        resolvePublicFile(path, dir) ?? resolvePublicFile(path, runnerPublic));
+      return `export const files = ${JSON.stringify(files)};
+export const prefetch = ${JSON.stringify(prefetch)};
+`;
+    },
+    configureServer(devServer) {
+      server = devServer;
+      // A pack provisioned while the server runs joins the game's list on the next page load.
+      devServer.watcher.add([...dirs.values()]);
+      const refresh = (file: string): void => {
+        for (const [game, dir] of dirs) {
+          if (!resolve(file).startsWith(resolve(dir) + sep)) continue;
+          const module = server?.moduleGraph.getModuleById(`${resolvedIndex}/${game}`);
+          if (module !== undefined) server?.moduleGraph.invalidateModule(module);
+        }
+      };
+      devServer.watcher.on("add", refresh);
+      devServer.watcher.on("unlink", refresh);
+      devServer.middlewares.use((req: IncomingMessage, res: ServerResponse, next: () => void) => {
         if (req.method !== "GET" && req.method !== "HEAD") return next();
-        const file = resolveGamePublicFile(req.url ?? "", roots, variantDir);
+        const split = splitGamePublicUrl(req.url ?? "");
+        const dir = split === null ? undefined : dirs.get(split.game);
+        const file = split === null || dir === undefined ? null : resolvePublicFile(split.path, dir, variantDir);
         if (file === null) return next();
         res.statusCode = 200;
         res.setHeader("Content-Type", TYPES[extname(file).toLowerCase()] ?? "application/octet-stream");
@@ -81,6 +244,10 @@ export function gamePublicPlugin(servedGameDir: string | undefined, gamesDir: st
         if (req.method === "HEAD") return void res.end();
         createReadStream(file).pipe(res);
       });
+    },
+    writeBundle() {
+      const written = writeGamePublics(outDir, dirs);
+      this.info(`wrote ${written} game public files under ${GAME_PUBLIC_FOLDER}/`);
     },
   };
 }

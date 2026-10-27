@@ -9,12 +9,12 @@ import { fileURLToPath } from "node:url";
 
 import { chromium, type Frame, type Page } from "playwright-core";
 
-import { gamePublicRoots, resolveGamePublicFile } from "../apps/dev/gamePublicPlugin";
 import { assetStoreRoot } from "../packages/assets/src/assetStore";
 import { provisionGame } from "../games/shared/provisionAssets";
 import { compressedVariant, textureVariantDir } from "../games/shared/textureVariants";
 import { killPid, pickDebugPort, removeProfileDir, startBrowser, waitForPidExit } from "./browser-lib";
 import { printHelpIfAsked } from "./script-help";
+import { BOOT_SEQUENCE_ATTRIBUTE, bootSequenceErrors, parseBootSequence } from "../packages/core/src/boot/bootSequence";
 import { siteGames } from "./siteGames";
 
 const repoRoot = fileURLToPath(new URL("..", import.meta.url));
@@ -118,6 +118,10 @@ export interface LoadSample {
   glErrors?: number;
   /** The WebGL renderer string: timings are only comparable on the same GPU. */
   gpu?: string;
+  /** The screens the game showed, in order (`open>loading>menu>playing`), as the engine recorded them. */
+  boot?: string;
+  /** Files the game asked for that the server did not have. */
+  missingFiles?: string[];
   error?: string;
 }
 
@@ -334,6 +338,23 @@ export const GUARD_LIMITS = {
 /** Fewer distinct coarse colours than this in the scene canvas reads as a blank scene, not a drawn one. */
 export const BLANK_SCENE_COLORS = 40;
 
+/**
+ * What a game's open did wrong whatever its timing: a screen shown twice or out of order (a second
+ * loading screen, a world that vanished to load), or a file the server did not have.
+ */
+export function judgeOpen(game: string, sample: LoadSample): string[] {
+  const failures: string[] = [];
+  if (sample.boot === undefined) failures.push(`${game}: the engine recorded no boot sequence`);
+  else {
+    const boot = parseBootSequence(sample.boot);
+    for (const error of bootSequenceErrors(boot.history, boot.refused)) failures.push(`${game}: boot ${boot.history.join(" > ")}: ${error}`);
+  }
+  if (sample.missingFiles !== undefined && sample.missingFiles.length > 0) {
+    failures.push(`${game}: ${sample.missingFiles.length} files missing on the server: ${[...new Set(sample.missingFiles)].slice(0, 5).join(", ")}`);
+  }
+  return failures;
+}
+
 /** Each way `now` loads worse than `base`, as a sentence; empty when it holds. */
 export function judgeLoad(game: string, base: LoadBaseline["games"][string], now: LoadSample): string[] {
   if (now.error !== undefined) return [`${game}: ${now.error}`];
@@ -399,9 +420,7 @@ export function serveSite(clientDir = join(webRoot, "dist", "client"), entry = "
     }
     return null;
   };
-  // Game models live in each game's provisioned public/ folder, which the build does not copy;
-  // the runner serves them from there, the same as `bun run drive` does.
-  const gamePublic = gamePublicRoots(undefined, join(repoRoot, "games"));
+  // Every file comes from the build, game models included (`games/<id>/` under /play), as on the live site.
   const variantDir = textureVariantDir(assetStoreRoot(repoRoot));
   const server = Bun.serve({
     port: 0,
@@ -409,8 +428,7 @@ export function serveSite(clientDir = join(webRoot, "dist", "client"), entry = "
     fetch: (request) => {
       const { pathname, search } = new URL(request.url);
       const built = resolve(pathname);
-      // The runner's own public/ (copied into the build) holds packs too; they get their twins the same way.
-      const path = built !== null ? (compressedVariant(built, search, variantDir) ?? built) : pathname.startsWith("/play/") ? resolveGamePublicFile(pathname.slice("/play".length) + search, gamePublic, variantDir) : null;
+      const path = built === null ? null : (compressedVariant(built, search, variantDir) ?? built);
       if (path === null) return new Response("not found", { status: 404 });
       const hashed = pathname.startsWith("/assets/") || pathname.startsWith("/play/assets/");
       return new Response(Bun.file(path), {
@@ -455,7 +473,10 @@ async function measureOnce(base: string, game: string, path: string, args: LoadA
       if (message.type() === "error" && !message.text().startsWith("Failed to load resource")) pageErrors.push(message.text());
     });
     page.on("response", (response) => {
-      if (response.status() >= 400) pageErrors.push(`${response.status()} ${new URL(response.url()).pathname}`);
+      if (response.status() < 400) return;
+      const path = new URL(response.url()).pathname;
+      pageErrors.push(`${response.status()} ${path}`);
+      if (response.status() === 404 && path.startsWith("/play/")) (sample.missingFiles ??= []).push(path);
     });
     if (args.trace) {
       await browser.startTracing(page, {
@@ -514,6 +535,7 @@ async function measureOnce(base: string, game: string, path: string, args: LoadA
       })
       .catch(() => "unknown")) as string;
     const frame = await playFrame(page);
+    sample.boot = (await frame?.evaluate((name) => document.documentElement.getAttribute(name), BOOT_SEQUENCE_ATTRIBUTE).catch(() => null)) ?? undefined;
     const tasks = [
       ...(state?.tasks ?? []),
       ...((await page.evaluate(() => performance.getEntriesByType("longtask").map((entry) => Math.round(entry.duration))).catch(() => [])) as number[]).map((duration) => [0, duration] as [number, number]),
@@ -561,7 +583,7 @@ async function main(): Promise<number> {
   const allSamples: LoadSample[] = [];
   const failures: string[] = [];
   const log = (game: string, run: number, sample: LoadSample) =>
-    console.error(`load: ${game} run ${run}: paint ${cell(sample.firstPaint)} menu ${cell(sample.menuShown)} worst click ${cell(sample.worstClick)} scene ${cell(sample.sceneReady)} playable ${cell(sample.playable)} ms, after reveal ${revealSummary(sample.revealFrames, sample.revealCovered)}, effects on ${sample.effectsAfterReveal == null ? "-" : `${sample.effectsAfterReveal >= 0 ? "+" : ""}${sample.effectsAfterReveal}`} ms, ${sample.sceneColors ?? "-"} colours, ${sample.glErrors ?? 0} GL errors${sample.error === undefined ? "" : ` (${sample.error})`}`);
+    console.error(`load: ${game} run ${run}: paint ${cell(sample.firstPaint)} menu ${cell(sample.menuShown)} worst click ${cell(sample.worstClick)} scene ${cell(sample.sceneReady)} playable ${cell(sample.playable)} ms, after reveal ${revealSummary(sample.revealFrames, sample.revealCovered)}, effects on ${sample.effectsAfterReveal == null ? "-" : `${sample.effectsAfterReveal >= 0 ? "+" : ""}${sample.effectsAfterReveal}`} ms, ${sample.sceneColors ?? "-"} colours, ${sample.glErrors ?? 0} GL errors, boot ${sample.boot ?? "-"}${sample.error === undefined ? "" : ` (${sample.error})`}`);
   try {
     for (const game of args.games) {
       const samples: LoadSample[] = [];
@@ -571,6 +593,7 @@ async function main(): Promise<number> {
         samples.push(sample);
       }
       let row: LoadSample = { ...summarizeRuns(samples), ...(samples[0]?.gpu === undefined ? {} : { gpu: samples[0].gpu }) };
+      for (const sample of samples) if (sample.error === undefined) failures.push(...judgeOpen(game, sample));
       if (args.guard) {
         const accepted = baseline?.games[game];
         if (baseline === null || accepted === undefined || baseline.gpu !== row.gpu) {
@@ -607,7 +630,7 @@ async function main(): Promise<number> {
     console.error(`load: baseline for ${rows.map((row) => row.game).join(", ")} written to scripts/load-baseline.json`);
   }
   if (failures.length > 0) {
-    console.error(`load guard: ${failures.length} regression(s) against scripts/load-baseline.json:`);
+    console.error(`load: ${failures.length} failure(s) (boot sequence, missing files, or a regression against scripts/load-baseline.json):`);
     for (const failure of failures) console.error(`  ${failure}`);
     console.error("load guard: find the slow shader or task with `bun run shoot --load <game> --trace`; a deliberate cost re-records with --save-baseline");
     return 1;

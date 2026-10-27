@@ -1,7 +1,7 @@
 import { describe, expect, test } from "bun:test";
 
 import { shootCommand, LOAD_GUARD_SECONDS } from "./shoot";
-import { bestOf, judgeLoad, parseLoadArgs, renderTable, revealSummary, summarizeRuns, type LoadSample } from "./load-check";
+import { bestOf, judgeLoad, judgeOpen, parseLoadArgs, renderTable, revealSummary, summarizeRuns, type LoadSample } from "./load-check";
 import { siteGames } from "./siteGames";
 
 const known = ["apex-nights", "hold-the-line", "saltwick"];
@@ -88,5 +88,16 @@ describe("revealSummary", () => {
     expect(revealSummary([])).toBe("no frames");
     expect(revealSummary([16.7, 50, 16.7], true)).toBe("3 frames once the game's menu lifted, worst 50 ms, median 17 ms, 1 over 33 ms");
     expect(revealSummary([], true)).toBe("no frames (the game's menu never lifted)");
+  });
+
+  test("an open fails on a second loading screen, a vanished world or a missing file", () => {
+    expect(judgeOpen("saltwick", { ...sample("saltwick", 10, 10), boot: "open>loading>menu>playing" })).toEqual([]);
+    expect(judgeOpen("saltwick", { ...sample("saltwick", 10, 10), boot: "open>loading>menu|menu -> loading (game view code)" })).toEqual([
+      "saltwick: boot open > loading > menu: refused: menu -> loading (game view code)",
+    ]);
+    expect(judgeOpen("saltwick", sample("saltwick", 10, 10))).toEqual(["saltwick: the engine recorded no boot sequence"]);
+    expect(judgeOpen("saltwick", { ...sample("saltwick", 10, 10), boot: "open>menu", missingFiles: ["/play/models/a.glb", "/play/models/a.glb"] })).toEqual([
+      "saltwick: 2 files missing on the server: /play/models/a.glb",
+    ]);
   });
 });

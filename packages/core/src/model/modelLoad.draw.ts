@@ -10,8 +10,9 @@ import {
   type AssetResponseProbe,
 } from "@jgengine/core/scene/assetDiagnostics";
 import { reportTextureLoadError } from "@jgengine/core/devtools/textureErrors";
+import { isProductionEnvironment } from "@jgengine/core/devtools/saveEndpoint";
 
-import { resolveAssetBaseUrl } from "@jgengine/core/assets/assetBase.draw";
+import { resolveAssetBaseUrl } from "@jgengine/core/assets/assetBase";
 import { mergeModelSubMeshes, mergeSkinnedModelParts } from "./modelMeshMerge.draw";
 import { applyModelSurface } from "./modelSurface.draw";
 import { sharedModelImages } from "./sharedModelImages.draw";
@@ -97,12 +98,13 @@ export function missingModelName(url: string): string {
 let labelMissingModels = false;
 
 /**
- * Write each missing model's name on its placeholder box. The shell turns it on with devtools (dev
- * builds), so a broken asset reads by name in the world instead of as one more identical box.
+ * Write each missing model's name on its placeholder box. The shell turns it on with devtools, so a
+ * broken asset reads by name in the world instead of as one more identical box. A production build
+ * never labels: players get a plain placeholder and the console names the file.
  * @internal
  */
 export function armMissingModelLabels(on: boolean): void {
-  labelMissingModels = on;
+  labelMissingModels = on && !isProductionEnvironment();
 }
 
 function nameLabelTexture(name: string): THREE.Texture | null {

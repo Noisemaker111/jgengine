@@ -8,7 +8,7 @@
 import { Suspense, useEffect, useMemo, useRef } from "react";
 import { useLoader } from "@react-three/fiber";
 import * as THREE from "three";
-import { GLTFLoader } from "three/examples/jsm/loaders/GLTFLoader.js";
+import { sharedGltfLoader } from "@jgengine/core/model/modelLoad.draw";
 
 import { parseParams } from "@jgengine/core/scene/sceneKinds";
 import { readNamedSockets, type ModelNode } from "@jgengine/core/scene/modelSockets";
@@ -250,7 +250,7 @@ function ProxyPoles({
 }
 
 function ModelPoles({ url, poles }: { url: string; poles: readonly Pole[] }) {
-  const gltf = useLoader(GLTFLoader, url);
+  const gltf = useLoader(sharedGltfLoader, url);
   const sources = useMemo(() => {
     const meshes: { geometry: THREE.BufferGeometry; material: THREE.Material; local: THREE.Matrix4 }[] = [];
     gltf.scene.updateWorldMatrix(true, true);

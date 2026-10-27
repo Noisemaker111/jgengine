@@ -124,6 +124,8 @@ import { WorldTireMarks } from "@jgengine/core/vfx/tireMarks.draw";
 import { TerrainQualityContext } from "@jgengine/core/terrain/terrainQuality.draw";
 import { detectKtx2Support } from "@jgengine/core/model/modelLoad.draw";
 import { SceneWarmupCoverLive, SceneWarmupGate, createSceneWarmupStore } from "@jgengine/core/scene/SceneWarmupGate.draw";
+import { BootDirector } from "@jgengine/core/boot/BootDirector.draw";
+import { BootSuspenseGuard } from "@jgengine/core/boot/bootScreen.view";
 import {
   resolvePresentationEffects,
   resolveWorldOverlayBars,
@@ -692,6 +694,7 @@ export function Shell3dPresentation({
                   ) : null}
                   {backgroundColor !== undefined ? <color attach="background" args={[backgroundColor]} /> : null}
                   {cinematicLook ? (
+                    <BootSuspenseGuard area="the environment lighting">
                     <EnvironmentLighting
                       source={playable.environmentSource}
                       skyColor={sceneLighting?.hemisphere?.skyColor ?? "#87b5e0"}
@@ -702,6 +705,7 @@ export function Shell3dPresentation({
                       worldProbe={worldProbe}
                       {...(authoredDaylight ? { daylight: daylightModulation } : {})}
                     />
+                    </BootSuspenseGuard>
                   ) : null}
                   <LivingWorld ambientLife={playable.ambientLife} lowTier={graphics.quality === "low"} outdoor={effectiveSky !== undefined} />
                   {sceneLighting !== undefined ? (
@@ -717,6 +721,7 @@ export function Shell3dPresentation({
                     </>
                   ) : null}
                   {effectiveSky !== undefined ? (
+                    <BootSuspenseGuard area="the sky">
                     <Sky
                       sky={effectiveSky}
                       clock={ctx.time}
@@ -726,6 +731,7 @@ export function Shell3dPresentation({
                       {...(backdrop?.fog === undefined ? {} : { fogRange: backdrop.fog })}
                       {...(playable.editorLayers?.simulation?.weather === undefined ? {} : { weather: ctx.environment })}
                     />
+                    </BootSuspenseGuard>
                   ) : null}
   {irradianceVolumes.length > 0 ? <IrradianceVolumeLighting volumes={irradianceVolumes} /> : null}
                   {/* One fog owner: a mounted sky always drives scene fog, so a second `<fog>` here would only shadow it. */}
@@ -734,6 +740,7 @@ export function Shell3dPresentation({
                     <TerrainQualityContext.Provider value={graphics.quality}>
                     <BuildingRenderBudget drawDistance={graphics.profile.drawDistance} visibility={playable.visibility} cullingDisabled={splitScreen}>
                     <CullingProvider config={playable.visibility} drawDistance={graphics.profile.drawDistance}>
+                      <BootSuspenseGuard area="the world">
                       <WorldView
                         entitySprites={playable.entitySprites}
                         entityModels={playable.entityModels}
@@ -747,6 +754,7 @@ export function Shell3dPresentation({
                         hideLocalActor={firstPerson}
                         editorLayers={playable.editorLayers}
                       />
+                      </BootSuspenseGuard>
                       {bars !== null ? (
                         <WorldEntityBars
                           statId={bars.statId}
@@ -776,7 +784,7 @@ export function Shell3dPresentation({
                       // camera-transparent so the orbit spring-arm never yanks toward it. A child
                       // that should block the camera opts back in with userData.jgCameraCollide.
                       <group userData={CAMERA_TRANSPARENT_USERDATA}>
-                        <WorldOverlay ctx={ctx} />
+                        <BootSuspenseGuard area="the game's world overlay"><WorldOverlay ctx={ctx} /></BootSuspenseGuard>
                       </group>
                     ) : null}
                     </CullingProvider>
@@ -861,6 +869,7 @@ export function Shell3dPresentation({
                 </Canvas>
               </ColorblindFrame>
               <SceneWarmupCoverLive store={warmup} />
+              {poster ? null : <BootDirector ctx={ctx} warmup={warmup} />}
               {graphics.showFps && !poster ? <FpsCounter tally={frameTally} /> : null}
               {!poster &&
               !orientationGate &&

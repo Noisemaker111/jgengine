@@ -1,15 +1,18 @@
 import { useSyncExternalStore } from "react";
 
+import { isProductionEnvironment } from "@jgengine/core/devtools/saveEndpoint";
 import { modelLoadFallbacks, subscribeModelLoadFallbacks } from "@jgengine/core/model/modelLoad.draw";
 
 /**
  * Dev-build banner naming every model the loader replaced with a placeholder box, so a missing asset
- * is read by name on screen instead of passing as one more pink box. Mounted with devtools.
+ * is read by name on screen instead of passing as one more pink box. Mounted with devtools; a
+ * production build never draws it (the console warning stays, and the release gate keeps missing
+ * models from shipping at all).
  * @internal
  */
 export function MissingModelsNotice() {
   const missing = useSyncExternalStore(subscribeModelLoadFallbacks, modelLoadFallbacks, modelLoadFallbacks);
-  if (missing.length === 0) return null;
+  if (missing.length === 0 || isProductionEnvironment()) return null;
   const shown = missing.slice(0, 6);
   return (
     <div

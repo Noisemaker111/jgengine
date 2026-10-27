@@ -1,10 +1,9 @@
 import { Suspense, useCallback, useEffect, useLayoutEffect, useMemo, useRef } from "react";
 import { useFrame, useLoader, useThree } from "@react-three/fiber";
 import * as THREE from "three";
-import { GLTFLoader } from "three/examples/jsm/loaders/GLTFLoader.js";
-import { MeshoptDecoder } from "three/examples/jsm/libs/meshopt_decoder.module.js";
 
 import type { ModelConfig } from "@jgengine/core/game/playableGame";
+import { sharedGltfLoader } from "@jgengine/core/model/modelLoad.draw";
 import type { ScatterInstance } from "@jgengine/core/scatter/scatterRegion";
 import { groupInstancesByCell } from "@jgengine/core/instancing/instanceCells";
 import { beginFallbackSeam, reportFallbackSeam } from "@jgengine/core/devtools/fallbackSeams";
@@ -200,9 +199,7 @@ function ScatterVariantLevel({ model, url, level, selector, batches }: {
   selector: ModelVariantSelector;
   batches: ScatterBatch[];
 }) {
-  const gltf = useLoader(GLTFLoader, url, (loader) => {
-    loader.setMeshoptDecoder(MeshoptDecoder);
-  });
+  const gltf = useLoader(sharedGltfLoader, url);
   const { sources, root } = useMemo(() => {
     return buildScatterModelSources(gltf.scene, variantLevelModel(model, level));
   }, [gltf, model, level]);
@@ -299,9 +296,7 @@ function ScatterDetailInstances({ sources, batches, radius }: { sources: Scatter
  * smaller one stops drawing past its detail distance.
  */
 function ScatterSingleSpecies({ model, batches }: { model: ModelConfig; batches: ScatterBatch[] }) {
-  const gltf = useLoader(GLTFLoader, model.url, (loader) => {
-    loader.setMeshoptDecoder(MeshoptDecoder);
-  });
+  const gltf = useLoader(sharedGltfLoader, model.url);
   const { sources, root } = useMemo(() => buildScatterModelSources(gltf.scene, model), [gltf, model]);
   useEffect(() => () => disposeScatterModelSources(root), [root]);
   const radius = useMemo(() => sourceRadius(sources), [sources]);

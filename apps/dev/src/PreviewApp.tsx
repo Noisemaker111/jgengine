@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 
 import { ErrorPanel, LoadingPanel, formatLoadError } from "./appShared";
 import { captureArmed, readCaptureQuery, setCaptureStatus } from "./captureReady";
+import { installGameAssets } from "./gameAssets";
 import { previewLoaders, type PreviewComponent } from "./registries";
 
 export function PreviewApp({ gameId, stateKey }: { gameId: string; stateKey: string }) {
@@ -16,8 +17,8 @@ export function PreviewApp({ gameId, stateKey }: { gameId: string; stateKey: str
       );
       return;
     }
-    void loader()
-      .then((module) => {
+    void Promise.all([loader(), installGameAssets(gameId)])
+      .then(([module]) => {
         if (stateKey === "") {
           setComponent(() => module.default);
           return;

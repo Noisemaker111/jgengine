@@ -1,6 +1,8 @@
 import { addAfterEffect, addEffect, useThree } from "@react-three/fiber";
 import { useEffect, useSyncExternalStore } from "react";
 
+import type { BootStep } from "@jgengine/core/boot/bootSequence";
+import { BootLoadingScreen, useBootStep } from "@jgengine/core/boot/bootScreen.view";
 import { devtools } from "@jgengine/core/devtools/devtools";
 
 import { createShaderWarmup, deferUnlinkedDraws, firstUnlinkedDrawable, holdDraws, registerSceneWarmup, SHADER_WARMUP_DEFAULTS, type HeldDraw, type ShaderWarmupState } from "@jgengine/core/render/shaderWarmup.draw";
@@ -164,55 +166,30 @@ export function warmupCovering(state: ShaderWarmupState): boolean {
   return state.phase !== "ready" && state.phase !== "failed";
 }
 
-/** The cover, re-rendered on its own as progress lands in the store. @internal */
+/** The cover, re-rendered on its own as progress lands in the store and as the boot moves. @internal */
 export function SceneWarmupCoverLive({ store }: { store: SceneWarmupStore }) {
   const state = useSyncExternalStore(store.subscribe, store.get, store.get);
-  return <SceneWarmupCover state={state} />;
+  return <SceneWarmupCover state={state} step={useBootStep()} />;
 }
 
 /**
  * Opaque cover over the canvas while the scene warms: the first frames of a scene compile its
- * materials, and a player should not see those frames. Game UI and menus mount after this and
- * paint over it, so a title screen stays usable.
+ * materials, and a player should not see those frames. While the boot is loading it is the jgengine
+ * loading screen with the warmup's progress; once the game's intro or menu shows, it is a plain
+ * backdrop under that screen, so the warmup finishes behind the menu without a second loading screen.
  * @internal
  */
-export function SceneWarmupCover({ state }: { state: ShaderWarmupState }) {
+export function SceneWarmupCover({ state, step = "loading" }: { state: ShaderWarmupState; step?: BootStep }) {
   if (!warmupCovering(state)) return null;
+  if (step === "intro" || step === "menu" || step === "entering") {
+    return <div data-shell-code-loading data-shell-warmup aria-hidden="true" style={{ position: "absolute", inset: 0, background: "#0f172a" }} />;
+  }
+  const detail = state.deferred > 0
+    ? `${state.deferred} more prepare after this`
+    : state.phase === "compiling" && state.elapsedMs >= 1_000 ? `${(state.elapsedMs / 1000).toFixed(1)}s` : undefined;
   return (
-    <div
-      data-shell-code-loading
-      data-shell-warmup
-      role="status"
-      aria-live="polite"
-      style={{
-        position: "absolute",
-        inset: 0,
-        display: "grid",
-        placeItems: "center",
-        background: "#0f172a",
-        color: "#e2e8f0",
-        fontFamily: "ui-sans-serif, system-ui, sans-serif",
-      }}
-    >
-      <div style={{ display: "grid", gap: 10, justifyItems: "center", fontSize: 14 }}>
-        <span>{warmupLabel(state)}</span>
-        <div data-shell-warmup-bar aria-hidden="true" style={{ width: 160, height: 3, borderRadius: 2, background: "#1e293b", overflow: "hidden" }}>
-          <div
-            style={{
-              width: `${Math.round(warmupBarShare(state) * 100)}%`,
-              height: "100%",
-              background: "#38bdf8",
-              transition: "width 120ms linear",
-            }}
-          />
-        </div>
-        {state.deferred > 0 ? (
-          <span style={{ fontSize: 11, color: "#94a3b8" }}>{`${state.deferred} more prepare after this`}</span>
-        ) : null}
-        {state.phase === "compiling" && state.elapsedMs >= 1_000 ? (
-          <span style={{ fontSize: 11, color: "#64748b" }}>{`${(state.elapsedMs / 1000).toFixed(1)}s`}</span>
-        ) : null}
-      </div>
+    <div data-shell-code-loading data-shell-warmup style={{ position: "absolute", inset: 0 }}>
+      <BootLoadingScreen label={warmupLabel(state)} progress={warmupBarShare(state)} {...(detail === undefined ? {} : { detail })} />
     </div>
   );
 }

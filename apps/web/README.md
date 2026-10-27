@@ -9,6 +9,7 @@ The landing page for JGengine and the front door for agents. It runs TanStack St
 ## Games on the site
 
 `bun --cwd=apps/web run build` builds the SDK packages before Vite builds the site and the `games-player` plugin builds `apps/dev` into `public/play`.
+Each game's own `public/` files (its provisioned models, textures and sounds) are written to `public/play/games/<id>/`, and the runner loads a game's paths from there, so two games can ship different files at the same path.
 CI runs this command on cold checkouts for pushes and PRs; deploy uses the same build.
 The site lists every game under `games/` in this repo; a root `bun install` is all it needs.
 
@@ -39,5 +40,7 @@ bun --cwd=apps/web run deploy:cloudflare
 ```
 
 The build emits the TanStack Start Worker and static assets under `dist/`. Wrangler follows the generated deployment configuration automatically.
+
+Between the build and the upload, `scripts/check-site-assets.ts` checks every file and pack each game names is in the built runner; one missing file stops the deploy (and so the release).
 
 Before changing `jgengine.com`, verify `/`, `/capabilities`, `/games`, and `/play` on the `workers.dev` preview.

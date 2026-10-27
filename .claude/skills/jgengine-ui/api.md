@@ -2,6 +2,37 @@
 
 # jgengine-ui — exported API surface
 
+## @jgengine/core/boot/BootDirector.draw
+
+- `BootSignals` (interface): interface BootSignals — What the boot reads each check: the game's phase, the scene warmup, the prefetch and the model loader.
+- `ENTER_QUIET_MS` (const): const ENTER_QUIET_MS: 250 — How long the model loader must stay idle after Play before the entering screen lifts.
+
+## @jgengine/core/boot/assetPrefetch
+
+- `AssetPrefetch` (interface): interface AssetPrefetch — Downloads a game's files in the background, near ones first, so a later load reads them from the browser cache.
+- `PrefetchState` (interface): interface PrefetchState — How far a prefetch got, in files.
+- `pagePrefetch` (const): const pagePrefetch: AssetPrefetch — The page's prefetch: one game per page, started when the game opens.
+
+## @jgengine/core/boot/bootScreen.view
+
+- `bootLoadingAreas` (function): function bootLoadingAreas(): number — How many world pieces are still loading; Play waits on the entering screen until none are.
+- `useBootStep` (function): function useBootStep(): BootStep — The boot screen showing now, re-rendered as the page's boot moves.
+
+## @jgengine/core/boot/bootSequence
+
+- `BOOT_SEQUENCE_ATTRIBUTE` (const): const BOOT_SEQUENCE_ATTRIBUTE: "data-jg-boot" — The page attribute a boot is stamped on, for a check that reads a running game.
+- `BOOT_STEPS` (const): const BOOT_STEPS: readonly ["open", "loading", "intro", "menu", "entering", "playing"] — The screens a game opens through, in the only order they may show: the page opens, one engine loading screen if anything is still loading, the game's own intro, its main menu, a short entering screen when Play needs more loading, then play. Every step after `open` is optional; none repeats and none comes back.
+- `BootSequence` (interface): interface BootSequence — The page's boot: the one authority on which boot screen shows.
+- `BootSequenceState` (interface): interface BootSequenceState — What a boot recorded: each step it showed, in order, and every request it refused.
+- `BootStep` (type): type BootStep = (typeof BOOT_STEPS)[number] — One screen of the boot.
+- `pageBoot` (const): const pageBoot: BootSequence — The page's one boot. A page boots one game, and the runner, the shell and the game's menus all move it, so it is a page-level instance; `reset()` starts it over for a fresh mount.
+
+## @jgengine/core/boot/prefetchTier
+
+- `PrefetchItem` (interface): interface PrefetchItem — One file to fetch ahead: the root-absolute path the game asks for.
+- `PrefetchTier` (type): type PrefetchTier = "near" | "far" — `near`: what the first view of the world needs. `far`: distance and LOD versions, fetched after.
+- `orderPrefetch` (function): function orderPrefetch(items: readonly PrefetchItem[]): PrefetchItem[] — Order a list near tier first, keeping each tier's own order and dropping repeats.
+
 ## @jgengine/core/dialog/dialogBehavior.view
 
 - `DialogBehaviorOptions` (interface): interface DialogBehaviorOptions — Options for controlled dialog focus behavior; callers own markup, state, and close policy.

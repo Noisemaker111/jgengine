@@ -11,6 +11,7 @@
     "basebuilding": "jgengine-gameplay",
     "behaviour": "jgengine-gameplay",
     "board": "jgengine-gameplay",
+    "boot": "jgengine-ui",
     "bossArena": "jgengine-gameplay",
     "breeding": "jgengine-gameplay",
     "buildings": "jgengine-world",

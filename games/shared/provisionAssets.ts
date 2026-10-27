@@ -65,7 +65,25 @@ export function drawsPavedRoad(sourceText: string, sceneText: string): boolean {
   return /\broad\(/.test(sourceText) || PAVED_PATH.test(sceneText);
 }
 
-async function loadCatalogs(): Promise<AssetCatalogs> {
+/**
+ * The text a game's asset references are read from: its source, plus the default road scan's pack id
+ * when it draws a paved road, since no source line names that pack.
+ */
+export function referencedAssetText(gameDir: string): string {
+  const text = sourceText(join(gameDir, "src"));
+  const scene = join(gameDir, "src", "editor.scene.json");
+  const sceneText = existsSync(scene) ? readFileSync(scene, "utf8") : "";
+  return drawsPavedRoad(text, sceneText) ? `${text}\n"${DEFAULT_ROAD_SCAN_SOURCE}"` : text;
+}
+
+/** Everything a game names assets in: its asset reference text plus its editor scene. */
+export function gameAssetText(gameDir: string): string {
+  const scene = join(gameDir, "src", "editor.scene.json");
+  return `${referencedAssetText(gameDir)}\n${existsSync(scene) ? readFileSync(scene, "utf8") : ""}`;
+}
+
+/** The pack and model-library catalogs games are matched against. */
+export async function loadCatalogs(): Promise<AssetCatalogs> {
   const module = (await import(join(assetsDir, "src/index.ts"))) as {
     sources: AssetCatalogs["sources"];
     MODEL_LIBRARY?: AssetCatalogs["library"];
@@ -96,12 +114,7 @@ export async function provisionGame(
   gameDir: string,
   options: { log?: (line: string) => void; download?: boolean; env?: Readonly<Record<string, string | undefined>> } = {},
 ): Promise<ProvisionResult> {
-  const text = sourceText(join(gameDir, "src"));
-  const scene = join(gameDir, "src", "editor.scene.json");
-  const sceneText = existsSync(scene) ? readFileSync(scene, "utf8") : "";
-  // Paved roads wear the default scanned asphalt even though no source line names its pack.
-  const referenced = drawsPavedRoad(text, sceneText) ? `${text}\n"${DEFAULT_ROAD_SCAN_SOURCE}"` : text;
-  const jobs = missingPulls(referenced, join(gameDir, "public"), await loadCatalogs());
+  const jobs = missingPulls(referencedAssetText(gameDir), join(gameDir, "public"), await loadCatalogs());
   return provisionJobs(gameDir, jobs, { pull: (target, outRoot) => runPull(gameDir, target, outRoot), log: options.log, download: options.download, env: options.env });
 }
 

@@ -75,6 +75,8 @@ import { resolveInputSink } from "@jgengine/core/input/inputSink";
 import { observableShellTracker, attachShellInputPublication } from "@jgengine/core/input/shellInputPublication";
 import { attachShellControlSuspension } from "@jgengine/core/input/shellControlSuspension";
 import { LazyShell3dPresentation } from "./lazyShell3dPresentation";
+import { BootLoading } from "@jgengine/core/boot/bootScreen.view";
+import { BootDirector } from "@jgengine/core/boot/BootDirector.draw";
 import { createPresentationDiagnosticOwnership, createPlaySurfaceFocusOwnership, PresentationRecovery, type PresentationRecoveryEvent } from "./presentationRecovery";
 import { installPlayFocusReclaim } from "@jgengine/core/input/surfaceFocus.view";
 
@@ -471,7 +473,7 @@ export function GamePlayerShell({
   // The shell root re-renders only for the ctx slices it reads — see {@link useShellRootResubscribe}.
   useShellRootResubscribe(ctx, userId);
 
-  if (ctx === null) return <div className="h-full w-full bg-neutral-950" />;
+  if (ctx === null) return <div className="relative h-full w-full"><BootLoading reason="game start" /></div>;
   if (join.status !== "joined") return <JoinGate {...join} />;
 
   const cameraConfig =
@@ -523,6 +525,7 @@ export function GamePlayerShell({
           audioEngine={audioEngine}
           poster={poster}
         />
+        {poster ? null : <BootDirector ctx={ctx} />}
       </PresentationRecovery>
       </ActionBindingsProvider>
     );
