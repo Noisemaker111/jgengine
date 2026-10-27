@@ -244,13 +244,16 @@ describe("portable CDP deadlines", () => {
   test("a screenshot with no transport response rejects on time and releases its waiter", async () => {
     const dir = materializeHarness("shoot");
     let messages = 0;
+    let sawMessage!: () => void;
+    // The server sees the request on its own turn; under load that can land after the 50 ms deadline.
+    const messaged = new Promise<void>((resolve) => { sawMessage = resolve; });
     const server = Bun.serve({
       port: 0,
       hostname: "127.0.0.1",
       fetch(request, server) {
         return server.upgrade(request) ? undefined : new Response("websocket required", { status: 400 });
       },
-      websocket: { message() { messages += 1; } },
+      websocket: { message() { messages += 1; sawMessage(); } },
     });
     const lib = await import(join(dir, "browser.mjs"));
     const session = await lib.Cdp.connect(server.url.toString().replace("http:", "ws:"), 1000);
@@ -260,6 +263,7 @@ describe("portable CDP deadlines", () => {
       const start = Date.now();
       await expect(lib.screenshotTo(session, out, 10000, 50)).rejects.toThrow("CDP Page.captureScreenshot timed out");
       expect(Date.now() - start).toBeLessThan(1000);
+      await messaged;
       expect(messages).toBe(1);
       expect(session.pending.size).toBe(0);
       expect(existsSync(out)).toBe(false);

@@ -64,6 +64,9 @@ export type HostRouterOptions = {
   now?: () => number;
   /** How long a disconnected membership remains reclaimable. Defaults to 15 seconds. */
   graceMs?: number;
+  /** The timers that run the grace window; tests pass ones they fire by hand. */
+  setTimeoutFn?: typeof setTimeout;
+  clearTimeoutFn?: typeof clearTimeout;
 };
 
 export type HostRouterTransport = {
@@ -163,6 +166,8 @@ export function createHostRouter(options: HostRouterOptions): HostRouter {
   const host = options.host;
   const now = options.now ?? Date.now;
   const graceMs = options.graceMs ?? DEFAULT_GRACE_MS;
+  const schedule = options.setTimeoutFn ?? setTimeout;
+  const cancel = options.clearTimeoutFn ?? clearTimeout;
   const poseRules = options.poseRules ?? DEFAULT_POSE_RULES;
   const allowAnonymous = options.allowAnonymous === true;
   const singleSession = options.singleSession !== false;
@@ -191,7 +196,7 @@ export function createHostRouter(options: HostRouterOptions): HostRouter {
     const key = ticketKey(userId, serverId);
     const timer = pendingLeaves.get(key);
     if (timer === undefined) return;
-    clearTimeout(timer);
+    cancel(timer);
     pendingLeaves.delete(key);
   };
   const heldByOtherConnection = (self: Connection, userId: string, serverId: string): boolean => {
@@ -203,7 +208,7 @@ export function createHostRouter(options: HostRouterOptions): HostRouter {
   const scheduleLeave = (connection: Connection, userId: string, serverId: string) => {
     clearPendingLeave(userId, serverId);
     const key = ticketKey(userId, serverId);
-    pendingLeaves.set(key, setTimeout(() => {
+    pendingLeaves.set(key, schedule(() => {
       pendingLeaves.delete(key);
       void track((async () => {
         const admissions = [...connections]
@@ -930,7 +935,7 @@ export function createHostRouter(options: HostRouterOptions): HostRouter {
       if (closed) return;
       closed = true;
       unsubscribeHost();
-      for (const timer of pendingLeaves.values()) clearTimeout(timer);
+      for (const timer of pendingLeaves.values()) cancel(timer);
       pendingLeaves.clear();
       connections.clear();
       subscribers.clear();

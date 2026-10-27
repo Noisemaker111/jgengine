@@ -3,6 +3,7 @@ import { defineGameDefinition } from "@jgengine/core/game/defineGame";
 import { createHostedWorldSessionAsync } from "@jgengine/core/runtime/hostedWorldSession";
 import { createGameServerHost, memoryPersistence, type GameServerHost } from "./host";
 import { createHostRouter } from "./hostRouter";
+import { manualTimers } from "./testFixtures";
 import { createWorldGameHost } from "./worldHost";
 
 function deferred() {
@@ -206,7 +207,8 @@ test("a code join completing after disconnect releases its admitted membership",
 
 test("late admission retains the configured reconnect grace before releasing capacity", async () => {
   const stack = await delayedHost("world");
-  const router = createHostRouter({ host: stack.host, allowAnonymous: true, graceMs: 100 });
+  const timers = manualTimers();
+  const router = createHostRouter({ host: stack.host, allowAnonymous: true, graceMs: 100, ...timers });
   const connection = router.connect({ send() {}, close() {} });
   connection.handleRaw(JSON.stringify({ v: 1, t: "hello", id: 1, userId: "departed" }));
   await router.drain();
@@ -216,7 +218,8 @@ test("late admission retains the configured reconnect grace before releasing cap
   try {
     await router.drain();
     expect(await stack.host.isMember({ userId: "departed", serverId: stack.serverId })).toBe(true);
-    await Bun.sleep(110); await router.drain();
+    expect(timers.pending()).toEqual([100]);
+    timers.fire(); await router.drain();
     expect(await stack.host.isMember({ userId: "departed", serverId: stack.serverId })).toBe(false);
   } finally { router.close(); await router.drain(); await stack.host.stop(); }
 });
@@ -247,15 +250,18 @@ test("drain awaits a started grace cleanup through router close", async () => {
 
 test("router close cancels grace timers that have not started", async () => {
   const stack = await delayedHost("world");
-  const router = createHostRouter({ host: stack.host, allowAnonymous: true, graceMs: 50 });
+  const timers = manualTimers();
+  const router = createHostRouter({ host: stack.host, allowAnonymous: true, graceMs: 50, ...timers });
   const connection = router.connect({ send() {}, close() {} });
   connection.handleRaw(JSON.stringify({ v: 1, t: "hello", id: 1, userId: "departed" }));
   await router.drain();
   connection.handleRaw(JSON.stringify({ v: 1, t: "join", id: 2, gameId: "world", serverId: stack.serverId }));
   await stack.started.promise; connection.close(); stack.released.resolve();
   try {
-    await router.drain(); router.close(); await router.drain();
-    await Bun.sleep(60);
+    await router.drain();
+    expect(timers.pending()).toEqual([50]);
+    router.close(); await router.drain();
+    expect(timers.pending()).toEqual([]);
     expect(await stack.host.isMember({ userId: "departed", serverId: stack.serverId })).toBe(true);
   } finally { router.close(); await router.drain(); await stack.host.stop(); }
 });

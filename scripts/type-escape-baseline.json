@@ -559,7 +559,7 @@
   "games/scrap-signal/src/editorLayers.ts": {"cast":2},
   "games/scrap-signal/src/game/audio/drive.test.ts": {"nonNull":8},
   "games/scrap-signal/src/game/audio/drive.ts": {"cast":3},
-  "games/scrap-signal/src/game/audio/mix.test.ts": {"cast":10,"any":8,"nonNull":3},
+  "games/scrap-signal/src/game/audio/mix.test.ts": {"cast":8,"any":6,"nonNull":3},
   "games/scrap-signal/src/game/cash.test.ts": {"nonNull":2},
   "games/scrap-signal/src/game/characters.test.ts": {"nonNull":2},
   "games/scrap-signal/src/game/characters.ts": {"cast":1},
