@@ -708,7 +708,7 @@
     },
     "packages/assets": {
       "name": "@jgengine/assets",
-      "version": "0.49.1",
+      "version": "0.50.0",
       "bin": {
         "assets": "dist/cli/pull.js",
       },
@@ -716,7 +716,7 @@
         "@gltf-transform/core": "4.2.1",
         "@gltf-transform/extensions": "4.2.1",
         "@gltf-transform/functions": "4.2.1",
-        "@jgengine/core": "^0.49.1",
+        "@jgengine/core": "^0.50.0",
         "fflate": "^0.8.2",
         "jpeg-js": "0.4.4",
         "meshoptimizer": "0.22.0",
@@ -732,9 +732,9 @@
     },
     "packages/convex": {
       "name": "@jgengine/convex",
-      "version": "0.49.1",
+      "version": "0.50.0",
       "dependencies": {
-        "@jgengine/core": "^0.49.1",
+        "@jgengine/core": "^0.50.0",
       },
       "devDependencies": {
         "@types/react": "catalog:",
@@ -748,7 +748,7 @@
     },
     "packages/core": {
       "name": "@jgengine/core",
-      "version": "0.49.1",
+      "version": "0.50.0",
       "devDependencies": {
         "@react-three/drei": "catalog:",
         "@react-three/fiber": "catalog:",
@@ -761,8 +761,8 @@
         "three-stdlib": "catalog:",
       },
       "peerDependencies": {
-        "@jgengine/react": "^0.49.1",
-        "@jgengine/shell": "^0.49.1",
+        "@jgengine/react": "^0.50.0",
+        "@jgengine/shell": "^0.50.0",
         "@react-three/drei": "^10.0.0",
         "@react-three/fiber": "^9.0.0",
         "react": "^19.0.0",
@@ -783,13 +783,13 @@
     },
     "packages/editor": {
       "name": "@jgengine/editor",
-      "version": "0.49.1",
+      "version": "0.50.0",
       "dependencies": {
-        "@jgengine/assets": "^0.49.1",
-        "@jgengine/core": "^0.49.1",
-        "@jgengine/navbake": "^0.49.1",
-        "@jgengine/react": "^0.49.1",
-        "@jgengine/shell": "^0.49.1",
+        "@jgengine/assets": "^0.50.0",
+        "@jgengine/core": "^0.50.0",
+        "@jgengine/navbake": "^0.50.0",
+        "@jgengine/react": "^0.50.0",
+        "@jgengine/shell": "^0.50.0",
       },
       "devDependencies": {
         "@react-three/drei": "catalog:",
@@ -812,16 +812,16 @@
     },
     "packages/github": {
       "name": "@jgengine/github",
-      "version": "0.36.1",
+      "version": "0.37.0",
     },
     "packages/jgengine": {
       "name": "jgengine",
-      "version": "0.46.1",
+      "version": "0.47.0",
       "bin": {
         "jgengine": "dist/cli/index.js",
       },
       "dependencies": {
-        "@jgengine/assets": "^0.49.1",
+        "@jgengine/assets": "^0.50.0",
       },
       "devDependencies": {
         "@types/node": "^24",
@@ -829,18 +829,18 @@
     },
     "packages/navbake": {
       "name": "@jgengine/navbake",
-      "version": "0.49.1",
+      "version": "0.50.0",
       "dependencies": {
-        "@jgengine/core": "^0.49.1",
+        "@jgengine/core": "^0.50.0",
         "recast-navigation": "^0.34.0",
       },
     },
     "packages/node": {
       "name": "@jgengine/node",
-      "version": "0.49.1",
+      "version": "0.50.0",
       "dependencies": {
-        "@jgengine/core": "^0.49.1",
-        "@jgengine/ws": "^0.49.1",
+        "@jgengine/core": "^0.50.0",
+        "@jgengine/ws": "^0.50.0",
         "ws": "^8.18.0",
       },
       "devDependencies": {
@@ -853,17 +853,17 @@
     },
     "packages/rapier": {
       "name": "@jgengine/rapier",
-      "version": "0.49.1",
+      "version": "0.50.0",
       "dependencies": {
         "@dimforge/rapier3d-compat": "0.19.3",
-        "@jgengine/core": "^0.49.1",
+        "@jgengine/core": "^0.50.0",
       },
     },
     "packages/react": {
       "name": "@jgengine/react",
-      "version": "0.49.1",
+      "version": "0.50.0",
       "dependencies": {
-        "@jgengine/core": "^0.49.1",
+        "@jgengine/core": "^0.50.0",
       },
       "devDependencies": {
         "@types/react": "catalog:",
@@ -878,11 +878,11 @@
     },
     "packages/shell": {
       "name": "@jgengine/shell",
-      "version": "0.49.1",
+      "version": "0.50.0",
       "dependencies": {
-        "@jgengine/core": "^0.49.1",
-        "@jgengine/react": "^0.49.1",
-        "@jgengine/ws": "^0.49.1",
+        "@jgengine/core": "^0.50.0",
+        "@jgengine/react": "^0.50.0",
+        "@jgengine/ws": "^0.50.0",
       },
       "devDependencies": {
         "@react-three/drei": "catalog:",
@@ -903,9 +903,9 @@
     },
     "packages/sql": {
       "name": "@jgengine/sql",
-      "version": "0.49.1",
+      "version": "0.50.0",
       "dependencies": {
-        "@jgengine/core": "^0.49.1",
+        "@jgengine/core": "^0.50.0",
       },
       "devDependencies": {
         "pg-mem": "^3.0.5",
@@ -913,9 +913,9 @@
     },
     "packages/ws": {
       "name": "@jgengine/ws",
-      "version": "0.49.1",
+      "version": "0.50.0",
       "dependencies": {
-        "@jgengine/core": "^0.49.1",
+        "@jgengine/core": "^0.50.0",
       },
     },
     "registry": {
