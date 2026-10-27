@@ -1,7 +1,7 @@
 import type { ModelConfig, ModelMaterialOverride } from "@jgengine/core/game/playableGame";
 import { pickModel, resolveModelPlan, type ModelPick } from "@jgengine/core/model/resolveModel";
 
-import { assets, CHASSIS, CLIFF_MAPS, NPC_STYLES, PANEL_MAPS, SCRAP_METAL_MAPS } from "../assets";
+import { assets, chassisOf, CLIFF_MAPS, NPC_STYLES, PANEL_MAPS, SCRAP_METAL_MAPS } from "../assets";
 import { MACHINE } from "../palette";
 import { enemies, type EnemyDef } from "../entities/enemies/catalog";
 import { robotChassis } from "./robots";
@@ -79,7 +79,7 @@ const WEAPON_PLAN: Record<string, ModelPick> = {
  * silhouette legible at range against open desert.
  */
 function enemyFinish(def: EnemyDef, kind: RigKind): ModelMaterialOverride {
-  const style = CHASSIS[def.id] ?? CHASSIS["husk"]!;
+  const style = chassisOf(def, "husk");
   const machined = kind !== "beast";
   return {
     color: style.plate,
@@ -102,10 +102,15 @@ function enemyFinish(def: EnemyDef, kind: RigKind): ModelMaterialOverride {
   };
 }
 
+/** A local breed wears its base's rig. */
+function rigOf(def: EnemyDef) {
+  return RIG_BY_ID[def.look ?? def.id];
+}
+
 function enemyPick(def: EnemyDef): ModelPick | null {
-  const rig = RIG_BY_ID[def.id];
+  const rig = rigOf(def);
   if (rig === undefined) return null;
-  const weapon = WEAPON_PLAN[def.id];
+  const weapon = WEAPON_PLAN[def.look ?? def.id];
   const weaponModel = weapon === undefined ? undefined : pickModel(assets, weapon);
   return {
     model: rig.model,
@@ -177,7 +182,7 @@ function buildEntityModels(): Record<string, ModelConfig> {
   // Loaders walk as kit-bashed part compositions; the rigged pick above stays their fallback when a
   // chassis piece is missing from the catalog.
   for (const def of enemies) {
-    if (RIG_BY_ID[def.id]?.kind !== "machine") continue;
+    if (rigOf(def)?.kind !== "machine") continue;
     const chassis = robotChassis(def, BASE_HEIGHT.machine * def.scale);
     if (chassis !== null) models[def.id] = chassis;
   }

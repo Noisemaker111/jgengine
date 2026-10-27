@@ -68,8 +68,11 @@ export interface ChassisStyle {
   optic: string;
 }
 
+const HUSK_CHASSIS: ChassisStyle = { plate: MACHINE.scrap, accent: MACHINE.rust, optic: MACHINE.opticElite };
+const LOADER_CHASSIS: ChassisStyle = { plate: MACHINE.steel, accent: MACHINE.hazard, optic: MACHINE.optic };
+
 export const CHASSIS: Record<string, ChassisStyle> = {
-  husk: { plate: MACHINE.scrap, accent: MACHINE.rust, optic: MACHINE.opticElite },
+  husk: HUSK_CHASSIS,
   marauder: { plate: MACHINE.steel, accent: MACHINE.hazard, optic: MACHINE.optic },
   nomad: { plate: MACHINE.iron, accent: MACHINE.rust, optic: MACHINE.optic },
   elite_husk: { plate: MACHINE.iron, accent: MACHINE.opticElite, optic: MACHINE.opticElite },
@@ -80,7 +83,7 @@ export const CHASSIS: Record<string, ChassisStyle> = {
   bruiser: { plate: MACHINE.scrap, accent: MACHINE.joint, optic: MACHINE.optic },
   crawler: { plate: MACHINE.steel, accent: MACHINE.rust, optic: MACHINE.optic },
   crawler_soldier: { plate: MACHINE.iron, accent: MACHINE.hazard, optic: MACHINE.opticElite },
-  loader: { plate: MACHINE.steel, accent: MACHINE.hazard, optic: MACHINE.optic },
+  loader: LOADER_CHASSIS,
   loader_war: { plate: MACHINE.iron, accent: MACHINE.hazard, optic: MACHINE.opticElite },
   elite_loader: { plate: MACHINE.iron, accent: MACHINE.opticElite, optic: MACHINE.opticElite },
   old_tusk: { plate: MACHINE.iron, accent: MACHINE.rust, optic: MACHINE.opticElite },
@@ -89,6 +92,18 @@ export const CHASSIS: Record<string, ChassisStyle> = {
   captain_rusk: { plate: MACHINE.iron, accent: MACHINE.hazard, optic: MACHINE.opticElite },
   foundry_heart: { plate: MACHINE.joint, accent: MACHINE.opticElite, optic: MACHINE.opticElite },
 };
+
+/** An enemy's finish: its own entry, else its base's (a local breed), with a breed's plate over it. */
+export function chassisOf(
+  def: { id: string; look?: string; plate?: string },
+  fallback: "husk" | "loader",
+): ChassisStyle {
+  const style =
+    CHASSIS[def.id] ??
+    (def.look === undefined ? undefined : CHASSIS[def.look]) ??
+    (fallback === "husk" ? HUSK_CHASSIS : LOADER_CHASSIS);
+  return def.plate === undefined ? style : { ...style, plate: def.plate };
+}
 
 export const NPC_STYLES: Record<string, { coat: string }> = {
   dr_sparx: { coat: "#d8d4c8" },

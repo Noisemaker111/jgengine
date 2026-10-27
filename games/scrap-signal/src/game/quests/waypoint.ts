@@ -1,5 +1,6 @@
 import type { GameContext } from "@jgengine/core/runtime/gameContext";
 
+import { countsAsKillOf } from "../entities/enemies/catalog";
 import { gunById } from "../handroll";
 import { ZONES } from "../world/zones";
 import { isNpcId, NPCS, objectiveLabel, scrapQuestById, type NpcId, type ScrapObjective } from "./catalog";
@@ -53,7 +54,7 @@ function objectivePoint(ctx: GameContext, objective: ScrapObjective, from: Point
   const label = objectiveLabel(objective);
   switch (objective.kind) {
     case "kill": {
-      const living = ctx.scene.entity.list().filter((entity) => entity.name === objective.target).map((entity) => entity.position);
+      const living = ctx.scene.entity.list().filter((entity) => countsAsKillOf(entity.name, objective.target)).map((entity) => entity.position);
       const point = nearest(from, living) ?? campOf(ctx, objective.target, from);
       return point === null ? null : at(point, "enemy", label);
     }

@@ -58,6 +58,12 @@ interface ZoneMeta {
   level: number;
   settlement?: ZoneDef["settlement"];
   clusters: readonly { catalogId: string; count: number }[];
+  /**
+   * Variant squads that share a camp with one of `clusters` (by index): the zone's local breeds
+   * mixed in with the common stock, Borderlands-style, without a camp volume of their own. A squad
+   * takes its places from the camp's count, which must keep at least one of the common stock.
+   */
+  squads?: readonly { catalogId: string; count: number; joins: number }[];
   chests: readonly { kind: "red" | "ammo" }[];
   boss?: { catalogId: string; instanceId: string };
 }
@@ -85,6 +91,11 @@ const ZONE_META: readonly ZoneMeta[] = [
       { catalogId: "nomad", count: 2 },
       { catalogId: "bruiser", count: 3 },
     ],
+    squads: [
+      { catalogId: "scorch_husk", count: 2, joins: 0 },
+      { catalogId: "shelf_raider", count: 2, joins: 1 },
+      { catalogId: "tide_bruiser", count: 1, joins: 3 },
+    ],
     chests: [{ kind: "red" }, { kind: "ammo" }],
     boss: { catalogId: "captain_rusk", instanceId: "boss_rusk" },
   },
@@ -101,6 +112,11 @@ const ZONE_META: readonly ZoneMeta[] = [
       { catalogId: "marauder", count: 4 },
       { catalogId: "elite_husk", count: 1 },
     ],
+    squads: [
+      { catalogId: "dust_ripper", count: 2, joins: 1 },
+      { catalogId: "ripper_matriarch", count: 1, joins: 0 },
+      { catalogId: "sand_hauler", count: 2, joins: 4 },
+    ],
     chests: [{ kind: "red" }, { kind: "ammo" }, { kind: "ammo" }],
   },
   {
@@ -113,6 +129,11 @@ const ZONE_META: readonly ZoneMeta[] = [
       { catalogId: "nomad", count: 3 },
       { catalogId: "crawler", count: 5 },
       { catalogId: "crawler_soldier", count: 3 },
+    ],
+    squads: [
+      { catalogId: "ridge_raider", count: 2, joins: 0 },
+      { catalogId: "crawler_spitter", count: 2, joins: 2 },
+      { catalogId: "brood_crawler", count: 1, joins: 3 },
     ],
     chests: [{ kind: "red" }, { kind: "ammo" }],
     boss: { catalogId: "wreck_maw", instanceId: "boss_wreck_maw" },
@@ -129,6 +150,11 @@ const ZONE_META: readonly ZoneMeta[] = [
       { catalogId: "marauder", count: 5 },
       { catalogId: "nomad", count: 3 },
     ],
+    squads: [
+      { catalogId: "shard_crawler", count: 2, joins: 0 },
+      { catalogId: "glass_husk", count: 2, joins: 3 },
+      { catalogId: "glasswind_hauler", count: 1, joins: 4 },
+    ],
     chests: [{ kind: "red" }, { kind: "ammo" }],
   },
   {
@@ -141,6 +167,11 @@ const ZONE_META: readonly ZoneMeta[] = [
       { catalogId: "loader_war", count: 3 },
       { catalogId: "loader", count: 4 },
       { catalogId: "elite_loader", count: 1 },
+    ],
+    squads: [
+      { catalogId: "slag_loader", count: 2, joins: 0 },
+      { catalogId: "core_crawler", count: 2, joins: 2 },
+      { catalogId: "blight_husk", count: 1, joins: 1 },
     ],
     chests: [{ kind: "red" }, { kind: "red" }, { kind: "ammo" }],
     boss: { catalogId: "foundry_heart", instanceId: "boss_foundry_heart" },
@@ -166,15 +197,26 @@ export const ZONES: readonly ZoneDef[] = ZONE_META.map((meta) => {
   const flattenVol = requireVolume(`flatten_${meta.id}`);
   const travel = requireMarker(`travel_${meta.id}`);
 
-  const clusters: ZoneCluster[] = meta.clusters.map((cluster, index) => {
+  const camps: ZoneCluster[] = meta.clusters.map((cluster, index) => {
     const volume = requireVolume(`cluster_${meta.id}_${index}_${cluster.catalogId}`);
+    // A squad takes places in its camp rather than adding bodies: the zone's population, and so its
+    // load and frame cost, stays what the camps author.
+    const taken = (meta.squads ?? []).filter((squad) => squad.joins === index).reduce((sum, squad) => sum + squad.count, 0);
+    if (taken >= cluster.count) throw new Error(`zone ${meta.id}: squads leave camp ${index} (${cluster.catalogId}) empty`);
     return {
       catalogId: cluster.catalogId,
-      count: cluster.count,
+      count: cluster.count - taken,
       center: { x: volume.center.x, z: volume.center.z },
       radius: volume.radius!,
     };
   });
+  // Squads go after the camps so the camps' spawn ids (and the saves that hold them) keep their prefix.
+  const squads: ZoneCluster[] = (meta.squads ?? []).map((squad) => {
+    const camp = camps[squad.joins];
+    if (camp === undefined) throw new Error(`zone ${meta.id}: squad ${squad.catalogId} joins missing camp ${squad.joins}`);
+    return { catalogId: squad.catalogId, count: squad.count, center: camp.center, radius: camp.radius };
+  });
+  const clusters = [...camps, ...squads];
 
   const chests: ZoneChest[] = meta.chests.map((chest, index) => {
     const marker = requireMarker(`chest_${meta.id}_${chest.kind}_${index}`);
