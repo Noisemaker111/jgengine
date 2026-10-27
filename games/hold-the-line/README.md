@@ -10,10 +10,10 @@ Every word, cost and model below lives in `src/game/idea.ts`; places live in `sr
   build barricade, lookout, garden bed on the grid around the safehouse;
   every 75 seconds the sun sets and a night comes out of the woods for your walls, you and the safehouse.
 - **Progression.**
-  - [x] Waves grow: 3 attackers on the first, three more each time, and biters from night 1, runners from night 3, brutes from night 5.
-  - [x] Buildings level up to 3 (E on a building); a level-3 lookout hits three times as hard.
-  - [x] Stray dog can be won over and fight beside you.
-  - [x] A 4-beat story from Mara ends after 7 nights held.
+  - Waves grow: 3 attackers on the first, three more each time, and biters from night 1, runners from night 3, brutes from night 5.
+  - Buildings level up to 3 (E on a building); a level-3 lookout hits three times as hard.
+  - Stray dog can be won over and fight beside you.
+  - A 4-beat story from Mara ends after 7 nights held.
 - **Failure states.** The safehouse has 1500 health; when it falls the run ends and you retry from the last save. You respawn 4 seconds after going down.
 - **Minute 5 -> hour 5.** At 5:00 two nights are held behind a few barricade and scrap is the limit. Later nights bring bigger attackers, so levelled buildings and allies decide whether the safehouse stands.
 - **References it is chasing.**

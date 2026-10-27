@@ -77,7 +77,7 @@ export const CAPTURE_FLAGS: readonly CaptureFlag[] = [
   { flag: "--strict", tools: ["drive"], value: "none", help: "with --playtest, exit nonzero on a softlock or missing probe" },
   { flag: "--seed", tools: ["drive"], value: "required", arg: "<n>", help: "playtest seed, forwarded as ?seed=n (default 1)" },
   { flag: "--sample", tools: ["drive"], value: "required", arg: "<ms>", help: "playtest probe sampling interval (default 250)" },
-  { flag: "--softlock", tools: ["drive"], value: "required", arg: "<ms>", help: "flat-progress span under input that counts as a softlock (default 2000)" },
+  { flag: "--softlock", tools: ["drive"], value: "required", arg: "<ms>", help: "flat-progress span after the first input that counts as a softlock (default 2000); time before the player acts is never judged" },
   { flag: "--epsilon", tools: ["drive"], value: "required", arg: "<n>", help: "smallest metric change that counts as progress (default 0.001)" },
   { flag: "--help", tools: ["shoot", "drive"], value: "none", help: "show this text" },
   { flag: "--game", tools: ["shoot", "drive"], value: "required", arg: "<id>", engineOnly: RUNNER + " to pick a game; a game project drives itself", help: "game id (a positional id works too)" },

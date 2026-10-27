@@ -398,6 +398,11 @@ async function driveSession(daemon: ShootDaemonState | null): Promise<number> {
         const samples: ProbeSample[] = [];
         let sampling = args.playtest;
         const sampleStart = Date.now();
+        // When the player first acted: the softlock verdict judges only the time after it.
+        let actedAtMs: number | null = null;
+        const markActed = (): void => {
+          if (actedAtMs === null) actedAtMs = Date.now() - sampleStart;
+        };
         const framesAtStart = args.playtest ? await readFrames(session) : 0;
         const sampler = args.playtest
           ? (async () => {
@@ -428,6 +433,8 @@ async function driveSession(daemon: ShootDaemonState | null): Promise<number> {
           const stepper = createFlowStepper(() => readProbe(session));
           const reports: { label: string; probe: unknown }[] = [];
           const browserFlow = createBrowserFlow(driver, stepper, reports);
+          // A flow is played input from its first step.
+          markActed();
           code = finishFlow(args.flow ?? "flow", await runFlowReport(stepper, reports, () => flow.run(browserFlow)));
         }
 
@@ -452,6 +459,7 @@ async function driveSession(daemon: ShootDaemonState | null): Promise<number> {
                   appendFileSync(logPath, JSON.stringify(engineForRecord === null ? entry : { ...entry, engine: engineForRecord }) + "\n"),
               }),
           run: async (step) => {
+            if (step.kind === "click" || step.kind === "double-click" || step.kind === "fill" || step.kind === "key" || step.kind === "click-at") markActed();
             if (step.kind === "click" || step.kind === "double-click") {
               await clickText(session, step.text, step.kind === "double-click" ? 2 : 1);
               // Let the UI react on the virtual clock so the click's effect is in frame.
@@ -564,6 +572,7 @@ async function driveSession(daemon: ShootDaemonState | null): Promise<number> {
             seed: args.seed,
             softlockThresholdMs: args.softlockMs,
             epsilon: args.epsilon,
+            actedAtMs,
           });
           // Effective render cadence over the sampled window. Below LOW_FPS a held
           // key advances the sim only a few frames total, so a flat progress probe
@@ -592,7 +601,7 @@ async function driveSession(daemon: ShootDaemonState | null): Promise<number> {
             // signal must not fail CI as if it were a real softlock.
           } else if (result.softlocked) {
             console.error(
-              `drive: SOFTLOCK — progress stayed flat for ${result.softlockWindowMs}ms under active input (threshold ${args.softlockMs}ms, seed ${args.seed}). The loop did not advance.`,
+              `drive: SOFTLOCK — progress stayed flat for ${result.softlockWindowMs}ms after the player acted (threshold ${args.softlockMs}ms, seed ${args.seed}). The loop did not advance.`,
             );
             if (args.strict) code = 1;
           } else if (unreliableRender && args.steps.some((step) => step.kind === "key")) {

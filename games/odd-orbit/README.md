@@ -40,25 +40,25 @@ Read from `src/game/{needs,objects,sim,session}`. Numbers are what the build doe
   one ration; a 20-second shift pays 100 credits (Yield, 08–14) or 4 rations and 48 credits (Bloom,
   14–18). Midnight charges the term's rent (80 / 130 / 190 / 260 credits) plus each furnishing's running cost.
 - **Progression — seven systems.**
-  - [x] The charter. A household holds the habitat on a four-term charter from the Habitat Authority,
+  - The charter. A household holds the habitat on a four-term charter from the Habitat Authority,
     five days a term. Each term pins three goals under the fridge (promote to Adept, furnish a third
     paid station, close debt-free; three Adepts, answer three transmissions, earn 1,500 credits; a close
     pair, ten furnishings, 18 rations; a bonded pair, a Master, 600 credits saved and no debt). Meeting
     two of three passes; each goal met pays a 60-credit grant and a star; a term with fewer is a strike,
     and two strikes evict. Rent rises every term. The Authority's letter reads the term out. Twenty days
     end with the charter kept and graded by stars (Cherished 10+, Welcome 7+, Tolerated).
-  - [x] Transmissions. A storyteller (engine `createStoryteller`, RimWorld-style threat points) paces
+  - Transmissions. A storyteller (engine `createStoryteller`, RimWorld-style threat points) paces
     fourteen incidents by elapsed time, household wealth and term, with rests after big beats and less
     repetition. Four land on their own (a comet show, a supply cache, a stray signal, an inspection);
     ten wait 45 seconds on an answer with costs and trade-offs — a trader, overtime, a dust storm, a
     brownout, spoiled stores, a traveller asking for food, a quarrel, a fever, a micrometeor that breaks a
     furnishing, a hull leak that halves rest. Each has a default that is always allowed. Broken furnishings
     and the hull are mended from Pantry & bills.
-  - [x] Traits. Every being rolls two of twelve traits (Hearty eater, Night owl, Industrious, Green-fingered,
+  - Traits. Every being rolls two of twelve traits (Hearty eater, Night owl, Industrious, Green-fingered,
     Gregarious, Loner, Anxious, Serene, Playful, Kind, Handy, Thrifty). They change need decay, stress,
     Yield pay, harvests, bonding and play, and unlock answers — only a Handy being mends for free, only a
     Thrifty one haggles.
-  - [x] Posts and rungs. Each being holds one of the household's six jobs as a paid post: Botanist,
+  - Posts and rungs. Each being holds one of the household's six jobs as a paid post: Botanist,
     Signal-keeper (both open from the first shift), Forager (3 household standing), Tinkerer (6),
     Archivist (10) and Warden (14, covers either station). Every post has three rungs; a completed
     shift earns one household standing, a missed shift costs one, and rung 2 (3 standing) and rung 3
@@ -67,12 +67,12 @@ Read from `src/game/{needs,objects,sim,session}`. Numbers are what the build doe
     a ration to every harvest. A post is also what a being may be ordered to work: the other station
     waits for the cross-trained rung, so a career changes both what work they can take and what they
     are paid.
-  - [x] Shift mastery. Each station keeps a per-being shift count (Yield and Bloom track separately)
+  - Shift mastery. Each station keeps a per-being shift count (Yield and Bloom track separately)
     that crosses five levels at 1 / 4 / 8 / 12 shifts and adds 5% pay per level above I; the roster
     shows both levels beside the post. Nobody refuses a station for low proficiency — the game's
     fiction is a small cooperative household, so an unskilled shift simply pays less. Three completed
     shifts still unlock the wider 08–18 window.
-  - [x] Bonds. Pair relationships run -100 to 100 with milestones at 35 (friends), 70 (close) and 95
+  - Bonds. Pair relationships run -100 to 100 with milestones at 35 (friends), 70 (close) and 95
     (bonded); tending Bloom together pays more for friends, and two stressed members clash instead.
     Friends and bonded pairs prefer each other's company, so an off-hours stroll walks to a friend
     instead of a random spot ("Keeping X company"). A bonded pair will not split for work: ordering one
@@ -81,7 +81,7 @@ Read from `src/game/{needs,objects,sim,session}`. Numbers are what the build doe
     The bond also refuses a post change that would put the pair in different station families, so a
     career order never wins over the pair.
     The household panel shows each being's bond (partner and the book's word) and it moves as friends talk.
-  - [x] Furnishing. Six types from 70 to 220 credits, capacity 1–4, running cost 1–4 a day, satisfying
+  - Furnishing. Six types from 70 to 220 credits, capacity 1–4, running cost 1–4 a day, satisfying
     5–12 points a second — so a full household needs duplicates of the same station.
 - **Failure states.** Eviction. Two failed terms end the charter, and 300 debt brings the bailiff at once
   (a final notice warns at 150). Below that, an unpaid bill becomes debt, which the next bill repays at up

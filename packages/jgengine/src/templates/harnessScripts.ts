@@ -851,10 +851,14 @@ function summarizePlaytest(samples, options) {
   const probed = samples.length > 0;
   const delta = progressDelta(samples);
   const totalProgress = Object.values(delta).reduce((sum, value) => sum + Math.abs(value), 0);
-  const softlockWindowMs = longestFlatWindowMs(samples, options.epsilon);
   const durationMs = probed ? samples[samples.length - 1].t - samples[0].t : 0;
+  // Only time after the player first acted is judged: a game owes nothing to a player who has not done anything yet.
+  const actedAt = options.actedAtMs;
+  const judged = actedAt === null ? [] : samples.filter((sample) => sample.t >= actedAt);
+  const softlockWindowMs = longestFlatWindowMs(judged, options.epsilon);
+  const judgedMs = judged.length > 0 ? judged[judged.length - 1].t - judged[0].t : 0;
   const softlocked =
-    probed && durationMs >= options.softlockThresholdMs && softlockWindowMs >= options.softlockThresholdMs;
+    judged.length > 0 && judgedMs >= options.softlockThresholdMs && softlockWindowMs >= options.softlockThresholdMs;
   return {
     seed: options.seed,
     framesElapsed: samples.length,
@@ -863,6 +867,7 @@ function summarizePlaytest(samples, options) {
     totalProgress,
     softlockWindowMs,
     softlocked,
+    acted: actedAt !== null,
     probed,
   };
 }
@@ -920,7 +925,9 @@ async function main() {
           })()
         : Promise.resolve();
 
+      let actedAtMs = null;
       for (const step of args.steps) {
+        if (actedAtMs === null && ["click", "double-click", "fill", "click-at", "key"].includes(step.kind)) actedAtMs = Date.now() - sampleStart;
         if (step.kind === "click" || step.kind === "double-click") await click(session, step.text, step.kind === "double-click" ? 2 : 1);
         else if (step.kind === "fill") await fill(session, step.label, step.value);
         else if (step.kind === "click-at") await dispatchClickAt(session, step.point, step.button);
@@ -946,6 +953,7 @@ async function main() {
           seed: args.seed,
           softlockThresholdMs: args.softlockMs,
           epsilon: args.epsilon,
+          actedAtMs,
         });
         console.log(JSON.stringify(result));
         if (!result.probed) {
@@ -956,7 +964,7 @@ async function main() {
           if (args.strict) exitCode = 1;
         } else if (result.softlocked) {
           console.error(
-            "drive: SOFTLOCK — progress stayed flat for " + result.softlockWindowMs + "ms under active input " +
+            "drive: SOFTLOCK — progress stayed flat for " + result.softlockWindowMs + "ms after the player acted " +
               "(threshold " + args.softlockMs + "ms, seed " + args.seed + "). The loop did not advance.",
           );
           if (args.strict) exitCode = 1;

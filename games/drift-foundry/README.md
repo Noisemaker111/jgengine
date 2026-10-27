@@ -21,26 +21,26 @@ Read from `src/game/{run,parts,route,compactor,vehicle}`. Numbers are what the b
   four slots. The compactor starts behind you at 5.6 m/s and surges to 10.5 m/s at 26–38 s and
   11.5 m/s at 62–76 s.
 - **Progression — four systems.**
-  - [x] Build. 12 parts across engine / front / wheels / frame, one per slot; the plow and springs bolt
+  - Build. 12 parts across engine / front / wheels / frame, one per slot; the plow and springs bolt
     on as you drive over them, while an engine or frame replacement needs a held swap — so engine and
     frame are decisions and the route parts are not. Trade-offs are real: Truck Engine adds 9.5 top speed
     but −0.7 turn rate, the EV conversion adds 0.5 turn rate but tops out at 3, and the plow blade trades
     1 top speed and 0.2 turn rate for clearing walls.
-  - [x] Route. Eight full-width barricades at z = 110, 150, 210, 250, 300, 350, 400, 440 alternate
+  - Route. Eight full-width barricades at z = 110, 150, 210, 250, 300, 350, 400, 440 alternate
     plow and jump. A jump needs 0.65 m of air, so coil springs are mandatory, not decorative.
-  - [x] Records. Attempts, escapes, best time and farthest distance save to `drift-foundry.records.v1`;
+  - Records. Attempts, escapes, best time and farthest distance save to `drift-foundry.records.v1`;
     pausing while stopped and grounded parks the build and clock at `drift-foundry.parked-run.v1`.
-  - [x] Run. Every run carries salvage - 25 cr per part swept plus 100 cr at the gate - and an escape
+  - Run. Every run carries salvage - 25 cr per part swept plus 100 cr at the gate - and an escape
     banks it scaled by the line: `×0.5` to `×1.8`, from barriers cleared (+0.05 each), finish place
     (+0.30/+0.15/+0.05), beating par (+0.20 under 36 s) and minus 0.10 per folded-nose stage and per
     armor save. A wreck loses everything the run carried and keeps the bank. The haul, the shift it
     draws and the banked/lost totals save to `drift-foundry.run.v1`, so a career survives a reload.
-  - [x] Shifts. The first run is honest; every run after it draws one change from
+  - Shifts. The first run is honest; every run after it draws one change from
     `src/game/run/shifts.ts` by seed (`drift-foundry-run:run:N`, no repeat, night crew only after two
     runs): HOBBS's line tightens 45% and his pace rises 4%, TALLY loses his tow, the crusher starts
     12 m closer, or the night crew brings both surges 6 s earlier and 0.6 m/s harder. Same seed and
     same run count, same sequence.
-  - [x] Tracks. Six layouts in `src/game/tracks/`, each built with `buildRouteCourse`
+  - Tracks. Six layouts in `src/game/tracks/`, each built with `buildRouteCourse`
     (`@jgengine/core/roads/routeCourse`) on rolling yard ground: one shortcut branch, timed or standing
     hazard spans, its own sky/fog/ground band and props from the JGengine model library.
     Slag River (690 m, molten channels and slick spill, LADLE BRIDGE shortcut 123–251 m, dusk red-orange),
@@ -50,7 +50,7 @@ Read from `src/game/{run,parts,route,compactor,vehicle}`. Numbers are what the b
     overcast steel), Smelter Climb (716 m, slag vents on a climb, TAPPING FLOOR 596–703 m, furnace red)
     and Row Six (470 m, the original corridor). A branch gate stops only karts that took the branch;
     some main-line gates drop shut at a set time, and beating one there leaves it down behind you.
-  - [x] Calendar. Eight events in `src/game/events/catalog.ts`, spread over the six tracks,
+  - Calendar. Eight events in `src/game/events/catalog.ts`, spread over the six tracks,
     graded bronze/silver/gold on one number by the engine's medal board
     (`@jgengine/core/progression/medalBoard`). Medals are worth 1/2/3 points; tiers open at
     0 / 4 / 10 / 16 points of 24. Row Six tier: Salvage Run on Row Six (finish place), Time Sheet on
@@ -67,10 +67,10 @@ Read from `src/game/{run,parts,route,compactor,vehicle}`. Numbers are what the b
     River it takes bronze on the plain line (61 s) and gold only through the ladle bridge with the
     drops swept (40 s). A 4 s stall is survivable on the Salvage Run and fatal on Night Shift and
     Crusher Rush.
-  - [x] Ghost. Timed events record the kart ten times a second on the engine recording buffer; the
+  - Ghost. Timed events record the kart ten times a second on the engine recording buffer; the
     fastest escape on each is saved to `drift-foundry.ghost.v1` and replays as a see-through teal
     kart on the next run, with the tower reading metres ahead of or behind it.
-  - [x] Field. Three rivals start ahead of you in the same corridor: TALLY (easy, EV build, wanders
+  - Field. Three rivals start ahead of you in the same corridor: TALLY (easy, EV build, wanders
     gate to gate), MOSS (standard, Salvage V6, weaves for the free side) and HOBBS (expert, Truck
     Engine, one clean outside line). Each drives with the shared `ai/driver` brain on its own line from
     `src/game/race/opponents.ts`; position, lap, lap clock and the finish come from `game/race`, so the

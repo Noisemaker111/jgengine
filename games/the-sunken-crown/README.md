@@ -9,10 +9,10 @@ Every word, stat and model below lives in `src/game/idea.ts`; places live in `sr
 - **Core loop.** Follow the compass to the next landmark; reaching one puts it on your map and opens it for
   fast travel (T); take the relic on its shrine (E) once its guardians fall; a new ability opens new ground.
 - **Progression.**
-  - [x] 6 landmarks, 3 with relics: Wing of Aurel (glide) at The Broken Gate, Ember Heart (stamina) at Warden's Watch, Stormstep Boots (doubleJump) at Thornspire.
-  - [x] Glide runs the engine glide model while you hold Space in the air; the double jump and deeper stamina change how far you get.
-  - [x] Guardians: 2 bone wardens at Warden's Watch, 3 thorn brutes at Thornspire, 1 altar golem at The Sky Altar.
-  - [x] A 4-beat story from Ysolde ends when you wake the Sky Altar.
+  - 6 landmarks, 3 with relics: Wing of Aurel (glide) at The Broken Gate, Ember Heart (stamina) at Warden's Watch, Stormstep Boots (doubleJump) at Thornspire.
+  - Glide runs the engine glide model while you hold Space in the air; the double jump and deeper stamina change how far you get.
+  - Guardians: 2 bone wardens at Warden's Watch, 3 thorn brutes at Thornspire, 1 altar golem at The Sky Altar.
+  - A 4-beat story from Ysolde ends when you wake the Sky Altar.
 - **Failure states.** Guardians hit back; at 0 health you are back at the last place you found 4 seconds later. Sprinting empties stamina and leaves you winded.
 - **Minute 5 -> hour 5.** At 5:00 you have found two places and glide. Later places are farther, higher and guarded, so stamina, the second jump and fast travel decide how you get there.
 - **References it is chasing.**

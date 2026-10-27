@@ -115,35 +115,35 @@ not the full design, is what the numbers describe.
   loot from a source into a 4 × 3 cache grid, then retrace the route to the entrance before air runs out.
   Banked salvage stays home; the next dive starts from the same entrance.
 - **Progression — three systems.**
-  - [x] Refits. Two permanent buys at the stash: a sealed tank (145 seconds instead of 110) and a reserve
+  - Refits. Two permanent buys at the stash: a sealed tank (145 seconds instead of 110) and a reserve
     rack (30 rounds instead of 18). Both cost one copper spool plus seals or cells, so one spool buys one
     of them, and that shortage is the intended decision.
-  - [x] Salvage. Five item kinds with real footprints and real mass — ink 2 × 2 and 7.8 weight at depth,
+  - Salvage. Five item kinds with real footprints and real mass — ink 2 × 2 and 7.8 weight at depth,
     power cells 1 × 2 and 2.75, service rifle 3 × 1 and 9.1, suit seals 2 × 1 and 2.2, wire 1 × 1 and
     1.5 — so the twelve-square grid and the twelve-kilo load disagree, and what to leave behind is the
     choice. Every instance rolls its own level and affixes.
-  - [x] Lives. Death advances the Life once, keeps the stash, and stops at Halloway's reprint screen.
+  - Lives. Death advances the Life once, keeps the stash, and stops at Halloway's reprint screen.
     A service rifle can be prepared for one departure (its rolled damage against the sidearm's 20), leaves
     the stash on departure, and is gone if that dive ends in death.
-  - [x] Below receiving. Four strata under Marrow, each its own light, cold, pressure and fauna:
+  - Below receiving. Four strata under Marrow, each its own light, cold, pressure and fauna:
     Bellwether receiving (pressure 1), the Cold Stores (2, food drains three times as fast), the Ink Wells
     (3, ink slows you and leaves a scent trail) and the Choir Deep (4). Lifts link them; a seal rated
     below a floor's pressure takes 7 health a second per step over. The lift under the Cold Stores needs
     the mast's cage code, and the last lift needs the Ink Wells relay's.
-  - [x] Fabricator. Scanning wrecks, suits, rigs and trays (C on a creature, E on a fragment) teaches seven
+  - Fabricator. Scanning wrecks, suits, rigs and trays (C on a creature, E on a fragment) teaches seven
     blueprints over one to three fragments each: plasma cutter (cable runs), Seal Mk II and III, seam drill
     (ink seams), blood lure, spare cylinder (+40 s air) and rail crawler (land at your deepest lift, ride
     home from any lift). Each prints from banked salvage.
-  - [x] Marrow's bays. Six bays take a cell generator (+3 power), water still (one water a 80 s), growbed
+  - Marrow's bays. Six bays take a cell generator (+3 power), water still (one water a 80 s), growbed
     (one ration a 110 s), air scrubber (+25 s air) and radio mast (the story's ears), each costing power,
     each built over 6-10 s while Marrow runs, all saved with the record.
-  - [x] Body. Food and water drain on every dive (faster in the cold); rations and water ride a belt (Q eats)
+  - Body. Food and water drain on every dive (faster in the cold); rations and water ride a belt (Q eats)
     and anything left on the belt at extraction fills the galley, which feeds you between dives. Starving
     costs health; a full galley and running bays turn survival into a background chore.
-  - [x] Creatures. Hands (passive, flee noise and light), couriers (territorial, hunt light, sound and blood,
+  - Creatures. Hands (passive, flee noise and light), couriers (territorial, hunt light, sound and blood,
     wind up before a 16-damage strike) and the Overrun in the Choir. A lit lamp (F) is seen from further;
     a thrown blood lure (G) pulls any hunter off you until it is eaten.
-  - [x] Story. Halloway's lines follow Marrow's state: build a generator, raise the mast, hear Printer Zero,
+  - Story. Halloway's lines follow Marrow's state: build a generator, raise the mast, hear Printer Zero,
     find the relay, seal for the Choir, take Pattern 406, bring it home. Logs scanned below fill the codex,
     and the fabricator lists the job with what is done and what is next.
 - **Failure states.** Air at zero suffocates at 12 health a second; steam costs 18 a second; the Fitter

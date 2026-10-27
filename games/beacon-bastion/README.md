@@ -39,7 +39,7 @@ is what the build does now.
     - Ironshot cracks armor by 10 a stack.
     - Frost freezes, and leaves raiders brittle (+25% damage taken).
 - **Progression — six systems.**
-  - [x] Tower ladders. Every tower takes two shared ranks (75% of build cost × rank; each adds 50%
+  - Tower ladders. Every tower takes two shared ranks (75% of build cost × rank; each adds 50%
     damage, 15% fire rate, 0.5 range). It then commits to one of two paths, and taking one closes the
     other. Each path has two steps (150–320 gold):
     - Archer: Longbow (+3.5 range, ignores up to 45 armor, every 4th arrow ×3) or Volley (three targets,
@@ -50,18 +50,18 @@ is what the build does now.
     - Arcane: Storm (bolts chain to 5 raiders) or Ember (burns, and melts wards 2.5× faster).
     - Selling returns 70% of everything spent. The ladders are the engine's `upgradePaths`, so the world
       model prices, refuses and saves every step.
-  - [x] Aim. Each tower targets the first raider on the road, the last, the strongest or the nearest. T
+  - Aim. Each tower targets the first raider on the road, the last, the strongest or the nearest. T
     cycles it, as does the tower card.
-  - [x] Beacon rites. Beacon Fire (Q, every 40 s) falls 0.9 s after a click on the road: 120 damage in
+  - Beacon rites. Beacon Fire (Q, every 40 s) falls 0.9 s after a click on the road: 120 damage in
     3.5 m plus a burn. The Frost Bell (E, every 55 s) slows every raider to 40% for 4 s (a boss to 70%).
-  - [x] Bounty ladder. Kill pay is the raider's weight × `1 + 0.25 × (wave − 1)`, capped at ×4, then the
+  - Bounty ladder. Kill pay is the raider's weight × `1 + 0.25 × (wave − 1)`, capped at ×4, then the
     relic, the difficulty and the council.
-  - [x] Stars and the war council. A hold earns 1–3 stars by lives kept (90% for three), plus one on
+  - Stars and the war council. A hold earns 1–3 stars by lives kept (90% for three), plus one on
     Warlord. The best stars per difficulty are council points, spent on the result stone:
     - Arsenal: tower-line damage, reach, and two mutually exclusive doctrines.
     - Treasury: opening gold, walls, kill pay, early-call pay.
     - Rites: hotter fire, faster cooldowns.
-  - [x] Relics. A finished defense banks half its purse (capped at 200), and the result card offers
+  - Relics. A finished defense banks half its purse (capped at 200), and the result card offers
     three relics through the engine's seeded draft.
 - **Difficulty.**
   - Squire: 25 lives, raiders ×0.8 health, 32 s breathers.

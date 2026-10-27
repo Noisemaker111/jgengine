@@ -41,11 +41,11 @@ does now.
   Peasants (55 gold, 8 s), Footmen (80 gold + 10 lumber, 14 s, barracks) and Riflemen (70 + 20, 16 s),
   plus Barracks (140 + 60, 20 s), Farms (60 + 30, 12 s, +8 supply) and Guard Towers (90 + 40, 16 s).
 - **Progression — three systems.**
-  - [x] Supply. 30 from the hall plus 8 per farm, spent 1–5 per unit, reserved when training is queued
+  - Supply. 30 from the hall plus 8 per farm, spent 1–5 per unit, reserved when training is queued
     rather than when the recruit lands.
-  - [x] Research. Iron Weapons (+3 damage per rank) and Iron Armor (−2 damage taken per rank), three
+  - Research. Iron Weapons (+3 damage per rank) and Iron Armor (−2 damage taken per rank), three
     ranks each, 18 + 8 × rank seconds, two jobs at once, barracks required.
-  - [x] Hero. Bram 1–5 earns 35% of a victim's max health as XP; each level adds 70 health, 4 damage and
+  - Hero. Bram 1–5 earns 35% of a victim's max health as XP; each level adds 70 health, 4 damage and
     20 max mana. Thunder Clap costs 40 mana, hits a 7 m radius for 26 + 8 per level, 9 s cooldown.
 - **Failure states.** Player keep at 1600 health, warcamp at 1300; either reaching zero ends the
   match, and a campaign mission lands in its named fail state first. The Marauders wait 30 seconds,

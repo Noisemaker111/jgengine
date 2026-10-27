@@ -12,10 +12,10 @@ Every word, price and model below lives in `src/game/idea.ts`; places live in `s
   sell everything at the fish cart, then spend it at the harbor market in the harbor (number keys).
   Signposts by the cottage walk you down the road to the water and the market, and back.
 - **Progression.**
-  - [x] Seeds unlock at the market: cabbage (40), sunflower (90), sea berry (150).
-  - [x] The rod has 3 upgrades (wider green, quicker bites); more land opens a row of 3 plots each, up to 12.
-  - [x] Rarer fish bite after enough casts: sardine (7), mackerel (13), sea bass (28), old whiskers (110).
-  - [x] 5 requests from the village (Nell, Old Bram, Ivy), each paying a little, ending in the festival.
+  - Seeds unlock at the market: cabbage (40), sunflower (90), sea berry (150).
+  - The rod has 3 upgrades (wider green, quicker bites); more land opens a row of 3 plots each, up to 12.
+  - Rarer fish bite after enough casts: sardine (7), mackerel (13), sea bass (28), old whiskers (110).
+  - 5 requests from the village (Nell, Old Bram, Ivy), each paying a little, ending in the festival.
 - **Failure states.** None that end the run: a fish that waits too long or that you reel in early gets away, and the market closes at 20:00. Sleeping in the cottage ends the day and saves; crops keep growing overnight.
 - **Minute 5 -> hour 5.** At 5:00 the first turnip are sold and the first fish is in; the rod and the second crop are the next buys. Later days are about filling 12 plots with the best crop and chasing the rare fish.
 - **References it is chasing.**

@@ -15,34 +15,34 @@ Read from `src/game/{park,catalog,objects,sim,scenarios,milestones,rides}`; the 
   wait they can see and the price. Upkeep and wages run by the second; each midnight restocks the
   stalls (paid per item sold) and takes the loan's interest.
 - **Progression — four systems.**
-  - [x] Twenty-eight rides in five families (gentle 8, thrill 8, water 4, transport 3, coasters 5),
+  - Twenty-eight rides in five families (gentle 8, thrill 8, water 4, transport 3, coasters 5),
     each with its own excitement, intensity, nausea, capacity, cycle and ticket on the shared ride
     sim. Wear builds every cycle until the ride breaks; the crew's repair is a full overhaul, a
     mechanic bay cuts it by a third, and servicing clears wear before it breaks.
-  - [x] Money that binds. Every stall and ride has a price the player sets; a guest refuses one more
+  - Money that binds. Every stall and ride has a price the player sets; a guest refuses one more
     than a quarter over what it is worth ("too expensive" counts on the dashboard). Ten shops and
     facilities: burgers, drinks, toilets and the information kiosk at the start, six more in the lab.
     Borrow or repay in $1,000 steps up to $25,000 in the park books (Books, or L), which show what is
     owed and the night's interest.
-  - [x] A research lab. Four rides, four shops and nine scenery pieces are open at the start; every
+  - A research lab. Four rides, four shops and nine scenery pieces are open at the start; every
     other ride, shop, theme piece and the mechanic bay is a lab topic with its own fee and time, each
     after the one before it in its family.
-  - [x] Theming. Fourteen scenery pieces (library trees, bushes, rocks, benches, lamps and bins, plus
+  - Theming. Fourteen scenery pieces (library trees, bushes, rocks, benches, lamps and bins, plus
     the park's own flower beds, hedges, fountain, topiary, statue, arch and flagpole) add charm to
     every ride in reach, which lifts the ride's appeal and excitement, up to 6 points a ride.
-  - [x] Awards. Six rating awards (150 to 900 stars) pay $500 to $6,000 once each.
-  - [x] Guests say what they think. Each guest keeps its last few thoughts (hungry, needs the toilet,
+  - Awards. Six rating awards (150 to 900 stars) pay $500 to $6,000 once each.
+  - Guests say what they think. Each guest keeps its last few thoughts (hungry, needs the toilet,
     feels sick, the queue is too long, too expensive, great ride); the dashboard shows what the crowd
     is saying most, and a park full of complaints loses rating.
-  - [x] Staff with patrol areas. Handymen sweep, mechanics inspect and service worn rides, entertainers
+  - Staff with patrol areas. Handymen sweep, mechanics inspect and service worn rides, entertainers
     cheer guests and ease long queues, security guards stop unhappy guests making a mess; each works
     a ring the player widens or narrows.
-  - [x] Building like a park sim. Height levels with land raise and lower (drag an area, $25 a cell);
+  - Building like a park sim. Height levels with land raise and lower (drag an area, $25 a cell);
     rides need flat ground. Paths and queue lines drag out as a line. A ride opens only with an
     entrance and an exit against it joined to the paths from the gate, and a shop only with a path
     beside it; a shut one says why and offers "Connect it". Guests queue on the queue line, which
     makes a long wait easier to bear. U undoes the last build, demolish or land change.
-  - [x] Three scenarios. Opening Weekend, Star Attraction and Full House, each a timed objective on the
+  - Three scenarios. Opening Weekend, Star Attraction and Full House, each a timed objective on the
     shared mission runtime with its own fail states, reward and fresh-park replay.
 - **Failure states.** A day that ends in the red counts toward bankruptcy; three days in the red
   closes the park for good. A breakdown takes its ride offline until its queued repair lands, so a
