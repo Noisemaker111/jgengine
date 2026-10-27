@@ -232,7 +232,7 @@ export function closeLane(args: LaneCloseArgs, io: LaneIo): number {
   // cannot delete the directory it runs in, and the next close takes it.
   const reaped = io.sh(["run", "worktree", "reap", "--fetch"], false);
   const reapLine = lastLine(reaped.stdout);
-  if (reapLine.length > 0) io.out(`lane:close: ${reapLine}`);
+  if (reapLine.length > 0) stage(`lane:close: ${reapLine}`);
   return EXIT_CLOSED;
 }
 

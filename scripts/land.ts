@@ -292,7 +292,8 @@ export function landBody(options: {
   const files = (options.files ?? (() => fragmentFiles()))();
   const added = (options.added ?? (() => diffPaths(args.base)))();
   const { own, ignored } = ownFragments(files, added);
-  for (const file of ignored) {
+  // Other lanes' notes sit in the shared directory on every branch; naming them is detail.
+  for (const file of isVerbose() ? ignored : []) {
     log(`ignoring changes/${basename(file.path)}: this branch's diff against origin/${args.base} does not add it`);
   }
   const fragment = pickFragment(own, branch);
