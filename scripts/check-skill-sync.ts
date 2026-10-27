@@ -118,7 +118,7 @@ const coreDomains = readdirSync(join(root, "packages", "core", "src")).filter((n
 );
 for (const domain of coreDomains) {
   if (!CORE_INTERNAL_DOMAINS.has(domain) && CORE_DOMAIN_SKILLS[domain] === undefined) {
-    problems.push(`core domain ${domain}/ has no skill owner in skillRouting.ts`);
+    problems.push(`core folder ${domain}/ has no skill in scripts/skill-routing.json; run bun run gen`);
   }
 }
 
