@@ -64,7 +64,7 @@ export type ActionStateBindingMap<TAction extends string, TCode extends string =
   ActionBindingConfig<TCode>
 >;
 
-/** The hold/toggle form of an {@link ActionCodes} entry, with an optional auto-repeat rate. */
+/** The hold/toggle form of an {@link ActionCodes} entry, with an optional auto-repeat rate and rebind lock. */
 export interface ActionCodeModes<TCode extends string = string> {
   hold?: readonly TCode[];
   toggle?: readonly TCode[];
@@ -73,6 +73,7 @@ export interface ActionCodeModes<TCode extends string = string> {
   locked?: boolean;
 }
 
+/** One action's input codes: a plain code list, or {@link ActionCodeModes} for hold/toggle, repeat and lock. */
 export type ActionCodes<TCode extends string = string> = readonly TCode[] | ActionCodeModes<TCode>;
 
 /**

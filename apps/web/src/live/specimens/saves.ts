@@ -221,7 +221,8 @@ export function createSavesSpecimen(container: HTMLElement, trace: Trace): Saves
     const target = { x: sx + sw / 2, y: (dials.cloud ? cloudY : localY) + boxH / 2 };
     const game = { x: gameW * 0.28, y: floor - 30 };
     for (let i = packets.length - 1; i >= 0; i--) {
-      const p = packets[i]!;
+      const p = packets[i];
+      if (p === undefined) continue;
       const t = (now - p.started) / p.ms;
       if (t >= 1) { packets.splice(i, 1); continue; }
       const a = p.from === "game" ? game : target, b = p.from === "game" ? target : game;

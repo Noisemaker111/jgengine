@@ -7,10 +7,15 @@ import type { AxisInput } from "@jgengine/core/input/axisInput";
 import { createVehicleDynamics } from "@jgengine/core/physics/vehicleDynamics";
 import { VEHICLE_STYLES, vehicleTuning } from "@jgengine/core/physics/vehicleSpec";
 
+import { at } from "../at";
 import { drawKeycaps, drawPill, heldKeys, mountCanvas2d, takeover } from "../canvas2d";
 import type { Trace } from "../trace";
 
 export type CarStyle = keyof typeof VEHICLE_STYLES;
+
+export function isCarStyle(value: unknown): value is CarStyle {
+  return typeof value === "string" && Object.hasOwn(VEHICLE_STYLES, value);
+}
 
 export interface CarDials {
   style: CarStyle;
@@ -48,7 +53,7 @@ function buildTrack(): { x: number; z: number }[] {
   const out: { x: number; z: number }[] = [];
   const n = CORNERS.length;
   for (let i = 0; i < n; i++) {
-    const p0 = CORNERS[(i - 1 + n) % n]!, p1 = CORNERS[i]!, p2 = CORNERS[(i + 1) % n]!, p3 = CORNERS[(i + 2) % n]!;
+    const p0 = at(CORNERS, (i - 1 + n) % n), p1 = at(CORNERS, i), p2 = at(CORNERS, (i + 1) % n), p3 = at(CORNERS, (i + 2) % n);
     const steps = Math.ceil(Math.hypot(p2[0] - p1[0], p2[1] - p1[1]));
     for (let s = 0; s < steps; s++) {
       const t = s / steps;
@@ -75,8 +80,8 @@ function wrapAngle(a: number): number {
 export function createCarSpecimen(container: HTMLElement, trace: Trace): CarSpecimen {
   let dials: CarDials = { style: "drift", topSpeed: 34, accel: 10, turnRate: 2.4, grip: VEHICLE_STYLES.drift.grip, drift: VEHICLE_STYLES.drift.drift };
   const car = createVehicleDynamics(tuningFrom(dials));
-  const start = TRACK[0]!;
-  const resetCar = () => car.resetTo([start.x, 0, start.z], headingOf(start, TRACK[3]!));
+  const start = at(TRACK, 0);
+  const resetCar = () => car.resetTo([start.x, 0, start.z], headingOf(start, at(TRACK, 3)));
   resetCar();
   const skids: { x: number; z: number; t: number }[] = [];
   const pilot = takeover(5000);
@@ -89,7 +94,7 @@ export function createCarSpecimen(container: HTMLElement, trace: Trace): CarSpec
     let best = index, bestD = Infinity;
     for (let k = -30; k <= 60; k++) {
       const i = (index + k + TRACK.length) % TRACK.length;
-      const p = TRACK[i]!;
+      const p = at(TRACK, i);
       const d = (p.x - x) ** 2 + (p.z - z) ** 2;
       if (d < bestD) { bestD = d; best = i; }
     }
@@ -97,7 +102,7 @@ export function createCarSpecimen(container: HTMLElement, trace: Trace): CarSpec
   }
 
   function autopilot(x: number, z: number, heading: number, speed: number): AxisInput {
-    const ahead = (m: number) => TRACK[(index + Math.round(m)) % TRACK.length]!;
+    const ahead = (m: number) => at(TRACK, (index + Math.round(m)) % TRACK.length);
     const target = ahead(6 + speed * 0.3);
     const dx = target.x - x, dz = target.z - z;
     const fwd = dx * Math.sin(heading) + dz * Math.cos(heading);
@@ -151,11 +156,10 @@ export function createCarSpecimen(container: HTMLElement, trace: Trace): CarSpec
       skids.push({ x, z, t: now });
       if (skids.length > MAX_SKIDS) skids.shift();
     }
-    const off = Math.hypot(TRACK[index]!.x - x, TRACK[index]!.z - z);
-    if (off > 30) {
+    const here = at(TRACK, index);
+    if (Math.hypot(here.x - x, here.z - z) > 30) {
       // Put the car back on the road where it left it.
-      const here = TRACK[index]!;
-      car.resetTo([here.x, 0, here.z], headingOf(here, TRACK[(index + 3) % TRACK.length]!));
+      car.resetTo([here.x, 0, here.z], headingOf(here, at(TRACK, (index + 3) % TRACK.length)));
     }
     if (index < 20 && nearestPrev > TRACK.length - 20 && now - lapStart > 4000) {
       const lap = (now - lapStart) / 1000;
@@ -187,7 +191,7 @@ export function createCarSpecimen(container: HTMLElement, trace: Trace): CarSpec
     road(0.3, "rgba(255,255,255,0.25)");
     ctx.setLineDash([]);
     // Start line.
-    const s0 = TRACK[0]!, s1 = TRACK[2]!;
+    const s0 = at(TRACK, 0), s1 = at(TRACK, 2);
     const h0 = headingOf(s0, s1);
     ctx.strokeStyle = "#fff";
     ctx.lineWidth = 3;

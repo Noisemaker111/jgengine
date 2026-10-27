@@ -1,7 +1,13 @@
 import { describe, expect, it } from "bun:test";
 
-import { createRebindSession, type RebindSessionSnapshot } from "./rebindSession";
+import { createRebindSession, type RebindRow, type RebindSession, type RebindSessionSnapshot } from "./rebindSession";
 import type { BindingOverrides } from "./bindingOverrides";
+
+function rowOf(s: RebindSession, actionId: string): RebindRow {
+  const row = s.row(actionId);
+  if (row === null) throw new Error(`no row for ${actionId}`);
+  return row;
+}
 
 const ACTIONS = [
   { id: "moveForward", label: "Move Forward", defaultCodes: ["KeyW"] },
@@ -25,10 +31,10 @@ describe("createRebindSession", () => {
 
   it("merges seeded overrides over defaults and marks the row non-default", () => {
     const s = session({ jump: ["KeyJ"] });
-    const jump = s.row("jump")!;
+    const jump = rowOf(s, "jump");
     expect(jump.bindingLabel).toBe("J");
     expect(jump.isDefault).toBe(false);
-    expect(s.row("moveForward")!.isDefault).toBe(true);
+    expect(rowOf(s, "moveForward").isDefault).toBe(true);
   });
 
   it("ignores override keys for unknown actions", () => {
@@ -44,7 +50,7 @@ describe("createRebindSession", () => {
     expect(s.isCapturing("sprint")).toBe(true);
     expect(s.capturingActionId()).toBe("sprint");
     expect(s.capture("ControlRight")).toBe(true); // normalizes to "Control"
-    const sprint = s.row("sprint")!;
+    const sprint = rowOf(s, "sprint");
     expect(sprint.code).toBe("Control");
     expect(sprint.bindingLabel).toBe("Ctrl");
     expect(sprint.isDefault).toBe(false);
@@ -59,7 +65,7 @@ describe("createRebindSession", () => {
     s.beginCapture("jump");
     s.cancelCapture();
     expect(s.isCapturing()).toBe(false);
-    expect(s.row("jump")!.isDefault).toBe(true);
+    expect(rowOf(s, "jump").isDefault).toBe(true);
   });
 
   it("detects conflicts when two actions share a normalized code", () => {
@@ -69,13 +75,13 @@ describe("createRebindSession", () => {
     expect(s.hasConflicts()).toBe(true);
     const conflicts = s.conflicts();
     expect(conflicts).toHaveLength(1);
-    expect(conflicts[0]!.code).toBe("KeyW");
-    expect(conflicts[0]!.actionIds.sort()).toEqual(["interact", "moveForward"]);
-    const forward = s.row("moveForward")!;
+    expect(conflicts[0]?.code).toBe("KeyW");
+    expect(conflicts[0]?.actionIds.sort()).toEqual(["interact", "moveForward"]);
+    const forward = rowOf(s, "moveForward");
     expect(forward.conflictWith).toEqual(["interact"]);
-    expect(s.row("interact")!.conflictWith).toEqual(["moveForward"]);
+    expect(rowOf(s, "interact").conflictWith).toEqual(["moveForward"]);
     // sprint remains conflict-free
-    expect(s.row("sprint")!.conflictWith).toEqual([]);
+    expect(rowOf(s, "sprint").conflictWith).toEqual([]);
   });
 
   it("normalizes left/right modifier variants when detecting conflicts", () => {
@@ -83,7 +89,7 @@ describe("createRebindSession", () => {
     s.beginCapture("jump");
     s.capture("ShiftRight"); // normalizes to Shift, same as sprint's ShiftLeft default
     expect(s.hasConflicts()).toBe(true);
-    expect(s.conflicts()[0]!.actionIds.sort()).toEqual(["jump", "sprint"]);
+    expect(s.conflicts()[0]?.actionIds.sort()).toEqual(["jump", "sprint"]);
   });
 
   it("reset returns one action to default; resetAll clears everything", () => {
@@ -94,7 +100,7 @@ describe("createRebindSession", () => {
     s.capture("KeyX");
     expect(Object.keys(s.overrides()).sort()).toEqual(["jump", "moveForward"]);
     s.reset("moveForward");
-    expect(s.row("moveForward")!.bindingLabel).toBe("W");
+    expect(rowOf(s, "moveForward").bindingLabel).toBe("W");
     expect(s.overrides()).toEqual({ jump: ["KeyX"] });
     s.resetAll();
     expect(s.overrides()).toEqual({});
@@ -153,8 +159,8 @@ describe("createRebindSession", () => {
     const fresh = session();
     fresh.restore(snap);
     expect(fresh.overrides()).toEqual({ interact: ["KeyH"] });
-    expect(fresh.row("interact")!.bindingLabel).toBe("H");
-    expect(fresh.row("interact")!.changedAt).toBe(1000);
+    expect(rowOf(fresh, "interact").bindingLabel).toBe("H");
+    expect(rowOf(fresh, "interact").changedAt).toBe(1000);
     expect(fresh.capturingActionId()).toBe("jump");
   });
 });
@@ -169,15 +175,15 @@ describe("createRebindSession locked actions", () => {
 
   it("marks only the locked row locked", () => {
     const s = lockedSession();
-    expect(s.row("fire")!.locked).toBe(true);
-    expect(s.row("jump")!.locked).toBe(false);
+    expect(rowOf(s, "fire").locked).toBe(true);
+    expect(rowOf(s, "jump").locked).toBe(false);
   });
 
   it("ignores a saved override for a locked action", () => {
     const s = lockedSession({ fire: ["KeyF"] });
     expect(s.overrides()).toEqual({});
-    expect(s.row("fire")!.code).toBe("mouse0");
-    expect(s.row("fire")!.isDefault).toBe(true);
+    expect(rowOf(s, "fire").code).toBe("mouse0");
+    expect(rowOf(s, "fire").isDefault).toBe(true);
   });
 
   it("never arms capture on a locked row, so capture and reset change nothing", () => {
@@ -186,10 +192,10 @@ describe("createRebindSession locked actions", () => {
     expect(s.capturingActionId()).toBeNull();
     expect(s.capture("KeyF")).toBe(false);
     s.reset("fire");
-    expect(s.row("fire")!.code).toBe("mouse0");
+    expect(rowOf(s, "fire").code).toBe("mouse0");
     s.restore({ overrides: { fire: ["KeyF"] }, changedAt: {}, capturingActionId: "fire" });
     expect(s.capturingActionId()).toBeNull();
-    expect(s.row("fire")!.code).toBe("mouse0");
+    expect(rowOf(s, "fire").code).toBe("mouse0");
   });
 
   it("reports a conflict when another action is captured onto a locked code", () => {
@@ -197,6 +203,6 @@ describe("createRebindSession locked actions", () => {
     s.beginCapture("jump");
     s.capture("mouse0");
     expect(s.conflicts()).toEqual([{ code: "mouse0", actionIds: ["jump", "fire"] }]);
-    expect(s.row("fire")!.conflictWith).toEqual(["jump"]);
+    expect(rowOf(s, "fire").conflictWith).toEqual(["jump"]);
   });
 });

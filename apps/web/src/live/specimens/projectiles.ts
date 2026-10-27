@@ -264,7 +264,8 @@ export function createProjectilesSpecimen(container: HTMLElement, trace: Trace):
     }
 
     for (let i = sparks.length - 1; i >= 0; i--) {
-      const s = sparks[i]!;
+      const s = sparks[i];
+      if (s === undefined) continue;
       s.life -= dt;
       if (s.life <= 0) { sparks.splice(i, 1); continue; }
       s.vy -= 9.8 * dt;

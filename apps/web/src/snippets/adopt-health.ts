@@ -9,7 +9,7 @@ const pools: Record<string, Record<string, StatPool>> = {
 export const access = {
   get: (id: string, stat: string) => pools[id]?.[stat] ?? null,
   set: (id: string, stat: string, next: StatPool) => {
-    pools[id]![stat] = next;
+    pools[id] = { ...pools[id], [stat]: next };
   },
 };
 

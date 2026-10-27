@@ -6,6 +6,24 @@ import { buildBrowserFixture, findChromeExecutable } from "../../../../scripts/b
 
 setDefaultTimeout(30_000);
 
+/** What the fixture page below puts on `window`, so the page-side callbacks stay typed. */
+interface SettingsFixture {
+  bindings(): Record<string, string>;
+  overrides(): Record<string, unknown>;
+  values(): { volume: number; captions: boolean; quality: string };
+  press(buttons: number[]): void;
+  axes(values: number[]): void;
+}
+
+declare global {
+  interface Window {
+    fixture?: SettingsFixture;
+    menuKeys?: string[];
+    steps?: string[];
+    sampler?: MutationObserver;
+  }
+}
+
 const scratch = resolve(import.meta.dir, "../../../../.scratch/settings-section-test");
 let browser: Browser;
 let page: Page;
@@ -126,7 +144,7 @@ beforeEach(async () => {
   // hovers whatever is under it on the new page, which legitimately makes that row the menu's active row.
   await page.mouse.move(1260, 4);
   await page.goto(`http://127.0.0.1:${server.port}`);
-  await page.waitForFunction(() => typeof (window as any).fixture !== "undefined");
+  await page.waitForFunction(() => window.fixture !== undefined);
 });
 
 afterAll(async () => {
@@ -141,55 +159,59 @@ async function focused(): Promise<string | null> {
 
 describe("SettingsSection rebinding", () => {
   test("click-to-capture writes the pressed key into the rebind session", async () => {
-    expect(await page.evaluate(() => (window as any).fixture.bindings().jump)).toBe("Space");
+    expect(await page.evaluate(() => window.fixture?.bindings().jump)).toBe("Space");
     await page.locator('[data-settings-keybind="jump"] [data-settings-capture]').click();
     await page.keyboard.press("KeyQ");
-    await page.waitForFunction(() => (window as any).fixture.bindings().jump === "Q");
-    expect(await page.evaluate(() => (window as any).fixture.overrides().jump)).toEqual(["KeyQ"]);
+    await page.waitForFunction(() => window.fixture?.bindings().jump === "Q");
+    expect(await page.evaluate(() => window.fixture?.overrides().jump)).toEqual(["KeyQ"]);
   });
 
   test("Escape cancels capture without changing the binding", async () => {
     await page.locator('[data-settings-keybind="fire"] [data-settings-capture]').click();
     await page.keyboard.press("Escape");
     await page.waitForTimeout(120);
-    expect(await page.evaluate(() => (window as any).fixture.bindings().fire)).toBe("F");
+    expect(await page.evaluate(() => window.fixture?.bindings().fire)).toBe("F");
   });
 
   test("confirming a locked row never arms capture", async () => {
     await page.evaluate(() => {
-      (document.querySelector('[data-jg-menu-item="key:aim"]') as HTMLElement | null)?.focus();
+      const row = document.querySelector('[data-jg-menu-item="key:aim"]');
+      if (row instanceof HTMLElement) row.focus();
     });
     await page.waitForFunction(() => document.activeElement?.getAttribute("data-jg-menu-item") === "key:aim");
     await page.evaluate(() => {
-      (window as any).menuKeys = [];
-      window.addEventListener("keydown", (event) => (window as any).menuKeys.push(event.code));
+      const keys: string[] = [];
+      window.menuKeys = keys;
+      window.addEventListener("keydown", (event) => keys.push(event.code));
     });
     await page.keyboard.press("Enter");
     await page.waitForTimeout(120);
     await page.keyboard.press("KeyQ");
     await page.waitForTimeout(120);
     // An armed capture swallows the next key; a locked row must leave it to the menu.
-    expect(await page.evaluate(() => (window as any).menuKeys)).toContain("KeyQ");
+    expect(await page.evaluate(() => window.menuKeys)).toContain("KeyQ");
     expect(await page.locator('[data-settings-keybind="aim"] [data-settings-capture]').count()).toBe(0);
-    expect(await page.evaluate(() => (window as any).fixture.overrides())).toEqual({});
+    expect(await page.evaluate(() => window.fixture?.overrides())).toEqual({});
   });
 
   test("a captured key never reaches the surrounding menu", async () => {
     await page.evaluate(() => {
-      (window as any).menuKeys = [];
-      window.addEventListener("keydown", (event) => (window as any).menuKeys.push(event.code));
+      const keys: string[] = [];
+      window.menuKeys = keys;
+      window.addEventListener("keydown", (event) => keys.push(event.code));
     });
     await page.locator('[data-settings-keybind="jump"] [data-settings-capture]').click();
     await page.keyboard.press("KeyR");
-    await page.waitForFunction(() => (window as any).fixture.bindings().jump === "R");
-    expect(await page.evaluate(() => (window as any).menuKeys)).not.toContain("KeyR");
+    await page.waitForFunction(() => window.fixture?.bindings().jump === "R");
+    expect(await page.evaluate(() => window.menuKeys)).not.toContain("KeyR");
   });
 });
 
 describe("SettingsSection keyboard rows", () => {
   test("arrow keys edit the focused row through the same adjust path the d-pad uses", async () => {
     await page.evaluate(() => {
-      (document.querySelector('[data-jg-menu-item="row:volume"]') as HTMLElement | null)?.focus();
+      const row = document.querySelector('[data-jg-menu-item="row:volume"]');
+      if (row instanceof HTMLElement) row.focus();
     });
     await page.waitForFunction(() => document.activeElement?.getAttribute("data-jg-menu-item") === "row:volume");
     await page.keyboard.press("ArrowRight");
@@ -213,7 +235,7 @@ describe("SettingsSection keyboard rows", () => {
 });
 
 describe("SettingsSection gamepad rows", () => {
-  const press = (buttons: number[]) => page.evaluate((held) => (window as any).fixture.press(held), buttons);
+  const press = (buttons: number[]) => page.evaluate((held) => window.fixture?.press(held), buttons);
   const release = async () => {
     await press([]);
     await page.waitForTimeout(60);
@@ -228,7 +250,7 @@ describe("SettingsSection gamepad rows", () => {
   const focusRow = async (id: string) => {
     await page.evaluate((want) => {
       const element = document.querySelector(`[data-jg-menu-item="${want}"]`);
-      (element as HTMLElement | null)?.focus();
+      if (element instanceof HTMLElement) element.focus();
     }, id);
     await focusedOn(id);
   };
@@ -249,13 +271,13 @@ describe("SettingsSection gamepad rows", () => {
         }
       });
       observer.observe(target, { childList: true, characterData: true, subtree: true });
-      (window as any).steps = steps;
-      (window as any).sampler = observer;
+      window.steps = steps;
+      window.sampler = observer;
     });
   const stopSampling = () =>
     page.evaluate(() => {
-      (window as any).sampler?.disconnect();
-      return (window as any).steps as string[];
+      window.sampler?.disconnect();
+      return window.steps ?? [];
     });
 
   test("opens on the first row and one d-pad press steps its value by the row's step", async () => {
@@ -315,14 +337,14 @@ describe("SettingsSection gamepad rows", () => {
 
   test("a held stick repeats on hold", async () => {
     await focusRow("row:volume");
-    await page.evaluate(() => (window as any).fixture.axes([1, 0]));
+    await page.evaluate(() => window.fixture?.axes([1, 0]));
     await page.waitForFunction(() => Number(document.getElementById("volume")?.textContent) >= 0.8, undefined, {
       polling: 50,
       timeout: 4000,
     });
-    await page.evaluate(() => (window as any).fixture.axes([0, 0]));
+    await page.evaluate(() => window.fixture?.axes([0, 0]));
     // 0.5 to 0.8 is three steps, so only hold-to-repeat can get there.
-    expect(await page.evaluate(() => (window as any).fixture.values().volume)).toBeGreaterThanOrEqual(0.8);
+    expect(await page.evaluate(() => window.fixture?.values().volume)).toBeGreaterThanOrEqual(0.8);
   }, 20_000);
 
   test("A arms the focused keybind row and Escape cancels without rebinding", async () => {
@@ -343,7 +365,7 @@ describe("SettingsSection gamepad rows", () => {
       polling: 25,
       timeout: 4000,
     });
-    expect(await page.evaluate(() => (window as any).fixture.bindings().jump)).toBe("Space");
+    expect(await page.evaluate(() => window.fixture?.bindings().jump)).toBe("Space");
   }, 20_000);
 
   test("Escape disarms before the next key arrives, so a key in the same tick cannot rebind", async () => {
@@ -362,7 +384,7 @@ describe("SettingsSection gamepad rows", () => {
     });
     await page.waitForTimeout(120);
     expect(await armed()).toBe(false);
-    expect(await page.evaluate(() => (window as any).fixture.bindings().jump)).toBe("Space");
+    expect(await page.evaluate(() => window.fixture?.bindings().jump)).toBe("Space");
   }, 20_000);
 });
 

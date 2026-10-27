@@ -6,7 +6,7 @@ import { FeatureCard } from "./marketing";
 
 const EDITOR_URL = "/play/?editor=standalone";
 
-const EDITOR_TOOLS = [
+const EDITOR_TOOLS: readonly (readonly [glyph: string, title: string, body: string])[] = [
   ["01", "Move things", "Select spawns, zones, paths and notes. Move, rotate and scale with snapping, several at once."],
   ["02", "Sculpt and paint", "Raise, lower, smooth and flatten the ground, then paint blended materials. Each stroke undoes on its own."],
   ["03", "Grass and trees", "Lasso an area to fill it with foliage, with density, slope and height limits. The same seed gives the same result."],
@@ -46,7 +46,7 @@ export function EditorEmbed() {
         </p>
         <div className="mt-10 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
           {EDITOR_TOOLS.map(([glyph, title, body]) => (
-            <FeatureCard key={title} glyph={glyph!} title={title!}>
+            <FeatureCard key={title} glyph={glyph} title={title}>
               {body}
             </FeatureCard>
           ))}

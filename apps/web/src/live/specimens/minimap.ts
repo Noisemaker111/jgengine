@@ -9,6 +9,7 @@ import { createRoot } from "react-dom/client";
 import { Minimap } from "@jgengine/core/map/map.view";
 import { DEFAULT_MARKER_KINDS } from "@jgengine/core/map/markers";
 
+import { at } from "../at";
 import { drawPill, mountCanvas2d, takeover } from "../canvas2d";
 import type { Trace } from "../trace";
 
@@ -62,7 +63,7 @@ export function createMinimapSpecimen(container: HTMLElement, trace: Trace): Min
         z: (rand() - 0.5) * FIELD_D,
         vx: (rand() - 0.5) * 6,
         vz: (rand() - 0.5) * 6,
-        team: TEAMS[i % TEAMS.length]!,
+        team: at(TEAMS, i % TEAMS.length),
       });
     }
   }
@@ -149,7 +150,7 @@ export function createMinimapSpecimen(container: HTMLElement, trace: Trace): Min
     ctx.save();
     ctx.translate(sx(hero.x), sy(hero.z));
     ctx.rotate(hero.yaw);
-    ctx.fillStyle = DEFAULT_MARKER_KINDS.player!.color;
+    ctx.fillStyle = DEFAULT_MARKER_KINDS.player?.color ?? "#fff";
     ctx.beginPath();
     ctx.moveTo(0, -9);
     ctx.lineTo(6, 6);

@@ -13,13 +13,14 @@ test("a locked action's controls row is locked and keeps its authored key over a
     rebind: () => undefined,
     resetBinding: () => undefined,
   });
-  const fire = rows.find((row) => row.action === "fire")!;
-  const jump = rows.find((row) => row.action === "jump")!;
-  expect(fire.locked).toBe(true);
-  expect(fire.isDefault).toBe(true);
-  expect(fire.bindingLabel).not.toBe("F");
-  expect(jump.locked).toBe(false);
-  expect(jump.bindingLabel).toBe("J");
+  const fire = rows.find((row) => row.action === "fire");
+  const jump = rows.find((row) => row.action === "jump");
+  expect(fire?.locked).toBe(true);
+  expect(fire?.isDefault).toBe(true);
+  expect(fire?.bindingLabel).toBeString();
+  expect(fire?.bindingLabel).not.toBe("F");
+  expect(jump?.locked).toBe(false);
+  expect(jump?.bindingLabel).toBe("J");
 });
 
 const rowIds = (postProcessing: PostProcessingConfig | undefined): string[] =>

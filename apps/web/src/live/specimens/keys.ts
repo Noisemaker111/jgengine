@@ -11,6 +11,7 @@ import { applyBindingOverrides } from "@jgengine/core/input/bindingOverrides";
 import { createRebindSession, type RebindSession } from "@jgengine/core/input/rebindSession";
 import { KeybindingMenu } from "@jgengine/core/settings/keybindingMenu.view";
 
+import { at } from "../at";
 import { drawKeycaps, drawPill, mountCanvas2d, takeover } from "../canvas2d";
 import type { Trace } from "../trace";
 
@@ -116,7 +117,7 @@ export function createKeysSpecimen(container: HTMLElement, trace: Trace): KeysSp
     const codes = map[action];
     return codes !== undefined && codesOf(codes).some((c) => pressed.has(c));
   };
-  const actionFor = (code: string) => Object.keys(map).find((a) => codesOf(map[a]!).includes(fold(code))) ?? null;
+  const actionFor = (code: string) => Object.entries(map).find(([, codes]) => codesOf(codes).includes(fold(code)))?.[0] ?? null;
   /** The key the input map says triggers an action right now. */
   const keyFor = (action: string) => {
     const codes = map[action];
@@ -154,7 +155,7 @@ export function createKeysSpecimen(container: HTMLElement, trace: Trace): KeysSp
 
   /** Runs the script: walking presses the move keys, the rest press one action's key. */
   function autopilot(now: number) {
-    const step = SCRIPT[stepAt]!;
+    const step = at(SCRIPT, stepAt);
     const age = now - stepStarted;
     for (const a of ["moveForward", "moveBack", "moveLeft", "moveRight", "sprint"]) {
       const code = keyFor(a);
@@ -225,7 +226,8 @@ export function createKeysSpecimen(container: HTMLElement, trace: Trace): KeysSp
         trace.hit("fire");
       }
       for (const b of bullets) { b.x += b.vx * dt; b.y += b.vy * dt; }
-      while (bullets.length > 0 && (bullets[0]!.x < 0 || bullets[0]!.x > 1 || bullets[0]!.y < 0 || bullets[0]!.y > 1)) bullets.shift();
+      const offStage = (b: { x: number; y: number }) => b.x < 0 || b.x > 1 || b.y < 0 || b.y > 1;
+      while (bullets[0] !== undefined && offStage(bullets[0])) bullets.shift();
       if (bullets.length > 80) bullets.splice(0, bullets.length - 80);
     }
     if (paused) trace.hit("pause");

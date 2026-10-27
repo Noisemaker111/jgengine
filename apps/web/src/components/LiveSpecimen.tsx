@@ -105,11 +105,12 @@ const CONFIGS: Record<DemoKey, SpecimenConfig> = {
   },
   car: {
     load: async (el, trace) => {
-      const s = (await import("../live/specimens/car")).createCarSpecimen(el, trace);
+      const { createCarSpecimen, isCarStyle } = await import("../live/specimens/car");
+      const s = createCarSpecimen(el, trace);
       return {
         setDials: (d) =>
           s.setDials({
-            style: d.style as "arcade" | "sim" | "drift",
+            style: isCarStyle(d.style) ? d.style : "drift",
             topSpeed: Number(d.topSpeed),
             accel: Number(d.accel),
             turnRate: Number(d.turnRate),
@@ -208,7 +209,7 @@ const CONFIGS: Record<DemoKey, SpecimenConfig> = {
       const s = (await import("../live/specimens/grass")).createGrassSpecimen(el, trace);
       return { setDials: (d) => s.setDials(d), dispose: s.dispose };
     },
-    initial: { preset: "meadow", ...GRASS_PRESETS[0]!.values },
+    initial: { preset: "meadow", ...GRASS_PRESETS.find((p) => p.id === "meadow")?.values },
     controls: GRASS_CONTROLS,
     nudges: [
       { key: "preset", text: "Pick another preset" },

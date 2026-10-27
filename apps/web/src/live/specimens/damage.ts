@@ -37,23 +37,19 @@ interface Popup {
   born: number;
 }
 
-const TARGETS: readonly Target[] = [
-  { id: "grunt", armored: false, y: 0.33 },
-  { id: "knight", armored: true, y: 0.72 },
-];
+const GRUNT: Target = { id: "grunt", armored: false, y: 0.33 };
+const KNIGHT: Target = { id: "knight", armored: true, y: 0.72 };
+const TARGETS: readonly Target[] = [GRUNT, KNIGHT];
 const SHOT_MS = 380;
 const MAX_HP = 120;
 
 export function createDamageSpecimen(container: HTMLElement, trace: Trace): DamageSpecimen {
   let dials: DamageDials = { impact: 24, armorFactor: 0.5 };
-  const pools: Record<string, Record<string, StatPool>> = {
-    grunt: { health: createStatPool({ max: MAX_HP }) },
-    knight: { health: createStatPool({ max: MAX_HP }) },
-  };
+  const health = new Map<string, StatPool>(TARGETS.map((t) => [t.id, createStatPool({ max: MAX_HP })]));
   const access = {
-    get: (id: string, stat: string) => pools[id]?.[stat] ?? null,
+    get: (id: string, stat: string) => (stat === "health" ? (health.get(id) ?? null) : null),
     set: (id: string, stat: string, next: StatPool) => {
-      pools[id]![stat] = next;
+      if (stat === "health") health.set(id, next);
     },
   };
   const shots: Shot[] = [];
@@ -76,20 +72,21 @@ export function createDamageSpecimen(container: HTMLElement, trace: Trace): Dama
     trace.hit("drain");
     applyStatPoolDelta(access, target.id, "health", -result.impact);
     popups.push({ target, text: `-${Math.round(result.impact * 10) / 10}`, born: performance.now() });
-    const pool = pools[target.id]!.health!;
-    if (pool.current <= pool.min) pools[target.id]!.health = createStatPool({ max: MAX_HP });
+    const pool = health.get(target.id);
+    if (pool !== undefined && pool.current <= pool.min) health.set(target.id, createStatPool({ max: MAX_HP }));
   }
 
   const view = mountCanvas2d(container, ({ ctx, width, height }) => {
     const now = performance.now();
     if (!pilot.byVisitor() && now > nextShot) {
-      shots.push({ target: TARGETS[turn % 2]!, born: now });
+      shots.push({ target: turn % 2 === 0 ? GRUNT : KNIGHT, born: now });
       turn += 1;
       nextShot = now + 650;
     }
     for (let i = shots.length - 1; i >= 0; i--) {
-      if (now - shots[i]!.born >= SHOT_MS) {
-        const s = shots.splice(i, 1)[0]!;
+      const s = shots[i];
+      if (s !== undefined && now - s.born >= SHOT_MS) {
+        shots.splice(i, 1);
         land(s.target);
       }
     }
@@ -112,7 +109,8 @@ export function createDamageSpecimen(container: HTMLElement, trace: Trace): Dama
     ctx.font = "12px ui-monospace, monospace";
     for (const target of TARGETS) {
       const y = height * target.y;
-      const pool = pools[target.id]!.health!;
+      const pool = health.get(target.id);
+      if (pool === undefined) continue;
       ctx.fillStyle = target.armored ? "#93c5fd" : "#f87171";
       ctx.beginPath();
       ctx.arc(layout.targetX, y, 16, 0, Math.PI * 2);
@@ -135,7 +133,8 @@ export function createDamageSpecimen(container: HTMLElement, trace: Trace): Dama
     }
     ctx.textAlign = "center";
     for (let i = popups.length - 1; i >= 0; i--) {
-      const p = popups[i]!;
+      const p = popups[i];
+      if (p === undefined) continue;
       const age = (now - p.born) / 900;
       if (age > 1) {
         popups.splice(i, 1);
@@ -157,7 +156,7 @@ export function createDamageSpecimen(container: HTMLElement, trace: Trace): Dama
   const onPointer = (e: PointerEvent) => {
     const rect = view.canvas.getBoundingClientRect();
     const y = (e.clientY - rect.top) / layout.height;
-    const target = Math.abs(y - TARGETS[0]!.y) < Math.abs(y - TARGETS[1]!.y) ? TARGETS[0]! : TARGETS[1]!;
+    const target = Math.abs(y - GRUNT.y) < Math.abs(y - KNIGHT.y) ? GRUNT : KNIGHT;
     pilot.touch();
     shots.push({ target, born: performance.now() });
   };

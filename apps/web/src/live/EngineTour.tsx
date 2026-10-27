@@ -16,7 +16,8 @@ export function EngineTour({
   title: string;
   lede: ReactNode;
 }) {
-  const [active, setActive] = useState<DemoKey>(demos[0]!);
+  const [active, setActive] = useState<DemoKey | undefined>(demos[0]);
+  if (active === undefined) return null;
   const part = demoPart(active);
   return (
     <section className="band" aria-label={title}>

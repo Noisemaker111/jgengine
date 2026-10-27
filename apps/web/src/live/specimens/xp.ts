@@ -129,7 +129,8 @@ export function createXpSpecimen(container: HTMLElement, trace: Trace): XpSpecim
 
     ctx.textAlign = "center";
     for (let i = bursts.length - 1; i >= 0; i--) {
-      const b = bursts[i]!;
+      const b = bursts[i];
+      if (b === undefined) continue;
       const age = (now - b.born) / 1100;
       if (age > 1) {
         bursts.splice(i, 1);

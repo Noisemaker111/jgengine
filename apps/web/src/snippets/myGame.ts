@@ -7,9 +7,8 @@ export function openDoor(ctx: GameContext): void {
   ctx.game.notices.push({ text: "The gate creaks open", tone: "info" });
 }
 
-export function shoot(ctx: GameContext, input: unknown): void {
-  const { aim } = input as { aim?: { yaw: number; pitch: number } };
-  ctx.item.use.use({ from: ctx.player.userId, itemId: "rifle", aim });
+export function shoot(ctx: GameContext, input: { aim?: { yaw: number; pitch: number } }): void {
+  ctx.item.use.use({ from: ctx.player.userId, itemId: "rifle", aim: input.aim });
 }
 
 let inventoryOpen = false;

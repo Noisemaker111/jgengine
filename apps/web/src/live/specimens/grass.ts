@@ -23,7 +23,7 @@ const SKY = 0xbfd6ea;
 
 export function createGrassSpecimen(container: HTMLElement, trace: Trace): GrassSpecimen {
   let patch: { stream: GrassStream; handle: GrassMaterialHandle } | null = null;
-  let ground: THREE.Mesh | null = null;
+  let ground: THREE.Mesh<THREE.BufferGeometry, THREE.MeshStandardMaterial> | null = null;
   let rebuildTimer: ReturnType<typeof setTimeout> | null = null;
   let viewHeight = container.clientHeight || 400;
 
@@ -45,7 +45,7 @@ export function createGrassSpecimen(container: HTMLElement, trace: Trace): Grass
       if (rebuildTimer !== null) clearTimeout(rebuildTimer);
       dropPatch();
       ground?.geometry.dispose();
-      (ground?.material as THREE.Material | undefined)?.dispose();
+      ground?.material.dispose();
     },
   });
   live.scene.background = new THREE.Color(SKY);
@@ -72,7 +72,7 @@ export function createGrassSpecimen(container: HTMLElement, trace: Trace): Grass
       ground = new THREE.Mesh(new THREE.CircleGeometry(60, 48).rotateX(-Math.PI / 2), new THREE.MeshStandardMaterial({ roughness: 1 }));
       live.scene.add(ground);
     }
-    (ground.material as THREE.MeshStandardMaterial).color.copy(groundColor);
+    ground.material.color.copy(groundColor);
     dropPatch();
     const bake = resolveGrassBake({ look, area: [AREA, AREA], seed: "site-meadow" });
     const handle = createGrassMaterial(look, groundColor);

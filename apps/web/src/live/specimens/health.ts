@@ -43,8 +43,16 @@ export function createHealthSpecimen(container: HTMLElement, trace: Trace): Heal
     },
     set: (id: string, stat: string, next: StatPool) => {
       trace.hit("set");
-      pools[id]![stat] = next;
+      pools[id] = { ...pools[id], [stat]: next };
     },
+  };
+  const heroHealth = (): StatPool => {
+    const pool = pools.hero?.health;
+    if (pool === undefined) throw new Error("the hero has no health pool");
+    return pool;
+  };
+  const resetHero = (current: number, max: number) => {
+    pools.hero = { ...pools.hero, health: createStatPool({ current, max }) };
   };
   const popups: Popup[] = [];
   const bolts: Bolt[] = [];
@@ -76,10 +84,10 @@ export function createHealthSpecimen(container: HTMLElement, trace: Trace): Heal
 
   const view = mountCanvas2d(container, ({ ctx, width, height }) => {
     const now = performance.now();
-    const pool = pools.hero!.health!;
+    const pool = heroHealth();
     if (downUntil !== 0 && now > downUntil) {
       downUntil = 0;
-      pools.hero!.health = createStatPool({ current: dials.maxHealth, max: dials.maxHealth });
+      resetHero(dials.maxHealth, dials.maxHealth);
       popups.push({ text: "back up", color: "#e2e8f0", born: now });
     }
     if (downUntil === 0 && !pilot.byVisitor()) {
@@ -93,7 +101,8 @@ export function createHealthSpecimen(container: HTMLElement, trace: Trace): Heal
       }
     }
     for (let i = bolts.length - 1; i >= 0; i--) {
-      if (now - bolts[i]!.born >= BOLT_MS) {
+      const bolt = bolts[i];
+      if (bolt !== undefined && now - bolt.born >= BOLT_MS) {
         bolts.splice(i, 1);
         if (downUntil === 0) hit();
       }
@@ -146,7 +155,8 @@ export function createHealthSpecimen(container: HTMLElement, trace: Trace): Heal
     ctx.fillStyle = "rgba(255,255,255,0.85)";
     ctx.fillText(`${Math.round(pool.current)} / ${pool.max}`, cx, cy - 60);
     for (let i = popups.length - 1; i >= 0; i--) {
-      const p = popups[i]!;
+      const p = popups[i];
+      if (p === undefined) continue;
       const age = (now - p.born) / 1100;
       if (age > 1) {
         popups.splice(i, 1);
@@ -177,8 +187,7 @@ export function createHealthSpecimen(container: HTMLElement, trace: Trace): Heal
       const maxChanged = next.maxHealth !== dials.maxHealth;
       dials = next;
       if (maxChanged) {
-        const pool = pools.hero!.health!;
-        pools.hero!.health = createStatPool({ current: Math.min(pool.current, next.maxHealth), max: next.maxHealth });
+        resetHero(Math.min(heroHealth().current, next.maxHealth), next.maxHealth);
       }
     },
     dispose() {
