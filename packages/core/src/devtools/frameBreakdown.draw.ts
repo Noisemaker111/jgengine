@@ -277,20 +277,38 @@ export function installFrameBreakdown(renderer: WebGLRenderer, store: RootStore)
       entry.cpuMs += ms;
     }
   };
-  wrap(renderer, "renderBufferDirect", (original) => (...args) => {
+  // Labels are built once per object and material: this runs for every draw, so building a string
+  // there would be a cost of its own the breakdown reports.
+  const objectLabels = new WeakMap<object, string>();
+  const materialLabels = new WeakMap<object, string>();
+  const labelFor = (cache: WeakMap<object, string>, thing: unknown, build: () => string): string => {
+    if (typeof thing !== "object" || thing === null) return build();
+    let label = cache.get(thing);
+    if (label === undefined) {
+      label = build();
+      cache.set(thing, label);
+    }
+    return label;
+  };
+  wrap(renderer, "renderBufferDirect", (original) => (camera: unknown, scene: unknown, geometry: unknown, material: unknown, object: unknown, group: unknown) => {
     const start = performance.now();
+    const compiledBefore = current?.compileMs ?? 0;
     try {
-      return original(...args);
+      return original(camera, scene, geometry, material, object, group);
     } finally {
       const ms = performance.now() - start;
-      const triangles = trianglesOf(args[2], args[5], args[4]);
+      const triangles = trianglesOf(geometry, group, object);
       const pass = gpuStack[gpuStack.length - 1] ?? "main";
       if (current !== null) {
         current.draws += 1;
         current.triangles += triangles;
       }
-      tally(objects, objectLabel(args[4], args[2]), triangles, ms, pass);
-      tally(materials, labelOf(args[3], "material"), triangles, ms, pass);
+      const objectName = labelFor(objectLabels, object, () => objectLabel(object, geometry));
+      const materialName = labelFor(materialLabels, material, () => labelOf(material, "material"));
+      tally(objects, objectName, triangles, ms, pass);
+      tally(materials, materialName, triangles, ms, pass);
+      // This draw built or first used a program: name it, so a compile hitch says what to warm up.
+      if (current !== null && current.compileMs - compiledBefore >= 1) (current.shaders ??= []).push(`${materialName} on ${objectName}`);
     }
   });
 
@@ -307,7 +325,8 @@ export function installFrameBreakdown(renderer: WebGLRenderer, store: RootStore)
     current.compiles += 1;
     current.compileMs += ms;
   });
-  for (const method of ["compileShader", "getShaderParameter", "getProgramParameter", "getProgramInfoLog", "getShaderInfoLog"]) {
+  // three asks a program for its uniforms and attributes at its first draw; those queries wait for the link.
+  for (const method of ["compileShader", "getShaderParameter", "getProgramParameter", "getProgramInfoLog", "getShaderInfoLog", "getActiveUniform", "getActiveAttrib", "getUniformLocation", "getAttribLocation"]) {
     timed(method, (ms, args) => {
       if (current === null) return;
       if (method === "getProgramParameter" && args[1] !== context.LINK_STATUS) return;

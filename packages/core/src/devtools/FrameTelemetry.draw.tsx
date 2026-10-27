@@ -48,11 +48,14 @@ export function FrameTelemetry({ game, quality }: { game: string; quality: PerfQ
       } catch (error) {
         console.warn(`[jgengine:perf] frame breakdown did not install: ${String(error)}`);
       }
+      // Asked once: the GPU does not change, and the unmasked renderer query can stall the frame it runs
+      // in for tens of milliseconds while the driver drains its queue; the report asks every second.
+      const gpuLabel = readGpuLabel(gl.getContext());
       telemetry = installFrameTelemetry({
         game,
         quality: () => quality,
         viewport: () => `${window.innerWidth}x${window.innerHeight}`,
-        gpu: () => readGpuLabel(gl.getContext()),
+        gpu: () => gpuLabel,
         render: () => devtools.render.latest() ?? {
           // Falling back to the live counter is a mid-frame read: it holds the passes drawn so far.
           drawCalls: gl.info.render.calls,

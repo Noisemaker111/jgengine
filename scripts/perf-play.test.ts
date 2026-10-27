@@ -409,3 +409,20 @@ test("whole-frame draws are the p95 of the sampled frames, so a cadenced pass is
   expect(summarizeFrameDraws([Number.NaN, -4, 12])).toMatchObject({ frames: 1, p95: 12 });
 });
 
+
+test("a library function's self time names the engine or game code that called it", () => {
+  const url = (path: string) => `http://127.0.0.1:4517/${path}`;
+  const profile = {
+    nodes: [
+      { id: 1, callFrame: { functionName: "(root)", url: "", lineNumber: 0, columnNumber: 0 }, children: [2, 4] },
+      { id: 2, callFrame: { functionName: "findLamps", url: url("src/postfx/haze.ts"), lineNumber: 9, columnNumber: 2 }, children: [3] },
+      { id: 3, callFrame: { functionName: "traverseVisible", url: url("node_modules/.vite/deps/three.js"), lineNumber: 99, columnNumber: 0 } },
+      { id: 4, callFrame: { functionName: "tick", url: url("src/game/tick.ts"), lineNumber: 0, columnNumber: 0 } },
+    ],
+    samples: [3, 3, 4],
+    timeDeltas: [3_000, 3_000, 1_000],
+  };
+  const self = aggregateSelfTime(profile, 7);
+  expect(self[0]).toMatchObject({ fn: "traverseVisible", via: "findLamps src/postfx/haze.ts:10:3" });
+  expect(self[1]?.via).toBeUndefined();
+});

@@ -10,35 +10,142 @@ const culled = new WeakSet<THREE.Object3D>();
  */
 export function setCulled(node: THREE.Object3D, isCulled: boolean): void {
   if (isCulled) culled.add(node);
-  else culled.delete(node);
+  else {
+    culled.delete(node);
+    // Its parent may have moved while the pass skipped it; rebuild the subtree on its way back.
+    (node as THREE.Object3D & Tracked)[LOCAL] = undefined;
+  }
 }
 
-function updateShownMatrixWorld(node: THREE.Object3D, force: boolean): void {
-  if (node.matrixAutoUpdate) node.updateMatrix();
-  if (node.matrixWorldNeedsUpdate || force) {
-    if (node.matrixWorldAutoUpdate) {
-      if (node.parent === null) node.matrixWorld.copy(node.matrix);
-      else node.matrixWorld.multiplyMatrices(node.parent.matrixWorld, node.matrix);
-      // Three's own SkinnedMesh.updateMatrixWorld does this: an attached skin is posed relative to where
-      // the mesh hangs now. Left stale, a character drawn on its own rig is skinned against where it was
-      // first mounted and floats away from its body as it moves.
-      const skinned = node as THREE.SkinnedMesh;
-      if (skinned.isSkinnedMesh === true && skinned.bindMode === "attached") skinned.bindMatrixInverse.copy(skinned.matrixWorld).invert();
-    }
-    node.matrixWorldNeedsUpdate = false;
-    force = true;
+const LOCAL = Symbol("jg.localTransform");
+
+interface Tracked {
+  [LOCAL]?: Float64Array | undefined;
+}
+
+// A node's snapshot from the pass that last rebuilt it: what its local matrix was made of (position,
+// rotation and scale, or the hand-written matrix of a node that does not compose its own), whether it
+// composed it, its parent's id, and the world matrix the pass wrote.
+const SIGNATURE = 16;
+const MODE = 16;
+const PARENT = 17;
+const WORLD = 18;
+const SNAPSHOT_SIZE = WORLD + 16;
+
+function writeSignature(node: THREE.Object3D, snapshot: Float64Array, composes: boolean): void {
+  if (composes) {
+    const p = node.position;
+    const q = node.quaternion;
+    const s = node.scale;
+    snapshot[0] = p.x;
+    snapshot[1] = p.y;
+    snapshot[2] = p.z;
+    snapshot[3] = q.x;
+    snapshot[4] = q.y;
+    snapshot[5] = q.z;
+    snapshot[6] = q.w;
+    snapshot[7] = s.x;
+    snapshot[8] = s.y;
+    snapshot[9] = s.z;
+  } else {
+    const elements = node.matrix.elements;
+    for (let index = 0; index < SIGNATURE; index += 1) snapshot[index] = elements[index]!;
   }
-  const children = node.children;
-  for (let index = 0; index < children.length; index += 1) {
-    const child = children[index]!;
-    if (!child.visible && culled.has(child)) continue;
-    updateShownMatrixWorld(child, force);
+}
+
+function signatureChanged(node: THREE.Object3D, snapshot: Float64Array, composes: boolean): boolean {
+  if (composes) {
+    const p = node.position;
+    const q = node.quaternion;
+    const s = node.scale;
+    return snapshot[0] !== p.x || snapshot[1] !== p.y || snapshot[2] !== p.z ||
+      snapshot[3] !== q.x || snapshot[4] !== q.y || snapshot[5] !== q.z || snapshot[6] !== q.w ||
+      snapshot[7] !== s.x || snapshot[8] !== s.y || snapshot[9] !== s.z;
+  }
+  const elements = node.matrix.elements;
+  for (let index = 0; index < SIGNATURE; index += 1) if (snapshot[index] !== elements[index]) return true;
+  return false;
+}
+
+/** Whether something other than the pass wrote this world matrix since the pass last did (a pose held for one render, say). */
+function worldChanged(node: THREE.Object3D, snapshot: Float64Array): boolean {
+  const elements = node.matrixWorld.elements;
+  for (let index = 0; index < 16; index += 1) if (snapshot[WORLD + index] !== elements[index]) return true;
+  return false;
+}
+
+/**
+ * One node's step of the pass: recompose and rebuild its world matrix when stale; true when it was
+ * rebuilt, which rebuilds its children too. Stale means its position, rotation, scale (or hand-written
+ * matrix), parent or world matrix changed since the pass last rebuilt it. Most of a scene stands still,
+ * and three recomposed every node every frame and then rebuilt every world matrix under it.
+ * `matrixWorldNeedsUpdate` is no signal for a node that composes its own matrix: three's
+ * `getWorldPosition` and friends set it on every ancestor up to the scene, so one call per frame
+ * anywhere rebuilt the whole tree. The parent is kept by id, so a pooled node does not hold its old
+ * parent alive.
+ */
+function updateShownNode(node: THREE.Object3D, force: boolean): boolean {
+  const tracked = node as THREE.Object3D & Tracked;
+  const composes = node.matrixAutoUpdate;
+  const parent = node.parent === null ? -1 : node.parent.id;
+  let snapshot = tracked[LOCAL];
+  let stale: boolean;
+  if (snapshot === undefined) {
+    snapshot = new Float64Array(SNAPSHOT_SIZE);
+    tracked[LOCAL] = snapshot;
+    stale = true;
+  } else {
+    stale = snapshot[MODE] !== (composes ? 1 : 0) || snapshot[PARENT] !== parent || signatureChanged(node, snapshot, composes) ||
+      (node.matrixWorldAutoUpdate && worldChanged(node, snapshot));
+  }
+  if (!composes && node.matrixWorldNeedsUpdate) stale = true;
+  if (stale) {
+    if (composes) node.updateMatrix();
+    writeSignature(node, snapshot, composes);
+    snapshot[MODE] = composes ? 1 : 0;
+    snapshot[PARENT] = parent;
+  }
+  if (!stale && !force) return false;
+  if (node.matrixWorldAutoUpdate) {
+    if (node.parent === null) node.matrixWorld.copy(node.matrix);
+    else node.matrixWorld.multiplyMatrices(node.parent.matrixWorld, node.matrix);
+    const world = node.matrixWorld.elements;
+    for (let index = 0; index < 16; index += 1) snapshot[WORLD + index] = world[index]!;
+    // Three's own SkinnedMesh.updateMatrixWorld does this: an attached skin is posed relative to where
+    // the mesh hangs now. Left stale, a character drawn on its own rig is skinned against where it was
+    // first mounted and floats away from its body as it moves.
+    const skinned = node as THREE.SkinnedMesh;
+    if (skinned.isSkinnedMesh === true && skinned.bindMode === "attached") skinned.bindMatrixInverse.copy(skinned.matrixWorld).invert();
+  }
+  node.matrixWorldNeedsUpdate = false;
+  return true;
+}
+
+/**
+ * Parents before children, with its own stack: a recursive walk over a scene's mix of node classes
+ * cost several times more than the work it did at each node.
+ */
+function updateShownMatrixWorld(root: THREE.Object3D, force: boolean): void {
+  const nodes: THREE.Object3D[] = [root];
+  const forced: boolean[] = [force];
+  while (nodes.length > 0) {
+    const node = nodes.pop()!;
+    const childForce = updateShownNode(node, forced.pop()!);
+    const children = node.children;
+    for (let index = children.length - 1; index >= 0; index -= 1) {
+      const child = children[index]!;
+      if (!child.visible && culled.has(child)) continue;
+      nodes.push(child);
+      forced.push(childForce);
+    }
   }
 }
 
 /**
  * Three walks and recomposes every node of the scene each frame, culled ones included; this scene's
- * pass skips the subtrees {@link setCulled} hid, so props and actors out of view cost nothing there.
+ * pass skips the subtrees {@link setCulled} hid, so props and actors out of view cost nothing there,
+ * and recomposes only nodes whose position, rotation or scale changed, so a still prop costs a compare.
+ * A matrix written by hand needs `matrixAutoUpdate = false`, as in three.
  * @internal
  */
 export function skipCulledMatrices(scene: THREE.Object3D): void {

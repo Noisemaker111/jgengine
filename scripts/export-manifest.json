@@ -1120,6 +1120,7 @@
     "./visibility/settings",
     "./visibility/simulationCulling",
     "./visibility/visibilitySystem",
+    "./visibility/visitVisible.draw",
     "./water/Ocean.draw",
     "./water/OceanConfig.draw",
     "./water/OceanMaterial.draw",

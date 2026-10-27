@@ -18,6 +18,7 @@ import {
 } from "three";
 
 import { modelLoadIdleMs, modelLoadStarts } from "@jgengine/core/model/modelLoad.draw";
+import { visitVisible } from "@jgengine/core/visibility/visitVisible.draw";
 
 /**
  * Where the load-time shader warmup is: waiting for the scene to stop growing, compiling a
@@ -113,7 +114,7 @@ export function firstUnlinkedDrawable(renderer: Pick<ShaderWarmupRenderer, "prop
   const properties = renderer.properties;
   if (properties === undefined) return null;
   let found: Object3D | null = null;
-  scene.traverseVisible((object) => {
+  visitVisible(scene, (object) => {
     if (found !== null || !isDrawable(object) || !object.layers.test(camera.layers)) return;
     if (linkState(properties, object) !== "linked") found = object;
   });
@@ -157,7 +158,7 @@ export function deferUnlinkedDraws(
     const view = camera as Camera;
     const missing: Drawable[] = [];
     const pending: Drawable[] = [];
-    scene.traverseVisible((object) => {
+    visitVisible(scene, (object) => {
       if (!isDrawable(object) || !object.layers.test(view.layers)) return;
       const state = linkState(renderer.properties, object);
       if (state === "missing") missing.push(object);
@@ -1187,7 +1188,7 @@ export function createShaderWarmup(options: ShaderWarmupOptions): ShaderWarmup {
     const lights: Object3D[] = [];
     const shadowKinds = new Set<"z" | "d">();
     const counts = new Map<string, number>();
-    options.scene.traverseVisible((object) => {
+    visitVisible(options.scene, (object) => {
       const light = object as Object3D & { isLight?: boolean; castShadow?: boolean; isPointLight?: boolean; type: string };
       if (light.isLight !== true || !light.layers.test(options.camera.layers)) return;
       lights.push(light);

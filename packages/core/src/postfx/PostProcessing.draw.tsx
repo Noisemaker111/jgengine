@@ -78,12 +78,31 @@ export function skipGtaoVisibilityWalk(pass: object): boolean {
   return true;
 }
 
+/** The AO and its denoise run at this fraction of the frame on each axis; the blend upsamples them. */
+const AO_RESOLUTION = 0.5;
+
 class OverlayAwareGTAOPass extends GTAOPass {
   private readonly hiddenOverlays: THREE.Object3D[] = [];
 
   constructor(scene: THREE.Scene, camera: THREE.Camera, width?: number, height?: number) {
     super(scene, camera, width, height);
     skipGtaoVisibilityWalk(this);
+    this.setSize(this.width, this.height);
+  }
+
+  /**
+   * Ambient occlusion is soft and gets blurred by its denoise anyway, so it is computed on a quarter of
+   * the pixels: at 1080p that took the AO from about 2-4 ms of GPU to a fraction of it in every game.
+   * The normal/depth buffers stay full size, so edges are still found at full resolution.
+   */
+  override setSize(width: number, height: number): void {
+    super.setSize(width, height);
+    const aoWidth = Math.max(1, Math.round(width * AO_RESOLUTION));
+    const aoHeight = Math.max(1, Math.round(height * AO_RESOLUTION));
+    this.gtaoRenderTarget.setSize(aoWidth, aoHeight);
+    this.pdRenderTarget.setSize(aoWidth, aoHeight);
+    this.gtaoMaterial.uniforms.resolution!.value.set(aoWidth, aoHeight);
+    this.pdMaterial.uniforms.resolution!.value.set(aoWidth, aoHeight);
   }
 
   override render(

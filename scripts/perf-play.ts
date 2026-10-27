@@ -489,13 +489,47 @@ export function aggregateSelfTime(
   top = TOP_SELF,
 ): ProfileEntry[] {
   const byId = new Map<number, ProfileNode>(profile.nodes.map((node) => [node.id, node]));
+  const parent = new Map<number, number>();
+  for (const node of profile.nodes) for (const child of node.children ?? []) parent.set(child, node.id);
   const self = new Map<string, number>();
+  const callers = new Map<string, Map<string, number>>();
   profile.samples.forEach((id, index) => {
-    const key = frameKey(byId.get(id));
-    if (key === null) return;
-    self.set(key, (self.get(key) ?? 0) + (profile.timeDeltas[index] ?? 0));
+    const node = byId.get(id);
+    const key = frameKey(node);
+    if (key === null || node === undefined) return;
+    const us = profile.timeDeltas[index] ?? 0;
+    self.set(key, (self.get(key) ?? 0) + us);
+    if (!isLibraryFrame(node) && !isNativeCall(node)) return;
+    // A three.js, React or browser function is only actionable through the project code that called it.
+    for (let up = parent.get(id); up !== undefined; up = parent.get(up)) {
+      const caller = byId.get(up);
+      // The breakdown's own timing wrappers sit between three and the code that called it; look past them.
+      if (caller === undefined || isLibraryFrame(caller) || caller.callFrame.url.includes("/devtools/frameBreakdown.draw")) continue;
+      const callerKey = frameKey(caller);
+      if (callerKey === null) break;
+      if (caller.callFrame.url === "") continue;
+      const tally = callers.get(key) ?? new Map<string, number>();
+      tally.set(callerKey, (tally.get(callerKey) ?? 0) + us);
+      callers.set(key, tally);
+      break;
+    }
   });
-  return rank(self, windowMs, top);
+  return rank(self, windowMs, top).map((entry) => {
+    const tally = callers.get(entry.at === "" ? entry.fn : `${entry.fn}\t${entry.at}`);
+    if (tally === undefined) return entry;
+    const [best] = [...tally].sort((a, b) => b[1] - a[1]);
+    return { ...entry, via: best![0].replace("\t", " ") };
+  });
+}
+
+/** A browser built-in such as `getParameter` or `readPixels`: named, with no script of its own. */
+function isNativeCall(node: ProfileNode): boolean {
+  return node.callFrame.url === "" && !node.callFrame.functionName.startsWith("(") && node.callFrame.functionName !== "";
+}
+
+/** A frame from a dependency (three.js, React, r3f) rather than the engine or a game. */
+function isLibraryFrame(node: ProfileNode): boolean {
+  return /\/node_modules\/|\/\.vite\/deps\//.test(node.callFrame.url);
 }
 
 /** Inclusive (self + callees) time per function, used by `--profile`. */
@@ -1243,6 +1277,13 @@ export function perfSummaryText(record: PerfRecord, baseline: PerfRecord | null)
     lines.push(`${record.game}: no frame breakdown (the page has no dev telemetry); frame avg ${record.frame.avgMs} ms, p95 ${record.frame.p95Ms} ms`);
   } else {
     lines.push(renderBreakdownText(record.breakdown, record.game));
+  }
+  const functions = record.profile?.top ?? [];
+  if (functions.length > 0) {
+    lines.push("top functions by self time (via the engine or game code that called them):");
+    for (const entry of functions.slice(0, 8)) {
+      lines.push(`  ${entry.selfPct.toFixed(1).padStart(5)}%  ${entry.fn}  ${entry.at}${entry.via === undefined ? "" : `  via ${entry.via}`}`);
+    }
   }
   lines.push(`run: ${conditions}`);
   const before = baseline?.breakdown;

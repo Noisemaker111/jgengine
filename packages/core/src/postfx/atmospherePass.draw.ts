@@ -4,6 +4,7 @@ import { FullScreenQuad, Pass } from "three-stdlib";
 import type { AtmosphereConfig } from "@jgengine/core/render/postProcessing";
 
 import { findKeyLight, towardLight } from "./contactShadowPass.draw";
+import { visitVisible } from "@jgengine/core/visibility/visitVisible.draw";
 
 const vertexShader = /* glsl */ `
   varying vec2 vUv;
@@ -161,7 +162,7 @@ export type HazeLamp = THREE.PointLight | THREE.SpotLight;
 /** Every visible point or spot light in `scene` that may glow in the haze. @internal */
 export function findHazeLamps(scene: THREE.Object3D): HazeLamp[] {
   const lamps: HazeLamp[] = [];
-  scene.traverseVisible((object) => {
+  visitVisible(scene, (object) => {
     const light = object as HazeLamp;
     if (!(light as THREE.PointLight).isPointLight && !(light as THREE.SpotLight).isSpotLight) return;
     if (light.userData?.["haze"] === false) return;
