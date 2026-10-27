@@ -1,7 +1,7 @@
 import { describe, expect, test } from "bun:test";
 import { join } from "node:path";
 
-import { driveProjectDir, flowSourceFrom, flowsDirOf, listFlowNames, missingFlowsMessage } from "./driveFlows";
+import { driveProjectDir, flowFileOf, flowsDirOf, listFlowNames, missingFlowsMessage } from "./driveFlows";
 
 /** A checkout that only has the paths the test names, so the lookup is read without touching disk. */
 function checkout(paths: string[]) {
@@ -44,32 +44,25 @@ describe("flows of a game that has none", () => {
     expect(listFlowNames(dir, tree.readdir)).toEqual([]);
     expect(missingFlowsMessage(dir)).toContain("no flows at");
     expect(missingFlowsMessage(dir)).toContain(join("proofs", "flows"));
-    expect(missingFlowsMessage(dir)).toContain("arrival it asserts");
+    expect(missingFlowsMessage(dir)).toContain("arrival it expects");
   });
 
   test("asking for a named flow fails with the folder and the repair, never an empty run", () => {
     const tree = checkout([]);
     const dir = flowsDirOf("/wt/newgame");
-    const read = (path: string) => {
-      throw new Error("ENOENT: " + path);
-    };
-    const flow = flowSourceFrom(dir, read, () => listFlowNames(dir, tree.readdir));
-    expect(() => flow("to-skirmish")).toThrow("no flow named \"to-skirmish\"");
-    expect(() => flow("to-skirmish")).toThrow("no flows at");
-    expect(() => flow("to-skirmish")).toThrow(join("proofs", "flows"));
+    const find = () => flowFileOf(dir, "to-skirmish", tree.exists, () => listFlowNames(dir, tree.readdir));
+    expect(find).toThrow("no flow named \"to-skirmish\"");
+    expect(find).toThrow("no flows at");
+    expect(find).toThrow(join("proofs", "flows"));
   });
 
-  test("a folder with flows lists them, and a missing name names the ones that exist", () => {
+  test("a folder with flows lists them, finds one by name, and a missing name names the ones that exist", () => {
     const dir = flowsDirOf("/wt/game");
-    const tree = checkout([dir + "/to-menu.json", dir + "/to-skirmish.json"]);
-    expect(listFlowNames(dir, tree.readdir)).toEqual(["to-menu", "to-skirmish"]);
-    const read = (path: string) => {
-      if (path.endsWith("to-menu.json")) return JSON.stringify({ steps: [{ assert: "menu.ready" }] });
-      throw new Error("ENOENT: " + path);
-    };
-    const flow = flowSourceFrom(dir, read, () => listFlowNames(dir, tree.readdir));
-    expect(flow("to-menu")?.json).toEqual({ steps: [{ assert: "menu.ready" }] });
-    expect(() => flow("to-level-1")).toThrow("available: to-menu, to-skirmish");
+    const tree = checkout([dir + "/to-menu.flow.ts", dir + "/to-skirmish.flow.ts", dir + "/notes.md"]);
+    const names = () => listFlowNames(dir, tree.readdir);
+    expect(names()).toEqual(["to-menu", "to-skirmish"]);
+    expect(flowFileOf(dir, "to-menu", tree.exists, names).replace(/\\/g, "/")).toBe(dir.replace(/\\/g, "/") + "/to-menu.flow.ts");
+    expect(() => flowFileOf(dir, "to-level-1", tree.exists, names)).toThrow("available: to-menu, to-skirmish");
+    expect(() => flowFileOf(dir, "to-menu.flow.ts", tree.exists, names)).toThrow("--flow takes a bare name");
   });
 });
-

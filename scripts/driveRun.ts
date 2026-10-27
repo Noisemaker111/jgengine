@@ -1,18 +1,10 @@
 /**
- * The step loop `bun run drive` runs: one line per step as it happens, a JSONL row beside it when
- * asked, and a summary of passed/failed/wall/virtual time. The first failure stops the run, so a
- * wrong state never costs the screenshots after it.
+ * The step loop `bun run drive` runs for its step flags: quiet while steps pass, a JSONL row per step
+ * when asked, and on a failure every step before it, the failing one and the totals. The first
+ * failure stops the run, so a wrong state never costs the screenshots after it.
  */
 import { describeStep, type CaptureStep } from "../packages/jgengine/src/templates/captureArgs";
-import { conditionMatches } from "../packages/jgengine/src/templates/driveSteps";
 import { withStepDeadline } from "./hangReport";
-
-/** An assert mismatch: the step line prints the actual value, and the message names the contract. */
-export class AssertionMismatch extends Error {
-  constructor(readonly actual: unknown, message: string) {
-    super(message);
-  }
-}
 
 /** One step's outcome, the same shape `--log` writes as a JSONL line. */
 export interface DriveStepRecord {
@@ -53,18 +45,16 @@ export interface DriveStepSummary {
   virtualMs: number;
 }
 
-const FAIL = "FAIL";
-
 /**
- * Run steps in order and stop at the first failure, logging every step either way. The summary
- * prints from a `finally`, so a failing run still reports what it got through.
+ * Run steps in order and stop at the first failure. A passing run prints one line; a failing run
+ * prints each step it got through, the failure and the totals, from a `finally`.
  */
 export async function runDriveSteps(steps: readonly CaptureStep[], deps: DriveStepRunnerDeps): Promise<DriveStepSummary> {
   let passed = 0;
   let failed = 0;
   const wallStart = deps.now();
   const virtualStart = deps.virtualNow?.() ?? 0;
-  let summary: DriveStepSummary | undefined;
+  const done: string[] = [];
   try {
     for (const [index, step] of steps.entries()) {
       const startedAt = deps.now();
@@ -78,58 +68,28 @@ export async function runDriveSteps(steps: readonly CaptureStep[], deps: DriveSt
         const detailText = error instanceof Error ? error.message : String(error);
         failed += 1;
         deps.record?.({ index: index + 1, name, kind: step.kind, ms, pass: false, detail: detailText });
-        deps.line(
-          "#" + (index + 1) + " " + name + " FAIL" +
-            (error instanceof AssertionMismatch ? " actual=" + JSON.stringify(error.actual ?? null) : "") + " " + ms + "ms" +
-            (error instanceof AssertionMismatch ? "" : " — " + detailText),
-        );
+        done.push("#" + (index + 1) + " " + name + " FAIL " + ms + "ms — " + detailText);
         throw error;
       }
       const ms = Math.round(deps.now() - startedAt);
       passed += 1;
       deps.record?.({ index: index + 1, name, kind: step.kind, ms, pass: true, detail });
-      deps.line("#" + (index + 1) + " " + name + " ok" + (detail === "" ? "" : " " + detail) + " total " + ms + "ms");
+      done.push("#" + (index + 1) + " " + name + " ok" + (detail === "" ? "" : " " + detail) + " " + ms + "ms");
     }
   } finally {
-    summary = {
-      passed,
-      failed,
-      wallMs: Math.round(deps.now() - wallStart),
-      virtualMs: deps.virtualNow === undefined ? 0 : Math.round(deps.virtualNow() - virtualStart),
-    };
-    deps.line("drive: step summary");
-    deps.line("  passed   " + summary.passed);
-    deps.line("  failed   " + summary.failed);
-    deps.line("  wall     " + summary.wallMs + "ms");
-    deps.line("  virtual  " + summary.virtualMs + "ms");
-    deps.line("  tier     " + (deps.tier ?? "n/a"));
+    const wallMs = Math.round(deps.now() - wallStart);
+    const virtualMs = deps.virtualNow === undefined ? 0 : Math.round(deps.virtualNow() - virtualStart);
+    const totals = wallMs + "ms" + (virtualMs > 0 ? ", " + virtualMs + "ms virtual" : "") + ", tier " + (deps.tier ?? "n/a");
+    if (failed === 0) deps.line("drive: " + passed + " step(s) passed in " + totals);
+    else {
+      for (const line of done) deps.line(line);
+      deps.line("drive: FAILED at step " + (passed + 1) + " of " + steps.length + " after " + totals);
+    }
   }
-  return summary;
-}
-
-/** An assert step, narrowed: the page expression, the value that must match and why. */
-export type DriveAssertStep = Extract<CaptureStep, { kind: "assert" }>;
-
-/**
- * Evaluate an assert once and, when it is not the expected value, fail with the actual one. No
- * polling: a contract that is false right now is a failure, not something to wait out.
- */
-export async function evaluateAssertStep(
-  session: { evaluate(expression: string, options?: { awaitPromise?: boolean }): Promise<unknown> },
-  step: DriveAssertStep,
-): Promise<unknown> {
-  let actual: unknown;
-  try {
-    actual = await session.evaluate("(async () => (" + step.expression + "))()", { awaitPromise: true });
-  } catch (error) {
-    throw new Error("assert " + JSON.stringify(step.expression) + " threw " + (error instanceof Error ? error.message : String(error)));
-  }
-  if (!conditionMatches(actual, step.expected)) {
-    throw new AssertionMismatch(
-      actual,
-      "assert " + JSON.stringify(step.expression) + " is " + JSON.stringify(step.expected) + ", actual " + JSON.stringify(actual ?? null) +
-        (step.note === undefined ? "" : " — " + step.note),
-    );
-  }
-  return actual;
+  return {
+    passed,
+    failed,
+    wallMs: Math.round(deps.now() - wallStart),
+    virtualMs: deps.virtualNow === undefined ? 0 : Math.round(deps.virtualNow() - virtualStart),
+  };
 }

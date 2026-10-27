@@ -65,14 +65,26 @@ Every game's README states the same six-section design checklist (core loop, pro
 states, minute 5 → hour 5, references, gap to target) and ends it with one `Loop proof:` line naming
 the flow that proves the stated loop. A game with a `PLAN.md` (`bun run jgengine plan`) states its gap
 to target there, in the generated `## Gaps` section, instead of in the README. `bun run check games-design` (also run by CI) fails a game that
-is missing a section, names a flow whose `<game>/proofs/flows/<name>.json` is absent or does not
-parse, or ships a flow with no arrival assert. A name marked `TODO` is a promised flow nobody has
+is missing a section, names a flow whose `<game>/proofs/flows/<name>.flow.ts` is absent or does not
+export `defineFlow(...)`, or ships a flow that checks no arrival. Each game's typecheck covers
+`proofs/`, so a mistyped key or probe field in a flow is a compile error. A name marked `TODO` is a promised flow nobody has
 written: it is reported, and `--strict` fails it.
 
-A flow runs headless from the repository root:
+A flow is TypeScript against the game's own probe; it names the capture state it boots, and runs
+headless (game time, no browser) unless it sets `browser: true` or the run passes `--browser`:
+
+```ts
+export default defineFlow(game, {
+  state: "journey",
+  async run(f) {
+    await f.hold(["KeyW", "Space"], { until: (p) => p.glided > 0.3 });
+    await f.expect((p) => p.found >= 2, "arrival: two places on the map");
+  },
+});
+```
 
 ```sh
-bun run drive harbor-heat --state chase --flow to-chase     # add --state when the flow needs a staged entry
+bun run drive the-sunken-crown --flow the-sunken-crown-clip    # quiet: one line unless a step fails
 ```
 
 `bun run shoot --prove harbor-heat --view boulevard --view downtown --sizes 1600x900,1024x640 --flow to-chase --state chase`

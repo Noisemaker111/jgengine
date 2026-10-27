@@ -565,10 +565,47 @@
 - `StartScreen` (function): function StartScreen({ open = true, className, style, children, settings, settingsPlacement = "top-right", settingsClassName, settingsWrapperClassName, }: { open?: boolean; className?: string; style?: CSSProperties; children?: ReactNode; settings?: boolean | ReactNode; settingsPlacement?: StartScree… — Composable title/attract-screen scaffold: a full-bleed `data-jg-menu` overlay that positions and centers the game's own content, with an opt-in settings corner. It imposes no look — the game supplies the title, art, and buttons as children and styles the container through `className`/`style` (per the composable-chrome rule: a placement hook, not a mandated menu).
 - `StartScreenCorner` (type): type StartScreenCorner = "top-left" | "top-right" | "bottom-left" | "bottom-right" — Which corner of a `StartScreen` the opt-in settings slot is pinned to.
 
+## @jgengine/core/play/flow
+
+- `BrowserFlow` (interface): interface BrowserFlow<TProbe extends ProbeReadings> extends Flow<TProbe> — A browser-only flow: everything a {@link Flow} does, plus the page itself.
+- `BrowserFlowSpec` (interface): interface BrowserFlowSpec<TProbe extends ProbeReadings> extends FlowSpecBase — A flow that needs the page: menus, DOM text, clicks.
+- `BrowserProofFlow` (interface): interface BrowserProofFlow<TProbe extends ProbeReadings = ProbeReadings> — A defined flow that only the browser runner can play.
+- `FLOW_PRESS_MS` (const): const FLOW_PRESS_MS: 120 — How long {@link Flow.press} holds its keys.
+- `FLOW_WAIT_MS` (const): const FLOW_WAIT_MS: 15000 — Default wait cap for a flow step, in milliseconds.
+- `Flow` (interface): interface Flow<TProbe extends ProbeReadings> — What a flow can do in both runners: hold keys, turn the camera, teleport, run commands, wait on the game's probe. Each call is one step; a failing step stops the flow and names itself.
+- `FlowCommandResult` (type): type FlowCommandResult = { status: "applied" } | { status: "rejected"; reason: string; message?: string } — The result a game command gave.
+- `FlowHold` (type): type FlowHold<TProbe extends ProbeReadings> = | { ms: number; until?: never; timeoutMs?: never } /** Hold until the check passes (`ms` is then the minimum), failing at `timeoutMs` (default 15 000). */ | { until: ProbeCheck<TProbe>; ms?: number; timeoutMs?: number } — How long {@link Flow.hold} keeps the keys down.
+- `FlowKey` (type): type FlowKey = | `Key${Letter}` | `Digit${Digit}` | `Numpad${Digit}` | FunctionKey | "Space" | "Enter" | "Escape" | "Tab" | "Backspace" | "Delete" | "Insert" | "Home" | "End" | "PageUp" | "PageDown" | "ArrowUp" | "ArrowDown" | "ArrowLeft" | "ArrowRight" | "ShiftLeft" | "ShiftRight" | "ControlLeft" |… — A key or mouse button a flow can hold, by its `KeyboardEvent.code` (`KeyW`, `Digit1`, `ShiftLeft`) or `mouse0`/`mouse1`/`mouse2`. A typo is a compile error, not a key the game never sees.
+- `FlowKeys` (type): type FlowKeys = FlowKey | readonly [FlowKey, ...FlowKey[]] — One key, or several held together as a chord (`["ShiftLeft", "KeyW"]`, pressed in that order).
+- `FlowWaitOptions` (interface): interface FlowWaitOptions — How long a wait may take before the flow fails at that step.
+- `HeadlessFlowSpec` (interface): interface HeadlessFlowSpec<TProbe extends ProbeReadings> extends FlowSpecBase — A flow both runners can play; headless (the default, fast) unless asked for the browser.
+- `HeadlessProofFlow` (interface): interface HeadlessProofFlow<TProbe extends ProbeReadings = ProbeReadings> — A defined flow that both runners can play.
+- `ProbeCheck` (type): type ProbeCheck<TProbe extends ProbeReadings> = (probe: TProbe) => boolean — A question about the game's own `capture.probe` readings, typed from the game's probe.
+- `ProofFlow` (type): type ProofFlow<TProbe extends ProbeReadings = ProbeReadings> = HeadlessProofFlow<TProbe> | BrowserProofFlow<TProbe> — A defined flow, as `<game>/proofs/flows/<name>.flow.ts` exports it by default.
+- `defineFlow` (function): function defineFlow<TProbe extends ProbeReadings>(game: HeadlessPlayable<TProbe>, spec: HeadlessFlowSpec<TProbe>): HeadlessProofFlow<TProbe> — Define a proof flow: the route a proof needs, written as code against the game's own typed probe. `bun run drive <game> --flow <name>` plays it headless by default (no browser, game time, seconds), or in the browser with `browser: true` or `--browser`. Compose flows by calling another's `run`.
+
+## @jgengine/core/play/flowSteps
+
+- `FlowFailure` (interface): interface FlowFailure — The step a flow failed at and why, with the probe readings at that moment when the game has a probe.
+- `FlowRunReport` (type): type FlowRunReport = (FlowRunBase & { ok: true }) | (FlowRunBase & { ok: false; failure: FlowFailure }) — What a flow run produced: quiet on a pass, every step and the failing one on a failure.
+- `FlowStepRecord` (interface): interface FlowStepRecord — One step a flow ran, for the failure report.
+- `FlowStepper` (interface): interface FlowStepper — Numbers and names each step a flow driver runs, so a failure says which step, what it expected and what the probe read, while a passing run prints nothing.
+
+## @jgengine/core/play/headlessFlow.draw
+
+- `HeadlessFlowOptions` (interface): interface HeadlessFlowOptions — Options for {@link runFlowHeadless}.
+- `runFlowHeadless` (function): function runFlowHeadless<TProbe extends ProbeReadings>(flow: HeadlessProofFlow<TProbe>, options: HeadlessFlowOptions = {}): Promise<FlowRunReport> — Play a proof flow headless: the real game through {@link createPlaySession}, keys mapped to the game's own bindings, every wait in game time, so a flow that takes a minute in the browser takes seconds here. Screenshots are skipped. A failing step stops the run and the report names it with the probe readings.
+
 ## @jgengine/core/play/playRunner.draw
 
 - `PlayRunOptions` (interface): interface PlayRunOptions — Options for one scripted play run.
 - `runPlayScript` (function): function runPlayScript(playable: PlayableGame, spec: PlayScript | PlayScriptSpec, options: PlayRunOptions = {}): PlayRunResult — Play a real game without a browser: boot its `PlayableGame` through the headless runner, apply a tick-based {@link PlayScript}, and return what happened plus whether the script's assertions held.
+
+## @jgengine/core/play/playSession.draw
+
+- `PlaySession` (interface): interface PlaySession — A live headless play of one game, ticked by its caller.
+- `PlaySessionOptions` (interface): interface PlaySessionOptions — Options for {@link createPlaySession}.
+- `createPlaySession` (function): function createPlaySession(playable: HeadlessPlayable, options: PlaySessionOptions = {}): PlaySession — Boot a `PlayableGame` through the headless runner and tick it the way the shell does: movement from held actions, then the per-frame action phase (bound commands, prompts, hotbar). The aim a command receives is the walk heading, so a `ctx.camera.turnTo` from the game or the caller steers both.
 
 ## @jgengine/core/play/script
 

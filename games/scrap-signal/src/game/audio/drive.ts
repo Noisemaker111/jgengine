@@ -43,7 +43,7 @@ const stateOf = perContext(() => ({
  * Capture probe counters. Sound is the one change a screenshot cannot carry, so the drive proves it
  * by reading these back over the agent bridge: non-zero means the real browser runtime fired cues.
  */
-export function audioProbe(ctx: GameContext): Record<string, number> {
+export function audioProbe(ctx: GameContext) {
   const state = stateOf(ctx);
   const position = ctx.scene.entity.get(ctx.player.userId)?.position ?? [0, 0, 0];
   return {

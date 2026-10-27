@@ -1,12 +1,8 @@
 // @skill jgengine-ui
 import type { GameContext } from "@jgengine/core/runtime/gameContext";
-import { createHeadlessRunner, type HeadlessRunner } from "@jgengine/core/runtime/headlessRunner";
-import { resolveActivePrompt } from "@jgengine/core/interaction/proximityPrompt";
-import type { Aim } from "@jgengine/core/scene/spatial";
-
-import { dispatchBoundAction, RESERVED_INPUT_ACTIONS, shouldFireBoundAction } from "../input/boundActionDispatch";
-import { executeHotbarSlot, findHotbarSlotActions, hotbarIdFor } from "../input/hotbarActions";
 import type { PlayableGame } from "@jgengine/shell/registry";
+
+import { createPlaySession } from "./playSession.draw";
 import {
   createPlayScript,
   PLAY_MOVE_ACTIONS,
@@ -118,20 +114,25 @@ export function runPlayScript(
   options: PlayRunOptions = {},
 ): PlayRunResult {
   const script: PlayScript = createPlayScript(spec);
-  const definition = playable.game;
   const dt = options.dt ?? script.dt;
   const maxEvents = options.maxEvents ?? 1000;
-
-  let clockMs = 0;
-  const runner: HeadlessRunner = createHeadlessRunner({
-    game: playable,
-    player: { userId: options.userId ?? "player", isNew: true },
+  const session = createPlaySession(playable, {
+    userId: options.userId ?? "player",
     seed: script.seed,
-    now: () => clockMs,
-    maxStepSeconds: dt,
+    dt,
+    onCommand: ({ label, result }) =>
+      record({
+        tick: runner.tick(),
+        kind: "command",
+        label,
+        values: {
+          status: result.status,
+          ...(result.status === "rejected" && "reason" in result && result.reason !== undefined ? { reason: String(result.reason) } : {}),
+        },
+      }),
   });
-  const ctx = runner.ctx;
-  const playerId = options.userId ?? "player";
+  const runner = session.runner;
+  const ctx = session.ctx;
 
   const timeline: PlayTimelineEntry[] = [];
   let eventRows = 0;
@@ -156,22 +157,6 @@ export function runPlayScript(
     });
   }
 
-  /** Run a command and record its verdict once, at the tick it ran. */
-  const runCommand = (name: string, input?: unknown, label = `command ${name}`): void => {
-    const result = ctx.game.commands.run(name, input);
-    record({
-      tick: runner.tick(),
-      kind: "command",
-      label,
-      values: {
-        status: result.status,
-        ...(result.status === "rejected" && "reason" in result && result.reason !== undefined ? { reason: String(result.reason) } : {}),
-      },
-    });
-  };
-
-  let yaw = 0;
-  let pitch = 0;
   const heldWindows: HeldWindow[] = [];
 
   const stepHolds = (step: PlayStep): string | null => {
@@ -210,46 +195,6 @@ export function runPlayScript(
   for (const expectation of script.expect) {
     if (expectation.at === 0) results.push(sample(expectation, 0));
   }
-  const repeatFiredAt = new Map<string, number>();
-  const gameActions = Object.keys(definition.input ?? {});
-  const slotActions = findHotbarSlotActions(definition.input);
-  const hotbarId = hotbarIdFor(playable);
-  const sink = { run: (name: string, input: unknown) => runCommand(name, input, `action ${name}`) };
-  const commandAim = (): Aim => ({ yaw, pitch });
-
-  /** The shell's per-frame action phase: bound commands, prompts, hotbar — run after the tick it belongs to. */
-  const dispatchActions = (): void => {
-    const isDown = (action: string): boolean => ctx.input.isDown(action);
-    const wasPressed = (action: string): boolean => ctx.input.justPressed(action);
-    const tracker = { isDown, wasPressed };
-    for (const action of gameActions) {
-      if (action === "interact") {
-        if (!wasPressed(action)) continue;
-        const prompts = playable.prompts?.(ctx) ?? [];
-        const focus = ctx.scene.entity.get(playerId);
-        if (prompts.length === 0 || focus === null) continue;
-        const active = resolveActivePrompt({ x: focus.position[0], z: focus.position[2] }, prompts);
-        if (active?.prompt.invoke != null) runCommand(active.prompt.invoke.name, active.prompt.invoke.input, `prompt ${active.id}`);
-        continue;
-      }
-      if (!shouldFireBoundAction(tracker, action, definition.input, repeatFiredAt, clockMs)) continue;
-      repeatFiredAt.set(action, clockMs);
-      dispatchBoundAction(ctx, action, yaw, pitch, commandAim(), RESERVED_INPUT_ACTIONS, sink, !wasPressed(action));
-    }
-    if (hotbarId !== null) {
-      for (const { action, slot } of slotActions) {
-        if (!wasPressed(action)) continue;
-        executeHotbarSlot(ctx, playerId, hotbarId, slot, yaw, pitch);
-      }
-      if (wasPressed("useAbility")) {
-        const slots = ctx.player.inventory.state(hotbarId).slots;
-        const preferred = playable.hotbarSelection?.() ?? -1;
-        const slot = preferred >= 0 && slots[preferred] != null ? preferred : slots.findIndex((stack) => stack != null);
-        if (slot >= 0) executeHotbarSlot(ctx, playerId, hotbarId, slot, yaw, pitch);
-      }
-    }
-  };
-
   const stepsByTick = new Map<number, PlayStep[]>();
   for (const step of script.steps) {
     const bucket = stepsByTick.get(step.tick) ?? [];
@@ -260,18 +205,12 @@ export function runPlayScript(
   for (let tick = 0; tick < script.totalTicks; tick += 1) {
     for (const step of stepsByTick.get(tick) ?? []) {
       record({ tick, kind: "step", label: stepLabel(step), values: { action: step.action, ticks: step.ticks ?? 1 } });
-      if (step.action === "command") runCommand(step.name, step.input);
-      if (step.action === "aim") {
-        yaw = step.yaw;
-        if (step.pitch !== undefined) pitch = step.pitch;
-        runner.aim({ heading: yaw, pitch });
-      }
+      if (step.action === "command") session.command(step.name, step.input);
+      if (step.action === "aim") runner.aim({ heading: step.yaw, ...(step.pitch === undefined ? {} : { pitch: step.pitch }) });
     }
 
     const held = heldWindows.filter((window) => tick >= window.from && tick < window.to).map((window) => window.action);
-    clockMs = Math.round((tick + 1) * dt * 1000 * 1000) / 1000;
-    runner.step(dt, { held, pointer: null });
-    dispatchActions();
+    session.tick(held);
     script.onTick?.(ctx, runner.tick());
     options.onTick?.(runner.tick(), ctx);
 

@@ -60,7 +60,7 @@ Numbers are what the build does now.
   respec makes a second build worth trying, but the world itself still ends at Cores Blight (level 24),
   the ladder has one arena (the Rustflat wreck), and there is no set gear or leaderboard to chase.
 
-Loop proof: to-overdrive, to-front (run with `--state overdrive` for the console with seven tiers cleared, then the console's own start button opens tier VIII and the run card goes live; `--state boss` for the front's last wave with the Foreman on the field, where the flow turns the crosshair off and back with `look` and asserts his health dropped)
+Loop proof: to-overdrive, to-front (each flow boots its own state: `overdrive` is the console with seven tiers cleared, then the console's own start button opens tier VIII and the run card goes live; `boss` is the front's last wave with the Foreman on the field, where the flow turns a quarter off him and back onto his heading and asserts his health dropped)
 
 The whole-world save restores character, talents, quests, inventory and economy; `src/game/saveCompatibility.ts`
 handles the legacy identifiers. Run `bun run check-types` and `bun run test` here after changes.

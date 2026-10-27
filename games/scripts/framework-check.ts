@@ -124,11 +124,11 @@ const SHARED_RUN_LOOP = /from\s+"@jgengine\/core\/run\/sessionLoop"/;
 const ADOPTS_DAMAGE_MODEL = /from\s+"@jgengine\/core\/combat\/(?:damage\/(?:damageTable|damageRuntime|damageResolution|resistance|landDamage)|statusRuntime|statusApplication)"/;
 const DAMAGE_TABLE_CONST = /\b(?:const|let|var)\s+\w*(?:Damage|DAMAGE|Status|STATUS)_?(?:Table|TABLE|Matrix|MATRIX|Chart|CHART)\b/;
 
-/** A file the runner can execute. Anything else - a JSON flow, a note, an asset - is never an engine. */
+/** A file the runner can execute. Anything else - a note, a scene doc, an asset - is never an engine. */
 const CODE_FILE = /\.[cm]?[jt]sx?$/;
 
-/** Tests describe systems; they do not own them. */
-const TEST_FILE = /\.(?:test|spec)\.[cm]?[jt]sx?$/;
+/** Tests and proof flows describe systems; they do not own them. */
+const TEST_FILE = /\.(?:test|spec|flow)\.[cm]?[jt]sx?$/;
 
 /** The in-file exemption, with a reason: `// framework-ok: authored campaign flow, no second adopter`. */
 const FRAMEWORK_OK = /^[ \t]*\/\/[ \t]*framework-ok:[ \t]*\S/;

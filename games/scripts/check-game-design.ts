@@ -8,12 +8,12 @@
  *     minute 5 -> hour 5, references, gap to target - a `PLAN.md` with its `## Gaps` section
  *     answers the last one);
  *   - has no `Loop proof:` line, or names no flow;
- *   - names a flow whose file is not at `<game>/proofs/flows/<name>.json`, or that the engine's
- *     drive refuses, or that asserts nothing.
+ *   - names a flow whose file is not at `<game>/proofs/flows/<name>.flow.ts`, that does not export
+ *     `defineFlow(...)` by default, or that expects nothing.
  *
- * Whether a flow parses is the engine's answer, not this file's: each one goes through `drive`'s own
- * `parseStepFile` (`jgengine/templates/captureArgs`) with this game's flow folder, so its step kinds,
- * fields, includes, depth and cycles are refused here exactly when `drive` would refuse them.
+ * Whether a flow is well formed is the compiler's answer, not this file's: a flow is TypeScript
+ * against the game's own typed probe, and the game's typecheck covers `proofs/`. This gate only
+ * checks that the README's proof exists and checks an arrival rather than just pressing keys.
  *
  * A name prefixed `TODO` is a flow the README promises and nobody has written. It is reported as a
  * TODO line rather than a failure, so the four games still to be covered can be cut as their own
@@ -25,7 +25,6 @@ import { existsSync, readdirSync, readFileSync } from "node:fs";
 import { join } from "node:path";
 
 import { PLAN_FILE, PLAN_GAPS_HEADING } from "../../packages/jgengine/src/plan/plan";
-import { parseStepFile, type FlowFile } from "../../packages/jgengine/src/templates/captureArgs";
 
 import { gameDirs } from "./capabilities";
 
@@ -90,7 +89,7 @@ export interface GameInspection {
   problems: string[];
   /** Flows the README names but nobody has written. */
   todos: string[];
-  /** Flows the README names that exist and parse. */
+  /** Flows the README names that exist and expect an arrival. */
   proven: string[];
 }
 
@@ -109,43 +108,27 @@ export const realIo: Io = {
   exists: (path) => existsSync(path),
   listFlows: (dir) => {
     try {
-      return readdirSync(dir).map((name) => name.replace(/\.json$/, ""));
+      return readdirSync(dir).filter((name) => name.endsWith(FLOW_EXTENSION)).map((name) => name.slice(0, -FLOW_EXTENSION.length));
     } catch {
       return [];
     }
   },
 };
 
-/** The engine's step-file parser, or a stand-in a test hands over to prove this gate follows it. */
-export type ParseSteps = typeof parseStepFile;
+/** A TypeScript proof flow's file extension. */
+export const FLOW_EXTENSION = ".flow.ts";
 
-/**
- * Parse one named flow the way `drive` does, includes and all, and count the asserts it runs. A flow
- * the parser refuses comes back as one problem carrying the engine's own message.
- */
-export function checkFlow(game: string, flowName: string, flowsDir: string, io: Io = realIo, parse: ParseSteps = parseStepFile): { problems: string[]; asserts: number } {
-  const read = (name: string): FlowFile | undefined => {
-    const file = `${flowsDir}/${name}.json`;
-    const source = `${game}/proofs/flows/${name}.json`;
-    if (!io.exists(file)) {
-      const available = io.listFlows(flowsDir).sort();
-      throw new Error(`no flow named "${name}": ${source} does not exist${available.length === 0 ? "" : ` (available: ${available.join(", ")})`}`);
-    }
-    try {
-      return { json: JSON.parse(io.read(file)) as unknown, source };
-    } catch (error) {
-      throw new Error(`${source} is not valid JSON (${error instanceof Error ? error.message : String(error)})`);
-    }
-  };
-  try {
-    const root = read(flowName)!;
-    const steps = parse(root.json, root.source, { flows: read });
-    return { problems: [], asserts: steps.filter((step) => step.kind === "assert").length };
-  } catch (error) {
-    const message = error instanceof Error ? error.message : String(error);
-    const located = message.startsWith(`${game}/`) ? message : `${game}/proofs/flows/${flowName}.json ${message}`;
-    return { problems: [`${game} Loop proof "${flowName}": ${located}`], asserts: 0 };
+/** The flow calls that check an arrival: a probe or page expectation, a wait on one, or a hold until one passes. */
+const ARRIVAL = /\.(?:expect|waitFor|expectPage|waitForPage|see)\(|\buntil\s*:/g;
+
+/** Read one named flow and count the arrival checks it makes. */
+export function checkFlow(game: string, flowName: string, flowsDir: string, io: Io = realIo): { problems: string[]; asserts: number } {
+  const source = `${game}/proofs/flows/${flowName}${FLOW_EXTENSION}`;
+  const text = io.read(`${flowsDir}/${flowName}${FLOW_EXTENSION}`);
+  if (!/export\s+default\s+defineFlow\(/.test(text)) {
+    return { problems: [`${game} Loop proof "${flowName}": ${source} must export default defineFlow(game, { run })`], asserts: 0 };
   }
+  return { problems: [], asserts: text.match(ARRIVAL)?.length ?? 0 };
 }
 
 /**
@@ -187,13 +170,13 @@ export function inspectGame(root: string, game: string, io: Io = realIo): GameIn
       todos.push(entry.name);
       continue;
     }
-    const file = join(flowsDir, `${entry.name}.json`);
+    const file = join(flowsDir, `${entry.name}${FLOW_EXTENSION}`);
     if (!io.exists(file)) {
       const available = io.listFlows(flowsDir);
       problems.push(
-        `${game} Loop proof names "${entry.name}", but ${game}/proofs/flows/${entry.name}.json does not exist` +
+        `${game} Loop proof names "${entry.name}", but ${game}/proofs/flows/${entry.name}${FLOW_EXTENSION} does not exist` +
           (available.length === 0
-            ? " (the game has no flows; write one that reaches the loop and asserts the arrival)"
+            ? " (the game has no flows; write one that reaches the loop and expects the arrival)"
             : ` (available: ${available.sort().join(", ")})`),
       );
       continue;
@@ -202,7 +185,7 @@ export function inspectGame(root: string, game: string, io: Io = realIo): GameIn
     problems.push(...tree.problems);
     if (tree.problems.length === 0) {
       if (tree.asserts === 0) {
-        problems.push(`${game} Loop proof "${entry.name}" runs steps but asserts nothing; a flow without an arrival assert is not a proof`);
+        problems.push(`${game} Loop proof "${entry.name}" runs steps but expects nothing; a flow that never checks an arrival (expect, waitFor, hold until) is not a proof`);
       } else {
         proven.push(entry.name);
       }
@@ -231,7 +214,7 @@ export function checkGames(root: string, games: string[], io: Io = realIo, stric
     }
     for (const name of result.todos) {
       todos += 1;
-      const message = `${game} Loop proof names "${name}" as TODO: no ${game}/proofs/flows/${name}.json yet`;
+      const message = `${game} Loop proof names "${name}" as TODO: no ${game}/proofs/flows/${name}${FLOW_EXTENSION} yet`;
       if (strict) {
         failures += 1;
         lines.push(`game-design: FAIL - ${message}`);
@@ -263,4 +246,6 @@ export function runCli(argv: string[], root: string, log: (line: string) => void
   return result.failures === 0 ? 0 : 1;
 }
 
-if (import.meta.main) process.exit(runCli(process.argv.slice(2), process.cwd(), console.log));
+// The games folder is this script's parent, wherever it is run from: `bun run check` runs it from the
+// repository root, where reading the working directory found no games and passed.
+if (import.meta.main) process.exit(runCli(process.argv.slice(2), join(import.meta.dir, ".."), console.log));

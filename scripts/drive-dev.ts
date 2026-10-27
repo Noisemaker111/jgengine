@@ -63,11 +63,14 @@ import {
   splitQuickFlag,
 } from "./capture-preset";
 import { driveInputPointExpr } from "../packages/jgengine/src/templates/driveInput";
-import { CAPTURE_FLAGS, captureFlagHelp, describeFlow, describeStepFile, parseCaptureArgs, parseGraphicsTier, parseStepFile, rejectMixedStepFlags, stepDurationMs, type CaptureStep, type FlowFile, type FlowSource, type GraphicsTier } from "../packages/jgengine/src/templates/captureArgs";
-import { awaitDriveCondition, awaitGameView, conditionMatches, holdDriveInput, sendDriveChord, type DriveConditionClock, type DriveHoldUntil, type DriveInputDeps, type DriveSession } from "../packages/jgengine/src/templates/driveSteps";
-import { acquireDrivePointerLock, aimDriveAt, lookDrivePointer, moveDrivePointer, type DrivePoint } from "../packages/jgengine/src/templates/driveAim";
-import { driveProjectDir, flowSourceFrom, flowsDirOf, listFlowNames, missingFlowsMessage } from "./driveFlows";
-import { evaluateAssertStep, runDriveSteps, type DriveStepRecord } from "./driveRun";
+import { CAPTURE_FLAGS, captureFlagHelp, parseCaptureArgs, parseGraphicsTier, stepDurationMs, type CaptureStep, type GraphicsTier } from "../packages/jgengine/src/templates/captureArgs";
+import { awaitGameView, holdDriveInput, sendDriveChord, type DriveHoldUntil, type DriveInputDeps, type DriveSession } from "../packages/jgengine/src/templates/driveSteps";
+import { driveProjectDir, flowFileOf, flowsDirOf, listFlowNames, loadFlow, missingFlowsMessage } from "./driveFlows";
+import { runDriveSteps, type DriveStepRecord } from "./driveRun";
+import { createBrowserFlow, type BridgeAnswer, type BrowserFlowDriver } from "./browserFlow";
+import { createFlowStepper, describeFlowReport, runFlowReport, type FlowRunReport } from "../packages/core/src/play/flowSteps";
+import { runFlowHeadless } from "../packages/core/src/play/headlessFlow.draw";
+import type { ProofFlow } from "../packages/core/src/play/flow";
 import { gameSurfaceCenter, mouseButtonForCode } from "../packages/jgengine/src/templates/gameSurfaceFocus";
 import { dispatchClickAt, parseClickAt } from "../packages/jgengine/src/clickInput";
 import { decodePng } from "../packages/assets/src/imageCodec";
@@ -144,14 +147,12 @@ type Args = {
   quick: boolean;
   /** `--game-dir`: serve this game from another checkout instead of `games/<game>`. */
   gameDir: string | null;
-  /** Step file this run reads, when it reads one. */
-  stepsFile?: string;
-  /** Named flow this run reads, when it reads one. */
+  /** Named flow this run plays, when it plays one. */
   flow?: string;
+  /** `--browser`: play a headless flow in the browser. */
+  browser: boolean;
   /** List the game's flows and exit. */
   flows: boolean;
-  /** Parse and print the step file, then exit without a browser. */
-  check: boolean;
   /** Also write one JSONL line per step here. */
   log?: string;
 };
@@ -160,63 +161,39 @@ type Args = {
  * so a recorded clip actually animates in the PR body. */
 const RECORD_BUDGET_BYTES = 4_500_000;
 
-const HELP = `bun run drive <gameId> --steps <file>   (scripted drive: checked, no flags)
-bun run drive <gameId> --flow <name>     (a named route from <game>/proofs/flows/)
+const HELP = `bun run drive <gameId> --flow <name>     (a TypeScript route from <game>/proofs/flows/)
 bun run drive <gameId> [options] --click "TEXT" --shot name ...   (one-off drive)
 
 ${captureFlagHelp("drive", "engine", CAPTURE_FLAGS)}
 
-Script a drive:
-  bun run drive ember-command --steps proofs/skirmish.json --check   # list the resolved steps, no browser
-  bun run drive ember-command --steps proofs/skirmish.json
+Flows:
+  A flow is <game>/proofs/flows/<name>.flow.ts: the route a proof needs, written in TypeScript
+  against the game's own typed probe, so a typo in a key or a probe field is a compile error.
 
-  { "steps": [
-    { "click": "Free skirmish",
-      "before": { "is": "menu.ready", "timeoutMs": 15000 },
-      "after":  { "is": "skirmish.started" } },
-    { "assert": "skirmish.units.length", "is": 4,
-      "note": "arrival means four units on the field, not that the click landed" },
-    { "key": "KeyH", "ms": 120,
-      "before": { "is": "selection.count >= 2" },
-      "after":  { "is": "squad.formationCount >= 2" } },
-    { "shot": "formation-line",
-      "before": { "is": "squad.formation === 'line'" } }
-  ] }
+    import { defineFlow } from "@jgengine/core/play/flow";
+    import { game } from "../../src/game.config";
 
-  A step waits for its before condition, acts, then waits for its after condition, so
-  each step starts the instant the previous one is really done. Conditions are page
-  expressions polled every 50ms (default timeout 15000ms, per-condition timeoutMs). A
-  timeout stops the run at that step and prints the index, the expression, the last
-  value and the elapsed time; nothing after it runs.
-  An "assert" step evaluates its expression once and compares it to "is" (default true).
-  A mismatch stops the run there — no later key, click or shot — and prints the index,
-  the expression, the expected and actual value, and the elapsed ms. Assert arrival
-  ("the skirmish started, four units present"), never that a click happened.
-  "shot" is a bare name: it lands in the ignored shots/<game>/<name>.png (a site
-  target in shots/site/), never an absolute path. Coordinates are [x, y] numbers.
-  "waitFor": "<expression>" is sugar for a step with only a before condition.
-  Aim steps: "moveMouse": [x, y] hovers the pointer at CSS viewport pixels; "look": [dx, dy]
-  turns a pointer-locked view by that many pixels of mouse movement (the step takes pointer
-  lock on the play canvas the way the game does, without clicking, so it cannot fire);
-  "aimAt": "<page expression>" resolves the expression to the target's { x, y } screen point
-  and turns until the crosshair is on it ("tolerancePx", default 6), measuring the game's own
-  look response instead of assuming a sensitivity. A goal is "aimAt", never a guessed "look".
-  A fixed "wait" still parses for CI compatibility, but it is the last resort: a guessed
-  sleep either wastes the difference or races the frame. Say what must be true instead.
-  --steps cannot be mixed with step flags (--click, --key, --wait, --shot, ...).
+    export default defineFlow(game, {
+      async run(f) {
+        await f.command("debug.grantGold", { amount: 500 });
+        await f.heading(Math.PI / 2);
+        await f.hold("KeyW", { until: (p) => p.x > 40 });
+        await f.waitFor((p) => p.wave >= 2, { note: "second wave started" });
+        await f.expect((p) => p.gold < 500, "the shop took the gold");
+        await f.shot("second-wave");
+      },
+    });
 
-Named flows:
-  A flow is a step file at <game>/proofs/flows/<name>.json holding the route every proof
-  needs once: to-menu, to-skirmish, to-level-1. Run it whole, or include it:
-    bun run drive ember-command --flow to-skirmish
-    bun run drive ember-command --flows                       # names, step counts, asserts
-    { "flow": "to-skirmish" }                                 # inside any step file
-  A flow's asserts are its contract: the route is done when they pass, so a flow that
-  only clicks is unfinished. Includes nest up to 4 deep; a repeated name is rejected as
-  a cycle. Both errors name the flow and the chain.
-  Every run prints one line per step (#3 key KeyH 120ms ok before 18ms after 21ms total
-  810ms) and a passed/failed/wall/virtual summary; --log <path> also writes JSONL,
-  one { index, name, kind, ms, pass, detail } object per step.
+  bun run drive ember-command --flow to-skirmish      # headless: no browser, game time, seconds
+  bun run drive ember-command --flow to-skirmish --browser --size half   # the same route on the page
+  bun run drive ember-command --flows                 # names, and which need the browser
+
+  Headless is the default: the real game ticks at 60 Hz with keys mapped to its own bindings, so
+  a key it binds nowhere fails the step. Shots are skipped headless. A flow that needs the page
+  (menus, DOM text, clicks) sets browser: true and gets click, clickAt, fill, see, page,
+  waitForPage, expectPage, reload and rpc. state: "<name>" boots a capture.states entry.
+  A passing run prints one line; a failing one prints the step, what it expected, the probe
+  readings at that moment and the steps before it.
 
 Notes:
   --probe before and after a --key hold proves movement by RPC on a low-fps headless page.
@@ -257,11 +234,6 @@ function projectDirOf(args: Args): string {
     resolve(import.meta.dir, ".."),
     existsSync,
   );
-}
-
-/** Read a named flow; a missing name lists the ones that do exist, so the next agent picks a route instead of guessing. */
-function flowSource(dir: string): FlowSource {
-  return flowSourceFrom(dir, (path) => readFileSync(path, "utf8"), () => listFlowNames(dir, (path) => readdirSync(path)));
 }
 
 /** Map the shared capture command line (packages/jgengine/src/templates/captureArgs.ts) onto drive's options. */
@@ -330,18 +302,19 @@ function parseArgs(argv: string[]): Args {  // `--headed` is parsed here, not in
     headed,
     quick: quick.quick,
     gameDir: served.dir,
-    stepsFile: str("steps"),
     flow: str("flow"),
+    browser: o.browser === true,
     flows: o.flows === true,
-    check: o.check === true,
     log: str("log"),
   };
   if (args.help) return args;
-  if (args.check && args.stepsFile === undefined && args.flow === undefined) throw new Error("drive: --check needs --steps <file> or --flow <name>");
-  if (args.flow !== undefined && args.stepsFile !== undefined) throw new Error("drive: --flow runs a committed flow; drop --steps (or --flow and keep the file)");
-  if (args.flows && (args.flow !== undefined || args.stepsFile !== undefined || args.steps.length > 0)) {
+  if (args.flows && (args.flow !== undefined || args.steps.length > 0)) {
     throw new Error("drive: --flows only lists the game's flows; drop the other step options");
   }
+  if (args.flow !== undefined && args.steps.length > 0) {
+    throw new Error("drive: --flow plays a committed route, so drop the step flags (" + args.steps.map((step) => step.kind).join(", ") + "); put them in the flow");
+  }
+  if (args.browser && args.flow === undefined) throw new Error("drive: --browser picks where a --flow plays; pass --flow <name>");
   assertQuickIsIterationOnly({
     tool: "drive",
     quick: args.quick,
@@ -378,34 +351,8 @@ function parseArgs(argv: string[]): Args {  // `--headed` is parsed here, not in
   if (args.site !== undefined && !args.timeoutExplicit) {
     args.timeoutMs = process.platform === "linux" || process.env.CI !== undefined ? 30_000 : 10_000;
   }
-  if (args.stepsFile !== undefined || args.flow !== undefined) {
-    rejectMixedStepFlags("drive", quick.argv, CAPTURE_FLAGS);
-    const projectDir = projectDirOf(args);
-    const flows = flowSource(join(projectDir, "proofs", "flows"));
-    let raw: unknown;
-    let source: string;
-    if (args.flow !== undefined) {
-      if (args.flow.includes("/") || args.flow.includes("\\") || args.flow.endsWith(".json")) {
-        throw new Error(`drive: --flow takes a bare name; the file lives at ${join(projectDir, "proofs", "flows", "<name>.json")} (got "${args.flow}")`);
-      }
-      const file = flows(args.flow);
-      if (file === undefined) throw new Error("drive: no flow at " + join(projectDir, "proofs", "flows", args.flow + ".json"));
-      raw = file.json;
-      source = file.source;
-      args.stepsFile = source;
-    } else {
-      if (!existsSync(resolve(args.stepsFile!))) throw new Error("drive: no step file at " + args.stepsFile);
-      try {
-        raw = JSON.parse(readFileSync(resolve(args.stepsFile!), "utf8"));
-      } catch (error) {
-        throw new Error("drive: " + args.stepsFile + " is not valid JSON (" + (error instanceof Error ? error.message : String(error)) + ")");
-      }
-      source = resolve(args.stepsFile!);
-    }
-    args.steps = parseStepFile(raw, source, { flows }).map((step) => step.kind === "shot" ? { ...step, out: driveShotPath(shotsDir(join(import.meta.dir, "..")), args.game, step.name) } : step);
-  }
   if (
-    args.stepsFile === undefined &&
+    args.flow === undefined &&
     !args.playtest &&
     args.record === undefined &&
     !args.steps.some((step) => step.kind === "shot" || step.kind === "rpc" || step.kind === "probe")
@@ -519,6 +466,22 @@ async function rpc(session: CdpSession, json: string): Promise<void> {
     { awaitPromise: true },
   );
   console.log(value ?? JSON.stringify({ ok: false, error: "rpc evaluation returned nothing" }));
+}
+
+/** Call the page's agent bridge and return its answer; a page with no bridge answers `ok: false`. */
+async function bridge(session: CdpSession, request: { method: string } & Record<string, unknown>): Promise<BridgeAnswer> {
+  const raw = await session.evaluate<string>(
+    `(async () => {
+      const host = globalThis.__jgengineAgent;
+      if (host === undefined) return JSON.stringify({ ok: false, error: "no agent bridge on this page" });
+      return JSON.stringify(await host.handle(${JSON.stringify(request)}));
+    })()`,
+    { awaitPromise: true },
+  );
+  const answer: unknown = typeof raw === "string" ? JSON.parse(raw) : null;
+  if (typeof answer !== "object" || answer === null || !("ok" in answer)) return { ok: false, error: "the agent bridge returned nothing" };
+  if (answer.ok === true) return { ...answer, ok: true };
+  return { ok: false, error: "error" in answer && typeof answer.error === "string" ? answer.error : "the agent bridge refused" };
 }
 
 async function readProbe(session: CdpSession): Promise<Record<string, number> | null> {
@@ -716,7 +679,7 @@ async function screenshot(
   const profile = captureProfile(device, size, viewport);
   const { region } = await readCapturePageState(session);
   const editor = await session.evaluate<boolean>(`document.documentElement.dataset.jgEditor === "1"`);
-  const { bytes, via } = await captureViewportPng(session, {
+  const { bytes } = await captureViewportPng(session, {
     screencast: screencast && editor !== true && screencastCapturesFully(profile),
     expect: {
       width: Math.round(profile.width * profile.deviceScaleFactor),
@@ -724,7 +687,6 @@ async function screenshot(
     },
     ...(region === undefined ? {} : { liveRegion: region }),
   });
-  console.error(`drive: frame(${via})${editor === true ? " — synchronous editor snapshot" : ""}`);
   writePngAtomic(outPath, bytes);
   const decoded = decodePng(bytes);
   const record = buildShotRecord({
@@ -752,10 +714,6 @@ if (args.gameDir !== null) {
   assertOneTarget({ served: args.gameDir, ...(args.url === undefined ? {} : { url: args.url }), ...(args.site === undefined ? {} : { site: args.site }) });
   serveGameDir(args.gameDir, args.game);
 }
-if (args.check) {
-  console.log(describeStepFile(args.steps, args.stepsFile ?? "steps"));
-  process.exit(0);
-}
 if (args.flows) {
   const dir = flowsDirOf(projectDirOf(args));
   const names = listFlowNames(dir, (path) => readdirSync(path));
@@ -763,16 +721,40 @@ if (args.flows) {
     console.error("drive: " + missingFlowsMessage(dir));
     process.exit(1);
   }
-  const flows = flowSource(dir);
   for (const name of names) {
     try {
-      const file = flows(name)!;
-      console.log(describeFlow(name, parseStepFile(file.json, file.source, { flows })));
+      const flow = await loadFlow(dir, name);
+      console.log(name + ": " + (flow.browser ? "browser" : "headless") + (flow.state === undefined ? "" : ", state " + flow.state));
     } catch (error) {
       console.log(name + ": INVALID — " + (error instanceof Error ? error.message : String(error)));
     }
   }
   process.exit(0);
+}
+
+/** The flow this run plays, loaded once; `null` for a run of step flags. */
+const flow: ProofFlow | null = args.flow === undefined ? null : await loadFlow(flowsDirOf(projectDirOf(args)), args.flow).catch((error: unknown) => {
+  console.error("drive: " + (error instanceof Error ? error.message : String(error)));
+  process.exit(1);
+});
+
+/** Print a flow's result the quiet way, write its --log rows, and give the exit code. */
+function finishFlow(name: string, report: FlowRunReport): number {
+  for (const line of describeFlowReport(name, report)) (report.ok ? console.log : console.error)(line);
+  if (args.log !== undefined) {
+    const logPath = resolve(args.log);
+    mkdirSync(dirname(logPath), { recursive: true });
+    const failedAt = report.ok ? -1 : report.failure.index;
+    const rows = report.steps.map((step) =>
+      JSON.stringify({ index: step.index, name: step.label, ms: step.ms, pass: step.index !== failedAt, ...(step.index === failedAt && !report.ok ? { detail: report.failure.message } : {}) }));
+    writeFileSync(logPath, rows.map((row) => row + "\n").join(""));
+  }
+  return report.ok ? 0 : 1;
+}
+
+// A headless flow needs no browser, no dev server and no assets: the game ticks in this process.
+if (flow !== null && !flow.browser && !args.browser) {
+  process.exit(finishFlow(args.flow ?? "flow", await runFlowHeadless(flow, args.state === undefined ? {} : { state: args.state })));
 }
 
 sweepCaptureProfiles();
@@ -850,7 +832,8 @@ async function driveSession(daemon: ShootDaemonState | null): Promise<number> {
         if (args.spawn !== undefined && args.spawn.length > 0) url.searchParams.set("spawn", args.spawn);
         for (const [key, value] of args.params) url.searchParams.set(key, value);
         if (args.view !== undefined) url.searchParams.set("view", args.view);
-        if (args.state !== undefined) url.searchParams.set("state", args.state);
+        const state = args.state ?? flow?.state;
+        if (state !== undefined) url.searchParams.set("state", state);
         if (args.run !== undefined) url.searchParams.set("run", args.run);
         if (args.style !== undefined) url.searchParams.set("style", args.style);
         if (args.settle !== undefined) url.searchParams.set("settle", String(args.settle));
@@ -934,22 +917,72 @@ async function driveSession(daemon: ShootDaemonState | null): Promise<number> {
             })()
           : Promise.resolve();
 
-        const conditionClock = (): DriveConditionClock => recorder === null
-          ? { sleep: (ms: number) => new Promise<void>((r) => setTimeout(r, ms)), now: () => Date.now() }
-          : { sleep: (ms: number) => recorder!.advance(ms), now: () => recorder!.virtualNow };
-        const waitOn = (label: string, entry: { is: string; value?: unknown; timeoutMs?: number; note?: string }) =>
-          awaitDriveCondition(session as unknown as DriveSession, label, entry, conditionClock());
+        const takeShot = async (path: string, previous: PreviousShot | undefined) =>
+          screenshot(session, path, args.size, args.device, args.record === undefined, previous, viewport, args.quick ? QUICK_DRIVE_WINDOW_MS : 60_000);
 
-        const logPath = args.log === undefined ? undefined : resolve(args.log);
+        if (flow !== null) {
+          const clock = recorder;
+          const sleep = (ms: number): Promise<void> => (clock === null ? new Promise<void>((r) => setTimeout(r, ms)) : clock.advance(ms));
+          const now = (): number => (clock === null ? Date.now() : clock.virtualNow);
+          const driver: BrowserFlowDriver = {
+            async hold(chord, minMs, until) {
+              if (clock === null) return holdKey(session, chord, minMs, until);
+              // Lockstep hold: the virtual clock steps the sim under the key, so no frame-starvation grace is needed.
+              await focusSurface(session);
+              await sendDriveChord(session, chord, "keyDown");
+              try {
+                await clock.advance(minMs);
+                if (until !== undefined) {
+                  for (let held = 0; !(await until.check()); held += 100) {
+                    if (held >= until.timeoutMs) throw new Error(until.describe + ": not true after " + until.timeoutMs + "ms of virtual time holding " + chord);
+                    await clock.advance(100);
+                  }
+                }
+              } finally {
+                await sendDriveChord(session, chord, "keyUp");
+              }
+            },
+            async click(text, count) {
+              await click(session, text, count);
+              if (clock !== null) await clock.advance(300);
+            },
+            async clickAt(x, y, button) {
+              await session.send("Page.bringToFront");
+              await dispatchClickAt(session, { x, y }, button);
+              if (clock !== null) await clock.advance(300);
+            },
+            async fill(label, value) {
+              await fill(session, label, value);
+              if (clock !== null) await clock.advance(300);
+            },
+            evaluate: (expression) => session.evaluate(expression, { awaitPromise: true }),
+            bridge: (request) => bridge(session, request),
+            readProbe: () => readProbe(session),
+            async reload() {
+              await navigateCapturePageWithRetry(session, url.toString(), dev.base, args.timeoutMs, 2, { legacyCanvas: args.url !== undefined });
+              await installFrameCounter(session);
+            },
+            async shot(name) {
+              const path = driveShotPath(shotsDir(join(import.meta.dir, "..")), args.game, name);
+              mkdirSync(dirname(path), { recursive: true });
+              await takeShot(path, clearShotTarget(path));
+            },
+            sleep,
+            now,
+          };
+          const stepper = createFlowStepper(() => readProbe(session));
+          const reports: { label: string; probe: unknown }[] = [];
+          const browserFlow = createBrowserFlow(driver, stepper, reports);
+          code = finishFlow(args.flow ?? "flow", await runFlowReport(stepper, reports, () => flow.run(browserFlow)));
+        }
+
+        const logPath = flow !== null || args.log === undefined ? undefined : resolve(args.log);
         if (logPath !== undefined) {
           mkdirSync(dirname(logPath), { recursive: true });
           writeFileSync(logPath, "");
         }
 
-        /** Where the pointer was left by the previous aim step, so a relative look has an origin. */
-        let pointer: DrivePoint | null = null;
-
-        const done = await runDriveSteps(args.steps, {
+        const done = flow !== null ? { failed: 0 } : await runDriveSteps(args.steps, {
           now: () => performance.now(),
           line: (text) => console.error(text),
           tier: reportedTier,
@@ -963,10 +996,7 @@ async function driveSession(daemon: ShootDaemonState | null): Promise<number> {
                 record: (entry: DriveStepRecord) =>
                   appendFileSync(logPath, JSON.stringify(engineForRecord === null ? entry : { ...entry, engine: engineForRecord }) + "\n"),
               }),
-          run: async (step, index) => {
-            const label = "steps[" + index + "]";
-            const timings: string[] = [];
-            if (step.before !== undefined) timings.push("before " + (await waitOn(label + ".before", step.before)).elapsedMs + "ms");
+          run: async (step) => {
             if (step.kind === "click" || step.kind === "double-click") {
               await click(session, step.text, step.kind === "double-click" ? 2 : 1);
               // Let the UI react on the virtual clock so the click's effect is in frame.
@@ -982,55 +1012,28 @@ async function driveSession(daemon: ShootDaemonState | null): Promise<number> {
                 await sendDriveChord(session, step.code, "keyDown");
                 try {
                   await recorder.advance(step.holdMs);
-                  // `until` on the virtual clock: step the sim in short slices until the arrival holds.
-                  if (step.until !== undefined) {
-                    const cap = step.until.timeoutMs ?? 15_000;
-                    for (let held = 0; ; held += 100) {
-                      if (conditionMatches(await session.evaluate("(async () => (" + step.until.is + "))()", { awaitPromise: true }), step.until.value)) break;
-                      if (held >= cap) throw new Error(label + ".until: \"" + step.until.is + "\" did not become true within " + cap + "ms of virtual time");
-                      await recorder.advance(100);
-                    }
-                  }
                 } finally {
                   await sendDriveChord(session, step.code, "keyUp");
                 }
               } else {
-                await holdKey(session, step.code, step.holdMs, step.until === undefined ? undefined : { ...step.until, label: label + ".until" });
+                await holdKey(session, step.code, step.holdMs);
               }
             } else if (step.kind === "wait") {
               if (recorder !== null) await recorder.advance(step.ms);
               else await new Promise((r) => setTimeout(r, step.ms));
-            } else if (step.kind === "waitFor") {
-              timings.push("waitFor " + (await waitOn(label + ".waitFor", { is: step.expression, timeoutMs: step.timeoutMs })).elapsedMs + "ms");
-            } else if (step.kind === "assert") {
-              timings.push("actual " + JSON.stringify((await evaluateAssertStep(session as unknown as DriveSession, step)) ?? null));
             } else if (step.kind === "reload") {
               await navigateCapturePageWithRetry(session, url.toString(), dev.base, args.timeoutMs, 2, { legacyCanvas: args.url !== undefined });
               await installFrameCounter(session);
             } else if (step.kind === "click-at") {
               await session.send("Page.bringToFront");
-              await dispatchClickAt(session, clickPoints.get(step)!, step.button);
-              if (recorder !== null) await recorder.advance(300);
-            } else if (step.kind === "move-mouse") {
-              await moveDrivePointer(session, { x: step.x, y: step.y });
-              pointer = { x: step.x, y: step.y };
-              if (recorder !== null) await recorder.advance(300);
-            } else if (step.kind === "look") {
-              await acquireDrivePointerLock(session);
-              const turned = await lookDrivePointer(session, step.dx, step.dy);
-              timings.push("moved " + Math.round(turned.movement.x) + "," + Math.round(turned.movement.y) + "px");
-              if (recorder !== null) await recorder.advance(300);
-            } else if (step.kind === "aim-at") {
-              await acquireDrivePointerLock(session).catch(() => false);
-              const aimed = await aimDriveAt(session, pointer, step.expression, step.tolerancePx);
-              pointer = aimed.from;
-              timings.push("aimed " + Math.round(aimed.point.x) + "," + Math.round(aimed.point.y) + " in " + aimed.moves + " move(s)");
+              const point = clickPoints.get(step);
+              if (point === undefined) throw new Error("click-at " + step.spec + " has no resolved point");
+              await dispatchClickAt(session, point, step.button);
               if (recorder !== null) await recorder.advance(300);
             } else if (step.kind === "rpc") {
               await rpc(session, step.json);
               if (step.summarized) console.error(`drive: debug_snapshot printed its summary; pass {"method":"debug_snapshot","detail":"full"} for everything`);
-            }
-            else if (step.kind === "probe") {
+            } else if (step.kind === "probe") {
               const metrics = await readProbe(session);
               console.log(JSON.stringify({ probe: step.name, metrics }));
             } else {
@@ -1040,19 +1043,9 @@ async function driveSession(daemon: ShootDaemonState | null): Promise<number> {
               const path = shot.out ?? join(outDir, `${args.game}-${shot.name}${sizeSuffix(args.size)}${qualitySuffix(args.quality)}${draftSuffix(args.draft)}${quickSuffix(args.quick)}.png`);
               const previous = preparedShots.has(path) ? preparedShots.get(path) : clearShotTarget(path);
               preparedShots.delete(path);
-              await screenshot(
-                session,
-                path,
-                args.size,
-                args.device,
-                args.record === undefined,
-                previous,
-                viewport,
-                args.quick ? QUICK_DRIVE_WINDOW_MS : 60_000,
-              );
+              await takeShot(path, previous);
             }
-            if (step.after !== undefined) timings.push("after " + (await waitOn(label + ".after", step.after)).elapsedMs + "ms");
-            return timings.join(" ");
+            return "";
           },
         });
         if (done.failed > 0) code = 1;

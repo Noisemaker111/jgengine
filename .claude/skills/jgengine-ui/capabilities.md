@@ -277,6 +277,10 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `groupCredits` (function) · `import { groupCredits } from "@jgengine/core/menu/credits"`
 
+## headless-flow — play a game's TypeScript proof flow headless in seconds, with typed keys and probe checks
+
+- `runFlowHeadless` (function) · `import { runFlowHeadless } from "@jgengine/core/play/headlessFlow.draw"`
+
 ## hold-vs-toggle — resolve one action frame under a hold-or-toggle preference
 
 - `holdToggleActive` (function) · `import { holdToggleActive } from "@jgengine/core/settings/accessibilitySettings"`
@@ -664,6 +668,10 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 - `createPlayScript` (function) · `import { createPlayScript } from "@jgengine/core/play/script"`
 - `runPlayScript` (function) · `import { runPlayScript } from "@jgengine/core/play/playRunner.draw"`
 
+## play-session — tick a real game headless the way the shell does, with held actions, prompts and hotbar
+
+- `createPlaySession` (function) · `import { createPlaySession } from "@jgengine/core/play/playSession.draw"`
+
 ## popover — viewport-flipping, viewport-clamped anchored popover/tooltip shell
 
 - `Popover` (function) · `import { Popover } from "@jgengine/react"`
@@ -675,6 +683,10 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 ## projected-overdraw — sample actual mesh/camera fragment overlap with native coverage and explicit depth/blending/transmission limits
 
 - `measureProjectedOverdraw` (function) · `import { measureProjectedOverdraw } from "@jgengine/core/render/projectedOverdraw.draw"`
+
+## proof-flow — write a game's proof route in TypeScript with typed keys and probe checks; it runs headless or in the browser
+
+- `defineFlow` (function) · `import { defineFlow } from "@jgengine/core/play/flow"`
 
 ## quest-tracker — compact quest/objective HUD tracker — titles + labelled objective progress from describeTrackedQuest views
 

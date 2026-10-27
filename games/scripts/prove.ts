@@ -701,6 +701,8 @@ async function main(): Promise<number> {
       args.game,
       "--flow",
       request.flow,
+      // The bundle is a pixel proof at these sizes and this tier, so the flow plays on the page.
+      "--browser",
       "--quality",
       request.tier,
       "--width",

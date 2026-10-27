@@ -45,6 +45,7 @@
   },
   "include": [
     "src",
+    "proofs",
     "*.ts",
     "scripts/*.ts"
   ],

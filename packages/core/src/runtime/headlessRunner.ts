@@ -1,5 +1,5 @@
 import type { GameDefinition, GameLoop } from "../game/defineGame";
-import type { PlayableGameContract, PlayerMovementConfig, VoxelCollisionConfig } from "../game/playableGame";
+import type { PlayableGameContract, PlayerMovementConfig, ProbeReadings, VoxelCollisionConfig } from "../game/playableGame";
 import type { PointerAxisState } from "../input/pointerAxis";
 import {
   resolvePlayerMovementTuning,
@@ -23,8 +23,8 @@ export interface HeadlessInput {
   pointer?: PointerAxisState | null;
 }
 
-/** Any playable game, whatever its UI and render types: what `defineGame` returns. */
-export type HeadlessPlayable = PlayableGameContract<unknown, unknown, unknown, unknown, unknown, unknown>;
+/** Any playable game, whatever its UI and render types (what `defineGame` returns); `TProbe` is what its `capture.probe` returns. */
+export type HeadlessPlayable<TProbe extends ProbeReadings = ProbeReadings> = PlayableGameContract<unknown, unknown, unknown, unknown, unknown, unknown, TProbe>;
 
 /**
  * Where a headless run gets its game. Pass the whole playable (`game`, what `defineGame` returns) and the runner
@@ -160,7 +160,8 @@ export function createHeadlessRunner<TAssetRef extends ModelAssetRef, TMultiplay
   loop?.onNewPlayer?.(ctx);
   const simSnapshot = createContextSimSnapshot(ctx);
 
-  const look = { heading: options.heading ?? 0, pitch: options.pitch ?? 0 };
+  // The shell's camera starts on the game's `camera.initialYaw`, so a walk faces the same way here as in the page.
+  const look = { heading: options.heading ?? playable?.camera?.initialYaw ?? 0, pitch: options.pitch ?? 0 };
 
   const tuning: PlayerMovementTuning | null =
     (options.playerMovement ?? shellDrivesPlayerPose(definition.input))

@@ -96,7 +96,7 @@ export function tickDowned(ctx: GameContext, dt: number): DownedEvent[] {
 }
 
 /** Probe line: the live window a capture or a flow reads, and the wallet the fee comes out of. */
-export function reserveProbe(ctx: GameContext): Record<string, number> {
+export function reserveProbe(ctx: GameContext) {
   const entry = reserve(ctx).get(ctx.player.userId);
   const phase = entry?.phase ?? "alive";
   return {

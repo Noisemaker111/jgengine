@@ -209,7 +209,7 @@ const tsconfigJson = (variant: TemplateVariant) => `${JSON.stringify(
   {
     ...(variant === "in-repo" ? { extends: "../tsconfig.base.json" } : {}),
     compilerOptions: sharedCompilerOptions,
-    include: ["src"],
+    include: ["src", "proofs"],
     exclude: ["src/**/*.test.ts"],
   },
   null,
