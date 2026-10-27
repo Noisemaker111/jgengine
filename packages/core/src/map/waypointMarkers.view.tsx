@@ -137,6 +137,7 @@ export function WaypointMarkers({
           waypoint={waypoint}
           x={layout.x}
           y={layout.y}
+          width={viewport.width}
           color={color}
           theme={t}
           label={showPinLabels ? waypoint.label : undefined}
@@ -148,6 +149,7 @@ export function WaypointMarkers({
           waypoint={waypoint}
           x={layout.x}
           y={layout.y}
+          width={viewport.width}
           angle={layout.angle}
           color={color}
           theme={t}
@@ -166,6 +168,16 @@ export function WaypointMarkers({
       {rendered}
     </div>
   );
+}
+
+/**
+ * How a marker hangs from its point so its caption stays on screen: centred, or pinned to the
+ * left or right of the point when the point is near that edge (a long label would spill off).
+ */
+function hang(x: number, width: number, size: number): Pick<CSSProperties, "transform" | "alignItems"> {
+  if (x < width * 0.2) return { transform: `translate(-${size / 2}px, -50%)`, alignItems: "flex-start" };
+  if (x > width * 0.8) return { transform: `translate(calc(-100% + ${size / 2}px), -50%)`, alignItems: "flex-end" };
+  return { transform: "translate(-50%, -50%)", alignItems: "center" };
 }
 
 function chipStyle(theme: Required<WaypointMarkerTheme>, color: string): CSSProperties {
@@ -187,6 +199,8 @@ interface PinProps {
   waypoint: WaypointEntry;
   x: number;
   y: number;
+  /** Viewport width, so a marker near an edge keeps its caption on screen. */
+  width: number;
   color: string;
   theme: Required<WaypointMarkerTheme>;
   label: string | undefined;
@@ -194,7 +208,7 @@ interface PinProps {
 }
 
 /** An on-screen pin: a dot at the projected point with an optional label/distance chip above it. */
-function WaypointPin({ waypoint, x, y, color, theme, label, distanceText }: PinProps): ReactNode {
+function WaypointPin({ waypoint, x, y, width, color, theme, label, distanceText }: PinProps): ReactNode {
   const dot = theme.size * 0.7;
   const caption = [label, distanceText].filter((part) => part !== undefined).join("  ");
   return (
@@ -205,11 +219,10 @@ function WaypointPin({ waypoint, x, y, color, theme, label, distanceText }: PinP
         position: "absolute",
         left: x,
         top: y,
-        transform: "translate(-50%, -50%)",
         display: "flex",
         flexDirection: "column",
-        alignItems: "center",
         gap: 4,
+        ...hang(x, width, dot),
       }}
     >
       {caption.length > 0 ? <div style={chipStyle(theme, color)}>{caption}</div> : null}
@@ -232,6 +245,7 @@ interface ArrowProps {
   waypoint: WaypointEntry;
   x: number;
   y: number;
+  width: number;
   angle: number;
   color: string;
   theme: Required<WaypointMarkerTheme>;
@@ -239,7 +253,7 @@ interface ArrowProps {
 }
 
 /** An edge-clamped directional arrow: a triangle rotated by `angle` with an optional distance chip. */
-function WaypointArrow({ waypoint, x, y, angle, color, theme, distanceText }: ArrowProps): ReactNode {
+function WaypointArrow({ waypoint, x, y, width, angle, color, theme, distanceText }: ArrowProps): ReactNode {
   const size = theme.size;
   const caption = [waypoint.label, distanceText].filter((part) => part !== undefined).join("  ");
   return (
@@ -250,11 +264,10 @@ function WaypointArrow({ waypoint, x, y, angle, color, theme, distanceText }: Ar
         position: "absolute",
         left: x,
         top: y,
-        transform: "translate(-50%, -50%)",
         display: "flex",
         flexDirection: "column",
-        alignItems: "center",
         gap: 3,
+        ...hang(x, width, size),
       }}
     >
       <svg

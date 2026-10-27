@@ -1067,6 +1067,41 @@ export function creaturesView(ctx: GameContext) {
 
 export type CreaturesView = ReturnType<typeof creaturesView>;
 
+/** Where each authored herd lives and who lives there: fixed by editor.scene.json, so shared by every run. */
+const HERD_HOMES: readonly { species: readonly string[]; center: readonly [number, number, number] }[] = herds().map((herd) => ({
+  species: herd.species.map((entry) => entry.species),
+  center: herd.center,
+}));
+
+/**
+ * Where to find a wild `species` from `from`: the nearest live untamed one within `within` metres,
+ * else the centre of the nearest spawn zone it lives in (asleep zones have nobody in them yet).
+ */
+export function nearestWild(ctx: GameContext, species: string, from: readonly [number, number, number], within: number): [number, number, number] | null {
+  let best: [number, number, number] | null = null;
+  let bestDistance = within;
+  for (const creature of worldOf(ctx).creatures.values()) {
+    if (creature.dead || creature.tamed || creature.species !== species) continue;
+    const at = ctx.scene.entity.get(creature.id)?.position;
+    const distance = at === undefined ? Number.POSITIVE_INFINITY : Math.hypot(at[0] - from[0], at[2] - from[2]);
+    if (at !== undefined && distance <= bestDistance) {
+      best = [at[0], at[1], at[2]];
+      bestDistance = distance;
+    }
+  }
+  if (best !== null) return best;
+  let home: readonly [number, number, number] | null = null;
+  let homeDistance = Number.POSITIVE_INFINITY;
+  for (const herd of HERD_HOMES) {
+    const distance = Math.hypot(herd.center[0] - from[0], herd.center[2] - from[2]);
+    if (herd.species.includes(species) && distance < homeDistance) {
+      home = herd.center;
+      homeDistance = distance;
+    }
+  }
+  return home === null ? null : [home[0], ctx.world.groundHeightAt(home[0], home[2]), home[2]];
+}
+
 // --- save -----------------------------------------------------------------------------------------
 
 interface CreaturesSave {

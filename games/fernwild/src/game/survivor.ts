@@ -16,7 +16,7 @@ import { cancelJob, createWorkQueue, enqueue, jobProgress, tick as tickQueue, ty
 import { editorLayers } from "../editorLayers";
 import { BAG, BAG_SLOTS, HOTBAR } from "./bags";
 import { ENGRAMS, engramDef, CRAFTING_RECIPES, recipeDef } from "./data/engrams";
-import { gatheredBy, HARVESTABLES } from "./data/harvestables";
+import { gatheredBy, HARVESTABLES, type GatherBy } from "./data/harvestables";
 import { command, keybind, proximityPrompt, type PositionedPrompt } from "@jgengine/core/interaction/proximityPrompt";
 import { FIST, itemDef, itemLabel, itemTraits, PICK_UP, type ToolDef } from "./data/items";
 import { placeHeld, stations, strikeStructure } from "./base";
@@ -178,6 +178,18 @@ function ensurePlacements(ctx: GameContext, survivor: Survivor): void {
   if (survivor.placed) return;
   survivor.harvest.setPlacements(resolveScatter(editorLayers, ctx.world.ground));
   survivor.placed = true;
+}
+
+/** The nearest standing tree, rock or bush gathered `by` that yields `resource`, within `within` metres of `from`. */
+export function nearestHarvestable(ctx: GameContext, from: readonly [number, number, number], within: number, by: GatherBy, resource: string): [number, number, number] | null {
+  const survivor = survivorOf(ctx);
+  ensurePlacements(ctx, survivor);
+  const yields = (item: string): boolean => {
+    const kind = HARVESTABLES[item];
+    return kind !== undefined && kind.by === by && kind.resources.some((grant) => grant.kind === resource);
+  };
+  const hit = survivor.harvest.target({ x: from[0], z: from[2], yaw: 0, reach: within, cone: Math.PI, accepts: yields });
+  return hit === null ? null : [hit.x, ctx.world.groundHeightAt(hit.x, hit.z), hit.z];
 }
 
 function grantGather(ctx: GameContext, survivor: Survivor, granted: readonly { kind: string; amount: number }[]): string[] {

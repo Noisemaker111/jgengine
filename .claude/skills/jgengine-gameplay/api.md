@@ -2642,6 +2642,38 @@
 
 - `ToastStack` (function): function ToastStack({ action, limit = 4, className, renderToast, }: { action: string; limit?: number; className?: string; renderToast?: (entry: FeedEntry, index: number) => ReactNode; }): React.JSX.Element | null — Render `ctx.game.feed`'s entries for `action` as a newest-first toast stack. Reach for this when the message source is already an engine event bound onto `ctx.game.feed` (kill feed, quest updates, loot log); for ad-hoc player messages push to `ctx.game.notices`, which the shell draws as a {@link NoticeStack}.
 
+## @jgengine/core/onboarding/OnboardingPointer.draw
+
+- `OnboardingPointer` (function): function OnboardingPointer({ ctx, theme }: { ctx: GameContext; theme?: WaypointMarkerTheme }): ReactNode — The onboarding's on-screen pointer, mounted in a game's `WorldOverlay`: a pin over the current step's target while it is in view, an edge arrow pointing the way with the distance while it is not (`WaypointMarkers` over the onboarding's waypoint).
+
+## @jgengine/core/onboarding/onboarding
+
+- `Onboarding` (interface): interface Onboarding<C> — One player's run through an {@link OnboardingConfig}.
+- `OnboardingConfig` (interface): interface OnboardingConfig<C> — A game's whole onboarding, declared as data.
+- `OnboardingDone` (type): type OnboardingDone<C> = | { event: keyof GameEventMap; match?: Readonly<Record<string, string | number | boolean>>; count?: number } /** A condition on the world becomes true. */ | { when: (ctx: C, userId: string) => boolean } /** A measured amount reaches `count` (shown as "3/10" in the tracker). … — When a step is done.
+- `OnboardingPoint` (type): type OnboardingPoint = readonly [number, number, number] — World position `[x, y, z]`.
+- `OnboardingSnapshot` (interface): interface OnboardingSnapshot — One player's saved onboarding: finished step ids, partial progress, and whether it was skipped.
+- `OnboardingStep` (interface): interface OnboardingStep<C> — One onboarding step, declared as data.
+- `OnboardingStepView` (interface): interface OnboardingStepView<C> — The current step as the HUD reads it.
+- `OnboardingStyle` (type): type OnboardingStyle = "tutorial-level" | "teaching-area" | "blended" — How a game teaches: a separate `"tutorial-level"` it leaves when done (its `finish` hook moves the player on), a `"teaching-area"` start that guides only inside its `area` and points back when the player wanders off, or `"blended"` hints that sit quietly in stage one (no banners, no locks).
+- `OnboardingTarget` (type): type OnboardingTarget = | { entity: string } /** The nearest entity of this catalog name (or thing a `locate` hook finds) within `within` metres. Default 60. */ | { kind: string; within?: number } | { at: OnboardingPoint } — What a step points at: one entity, the nearest thing of a kind, or a spot.
+
+## @jgengine/core/onboarding/onboarding.view
+
+- `OnboardingBanner` (function): function OnboardingBanner({ theme }: { theme?: ObjectiveBannerTheme }): ReactNode — The step-done banner ("Gather stone" / "Next: Craft a Stone Pick") through `ObjectiveBannerHost`, near the top of the screen. Put it in the HUD's full-screen overlay.
+- `OnboardingHud` (function): function OnboardingHud({ accent, skipLabel = "Skip tutorial", nextLabel = "Next", style }: OnboardingHudProps): ReactNode — The onboarding's HUD: its steps as a quest in the existing `QuestTracker` (current step's detail under it), Next for a step the player acknowledges, and Skip when skippable. Put it in a `HudSlots` slot; it hides itself once finished.
+- `OnboardingHudProps` (interface): interface OnboardingHudProps — Props for {@link OnboardingHud}.
+- `useOnboarding` (function): function useOnboarding(): OnboardingRuntime | null — The running onboarding, or `null` when the game installed none. Compose its `markers` into the game's `Minimap` and its `waypoints` into a compass.
+
+## @jgengine/core/onboarding/onboardingSystem
+
+- `ONBOARDING_MARK` (const): const ONBOARDING_MARK: "onboarding" — The id of the waypoint and minimap marker the onboarding owns.
+- `OnboardingRuntime` (interface): interface OnboardingRuntime — What the HUD and the world overlay read from a running onboarding.
+- `OnboardingSystemOptions` (interface): interface OnboardingSystemOptions — Options for {@link createOnboardingSystem} beyond the declared steps.
+- `createOnboardingSystem` (function): function createOnboardingSystem(config: OnboardingConfig<GameContext>, options: OnboardingSystemOptions = {}): SystemDefinition — A game's onboarding as one system: declare the steps as data, and the engine completes them from game events and conditions, refuses locked commands (`ctx.game.commands.gate`), hands out each step's grants, announces finished steps on an objective banner, shows the steps as a quest in `QuestTracker`, and keeps one waypoint and one minimap marker on the current step's target. It saves per player, and `onboarding.skip` / `onboarding.next` commands skip it and press Next. Render it with `OnboardingHud` and `OnboardingPointer`; read it with {@link onboardingOf}.
+- `onboardingLock` (function): function onboardingLock(ctx: GameContext, id: string): string | null — The step text that locks `id` for the local player, or `null` when `id` is free. HUDs hide or grey locked UI with it.
+- `onboardingOf` (function): function onboardingOf(ctx: GameContext): OnboardingRuntime | null — The onboarding running in `ctx`, or `null` when the game installed none.
+
 ## @jgengine/core/progression/careerBank
 
 - `CareerBank` (interface): interface CareerBank — Persistent career money plus the run in progress, which a failed run loses.

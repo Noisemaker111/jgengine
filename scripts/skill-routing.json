@@ -63,6 +63,7 @@
     "multiplayer": "jgengine-multiplayer",
     "nav": "jgengine-world",
     "notifications": "jgengine-gameplay",
+    "onboarding": "jgengine-gameplay",
     "orders": "jgengine-world",
     "physics": "jgengine-world",
     "placement": "jgengine-world",

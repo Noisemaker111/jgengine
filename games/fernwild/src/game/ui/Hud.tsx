@@ -1,5 +1,7 @@
 import type { CSSProperties, ReactNode } from "react";
 import { Hotbar } from "@jgengine/core/hud/hudReadouts.view";
+import { Minimap } from "@jgengine/core/map/map.view";
+import { OnboardingBanner, OnboardingHud, useOnboarding } from "@jgengine/core/onboarding/onboarding.view";
 import { useGameStore } from "@jgengine/react/hooks";
 import { HudSlots } from "@jgengine/shell/gameKit";
 
@@ -204,11 +206,29 @@ function Screens(): ReactNode {
       <div style={crosshair} />
       {screen === null ? <Prompt /> : null}
       {screen === null ? null : <InventoryScreen tab={screen} />}
+      <OnboardingBanner theme={{ accent: "#e7c84a" }} />
     </>
   );
 }
 
-/** ARK's layout: pools bottom-right, hotbar bottom-centre, gather feed left, crosshair centre. */
+/** A small map centred on the survivor, facing up the way they face, with the first-day goal starred. */
+function MapCorner(): ReactNode {
+  const onboarding = useOnboarding();
+  const here = useGameStore((ctx) => {
+    const me = ctx.scene.entity.get(ctx.player.userId);
+    return me === null ? null : { x: Math.round(me.position[0]), z: Math.round(me.position[2]), yaw: Math.round(me.rotationY * 20) / 20 };
+  }, same);
+  if (onboarding === null || here === null) return null;
+  return <Minimap markers={onboarding.markers} center={[here.x, here.z]} facingYaw={here.yaw} worldRadius={100} size={150} title="Island" />;
+}
+
+/** ARK's layout: pools bottom-right, hotbar bottom-centre, gather feed left, crosshair centre; the first-day steps top-left over the map. */
 export function Hud(): ReactNode {
-  return <HudSlots storageKey="fernwild" slots={{ top: <BossBar />, topRight: <BodyLine />, left: <Feed />, bottomLeft: <Mount />, bottom: <Bar />, bottomRight: <Vitals /> }} overlay={<Screens />} />;
+  return (
+    <HudSlots
+      storageKey="fernwild"
+      slots={{ topLeft: <OnboardingHud accent="#e7c84a" />, top: <BossBar />, topRight: <BodyLine />, right: <MapCorner />, left: <Feed />, bottomLeft: <Mount />, bottom: <Bar />, bottomRight: <Vitals /> }}
+      overlay={<Screens />}
+    />
+  );
 }

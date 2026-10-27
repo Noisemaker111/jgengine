@@ -18,6 +18,7 @@ import { entityModels, objectModels, scatterModels } from "./game/models";
 import { BAG, BAG_SLOTS, HOTBAR, HOTBAR_SLOTS } from "./game/bags";
 import { nearestSupplyDrop, supplyDropPrompts } from "./game/supplyDrops";
 import { canRun, survivorPrompts, survivorView } from "./game/survivor";
+import { firstDay } from "./game/onboarding";
 import { openScreen } from "./game/screens";
 import { GameUI } from "./game/ui/GameUI";
 import { BaseWorld } from "./game/ui/BaseWorld";
@@ -57,7 +58,7 @@ export const game = defineGame({
     ...Object.fromEntries(Array.from({ length: HOTBAR_SLOTS }, (_, slot) => [`slot${slot + 1}`, [`Digit${(slot + 1) % 10}`]])),
   },
   movement: { canSprint: canRun, swim: { speedMultiplier: 0.6 }, feel: { runMultiplier: SURVIVOR.runMultiplier } },
-  systems: [createGameFlowSystem(), ...systems],
+  systems: [createGameFlowSystem(), ...systems, firstDay],
   newGame: survivorStart,
   loop: { onNewPlayer },
   GameUI,

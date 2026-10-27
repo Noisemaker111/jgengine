@@ -611,6 +611,26 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `createOffScreenWorld` (function) · `import { createOffScreenWorld } from "@jgengine/core/gameplay"`
 
+## onboarding — declared tutorial steps that point at world things (arrow, minimap marker, waypoint), complete from events or conditions, lock commands until done, grant on completion, skip and save — as a separate tutorial level, a teaching start area or hints blended into stage one
+
+- `createOnboardingSystem` (function) · `import { createOnboardingSystem } from "@jgengine/core/onboarding/onboardingSystem"`
+
+## onboarding-banner — announces each finished onboarding step and the next one on the objective banner
+
+- `OnboardingBanner` (function) · `import { OnboardingBanner } from "@jgengine/core/onboarding/onboarding.view"`
+
+## onboarding-hud — onboarding steps in the quest tracker with Next and Skip
+
+- `OnboardingHud` (function) · `import { OnboardingHud } from "@jgengine/core/onboarding/onboarding.view"`
+
+## onboarding-lock — which onboarding step still locks a command or UI id, so a HUD can grey it out
+
+- `onboardingLock` (function) · `import { onboardingLock } from "@jgengine/core/onboarding/onboardingSystem"`
+
+## onboarding-pointer — on-screen pin or edge arrow with distance to the current onboarding step's target
+
+- `OnboardingPointer` (function) · `import { OnboardingPointer } from "@jgengine/core/onboarding/OnboardingPointer.draw"`
+
 ## param-layers — register parameter layers by stable id and resolve serialized selections
 
 - `createLayerRegistry` (function) · `import { createLayerRegistry } from "@jgengine/core/gameplay"`

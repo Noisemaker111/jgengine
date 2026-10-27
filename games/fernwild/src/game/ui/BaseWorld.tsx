@@ -1,6 +1,7 @@
 import type { ReactNode } from "react";
 import { BaseStructures } from "@jgengine/core/basebuilding/BaseStructures.draw";
 import type { WorldOverlayProps } from "@jgengine/core/game/playableGame";
+import { OnboardingPointer } from "@jgengine/core/onboarding/OnboardingPointer.draw";
 
 import { baseBuilding, baseGhost, structureColor } from "../base";
 import { Bodies } from "./Bodies";
@@ -21,6 +22,7 @@ export function BaseWorld({ ctx }: WorldOverlayProps): ReactNode {
       <SupplyDrops ctx={ctx} />
       <Eggs ctx={ctx} />
       <BroodLair ctx={ctx} />
+      <OnboardingPointer ctx={ctx} />
     </>
   );
 }
