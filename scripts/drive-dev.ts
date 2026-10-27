@@ -68,6 +68,7 @@ import { awaitGameView, holdDriveInput, sendDriveChord, type DriveHoldUntil, typ
 import { driveProjectDir, flowFileOf, flowsDirOf, listFlowNames, loadFlow, missingFlowsMessage } from "./driveFlows";
 import { runDriveSteps, type DriveStepRecord } from "./driveRun";
 import { createBrowserFlow, type BridgeAnswer, type BrowserFlowDriver } from "./browserFlow";
+import { acquireDrivePointerLock, aimDriveAt, lookDrivePointer, moveDrivePointer, type DrivePoint } from "./driveAim";
 import { createFlowStepper, describeFlowReport, runFlowReport, type FlowRunReport } from "../packages/core/src/play/flowSteps";
 import { runFlowHeadless } from "../packages/core/src/play/headlessFlow.draw";
 import type { ProofFlow } from "../packages/core/src/play/flow";
@@ -190,8 +191,8 @@ Flows:
 
   Headless is the default: the real game ticks at 60 Hz with keys mapped to its own bindings, so
   a key it binds nowhere fails the step. Shots are skipped headless. A flow that needs the page
-  (menus, DOM text, clicks) sets browser: true and gets click, clickAt, fill, see, page,
-  waitForPage, expectPage, reload and rpc. state: "<name>" boots a capture.states entry.
+  (menus, DOM text, clicks, real mouse look) sets browser: true and gets click, clickAt,
+  moveMouse, look, aimAt, fill, see, page, waitForPage, expectPage, reload and rpc. state: "<name>" boots a capture.states entry.
   A passing run prints one line; a failing one prints the step, what it expected, the probe
   readings at that moment and the steps before it.
 
@@ -924,6 +925,7 @@ async function driveSession(daemon: ShootDaemonState | null): Promise<number> {
           const clock = recorder;
           const sleep = (ms: number): Promise<void> => (clock === null ? new Promise<void>((r) => setTimeout(r, ms)) : clock.advance(ms));
           const now = (): number => (clock === null ? Date.now() : clock.virtualNow);
+          let pointer: DrivePoint | null = null;
           const driver: BrowserFlowDriver = {
             async hold(chord, minMs, until) {
               if (clock === null) return holdKey(session, chord, minMs, until);
@@ -950,6 +952,25 @@ async function driveSession(daemon: ShootDaemonState | null): Promise<number> {
               await session.send("Page.bringToFront");
               await dispatchClickAt(session, { x, y }, button);
               if (clock !== null) await clock.advance(300);
+            },
+            async moveMouse(x, y) {
+              await moveDrivePointer(session, { x, y });
+              pointer = { x, y };
+              if (clock !== null) await clock.advance(300);
+            },
+            async look(dx, dy) {
+              await acquireDrivePointerLock(session);
+              const turned = await lookDrivePointer(session, dx, dy);
+              if (clock !== null) await clock.advance(300);
+              return turned.movement;
+            },
+            async aimAt(expression, tolerancePx) {
+              // An unlocked page is aimed with the plain pointer, so a refused lock is not a failure here.
+              await acquireDrivePointerLock(session).catch(() => false);
+              const aimed = await aimDriveAt(session, pointer, expression, tolerancePx);
+              pointer = aimed.from;
+              if (clock !== null) await clock.advance(300);
+              return { point: aimed.point, moves: aimed.moves };
             },
             async fill(label, value) {
               await fill(session, label, value);
