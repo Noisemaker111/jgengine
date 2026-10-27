@@ -69,3 +69,90 @@ test("a culled marker's world position is still exact when asked for directly", 
   scene.updateMatrixWorld();
   expect(mesh.getWorldPosition(new THREE.Vector3()).toArray()).toEqual([12, 2, 0]);
 });
+
+test("a still node is not recomposed each frame; one that moves is, and its children follow", () => {
+  const scene = new THREE.Scene();
+  skipCulledMatrices(scene);
+  const still = marker(scene, 4);
+  const moving = marker(scene, 8);
+  scene.updateMatrixWorld();
+  let recomposed = 0;
+  const count = (node: THREE.Object3D) => {
+    const original = node.updateMatrix.bind(node);
+    node.updateMatrix = () => {
+      recomposed += 1;
+      original();
+    };
+  };
+  for (const node of [still.group, still.mesh, moving.group, moving.mesh]) count(node);
+  moving.group.position.x = 9;
+  scene.updateMatrixWorld();
+  expect(recomposed).toBe(1);
+  expect(moving.mesh.matrixWorld.elements.slice(12, 15)).toEqual([9, 2, 0]);
+  expect(still.mesh.matrixWorld.elements.slice(12, 15)).toEqual([4, 2, 0]);
+});
+
+test("a node moved under a new parent with the same local transform takes the new parent's place", () => {
+  const scene = new THREE.Scene();
+  skipCulledMatrices(scene);
+  const a = marker(scene, 4);
+  const b = marker(scene, 20);
+  scene.updateMatrixWorld();
+  b.group.add(a.mesh);
+  scene.updateMatrixWorld();
+  expect(a.mesh.matrixWorld.elements.slice(12, 15)).toEqual([20, 2, 0]);
+});
+
+test("a culled node shown again under a parent that moved while it was out of view is rebuilt", () => {
+  const scene = new THREE.Scene();
+  skipCulledMatrices(scene);
+  const { group, mesh } = marker(scene, 4);
+  scene.updateMatrixWorld();
+  mesh.visible = false;
+  setCulled(mesh, true);
+  group.position.x = 30;
+  scene.updateMatrixWorld();
+  mesh.visible = true;
+  setCulled(mesh, false);
+  scene.updateMatrixWorld();
+  expect(mesh.matrixWorld.elements.slice(12, 15)).toEqual([30, 2, 0]);
+});
+
+test("asking one node for its world position does not rebuild the rest of the scene", () => {
+  const scene = new THREE.Scene();
+  skipCulledMatrices(scene);
+  const asked = marker(scene, 4);
+  const other = marker(scene, 8);
+  scene.updateMatrixWorld();
+  // three's getWorldPosition marks every ancestor up to the scene as needing a world update.
+  asked.mesh.getWorldPosition(new THREE.Vector3());
+  expect(scene.matrixWorldNeedsUpdate).toBe(true);
+  let rebuilt = 0;
+  const multiply = other.mesh.matrixWorld.multiplyMatrices.bind(other.mesh.matrixWorld);
+  other.mesh.matrixWorld.multiplyMatrices = (a, b) => {
+    rebuilt += 1;
+    return multiply(a, b);
+  };
+  scene.updateMatrixWorld();
+  expect(rebuilt).toBe(0);
+  other.group.position.x = 9;
+  scene.updateMatrixWorld();
+  expect(rebuilt).toBe(1);
+  expect(other.mesh.matrixWorld.elements.slice(12, 15)).toEqual([9, 2, 0]);
+});
+
+test("a world matrix something else wrote (a pose held for one render) is put back by the next pass", () => {
+  const scene = new THREE.Scene();
+  skipCulledMatrices(scene);
+  const { group, mesh } = marker(scene, 4);
+  scene.updateMatrixWorld();
+  // Move, rebuild the subtree with three's own pass, move back: the node's local transform is where the
+  // last pass left it, but its child's world matrix is not.
+  group.position.x = 50;
+  group.updateMatrixWorld(true);
+  group.position.x = 4;
+  group.updateMatrix();
+  group.matrixWorld.makeTranslation(4, 0, 0);
+  scene.updateMatrixWorld();
+  expect(mesh.matrixWorld.elements.slice(12, 15)).toEqual([4, 2, 0]);
+});

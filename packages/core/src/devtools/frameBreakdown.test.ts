@@ -17,6 +17,10 @@ test("percentiles of a series", () => {
 
 test("a hitch names its cause from what happened in that frame", () => {
   expect(hitchCause(frame({ intervalMs: 80, compiles: 3, compileMs: 60 })).cause).toBe("compile");
+  // A program linked in an earlier frame stalls the draw that first uses it; the hitch names that draw.
+  expect(hitchCause(frame({ intervalMs: 90, compileMs: 70, shaders: ["Water#3 on Lake #9"] })).detail).toBe(
+    "waited on shader programs at first use, 70 ms for Water#3 on Lake #9",
+  );
   expect(hitchCause(frame({ intervalMs: 50, uploads: 2, uploadBytes: 16 * 1048576, uploadMs: 20 })).cause).toBe("upload");
   expect(hitchCause(frame({ intervalMs: 45, heapDropMb: 30 })).detail).toContain("30 MB");
   expect(hitchCause(frame({ intervalMs: 40, cpu: { "frame#4 src/water.ts:9": 30 } })).detail).toBe("frame#4 src/water.ts:9 30 ms on the CPU");

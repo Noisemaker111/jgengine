@@ -2,6 +2,7 @@ import * as THREE from "three";
 import { FullScreenQuad, Pass } from "three-stdlib";
 
 import { DEFAULT_CONTACT_SHADOWS, type ContactShadowConfig } from "@jgengine/core/render/postProcessing";
+import { visitVisible } from "@jgengine/core/visibility/visitVisible.draw";
 
 const vertexShader = /* glsl */ `
   varying vec2 vUv;
@@ -94,7 +95,7 @@ const targetPosition = new THREE.Vector3();
  */
 export function findKeyLight(scene: THREE.Object3D): THREE.DirectionalLight | null {
   let best: THREE.DirectionalLight | null = null;
-  scene.traverseVisible((object) => {
+  visitVisible(scene, (object) => {
     const light = object as THREE.DirectionalLight;
     if (!light.isDirectionalLight || !light.castShadow || light.intensity <= 0) return;
     if (best === null || light.intensity > best.intensity) best = light;

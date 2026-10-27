@@ -6,6 +6,7 @@ import { applyMaterialAssignments, validateMaterialAssignmentTargets } from "@jg
 import { buildScatterModelSources, disposeScatterModelSources } from "@jgengine/core/scatter/scatterModels.draw";
 import { composeBuildingKitMatrix, type BuildingKitInstance, type BuildingKitModelBounds } from "./buildingKitFit.draw";
 import { applyBuildingSurface, surfaceKey } from "./buildingSurface.draw";
+import { visitVisible } from "@jgengine/core/visibility/visitVisible.draw";
 
 /** The material values used by one kit variant, excluding unrelated document library entries. @internal */
 export function buildingKitMaterialKey(part: BuildingKitPart, assets: readonly MaterialAsset[] = []): string {
@@ -55,7 +56,7 @@ export function buildBuildingKitSources(
   const prepared = buildScatterModelSources(scene, { url: part.model });
   try {
     const tint = part.tint === undefined || part.tint === "" ? undefined : new THREE.Color(part.tint);
-    prepared.root.traverseVisible(node => {
+    visitVisible(prepared.root, node => {
       const mesh = node as THREE.Mesh;
       if (!mesh.isMesh) return;
       for (const material of Array.isArray(mesh.material) ? mesh.material : [mesh.material]) {
@@ -65,7 +66,7 @@ export function buildBuildingKitSources(
     });
     if (part.materialAssignments?.length) applyMaterialAssignments(prepared.root, assets, part.materialAssignments, assetTextures);
     let index = 0;
-    prepared.root.traverseVisible(node => {
+    visitVisible(prepared.root, node => {
       const mesh = node as THREE.Mesh;
       if (mesh.isMesh) prepared.sources[index++]!.material = mesh.material;
     });

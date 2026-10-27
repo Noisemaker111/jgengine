@@ -70,6 +70,8 @@ export interface ProfileEntry {
   at: string;
   selfMs: number;
   selfPct: number;
+  /** For a library function, the nearest engine or game function that called it most: where to look. */
+  via?: string;
 }
 
 /** CPU profile summary; only the CDP harness can produce one. */

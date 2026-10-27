@@ -20,9 +20,14 @@ export interface FrameBreakdownRecord {
   gpu: Record<string, number> | null;
   draws: number;
   triangles: number;
-  /** Shader programs linked this frame, and the milliseconds the main thread spent compiling and linking. */
+  /**
+   * Shader programs linked this frame, and the milliseconds the main thread spent compiling, linking
+   * and waiting on a program's first use (three's uniform and attribute queries wait for the link).
+   */
   compiles: number;
   compileMs: number;
+  /** The draws that waited on a shader program this frame, as "material on object". */
+  shaders?: string[];
   /** Texture and buffer uploads this frame: calls, bytes and main-thread milliseconds. */
   uploads: number;
   uploadBytes: number;
@@ -155,8 +160,10 @@ function namedCosts(frames: readonly Record<string, number>[], top: number): Nam
  * @internal
  */
 export function hitchCause(record: FrameBreakdownRecord): Pick<Hitch, "cause" | "detail"> {
-  if (record.compiles > 0 && record.compileMs >= 2) {
-    return { cause: "compile", detail: `${record.compiles} shader program(s) compiled, ${round(record.compileMs, 1)} ms` };
+  if (record.compileMs >= 2) {
+    const what = record.compiles > 0 ? `${record.compiles} shader program(s) compiled` : "waited on shader programs at first use";
+    const which = record.shaders !== undefined && record.shaders.length > 0 ? ` for ${record.shaders.slice(0, 3).join(", ")}` : "";
+    return { cause: "compile", detail: `${what}, ${round(record.compileMs, 1)} ms${which}` };
   }
   if (record.uploadMs >= 4 || record.uploadBytes >= 4 * 1024 * 1024) {
     return { cause: "upload", detail: `${record.uploads} upload(s), ${round(record.uploadBytes / 1048576, 1)} MB, ${round(record.uploadMs, 1)} ms` };

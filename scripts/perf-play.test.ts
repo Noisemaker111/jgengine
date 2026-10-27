@@ -14,6 +14,7 @@ import {
   parseDeclaredSettings,
   parsePerfArgs,
   parseSettingSpec,
+  perfBatchTable,
   perfFrameClockLine,
   perfPageUrl,
   perfSettingsScript,
@@ -27,11 +28,11 @@ import {
 test("parsePerfArgs reads one game with its flags", () => {
   expect(parsePerfArgs(["harbor-heat"])).toEqual({
     kind: "run",
-    args: { game: "harbor-heat", draft: false, profile: false, seconds: 6, telemetry: "on", settings: [], frameClock: "uncapped", path: "walk", size: { width: 1920, height: 1080 }, json: false, params: [] },
+    args: { games: ["harbor-heat"], draft: false, profile: false, seconds: 6, telemetry: "on", settings: [], frameClock: "uncapped", path: "walk", size: { width: 1920, height: 1080 }, json: false, params: [] },
   });
   expect(parsePerfArgs(["deepward", "--quality", "ultra", "--profile", "--seconds", "3"])).toEqual({
     kind: "run",
-    args: { game: "deepward", quality: "ultra", draft: false, profile: true, seconds: 3, telemetry: "on", settings: [], frameClock: "uncapped", path: "walk", size: { width: 1920, height: 1080 }, json: false, params: [] },
+    args: { games: ["deepward"], quality: "ultra", draft: false, profile: true, seconds: 3, telemetry: "on", settings: [], frameClock: "uncapped", path: "walk", size: { width: 1920, height: 1080 }, json: false, params: [] },
   });
   expect(parsePerfArgs(["deepward", "--path", "still", "--size", "1280x720", "--compare", "before.json", "--out", "after.json", "--json", "--capped"])).toMatchObject({
     args: { path: "still", size: { width: 1280, height: 720 }, compare: "before.json", out: "after.json", json: true, frameClock: "capped" },
@@ -42,11 +43,30 @@ test("parsePerfArgs reads one game with its flags", () => {
   expect(drafted.kind === "run" && drafted.args.draft).toBe(true);
   expect(drafted.kind === "run" && drafted.args.quality).toBeUndefined();
   expect(parsePerfArgs(["--help"]).kind).toBe("help");
+  // Several games are one run in one browser, in the order given.
+  expect(parsePerfArgs(["deepward", "saltwick", "--compare", "HEAD"])).toMatchObject({ args: { games: ["deepward", "saltwick"], compare: "HEAD" } });
+});
+
+test("a batch ends with one row per game: frame, cost, and the distance from 144 Hz", () => {
+  const spread = (p50: number, p95: number) => ({ p50, p95, p99: p95, max: p95, avg: p50 });
+  const summary = (work: number, gpu: number) => ({ frame: spread(8, 12), work: spread(work, work + 1), gpu: spread(gpu, gpu + 1) });
+  const table = perfBatchTable([
+    { game: "deepward", summary: summary(3, 2.5) },
+    { game: "harbor-heat", summary: summary(10, 62.2) },
+    { game: "hold-the-line", summary: "failed" },
+  ]).split("\n");
+  expect(table).toHaveLength(4);
+  expect(table[1]).toMatch(/^deepward\s+8\.00 ms\s+12\.00 ms\s+3\.00 ms\s+ok$/);
+  // The cost is the larger of CPU work and GPU time, whichever side it is on.
+  expect(table[2]).toMatch(/^harbor-heat\s+8\.00 ms\s+12\.00 ms\s+62\.20 ms\s+55\.26 ms over$/);
+  expect(table[3]).toMatch(/^hold-the-line\s+failed$/);
 });
 
 test("parsePerfArgs rejects unusable input", () => {
   expect(() => parsePerfArgs([])).toThrow("a game id is required");
-  expect(() => parsePerfArgs(["a", "b"])).toThrow("one game per run");
+  expect(() => parsePerfArgs(["a", "a"])).toThrow("a given twice");
+  expect(() => parsePerfArgs(["a", "b", "--out", "x.json"])).toThrow("--out names one record");
+  expect(() => parsePerfArgs(["a", "b", "--state", "two-towers"])).toThrow("pin one game's scene");
   expect(() => parsePerfArgs(["a", "--quality", "highish"])).toThrow("--quality must be one of low, medium, high, ultra");
   expect(() => parsePerfArgs(["a", "--quality", "draft"])).toThrow("--quality must be one of low, medium, high, ultra");
   expect(() => parsePerfArgs(["a", "--draft", "--quality", "ultra"])).toThrow("--draft is the iteration preset");
@@ -409,3 +429,20 @@ test("whole-frame draws are the p95 of the sampled frames, so a cadenced pass is
   expect(summarizeFrameDraws([Number.NaN, -4, 12])).toMatchObject({ frames: 1, p95: 12 });
 });
 
+
+test("a library function's self time names the engine or game code that called it", () => {
+  const url = (path: string) => `http://127.0.0.1:4517/${path}`;
+  const profile = {
+    nodes: [
+      { id: 1, callFrame: { functionName: "(root)", url: "", lineNumber: 0, columnNumber: 0 }, children: [2, 4] },
+      { id: 2, callFrame: { functionName: "findLamps", url: url("src/postfx/haze.ts"), lineNumber: 9, columnNumber: 2 }, children: [3] },
+      { id: 3, callFrame: { functionName: "traverseVisible", url: url("node_modules/.vite/deps/three.js"), lineNumber: 99, columnNumber: 0 } },
+      { id: 4, callFrame: { functionName: "tick", url: url("src/game/tick.ts"), lineNumber: 0, columnNumber: 0 } },
+    ],
+    samples: [3, 3, 4],
+    timeDeltas: [3_000, 3_000, 1_000],
+  };
+  const self = aggregateSelfTime(profile, 7);
+  expect(self[0]).toMatchObject({ fn: "traverseVisible", via: "findLamps src/postfx/haze.ts:10:3" });
+  expect(self[1]?.via).toBeUndefined();
+});

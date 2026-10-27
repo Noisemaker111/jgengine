@@ -7,6 +7,7 @@ import { applyMaterialOverride } from "@jgengine/core/material/materialOverride.
 import { cloneModelScene, disposeModelScene, ownModelMaterial } from "@jgengine/core/model/modelRender.draw";
 import { applyModelSurface } from "@jgengine/core/model/modelSurface.draw";
 import { applyModelWindToScene } from "@jgengine/core/model/modelWind.draw";
+import { visitVisible } from "@jgengine/core/visibility/visitVisible.draw";
 /** One instanceable draw source harvested from a resolved GLB — geometry stays shared with the loader cache, `localMatrix` bakes the model's own transform (from its scene root) plus scale/anchor normalization. */
 export interface ScatterModelSource {
   geometry: THREE.BufferGeometry;
@@ -87,7 +88,7 @@ export function buildScatterModelSources(
   root.updateMatrixWorld(true);
   const base = scatterModelBaseTransform(root, model);
   const sources: ScatterModelSource[] = [];
-  root.traverseVisible((node) => {
+  visitVisible(root, (node) => {
     const mesh = node as THREE.Mesh;
     if (!mesh.isMesh) return;
     sources.push({

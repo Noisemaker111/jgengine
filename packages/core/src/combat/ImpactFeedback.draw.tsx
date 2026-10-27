@@ -11,6 +11,7 @@ import { useGameContext } from "@jgengine/react/provider";
 
 import { cameraShake } from "@jgengine/core/camera/shake/cameraShake";
 import { useTerrainQuality } from "@jgengine/core/terrain/terrainQuality.draw";
+import { visitVisible } from "@jgengine/core/visibility/visitVisible.draw";
 
 /** What {@link ImpactFeedback} reacts with; every field defaults on. */
 export interface ImpactFeedbackOptions {
@@ -148,7 +149,7 @@ export function drawnSurfaceHit(
   // Prune by bounds before any triangle test: only meshes whose bounds touch this short ray are cast.
   const ray = surfaceRay.ray;
   const hits: THREE.Intersection[] = [];
-  scene.traverseVisible((node) => {
+  visitVisible(scene, (node) => {
     const object = node as THREE.Mesh & { isSkinnedMesh?: boolean; isInstancedMesh?: boolean; boundingSphere?: THREE.Sphere | null };
     if (object.isMesh !== true || object === skip || object.isSkinnedMesh === true) return;
     let sphere: THREE.Sphere | null;

@@ -1,4 +1,5 @@
 import * as THREE from "three";
+import { visitVisible } from "@jgengine/core/visibility/visitVisible.draw";
 
 /** Sampling resolution; lower resolutions change thin geometry and alpha-mask raster coverage. */
 export interface ProjectedOverdrawOptions { width?: number; height?: number }
@@ -92,7 +93,7 @@ export function measureProjectedOverdraw(renderer: THREE.WebGLRenderer, scene: T
   const materials = new Set<THREE.Material>();
   let materialSlots = 0, opaqueSlots = 0, maskedSlots = 0, blendedSlots = 0, transmissionSlots = 0;
   if (scene.onBeforeRender !== THREE.Object3D.prototype.onBeforeRender || scene.onAfterRender !== THREE.Object3D.prototype.onAfterRender) throw new Error("Projected overdraw rejects scene render callbacks");
-  scene.traverseVisible(node => {
+  visitVisible(scene, node => {
     if (!node.layers.test(camera.layers)) return;
     const flags = node as THREE.Mesh & { isPoints?: boolean; isLine?: boolean; isSprite?: boolean; isBatchedMesh?: boolean; isInstancedMesh?: boolean; count?: number };
     if (flags.geometry?.drawRange.count === 0 || (flags.isInstancedMesh && flags.count === 0)) return;
