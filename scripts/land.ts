@@ -857,10 +857,18 @@ function run(command: string, args: string[], timeout?: number): Run {
   return runAt(root, command, args, timeout);
 }
 
+/**
+ * Output a command may print before it is cut off. Node's default is 1 MiB, and `git show` of a
+ * skill's generated api.md is already past that: cut off, the show fails and every export in the
+ * file reads as newly added.
+ */
+const MAX_OUTPUT = 64 * 1024 * 1024;
+
 export function runAt(cwd: string, command: string, args: string[], timeout?: number): Run {
   const result = spawnSync(command, args, {
     cwd,
     encoding: "utf8",
+    maxBuffer: MAX_OUTPUT,
     stdio: ["ignore", "pipe", "pipe"],
     ...(timeout === undefined ? {} : { timeout }),
   });

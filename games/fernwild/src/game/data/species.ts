@@ -44,6 +44,8 @@ export interface SpeciesDef {
   carcass: { hits: number; meat: number; hide: number };
   /** Body radius in metres, for hits and prompts. */
   radius: number;
+  /** Clubs, darts and narcotics never put it down (ARK's bosses). */
+  torporImmune?: boolean;
 }
 
 const food = (countAt1: number, secondsAt1: number, countAt30: number, secondsAt30: number, ineffectiveness?: number): TamingFood => ({
@@ -284,10 +286,46 @@ function fromRow(id: string, row: Row): SpeciesDef {
   };
 }
 
-/** Every species on the Island: the detailed three and the table's rest. */
+/**
+ * The Broodmother Lysrix, one species per difficulty as ARK keeps them: the wiki's base health and its
+ * per-level gain, the lighter of her two melee attacks, torpor 100000 (+6000 a level) that nothing
+ * brings down, and 32 base kill XP. Her speeds, bite timing, size and carcass are approximate.
+ */
+function broodmother(tier: "gamma" | "beta" | "alpha", health: number, healthPerLevel: number, melee: number): SpeciesDef {
+  const label = `${tier[0]!.toUpperCase()}${tier.slice(1)} Broodmother`;
+  return {
+    id: `broodmother_${tier}`,
+    label,
+    temperament: "aggressive",
+    diet: "carnivore",
+    health: { base: health, perLevel: healthPerLevel },
+    stamina: { base: 1000, perLevel: 100 },
+    oxygen: { base: 150, perLevel: 15 },
+    food: { base: 10000, perLevel: 1000 },
+    weight: { base: 1000, perLevel: 20 },
+    melee: { base: melee, perLevel: melee * 0.05 },
+    walk: 2,
+    sprint: 4.5,
+    sprintStamina: 0,
+    killXp: 32,
+    attack: { damage: melee, interval: 2, reach: 3 },
+    taming: { torpor: { base: 100000, perLevel: 6000 }, torporDrain: DRAIN, foods: {} },
+    saddle: null,
+    saddleEngram: null,
+    seat: [0, 0, 0],
+    carcass: { hits: 60, meat: 8, hide: 6 },
+    radius: 7,
+    torporImmune: true,
+  };
+}
+
+/** Every species on the Island: the detailed three, the table's rest, and the Broodmother. */
 export const SPECIES: Readonly<Record<string, SpeciesDef>> = {
   ...DETAILED,
   ...Object.fromEntries(Object.entries(ROWS).map(([id, row]) => [id, fromRow(id, row)])),
+  broodmother_gamma: broodmother("gamma", 324000, 64800, 180),
+  broodmother_beta: broodmother("beta", 648000, 97200, 320),
+  broodmother_alpha: broodmother("alpha", 972000, 243000, 540),
 };
 
 /** What a tame puts its level-up points into. */

@@ -4,12 +4,13 @@ import type { WorldOverlayProps } from "@jgengine/core/game/playableGame";
 
 import { baseBuilding, baseGhost, structureColor } from "../base";
 import { Bodies } from "./Bodies";
+import { BroodLair } from "./Broodmother";
 import { Caves } from "./Caves";
 import { Eggs } from "./Eggs";
 import { Obelisks } from "./Obelisks";
 import { SupplyDrops } from "./SupplyDrops";
 
-/** What the game draws into the world: the survivor's base (pieces by tier colour, the build ghost), the obelisks, the caves, fallen survivors' bodies, supply crates and fertilized eggs. */
+/** What the game draws into the world: the survivor's base (pieces by tier colour, the build ghost), the obelisks, the caves, fallen survivors' bodies, supply crates, fertilized eggs and the Broodmother's lair. */
 export function BaseWorld({ ctx }: WorldOverlayProps): ReactNode {
   return (
     <>
@@ -19,6 +20,7 @@ export function BaseWorld({ ctx }: WorldOverlayProps): ReactNode {
       <Bodies ctx={ctx} />
       <SupplyDrops ctx={ctx} />
       <Eggs ctx={ctx} />
+      <BroodLair ctx={ctx} />
     </>
   );
 }

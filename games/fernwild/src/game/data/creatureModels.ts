@@ -125,6 +125,10 @@ export const SPECIES_MODELS: Readonly<Record<string, SpeciesModel>> = {
   gallimimus: { file: "ostrich", height: 2.8 },
   castoroides: { file: "beaver", height: 1.6 },
   araneo: { file: "spider", height: 1.3 },
+  // The Broodmother: Araneo's queen, dark and many times its size; brighter the harder she is.
+  broodmother_gamma: { file: "spider", height: 10, tint: "#3a2c3e" },
+  broodmother_beta: { file: "spider", height: 10, tint: "#4a2a5a" },
+  broodmother_alpha: { file: "spider", height: 10, tint: "#6a1f2a" },
   dimetrodon: { file: "fire_salamander", height: 2.2, tint: "#c07a4a" },
   kaprosuchus: { file: "crocodile", height: 1.4, tint: "#8a9a6a" },
   sarco: { file: "crocodile", height: 1.5 },

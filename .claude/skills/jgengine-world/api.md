@@ -802,6 +802,23 @@
 - `VoiceAllocatorStorage` (interface): interface VoiceAllocatorStorage — Caller-owned reservation storage. Reads and writes use detached state.
 - `createVoiceAllocator` (function): function createVoiceAllocator(config: VoiceAllocatorConfig = {}): VoiceAllocator — Reserve bounded sound playback before fetching or constructing a graph. Equal priorities steal the oldest reservation; lower priorities cannot interrupt higher priorities. Policy is retunable.
 
+## @jgengine/core/bossArena/bossArena
+
+- `ArenaCandidate` (interface): interface ArenaCandidate — Someone the portal could take in: a survivor, or a companion, and where they stood to be sent back to.
+- `ArenaReturn` (interface): interface ArenaReturn — Who goes back where, when a fight ends.
+- `ArenaWallOptions` (interface): interface ArenaWallOptions — Where the arena stands in the world and how high its walls rise.
+- `BossArena` (interface): interface BossArena — A summoned boss fight: tribute, portal, the fight, the winners' wait, the trip home.
+- `BossArenaEvent` (type): type BossArenaEvent = | { type: "entered"; tier: string; admitted: ArenaCandidate[]; refused: { id: string; reason: "full" | "heavy" }[] } /** The portal closed with no survivor in range: the tribute is gone, as in ARK. */ | { type: "closed"; tier: string } | { type: "won"; tier: string; survivors: … — Things that happened on one step of the arena clock.
+- `BossArenaHooks` (interface): interface BossArenaHooks — What the arena clock asks the game each step.
+- `BossArenaOptions` (interface): interface BossArenaOptions — How a summoned boss fight runs: tiers, the portal, who may come in, and how long the winners stay.
+- `BossArenaPhase` (type): type BossArenaPhase = "idle" | "portal" | "fight" | "victory" — Where a fight stands: nothing summoned, the portal counting down, the fight, or the winners' wait.
+- `BossArenaState` (interface): interface BossArenaState — Serializable fight state.
+- `BossArenaTier` (interface): interface BossArenaTier — One difficulty of a summoned boss: the survivor level it asks for and the tribute it eats.
+- `TributeCheck` (interface): interface TributeCheck — What a tribute check found: what is missing, and how many levels short the summoner is.
+- `TributeSource` (interface): interface TributeSource — What the summoner carries, for a tribute: how many of an item, and taking them.
+- `arenaWall` (function): function arenaWall(options: ArenaWallOptions): WorldSolid[] — The ring wall that keeps a fight in its arena: `sides` solid slabs round the floor, each standing on the lowest ground under it so no gap opens on a slope. Feed it to `ctx.world.solids.set`.
+- `createBossArena` (function): function createBossArena(options: BossArenaOptions): BossArena — A summoned boss fight as ARK runs its obelisk bosses. The summoner pays a tier's tribute (and needs its level); a portal counts down, then takes every survivor and companion in range up to the caps into the arena, each remembered where they stood. The fight is won when the boss dies, after which the winners stay `victorySeconds` and are sent back; it is lost when no survivor is left inside (or time runs out), and the companions still inside are lost with it. The game owns the bodies, teleports and the boss; this owns the rules and the clock. Deterministic in `now`; serializable.
+
 ## @jgengine/core/buildings/GeneratedBuilding.draw
 
 - `BuildingBlock` (function): function BuildingBlock({ part, palette }: BuildingBlockProps): React.JSX.Element — ⚠ undocumented

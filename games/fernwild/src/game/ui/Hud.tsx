@@ -8,6 +8,7 @@ import { bodyView } from "../deathBody";
 import { openScreen } from "../screens";
 import { HOTBAR } from "../bags";
 import { survivorView, type SurvivorView } from "../survivor";
+import { BossBar } from "./Broodmother";
 import { itemIcon } from "./ItemIcon";
 import { InventoryScreen } from "./InventoryScreen";
 import { CreatureReadout, useCreatures } from "./CreatureScreen";
@@ -136,7 +137,7 @@ function CreatureLook(): ReactNode {
   const { aimed, riding } = useCreatures();
   if (riding !== null) return null;
   if (aimed === null) return null;
-  const use = aimed.dead ? "Hit to carve meat and hide" : aimed.tamed ? (aimed.saddled ? "E · Ride" : "E · Access inventory") : aimed.taming?.unconscious === true ? "E · Access inventory" : null;
+  const use = aimed.dead ? (aimed.inventory.some((slot) => slot !== null) ? "E · Access inventory · Hit to carve" : "Hit to carve meat and hide") : aimed.tamed ? (aimed.saddled ? "E · Ride" : "E · Access inventory") : aimed.taming?.unconscious === true ? "E · Access inventory" : null;
   return (
     <div data-aim-creature="" style={{ ...LOOK, display: "flex", flexDirection: "column", alignItems: "center", gap: 4 }}>
       <CreatureReadout card={aimed} />
@@ -209,5 +210,5 @@ function Screens(): ReactNode {
 
 /** ARK's layout: pools bottom-right, hotbar bottom-centre, gather feed left, crosshair centre. */
 export function Hud(): ReactNode {
-  return <HudSlots storageKey="fernwild" slots={{ topRight: <BodyLine />, left: <Feed />, bottomLeft: <Mount />, bottom: <Bar />, bottomRight: <Vitals /> }} overlay={<Screens />} />;
+  return <HudSlots storageKey="fernwild" slots={{ top: <BossBar />, topRight: <BodyLine />, left: <Feed />, bottomLeft: <Mount />, bottom: <Bar />, bottomRight: <Vitals /> }} overlay={<Screens />} />;
 }

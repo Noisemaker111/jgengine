@@ -7,6 +7,7 @@ import { itemDef, itemLabel } from "../data/items";
 import type { SurvivorScreen } from "../screens";
 import { BAG, HOTBAR } from "../bags";
 import { craftable } from "../survivor";
+import { ObeliskPanel } from "./Broodmother";
 import { CreaturePanel } from "./CreatureScreen";
 import { useSurvivor } from "./Hud";
 import { ItemIcon, itemIcon } from "./ItemIcon";
@@ -272,8 +273,10 @@ export function InventoryScreen({ tab }: { tab: SurvivorScreen }): ReactNode {
         if (event.key === "Escape") void ctx.game.commands.run("screen", { screen: null });
       }}
     >
-      {tab === "creature" ? null : <Tabs tab={tab} />}
-      {tab === "creature" ? (
+      {tab === "creature" || tab === "obelisk" ? null : <Tabs tab={tab} />}
+      {tab === "obelisk" ? (
+        <ObeliskPanel />
+      ) : tab === "creature" ? (
         <div style={{ display: "flex", gap: 10, alignItems: "stretch" }}>
           <Carried give />
           <CreaturePanel />

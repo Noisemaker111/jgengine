@@ -3,6 +3,7 @@ import { surveyFromDocument, surveyTerrain } from "@jgengine/core/terrain/survey
 import { environment, ocean, sky, terrain } from "@jgengine/core/world/features";
 
 import { editorLayers } from "./editorLayers";
+import { BROOD_LAIR } from "./game/data/bosses";
 
 /** Sea level; the survey's shores ease the land down to the sand just above it. */
 export const SEA_LEVEL = 0;
@@ -26,6 +27,8 @@ export const world = environment({
     bounds: authored.bounds,
     cellSize: 8,
     ...shaped,
+    // The Broodmother's lair: a flat islet out in the far corner's sea, ringed by its wall (game/broodmother.ts).
+    flatten: [{ center: BROOD_LAIR.center, radius: BROOD_LAIR.radius + 8, height: BROOD_LAIR.floor, falloff: 30 }],
     material: "grass",
     colors: { low: "#4f7f35", high: "#7d9a4a" },
     waterLevel: SEA_LEVEL,
