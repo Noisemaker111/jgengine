@@ -207,7 +207,7 @@ function ScreenProbe() {
 function HintArrow() {
   const ctx=useGameContext();
   const reduced=useGameStore(c=>Boolean(c.game.store.get("park.reduced-motion")));
-  const spot=useGameStore(c=>{const w=park.of(c);const p=currentHint(w)?.world?.(w)??null;return p===null?"":`${p[0]},${p[1]}`;});
+  const spot=useGameStore(c=>{const p=currentHint(c)?.world??null;return p===null?"":`${p[0]},${p[1]}`;});
   const ref=useRef<Group>(null);
   useFrame(({clock})=>{if(ref.current)ref.current.position.y=reduced?0:Math.sin(clock.elapsedTime*3)*.6;});
   if(spot==="")return null;

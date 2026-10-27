@@ -27,8 +27,8 @@ export function GameUI() {
   const inspecting = useGameStore((ctx) => session.selectedObject !== null || ctx.scene.entity.selection.list().length > 0);
   // The world holds game over, the ribbon and the scenario result; re-read them when it changes.
   const w = usePark();
-  const hinting = currentHint(w) !== null;
   const ctx = useGameContext();
+  const hinting = currentHint(ctx) !== null;
   const [reducedMotion, setReducedMotion] = useState(savedMotion);
   const layout = useHudLayout({ storageKey: "brightway-park" });
   // While the pause board or a result screen is up it owns the keys, so the palette hotkeys stand down.

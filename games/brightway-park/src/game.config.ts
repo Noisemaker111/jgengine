@@ -6,6 +6,7 @@ import { DAY_LENGTH, DAY_START } from "./game/catalog";
 import { content } from "./game/content";
 import { entityModels, objectModels } from "./game/models";
 import { BrightwayParkWorldOverlay } from "./game/render/WorldOverlay";
+import { parkHints, parkHintsWhilePaused } from "./game/onboarding";
 import { park } from "./game/park";
 import { parkProbe } from "./game/parkProbe";
 import { GameUI } from "./game/ui/GameUI";
@@ -34,7 +35,8 @@ export const game = defineGame({
   server: { mode: "solo" },
   save: "none",
   // The park is one declaration (`game/park.ts`); its system runs the world and its commands.
-  systems: [park.system],
+  // The first scenario's hints run on the engine's onboarding, after the park so they read this tick's world.
+  systems: [park.system, parkHints, parkHintsWhilePaused],
   time: { scale: 1, dayLength: DAY_LENGTH, start: DAY_START, speeds: [1, 2, 4, 8], startPaused: true },
   content,
   loop,

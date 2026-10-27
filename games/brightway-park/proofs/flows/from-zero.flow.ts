@@ -33,7 +33,8 @@ export default defineFlow(game, {
     await f.command("build.connect", {});
     await f.wait(2500);
     await f.command("brightway.act", { action: "open_gate" });
-    await f.expect((p) => p.taught >= 4, "taught: path, ride, connect and gate are done");
+    // The hints move on at the next onboarding tick, a tenth of a second later.
+    await f.waitFor((p) => p.taught >= 4, { timeoutMs: 1000, note: "taught: path, ride, connect and gate are done" });
 
     // The lab: the first topic is short, so the first unlock lands inside two minutes.
     await f.wait(6000);

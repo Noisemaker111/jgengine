@@ -2,7 +2,7 @@ import type { GameContext } from "@jgengine/core/runtime/gameContext";
 
 import { MILESTONES } from "./milestones";
 import { BUILDABLES, type BuildCategory } from "./objects/catalog";
-import { HINT_STEPS } from "./onboarding";
+import { hintsTaught } from "./onboarding";
 import { park, researched } from "./park";
 import { SCENARIOS, scenarioLock } from "./scenarios";
 import { session } from "./session";
@@ -86,7 +86,7 @@ export function parkProbe(ctx: GameContext): ParkProbe {
     cash: w.num("park.cash"),
     breakdowns: w.num("park.breakdowns"),
     rides: w.num("park.rides"),
-    taught: HINT_STEPS.filter((step) => step.done(w)).length,
+    taught: hintsTaught(ctx),
     unlocks: topics + awards,
     ridesSeen: rides.seen,
     ridesTotal: rides.total,
