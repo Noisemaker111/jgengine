@@ -10,7 +10,7 @@ chains, Frozen Fang and Frozen Tooth in the snow, the redwoods, the swamp, the j
 rivers, with ARK's three obelisks and caves marked. Its 231 creature spawn zones carry ARK's
 species and weights per biome, and resources sit where ARK puts them: metal on the mountains,
 obsidian at the volcano, crystal on the peaks, oil on the frozen shore. Survival, creatures and
-thatch-to-stone building, death, weather, supply drops and breeding are in; the boss comes next.
+thatch-to-stone building, death, weather, supply drops, breeding, explorer notes and the Broodmother are in.
 
 ## Controls
 
@@ -20,7 +20,7 @@ At a creature: E opens a knocked-out or tamed creature's inventory (double-click
 them), E rides a saddled tame and E again gets off. T whistles your tames to follow, U to stay.
 Riding, WASD steers the mount and left click bites.
 
-## Design checklist
+## Design
 
 Numbers live in `src/game/data/` (items, engrams, survivor, harvestables, species); places and
 herds (`creature_spawn` markers) live in `src/editor.scene.json`. The Island is surveyed there too:
@@ -32,25 +32,36 @@ are drawn.
   pick bushes for fiber and berries, pick up stones and flint. Open the inventory (I), craft a Stone
   Pick (1 wood, 1 stone, 10 thatch) and a Stone Hatchet, and gather faster. Eat berries and drink at
   the shore while food and water drain.
+- **The Survivor's path.** Top left, one step at a time, with a star on the map at its target: the
+  first tree, stones, the Stone Pick, the hatchet, berries, a drink, a dodo tamed, a stat point, a
+  campfire, meat hunted and cooked, a spear, a thatch hut, the Phiomia saddle, a phiomia tamed and
+  ridden, an explorer note, narcotics, a club, a raptor, a cave artifact, the three artifacts, and the
+  Broodmother. `Skip tutorial` hides it.
 - **Progression.**
-  - [x] ARK's XP table to level 30 and its curve to level 105; each level gives one stat point and
+  - ARK's XP table to level 30 and its curve to level 105; each level gives one stat point and
     ARK's engram points (8 at level 2).
-  - [x] Ten levelable stats with ARK's per-point gains (health +10, stamina +10, oxygen +20, food +10,
+  - Ten levelable stats with ARK's per-point gains (health +10, stamina +10, oxygen +20, food +10,
     water +10, weight +10, melee +5%, speed +1.5%, fortitude +2, crafting +10%).
-  - [x] Engrams by ARK level and point cost: Stone Pick and Torch known at level 1, Campfire, Spear and
+  - Engrams by ARK level and point cost: Stone Pick and Torch known at level 1, Campfire, Spear and
     Hatchet at 2, cloth at 3, thatch pieces and Storage Box at 4, Phiomia saddle at 5, Mortar and
     Pestle at 6, Wooden Club at 8.
-  - [x] Tools bias the yield like ARK: the pick takes thatch and flint, the hatchet wood and stone.
-  - [x] Dodo, Phiomia and Raptor with ARK's base stats, per-level gains, speeds, temperaments
-    (oblivious, skittish, aggressive) and taming tables; wild levels 1-30.
-  - [x] Knock-out taming: club torpor (18 hits for a level-1 raptor), torpor drain, food in its
-    inventory eaten on ARK's meal clock, narcotics to keep it under, taming effectiveness and bonus
-    levels; it wakes and the tame is lost if torpor runs out.
-  - [x] Tames stay or follow on whistles and fight what you fight; Phiomia saddle at level 5 and
+  - Tools bias the yield like ARK: the pick takes thatch and flint, the hatchet wood and stone.
+  - Dodo, Phiomia and Raptor with ARK's base stats, per-level gains, speeds, temperaments
+    (oblivious, skittish, aggressive) and taming tables. Danger rises with distance: zones near the
+    south beach roll wild levels up to 5, a level more every 50 m out, the full 30 from 1250 m.
+  - Knock-out taming: fists land 1.75x their damage as torpor, a club 20 a hit (9 hits for a level-1
+    raptor); torpor drains, food in its inventory is eaten on ARK's meal clock, narcotics keep it
+    under, taming effectiveness and bonus levels; it wakes and the tame is lost if torpor runs out.
+  - Tames stay or follow on whistles and fight what you fight; Phiomia saddle at level 5 and
     Raptor saddle at 18 (ARK's costs) let you ride them.
-  - [x] Bodies carve into meat and hide by tool (pick for meat, hatchet for hide), and herds refill
-    out of sight.
-  - [ ] Thatch, wood and stone building tiers with snap sockets (PR after).
+  - Bodies carve into meat and hide by tool (pick for meat, hatchet for hide), and herds refill
+    out of sight. Raw meat spoils in 10 minutes and cooked meat in 20, into spoiled meat, which the
+    mortar grinds with narcoberries into narcotics.
+  - Thatch, wood and stone building tiers with snap sockets.
+- **Explorer notes and the dossier.** 21 notes lie at cave mouths, obelisk feet and summits; E reads
+  one, opens it on screen and gives XP the first time. The Dossier tab (I) lists every species, "???"
+  until met, which you have tamed, and the notes you have read. The map in the corner shows the
+  island's ground from above with unread notes, obelisks, cave mouths and your tames on it.
 - **Weather and climate.** A long blue day and a short dawn and dusk on ARK's hour-long day. Each
   biome has its own air (the south coast hottest, the redwoods cool, the snow below freezing at
   night), colder with height and at night. Showers, storms, a heatwave and a cold snap come round on
@@ -116,6 +127,11 @@ an open-sky walled islet rather than ARK's enclosed jungle cave, she is a tinted
 model, the portal has no drag-weight limit, and the single-player boss damage cut is not applied.
 
 Loop proof: fernwild-loop, fernwild-tame, fernwild-build
+
+`from-zero` plays a new game with keys and mouse only, no cheats, for about 19 minutes of game
+time: gathers, crafts the pick and hatchet, drinks, tames a dodo with fists and berries, spends a
+stat point, builds a campfire, hunts and cooks, crafts a spear, builds the thatch hut piece by piece,
+tames, saddles and rides a phiomia, reads a note, grinds narcotics and crafts a club.
 
 `fernwild-build` proves building: craft a thatch foundation, doorframe, three walls, a door and a
 ceiling at ARK's prices, place them with snapping, walk inside, roof it, hang the door and open it.

@@ -3,6 +3,7 @@ import { createUnlockPoints, type UnlockPoints, type UnlockPointsState } from "@
 import { createScatterHarvest, type ScatterHarvest, type ScatterHarvestState } from "@jgengine/core/harvest/scatterHarvest";
 import { resolveEncumbrance, totalLoad } from "@jgengine/core/inventory/encumbrance";
 import type { InventoryState } from "@jgengine/core/inventory/inventoryModel";
+import { createSpoilage, type Spoilage } from "@jgengine/core/inventory/spoilage";
 import { leveling } from "@jgengine/core/progression/leveling";
 import { createStatPoints, type StatPointLine } from "@jgengine/core/progression/statPoints";
 import type { GameContext } from "@jgengine/core/runtime/gameContext";
@@ -18,7 +19,7 @@ import { BAG, BAG_SLOTS, HOTBAR } from "./bags";
 import { ENGRAMS, engramDef, CRAFTING_RECIPES, recipeDef } from "./data/engrams";
 import { gatheredBy, HARVESTABLES, type GatherBy } from "./data/harvestables";
 import { command, keybind, proximityPrompt, type PositionedPrompt } from "@jgengine/core/interaction/proximityPrompt";
-import { FIST, itemDef, itemLabel, itemTraits, PICK_UP, type ToolDef } from "./data/items";
+import { FIST, itemDef, itemLabel, itemTraits, PICK_UP, SPOILS, type ToolDef } from "./data/items";
 import { placeHeld, stations, strikeStructure } from "./base";
 import { mountCanSprint, strikeCreature } from "./creatures";
 import { climateAt, inWater, type ClimateHere } from "./climate";
@@ -52,7 +53,19 @@ interface Survivor {
   dead: boolean;
   /** Webbed (the Broodmother's spit): moving at this share of speed until this game time. */
   web: { slow: number; until: number } | null;
+  /** Lifetime tallies: gathers that took something, items crafted, drinks from water. */
+  tally: Tally;
+  /** Meat going off in the bag and on the hotbar. Timers restart on load. */
+  spoilage: Spoilage;
 }
+
+interface Tally {
+  gathered: number;
+  crafted: number;
+  drinks: number;
+}
+
+const NO_TALLY: Tally = { gathered: 0, crafted: 0, drinks: 0 };
 
 /** ARK's survivor stats: pools start at the survivor's base, percentages at 100%, fortitude at 0. */
 const POINTS = createStatPoints({
@@ -78,6 +91,8 @@ const survivorOf = perContext((ctx: GameContext): Survivor => ({
   aim: { strike: null, pick: null, pickAt: null, water: false },
   dead: false,
   web: null,
+  tally: { ...NO_TALLY },
+  spoilage: createSpoilage(SPOILS),
 }));
 
 /** No engram known; the new-game declaration (`data/start.ts`) teaches the starting ones. */
@@ -199,16 +214,33 @@ function grantGather(ctx: GameContext, survivor: Survivor, granted: readonly { k
     if (give(ctx, grant.kind, whole) > 0) got.push(`${whole} ${itemLabel(grant.kind)}`);
   }
   if (got.length > 0) {
+    survivor.tally.gathered += 1;
     survivor.lastGain = { text: got.join(", "), at: ctx.time.now() };
     grantXp(ctx, SURVIVOR.gatherXp);
   }
   return got;
 }
 
+/** What E would pick from where the survivor stands and faces: the nearest bush or stones in front, never one behind a tree you face. */
+function pickSpec(position: readonly [number, number, number], yaw: number) {
+  return { x: position[0], z: position[2], yaw, reach: PICK_UP.reach, cone: PICK_CONE, accepts: gatheredBy("pick") };
+}
+
+/** Half-angle of what E reaches: what is in front, as ARK picks what the crosshair is on. */
+const PICK_CONE = 0.7;
+
 function aimAt(ctx: GameContext, survivor: Survivor, position: readonly [number, number, number], yaw: number): Survivor["aim"] {
   const label = (hit: { item: string } | null) => (hit === null ? null : (HARVESTABLES[hit.item]?.label ?? null));
   const strike = survivor.harvest.target({ x: position[0], z: position[2], yaw, reach: heldTool(ctx, survivor).tool.reach, accepts: gatheredBy("strike") });
-  const pick = survivor.harvest.target({ x: position[0], z: position[2], yaw, reach: PICK_UP.reach, cone: Math.PI, accepts: gatheredBy("pick") });
+  let pick = survivor.harvest.target(pickSpec(position, yaw));
+  // A trunk or boulder nearer than the stones and nearer the middle of the view is what the survivor faces, as
+  // ARK's crosshair lands on the tree: E names only what it would take. A bush off to the side of a trunk stays picked.
+  const away = (hit: { x: number; z: number }) => Math.hypot(hit.x - position[0], hit.z - position[2]);
+  const offAim = (hit: { x: number; z: number }) => {
+    const turn = Math.atan2(hit.x - position[0], hit.z - position[2]) - yaw;
+    return Math.abs(Math.atan2(Math.sin(turn), Math.cos(turn)));
+  };
+  if (pick !== null && strike !== null && away(strike) < away(pick) && offAim(strike) <= offAim(pick)) pick = null;
   return { strike: label(strike), pick: label(pick), pickAt: pick === null ? null : { x: pick.x, z: pick.z }, water: inWater(ctx, position) };
 }
 
@@ -219,8 +251,7 @@ export function swing(ctx: GameContext, yaw?: number): void {
   if (me === null || survivor.dead || survivor.vitals.has("unconscious") || openScreen(ctx) !== null) return;
   const now = ctx.time.now();
   if (now < survivor.swingReady) return;
-  const held = heldItem(ctx);
-  if (held !== null && itemDef(held)?.kind === "structure") {
+  const held = heldItem(ctx);  if (held !== null && itemDef(held)?.kind === "structure") {
     survivor.swingReady = now + 0.25;
     placeHeld(ctx, held, yaw);
     if (ctx.player.inventory.count(HOTBAR, held) === 0) survivor.activeSlot = null;
@@ -282,15 +313,9 @@ export function use(ctx: GameContext): void {
   const me = ctx.scene.entity.get(ctx.player.userId);
   if (me === null || survivor.dead || survivor.vitals.has("unconscious")) return;
   ensurePlacements(ctx, survivor);
-  const hit = survivor.harvest.strike({
-    x: me.position[0],
-    z: me.position[2],
-    yaw: me.rotationY,
-    reach: PICK_UP.reach,
-    cone: Math.PI,
-    tool: PICK_UP.gather,
-    accepts: gatheredBy("pick"),
-  });
+  // E takes what the prompt names, so it is read from the same aim the HUD shows.
+  survivor.aim = aimAt(ctx, survivor, me.position, me.rotationY);
+  const hit = survivor.aim.pick === null ? null : survivor.harvest.strike({ ...pickSpec(me.position, me.rotationY), tool: PICK_UP.gather });
   if (hit !== null) {
     const got = grantGather(ctx, survivor, hit.granted);
     if (got.length > 0) ctx.scene.entity.floatText({ instanceId: ctx.player.userId, text: `+${got.join(", +")}`, kind: "pickup" });
@@ -298,6 +323,7 @@ export function use(ctx: GameContext): void {
   }
   if (inWater(ctx, me.position)) {
     survivor.vitals.change("water", SURVIVOR.drink);
+    survivor.tally.drinks += 1;
     ctx.scene.entity.floatText({ instanceId: ctx.player.userId, text: "Drank", kind: "pickup" });
   }
 }
@@ -346,6 +372,10 @@ export function shuttle(ctx: GameContext, from: string, slot: number): void {
 }
 
 // --- engrams and crafting ----------------------------------------------------------------
+
+export function knowsEngram(ctx: GameContext, engramId: string): boolean {
+  return survivorOf(ctx).engrams.isUnlocked(engramId);
+}
 
 export function learn(ctx: GameContext, engramId: string): void {
   const survivor = survivorOf(ctx);
@@ -421,6 +451,7 @@ function finishCraft(ctx: GameContext, spec: CraftSpec): void {
     if (!toHotbar) give(ctx, output.itemId, output.count);
     ctx.game.notices.push({ text: `Crafted ${itemLabel(output.itemId)}`, tone: "success" });
   }
+  survivorOf(ctx).tally.crafted += 1;
   grantXp(ctx, Math.max(1, craftSeconds(recipe) * 0.4));
 }
 
@@ -478,6 +509,7 @@ export function tickSurvivor(ctx: GameContext, dt: number): void {
   const crafted = tickQueue(survivor.queue, queueConfig(survivor), dt);
   survivor.queue = crafted.state;
   for (const event of crafted.events) if (event.type === "completed") finishCraft(ctx, event.output);
+  spoil(ctx, survivor, dt);
 
   ensurePlacements(ctx, survivor);
   survivor.harvest.tick(dt);
@@ -485,6 +517,18 @@ export function tickSurvivor(ctx: GameContext, dt: number): void {
 
   if (survivor.vitals.value("health") <= 0 && !survivor.dead) die(ctx, survivor);
   ctx.touch();
+}
+
+/** Carried meat goes off: each spoiled unit leaves its stack and spoiled meat (or nothing) takes its place. */
+function spoil(ctx: GameContext, survivor: Survivor, dt: number): void {
+  const stacks = [BAG, HOTBAR].flatMap((inventoryId) =>
+    ctx.player.inventory.state(inventoryId).slots.flatMap((slot, index) => (slot === null ? [] : [{ key: `${inventoryId}:${index}`, itemId: slot.itemId, count: slot.count }])),
+  );
+  for (const unit of survivor.spoilage.tick(dt, stacks)) {
+    const inventoryId = unit.key.slice(0, unit.key.lastIndexOf(":"));
+    ctx.player.inventory.take(inventoryId, unit.itemId, unit.count);
+    if (unit.into !== null) give(ctx, unit.into, unit.count);
+  }
 }
 
 /**
@@ -544,6 +588,9 @@ interface SurvivorSave {
   engrams: UnlockPointsState;
   queue: WorkQueueState<CraftSpec>;
   harvest: ScatterHarvestState;
+  tally: Tally;
+  /** Seconds each carried perishable stack has been going off; absent in saves from before spoilage. */
+  spoilage?: Record<string, number>;
 }
 
 export function survivorSave(ctx: GameContext) {
@@ -551,7 +598,7 @@ export function survivorSave(ctx: GameContext) {
     key: "fernwild.survivor",
     snapshot: (): SurvivorSave => {
       const survivor = survivorOf(ctx);
-      return { vitals: survivor.vitals.state(), points: { ...survivor.points }, engrams: survivor.engrams.snapshot(), queue: survivor.queue, harvest: survivor.harvest.snapshot() };
+      return { vitals: survivor.vitals.state(), points: { ...survivor.points }, engrams: survivor.engrams.snapshot(), queue: survivor.queue, harvest: survivor.harvest.snapshot(), tally: { ...survivor.tally }, spoilage: survivor.spoilage.snapshot() };
     },
     hydrate: (data: SurvivorSave) => {
       const survivor = survivorOf(ctx);
@@ -561,6 +608,8 @@ export function survivorSave(ctx: GameContext) {
       survivor.queue = data.queue;
       ensurePlacements(ctx, survivor);
       survivor.harvest.restore(data.harvest);
+      survivor.tally = { ...data.tally };
+      survivor.spoilage.restore(data.spoilage ?? {});
       applyMaxes(ctx, survivor, false);
     },
   };
@@ -574,6 +623,8 @@ export function resetSurvivor(ctx: GameContext): void {
   survivor.queue = createWorkQueue<CraftSpec>();
   survivor.harvest.reset();
   survivor.activeSlot = null;
+  survivor.tally = { ...NO_TALLY };
+  survivor.spoilage = createSpoilage(SPOILS);
 }
 
 // --- what the HUD reads ----------------------------------------------------------------------
@@ -609,6 +660,8 @@ export function survivorView(ctx: GameContext) {
     weather: survivor.climate?.weather ?? "clear",
     sheltered: survivor.climate?.covered ?? false,
     webbed: survivor.web !== null && survivor.web.until > now,
+    tally: survivor.tally,
+    spentPoints: Object.values(survivor.points).reduce((sum, points) => sum + points, 0),
     activeSlot: survivor.activeSlot,
     aim: survivor.aim,
     gain: survivor.lastGain !== null && now - survivor.lastGain.at < 2.5 ? survivor.lastGain.text : null,

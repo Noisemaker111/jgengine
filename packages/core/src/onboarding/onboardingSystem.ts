@@ -147,7 +147,7 @@ export function createOnboardingSystem(config: OnboardingConfig<GameContext>, op
         let showMarker = false;
         if (me !== null && view !== null) {
           const area = config.area;
-          const outside = config.style === "teaching-area" && area !== undefined && (me.position[0] - area.center[0]) ** 2 + (me.position[2] - area.center[1]) ** 2 > area.radius ** 2;
+          const outside = config.style === "teaching-area" && area !== undefined && view.step.inArea !== false && (me.position[0] - area.center[0]) ** 2 + (me.position[2] - area.center[1]) ** 2 > area.radius ** 2;
           if (outside) {
             at = [area.center[0], ctx.world.groundHeightAt(area.center[0], area.center[1]), area.center[1]];
             label = `Back to ${area.label ?? "the start"}`;

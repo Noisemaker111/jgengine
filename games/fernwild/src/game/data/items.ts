@@ -1,7 +1,19 @@
+import type { SpoilRule } from "@jgengine/core/inventory/spoilage";
 import type { ToolProfile } from "@jgengine/core/world/resourceNode";
 
 import { SPECIES } from "./species";
 import { STRUCTURES } from "./structures";
+
+/**
+ * Food goes off in the bag, a unit at a time per stack, as in ARK: raw meat in 10 minutes, cooked meat
+ * in 20, both into spoiled meat, the narcotic's base. Spoiled meat itself rots away in an hour.
+ */
+export const SPOILS: Readonly<Record<string, SpoilRule>> = {
+  raw_meat: { seconds: 600, into: "spoiled_meat" },
+  raw_prime_meat: { seconds: 600, into: "spoiled_meat" },
+  cooked_meat: { seconds: 1200, into: "spoiled_meat" },
+  spoiled_meat: { seconds: 3600, into: null },
+};
 
 /** What eating or drinking one unit does to the survivor. */
 export interface Consume {
@@ -50,7 +62,8 @@ const berry = (id: string, label: string, consume: Consume, note: string): ItemD
 
 /**
  * Bare hands: ARK's 8-damage punch, thatch from trees, a little stone from rocks. A punch knocks out
- * as well as hurts: ARK deals 1.75x a fist's damage as torpor (a club 3.75x).
+ * as well as hurts: ARK deals 1.75x a fist's damage as torpor, so a dodo sleeps before it dies.
+ * Each tool's `torpor` is what one hit lands on a creature.
  */
 export const FIST: ToolDef = {
   gather: { power: 1, biases: { thatch: 1, wood: 0.35, stone: 0.5, flint: 0.25, fiber: 0, raw_meat: 0.5, hide: 0.5 }, defaultBias: 0 },
@@ -124,6 +137,8 @@ export const ITEMS: readonly ItemDef[] = [
   },
   {
     id: "wooden_club", label: "Wooden Club", kind: "tool", weight: 1, stack: 1, note: "Knocks creatures out.",
+    // ARK's club lands about 3.75x its damage as torpor: a level-1 raptor (180 torpor) sleeps in 9 hits, a
+    // phiomia (240) in 12. Fists land more per swing than they did, but the club still outsleeps them.
     tool: { gather: { power: 1, biases: {}, defaultBias: 0 }, reach: 2.3, damage: 5, torpor: 20, stamina: 6, cooldown: 0.9 },
   },
   {

@@ -7,7 +7,7 @@ import { world } from "../world";
 import { content } from "./content";
 import { itemTraits } from "./data/items";
 import { BAG, BAG_SLOTS, HOTBAR, HOTBAR_SLOTS } from "./bags";
-import { survivorView } from "./survivor";
+import { nearestHarvestable, survivorSave, survivorView } from "./survivor";
 
 /** A survivor on the authored beach with the real island under them and the survivor system installed. */
 function survivorRunner(): HeadlessRunner {
@@ -43,6 +43,13 @@ test("wake on the beach, punch a tree, pick stones, craft a Stone Pick, level up
   expect(count(runner, "wood")).toBeGreaterThanOrEqual(1);
   expect(count(runner, "thatch")).toBeGreaterThan(count(runner, "wood") * 2);
 
+  // E takes only what the survivor looks at: facing the tree it picks nothing; turned to the stones it picks them.
+  runner.ui.tryInvoke("harvest", {});
+  expect(count(runner, "stone")).toBe(0);
+  const me = runner.ctx.scene.entity.get(runner.userId);
+  const stones = me === null ? null : nearestHarvestable(runner.ctx, me.position, 4, "pick", "stone");
+  if (me === null || stones === null) throw new Error("no stones beside the survivor");
+  runner.ctx.scene.entity.setPose(runner.userId, { position: me.position, rotationY: Math.atan2(stones[0] - me.position[0], stones[2] - me.position[2]) });
   runner.ui.tryInvoke("harvest", {});
   expect(count(runner, "stone")).toBeGreaterThanOrEqual(1);
 
@@ -99,4 +106,32 @@ test("the HUD's health is the pool hits land on, the moment they land", () => {
   runner.ctx.scene.entity.effect({ from: "raptor", to: runner.userId, effect: "damage", via: { amount: 15 } });
   shows();
   expect(pool().current).toBeCloseTo(before - 15, 5);
+});
+
+test("raw meat goes off in the bag: a unit every 10 minutes turns to spoiled meat, the narcotic's base", () => {
+  const runner = survivorRunner();
+  tick(runner, 0.1);
+  runner.ctx.player.inventory.put(BAG, "raw_meat", 2);
+  for (let second = 0; second < 590; second += 1) runner.step(1);
+  expect(count(runner, "raw_meat")).toBe(2);
+  expect(count(runner, "spoiled_meat")).toBe(0);
+  for (let second = 0; second < 20; second += 1) runner.step(1);
+  expect(count(runner, "raw_meat")).toBe(1);
+  expect(count(runner, "spoiled_meat")).toBe(1);
+});
+
+test("a save keeps how far the meat has gone off", () => {
+  const before = survivorRunner();
+  tick(before, 0.1);
+  before.ctx.player.inventory.put(BAG, "raw_meat", 2);
+  for (let second = 0; second < 590; second += 1) before.step(1);
+  const saved = survivorSave(before.ctx).snapshot();
+
+  const after = survivorRunner();
+  tick(after, 0.1);
+  after.ctx.player.inventory.put(BAG, "raw_meat", 2);
+  survivorSave(after.ctx).hydrate(saved);
+  for (let second = 0; second < 20; second += 1) after.step(1);
+  expect(count(after, "raw_meat")).toBe(1);
+  expect(count(after, "spoiled_meat")).toBe(1);
 });

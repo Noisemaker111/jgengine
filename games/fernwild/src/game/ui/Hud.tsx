@@ -1,12 +1,16 @@
-import type { CSSProperties, ReactNode } from "react";
+import { useMemo, type CSSProperties, type ReactNode } from "react";
 import { Hotbar } from "@jgengine/core/hud/hudReadouts.view";
-import { Minimap } from "@jgengine/core/map/map.view";
+import { Minimap, useMarkers } from "@jgengine/core/map/map.view";
+import type { MarkerView } from "@jgengine/core/map/markers";
 import { OnboardingBanner, OnboardingHud, useOnboarding } from "@jgengine/core/onboarding/onboarding.view";
 import { useGameStore } from "@jgengine/react/hooks";
+import { useGameContext } from "@jgengine/react/provider";
 import { HudSlots } from "@jgengine/shell/gameKit";
 
 import { baseView } from "../base";
 import { bodyView } from "../deathBody";
+import { dossierView } from "../dossier";
+import { ISLAND_MARKS, islandBake, islandMarks } from "../islandMap";
 import { openScreen } from "../screens";
 import { HOTBAR } from "../bags";
 import { survivorView, type SurvivorView } from "../survivor";
@@ -205,21 +209,49 @@ function Screens(): ReactNode {
     <>
       <div style={crosshair} />
       {screen === null ? <Prompt /> : null}
+      {screen === null ? <NoteReader /> : null}
       {screen === null ? null : <InventoryScreen tab={screen} />}
       <OnboardingBanner theme={{ accent: "#e7c84a" }} />
     </>
   );
 }
 
-/** A small map centred on the survivor, facing up the way they face, with the first-day goal starred. */
+const NO_MARKS: readonly MarkerView[] = [];
+
+/** A small map of the island round the survivor: the ground from above, the first-day goal starred, unread notes, obelisks, cave mouths and your tames. */
 function MapCorner(): ReactNode {
+  const ctx = useGameContext();
   const onboarding = useOnboarding();
-  const here = useGameStore((ctx) => {
-    const me = ctx.scene.entity.get(ctx.player.userId);
+  const goal = useMarkers(onboarding?.markers ?? NO_MARKS);
+  const marks = useGameStore(islandMarks, same);
+  const bake = useMemo(() => islandBake(ctx), [ctx]);
+  const here = useGameStore((state) => {
+    const me = state.scene.entity.get(state.player.userId);
     return me === null ? null : { x: Math.round(me.position[0]), z: Math.round(me.position[2]), yaw: Math.round(me.rotationY * 20) / 20 };
   }, same);
-  if (onboarding === null || here === null) return null;
-  return <Minimap markers={onboarding.markers} center={[here.x, here.z]} facingYaw={here.yaw} worldRadius={100} size={150} title="Island" />;
+  const markers = useMemo(() => [...goal, ...marks], [goal, marks]);
+  if (here === null) return null;
+  return (
+    <div data-minimap="">
+      <Minimap markers={markers} center={[here.x, here.z]} facingYaw={here.yaw} worldRadius={180} size={170} title="Island" background={bake.background} mapBounds={bake.mapBounds} kindStyles={ISLAND_MARKS} />
+    </div>
+  );
+}
+
+/** A note just read: ARK's explorer note open over the world for a while; the dossier (I) keeps it. */
+function NoteReader(): ReactNode {
+  const reading = useGameStore((ctx) => dossierView(ctx).reading, same);
+  if (reading === null) return null;
+  return (
+    <div
+      data-note-open=""
+      style={{ position: "absolute", right: 16, top: 40, width: 380, maxWidth: "45vw", maxHeight: "50vh", overflowY: "auto", background: "#f1e6c8f2", color: "#3a2c18", padding: "14px 18px", borderRadius: 4, boxShadow: "0 8px 30px #000a", fontFamily: "Georgia, serif", pointerEvents: "none" }}
+    >
+      <div style={{ fontWeight: 800, fontSize: 15, marginBottom: 6 }}>{reading.title}</div>
+      <div style={{ fontSize: 13, lineHeight: 1.5, whiteSpace: "pre-wrap" }}>{reading.text}</div>
+      <div style={{ fontSize: 11, opacity: 0.7, marginTop: 8 }}>Kept in your dossier (I · Dossier)</div>
+    </div>
+  );
 }
 
 /** ARK's layout: pools bottom-right, hotbar bottom-centre, gather feed left, crosshair centre; the first-day steps top-left over the map. */

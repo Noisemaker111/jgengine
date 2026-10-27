@@ -2138,6 +2138,14 @@
 - `SlotItem` (interface): interface SlotItem — Atomic, purpose-named slot grids (#1033): one component per category — `EquipmentSlots`, `WeaponSlots`, `ArmorSlots`, `PotionSlots` — for paperdoll / equip layouts where each grid holds a single gear category. A full multi-category backpack that binds to a live inventory with drag/swap/stack/split is a different, supported shape: reach for `<InventoryGrid>` (`inventoryGrid.tsx`) there, and use these atomic grids for the equip slots around it. Each renders a grid of painted {@link IconTreatment} tiles (glyph + gradient + count badge) for filled slots and a themed placeholder for empty ones, all reading the shared `--jg-slot-*` / `--jg-accent` HudTheme tokens (#1034). Composition stays the game's; the engine ships the grid.
 - `WeaponSlots` (function): function WeaponSlots(props: SlotGridProps): React.JSX.Element — Weapon loadout slots.
 
+## @jgengine/core/inventory/spoilage
+
+- `SpoilRule` (interface): interface SpoilRule — How one item goes off: a unit spoils every `seconds` it is carried, turning into `into` (or nothing).
+- `Spoilage` (interface): interface Spoilage — The spoil timers of every perishable stack carried, advanced together; `snapshot`/`restore` keep them across a save.
+- `SpoiledUnits` (interface): interface SpoiledUnits — Units of one stack that went off this tick: take `count` of `itemId` from `key`, give `count` of `into`.
+- `SpoilingStack` (interface): interface SpoilingStack — One carried stack, keyed by where it sits (e.g. `"bag:3"`), so a timer follows its slot.
+- `createSpoilage` (function): function createSpoilage(rules: Readonly<Record<string, SpoilRule>>): Spoilage — Perishables in an inventory, as ARK keeps them: each stack runs one timer, and every time it runs out one unit spoils and the timer starts again, so a big stack lasts longer than a small one. A slot that changes item starts a fresh timer.
+
 ## @jgengine/core/inventory/storageTier
 
 - `ConsolationPolicy` (interface): interface ConsolationPolicy { loadoutId: string; when?: "always" | "if-carried-empty" } — ⚠ undocumented

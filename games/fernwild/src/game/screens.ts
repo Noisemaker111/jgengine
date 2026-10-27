@@ -1,8 +1,8 @@
 import type { GameContext } from "@jgengine/core/runtime/gameContext";
 import { perContext } from "@jgengine/core/runtime/perContext";
 
-/** Which full-screen survivor panel is open: ARK's inventory (with crafting and stats), the engram list, a creature's inventory, or the Green Obelisk's terminal. */
-export type SurvivorScreen = "inventory" | "engrams" | "creature" | "obelisk";
+/** Which full-screen survivor panel is open: ARK's inventory (with crafting and stats), the engram list, the dossier of creatures and notes, a creature's inventory, or the Green Obelisk's terminal. */
+export type SurvivorScreen = "inventory" | "engrams" | "dossier" | "creature" | "obelisk";
 
 const open = perContext((_ctx: GameContext) => ({ screen: null as SurvivorScreen | null }));
 

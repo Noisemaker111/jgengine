@@ -63,10 +63,12 @@ const DRAIN = { at1: 0.3, at30: 0.5 };
 export const WILD_LEVELS = { min: 1, max: 30 } as const;
 
 /**
- * Of a club's torpor, how much lands on a creature. ARK's wiki counts 18 club hits for a level-1
- * raptor (180 torpor), 3 for a dodo (30), 24 for a phiomia (240): ten per 20-torpor club hit.
+ * Danger rises with distance: a zone by the survivor's beach rolls levels up to 5, and the cap climbs a
+ * level every 50 m out, so only zones 1250 m away or more roll the full 30.
  */
-export const TORPOR_TAKEN = 0.5;
+export function wildLevelCap(metresFromStart: number): number {
+  return Math.min(WILD_LEVELS.max, Math.max(5, Math.floor(5 + metresFromStart / 50)));
+}
 
 /** The three species with their full wiki taming tables. ARK wiki numbers (ark.wiki.gg). Speeds are units/s ÷ 100. */
 const DETAILED: Readonly<Record<string, SpeciesDef>> = {

@@ -211,6 +211,11 @@ export function baseView(ctx: GameContext) {
 
 export type BaseView = ReturnType<typeof baseView>;
 
+/** How many pieces whose id starts with `prefix` stand in the base (`thatch_wall`, or `thatch_` for every thatch piece). */
+export function piecesBuilt(ctx: GameContext, prefix: string): number {
+  return baseOf(ctx).building.list().filter((piece) => piece.pieceId.startsWith(prefix)).length;
+}
+
 export function baseSave(ctx: GameContext) {
   return {
     key: "fernwild.base",

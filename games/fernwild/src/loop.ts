@@ -12,6 +12,7 @@ import { closeCreature, creaturesSave, destroyWild, feedNarcotic, forceTame, giv
 import { TAME_STATS } from "./game/data/species";
 import { LEVEL_STATS, SURVIVOR } from "./game/data/survivor";
 import { BAG, HOTBAR } from "./game/bags";
+import { closeNote, dossierSave, readNote, resetDossier, tickDossier } from "./game/dossier";
 import { callSupplyDrop, openCrate, resetSupplyDrops, supplyDropsSave, tickSupplyDrops } from "./game/supplyDrops";
 import type { NewGameConfig } from "@jgengine/core/game/newGame";
 import { START } from "./game/data/start";
@@ -150,6 +151,17 @@ export const systems = [
     update: tickBroodmother,
     save: broodSave,
     reset: resetBroodmother,
+  }),
+  defineSystem({
+    id: "dossier",
+    tick: { type: "fixed", rate: 4 },
+    create(ctx) {
+      ctx.game.commands.define("readNote", { apply: (state) => (readNote(state), state) });
+      ctx.game.commands.define("closeNote", { apply: (state) => (closeNote(state), state) });
+    },
+    update: tickDossier,
+    save: dossierSave,
+    reset: resetDossier,
   }),
   defineSystem({
     id: "breeding",

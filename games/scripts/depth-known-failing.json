@@ -30,11 +30,6 @@
     "from-zero": "no from-zero proof; to-skirmish starts a skirmish directly",
     "depth": "no from-zero run to measure; no content budget or unlock pace declared"
   },
-  "fernwild": {
-    "brief": "PLAN.md has features, gaps and milestones but no design brief",
-    "from-zero": "no from-zero proof; a new survivor gets no objective, hint or minimap, only the menu paragraph",
-    "depth": "lots of content (58 species, 79 engrams, 116 items) but nothing is taught or unlocked on a pace the player can follow; no run to measure it"
-  },
   "harbor-heat": {
     "brief": "no PLAN.md design brief",
     "from-zero": "no from-zero proof; its flows boot named states (chase, courier)",

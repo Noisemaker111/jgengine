@@ -512,6 +512,7 @@
     "./inventory/shopGrid.view",
     "./inventory/slotModel",
     "./inventory/slots.view",
+    "./inventory/spoilage",
     "./inventory/storageTier",
     "./item/WorldItems.draw",
     "./item/affix",
