@@ -407,7 +407,7 @@
 
 ## @jgengine/core/data/definedFields
 
-- `DefinedFields` (type): type DefinedFields<T> = { [K in keyof T]?: Exclude<T[K], undefined> } — Passing optional values on to something that takes optional fields. With exact optional property types, a field set to `undefined` is not the same as a field left out, so a value that may be missing has to be dropped rather than passed as `undefined`.
+- `DefinedFields` (type): type DefinedFields<T> = { [K in keyof T]?: T[K] & ({} | null) } — Passing optional values on to something that takes optional fields. With exact optional property types, a field set to `undefined` is not the same as a field left out, so a value that may be missing has to be dropped rather than passed as `undefined`.
 - `definedFields` (function): function definedFields<T extends object>(fields: T): DefinedFields<T> — `fields` without the entries whose value is `undefined`, typed so the result spreads into props or options that take those fields as optional: `<mesh {...definedFields({ rotation, scale })} />`.
 
 ## @jgengine/core/data/definedOnly
