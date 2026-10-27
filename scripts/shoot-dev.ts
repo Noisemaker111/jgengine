@@ -779,7 +779,7 @@ async function shootSession(daemon: ShootDaemonState | null): Promise<number> {
 {
   const identity = resolveEngineIdentity();
   if (args.url === undefined) {
-    detail(identity.line);
+    console.error(identity.line);
     engineForRecord = engineRecord(identity);
   }
 }
