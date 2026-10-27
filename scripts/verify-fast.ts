@@ -337,7 +337,7 @@ export function gatesFor(changed: readonly string[]): string[] {
     gates.add("skill-api");
   }
   if (changed.some((path) => path.startsWith("games/"))) {
-    for (const gate of ["games-framework", "module-globals", "games-save-states", "games-design"]) gates.add(gate);
+    for (const gate of ["games-framework", "module-globals", "games-save-states", "games-design", "games-depth"]) gates.add(gate);
   }
   // The `games` CI job runs both on every package or game change; each takes seconds here.
   if (changed.some((path) => path.startsWith("games/") || /^packages\/[^/]+\/src\//.test(path))) {
