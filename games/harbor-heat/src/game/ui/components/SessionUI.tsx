@@ -91,6 +91,7 @@ export function SessionUI() {
         commands.run(dismiss, {});
         // Title keeps the run where it stands, so Continue picks up here and not at an older autosave.
         if (id === "title") void saveHarborState(ctx).then(() => commands.run("session.title", {}));
+        return undefined;
       }}
     />
   );

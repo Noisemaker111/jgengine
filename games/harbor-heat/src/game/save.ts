@@ -1,5 +1,6 @@
 import { createGameSave, type GameSave, type GameSaveDocument, type GameSaveSystem } from "@jgengine/core/save/saveDocument";
 import { localSaveBackend, type SaveBackend } from "@jgengine/core/save/saveStore";
+import { isRecord } from "@jgengine/core/data/untyped";
 import { perContext } from "@jgengine/core/runtime/perContext";
 import type { GameContext } from "@jgengine/core/runtime/gameContext";
 import type { StoreHandle } from "@jgengine/core/store/defineStore";
@@ -99,24 +100,22 @@ export function isKnownStore(key: string): boolean {
   return STORE_POLICY[key] !== undefined;
 }
 
-function isRecord(value: unknown): value is Record<string, unknown> {
-  return typeof value === "object" && value !== null && !Array.isArray(value);
-}
-
 function isPursuitSave(value: unknown): value is PursuitSave {
-  return isRecord(value) && isRecord(value.police) && typeof (value.police as { heat?: unknown }).heat === "object";
+  if (!isRecord(value)) return false;
+  const police = value["police"];
+  return isRecord(police) && typeof police["heat"] === "object";
 }
 
 function isMissionSave(value: unknown): value is MissionFlags {
-  return isRecord(value) && typeof value.bustedHold === "number";
+  return isRecord(value) && typeof value["bustedHold"] === "number";
 }
 
 function isCourierSave(value: unknown): value is CourierState {
-  return isRecord(value) && typeof value.phase === "string" && typeof value.route === "number";
+  return isRecord(value) && typeof value["phase"] === "string" && typeof value["route"] === "number";
 }
 
 function isLedgerShape(value: unknown): boolean {
-  return isRecord(value) && isRecord(value.accounts) && Array.isArray(value.entries);
+  return isRecord(value) && isRecord(value["accounts"]) && Array.isArray(value["entries"]);
 }
 
 /** Heat and the pursuit's own clocks - what the world snapshot could never see. */
@@ -140,7 +139,7 @@ function convoySystem(ctx: GameContext): GameSaveSystem<SpawnDirectorState | nul
     name: "convoy",
     snapshot: () => convoySnapshot(ctx),
     restore(section) {
-      if (!isRecord(section) || typeof section.wave !== "number") return;
+      if (!isRecord(section) || typeof section["wave"] !== "number") return;
       restoreConvoy(ctx, section as unknown as SpawnDirectorState);
     },
   };
@@ -162,13 +161,14 @@ function runSystem(ctx: GameContext): GameSaveSystem {
     }),
     restore(section) {
       if (!isRecord(section)) return;
-      if (isMissionSave(section.mission)) patchMission(ctx, section.mission);
-      if (isCourierSave(section.courier)) courierStore.write(ctx, section.courier);
-      if (isRecord(section.courierSession)) restoreCourierLoop(ctx, section.courierSession as unknown as SessionLoopState);
-      restoreNullable(courierMissionStore, ctx, section.courierMission);
-      restoreNullable(courierObjectiveStore, ctx, section.courierObjective);
-      restoreNullable(cargoStore, ctx, section.cargo);
-      restoreGigs(ctx, section.gigs);
+      const { mission, courier, courierSession } = section;
+      if (isMissionSave(mission)) patchMission(ctx, mission);
+      if (isCourierSave(courier)) courierStore.write(ctx, courier);
+      if (isRecord(courierSession)) restoreCourierLoop(ctx, courierSession as unknown as SessionLoopState);
+      restoreNullable(courierMissionStore, ctx, section["courierMission"]);
+      restoreNullable(courierObjectiveStore, ctx, section["courierObjective"]);
+      restoreNullable(cargoStore, ctx, section["cargo"]);
+      restoreGigs(ctx, section["gigs"]);
     },
     reset() {
       patchMission(ctx, { bustedHold: 0, raceSettled: false, raceClearAt: 0 });
@@ -220,17 +220,22 @@ function cashSystem(ctx: GameContext): GameSaveSystem {
  * field existed (a bare system bag), and a pre-document save has no game section at all - that boot
  * falls back to the heat the world snapshot's `harbor.wanted` store already restored.
  */
+function numberOr(value: unknown, fallback: number): number {
+  return typeof value === "number" ? value : fallback;
+}
+
 export function migrateHarborSave(document: unknown, fromVersion: number): GameSaveDocument {
   const base = isRecord(document) ? document : {};
   if (fromVersion >= HARBOR_SAVE_VERSION) return base as unknown as GameSaveDocument;
+  const systems = base["systems"];
   return {
     version: HARBOR_SAVE_VERSION,
     game: "harbor-heat",
-    savedAt: typeof base.savedAt === "number" ? base.savedAt : 0,
-    time: typeof base.time === "number" ? base.time : 0,
-    playtime: typeof base.playtime === "number" ? base.playtime : 0,
-    rng: (base.rng as GameSaveDocument["rng"]) ?? null,
-    systems: isRecord(base.systems) ? (base.systems as Record<string, unknown>) : {},
+    savedAt: numberOr(base["savedAt"], 0),
+    time: numberOr(base["time"], 0),
+    playtime: numberOr(base["playtime"], 0),
+    rng: (base["rng"] as GameSaveDocument["rng"]) ?? null,
+    systems: isRecord(systems) ? { ...systems } : {},
   };
 }
 
@@ -279,7 +284,7 @@ export async function loadHarborSave(ctx: GameContext): Promise<boolean> {
   const save = harborSave(ctx);
   const document = await save.peek(save.slot());
   if (document === null) return adoptLegacyWanted(ctx);
-  if (document.systems.wanted === undefined) return adoptLegacyWanted(ctx);
+  if (document.systems["wanted"] === undefined) return adoptLegacyWanted(ctx);
   await save.load();
   noteSavedAt(ctx, document.savedAt);
   catchUpAway(ctx);
@@ -299,8 +304,9 @@ function adoptLegacyWanted(ctx: GameContext): boolean {
 
 function wantedStoreValue(ctx: GameContext): { heat: number } | null {
   const raw = ctx.game.store.get("harbor.wanted") as unknown;
-  if (!isRecord(raw) || typeof raw.heat !== "number") return null;
-  return { heat: raw.heat };
+  if (!isRecord(raw)) return null;
+  const heat = raw["heat"];
+  return typeof heat === "number" ? { heat } : null;
 }
 
 /**

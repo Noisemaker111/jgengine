@@ -1,4 +1,5 @@
 import { editorMarkerPosition, findEditorMarker } from "@jgengine/core/editor/index";
+import { metaText } from "@jgengine/core/editor/markerMeta";
 import { authoredSpawnPosition, authoredSpawnRotation } from "@jgengine/core/world/authoredSpawn";
 
 import { editorLayers } from "../../editorLayers";
@@ -54,7 +55,7 @@ export const ROADS: readonly RoadSegment[] = editorLayers.paths
       from: [from.x, from.z] as const,
       to: [to.x, to.z] as const,
       width: path.width ?? 9,
-      level: typeof path.meta?.level === "string" ? path.meta.level : "street",
+      level: metaText(path, "level") ?? "street",
     };
   });
 
@@ -99,7 +100,7 @@ export const RACE_CHECKPOINTS: readonly (readonly [number, number])[] =
 export const AUTHORED_VEHICLE_SPAWNS: readonly AuthoredVehicleSpawn[] = editorLayers.markers
   .filter((marker) => marker.kind === "vehicle_spawn")
   .flatMap((marker) => {
-    const catalogId = typeof marker.meta?.assetId === "string" ? marker.meta.assetId : null;
+    const catalogId = metaText(marker, "assetId") ?? null;
     return catalogId === null
       ? []
       : [{

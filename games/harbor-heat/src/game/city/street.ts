@@ -1,3 +1,4 @@
+import { metaNumber, metaText } from "@jgengine/core/editor/markerMeta";
 import type { PositionedPrompt } from "@jgengine/core/interaction/proximityPrompt";
 import type { GameContext } from "@jgengine/core/runtime/gameContext";
 import { perContext } from "@jgengine/core/runtime/perContext";
@@ -240,8 +241,8 @@ const HIDEOUTS: readonly Hideout[] = editorLayers.markers
     id: marker.id,
     label: marker.label ?? marker.id,
     at: [marker.position.x, marker.position.z] as const,
-    radius: typeof marker.meta?.radius === "number" ? marker.meta.radius : 8,
-    needs: typeof marker.meta?.needs === "string" && marker.meta.needs !== "" ? marker.meta.needs : null,
+    radius: metaNumber(marker, "radius", 8),
+    needs: metaText(marker, "needs") || null,
   }));
 
 function hideoutOpen(ctx: GameContext, hideout: Hideout, safehouseOwned: boolean): boolean {

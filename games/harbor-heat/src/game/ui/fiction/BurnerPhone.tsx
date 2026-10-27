@@ -28,7 +28,7 @@ const NUMPAD = [
 /** Keys never take focus from the menu on the screen: the screen keeps keyboard and gamepad focus. */
 const keep = (event: { preventDefault: () => void }) => event.preventDefault();
 
-function Pad({ dir, run }: { dir: "up" | "down" | "left" | "right"; run?: () => void }) {
+function Pad({ dir, run }: { dir: "up" | "down" | "left" | "right"; run?: (() => void) | undefined }) {
   const icon = dir === "up" ? "arrowUp" : dir === "down" ? "arrowDown" : dir === "left" ? "arrowLeft" : "arrowRight";
   return (
     <button type="button" tabIndex={-1} className={`hh-pad ${dir}`} aria-label={dir} onMouseDown={keep} onClick={run} disabled={run === undefined}>
@@ -55,8 +55,8 @@ export function BurnerPhone({
 }: {
   app: ReactNode;
   children: ReactNode;
-  softLeft?: PhoneKey;
-  softRight?: PhoneKey;
+  softLeft?: PhoneKey | undefined;
+  softRight?: PhoneKey | undefined;
   pad?: PhonePad;
   notice?: ReactNode;
   className?: string;

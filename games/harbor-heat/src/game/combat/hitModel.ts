@@ -136,7 +136,7 @@ export function landWeaponHit(
 ): DamageRuntimeResolution | null {
   const hit = weaponHit(input.weaponId);
   if (hit === null) return null;
-  return landHit(ctx, { from: input.from, to: input.to, type: hit.type, base: input.from === ctx.player.userId ? Math.round(hit.base * gunDamageScale(ctx)) : hit.base, position: input.position });
+  return landHit(ctx, { from: input.from, to: input.to, type: hit.type, base: input.from === ctx.player.userId ? Math.round(hit.base * gunDamageScale(ctx)) : hit.base, ...(input.position === undefined ? {} : { position: input.position }) });
 }
 
 /**

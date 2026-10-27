@@ -73,7 +73,7 @@ export const GIG_KINDS: readonly SideJobKindDef[] = [
     tip: { max: 0.25, minComfort: 20 },
     streak: { step: 0.1, max: 0.5, window: 60 },
     // A crash costs a fifth of the mood, hull damage costs half a point per hit point, and a cop chase bleeds it.
-    comfortLoss: ({ dt, facts }) => (facts.crash === true ? 20 : 0) + Number(facts.damage ?? 0) * 0.5 + Number(facts.stars ?? 0) * 4 * dt,
+    comfortLoss: ({ dt, facts }) => (facts["crash"] === true ? 20 : 0) + Number(facts["damage"] ?? 0) * 0.5 + Number(facts["stars"] ?? 0) * 4 * dt,
     offerTtl: 45,
     radius: 9,
     stopSpeed: kmh(9),
@@ -91,7 +91,7 @@ export const GIG_KINDS: readonly SideJobKindDef[] = [
     deadline: { speed: kmh(40), slack: 30 },
     tip: { max: 0.3, minComfort: 50 },
     // Bouquets bruise above 60 km/h and in any knock; at 0% the run is spoiled.
-    comfortLoss: ({ dt, speed, facts }) => Math.max(0, speed - kmh(60)) * 0.9 * dt + (facts.crash === true ? 30 : 0) + Number(facts.damage ?? 0),
+    comfortLoss: ({ dt, speed, facts }) => Math.max(0, speed - kmh(60)) * 0.9 * dt + (facts["crash"] === true ? 30 : 0) + Number(facts["damage"] ?? 0),
     failAtComfort: 0,
     cooldown: 20,
     offerTtl: 120,

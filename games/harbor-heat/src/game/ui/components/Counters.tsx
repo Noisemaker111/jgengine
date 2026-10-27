@@ -131,12 +131,12 @@ function GunCounter() {
     {
       id: "rack",
       title: "The rack",
-      rows: GUNS.map((item) => ({ id: item.id, name: ITEM_LABELS[item.id] ?? item.label, line: weaponLine(item), price: item.trade?.buy?.cash ?? 0, gate: CRED_GATES[item.id], owned: item.id.startsWith("grenade") ? undefined : countIn(hotbar, item.id) > 0, count: item.id.startsWith("grenade") ? countIn(hotbar, item.id) : undefined, pick: () => commands.run("shop.buy", { item: item.id }) })),
+      rows: GUNS.map((item) => ({ id: item.id, name: ITEM_LABELS[item.id] ?? item.label, line: weaponLine(item), price: item.trade?.buy?.["cash"] ?? 0, gate: CRED_GATES[item.id], owned: item.id.startsWith("grenade") ? undefined : countIn(hotbar, item.id) > 0, count: item.id.startsWith("grenade") ? countIn(hotbar, item.id) : undefined, pick: () => commands.run("shop.buy", { item: item.id }) })),
     },
     {
       id: "shelf",
       title: "The shelf",
-      rows: KIT.map((item) => ({ id: item.id, name: ITEM_LABELS[item.id] ?? item.label, line: gearLine(item), price: item.trade?.buy?.cash ?? 0, gate: CRED_GATES[item.id], count: countIn(backpack, item.id), pick: () => commands.run("shop.buy", { item: item.id }) })),
+      rows: KIT.map((item) => ({ id: item.id, name: ITEM_LABELS[item.id] ?? item.label, line: gearLine(item), price: item.trade?.buy?.["cash"] ?? 0, gate: CRED_GATES[item.id], count: countIn(backpack, item.id), pick: () => commands.run("shop.buy", { item: item.id }) })),
     },
     {
       id: "work",
@@ -181,7 +181,7 @@ function House() {
   const cash = useCurrency("cash");
   const cred = useEntityStat(usePlayer().userId, "level")?.current ?? 1;
   const roomRows = useUpgradeRows("house");
-  const wired = useStore(upgradesStore, (state) => (state?.ranks.house_wire ?? 0) > 0);
+  const wired = useStore(upgradesStore, (state) => (state?.ranks["house_wire"] ?? 0) > 0);
   const takings = useGameStore((ctx) => Math.floor(cityOf(ctx).num("fronts.takings")));
   const sections: BoardSection[] = [
     {
