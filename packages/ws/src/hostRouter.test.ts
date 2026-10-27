@@ -60,7 +60,7 @@ function startStack(options: {
     authorize: options.authorize,
     validate: options.validate,
     graceMs: options.graceMs,
-    ...(options.timers === undefined ? {} : { setTimeoutFn: options.timers.setTimeoutFn, clearTimeoutFn: options.timers.clearTimeoutFn }),
+    ...(options.timers === undefined ? {} : { scheduleTimer: options.timers.scheduleTimer }),
   });
   const backends: WsBackend[] = [];
   return {

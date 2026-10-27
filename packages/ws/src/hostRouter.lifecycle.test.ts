@@ -208,7 +208,7 @@ test("a code join completing after disconnect releases its admitted membership",
 test("late admission retains the configured reconnect grace before releasing capacity", async () => {
   const stack = await delayedHost("world");
   const timers = manualTimers();
-  const router = createHostRouter({ host: stack.host, allowAnonymous: true, graceMs: 100, ...timers });
+  const router = createHostRouter({ host: stack.host, allowAnonymous: true, graceMs: 100, scheduleTimer: timers.scheduleTimer });
   const connection = router.connect({ send() {}, close() {} });
   connection.handleRaw(JSON.stringify({ v: 1, t: "hello", id: 1, userId: "departed" }));
   await router.drain();
@@ -251,7 +251,7 @@ test("drain awaits a started grace cleanup through router close", async () => {
 test("router close cancels grace timers that have not started", async () => {
   const stack = await delayedHost("world");
   const timers = manualTimers();
-  const router = createHostRouter({ host: stack.host, allowAnonymous: true, graceMs: 50, ...timers });
+  const router = createHostRouter({ host: stack.host, allowAnonymous: true, graceMs: 50, scheduleTimer: timers.scheduleTimer });
   const connection = router.connect({ send() {}, close() {} });
   connection.handleRaw(JSON.stringify({ v: 1, t: "hello", id: 1, userId: "departed" }));
   await router.drain();

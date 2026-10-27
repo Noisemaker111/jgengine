@@ -13,7 +13,7 @@ const RETRY_PAUSE_MS = 100;
 const DEFAULT_TIMEOUT_MS = 10_000;
 
 function retryable(error: unknown): boolean {
-  return RETRY_CODES.has((error as NodeJS.ErrnoException | null)?.code ?? "");
+  return error instanceof Error && "code" in error && typeof error.code === "string" && RETRY_CODES.has(error.code);
 }
 
 /** Remove `dir` and everything in it, retrying a held file for up to `timeoutMs`; throws the last error after that. */
