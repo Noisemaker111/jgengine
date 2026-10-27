@@ -51,6 +51,9 @@ export function hitFeel(crit: boolean, killed: boolean): HitReactionConfig | "en
 function landGunHit(ctx: GameContext, from: string, targetId: string, gunId: string, nowMs: number, shot: GunHitMods = {}): void {
   const gun = gunById(gunId);
   if (gun === undefined) return;
+  // A volley's pellets settle together: when an earlier one killed the body, it has left the scene
+  // (and the damage model) before the rest land, so they hit nothing.
+  if (ctx.scene.entity.get(targetId) === null) return;
   const wasAlive = (ctx.scene.entity.stats.get(targetId, "health")?.current ?? 0) > 0;
   const mods = perkHitMods(ctx, gun, targetId, shot);
   const { value: outcome, died } = watchDeaths(ctx, () => resolveGunHit(ctx, gun, from, targetId, gun.elementChance + bonus("elementChance"), mods));

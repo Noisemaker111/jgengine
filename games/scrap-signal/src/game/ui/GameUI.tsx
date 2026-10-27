@@ -5,6 +5,8 @@ import { useGamePhase } from "@jgengine/react/hooks";
 import { useStore } from "@jgengine/react/store";
 import { lootDropsOf } from "@jgengine/core/game/events";
 import { ToastStack } from "@jgengine/core/notifications/toastStack.view";
+import { OnboardingHud } from "@jgengine/core/onboarding/onboarding.view";
+import { FERRALON } from "../palette";
 import { itemNameById } from "../content";
 import { DamageVignette, HitMarker, LevelUpBurst } from "./components/Feedback";
 import { CashPlate, MissionTracker } from "./components/Mission";
@@ -55,6 +57,11 @@ export function GameUI() {
           <MissionTracker />
         </HudPanel>
       )}
+
+      {/* Bolt's field notes: one hint at a time about whatever the crash site is teaching now. */}
+      <HudPanel id="field-notes" anchor="left" order={1} chip="notes" interactive={true}>
+        <OnboardingHud accent={FERRALON.hudAmber} skipLabel="Hide notes" />
+      </HudPanel>
 
       <HudPanel id="cash" anchor="top-right" order={0} priority="critical" interactive={false}>
         <CashPlate />

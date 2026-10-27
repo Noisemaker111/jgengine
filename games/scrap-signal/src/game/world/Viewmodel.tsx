@@ -11,6 +11,7 @@ import { equippedGun, gameNow, muzzleFlashVisible, recoilAt } from "../feel";
 import { gunById, isReloading, type GunDef, type GunFamily } from "../handroll";
 import { ELEMENT_COLORS } from "../palette";
 import { SalvageRelay } from "./Relay";
+import { QuestMarker } from "./QuestMarker";
 
 /**
  * Blaster silhouettes, built from primitives rather than cast from a model pack.
@@ -349,6 +350,7 @@ export function FerralonWorldOverlay() {
       <FerralonAir />
       <SalvageRelay />
       <FerralonViewmodel />
+      <QuestMarker />
     </>
   );
 }

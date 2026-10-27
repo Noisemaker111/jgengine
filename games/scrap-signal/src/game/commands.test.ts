@@ -4,7 +4,8 @@ import { createGameContext, type GameContext } from "@jgengine/core/runtime/game
 import { createAssetCatalog } from "@jgengine/core/scene/assetCatalog";
 
 import { registerCommands } from "./commands";
-import { gunById } from "./handroll";
+import { seededRng } from "@jgengine/core/random/rng";
+import { gunById, rollGun } from "./handroll";
 import { inventories } from "./inventories";
 import { session } from "./session";
 import type { QuestJournal } from "@jgengine/core/mission/quest";
@@ -125,6 +126,35 @@ describe("scrap-signal weapon slots", () => {
     expect(journal(ctx).canTurnIn("p1", QUEST_IDS.firstGun)).toBeNull();
     ctx.game.commands.run("selectSlot2", {});
     expect(session.selectedSlot()).toBe(0);
+  });
+});
+
+describe("scrap-signal pickup", () => {
+  test("E takes the gun in front, not the one just dropped underfoot", () => {
+    const ctx = bootContext();
+    const rng = seededRng("pickup-test");
+    const underfoot = rollGun(rng, 1, { family: "pistol", rarity: "common" });
+    const ahead = rollGun(rng, 1, { family: "smg", rarity: "common" });
+    ctx.scene.worldItem.spawn({ itemId: underfoot.id, position: [0, 0, 0.1] });
+    ctx.scene.worldItem.spawn({ itemId: ahead.id, position: [0.2, 0, 1.8] });
+    ctx.scene.entity.update("p1", { rotationY: 0 });
+    ctx.game.commands.run("pickup", {});
+    expect(ctx.player.inventory.state("hotbar").slots[0]?.itemId).toBe(ahead.id);
+  });
+
+  test("a swapped-out gun lands behind the player", () => {
+    const ctx = bootContext();
+    const rng = seededRng("swap-test");
+    const held = rollGun(rng, 1, { family: "pistol", rarity: "common" });
+    const next = rollGun(rng, 1, { family: "smg", rarity: "common" });
+    ctx.game.unlocks?.grant("p1", "slot:1");
+    ctx.player.inventory.put("hotbar", held.id, 1, { slot: 0 });
+    ctx.scene.worldItem.spawn({ itemId: next.id, position: [0, 0, 1.5] });
+    ctx.scene.entity.update("p1", { rotationY: 0 });
+    ctx.game.commands.run("pickup", {});
+    expect(ctx.player.inventory.state("hotbar").slots[0]?.itemId).toBe(next.id);
+    expect(onlyDrop(ctx).itemId).toBe(held.id);
+    expect(onlyDrop(ctx).position[2]).toBeLessThan(-1);
   });
 });
 
