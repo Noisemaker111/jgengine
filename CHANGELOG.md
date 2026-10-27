@@ -26,6 +26,11 @@ At publish, rename this heading to the new version and mirror the entries into
 `packages/core/src/meta/changelog.ts` (the typed `CHANGELOG` export).
 -->
 
+### Added
+
+- An action's bindings take `locked: true`: players can't rebind it, saved overrides for it are ignored, and controls menus show it read-only. `isActionLocked(codes)` reads the flag.
+- `persist.storage` in `defineGame` also takes any `SaveBackend`, such as `createConvexSaveBackend`, so a solo game's whole-world save can go to the cloud.
+
 ## 0.49.1
 
 ### Migrate
