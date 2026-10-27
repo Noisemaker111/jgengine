@@ -156,7 +156,6 @@
   "games/brightway-park/src/game/render/WorldOverlay.tsx": {"cast":3,"nonNull":7},
   "games/brightway-park/src/game/rides.test.ts": {"nonNull":15},
   "games/brightway-park/src/game/saveStates.ts": {"cast":9,"nonNull":2},
-  "games/brightway-park/src/game/scenarios.test.ts": {"nonNull":7},
   "games/brightway-park/src/game/sim/guests.test.ts": {"nonNull":26},
   "games/brightway-park/src/game/sim/guests.ts": {"nonNull":1},
   "games/brightway-park/src/game/sim/rating.test.ts": {"nonNull":1},

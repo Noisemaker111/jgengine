@@ -10,7 +10,7 @@ import { KitButton } from "@jgengine/core/ui/kit/uiKitRoot.view";
 
 import { captureParkThumb, parkProfile } from "../../parkProfile";
 import { parkSlots, refreshParkSlot } from "../../parkSlot";
-import { SCENARIOS } from "../../scenarios";
+import { FIRST_SCENARIO, SCENARIOS, scenarioDef, scenarioLock } from "../../scenarios";
 import { session } from "../../session";
 import { resultOpen } from "../components/ParkFlow";
 import { parkFlags, usePark } from "../usePark";
@@ -62,7 +62,7 @@ export function ParkMenu({ reducedMotion, onReducedMotion }: ParkMenuProps): Rea
       tagline="Turn a quiet coastal fair into a blue ribbon park." footer={<span>Brightway Park · day {day}</span>}
       items={[
         { id: "continue", label: "Continue", hint: recent === null ? "No park on the board" : `${recent.name ?? "Brightway Park"} · day ${String(recent.meta["day"] ?? day)}`, disabled: recent === null },
-        { id: "new", label: "Open the park", hint: recent === null ? "Free play, or pick a scenario" : "Start fresh or pick a scenario" },
+        { id: "new", label: "Open the park", hint: recent === null ? `Start with ${scenarioDef(FIRST_SCENARIO)?.title ?? "the first scenario"}` : "Start fresh or pick a scenario" },
         { id: "saves", label: "Park saves", hint: recent === null ? "Nothing saved yet" : `Day ${String(recent.meta["day"] ?? 1)} on the board` },
         { id: "settings", label: "Settings", hint: "Motion, sound, controls" },
         { id: "credits", label: "Credits" },
@@ -70,6 +70,7 @@ export function ParkMenu({ reducedMotion, onReducedMotion }: ParkMenuProps): Rea
       detail={(id) => {
         if (id === "continue") return <ContinuePane slot={recent} now={() => Date.now()} emptyMessage="No park saved yet. Open one and the day starts from the gate." onContinue={() => commands.run("park.start", {})} />;
         if (id === "new") return <NewParkPane name={name} onName={setName} hasSave={recent !== null} onFresh={() => commands.run("park.new", {})}
+          onFreePlay={() => commands.run("park.start", {})}
           onScenario={(scenarioId) => { commands.run("park.scenario", { id: scenarioId }); commands.run("park.start", {}); }} />;
         if (id === "saves") return <SaveSlotsPane model={parkSlots} heading="Park saves" columns={1} onContinue={() => commands.run("park.start", {})} onLoad={() => commands.run("park.start", {})} />;
         if (id === "settings") return settings;
@@ -81,25 +82,33 @@ export function ParkMenu({ reducedMotion, onReducedMotion }: ParkMenuProps): Rea
       }}
       onSelect={(id) => {
         if (id === "continue" && recent !== null) commands.run("park.start", {});
-        // With nothing saved, opening the park is one press; with a save, the pane asks first.
-        if (id === "new") { if (recent === null) commands.run("park.start", {}); else document.querySelector<HTMLElement>("[data-park-scenario]")?.focus(); }
+        // With nothing saved, opening the park is one press into the first scenario; with a save, the pane asks first.
+        if (id === "new") {
+          if (recent === null) { commands.run("park.scenario", { id: FIRST_SCENARIO }); commands.run("park.start", {}); }
+          else document.querySelector<HTMLElement>("[data-park-scenario]")?.focus();
+        }
         if (id === "saves") document.querySelector<HTMLButtonElement>("[data-save-slot-load]")?.focus();
       }} />
   );
 }
 
-/** Name the park, then open it in free play (the menu row) or start one of the scenarios. */
-function NewParkPane({ name, onName, hasSave, onFresh, onScenario }: { name: string; onName: (next: string) => void; hasSave: boolean; onFresh: () => void; onScenario: (id: string) => void }): ReactNode {
+/** Name the park, then start a scenario (the menu row starts the first) or free play on the empty lot. */
+function NewParkPane({ name, onName, hasSave, onFresh, onFreePlay, onScenario }: { name: string; onName: (next: string) => void; hasSave: boolean; onFresh: () => void; onFreePlay: () => void; onScenario: (id: string) => void }): ReactNode {
   return (
     <div className="bw-pane">
       <label className="bw-field"><span>Park name</span>
         <input data-new-day-name="" value={name} maxLength={28} placeholder="Brightway Park" onChange={(event) => { onName(event.target.value); parkProfile.name = event.target.value.trim() === "" ? null : event.target.value.trim(); }} />
       </label>
-      <p>Or take on a scenario:</p>
+      <p>Scenarios open one after another: win one to unlock the next.</p>
       <div className="bw-scenarios">
-        {SCENARIOS.map((scenario) => <KitButton key={scenario.id} data-park-scenario={scenario.id} onClick={() => onScenario(scenario.id)}>{scenario.title}<small>{scenario.goal}</small></KitButton>)}
+        {SCENARIOS.map((scenario) => {
+          const lock = scenarioLock(scenario.id);
+          return <KitButton key={scenario.id} data-park-scenario={scenario.id} disabled={lock !== null} title={lock ?? scenario.blurb} onClick={() => onScenario(scenario.id)}>
+            {lock === null ? scenario.title : `🔒 ${scenario.title}`}<small>{lock ?? scenario.goal}</small></KitButton>;
+        })}
       </div>
-      {hasSave ? <KitButton variant="ghost" data-new-day-fresh="" onClick={onFresh}>Start fresh · archive this save</KitButton> : null}
+      {hasSave ? <KitButton variant="ghost" data-new-day-fresh="" onClick={onFresh}>Start fresh · archive this save</KitButton>
+        : <KitButton variant="ghost" data-park-free-play="" onClick={onFreePlay}>Free play on the empty lot</KitButton>}
     </div>
   );
 }

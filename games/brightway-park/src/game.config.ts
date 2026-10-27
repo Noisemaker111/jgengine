@@ -35,7 +35,7 @@ export const game = defineGame({
   save: "none",
   // The park is one declaration (`game/park.ts`); its system runs the world and its commands.
   systems: [park.system],
-  time: { scale: 1, dayLength: DAY_LENGTH, start: DAY_LENGTH * (9 / 24), speeds: [1, 2, 4], startPaused: true },
+  time: { scale: 1, dayLength: DAY_LENGTH, start: DAY_LENGTH * (9 / 24), speeds: [1, 2, 4, 8], startPaused: true },
   content,
   loop,
   GameUI,
@@ -53,7 +53,8 @@ export const game = defineGame({
   look: "cinematic",
   mood: "day",
   capture: {
-    play: ["park.start"],
+    // A new game: the menu's "Open the park" with nothing saved starts the first scenario on the empty lot.
+    play: [{ name: "park.scenario", input: { id: "brightway_beginnings" } }, "park.start"],
     // `full-park` stages the day a reviewer asks about: gates open, the authored starter park at
     // its guest cap, lines at the rides. It composes the dev-only `park.stage`, which runs the
     // park's own tick forward instead of the lane waiting out a day at 4x.

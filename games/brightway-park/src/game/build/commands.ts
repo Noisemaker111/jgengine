@@ -220,7 +220,7 @@ export function registerBuildCommands(ctx: GameContext): void {
     park.of(state).set("park.win_dismissed", true); state.time.play(); setGamePhase(state, "playing"); savePark(state); bump(state);
   } });
   ctx.game.commands.define<{ speed: number }>("park.speed", { apply(state, input) {
-    if (!session.started || over(state) || ribbonUp(state) || ![1, 2, 4].includes(input.speed)) return;
+    if (!session.started || over(state) || ribbonUp(state) || !state.time.snapshot().speeds.includes(input.speed)) return;
     state.time.setSpeed(input.speed); setGamePhase(state, "playing"); bump(state);
   } });
   ctx.game.commands.define<PointerInput>("park.pointer", {
