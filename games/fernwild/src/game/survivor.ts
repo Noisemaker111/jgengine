@@ -50,6 +50,8 @@ interface Survivor {
   /** What sits in front of the survivor: the struck node in reach, or what E would pick. */
   aim: { strike: string | null; pick: string | null; pickAt: { x: number; z: number } | null; water: boolean };
   dead: boolean;
+  /** Webbed (the Broodmother's spit): moving at this share of speed until this game time. */
+  web: { slow: number; until: number } | null;
 }
 
 /** ARK's survivor stats: pools start at the survivor's base, percentages at 100%, fortitude at 0. */
@@ -75,6 +77,7 @@ const survivorOf = perContext((ctx: GameContext): Survivor => ({
   lastGain: null,
   aim: { strike: null, pick: null, pickAt: null, water: false },
   dead: false,
+  web: null,
 }));
 
 /** Level-1 engrams are known from the start, like a fresh ARK survivor. */
@@ -141,7 +144,8 @@ export function give(ctx: GameContext, itemId: string, count: number): number {
   return count;
 }
 
-function takeAnywhere(ctx: GameContext, itemId: string, count: number): boolean {
+/** Take `count` of an item from the bag, then the hotbar; false (and nothing taken) when there are not that many. */
+export function takeAnywhere(ctx: GameContext, itemId: string, count: number): boolean {
   const inBag = ctx.player.inventory.count(BAG, itemId);
   const fromBag = Math.min(inBag, count);
   if (fromBag + ctx.player.inventory.count(HOTBAR, itemId) < count) return false;
@@ -451,7 +455,8 @@ export function tickSurvivor(ctx: GameContext, dt: number): void {
 
   const injured = survivor.vitals.value("health") <= SURVIVOR.injuredAt;
   const knocked = survivor.vitals.has("unconscious");
-  const speed = SURVIVOR.walkSpeed * (statValue(survivor, "speed") / 100) * load.moveMultiplier * (injured ? SURVIVOR.injuredSpeed : 1) * (knocked ? 0 : 1);
+  if (survivor.web !== null && survivor.web.until <= ctx.time.now()) survivor.web = null;
+  const speed = SURVIVOR.walkSpeed * (statValue(survivor, "speed") / 100) * load.moveMultiplier * (injured ? SURVIVOR.injuredSpeed : 1) * (knocked ? 0 : 1) * (survivor.web?.slow ?? 1);
   if (Math.abs((me.movement?.walkSpeed ?? 0) - speed) > 0.01) ctx.scene.entity.update(id, { movement: { ...me.movement, walkSpeed: speed } });
 
   const crafted = tickQueue(survivor.queue, queueConfig(survivor), dt);
@@ -480,9 +485,20 @@ function die(ctx: GameContext, survivor: Survivor): void {
 
 function respawn(ctx: GameContext, survivor: Survivor): void {
   survivor.vitals.reset();
+  survivor.web = null;
   applyMaxes(ctx, survivor, true);
   ctx.scene.entity.resetToSpawn(ctx.player.userId);
   survivor.dead = false;
+}
+
+/** Webbed: the survivor moves at `slow` of their speed for `seconds`. */
+export function webSurvivor(ctx: GameContext, slow: number, seconds: number): void {
+  survivorOf(ctx).web = { slow, until: ctx.time.now() + seconds };
+}
+
+/** Torpor from venom or acid: enough of it and the survivor passes out. */
+export function drugSurvivor(ctx: GameContext, torpor: number): void {
+  survivorOf(ctx).vitals.change("torpor", torpor);
 }
 
 /** Shift sprints while there is stamina for it: the mount's when riding, else the survivor's. */
@@ -573,6 +589,7 @@ export function survivorView(ctx: GameContext) {
     comfort: survivor.comfort.band,
     weather: survivor.climate?.weather ?? "clear",
     sheltered: survivor.climate?.covered ?? false,
+    webbed: survivor.web !== null && survivor.web.until > now,
     activeSlot: survivor.activeSlot,
     aim: survivor.aim,
     gain: survivor.lastGain !== null && now - survivor.lastGain.at < 2.5 ? survivor.lastGain.text : null,

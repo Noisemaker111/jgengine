@@ -405,6 +405,17 @@
       "intent": "keep one area membership per stack key, strongest wins"
     },
     {
+      "id": "arena-wall",
+      "packages": [
+        "@jgengine/core"
+      ],
+      "module": "@jgengine/core/bossArena/bossArena",
+      "domain": "bossArena",
+      "gameFacing": false,
+      "probe": null,
+      "intent": "solid ring wall round a circular arena floor, following the ground"
+    },
+    {
       "id": "armor-bypass",
       "packages": [
         "@jgengine/core"
@@ -926,6 +937,17 @@
       "gameFacing": false,
       "probe": null,
       "intent": "hypothermia and hyperthermia from ambient temperature, insulation and fortitude, as vital drain and exposure damage"
+    },
+    {
+      "id": "boss-arena",
+      "packages": [
+        "@jgengine/core"
+      ],
+      "module": "@jgengine/core/bossArena/bossArena",
+      "domain": "bossArena",
+      "gameFacing": false,
+      "probe": null,
+      "intent": "summoned boss fights: tribute and level gates, a portal that takes survivors and companions in, win, wipe and the trip home"
     },
     {
       "id": "boss-phase-state",

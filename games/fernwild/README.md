@@ -77,6 +77,19 @@ are drawn.
   health, food, weight and melee by up to 20%. The mother waits 18 to 48 hours before mating again.
   `cheat breedingSpeed` sets ARK's hatch, maturation and mating multipliers at once (mating time,
   egg health and baby food are approximate).
+- **The Broodmother.** E at the Green Obelisk's foot opens its terminal: Gamma (level 30, the Clever,
+  Hunter and Massive artifacts), Beta (level 50, plus 5 each of Argentavis Talon, Sarcosuchus Skin,
+  Sauropod Vertebra and Titanoboa Venom) and Alpha (level 70, 10 of each). The trophies are on the
+  bodies of the creatures that carry them: E on a dead Argentavis, Sarco, Brontosaurus, Diplodocus or
+  Titanoboa opens it. Paying the tribute opens a portal for 25 seconds; then everyone within 30 m of
+  the obelisk, up to 10 survivors and 20 tames (riders pulled off), goes to her lair, a walled islet in
+  the far south-east sea. She has the wiki's health (324k, 648k, 972k), melee and torpor, and is never
+  knocked out. She opens with a spit of acid and web that burns, drugs and slows, spits again every
+  few seconds, and calls Araneo out of the walls at full health, two thirds and one third. Kill her
+  and each survivor gets Element (20, 56, 148), a Spider Flag and her trophy, then a minute later is
+  sent back to where they stood. If every survivor dies the fight is lost and the tames left inside
+  die with it. `cheat broodHealth` sets her health for proofs. Her spit, brood sizes, speeds and the
+  trophy odds (one per body) are approximate.
 - **Failure states.** Food and water drain; when either empties you lose about 1 HP every 5 seconds
   and torpor rises. Heat and cold drain them faster and hurt past the comfort band. At 0 health you
   wake back on the beach with full vitals.
@@ -98,7 +111,9 @@ are drawn.
   no metal tier, foundations snap edge to edge but not to cliffs, and storage boxes cannot be placed
   yet; rain drops are thin streaks; no bolas, slingshot shots or tranq arrows yet, so a raptor is clubbed (or
   punched) at close range; a tame's inventory holds slots, not weight; drain and regen rates where
-  ARK publishes none are approximate; trees are stylized stand-ins, not palms.
+  ARK publishes none are approximate; trees are stylized stand-ins, not palms. The Broodmother's lair is
+an open-sky walled islet rather than ARK's enclosed jungle cave, she is a tinted, enlarged spider
+model, the portal has no drag-weight limit, and the single-player boss damage cut is not applied.
 
 Loop proof: fernwild-loop, fernwild-tame, fernwild-build
 

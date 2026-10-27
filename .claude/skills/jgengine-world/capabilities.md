@@ -87,6 +87,10 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `uniqueByStackKey` (function) · `import { uniqueByStackKey } from "@jgengine/core/world"`
 
+## arena-wall — solid ring wall round a circular arena floor, following the ground
+
+- `arenaWall` (function) · `import { arenaWall } from "@jgengine/core/bossArena/bossArena"`
+
 ## asset-anchor — resolve a model's pivot offset from its footprint center
 
 - `resolveAnchorOffset` (function) · `import { resolveAnchorOffset } from "@jgengine/core/world"`
@@ -242,6 +246,10 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 ## body-bind — mirror sim-body snapshots onto scene entities each tick, no per-body setPose
 
 - `createBodyBind` (function) · `import { createBodyBind } from "@jgengine/core/world"`
+
+## boss-arena — summoned boss fights: tribute and level gates, a portal that takes survivors and companions in, win, wipe and the trip home
+
+- `createBossArena` (function) · `import { createBossArena } from "@jgengine/core/bossArena/bossArena"`
 
 ## boss-phase-state — fresh serializable boss phase state that opens in the first phase
 

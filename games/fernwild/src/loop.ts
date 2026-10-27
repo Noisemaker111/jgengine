@@ -7,6 +7,7 @@ import { baseSave, demolish, resetBase, rotateBuild, tickBase, useStructure } fr
 import { cavesOf, cavesSave, resetCaves, takeArtifact } from "./game/caves";
 import { bodiesSave, recoverBody, resetBodies, tickBodies } from "./game/deathBody";
 import { breedingSave, careForBaby, resetBreeding, setBreedingSpeed, tickBreeding } from "./game/breeding";
+import { broodSave, resetBroodmother, setBroodHealth, summonBroodmother, tickBroodmother, useObelisk } from "./game/broodmother";
 import { closeCreature, creaturesSave, destroyWild, feedNarcotic, forceTame, giveTameXp, giveToCreature, levelTame, mountBite, resetCreatures, setTamingSpeed, spawnCreature, takeFromCreature, tameSummoned, tickCreatures, toggleMating, unsaddle, useCreature, whistle } from "./game/creatures";
 import { TAME_STATS } from "./game/data/species";
 import { LEVEL_STATS, SURVIVOR } from "./game/data/survivor";
@@ -138,6 +139,17 @@ export const systems = [
     reset: resetSupplyDrops,
   }),
   defineSystem({
+    id: "broodmother",
+    tick: { type: "fixed", rate: 10 },
+    create(ctx) {
+      ctx.game.commands.define("obeliskUse", { apply: (state) => (useObelisk(state), state) });
+      ctx.game.commands.define<{ tier: string }>("summonBoss", { apply: (state, input) => (summonBroodmother(state, input.tier), state) });
+    },
+    update: tickBroodmother,
+    save: broodSave,
+    reset: resetBroodmother,
+  }),
+  defineSystem({
     id: "breeding",
     tick: { type: "fixed", rate: 2 },
     create(ctx) {
@@ -178,6 +190,8 @@ interface Cheat {
   teleport?: readonly [number, number] | readonly [number, number, number];
   /** Send a supply crate from the drop site nearest the survivor, of this tier (true: the site's own odds). */
   drop?: string | true;
+  /** ARK's admin SetHealth on the Broodmother in her lair: her health to this share of its max. */
+  broodHealth?: number;
 }
 
 function cheat(ctx: GameContext, input: Cheat): void {
@@ -198,6 +212,7 @@ function cheat(ctx: GameContext, input: Cheat): void {
     if (facing !== undefined) ctx.camera.turnTo(facing);
   }
   if (input.drop !== undefined) callSupplyDrop(ctx, input.drop === true ? undefined : input.drop);
+  if (input.broodHealth !== undefined) setBroodHealth(ctx, input.broodHealth);
   const me = ctx.scene.entity.get(ctx.player.userId);
   if (input.summon !== undefined && me !== null) {
     const distance = input.summon.distance ?? 4;

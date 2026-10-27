@@ -20,6 +20,7 @@ import { editorLayers } from "../editorLayers";
 import { BAG, HOTBAR } from "./bags";
 import { itemDef, itemLabel, itemTraits } from "./data/items";
 import { IMPRINT_BONUS, IMPRINTED_STATS } from "./data/breeding";
+import { TROPHY_DROPS } from "./data/bosses";
 import { killXp, SPECIES, speciesDef, statAt, TAME_LEVELS, TAME_STATS, temperamentOf, TORPOR_TAKEN, WILD_LEVELS, WILD_STATS, type SpeciesDef, type TameStat, type WildStat } from "./data/species";
 import { setScreen } from "./screens";
 
@@ -415,7 +416,7 @@ export function strikeCreature(ctx: GameContext, attackerId: string, yaw: number
   world.lastTarget = { id: target.id, until: ctx.time.now() + 10 };
   const wasDown = world.taming.state(target.id)?.unconscious === true;
   if (wasDown) world.taming.damage(target.id, damage / maxHealth(target));
-  const knockedOut = !wasDown && world.taming.addTorpor(target.id, (tool.torpor ?? 0) * TORPOR_TAKEN * melee);
+  const knockedOut = !wasDown && def.torporImmune !== true && world.taming.addTorpor(target.id, (tool.torpor ?? 0) * TORPOR_TAKEN * melee);
   if (knockedOut) knockOut(ctx, target);
   const killed = (ctx.scene.entity.stats.get(target.id, "health")?.current ?? 1) <= 0;
   if (killed) kill(ctx, target);
@@ -472,6 +473,12 @@ function kill(ctx: GameContext, creature: Creature): void {
   } else if (creature.region !== "") {
     world.director.notifyRemoved(creature.region, creature.species);
   }
+  // The wild ones the Broodmother's tribute asks for carry their trophy, to take from the body.
+  const trophy = creature.tamed ? undefined : TROPHY_DROPS[creature.species];
+  if (trophy !== undefined) {
+    const put = putItem(creature.inventory, { slots: CREATURE_SLOTS }, itemTraits, trophy, 1);
+    if (put.status === "ok") creature.inventory = put.state;
+  }
   lie(ctx, creature.id, true);
   const killer = creature.lastHitBy === null ? undefined : world.creatures.get(creature.lastHitBy);
   if (killer?.growth != null && !killer.dead) grantTameXp(ctx, killer, killXp(defOf(creature), creature.level));
@@ -517,7 +524,7 @@ export function mountCanSprint(ctx: GameContext): boolean | null {
 export function levelTame(ctx: GameContext, stat: TameStat): void {
   const creature = viewed(ctx);
   const growth = creature?.growth ?? null;
-  if (creature === null || growth === null) return;
+  if (creature === null || growth === null || creature.dead) return;
   const before = { health: maxHealth(creature), stamina: statOf(creature, "stamina") };
   if (!TAME_POINTS.spend(growth.points, stat, growth.gained)) return;
   if (stat === "health") {
@@ -621,6 +628,39 @@ export function takeFromCreatureInventory(ctx: GameContext, id: string, item: st
 export function creatureAlive(ctx: GameContext, id: string): boolean {
   const creature = worldOf(ctx).creatures.get(id);
   return creature !== undefined && !creature.dead;
+}
+
+/** Set a creature down at `at` (a portal took it): it stands there, and a tame told to stay now waits there. */
+export function moveCreature(ctx: GameContext, id: string, at: readonly [number, number]): void {
+  const world = worldOf(ctx);
+  const creature = world.creatures.get(id);
+  if (creature === undefined || creature.dead) return;
+  const position = openGround(ctx, at, defOf(creature).radius) ?? [at[0], ctx.world.groundHeightAt(at[0], at[1]), at[1]];
+  ctx.scene.entity.setPose(id, { position });
+  ctx.scene.entity.setVelocity(id, [0, 0, 0]);
+  world.driver.setHome(id, position);
+  if (world.roster.get(id) !== null) world.roster.setHome(id, position);
+  world.steps.delete(id);
+}
+
+/** A creature dies where it stands (the tames left behind in a lost boss fight). */
+export function slayCreature(ctx: GameContext, id: string): void {
+  const creature = worldOf(ctx).creatures.get(id);
+  if (creature !== undefined) kill(ctx, creature);
+}
+
+/** A creature, alive or a body, is gone from the world at once (a boss lair clearing out). */
+export function removeCreatureNow(ctx: GameContext, id: string): void {
+  const world = worldOf(ctx);
+  const creature = world.creatures.get(id);
+  if (creature !== undefined) removeCreature(ctx, world, creature, 0);
+}
+
+/** A live creature's health, as a share of its max; null when it is gone or dead. */
+export function creatureHealth(ctx: GameContext, id: string): number | null {
+  const creature = worldOf(ctx).creatures.get(id);
+  const health = creature === undefined || creature.dead ? null : ctx.scene.entity.stats.get(id, "health");
+  return health === null || health.max <= 0 ? null : Math.max(0, health.current / health.max);
 }
 
 /** The creature the survivor is aimed at, or null. */
@@ -768,7 +808,15 @@ export function useCreature(ctx: GameContext): void {
     return;
   }
   const creature = world.aimed === null ? undefined : world.creatures.get(world.aimed);
-  if (creature === undefined || creature.dead) return;
+  if (creature === undefined) return;
+  if (creature.dead) {
+    // A body still holding something (a trophy, a tame's things) opens like a live one's inventory.
+    if (holdsItems(creature)) {
+      world.viewing = creature.id;
+      setScreen(ctx, "creature");
+    }
+    return;
+  }
   if (creature.tamed && creature.saddled) {
     const ride = riding.ride(ctx.player.userId, creature.id, defOf(creature).seat as SeatOffset);
     if (!ride.ok) ctx.game.notices.push({ text: ride.reason, tone: "deny" });
@@ -816,7 +864,8 @@ export function creaturePrompts(ctx: GameContext): PositionedPrompt[] {
   };
   if (mounted !== null) return prompt(mounted, "Dismount");
   const creature = world.aimed === null ? undefined : world.creatures.get(world.aimed);
-  if (creature === undefined || creature.dead) return [];
+  if (creature === undefined) return [];
+  if (creature.dead) return holdsItems(creature) ? prompt(creature.id, "Access inventory") : [];
   if (creature.tamed) return prompt(creature.id, creature.saddled ? "Ride" : "Access inventory");
   if (world.taming.state(creature.id)?.unconscious === true) return prompt(creature.id, "Access inventory");
   return [];
@@ -831,10 +880,15 @@ const NARCOTICS: Readonly<Record<string, { torpor: number; seconds: number }>> =
   stimulant: { torpor: -40, seconds: 3 },
 };
 
+function holdsItems(creature: Creature): boolean {
+  return creature.inventory.slots.some((slot) => slot !== null);
+}
+
+/** The creature whose inventory is open: a live one, or a body with something left in it. */
 function viewed(ctx: GameContext): Creature | null {
   const world = worldOf(ctx);
   const creature = world.viewing === null ? undefined : world.creatures.get(world.viewing);
-  return creature === undefined || creature.dead ? null : creature;
+  return creature === undefined || (creature.dead && !holdsItems(creature)) ? null : creature;
 }
 
 /** Move a stack from the survivor's bag or hotbar into the creature; a matching saddle goes on its back. */

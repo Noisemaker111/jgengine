@@ -26,6 +26,7 @@ import {
   parseArgs,
   parseLock,
   pickFragment,
+  runAt,
   staleReason,
   ownFragments,
   commitsBody,
@@ -35,6 +36,13 @@ import {
 import type { FragmentFile, Gh, GhCheck, LandIo, LockWait, Run } from "./land";
 import { attemptsOf, judgeChecks } from "./ci-status";
 import type { RollupEntry } from "./ci-status";
+
+test("a command printing more than Node's 1 MiB default comes back whole, as `git show` of a big api.md does", () => {
+  const size = 3 * 1024 * 1024;
+  const out = runAt(process.cwd(), process.execPath, ["-e", `process.stdout.write("x".repeat(${size}))`]);
+  expect(out.status).toBe(0);
+  expect(out.stdout.length).toBe(size);
+});
 
 test("parses flags with values and defaults the base to beta", () => {
   expect(parseArgs([])).toEqual({ base: "beta", commit: false, allow: [], messages: [] });
