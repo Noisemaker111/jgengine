@@ -2,8 +2,9 @@
 // will ever open again. Nothing removed those, so `.claude/worktrees` grew by
 // about a gigabyte per lane until the disk filled, and a full disk is what leaves
 // the next install half-linked. This reaps a worktree when its branch has reached
-// `origin/beta` and its tree has nothing uncommitted. Committed work is never at
-// risk: removing a worktree deletes files, not branches.
+// `origin/beta` and its tree has nothing uncommitted; a lane that never committed
+// goes once it has sat untouched past its grace, with no new files either.
+// Committed work is never at risk: removing a worktree deletes files, not branches.
 import { existsSync, realpathSync } from "node:fs";
 import { basename, dirname, resolve, sep } from "node:path";
 
@@ -26,7 +27,19 @@ export interface ReapCandidate {
   path: string;
   name: string;
   branch: string;
+  /**
+   * The branch never moved from where it was created. Such a lane's only work can be new files git
+   * does not track yet, so its tree must be clean of those too before it goes.
+   */
+  untouched: boolean;
 }
+
+/**
+ * How long a lane with nothing committed is left for its session to start work. A lane created at the
+ * beta tip reads as merged, so without a grace a second lane starting up deleted the first; without an
+ * end to it, a lane abandoned before its first commit stayed forever.
+ */
+export const NEW_LANE_GRACE_MS = 60 * 60 * 1000;
 
 export interface ReapSelection {
   reap: ReapCandidate[];
@@ -55,11 +68,9 @@ export function selectReap(args: {
   mainRoot: string;
   skip: string[];
   isMerged: (branch: string) => boolean;
-  /**
-   * False for a branch that has not moved since it was created. A new lane's branch sits on
-   * origin/beta and so reads as merged; without this, a second lane starting up deleted it.
-   */
-  hasCommitted?: (branch: string) => boolean;
+  /** When the branch was created (epoch ms) if it has not moved since; null once it has. */
+  createdAt: (branch: string) => number | null;
+  now: number;
 }): ReapSelection {
   const skip = new Set(args.skip.map((path) => safeRealpath(path)));
   const reap: ReapCandidate[] = [];
@@ -71,8 +82,11 @@ export function selectReap(args: {
     else if (ref.branch === null) kept.push({ name, reason: "detached" });
     else if (skip.has(safeRealpath(ref.path))) kept.push({ name, reason: "this session" });
     else if (!args.isMerged(ref.branch)) kept.push({ name, reason: "not merged into origin/beta" });
-    else if (args.hasCommitted !== undefined && !args.hasCommitted(ref.branch)) kept.push({ name, reason: "new lane, nothing committed yet" });
-    else reap.push({ path: ref.path, name, branch: ref.branch });
+    else {
+      const created = args.createdAt(ref.branch);
+      if (created !== null && args.now - created < NEW_LANE_GRACE_MS) kept.push({ name, reason: "new lane, nothing committed yet" });
+      else reap.push({ path: ref.path, name, branch: ref.branch, untouched: created !== null });
+    }
   }
   return { reap, kept };
 }
@@ -88,8 +102,11 @@ function safeRealpath(path: string): string {
 export interface ReapIo {
   /** True when the directory is still there; a tree another run already removed is not an error. */
   exists: (path: string) => boolean;
-  /** True when the tree has no tracked changes; untracked files such as node_modules do not count. */
-  isClean: (path: string) => boolean;
+  /**
+   * True when the tree has no tracked changes. Untracked files count only when `untracked` is set (a
+   * lane that never committed); ignored ones such as node_modules never do.
+   */
+  isClean: (path: string, untracked: boolean) => boolean;
   remove: (path: string) => boolean;
 }
 
@@ -106,7 +123,7 @@ export function reap(selection: ReapSelection, io: ReapIo): { removed: ReapCandi
       removed.push(candidate);
       continue;
     }
-    if (!io.isClean(candidate.path)) {
+    if (!io.isClean(candidate.path, candidate.untouched)) {
       kept.push({ name: candidate.name, reason: "uncommitted changes" });
       continue;
     }
@@ -177,27 +194,33 @@ function main(argv: readonly string[]): void {
     mainRoot,
     skip: skipPaths(argv, process.cwd()),
     isMerged: (branch) => git(mainRoot, ["merge-base", "--is-ancestor", branch, "origin/beta"]).ok,
-    hasCommitted: (branch) => {
-      const log = git(mainRoot, ["reflog", "show", "--format=%H", `refs/heads/${branch}`]);
-      return !log.ok || log.stdout.trim().split("\n").length > 1;
+    createdAt: (branch) => {
+      const log = git(mainRoot, ["reflog", "show", "--format=%ct", `refs/heads/${branch}`]);
+      const entries = log.stdout.trim().split("\n");
+      const seconds = Number(entries[0]);
+      return log.ok && entries.length === 1 && Number.isFinite(seconds) && seconds > 0 ? seconds * 1000 : null;
     },
+    now: Date.now(),
   });
 
-  if (dryRun) {
-    for (const candidate of selection.reap) console.log(`would remove ${candidate.name} (${candidate.branch})`);
-    for (const row of selection.kept) console.log(`keeps ${row.name} - ${row.reason}`);
-    console.log(summarise({ removed: [], kept: selection.kept }));
-    return;
-  }
-
+  // A dry run asks the trees the same questions and deletes nothing, so it lists what a real run takes.
   const result = reap(selection, {
     exists: (path) => existsSync(path),
-    isClean: (path) => git(path, ["status", "--porcelain", "--untracked-files=no"]).stdout.trim() === "",
+    isClean: (path, untracked) => {
+      const status = git(path, ["status", "--porcelain", `--untracked-files=${untracked ? "normal" : "no"}`]);
+      return status.ok && status.stdout.trim() === "";
+    },
     remove: (path) => {
+      if (dryRun) return true;
       removeDirSync(path, 1_000);
       return !existsSync(path);
     },
   });
+  if (dryRun) {
+    for (const candidate of result.removed) console.log(`would remove ${candidate.name} (${candidate.branch})`);
+    for (const row of result.kept) if (row.reason !== "not merged into origin/beta") console.log(`keeps ${row.name} - ${row.reason}`);
+    return;
+  }
   git(mainRoot, ["worktree", "prune"]);
   console.log(summarise(result));
 }

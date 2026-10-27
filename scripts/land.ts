@@ -57,7 +57,7 @@ import { basename, dirname, isAbsolute, join, relative, resolve } from "node:pat
 import { fileURLToPath } from "node:url";
 import { bendsSection, findBends, withBends } from "./bends";
 import { FRAGMENT_PATTERN } from "./changelog-fragments";
-import { apiNoteBullets, engineSeamLine, renderChangeNote } from "./change-note";
+import { apiNoteBullets, engineSeamLine, noteMessages, renderChangeNote } from "./change-note";
 import { rebaseResolvingGenerated, regenerateAndCommit } from "./generated-rebase";
 import { assertCheckoutReady } from "./checkout-ready";
 import { printHelpIfAsked } from "./script-help";
@@ -430,7 +430,7 @@ export interface CommitOptions {
   checkout?: string;
   /** Paths the author wants committed although a guard refuses them. */
   allow?: readonly string[];
-  /** `-m` messages: the change note is written from them, over any note the branch already has. */
+  /** `-m` messages: added to the note the branch already has, or the note is written from them. */
   messages?: readonly string[];
   /** Fragments in this checkout, `changes/` by default. */
   files?: () => readonly FragmentFile[];
@@ -460,7 +460,8 @@ export function commitLane(options: CommitOptions): LaneCommitOutcome {
   const dirty = runGit(["status", "--porcelain"]);
   if (dirty.status !== 0) return { kind: "failed", code: EXIT_COULD_NOT_MERGE, why: `git status failed: ${details(dirty)}` };
   const messages = (options.messages ?? []).filter((message) => message.trim().length > 0);
-  // A clean tree with -m lines still rewrites the note: a re-close is how a lane rewords its PR.
+  // A clean tree with -m lines still adds them to the note: a re-close is how a lane adds to its PR.
+  // Rewording a line is an edit to changes/<branch>.md, then a close without -m.
   if (dirty.stdout.trim().length === 0 && messages.length === 0) return { kind: "clean" };
 
   const staged = runGit(["add", "-A"]);
@@ -499,7 +500,10 @@ export function commitLane(options: CommitOptions): LaneCommitOutcome {
   const candidates = new Set(changed.map((path) => basename(path)));
   const files = options.files ?? (() => fragmentFiles());
   const own = files().filter((file) => candidates.has(basename(file.path)));
-  let fragment = messages.length > 0 ? null : pickFragment(own, branch);
+  const existing = pickFragment(own, branch);
+  // New -m lines add to the note the branch already has; they never replace it.
+  const noteLinesFromMessages = existing === null ? messages : [...noteMessages(existing.text), ...messages];
+  let fragment = messages.length > 0 ? null : existing;
   let created = false;
 
   if (fragment === null && messages.length === 0 && commits.length === 0) {
@@ -512,7 +516,7 @@ export function commitLane(options: CommitOptions): LaneCommitOutcome {
     // The whole message, not just its subject: a body line the author wrote (a root cause, an
     // engine seam) is the note, and dropping it is how a required line went missing from PRs.
     const text = renderChangeNote({
-      messages: messages.length > 0 ? messages : noteLines(commits),
+      messages: messages.length > 0 ? noteLinesFromMessages : noteLines(commits),
       api: apiChangesIn(changed, base, runGit, (file) => {
         try {
           return read(join(checkout, file));

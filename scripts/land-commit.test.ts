@@ -161,20 +161,22 @@ test("nothing to commit is not a failure: the tree is left alone", () => {
   expect(gitOk(work, ["log", "-1", "--format=%s"])).toBe("already done");
 });
 
-test("a re-close with new -m lines on a clean tree rewrites the note and commits it; the same lines again commit nothing", () => {
+test("a re-close with new -m lines on a clean tree adds them to the note and commits it; the same lines again commit nothing", () => {
   const { work } = originWithBeta();
   gitOk(work, ["checkout", "-q", "-b", "agent/lane-x"]);
   writeFileSync(join(work, "shared.txt"), "one\nwork\n");
-  expect(commitIn(work, [], ["First wording"]).kind).toBe("committed");
+  expect(commitIn(work, [], ["First wording", "Closes #12"]).kind).toBe("committed");
   expect(gitOk(work, ["status", "--porcelain"])).toBe("");
 
-  const reworded = commitIn(work, [], ["Better wording"]);
-  expect(reworded.kind).toBe("committed");
-  expect(reworded.subject).toBe("Better wording");
-  expect(readFileSync(join(work, "changes", "agent-lane-x.md"), "utf8")).toContain("- Better wording");
+  const added = commitIn(work, [], ["Fixed: the second thing"]);
+  expect(added.kind).toBe("committed");
+  expect(added.subject).toBe("First wording");
+  expect(readFileSync(join(work, "changes", "agent-lane-x.md"), "utf8")).toBe(
+    "First wording\n\nCloses #12\n\n### Changed\n\n- First wording\n\n### Fixed\n\n- the second thing\n",
+  );
 
-  expect(commitIn(work, [], ["Better wording"])).toEqual({ kind: "clean" });
-  expect(gitOk(work, ["log", "-1", "--format=%s"])).toBe("Better wording");
+  expect(commitIn(work, [], ["Fixed: the second thing"])).toEqual({ kind: "clean" });
+  expect(gitOk(work, ["log", "-1", "--format=%s"])).toBe("First wording");
 });
 
 test("a fragment another lane left is not used; this branch writes its own from its own commits", () => {
@@ -272,9 +274,15 @@ test("-m writes the note: sections from prefixes, the API the diff added, the se
     ].join("\n"),
   );
   expect(log).toContain("wrote agent-lane-x.md from the -m messages");
+
+  // A re-close adds its line once; the API bullets and the seam are written again from the diff, not doubled.
+  const before = readFileSync(join(work, "changes", "agent-lane-x.md"), "utf8");
+  expect(commitIn(work, [], ["Dens show on the map"]).kind).toBe("committed");
+  expect(readFileSync(join(work, "changes", "agent-lane-x.md"), "utf8")).toBe(before.replace("- Wolves sleep in dens\n", "- Wolves sleep in dens\n- Dens show on the map\n"));
 });
 
-test("a second close keeps the note the first wrote; -m rewrites it", () => {
+test("a second close keeps the note the first wrote; -m adds to it, never wiping it", () => {
+  // A re-close with -m once replaced #2626's whole note.
   const { work } = originWithBeta();
   gitOk(work, ["checkout", "-q", "-b", "agent/lane-x"]);
   writeFileSync(join(work, "shared.txt"), "one\nfirst\n");
@@ -284,8 +292,8 @@ test("a second close keeps the note the first wrote; -m rewrites it", () => {
   expect(commitIn(work).subject).toBe("First words");
 
   writeFileSync(join(work, "shared.txt"), "one\nthird\n");
-  expect(commitIn(work, [], ["Better words"]).subject).toBe("Better words");
-  expect(readFileSync(join(work, "changes", "agent-lane-x.md"), "utf8")).not.toContain("First words");
+  expect(commitIn(work, [], ["More words"]).subject).toBe("First words");
+  expect(readFileSync(join(work, "changes", "agent-lane-x.md"), "utf8")).toBe("First words\n\n### Changed\n\n- First words\n- More words\n");
 });
 
 test("a lane with no commit, no fragment and no -m is refused, never given the base's merge subject", () => {
