@@ -11,8 +11,8 @@ interface SettingsModalProps {
   onClose: () => void;
   activeTab: SettingsTabId;
   onTabChange: (tab: SettingsTabId) => void;
-  headerActionLabel?: string;
-  onHeaderAction?: () => void;
+  headerActionLabel?: string | undefined;
+  onHeaderAction?: (() => void) | undefined;
 }
 
 export function SettingsModal({
@@ -28,10 +28,10 @@ export function SettingsModal({
   useEffect(() => {
     if (open) {
       setVisible(true);
-    } else {
-      const t = setTimeout(() => setVisible(false), 200);
-      return () => clearTimeout(t);
+      return undefined;
     }
+    const t = setTimeout(() => setVisible(false), 200);
+    return () => clearTimeout(t);
   }, [open]);
 
   useEffect(() => {

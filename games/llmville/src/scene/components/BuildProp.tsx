@@ -8,6 +8,13 @@ import { SceneModel } from "@/scene/components/SceneModel";
 import { resolveWebBuildItemPlacementBounds3d } from "@/scene/buildItemBounds";
 import { getWorldModelAsset } from "@llmville/game/world/worldModelCatalog";
 
+const CART_WHEEL_OFFSETS: readonly (readonly [number, number, number])[] = [
+  [-0.35, 0.12, -0.22],
+  [0.35, 0.12, -0.22],
+  [-0.35, 0.12, 0.22],
+  [0.35, 0.12, 0.22],
+];
+
 interface BuildPropProps {
   itemId: PlaceableBuildItemId;
   x: number;
@@ -110,12 +117,7 @@ function BuildPropShape({
           <boxGeometry args={[1.05, 0.08, 0.65]} />
           <meshStandardMaterial {...style} color={style.transparent ? style.color : "#cbd5e1"} emissive={style.emissive} />
         </mesh>
-        {[
-          [-0.35, 0.12, -0.22],
-          [0.35, 0.12, -0.22],
-          [-0.35, 0.12, 0.22],
-          [0.35, 0.12, 0.22],
-        ].map(([wheelX, wheelY, wheelZ]) => (
+        {CART_WHEEL_OFFSETS.map(([wheelX, wheelY, wheelZ]) => (
           <mesh key={`${wheelX}-${wheelZ}`} position={[wheelX, wheelY, wheelZ]} castShadow>
             <cylinderGeometry args={[0.08, 0.08, 0.06, 12]} />
             <meshStandardMaterial {...style} color={style.transparent ? style.color : "#0f172a"} emissive={style.emissive} />

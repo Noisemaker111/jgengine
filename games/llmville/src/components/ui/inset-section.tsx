@@ -6,7 +6,7 @@ import { cn } from "@/components/ui/cn";
 interface InsetSectionProps {
   children: ReactNode;
   className?: string;
-  label?: string;
+  label?: string | undefined;
   trailing?: ReactNode;
 }
 

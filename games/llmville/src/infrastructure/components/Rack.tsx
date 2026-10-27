@@ -275,7 +275,7 @@ function RackCabinetBox({
         <GhostRackMaterial isValid={isValid} />
       ) : (
         <meshStandardMaterial
-          ref={materialRef}
+          {...(materialRef === undefined ? {} : { ref: materialRef })}
           color={color}
           emissive={emissive ?? color}
           emissiveIntensity={emissiveIntensity}
@@ -767,9 +767,9 @@ interface RackProps {
   rotationY: number;
   ghost?: boolean;
   isValid?: boolean;
-  installedHardwareSlots?: readonly RackInstalledHardwareSlot[];
-  installedCoolerId?: RackCoolingUnitId | null;
-  slotWorkloadMap?: ReadonlyMap<string, GpuSlotWorkload>;
+  installedHardwareSlots?: readonly RackInstalledHardwareSlot[] | undefined;
+  installedCoolerId?: RackCoolingUnitId | null | undefined;
+  slotWorkloadMap?: ReadonlyMap<string, GpuSlotWorkload> | undefined;
 }
 
 export default function Rack({

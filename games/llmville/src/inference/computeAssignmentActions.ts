@@ -51,7 +51,7 @@ export function useComputeAssignmentActions({
             rackId,
             slotIndex,
             lane,
-            targetModelId,
+            ...(targetModelId === undefined ? {} : { targetModelId }),
             externalId: playerId,
           }),
           { onError: (error) => showActionErrorFromException(error) },

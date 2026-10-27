@@ -64,7 +64,7 @@ export function BlueprintCard({
   owned,
 }: {
   children: ReactNode;
-  className?: string;
+  className?: string | undefined;
   owned?: boolean;
 }) {
   return (
@@ -85,7 +85,7 @@ interface QuantityBuyControlProps {
   onQtyChange: (next: number) => void;
   onBuy: () => void;
   disabled?: boolean;
-  className?: string;
+  className?: string | undefined;
 }
 
 export function QuantityBuyControl({

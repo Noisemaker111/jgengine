@@ -4,9 +4,9 @@ import { getHardwareImagePath } from "@llmville/game/world/worldModelCatalog";
 
 interface RackSlotProps {
   /** When set, slot is filled with this hardware. When undefined, slot is empty (drop zone). */
-  hardwareModelId?: HardwareModelId;
+  hardwareModelId?: HardwareModelId | undefined;
   /** Optional count for inventory display (e.g. ×2) */
-  count?: number;
+  count?: number | undefined;
   /** Whether this slot is being dragged */
   isDragging?: boolean;
   /** Drag start handler */
@@ -17,7 +17,7 @@ interface RackSlotProps {
   /** When true, drag is handled by parent (e.g. @dnd-kit); disables native draggable */
   useExternalDrag?: boolean;
   /** Card temperature from rack thermal v3 (°C) */
-  temperatureC?: number;
+  temperatureC?: number | undefined;
   /** Show slot number label (for rack slots) */
   slotNumber?: number;
 }

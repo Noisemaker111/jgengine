@@ -94,7 +94,7 @@ function percentile(sortedValues: readonly number[], ratio: number): number {
     sortedValues.length - 1,
     Math.max(0, Math.floor(ratio * (sortedValues.length - 1))),
   );
-  return sortedValues[index];
+  return sortedValues[index] ?? 0;
 }
 
 function pushRingSample(ring: SectionRing, ms: number, calls: number): void {
@@ -131,7 +131,7 @@ function buildOffenders(frameMs: number): PerformanceProfileOffender[] {
     let maxMs = 0;
     let callSum = 0;
     for (let index = 0; index < samples.length; index += 1) {
-      const ms = samples[index];
+      const ms = samples[index] ?? 0;
       sum += ms;
       maxMs = Math.max(maxMs, ms);
       callSum += callSamples[index] ?? 0;

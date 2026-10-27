@@ -40,7 +40,7 @@ const DEFAULT_PROCESSING: ProcessingOptions = {
   trimPadding: 4,
 };
 
-const PRESET_NAMES: Record<string, string> = {
+const PRESET_NAMES = {
   "4x4-mmo": [
     "armored-player",
     "caster",
@@ -365,6 +365,13 @@ export function AssetSheetWorkbench() {
   };
 
   const updateGrid = (patch: Partial<SpriteSheetGridConfig>) => setGrid((current) => ({ ...current, ...patch }));
+  const setCellSize = (key: "cellWidth" | "cellHeight", value: number | undefined) =>
+    setGrid((current) => {
+      const next = { ...current };
+      if (value === undefined) delete next[key];
+      else next[key] = value;
+      return next;
+    });
   const updateProcessing = (patch: Partial<ProcessingOptions>) =>
     setProcessing((current) => ({ ...current, ...patch }));
 
@@ -407,8 +414,8 @@ export function AssetSheetWorkbench() {
             <ControlNumber label="Margin Y" value={grid.marginY} onChange={(value) => updateGrid({ marginY: value ?? 0 })} />
             <ControlNumber label="Gap X" value={grid.gapX} onChange={(value) => updateGrid({ gapX: value ?? 0 })} />
             <ControlNumber label="Gap Y" value={grid.gapY} onChange={(value) => updateGrid({ gapY: value ?? 0 })} />
-            <ControlNumber label="Cell W" value={grid.cellWidth} onChange={(value) => updateGrid({ cellWidth: value })} />
-            <ControlNumber label="Cell H" value={grid.cellHeight} onChange={(value) => updateGrid({ cellHeight: value })} />
+            <ControlNumber label="Cell W" value={grid.cellWidth} onChange={(value) => setCellSize("cellWidth", value)} />
+            <ControlNumber label="Cell H" value={grid.cellHeight} onChange={(value) => setCellSize("cellHeight", value)} />
           </div>
 
           <label className="flex flex-col gap-1 text-xs font-medium text-slate-700">

@@ -10,8 +10,8 @@ export interface ModelCatalogLike {
 
 export interface PlayerModelLike {
   launchState: string;
-  isLicensedBaseServe?: boolean;
-  baseModelId?: string;
+  isLicensedBaseServe?: boolean | undefined;
+  baseModelId?: string | undefined;
   tokensPerToken: number;
 }
 

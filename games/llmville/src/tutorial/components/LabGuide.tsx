@@ -15,7 +15,7 @@ export interface LabGoalSelection {
   select: (id: string) => void;
 }
 
-export function LabGuide({ world, tutorial, compact = false, selection }: { world: ReadyWorldViewModel; tutorial: TutorialViewModel; compact?: boolean; selection?: LabGoalSelection }) {
+export function LabGuide({ world, tutorial, compact = false, selection }: { world: ReadyWorldViewModel; tutorial: TutorialViewModel; compact?: boolean; selection?: LabGoalSelection | undefined }) {
   const nav = useTabletNavContext();
   const [localGoal, setLocalGoal] = useState<string | null>(null);
   const chosenGoal = selection?.id ?? localGoal;

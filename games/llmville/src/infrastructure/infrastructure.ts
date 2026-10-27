@@ -37,7 +37,7 @@ export interface PlacedRack {
   rotationY: number;
   createdAt: number;
   installedHardwareModuleIds: readonly RackInstalledHardwareSlot[];
-  installedCoolerId?: RackCoolingUnitId | null;
+  installedCoolerId?: RackCoolingUnitId | null | undefined;
 }
 
 export function findPlacedRackById(
@@ -126,10 +126,10 @@ interface SceneModelLike {
   tokensPerSecond: number;
   moneyPerToken: number;
   tokensPerToken: number;
-  paramsB?: number;
-  precision?: ComputePrecision | null;
-  benchmarkScore?: number | null;
-  baseModelId?: string;
+  paramsB?: number | undefined;
+  precision?: ComputePrecision | null | undefined;
+  benchmarkScore?: number | null | undefined;
+  baseModelId?: string | undefined;
 }
 
 interface DeriveWorldSceneSummaryOptions {
@@ -137,12 +137,12 @@ interface DeriveWorldSceneSummaryOptions {
   models: readonly SceneModelLike[];
   isTraining: boolean;
   hardwareInventory: HardwareInventory;
-  computeAssignments?: ComputeAssignmentMap | null;
-  servingMode?: ServingModeId | null;
-  ownerAvatarId?: string | null;
-  dataTokens?: number;
-  modelCatalog?: Record<string, { isUnlocked?: boolean }> | null;
-  gameCreatedAt?: number;
+  computeAssignments?: ComputeAssignmentMap | null | undefined;
+  servingMode?: ServingModeId | null | undefined;
+  ownerAvatarId?: string | null | undefined;
+  dataTokens?: number | undefined;
+  modelCatalog?: Record<string, { isUnlocked?: boolean }> | null | undefined;
+  gameCreatedAt?: number | undefined;
   powerCapacityKw: number;
 }
 

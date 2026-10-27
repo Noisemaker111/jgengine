@@ -24,10 +24,10 @@ interface StoreScreenProps {
   activeStoreTab: TabletStoreTabId;
   onBuyItem: (itemId: string) => Promise<unknown> | undefined;
   onUnlockResearch: (itemId: string) => Promise<unknown>;
-  tutorialBench?: TutorialBenchOption;
+  tutorialBench?: TutorialBenchOption | undefined;
   money: number;
   dataTokens: number;
-  researchUnlocks?: ResearchUnlocks;
+  researchUnlocks?: ResearchUnlocks | undefined;
   shopItems: readonly ShopCatalogItem[];
   personalUpgrades: readonly PersonalUpgradeItem[];
   onBuyPersonalUpgrade: (upgradeId: PersonalUpgradeId) => void;

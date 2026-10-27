@@ -38,8 +38,8 @@ interface UseTabletSheetDragParams {
   shellRef: RefObject<HTMLElement | null>;
   startTranslatePercent: number;
   onComplete: () => void;
-  openTranslatePercent?: number;
-  closedTranslatePercent?: number;
+  openTranslatePercent?: number | undefined;
+  closedTranslatePercent?: number | undefined;
 }
 
 function useTabletSheetDrag({
@@ -167,8 +167,8 @@ interface UseTabletSheetGesturesParams {
   peekEnabled: boolean;
   onDismiss: () => void;
   onOpen: () => void;
-  openTranslatePercent?: number;
-  closedTranslatePercent?: number;
+  openTranslatePercent?: number | undefined;
+  closedTranslatePercent?: number | undefined;
 }
 
 /** Sheet drag for notch dismiss (open sheet) and bottom peek open (collapsed sheet). */

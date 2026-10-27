@@ -61,8 +61,8 @@ function CreditsPanel() {
 interface SettingsTabPanelsProps {
   activeTab: SettingsTabId;
   onTabChange: (tab: SettingsTabId) => void;
-  headerActionLabel?: string;
-  onHeaderAction?: () => void;
+  headerActionLabel?: string | undefined;
+  onHeaderAction?: (() => void) | undefined;
   /** Tablet shell: tighter tabs and no outer title row. */
   embedded?: boolean;
 }

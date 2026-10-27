@@ -52,7 +52,7 @@ export function BuilderAssetPreviewRoot({
 }: {
   children: ReactNode;
   preloadItems: readonly BuilderPlaceableItem[];
-  scrollRef?: RefObject<HTMLElement | null>;
+  scrollRef?: RefObject<HTMLElement | null> | undefined;
 }) {
   useEffect(() => {
     for (const path of collectPlaceableModelPaths(preloadItems)) {
@@ -113,7 +113,7 @@ export function BuilderPlaceablePreviewGrid({
   selectedId?: string;
   sections?: readonly BuilderPreviewSection[];
   hideSectionLabels?: boolean;
-  scrollRef?: RefObject<HTMLElement | null>;
+  scrollRef?: RefObject<HTMLElement | null> | undefined;
 }) {
   const flatItems = useMemo(() => {
     if (sections) return sections.flatMap((section) => section.items);
@@ -206,7 +206,11 @@ const _previewBox = new Box3();
 const _previewCenter = new Vector3();
 const _previewSize = new Vector3();
 const _previewCorner = new Vector3();
-const _previewCorners: Vector3[] = Array.from({ length: 8 }, () => new Vector3());
+type BoxCorners = readonly [Vector3, Vector3, Vector3, Vector3, Vector3, Vector3, Vector3, Vector3];
+const _previewCorners: BoxCorners = [
+  new Vector3(), new Vector3(), new Vector3(), new Vector3(),
+  new Vector3(), new Vector3(), new Vector3(), new Vector3(),
+];
 
 type PreviewFrameLayout = {
   offset: [number, number, number];
@@ -337,7 +341,7 @@ function computePreviewLayout(
   };
 }
 
-function writeBoxCorners(box: Box3, corners: readonly Vector3[]) {
+function writeBoxCorners(box: Box3, corners: BoxCorners) {
   const { min, max } = box;
   corners[0].set(min.x, min.y, min.z);
   corners[1].set(min.x, min.y, max.z);
@@ -387,15 +391,18 @@ function CatalogPreview({ modelKey }: { modelKey: string }) {
 }
 
 function DecorPreview({ template }: { template: DecorItemSpec }) {
-  const item = useMemo<DecorItemSpec>(() => centerDecorAtOrigin({
-    ...template,
-    id: undefined,
-    gridX: undefined,
-    gridZ: undefined,
-    position: [0, template.position?.[1] ?? 0, 0],
-    castShadow: false,
-    receiveShadow: false,
-  }, PREVIEW_GRID), [template]);
+  const item = useMemo<DecorItemSpec>(() => {
+    const preview: DecorItemSpec = {
+      ...template,
+      position: [0, template.position?.[1] ?? 0, 0],
+      castShadow: false,
+      receiveShadow: false,
+    };
+    delete preview.id;
+    delete preview.gridX;
+    delete preview.gridZ;
+    return centerDecorAtOrigin(preview, PREVIEW_GRID);
+  }, [template]);
 
   return <MapDecor items={[item]} grid={PREVIEW_GRID} modelLoadingFallback="none" />;
 }

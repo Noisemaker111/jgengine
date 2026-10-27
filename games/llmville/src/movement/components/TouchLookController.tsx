@@ -17,10 +17,10 @@ const LONG_PRESS_MS = 420;
 interface TouchLookControllerProps {
   enabled: boolean;
   /** Quick tap on the world → interact with whatever is targeted. */
-  onTap?: () => void;
+  onTap?: (() => void) | undefined;
   /** Long-press begins / ends a hold-interact. */
-  onHoldStart?: () => void;
-  onHoldEnd?: () => void;
+  onHoldStart?: (() => void) | undefined;
+  onHoldEnd?: (() => void) | undefined;
 }
 
 /**

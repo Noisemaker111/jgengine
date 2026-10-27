@@ -21,7 +21,7 @@ type CharacterViewAngle = "front" | "back" | "diagonal" | "fixed-front";
 interface CharacterViewProps {
   yaw: number;
   look: CharacterLook;
-  walkPhase?: number;
+  walkPhase?: number | undefined;
   isWalking: boolean;
   label: string;
   /** Explicit camera placement — do not infer from body yaw (model face is +Z at yaw 0). */

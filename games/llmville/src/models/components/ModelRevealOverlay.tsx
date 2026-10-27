@@ -19,13 +19,13 @@ export interface RevealingModelStats {
   name: string;
   qualityTier: "common" | "uncommon" | "rare" | "sota";
   trainingVolumeLabel: string;
-  baseModelId?: string;
+  baseModelId?: string | undefined;
   moneyPerToken: number;
   tokensPerSecond: number;
   tokensPerToken: number;
-  tflopsUsed?: number;
+  tflopsUsed?: number | undefined;
   estimatedIncomePerSecond: number;
-  trainingDataTokens?: number;
+  trainingDataTokens?: number | undefined;
 }
 
 type RevealedStatKey = "moneyPerToken" | "tokensPerSecond" | "tokensPerToken" | "estimatedIncomePerSecond";

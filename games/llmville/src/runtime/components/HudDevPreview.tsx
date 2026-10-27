@@ -296,8 +296,8 @@ function SharedFeedbackPreview({ kind }: { kind: string }) {
   const preview = usePreviewWorldState();
   const [chatOpen, setChatOpen] = useState(kind === "chat-expanded");
   useEffect(() => {
-    document.documentElement.dataset.jgCapture = "ready";
-    return () => { delete document.documentElement.dataset.jgCapture; };
+    document.documentElement.dataset["jgCapture"] = "ready";
+    return () => { delete document.documentElement.dataset["jgCapture"]; };
   }, [kind]);
   if (kind === "join") return <JoinGate status="failed" failureReason="The world is temporarily unavailable. Try joining again." retry={() => {}}
     renderFailure={(reason, retry) => <GameConnectionErrorScreen message={reason ?? "Could not join"} onRetry={retry} kind="connection" />} />;

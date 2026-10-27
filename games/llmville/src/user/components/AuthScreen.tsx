@@ -12,7 +12,7 @@ export type AuthScreenMode = "sign-in" | "sign-up";
 
 interface AuthScreenProps {
   mode: AuthScreenMode;
-  playIntent?: PlayEntryIntent;
+  playIntent?: PlayEntryIntent | undefined;
 }
 
 const AUTH_COPY = {
@@ -77,7 +77,7 @@ function AuthScreenShell({
 
 interface AuthScreenBodyProps {
   mode: AuthScreenMode;
-  playIntent?: PlayEntryIntent;
+  playIntent?: PlayEntryIntent | undefined;
   error: string | null;
   isLoading: boolean;
   isGoogleLoading: boolean;
@@ -131,7 +131,7 @@ function AuthScreenBody({
         {copy.alternateLead}{" "}
         <Link
           to={copy.alternateRoute}
-          search={playIntent ? { intent: playIntent } : undefined}
+          {...(playIntent ? { search: { intent: playIntent } } : {})}
           className="font-semibold text-brand-teal transition-colors hover:text-brand-cream"
         >
           {copy.alternateLabel}
@@ -210,7 +210,7 @@ function AuthCredentialFields({
   );
 }
 
-function SignInAuthScreen({ playIntent }: { playIntent?: PlayEntryIntent }) {
+function SignInAuthScreen({ playIntent }: { playIntent?: PlayEntryIntent | undefined }) {
   const navigate = useNavigate();
   const form = useLoginForm(() => navigate(destinationAfterAuth(playIntent)), playIntent);
   const copy = AUTH_COPY["sign-in"];
@@ -241,7 +241,7 @@ function SignInAuthScreen({ playIntent }: { playIntent?: PlayEntryIntent }) {
   );
 }
 
-function SignUpAuthScreen({ playIntent }: { playIntent?: PlayEntryIntent }) {
+function SignUpAuthScreen({ playIntent }: { playIntent?: PlayEntryIntent | undefined }) {
   const navigate = useNavigate();
   const form = useSignupForm(() => navigate(destinationAfterAuth(playIntent)), playIntent);
   const copy = AUTH_COPY["sign-up"];
@@ -280,10 +280,10 @@ export function AuthScreen({ mode, playIntent }: AuthScreenProps) {
   );
 }
 
-export function LoginScreen({ playIntent }: { playIntent?: PlayEntryIntent }) {
+export function LoginScreen({ playIntent }: { playIntent?: PlayEntryIntent | undefined }) {
   return <AuthScreen mode="sign-in" playIntent={playIntent} />;
 }
 
-export function SignupScreen({ playIntent }: { playIntent?: PlayEntryIntent }) {
+export function SignupScreen({ playIntent }: { playIntent?: PlayEntryIntent | undefined }) {
   return <AuthScreen mode="sign-up" playIntent={playIntent} />;
 }

@@ -25,7 +25,7 @@ function isAnonymousUser(user: AuthUser | null): boolean {
 }
 
 function betterAuthErrorMessage(
-  error: { message?: string; statusText?: string; status?: number } | null | undefined,
+  error: { message?: string | undefined; statusText?: string | undefined; status?: number | undefined } | null | undefined,
   fallback: string,
 ): string {
   if (!error) return fallback;
@@ -133,8 +133,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     const preferredUsername = email ? deriveUsernameFromEmail(email) : undefined;
     void createOrUpdateUser({
       displayName: preferredUsername ?? user.name ?? "Lab Builder",
-      email,
-      username: preferredUsername,
+      ...(email === undefined ? {} : { email }),
+      ...(preferredUsername === undefined ? {} : { username: preferredUsername }),
     }).catch((error) => {
       syncedUserRef.current = null;
       console.error("Failed to sync user to Convex:", error);

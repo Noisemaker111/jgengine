@@ -22,9 +22,9 @@ export interface GameUserModel {
   tokensPerToken: number;
   /** $/s this model would earn on the cards bound to it (or one starter GPU when unassigned). */
   estimatedIncomePerSecond: number;
-  baseModelId?: string;
-  trainingDataTokens?: number;
-  tflopsUsed?: number;
+  baseModelId?: string | undefined;
+  trainingDataTokens?: number | undefined;
+  tflopsUsed?: number | undefined;
   paramsB: number;
   precision: ComputePrecision;
   precisionLabel: string;
@@ -64,12 +64,12 @@ export interface GameModelState {
   moneyPerToken: number;
   tokensPerSecond: number;
   tokensPerToken: number;
-  baseModelId?: string;
-  trainingDataTokens?: number;
-  tflopsUsed?: number;
-  paramsB?: number;
-  precision?: ComputePrecision;
-  benchmarkScore?: number;
+  baseModelId?: string | undefined;
+  trainingDataTokens?: number | undefined;
+  tflopsUsed?: number | undefined;
+  paramsB?: number | undefined;
+  precision?: ComputePrecision | undefined;
+  benchmarkScore?: number | undefined;
   notes?: readonly string[];
 }
 

@@ -17,7 +17,7 @@ interface StatsAppProps {
   trainingGpus: number;
   scrapingGpus: number;
   servingGpus: number;
-  onOpenCoolingStore?: () => void;
+  onOpenCoolingStore?: (() => void) | undefined;
 }
 
 export function StatsApp({

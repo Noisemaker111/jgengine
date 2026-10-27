@@ -101,7 +101,7 @@ function useBuildActions({
       return false;
     }
     if (isHardwareStorageItem(selectedBuildItem)) return false;
-    const ownedCount = buildInventory[selectedBuildItem.id];
+    const ownedCount = buildInventory[selectedBuildItem.id] ?? 0;
     if (ownedCount < 1) {
       showActionErrorThrottled(`build-stock-${selectedBuildItem.id}`, "Out of stock");
       return false;
@@ -124,7 +124,7 @@ function useBuildActions({
       );
       return;
     }
-    const storageCount = buildInventory[selectedBuildItem.id];
+    const storageCount = buildInventory[selectedBuildItem.id] ?? 0;
     if (storageCount > 0) {
       void wrapMutation(
         "sellBuildItem",

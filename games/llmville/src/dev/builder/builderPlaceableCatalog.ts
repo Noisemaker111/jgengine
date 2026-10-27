@@ -75,7 +75,9 @@ export function defaultPlaceableForCategory(category: BuilderCategory): BuilderP
     const preferred = items.find((item) => item.id === preferredId);
     if (preferred) return preferred;
   }
-  return items[0] ?? BUILDER_PLACEABLE_ITEMS[0];
+  const first = items[0] ?? BUILDER_PLACEABLE_ITEMS[0];
+  if (first === undefined) throw new Error("The builder placeable catalog is empty.");
+  return first;
 }
 
 export function findPlaceableItem(id: string): BuilderPlaceableItem | undefined {

@@ -3,7 +3,7 @@ import { TouchLookController } from "@/movement/components/TouchLookController";
 interface PlayLookProps {
   touchMode: boolean;
   /** Touch only: quick tap on the world interacts; long-press holds. */
-  onTouchTap?: () => void;
+  onTouchTap?: (() => void) | undefined;
   onTouchHoldStart?: () => void;
   onTouchHoldEnd?: () => void;
 }

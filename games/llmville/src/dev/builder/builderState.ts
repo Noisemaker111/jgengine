@@ -141,7 +141,7 @@ const DEFAULT_GROUP_DRAFT: BuilderGroupDraft = {
   prompt: "",
 };
 
-export const BUILDER_ROOM_TEMPLATES: readonly BuilderRoomDraft[] = [
+export const BUILDER_ROOM_TEMPLATES: readonly [BuilderRoomDraft, ...BuilderRoomDraft[]] = [
   {
     template: "custom",
     width: 10,

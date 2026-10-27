@@ -16,7 +16,7 @@ interface HardwareShopCardProps {
   dataTokens: number;
   pending: boolean;
   researchPending?: boolean;
-  recentPurchase?: { quantity: number } | null;
+  recentPurchase?: { quantity: number } | null | undefined;
   onQtyChange: (next: number) => void;
   onBuy: () => void;
   onUnlockResearch?: () => void;

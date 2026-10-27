@@ -16,7 +16,7 @@ export interface WorldChatMessage {
   createdAt: number;
 }
 
-export function WorldChat({ world, placing, open, setOpen, fixtureMessages }: { world: ReadyWorldViewModel; placing: boolean; open: boolean; setOpen: (open: boolean) => void; fixtureMessages?: readonly WorldChatMessage[] }) {
+export function WorldChat({ world, placing, open, setOpen, fixtureMessages }: { world: ReadyWorldViewModel; placing: boolean; open: boolean; setOpen: (open: boolean) => void; fixtureMessages?: readonly WorldChatMessage[] | undefined }) {
   const { serverId } = useWorldServer();
   const { tabletOpen, rackMenuOverlayRackId } = useTabletNavContext();
   const [draft, setDraft] = useState("");

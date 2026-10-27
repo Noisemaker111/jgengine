@@ -251,8 +251,8 @@ export function isSettingsTabId(value: unknown): value is SettingsTabId {
 }
 
 export interface HomeRouteSearch {
-  settings?: boolean;
-  tab?: SettingsTabId;
+  settings?: boolean | undefined;
+  tab?: SettingsTabId | undefined;
 }
 
 export function parseHomeRouteSearch(raw: Record<string, unknown>): HomeRouteSearch {
@@ -309,8 +309,8 @@ function parseStoredSettings(raw: string | null): AppSettings {
 
 function applySettingsToDocument(settings: AppSettings) {
   if (typeof document === "undefined") return;
-  document.documentElement.dataset.reducedMotion = settings.reducedMotion ? "true" : "false";
-  document.documentElement.dataset.graphicsQuality = settings.graphicsQuality;
+  document.documentElement.dataset["reducedMotion"] = settings.reducedMotion ? "true" : "false";
+  document.documentElement.dataset["graphicsQuality"] = settings.graphicsQuality;
 }
 
 function handleStorageChange(event: StorageEvent) {
@@ -368,8 +368,8 @@ export function useAppSettings() {
   const settings = useSyncExternalStore(subscribeToAppSettings, getAppSettingsSnapshot, () => DEFAULT_APP_SETTINGS);
 
   useEffect(() => {
-    document.documentElement.dataset.reducedMotion = settings.reducedMotion ? "true" : "false";
-    document.documentElement.dataset.graphicsQuality = settings.graphicsQuality;
+    document.documentElement.dataset["reducedMotion"] = settings.reducedMotion ? "true" : "false";
+    document.documentElement.dataset["graphicsQuality"] = settings.graphicsQuality;
   }, [settings]);
 
   return {

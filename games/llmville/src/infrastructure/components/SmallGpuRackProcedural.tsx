@@ -20,11 +20,17 @@ type SmallGpuRackProceduralProps = {
   ghost: boolean;
   isValid: boolean;
   emissiveColor: string;
-  installedCoolerId?: RackCoolingUnitId | null;
+  installedCoolerId?: RackCoolingUnitId | null | undefined;
   lightRef: RefObject<MeshStandardMaterialType | null>;
 };
 
 const FRAME = "#141414";
+const FRAME_POST_OFFSETS: readonly (readonly [number, number])[] = [
+  [-0.38, -0.38],
+  [0.38, -0.38],
+  [-0.38, 0.38],
+  [0.38, 0.38],
+];
 const FRAME_METAL = 0.84;
 const FRAME_ROUGH = 0.26;
 const PSU_COLOR = "#0a0a0a";
@@ -270,7 +276,7 @@ function OpenRackCoolingModule({
   installedCoolerId,
   ghost,
 }: {
-  installedCoolerId?: RackCoolingUnitId | null;
+  installedCoolerId?: RackCoolingUnitId | null | undefined;
   ghost: boolean;
 }) {
   if (ghost || !installedCoolerId) return null;
@@ -387,12 +393,7 @@ export function SmallGpuRackProcedural({
 
   return (
     <group>
-      {[
-        [-0.38, -0.38],
-        [0.38, -0.38],
-        [-0.38, 0.38],
-        [0.38, 0.38],
-      ].map(([px, pz], i) => (
+      {FRAME_POST_OFFSETS.map(([px, pz], i) => (
         <mesh key={`post-${i}`} position={[px, 0, pz]} castShadow={!ghost} receiveShadow>
           <boxGeometry args={[0.045, 0.95, 0.045]} />
           {ghost ? <GhostPlacementMaterial isValid={isValid} /> : <meshStandardMaterial color={FRAME} metalness={FRAME_METAL} roughness={FRAME_ROUGH} />}

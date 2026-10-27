@@ -56,7 +56,7 @@ interface GameSceneProps {
   playInputTouch: boolean;
   onStepPlayer: (deltaX: number, deltaZ: number) => void;
   /** Touch only: tap the world to interact. */
-  onTouchInteract?: () => void;
+  onTouchInteract?: (() => void) | undefined;
   racks: readonly PlacedRack[];
   rackSlotWorkloadMap: ReadonlyMap<string, GpuSlotWorkload>;
   placedBuildItems: readonly PlacedBuildItem[];
@@ -74,9 +74,9 @@ interface GameSceneProps {
   placementDraftItemId: BuildItemId | null;
   placementDraftDirection: BuildDirection;
   placementPreview: BuildPlacementPreview | null;
-  interactionHint?: InteractionHint | null;
-  interactionTarget?: InteractionTarget | null;
-  interactionPrompt?: GamePositionedPrompt | null;
+  interactionHint?: InteractionHint | null | undefined;
+  interactionTarget?: InteractionTarget | null | undefined;
+  interactionPrompt?: GamePositionedPrompt | null | undefined;
   tutorialRack: PlacedRack | null;
   showTutorialRackArrow: boolean;
   powerDrawKw: number;
@@ -200,9 +200,9 @@ function GameWorldContent({
   showTutorialRackArrow: boolean;
   powerDrawKw: number;
   powerCapacityKw: number;
-  interactionHint?: InteractionHint | null;
-  interactionTarget?: InteractionTarget | null;
-  interactionPrompt?: GamePositionedPrompt | null;
+  interactionHint?: InteractionHint | null | undefined;
+  interactionTarget?: InteractionTarget | null | undefined;
+  interactionPrompt?: GamePositionedPrompt | null | undefined;
 }) {
   const placementDraft =
     buildPlacementModeActive && placementDraftItemId !== null

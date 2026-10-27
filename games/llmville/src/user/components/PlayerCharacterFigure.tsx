@@ -33,13 +33,13 @@ interface PlayerCharacterFigureProps {
   /** When true, legs/arms swing through the walk cycle. Idle holds a neutral frame. */
   isWalking?: boolean;
   /** Optional external walk phase in radians to drive sync across clients. */
-  walkPhase?: number;
+  walkPhase?: number | undefined;
   /** Head look yaw in radians (positive = turn right from model's +Z forward). */
   headYaw?: number;
   /** Head look pitch in radians (positive = look down in camera space). */
   headPitch?: number;
   /** Live head look — read every frame when set (for remote avatar interpolation). */
-  headLookRef?: MutableRefObject<{ pitch: number } | null>;
+  headLookRef?: MutableRefObject<{ pitch: number } | null> | undefined;
 }
 
 const MODEL_URL = "/models/character/player-walk.glb";
@@ -99,10 +99,15 @@ function computeVertexRegions(mesh: SkinnedMesh, sampleTexture?: TextureSampler)
   if (cached) return cached;
 
   const boneNames = mesh.skeleton.bones.map((b) => b.name);
-  const position = mesh.geometry.attributes.position;
-  const uvAttr = mesh.geometry.attributes.uv;
-  const skinIndex = mesh.geometry.attributes.skinIndex;
-  const skinWeight = mesh.geometry.attributes.skinWeight;
+  const {
+    position,
+    uv: uvAttr,
+    skinIndex,
+    skinWeight,
+  } = mesh.geometry.attributes;
+  if (!position || !skinIndex || !skinWeight) {
+    throw new Error("PlayerCharacterFigure: skinned mesh is missing position or skin attributes");
+  }
   const count = position.count;
   const regions = new Uint8Array(count);
 
@@ -179,7 +184,7 @@ function createTextureSampler(map: Texture): TextureSampler | null {
     const x = Math.min(dimensions.width - 1, Math.max(0, Math.floor(u * dimensions.width)));
     const y = Math.min(dimensions.height - 1, Math.max(0, Math.floor((1 - v) * dimensions.height)));
     const index = (y * dimensions.width + x) * 4;
-    return [pixels[index] / 255, pixels[index + 1] / 255, pixels[index + 2] / 255];
+    return [(pixels[index] ?? 0) / 255, (pixels[index + 1] ?? 0) / 255, (pixels[index + 2] ?? 0) / 255];
   };
 }
 
@@ -295,6 +300,7 @@ export function PlayerCharacterFigure({
     }
 
     applyTint();
+    return undefined;
   }, [skinnedMesh, look]);
 
   useProfiledFrame(PROFILE_SECTION.playerCharacter, (state) => {

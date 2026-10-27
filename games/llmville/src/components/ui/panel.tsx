@@ -31,7 +31,7 @@ export const PANEL_VARIANT = {
 
 interface PanelProps extends HTMLAttributes<HTMLElement>, VariantProps<typeof panelVariants> {
   children: ReactNode;
-  label?: string;
+  label?: string | undefined;
   as?: "section" | "div" | "article" | "nav" | "header";
 }
 

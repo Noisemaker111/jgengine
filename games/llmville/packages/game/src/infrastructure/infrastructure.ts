@@ -260,7 +260,7 @@ export function rackHardwareDropEndpoints(params: {
   overId: string;
   dragType: "inventory" | "slot";
   hardwareModelId: HardwareModelId;
-  sourceSlotIndex?: number;
+  sourceSlotIndex?: number | undefined;
 }): RackHardwareDragEndpoints | null {
   const from: RackHardwareDragEndpoints["from"] | null =
     params.dragType === "inventory"
@@ -783,7 +783,7 @@ export interface RackSnapshot {
   rackId: string;
   rackType: string;
   installedHardwareModuleIds?: readonly (string | null)[];
-  installedCoolerId?: string | null;
+  installedCoolerId?: string | null | undefined;
 }
 
 export function rackAssignmentInputs(racks: readonly RackSnapshot[]): AssignmentRackInput[] {

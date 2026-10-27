@@ -181,7 +181,9 @@ export function useWorldState({
         claimCellMutation({ gameId: game._id, cx: cell.cx, cz: cell.cz, externalId: playerId }),
       );
       if (result === undefined) return { claimed: false, reason: "Claim failed" };
-      return { claimed: result.claimed, reason: "reason" in result ? result.reason : undefined };
+      return "reason" in result && result.reason !== undefined
+        ? { claimed: result.claimed, reason: result.reason }
+        : { claimed: result.claimed };
     },
     [claimCellMutation, game, playerId],
   );

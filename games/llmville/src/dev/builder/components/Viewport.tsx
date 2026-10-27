@@ -504,7 +504,7 @@ function BuilderCanvasTools({
         enableRotate
         enabled={controlsEnabled && !captureActive}
         screenSpacePanning
-        mouseButtons={{ LEFT: MOUSE.ROTATE, MIDDLE: MOUSE.PAN, RIGHT: undefined }}
+        mouseButtons={{ LEFT: MOUSE.ROTATE, MIDDLE: MOUSE.PAN }}
       />
     </>
   );

@@ -39,8 +39,7 @@ export function listComputeUnitsFromRacks(
   const units: ListedComputeUnit[] = [];
   for (const rack of ordered) {
     const slots = normalizeRackInstalledHardwareSlots(rack.installedHardwareModuleIds ?? [], rack.rackType);
-    for (let slotIndex = 0; slotIndex < slots.length; slotIndex++) {
-      const id = slots[slotIndex];
+    for (const [slotIndex, id] of slots.entries()) {
       if (id === null) continue;
       const def = getHardwareDefinition(id);
       units.push({
@@ -92,7 +91,7 @@ export const GPU_SPLOT_WORKLOAD = {
 /** Each installed slot's workload is exactly its per-card dedication lane (undedicated → idle). */
 export function buildRackSlotGpuWorkloadMap(options: {
   racks: readonly PlacedRack[];
-  computeAssignments?: ComputeAssignmentMap | null;
+  computeAssignments?: ComputeAssignmentMap | null | undefined;
   isTraining?: boolean;
 }): Map<string, GpuSlotWorkload> {
   const units = listClientComputeUnits(options.racks);
