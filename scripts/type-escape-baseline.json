@@ -1992,7 +1992,6 @@
   "packages/jgengine/src/harness.unreachableTargets.browser.test.ts": {"cast":2},
   "packages/jgengine/src/packaging.test.ts": {"cast":1},
   "packages/jgengine/src/pkg.ts": {"cast":1},
-  "packages/jgengine/src/plan/plan.ts": {"nonNull":8},
   "packages/jgengine/src/projectConfig.ts": {"cast":2},
   "packages/jgengine/src/recipes/narrativeAuthoring.test.ts": {"nonNull":16,"cast":2},
   "packages/jgengine/src/recipes/quest-authoring.test.ts": {"nonNull":1},
