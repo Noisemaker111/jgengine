@@ -63,7 +63,8 @@ id appears in the game's `src/`. `bun --filter="@games/*" run check-types` and `
 
 Every game's README states the same six-section design checklist (core loop, progression, failure
 states, minute 5 → hour 5, references, gap to target) and ends it with one `Loop proof:` line naming
-the flow that proves the stated loop. `bun run check games-design` (also run by CI) fails a game that
+the flow that proves the stated loop. A game with a `PLAN.md` (`bun run jgengine plan`) states its gap
+to target there, in the generated `## Gaps` section, instead of in the README. `bun run check games-design` (also run by CI) fails a game that
 is missing a section, names a flow whose `<game>/proofs/flows/<name>.json` is absent or does not
 parse, or ships a flow with no arrival assert. A name marked `TODO` is a promised flow nobody has
 written: it is reported, and `--strict` fails it.

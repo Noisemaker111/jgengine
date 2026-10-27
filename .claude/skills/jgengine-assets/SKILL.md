@@ -18,7 +18,7 @@ Search [capabilities.md](capabilities.md) before adding a resolver or catalog pa
 3. Record canonical facing, source units, pivot, footprint, bounds, and placement policy in metadata.
 4. Pull/index through shared tooling; do not commit remote-library bulk bytes when the catalog is designed to resolve them.
 5. Preview through the same resolver runtime will use.
-6. Add required credit in the same PR.
+6. Record source, author, license and page on the asset's metadata (its catalog source or library entry) in the same PR; credits are built from it (`creditsForSourceIds`, `creditsForAssetIds`, `libraryModelCredits`). Never hand-list assets in a README or `games/CONTENT-PROVENANCE.md`.
 
 Look up every model a game needs in one call: `jgengine assets find raptor "street lamp" knight --game games/<name>` (or `--list names.json`, an array of names or `{ "query", "pick" }`) prints one JSON document. Each name gets its best matches across catalog packs, the realistic library and model files other games already ship, each with licence, the URL the game loads, and whether it is on disk; a weak answer adds the free sources to search (Poly Pizza for low-poly creatures and dinosaurs, Poly Haven for scans). `--provision` puts each confident match (or the named `pick`) into the game: packs and library models are linked from the machine's shared store, pulling only what no checkout has, and another game's file is copied to the same path. Do not copy GLBs by hand.
 

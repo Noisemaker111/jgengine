@@ -8,6 +8,6 @@ Each authored model is merged to one mesh per material, so detail costs triangle
 
 `city-block.glb` is the unit building block (1 m cube, base at y = 0) every city building draws: `node scripts/author-city-block.mjs` rebuilds it. Its sides carry the material `facade` and its top `roof`; each placement stretches it to its lot with `visual.scale` and lays an ambientCG facade scan (brick red, grey and brown, blue and mirror glass, all CC0) over `facade` at real-world tile size. It has no textures of its own.
 
-Street furniture comes from the engine's realistic model library (CC0 scans from Poly Haven), pulled by `bun run games:provision harbor-heat` into `public/models/library/`; `src/game/world/props.ts` maps each prop to its library name and builds the credits from the same names. Every model's source, author and license is listed in the repository's `CONTENT-PROVENANCE.md`.
+Street furniture comes from the engine's realistic model library (CC0 scans from Poly Haven), pulled by `bun run games:provision harbor-heat` into `public/models/library/`; `src/game/world/props.ts` maps each prop to its library name and builds the credits from the same names. Every model's source, author and license lives on its library entry, which is what the credits read.
 
 Existing KayKit, Quaternius and ambientCG assets retain their original credits and licenses. These additions do not replace those attributions.

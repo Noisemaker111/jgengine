@@ -202,6 +202,25 @@ describe("game design gate", () => {
     expect(result.lines.at(-1)).toBe("game-design: FAIL - 1 problem in 1 games");
   });
 
+  test("a PLAN.md with its Gaps section answers the gap to target; a plan without one does not", () => {
+    const withoutGap = SECTIONS.filter((line) => !line.includes("Gap to target"));
+    const planned = fixture({
+      "planned/README.md": readme("Loop proof: to-start", withoutGap),
+      "planned/PLAN.md": "# Planned\n\n## Features\n\n- packs\n\n## Gaps\n\n_None._\n",
+      "planned/proofs/flows/to-start.json": FLOW,
+    });
+    expect(checkGames(planned, ["planned"]).failures).toBe(0);
+
+    const unplanned = fixture({
+      "unplanned/README.md": readme("Loop proof: to-start", withoutGap),
+      "unplanned/PLAN.md": "# Unplanned\n\n## Features\n\n- packs\n",
+      "unplanned/proofs/flows/to-start.json": FLOW,
+    });
+    const result = checkGames(unplanned, ["unplanned"]);
+    expect(result.failures).toBe(1);
+    expect(result.lines[0]).toContain('"Gap to target"');
+  });
+
   test("naming a flow that is not on disk fails, and lists the flows that do exist", () => {
     const root = fixture({
       "hopeful/README.md": readme("Loop proof: to-finish"),

@@ -21,42 +21,11 @@ All eight listed games have runnable packages. Deepward uses original procedural
 
 Harbor Heat and Scrap Signal retain historical save namespaces and identifiers only in their compatibility loaders. A current save takes precedence; otherwise the loader copies an existing legacy slot into the new namespace and translates renamed content IDs through the whole-world save controller. It leaves the old record intact. Save and reload behavior is game-specific; Deepward has an offline continuation path.
 
-## Harbor Heat realistic assets
+## Where asset credits live
 
-Harbor Heat's street furniture comes from the engine's realistic model library and its building faces from ambientCG scans. Every file is downloaded from the publisher's own site by `bun run games:provision harbor-heat` (Poly Haven files are checked against Poly Haven's published md5), compressed, and kept out of Git under `public/`. All are CC0 1.0: no attribution is required, and these credits are given anyway.
+A borrowed asset's source, author, license and page are recorded once, on its metadata: the catalog source for a pack or scan, the `MODEL_LIBRARY` entry for a library model. Each game's Credits screen is built from that metadata (`creditsForSourceIds`, `creditsForAssetIds` and `libraryModelCredits` in `@jgengine/assets`), so this file does not list assets one by one and cannot drift from what ships. Harbor Heat's street furniture, building faces, people, animals and cars all credit this way (`src/game/credits.ts`, `src/game/world/props.ts`); `bun run games:provision <game>` downloads each file from its publisher.
 
-| In game | Asset | Author | License | Source |
-| --- | --- | --- | --- | --- |
-| `obj_streetlight` | Cast-iron street lamp (`city/street-lamp`) | Josh Dean | CC0 1.0 | https://polyhaven.com/a/street_lamp_01 |
-| `obj_bench` | Painted wooden bench (`park/bench`) | Kirill Sannikov | CC0 1.0 | https://polyhaven.com/a/painted_wooden_bench |
-| `obj_hydrant` | Fire hydrant (`city/fire-hydrant`) | Gonçalo Felício | CC0 1.0 | https://polyhaven.com/a/fire_hydrant |
-| `obj_trashcan` | Galvanised trash can (`city/trash-can`) | GurJas Studios | CC0 1.0 | https://polyhaven.com/a/metal_trash_can |
-| `obj_dumpster` | Street utility cabinet (`city/utility-cabinet`) | James Ray Cock | CC0 1.0 | https://polyhaven.com/a/utility_box_02 |
-| `obj_barrier` | Concrete road barrier (`city/road-barrier`) | Amal Kumar | CC0 1.0 | https://polyhaven.com/a/concrete_road_barrier_02 |
-| `obj_crate_dock` | Wooden shipping crate (`industrial/wooden-crate`) | James Ray Cock, Jurita Burger | CC0 1.0 | https://polyhaven.com/a/wooden_crate_02 |
-| `obj_barrel` | Steel drum barrel (`industrial/barrel`) | Jorge Camacho | CC0 1.0 | https://polyhaven.com/a/Barrel_01 |
-| `obj_planter` | Potted plant (`park/potted-plant`) | Rico Cilliers | CC0 1.0 | https://polyhaven.com/a/potted_plant_02 |
-| `obj_hedge` | Wooden planter box (`park/planter-box`) | James Ray Cock | CC0 1.0 | https://polyhaven.com/a/planter_box_01 |
-| `obj_cactus` | Quiver tree (`nature/quiver-tree`) | Dario Barresi, Rico Cilliers | CC0 1.0 | https://polyhaven.com/a/quiver_tree_02 |
-| building face `facade/brick-red` | Brick facade, red (Facade018A) | ambientCG (Lennart Demes) | CC0 1.0 | https://ambientcg.com/view?id=Facade018A |
-| building face `facade/brick-grey` | Brick facade, grey (Facade019A) | ambientCG (Lennart Demes) | CC0 1.0 | https://ambientcg.com/view?id=Facade019A |
-| building face `facade/brick-brown` | Brick facade, brown (Facade020A) | ambientCG (Lennart Demes) | CC0 1.0 | https://ambientcg.com/view?id=Facade020A |
-| `obj_shade_tree` | Jacaranda tree (`nature/jacaranda`) | Rob Tuytel, Rico Cilliers | CC0 1.0 | https://polyhaven.com/a/jacaranda_tree |
-| `obj_patio` | Outdoor table and chairs (`park/patio-set`) | James Ray Cock | CC0 1.0 | https://polyhaven.com/a/outdoor_table_chair_set_01 |
-| `obj_picnic` | Wooden picnic table (`park/picnic-table`) | Ulan Cabanilla | CC0 1.0 | https://polyhaven.com/a/wooden_picnic_table |
-| building face `facade/glass-curtain` | Glass curtain wall with mullions (Facade006) | ambientCG (Lennart Demes) | CC0 1.0 | https://ambientcg.com/view?id=Facade006 |
-| streets | Road asphalt (Asphalt003) | ambientCG (Lennart Demes) | CC0 1.0 | https://ambientcg.com/view?id=Asphalt003 |
-| streets | Sidewalk and driveway concrete (Concrete006) | ambientCG (Lennart Demes) | CC0 1.0 | https://ambientcg.com/view?id=Concrete006 |
-
-The building block itself (`harbor-heat/src/art/city-block.glb`) is original geometry with no textures. People, animals and the street cars come from the engine library's non-CC0 entries, which do require attribution (the in-game credits list them):
-
-| In game | Asset | Author | License | Source |
-| --- | --- | --- | --- | --- |
-| player, residents, contacts, gangs, police, bounty marks (`src/game/world/cast.ts`) | Microsoft Rocketbox avatars (`human/*`: man-casual, man-casual-2, woman-casual, woman-casual-2, jogger, construction-worker, security-guard, businessman, police-officer, soldier) | Microsoft (Rocketbox Studios GmbH) | MIT | https://github.com/microsoft/Microsoft-Rocketbox (commit 0943055d) |
-| `obj_dog`, `obj_dog_shepherd`, `obj_duck` | Rocketbox animals (`creature/dog-beagle`, `creature/dog-shepherd`, `creature/duck`) | Microsoft (Rocketbox Studios GmbH) | MIT | https://github.com/microsoft/Microsoft-Rocketbox (commit 0943055d) |
-| `car_compact`, `car_muscle`, `car_sport`, `car_suv`, `car_cop` (repainted; the cruiser adds an original light bar) | CarConcept (`vehicle/sports-car`, logos removed) | Eric Chadwick, Darmstadt Graphics Group GmbH | CC-BY 4.0 | https://github.com/KhronosGroup/glTF-Sample-Assets/tree/main/Models/CarConcept (commit 8f492390) |
-
-The Islander bus (`islander-bus.glb`) and the cruiser's light bar (`hhpd-lightbar.glb`) are original geometry from `harbor-heat/scripts/author-harbor.mjs`. Aircraft, signs, neon, signals and cargo are still KayKit (CC0); the engine's `MODEL_LIBRARY_GAPS` lists the route for each.
+Harbor Heat's building block, Islander bus and cruiser light bar are original geometry from `harbor-heat/scripts/author-harbor.mjs`.
 
 ## Games first generated from ideas
 

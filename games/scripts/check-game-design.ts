@@ -5,7 +5,8 @@
  * naming the flow that proves the loop. This gate fails a game that:
  *
  *   - has no README, or is missing a section (core loop, progression, failure states,
- *     minute 5 -> hour 5, references, gap to target);
+ *     minute 5 -> hour 5, references, gap to target - a `PLAN.md` with its `## Gaps` section
+ *     answers the last one);
  *   - has no `Loop proof:` line, or names no flow;
  *   - names a flow whose file is not at `<game>/proofs/flows/<name>.json`, or that the engine's
  *     drive refuses, or that asserts nothing.
@@ -23,6 +24,7 @@
 import { existsSync, readdirSync, readFileSync } from "node:fs";
 import { join } from "node:path";
 
+import { PLAN_FILE, PLAN_GAPS_HEADING } from "../../packages/jgengine/src/plan/plan";
 import { parseStepFile, type FlowFile } from "../../packages/jgengine/src/templates/captureArgs";
 
 import { gameDirs } from "./capabilities";
@@ -146,6 +148,15 @@ export function checkFlow(game: string, flowName: string, flowsDir: string, io: 
   }
 }
 
+/**
+ * A game's `PLAN.md` (`jgengine plan`) states its gap to target in the generated `## Gaps` section and
+ * its milestones, so a README need not repeat it.
+ */
+function planHasGaps(path: string, io: Io): boolean {
+  if (!io.exists(path)) return false;
+  return io.read(path).split("\n").some((line) => line.trim() === PLAN_GAPS_HEADING);
+}
+
 /** Check one game's README and the flows it names. */
 export function inspectGame(root: string, game: string, io: Io = realIo): GameInspection {
   const problems: string[] = [];
@@ -158,7 +169,9 @@ export function inspectGame(root: string, game: string, io: Io = realIo): GameIn
     return { game, problems: [`${game} has no README.md with a design checklist`], todos, proven };
   }
   const text = io.read(readme);
+  const planned = planHasGaps(join(dir, PLAN_FILE), io);
   for (const section of SECTIONS) {
+    if (section.id === "gap-to-target" && planned) continue;
     if (!section.pattern.test(text)) problems.push(`${game} README is missing the "${section.label}" section of the design checklist`);
   }
 
