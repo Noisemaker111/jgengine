@@ -5,8 +5,8 @@
 // `origin/beta` and its tree has nothing uncommitted; a lane that never committed
 // goes once it has sat untouched past its grace, with no new files either.
 // Committed work is never at risk: removing a worktree deletes files, not branches.
-import { existsSync, realpathSync } from "node:fs";
-import { basename, dirname, resolve, sep } from "node:path";
+import { existsSync, readdirSync, realpathSync, renameSync } from "node:fs";
+import { basename, dirname, join, resolve, sep } from "node:path";
 
 import { removeDirSync } from "./removeDir";
 import { printHelpIfAsked } from "./script-help";
@@ -136,6 +136,37 @@ export function reap(selection: ReapSelection, io: ReapIo): { removed: ReapCandi
   return { removed, kept };
 }
 
+/** Where a tree goes while it is deleted; a leftover one is finished by the next reap. */
+export const REAPING_SUFFIX = ".reaping";
+
+export interface TreeRemoval {
+  rename: (from: string, to: string) => void;
+  removeDir: (path: string, timeoutMs: number) => void;
+}
+
+const fsRemoval: TreeRemoval = { rename: renameSync, removeDir: removeDirSync };
+
+/**
+ * Delete one tree; false when it is in use. A tree a live process holds (a dev server running from
+ * it) refuses to be renamed, so the rename asks first and a held tree is left whole. Deleting it in
+ * place got halfway (its `.git` link and most files gone) before the refusal, leaving a folder no reap
+ * could see; and the throw ended the whole reap, so every worktree after a held one stayed too.
+ */
+export function removeTree(path: string, io: TreeRemoval = fsRemoval): boolean {
+  const staging = `${path.replace(/[\\/]+$/, "")}${REAPING_SUFFIX}`;
+  try {
+    io.rename(path, staging);
+  } catch {
+    return false;
+  }
+  try {
+    io.removeDir(staging, 10_000);
+  } catch {
+    // Out of the worktree list already; the next reap finishes it.
+  }
+  return true;
+}
+
 /** One line per reap run: what went, what stayed, and the reason for each rerun. */
 export function summarise(result: { removed: ReapCandidate[]; kept: { name: string; reason: string }[] }): string {
   if (result.removed.length === 0) {
@@ -210,11 +241,7 @@ function main(argv: readonly string[]): void {
       const status = git(path, ["status", "--porcelain", `--untracked-files=${untracked ? "normal" : "no"}`]);
       return status.ok && status.stdout.trim() === "";
     },
-    remove: (path) => {
-      if (dryRun) return true;
-      removeDirSync(path, 1_000);
-      return !existsSync(path);
-    },
+    remove: (path) => dryRun || removeTree(path),
   });
   if (dryRun) {
     for (const candidate of result.removed) console.log(`would remove ${candidate.name} (${candidate.branch})`);
@@ -222,7 +249,21 @@ function main(argv: readonly string[]): void {
     return;
   }
   git(mainRoot, ["worktree", "prune"]);
+  finishStaged(join(mainRoot, ".claude", "worktrees"));
   console.log(summarise(result));
+}
+
+/** Delete trees an earlier reap renamed aside but could not finish deleting. */
+function finishStaged(root: string): void {
+  if (!existsSync(root)) return;
+  for (const entry of readdirSync(root)) {
+    if (!entry.endsWith(REAPING_SUFFIX)) continue;
+    try {
+      removeDirSync(join(root, entry), 1_000);
+    } catch {
+      // Still held; the next reap tries again.
+    }
+  }
 }
 
 if (import.meta.main) main(process.argv.slice(2));

@@ -297,9 +297,11 @@ if (import.meta.main) {
   }
 
   // A lane that ended without `lane:close` still leaves its worktree behind, so a
-  // new lane takes the merged ones with it. Unmerged and dirty trees stay.
-  const reaped = Bun.spawnSync(["bun", "run", "worktree", "reap", "--skip", target], {
-    cwd: mainRoot,
+  // new lane takes the merged ones with it. Unmerged and dirty trees stay. The reap
+  // runs from the new tree, which is origin/beta: the main checkout can sit on any
+  // branch, and its older copy of the reaper kept what the current one removes.
+  const reaped = Bun.spawnSync(["bun", join(target, "scripts", "worktree-reap.ts"), "--skip", target], {
+    cwd: target,
     stdout: "pipe",
     stderr: "pipe",
     timeout: 600_000,
