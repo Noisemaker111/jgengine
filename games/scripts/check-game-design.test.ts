@@ -3,7 +3,9 @@ import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 
+import { EXAMPLE_BRIEF } from "./briefExample";
 import { checkFlow, checkGames, inspectGame, readLoopProof, runCli, type Io } from "./check-game-design";
+import type { DepthRule } from "./knownFailing";
 
 const roots: string[] = [];
 afterEach(() => {
@@ -35,10 +37,18 @@ export default defineFlow(game, {
 });
 `;
 
-/** A temp games root: `files` maps a path under the root to its contents. */
+const BRIEF = EXAMPLE_BRIEF;
+
+/** A temp games root: `files` maps a path under the root to its contents. A game with a README gets a plan with {@link BRIEF} unless the files give it one. */
 function fixture(files: Record<string, string>): string {
   const root = mkdtempSync(join(tmpdir(), "game-design-"));
   roots.push(root);
+  const games = new Set(Object.keys(files).filter((path) => path.endsWith("/README.md")).map((path) => path.split("/")[0] ?? ""));
+  for (const game of games) {
+    if (files[`${game}/PLAN.md`] !== undefined) continue;
+    mkdirSync(join(root, game), { recursive: true });
+    writeFileSync(join(root, game, "PLAN.md"), `# ${game} plan\n\n${BRIEF}`);
+  }
   for (const [path, contents] of Object.entries(files)) {
     const target = join(root, path);
     mkdirSync(join(target, ".."), { recursive: true });
@@ -153,14 +163,14 @@ describe("game design gate", () => {
     const withoutGap = SECTIONS.filter((line) => !line.includes("Gap to target"));
     const planned = fixture({
       "planned/README.md": readme("Loop proof: to-start", withoutGap),
-      "planned/PLAN.md": "# Planned\n\n## Features\n\n- packs\n\n## Gaps\n\n_None._\n",
+      "planned/PLAN.md": `# Planned\n\n${BRIEF}\n## Features\n\n- packs\n\n## Gaps\n\n_None._\n`,
       "planned/proofs/flows/to-start.flow.ts": FLOW,
     });
     expect(checkGames(planned, ["planned"]).failures).toBe(0);
 
     const unplanned = fixture({
       "unplanned/README.md": readme("Loop proof: to-start", withoutGap),
-      "unplanned/PLAN.md": "# Unplanned\n\n## Features\n\n- packs\n",
+      "unplanned/PLAN.md": `# Unplanned\n\n${BRIEF}\n## Features\n\n- packs\n`,
       "unplanned/proofs/flows/to-start.flow.ts": FLOW,
     });
     const result = checkGames(unplanned, ["unplanned"]);
@@ -217,6 +227,30 @@ describe("game design gate", () => {
     const root = fixture({ "quiet/README.md": readme("Nothing about flows.") });
     const result = inspectGame(root, "quiet");
     expect(result.problems).toEqual(['quiet README has no "Loop proof:" line; name the flow that proves the core loop']);
+  });
+
+  test("a game with no design brief fails; one on the known-failing list is reported, not failed", () => {
+    const root = fixture({
+      "demo/README.md": readme("Loop proof: to-start"),
+      "demo/PLAN.md": "# Demo plan\n\n## Milestones\n\n- [ ] 1. one more system\n",
+      "demo/proofs/flows/to-start.flow.ts": FLOW,
+    });
+    const failing = checkGames(root, ["demo"]);
+    expect(failing.failures).toBeGreaterThan(0);
+    expect(failing.lines[0]).toBe('game-design: FAIL - demo brief: has no "## Design brief" section in PLAN.md');
+
+    const known = new Map([["demo", new Map<DepthRule, string>([["brief", "written before the brief existed"]])]]);
+    const listed = checkGames(root, ["demo"], undefined, false, known);
+    expect(listed.failures).toBe(0);
+    expect(listed.lines[0]).toStartWith("game-design: KNOWN - demo brief (written before the brief existed)");
+  });
+
+  test("a listed game whose brief is now complete fails until its entry is removed", () => {
+    const root = fixture({ "fixed/README.md": readme("Loop proof: to-start"), "fixed/proofs/flows/to-start.flow.ts": FLOW });
+    const known = new Map([["fixed", new Map<DepthRule, string>([["brief", "no brief"]])]]);
+    const result = checkGames(root, ["fixed"], undefined, false, known);
+    expect(result.failures).toBe(1);
+    expect(result.lines[0]).toContain('fixed now passes "brief"; remove its entry');
   });
 
   test("the CLI reads the checkout it is pointed at and exits on the verdict", () => {
