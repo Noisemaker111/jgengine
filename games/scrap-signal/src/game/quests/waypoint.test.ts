@@ -5,6 +5,7 @@ import { createGameContext, type GameContext } from "@jgengine/core/runtime/game
 import { createAssetCatalog } from "@jgengine/core/scene/assetCatalog";
 
 import { QUEST_IDS, quests } from "./catalog";
+import { creditObjective } from "./givers";
 import { questWaypoint } from "./waypoint";
 
 function bootContext(): GameContext {
@@ -40,6 +41,16 @@ describe("scrap-signal quest marker", () => {
     ctx.scene.entity.spawn("bruiser_brat", { id: "far", position: [40, 0, 0] });
     ctx.scene.entity.spawn("bruiser_brat", { id: "near", position: [0, 0, 12] });
     expect(questWaypoint(ctx)).toMatchObject({ x: 0, z: 12, kind: "enemy" });
+  });
+
+  test("a local breed counts as its base, for the marker and the journal", () => {
+    const ctx = bootContext();
+    journal(ctx).grant("p1", QUEST_IDS.shoreParty);
+    ctx.scene.entity.spawn("scorch_husk", { id: "breed", position: [0, 0, 9] });
+    expect(questWaypoint(ctx)).toMatchObject({ x: 0, z: 9, kind: "enemy" });
+    creditObjective(ctx, "kill", "husk");
+    const entry = journal(ctx).list("p1").find((candidate) => candidate.questId === QUEST_IDS.shoreParty);
+    expect(entry?.objectives.find((objective) => objective.id === "husks")?.progress).toBe(1);
   });
 
   test("a finished quest points back at its giver", () => {

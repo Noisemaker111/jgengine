@@ -1,7 +1,7 @@
 import type { ModelConfig, ModelPart } from "@jgengine/core/game/playableGame";
 import { pickModel } from "@jgengine/core/model/resolveModel";
 
-import { assets, CHASSIS, PANEL_MAPS, SCRAP_METAL_MAPS } from "../assets";
+import { assets, chassisOf, PANEL_MAPS, SCRAP_METAL_MAPS } from "../assets";
 import { MACHINE } from "../palette";
 import type { EnemyDef } from "../entities/enemies/catalog";
 
@@ -59,7 +59,7 @@ export function robotChassis(def: EnemyDef, height: number): ModelConfig | null 
   };
   if (Object.values(resolved).some((piece) => piece === undefined)) return null;
 
-  const style = CHASSIS[def.id] ?? CHASSIS["loader"]!;
+  const style = chassisOf(def, "loader");
   // Every piece takes the same map set: the kit's own baked crate/column albedo is near-black and
   // reads as a hole outdoors, and mismatched surfaces make a kit-bash look like scattered props
   // rather than one machine.

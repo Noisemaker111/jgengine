@@ -2,6 +2,8 @@ import type { OnDeathSpec } from "@jgengine/core/combat/death";
 import type { ReceiveMap } from "@jgengine/core/combat/effects";
 import type { StatCatalog } from "@jgengine/core/scene/entityStats";
 import type { Surface } from "../../handroll";
+import { MACHINE } from "../../palette";
+import { ENEMY_VARIANTS, type EnemyVariant } from "./variants";
 
 export type EnemyFamily = "scrapjack" | "ripper" | "boss";
 
@@ -25,6 +27,10 @@ export interface EnemyDef {
   xp: number;
   gunDropChance: number;
   gunLuck: number;
+  /** A local breed's base enemy, whose rig and weapon it wears (`variants.ts`). */
+  look?: string;
+  /** A local breed's plate colour, over its base's. */
+  plate?: string;
 }
 
 const receive: ReceiveMap = { damage: { order: ["shield", "health"] } };
@@ -37,7 +43,7 @@ function drops(table: string): OnDeathSpec {
   };
 }
 
-export const enemies: readonly EnemyDef[] = [
+const baseEnemies: readonly EnemyDef[] = [
   {
     id: "husk",
     name: "Husk Drone",
@@ -366,7 +372,45 @@ export const enemies: readonly EnemyDef[] = [
   },
 ];
 
+function scaledAttack(attack: EnemyAttack, damage: number): EnemyAttack {
+  return attack.kind === "melee" ? { ...attack, damage: Math.round(attack.damage * damage) } : attack;
+}
+
+/** A local breed built from its base: the base's rig, attack and drops with the variant's body and numbers. */
+function breed(variant: EnemyVariant): EnemyDef {
+  const base = baseEnemies.find((enemy) => enemy.id === variant.base);
+  if (base === undefined) throw new Error(`enemy variant ${variant.id}: unknown base ${variant.base}`);
+  const health = Math.round((base.stats["health"]?.max ?? 50) * variant.health);
+  const shield = variant.shield ?? base.stats["shield"]?.max;
+  return {
+    ...base,
+    id: variant.id,
+    name: variant.name,
+    look: base.id,
+    plate: MACHINE[variant.plate],
+    elite: variant.elite ?? base.elite,
+    surface: variant.surface ?? base.surface,
+    scale: base.scale * (variant.scale ?? 1),
+    walkSpeed: base.walkSpeed * (variant.speed ?? 1),
+    stats: {
+      ...base.stats,
+      health: { ...base.stats["health"], max: health },
+      ...(shield === undefined ? {} : { shield: { ...base.stats["shield"], max: shield } }),
+    },
+    attack: scaledAttack(base.attack, variant.damage),
+    xp: Math.round(base.xp * variant.xp),
+    gunDropChance: Math.min(1, base.gunDropChance * 1.25),
+  };
+}
+
+export const enemies: readonly EnemyDef[] = [...baseEnemies, ...ENEMY_VARIANTS.map(breed)];
+
 const byId = new Map(enemies.map((enemy) => [enemy.id, enemy]));
+
+/** Whether killing a `catalogId` counts for a job against `target`: itself, or a local breed of it. */
+export function countsAsKillOf(catalogId: string, target: string): boolean {
+  return catalogId === target || byId.get(catalogId)?.look === target;
+}
 
 export function enemyById(id: string): EnemyDef | undefined {
   return byId.get(id);

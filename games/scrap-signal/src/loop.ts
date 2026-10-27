@@ -131,6 +131,8 @@ function onEntityDied(ctx: GameContext, event: EntityDiedEvent): void {
   if (event.reason.kind === "player_kill" && event.reason.killerUserId === userId) {
     const anchor = deathAt;
     noteKill(ctx, event.catalogId);
+    // The engine credits the breed's own id; a local breed also counts for a job against its base.
+    if (enemy.look !== undefined) creditObjective(ctx, "kill", enemy.look);
     if (event.reason.via?.item !== undefined) {
       const family = gunById(event.reason.via.item)?.family;
       if (family !== undefined) noteMastKill(ctx, event.catalogId, userId, family);

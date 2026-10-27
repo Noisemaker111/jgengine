@@ -36,8 +36,11 @@ export function offerFrom(ctx: GameContext, npc: NpcId): GiverOffer {
   });
 }
 
-/** Add progress to every active objective of `kind` aimed at `target`. */
-export function creditObjective(ctx: GameContext, kind: Exclude<ScrapObjective["kind"], "kill">, target: string, amount = 1): void {
+/**
+ * Add progress to every active objective of `kind` aimed at `target`. The engine credits kills of an
+ * enemy's own catalog id itself; `kill` here is only for a local breed counting toward its base.
+ */
+export function creditObjective(ctx: GameContext, kind: ScrapObjective["kind"], target: string, amount = 1): void {
   const journal = ctx.game.quest;
   if (journal === undefined) return;
   const userId = ctx.player.userId;
