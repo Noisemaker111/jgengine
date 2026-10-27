@@ -46,9 +46,9 @@ test("a command printing more than Node's 1 MiB default comes back whole, as `gi
 
 test("parses flags with values and defaults the base to beta", () => {
   expect(parseArgs([])).toEqual({ base: "beta", commit: false, allow: [], messages: [] });
-  expect(parseArgs(["--verify", "bun run preflight --ship"])).toEqual({
+  expect(parseArgs(["--verify", "bun run preflight"])).toEqual({
     base: "beta",
-    verify: "bun run preflight --ship",
+    verify: "bun run preflight",
     commit: false,
     allow: [],
     messages: [],
@@ -1204,14 +1204,14 @@ test("checks that already failed stop the hand-off, and a failed verify never ar
   const second = handOffIo({ git: scriptedGit().git, gh: unverified.gh, verifyOk: false });
   expect(
     landBranch({
-      args: { base: "beta", commit: false, allow: [], messages: [], verify: "bun run preflight --ship" },
+      args: { base: "beta", commit: false, allow: [], messages: [], verify: "bun run preflight" },
       branch: "agent/lane-x",
       lock: lockPathForTest(),
       io: second.io,
     }),
   ).toBe(EXIT_VERIFY_FAILED);
   expect(unverified.calls.some((call) => call[1] === "merge")).toBe(false);
-  expect(second.logs).toContain("verify bun run preflight --ship");
+  expect(second.logs).toContain("verify bun run preflight");
 });
 
 test("a reused PR keeps its body and gets the Bends section the diff now shows", () => {

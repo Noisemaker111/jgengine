@@ -148,7 +148,7 @@ Game changes:
 
 Verify:
   focused package tests and types (from source; no build needed); bun run gen when required
-  bun run preflight --ship after commit; CI runs the full gate
+  bun run preflight: the cheap checks lane:close runs first (gen, type-checks, gates); CI runs the full gate
   visual: bun run shoot daemon + shoot <game> only for pixel claims
   arbitrary --url pages declare readiness after an honest frame, never by forcing a ready flag
 `);

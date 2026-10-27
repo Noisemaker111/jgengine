@@ -10,6 +10,7 @@
  */
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
+import { printHelpIfAsked } from "./script-help";
 import { walkTestFiles } from "./test-shard";
 
 /** Budget a browser test file needs: enough for a fixture build and a slow frame on a busy machine. */
@@ -77,6 +78,16 @@ export function findShortSetupBudgets(files: readonly { path: string; source: st
 }
 
 if (import.meta.main) {
+  if (
+    printHelpIfAsked("browser-test-budget", {
+      summary: "fail a browser test file that inherits Bun's 5 s budget, or a setup hook that expires with the launch",
+      usage: "bun run check browser-test-budget",
+      flags: [],
+      example: "bun run check browser-test-budget",
+    })
+  ) {
+    process.exit(0);
+  }
   const root = join(import.meta.dir, "..");
   const files = walkTestFiles(root)
     // This checker's own test holds a browser file without a budget as fixture text.

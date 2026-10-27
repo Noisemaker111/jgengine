@@ -10,11 +10,11 @@ import {
 const stage = (name: string, needs?: string[]): Stage => ({ name, command: "bun", args: [], needs });
 
 describe("runPlan", () => {
-  test("a failing stage does not stop independent stages behind it", () => {
+  test("a failing stage does not stop independent stages behind it", async () => {
     // The exact `&&`-chain bug: check-game-shape failing used to hide check-types-all.
     const stages = [stage("ensure-ready"), stage("check-game-shape", ["ensure-ready"]), stage("check-types-all", ["ensure-ready"])];
     const ran: string[] = [];
-    const results = runPlan(stages, (candidate) => {
+    const results = await runPlan(stages, (candidate) => {
       ran.push(candidate.name);
       return candidate.name !== "check-game-shape";
     });
@@ -22,16 +22,16 @@ describe("runPlan", () => {
     expect(results.map((result) => result.state)).toEqual(["passed", "failed", "passed"]);
   });
 
-  test("reports every failure in one run rather than only the first", () => {
+  test("reports every failure in one run rather than only the first", async () => {
     const stages = [stage("a"), stage("b"), stage("c")];
-    const results = runPlan(stages, (candidate) => candidate.name === "b");
+    const results = await runPlan(stages, (candidate) => candidate.name === "b");
     expect(results.filter((result) => result.state === "failed").map((result) => result.name)).toEqual(["a", "c"]);
   });
 
-  test("a stage whose prerequisite failed is skipped, not run and not passed", () => {
+  test("a stage whose prerequisite failed is skipped, not run and not passed", async () => {
     const stages = [stage("build"), stage("check-types", ["build"])];
     const ran: string[] = [];
-    const results = runPlan(stages, (candidate) => {
+    const results = await runPlan(stages, (candidate) => {
       ran.push(candidate.name);
       return false;
     });
@@ -39,32 +39,53 @@ describe("runPlan", () => {
     expect(results[1]).toEqual({ name: "check-types", state: "skipped", blockedBy: ["build"] });
   });
 
-  test("skips propagate transitively so nothing downstream reads as green", () => {
+  test("skips propagate transitively so nothing downstream reads as green", async () => {
     const stages = [stage("build"), stage("check-types", ["build"]), stage("report", ["check-types"])];
-    const results = runPlan(stages, (candidate) => candidate.name !== "build");
+    const results = await runPlan(stages, (candidate) => candidate.name !== "build");
     expect(results.map((result) => result.state)).toEqual(["failed", "skipped", "skipped"]);
   });
 
-  test("an all-passing plan runs every stage", () => {
+  test("with jobs, independent stages run side by side and a dependant still waits for its need", async () => {
+    const stages = [stage("barrels"), stage("capabilities", ["barrels"]), stage("skill-api", ["barrels"])];
+    const log: string[] = [];
+    let inFlight = 0;
+    let peak = 0;
+    await runPlan(
+      stages,
+      async (candidate) => {
+        log.push(`start ${candidate.name}`);
+        inFlight += 1;
+        peak = Math.max(peak, inFlight);
+        await new Promise((resolve) => setTimeout(resolve, 10));
+        inFlight -= 1;
+        return true;
+      },
+      3,
+    );
+    expect(log[0]).toBe("start barrels");
+    expect(peak).toBe(2);
+  });
+
+  test("an all-passing plan runs every stage", async () => {
     const stages = [stage("a"), stage("b", ["a"])];
-    const results = runPlan(stages, () => true);
+    const results = await runPlan(stages, () => true);
     expect(results.every((result) => result.state === "passed")).toBe(true);
   });
 });
 
 describe("formatSummary", () => {
-  test("names every failure and flags unrun stages as not known-good", () => {
+  test("names every failure and flags unrun stages as not known-good", async () => {
     const stages = [stage("build"), stage("check-types", ["build"]), stage("test:all", ["build"])];
-    const results = runPlan(stages, (candidate) => candidate.name !== "build");
+    const results = await runPlan(stages, (candidate) => candidate.name !== "build");
     const summary = formatSummary("gate", stages, results);
     expect(summary).toContain("gate failed — 1 failed, 2 not run of 3 stages");
     expect(summary).toContain("bun run check build");
     expect(summary).toContain("NOT known-good");
   });
 
-  test("a clean run says so and lists no re-run hints", () => {
+  test("a clean run says so and lists no re-run hints", async () => {
     const stages = [stage("a"), stage("b")];
-    const summary = formatSummary("gate", stages, runPlan(stages, () => true));
+    const summary = formatSummary("gate", stages, await runPlan(stages, () => true));
     expect(summary).toContain("gate ok — 2 stages passed");
     expect(summary).not.toContain("re-run individually");
   });
@@ -96,12 +117,12 @@ describe("the check table", () => {
     }
   });
 
-  test("checks are independent of each other, so one failure hides none of the rest", () => {
+  test("checks are independent of each other, so one failure hides none of the rest", async () => {
     const stages = checkPlan(ALL_CHECKS, true);
     for (const candidate of stages.filter((stage) => stage.name !== "ensure-ready" && stage.name !== "build")) {
       expect(candidate.needs?.every((need) => need === "ensure-ready" || need === "build")).toBe(true);
     }
-    const results = runPlan(stages, (stage) => stage.name !== "skills");
+    const results = await runPlan(stages, (stage) => stage.name !== "skills");
     expect(results.find((result) => result.name === "skills")?.state).toBe("failed");
     expect(results.find((result) => result.name === "types")?.state).toBe("passed");
   });
@@ -123,9 +144,9 @@ describe("the check table", () => {
     expect(sdk).toContain("skill-api");
   });
 
-  test("an SDK prerequisite failure leaves every check skipped, never green", () => {
+  test("an SDK prerequisite failure leaves every check skipped, never green", async () => {
     const stages = checkPlan(SDK_CHECKS, true);
-    const results = runPlan(stages, (stage) => stage.name !== "ensure-ready");
+    const results = await runPlan(stages, (stage) => stage.name !== "ensure-ready");
     expect(results.slice(1).every((result) => result.state === "skipped")).toBe(true);
     expect(formatSummary("check --sdk", stages, results)).toContain("NOT known-good");
   });
@@ -140,9 +161,9 @@ describe("generated-artifact drift", () => {
     expect(fixHint(stages, "recipes")).toBeUndefined();
   });
 
-  test("the summary surfaces the fix command once, not once per failed check", () => {
+  test("the summary surfaces the fix command once, not once per failed check", async () => {
     const stages = checkPlan(jobChecks("types"), false);
-    const results = runPlan(stages, (stage) => !["capabilities", "skill-api"].includes(stage.name));
+    const results = await runPlan(stages, (stage) => !["capabilities", "skill-api"].includes(stage.name));
     const summary = formatSummary("check", stages, results);
     expect(summary).toContain("fix drifted artifacts with:");
     expect(summary.match(/bun run gen$/gm)?.length).toBe(1);
