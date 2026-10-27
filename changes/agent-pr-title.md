@@ -1,5 +1,5 @@
-land: re-closing with -m rewrites the note, the PR body and the PR title, even when nothing else changed
+land: a re-close with only new -m wording rewrites the note and retitles the open PR
 
 ### Changed
 
-- land: re-closing with -m rewrites the note, the PR body and the PR title, even when nothing else changed
+- land: a re-close with only new -m wording rewrites the note and retitles the open PR
