@@ -107,8 +107,8 @@ export function marketGunById(id: string): WeaponDef | null {
     use: "fireGun",
     ammo: base.ammo,
     ammoPerShot: 1,
-    fireIntervalMs: Math.max(45, Math.round((item.stats.fireIntervalMs as number | undefined) ?? base.fireIntervalMs)),
-    weapon: { damage: Math.max(1, Math.round((item.stats.damage as number | undefined) ?? base.damage)) },
+    fireIntervalMs: Math.max(45, Math.round((item.stats["fireIntervalMs"] as number | undefined) ?? base.fireIntervalMs)),
+    weapon: { damage: Math.max(1, Math.round((item.stats["damage"] as number | undefined) ?? base.damage)) },
   });
 }
 
@@ -132,7 +132,7 @@ export function ensureNightMarket(ctx: GameContext): MarketView {
     name: offer.item.name,
     rarity: offer.item.rarity,
     level: offer.item.level,
-    damage: Math.round((offer.item.stats.damage as number | undefined) ?? 0),
+    damage: Math.round((offer.item.stats["damage"] as number | undefined) ?? 0),
     price: offer.entry.price.amount,
   }));
   const view: MarketView = { day, items };

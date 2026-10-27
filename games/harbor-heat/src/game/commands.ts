@@ -40,7 +40,7 @@ export function shouldSkipIntroFlyover(): boolean {
   const search = globalThis.location.search ?? "";
   if (/[?&](spawn|cam)=/.test(search)) return true;
   if (typeof document !== "undefined") {
-    const capture = document.documentElement?.dataset?.jgCapture;
+    const capture = document.documentElement?.dataset?.["jgCapture"];
     if (capture === "ready" || capture === "pending") return true;
   }
   return false;
@@ -87,7 +87,7 @@ export function registerCommands(ctx: GameContext): void {
       const itemId = selectedHotbarItem(state);
       if (itemId === null) return;
       const aim = (input as { aim?: { yaw: number; pitch: number } }).aim;
-      state.item.use.use({ from: state.player.userId, itemId, aim });
+      state.item.use.use({ from: state.player.userId, itemId, ...(aim === undefined ? {} : { aim }) });
     },
   });
 

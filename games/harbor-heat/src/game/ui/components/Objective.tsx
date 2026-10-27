@@ -30,12 +30,12 @@ const timerTotals = new Map<string, number>();
 
 interface Goal {
   key: string;
-  eyebrow?: string;
+  eyebrow?: string | undefined;
   title: string;
-  target?: XZ;
-  deadline?: { remaining: number; total: number };
-  hint?: string;
-  rush?: string;
+  target?: XZ | undefined;
+  deadline?: { remaining: number; total: number } | undefined;
+  hint?: string | undefined;
+  rush?: string | undefined;
   /** An open gig offer the pager can take with one tap. */
   offer?: { id: string; label: string };
 }

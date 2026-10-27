@@ -72,7 +72,7 @@ export interface CourierReceipt {
 export interface CourierSettlementInput {
   won: boolean;
   route: (typeof DELIVERY_ROUTES)[number];
-  reason?: string;
+  reason?: string | undefined;
 }
 export const RUSH_BOND = 60;
 export function courierDeadline(seconds: number, rush: boolean): number { return rush ? Math.ceil(seconds * 0.35) : seconds; }

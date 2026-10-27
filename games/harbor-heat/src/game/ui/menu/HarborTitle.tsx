@@ -240,7 +240,7 @@ export function CourierLicence({ name, onName, bayLabel, active, onBegin }: { na
     // on-screen keyboard does not cover the licence.
     if (active && !touch) input.current?.focus();
   }, [active, touch]);
-  const model = entityModels.street_runner;
+  const model = entityModels["street_runner"];
   return (
     <KitPanel material="paper" tint="#f3e7cc" cut="notch" depth={18} edge={HH.ink} edgeWidth={3} padding="0" className="hh-licence" data-new-dispatch-pane="">
       <span className="hh-licence-band"><span>Mainsail express</span><b>Courier licence</b></span>

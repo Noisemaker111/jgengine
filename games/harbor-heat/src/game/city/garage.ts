@@ -1,3 +1,4 @@
+import { metaNumber } from "@jgengine/core/editor/markerMeta";
 import type { PositionedPrompt } from "@jgengine/core/interaction/proximityPrompt";
 import type { GameContext } from "@jgengine/core/runtime/gameContext";
 import { defineStore } from "@jgengine/core/store/defineStore";
@@ -22,7 +23,7 @@ interface CarMeta {
 
 const bay = (() => {
   const marker = editorLayers.markers.find((entry) => entry.id === "hideout_motors");
-  return marker === undefined ? null : { x: marker.position.x, z: marker.position.z, radius: typeof marker.meta?.radius === "number" ? marker.meta.radius : 10 };
+  return marker === undefined ? null : { x: marker.position.x, z: marker.position.z, radius: metaNumber(marker, "radius", 10) };
 })();
 
 /**

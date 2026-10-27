@@ -36,12 +36,12 @@ const harborSlots = createSaveSlots({
 export async function refreshHarborSlots(ctx: ReturnType<typeof useGameContext>): Promise<void> {
   await refreshSaveSlots(gameSaveSlotSource(harborSave(ctx)), harborSlots, {
     nameOf: (_slot, document) => {
-      const profile = (document.systems.profile ?? {}) as { driver?: string | null };
+      const profile = (document.systems["profile"] ?? {}) as { driver?: string | null };
       return typeof profile.driver === "string" && profile.driver.length > 0 ? profile.driver : "Courier";
     },
     metaOf: (_slot, document) => {
-      const run = (document.systems.run ?? {}) as { courierSession?: { closed?: number; session?: number } };
-      const profile = (document.systems.profile ?? {}) as { driver?: string | null; thumbnail?: string | null };
+      const run = (document.systems["run"] ?? {}) as { courierSession?: { closed?: number; session?: number } };
+      const profile = (document.systems["profile"] ?? {}) as { driver?: string | null; thumbnail?: string | null };
       return {
         ...(typeof profile.driver === "string" && profile.driver.length > 0 ? { character: profile.driver } : {}),
         parcels: Math.max(0, run.courierSession?.closed ?? 0),

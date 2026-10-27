@@ -42,7 +42,8 @@ export function ReceiptScreen({ slip, onAction }: { slip: Slip; onAction: (id: s
     sound.play("confirm");
     onAction(id);
   };
-  const nav = useMenuNav({ ids, initialId: slip.actions.find((action) => action.primary === true)?.id, columns: compact ? 1 : ids.length, onConfirm: pick, onBack: () => { if (back !== undefined) { sound.play("back"); onAction(back); } } });
+  const initialId = slip.actions.find((action) => action.primary === true)?.id;
+  const nav = useMenuNav({ ids, ...(initialId === undefined ? {} : { initialId }), columns: compact ? 1 : ids.length, onConfirm: pick, onBack: () => { if (back !== undefined) { sound.play("back"); onAction(back); } } });
   useMoveTick(nav.activeId);
   const stamp = useGameStore((ctx) => {
     const calendar = ctx.time.calendar();

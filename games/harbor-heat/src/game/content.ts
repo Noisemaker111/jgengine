@@ -16,23 +16,31 @@ type WeaponRecord = Record<string, number | Record<string, number>>;
 
 function weaponRecord(stats: { damage: number; projectile?: { mass: number; gravity: number; fuseTime: number }; explosion?: { radius: number } }): WeaponRecord {
   const record: WeaponRecord = { damage: stats.damage };
-  if (stats.projectile !== undefined) record.projectile = { ...stats.projectile };
-  if (stats.explosion !== undefined) record.explosion = { ...stats.explosion };
+  if (stats.projectile !== undefined) record["projectile"] = { ...stats.projectile };
+  if (stats.explosion !== undefined) record["explosion"] = { ...stats.explosion };
   return record;
+}
+
+/** The use and trade an entry carries, each only when the catalog sets it. */
+function useAndTrade(def: { use?: GameContextItemEntry["use"] | undefined; trade?: GameContextItemEntry["trade"] | undefined }): GameContextItemEntry {
+  return {
+    ...(def.use === undefined ? {} : { use: def.use }),
+    ...(def.trade === undefined ? {} : { trade: def.trade }),
+  };
 }
 
 function itemById(itemId: string): GameContextItemEntry | null {
   const weapon = weaponById(itemId);
   if (weapon !== undefined) {
-    return { use: weapon.use, weapon: weaponRecord(weapon.weapon), trade: weapon.trade };
+    return { ...useAndTrade(weapon), weapon: weaponRecord(weapon.weapon) };
   }
   const market = marketGunById(itemId);
   if (market !== null) {
-    return { use: market.use, weapon: weaponRecord(market.weapon) };
+    return { ...useAndTrade({ use: market.use }), weapon: weaponRecord(market.weapon) };
   }
   const gear = gearById(itemId);
   if (gear !== undefined) {
-    return { use: gear.use, trade: gear.trade };
+    return useAndTrade(gear);
   }
   return null;
 }

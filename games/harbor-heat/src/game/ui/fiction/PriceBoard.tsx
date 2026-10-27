@@ -15,17 +15,17 @@ export interface BoardRow {
   id: string;
   name: string;
   /** One short line under the name: what it does, how much is in the box. */
-  line?: string;
+  line?: string | undefined;
   /** Cash price. */
   price: number;
   /** Already yours: drawn with the OWNED stamp, and picking it does nothing. */
-  owned?: boolean;
+  owned?: boolean | undefined;
   /** Owned as a stack: `×3` beside the name. Picking it still buys another. */
-  count?: number;
+  count?: number | undefined;
   /** Street cred level the row needs; above the player's cred it is taped off. */
-  gate?: number;
+  gate?: number | undefined;
   /** A small tag before the name: a rarity, a tier. */
-  tag?: string;
+  tag?: string | undefined;
   pick: () => void;
 }
 

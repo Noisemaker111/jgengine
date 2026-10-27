@@ -1,3 +1,4 @@
+import { metaNumber, metaText } from "@jgengine/core/editor/markerMeta";
 import type { PositionedPrompt } from "@jgengine/core/interaction/proximityPrompt";
 import type { GameContext } from "@jgengine/core/runtime/gameContext";
 import { perContext } from "@jgengine/core/runtime/perContext";
@@ -20,9 +21,9 @@ export const FRONT_LOTS: readonly FrontLot[] = editorLayers.markers
   .filter((marker) => marker.kind === "front")
   .map((marker) => ({
     slot: marker.id,
-    kind: typeof marker.meta?.business === "string" ? marker.meta.business : "lounge",
+    kind: metaText(marker, "business") ?? "lounge",
     label: marker.label ?? marker.id,
-    price: typeof marker.meta?.price === "number" ? marker.meta.price : 3000,
+    price: metaNumber(marker, "price", 3000),
     position: [marker.position.x, marker.position.z] as const,
   }));
 

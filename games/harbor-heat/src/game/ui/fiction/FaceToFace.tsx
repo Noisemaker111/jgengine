@@ -20,11 +20,11 @@ export interface Reply {
 export interface Speaker {
   name: string;
   /** Faction label for the plate: "Mainsail locals", "HHPD". */
-  crew?: string;
+  crew?: string | undefined;
   /** A tone for the plate: `locals` mint, `carmine` coral, `hhpd` blue. */
-  faction?: string;
+  faction?: string | undefined;
   /** An entity model id from `entityModels` for the portrait. */
-  portrait?: string;
+  portrait?: string | undefined;
 }
 
 const PLATE: Record<string, string> = { locals: HH.teal, carmine: "#8c2a22", hhpd: "#1f3f86" };
