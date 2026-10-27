@@ -265,7 +265,7 @@ function builderExecutorApiPlugin(): Plugin {
         }
         // `server.middlewares.use(prefix, fn)` strips the matched prefix off
         // `request.url`, leaving just the method segment (e.g. "/moveSelection").
-        const method = decodeURIComponent((request.url ?? "").split("?")[0]!.replace(/^\/+/, ""));
+        const method = decodeURIComponent(((request.url ?? "").split("?")[0] ?? "").replace(/^\/+/, ""));
         if (!method) {
           next();
           return;
@@ -552,8 +552,9 @@ async function loadSourceLibraryFromDisk(): Promise<unknown[]> {
   try {
     const raw = await fs.readFile(builderSourceLibraryPath, "utf8");
     const match = /DEV_BUILDER_ASSET_LIBRARY[^[]*(\[[\s\S]*?\])\s*;/.exec(raw);
-    if (!match) return [];
-    return JSON.parse(match[1]!) as unknown[];
+    const list = match?.[1];
+    if (list === undefined) return [];
+    return JSON.parse(list) as unknown[];
   } catch {
     return [];
   }

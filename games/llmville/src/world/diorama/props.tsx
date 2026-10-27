@@ -158,7 +158,7 @@ function GarageWorkbench({ castShadow, receiveShadow }: PropProps) {
 /** garage_bookshelf — frame + shelves + colored book spines, 1 x 1 x 2 m. */
 function GarageBookshelf({ castShadow, receiveShadow }: PropProps) {
   const s = { castShadow, receiveShadow };
-  const spines: MaterialPreset[] = [
+  const spines: readonly [MaterialPreset, ...MaterialPreset[]] = [
     MATERIAL_PRESET.accentTeal,
     MATERIAL_PRESET.accentCoral,
     MATERIAL_PRESET.accentAmber,
@@ -180,7 +180,7 @@ function GarageBookshelf({ castShadow, receiveShadow }: PropProps) {
             key={`${shelf}-${i}`}
             args={[BOOK_SPINE_W, BOOK_SPINE_H, PROP_MEDIUM]}
             position={[BOOK_ROW_START_X + i * BOOK_ROW_SPACING, y + PROP_FOOT_H, 0]}
-            preset={spines[(i + shelf) % spines.length]!}
+            preset={spines[(i + shelf) % spines.length] ?? spines[0]}
             {...s}
           />
         )),

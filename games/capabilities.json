@@ -2472,6 +2472,16 @@
       "intent": "composable game behavior — pure data + hooks the engine schedules; pass via `defineGame({ systems })`"
     },
     {
+      "id": "defined-fields",
+      "packages": [
+        "@jgengine/core"
+      ],
+      "module": "@jgengine/core/data/definedFields",
+      "gameFacing": false,
+      "probe": null,
+      "intent": "pass maybe-missing values on as optional fields, leaving out the ones that are undefined"
+    },
+    {
       "id": "describe-asset-match",
       "packages": [
         "@jgengine/assets"

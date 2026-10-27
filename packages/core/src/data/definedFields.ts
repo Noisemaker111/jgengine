@@ -7,17 +7,18 @@
  */
 
 /** The fields of `T` with `undefined` taken out of each value: the ones that were set stay, the rest are left out. */
-export type DefinedFields<T> = { [K in keyof T]?: Exclude<T[K], undefined> };
+export type DefinedFields<T> = { [K in keyof T]?: T[K] & ({} | null) };
 
 /**
  * `fields` without the entries whose value is `undefined`, typed so the result spreads into props or
  * options that take those fields as optional: `<mesh {...definedFields({ rotation, scale })} />`.
  */
 export function definedFields<T extends object>(fields: T): DefinedFields<T> {
-  const out: Partial<Record<keyof T, unknown>> = {};
-  for (const key of Object.keys(fields) as (keyof T)[]) {
+  const out: DefinedFields<T> = {};
+  for (const key in fields) {
+    if (!Object.hasOwn(fields, key)) continue;
     const value = fields[key];
     if (value !== undefined) out[key] = value;
   }
-  return out as DefinedFields<T>;
+  return out;
 }

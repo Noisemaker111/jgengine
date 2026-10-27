@@ -191,6 +191,10 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `defineSystem` (function) · `import { defineSystem } from "@jgengine/core/gameplay"`
 
+## defined-fields — pass maybe-missing values on as optional fields, leaving out the ones that are undefined
+
+- `DefinedFields` (type) · `import { DefinedFields } from "@jgengine/core/data/definedFields"`
+
 ## detect — fire-once threshold/milestone/tier crossings when a value moves
 
 - `crossThresholds` (function) · `import { crossThresholds } from "@jgengine/core/gameplay"`

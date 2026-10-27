@@ -382,7 +382,6 @@
   "games/hold-the-line/src/game/spec.ts": {"nonNull":7},
   "games/hold-the-line/src/game/waves.ts": {"nonNull":3},
   "games/hold-the-line/src/game/world.test.ts": {"cast":2},
-  "games/llmville/builderAgentAssets.ts": {"cast":4},
   "games/llmville/builderScreenshotApi.ts": {"cast":1},
   "games/llmville/packages/backend/convex/agentApiHttp.ts": {"cast":1},
   "games/llmville/packages/backend/convex/bills.ts": {"nonNull":1},
