@@ -273,6 +273,8 @@
     "./devtools/discover",
     "./devtools/fallbackSeams",
     "./devtools/frame",
+    "./devtools/frameBreakdown",
+    "./devtools/frameBreakdown.draw",
     "./devtools/frameSampler.view",
     "./devtools/latencyInstrumentation.draw",
     "./devtools/logBus",

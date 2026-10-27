@@ -27,12 +27,17 @@ import {
 test("parsePerfArgs reads one game with its flags", () => {
   expect(parsePerfArgs(["harbor-heat"])).toEqual({
     kind: "run",
-    args: { game: "harbor-heat", draft: false, profile: false, seconds: 6, telemetry: "on", settings: [], frameClock: "capped", params: [] },
+    args: { game: "harbor-heat", draft: false, profile: false, seconds: 6, telemetry: "on", settings: [], frameClock: "uncapped", path: "walk", size: { width: 1920, height: 1080 }, json: false, params: [] },
   });
   expect(parsePerfArgs(["deepward", "--quality", "ultra", "--profile", "--seconds", "3"])).toEqual({
     kind: "run",
-    args: { game: "deepward", quality: "ultra", draft: false, profile: true, seconds: 3, telemetry: "on", settings: [], frameClock: "capped", params: [] },
+    args: { game: "deepward", quality: "ultra", draft: false, profile: true, seconds: 3, telemetry: "on", settings: [], frameClock: "uncapped", path: "walk", size: { width: 1920, height: 1080 }, json: false, params: [] },
   });
+  expect(parsePerfArgs(["deepward", "--path", "still", "--size", "1280x720", "--compare", "before.json", "--out", "after.json", "--json", "--capped"])).toMatchObject({
+    args: { path: "still", size: { width: 1280, height: 720 }, compare: "before.json", out: "after.json", json: true, frameClock: "capped" },
+  });
+  expect(() => parsePerfArgs(["deepward", "--path", "run"])).toThrow("--path must be walk or still");
+  expect(() => parsePerfArgs(["deepward", "--size", "1080p"])).toThrow("--size must be WxH");
   const drafted = parsePerfArgs(["deepward", "--draft"]);
   expect(drafted.kind === "run" && drafted.args.draft).toBe(true);
   expect(drafted.kind === "run" && drafted.args.quality).toBeUndefined();
@@ -273,10 +278,11 @@ test("an unreadable scene is reported as unavailable, never as zero", async () =
  * The launch flags and the record marker: `--uncapped` has to reach Chrome, and a record has to say
  * which clock produced its ms, because a vsync-multiple and a real frame cost never compare.
  */
-test("--uncapped asks Chrome for an unthrottled rAF clock; the default asks for nothing", () => {
+test("the default is the unthrottled rAF clock; --capped asks Chrome for nothing", () => {
   expect(parsePerfArgs(["harbor-heat", "--uncapped"])).toMatchObject({ args: { frameClock: "uncapped" } });
   const plain = parsePerfArgs(["harbor-heat"]);
-  expect(plain.kind === "run" ? plain.args.frameClock : null).toBe("capped");
+  expect(plain.kind === "run" ? plain.args.frameClock : null).toBe("uncapped");
+  expect(parsePerfArgs(["harbor-heat", "--capped"])).toMatchObject({ args: { frameClock: "capped" } });
 
   expect(chromeFrameClockArgs("capped")).toEqual([]);
   expect(chromeFrameClockArgs()).toEqual([]);

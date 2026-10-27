@@ -1,5 +1,5 @@
 import { useEffect } from "react";
-import { useThree } from "@react-three/fiber";
+import { useStore, useThree } from "@react-three/fiber";
 
 import { devtools, type PerfQuality } from "@jgengine/core/devtools/devtools";
 import { readUrlParam } from "@jgengine/core/devtools/urlFlags";
@@ -12,21 +12,25 @@ import {
   type FrameSampler,
   type GlCounterTotals,
 } from "./frameSampler.view";
+import { installFrameBreakdown, type BreakdownRenderer, type BreakdownStore, type FrameBreakdown } from "./frameBreakdown.draw";
 
 /**
  * Mounts the in-page frame sampler for the live 3D scene: it wraps this renderer's
  * context for GPU-object counts, reads renderer and scene numbers on demand, and
- * publishes `window.__JG.report()`. It installs only when the dev server answers its
+ * publishes `window.__JG.report()`, plus the per-frame breakdown (`window.__jgFrameBreakdown`: CPU
+ * per system, GPU per pass, draws, compiles, uploads, hitches). It installs only when the dev server answers its
  * report route, so a shipped game pays for one probe request and nothing else.
  * @internal
  */
 export function FrameTelemetry({ game, quality }: { game: string; quality: PerfQuality }) {
   const gl = useThree((state) => state.gl);
   const scene = useThree((state) => state.scene);
+  const store = useStore();
   useEffect(() => {
     if ((readUrlParam(TELEMETRY_FLAG) ?? "").toLowerCase() === "off") return;
     let active = true;
     let telemetry: FrameSampler | null = null;
+    let breakdown: FrameBreakdown | null = null;
     void probeReportRoute(undefined, reportGameId(game)).then((available) => {
       if (!active || !available) return;
       let counters: { totals: GlCounterTotals; attached: boolean } = {
@@ -37,6 +41,11 @@ export function FrameTelemetry({ game, quality }: { game: string; quality: PerfQ
         counters = attachGlCounters(gl.getContext());
       } catch {
         counters.attached = false;
+      }
+      try {
+        breakdown = installFrameBreakdown(gl as unknown as BreakdownRenderer, store as unknown as BreakdownStore);
+      } catch (error) {
+        console.warn(`[jgengine:perf] frame breakdown did not install: ${String(error)}`);
       }
       telemetry = installFrameTelemetry({
         game,
@@ -58,8 +67,9 @@ export function FrameTelemetry({ game, quality }: { game: string; quality: PerfQ
     return () => {
       active = false;
       telemetry?.dispose();
+      breakdown?.dispose();
     };
-  }, [game, quality, gl, scene]);
+  }, [game, quality, gl, scene, store]);
   return null;
 }
 

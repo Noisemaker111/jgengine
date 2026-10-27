@@ -274,6 +274,23 @@
 - `FrameModule` (interface): interface FrameModule — Frame subsystem exposing the frame-timing, profiling, and render-sample facades.
 - `createFrameModule` (const): const createFrameModule: (deps: { readProbes: () => Record<string, unknown>; }) => FrameModule — Create the frame subsystem that records frame/sim/phase timings, computes stats, and captures long-frame events.
 
+## @jgengine/core/devtools/frameBreakdown
+
+- `DrawCost` (interface): interface DrawCost — One object or material's share of the draws: totals while gathering, per-frame averages in a summary.
+- `FrameBreakdownRecord` (interface): interface FrameBreakdownRecord — One frame, as the hooks saw it. GPU times arrive a few frames late; `gpu` is null until they do.
+- `FrameBreakdownSummary` (interface): interface FrameBreakdownSummary — A window of frames, summarized for a person or a diff.
+- `HITCH_MS` (const): const HITCH_MS: 33 — Where each frame goes: the record of one frame (CPU per system, GPU per render pass, draws, shader compiles, uploads, heap) and the summary of a window of them (percentiles, the costliest systems, passes, objects and materials, and every hitch with what caused it). This file is the arithmetic; `frameBreakdown.draw.ts` fills the records from a live renderer.
+- `Hitch` (interface): interface Hitch — A frame over {@link HITCH_MS}, with the cause read from what happened inside it.
+- `NamedCost` (interface): interface NamedCost — A named cost over the window: its average per frame and its 95th percentile.
+- `Spread` (interface): interface Spread — Percentiles of one series.
+
+## @jgengine/core/devtools/frameBreakdown.draw
+
+- `BreakdownRenderer` (interface): interface BreakdownRenderer — What the breakdown needs from a three.js WebGLRenderer.
+- `BreakdownStore` (interface): interface BreakdownStore — What it needs from the r3f store: the subscriber list and the subscribe call.
+- `FrameBreakdown` (interface): interface FrameBreakdown — A running breakdown.
+- `measureComposerPasses` (function): function measureComposerPasses(composer: { passes: readonly object[] }): void — Time each post pass of a composer by name, CPU and GPU. Cheap when no breakdown is installed; call it each frame before `composer.render` so passes added later are timed too.
+
 ## @jgengine/core/devtools/frameSampler.view
 
 - `FrameReportInputs` (interface): interface FrameReportInputs — Everything the report needs, gathered by whichever producer is asking.
@@ -395,6 +412,7 @@
 - `DiscoveredEntry` (interface): interface DiscoveredEntry — A control auto-discovered by scanning an object/table, with its binding metadata and current reader.
 - `FrameRecordSample` (interface): interface FrameRecordSample — Per-frame timing input recorded by callers: total frame time, sim time, and optional named phase durations.
 - `FrameStats` (interface): interface FrameStats — Aggregated frame-timing statistics over the recent sampling window, including per-phase breakdown.
+- `LastFrameSample` (interface): interface LastFrameSample — The last frame `devtools.frame.record` saw: its sim milliseconds and named phases.
 - `LatencyStats` (interface): interface LatencyStats — Aggregated latency statistics (last/avg/min/max) over recorded latency samples.
 - `LongFrameEvent` (interface): interface LongFrameEvent — Recorded spike event for a frame that exceeded the long-frame threshold, with culprit attribution.
 - `OverrideApplyResult` (interface): interface OverrideApplyResult — Outcome of applying a devtools overrides payload: counts of applied and skipped entries plus diagnostics.

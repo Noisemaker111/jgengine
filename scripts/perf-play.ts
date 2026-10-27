@@ -1,6 +1,6 @@
-import { existsSync } from "node:fs";
+import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
-import { join } from "node:path";
+import { dirname, join, resolve } from "node:path";
 
 import {
   CdpSession,
@@ -35,6 +35,8 @@ import {
   type SceneNodeSource,
 } from "../packages/core/src/devtools/report";
 import type { SystemProbeReading } from "../packages/core/src/devtools/types";
+import { renderBreakdownText, type FrameBreakdownSummary } from "../packages/core/src/devtools/frameBreakdown";
+import { compareBreakdowns, readBreakdown, resetBreakdown, startPath, type PerfPath } from "./perf-breakdown";
 import {
   ACCESSIBILITY_SETTING_IDS,
   COLORBLIND_OPTIONS,
@@ -139,14 +141,37 @@ export interface PerfArgs {
   headed?: boolean;
   /** `--cold`: boot Chrome and Vite directly instead of reusing the warm daemon. */
   cold?: boolean;
+  /** How the run moves while measured: `walk` (default) holds forward and weaves, `still` stands. */
+  path: PerfPath;
+  /** Viewport in CSS pixels; 1920x1080 unless `--size` or `--draft` says otherwise. */
+  size: { width: number; height: number };
+  /** Where the JSON record goes; the text summary goes to stdout. */
+  out?: string;
+  /** A saved record to diff this run against. */
+  compare?: string;
+  /** Print the JSON record to stdout instead of the text summary. */
+  json: boolean;
 }
 
 export type ArgResult = { kind: "run"; args: PerfArgs } | { kind: "help" };
 
-const USAGE = `usage: bun run perf <game> [--quality low|medium|high|ultra] [--draft] [--profile] [--seconds n] [--telemetry on|off]
-                    [--state name] [--param k=v ...] [--set key=value ...] [--uncapped] [--headed] [--cold]
+const USAGE = `usage: bun run perf <game> [--seconds n] [--path walk|still] [--size WxH] [--compare <before.json>] [--out <file.json>] [--json]
+                    [--quality low|medium|high|ultra] [--draft] [--profile] [--telemetry on|off]
+                    [--state name] [--param k=v ...] [--set key=value ...] [--capped] [--headed] [--cold]
+
+Plays the game at 1920x1080 on an uncapped frame clock, walking, and prints where a frame goes: frame
+p50/p95/p99, main-thread and GPU ms per frame against 60 and 144 Hz, CPU ms per system, GPU ms per
+render pass, draws, triangles, compiles, uploads, the costliest objects and materials, and every hitch
+over 33 ms with its cause. The full record is written as JSON (default .scratch/perf/<game>.json).
+One fix, one run: keep a record, change the code, run again with --compare <kept.json>.
 
   <game>            game id under games/ (for example harbor-heat)
+  --path            walk (default): hold forward and weave left/right while measuring; still: stand
+  --size            viewport in CSS pixels (default 1920x1080)
+  --compare         a record an earlier run wrote: print the before/after table under the summary
+  --out             where to write this run's JSON record (default .scratch/perf/<game>.json)
+  --json            print the JSON record to stdout instead of the text summary
+  --capped          run on the display's vsync clock instead (frame times become 16.7 ms steps)
   --cold            skip the warm daemon and boot Chrome + Vite directly: fresh caches, larger
                     numbers than a warm run, for an evidence run that must prove a clean start.
                     Every run prints which it got: warm: reused :9261 (0.2s) / cold: started :9261 (4.1s)
@@ -157,11 +182,9 @@ const USAGE = `usage: bun run perf <game> [--quality low|medium|high|ultra] [--d
   --profile         also print the inclusive-time table to stderr
   --seconds         measured window in seconds (default ${DEFAULT_SECONDS})
   --telemetry       in-page report sampler: on (default) or off (?telemetry=off) for an A/B run
-  --uncapped        launch the browser with an unthrottled rAF clock (--disable-frame-rate-limit,
-                    --disable-gpu-vsync), so frame times are what a frame costs instead of a 16.7 ms
-                    vsync multiple. Opt-in: the record then says frameClock uncapped and its ms do not
-                    compare with a capped record. Verify the clock took by omission — a browser that
-                    stays vsynced fails the run.
+  --uncapped        the default: an unthrottled rAF clock (--disable-frame-rate-limit,
+                    --disable-gpu-vsync), so frame times are what a frame costs. A browser that stays
+                    vsynced fails the run.
   --headed          open a real Chrome window off-screen instead of headless, for debugging a run;
                     never use it for a number you report.
   --state           boot into the game's capture.states entry of this name (?state=name), so two runs
@@ -331,7 +354,12 @@ export function parsePerfArgs(argv: readonly string[]): ArgResult {
   let profile = false;
   let seconds = DEFAULT_SECONDS;
   let telemetry: "on" | "off" = "on";
-  let frameClock: FrameClock = "capped";
+  let frameClock: FrameClock = "uncapped";
+  let path: PerfPath = "walk";
+  let size = { width: 1920, height: 1080 };
+  let out: string | undefined;
+  let compare: string | undefined;
+  let json = false;
   let headed = false;
   let cold = false;
   let state: string | undefined;
@@ -346,6 +374,29 @@ export function parsePerfArgs(argv: readonly string[]): ArgResult {
     }
     if (arg === "--uncapped") {
       frameClock = "uncapped";
+      continue;
+    }
+    if (arg === "--capped") {
+      frameClock = "capped";
+      continue;
+    }
+    if (arg === "--json") {
+      json = true;
+      continue;
+    }
+    if (arg === "--path" || arg === "--size" || arg === "--out" || arg === "--compare") {
+      const value = argv[index + 1];
+      if (value === undefined || value.startsWith("--")) throw new Error(`${arg} needs a value`);
+      index += 1;
+      if (arg === "--path") {
+        if (value !== "walk" && value !== "still") throw new Error(`--path must be walk or still (got ${value})`);
+        path = value;
+      } else if (arg === "--size") {
+        const match = /^(\d+)x(\d+)$/.exec(value);
+        if (match === null) throw new Error(`--size must be WxH, like 1920x1080 (got ${value})`);
+        size = { width: Number(match[1]), height: Number(match[2]) };
+      } else if (arg === "--out") out = value;
+      else compare = value;
       continue;
     }
     if (arg === "--headed") {
@@ -415,7 +466,7 @@ export function parsePerfArgs(argv: readonly string[]): ArgResult {
   }
   if (game === undefined) throw new Error("a game id is required");
   if (draft && quality !== undefined) throw new Error(`--draft is the iteration preset (low tier, half viewport), so drop it or drop --quality ${quality}`);
-  return { kind: "run", args: { game, ...(quality === undefined ? {} : { quality }), draft, profile, seconds, telemetry, settings, frameClock, ...(headed ? { headed: true } : {}), ...(cold ? { cold: true } : {}), ...(state === undefined ? {} : { state }), params } };
+  return { kind: "run", args: { game, ...(quality === undefined ? {} : { quality }), draft, profile, seconds, telemetry, settings, frameClock, path, size, json, ...(out === undefined ? {} : { out }), ...(compare === undefined ? {} : { compare }), ...(headed ? { headed: true } : {}), ...(cold ? { cold: true } : {}), ...(state === undefined ? {} : { state }), params } };
 }
 
 
@@ -801,6 +852,10 @@ export interface PerfRecord extends Omit<PerfReport, "quality"> {
   frameClock: FrameClock;
   /** Which engine the measured window rendered, so a saved record can be audited later. */
   engine?: EngineRecord;
+  /** How the run moved while measured. */
+  path?: PerfPath;
+  /** Where each frame went over the measured window; null when the page has no dev telemetry. */
+  breakdown?: FrameBreakdownSummary | null;
 }
 export type { PerfReport };
 
@@ -834,6 +889,10 @@ export interface MeasureOptions {
   params?: readonly (readonly [string, string])[];
   /** The rAF clock the caller launched the browser on, echoed into the record. */
   frameClock?: FrameClock;
+  /** Move through the game while measuring (`walk`), or stand (`still`, the default here). */
+  path?: PerfPath;
+  /** Viewport override in CSS pixels; the device default when omitted. */
+  size?: { width: number; height: number };
 }
 
 export interface PerfMeasure {
@@ -924,7 +983,7 @@ export async function measureGame(options: MeasureOptions): Promise<PerfMeasure>
     await session.send("Page.addScriptToEvaluateOnNewDocument", { source: perfSettingsScript(settings) });
   }
   const throws = watchPageExceptions(session);
-  await applyDevice(session, "desktop", draft ? "half" : "full");
+  await applyDevice(session, "desktop", draft ? "half" : "full", options.size ?? {});
   const url = perfPageUrl({ base, game, quality, telemetry: options.telemetry, state: options.state, params });
   // Same navigation the capture tools use: it fails on a page exception or a failed document
   // instead of waiting out the readiness timeout.
@@ -942,7 +1001,9 @@ export async function measureGame(options: MeasureOptions): Promise<PerfMeasure>
   }
 
   await session.evaluate(`new Promise((r) => setTimeout(r, ${warmupMs}))`, { awaitPromise: true });
+  const releasePath = await startPath(session, options.path ?? "still");
   await session.evaluate(`window.__jgPerfGl?.reset?.()`);
+  const hasBreakdown = await resetBreakdown(session);
   await session.evaluate(`window.__jgengineAgent?.handle?.({ method: "debug_perf_reset" })`);
 
   // Frame timings are sampled without the profiler running, so the fps and
@@ -953,6 +1014,7 @@ export async function measureGame(options: MeasureOptions): Promise<PerfMeasure>
   const drawFrames = (await session.evaluate<number[]>(`globalThis.__jgPerfDraws?.stop?.() ?? []`)) ?? [];
   const windowMs = Date.now() - startedAt;
   const frameDraws = summarizeFrameDraws(drawFrames);
+  const breakdown = hasBreakdown ? await readBreakdown(session) : null;
 
   const snapshot = await session.evaluate<{
     frame: { avgSimMs?: number; avgOutsideMs?: number; phases?: unknown[] } | null;
@@ -989,6 +1051,7 @@ export async function measureGame(options: MeasureOptions): Promise<PerfMeasure>
     raw = (stopped.profile ?? { nodes: [], samples: [], timeDeltas: [] }) as RawProfile;
   }
 
+  await releasePath();
   const top = raw === null ? [] : aggregateSelfTime(raw, profiledMs);
 
   const record: PerfRecord = {
@@ -1036,6 +1099,8 @@ export async function measureGame(options: MeasureOptions): Promise<PerfMeasure>
     state: options.state ?? null,
     params: params.map(([key, value]) => `${key}=${value}`),
     frameClock,
+    path: options.path ?? "still",
+    breakdown,
   };
 
   const draws = record.render.draws;
@@ -1060,7 +1125,10 @@ async function main(): Promise<void> {
     console.log(USAGE);
     return;
   }
-  const { game, quality, draft, profile, seconds, telemetry, settings, state, params, frameClock, headed } = parsed.args;
+  const { game, quality, draft, profile, seconds, telemetry, settings, state, params, frameClock, headed, path, size, json } = parsed.args;
+  const outPath = resolve(process.cwd(), parsed.args.out ?? join(repoRoot, ".scratch", "perf", `${game}.json`));
+  // Read the baseline before the run, so a missing or unreadable file fails in a second, not after a minute.
+  const baseline = parsed.args.compare === undefined ? null : readBaseline(parsed.args.compare);
 
   sweepCaptureProfiles();
 
@@ -1106,7 +1174,7 @@ async function main(): Promise<void> {
       async ({ debugPort }) => {
         const session = await openPageSession(debugPort);
         try {
-          const measured = await measureGame({ session, base: server.base, game, quality, draft, seconds, telemetry, settings, state, params, frameClock });
+          const measured = await measureGame({ session, base: server.base, game, quality, draft, seconds, telemetry, settings, state, params, frameClock, path, size });
           if (measuredEngine !== null) measured.record.engine = measuredEngine;
           console.error(`perf: tier ${measured.record.quality}${draft ? " (draft: low tier, half viewport)" : ""}`);
           const pin = perfStateLine(state, params);
@@ -1119,7 +1187,11 @@ async function main(): Promise<void> {
           if (measured.record.overrides.length > 0) {
             console.error(`perf: overrides ${measured.record.overrides.join(" ")}`);
           }
-          console.log(JSON.stringify(measured.record, null, 2));
+          mkdirSync(dirname(outPath), { recursive: true });
+          writeFileSync(outPath, `${JSON.stringify(measured.record, null, 2)}\n`);
+          if (json) console.log(JSON.stringify(measured.record, null, 2));
+          else console.log(perfSummaryText(measured.record, baseline));
+          console.error(`perf: record written to ${outPath}`);
           if (profile && measured.profile !== null) {
             printInclusive(aggregateInclusiveTime(measured.profile, measured.profileMs));
           }
@@ -1148,7 +1220,37 @@ async function main(): Promise<void> {
       return 1;
     });
   }
-  if (exitCode !== 0) process.exit(exitCode);
+  // Exit explicitly: a browser socket or watcher left open must not hold a finished run for minutes.
+  process.exit(exitCode);
+}
+
+/** A record an earlier run wrote, for `--compare`. */
+function readBaseline(path: string): PerfRecord {
+  const text = readFileSync(resolve(process.cwd(), path), "utf8");
+  const record = JSON.parse(text) as PerfRecord;
+  if (record.breakdown === undefined || record.breakdown === null) {
+    throw new Error(`${path} has no frame breakdown to compare against; it was written before the breakdown existed, or by a page without dev telemetry`);
+  }
+  return record;
+}
+
+/** The text a person reads after a run: the breakdown, the run's conditions, and the diff when asked. */
+export function perfSummaryText(record: PerfRecord, baseline: PerfRecord | null): string {
+  const conditions = `${record.viewport}, ${record.quality} tier, ${record.frameClock} clock, path ${record.path ?? "still"}, ${record.gpu}`;
+  const lines: string[] = [];
+  if (record.breakdown === null || record.breakdown === undefined) {
+    lines.push(`${record.game}: no frame breakdown (the page has no dev telemetry); frame avg ${record.frame.avgMs} ms, p95 ${record.frame.p95Ms} ms`);
+  } else {
+    lines.push(renderBreakdownText(record.breakdown, record.game));
+  }
+  lines.push(`run: ${conditions}`);
+  if (baseline !== null && record.breakdown !== null && record.breakdown !== undefined) {
+    lines.push("", compareBreakdowns(baseline.breakdown!, record.breakdown));
+    if (baseline.viewport !== record.viewport || baseline.quality !== record.quality || baseline.frameClock !== record.frameClock || baseline.path !== record.path) {
+      lines.push(`  note: the runs differ (${baseline.viewport} ${baseline.quality} ${baseline.frameClock} ${baseline.path ?? "still"} before), so the diff mixes in that change`);
+    }
+  }
+  return lines.join("\n");
 }
 
 if (import.meta.main) {

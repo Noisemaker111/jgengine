@@ -1,3 +1,5 @@
+import { devtools } from "../devtools/devtools";
+import { nowMs } from "../devtools/frame";
 import type { EntityStore } from "../scene/entityStore";
 import type { SimClock } from "../time/simClock";
 import { createPoseHistory, type PoseHistory, type RenderPose } from "./poseInterpolation";
@@ -51,6 +53,8 @@ export function createSimContext(options: { config?: SimulationConfig; entities:
   const loop = createSimLoop(options.config);
   const poses = createPoseHistory({ snapDistance: loop.config().snapDistance });
   const stages = new Map<SimStagePhase, SimStage[]>();
+  // Each stage's time is a named phase of the frame, so the frame breakdown shows it by id.
+  const stageLabels = new WeakMap<SimStage, string>();
   let advancing = false;
   let currentGameDt = 0;
 
@@ -78,6 +82,7 @@ export function createSimContext(options: { config?: SimulationConfig; entities:
     },
     snapPose: (id) => poses.snap(id),
     addStage(stage) {
+      stageLabels.set(stage, `stage:${stage.id}`);
       const list = stages.get(stage.phase) ?? [];
       list.push(stage);
       stages.set(stage.phase, list);
@@ -92,7 +97,11 @@ export function createSimContext(options: { config?: SimulationConfig; entities:
       const list = stages.get(phase);
       if (list === undefined) return;
       const tick = loop.tick();
-      for (const stage of list) stage.run(dt, tick, advancing ? currentGameDt : dt);
+      for (const stage of list) {
+        const start = nowMs();
+        stage.run(dt, tick, advancing ? currentGameDt : dt);
+        devtools.profile.add(stageLabels.get(stage) ?? stage.id, nowMs() - start);
+      }
     },
     retune(config) {
       loop.retune(config);
