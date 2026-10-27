@@ -5,11 +5,15 @@ import {
   failureLine,
   failedJobs,
   pickRun,
-  registryVersion,
   successLine,
+  VERIFY_STEP,
   type PublishJob,
   type PublishRun,
+  type RegistryCheck,
 } from "./release-await";
+
+/** npm already serves every package of the release. */
+const served: RegistryCheck = { unserved: async () => [], defects: async () => [] };
 
 const run = (overrides: Partial<PublishRun> = {}): PublishRun => ({
   databaseId: 40107700057,
@@ -82,7 +86,7 @@ describe("waiting on the publish run", () => {
       version: "0.38.4",
       sha,
       gh: ghFor([run({ headSha: sha })]),
-      npmView: () => ({ status: 0, stdout: "0.38.4\n", stderr: "" }),
+      registry: served,
       sleep: async () => {},
       log: () => {},
     });
@@ -97,7 +101,7 @@ describe("waiting on the publish run", () => {
       version: "0.38.4",
       sha,
       gh: ghFor([run({ headSha: sha, conclusion: "failure" })], [job("publish", "failure")]),
-      npmView: () => ({ status: 0, stdout: "0.38.3\n", stderr: "" }),
+      registry: served,
       sleep: async () => {},
       log: () => {},
     });
@@ -106,18 +110,110 @@ describe("waiting on the publish run", () => {
     expect(result.line).toContain('job "publish"');
   });
 
-  test("a run that succeeded without the version on npm is a failure that names both", async () => {
+  test("npm not serving the release is waited on, bounded, and then names what it lacks", async () => {
     const sha = "a".repeat(40);
+    let clock = 0;
+    let asked = 0;
     const result = await awaitPublish({
       version: "0.38.4",
       sha,
       gh: ghFor([run({ headSha: sha })]),
-      npmView: () => ({ status: 0, stdout: "0.38.3\n", stderr: "" }),
+      registry: {
+        unserved: async () => {
+          asked += 1;
+          return ["@jgengine/core@0.38.4"];
+        },
+        defects: async () => [],
+      },
+      registryTimeoutMs: 60_000,
+      intervalMs: 10_000,
+      now: () => clock,
+      sleep: async (ms) => {
+        clock += ms;
+      },
+      log: () => {},
+    });
+    expect(result.ok).toBe(false);
+    expect(result.line).toContain("after 1 minutes npm does not serve @jgengine/core@0.38.4");
+    expect(asked).toBe(7);
+  });
+
+  test("a run whose registry check gave up while npm processed core answers published once npm serves it", async () => {
+    // 0.49.0: every package uploaded at 03:01, the run's 5-minute check gave up at 03:08:32, and npm
+    // served core at 03:08:56. The release was fine; this wait now says so instead of failing it.
+    const sha = "f".repeat(40);
+    let clock = 0;
+    const servedAt = 24_000;
+    const gh = (args: readonly string[]) => {
+      if (args[0] === "run") return { status: 0, stdout: JSON.stringify([run({ headSha: sha, conclusion: "failure" })]), stderr: "" };
+      if (args[1]?.endsWith("/jobs")) return { status: 0, stdout: JSON.stringify({ jobs: [{ id: 9, name: "publish", conclusion: "failure", html_url: "u" }] }), stderr: "" };
+      if (args[1]?.endsWith("/jobs/9")) return { status: 0, stdout: JSON.stringify({ steps: [{ name: VERIFY_STEP, conclusion: "failure" }] }), stderr: "" };
+      return { status: 0, stdout: JSON.stringify(run({ headSha: sha, conclusion: "failure" })), stderr: "" };
+    };
+    let checked = false;
+    const result = await awaitPublish({
+      version: "0.49.0",
+      sha,
+      gh,
+      registry: {
+        unserved: async () => (clock >= servedAt ? [] : ["@jgengine/core@0.49.0"]),
+        defects: async () => {
+          checked = true;
+          return [];
+        },
+      },
+      intervalMs: 10_000,
+      now: () => clock,
+      sleep: async (ms) => {
+        clock += ms;
+      },
+      log: () => {},
+    });
+    expect(result.ok).toBe(true);
+    expect(result.line).toBe("release: published @jgengine/core@0.49.0 (publish run 40107700057), served by npm 30s after the run");
+    expect(checked).toBe(true);
+  });
+
+  test("a run whose registry check gave up still fails when what npm serves does not install", async () => {
+    const sha = "f".repeat(40);
+    const gh = (args: readonly string[]) => {
+      if (args[0] === "run") return { status: 0, stdout: JSON.stringify([run({ headSha: sha, conclusion: "failure" })]), stderr: "" };
+      if (args[1]?.endsWith("/jobs")) return { status: 0, stdout: JSON.stringify({ jobs: [{ id: 9, name: "publish", conclusion: "failure", html_url: "u" }] }), stderr: "" };
+      if (args[1]?.endsWith("/jobs/9")) return { status: 0, stdout: JSON.stringify({ steps: [{ name: VERIFY_STEP, conclusion: "failure" }] }), stderr: "" };
+      return { status: 0, stdout: JSON.stringify(run({ headSha: sha, conclusion: "failure" })), stderr: "" };
+    };
+    const result = await awaitPublish({
+      version: "0.49.0",
+      sha,
+      gh,
+      registry: { unserved: async () => [], defects: async () => ["@jgengine/core@0.49.0: ./data/definedOnly resolves to dist/data/definedOnly.js, which the tarball does not contain"] },
       sleep: async () => {},
       log: () => {},
     });
     expect(result.ok).toBe(false);
-    expect(result.line).toContain("succeeded but npm answers 0.38.3 for @jgengine/core, not 0.38.4");
+    expect(result.line).toContain("is on npm but does not install: @jgengine/core@0.49.0: ./data/definedOnly");
+  });
+
+  test("a run that failed at any other step is a failure without waiting on npm", async () => {
+    const sha = "f".repeat(40);
+    let asked = false;
+    const gh = (args: readonly string[]) => {
+      if (args[0] === "run") return { status: 0, stdout: JSON.stringify([run({ headSha: sha, conclusion: "failure" })]), stderr: "" };
+      if (args[1]?.endsWith("/jobs")) return { status: 0, stdout: JSON.stringify({ jobs: [{ id: 9, name: "publish", conclusion: "failure", html_url: "u" }] }), stderr: "" };
+      if (args[1]?.endsWith("/jobs/9")) return { status: 0, stdout: JSON.stringify({ steps: [{ name: "Refuse to publish a commit behind beta", conclusion: "failure" }] }), stderr: "" };
+      return { status: 0, stdout: JSON.stringify(run({ headSha: sha, conclusion: "failure" })), stderr: "" };
+    };
+    const result = await awaitPublish({
+      version: "0.49.0",
+      sha,
+      gh,
+      registry: { unserved: async () => { asked = true; return []; }, defects: async () => [] },
+      sleep: async () => {},
+      log: () => {},
+    });
+    expect(result.ok).toBe(false);
+    expect(result.line).toContain('at step "Refuse to publish a commit behind beta"');
+    expect(asked).toBe(false);
   });
 
   test("the run is found by SHA whatever branch GitHub reports, since publish.yml follows beta's CI run", async () => {
@@ -133,7 +229,7 @@ describe("waiting on the publish run", () => {
         }
         return { status: 0, stdout: JSON.stringify(run({ headSha: sha })), stderr: "" };
       },
-      npmView: () => ({ status: 0, stdout: "0.38.4\n", stderr: "" }),
+      registry: served,
       graceMs: 0,
       sleep: async () => {},
       log: () => {},
@@ -176,7 +272,7 @@ describe("waiting on the publish run", () => {
       version: "0.41.0",
       sha,
       gh,
-      npmView: () => ({ status: 0, stdout: "0.41.0\n", stderr: "" }),
+      registry: served,
       graceMs: 3 * 60_000,
       intervalMs: 10_000,
       now: () => clock,
@@ -212,12 +308,5 @@ describe("waiting on the publish run", () => {
     expect(result.ok).toBe(false);
     expect(result.line).toContain("CI run 7 on main for eeeeeeee ended failure");
     expect(slept).toBe(0);
-  });
-});
-
-describe("npm's answer", () => {
-  test("npm answering nothing is not a version", () => {
-    expect(registryVersion(() => ({ status: 1, stdout: "", stderr: "E404" }))).toBeNull();
-    expect(registryVersion(() => ({ status: 0, stdout: "  \n", stderr: "" }))).toBeNull();
   });
 });

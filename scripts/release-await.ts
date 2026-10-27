@@ -7,6 +7,8 @@
 // waited on, and names the failed job instead of leaving a lane to poll.
 import { spawnSync } from "node:child_process";
 
+import { checkLiveRelease, unservedLockstep } from "./check-release-artifacts";
+
 export interface ProcResult {
   status: number;
   stdout: string;
@@ -75,21 +77,37 @@ export function successLine(version: string, runId: number): string {
   return `release: published @jgengine/core@${version} (publish run ${runId})`;
 }
 
-/** The version npm answers with, or null when npm has no such version (or cannot be asked). */
-export function registryVersion(npmView: () => ProcResult): string | null {
-  const result = npmView();
-  if (result.status !== 0) return null;
-  const version = result.stdout.trim();
-  return version === "" ? null : version;
+/** The publish.yml step that checks every package installs from npm, waiting a bounded time for it to appear. */
+export const VERIFY_STEP = "Verify every published package installs";
+/**
+ * How long npm may take to serve every package of a release once its publish run ends. npm answers a
+ * publish with 202 and processes it afterwards: 0.49.0's core appeared 7m12s after its upload, 24 s
+ * after the run's own 5-minute check gave up, and that false failure led to a second release.
+ */
+export const REGISTRY_TIMEOUT_MS = 20 * 60_000;
+
+/** What the registry serves for a version. */
+export interface RegistryCheck {
+  /** The release's packages npm does not serve at `version` yet, as `name@version`. */
+  unserved(version: string): Promise<string[]>;
+  /** What a consumer installing `version` would hit: the publish run's own artifact check, run here. */
+  defects(version: string): Promise<string[]>;
 }
+
+export const liveRegistryCheck: RegistryCheck = {
+  unserved: (version) => unservedLockstep(version),
+  defects: async (version) => (await checkLiveRelease(version)).flatMap((verdict) => verdict.failures),
+};
 
 export interface AwaitOptions {
   version: string;
   /** The commit Publish runs on; `main`'s head after the release lands. */
   sha: string;
   gh?: RunGh;
-  /** Registry answer, for the final check. */
-  npmView?: () => ProcResult;
+  /** The registry the release must reach before the wait answers. */
+  registry?: RegistryCheck;
+  /** How long npm may take to serve every package after the run ends. */
+  registryTimeoutMs?: number;
   runId?: number | undefined;
   timeoutMs?: number;
   graceMs?: number;
@@ -109,12 +127,6 @@ export interface AwaitResult {
 
 function defaultGh(args: readonly string[]): ProcResult {
   const result = spawnSync("gh", [...args], { encoding: "utf8" });
-  return { status: result.status ?? 1, stdout: result.stdout ?? "", stderr: result.stderr ?? "" };
-}
-
-/** The published version `npm view` answers, read the same way: no status is a failure. */
-function defaultNpmView(): ProcResult {
-  const result = spawnSync("npm", ["view", "@jgengine/core", "version"], { encoding: "utf8" });
   return { status: result.status ?? 1, stdout: result.stdout ?? "", stderr: result.stderr ?? "" };
 }
 
@@ -244,6 +256,9 @@ export async function awaitPublish(options: AwaitOptions): Promise<AwaitResult> 
     };
   }
 
+  // A run whose only failure is its registry check giving up has uploaded everything; npm is still
+  // processing. That is a wait, not a failed release, so it continues here against npm itself.
+  let checkHere = false;
   if (run.conclusion !== "success") {
     const raw = gh(["api", `repos/{owner}/{repo}/actions/runs/${run.databaseId}/jobs`]).stdout;
     const listed = parseJson<{ jobs?: (PublishJob & { html_url?: string })[] }>(raw)?.jobs ?? [];
@@ -255,18 +270,40 @@ export async function awaitPublish(options: AwaitOptions): Promise<AwaitResult> 
       const steps = parseJson<{ steps?: JobStep[] }>(detail.stdout)?.steps ?? [];
       step = steps.find((entry) => entry.conclusion === "failure")?.name ?? null;
     }
-    return { ok: false, line: failureLine(run, jobs, step), runId: run.databaseId, code: 1 };
+    if (step !== VERIFY_STEP) return { ok: false, line: failureLine(run, jobs, step), runId: run.databaseId, code: 1 };
+    checkHere = true;
+    log(`release: publish run ${run.databaseId} uploaded every package but its registry check gave up; waiting on npm itself`);
   }
 
-  const npmView = options.npmView ?? defaultNpmView;
-  const published = registryVersion(npmView);
-  if (published !== options.version) {
+  const registry = options.registry ?? liveRegistryCheck;
+  const registryTimeout = options.registryTimeoutMs ?? REGISTRY_TIMEOUT_MS;
+  const registryStarted = now();
+  let unserved = await registry.unserved(options.version);
+  const servedLate = unserved.length > 0;
+  while (unserved.length > 0 && now() - registryStarted < registryTimeout) {
+    // wait-ok: npm serves an accepted publish minutes later; polled, and bounded by the registry timeout
+    await sleep(interval);
+    unserved = await registry.unserved(options.version);
+  }
+  if (unserved.length > 0) {
     return {
       ok: false,
-      line: `release: publish run ${run.databaseId} succeeded but npm answers ${published ?? "nothing"} for @jgengine/core, not ${options.version}`,
+      line: `release: publish run ${run.databaseId} ${checkHere ? "uploaded" : "succeeded"}, but after ${Math.round(registryTimeout / 60_000)} minutes npm does not serve ${unserved.join(", ")}; a publish npm holds for approval shows in \`npm stage list <package>\``,
       runId: run.databaseId,
       code: 1,
     };
   }
-  return { ok: true, line: successLine(options.version, run.databaseId), runId: run.databaseId, code: 0 };
+  if (checkHere) {
+    const defects = await registry.defects(options.version);
+    if (defects.length > 0) {
+      return { ok: false, line: `release: ${options.version} is on npm but does not install: ${defects.join("; ")}`, runId: run.databaseId, code: 1 };
+    }
+  }
+  const waited = Math.round((now() - registryStarted) / 1000);
+  return {
+    ok: true,
+    line: successLine(options.version, run.databaseId) + (servedLate ? `, served by npm ${waited}s after the run` : ""),
+    runId: run.databaseId,
+    code: 0,
+  };
 }

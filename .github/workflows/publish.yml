@@ -88,4 +88,5 @@ jobs:
             (cd "packages/$p" && npm publish --access public --tag "$tag" --loglevel verbose)
           done
       - name: Verify every published package installs
-        run: bun scripts/check-release-artifacts.ts --wait 300
+        # npm serves an accepted publish minutes later: 0.49.0's core took 7m12s, so 300 s failed a good release.
+        run: bun scripts/check-release-artifacts.ts --wait 900

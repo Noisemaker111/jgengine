@@ -8,6 +8,8 @@
 import { existsSync, readdirSync, readFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 
+import { separateCadencePackages } from "./exportManifest";
+
 const root = fileURLToPath(new URL("..", import.meta.url));
 const read = (rel: string) => readFileSync(`${root}${rel}`, "utf8");
 
@@ -91,8 +93,7 @@ export function checkReleaseSet(): ReleaseSetReport {
   }
   failures.push(...checkPublishOrder(publishOrder, manifests));
 
-  const separateCadence = new Set(["jgengine", "github"]);
-  const lockstepExpected = publishOrder.filter((dir) => !separateCadence.has(dir)).sort();
+  const lockstepExpected = publishOrder.filter((dir) => !separateCadencePackages.has(dir)).sort();
   for (const [label, source] of [
     ["scripts/release.ts", read("scripts/release.ts")],
     ["README.md", read("README.md")],
