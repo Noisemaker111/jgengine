@@ -1,6 +1,7 @@
 import { existsSync, lstatSync, readdirSync, readFileSync, realpathSync, rmSync } from "node:fs";
 import { join } from "node:path";
 import { ensureWorktreeReady } from "./agent-worktree";
+import { hasInstall } from "./checkout-ready";
 import { scanStalePackages } from "./distStaleness";
 
 function run(label: string, cmd: string[], timeoutMs: number): void {
@@ -35,8 +36,7 @@ if (readiness !== null && !readiness.unchanged) {
   console.log(`ensure-ready: ${did.join("; ")}`);
 }
 
-const tsgo = join(process.cwd(), "node_modules", ".bin", process.platform === "win32" ? "tsgo.exe" : "tsgo");
-if (!existsSync(tsgo)) {
+if (!hasInstall(process.cwd())) {
   run("node_modules incomplete (tsgo missing) — running bun install", ["bun", "install"], 300_000);
 }
 

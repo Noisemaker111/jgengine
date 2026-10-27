@@ -15,8 +15,10 @@
  * `ensureWorktreeReady` is the same repair path exposed to any tree through
  * `bun run ensure-ready` (which every test/build/smoke script runs).
  */
-import { cpSync, existsSync, lstatSync, mkdirSync, readdirSync, readFileSync, realpathSync, symlinkSync, unlinkSync } from "node:fs";
+import { cpSync, existsSync, lstatSync, mkdirSync, readdirSync, readFileSync, realpathSync, rmSync, symlinkSync, unlinkSync } from "node:fs";
 import { dirname, join, resolve, sep } from "node:path";
+
+import { hasInstall } from "./checkout-ready";
 
 export const NAME_PATTERN = /^[a-zA-Z0-9][a-zA-Z0-9._-]{0,63}$/;
 
@@ -52,11 +54,26 @@ export function workspaceDirs(root: string): string[] {
 
 /** True when the worktree can reuse the main checkout's installed dependencies. */
 export function canLinkDeps(mainRoot: string, target: string): boolean {
-  if (!existsSync(join(mainRoot, "node_modules", ".bin", "tsgo"))) return false;
+  return hasInstall(mainRoot) && locksMatch(mainRoot, target);
+}
+
+function locksMatch(mainRoot: string, target: string): boolean {
   try {
     return readFileSync(join(mainRoot, "bun.lock"), "utf8") === readFileSync(join(target, "bun.lock"), "utf8");
   } catch {
     return false;
+  }
+}
+
+/**
+ * Take the links back out once the worktree's lock no longer matches the store they point at, so the
+ * install that follows writes this worktree's own node_modules and never the main checkout's.
+ * Only the root junction and the copied workspace folders go; the store behind them is untouched.
+ */
+export function unlinkDeps(target: string): void {
+  unlinkSync(join(target, "node_modules"));
+  for (const rel of workspaceDirs(target)) {
+    if (rel !== "") rmSync(join(target, rel, "node_modules"), { recursive: true, force: true });
   }
 }
 
@@ -170,11 +187,12 @@ function gitIgnored(mainRoot: string): string[] {
   return (result.stdout?.toString() ?? "").split("\n").map((line) => line.trim()).filter(Boolean);
 }
 
-function installed(target: string): boolean {
-  return (
-    existsSync(join(target, "node_modules", ".bin", "tsgo")) ||
-    existsSync(join(target, "node_modules", ".bin", "tsgo.exe"))
-  );
+function isLink(path: string): boolean {
+  try {
+    return lstatSync(path).isSymbolicLink();
+  } catch {
+    return false;
+  }
 }
 
 /**
@@ -189,27 +207,28 @@ export function ensureWorktreeReady(cwd: string, options: WorktreeReadyOptions =
   const mainRoot = mainCheckoutRoot(cwd);
   if (mainRoot === null || realpathSync(mainRoot) === realpathSync(cwd)) return null;
 
-  const needsDeps = !installed(cwd);
-  if (!needsDeps) return { mainRoot, deps: [], assets: [], installed: false, unchanged: true };
+  // A linked tree whose lock moved on (a lane that added a package) would install into the main
+  // checkout's store through the link, so it gets its own install instead.
+  const staleLink = isLink(join(cwd, "node_modules")) && !locksMatch(mainRoot, cwd);
+  if (hasInstall(cwd) && !staleLink) return { mainRoot, deps: [], assets: [], installed: false, unchanged: true };
 
   const result: WorktreeReadiness = { mainRoot, deps: [], assets: [], installed: false, unchanged: false };
-  if (needsDeps) {
-    if (canLinkDeps(mainRoot, cwd)) {
-      result.deps = linkDeps(mainRoot, cwd);
-    } else {
-      (options.install ?? ((target: string) => {
-        const install = Bun.spawnSync(["bun", "install", "--frozen-lockfile"], {
-          cwd: target,
-          stdout: "inherit",
-          stderr: "inherit",
-          timeout: 600_000,
-        });
-        if (install.exitCode !== 0) {
-          throw new Error(`bun install --frozen-lockfile failed (exit ${install.exitCode ?? 1})`);
-        }
-      }))(cwd);
-      result.installed = true;
-    }
+  if (staleLink) unlinkDeps(cwd);
+  if (canLinkDeps(mainRoot, cwd)) {
+    result.deps = linkDeps(mainRoot, cwd);
+  } else {
+    (options.install ?? ((target: string) => {
+      const install = Bun.spawnSync(["bun", "install", "--frozen-lockfile"], {
+        cwd: target,
+        stdout: "inherit",
+        stderr: "inherit",
+        timeout: 600_000,
+      });
+      if (install.exitCode !== 0) {
+        throw new Error(`bun install --frozen-lockfile failed (exit ${install.exitCode ?? 1})`);
+      }
+    }))(cwd);
+    result.installed = true;
   }
   const ignored = (options.ignored ?? gitIgnored)(mainRoot);
   result.assets = linkAssets(mainRoot, cwd, assetLinks(mainRoot, ignored));

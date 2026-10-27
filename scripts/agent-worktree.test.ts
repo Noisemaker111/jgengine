@@ -4,6 +4,7 @@ import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
 
 import { assetLinks, canLinkDeps, ensureWorktreeReady, linkAssets, linkDeps, mainCheckoutRoot, worktreeTarget } from "./agent-worktree";
+import { tsgoBin } from "./checkout-ready";
 
 describe("worktreeTarget", () => {
   test("places worktrees under the main checkout's .claude/worktrees", () => {
@@ -35,7 +36,7 @@ describe("linking a worktree to the main checkout", () => {
       write(join(root, "packages", "core", "package.json"), "{}");
       write(join(root, "packages", "shell", "package.json"), "{}");
     }
-    write(join(main, "node_modules", ".bin", "tsgo"));
+    write(tsgoBin(main));
     mkdirSync(join(main, "packages", "shell", "node_modules", "@jgengine"), { recursive: true });
     symlinkSync("../../../core", join(main, "packages", "shell", "node_modules", "@jgengine", "core"));
     write(join(main, "packages", "shell", "node_modules", ".vite", "deps.json"));
@@ -49,6 +50,15 @@ describe("linking a worktree to the main checkout", () => {
     expect(canLinkDeps(main, target)).toBe(true);
     writeFileSync(join(target, "bun.lock"), "lock-v2");
     expect(canLinkDeps(main, target)).toBe(false);
+  });
+
+  test("an install is the platform's own tsgo binary, so a Windows main checkout counts as installed", () => {
+    rmSync(join(main, "node_modules", ".bin"), { recursive: true, force: true });
+    // What `bun install` leaves on the other platform is not an install here.
+    write(join(main, "node_modules", ".bin", process.platform === "win32" ? "tsgo" : "tsgo.exe"));
+    expect(canLinkDeps(main, target)).toBe(false);
+    write(tsgoBin(main));
+    expect(canLinkDeps(main, target)).toBe(true);
   });
 
   test("shares the root store and copies workspace links so they point at the worktree's own packages", () => {
@@ -98,7 +108,7 @@ describe("readiness for a worktree nobody linked", () => {
       write(join(root, "bun.lock"), "lock-v1");
       write(join(root, "packages", "core", "package.json"), "{}");
     }
-    write(join(main, "node_modules", ".bin", "tsgo"));
+    write(tsgoBin(main));
     mkdirSync(join(main, ".git", "worktrees", "wt"), { recursive: true });
     mkdirSync(join(main, "apps", "dev", "public", "models", "pack"), { recursive: true });
     // `git worktree add` writes `.git` as a file; that is the only marker this needs.
@@ -121,7 +131,8 @@ describe("readiness for a worktree nobody linked", () => {
   test("a bare worktree gets dependencies and the asset links, and a second call changes nothing", () => {
     const first = ensureWorktreeReady(target, { ignored });
     expect(first).toMatchObject({ installed: false, unchanged: false, assets: ["apps/dev/public/models/pack"] });
-    expect(existsSync(join(target, "node_modules", ".bin", "tsgo"))).toBe(true);
+    expect(first?.deps).toContain("node_modules");
+    expect(existsSync(tsgoBin(target))).toBe(true);
     expect(realpathSync(join(target, "apps/dev/public/models/pack"))).toBe(realpathSync(join(main, "apps/dev/public/models/pack")));
 
     const second = ensureWorktreeReady(target, { ignored: () => { throw new Error("second call must not list ignored files"); } });
@@ -131,7 +142,7 @@ describe("readiness for a worktree nobody linked", () => {
   test("installs only when the locks differ, and links nothing from the stale store", () => {
     writeFileSync(join(target, "bun.lock"), "lock-v2");
     mkdirSync(join(target, "node_modules", ".bin"), { recursive: true });
-    writeFileSync(join(target, "node_modules", ".bin", "tsgo"), "");
+    writeFileSync(tsgoBin(target), "");
     rmSync(join(target, "node_modules"), { recursive: true, force: true });
     let installed = 0;
     const result = ensureWorktreeReady(target, {
@@ -139,11 +150,29 @@ describe("readiness for a worktree nobody linked", () => {
       install: (dir) => {
         installed += 1;
         expect(dir).toBe(target);
-        write(join(target, "node_modules", ".bin", "tsgo"));
+        write(tsgoBin(target));
       },
     });
     expect(installed).toBe(1);
     expect(result).toMatchObject({ installed: true, deps: [] });
+  });
+
+  test("a linked tree whose lock moved on gets its own install, and the main store is untouched", () => {
+    expect(ensureWorktreeReady(target, { ignored })?.deps).toContain("node_modules");
+    writeFileSync(join(target, "bun.lock"), "lock-v2");
+    let installed = 0;
+    const result = ensureWorktreeReady(target, {
+      ignored,
+      install: () => {
+        installed += 1;
+        expect(lstatSync(join(target, "node_modules"), { throwIfNoEntry: false })).toBeUndefined();
+        write(tsgoBin(target));
+      },
+    });
+    expect(installed).toBe(1);
+    expect(result).toMatchObject({ installed: true, deps: [] });
+    expect(lstatSync(join(target, "node_modules")).isSymbolicLink()).toBe(false);
+    expect(existsSync(tsgoBin(main))).toBe(true);
   });
 
   test("the main checkout itself is left alone", () => {

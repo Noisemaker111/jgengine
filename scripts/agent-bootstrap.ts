@@ -12,6 +12,8 @@
 import { existsSync, readdirSync, readFileSync, rmSync, statSync, unlinkSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 
+import { hasInstall } from "./checkout-ready";
+
 const root = process.cwd();
 const checkOnly = process.argv.includes("--check");
 const withBuild = process.argv.includes("--build");
@@ -26,8 +28,7 @@ const coreSrc = join(coreRoot, "src");
 const coreDist = join(coreRoot, "dist");
 
 function hasTsgo(): boolean {
-  return existsSync(join(root, "node_modules", ".bin", "tsgo"))
-    || existsSync(join(root, "node_modules", ".bin", "tsgo.exe"));
+  return hasInstall(root);
 }
 
 function coreDistPresent(): boolean {
