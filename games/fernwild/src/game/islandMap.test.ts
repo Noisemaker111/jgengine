@@ -11,6 +11,7 @@ import { BAG, BAG_SLOTS, HOTBAR, HOTBAR_SLOTS } from "./bags";
 import { islandBake, islandMarks } from "./islandMap";
 
 function runner(): HeadlessRunner {
+  const loop = { onNewPlayer };
   const definition = defineGameDefinition({
     name: "Fernwild (map test)",
     multiplayer: "off",
@@ -18,9 +19,9 @@ function runner(): HeadlessRunner {
     inventories: { [BAG]: { slots: BAG_SLOTS, traits: itemTraits }, [HOTBAR]: { slots: HOTBAR_SLOTS, traits: itemTraits } },
     systems,
     newGame: survivorStart,
-    loop: { onNewPlayer },
+    loop,
   });
-  return createHeadlessRunner({ definition, content, loop: definition.loop!, playerMovement: true });
+  return createHeadlessRunner({ definition, content, loop, playerMovement: true });
 }
 
 test("the map marks every unread note, the three obelisks and the eight cave mouths", () => {
@@ -40,6 +41,7 @@ test("the map's ground is baked from the island: a PNG spanning the whole square
   expect(bake.mapBounds).toEqual({ minX: -1650, minZ: -1650, maxX: 1650, maxZ: 1650 });
   // The corners are open sea and the start beach is land, so the bake reads the real ground.
   expect(game.ctx.world.groundHeightAt(-1600, -1600)).toBeLessThan(0);
-  const me = game.ctx.scene.entity.get(game.ctx.player.userId)!;
-  expect(game.ctx.world.groundHeightAt(me.position[0], me.position[2])).toBeGreaterThan(0);
+  const at = game.ctx.scene.entity.get(game.ctx.player.userId)?.position;
+  expect(at).toBeDefined();
+  expect(game.ctx.world.groundHeightAt(at?.[0] ?? -1600, at?.[2] ?? -1600)).toBeGreaterThan(0);
 });

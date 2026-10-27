@@ -137,7 +137,8 @@ export function nearestUnreadNote(ctx: GameContext, from: readonly [number, numb
 export function dossierView(ctx: GameContext) {
   const dossier = dossierOf(ctx);
   const count = (kind: Kind) => dossier.codex.list(kind).filter((entry) => entry.discovered).length;
-  const reading = dossier.reading === null ? null : NOTES.find((note) => note.at === dossier.reading!.id) ?? null;
+  const open = dossier.reading;
+  const reading = open === null ? null : NOTES.find((note) => note.at === open.id) ?? null;
   return {
     species: { seen: count("species"), total: dossier.codex.list("species").length },
     items: { seen: count("item"), total: dossier.codex.list("item").length },

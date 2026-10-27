@@ -8,6 +8,8 @@ type Sight = "point" | "tree" | "rock" | "bush" | "prey" | "campfire" | "mortar"
 
 /** The number keys, by the hotbar key they take in hand (Digit0 is the tenth). */
 const DIGITS = ["Digit0", "Digit1", "Digit2", "Digit3", "Digit4", "Digit5", "Digit6", "Digit7", "Digit8", "Digit9"] as const;
+/** The number key for hotbar key `n` (1-9, and 10 is Digit0). */
+const digit = (n: number): (typeof DIGITS)[number] => DIGITS[n % 10] ?? "Digit0";
 
 /** Metres a walking survivor covers in a second. */
 const WALK = 4.9;
@@ -112,7 +114,7 @@ async function hand(f: Flow<Probe>, key: (p: Probe) => number): Promise<void> {
   const want = key(p);
   if (want === p.holding) return;
   // A number key takes that slot in hand; pressing the held slot's number again puts it away.
-  await f.press(DIGITS[(want === 0 ? p.holding : want) % 10]!);
+  await f.press(digit(want === 0 ? p.holding : want));
   await f.waitFor((q) => q.holding === want, { timeoutMs: 2000, note: `hotbar key ${want} in hand` });
 }
 const bare = (): number => 0;
@@ -129,7 +131,7 @@ async function placePiece(f: Flow<Probe>, maxLift = 1.5, look: readonly number[]
   const inBag = await f.probe();
   if (inBag.pieceSlot >= 0) await f.command("shuttle", { inventoryId: "inventory", slot: inBag.pieceSlot });
   const onBar = await f.waitFor((p) => p.pieceKey > 0, { timeoutMs: 2000, note: "the piece is on the hotbar" });
-  if (onBar.holding !== onBar.pieceKey) await f.press(DIGITS[onBar.pieceKey % 10]!);
+  if (onBar.holding !== onBar.pieceKey) await f.press(digit(onBar.pieceKey));
   const headings = look.length > 0 ? look : [onBar.yaw];
   let found = false;
   for (let attempt = 0; attempt < 6 && !found; attempt += 1) {

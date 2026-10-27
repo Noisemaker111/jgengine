@@ -36,9 +36,10 @@ export const ISLAND_MARKS: Record<string, MarkerKindStyle> = {
 
 const fixed = perContext((_ctx: GameContext): MarkerView[] => [
   ...markersOfKind(editorLayers, "obelisk").map((marker) => ({ id: `obelisk:${marker.id}`, kind: "obelisk", label: `${String(marker.meta?.["color"] ?? "")} obelisk`.trim(), position: [marker.position.x, 0, marker.position.z] as const })),
-  ...editorLayers.paths
-    .filter((path) => path.kind === "cave" && path.points[0] !== undefined)
-    .map((path) => ({ id: `cave:${path.id}`, kind: "cave", label: path.label ?? path.id, position: [path.points[0]!.x, 0, path.points[0]!.z] as const })),
+  ...editorLayers.paths.flatMap((path) => {
+    const mouth = path.kind === "cave" ? path.points[0] : undefined;
+    return mouth === undefined ? [] : [{ id: `cave:${path.id}`, kind: "cave", label: path.label ?? path.id, position: [mouth.x, 0, mouth.z] as const }];
+  }),
 ]);
 
 export function islandMarks(ctx: GameContext): MarkerView[] {
