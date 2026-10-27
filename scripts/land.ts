@@ -1007,42 +1007,51 @@ export interface PrRef {
   url: string;
 }
 
-/** Replace a PR's body (or rewrite it from the current one), leaving it alone when it already reads the same. */
-export function updatePrBody(
+/**
+ * Replace a PR's body (or rewrite it from the current one) and, when given, its title, leaving each
+ * alone when it already reads the same.
+ */
+export function updatePr(
   number: number,
-  next: string | ((current: string) => string),
+  next: { body: string | ((current: string) => string); title?: string },
   gh: Gh,
   log = (line: string) => console.log(`land: ${line}`),
 ): boolean {
-  const view = gh(["pr", "view", String(number), "--json", "body"]);
+  const view = gh(["pr", "view", String(number), "--json", "body,title"]);
   if (view.status !== 0) {
     console.error(`land: gh pr view #${number} failed: ${details(view)}`);
     return false;
   }
-  let current = "";
+  let current: { body?: string; title?: string } = {};
   try {
-    current = (JSON.parse(view.stdout) as { body?: string }).body ?? "";
+    current = JSON.parse(view.stdout) as { body?: string; title?: string };
   } catch (error) {
     console.error(`land: unreadable gh pr view output for #${number}: ${String(error)}`);
     return false;
   }
-  const text = typeof next === "string" ? next : next(current);
-  if (current.trim() === text.trim()) {
-    log(`PR #${number} body is already the one given`);
+  const currentBody = current.body ?? "";
+  const body = typeof next.body === "string" ? next.body : next.body(currentBody);
+  const edit: string[] = [];
+  if (currentBody.trim() !== body.trim()) edit.push("--body", body);
+  if (next.title !== undefined && next.title.trim() !== "" && (current.title ?? "").trim() !== next.title.trim()) edit.push("--title", next.title);
+  const changed = [edit.includes("--body") ? "body" : null, edit.includes("--title") ? "title" : null].filter((part) => part !== null).join(" and ");
+  if (edit.length === 0) {
+    log(`PR #${number} already reads as given`);
     return true;
   }
-  const edited = gh(["pr", "edit", String(number), "--body", text]);
+  const edited = gh(["pr", "edit", String(number), ...edit]);
   if (edited.status !== 0) {
-    console.error(`land: could not update PR #${number} body: ${details(edited)}`);
+    console.error(`land: could not update PR #${number} ${changed}: ${details(edited)}`);
     return false;
   }
-  log(`updated PR #${number} body`);
+  log(`updated PR #${number} ${changed}`);
   return true;
 }
 
 /**
- * Reuse the open PR for `branch`, or open one. A reused PR gets the body land was given written over
- * its old one, so a body left from an earlier run cannot keep a check that reads it red.
+ * Reuse the open PR for `branch`, or open one. A reused PR gets the body and title land was given
+ * written over its old ones, so a body left from an earlier run cannot keep a check that reads it red
+ * and a title cannot describe work the branch no longer is.
  */
 export function ensurePr(options: {
   args: Pick<LandArgs, "base" | "title" | "bodyFile">;
@@ -1064,9 +1073,11 @@ export function ensurePr(options: {
   const existing = open[0];
   if (existing !== undefined) {
     log(`reusing PR #${existing.number} ${existing.url}`);
-    if (body.explicit && !updatePrBody(existing.number, body.text, runGh, log)) return null;
+    // A body land was given (`--body-file`, or `-m` lines that rewrote the note) rewrites the title too,
+    // so a re-close never leaves the first run's title over the new description.
+    if (body.explicit && !updatePr(existing.number, { body: body.text, title: args.title ?? summary }, runGh, log)) return null;
     // A reused PR keeps its body, but its Bends section is rewritten from the diff it now carries.
-    if (!body.explicit && body.bends !== undefined && !updatePrBody(existing.number, (current) => withBends(current, body.bends!), runGh, log)) {
+    if (!body.explicit && body.bends !== undefined && !updatePr(existing.number, { body: (current) => withBends(current, body.bends!) }, runGh, log)) {
       return null;
     }
     return existing;
