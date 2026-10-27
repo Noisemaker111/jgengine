@@ -54,5 +54,10 @@ export default defineFlow(game, {
     await f.press("KeyX");
     await f.press("KeyL");
     await f.expectPage("(() => { const m = /Today.{0,2}s sales\\s*\\$([\\d,]+)/.exec(document.body.innerText); return m === null ? -1 : Number(m[1].replace(/,/g, '')); })() > 0", "economy: guests paid at the gate, the same ledger the books read");
+    await f.expectPage("(() => { const m = /Gate tickets\\s*\\$([\\d,]+)/.exec(document.querySelector('.bw-side')?.innerText ?? ''); return m === null ? -1 : Number(m[1].replace(/,/g, '')); })() > 0", "books: the month's report counts gate tickets on their own line");
+    await f.click("Leaflets in town");
+    await f.waitForPage("document.querySelector('.bw-side')?.innerText.includes('left') === true", { timeoutMs: 5000 });
+    await f.expectPage("(() => { const m = /Marketing\\s*−\\$([\\d,]+)/.exec(document.querySelector('.bw-side')?.innerText ?? ''); return m === null ? -1 : Number(m[1].replace(/,/g, '')); })() > 0", "marketing: a campaign is paid up front, shows on the books and counts down its days");
+    await f.shot("brightway-books");
   },
 });

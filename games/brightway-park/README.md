@@ -10,13 +10,14 @@ rating climbing, and keep the crew on the breakdowns. Runs on engine source; sta
 Read from `src/game/{park,catalog,objects,sim,scenarios,milestones,rides}`; the park is one declaration in `park.ts`. Numbers are what the build does now.
 
 - **Core loop.** A new park is an empty lot with a two-tile plaza inside a shut gate, $10,000 in the
-  till and $10,000 owed to the bank at 0.8% a day, a 150-second day starting at 09:00. The player
+  till and $10,000 owed to the bank at 4% a month, a 150-second day starting at 09:00 on 1 March;
+  a month is eight days (20 minutes at 1x), March to October. The player
   lays a path, builds and connects a ride, then opens the gate (it refuses with no ride running).
   Guests trickle in (about four a minute with one ride, more with rating and appeal) while the gate
   is open and the park is in its hours, pay the entry fee (default $8;
   the more the park is worth, the more they will pay), then pick a ride or a stall by need, mood, the
   wait they can see and the price. Upkeep and wages run by the second; each midnight restocks the
-  stalls (paid per item sold) and takes the loan's interest.
+  stalls (paid per item sold); each month's close takes the loan's interest and files the books.
 - **Progression — four systems.**
   - Twenty-eight rides in five families (gentle 8, thrill 8, water 4, transport 3, coasters 5),
     each with its own excitement, intensity, nausea, capacity, cycle and ticket on the shared ride
@@ -25,8 +26,11 @@ Read from `src/game/{park,catalog,objects,sim,scenarios,milestones,rides}`; the 
   - Money that binds. Every stall and ride has a price the player sets; a guest refuses one more
     than a quarter over what it is worth ("too expensive" counts on the dashboard). Ten shops and
     facilities: burgers, drinks, toilets and the information kiosk at the start, six more in the lab.
-    Borrow or repay in $1,000 steps up to $25,000 in the park books (Books, or L), which show what is
-    owed and the night's interest.
+    Borrow or repay in $1,000 steps up to $25,000 in the park books (Books, or L). The books show
+    this month and last month line by line (gate, rides, shops, awards, borrowing, wages, upkeep,
+    restocking, repairs, research, marketing, interest, building and land, profit).
+  - Marketing. Three campaigns (leaflets $300 for 2 days, posters $800 for 4, radio $2,000 for 6)
+    multiply the guests heading for the gate by 1.5, 1.8 and 2.5 while they run; they stack.
   - A research lab. Four rides, four shops and nine scenery pieces are open at the start; every
     other ride, shop, theme piece and the mechanic bay is a lab topic with its own fee and time, each
     after the one before it in its family.
@@ -47,8 +51,8 @@ Read from `src/game/{park,catalog,objects,sim,scenarios,milestones,rides}`; the 
     makes a long wait easier to bear. U undoes the last build, demolish or land change.
   - Three scenarios. Opening Weekend, Star Attraction and Full House, each a timed objective on the
     shared mission runtime with its own fail states, reward and fresh-park replay.
-- **Failure states.** A day that ends in the red counts toward bankruptcy; three days in the red
-  closes the park for good. A breakdown takes its ride offline until its queued repair lands, so a
+- **Failure states.** A month that closes in the red is a warning; two in a row close the park
+  for good. A breakdown takes its ride offline until its queued repair lands, so a
   park that skips servicing loses its queue and its rating with it. A scenario that misses its clock
   fails in its own named state rather than ending free play.
 - **Minute 5 → hour 5.** The 30-minute balance bot (`bun scripts/balance.ts 30`) spends the opening

@@ -4,7 +4,9 @@ import { createHeadlessRunner } from "@jgengine/core/runtime/headlessRunner";
 import { game } from "../game.config";
 import { DAY_LENGTH } from "./catalog";
 import { BUILDABLES } from "./objects/catalog";
-import { cellFor, LOAN, park, parkMetrics, QUICK_REPAIR } from "./park";
+import { CAMPAIGNS, MONTH_DAYS } from "./books";
+import { cellFor, LOAN, marketingBoost, park, parkMetrics, QUICK_REPAIR } from "./park";
+import { demand } from "./sim/rating";
 import { forceBreakdown } from "./capture";
 import { connectPark } from "./build/links";
 import { rideView } from "./rides";
@@ -145,7 +147,7 @@ describe("Brightway Park as one declaration", () => {
     expect(order.remaining).toBeCloseTo(Math.round(BUILDABLES.ride_carousel!.ride!.breakdown.repairSeconds * QUICK_REPAIR), 0);
   });
 
-  test("the park opens in debt; borrowing is an action, interest is a nightly ripple; midnight restocks the stalls", () => {
+  test("the park opens in debt; borrowing is an action; midnight restocks the stalls; the month's close charges interest and files the books", () => {
     const { runner, w } = openPark();
     expect(w.num("park.loan_owed")).toBe(LOAN.start);
     const cash = w.num("park.cash");
@@ -156,23 +158,54 @@ describe("Brightway Park as one declaration", () => {
     while (w.num("park.loan_owed") < LOAN.max) runner.ctx.game.commands.run("brightway.act", { action: "take_loan" });
     expect(runner.ctx.game.commands.run("brightway.act", { action: "take_loan" }).status).toBe("rejected");
     const owed = w.num("park.loan_owed");
-    const interest = Math.round(owed * LOAN.dailyRate);
+    expect(w.num("month.loan")).toBe(owed - LOAN.start);
 
-    const stall = w.instances("stall_food")[0]!.id;
+    const stall = w.instances("stall_food")[0]?.id ?? "";
     w.change({ [`${stall}.sold`]: 10 });
-    const restock = BUILDABLES.stall_food!.stall!.restock * 10;
+    const restock = (BUILDABLES.stall_food?.stall?.restock ?? 0) * 10;
     const tillBefore = w.num("park.cash");
     closeDay(runner.ctx);
     expect(w.num(`${stall}.sold`)).toBe(0);
-    expect(w.num("park.loan_owed")).toBe(owed);
-    expect(w.num("park.cash")).toBe(tillBefore - restock - interest);
-    expect(w.num("park.upkeep_yesterday")).toBeGreaterThanOrEqual(restock + interest);
+    // No interest at midnight: the bank charges when the month closes.
+    expect(w.num("park.cash")).toBe(tillBefore - restock);
+    expect(w.num("park.upkeep_yesterday")).toBeGreaterThanOrEqual(restock);
     expect(w.num("park.day")).toBe(2);
+    expect(w.num("month.restock")).toBe(restock);
 
     // Paying early is the same instalment, from the till, on demand.
     expect(runner.ctx.game.commands.run("brightway.act", { action: "repay_loan" }).status).toBe("applied");
     expect(w.num("park.loan_owed")).toBe(owed - LOAN.step);
+    expect(w.num("month.loan")).toBe(owed - LOAN.start - LOAN.step);
+
+    const interest = Math.round((owed - LOAN.step) * LOAN.monthlyRate);
+    const beforeClose = w.num("park.cash");
+    while (w.num("park.day") <= MONTH_DAYS) closeDay(runner.ctx);
+    expect(w.num("park.cash")).toBe(beforeClose - interest);
+    expect(w.num("report.month")).toBe(0);
+    expect(w.num("report.interest")).toBe(interest);
+    expect(w.num("report.restock")).toBe(restock);
+    expect(w.num("report.loan")).toBe(owed - LOAN.start - LOAN.step);
+    // The new month starts its lines at zero, from the till as it stands.
+    expect(w.num("month.interest")).toBe(0);
+    expect(w.num("month.cash_start")).toBe(w.num("park.cash"));
+    expect(w.num("report.profit")).toBe(w.num("park.cash") - cash);
   });
+
+  test("a marketing campaign is paid up front, brings more guests while it runs, and one of each runs at a time", () => {
+    const { runner, w } = openPark();
+    const campaign = CAMPAIGNS[0];
+    if (campaign === undefined) throw new Error("no campaigns");
+    expect(marketingBoost(w)).toBe(1);
+    const cash = w.num("park.cash");
+    expect(runner.ctx.game.commands.run("brightway.act", { action: campaign.id }).status).toBe("applied");
+    expect(w.num("park.cash")).toBe(cash - campaign.cost);
+    expect(w.num("month.marketing")).toBe(campaign.cost);
+    expect(marketingBoost(w)).toBe(1 + campaign.boost);
+    expect(demand(20, 8, 100, true, marketingBoost(w))).toBeGreaterThan(demand(20, 8, 100, true));
+    expect(runner.ctx.game.commands.run("brightway.act", { action: campaign.id }).status).toBe("rejected");
+    runner.step(campaign.days * DAY_LENGTH + 2);
+    expect(marketingBoost(w)).toBe(1);
+  }, 30_000);
 
   test("ride and entry prices are world facts the actions move inside their bounds", () => {
     const { runner, w } = openPark();

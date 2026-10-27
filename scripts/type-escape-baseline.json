@@ -149,7 +149,7 @@
   "games/brightway-park/src/game/entities/guests/catalog.ts": {"nonNull":1},
   "games/brightway-park/src/game/milestones.test.ts": {"nonNull":4},
   "games/brightway-park/src/game/models.ts": {"nonNull":1},
-  "games/brightway-park/src/game/park.test.ts": {"nonNull":11},
+  "games/brightway-park/src/game/park.test.ts": {"nonNull":8},
   "games/brightway-park/src/game/park.ts": {"nonNull":12,"cast":2},
   "games/brightway-park/src/game/persistence.test.ts": {"nonNull":9,"cast":2},
   "games/brightway-park/src/game/persistence.ts": {"cast":1},

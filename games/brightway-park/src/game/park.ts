@@ -16,6 +16,7 @@ import { LOT, sizeOf } from "./lot";
 import { FLAT_LAND, LAND_FACT } from "./build/terrain";
 import { BUILDABLES, BUILD_IDS, buildableDef, THEME_CAP, type BuildableDef } from "./objects/catalog";
 import { SCENARIOS } from "./scenarios";
+import { BOOK_LINES, CAMPAIGNS } from "./books";
 import { despawnObject, dispatchCrew, landed, scenarioEnded, spawnObject } from "./parkScene";
 
 /**
@@ -33,9 +34,15 @@ export { LOT, sizeOf };
 
 /**
  * The bank: the park opens owing `start`, may borrow up to `max` in steps of `step`, and pays
- * `dailyRate` interest on what it owes every midnight.
+ * `monthlyRate` interest on what it owes when each month closes.
  */
-export const LOAN = { start: 10_000, max: 25_000, step: 1_000, dailyRate: 0.008 } as const;
+export const LOAN = { start: 10_000, max: 25_000, step: 1_000, monthlyRate: 0.04 } as const;
+
+/** This month's running total for a line of the books, and the last closed month's. */
+export const monthLine = (id: string): string => `month.${id}`;
+export const reportLine = (id: string): string => `report.${id}`;
+/** A campaign's running count (1 while it runs). */
+export const campaignFact = (id: string): string => `ads.${id}`;
 
 const ride = (def: BuildableDef) => def.ride !== undefined;
 
@@ -108,12 +115,13 @@ export const QUICK_REPAIR = 0.65;
 
 function rideActions(def: BuildableDef): Record<string, WorldActionDecl> {
   const ride = def.ride!;
+  // Spending lands on the month's books when it is paid: up front, with the cost.
   const repair = (takes: number, when: WorldActionDecl["when"]): WorldActionDecl => ({
     label: `Repair ${def.label}`,
     on: def.id,
     ...(when === undefined ? {} : { when }),
     whenTarget: { broken: true },
-    cost: { "park.cash": -ride.breakdown.repairCost },
+    cost: { "park.cash": -ride.breakdown.repairCost, [monthLine("repairs")]: ride.breakdown.repairCost },
     world: { "park.spent_today": ride.breakdown.repairCost },
     takes,
     queue: "crew",
@@ -129,7 +137,7 @@ function rideActions(def: BuildableDef): Record<string, WorldActionDecl> {
       on: def.id,
       whenTarget: { broken: false },
       cost: { "park.cash": -ride.breakdown.serviceCost },
-      world: { "park.spent_today": ride.breakdown.serviceCost },
+      world: { "park.spent_today": ride.breakdown.serviceCost, [monthLine("repairs")]: ride.breakdown.serviceCost },
       note: "Serviced the {target}: its wear is cleared.",
     },
     [`price_up_${def.id}`]: { label: `Raise the ${def.label} ticket`, world: { [`price.${def.id}`]: 1 } },
@@ -148,7 +156,7 @@ function stallActions(def: BuildableDef): Record<string, WorldActionDecl> {
       on: def.id,
       scaleBy: "sold",
       cost: { "park.cash": -stall.restock },
-      world: { "park.spent_today": stall.restock },
+      world: { "park.spent_today": stall.restock, [monthLine("restock")]: stall.restock },
       effect: { sold: -stall.stock },
     },
   };
@@ -177,7 +185,7 @@ const actions: Record<string, WorldActionDecl> = {
     label: `Borrow $${LOAN.step.toLocaleString()}`,
     when: { "park.loan_owed": { atMost: LOAN.max - LOAN.step } },
     refuse: `The bank won't lend more than $${LOAN.max.toLocaleString()}`,
-    world: { "park.cash": LOAN.step, "park.loan_owed": LOAN.step },
+    world: { "park.cash": LOAN.step, "park.loan_owed": LOAN.step, [monthLine("loan")]: LOAN.step },
     note: `Borrowed $${LOAN.step.toLocaleString()} from the bank`,
   },
   repay_loan: {
@@ -185,7 +193,7 @@ const actions: Record<string, WorldActionDecl> = {
     when: { "park.loan_owed": { atLeast: LOAN.step } },
     refuse: "The park owes the bank nothing",
     cost: { "park.cash": -LOAN.step },
-    world: { "park.loan_owed": -LOAN.step },
+    world: { "park.loan_owed": -LOAN.step, [monthLine("loan")]: -LOAN.step },
     note: `Paid $${LOAN.step.toLocaleString()} back to the bank`,
   },
 };
@@ -201,13 +209,58 @@ function researchAction(def: BuildableDef): WorldActionDecl {
     label: `Research ${def.label}`,
     when: { [researched(def.id)]: false, ...(after === undefined || BUILDABLES[after]?.research === undefined ? {} : { [researched(after)]: true }) },
     refuse: after === undefined ? `${def.label} is already researched` : `Research the ${BUILDABLES[after]!.label} first`,
-    cost: { "park.cash": -research.cost },
+    cost: { "park.cash": -research.cost, [monthLine("research")]: research.cost },
     takes: research.seconds,
     queue: "lab",
     world: { [researched(def.id)]: true, "park.spent_today": research.cost },
     note: `Research complete: the ${def.label} can now be built`,
   };
 }
+
+/**
+ * Marketing: a campaign is paid up front and runs its days in the `ads` queue; while it runs its
+ * `ads.<id>` is 1 and it brings more guests to the gate (`marketingBoost`). One of each at a time.
+ */
+for (const campaign of CAMPAIGNS) {
+  actions[campaign.id] = {
+    label: campaign.label,
+    when: { [campaignFact(campaign.id)]: { atMost: 0 } },
+    refuse: `The ${campaign.label.toLowerCase()} campaign is already running`,
+    cost: { "park.cash": -campaign.cost, [monthLine("marketing")]: campaign.cost, [campaignFact(campaign.id)]: 1 },
+    takes: campaign.days * DAY_LENGTH,
+    queue: "ads",
+    world: { [campaignFact(campaign.id)]: -1 },
+    note: `The ${campaign.label.toLowerCase()} campaign has finished`,
+  };
+}
+
+/** How much running campaigns multiply the guests heading for the gate: 1 with none. */
+export function marketingBoost(w: WorldModel): number {
+  let boost = 1;
+  for (const campaign of CAMPAIGNS) if (w.num(campaignFact(campaign.id)) > 0) boost += campaign.boost;
+  return boost;
+}
+
+/** Money in less money out across every line of the books, this month (`monthLine`) or last (`reportLine`). */
+export function linesNet(w: WorldModel, lineFact: (id: string) => string): number {
+  let net = 0;
+  for (const line of BOOK_LINES) net += (line.income ? 1 : -1) * w.num(lineFact(line.id));
+  return net;
+}
+
+/** The books' facts: every line this month and last month, the campaigns, and the month's opening till. */
+const bookFacts: Record<string, WorldFactsDecl[string]> = {
+  "month.cash_start": STARTING_CASH,
+  "report.building": 0,
+  "report.profit": 0,
+  // Which month the report is for (-1: none closed yet).
+  "report.month": -1,
+};
+for (const line of BOOK_LINES) {
+  bookFacts[monthLine(line.id)] = 0;
+  bookFacts[reportLine(line.id)] = 0;
+}
+for (const campaign of CAMPAIGNS) bookFacts[campaignFact(campaign.id)] = 0;
 const totals: Record<string, WorldTotalDecl> = {
   // Across every kind by its category tag: the dashboard's counts.
   "park.rides": { of: "ride" },
@@ -245,8 +298,12 @@ for (const id of BUILD_IDS) {
     // Upkeep and wages run by the second through the day, and the day's bill keeps count.
     flows[`upkeep_${id}`] = { to: "park.cash", from: `n.${id}`, rate: -def.upkeep / DAY_LENGTH };
     flows[`bill_${id}`] = { to: "park.spent_today", from: `n.${id}`, rate: def.upkeep / DAY_LENGTH };
+    flows[`book_${id}`] = { to: monthLine(def.category === "staff" ? "wages" : "upkeep"), from: `n.${id}`, rate: def.upkeep / DAY_LENGTH };
   }
 }
+
+/** What every payment from a guest adds to: the till, the day's takings and the scenario's. */
+const takings = { "park.cash": 1, "park.revenue_today": 1, "park.scenario_revenue": 1 };
 
 const jobs = Object.fromEntries(
   SCENARIOS.map((scenario) => [scenario.id, { title: scenario.title, mission: scenario.mission, kind: "side" as const, repeatable: true, pitch: scenario.goal }]),
@@ -283,7 +340,8 @@ export const park = defineGameSpec({
           gate: false,
           open: false,
           loan_owed: { value: LOAN.start, min: 0 },
-          bankrupt_days: 0,
+          // Month-ends in a row the till closed in the red: the second closes the park.
+          red_months: 0,
           game_over: false,
           won: false,
           win_dismissed: false,
@@ -294,28 +352,30 @@ export const park = defineGameSpec({
         },
       },
     },
-    facts: { ...prices, "scenario.id": "", "scenario.result": "", "scenario.reason": "" },
+    facts: { ...prices, ...bookFacts, "scenario.id": "", "scenario.result": "", "scenario.reason": "" },
     grids: { lot: LOT },
     kinds,
     actions,
     totals,
     flows,
-    queues: { crew: { lanes: 2 }, lab: { lanes: 1, capacity: 4 } },
+    queues: { crew: { lanes: 2 }, lab: { lanes: 1, capacity: 4 }, ads: { lanes: CAMPAIGNS.length, capacity: CAMPAIGNS.length } },
     ripples: {
-      // A guest through the turnstile; the ticket is paid with `pay`.
+      // A guest through the turnstile; the ticket is paid with `pay_gate`.
       admit: { world: { "park.guests": 1, "park.guests_today": 1, "park.scenario_visitors": 1 } },
-      // Any money a guest hands over - gate, ride or stall - scaled by the amount.
-      pay: { world: { "park.cash": 1, "park.revenue_today": 1, "park.scenario_revenue": 1 } },
+      // Money a guest hands over at the gate, a ride or a shop, scaled by the amount.
+      pay_gate: { world: { ...takings, [monthLine("gate")]: 1 } },
+      pay_ride: { world: { ...takings, [monthLine("rides")]: 1 } },
+      pay_shop: { world: { ...takings, [monthLine("shops")]: 1 } },
       leave: { world: { "park.guests": -1 } },
       breakdown: { world: { "park.buzz": -15, "park.breakdowns": 1 }, note: "A ride broke down - the crowd groans", hook: "dispatch_crew" },
       repaired: { world: { "park.buzz": 6 } },
-      // Midnight's interest on the loan, scaled by what it comes to.
+      // The month's interest on the loan, scaled by what it comes to.
       interest: {
         when: { "park.loan_owed": { atLeast: 1 } },
-        world: { "park.cash": -1, "park.spent_today": 1, "park.interest_paid": 1 },
+        world: { "park.cash": -1, "park.spent_today": 1, "park.interest_paid": 1, [monthLine("interest")]: 1 },
       },
-      // A rating award, scaled by its prize.
-      award: { world: { "park.cash": 1 } },
+      // A rating award or a scenario's prize, scaled by the money.
+      award: { world: { "park.cash": 1, [monthLine("awards")]: 1 } },
       // A guest who wanted something but wouldn't pay the price.
       refused_price: { world: { "park.price_complaints": 1 } },
     },
@@ -334,7 +394,7 @@ export const park = defineGameSpec({
   onLanded: (ctx, action, target) => landed(ctx, action, target),
   onReward: (ctx, rewards) => {
     const cash = rewards.economy?.["cash"] ?? 0;
-    if (cash > 0) park.of(ctx).change({ "park.cash": cash });
+    if (cash > 0) park.of(ctx).emit({ kind: "award", scale: cash });
   },
   onJob: (ctx, event) => scenarioEnded(ctx, event),
 });
@@ -482,7 +542,7 @@ export function parkMetrics(w: WorldModel): ParkMetrics {
 export function freshWorld(ctx: GameContext, cash = STARTING_CASH): WorldModel {
   park.store.write(ctx, undefined);
   const w = park.of(ctx);
-  w.change({ "park.cash": cash - STARTING_CASH });
+  w.change({ "park.cash": cash - STARTING_CASH, "month.cash_start": cash - STARTING_CASH });
   return w;
 }
 
