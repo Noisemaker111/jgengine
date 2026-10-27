@@ -7,23 +7,20 @@ import { savePark } from "./persistence";
 import { closeDay } from "./sim/economy";
 
 /**
- * Midnight is a simulation event at the next whole day on the clock. Arming it again (after a load
- * or a fresh park rewinds the clock) retires the chain armed before, so a day never closes twice.
+ * Midnight is a clock event at the next whole day, re-armed from each midnight so it stays on the
+ * day boundary. Arming it again (after a load or a fresh park rewinds the clock) cancels the timer
+ * armed before, so a day never closes twice.
  */
-const chain = perContext(() => ({ generation: 0 }));
+const armed = perContext(() => ({ cancel: () => {} }));
 
 export function armMidnight(ctx: GameContext): void {
-  const generation = ++chain(ctx).generation;
-  schedule(ctx, generation);
-}
-
-function schedule(ctx: GameContext, generation: number): void {
-  const midnight = (Math.floor(ctx.time.now() / DAY_LENGTH) + 1) * DAY_LENGTH;
-  ctx.time.at(midnight, () => {
-    if (chain(ctx).generation !== generation) return;
+  const slot = armed(ctx);
+  slot.cancel();
+  const nextMidnight = (Math.floor(ctx.time.now() / DAY_LENGTH) + 1) * DAY_LENGTH;
+  slot.cancel = ctx.time.at(nextMidnight, () => {
     const over = () => park.of(ctx).fact("park.game_over") === true;
     if (!over()) closeDay(ctx);
     savePark(ctx);
-    if (!over()) schedule(ctx, generation);
+    if (!over()) armMidnight(ctx);
   });
 }
