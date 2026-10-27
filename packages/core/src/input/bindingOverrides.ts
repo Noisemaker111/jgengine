@@ -1,4 +1,4 @@
-import type { ActionCodes, ActionCodesMap } from "./actionBindings";
+import { isActionLocked, type ActionCodes, type ActionCodesMap } from "./actionBindings";
 
 /**
  * Player-rebound keys, keyed by action name. Values mirror an `ActionCodes`
@@ -110,7 +110,8 @@ export function clearAllBindingOverrides(
 /**
  * Merge player rebinds over a game's authored `input` map. Only actions the
  * game already declares can be overridden; unknown override keys are ignored so
- * a stale localStorage entry can't inject phantom actions.
+ * a stale localStorage entry can't inject phantom actions, and overrides for
+ * `locked` actions are ignored so a saved entry can't rebind them.
  */
 export function applyBindingOverrides<TAction extends string, TCode extends string>(
   input: ActionCodesMap<TAction, TCode>,
@@ -119,6 +120,7 @@ export function applyBindingOverrides<TAction extends string, TCode extends stri
   if (Object.keys(overrides).length === 0) return input;
   const result = { ...input };
   for (const action of Object.keys(input) as TAction[]) {
+    if (isActionLocked(input[action])) continue;
     const override = overrides[action];
     if (override !== undefined) result[action] = override as ActionCodes<TCode>;
   }

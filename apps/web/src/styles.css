@@ -407,3 +407,56 @@ body {
 .tok-keyword {
   color: var(--jg-code-keyword);
 }
+
+/* A code line the demo is running right now, and one a slider just rewrote. */
+.code-line {
+  margin: 0 -1rem;
+  padding: 0 1rem 0 calc(1rem - 2px);
+  border-left: 2px solid transparent;
+  transition: background-color 260ms ease, border-color 260ms ease;
+}
+.code-line.is-lit {
+  background: color-mix(in oklab, var(--jg-accent) 14%, transparent);
+  border-left-color: var(--jg-accent);
+  transition-duration: 60ms;
+}
+.code-line.is-changed {
+  animation: code-changed 1.4s ease-out;
+}
+@keyframes code-changed {
+  from {
+    background: color-mix(in oklab, var(--jg-live) 30%, transparent);
+  }
+  to {
+    background: transparent;
+  }
+}
+
+/* A pulsing ring and note that point at the next thing to try in a demo. */
+.nudge-ring {
+  box-shadow: 0 0 0 2px var(--jg-accent);
+  border-radius: 0.5rem;
+  animation: nudge-pulse 1.6s ease-in-out infinite;
+}
+@keyframes nudge-pulse {
+  0%,
+  100% {
+    box-shadow: 0 0 0 2px color-mix(in oklab, var(--jg-accent) 90%, transparent);
+  }
+  50% {
+    box-shadow: 0 0 0 5px color-mix(in oklab, var(--jg-accent) 25%, transparent);
+  }
+}
+.nudge-arrow {
+  display: inline-block;
+  animation: nudge-bob 0.9s ease-in-out infinite;
+}
+@keyframes nudge-bob {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(3px);
+  }
+}

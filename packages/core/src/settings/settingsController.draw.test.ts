@@ -3,7 +3,25 @@ import { expect, test } from "bun:test";
 import type { PostProcessingConfig } from "@jgengine/core/render/postProcessing";
 import { createSettingsStore } from "@jgengine/core/settings/settingsModel";
 
-import { graphicsSettingRows } from "./settingsController.draw";
+import { graphicsSettingRows, keybindSettingRows } from "./settingsController.draw";
+
+test("a locked action's controls row is locked and keeps its authored key over a saved override", () => {
+  const rows = keybindSettingRows({
+    input: { jump: ["Space"], fire: { hold: ["mouse0"], locked: true } },
+    overrides: { jump: ["KeyJ"], fire: ["KeyF"] },
+    hideBindings: [],
+    rebind: () => undefined,
+    resetBinding: () => undefined,
+  });
+  const fire = rows.find((row) => row.action === "fire");
+  const jump = rows.find((row) => row.action === "jump");
+  expect(fire?.locked).toBe(true);
+  expect(fire?.isDefault).toBe(true);
+  expect(fire?.bindingLabel).toBeString();
+  expect(fire?.bindingLabel).not.toBe("F");
+  expect(jump?.locked).toBe(false);
+  expect(jump?.bindingLabel).toBe("J");
+});
 
 const rowIds = (postProcessing: PostProcessingConfig | undefined): string[] =>
   graphicsSettingRows(createSettingsStore(null), undefined, postProcessing).map((row) => row.id);

@@ -1,8 +1,15 @@
 import { useDeferredValue, useMemo, useState } from "react";
 
+import type { Capability } from "../lib/capabilityIndex";
 import { CAPABILITIES, SKILL_DOMAINS, domainLabel } from "../lib/capabilities";
+import { demoForSymbols } from "../live/demoParts";
+import { TracedDemo } from "../live/TracedDemo";
 import { CopyButton } from "./Copy";
 import { InlineCode } from "./InlineCode";
+
+function demoOf(row: Capability) {
+  return demoForSymbols(row.exports.map((e) => e.symbol));
+}
 
 const PAGE = 40;
 const REPO_SKILLS = "https://github.com/Noisemaker111/jgengine/blob/main/.claude/skills";
@@ -11,8 +18,11 @@ const REPO_SKILLS = "https://github.com/Noisemaker111/jgengine/blob/main/.claude
 export function CapabilityBrowser() {
   const [query, setQuery] = useState("");
   const [skill, setSkill] = useState<string | null>(null);
+  const [liveOnly, setLiveOnly] = useState(false);
+  const [open, setOpen] = useState<string | null>(null);
   const [limit, setLimit] = useState(PAGE);
   const deferredQuery = useDeferredValue(query);
+  const liveCount = useMemo(() => CAPABILITIES.filter((row) => demoOf(row) !== undefined).length, []);
 
   const counts = useMemo(() => {
     const byskill = new Map<string, number>();
@@ -24,11 +34,12 @@ export function CapabilityBrowser() {
     const terms = deferredQuery.toLowerCase().split(/\s+/).filter(Boolean);
     return CAPABILITIES.filter((row) => {
       if (skill !== null && row.skill !== skill) return false;
+      if (liveOnly && demoOf(row) === undefined) return false;
       if (terms.length === 0) return true;
       const hay = `${row.key} ${row.summary} ${row.exports.map((e) => e.symbol).join(" ")}`.toLowerCase();
       return terms.every((term) => hay.includes(term));
     });
-  }, [deferredQuery, skill]);
+  }, [deferredQuery, skill, liveOnly]);
 
   const shown = matches.slice(0, limit);
 
@@ -73,6 +84,15 @@ export function CapabilityBrowser() {
               count={counts.get(domain.id) ?? 0}
             />
           ))}
+          <FilterChip
+            active={liveOnly}
+            onClick={() => {
+              setLiveOnly(!liveOnly);
+              setLimit(PAGE);
+            }}
+            label="▶ Has a live demo"
+            count={liveCount}
+          />
         </div>
       </div>
 
@@ -92,15 +112,28 @@ export function CapabilityBrowser() {
       <ul className="mt-3 grid gap-2">
         {shown.map((row) => {
           const first = row.exports[0]!;
+          const id = `${row.skill}/${row.key}`;
+          const demo = demoOf(row);
+          const isOpen = demo !== undefined && open === id;
           return (
             <li
-              key={`${row.skill}/${row.key}`}
+              key={id}
               className="grid gap-3 rounded-xl border border-line bg-raised p-4 md:grid-cols-[minmax(0,1fr)_minmax(0,1.15fr)] md:items-center md:gap-6"
             >
               <div className="min-w-0">
                 <p className="flex flex-wrap items-center gap-x-2 gap-y-1">
                   <span className="font-mono text-[13px] font-semibold text-fg">{row.key}</span>
                   <span className="chip !py-0 !text-[10px] uppercase tracking-[0.08em]">{domainLabel(row.skill)}</span>
+                  {demo !== undefined && (
+                    <button
+                      type="button"
+                      aria-expanded={isOpen}
+                      onClick={() => setOpen(isOpen ? null : id)}
+                      className="rounded-full border border-accent/50 px-2.5 py-0.5 font-mono text-[11px] text-accent-text transition-colors hover:bg-accent/10"
+                    >
+                      {isOpen ? "Close demo" : "▶ Try it live"}
+                    </button>
+                  )}
                 </p>
                 <p className="mt-1 text-sm leading-snug text-muted">
                   <InlineCode text={row.summary} />
@@ -114,6 +147,12 @@ export function CapabilityBrowser() {
                 </code>
                 <CopyButton value={first.importLine} label="" ariaLabel={`Copy import for ${first.symbol}`} variant="ghost" className="!px-2" />
               </div>
+              {isOpen && (
+                <div className="min-w-0 md:col-span-2">
+                  <p className="mb-3 text-sm text-muted">{demo.does}</p>
+                  <TracedDemo demo={demo.key} />
+                </div>
+              )}
             </li>
           );
         })}

@@ -1,6 +1,7 @@
 import {
   allActionCodes,
   bindingLabel,
+  isActionLocked,
   isCodeList,
   normalizeKeyCode,
   type ActionCodes,
@@ -19,7 +20,7 @@ export interface RebindActionConfig {
   id: string;
   /** Human label shown in the controls list ("Move Forward"). Free string. */
   label: string;
-  /** The game's authored binding for this action; `reset` returns here. */
+  /** The game's authored binding for this action; `reset` returns here. `locked: true` here makes the row read-only. */
   defaultCodes: ActionCodes;
 }
 
@@ -58,6 +59,8 @@ export interface RebindRow {
   bindingLabel: string;
   /** True when no override is set — the effective binding is the authored default. */
   isDefault: boolean;
+  /** The game marked this action `locked`: capture and reset do nothing and it always shows its default. */
+  locked: boolean;
   /** Other action ids that share a normalized code with this row (the conflict set). */
   conflictWith: string[];
   /** Clock time (ms) this action was last rebound, or `null` if never rebound this session. */
@@ -93,7 +96,7 @@ export interface RebindSession {
   /**
    * Arm capture for an action: the next {@link RebindSession.capture} assigns to
    * it. A React host shows "Press a key…" for the armed action. No-op for an
-   * unknown id.
+   * unknown or locked id.
    */
   beginCapture(actionId: string): void;
   /** The action currently armed for capture, or `null`. */
@@ -195,6 +198,7 @@ export function createRebindSession(config: RebindSessionConfig): RebindSession 
   const defaultMap: ActionCodesMap = {};
   for (const action of actionList) defaultMap[action.id] = action.defaultCodes;
   const knownIds = new Set(actionList.map((a) => a.id));
+  const lockedIds = new Set(actionList.filter((a) => isActionLocked(a.defaultCodes)).map((a) => a.id));
 
   const overrides: BindingOverrides = {};
   const changedAt = new Map<string, number>();
@@ -203,7 +207,7 @@ export function createRebindSession(config: RebindSessionConfig): RebindSession 
 
   function ingestOverrides(source: BindingOverrides): void {
     for (const id of Object.keys(source)) {
-      if (knownIds.has(id)) overrides[id] = source[id]!;
+      if (knownIds.has(id) && !lockedIds.has(id)) overrides[id] = source[id]!;
     }
   }
   if (config.overrides !== undefined) ingestOverrides(config.overrides);
@@ -252,6 +256,7 @@ export function createRebindSession(config: RebindSessionConfig): RebindSession 
         code: primary,
         bindingLabel: primary === null ? "" : bindingLabel(primary),
         isDefault: overrides[action.id] === undefined,
+        locked: lockedIds.has(action.id),
         conflictWith: [...conflictWith],
         changedAt: changedAt.get(action.id) ?? null,
       };
@@ -267,7 +272,7 @@ export function createRebindSession(config: RebindSessionConfig): RebindSession 
       return rows().find((r) => r.actionId === actionId) ?? null;
     },
     beginCapture(actionId) {
-      if (!knownIds.has(actionId) || capturingActionId === actionId) return;
+      if (!knownIds.has(actionId) || lockedIds.has(actionId) || capturingActionId === actionId) return;
       capturingActionId = actionId;
       notify();
     },
@@ -347,7 +352,9 @@ export function createRebindSession(config: RebindSessionConfig): RebindSession 
         if (knownIds.has(id)) changedAt.set(id, at);
       }
       capturingActionId =
-        snapshot.capturingActionId !== null && knownIds.has(snapshot.capturingActionId)
+        snapshot.capturingActionId !== null &&
+        knownIds.has(snapshot.capturingActionId) &&
+        !lockedIds.has(snapshot.capturingActionId)
           ? snapshot.capturingActionId
           : null;
       notify();

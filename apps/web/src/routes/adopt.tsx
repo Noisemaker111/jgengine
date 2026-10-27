@@ -1,7 +1,8 @@
 import { Link, createFileRoute } from "@tanstack/react-router";
 
 import { Page, PageHero, SectionHeading } from "../components/Layout";
-import { CodeBlock } from "../components/marketing";
+import type { DemoKey } from "../live/demoParts";
+import { TracedDemo } from "../live/TracedDemo";
 import { seo } from "../lib/seo";
 
 export const Route = createFileRoute("/adopt")({
@@ -16,84 +17,50 @@ export const Route = createFileRoute("/adopt")({
 });
 
 type Adoption = {
+  demo: DemoKey;
   domain: string;
   title: string;
   blurb: string;
   keep: string;
   get: string;
-  filename: string;
-  code: string;
 };
 
 const ADOPTIONS: Adoption[] = [
   {
+    demo: "minimap",
     domain: "Minimap",
     title: "Render a minimap from the array you already have",
     blurb:
-      "Project your own units into display markers and hand them to the minimap. It reads a static array, a subscribable store, or a native MarkerSet — no copying entities into JGengine.",
-    keep: "Your entity array/ECS/store, your styling and chrome.",
-    get: "A framed minimap with categorized markers and a facing arrow — no GameProvider, no three.js.",
-    filename: "Minimap.tsx",
-    code: `import { Minimap } from "@jgengine/core/map/map.view";
-
-// units are YOUR objects — nothing is mirrored into a JGengine store.
-const markers = units.map((u) => ({ id: u.id, position: [u.x, 0, u.z], kind: u.team }));
-
-<Minimap markers={markers} center={[cam.x, cam.z]} worldRadius={120} />;`,
+      "Map your own units to markers and hand them to the minimap. It reads a plain array, a store you can subscribe to, or the engine's own marker set. Nothing is copied into jgengine.",
+    keep: "Your entity array or store, your styling and frame.",
+    get: "A minimap with marker kinds and a facing arrow, with no game provider and no three.js.",
   },
   {
+    demo: "health",
     domain: "Health & resources",
-    title: "Health, shields, mana — over your own state",
+    title: "Health, shields, mana, over your own state",
     blurb:
-      "A serializable current/max/min pool with a two-method adapter. Nothing privileges “health”; the same primitive drives shields, stamina, durability, or any named resource in the store you already own.",
-    keep: "Where the numbers live — a plain object, Zustand, Redux, an ECS component, a DB row.",
-    get: "Clamped, inspectable pool changes with the exact applied amount and min/max flags.",
-    filename: "health.ts",
-    code: `import { applyStatPoolDelta, createStatPool } from "@jgengine/core/stats/statPool";
-
-const pools = { hero: { health: createStatPool({ current: 80, max: 100 }) } };
-const access = {
-  get: (id, stat) => pools[id]?.[stat] ?? null,
-  set: (id, stat, next) => { pools[id][stat] = next; },
-};
-
-const hit = applyStatPoolDelta(access, "hero", "health", -12); // hit.applied === -12`,
+      "A current, max and min pool with a two-method adapter. Nothing is special about health: the same pool runs shields, stamina, durability or any resource in the store you already have.",
+    keep: "Where the numbers live: a plain object, Zustand, Redux, an ECS component, a database row.",
+    get: "Changes that come back clamped, with the amount really applied and whether it hit 0 or the max.",
   },
   {
+    demo: "damage",
     domain: "Damage",
-    title: "Resolve a hit, keep the provenance",
+    title: "Resolve a hit and keep how it got there",
     blurb:
-      "A pure, deterministic damage resolver: channel-vs-trait matchup, receiver modifiers, and a status roll against an injected RNG. It returns the final impact and every stage — you apply it to whatever holds your entities' health.",
-    keep: "Your entities, your health sink, when a hit happens.",
-    get: "A serializable, replay-safe resolution you can run on the authority and mirror to clients.",
-    filename: "damage.ts",
-    code: `import { resolveDamageHit } from "@jgengine/core/combat/damage/damageResolution";
-import { applyStatPoolDelta } from "@jgengine/core/stats/statPool";
-
-const result = resolveDamageHit({
-  channel: "kinetic",
-  impact: 24,
-  target: enemy.id,
-  targetTraits: enemy.armored ? ["armored"] : [],
-  matchup: { entries: { kinetic: { armored: { impact: 0.5 } } } },
-});
-// Drain it through the same two-method adapter from health.ts above.
-applyStatPoolDelta(access, enemy.id, "health", -result.impact); // -12 vs the armored enemy`,
+      "A damage resolver that gives the same answer every time: damage type against target traits, receiver modifiers and a status roll on a random source you pass in. It returns the final number and every step; you apply it to whatever holds your health.",
+    keep: "Your entities, where health lives, when a hit happens.",
+    get: "A result you can save, replay, or work out on the server and send to players.",
   },
   {
+    demo: "xp",
     domain: "XP & leveling",
     title: "XP curves and level-ups on your save format",
     blurb:
-      "Deterministic XP curves, surplus rollover, level caps, and one event per reached level — written back through a two-method adapter over the player state you already persist.",
-    keep: "Player identity, your save schema, your event bus, when XP is granted.",
-    get: "grantXp: curve math, rollover, caps, and ordered level-up callbacks with no store to adopt.",
-    filename: "xp.ts",
-    code: `import { leveling } from "@jgengine/core/progression/leveling";
-
-const track = leveling({ xpForLevel: { kind: "power", base: 80, exponent: 1.35, round: "floor" }, maxLevel: 20 });
-
-// access reads/writes save.players[id].xp / .level — your data, your store.
-const gained = track.grantXp(access, "p1", 900, (level) => emit("level-up", { level }));`,
+      "XP curves, leftover XP rolling into the next level, a level cap, and one callback per level reached, written back through a two-method adapter over the player data you already save.",
+    keep: "Player identity, your save format, your events, when XP is given.",
+    get: "grantXp: the curve math, rollover, cap and level-up callbacks in order, with no store to adopt.",
   },
 ];
 
@@ -119,7 +86,7 @@ const PROS: { title: string; body: string }[] = [
 const CONS: { title: string; body: string }[] = [
   {
     title: "You write the adapter and the wiring",
-    body: "The get/set, the projection, the raycast and the tick call are yours. It is a few lines, and the engine never reaches into your world on its own.",
+    body: "The get/set, the raycast and the tick(dt) call are yours, and you apply the results. It is a few lines, and it is why the parts fit engines you did not write.",
   },
   {
     title: "Presentation stays your job",
@@ -128,10 +95,6 @@ const CONS: { title: string; body: string }[] = [
   {
     title: "Some systems still want native integration",
     body: "The full runtime, the multiplayer host and editor-authored scenes need a jgengine game. The drop-in path stops there.",
-  },
-  {
-    title: "You do the wiring",
-    body: "You call tick(dt) and apply results yourself. That is more wiring than a black box, and it is why the parts fit engines you did not write.",
   },
 ];
 
@@ -162,17 +125,8 @@ function Adopt() {
         blurb="You can use a jgengine system without switching engines. A minimap, health pools, damage or XP work over your own entities, store and loop: one install and a few lines of adapter. Here is how each one fits, and what it costs you."
       >
         <div className="flex flex-wrap gap-3">
-          <Link
-            to="/capabilities"
-            className="btn btn-primary"
-          >
+          <Link to="/docs" className="btn btn-primary">
             Search the capabilities →
-          </Link>
-          <Link
-            to="/why"
-            className="btn btn-secondary"
-          >
-            Why jgengine
           </Link>
         </div>
       </PageHero>
@@ -198,8 +152,8 @@ function Adopt() {
       <div className="mx-auto max-w-6xl px-4 pb-8 sm:px-6">
         <div className="space-y-16 py-4 sm:space-y-20">
           {ADOPTIONS.map((cap, i) => (
-            <section key={cap.title} className="grid items-center gap-6 lg:grid-cols-2 lg:gap-12">
-              <div className={`min-w-0 ${i % 2 === 1 ? "lg:order-2" : ""}`}>
+            <section key={cap.title} className="min-w-0">
+              <div className="min-w-0 max-w-3xl">
                 <p className="flex items-center gap-2.5 font-mono text-xs uppercase tracking-[0.2em] text-accent-text">
                   <span className="text-faint">{String(i + 1).padStart(2, "0")}</span>
                   {cap.domain}
@@ -217,8 +171,8 @@ function Adopt() {
                   </div>
                 </dl>
               </div>
-              <div className={`min-w-0 ${i % 2 === 1 ? "lg:order-1" : ""}`}>
-                <CodeBlock code={cap.code} filename={cap.filename} />
+              <div className="mt-6 min-w-0">
+                <TracedDemo demo={cap.demo} />
               </div>
             </section>
           ))}

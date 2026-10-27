@@ -14,8 +14,7 @@ import { Route as SitemapDotxmlRouteImport } from './routes/sitemap[.]xml'
 import { Route as PlaygroundRouteImport } from './routes/playground'
 import { Route as LlmsDottxtRouteImport } from './routes/llms[.]txt'
 import { Route as LlmsFullDottxtRouteImport } from './routes/llms-full[.]txt'
-import { Route as EditorRouteImport } from './routes/editor'
-import { Route as CapabilitiesRouteImport } from './routes/capabilities'
+import { Route as DocsRouteImport } from './routes/docs'
 import { Route as AgentsDotmdRouteImport } from './routes/agents[.]md'
 import { Route as AdoptRouteImport } from './routes/adopt'
 import { Route as IndexRouteImport } from './routes/index'
@@ -49,14 +48,9 @@ const LlmsFullDottxtRoute = LlmsFullDottxtRouteImport.update({
   path: '/llms-full.txt',
   getParentRoute: () => rootRouteImport,
 } as any)
-const EditorRoute = EditorRouteImport.update({
-  id: '/editor',
-  path: '/editor',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const CapabilitiesRoute = CapabilitiesRouteImport.update({
-  id: '/capabilities',
-  path: '/capabilities',
+const DocsRoute = DocsRouteImport.update({
+  id: '/docs',
+  path: '/docs',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AgentsDotmdRoute = AgentsDotmdRouteImport.update({
@@ -99,8 +93,7 @@ export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/adopt': typeof AdoptRoute
   '/agents.md': typeof AgentsDotmdRoute
-  '/capabilities': typeof CapabilitiesRoute
-  '/editor': typeof EditorRoute
+  '/docs': typeof DocsRoute
   '/llms-full.txt': typeof LlmsFullDottxtRoute
   '/llms.txt': typeof LlmsDottxtRoute
   '/playground': typeof PlaygroundRoute
@@ -115,8 +108,7 @@ export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/adopt': typeof AdoptRoute
   '/agents.md': typeof AgentsDotmdRoute
-  '/capabilities': typeof CapabilitiesRoute
-  '/editor': typeof EditorRoute
+  '/docs': typeof DocsRoute
   '/llms-full.txt': typeof LlmsFullDottxtRoute
   '/llms.txt': typeof LlmsDottxtRoute
   '/playground': typeof PlaygroundRoute
@@ -132,8 +124,7 @@ export interface FileRoutesById {
   '/': typeof IndexRoute
   '/adopt': typeof AdoptRoute
   '/agents.md': typeof AgentsDotmdRoute
-  '/capabilities': typeof CapabilitiesRoute
-  '/editor': typeof EditorRoute
+  '/docs': typeof DocsRoute
   '/llms-full.txt': typeof LlmsFullDottxtRoute
   '/llms.txt': typeof LlmsDottxtRoute
   '/playground': typeof PlaygroundRoute
@@ -150,8 +141,7 @@ export interface FileRouteTypes {
     | '/'
     | '/adopt'
     | '/agents.md'
-    | '/capabilities'
-    | '/editor'
+    | '/docs'
     | '/llms-full.txt'
     | '/llms.txt'
     | '/playground'
@@ -166,8 +156,7 @@ export interface FileRouteTypes {
     | '/'
     | '/adopt'
     | '/agents.md'
-    | '/capabilities'
-    | '/editor'
+    | '/docs'
     | '/llms-full.txt'
     | '/llms.txt'
     | '/playground'
@@ -182,8 +171,7 @@ export interface FileRouteTypes {
     | '/'
     | '/adopt'
     | '/agents.md'
-    | '/capabilities'
-    | '/editor'
+    | '/docs'
     | '/llms-full.txt'
     | '/llms.txt'
     | '/playground'
@@ -199,8 +187,7 @@ export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AdoptRoute: typeof AdoptRoute
   AgentsDotmdRoute: typeof AgentsDotmdRoute
-  CapabilitiesRoute: typeof CapabilitiesRoute
-  EditorRoute: typeof EditorRoute
+  DocsRoute: typeof DocsRoute
   LlmsFullDottxtRoute: typeof LlmsFullDottxtRoute
   LlmsDottxtRoute: typeof LlmsDottxtRoute
   PlaygroundRoute: typeof PlaygroundRoute
@@ -249,18 +236,11 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof LlmsFullDottxtRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/editor': {
-      id: '/editor'
-      path: '/editor'
-      fullPath: '/editor'
-      preLoaderRoute: typeof EditorRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/capabilities': {
-      id: '/capabilities'
-      path: '/capabilities'
-      fullPath: '/capabilities'
-      preLoaderRoute: typeof CapabilitiesRouteImport
+    '/docs': {
+      id: '/docs'
+      path: '/docs'
+      fullPath: '/docs'
+      preLoaderRoute: typeof DocsRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/agents.md': {
@@ -319,8 +299,7 @@ const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AdoptRoute: AdoptRoute,
   AgentsDotmdRoute: AgentsDotmdRoute,
-  CapabilitiesRoute: CapabilitiesRoute,
-  EditorRoute: EditorRoute,
+  DocsRoute: DocsRoute,
   LlmsFullDottxtRoute: LlmsFullDottxtRoute,
   LlmsDottxtRoute: LlmsDottxtRoute,
   PlaygroundRoute: PlaygroundRoute,

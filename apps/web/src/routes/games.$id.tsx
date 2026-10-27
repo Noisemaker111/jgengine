@@ -3,7 +3,8 @@ import { useEffect, useRef, useState } from "react";
 
 import { Page } from "../components/Layout";
 import { GameCard } from "../components/GameCard";
-import { GAME_IDS, gameBlurb, gameCredit, gameSeed, gameTitle, isGameId } from "../lib/games";
+import { GAME_IDS, gameBlurb, gameCredit, gameParts, gameSeed, gameTitle, isGameId } from "../lib/games";
+import { EngineTour } from "../live/EngineTour";
 import { seo } from "../lib/seo";
 
 export const Route = createFileRoute("/games/$id")({
@@ -74,6 +75,7 @@ function GamePage() {
     window.open(playUrl, "_blank", "noopener,noreferrer");
   };
 
+  const parts = gameParts(id);
   const blurb = gameBlurb(id);
   const seed = gameSeed(id);
   const at = GAME_IDS.indexOf(id);
@@ -127,6 +129,17 @@ function GamePage() {
               <span>{credit.text}</span>
             ))}
         </div>
+
+        {parts.length > 0 && (
+          <div className="-mx-4 mt-12 sm:-mx-6">
+            <EngineTour
+              demos={parts}
+              eyebrow="Engine parts in this game"
+              title={`What ${gameTitle(id)} runs on`}
+              lede={`${gameTitle(id)} uses ${parts.length === 1 ? "this engine part" : `these ${parts.length} engine parts`}. Each one runs here on its own, with the code that drives it.`}
+            />
+          </div>
+        )}
 
         {others.length > 0 && (
           <div className="mt-16">

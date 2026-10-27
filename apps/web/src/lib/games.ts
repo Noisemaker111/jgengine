@@ -1,4 +1,6 @@
-import { GAME_CREDITS, GAME_IDS, GAME_META, GAME_SEEDS, GAME_THUMBS } from "virtual:jgengine-games";
+import { GAME_CREDITS, GAME_IDS, GAME_META, GAME_PARTS, GAME_SEEDS, GAME_THUMBS } from "virtual:jgengine-games";
+
+import { DEMO_PARTS, type DemoKey } from "../live/demoParts";
 
 export { GAME_IDS };
 
@@ -42,6 +44,12 @@ export function isGameId(id: string): boolean {
 /** The one-line idea the game was first generated from, or null when it was designed by hand. */
 export function gameSeed(id: string): string | null {
   return GAME_SEEDS[id] ?? null;
+}
+
+/** The engine parts with a live demo on this site that the game's source uses, in demo order. */
+export function gameParts(id: string): readonly DemoKey[] {
+  const used = GAME_PARTS[id] ?? [];
+  return DEMO_PARTS.filter((part) => used.includes(part.key)).map((part) => part.key);
 }
 
 /** How many listed games started as a one-line idea. */

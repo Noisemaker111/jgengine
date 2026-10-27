@@ -11,16 +11,18 @@ import {
   type StreetNetworkMode,
   type StreetNetworkRules,
 } from "@jgengine/core/roads/streetGenerator";
-import { Page, PageHero } from "../components/Layout";
+import { EditorEmbed } from "../components/EditorEmbed";
+import { Page, PageHero, SectionHeading } from "../components/Layout";
+import { LiveDemos } from "../live/LiveDemos";
 import type { PlaygroundWorldHandle } from "../live/playgroundWorld";
 import { seo } from "../lib/seo";
 
 export const Route = createFileRoute("/playground")({
   head: () =>
     seo({
-      title: "Playground — grow a 3D city, a circuit, or a street race from one seed",
+      title: "Playground — try jgengine in your browser",
       description:
-        "Drag sliders and grow a 3D city, a race circuit, or a street race through the city, live in your browser. It is jgengine's street generator: same seed and sliders, same world, in the editor and in a game.",
+        "Grow a 3D city, circuit or street race from sliders, build a world in the jgengine scene editor, and try three engine functions live. Everything runs in your browser.",
       path: "/playground",
     }),
   component: Playground,
@@ -900,9 +902,24 @@ function Playground() {
       {!query.inspect && (
         <PageHero
           eyebrow="Playground"
-          title="Grow a city with sliders."
-          blurb="This is the street generator from @jgengine/core, drawn in 3D: streets, building lots and a closed racing lap. City, circuit and street race are presets over the same sliders. Every drag regrows the world, and the same seed and sliders give the same world here, in the editor and in a game."
-        />
+          title="Try the engine in your browser."
+          blurb="Grow a city from sliders, build a world in the scene editor, and play with three engine functions. All of it runs on this page."
+        >
+          <div className="flex flex-wrap gap-3">
+            <a href="#city" className="btn btn-secondary">City generator</a>
+            <a href="#editor" className="btn btn-secondary">Scene editor</a>
+            <a href="#functions" className="btn btn-secondary">Engine functions</a>
+          </div>
+        </PageHero>
+      )}
+      {!query.inspect && (
+        <div id="city" className="mx-auto max-w-6xl scroll-mt-20 px-6 pb-8">
+          <SectionHeading
+            eyebrow="City generator"
+            title="Grow a city with sliders."
+            blurb="The engine's street generator, drawn in 3D: streets, building lots and a closed racing lap. City, circuit and street race are presets over the same sliders. The same seed and sliders give the same world here, in the editor and in a game."
+          />
+        </div>
       )}
       <div className={query.inspect ? "fixed inset-0 z-50 bg-[#0b1017]" : "mx-auto grid max-w-6xl gap-6 px-6 pb-24 lg:grid-cols-[320px_1fr]"}>
         <div className={query.inspect ? "hidden" : "space-y-5 rounded-lg border border-line bg-fg/[0.02] p-5"}>
@@ -1080,6 +1097,8 @@ function Playground() {
           )}
         </div>
       </div>
+      {!query.inspect && <EditorEmbed />}
+      {!query.inspect && <LiveDemos />}
     </Page>
   );
 }

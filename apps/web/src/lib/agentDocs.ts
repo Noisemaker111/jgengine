@@ -49,10 +49,10 @@ ${RULES.map((rule) => `- ${rule}`).join("\n")}
 ## Docs
 
 - [Agent brief](${SITE_URL}/llms-full.txt): the full agent-facing guide — quickstart, CLI commands, package set, verification
-- [Capabilities](${SITE_URL}/capabilities): every shipped capability with its import line
 - [Games](${SITE_URL}/games): the games built on the engine, playable in the browser
-- [Why jgengine](${SITE_URL}/why): what it is good at and where it falls short
-- [Editor](${SITE_URL}/editor): the standalone 3D scene editor
+- [Docs](${SITE_URL}/docs): every shipped capability with its import line
+- [Why jgengine](${SITE_URL}/why): code by hand vs. on the engine, and trade-offs
+- [Playground](${SITE_URL}/playground): the city generator, the standalone 3D scene editor and live engine functions
 - [Adopt](${SITE_URL}/adopt): use single jgengine systems inside an existing game
 
 ## Source & packages
@@ -110,7 +110,7 @@ A scaffolded game ships verification scripts (\`bun run shoot\` for screenshots)
 
 ## More
 
-- ${SITE_URL}/capabilities — every shipped capability with its import line
+- ${SITE_URL}/docs — every shipped capability with its import line
 - ${SITE_URL}/why — strengths and trade-offs
 - ${SITE_URL}/adopt — using single jgengine systems inside an existing game
 - ${REPO_URL}/blob/main/CHANGELOG.md — consumer-facing changes (also typed data at \`@jgengine/core/meta/changelog\`)

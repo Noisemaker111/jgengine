@@ -103,9 +103,6 @@ export function Blueprints() {
               </span>
             </Link>
           )}
-          <Link to="/capabilities" className="link self-start text-sm">
-            Browse every capability
-          </Link>
         </div>
       </div>
     </div>

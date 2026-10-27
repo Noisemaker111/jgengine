@@ -64,13 +64,16 @@ export type ActionStateBindingMap<TAction extends string, TCode extends string =
   ActionBindingConfig<TCode>
 >;
 
-/** The hold/toggle form of an {@link ActionCodes} entry, with an optional auto-repeat rate. */
+/** The hold/toggle form of an {@link ActionCodes} entry, with an optional auto-repeat rate and rebind lock. */
 export interface ActionCodeModes<TCode extends string = string> {
   hold?: readonly TCode[];
   toggle?: readonly TCode[];
   repeatMs?: number;
+  /** Players can't rebind this action: saved overrides are ignored and controls menus show it read-only. */
+  locked?: boolean;
 }
 
+/** One action's input codes: a plain code list, or {@link ActionCodeModes} for hold/toggle, repeat and lock. */
 export type ActionCodes<TCode extends string = string> = readonly TCode[] | ActionCodeModes<TCode>;
 
 /**
@@ -114,6 +117,12 @@ export type ActionCodesMap<TAction extends string = string, TCode extends string
 export function actionRepeatMs(codes: ActionCodes | undefined): number | undefined {
   if (codes === undefined || isCodeList(codes)) return undefined;
   return codes.repeatMs;
+}
+
+/** Whether an action's authored codes mark it as not rebindable (`locked: true`). */
+export function isActionLocked(codes: ActionCodes | undefined): boolean {
+  if (codes === undefined || isCodeList(codes)) return false;
+  return codes.locked === true;
 }
 
 export interface ShouldDispatchActionInput {

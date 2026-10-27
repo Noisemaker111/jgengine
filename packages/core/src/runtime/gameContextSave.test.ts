@@ -1,7 +1,7 @@
 import { describe, expect, test } from "bun:test";
 
-import { defineGameDefinition } from "../game/defineGame";
-import { localSaveBackend, memorySaveBackend } from "../save/saveStore";
+import { defineGameDefinition, type PersistConfig } from "../game/defineGame";
+import { localSaveBackend, memorySaveBackend, type SaveBackend } from "../save/saveStore";
 import { createAssetCatalog } from "../scene/assetCatalog";
 import { defineStore } from "../store/defineStore";
 import { convex } from "./adapter";
@@ -10,7 +10,7 @@ import { createRuntimeSave } from "../save/snapshotSave";
 
 const progress = defineStore<{ level: number }>("save.progress", { level: 1 });
 
-function offlineGame(persist: boolean | { storage?: "local" | "memory"; mode?: "autosave" | "manual" }) {
+function offlineGame(persist: boolean | PersistConfig) {
   return defineGameDefinition({ name: "SaveTest", assets: createAssetCatalog(), multiplayer: "off", persist });
 }
 
@@ -100,6 +100,27 @@ describe("ctx.game.save", () => {
       if (descriptor) Object.defineProperty(globalThis, "localStorage", descriptor);
       else Reflect.deleteProperty(globalThis, "localStorage");
     }
+  });
+
+  test("persist.storage takes a custom SaveBackend and the autosave writes to it", async () => {
+    const writes: { key: string; value: string }[] = [];
+    const inner = memorySaveBackend();
+    const backend: SaveBackend = {
+      read: (key) => inner.read(key),
+      write: async (key, value) => {
+        writes.push({ key, value });
+        await inner.write(key, value);
+      },
+      remove: (key) => inner.remove(key),
+    };
+    const ctx = createGameContext({
+      definition: offlineGame({ storage: backend, autosaveMs: 10 }),
+      content: {},
+      player: { userId: "p1", isNew: true },
+    });
+    ctx.scene.entity.spawn("crate", { id: "crate-1", position: [1, 0, 2] });
+    await new Promise((resolve) => setTimeout(resolve, 80)); // wait-ok: real autosave timer
+    expect(writes.some((write) => write.value.includes("crate-1"))).toBe(true);
   });
 
   test("unavailable local storage cannot report saved; explicit memory persistence can", async () => {
