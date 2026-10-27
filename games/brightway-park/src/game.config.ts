@@ -2,7 +2,7 @@ import { defineGame } from "@jgengine/shell/defineGame";
 
 import { BRIGHTWAY_SOUNDS } from "./game/audio";
 import { assets } from "./game/assets";
-import { DAY_LENGTH } from "./game/catalog";
+import { DAY_LENGTH, DAY_START } from "./game/catalog";
 import { content } from "./game/content";
 import { entityModels, objectModels } from "./game/models";
 import { BrightwayParkWorldOverlay } from "./game/render/WorldOverlay";
@@ -35,7 +35,7 @@ export const game = defineGame({
   save: "none",
   // The park is one declaration (`game/park.ts`); its system runs the world and its commands.
   systems: [park.system],
-  time: { scale: 1, dayLength: DAY_LENGTH, start: DAY_LENGTH * (9 / 24), speeds: [1, 2, 4, 8], startPaused: true },
+  time: { scale: 1, dayLength: DAY_LENGTH, start: DAY_START, speeds: [1, 2, 4, 8], startPaused: true },
   content,
   loop,
   GameUI,

@@ -12,6 +12,9 @@ import { resetSession, session } from "./session";
 import { scenarioDef, scenarioLock, scenarioSeconds } from "./scenarios";
 import { syncAmbience } from "./audio";
 import { savePark } from "./persistence";
+import { DAY_START } from "./catalog";
+import { resetDayLoop } from "./daySession";
+import { armMidnight } from "./midnight";
 
 const TRACK_PATH_ID = "coaster-track";
 
@@ -82,6 +85,10 @@ export function resetPark(ctx: GameContext, options: ResetOptions = {}): void {
   resetRides();
   resetGuestAgents();
   const w = freshWorld(ctx, options.cash);
+  // A fresh park's calendar starts again: 09:00 on 1 March, day one, the next midnight from there.
+  ctx.time.hydrate({ ...ctx.time.snapshot(), now: DAY_START });
+  resetDayLoop(ctx);
+  armMidnight(ctx);
   const layout = options.layout ?? "lot";
   if (layout === "lot") {
     for (const cell of GATE_PLAZA) placeFree(w, "path_walk", cell);

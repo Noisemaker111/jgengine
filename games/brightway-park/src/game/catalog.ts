@@ -5,6 +5,8 @@ export const GRID = 4;
 export const PARK_HALF = 60;
 
 export const DAY_LENGTH = 150;
+/** A new park's second 0: 09:00 on its first day. */
+export const DAY_START = DAY_LENGTH * (9 / 24);
 
 export const ENTRANCE: readonly [number, number, number] = [0, 0, PARK_HALF - 2];
 
