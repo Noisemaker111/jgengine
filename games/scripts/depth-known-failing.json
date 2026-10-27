@@ -15,11 +15,6 @@
     "from-zero": "no from-zero proof",
     "depth": "one-line-idea game of about 1.5k lines: a 10-minute day and no declared content budget"
   },
-  "brightway-park": {
-    "brief": "no PLAN.md design brief",
-    "from-zero": "no from-zero proof; a new park starts with two rides built, shops, $9,998 and 24 guests, and runs itself (to-open-park relies on the starter rides)",
-    "depth": "a park day is 150 seconds so it fits in a proof; 28 rides exist but no unlock pace or content budget is declared"
-  },
   "deepward": {
     "brief": "no PLAN.md design brief (DESIGN.md exists but is not the brief)",
     "from-zero": "no from-zero proof; depth-run seeds a mid-game record with deepward.dev.seed",

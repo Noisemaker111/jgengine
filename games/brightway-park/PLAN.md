@@ -2,58 +2,81 @@
 
 Brief: a seaside theme-park tycoon with the loop of RollerCoaster Tycoon: start on an empty lot, build a park guests want to visit, and keep it running for hours.
 
+## Direction
+
+- Genre and references: a park tycoon after RollerCoaster Tycoon 2 (guests with opinions, scenarios with deadlines), Parkitect (upkeep and restocking that bite) and Planet Coaster (awards worth pausing for). Inspired by, not a 1:1 remake: own numbers, own rides.
+- Breadth: building (paths, rides, shops, scenery, land), guests with needs and thoughts, ride wear and repairs, four staff roles, a research lab, monthly books with a loan and marketing, rating awards, three chained scenarios. Out: a piece-by-piece coaster editor, guest pathfinding along every path, multiplayer.
+- Look and camera: stylized low-poly seaside lot, an RTS camera over a grid, mouse and keyboard first, touch through the build palette.
+- Length: 4 to 9 hours at 1x to win the three scenarios, then free play. A sitting is one park month (20 minutes at 1x).
+- Onboarding: hint cards in the first scenario that ring the control and point at the spot.
+- Done: from an empty lot, open a park, keep its rides running through breakdowns, and win Brightway Beginnings (120 guests and 400 stars by the end of May).
+- Player promise: the player repeatedly spends scarce money on what the crowd is asking for, so they feel the park grow because of their choices.
+- Pillars: every problem comes from something the player built; every fix is something they buy or change; the crowd says what it wants.
+- Anti-pillars: no park that runs itself, no starting half-built, no money that never binds.
+- Falsifier: a player who builds one ride and waits should see the rating stall, rides break and guests complain, not a scenario won.
+
 ## Design brief
 
-### Core loop
+- Core loop: build or adjust one thing (a path, a ride and its entrance, a shop, a hire, a price), watch the guests react in their thoughts, mood and spending, then fix what they complain about.
+- Session loop: one park month (eight 150-second days, 20 minutes at 1x): run the lab, grow the crowd and the rating, and close the month in the black when the books are filed.
+- Long loop: three scenarios with deadlines (3, 8 and 16 months), each won unlocking the next; the lab opens 34 rides, shops and theme pieces in family chains over about thirteen months; six rating awards pay for bigger rides; the loan, wages and marketing decide how fast the park can grow.
+- Second 0: an empty lot inside the fence, a shut gate behind a two-cell plaza, $10,000 in the till and $10,000 owed to the bank, four starter rides, four shops and plain scenery on the palette, no guests. The money buys about one ride, two shops and a hire, so the first verb is choosing what to build, and the shut gate means nobody comes until the player has built something worth visiting.
+- Onboarding: hint cards in the first scenario say the next step, ring the control that does it and put an arrow over the spot on the lot: path, ride, connect, gate, lab, mechanic.
+- Pace: something new every 4 minutes in the first hour (the first four lab topics take one to two and a half minutes); later topics take 4 to 20 minutes and the awards and scenarios carry the gaps.
+- Longest cycle: 20 minutes, one park month at 1x, closed by the monthly books.
+- Minutes to see everything: 540
 
-Build or adjust, watch guests react, fix problems.
+### First 10 minutes
 
-- **Build or adjust**: lay paths from the gate, place a ride, connect its entrance and exit, add shops, scenery and staff, set the gate ticket and every price.
-- **Watch guests react**: guests walk in, queue, ride, eat, drink, use the toilet, get sick, get tired, and say so. Their thoughts, mood and money are visible per guest and summed on the status card.
-- **Fix problems**: a ride breaks and stays down until a mechanic fixes it; litter piles up until a handyman sweeps it; unhappy guests kick over bins unless security is near; prices too high empty the queues; a red month warns of bankruptcy.
+- 0:00 an empty lot and a shut gate; the hint card teaches laying a path in from the gate
+- 0:15 the path is down; the hint teaches placing the carousel and Connect it for its entrance and exit
+- 0:30 the carousel runs; the hint teaches opening the gate, and the first guests start walking in
+- 0:45 the hint teaches the lab: start the Ice Cream Cart, a one-minute topic
+- 1:00 the hint teaches hiring a mechanic before the first breakdown
+- 1:30 the Ice Cream Cart research lands, the first unlock; hungry guests teach building food and drink beside the path
+- 2:30 the Topiary unlocks; scenery near a ride teaches charm and appeal
+- 4:30 the Spinning Teacups unlock; a second ride teaches spending against the till
+- 7:00 the Dodgems unlock; worn rides break down and teach the mechanic's worth
+- 9:00 litter on the paths teaches hiring a handyman; the Books teach where the money went before the month closes at 20:00
 
-Every problem comes from a system the player built into, and every fix is something the player buys or changes.
+### Start state
 
-### Session goal
-
-Each scenario is one objective with a deadline on the park calendar, for example "120 guests in the park and a 400 rating by the end of May, Year 1". Meeting it at any point before the deadline wins at once; the deadline passing, two red month-ends in a row, or the crowd's mood collapsing loses.
-
-### Long loop
-
-- **Research**: the lab unlocks the 28 rides, 10 shops and 14 scenery pieces over game months, one family chain at a time. A new park starts with 3 rides, 4 shops, the wooden coaster kit and the plain scenery.
-- **Scenarios unlock each other**: winning one opens the next on the menu, kept across new games.
-- **Loans**: the park opens owing the bank. Borrow in $1,000 steps to build faster, pay monthly interest, repay when the park is earning.
-- **Staff**: mechanics (needed for every repair), handymen, entertainers and security guards, each on a monthly wage and a patrol area.
-- **Park value and rating**: rating draws more guests and lets the park charge more at the gate; awards pay out at rating bands.
-- **Marketing**: paid campaigns raise how many guests hear of the park for a few days.
-- **Monthly books**: every month closes with a report of income and spending by kind, the loan's interest and the profit.
-
-### What you have at second 0
-
-An empty lot inside the fence, a closed gate with a short paved plaza behind it, $10,000 in the till, $10,000 owed to the bank, no guests, and a hint pointing at the gate. It is 09:00 on 1 March, Year 1.
-
-### The first 10 minutes (at 1x)
-
-1. **0:00** New game starts the first scenario. A hint points at the gate plaza: lay a path in from the gate.
-2. **0:30** Path laid. The hint points at Build, then at the Carousel: place your first ride beside the path.
-3. **1:00** Carousel placed; it is shut. The hint points at the ride: select it and press "Connect it" for an entrance and an exit.
-4. **1:30** The ride is open. The hint points at "Open the gate".
-5. **2:00** Gate open. The first guest walks in a few seconds later; more trickle in, one every several seconds at a new park's zero rating.
-6. **2:30** Guests ride and start thinking out loud. The hint asks for food and drink stalls beside the path.
-7. **4:00** Hungry and thirsty guests buy; some need the toilet. The hint asks for toilets. Rating starts to climb from zero.
-8. **4:00-6:00** The carousel wears and breaks down. It stays down and guests complain. The hint points at Staff: hire a mechanic. The mechanic fixes it and keeps servicing it.
-9. **6:00-8:00** Litter builds; the hint suggests a handyman. Day 3 or 4 begins; stalls restock at midnight.
-10. **8:00-10:00** The hint points at the lab: start research on the next ride. The player places a second ride and sets prices; guests pour in faster as the rating climbs.
-
-The first month closes at 20:00 with the monthly report.
+| Probe | At most |
+| --- | --- |
+| guests | 0 |
+| rides | 0 |
+| structures | 2 |
+| cash | 10000 |
+| taught | 0 |
+| unlocks | 0 |
+| ridesSeen | 4 |
+| shopsSeen | 4 |
+| scenerySeen | 10 |
+| staffSeen | 4 |
+| awardsSeen | 0 |
+| scenariosSeen | 1 |
 
 ### Content budget
 
-- 28 rides, 10 shops and facilities, 14 scenery pieces, 4 staff roles: 34 lab topics unlock 24 rides, 6 shops and 4 scenery pieces in family chains.
-- 3 scenarios, each unlocking the next, plus free play after any of them.
-- Calendar: a day is 150 seconds, a month is 8 days (20 minutes at 1x), a year is the 8-month season March to October (2 hours 40 minutes at 1x).
-- Scenario lengths at 1x: Brightway Beginnings 3 months (1 hour), Star Attraction 8 months (2 h 40), Full House 16 months (5 h 20). At 2x, half that.
-- Estimated play: 4-9 hours to finish the three scenarios, plus open-ended free play. Lab topics total about 13 game months, so the full ride list arrives near the end of the last scenario.
+| Kind | Count |
+| --- | --- |
+| rides | 28 |
+| shops | 10 |
+| scenery | 14 |
+| staff | 4 |
+| awards | 6 |
+| scenarios | 3 |
+
+### Systems
+
+| System | Probe |
+| --- | --- |
+| building | structures |
+| research | researched |
+| staff | staffHired |
+| guests | visitors |
+| ride wear | breakdowns |
+| bank | loanOwed |
 
 ## Features
 
@@ -70,6 +93,12 @@ The first month closes at 20:00 with the monthly report.
 - calendar and speed — months and years, 1x to 8x
 - onboarding — hints in the first scenario that point at things
 
+## Gaps
+
+- A piece-by-piece coaster builder (slopes, turns, loops, lifts) with a test run.
+- Guests that walk the paths rather than straight to the door.
+- Scenario goals past the third, like 800 guests and a 600 rating by year 2.
+
 ## Milestones
 
 1. [x] Design brief.
@@ -78,3 +107,5 @@ The first month closes at 20:00 with the monthly report.
 4. [x] Repairs need a mechanic; reliability shown; research rescaled to months; bins cut litter.
 5. [x] Calendar months, long scenarios with an unlock chain, 8x speed.
 6. [x] Onboarding hints that point at the gate, the ride, the gate button and the staff button.
+7. [x] The brief in the checked shape; the from-zero proof plays the first 10 minutes; the lab's first four topics are short and the hints teach the lab, so the first unlock lands inside two minutes.
+8. [ ] Hint cards on the engine's onboarding system.

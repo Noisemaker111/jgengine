@@ -12,8 +12,12 @@ export default defineFlow(game, {
   browser: true,
   async run(f) {
     await openPark.run(f);
-    // Close the books so the build palette is the only panel open.
+    // Close the books, then take the hint's lab step: the Ice Cream Cart from the Lab panel.
     await f.press("KeyL");
+    await f.click("Lab");
+    await f.click("Ice Cream Cart");
+    await f.click("Lab");
+    await f.waitForPage("document.querySelector('[data-onboarding-step]')?.getAttribute('data-onboarding-step') === 'mechanic'", { timeoutMs: 3000, note: "hint: with research running, the next step is a mechanic" });
     await f.timeScale(8);
     await f.waitFor((p) => p.breakdowns > 0, { timeoutMs: 120000, note: "breakdown: the carousel wears out and breaks on its own" });
     await f.timeScale(1);

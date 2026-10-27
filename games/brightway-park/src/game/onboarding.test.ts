@@ -21,7 +21,7 @@ afterEach(() => {
   else Reflect.deleteProperty(globalThis, "localStorage");
 });
 
-test("the first scenario's hints follow the player: path, ride, connect, gate, then a mechanic at the first breakdown", () => {
+test("the first scenario's hints follow the player: path, ride, connect, gate, the lab, then a mechanic", () => {
   const runner = createHeadlessRunner({ game, maxStepSeconds: 1 });
   const run = (name: string, input: Record<string, unknown> = {}) => runner.ctx.game.commands.run(name, input);
   const w = park.of(runner.ctx);
@@ -45,7 +45,9 @@ test("the first scenario's hints follow the player: path, ride, connect, gate, t
   run("build.connect", { id: ride });
   expect(currentHint(w)?.id).toBe("gate");
   run("brightway.act", { action: "open_gate" });
-  expect(currentHint(w)).toBeNull();
+  expect(currentHint(w)?.id).toBe("research");
+  run("brightway.act", { action: "research_stall_icecream" });
+  expect(currentHint(w)?.id).toBe("mechanic");
 
   forceBreakdown(runner.ctx, ride);
   expect(currentHint(w)?.id).toBe("mechanic");

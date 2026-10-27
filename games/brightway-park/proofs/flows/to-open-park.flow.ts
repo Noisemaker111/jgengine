@@ -56,7 +56,7 @@ export default defineFlow(game, {
     await f.shot("brightway-first-ride");
 
     await f.click("Open the gate");
-    await f.waitForPage("document.querySelector('[data-onboarding-step]') === null", { timeoutMs: 3000 });
+    await f.waitForPage(step("research"), { timeoutMs: 3000, note: "hint: with the gate open, the next step is the lab" });
     await f.see(/gate is open/i, { timeoutMs: 5000, note: "arrival: the player opened the gate" });
     await f.timeScale(4);
     await f.waitFor((p) => p.guests > 0, { timeoutMs: 30000, note: "arrival: the first guests walk in through the gate" });

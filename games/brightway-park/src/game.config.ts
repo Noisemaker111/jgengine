@@ -6,8 +6,8 @@ import { DAY_LENGTH, DAY_START } from "./game/catalog";
 import { content } from "./game/content";
 import { entityModels, objectModels } from "./game/models";
 import { BrightwayParkWorldOverlay } from "./game/render/WorldOverlay";
-import { session } from "./game/session";
 import { park } from "./game/park";
+import { parkProbe } from "./game/parkProbe";
 import { GameUI } from "./game/ui/GameUI";
 import { parkKit } from "./game/ui/kit";
 import { parkTheme } from "./game/ui/theme";
@@ -71,16 +71,7 @@ export const game = defineGame({
       menuSaves: { description: "Park saves with the saved day", state: "menu-saves", settleMs: 1800 },
       menuNew: { description: "New day pane with the scenarios", state: "menu-new", settleMs: 1200 },
     },
-    probe: (ctx) => {
-      let queued = 0;
-      let riding = 0;
-      for (const guest of session.guests.values()) {
-        if (guest.phase === "queued") queued += 1;
-        else if (guest.phase === "riding") riding += 1;
-      }
-      const w = park.of(ctx);
-      return { guests: session.guests.size, queued, riding, rating: w.num("park.rating"), cash: w.num("park.cash"), breakdowns: w.num("park.breakdowns") };
-    },
+    probe: parkProbe,
   },
   pointer: { moveCommand: "park.pointer", secondaryCommand: "build.clear" },
   camera: {

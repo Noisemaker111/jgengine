@@ -44,7 +44,7 @@ export function ResearchPanel({ onClose }: { onClose: () => void }) {
             const inLab = queued.has(`Research ${def.label}`);
             const refusal = done || inLab ? null : w.canAct(action);
             return (
-              <KitButton key={def.id} size="sm" variant={done || refusal !== null ? "ghost" : "secondary"} disabled={done || inLab || refusal !== null}
+              <KitButton key={def.id} data-research={def.id} size="sm" variant={done || refusal !== null ? "ghost" : "secondary"} disabled={done || inLab || refusal !== null}
                 icon={done ? "✓" : inLab ? "⏳" : refusal !== null ? "🔒" : def.icon} title={refusal?.message ?? def.blurb}
                 onClick={() => commands.run("brightway.act", { action })}
                 glyph={done ? "ready" : inLab ? "in lab" : `$${(def.research?.cost ?? 0).toLocaleString()} · ${parkDuration((def.research?.seconds ?? 0) * RESEARCH_PACE)}`}>
