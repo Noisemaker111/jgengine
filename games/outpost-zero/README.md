@@ -9,10 +9,10 @@ Every word, price and model below lives in `src/game/idea.ts`; the base, outpost
 - **Core loop.** Leave the forward base with the Carbine, walk a trail to an outpost held by the Hive,
   shoot its garrison (they shoot back when they see you), collect credits per kill and for the whole camp, spend it, go again.
 - **Progression.**
-  - [x] 4 outposts with growing garrisons: Drill Site (3 guards, 150), Crater Nest (4 guards, 250), Relay Hive (5 guards, 400), Queen's Spire (6 guards, 700).
-  - [x] Guns to buy (digit keys): Scattergun 300, Marksman 650, Pulse LMG 1200.
-  - [x] Upgrades in stages: Armor +25% armor per stage, Rounds +20% damage per stage.
-  - [x] A 4-beat story from Command, one beat per outpost.
+  - 4 outposts with growing garrisons: Drill Site (3 guards, 150), Crater Nest (4 guards, 250), Relay Hive (5 guards, 400), Queen's Spire (6 guards, 700).
+  - Guns to buy (digit keys): Scattergun 300, Marksman 650, Pulse LMG 1200.
+  - Upgrades in stages: Armor +25% armor per stage, Rounds +20% damage per stage.
+  - A 4-beat story from Command, one beat per outpost.
 - **Failure states.** You have 150 health; at 0 you go down and go back to the last save (every outpost cleared saves).
 - **Minute 5 -> hour 5.** At 5:00 the first outpost is down and a second gun is in reach. Later camps bring tougher guards, so the guns and upgrades decide whether you clear them.
 - **References it is chasing.**

@@ -1,9 +1,10 @@
 /**
  * Fails when a game directory grows an engine-shaped module.
  *
- * A game owns content and feel. Missions, economy, vehicles, loot, AI, damage, progression and UI
- * kits belong to `Noisemaker111/jgengine` so one fix reaches every game; see "Framework-first
- * development" in AGENTS.md.
+ * A game owns content and feel. Missions, economy, vehicles, loot, AI, damage and UI kits belong to
+ * `Noisemaker111/jgengine` so one fix reaches every game; see "Framework-first development" in
+ * AGENTS.md. A game's own progression - its level numbers, unlock order, tutorial beats and content
+ * tables - is the game itself, at any length, so no seam here matches it.
  *
  * The verdict is about what a file contains, never what it is called. A basename or a folder name
  * is not evidence that a game wrote an engine: `to-cleared-mission.json` is a flow, not a mission
@@ -91,11 +92,6 @@ export const ENGINE_SEAMS: readonly EngineSeam[] = [
     owner: "AI director",
     defines: [/\bclass\s+\w*(?:Director|Spawner|SpawnDirector)\b/, /\b(?:spawnBudget|waveBudget|spawnSchedule|difficultyCurve|threatBudget)\b/],
   },
-  {
-    name: "progression curve",
-    owner: "progression and economy",
-    defines: [/\b(?:function|const|let)\s+\w*(?:xpForLevel|xpToNext|levelCurve|progressionCurve|curveFor|levelThresholds|xpCurve)\b/],
-  },
 ];
 
 /** A named set of states and the transitions between them: a state machine, not a typed field. */
@@ -135,8 +131,7 @@ const FRAMEWORK_OK = /^[ \t]*\/\/[ \t]*framework-ok:[ \t]*\S/;
 
 /**
  * Below this many lines of code a match is adoption glue - an adapter that names a shared system -
- * rather than a system of its own. AGENTS.md files the seam at "roughly 50 lines"; this sits lower
- * so a lane hears about the system while it is still cheap to move.
+ * rather than a system of its own, so a lane hears about a mechanism while it is still cheap to move.
  */
 export const MIN_SYSTEM_LINES = 20;
 

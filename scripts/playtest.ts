@@ -4,8 +4,10 @@
  * whether the loop actually advances under input. Genre-agnostic — a "metric"
  * is any number the game reports (score, position, distance, phase); progress
  * is any metric moving beyond `epsilon`. A span where every metric stays flat
- * longer than the softlock threshold, while input is being driven, is a
- * softlock. Pure and WebGL-free so the ruling is unit-testable on synthetic
+ * longer than the softlock threshold, after the player first acted, is a
+ * softlock. Time before the first input is never judged: a game owes nothing
+ * to a player who has not done anything yet, so it need not animate numbers at
+ * boot to pass. Pure and WebGL-free so the ruling is unit-testable on synthetic
  * samples; the browser half lives in `scripts/drive-dev.ts`.
  */
 
@@ -22,6 +24,11 @@ export interface PlaytestOptions {
   softlockThresholdMs: number;
   /** A metric moving by more than this counts as progress. */
   epsilon: number;
+  /**
+   * Milliseconds since sampling began when the player first acted (a key, click or fill), or `null`
+   * when nothing was driven. Samples before it are not judged; with `null` nothing is.
+   */
+  actedAtMs: number | null;
 }
 
 export interface PlaytestResult {
@@ -34,10 +41,12 @@ export interface PlaytestResult {
   progressDelta: Record<string, number>;
   /** Sum of the absolute net changes — one scalar for "did anything move". */
   totalProgress: number;
-  /** Longest contiguous span (ms) where every metric held flat within epsilon. */
+  /** Longest contiguous span (ms) after the first input where every metric held flat within epsilon. */
   softlockWindowMs: number;
-  /** True when the flat span reached the threshold and the run was long enough to judge it. */
+  /** True when the flat span after the first input reached the threshold and that part of the run was long enough to judge it. */
   softlocked: boolean;
+  /** Whether the run drove any input, so a softlock could be judged at all. */
+  acted: boolean;
   /** Whether any probe sample was read at all. */
   probed: boolean;
 }
@@ -137,10 +146,15 @@ export function summarizePlaytest(samples: readonly ProbeSample[], options: Play
   const probed = samples.length > 0;
   const delta = progressDelta(samples);
   const totalProgress = Object.values(delta).reduce((sum, value) => sum + Math.abs(value), 0);
-  const softlockWindowMs = longestFlatWindowMs(samples, options.epsilon);
   const durationMs = probed ? samples[samples.length - 1]!.t - samples[0]!.t : 0;
+  const actedAt = options.actedAtMs;
+  const judged = actedAt === null ? [] : samples.filter((sample) => sample.t >= actedAt);
+  const softlockWindowMs = longestFlatWindowMs(judged, options.epsilon);
+  const firstJudged = judged.at(0);
+  const lastJudged = judged.at(-1);
+  const judgedMs = firstJudged !== undefined && lastJudged !== undefined ? lastJudged.t - firstJudged.t : 0;
   const softlocked =
-    probed && durationMs >= options.softlockThresholdMs && softlockWindowMs >= options.softlockThresholdMs;
+    firstJudged !== undefined && judgedMs >= options.softlockThresholdMs && softlockWindowMs >= options.softlockThresholdMs;
   return {
     seed: options.seed,
     framesElapsed: samples.length,
@@ -149,6 +163,7 @@ export function summarizePlaytest(samples: readonly ProbeSample[], options: Play
     totalProgress,
     softlockWindowMs,
     softlocked,
+    acted: actedAt !== null,
     probed,
   };
 }

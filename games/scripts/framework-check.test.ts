@@ -120,13 +120,22 @@ export function reset(): void {
       ["reducer", "ember-command/src/game/store.ts", "export function gameReducer(state: State, action: Action) {\n  switch (action.type) {\n    case 'a': return state;\n    default: return state;\n  }\n}\n"],
       ["pathfinder", "odd-orbit/src/game/nav.ts", "export function findPath(from: Cell, to: Cell): Cell[] {\n  const openSet = [from];\n  while (openSet.length > 0) openSet.pop();\n  return [];\n}\n"],
       ["spawn director", "harbor-heat/src/game/waves.ts", "export class SpawnDirector {\n  private spawnBudget = 10;\n  next(): number { return this.spawnBudget--; }\n}\n"],
-      ["progression curve", "harbor-heat/src/game/xp.ts", "export function xpForLevel(level: number): number {\n  return Math.round(100 * level ** 1.5);\n}\n"],
       ["resource pool", "scrap-signal/src/game/pool.ts", "export class BulletPool {\n  private freeList: Bullet[] = [];\n  take(): Bullet { return this.freeList.pop()!; }\n}\n"],
       ["damage or status table", "deepward/src/game/hit.ts", "export const ENEMY_DAMAGE_TABLE: DamageTableDef = { rows: [] };\n"],
     ];
     for (const [seam, path, source] of cases) {
       expect({ path, seams: engineSeams(path, pad(source)).map((found) => found.name) }).toEqual({ path, seams: [seam] });
     }
+  });
+
+  test("a game's own progression is content at any length, never a seam", () => {
+    const levels = Array.from({ length: 80 }, (_, index) => `  ${(index + 1) * 120},`).join("\n");
+    const source =
+      `export const levelThresholds = [\n${levels}\n];\n` +
+      "export function xpForLevel(level: number): number {\n  return Math.round(100 * level ** 1.5);\n}\n" +
+      'export const UNLOCK_ORDER = ["axe", "campfire", "thatch", "spear", "bow"];\n';
+    expect(codeLines(source)).toBeGreaterThan(50);
+    expect(engineSeams("fernwild/src/game/levels.ts", source)).toEqual([]);
   });
 
   test("a queue drained by due time is a scheduler; a bill carrying a due date is data", () => {
@@ -350,7 +359,7 @@ describe("the shape of the judge", () => {
   });
 
   test("every seam names the engine area it belongs to", () => {
-    expect(ENGINE_SEAMS.length).toBe(8);
+    expect(ENGINE_SEAMS.length).toBe(7);
     for (const seam of ENGINE_SEAMS) {
       expect(seam.owner.length).toBeGreaterThan(3);
       expect(seam.defines.length).toBeGreaterThan(0);

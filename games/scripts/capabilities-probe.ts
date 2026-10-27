@@ -8,6 +8,9 @@
  * `window.__jgengine*` readout (`window.__jgengineAudio`, `window.__jgengineRun`),
  * so an adopted system that is merely imported fails here.
  *
+ * The probe presses Play first (the game's `capture.play` commands through the agent bridge) and
+ * counts frames from there: a system is owed live counters once the player starts, not on the menu.
+ *
  * Capabilities with no probe surface stay at declaration level; `bun run check games-capabilities`
  * lists them. This command only checks modules whose declaration names a probe.
  *
@@ -18,7 +21,7 @@ import { existsSync, mkdtempSync, readFileSync, rmSync } from "node:fs";
 import { createServer } from "node:net";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import { fileURLToPath } from "node:url";
+import { fileURLToPath, pathToFileURL } from "node:url";
 
 import {
   gameAdoption,
@@ -254,7 +257,52 @@ interface Expectations {
   devtools: string[];
 }
 
-async function bootAndRead(game: string, port: number, expectations: Expectations): Promise<LivePage> {
+/** One `capture.play` entry: the commands the start menu dispatches, so the probe can press Play. */
+interface StartCommand {
+  name: string;
+  input?: unknown;
+}
+
+/**
+ * The game's own start (`capture.play`), read from `src/game.config.ts` the way a headless flow reads it.
+ * A game with none starts in play, and the probe judges it from mount.
+ */
+async function startCommands(game: string): Promise<StartCommand[]> {
+  try {
+    const module: unknown = await import(pathToFileURL(join(root, game, "src", "game.config.ts")).href);
+    const playable = typeof module === "object" && module !== null && "game" in module ? module.game : undefined;
+    const capture = typeof playable === "object" && playable !== null && "capture" in playable ? playable.capture : undefined;
+    const play = typeof capture === "object" && capture !== null && "play" in capture ? capture.play : undefined;
+    if (!Array.isArray(play)) return [];
+    const entries: StartCommand[] = [];
+    for (const entry of play) {
+      if (typeof entry === "string") entries.push({ name: entry });
+      else if (typeof entry === "object" && entry !== null && "name" in entry && typeof entry.name === "string") {
+        entries.push("input" in entry ? { name: entry.name, input: entry.input } : { name: entry.name });
+      }
+    }
+    return entries;
+  } catch (error) {
+    console.log(`(${game}: could not read capture.play, so the probe judges it from mount: ${error instanceof Error ? error.message.split("\n")[0] : String(error)})`);
+    return [];
+  }
+}
+
+/**
+ * Press Play through the agent bridge, then restart the frame count: a system is owed live counters
+ * {@link PROBE_SETTLE_FRAMES} frames after the player starts, not after the menu appears.
+ */
+function startPlayExpression(commands: readonly StartCommand[]): string {
+  return `(() => {
+  const agent = window.__jgengineAgent;
+  if (agent === undefined) return false;
+  for (const command of ${JSON.stringify(commands)}) agent.handle({ method: "run_command", name: command.name, input: command.input ?? {} });
+  window.__jgProbeFrames = 0;
+  return true;
+})()`;
+}
+
+async function bootAndRead(game: string, port: number, expectations: Expectations, start: readonly StartCommand[]): Promise<LivePage> {
   const url = `http://127.0.0.1:${port}/`;
   const dev = spawn("bun", ["run", "dev", "--", "--port", String(port), "--strictPort", "--host", "127.0.0.1"], {
     cwd: join(root, game),
@@ -293,6 +341,7 @@ async function bootAndRead(game: string, port: number, expectations: Expectation
     await cdp.send("Page.navigate", { url });
     const started = Date.now();
     let last: LivePage = { probes: null, windows: {} };
+    let playing = start.length === 0;
     const clock = (): Parameters<typeof probeGivesUp>[0] => ({
       now: Date.now(),
       startedAt: started,
@@ -303,6 +352,12 @@ async function bootAndRead(game: string, port: number, expectations: Expectation
       try {
         const page = await cdp.evaluate<LivePage>(READ_PAGE);
         last = page;
+        if (!playing) {
+          if (page.mounted === true) playing = await cdp.evaluate<boolean>(startPlayExpression(start));
+          if (playing) process.stdout.write(`pressed Play (${start.map((command) => command.name).join(", ")})... `);
+          await Bun.sleep(500);
+          continue;
+        }
         const windowsLive = expectations.windows.every((name) => page.windows?.[name] !== undefined);
         const probesLive =
           expectations.devtools.length === 0 ||
@@ -368,7 +423,7 @@ for (const game of targets) {
   }
   const port = await freePort();
   process.stdout.write(`probing ${game}... `);
-  const page = await bootAndRead(game, port, expectations);
+  const page = await bootAndRead(game, port, expectations, await startCommands(game));
   const gameFailures: ProbeFailure[] = [];
   const unmounted =
     page.mounted === true

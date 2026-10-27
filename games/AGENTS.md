@@ -13,7 +13,9 @@ Games run the engine source in `packages/` from the same commit, never a publish
 3. Verify the game itself, plus a differently built second game when it applies.
 4. Delete superseded game code after adoption.
 
-**Size signal.** A game module that owns a state machine, reducer, scheduler, resource pool, pathfinder, damage or status table, spawn director or progression curve is an engine system in the wrong place. If it would pass roughly 50 lines, or a second game would want it, file the engine seam first: name `packages/<pkg>/src/<file>`, the API needed and two adopting games, under [epic #2312](https://github.com/Noisemaker111/jgengine/issues/2312).
+**Mechanism signal.** A game module that owns a reusable mechanism (a state machine, reducer, scheduler, resource pool, pathfinder, damage or status model, spawn director) is an engine system in the wrong place when a second game would want the same code with different data. Then file the engine seam first: name `packages/<pkg>/src/<file>`, the API needed and two adopting games, under [epic #2312](https://github.com/Noisemaker111/jgengine/issues/2312).
+
+A game's own progression is the game, not a mechanism, and stays in the game at any length: its level and price numbers, unlock order, tutorial beats, quests, recipes and content tables. Hours of content are expected to be thousands of lines; size is never the signal.
 
 **Seam line.** `lane:close` writes the PR's `Engine seam:` line from the diff: the engine source changed beside the game, or `none - game content only`. `bun run check games-framework` fails a new engine-shaped module in a game; a first-line `// framework-ok: <reason>` exempts one file when you can say why it cannot live upstream, and the PR body lists it as a bend.
 
@@ -22,7 +24,7 @@ Games run the engine source in `packages/` from the same commit, never a publish
 `capabilities.json` is generated from the engine's capabilities (`bun run gen games-ledger`, which `lane:close` runs). What a game adopts is read from its imports; nobody writes it. A game's `jgengine.json` `capabilities` section holds only what source cannot show:
 
 - **debt** - a game-facing capability whose domain the game has while it runs its own version, keyed by id: `{ "issue": N }` for the issue that tracks adopting it, plus an optional `reason` for the reader. Importing the capability pays the debt; the check then asks you to remove the entry.
-- **probes** - by module, the boot probes that prove an adopted system live. Name one only for a system mounted at boot.
+- **probes** - by module, the boot probes that prove an adopted system live. Name one only for a system live once play starts: the probe presses Play (the game's `capture.play`) and gives it 300 frames from there.
 
 `bun run check games-capabilities` fails debt on an id the ledger lacks, on something already imported or on a capability that ships no probe, a debt entry with no issue number, a probe for a module the game does not import, and a stale ledger; it never judges the words, and it reads nothing from GitHub. `--summary` prints the per-game table. `bun run games:capabilities probe` boots games that name a probe and checks the system reports live counters.
 

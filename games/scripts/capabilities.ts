@@ -568,7 +568,7 @@ export function probeMatches(pattern: string, keys: string[]): boolean {
  * at least one finite number, such as the audio master level or a run's banked total. Absent or empty
  * counters fail the claim rather than passing it as "imported".
  */
-/** Frames the game draws after it mounts before a readout it has not published counts as absent. */
+/** Frames the game draws after the player starts play (its `capture.play`, or mount when it has none) before a readout it has not published counts as absent. */
 export const PROBE_SETTLE_FRAMES = 300;
 /** The most a boot may take to mount at all, however busy the machine; past it the game never mounted. */
 export const PROBE_MOUNT_MS = 300_000;

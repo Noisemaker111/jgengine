@@ -8,7 +8,7 @@ import {
   type ProbeSample,
 } from "./playtest";
 
-const OPTS = { seed: 7, softlockThresholdMs: 1500, epsilon: 1e-3 };
+const OPTS = { seed: 7, softlockThresholdMs: 1500, epsilon: 1e-3, actedAtMs: 0 };
 
 function ramp(from: number, to: number, count: number, step: number): ProbeSample[] {
   return Array.from({ length: count }, (_, index) => ({
@@ -148,6 +148,32 @@ describe("summarizePlaytest", () => {
     const result = summarizePlaytest(brief, OPTS);
     expect(result.softlocked).toBe(false);
     expect(result.durationMs).toBe(200);
+  });
+
+  test("a quiet stretch before the player acts is not a softlock", () => {
+    // Four seconds of a still title or an idle start, then the player acts and the numbers move.
+    const samples: ProbeSample[] = [
+      ...Array.from({ length: 40 }, (_, index) => ({ t: index * 100, metrics: { x: 0 } })),
+      ...Array.from({ length: 30 }, (_, index) => ({ t: 4000 + index * 100, metrics: { x: index } })),
+    ];
+    const judgedFromStart = summarizePlaytest(samples, OPTS);
+    expect(judgedFromStart.softlocked).toBe(true);
+    const judgedFromInput = summarizePlaytest(samples, { ...OPTS, actedAtMs: 4000 });
+    expect(judgedFromInput.softlocked).toBe(false);
+    expect(judgedFromInput.acted).toBe(true);
+  });
+
+  test("a stuck loop after the player acts is still a softlock", () => {
+    const samples: ProbeSample[] = Array.from({ length: 60 }, (_, index) => ({ t: index * 100, metrics: { x: index < 10 ? index : 9 } }));
+    const result = summarizePlaytest(samples, { ...OPTS, actedAtMs: 500 });
+    expect(result.softlocked).toBe(true);
+  });
+
+  test("a run that never acted judges nothing", () => {
+    const stuck: ProbeSample[] = Array.from({ length: 30 }, (_, index) => ({ t: index * 100, metrics: { x: 3 } }));
+    const result = summarizePlaytest(stuck, { ...OPTS, actedAtMs: null });
+    expect(result.softlocked).toBe(false);
+    expect(result.acted).toBe(false);
   });
 
   test("no probe: empty samples read as unprobed, never softlocked", () => {
