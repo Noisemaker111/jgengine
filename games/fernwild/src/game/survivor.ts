@@ -515,6 +515,9 @@ export function setUpSurvivor(ctx: GameContext): void {
   ctx.scene.entity.stats.set(ctx.player.userId, "level", { current: 1, max: MAX_LEVEL });
   ctx.scene.entity.stats.set(ctx.player.userId, "xp", { current: 0, max: track.xpForLevel(2) });
   applyMaxes(ctx, survivor, true);
+  // Place the island's 33k trees and rocks while the title loads, not on the Play click: the
+  // renderer's foliage reads the same shared resolve, so Play no longer spends ~0.4 s on it.
+  ensurePlacements(ctx, survivor);
 }
 
 // --- save ----------------------------------------------------------------------------------
