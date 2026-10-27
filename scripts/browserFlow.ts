@@ -5,7 +5,7 @@
  * mapping and its failure messages, testable without a browser.
  */
 import type { ProbeReadings } from "../packages/core/src/game/playableGame";
-import { FLOW_PRESS_MS, FLOW_WAIT_MS, flowKeyList, type BrowserFlow, type FlowCommandResult, type FlowKeys, type ProbeCheck } from "../packages/core/src/play/flow";
+import { FLOW_AIM_TOLERANCE_PX, FLOW_PRESS_MS, FLOW_WAIT_MS, flowKeyList, type BrowserFlow, type FlowCommandResult, type FlowKeys, type ProbeCheck } from "../packages/core/src/play/flow";
 import type { FlowStepper } from "../packages/core/src/play/flowSteps";
 
 /** What the page answers through the agent bridge: `ok` plus the verb's fields, or an error. */
@@ -17,6 +17,12 @@ export interface BrowserFlowDriver {
   hold(chord: string, minMs: number, until?: { check: () => Promise<boolean>; timeoutMs: number; describe: string }): Promise<void>;
   click(text: string, count: 1 | 2): Promise<void>;
   clickAt(x: number, y: number, button: "left" | "right"): Promise<void>;
+  /** Hover the real pointer, no button. */
+  moveMouse(x: number, y: number): Promise<void>;
+  /** Lock the pointer to the canvas and turn by real mouse movement; the movement the page saw. */
+  look(dx: number, dy: number): Promise<{ x: number; y: number }>;
+  /** Turn until the page's screen point for `expression` sits within `tolerancePx` of the crosshair. */
+  aimAt(expression: string, tolerancePx: number): Promise<{ point: { x: number; y: number }; moves: number }>;
   fill(label: string, value: string): Promise<void>;
   /** Evaluate a page expression (awaited when it is a promise). */
   evaluate(expression: string): Promise<unknown>;
@@ -126,6 +132,10 @@ export function createBrowserFlow(driver: BrowserFlowDriver, stepper: FlowSteppe
     shot: (name) => stepper.run(`shot ${name}`, () => driver.shot(name)),
     click: (text, options = {}) => stepper.run(`click "${text}"`, () => driver.click(text, options.double === true ? 2 : 1)),
     clickAt: (x, y, options = {}) => stepper.run(`click at ${x},${y}`, () => driver.clickAt(x, y, options.button ?? "left")),
+    moveMouse: (x, y) => stepper.run(`move mouse ${x},${y}`, () => driver.moveMouse(x, y)),
+    look: (dx, dy) => stepper.run(`look ${dx},${dy} px`, () => driver.look(dx, dy)),
+    aimAt: (expression, options = {}) =>
+      stepper.run(`aim at ${expression}`, async () => (await driver.aimAt(expression, options.tolerancePx ?? FLOW_AIM_TOLERANCE_PX)).point),
     fill: (label, value) => stepper.run(`fill "${label}"`, () => driver.fill(label, value)),
     see: (text, options = {}) =>
       stepper.run(`see ${String(text)}`, async () => {

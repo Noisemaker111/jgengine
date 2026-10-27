@@ -84,6 +84,20 @@ export interface BrowserFlow<TProbe extends ProbeReadings> extends Flow<TProbe> 
   click(text: string, options?: { double?: boolean }): Promise<void>;
   /** Native click at CSS viewport pixels (canvas targets, map orders). */
   clickAt(x: number, y: number, options?: { button?: "left" | "right" }): Promise<void>;
+  /** Hover the real pointer at CSS viewport pixels, no button. */
+  moveMouse(x: number, y: number): Promise<void>;
+  /**
+   * Turn a pointer-locked view by `dx`,`dy` pixels of real mouse movement, locking the pointer to the
+   * canvas first the way the game does. Fails when the page never reports the movement. Returns the
+   * movement the page saw.
+   */
+  look(dx: number, dy: number): Promise<{ x: number; y: number }>;
+  /**
+   * Bring the crosshair onto a target: `expression` evaluates on the page to the target's CSS screen
+   * point `{ x, y }` (or `null` while hidden). The step learns the game's look response as it goes and
+   * fails when the target is not within `tolerancePx` (default 6) after its corrections.
+   */
+  aimAt(expression: string, options?: { tolerancePx?: number }): Promise<{ x: number; y: number }>;
   /** Replace a text field's value by its accessible label, then Tab to commit. */
   fill(label: string, value: string): Promise<void>;
   /** Wait until the page's text shows this. */
@@ -177,3 +191,5 @@ export function flowKeyList(keys: FlowKeys): readonly FlowKey[] {
 export const FLOW_WAIT_MS = 15_000;
 /** How long {@link Flow.press} holds its keys. */
 export const FLOW_PRESS_MS = 120;
+/** How close {@link BrowserFlow.aimAt} must bring the target to the crosshair, in CSS pixels. */
+export const FLOW_AIM_TOLERANCE_PX = 6;

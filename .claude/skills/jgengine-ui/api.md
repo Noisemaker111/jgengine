@@ -601,6 +601,7 @@
 - `BrowserFlow` (interface): interface BrowserFlow<TProbe extends ProbeReadings> extends Flow<TProbe> — A browser-only flow: everything a {@link Flow} does, plus the page itself.
 - `BrowserFlowSpec` (interface): interface BrowserFlowSpec<TProbe extends ProbeReadings> extends FlowSpecBase — A flow that needs the page: menus, DOM text, clicks.
 - `BrowserProofFlow` (interface): interface BrowserProofFlow<TProbe extends ProbeReadings = ProbeReadings> — A defined flow that only the browser runner can play.
+- `FLOW_AIM_TOLERANCE_PX` (const): const FLOW_AIM_TOLERANCE_PX: 6 — How close {@link BrowserFlow.aimAt} must bring the target to the crosshair, in CSS pixels.
 - `FLOW_PRESS_MS` (const): const FLOW_PRESS_MS: 120 — How long {@link Flow.press} holds its keys.
 - `FLOW_WAIT_MS` (const): const FLOW_WAIT_MS: 15000 — Default wait cap for a flow step, in milliseconds.
 - `Flow` (interface): interface Flow<TProbe extends ProbeReadings> — What a flow can do in both runners: hold keys, turn the camera, teleport, run commands, wait on the game's probe. Each call is one step; a failing step stops the flow and names itself.
