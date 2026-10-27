@@ -101,18 +101,6 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 - `formatDelta` (function) · `import { formatDelta } from "@jgengine/core/ui"`
 - `formatDuration` (function) · `import { formatDuration } from "@jgengine/core/ui"`
 
-## coach-mark — single onboarding callout — title/body, N-of-M counter, Next + Skip controls, theme-reskinnable
-
-- `CoachMark` (function) · `import { CoachMark } from "@jgengine/react"`
-
-## coach-mark-host — full-screen onboarding coach-mark host — anchored/centered callout, dimmed spotlight backdrop, Next/Skip wired to the sequence
-
-- `CoachMarkHost` (function) · `import { CoachMarkHost } from "@jgengine/react"`
-
-## coach-marks — ordered, gated, persist-once onboarding coach-marks/tutorial callouts — anchored or centered steps with a seen set and Next/Skip
-
-- `createCoachMarkSequence` (function) · `import { createCoachMarkSequence } from "@jgengine/core/ui"`
-
 ## codex-gallery — codex/bestiary gallery with category tabs, discovered/locked cards, secret masking, and a completion header
 
 - `CodexPanel` (function) · `import { CodexPanel } from "@jgengine/react"`
@@ -607,6 +595,14 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `layoutScreenMarker` (function) · `import { layoutScreenMarker } from "@jgengine/core/ui"`
 
+## onboarding-callout — anchored or centred tutorial callouts with a spotlight, Next and Skip, driven by the onboarding steps
+
+- `OnboardingCallout` (function) · `import { OnboardingCallout } from "@jgengine/react"`
+
+## onboarding-callout-card — one onboarding step as a card with N of M, Next and Skip, theme-reskinnable
+
+- `OnboardingCalloutCard` (function) · `import { OnboardingCalloutCard } from "@jgengine/react"`
+
 ## ordinal-format — format a placement number as 1st/2nd/3rd for HUD ranks
 
 - `formatOrdinal` (function) · `import { formatOrdinal } from "@jgengine/core/ui"`
@@ -881,10 +877,6 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 ## use-camera-shake — React hook reading a camera-shake controller's live trauma and kind
 
 - `useCameraShakeReadout` (function) · `import { useCameraShakeReadout } from "@jgengine/react"`
-
-## use-coach-marks — React hook binding a coach-mark sequence to a component — re-renders on advance/skip/gate changes
-
-- `useCoachMarks` (function) · `import { useCoachMarks } from "@jgengine/react"`
 
 ## use-combo-meter — React hook binding a combo meter — re-renders per frame so the decay-window bar drains live and returns the current combo view
 

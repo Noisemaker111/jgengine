@@ -1724,7 +1724,6 @@
   "packages/core/src/ui/accessibility.test.ts": {"nonNull":1,"cast":1},
   "packages/core/src/ui/accessibility.view.test.ts": {"cast":1},
   "packages/core/src/ui/accessibility.view.tsx": {"cast":1},
-  "packages/core/src/ui/coachMarks.ts": {"nonNull":1},
   "packages/core/src/ui/cursor.view.tsx": {"cast":3},
   "packages/core/src/ui/fonts.view.ts": {"cast":5,"nonNull":1},
   "packages/core/src/ui/icons/gameIcons.view.tsx": {"cast":1},

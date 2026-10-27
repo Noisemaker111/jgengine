@@ -2665,6 +2665,14 @@
 - `OnboardingHudProps` (interface): interface OnboardingHudProps — Props for {@link OnboardingHud}.
 - `useOnboarding` (function): function useOnboarding(): OnboardingRuntime | null — The running onboarding, or `null` when the game installed none. Compose its `markers` into the game's `Minimap` and its `waypoints` into a compass.
 
+## @jgengine/core/onboarding/onboardingCallout.view
+
+- `OnboardingCallout` (function): function OnboardingCallout({ resolveAnchor, showBackdrop = true, nextLabel = "Next", doneLabel = "Got it", skipLabel = "Skip tour", theme, className, style, }: OnboardingCalloutProps): ReactNode — The onboarding's UI callout, for steps about the interface rather than the world: a step with an `anchor` (a CSS selector) gets a card beside that element with a spotlight around it, and a step that finishes on Next with no anchor gets a centred card. Next and Skip run `onboarding.next` and `onboarding.skip`, so progress saves with the game. Other steps show nothing here.
+- `OnboardingCalloutCard` (function): function OnboardingCalloutCard({ view, positionStyle, onNext, onSkip, nextLabel = "Next", doneLabel = "Got it", skipLabel = "Skip tour", theme, className, style, }: OnboardingCalloutCardProps): ReactNode — One onboarding step as a card: "N of M", the step's text and detail, Next (Got it on the last step) when the step finishes on Next, and Skip when the onboarding is skippable. Presentation only; {@link OnboardingCallout} positions it and wires it to the running onboarding.
+- `OnboardingCalloutCardProps` (interface): interface OnboardingCalloutCardProps — Props for {@link OnboardingCalloutCard}.
+- `OnboardingCalloutProps` (interface): interface OnboardingCalloutProps — Props for {@link OnboardingCallout}.
+- `OnboardingCalloutTheme` (interface): interface OnboardingCalloutTheme — Reskin tokens for {@link OnboardingCallout}.
+
 ## @jgengine/core/onboarding/onboardingSystem
 
 - `ONBOARDING_MARK` (const): const ONBOARDING_MARK: "onboarding" — The id of the waypoint and minimap marker the onboarding owns.

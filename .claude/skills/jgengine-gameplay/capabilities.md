@@ -619,6 +619,14 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `OnboardingBanner` (function) · `import { OnboardingBanner } from "@jgengine/core/onboarding/onboarding.view"`
 
+## onboarding-callout — anchored or centred tutorial callouts with a spotlight, Next and Skip, driven by the onboarding steps
+
+- `OnboardingCallout` (function) · `import { OnboardingCallout } from "@jgengine/core/onboarding/onboardingCallout.view"`
+
+## onboarding-callout-card — one onboarding step as a card with N of M, Next and Skip, theme-reskinnable
+
+- `OnboardingCalloutCard` (function) · `import { OnboardingCalloutCard } from "@jgengine/core/onboarding/onboardingCallout.view"`
+
 ## onboarding-hud — onboarding steps in the quest tracker with Next and Skip
 
 - `OnboardingHud` (function) · `import { OnboardingHud } from "@jgengine/core/onboarding/onboarding.view"`

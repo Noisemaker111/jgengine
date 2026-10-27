@@ -20,7 +20,7 @@ export * from "@jgengine/core/mission/questTracker.view";
 export * from "@jgengine/core/codex/codex.view";
 export * from "@jgengine/core/notifications/notificationCenter.view";
 export * from "@jgengine/core/notifications/toastStack.view";
-export * from "@jgengine/core/ui/coachMarks.view";
+export * from "@jgengine/core/onboarding/onboardingCallout.view";
 export * from "@jgengine/core/mission/objectiveBanner.view";
 export * from "@jgengine/core/settings/keybindingMenu.view";
 export * from "@jgengine/core/inventory/shopGrid.view";

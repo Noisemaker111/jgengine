@@ -162,15 +162,6 @@ export {
   type ResolvedAction,
 } from "./ui/actionModel";
 export {
-  createCoachMarkSequence,
-  type CoachMarkPlacement,
-  type CoachMarkSequence,
-  type CoachMarkSequenceOptions,
-  type CoachMarkSnapshot,
-  type CoachMarkStep,
-  type CoachMarkView,
-} from "./ui/coachMarks";
-export {
   orientationGateActive,
   orientationHintActive,
   resolveOrientationRequirement,
