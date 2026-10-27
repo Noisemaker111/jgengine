@@ -1528,36 +1528,6 @@
       "intent": "render seconds as m:ss / m:ss.ff / h:mm:ss for timers and race HUDs"
     },
     {
-      "id": "coach-mark",
-      "packages": [
-        "@jgengine/core"
-      ],
-      "module": "@jgengine/core/ui/coachMarks.view",
-      "gameFacing": false,
-      "probe": null,
-      "intent": "single onboarding callout — title/body, N-of-M counter, Next + Skip controls, theme-reskinnable"
-    },
-    {
-      "id": "coach-mark-host",
-      "packages": [
-        "@jgengine/core"
-      ],
-      "module": "@jgengine/core/ui/coachMarks.view",
-      "gameFacing": false,
-      "probe": null,
-      "intent": "full-screen onboarding coach-mark host — anchored/centered callout, dimmed spotlight backdrop, Next/Skip wired to the sequence"
-    },
-    {
-      "id": "coach-marks",
-      "packages": [
-        "@jgengine/core"
-      ],
-      "module": "@jgengine/core/ui/coachMarks",
-      "gameFacing": false,
-      "probe": null,
-      "intent": "ordered, gated, persist-once onboarding coach-marks/tutorial callouts — anchored or centered steps with a seen set and Next/Skip"
-    },
-    {
       "id": "codex",
       "packages": [
         "@jgengine/core"
@@ -6415,6 +6385,26 @@
       "intent": "announces each finished onboarding step and the next one on the objective banner"
     },
     {
+      "id": "onboarding-callout",
+      "packages": [
+        "@jgengine/core"
+      ],
+      "module": "@jgengine/core/onboarding/onboardingCallout.view",
+      "gameFacing": false,
+      "probe": null,
+      "intent": "anchored or centred tutorial callouts with a spotlight, Next and Skip, driven by the onboarding steps"
+    },
+    {
+      "id": "onboarding-callout-card",
+      "packages": [
+        "@jgengine/core"
+      ],
+      "module": "@jgengine/core/onboarding/onboardingCallout.view",
+      "gameFacing": false,
+      "probe": null,
+      "intent": "one onboarding step as a card with N of M, Next and Skip, theme-reskinnable"
+    },
+    {
       "id": "onboarding-hud",
       "packages": [
         "@jgengine/core"
@@ -9834,16 +9824,6 @@
       "gameFacing": false,
       "probe": null,
       "intent": "React hook reading a camera-shake controller's live trauma and kind"
-    },
-    {
-      "id": "use-coach-marks",
-      "packages": [
-        "@jgengine/core"
-      ],
-      "module": "@jgengine/core/ui/coachMarks.view",
-      "gameFacing": false,
-      "probe": null,
-      "intent": "React hook binding a coach-mark sequence to a component — re-renders on advance/skip/gate changes"
     },
     {
       "id": "use-combo-meter",
