@@ -529,9 +529,9 @@ export function aggregateSelfTime(
   });
   return rank(self, windowMs, top).map((entry) => {
     const tally = callers.get(entry.at === "" ? entry.fn : `${entry.fn}\t${entry.at}`);
-    if (tally === undefined) return entry;
-    const [best] = [...tally].sort((a, b) => b[1] - a[1]);
-    return { ...entry, via: best![0].replace("\t", " ") };
+    const [best] = tally === undefined ? [] : [...tally].sort((a, b) => b[1] - a[1]);
+    if (best === undefined) return entry;
+    return { ...entry, via: best[0].replace("\t", " ") };
   });
 }
 
