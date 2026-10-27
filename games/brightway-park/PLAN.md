@@ -98,6 +98,12 @@ Brief: a seaside theme-park tycoon with the loop of RollerCoaster Tycoon: start 
 - A piece-by-piece coaster builder (slopes, turns, loops, lifts) with a test run.
 - Guests that walk the paths rather than straight to the door.
 - Scenario goals past the third, like 800 guests and a 600 rating by year 2.
+- The economy: a steady player's park loses money and closes in its second month (`bun scripts/balance.ts 60`
+  is the measure). Guests stay about a minute and a half and spend little inside; the first scenario cannot
+  be won yet.
+- `packages/core/src/onboarding/`: steps are checked only on a game-time tick, so a game built with the
+  clock paused checks them itself (`parkHintsWhilePaused` in `src/game/onboarding.ts`). The engine should
+  check steps on world changes while paused.
 
 ## Milestones
 
@@ -108,4 +114,5 @@ Brief: a seaside theme-park tycoon with the loop of RollerCoaster Tycoon: start 
 5. [x] Calendar months, long scenarios with an unlock chain, 8x speed.
 6. [x] Onboarding hints that point at the gate, the ride, the gate button and the staff button.
 7. [x] The brief in the checked shape; the from-zero proof plays the first 10 minutes; the lab's first four topics are short and the hints teach the lab, so the first unlock lands inside two minutes.
-8. [ ] Hint cards on the engine's onboarding system.
+8. [x] Hint cards on the engine's onboarding system, with Hide hints.
+9. [ ] An economy a steady player can grow: the balance bot wins the first scenario.

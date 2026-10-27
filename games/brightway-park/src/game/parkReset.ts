@@ -14,6 +14,7 @@ import { syncAmbience } from "./audio";
 import { savePark } from "./persistence";
 import { DAY_START } from "./catalog";
 import { resetDayLoop } from "./daySession";
+import { restartHints } from "./onboarding";
 import { armMidnight } from "./midnight";
 
 const TRACK_PATH_ID = "coaster-track";
@@ -105,6 +106,7 @@ export function beginScenario(ctx: GameContext, id: string): boolean {
   const scenario = scenarioDef(id);
   if (scenario === null || scenarioLock(id) !== null) return false;
   resetPark(ctx, { cash: scenario.cash });
+  restartHints(ctx);
   const w = park.of(ctx);
   w.set("scenario.id", id);
   if (w.startJob(id) === null) return false;

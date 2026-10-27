@@ -58,7 +58,8 @@ Read from `src/game/{park,catalog,objects,sim,scenarios,milestones,rides}`; the 
     a new game starts the first. Speeds 1x, 2x, 4x and 8x.
   - First-scenario hints. A card says the next step and rings the control that does it, with an
     arrow over the spot on the lot: lay a path from the gate, build a ride, connect it, open the
-    gate; at the first breakdown, hire a mechanic from Staff.
+    gate, start the Ice Cream Cart in the Lab, hire a mechanic from Staff. The steps run on the
+    engine's onboarding; Hide hints on the card skips the rest.
 
     | Scenario | Targets | Deadline | At 1x | Prize |
     | --- | --- | --- | --- | --- |
