@@ -21,8 +21,9 @@ Read from `src/game/{park,catalog,objects,sim,scenarios,milestones,rides}`; the 
 - **Progression — four systems.**
   - Twenty-eight rides in five families (gentle 8, thrill 8, water 4, transport 3, coasters 5),
     each with its own excitement, intensity, nausea, capacity, cycle and ticket on the shared ride
-    sim. Wear builds every cycle until the ride breaks; the crew's repair is a full overhaul, a
-    mechanic bay cuts it by a third, and servicing clears wear before it breaks.
+    sim. Wear builds every cycle until the ride breaks (the ride window shows its reliability for
+    the next run); a broken ride stays down until a mechanic repairs it, a newly hired mechanic goes
+    straight to it, and servicing clears wear before it breaks.
   - Money that binds. Every stall and ride has a price the player sets; a guest refuses one more
     than a quarter over what it is worth ("too expensive" counts on the dashboard). Ten shops and
     facilities: burgers, drinks, toilets and the information kiosk at the start, six more in the lab.
@@ -31,9 +32,11 @@ Read from `src/game/{park,catalog,objects,sim,scenarios,milestones,rides}`; the 
     restocking, repairs, research, marketing, interest, building and land, profit).
   - Marketing. Three campaigns (leaflets $300 for 2 days, posters $800 for 4, radio $2,000 for 6)
     multiply the guests heading for the gate by 1.5, 1.8 and 2.5 while they run; they stack.
-  - A research lab. Four rides, four shops and nine scenery pieces are open at the start; every
-    other ride, shop, theme piece and the mechanic bay is a lab topic with its own fee and time, each
-    after the one before it in its family.
+  - A research lab. Four rides (carousel, helter skelter, boat hire, wooden coaster), four shops
+    and ten scenery pieces are open at the start; the other 24 rides, 6 shops and 4 theme pieces are
+    34 lab topics, each with its own fee and time (one to eight park days, about thirteen park months
+    for all of them), each after the one before it in its family.
+  - Litter bins. Each bin catches about two-thirds of what one guest drops.
   - Theming. Fourteen scenery pieces (library trees, bushes, rocks, benches, lamps and bins, plus
     the park's own flower beds, hedges, fountain, topiary, statue, arch and flagpole) add charm to
     every ride in reach, which lifts the ride's appeal and excitement, up to 6 points a ride.

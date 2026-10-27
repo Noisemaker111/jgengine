@@ -5,6 +5,8 @@
  * `report.<id>` (the last month closed), and each campaign into an action in the `ads` queue.
  */
 
+import { DAY_LENGTH } from "./catalog";
+
 /** Days in a park month. A day is `DAY_LENGTH` seconds, so a month is 20 minutes at 1x. */
 export const MONTH_DAYS = 8;
 
@@ -35,6 +37,13 @@ export function parkDate(day: number): ParkDate {
 export function parkDateLabel(day: number): string {
   const date = parkDate(day);
   return `${date.dayOfMonth} ${date.month}${date.year > 1 ? ` Y${date.year}` : ""}`;
+}
+
+/** Seconds of park time as the player reads them: park hours under a day, days above. */
+export function parkDuration(seconds: number): string {
+  if (seconds < DAY_LENGTH) return `${Math.max(1, Math.ceil(seconds / (DAY_LENGTH / 24)))}h`;
+  const days = Math.round((seconds / DAY_LENGTH) * 10) / 10;
+  return `${days} day${days === 1 ? "" : "s"}`;
 }
 
 /** "May, Year 1": how a month reads on the HUD and in a scenario's deadline. */

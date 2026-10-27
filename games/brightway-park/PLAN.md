@@ -75,6 +75,6 @@ The first month closes at 20:00 with the monthly report.
 1. [x] Design brief.
 2. [x] Empty lot start, closed gate, arrival ramp, slower rating; the open-park proof plays from the empty lot.
 3. [x] Monthly books, monthly loan interest and bankruptcy, marketing campaigns.
-4. [ ] Repairs need a mechanic; reliability shown; research rescaled to months; bins cut litter.
+4. [x] Repairs need a mechanic; reliability shown; research rescaled to months; bins cut litter.
 5. [ ] Calendar months, long scenarios with an unlock chain, 8x speed.
 6. [ ] Onboarding hints that point at the gate, the ride, the gate button and the staff button.

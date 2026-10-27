@@ -110,28 +110,28 @@ function staffActions(def: BuildableDef): Record<string, WorldActionDecl> {
   };
 }
 
-/** A mechanic bay cuts a repair by a third. */
-export const QUICK_REPAIR = 0.65;
+/** The repair a broken ride of this kind needs: only a mechanic can do it. */
+export const repairAction = (kind: string): string => `repair_${kind}`;
 
 function rideActions(def: BuildableDef): Record<string, WorldActionDecl> {
   const ride = def.ride!;
-  // Spending lands on the month's books when it is paid: up front, with the cost.
-  const repair = (takes: number, when: WorldActionDecl["when"]): WorldActionDecl => ({
-    label: `Repair ${def.label}`,
-    on: def.id,
-    ...(when === undefined ? {} : { when }),
-    whenTarget: { broken: true },
-    cost: { "park.cash": -ride.breakdown.repairCost, [monthLine("repairs")]: ride.breakdown.repairCost },
-    world: { "park.spent_today": ride.breakdown.repairCost },
-    takes,
-    queue: "crew",
-    effect: { broken: false },
-    emit: "repaired",
-    note: "The crew has the {target} running again.",
-  });
   return {
-    [`repair_${def.id}`]: repair(ride.breakdown.repairSeconds, { "n.staff_mechanic": { atMost: 0 } }),
-    [`quickfix_${def.id}`]: repair(Math.round(ride.breakdown.repairSeconds * QUICK_REPAIR), { "n.staff_mechanic": { atLeast: 1 } }),
+    // A broken ride stays down until a mechanic fixes it. Spending lands on the month's books when
+    // it is paid: up front, with the cost.
+    [repairAction(def.id)]: {
+      label: `Repair ${def.label}`,
+      on: def.id,
+      when: { "n.staff_mechanic": { atLeast: 1 } },
+      refuse: "Hire a mechanic from Staff to fix it",
+      whenTarget: { broken: true },
+      cost: { "park.cash": -ride.breakdown.repairCost, [monthLine("repairs")]: ride.breakdown.repairCost },
+      world: { "park.spent_today": ride.breakdown.repairCost },
+      takes: ride.breakdown.repairSeconds,
+      queue: "crew",
+      effect: { broken: false },
+      emit: "repaired",
+      note: "The mechanic has the {target} running again.",
+    },
     [`service_${def.id}`]: {
       label: `Service ${def.label}`,
       on: def.id,
@@ -199,6 +199,12 @@ const actions: Record<string, WorldActionDecl> = {
 };
 
 /**
+ * How many seconds of park time a topic's listed `seconds` take in the lab: the 34 topics come to
+ * about 15,500 s, thirteen park months, so the lab paces a season rather than an afternoon.
+ */
+export const RESEARCH_PACE = 5;
+
+/**
  * The lab: each topic is an action that costs its fee up front, waits its time in the `lab` queue
  * and sets `research.<kind>`; the topic before it in its family must be done first.
  */
@@ -210,7 +216,7 @@ function researchAction(def: BuildableDef): WorldActionDecl {
     when: { [researched(def.id)]: false, ...(after === undefined || BUILDABLES[after]?.research === undefined ? {} : { [researched(after)]: true }) },
     refuse: after === undefined ? `${def.label} is already researched` : `Research the ${BUILDABLES[after]!.label} first`,
     cost: { "park.cash": -research.cost, [monthLine("research")]: research.cost },
-    takes: research.seconds,
+    takes: research.seconds * RESEARCH_PACE,
     queue: "lab",
     world: { [researched(def.id)]: true, "park.spent_today": research.cost },
     note: `Research complete: the ${def.label} can now be built`,
@@ -271,6 +277,8 @@ const flows: Record<string, WorldFlowDecl> = {
   // Every guest drops a little litter; every janitor post sweeps it up.
   litter: { to: "park.litter", from: "park.guests", rate: 0.006 },
   sweep: { to: "park.litter", from: "n.staff_janitor", rate: -(buildableDef("staff_janitor").staff!.cleaning * 0.08) },
+  // Every bin catches what about two-thirds of a guest would drop.
+  bins: { to: "park.litter", from: "n.deco_bin", rate: -0.004 },
 };
 // The ground's height levels, a digit a cell; and which version of the path rules the park was laid under.
 const prices: Record<string, WorldFactsDecl[string]> = { [LAND_FACT]: FLAT_LAND, "park.netv": 0 };
@@ -483,7 +491,6 @@ export function rethemeRides(ctx: GameContext): void {
   }
 }
 
-/** The repair the park's crew runs on this ride now: quicker once a mechanic bay stands. */
 /** A staff post's patrol radius in metres. */
 export function patrolRadius(w: WorldModel, postId: string): number {
   return w.num(`${postId}.patrol`);
@@ -492,7 +499,12 @@ export function patrolRadius(w: WorldModel, postId: string): number {
 /** Every placed ride. */
 export const rideObjects = (ctx: GameContext): readonly ParkObject[] => parkObjects(ctx).filter((obj) => obj.def.ride !== undefined);
 
-export const repairAction = (w: WorldModel, kind: string): string => (countOf(w, "staff_mechanic") > 0 ? `quickfix_${kind}` : `repair_${kind}`);
+/** A ride's chance in a hundred of running its next cycle without breaking, from its wear (runs since its last service). */
+export function reliability(def: BuildableDef, wear: number): number {
+  // The ride sim counts the run before it rolls: the next run is wear + 1.
+  const odds = def.ride === undefined ? 0 : def.ride.breakdown.baseChance + def.ride.breakdown.wearChance * (wear + 1);
+  return Math.max(0, Math.round((1 - odds) * 1000) / 10);
+}
 
 /** The park as the dashboard and the rating read it: sums over every kind's totals. */
 export interface ParkMetrics {

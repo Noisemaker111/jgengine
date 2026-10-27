@@ -101,8 +101,8 @@ const RIDES: readonly RideRow[] = [
   ["ride_ferris", "Ferris Wheel", "🎡", "gentle", 2600, 70, 12, 4.2, 0.9, 0.5, 16, 24, 2, { cost: 900, seconds: 80, after: "ride_vintage" }, "Slow, scenic and seen from every corner of the park."],
   ["ride_haunted", "Haunted House", "👻", "gentle", 3200, 80, 12, 4.8, 2.5, 1.0, 8, 20, 3, { cost: 1100, seconds: 90, after: "ride_ferris" }, "Crooked gables and creaking doors. Screams guaranteed."],
   ["ride_obs", "Observation Tower", "🗼", "gentle", 3800, 90, 8, 4.5, 0.8, 0.4, 20, 30, 3, { cost: 1300, seconds: 100, after: "ride_haunted" }, "A ring cabin rises up the mast for a view of the whole coast."],
-  ["ride_bumper", "Dodgems", "🚙", "thrill", 2200, 60, 12, 4.4, 3.0, 1.5, 12, 16, 2, null, "Bumper cars under a striped roof. Pure chaos."],
-  ["ride_swings", "Wave Swinger", "🎐", "thrill", 2800, 70, 12, 5.0, 4.2, 2.8, 16, 18, 3, { cost: 900, seconds: 70 }, "Chairs fly out on chains as the canopy spins and tilts."],
+  ["ride_bumper", "Dodgems", "🚙", "thrill", 2200, 60, 12, 4.4, 3.0, 1.5, 12, 16, 2, { cost: 700, seconds: 60 }, "Bumper cars under a striped roof. Pure chaos."],
+  ["ride_swings", "Wave Swinger", "🎐", "thrill", 2800, 70, 12, 5.0, 4.2, 2.8, 16, 18, 3, { cost: 900, seconds: 70, after: "ride_bumper" }, "Chairs fly out on chains as the canopy spins and tilts."],
   ["ride_pirate", "Pirate Ship", "🏴‍☠️", "thrill", 3000, 75, 12, 5.4, 4.8, 3.6, 16, 20, 3, { cost: 1000, seconds: 80, after: "ride_swings" }, "A galleon swinging higher and higher on its frame."],
   ["ride_gokarts", "Go-Karts", "🏎️", "thrill", 3600, 90, 16, 5.6, 3.6, 1.2, 8, 30, 4, { cost: 1200, seconds: 90, after: "ride_pirate" }, "Race round a tyre-walled track. Everyone wants another go."],
   ["ride_simulator", "Motion Simulator", "🛸", "thrill", 3400, 100, 8, 4.8, 5.4, 6.2, 8, 18, 4, { cost: 1200, seconds: 90, after: "ride_gokarts" }, "A capsule that throws its riders through space."],
@@ -245,8 +245,7 @@ const OTHER: readonly BuildableDef[] = [
   },
   {
     id: "staff_mechanic", label: "Mechanic", category: "staff", icon: "🔧", cost: 500, upkeep: 90, color: "#4a5568", trim: "#ffb03a", appeal: 0, footprint: 4,
-    blurb: "Hire a mechanic: inspects and services worn rides in the patrol area, and every repair goes quicker.", staff: { role: "mechanic", cleaning: 0, repair: 0.35, patrol: 22 },
-    research: { cost: 600, seconds: 60 },
+    blurb: "Hire a mechanic: fixes rides that break down, and inspects and services worn rides in the patrol area.", staff: { role: "mechanic", cleaning: 0, repair: 0.35, patrol: 22 },
   },
   {
     id: "staff_entertainer", label: "Entertainer", category: "staff", icon: "🤡", cost: 400, upkeep: 70, color: "#d0508a", trim: "#ffd24a", appeal: 0, footprint: 4,
