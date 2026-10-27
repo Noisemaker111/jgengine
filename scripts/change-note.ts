@@ -112,7 +112,7 @@ export function noteEntries(messages: readonly string[]): { sections: Map<NoteSe
     const message = raw.trim().replace(/\s+/g, " ");
     if (message === "") continue;
     if (PR_ONLY.test(message)) {
-      prOnly.push(message);
+      if (!prOnly.includes(message)) prOnly.push(message);
       continue;
     }
     const match = SECTION_PREFIX.exec(message);
@@ -120,9 +120,44 @@ export function noteEntries(messages: readonly string[]): { sections: Map<NoteSe
       ? "Changed"
       : NOTE_SECTIONS.find((name) => name.toLowerCase() === match[1]!.toLowerCase())!) as NoteSection;
     const text = match === null ? message : match[2]!.trim();
-    sections.set(section, [...(sections.get(section) ?? []), `- ${text}`]);
+    // A line said twice (a re-close repeating one) is one bullet.
+    const listed = sections.get(section) ?? [];
+    if (!listed.includes(`- ${text}`)) sections.set(section, [...listed, `- ${text}`]);
   }
   return { sections, prOnly };
+}
+
+/** An API bullet {@link apiNoteBullets} writes; the next render writes it again from the diff. */
+const API_BULLET = /^`[^`]+` (?:\(`[^`]+`\)|no longer exports )/;
+
+/**
+ * The messages a written note came from, lead first, so a lane closed again with more `-m` lines adds
+ * them to its note instead of replacing it (a re-close once wiped #2626's note). The API bullets and
+ * the seam line are left out: the next render writes them again from the diff.
+ */
+export function noteMessages(text: string): string[] {
+  const prose: string[] = [];
+  const bullets: string[] = [];
+  let section: NoteSection | null = null;
+  for (const raw of text.split("\n")) {
+    const line = raw.trim();
+    if (line === "") continue;
+    const heading = /^###\s+(.+)$/.exec(line);
+    if (heading !== null) {
+      section = NOTE_SECTIONS.find((name) => name === heading[1]?.trim()) ?? null;
+      continue;
+    }
+    if (section === null) {
+      if (!line.startsWith("Engine seam:")) prose.push(line);
+      continue;
+    }
+    const bullet = /^- (.+)$/.exec(line)?.[1];
+    if (bullet === undefined || API_BULLET.test(bullet)) continue;
+    bullets.push(section === "Changed" ? bullet : `${section}: ${bullet}`);
+  }
+  const lead = prose[0];
+  const ordered = lead === undefined ? bullets : [...bullets.filter((bullet) => bullet.replace(SECTION_PREFIX, "$2") === lead), ...bullets.filter((bullet) => bullet.replace(SECTION_PREFIX, "$2") !== lead)];
+  return [...ordered, ...prose.filter((line) => PR_ONLY.test(line))];
 }
 
 /**

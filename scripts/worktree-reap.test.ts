@@ -4,9 +4,12 @@ import { join, resolve } from "node:path";
 import { tmpdir } from "node:os";
 import { randomUUID } from "node:crypto";
 
-import { livesUnderWorktrees, reap, selectReap, skipPaths, summarise, type ReapCandidate } from "./worktree-reap";
+import { livesUnderWorktrees, NEW_LANE_GRACE_MS, reap, selectReap, skipPaths, summarise, type ReapCandidate } from "./worktree-reap";
 
 const MAIN = resolve("repo-root");
+const NOW = 1_800_000_000_000;
+/** A branch that has moved since it was created. */
+const moved = (): number | null => null;
 const WORKTREES = join(MAIN, ".claude", "worktrees");
 
 function refs(names: string[], extra: { locked?: string[]; detached?: string[]; outside?: string[] } = {}) {
@@ -23,31 +26,31 @@ function refs(names: string[], extra: { locked?: string[]; detached?: string[]; 
 
 describe("a merged, clean worktree is taken; everything else stays", () => {
   test("the main checkout is never a candidate", () => {
-    const plan = selectReap({ refs: refs(["a"]), mainRoot: MAIN, skip: [], isMerged: () => true });
+    const plan = selectReap({ refs: refs(["a"]), mainRoot: MAIN, skip: [], isMerged: () => true, createdAt: moved, now: NOW });
     expect(plan.reap.map((row) => row.name)).toEqual(["a"]);
   });
 
   test("an unmerged branch keeps its worktree", () => {
-    const plan = selectReap({ refs: refs(["a", "b"]), mainRoot: MAIN, skip: [], isMerged: (branch) => branch === "agent/a" });
+    const plan = selectReap({ refs: refs(["a", "b"]), mainRoot: MAIN, skip: [], isMerged: (branch) => branch === "agent/a", createdAt: moved, now: NOW });
     expect(plan.reap.map((row) => row.name)).toEqual(["a"]);
     expect(plan.kept).toContainEqual({ name: "b", reason: "not merged into origin/beta" });
   });
 
   test("a locked worktree is left alone even when merged", () => {
-    const plan = selectReap({ refs: refs(["a"], { locked: ["a"] }), mainRoot: MAIN, skip: [], isMerged: () => true });
+    const plan = selectReap({ refs: refs(["a"], { locked: ["a"] }), mainRoot: MAIN, skip: [], isMerged: () => true, createdAt: moved, now: NOW });
     expect(plan.reap).toEqual([]);
     expect(plan.kept).toContainEqual({ name: "a", reason: "locked" });
   });
 
   test("a detached worktree is left alone even when merged", () => {
-    const plan = selectReap({ refs: refs(["a"], { detached: ["a"] }), mainRoot: MAIN, skip: [], isMerged: () => true });
+    const plan = selectReap({ refs: refs(["a"], { detached: ["a"] }), mainRoot: MAIN, skip: [], isMerged: () => true, createdAt: moved, now: NOW });
     expect(plan.reap).toEqual([]);
     expect(plan.kept).toContainEqual({ name: "a", reason: "detached" });
   });
 
   test("the session's own worktree is left alone", () => {
     const here = join(WORKTREES, "a");
-    const plan = selectReap({ refs: refs(["a"]), mainRoot: MAIN, skip: [here], isMerged: () => true });
+    const plan = selectReap({ refs: refs(["a"]), mainRoot: MAIN, skip: [here], isMerged: () => true, createdAt: moved, now: NOW });
     expect(plan.reap).toEqual([]);
     expect(plan.kept).toContainEqual({ name: "a", reason: "this session" });
   });
@@ -58,10 +61,35 @@ describe("a merged, clean worktree is taken; everything else stays", () => {
       mainRoot: MAIN,
       skip: [],
       isMerged: () => true,
-      hasCommitted: (branch) => branch === "agent/landed",
+      createdAt: (branch) => (branch === "agent/fresh" ? NOW - NEW_LANE_GRACE_MS + 1 : null),
+      now: NOW,
     });
     expect(plan.reap.map((row) => row.name)).toEqual(["landed"]);
+    expect(plan.reap[0]?.untouched).toBe(false);
     expect(plan.kept).toContainEqual({ name: "fresh", reason: "new lane, nothing committed yet" });
+  });
+
+  test("a lane abandoned before its first commit goes once its grace is over, checked for new files too", () => {
+    const plan = selectReap({
+      refs: refs(["abandoned"]),
+      mainRoot: MAIN,
+      skip: [],
+      isMerged: () => true,
+      createdAt: () => NOW - NEW_LANE_GRACE_MS,
+      now: NOW,
+    });
+    expect(plan.reap).toEqual([{ ...candidate("abandoned"), untouched: true }]);
+    const asked: boolean[] = [];
+    const result = reap(plan, {
+      exists: () => true,
+      isClean: (_path, untracked) => {
+        asked.push(untracked);
+        return !untracked;
+      },
+      remove: () => true,
+    });
+    expect(asked).toEqual([true]);
+    expect(result.kept).toContainEqual({ name: "abandoned", reason: "uncommitted changes" });
   });
 
   test("a worktree outside the worktrees directory is never removed, whatever its branch says", () => {
@@ -70,6 +98,8 @@ describe("a merged, clean worktree is taken; everything else stays", () => {
       mainRoot: MAIN,
       skip: [],
       isMerged: () => true,
+      createdAt: moved,
+      now: NOW,
     });
     expect(plan.reap).toEqual([]);
     expect(plan.kept).toContainEqual({ name: "else", reason: "not under .claude/worktrees" });
@@ -179,7 +209,7 @@ function candidate(name: string): ReapCandidate {
 }
 
 function candidateAt(path: string, name: string): ReapCandidate {
-  return { path, name, branch: `agent/${name}` };
+  return { path, name, branch: `agent/${name}`, untouched: false };
 }
 
 describe("a lane created at the beta tip survives the reap that follows it", () => {
@@ -190,6 +220,8 @@ describe("a lane created at the beta tip survives the reap that follows it", () 
       mainRoot: MAIN,
       skip: skipPaths(["--skip", `${MAIN}/.claude/worktrees/new`], MAIN),
       isMerged: () => true,
+      createdAt: moved,
+      now: NOW,
     });
     expect(plan.reap).toEqual([]);
   });
