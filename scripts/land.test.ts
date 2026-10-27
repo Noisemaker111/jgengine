@@ -197,7 +197,7 @@ test("with no fragment and no commits the one-line summary is the body", () => {
 });
 
 /** A gh that answers from a script and records every call, so a landing can be replayed without GitHub. */
-function scriptedGh(answers: { open?: { number: number; url: string }[]; body?: string; fail?: string }): {
+function scriptedGh(answers: { open?: { number: number; url: string }[]; body?: string; title?: string; fail?: string }): {
   gh: Gh;
   calls: string[][];
 } {
@@ -212,7 +212,7 @@ function scriptedGh(answers: { open?: { number: number; url: string }[]; body?: 
       return { status: 0, stdout: JSON.stringify(answers.open ?? []), stderr: "" };
     }
     if (joined.startsWith("pr view")) {
-      return { status: 0, stdout: JSON.stringify({ body: answers.body ?? "" }), stderr: "" };
+      return { status: 0, stdout: JSON.stringify({ body: answers.body ?? "", title: answers.title ?? "" }), stderr: "" };
     }
     if (joined.startsWith("pr create")) {
       return { status: 0, stdout: "https://github.com/Noisemaker111/JGengine/pull/4242\n", stderr: "" };
@@ -224,8 +224,8 @@ function scriptedGh(answers: { open?: { number: number; url: string }[]; body?: 
 
 const noLog = (): void => {};
 
-test("a reused PR has its stale body replaced with the explicit one", () => {
-  const { gh, calls } = scriptedGh({ open: [{ number: 12, url: "https://example.test/12" }], body: "a stale body" });
+test("a reused PR has its stale body and title replaced with the explicit ones", () => {
+  const { gh, calls } = scriptedGh({ open: [{ number: 12, url: "https://example.test/12" }], body: "a stale body", title: "the first run's title" });
   const pr = ensurePr({
     args: { base: "beta", bodyFile: ".scratch/body.md" },
     branch: "agent/lane-x",
@@ -235,8 +235,30 @@ test("a reused PR has its stale body replaced with the explicit one", () => {
     log: noLog,
   });
   expect(pr).toEqual({ number: 12, url: "https://example.test/12" });
-  expect(calls).toContainEqual(["pr", "view", "12", "--json", "body"]);
-  expect(calls).toContainEqual(["pr", "edit", "12", "--body", "the body I wrote"]);
+  expect(calls).toContainEqual(["pr", "view", "12", "--json", "body,title"]);
+  expect(calls).toContainEqual(["pr", "edit", "12", "--body", "the body I wrote", "--title", "the last commit"]);
+});
+
+test("a re-close with -m retitles the reused PR from the new note, and a matching title is left alone", () => {
+  const stale = scriptedGh({ open: [{ number: 16, url: "https://example.test/16" }], body: "the note", title: "old subject" });
+  ensurePr({
+    args: { base: "beta" },
+    branch: "agent/lane-x",
+    summary: "new subject",
+    body: { text: "the note", explicit: true },
+    gh: stale.gh,
+    log: noLog,
+  });
+  expect(stale.calls).toContainEqual(["pr", "edit", "16", "--title", "new subject"]);
+
+  const same = scriptedGh({ open: [{ number: 17, url: "https://example.test/17" }], body: "the note", title: "new subject" });
+  ensurePr({ args: { base: "beta" }, branch: "agent/lane-x", summary: "new subject", body: { text: "the note", explicit: true }, gh: same.gh, log: noLog });
+  expect(same.calls.some((call) => call[1] === "edit")).toBe(false);
+
+  // A body land was not given leaves the title alone too.
+  const kept = scriptedGh({ open: [{ number: 18, url: "https://example.test/18" }], body: "someone's body", title: "someone's title" });
+  ensurePr({ args: { base: "beta" }, branch: "agent/lane-x", summary: "new subject", body: { text: "x", explicit: false, bends: "" }, gh: kept.gh, log: noLog });
+  expect(kept.calls.some((call) => call.includes("--title"))).toBe(false);
 });
 
 test("fragments are split by what the diff adds, not by which one is newest", () => {
@@ -261,7 +283,7 @@ test("a reused PR keeps a body land was not given, and one that already matches 
   });
   expect(kept.calls.some((call) => call[1] === "edit")).toBe(false);
 
-  const same = scriptedGh({ open: [{ number: 14, url: "https://example.test/14" }], body: "the body I wrote\n" });
+  const same = scriptedGh({ open: [{ number: 14, url: "https://example.test/14" }], body: "the body I wrote\n", title: "the last commit" });
   ensurePr({
     args: { base: "beta", bodyFile: ".scratch/body.md" },
     branch: "agent/lane-x",
