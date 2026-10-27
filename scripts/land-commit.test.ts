@@ -2,6 +2,7 @@ import { afterEach, expect, test } from "bun:test";
 import { existsSync, mkdirSync, readdirSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 
+import { VERBOSE_ENV } from "./verbosity";
 import {
   EXIT_LANDED,
   commitGuards,
@@ -112,6 +113,25 @@ test("stages unstaged work, commits it with the branch's own fragment, and leave
     "changes/agent-lane-x.md",
     "shared.txt",
   ]);
+  expect(log).toEqual(["committing 2 file(s)"]);
+});
+
+test("--verbose lists every path a clean commit takes", () => {
+  const { work } = originWithBeta();
+  gitOk(work, ["checkout", "-q", "-b", "agent/lane-x"]);
+  mkdirSync(join(work, "changes"), { recursive: true });
+  writeFileSync(join(work, "changes", "agent-lane-x.md"), "### Changed\n\n- The lane closes itself.\n");
+  writeFileSync(join(work, "shared.txt"), "one\ntwo\n");
+
+  const before = process.env[VERBOSE_ENV];
+  process.env[VERBOSE_ENV] = "1";
+  const log: string[] = [];
+  try {
+    commitIn(work, log);
+  } finally {
+    if (before === undefined) delete process.env[VERBOSE_ENV];
+    else process.env[VERBOSE_ENV] = before;
+  }
   expect(log).toEqual(["committing 2 file(s):", "  commit  changes/agent-lane-x.md", "  commit  shared.txt"]);
 });
 

@@ -30,13 +30,14 @@ import { buildImportGraph, closure, repoFiles, reverseReach, type ImportGraph } 
 import { openPassCache, treeDigests, WHOLE_TREE } from "./verify-cache";
 import { checkCommand, findCheck, jobChecks } from "./run-stages";
 import { printHelpIfAsked } from "./script-help";
+import { isVerbose, takeVerboseFlag } from "./verbosity";
 import { siteGames } from "./siteGames";
 import { runSteps, type ScheduledStep, type StepResult } from "./stepScheduler";
 import { TEST_ROOTS, walkTestFiles } from "./test-shard";
 
 const VERIFY_FAST_USAGE = {
   summary: "run only the tests and static gates this branch's diff reaches, in seconds",
-  usage: "bun run verify:fast [--full] [--cheap] [--plan] [--json] [--base <ref>] [--jobs <n>] [--skill-api] [--no-cache]",
+  usage: "bun run verify:fast [--full] [--cheap] [--plan] [--json] [--base <ref>] [--jobs <n>] [--skill-api] [--no-cache] [--verbose]",
   flags: [
     { flag: "--full", detail: "what CI runs, not just what this change reaches; minutes, before landing" },
     { flag: "--cheap", detail: "only the type-checks and gates, no tests or boots; `bun run preflight` runs this" },
@@ -46,6 +47,7 @@ const VERIFY_FAST_USAGE = {
     { flag: "--jobs <n>", detail: "steps to run at once (default: half the cores, at most 6)" },
     { flag: "--skill-api", detail: "also run `check skill-api`, the 21 s generated api.md check (`bun run gen` regenerates it before a landing)" },
     { flag: "--no-cache", detail: "run every unit, including those that passed before with the same inputs" },
+    { flag: "--verbose", detail: "also print the plan, each PASS line and the cache notes (by default only failures and the total)" },
   ],
   example: "bun run verify:fast --plan",
   exits: [
@@ -916,6 +918,10 @@ async function main(argv: readonly string[]): Promise<number> {
   const skillApi = argv.includes("--skill-api");
   const cheap = argv.includes("--cheap");
   const started = Date.now();
+  // A failure, its fix and the total always print; the plan, each pass and the cache notes are
+  // kept for --verbose, and for --plan, whose whole point is to show them.
+  const say = (line: string): void => console.log(line);
+  const note = planOnly || isVerbose() ? say : (): void => {};
 
   let changed: string[];
   try {
@@ -955,8 +961,8 @@ async function main(argv: readonly string[]): Promise<number> {
       console.log(JSON.stringify(jsonReport(checks, Date.now() - started)));
       return checks.every((check) => check.ok) ? EXIT_VERIFIED : EXIT_FAILED;
     }
-    console.log(`verify:fast --full: ${steps.length} step(s), what CI runs for ${changed.length} changed file(s)`);
-    console.log(`  ${Math.min(jobs, steps.length)} at a time in this checkout, the same work CI runs as parallel jobs.`);
+    note(`verify:fast --full: ${steps.length} step(s), what CI runs for ${changed.length} changed file(s)`);
+    note(`  ${Math.min(jobs, steps.length)} at a time in this checkout, the same work CI runs as parallel jobs.`);
     if (planOnly) {
       for (const step of steps) {
         const deps = step.needs === undefined ? "" : `  after ${step.needs.join(", ")}`;
@@ -969,7 +975,7 @@ async function main(argv: readonly string[]): Promise<number> {
       runSteps(steps, jobs, async (step) => {
         const result = await run(step, root);
         const suffix = result.blockedBy === undefined ? "" : `  (${result.output})`;
-        console.log(`${result.ok ? "PASS" : "FAIL"}  ${step.name}  ${(result.ms / 1000).toFixed(1)}s${suffix}`);
+        (result.ok ? note : say)(`${result.ok ? "PASS" : "FAIL"}  ${step.name}  ${(result.ms / 1000).toFixed(1)}s${suffix}`);
         if (!result.ok && result.blockedBy === undefined) printFailure(root, step.name, result.output);
         if (!result.ok && result.blockedBy === undefined && step.fix !== undefined) console.log(`  fix: ${step.fix}`);
         return result;
@@ -1060,18 +1066,18 @@ async function main(argv: readonly string[]): Promise<number> {
   }
 
   const leftOutSkillApi = !skillApi && plan.gates.includes("skill-api");
-  console.log(
+  note(
     `verify:fast against ${base}: ${plan.changed.length} changed file(s), ${plan.tests.length} test file(s), ${plan.typechecks.length} type-check(s), ${plan.gates.length - (leftOutSkillApi ? 1 : 0)} gate(s), boot ${plan.boots.join(" ") || "none"}  (planned in ${((Date.now() - started) / 1000).toFixed(1)}s)`,
   );
-  if (cheap) console.log("verify:fast --cheap: type-checks and gates only; the tests and boots run when lane:close lands");
+  if (cheap) note("verify:fast --cheap: type-checks and gates only; the tests and boots run when lane:close lands");
   if (plan.suites.length > 0) {
-    console.log(`verify:fast: whole suite of ${plan.suites.join(", ")}: a changed file there has no test of its own, so its package's tests cover it`);
+    note(`verify:fast: whole suite of ${plan.suites.join(", ")}: a changed file there has no test of its own, so its package's tests cover it`);
   }
   if (leftOutSkillApi) {
-    console.log("verify:fast: check skill-api (21 s) is left out here; `--skill-api` runs it, and the `bun run gen` that lane:close and preflight run regenerates it.");
+    note("verify:fast: check skill-api (21 s) is left out here; `--skill-api` runs it, and the `bun run gen` that lane:close and preflight run regenerates it.");
   }
   if (skipped.length > 0) {
-    console.log(`verify:fast: ${skipped.length} unit(s) passed before with these exact inputs and are not run again (--no-cache runs them): ${summarizeUnits(skipped)}`);
+    note(`verify:fast: ${skipped.length} unit(s) passed before with these exact inputs and are not run again (--no-cache runs them): ${summarizeUnits(skipped)}`);
   }
   if (planOnly) {
     printPlan(plan, steps);
@@ -1091,7 +1097,7 @@ async function main(argv: readonly string[]): Promise<number> {
     async (step, signal) => {
       const result = await run(step, root, signal);
       if (result.stopped === true) return result;
-      console.log(`${result.ok ? "PASS" : "FAIL"}  ${result.name}  ${(result.ms / 1000).toFixed(1)}s`);
+      (result.ok ? note : say)(`${result.ok ? "PASS" : "FAIL"}  ${result.name}  ${(result.ms / 1000).toFixed(1)}s`);
       if (!result.ok) {
         if (result.output.length > 0) printFailure(root, result.name, result.output);
         if (step.fix !== undefined) console.log(`  fix: ${step.fix}`);
@@ -1119,7 +1125,7 @@ async function main(argv: readonly string[]): Promise<number> {
 }
 
 if (import.meta.main) {
-  const argv = process.argv.slice(2);
+  const argv = takeVerboseFlag(process.argv.slice(2));
   if (printHelpIfAsked("verify-fast", VERIFY_FAST_USAGE, argv)) process.exit(EXIT_VERIFIED);
   assertCheckoutReady("verify:fast");
   process.exit(await main(argv));

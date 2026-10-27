@@ -61,6 +61,7 @@ import { apiNoteBullets, engineSeamLine, renderChangeNote } from "./change-note"
 import { rebaseResolvingGenerated, regenerateAndCommit } from "./generated-rebase";
 import { assertCheckoutReady } from "./checkout-ready";
 import { printHelpIfAsked } from "./script-help";
+import { isVerbose } from "./verbosity";
 import { attemptsOf, judgeChecks, runIdFrom } from "./ci-status";
 import type { RollupEntry } from "./ci-status";
 
@@ -440,7 +441,7 @@ export interface CommitOptions {
 }
 
 /**
- * Stage this worktree, print every path it will commit, refuse the ones a lane did not author, then
+ * Stage this worktree, print how many paths it will commit (every one under --verbose or when one is refused), refuse the ones a lane did not author, then
  * commit with the branch's change note as the message. The note is written (`scripts/change-note.ts`)
  * from the `-m` messages when there are any, else kept when the branch already has one (a lane closed
  * twice), else written from the branch's commit messages, bodies included; the written note also lists the exported
@@ -477,8 +478,10 @@ export function commitLane(options: CommitOptions): LaneCommitOutcome {
     allow: options.allow,
   });
 
-  log(`committing ${stagedPaths.length} file(s):`);
-  for (const path of stagedPaths) log(`  ${blocked.some((entry) => entry.path === path) ? "refused" : "commit "} ${path}`);
+  // Every path is listed when one is refused, or under --verbose; a clean commit prints its count.
+  const listPaths = blocked.length > 0 || isVerbose();
+  log(`committing ${stagedPaths.length} file(s)${listPaths ? ":" : ""}`);
+  if (listPaths) for (const path of stagedPaths) log(`  ${blocked.some((entry) => entry.path === path) ? "refused" : "commit "} ${path}`);
   if (blocked.length > 0) {
     for (const entry of blocked) refuse(`land: refusing ${entry.path}: ${entry.why}`);
     refuse("land: nothing was committed; the files above are staged. Unstage one with");

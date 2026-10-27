@@ -132,6 +132,21 @@ describe("lane:close end to end", () => {
     expect(calls.indexOf("run preflight")).toBeLessThan(calls.indexOf("run verify:fast"));
   });
 
+  test("by default the stage lines stay quiet and the report still prints; --verbose prints each stage", () => {
+    const quiet = io();
+    closeLane({}, quiet);
+    expect(quiet.lines.out.some((line) => line.includes("— preflight"))).toBe(false);
+    expect(quiet.lines.out.join("\n")).toContain("Lane report");
+
+    const verbose = io();
+    verbose.env = { JG_VERBOSE: "1" };
+    closeLane({}, verbose);
+    const printed = verbose.lines.out.join("\n");
+    expect(printed).toContain("lane:close: agent/x — preflight (gen, type-checks, gates)");
+    expect(printed).toContain("lane:close: agent/x — verify:fast (tests and boots)");
+    expect(printed).toContain("lane:close: land --commit");
+  });
+
   test("a preflight failure stops before the tests and land", () => {
     const calls: string[] = [];
     const fake = io({ preflight: 1 });

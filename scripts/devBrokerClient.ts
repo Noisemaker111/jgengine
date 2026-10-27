@@ -8,6 +8,7 @@ import { checkoutIdentity } from "./devServerMarker";
 import { BROKER_PROTOCOL, brokerEnabled, brokerPort, type BrokerStatus, type CaptureGrant, type ServerGrant, type ServerKind } from "./devBroker";
 import { localPostJson, localRequest } from "./localhostHttp";
 import { servedGameDir } from "./servedGame";
+import { detail } from "./verbosity";
 
 /**
  * The client half of `scripts/devBroker.ts`: find or start the machine's broker, then ask it for a
@@ -172,7 +173,7 @@ export async function brokerServer(
   if (response.status !== 200) throw new Error(`broker: ${response.body.error ?? `server request answered ${response.status}`}`);
   const grant = response.body;
   rememberLease(grant.leaseId);
-  log(`broker: ${grant.reused ? "reused" : "started"} ${kind} ${grant.base} for ${root}${gameDir === null ? "" : ` (game dir ${gameDir})`}`);
+  detail(`broker: ${grant.reused ? "reused" : "started"} ${kind} ${grant.base} for ${root}${gameDir === null ? "" : ` (game dir ${gameDir})`}`);
   if (grant.stale !== undefined) log(`broker: ${grant.stale}`);
   return { port: grant.port, base: grant.base, reused: grant.reused };
 }
