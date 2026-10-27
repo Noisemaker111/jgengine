@@ -410,7 +410,6 @@
         "@jgengine/core"
       ],
       "module": "@jgengine/core/bossArena/bossArena",
-      "domain": "bossArena",
       "gameFacing": false,
       "probe": null,
       "intent": "solid ring wall round a circular arena floor, following the ground"
@@ -944,7 +943,6 @@
         "@jgengine/core"
       ],
       "module": "@jgengine/core/bossArena/bossArena",
-      "domain": "bossArena",
       "gameFacing": false,
       "probe": null,
       "intent": "summoned boss fights: tribute and level gates, a portal that takes survivors and companions in, win, wipe and the trip home"
