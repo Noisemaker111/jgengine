@@ -134,7 +134,7 @@ function relaunchWithMergedTsconfig(gameDir: string): never {
     env: { ...process.env, [CHILD_FLAG]: "1" },
     stdio: ["inherit", "inherit", "inherit"],
   });
-  if (process.env.JG_SIMULATE_DEBUG === "1") console.error(`simulate: tsconfig ${configPath}\n${readFileSync(configPath, "utf8")}`);
+  if (process.env["JG_SIMULATE_DEBUG"] === "1") console.error(`simulate: tsconfig ${configPath}\n${readFileSync(configPath, "utf8")}`);
   rmSync(dir, { recursive: true, force: true });
   process.exit(child.exitCode ?? 1);
 }

@@ -71,7 +71,7 @@ export interface BatchArgs {
 export function parseArgs(argv: readonly string[]): BatchArgs {
   const args: BatchArgs = { base: "beta", branches: [], verify: "bun run verify:fast", skillApi: false, dryRun: false, explain: false };
   for (let i = 0; i < argv.length; i += 1) {
-    const arg = argv[i];
+    const arg = argv[i] ?? "";
     if (arg === "--base") args.base = value(argv, (i += 1), arg);
     else if (arg === "--file") args.file = value(argv, (i += 1), arg);
     else if (arg === "--verify") args.verify = value(argv, (i += 1), arg);

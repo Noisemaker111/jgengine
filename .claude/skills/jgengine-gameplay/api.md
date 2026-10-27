@@ -293,7 +293,7 @@
 ## @jgengine/core/chat/chatBubbles.view
 
 - `ChatBubble` (interface): interface ChatBubble { id: string; fromUserId: string; body: string; at: number } — ⚠ undocumented
-- `ChatBubblesOptions` (interface): interface ChatBubblesOptions { channelId?: string; ttlMs?: number; limit?: number } — ⚠ undocumented
+- `ChatBubblesOptions` (interface): interface ChatBubblesOptions { channelId?: string | undefined; ttlMs?: number | undefined; limit?: number } — ⚠ undocumented
 - `latestChatBubbles` (function): function latestChatBubbles(messages: readonly ChatMessage[], nowMs: number, ttlMs: number): ChatBubble[] — ⚠ undocumented
 - `useChatBubbles` (function): function useChatBubbles(options?: ChatBubblesOptions): readonly ChatBubble[] — ⚠ undocumented
 - `useEntityChatBubble` (function): function useEntityChatBubble(instanceId: string, options?: ChatBubblesOptions): ChatBubble | null — ⚠ undocumented

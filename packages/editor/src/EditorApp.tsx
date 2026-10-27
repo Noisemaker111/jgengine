@@ -58,30 +58,30 @@ export interface EditorAppProps {
   catalogs?: readonly EditorCatalogDefinition[] | undefined;
   save?: EditorSaveFn | undefined;
   /** Skin for the play/walk escape chip. Omit for the default pill; pass `null` to hide it (F2+E still exits); pass a component to place the game's own. */
-  modeChip?: ComponentType<{ mode: EditorRunMode; onExit: () => void }> | null;
+  modeChip?: ComponentType<{ mode: EditorRunMode; onExit: () => void }> | null | undefined;
   /**
    * Optional live multiplayer presence/session feed for the Network workspace.
    * Adapter config always comes from `playable.game.multiplayer`; this only supplies real
    * session identity and presence rows. Omit when the host has nothing live — the panel stays honest.
    */
-  networkPresence?: EditorNetworkPresenceInput;
+  networkPresence?: EditorNetworkPresenceInput | undefined;
   /**
    * Called to close the editor and return to the game. Passed by `GameHost` when the editor was
    * summoned over a running game; when set, the chrome shows an "Exit to game" control. Omit for the
    * standalone editor, which has no game to return to.
    */
-  onExitEditor?: () => void;
+  onExitEditor?: (() => void) | undefined;
   /** Build a fresh playable from a captured document for each isolated playtest. */
-  createPlaytest?: (document: EditorDocument) => PlayableGame;
+  createPlaytest?: ((document: EditorDocument) => PlayableGame) | undefined;
   /** Reject document edits before they enter history, live sync, or saves. */
-  validateDocument?: (document: EditorDocument) => void;
+  validateDocument?: ((document: EditorDocument) => void) | undefined;
   /** Disable developer host publication and recovery drafts for a player creator. */
-  playerCreator?: boolean;
+  playerCreator?: boolean | undefined;
   /** Catalog entries the player creator may place. */
-  allowedAssets?: readonly string[];
-  allowedKinds?: readonly string[];
-  maxImportBytes?: number;
-  creatorPolicy?: CreatorPolicy;
+  allowedAssets?: readonly string[] | undefined;
+  allowedKinds?: readonly string[] | undefined;
+  maxImportBytes?: number | undefined;
+  creatorPolicy?: CreatorPolicy | undefined;
 }
 
 /** Persists an exported document JSON; resolves with where it landed or why it failed. */

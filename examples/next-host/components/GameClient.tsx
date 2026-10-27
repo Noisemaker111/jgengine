@@ -10,7 +10,7 @@ const gameRegistry: GameRegistry = {};
 export default function GameClient() {
   return (
     <GamePlayer
-      gameId={process.env.NEXT_PUBLIC_GAME_ID ?? "deepward"}
+      gameId={process.env["NEXT_PUBLIC_GAME_ID"] ?? "deepward"}
       registry={gameRegistry}
       fallbackGameId="deepward"
       loading={

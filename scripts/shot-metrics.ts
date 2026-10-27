@@ -96,7 +96,7 @@ function colorBucketCode(r: number, g: number, b: number): number {
 function percentile(sorted: number[], p: number): number {
   if (sorted.length === 0) return 0;
   const index = Math.min(sorted.length - 1, Math.max(0, Math.round(p * (sorted.length - 1))));
-  return sorted[index];
+  return sorted[index] ?? 0;
 }
 
 export function computeShotMetrics(
@@ -133,10 +133,10 @@ export function computeShotMetrics(
         continue;
       }
       const offset = (y * width + x) * 4;
-      const r = rgba[offset];
-      const g = rgba[offset + 1];
-      const b = rgba[offset + 2];
-      const a = rgba[offset + 3];
+      const r = rgba[offset] ?? 0;
+      const g = rgba[offset + 1] ?? 0;
+      const b = rgba[offset + 2] ?? 0;
+      const a = rgba[offset + 3] ?? 0;
       const luminance = luminanceOf(r, g, b);
       luminanceRow.push(luminance);
       luminanceSamples.push(luminance);
@@ -163,9 +163,9 @@ export function computeShotMetrics(
   let edgeTotal = 0;
   for (let row = 0; row < rows - 1; row += 1) {
     for (let col = 0; col < cols - 1; col += 1) {
-      const l = luminanceGrid[row][col];
-      const right = luminanceGrid[row][col + 1];
-      const below = luminanceGrid[row + 1][col];
+      const l = luminanceGrid[row]?.[col] ?? null;
+      const right = luminanceGrid[row]?.[col + 1] ?? null;
+      const below = luminanceGrid[row + 1]?.[col] ?? null;
       if (l === null || right === null || below === null) continue;
       const step = Math.max(Math.abs(right - l), Math.abs(below - l));
       if (step > EDGE_LUMINANCE_DELTA) edgeCount += 1;
@@ -222,7 +222,7 @@ export function shotSignature(
     for (let col = 0; col < SIGNATURE_COLUMNS; col += 1) {
       const x = Math.min(width - 1, Math.floor(((col + 0.5) * width) / SIGNATURE_COLUMNS));
       const offset = (y * width + x) * 4;
-      signature.push(Math.round(luminanceOf(rgba[offset], rgba[offset + 1], rgba[offset + 2])));
+      signature.push(Math.round(luminanceOf(rgba[offset] ?? 0, rgba[offset + 1] ?? 0, rgba[offset + 2] ?? 0)));
     }
   }
   return signature;

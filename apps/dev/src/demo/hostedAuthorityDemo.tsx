@@ -56,7 +56,7 @@ function AuthorityUI() {
     </div>
     <p role="status" data-testid="command-result" style={{ color: "#dda45a", minHeight: 26 }}>{result}</p>
     <p style={{ color: "#aac5c9" }}>WASD moves your courier. Space sends the selected signal. Commands and timers belong to the host.</p>
-    <footer style={{ marginTop: 32, fontSize: 12, color: "#aac5c9" }}>Original signal crest and interface by JG Engine. Engine fixture; anonymous throwaway realm.<br/>Frontend build: <span data-testid="frontend-revision">{import.meta.env.VITE_JG_COMPILED_REVISION ?? "development"}</span></footer>
+    <footer style={{ marginTop: 32, fontSize: 12, color: "#aac5c9" }}>Original signal crest and interface by JG Engine. Engine fixture; anonymous throwaway realm.<br/>Frontend build: <span data-testid="frontend-revision">{import.meta.env["VITE_JG_COMPILED_REVISION"] ?? "development"}</span></footer>
   </main>;
 }
 

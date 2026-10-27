@@ -299,7 +299,7 @@ if (import.meta.main) {
           }
         : gameScope(changedPaths(args));
       console.log(renderVerdict(verdict));
-      const output = process.env.GITHUB_OUTPUT;
+      const output = process.env["GITHUB_OUTPUT"];
       if (process.argv.includes("--github-output") && output !== undefined) {
         const { appendFileSync } = await import("node:fs");
         appendFileSync(

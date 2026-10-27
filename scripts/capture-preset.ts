@@ -40,15 +40,15 @@ export interface QuickRequest {
   tool: CaptureTool;
   quick: boolean;
   /** Flags the command line asked for, whether or not the preset would override them. */
-  width?: number;
-  height?: number;
-  size?: string;
-  device?: string;
+  width?: number | undefined;
+  height?: number | undefined;
+  size?: string | undefined;
+  device?: string | undefined;
   playtest?: boolean;
-  record?: string;
+  record?: string | undefined;
   recordRealtime?: boolean;
-  recordFps?: number;
-  recordWidth?: number;
+  recordFps?: number | undefined;
+  recordWidth?: number | undefined;
 }
 
 /**

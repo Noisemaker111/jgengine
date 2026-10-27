@@ -384,7 +384,7 @@ describe("fastForwardMain", () => {
   test("a failed fetch never pushes", () => {
     const calls: string[] = [];
     const git = (args: readonly string[]) => {
-      calls.push(args[0]);
+      calls.push(args[0] ?? "");
       return { status: args[0] === "fetch" ? 1 : 0, stdout: "", stderr: "offline" };
     };
     expect(fastForwardMain(git).ok).toBe(false);

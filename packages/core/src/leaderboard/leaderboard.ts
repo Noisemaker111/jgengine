@@ -27,7 +27,7 @@ export interface Leaderboard {
   ): IncrementResult;
   getTop(
     stat: string,
-    options: { scope: LeaderboardScope; limit?: number; serverId?: string },
+    options: { scope: LeaderboardScope; limit?: number | undefined; serverId?: string },
   ): { userId: string; value: number }[];
   getProfile(userId: string): Record<string, number>;
   snapshot(): LeaderboardRow[];

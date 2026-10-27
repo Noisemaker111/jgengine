@@ -60,8 +60,8 @@ function GuardOverlay({ ctx }: WorldOverlayProps): ReactNode {
       cone.current.rotation.set(-Math.PI / 2, 0, guard.rotationY - Math.PI / 2 - (GUARD_SENSES.sightConeDeg * Math.PI) / 360);
     }
     if (marker.current !== null) {
-      marker.current.visible = board.alerted === true;
-      marker.current.position.set(Number(board.lastKnownX ?? 0), 0.05, Number(board.lastKnownZ ?? 0));
+      marker.current.visible = board["alerted"] === true;
+      marker.current.position.set(Number(board["lastKnownX"] ?? 0), 0.05, Number(board["lastKnownZ"] ?? 0));
     }
   });
   return (
@@ -81,7 +81,7 @@ function GuardOverlay({ ctx }: WorldOverlayProps): ReactNode {
 function guardState(ctx: GameContext | null): { label: string; confidence: number } {
   const board = ctx === null ? null : behaviorControl(ctx).blackboard(GUARD_ID);
   if (board === null) return { label: "—", confidence: 0 };
-  return { label: board.alerted === true ? "investigating" : "patrolling", confidence: Number(board.confidence ?? 0) };
+  return { label: board["alerted"] === true ? "investigating" : "patrolling", confidence: Number(board["confidence"] ?? 0) };
 }
 
 function GuardPanel({ read }: { read: () => GameContext | null }): ReactNode {
@@ -165,7 +165,7 @@ function makeGuardProbe(): PlayableGame {
         const board = context === null ? null : behaviorControl(context).blackboard(GUARD_ID);
         if (guard === null || guard === undefined || board === null) return {};
         const hero = context?.scene.entity.get(context.player.userId);
-        return { playerX: hero?.position[0] ?? 0, playerZ: hero?.position[2] ?? 0, guardX: guard.position[0], guardZ: guard.position[2], alerted: board.alerted === true ? 1 : 0, confidence: Number(board.confidence ?? 0) };
+        return { playerX: hero?.position[0] ?? 0, playerZ: hero?.position[2] ?? 0, guardX: guard.position[0], guardZ: guard.position[2], alerted: board["alerted"] === true ? 1 : 0, confidence: Number(board["confidence"] ?? 0) };
       },
     },
   };

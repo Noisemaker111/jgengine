@@ -249,7 +249,7 @@ export function summarizeChecks(input: {
   branch: string;
   state: string;
   /** The commit the rollup belongs to, when the caller read it. */
-  headSha?: string;
+  headSha?: string | undefined;
   rollup: readonly RollupEntry[];
   wallMs: number;
 }): CiStatus {
@@ -321,7 +321,7 @@ function ghRun(io: CiIo, args: string[]): Run {
 
 function describe(run: Run): string {
   const text = (run.stderr || run.stdout).trim();
-  return text.length > 0 ? text.split("\n")[0] : `gh exited ${run.status}`;
+  return text.length > 0 ? (text.split("\n")[0] ?? text) : `gh exited ${run.status}`;
 }
 
 /** `owner/name` for the line a lane reads, from `--repo` or this checkout's origin. */

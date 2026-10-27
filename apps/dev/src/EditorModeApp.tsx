@@ -1,5 +1,6 @@
 import { useEffect, useState, type ComponentType } from "react";
 
+import type { EditorAppProps } from "@jgengine/editor/EditorApp";
 import type { PlayableGame } from "@jgengine/shell/registry";
 
 import { ErrorPanel, LoadingPanel, formatLoadError } from "./appShared";
@@ -14,15 +15,9 @@ export function EditorModeApp({
   gameId: string;
   playable: PlayableGame;
   /** Closes the editor and returns to the game; powers the chrome's "Exit to game" control. */
-  onExitEditor?: () => void;
+  onExitEditor?: (() => void) | undefined;
 }) {
-  const [EditorApp, setEditorApp] = useState<ComponentType<{
-    gameId: string;
-    playable: PlayableGame;
-    layers?: import("@jgengine/core/editor/index").EditorLayersInput;
-    catalogs?: readonly import("@jgengine/core/editor/index").EditorCatalogDefinition[];
-    onExitEditor?: () => void;
-  }> | null>(null);
+  const [EditorApp, setEditorApp] = useState<ComponentType<EditorAppProps> | null>(null);
   const [layers, setLayers] = useState<import("@jgengine/core/editor/index").EditorLayersInput | undefined>(
     undefined,
   );

@@ -81,13 +81,13 @@ export interface Step {
    * runnable step starts first, so the longest step is not the one that ends the run while
    * lanes sit idle. A stale number costs overlap, never correctness.
    */
-  cost?: number;
+  cost?: number | undefined;
   /**
    * What to run when this step fails because a committed artifact drifted from its
    * generator. Named with the command and the files it rewrites, because "failed" left
    * lanes guessing and pushed them to CI to find out.
    */
-  fix?: string;
+  fix?: string | undefined;
   /** The units this step settles; each is remembered as passed when the step passes. */
   units?: Unit[];
 }
@@ -900,6 +900,7 @@ export async function runSteps(
         const index = runnable();
         if (index >= 0) {
           const [step] = pending.splice(index, 1);
+          if (step === undefined) continue;
           const blockedBy = (step.needs ?? []).filter((need) => results.get(need)?.ok !== true);
           if (blockedBy.length > 0) {
             settle({ name: step.name, ok: false, ms: 0, output: `not run: ${blockedBy.join(", ")} failed`, blockedBy });

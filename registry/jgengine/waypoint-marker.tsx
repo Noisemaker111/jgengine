@@ -31,11 +31,11 @@ export function WaypointMarker({
 }: {
   x: number;
   y: number;
-  label?: string;
-  distance?: string;
-  kind?: WaypointMarkerKind;
-  clamped?: boolean;
-  arrowAngle?: number;
+  label?: string | undefined;
+  distance?: string | undefined;
+  kind?: WaypointMarkerKind | undefined;
+  clamped?: boolean | undefined;
+  arrowAngle?: number | undefined;
   icon?: ReactNode;
   className?: string;
 }) {

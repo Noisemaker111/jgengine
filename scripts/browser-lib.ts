@@ -68,8 +68,8 @@ export function scaleProfile(profile: DeviceProfile, size: SizeMode): DeviceProf
 
 /** Viewport overrides (`--width`/`--height`) in CSS pixels, kept as-is by `--size half`, which halves only the pixel ratio. */
 export interface ViewportOverride {
-  width?: number;
-  height?: number;
+  width?: number | undefined;
+  height?: number | undefined;
 }
 
 /** The device profile a capture actually uses: device defaults, explicit overrides, then size. */
@@ -96,8 +96,8 @@ export async function applyDevice(session: CdpSession, device: Device, size: Siz
 
 export function findChromeExecutable(): string {
   for (const candidate of [
-    process.env.CHROME_PATH,
-    process.env.JG_CHROME,
+    process.env["CHROME_PATH"],
+    process.env["JG_CHROME"],
     "C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe",
     "C:\\Program Files (x86)\\Google\\Chrome\\Application\\chrome.exe",
     "C:\\Program Files (x86)\\Microsoft\\Edge\\Application\\msedge.exe",
@@ -111,7 +111,7 @@ export function findChromeExecutable(): string {
   ]) {
     if (candidate !== undefined && existsSync(candidate)) return candidate;
   }
-  const root = process.env.PLAYWRIGHT_BROWSERS_PATH ?? "/opt/pw-browsers";
+  const root = process.env["PLAYWRIGHT_BROWSERS_PATH"] ?? "/opt/pw-browsers";
   if (existsSync(root)) {
     const direct = join(root, "chromium");
     if (existsSync(direct) && statSync(direct).isFile()) return direct;
@@ -143,8 +143,8 @@ export function chromeGraphicsArgs(
   env: NodeJS.ProcessEnv = process.env,
   platform: NodeJS.Platform = process.platform,
 ): string[] {
-  const software = env.JG_CAPTURE_SOFTWARE_GL === "1" ||
-    (env.JG_CAPTURE_SOFTWARE_GL !== "0" && (env.CI !== undefined || platform === "linux"));
+  const software = env["JG_CAPTURE_SOFTWARE_GL"] === "1" ||
+    (env["JG_CAPTURE_SOFTWARE_GL"] !== "0" && (env["CI"] !== undefined || platform === "linux"));
   return software
     ? ["--use-angle=swiftshader", "--enable-unsafe-swiftshader", "--ignore-gpu-blocklist"]
     : ["--ignore-gpu-blocklist"];
@@ -185,7 +185,7 @@ export function softwareGlBackend(
   hasXvfb: boolean = xvfbExecutable() !== null,
 ): SoftwareGl | null {
   if (!chromeGraphicsArgs(env, platform).includes("--use-angle=swiftshader")) return null;
-  if (env.JG_CAPTURE_GL === "swiftshader") return "swiftshader";
+  if (env["JG_CAPTURE_GL"] === "swiftshader") return "swiftshader";
   return platform === "linux" && hasXvfb ? "llvmpipe" : "swiftshader";
 }
 
@@ -210,7 +210,7 @@ export function chromeRenderArgs(backend: SoftwareGl | null, headed = false): st
 }
 
 function xvfbExecutable(): string | null {
-  for (const dir of (process.env.PATH ?? "/usr/bin").split(":")) {
+  for (const dir of (process.env["PATH"] ?? "/usr/bin").split(":")) {
     const candidate = join(dir, "Xvfb");
     if (dir !== "" && existsSync(candidate)) return candidate;
   }
@@ -224,7 +224,7 @@ function xvfbExecutable(): string | null {
 export function ensureXvfbDisplay(): string | null {
   const xvfb = xvfbExecutable();
   if (xvfb === null) return null;
-  const display = Number(process.env.JG_XVFB_DISPLAY ?? 93);
+  const display = Number(process.env["JG_XVFB_DISPLAY"] ?? 93);
   const socket = `/tmp/.X11-unix/X${display}`;
   if (existsSync(socket)) return `:${display}`;
   const child = spawn(xvfb, [`:${display}`, "-screen", "0", "2560x2560x24", "-nolisten", "tcp"], {
@@ -272,7 +272,7 @@ function hashPortOffset(identity: string, span: number): number {
  * Override with `JG_DEV_PORT`. Range 4517–4999 (483 ports).
  */
 export function resolveDevPort(cwd = process.cwd()): number {
-  const override = process.env.JG_DEV_PORT;
+  const override = process.env["JG_DEV_PORT"];
   if (override !== undefined && override.length > 0) {
     const n = Number(override);
     if (Number.isFinite(n) && n > 0) return Math.floor(n);
@@ -287,7 +287,7 @@ export function resolveDevBase(cwd = process.cwd()): string {
 
 /** Per-checkout website port used by managed `shoot --site` captures. */
 export function resolveWebPort(cwd = process.cwd()): number {
-  const override = process.env.JG_WEB_PORT;
+  const override = process.env["JG_WEB_PORT"];
   if (override !== undefined && override.length > 0) {
     const n = Number(override);
     if (Number.isFinite(n) && n > 0) return Math.floor(n);
@@ -305,7 +305,7 @@ export function resolveWebBase(cwd = process.cwd()): string {
  * Override with `JG_CHROME_PORT`. Range 9223–9322.
  */
 export function resolveWarmChromePort(cwd = process.cwd()): number {
-  const override = process.env.JG_CHROME_PORT;
+  const override = process.env["JG_CHROME_PORT"];
   if (override !== undefined && override.length > 0) {
     const n = Number(override);
     if (Number.isFinite(n) && n > 0) return Math.floor(n);
@@ -618,7 +618,7 @@ export const DEFAULT_CHROME_READY_MS = 30_000;
  * day, and a busy runner overran the old hardcoded 30s (#2110).
  */
 export function resolveChromeReadyMs(env: NodeJS.ProcessEnv = process.env): number {
-  const configured = Number(env.JG_CHROME_READY_MS);
+  const configured = Number(env["JG_CHROME_READY_MS"]);
   return Number.isFinite(configured) && configured > 0 ? Math.floor(configured) : DEFAULT_CHROME_READY_MS;
 }
 
@@ -631,7 +631,7 @@ export interface BrowserLaunchFailure {
   profilePath: string | null;
   attempts: number;
   /** Wait the failing attempt was given, when the step waited at all. */
-  waitedMs?: number;
+  waitedMs?: number | undefined;
   reason: string;
 }
 
@@ -743,7 +743,7 @@ export class CdpSession {
     { resolve: (value: Record<string, unknown>) => void; reject: (error: Error) => void }
   >();
   private readonly ws: WebSocket;
-  private readonly ownedTarget?: { debugPort: number; targetId: string };
+  private readonly ownedTarget?: { debugPort: number; targetId: string } | undefined;
   private readonly eventHandlers = new Map<string, Array<(params: Record<string, unknown>) => void>>();
 
   private constructor(ws: WebSocket, ownedTarget?: { debugPort: number; targetId: string }) {
@@ -829,7 +829,7 @@ export class CdpSession {
       returnByValue: true,
       ...(opts.awaitPromise === true ? { awaitPromise: true } : {}),
     });
-    return (result.result as { value?: T } | undefined)?.value;
+    return (result["result"] as { value?: T } | undefined)?.value;
   }
 
   async close(): Promise<void> {
@@ -961,7 +961,7 @@ export function pidAlive(pid: number | undefined): boolean {
   }
 }
 
-type OwnedProfile = { dir: string; pid?: number };
+type OwnedProfile = { dir: string; pid?: number | undefined };
 /** Profiles this process created and still owes cleanup for. */
 const ownedProfiles = new Map<string, OwnedProfile>();
 let profileCleanupHooks = false;
@@ -1340,7 +1340,7 @@ export function freeBytesAt(root: string = tmpdir()): number | null {
  * it, and one leaked profile is ~150 MB; `JG_CAPTURE_MIN_FREE_MB` moves the floor.
  */
 export function ensureCaptureFreeSpace(root: string = tmpdir(), env: NodeJS.ProcessEnv = process.env): void {
-  const configured = Number(env.JG_CAPTURE_MIN_FREE_MB);
+  const configured = Number(env["JG_CAPTURE_MIN_FREE_MB"]);
   const minimum = Number.isFinite(configured) && configured > 0 ? configured * 1024 * 1024 : MIN_CAPTURE_FREE_BYTES;
   const free = freeBytesAt(root);
   if (free === null || free >= minimum) return;
@@ -1529,7 +1529,7 @@ export function launchPersistentChrome(
 }
 
 export interface LaunchableBrowser {
-  pid?: number;
+  pid?: number | undefined;
   userDataDir: string;
 }
 
@@ -1730,7 +1730,7 @@ export function regionCarriesPicture(
 function pngSize(bytes: Uint8Array): { width: number; height: number } | null {
   if (bytes.length < 24 || bytes[0] !== 137 || bytes[1] !== 80) return null;
   const read = (offset: number): number =>
-    ((bytes[offset] << 24) | (bytes[offset + 1] << 16) | (bytes[offset + 2] << 8) | bytes[offset + 3]) >>> 0;
+    (((bytes[offset] ?? 0) << 24) | ((bytes[offset + 1] ?? 0) << 16) | ((bytes[offset + 2] ?? 0) << 8) | (bytes[offset + 3] ?? 0)) >>> 0;
   return { width: read(16), height: read(20) };
 }
 
@@ -1760,13 +1760,13 @@ async function nextScreencastPng(
     };
     const timer = setTimeout(() => finish(null), timeoutMs);
     const off = session.on("Page.screencastFrame", (params) => {
-      const sessionId = params.sessionId;
+      const sessionId = params["sessionId"];
       if (typeof sessionId === "number" || typeof sessionId === "string") {
         void session.send("Page.screencastFrameAck", { sessionId }).catch(() => {});
       }
-      const data = params.data;
+      const data = params["data"];
       if (typeof data !== "string" || data.length === 0) return;
-      const timestamp = (params.metadata as { timestamp?: number } | undefined)?.timestamp;
+      const timestamp = (params["metadata"] as { timestamp?: number } | undefined)?.timestamp;
       if (typeof timestamp === "number" && timestamp < notBefore) return;
       const bytes = Buffer.from(data, "base64");
       const size = pngSize(bytes);
@@ -1815,7 +1815,7 @@ export async function captureViewportPng(
     liveRegion?: { x: number; y: number; width: number; height: number };
   } = {},
 ): Promise<ViewportPng> {
-  if (options.screencast !== false && process.env.JG_CAPTURE_SCREENCAST !== "0") {
+  if (options.screencast !== false && process.env["JG_CAPTURE_SCREENCAST"] !== "0") {
     try {
       const bytes = await nextScreencastPng(
         session,
@@ -1834,7 +1834,7 @@ export async function captureViewportPng(
     captureBeyondViewport: false,
     optimizeForSpeed: true,
   });
-  const data = shot.data;
+  const data = shot["data"];
   if (typeof data !== "string" || data.length === 0) {
     throw new Error("Page.captureScreenshot returned empty data");
   }
@@ -1891,7 +1891,7 @@ export async function webGlRenderer(session: CdpSession): Promise<string | null>
   return typeof renderer === "string" && renderer.length > 0 ? renderer : null;
 }
 
-function exceptionMessage(params: Record<string, unknown>): string {  const details = params.exceptionDetails as
+function exceptionMessage(params: Record<string, unknown>): string {  const details = params["exceptionDetails"] as
     | { text?: unknown; exception?: { description?: unknown; value?: unknown }; url?: unknown; lineNumber?: unknown }
     | undefined;
   const description = details?.exception?.description;
@@ -2050,9 +2050,9 @@ export async function readCapturePageState(session: CdpSession): Promise<Capture
  */
 export function forwardPageConsole(session: CdpSession, prefix: string): () => void {
   return session.on("Runtime.consoleAPICalled", (params) => {
-    const level = params.type;
+    const level = params["type"];
     if (level !== "warning" && level !== "error") return;
-    const args = Array.isArray(params.args) ? params.args : [];
+    const args = Array.isArray(params["args"]) ? params["args"] : [];
     const text = args
       .map((arg: { value?: unknown; description?: unknown }) =>
         typeof arg?.value === "string" || typeof arg?.value === "number"
@@ -2155,11 +2155,11 @@ export async function navigateCapturePage(
   let frameId: string | undefined;
   let signalled: { status: string | null; error: string | null; sizedCanvas?: boolean } | undefined;
   const requestFrames = new Map<string, string>();
-  const pendingDocumentFailures: Array<{ frameId?: string; message: string }> = [];
+  const pendingDocumentFailures: Array<{ frameId?: string | undefined; message: string }> = [];
   const offSignal = session.on("Runtime.bindingCalled", (params) => {
-    if (params.name !== CAPTURE_SIGNAL_BINDING || typeof params.payload !== "string") return;
+    if (params["name"] !== CAPTURE_SIGNAL_BINDING || typeof params["payload"] !== "string") return;
     try {
-      signalled = JSON.parse(params.payload) as { status: string | null; error: string | null };
+      signalled = JSON.parse(params["payload"]) as { status: string | null; error: string | null };
       if (signalled.status !== null) handshakeSeen = true;
     } catch {
       /* malformed payload — the poll below still reads the real flag */
@@ -2169,15 +2169,15 @@ export async function navigateCapturePage(
     pageFailure ??= exceptionMessage(params);
   });
   const offRequest = session.on("Network.requestWillBeSent", (params) => {
-    if (params.type !== "Document") return;
-    if (typeof params.requestId === "string" && typeof params.frameId === "string") {
-      requestFrames.set(params.requestId, params.frameId);
+    if (params["type"] !== "Document") return;
+    if (typeof params["requestId"] === "string" && typeof params["frameId"] === "string") {
+      requestFrames.set(params["requestId"], params["frameId"]);
     }
   });
   const offLoadingFailed = session.on("Network.loadingFailed", (params) => {
-    if (params.type !== "Document") return;
-    const errorText = typeof params.errorText === "string" ? params.errorText : "unknown error";
-    const failedFrameId = typeof params.requestId === "string" ? requestFrames.get(params.requestId) : undefined;
+    if (params["type"] !== "Document") return;
+    const errorText = typeof params["errorText"] === "string" ? params["errorText"] : "unknown error";
+    const failedFrameId = typeof params["requestId"] === "string" ? requestFrames.get(params["requestId"]) : undefined;
     const message = `page load failed: ${errorText}`;
     if (frameId === undefined) pendingDocumentFailures.push({ frameId: failedFrameId, message });
     else if (failedFrameId === undefined || failedFrameId === frameId) pageFailure ??= message;
@@ -2187,10 +2187,10 @@ export async function navigateCapturePage(
     await installReadinessSignal(session).catch(() => {});
     await holdCapturePlay(session).catch(() => {});
     const navigation = await session.send("Page.navigate", { url });
-    if (typeof navigation.errorText === "string" && navigation.errorText.length > 0) {
-      throw new Error(`navigation failed for ${url}: ${navigation.errorText}`);
+    if (typeof navigation["errorText"] === "string" && navigation["errorText"].length > 0) {
+      throw new Error(`navigation failed for ${url}: ${navigation["errorText"]}`);
     }
-    frameId = typeof navigation.frameId === "string" ? navigation.frameId : undefined;
+    frameId = typeof navigation["frameId"] === "string" ? navigation["frameId"] : undefined;
     const matchingFailure = pendingDocumentFailures.find(
       (failure) => frameId === undefined || failure.frameId === undefined || failure.frameId === frameId,
     );
@@ -2359,15 +2359,15 @@ export interface WithBrowserSessionOptions {
   /** Leave the derived warm debug port instead of a random one. */
   keep: boolean;
   /** Attach to an already-running Chrome on this port (skips launch/kill). */
-  connect?: number;
+  connect?: number | undefined;
   /** Base per-shot timeout; the hard watchdog defaults to this + 120s. */
   timeoutMs: number;
   /** Dev server to tear down alongside Chrome when not left warm. */
   server?: ChildProcess | null;
   /** Native persistent server pid when no ChildProcess handle is retained on Windows. */
-  serverPid?: number;
+  serverPid?: number | undefined;
   /** Pre-resolved debug port (daemon attach) — overrides keep/connect derivation. */
-  debugPort?: number;
+  debugPort?: number | undefined;
   /** Attach without launching even without `--connect` (daemon). */
   attach?: boolean;
   /** Leave Chrome + server running after `fn` resolves (warm loop / daemon). */
@@ -2385,12 +2385,12 @@ export interface WithBrowserSessionOptions {
   /** rAF clock the launched Chrome runs on. Default is the display's commit clock. */
   frameClock?: FrameClock;
   /** Launch a real (off-screen) window instead of headless Chrome; only `--headed` sets it. */
-  headed?: boolean;
+  headed?: boolean | undefined;
   /**
    * Wait for a turn in a shared browser before the session starts; resolves with its release.
    * The wait sits outside the hard deadline, which covers only this run's own work.
    */
-  turn?: () => Promise<() => Promise<void>>;
+  turn?: (() => Promise<() => Promise<void>>) | undefined;
 }
 
 /**

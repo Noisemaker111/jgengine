@@ -29,10 +29,10 @@ export function CombatLogPanel({
   className,
 }: {
   lines: readonly CombatLogLine[];
-  title?: string;
-  width?: number;
-  height?: number;
-  className?: string;
+  title?: string | undefined;
+  width?: number | undefined;
+  height?: number | undefined;
+  className?: string | undefined;
 }) {
   const scrollRef = useAutoScroll<HTMLDivElement>(lines.length);
   return (

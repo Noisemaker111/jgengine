@@ -61,13 +61,13 @@ export function UnitFrame({
   children,
 }: {
   name: string;
-  level?: number;
+  level?: number | undefined;
   vitals: readonly UnitVital[];
-  portrait?: ReactNode;
+  portrait?: ReactNode | undefined;
   reverse?: boolean;
   nameColor?: string;
-  width?: number;
-  className?: string;
+  width?: number | undefined;
+  className?: string | undefined;
   children?: ReactNode;
 }) {
   const portraitSize = 52;

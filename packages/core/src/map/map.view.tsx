@@ -213,7 +213,7 @@ export interface MinimapProps {
   facingYaw?: number;
   rotate?: boolean;
   kindStyles?: Record<string, MarkerKindStyle>;
-  background?: string;
+  background?: string | undefined;
   /** World bounds the `background` image spans, so it pans correctly under a player-centered map. */
   mapBounds?: MapBounds;
   /** Route/corridor polylines drawn under the markers (#285.2); `forecast` routes dash. */

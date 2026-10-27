@@ -6,7 +6,7 @@ const globalForPersistence = globalThis as typeof globalThis & {
 };
 
 async function initPersistence(): Promise<HostPersistence> {
-  const url = process.env.DATABASE_URL;
+  const url = process.env["DATABASE_URL"];
   if (url === undefined) {
     throw new Error("DATABASE_URL is required — the reads hit the shared Postgres from the ws host");
   }

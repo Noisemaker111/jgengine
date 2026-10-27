@@ -39,7 +39,7 @@ interface ScenarioResult {
   /** `ok:<attempts>` when the launch recovered, `error:<message>` when it gave up. */
   outcome: string;
   /** The step the failure named, when it failed. */
-  step?: string;
+  step?: string | undefined;
 }
 
 interface Implementation {

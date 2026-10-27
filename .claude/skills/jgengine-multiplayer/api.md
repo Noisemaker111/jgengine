@@ -62,7 +62,7 @@
 - `randomConvexPlayerId` (function): function randomConvexPlayerId(): string — ⚠ undocumented
 - `rateLimit` (function): function rateLimit(ctx: JGMutationCtx, args: { key: string; windowMs: number; max: number; nowMs?: number }): Promise<{ ok: boolean; retryAfterMs: number }> — Consume one request in a fixed rate window; concurrent callers serialize on the indexed key.
 - `recentChatMessages` (function): function recentChatMessages(ctx: { db: Pick<JGQueryCtx["db"], "query"> }, args: { serverId: string; channelId?: string; limit?: number }): Promise<{ _id: Id<"jgChatMessages">; _creationTime: number; authorName?: string | undefined; serverId: string; userId: string; channelId: string; body: string; a… — Bounded recent chat for a resolved server; authorization belongs to the calling query.
-- `resolveConvexMultiplayer` (function): function resolveConvexMultiplayer(args: { game: GameDefinition; gameId: string; url?: string; client?: ConvexReactClient; api?: ConvexGameApi; userId?: string; force?: boolean; feedActions?: string[]; poseTuning?: PoseSyncTuning; }): MultiplayerSession | null — ⚠ undocumented
+- `resolveConvexMultiplayer` (function): function resolveConvexMultiplayer(args: { game: GameDefinition; gameId: string; url?: string | undefined; client?: ConvexReactClient; api?: ConvexGameApi; userId?: string; force?: boolean; feedActions?: string[]; poseTuning?: PoseSyncTuning; }): MultiplayerSession | null — ⚠ undocumented
 - `sendChatMessage` (function): function sendChatMessage(ctx: JGMutationCtx, args: { serverId: string; userId: string; body: string; channelId?: string; authorName?: string; maxBodyLength?: number; minIntervalMs?: number }): Promise<ChatSendOutcome> — Write validated chat in a host transaction after the caller resolves its actor and world.
 - `validateSlotsPerServer` (function): function validateSlotsPerServer(slotsPerServer: number, topology: "rooms" | "shared" = "rooms"): { ok: true } | { ok: false; reason: string } — Whether a `slotsPerServer` value is a capacity a single hosted server row can actually hold.
 - `watchConvexQuery` (function): function watchConvexQuery<TArgs extends DefaultFunctionArgs, TResult, TView>(client: ConvexGameClient, query: FunctionReference<"query", "public", TArgs, TResult>, args: TArgs, toView: (result: TResult) => TView, onChange: (view: TView) => void): () => void — ⚠ undocumented
@@ -119,7 +119,7 @@
 ## @jgengine/convex/resolveConvexMultiplayer
 
 - `randomConvexPlayerId` (function): function randomConvexPlayerId(): string — ⚠ undocumented
-- `resolveConvexMultiplayer` (function): function resolveConvexMultiplayer(args: { game: GameDefinition; gameId: string; url?: string; client?: ConvexReactClient; api?: ConvexGameApi; userId?: string; force?: boolean; feedActions?: string[]; poseTuning?: PoseSyncTuning; }): MultiplayerSession | null — ⚠ undocumented
+- `resolveConvexMultiplayer` (function): function resolveConvexMultiplayer(args: { game: GameDefinition; gameId: string; url?: string | undefined; client?: ConvexReactClient; api?: ConvexGameApi; userId?: string; force?: boolean; feedActions?: string[]; poseTuning?: PoseSyncTuning; }): MultiplayerSession | null — ⚠ undocumented
 
 ## @jgengine/convex/server
 
@@ -286,7 +286,7 @@
 - `DEFAULT_FEED_ACTIONS` (const): const DEFAULT_FEED_ACTIONS: string[] — ⚠ undocumented
 - `PeerShellFactories` (interface): interface PeerShellFactories — Alternate peer factories for hosts that provide their own WebRTC implementation or transport pipe.
 - `ResolvePeerShellMultiplayerArgs` (interface): interface ResolvePeerShellMultiplayerArgs — Peer bootstrap options; passing a playable hosts its authoritative GameContext world.
-- `ResolveShellMultiplayerArgs` (type): type ResolveShellMultiplayerArgs = { game: GameDefinition; gameId: string; url?: string | undefined; userId?: string; force?: boolean; feedActions?: string[]; } — ⚠ undocumented
+- `ResolveShellMultiplayerArgs` (type): type ResolveShellMultiplayerArgs = { game: GameDefinition; gameId: string; url?: string | undefined; userId?: string | undefined; force?: boolean; feedActions?: string[]; } — ⚠ undocumented
 - `ShellMultiplayer` (type): type ShellMultiplayer = MultiplayerSession — ⚠ undocumented · used by `resolvePeerShellMultiplayer`: Opens a peer session.
 - `randomPlayerId` (function): function randomPlayerId(): string — ⚠ undocumented
 - `resolvePeerShellMultiplayer` (function): function resolvePeerShellMultiplayer(args: ResolvePeerShellMultiplayerArgs): Promise<ShellMultiplayer & { close: () => Promise<void> }> — Opens a peer session. With `playable`, one host runs the game loop and guests mirror its shared world. Await `close()` to finish authoritative persistence. Same-origin rooms use BroadcastChannel signaling.

@@ -111,23 +111,23 @@ type Args = {
   quality?: GraphicsTier;
   /** `--draft`: the low-tier half-size iteration preset. */
   draft: boolean;
-  stage?: boolean;
-  state?: string;
-  preview?: string;
-  fixture?: string;
+  stage?: boolean | undefined;
+  state?: string | undefined;
+  preview?: string | undefined;
+  fixture?: string | undefined;
   listFixtures: boolean;
-  run?: string[];
-  settle?: number;
-  spawn?: string;
-  style?: string;
-  look?: string;
-  lookFrom?: string;
-  view?: string;
+  run?: string[] | undefined;
+  settle?: number | undefined;
+  spawn?: string | undefined;
+  style?: string | undefined;
+  look?: string | undefined;
+  lookFrom?: string | undefined;
+  view?: string | undefined;
   listViews: boolean;
-  out?: string;
-  url?: string;
-  site?: string;
-  connect?: number;
+  out?: string | undefined;
+  url?: string | undefined;
+  site?: string | undefined;
+  connect?: number | undefined;
   keep: boolean;
   /** `--cold`: boot Chrome and Vite directly, proving a clean start. */
   cold: boolean;
@@ -141,9 +141,9 @@ type Args = {
   help: boolean;
   timeoutMs: number;
   timeoutExplicit: boolean;
-  port?: number;
-  width?: number;
-  height?: number;
+  port?: number | undefined;
+  width?: number | undefined;
+  height?: number | undefined;
   params: [string, string][];
 };
 
@@ -208,7 +208,7 @@ function parseArgs(argv: string[]): Args {
   if (!["ui", "play", "poster", "preview"].includes(mode)) throw new Error(`--mode must be ui, play, poster, or preview (got ${mode})`);
   const run = str("run")?.split(",").map((name) => name.trim()).filter((name) => name.length > 0);
   const view = str("view");
-  const draft = o.draft === true;
+  const draft = o["draft"] === true;
   const quality = draft ? "low" : str("quality") === undefined ? undefined : parseGraphicsTier(str("quality"));
   const args: Args = {
     game: str("game") ?? parsed.positionals[0] ?? "world-of-warcraft",
@@ -217,11 +217,11 @@ function parseArgs(argv: string[]): Args {
     ...(quality === undefined ? {} : { quality }),
     draft,
     size: sizeForDraft(draft, str("size") === undefined ? undefined : parseSizeArg(str("size"))),
-    stage: o.stage === true ? true : undefined,
+    stage: o["stage"] === true ? true : undefined,
     state: str("state"),
     preview: str("preview") ?? (mode === "preview" ? "" : undefined),
     fixture: str("fixture"),
-    listFixtures: o.list === true,
+    listFixtures: o["list"] === true,
     run: run !== undefined && run.length > 0 ? run : undefined,
     settle: num("settle"),
     spawn: str("spawn"),
@@ -234,9 +234,9 @@ function parseArgs(argv: string[]): Args {
     url: str("url") === undefined ? undefined : externalCaptureUrl(str("url")),
     site: str("site"),
     connect: num("connect"),
-    keep: o.keep === true,
+    keep: o["keep"] === true,
     cold,
-    inspect: o.inspect === true,
+    inspect: o["inspect"] === true,
     headed,
     quick: quick.quick,
     gameDir: served.dir,
@@ -246,7 +246,7 @@ function parseArgs(argv: string[]): Args {
     port: num("port"),
     width: num("width"),
     height: num("height"),
-    params: ((o.param as string[] | undefined) ?? []).map((pair) => [pair.slice(0, pair.indexOf("=")), pair.slice(pair.indexOf("=") + 1)] as [string, string]),
+    params: ((o["param"] as string[] | undefined) ?? []).map((pair) => [pair.slice(0, pair.indexOf("=")), pair.slice(pair.indexOf("=") + 1)] as [string, string]),
   };
   assertQuickIsIterationOnly({
     tool: "shoot",
@@ -268,7 +268,7 @@ function parseArgs(argv: string[]): Args {
     args.size = "full";
   }
   if (args.site !== undefined && !args.timeoutExplicit) {
-    args.timeoutMs = process.platform === "linux" || process.env.CI !== undefined ? 30_000 : 10_000;
+    args.timeoutMs = process.platform === "linux" || process.env["CI"] !== undefined ? 30_000 : 10_000;
   }
   return args;
 }
@@ -635,7 +635,7 @@ if (!args.listViews) {
   }
 }
 
-if (args.port !== undefined) process.env.JG_DEV_PORT = String(args.port);
+if (args.port !== undefined) process.env["JG_DEV_PORT"] = String(args.port);
 if (args.gameDir !== null) {
   assertOneTarget({ served: args.gameDir, ...(args.url === undefined ? {} : { url: args.url }), ...(args.site === undefined ? {} : { site: args.site }) });
   serveGameDir(args.gameDir, args.game);

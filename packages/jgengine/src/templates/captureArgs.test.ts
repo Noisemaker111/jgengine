@@ -42,7 +42,7 @@ describe("parseCaptureArgs", () => {
   test("--quality pins one of the four graphics tiers and rejects anything else by name", () => {
     for (const tool of tools) {
       for (const tier of ["low", "medium", "high", "ultra"]) {
-        expect(parseCaptureArgs(tool, ["--quality", tier], CAPTURE_FLAGS).options.quality).toBe(tier);
+        expect(parseCaptureArgs(tool, ["--quality", tier], CAPTURE_FLAGS).options["quality"]).toBe(tier);
       }
       expect(() => parseCaptureArgs(tool, ["--quality", "draft"], CAPTURE_FLAGS)).toThrow("--quality must be one of low, medium, high, ultra (got draft)");
       expect(() => parseCaptureArgs(tool, ["--quality", "HIGH"], CAPTURE_FLAGS)).toThrow("must be one of low, medium, high, ultra");
@@ -52,8 +52,8 @@ describe("parseCaptureArgs", () => {
   });
 
   test("--draft is the iteration preset, so it cannot ride with --quality", () => {
-    expect(parseCaptureArgs("shoot", ["--draft"], CAPTURE_FLAGS).options.draft).toBe(true);
-    expect(parseCaptureArgs("drive", ["--draft", "--size", "half"], CAPTURE_FLAGS).options.draft).toBe(true);
+    expect(parseCaptureArgs("shoot", ["--draft"], CAPTURE_FLAGS).options["draft"]).toBe(true);
+    expect(parseCaptureArgs("drive", ["--draft", "--size", "half"], CAPTURE_FLAGS).options["draft"]).toBe(true);
     expect(() => parseCaptureArgs("drive", ["--draft", "--quality", "ultra"], CAPTURE_FLAGS)).toThrow("--draft is the iteration preset");
   });
 

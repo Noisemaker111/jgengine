@@ -4,16 +4,16 @@ import { AbilitySlotButton, type AbilitySlotState } from "@/components/ui/abilit
 
 export interface ActionBarSlot {
   id: string;
-  icon?: ReactNode;
-  label?: string;
-  cost?: string;
-  keybind?: string;
-  state?: AbilitySlotState;
-  cooldownFraction?: number;
-  cooldownSeconds?: number;
-  charges?: number;
-  chargesMax?: number;
-  justCast?: boolean;
+  icon?: ReactNode | undefined;
+  label?: string | undefined;
+  cost?: string | undefined;
+  keybind?: string | undefined;
+  state?: AbilitySlotState | undefined;
+  cooldownFraction?: number | undefined;
+  cooldownSeconds?: number | undefined;
+  charges?: number | undefined;
+  chargesMax?: number | undefined;
+  justCast?: boolean | undefined;
 }
 
 export function ActionBar({
@@ -23,9 +23,9 @@ export function ActionBar({
   className,
 }: {
   slots: readonly ActionBarSlot[];
-  onActivate?: (slotId: string) => void;
-  slotSize?: number;
-  className?: string;
+  onActivate?: ((slotId: string) => void) | undefined;
+  slotSize?: number | undefined;
+  className?: string | undefined;
 }) {
   return (
     <div className={`flex gap-[5px] ${className ?? ""}`} data-jg="action-bar">

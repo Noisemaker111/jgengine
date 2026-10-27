@@ -128,16 +128,16 @@ export function registerGuardActions(mesh: NavMeshData = yardNavMesh()): () => v
   const walker = createWalker(createNavMeshQuery(mesh));
   return registerBehaviorActions(GUARD_ACTIONS, {
     patrol: ({ ctx, entityId, dt }: BehaviorActionContext, _params, board) => {
-      const index = Number(board.post) % GUARD_POSTS.length;
+      const index = Number(board["post"]) % GUARD_POSTS.length;
       const [x, z] = GUARD_POSTS[index]!;
-      if (walker.step(ctx, entityId, x, z, PATROL_SPEED, dt) === "done") board.post = index + 1;
+      if (walker.step(ctx, entityId, x, z, PATROL_SPEED, dt) === "done") board["post"] = index + 1;
       return "running";
     },
     investigate: ({ ctx, entityId, dt }, _params, board) =>
-      walker.step(ctx, entityId, Number(board.lastKnownX), Number(board.lastKnownZ), INVESTIGATE_SPEED, dt),
+      walker.step(ctx, entityId, Number(board["lastKnownX"]), Number(board["lastKnownZ"]), INVESTIGATE_SPEED, dt),
     giveUp: (_ctx, _params, board) => {
-      board.alerted = false;
-      board.handledAt = board.heardAt ?? -1;
+      board["alerted"] = false;
+      board["handledAt"] = board["heardAt"] ?? -1;
       return "done";
     },
   }, { onAbort: (_action, { entityId }) => walker.clear(entityId) });
@@ -177,12 +177,12 @@ export function createGuardSenses(): GuardSenses {
       }
       perception.observe({ id: GUARD_ID, position: guard.position, yaw: guard.rotationY }, [{ id: playerId, position: player.position }], now);
       const memory = perception.memory(GUARD_ID).find((entry) => entry.targetId === playerId);
-      board.confidence = memory?.confidence ?? 0;
-      if (memory !== undefined && memory.lastSeenAt > Number(board.handledAt)) {
-        board.alerted = true;
-        board.heardAt = memory.lastSeenAt;
-        board.lastKnownX = memory.lastKnownPos[0];
-        board.lastKnownZ = memory.lastKnownPos[2];
+      board["confidence"] = memory?.confidence ?? 0;
+      if (memory !== undefined && memory.lastSeenAt > Number(board["handledAt"])) {
+        board["alerted"] = true;
+        board["heardAt"] = memory.lastSeenAt;
+        board["lastKnownX"] = memory.lastKnownPos[0];
+        board["lastKnownZ"] = memory.lastKnownPos[2];
       }
     },
   };

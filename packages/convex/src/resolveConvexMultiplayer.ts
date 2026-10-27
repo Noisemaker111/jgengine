@@ -13,7 +13,7 @@ export function randomConvexPlayerId(): string {
 export function resolveConvexMultiplayer(args: {
   game: GameDefinition;
   gameId: string;
-  url?: string;
+  url?: string | undefined;
   client?: ConvexReactClient;
   api?: ConvexGameApi;
   userId?: string;

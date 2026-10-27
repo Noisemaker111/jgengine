@@ -116,9 +116,9 @@ export function DevApp({ gameId }: { gameId: string }) {
         }
         // Publish the declared shots before anything can fail, so `--list-views` works on a game
         // whose `?shot=` is wrong — discovery must survive the error it exists to resolve.
-        document.documentElement.dataset.jgViews = JSON.stringify(describeViews(loaded.capture?.views));
+        document.documentElement.dataset["jgViews"] = JSON.stringify(describeViews(loaded.capture?.views));
         // The game's own settings rows, so a harness can name and check an id it did not declare.
-        document.documentElement.dataset.jgSettings = JSON.stringify(describeDeclaredSettings(loaded.settings));
+        document.documentElement.dataset["jgSettings"] = JSON.stringify(describeDeclaredSettings(loaded.settings));
 
         const view = resolveCaptureView({
           views: loaded.capture?.views,
@@ -138,7 +138,7 @@ export function DevApp({ gameId }: { gameId: string }) {
         }
         if (view.kind === "view") {
           applyCaptureView(view.overrides);
-          document.documentElement.dataset.jgView = view.name;
+          document.documentElement.dataset["jgView"] = view.name;
         }
         if (STYLE !== null && !LOOK_PRESETS.includes(STYLE as LookPreset)) {
           const message = `Unknown ?style="${STYLE}" — known looks: ${LOOK_PRESETS.join(", ")}`;

@@ -3,7 +3,7 @@ import { existsSync, readFileSync } from "node:fs";
 import { join } from "node:path";
 
 export const ORPHAN_BASELINE_REL = "scripts/api-orphan-baseline.json";
-const DEFAULT_REF = process.env.ORPHAN_RATCHET_REF ?? "origin/main";
+const DEFAULT_REF = process.env["ORPHAN_RATCHET_REF"] ?? "origin/main";
 
 export interface OrphanRatchetResult {
   added: string[];

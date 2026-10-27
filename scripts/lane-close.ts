@@ -77,9 +77,9 @@ export function parseArgs(argv: readonly string[]): LaneCloseArgs {
 export interface ReportInput {
   branch: string;
   pr: number;
-  prState?: string;
-  prUrl?: string;
-  status?: { counts: { pass: number; fail: number; pending: number }; verdict: string; runIds: number[] };
+  prState?: string | undefined;
+  prUrl?: string | undefined;
+  status?: { counts: { pass: number; fail: number; pending: number }; verdict: string; runIds: number[] } | undefined;
   checksProblem?: string;
   filesChanged: string;
 }

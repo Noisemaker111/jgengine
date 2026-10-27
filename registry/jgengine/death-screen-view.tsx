@@ -11,13 +11,13 @@ export function DeathScreenView({
   respawnAvailableIn,
   className,
 }: {
-  title?: string;
-  subtitle?: string;
-  respawnLabel?: string;
-  respawnKeybind?: string;
-  onRespawn?: () => void;
-  respawnAvailableIn?: number;
-  className?: string;
+  title?: string | undefined;
+  subtitle?: string | undefined;
+  respawnLabel?: string | undefined;
+  respawnKeybind?: string | undefined;
+  onRespawn?: (() => void) | undefined;
+  respawnAvailableIn?: number | undefined;
+  className?: string | undefined;
 }) {
   const countingDown = respawnAvailableIn !== undefined && respawnAvailableIn > 0;
   return (

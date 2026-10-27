@@ -57,25 +57,25 @@ function guardCaptureFlag(root: HTMLElement): void {
   guardInstalled = true;
   let reported = false;
   new MutationObserver(() => {
-    if (hostStatus === undefined || root.dataset.jgCapture === hostStatus) return;
+    if (hostStatus === undefined || root.dataset["jgCapture"] === hostStatus) return;
     if (!reported) {
       reported = true;
-      addCaptureNote(`game code changed data-jg-capture to ${JSON.stringify(root.dataset.jgCapture ?? null)}; the dev runner owns readiness, so it was restored — remove the game's own capture readiness code`);
+      addCaptureNote(`game code changed data-jg-capture to ${JSON.stringify(root.dataset["jgCapture"] ?? null)}; the dev runner owns readiness, so it was restored — remove the game's own capture readiness code`);
     }
-    root.dataset.jgCapture = hostStatus;
+    root.dataset["jgCapture"] = hostStatus;
   }).observe(root, { attributes: true, attributeFilter: ["data-jg-capture"] });
 }
 
 export function setCaptureStatus(status: CaptureStatus, error?: string): void {
   if (typeof document === "undefined") return;
-  if (status !== "error" && document.documentElement.dataset.jgCapture === "error") return;
+  if (status !== "error" && document.documentElement.dataset["jgCapture"] === "error") return;
   hostStatus = status;
   guardCaptureFlag(document.documentElement);
-  document.documentElement.dataset.jgCapture = status;
+  document.documentElement.dataset["jgCapture"] = status;
   if (error !== undefined && error.length > 0) {
-    document.documentElement.dataset.jgCaptureError = error.slice(0, 500);
+    document.documentElement.dataset["jgCaptureError"] = error.slice(0, 500);
   } else {
-    delete document.documentElement.dataset.jgCaptureError;
+    delete document.documentElement.dataset["jgCaptureError"];
   }
   const q = readCaptureQuery();
   const meta: CaptureMeta = {
@@ -188,8 +188,8 @@ async function waitForCaptureRun(timeoutMs: number): Promise<void> {
 /** Human-readable notes about what the gate did, surfaced by shoot/drive after readiness. */
 function addCaptureNote(note: string): void {
   const root = document.documentElement;
-  const current = root.dataset.jgCaptureNote;
-  root.dataset.jgCaptureNote = (current === undefined || current === "" ? note : `${current}; ${note}`).slice(0, 500);
+  const current = root.dataset["jgCaptureNote"];
+  root.dataset["jgCaptureNote"] = (current === undefined || current === "" ? note : `${current}; ${note}`).slice(0, 500);
 }
 
 async function waitPlayFrames(settleMs: number): Promise<void> {
@@ -202,13 +202,13 @@ async function waitPlayFrames(settleMs: number): Promise<void> {
 }
 
 function menuOnScreen(): Element | null {
-  const phase = document.documentElement.dataset.jgPhase;
+  const phase = document.documentElement.dataset["jgPhase"];
   return document.querySelector("[data-jg-menu]") ?? (phase === "menu" ? document.body : null);
 }
 
 function startCandidates(menu: Element): (StartCandidate & { element: HTMLElement })[] {
   return Array.from(menu.querySelectorAll<HTMLElement>("button, [role=button], a[href]")).map((element) => {
-    const label = `${element.className} ${element.dataset.variant ?? ""}`.toLowerCase();
+    const label = `${element.className} ${element.dataset["variant"] ?? ""}`.toLowerCase();
     return {
       element,
       text: (element.textContent ?? element.getAttribute("aria-label") ?? "").trim(),
@@ -342,7 +342,7 @@ export function resolveCaptureRun(args: {
  */
 export function createCaptureContextReady(opts: {
   captureRun: readonly CaptureRunEntry[];
-  stageScenario?: (ctx: GameContext) => void;
+  stageScenario?: ((ctx: GameContext) => void) | undefined;
   gameId: string;
   strict?: boolean;
 }): ((ctx: GameContext) => void) | undefined {

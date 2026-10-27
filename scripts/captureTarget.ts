@@ -15,7 +15,7 @@ export function externalCaptureUrl(raw: string | undefined): string {
   return url.toString();
 }
 
-export function driveTargetUrl(args: { game: string; mode: string; modeExplicit?: boolean; device?: Device; site?: string; url?: string }, base: string): URL {
+export function driveTargetUrl(args: { game: string; mode: string; modeExplicit?: boolean | undefined; device?: Device | undefined; site?: string | undefined; url?: string | undefined }, base: string): URL {
   if (args.url !== undefined && args.site !== undefined) throw new Error("--url and --site select different targets; pass one");
   let url: URL;
   if (args.url !== undefined) {

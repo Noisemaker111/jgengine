@@ -120,7 +120,7 @@ function waitForExit(
 }
 
 /** `<id>` and `--timeout <seconds>`. */
-export function parseAwaitArgs(argv: readonly string[]): { id: string; timeoutMs?: number } {
+export function parseAwaitArgs(argv: readonly string[]): { id: string; timeoutMs?: number | undefined } {
   const rest = argv[0] === "--" ? argv.slice(1) : argv;
   let id: string | null = null;
   let timeoutMs: number | undefined;
@@ -140,7 +140,7 @@ export function parseAwaitArgs(argv: readonly string[]): { id: string; timeoutMs
 }
 
 async function main(argv: readonly string[]): Promise<void> {
-  let args: { id: string; timeoutMs?: number };
+  let args: ReturnType<typeof parseAwaitArgs>;
   try {
     args = parseAwaitArgs(argv);
   } catch (error) {

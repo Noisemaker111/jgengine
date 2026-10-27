@@ -158,11 +158,11 @@ function probe(ctx: GameContext): Record<string, number> {
   };
   const last = occlusion.lastTest;
   if (last !== null) {
-    out.lastFromY = last.from.y;
-    out.lastFromZ = last.from.z;
-    out.lastToY = last.to.y;
-    out.lastToZ = last.to.z;
-    out.lastBlocked = last.blocked ? 1 : 0;
+    out["lastFromY"] = last.from.y;
+    out["lastFromZ"] = last.from.z;
+    out["lastToY"] = last.to.y;
+    out["lastToZ"] = last.to.z;
+    out["lastBlocked"] = last.blocked ? 1 : 0;
   }
   for (const entry of ambience.levels) out[`zone_${entry.id}`] = entry.level;
   return out;

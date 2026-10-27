@@ -36,7 +36,7 @@ function nextPrerelease(version: string): string {
   const [, major, minor, patch, pre] = match;
   if (pre) {
     const parts = pre.split(".");
-    const last = parts[parts.length - 1];
+    const last = parts.at(-1) ?? "";
     if (parts[0] === preId && /^\d+$/.test(last)) {
       parts[parts.length - 1] = String(Number(last) + 1);
       return `${major}.${minor}.${patch}-${parts.join(".")}`;

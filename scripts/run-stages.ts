@@ -23,7 +23,7 @@ export interface Stage {
    * prerequisite failed is skipped, because running it would only produce
    * derivative noise (type errors from a dist that never got built).
    */
-  readonly needs?: readonly string[];
+  readonly needs?: readonly string[] | undefined;
   /** The command that re-runs this stage alone. */
   readonly rerun?: string;
   /**
@@ -31,7 +31,7 @@ export interface Stage {
    * generated artifact is the case that matters: re-running the check proves the drift again, it
    * does not regenerate anything.
    */
-  readonly fix?: string;
+  readonly fix?: string | undefined;
 }
 
 /** The CI jobs a check runs in; a check in none runs only from `bun run check`. */

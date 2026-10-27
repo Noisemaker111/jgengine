@@ -17,9 +17,9 @@ export function MenuList({
   className,
 }: {
   entries: readonly MenuEntry[];
-  selectedId?: string;
-  onSelect?: (id: string) => void;
-  onActivate?: (id: string) => void;
+  selectedId?: string | undefined;
+  onSelect?: ((id: string) => void) | undefined;
+  onActivate?: ((id: string) => void) | undefined;
   className?: string;
 }) {
   return (

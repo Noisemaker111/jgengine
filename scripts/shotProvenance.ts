@@ -80,7 +80,7 @@ export function buildShotRecord(args: {
   previous?: PreviousShot;
   width?: number;
   height?: number;
-  git?: { head: string; dirty: boolean };
+  git?: { head: string; dirty: boolean } | undefined;
   engine?: EngineRecord;
 }): ShotRecord {
   const { previous, signature } = args;

@@ -303,9 +303,9 @@ export function undeclaredSettingErrors(
 export function perfPageUrl(options: {
   base: string;
   game: string;
-  quality?: GraphicsTier;
-  telemetry?: "on" | "off";
-  state?: string;
+  quality?: GraphicsTier | undefined;
+  telemetry?: "on" | "off" | undefined;
+  state?: string | undefined;
   params?: readonly (readonly [string, string])[];
 }): URL {
   const url = new URL(options.base);
@@ -748,7 +748,7 @@ interface SceneNodeCount {
 }
 
 function remoteObjectId(result: Record<string, unknown>): string | undefined {
-  return (result.result as { objectId?: string } | undefined)?.objectId;
+  return (result["result"] as { objectId?: string } | undefined)?.objectId;
 }
 
 /**
@@ -811,7 +811,7 @@ async function countInstances(
   if (prototypeId === undefined) return { nodes: 0, scenes: 0 };
 
   const found = await session.send("Runtime.queryObjects", { prototypeObjectId: prototypeId });
-  const arrayId = ((found.objects ?? {}) as { objectId?: string }).objectId;
+  const arrayId = ((found["objects"] ?? {}) as { objectId?: string }).objectId;
   if (arrayId === undefined) return { nodes: 0, scenes: 0 };
 
   const counted = await session.send("Runtime.callFunctionOn", {
@@ -828,7 +828,7 @@ async function countInstances(
     }`,
     returnByValue: true,
   });
-  const value = (counted.result as { value?: { scenes?: number; nodes?: number } } | undefined)?.value;
+  const value = (counted["result"] as { value?: { scenes?: number; nodes?: number } } | undefined)?.value;
   return { nodes: value?.nodes ?? 0, scenes: value?.scenes ?? 0 };
 }
 
@@ -872,7 +872,7 @@ export interface MeasureOptions {
   base: string;
   game: string;
   /** The graphics tier to pin; omitted measures whatever tier the game itself resolves. */
-  quality?: GraphicsTier;
+  quality?: GraphicsTier | undefined;
   /** Half viewport at the low tier, for a quick smoke run. */
   draft?: boolean;
   seconds?: number;
@@ -884,7 +884,7 @@ export interface MeasureOptions {
   /** Settings seeded into the page's settings storage before it boots. */
   settings?: readonly PerfSettingOverride[];
   /** The game's `capture.states` entry to boot into, so two runs are the same scene. */
-  state?: string;
+  state?: string | undefined;
   /** Extra page params pinned beside the state (`spawn=…`, `seed=…`). */
   params?: readonly (readonly [string, string])[];
   /** The rAF clock the caller launched the browser on, echoed into the record. */
@@ -1031,12 +1031,12 @@ export async function measureGame(options: MeasureOptions): Promise<PerfMeasure>
   const frame = summarizeFrameDeltas(deltas);
   const since = gl.since;
   const allocations =
-    (since.buffers ?? 0) +
-    (since.textures ?? 0) +
-    (since.vertexArrays ?? 0) +
-    (since.programsLinked ?? 0) +
-    (since.framebuffers ?? 0);
-  const residentPrograms = snapshot?.probes?.shaderPrograms;
+    (since["buffers"] ?? 0) +
+    (since["textures"] ?? 0) +
+    (since["vertexArrays"] ?? 0) +
+    (since["programsLinked"] ?? 0) +
+    (since["framebuffers"] ?? 0);
+  const residentPrograms = snapshot?.probes?.["shaderPrograms"];
 
   let raw: RawProfile | null = null;
   let profiledMs = 0;
@@ -1048,7 +1048,7 @@ export async function measureGame(options: MeasureOptions): Promise<PerfMeasure>
     await session.evaluate(`new Promise((r) => setTimeout(r, ${seconds * 1000}))`, { awaitPromise: true });
     profiledMs = Date.now() - profiledAt;
     const stopped = await session.send("Profiler.stop");
-    raw = (stopped.profile ?? { nodes: [], samples: [], timeDeltas: [] }) as RawProfile;
+    raw = (stopped["profile"] ?? { nodes: [], samples: [], timeDeltas: [] }) as RawProfile;
   }
 
   await releasePath();
@@ -1074,15 +1074,15 @@ export async function measureGame(options: MeasureOptions): Promise<PerfMeasure>
       scenes: sceneNodes.scenes,
     },
     gl: {
-      programsLinked: since.programsLinked ?? 0,
-      framebuffers: since.framebuffers ?? 0,
-      buffers: since.buffers ?? 0,
-      textures: since.textures ?? 0,
-      vertexArrays: since.vertexArrays ?? 0,
+      programsLinked: since["programsLinked"] ?? 0,
+      framebuffers: since["framebuffers"] ?? 0,
+      buffers: since["buffers"] ?? 0,
+      textures: since["textures"] ?? 0,
+      vertexArrays: since["vertexArrays"] ?? 0,
       allocations,
       residentPrograms: typeof residentPrograms === "number" ? residentPrograms : null,
       total: gl.counts,
-      attached: (gl.counts.buffers ?? 0) + (gl.counts.textures ?? 0) > 0,
+      attached: (gl.counts["buffers"] ?? 0) + (gl.counts["textures"] ?? 0) > 0,
     },
     sim:
       snapshot?.frame === null || snapshot?.frame === undefined

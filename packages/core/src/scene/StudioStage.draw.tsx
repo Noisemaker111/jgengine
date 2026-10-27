@@ -47,7 +47,7 @@ export interface StudioStageProps {
    * convention) — the direction `faceCamera` turns to point at the camera. Default `[0, 0, 1]`, the
    * engine-wide convention (`DEFAULT_FORWARD` in `@jgengine/core/scene/facing`).
    */
-  forward?: readonly [number, number, number];
+  forward?: readonly [number, number, number] | undefined;
   children: ReactNode;
 }
 

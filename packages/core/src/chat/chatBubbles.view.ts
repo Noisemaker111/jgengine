@@ -10,8 +10,8 @@ export interface ChatBubble {
 }
 
 export interface ChatBubblesOptions {
-  channelId?: string;
-  ttlMs?: number;
+  channelId?: string | undefined;
+  ttlMs?: number | undefined;
   limit?: number;
 }
 

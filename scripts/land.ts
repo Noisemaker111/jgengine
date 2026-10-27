@@ -394,7 +394,7 @@ export function commitGuards(options: {
   added: readonly string[];
   ignored: readonly string[];
   branch: string;
-  allow?: readonly string[];
+  allow?: readonly string[] | undefined;
 }): CommitGuard[] {
   const allowed = new Set(options.allow ?? []);
   const staged = new Set(options.staged.map(normalizePath));

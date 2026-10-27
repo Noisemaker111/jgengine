@@ -16,8 +16,8 @@ export function ownBrowserProcess(
 
 export interface BrowserFixtureResources {
   releasePending?: () => void | Promise<void>;
-  ownedBrowserProcess?: OwnedBrowserProcess;
-  browser?: { close: () => Promise<void> };
+  ownedBrowserProcess?: OwnedBrowserProcess | undefined;
+  browser?: { close: () => Promise<void> } | undefined;
   server?: { stop: (closeActiveConnections: boolean) => unknown };
   removeScratch: () => Promise<void>;
 }

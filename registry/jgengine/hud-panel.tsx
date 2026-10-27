@@ -25,7 +25,7 @@ export function HudPanel({
   style,
   children,
 }: {
-  title?: string;
+  title?: string | undefined;
   actions?: ReactNode;
   width?: number | string;
   className?: string;

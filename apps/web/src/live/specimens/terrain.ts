@@ -36,7 +36,7 @@ const SLATE_HIGH = new THREE.Color(0xc6d2e2);
 export function createTerrainSpecimen(container: HTMLElement): TerrainSpecimen {
   const geo = new THREE.PlaneGeometry(DOMAIN, DOMAIN, SEGMENTS, SEGMENTS);
   geo.rotateX(-Math.PI / 2); // lie flat: local x/z in [-2.5, 2.5], y is displacement
-  const position = geo.attributes.position as THREE.BufferAttribute;
+  const position = geo.attributes["position"] as THREE.BufferAttribute;
   const colors = new THREE.Float32BufferAttribute(new Float32Array(position.count * 3), 3);
   geo.setAttribute("color", colors);
 

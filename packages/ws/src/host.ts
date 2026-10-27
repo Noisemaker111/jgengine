@@ -111,7 +111,7 @@ export type GameServerHost = {
     action: string;
     entry: unknown;
   }) => Promise<void>;
-  listOpenServers: (args: { gameId: string; limit?: number }) => Promise<ServerListing[]>;
+  listOpenServers: (args: { gameId: string; limit?: number | undefined }) => Promise<ServerListing[]>;
   tickOnce: () => Promise<{ ticked: number; saved: number }>;
   flushAll: () => Promise<number>;
   start: () => void;

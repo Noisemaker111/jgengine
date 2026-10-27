@@ -33,7 +33,7 @@ bun run drive scrap-signal --mode editor \\
   --rpc '{"method":"set_transform","id":"boss","x":-90,"z":-650}' \\
   --rpc '{"method":"export_document"}'`;
 
-const FEATURES = [
+const FEATURES: readonly (readonly [glyph: string, title: string, body: string])[] = [
   ["01", "Gizmos & selection", "Select markers, volumes, paths and notes. Move, rotate and scale with snapping, drag several at once, and edit them in the outliner and inspector."],
   ["02", "Terrain sculpt & paint", "Raise, lower, smooth, flatten, ramp and noise brushes on a live heightfield, then paint blended material layers. Each stroke is one undo step."],
   ["03", "Foliage & scatter", "Lasso a region for GPU-instanced foliage with density, species mixes, slope and height masks, and clear zones around gameplay spots. Same seed, same result."],

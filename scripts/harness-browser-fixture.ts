@@ -69,7 +69,7 @@ async function drain(stream: ReadableStream<Uint8Array>): Promise<string> {
 /** Run a harness CLI child under CLI_DEADLINE_MS, failing the test with its own output if it is killed. */
 export async function runHarnessCli(command: string[], options: { cwd: string; env?: Record<string, string | undefined>; timeoutMs?: number }) {
   const timeoutMs = options.timeoutMs ?? CLI_DEADLINE_MS;
-  const child = Bun.spawn([process.execPath, ...command], { cwd: options.cwd, env: options.env, stdout: "pipe", stderr: "pipe", timeout: timeoutMs, killSignal: "SIGTERM" });
+  const child = Bun.spawn([process.execPath, ...command], { cwd: options.cwd, ...(options.env === undefined ? {} : { env: options.env }), stdout: "pipe", stderr: "pipe", timeout: timeoutMs, killSignal: "SIGTERM" });
   const exit = await child.exited;
   const [stdout, stderr] = await Promise.all([drain(child.stdout), drain(child.stderr)]);
   if (child.signalCode !== null) {

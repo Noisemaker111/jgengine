@@ -141,7 +141,7 @@ export function buildImportGraph(
     return everyAlias;
   };
 
-  const resolveOne = (specifier: string, from: string): { file?: string; inRepo: boolean } => {
+  const resolveOne = (specifier: string, from: string): { file?: string | undefined; inRepo: boolean } => {
     const bare = specifier.replace(/[?#].*$/, "");
     if (bare.startsWith(".")) {
       const file = firstFile(posixPath.normalize(posixPath.join(posixPath.dirname(from), bare)));

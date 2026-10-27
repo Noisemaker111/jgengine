@@ -317,7 +317,7 @@ function MenuFrameworkUI(): ReactNode {
           {
             id: "continue",
             label: "Continue",
-            hint: recent === null ? "No saved run yet" : `Slot ${recent.name ?? recent.id} · ${String(recent.meta.playtime ?? "")}`,
+            hint: recent === null ? "No saved run yet" : `Slot ${recent.name ?? recent.id} · ${String(recent.meta["playtime"] ?? "")}`,
             disabled: recent === null,
           },
           { id: "new", label: "New Game", hint: "Start in the first free slot" },

@@ -27,7 +27,7 @@ function Stage(): ReactNode {
         return (
           <mesh key={i} position={[Math.cos(angle) * 12, 1.5, Math.sin(angle) * 12]} castShadow>
             <boxGeometry args={[1, 3, 1]} />
-            <meshStandardMaterial color={SEAT_COLORS[i % SEAT_COLORS.length]} roughness={0.6} />
+            <meshStandardMaterial color={SEAT_COLORS[i % SEAT_COLORS.length] ?? "#ffffff"} roughness={0.6} />
           </mesh>
         );
       })}

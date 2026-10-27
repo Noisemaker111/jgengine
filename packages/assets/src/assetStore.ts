@@ -137,7 +137,7 @@ export type PullTarget = (target: string, outRoot: string) => Promise<boolean>;
 export async function provisionJobs(
   gameDir: string,
   jobs: readonly PullJob[],
-  options: { pull: PullTarget; log?: (line: string) => void; download?: boolean; env?: Readonly<Record<string, string | undefined>> },
+  options: { pull: PullTarget; log?: ((line: string) => void) | undefined; download?: boolean | undefined; env?: Readonly<Record<string, string | undefined>> | undefined },
 ): Promise<ProvisionResult> {
   const log = options.log ?? console.log;
   const repoRoot = resolve(gameDir, "..", "..");

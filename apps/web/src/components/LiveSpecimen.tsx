@@ -34,7 +34,7 @@ const CONFIGS: Record<SpecimenKey, SpecimenConfig> = {
     load: async (el) => {
       const s = (await import("../live/specimens/windGrass")).createWindSpecimen(el);
       return {
-        setDials: (d) => s.setDials({ speed: Number(d.speed), gust: Number(d.gust), turbulence: Number(d.turbulence) }),
+        setDials: (d) => s.setDials({ speed: Number(d["speed"]), gust: Number(d["gust"]), turbulence: Number(d["turbulence"]) }),
         dispose: s.dispose,
       };
     },
@@ -49,7 +49,7 @@ const CONFIGS: Record<SpecimenKey, SpecimenConfig> = {
   catenary: {
     load: async (el) => {
       const s = (await import("../live/specimens/catenary")).createCatenarySpecimen(el);
-      return { setDials: (d) => s.setDials({ slack: Number(d.slack) }), dispose: s.dispose };
+      return { setDials: (d) => s.setDials({ slack: Number(d["slack"]) }), dispose: s.dispose };
     },
     initial: { slack: 0.22 },
     controls: [{ kind: "range", key: "slack", label: "slack", min: 0.02, max: 0.6, step: 0.01 }],
@@ -61,10 +61,10 @@ const CONFIGS: Record<SpecimenKey, SpecimenConfig> = {
       return {
         setDials: (d) =>
           s.setDials({
-            frequency: Number(d.frequency),
-            octaves: Number(d.octaves),
-            ridged: Boolean(d.ridged),
-            seed: Number(d.seed),
+            frequency: Number(d["frequency"]),
+            octaves: Number(d["octaves"]),
+            ridged: Boolean(d["ridged"]),
+            seed: Number(d["seed"]),
           }),
         dispose: s.dispose,
       };
@@ -98,7 +98,7 @@ export function LiveSpecimen({ specimen }: { specimen: SpecimenKey }) {
     if (host === null) return;
     let cancelled = false;
     let created: SpecimenInstance | null = null;
-    document.documentElement.dataset.jgCapture = "pending";
+    document.documentElement.dataset["jgCapture"] = "pending";
     config
       .load(host)
       .then((instance) => {
@@ -110,12 +110,12 @@ export function LiveSpecimen({ specimen }: { specimen: SpecimenKey }) {
         instanceRef.current = instance;
         setReady(true);
         // Screenshot tooling (jgengine-verify) waits for this flag.
-        document.documentElement.dataset.jgCapture = "ready";
+        document.documentElement.dataset["jgCapture"] = "ready";
       })
       .catch(() => {
         // No WebGL, or a module/render failure: fall back to the "unavailable" note.
         if (!cancelled) setFailed(true);
-        document.documentElement.dataset.jgCapture = "ready";
+        document.documentElement.dataset["jgCapture"] = "ready";
       });
     return () => {
       cancelled = true;

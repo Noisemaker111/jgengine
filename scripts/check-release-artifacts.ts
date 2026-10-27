@@ -49,7 +49,7 @@ export interface PackageCheck {
   declared?: readonly string[];
   registry: Registry;
   unpack: Unpack;
-  importEntry?: (url: string) => Promise<unknown>;
+  importEntry?: ((url: string) => Promise<unknown>) | undefined;
 }
 
 export interface PackageVerdict {
@@ -119,7 +119,7 @@ export interface PublishedState {
 export async function publishedState(registry: Registry, name: string, version: string): Promise<PublishedState> {
   const metadata = await registry.metadata(name);
   if (metadata === null) return { hasMetadata: false, hasVersion: false, tarballStatus: null };
-  const versions = (metadata.versions ?? {}) as Record<string, { dist?: { tarball?: string } }>;
+  const versions = (metadata["versions"] ?? {}) as Record<string, { dist?: { tarball?: string } }>;
   const entry = versions[version];
   if (entry === undefined) return { hasMetadata: true, hasVersion: false, tarballStatus: null };
   const url = entry.dist?.tarball;
@@ -153,7 +153,7 @@ export async function checkPackage(input: PackageCheck): Promise<PackageVerdict>
     fail(`the registry has no metadata for ${input.name}`);
     return verdict;
   }
-  const versions = (metadata.versions ?? {}) as Record<string, { dist?: { tarball?: string } }>;
+  const versions = (metadata["versions"] ?? {}) as Record<string, { dist?: { tarball?: string } }>;
   const entry = versions[input.version];
   if (entry === undefined) {
     const published = Object.keys(versions).slice(-3);

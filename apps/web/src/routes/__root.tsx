@@ -73,9 +73,9 @@ function RootComponent() {
   // mark themselves "pending" in their own (earlier-running) effects and flag ready when drawn.
   useEffect(() => {
     const flags = document.documentElement.dataset;
-    if (flags.jgCapture !== undefined) return;
+    if (flags["jgCapture"] !== undefined) return;
     void document.fonts.ready.then(() => {
-      flags.jgCapture ??= "ready";
+      flags["jgCapture"] ??= "ready";
     });
   }, []);
 

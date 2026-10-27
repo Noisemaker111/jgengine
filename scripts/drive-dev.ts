@@ -108,7 +108,7 @@ type Args = {
   quality?: GraphicsTier;
   /** `--draft`: the low-tier half-size iteration preset. */
   draft: boolean;
-  connect?: number;
+  connect?: number | undefined;
   keep: boolean;
   help: boolean;
   timeoutMs: number;
@@ -120,25 +120,25 @@ type Args = {
   sampleMs: number;
   softlockMs: number;
   epsilon: number;
-  spawn?: string;
+  spawn?: string | undefined;
   params: [string, string][];
-  look?: string;
-  lookFrom?: string;
-  view?: string;
-  state?: string;
-  site?: string;
-  url?: string;
-  record?: string;
+  look?: string | undefined;
+  lookFrom?: string | undefined;
+  view?: string | undefined;
+  state?: string | undefined;
+  site?: string | undefined;
+  url?: string | undefined;
+  record?: string | undefined;
   recordWidth: number;
   recordFps: number;
   recordRealtime: boolean;
   reuseStorage: boolean;
-  port?: number;
-  width?: number;
-  height?: number;
-  settle?: number;
-  run?: string;
-  style?: string;
+  port?: number | undefined;
+  width?: number | undefined;
+  height?: number | undefined;
+  settle?: number | undefined;
+  run?: string | undefined;
+  style?: string | undefined;
   /** Show a real window (off-screen) instead of headless Chrome. */
   headed: boolean;
   /** `--cold`: boot Chrome and Vite directly, proving a clean start. */
@@ -148,13 +148,13 @@ type Args = {
   /** `--game-dir`: serve this game from another checkout instead of `games/<game>`. */
   gameDir: string | null;
   /** Named flow this run plays, when it plays one. */
-  flow?: string;
+  flow?: string | undefined;
   /** `--browser`: play a headless flow in the browser. */
   browser: boolean;
   /** List the game's flows and exit. */
   flows: boolean;
   /** Also write one JSONL line per step here. */
-  log?: string;
+  log?: string | undefined;
 };
 
 /** GitHub's camo image proxy stops serving around 5 MB — stay safely under it
@@ -257,7 +257,7 @@ function parseArgs(argv: string[]): Args {  // `--headed` is parsed here, not in
   const str = (name: string): string | undefined => (typeof o[name] === "string" ? (o[name] as string) : undefined);
   const num = (name: string): number | undefined => (str(name) === undefined ? undefined : Number(str(name)));
   if (parsed.positionals.length > 1) throw new Error(`drive: one game id, got ${parsed.positionals.join(" ")}`);
-  const draft = o.draft === true;
+  const draft = o["draft"] === true;
   const quality = draft ? "low" : str("quality") === undefined ? undefined : parseGraphicsTier(str("quality"));
   const args: Args = {
     game: str("game") ?? parsed.positionals[0] ?? "",
@@ -268,15 +268,15 @@ function parseArgs(argv: string[]): Args {  // `--headed` is parsed here, not in
     draft,
     size: sizeForDraft(draft, str("size") === undefined ? undefined : parseSizeArg(str("size"))),
     connect: num("connect"),
-    keep: o.keep === true,
+    keep: o["keep"] === true,
     cold,
     help: parsed.help,
     timeoutMs: (num("timeout") ?? 60) * 1000,
     timeoutExplicit: str("timeout") !== undefined,
     steps: parsed.steps,
-    params: ((o.param as string[] | undefined) ?? []).map((pair) => [pair.slice(0, pair.indexOf("=")), pair.slice(pair.indexOf("=") + 1)] as [string, string]),
-    playtest: o.playtest === true,
-    strict: o.strict === true,
+    params: ((o["param"] as string[] | undefined) ?? []).map((pair) => [pair.slice(0, pair.indexOf("=")), pair.slice(pair.indexOf("=") + 1)] as [string, string]),
+    playtest: o["playtest"] === true,
+    strict: o["strict"] === true,
     seed: num("seed") ?? 1,
     sampleMs: num("sample") ?? 250,
     softlockMs: num("softlock") ?? 2000,
@@ -303,8 +303,8 @@ function parseArgs(argv: string[]): Args {  // `--headed` is parsed here, not in
     quick: quick.quick,
     gameDir: served.dir,
     flow: str("flow"),
-    browser: o.browser === true,
-    flows: o.flows === true,
+    browser: o["browser"] === true,
+    flows: o["flows"] === true,
     log: str("log"),
   };
   if (args.help) return args;
@@ -349,7 +349,7 @@ function parseArgs(argv: string[]): Args {  // `--headed` is parsed here, not in
   }
   if (args.game === "") args.game = args.url === undefined ? "site" : "url";
   if (args.site !== undefined && !args.timeoutExplicit) {
-    args.timeoutMs = process.platform === "linux" || process.env.CI !== undefined ? 30_000 : 10_000;
+    args.timeoutMs = process.platform === "linux" || process.env["CI"] !== undefined ? 30_000 : 10_000;
   }
   if (
     args.flow === undefined &&
@@ -600,17 +600,17 @@ class LockstepRecorder {
         for (const cb of cbs) { try { cb(virtual); } catch (err) { console.error(err); } }
       };
     })()`);
-    if (process.env.JG_CAPTURE_SCREENCAST === "0") {
+    if (process.env["JG_CAPTURE_SCREENCAST"] === "0") {
       await this.captureFrame();
       return;
     }
     this.stopPump = this.session.on("Page.screencastFrame", (params) => {
-      const sessionId = params.sessionId;
+      const sessionId = params["sessionId"];
       if (typeof sessionId === "number" || typeof sessionId === "string") {
         void this.session.send("Page.screencastFrameAck", { sessionId }).catch(() => {});
       }
-      const data = params.data;
-      const timestamp = (params.metadata as { timestamp?: number } | undefined)?.timestamp;
+      const data = params["data"];
+      const timestamp = (params["metadata"] as { timestamp?: number } | undefined)?.timestamp;
       if (typeof data !== "string" || data.length === 0) return;
       this.pump?.({ data, timestamp: typeof timestamp === "number" ? timestamp : Date.now() / 1000 });
     });
@@ -659,7 +659,7 @@ class LockstepRecorder {
     });
     const data =
       streamed ??
-      (await this.session.send("Page.captureScreenshot", { format: "jpeg", quality: 85, fromSurface: true })).data;
+      (await this.session.send("Page.captureScreenshot", { format: "jpeg", quality: 85, fromSurface: true }))["data"];
     if (typeof data !== "string" || data.length === 0) return;
     this.frames.push({ png: Buffer.from(data, "base64"), tMs: this.virtualNow });
   }
@@ -783,7 +783,7 @@ const clickPoints = new Map<CaptureStep, { x: number; y: number }>();
     if (step.kind === "click-at") clickPoints.set(step, parseClickAt(step.spec, profile.width, profile.height));
   }
 }
-if (args.port !== undefined) process.env.JG_DEV_PORT = String(args.port);
+if (args.port !== undefined) process.env["JG_DEV_PORT"] = String(args.port);
 async function driveSession(daemon: ShootDaemonState | null): Promise<number> {
   requireReusableCaptureStorage(args.reuseStorage, args.connect !== undefined, daemon !== null);
   if (args.url !== undefined && !(await isUp(args.url))) {
@@ -878,9 +878,9 @@ async function driveSession(daemon: ShootDaemonState | null): Promise<number> {
         const recorded: TimedPng[] = [];
         if (args.record !== undefined && !lockstep) {
           session.on("Page.screencastFrame", (params) => {
-            const data = params.data;
-            const sessionId = params.sessionId;
-            const metadata = params.metadata as { timestamp?: number } | undefined;
+            const data = params["data"];
+            const sessionId = params["sessionId"];
+            const metadata = params["metadata"] as { timestamp?: number } | undefined;
             if (typeof sessionId === "number" || typeof sessionId === "string") {
               void session.send("Page.screencastFrameAck", { sessionId }).catch(() => {});
             }

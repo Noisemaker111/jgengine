@@ -32,16 +32,16 @@ function Samples() {
     <Suspense fallback={null}>
       {authored.markers.map((marker) => {
         const meta = marker.meta ?? {};
-        const asset = materials.get(String(meta.materialId));
-        if (meta.shape === "model") {
-          const imported: ModelConfig = { url: String(meta.url), targetHeight: 1.65, animation: "none" };
+        const asset = materials.get(String(meta["materialId"]));
+        if (meta["shape"] === "model") {
+          const imported: ModelConfig = { url: String(meta["url"]), targetHeight: 1.65, animation: "none" };
           const model = baseline ? imported : modelWithAuthoredMaterials(imported, authored, marker.id)!;
           return <group key={marker.id} position={[marker.position.x, marker.position.y, marker.position.z]} rotation-y={angle}><IsolatedEntityModel model={model} /></group>;
         }
         if (!asset) return null;
         return <group key={marker.id} position={[marker.position.x, marker.position.y, marker.position.z]} rotation-y={marker.id === "metal" ? 0 : angle} rotation-z={marker.id === "metal" ? angle : 0}>
-          {meta.shape === "hair" && !baseline ? <HairCards cards={meta.cards as unknown as HairCardAuthoring} material={asset} /> : <mesh castShadow receiveShadow>
-            {meta.shape === "cloth" || meta.shape === "hair" ? <planeGeometry args={[1.25, 1.5, 12, 12]} /> : <sphereGeometry args={[0.65, 48, 32]} />}
+          {meta["shape"] === "hair" && !baseline ? <HairCards cards={meta["cards"] as unknown as HairCardAuthoring} material={asset} /> : <mesh castShadow receiveShadow>
+            {meta["shape"] === "cloth" || meta["shape"] === "hair" ? <planeGeometry args={[1.25, 1.5, 12, 12]} /> : <sphereGeometry args={[0.65, 48, 32]} />}
             {baseline ? <meshStandardMaterial color={asset.surface.color ?? "#b7b6b2"} roughness={asset.surface.roughness ?? 0.5} metalness={asset.surface.metalness ?? 0} side={2} /> : <MaterialAssetSurface asset={asset} />}
           </mesh>}
           {marker.id === "glass" ? <mesh position={[0, 0, -0.85]}><boxGeometry args={[0.55, 0.9, 0.2]} /><meshStandardMaterial color="#ed7754" roughness={0.7} /></mesh> : null}

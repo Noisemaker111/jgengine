@@ -14,16 +14,16 @@ import { createReadsHandler } from "@jgengine/ws/readsHandler";
 const GAME_RUNTIMES: GameRuntime[] = [];
 
 async function persistenceFromEnv(): Promise<HostPersistence> {
-  if (process.env.DATABASE_URL) {
+  if (process.env["DATABASE_URL"]) {
     const { Pool } = await import("pg");
-    const pool = new Pool({ connectionString: process.env.DATABASE_URL }) as unknown as SqlPool;
+    const pool = new Pool({ connectionString: process.env["DATABASE_URL"] }) as unknown as SqlPool;
     await ensureSchema(pool);
     console.log("persistence: postgres");
     return sqlPersistence(pool);
   }
-  if (process.env.DATA_DIR) {
-    console.log(`persistence: file (${process.env.DATA_DIR})`);
-    return filePersistence(process.env.DATA_DIR);
+  if (process.env["DATA_DIR"]) {
+    console.log(`persistence: file (${process.env["DATA_DIR"]})`);
+    return filePersistence(process.env["DATA_DIR"]);
   }
   console.warn(
     "persistence: memory — NON-PERSISTENT, all data is lost on restart. Set DATABASE_URL or DATA_DIR to persist.",
@@ -47,7 +47,7 @@ app.get("/api/*splat", toNodeHandler(reads));
 const server = createServer(app);
 const wsServer = createGameWsServer({ host, server, path: "/ws" });
 
-const port = Number(process.env.PORT ?? 8080);
+const port = Number(process.env["PORT"] ?? 8080);
 server.listen(port, () => {
   console.log(`jgengine host listening on :${port} (game socket at /ws)`);
 });

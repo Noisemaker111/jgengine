@@ -23,9 +23,9 @@ export function RankList({
   className,
 }: {
   entries: readonly RankEntry[];
-  title?: string;
-  width?: number;
-  className?: string;
+  title?: string | undefined;
+  width?: number | undefined;
+  className?: string | undefined;
 }) {
   return (
     <div className={className} data-jg="rank-list">

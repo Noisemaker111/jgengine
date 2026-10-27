@@ -27,7 +27,7 @@ export interface LookAppliedAim {
 
 export interface LookTerrain {
   sampleHeight(x: number, z: number): number;
-  bounds?: WorldBounds;
+  bounds?: WorldBounds | undefined;
 }
 
 /** Authored markers the `@marker:<id>` form aims at, keyed by the id in `editor.scene.json`. */

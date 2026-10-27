@@ -16,7 +16,7 @@ export interface NotificationInput<TMeta = unknown> {
   id?: string;
   kind?: string;
   title: string;
-  body?: string;
+  body?: string | undefined;
   at?: number;
   meta?: TMeta;
 }

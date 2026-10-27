@@ -80,7 +80,9 @@ describe("core domain barrels", () => {
       });
 
       test("exposes the domain's headline symbol", () => {
-        expect(names).toContain(KEY_SYMBOL[barrel]);
+        const symbol = KEY_SYMBOL[barrel];
+        if (symbol === undefined) throw new Error(`${barrel} has no headline symbol in KEY_SYMBOL`);
+        expect(names).toContain(symbol);
       });
 
       test("is wired into package exports", () => {

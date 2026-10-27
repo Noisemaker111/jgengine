@@ -1,6 +1,12 @@
 {
   "extends": "../tsconfig.base.json",
   "compilerOptions": {
+    "noFallthroughCasesInSwitch": true,
+    "noUncheckedIndexedAccess": true,
+    "exactOptionalPropertyTypes": true,
+    "noImplicitOverride": true,
+    "noPropertyAccessFromIndexSignature": true,
+    "noImplicitReturns": true,
     "lib": ["ES2022", "DOM"],
     "jsx": "react-jsx",
     "resolveJsonModule": true,
