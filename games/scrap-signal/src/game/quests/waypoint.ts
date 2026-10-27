@@ -2,6 +2,8 @@ import type { GameContext } from "@jgengine/core/runtime/gameContext";
 
 import { countsAsKillOf } from "../entities/enemies/catalog";
 import { gunById } from "../handroll";
+import { AMMO_CRATES, ammoCrateStocked, outOfAmmo } from "../items/ammoCrates";
+import { SIDE_POIS } from "../world/level";
 import { ZONES } from "../world/zones";
 import { isNpcId, NPCS, objectiveLabel, scrapQuestById, type NpcId, type ScrapObjective } from "./catalog";
 import { offerFrom } from "./givers";
@@ -50,12 +52,26 @@ function campOf(ctx: GameContext, catalogId: string, from: Point): Point | null 
   return nearest(from, camps.map((camp): Point => [camp.x, ctx.world.groundHeightAt(camp.x, camp.z), camp.z]));
 }
 
+function nearestStockedCrate(ctx: GameContext, from: Point): Point | null {
+  const stocked = AMMO_CRATES.filter((crate) => ammoCrateStocked(ctx, crate.id)).flatMap((crate) => {
+    const object = ctx.scene.object.get(crate.id);
+    return object === null ? [] : [object.position];
+  });
+  return nearest(from, stocked);
+}
+
 function objectivePoint(ctx: GameContext, objective: ScrapObjective, from: Point): QuestWaypoint | null {
   const label = objectiveLabel(objective);
   switch (objective.kind) {
     case "kill": {
-      const living = ctx.scene.entity.list().filter((entity) => countsAsKillOf(entity.name, objective.target)).map((entity) => entity.position);
-      const point = nearest(from, living) ?? campOf(ctx, objective.target, from);
+      const camp = objective.near === undefined ? undefined : SIDE_POIS.find((poi) => poi.id === objective.near);
+      const living = ctx.scene.entity
+        .list()
+        .filter((entity) => countsAsKillOf(entity.name, objective.target))
+        .filter((entity) => camp === undefined || Math.hypot(entity.position[0] - camp.x, entity.position[2] - camp.z) <= camp.radius * 1.5)
+        .map((entity) => entity.position);
+      const fallback: Point | null = camp === undefined ? campOf(ctx, objective.target, from) : [camp.x, ctx.world.groundHeightAt(camp.x, camp.z), camp.z];
+      const point = nearest(from, living) ?? fallback;
       return point === null ? null : at(point, "enemy", label);
     }
     case "chest": {
@@ -94,6 +110,8 @@ export function questWaypoint(ctx: GameContext): QuestWaypoint | null {
   const journal = ctx.game.quest;
   const me = ctx.scene.entity.get(ctx.player.userId);
   if (journal === undefined || me === null) return null;
+  const restock = outOfAmmo(ctx) ? nearestStockedCrate(ctx, me.position) : null;
+  if (restock !== null) return at(restock, "chest", "Out of ammo: restock at the crate");
   const tracked = journal.list(ctx.player.userId).find((entry) => entry.status === "active");
   const quest = tracked === undefined ? undefined : scrapQuestById(tracked.questId);
   if (tracked !== undefined && quest !== undefined) {

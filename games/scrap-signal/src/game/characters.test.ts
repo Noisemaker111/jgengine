@@ -37,6 +37,34 @@ describe("characters", () => {
     expect(bonus("gunDamage")).toBeCloseTo(0.05 * 5 + 0.1, 5);
   });
 
+  test("every branch climbs five tiers to a one-rank capstone at 20 points", () => {
+    for (const character of CHARACTERS) {
+      expect(character.nodes.length).toBe(27);
+      expect(new Set(character.nodes.map((node) => node.id)).size).toBe(27);
+      for (const branch of character.branches) {
+        const nodes = character.nodes.filter((node) => node.branch === branch.id);
+        expect([...new Set(nodes.map((node) => node.requiresPointsInBranch ?? 0))].sort((a, b) => a - b)).toEqual([0, 5, 10, 15, 20]);
+        const capstones = nodes.filter((node) => (node.requiresPointsInBranch ?? 0) === 20);
+        expect(capstones.map((node) => node.maxRank)).toEqual([1]);
+      }
+    }
+  });
+
+  test("a capstone stays shut at 19 points in its branch and opens at 20", () => {
+    pickCharacter("gunk");
+    const tree = talentTree();
+    if (tree === null) throw new Error("no tree");
+    tree.grantPoints(21);
+    for (const id of ["gunk_hot_chamber", "gunk_trigger_discipline", "gunk_heavy_feed"]) {
+      for (let index = 0; index < 5; index += 1) expect(tree.allocate(id).ok).toBe(true);
+    }
+    for (let index = 0; index < 4; index += 1) expect(tree.allocate("gunk_hot_brass").ok).toBe(true);
+    expect(tree.pointsInBranch("barrage")).toBe(19);
+    expect(tree.canAllocate("gunk_all_guns_blazing").ok).toBe(false);
+    expect(tree.allocate("gunk_hot_brass").ok).toBe(true);
+    expect(tree.canAllocate("gunk_all_guns_blazing").ok).toBe(true);
+  });
+
   test("bonus reads zero with no character picked", () => {
     expect(bonus("gunDamage")).toBe(0);
   });

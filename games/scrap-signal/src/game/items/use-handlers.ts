@@ -1,3 +1,4 @@
+import type { ProjectileShotInput } from "@jgengine/core/combat/projectiles";
 import type { ItemUseHandler } from "@jgengine/core/item/use";
 import type { GameContext } from "@jgengine/core/runtime/gameContext";
 import { seededRng } from "@jgengine/core/random/rng";
@@ -107,16 +108,14 @@ const fireGun: ItemUseHandler<GameContext> = {
     const aim = input.aim ?? { yaw: ctx.scene.entity.get(input.from)?.rotationY ?? 0, pitch: 0 };
     // Delivery stays the engine projectile (its cone, ballistics and settled event are what the tracer
     // and cover rules are built on); damage is the shared model's job, so the projectile itself lands 0.
-    const shotId = ctx.scene.entity.fireProjectile({
-      from: input.from,
-      via: { item: gun.id, amount: 0 },
-      aim,
-      effect: "damage",
-    });
+    const shotInput: ProjectileShotInput = { from: input.from, via: { item: gun.id, amount: 0 }, aim, effect: "damage" };
+    // A rocket bursts on the first thing in its path, so it lands when it would reach that.
+    const impactDistance = ctx.scene.entity.willHitProjectile(shotInput).firstImpact?.distance ?? gun.weapon.range;
+    const shotId = ctx.scene.entity.fireProjectile(shotInput);
 
     if (gun.weapon.projectile !== undefined && gun.weapon.explosion !== undefined) {
       const explosion = gun.weapon.explosion;
-      ctx.time.after(gun.weapon.projectile.fuseTime, () => {
+      ctx.time.after(impactDistance / gun.weapon.projectile.speed, () => {
         const settled = ctx.scene.entity.settleProjectile(shotId);
         if (settled.status !== "settled") return;
         // A launched round's direct impact was never elemental or critical: it lands its base number,

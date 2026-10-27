@@ -12,10 +12,12 @@ import { scrapSave } from "./save";
 import { captureScrapThumb, scrapProfile } from "./scrapProfile";
 import { refreshScrapSlots } from "./scrapSlots";
 import { noteEquipped } from "./feel";
-import { gunById, rollGun, startReload, reservePhase } from "./handroll";
+import { gunById, rarityRank, rollGun, startReload, reservePhase } from "./handroll";
 import { depositGun, vaultOpenStore, withdrawGun } from "./items/vault";
+import { openAmmoCrate } from "./items/ammoCrates";
 import { playerDef } from "./entities/players/catalog";
 import { session } from "./session";
+import { chestDropSpot } from "./items/chestDrops";
 import { noteGunHeld } from "./progression/discovery";
 import { award, isUnlocked, openWeaponSlots, rarityCapFor, SKILLS_LEVEL, unlock } from "./progression/unlocks";
 import { CRASH_CHEST, isNpcId, QUEST_IDS } from "./quests/catalog";
@@ -74,15 +76,24 @@ function playerLevel(ctx: GameContext): number {
 
 /** How far off the facing direction (radians) an item still counts as the one being looked at. */
 const LOOK_CONE = Math.PI / 3;
+/** A drop this close is under your feet: the one you mean. */
+export const STAND_ON = 0.6;
+/** Drops this close in score are one pile: E takes the best of it, not whichever landed first. */
+const PILE_SPREAD = 0.08;
+
+function pileRank(itemId: string): number {
+  const gun = gunById(itemId);
+  return gun === undefined ? 0 : 1 + rarityRank(gun.rarity);
+}
 
 /**
- * The drop E takes: the one in reach closest to where the player is facing, so a gun you just swapped
- * out at your feet never steals the press meant for the one in front of you. Nearest when nothing in
- * reach is in front.
+ * The drop E takes: the one you stand on, else the one in reach closest to where the player is facing,
+ * else the nearest. Out of a pile (drops at the same spot) it takes the rarest gun.
  */
 export function lookedAtItem(ctx: GameContext, from: readonly [number, number, number], yaw: number): string | null {
   let best: string | null = null;
-  let bestOff = LOOK_CONE;
+  let bestScore = Number.POSITIVE_INFINITY;
+  let bestRank = -1;
   for (const item of ctx.scene.worldItem.list()) {
     const at = ctx.scene.entity.get(item.instanceId)?.position;
     if (at === undefined) continue;
@@ -90,13 +101,19 @@ export function lookedAtItem(ctx: GameContext, from: readonly [number, number, n
     const dz = at[2] - from[2];
     const distance = Math.hypot(dx, dz);
     if (distance > PICKUP_RADIUS) continue;
-    const off = distance < 0.35 ? LOOK_CONE * 0.99 : Math.abs(Math.atan2(Math.sin(Math.atan2(dx, dz) - yaw), Math.cos(Math.atan2(dx, dz) - yaw)));
-    if (off < bestOff) {
-      bestOff = off;
+    const off = Math.abs(Math.atan2(Math.sin(Math.atan2(dx, dz) - yaw), Math.cos(Math.atan2(dx, dz) - yaw)));
+    // What you stand on comes first, then what is in front by angle, then the rest by distance. A gun
+    // you just swapped out lands behind you, so it never comes first.
+    const score = distance < STAND_ON ? distance - 1 : off < LOOK_CONE ? off : LOOK_CONE + distance;
+    const rank = pileRank(item.itemId);
+    const tied = Math.abs(score - bestScore) < PILE_SPREAD;
+    if (tied ? rank > bestRank : score < bestScore) {
+      bestScore = Math.min(score, bestScore);
+      bestRank = rank;
       best = item.instanceId;
     }
   }
-  return best ?? ctx.scene.worldItem.nearestInRadius(from, PICKUP_RADIUS);
+  return best;
 }
 
 function pickupWorldItem(ctx: GameContext): void {
@@ -196,7 +213,7 @@ function openRedChest(ctx: GameContext, instanceId: string): void {
     const pistol = rollGun(chestRng, 1, { family: "pistol", rarity: "common", maker: STARTER_MAKER });
     ctx.scene.worldItem.spawn({
       itemId: pistol.id,
-      position: [at[0] + 0.8, at[1], at[2] + 0.9],
+      position: chestDropSpot(ctx, at, 0, 1),
       rarity: pistol.rarity,
       baseType: pistol.family,
       source: "chest",
@@ -204,33 +221,17 @@ function openRedChest(ctx: GameContext, instanceId: string): void {
     return;
   }
   const chestLevel = Math.max(playerLevel(ctx), zoneLevelAt(at[0], at[2]));
-  for (let roll = 0; roll < 2; roll += 1) {
+  const rolls = 2;
+  for (let roll = 0; roll < rolls; roll += 1) {
     const gun = rollGun(chestRng, chestLevel, { luck: 4, maxRarity: rarityCapFor(playerLevel(ctx)) });
     ctx.scene.worldItem.spawn({
       itemId: gun.id,
-      position: [at[0] + 0.8 + roll * 0.8, at[1], at[2] + 0.9],
+      position: chestDropSpot(ctx, at, roll, rolls),
       rarity: gun.rarity,
       baseType: gun.family,
       source: "chest",
     });
   }
-}
-
-function openAmmoChest(ctx: GameContext, instanceId: string): void {
-  if (!claimChest(ctx, instanceId)) return;
-  const object = ctx.scene.object.get(instanceId);
-  const at = object?.position ?? [0, 0, 0];
-  const pools: readonly AmmoPool[] = ["pistol", "smg", "shotgun", "rifle"];
-  for (let index = 0; index < 2; index += 1) {
-    const pool = pools[Math.floor(chestRng() * pools.length)]!;
-    ctx.scene.worldItem.spawn({
-      itemId: `ammo_${pool}_pack`,
-      position: [at[0] + 0.6 + index * 0.7, at[1], at[2] + 0.8],
-      source: "chest",
-    });
-  }
-  ctx.scene.entity.stats.delta(ctx.player.userId, "grenades", 1);
-  ctx.scene.entity.floatText({ instanceId: ctx.player.userId, text: "+1 GRENADE", kind: "pickup" });
 }
 
 /** The aim a command carries, as an optional field a use input can spread in. */
@@ -302,7 +303,7 @@ export function registerCommands(ctx: GameContext): void {
 
   ctx.game.commands.define<{ instanceId?: string }>("chest.openAmmo", {
     apply(state: GameContext, input) {
-      if (input.instanceId !== undefined) openAmmoChest(state, input.instanceId);
+      if (input.instanceId !== undefined) openAmmoCrate(state, input.instanceId);
     },
   });
 

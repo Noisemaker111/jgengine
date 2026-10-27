@@ -6,7 +6,7 @@ import { createAssetCatalog } from "@jgengine/core/scene/assetCatalog";
 
 import { rollGun } from "../handroll";
 import { inventories } from "../inventories";
-import { ammoPackFor, ammoRollsFor } from "./ammoDrops";
+import { ammoPackFor, ammoRollsFor, ammoStarved } from "./ammoDrops";
 
 function bootContext(): GameContext {
   const ctx = createGameContext({
@@ -34,9 +34,19 @@ describe("scrap-signal ammo drops", () => {
     expect(ammoPackFor(ctx)).toBe("ammo_shotgun_pack");
   });
 
-  test("bosses always drop ammo, the rest only sometimes", () => {
-    expect(ammoRollsFor({ family: "boss", elite: true }, 0.99)).toBe(2);
-    expect(ammoRollsFor({ family: "scrapjack", elite: false }, 0.1)).toBe(1);
-    expect(ammoRollsFor({ family: "scrapjack", elite: false }, 0.9)).toBe(0);
+  test("bosses always drop ammo, the rest only sometimes, and every kill while you are short", () => {
+    expect(ammoRollsFor({ family: "boss", elite: true }, 0.99, false)).toBe(2);
+    expect(ammoRollsFor({ family: "scrapjack", elite: false }, 0.1, false)).toBe(1);
+    expect(ammoRollsFor({ family: "scrapjack", elite: false }, 0.9, false)).toBe(0);
+    expect(ammoRollsFor({ family: "scrapjack", elite: false }, 0.9, true)).toBe(1);
+  });
+
+  test("short means a carried gun's pool is under a fifth full", () => {
+    const ctx = bootContext();
+    const rng = seededRng("starved");
+    ctx.player.inventory.put("hotbar", rollGun(rng, 1, { family: "pistol", rarity: "common" }).id, 1, { slot: 0 });
+    expect(ammoStarved(ctx)).toBe(false);
+    ctx.player.inventory.put("hotbar", rollGun(rng, 1, { family: "shotgun", rarity: "common" }).id, 1, { slot: 1 });
+    expect(ammoStarved(ctx)).toBe(true);
   });
 });

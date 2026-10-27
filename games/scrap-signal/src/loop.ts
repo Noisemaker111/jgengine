@@ -36,7 +36,7 @@ import {
   tickShields,
 } from "./game/handroll";
 import { itemUseHandlers } from "./game/items/use-handlers";
-import { ammoPackFor, ammoRollsFor } from "./game/items/ammoDrops";
+import { ammoPackFor, ammoRollsFor, ammoStarved } from "./game/items/ammoDrops";
 import { grantXp } from "./game/progression/curves";
 import { noteKill, noteZone } from "./game/progression/discovery";
 import { grantLevelUnlocks, rarityCapFor, zoneOpen } from "./game/progression/unlocks";
@@ -96,7 +96,7 @@ function dropGunAt(ctx: GameContext, event: EntityDiedEvent, anchor: readonly [n
 function dropAmmoAt(ctx: GameContext, event: EntityDiedEvent, anchor: readonly [number, number, number]): void {
   const def = enemyById(event.catalogId);
   if (def === undefined) return;
-  const packs = ammoRollsFor(def, dropRng());
+  const packs = ammoRollsFor(def, dropRng(), ammoStarved(ctx));
   for (let index = 0; index < packs; index += 1) {
     const itemId = ammoPackFor(ctx);
     if (itemId === null) return;

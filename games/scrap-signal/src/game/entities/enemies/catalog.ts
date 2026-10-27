@@ -172,7 +172,7 @@ const baseEnemies: readonly EnemyDef[] = [
     scale: 0.8,
     walkSpeed: 5.6,
     aggroRadius: 22,
-    // Four or five pistol rounds: target practice, not a speed bump.
+    // The smallest thing on Ferralon: eight or so starter-pistol rounds once toughened.
     stats: { health: { max: 48 } },
     receive,
     onDeath: drops("drops_ripper"),
@@ -190,6 +190,7 @@ const baseEnemies: readonly EnemyDef[] = [
     scale: 1.4,
     walkSpeed: 5,
     aggroRadius: 25,
+    // All hide: a plain pistol takes two magazines, which is what sends you looking for fire.
     stats: { health: { max: 150 } },
     receive,
     onDeath: drops("drops_ripper"),
@@ -293,8 +294,9 @@ const baseEnemies: readonly EnemyDef[] = [
     scale: 2.2,
     walkSpeed: 3.8,
     aggroRadius: 30,
-    // A boss fight with a pistol: half a minute of fire for a clean shooter, longer for everyone else.
-    stats: { health: { max: 1200 } },
+    // A boss fight with a pistol: a minute of fire for a clean shooter, two for everyone else (the
+    // brief's Old Tusk runs 5:00 to 7:00), with an ammo crate in the den for the long version.
+    stats: { health: { max: 2000 } },
     receive,
     onDeath: drops("drops_boss"),
     attack: { kind: "melee", damage: 18, reach: 2.8, intervalMs: 1800 },
@@ -362,7 +364,8 @@ const baseEnemies: readonly EnemyDef[] = [
     scale: 2.1,
     walkSpeed: 3.2,
     aggroRadius: 36,
-    stats: { health: { max: 1400 }, shield: { max: 300 } },
+    // Act 1's real boss: well past Old Tusk, so the Breakwater gate is the act's hardest fight.
+    stats: { health: { max: 1800 }, shield: { max: 400 } },
     receive,
     onDeath: drops("drops_boss"),
     attack: { kind: "ranged", itemId: "bolt_rusk", intervalMs: 1200, preferRange: 14, eyeHeight: 2.4 },
@@ -376,17 +379,21 @@ function scaledAttack(attack: EnemyAttack, damage: number): EnemyAttack {
   return attack.kind === "melee" ? { ...attack, damage: Math.round(attack.damage * damage) } : attack;
 }
 
-/** A local breed built from its base: the base's rig, attack and drops with the variant's body and numbers. */
-function breed(variant: EnemyVariant): EnemyDef {
-  const base = baseEnemies.find((enemy) => enemy.id === variant.base);
-  if (base === undefined) throw new Error(`enemy variant ${variant.id}: unknown base ${variant.base}`);
+/**
+ * A local breed built from its base (a common enemy, or a breed listed before it): the base's rig,
+ * attack and drops with the variant's body and numbers. `look` is always the common enemy at the root.
+ */
+function breed(built: readonly EnemyDef[], variant: EnemyVariant): EnemyDef {
+  const base = built.find((enemy) => enemy.id === variant.base);
+  if (base === undefined) throw new Error(`enemy variant ${variant.id}: unknown base ${variant.base} (a base must come first)`);
   const health = Math.round((base.stats["health"]?.max ?? 50) * variant.health);
-  const shield = variant.shield ?? base.stats["shield"]?.max;
+  // The base is already toughened; a variant's own listed shield is toughened the same way.
+  const shield = variant.shield === undefined ? base.stats["shield"]?.max : Math.round(variant.shield * ENEMY_TOUGHNESS);
   return {
     ...base,
     id: variant.id,
     name: variant.name,
-    look: base.id,
+    look: base.look ?? base.id,
     plate: MACHINE[variant.plate],
     elite: variant.elite ?? base.elite,
     surface: variant.surface ?? base.surface,
@@ -403,7 +410,29 @@ function breed(variant: EnemyVariant): EnemyDef {
   };
 }
 
-export const enemies: readonly EnemyDef[] = [...baseEnemies, ...ENEMY_VARIANTS.map(breed)];
+/**
+ * How many times its listed health and shield every camp enemy carries. The listed numbers are the
+ * relative sizes; this is the one dial for how long a camp fight lasts, so a camp is a fight you read
+ * and move through, not a row of one-magazine kills. Bosses list their real numbers: each is tuned
+ * to its own fight length.
+ */
+export const ENEMY_TOUGHNESS = 4;
+
+function toughened(enemy: EnemyDef): EnemyDef {
+  if (enemy.family === "boss") return enemy;
+  const pools = Object.fromEntries(
+    Object.entries(enemy.stats).map(([statId, stat]) =>
+      statId === "health" || statId === "shield" ? [statId, { ...stat, max: Math.round(stat.max * ENEMY_TOUGHNESS) }] : [statId, stat],
+    ),
+  );
+  return { ...enemy, stats: pools };
+}
+
+// Toughened before breeding, so a local breed is its base's real numbers times its own multiplier.
+export const enemies: readonly EnemyDef[] = ENEMY_VARIANTS.reduce<readonly EnemyDef[]>(
+  (built, variant) => [...built, breed(built, variant)],
+  baseEnemies.map(toughened),
+);
 
 const byId = new Map(enemies.map((enemy) => [enemy.id, enemy]));
 

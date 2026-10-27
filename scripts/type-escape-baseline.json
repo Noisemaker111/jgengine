@@ -551,7 +551,6 @@
   "games/scrap-signal/src/game/characters.test.ts": {"nonNull":2},
   "games/scrap-signal/src/game/characters.ts": {"cast":1},
   "games/scrap-signal/src/game/combat/gunPerks.ts": {"cast":3,"nonNull":1},
-  "games/scrap-signal/src/game/commands.ts": {"nonNull":1},
   "games/scrap-signal/src/game/content.ts": {"cast":1},
   "games/scrap-signal/src/game/encounters/front.test.ts": {"nonNull":3},
   "games/scrap-signal/src/game/encounters/front.ts": {"nonNull":4},

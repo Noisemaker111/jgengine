@@ -47,7 +47,8 @@ const SIDE_POI_META: readonly SidePoiMeta[] = [
     name: "Monglet Den",
     anchorZoneId: "rustflat_waste",
     dressing: "ripper_den",
-    spawns: [{ catalogId: "bruiser_brat", count: 4 }, { catalogId: "bruiser", count: 2 }],
+    // Old Tusk's own pack: whelps only, so the boss fight is the boss, not two bruisers beside him.
+    spawns: [{ catalogId: "bruiser_brat", count: 5 }],
   },
   {
     id: "poi_lost_cache",

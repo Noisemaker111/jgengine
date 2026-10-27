@@ -16,6 +16,7 @@ import {
   type GunRarity,
 } from "./guns";
 import { derivePerks } from "./perks";
+import { uniqueGun } from "./uniques";
 
 /**
  * The gun catalog is a process-global registry, not per-context: the engine resolves item stats,
@@ -89,6 +90,8 @@ export interface RollGunOptions {
   maker?: string;
   /** The rarest tier this roll may land on; rarer tiers get no weight. A pinned rarity ignores it. */
   maxRarity?: Rarity;
+  /** Pin a quest-reward unique ("Kindler"): its maker, family, rarity, element and name. */
+  unique?: string;
 }
 
 /** The family and maker a named legendary belongs to, or undefined for a name nobody rolls. */
@@ -162,8 +165,15 @@ export function rollGun(rng: () => number, level: number, options: RollGunOption
     pin["rarity"] = "legendary";
     pin["maker"] = `${entry.maker}:${options.legendary}`;
   }
+  const unique = options.unique === undefined ? undefined : uniqueGun(options.unique);
+  if (options.unique !== undefined && unique === undefined) throw new Error(`unknown unique: ${options.unique}`);
+  if (unique !== undefined) {
+    pin["family"] = unique.family;
+    pin["rarity"] = unique.rarity;
+    pin["maker"] = unique.maker;
+  }
   // A pinned plain maker cannot land on a named legendary, whose maker ids carry the name.
-  const ceiling: Rarity = options.maker !== undefined && options.legendary === undefined ? "epic" : "legendary";
+  const ceiling: Rarity = pin["maker"] !== undefined && options.legendary === undefined ? "epic" : "legendary";
   const wanted = options.maxRarity ?? ceiling;
   const maxRarity = pin["rarity"] !== undefined ? "legendary" : rarityRank(wanted) < rarityRank(ceiling) ? wanted : ceiling;
   const rolled = generate(gunSelectionSchema(options.luck ?? 1, maxRarity), rng, { pin });
@@ -176,7 +186,8 @@ export function rollGun(rng: () => number, level: number, options: RollGunOption
   const legendaryName = maker.legendaryName;
 
   let element: GunElement = "none";
-  if (manufacturer.neverElemental !== true) {
+  if (unique !== undefined) element = unique.element;
+  else if (manufacturer.neverElemental !== true) {
     if (manufacturer.forcedElement !== undefined) element = manufacturer.forcedElement;
     else if (manufacturer.id === "Voltek" || rng() < tier.elementChance) element = pick(rng, ELEMENTS);
   }
@@ -187,9 +198,11 @@ export function rollGun(rng: () => number, level: number, options: RollGunOption
   const damage = Math.max(1, Math.round(base.stats.damage * tier.mult * manufacturer.damage * levelMult * jitter));
   const magSize = Math.max(2, Math.round(base.magSize * manufacturer.mag));
   const elementPrefix = element === "none" ? "" : `${ELEMENT_PREFIX[element]} `;
-  const name = legendaryName !== null
-    ? `${elementPrefix}${legendaryName}`
-    : `${elementPrefix}${pick(rng, manufacturer.prefixes)} ${pick(rng, base.nouns)}`;
+  const name = unique !== undefined
+    ? unique.name
+    : legendaryName !== null
+      ? `${elementPrefix}${legendaryName}`
+      : `${elementPrefix}${pick(rng, manufacturer.prefixes)} ${pick(rng, base.nouns)}`;
 
   gunSerial += 1;
   const def: GunDef = {
@@ -198,7 +211,7 @@ export function rollGun(rng: () => number, level: number, options: RollGunOption
     name,
     family: base.family,
     manufacturer: manufacturer.id,
-    model: legendaryName !== null ? `legendary:${legendaryName}` : `${manufacturer.id}:${base.family}`,
+    model: unique !== undefined ? `unique:${unique.name}` : legendaryName !== null ? `legendary:${legendaryName}` : `${manufacturer.id}:${base.family}`,
     rarity,
     element,
     level: gunLevel,

@@ -95,6 +95,10 @@ The kinds are counted from the game's data: `quests` is every quest in the catal
 - onboarding hints — Bolt's lines and field notes blended into the crash site, one hint at a time
 - quest marker — a pin over the tracked objective, an edge arrow with the distance when it is off screen
 - ammo for what you carry — kills drop ammo for the carried gun that is emptiest
+- ammo crates — a pack per carried gun, empty a while after opening, then restocked; one stands in each boss yard
+- camp fights — camp enemies carry four times their listed health and shield (`ENEMY_TOUGHNESS`, the one dial), so a camp is a fight you read; bosses and Overdrive crews keep their own numbers; a cleared camp refills after four minutes away
+- local breeds and named targets — each zone's own variants mixed into its camps, and named elites behind side quests, some dropping uniques
+- the Rustflat Front — the convoy wreck's two crews wake only after Old Tusk is down
 - from-zero proof — a new game played for ten minutes through real input
 
 ## Engine coverage
@@ -121,6 +125,6 @@ The kinds are counted from the game's data: `quests` is every quest in the catal
 - [x] 1. Design brief.
 - [x] 2. The opening: unarmed start, Bolt gives quests one at a time, the crash chest's plain pistol, quests turned in to their giver, Old Tusk as act 1's boss, zones closed until their story quest, rarity tiers and the skill tree opening with level, weapon slots opening with the story.
 - [x] 3. Gates: element weakness on the target, a bank in Coretown in place of the field stash.
-- [ ] 4. Content to the budget: quests, enemy types, gun parts and gun models as data.
-- [ ] 5. From-zero proof: ten minutes from a new game through real input; Scrap Signal off the known-failing list.
+- [x] 4. Content to the budget: quests, enemy types, gun parts and gun models as data.
+- [x] 5. From-zero proof: ten minutes from a new game through real input; Scrap Signal off the known-failing list.
 - [x] 6. Onboarding hints in the crash site through the engine onboarding system.
