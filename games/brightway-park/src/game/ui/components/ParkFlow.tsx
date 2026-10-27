@@ -4,6 +4,7 @@ import { useGame, useGameStore } from "@jgengine/react/hooks";
 import { useGameContext } from "@jgengine/react/provider";
 import { KitBanner, KitResultScreen } from "@jgengine/core/ui/kit/kitFlow.view";
 
+import { parkDateLabel } from "../../books";
 import { park } from "../../park";
 import { scenarioView } from "../../parkReset";
 import { scenarioDef } from "../../scenarios";
@@ -33,14 +34,14 @@ export function ParkFlow() {
   if (open) openDay.current = day;
   const tally = [{ label: "Park funds", value: money(cash) }, { label: "Rating", value: `★ ${Math.round(rating)}` }, { label: "Guests in the park", value: guests }];
   return <>
-    <KitBanner cue={started && !resultOpen(ctx) ? `${open}-${openDay.current}` : null} initial title={`Day ${openDay.current} · Gates ${open ? "open" : "closed"}`}
+    <KitBanner cue={started && !resultOpen(ctx) ? `${open}-${openDay.current}` : null} initial title={`${parkDateLabel(openDay.current)} · Gates ${open ? "open" : "closed"}`}
       subtitle={!gate ? "Build a ride, then open the gate" : !open ? `Takings ${money(w.num("park.revenue_today"))}` : scenario?.title ?? (day > 1 ? `Yesterday ${money(w.num("park.revenue_yesterday") - w.num("park.upkeep_yesterday"))} net` : "Welcome to Brightway")} />
     <KitResultScreen open={started && scenario?.result != null} tone={scenarioWon ? "good" : "bad"} eyebrow={scenario?.title} title={scenarioWon ? "Scenario won!" : "Scenario failed"}
       summary={scenarioWon ? `You hit the target with the park still standing${reward > 0 ? `: ${money(reward)} is in the till` : ""}.` : scenario?.reason ?? "The target slipped away."}
       stats={[{ label: "Takings", value: money(scenario?.revenue ?? 0) }, { label: "Visitors", value: scenario?.visitors ?? 0 }, ...tally.slice(0, 2)]}
       actions={[{ id: "replay", label: "Play it again", primary: true }, { id: "free", label: "Keep this park" }]} onAction={(action) => commands.run(action === "replay" ? "park.replay" : "park.freeplay", {})} />
     <KitResultScreen open={started && flags.gameOver} tone="bad" eyebrow="The lights go down" title="Park bankrupt"
-      summary={`Three days in debt closed the gates after ${day - 1} days. Next time watch the nightly bills, the loan and give guests food and drink.`}
+      summary={`Two months in a row ended in the red, and the bank closed the gates after ${day - 1} days. Next time watch the monthly books, borrow before the month ends, and give guests food and drink.`}
       stats={tally.slice(0, 2)} actions={[{ id: "new", label: "Open a new park" }]} onAction={() => commands.run("park.new", {})} />
     <KitResultScreen open={started && flags.ribbon && !flags.gameOver} tone="good" eyebrow="Bright days ahead" title="Blue ribbon!"
       summary="Three rides, a profitable day and a happy, tidy park: Brightway is a seaside favourite. Your park is saved." stats={tally}

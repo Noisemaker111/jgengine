@@ -16,6 +16,8 @@ html,body,#root{height:100%;margin:0;background:#24444c}
 .bw-hud [data-bad]{color:var(--kit-bad)}
 .bw-hint{font-size:13px}
 .bw-blurb{margin:0 0 8px;font-size:13px;color:var(--kit-pencil)}
+.bw-subhead{margin:12px 0 0;font-size:13px}.bw-subhead small{font-weight:400;color:var(--kit-pencil)}
+.bw-ads{display:flex;flex-direction:column;gap:4px;margin-top:6px}
 .bw-rows{display:grid;grid-template-columns:1fr auto;gap:3px 14px;margin:8px 0 0;font-size:13px}
 .bw-rows dt{color:var(--kit-pencil)}.bw-rows dd{margin:0;text-align:right;font-weight:700;font-variant-numeric:tabular-nums}
 .bw-pane{display:grid;gap:12px;justify-items:start}.bw-pane p{margin:0;max-width:56ch}

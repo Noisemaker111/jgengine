@@ -8,6 +8,7 @@ import { MILESTONES } from "./milestones";
 import { park } from "./park";
 import { archiveSave, decodeSave, SAVE_KEY, snapshotPark, STORE_POLICY } from "./persistence";
 import { closeDay } from "./sim/economy";
+import { MONTH_DAYS } from "./books";
 
 const originalStorage = Object.getOwnPropertyDescriptor(globalThis, "localStorage");
 let records: Map<string, string>;
@@ -122,7 +123,7 @@ describe("park saves and real command boundaries", () => {
     expect(decodeSave(records.get(SAVE_KEY)!)).not.toBeNull();
   });
 
-  test("a first ride on the empty lot climbs the rating; three debt settlements end play", () => {
+  test("a first ride on the empty lot climbs the rating; two red month-ends end play", () => {
     const live = runner();
     live.ui.invoke("park.start");
     live.ui.invoke("pickCarousel");
@@ -141,7 +142,14 @@ describe("park saves and real command boundaries", () => {
     expect(w.num("park.peak")).toBeGreaterThan(40);
     expect(w.num("park.peak")).toBeLessThan(MILESTONES[0]!.rating);
     w.change({ "park.cash": -100_000 - w.num("park.cash") });
-    for (let day = 0; day < 3; day++) closeDay(live.ctx);
+    // One month-end in the red is a warning; the second in a row closes the park.
+    const nextMonth = (now: number) => (Math.floor((now - 1) / MONTH_DAYS) + 1) * MONTH_DAYS + 1;
+    const first = nextMonth(w.num("park.day"));
+    while (w.num("park.day") < first) closeDay(live.ctx);
+    expect(w.num("park.red_months")).toBe(1);
+    expect(w.fact("park.game_over")).toBe(false);
+    const second = nextMonth(w.num("park.day"));
+    while (w.num("park.day") < second && w.fact("park.game_over") !== true) closeDay(live.ctx);
     expect(w.fact("park.game_over")).toBe(true);
     expect(live.ctx.time.isPaused()).toBe(true);
     live.ui.invoke("pickCarousel");

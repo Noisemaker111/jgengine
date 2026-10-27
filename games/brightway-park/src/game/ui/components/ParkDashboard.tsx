@@ -5,7 +5,9 @@ import { KitButton, KitMeter, KitPanel } from "@jgengine/core/ui/kit/uiKitRoot.v
 import type { KitTone } from "@jgengine/core/ui/kit/uiKit.view";
 
 import { guestCap } from "../../catalog";
-import { LOAN, parkMetrics } from "../../park";
+import { BOOK_LINES, CAMPAIGNS, MONTH_DAYS, monthLabel, parkDateLabel, parkDate, type BookLine } from "../../books";
+import { DAY_LENGTH } from "../../catalog";
+import { LOAN, linesNet, monthLine, parkMetrics, reportLine } from "../../park";
 import { scenarioView } from "../../parkReset";
 import { rideBoard } from "../../rides";
 import { scenarioDef } from "../../scenarios";
@@ -32,7 +34,7 @@ export function ParkStatus() {
   // What the crowd is thinking most, freshest first: complaints in the warning colour.
   const said = useGameStore(() => session.thoughts.top.slice(0, 3).map((t) => `${t.label}:${t.count}:${t.complaint ? 1 : 0}`).join("|"));
   return (
-    <KitPanel className="bw-status" eyebrow={`Day ${w.num("park.day")} · ${clock} · ${!gate ? "Gate shut" : open ? "Gates open" : "After hours"}`} title={money(cash)} tone={cash < 0 ? "bad" : undefined} aside={`★ ${Math.round(rating)}`}
+    <KitPanel className="bw-status" eyebrow={`${parkDateLabel(w.num("park.day"))} · ${clock} · ${!gate ? "Gate shut" : open ? "Gates open" : "After hours"}`} title={money(cash)} tone={cash < 0 ? "bad" : undefined} aside={`★ ${Math.round(rating)}`}
       footer={<KitButton size="sm" variant={gate ? "ghost" : "primary"} data-hint="gate" disabled={gateRefusal !== null} title={gateRefusal?.message}
         onClick={() => commands.run("brightway.act", { action: gate ? "close_gate" : "open_gate" })}>{gate ? "Close the gate" : "Open the gate"}</KitButton>}>
       <div className="bw-line"><span>{guests} / {guestCap(rating)} guests</span>{down > 0 ? <b data-bad="">{down} {down === 1 ? "ride" : "rides"} down</b> : null}</div>
@@ -83,7 +85,14 @@ export function ParkBooks({ onClose }: { onClose: () => void }) {
   useGameStore(() => session.guests.size);
   const act = (action: string) => commands.run("brightway.act", { action });
   const m = parkMetrics(w), peak = w.num("park.peak"), next = nextMilestone(peak), rides = rideBoard();
-  const owed = w.num("park.loan_owed");
+  const owed = w.num("park.loan_owed"), date = parkDate(w.num("park.day")), lastMonth = w.num("report.month");
+  const hasReport = lastMonth >= 0;
+  const signed = (line: BookLine, amount: number) => money(line.income ? amount : -amount);
+  const bookRows: [string, string][] = BOOK_LINES
+    .filter((line) => w.num(monthLine(line.id)) !== 0 || (hasReport && w.num(reportLine(line.id)) !== 0))
+    .map((line) => [line.label, `${signed(line, w.num(monthLine(line.id)))}${hasReport ? ` · ${signed(line, w.num(reportLine(line.id)))}` : ""}`]);
+  const profit = w.num("park.cash") - w.num("month.cash_start");
+  const ads = w.orders("ads");
   return (
     <KitPanel variant="card" eyebrow="The office" title="Park books" aside={<KitButton variant="ghost" size="sm" cue="close" aria-label="Close park books" onClick={onClose}>✕</KitButton>}
       footer={<>
@@ -95,8 +104,17 @@ export function ParkBooks({ onClose }: { onClose: () => void }) {
         <KitButton size="sm" aria-label="Raise ticket price" onClick={() => act("ticket_up")}>+</KitButton></span></div>
       <Rows rows={[["Today’s sales", money(w.num("park.revenue_today"))], ["Rides & shops upkeep", `${money(m.facilitiesUpkeep)} / day`], ["Staff wages", `${money(m.wages)} / day`],
         ...(rides.rides > 0 ? [["Ride lines", `${rides.queued} waiting`] as [string, string]] : []),
-        ["Loan owed", owed > 0 ? `${money(owed)} of ${money(LOAN.max)} · ${money(owed * LOAN.dailyRate)}/night interest` : `none · up to ${money(LOAN.max)}`]]} />
+        ["Loan owed", owed > 0 ? `${money(owed)} · ${money(owed * LOAN.monthlyRate)}/mo` : `none · up to ${money(LOAN.max)}`]]} />
       {next !== null ? <KitMeter size="sm" label={`Next award: ${next.label} · ${money(next.prize)}`} value={peak} max={next.rating} readout={`★ ${Math.round(peak)} / ${next.rating}`} /> : null}
+      <h4 className="bw-subhead">{date.month} so far{hasReport ? ` · then ${monthLabel(lastMonth)}` : ""} <small>day {date.dayOfMonth} of {MONTH_DAYS}</small></h4>
+      <Rows rows={[...bookRows, ["Building and land", `${money(profit - linesNet(w, monthLine))}${hasReport ? ` · ${money(-w.num("report.building"))}` : ""}`],
+        ["Profit", `${money(profit)}${hasReport ? ` · ${money(w.num("report.profit"))}` : ""}`]]} />
+      <h4 className="bw-subhead">Marketing</h4>
+      <div className="bw-ads">{CAMPAIGNS.map((c) => {
+        const running = ads.find((order) => order.label === c.label);
+        return <KitButton key={c.id} size="sm" data-campaign={c.id} disabled={running !== undefined || w.canAct(c.id) !== null} title={c.blurb} onClick={() => act(c.id)}>
+          {running !== undefined ? `${c.label} · ${Math.ceil(running.remaining / DAY_LENGTH)}d left` : `${c.label} · ${money(c.cost)}`}</KitButton>;
+      })}</div>
     </KitPanel>
   );
 }

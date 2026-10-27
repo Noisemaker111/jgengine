@@ -5,7 +5,7 @@ import { guestCap } from "../catalog";
 import type { BuildableDef, StaffRole } from "../objects/catalog";
 import { GUEST_WALK_SPEED, guestKindFor } from "../entities/guests/catalog";
 import { nextGuestId, session, type GuestState } from "../session";
-import { fairPrice, park, parkObject, ridePrice, stallPrice, stockOf, type ParkObject } from "../park";
+import { fairPrice, marketingBoost, park, parkObject, ridePrice, stallPrice, stockOf, type ParkObject } from "../park";
 import {
   agentOf,
   clearAgents,
@@ -121,7 +121,7 @@ function spawnGuest(ctx: GameContext): void {
   makeGuest(ctx, id, [jitter, 0, 56]);
   // Through the turnstile, then the entry ticket: both are ripples the world declares.
   park.emit(ctx, { kind: "admit" });
-  park.emit(ctx, { kind: "pay", scale: park.of(ctx).num("park.ticket") });
+  park.emit(ctx, { kind: "pay_gate", scale: park.of(ctx).num("park.ticket") });
 }
 
 export function seedGuests(ctx: GameContext, count: number): void {
@@ -138,7 +138,7 @@ export function spawnGuests(ctx: GameContext, dt: number, totalAppeal: number): 
   const rating = w.num("park.rating");
   const cap = guestCap(rating);
   if (session.guests.size >= cap) return;
-  const rate = demand(totalAppeal, w.num("park.ticket"), rating, w.fact("park.open") === true);
+  const rate = demand(totalAppeal, w.num("park.ticket"), rating, w.fact("park.open") === true, marketingBoost(w));
   session.spawnAcc += rate * dt;
   let budget = 4;
   while (session.spawnAcc >= 1 && session.guests.size < cap && budget > 0) {
@@ -172,7 +172,7 @@ function finishInteraction(ctx: GameContext, guest: GuestState): void {
       if (price > 0 && price <= stall.value * 0.8) think(guest, "good_value", `The ${obj.def.label} is good value`, ctx.time.now());
       guest.money -= price;
       w.change({ [`${obj.id}.sold`]: 1, [`${obj.id}.sold_total`]: 1 });
-      if (price > 0) park.emit(ctx, { kind: "pay", scale: price });
+      if (price > 0) park.emit(ctx, { kind: "pay_shop", scale: price });
       agent.needs.refill(stall.need, stall.fill);
       // What goes in must come out.
       if (stall.need === "hunger" || stall.need === "thirst") agent.needs.refill("toilet", -18);
@@ -255,7 +255,7 @@ function makeRideSink(ctx: GameContext): RideTickSink {
       const price = ridePrice(park.of(ctx), obj.kind);
       if (price > 0) {
         guest.money = Math.max(0, guest.money - price);
-        park.emit(ctx, { kind: "pay", scale: price });
+        park.emit(ctx, { kind: "pay_ride", scale: price });
       }
       guest.phase = "riding";
       guest.busy = 0;
