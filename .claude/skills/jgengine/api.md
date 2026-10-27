@@ -184,7 +184,7 @@
 - `DevtoolsLogEntry` (interface): interface DevtoolsLogEntry — A single captured log line with timestamp, level, owning system tag, and formatted message.
 - `DevtoolsLogLevel` (type): type DevtoolsLogLevel = "log" | "info" | "warn" | "error" — Severity level for a captured devtools log entry.
 - `DevtoolsLogs` (interface): interface DevtoolsLogs — Bounded log ring with per-system tags, a warning/error ring, and lifetime counts.
-- `DevtoolsOverrides` (interface): interface DevtoolsOverrides { version: number; enabled: string[]; values: Record<string, unknown>; schemas?: Record<string, {kind: DevtoolsControlKind; schemaVersion?: number}> } — ⚠ undocumented
+- `DevtoolsOverrides` (interface): interface DevtoolsOverrides { version: number; enabled: string[]; values: Record<string, unknown>; schemas?: Record<string, {kind: DevtoolsControlKind; schemaVersion?: number | undefined}> | undefined } — ⚠ undocumented
 - `DevtoolsSnapshot` (interface): interface DevtoolsSnapshot — Serializable point-in-time snapshot of devtools state: frame, render, latency, logs, controls, and discovered fields.
 - `DiscoveredEntry` (interface): interface DiscoveredEntry — A control auto-discovered by scanning an object/table, with its binding metadata and current reader.
 - `DiscoverySkip` (interface): interface DiscoverySkip { readonly path: string; readonly reason: string } — ⚠ undocumented
@@ -246,7 +246,7 @@
 - `DiagnosticOverlay` (function): function DiagnosticOverlay({ diagnostics, gameName }: { diagnostics: RuntimeDiagnostic[]; gameName: string }): React.JSX.Element | null — ⚠ undocumented
 - `ErrorReportActions` (function): function ErrorReportActions({ report, issueTitle }: { report: string; issueTitle: string }): React.JSX.Element — "Copy error" + "File issue" buttons for any error surface. `report` is the full text to copy / prefill.
 - `GameUiErrorBoundary` (class): class GameUiErrorBoundary extends Component< { children: ReactNode; onRuntimeError: (error: unknown, phase: string, componentStack?: string) => void }, { failed: boolean } > — ⚠ undocumented
-- `RuntimeDiagnostic` (interface): interface RuntimeDiagnostic { id: number; phase: string; message: string; stack?: string; componentStack?: string; capturedAt: string } — ⚠ undocumented
+- `RuntimeDiagnostic` (interface): interface RuntimeDiagnostic { id: number; phase: string; message: string; stack?: string | undefined; componentStack?: string | undefined; capturedAt: string } — ⚠ undocumented
 - `errorReportContext` (function): function errorReportContext(): string — Standalone error footer text (page, browser, engine) shared by every error surface.
 - `logRuntimeError` (function): function logRuntimeError(error: unknown, phase: string, componentStack?: string): Omit<RuntimeDiagnostic, "id"> — ⚠ undocumented
 
@@ -381,7 +381,7 @@
 - `AngleUnit` (type): type AngleUnit = "rad" | "deg" — ⚠ undocumented
 - `CONTROL_SCHEMA_VERSION` (const): const CONTROL_SCHEMA_VERSION: 1 — ⚠ undocumented
 - `DevtoolsControlKind` (type): type DevtoolsControlKind = | "slider" | "toggle" | "color" | "select" | "text" | "vec2" | "vec3" | "vec4" | "interval" | "angle" | "enum" — ⚠ undocumented
-- `DevtoolsOverrides` (interface): interface DevtoolsOverrides { version: number; enabled: string[]; values: Record<string, unknown>; schemas?: Record<string, {kind: DevtoolsControlKind; schemaVersion?: number}> } — ⚠ undocumented
+- `DevtoolsOverrides` (interface): interface DevtoolsOverrides { version: number; enabled: string[]; values: Record<string, unknown>; schemas?: Record<string, {kind: DevtoolsControlKind; schemaVersion?: number | undefined}> | undefined } — ⚠ undocumented
 - `DiscoverySkip` (interface): interface DiscoverySkip { readonly path: string; readonly reason: string } — ⚠ undocumented
 - `MAX_SCAN_DEPTH` (const): const MAX_SCAN_DEPTH: 5 — ⚠ undocumented
 - `MAX_SCAN_TARGETS` (const): const MAX_SCAN_TARGETS: 512 — ⚠ undocumented
@@ -442,7 +442,7 @@
 
 ## @jgengine/core/runtime/adapter
 
-- `MultiplayerAdapterConfig` (type): type MultiplayerAdapterConfig = | { kind: "convex"; topology?: MultiplayerTopology; authority?: MultiplayerAuthority } | { kind: "ws"; topology?: MultiplayerTopology; url?: string; authority?: MultiplayerAuthority } | { kind: "socketio"; topology?: MultiplayerTopology; url?: string; authority?: Mult… — ⚠ undocumented · used by `convex`: Convex transport.
+- `MultiplayerAdapterConfig` (type): type MultiplayerAdapterConfig = | { kind: "convex"; topology?: MultiplayerTopology | undefined; authority?: MultiplayerAuthority | undefined } | { kind: "ws"; topology?: MultiplayerTopology | undefined; url?: string | undefined; authority?: MultiplayerAuthority | undefined } | { kind: "socketio"; to… — ⚠ undocumented · used by `convex`: Convex transport.
 - `MultiplayerAuthority` (type): type MultiplayerAuthority = "server" | "client" — Where the world simulation is authoritative.
 - `MultiplayerTopology` (type): type MultiplayerTopology = "shared" | "lobbies" | "private" — ⚠ undocumented · used by `convex`: Convex transport.
 - `ServersPoolConfig` (type): type ServersPoolConfig = { minPlayersToStart?: number; adapter: MultiplayerAdapterConfig; } & ( | { topology: "shared"; maxServers?: number; slotsPerServer?: number } | { topology?: "rooms"; maxServers: number; slotsPerServer: number } ) — ⚠ undocumented · used by `servers`: Resolve the shared-world pool to one unbounded world; room pools keep explicit capacities.
@@ -554,7 +554,7 @@
 
 ## @jgengine/core/runtime/gameRuntime
 
-- `GameRuntime` (type): type GameRuntime = { gameId: string; topology?: "shared" | "rooms"; save: SaveConfig; /** * Whether this runtime declares `loop.onTick`. A host's tick cron reads it to skip hydrating and * persisting a server whose `tick` is a no-op by construction — the difference between a world that * costs a ful… — ⚠ undocumented · used by `initialPlayerState`: Seed a fresh player through the same onNewPlayer hook as joining, without hydrating or modifying a world.
+- `GameRuntime` (type): type GameRuntime = { gameId: string; topology?: "shared" | "rooms" | undefined; save: SaveConfig; /** * Whether this runtime declares `loop.onTick`. A host's tick cron reads it to skip hydrating and * persisting a server whose `tick` is a no-op by construction — the difference between a world that *… — ⚠ undocumented · used by `initialPlayerState`: Seed a fresh player through the same onNewPlayer hook as joining, without hydrating or modifying a world.
 - `GameRuntimeDefinition` (type): type GameRuntimeDefinition = { gameId: string; topology?: "shared" | "rooms"; save: SaveConfig; commands: Record<string, CommandDef>; loop?: ServerLoopHooks; } — ⚠ undocumented
 - `HydrateInput` (type): type HydrateInput = { gameId: string; serverId: string; serverRow: RuntimeServerRow; playersByUserId: Record<string, RuntimePlayerRow>; chunksByKey: Record<string, RuntimeChunkRow>; revision?: number; /** Host wall clock for `onInit`, in ms. Defaults to `Date.now()`. */ nowMs?: number; } — ⚠ undocumented
 - `RuntimeInitContext` (type): type RuntimeInitContext = { snapshot: GameRuntimeSnapshot; setSnapshot: (snapshot: GameRuntimeSnapshot) => void; /** * Host wall clock at the start of this call, in ms. The host already knows it, so anything keyed to * real time — a UTC date rollover, a `lastTickAt` anchor other code paths read, a s… — ⚠ undocumented
@@ -586,7 +586,7 @@
 - `OPEN_SERVER_LISTING_LIMIT` (const): const OPEN_SERVER_LISTING_LIMIT: 20 — ⚠ undocumented
 - `OPEN_SERVER_LISTING_MAX` (const): const OPEN_SERVER_LISTING_MAX: 100 — ⚠ undocumented
 - `PlayerProfileRecord` (type): type PlayerProfileRecord = { userId: string; gameId: string; playerState: RuntimePlayerRow; revision: number; updatedAt: number; } — ⚠ undocumented
-- `ServerListing` (type): type ServerListing = { serverId: string; status: GameServerStatus; memberCount: number; slotsPerServer: number; mode?: string; label?: string; visibility?: SessionVisibility; joinCode?: string; tags?: string[]; updatedAt: number; } — ⚠ undocumented
+- `ServerListing` (type): type ServerListing = { serverId: string; status: GameServerStatus; memberCount: number; slotsPerServer: number; mode?: string | undefined; label?: string | undefined; visibility?: SessionVisibility | undefined; joinCode?: string; tags?: string[] | undefined; updatedAt: number; } — ⚠ undocumented
 - `ServerPersistPlan` (type): type ServerPersistPlan = { server: GameServerRecord; profiles: PlayerProfileRecord[]; chunks: WorldChunkRecord[]; deletedChunks: string[]; leaderboard: LeaderboardIncrement[]; /** * Which fields of the server row the plan actually moved. A store that pays per written field — * or whose subscribers r… — ⚠ undocumented
 - `SessionAttributes` (type): type SessionAttributes = { label?: string; mode?: string; visibility?: SessionVisibility; joinCode?: string; tags?: string[]; } — ⚠ undocumented
 - `StoredLeaderboardRow` (type): type StoredLeaderboardRow = LeaderboardRow & { gameId: string; updatedAt: number; } — A {@link LeaderboardRow} as a host stores it: keyed by game, stamped with its last write.
@@ -705,7 +705,7 @@
 - `SimContextState` (interface): interface SimContextState — Serializable `ctx.sim` state: loop position plus the interpolation pose history.
 - `SimStage` (interface): interface SimStage — Extra work a game or engine seam (a physics backend, a netcode buffer) runs inside every simulation step.
 - `SimStagePhase` (type): type SimStagePhase = "beforeMovement" | "afterMovement" | "afterTick" — Where a registered stage runs inside one simulation step.
-- `createSimContext` (function): function createSimContext(options: { config?: SimulationConfig; entities: EntityStore; time?: Pick<SimClock, "advance"> }): SimContext — Build `ctx.sim` for a context; `createGameContext` calls this from `definition.simulation`.
+- `createSimContext` (function): function createSimContext(options: { config?: SimulationConfig | undefined; entities: EntityStore; time?: Pick<SimClock, "advance"> }): SimContext — Build `ctx.sim` for a context; `createGameContext` calls this from `definition.simulation`.
 
 ## @jgengine/core/runtime/simLoop
 

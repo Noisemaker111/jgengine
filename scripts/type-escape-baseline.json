@@ -1076,7 +1076,7 @@
   "packages/core/src/hud/hudLayout.test.ts": {"nonNull":23},
   "packages/core/src/hud/hudLayout.ts": {"cast":3},
   "packages/core/src/hud/hudLayout.view.test.ts": {"nonNull":8},
-  "packages/core/src/hud/hudLayout.view.tsx": {"ignore":3,"cast":6},
+  "packages/core/src/hud/hudLayout.view.tsx": {"ignore":2,"cast":6},
   "packages/core/src/hud/hudPanelAnchor.view.test.ts": {"nonNull":3,"cast":1},
   "packages/core/src/hud/hudPanelLayout.test.ts": {"nonNull":10},
   "packages/core/src/hud/hudPanelLayout.ts": {"nonNull":2},

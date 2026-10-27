@@ -28,7 +28,8 @@ export interface Escape {
   text: string;
 }
 
-const IGNORE = /@ts-(?:ignore|expect-error|nocheck)\b/;
+/** A directive only works at the start of a comment, so prose that mentions one is not counted. */
+const IGNORE = /^\s*(?:\/\/\/?|\/\*+)\s*@ts-(?:ignore|expect-error|nocheck)\b/;
 const DOCUMENTED = /\/\/\s*type-escape:\s*\S/;
 export const BASELINE_REL = "scripts/type-escape-baseline.json";
 
@@ -59,7 +60,7 @@ export function findEscapes(fileName: string, source: string): Escape[] {
   };
   visit(file);
   lines.forEach((text, index) => {
-    if (IGNORE.test(text) && /^\s*(?:\/\/|\/\*|\*)/.test(text) && !documented(index + 1)) {
+    if (IGNORE.test(text) && !documented(index + 1)) {
       found.push({ kind: "ignore", line: index + 1, text: text.trim().slice(0, 80) });
     }
   });

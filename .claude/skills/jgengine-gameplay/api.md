@@ -255,7 +255,7 @@
 - `ModifierPipeline` (interface): interface ModifierPipeline<V> { add(modifier: Modifier<V>): void; insertAt(index: number, modifier: Modifier<V>): void; remove(id: string): boolean; clear(): void; list(): readonly Modifier<V>[]; run(base: V): PipelineResult<V> } — ⚠ undocumented
 - `PipelineContext` (interface): interface PipelineContext<V> { base: V; index: number; trace: readonly TraceStep<V>[] } — ⚠ undocumented
 - `PipelineResult` (interface): interface PipelineResult<V> { base: V; value: V; trace: readonly TraceStep<V>[] } — ⚠ undocumented
-- `TraceStep` (interface): interface TraceStep<V> { id: string; source?: string; index: number; before: V; after: V; changed: boolean } — ⚠ undocumented
+- `TraceStep` (interface): interface TraceStep<V> { id: string; source?: string | undefined; index: number; before: V; after: V; changed: boolean } — ⚠ undocumented
 - `createModifierPipeline` (function): function createModifierPipeline<V>(initial: readonly Modifier<V>[] = [], equals: (a: V, b: V) => boolean = Object.is): ModifierPipeline<V> — ⚠ undocumented
 - `runPipeline` (function): function runPipeline<V>(base: V, modifiers: readonly Modifier<V>[], equals: (a: V, b: V) => boolean = Object.is): PipelineResult<V> — ⚠ undocumented
 
@@ -353,7 +353,7 @@
 - `PowerConsumer` (interface): interface PowerConsumer { id: string; demand: number } — ⚠ undocumented
 - `PowerGridResult` (interface): interface PowerGridResult { powered: ReadonlySet<string>; supply: number; demand: number; deficit: number } — ⚠ undocumented
 - `ProductionBuildingConfig` (interface): interface ProductionBuildingConfig { id: string; inputs?: readonly RecipeItem[]; outputs: readonly RecipeItem[]; rate: number; power?: number; bufferMultiplier?: number } — ⚠ undocumented
-- `ProductionBuildingDef` (interface): interface ProductionBuildingDef { id: string; inputs: readonly RecipeItem[]; outputs: readonly RecipeItem[]; rate: number; power?: number; bufferMultiplier?: number } — ⚠ undocumented
+- `ProductionBuildingDef` (interface): interface ProductionBuildingDef { id: string; inputs: readonly RecipeItem[]; outputs: readonly RecipeItem[]; rate: number; power?: number | undefined; bufferMultiplier?: number | undefined } — ⚠ undocumented
 - `ProductionState` (interface): interface ProductionState { buffer: ItemCounts; output: ItemCounts; progress: number; active: boolean } — ⚠ undocumented · used by `createProductionState`: A production building that converts input items into outputs over time — factory/crafting station.
 - `ProductionTickInput` (interface): interface ProductionTickInput { dt: number; powered?: boolean } — ⚠ undocumented
 - `TransportItem` (interface): interface TransportItem { itemId: string; count: number; position: number } — ⚠ undocumented
@@ -399,7 +399,7 @@
 
 - `DataSource` (interface): interface DataSource<T> { getState(): DataSourceState<T>; subscribe(listener: (state: DataSourceState<T>) => void): () => void; refresh(options?: RefreshOptions): Promise<void>; startPolling(intervalMs?: number): void; stopPolling(): void; dispose(): void } — ⚠ undocumented
 - `DataSourceClock` (interface): interface DataSourceClock { setInterval(handler: () => void, intervalMs: number): unknown; clearInterval(handle: unknown): void } — ⚠ undocumented
-- `DataSourceOptions` (interface): interface DataSourceOptions { intervalMs?: number; clock?: DataSourceClock } — ⚠ undocumented
+- `DataSourceOptions` (interface): interface DataSourceOptions { intervalMs?: number | undefined; clock?: DataSourceClock | undefined } — ⚠ undocumented
 - `DataSourceState` (interface): interface DataSourceState<T> { readonly status: DataSourceStatus; readonly data: T | undefined; readonly error: Error | undefined } — ⚠ undocumented
 - `DataSourceStatus` (type): type DataSourceStatus = "idle" | "loading" | "ready" | "error" — ⚠ undocumented
 - `RefreshOptions` (interface): interface RefreshOptions { force?: boolean } — ⚠ undocumented
@@ -773,7 +773,7 @@
 - `DeathReason` (type): type DeathReason = | { kind: "player_kill"; killerUserId: string; source?: string; via?: { item?: string } } | { kind: "environment"; source: string; attacker?: string } | { kind: "self"; source: string } — Why an entity died — who or what gets credit, for drop/command rules and the `entity.died` event. `source` names what dealt it: a player kill's killer instance id, or the hazard/item of an environment death; `attacker` carries the non-player entity's instance id when one dealt it.
 - `EmotePlayedEvent` (interface): interface EmotePlayedEvent { from: string; emoteId: string; at: readonly [number, number, number]; recipients: readonly string[] } — ⚠ undocumented
 - `EntityAnimationEvent` (interface): interface EntityAnimationEvent — Request that an entity's rig play a one-shot animation clip bound to `event` in its `animation.oneShots` (e.g. an "attack" swing); the shell resolves the clip and plays it once over the locomotion state. With an `animation.graph`, `event` arms the trigger of that name.
-- `EntityDiedEvent` (interface): interface EntityDiedEvent { instanceId: string; catalogId: string; userId?: string; displayName?: string; reason: DeathReason; source?: string; position: [number, number, number]; serverId?: string; kept?: true } — ⚠ undocumented · used by `deathRemovesEntity` (@jgengine/core/combat/death): Whether a death took the entity out of the scene.
+- `EntityDiedEvent` (interface): interface EntityDiedEvent { instanceId: string; catalogId: string; userId?: string; displayName?: string; reason: DeathReason; source?: string | undefined; position: [number, number, number]; serverId?: string; kept?: true } — ⚠ undocumented · used by `deathRemovesEntity` (@jgengine/core/combat/death): Whether a death took the entity out of the scene.
 - `EntityFloatTextEvent` (interface): interface EntityFloatTextEvent { instanceId?: string; position: [number, number, number]; text: string; kind: string; amount?: number; hitType?: string; element?: string; crit?: boolean; scale?: number } — ⚠ undocumented
 - `FeedbackCueEvent` (interface): interface FeedbackCueEvent — A gameplay moment the game announces itself, for the moments no engine event covers (a wave starting, a scripted beat). The shell reacts with the cue's sound, rumble, camera kick and caption.
 - `GameEventHandler` (type): type GameEventHandler<TPayload> = (payload: TPayload) => void — ⚠ undocumented
@@ -1094,7 +1094,7 @@
 ## @jgengine/core/game/unlocks
 
 - `UnlockCatalog` (interface): interface UnlockCatalog { has(unlockId: string): boolean; tree(categoryId: string): UnlockDef[] } — ⚠ undocumented · used by `createUnlockCatalog`: A catalog of unlockable content gated behind conditions the player earns, tracking what is unlocked.
-- `UnlockDef` (interface): interface UnlockDef { id: string; category?: string } — ⚠ undocumented · used by `createUnlockCatalog`: A catalog of unlockable content gated behind conditions the player earns, tracking what is unlocked.
+- `UnlockDef` (interface): interface UnlockDef { id: string; category?: string | undefined } — ⚠ undocumented · used by `createUnlockCatalog`: A catalog of unlockable content gated behind conditions the player earns, tracking what is unlocked.
 - `UnlockState` (type): type UnlockState = readonly string[] — ⚠ undocumented
 - `Unlocks` (interface): interface Unlocks { has(userId: string, unlockId: string): boolean; grant(userId: string, unlockId: string): void; list(userId: string): string[]; tree(categoryId: string): UnlockDef[]; snapshot(userId: string): string[]; hydrate(userId: string, ids: string[… — ⚠ undocumented
 - `createUnlockCatalog` (function): function createUnlockCatalog(defs: readonly UnlockDef[] = []): UnlockCatalog — A catalog of unlockable content gated behind conditions the player earns, tracking what is unlocked.
@@ -1122,7 +1122,7 @@
 - `AchievementTrackerOptions` (interface): interface AchievementTrackerOptions — Options for {@link createAchievementTracker}.
 - `AchievementUnlock` (interface): interface AchievementUnlock — Emitted the instant an achievement unlocks — wire to a toast, feed, or sound.
 - `AchievementView` (interface): interface AchievementView extends AchievementDef — A definition plus its live unlock/progress state — what UI renders.
-- `ActionCodes` (type): type ActionCodes<TCode extends string = string> = | readonly TCode[] | { hold?: readonly TCode[]; toggle?: readonly TCode[]; repeatMs?: number } — ⚠ undocumented
+- `ActionCodes` (type): type ActionCodes<TCode extends string = string> = readonly TCode[] | ActionCodeModes<TCode> — ⚠ undocumented
 - `ActionCodesMap` (type): type ActionCodesMap<TAction extends string = string, TCode extends string = string> = Record< TAction, ActionCodes<TCode> > — Maps each game action name to the input codes (hold/toggle keys, repeat rate) that trigger it. In a `defineGame({ input })`, pressing an action runs the same-named command with `{ yaw, pitch, aim, held }`; `repeatMs` re-fires it while held (automatic weapons), with `held: true` on those re-fires so one binding can drive a single-shot pistol (ignore `held`) and an automatic rifle (accept it).
 - `ActionStateTracker` (interface): interface ActionStateTracker<TAction extends string> { handleDown(code: string): TAction | null; handleUp(code: string): TAction | null; isDown(action: TAction): boolean; wasPressed(action: TAction): boolean; endFrame(): void; reset(): void; rebind(map: ActionStateBindingMap<TAction, string>)… — ⚠ undocumented · used by `rebindGamepadPoll` (@jgengine/core/input/gamepadPoll): Swap the pad bindings mid-game (a context push) without touching keyboard state: release the codes of pad-held actions whose pad codes chang…
 - `ActiveEffect` (interface): interface ActiveEffect — A live timed effect an engine is tracking until it expires or is cleaned up.
@@ -1220,7 +1220,7 @@
 - `EffectRef` (interface): interface EffectRef — A reference to an effect the game knows how to apply — id plus JSON-safe params, no closures.
 - `EnqueueOptions` (interface): interface EnqueueOptions — Optional per-enqueue overrides.
 - `EnqueueResult` (type): type EnqueueResult<TSpec, TReserve = undefined> = | { readonly ok: true; readonly state: WorkQueueState<TSpec, TReserve>; readonly job: Job<TSpec, TReserve> } | { readonly ok: false; readonly state: WorkQueueState<TSpec, TReserve>; readonly reason: string } — Outcome of {@link enqueue}. On rejection the state is returned unchanged.
-- `EntityDiedEvent` (interface): interface EntityDiedEvent { instanceId: string; catalogId: string; userId?: string; displayName?: string; reason: DeathReason; source?: string; position: [number, number, number]; serverId?: string; kept?: true } — ⚠ undocumented · used by `deathRemovesEntity` (@jgengine/core/combat/death): Whether a death took the entity out of the scene.
+- `EntityDiedEvent` (interface): interface EntityDiedEvent { instanceId: string; catalogId: string; userId?: string; displayName?: string; reason: DeathReason; source?: string | undefined; position: [number, number, number]; serverId?: string; kept?: true } — ⚠ undocumented · used by `deathRemovesEntity` (@jgengine/core/combat/death): Whether a death took the entity out of the scene.
 - `EntityFloatTextEvent` (interface): interface EntityFloatTextEvent { instanceId?: string; position: [number, number, number]; text: string; kind: string; amount?: number; hitType?: string; element?: string; crit?: boolean; scale?: number } — ⚠ undocumented
 - `EntitySpriteConfig` (interface): interface EntitySpriteConfig { url: string; width: number; height: number; y: number; clip?: {atlas: SpriteAtlas; animation: string} } — ⚠ undocumented · used by `EntitySprite` (@jgengine/core/model/SceneModels.draw): Draws an entity as a camera-facing sprite, playing its atlas clip when it has one.
 - `EscortMissionOptions` (interface): interface EscortMissionOptions extends ComposedMissionOptions — Options for {@link escortMission}: a protected actor that must reach a destination alive.
@@ -1300,7 +1300,7 @@
 - `LayerOps` (type): type LayerOps = Readonly<Record<string, ParamOp | readonly ParamOp[]>> — Per-parameter ops contributed by one layer — a single op or an ordered list folded in sequence.
 - `LayerRegistry` (interface): interface LayerRegistry — Registered lookup of {@link ParamLayer}s by stable id, resolving serialized selections and unknowns.
 - `LayerSelection` (type): type LayerSelection = readonly string[] — A serializable, ordered reference to layers by stable id — what a save file or session setup stores.
-- `LeaderboardRow` (interface): interface LeaderboardRow { stat: string; scope: LeaderboardScope; serverId?: string; userId: string; value: number } — ⚠ undocumented · used by `createLeaderboard`: Ranked score tracking across global, server, and per-profile scopes, with top-N queries and per-profile lookups.
+- `LeaderboardRow` (interface): interface LeaderboardRow { stat: string; scope: LeaderboardScope; serverId?: string | undefined; userId: string; value: number } — ⚠ undocumented · used by `createLeaderboard`: Ranked score tracking across global, server, and per-profile scopes, with top-N queries and per-profile lookups.
 - `LeaderboardScope` (type): type LeaderboardScope = "global" | "server" | "profile" — ⚠ undocumented
 - `LedgerAdvanceResult` (interface): interface LedgerAdvanceResult — What one {@link TransactionLedger.chargeDue} settled, and what it could not.
 - `LedgerEntry` (interface): interface LedgerEntry — Money in this module is an integer count of **minor units** — cents when the currency has two decimals, whole coins when it has none. Every posted amount and every balance is a safe integer, so a long simulation never accumulates float drift. `currency` is a free string the game owns.
@@ -1641,7 +1641,7 @@
 - `UnitSpawnOrder` (interface): interface UnitSpawnOrder — Completion payload: everything a spawn/rally adapter needs, and nothing it doesn't.
 - `UnitTrainingOptions` (interface): interface UnitTrainingOptions — Config knobs for {@link unitTrainingConfig}.
 - `UnitTrainingSpec` (interface): interface UnitTrainingSpec — What the caller asks the queue to build.
-- `UnlockDef` (interface): interface UnlockDef { id: string; category?: string } — ⚠ undocumented · used by `createUnlockCatalog`: A catalog of unlockable content gated behind conditions the player earns, tracking what is unlocked.
+- `UnlockDef` (interface): interface UnlockDef { id: string; category?: string | undefined } — ⚠ undocumented · used by `createUnlockCatalog`: A catalog of unlockable content gated behind conditions the player earns, tracking what is unlocked.
 - `UseBehaviorContext` (interface): interface UseBehaviorContext<TWorld> — The context handed to each behavior hook: the shared folded `world`, this behavior's own `config` and `state` slice, and the triggering use input.
 - `UseBehaviorDef` (interface): interface UseBehaviorDef<TWorld> — A registered behavior implementation. The combat/game side registers these (charge, thrown-reload, projectile-replacement, …); the item core only ever stores a {@link UseBehaviorRef} to one by id. Hooks are the lifecycle: `init` builds serializable state, `can` gates, `apply` folds the world.
 - `UseBehaviorOutcome` (interface): interface UseBehaviorOutcome<TWorld> — The result of applying one behavior: the (possibly advanced) world, this behavior's updated state, an optional error that aborts the chain, and an optional `stop` that ends the chain after a successful apply.
@@ -2129,7 +2129,7 @@
 
 ## @jgengine/core/item/WorldItems.draw
 
-- `WorldItems` (function): function WorldItems({ config }: { config?: WorldItemRenderConfig }): React.JSX.Element — Rarity→beam/color/label render binding + loot-filter overlay (#32/#33) for every dropped `worldItem`.
+- `WorldItems` (function): function WorldItems({ config }: { config?: WorldItemRenderConfig | undefined }): React.JSX.Element — Rarity→beam/color/label render binding + loot-filter overlay (#32/#33) for every dropped `worldItem`.
 
 ## @jgengine/core/item/affix
 
@@ -2268,7 +2268,7 @@
 
 - `IncrementResult` (type): type IncrementResult = { status: "ok"; value: number } | { status: "rejected"; reason: "not-tracked" } — ⚠ undocumented
 - `Leaderboard` (interface): interface Leaderboard { track(def: LeaderboardTrackDef): void; tracked(): {stat: string; scope: LeaderboardScope}[]; increment(userId: string, stat: string, options: {scope: LeaderboardScope; serverId?: string; by?: number}): IncrementResult; getTop(stat: string… — ⚠ undocumented · used by `createLeaderboard`: Ranked score tracking across global, server, and per-profile scopes, with top-N queries and per-profile lookups.
-- `LeaderboardRow` (interface): interface LeaderboardRow { stat: string; scope: LeaderboardScope; serverId?: string; userId: string; value: number } — ⚠ undocumented · used by `createLeaderboard`: Ranked score tracking across global, server, and per-profile scopes, with top-N queries and per-profile lookups.
+- `LeaderboardRow` (interface): interface LeaderboardRow { stat: string; scope: LeaderboardScope; serverId?: string | undefined; userId: string; value: number } — ⚠ undocumented · used by `createLeaderboard`: Ranked score tracking across global, server, and per-profile scopes, with top-N queries and per-profile lookups.
 - `LeaderboardScope` (type): type LeaderboardScope = "global" | "server" | "profile" — ⚠ undocumented
 - `LeaderboardTrackDef` (interface): interface LeaderboardTrackDef { stat?: string; currency?: string; scope: LeaderboardScope } — ⚠ undocumented
 - `createLeaderboard` (function): function createLeaderboard(sink?: { onIncrement?(row: LeaderboardRow): void }): Leaderboard — Ranked score tracking across global, server, and per-profile scopes, with top-N queries and per-profile lookups.
@@ -2305,7 +2305,7 @@
 - `DEFAULT_RARITY` (const): const DEFAULT_RARITY: "common" — ⚠ undocumented
 - `DEFAULT_SCATTER` (const): const DEFAULT_SCATTER: ScatterOptions — ⚠ undocumented
 - `RarityStyle` (interface): interface RarityStyle — Per-rarity look of a dropped item: beam, color and label. Set via `defineGame({ worldItem: { rarityStyle } })`.
-- `ResolveDeathDropsOptions` (interface): interface ResolveDeathDropsOptions { mode: "grant" | "world"; origin: EntityPosition; resolveRarity(itemId: string): string; resolveBaseType?(itemId: string): string; scatter?: ScatterOptions; rng?(): number; source?: string } — ⚠ undocumented
+- `ResolveDeathDropsOptions` (interface): interface ResolveDeathDropsOptions { mode: "grant" | "world"; origin: EntityPosition; resolveRarity(itemId: string): string; resolveBaseType?(itemId: string): string; scatter?: ScatterOptions | undefined; rng?(): number; source?: string } — ⚠ undocumented
 - `ResolvedDeathDrops` (interface): interface ResolvedDeathDrops { worldSpawns: WorldItemSpawnInput[]; grants: Drop[] } — ⚠ undocumented
 - `ScatterOptions` (interface): interface ScatterOptions { radius: number; minRadius?: number; height?: number } — ⚠ undocumented
 - `WORLD_ITEM_ENTITY_NAME` (const): const WORLD_ITEM_ENTITY_NAME: "world_item" — Scene-entity catalog name every dropped-item instance spawns under (see the three buckets: worldItem is an entity, never an inventory item or object).
@@ -2974,7 +2974,7 @@
 
 - `ContestReaction` (type): type ContestReaction = "pause" | "decay" — ⚠ undocumented
 - `ContestedChannel` (interface): interface ContestedChannel { start(team: string): ContestedEvent | null; tick(dt: number, occupants?: Record<string, number>): ContestedEvent[]; damage(reason?: string): ContestedEvent | null; reset(): void; progress(): number; phase(): ContestedPhase; owner(): strin… — ⚠ undocumented
-- `ContestedChannelConfig` (interface): interface ContestedChannelConfig { duration: number; interruptOnDamage?: boolean; resetOnInterrupt?: boolean; favorability?: Record<string, number>; ratePerOccupant?: boolean; contested?: ContestReaction; decayRate?: number } — ⚠ undocumented
+- `ContestedChannelConfig` (interface): interface ContestedChannelConfig { duration: number; interruptOnDamage?: boolean; resetOnInterrupt?: boolean; favorability?: Record<string, number> | undefined; ratePerOccupant?: boolean; contested?: ContestReaction; decayRate?: number } — ⚠ undocumented
 - `ContestedEvent` (interface): interface ContestedEvent { kind: ContestedEventKind; owner: string | null; progress: number; reason?: string } — ⚠ undocumented
 - `ContestedEventKind` (type): type ContestedEventKind = "start" | "tick" | "contested" | "paused" | "complete" | "interrupted" — ⚠ undocumented
 - `ContestedPhase` (type): type ContestedPhase = "idle" | "active" | "paused" | "contested" | "complete" | "interrupted" — ⚠ undocumented

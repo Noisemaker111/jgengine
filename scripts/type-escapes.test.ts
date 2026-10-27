@@ -31,6 +31,11 @@ describe("findEscapes", () => {
     expect(kinds("// type-escape:\nconst a = raw as Shape;")).toEqual(["cast"]);
   });
 
+  test("a comment that only mentions a directive is not one", () => {
+    expect(kinds("/**\n * never use @ts-ignore here\n */\nconst a = 1;")).toEqual([]);
+    expect(kinds("/* @ts-ignore */ const a: number = 'x';")).toEqual(["ignore"]);
+  });
+
   test("parses tsx", () => {
     expect(kinds("const a = <div>{value!}</div>;", "a.tsx")).toEqual(["nonNull"]);
   });

@@ -76,12 +76,12 @@
  */
 import { seededStreams } from "../random/rng";
 
-/** A path vertex in the volume-local XZ frame. */
 /** Add one to `counts[index]` (an unset slot counts from zero). */
 function increment(counts: number[] | Uint16Array, index: number): void {
   counts[index] = (counts[index] ?? 0) + 1;
 }
 
+/** A path vertex in the volume-local XZ frame. */
 export type StreetVec2 = readonly [number, number];
 
 /** Road hierarchy, widest to narrowest — shared by the city fabric and the renderer. */
