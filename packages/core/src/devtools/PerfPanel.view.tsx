@@ -3,6 +3,7 @@ import { useRef } from "react";
 import { devtools, LONG_FRAME_MS, type LongFrameEvent, type PhaseStats } from "@jgengine/core/devtools/devtools";
 import type { GameContext } from "@jgengine/core/runtime/gameContext";
 
+import type { FrameBreakdownSummary } from "./frameBreakdown";
 import { ms, SectionLabel, PanelStatRow } from "./panelAtoms.view";
 import { diagnose } from "./perfDiagnose.view";
 
@@ -126,7 +127,40 @@ function LongFrameList({ events }: { events: readonly LongFrameEvent[] }) {
   );
 }
 
+/** The last 600 frames of the live breakdown (`window.__jgFrameBreakdown`), when the dev telemetry installed it. */
+function readBreakdown(): FrameBreakdownSummary | null {
+  const live = (globalThis as { __jgFrameBreakdown?: { summary(options: { top: number; last: number }): FrameBreakdownSummary } }).__jgFrameBreakdown;
+  return live === undefined ? null : live.summary({ top: 6, last: 600 });
+}
+
+function Breakdown({ summary }: { summary: FrameBreakdownSummary }) {
+  const cost = Math.max(summary.work.p50, summary.gpu?.p50 ?? 0);
+  return (
+    <div className="space-y-1">
+      <SectionLabel>{`where the frame goes (last ${summary.frames} frames)`}</SectionLabel>
+      <PanelStatRow name="frame p50 / p95 / p99" value={`${ms(summary.frame.p50)} / ${ms(summary.frame.p95)} / ${ms(summary.frame.p99)}`} alert={summary.frame.p95 > 16.7} />
+      <PanelStatRow name="cpu work p50 / p95" value={`${ms(summary.work.p50)} / ${ms(summary.work.p95)}`} alert={summary.work.p95 > 6.94} />
+      <PanelStatRow name="gpu p50 / p95" value={summary.gpu === null ? "no timer queries" : `${ms(summary.gpu.p50)} / ${ms(summary.gpu.p95)}`} alert={(summary.gpu?.p95 ?? 0) > 6.94} />
+      <PanelStatRow name="fps the cost allows" value={cost > 0 ? (1000 / cost).toFixed(0) : "?"} alert={cost > 6.94} />
+      {summary.cpu.map((entry) => (
+        <PanelStatRow key={`cpu-${entry.name}`} name={`cpu ${entry.name}`} value={`${ms(entry.avgMs)} / ${ms(entry.p95Ms)}`} alert={entry.p95Ms > 4} />
+      ))}
+      {summary.passes.map((entry) => (
+        <PanelStatRow key={`gpu-${entry.name}`} name={`gpu ${entry.name}`} value={`${ms(entry.avgMs)} / ${ms(entry.p95Ms)}`} alert={entry.p95Ms > 4} />
+      ))}
+      <PanelStatRow name="draws / triangles" value={`${summary.counts.drawsAvg} / ${summary.counts.trianglesAvg.toLocaleString()}`} />
+      <PanelStatRow name="compiles / uploads" value={`${summary.counts.compiles} (${summary.counts.compileMs} ms) / ${summary.counts.uploadMb} MB`} alert={summary.counts.compiles > 0} />
+      {summary.hitches.slice(0, 3).map((hitch) => (
+        <div key={`${hitch.atS}-${hitch.ms}`} className="text-[10px] text-amber-200">
+          {hitch.ms.toFixed(0)} ms {hitch.cause}: {hitch.detail}
+        </div>
+      ))}
+    </div>
+  );
+}
+
 export function PerfPanel({ ctx }: { ctx: GameContext }) {
+  const breakdown = readBreakdown();
   const rateRef = useRef<{ version: number; at: number; perSecond: number }>({ version: 0, at: 0, perSecond: 0 });
   const frame = devtools.frame.stats();
   const render = devtools.render.latest();
@@ -185,6 +219,7 @@ export function PerfPanel({ ctx }: { ctx: GameContext }) {
         </div>
         <LongFrameList events={longs} />
       </div>
+      {breakdown !== null && breakdown.frames > 0 ? <Breakdown summary={breakdown} /> : null}
       {render !== null ? (
         <div className="space-y-1">
           <SectionLabel>render sample</SectionLabel>

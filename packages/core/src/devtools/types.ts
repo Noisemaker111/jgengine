@@ -196,6 +196,13 @@ export interface DevtoolsSnapshot {
   skipped: readonly DiscoverySkip[];
 }
 
+/** The last frame `devtools.frame.record` saw: its sim milliseconds and named phases. */
+export interface LastFrameSample {
+  serial: number;
+  simMs: number;
+  phases: Readonly<Record<string, number>>;
+}
+
 /** Per-frame timing input recorded by callers: total frame time, sim time, and optional named phase durations. */
 export interface FrameRecordSample {
   frameMs: number;
@@ -208,6 +215,8 @@ export interface Devtools {
   frame: {
     record(sample: FrameRecordSample): void;
     stats(): FrameStats | null;
+    /** The most recent recorded frame's sim time and phases; `serial` counts records, so a reader can tell a new one. */
+    last(): LastFrameSample | null;
     longFrames(): readonly LongFrameEvent[];
     clearLongFrames(): void;
     /** Drop all frame/phase/long-frame history so the next stats() window starts clean — use after load/shader warmup before measuring. */

@@ -110,7 +110,7 @@ bun --filter="@games/*" run check-types  # type-check every game in games/ again
 bun test games         # every game's tests and the games' own scripts
 bun run games:provision    # link the asset packs the games reference from the shared store (games:provision <id> for one game)
 bun dev              # jgengine.com locally, games playable at /games/<id>
-bun run perf <game>  # frame times, draws, triangles, node/GL counts and top self-time functions as JSON (--help; --state pins the scene, --param k=v pins a spawn/seed, --set key=value prices a setting)
+bun run perf <game>  # 1080p walk: frame p50/p95/p99, CPU per system, GPU per pass, top objects and hitches with their cause, as a text summary and .scratch/perf/<game>.json (--compare before.json diffs, --json prints the record) (--help; --state pins the scene, --param k=v pins a spawn/seed, --set key=value prices a setting)
 bun run perf live <game> # the same JSON for a game already open in a browser, ~0.3 s, fails on a budget breach
 bun run perf gate    # CI gate: plays all 8 reference games and fails on draws/triangles/nodes over games/<id>/perf-budget.json (scripts/perf-budget.json when a game has none), or any program/framebuffer created after warmup (--help)
 bun run perf timing    # the CPU timing gate: re-runs the benchmarks that carry wall-clock budgets (nav crowd, perception, utility, visibility, off-screen, flock, paths) and fails when one exceeds it

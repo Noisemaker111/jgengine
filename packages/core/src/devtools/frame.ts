@@ -1,6 +1,7 @@
 import type {
   Devtools,
   FrameRecordSample,
+  LastFrameSample,
   FrameStats,
   LongFrameEvent,
   PhaseStats,
@@ -123,6 +124,8 @@ export const createFrameModule = (deps: {
   let frameCount = 0;
 
   let renderSample: RenderSample | null = null;
+  let lastSample: LastFrameSample | null = null;
+  let serial = 0;
 
   const longFrameEvents: LongFrameEvent[] = [];
   const phaseAccumulators = new Map<string, PhaseAccumulator>();
@@ -231,6 +234,8 @@ export const createFrameModule = (deps: {
     frameCount += 1;
 
     recordPhaseStats(phases);
+    serial += 1;
+    lastSample = { serial, simMs, phases };
 
     if (frameMs > LONG_FRAME_MS) {
       const ranked = rankPhases(phases);
@@ -259,6 +264,7 @@ export const createFrameModule = (deps: {
     frame: {
       record: recordFrame,
       stats: frameStats,
+      last: () => lastSample,
       longFrames: () => longFrameEvents,
       clearLongFrames() {
         longFrameEvents.length = 0;

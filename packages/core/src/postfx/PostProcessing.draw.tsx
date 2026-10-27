@@ -30,6 +30,7 @@ import {
 } from "@jgengine/core/render/colorPipeline";
 import type { GraphicsQuality } from "@jgengine/core/settings/settingsModel";
 
+import { measureComposerPasses } from "@jgengine/core/devtools/frameBreakdown.draw";
 import { linkDrawsOffFrame, sceneRevealed, warmupDraws } from "@jgengine/core/render/shaderWarmup.draw";
 import { ExposureMeterPass } from "./autoExposure.draw";
 import { AtmospherePass } from "./atmospherePass.draw";
@@ -570,6 +571,7 @@ export function PostProcessing({
     const built = builtRef.current;
     if (built === null) return;
     if (built.grade !== null) built.grade.uniforms.uTime.value += delta;
+    measureComposerPasses(built.composer);
     built.composer.render(delta);
     advanceRevealFade(built, delta);
   }, 1);
