@@ -1,3 +1,5 @@
+import { isFiniteNumber } from "../data/untyped";
+
 export type DevtoolsControlKind =
   | "slider"
   | "toggle"
@@ -81,9 +83,6 @@ export interface ResolvedAxisBounds {
 }
 
 /** @internal */
-export function isFiniteNumber(value: unknown): value is number {
-  return typeof value === "number" && Number.isFinite(value);
-}
 
 /** @internal */
 export function escapePathSegment(segment: string): string {

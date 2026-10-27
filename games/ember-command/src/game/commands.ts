@@ -3,13 +3,13 @@ import type { GameContext } from "@jgengine/core/runtime/gameContext";
 import type { EntityPosition } from "@jgengine/core/scene/entityStore";
 import { activeJobs, queuedJobs, enqueue } from "@jgengine/core/gameplay";
 
-import { BARRACKS_UNITS, BUILDINGS, combatantDef, COMBATANTS, TRAINABLE } from "./catalog";
+import { BARRACKS_UNITS, buildingDef, combatantDef, trainableDef } from "./catalog";
 import { BUILD_CONFIG } from "./building";
 import { anchorFormation, FORMATIONS, pruneFormation, reshapeFormation, type FormationKind } from "./formations";
 import { TRAINING_CONFIG } from "./production";
 import { NODE_ORDER_RADIUS, ORDER_TARGET_RADIUS } from "./tuning";
 import { matchRunning, reservedSupply, livingUnits, session, usedSupply, type NodeInfo, type UnitRuntime } from "./session";
-import { pendingRanks, RESEARCH_CONFIG, UPGRADES, upgradeRank } from "./upgrades";
+import { pendingRanks, RESEARCH_CONFIG, upgradeDef, upgradeRank } from "./upgrades";
 import { castHeroAct, chooseHeroPick, heroActViews, pendingHeroOffer } from "./heroActs";
 import { MUSTER_MARKER, noteCampaignBuild, noteCampaignTrain, startCampaignMission, tickCampaign } from "./campaign";
 import { HERO_ID } from "./hero";
@@ -82,7 +82,7 @@ function assignMoveFormation(ctx: GameContext, units: UnitRuntime[], x: number, 
 }
 
 export function canAffordBuilding(ctx: GameContext, type: string): boolean {
-  const def = BUILDINGS[type];
+  const def = buildingDef(type);
   if (def === undefined || !matchRunning()) return false;
   for (const [currency, amount] of Object.entries(def.cost)) {
     if (ctx.game.economy.balance(ctx.player.userId, currency) < amount) return false;
@@ -109,14 +109,15 @@ function canPlaceAt(ctx: GameContext, x: number, z: number): boolean {
 }
 
 function placeBuilding(ctx: GameContext, type: string, x: number, z: number): boolean {
-  if (!canAffordBuilding(ctx, type) || !canPlaceAt(ctx, x, z)) {
+  const def = buildingDef(type);
+  if (def === undefined || !canAffordBuilding(ctx, type) || !canPlaceAt(ctx, x, z)) {
     notify(ctx, "Choose clear ground on your half of the vale, away from buildings and resource nodes.", "deny");
     return false;
   }
   const result = enqueue(session.buildQueue, BUILD_CONFIG, { type, x, z });
   if (!result.ok) return false;
   session.buildQueue = result.state;
-  for (const [currency, amount] of Object.entries(BUILDINGS[type]!.cost)) {
+  for (const [currency, amount] of Object.entries(def.cost)) {
     ctx.game.economy.charge(ctx.player.userId, currency, amount);
   }
   notify(ctx, `Raising ${type.replaceAll("_", " ")} — construction is underway.`, "success");
@@ -189,20 +190,20 @@ function armAttackMove(ctx: GameContext): GameContext {
 export function canTrain(ctx: GameContext, unitId: string): boolean {
   if (!matchRunning()) return false;
   if (livingUnits("player", "building").length === 0) return false;
-  const def = TRAINABLE[unitId];
+  const def = trainableDef(unitId);
   if (def === undefined) return false;
   if (BARRACKS_UNITS.has(unitId) && !livingUnits("player", "building").some((u) => u.catalogId === "barracks")) return false;
   for (const [currency, amount] of Object.entries(def.cost)) {
     if (ctx.game.economy.balance(ctx.player.userId, currency) < amount) return false;
   }
-  const food = COMBATANTS[unitId]?.food ?? 0;
+  const food = combatantDef(unitId)?.food ?? 0;
   return usedSupply() + reservedSupply() + food <= session.supplyCap;
 }
 
 /** Say why a train order was refused, so a keypress never fails silently. */
 function explainTrainRefusal(ctx: GameContext, unitId: string): string {
-  const def = TRAINABLE[unitId];
-  const label = COMBATANTS[unitId]?.label ?? unitId;
+  const def = trainableDef(unitId);
+  const label = combatantDef(unitId)?.label ?? unitId;
   if (!matchRunning()) return "The match is not running.";
   if (livingUnits("player", "building").length === 0) return "No buildings left to train from.";
   if (BARRACKS_UNITS.has(unitId) && !livingUnits("player", "building").some((u) => u.catalogId === "barracks")) {
@@ -217,18 +218,19 @@ function explainTrainRefusal(ctx: GameContext, unitId: string): string {
 }
 
 export function trainUnit(ctx: GameContext, unitId: string): GameContext {
-  if (!canTrain(ctx, unitId)) {
+  const def = trainableDef(unitId);
+  if (def === undefined || !canTrain(ctx, unitId)) {
     notify(ctx, explainTrainRefusal(ctx, unitId), "deny");
     return ctx;
   }
   const result = enqueue(session.production, TRAINING_CONFIG, { unitId });
   if (!result.ok) return ctx;
   session.production = result.state;
-  for (const [currency, amount] of Object.entries(TRAINABLE[unitId]!.cost)) {
+  for (const [currency, amount] of Object.entries(def.cost)) {
     ctx.game.economy.charge(ctx.player.userId, currency, amount);
   }
   const trainer = BARRACKS_UNITS.has(unitId) ? "Barracks" : "Town Hall";
-  notify(ctx, `Training ${COMBATANTS[unitId]?.label ?? unitId} at the ${trainer}.`, "success");
+  notify(ctx, `Training ${combatantDef(unitId)?.label ?? unitId} at the ${trainer}.`, "success");
   return ctx;
 }
 
@@ -242,7 +244,7 @@ function armBuild(ctx: GameContext, type: string): GameContext {
  * command and the HUD gate. */
 export function canResearch(ctx: GameContext, upgradeId: string): boolean {
   if (!matchRunning()) return false;
-  const up = UPGRADES[upgradeId];
+  const up = upgradeDef(upgradeId);
   if (up === undefined) return false;
   if (pendingRanks(upgradeId) > 0) return false; // already researching this upgrade
   const rank = upgradeRank(upgradeId);
@@ -255,8 +257,8 @@ export function canResearch(ctx: GameContext, upgradeId: string): boolean {
 }
 
 function research(ctx: GameContext, upgradeId: string): GameContext {
-  if (!canResearch(ctx, upgradeId)) return ctx;
-  const up = UPGRADES[upgradeId]!;
+  const up = upgradeDef(upgradeId);
+  if (up === undefined || !canResearch(ctx, upgradeId)) return ctx;
   const rank = upgradeRank(upgradeId);
   const result = enqueue(session.research.queue, RESEARCH_CONFIG, { upgradeId, toRank: rank + 1 });
   if (!result.ok) return ctx;

@@ -152,7 +152,7 @@ export function scaledObjectColliders(scale: readonly [number, number, number]):
  */
 export interface ModelBodySource {
   /** Measured model-space bounds from the asset index; fitting requires `dims` with `maxY`. */
-  dims?: ModelDims;
+  dims?: ModelDims | undefined;
   /** Uniform render scale. Default `1`. */
   scale?: number;
   /** Normalize-to-height in world units — fitting composes it exactly like the renderer (`targetHeight / measured height`, multiplied by `scale`). */

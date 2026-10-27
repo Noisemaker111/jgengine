@@ -24,8 +24,8 @@ import {
   removePlacedObject,
   type PlacedObject,
 } from "@llmville/game/datacenter/placedObjects";
+import { isRecord } from "@jgengine/core/data/untyped";
 import {
-  isRecord,
   readCardinalDirection,
   readFiniteNumber,
   readPoint2,

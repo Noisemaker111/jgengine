@@ -14,7 +14,7 @@ import type { GameContext } from "@jgengine/core/runtime/gameContext";
 import { DAY_LENGTH, GRID, STARTING_CASH, snapToTile } from "./catalog";
 import { LOT, sizeOf } from "./lot";
 import { FLAT_LAND, LAND_FACT } from "./build/terrain";
-import { BUILDABLES, BUILD_IDS, THEME_CAP, type BuildableDef } from "./objects/catalog";
+import { BUILDABLES, BUILD_IDS, buildableDef, THEME_CAP, type BuildableDef } from "./objects/catalog";
 import { SCENARIOS } from "./scenarios";
 import { despawnObject, dispatchCrew, landed, scenarioEnded, spawnObject } from "./parkScene";
 
@@ -66,19 +66,19 @@ function kindOf(def: BuildableDef): WorldKindDecl {
   const facts: Record<string, WorldFactsDecl[string]> = { appeal: def.appeal, rot: 0 };
   // A ride or shop no path reaches (or a ride with no entrance or exit) is shut: `closed`, until the
   // network says otherwise when it opens.
-  if (def.ride !== undefined || def.stall !== undefined) facts.closed = true;
+  if (def.ride !== undefined || def.stall !== undefined) facts["closed"] = true;
   if (def.ride !== undefined) {
-    facts.broken = false;
+    facts["broken"] = false;
     // Charm from scenery in reach, which the park adds to the ride's appeal and excitement.
-    facts.theme = 0;
+    facts["theme"] = 0;
   }
   if (def.staff !== undefined) {
     // The patrol area's radius in metres, around the post.
-    facts.patrol = { value: def.staff.patrol, min: PATROL.min, max: PATROL.max };
+    facts["patrol"] = { value: def.staff.patrol, min: PATROL.min, max: PATROL.max };
   }
   if (def.stall !== undefined) {
-    facts.sold = { value: 0, min: 0, max: def.stall.stock };
-    facts.sold_total = 0;
+    facts["sold"] = { value: 0, min: 0, max: def.stall.stock };
+    facts["sold_total"] = 0;
   }
   return {
     label: def.label,
@@ -111,7 +111,7 @@ function rideActions(def: BuildableDef): Record<string, WorldActionDecl> {
   const repair = (takes: number, when: WorldActionDecl["when"]): WorldActionDecl => ({
     label: `Repair ${def.label}`,
     on: def.id,
-    when,
+    ...(when === undefined ? {} : { when }),
     whenTarget: { broken: true },
     cost: { "park.cash": -ride.breakdown.repairCost },
     world: { "park.spent_today": ride.breakdown.repairCost },
@@ -202,7 +202,7 @@ const totals: Record<string, WorldTotalDecl> = {
 const flows: Record<string, WorldFlowDecl> = {
   // Every guest drops a little litter; every janitor post sweeps it up.
   litter: { to: "park.litter", from: "park.guests", rate: 0.006 },
-  sweep: { to: "park.litter", from: "n.staff_janitor", rate: -(BUILDABLES.staff_janitor!.staff!.cleaning * 0.08) },
+  sweep: { to: "park.litter", from: "n.staff_janitor", rate: -(buildableDef("staff_janitor").staff!.cleaning * 0.08) },
 };
 // The ground's height levels, a digit a cell; and which version of the path rules the park was laid under.
 const prices: Record<string, WorldFactsDecl[string]> = { [LAND_FACT]: FLAT_LAND, "park.netv": 0 };
@@ -316,7 +316,7 @@ export const park = defineGameSpec({
   accepting: (ctx) => (park.of(ctx).fact("park.game_over") === true ? "The park has closed for good" : null),
   onLanded: (ctx, action, target) => landed(ctx, action, target),
   onReward: (ctx, rewards) => {
-    const cash = rewards.economy?.cash ?? 0;
+    const cash = rewards.economy?.["cash"] ?? 0;
     if (cash > 0) park.of(ctx).change({ "park.cash": cash });
   },
   onJob: (ctx, event) => scenarioEnded(ctx, event),

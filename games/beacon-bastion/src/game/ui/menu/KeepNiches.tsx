@@ -4,7 +4,7 @@ import { KitButton, KitPanel } from "@jgengine/core/ui/kit/uiKitRoot.view";
 import { GameIcon } from "@jgengine/core/ui/icons/gameIcons.view";
 import { useMenuNav } from "@jgengine/core/menu/menuNav.view";
 import { relativeSavedAt } from "@jgengine/core/save/saveSlots.view";
-import type { SaveSlotMeta } from "@jgengine/core/save/saveSlots";
+import { slotNumber, slotText, type SaveSlotMeta } from "@jgengine/core/save/saveSlots";
 
 import { KEEP_LABEL } from "../../save";
 import { Brazier } from "../kit/Brazier";
@@ -12,9 +12,13 @@ import { FIRE } from "../theme";
 
 /** The numbers a kept defense carries, read from the slot's meta (written by `refreshBeaconSlots`). */
 function keepFacts(slot: SaveSlotMeta): { wave: number | null; gold: number | null; lives: number | null; commander: string | null; thumb: string | null } {
-  const num = (key: string) => (typeof slot.meta[key] === "number" ? (slot.meta[key] as number) : null);
-  const str = (key: string) => (typeof slot.meta[key] === "string" && String(slot.meta[key]).length > 0 ? String(slot.meta[key]) : null);
-  return { wave: num("wave"), gold: num("gold"), lives: num("lives"), commander: str("character"), thumb: str("thumbnail") };
+  return {
+    wave: slotNumber(slot, "wave"),
+    gold: slotNumber(slot, "gold"),
+    lives: slotNumber(slot, "lives"),
+    commander: slotText(slot, "character"),
+    thumb: slotText(slot, "thumbnail"),
+  };
 }
 
 /** One kept defense's carved line: the wave it reached, its purse and its walls, each beside its glyph. */

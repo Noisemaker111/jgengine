@@ -44,7 +44,7 @@ export const game = defineGame({
   WorldOverlay: BrightwayParkWorldOverlay,
   worldHealthBars: false,
   // A refused build is a deny notice; its cue is the park's own "denied" chime.
-  audio: { sounds: BRIGHTWAY_SOUNDS, uiCues: { deny: BRIGHTWAY_SOUNDS.denied! } },
+  audio: { sounds: BRIGHTWAY_SOUNDS, uiCues: { deny: BRIGHTWAY_SOUNDS.denied } },
   notices: { cap: 3, ttlMs: 5000 },
   // The build palette is the touch control: no derived pick/clear buttons over it.
   touch: { buttons: [] },

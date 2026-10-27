@@ -25,7 +25,7 @@ export interface DrivableTireEffects {
 export interface DrivableVehicleOptions {
   /** Resamples world-space Y each tick (terrain height, a ramp, a bridge deck); omit to keep the sim's own flat `y`. */
   groundHeight?: (x: number, z: number) => number;
-  modifiers?: VehicleDynamicsModifiers;
+  modifiers?: VehicleDynamicsModifiers | undefined;
   /** Lay skid marks and tire smoke while the car slides; omit for none. */
   tires?: DrivableTireEffects;
 }

@@ -156,7 +156,7 @@ export function reservedSupply(): number {
 /** Build the depletion field from the resource nodes discovered in the scene. */
 export function initResourceField(rng?: () => number): void {
   session.resourceField = createResourceNodeField({
-    rng,
+    ...(rng === undefined ? {} : { rng }),
     nodes: Array.from(session.nodes.values()).map((n) => ({
       id: n.id,
       budget: n.resource === "gold" ? 600 : 500,

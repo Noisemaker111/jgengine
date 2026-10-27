@@ -1,5 +1,6 @@
 import { activeJobs, queuedJobs, type WorkQueueConfig } from "@jgengine/core/gameplay";
 
+import type { Cost } from "./catalog";
 import { session } from "./session";
 import type { Faction } from "./tuning";
 
@@ -19,7 +20,7 @@ export interface UpgradeDef {
   /** Building the player must own to research (by catalog id). */
   requires: string;
   /** Cost to advance from `have` ranks to `have + 1`. */
-  cost: (have: number) => Record<string, number>;
+  cost: (have: number) => Cost;
   /** Seconds to research the `have → have + 1` rank. */
   researchSeconds: (have: number) => number;
 }
@@ -28,7 +29,9 @@ export interface UpgradeDef {
 export const WEAPON_DMG_PER_RANK = 3;
 export const ARMOR_REDUCE_PER_RANK = 2;
 
-export const UPGRADES: Record<string, UpgradeDef> = {
+export type UpgradeId = "weapons" | "armor";
+
+export const UPGRADES: Readonly<Record<UpgradeId, UpgradeDef>> = {
   weapons: {
     id: "weapons",
     label: "Iron Weapons",
@@ -49,6 +52,13 @@ export const UPGRADES: Record<string, UpgradeDef> = {
   },
 };
 
+const upgradeById = new Map<string, UpgradeDef>(Object.entries(UPGRADES));
+
+/** Research `id` names, or undefined when there is no such research. */
+export function upgradeDef(id: string): UpgradeDef | undefined {
+  return upgradeById.get(id);
+}
+
 /** What a completed research job grants: one rank of one upgrade. */
 export interface ResearchSpec {
   upgradeId: string;
@@ -58,7 +68,7 @@ export interface ResearchSpec {
 /** The research queue config — duration is the per-rank research time; completion output raises the
  * upgrade's rank. A couple may research at once. */
 export const RESEARCH_CONFIG: WorkQueueConfig<ResearchSpec, undefined, ResearchSpec> = {
-  duration: (spec) => UPGRADES[spec.upgradeId]?.researchSeconds(spec.toRank - 1) ?? 0,
+  duration: (spec) => upgradeDef(spec.upgradeId)?.researchSeconds(spec.toRank - 1) ?? 0,
   concurrency: 2,
   output: (job) => job.spec,
 };

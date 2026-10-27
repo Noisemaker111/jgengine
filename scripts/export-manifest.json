@@ -257,6 +257,7 @@
     "./data/devProxy",
     "./data/fetchJson",
     "./data/jsonDataSource",
+    "./data/untyped",
     "./data/withField",
     "./devtools/ColPanel.view",
     "./devtools/CollisionDebugWorld.draw",

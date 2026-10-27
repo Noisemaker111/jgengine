@@ -6,9 +6,9 @@ import { useEntityStat, useGame } from "@jgengine/react/hooks";
 
 import { hudStore, type ArmyUnit, type HeroKitEntry, type HudSnapshot } from "../../hudStore";
 import { campaignOrdinal, type CampaignReadout } from "../../campaign";
-import { BARRACKS_UNITS, BUILDINGS, COMBATANTS, TRAINABLE } from "../../catalog";
+import { BARRACKS_UNITS, BUILDINGS, COMBATANTS, TRAINABLE, type BuildingId, type TrainableId } from "../../catalog";
 import { FORMATIONS } from "../../formations";
-import { UPGRADES, WEAPON_DMG_PER_RANK, ARMOR_REDUCE_PER_RANK } from "../../upgrades";
+import { UPGRADES, WEAPON_DMG_PER_RANK, ARMOR_REDUCE_PER_RANK, type UpgradeId } from "../../upgrades";
 import { HERO_DMG_PER_LEVEL } from "../../hero";
 import type { HeroActView, HeroOffer } from "../../heroActs";
 import { GlyphIcon } from "../icons";
@@ -196,7 +196,7 @@ function Slot({
   icon: string;
   hotkey: string;
   foot?: string;
-  badge?: string;
+  badge?: string | undefined;
   tone: "ready" | "active" | "locked";
   tip: Tip;
   setTip: (t: Tip | null) => void;
@@ -234,24 +234,24 @@ function costChips(gold?: number, lumber?: number): { icon: string; text: string
   return chips;
 }
 
-function trainTone(hud: HudSnapshot, id: string): "ready" | "locked" {
+function trainTone(hud: HudSnapshot, id: TrainableId): "ready" | "locked" {
   const t = TRAINABLE[id];
-  if (t === undefined || hud.phase !== "playing") return "locked";
+  if (hud.phase !== "playing") return "locked";
   if (BARRACKS_UNITS.has(id) && !hud.hasBarracks) return "locked";
   if ((t.cost.gold ?? 0) > hud.gold || (t.cost.lumber ?? 0) > hud.lumber) return "locked";
-  return hud.foodUsed + hud.foodReserved + (COMBATANTS[id]?.food ?? 0) <= hud.foodCap ? "ready" : "locked";
+  return hud.foodUsed + hud.foodReserved + COMBATANTS[id].food <= hud.foodCap ? "ready" : "locked";
 }
 
-function buildTone(hud: HudSnapshot, type: string): "ready" | "active" | "locked" {
+function buildTone(hud: HudSnapshot, type: BuildingId): "ready" | "active" | "locked" {
   if (hud.buildArmed === type) return "active";
   const b = BUILDINGS[type];
-  if (b === undefined || hud.phase !== "playing") return "locked";
+  if (hud.phase !== "playing") return "locked";
   return (b.cost.gold ?? 0) <= hud.gold && (b.cost.lumber ?? 0) <= hud.lumber ? "ready" : "locked";
 }
 
-function researchTone(hud: HudSnapshot, id: string): "ready" | "locked" {
+function researchTone(hud: HudSnapshot, id: UpgradeId): "ready" | "locked" {
   const up = UPGRADES[id];
-  if (up === undefined || hud.phase !== "playing" || !hud.hasBarracks) return "locked";
+  if (hud.phase !== "playing" || !hud.hasBarracks) return "locked";
   const rank = id === "weapons" ? hud.weaponsRank : hud.armorRank;
   const have = id === "weapons" ? hud.weaponsHave : hud.armorHave;
   if (have >= up.maxRank || have > rank) return "locked";
@@ -259,8 +259,8 @@ function researchTone(hud: HudSnapshot, id: string): "ready" | "locked" {
   return (c.gold ?? 0) <= hud.gold && (c.lumber ?? 0) <= hud.lumber ? "ready" : "locked";
 }
 
-function researchFoot(hud: HudSnapshot, id: string): string {
-  const up = UPGRADES[id]!;
+function researchFoot(hud: HudSnapshot, id: UpgradeId): string {
+  const up = UPGRADES[id];
   const rank = id === "weapons" ? hud.weaponsRank : hud.armorRank;
   const have = id === "weapons" ? hud.weaponsHave : hud.armorHave;
   if (have >= up.maxRank) return "max";
@@ -318,7 +318,7 @@ function CommandBoard() {
   const hud = useHud();
   const { commands } = useGame();
   const [tip, setTip] = useState<Tip | null>(null);
-  const barracksFoot = (id: string) => (hud.hasBarracks ? costFoot(TRAINABLE[id]!.cost.gold, TRAINABLE[id]!.cost.lumber) : "locked");
+  const barracksFoot = (id: TrainableId) => (hud.hasBarracks ? costFoot(TRAINABLE[id].cost.gold, TRAINABLE[id].cost.lumber) : "locked");
 
   return (
     <KitPanel material="leather" tint="#4a2c19" cut="chamfer" depth={10} padding="9px" className="ec-board">
@@ -339,27 +339,27 @@ function CommandBoard() {
         </KitPanel>
       ) : null}
       <div className="ec-board-grid">
-        <Slot icon="peasant" hotkey="1" foot={costFoot(TRAINABLE.peasant!.cost.gold)} tone={trainTone(hud, "peasant")} setTip={setTip} onClick={() => commands.run("train.peasant", {})}
-          tip={{ title: "Train Peasant", desc: "Worker — mines gold, cuts lumber, and raises buildings.", chips: costChips(TRAINABLE.peasant!.cost.gold, TRAINABLE.peasant!.cost.lumber) }} />
+        <Slot icon="peasant" hotkey="1" foot={costFoot(TRAINABLE.peasant.cost.gold)} tone={trainTone(hud, "peasant")} setTip={setTip} onClick={() => commands.run("train.peasant", {})}
+          tip={{ title: "Train Peasant", desc: "Worker — mines gold, cuts lumber, and raises buildings.", chips: costChips(TRAINABLE.peasant.cost.gold, TRAINABLE.peasant.cost.lumber) }} />
         <Slot icon="footman" hotkey="2" foot={barracksFoot("footman")} tone={trainTone(hud, "footman")} setTip={setTip} onClick={() => commands.run("train.footman", {})}
-          tip={{ title: "Train Footman", desc: "Frontline screen. Deals 50% more damage to armored Reavers; holds raiders away from rifles. Requires a Barracks.", chips: costChips(TRAINABLE.footman!.cost.gold, TRAINABLE.footman!.cost.lumber) }} />
+          tip={{ title: "Train Footman", desc: "Frontline screen. Deals 50% more damage to armored Reavers; holds raiders away from rifles. Requires a Barracks.", chips: costChips(TRAINABLE.footman.cost.gold, TRAINABLE.footman.cost.lumber) }} />
         <Slot icon="rifleman" hotkey="3" foot={barracksFoot("rifleman")} tone={trainTone(hud, "rifleman")} setTip={setTip} onClick={() => commands.run("train.rifleman", {})}
-          tip={{ title: "Train Rifleman", desc: "Full firepower beyond 3m; weak at close range and against armored Reavers. Strong against the warcamp. Requires a Barracks.", chips: costChips(TRAINABLE.rifleman!.cost.gold, TRAINABLE.rifleman!.cost.lumber) }} />
+          tip={{ title: "Train Rifleman", desc: "Full firepower beyond 3m; weak at close range and against armored Reavers. Strong against the warcamp. Requires a Barracks.", chips: costChips(TRAINABLE.rifleman.cost.gold, TRAINABLE.rifleman.cost.lumber) }} />
         <Slot icon="attackMove" hotkey="R" tone={hud.phase === "playing" ? (hud.attackMoveArmed ? "active" : "ready") : "locked"} setTip={setTip} onClick={() => commands.run("unit.attackMove", {})}
           tip={{ title: "Attack-Move", desc: "Arm, then right-click a destination — the group fights anything it meets on the way.", chips: [] }} />
 
-        <Slot icon="barracks" hotkey="B" foot={costFoot(BUILDINGS.barracks!.cost.gold, BUILDINGS.barracks!.cost.lumber)} tone={buildTone(hud, "barracks")} setTip={setTip} onClick={() => commands.run("build.arm", { type: "barracks" })}
-          tip={{ title: "Build Barracks", desc: "Unlocks Footman & Rifleman and enables research.", chips: costChips(BUILDINGS.barracks!.cost.gold, BUILDINGS.barracks!.cost.lumber) }} />
-        <Slot icon="farm" hotkey="G" foot={costFoot(BUILDINGS.farm!.cost.gold, BUILDINGS.farm!.cost.lumber)} tone={buildTone(hud, "farm")} setTip={setTip} onClick={() => commands.run("build.arm", { type: "farm" })}
-          tip={{ title: "Build Farm", desc: `Raises your food (supply) cap by ${BUILDINGS.farm!.supply}.`, chips: [...costChips(BUILDINGS.farm!.cost.gold, BUILDINGS.farm!.cost.lumber), { icon: "food", text: `+${BUILDINGS.farm!.supply}` }] }} />
-        <Slot icon="tower" hotkey="T" foot={costFoot(BUILDINGS.guard_tower!.cost.gold, BUILDINGS.guard_tower!.cost.lumber)} tone={buildTone(hud, "guard_tower")} setTip={setTip} onClick={() => commands.run("build.arm", { type: "guard_tower" })}
-          tip={{ title: "Build Guard Tower", desc: "Auto-fires on Marauders that stray into range.", chips: costChips(BUILDINGS.guard_tower!.cost.gold, BUILDINGS.guard_tower!.cost.lumber) }} />
+        <Slot icon="barracks" hotkey="B" foot={costFoot(BUILDINGS.barracks.cost.gold, BUILDINGS.barracks.cost.lumber)} tone={buildTone(hud, "barracks")} setTip={setTip} onClick={() => commands.run("build.arm", { type: "barracks" })}
+          tip={{ title: "Build Barracks", desc: "Unlocks Footman & Rifleman and enables research.", chips: costChips(BUILDINGS.barracks.cost.gold, BUILDINGS.barracks.cost.lumber) }} />
+        <Slot icon="farm" hotkey="G" foot={costFoot(BUILDINGS.farm.cost.gold, BUILDINGS.farm.cost.lumber)} tone={buildTone(hud, "farm")} setTip={setTip} onClick={() => commands.run("build.arm", { type: "farm" })}
+          tip={{ title: "Build Farm", desc: `Raises your food (supply) cap by ${BUILDINGS.farm.supply}.`, chips: [...costChips(BUILDINGS.farm.cost.gold, BUILDINGS.farm.cost.lumber), { icon: "food", text: `+${BUILDINGS.farm.supply}` }] }} />
+        <Slot icon="tower" hotkey="T" foot={costFoot(BUILDINGS.guard_tower.cost.gold, BUILDINGS.guard_tower.cost.lumber)} tone={buildTone(hud, "guard_tower")} setTip={setTip} onClick={() => commands.run("build.arm", { type: "guard_tower" })}
+          tip={{ title: "Build Guard Tower", desc: "Auto-fires on Marauders that stray into range.", chips: costChips(BUILDINGS.guard_tower.cost.gold, BUILDINGS.guard_tower.cost.lumber) }} />
         <Slot icon="rally" hotkey="F" tone={hud.phase === "playing" ? (hud.rallyArmed ? "active" : "ready") : "locked"} setTip={setTip} onClick={() => commands.run("unit.rally", {})} tip={{ title: "Rally Point", desc: "Arm, then right-click where new recruits should gather.", chips: [] }} />
 
         <Slot icon="weapons" hotkey="Z" badge={hud.weaponsRank > 0 ? String(hud.weaponsRank) : undefined} foot={researchFoot(hud, "weapons")} tone={researchTone(hud, "weapons")} setTip={setTip} onClick={() => commands.run("research.weapons", {})}
-          tip={{ title: `${UPGRADES.weapons!.label} — L${hud.weaponsRank}/${UPGRADES.weapons!.maxRank}`, desc: `+${WEAPON_DMG_PER_RANK} damage to your whole army per rank.`, chips: costChips(UPGRADES.weapons!.cost(hud.weaponsRank).gold, UPGRADES.weapons!.cost(hud.weaponsRank).lumber) }} />
+          tip={{ title: `${UPGRADES.weapons.label} — L${hud.weaponsRank}/${UPGRADES.weapons.maxRank}`, desc: `+${WEAPON_DMG_PER_RANK} damage to your whole army per rank.`, chips: costChips(UPGRADES.weapons.cost(hud.weaponsRank).gold, UPGRADES.weapons.cost(hud.weaponsRank).lumber) }} />
         <Slot icon="armor" hotkey="X" badge={hud.armorRank > 0 ? String(hud.armorRank) : undefined} foot={researchFoot(hud, "armor")} tone={researchTone(hud, "armor")} setTip={setTip} onClick={() => commands.run("research.armor", {})}
-          tip={{ title: `${UPGRADES.armor!.label} — L${hud.armorRank}/${UPGRADES.armor!.maxRank}`, desc: `−${ARMOR_REDUCE_PER_RANK} damage taken by your whole army per rank.`, chips: costChips(UPGRADES.armor!.cost(hud.armorRank).gold, UPGRADES.armor!.cost(hud.armorRank).lumber) }} />
+          tip={{ title: `${UPGRADES.armor.label} — L${hud.armorRank}/${UPGRADES.armor.maxRank}`, desc: `−${ARMOR_REDUCE_PER_RANK} damage taken by your whole army per rank.`, chips: costChips(UPGRADES.armor.cost(hud.armorRank).gold, UPGRADES.armor.cost(hud.armorRank).lumber) }} />
         <ActSlot act={hud.heroActs.find((entry) => entry.id === "thunderclap")} setTip={setTip} />
         <Slot icon="hold" hotkey="V" tone={hud.phase === "playing" ? "ready" : "locked"} setTip={setTip} onClick={() => commands.run("unit.hold", {})} tip={{ title: "Hold Army", desc: "All combat troops stop and attack only enemies within weapon reach. Workers keep harvesting.", chips: [] }} />
 
@@ -380,7 +380,7 @@ function HeroCard() {
   const mana = useEntityStat("hero", "mana");
   const xp = useEntityStat("hero", "xp");
   const alive = hp !== null && hp.current > 0;
-  const dmg = (COMBATANTS.hero?.damage ?? 24) + (hud.heroLevel - 1) * HERO_DMG_PER_LEVEL + hud.weaponsRank * WEAPON_DMG_PER_RANK;
+  const dmg = COMBATANTS.hero.damage +(hud.heroLevel - 1) * HERO_DMG_PER_LEVEL + hud.weaponsRank * WEAPON_DMG_PER_RANK;
   const armor = hud.armorRank * ARMOR_REDUCE_PER_RANK;
   return (
     <div className="ec-hero">
@@ -406,7 +406,7 @@ function HeroCard() {
         <span className="ec-hero-stats">
           <span aria-label={`damage ${dmg}`}><GlyphIcon name="weapons" className="ec-hero-stat-glyph" />{dmg}</span>
           <span aria-label={`armor ${armor}`}><GlyphIcon name="shield" className="ec-hero-stat-glyph" />{armor}</span>
-          <span aria-label="walk speed"><GlyphIcon name="boots" className="ec-hero-stat-glyph" />{COMBATANTS.hero?.walkSpeed ?? 4.3}</span>
+          <span aria-label="walk speed"><GlyphIcon name="boots" className="ec-hero-stat-glyph" />{COMBATANTS.hero.walkSpeed}</span>
         </span>
       </span>
     </div>

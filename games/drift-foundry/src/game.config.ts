@@ -74,10 +74,11 @@ export const game = defineGame({
         run: ["startRun"],
       },
     },
-    probe: (ctx): Record<string, number> => {
+    // `car` is 0 before the car spawns, when the position reads as the origin.
+    probe: (ctx) => {
       const car = ctx.scene.entity.get(ctx.player.userId);
-      if (car === null) return {};
-      return { x: car.position[0], y: car.position[1], z: car.position[2] };
+      if (car === null) return { car: 0, x: 0, y: 0, z: 0 };
+      return { car: 1, x: car.position[0], y: car.position[1], z: car.position[2] };
     },
   },
   entityModels,

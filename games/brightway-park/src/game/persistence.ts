@@ -1,4 +1,5 @@
 import type { AgentSnapshot } from "@jgengine/core/agents/agent";
+import { isFiniteNumber, isRecord, typedRecord } from "@jgengine/core/data/untyped";
 import type { GameContext } from "@jgengine/core/runtime/gameContext";
 import type { ClockSnapshot } from "@jgengine/core/time/simClock";
 import type { RideSystemSnapshot } from "@jgengine/core/sim/rides";
@@ -6,7 +7,7 @@ import type { WorldModelState } from "@jgengine/core/worldModel/worldModel";
 import { rngStateOf, restoreRng } from "@jgengine/core/random/rng";
 
 import { syncAgentStates } from "./agents";
-import { BUILDABLES } from "./objects/catalog";
+import { findBuildable } from "./objects/catalog";
 import { GUEST_KINDS } from "./entities/guests/catalog";
 import { LOT, park, sizeOf } from "./park";
 import { spawnAll } from "./parkScene";
@@ -51,38 +52,48 @@ export interface ParkSave {
   playtime?: number;
 }
 
-const finite = (x: unknown): x is number => typeof x === "number" && Number.isFinite(x);
-const record = (x: unknown): x is Record<string, unknown> => typeof x === "object" && x !== null && !Array.isArray(x);
+const finite = isFiniteNumber;
+const record = isRecord;
 
 function validAgent(value: unknown): value is AgentSnapshot {
-  if (!record(value) || !record(value.needs) || !record(value.mood) || !record(value.brain) || !record(value.action)) return false;
-  const needs = value.needs;
-  if (!record(needs.values) || !Object.values(needs.values).every(finite)) return false;
-  if (!record(needs.rates) || !Object.values(needs.rates).every(finite)) return false;
-  if (!record(needs.modifiers) || !Object.values(needs.modifiers).every(finite)) return false;
-  if (typeof value.far !== "boolean") return false;
-  if (value.scheduleMark !== null && typeof value.scheduleMark !== "string") return false;
+  if (!record(value) || !record(value["mood"]) || !record(value["brain"]) || !record(value["action"])) return false;
+  const needs = value["needs"];
+  if (!record(needs)) return false;
+  if (typedRecord(needs["values"], finite) === null) return false;
+  if (typedRecord(needs["rates"], finite) === null) return false;
+  if (typedRecord(needs["modifiers"], finite) === null) return false;
+  if (typeof value["far"] !== "boolean") return false;
+  const mark = value["scheduleMark"];
+  if (mark !== null && typeof mark !== "string") return false;
   return true;
 }
 
 /** Every instance is a known kind on the lot, inside it, and on cells nothing else covers. */
 function validWorld(world: unknown): world is WorldModelState {
-  if (!record(world) || !finite(world.time) || !record(world.facts) || !Array.isArray(world.log)) return false;
-  for (const value of Object.values(world.facts)) {
+  if (!record(world) || !finite(world["time"]) || !Array.isArray(world["log"])) return false;
+  const facts = world["facts"];
+  if (!record(facts)) return false;
+  for (const value of Object.values(facts)) {
     if (typeof value === "number" ? !Number.isFinite(value) : typeof value !== "string" && typeof value !== "boolean") return false;
   }
-  if (world.instances === undefined) return true;
-  if (!record(world.instances)) return false;
+  const instances = world["instances"];
+  if (instances === undefined) return true;
+  if (!record(instances)) return false;
   const cells = new Set<string>();
-  for (const instance of Object.values(world.instances)) {
-    if (!record(instance) || typeof instance.kind !== "string" || !Object.hasOwn(BUILDABLES, instance.kind)) return false;
-    const cell = instance.cell;
-    if (!Array.isArray(cell) || cell.length !== 2 || !cell.every(Number.isInteger)) return false;
-    const n = sizeOf(BUILDABLES[instance.kind]!);
+  for (const instance of Object.values(instances)) {
+    if (!record(instance)) return false;
+    const kind = instance["kind"];
+    const buildable = typeof kind === "string" ? findBuildable(kind) : undefined;
+    if (buildable === undefined) return false;
+    const cell = instance["cell"];
+    if (!Array.isArray(cell) || cell.length !== 2) return false;
+    const [cellCol, cellRow]: unknown[] = cell;
+    if (!Number.isInteger(cellCol) || !Number.isInteger(cellRow) || !finite(cellCol) || !finite(cellRow)) return false;
+    const n = sizeOf(buildable);
     for (let i = 0; i < n; i += 1) {
       for (let j = 0; j < n; j += 1) {
-        const col = (cell[0] as number) + i;
-        const row = (cell[1] as number) + j;
+        const col = cellCol + i;
+        const row = cellRow + j;
         if (col < 0 || row < 0 || col >= LOT.cols || row >= LOT.rows || cells.has(`${col},${row}`)) return false;
         cells.add(`${col},${row}`);
       }
@@ -91,52 +102,98 @@ function validWorld(world: unknown): world is WorldModelState {
   return true;
 }
 
+function validClock(value: unknown): value is ClockSnapshot {
+  if (!record(value)) return false;
+  const now = value["now"];
+  const speed = value["playSpeed"];
+  return finite(now) && now >= 0 && typeof value["paused"] === "boolean" && (speed === 1 || speed === 2 || speed === 4) && value["timescale"] === 1;
+}
+
+const isPoint = (value: unknown): value is [number, number, number] =>
+  Array.isArray(value) && value.length === 3 && value.every(finite);
+
+function isGuestPhase(value: unknown): value is GuestPhase {
+  return GUEST_PHASES.some((phase) => phase === value);
+}
+
+/** A saved guest whose target, if any, is a structure the saved park still has. */
+function validGuest(value: unknown, structures: ReadonlySet<string>): value is GuestState {
+  if (!record(value)) return false;
+  const { id, kind, money, visits, busy, phase, targetId, target, agent } = value;
+  if (typeof id !== "string" || !GUEST_KINDS.some((known) => known === kind)) return false;
+  if (!finite(money) || !finite(visits) || !finite(busy) || !isGuestPhase(phase)) return false;
+  if (targetId !== null && (typeof targetId !== "string" || !structures.has(targetId))) return false;
+  if (target !== null && !isPoint(target)) return false;
+  return validAgent(agent);
+}
+
+/** A saved janitor posted at a structure the saved park still has. */
+function validStaff(value: unknown, structures: ReadonlySet<string>): value is StaffState {
+  if (!record(value)) return false;
+  const { id, postId, agent } = value;
+  return typeof id === "string" && typeof postId === "string" && structures.has(postId) && validAgent(agent);
+}
+
+function validRides(value: unknown): value is RideSystemSnapshot {
+  return record(value) && Array.isArray(value["rides"]);
+}
+
+/** The random stream's saved seed: a 32-bit integer, or null when the save kept none. */
+function readSeed(value: unknown): number | null | undefined {
+  if (value === undefined || value === null) return null;
+  return typeof value === "number" && Number.isInteger(value) && value >= -0x80000000 && value <= 0x7fffffff ? value : undefined;
+}
+
 /** Validate before touching the live scene. Unreadable saves stay intact; a pre-v4 park is unreadable. */
 export function decodeSave(raw: string): ParkSave | null {
   try {
-    const s = JSON.parse(raw) as Record<string, unknown>;
-    if (s.version !== 4 || !validWorld(s.world)) return null;
-    const world = s.world;
+    const s: unknown = JSON.parse(raw);
+    if (!record(s) || s["version"] !== 4) return null;
+    const world = s["world"];
+    if (!validWorld(world)) return null;
     const ids = new Set(Object.keys(world.instances ?? {}));
-    const clock = s.clock as ClockSnapshot | undefined;
-    if (!record(clock) || !finite(clock.now) || clock.now < 0 || typeof clock.paused !== "boolean" || ![1, 2, 4].includes(clock.playSpeed) || clock.timescale !== 1) return null;
-    if (s.rng !== undefined && s.rng !== null && (!Number.isInteger(s.rng) || (s.rng as number) < -0x80000000 || (s.rng as number) > 0x7fffffff)) return null;
-    if (!record(s.sim) || !finite(s.sim.guestSeq) || !finite(s.sim.spawnAcc)) return null;
-    if (!Array.isArray(s.guests) || !Array.isArray(s.staff)) return null;
+    const clock = s["clock"];
+    if (!validClock(clock)) return null;
+    const rng = readSeed(s["rng"]);
+    if (rng === undefined) return null;
+    const sim = s["sim"];
+    if (!record(sim)) return null;
+    const { guestSeq, spawnAcc } = sim;
+    if (!finite(guestSeq) || !finite(spawnAcc)) return null;
+    const savedGuests = s["guests"];
+    const savedStaff = s["staff"];
+    if (!Array.isArray(savedGuests) || !Array.isArray(savedStaff)) return null;
     const guests: ParkSave["guests"] = [];
     const guestIds = new Set<string>();
-    for (const entry of s.guests) {
-      if (!record(entry) || !record(entry.state)) return null;
-      const state = entry.state as unknown as GuestState;
-      const position = entry.position;
-      if (typeof state.id !== "string" || guestIds.has(state.id) || !GUEST_KINDS.includes(state.kind)) return null;
-      if (![state.money, state.visits, state.busy].every(finite)) return null;
-      if (!GUEST_PHASES.includes(state.phase as GuestPhase) || (state.targetId !== null && !ids.has(state.targetId))) return null;
-      if (!validAgent(state.agent)) return null;
-      if (!Array.isArray(position) || position.length !== 3 || !position.every(finite)) return null;
-      if (state.target !== null && (!Array.isArray(state.target) || state.target.length !== 3 || !state.target.every(finite))) return null;
+    for (const entry of savedGuests) {
+      if (!record(entry)) return null;
+      const state = entry["state"];
+      const position = entry["position"];
+      if (!validGuest(state, ids) || guestIds.has(state.id) || !isPoint(position)) return null;
       guestIds.add(state.id);
-      guests.push({ state: { ...state, targetUntil: finite(state.targetUntil) ? state.targetUntil : 0 }, position: position as [number, number, number] });
+      guests.push({ state: { ...state, targetUntil: finite(state.targetUntil) ? state.targetUntil : 0 }, position });
     }
     const staff: StaffState[] = [];
-    for (const entry of s.staff as StaffState[]) {
-      if (!record(entry) || typeof entry.id !== "string" || typeof entry.postId !== "string" || !validAgent(entry.agent)) return null;
-      if (!ids.has(entry.postId)) return null;
+    for (const entry of savedStaff) {
+      if (!validStaff(entry, ids)) return null;
       staff.push(entry);
     }
-    const rides = record(s.rides) && Array.isArray(s.rides.rides) ? (s.rides as unknown as RideSystemSnapshot) : null;
+    const rides = s["rides"];
+    const parkName = s["parkName"];
+    const thumbnail = s["thumbnail"];
+    const playtime = s["playtime"];
     return {
       version: 4,
       world,
       guests,
       staff,
       clock,
-      rng: (s.rng as number | null | undefined) ?? null,
-      rides,
-      sim: { guestSeq: s.sim.guestSeq, spawnAcc: s.sim.spawnAcc },
-      ...(typeof s.parkName === "string" ? { parkName: s.parkName } : {}),
-      ...(typeof s.thumbnail === "string" ? { thumbnail: s.thumbnail } : {}),
-      ...(finite(s.playtime) ? { playtime: s.playtime } : {}),
+      rng,
+      rides: validRides(rides) ? rides : null,
+      sim: { guestSeq, spawnAcc },
+      ...(typeof parkName === "string" ? { parkName } : {}),
+      ...(typeof thumbnail === "string" ? { thumbnail } : {}),
+      ...(finite(playtime) ? { playtime } : {}),
     };
   } catch {
     return null;

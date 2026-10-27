@@ -9,7 +9,7 @@ import { park } from "./park";
  * that accepted the action (or the day/milestone event), so a cue never fires for a rejected click.
  * Synth patches need no asset files and keep to a light, music-box palette.
  */
-export const BRIGHTWAY_SOUNDS: Record<string, SoundDef> = {
+export const BRIGHTWAY_SOUNDS = {
   // A ride or stall set down on the grass: a soft wooden plop with a little air.
   place: {
     id: "place",
@@ -135,7 +135,7 @@ export const BRIGHTWAY_SOUNDS: Record<string, SoundDef> = {
       ],
     },
   },
-};
+} satisfies Record<string, SoundDef>;
 
 /** Loudness of the sea bed while the park is open and running. */
 const SEA_GAIN = 0.3;

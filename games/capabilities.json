@@ -9686,6 +9686,16 @@
       "intent": "gate content behind unlock conditions the player earns"
     },
     {
+      "id": "untyped-read",
+      "packages": [
+        "@jgengine/core"
+      ],
+      "module": "@jgengine/core/data/untyped",
+      "gameFacing": false,
+      "probe": null,
+      "intent": "narrow parsed JSON, old saves and other unknown values to records and typed maps without casts"
+    },
+    {
       "id": "upgrade-options",
       "packages": [
         "@jgengine/core"

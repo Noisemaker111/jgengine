@@ -11,7 +11,7 @@ import { enemyDrawn, refreshSight, sightRadiusFor, type SightSource } from "./fo
 import { holdFormation } from "./formations";
 import { heroLevel } from "./hero";
 import { heroActViews, carriedHeroPicks, pendingHeroOffer, tickHero } from "./heroActs";
-import { BUILDINGS, combatantDef } from "./catalog";
+import { buildingDef, combatantDef } from "./catalog";
 import { BUILD_CONFIG, type BuildSpec } from "./building";
 import { hudStore } from "./hudStore";
 import { TRAINING_CONFIG } from "./production";
@@ -161,7 +161,7 @@ function raiseBuilding(ctx: GameContext, spec: BuildSpec): void {
     leash: 0,
     attackCooldown: 0,
   });
-  const supply = BUILDINGS[spec.type]?.supply;
+  const supply = buildingDef(spec.type)?.supply;
   if (supply !== undefined) session.supplyCap += supply;
 }
 

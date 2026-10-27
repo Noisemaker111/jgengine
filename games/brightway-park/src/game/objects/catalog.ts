@@ -73,7 +73,7 @@ export interface BuildableDef {
   /** Scenery: how far its charm reaches, in metres, and how much it adds to each ride in reach. */
   theme?: { radius: number; bonus: number };
   /** A model from the engine's asset library instead of the park's own authored GLB. */
-  libraryModel?: { id: string; height?: number };
+  libraryModel?: { id: string; height?: number } | undefined;
 }
 
 /** What a hired person does on patrol. */
@@ -271,8 +271,13 @@ for (const def of Object.values(BUILDABLES)) {
   }
 }
 
+/** The buildable `id` names, or undefined for an id the park does not know (an old save, a typo). */
+export function findBuildable(id: string): BuildableDef | undefined {
+  return BUILDABLES[id];
+}
+
 export function buildableDef(id: string): BuildableDef {
-  const def = BUILDABLES[id];
+  const def = findBuildable(id);
   if (def === undefined) throw new Error(`brightway-park: unknown buildable "${id}"`);
   return def;
 }

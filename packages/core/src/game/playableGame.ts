@@ -326,7 +326,7 @@ export interface ModelConfig {  url: string;
   /** How the model registers on its placement point. `"center"` (default) horizontally centers the measured footprint on the point and ground-snaps its lowest vertex to the point's Y — the correct behavior for corner-pivot modular kits. `"origin"` renders at the raw GLB origin (legacy). */
   anchor?: "center" | "origin";
   /** Measured footprint/center/minY; supplied automatically when the model resolves through an `@jgengine/assets` catalog. Required for `anchor: "center"` to take effect. */
-  dims?: ModelDims;
+  dims?: ModelDims | undefined;
   /** Opt-in compact collision mesh from the asset index; when present, collider auto-fit raycasts the actual triangles, so shots pass through holes in concave models (torus, archway) instead of hitting the fitted box. Supplied automatically for opted-in catalog assets. */
   collisionMesh?: CollisionMeshData;
   /** Per-entity PBR tint/finish override (#151.3); cloned onto each `MeshStandardMaterial` in the model so shared GLTF caches stay untouched. */

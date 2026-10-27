@@ -9,7 +9,7 @@ import { useGameContext } from "@jgengine/react/provider";
 import { relativeSavedAt, useSaveSlots } from "@jgengine/core/save/saveSlots.view";
 import { useSettings } from "@jgengine/core/settings/settings.view";
 import { SettingsSection, SettingsTabs } from "@jgengine/core/settings/settingsBlocks.view";
-import type { SaveSlotMeta } from "@jgengine/core/save/saveSlots";
+import { slotText, type SaveSlotMeta } from "@jgengine/core/save/saveSlots";
 import { creditsForSourceIds } from "@jgengine/assets/credits";
 import { mergeCredits } from "@jgengine/core/menu/credits";
 
@@ -138,9 +138,9 @@ function orderLine(campaign: CampaignReadout | null): { eyebrow: string; title: 
 
 /** One kept record's line: mission, stores, playtime and when it was written. */
 function RecordFacts({ slot }: { slot: SaveSlotMeta }) {
-  const mission = typeof slot.meta.mission === "string" ? slot.meta.mission : null;
-  const stores = typeof slot.meta.stores === "string" ? slot.meta.stores : null;
-  const playtime = typeof slot.meta.playtime === "string" ? slot.meta.playtime : null;
+  const mission = slotText(slot, "mission");
+  const stores = slotText(slot, "stores");
+  const playtime = slotText(slot, "playtime");
   return (
     <span className="ec-record-facts">
       {mission === null ? null : <span><GameIcon name="flag" size={13} /> {mission}</span>}
@@ -151,7 +151,7 @@ function RecordFacts({ slot }: { slot: SaveSlotMeta }) {
 }
 
 function thumbOf(slot: SaveSlotMeta): string | null {
-  return typeof slot.meta.thumbnail === "string" && slot.meta.thumbnail.length > 0 ? slot.meta.thumbnail : null;
+  return slotText(slot, "thumbnail");
 }
 
 /** Take command: the last record's dispatch, or the order the track offers when nothing is kept. */

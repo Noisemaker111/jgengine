@@ -10,7 +10,7 @@ import { useGameContext } from "@jgengine/react/provider";
 import { useSaveSlots } from "@jgengine/core/save/saveSlots.view";
 import { useStore } from "@jgengine/react/store";
 import { EntityPreview } from "@jgengine/core/render/EntityPreview.draw";
-import type { SaveSlotMeta } from "@jgengine/core/save/saveSlots";
+import { slotText, type SaveSlotMeta } from "@jgengine/core/save/saveSlots";
 import { creditsForSourceIds } from "@jgengine/assets/credits";
 import { mergeCredits } from "@jgengine/core/menu/credits";
 
@@ -171,16 +171,16 @@ function PorchTitle({ preferences, onPreference, whileLoading }: Prefs & { while
     if (active === "continue") {
       const saved = recent === null ? null : readOrbitSave(undefined, recent.id).save;
       const member = saved === null ? null : workingMember(saved.household);
-      const thumb = recent?.meta.thumbnail;
+      const thumb = recent === null ? null : slotText(recent, "thumbnail");
       if (recent === null || saved === null) {
         return <div className="orbit-note-body" data-continue-shift=""><h2>Nobody lives here yet</h2><p>{session.saveStatus === "damaged" ? "The saved household is unreadable. Moving in replaces it." : session.saveStatus === "unavailable" ? "This browser cannot keep a household." : "Move a household in, work a shift, then save from the handbook."}</p></div>;
       }
       return (
         <div className="orbit-note-body" data-continue-shift="">
-          <PortraitFrame thumb={typeof thumb === "string" ? thumb : null} />
+          <PortraitFrame thumb={thumb} />
           <h2>{recent.name ?? orbitSlotLabel(recent.id)}</h2>
           <div className="orbit-stamps">
-            <Stamp icon="hourglass" text={String(recent.meta.day ?? "")} />
+            <Stamp icon="hourglass" text={String(recent.meta["day"] ?? "")} />
             <Stamp icon="coin" text={`${saved.household.credits}`} />
             <Stamp icon="bread" text={`${saved.household.pantry}`} />
           </div>
@@ -293,13 +293,13 @@ function PortraitFrame({ thumb }: { thumb: string | null }): ReactNode {
 }
 
 function Polaroid({ slot, tilt, onOpen, onNew, onClear }: { slot: SaveSlotMeta; tilt: number; onOpen: () => void; onNew: () => void; onClear: () => void }): ReactNode {
-  const thumb = slot.meta.thumbnail;
+  const thumb = slotText(slot, "thumbnail");
   return (
     <div className="orbit-polaroid" style={{ rotate: `${tilt}deg` }}>
       <KitPanel material="paper" cut="box" padding="8px 8px 10px" edge="#6b4c3a" edgeWidth={1}>
-        <span className="orbit-polaroid-shot">{typeof thumb === "string" ? <img src={thumb} alt="" /> : <GameIcon name={slot.empty ? "key" : "eye"} size={26} />}</span>
+        <span className="orbit-polaroid-shot">{thumb !== null ? <img src={thumb} alt="" /> : <GameIcon name={slot.empty ? "key" : "eye"} size={26} />}</span>
         <strong>{slot.empty ? orbitSlotLabel(slot.id) : (slot.name ?? orbitSlotLabel(slot.id))}</strong>
-        <small>{slot.empty ? "Empty rooms" : `${slot.meta.day ?? ""} · ${slot.meta.credits ?? ""}`}</small>
+        <small>{slot.empty ? "Empty rooms" : `${slot.meta["day"] ?? ""} · ${slot.meta["credits"] ?? ""}`}</small>
         <span className="orbit-polaroid-actions">
           {slot.empty
             ? <Enamel as="button" tone="pink" radius={10} padding="4px 10px" onClick={onNew}>Move in</Enamel>

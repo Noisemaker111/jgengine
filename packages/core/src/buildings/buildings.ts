@@ -169,8 +169,8 @@ export interface BuildingSurfaceMaterial {
    * `bayWidth`. Default 1.
    */
   repeat?: number | readonly [number, number];
-  roughness?: number;
-  metalness?: number;
+  roughness?: number | undefined;
+  metalness?: number | undefined;
 }
 
 /** What a building part kind is painted with: a hex colour, or a colour plus tiled PBR maps. */

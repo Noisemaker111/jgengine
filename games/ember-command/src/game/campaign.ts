@@ -84,7 +84,10 @@ function withKeepFail(def: MissionDef): MissionDef {
 function withFailMessages(def: MissionDef, messages: Readonly<Record<string, string>>): MissionDef {
   return {
     ...def,
-    fail: (def.fail ?? []).map((state) => messages[state.id] === undefined ? state : { ...state, message: messages[state.id] }),
+    fail: (def.fail ?? []).map((state) => {
+      const message = messages[state.id];
+      return message === undefined ? state : { ...state, message };
+    }),
   };
 }
 

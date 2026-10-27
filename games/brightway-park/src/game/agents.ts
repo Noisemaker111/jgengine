@@ -101,10 +101,7 @@ export function createGuestAgent(
 ): Agent {
   const agent = createAgent({
       id,
-      needs: GUEST_NEEDS.map((need) => ({
-        ...need,
-        start: randomized ? (need.start ?? 0) + (rng() - 0.5) * 20 : need.start,
-      })),
+      needs: GUEST_NEEDS.map((need) => (randomized ? { ...need, start: (need.start ?? 0) + (rng() - 0.5) * 20 } : need)),
       options: GUEST_OPTIONS,
       mood: {
         tiers: GUEST_MOOD_TIERS,

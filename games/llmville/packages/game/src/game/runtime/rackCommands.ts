@@ -6,8 +6,8 @@ import {
   writePlacedObject,
   type PlacedRackObject,
 } from "@llmville/game/datacenter/placedObjects";
+import { isRecord } from "@jgengine/core/data/untyped";
 import {
-  isRecord,
   readNonNegativeInteger,
   readString,
 } from "@llmville/game/game/runtime/commandInput";

@@ -1,5 +1,5 @@
 import { createElement, useEffect, useRef, useState, type CSSProperties, type ReactNode, type Ref } from "react";
-import type { SaveSlotMeta } from "@jgengine/core/save/saveSlots";
+import { slotText, type SaveSlotMeta } from "@jgengine/core/save/saveSlots";
 import { GameCursor } from "@jgengine/core/ui/cursor.view";
 import { KitButton, KitPanel } from "@jgengine/core/ui/kit/uiKitRoot.view";
 import { kitCutPath } from "@jgengine/core/ui/kit/kitFrame.view";
@@ -205,12 +205,12 @@ export function ContinueTag({ slot, bayLabel, active, onContinue }: { slot: Save
         </span>
       ) : (
         <span className="hh-tag-body" {...nav.containerProps}>
-          <Snapshot src={typeof slot.meta.thumbnail === "string" ? slot.meta.thumbnail : null} />
+          <Snapshot src={slotText(slot, "thumbnail")} />
           <span className="hh-tag-fields">
             <span className="hh-tag-name">{slot.name ?? "Courier"}</span>
             <span className="hh-tag-row"><small>Bay</small><b>{bayLabel}</b></span>
-            <span className="hh-tag-row"><small>On the road</small><b>{String(slot.meta.playtime ?? "0m")}</b></span>
-            <span className="hh-tag-row"><small>Parcels</small><b>{String(slot.meta.parcels ?? 0)}</b></span>
+            <span className="hh-tag-row"><small>On the road</small><b>{String(slot.meta["playtime"] ?? "0m")}</b></span>
+            <span className="hh-tag-row"><small>Parcels</small><b>{String(slot.meta["parcels"] ?? 0)}</b></span>
             <StampButton data-harbor-continue="" {...navItem(nav.itemProps("go"))} onClick={onContinue}>Pick it up</StampButton>
           </span>
         </span>
@@ -340,13 +340,13 @@ export function BayTags({ bays, labels, active, onLoad, onNew, onClear }: {
         >
           <i className="hh-tag-hole" aria-hidden="true" />
           <span className="hh-tag-head"><span>Bay {index + 1}</span><b>{labels[bay.id] ?? bay.id}</b></span>
-          <Snapshot src={typeof bay.meta.thumbnail === "string" ? bay.meta.thumbnail : null} />
+          <Snapshot src={slotText(bay, "thumbnail")} />
           {bay.empty ? (
             <span className="hh-bay-empty">Empty bay</span>
           ) : (
             <span className="hh-bay-info">
               <b>{bay.name ?? "Courier"}</b>
-              <small>{String(bay.meta.playtime ?? "0m")} · {String(bay.meta.parcels ?? 0)} parcels</small>
+              <small>{String(bay.meta["playtime"] ?? "0m")} · {String(bay.meta["parcels"] ?? 0)} parcels</small>
             </span>
           )}
           <span className="hh-bay-verb" style={VERB_CUT}>{bay.empty ? "Start here" : "Load"}</span>
