@@ -5,14 +5,14 @@
 ## @jgengine/convex
 
 - `ConvexBackend` (type): type ConvexBackend<TPresenceRow = unknown, TPresenceLocation = unknown, TGameId extends string = string> = LiveGameBackend<TPresenceRow, TPresenceLocation, TGameId> & { leaderboard: ConvexLeaderboardReads; } — ⚠ undocumented
-- `ConvexBackendOptions` (type): type ConvexBackendOptions<TRawPresenceRow extends { actorExternalId: string }, TPresenceRow> = { client: ConvexReactClient; gameId: string; userId: string; api?: ConvexGameApi; poseTuning?: PoseSyncTuning; presence?: { functions: ConvexPresenceFunctions; mapRow: (row: TRawPresenceRow) => TPresenceRo… — ⚠ undocumented
+- `ConvexBackendOptions` (type): type ConvexBackendOptions<TRawPresenceRow extends { actorExternalId: string }, TPresenceRow> = { client: ConvexReactClient; gameId: string; userId: string; api?: ConvexGameApi | undefined; poseTuning?: PoseSyncTuning | undefined; presence?: { functions: ConvexPresenceFunctions; mapRow: (row: TRawPre… — ⚠ undocumented
 - `ConvexChatFunctions` (interface): interface ConvexChatFunctions { messages: FunctionReference<"query">; sendMessage: FunctionReference<"mutation"> } — ⚠ undocumented · used by `createConvexChatTransport`: Wires a game's Convex chat functions into the engine's ChatTransport contract: one live query per subscribed channel (the channel's recent h…
-- `ConvexGameApi` (type): type ConvexGameApi = { runtime: { joinServer: FunctionReference< "mutation", "public", { gameId: string; serverId?: string; mode?: string; visibility?: "public" | "private"; joinCode?: string; externalId?: string; sessionId?: string; }, JoinServerOutcome >; leaveServer: FunctionReference<"mutation",… — ⚠ undocumented
+- `ConvexGameApi` (type): type ConvexGameApi = { runtime: { joinServer: FunctionReference< "mutation", "public", { gameId: string; serverId?: string | undefined; mode?: string; visibility?: "public" | "private"; joinCode?: string; externalId?: string | undefined; sessionId?: string; }, JoinServerOutcome >; leaveServer: Funct… — ⚠ undocumented
 - `ConvexGameClient` (type): type ConvexGameClient = Pick<ConvexReactClient, "mutation" | "watchQuery"> — Structural client seam avoids requiring the engine and game to share a class instance type.
 - `ConvexGameTransportConfig` (type): type ConvexGameTransportConfig = { gameId: string; userId?: string; } — ⚠ undocumented
 - `ConvexLeaderboardReads` (type): type ConvexLeaderboardReads = ReturnType<typeof createConvexLeaderboardReads> — ⚠ undocumented
 - `ConvexPresenceFunctions` (interface): interface ConvexPresenceFunctions — The Convex functions a **game** supplies for a world it owns: presence keyed by the game's own ids, including which residents exist while offline, which is game content and has no engine analogue. Not satisfied by `createPresenceFunctions` (`@jgengine/convex/server`) — that is the pose lane of a hosted `jgGameServers` server, backing `PresenceSync` rather than `PresenceTransport`.
-- `ConvexRunCommandArgs` (type): type ConvexRunCommandArgs = RunCommandArgs & { externalId?: string; /** * How much of the server to hydrate before applying the command. Overrides whatever the * {@link CommandDef} declares through its own `scope`; omit both to hydrate the whole world. */ scope?: LoadSnapshotScope; /** * Trusted hos… — Arguments of the `runCommand` mutation, and of the equivalent {@link GameServerHelpers.runCommand} helper.
+- `ConvexRunCommandArgs` (type): type ConvexRunCommandArgs = RunCommandArgs & { externalId?: string | undefined; /** * How much of the server to hydrate before applying the command. Overrides whatever the * {@link CommandDef} declares through its own `scope`; omit both to hydrate the whole world. */ scope?: LoadSnapshotScope; /** *… — Arguments of the `runCommand` mutation, and of the equivalent {@link GameServerHelpers.runCommand} helper.
 - `ConvexSaveBackendOptions` (interface): interface ConvexSaveBackendOptions — Config for {@link createConvexSaveBackend} — the Convex client, optional function refs (defaults to the `saves.*` convention), and an optional key `namespace`.
 - `ConvexSaveFunctions` (interface): interface ConvexSaveFunctions — The three Convex functions a save backend calls — a `query` that returns the stored string (or `null`) and two `mutation`s. Point them at your app's own module, or lean on the default `saves.*` convention.
 - `DEFAULT_CONVEX_POSE_RULES` (const): const DEFAULT_CONVEX_POSE_RULES: PoseSyncRules — ⚠ undocumented
@@ -87,13 +87,13 @@
 ## @jgengine/convex/createConvexBackend
 
 - `ConvexBackend` (type): type ConvexBackend<TPresenceRow = unknown, TPresenceLocation = unknown, TGameId extends string = string> = LiveGameBackend<TPresenceRow, TPresenceLocation, TGameId> & { leaderboard: ConvexLeaderboardReads; } — ⚠ undocumented
-- `ConvexBackendOptions` (type): type ConvexBackendOptions<TRawPresenceRow extends { actorExternalId: string }, TPresenceRow> = { client: ConvexReactClient; gameId: string; userId: string; api?: ConvexGameApi; poseTuning?: PoseSyncTuning; presence?: { functions: ConvexPresenceFunctions; mapRow: (row: TRawPresenceRow) => TPresenceRo… — ⚠ undocumented
+- `ConvexBackendOptions` (type): type ConvexBackendOptions<TRawPresenceRow extends { actorExternalId: string }, TPresenceRow> = { client: ConvexReactClient; gameId: string; userId: string; api?: ConvexGameApi | undefined; poseTuning?: PoseSyncTuning | undefined; presence?: { functions: ConvexPresenceFunctions; mapRow: (row: TRawPre… — ⚠ undocumented
 - `ConvexLeaderboardReads` (type): type ConvexLeaderboardReads = ReturnType<typeof createConvexLeaderboardReads> — ⚠ undocumented
 - `createConvexBackend` (function): function createConvexBackend<TRawPresenceRow extends { actorExternalId: string } = { actorExternalId: string }, TPresenceRow = unknown, TPresenceLocation = unknown, TGameId extends string = string>(options: ConvexBackendOptions<TRawPresenceRow, TPresenceRow>): ConvexBackend<TPresenceRow, TPresenceLo… — ⚠ undocumented
 
 ## @jgengine/convex/createConvexGameTransport
 
-- `ConvexGameApi` (type): type ConvexGameApi = { runtime: { joinServer: FunctionReference< "mutation", "public", { gameId: string; serverId?: string; mode?: string; visibility?: "public" | "private"; joinCode?: string; externalId?: string; sessionId?: string; }, JoinServerOutcome >; leaveServer: FunctionReference<"mutation",… — ⚠ undocumented
+- `ConvexGameApi` (type): type ConvexGameApi = { runtime: { joinServer: FunctionReference< "mutation", "public", { gameId: string; serverId?: string | undefined; mode?: string; visibility?: "public" | "private"; joinCode?: string; externalId?: string | undefined; sessionId?: string; }, JoinServerOutcome >; leaveServer: Funct… — ⚠ undocumented
 - `ConvexGameClient` (type): type ConvexGameClient = Pick<ConvexReactClient, "mutation" | "watchQuery"> — Structural client seam avoids requiring the engine and game to share a class instance type.
 - `ConvexGameTransportConfig` (type): type ConvexGameTransportConfig = { gameId: string; userId?: string; } — ⚠ undocumented
 - `createConvexChatSync` (function): function createConvexChatSync(client: ConvexGameClient, api: ConvexGameApi, config: ConvexGameTransportConfig, serverId: string): ChatSync — ⚠ undocumented
@@ -123,7 +123,7 @@
 
 ## @jgengine/convex/server
 
-- `ConvexRunCommandArgs` (type): type ConvexRunCommandArgs = RunCommandArgs & { externalId?: string; /** * How much of the server to hydrate before applying the command. Overrides whatever the * {@link CommandDef} declares through its own `scope`; omit both to hydrate the whole world. */ scope?: LoadSnapshotScope; /** * Trusted hos… — Arguments of the `runCommand` mutation, and of the equivalent {@link GameServerHelpers.runCommand} helper.
+- `ConvexRunCommandArgs` (type): type ConvexRunCommandArgs = RunCommandArgs & { externalId?: string | undefined; /** * How much of the server to hydrate before applying the command. Overrides whatever the * {@link CommandDef} declares through its own `scope`; omit both to hydrate the whole world. */ scope?: LoadSnapshotScope; /** *… — Arguments of the `runCommand` mutation, and of the equivalent {@link GameServerHelpers.runCommand} helper.
 - `DEFAULT_CONVEX_POSE_RULES` (const): const DEFAULT_CONVEX_POSE_RULES: PoseSyncRules — ⚠ undocumented
 - `DEFAULT_MAX_SERVERS_PER_TICK` (const): const DEFAULT_MAX_SERVERS_PER_TICK: 32 — How many running servers one `tickActiveServers` transaction may hydrate, tick, and persist.
 - `EnsureJoinedOutcome` (type): type EnsureJoinedOutcome = | { ok: true; serverId: GenericId<"jgGameServers">; isNew: boolean } | { ok: false; reason: "full" | "closed" | "unauthorized" } — Outcome of a join: the server joined and whether the player's profile was created, or why it was refused.
@@ -200,7 +200,7 @@
 - `createFeedWriteGate` (function): function createFeedWriteGate(allowedActions: readonly string[] = []): FeedWriteGate — ⚠ undocumented
 - `createLocalVoiceTransport` (function): function createLocalVoiceTransport(options?: { userId?: string }): { transport: VoiceTransport; participants(channelId: string): readonly VoiceParticipant[]; } — ⚠ undocumented
 - `createPoseSyncGate` (function): function createPoseSyncGate(tuning: PoseSyncTuning = DEFAULT_POSE_SYNC_TUNING): PoseSyncGate — ⚠ undocumented
-- `createPushToTalk` (function): function createPushToTalk(config?: { mode?: PushToTalkMode; onChange?: (transmitting: boolean) => void; }): PushToTalk — ⚠ undocumented
+- `createPushToTalk` (function): function createPushToTalk(config?: { mode?: PushToTalkMode | undefined; onChange?: (transmitting: boolean) => void; }): PushToTalk — ⚠ undocumented
 - `findByJoinCode` (function): function findByJoinCode(listings: readonly SessionListing[], code: string): SessionListing | null — ⚠ undocumented
 - `fromRuntimeObjectRow` (function): function fromRuntimeObjectRow(row: RuntimeObjectRow): SceneObject — Inverse of {@link toRuntimeObjectRow}: rebuild the live placed object a host persisted.
 - `normalizeJoinCode` (function): function normalizeJoinCode(code: string): string — ⚠ undocumented
@@ -319,7 +319,7 @@
 - `ActivePresenceResolution` (interface): interface ActivePresenceResolution<T> { active: T | null; extras: T[] } — ⚠ undocumented
 - `DEFAULT_POSE_SYNC_RULES` (const): const DEFAULT_POSE_SYNC_RULES: PoseSyncRules — Canonical client-authoritative pose-sync tuning shared by every host transport (WS, Convex).
 - `DEFAULT_SPAWN_ORIGIN` (const): const DEFAULT_SPAWN_ORIGIN: { readonly x: 0; readonly y: 0; readonly z: 0; } — ⚠ undocumented
-- `IncomingPose` (interface): interface IncomingPose { position: {x: number; z: number; y?: number}; rotationY?: number; rotationPitch?: number; appearance?: Record<string, string> } — ⚠ undocumented
+- `IncomingPose` (interface): interface IncomingPose { position: {x: number; z: number; y?: number}; rotationY?: number; rotationPitch?: number | undefined; appearance?: Record<string, string> } — ⚠ undocumented
 - `PoseSyncDecision` (interface): interface PoseSyncDecision { position: {x: number; y: number; z: number}; rotationY: number; rotationPitch: number; appearance?: Record<string, string> | undefined; changed: boolean; refreshKeepAlive: boolean } — ⚠ undocumented
 - `PoseSyncRules` (interface): interface PoseSyncRules { maxSpeed: number; minIntervalMs?: number; maxVerticalOffset: number; floorY?: number; minElapsedSec: number; maxElapsedSec: number; keepAliveRefreshMs: number } — ⚠ undocumented · used by `DEFAULT_POSE_SYNC_RULES`: Canonical client-authoritative pose-sync tuning shared by every host transport (WS, Convex).
 - `PresencePoseState` (interface): interface PresencePoseState { position: {x: number; y: number; z: number}; rotationY: number; rotationPitch?: number; lastSeenAtMs?: number; appearance?: Record<string, string> | undefined } — ⚠ undocumented
@@ -354,7 +354,7 @@
 - `VoiceRoute` (interface): interface VoiceRoute { fromUserId: string; channelId: string; gain: number } — ⚠ undocumented
 - `VoiceTransport` (interface): interface VoiceTransport — Signaling seam for voice: who is in a channel and which media stream descriptor they published. The media plane (WebRTC, SFU, or anything else that moves audio bytes) stays behind this seam, host-supplied — the engine never touches it. subscribers delivers the channel roster on every change, starting with the current roster.
 - `createLocalVoiceTransport` (function): function createLocalVoiceTransport(options?: { userId?: string }): { transport: VoiceTransport; participants(channelId: string): readonly VoiceParticipant[]; } — ⚠ undocumented
-- `createPushToTalk` (function): function createPushToTalk(config?: { mode?: PushToTalkMode; onChange?: (transmitting: boolean) => void; }): PushToTalk — ⚠ undocumented
+- `createPushToTalk` (function): function createPushToTalk(config?: { mode?: PushToTalkMode | undefined; onChange?: (transmitting: boolean) => void; }): PushToTalk — ⚠ undocumented
 
 ## @jgengine/core/runtime/worldProjection
 

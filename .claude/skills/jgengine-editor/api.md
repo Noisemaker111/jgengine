@@ -519,7 +519,7 @@
 - `createBlankPlayable` (function): function createBlankPlayable(options: BlankPlayableOptions = {}): PlayableGame — Builds a minimal gameless `PlayableGame` — a flat world plus an asset catalog — for the editor to mount over.
 - `createDefaultAgentEndpoint` (function): function createDefaultAgentEndpoint(config: AgentEndpointConfig = resolveAgentEndpointConfig()): AgentEndpoint — Picks HTTP endpoint when `JGENGINE_EDITOR_AGENT_URL` (or config.url) is set, otherwise the offline local agent.
 - `createEditorUiStore` (function): function createEditorUiStore(): EditorUiStore — Creates the shared UI store the editor chrome and viewport both drive.
-- `createHttpAgentEndpoint` (function): function createHttpAgentEndpoint(config: { url: string; apiKey?: string; fetchImpl?: typeof fetch; }): AgentEndpoint — HTTP POST agent endpoint: `{ messages, context, tools }` → `{ message?, toolCalls? }`. Bearer auth from `apiKey` when provided (`JGENGINE_EDITOR_AGENT_KEY` / `ANTHROPIC_API_KEY`).
+- `createHttpAgentEndpoint` (function): function createHttpAgentEndpoint(config: { url: string; apiKey?: string | undefined; fetchImpl?: typeof fetch; }): AgentEndpoint — HTTP POST agent endpoint: `{ messages, context, tools }` → `{ message?, toolCalls? }`. Bearer auth from `apiKey` when provided (`JGENGINE_EDITOR_AGENT_KEY` / `ANTHROPIC_API_KEY`).
 - `downloadSaver` (function): function downloadSaver(filename = "editor.scene.json"): EditorSaveFn — A save fn that hands the scene JSON back to the browser as a downloaded file — the exit path when no dev server is listening.
 - `installEditorHost` (function): function installEditorHost(api: EditorHostApi): () => void — Publishes an editor host globally so devtools and MCP agents can reach it; returns a cleanup fn.
 - `newPlacementId` (function): function newPlacementId(prefix: string): string — Generates a fresh scene-object id for a placement tool click.
@@ -588,7 +588,7 @@
 
 ## @jgengine/editor/SimulationInspector
 
-- `SimulationInspector` (function): function SimulationInspector({ session, creatorPolicy }: { session: EditorSession; creatorPolicy?: CreatorPolicy }): React.JSX.Element — Production authoring controls share the same validated command and undo history as RPC.
+- `SimulationInspector` (function): function SimulationInspector({ session, creatorPolicy }: { session: EditorSession; creatorPolicy?: CreatorPolicy | undefined }): React.JSX.Element — Production authoring controls share the same validated command and undo history as RPC.
 
 ## @jgengine/editor/StandaloneEditor
 
@@ -634,7 +634,7 @@
 - `EDITOR_AGENT_KEY_FALLBACK_ENV` (const): const EDITOR_AGENT_KEY_FALLBACK_ENV: "ANTHROPIC_API_KEY" — Fallback API-key env when `JGENGINE_EDITOR_AGENT_KEY` is unset (`ANTHROPIC_API_KEY`).
 - `EDITOR_AGENT_URL_ENV` (const): const EDITOR_AGENT_URL_ENV: "JGENGINE_EDITOR_AGENT_URL" — Env var name for the remote agent HTTP URL (`JGENGINE_EDITOR_AGENT_URL`).
 - `createDefaultAgentEndpoint` (function): function createDefaultAgentEndpoint(config: AgentEndpointConfig = resolveAgentEndpointConfig()): AgentEndpoint — Picks HTTP endpoint when `JGENGINE_EDITOR_AGENT_URL` (or config.url) is set, otherwise the offline local agent.
-- `createHttpAgentEndpoint` (function): function createHttpAgentEndpoint(config: { url: string; apiKey?: string; fetchImpl?: typeof fetch; }): AgentEndpoint — HTTP POST agent endpoint: `{ messages, context, tools }` → `{ message?, toolCalls? }`. Bearer auth from `apiKey` when provided (`JGENGINE_EDITOR_AGENT_KEY` / `ANTHROPIC_API_KEY`).
+- `createHttpAgentEndpoint` (function): function createHttpAgentEndpoint(config: { url: string; apiKey?: string | undefined; fetchImpl?: typeof fetch; }): AgentEndpoint — HTTP POST agent endpoint: `{ messages, context, tools }` → `{ message?, toolCalls? }`. Bearer auth from `apiKey` when provided (`JGENGINE_EDITOR_AGENT_KEY` / `ANTHROPIC_API_KEY`).
 - `resolveAgentEndpointConfig` (function): function resolveAgentEndpointConfig(env: Record<string, string | undefined> = readProcessEnv()): AgentEndpointConfig — Reads agent endpoint config from an env map. Prefer `JGENGINE_EDITOR_AGENT_URL` + `JGENGINE_EDITOR_AGENT_KEY` (falls back to `ANTHROPIC_API_KEY`). Empty URL → local offline agent; set the URL for a remote model/tool-call backend.
 
 ## @jgengine/editor/agent/toolBridge

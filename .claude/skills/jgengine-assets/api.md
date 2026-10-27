@@ -263,7 +263,7 @@
 ## @jgengine/assets/download
 
 - `DEFAULT_RELEASE_BASE` (const): const DEFAULT_RELEASE_BASE: "https://github.com/Noisemaker111/jgengine/releases/download/packs" — Default asset mirror: this repo's own GitHub Releases, reachable from every cloud sandbox without network-policy changes (github.com is on the default allowlist). Assets live on the rolling `packs` release, one flat zip per pack named `<provider>-<packId>.zip`, kept in sync with the source catalog by `.github/workflows/mirror-assets.yml` — adding a catalog entry is the whole publishing step. Override the chain with `--mirror` / `JGENGINE_ASSETS_MIRROR`, or disable this hop with `JGENGINE_ASSETS_NO_DEFAULT_MIRROR=1`.
-- `DownloadPackOptions` (interface): interface DownloadPackOptions { mirrorBase?: string; fetchImpl?: FetchLike } — ⚠ undocumented
+- `DownloadPackOptions` (interface): interface DownloadPackOptions { mirrorBase?: string | undefined; fetchImpl?: FetchLike } — ⚠ undocumented
 - `DownloadPackResult` (interface): interface DownloadPackResult { archive: Uint8Array; url: string; attempted: readonly string[] } — ⚠ undocumented
 - `ExtractedGlb` (interface): interface ExtractedGlb { file: string; bytes: Uint8Array } — ⚠ undocumented
 - `ExtractedPack` (interface): interface ExtractedPack — What `extractGlbs` pulls out of a pack archive: the models plus the textures they reference.
