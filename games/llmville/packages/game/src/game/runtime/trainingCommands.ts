@@ -6,8 +6,8 @@ import {
   listPlacedObjects,
   type PlacedRackObject,
 } from "@llmville/game/datacenter/placedObjects";
+import { isRecord } from "@jgengine/core/data/untyped";
 import {
-  isRecord,
   readFiniteNumber,
   readString,
   readStringArray,

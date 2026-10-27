@@ -435,7 +435,7 @@
 
 - `isFiniteNumber` (function): function isFiniteNumber(value: unknown): value is number — True for a number that is not NaN or infinite.
 - `isRecord` (function): function isRecord(value: unknown): value is Readonly<Record<string, unknown>> — Reading a value whose shape is not known yet: parsed JSON, a save from an older build, a message off the wire. Narrow it with these instead of casting, read its fields with brackets, and build the typed value from the pieces that checked out.
-- `recordOf` (function): function recordOf<T>(value: unknown, entry: (item: unknown) => item is T): Record<string, T> | null — `value` as a map whose every entry passes `entry`, or `null` when it is not an object or any entry fails. A saved `{ id: score }` table reads back as `recordOf(saved, isFiniteNumber)`.
+- `typedRecord` (function): function typedRecord<T>(value: unknown, entry: (item: unknown) => item is T): Record<string, T> | null — `value` as a map whose every entry passes `entry`, or `null` when it is not an object or any entry fails. A saved `{ id: score }` table reads back as `typedRecord(saved, isFiniteNumber)`.
 
 ## @jgengine/core/data/withField
 
