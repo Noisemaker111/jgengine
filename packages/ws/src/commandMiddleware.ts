@@ -30,8 +30,8 @@ export type CommandCatalog = Record<string, CommandCatalogEntry>;
 export type CommandAuthorize = (args: {
   userId: string;
   op: HostCommandOp;
-  serverId?: string;
-  command?: string;
+  serverId?: string | undefined;
+  command?: string | undefined;
 }) => boolean | Promise<boolean>;
 
 /** A composable per-connection/per-op sliding-window rate limiter. */
@@ -79,8 +79,8 @@ export function validateCommandInput(
 /** Config for {@link createCommandMiddleware}: the same `limits`/`authorize`/`validate` fields accepted by `HostRouterOptions`. */
 export type CommandMiddlewareOptions = {
   limits?: CommandLimits;
-  authorize?: CommandAuthorize;
-  validate?: CommandCatalog;
+  authorize?: CommandAuthorize | undefined;
+  validate?: CommandCatalog | undefined;
 };
 
 /** One op attempt to run through the middleware pipeline: which connection, which op, and (for `runCommand`) the command name/input. */
@@ -89,7 +89,7 @@ export type CommandGateArgs = {
   userId: string;
   op: HostCommandOp;
   atMs: number;
-  serverId?: string;
+  serverId?: string | undefined;
   command?: string;
   input?: unknown;
 };

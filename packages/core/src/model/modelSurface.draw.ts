@@ -118,7 +118,7 @@ function surfaceOnBeforeCompile(this: THREE.Material, shader: THREE.WebGLProgram
   }
   const level = materialSurfaceLevel(this);
   if (level === "off") return;
-  shader.uniforms.jgSurfStrength = strengthUniform;
+  shader.uniforms["jgSurfStrength"] = strengthUniform;
   shader.vertexShader = shader.vertexShader
     .replace("#include <common>", `#include <common>${VERTEX_PARS}`)
     .replace("#include <skinning_vertex>", VERTEX_MAIN);

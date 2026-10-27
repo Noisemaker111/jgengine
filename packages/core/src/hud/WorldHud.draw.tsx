@@ -82,7 +82,7 @@ export function WorldEntityBars({
 }: {
   statId: string;
   height?: number;
-  roles?: readonly CatalogEntityRole[];
+  roles?: readonly CatalogEntityRole[] | undefined;
   resolveRole?: (entity: SceneEntity) => CatalogEntityRole | undefined;
   /** Hide bars beyond this camera distance in world units. Unset derives the range from the camera and the target height. */
   maxDistance?: number;
@@ -169,7 +169,7 @@ export function WorldEntityBars({
 export interface WorldNameplatesProps {
   statId?: string;
   height?: number;
-  roles?: readonly CatalogEntityRole[];
+  roles?: readonly CatalogEntityRole[] | undefined;
   resolveRole?: (entity: SceneEntity) => CatalogEntityRole | undefined;
   /** Hide nameplates beyond this camera distance in world units. Unset derives the range from the camera and the plate height. */
   maxDistance?: number;

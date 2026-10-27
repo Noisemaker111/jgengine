@@ -144,7 +144,7 @@ function writeUiPanelDocument(id: string, panel: EditorUiPanelLayout): boolean {
 
 function panelLayoutSnapshot(
   placement: HudPlacement,
-  extras?: { width?: number; height?: number; visible?: boolean; type?: string },
+  extras?: { width?: number | undefined; height?: number | undefined; visible?: boolean; type?: string | undefined },
 ): EditorUiPanelLayout {
   return {
     anchor: placement.anchor,
@@ -196,7 +196,7 @@ export function installAgentBridge(options: {
         };
       case "debug_open": {
         if (!devtoolsEnabled) return { ok: false, error: "devtools disabled for this game" };
-        const open = typeof request.open === "boolean" ? request.open : !isDevtoolsOpen();
+        const open = typeof request["open"] === "boolean" ? request["open"] : !isDevtoolsOpen();
         setDevtoolsOpen(open);
         return { ok: true, open };
       }
@@ -204,7 +204,7 @@ export function installAgentBridge(options: {
       case "debug_snapshot": {
         const ctx = getContext();
         const lean = buildLeanReport(playable);
-        if (method === "debug_summary" || request.detail === "summary") {
+        if (method === "debug_summary" || request["detail"] === "summary") {
           const entities = ctx === null ? null : ctx.scene.entity.ids().length;
           return { ok: true, summary: { ...summarizeLeanReport(lean, entities), player: playerPoseReport(ctx) } };
         }
@@ -217,12 +217,12 @@ export function installAgentBridge(options: {
       case "time_scale": {
         const ctx = getContext();
         if (ctx === null) return { ok: false, error: "no game context yet" };
-        return applyTimeScale(ctx, request.scale);
+        return applyTimeScale(ctx, request["scale"]);
       }
       case "camera_heading": {
         const ctx = getContext();
         if (ctx === null) return { ok: false, error: "no game context yet" };
-        const yaw = request.yaw;
+        const yaw = request["yaw"];
         if (typeof yaw !== "number" || !Number.isFinite(yaw)) return { ok: false, error: "camera_heading needs { yaw } in radians" };
         ctx.camera.turnTo(yaw);
         return { ok: true, yaw };
@@ -239,7 +239,7 @@ export function installAgentBridge(options: {
         return moved === null ? { ok: false, error: "no local player entity yet" } : { ok: true, entity: moved };
       }
       case "sim_advance": {
-        const seconds = request.seconds;
+        const seconds = request["seconds"];
         if (typeof seconds !== "number" || !Number.isFinite(seconds) || seconds <= 0 || seconds > 120) {
           return { ok: false, error: "sim_advance needs { seconds } in (0, 120]" };
         }
@@ -252,12 +252,12 @@ export function installAgentBridge(options: {
       case "notice_push": {
         const ctx = getContext();
         if (ctx === null) return { ok: false, error: "no game context yet" };
-        const tone = request.tone;
-        if (typeof request.text !== "string" || (tone !== undefined && tone !== "info" && tone !== "success" && tone !== "warn" && tone !== "deny")) {
+        const tone = request["tone"];
+        if (typeof request["text"] !== "string" || (tone !== undefined && tone !== "info" && tone !== "success" && tone !== "warn" && tone !== "deny")) {
           return { ok: false, error: "notice_push needs { text, tone?: info|success|warn|deny, ttlMs? }" };
         }
-        const ttlMs = typeof request.ttlMs === "number" && request.ttlMs > 0 ? request.ttlMs : undefined;
-        const notice = ctx.game.notices.push({ text: request.text, ...(tone === undefined ? {} : { tone }), ...(ttlMs === undefined ? {} : { ttlMs }) });
+        const ttlMs = typeof request["ttlMs"] === "number" && request["ttlMs"] > 0 ? request["ttlMs"] : undefined;
+        const notice = ctx.game.notices.push({ text: request["text"], ...(tone === undefined ? {} : { tone }), ...(ttlMs === undefined ? {} : { ttlMs }) });
         return { ok: true, id: notice.id, count: notice.count };
       }
       case "notice_list": {
@@ -268,8 +268,8 @@ export function installAgentBridge(options: {
       case "run_command": {
         const ctx = getContext();
         if (ctx === null) return { ok: false, error: "no game context yet" };
-        if (typeof request.name !== "string") return { ok: false, error: "run_command needs { name, input? }" };
-        const result = ctx.game.commands.run(request.name, request.input ?? {});
+        if (typeof request["name"] !== "string") return { ok: false, error: "run_command needs { name, input? }" };
+        const result = ctx.game.commands.run(request["name"], request["input"] ?? {});
         return result.status === "rejected"
           ? { ok: true, status: result.status, reason: result.reason, ...(result.message === undefined ? {} : { message: result.message }) }
           : { ok: true, status: result.status };
@@ -283,17 +283,17 @@ export function installAgentBridge(options: {
       case "canvas_state":
         return { ok: true, layouts: canvasPanels() };
       case "canvas_set_editing": {
-        const editing = request.editing === true;
+        const editing = request["editing"] === true;
         const layouts = listActiveHudLayouts();
         if (layouts.length === 0) return { ok: false, error: "no HudCanvas mounted" };
         for (const layout of layouts) layout.setEditing(editing);
         return { ok: true, editing };
       }
       case "canvas_move_panel": {
-        const id = typeof request.id === "string" ? request.id : "";
-        const anchor = request.anchor;
-        const dx = typeof request.dx === "number" ? request.dx : 0;
-        const dy = typeof request.dy === "number" ? request.dy : 0;
+        const id = typeof request["id"] === "string" ? request["id"] : "";
+        const anchor = request["anchor"];
+        const dx = typeof request["dx"] === "number" ? request["dx"] : 0;
+        const dy = typeof request["dy"] === "number" ? request["dy"] : 0;
         if (id === "" || !isHudAnchor(anchor)) {
           return { ok: false, error: "canvas_move_panel needs { id, anchor } (dx/dy optional px offsets)" };
         }
@@ -328,7 +328,7 @@ export function installAgentBridge(options: {
         return { ok: false, error: `no HUD panel "${id}" — canvas_state lists ids` };
       }
       case "canvas_resize_panel": {
-        const id = typeof request.id === "string" ? request.id : "";
+        const id = typeof request["id"] === "string" ? request["id"] : "";
         if (id === "") {
           return { ok: false, error: "canvas_resize_panel needs { id, width?/height? or dw?/dh? }" };
         }
@@ -337,14 +337,14 @@ export function installAgentBridge(options: {
           if (existing === undefined) continue;
           const resize = resolvePanelResize(existing.type);
           const current = {
-            width: existing.width ?? (typeof request.width === "number" ? request.width : 100),
-            height: existing.height ?? (typeof request.height === "number" ? request.height : 40),
+            width: existing.width ?? (typeof request["width"] === "number" ? request["width"] : 100),
+            height: existing.height ?? (typeof request["height"] === "number" ? request["height"] : 40),
           };
           let next = current;
-          if (typeof request.width === "number" || typeof request.height === "number") {
+          if (typeof request["width"] === "number" || typeof request["height"] === "number") {
             const absolute = {
-              width: typeof request.width === "number" ? request.width : current.width,
-              height: typeof request.height === "number" ? request.height : current.height,
+              width: typeof request["width"] === "number" ? request["width"] : current.width,
+              height: typeof request["height"] === "number" ? request["height"] : current.height,
             };
             next = resizePanelSize(
               current,
@@ -353,8 +353,8 @@ export function installAgentBridge(options: {
               resize,
             );
           } else {
-            const dw = typeof request.dw === "number" ? request.dw : 0;
-            const dh = typeof request.dh === "number" ? request.dh : 0;
+            const dw = typeof request["dw"] === "number" ? request["dw"] : 0;
+            const dh = typeof request["dh"] === "number" ? request["dh"] : 0;
             next = resizePanelSize(current, { dw, dh }, resize.axes, resize);
           }
           layout.hydrate(
@@ -386,7 +386,7 @@ export function installAgentBridge(options: {
         return { ok: false, error: `no HUD panel "${id}" — canvas_state lists ids` };
       }
       case "canvas_cover": {
-        if (request.covered === true) {
+        if (request["covered"] === true) {
           coverRelease ??= canvasCover.hold();
           return { ok: true, covered: true, holders: canvasCover.holders() };
         }
@@ -409,7 +409,7 @@ export function installAgentBridge(options: {
           })),
         };
       case "canvas_reset": {
-        const id = typeof request.id === "string" ? request.id : undefined;
+        const id = typeof request["id"] === "string" ? request["id"] : undefined;
         const layouts = listActiveHudLayouts();
         if (layouts.length === 0) return { ok: false, error: "no HudCanvas mounted" };
         for (const layout of layouts) layout.reset(id);

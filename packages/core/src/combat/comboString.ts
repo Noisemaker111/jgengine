@@ -25,7 +25,7 @@ export interface AdvanceComboInput {
   currentStepId: string | null;
   requestedStepId: string;
   phases: readonly FramePhase[];
-  stance?: string;
+  stance?: string | undefined;
 }
 
 export type AdvanceComboResult =

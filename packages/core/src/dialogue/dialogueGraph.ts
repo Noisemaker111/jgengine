@@ -163,11 +163,11 @@ export interface DialogueGraphView {
   /** Current node id. */
   nodeId: string;
   /** Speaker name to display, or `undefined` for an unattributed line. */
-  speaker?: string;
+  speaker?: string | undefined;
   /** Speaker style tag the game skins on. */
-  speakerKind?: string;
+  speakerKind?: string | undefined;
   /** Portrait key/URL for the portrait slot, or `undefined` when none. */
-  portrait?: string;
+  portrait?: string | undefined;
   /** The current line text. */
   text: string;
   /** Branching responses at this node (empty at a terminal node). */

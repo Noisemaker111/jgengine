@@ -31,8 +31,8 @@ export interface LaneEdgeConfig {
   speed?: number;
   width?: number;
   /** Ids of the parallel lanes on either side, used for lane changes. */
-  left?: string;
-  right?: string;
+  left?: string | undefined;
+  right?: string | undefined;
   /** Arc positions, in metres, of parking spots on this lane. */
   parking?: readonly number[];
   /** Allowed as a traffic spawn point. */
@@ -227,7 +227,7 @@ function nodeKeyAt(point: Waypoint): string {
 }
 
 function joinNodes(
-  lanes: readonly { index: number; fromPoint: Waypoint; toPoint: Waypoint; from?: string; to?: string }[],
+  lanes: readonly { index: number; fromPoint: Waypoint; toPoint: Waypoint; from?: string | undefined; to?: string | undefined }[],
   explicit: ReadonlyMap<string, Waypoint>,
   joinRadius: number,
 ): { from: string[]; to: string[]; nodes: Map<string, NodeCluster> } {
@@ -327,8 +327,8 @@ function resolveLaneGraph(config: LaneGraphConfig): ResolvedLaneGraph {
     index: number;
     fromPoint: Waypoint;
     toPoint: Waypoint;
-    from?: string;
-    to?: string;
+    from?: string | undefined;
+    to?: string | undefined;
   }[] = [];
   const lanes: LaneSpan[] = [];
   config.lanes.forEach((lane, index) => {
@@ -591,7 +591,7 @@ function metaBoolean(meta: Record<string, unknown> | undefined, key: string): bo
 function pathSpeed(path: EditorPath, options: LaneGraphDocumentOptions): number {
   const declared = metaNumber(path.meta, "speed");
   if (declared !== undefined) return declared;
-  const level = path.meta?.level;
+  const level = path.meta?.["level"];
   const byLevel = options.speedByLevel ?? DEFAULT_SPEED_BY_LEVEL;
   if (typeof level === "string" && byLevel[level] !== undefined) return byLevel[level]!;
   return options.defaultSpeed ?? DEFAULT_SPEED;
@@ -700,13 +700,13 @@ function nearestLaneAt(
 }
 
 function signalFromMeta(meta: Record<string, unknown> | undefined): LaneSignalProgram | null {
-  const raw = meta?.signal;
+  const raw = meta?.["signal"];
   if (raw === undefined || raw === null || typeof raw !== "object") return null;
   const record = raw as Record<string, unknown>;
   const green = metaNumber(record, "greenSeconds") ?? metaNumber(record, "green") ?? 12;
   const yellow = metaNumber(record, "yellowSeconds") ?? metaNumber(record, "yellow") ?? 3;
   const allRed = metaNumber(record, "allRedSeconds") ?? metaNumber(record, "allRed");
-  const rawPhases = record.phases;
+  const rawPhases = record["phases"];
   let phases: string[][] | undefined;
   if (Array.isArray(rawPhases)) {
     phases = rawPhases.map((phase) => (Array.isArray(phase) ? phase.filter((entry): entry is string => typeof entry === "string") : []));
@@ -789,8 +789,8 @@ export function laneGraphFromDocument(
     const speed = pathSpeed(path, options);
     const entry = metaBoolean(path.meta, "entry") ?? false;
     const exit = metaBoolean(path.meta, "exit") ?? false;
-    const authoredParking = Array.isArray(path.meta?.parking)
-      ? path.meta.parking.filter((arc): arc is number => typeof arc === "number" && Number.isFinite(arc))
+    const authoredParking = Array.isArray(path.meta?.["parking"])
+      ? path.meta["parking"].filter((arc): arc is number => typeof arc === "number" && Number.isFinite(arc))
       : [];
     const arcsAt = cumulativeArcs(points);
     const pathLength = arcsAt[arcsAt.length - 1]!;
@@ -814,8 +814,8 @@ export function laneGraphFromDocument(
         push(index === 0 ? path.id : `${path.id}#${index + 1}`, run);
         if (split) return;
         const lane = lanes[lanes.length - 1]!;
-        lane.left = typeof path.meta?.left === "string" ? path.meta.left : undefined;
-        lane.right = typeof path.meta?.right === "string" ? path.meta.right : undefined;
+        lane.left = typeof path.meta?.["left"] === "string" ? path.meta["left"] : undefined;
+        lane.right = typeof path.meta?.["right"] === "string" ? path.meta["right"] : undefined;
       });
       continue;
     }
@@ -860,7 +860,7 @@ export function laneGraphFromDocument(
     const hit = nearestNode(preliminary, marker, joinRadius * 1.5);
     if (hit === null) continue;
     const signal = signalFromMeta(marker.meta) ?? (marker.kind === "traffic_signal" ? { greenSeconds: 12, yellowSeconds: 3 } : null);
-    const declaredKind = marker.meta?.rightOfWay;
+    const declaredKind = marker.meta?.["rightOfWay"];
     const stopLine = metaNumber(marker.meta, "stopLine");
     const offsetSeconds = metaNumber(marker.meta, "offsetSeconds");
     intersections.push({

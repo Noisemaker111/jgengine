@@ -23,7 +23,7 @@ export interface QuestCatalogIssue {
   message: string;
   path: string;
   questId?: string;
-  objectiveId?: string;
+  objectiveId?: string | undefined;
   referenceId?: string;
   relatedQuestIds?: string[];
   requirementIds?: string[];
@@ -38,7 +38,7 @@ export interface QuestCatalogValidationOptions {
   /** Check present references against caller catalogs; omitted means unchecked. */
   hasReference?(kind: QuestCatalogReferenceKind, id: string, context: {
     quest: QuestCatalogDefinition;
-    objective?: Readonly<QuestObjective>;
+    objective?: Readonly<QuestObjective> | undefined;
   }): boolean;
 }
 

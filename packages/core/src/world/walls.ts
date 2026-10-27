@@ -145,23 +145,23 @@ export function autoRoof(footprint: EnclosedFootprint, config: RoofConfig = {}):
   };
   const faces: WallVec3[][] = ridgeAlongX
     ? [
-        [corners.nw!, corners.ne!, r1, r0],
-        [corners.se!, corners.sw!, r0, r1],
+        [corners["nw"]!, corners["ne"]!, r1, r0],
+        [corners["se"]!, corners["sw"]!, r0, r1],
       ]
     : [
-        [corners.ne!, corners.se!, r1, r0],
-        [corners.sw!, corners.nw!, r0, r1],
+        [corners["ne"]!, corners["se"]!, r1, r0],
+        [corners["sw"]!, corners["nw"]!, r0, r1],
       ];
   if (style === "hip") {
     faces.push(
       ridgeAlongX
-        ? [corners.sw!, corners.nw!, r0]
-        : [corners.nw!, corners.ne!, r0],
+        ? [corners["sw"]!, corners["nw"]!, r0]
+        : [corners["nw"]!, corners["ne"]!, r0],
     );
     faces.push(
       ridgeAlongX
-        ? [corners.ne!, corners.se!, r1]
-        : [corners.se!, corners.sw!, r1],
+        ? [corners["ne"]!, corners["se"]!, r1]
+        : [corners["se"]!, corners["sw"]!, r1],
     );
   }
   return { style, ridge, apexHeight, eaveHeight, faces };

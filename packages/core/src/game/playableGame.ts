@@ -222,14 +222,14 @@ export interface ModelAnimationConfig {
   /** Seek the clip to this time in seconds; combine with `paused: true` to hold a specific pose ("pose library" usage). */
   time?: number;
   /** Speed-driven idle/walk/run clip switching, crossfaded by the shell from the entity's live movement; overrides `clip` while set. */
-  states?: ModelAnimationStates;
+  states?: ModelAnimationStates | undefined;
   /**
    * One-shot clips keyed by event name, each played once over the locomotion state then released back to it.
    * Reserved keys `hit` and `death` auto-fire on this entity's `combat.hitReaction` / `entity.died`; any other
    * key fires when the game emits `entity.animation` (`ctx.game.playEntityAnimation(instanceId, event)`). A
    * `string[]` picks a random variant per trigger. `death` clamps on its final frame instead of returning.
    */
-  oneShots?: Record<string, string | readonly string[]>;
+  oneShots?: Record<string, string | readonly string[]> | undefined;
   /**
    * A full animation graph (`@jgengine/core/anim/animGraph`) — layered state machine with blend trees, data
    * transitions, triggers, and clip events. Takes over from `states`/`oneShots` when set: the shell feeds the
@@ -237,7 +237,7 @@ export interface ModelAnimationConfig {
    * `ANIM_PARAMS_KEY`, arms triggers from `entity.animation` (`hit` and `death` from their combat events), and
    * emits `animation.event` for clip events. `locomotionGraph()` builds the default idle/walk/run graph.
    */
-  graph?: AnimGraph;
+  graph?: AnimGraph | undefined;
 }
 
 /**
@@ -251,7 +251,7 @@ export interface ModelMaterialMaps extends Partial<Record<MaterialTextureRole, s
 /** Per-entity PBR material override (#151.3) applied to every standard or physical material in the model's cloned scene graph. */
 export interface ModelMaterialOverride extends MaterialSurfaceParameters {
   /** Real PBR texture maps applied over the model's material — see {@link ModelMaterialMaps}. */
-  maps?: ModelMaterialMaps;
+  maps?: ModelMaterialMaps | undefined;
   /**
    * Fresnel rim light: a bright edge where the surface turns away from the viewer. This is what
    * separates an actor from ground of the same value — a body lit only by the scene's own key sits
@@ -341,8 +341,8 @@ export interface ModelConfig {  url: string;
    */
   wind?: ModelWindConfig | false;
   /** Reusable authored surfaces available to this model's named slot assignments. */
-  materialAssets?: readonly MaterialAsset[];  /** Sparse per-slot assignments; unselected imported materials keep their original appearance. */
-  materialAssignments?: readonly MaterialAssignment[];
+  materialAssets?: readonly MaterialAsset[] | undefined;  /** Sparse per-slot assignments; unselected imported materials keep their original appearance. */
+  materialAssignments?: readonly MaterialAssignment[] | undefined;
   /** Hide named visual subtrees on this instance before placement measurement. Exact runtime names or unique original imported names resolve without removing bones or changing the cached model; missing or ambiguous names warn and leave existing visibility unchanged. Malformed lists reject before model or texture allocation. Omit or pass [] to retain imported visibility. */
   hiddenNodes?: readonly string[];
   /** Shadow participation of every mesh in the model. Default `"both"` (casts and receives); `"none"` for foliage cards, decals, or viewmodels that must never shadow the world. */
@@ -385,7 +385,7 @@ export interface ModelConfig {  url: string;
    * the instanced draw path swaps levels; a single-instance placement always draws `url`. See
    * {@link ModelVariantLodConfig} and `core/world/modelLod`.
    */
-  variants?: ModelVariantLodConfig;
+  variants?: ModelVariantLodConfig | undefined;
 }
 
 /**
@@ -626,9 +626,9 @@ export interface PlayerMovementConfig {
    */
   collideObjects?: boolean;
   /** Heightfield collision span from feet, finite and positive; default 1.8 meters. Live growth waits for clear headroom. Capsule and voxel paths retain their own dimensions; model proportions and camera placement remain game-owned. */
-  collisionHeight?: number;
+  collisionHeight?: number | undefined;
   /** Tallest object ledge stepped up while walking (and largest drop still snapped down instead of falling). Default 0.4. */
-  stepHeight?: number;
+  stepHeight?: number | undefined;
   /** Intercepts each frame's resolved position before the pose commits (and before onTick): return a replacement [x,y,z] to constrain or redirect the step, or nothing to accept it. */
   beforeCommit?: (frame: MovementCommitFrame) => readonly [number, number, number] | undefined | void;
   /** Gates the built-in sprint (`runSpeedMultiplier`) behind live game state — a stamina stat, an encumbrance check (#282.3). Called each frame while sprint is held; `false` walks. */
@@ -641,7 +641,7 @@ export interface PlayerMovementConfig {
    * game sets one. The heightfield and physics-backed capsule paths share jump feel; a `collision.voxel`
    * body retains press-frame jumping with plain gravity. Tune against `measureMovement` (`@jgengine/core/movement/movementProbe`).
    */
-  feel?: MovementFeelConfig;
+  feel?: MovementFeelConfig | undefined;
   /** Radians/second the rendered body rotates toward its movement heading (shortest arc), so strafing/backpedalling read as a turn rather than an instant flip; also the rate the internally-integrated `turnLeft`/`turnRight` heading turns when the shell doesn't own yaw. Unset = body facing snaps instantly (no change to existing feel). */
   turnSpeed?: number;
   /** On-foot swimming when the terrain declares a `waterLevel` and the player is submerged: caps speed and floats them at the surface. `true` uses defaults; default off. */
@@ -653,7 +653,7 @@ export interface PlayerMovementConfig {
    * slides along a traversable X or Z axis and feet use the accepted ground. Finite, nonnegative;
    * omitted means unrestricted. Capsule, voxel and flight paths retain their own collision rules.
    */
-  maxClimbGrade?: number;
+  maxClimbGrade?: number | undefined;
   /**
    * Optional terrain-policy sampler for `maxClimbGrade`; defaults to the resolved ground sampler.
    * Use when grade rules follow a different terrain field (for example before road cuts). This
@@ -796,59 +796,59 @@ export interface PlayableGameContract<
   loop: Required<Omit<GameLoop<GameContext>, "onPlayerLeave">> & Pick<GameLoop<GameContext>, "onPlayerLeave">;
   GameUI: TUi;
   /** Which shell mount to use. Default `"3d"` (canvas, camera rig, pointer, world rendering). `"hud"` mounts no 3D canvas, camera rig, or pointer — the game is `GameUI` plus the command/input loop, for board/card/menu games. */
-  presentation?: "3d" | "hud";
+  presentation?: "3d" | "hud" | undefined;
   /** Optional canvas-layer VFX component (e.g. traveling projectiles); receives `{ ctx }` (#542) so overlay VFX read live engine state without a separate hook or a module-global workaround. */
-  WorldOverlay?: TOverlay;
+  WorldOverlay?: TOverlay | undefined;
   /** Replaces the default demo backdrop (ground + grid + rocks) with the game's own scene — ground, sky, structures. Camera, input, HUD, entity rendering, and the loop stay shell-provided; supply your world without forking the shell. When unset and `game.world` is an `environment()` descriptor, the shell auto-renders that world here — no manual wiring needed. */
-  environment?: TWorldOverlay | EnvironmentSource;
+  environment?: TWorldOverlay | EnvironmentSource | undefined;
   /** The game's authored scene document (`editor.scene.json`, normalized). When set, `defineGame` always mounts `AuthoredScene` over it (draped paths, scatter, studios, placed catalog props) — any `WorldOverlay` renders alongside it as VFX only — and the embedded editor opens it as its default layers: the zero-wiring path from document to play and edit modes. */
-  editorLayers?: EditorDocument;
+  editorLayers?: EditorDocument | undefined;
   /** Game-exported gameplay catalog definitions (schemas + defaults). `GameHost` forwards them to the summoned editor's Data panel; no per-game editor bootstrap needed. */
-  editorCatalogs?: readonly EditorCatalogDefinition[];
+  editorCatalogs?: readonly EditorCatalogDefinition[] | undefined;
   /** Custom first-person viewmodel (#542), read when the active rig is first-person. Rendered inside the shell's camera-locked, muzzle-tracked anchor in place of the built-in three-mesh gun; receives a live `cuesRef` (velocity/bob/firing/reloading/recoil) driven from the followed entity — see `@jgengine/core/camera/GameFirstPersonCamera.draw`'s `ViewmodelProps`. Set `camera.firstPerson.viewmodel: false` to render no viewmodel at all regardless of this field. */
-  viewmodel?: TViewmodel;
+  viewmodel?: TViewmodel | undefined;
   /** Per-entity visual override: return your own mesh for an entity and the shell still positions it and drives selection/targeting. Return null/undefined to fall back to model → sprite → primitive. */
-  renderEntity?: TRenderEntity;
+  renderEntity?: TRenderEntity | undefined;
   /** Per-object visual override: return your own mesh for a placed scene object and the shell still positions it and drives picking. Return null/undefined to fall back to objectModels → styled box. */
-  renderObject?: TRenderObject;
+  renderObject?: TRenderObject | undefined;
   /** Billboard sprites keyed by entity kind name; unmatched entities get primitive markers. */
-  entitySprites?: Record<string, EntitySpriteConfig>;
+  entitySprites?: Record<string, EntitySpriteConfig> | undefined;
   /** GLB models keyed by entity kind name; a string resolves as an asset-catalog key via game.assets, a ModelConfig renders directly. Takes priority over sprites, then primitives. */
-  entityModels?: Record<string, string | ModelConfig>;
+  entityModels?: Record<string, string | ModelConfig> | undefined;
   /** GLB models keyed by object catalog id; a string resolves via game.assets, a ModelConfig renders directly. Replaces the colored box when present. */
-  objectModels?: Record<string, string | ModelConfig>;
+  objectModels?: Record<string, string | ModelConfig> | undefined;
   /** Styling for the default colored-box object render, keyed by catalog id: color override, opacity (< 1 sets transparent), hidden (skips the mesh but keeps the positioning group + picking). */
-  objectStyles?: Record<string, ObjectStyle>;
+  objectStyles?: Record<string, ObjectStyle> | undefined;
   /** Optional scroll-selected hotbar index for primary ability (mouse0). */
-  hotbarSelection?: () => number;
+  hotbarSelection?: (() => number) | undefined;
   /** Positioned proximity prompts for the interact key + HUD; single source shared with useActivePrompt. */
-  prompts?: (ctx: GameContext) => readonly PositionedPrompt[];
+  prompts?: ((ctx: GameContext) => readonly PositionedPrompt[]) | undefined;
   /** Camera tuning (perspective, orbit, first-person) for the dev game player shell. */
   camera?: GameCameraConfig;
   /** Screenshot-host recipe for reaching live gameplay past a start menu (`shoot --mode play` runs `capture.play` automatically). Any game with a start/title screen declares this. */
-  capture?: GameCaptureConfig<TProbe>;
+  capture?: GameCaptureConfig<TProbe> | undefined;
   /** Cast/receive shadows across the scene (R3F Canvas shadow pass). Default true. */
-  shadows?: boolean;
+  shadows?: boolean | undefined;
   /** Per-quality renderer budgets; omitted tiers use {@link DEFAULT_GRAPHICS_PROFILES}. */
-  graphics?: Partial<Record<"low" | "medium" | "high", Partial<GraphicsProfile>>>;
+  graphics?: Partial<Record<"low" | "medium" | "high", Partial<GraphicsProfile>>> | undefined;
   /** Default painted finish on loaded models (normalized glTF params plus procedural mottling, wear and micro-normal, scaled by the graphics tier's `surfaceDetail`). Default true; `false` renders every model with its exported material. */
   surfaceDetail?: boolean;
   /** Pointer-driven input: click-to-move, box-select, right-click verbs, cursor aim (#22/#30/#31). */
-  pointer?: PointerConfig;
+  pointer?: PointerConfig | undefined;
   /** Touch controls on coarse-pointer devices. Unset derives a scheme from `input` (virtual joystick for movement actions, on-screen buttons for the rest); a config refines it with gestures and curated buttons; `false` opts out. */
-  touch?: TouchControlsConfig | false;
+  touch?: TouchControlsConfig | false | undefined;
   /** Gamepad stick deadzone, response curve and trigger deadzone the shell's pad poll applies before publishing analog values. Unset keeps the shell defaults (axial `0.12`/`0.95`, linear). */
-  gamepad?: GamepadFeelConfig;
+  gamepad?: GamepadFeelConfig | undefined;
   /** Local seats on this screen for couch co-op. With `maxSlots > 1` each extra pad hot-joins its own seat on its first button press, the shell calls `loop.onNewPlayer(ctx, { userId, isNew: true })` for it, and its input lands on `localPlayers(ctx).local(slotId).input` instead of `ctx.input`. Unset keeps one seat: every device drives `ctx.player`. */
-  localPlayers?: LocalPlayersConfig;
+  localPlayers?: LocalPlayersConfig | undefined;
   /** Split-screen for local seats (`localPlayers`): one viewport per joined seat, each following its own entity. The primary seat keeps the main camera rig; post-processing is skipped while more than one viewport is drawn. */
-  viewports?: ViewportsConfig;
+  viewports?: ViewportsConfig | undefined;
   /** Phone orientation contract. Legacy `"landscape"`/`"portrait"` stays advisory (a dismissible rotate hint). The object form `{ mobile: "landscape-required" }` is strict — the shell shows an engine-owned rotate screen and blocks gameplay until the device is turned. See `GameOrientation`. */
-  orientation?: GameOrientation;
+  orientation?: GameOrientation | undefined;
   /** Where the game is meant to be played. Default `["web", "mobile"]` — design-resolution HUD fit is on for every game: `HudCanvas` auto-scales from `hudFit.designSize` down to the live viewport, so the desktop layout shrinks to fit a phone instead of overflowing it. Declare `["web"]` to opt a desktop-only game out (compact displays fall back to the legacy fixed 0.85 zoom). */
-  platforms?: readonly HudPlatform[];
+  platforms?: readonly HudPlatform[] | undefined;
   /** HUD design resolution + scale clamps (default 1600×900, scale 0.4–1). `mobile` overrides tune the phone fit separately — the same resolution system drives desktop UI-scale and phone shrink. */
-  hudFit?: HudViewportConfig;
+  hudFit?: HudViewportConfig | undefined;
   /** Opt in to world-space health bars floating over non-local entities that carry the stat. `roles` restricts bars to entities whose catalog entry declares one of the given roles; `maxDistance` hides bars beyond this many world units from the render camera, and unset derives the range from the camera and the target height (an overhead camera reaches the units it looks at). */
   worldHealthBars?:
     | boolean
@@ -862,7 +862,7 @@ export interface PlayableGameContract<
         tickMs?: number;
         /** Hide bars behind blocking geometry from the render camera. Default true; false explicitly reveals through walls. */
         occlude?: boolean;
-      };
+      } | undefined;
   /**
    * Opt in to billboarded nameplates (name + optional HP bar) floating over non-local entities — the
    * MMO "who's this and how hurt are they" readout. `roles` restricts to entities whose catalog entry
@@ -888,14 +888,14 @@ export interface PlayableGameContract<
         occlude?: boolean;
         /** Authored display name. Return null to omit a plate; default suppresses machine identifiers. */
         resolveName?: (entity: SceneEntity) => string | null;
-      };
+      } | undefined;
   /**
    * Combat presentation stack mounted inside the 3D canvas (telegraphs, spell VFX, retained VFX,
    * float text, projectile tracers, camera shake). Default `true` preserves historical always-on
    * behavior. `false` mounts none. An object mounts only the listed pieces (missing keys default
    * on so games can disable a single expensive channel, e.g. `{ tracers: false }`).
    */
-  presentationEffects?: boolean | PresentationEffectsConfig;
+  presentationEffects?: boolean | PresentationEffectsConfig | undefined;
   /** Sound catalog + mix buses (music/sfx/ambient/…) the shell's Web Audio glue plays from. Catalog-first — no per-game audio wiring. `sounds` may be sample (`url`) or procedural (`synth`); `music` holds procedural themes crossfaded via `ctx.game.audio.music(id)`. */
   audio?: {
     sounds: Record<string, SoundDef>;
@@ -941,46 +941,46 @@ export interface PlayableGameContract<
      * default, and leave it off when the game calls `ctx.game.audio.music` itself.
      */
     adaptiveMusic?: boolean | AdaptiveMusicConfig;
-  };
+  } | undefined;
   /** Continuous positional emitter keyed by entity kind name: while a matching entity exists, the shell plays and repositions the mapped `audio.sounds` id (looping engine hum, campfire crackle, footstep loop) with listener-distance falloff. */
-  entitySounds?: Record<string, string>;
+  entitySounds?: Record<string, string> | undefined;
   /** Same as `entitySounds` but keyed by placed-object catalog id (torches, machinery). */
-  objectSounds?: Record<string, string>;
+  objectSounds?: Record<string, string> | undefined;
   /** Rarity render binding + loot filter for dropped-item ground presentation (#32/#33). */
-  worldItem?: WorldItemRenderConfig;
+  worldItem?: WorldItemRenderConfig | undefined;
   /** Player-vs-world collision for the first-person controller (block/voxel worlds). Off by default (flat ground). */
-  collision?: VoxelCollisionConfig;
+  collision?: VoxelCollisionConfig | undefined;
   /** Movement-control levers (axis/grid constraints, object collision, pre-commit hook) for the shell-driven walk controller. */
-  movement?: PlayerMovementConfig;
+  movement?: PlayerMovementConfig | undefined;
   /** Graphics look profile. Unset is `"cinematic"`: tone mapping, restrained bloom, AO, contact shadows and temporal AA by tier, lit by `mood`. `"neutral"` keeps the output unstyled; `"photoreal"`, `"toon"`, `"comic"` and `"retro"` select other styles and `"flat"` opts out of the rig. Explicit `lighting`/`backdrop`/`postProcessing` always wins. */
-  look?: LookPreset;
+  look?: LookPreset | undefined;
   /**
    * Lighting mood: the sun, sky fill, haze and grade tint as one art-direction choice (`"day"`, `"bright"`,
    * `"golden"`, `"dusk"`, `"overcast"`, `"night"`), or `{ preset, sun, skyColor, horizonColor, groundColor, fog,
    * exposure, saturation, contrast, shadows }` to move a few tokens. Composes with `look`; explicit `lighting`,
    * `backdrop` and `postProcessing` fields still win.
    */
-  mood?: LookMood;
+  mood?: LookMood | undefined;
   /** Birds overhead, litter in wind and steam from vents, driven by weather and time of day. Birds are on by default outdoors; `false` turns all of it off. */
-  ambientLife?: AmbientLifeConfig | false;
+  ambientLife?: AmbientLifeConfig | false | undefined;
   /** Declarative ambient/directional/hemisphere lighting (#207.5); replaces the shell's hardcoded default lights when present, regardless of world kind. */
-  lighting?: LightingConfig;
+  lighting?: LightingConfig | undefined;
   /** Image-based environment source; omit to use the procedural gradient probe. */
-  environmentSource?: EnvironmentSource;
+  environmentSource?: EnvironmentSource | undefined;
   /** Generic background/sky/fog (#207.6), applied for any world kind including a custom `environment` component. */
-  backdrop?: BackdropConfig;
+  backdrop?: BackdropConfig | undefined;
   /** Declarative post-processing chain (AO/bloom/tone-map/grade). When set, the shell mounts an EffectComposer and owns the render; absent leaves the renderer drawing directly (unchanged). */
-  postProcessing?: PostProcessingConfig;
+  postProcessing?: PostProcessingConfig | undefined;
   /** F2+D debug overlay (frame/sim timing, logs, backend latency, keybinds, live tunables). On for every game by default; `false` disables the toggle. */
-  devtools?: boolean;
+  devtools?: boolean | undefined;
   /**
    * Shell-mounted notice feed for `ctx.game.notices`: toned, stacked, self-expiring messages with a UI cue
    * per push, plus automatic deny notices for refused commands that return a `message`. On by default;
    * `false` removes the renderer, the cues and the refusal hookup (the feed itself stays on ctx).
    */
-  notices?: NoticePresentationConfig | false;
+  notices?: NoticePresentationConfig | false | undefined;
   /** Player settings menu. Auto-mounted for every game (Sound / Graphics / Gameplay / Controls); unset uses the defaults, `false` opts out. Add game-specific rows via `extra`, switch overlay/full-page via `mode`, or swap the gear for compact on-screen buttons via `surface: "quick"`. */
-  settings?: GameSettingsConfig | false;
+  settings?: GameSettingsConfig | false | undefined;
   /** Automatic camera frustum + distance culling and asset streaming. On by default with conservative margins; unset uses engine defaults, `{ enabled: false }` opts out. Override bounds/distance/pins per entity kind or object catalog id. */
   visibility?: VisibilityConfig;
 }

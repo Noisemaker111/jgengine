@@ -111,7 +111,7 @@ export interface OwnershipVerdict {
   /** Diagnostic string the editor can surface next to the object. */
   readonly reason: string;
   /** Set when the declaration breaks the ownership contract; the editor and content gate should flag it. */
-  readonly violation?: string;
+  readonly violation?: string | undefined;
 }
 
 /** One boundary problem found while auditing a set of declarations. */
@@ -265,14 +265,14 @@ export function auditManifest(manifest: SceneOwnershipManifest): OwnershipDiagno
 function isProvenance(value: unknown): value is SceneProvenance {
   if (typeof value !== "object" || value === null) return false;
   const record = value as Record<string, unknown>;
-  switch (record.kind) {
+  switch (record["kind"]) {
     case "authored":
-      return typeof record.documentId === "string";
+      return typeof record["documentId"] === "string";
     case "generated":
-      return typeof record.sourceDocumentId === "string" && typeof record.instanceId === "string";
+      return typeof record["sourceDocumentId"] === "string" && typeof record["instanceId"] === "string";
     case "runtime":
     case "transient":
-      return typeof record.providerId === "string" && typeof record.instanceId === "string";
+      return typeof record["providerId"] === "string" && typeof record["instanceId"] === "string";
     default:
       return false;
   }
@@ -281,9 +281,9 @@ function isProvenance(value: unknown): value is SceneProvenance {
 function isDeclaration(value: unknown): value is SceneOwnershipDeclaration {
   if (typeof value !== "object" || value === null) return false;
   const record = value as Record<string, unknown>;
-  if (!isProvenance(record.provenance)) return false;
-  if (record.reason !== undefined && typeof record.reason !== "string") return false;
-  if (record.capabilities !== undefined && (typeof record.capabilities !== "object" || record.capabilities === null)) {
+  if (!isProvenance(record["provenance"])) return false;
+  if (record["reason"] !== undefined && typeof record["reason"] !== "string") return false;
+  if (record["capabilities"] !== undefined && (typeof record["capabilities"] !== "object" || record["capabilities"] === null)) {
     return false;
   }
   return true;
@@ -300,8 +300,8 @@ function isDeclaration(value: unknown): value is SceneOwnershipDeclaration {
 export function isSceneOwnershipManifest(value: unknown): value is SceneOwnershipManifest {
   if (typeof value !== "object" || value === null) return false;
   const record = value as Record<string, unknown>;
-  if (record.version !== SCENE_OWNERSHIP_MANIFEST_VERSION) return false;
-  if (record.provider !== undefined && typeof record.provider !== "string") return false;
-  if (!Array.isArray(record.declarations)) return false;
-  return record.declarations.every(isDeclaration);
+  if (record["version"] !== SCENE_OWNERSHIP_MANIFEST_VERSION) return false;
+  if (record["provider"] !== undefined && typeof record["provider"] !== "string") return false;
+  if (!Array.isArray(record["declarations"])) return false;
+  return record["declarations"].every(isDeclaration);
 }

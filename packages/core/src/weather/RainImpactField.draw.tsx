@@ -1,5 +1,6 @@
 import { useFrame } from "@react-three/fiber";
 import * as THREE from "three";
+import { UniformMaterial } from "@jgengine/core/render/uniformMaterial.draw";
 import { useDisposable } from "@jgengine/core/render/useDisposable.draw";
 import { createWeatherQuadGeometry } from "./weatherGeometry.draw";
 import { useWeatherUniformSet } from "./weatherUniforms.draw";
@@ -30,7 +31,7 @@ export function RainImpactField({ count = 64, extent = 48, heightAt, exposureAt,
     value.instanceCount = capacity;
     return value;
   }, [capacity, seed]);
-  const material = useDisposable(() => new THREE.ShaderMaterial({
+  const material = useDisposable(() => new UniformMaterial({
     transparent: true,
     side: THREE.DoubleSide,
     depthWrite: false,
@@ -75,7 +76,7 @@ export function RainImpactField({ count = 64, extent = 48, heightAt, exposureAt,
   useFrame((state) => {
     const anchorX = Math.round(state.camera.position.x / 8) * 8;
     const anchorZ = Math.round(state.camera.position.z / 8) * 8;
-    (material.uniforms.uAnchor.value as THREE.Vector2).set(anchorX, anchorZ);
+    material.uniforms.uAnchor.value.set(anchorX, anchorZ);
     const spawn = geometry.getAttribute("aSpawn");
     const ground = geometry.getAttribute("aGround");
     const exposure = geometry.getAttribute("aExposure");

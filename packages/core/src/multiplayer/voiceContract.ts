@@ -1,6 +1,6 @@
 export interface VoiceParticipant {
   userId: string;
-  streamId?: string;
+  streamId?: string | undefined;
 }
 
 export interface VoiceRoute {

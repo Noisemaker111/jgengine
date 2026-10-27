@@ -29,7 +29,7 @@ export { resolveRigKind } from "./rigResolve";
 export interface GameCameraRigProps {
   yawRef: MutableRefObject<number>;
   pitchRef: MutableRefObject<number>;
-  config?: GameCameraConfig;
+  config?: GameCameraConfig | undefined;
   onDragChange?: (dragging: boolean) => void;
   pointerControls?: boolean;
   /** False when the game's own input map already claims WASD, so the RTS rig should stop panning on those keys. */
@@ -39,7 +39,7 @@ export interface GameCameraRigProps {
   /** Runtime follow/cinematic override (#196.2). While present it wins over the static `config` for any field it reports non-`undefined`/non-`null`; absent (or an all-`undefined` snapshot) is a no-op. */
   director?: CameraDirector;
   /** Custom first-person viewmodel (#542); read only when the resolved rig is `"first"`. */
-  viewmodel?: ComponentType<ViewmodelProps>;
+  viewmodel?: ComponentType<ViewmodelProps> | undefined;
 }
 
 /** Mounts the camera rig the game's camera config selects (orbit, first person, top-down, RTS, shoulder, chase, cinematic and the rest). */

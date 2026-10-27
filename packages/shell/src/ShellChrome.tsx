@@ -161,7 +161,7 @@ export function createShellKeyHandlers({
   /** 3D path exits pointer lock when opening devtools. */
   exitPointerLockOnDevtools?: boolean;
   /** Play-surface key-down hook that runs before action bindings; returning true consumes the key (and its key-up). */
-  claimKey?: (event: ShellKeyDownEvent) => boolean;
+  claimKey?: ((event: ShellKeyDownEvent) => boolean) | undefined;
 }): ShellKeyHandlers {
   const claimed = new Set<string>();
   return {

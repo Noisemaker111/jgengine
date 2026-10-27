@@ -14,7 +14,7 @@ import {
 
 /** Props for GameInspectionCamera: the inspection orbit config patch (target, distances, zoom anchor). */
 export interface GameInspectionCameraProps {
-  config?: InspectionCameraConfig;
+  config?: InspectionCameraConfig | undefined;
 }
 
 /** Model-viewer / editor rig (#207.7, #866): left-click selects (editor), middle-drag pans, right-drag orbits, scroll zooms toward a configurable anchor. Orbits a fixed `target`; never reads player/entity state. */
@@ -61,7 +61,7 @@ export function GameInspectionCamera({ config: configPatch }: GameInspectionCame
       minPolarAngle={config.minPolarAngle}
       maxPolarAngle={config.maxPolarAngle}
       screenSpacePanning
-      mouseButtons={{ LEFT: undefined, MIDDLE: MOUSE.PAN, RIGHT: MOUSE.ROTATE }}
+      mouseButtons={{ MIDDLE: MOUSE.PAN, RIGHT: MOUSE.ROTATE }}
     />
   );
 }

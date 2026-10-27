@@ -371,7 +371,7 @@ export function createAuthoredTriggerRuntime(options: {
   /** Invoked for every dispatch after the matching handler (if any). */
   onDispatch?: (event: TriggerDispatchEvent) => void;
   /** Override the collected trigger list (tests / hot-reload). Default: {@link collectAuthoredTriggers}. */
-  triggers?: readonly AuthoredTrigger[];
+  triggers?: readonly AuthoredTrigger[] | undefined;
 }): AuthoredTriggerRuntime {
   const document = options.document;
   const triggers = options.triggers ?? collectAuthoredTriggers(document);
@@ -532,7 +532,7 @@ export function createTriggerOutcome(): TriggerOutcomeStore {
     for (const listener of listeners) listener();
   };
   const messageOf = (event: TriggerDispatchEvent, fallback: string): string => {
-    const value = event.params.message;
+    const value = event.params["message"];
     return typeof value === "string" && value.length > 0 ? value : fallback;
   };
   const stringParam = (event: TriggerDispatchEvent, key: string): string | undefined => {

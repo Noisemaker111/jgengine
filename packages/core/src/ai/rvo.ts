@@ -82,7 +82,7 @@ export interface RvoCrowd {
 /** Options for {@link createRvoCrowd}. */
 export interface RvoCrowdOptions extends Partial<RvoTunables> {
   /** Register a devtools probe under this name so the perf overlay shows crowd counters. */
-  devtoolsName?: string;
+  devtoolsName?: string | undefined;
 }
 
 const DEFAULT_TUNABLES: RvoTunables = { timeHorizon: 2, neighborDist: 3, maxNeighbors: 6, sideBias: 0.035, overlapRelief: 1 };

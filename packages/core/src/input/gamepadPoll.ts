@@ -88,8 +88,8 @@ export function stepGamepadPoll(
   for (const key in merged) delete merged[key];
   let any = false;
   if (poll.base !== null) {
-    for (const action in poll.base) {
-      merged[action] = poll.base[action];
+    for (const [action, value] of Object.entries(poll.base)) {
+      merged[action] = value;
       any = true;
     }
   }
@@ -100,8 +100,7 @@ export function stepGamepadPoll(
     if (pad === null || pad === undefined) continue;
     const frame = resolveGamepadFrame(pad, bindings, options, poll.frame);
     for (const action of frame.held) nextHeld.add(action);
-    for (const action in frame.analog) {
-      const value = frame.analog[action];
+    for (const [action, value] of Object.entries(frame.analog)) {
       if (value > (merged[action] ?? 0)) {
         merged[action] = value;
         any = true;

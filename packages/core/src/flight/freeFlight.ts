@@ -23,29 +23,29 @@ export interface FreeFlightBindings {
 export interface FreeFlightTuning {
   mode: FreeFlightMode;
   /** Horizontal base speed (units/s) before sprint. Default 8. */
-  speed?: number;
+  speed?: number | undefined;
   /** Vertical base speed for ascend/descend. Default = `speed`. */
-  verticalSpeed?: number;
+  verticalSpeed?: number | undefined;
   /** Sprint multiplier while shift is held. Default 1.8. */
-  sprintMultiplier?: number;
+  sprintMultiplier?: number | undefined;
   /** Lerp rate toward target velocity. Default 20. */
-  acceleration?: number;
+  acceleration?: number | undefined;
   /** Extra damping applied when no input (0 = rely on lerp). Default 0. */
   damping?: number;
   /** Downward acceleration for hover mode. Default 0 (weightless). */
-  gravity?: number;
+  gravity?: number | undefined;
   /** Upward thrust acceleration while ascending in hover. Default 32. */
-  thrust?: number;
+  thrust?: number | undefined;
   /** When true, forward moves along the look pitch (spectator). Default false. */
-  alignWithLook?: boolean;
+  alignWithLook?: boolean | undefined;
   /** Top vertical fall speed in hover. Default 20. */
   maxFallSpeed?: number;
   /** Whether to slide against world solids. Default true for creative/hover, false for spectator/noclip. */
-  collide?: boolean;
+  collide?: boolean | undefined;
   /** Axis bindings for this flight profile — which actions drive each axis. Unlisted axes keep the defaults above. */
-  bindings?: FreeFlightBindings;
+  bindings?: FreeFlightBindings | undefined;
   /** Camera POV while this flight is active — chase tuning overlay applied on mount, cleared on dismount. Null clears. */
-  camera?: ChaseCameraTuning | null;
+  camera?: ChaseCameraTuning | null | undefined;
 }
 
 /** Velocity state for a free-flight actor — serializable and ownable by the caller. */

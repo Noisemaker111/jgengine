@@ -162,8 +162,8 @@ export function CascadedShadows({
   modulation,
 }: {
   entry: DirectionalLightingConfig;
-  profile?: GraphicsProfile;
-  modulation?: DaylightModulation;
+  profile?: GraphicsProfile | undefined;
+  modulation?: DaylightModulation | undefined;
 }): null {
   const camera = useThree((s) => s.camera);
   const scene = useThree((s) => s.scene);

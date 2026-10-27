@@ -25,9 +25,9 @@ export function decodePeerSignal(code: string): PeerSignalPayload | null {
     const padded = base64 + "=".repeat((4 - (base64.length % 4)) % 4);
     const parsed: unknown = JSON.parse(atob(padded));
     if (!isRecord(parsed)) return null;
-    if (parsed.type !== "offer" && parsed.type !== "answer") return null;
-    if (typeof parsed.sdp !== "string") return null;
-    return { type: parsed.type, sdp: parsed.sdp };
+    if (parsed["type"] !== "offer" && parsed["type"] !== "answer") return null;
+    if (typeof parsed["sdp"] !== "string") return null;
+    return { type: parsed["type"], sdp: parsed["sdp"] };
   } catch {
     return null;
   }
@@ -252,9 +252,9 @@ type SignalEnvelope =
 function isSignalEnvelope(value: unknown): value is SignalEnvelope {
   return (
     isRecord(value) &&
-    (value.t === "offer" || value.t === "answer") &&
-    typeof value.id === "string" &&
-    typeof value.code === "string"
+    (value["t"] === "offer" || value["t"] === "answer") &&
+    typeof value["id"] === "string" &&
+    typeof value["code"] === "string"
   );
 }
 

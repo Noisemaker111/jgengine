@@ -17,8 +17,8 @@ const defaultClock: DataSourceClock = {
 };
 
 export interface DataSourceOptions {
-  intervalMs?: number;
-  clock?: DataSourceClock;
+  intervalMs?: number | undefined;
+  clock?: DataSourceClock | undefined;
 }
 
 export interface RefreshOptions {

@@ -10,7 +10,7 @@
  * opt out entirely with `touch: false`.
  */
 
-import { isHotbarSlotAction, type ActionCodes, type ActionCodesMap } from "./actionBindings";
+import { isCodeList, isHotbarSlotAction, type ActionCodesMap } from "./actionBindings";
 
 export const TOUCH_CODE_PREFIX = "touch:";
 
@@ -21,18 +21,17 @@ export function touchCode(action: string): string {
 /** Every action gains a synthetic touch code alongside its physical codes. */
 export function withTouchCodes(map: ActionCodesMap | undefined): ActionCodesMap {
   const result: ActionCodesMap = {};
-  for (const action of Object.keys(map ?? {})) {
-    const codes = (map as ActionCodesMap)[action] as ActionCodes;
+  for (const [action, codes] of Object.entries(map ?? {})) {
     const synthetic = touchCode(action);
-    if (Array.isArray(codes)) {
+    if (isCodeList(codes)) {
       result[action] = [...codes, synthetic];
-    } else {
-      const modes = codes as { hold?: readonly string[]; toggle?: readonly string[] };
-      const toggleOnly = (modes.toggle?.length ?? 0) > 0 && (modes.hold?.length ?? 0) === 0;
-      result[action] = toggleOnly
-        ? { hold: modes.hold, toggle: [...(modes.toggle ?? []), synthetic] }
-        : { hold: [...(modes.hold ?? []), synthetic], toggle: modes.toggle };
+      continue;
     }
+    const { hold, toggle } = codes;
+    const toggleOnly = (toggle?.length ?? 0) > 0 && (hold?.length ?? 0) === 0;
+    result[action] = toggleOnly
+      ? { ...(hold === undefined ? {} : { hold }), toggle: [...(toggle ?? []), synthetic] }
+      : { hold: [...(hold ?? []), synthetic], ...(toggle === undefined ? {} : { toggle }) };
   }
   return result;
 }
@@ -406,7 +405,7 @@ function actionPriority(action: string): number {
 export interface DeriveTouchSchemeOptions {
   reserved: ReadonlySet<string>;
   firstPerson: boolean;
-  config?: TouchControlsConfig | false;
+  config?: TouchControlsConfig | false | undefined;
   /** Active control context (see {@link TouchControlsConfig.modes}); null/unknown falls back to the base config. */
   mode?: string | null;
 }

@@ -48,6 +48,6 @@ export function buildContextMenu(input: BuildContextMenuInput): ContextMenu | nu
  */
 export function contextVerbInput(menu: ContextMenu, verb: ContextVerb): Record<string, unknown> {
   const base: Record<string, unknown> = { ...verb.args, target: menu.targetId, targetKind: menu.kind };
-  if (menu.point !== undefined) base.point = menu.point;
+  if (menu.point !== undefined) base["point"] = menu.point;
   return base;
 }

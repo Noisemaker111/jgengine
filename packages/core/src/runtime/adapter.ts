@@ -15,11 +15,11 @@ export type MultiplayerTopology = "shared" | "lobbies" | "private";
 export type MultiplayerAuthority = "server" | "client";
 
 export type MultiplayerAdapterConfig =
-  | { kind: "convex"; topology?: MultiplayerTopology; authority?: MultiplayerAuthority }
-  | { kind: "ws"; topology?: MultiplayerTopology; url?: string; authority?: MultiplayerAuthority }
-  | { kind: "socketio"; topology?: MultiplayerTopology; url?: string; authority?: MultiplayerAuthority }
-  | { kind: "p2p"; topology?: MultiplayerTopology; room?: string; authority?: MultiplayerAuthority }
-  | { kind: "lan"; topology?: MultiplayerTopology; port?: number; path?: string; authority?: MultiplayerAuthority }
+  | { kind: "convex"; topology?: MultiplayerTopology | undefined; authority?: MultiplayerAuthority | undefined }
+  | { kind: "ws"; topology?: MultiplayerTopology | undefined; url?: string | undefined; authority?: MultiplayerAuthority | undefined }
+  | { kind: "socketio"; topology?: MultiplayerTopology | undefined; url?: string | undefined; authority?: MultiplayerAuthority | undefined }
+  | { kind: "p2p"; topology?: MultiplayerTopology | undefined; room?: string | undefined; authority?: MultiplayerAuthority | undefined }
+  | { kind: "lan"; topology?: MultiplayerTopology | undefined; port?: number | undefined; path?: string | undefined; authority?: MultiplayerAuthority | undefined }
   | { kind: "offline" };
 
 /**

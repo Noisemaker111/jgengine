@@ -15,11 +15,11 @@ export interface LocomotionGraphInput {
   /** Clip for turning on the spot. Omitted, the turn blend uses `walk` as its pivot step. */
   turn?: string;
   /** Speed (world units/sec) above which the character walks. Default 0.5. */
-  walkSpeed?: number;
+  walkSpeed?: number | undefined;
   /** Speed above which it runs. Default 6. */
-  runSpeed?: number;
+  runSpeed?: number | undefined;
   /** Crossfade seconds between locomotion states. Default 0.2. */
-  fadeSec?: number;
+  fadeSec?: number | undefined;
   /** Lateral share above which the character counts as strafing. Default 0.35. */
   strafeGate?: number;
   /** Lateral share at or below which it stops strafing. Default 0.2. */

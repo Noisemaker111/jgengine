@@ -21,25 +21,25 @@ export const LOOK_PRESETS: readonly LookPreset[] = ["neutral", "photoreal", "cin
 
 /** Explicit graphics knobs a game may set; the preset only fills the ones left undefined. */
 export interface GameLookInput {
-  look?: LookPreset;
+  look?: LookPreset | undefined;
   /** Lighting mood; see {@link resolveGameLook} for when an unset mood is filled in. */
-  mood?: LookMood;
-  lighting?: LightingConfig;
-  backdrop?: BackdropConfig;
-  postProcessing?: PostProcessingConfig;
+  mood?: LookMood | undefined;
+  lighting?: LightingConfig | undefined;
+  backdrop?: BackdropConfig | undefined;
+  postProcessing?: PostProcessingConfig | undefined;
   /** True when the world already declares its own sky — the preset then leaves the sky to the world. */
-  hasWorldSky?: boolean;
+  hasWorldSky?: boolean | undefined;
   /** The sky the world declares. A mood keeps its shape (radius, clouds, day cycle) and repaints its colours and sun. */
-  worldSky?: SkyEnvironmentConfig;
+  worldSky?: SkyEnvironmentConfig | undefined;
   /** Sky fields the scene document authored; they win over the mood and the world. */
-  documentSky?: SkyEnvironmentConfig;
+  documentSky?: SkyEnvironmentConfig | undefined;
 }
 
 /** Concrete lighting/backdrop/post the shell renders after the preset has filled unset knobs. */
 export interface ResolvedGameLook {
-  lighting?: LightingConfig;
-  backdrop?: BackdropConfig;
-  postProcessing?: PostProcessingConfig;
+  lighting?: LightingConfig | undefined;
+  backdrop?: BackdropConfig | undefined;
+  postProcessing?: PostProcessingConfig | undefined;
 }
 
 /** A static day sky: a real dome plus the shell's view-following shadow-casting sun and hemisphere fill. */
@@ -61,7 +61,10 @@ export const CINEMATIC_POST_PROCESSING: PostProcessingConfig = {
  * For a game that lit its own scene and left `look` unset: ACES and the cinematic bloom, with AO,
  * grade, contact shadows and antialiasing at the engine defaults.
  */
-const OWN_RIG_POST_PROCESSING: PostProcessingConfig = { toneMapping: "aces", bloom: CINEMATIC_POST_PROCESSING.bloom };
+const OWN_RIG_POST_PROCESSING: PostProcessingConfig = {
+  toneMapping: "aces",
+  ...(CINEMATIC_POST_PROCESSING.bloom === undefined ? {} : { bloom: CINEMATIC_POST_PROCESSING.bloom }),
+};
 
 /** Unstyled baseline: no bloom or grade; contact AO stays at the graphics-tier default. */
 export const NEUTRAL_POST_PROCESSING: PostProcessingConfig = {

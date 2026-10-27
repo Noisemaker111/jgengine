@@ -40,9 +40,9 @@ export interface ResolvedShot {
 
 export interface ShotOriginDeps {
   positionOf(instanceId: string): EntityPosition | undefined;
-  rotationYOf?(instanceId: string): number | undefined;
+  rotationYOf?: ((instanceId: string) => number | undefined) | undefined;
   /** When provided, the `eye` policy sizes its height from the shooter's own hitbox instead of the humanoid default. */
-  collidersOf?(instanceId: string): EntityColliderSet | null | undefined;
+  collidersOf?: ((instanceId: string) => EntityColliderSet | null | undefined) | undefined;
 }
 
 const DEFAULT_MUZZLE_OFFSET: EntityPosition = [0, 1.4, 0.35];
@@ -103,7 +103,7 @@ export function resolveShot(
         return { origin: aim.origin, direction: aimDir };
       }
       if (aimDir === null) return null;
-      const muzzle = resolveShot(deps, from, aim, { kind: "muzzle", offset: policy.muzzle });
+      const muzzle = resolveShot(deps, from, aim, { kind: "muzzle", ...(policy.muzzle === undefined ? {} : { offset: policy.muzzle }) });
       return muzzle ?? null;
     }
     case "eye": {
@@ -166,10 +166,10 @@ export function convergeShot(
   sightHit: (origin: EntityPosition, direction: EntityPosition) => EntityPosition | null,
   muzzleOffset?: EntityPosition,
 ): ResolvedShot | null {
-  const sight = resolveShot(deps, from, aim, { kind: "eye", height: undefined });
+  const sight = resolveShot(deps, from, aim, { kind: "eye" });
   if (sight === null) return null;
   if ("origin" in aim) return sight;
-  const muzzle = resolveShot(deps, from, aim, { kind: "muzzle", offset: muzzleOffset });
+  const muzzle = resolveShot(deps, from, aim, { kind: "muzzle", ...(muzzleOffset === undefined ? {} : { offset: muzzleOffset }) });
   if (muzzle === null) return sight;
   const aimPoint =
     sightHit(sight.origin, sight.direction) ??

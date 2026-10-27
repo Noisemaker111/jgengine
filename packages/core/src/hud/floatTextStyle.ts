@@ -34,11 +34,12 @@ const ELEMENT_COLORS: Record<string, string> = {
 /** @internal */
 export function resolveFloatTextStyle(info: FloatTextInfo): FloatTextStyle {
   const crit = info.crit === true || info.hitType === "crit";
+  const elementColor = info.element === undefined ? undefined : ELEMENT_COLORS[info.element];
   let color: string;
   if (info.kind === "heal") {
     color = "#6ee7b7";
-  } else if (info.element !== undefined && ELEMENT_COLORS[info.element] !== undefined) {
-    color = ELEMENT_COLORS[info.element];
+  } else if (elementColor !== undefined) {
+    color = elementColor;
   } else if (crit) {
     color = "#fbbf24";
   } else {

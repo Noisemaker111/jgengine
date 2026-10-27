@@ -93,7 +93,7 @@ export function createPlayerSubsystem(d: PlayerSubsystemDeps): PlayerSubsystem {
   const inventoryIds = Object.keys(inventoryDeclarations);
   const layouts: Record<string, InventoryLayout> = {};
   for (const [inventoryId, declaration] of Object.entries(inventoryDeclarations)) {
-    layouts[inventoryId] = { slots: declaration.slots, accepts: declaration.accepts };
+    layouts[inventoryId] = { slots: declaration.slots, ...(declaration.accepts === undefined ? {} : { accepts: declaration.accepts }) };
   }
   const traits: ItemTraits =
     Object.values(inventoryDeclarations).find((declaration) => declaration.traits !== undefined)

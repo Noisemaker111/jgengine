@@ -31,9 +31,9 @@ export type ApplyDocumentPatchResult =
 /** One live entity row the runtime may stream to the editor (play-mode inspector feed). */
 export interface RuntimeEntityState {
   id: string;
-  position?: EditorVec3;
-  rotationY?: number;
-  values?: Record<string, unknown>;
+  position?: EditorVec3 | undefined;
+  rotationY?: number | undefined;
+  values?: Record<string, unknown> | undefined;
 }
 
 /** Full ephemeral runtime view held on the reverse channel — never mutates the document. */

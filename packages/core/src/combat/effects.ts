@@ -66,7 +66,7 @@ export interface EffectResult {
 
 export interface LethalContext {
   from: string;
-  via?: EffectVia;
+  via?: EffectVia | undefined;
   effect: string;
 }
 
@@ -266,7 +266,7 @@ export function createEffectSystem(deps: EffectSystemDeps): EffectSystem {
         effect,
         incoming: drainMagnitude,
         dealt,
-        remaining: statPools.get(instanceId, lastStatId)?.current ?? null,
+        remaining: lastStatId === undefined ? null : statPools.get(instanceId, lastStatId)?.current ?? null,
         lethal: result.lethal,
         ...(at === undefined ? {} : { at }),
       });

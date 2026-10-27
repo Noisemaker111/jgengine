@@ -55,7 +55,7 @@ export function updateWeatherShelters(uniforms: WeatherShelterUniforms, shelters
     const shelter = shelters[index]!;
     const center = shelter.center;
     uniforms.shelterCenters.value[slot]!.set(center.x, center.y, center.z, shelter.shape === "box" ? 0 : shelter.shape === "sphere" ? 1 : 2);
-    const exposure = typeof shelter.meta?.exposure === "number" ? Math.max(0, Math.min(1, shelter.meta.exposure)) : 0;
+    const exposure = typeof shelter.meta?.["exposure"] === "number" ? Math.max(0, Math.min(1, shelter.meta["exposure"])) : 0;
     const extents = shelter.halfExtents;
     uniforms.shelterShapes.value[slot]!.set(shelter.shape === "box" ? extents?.x ?? 0 : shelter.radius ?? 0, shelter.shape === "box" ? extents?.y ?? 0 : (shelter.height ?? 0) * 0.5, shelter.shape === "box" ? extents?.z ?? 0 : 0, exposure);
     count += 1;

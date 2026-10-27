@@ -127,7 +127,7 @@ export interface AnimGraphRuntime {
 
 /** Randomness used only when entering a clip state with variants. Omit to choose the first variant. */
 export interface AnimGraphRuntimeOptions {
-  rng?: () => number;
+  rng?: (() => number) | undefined;
 }
 
 const DEFAULT_FADE = 0.2;
@@ -221,7 +221,7 @@ function stateDuration(weights: Record<string, number>, clips: AnimGraphClipInfo
   return duration;
 }
 
-function clipDuration(info: AnimGraphClipInfo[string]): number {
+function clipDuration(info: AnimGraphClipInfo[string] | undefined): number {
   return typeof info === "number" ? info : info?.duration ?? 0;
 }
 
@@ -357,8 +357,8 @@ export function createAnimGraphRuntime(initial: AnimGraph, options: AnimGraphRun
         const loop = stateLoops(def);
         const normalized = duration > 0 ? (loop ? (state.time % duration) / duration : Math.min(1, state.time / duration)) : 1;
 
-        for (const clip of Object.keys(weights)) {
-          if (!(weights[clip]! * layerWeight > 0)) continue;
+        for (const [clip, weight] of Object.entries(weights)) {
+          if (!(weight * layerWeight > 0)) continue;
           const duration = clipDuration(clips[clip]);
           collectEvents(
             output.events,
@@ -373,7 +373,10 @@ export function createAnimGraphRuntime(initial: AnimGraph, options: AnimGraphRun
             if (typeof info !== "number" && info?.rootTrack !== undefined) {
               const from = rootPosition(info.rootTrack, before, duration, loop);
               const to = rootPosition(info.rootTrack, state.time, duration, loop);
-              for (let axis = 0; axis < 3; axis += 1) rootDelta[axis] += (to[axis] - from[axis]) * weights[clip]! * layerWeight;
+              const scale = weight * layerWeight;
+              rootDelta[0] += (to[0] - from[0]) * scale;
+              rootDelta[1] += (to[1] - from[1]) * scale;
+              rootDelta[2] += (to[2] - from[2]) * scale;
             }
           }
         }
@@ -464,57 +467,57 @@ function parseState(value: unknown): AnimState | null {
   const raw = record(value);
   if (raw === null) return null;
   const extra = {
-    ...(optionalNumber(raw.speed) === undefined ? {} : { speed: raw.speed as number }),
-    ...(typeof raw.loop === "boolean" ? { loop: raw.loop } : {}),
-    ...(typeof raw.rootMotion === "boolean" ? { rootMotion: raw.rootMotion } : {}),
+    ...(optionalNumber(raw["speed"]) === undefined ? {} : { speed: raw["speed"] as number }),
+    ...(typeof raw["loop"] === "boolean" ? { loop: raw["loop"] } : {}),
+    ...(typeof raw["rootMotion"] === "boolean" ? { rootMotion: raw["rootMotion"] } : {}),
   };
-  if (raw.kind === "clip" && typeof raw.clip === "string") {
-    const variants = Array.isArray(raw.variants) ? raw.variants.filter((clip): clip is string => typeof clip === "string" && clip.length > 0) : undefined;
-    return { kind: "clip", clip: raw.clip, ...(variants === undefined || variants.length === 0 ? {} : { variants }), ...extra };
+  if (raw["kind"] === "clip" && typeof raw["clip"] === "string") {
+    const variants = Array.isArray(raw["variants"]) ? raw["variants"].filter((clip): clip is string => typeof clip === "string" && clip.length > 0) : undefined;
+    return { kind: "clip", clip: raw["clip"], ...(variants === undefined || variants.length === 0 ? {} : { variants }), ...extra };
   }
-  if (!Array.isArray(raw.points)) return null;
-  if (raw.kind === "blend1D" && typeof raw.param === "string") {
-    const points = raw.points.flatMap((point) => {
+  if (!Array.isArray(raw["points"])) return null;
+  if (raw["kind"] === "blend1D" && typeof raw["param"] === "string") {
+    const points = raw["points"].flatMap((point) => {
       const entry = record(point);
-      return entry !== null && typeof entry.clip === "string" && optionalNumber(entry.at) !== undefined ? [{ at: entry.at as number, clip: entry.clip }] : [];
+      return entry !== null && typeof entry["clip"] === "string" && optionalNumber(entry["at"]) !== undefined ? [{ at: entry["at"] as number, clip: entry["clip"] }] : [];
     });
-    return { kind: "blend1D", param: raw.param, points, ...extra };
+    return { kind: "blend1D", param: raw["param"], points, ...extra };
   }
-  if (raw.kind === "blend2D" && Array.isArray(raw.params) && raw.params.length === 2 && raw.params.every((param) => typeof param === "string")) {
-    const points = raw.points.flatMap((point) => {
+  if (raw["kind"] === "blend2D" && Array.isArray(raw["params"]) && raw["params"].length === 2 && raw["params"].every((param) => typeof param === "string")) {
+    const points = raw["points"].flatMap((point) => {
       const entry = record(point);
-      const at = entry?.at;
-      return entry !== null && typeof entry.clip === "string" && Array.isArray(at) && at.length === 2 && at.every((n) => optionalNumber(n) !== undefined)
-        ? [{ at: [at[0] as number, at[1] as number] as const, clip: entry.clip }]
+      const at = entry?.["at"];
+      return entry !== null && typeof entry["clip"] === "string" && Array.isArray(at) && at.length === 2 && at.every((n) => optionalNumber(n) !== undefined)
+        ? [{ at: [at[0] as number, at[1] as number] as const, clip: entry["clip"] }]
         : [];
     });
-    return { kind: "blend2D", params: [raw.params[0] as string, raw.params[1] as string], points, ...extra };
+    return { kind: "blend2D", params: [raw["params"][0] as string, raw["params"][1] as string], points, ...extra };
   }
   return null;
 }
 
 function parseTransition(value: unknown, states: Readonly<Record<string, AnimState>>): AnimTransition | null {
   const raw = record(value);
-  if (raw === null || typeof raw.from !== "string" || typeof raw.to !== "string") return null;
-  if (states[raw.to] === undefined || (raw.from !== "*" && states[raw.from] === undefined)) return null;
-  const when = Array.isArray(raw.when)
-    ? raw.when.flatMap((condition) => {
+  if (raw === null || typeof raw["from"] !== "string" || typeof raw["to"] !== "string") return null;
+  if (states[raw["to"]] === undefined || (raw["from"] !== "*" && states[raw["from"]] === undefined)) return null;
+  const when = Array.isArray(raw["when"])
+    ? raw["when"].flatMap((condition) => {
         const entry = record(condition);
         return entry !== null &&
-          typeof entry.param === "string" &&
-          COMPARES.includes(entry.op as AnimCompare) &&
-          (typeof entry.value === "number" || typeof entry.value === "boolean")
-          ? [{ param: entry.param, op: entry.op as AnimCompare, value: entry.value }]
+          typeof entry["param"] === "string" &&
+          COMPARES.includes(entry["op"] as AnimCompare) &&
+          (typeof entry["value"] === "number" || typeof entry["value"] === "boolean")
+          ? [{ param: entry["param"], op: entry["op"] as AnimCompare, value: entry["value"] }]
           : [];
       })
     : undefined;
   return {
-    from: raw.from,
-    to: raw.to,
+    from: raw["from"],
+    to: raw["to"],
     ...(when === undefined || when.length === 0 ? {} : { when }),
-    ...(typeof raw.trigger === "string" ? { trigger: raw.trigger } : {}),
-    ...(optionalNumber(raw.duration) === undefined ? {} : { duration: Math.max(0, raw.duration as number) }),
-    ...(optionalNumber(raw.exitTime) === undefined ? {} : { exitTime: raw.exitTime as number }),
+    ...(typeof raw["trigger"] === "string" ? { trigger: raw["trigger"] } : {}),
+    ...(optionalNumber(raw["duration"]) === undefined ? {} : { duration: Math.max(0, raw["duration"] as number) }),
+    ...(optionalNumber(raw["exitTime"]) === undefined ? {} : { exitTime: raw["exitTime"] as number }),
   };
 }
 
@@ -527,44 +530,44 @@ function parseTransition(value: unknown, states: Readonly<Record<string, AnimSta
  */
 export function parseAnimGraph(value: unknown): AnimGraph | undefined {
   const raw = record(value);
-  if (raw === null || !Array.isArray(raw.layers)) return undefined;
+  if (raw === null || !Array.isArray(raw["layers"])) return undefined;
   const layers: AnimLayer[] = [];
   const seen = new Set<string>();
-  for (const candidate of raw.layers) {
+  for (const candidate of raw["layers"]) {
     const layer = record(candidate);
-    if (layer === null || typeof layer.id !== "string" || seen.has(layer.id) || typeof layer.entry !== "string") continue;
-    const rawStates = record(layer.states);
+    if (layer === null || typeof layer["id"] !== "string" || seen.has(layer["id"]) || typeof layer["entry"] !== "string") continue;
+    const rawStates = record(layer["states"]);
     if (rawStates === null) continue;
     const states: Record<string, AnimState> = {};
     for (const [name, state] of Object.entries(rawStates)) {
       const parsed = parseState(state);
       if (parsed !== null) states[name] = parsed;
     }
-    if (states[layer.entry] === undefined) continue;
-    const transitions = Array.isArray(layer.transitions)
-      ? layer.transitions.flatMap((transition) => {
+    if (states[layer["entry"]] === undefined) continue;
+    const transitions = Array.isArray(layer["transitions"])
+      ? layer["transitions"].flatMap((transition) => {
           const parsed = parseTransition(transition, states);
           return parsed === null ? [] : [parsed];
         })
       : [];
-    const mask = Array.isArray(layer.mask) ? layer.mask.filter((prefix): prefix is string => typeof prefix === "string") : undefined;
-    seen.add(layer.id);
+    const mask = Array.isArray(layer["mask"]) ? layer["mask"].filter((prefix): prefix is string => typeof prefix === "string") : undefined;
+    seen.add(layer["id"]);
     layers.push({
-      id: layer.id,
-      entry: layer.entry,
+      id: layer["id"],
+      entry: layer["entry"],
       states,
       transitions,
       ...(mask === undefined ? {} : { mask }),
-      ...(typeof layer.additive === "boolean" ? { additive: layer.additive } : {}),
-      ...(optionalNumber(layer.weight) === undefined ? {} : { weight: Math.min(1, Math.max(0, layer.weight as number)) }),
+      ...(typeof layer["additive"] === "boolean" ? { additive: layer["additive"] } : {}),
+      ...(optionalNumber(layer["weight"]) === undefined ? {} : { weight: Math.min(1, Math.max(0, layer["weight"] as number)) }),
     });
   }
   if (layers.length === 0) return undefined;
-  const events = Array.isArray(raw.events)
-    ? raw.events.flatMap((event) => {
+  const events = Array.isArray(raw["events"])
+    ? raw["events"].flatMap((event) => {
         const entry = record(event);
-        return entry !== null && typeof entry.clip === "string" && typeof entry.name === "string" && optionalNumber(entry.atSec) !== undefined
-          ? [{ clip: entry.clip, atSec: entry.atSec as number, name: entry.name }]
+        return entry !== null && typeof entry["clip"] === "string" && typeof entry["name"] === "string" && optionalNumber(entry["atSec"]) !== undefined
+          ? [{ clip: entry["clip"], atSec: entry["atSec"] as number, name: entry["name"] }]
           : [];
       })
     : [];
@@ -629,77 +632,77 @@ export function validateAnimGraph(value: unknown): AnimGraphValidation {
   const state = (candidate: unknown, path: string): void => {
     const raw = object(candidate, path);
     if (raw === null) return;
-    if (!["clip", "blend1D", "blend2D"].includes(raw.kind as string)) {
+    if (!["clip", "blend1D", "blend2D"].includes(raw["kind"] as string)) {
       issue(`${path}.kind`, "Unknown animation state kind.", "Choose clip, blend1D or blend2D.");
       return;
     }
-    if (raw.speed !== undefined) number(raw.speed, `${path}.speed`);
+    if (raw["speed"] !== undefined) number(raw["speed"], `${path}.speed`);
     for (const key of ["loop", "rootMotion"]) if (raw[key] !== undefined) boolean(raw[key], `${path}.${key}`);
-    const allowed = raw.kind === "clip" ? ["clip", "variants"] : raw.kind === "blend1D" ? ["param", "points"] : ["params", "points"];
+    const allowed = raw["kind"] === "clip" ? ["clip", "variants"] : raw["kind"] === "blend1D" ? ["param", "points"] : ["params", "points"];
     for (const key of ["clip", "variants", "param", "params", "points"]) if (raw[key] !== undefined && !allowed.includes(key)) {
-      issue(`${path}.${key}`, `Field ${key} is not used by a ${raw.kind} state.`, "Remove the field or choose the matching state kind.");
+      issue(`${path}.${key}`, `Field ${key} is not used by a ${raw["kind"]} state.`, "Remove the field or choose the matching state kind.");
     }
-    if (raw.kind === "clip") {
-      text(raw.clip, `${path}.clip`);
-      if (raw.variants !== undefined) array(raw.variants, `${path}.variants`)?.forEach((clip, index) => text(clip, `${path}.variants[${index}]`));
+    if (raw["kind"] === "clip") {
+      text(raw["clip"], `${path}.clip`);
+      if (raw["variants"] !== undefined) array(raw["variants"], `${path}.variants`)?.forEach((clip, index) => text(clip, `${path}.variants[${index}]`));
       return;
     }
-    if (raw.kind === "blend1D") text(raw.param, `${path}.param`);
-    else tuple(raw.params, `${path}.params`, false);
-    array(raw.points, `${path}.points`)?.forEach((candidate, index) => {
+    if (raw["kind"] === "blend1D") text(raw["param"], `${path}.param`);
+    else tuple(raw["params"], `${path}.params`, false);
+    array(raw["points"], `${path}.points`)?.forEach((candidate, index) => {
       const pointPath = `${path}.points[${index}]`, point = object(candidate, pointPath);
       if (point === null) return;
-      text(point.clip, `${pointPath}.clip`);
-      if (raw.kind === "blend1D") number(point.at, `${pointPath}.at`);
-      else tuple(point.at, `${pointPath}.at`, true);
+      text(point["clip"], `${pointPath}.clip`);
+      if (raw["kind"] === "blend1D") number(point["at"], `${pointPath}.at`);
+      else tuple(point["at"], `${pointPath}.at`, true);
     });
   };
   const raw = object(value, "");
   if (raw === null) return { graph: undefined, diagnostics };
-  const layers = array(raw.layers, "layers"), seen = new Set<string>();
+  const layers = array(raw["layers"], "layers"), seen = new Set<string>();
   if (layers?.length === 0) issue("layers", "An animation graph needs at least one layer.", "Add a layer with an entry state.");
   layers?.forEach((candidate, index) => {
     const path = `layers[${index}]`, layer = object(candidate, path);
     if (layer === null) return;
-    if (text(layer.id, `${path}.id`)) {
-      if (seen.has(layer.id)) issue(`${path}.id`, "Layer id is duplicated.", "Give each layer a distinct id.");
-      seen.add(layer.id);
+    if (text(layer["id"], `${path}.id`)) {
+      if (seen.has(layer["id"])) issue(`${path}.id`, "Layer id is duplicated.", "Give each layer a distinct id.");
+      seen.add(layer["id"]);
     }
-    const validEntry = text(layer.entry, `${path}.entry`), states = object(layer.states, `${path}.states`);
+    const validEntry = text(layer["entry"], `${path}.entry`), states = object(layer["states"], `${path}.states`);
     if (states !== null) {
       for (const [name, candidate] of Object.entries(states)) {
         text(name, field(`${path}.states`, name));
         state(candidate, field(`${path}.states`, name));
       }
-      if (validEntry && !Object.hasOwn(states, layer.entry as string)) issue(`${path}.entry`, "Entry state does not exist in this layer.", "Choose a state declared in this layer.");
+      if (validEntry && !Object.hasOwn(states, layer["entry"] as string)) issue(`${path}.entry`, "Entry state does not exist in this layer.", "Choose a state declared in this layer.");
     }
-    if (layer.weight !== undefined) number(layer.weight, `${path}.weight`, 0, 1);
-    if (layer.additive !== undefined) boolean(layer.additive, `${path}.additive`);
-    if (layer.mask !== undefined) array(layer.mask, `${path}.mask`)?.forEach((prefix, i) => text(prefix, `${path}.mask[${i}]`, true));
-    array(layer.transitions, `${path}.transitions`)?.forEach((candidate, i) => {
+    if (layer["weight"] !== undefined) number(layer["weight"], `${path}.weight`, 0, 1);
+    if (layer["additive"] !== undefined) boolean(layer["additive"], `${path}.additive`);
+    if (layer["mask"] !== undefined) array(layer["mask"], `${path}.mask`)?.forEach((prefix, i) => text(prefix, `${path}.mask[${i}]`, true));
+    array(layer["transitions"], `${path}.transitions`)?.forEach((candidate, i) => {
       const edgePath = `${path}.transitions[${i}]`, edge = object(candidate, edgePath);
       if (edge === null) return;
       for (const key of ["from", "to"]) if (text(edge[key], `${edgePath}.${key}`) && states !== null && !(key === "from" && edge[key] === "*") && !Object.hasOwn(states, edge[key] as string)) {
         issue(`${edgePath}.${key}`, "Transition references an unknown state.", "Choose a state declared in this layer; only from may use *.");
       }
-      if (edge.trigger !== undefined) text(edge.trigger, `${edgePath}.trigger`);
-      if (edge.duration !== undefined) number(edge.duration, `${edgePath}.duration`, 0);
-      if (edge.exitTime !== undefined) number(edge.exitTime, `${edgePath}.exitTime`);
-      if (edge.when !== undefined) array(edge.when, `${edgePath}.when`)?.forEach((candidate, i) => {
+      if (edge["trigger"] !== undefined) text(edge["trigger"], `${edgePath}.trigger`);
+      if (edge["duration"] !== undefined) number(edge["duration"], `${edgePath}.duration`, 0);
+      if (edge["exitTime"] !== undefined) number(edge["exitTime"], `${edgePath}.exitTime`);
+      if (edge["when"] !== undefined) array(edge["when"], `${edgePath}.when`)?.forEach((candidate, i) => {
         const conditionPath = `${edgePath}.when[${i}]`, condition = object(candidate, conditionPath);
         if (condition === null) return;
-        text(condition.param, `${conditionPath}.param`);
-        if (!COMPARES.includes(condition.op as AnimCompare)) issue(`${conditionPath}.op`, "Unknown comparison operator.", "Choose >, <, >=, <=, == or !=.");
-        if (typeof condition.value !== "boolean") number(condition.value, `${conditionPath}.value`);
+        text(condition["param"], `${conditionPath}.param`);
+        if (!COMPARES.includes(condition["op"] as AnimCompare)) issue(`${conditionPath}.op`, "Unknown comparison operator.", "Choose >, <, >=, <=, == or !=.");
+        if (typeof condition["value"] !== "boolean") number(condition["value"], `${conditionPath}.value`);
       });
     });
   });
-  if (raw.events !== undefined) array(raw.events, "events")?.forEach((candidate, index) => {
+  if (raw["events"] !== undefined) array(raw["events"], "events")?.forEach((candidate, index) => {
     const path = `events[${index}]`, event = object(candidate, path);
     if (event === null) return;
-    text(event.clip, `${path}.clip`);
-    text(event.name, `${path}.name`);
-    number(event.atSec, `${path}.atSec`, 0);
+    text(event["clip"], `${path}.clip`);
+    text(event["name"], `${path}.name`);
+    number(event["atSec"], `${path}.atSec`, 0);
   });
   return { graph: diagnostics.length === 0 ? value as AnimGraph : undefined, diagnostics };
 }

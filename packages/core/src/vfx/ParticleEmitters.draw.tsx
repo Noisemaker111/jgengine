@@ -28,10 +28,10 @@ interface BurstInstance {
   seq: number;
   system: ParticleSystem;
   blending: "additive" | "normal";
-  render?: ParticleRenderHint;
+  render?: ParticleRenderHint | undefined;
   position: Vec3;
   rotationY: number;
-  collisionEffect?: ParticleCollisionEffect;
+  collisionEffect?: ParticleCollisionEffect | undefined;
 }
 
 const MAX_CONCURRENT_BURSTS = 32;

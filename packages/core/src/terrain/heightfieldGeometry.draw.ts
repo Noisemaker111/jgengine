@@ -47,8 +47,8 @@ export function displaceHeightfieldGeometry(
   sampleHeight: (x: number, z: number) => number,
   options: HeightfieldDisplaceOptions,
 ): void {
-  const position = geometry.attributes.position as THREE.BufferAttribute;
-  const normals = geometry.attributes.normal as THREE.BufferAttribute;
+  const position = geometry.attributes["position"] as THREE.BufferAttribute;
+  const normals = geometry.attributes["normal"] as THREE.BufferAttribute;
   const { bounds } = options;
   const cx = (bounds.minX + bounds.maxX) / 2;
   const cz = (bounds.minZ + bounds.maxZ) / 2;
@@ -61,7 +61,7 @@ export function displaceHeightfieldGeometry(
   const stepX = width / segments;
   const stepZ = depth / segments;
 
-  let colors = geometry.attributes.color as THREE.BufferAttribute | undefined;
+  let colors = geometry.attributes["color"] as THREE.BufferAttribute | undefined;
   const wantColors = options.color !== undefined;
   const colorsMissing = wantColors && (colors === undefined || colors.count !== position.count);
   const region = options.region ?? null;

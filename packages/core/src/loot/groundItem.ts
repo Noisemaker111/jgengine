@@ -163,7 +163,7 @@ export interface ResolveDeathDropsOptions {
   origin: EntityPosition;
   resolveRarity(itemId: string): string;
   resolveBaseType?(itemId: string): string;
-  scatter?: ScatterOptions;
+  scatter?: ScatterOptions | undefined;
   rng?(): number;
   source?: string;
 }

@@ -44,7 +44,7 @@ export class Ragdoll {
   readonly bones: Record<string, number>;
   readonly links: number[];
   private readonly world: PhysicsWorld;
-  private readonly config?: RagdollBalanceConfig;
+  private readonly config?: RagdollBalanceConfig | undefined;
 
   constructor(world: PhysicsWorld, bones: Record<string, number>, links: number[], balance?: RagdollBalanceConfig) {
     this.world = world;

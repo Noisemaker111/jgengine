@@ -73,9 +73,9 @@ export interface WorkQueueConfig<TSpec, TReserve = undefined, TOutput = undefine
   /** Seconds of work a spec requires. Negative values clamp to 0 (instant). */
   duration: (spec: TSpec) => number;
   /** Max concurrent active jobs (multi-server queue). Defaults to 1. */
-  concurrency?: number;
+  concurrency?: number | undefined;
   /** Max non-terminal jobs; further enqueues are rejected with `"capacity"`. */
-  capacity?: number;
+  capacity?: number | undefined;
   /** Selection order for queued jobs. Defaults to {@link priorityOrdering}. */
   ordering?: JobOrdering<TSpec, TReserve>;
   /** Compute the reservation stored on the job (charge-now is the caller's job). */

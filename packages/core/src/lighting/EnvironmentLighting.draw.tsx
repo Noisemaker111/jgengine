@@ -13,7 +13,7 @@ import { WorldReflectionProbe, type WorldProbeSettings } from "./reflectionProbe
 /** @internal Props for shell {@link EnvironmentLighting}. */
 export interface EnvironmentLightingProps {
   /** Optional authored environment map; absent or `gradient` uses the procedural probe. */
-  source?: EnvironmentSource;
+  source?: EnvironmentSource | undefined;
   /** IBL intensity. Default {@link DEFAULT_IBL_INTENSITY}. */
   intensity?: number;
   /** Upper-hemisphere tint for the procedural sky probe. Default cool daylight. */
@@ -21,12 +21,12 @@ export interface EnvironmentLightingProps {
   /** Ground / lower-hemisphere tint. Default soft earth. */
   groundColor?: string;
   /** Tint the horizon band leans toward, usually the scene's ambient colour so IBL keeps its warmth. Default white. */
-  horizonTint?: string;
+  horizonTint?: string | undefined;
   /**
    * Sun direction (world space, not normalized) baked into the probe as an HDR disc plus a broad
    * lobe, so metals glint and diffuse IBL has a lit side. Default {@link DEFAULT_PROBE_SUN}.
    */
-  sunDirection?: readonly [number, number, number];
+  sunDirection?: readonly [number, number, number] | undefined;
   /** Sun disc tint. Default warm white. */
   sunColor?: string;
   /**
@@ -201,7 +201,7 @@ export function buildSkyProbeScene(options: {
   skyColor: string;
   groundColor: string;
   horizonTint?: string;
-  sunDirection?: readonly [number, number, number];
+  sunDirection?: readonly [number, number, number] | undefined;
   sunColor: string;
 }): THREE.Scene {
   const probe = new THREE.Scene();

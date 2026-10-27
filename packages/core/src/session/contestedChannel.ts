@@ -7,7 +7,7 @@ export interface ContestedChannelConfig {
   duration: number;
   interruptOnDamage?: boolean;
   resetOnInterrupt?: boolean;
-  favorability?: Record<string, number>;
+  favorability?: Record<string, number> | undefined;
   ratePerOccupant?: boolean;
   contested?: ContestReaction;
   decayRate?: number;

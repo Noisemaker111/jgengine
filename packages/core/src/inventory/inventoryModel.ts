@@ -45,8 +45,9 @@ function violatesKind(layout: InventoryLayout, traits: ItemTraits, itemId: strin
   return kind !== layout.accepts;
 }
 
-function validSlot(state: InventoryState, slot: number): boolean {
-  return Number.isInteger(slot) && slot >= 0 && slot < state.slots.length;
+/** The slot at `index`, or `undefined` when `index` is not a slot of this inventory. */
+function slotAt(state: InventoryState, index: number): InventorySlot | undefined {
+  return Number.isInteger(index) ? state.slots[index] : undefined;
 }
 
 function computeCapacity(state: InventoryState, traits: ItemTraits, itemId: string) {
@@ -62,16 +63,17 @@ function computeCapacity(state: InventoryState, traits: ItemTraits, itemId: stri
 
 function fillSlots(slots: InventorySlot[], itemId: string, limit: number, amount: number): number {
   let remaining = amount;
-  for (let i = 0; i < slots.length && remaining > 0; i++) {
-    const slot = slots[i];
+  for (const [i, slot] of slots.entries()) {
+    if (remaining <= 0) break;
     if (slot !== null && slot.itemId === itemId && slot.count < limit) {
       const add = Math.min(limit - slot.count, remaining);
       slots[i] = { itemId, count: slot.count + add };
       remaining -= add;
     }
   }
-  for (let i = 0; i < slots.length && remaining > 0; i++) {
-    if (slots[i] === null) {
+  for (const [i, slot] of slots.entries()) {
+    if (remaining <= 0) break;
+    if (slot === null) {
       const add = Math.min(limit, remaining);
       slots[i] = { itemId, count: add };
       remaining -= add;
@@ -100,12 +102,12 @@ function explicitPut(
   count: number,
   slot: number,
 ): PutResult {
-  if (!validSlot(state, slot)) return { status: "rejected", reason: "invalid-slot" };
+  const existing = slotAt(state, slot);
+  if (existing === undefined) return { status: "rejected", reason: "invalid-slot" };
   if (violatesKind(layout, traits, itemId)) return { status: "rejected", reason: "wrong-kind" };
   if (count <= 0) return { status: "ok", state };
 
   const limit = traits.stackLimit(itemId);
-  const existing = state.slots[slot];
   const slots = state.slots.slice();
 
   if (existing === null) {
@@ -144,7 +146,7 @@ export function takeItem(state: InventoryState, itemId: string, count: number): 
   let remaining = count;
   for (let i = slots.length - 1; i >= 0 && remaining > 0; i--) {
     const slot = slots[i];
-    if (slot !== null && slot.itemId === itemId) {
+    if (slot !== null && slot !== undefined && slot.itemId === itemId) {
       const removed = Math.min(slot.count, remaining);
       const newCount = slot.count - removed;
       slots[i] = newCount > 0 ? { itemId, count: newCount } : null;
@@ -175,8 +177,8 @@ export function moveItem(
   traits: ItemTraits,
   toSlot?: number,
 ): MoveResult {
-  if (!validSlot(from, fromSlot)) return { status: "rejected", reason: "invalid-slot" };
-  const source = from.slots[fromSlot];
+  const source = slotAt(from, fromSlot);
+  if (source === undefined) return { status: "rejected", reason: "invalid-slot" };
   if (source === null) return { status: "rejected", reason: "empty-slot" };
   if (violatesKind(toLayout, traits, source.itemId)) return { status: "rejected", reason: "wrong-kind" };
 
@@ -195,8 +197,8 @@ export function moveItem(
   const limit = traits.stackLimit(source.itemId);
 
   if (toSlot !== undefined) {
-    if (!validSlot(to, toSlot)) return { status: "rejected", reason: "invalid-slot" };
-    const dest = toSlots[toSlot];
+    const dest = slotAt({ slots: toSlots }, toSlot);
+    if (dest === undefined) return { status: "rejected", reason: "invalid-slot" };
 
     if (dest === null) {
       toSlots[toSlot] = { itemId: source.itemId, count: source.count };
@@ -241,8 +243,8 @@ export function splitStack(
   toSlot?: number,
   limit?: number,
 ): SplitResult {
-  if (!validSlot(state, slot)) return { status: "rejected", reason: "invalid-slot" };
-  const source = state.slots[slot];
+  const source = slotAt(state, slot);
+  if (source === undefined) return { status: "rejected", reason: "invalid-slot" };
   if (source === null) return { status: "rejected", reason: "empty-slot" };
   if (!Number.isFinite(amount) || amount <= 0 || amount >= source.count) return { status: "rejected", reason: "invalid-amount" };
 
@@ -251,9 +253,9 @@ export function splitStack(
     target = state.slots.findIndex((s) => s === null);
     if (target === -1) return { status: "rejected", reason: "no-space" };
   } else {
-    if (!validSlot(state, target)) return { status: "rejected", reason: "invalid-slot" };
+    const dest = slotAt(state, target);
+    if (dest === undefined) return { status: "rejected", reason: "invalid-slot" };
     if (target === slot) return { status: "rejected", reason: "slot-occupied" };
-    const dest = state.slots[target];
     if (dest !== null && dest.itemId !== source.itemId) return { status: "rejected", reason: "slot-occupied" };
   }
 

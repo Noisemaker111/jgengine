@@ -14,7 +14,7 @@ export function parseEditorMaterialAsset(value: unknown): MaterialAsset {
  * @capability authored-material-slots read validated material assignments from editor marker metadata
  */
 export function authoredMaterialAssignments(meta: Record<string, unknown> | undefined): MaterialAssignment[] {
-  return meta?.materialAssignments === undefined ? [] : parseMaterialAssignments(meta.materialAssignments);
+  return meta?.["materialAssignments"] === undefined ? [] : parseMaterialAssignments(meta["materialAssignments"]);
 }
 
 /** Compare selector meaning independently of serialized property order. @internal */

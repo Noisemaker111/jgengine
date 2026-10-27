@@ -18,9 +18,9 @@ export interface PlayerFovBounds {
 
 /** @internal */
 export function resolvePlayerFovBounds(options?: {
-  min?: number;
-  max?: number;
-  default?: number;
+  min?: number | undefined;
+  max?: number | undefined;
+  default?: number | undefined;
 }): PlayerFovBounds {
   const min = Number.isFinite(options?.min) ? (options!.min as number) : PLAYER_FOV_MIN;
   const max = Number.isFinite(options?.max) ? (options!.max as number) : PLAYER_FOV_MAX;

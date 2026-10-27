@@ -27,7 +27,7 @@ export interface EditorSummonModule {
   EditorApp: ComponentType<{
     gameId: string;
     playable: PlayableGame;
-    catalogs?: readonly EditorCatalogDefinition[];
+    catalogs?: readonly EditorCatalogDefinition[] | undefined;
     /** Passed by the host when the editor was summoned over a game — powers the "Exit to game" control. */
     onExitEditor?: () => void;
   }>;

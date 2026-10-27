@@ -60,7 +60,7 @@ export interface FloatingTextView {
   /** The style tag (resolved; `"default"` when the def omitted `kind`). */
   kind: string;
   /** The def's color hint, if any. */
-  color?: string;
+  color?: string | undefined;
   /** Resolved scale: base `size` times the current birth pop-in factor. */
   size: number;
   /** Opacity `0..1`, full until the fade window then easing to 0. */

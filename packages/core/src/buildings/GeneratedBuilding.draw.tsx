@@ -31,7 +31,7 @@ export type BuildingMaterialPalette = Partial<Record<BuildingPartKind, BuildingS
 
 export interface BuildingBlockProps {
   part: BuildingPartPlacement;
-  palette?: BuildingMaterialPalette;
+  palette?: BuildingMaterialPalette | undefined;
 }
 
 export interface InstancedBuildingPlacement {
@@ -121,7 +121,7 @@ export function boxKindCastsShadow(kind: BuildingPartKind, boxKinds: { has(kind:
 interface BuildingKindBatchProps {
   kind: BuildingPartKind;
   matrices: readonly THREE.Matrix4[];
-  palette?: BuildingMaterialPalette;
+  palette?: BuildingMaterialPalette | undefined;
   geometry: THREE.BoxGeometry;
   castShadow: boolean;
 }

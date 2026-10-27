@@ -38,8 +38,8 @@ export function isCameraOccluderTransparent(object: CameraOccluder | null | unde
   for (let node = object ?? null; node != null; node = node.parent ?? null) {
     const data = node.userData;
     if (data === undefined) continue;
-    if (data.jgCameraCollide === true) return false;
-    if (data.jgCameraTransparent === true) return true;
+    if (data["jgCameraCollide"] === true) return false;
+    if (data["jgCameraTransparent"] === true) return true;
   }
   return false;
 }

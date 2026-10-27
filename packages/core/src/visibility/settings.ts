@@ -105,7 +105,7 @@ const EMPTY: ObjectVisibilityOverrides = {};
 
 /** Merge override layers by precedence: earlier arguments win. Pass object, then layer, then scene, then global. */
 export function resolveOverrides(...layers: readonly (ObjectVisibilityOverrides | undefined)[]): ResolvedOverrides {
-  const pick = <K extends keyof ObjectVisibilityOverrides>(key: K): ObjectVisibilityOverrides[K] => {
+  const pick = <K extends keyof ObjectVisibilityOverrides>(key: K): ObjectVisibilityOverrides[K] | undefined => {
     for (const layer of layers) {
       const value = (layer ?? EMPTY)[key];
       if (value !== undefined) return value;

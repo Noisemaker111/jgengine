@@ -36,9 +36,9 @@ export interface AnnotationSnapshot {
 /** Player-drawn map annotation layer — strokes, shapes, and notes over caller-owned map data. */
 export interface AnnotationLayer {
   /** Add a freehand stroke; returns its id. Ignored (returns "") when fewer than 2 points. */
-  addStroke(points: readonly WorldXZ[], options?: { id?: string; tone?: MapLayerTone; width?: number }): string;
-  addShape(shape: MapZoneShape, options?: { id?: string; tone?: MapLayerTone; label?: string }): string;
-  addNote(position: WorldXZ, text: string, options?: { id?: string; tone?: MapLayerTone }): string;
+  addStroke(points: readonly WorldXZ[], options?: { id?: string; tone?: MapLayerTone | undefined; width?: number | undefined }): string;
+  addShape(shape: MapZoneShape, options?: { id?: string; tone?: MapLayerTone | undefined; label?: string | undefined }): string;
+  addNote(position: WorldXZ, text: string, options?: { id?: string; tone?: MapLayerTone | undefined }): string;
   remove(id: string): boolean;
   clear(): void;
   strokes(): readonly MapStroke[];

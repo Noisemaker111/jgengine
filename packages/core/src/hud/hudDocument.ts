@@ -38,10 +38,10 @@ export interface HudPanelFallback {
 /** Fully resolved panel layout after document + fallback merge. */
 export interface ResolvedHudPanelLayout {
   placement: HudPlacement;
-  width?: number;
-  height?: number;
+  width?: number | undefined;
+  height?: number | undefined;
   visible: boolean;
-  type?: string;
+  type?: string | undefined;
   /** True when the document owned at least one field (not pure TSX fallback). */
   fromDocument: boolean;
 }
@@ -208,10 +208,10 @@ export function resizePanelSize(
   delta: { dw: number; dh: number },
   axes: HudResizeAxes,
   limits?: {
-    minWidth?: number;
-    maxWidth?: number;
-    minHeight?: number;
-    maxHeight?: number;
+    minWidth?: number | undefined;
+    maxWidth?: number | undefined;
+    minHeight?: number | undefined;
+    maxHeight?: number | undefined;
   },
 ): HudSize {
   if (axes === "none") return { ...current };
@@ -232,10 +232,10 @@ export function resizePanelSize(
 /** @internal Resolve resize axes + limits for a panel type id (defaults to none when unregistered). */
 export function resolvePanelResize(typeId: string | undefined): {
   axes: HudResizeAxes;
-  minWidth?: number;
-  maxWidth?: number;
-  minHeight?: number;
-  maxHeight?: number;
+  minWidth?: number | undefined;
+  maxWidth?: number | undefined;
+  minHeight?: number | undefined;
+  maxHeight?: number | undefined;
 } {
   if (typeId === undefined) return { axes: "none" };
   const def = panelTypes.get(typeId);
@@ -257,17 +257,17 @@ function isFiniteNumber(value: unknown): value is number {
 export function decodeUiPanelLayout(raw: unknown): EditorUiPanelLayout | null {
   if (typeof raw !== "object" || raw === null || Array.isArray(raw)) return null;
   const value = raw as Record<string, unknown>;
-  if (!isHudAnchor(value.anchor)) return null;
-  if (!isFiniteNumber(value.dx) || !isFiniteNumber(value.dy)) return null;
+  if (!isHudAnchor(value["anchor"])) return null;
+  if (!isFiniteNumber(value["dx"]) || !isFiniteNumber(value["dy"])) return null;
   const panel: EditorUiPanelLayout = {
-    anchor: value.anchor,
-    dx: value.dx,
-    dy: value.dy,
+    anchor: value["anchor"],
+    dx: value["dx"],
+    dy: value["dy"],
   };
-  if (isFiniteNumber(value.width)) panel.width = value.width;
-  if (isFiniteNumber(value.height)) panel.height = value.height;
-  if (typeof value.visible === "boolean") panel.visible = value.visible;
-  if (typeof value.type === "string" && value.type.length > 0) panel.type = value.type;
+  if (isFiniteNumber(value["width"])) panel.width = value["width"];
+  if (isFiniteNumber(value["height"])) panel.height = value["height"];
+  if (typeof value["visible"] === "boolean") panel.visible = value["visible"];
+  if (typeof value["type"] === "string" && value["type"].length > 0) panel.type = value["type"];
   return panel;
 }
 
@@ -275,7 +275,7 @@ export function decodeUiPanelLayout(raw: unknown): EditorUiPanelLayout | null {
 export function decodeEditorUiDocument(raw: unknown): EditorUiDocument | undefined {
   if (raw === undefined || raw === null) return undefined;
   if (typeof raw !== "object" || Array.isArray(raw)) return undefined;
-  const panelsRaw = (raw as Record<string, unknown>).panels;
+  const panelsRaw = (raw as Record<string, unknown>)["panels"];
   if (typeof panelsRaw !== "object" || panelsRaw === null || Array.isArray(panelsRaw)) {
     return { panels: {} };
   }

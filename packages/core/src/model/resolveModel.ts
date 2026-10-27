@@ -186,8 +186,8 @@ function softModelLookup(
  */
 export function contextModels(playable: {
   game: { assets: AssetCatalog };
-  entityModels?: Record<string, string | ModelConfig>;
-  objectModels?: Record<string, string | ModelConfig>;
+  entityModels?: Record<string, string | ModelConfig> | undefined;
+  objectModels?: Record<string, string | ModelConfig> | undefined;
 }): GameContextModels | undefined {
   const entity = softModelLookup(playable.entityModels, playable.game.assets);
   const explicitObject = softModelLookup(playable.objectModels, playable.game.assets);

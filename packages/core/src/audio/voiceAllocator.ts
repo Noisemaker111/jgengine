@@ -19,9 +19,9 @@ export interface VoiceAllocatorStorage {
 
 /** Playback budget. Zero disables playback; default 64. */
 export interface VoiceAllocatorConfig {
-  maxTotal?: number;
+  maxTotal?: number | undefined;
   /** At capacity, steal the lowest-priority oldest voice, or reject new voices. Default "steal-lowest". */
-  overflow?: "steal-lowest" | "reject";
+  overflow?: "steal-lowest" | "reject" | undefined;
   storage?: VoiceAllocatorStorage;
 }
 

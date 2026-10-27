@@ -1,6 +1,6 @@
 import { useSyncExternalStore } from "react";
 
-import { bindingLabel, type ActionCodesMap } from "@jgengine/core/input/actionBindings";
+import { bindingLabel, primaryActionCodes, type ActionCodesMap } from "@jgengine/core/input/actionBindings";
 import type { GamepadGlyphName } from "@jgengine/core/input/gamepadModel";
 
 /** The device the player last used: drives which glyph a prompt shows. */
@@ -104,10 +104,7 @@ function isPadCode(code: string): boolean {
 
 function codesFor(map: ActionCodesMap, action: string): readonly string[] {
   const codes = map[action];
-  if (codes === undefined) return [];
-  if (Array.isArray(codes)) return codes as readonly string[];
-  const modes = codes as { hold?: readonly string[]; toggle?: readonly string[] };
-  return modes.hold ?? modes.toggle ?? [];
+  return codes === undefined ? [] : primaryActionCodes(codes);
 }
 
 /**

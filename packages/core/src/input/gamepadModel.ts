@@ -1,4 +1,4 @@
-import type { ActionCodesMap } from "./actionBindings";
+import { allActionCodes, type ActionCodesMap } from "./actionBindings";
 
 /** A serializable gamepad state sampled from the platform input API. */
 export interface GamepadSnapshot {
@@ -96,11 +96,6 @@ export interface GamepadFrame {
   analog: Record<string, number>;
 }
 
-function bindingCodes(codes: GamepadBindings[string]): readonly GamepadCode[] {
-  if (Array.isArray(codes)) return codes;
-  const modes = codes as { hold?: readonly GamepadCode[]; toggle?: readonly GamepadCode[] };
-  return [...(modes.hold ?? []), ...(modes.toggle ?? [])];
-}
 
 function clampUnit(value: number): number {
   return Number.isFinite(value) ? (value < -1 ? -1 : value > 1 ? 1 : value) : 0;
@@ -148,17 +143,17 @@ export function resolveGamepadFrame(
   if (radial) {
     let sumSquares = 0;
     for (let index = 0; index < snapshot.axes.length; index += 1) {
-      const value = clampUnit(snapshot.axes[index]);
+      const value = clampUnit(snapshot.axes[index] ?? 0);
       sumSquares += value * value;
     }
     const magnitude = Math.sqrt(sumSquares);
     radialFactor = magnitude === 0 ? 0 : rescale(Math.min(1, magnitude), inner, outer, curve) / magnitude;
   }
 
-  for (const action in bindings) {
+  for (const [action, codes] of Object.entries(bindings)) {
     let actionAnalog = 0;
     let isHeld = false;
-    for (const code of bindingCodes(bindings[action])) {
+    for (const code of allActionCodes(codes)) {
       if (code.startsWith("pad:")) {
         const button = snapshot.buttons[Number(code.slice(4))];
         if (button === undefined) continue;

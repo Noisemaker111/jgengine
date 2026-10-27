@@ -75,8 +75,8 @@ export function createVehicleObstacleClamp(options: {
   // after warm-up. Per-clamp (closure-local) so concurrent cars never share it.
   const scratch: {
     position: [number, number, number];
-    halfExtents?: readonly [number, number, number];
-    offset?: readonly [number, number, number];
+    halfExtents?: readonly [number, number, number] | undefined;
+    offset?: readonly [number, number, number] | undefined;
     boxes?: CollisionObstacle["boxes"];
   }[] = [];
   const offsetScratch: [number, number, number][] = [];

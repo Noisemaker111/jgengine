@@ -25,21 +25,21 @@ export interface WeatherUniformSet extends WeatherShelterUniforms {
   snow: THREE.IUniform<number>;
   dust: THREE.IUniform<number>;
   controlsWind: boolean;
-  metrics?: WeatherParticleMetrics;
+  metrics?: WeatherParticleMetrics | undefined;
 }
 
 /** Options for the shared weather uniforms: wind, lightning, time scale or an authoritative clock, and an authored weather sampler. */
 export interface WeatherUniformOptions {
-  wind?: WeatherVector;
-  lightning?: number;
-  timeScale?: number;
+  wind?: WeatherVector | undefined;
+  lightning?: number | undefined;
+  timeScale?: number | undefined;
   /** Absolute authoritative simulation seconds; no render delta is accumulated when supplied. */
-  timeSeconds?: number | (() => number);
-  sample?: (x: number, z: number) => AuthoredWeatherSample;
+  timeSeconds?: number | (() => number) | undefined;
+  sample?: ((x: number, z: number) => AuthoredWeatherSample) | undefined;
   /** The closest 32 authored shelter volumes clip cosmetic particles. */
-  shelters?: readonly EditorVolume[];
+  shelters?: readonly EditorVolume[] | undefined;
   /** Opt-in counters read from submitted geometry and actual query calls. */
-  metrics?: WeatherParticleMetrics;
+  metrics?: WeatherParticleMetrics | undefined;
 }
 
 const WeatherUniformContext = createContext<WeatherUniformSet | null>(null);

@@ -9,10 +9,10 @@ export interface SessionListing {
   visibility: SessionVisibility;
   memberCount: number;
   slotsPerServer: number;
-  label?: string;
-  mode?: string;
-  joinCode?: string;
-  tags?: readonly string[];
+  label?: string | undefined;
+  mode?: string | undefined;
+  joinCode?: string | undefined;
+  tags?: readonly string[] | undefined;
   updatedAt: number;
 }
 
@@ -26,7 +26,7 @@ export interface MatchFilter {
 }
 
 export interface BrowseOptions {
-  limit?: number;
+  limit?: number | undefined;
 }
 
 export function normalizeJoinCode(code: string): string {

@@ -95,8 +95,8 @@ export function WorldTireMarks(): ReactElement {
     seen.current = { version, rebuiltAt: now };
     const count = writeTireMarkGeometry(store.marks(now), now, store.lifetime, positions, colors);
     geometry.setDrawRange(0, count);
-    geometry.attributes.position!.needsUpdate = true;
-    geometry.attributes.color!.needsUpdate = true;
+    geometry.attributes["position"]!.needsUpdate = true;
+    geometry.attributes["color"]!.needsUpdate = true;
     geometry.computeBoundingSphere();
     if (mesh.current !== null) mesh.current.visible = count > 0;
   });

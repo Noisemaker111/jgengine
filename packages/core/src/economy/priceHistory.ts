@@ -52,7 +52,7 @@ export function createPriceHistory(config: PriceHistoryConfig): PriceHistory {
     if (config.windowSeconds !== undefined && now !== undefined) {
       const cutoff = now - config.windowSeconds;
       let drop = 0;
-      while (drop < list.length && list[drop].at < cutoff) drop += 1;
+      while ((list[drop]?.at ?? Infinity) < cutoff) drop += 1;
       if (drop > 0) list.splice(0, drop);
     }
     if (list.length > config.maxSamplesPerItem) {
@@ -102,7 +102,7 @@ export function createPriceHistory(config: PriceHistoryConfig): PriceHistory {
         minUnitPrice: min,
         maxUnitPrice: max,
         averageUnitPrice: spend / volume,
-        latestUnitPrice: list[list.length - 1].unitPrice,
+        latestUnitPrice: list.at(-1)?.unitPrice ?? 0,
       };
     },
     samplesOf(itemId, now) {

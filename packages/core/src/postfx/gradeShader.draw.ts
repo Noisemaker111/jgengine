@@ -1,4 +1,5 @@
 import * as THREE from "three";
+import { requireUniform } from "@jgengine/core/render/uniformMaterial.draw";
 import { ShaderPass } from "three-stdlib";
 
 import type { GradeConfig, LutCube } from "@jgengine/core/render/postProcessing";
@@ -136,8 +137,8 @@ export function createGradePass(config: GradeConfig = {}): ShaderPass {
     const lut = config.lut;
     if ("cube" in lut) {
       lutTexture = lutStripTexture(lut.cube);
-      pass.uniforms.uLut.value = lutTexture;
-      pass.uniforms.uLutSize.value = lut.cube.size;
+      requireUniform(pass.uniforms, "uLut").value = lutTexture;
+      requireUniform(pass.uniforms, "uLutSize").value = lut.cube.size;
       return pass;
     }
     void new THREE.TextureLoader().loadAsync(lut.url).then((texture) => {
@@ -150,8 +151,8 @@ export function createGradePass(config: GradeConfig = {}): ShaderPass {
       texture.minFilter = THREE.NearestFilter;
       texture.magFilter = THREE.NearestFilter;
       texture.generateMipmaps = false;
-      pass.uniforms.uLut.value = texture;
-      pass.uniforms.uLutSize.value = lut.size ?? 32;
+      requireUniform(pass.uniforms, "uLut").value = texture;
+      requireUniform(pass.uniforms, "uLutSize").value = lut.size ?? 32;
     }).catch(() => undefined);
   }
   return pass;

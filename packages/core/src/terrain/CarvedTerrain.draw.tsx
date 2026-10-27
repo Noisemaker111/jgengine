@@ -16,16 +16,16 @@ export interface CarvedTerrainProps extends Omit<ThreeElements["mesh"], "args" |
   /** The terrain field to mesh — a `CarvableField` renders its craters and mounds. */
   field: TerrainField;
   size?: FieldGroundOptions["size"];
-  segments?: FieldGroundOptions["segments"];
-  center?: FieldGroundOptions["center"];
+  segments?: FieldGroundOptions["segments"] | undefined;
+  center?: FieldGroundOptions["center"] | undefined;
   colors?: FieldGroundOptions["colors"];
   heightRange?: FieldGroundOptions["heightRange"];
-  paletteAt?: FieldGroundOptions["paletteAt"];
-  paintColorAt?: FieldGroundOptions["paintColorAt"];
+  paletteAt?: FieldGroundOptions["paletteAt"] | undefined;
+  paintColorAt?: FieldGroundOptions["paintColorAt"] | undefined;
   roughness?: number;
   metalness?: number;
   /** Override the default vertex-colour material (e.g. a procedural detail material). The caller owns its lifecycle; it is not disposed here. */
-  surfaceMaterial?: THREE.Material;
+  surfaceMaterial?: THREE.Material | undefined;
   /** Bump after a runtime carve/deposit to re-mesh the deformed surface. */
   epoch?: number;
 }
@@ -62,7 +62,7 @@ export function CarvedTerrain({
     [field, size, segments, center, colors, heightRange, paletteAt, paintColorAt, epoch],
   );
   const chunked = (grid.segments.x + 1) * (grid.segments.z + 1) > CHUNKED_GROUND_MIN_VERTICES;
-  if (chunked) return <ChunkedGround grid={grid} material={material} receiveShadow={receiveShadow ?? true} meshProps={meshProps} />;
+  if (chunked) return <ChunkedGround grid={grid} material={material} receiveShadow={receiveShadow} meshProps={meshProps} />;
   return <WholeGround field={field} options={{ size, segments, center, colors, heightRange, paletteAt, paintColorAt }} epoch={epoch} material={material} receiveShadow={receiveShadow} meshProps={meshProps} />;
 }
 
@@ -78,7 +78,7 @@ function WholeGround({
   options: FieldGroundOptions;
   epoch: number;
   material: THREE.Material;
-  receiveShadow: CarvedTerrainProps["receiveShadow"];
+  receiveShadow: boolean;
   meshProps: Omit<CarvedTerrainProps, "field">;
 }) {
   // Meshed in slices after mount: a big field samples the game's height function hundreds of

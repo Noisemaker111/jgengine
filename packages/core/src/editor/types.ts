@@ -311,7 +311,7 @@ export interface EditorEnvironment {
 /** The full authored scene: every marker, volume, path, note, and sculpted terrain for a game. */
 export interface EditorDocument {
   /** Reusable material library; per-marker named assignments live in meta.materialAssignments. */
-  materialAssets?: MaterialAsset[];
+  materialAssets?: MaterialAsset[] | undefined;
   version: 1;
   /** Authored weather, emitter, fire and habitat inputs; runtime state saves separately. */
   simulation?: EditorSimulation;
@@ -337,7 +337,7 @@ export interface EditorDocument {
    * HUD layout owned by the scene document — panel id → anchor/offset/size/visibility.
    * Canvas mode (F2+C) and `canvas_move_panel` / `canvas_resize_panel` write here; HudPanel reads it.
    */
-  ui?: EditorUiDocument;
+  ui?: EditorUiDocument | undefined;
   /**
    * Procedural **directives** — the scene-authorable face of the runtime scatter/population
    * primitives. One directive line materializes into many placements at load (via
@@ -352,7 +352,7 @@ export interface EditorDocument {
    */
   minimap?: EditorMinimapBake;
   /** Named baked artifacts; `minimap` remains as a compatible legacy alias. */
-  bakes?: EditorBake[];
+  bakes?: EditorBake[] | undefined;
   /**
    * Scene-document sky/fog/lighting (#1110). Absent until authored in the lighting workspace or
    * seeded via `editorLayers`, so old docs load unchanged and world.ts can keep a fallback sky.

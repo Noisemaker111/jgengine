@@ -1,4 +1,5 @@
 import * as THREE from "three";
+import { requireUniform } from "@jgengine/core/render/uniformMaterial.draw";
 import { FullScreenQuad, Pass } from "three-stdlib";
 
 import type { StylizeConfig } from "@jgengine/core/render/postProcessing";
@@ -182,7 +183,7 @@ export class StylizePass extends Pass {
   }
 
   override setSize(width: number, height: number): void {
-    this.material.uniforms.uResolution.value.set(width, height);
+    requireUniform(this.material.uniforms, "uResolution").value.set(width, height);
     this.normalTarget?.setSize(width, height);
   }
 
@@ -194,10 +195,10 @@ export class StylizePass extends Pass {
     const uniforms = this.material.uniforms;
     if (this.normalTarget !== null) this.renderPrepass(renderer, this.normalTarget);
     const camera = this.camera as THREE.PerspectiveCamera | THREE.OrthographicCamera;
-    uniforms.uNear.value = camera.near;
-    uniforms.uFar.value = camera.far;
-    uniforms.uOrtho.value = (camera as THREE.OrthographicCamera).isOrthographicCamera === true;
-    uniforms.tDiffuse.value = readBuffer.texture;
+    requireUniform(uniforms, "uNear").value = camera.near;
+    requireUniform(uniforms, "uFar").value = camera.far;
+    requireUniform(uniforms, "uOrtho").value = (camera as THREE.OrthographicCamera).isOrthographicCamera === true;
+    requireUniform(uniforms, "tDiffuse").value = readBuffer.texture;
     renderer.setRenderTarget(this.renderToScreen ? null : writeBuffer);
     this.quad.render(renderer);
   }

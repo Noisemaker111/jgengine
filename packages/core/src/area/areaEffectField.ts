@@ -92,7 +92,7 @@ export interface AreaFieldState<P> {
   readonly sources: {
     readonly id: string;
     readonly payload: P;
-    readonly refreshMs?: number;
+    readonly refreshMs?: number | undefined;
     readonly stackKey: string;
     readonly enabled: boolean;
   }[];

@@ -48,7 +48,7 @@ export interface SimContext {
 }
 
 /** Build `ctx.sim` for a context; `createGameContext` calls this from `definition.simulation`. */
-export function createSimContext(options: { config?: SimulationConfig; entities: EntityStore; time?: Pick<SimClock, "advance"> }): SimContext {
+export function createSimContext(options: { config?: SimulationConfig | undefined; entities: EntityStore; time?: Pick<SimClock, "advance"> }): SimContext {
   const { entities } = options;
   const loop = createSimLoop(options.config);
   const poses = createPoseHistory({ snapDistance: loop.config().snapDistance });

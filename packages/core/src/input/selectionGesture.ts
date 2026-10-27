@@ -27,7 +27,7 @@ export interface ClickSelectInput {
   additive: boolean;
   /** Double-click or Ctrl+click: select every on-screen selectable entity of the hit's kind. */
   sameKind: boolean;
-  kindOf?: (entityId: string) => string | null;
+  kindOf?: ((entityId: string) => string | null) | undefined;
   /** Selectable entities currently on screen, in a stable order; only read for a same-kind select. */
   onScreen: () => readonly string[];
 }

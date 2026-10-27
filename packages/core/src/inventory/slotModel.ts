@@ -43,10 +43,12 @@ export function removeAt<T>(grid: SlotGrid<T>, index: number): SlotResult<T> {
 /** @internal */
 export function moveSlot<T>(grid: SlotGrid<T>, from: number, to: number): SlotResult<T> {
   if (!inRange(grid, from) || !inRange(grid, to)) return { status: "rejected", reason: "invalid-slot" };
-  if (grid[from] === null) return { status: "rejected", reason: "empty-slot" };
+  const moved = grid[from];
+  const target = grid[to];
+  if (moved === undefined || target === undefined) return { status: "rejected", reason: "invalid-slot" };
+  if (moved === null) return { status: "rejected", reason: "empty-slot" };
   const next = grid.slice();
-  const moved = next[from]!;
-  next[from] = next[to];
+  next[from] = target;
   next[to] = moved;
   return { status: "ok", grid: next };
 }
@@ -83,8 +85,7 @@ export function countFilled<T>(grid: SlotGrid<T>): number {
 
 /** @internal */
 export function indexOfSlot<T>(grid: SlotGrid<T>, match: (value: T, index: number) => boolean): number | null {
-  for (let index = 0; index < grid.length; index++) {
-    const slot = grid[index];
+  for (const [index, slot] of grid.entries()) {
     if (slot !== null && match(slot, index)) return index;
   }
   return null;

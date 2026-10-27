@@ -209,9 +209,9 @@ export function authoredLightsFromDocument(doc: EditorDocument): readonly { posi
     const meta = marker.meta ?? {};
     lamps.push({
       position: [marker.position.x, marker.position.y, marker.position.z],
-      ...(typeof meta.color === "string" ? { color: meta.color } : {}),
-      ...(typeof meta.intensity === "number" ? { intensity: meta.intensity } : {}),
-      ...(typeof meta.range === "number" ? { distance: meta.range } : {}),
+      ...(typeof meta["color"] === "string" ? { color: meta["color"] } : {}),
+      ...(typeof meta["intensity"] === "number" ? { intensity: meta["intensity"] } : {}),
+      ...(typeof meta["range"] === "number" ? { distance: meta["range"] } : {}),
     });
   }
   for (const light of doc.environment?.pointLights ?? []) {
@@ -259,8 +259,8 @@ export function lightingFromDocument(doc: EditorDocument): LightingConfig | unde
   for (const marker of doc.markers) {
     if (marker.kind !== "light" || marker.position === undefined) continue;
     const meta = marker.meta ?? {};
-    const base = { position: [marker.position.x, marker.position.y, marker.position.z] as [number, number, number], color: typeof meta.color === "string" ? meta.color : "#ffd6a0", intensity: typeof meta.intensity === "number" ? meta.intensity : 2, distance: typeof meta.range === "number" ? meta.range : 12, castShadow: meta.castShadow === true };
-    if (meta.type === "spot") spots.push({ ...base, angle: typeof meta.angle === "number" ? meta.angle : Math.PI / 6 });
+    const base = { position: [marker.position.x, marker.position.y, marker.position.z] as [number, number, number], color: typeof meta["color"] === "string" ? meta["color"] : "#ffd6a0", intensity: typeof meta["intensity"] === "number" ? meta["intensity"] : 2, distance: typeof meta["range"] === "number" ? meta["range"] : 12, castShadow: meta["castShadow"] === true };
+    if (meta["type"] === "spot") spots.push({ ...base, angle: typeof meta["angle"] === "number" ? meta["angle"] : Math.PI / 6 });
     else points.push(base);
   }
   return points.length === 0 && spots.length === 0 ? undefined : { point: points, spot: spots };

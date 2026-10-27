@@ -31,15 +31,15 @@ export interface PersistConfig {
   /** Save-format version. Supply `migrate` for incompatible older shapes; without it, mismatched versions retain compatible load behavior. */
   version?: number;
   /** Convert a mismatched version (or raw payload, version 0) before world restoration. Throw to reject without hydrating or changing the stored save. Current-version payloads bypass this hook. */
-  migrate?: RuntimeSaveOptions["migrate"];
+  migrate?: RuntimeSaveOptions["migrate"] | undefined;
   /** Autosave debounce in ms (autosave mode). Default 3000. */
   autosaveMs?: number;
 }
 
 /** World gravity and jump tuning, plus the optional rigid-body backend and character capsule. */
 export interface PhysicsConfig {
-  gravity?: number;
-  jumpVelocity?: number;
+  gravity?: number | undefined;
+  jumpVelocity?: number | undefined;
   /** Physics solver used by the shell movement controller and the context's physics stage. */
   backend?: PhysicsBackend;
   /** Capsule dimensions for players using the configured physics backend. */
@@ -220,7 +220,7 @@ export interface GameDefinition<
   /** @deprecated No longer the runtime store — `createGameContext` mints a fresh per-context `EntityStore` so one host can serve many worlds without state bleed (#632). Retained only for API compatibility; read `ctx.scene.entity` instead. */
   scene: EntityStore;
   /** Opt-in `ctx.game.*` subsystems beyond the always-on base; omitted systems are `undefined` on `ctx.game`. */
-  features?: GameFeatures;
+  features?: GameFeatures | undefined;
   /**
    * Composable game capabilities — the preferred authoring path for runtime behavior.
    * Each system owns timing, events, and optional save/replication/reset/disposal.
@@ -271,7 +271,7 @@ export interface GameDefinition<
    * `undefined` here, so a resolved definition only ever carries a real {@link LifecycleConfig} or
    * nothing.
    */
-  lifecycle?: LifecycleConfig;
+  lifecycle?: LifecycleConfig | undefined;
   /**
    * Host-side per-viewer replication policy — private-state and area-of-interest projection over the
    * wire. Applied on every authoritative host (ws, Convex, loopback); clients need not set it. Unset

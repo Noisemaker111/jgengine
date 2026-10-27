@@ -190,7 +190,7 @@ export interface ProjectileSystemDeps {
   getStat(itemId: string, stat: string): number | null;
   raycast?: Raycast;
   sceneRaycast?: SceneRaycastApi;
-  objects?: ProjectileObjectsDeps;
+  objects?: ProjectileObjectsDeps | undefined;
   entityCollidersOf?(instanceId: string): EntityColliderSet | null | undefined;
   rotationYOf?(instanceId: string): number | undefined;
   sweepBallistic?: BallisticSweep;
@@ -339,7 +339,7 @@ function asSceneHits(hits: readonly RaycastHit[]): SceneRaycastHit[] {
   return hits.map((hit) => ({
     targetKind: hit.kind === "entity" ? ("entity" as const) : ("object" as const),
     instanceId: hit.instanceId,
-    catalogId: hit.kind === "object" ? hit.catalogId : undefined,
+    ...(hit.kind === "object" ? { catalogId: hit.catalogId } : {}),
     colliderName: hit.colliderName ?? "body",
     purpose: hit.damageEligible === false ? ("physical" as const) : ("damage" as const),
     damageEligible: hit.kind === "entity" ? hit.damageEligible !== false : hit.damageEligible === true,

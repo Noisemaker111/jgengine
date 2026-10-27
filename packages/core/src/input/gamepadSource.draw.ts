@@ -81,7 +81,7 @@ export function GamepadSource({
   analogRef: { current: Readonly<Record<string, number>> | null };
   input: InputSnapshot;
   /** Game-level pad feel (`defineGame({ gamepad })`); unset keeps the shell defaults. */
-  feel?: GamepadFeelConfig;
+  feel?: GamepadFeelConfig | undefined;
   /** Local seats; pads claimed by a seat other than the primary publish to that seat's input. */
   seats?: LocalPlayers;
   /** A pad just opened a new seat; the shell spawns its player here. */

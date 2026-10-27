@@ -101,7 +101,7 @@ export function SpriteBatch({
       opacity,
     });
     mat.onBeforeCompile = (shader) => {
-      shader.uniforms.spriteUvScale = { value: new THREE.Vector2(1 / columns, 1 / rows) };
+      shader.uniforms["spriteUvScale"] = { value: new THREE.Vector2(1 / columns, 1 / rows) };
       shader.vertexShader = shader.vertexShader
         .replace(
           "#include <common>",

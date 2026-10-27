@@ -33,17 +33,17 @@ export interface RuntimeSaveConfig {
   /** Where the save lives — `localSaveBackend()` (offline) or a cloud/Convex backend; the only thing that changes between offline and cloud. */
   backend: SaveBackend;
   /** `"autosave"` (default) persists on world change; `"manual"` only when the game calls `save()`/`checkpoint()`. */
-  mode?: RuntimeSaveMode;
+  mode?: RuntimeSaveMode | undefined;
   /** Storage namespace. Default `"runtime"`. */
   key?: string;
   /** Active save slot. Default `"default"`. */
   slot?: string;
   /** Save-format version; bump + pass {@link migrate} on a breaking world-shape change. */
-  version?: number;
-  migrate?: (data: unknown, fromVersion: number) => WorldSnapshot;
+  version?: number | undefined;
+  migrate?: ((data: unknown, fromVersion: number) => WorldSnapshot) | undefined;
   /** Trailing autosave interval (ms) for `autosave` mode — the world persists at most once per interval and always within one interval of its first unsaved change. Default `3000`. */
-  autosaveMs?: number;
-  now?: () => number;
+  autosaveMs?: number | undefined;
+  now?: (() => number) | undefined;
   timers?: SaveTimers;
   onError?: (error: unknown) => void;
 }

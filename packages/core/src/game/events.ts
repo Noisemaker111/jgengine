@@ -19,7 +19,7 @@ export interface EntityDiedEvent {
   /** The cause (`reason.kind`) and, through `source`, what dealt it. */
   reason: DeathReason;
   /** Instance id of the killer, hazard or effect that caused it, when the caller knew one. */
-  source?: string;
+  source?: string | undefined;
   position: [number, number, number];
   serverId?: string;
   /** The catalog's `onDeath.keep`: the entity stayed in the scene and the game decides what comes next. */
@@ -75,8 +75,8 @@ export interface AnimationClipEvent {
  * one that re-declares the shape inline is a cast the compiler cannot check.
  */
 export interface LootDrop {
-  item?: string;
-  currency?: string;
+  item?: string | undefined;
+  currency?: string | undefined;
   count: number;
 }
 

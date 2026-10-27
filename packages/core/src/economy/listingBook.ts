@@ -224,7 +224,7 @@ export function createListingBook(config: ListingBookConfig): ListingBook {
       const index = box.items.findIndex((stack) => stack.itemId === itemId);
       if (index === -1) return false;
       const stack = box.items[index];
-      if (stack.count < count) return false;
+      if (stack === undefined || stack.count < count) return false;
       if (stack.count === count) box.items.splice(index, 1);
       else box.items[index] = { ...stack, count: stack.count - count };
       return true;

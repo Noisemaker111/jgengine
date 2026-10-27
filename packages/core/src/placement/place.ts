@@ -1,3 +1,4 @@
+import { definedOnly } from "../data/definedOnly";
 import type { PhysicsConfig } from "../game/defineGame";
 
 /**
@@ -251,7 +252,7 @@ export function resolveWorldPhysics(
   base: PhysicsConfig | undefined,
 ): PhysicsConfig | undefined {
   if (worldFeature === undefined || worldFeature.kind !== "place" || worldFeature.physics === undefined) return base;
-  return base === undefined ? worldFeature.physics : { ...base, ...worldFeature.physics };
+  return base === undefined ? worldFeature.physics : { ...base, ...definedOnly(worldFeature.physics) };
 }
 
 /** Type guard for the place-model world feature. */

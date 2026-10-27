@@ -29,7 +29,7 @@ export type WsBackendOptions = {
   url?: string;
   pipe?: TransportPipeFactory;
   userId: string;
-  token?: string;
+  token?: string | undefined;
   webSocketFactory?: (url: string) => WebSocket;
   reconnectDelayMs?: number;
   maxReconnectDelayMs?: number;
@@ -117,7 +117,7 @@ type PendingRequest = {
 type Subscription = {
   channel: WsChannel;
   serverId: string;
-  action?: string;
+  action: string | undefined;
   callbacks: Set<(data: unknown) => void>;
   last?: unknown;
   hasLast: boolean;
@@ -489,8 +489,9 @@ export function createWsBackend(options: WsBackendOptions): WsBackend {
     const key = subscriptionKey(channel, serverId, action);
     let subscription = subscriptions.get(key);
     if (subscription === undefined) {
-      subscription = { channel, serverId, action, callbacks: new Set(), hasLast: false };
-      subscriptions.set(key, subscription);
+      const created: Subscription = { channel, serverId, action, callbacks: new Set(), hasLast: false };
+      subscription = created;
+      subscriptions.set(key, created);
       void request((id) => ({ v: 1, t: "subscribe", id, channel, serverId, action })).catch(
         () => undefined,
       );

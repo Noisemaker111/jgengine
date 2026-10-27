@@ -58,7 +58,7 @@ export class RevealSnapshotPass extends Pass {
   }
 
   override render(renderer: THREE.WebGLRenderer, _writeBuffer: THREE.WebGLRenderTarget, readBuffer: THREE.WebGLRenderTarget): void {
-    this.material.uniforms.tDiffuse!.value = readBuffer.texture;
+    this.material.uniforms["tDiffuse"]!.value = readBuffer.texture;
     renderer.setRenderTarget(this.fade.plain);
     this.quad.render(renderer);
   }
@@ -119,13 +119,13 @@ export class RevealFadePass extends Pass {
   override render(renderer: THREE.WebGLRenderer, _writeBuffer: THREE.WebGLRenderTarget, readBuffer: THREE.WebGLRenderTarget): void {
     this.output.renderToScreen = false;
     this.output.render(renderer, this.plainDisplay, this.plain, 0, false);
-    this.material.uniforms.uOpacity!.value = 1 - this.progress * this.progress * (3 - 2 * this.progress);
+    this.material.uniforms["uOpacity"]!.value = 1 - this.progress * this.progress * (3 - 2 * this.progress);
     const autoClear = renderer.autoClear;
     renderer.autoClear = false;
     try {
       if (this.renderToScreen) {
         // Last in the chain: the full result goes to the canvas first, then the frame without effects over it.
-        this.copyMaterial.uniforms.tDiffuse!.value = readBuffer.texture;
+        this.copyMaterial.uniforms["tDiffuse"]!.value = readBuffer.texture;
         renderer.setRenderTarget(null);
         this.copyQuad.render(renderer);
       } else {

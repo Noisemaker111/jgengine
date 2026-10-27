@@ -63,7 +63,7 @@ if (jgPuddle > 0.0) normal = normalize(mix(normal, normalize((viewMatrix * vec4(
 export function takesWetness(material: THREE.Material): boolean {
   const standard = material as THREE.MeshStandardMaterial;
   if (standard.isMeshStandardMaterial !== true || material.userData[WET_KEY] !== undefined) return false;
-  if (material.userData.noWetness === true) return false;
+  if (material.userData["noWetness"] === true) return false;
   const physical = material as THREE.MeshPhysicalMaterial;
   // Feathered road and decal ribbons blend only at their edges; see-through glass is what stays dry.
   return !(physical.isMeshPhysicalMaterial === true && physical.transmission > 0) && !(material.transparent && material.opacity < 0.95);
@@ -79,7 +79,7 @@ export function applyWetness(material: THREE.MeshStandardMaterial): void {
     previousCompile.call(material, shader, renderer);
     // A material whose own shader already replaced these chunks keeps its look dry.
     if (!shader.fragmentShader.includes("#include <metalnessmap_fragment>") || !shader.vertexShader.includes("#include <worldpos_vertex>")) return;
-    shader.uniforms.uJgWetness = wetnessUniform;
+    shader.uniforms["uJgWetness"] = wetnessUniform;
     shader.vertexShader = shader.vertexShader
       .replace("#include <common>", `#include <common>\n${VERTEX_PARS}`)
       .replace("#include <worldpos_vertex>", VERTEX_MAIN);

@@ -77,11 +77,11 @@ export interface MissionFactCondition {
   /** Fact name, or `"score"` for the mission's running survival score. */
   fact: string;
   /** Matches when the fact strictly equals this. */
-  is?: string | number | boolean;
+  is?: string | number | boolean | undefined;
   /** Matches when the numeric fact is at least this. */
-  atLeast?: number;
+  atLeast?: number | undefined;
   /** Matches when the numeric fact is at most this. */
-  atMost?: number;
+  atMost?: number | undefined;
   /** Invert the whole test. */
   not?: boolean;
 }
@@ -130,53 +130,53 @@ export interface MissionObjectiveDef {
   id: string;
   kind: MissionObjectiveKind;
   /** Human label for a HUD tracker; falls back to a derived label. */
-  label?: string;
+  label?: string | undefined;
   /** Tracked actor for `reach` / `interact` / `survive` / the `pursue` target. */
-  actor?: string;
+  actor?: string | undefined;
   /** Pursuer for `pursue`; defaults to the runtime's `defaultPursuer`. */
-  pursuer?: string;
+  pursuer?: string | undefined;
   /** Authored scene marker id the actor must reach or interact at. */
-  marker?: string;
+  marker?: string | undefined;
   /** Proximity radius (m) for `reach` / `interact`. Default {@link DEFAULT_REACH_RADIUS}. */
-  radius?: number;
+  radius?: number | undefined;
   /** Seconds the actor must hold for `survive`. */
-  duration?: number;
+  duration?: number | undefined;
   /**
    * World facts that complete a `survive` objective once they hold (after any `duration`): "lose the
    * police" is `until: { fact: "police_tier", atMost: 0 }`, not a game-side signal.
    */
-  until?: MissionFactCondition | readonly MissionFactCondition[];
+  until?: MissionFactCondition | readonly MissionFactCondition[] | undefined;
   /** Keep-close distance (m) for `pursue`. Default {@link DEFAULT_PURSUE_DISTANCE}. */
-  distance?: number;
+  distance?: number | undefined;
   /** Distance (m) past which a pursuit counts as escaped. Default `distance * 3`. */
-  escapeDistance?: number;
+  escapeDistance?: number | undefined;
   /** Seconds beyond `escapeDistance` before the pursuit fails. Default `0` (instant). */
-  escapeGrace?: number;
+  escapeGrace?: number | undefined;
   /** Fail state a pursuit escape lands in. Default `"failed"`. */
-  escapeFail?: string;
+  escapeFail?: string | undefined;
   /** Counter key for `kill` / `collect`; defaults to the objective id. */
-  counter?: string;
+  counter?: string | undefined;
   /** Counter target for `kill` / `collect`. */
-  count?: number;
+  count?: number | undefined;
   /**
    * Count `kill` / `collect` objectives from reported world events instead of a bare counter, so only a
    * matching event credits progress (`tags`, `withoutTags`, `target`). Omitted keeps the counter path.
    */
-  match?: MissionEventFilter;
+  match?: MissionEventFilter | undefined;
   /** Survivors that must remain for `survive`; dropping below fails the mission. */
-  minSurvivors?: number;
+  minSurvivors?: number | undefined;
   /** Fail state a `minSurvivors` breach lands in. Default `"failed"`. */
-  minSurvivorsFail?: string;
+  minSurvivorsFail?: string | undefined;
   /** Seconds in this objective before it expires into `onTimeout`. */
-  timeout?: number;
+  timeout?: number | undefined;
   /** Where expiry goes: an objective id, a fail state id, or `"done"`. Default: fail the mission. */
-  onTimeout?: string;
+  onTimeout?: string | undefined;
   /** Conditions that fail the mission while this objective is active. */
-  failOn?: readonly MissionFailCondition[];
+  failOn?: readonly MissionFailCondition[] | undefined;
   /** Next objective (or `"done"`) when the goal is met and no branch matches. */
-  next?: string;
+  next?: string | undefined;
   /** Conditional edges, first match wins. */
-  branches?: readonly MissionBranch[];
+  branches?: readonly MissionBranch[] | undefined;
 }
 
 /** A named fail state an objective, timer or branch can land in. */
@@ -195,20 +195,20 @@ export interface MissionRewards extends QuestRewards {
 export interface MissionDef {
   id: string;
   title: string;
-  description?: string;
+  description?: string | undefined;
   /** Objective the mission starts on. Defaults to the first objective. */
   start?: string;
   objectives: readonly MissionObjectiveDef[];
   /** Named fail states. */
   fail?: readonly MissionFailDef[];
   /** Rewards paid on completion. */
-  rewards?: MissionRewards;
+  rewards?: MissionRewards | undefined;
   /** Rewards paid the moment a named objective completes. */
   objectiveRewards?: Readonly<Record<string, MissionRewards>>;
   /** One named fact rolled from `options` at start with the injected RNG — deterministic variation. */
   rollout?: { fact: string; options: readonly (string | number)[] };
   /** Follow-up mission started on completion — how a chain or campaign is authored. */
-  next?: string;
+  next?: string | undefined;
 }
 
 /** A live actor the machine tracks: whether it is alive and, when needed, where it is. */

@@ -351,17 +351,17 @@ export function GamePlayerShell({
   }, [ctx, audioEngine, playable]);
   useEffect(() => {
     if (typeof document === "undefined") return;
-    document.documentElement.dataset.jgPresentation = playable.presentation ?? "3d";
+    document.documentElement.dataset["jgPresentation"] = playable.presentation ?? "3d";
     return () => {
-      delete document.documentElement.dataset.jgPresentation;
+      delete document.documentElement.dataset["jgPresentation"];
     };
   }, [playable]);
   // The tier the shell actually resolved, so a capture can prove which one it measured.
   useEffect(() => {
     if (typeof document === "undefined") return;
-    document.documentElement.dataset.jgQuality = graphics.quality;
+    document.documentElement.dataset["jgQuality"] = graphics.quality;
     return () => {
-      delete document.documentElement.dataset.jgQuality;
+      delete document.documentElement.dataset["jgQuality"];
     };
   }, [graphics.quality]);
   useEffect(() => {
@@ -369,11 +369,11 @@ export function GamePlayerShell({
     const hud = resolveRigKind(playable.camera) === "none" || playable.presentation === "hud";
     if (!hud) return;
     const frame = requestAnimationFrame(() => {
-      document.documentElement.dataset.jgFrameReady = "1";
+      document.documentElement.dataset["jgFrameReady"] = "1";
     });
     return () => {
       cancelAnimationFrame(frame);
-      delete document.documentElement.dataset.jgFrameReady;
+      delete document.documentElement.dataset["jgFrameReady"];
     };
   }, [ctx, playable]);
   const userId = multiplayer?.userId ?? DEV_USER_ID;

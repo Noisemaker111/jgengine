@@ -14,7 +14,7 @@ function periodicValueNoise(size: number, cells: number, seed: number): Float32A
     lattice[index] = h - Math.floor(h);
   }
   const at = (cx: number, cy: number): number =>
-    lattice[((cy % cells) + cells) % cells * cells + (((cx % cells) + cells) % cells)];
+    lattice[((cy % cells) + cells) % cells * cells + (((cx % cells) + cells) % cells)] ?? 0;
   const field = new Float32Array(size * size);
   const step = cells / size;
   for (let y = 0; y < size; y += 1) {
@@ -41,7 +41,7 @@ function heightField(size: number): Float32Array {
   const fine = periodicValueNoise(size, 16, 13);
   const field = new Float32Array(size * size);
   for (let index = 0; index < field.length; index += 1) {
-    field[index] = coarse[index] * 0.55 + medium[index] * 0.3 + fine[index] * 0.15;
+    field[index] = (coarse[index] ?? 0) * 0.55 + (medium[index] ?? 0) * 0.3 + (fine[index] ?? 0) * 0.15;
   }
   return field;
 }
@@ -58,7 +58,7 @@ export function detailMaps(): { normal: THREE.DataTexture; roughness: THREE.Data
   if (cached !== null) return cached;
   const size = DETAIL_SIZE;
   const height = heightField(size);
-  const sample = (x: number, y: number): number => height[(((y % size) + size) % size) * size + (((x % size) + size) % size)];
+  const sample = (x: number, y: number): number => height[(((y % size) + size) % size) * size + (((x % size) + size) % size)] ?? 0;
 
   const normalData = new Uint8Array(size * size * 4);
   const roughnessData = new Uint8Array(size * size * 4);
@@ -130,7 +130,7 @@ export function DefaultSurface({
       metalness={metalness}
       envMapIntensity={0.6}
       normalMap={maps?.normal ?? null}
-      normalScale={maps === null ? undefined : new THREE.Vector2(0.6, 0.6)}
+      {...(maps === null ? {} : { normalScale: new THREE.Vector2(0.6, 0.6) })}
       roughnessMap={maps?.roughness ?? null}
       {...rest}
     />

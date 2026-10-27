@@ -9,7 +9,7 @@ import type {
   TopDownCameraConfig,
 } from "@jgengine/core/game/playableGame";
 import { lerp, smoothstep } from "@jgengine/core/anim/easing";
-import type { ActionCodes, ActionCodesMap } from "@jgengine/core/input/actionBindings";
+import { allActionCodes, type ActionCodesMap } from "@jgengine/core/input/actionBindings";
 import { clamp } from "@jgengine/core/math/scalar";
 
 import { lerpVec3, smoothBlend } from "./orbitCameraMath";
@@ -25,15 +25,10 @@ export interface CameraPose {
 const RTS_WASD_CODES: readonly string[] = ["KeyW", "KeyA", "KeyS", "KeyD"];
 const RTS_ROTATE_CODES: readonly string[] = ["KeyQ", "KeyE"];
 
-function actionCodeList(codes: ActionCodes): readonly string[] {
-  if (Array.isArray(codes)) return codes as readonly string[];
-  const modes = codes as { hold?: readonly string[]; toggle?: readonly string[] };
-  return [...(modes.hold ?? []), ...(modes.toggle ?? [])];
-}
 
 function bindsAny(input: ActionCodesMap | undefined, wanted: readonly string[]): boolean {
   if (input === undefined) return false;
-  return Object.values(input).some((codes) => actionCodeList(codes).some((code) => wanted.includes(code)));
+  return Object.values(input).some((codes) => allActionCodes(codes).some((code) => wanted.includes(code)));
 }
 
 /** @internal */
@@ -736,15 +731,15 @@ export function crossfadePose(from: CameraPose, to: CameraPose, t: number): Came
 /** A CameraDirector's runtime overrides for the followed entity and cinematic. */
 export interface DirectorCameraValues {
   /** `undefined` = no runtime override (fall back to static); `null` = explicitly follow nothing. */
-  followEntityId?: string | null;
+  followEntityId?: string | null | undefined;
   /** `null` = no runtime cinematic active (fall back to static). */
-  cinematic?: CinematicCameraConfig | null;
+  cinematic?: CinematicCameraConfig | null | undefined;
 }
 
 /** The game's static follow entity and cinematic, used when no director override is active. */
 export interface StaticCameraValues {
-  followEntityId?: string | null;
-  cinematic?: CinematicCameraConfig;
+  followEntityId?: string | null | undefined;
+  cinematic?: CinematicCameraConfig | undefined;
 }
 
 /** Follow entity and cinematic after director overrides are merged over the static config. */

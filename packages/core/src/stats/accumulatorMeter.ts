@@ -11,9 +11,9 @@ export type MeterMode = "hold" | "reset";
 export interface AccumulatorMeterConfig {
   max: number;
   mode?: MeterMode;
-  decayPerSecond?: number;
-  decayDelayMs?: number;
-  tiers?: readonly MeterTier[];
+  decayPerSecond?: number | undefined;
+  decayDelayMs?: number | undefined;
+  tiers?: readonly MeterTier[] | undefined;
 }
 
 export interface MeterAddResult {

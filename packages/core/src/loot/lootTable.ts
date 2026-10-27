@@ -33,8 +33,8 @@ export interface LootTableDef {
 
 /** A resolved loot outcome — one item or currency grant with its rolled count. */
 export interface Drop {
-  item?: string;
-  currency?: string;
+  item?: string | undefined;
+  currency?: string | undefined;
   count: number;
 }
 

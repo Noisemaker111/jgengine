@@ -72,9 +72,9 @@ export interface SettingsControllerInput {
   hide: readonly SettingCategory[];
   fovEnabled: boolean;
   /** The game's per-tier profile overrides (`defineGame({ graphics })`), so tier defaults match what renders. */
-  graphics?: GraphicsProfileOverrides;
+  graphics?: GraphicsProfileOverrides | undefined;
   /** The post chain this game actually runs, so a stage row never outlives its pass. */
-  postProcessing?: PostProcessingConfig;
+  postProcessing?: PostProcessingConfig | undefined;
   hideBindings: readonly string[];
   /** Show the touch-controls skin selector in Controls (touch device with a dock). */
   touchStyle: boolean;

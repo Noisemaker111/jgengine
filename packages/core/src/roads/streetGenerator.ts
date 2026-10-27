@@ -77,6 +77,11 @@
 import { seededStreams } from "../random/rng";
 
 /** A path vertex in the volume-local XZ frame. */
+/** Add one to `counts[index]` (an unset slot counts from zero). */
+function increment(counts: number[] | Uint16Array, index: number): void {
+  counts[index] = (counts[index] ?? 0) + 1;
+}
+
 export type StreetVec2 = readonly [number, number];
 
 /** Road hierarchy, widest to narrowest — shared by the city fabric and the renderer. */
@@ -256,7 +261,7 @@ export interface StreetNetworkRules {
 /** Ground sampler + feature toggles enabling bridges/tunnels; omit for a flat, feature-free network. */
 export interface StreetNetworkContext {
   /** Volume-local ground height sampler. */
-  heightAt?: (x: number, z: number) => number;
+  heightAt?: ((x: number, z: number) => number) | undefined;
   /** Ground below this (local) height is a gap streets bridge over. */
   minElevation?: number;
   /** Emit bridge decks over sub-`minElevation` gaps. */
@@ -631,8 +636,8 @@ function buildNet(
   const addAdj = (a: number, b: number): void => {
     (adj.get(a) ?? adj.set(a, new Set()).get(a)!).add(b);
     (adj.get(b) ?? adj.set(b, new Set()).get(b)!).add(a);
-    degree[a] += 1;
-    degree[b] += 1;
+    increment(degree, a);
+    increment(degree, b);
   };
   for (const e of edges) addAdj(e.a, e.b);
   // A new chord/spur must keep the graph PLANAR: it may not cross or shadow any edge it does not
@@ -2285,8 +2290,8 @@ export function generateStreets(
   const adj: { edge: number; other: number }[][] = rawNodes.map(() => []);
   const adjNodes: number[][] = rawNodes.map(() => []);
   rawEdges.forEach((e, i) => {
-    degree[e.a] += 1;
-    degree[e.b] += 1;
+    increment(degree, e.a);
+    increment(degree, e.b);
     adj[e.a]!.push({ edge: i, other: e.b });
     adj[e.b]!.push({ edge: i, other: e.a });
     adjNodes[e.a]!.push(e.b);
@@ -2492,12 +2497,15 @@ export function generateStreets(
   const chainEndsAt = new Uint16Array(rawNodes.length);
   for (const chain of chains) {
     if (chain.loop) continue;
-    chainEndsAt[chain.nodes[0]!] += 1;
-    chainEndsAt[chain.nodes[chain.nodes.length - 1]!] += 1;
+    const head = chain.nodes[0];
+    const tail = chain.nodes.at(-1);
+    if (head !== undefined) increment(chainEndsAt, head);
+    if (tail !== undefined) increment(chainEndsAt, tail);
   }
   const junctions: StreetJunction[] = [];
   for (let n = 0; n < rawNodes.length; n += 1) {
-    if (degree[n] < 3 && !(degree[n] === 2 && chainEndsAt[n]! >= 2)) continue;
+    const nodeDegree = degree[n] ?? 0;
+    if (nodeDegree < 3 && !(nodeDegree === 2 && (chainEndsAt[n] ?? 0) >= 2)) continue;
     const arms: { angle: number; width: number }[] = [];
     let radius = 0;
     let level: StreetLevel = "lane";

@@ -54,7 +54,7 @@ function buildWsMultiplayer(args: {
 export type ResolveShellMultiplayerArgs = {
   game: GameDefinition;
   gameId: string;
-  url?: string;
+  url?: string | undefined;
   userId?: string;
   force?: boolean;
   feedActions?: string[];

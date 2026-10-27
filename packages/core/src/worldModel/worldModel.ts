@@ -170,7 +170,7 @@ export interface WorldActionDecl {
   /** Absolute facts that must hold. */
   when?: WorldConditions;
   /** Facts on the target that must hold, keyed without the subject (`{ level: { atMost: 2 } }`). */
-  whenTarget?: WorldConditions;
+  whenTarget?: WorldConditions | undefined;
   /** Absolute changes paid (negative numbers spend); refused when unaffordable. */
   cost?: WorldChanges;
   /** A target fact that multiplies `cost` and `world` numbers (an upgrade that costs more per level). */

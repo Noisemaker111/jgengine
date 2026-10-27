@@ -49,7 +49,7 @@ export function modelPlacementTransform(root: THREE.Object3D, model: ModelConfig
  */
 export function cloneModelScene(
   source: THREE.Object3D,
-  options?: { cloneMaterials?: boolean; shadows?: ModelShadowMode; surfaceDetail?: boolean },
+  options?: { cloneMaterials?: boolean; shadows?: ModelShadowMode | undefined; surfaceDetail?: boolean | undefined },
 ): THREE.Object3D {
   const clone = cloneSkinned(source) as THREE.Object3D;
   copyModelBindPose(source, clone);

@@ -182,25 +182,25 @@ function allocateShared(request: AllocationRequest): AllocationOutcome {
   for (const result of results) {
     const total = countOf(result);
     if (total === 0) continue;
-    const exact = weights.map((w) => (total * w) / totalWeight);
-    const base = exact.map((x) => Math.floor(x));
-    let remaining = total - base.reduce((sum, n) => sum + n, 0);
-    const byRemainder = recipients
-      .map((_, i) => i)
-      .sort((a, b) => {
-        const fa = exact[a] - base[a];
-        const fb = exact[b] - base[b];
-        if (fb !== fa) return fb - fa;
-        return a - b; // canonical order tie-break
-      });
-    for (const i of byRemainder) {
+    const shares = recipients.map((recipient, index) => {
+      const exact = (total * (weights[index] ?? 1)) / totalWeight;
+      return { recipient, index, exact, count: Math.floor(exact) };
+    });
+    let remaining = total - shares.reduce((sum, share) => sum + share.count, 0);
+    const byRemainder = [...shares].sort((a, b) => {
+      const fa = a.exact - a.count;
+      const fb = b.exact - b.count;
+      if (fb !== fa) return fb - fa;
+      return a.index - b.index; // canonical order tie-break
+    });
+    for (const share of byRemainder) {
       if (remaining <= 0) break;
-      base[i] += 1;
+      share.count += 1;
       remaining -= 1;
     }
-    recipients.forEach((recipient, i) => {
-      if (base[i] > 0) grants.push(grant(recipient.id, result.id, base[i], "shared", isPrivate));
-    });
+    for (const share of shares) {
+      if (share.count > 0) grants.push(grant(share.recipient.id, result.id, share.count, "shared", isPrivate));
+    }
   }
   return { grants, pools: [] };
 }
@@ -216,6 +216,7 @@ function allocateRoundRobin(request: AllocationRequest): AllocationOutcome {
     const count = countOf(result);
     if (count === 0) return;
     const recipient = recipients[index % recipients.length];
+    if (recipient === undefined) return;
     grants.push(grant(recipient.id, result.id, count, "roundRobin", isPrivate));
   });
   return { grants, pools: [] };
@@ -264,7 +265,7 @@ function allocateClaimed(request: AllocationRequest): AllocationOutcome {
       reservedFor = spec.reservedFor;
     } else if (recipients.length > 0) {
       const pick = seededStreams(request.allocationSeed)("claim:reserve")();
-      reservedFor = recipients[Math.min(recipients.length - 1, Math.floor(pick * recipients.length))].id;
+      reservedFor = recipients[Math.min(recipients.length - 1, Math.floor(pick * recipients.length))]?.id ?? null;
     }
   }
   const pool: ClaimablePool = {

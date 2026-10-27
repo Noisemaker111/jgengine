@@ -59,7 +59,7 @@ function RetainedBeam({
     const mesh = meshRef.current;
     const mat = matRef.current;
     if (entry === undefined || mesh === null || mat === null) return;
-    const lift = entry.state.params?.lift ?? 1;
+    const lift = entry.state.params?.["lift"] ?? 1;
     const hasFrom = resolveRef(ctx, entry.state.from, lift, from.current);
     const hasTo = resolveRef(ctx, entry.state.to, lift, to.current);
     if (!hasFrom || !hasTo) {
@@ -79,7 +79,7 @@ function RetainedBeam({
     const thickness = entry.state.radius ?? 0.12;
     mesh.scale.set(thickness, length, thickness);
     mat.color.set(entry.state.color);
-    const baseOpacity = entry.state.params?.opacity ?? 0.85;
+    const baseOpacity = entry.state.params?.["opacity"] ?? 0.85;
     if (entry.fade === null) {
       mat.opacity = baseOpacity;
     } else {

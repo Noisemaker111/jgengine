@@ -24,13 +24,13 @@ export type PlayableGame<TProbe extends ProbeReadings = ProbeReadings> = Playabl
   TProbe
 > & {
   /** HUD theme the shell applies at the `GameUI` root. Unset uses `defaultHudTheme`; `false` opts out of the default theme and the engine's generic HUD control styling. A theme the game sets inside `GameUI` still wins. */
-  hudTheme?: HudTheme | false;
+  hudTheme?: HudTheme | false | undefined;
   /**
    * The game's UI kit: a complete visual language (shapes, type, motion, sound) for every kit part and
    * engine screen — a built-in name (`ink`, `paper`, `parchment`, `terminal`, `holo`, `broadcast`,
    * `arcade`, `signal`) or `customizeKit(UI_KITS.ink, { ... })`. Its cue sounds replace the default UI sounds.
    */
-  uiKit?: UiKitName | UiKit;
+  uiKit?: UiKitName | UiKit | undefined;
 };
 
 export type GameRegistry = Record<string, () => Promise<PlayableGame>>;

@@ -1,4 +1,6 @@
 // @skill jgengine-world
+import { definedOnly } from "../data/definedOnly";
+import { requireUniform } from "../render/uniformMaterial.draw";
 import { useFrame, useThree } from "@react-three/fiber";
 import { useEffect, useRef } from "react";
 import * as THREE from "three";
@@ -285,10 +287,6 @@ export function resolveAtmosphereStage(config: PostProcessingConfig["atmosphere"
   return settings.fogDensity <= 0 && settings.shafts <= 0 ? null : settings;
 }
 
-function definedOnly<T extends object>(value: T): Partial<T> {
-  return Object.fromEntries(Object.entries(value).filter(([, entry]) => entry !== undefined)) as Partial<T>;
-}
-
 /** The stages one chain asks for, before any pass is built. Pure data. @internal */
 export function planPostStages(
   config: PostProcessingConfig,
@@ -570,7 +568,7 @@ export function PostProcessing({
   useFrame((_, delta) => {
     const built = builtRef.current;
     if (built === null) return;
-    if (built.grade !== null) built.grade.uniforms.uTime.value += delta;
+    if (built.grade !== null) requireUniform(built.grade.uniforms, "uTime").value += delta;
     measureComposerPasses(built.composer);
     built.composer.render(delta);
     advanceRevealFade(built, delta);

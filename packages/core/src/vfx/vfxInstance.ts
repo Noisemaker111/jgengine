@@ -45,7 +45,7 @@ export interface VfxInstanceState {
   /** Effect radius/thickness. */
   readonly radius?: number;
   /** Renderer knobs. */
-  readonly params?: Readonly<Record<string, number>>;
+  readonly params?: Readonly<Record<string, number>> | undefined;
   /** TTL in ms, if the instance heartbeats. */
   readonly ttlMs?: number;
   /** Clock time (ms) of the last create/update; the TTL heartbeat measures staleness from here. */

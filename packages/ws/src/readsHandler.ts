@@ -16,7 +16,7 @@ export type ReadsAuthenticate = (
 export type ReadsHandlerOptions = {
   persistence: ReadsPersistence | (() => Promise<ReadsPersistence>);
   basePath?: string;
-  listOpenServers?: (args: { gameId: string; limit?: number }) => Promise<ServerListing[]>;
+  listOpenServers?: (args: { gameId: string; limit?: number | undefined }) => Promise<ServerListing[]>;
   authenticate?: ReadsAuthenticate;
   allowPublicProfiles?: boolean;
 };

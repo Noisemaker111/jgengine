@@ -52,9 +52,9 @@ export function readInputPoint3(
 ): { x: number; y: number; z: number } | null {
   if (!isInputRecord(value)) return null;
   const bound = { min: -(options.maxAbs ?? Number.MAX_VALUE), max: options.maxAbs ?? Number.MAX_VALUE };
-  const x = readInputNumber(value.x, bound);
-  const y = readInputNumber(value.y, bound);
-  const z = readInputNumber(value.z, bound);
+  const x = readInputNumber(value["x"], bound);
+  const y = readInputNumber(value["y"], bound);
+  const z = readInputNumber(value["z"], bound);
   return x === null || y === null || z === null ? null : { x, y, z };
 }
 
@@ -62,8 +62,8 @@ export function readInputPoint3(
 export function readInputPoint2(value: unknown, options: { maxAbs?: number } = {}): { x: number; z: number } | null {
   if (!isInputRecord(value)) return null;
   const bound = { min: -(options.maxAbs ?? Number.MAX_VALUE), max: options.maxAbs ?? Number.MAX_VALUE };
-  const x = readInputNumber(value.x, bound);
-  const z = readInputNumber(value.z, bound);
+  const x = readInputNumber(value["x"], bound);
+  const z = readInputNumber(value["z"], bound);
   return x === null || z === null ? null : { x, z };
 }
 

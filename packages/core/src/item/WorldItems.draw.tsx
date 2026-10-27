@@ -85,7 +85,7 @@ function WorldItemMarker({
 }
 
 /** Rarity→beam/color/label render binding + loot-filter overlay (#32/#33) for every dropped `worldItem`. */
-export function WorldItems({ config }: { config?: WorldItemRenderConfig }) {
+export function WorldItems({ config }: { config?: WorldItemRenderConfig | undefined }) {
   const ctx = useGameContext();
   const items = useWorldItems();
   const beamHeight = config?.beamHeight ?? DEFAULT_BEAM_HEIGHT;

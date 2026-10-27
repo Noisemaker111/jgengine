@@ -216,7 +216,7 @@ function transactionCommandError(document: EditorDocument, command: EditorComman
     case "insertPrefab": case "deletePrefab":
       return document.prefabs.some((item) => item.id === command.prefabId) ? null : `prefab not found: ${command.prefabId}`;
     case "detachPrefabInstance":
-      return placeables.some((item) => item.meta?.prefabInstanceId === command.instanceId) ? null : `prefab instance not found: ${command.instanceId}`;
+      return placeables.some((item) => item.meta?.["prefabInstanceId"] === command.instanceId) ? null : `prefab instance not found: ${command.instanceId}`;
     case "createCollection":
       return command.memberIds === undefined || command.memberIds.length === 0 ? null : requireObjects(command.memberIds, true);
     case "renameCollection": case "deleteCollection": case "setCollectionFlags": case "selectCollection":
@@ -578,8 +578,8 @@ export function summarizeEditorSession(state: EditorSessionState): {
   paths: number;
   annotations: number;
   selection: string[];
-  selectedMarker?: EditorMarker;
-  selectedVolume?: EditorVolume;
+  selectedMarker?: EditorMarker | undefined;
+  selectedVolume?: EditorVolume | undefined;
 } {
   const selectedId = state.selection[0];
   return {

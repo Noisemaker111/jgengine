@@ -33,7 +33,7 @@ export interface QueueWait {
 /** Tunables for {@link createWaitQueue}, every one retunable through a restore. */
 export interface WaitQueueOptions {
   /** Seconds per guest used before the queue has measured an interval. Default 8. */
-  readonly seedServiceSeconds?: number;
+  readonly seedServiceSeconds?: number | undefined;
   /** Boarding events the throughput window keeps. Default 8. */
   readonly window?: number;
   /** Register a devtools probe under this name so the perf overlay shows the live line. */

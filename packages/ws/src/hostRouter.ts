@@ -42,7 +42,7 @@ import {
 
 export type HostRouterAuthenticate = (args: {
   userId: string;
-  token?: string;
+  token?: string | undefined;
 }) => Promise<string | null> | string | null;
 
 export type HostRouterOptions = {
@@ -112,16 +112,16 @@ type Connection = {
   worldRevisions: Map<string, number | null>;
   roles: Map<string, SnapshotViewer["role"]>;
   subscriptionPushes: Map<string, SubscriptionPush>;
-  admission: { serverId?: string; result: Promise<JoinServerResult | null> } | null;
+  admission: { serverId?: string | undefined; result: Promise<JoinServerResult | null> } | null;
 };
 
 type SubscriptionPush = {
   generation: number;
   pending: boolean;
-  run?: Promise<void>;
+  run?: Promise<void> | undefined;
 };
 
-type PresenceEntry = PresencePoseState & { appearance?: WsAppearance };
+type PresenceEntry = PresencePoseState & { appearance?: WsAppearance | undefined };
 
 function appearanceEqual(a: WsAppearance | undefined, b: WsAppearance | undefined): boolean {
   if (a === b) return true;
@@ -332,7 +332,7 @@ export function createHostRouter(options: HostRouterOptions): HostRouter {
     connection: Connection,
     id: number,
     op: HostCommandOp,
-    args: { serverId?: string; command?: string; input?: unknown } = {},
+    args: { serverId?: string | undefined; command?: string; input?: unknown } = {},
   ): Promise<boolean> => {
     if (connection.userId === null) return true;
     const decision = await commandMiddleware.check({

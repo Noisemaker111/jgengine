@@ -969,19 +969,19 @@ const IDENTITY_VIEWPORT: MapViewport = { scale: 1, tx: 0, ty: 0 };
 export interface WorldMapSurfaceProps {
   markers: MarkerCollection;
   bounds: MapBounds;
-  player?: WorldXZ;
+  player?: WorldXZ | undefined;
   facingYaw?: number;
-  fog?: FogField;
-  background?: string;
+  fog?: FogField | undefined;
+  background?: string | undefined;
   /** Content layout width in px (world bounds map into this). */
   width?: number;
   /** Content layout height; defaults to the bounds aspect ratio. */
-  height?: number;
+  height?: number | undefined;
   kindStyles?: Record<string, MarkerKindStyle>;
-  routes?: readonly MapRoute[];
-  zones?: readonly MapZone[];
-  cellStates?: readonly MapCellStates[];
-  onWorldClick?: (world: WorldXZ) => void;
+  routes?: readonly MapRoute[] | undefined;
+  zones?: readonly MapZone[] | undefined;
+  cellStates?: readonly MapCellStates[] | undefined;
+  onWorldClick?: ((world: WorldXZ) => void) | undefined;
   /** Outer `<svg>` pixel size; defaults to the content `width`/`height` (no viewport). */
   canvasWidth?: number;
   canvasHeight?: number;

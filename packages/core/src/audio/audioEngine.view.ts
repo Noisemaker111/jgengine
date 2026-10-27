@@ -44,32 +44,32 @@ export interface ListenerPose {
 export interface AudioSceneConfig {
   sounds?: Record<string, SoundDef>;
   /** SFX playback/patch slots, including pending loads; individual synth oscillators share one slot. Default 64; zero disables SFX. */
-  maxVoices?: number;
+  maxVoices?: number | undefined;
   /** Budget overflow policy. Default "steal-lowest"; lower priorities never steal higher ones. */
-  voiceOverflow?: VoiceAllocatorConfig["overflow"];
+  voiceOverflow?: VoiceAllocatorConfig["overflow"] | undefined;
   /** Dedicated caller-owned allocator for inspectable reservations and injected storage. Music has its own lifecycle. */
   voiceAllocator?: VoiceAllocator;
-  buses?: Record<string, AudioBusDef>;
+  buses?: Record<string, AudioBusDef> | undefined;
   /** Procedural music themes, crossfaded by {@link AudioEngine.playMusic}. Mixed through the `musicBus` (default "music") so the settings volume applies. */
-  music?: Record<string, MusicTheme>;
+  music?: Record<string, MusicTheme> | undefined;
   /** Bus id the procedural music director mixes through. Default "music". */
-  musicBus?: string;
+  musicBus?: string | undefined;
   /** Bus whose level (with the master) sets spoken-line volume. Default: the music bus. */
-  speechBus?: string;
+  speechBus?: string | undefined;
   /** Speech channel for {@link AudioEngine.speak}. Default: the browser's `speechSynthesis`, silent when absent. */
   speech?: SpeechChannel;
   /** World-space ambience zones; each becomes one retained looping bed driven by the listener position. */
-  zones?: readonly AmbienceZoneDef[];
+  zones?: readonly AmbienceZoneDef[] | undefined;
   /** Geometry occlusion budget/policy for retained positional loops. Unset keeps the defaults; `false` keeps distance-only. */
-  occlusion?: AudioOcclusionConfig | false;
+  occlusion?: AudioOcclusionConfig | false | undefined;
   /**
    * Left/right placement for positioned sounds that declare no `spatial` block of their own: "hrtf"
    * (default) places them around the head, "equalpower" is a cheaper plain stereo pan, "off" keeps
    * them centred. Distance loudness still follows each sound's `falloff`.
    */
-  panning?: "hrtf" | "equalpower" | "off";
+  panning?: "hrtf" | "equalpower" | "off" | undefined;
   /** World reverb on positioned sounds: authored zones, else the space the shell hears around the listener. `false` keeps them dry. */
-  reverb?: AudioReverbConfig | false;
+  reverb?: AudioReverbConfig | false | undefined;
 }
 
 /** What the spatial mix did, cumulative since the engine was created, plus the space it rings in now. */
@@ -108,11 +108,11 @@ export interface AudioEmitterHandle {
 /** How long and how far to duck buses for {@link AudioEngine.duck}. */
 export interface DuckOptions {
   /** How far to lower the buses, 0..1. Default 0.6. */
-  amount?: number;
+  amount?: number | undefined;
   /** Seconds to hold the duck; omit to hold until the returned release runs. */
-  seconds?: number;
+  seconds?: number | undefined;
   /** Fade time constant in seconds. Default 0.03. */
-  fadeSeconds?: number;
+  fadeSeconds?: number | undefined;
 }
 
 /** Measured geometry-occlusion work, cumulative since the engine was created. */
@@ -866,8 +866,9 @@ export function createAudioEngine(config: AudioSceneConfig = {}): AudioEngine {
 
   function playInternal(soundId: string, position: Xyz | undefined, loop: boolean): AudioEmitterHandle | null {
     if (disposed) return null;
-    const sound = sounds[soundId];
-    if (sound === undefined || (sound.synth === undefined && sound.url === undefined)) return null;
+    const found = sounds[soundId];
+    if (found === undefined || (found.synth === undefined && found.url === undefined)) return null;
+    const sound: SoundDef = found;
     const allocation = allocator.request(soundId, sound.priority, sound.maxVoices);
     if (!allocation.ok) return null;
     for (const id of allocation.stolen) activeVoices.get(id)?.();

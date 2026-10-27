@@ -36,7 +36,7 @@ export function resolveBuildingRenderPolicy(drawDistance: number, config?: Visib
 /** Forward the shell's resolved graphics distance without registering generated parts as scene objects. @internal */
 export function BuildingRenderBudget({ drawDistance, visibility, cullingDisabled = false, children }: {
   drawDistance: number;
-  visibility?: VisibilityConfig;
+  visibility?: VisibilityConfig | undefined;
   cullingDisabled?: boolean;
   children: ReactNode;
 }) {

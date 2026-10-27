@@ -13,13 +13,13 @@ import { useDisposable } from "@jgengine/core/render/useDisposable.draw";
 /** Serializable PBR settings for an authored primitive surface. Map roles use the model-material contract. */
 export interface AuthoredSurfaceConfig extends Omit<ModelMaterialOverride, "anisotropy" | "normalScale"> {
   /** Physical metres per texture tile on unit boxes/cylinders, including instance and parent scale. Omit to retain authored UVs. */
-  repeatMetres?: number;
+  repeatMetres?: number | undefined;
   /** Texture sampler policy on owned clones; defaults to repeat on both axes and anisotropy 1. */
   wrapping?: "repeat" | "clamp" | "mirror";
-  anisotropy?: number;
+  anisotropy?: number | undefined;
   /** Physical directional highlight strength [0,1]; `anisotropy` remains the legacy texture sampler setting. */
-  surfaceAnisotropy?: number;
-  normalScale?: readonly [number, number];
+  surfaceAnisotropy?: number | undefined;
+  normalScale?: readonly [number, number] | undefined;
   /** Normalized [0,1] height maps displace in local shape units (Three defaults: scale 1, bias 0). */
   displacementScale?: number;
   displacementBias?: number;

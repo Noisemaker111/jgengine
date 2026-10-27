@@ -19,7 +19,7 @@ export interface MusicStateConfig {
   /** Ordered or unordered; the highest `enter` at or below the intensity wins. */
   tiers: readonly MusicTier[];
   /** Intensity must fall this far below a tier's `enter` before leaving it. Default 0.2. */
-  release?: number;
+  release?: number | undefined;
 }
 
 /** Which tier is playing and when it was entered, on the caller's clock. Serialisable. */

@@ -236,7 +236,7 @@ export function GameViewportProvider({
   style,
   children,
 }: {
-  platforms?: readonly HudPlatform[];
+  platforms?: readonly HudPlatform[] | undefined;
   className?: string;
   style?: CSSProperties;
   children?: ReactNode;

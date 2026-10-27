@@ -32,8 +32,9 @@ type OrbitControlsImpl = NonNullable<ComponentRef<typeof OrbitControls>>;
  * @internal
  */
 export function orbitMouseButtons(pointerControls: boolean): { LEFT?: MOUSE; MIDDLE?: MOUSE; RIGHT?: MOUSE } {
+  // Leaving LEFT out frees the left button for pointer controls (the prop replaces the whole map).
   return pointerControls
-    ? { LEFT: undefined, MIDDLE: MOUSE.ROTATE, RIGHT: MOUSE.ROTATE }
+    ? { MIDDLE: MOUSE.ROTATE, RIGHT: MOUSE.ROTATE }
     : { LEFT: MOUSE.ROTATE, MIDDLE: MOUSE.DOLLY, RIGHT: MOUSE.ROTATE };
 }
 
@@ -45,14 +46,14 @@ export interface GameOrbitCameraProps {
   yawRef: MutableRefObject<number>;
   /** Written each frame with the camera's look elevation (radians) for aim.pitch. */
   pitchRef?: MutableRefObject<number>;
-  config?: Partial<OrbitCameraConfig>;
-  followEntityId?: string;
+  config?: Partial<OrbitCameraConfig> | undefined;
+  followEntityId?: string | undefined;
   /** Override orbit target derived from the followed entity. */
   resolveFollowTarget?: (entity: SceneEntity) => Xyz;
-  onDragChange?: (dragging: boolean) => void;
-  onCameraFollow?: CameraFollowListener;
+  onDragChange?: ((dragging: boolean) => void) | undefined;
+  onCameraFollow?: CameraFollowListener | undefined;
   /** Free the left mouse button for pointer verbs (marquee / click-to-move); orbit moves to the middle button. */
-  pointerControls?: boolean;
+  pointerControls?: boolean | undefined;
 }
 
 /** Third-person orbit camera that follows an entity, with drag-to-orbit, zoom limits and optional collision pull-in. */

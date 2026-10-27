@@ -576,7 +576,7 @@ export interface GameContext {
    */
   rng: () => number;
   game: {
-    territory?: Territory;
+    territory?: Territory | undefined;
     commands: GameContextCommands;
     events: GameEvents;
     /**
@@ -652,7 +652,7 @@ export interface GameContext {
     movement: PoseState;
     possession: Possession;
     /** Cosmetic skins/customization — present only when `features.cosmetics` is set. */
-    cosmetics?: Cosmetics;
+    cosmetics?: Cosmetics | undefined;
     /** Motion seam into the movement integrator (#162.4); routes to the command actor's queue (or the local player outside a command), so a command's impulse lands on whoever ran it. See `MotionIntents`. */
     motion: MotionIntents;
     /** A specific player's motion queue — how the host-side per-player movement integrator drains each connected player's impulses. */

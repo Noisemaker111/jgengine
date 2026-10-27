@@ -44,7 +44,7 @@ export interface ParticleAttachOptions {
   /** Local particles move with the followed pose; world particles retain their emitted positions. */
   space?: "world" | "local";
   active?: boolean;
-  render?: ParticleRenderHint;
+  render?: ParticleRenderHint | undefined;
   collisionEffect?: ParticleCollisionEffect;
   /** Explicit environment influence: windResponse in 1/second, maxAcceleration in metres/second², both 0..1e12. */
   environment?: { windResponse?: number; maxAcceleration?: number; mask?: number };
@@ -259,35 +259,35 @@ export function validateParticleAttachOptions(value: unknown): string[] {
   if (value === null || typeof value !== "object" || Array.isArray(value)) return ["particle options must be an object"];
   const options = value as Record<string, unknown>;
   const errors: string[] = [];
-  if (options.follow !== undefined && typeof options.follow !== "string") errors.push("follow must be an entity id");
-  if (options.offset !== undefined && (!Array.isArray(options.offset) || options.offset.length !== 3 || options.offset.some((v) => typeof v !== "number" || !Number.isFinite(v)))) errors.push("offset must contain three finite numbers");
-  if (options.space !== undefined && options.space !== "world" && options.space !== "local") errors.push("space must be world or local");
-  if (options.active !== undefined && typeof options.active !== "boolean") errors.push("active must be boolean");
-  if (options.priority !== undefined && (typeof options.priority !== "number" || !Number.isFinite(options.priority))) errors.push("priority must be a finite number");
+  if (options["follow"] !== undefined && typeof options["follow"] !== "string") errors.push("follow must be an entity id");
+  if (options["offset"] !== undefined && (!Array.isArray(options["offset"]) || options["offset"].length !== 3 || options["offset"].some((v) => typeof v !== "number" || !Number.isFinite(v)))) errors.push("offset must contain three finite numbers");
+  if (options["space"] !== undefined && options["space"] !== "world" && options["space"] !== "local") errors.push("space must be world or local");
+  if (options["active"] !== undefined && typeof options["active"] !== "boolean") errors.push("active must be boolean");
+  if (options["priority"] !== undefined && (typeof options["priority"] !== "number" || !Number.isFinite(options["priority"]))) errors.push("priority must be a finite number");
   const output = (render: unknown, blending: unknown, prefix: string) => {
     if (blending !== undefined && blending !== "normal" && blending !== "additive") errors.push(`${prefix}blending must be normal or additive`);
     if (render === undefined) return;
     if (render === null || typeof render !== "object" || Array.isArray(render)) { errors.push(`${prefix}render must be an output descriptor`); return; }
     const hint = render as Record<string, unknown>;
-    if (!["point", "streak", "flake", "flame", "smoke", "ribbon", "ripple"].includes(hint.shape as string)) errors.push(`${prefix}render.shape is unsupported`);
-    if (hint.stretch !== undefined && (typeof hint.stretch !== "number" || !Number.isFinite(hint.stretch) || hint.stretch < 0)) errors.push(`${prefix}render.stretch must be finite and nonnegative`);
+    if (!["point", "streak", "flake", "flame", "smoke", "ribbon", "ripple"].includes(hint["shape"] as string)) errors.push(`${prefix}render.shape is unsupported`);
+    if (hint["stretch"] !== undefined && (typeof hint["stretch"] !== "number" || !Number.isFinite(hint["stretch"]) || hint["stretch"] < 0)) errors.push(`${prefix}render.stretch must be finite and nonnegative`);
   };
-  output(options.render, options.blending, "");
-  if (options.environment !== undefined) {
-    const influence = options.environment as Record<string, unknown>;
+  output(options["render"], options["blending"], "");
+  if (options["environment"] !== undefined) {
+    const influence = options["environment"] as Record<string, unknown>;
     if (influence === null || typeof influence !== "object" || Array.isArray(influence)) errors.push("environment must be an influence descriptor");
     else {
       for (const name of ["windResponse", "maxAcceleration"]) if (influence[name] !== undefined && (typeof influence[name] !== "number" || !Number.isFinite(influence[name]) || influence[name] < 0 || influence[name] > 1e12)) errors.push(`environment.${name} must be finite in 0..1e12`);
-      if (influence.mask !== undefined && (typeof influence.mask !== "number" || !Number.isInteger(influence.mask) || influence.mask < 0 || influence.mask > 0xffffffff)) errors.push("environment.mask must be an unsigned 32-bit integer");
+      if (influence["mask"] !== undefined && (typeof influence["mask"] !== "number" || !Number.isInteger(influence["mask"]) || influence["mask"] < 0 || influence["mask"] > 0xffffffff)) errors.push("environment.mask must be an unsigned 32-bit integer");
     }
   }
-  if (options.collisionEffect !== undefined) {
-    const child = options.collisionEffect as Record<string, unknown>;
+  if (options["collisionEffect"] !== undefined) {
+    const child = options["collisionEffect"] as Record<string, unknown>;
     if (child === null || typeof child !== "object" || Array.isArray(child)) errors.push("collisionEffect must be a child effect descriptor");
     else {
-      errors.push(...validateEmitterConfig(child.config).map((error) => `collisionEffect.config.${error}`));
-      if (typeof child.count !== "number" || !Number.isInteger(child.count) || child.count < 1 || child.count > 65536) errors.push("collisionEffect.count must be an integer in [1, 65536]");
-      output(child.render, child.blending, "collisionEffect.");
+      errors.push(...validateEmitterConfig(child["config"]).map((error) => `collisionEffect.config.${error}`));
+      if (typeof child["count"] !== "number" || !Number.isInteger(child["count"]) || child["count"] < 1 || child["count"] > 65536) errors.push("collisionEffect.count must be an integer in [1, 65536]");
+      output(child["render"], child["blending"], "collisionEffect.");
     }
   }
   return errors;

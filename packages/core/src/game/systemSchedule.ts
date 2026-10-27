@@ -37,8 +37,8 @@ export interface ScheduledSystem {
   readonly id: string;
   readonly channel: TimingChannel;
   readonly stage: string;
-  readonly rate?: number;
-  readonly every?: number;
+  readonly rate?: number | undefined;
+  readonly every?: number | undefined;
   readonly after: readonly string[];
   readonly before: readonly string[];
   readonly dependsOn: readonly string[];

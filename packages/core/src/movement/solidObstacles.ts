@@ -56,7 +56,7 @@ export interface ObstacleReach {
  */
 export interface SolidObstacleSource {
   /** Optional indexed world geometry that is not represented by scene objects. */
-  solids?: Pick<WorldSolids, "count" | "inBox">;
+  solids?: Pick<WorldSolids, "count" | "inBox"> | undefined;
   list(): readonly { instanceId: string; position: EntityPosition; rotationY: number }[];
   inBox(
     min: EntityPosition,

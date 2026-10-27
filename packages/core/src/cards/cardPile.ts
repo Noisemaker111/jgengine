@@ -64,15 +64,20 @@ export function shuffleWithRng<T>(values: readonly T[], rng: () => number): T[] 
   const out = values.slice();
   for (let i = out.length - 1; i > 0; i--) {
     const j = Math.floor(rng() * (i + 1));
-    const tmp = out[i];
-    out[i] = out[j];
-    out[j] = tmp;
+    const a = out[i];
+    const b = out[j];
+    if (a === undefined || b === undefined) continue;
+    out[i] = b;
+    out[j] = a;
   }
   return out;
 }
 
-function assertZone(state: CardPileState, zone: ZoneName): void {
-  if (!(zone in state.zones)) throw new Error(`unknown card-pile zone: ${zone}`);
+/** The cards in `zone`, top first; an undeclared zone throws. */
+function cardsIn(state: CardPileState, zone: ZoneName): readonly string[] {
+  const cards = Object.hasOwn(state.zones, zone) ? state.zones[zone] : undefined;
+  if (cards === undefined) throw new Error(`unknown card-pile zone: ${zone}`);
+  return cards;
 }
 
 export function createCardPileState(
@@ -102,13 +107,11 @@ export function zoneOf(state: CardPileState, cardId: string): ZoneName | null {
 }
 
 export function countIn(state: CardPileState, zone: ZoneName): number {
-  assertZone(state, zone);
-  return state.zones[zone].length;
+  return cardsIn(state, zone).length;
 }
 
 export function peek(state: CardPileState, zone: ZoneName, n = 1): readonly string[] {
-  assertZone(state, zone);
-  return state.zones[zone].slice(0, Math.max(0, n));
+  return cardsIn(state, zone).slice(0, Math.max(0, n));
 }
 
 export function shuffleZone(
@@ -116,8 +119,7 @@ export function shuffleZone(
   zone: ZoneName,
   seed: string | number,
 ): CardPileState {
-  assertZone(state, zone);
-  return { zones: { ...state.zones, [zone]: shuffleWithRng(state.zones[zone], pileRng(seed)) } };
+  return { zones: { ...state.zones, [zone]: shuffleWithRng(cardsIn(state, zone), pileRng(seed)) } };
 }
 
 export function moveCards(
@@ -127,15 +129,13 @@ export function moveCards(
   to: ZoneName,
   position: "top" | "bottom" = "top",
 ): PileResult {
-  assertZone(state, from);
-  assertZone(state, to);
-  const source = state.zones[from];
+  const source = cardsIn(state, from);
+  const dest = cardsIn(state, to);
   for (const id of ids) {
     if (!source.includes(id)) return { status: "rejected", reason: "card-not-in-zone", detail: id };
   }
   const idSet = new Set(ids);
   const nextFrom = source.filter((id) => !idSet.has(id));
-  const dest = state.zones[to];
   const nextTo = position === "top" ? [...ids, ...dest] : [...dest, ...ids];
   return { status: "ok", state: { zones: { ...state.zones, [from]: nextFrom, [to]: nextTo } } };
 }
@@ -151,36 +151,36 @@ export function draw(
     seed?: string | number;
   },
 ): DrawResult {
-  assertZone(state, options.from);
-  assertZone(state, options.to);
-  if (options.reshuffleFrom !== undefined) assertZone(state, options.reshuffleFrom);
+  cardsIn(state, options.from);
+  cardsIn(state, options.to);
+  if (options.reshuffleFrom !== undefined) cardsIn(state, options.reshuffleFrom);
   let current = state;
   let reshuffled = false;
   const drawn: string[] = [];
   const wanted = Math.max(0, Math.floor(n));
   for (let i = 0; i < wanted; i++) {
-    if (options.handLimit !== undefined && current.zones[options.to].length >= options.handLimit) {
+    if (options.handLimit !== undefined && cardsIn(current, options.to).length >= options.handLimit) {
       break;
     }
-    if (current.zones[options.from].length === 0) {
-      if (options.reshuffleFrom === undefined || current.zones[options.reshuffleFrom].length === 0) {
+    if (cardsIn(current, options.from).length === 0) {
+      if (options.reshuffleFrom === undefined || cardsIn(current, options.reshuffleFrom).length === 0) {
         break;
       }
       const seed = options.seed ?? drawn.length + i;
-      const shuffledSource = shuffleWithRng(current.zones[options.reshuffleFrom], pileRng(seed));
+      const shuffledSource = shuffleWithRng(cardsIn(current, options.reshuffleFrom), pileRng(seed));
       current = {
         zones: { ...current.zones, [options.from]: shuffledSource, [options.reshuffleFrom]: [] },
       };
       reshuffled = true;
     }
-    const source = current.zones[options.from];
-    const top = source[0];
+    const [top, ...rest] = cardsIn(current, options.from);
+    if (top === undefined) break;
     drawn.push(top);
     current = {
       zones: {
         ...current.zones,
-        [options.from]: source.slice(1),
-        [options.to]: [...current.zones[options.to], top],
+        [options.from]: rest,
+        [options.to]: [...cardsIn(current, options.to), top],
       },
     };
   }
@@ -206,9 +206,12 @@ export function createCardPile(
   initial?: Partial<Record<ZoneName, readonly string[]>>,
 ): CardPile {
   let state = createCardPileState(config, initial);
-  const drawFrom = config.drawFrom ?? config.zones[0];
-  const handZone = config.handZone ?? config.zones[Math.min(1, config.zones.length - 1)];
-  const discardTo = config.discardTo ?? config.zones[config.zones.length - 1];
+  const first = config.zones[0];
+  const last = config.zones.at(-1);
+  if (first === undefined || last === undefined) throw new Error("card pile needs at least one zone");
+  const drawFrom = config.drawFrom ?? first;
+  const handZone = config.handZone ?? config.zones[1] ?? first;
+  const discardTo = config.discardTo ?? last;
   return {
     state: () => state,
     zones: () => config.zones,
@@ -223,8 +226,8 @@ export function createCardPile(
       const result = draw(state, n, {
         from: options?.from ?? drawFrom,
         to: options?.to ?? handZone,
-        handLimit: config.handLimit,
-        reshuffleFrom: config.reshuffleFrom,
+        ...(config.handLimit === undefined ? {} : { handLimit: config.handLimit }),
+        ...(config.reshuffleFrom === undefined ? {} : { reshuffleFrom: config.reshuffleFrom }),
       });
       state = result.state;
       config.onChange?.();

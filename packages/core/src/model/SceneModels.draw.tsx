@@ -101,7 +101,7 @@ export function EntitySprite({ sprite }: { sprite: EntitySpriteConfig }) {
  * @internal
  */
 export class ModelFallbackBoundary extends Component<
-  { fallback: ReactNode; children: ReactNode; url: string; seam?: FallbackSeam },
+  { fallback: ReactNode; children: ReactNode; url: string; seam?: FallbackSeam | undefined },
   { failed: boolean }
 > {
   override state = { failed: false };
@@ -135,7 +135,7 @@ export function IsolatedModelPart({
   children,
 }: {
   model: ModelConfig;
-  seam?: FallbackSeam;
+  seam?: FallbackSeam | undefined;
   children: ReactNode;
 }) {
   return (
@@ -153,7 +153,7 @@ export function IsolatedEntityModel({
   fallback,
 }: {
   model: ModelConfig;
-  instanceId?: string;
+  instanceId?: string | undefined;
   measure?: MeasureTarget;
   fallback?: ReactNode;
 }) {
@@ -186,7 +186,7 @@ export function SingleVariantModel({
 }: {
   model: ModelConfig;
   instanceId: string;
-  measure?: MeasureTarget;
+  measure?: MeasureTarget | undefined;
 }) {
   const ctx = useOptionalGameContext();
   const variants = model.variants;
@@ -223,9 +223,9 @@ function BoneAttachment({
   rig: THREE.Object3D;
   model: ModelConfig;
   slot: string;
-  position?: [number, number, number];
-  rotation?: [number, number, number];
-  scale?: number;
+  position?: [number, number, number] | undefined;
+  rotation?: [number, number, number] | undefined;
+  scale?: number | undefined;
 }) {
   const gltf = useLoader(sharedGltfLoader, model.url);
   const weaponScene = useMemo(() => cloneModelScene(gltf.scene), [gltf]);
@@ -268,9 +268,9 @@ function ModelPartGroup({
   scale,
 }: {
   model: ModelConfig;
-  position?: [number, number, number];
-  rotation?: [number, number, number];
-  scale?: number;
+  position?: [number, number, number] | undefined;
+  rotation?: [number, number, number] | undefined;
+  scale?: number | undefined;
 }) {
   return (
     <group position={position ?? [0, 0, 0]} rotation={rotation ?? [0, 0, 0]} scale={scale ?? 1}>
@@ -295,8 +295,8 @@ export function EntityModel({
   lodLevel = 0,
 }: {
   model: ModelConfig;
-  instanceId?: string;
-  measure?: MeasureTarget;
+  instanceId?: string | undefined;
+  measure?: MeasureTarget | undefined;
   /** The variant level being drawn. Past the source level, a simplified asset may have dropped a selected slot. */
   lodLevel?: number;
 }) {

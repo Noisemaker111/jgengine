@@ -11,7 +11,7 @@ export interface MaterialSurfaceParameters {
   roughness?: number;
   emissive?: string;
   emissiveIntensity?: number;
-  normalScale?: [number, number];
+  normalScale?: [number, number] | undefined;
   alphaMode?: "opaque" | "mask" | "blend";
   alphaCutoff?: number;
   opacity?: number;
@@ -19,7 +19,7 @@ export interface MaterialSurfaceParameters {
   sheen?: number;
   sheenColor?: string;
   sheenRoughness?: number;
-  anisotropy?: number;
+  anisotropy?: number | undefined;
   anisotropyRotation?: number;
   clearcoat?: number;
   clearcoatRoughness?: number;
@@ -80,8 +80,8 @@ export interface MaterialAsset {
   provenance?: MaterialProvenance;
   surface: MaterialSurfaceParameters;
   textures?: Partial<Record<MaterialTextureRole, MaterialTextureMetadata>>;
-  fabric?: FabricAppearance;
-  hair?: HairAppearance;
+  fabric?: FabricAppearance | undefined;
+  hair?: HairAppearance | undefined;
 }
 
 /** Procedural cloth surface response; this does not create or bend cloth geometry. */
@@ -216,9 +216,9 @@ function finite(value: unknown): value is number { return typeof value === "numb
 function pair(value: unknown): value is [number, number] { return Array.isArray(value) && value.length === 2 && value.every(finite); }
 
 function validateProvenance(value: unknown, path: string): MaterialDiagnostic[] {
-  if (!record(value) || typeof value.author !== "string" || value.author.trim().length === 0 || typeof value.license !== "string" || value.license.trim().length === 0) return [{ severity: "error", code: "invalid-provenance", path, message: "Expected author and license attribution." }];
-  if (Object.keys(value).some((key) => !["author", "license", "sourceUrl", "description"].includes(key)) || (value.description !== undefined && typeof value.description !== "string")) return [{ severity: "error", code: "invalid-provenance", path, message: "Unsupported or invalid attribution field." }];
-  if (value.sourceUrl !== undefined && (typeof value.sourceUrl !== "string" || !/^https?:\/\//i.test(value.sourceUrl))) return [{ severity: "error", code: "invalid-provenance", path: `${path}.sourceUrl`, message: "Expected an HTTP source URL." }];
+  if (!record(value) || typeof value["author"] !== "string" || value["author"].trim().length === 0 || typeof value["license"] !== "string" || value["license"].trim().length === 0) return [{ severity: "error", code: "invalid-provenance", path, message: "Expected author and license attribution." }];
+  if (Object.keys(value).some((key) => !["author", "license", "sourceUrl", "description"].includes(key)) || (value["description"] !== undefined && typeof value["description"] !== "string")) return [{ severity: "error", code: "invalid-provenance", path, message: "Unsupported or invalid attribution field." }];
+  if (value["sourceUrl"] !== undefined && (typeof value["sourceUrl"] !== "string" || !/^https?:\/\//i.test(value["sourceUrl"]))) return [{ severity: "error", code: "invalid-provenance", path: `${path}.sourceUrl`, message: "Expected an HTTP source URL." }];
   return [];
 }
 
@@ -251,74 +251,74 @@ export function validateMaterialAsset(value: unknown): MaterialDiagnostic[] {
   const errors: MaterialDiagnostic[] = [];
   const error = (path: string, message: string, code = "invalid-material") => errors.push({ severity: "error", code, path, message });
   if (!record(value)) return [{ severity: "error", code: "invalid-material", path: "", message: "Expected a material object." }];
-  if (value.schemaVersion !== 1) error("schemaVersion", "Expected material schema version 1.");
+  if (value["schemaVersion"] !== 1) error("schemaVersion", "Expected material schema version 1.");
   for (const key of Object.keys(value)) if (!["schemaVersion", "id", "name", "family", "capabilities", "provenance", "surface", "textures", "fabric", "hair"].includes(key)) error(key, "Unsupported material asset metadata.");
-  if (typeof value.id !== "string" || value.id.trim().length === 0) error("id", "Expected a stable nonempty material ID.");
-  if (typeof value.name !== "string" || value.name.trim().length === 0) error("name", "Expected a material name.");
-  if (!FAMILIES.includes(value.family as MaterialFamily)) error("family", "Unknown material family.");
-  if (value.provenance !== undefined) errors.push(...validateProvenance(value.provenance, "provenance"));
-  const capabilities = Array.isArray(value.capabilities) ? value.capabilities : [];
-  if (!Array.isArray(value.capabilities) || capabilities.some((item) => !CAPABILITIES.includes(item))) error("capabilities", "Expected an explicit list of supported material capabilities.");
-  errors.push(...validateMaterialSurface(value.surface));
-  if (record(value.surface)) {
+  if (typeof value["id"] !== "string" || value["id"].trim().length === 0) error("id", "Expected a stable nonempty material ID.");
+  if (typeof value["name"] !== "string" || value["name"].trim().length === 0) error("name", "Expected a material name.");
+  if (!FAMILIES.includes(value["family"] as MaterialFamily)) error("family", "Unknown material family.");
+  if (value["provenance"] !== undefined) errors.push(...validateProvenance(value["provenance"], "provenance"));
+  const capabilities = Array.isArray(value["capabilities"]) ? value["capabilities"] : [];
+  if (!Array.isArray(value["capabilities"]) || capabilities.some((item) => !CAPABILITIES.includes(item))) error("capabilities", "Expected an explicit list of supported material capabilities.");
+  errors.push(...validateMaterialSurface(value["surface"]));
+  if (record(value["surface"])) {
     for (const [field, capability] of Object.entries(MATERIAL_SURFACE_CAPABILITIES)) {
-      if (value.surface[field] !== undefined && !capabilities.includes(capability)) error(`surface.${field}`, `Declare the ${capability} capability.`, "missing-capability");
+      if (value["surface"][field] !== undefined && !capabilities.includes(capability)) error(`surface.${field}`, `Declare the ${capability} capability.`, "missing-capability");
     }
-    if (typeof value.surface.transmission === "number" && value.surface.transmission > 0 && value.surface.alphaMode === "blend") error("surface.alphaMode", "Use opaque or mask coverage with transmission; alpha blending and physical transmission are distinct paths.", "unsupported-combination");
+    if (typeof value["surface"]["transmission"] === "number" && value["surface"]["transmission"] > 0 && value["surface"]["alphaMode"] === "blend") error("surface.alphaMode", "Use opaque or mask coverage with transmission; alpha blending and physical transmission are distinct paths.", "unsupported-combination");
   }
-  if (value.fabric !== undefined) {
-    if (!record(value.fabric) || !["woven", "fuzzy"].includes(value.fabric.construction as string)) error("fabric", "Expected woven or fuzzy fabric construction.");
+  if (value["fabric"] !== undefined) {
+    if (!record(value["fabric"]) || !["woven", "fuzzy"].includes(value["fabric"]["construction"] as string)) error("fabric", "Expected woven or fuzzy fabric construction.");
     else {
-      for (const [field, item] of Object.entries(value.fabric)) {
+      for (const [field, item] of Object.entries(value["fabric"])) {
         if (field === "construction") continue;
-        if (value.fabric.construction === "fuzzy") { error(`fabric.${field}`, "Thread controls require woven construction; use normal maps and surface normals for fuzzy cloth detail."); continue; }
+        if (value["fabric"]["construction"] === "fuzzy") { error(`fabric.${field}`, "Thread controls require woven construction; use normal maps and surface normals for fuzzy cloth detail."); continue; }
         if (field === "weaveDirection" ? !finite(item) : field === "threadScale" ? !finite(item) || item <= 0 : field === "normalStrength" || field === "variation" ? !finite(item) || item < 0 || item > 1 : true) error(`fabric.${field}`, "Unsupported or invalid fabric parameter.");
       }
-      for (const capability of FABRIC_CAPABILITIES[value.fabric.construction as FabricAppearance["construction"]]) {
+      for (const capability of FABRIC_CAPABILITIES[value["fabric"]["construction"] as FabricAppearance["construction"]]) {
         if (!capabilities.includes(capability)) error("fabric", `Fabric appearance requires the ${capability} capability.`, "missing-capability");
       }
     }
   }
-  if (value.hair !== undefined) {
-    if (!record(value.hair) || !["cards", "strands"].includes(value.hair.geometry as string)) error("hair", "Expected cards or strands geometry.");
-    else for (const [field, item] of Object.entries(value.hair)) {
+  if (value["hair"] !== undefined) {
+    if (!record(value["hair"]) || !["cards", "strands"].includes(value["hair"]["geometry"] as string)) error("hair", "Expected cards or strands geometry.");
+    else for (const [field, item] of Object.entries(value["hair"])) {
       if (field === "geometry") continue;
       if (field === "strandDirection" ? !finite(item) : field === "backlightStrength" ? !finite(item) || item < 0 || item > 1 : field === "backlightColor" ? typeof item !== "string" || !/^#[0-9a-f]{6}$/i.test(item) : true) error(`hair.${field}`, "Unsupported or invalid hair parameter.");
-      if (value.hair.geometry !== "cards" && (field === "backlightStrength" || field === "backlightColor")) error(`hair.${field}`, "Thin-sheet backlighting supports hair cards only.");
+      if (value["hair"]["geometry"] !== "cards" && (field === "backlightStrength" || field === "backlightColor")) error(`hair.${field}`, "Thin-sheet backlighting supports hair cards only.");
     }
-    if (record(value.hair) && ["cards", "strands"].includes(value.hair.geometry as string)) {
-      for (const capability of HAIR_CAPABILITIES[value.hair.geometry as HairAppearance["geometry"]]) {
+    if (record(value["hair"]) && ["cards", "strands"].includes(value["hair"]["geometry"] as string)) {
+      for (const capability of HAIR_CAPABILITIES[value["hair"]["geometry"] as HairAppearance["geometry"]]) {
         if (!capabilities.includes(capability)) error("hair", `Hair approximation requires the ${capability} capability.`, "missing-capability");
       }
     }
   }
-  if (value.textures !== undefined) {
-    if (!record(value.textures)) error("textures", "Expected a texture-role object.");
-    else for (const [role, texture] of Object.entries(value.textures)) {
+  if (value["textures"] !== undefined) {
+    if (!record(value["textures"])) error("textures", "Expected a texture-role object.");
+    else for (const [role, texture] of Object.entries(value["textures"])) {
       const semantics = MATERIAL_TEXTURE_SEMANTICS[role as MaterialTextureRole];
       const path = `textures.${role}`;
       if (semantics === undefined) { error(path, "Unsupported texture role."); continue; }
       if (!record(texture)) { error(path, "Expected texture metadata."); continue; }
       for (const field of Object.keys(texture)) if (!["url", "colorSpace", "channel", "uvSet", "transform", "physicalSize", "normalConvention", "sampler", "compression", "provenance"].includes(field)) error(`${path}.${field}`, "Unsupported texture metadata.");
-      if (texture.provenance !== undefined) errors.push(...validateProvenance(texture.provenance, `${path}.provenance`));
+      if (texture["provenance"] !== undefined) errors.push(...validateProvenance(texture["provenance"], `${path}.provenance`));
       const feature = MATERIAL_TEXTURE_CAPABILITIES[role as MaterialTextureRole];
       if (feature !== undefined && !capabilities.includes(feature)) error(path, `Declare the ${feature} capability.`, "missing-capability");
-      if (typeof texture.url !== "string" || texture.url.trim().length === 0 || /^\s*(?:javascript|file):/i.test(texture.url)) error(`${path}.url`, "Expected a runtime asset URL.");
-      if (texture.colorSpace !== semantics.colorSpace) error(`${path}.colorSpace`, `The ${role} role requires ${semantics.colorSpace} color space.`, "texture-color-space");
-      if (texture.channel !== undefined && texture.channel !== semantics.channel && !(role === "color" && texture.channel === "rgb")) error(`${path}.channel`, `The shader samples ${semantics.channel} for ${role}; repack this texture.`, "texture-channel");
-      if (texture.uvSet !== undefined && ![0, 1, 2, 3].includes(texture.uvSet as number)) error(`${path}.uvSet`, "Expected UV set 0, 1, 2 or 3.");
-      if (texture.physicalSize !== undefined && (!pair(texture.physicalSize) || texture.physicalSize.some((n) => n <= 0))) error(`${path}.physicalSize`, "Expected positive metre dimensions.");
-      if (texture.normalConvention !== undefined && (!["opengl", "directx"].includes(texture.normalConvention as string) || !["normal", "clearcoatNormal"].includes(role))) error(`${path}.normalConvention`, "Normal conventions apply only to normal textures.");
-      if (texture.compression !== undefined && !["none", "ktx2", "basisu", "webp"].includes(texture.compression as string)) error(`${path}.compression`, "Unknown texture compression.");
-      if (texture.transform !== undefined) {
-        if (!record(texture.transform)) error(`${path}.transform`, "Expected a UV transform object.");
-        else for (const [field, item] of Object.entries(texture.transform)) {
+      if (typeof texture["url"] !== "string" || texture["url"].trim().length === 0 || /^\s*(?:javascript|file):/i.test(texture["url"])) error(`${path}.url`, "Expected a runtime asset URL.");
+      if (texture["colorSpace"] !== semantics.colorSpace) error(`${path}.colorSpace`, `The ${role} role requires ${semantics.colorSpace} color space.`, "texture-color-space");
+      if (texture["channel"] !== undefined && texture["channel"] !== semantics.channel && !(role === "color" && texture["channel"] === "rgb")) error(`${path}.channel`, `The shader samples ${semantics.channel} for ${role}; repack this texture.`, "texture-channel");
+      if (texture["uvSet"] !== undefined && ![0, 1, 2, 3].includes(texture["uvSet"] as number)) error(`${path}.uvSet`, "Expected UV set 0, 1, 2 or 3.");
+      if (texture["physicalSize"] !== undefined && (!pair(texture["physicalSize"]) || texture["physicalSize"].some((n) => n <= 0))) error(`${path}.physicalSize`, "Expected positive metre dimensions.");
+      if (texture["normalConvention"] !== undefined && (!["opengl", "directx"].includes(texture["normalConvention"] as string) || !["normal", "clearcoatNormal"].includes(role))) error(`${path}.normalConvention`, "Normal conventions apply only to normal textures.");
+      if (texture["compression"] !== undefined && !["none", "ktx2", "basisu", "webp"].includes(texture["compression"] as string)) error(`${path}.compression`, "Unknown texture compression.");
+      if (texture["transform"] !== undefined) {
+        if (!record(texture["transform"])) error(`${path}.transform`, "Expected a UV transform object.");
+        else for (const [field, item] of Object.entries(texture["transform"])) {
           if ((field === "offset" || field === "scale") ? !pair(item) : field === "rotation" ? !finite(item) : true) error(`${path}.transform.${field}`, "Unsupported or invalid UV transform.");
         }
       }
-      if (texture.sampler !== undefined) {
-        if (!record(texture.sampler)) error(`${path}.sampler`, "Expected a sampler object.");
-        else for (const [field, item] of Object.entries(texture.sampler)) {
+      if (texture["sampler"] !== undefined) {
+        if (!record(texture["sampler"])) error(`${path}.sampler`, "Expected a sampler object.");
+        else for (const [field, item] of Object.entries(texture["sampler"])) {
           const valid = field === "wrapS" || field === "wrapT" ? ["repeat", "clamp", "mirror"].includes(item as string)
             : field === "minFilter" ? ["nearest", "linear", "nearest-mipmap-nearest", "nearest-mipmap-linear", "linear-mipmap-nearest", "linear-mipmap-linear"].includes(item as string)
             : field === "magFilter" ? ["nearest", "linear"].includes(item as string)
@@ -328,8 +328,8 @@ export function validateMaterialAsset(value: unknown): MaterialDiagnostic[] {
       }
     }
   }
-  if (value.family === "hair") errors.push({ severity: "warning", code: "hair-approximation", path: "family", message: "Anisotropy and card backlighting approximate hair surfaces; this material creates no groom, strand multiscattering or simulation." });
-  if (record(value.surface) && typeof value.surface.anisotropy === "number" && value.surface.anisotropy > 0) errors.push({ severity: "warning", code: "direction-prerequisite", path: "surface.anisotropy", message: "Directional highlights require suitable UVs or mesh tangents; verify their orientation on the imported mesh." });
+  if (value["family"] === "hair") errors.push({ severity: "warning", code: "hair-approximation", path: "family", message: "Anisotropy and card backlighting approximate hair surfaces; this material creates no groom, strand multiscattering or simulation." });
+  if (record(value["surface"]) && typeof value["surface"]["anisotropy"] === "number" && value["surface"]["anisotropy"] > 0) errors.push({ severity: "warning", code: "direction-prerequisite", path: "surface.anisotropy", message: "Directional highlights require suitable UVs or mesh tangents; verify their orientation on the imported mesh." });
   return errors;
 }
 
@@ -338,20 +338,21 @@ export function parseMaterialAssignments(value: unknown): MaterialAssignment[] {
   if (!Array.isArray(value)) throw new TypeError("materialAssignments: expected an array.");
   return value.map((item, index) => {
     const path = `materialAssignments.${index}`;
-    if (!record(item) || typeof item.materialId !== "string" || item.materialId.trim().length === 0) throw new TypeError(`${path}.materialId: expected a stable material ID.`);
+    if (!record(item) || typeof item["materialId"] !== "string" || item["materialId"].trim().length === 0) throw new TypeError(`${path}.materialId: expected a stable material ID.`);
     if (Object.keys(item).some((key) => !["materialId", "selector", "overrides"].includes(key))) throw new TypeError(`${path}: unsupported assignment field.`);
-    if (!record(item.selector) || Object.keys(item.selector).length === 0) throw new TypeError(`${path}.selector: choose a mesh, slot or slotIndex.`);
+    if (!record(item["selector"]) || Object.keys(item["selector"]).length === 0) throw new TypeError(`${path}.selector: choose a mesh, slot or slotIndex.`);
     const selector: MaterialSelector = {};
-    for (const [key, field] of Object.entries(item.selector)) {
+    for (const [key, field] of Object.entries(item["selector"])) {
       if (key === "mesh" || key === "slot") {
         if (typeof field !== "string" || field.trim().length === 0) throw new TypeError(`${path}.selector.${key}: expected a nonempty name.`);
         selector[key] = field;
       } else if (key === "slotIndex" && typeof field === "number" && Number.isInteger(field) && field >= 0) selector.slotIndex = field;
       else throw new TypeError(`${path}.selector.${key}: unsupported selector or invalid index.`);
     }
-    const diagnostics = item.overrides === undefined ? [] : validateMaterialSurface(item.overrides, `${path}.overrides`);
-    if (diagnostics.length > 0) throw new TypeError(`${diagnostics[0].path}: ${diagnostics[0].message}`);
-    return { materialId: item.materialId, selector, ...(item.overrides === undefined ? {} : { overrides: { ...item.overrides as MaterialSurfaceParameters } }) };
+    const diagnostics = item["overrides"] === undefined ? [] : validateMaterialSurface(item["overrides"], `${path}.overrides`);
+    const [first] = diagnostics;
+    if (first !== undefined) throw new TypeError(`${first.path}: ${first.message}`);
+    return { materialId: item["materialId"], selector, ...(item["overrides"] === undefined ? {} : { overrides: { ...item["overrides"] as MaterialSurfaceParameters } }) };
   });
 }
 
@@ -410,6 +411,7 @@ export function createMaterialTemplate(template: MaterialTemplate, id: string, n
     ...(fabric === undefined ? {} : { fabric }), ...(hair === undefined ? {} : { hair }),
   };
   const errors = validateMaterialAsset(asset).filter((diagnostic) => diagnostic.severity === "error");
-  if (errors.length > 0) throw new TypeError(`${errors[0].path}: ${errors[0].message}`);
+  const [firstError] = errors;
+  if (firstError !== undefined) throw new TypeError(`${firstError.path}: ${firstError.message}`);
   return asset;
 }

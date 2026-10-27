@@ -26,7 +26,7 @@ export interface DiscoveredRecord {
   initial: unknown;
   enabled: boolean;
   source: object | null;
-  options?: TunableOptions;
+  options?: TunableOptions | undefined;
   get(): unknown;
   set(value: unknown): void;
 }
@@ -36,7 +36,7 @@ interface ScanTarget {
   target: Record<string, unknown>;
   key: string;
   kind: DevtoolsControlKind;
-  options?: TunableOptions;
+  options?: TunableOptions | undefined;
 }
 
 interface ScanCollection {

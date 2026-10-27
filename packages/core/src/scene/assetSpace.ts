@@ -205,14 +205,14 @@ function finitePositive(value: unknown): value is number {
 
 function validateRotationPolicy(raw: unknown): AssetSpaceIssue[] {
   if (!isRecord(raw)) return [{ field: "mode", message: "expected an object" }];
-  if (raw.mode === "free") return [];
-  if (raw.mode === "locked") {
-    return raw.degrees !== undefined && (typeof raw.degrees !== "number" || !Number.isFinite(raw.degrees))
+  if (raw["mode"] === "free") return [];
+  if (raw["mode"] === "locked") {
+    return raw["degrees"] !== undefined && (typeof raw["degrees"] !== "number" || !Number.isFinite(raw["degrees"]))
       ? [{ field: "degrees", message: "expected a finite number" }]
       : [];
   }
-  if (raw.mode === "snap") {
-    return finitePositive(raw.snapDegrees) ? [] : [{ field: "snapDegrees", message: "expected a positive number" }];
+  if (raw["mode"] === "snap") {
+    return finitePositive(raw["snapDegrees"]) ? [] : [{ field: "snapDegrees", message: "expected a positive number" }];
   }
   return [{ field: "mode", message: "expected 'locked', 'snap', or 'free'" }];
 }
@@ -230,37 +230,37 @@ export function validateAssetSpace(raw: unknown): AssetSpaceIssue[] {
     issues.push({ field: "", message: "expected an object" });
     return issues;
   }
-  if (raw.forwardDegrees !== undefined && (typeof raw.forwardDegrees !== "number" || !Number.isFinite(raw.forwardDegrees))) {
+  if (raw["forwardDegrees"] !== undefined && (typeof raw["forwardDegrees"] !== "number" || !Number.isFinite(raw["forwardDegrees"]))) {
     issues.push({ field: "forwardDegrees", message: "expected a finite number" });
   }
-  if (raw.unitScale !== undefined && !finitePositive(raw.unitScale)) {
+  if (raw["unitScale"] !== undefined && !finitePositive(raw["unitScale"])) {
     issues.push({ field: "unitScale", message: "expected a positive number" });
   }
-  if (raw.gridSize !== undefined && !finitePositive(raw.gridSize)) {
+  if (raw["gridSize"] !== undefined && !finitePositive(raw["gridSize"])) {
     issues.push({ field: "gridSize", message: "expected a positive number" });
   }
-  if (raw.footprint !== undefined) {
-    const fp = raw.footprint;
-    if (!isRecord(fp) || !finitePositive(fp.w) || !finitePositive(fp.d)) {
+  if (raw["footprint"] !== undefined) {
+    const fp = raw["footprint"];
+    if (!isRecord(fp) || !finitePositive(fp["w"]) || !finitePositive(fp["d"])) {
       issues.push({ field: "footprint", message: "expected { w > 0, d > 0 }" });
     }
   }
-  if (raw.anchor !== undefined) {
-    const a = raw.anchor;
+  if (raw["anchor"] !== undefined) {
+    const a = raw["anchor"];
     const named = a === "center" || a === "corner";
-    const explicit = isRecord(a) && typeof a.x === "number" && typeof a.z === "number";
+    const explicit = isRecord(a) && typeof a["x"] === "number" && typeof a["z"] === "number";
     if (!named && !explicit) issues.push({ field: "anchor", message: "expected 'center', 'corner', or { x, z }" });
   }
-  if (raw.bounds !== undefined) {
-    const b = raw.bounds;
-    if (!isRecord(b) || typeof b.minX !== "number" || typeof b.maxX !== "number" || typeof b.minZ !== "number" || typeof b.maxZ !== "number") {
+  if (raw["bounds"] !== undefined) {
+    const b = raw["bounds"];
+    if (!isRecord(b) || typeof b["minX"] !== "number" || typeof b["maxX"] !== "number" || typeof b["minZ"] !== "number" || typeof b["maxZ"] !== "number") {
       issues.push({ field: "bounds", message: "expected an Aabb" });
-    } else if (b.maxX < b.minX || b.maxZ < b.minZ) {
+    } else if (b["maxX"] < b["minX"] || b["maxZ"] < b["minZ"]) {
       issues.push({ field: "bounds", message: "max must be >= min" });
     }
   }
-  if (raw.rotation !== undefined) {
-    issues.push(...validateRotationPolicy(raw.rotation).map((m) => ({ field: `rotation.${m.field}`, message: m.message })));
+  if (raw["rotation"] !== undefined) {
+    issues.push(...validateRotationPolicy(raw["rotation"]).map((m) => ({ field: `rotation.${m.field}`, message: m.message })));
   }
   return issues;
 }
@@ -273,12 +273,12 @@ export function validateAssetSpace(raw: unknown): AssetSpaceIssue[] {
  */
 export function parseRotationPolicy(raw: unknown): PlacementRotationPolicy {
   if (isRecord(raw)) {
-    if (raw.mode === "locked") {
-      return typeof raw.degrees === "number" && Number.isFinite(raw.degrees)
-        ? { mode: "locked", degrees: normalizeDegrees(raw.degrees) }
+    if (raw["mode"] === "locked") {
+      return typeof raw["degrees"] === "number" && Number.isFinite(raw["degrees"])
+        ? { mode: "locked", degrees: normalizeDegrees(raw["degrees"]) }
         : { mode: "locked" };
     }
-    if (raw.mode === "snap" && finitePositive(raw.snapDegrees)) return { mode: "snap", snapDegrees: raw.snapDegrees };
+    if (raw["mode"] === "snap" && finitePositive(raw["snapDegrees"])) return { mode: "snap", snapDegrees: raw["snapDegrees"] };
   }
   return { mode: "free" };
 }
@@ -299,19 +299,19 @@ export function parseAssetSpace(raw: unknown): AssetSpace | undefined {
     bounds?: Aabb;
     rotation?: PlacementRotationPolicy;
   } = {};
-  if (typeof raw.forwardDegrees === "number" && Number.isFinite(raw.forwardDegrees)) out.forwardDegrees = normalizeDegrees(raw.forwardDegrees);
-  if (finitePositive(raw.unitScale)) out.unitScale = raw.unitScale;
-  if (finitePositive(raw.gridSize)) out.gridSize = raw.gridSize;
-  if (isRecord(raw.footprint) && finitePositive(raw.footprint.w) && finitePositive(raw.footprint.d)) {
-    out.footprint = { w: raw.footprint.w, d: raw.footprint.d };
+  if (typeof raw["forwardDegrees"] === "number" && Number.isFinite(raw["forwardDegrees"])) out.forwardDegrees = normalizeDegrees(raw["forwardDegrees"]);
+  if (finitePositive(raw["unitScale"])) out.unitScale = raw["unitScale"];
+  if (finitePositive(raw["gridSize"])) out.gridSize = raw["gridSize"];
+  if (isRecord(raw["footprint"]) && finitePositive(raw["footprint"]["w"]) && finitePositive(raw["footprint"]["d"])) {
+    out.footprint = { w: raw["footprint"]["w"], d: raw["footprint"]["d"] };
   }
-  if (raw.anchor === "center" || raw.anchor === "corner") out.anchor = raw.anchor;
-  else if (isRecord(raw.anchor) && typeof raw.anchor.x === "number" && typeof raw.anchor.z === "number") {
-    out.anchor = { x: raw.anchor.x, z: raw.anchor.z };
+  if (raw["anchor"] === "center" || raw["anchor"] === "corner") out.anchor = raw["anchor"];
+  else if (isRecord(raw["anchor"]) && typeof raw["anchor"]["x"] === "number" && typeof raw["anchor"]["z"] === "number") {
+    out.anchor = { x: raw["anchor"]["x"], z: raw["anchor"]["z"] };
   }
-  if (isRecord(raw.bounds) && typeof raw.bounds.minX === "number" && typeof raw.bounds.maxX === "number" && typeof raw.bounds.minZ === "number" && typeof raw.bounds.maxZ === "number") {
-    out.bounds = { minX: raw.bounds.minX, maxX: raw.bounds.maxX, minZ: raw.bounds.minZ, maxZ: raw.bounds.maxZ };
+  if (isRecord(raw["bounds"]) && typeof raw["bounds"]["minX"] === "number" && typeof raw["bounds"]["maxX"] === "number" && typeof raw["bounds"]["minZ"] === "number" && typeof raw["bounds"]["maxZ"] === "number") {
+    out.bounds = { minX: raw["bounds"]["minX"], maxX: raw["bounds"]["maxX"], minZ: raw["bounds"]["minZ"], maxZ: raw["bounds"]["maxZ"] };
   }
-  if (isRecord(raw.rotation)) out.rotation = parseRotationPolicy(raw.rotation);
+  if (isRecord(raw["rotation"])) out.rotation = parseRotationPolicy(raw["rotation"]);
   return Object.keys(out).length === 0 ? undefined : out;
 }
