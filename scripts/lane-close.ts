@@ -13,10 +13,18 @@
 // A PR whose checks have not registered yet is a hand-off, not a failure: the queue
 // owns the wait and `bun run ci:status --pr <n>` answers only later, so the report
 // says so and the lane still exits 0.
+//
+// One run per worktree: a second lane:close started while the first is still verifying is
+// refused (exit 4) and told which run holds the worktree, instead of racing it for the same
+// files, browsers and commit. The lock names the run's pid and goes with it, so a run that
+// crashed or was killed by a timeout leaves a lock the next run breaks on its own.
 import { spawnSync } from "node:child_process";
+import { readFileSync, rmSync, statSync, writeFileSync } from "node:fs";
+import { join } from "node:path";
 import { fileURLToPath } from "node:url";
 
 import { assertCheckoutReady } from "./checkout-ready";
+import { parseLock, pidIsAlive, staleReason, type LandLock } from "./land";
 import { printHelpIfAsked } from "./script-help";
 
 const LANE_CLOSE_USAGE = {
@@ -34,6 +42,7 @@ const LANE_CLOSE_USAGE = {
     "0 closed",
     "1 verify or land failed",
     "3 cannot answer (no PR, no branch)",
+    "4 another lane:close is still running in this worktree",
     "78 this checkout has no node_modules - run bun install, or bun run agent:bootstrap",
   ],
 } as const;
@@ -41,6 +50,10 @@ const LANE_CLOSE_USAGE = {
 export const EXIT_CLOSED = 0;
 export const EXIT_VERIFY_FAILED = 1;
 export const EXIT_CANNOT_ANSWER = 3;
+export const EXIT_ANOTHER_RUN = 4;
+
+/** The lock file's name inside the worktree's git directory. */
+export const LANE_LOCK_FILE = "lane-close.lock";
 
 const root = fileURLToPath(new URL("..", import.meta.url));
 
@@ -101,6 +114,15 @@ export function reportSkeleton(input: ReportInput): string {
   return lines.join("\n");
 }
 
+/** The file operations the worktree lock needs, so a test can hold one in memory. */
+export interface LaneLockFs {
+  /** Create the file holding `text` only when it does not exist; false when it does. */
+  create: (path: string, text: string) => boolean;
+  read: (path: string) => string | null;
+  remove: (path: string) => void;
+  mtimeMs: (path: string) => number | null;
+}
+
 export interface LaneIo {
   /** Runs one command; `inherit` streams its output instead of capturing it. */
   sh: (argv: string[], inherit: boolean) => { status: number; stdout: string; stderr: string };
@@ -108,6 +130,53 @@ export interface LaneIo {
   env: Record<string, string | undefined>;
   out: (line: string) => void;
   err: (line: string) => void;
+  lock: LaneLockFs;
+  /** This run, as the lock records it. */
+  pid: number;
+  now: () => number;
+  alive: (pid: number) => boolean;
+}
+
+/** The lock another run holds, or the lock this run now holds with the release that drops it. */
+type LaneHold = { release: () => void } | { heldBy: string };
+
+/**
+ * Take this worktree's lane:close lock: `<git dir>/lane-close.lock`, one per worktree since
+ * each worktree has its own git directory. A lock whose pid is gone, or that is older than
+ * land's 30 minutes, is broken with a note; a live one is reported, never waited on.
+ */
+function holdWorktree(branch: string, io: LaneIo): LaneHold | null {
+  const gitDir = io.sh(["git", "rev-parse", "--absolute-git-dir"], false);
+  const dir = gitDir.stdout.trim();
+  if (gitDir.status !== 0 || dir.length === 0) return null;
+  const path = join(dir, LANE_LOCK_FILE);
+  const mine: LandLock = { branch, pid: io.pid, startedAt: io.now() };
+  for (let attempt = 0; attempt < 2; attempt += 1) {
+    if (io.lock.create(path, `${JSON.stringify(mine)}\n`)) {
+      return {
+        release: () => {
+          const text = io.lock.read(path);
+          const held = text === null ? null : parseLock(text);
+          if (held !== null && held.pid !== io.pid) return;
+          io.lock.remove(path);
+        },
+      };
+    }
+    const text = io.lock.read(path);
+    const held = text === null ? null : parseLock(text);
+    const reason = staleReason(held, io.lock.mtimeMs(path) ?? io.now(), io.now(), io.alive);
+    if (reason === null) return { heldBy: describeHolder(held, path, io.now()) };
+    const who = held === null ? "an unreadable lock" : `${held.branch} (pid ${held.pid})`;
+    io.out(`lane:close: breaking a stale lock from ${who}: ${reason}`);
+    io.lock.remove(path);
+  }
+  return { heldBy: `a lock that reappears at ${path}` };
+}
+
+function describeHolder(held: LandLock | null, path: string, now: number): string {
+  if (held === null) return `an unreadable lock at ${path}`;
+  const ago = Math.max(0, Math.round((now - held.startedAt) / 1000));
+  return `${held.branch} (pid ${held.pid}, started ${new Date(held.startedAt).toISOString()}, ${ago}s ago; lock ${path})`;
 }
 
 function lastLine(text: string): string {
@@ -140,6 +209,26 @@ export function closeLane(args: LaneCloseArgs, io: LaneIo): number {
     return EXIT_CANNOT_ANSWER;
   }
 
+  const hold = holdWorktree(branch, io);
+  if (hold === null) {
+    io.err("lane:close: could not find this worktree's git directory for its lock");
+    return EXIT_CANNOT_ANSWER;
+  }
+  if ("heldBy" in hold) {
+    io.err(
+      `lane:close: another lane:close is still running in this worktree: ${hold.heldBy}. ` +
+        "Let it finish; do not start a second one.",
+    );
+    return EXIT_ANOTHER_RUN;
+  }
+  try {
+    return closeHeldLane(args, branch, io);
+  } finally {
+    hold.release();
+  }
+}
+
+function closeHeldLane(args: LaneCloseArgs, branch: string, io: LaneIo): number {
   // Regenerate every committed derived file first: a stale manifest, api.md or capabilities
   // ledger was the most common reason a finished lane failed to land, and the fix was always
   // `bun run gen`. land --commit stages what gen rewrote.
@@ -294,6 +383,42 @@ function realIo(): LaneIo {
     env: process.env,
     out: (line) => console.log(line),
     err: (line) => console.error(line),
+    lock: realLockFs(),
+    pid: process.pid,
+    now: Date.now,
+    alive: pidIsAlive,
+  };
+}
+
+function realLockFs(): LaneLockFs {
+  return {
+    create: (path, text) => {
+      try {
+        writeFileSync(path, text, { flag: "wx" });
+        return true;
+      } catch (error) {
+        const code = (error as NodeJS.ErrnoException).code;
+        // Windows answers EPERM while the holder's release is still deleting the file: it is
+        // the same "someone has the lock" as EEXIST.
+        if (code === "EEXIST" || (code === "EPERM" && process.platform === "win32")) return false;
+        throw error;
+      }
+    },
+    read: (path) => {
+      try {
+        return readFileSync(path, "utf8");
+      } catch {
+        return null;
+      }
+    },
+    remove: (path) => rmSync(path, { force: true }),
+    mtimeMs: (path) => {
+      try {
+        return statSync(path).mtimeMs;
+      } catch {
+        return null;
+      }
+    },
   };
 }
 

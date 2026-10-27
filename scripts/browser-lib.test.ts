@@ -779,6 +779,59 @@ describe("browser launch handshake", () => {
     expect(calls).toBe(1);
   });
 
+  test("debugPort 0 reads the port the browser published and hands it on", async () => {
+    const server = fakeDebuggerServer();
+    const dir = mkdtempSync(join(tmpdir(), "jg-free-port-"));
+    const asked: number[] = [];
+    const probed: number[] = [];
+    try {
+      // What Chrome writes for --remote-debugging-port=0: the port, then the browser target path.
+      writeFileSync(join(dir, "DevToolsActivePort"), `${server.port}\n/devtools/browser/fake\n`);
+      const started = await startBrowser({
+        debugPort: 0,
+        readyMs: 1_000,
+        launch: (port) => {
+          asked.push(port);
+          return { pid: undefined, userDataDir: dir };
+        },
+        pageProbe: async (port) => {
+          probed.push(port);
+        },
+      });
+      expect(asked).toEqual([0]);
+      expect(probed).toEqual([server.port]);
+      expect(started.debugPort).toBe(server.port);
+    } finally {
+      server.stop(true);
+      rmSync(dir, { recursive: true, force: true });
+    }
+  });
+
+  test("a browser that never publishes its port fails the endpoint step", async () => {
+    const profiles: string[] = [];
+    let error: unknown;
+    try {
+      await startBrowser({
+        debugPort: 0,
+        readyMs: 60,
+        log: () => {},
+        launch: () => {
+          const dir = mkdtempSync(join(tmpdir(), "jg-unpublished-"));
+          profiles.push(dir);
+          return { pid: undefined, userDataDir: dir };
+        },
+        pageProbe: async () => {},
+      });
+    } catch (caught) {
+      error = caught;
+    }
+    const failure = launchFailure(error);
+    expect(failure.step).toBe("endpoint");
+    expect(failure.attempts).toBe(2);
+    expect(failure.message).toContain("did not publish its debugger port within 120ms");
+    for (const dir of profiles) expect(existsSync(dir)).toBe(false);
+  });
+
   test("only the handshake retries: a budget or assertion failure never does", () => {
     expect(isRetryableLaunchFailure("launch", "spawn chrome ENOENT")).toBe(true);
     expect(isRetryableLaunchFailure("endpoint", "the debugger on :9222 did not answer")).toBe(true);

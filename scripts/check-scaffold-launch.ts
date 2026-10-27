@@ -40,10 +40,12 @@ interface ScenarioResult {
   outcome: string;
   /** The step the failure named, when it failed. */
   step?: string;
+  /** The port the launch handed back, when it succeeded. */
+  debugPort?: number;
 }
 
 interface Implementation {
-  startBrowser: (options: Record<string, unknown>) => Promise<{ attempts: number }>;
+  startBrowser: (options: Record<string, unknown>) => Promise<{ attempts: number; debugPort: number }>;
 }
 
 function fail(message: string): never {
@@ -116,7 +118,7 @@ async function run(
   const logs: string[] = [];
   try {
     const started = await implementation.startBrowser({ ...options, log: (line: string) => logs.push(line) });
-    return { logs, outcome: `ok:${started.attempts}` };
+    return { logs, outcome: `ok:${started.attempts}`, debugPort: started.debugPort };
   } catch (error) {
     const failure = error as { message?: string; step?: string };
     const logsFirst = logs.map(normalize);
@@ -201,6 +203,32 @@ async function parity(engine: Implementation, scaffold: Implementation): Promise
     problems.push(
       `a debugger behind HTTP_PROXY: HTTP_PROXY=http://127.0.0.1:9 must not carry the handshake\n` +
         `  ${ENGINE_FILE}: ${proxyEngine.outcome}\n  ${SOURCE_FILE}: ${proxyScaffold.outcome}`,
+    );
+  }
+
+  // Two captures once picked the same clock-derived port and one lost its handshake. Port 0
+  // asks the browser for a free one; both copies must read it back and hand it on.
+  const freeEndpoint = await slowDebugger(0);
+  const freePort: Record<string, unknown> = {
+    debugPort: 0,
+    readyMs: 1_000,
+    launch: fakeLaunch([]),
+    publishedPort: async () => freeEndpoint.port,
+    pageProbe: async () => {},
+  };
+  let freeEngine: ScenarioResult;
+  let freeScaffold: ScenarioResult;
+  try {
+    freeEngine = await run(engine, freePort);
+    freeScaffold = await run(scaffold, freePort);
+  } finally {
+    await freeEndpoint.stop();
+  }
+  problems.push(...compare("a free port the browser publishes", freeEngine, freeScaffold));
+  if (freeEngine.debugPort !== freeEndpoint.port || freeScaffold.debugPort !== freeEndpoint.port) {
+    problems.push(
+      `a free port the browser publishes: debugPort 0 must come back as the published port ${freeEndpoint.port}\n` +
+        `  ${ENGINE_FILE}: ${freeEngine.debugPort}\n  ${SOURCE_FILE}: ${freeScaffold.debugPort}`,
     );
   }
 
@@ -444,7 +472,7 @@ async function main(): Promise<void> {
   console.log(
     `check-scaffold-launch ok: ${SOURCE_FILE} block ${canonicalHash} shipped verbatim to scripts/browser.mjs; ` +
       `shoot and drive route through startBrowser; no other script starts Chrome; no debugger probe uses fetch; ` +
-      `${ENGINE_FILE} agrees on 4 handshake scenarios, including one behind HTTP_PROXY`,
+      `${ENGINE_FILE} agrees on 5 handshake scenarios, including one behind HTTP_PROXY and one on a free port`,
   );
 }
 

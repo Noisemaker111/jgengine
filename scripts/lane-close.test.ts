@@ -1,15 +1,39 @@
 import { describe, expect, test } from "bun:test";
+import { join, resolve } from "node:path";
 
 import {
+  EXIT_ANOTHER_RUN,
   EXIT_CANNOT_ANSWER,
   EXIT_CLOSED,
   EXIT_VERIFY_FAILED,
+  LANE_LOCK_FILE,
   closeLane,
   landingMode,
   parseArgs,
   reportSkeleton,
   type LaneIo,
+  type LaneLockFs,
 } from "./lane-close";
+import { LOCK_STALE_MS } from "./land";
+
+/** The worktree's git directory, as `git rev-parse --absolute-git-dir` would print it. */
+const GIT_DIR = resolve("repo", ".git", "worktrees", "x");
+const LOCK_PATH = join(GIT_DIR, LANE_LOCK_FILE);
+const NOW = 1_800_000_000_000;
+
+/** A lock directory in memory: the files present, with the time each was written. */
+function memoryLock(files: Map<string, { text: string; mtimeMs: number }>, now: () => number): LaneLockFs {
+  return {
+    create: (path, text) => {
+      if (files.has(path)) return false;
+      files.set(path, { text, mtimeMs: now() });
+      return true;
+    },
+    read: (path) => files.get(path)?.text ?? null,
+    remove: (path) => void files.delete(path),
+    mtimeMs: (path) => files.get(path)?.mtimeMs ?? null,
+  };
+}
 
 const CI_OK = JSON.stringify({
   ok: true,
@@ -30,20 +54,34 @@ interface Script {
   branch?: string;
   shortstat?: string;
   pr?: number | null;
+  /** Lock files already present when the run starts. */
+  locks?: Map<string, { text: string; mtimeMs: number }>;
+  /** Which pids answer; default: only this run's. */
+  alive?: (pid: number) => boolean;
 }
 
-function io(script: Script = {}): LaneIo & { lines: { out: string[]; err: string[] } } {
+const RUN_PID = 4242;
+
+function io(script: Script = {}): LaneIo & { lines: { out: string[]; err: string[] }; locks: Map<string, { text: string; mtimeMs: number }> } {
   const lines = { out: [] as string[], err: [] as string[] };
+  const locks = script.locks ?? new Map();
+  const now = () => NOW;
   const run = () => ({ status: 0, stdout: "", stderr: "" });
   return {
     lines,
+    locks,
     cwd: "/repo",
     env: {},
     out: (line) => lines.out.push(line),
     err: (line) => lines.err.push(line),
+    lock: memoryLock(locks, now),
+    pid: RUN_PID,
+    now,
+    alive: script.alive ?? ((pid) => pid === RUN_PID),
     sh: (argv) => {
       const key = argv.join(" ");
       if (key === "git rev-parse --abbrev-ref HEAD") return { ...run(), stdout: `${script.branch ?? "agent/x"}\n` };
+      if (key === "git rev-parse --absolute-git-dir") return { ...run(), stdout: `${GIT_DIR}\n` };
       if (key === "run gen") return { ...run(), status: script.gen ?? 0 };
       if (key === "run verify:fast") return { ...run(), status: script.verify ?? 0 };
       if (key === "run scripts/land.ts --commit") return { ...run(), status: script.land ?? 0 };
@@ -181,6 +219,91 @@ describe("lane:close end to end", () => {
     const fake = io({ branch: "beta" });
     expect(closeLane({}, fake)).toBe(EXIT_CANNOT_ANSWER);
     expect(fake.lines.err.join("\n")).toContain("refusing to close beta");
+  });
+});
+
+describe("one lane:close per worktree", () => {
+  const liveLock = (pid: number, startedAt = NOW - 90_000) => ({
+    text: `${JSON.stringify({ branch: "agent/first", pid, startedAt })}\n`,
+    mtimeMs: startedAt,
+  });
+
+  test("a second run is refused while the first holds the worktree, and runs nothing", () => {
+    const calls: string[] = [];
+    const fake = io({ locks: new Map([[LOCK_PATH, liveLock(777)]]), alive: (pid) => pid === 777 || pid === RUN_PID });
+    const sh = fake.sh;
+    fake.sh = (argv, inherit) => {
+      calls.push(argv.join(" "));
+      return sh(argv, inherit);
+    };
+    expect(closeLane({}, fake)).toBe(EXIT_ANOTHER_RUN);
+    const refusal = fake.lines.err.join("\n");
+    expect(refusal).toContain("another lane:close is still running in this worktree");
+    expect(refusal).toContain("agent/first (pid 777");
+    expect(refusal).toContain("90s ago");
+    expect(refusal).toContain(LOCK_PATH);
+    expect(calls).not.toContain("run gen");
+    expect(calls).not.toContain("run verify:fast");
+    expect(calls).not.toContain("run scripts/land.ts --commit");
+    // The first run's lock is left exactly as it was.
+    expect(fake.locks.get(LOCK_PATH)).toEqual(liveLock(777));
+  });
+
+  test("a lock whose run died is broken and the lane closes", () => {
+    const fake = io({ locks: new Map([[LOCK_PATH, liveLock(777)]]) });
+    expect(closeLane({}, fake)).toBe(EXIT_CLOSED);
+    expect(fake.lines.out.join("\n")).toContain("breaking a stale lock from agent/first (pid 777): pid 777 is gone");
+    expect(fake.locks.has(LOCK_PATH)).toBe(false);
+  });
+
+  test("a lock older than land's limit is broken even when its pid still answers", () => {
+    const fake = io({
+      locks: new Map([[LOCK_PATH, liveLock(777, NOW - LOCK_STALE_MS - 1)]]),
+      alive: () => true,
+    });
+    expect(closeLane({}, fake)).toBe(EXIT_CLOSED);
+    expect(fake.lines.out.join("\n")).toContain("breaking a stale lock from agent/first (pid 777): older than 30 minutes");
+  });
+
+  test("the lock names this run while it holds the worktree and is gone when the lane closes", () => {
+    const fake = io();
+    const sh = fake.sh;
+    let seen: unknown = null;
+    fake.sh = (argv, inherit) => {
+      if (argv.join(" ") === "run verify:fast") seen = JSON.parse(fake.locks.get(LOCK_PATH)?.text ?? "null");
+      return sh(argv, inherit);
+    };
+    expect(closeLane({}, fake)).toBe(EXIT_CLOSED);
+    expect(seen).toEqual({ branch: "agent/x", pid: RUN_PID, startedAt: NOW });
+    expect(fake.locks.has(LOCK_PATH)).toBe(false);
+  });
+
+  test("the lock is released when verify fails, when land fails and when a step throws", () => {
+    for (const script of [{ verify: 1 }, { land: 4 }, { ci: "not json" }] as const) {
+      const fake = io(script);
+      closeLane({}, fake);
+      expect(fake.locks.has(LOCK_PATH)).toBe(false);
+    }
+    const thrown = io();
+    const sh = thrown.sh;
+    thrown.sh = (argv, inherit) => {
+      if (argv.join(" ") === "run gen") throw new Error("spawn failed");
+      return sh(argv, inherit);
+    };
+    expect(() => closeLane({}, thrown)).toThrow("spawn failed");
+    expect(thrown.locks.has(LOCK_PATH)).toBe(false);
+  });
+
+  test("a lock another run took over is left to that run", () => {
+    const fake = io();
+    const sh = fake.sh;
+    fake.sh = (argv, inherit) => {
+      // Someone replaced our lock mid-run (a stale-break race); release must not delete theirs.
+      if (argv.join(" ") === "run verify:fast") fake.locks.set(LOCK_PATH, liveLock(999, NOW));
+      return sh(argv, inherit);
+    };
+    closeLane({}, fake);
+    expect(fake.locks.get(LOCK_PATH)).toEqual(liveLock(999, NOW));
   });
 });
 
