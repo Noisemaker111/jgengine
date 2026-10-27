@@ -33,11 +33,11 @@ test("a player builds and connects a ride, hires staff, researches the mechanic,
   runner.ctx.time.hydrate({ ...runner.ctx.time.snapshot(), now: DAY_LENGTH * 0.3, paused: false });
   const w = park.of(runner.ctx);
 
-  /** Pick a blueprint, then click the first free spot on the lot: what the player does with the mouse. */
+  /** Pick a blueprint, then click the first free spot nearest the gate: what the player does with the mouse. */
   const clickBuild = (kind: string): string => {
     runner.ui.invoke("build.select", { id: kind });
     expect(session.selectedTool).toBe(kind);
-    for (let z = -50; z <= 50; z += 4) for (let x = -50; x <= 50; x += 4) {
+    for (let z = 40; z >= -50; z -= 4) for (let x = -20; x <= 50; x += 4) {
       if (w.canPlace(kind, { cell: cellFor(kind, x, z) }) !== null) continue;
       const before = new Set(w.instances().map((i) => i.id));
       runner.ui.invoke("park.pointer", { point: [x, 0, z], entity: null, object: null });
@@ -54,6 +54,10 @@ test("a player builds and connects a ride, hires staff, researches the mechanic,
   runner.ui.invoke("build.connect", { id: carousel });
   expect(accessOf(runner.ctx, carousel)?.open).toBe(true);
   expect(w.fact(`${carousel}.closed`)).toBe(false);
+  // The gate is the player's to open, and only once a ride runs.
+  expect(w.fact("park.gate")).toBe(false);
+  runner.ui.invoke("brightway.act", { action: "open_gate" });
+  expect(w.fact("park.gate")).toBe(true);
 
   // Undo takes the last build back; the ride itself stays.
   const handyman = clickBuild("staff_janitor");
@@ -80,8 +84,9 @@ test("a player builds and connects a ride, hires staff, researches the mechanic,
   runner.ui.invoke("brightway.act", { action: "take_loan" });
   expect(w.num("park.loan_owed")).toBe(owed + LOAN.step);
 
-  for (let t = 0; t < 240; t += 0.5) runner.step(0.5);
-
+  // A morning with the gate open: guests trickle in, ride and say what they think before closing time.
+  runner.ctx.time.hydrate({ ...runner.ctx.time.snapshot(), now: (Math.floor(runner.ctx.time.now() / DAY_LENGTH) + 1.3) * DAY_LENGTH });
+  for (let t = 0; t < 90; t += 0.5) runner.step(0.5);
   expect(session.guests.size).toBeGreaterThan(0);
   expect(rideView(carousel)!.cycles).toBeGreaterThan(0);
   const thinking = [...session.guests.values()].filter((g) => (g.thoughts ?? []).length > 0);

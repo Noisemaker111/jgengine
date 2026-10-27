@@ -47,7 +47,8 @@ describe("staged full-park capture", () => {
     stagePark(runner.ctx, "full");
     const w = park.of(runner.ctx);
     expect(w.fact("park.open")).toBe(true);
-    expect(session.guests.size).toBeGreaterThanOrEqual(guestCap(w.num("park.rating")));
+    // The seeded crowd is the cap a new park's rating allows, still inside.
+    expect(session.guests.size).toBeGreaterThanOrEqual(guestCap(0));
     const counted = phases();
     expect(counted.queued ?? 0).toBeGreaterThan(0);
   }, 30_000);

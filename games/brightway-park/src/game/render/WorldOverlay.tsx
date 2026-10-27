@@ -16,6 +16,7 @@ import { GRID, snapToTile } from "../catalog";
 import { traceNative } from "../evidence";
 import { hoverRefusal, placementHintStore } from "../build/placementHint";
 import { SceneCaptureBinding } from "@jgengine/core/scene/sceneCapture.draw";
+import { useWorldProjection } from "@jgengine/shell/world/WorldEntityFrames";
 import { bindParkCapture } from "../parkProfile";
 import { tileAt, cellCentre, groundAt, isLandTool, LEVEL_HEIGHT, lineCells, raisedCells, rectCells } from "../build/terrain";
 import { landCheck, LINE_KINDS } from "../build/commands";
@@ -188,9 +189,23 @@ function PatrolRing({x,z,radius}:{x:number;z:number;radius:number}) {
     <mesh raycast={()=>{}}><ringGeometry args={[radius-.25,radius,64]}/><meshBasicMaterial color="#5fb8ff" transparent opacity={.8} depthWrite={false}/></mesh>
   </group>;
 }
+/**
+ * Dev only: `__brightwayScreen(x, z)` gives the CSS pixel a ground point shows at, so a flow can click
+ * the lot with a real pointer instead of guessing pixels for a camera it does not know.
+ */
+function ScreenProbe() {
+  const project=useWorldProjection(); const {gl}=useThree(); const ctx=useGameContext();
+  useEffect(()=>{
+    const screenOf=(x:number,z:number):{x:number;y:number}|null=>{const p=project([x,groundAt(park.of(ctx),x,z),z]);const r=gl.domElement.getBoundingClientRect();return p===null||p.behind?null:{x:r.left+p.x,y:r.top+p.y};};
+    Reflect.set(globalThis,"__brightwayScreen",screenOf);
+    return()=>{Reflect.deleteProperty(globalThis,"__brightwayScreen");};
+  },[project,gl,ctx]);
+  return null;
+}
 export function BrightwayParkWorldOverlay() {
   return (
     <>
+      {import.meta.env.DEV&&<ScreenProbe/>}
       <SceneCaptureBinding bind={bindParkCapture} />
       <OverlayBodies />
     </>

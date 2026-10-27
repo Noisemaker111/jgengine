@@ -50,7 +50,7 @@ describe("park saves and real command boundaries", () => {
     expect(built.kind).toBe("ride_carousel");
     // A second carousel on the same spot is refused: the cell is taken.
     first.ui.invoke("park.pointer", { point: [-40, 0, -40], object: null, entity: null });
-    expect(w.instances().filter((entry) => entry.kind === "ride_carousel").length).toBe(2);
+    expect(w.instances().filter((entry) => entry.kind === "ride_carousel").length).toBe(1);
     for (let i = 0; i < 3; i += 1) first.ui.invoke("brightway.act", { action: "ticket_up" });
     first.ui.invoke("pauseToggle");
     const saved = snapshotPark(first.ctx);
@@ -122,21 +122,23 @@ describe("park saves and real command boundaries", () => {
     expect(decodeSave(records.get(SAVE_KEY)!)).not.toBeNull();
   });
 
-  test("a playable starter expansion climbs the rating; three debt settlements end play", () => {
+  test("a first ride on the empty lot climbs the rating; three debt settlements end play", () => {
     const live = runner();
     live.ui.invoke("park.start");
     live.ui.invoke("pickCarousel");
-    live.ui.invoke("park.pointer", { point: [-40, 0, -40], object: null, entity: null });
+    live.ui.invoke("park.pointer", { point: [10, 0, 36], object: null, entity: null });
     // A new ride opens once its entrance, queue, exit and paths join it to the park.
     live.ui.invoke("build.connect", { id: park.of(live.ctx).instances("ride_carousel").at(-1)!.id });
+    live.ui.invoke("brightway.act", { action: "open_gate" });
     live.ui.invoke("build.clear");
     live.ui.invoke("build.select", { id: "staff_janitor" });
-    live.ui.invoke("park.pointer", { point: [-36, 0, -28], object: null, entity: null });
+    live.ui.invoke("park.pointer", { point: [-12, 0, 28], object: null, entity: null });
     // Advance a finite season through the actual loop, without forcing award stats.
     for (let frame = 0; frame < 450; frame++) live.step(1);
     const w = park.of(live.ctx);
     // The first award is a goal for real building, not for one carousel: the climb is what shows here.
-    expect(w.num("park.peak")).toBeGreaterThan(180);
+    expect(w.num("park.guests_today") + w.num("park.guests")).toBeGreaterThan(0);
+    expect(w.num("park.peak")).toBeGreaterThan(40);
     expect(w.num("park.peak")).toBeLessThan(MILESTONES[0]!.rating);
     w.change({ "park.cash": -100_000 - w.num("park.cash") });
     for (let day = 0; day < 3; day++) closeDay(live.ctx);

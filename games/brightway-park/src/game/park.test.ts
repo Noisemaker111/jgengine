@@ -10,6 +10,7 @@ import { connectPark } from "./build/links";
 import { rideView } from "./rides";
 import { closeDay } from "./sim/economy";
 import { ratingTarget } from "./sim/rating";
+import { GATE_PLAZA, resetPark } from "./parkReset";
 
 const originalStorage = Object.getOwnPropertyDescriptor(globalThis, "localStorage");
 beforeEach(() => {
@@ -25,13 +26,46 @@ afterEach(() => {
   else Reflect.deleteProperty(globalThis, "localStorage");
 });
 
-/** A started park on the composed loop (the world system installed), its gates open mid-morning. */
+/** A started park on the composed loop (the world system installed): the authored starter park, its gates open mid-morning. */
 function openPark() {
   const runner = createHeadlessRunner({ game, maxStepSeconds: 1 });
+  resetPark(runner.ctx, { layout: "starter", guests: 0 });
   runner.ui.invoke("park.start");
   runner.ctx.time.hydrate({ ...runner.ctx.time.snapshot(), now: DAY_LENGTH * 0.3, paused: false });
   return { runner, w: park.of(runner.ctx) };
 }
+
+describe("a new park", () => {
+  test("is an empty lot with a shut gate: no guests until a connected ride runs and the player opens it", () => {
+    const runner = createHeadlessRunner({ game, maxStepSeconds: 1 });
+    runner.ui.invoke("park.start");
+    runner.ctx.time.hydrate({ ...runner.ctx.time.snapshot(), now: DAY_LENGTH * 0.3, paused: false });
+    const w = park.of(runner.ctx);
+    expect(w.instances().map((entry) => entry.kind)).toEqual(GATE_PLAZA.map(() => "path_walk"));
+    expect(w.fact("park.gate")).toBe(false);
+    expect(w.num("park.loan_owed")).toBe(LOAN.start);
+    step(runner, 30);
+    expect(w.num("park.guests_today")).toBe(0);
+    expect(w.fact("park.open")).toBe(false);
+    // No ride: the gate refuses to open.
+    expect(runner.ctx.game.commands.run("brightway.act", { action: "open_gate" }).status).toBe("rejected");
+
+    // A path north from the plaza, a carousel beside it, its entrance and exit: the gate opens.
+    runner.ui.invoke("build.line", { kind: "path_walk", from: [0, 48], to: [0, 32] });
+    expect(runner.ctx.game.commands.run("brightway.place", { kind: "ride_carousel", cell: cellFor("ride_carousel", 10, 38) }).status).toBe("applied");
+    const ride = w.instances("ride_carousel")[0]?.id ?? "";
+    runner.ui.invoke("build.connect", { id: ride });
+    expect(w.fact(`${ride}.closed`)).toBe(false);
+    expect(runner.ctx.game.commands.run("brightway.act", { action: "open_gate" }).status).toBe("applied");
+
+    // Guests trickle in: a handful in the first minute, not a flood.
+    step(runner, 60);
+    expect(w.num("park.guests_today")).toBeGreaterThan(0);
+    expect(w.num("park.guests_today")).toBeLessThan(12);
+    // The rating moves over the day, not in seconds.
+    expect(w.num("park.rating")).toBeLessThan(60);
+  }, 30_000);
+});
 
 const step = (runner: ReturnType<typeof openPark>["runner"], seconds: number) => {
   for (let t = 0; t < seconds; t += 0.25) runner.step(0.25);

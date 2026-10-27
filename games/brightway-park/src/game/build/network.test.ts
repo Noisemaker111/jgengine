@@ -9,6 +9,7 @@ import { session } from "../session";
 import { accessOf } from "./links";
 import { cellCentre, levelAt, LAND_COST } from "./terrain";
 import { clearUndo } from "./undo";
+import { resetPark } from "../parkReset";
 
 const originalStorage = Object.getOwnPropertyDescriptor(globalThis, "localStorage");
 beforeEach(() => {
@@ -25,8 +26,10 @@ afterEach(() => {
   else Reflect.deleteProperty(globalThis, "localStorage");
 });
 
+/** The authored starter park, running mid-morning. */
 function openPark() {
   const runner = createHeadlessRunner({ game, maxStepSeconds: 1 });
+  resetPark(runner.ctx, { layout: "starter", guests: 0 });
   runner.ui.invoke("park.start");
   runner.ctx.time.hydrate({ ...runner.ctx.time.snapshot(), now: DAY_LENGTH * 0.3, paused: false });
   return { runner, w: park.of(runner.ctx) };

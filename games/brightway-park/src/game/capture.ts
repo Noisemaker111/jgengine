@@ -25,7 +25,7 @@ const STEP = 1 / 20;
 function updateOpenState(ctx: GameContext): void {
   const w = park.of(ctx);
   const fraction = ctx.time.calendar().dayFraction;
-  const wantOpen = w.fact("park.game_over") !== true && fraction >= OPEN_FRACTION && fraction <= CLOSE_FRACTION;
+  const wantOpen = w.fact("park.gate") === true && w.fact("park.game_over") !== true && fraction >= OPEN_FRACTION && fraction <= CLOSE_FRACTION;
   if (wantOpen === (w.fact("park.open") === true)) return;
   w.set("park.open", wantOpen);
   if (wantOpen) ctx.game.audio.play("gates");
@@ -71,7 +71,7 @@ export function stagePark(ctx: GameContext, mode: StageMode): void {
   // Past the open fraction so the gates, the spawner and the HUD all read "open", not "closed for
   // the night" over a full park.
   advance(ctx, DAY_LENGTH * 0.27);
-  resetPark(ctx, { guests: guestCap(park.of(ctx).num("park.rating")) });
+  resetPark(ctx, { layout: "starter", guests: guestCap(park.of(ctx).num("park.rating")) });
   session.started = true;
   // Let the seeded crowd spread out, board and line up; queues only exist once guests reach a ride.
   advance(ctx, 30);

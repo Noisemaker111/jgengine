@@ -26,6 +26,7 @@ export function ParkFlow() {
   const guests = useGameStore(() => session.guests.size);
   const scenario = scenarioView(ctx), id = w.fact("scenario.id"), def = typeof id === "string" ? scenarioDef(id) : null;
   const scenarioWon = scenario?.result === "won", reward = def?.mission.rewards?.economy?.["cash"] ?? 0;
+  const gate = w.fact("park.gate") === true;
   const open = w.fact("park.open") === true, day = w.num("park.day"), cash = w.num("park.cash"), rating = w.num("park.rating");
   // The night after closing still belongs to that day: the banner must not re-fire at midnight.
   const openDay = useRef(day);
@@ -33,7 +34,7 @@ export function ParkFlow() {
   const tally = [{ label: "Park funds", value: money(cash) }, { label: "Rating", value: `★ ${Math.round(rating)}` }, { label: "Guests in the park", value: guests }];
   return <>
     <KitBanner cue={started && !resultOpen(ctx) ? `${open}-${openDay.current}` : null} initial title={`Day ${openDay.current} · Gates ${open ? "open" : "closed"}`}
-      subtitle={!open ? `Takings ${money(w.num("park.revenue_today"))}` : scenario?.title ?? (day > 1 ? `Yesterday ${money(w.num("park.revenue_yesterday") - w.num("park.upkeep_yesterday"))} net` : "Welcome to Brightway")} />
+      subtitle={!gate ? "Build a ride, then open the gate" : !open ? `Takings ${money(w.num("park.revenue_today"))}` : scenario?.title ?? (day > 1 ? `Yesterday ${money(w.num("park.revenue_yesterday") - w.num("park.upkeep_yesterday"))} net` : "Welcome to Brightway")} />
     <KitResultScreen open={started && scenario?.result != null} tone={scenarioWon ? "good" : "bad"} eyebrow={scenario?.title} title={scenarioWon ? "Scenario won!" : "Scenario failed"}
       summary={scenarioWon ? `You hit the target with the park still standing${reward > 0 ? `: ${money(reward)} is in the till` : ""}.` : scenario?.reason ?? "The target slipped away."}
       stats={[{ label: "Takings", value: money(scenario?.revenue ?? 0) }, { label: "Visitors", value: scenario?.visitors ?? 0 }, ...tally.slice(0, 2)]}

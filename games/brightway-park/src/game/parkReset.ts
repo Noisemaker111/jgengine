@@ -47,11 +47,24 @@ export function seedPlacements(): SeedPlacement[] {
   return [...rides, ...trackPieces, ...rest];
 }
 
+/** The paved plaza inside the gate a new park opens with: two path cells the player builds out from. */
+export const GATE_PLAZA: readonly (readonly [number, number])[] = [[14, 27], [14, 28]];
+
+/**
+ * What a reset lays down:
+ * - `lot`: a new game - the empty lot, the gate plaza, the gate shut and nobody inside;
+ * - `starter`: the authored starter park from `editor.scene.json` with a crowd already in it (the
+ *   capture staging and the screenshots of a running park);
+ * - `blank`: nothing at all, for a save to be restored into.
+ */
+export type ResetLayout = "lot" | "starter" | "blank";
+
 export interface ResetOptions {
   /** Cash the fresh park opens with; the catalog default when omitted. */
   cash?: number;
-  /** Seed the authored starter park and its visitors. Default true. */
-  seed?: boolean;
+  /** Default `lot`. */
+  layout?: ResetLayout;
+  /** The crowd a `starter` park opens with. */
   guests?: number;
 }
 
@@ -69,8 +82,12 @@ export function resetPark(ctx: GameContext, options: ResetOptions = {}): void {
   resetRides();
   resetGuestAgents();
   const w = freshWorld(ctx, options.cash);
-  if (options.seed !== false) {
+  const layout = options.layout ?? "lot";
+  if (layout === "lot") {
+    for (const cell of GATE_PLAZA) placeFree(w, "path_walk", cell);
+  } else if (layout === "starter") {
     for (const placement of seedPlacements()) placeFree(w, placement.catalogId, cellFor(placement.catalogId, placement.x, placement.z));
+    w.set("park.gate", true);
     seedGuests(ctx, options.guests ?? 24);
   }
   spawnAll(ctx);

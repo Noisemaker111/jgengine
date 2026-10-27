@@ -20,7 +20,10 @@ const tone = (value: number, good: number, warn: number): KitTone => (value >= g
 
 /** The park at a glance: funds, crowd and rating up front; mood and tidiness as meters that warn. Every number is the world's. */
 export function ParkStatus() {
+  const { commands } = useGame();
   const w = usePark();
+  const gate = w.fact("park.gate") === true;
+  const gateRefusal = gate ? null : w.canAct("open_gate");
   const guests = useGameStore(() => session.guests.size);
   const clock = useGameStore((ctx) => { const c = ctx.time.calendar(); return `${String(c.hour).padStart(2, "0")}:${String(c.minute).padStart(2, "0")}`; });
   const m = parkMetrics(w);
@@ -29,7 +32,9 @@ export function ParkStatus() {
   // What the crowd is thinking most, freshest first: complaints in the warning colour.
   const said = useGameStore(() => session.thoughts.top.slice(0, 3).map((t) => `${t.label}:${t.count}:${t.complaint ? 1 : 0}`).join("|"));
   return (
-    <KitPanel className="bw-status" eyebrow={`Day ${w.num("park.day")} · ${clock} · ${open ? "Gates open" : "After hours"}`} title={money(cash)} tone={cash < 0 ? "bad" : undefined} aside={`★ ${Math.round(rating)}`}>
+    <KitPanel className="bw-status" eyebrow={`Day ${w.num("park.day")} · ${clock} · ${!gate ? "Gate shut" : open ? "Gates open" : "After hours"}`} title={money(cash)} tone={cash < 0 ? "bad" : undefined} aside={`★ ${Math.round(rating)}`}
+      footer={<KitButton size="sm" variant={gate ? "ghost" : "primary"} data-hint="gate" disabled={gateRefusal !== null} title={gateRefusal?.message}
+        onClick={() => commands.run("brightway.act", { action: gate ? "close_gate" : "open_gate" })}>{gate ? "Close the gate" : "Open the gate"}</KitButton>}>
       <div className="bw-line"><span>{guests} / {guestCap(rating)} guests</span>{down > 0 ? <b data-bad="">{down} {down === 1 ? "ride" : "rides"} down</b> : null}</div>
       <KitMeter size="sm" label="Mood" value={mood} max={100} readout={`${Math.round(mood)}%`} tone={tone(mood, 50, 35)} />
       <KitMeter size="sm" label="Clean" value={clean} max={100} readout={`${Math.round(clean)}%`} tone={tone(clean, 60, 40)} />

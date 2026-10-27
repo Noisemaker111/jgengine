@@ -64,12 +64,20 @@ export function closeDay(ctx: GameContext): void {
   closeParkDay(ctx);
 }
 
+/**
+ * How fast the rating follows the park, per second: about a minute and a half to close two thirds of
+ * the gap, so a change shows over the rest of the day rather than in seconds.
+ */
+export const RATING_EASE = 0.012;
+
 /** The rating eases toward its target; its best-ever value is `park.peak`, and each award crossed pays once. */
 export function tickRating(ctx: GameContext, dt: number, metrics: ParkMetrics): void {
   const w = park.of(ctx);
-  const target = ratingTarget(metrics, w.num("park.mood"), w.num("park.guests_today"), w.num("park.litter"), w.num("park.complaints"));
+  // The crowd the rating judges: today's visitors, or the guests still inside across midnight.
+  const crowd = Math.max(w.num("park.guests_today"), w.num("park.guests"));
+  const target = ratingTarget(metrics, w.num("park.mood"), crowd, w.num("park.litter"), w.num("park.complaints"));
   const before = w.num("park.rating");
-  const rating = before + (target - before) * (1 - Math.exp(-dt * 0.25));
+  const rating = before + (target - before) * (1 - Math.exp(-dt * RATING_EASE));
   w.set("park.rating", rating);
   const peak = w.num("park.peak");
   if (rating <= peak) return;
