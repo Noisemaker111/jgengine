@@ -23,7 +23,7 @@ export interface BuildItemDefinition {
   label: string;
   description: string;
   price: number;
-  passiveBoost?: number;
+  passiveBoost?: number | undefined;
 }
 
 export type BuildInventory = Record<BuildItemId, number>;

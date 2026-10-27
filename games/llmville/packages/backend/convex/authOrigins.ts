@@ -1,6 +1,6 @@
 /** Better Auth trusted-origin resolution — SITE_URL + TRUSTED_ORIGINS, no hardcoded ports. */
 
-export function parseTrustedOriginsEnv(raw = process.env.TRUSTED_ORIGINS): string[] {
+export function parseTrustedOriginsEnv(raw = process.env["TRUSTED_ORIGINS"]): string[] {
   return (raw ?? "")
     .split(",")
     .map((origin) => origin.trim())

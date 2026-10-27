@@ -238,7 +238,7 @@ export const buy = mutation({
 
 async function unlockResearchInternal(
   ctx: MutationCtx,
-  args: { gameId: Id<"games">; itemId: string; externalId?: string },
+  args: { gameId: Id<"games">; itemId: string; externalId?: string | undefined },
 ) {
   const owned = await getEditorAccess(ctx, args.gameId, args.externalId);
   const decision = decideResearchUnlock({

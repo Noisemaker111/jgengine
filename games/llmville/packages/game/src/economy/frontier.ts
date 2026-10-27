@@ -42,10 +42,10 @@ export function clampFrontierBenchmark(benchmark: number): number {
 
 /** World-age frontier plus the clamped global release offset, or a per-world override. */
 export function computeEffectiveFrontierBenchmark(params: {
-  nowMs?: number;
-  gameCreatedAtMs?: number;
-  frontierOffset?: number;
-  gameOverride?: number;
+  nowMs?: number | undefined;
+  gameCreatedAtMs?: number | undefined;
+  frontierOffset?: number | undefined;
+  gameOverride?: number | undefined;
 } = {}): number {
   if (params.gameOverride !== undefined) return params.gameOverride;
   const nowMs = params.nowMs ?? Date.now();

@@ -72,7 +72,7 @@ export function createEmptyRackSlots(rackType: string): RackInstalledHardwareSlo
 
 export function getRackInstalledHardwareSlots(rack: {
   rackType: string;
-  installedHardwareModuleIds?: readonly (string | null)[];
+  installedHardwareModuleIds?: readonly (string | null)[] | undefined;
 }): RackInstalledHardwareSlot[] {
   return normalizeRackInstalledHardwareSlots(
     rack.installedHardwareModuleIds ?? [],
@@ -82,7 +82,7 @@ export function getRackInstalledHardwareSlots(rack: {
 
 export function getRackInstalledHardware(rack: {
   rackType: string;
-  installedHardwareModuleIds?: readonly (string | null)[];
+  installedHardwareModuleIds?: readonly (string | null)[] | undefined;
 }): HardwareModelId[] {
   return getRackInstalledHardwareSlots(rack)
     .filter((value): value is HardwareModelId => value !== null);
@@ -451,7 +451,7 @@ export type ComputeLane = (typeof COMPUTE_LANE_VALUES)[number];
 export interface ComputeAssignment {
   lane: ComputeLane;
   /** For serving: which model this card serves. Ignored for training/scraping. */
-  targetModelId?: string;
+  targetModelId?: string | undefined;
 }
 
 export type ComputeAssignmentMap = Record<string, ComputeAssignment>;
@@ -462,7 +462,7 @@ export const EMPTY_COMPUTE_ASSIGNMENTS: ComputeAssignmentMap = {};
 export interface AssignmentRackInput {
   rackId: string;
   rackType: string;
-  installedHardwareModuleIds?: readonly (string | null)[];
+  installedHardwareModuleIds?: readonly (string | null)[] | undefined;
 }
 
 export interface LaneComputeStats {
@@ -569,8 +569,8 @@ export function computeAssignmentStats(
 export interface RackThermalInput {
   id: string;
   rackType: string;
-  installedHardwareModuleIds?: readonly (string | null)[];
-  installedCoolerId?: RackCoolingUnitId | string | null;
+  installedHardwareModuleIds?: readonly (string | null)[] | undefined;
+  installedCoolerId?: RackCoolingUnitId | string | null | undefined;
 }
 
 export interface CardThermalState {

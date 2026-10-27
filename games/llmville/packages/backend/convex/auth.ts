@@ -9,16 +9,16 @@ import { components } from "./_generated/api";
 import authConfig from "./auth.config";
 import { createTrustedOriginsResolver } from "./authOrigins";
 
-const isLocalConvexSite = process.env.CONVEX_SITE_URL?.includes("127.0.0.1") ?? false;
+const isLocalConvexSite = process.env["CONVEX_SITE_URL"]?.includes("127.0.0.1") ?? false;
 const siteUrl =
-  process.env.SITE_URL ??
+  process.env["SITE_URL"] ??
   (isLocalConvexSite ? "http://localhost:3001" : "https://llmville.com");
 const authBaseUrl =
-  process.env.CONVEX_SITE_URL ??
-  process.env.BETTER_AUTH_URL ??
-  process.env.VITE_CONVEX_SITE_URL;
-const googleClientId = process.env.GOOGLE_CLIENT_ID;
-const googleClientSecret = process.env.GOOGLE_CLIENT_SECRET;
+  process.env["CONVEX_SITE_URL"] ??
+  process.env["BETTER_AUTH_URL"] ??
+  process.env["VITE_CONVEX_SITE_URL"];
+const googleClientId = process.env["GOOGLE_CLIENT_ID"];
+const googleClientSecret = process.env["GOOGLE_CLIENT_SECRET"];
 
 if (!authBaseUrl) {
   throw new Error("Missing auth base URL. Set CONVEX_SITE_URL (or BETTER_AUTH_URL).");

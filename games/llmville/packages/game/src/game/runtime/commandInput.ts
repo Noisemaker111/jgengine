@@ -30,15 +30,15 @@ export function readStringArray(value: unknown): string[] | null {
 
 export function readPoint3(value: unknown): { x: number; y: number; z: number } | null {
   if (!isRecord(value)) return null;
-  const x = readFiniteNumber(value.x);
-  const y = readFiniteNumber(value.y);
-  const z = readFiniteNumber(value.z);
+  const x = readFiniteNumber(value["x"]);
+  const y = readFiniteNumber(value["y"]);
+  const z = readFiniteNumber(value["z"]);
   return x === null || y === null || z === null ? null : { x, y, z };
 }
 
 export function readPoint2(value: unknown): { x: number; z: number } | null {
   if (!isRecord(value)) return null;
-  const x = readFiniteNumber(value.x);
-  const z = readFiniteNumber(value.z);
+  const x = readFiniteNumber(value["x"]);
+  const z = readFiniteNumber(value["z"]);
   return x === null || z === null ? null : { x, z };
 }

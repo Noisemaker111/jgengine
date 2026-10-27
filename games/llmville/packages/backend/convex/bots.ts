@@ -28,7 +28,7 @@ const BOT_TOKEN_TTL_SECONDS = 90 * 24 * 60 * 60;
 const DEFAULT_BOT_NAME = "Lab Bot";
 
 function botIssuer(): string {
-  return process.env.BOT_JWT_ISSUER ?? "https://llmville.com/bot";
+  return process.env["BOT_JWT_ISSUER"] ?? "https://llmville.com/bot";
 }
 
 export async function sha256Hex(input: string): Promise<string> {
@@ -43,7 +43,7 @@ function generateTokenNonce(): string {
 }
 
 async function signBotToken(botActorId: string, tokenNonce: string): Promise<string> {
-  const encodedPrivateKey = process.env.BOT_JWT_PRIVATE_KEY;
+  const encodedPrivateKey = process.env["BOT_JWT_PRIVATE_KEY"];
   if (!encodedPrivateKey) throw new ConvexError("BOT_JWT_PRIVATE_KEY is not configured");
   const key = await importPKCS8(atob(encodedPrivateKey), "RS256");
   const now = Math.floor(Date.now() / 1000);

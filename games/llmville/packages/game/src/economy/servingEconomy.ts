@@ -26,11 +26,11 @@ export interface ModelServingContributionInput {
   tokensPerSecond: number;
   moneyPerToken: number;
   tokensPerToken: number;
-  paramsB?: number;
+  paramsB?: number | undefined;
   precision?: Parameters<typeof effectiveModelServingStats>[0]["precision"];
-  benchmarkScore?: number | null;
-  trainedAt?: number;
-  frontierBenchmarkAtTrain?: number;
+  benchmarkScore?: number | null | undefined;
+  trainedAt?: number | undefined;
+  frontierBenchmarkAtTrain?: number | undefined;
 }
 
 export interface ModelServingContribution {
