@@ -60,11 +60,12 @@
 // shares it (so lanes queue with each other, not just with themselves), and it
 // cannot show up in `git status` to trip land's own dirty-tree check.
 import { spawnSync } from "node:child_process";
-import { existsSync, readdirSync, readFileSync, renameSync, rmSync, statSync, writeFileSync } from "node:fs";
-import { basename, isAbsolute, join, relative, resolve } from "node:path";
+import { existsSync, mkdirSync, readdirSync, readFileSync, renameSync, rmSync, statSync, writeFileSync } from "node:fs";
+import { basename, dirname, isAbsolute, join, relative, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { bendsSection, findBends, withBends } from "./bends";
 import { FRAGMENT_PATTERN } from "./changelog-fragments";
+import { apiNoteBullets, engineSeamLine, renderChangeNote } from "./change-note";
 import { rebaseResolvingGenerated, regenerateAndCommit } from "./generated-rebase";
 import { assertCheckoutReady } from "./checkout-ready";
 import { printHelpIfAsked } from "./script-help";
@@ -73,8 +74,9 @@ import type { RollupEntry } from "./ci-status";
 
 const LAND_USAGE = {
   summary: "push this branch, open or reuse its PR, verify it and hand it to the landing queue",
-  usage: "bun scripts/land.ts [--title <title>] [--body-file <path>] [--verify <command>] [--base <branch>] [--watch]",
+  usage: "bun scripts/land.ts [-m <message> ...] [--title <title>] [--body-file <path>] [--verify <command>] [--base <branch>] [--watch]",
   flags: [
+    { flag: "-m, --message <text>", detail: "with --commit: what changed, in plain words; repeatable. `Fixed: ...`, `Added: ...`, `Removed: ...`, `Migrate: ...` pick the changelog heading (default Changed). Writes changes/<branch>.md" },
     { flag: "--title <title>", detail: "PR title when land opens a PR" },
     { flag: "--body-file <path>", detail: "PR body from this file; wins over a changes/ fragment" },
     { flag: "--verify <command>", detail: "command to run before arming, e.g. \"bun run preflight --ship\"" },
@@ -118,13 +120,15 @@ export interface LandArgs {
   commit: boolean;
   /** Paths to commit although a `--commit` guard refuses them; repeatable. */
   allow: string[];
+  /** `-m`: the lane's own words for its change note; repeatable. */
+  messages: string[];
   /** Deprecated: wait and merge here, as land did before the queue owned waiting. */
   watch: boolean;
 }
 
-/** `--title`, `--body-file`, `--verify`, `--base beta`, `--commit`, `--allow <path>` and deprecated `--watch`; anything else is a typo. */
+/** `-m`, `--title`, `--body-file`, `--verify`, `--base beta`, `--commit`, `--allow <path>` and deprecated `--watch`; anything else is a typo. */
 export function parseArgs(argv: readonly string[]): LandArgs {
-  const args: LandArgs = { base: "beta", commit: false, allow: [], watch: false };
+  const args: LandArgs = { base: "beta", commit: false, allow: [], messages: [], watch: false };
   for (let i = 0; i < argv.length; i += 1) {
     const arg = argv[i];
     if (arg === "--title") args.title = value(argv, (i += 1), arg);
@@ -133,6 +137,7 @@ export function parseArgs(argv: readonly string[]): LandArgs {
     else if (arg === "--base") args.base = value(argv, (i += 1), arg);
     else if (arg === "--commit") args.commit = true;
     else if (arg === "--allow") args.allow.push(value(argv, (i += 1), arg).replace(/\\/g, "/"));
+    else if (arg === "-m" || arg === "--message") args.messages.push(value(argv, (i += 1), arg));
     else if (arg === "--watch") args.watch = true;
     else throw new Error(`unknown argument ${arg}`);
   }
@@ -245,7 +250,8 @@ export interface PrBody {
  * lane left in the shared directory is named and skipped, so the body never claims work the diff lacks.
  */
 export function landBody(options: {
-  args: Pick<LandArgs, "base" | "bodyFile">;
+  /** `messages`: this run's `-m` lines, which rewrote the note, so a reused PR's body is rewritten too. */
+  args: Pick<LandArgs, "base" | "bodyFile"> & { messages?: readonly string[] };
   branch: string;
   summary: string;
   read?: (path: string) => string;
@@ -268,7 +274,7 @@ export function landBody(options: {
     log(`ignoring changes/${basename(file.path)}: this branch's diff against origin/${args.base} does not add it`);
   }
   const fragment = pickFragment(own, branch);
-  if (fragment !== null) return { text: fragment.text.trim(), explicit: false };
+  if (fragment !== null) return { text: fragment.text.trim(), explicit: (args.messages?.length ?? 0) > 0 };
 
   const subjects = (options.subjects ?? (() => branchSubjects(args.base)))();
   const commits = subjectsBody(subjects);
@@ -299,6 +305,28 @@ export function fragmentBody(text: string): string {
     .filter((line) => line.trim().length > 0 && !/^#{2,3}\s/.test(line.trim()))
     .join("\n")
     .trim();
+}
+
+/** The generated API surfaces (`.claude/skills/<skill>/api.md`) a diff changed. */
+const API_SURFACE = /^\.claude\/skills\/[^/]+\/api\.md$/;
+
+/** Changelog bullets for the exports this diff added and removed, read from the generated api.md files. */
+export function apiChangesIn(
+  changed: readonly string[],
+  base: string,
+  runGit: Git,
+  readFile: (path: string) => string,
+): { added: string[]; removed: string[] } {
+  const surfaces = changed.filter((path) => API_SURFACE.test(path));
+  if (surfaces.length === 0) return { added: [], removed: [] };
+  const before = surfaces
+    .map((path) => {
+      const shown = runGit(["show", `origin/${base}:${path}`]);
+      return shown.status === 0 ? shown.stdout : "";
+    })
+    .join("\n");
+  const after = surfaces.map((path) => readFile(path)).join("\n");
+  return apiNoteBullets(before, after);
 }
 
 /** What `--commit` did, so the landing can print it and a test can read it. */
@@ -379,6 +407,8 @@ export interface CommitOptions {
   checkout?: string;
   /** Paths the author wants committed although a guard refuses them. */
   allow?: readonly string[];
+  /** `-m` messages: the change note is written from them, over any note the branch already has. */
+  messages?: readonly string[];
   /** Fragments in this checkout, `changes/` by default. */
   files?: () => readonly FragmentFile[];
   read?: (path: string) => string;
@@ -390,9 +420,11 @@ export interface CommitOptions {
 
 /**
  * Stage this worktree, print every path it will commit, refuse the ones a lane did not author, then
- * commit with the branch's own fragment as the message. A branch with no fragment of its own gets one
- * written from its commit summary, so the message, the PR body and `changes/` cannot disagree. Another
- * lane's fragment in the shared directory is never used.
+ * commit with the branch's change note as the message. The note is written (`scripts/change-note.ts`)
+ * from the `-m` messages when there are any, else kept when the branch already has one (a lane closed
+ * twice), else written from the branch's commit subjects; the written note also lists the exported
+ * API the diff added or removed and, for a game change, its engine seam. So the message, the PR body
+ * and `changes/` cannot disagree. Another lane's fragment in the shared directory is never used.
  */
 export function commitLane(options: CommitOptions): LaneCommitOutcome {
   const { base, branch, git: runGit } = options;
@@ -432,25 +464,42 @@ export function commitLane(options: CommitOptions): LaneCommitOutcome {
     return { kind: "failed", code: EXIT_COULD_NOT_MERGE, why: `refused ${blocked.length} file(s) this lane did not author`, refused: blocked };
   }
 
-  // The branch's own newest commit, never HEAD: on a lane with no commit yet HEAD is the base's
-  // merge commit, and its subject would become this lane's message, PR title and changelog line.
-  const summary = firstLine(runGit(["log", "-1", "--format=%s", `origin/${base}..HEAD`]).stdout);
-  const candidates = new Set([...diffPaths(base, runGit), ...stagedPaths].map((path) => basename(normalizePath(path))));
+  // The branch's own commits, never HEAD: on a lane with no commit yet HEAD is the base's merge
+  // commit, and its subject would become this lane's message, PR title and changelog line.
+  const subjects = lines(runGit(["log", "--reverse", "--format=%s", `origin/${base}..HEAD`]));
+  const summary = subjects[subjects.length - 1] ?? "";
+  const changed = [...new Set([...diffPaths(base, runGit), ...stagedPaths].map(normalizePath))];
+  const candidates = new Set(changed.map((path) => basename(path)));
   const files = options.files ?? (() => fragmentFiles());
   const own = files().filter((file) => candidates.has(basename(file.path)));
-  let fragment = pickFragment(own, branch);
+  const messages = (options.messages ?? []).filter((message) => message.trim().length > 0);
+  let fragment = messages.length > 0 ? null : pickFragment(own, branch);
   let created = false;
 
-  if (fragment === null && summary.length === 0) {
-    const name = `changes/${branch.replace(/\//g, "-")}.md`;
-    refuse(`land: this branch has no commit and no ${name}; write ${name} (its first bullet is the commit message and the PR body), then close again`);
-    return { kind: "failed", code: EXIT_COULD_NOT_MERGE, why: `no ${name} and no commit of this branch to write one from` };
+  if (fragment === null && messages.length === 0 && subjects.length === 0) {
+    refuse('land: this branch has no commit and no -m message; close again with -m "<what changed, in plain words>"');
+    return { kind: "failed", code: EXIT_COULD_NOT_MERGE, why: "no -m message and no commit of this branch to write the change note from" };
   }
 
   if (fragment === null) {
     const path = join(checkout, "changes", `${branch.replace(/\//g, "-")}.md`);
-    const text = `### Changed\n\n- ${summary}\n`;
+    const text = renderChangeNote({
+      messages: messages.length > 0 ? messages : subjects,
+      api: apiChangesIn(changed, base, runGit, (file) => {
+        try {
+          return read(join(checkout, file));
+        } catch {
+          return "";
+        }
+      }),
+      seam: engineSeamLine(changed),
+    });
+    if (!/^- \S/m.test(text)) {
+      refuse('land: the -m messages are all PR-only lines (Closes, Prevention, Root cause); add one saying what changed, e.g. -m "Wolves hunt in packs"');
+      return { kind: "failed", code: EXIT_COULD_NOT_MERGE, why: "the change note has no changelog line" };
+    }
     try {
+      mkdirSync(dirname(path), { recursive: true });
       write(path, text);
     } catch (error) {
       return { kind: "failed", code: EXIT_COULD_NOT_MERGE, why: `could not write ${path}: ${String(error)}` };
@@ -461,7 +510,7 @@ export function commitLane(options: CommitOptions): LaneCommitOutcome {
     }
     fragment = { path, text };
     created = true;
-    log(`no changes/ fragment in this branch's diff; wrote ${basename(path)} from the commit summary`);
+    log(`wrote ${basename(path)} from ${messages.length > 0 ? "the -m messages" : "the branch's commit subjects"}`);
   }
 
   const subject = fragmentSubject(fragment.text) || summary;
@@ -1244,6 +1293,7 @@ export function landBranch(run: LandRun): number {
         log: run.io.log,
         refuse: run.io.error,
         allow: run.args.allow,
+        messages: run.args.messages,
         ...run.commitIo,
       });
       if (committed.kind === "failed") {

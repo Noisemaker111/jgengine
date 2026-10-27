@@ -186,8 +186,10 @@ describe("lane:close end to end", () => {
 
 describe("arguments", () => {
   test("--pr and --allow", () => {
-    expect(parseArgs(["--pr", "12"])).toEqual({ pr: 12, allow: [] });
-    expect(parseArgs(["--allow", "bun.lock"])).toEqual({ allow: ["bun.lock"] });
+    expect(parseArgs(["--pr", "12"])).toEqual({ pr: 12, allow: [], messages: [] });
+    expect(parseArgs(["--allow", "bun.lock"])).toEqual({ allow: ["bun.lock"], messages: [] });
+    expect(parseArgs(["-m", "Wolves hunt", "--message", "Fixed: dens"]).messages).toEqual(["Wolves hunt", "Fixed: dens"]);
+    expect(() => parseArgs(["-m", " "])).toThrow("-m needs the words for the change note");
     expect(() => parseArgs(["--pr", "x"])).toThrow("--pr needs a PR number");
     expect(() => parseArgs(["--waive", "slow CI"])).toThrow("unknown argument");
     expect(() => parseArgs(["--branch", "x"])).toThrow("unknown argument");

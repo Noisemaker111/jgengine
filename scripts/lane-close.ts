@@ -1,12 +1,12 @@
 // The last step of a lane, done as one command so it is not a paragraph of
 // remembered steps:
 //
-//   bun run lane:close                 # the current branch's lane
+//   bun run lane:close -m "Wolves hunt in packs"   # the current branch's lane, with its change note
 //   bun run lane:close --pr 2274
 //   bun run lane:close --allow bun.lock  # keep a file the commit guards refuse
 //
-// It verifies, lands (staging and committing the lane's work first, with its `changes/`
-// fragment as the message), asks `ci:status` once for the truth about the checks, and
+// It verifies, lands (staging and committing the lane's work first, with a `changes/` note written
+// from the -m messages, the API the diff changed and its engine seam - see scripts/change-note.ts), asks `ci:status` once for the truth about the checks, and
 // prints a report skeleton a lane can paste instead of writing prose. It exits 1 when
 // verify or land failed and 3 when it cannot answer (no PR, no branch).
 //
@@ -21,14 +21,15 @@ import { printHelpIfAsked } from "./script-help";
 
 const LANE_CLOSE_USAGE = {
   summary: "verify, land, ask the checks once, and print the lane report",
-  usage: "bun run lane:close [--pr <number>] [--allow <path>] | --batch <branch ...> | --queue",
+  usage: "bun run lane:close [-m <message> ...] [--pr <number>] [--allow <path>] | --batch <branch ...> | --queue",
   flags: [
+    { flag: "-m, --message <text>", detail: "what changed, in plain words; repeatable. Prefix `Fixed:`, `Added:`, `Removed:` or `Migrate:` for that changelog heading (default Changed). Becomes changes/<branch>.md, the commit message and the PR body" },
     { flag: "--batch <branch ...>", detail: "land several finished branches as one push instead (the rest of the arguments go to the batch; --help there lists them)" },
     { flag: "--queue", detail: "drain the landing queue: rebase and wait once for each queued PR" },
     { flag: "--pr <number>", detail: "the PR to close; default: the open PR for this branch" },
     { flag: "--allow <path>", detail: "a path land --commit may take although its guards refuse it; repeatable" },
   ],
-  example: "bun run lane:close --pr 2274",
+  example: 'bun run lane:close -m "Wolves hunt in packs" -m "Fixed: a tamed wolf no longer despawns at night"',
   exits: [
     "0 closed",
     "1 verify or land failed",
@@ -47,10 +48,12 @@ export interface LaneCloseArgs {
   pr?: number;
   /** Paths `land --commit` may take although its guards refuse them; repeatable. */
   allow?: string[];
+  /** `-m`: the lane's own words for its change note; repeatable. */
+  messages?: string[];
 }
 
 export function parseArgs(argv: readonly string[]): LaneCloseArgs {
-  const args: LaneCloseArgs = { allow: [] };
+  const args: LaneCloseArgs = { allow: [], messages: [] };
   for (let i = 0; i < argv.length; i += 1) {
     const arg = argv[i];
     if (arg === "--pr") {
@@ -62,6 +65,10 @@ export function parseArgs(argv: readonly string[]): LaneCloseArgs {
       const path = argv[(i += 1)];
       if (path === undefined || path.trim().length === 0) throw new Error("--allow needs a path");
       (args.allow ??= []).push(path.trim().replace(/\\/g, "/"));
+    } else if (arg === "-m" || arg === "--message") {
+      const message = argv[(i += 1)];
+      if (message === undefined || message.trim().length === 0) throw new Error(`${arg} needs the words for the change note`);
+      (args.messages ??= []).push(message);
     } else throw new Error(`unknown argument ${arg}`);
   }
   return args;
@@ -153,7 +160,13 @@ export function closeLane(args: LaneCloseArgs, io: LaneIo): number {
   }
 
   io.out("lane:close: land --commit");
-  const landArgs = ["run", "scripts/land.ts", "--commit", ...(args.allow ?? []).flatMap((path) => ["--allow", path])];
+  const landArgs = [
+    "run",
+    "scripts/land.ts",
+    "--commit",
+    ...(args.allow ?? []).flatMap((path) => ["--allow", path]),
+    ...(args.messages ?? []).flatMap((message) => ["-m", message]),
+  ];
   const landed = io.sh(landArgs, true);
   if (landed.status !== 0) {
     io.err(`lane:close: land exited ${landed.status}; the lane is not closed`);

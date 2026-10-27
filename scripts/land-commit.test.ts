@@ -69,8 +69,9 @@ function fragmentsIn(dir: string): FragmentFile[] {
   return names.map((name) => ({ path: join(changes, name), text: readFileSync(join(changes, name), "utf8"), mtimeMs: 1 }));
 }
 
-function commitIn(work: string, log: string[] = []) {
+function commitIn(work: string, log: string[] = [], messages: string[] = []) {
   return commitLane({
+    messages,
     base: "beta",
     branch: "agent/lane-x",
     git: (args) => gitIn(work, args),
@@ -140,7 +141,7 @@ test("nothing to commit is not a failure: the tree is left alone", () => {
   expect(gitOk(work, ["log", "-1", "--format=%s"])).toBe("already done");
 });
 
-test("a fragment another lane left is not used; this branch writes its own from its own commit", () => {
+test("a fragment another lane left is not used; this branch writes its own from its own commits", () => {
   const { work } = originWithBeta();
   mkdirSync(join(work, "changes"), { recursive: true });
   writeFileSync(join(work, "changes", "other-lane.md"), "### Added\n\n- Someone else's work.\n");
@@ -158,12 +159,78 @@ test("a fragment another lane left is not used; this branch writes its own from 
   expect(outcome.created).toBe(true);
   expect(outcome.fragment).toBe("changes/agent-lane-x.md");
   expect(outcome.subject).toBe("my own work");
-  expect(readFileSync(join(work, "changes", "agent-lane-x.md"), "utf8")).toBe("### Changed\n\n- my own work\n");
+  expect(readFileSync(join(work, "changes", "agent-lane-x.md"), "utf8")).toBe("my own work\n\n### Changed\n\n- my own work\n");
   expect(gitOk(work, ["log", "-1", "--format=%b"])).not.toContain("Someone else's work");
-  expect(log).toContain("no changes/ fragment in this branch's diff; wrote agent-lane-x.md from the commit summary");
+  expect(log).toContain("wrote agent-lane-x.md from the branch's commit subjects");
 });
 
-test("a lane with no commit and no fragment is refused, never given the base's merge subject", () => {
+test("-m writes the note: sections from prefixes, the API the diff added, the seam a game change leaned on", () => {
+  const { work } = originWithBeta();
+  const surface = (body: string) =>
+    `<!-- GENERATED -->\n\n# jgengine-world — exported API surface\n\n## @jgengine/core/den/den\n\n${body}`;
+  mkdirSync(join(work, ".claude", "skills", "jgengine-world"), { recursive: true });
+  const api = join(work, ".claude", "skills", "jgengine-world", "api.md");
+  writeFileSync(api, surface("- `oldDen` (function): function oldDen(): void — Old den.\n"));
+  gitOk(work, ["add", "-A"]);
+  gitOk(work, ["commit", "-q", "-m", "api"]);
+  gitOk(work, ["push", "-q", "origin", "beta"]);
+  gitOk(work, ["checkout", "-q", "-b", "agent/lane-x"]);
+  writeFileSync(
+    api,
+    surface("- `denFor` (function): function denFor(id: string): Den — Find the den a pack sleeps in. Cheap.\n- `Den` (interface): interface Den — A den.\n"),
+  );
+  mkdirSync(join(work, "packages", "core", "src", "den"), { recursive: true });
+  writeFileSync(join(work, "packages", "core", "src", "den", "den.ts"), "export const x = 1;\n");
+  mkdirSync(join(work, "games", "wilds"), { recursive: true });
+  writeFileSync(join(work, "games", "wilds", "pack.ts"), "export {};\n");
+
+  const log: string[] = [];
+  const outcome = commitIn(work, log, ["Wolves sleep in dens", "Fixed: a pack no longer splits at dusk"]);
+
+  expect(outcome.kind).toBe("committed");
+  expect(outcome.subject).toBe("Wolves sleep in dens");
+  expect(readFileSync(join(work, "changes", "agent-lane-x.md"), "utf8")).toBe(
+    [
+      "Wolves sleep in dens",
+      "",
+      "Engine seam: packages/core/src/den/den.ts",
+      "",
+      "### Added",
+      "",
+      "- `denFor` (`@jgengine/core/den/den`): Find the den a pack sleeps in. Also `Den`.",
+      "",
+      "### Changed",
+      "",
+      "- Wolves sleep in dens",
+      "",
+      "### Fixed",
+      "",
+      "- a pack no longer splits at dusk",
+      "",
+      "### Removed",
+      "",
+      "- `@jgengine/core/den/den` no longer exports `oldDen`.",
+      "",
+    ].join("\n"),
+  );
+  expect(log).toContain("wrote agent-lane-x.md from the -m messages");
+});
+
+test("a second close keeps the note the first wrote; -m rewrites it", () => {
+  const { work } = originWithBeta();
+  gitOk(work, ["checkout", "-q", "-b", "agent/lane-x"]);
+  writeFileSync(join(work, "shared.txt"), "one\nfirst\n");
+  expect(commitIn(work, [], ["First words"]).kind).toBe("committed");
+
+  writeFileSync(join(work, "shared.txt"), "one\nsecond\n");
+  expect(commitIn(work).subject).toBe("First words");
+
+  writeFileSync(join(work, "shared.txt"), "one\nthird\n");
+  expect(commitIn(work, [], ["Better words"]).subject).toBe("Better words");
+  expect(readFileSync(join(work, "changes", "agent-lane-x.md"), "utf8")).not.toContain("First words");
+});
+
+test("a lane with no commit, no fragment and no -m is refused, never given the base's merge subject", () => {
   const { work } = originWithBeta();
   gitOk(work, ["commit", "-q", "--allow-empty", "-m", "Merge pull request #1 from someone/else"]);
   gitOk(work, ["push", "-q", "origin", "beta"]);
@@ -175,7 +242,7 @@ test("a lane with no commit and no fragment is refused, never given the base's m
 
   expect(outcome.kind).toBe("failed");
   expect(existsSync(join(work, "changes", "agent-lane-x.md"))).toBe(false);
-  expect(log.join("\n")).toContain("write changes/agent-lane-x.md");
+  expect(log.join("\n")).toContain('close again with -m "<what changed, in plain words>"');
   expect(gitOk(work, ["log", "-1", "--format=%s"])).toBe("Merge pull request #1 from someone/else");
 });
 
@@ -262,7 +329,7 @@ test("land --commit commits with the branch fragment, then hands the PR over in 
   const { io, logs } = handOffIo(git, gh);
 
   const code = landBranch({
-    args: { base: "beta", commit: true, allow: [], watch: false },
+    args: { base: "beta", commit: true, allow: [], messages: [], watch: false },
     branch: "agent/lane-x",
     lock: join(SCRATCH, `lock-${crypto.randomUUID()}.lock`),
     io,
@@ -285,7 +352,7 @@ test("land --commit with nothing to commit lands what the branch already has", (
   const { io, logs } = handOffIo(git, gh);
 
   const code = landBranch({
-    args: { base: "beta", commit: true, allow: [], watch: false },
+    args: { base: "beta", commit: true, allow: [], messages: [], watch: false },
     branch: "agent/lane-x",
     lock: join(SCRATCH, `lock-${crypto.randomUUID()}.lock`),
     io,
@@ -306,7 +373,7 @@ test("a failed commit stops the landing before anything is pushed", () => {
     args[0] === "commit" ? { status: 1, stdout: "", stderr: "nothing added to commit" } : git(args);
 
   const code = landBranch({
-    args: { base: "beta", commit: true, allow: [], watch: false },
+    args: { base: "beta", commit: true, allow: [], messages: [], watch: false },
     branch: "agent/lane-x",
     lock: join(SCRATCH, `lock-${crypto.randomUUID()}.lock`),
     io: { ...io, git: failing },
@@ -320,10 +387,10 @@ test("a failed commit stops the landing before anything is pushed", () => {
 
 test("--commit skips the dirty-tree refusal that stops a plain landing", () => {
   const dirty = " M scripts/land.ts\n";
-  expect(refusalFor({ base: "beta", commit: false, allow: [], watch: false }, "agent/x", dirty)).toContain("dirty tree");
-  expect(refusalFor({ base: "beta", commit: true, allow: [], watch: false }, "agent/x", dirty)).toBeNull();
-  expect(refusalFor({ base: "beta", commit: true, allow: [], watch: false }, "beta", dirty)).toContain("refusing to land beta");
-  expect(parseArgs(["--commit"])).toEqual({ base: "beta", commit: true, allow: [], watch: false });
+  expect(refusalFor({ base: "beta", commit: false, allow: [], messages: [], watch: false }, "agent/x", dirty)).toContain("dirty tree");
+  expect(refusalFor({ base: "beta", commit: true, allow: [], messages: [], watch: false }, "agent/x", dirty)).toBeNull();
+  expect(refusalFor({ base: "beta", commit: true, allow: [], messages: [], watch: false }, "beta", dirty)).toContain("refusing to land beta");
+  expect(parseArgs(["--commit"])).toEqual({ base: "beta", commit: true, allow: [], messages: [], watch: false });
 });
 
 test("a scratch artifact, an ignored path, a stray lockfile and a stranger's new fragment are refused", () => {
@@ -379,7 +446,7 @@ test("--commit prints every path it will commit, and refuses the whole set with 
   const { io, logs, errors } = handOffIo(git, gh);
 
   const code = landBranch({
-    args: { base: "beta", commit: true, allow: [], watch: false },
+    args: { base: "beta", commit: true, allow: [], messages: [], watch: false },
     branch: "agent/lane-one-command",
     lock: join(SCRATCH, `lock-${crypto.randomUUID()}.lock`),
     io,
@@ -409,7 +476,7 @@ test("--allow keeps one refused file on purpose", () => {
   const { io } = handOffIo(git, gh);
 
   const code = landBranch({
-    args: { base: "beta", commit: true, allow: ["bun.lock", "changes/agent-lane-x.md"], watch: false },
+    args: { base: "beta", commit: true, allow: ["bun.lock", "changes/agent-lane-x.md"], messages: [], watch: false },
     branch: "agent/lane-one-command",
     lock: join(SCRATCH, `lock-${crypto.randomUUID()}.lock`),
     io,

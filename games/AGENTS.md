@@ -15,7 +15,7 @@ Games run the engine source in `packages/` from the same commit, never a publish
 
 **Size signal.** A game module that owns a state machine, reducer, scheduler, resource pool, pathfinder, damage or status table, spawn director or progression curve is an engine system in the wrong place. If it would pass roughly 50 lines, or a second game would want it, file the engine seam first: name `packages/<pkg>/src/<file>`, the API needed and two adopting games, under [epic #2312](https://github.com/Noisemaker111/jgengine/issues/2312).
 
-**Seam line.** Every PR body carries `Engine seam: packages/shell/src/render/x.ts (adopts #1234)` or `Engine seam: none - authored content only`. `bun run check games-framework` fails a new engine-shaped module in a game; `-- --allow "<reason>"` only when you can say why it cannot live upstream.
+**Seam line.** `lane:close` writes the PR's `Engine seam:` line from the diff: the engine source changed beside the game, or `none - game content only`. `bun run check games-framework` fails a new engine-shaped module in a game; `-- --allow "<reason>"` only when you can say why it cannot live upstream.
 
 ## Capability adoption
 
