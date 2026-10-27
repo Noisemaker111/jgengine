@@ -84,7 +84,7 @@ export function createBrowserFlow(driver: BrowserFlowDriver, stepper: FlowSteppe
         await driver.hold(
           keysLabel(keys),
           how.ms ?? 0,
-          until === undefined ? undefined : { check: async () => until(await probe()), timeoutMs: how.timeoutMs ?? FLOW_WAIT_MS, describe: describeCheck(until) },
+          until === undefined ? undefined : { check: async () => { const readings = await driver.readProbe(); return readings !== null && until(readings); }, timeoutMs: how.timeoutMs ?? FLOW_WAIT_MS, describe: describeCheck(until) },
         );
       }),
     press: (keys) => stepper.run(`press ${keysLabel(keys)}`, () => driver.hold(keysLabel(keys), FLOW_PRESS_MS)),
@@ -107,8 +107,11 @@ export function createBrowserFlow(driver: BrowserFlowDriver, stepper: FlowSteppe
     timeScale: (scale) => stepper.run(`time scale ${scale}`, () => bridgeOk({ method: "time_scale", scale })),
     wait: (ms) => stepper.run(`wait ${ms} ms`, () => driver.sleep(ms)),
     waitFor: (check: ProbeCheck<ProbeReadings>, options = {}) =>
-      stepper.run(`wait for ${options.note ?? describeCheck(check)}`, () =>
-        waitUntil(probe, check, options.timeoutMs ?? FLOW_WAIT_MS, options.note ?? describeCheck(check))),
+      stepper.run(`wait for ${options.note ?? describeCheck(check)}`, async () => {
+        // A page still booting has no probe yet: that is "not yet", not a failure.
+        const readings = await waitUntil(() => driver.readProbe(), (value) => value !== null && check(value), options.timeoutMs ?? FLOW_WAIT_MS, options.note ?? describeCheck(check));
+        return readings ?? probe();
+      }),
     expect: (check, note) =>
       stepper.run(`expect ${note}`, async () => {
         const readings = await probe();

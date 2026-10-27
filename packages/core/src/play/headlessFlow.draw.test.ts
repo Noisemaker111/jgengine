@@ -6,9 +6,10 @@ import { defineFlow } from "./flow";
 import { describeFlowReport } from "./flowSteps";
 import { runFlowHeadless } from "./headlessFlow.draw";
 
-function fixture() {
+function fixture(initialYaw?: number) {
   return defineGame({
     name: "Flow Fixture",
+    ...(initialYaw === undefined ? {} : { camera: { perspective: "third", initialYaw } }),
     world: environment({ terrain: terrain() }),
     input: { moveForward: ["KeyW"], fire: ["mouse0"], interact: ["KeyE"] },
     content: {
@@ -106,6 +107,19 @@ describe("runFlowHeadless", () => {
     expect(Math.abs(straight.x)).toBeLessThan(0.01);
     expect(Math.abs(turned.x)).toBeGreaterThan(1);
     expect(Math.abs(turned.z)).toBeLessThan(0.01);
+  });
+
+  test("the walk starts on the game's camera.initialYaw, as the page's camera does", async () => {
+    let end = { x: 0, z: 0 };
+    const flow = defineFlow(fixture(Math.PI / 2), {
+      async run(f) {
+        await f.hold("KeyW", { ms: 500 });
+        end = await f.probe();
+      },
+    });
+    expect((await runFlowHeadless(flow)).ok).toBe(true);
+    expect(end.x).toBeGreaterThan(1);
+    expect(Math.abs(end.z)).toBeLessThan(0.01);
   });
 
   test("teleport, commands, refusals and time scale", async () => {
