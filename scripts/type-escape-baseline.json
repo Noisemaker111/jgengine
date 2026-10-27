@@ -2146,7 +2146,7 @@
   "scripts/devServerMarker.test.ts": {"nonNull":10,"cast":2},
   "scripts/devServerMarker.ts": {"cast":4},
   "scripts/distStaleness.ts": {"nonNull":2,"cast":1},
-  "scripts/drive-dev.ts": {"cast":5,"nonNull":1},
+  "scripts/drive-dev.ts": {"cast":1,"nonNull":1},
   "scripts/editor-mvp.test.ts": {"nonNull":6},
   "scripts/engineIdentity.test.ts": {"nonNull":3},
   "scripts/engineIdentity.ts": {"cast":1},
