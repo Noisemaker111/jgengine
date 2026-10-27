@@ -199,10 +199,10 @@ export const ZONES: readonly ZoneDef[] = ZONE_META.map((meta) => {
     radius: zoneVol.radius!,
     level: meta.level,
     flattenRadius: flattenVol.radius!,
-    settlement: meta.settlement,
+    ...(meta.settlement === undefined ? {} : { settlement: meta.settlement }),
     clusters,
     chests,
-    boss,
+    ...(boss === undefined ? {} : { boss }),
     travelStation: { x: travel.position.x, z: travel.position.z },
   };
 });

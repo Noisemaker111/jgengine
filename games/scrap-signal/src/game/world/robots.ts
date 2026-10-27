@@ -40,7 +40,7 @@ const LEG_SPREAD = 0.12;
 const ARM_SPREAD = 0.27;
 const PAD_SIZE = 0.16;
 
-function limb(url: ModelConfig, length: number, finish: ModelConfig["material"]): ModelConfig {
+function limb(url: ModelConfig, length: number, finish: NonNullable<ModelConfig["material"]>): ModelConfig {
   return { ...url, targetHeight: length, y: -length, material: finish };
 }
 
@@ -59,7 +59,7 @@ export function robotChassis(def: EnemyDef, height: number): ModelConfig | null 
   };
   if (Object.values(resolved).some((piece) => piece === undefined)) return null;
 
-  const style = CHASSIS[def.id] ?? CHASSIS.loader!;
+  const style = CHASSIS[def.id] ?? CHASSIS["loader"]!;
   // Every piece takes the same map set: the kit's own baked crate/column albedo is near-black and
   // reads as a hole outdoors, and mismatched surfaces make a kit-bash look like scattered props
   // rather than one machine.

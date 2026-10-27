@@ -80,8 +80,8 @@ export function VendorPanel() {
                 key={item.id}
                 label={item.name}
                 detail={item.kind === "health" ? `Restores ${item.heal} health` : "+25 max shield"}
-                cost={item.trade?.buy.cash ?? 0}
-                affordable={cash >= (item.trade?.buy.cash ?? 0)}
+                cost={item.trade?.buy["cash"] ?? 0}
+                affordable={cash >= (item.trade?.buy["cash"] ?? 0)}
                 onBuy={() => commands.run("vendor.buyGear", { itemId: item.id })}
               />
             ))}

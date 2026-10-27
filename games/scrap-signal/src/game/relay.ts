@@ -25,7 +25,7 @@ export interface RelayState {
   /** Optional so pre-uplink saves restore the clear-first strategy. */
   overclock?: boolean;
   /** The contract's result once its last wave closed, cleared when the player dismisses the report. */
-  outcome?: "won" | "lost";
+  outcome?: "won" | "lost" | undefined;
   /** The loop's own state, so a reload resumes the same wave with the signal it had banked. */
   session?: SessionLoopState;
 }

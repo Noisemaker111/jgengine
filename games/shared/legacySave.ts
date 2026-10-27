@@ -46,7 +46,7 @@ export async function loadLegacySave(
   }
   if (parsed === null || typeof parsed !== "object" || Array.isArray(parsed)) return false;
   const envelope = parsed as Record<string, unknown>;
-  const snapshot = "value" in envelope ? envelope.value : parsed;
+  const snapshot = "value" in envelope ? envelope["value"] : parsed;
   if (snapshot === null || typeof snapshot !== "object" || Array.isArray(snapshot)) return false;
   // Module keys (e.g. motion) are public engine protocols; translate only their payloads.
   const translated = Object.fromEntries(Object.entries(snapshot).map(([key, value]) => [key, migrateLegacySnapshot(value, ids)]));

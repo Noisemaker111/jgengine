@@ -57,7 +57,7 @@ export const Plate = forwardRef<HTMLElement, PlateProps>(function Plate(
     style: { "--ss-cut": kitCutPath(cut as KitCut, depth), "--ss-rim": rim, "--ss-rim-w": `${rimWidth}px`, ...style } as CSSProperties,
   };
   if (as === "button") return <KitButton ref={ref as Ref<HTMLButtonElement>} {...(rest as Omit<KitMaterialButtonProps, "material">)} {...look} />;
-  return <KitPanel ref={ref} {...(rest as Omit<KitMaterialPanelProps, "material">)} as={as} {...look} />;
+  return <KitPanel ref={ref} {...(rest as Omit<KitMaterialPanelProps, "material">)} {...(as === undefined ? {} : { as })} {...look} />;
 });
 
 /** A CRT screen set into a housing: phosphor glass, scanlines and a dark bezel lip. */

@@ -35,7 +35,7 @@ export function BroadcastTitle({
 }) {
   const profile = useDisplayProfile();
   const compact = profile.compact;
-  const nav = useMenuNav({ ids: CHARACTERS.map((c) => c.id), columns: compact ? 1 : CHARACTERS.length, initialId: CHARACTERS[0]?.id, onConfirm: onPick });
+  const nav = useMenuNav({ ids: CHARACTERS.map((c) => c.id), columns: compact ? 1 : CHARACTERS.length, ...(CHARACTERS[0] === undefined ? {} : { initialId: CHARACTERS[0].id }), onConfirm: onPick });
   return (
     <div className={`ss-broadcast ${compact ? "compact" : ""}`}>
       <i className="ss-static" aria-hidden="true" />

@@ -88,8 +88,7 @@ function pickupWorldItem(ctx: GameContext): void {
       ctx.scene.worldItem.spawn({
         itemId: current.itemId,
         position: [playerEntity.position[0], playerEntity.position[1], playerEntity.position[2]],
-        rarity: held?.rarity,
-        baseType: held?.family,
+        ...(held === undefined ? {} : { rarity: held.rarity, baseType: held.family }),
         source: "swap",
       });
     }
@@ -168,13 +167,18 @@ function openAmmoChest(ctx: GameContext, instanceId: string): void {
   ctx.scene.entity.floatText({ instanceId: ctx.player.userId, text: "+1 GRENADE", kind: "pickup" });
 }
 
+/** The aim a command carries, as an optional field a use input can spread in. */
+function aimOf(input: AimPayload): { aim?: NonNullable<AimPayload["aim"]> } {
+  return input.aim === undefined ? {} : { aim: input.aim };
+}
+
 export function registerCommands(ctx: GameContext): void {
   ctx.game.commands.define<AimPayload>("fire", {
     apply(state: GameContext, input) {
       if (reservePhase(state) === "dead") return;
       const itemId = selectedGunId(state);
       if (itemId === null) return;
-      const result = state.item.use.use({ from: state.player.userId, itemId, inventoryId: "hotbar", aim: input.aim });
+      const result = state.item.use.use({ from: state.player.userId, itemId, inventoryId: "hotbar", ...aimOf(input) });
       // A shot that actually left the barrel is a noise the whole battlefield can hear; a dry
       // click is not.
       if (result.error === undefined) noteShotNoise(state, itemId);
@@ -202,7 +206,7 @@ export function registerCommands(ctx: GameContext): void {
 
   ctx.game.commands.define<AimPayload>("throwGrenade", {
     apply(state: GameContext, input) {
-      state.item.use.use({ from: state.player.userId, itemId: "frag_grenade", inventoryId: "backpack", aim: input.aim });
+      state.item.use.use({ from: state.player.userId, itemId: "frag_grenade", inventoryId: "backpack", ...aimOf(input) });
     },
   });
 

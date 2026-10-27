@@ -126,7 +126,12 @@ export function setupWorld(ctx: GameContext): void {
       gx,
       gy + 0.5,
       gz,
-      instanceId === undefined && rotation === undefined ? undefined : { instanceId, rotation },
+      instanceId === undefined && rotation === undefined
+        ? undefined
+        : {
+            ...(instanceId === undefined ? {} : { instanceId }),
+            ...(rotation === undefined ? {} : { rotation }),
+          },
     );
   };
 

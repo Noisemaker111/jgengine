@@ -123,7 +123,7 @@ function num(firing: RuleFiring, key: string, fallback = 0): number {
 }
 
 function labelOf(firing: RuleFiring): string {
-  const label = firing.effect.params?.label;
+  const label = firing.effect.params?.["label"];
   if (typeof label === "string") return label;
   const perk = gunPerks(gunById(firing.target) ?? ({} as GunDef)).find((entry) => entry.id === perkOfRule(firing.ruleId));
   return (perk?.name ?? "PERK").toUpperCase();
@@ -156,7 +156,7 @@ function shapeFrom(ctx: GameContext, gun: GunDef, firings: readonly RuleFiring[]
     else if (id === "perk.shotScale" || id === "perk.hitScale") damageScale *= 1 + num(firing, "pct");
     else if (id === "perk.count" && (firing.stacks ?? 0) >= num(firing, "every", 1)) {
       resetCounter(ctx, firing);
-      if (firing.effect.params?.then === "crit") {
+      if (firing.effect.params?.["then"] === "crit") {
         forceCrit = true;
         callout(ctx, labelOf(firing));
       } else {
@@ -176,7 +176,8 @@ export function perkDamageScale(ctx: GameContext, gun: GunDef): number {
   let pct = 0;
   for (const effect of runtime.rules.activeFor(gun.id)) {
     if (effect.effectId !== "perk.damage") continue;
-    const per = typeof effect.params?.pct === "number" ? effect.params.pct : 0;
+    const pctParam = effect.params?.["pct"];
+    const per = typeof pctParam === "number" ? pctParam : 0;
     pct += per * effect.stacks;
   }
   return 1 + pct;
@@ -189,7 +190,8 @@ export function perkReloadScale(ctx: GameContext, gun: GunDef): number {
   runtime.rules.tick(nowMs(ctx));
   let pct = 0;
   for (const effect of runtime.rules.activeFor(gun.id)) {
-    if (effect.effectId === "perk.reload" && typeof effect.params?.pct === "number") pct = Math.max(pct, effect.params.pct);
+    const reloadPct = effect.params?.["pct"];
+    if (effect.effectId === "perk.reload" && typeof reloadPct === "number") pct = Math.max(pct, reloadPct);
   }
   return 1 + pct;
 }
@@ -203,7 +205,7 @@ export function activePerkBuffs(ctx: GameContext, gun: GunDef): { label: string;
     .activeFor(gun.id)
     .filter((effect) => (effect.effectId === "perk.damage" || effect.effectId === "perk.reload") && effect.expiresAt > now)
     .map((effect) => ({
-      label: typeof effect.params?.label === "string" ? effect.params.label : (gunPerks(gun).find((perk) => perk.id === perkOfRule(effect.ruleId))?.name ?? "PERK").toUpperCase(),
+      label: typeof effect.params?.["label"] === "string" ? effect.params["label"] : (gunPerks(gun).find((perk) => perk.id === perkOfRule(effect.ruleId))?.name ?? "PERK").toUpperCase(),
       stacks: effect.stacks,
       leftMs: effect.expiresAt - now,
     }));
@@ -290,7 +292,7 @@ function applyKillEffect(
       callout(ctx, labelOf(firing));
       return;
     case "perk.refund": {
-      const rounds = firing.effect.params?.fraction !== undefined
+      const rounds = firing.effect.params?.["fraction"] !== undefined
         ? Math.max(1, Math.ceil(effectiveMagSize(gun) * num(firing, "fraction")))
         : num(firing, "rounds", 1);
       const added = refundRounds(ctx, gun, rounds);

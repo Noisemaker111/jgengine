@@ -175,17 +175,17 @@ function toGun(drop: ItemDrop): GunDef {
     ammo: base.ammo,
     auto: base.auto,
     ammoPerShot: base.ammoPerShot,
-    magSize: Math.max(1, Math.round(stats.magSize ?? base.magSize)),
-    reloadMs: Math.max(200, Math.round(stats.reloadMs ?? base.reloadMs)),
+    magSize: Math.max(1, Math.round(stats["magSize"] ?? base.magSize)),
+    reloadMs: Math.max(200, Math.round(stats["reloadMs"] ?? base.reloadMs)),
     elementChance: 0,
     elementDps: 0,
     use: "fireGun",
     weapon: {
       ...base.stats,
-      damage: Math.max(1, Math.round(stats.damage ?? base.stats.damage)),
-      fireIntervalMs: Math.max(40, Math.round(stats.fireIntervalMs ?? base.stats.fireIntervalMs)),
-      spread: Math.max(0.05, stats.spread ?? base.stats.spread),
-      critChance: Math.min(0.95, stats.critChance ?? base.stats.critChance),
+      damage: Math.max(1, Math.round(stats["damage"] ?? base.stats.damage)),
+      fireIntervalMs: Math.max(40, Math.round(stats["fireIntervalMs"] ?? base.stats.fireIntervalMs)),
+      spread: Math.max(0.05, stats["spread"] ?? base.stats.spread),
+      critChance: Math.min(0.95, stats["critChance"] ?? base.stats.critChance),
     },
   };
   return registerGun(gun);

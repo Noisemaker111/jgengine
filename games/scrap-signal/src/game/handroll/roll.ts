@@ -142,21 +142,21 @@ function procChanceFor(element: GunElement, tier: GunRarity): number {
 
 export function rollGun(rng: () => number, level: number, options: RollGunOptions = {}): GunDef {
   const pin: Record<string, string> = {};
-  if (options.family !== undefined) pin.family = options.family;
-  if (options.rarity !== undefined) pin.rarity = options.rarity;
+  if (options.family !== undefined) pin["family"] = options.family;
+  if (options.rarity !== undefined) pin["rarity"] = options.rarity;
   if (options.legendary !== undefined) {
     const entry = legendaryEntry(options.legendary);
     if (entry === undefined) throw new Error(`unknown legendary: ${options.legendary}`);
-    pin.family = entry.family;
-    pin.rarity = "legendary";
-    pin.maker = `${entry.maker}:${options.legendary}`;
+    pin["family"] = entry.family;
+    pin["rarity"] = "legendary";
+    pin["maker"] = `${entry.maker}:${options.legendary}`;
   }
   const rolled = generate(gunSelectionSchema(options.luck ?? 1), rng, { pin });
   if (!rolled.ok) throw new Error(`gun roll failed: ${rolled.reason}`);
-  const base = rolled.result.values.family as FamilyBase;
-  const tier = rolled.result.values.rarity as GunRarity;
+  const base = rolled.result.values["family"] as FamilyBase;
+  const tier = rolled.result.values["rarity"] as GunRarity;
   const rarity = tier.id;
-  const maker = rolled.result.values.maker as { manufacturer: Manufacturer; legendaryName: string | null };
+  const maker = rolled.result.values["maker"] as { manufacturer: Manufacturer; legendaryName: string | null };
   const manufacturer = maker.manufacturer;
   const legendaryName = maker.legendaryName;
 

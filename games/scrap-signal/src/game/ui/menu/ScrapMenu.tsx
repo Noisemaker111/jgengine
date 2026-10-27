@@ -54,7 +54,7 @@ export function ScrapMenu(): ReactNode {
         name: recent.name ?? "Reclaimer",
         detail: [
           SCRAP_SLOTS.find((slot) => slot.id === recent.id)?.label,
-          recent.meta.playtime === undefined ? undefined : `${String(recent.meta.playtime)} played`,
+          recent.meta["playtime"] === undefined ? undefined : `${String(recent.meta["playtime"])} played`,
           savedAgo(recent.savedAt),
         ].filter((part) => part !== undefined && part !== "").join(" · "),
       };

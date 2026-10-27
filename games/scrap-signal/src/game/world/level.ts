@@ -77,7 +77,7 @@ function requirePoiMarker(id: string) {
 /** Side POIs — spawn tables in code, placement from `editor.scene.json`. */
 export const SIDE_POIS: readonly SidePoi[] = SIDE_POI_META.map((meta) => {
   const marker = requirePoiMarker(meta.id);
-  const radius = marker.meta?.radius;
+  const radius = marker.meta?.["radius"];
   if (typeof radius !== "number") {
     throw new Error(`editor.scene.json: POI "${meta.id}" has no numeric meta.radius`);
   }
@@ -98,8 +98,8 @@ const POI_IDS = new Set(SIDE_POIS.map((poi) => poi.id));
 function pathToRoute(path: EditorPath): Route {
   const count = path.points.length;
   return {
-    from: String(path.meta?.from ?? ""),
-    to: String(path.meta?.to ?? ""),
+    from: String(path.meta?.["from"] ?? ""),
+    to: String(path.meta?.["to"] ?? ""),
     points: path.points.map((point, index) => ({
       x: point.x,
       z: point.z,

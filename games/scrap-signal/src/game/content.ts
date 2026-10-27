@@ -45,7 +45,12 @@ function itemById(itemId: string): GameContextItemEntry | null {
   }
   const gear = gearById(itemId);
   if (gear !== undefined) {
-    return { use: gear.use, trade: gear.trade, rarity: "common", baseType: gear.kind };
+    return {
+      ...(gear.use === undefined ? {} : { use: gear.use }),
+      ...(gear.trade === undefined ? {} : { trade: gear.trade }),
+      rarity: "common",
+      baseType: gear.kind,
+    };
   }
   const bolt = enemyWeaponsById.get(itemId);
   if (bolt !== undefined) return { weapon: toWeaponRecord(bolt.weapon) };
