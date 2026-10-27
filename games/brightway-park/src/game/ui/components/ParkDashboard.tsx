@@ -55,15 +55,13 @@ export function ParkGoal() {
   const net = w.num("park.revenue_yesterday") - w.num("park.upkeep_yesterday"), won = w.fact("park.won") === true;
   if (scenario !== null) {
     const id = w.fact("scenario.id");
-    const when = (typeof id === "string" ? scenarioDef(id) : null)?.mission.objectives[0]?.branches?.find((b) => b.to === "done")?.when;
-    const target = Array.isArray(when) ? when[0] : when;
-    const goal = target?.atLeast ?? 0, fact = target?.fact ?? "park.scenario_revenue";
-    const isMoney = fact === "park.scenario_revenue";
-    const have = isMoney ? money(w.num(fact)) : fact === "park.rating" ? `★ ${Math.round(w.num(fact))}` : `${w.num(fact)}`;
-    return <KitObjective className="bw-goal" eyebrow={`Scenario · ${scenario.title}`} title={scenario.goal}
-      steps={[{ id: "target", label: `${have} of ${isMoney ? money(goal) : goal}`, done: scenario.result === "won" }, { id: "till", label: `Till ${money(scenario.cash)}`, done: scenario.cash > 0 }]}
-      deadline={scenario.remaining !== null && scenario.duration !== null ? { remaining: scenario.remaining, total: scenario.duration } : undefined}
-      hint="Cheaper tickets and more rides pull a bigger crowd." progressKey={`${Math.round(scenario.visitors / 5)}`} />;
+    const targets = (typeof id === "string" ? scenarioDef(id) : null)?.targets ?? [];
+    const steps = targets.map((t) => ({ id: t.fact, label: `${Math.floor(w.num(t.fact)).toLocaleString()} / ${t.atLeast.toLocaleString()} ${t.label}`, done: scenario.result === "won" || w.num(t.fact) >= t.atLeast }));
+    const hint = m.ridesOpen === 0 ? "Lay a path from the gate, build a ride and connect it." : w.fact("park.gate") !== true ? "Open the gate to let guests in." : "More rides, shops and scenery raise the rating; marketing in the Books brings more guests.";
+    // The deadline in park days, not clock seconds: a scenario runs for months.
+    const left = scenario.remaining === null ? "" : ` · ${parkDuration(scenario.remaining)} left`;
+    return <KitObjective className="bw-goal" eyebrow={`${scenario.title}${left}`} title={scenario.goal}
+      steps={steps} hint={hint} progressKey={steps.filter((s) => s.done).length} />;
   }
   const steps = [
     { id: "rides", label: `${BLUE_RIBBON.rides} rides · ${Math.min(m.rides, BLUE_RIBBON.rides)}/${BLUE_RIBBON.rides}`, done: m.rides >= BLUE_RIBBON.rides, next: `Build up to ${BLUE_RIBBON.rides} rides` },

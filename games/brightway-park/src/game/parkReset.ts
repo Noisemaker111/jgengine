@@ -9,7 +9,7 @@ import { spawnAll } from "./parkScene";
 import { seedGuests, resetGuestAgents } from "./sim/guests";
 import { resetRides } from "./rides";
 import { resetSession, session } from "./session";
-import { scenarioDef } from "./scenarios";
+import { scenarioDef, scenarioLock, scenarioSeconds } from "./scenarios";
 import { syncAmbience } from "./audio";
 import { savePark } from "./persistence";
 
@@ -96,7 +96,7 @@ export function resetPark(ctx: GameContext, options: ResetOptions = {}): void {
 /** Begin a scenario from a fresh park: the world starts over and its job's mission starts the clock. */
 export function beginScenario(ctx: GameContext, id: string): boolean {
   const scenario = scenarioDef(id);
-  if (scenario === null) return false;
+  if (scenario === null || scenarioLock(id) !== null) return false;
   resetPark(ctx, { cash: scenario.cash });
   const w = park.of(ctx);
   w.set("scenario.id", id);
@@ -153,7 +153,7 @@ export function scenarioView(ctx: GameContext): {
     title: def.title,
     goal: def.goal,
     remaining: w.missionView()?.remaining ?? null,
-    duration: def.mission.objectives[0]?.duration ?? null,
+    duration: scenarioSeconds(def.months),
     result: result === "won" || result === "failed" ? result : null,
     reason: typeof reason === "string" && reason !== "" ? reason : null,
     revenue: w.num("park.scenario_revenue"),

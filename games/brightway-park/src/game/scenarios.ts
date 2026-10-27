@@ -1,121 +1,162 @@
 import type { MissionDef } from "@jgengine/core/mission/mission";
 
+import { MONTH_DAYS, monthLabel } from "./books";
 import { DAY_LENGTH } from "./catalog";
 
 /**
- * Three park scenarios as content: each is a timed `survive` mission whose branches read the park's
- * world facts at the close, plus the fail states that end a run early. `park.ts` declares each one
- * as a job on the park's world, so the world's own mission runtime runs it and saves it with the park.
+ * The park's scenarios as content: each is a `survive` mission that completes the moment every
+ * target holds and fails when its months run out (or the crowd walks out). They unlock in order:
+ * winning one opens the next. `park.ts` declares each one as a job on the park's world, so the
+ * world's own mission runtime runs it and saves it with the park.
  */
+
+export interface ScenarioTarget {
+  /** The world fact the target reads. */
+  fact: string;
+  atLeast: number;
+  /** How the HUD names it: "guests in the park". */
+  label: string;
+}
 
 export interface ScenarioDef {
   id: string;
   title: string;
   blurb: string;
-  /** What the park must be true at the close. */
+  /** What must be true by the deadline. */
   goal: string;
   /** Money the park opens with. */
   cash: number;
+  /** Park months the scenario runs, from 1 March, Year 1. */
+  months: number;
+  targets: readonly ScenarioTarget[];
+  /** The scenario a park must win before this one opens; none for the first. */
+  after?: string;
   mission: MissionDef;
 }
 
-export const SCENARIOS: readonly ScenarioDef[] = [
-  {
-    id: "opening_weekend",
-    title: "Opening Weekend",
-    blurb: "Two days, one quiet seaside fair, and a gate that has to earn its keep.",
-    goal: "Take $2,000 across two days",
-    cash: 6000,
+interface ScenarioSpec {
+  id: string;
+  title: string;
+  blurb: string;
+  cash: number;
+  months: number;
+  targets: readonly ScenarioTarget[];
+  after?: string;
+  reward: number;
+}
+
+/** A scenario's deadline in park seconds. */
+export const scenarioSeconds = (months: number): number => months * MONTH_DAYS * DAY_LENGTH;
+
+function scenario(spec: ScenarioSpec): ScenarioDef {
+  const deadline = monthLabel(spec.months - 1);
+  const goal = `${spec.targets.map((t) => `${t.atLeast.toLocaleString()} ${t.label}`).join(" and ")} by the end of ${deadline}`;
+  return {
+    id: spec.id,
+    title: spec.title,
+    blurb: spec.blurb,
+    goal,
+    cash: spec.cash,
+    months: spec.months,
+    targets: spec.targets,
+    ...(spec.after === undefined ? {} : { after: spec.after }),
     mission: {
-      id: "opening_weekend",
-      title: "Opening Weekend",
-      description: "Take $2,000 at the gate across two days without running out of cash.",
-      fail: [
-        { id: "broke", message: "The till ran dry before the weekend was out." },
-        { id: "short", message: "The weekend closed short of $2,000." },
-      ],
-      objectives: [
-        {
-          id: "weekend",
-          kind: "survive",
-          label: "Take $2,000 across two days",
-          duration: DAY_LENGTH * 2,
-          failOn: [{ kind: "fact", fact: "park.cash", atMost: 0, to: "broke", message: "The till ran dry." }],
-          branches: [
-            { to: "done", when: { fact: "park.scenario_revenue", atLeast: 2000 }, label: "Weekend target met" },
-            { to: "short", when: { fact: "park.scenario_revenue" }, label: "Weekend target missed" },
-          ],
-        },
-      ],
-      rewards: { economy: { cash: 1500 } },
-    },
-  },
-  {
-    id: "star_attraction",
-    title: "Star Attraction",
-    blurb: "Three days to turn a handful of rides into a 420-star park people talk about.",
-    goal: "Reach a 420 star rating by the end of day three",
-    cash: 7000,
-    mission: {
-      id: "star_attraction",
-      title: "Star Attraction",
-      description: "Reach a park rating of 420 within three days with guests still smiling.",
+      id: spec.id,
+      title: spec.title,
+      description: `${goal}.`,
       fail: [
         { id: "walkout", message: "The crowd turned miserable and stopped coming." },
-        { id: "broke", message: "The park ran out of cash chasing the rating." },
-        { id: "quiet", message: "Three days gone and the park never became a star attraction." },
+        { id: "short", message: `The end of ${deadline} came and the park was short of its target.` },
       ],
       objectives: [
         {
-          id: "season",
+          id: "target",
           kind: "survive",
-          label: "Reach 420 stars by the end of day three",
-          duration: DAY_LENGTH * 3,
-          failOn: [
-            { kind: "fact", fact: "park.mood", atMost: 20, to: "walkout", message: "Guest mood collapsed below 20%." },
-            { kind: "fact", fact: "park.cash", atMost: 0, to: "broke", message: "The till ran dry." },
-          ],
-          branches: [
-            { to: "done", when: { fact: "park.rating", atLeast: 420 }, label: "Star attraction" },
-            { to: "quiet", when: { fact: "park.rating" }, label: "Short of 420 stars" },
-          ],
+          label: goal,
+          until: spec.targets.map((t) => ({ fact: t.fact, atLeast: t.atLeast })),
+          timeout: scenarioSeconds(spec.months),
+          onTimeout: "short",
+          failOn: [{ kind: "fact", fact: "park.mood", atMost: 15, to: "walkout", message: "Guest mood collapsed below 15%." }],
         },
       ],
-      rewards: { economy: { cash: 2500 } },
+      rewards: { economy: { cash: spec.reward } },
     },
-  },
-  {
+  };
+}
+
+export const SCENARIOS: readonly ScenarioDef[] = [
+  scenario({
+    id: "brightway_beginnings",
+    title: "Brightway Beginnings",
+    blurb: "An empty lot by the sea, a loan from the bank and one spring to prove the park can draw a crowd.",
+    cash: 10_000,
+    months: 3,
+    targets: [
+      { fact: "park.guests", atLeast: 120, label: "guests in the park" },
+      { fact: "park.rating", atLeast: 400, label: "stars" },
+    ],
+    reward: 5_000,
+  }),
+  scenario({
+    id: "star_attraction",
+    title: "Star Attraction",
+    blurb: "One whole season to build the coast's favourite day out.",
+    cash: 10_000,
+    months: 8,
+    targets: [
+      { fact: "park.rating", atLeast: 650, label: "stars" },
+      { fact: "park.guests", atLeast: 250, label: "guests in the park" },
+    ],
+    after: "brightway_beginnings",
+    reward: 10_000,
+  }),
+  scenario({
     id: "full_house",
     title: "Full House",
-    blurb: "One day to pack the midway: eighty visitors through the gate before the lights go down.",
-    goal: "Bring 80 visitors through the gate in one day",
-    cash: 5000,
-    mission: {
-      id: "full_house",
-      title: "Full House",
-      description: "Draw 80 visitors in a single day and keep the till in the black.",
-      fail: [
-        { id: "broke", message: "The park could not afford the day." },
-        { id: "thin", message: "The midway stayed quiet - under 80 visitors came through." },
-      ],
-      objectives: [
-        {
-          id: "day",
-          kind: "survive",
-          label: "Bring 80 visitors through the gate",
-          duration: DAY_LENGTH,
-          failOn: [{ kind: "fact", fact: "park.cash", atMost: 0, to: "broke", message: "The till ran dry." }],
-          branches: [
-            { to: "done", when: { fact: "park.scenario_visitors", atLeast: 80 }, label: "Full house" },
-            { to: "thin", when: { fact: "park.scenario_visitors" }, label: "Quiet day" },
-          ],
-        },
-      ],
-      rewards: { economy: { cash: 1800 } },
-    },
-  },
+    blurb: "Two seasons to fill every path: the biggest crowd Brightway has ever seen.",
+    cash: 10_000,
+    months: 16,
+    targets: [
+      { fact: "park.guests", atLeast: 380, label: "guests in the park" },
+      { fact: "park.rating", atLeast: 850, label: "stars" },
+    ],
+    after: "star_attraction",
+    reward: 20_000,
+  }),
 ];
 
+/** The first scenario: a new game starts here. */
+export const FIRST_SCENARIO = "brightway_beginnings";
+
 export function scenarioDef(id: string): ScenarioDef | null {
-  return SCENARIOS.find((scenario) => scenario.id === id) ?? null;
+  return SCENARIOS.find((entry) => entry.id === id) ?? null;
+}
+
+const WON_KEY = "brightway-park.scenarios-won";
+
+/** The scenarios this browser has won, kept apart from any one park's save. */
+export function scenariosWon(): readonly string[] {
+  try {
+    const raw = typeof localStorage === "undefined" ? null : localStorage.getItem(WON_KEY);
+    const parsed: unknown = raw === null ? [] : JSON.parse(raw);
+    return Array.isArray(parsed) ? parsed.filter((id): id is string => typeof id === "string") : [];
+  } catch {
+    return [];
+  }
+}
+
+export function recordScenarioWin(id: string): void {
+  const won = scenariosWon();
+  if (won.includes(id)) return;
+  try {
+    localStorage.setItem(WON_KEY, JSON.stringify([...won, id]));
+  } catch { /* Browser storage may be disabled: the unlock lasts this session only. */ }
+}
+
+/** Why a scenario is still locked, or null when it can be played. */
+export function scenarioLock(id: string): string | null {
+  const def = scenarioDef(id);
+  if (def === null) return "No such scenario";
+  if (def.after === undefined || scenariosWon().includes(def.after)) return null;
+  return `Win ${scenarioDef(def.after)?.title ?? "the one before"} first`;
 }

@@ -11,6 +11,8 @@ export default defineFlow(game, {
   browser: true,
   async run(f) {
     await f.see(/gate shut/i, { timeoutMs: 30000, note: "arrival: a new park opens on the empty lot with its gate shut" });
+    await f.see(/Brightway Beginnings/i, { timeoutMs: 5000, note: "arrival: a new game is the first scenario, its goal and deadline on the HUD" });
+    await f.see(/by the end of May, Year 1/, { timeoutMs: 5000 });
     await f.expect((p) => p.guests === 0, "arrival: nobody is inside before the player builds and opens the gate");
     await f.expectPage("document.querySelector('[data-hint=gate]')?.disabled === true", "arrival: the gate will not open with no ride running");
 

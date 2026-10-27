@@ -10,6 +10,7 @@ import { syncAmbience } from "./audio";
 import { savePark } from "./persistence";
 import { connectPark, relinkPark } from "./build/links";
 import { groundAt } from "./build/terrain";
+import { recordScenarioWin } from "./scenarios";
 
 /**
  * Where the park's declaration meets the screen: a built structure is placed in the scene, a removed
@@ -112,6 +113,8 @@ export function scenarioEnded(ctx: GameContext, event: WorldJobEvent): void {
     ctx.game.audio.play("bankrupt");
   } else {
     w.set("scenario.result", "won");
+    const id = w.fact("scenario.id");
+    if (typeof id === "string" && id !== "") recordScenarioWin(id);
     ctx.game.audio.play("ribbon");
   }
   ctx.time.pause();

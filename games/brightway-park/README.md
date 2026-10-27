@@ -52,10 +52,17 @@ Read from `src/game/{park,catalog,objects,sim,scenarios,milestones,rides}`; the 
     entrance and an exit against it joined to the paths from the gate, and a shop only with a path
     beside it; a shut one says why and offers "Connect it". Guests queue on the queue line, which
     makes a long wait easier to bear. U undoes the last build, demolish or land change.
-  - Three scenarios. Opening Weekend, Star Attraction and Full House, each a timed objective on the
-    shared mission runtime with its own fail states, reward and fresh-park replay.
+  - Three scenarios, each won the moment its targets hold and lost at its deadline or when the
+    crowd's mood falls to 15%. Winning one unlocks the next (kept in the browser across new games);
+    a new game starts the first. Speeds 1x, 2x, 4x and 8x.
+
+    | Scenario | Targets | Deadline | At 1x | Prize |
+    | --- | --- | --- | --- | --- |
+    | Brightway Beginnings | 120 guests in the park, 400 stars | end of May, Year 1 (3 months) | 1 h | $5,000 |
+    | Star Attraction | 650 stars, 250 guests | end of October, Year 1 (8 months) | 2 h 40 | $10,000 |
+    | Full House | 380 guests, 850 stars | end of October, Year 2 (16 months) | 5 h 20 | $20,000 |
 - **Failure states.** A month that closes in the red is a warning; two in a row close the park
-  for good. A breakdown takes its ride offline until its queued repair lands, so a
+  for good. A breakdown takes its ride offline until a mechanic's repair lands, so a
   park that skips servicing loses its queue and its rating with it. A scenario that misses its clock
   fails in its own named state rather than ending free play.
 - **Minute 5 → hour 5.** The 30-minute balance bot (`bun scripts/balance.ts 30`) spends the opening
