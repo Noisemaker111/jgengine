@@ -117,7 +117,7 @@ function EntityMarker({
       if (tier === "crowd") {
         // A painted character keeps its own rig: its strokes live on its materials, not in the batch.
         const painted = ctx.scene.entity.paint.version(entityId) !== 0;
-        batched = !painted && crowd.claim(entityId, crowdKind, { x, y, z, rotationY: live.rotationY ?? 0, speed: groundSpeed(live) });
+        batched = !painted && crowd.claim(entityId, crowdKind, { x, y, z, rotationY: live.rotationY ?? 0, speed: groundSpeed(live), size: live.size ?? 1 });
         // An over-cap batch leaves the rest of its kind on their own rigs at the tier their distance
         // earns, so a crowded scene loses draws rather than characters.
         if (!batched) tier = characterRigTier(distance, lod);
@@ -128,7 +128,11 @@ function EntityMarker({
     tierRef.current = tier;
     // The marker itself stays mounted and visible while a batch draws the character: its status
     // rings and the hit test on its rig have to behave as they do when it draws itself.
-    if (modelRef.current !== null) modelRef.current.visible = !batched;
+    if (modelRef.current !== null) {
+      modelRef.current.visible = !batched;
+      // A per-instance size (a baby growing up) scales the model about its feet.
+      modelRef.current.scale.setScalar(live.size ?? 1);
+    }
     group.visible = shown;
     setCulled(group, !inView);
   });

@@ -1064,6 +1064,17 @@
       "intent": "play positional or flat cues with listener orientation, voice budgets, and per-source cleanup"
     },
     {
+      "id": "breeding",
+      "packages": [
+        "@jgengine/core"
+      ],
+      "module": "@jgengine/core/breeding/breeding",
+      "domain": "breeding",
+      "gameFacing": false,
+      "probe": null,
+      "intent": "tame pairs mate, eggs incubate by temperature or mothers gestate, babies grow and imprint through care"
+    },
+    {
       "id": "browser-suspension",
       "packages": [
         "@jgengine/core"
@@ -3376,6 +3387,17 @@
       "gameFacing": false,
       "probe": null,
       "intent": "live velocity/bob/fire/reload/hit/death cues for a custom renderEntity or viewmodel component"
+    },
+    {
+      "id": "entity-size",
+      "packages": [
+        "@jgengine/core"
+      ],
+      "module": "@jgengine/core/scene/entityStore",
+      "domain": "scene",
+      "gameFacing": false,
+      "probe": null,
+      "intent": "grow or shrink one entity's model without a new kind, for babies growing up"
     },
     {
       "id": "environment-motion",
@@ -9535,6 +9557,17 @@
       "intent": "feed an existing StatModifierSet into a stat-graph source"
     },
     {
+      "id": "stat-inheritance",
+      "packages": [
+        "@jgengine/core"
+      ],
+      "module": "@jgengine/core/breeding/inheritance",
+      "domain": "breeding",
+      "gameFacing": false,
+      "probe": null,
+      "intent": "breed two parents' stat points into a baby's, favouring the stronger, with rare mutations"
+    },
+    {
       "id": "stat-points",
       "packages": [
         "@jgengine/core"
@@ -11346,6 +11379,17 @@
       "gameFacing": false,
       "probe": null,
       "intent": "pick one item from a set with an injected random source"
+    },
+    {
+      "id": "wild-stat-levels",
+      "packages": [
+        "@jgengine/core"
+      ],
+      "module": "@jgengine/core/breeding/inheritance",
+      "domain": "breeding",
+      "gameFacing": false,
+      "probe": null,
+      "intent": "spread a creature's levels over its stats at random so same-level creatures differ"
     },
     {
       "id": "window",

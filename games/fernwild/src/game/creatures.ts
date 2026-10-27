@@ -11,6 +11,7 @@ import { createStatPoints, type StatPointSheet } from "@jgengine/core/progressio
 import { createCompanionRoster, type CompanionCommand, type CompanionRecord } from "@jgengine/core/scene/companion";
 import { ridingOf, type SeatOffset } from "@jgengine/core/scene/riding";
 import type { MountedRider } from "@jgengine/core/scene/mount";
+import { scatterLevels } from "@jgengine/core/breeding/inheritance";
 import { createKnockoutTaming, type TamingFeeder, type TamingState } from "@jgengine/core/taming/knockoutTaming";
 import { markersOfKind } from "@jgengine/core/world/authoredSpawn";
 import { createResourceNodeField, type ResourceGrant, type ResourceNodeState, type ToolProfile } from "@jgengine/core/world/resourceNode";
@@ -18,7 +19,8 @@ import { createResourceNodeField, type ResourceGrant, type ResourceNodeState, ty
 import { editorLayers } from "../editorLayers";
 import { BAG, HOTBAR } from "./bags";
 import { itemDef, itemLabel, itemTraits } from "./data/items";
-import { killXp, SPECIES, speciesDef, statAt, TAME_LEVELS, TAME_STATS, temperamentOf, TORPOR_TAKEN, WILD_LEVELS, type SpeciesDef, type TameStat } from "./data/species";
+import { IMPRINT_BONUS, IMPRINTED_STATS } from "./data/breeding";
+import { killXp, SPECIES, speciesDef, statAt, TAME_LEVELS, TAME_STATS, temperamentOf, TORPOR_TAKEN, WILD_LEVELS, WILD_STATS, type SpeciesDef, type TameStat, type WildStat } from "./data/species";
 import { setScreen } from "./screens";
 
 /** Slots in a creature's own inventory (ARK caps it by weight; slots are the simple stand-in). */
@@ -52,6 +54,15 @@ interface Creature {
   stamina: number;
   /** A tame's own levels; null while wild. */
   growth: TameGrowth | null;
+  sex: "female" | "male";
+  /** Its levels past the first, stat by stat, as ARK hands them out wild and passes them to babies. */
+  wild: Record<WildStat, number>;
+  /** Mutations in its line. */
+  mutations: number;
+  /** A tame left to mate with tames of its kind nearby (ARK's Enable Mating). */
+  mating: boolean;
+  /** How much of its imprint it had as a baby, 0 to 1: every stat but stamina, oxygen and speed up to 20% more. */
+  imprint: number;
 }
 
 /** ARK's tamed levelling: the level it was tamed at, levels gained since, XP into the next, points spent. */
@@ -193,12 +204,15 @@ function defOf(creature: Creature): SpeciesDef {
   return speciesDef(creature.species)!;
 }
 
-/** A stat a creature has: a wild one's from its level, a tame's from its level when tamed and its points. */
+/**
+ * A stat a creature has: from its wild levels in that stat, then a tame's points on top, then a bred tame's imprint.
+ */
 function statOf(creature: Creature, stat: TameStat): number {
   const def = defOf(creature);
-  const level = creature.growth?.tamedAt ?? creature.level;
+  const level = stat === "speed" ? 1 : 1 + creature.wild[stat];
   const wild = stat === "speed" ? 1 : stat === "melee" ? statAt(def.melee, level) / def.melee.base : statAt(def[stat], level);
-  return creature.growth === null ? wild : TAME_POINTS.value(creature.growth.points, stat, wild);
+  const tamed = creature.growth === null ? wild : TAME_POINTS.value(creature.growth.points, stat, wild);
+  return IMPRINTED_STATS.includes(stat) ? tamed * (1 + IMPRINT_BONUS * creature.imprint) : tamed;
 }
 
 function maxHealth(creature: Creature): number {
@@ -236,15 +250,47 @@ function openGround(ctx: GameContext, at: readonly [number, number], radius: num
   return null;
 }
 
-export function spawnCreature(ctx: GameContext, species: string, at: readonly [number, number], options: { region?: string; level?: number } = {}): string | null {
+/** What a creature is born with: a wild one rolls it, a bred one inherits it. */
+export interface CreatureGenes {
+  sex: "female" | "male";
+  wild: Record<WildStat, number>;
+  mutations: number;
+}
+
+export function spawnCreature(
+  ctx: GameContext,
+  species: string,
+  at: readonly [number, number],
+  options: { region?: string; level?: number; sex?: "female" | "male"; genes?: CreatureGenes; size?: number } = {},
+): string | null {
   const def = speciesDef(species);
   const position = def === null ? null : openGround(ctx, at, def.radius);
   if (def === null || position === null) return null;
   const world = worldOf(ctx);
   const id = `${species}_${(world.seq += 1)}`;
-  const level = options.level ?? rollLevel(ctx);
-  ctx.scene.entity.spawn(species, { id, position, rotationY: ctx.rng() * Math.PI * 2, role: "npc" });
-  const creature: Creature = { id, species, level, region: options.region ?? "", inventory: createEmptyInventory({ slots: CREATURE_SLOTS }), tamed: false, saddled: false, dead: false, rot: 0, lastHitBy: null, stamina: 0, growth: null };
+  const sex = ctx.rng() < 0.5 ? "female" : "male";
+  const genes = options.genes ?? { sex: options.sex ?? sex, wild: scatterLevels((options.level ?? rollLevel(ctx)) - 1, WILD_STATS, ctx.rng), mutations: 0 };
+  const level = 1 + WILD_STATS.reduce((sum, stat) => sum + genes.wild[stat], 0);
+  ctx.scene.entity.spawn(species, { id, position, rotationY: ctx.rng() * Math.PI * 2, role: "npc", ...(options.size === undefined ? {} : { size: options.size }) });
+  const creature: Creature = {
+    id,
+    species,
+    level,
+    region: options.region ?? "",
+    inventory: createEmptyInventory({ slots: CREATURE_SLOTS }),
+    tamed: false,
+    saddled: false,
+    dead: false,
+    rot: 0,
+    lastHitBy: null,
+    stamina: 0,
+    growth: null,
+    sex: genes.sex,
+    wild: { ...genes.wild },
+    mutations: genes.mutations,
+    mating: false,
+    imprint: 0,
+  };
   const health = maxHealth(creature);
   creature.stamina = statOf(creature, "stamina");
   ctx.scene.entity.stats.set(id, "health", { max: health, current: health });
@@ -483,10 +529,18 @@ export function levelTame(ctx: GameContext, stat: TameStat): void {
 }
 
 function tame(ctx: GameContext, creature: Creature, effectiveness: number, bonus: number): void {
-  const world = worldOf(ctx);
-  const def = defOf(creature);
-  creature.tamed = true;
   creature.level += bonus;
+  // ARK's taming bonus levels land on random stats like wild ones, and pass to babies the same way.
+  const extra = scatterLevels(bonus, WILD_STATS, ctx.rng);
+  for (const stat of WILD_STATS) creature.wild[stat] += extra[stat];
+  makeTame(ctx, creature);
+  ctx.game.notices.push({ text: `${defOf(creature).label} tamed! Level ${creature.level} (+${bonus} from ${Math.round(effectiveness * 100)}% taming effectiveness)`, tone: "success" });
+}
+
+/** A creature becomes the survivor's: its tame levels start, full health, and it waits where it stands. */
+function makeTame(ctx: GameContext, creature: Creature): void {
+  const world = worldOf(ctx);
+  creature.tamed = true;
   creature.growth = { tamedAt: creature.level, gained: 0, xp: 0, points: TAME_POINTS.empty() };
   creature.stamina = statOf(creature, "stamina");
   const health = maxHealth(creature);
@@ -499,7 +553,92 @@ function tame(ctx: GameContext, creature: Creature, effectiveness: number, bonus
   if (home !== null) world.driver.setHome(creature.id, home);
   if (creature.region !== "") world.director.notifyRemoved(creature.region, creature.species);
   creature.region = "";
-  ctx.game.notices.push({ text: `${def.label} tamed! Level ${creature.level} (+${bonus} from ${Math.round(effectiveness * 100)}% taming effectiveness)`, tone: "success" });
+}
+
+/** A bred baby: hatched or born beside `at`, the survivor's from the first moment. Returns its id. */
+export function spawnBaby(ctx: GameContext, species: string, at: readonly [number, number], genes: CreatureGenes, size: number): string | null {
+  const id = spawnCreature(ctx, species, at, { genes, size });
+  if (id !== null) tameSummoned(ctx, id, false);
+  return id;
+}
+
+/** ARK's GMSummon: the creature just spawned is the survivor's at once, mating on or off. */
+export function tameSummoned(ctx: GameContext, id: string, mating: boolean): void {
+  const creature = worldOf(ctx).creatures.get(id);
+  if (creature === undefined) return;
+  worldOf(ctx).taming.forget(id);
+  makeTame(ctx, creature);
+  creature.mating = mating;
+}
+
+/** Every living tame of the survivor's, for breeding: where it stands, its kind, sex and whether it may mate. */
+export function tames(ctx: GameContext): { id: string; species: string; sex: "female" | "male"; mating: boolean; at: readonly [number, number, number]; radius: number; following: boolean }[] {
+  const world = worldOf(ctx);
+  const out = [];
+  for (const creature of world.creatures.values()) {
+    if (!creature.tamed || creature.dead) continue;
+    const entity = ctx.scene.entity.get(creature.id);
+    if (entity === null) continue;
+    out.push({ id: creature.id, species: creature.species, sex: creature.sex, mating: creature.mating, at: entity.position, radius: defOf(creature).radius, following: world.roster.get(creature.id)?.command === "follow" });
+  }
+  return out;
+}
+
+/** A creature's genes, for its babies; null when it is gone. */
+export function genesOf(ctx: GameContext, id: string): CreatureGenes | null {
+  const creature = worldOf(ctx).creatures.get(id);
+  return creature === undefined ? null : { sex: creature.sex, wild: { ...creature.wild }, mutations: creature.mutations };
+}
+
+/** Set a bred tame's imprint: its imprinted stats grow, and its health with them. */
+export function setImprint(ctx: GameContext, id: string, imprint: number): void {
+  const creature = worldOf(ctx).creatures.get(id);
+  if (creature === undefined || creature.dead) return;
+  const before = maxHealth(creature);
+  creature.imprint = Math.max(0, Math.min(1, imprint));
+  const max = maxHealth(creature);
+  const health = ctx.scene.entity.stats.get(id, "health");
+  ctx.scene.entity.stats.set(id, "health", { max, current: Math.max(0, (health?.current ?? max) + max - before) });
+}
+
+/** The max food a creature holds (ARK's food stat). */
+export function foodMaxOf(ctx: GameContext, id: string): number {
+  const creature = worldOf(ctx).creatures.get(id);
+  return creature === undefined ? 0 : statOf(creature, "food");
+}
+
+/** Take one `item` from a creature's own inventory; false when it has none. */
+export function takeFromCreatureInventory(ctx: GameContext, id: string, item: string): boolean {
+  const creature = worldOf(ctx).creatures.get(id);
+  if (creature === undefined) return false;
+  const taken = takeItem(creature.inventory, item, 1);
+  if (taken.status !== "ok") return false;
+  creature.inventory = taken.state;
+  return true;
+}
+
+/** Whether a creature is alive. */
+export function creatureAlive(ctx: GameContext, id: string): boolean {
+  const creature = worldOf(ctx).creatures.get(id);
+  return creature !== undefined && !creature.dead;
+}
+
+/** The creature the survivor is aimed at, or null. */
+export function aimedCreature(ctx: GameContext): string | null {
+  return worldOf(ctx).aimed;
+}
+
+/** The creature whose inventory screen is open, or null. */
+export function viewedCreature(ctx: GameContext): string | null {
+  return viewed(ctx)?.id ?? null;
+}
+
+/** ARK's Enable Mating, on the tame whose inventory is open. */
+export function toggleMating(ctx: GameContext): void {
+  const creature = viewed(ctx);
+  if (creature === null || !creature.tamed) return;
+  creature.mating = !creature.mating;
+  ctx.game.notices.push({ text: `${defOf(creature).label}: mating ${creature.mating ? "on" : "off"}`, tone: "success" });
 }
 
 function feeder(creature: Creature): TamingFeeder {
@@ -838,6 +977,10 @@ export function creatureCard(ctx: GameContext, id: string | null) {
     dead: creature.dead,
     saddled: creature.saddled,
     saddle: def.saddle,
+    sex: creature.sex,
+    mating: creature.mating,
+    imprint: creature.imprint,
+    mutations: creature.mutations,
     order: creature.tamed ? (world.roster.get(creature.id)?.command ?? null) : null,
     taming: creature.tamed ? null : tamingView(world, creature, world.taming.state(creature.id)),
     stamina: { value: Math.floor(creature.stamina), max: Math.round(statOf(creature, "stamina")) },

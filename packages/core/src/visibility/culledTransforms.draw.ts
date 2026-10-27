@@ -19,6 +19,11 @@ function updateShownMatrixWorld(node: THREE.Object3D, force: boolean): void {
     if (node.matrixWorldAutoUpdate) {
       if (node.parent === null) node.matrixWorld.copy(node.matrix);
       else node.matrixWorld.multiplyMatrices(node.parent.matrixWorld, node.matrix);
+      // Three's own SkinnedMesh.updateMatrixWorld does this: an attached skin is posed relative to where
+      // the mesh hangs now. Left stale, a character drawn on its own rig is skinned against where it was
+      // first mounted and floats away from its body as it moves.
+      const skinned = node as THREE.SkinnedMesh;
+      if (skinned.isSkinnedMesh === true && skinned.bindMode === "attached") skinned.bindMatrixInverse.copy(skinned.matrixWorld).invert();
     }
     node.matrixWorldNeedsUpdate = false;
     force = true;
