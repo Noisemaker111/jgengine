@@ -18,7 +18,7 @@ import { mkdirSync, mkdtempSync, readFileSync, readdirSync, rmSync, writeFileSyn
 import { join } from "node:path";
 import { pathToFileURL } from "node:url";
 
-import { packageDir, publishedPackages, readManifest, repoRoot } from "./exportManifest";
+import { packageDir, publishedPackages, readManifest, repoRoot, separateCadencePackages } from "./exportManifest";
 import { extractArgs, tarExecutable } from "./tar";
 
 export interface TarballResponse {
@@ -370,6 +370,37 @@ export async function checkReleaseArtifacts(options: {
   );
 }
 
+/** The checkout's packages checked against the live registry at `version`: what a consumer installing it would hit. */
+export function checkLiveRelease(version: string, only: ReadonlySet<string> = new Set()): Promise<PackageVerdict[]> {
+  return checkReleaseArtifacts({
+    version,
+    packages: localPackages(only),
+    manifest: readManifest(),
+    registry: liveRegistry,
+    unpack: unpackWithTar,
+    importEntry: (url: string): Promise<unknown> => import(url),
+  });
+}
+
+/**
+ * The lockstep packages the registry does not serve at `version` yet, as `name@version`: no metadata,
+ * no such version, or no tarball. A registry that cannot be asked counts as not serving it yet.
+ */
+export async function unservedLockstep(version: string, registry: Registry = liveRegistry): Promise<string[]> {
+  const lockstep = new Set(publishedPackages.filter((pkg) => !separateCadencePackages.has(pkg)));
+  const names = localPackages(lockstep).map((pkg) => pkg.name);
+  const served = await Promise.all(
+    names.map(async (name) => {
+      try {
+        return publishDecision(await publishedState(registry, name, version)) === "skip";
+      } catch {
+        return false;
+      }
+    }),
+  );
+  return names.filter((_, index) => served[index] !== true).map((name) => `${name}@${version}`);
+}
+
 function argValue(args: readonly string[], name: string): string | undefined {
   const at = args.indexOf(name);
   return at < 0 ? undefined : args[at + 1];
@@ -379,8 +410,6 @@ async function main(): Promise<void> {
   const args = process.argv.slice(2);
   const only = new Set((argValue(args, "--only") ?? "").split(",").filter(Boolean));
   const packages = localPackages(only);
-  const unpack = unpackWithTar;
-  const importer = (url: string): Promise<unknown> => import(url);
 
   const published = argValue(args, "--published");
   const plan = argValue(args, "--plan");
@@ -411,9 +440,7 @@ async function main(): Promise<void> {
     process.exit(2);
   }
 
-  const manifest = readManifest();
-  const runChecks = (): Promise<PackageVerdict[]> =>
-    checkReleaseArtifacts({ version, packages, manifest, registry: liveRegistry, unpack, importEntry: importer });
+  const runChecks = (): Promise<PackageVerdict[]> => checkLiveRelease(version, only);
 
   // The publish workflow runs this in the step after `npm publish`, and npm serves a new version from
   // its CDN minutes after answering 202, so one immediate check reported a whole release as unpublished.
