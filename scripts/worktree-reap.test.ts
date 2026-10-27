@@ -4,7 +4,7 @@ import { join, resolve } from "node:path";
 import { tmpdir } from "node:os";
 import { randomUUID } from "node:crypto";
 
-import { livesUnderWorktrees, NEW_LANE_GRACE_MS, reap, selectReap, skipPaths, summarise, type ReapCandidate } from "./worktree-reap";
+import { livesUnderWorktrees, NEW_LANE_GRACE_MS, reap, removeTree, selectReap, skipPaths, summarise, type ReapCandidate } from "./worktree-reap";
 
 const MAIN = resolve("repo-root");
 const NOW = 1_800_000_000_000;
@@ -133,6 +133,22 @@ describe("removal asks the tree, not just the branch", () => {
     );
     expect(asked).toBe(0);
     expect(result.removed.map((row) => row.name)).toEqual(["gone"]);
+  });
+
+  test("a held tree is left whole and in use, and the trees after it still go", () => {
+    const deleted: string[] = [];
+    const io = {
+      rename: (from: string) => {
+        if (from.endsWith("a")) throw Object.assign(new Error("EBUSY: resource busy or locked"), { code: "EBUSY" });
+      },
+      removeDir: (path: string) => {
+        deleted.push(path);
+      },
+    };
+    const result = reap(plan(), { exists: () => true, isClean: () => true, remove: (path) => removeTree(path, io) });
+    expect(result.kept).toContainEqual({ name: "a", reason: "in use" });
+    expect(result.removed.map((row) => row.name)).toEqual(["b"]);
+    expect(deleted).toEqual([`${candidate("b").path}.reaping`]);
   });
 
   test("a tree that cannot be deleted is reported, not retried", () => {
