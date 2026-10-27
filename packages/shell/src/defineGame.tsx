@@ -7,7 +7,7 @@ import {
   type GameLoop,
 } from "@jgengine/core/game/defineGame";
 import { syncLifecyclePhase } from "@jgengine/core/game/gamePhase";
-import type { LightingConfig, WorldOverlayProps } from "@jgengine/core/game/playableGame";
+import type { GameCaptureConfig, LightingConfig, ProbeReadings, WorldOverlayProps } from "@jgengine/core/game/playableGame";
 import { offline } from "@jgengine/core/runtime/adapter";
 import type { GameContext, GameContextContent } from "@jgengine/core/runtime/gameContext";
 import type { AssetCatalog, ModelAssetRef } from "@jgengine/core/scene/assetCatalog";
@@ -28,7 +28,9 @@ type EngineFields<TAssetRef extends ModelAssetRef> = Omit<
   "loop" | "ui" | "multiplayer"
 > & { multiplayer?: GameDefinitionConfig<TAssetRef>["multiplayer"] };
 
-type PresentationFields = Omit<PlayableGame, "game" | "content" | "loop" | "GameUI"> & {
+type PresentationFields<TProbe extends ProbeReadings> = Omit<PlayableGame<TProbe>, "game" | "content" | "loop" | "GameUI" | "capture"> & {
+  /** How capture hosts reach play and named screens, and the numbers `capture.probe` reports to proof flows. */
+  capture?: GameCaptureConfig<TProbe>;
   content?: GameContextContent;
   loop?: Partial<GameLoop<GameContext>>;
   GameUI?: ComponentType;
@@ -44,8 +46,8 @@ type PresentationFields = Omit<PlayableGame, "game" | "content" | "loop" | "Game
   scenePathKinds?: readonly string[];
 };
 
-export type GameConfig<TAssetRef extends ModelAssetRef = ModelAssetRef> = EngineFields<TAssetRef> &
-  PresentationFields;
+export type GameConfig<TAssetRef extends ModelAssetRef = ModelAssetRef, TProbe extends ProbeReadings = ProbeReadings> = EngineFields<TAssetRef> &
+  PresentationFields<TProbe>;
 
 const noop = (): void => {};
 
@@ -118,9 +120,9 @@ const emptyUi: ComponentType = () => null;
  *
  * @capability define-game single public game-authoring path — compose systems, world, presentation, and authored scene in one definition
  */
-export function defineGame<TAssetRef extends ModelAssetRef = ModelAssetRef>(
-  config: GameConfig<TAssetRef>,
-): PlayableGame {
+export function defineGame<TAssetRef extends ModelAssetRef = ModelAssetRef, TProbe extends ProbeReadings = ProbeReadings>(
+  config: GameConfig<TAssetRef, TProbe>,
+): PlayableGame<TProbe> {
   const {
     content,
     loop,

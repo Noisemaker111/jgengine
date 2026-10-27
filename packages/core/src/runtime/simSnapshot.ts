@@ -58,16 +58,17 @@ export function createSimSnapshotRegistry(): SimSnapshotRegistry {
 }
 
 /**
- * The engine's own contributors for a context: replicated world state, the sim clock, the loop and pose
+ * The engine's own contributors for a context: authoritative world state with every system save, the sim clock, the loop and pose
  * history, and the rng cursor when `ctx.rng` is a seeded stream. Games register theirs on the same registry.
  */
 export function createContextSimSnapshot(ctx: GameContext): SimSnapshotRegistry {
   const registry = createSimSnapshotRegistry();
-  // ctx.snapshot() hands back live rows; clone both ways so a captured snapshot stays frozen while the sim keeps running.
+  // The authoritative state, save-only modules included: a system's declared `save` round-trips with the
+  // world, which the replication view (`ctx.snapshot()`) leaves out. Both directions detach their rows.
   registry.register({
     id: "world",
-    capture: () => structuredClone(ctx.snapshot()),
-    restore: (data) => ctx.hydrate(structuredClone(data)),
+    capture: () => ctx.state(),
+    restore: (data) => ctx.restore(data as ReturnType<GameContext["state"]>),
   });
   registry.register({ id: "projectiles", capture: ctx.scene.entity.projectileState, restore: ctx.scene.entity.restoreProjectiles });
   registry.register({ id: "environment", capture: ctx.environment.snapshot, restore: ctx.environment.restore });

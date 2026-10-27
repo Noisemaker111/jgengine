@@ -2197,6 +2197,11 @@
 - `yawForward` (function): function yawForward(yaw: number): YawVectorXZ — XZ forward direction of a yaw (`rotationY`): `(sin yaw, cos yaw)`.
 - `yawRight` (function): function yawRight(yaw: number): YawVectorXZ — XZ screen-right of a yaw — `forward × up` with up = +Y: `(-cos yaw, sin yaw)`.
 
+## @jgengine/core/movement/teleport
+
+- `TeleportTarget` (interface): interface TeleportTarget — Where {@link teleportPlayer} puts a player: a ground point, an optional height (default the ground there) and an optional facing.
+- `teleportPlayer` (function): function teleportPlayer(ctx: GameContext, userId: string, to: TeleportTarget): string | null — Move a player to a point in one frame: the body they control (their mount while riding, so the rider comes along on the seat), facing `yaw`, with the camera swung round behind. The walk controller's carried velocity and capsule are dropped so the next step starts from rest at the new spot instead of pulling the body back, and the renderer snaps rather than gliding across the map. Returns the id of the entity that moved, or `null` when the player has no body yet.
+
 ## @jgengine/core/movement/voxelController
 
 - `DEFAULT_VOXEL_DIMS` (const): const DEFAULT_VOXEL_DIMS: VoxelPlayerDims — ⚠ undocumented

@@ -1316,6 +1316,10 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `defineTargetedOrder` (function) · `import { defineTargetedOrder } from "@jgengine/core/world"`
 
+## teleport-player — move a player (or the mount they ride) to a point and face their camera along a heading
+
+- `teleportPlayer` (function) · `import { teleportPlayer } from "@jgengine/core/movement/teleport"`
+
 ## terrain-coast — shape any terrain into an island landmass with beaches, bays and a sea floor
 
 - `withCoast` (function) · `import { withCoast } from "@jgengine/core/terrain/terrain"`

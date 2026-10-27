@@ -3,14 +3,13 @@ import { createHeadlessRunner } from "@jgengine/core/runtime/headlessRunner";
 import { closeTopPanel, createPanelState, isOpen, panelByHotkey, togglePanel } from "@jgengine/core/ui/panelModel";
 
 import { game } from "../../game.config";
-import { content } from "../content";
 import { session } from "../session";
 import { park } from "../park";
 import { DAY_LENGTH } from "../catalog";
 import { seedGuests } from "../sim/guests";
 import { BUILD_PANEL, PARK_PANELS } from "../ui/panels";
 
-const runner = () => createHeadlessRunner({ definition: game.game, content, loop: game.game.loop, maxStepSeconds: 1 });
+const runner = () => createHeadlessRunner({ game, maxStepSeconds: 1 });
 
 describe("the build palette is a toggleable window", () => {
   test("starts open, B toggles it, Escape closes it", () => {

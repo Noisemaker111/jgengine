@@ -2,7 +2,6 @@ import { afterEach, beforeEach, expect, test } from "bun:test";
 import { createHeadlessRunner } from "@jgengine/core/runtime/headlessRunner";
 
 import { game } from "../game.config";
-import { content } from "./content";
 import { DAY_LENGTH } from "./catalog";
 import { cellFor, LOAN, park } from "./park";
 import { accessOf } from "./build/links";
@@ -29,7 +28,7 @@ afterEach(() => {
  * bank, and let the day run until guests ride and say what they think.
  */
 test("a player builds and connects a ride, hires staff, researches the mechanic, borrows, and reads guest thoughts", () => {
-  const runner = createHeadlessRunner({ definition: game.game, content, loop: game.game.loop, maxStepSeconds: 1 });
+  const runner = createHeadlessRunner({ game, maxStepSeconds: 1 });
   runner.ui.invoke("park.start");
   runner.ctx.time.hydrate({ ...runner.ctx.time.snapshot(), now: DAY_LENGTH * 0.3, paused: false });
   const w = park.of(runner.ctx);

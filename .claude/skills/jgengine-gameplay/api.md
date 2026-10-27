@@ -883,7 +883,7 @@
 - `FirstPersonCollisionConfig` (interface): interface FirstPersonCollisionConfig — Clearance tuning for the first-person camera's collision pull-in.
 - `FlightConfig` (interface): interface FlightConfig — Free-flight families moved into the walk controller so one seam covers ground + air — creative/spectator/noclip/hover are weightless, aircraft, rotorcraft and rockets use `physics/aircraftDynamics`.
 - `GameCameraConfig` (interface): interface GameCameraConfig — Camera tuning for the shell's rig stack: pick the rig via `rig`, then tune it through its matching config block. All fields optional — the default is the third-person orbit rig.
-- `GameCaptureConfig` (interface): interface GameCaptureConfig — How a game makes itself screenshottable: the commands that reach live play or a named screen, the framings worth re-capturing, and the progress metrics a bot playtest samples. Declaring these once is what lets a capture host reproduce a view instead of re-deriving it by hand every run.
+- `GameCaptureConfig` (interface): interface GameCaptureConfig<TProbe extends ProbeReadings = ProbeReadings> — How a game makes itself screenshottable: the commands that reach live play or a named screen, the framings worth re-capturing, and the progress metrics a bot playtest samples. Declaring these once is what lets a capture host reproduce a view instead of re-deriving it by hand every run.
 - `GameCaptureView` (interface): interface GameCaptureView — How a screenshot host reaches live gameplay in this game — the data behind `shoot --mode play`.
 - `HemisphereLightingConfig` (interface): interface HemisphereLightingConfig { skyColor?: string; groundColor?: string; intensity?: number } — ⚠ undocumented
 - `InspectionCameraConfig` (interface): interface InspectionCameraConfig — Model-viewer / inspection rig (#207.7) — orbit + pan + anchored zoom around a fixed point, never reads player input.
@@ -910,12 +910,13 @@
 - `NoticePresentationConfig` (interface): interface NoticePresentationConfig extends NoticeFeedConfig — How the shell presents `ctx.game.notices`; every field is optional.
 - `ObjectStyle` (interface): interface ObjectStyle { color?: string; opacity?: number; hidden?: boolean } — ⚠ undocumented
 - `ObserverCameraConfig` (interface): interface ObserverCameraConfig — Detached spectator/photo cam (#120) — binds to any entity or fixed point, never reads player input.
-- `PlayableGameContract` (interface): interface PlayableGameContract<TUi = unknown, TWorldOverlay = unknown, TRenderEntity = never, TRenderObject = never, TViewmodel = unknown, TOverlay = TWorldOverlay> — The renderer-agnostic game contract, generic over its UI and render types; shell's `PlayableGame` fills them with React components.
+- `PlayableGameContract` (interface): interface PlayableGameContract<TUi = unknown, TWorldOverlay = unknown, TRenderEntity = never, TRenderObject = never, TViewmodel = unknown, TOverlay = TWorldOverlay, TProbe extends ProbeReadings = ProbeReadings> — The renderer-agnostic game contract, generic over its UI and render types; shell's `PlayableGame` fills them with React components.
 - `PlayerFovConfig` (interface): interface PlayerFovConfig — Player-facing FOV preference applied across every perspective camera rig. Orthographic projections ignore it.
 - `PlayerMovementConfig` (interface): interface PlayerMovementConfig — Movement-control levers for the shell-driven local player walk controller.
 - `PointLightingConfig` (interface): interface PointLightingConfig — A bounded dynamic point light in world space.
 - `PointerConfig` (interface): interface PointerConfig — Mouse/touch pointer bindings for `defineGame({ pointer })`.
 - `PresentationEffectsConfig` (interface): interface PresentationEffectsConfig — Per-channel combat presentation toggles for the 3D shell canvas. Missing keys default to enabled when the parent `presentationEffects` is an object.
+- `ProbeReadings` (type): type ProbeReadings = Readonly<Record<string, number>> — What a game's `capture.probe` reports: named numbers, read by proof flows and the playtest sampler.
 - `RtsCameraConfig` (interface): interface RtsCameraConfig extends TopDownCameraConfig — Free-pan / edge-scroll RTS rig (#24) — pan/rotate/zoom independent of any avatar.
 - `ShoulderCameraConfig` (interface): interface ShoulderCameraConfig — Over-the-shoulder combat rig (#25) — offset, ADS, shoulder swap, decoupled reticle.
 - `SideScrollCameraConfig` (interface): interface SideScrollCameraConfig — Fixed lateral 2.5D follow (side-on platformer cam): the camera sits perpendicular to the travel axis, tracks the followed entity, and never reads player look input.
@@ -1417,7 +1418,7 @@
 - `PhysicsConfig` (interface): interface PhysicsConfig — World gravity and jump tuning, plus the optional rigid-body backend and character capsule.
 - `PingCategory` (type): type PingCategory = string — A ping category id, such as `enemy`, `loot`, `location` or `danger`.
 - `PingSystem` (interface): interface PingSystem — Classify, build and broadcast pings as map markers shared with the party.
-- `PlayableGameContract` (interface): interface PlayableGameContract<TUi = unknown, TWorldOverlay = unknown, TRenderEntity = never, TRenderObject = never, TViewmodel = unknown, TOverlay = TWorldOverlay> — The renderer-agnostic game contract, generic over its UI and render types; shell's `PlayableGame` fills them with React components.
+- `PlayableGameContract` (interface): interface PlayableGameContract<TUi = unknown, TWorldOverlay = unknown, TRenderEntity = never, TRenderObject = never, TViewmodel = unknown, TOverlay = TWorldOverlay, TProbe extends ProbeReadings = ProbeReadings> — The renderer-agnostic game contract, generic over its UI and render types; shell's `PlayableGame` fills them with React components.
 - `PointerAxisState` (interface): interface PointerAxisState { x: number; y: number; active: boolean } — ⚠ undocumented · used by `normalizePointerToAxis`: Normalize client coordinates against a surface rect into a `PointerAxisState`, clamped to `[-1, 1]` per axis.
 - `PointerConfig` (interface): interface PointerConfig — Mouse/touch pointer bindings for `defineGame({ pointer })`.
 - `PointerHit` (interface): interface PointerHit — Renderer-free result of a screen→world raycast. The shell's pointer service produces this from the cursor; core-side gameplay (item.use aim, click-to-move, ground-target abilities, pings) consumes it without touching three.js.

@@ -743,12 +743,15 @@ export interface GameCaptureView {
   settleMs?: number;
 }
 
+/** What a game's `capture.probe` reports: named numbers, read by proof flows and the playtest sampler. */
+export type ProbeReadings = Readonly<Record<string, number>>;
+
 /**
  * How a game makes itself screenshottable: the commands that reach live play or a named screen, the
  * framings worth re-capturing, and the progress metrics a bot playtest samples. Declaring these once
  * is what lets a capture host reproduce a view instead of re-deriving it by hand every run.
  */
-export interface GameCaptureConfig {
+export interface GameCaptureConfig<TProbe extends ProbeReadings = ProbeReadings> {
   /**
    * Commands run (in order, via `ctx.game.commands.run`) right after boot when a capture host requests the
    * play screen — the same commands the start-menu buttons dispatch. A bare string runs with a default input;
@@ -775,7 +778,7 @@ export interface GameCaptureConfig {
   /** Extra milliseconds the capture host waits after `play` commands before taking the play-mode screenshot — cover an intro cinematic or spawn-in fade. Default 2500. */
   settleMs?: number;
   /** Bot-playtest read hook: maps live game state to a flat vector of numeric progress metrics the `drive --playtest` harness samples over time (e.g. `{ x, z, score, phase }`). Genre-agnostic — "progress" is whatever the game reports; the engine stays neutral. The harness watches these numbers move under scripted input: any metric changing beyond an epsilon counts as forward progress, all metrics flat past the softlock threshold under active input flags a softlock. Return every value that should count as advancing; omit to opt the game out of the playtest rung. */
-  probe?: (ctx: GameContext) => Record<string, number>;
+  probe?: (ctx: GameContext) => TProbe;
 }
 
 /** The renderer-agnostic game contract, generic over its UI and render types; shell's `PlayableGame` fills them with React components. */
@@ -786,6 +789,7 @@ export interface PlayableGameContract<
   TRenderObject = never,
   TViewmodel = unknown,
   TOverlay = TWorldOverlay,
+  TProbe extends ProbeReadings = ProbeReadings,
 > {
   game: GameDefinition;
   content: GameContextContent;
@@ -822,7 +826,7 @@ export interface PlayableGameContract<
   /** Camera tuning (perspective, orbit, first-person) for the dev game player shell. */
   camera?: GameCameraConfig;
   /** Screenshot-host recipe for reaching live gameplay past a start menu (`shoot --mode play` runs `capture.play` automatically). Any game with a start/title screen declares this. */
-  capture?: GameCaptureConfig;
+  capture?: GameCaptureConfig<TProbe>;
   /** Cast/receive shadows across the scene (R3F Canvas shadow pass). Default true. */
   shadows?: boolean;
   /** Per-quality renderer budgets; omitted tiers use {@link DEFAULT_GRAPHICS_PROFILES}. */

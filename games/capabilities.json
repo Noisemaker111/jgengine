@@ -9926,6 +9926,17 @@
       "intent": "research nodes with prerequisites that unlock recipes"
     },
     {
+      "id": "teleport-player",
+      "packages": [
+        "@jgengine/core"
+      ],
+      "module": "@jgengine/core/movement/teleport",
+      "domain": "movement",
+      "gameFacing": false,
+      "probe": null,
+      "intent": "move a player (or the mount they ride) to a point and face their camera along a heading"
+    },
+    {
       "id": "terrain-coast",
       "packages": [
         "@jgengine/core"

@@ -5,7 +5,6 @@ import { GUEST_KINDS } from "./entities/guests/catalog";
 import { guestAgentState } from "./agents";
 import { MILESTONES } from "./milestones";
 import { decodeSave, snapshotPark, type ParkSave } from "./persistence";
-import { content } from "./content";
 import { GUEST_PHASES, type GuestPhase, type GuestState } from "./session";
 import type { SaveStateAxis, SaveStateGate } from "../../../shared/saveStates";
 
@@ -21,7 +20,7 @@ const FAR_FUTURE = 1_000_000_000;
 
 /** The base save: a park this build started and saved, with no guests or scenario in it. */
 function base(): string {
-  const runner = createHeadlessRunner({ definition: game.game, content, loop: game.game.loop, maxStepSeconds: 1 });
+  const runner = createHeadlessRunner({ game, maxStepSeconds: 1 });
   runner.ui.invoke("park.start");
   return JSON.stringify(snapshotPark(runner.ctx));
 }

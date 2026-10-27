@@ -1,6 +1,7 @@
 import { describe, expect, test } from "bun:test";
 
 import { defineGameDefinition } from "../game/defineGame";
+import { defineSystem } from "../game/defineSystem";
 import { createAssetCatalog } from "../scene/assetCatalog";
 import { environment, grass, terrain } from "../world/features";
 import { summarizeEnvironment } from "../world/environmentSummary";
@@ -174,10 +175,79 @@ describe("createHeadlessRunner", () => {
     expect(runner.ctx.scene.entity.get("p1")!.position[1]).toBe(startY + 1);
   });
 
-  test("clamps a long stall to maxStepSeconds", () => {
-    const { runner } = boot();
-    const gameDt = runner.step(10, { held: [] });
-    expect(gameDt).toBeLessThanOrEqual(0.05);
+  test("a long step advances all of its time in frames no longer than maxStepSeconds", () => {
+    const frames: number[] = [];
+    const game = defineGameDefinition({ name: "Long step" });
+    const runner = createHeadlessRunner({ definition: game, loop: { onTick(_ctx, dt) { frames.push(dt); } } });
+    expect(runner.step(10, { held: [] })).toBeCloseTo(10, 9);
+    expect(runner.ctx.time.now()).toBeCloseTo(10, 9);
+    expect(frames).toHaveLength(200);
+    expect(Math.max(...frames)).toBeLessThanOrEqual(0.05 + 1e-12);
+  });
+
+  test("a fixed-rate game gets every tick of a long step, past the catch-up cap", () => {
+    let ticks = 0;
+    const game = defineGameDefinition({ name: "Fixed long step", simulation: { hz: 60 } });
+    const runner = createHeadlessRunner({ definition: game, maxStepSeconds: 5, loop: { onTick() { ticks += 1; } } });
+    runner.step(5);
+    expect(ticks).toBe(300);
+    expect(runner.tick()).toBe(300);
+  });
+
+  test("the walk controller runs by default for a game that binds walk keys, and stays off for one that does not", () => {
+    const spawn = { onNewPlayer(ctx: GameContext) { ctx.scene.entity.spawn("hero", { id: ctx.player.userId, position: [0, 0, 0] }); } };
+    const walking = createHeadlessRunner({ definition: defineGameDefinition({ name: "Walks", input: { moveForward: ["KeyW"] } }), content, loop: spawn });
+    walking.step(0.5, { held: ["moveForward"] });
+    expect(walking.ctx.scene.entity.get("player")!.position[2]).toBeGreaterThan(0.5);
+    const still = createHeadlessRunner({ definition: defineGameDefinition({ name: "Moves itself" }), content, loop: spawn });
+    still.step(0.5, { held: ["moveForward"] });
+    expect(still.ctx.scene.entity.get("player")!.position[2]).toBe(0);
+  });
+
+  test("the game's own camera turn steers the walk, as the shell's rig does", () => {
+    const game = defineGameDefinition({ name: "Turn", input: { moveForward: ["KeyW"] }, physics: { gravity: 0, jumpVelocity: 0 } });
+    const runner = createHeadlessRunner({ definition: game, content, loop: { onNewPlayer(ctx) { ctx.scene.entity.spawn("hero", { id: ctx.player.userId, position: [0, 0, 0] }); } } });
+    runner.ctx.camera.turnTo(Math.PI / 2);
+    runner.step(0.5, { held: ["moveForward"] });
+    const at = runner.ctx.scene.entity.get("player")!.position;
+    expect(runner.look.heading).toBeCloseTo(Math.PI / 2, 9);
+    expect(at[0]).toBeGreaterThan(0.5);
+    expect(Math.abs(at[2])).toBeLessThan(1e-6);
+  });
+
+  test("snapshot and restore carry a system's own save, not only the replicated world", () => {
+    let count = 0;
+    const counter = defineSystem({
+      id: "counter",
+      tick: { type: "frame" },
+      update() { count += 1; },
+      save: { key: "counter", snapshot: () => count, hydrate: (data) => { count = data as number; } },
+    });
+    const runner = createHeadlessRunner({ definition: defineGameDefinition({ name: "Saves", systems: [counter] }) });
+    runner.step(0.1);
+    const saved = runner.snapshot();
+    const at = count;
+    runner.step(0.5);
+    expect(count).toBeGreaterThan(at);
+    runner.restore(saved);
+    expect(count).toBe(at);
+  });
+
+  test("a whole playable game boots with its own content, loop and movement", () => {
+    const definition = defineGameDefinition({ name: "Playable", input: { moveForward: ["KeyW"] }, physics: { gravity: 0, jumpVelocity: 0 } });
+    const runner = createHeadlessRunner({
+      game: {
+        game: definition,
+        content,
+        loop: { onInit() {}, onNewPlayer(ctx) { ctx.scene.entity.spawn("hero", { id: ctx.player.userId, position: [0, 0, 0] }); }, onTick() {}, onReset() {}, onDispose() {} },
+        GameUI: null,
+        movement: { canSprint: () => false },
+      },
+    });
+    runner.step(0.5, { held: ["moveForward"] });
+    const walked = runner.ctx.scene.entity.get("player")!;
+    expect(walked.movement?.walkSpeed).toBe(MOVE_SPEED);
+    expect(walked.position[2]).toBeGreaterThan(0.5);
   });
 
   test("the game's world scene populates headlessly", () => {

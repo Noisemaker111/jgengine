@@ -700,7 +700,7 @@ If you catch yourself writing a \`z-index\` for a HUD window, a \`keydown\` list
 When a shared primitive misbehaves or lacks a reusable contract, **file a short upstream issue** at https://github.com/Noisemaker111/jgengine/issues. Check the installed version and existing fixes first. Do not treat a game-local replacement as the finished solution. Engine contributors fix the package and verify its adopter; independent projects track the gap and the published version that can replace any temporary adapter. Include:
 
 - **What** you were doing and what you expected.
-- **Cause** — the underlying behavior you traced, precisely. e.g. *"\`HeadlessRunner.step(dt)\` clamps game-dt to \`maxStepSeconds\` (default 0.05s) regardless of the dt passed, so time-based tests need ~20 steps per second of game-time."*
+- **Cause** — the underlying behavior you traced, precisely. e.g. *"a teleport while riding moved the rider, and the mount's seat carried them straight back, because the move targeted the rider instead of the body the player controls."*
 - **Why** it bit you — the false negative, wrong result, wasted time, or blocked path it caused.
 - **How** to reproduce (smallest steps) and, if you can see it, a suggested fix or the missing seam.
 - A **screenshot** whenever the problem is visual.
