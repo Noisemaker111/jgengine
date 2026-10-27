@@ -13,14 +13,3 @@ core, shell and ws type-check with noUncheckedIndexedAccess, exactOptionalProper
 
 - spreading a game's place physics over the base no longer erases base gravity or jump velocity with an undefined.
 - the four ActionCodes readers (camera, gamepad, touch, rebind) share one isCodeList / allActionCodes / primaryActionCodes instead of four copies with casts.
-
-### Removed
-
-- `@jgengine/core/boot/assetPrefetch` no longer exports `AssetPrefetch`, `PrefetchState`, `pagePrefetch`.
-- `@jgengine/core/boot/BootDirector.draw` no longer exports `BootSignals`, `ENTER_QUIET_MS`.
-- `@jgengine/core/boot/bootScreen.view` no longer exports `bootLoadingAreas`, `useBootStep`.
-- `@jgengine/core/boot/bootSequence` no longer exports `BOOT_SEQUENCE_ATTRIBUTE`, `BOOT_STEPS`, `BootSequence`, `BootSequenceState`, `BootStep`, `pageBoot`.
-- `@jgengine/core/boot/prefetchTier` no longer exports `PrefetchItem`, `PrefetchTier`, `orderPrefetch`.
-- `@jgengine/core/devtools/frameBreakdown` no longer exports `DrawCost`, `FrameBreakdownRecord`, `FrameBreakdownSummary`, `HITCH_MS`, `Hitch`, `NamedCost`, `Spread`.
-- `@jgengine/core/devtools/frameBreakdown.draw` no longer exports `BreakdownRenderer`, `BreakdownStore`, `FrameBreakdown`, `measureComposerPasses`.
-- `@jgengine/core/devtools/types` no longer exports `LastFrameSample`.
