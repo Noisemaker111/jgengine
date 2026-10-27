@@ -246,4 +246,6 @@ export function runCli(argv: string[], root: string, log: (line: string) => void
   return result.failures === 0 ? 0 : 1;
 }
 
-if (import.meta.main) process.exit(runCli(process.argv.slice(2), process.cwd(), console.log));
+// The games folder is this script's parent, wherever it is run from: `bun run check` runs it from the
+// repository root, where reading the working directory found no games and passed.
+if (import.meta.main) process.exit(runCli(process.argv.slice(2), join(import.meta.dir, ".."), console.log));
