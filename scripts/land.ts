@@ -250,7 +250,8 @@ export interface PrBody {
  * lane left in the shared directory is named and skipped, so the body never claims work the diff lacks.
  */
 export function landBody(options: {
-  args: Pick<LandArgs, "base" | "bodyFile">;
+  /** `messages`: this run's `-m` lines, which rewrote the note, so a reused PR's body is rewritten too. */
+  args: Pick<LandArgs, "base" | "bodyFile"> & { messages?: readonly string[] };
   branch: string;
   summary: string;
   read?: (path: string) => string;
@@ -273,7 +274,7 @@ export function landBody(options: {
     log(`ignoring changes/${basename(file.path)}: this branch's diff against origin/${args.base} does not add it`);
   }
   const fragment = pickFragment(own, branch);
-  if (fragment !== null) return { text: fragment.text.trim(), explicit: false };
+  if (fragment !== null) return { text: fragment.text.trim(), explicit: (args.messages?.length ?? 0) > 0 };
 
   const subjects = (options.subjects ?? (() => branchSubjects(args.base)))();
   const commits = subjectsBody(subjects);

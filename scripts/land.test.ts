@@ -121,6 +121,17 @@ const OWN: FragmentFile = {
   mtimeMs: 100,
 };
 
+test("a note this run rewrote from -m replaces a reused PR's body; a kept note does not", () => {
+  const options = {
+    branch: "agent/lane-x",
+    summary: "the last commit",
+    files: () => [OWN],
+    added: () => ["changes/agent-lane-x.md"],
+  };
+  expect(landBody({ ...options, args: { base: "beta", messages: ["The fragment."] } }).explicit).toBe(true);
+  expect(landBody({ ...options, args: { base: "beta", messages: [] } }).explicit).toBe(false);
+});
+
 test("a fragment another lane left in changes/ never reaches this PR's body", () => {
   const logged: string[] = [];
   const body = landBody({
