@@ -11,6 +11,7 @@ html,body,#root{height:100%;margin:0;background:#24444c}
 .bw-tickets>button{flex-shrink:0}
 .bw-camera{display:grid;grid-template-columns:repeat(3,44px);gap:4px}
 .bw-status .jgk-paper-meter{margin-top:6px}
+.bw-meters{display:grid;grid-template-columns:1fr 1fr;gap:12px}
 .bw-line{display:flex;justify-content:space-between;align-items:center;gap:8px}
 .bw-stepper{display:inline-flex;align-items:center;gap:2px}.bw-stepper b{min-width:36px;text-align:center}
 .bw-hud [data-bad]{color:var(--kit-bad)}
@@ -33,7 +34,8 @@ html,body,#root{height:100%;margin:0;background:#24444c}
 .bw-lab{display:grid;gap:4px;margin-top:10px}.bw-lab h3{margin:0;font-size:12px;letter-spacing:.1em;text-transform:uppercase;color:var(--kit-pencil)}
 .bw-thoughts,.bw-said{list-style:none;margin:8px 0 0;padding:0;display:grid;gap:2px;font-size:13px;font-style:italic}
 .bw-thoughts li{color:var(--kit-pencil)}.bw-thoughts li[data-latest]{color:var(--kit-ink);font-weight:700}
-.bw-said li{display:flex;justify-content:space-between;color:var(--kit-good)}.bw-said li[data-bad]{color:var(--kit-bad)}
+.bw-said li{display:flex;justify-content:space-between;color:var(--kit-good);line-height:18px;white-space:nowrap;overflow:hidden}.bw-said li[data-bad]{color:var(--kit-bad)}.bw-said li[data-quiet]{color:var(--kit-pencil)}
+.bw-said{min-height:58px}
 @media(max-width:650px){
   .bw-goal ul,.bw-wide{display:none!important}
   .bw-tickets{flex-wrap:nowrap;justify-content:start;overflow-x:auto}

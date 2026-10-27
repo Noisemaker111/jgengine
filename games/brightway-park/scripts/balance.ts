@@ -1,8 +1,9 @@
 /**
- * The first 30 minutes of play at 1x, headless: a steady player who opens the park and, every half
- * minute, builds the next ride or shop it can afford while keeping a cash reserve, and keeps the lab
- * busy when the till allows. Prices stay at their defaults.
- * Prints the till, takings and running costs minute by minute and the cash per minute.
+ * The first 30 minutes of a new game at 1x, headless: a steady player who starts the first scenario,
+ * opens the gate once a ride runs, hires a mechanic, and every half minute builds the next ride or
+ * shop it can afford while keeping a cash reserve, and keeps the lab busy when the till allows.
+ * Prices stay at their defaults. Prints the till, takings and running costs minute by minute, the
+ * cash per minute and how the scenario stands.
  *
  *   bun scripts/balance.ts [minutes=30]
  */
@@ -12,6 +13,7 @@ import { BUILDABLES, BUILD_IDS } from "../src/game/objects/catalog";
 import { LOT, park } from "../src/game/park";
 import { session } from "../src/game/session";
 import { connectPark } from "../src/game/build/links";
+import { FIRST_SCENARIO } from "../src/game/scenarios";
 
 const records = new Map<string, string>();
 Object.defineProperty(globalThis, "localStorage", { configurable: true, value: {
@@ -22,6 +24,8 @@ Object.defineProperty(globalThis, "localStorage", { configurable: true, value: {
 
 const minutes = Number(process.argv[2] ?? 30);
 const runner = createHeadlessRunner({ game, maxStepSeconds: 1 });
+// A new game, as the menu starts one: the first scenario on the empty lot.
+runner.ui.invoke("park.scenario", { id: FIRST_SCENARIO });
 runner.ui.invoke("park.start");
 const w = park.of(runner.ctx);
 const buildable = BUILD_IDS.filter((id) => BUILDABLES[id]!.category === "ride" || BUILDABLES[id]!.category === "stall");
@@ -38,7 +42,9 @@ const tryResearch = () => {
 const tryBuild = () => {
   const cash = w.num("park.cash") - RESERVE;
   // A steady player hires a handyman once the paths start to look dirty.
-  const wanted = w.num("park.litter") > 15 && w.num("n.staff_janitor") < 1 + Math.floor(session.guests.size / 80) ? ["staff_janitor"] : [];
+  // A steady player hires a mechanic once a ride runs, and a handyman once the paths start to look dirty.
+  const wanted = w.num("park.rides") > 0 && w.num("n.staff_mechanic") < 1 ? ["staff_mechanic"]
+    : w.num("park.litter") > 15 && w.num("n.staff_janitor") < 1 + Math.floor(session.guests.size / 80) ? ["staff_janitor"] : [];
   for (const kind of wanted) for (let row = 4; row < LOT.rows - 4; row += 2) for (let col = 4; col < LOT.cols - 4; col += 2) {
     if (wanted.length === 0 || w.canPlace(kind, { cell: [col, row] }) !== null) continue;
     if (runner.ctx.game.commands.run("brightway.place", { kind, cell: [col, row] }).status === "applied") { built += 1; spentOnBuilds += BUILDABLES[kind]!.cost; wanted.length = 0; }
@@ -64,6 +70,7 @@ const tryBuild = () => {
 const start = w.num("park.cash");
 let lastCash = start;
 let takings = 0;
+let peakGuests = 0;
 let lastRevenue = w.num("park.revenue_today");
 let lastSpent = w.num("park.spent_today");
 let lastAdmits = w.num("park.guests_today");
@@ -74,6 +81,8 @@ for (let m = 1; m <= minutes; m += 1) {
   let admitsThisMinute = 0;
   for (let s = 0; s < 60; s += 1) {
     if (s % 30 === 0) { tryBuild(); tryResearch(); }
+    // The gate is the player's: open it once a ride runs.
+    if (w.fact("park.gate") !== true && w.canAct("open_gate") === null) runner.ctx.game.commands.run("brightway.act", { action: "open_gate" });
     runner.step(1);
     const rev = w.num("park.revenue_today");
     const delta = rev >= lastRevenue ? rev - lastRevenue : rev;
@@ -82,6 +91,7 @@ for (let m = 1; m <= minutes; m += 1) {
     const ad = w.num("park.guests_today"); admitsThisMinute += ad >= lastAdmits ? ad - lastAdmits : ad; lastAdmits = ad;
   }
   takings += takingsThisMinute;
+  peakGuests = Math.max(peakGuests, w.num("park.guests"));
   const cash = w.num("park.cash");
   console.log(`${String(m).padStart(3)} ${String(Math.round(cash)).padStart(6)} ${String(Math.round(cash - lastCash)).padStart(7)} ${String(Math.round(takingsThisMinute)).padStart(11)} ${String(Math.round(spentThisMinute)).padStart(11)} ${String(admitsThisMinute).padStart(6)} ${String(session.guests.size).padStart(7)} ${String(Math.round(w.num("park.rating"))).padStart(6)} ${String(w.num("n.ride_carousel") >= 0 ? Object.values(w.instances()).filter((i) => BUILDABLES[i.kind]?.ride).length : 0).padStart(5)} ${String(built).padStart(5)}`);
   lastCash = cash;
@@ -91,3 +101,5 @@ console.log(`\nstart $${Math.round(start)}  end $${Math.round(end)}  built ${bui
 console.log(`till change per minute: $${Math.round((end - start) / minutes)}`);
 console.log(`operating cash per minute (till change + build spend): $${Math.round((end - start + spentOnBuilds) / minutes)}`);
 console.log(`takings per minute: $${Math.round(takings / minutes)}`);
+const result = w.fact("scenario.result");
+console.log(`scenario: ${result === "" ? "running" : String(result)}; most guests in the park ${peakGuests}; best rating ${Math.round(w.num("park.peak"))}; loan owed $${w.num("park.loan_owed")}`);

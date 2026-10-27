@@ -29,11 +29,11 @@
         "issue": 2478
       },
       "loan-schedule": {
-        "reason": "The park economy has loans: one repays a flat $703 a night from the park world, not a computed schedule; adopt the shared loan book schedule in minor units.",
+        "reason": "The park owes the bank from day one and pays 4% of what it owes as interest at each month's close, with no repayment schedule; adopt the shared loan book schedule in minor units.",
         "issue": 2479
       },
       "loans": {
-        "reason": "The loan is an economy world action (take $6,000) with a nightly loan_due ripple of a flat $703 for 10 nights; adopt the shared loan book for interest-bearing loans.",
+        "reason": "The loan is park world facts and actions: a new park owes $10,000, borrows or repays in $1,000 steps up to $25,000 (take_loan, repay_loan), and an interest ripple charges 4% a month; adopt the shared loan book for interest-bearing loans.",
         "issue": 2479
       },
       "visitor-population": {
