@@ -139,10 +139,10 @@ interface DeriveWorldSceneSummaryOptions {
   hardwareInventory: HardwareInventory;
   computeAssignments?: ComputeAssignmentMap | null | undefined;
   servingMode?: ServingModeId | null | undefined;
-  ownerAvatarId?: string | null;
-  dataTokens?: number;
-  modelCatalog?: Record<string, { isUnlocked?: boolean }> | null;
-  gameCreatedAt?: number;
+  ownerAvatarId?: string | null | undefined;
+  dataTokens?: number | undefined;
+  modelCatalog?: Record<string, { isUnlocked?: boolean }> | null | undefined;
+  gameCreatedAt?: number | undefined;
   powerCapacityKw: number;
 }
 

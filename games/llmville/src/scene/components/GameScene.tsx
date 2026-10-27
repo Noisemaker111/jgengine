@@ -76,7 +76,7 @@ interface GameSceneProps {
   placementPreview: BuildPlacementPreview | null;
   interactionHint?: InteractionHint | null | undefined;
   interactionTarget?: InteractionTarget | null | undefined;
-  interactionPrompt?: GamePositionedPrompt | null;
+  interactionPrompt?: GamePositionedPrompt | null | undefined;
   tutorialRack: PlacedRack | null;
   showTutorialRackArrow: boolean;
   powerDrawKw: number;
@@ -202,7 +202,7 @@ function GameWorldContent({
   powerCapacityKw: number;
   interactionHint?: InteractionHint | null | undefined;
   interactionTarget?: InteractionTarget | null | undefined;
-  interactionPrompt?: GamePositionedPrompt | null;
+  interactionPrompt?: GamePositionedPrompt | null | undefined;
 }) {
   const placementDraft =
     buildPlacementModeActive && placementDraftItemId !== null
