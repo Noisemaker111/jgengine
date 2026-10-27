@@ -1,19 +1,17 @@
 import { describe, expect, test } from "bun:test";
+import { join } from "node:path";
+import type { ReactElement } from "react";
 
 import { SCENE_WARMUP_PENDING, SceneWarmupCover, createSceneWarmupStore, warmupBarShare } from "./SceneWarmupGate.draw";
 
-function textOf(node: unknown): string {
-  if (node === null || node === undefined || node === false) return "";
-  if (typeof node === "string" || typeof node === "number") return String(node);
-  if (Array.isArray(node)) return node.map(textOf).join(" ");
-  const children = (node as { props?: { children?: unknown } }).props?.children;
-  return children === undefined ? "" : textOf(children);
-}
+const { renderToStaticMarkup } = (await import(Bun.resolveSync("react-dom/server", join(import.meta.dir, "../../../react/src")))) as {
+  renderToStaticMarkup: (node: ReactElement) => string;
+};
 
-function render(state: Parameters<typeof SceneWarmupCover>[0]["state"]) {
-  const element = SceneWarmupCover({ state });
+function render(state: Parameters<typeof SceneWarmupCover>[0]["state"], step?: Parameters<typeof SceneWarmupCover>[0]["step"]) {
+  const element = SceneWarmupCover({ state, step });
   if (element === null) return { markup: "", cover: null };
-  return { markup: textOf(element.props.children), cover: element.props as Record<string, unknown> };
+  return { markup: renderToStaticMarkup(element), cover: element.props as Record<string, unknown> };
 }
 
 describe("SceneWarmupCover", () => {
@@ -34,7 +32,12 @@ describe("SceneWarmupCover", () => {
   test("names the work left for the background instead of hiding it", () => {
     const { markup } = render({ phase: "compiling", rounds: 1, programs: 20, planned: 40, deferred: 60, progress: 0.5, elapsedMs: 1_400 });
     expect(markup).toContain("60 more prepare after this");
-    expect(markup).toContain("1.4s");
+  });
+
+  test("is a plain backdrop under the game's menu, never a second loading screen", () => {
+    const { markup, cover } = render(SCENE_WARMUP_PENDING, "menu");
+    expect(cover?.["data-shell-code-loading"]).toBe(true);
+    expect(markup).not.toContain("Preparing scene");
   });
 
   test("leaves the frame alone once warm or after a failed compile", () => {

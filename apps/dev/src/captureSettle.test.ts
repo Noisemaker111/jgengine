@@ -60,8 +60,8 @@ describe("waitForQuiescentView", () => {
     expect(run.frames()).toBe(6);
   });
 
-  test("never declares a view ready while the Loading game view fallback is mounted", async () => {
+  test("never declares a view ready while the loading screen is mounted", async () => {
     const run = harness([{ modelLoadStarts: 1, viewLoading: true }]);
-    expect(await waitForQuiescentView(run.deps, 5_000)).toContain("Loading game view");
+    expect(await waitForQuiescentView(run.deps, 5_000)).toContain("loading screen is up");
   });
 });

@@ -12,7 +12,7 @@ import { meshMatchesName } from "@jgengine/core/model/modelMeshMerge.draw";
 import { useDisposable } from "@jgengine/core/render/useDisposable.draw";
 import { ImageTextureLoader } from "./imageTexture.draw";
 import { detectKtx2Support, materialKtx2Loader } from "@jgengine/core/model/modelLoad.draw";
-import { resolveAssetBaseUrl } from "@jgengine/core/assets/assetBase.draw";
+import { resolveAssetBaseUrl } from "@jgengine/core/assets/assetBase";
 
 /** Shares the model transcoder and loader cache while loading native authored images normally, top row first as glTF maps expect. @internal */
 export class MaterialTextureLoader extends THREE.Loader<THREE.Texture> {

@@ -7,7 +7,7 @@
 export interface ViewActivity {
   /** Times the shared model loader went busy since boot; a change means new streaming started. */
   modelLoadStarts: number;
-  /** The shell's "Loading game view…" Suspense fallback is mounted. */
+  /** The jgengine loading screen (`data-shell-code-loading`) is mounted. */
   viewLoading: boolean;
 }
 
@@ -42,7 +42,7 @@ export async function waitForQuiescentView(deps: QuiescenceDeps, timeoutMs: numb
     if (stable && rounds >= 2) return null;
   }
   return last.viewLoading
-    ? `game view still loading ("Loading game view…" on screen) after ${Math.round(timeoutMs / 1000)}s — the 3D presentation never mounted`
+    ? `game view still loading (the jgengine loading screen is up) after ${Math.round(timeoutMs / 1000)}s — the 3D presentation never mounted`
     : `models kept streaming for ${Math.round(timeoutMs / 1000)}s — capturing would race them`;
 }
 

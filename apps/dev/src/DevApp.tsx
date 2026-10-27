@@ -11,6 +11,7 @@ import {
 } from "@jgengine/core/multiplayer/multiplayer.draw";
 import type { PlayableGame } from "@jgengine/shell/registry";
 import { LOOK_PRESETS, type LookPreset } from "@jgengine/core/render/lookPreset";
+import { BootLoading } from "@jgengine/core/boot/bootScreen.view";
 
 import {
   CONVEX_URL,
@@ -41,6 +42,7 @@ import {
   setCaptureStatus,
 } from "./captureReady";
 import { EditorModeApp } from "./EditorModeApp";
+import { installGameAssets } from "./gameAssets";
 import { useEditorSummon, useRuntimeError } from "./hooks";
 import {
   discoverGameTunables,
@@ -87,8 +89,8 @@ export function DevApp({ gameId }: { gameId: string }) {
       setLoadError(`Unknown game "${gameId}" — known ids: ${Object.keys(gameRegistry).sort().join(", ")}`);
       return;
     }
-    void load()
-      .then(async (loaded) => {
+    void Promise.all([load(), installGameAssets(gameId)])
+      .then(async ([loaded]) => {
         await loadGameStyle(gameId);
         await discoverGameTunables(gameId, loaded.game.name);
         if (MODE === "poster" || MODE === "editor") {
@@ -173,7 +175,7 @@ export function DevApp({ gameId }: { gameId: string }) {
   if (runtimeError !== null) {
     return <ErrorPanel title={`Runtime error in ${gameId}`} detail={runtimeError} />;
   }
-  if (playable === null) return <LoadingPanel label="Loading game…" />;
+  if (playable === null) return <div className="relative h-full w-full"><BootLoading reason="game code" /></div>;
   if (MODE === "ui") return <GameUiPreview playable={playable} scenario={scenario} />;
   if (MODE === "poster") return <GamePlayerShell playable={playable} poster />;
   if (editorOpen) return <EditorModeApp gameId={gameId} playable={playable} onExitEditor={exitEditor} />;

@@ -7,6 +7,7 @@ import type { SpeakOptions } from "@jgengine/core/audio/radioPlayback";
 import { reverbZoneAt, type AudioReverbConfig, type ReverbPreset } from "@jgengine/core/audio/reverb";
 import { patchDuration, type SynthPatch } from "@jgengine/core/audio/synth";
 import { createVoiceAllocator, type VoiceAllocator, type VoiceAllocatorConfig } from "@jgengine/core/audio/voiceAllocator";
+import { resolveAssetBaseUrl } from "@jgengine/core/assets/assetBase";
 import { createDisposer } from "@jgengine/core/game/defineGame";
 import type { Xyz } from "@jgengine/core/math/xyz";
 
@@ -542,7 +543,7 @@ export function createAudioEngine(config: AudioSceneConfig = {}): AudioEngine {
   function loadBuffer(url: string): Promise<AudioBuffer | null> {
     let pending = bufferCache.get(url);
     if (pending === undefined) {
-      pending = fetch(url)
+      pending = fetch(resolveAssetBaseUrl(url))
         .then((response) => response.arrayBuffer())
         .then((data) => context.decodeAudioData(data))
         .catch(() => null);

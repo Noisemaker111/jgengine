@@ -1,5 +1,6 @@
 import { lazy, Suspense, useLayoutEffect, useState, type ComponentProps, type LazyExoticComponent } from "react";
 
+import { BootLoading } from "@jgengine/core/boot/bootScreen.view";
 import { suspendPlayControls } from "@jgengine/core/game/controlGate";
 import type { GameContext } from "@jgengine/core/runtime/gameContext";
 import type { Shell3dPresentation } from "./Shell3dPresentation";
@@ -23,9 +24,8 @@ function getPresentation(): LazyExoticComponent<Presentation> {
 function LoadingPresentation({ ctx }: { ctx: GameContext }) {
   useLayoutEffect(() => suspendPlayControls(ctx), [ctx]);
   return (
-    <div role="status" aria-live="polite" data-shell-code-loading
-      style={{ display: "grid", placeItems: "center", width: "100%", height: "100%", minHeight: 160, background: "#0f172a", color: "#e2e8f0", fontFamily: "ui-sans-serif, system-ui, sans-serif" }}>
-      Loading game view…
+    <div style={{ position: "relative", width: "100%", height: "100%", minHeight: 160 }}>
+      <BootLoading reason="game view code" />
     </div>
   );
 }

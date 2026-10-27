@@ -31,4 +31,16 @@ describe("MissingModelsNotice", () => {
     expect(html).toContain("pack/Crate");
     expect(html).toContain("creature/dog-shepherd");
   });
+
+  test("never draws in a production build", async () => {
+    await fail("/models/pack/Crate.glb");
+    const before = process.env.NODE_ENV;
+    process.env.NODE_ENV = "production";
+    try {
+      expect(renderToStaticMarkup(<MissingModelsNotice />)).toBe("");
+    } finally {
+      process.env.NODE_ENV = before;
+    }
+    expect(renderToStaticMarkup(<MissingModelsNotice />)).toContain("1 MODEL MISSING");
+  });
 });
