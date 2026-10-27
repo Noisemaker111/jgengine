@@ -69,7 +69,7 @@ export function Inspector() {
       <p className="bw-blurb">{def.blurb}</p>
       {shut ? <div className="bw-shut" role="status">
         <b data-bad="">Closed · {access.reason}</b>
-        <KitButton size="sm" variant="primary" onClick={() => commands.run("build.connect", { id: obj.id })}>Connect it · ${connectCost(ctx, obj.id)}</KitButton>
+        <KitButton size="sm" variant="primary" data-hint="connect" onClick={() => commands.run("build.connect", { id: obj.id })}>Connect it · ${connectCost(ctx, obj.id)}</KitButton>
       </div> : null}
       {def.ride !== undefined ? <>
         <div className="bw-line"><b data-bad={broken ? "" : undefined}>{broken ? `Offline · ${crew}` : `${PHASE_LABEL[phase ?? "idle"]} · ${riders ?? 0} aboard`}</b>

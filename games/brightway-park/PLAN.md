@@ -77,4 +77,4 @@ The first month closes at 20:00 with the monthly report.
 3. [x] Monthly books, monthly loan interest and bankruptcy, marketing campaigns.
 4. [x] Repairs need a mechanic; reliability shown; research rescaled to months; bins cut litter.
 5. [x] Calendar months, long scenarios with an unlock chain, 8x speed.
-6. [ ] Onboarding hints that point at the gate, the ride, the gate button and the staff button.
+6. [x] Onboarding hints that point at the gate, the ride, the gate button and the staff button.
