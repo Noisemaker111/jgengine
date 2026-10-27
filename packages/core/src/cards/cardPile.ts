@@ -1,3 +1,4 @@
+// @skill jgengine-gameplay
 export type ZoneName = string;
 
 export interface CardPileConfig {

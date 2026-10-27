@@ -1,3 +1,4 @@
+// @skill jgengine-world
 import { useCallback, useEffect, useRef, useSyncExternalStore, type ComponentType, type MutableRefObject } from "react";
 
 import type { GameCameraConfig } from "@jgengine/core/game/playableGame";

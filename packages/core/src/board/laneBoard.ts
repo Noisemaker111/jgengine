@@ -1,3 +1,4 @@
+// @skill jgengine-gameplay
 export type Side = string;
 
 export interface LaneRuleInput<C> {

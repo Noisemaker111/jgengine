@@ -1,3 +1,4 @@
+// @skill jgengine-world
 /** Motor intensities, each `0..1`: `strong` is the low-frequency motor, `weak` the high-frequency one. */
 export interface HapticLevel {
   strong: number;

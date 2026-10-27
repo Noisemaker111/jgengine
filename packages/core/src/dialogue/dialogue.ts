@@ -1,3 +1,4 @@
+// @skill jgengine-gameplay
 import { defineStore, type StoreHandle } from "../store/defineStore";
 
 /** Store slot holding the id of the dialogue currently open, or absent when none is showing. */

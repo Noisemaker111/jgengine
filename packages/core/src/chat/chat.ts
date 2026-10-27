@@ -1,3 +1,4 @@
+// @skill jgengine-gameplay
 import { decideRateWindow } from "../time/rateWindow";
 import type { GameEventMap, GameEvents } from "../game/events";
 import type { ChatFilter } from "./chatFilter";

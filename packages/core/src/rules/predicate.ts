@@ -1,3 +1,4 @@
+// @skill jgengine-gameplay
 /**
  * A declarative, serializable predicate AST evaluated against a plain fact bag. Predicates carry no
  * closures, so they survive save/load and stay deterministic — the reusable condition seam that

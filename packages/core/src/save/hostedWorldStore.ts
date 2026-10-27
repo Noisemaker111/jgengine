@@ -1,3 +1,4 @@
+// @skill jgengine-gameplay
 import type { WorldSnapshot } from "../runtime/worldSnapshot";
 
 /** One hosted world's persisted authoritative state — the unit a {@link HostedWorldStore} loads and saves. */

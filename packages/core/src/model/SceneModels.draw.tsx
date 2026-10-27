@@ -1,3 +1,4 @@
+// @skill jgengine-assets
 import { deathRemovesEntity } from "@jgengine/core/combat/death";
 import { useFrame, useLoader, useThree } from "@react-three/fiber";
 import { Component, Suspense, useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState, useSyncExternalStore, type ReactNode } from "react";

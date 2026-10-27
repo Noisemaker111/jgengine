@@ -1,3 +1,4 @@
+// @skill jgengine-world
 /**
  * Seeded procedural buildings: a footprint of bays × floors emitted as placed facade parts — walls,
  * windows, storefronts, roof and decor — each tagged with a kit slot `world/buildingKit` binds to a

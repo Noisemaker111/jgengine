@@ -1,3 +1,4 @@
+// @skill jgengine-world
 import { oceanColor } from "@jgengine/core/water/oceanColor";
 import { waterSurfaceConfigFromDescriptor } from "@jgengine/core/water/waterSurface";
 import { useCallback, useEffect, useMemo, useRef, useState, useSyncExternalStore } from "react";import { useFrame } from "@react-three/fiber";

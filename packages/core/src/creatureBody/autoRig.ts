@@ -1,3 +1,4 @@
+// @skill jgengine-assets
 import { gaitClips, type GaitLimb } from "./gait";
 import type { ReadModel } from "./glbRead";
 import type { GlbMaterial, GlbModel, GlbNode, GlbPrimitive } from "./glbWrite";

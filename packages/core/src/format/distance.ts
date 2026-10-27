@@ -1,3 +1,4 @@
+// @skill jgengine-ui
 /** Target unit for {@link formatDistance}: meters, kilometers, or `"auto"` (km past 1000m). */
 export type DistanceUnit = "m" | "km" | "auto";
 

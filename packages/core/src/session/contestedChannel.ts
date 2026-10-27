@@ -1,3 +1,4 @@
+// @skill jgengine-gameplay
 export type ContestedPhase = "idle" | "active" | "paused" | "contested" | "complete" | "interrupted";
 
 export type ContestReaction = "pause" | "decay";

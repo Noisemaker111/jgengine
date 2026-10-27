@@ -1,3 +1,4 @@
+// @skill jgengine-world
 /** Elapsed duration and the next anchor to persist with accrued effects. */
 export interface Accrual {
   elapsedMs: number;

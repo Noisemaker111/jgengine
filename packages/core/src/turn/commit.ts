@@ -1,3 +1,4 @@
+// @skill jgengine-gameplay
 export type CommitMode = "immediate" | "simultaneous" | "resealable";
 
 export interface SubmittedAction<TAction> {

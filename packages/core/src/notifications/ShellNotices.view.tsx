@@ -1,3 +1,4 @@
+// @skill jgengine-gameplay
 import { useCallback, useEffect, type ReactNode } from "react";
 
 import { NOTICE_TONE_CUES, uiCueSoundId } from "@jgengine/core/ui/uiCues";

@@ -1,3 +1,4 @@
+// @skill jgengine-world
 import { useMemo, useState } from "react";
 import { useFrame } from "@react-three/fiber";
 import { DoubleSide } from "three";

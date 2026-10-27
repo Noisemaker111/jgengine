@@ -1,3 +1,4 @@
+// @skill jgengine-gameplay
 import type { StatModifierSet } from "../stats/statModifiers";
 
 export type TalentRequirement = string | { nodeId: string; rank: number };

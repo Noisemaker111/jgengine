@@ -1,3 +1,4 @@
+// @skill jgengine-gameplay
 import { createRemainsField, type RemainsSnapshot, type RemainsStack } from "../remains/remains";
 
 type Vec3 = readonly [number, number, number];

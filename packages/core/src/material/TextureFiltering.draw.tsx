@@ -1,3 +1,4 @@
+// @skill jgengine-assets
 import { useThree } from "@react-three/fiber";
 import { useLayoutEffect } from "react";
 import * as THREE from "three";

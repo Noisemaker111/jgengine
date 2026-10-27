@@ -1,3 +1,4 @@
+// @skill jgengine-gameplay
 import { devtools } from "../devtools/devtools";
 import type { Vec3 } from "../world/geometry";
 import { createNavCrowd, type NavCrowd, type NavCrowdOptions, type NavCrowdSnapshot } from "../nav/navCrowd";

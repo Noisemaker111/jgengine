@@ -1,3 +1,4 @@
+// @skill jgengine-world
 import { validateAnimGraph } from "../anim/animGraph";
 import type { AuthoredAnimation } from "./authoredObjects";
 

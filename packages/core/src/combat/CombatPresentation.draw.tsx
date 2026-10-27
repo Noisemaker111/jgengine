@@ -1,3 +1,4 @@
+// @skill jgengine-combat
 import {
   ProjectileTracers,
   WorldFloatText,

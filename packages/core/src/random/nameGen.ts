@@ -1,3 +1,4 @@
+// @skill jgengine-gameplay
 export interface SyllableBank {
   onset?: readonly string[];
   nucleus: readonly string[];

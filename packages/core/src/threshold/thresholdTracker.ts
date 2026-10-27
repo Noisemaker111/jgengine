@@ -1,3 +1,4 @@
+// @skill jgengine-gameplay
 /**
  * Generic numeric threshold-crossing tracker (#931).
  *

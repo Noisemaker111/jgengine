@@ -1,3 +1,4 @@
+// @skill jgengine-gameplay
 /** One stack held in remains: an item id and how many. */
 export interface RemainsStack {
   item: string;

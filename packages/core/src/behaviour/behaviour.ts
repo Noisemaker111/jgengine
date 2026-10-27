@@ -1,3 +1,4 @@
+// @skill jgengine-gameplay
 /**
  * Unity-style behaviour lifecycle over a headless id-keyed node tree, ported from
  * vladkrutenyuk/three-start (MIT) and adapted to run without three.js: nodes are plain

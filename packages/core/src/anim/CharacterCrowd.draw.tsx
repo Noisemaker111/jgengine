@@ -1,3 +1,4 @@
+// @skill jgengine-world
 import { useFrame, useLoader } from "@react-three/fiber";
 import type { ThreeEvent } from "@react-three/fiber";
 import { Suspense, useEffect, useMemo, useRef } from "react";

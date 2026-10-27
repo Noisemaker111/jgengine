@@ -1,3 +1,4 @@
+// @skill jgengine-world
 /**
  * Runtime renderer for the `city` volume kind: everything `resolveCityObject` emits becomes a
  * fixed, bounded set of merged and instanced draws — road ribbons split by surface with lane

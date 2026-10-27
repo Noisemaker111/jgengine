@@ -1,3 +1,4 @@
+// @skill jgengine-gameplay
 type Vec3 = readonly [number, number, number];
 
 /** How one species breeds. */

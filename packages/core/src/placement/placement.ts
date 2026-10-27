@@ -1,3 +1,4 @@
+// @skill jgengine-world
 import {
   aabbContains,
   aabbOverlap,

@@ -1,3 +1,4 @@
+// @skill jgengine-world
 import { createContext, useContext, useMemo, useRef, type ReactNode, type MutableRefObject } from "react";
 import { useThree, useFrame } from "@react-three/fiber";
 import * as THREE from "three";

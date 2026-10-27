@@ -1,3 +1,4 @@
+// @skill jgengine-world
 export type FactionRelation = "hostile" | "neutral" | "friendly";
 
 export interface FactionDef {

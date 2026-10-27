@@ -1,3 +1,4 @@
+// @skill jgengine
 import type { CommandResult } from "./commandRegistry";
 import type { GameContext } from "../runtime/gameContext";
 import type { LiveGameBackend } from "../runtime/transport";

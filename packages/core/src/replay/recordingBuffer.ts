@@ -1,3 +1,4 @@
+// @skill jgengine-ui
 export interface RecordingFrame<T> {
   /** Game-time seconds (from `ctx.time`), so pause/fast-forward scrub the recording consistently with the sim. */
   t: number;

@@ -1,3 +1,4 @@
+// @skill jgengine-world
 import * as THREE from "three";
 
 import { useDisposable } from "@jgengine/core/render/useDisposable.draw";

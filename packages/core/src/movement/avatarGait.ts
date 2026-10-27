@@ -1,3 +1,4 @@
+// @skill jgengine-world
 export interface GaitTuning {
   /** Stride cycles per world unit travelled — ties step cadence to actual speed. */
   stridesPerUnit: number;

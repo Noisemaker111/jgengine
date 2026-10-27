@@ -1,3 +1,4 @@
+// @skill jgengine-world
 export type ContextTargetKind = "entity" | "object";
 
 /** One right-click verb: a label plus the command it dispatches (walk-then-act supported by args). */

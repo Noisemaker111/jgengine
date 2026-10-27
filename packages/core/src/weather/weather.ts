@@ -1,3 +1,4 @@
+// @skill jgengine-world
 import type { WindVector } from "@jgengine/core/world/wind";
 
 /** A weather kind's name, as a game's {@link WeatherModifierTable} keys it (`"rain"`, `"storm"`, ...). */

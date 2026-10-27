@@ -1,3 +1,4 @@
+// @skill jgengine-world
 export { lerp, clamp01, smoothstep } from "../anim/easing";
 
 /** Constrain a value to the inclusive `[min, max]` range.
