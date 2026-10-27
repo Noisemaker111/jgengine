@@ -25,6 +25,7 @@ test("the seam line names engine source beside a game change, none for game-only
   );
   expect(engineSeamLine(["games/wilds/a.ts", "scripts/x.ts"])).toBe("Engine seam: none - game content only");
   expect(engineSeamLine(["packages/core/src/a.ts"])).toBeNull();
+  expect(engineSeamLine(["games/AGENTS.md", "games/scripts/check.ts", "packages/core/src/a.ts"])).toBeNull();
   const many = Array.from({ length: 10 }, (_, i) => `packages/core/src/f${i}.ts`);
   expect(engineSeamLine(["games/x/y.ts", ...many])).toEndWith("and 2 more");
 });

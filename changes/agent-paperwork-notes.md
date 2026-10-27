@@ -1,10 +1,9 @@
-lane:close writes the change note: pass -m with what changed in plain words, and the commit message, PR body and changes/<branch>.md come from it, with the exported API the diff changed and a game change's engine seam added
-
-Engine seam: none - game content only
+lane:close -m writes the change note, commit message and PR body
 
 ### Changed
 
-- lane:close writes the change note: pass -m with what changed in plain words, and the commit message, PR body and changes/<branch>.md come from it, with the exported API the diff changed and a game change's engine seam added
+- lane:close -m writes the change note, commit message and PR body
+- The note lists the exported API the diff added or removed and, for a game change, its engine seam; Closes/Prevention/Root cause lines stay out of the changelog
 
 ### Fixed
 

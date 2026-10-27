@@ -85,13 +85,15 @@ export function apiNoteBullets(before: string, after: string): { added: string[]
 const SHIPPED_SOURCE = /^packages\/[^/]+\/src\/.+\.(ts|tsx)$/;
 const NOT_SHIPPED = /\.(test|spec)\.tsx?$/;
 const SEAM_CAP = 8;
+/** A file inside one game's folder; `games/AGENTS.md` and the games tooling in `games/scripts/` are not a game. */
+const GAME_PATH = /^games\/(?!scripts\/)[^/]+\//;
 
 /**
  * The `Engine seam:` line for a diff that touches a game: the engine source it changed beside the
  * game, or `none` when the change is the game's own. Null when no game changed.
  */
 export function engineSeamLine(paths: readonly string[]): string | null {
-  if (!paths.some((path) => path.startsWith("games/"))) return null;
+  if (!paths.some((path) => GAME_PATH.test(path))) return null;
   const engine = [...new Set(paths.filter((path) => SHIPPED_SOURCE.test(path) && !NOT_SHIPPED.test(path)))].sort();
   if (engine.length === 0) return "Engine seam: none - game content only";
   const shown = engine.slice(0, SEAM_CAP);
