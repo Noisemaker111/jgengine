@@ -4,21 +4,23 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 
 import {
-  DECLINE_MIN,
+  DEBT_REASON_MIN,
   checkDeclarations,
   deriveLedger,
+  gameAdoption,
   ledgerDrift,
   namesDomain,
   probeGivesUp,
   probeMatches,
+  readGames,
   renderSummary,
-  seedDeclaration,
   windowProbeVerdict,
   type Declaration,
+  type GameDeclaration,
   type IssueState,
   type Ledger,
 } from "./capabilities";
-import { gamesToDecide, runCheck, type Sink } from "./check-capabilities";
+import { runCheck, type Sink } from "./check-capabilities";
 import { BUDGET_REL, buildBudget, parseBudget, renderTrend, type DebtBudget } from "./debt-budget";
 
 const ledger: Ledger = {
@@ -60,131 +62,139 @@ const OPEN = new Map<number, IssueState>([
   [102, { state: "closed" }],
 ]);
 
-const declaration = (overrides: Partial<Declaration> = {}): Declaration => ({
-  adopts: ["mission-runtime"],
-  probes: { "@jgengine/core/mission/mission": ["campaign"] },
-  declines: {
-    "audio-probe": {
-      kind: "not-applicable",
-      reason: "No audio mix is published: this game ships synth-free silence.",
-    },
-  },
-  ...overrides,
+const debtReason = "The shared audio mix is not adopted here yet; buses are wired by hand.";
+
+/** One game: what its source imports (`adopts`) and what it wrote (`declaration`). */
+const game = (name: string, adopts: string[], declaration: Declaration | null = null): GameDeclaration => ({
+  game: name,
+  adopts,
+  declaration,
 });
 
-describe("missing declaration", () => {
-  test("a game-facing capability nobody declared fails and names game, capability and module", () => {
-    const report = checkDeclarations(ledger, [
-      { game: "ember", declaration: declaration({ adopts: [], probes: {}, declines: {} }) },
-    ]);
-    expect(report.problems).toHaveLength(2);
-    expect(report.problems[0]!.message).toContain("ember");
-    expect(report.problems[0]!.message).toContain("mission-runtime");
-    expect(report.problems[0]!.message).toContain("@jgengine/core/mission/mission");
-    expect(report.problems[0]!.message).toContain("adopt it");
-    expect(report.problems[0]!.message).toContain("decline");
-  });
+const probed: Declaration = { probes: { "@jgengine/core/mission/mission": ["campaign"] } };
+/** `issue: null` writes the entry with no owner. */
+const owesAudio = (reason = debtReason, issue: number | null = 101): Declaration => ({
+  ...probed,
+  debt: { "audio-probe": issue === null ? ({ reason } as { reason: string; issue: number }) : { reason, issue } },
+});
 
-  test("a complete declaration passes", () => {
-    const report = checkDeclarations(ledger, [{ game: "ember", declaration: declaration() }], OPEN);
+describe("adoption is read, not written", () => {
+  test("a game that writes nothing passes: there is nothing to decline", () => {
+    const report = checkDeclarations(ledger, [game("ember", ["run-loop"])], OPEN);
     expect(report.problems).toEqual([]);
     expect(report.adopted).toBe(1);
-    expect(report.verified).toBe(1);
-    expect(report.declared).toBe(0);
-    expect(report.notApplicable).toBe(1);
     expect(report.debt).toBe(0);
   });
 
-  test("a missing declaration file fails with the generating command", () => {
-    const report = checkDeclarations(ledger, [{ game: "ember", declaration: null }]);
-    expect(report.problems[0]!.message).toContain("ember/jgengine.json has no capabilities");
-    expect(report.problems[0]!.message).toContain("bun run jgengine sync");
+  test("an adopted capability with its probe named is verified", () => {
+    const report = checkDeclarations(ledger, [game("ember", ["mission-runtime"], probed)], OPEN);
+    expect(report.problems).toEqual([]);
+    expect(report.verified).toBe(1);
+    expect(report.declared).toBe(0);
+    expect(report.declarationLevel).toEqual([]);
+  });
+
+  test("a probe-capable adoption with no probe named is listed; a probe-less one only counts", () => {
+    const report = checkDeclarations(ledger, [game("ember", ["mission-runtime", "run-loop"])], OPEN);
+    expect(report.problems).toEqual([]);
+    expect(report.adopted).toBe(2);
+    expect(report.declared).toBe(2);
+    expect(report.declarationLevel).toEqual([
+      { game: "ember", capability: "mission-runtime", module: "@jgengine/core/mission/mission" },
+    ]);
+    expect(report.tallies[0]).toEqual({ game: "ember", adopted: 2, verified: 0, declared: 2, debt: 0 });
+  });
+
+  test("a boot probe for a module the game does not import fails", () => {
+    const report = checkDeclarations(ledger, [game("ember", ["audio-probe"], probed)], OPEN);
+    expect(report.problems).toHaveLength(1);
+    expect(report.problems[0]!.message).toContain("imports none of that module's capabilities");
+  });
+
+  test("a boot probe for an unknown module fails", () => {
+    const report = checkDeclarations(ledger, [game("ember", [], { probes: { "@jgengine/core/nope": ["x"] } })], OPEN);
+    expect(report.problems[0]!.message).toContain('unknown module "@jgengine/core/nope"');
   });
 });
 
-describe("decline kinds", () => {
-  test("the old boilerplate sentence is rejected even at 20+ characters", () => {
-    const report = checkDeclarations(ledger, [
-      {
-        game: "ember",
-        declaration: declaration({
-          declines: {
-            "audio-probe": {
-              kind: "not-applicable",
-              reason: "Not adopted: this game does not run the engine audio-probe system.",
-            },
-          },
-        }),
-      },
-    ], OPEN);
+describe("debt entries", () => {
+  test("debt against an open issue passes and counts", () => {
+    const report = checkDeclarations(ledger, [game("ember", ["mission-runtime"], owesAudio())], OPEN);
+    expect(report.problems).toEqual([]);
+    expect(report.debt).toBe(1);
+    expect(report.debtEntries).toEqual([{ game: "ember", capability: "audio-probe", issue: 101 }]);
+  });
+
+  test("debt on a capability the source imports is paid and fails until removed", () => {
+    const report = checkDeclarations(ledger, [game("ember", ["mission-runtime", "audio-probe"], owesAudio())], OPEN);
     expect(report.problems).toHaveLength(1);
-    expect(report.problems[0]!.message).toContain("ember declines");
-    expect(report.problems[0]!.message).toContain("Not adopted");
+    expect(report.problems[0]!.message).toContain("the debt is paid");
+  });
+
+  test("debt on an unknown id fails", () => {
+    const report = checkDeclarations(
+      ledger,
+      [game("ember", [], { debt: { "no-such-system": { reason: debtReason, issue: 101 } } })],
+      OPEN,
+    );
+    expect(report.problems[0]!.message).toContain("not a capability in capabilities.json");
+  });
+
+  test("debt on a capability that ships no probe fails", () => {
+    const report = checkDeclarations(
+      ledger,
+      [game("ember", [], { debt: { "run-loop": { reason: "The run is banked by hand at the gate.", issue: 101 } } })],
+      OPEN,
+    );
+    expect(report.problems[0]!.message).toContain("ships no live probe");
+  });
+
+  test(`a reason under ${DEBT_REASON_MIN} characters fails and names the capability`, () => {
+    const report = checkDeclarations(ledger, [game("ember", ["mission-runtime"], owesAudio("no audio mix"))], OPEN);
+    expect(report.problems).toHaveLength(1);
+    expect(report.problems[0]!.message).toContain("audio-probe");
+    expect(report.problems[0]!.message).toContain("12-character reason");
   });
 
   test("a reason that does not name the domain fails", () => {
-    const report = checkDeclarations(ledger, [
-      {
-        game: "ember",
-        declaration: declaration({
-          declines: { "audio-probe": { kind: "not-applicable", reason: "This game does not need one of those." } },
-        }),
-      },
-    ], OPEN);
+    const report = checkDeclarations(
+      ledger,
+      [game("ember", ["mission-runtime"], owesAudio("This game does its own thing with those, for now."))],
+      OPEN,
+    );
     expect(report.problems).toHaveLength(1);
     expect(report.problems[0]!.message).toContain("audio mix");
   });
 
-  test("a bare string decline is rejected as ambiguous", () => {
-    const report = checkDeclarations(ledger, [
-      {
-        game: "ember",
-        declaration: declaration({
-          declines: { "audio-probe": "No audio mix is published here." as unknown as Declaration["declines"][string] },
-        }),
-      },
-    ], OPEN);
-    expect(report.problems[0]!.message).toContain('{"kind"');
-  });
-
-  test(`a reason under ${DECLINE_MIN} characters fails and names the capability`, () => {
-    const report = checkDeclarations(ledger, [
-      {
-        game: "ember",
-        declaration: declaration({
-          declines: { "audio-probe": { kind: "not-applicable", reason: "no audio" } },
-        }),
-      },
-    ], OPEN);
-    expect(report.problems).toHaveLength(1);
-    expect(report.problems[0]!.message).toContain("ember declines");
-    expect(report.problems[0]!.message).toContain("audio-probe");
-    expect(report.problems[0]!.message).toContain("8-character reason");
-    expect(report.problems[0]!.message).toContain(`${DECLINE_MIN}+ characters`);
-  });
-
   test("two games with the same reason are a template, not two answers", () => {
-    const reason = "No audio mix: this game has no sounds at all.";
-    const report = checkDeclarations(ledger, [
-      { game: "ember", declaration: declaration({ declines: { "audio-probe": { kind: "not-applicable", reason } } }) },
-      { game: "harbor", declaration: declaration({ declines: { "audio-probe": { kind: "not-applicable", reason } } }) },
-    ], OPEN);
+    const report = checkDeclarations(
+      ledger,
+      [game("ember", ["mission-runtime"], owesAudio()), game("harbor", ["mission-runtime"], owesAudio())],
+      OPEN,
+    );
     expect(report.problems).toHaveLength(2);
-    expect(report.problems[0]!.message).toContain("same decline reason");
+    expect(report.problems[0]!.message).toContain("same debt reason");
   });
 
-  test("a not-applicable entry carrying an issue fails", () => {
-    const report = checkDeclarations(ledger, [
-      {
-        game: "ember",
-        declaration: declaration({
-          declines: {
-            "audio-probe": { kind: "not-applicable", reason: "No audio mix is published here.", issue: 101 },
-          },
-        }),
-      },
-    ], OPEN);
-    expect(report.problems[0]!.message).toContain("not-applicable but names issue");
+  test("debt without an owner issue fails", () => {
+    const report = checkDeclarations(ledger, [game("ember", ["mission-runtime"], owesAudio(debtReason, null))], OPEN);
+    expect(report.problems).toHaveLength(1);
+    expect(report.problems[0]!.message).toContain("no owner");
+  });
+
+  test("debt whose issue is closed fails", () => {
+    const report = checkDeclarations(ledger, [game("ember", ["mission-runtime"], owesAudio(debtReason, 102))], OPEN);
+    expect(report.problems).toHaveLength(1);
+    expect(report.problems[0]!.message).toContain("is closed");
+  });
+
+  test("debt whose issue does not exist fails", () => {
+    const report = checkDeclarations(
+      ledger,
+      [game("ember", ["mission-runtime"], owesAudio(debtReason, 999))],
+      new Map([[999, { state: "missing" as const }]]),
+    );
+    expect(report.problems[0]!.message).toContain("does not have");
   });
 
   test("namesDomain accepts plural forms", () => {
@@ -193,257 +203,88 @@ describe("decline kinds", () => {
   });
 });
 
-describe("adoption without a probe", () => {
-  test("proof: a capability with no probe can be adopted, and counts as declared", () => {
-    const report = checkDeclarations(ledger, [
-      {
-        game: "ember",
-        declaration: declaration({
-          adopts: ["mission-runtime", "run-loop"],
-          probes: { "@jgengine/core/mission/mission": ["campaign"] },
-        }),
-      },
-    ], OPEN);
-    expect(report.problems).toEqual([]);
-    expect(report.adopted).toBe(2);
-    expect(report.verified).toBe(1);
-    expect(report.declared).toBe(1);
-    expect(report.tallies[0]).toEqual({
-      game: "ember",
-      adopted: 2,
-      verified: 1,
-      declared: 1,
-      notApplicable: 1,
-      debt: 0,
-    });
-    expect(report.declarationLevel).toEqual([
-      { game: "ember", capability: "run-loop", module: "@jgengine/core/run/runLoop" },
-    ]);
-  });
-
-  test("a probed capability adopted with its probe named is verified, not declared", () => {
-    const report = checkDeclarations(ledger, [{ game: "ember", declaration: declaration() }], OPEN);
-    expect(report.verified).toBe(1);
-    expect(report.declared).toBe(0);
-    expect(report.declarationLevel).toEqual([]);
-  });
-
-  test("proof: a probed claim still fails when the live counters are absent", () => {
-    // The declaration names the global, but the page answers nothing: `bun run games:capabilities probe` fails it.
-    expect(windowProbeVerdict("__jgengineRun", undefined)).toContain("__jgengineRun is absent");
-    expect(windowProbeVerdict("__jgengineRun", null)).toContain("__jgengineRun is absent");
-    expect(windowProbeVerdict("__jgengineRun", {})).toContain("no live counters");
-    expect(windowProbeVerdict("__jgengineRun", { error: "loop not installed" })).toContain("threw loop not installed");
-    expect(windowProbeVerdict("__jgengineAudio", { master: Number.NaN })).toContain("no live counters");
-    // A live readout passes, with the counters the probe prints.
-    expect(windowProbeVerdict("__jgengineRun", { run: 2, carried: 80, banked: 200, lost: 0, best: 200 })).toBeNull();
-    expect(windowProbeVerdict("__jgengineAudio", { rms: 0, peak: 0, master: 0.8 })).toBeNull();
-  });
-
-  test("the boot probe waits on game frames after mount, not on the clock", () => {
-    const limits = { settleFrames: 300, mountMs: 300_000 };
-    // Under load the game mounts four minutes in: not given up, however long that took.
-    expect(probeGivesUp({ startedAt: 0, now: 240_000, framesSinceMount: null }, limits)).toBe(false);
-    // Mounted and slow: 90 s of wall time but only 40 frames drawn, so a late readout is still awaited.
-    expect(probeGivesUp({ startedAt: 0, now: 90_000, framesSinceMount: 40 }, limits)).toBe(false);
-    // 300 frames after mount with the readout still missing: absent, on any machine.
-    expect(probeGivesUp({ startedAt: 0, now: 20_000, framesSinceMount: 300 }, limits)).toBe(true);
-    // A page that never mounts ends at the mount limit.
-    expect(probeGivesUp({ startedAt: 0, now: 300_000, framesSinceMount: null }, limits)).toBe(true);
-    // A page that threw before mounting will not mount: it stops at once instead of waiting out the limit.
-    expect(probeGivesUp({ startedAt: 0, now: 5_000, framesSinceMount: null, crashedBeforeMount: true }, limits)).toBe(true);
-    // An error after mount does not cut the frame wait short.
-    expect(probeGivesUp({ startedAt: 0, now: 5_000, framesSinceMount: 10, crashedBeforeMount: true }, limits)).toBe(false);
-  });
-
-  test("an id the ledger does not carry is still refused as an adoption", () => {
-    const report = checkDeclarations(ledger, [
-      { game: "ember", declaration: declaration({ adopts: ["mission-runtime", "no-such-system"] }) },
-    ], OPEN);
-    expect(report.problems.some((problem) => problem.message.includes("not a capability in capabilities.json"))).toBe(true);
-  });
-});
-
-describe("recording an adoption", () => {
+describe("reading adoption from a game's source", () => {
   const trees: string[] = [];
   afterEach(() => {
     for (const root of trees.splice(0)) rmSync(root, { recursive: true, force: true });
   });
 
-  /** A checkout with one installed probe-less capability and one game that imports it. */
-  function checkout(): string {
-    const repo = mkdtempSync(join(tmpdir(), "jg-capability-seed-"));
+  /** A checkout with one installed capability and one game; `source` is the game's one module. */
+  function checkout(source: string, jgengine?: object): string {
+    const repo = mkdtempSync(join(tmpdir(), "jg-capability-read-"));
     trees.push(repo);
     const root = join(repo, "games");
-    const pkg = join(root, "..", "packages", "core");
+    const pkg = join(repo, "packages", "core");
     mkdirSync(join(pkg, "src", "run"), { recursive: true });
     writeFileSync(join(pkg, "package.json"), JSON.stringify({ name: "@jgengine/core", version: "1.0.0" }));
     writeFileSync(
       join(pkg, "src", "run", "runLoop.ts"),
       "/** @capability run-loop Bank or lose what a run carries */\nexport function createRunLoop(): void {}\n",
     );
-    const game = join(root, "demo");
-    mkdirSync(join(game, "src"), { recursive: true });
-    writeFileSync(join(game, "package.json"), JSON.stringify({ name: "@games/demo" }));
-    writeFileSync(join(game, "src", "game.config.ts"), "export const config = {};\n");
-    writeFileSync(join(game, "src", "loop.ts"), 'import { createRunLoop } from "@jgengine/core/run/runLoop";\ncreateRunLoop();\n');
+    const dir = join(root, "demo");
+    mkdirSync(join(dir, "src"), { recursive: true });
+    writeFileSync(join(dir, "package.json"), JSON.stringify({ name: "@games/demo" }));
+    writeFileSync(join(dir, "src", "game.config.ts"), "export const config = {};\n");
+    writeFileSync(join(dir, "src", "loop.ts"), source);
+    if (jgengine !== undefined) writeFileSync(join(dir, "jgengine.json"), JSON.stringify(jgengine));
     return root;
   }
 
-  test("a capability with no probe is seeded as adopted when the game imports it", () => {
-    const root = checkout();
-    const seeded = seedDeclaration(root, "demo", deriveLedger(root));
-    expect(seeded.adopts).toEqual(["run-loop"]);
-    expect(seeded.declines).toEqual({});
+  test("an import of the capability's module is adoption", () => {
+    const root = checkout('import { createRunLoop } from "@jgengine/core/run/runLoop";\ncreateRunLoop();\n');
+    expect(gameAdoption(root, "demo", deriveLedger(root))).toEqual(["run-loop"]);
   });
 
-  test("the seeded declaration then passes the gate as adopted (declared), not refused", () => {
-    const root = checkout();
-    const installed = deriveLedger(root);
-    const seeded = seedDeclaration(root, "demo", installed);
-    const report = checkDeclarations(installed, [{ game: "demo", declaration: seeded }]);
-    expect(report.problems).toEqual([]);
-    expect(report.declared).toBe(1);
-    expect(report.verified).toBe(0);
+  test("proof: a game that does not import it does not adopt it", () => {
+    const root = checkout("export const nothing = 1;\n");
+    expect(gameAdoption(root, "demo", deriveLedger(root))).toEqual([]);
   });
 
-  test("a game-facing capability the game does not import is still a TODO decline", () => {
-    const root = checkout();
-    const withProbe = deriveLedger(root);
-    withProbe.capabilities.push({
-      id: "audio-probe",
-      packages: ["@jgengine/shell"],
-      module: "@jgengine/core/audio/audioProbe.view",
-      domain: "audio mix",
-      gameFacing: true,
-      probe: { kind: "window", global: "__jgengineAudio" },
-      intent: "read the mix",
+  test("readGames pairs each game's written answers with its read adoption", () => {
+    const root = checkout('import { createRunLoop } from "@jgengine/core/run/runLoop";\n', {
+      name: "Demo",
+      id: "demo",
+      engine: ["core"],
+      capabilities: { probes: { "@jgengine/core/run/runLoop": ["run"] } },
     });
-    const seeded = seedDeclaration(root, "demo", withProbe);
-    expect(seeded.adopts).toEqual(["run-loop"]);
-    expect(Object.keys(seeded.declines)).toEqual(["audio-probe"]);
-  });
-});
-
-describe("debt ownership", () => {
-  const debtReason = "We have not adopted the shared audio mix; buses are wired by hand.";
-
-  test("debt without an owner issue fails", () => {
-    const report = checkDeclarations(ledger, [
-      { game: "ember", declaration: declaration({ declines: { "audio-probe": { kind: "debt", reason: debtReason } } }) },
-    ], OPEN);
-    expect(report.problems).toHaveLength(1);
-    expect(report.problems[0]!.message).toContain("no owner");
+    expect(readGames(root, deriveLedger(root))).toEqual([
+      { game: "demo", adopts: ["run-loop"], declaration: { probes: { "@jgengine/core/run/runLoop": ["run"] } } },
+    ]);
   });
 
-  test("debt whose issue is closed fails", () => {
-    const report = checkDeclarations(ledger, [
-      {
-        game: "ember",
-        declaration: declaration({ declines: { "audio-probe": { kind: "debt", reason: debtReason, issue: 102 } } }),
-      },
-    ], OPEN);
-    expect(report.problems).toHaveLength(1);
-    expect(report.problems[0]!.message).toContain("is closed");
-  });
-
-  test("debt whose issue does not exist fails", () => {
-    const report = checkDeclarations(ledger, [
-      {
-        game: "ember",
-        declaration: declaration({ declines: { "audio-probe": { kind: "debt", reason: debtReason, issue: 999 } } }),
-      },
-    ], new Map([[999, { state: "missing" as const }]]));
-    expect(report.problems[0]!.message).toContain("does not have");
-  });
-
-  test("debt against an open issue passes and counts as debt", () => {
-    const report = checkDeclarations(ledger, [
-      {
-        game: "ember",
-        declaration: declaration({ declines: { "audio-probe": { kind: "debt", reason: debtReason, issue: 101 } } }),
-      },
-    ], OPEN);
-    expect(report.problems).toEqual([]);
-    expect(report.debt).toBe(1);
-    expect(report.notApplicable).toBe(0);
-    expect(report.debtEntries).toEqual([{ game: "ember", capability: "audio-probe", issue: 101 }]);
-  });
-
-  test("a correct pair passes: one domain absent, one gap owned by an open issue", () => {
-    const report = checkDeclarations(ledger, [
-      {
-        game: "ember",
-        declaration: declaration({
-          declines: {
-            "audio-probe": { kind: "debt", reason: debtReason, issue: 101 },
-            "mission-runtime": {
-              kind: "not-applicable",
-              reason: "No mission runtime: this game has one endless skirmish and no objectives.",
-            },
-          },
-          adopts: [],
-          probes: {},
-        }),
-      },
-    ], OPEN);
-    expect(report.problems).toEqual([]);
-    expect(report.tallies).toEqual([{ game: "ember", adopted: 0, verified: 0, declared: 0, notApplicable: 1, debt: 1 }]);
+  test("the audio config counts as adopting the audio probe, shorthand included", () => {
+    const withAudio: Ledger = {
+      ...ledger,
+      capabilities: ledger.capabilities.filter((entry) => entry.id === "audio-probe"),
+    };
+    for (const source of [
+      "export default defineGame({ name: 'x', audio: { master: 1 } });\n",
+      "export default defineGame({ name: 'x', audio: sounds });\n",
+      "export default defineGame({ name: 'x', world, audio, physics });\n",
+    ]) {
+      expect(gameAdoption(checkout(source), "demo", withAudio)).toEqual(["audio-probe"]);
+    }
+    expect(gameAdoption(checkout("export default defineGame({ name: 'x', audio: false });\n"), "demo", withAudio)).toEqual([]);
   });
 });
 
 describe("summary table", () => {
-  test("prints one row per game with adopted, not-applicable and debt counts", () => {
-    const report = checkDeclarations(ledger, [
-      {
-        game: "ember",
-        declaration: declaration({
-          declines: {
-            "audio-probe": { kind: "debt", reason: "The shared audio mix is not adopted here yet.", issue: 101 },
-          },
-        }),
-      },
-      {
-        game: "harbor",
-        declaration: declaration({
-          adopts: [],
-          probes: {},
-          declines: {
-            "mission-runtime": { kind: "not-applicable", reason: "No mission runtime: courier routes have no objectives." },
-            "audio-probe": { kind: "not-applicable", reason: "No audio mix is published in this game either." },
-          },
-        }),
-      },
-    ], OPEN);
+  test("prints one row per game with verified, declared and debt counts", () => {
+    const report = checkDeclarations(
+      ledger,
+      [game("ember", ["mission-runtime"], owesAudio()), game("harbor", ["run-loop", "audio-probe"])],
+      OPEN,
+    );
     const table = renderSummary(report, ledger);
-    expect(table).toContain("capability adoption - 2 game-facing capabilities");
-    expect(table).toContain("adopt (verified)");
-    expect(table).toContain("adopt (declared)");
-    expect(table).toContain("ember");
-    expect(table).toContain("harbor");
-    expect(table).toContain("TOTAL");
-    expect(table).toMatch(/ember\s+1\s+0\s+0\s+1/);
-    expect(table).toMatch(/harbor\s+0\s+0\s+2\s+0/);
-    expect(table).toMatch(/TOTAL\s+1\s+0\s+2\s+1/);
+    expect(table).toContain("3 capabilities, 2 game-facing");
+    expect(table).toMatch(/ember\s+1\s+0\s+1/);
+    expect(table).toMatch(/harbor\s+0\s+2\s+0/);
+    expect(table).toMatch(/TOTAL\s+1\s+2\s+1/);
     expect(table).toContain("1 entry across 1 game(s)");
-  });
-
-  test("a declared-only adoption sits in its own column, apart from a verified one", () => {
-    const report = checkDeclarations(ledger, [
-      {
-        game: "ember",
-        declaration: declaration({
-          adopts: ["mission-runtime", "run-loop"],
-          probes: { "@jgengine/core/mission/mission": ["campaign"] },
-        }),
-      },
-    ], OPEN);
-    const table = renderSummary(report, ledger);
-    expect(table).toMatch(/ember\s+1\s+1\s+1\s+0/);
   });
 });
 
-describe("stale ledger", () => {
+describe("probe and ledger helpers", () => {
   test("a newly shipped capability makes the checked ledger stale", () => {
     const installed: Ledger = {
       ...ledger,
@@ -461,73 +302,39 @@ describe("stale ledger", () => {
       ],
     };
     const drift = ledgerDrift(ledger, installed);
-    expect(drift).toHaveLength(1);
-    expect(drift[0]).toContain('added "traffic"');
-    expect(drift[0]).toContain("@jgengine/core/nav/traffic");
-    expect(drift[0]).toContain("no game declares it yet");
-  });
-
-  test("a matching ledger is fresh", () => {
+    expect(drift).toEqual(['added "traffic" (@jgengine/core/nav/traffic)']);
     expect(ledgerDrift(ledger, ledger)).toEqual([]);
   });
 
-});
-
-describe("probe expectations", () => {
-  test("wildcards match live devtools probe keys", () => {
+  test("wildcards match live devtools probe keys; dots and dashes are literal", () => {
     expect(probeMatches("park.staff.*", ["park.staff.greeter", "park.staff.cleaner"])).toBe(true);
     expect(probeMatches("park.staff.*", ["park.guest.1"])).toBe(false);
     expect(probeMatches("ember-command campaign", ["ember-command campaign"])).toBe(true);
-  });
-
-  test("dots and dashes are literal", () => {
     expect(probeMatches("harbor.traffic", ["harborXtraffic"])).toBe(false);
   });
 
-  test("an adopted capability with no probe is reported as declaration-level", () => {
-    const report = checkDeclarations(ledger, [
-      { game: "ember", declaration: declaration({ probes: {} }) },
-    ], OPEN);
-    expect(report.problems).toEqual([]);
-    expect(report.declarationLevel).toEqual([
-      { game: "ember", capability: "mission-runtime", module: "@jgengine/core/mission/mission" },
-    ]);
+  test("proof: a probed claim still fails when the live counters are absent", () => {
+    expect(windowProbeVerdict("__jgengineRun", undefined)).toContain("__jgengineRun is absent");
+    expect(windowProbeVerdict("__jgengineRun", null)).toContain("__jgengineRun is absent");
+    expect(windowProbeVerdict("__jgengineRun", {})).toContain("no live counters");
+    expect(windowProbeVerdict("__jgengineRun", { error: "loop not installed" })).toContain("threw loop not installed");
+    expect(windowProbeVerdict("__jgengineAudio", { master: Number.NaN })).toContain("no live counters");
+    expect(windowProbeVerdict("__jgengineRun", { run: 2, carried: 80, banked: 200, lost: 0, best: 200 })).toBeNull();
+    expect(windowProbeVerdict("__jgengineAudio", { rms: 0, peak: 0, master: 0.8 })).toBeNull();
   });
 
-  test("a probe for a module the game does not adopt fails", () => {
-    const report = checkDeclarations(ledger, [
-      {
-        game: "ember",
-        declaration: declaration({
-          adopts: ["audio-probe"],
-          probes: { "@jgengine/core/mission/mission": ["campaign"] },
-        }),
-      },
-    ], OPEN);
-    expect(report.problems.some((problem) => problem.message.includes("adopts none of its capabilities"))).toBe(true);
+  test("the boot probe waits on game frames after mount, not on the clock", () => {
+    const limits = { settleFrames: 300, mountMs: 300_000 };
+    expect(probeGivesUp({ startedAt: 0, now: 240_000, framesSinceMount: null }, limits)).toBe(false);
+    expect(probeGivesUp({ startedAt: 0, now: 90_000, framesSinceMount: 40 }, limits)).toBe(false);
+    expect(probeGivesUp({ startedAt: 0, now: 20_000, framesSinceMount: 300 }, limits)).toBe(true);
+    expect(probeGivesUp({ startedAt: 0, now: 300_000, framesSinceMount: null }, limits)).toBe(true);
+    expect(probeGivesUp({ startedAt: 0, now: 5_000, framesSinceMount: null, crashedBeforeMount: true }, limits)).toBe(true);
+    expect(probeGivesUp({ startedAt: 0, now: 5_000, framesSinceMount: 10, crashedBeforeMount: true }, limits)).toBe(false);
   });
 });
 
 // --- the debt ratchet: budget file, --write and the summary trend line --------
-
-const debtReason = "The shared audio mix is not adopted here yet; buses are wired by hand.";
-
-const debtDeclaration = (): Declaration =>
-  declaration({ declines: { "audio-probe": { kind: "debt", reason: debtReason, issue: 101 } } });
-
-const clearedDeclaration = (): Declaration =>
-  declaration({
-    declines: { "audio-probe": { kind: "not-applicable", reason: "No audio mix is published: this game is silent." } },
-  });
-
-const harbourDeclaration = (): Declaration => ({
-  adopts: [],
-  probes: {},
-  declines: {
-    "mission-runtime": { kind: "not-applicable", reason: "No mission runtime: courier routes carry no objectives." },
-    "audio-probe": { kind: "not-applicable", reason: "No audio mix: this game never plays a sound." },
-  },
-});
 
 const budget = (total: number, games: Record<string, number>, history: DebtBudget["history"] = []): DebtBudget => ({
   updated: "2026-10-23",
@@ -541,29 +348,19 @@ afterEach(() => {
   while (roots.length > 0) rmSync(roots.pop()!, { recursive: true, force: true });
 });
 
-function fixture(options: {
-  games: Record<string, Declaration>;
-  committedBudget?: DebtBudget | null;
-  ledger?: Ledger;
-}): string {
+function fixture(options: { committedBudget?: DebtBudget | null; ledger?: Ledger } = {}): string {
   const root = mkdtempSync(join(tmpdir(), "lane-debt-ratchet-"));
   roots.push(root);
   writeFileSync(join(root, "capabilities.json"), `${JSON.stringify(options.ledger ?? ledger, null, 2)}\n`);
   mkdirSync(join(root, "scripts"), { recursive: true });
   if (options.committedBudget !== null) {
-    writeFileSync(
-      join(root, BUDGET_REL),
-      `${JSON.stringify(options.committedBudget ?? budget(0, {}), null, 2)}\n`,
-    );
-  }
-  for (const [game, declaration] of Object.entries(options.games)) {
-    mkdirSync(join(root, game, "src"), { recursive: true });
-    writeFileSync(join(root, game, "package.json"), `${JSON.stringify({ name: `@games/${game}` })}\n`);
-    writeFileSync(join(root, game, "src", "game.config.ts"), "export {};\n");
-    writeFileSync(join(root, game, "jgengine.json"), `${JSON.stringify({ capabilities: declaration }, null, 2)}\n`);
+    writeFileSync(join(root, BUDGET_REL), `${JSON.stringify(options.committedBudget ?? budget(0, {}), null, 2)}\n`);
   }
   return root;
 }
+
+const indebted = (): GameDeclaration[] => [game("ember", ["mission-runtime"], owesAudio()), game("harbour", [])];
+const cleared = (): GameDeclaration[] => [game("ember", ["mission-runtime", "audio-probe"], probed), game("harbour", [])];
 
 function capture(): { sink: Sink; lines: string[]; errors: string[] } {
   const lines: string[] = [];
@@ -577,23 +374,18 @@ function capture(): { sink: Sink; lines: string[]; errors: string[] } {
 
 describe("debt ratchet", () => {
   test("proof 1: debt above the budget fails with the game, entry and issue to clear first", () => {
-    const root = fixture({ games: { ember: debtDeclaration(), harbour: harbourDeclaration() } });
+    const root = fixture();
     const { sink, errors } = capture();
-    const code = runCheck({ root, argv: ["--no-ledger"], sink, readIssues: () => OPEN });
-    expect(code).toBe(1);
+    expect(runCheck({ root, argv: ["--no-ledger"], sink, readIssues: () => OPEN, games: indebted() })).toBe(1);
     const output = errors.join("\n");
     expect(output).toContain("debt is above its budget");
     expect(output).toContain("ember: 1 debt entry, budget 0 - 1 over; clear #101 (audio-probe) first");
   });
 
   test("proof 2: a budget above the tally is stale and fails", () => {
-    const root = fixture({
-      games: { ember: debtDeclaration(), harbour: harbourDeclaration() },
-      committedBudget: budget(2, { ember: 2 }),
-    });
+    const root = fixture({ committedBudget: budget(2, { ember: 2 }) });
     const { sink, errors } = capture();
-    const code = runCheck({ root, argv: ["--no-ledger"], sink, readIssues: () => OPEN });
-    expect(code).toBe(1);
+    expect(runCheck({ root, argv: ["--no-ledger"], sink, readIssues: () => OPEN, games: indebted() })).toBe(1);
     const output = errors.join("\n");
     expect(output).toContain("debt budget is above the tally");
     expect(output).toContain("ember: budget 2, tally 1");
@@ -601,13 +393,10 @@ describe("debt ratchet", () => {
     expect(output).toContain("run bun run check games-capabilities --write");
   });
 
-  test("proof 3: a cleared entry with the budget lowered passes, and the trend keeps the old number", () => {
-    const root = fixture({
-      games: { ember: clearedDeclaration(), harbour: harbourDeclaration() },
-      committedBudget: budget(1, { ember: 1 }),
-    });
+  test("proof 3: adopting pays the debt; with the budget lowered it passes and the trend keeps the old number", () => {
+    const root = fixture({ committedBudget: budget(1, { ember: 1 }) });
     const stale = capture();
-    expect(runCheck({ root, argv: ["--no-ledger"], sink: stale.sink, readIssues: () => OPEN })).toBe(1);
+    expect(runCheck({ root, argv: ["--no-ledger"], sink: stale.sink, readIssues: () => OPEN, games: cleared() })).toBe(1);
     expect(stale.errors.join("\n")).toContain("ember: budget 1, tally 0");
 
     const write = capture();
@@ -617,6 +406,7 @@ describe("debt ratchet", () => {
       sink: write.sink,
       readIssues: () => OPEN,
       today: "2026-10-24",
+      games: cleared(),
     });
     expect(code).toBe(0);
     expect(write.lines.join("\n")).toContain("debt budget: 1 -> 0");
@@ -628,20 +418,21 @@ describe("debt ratchet", () => {
     });
 
     const pass = capture();
-    expect(runCheck({ root, argv: ["--no-ledger", "--summary"], sink: pass.sink, readIssues: () => OPEN })).toBe(0);
+    expect(
+      runCheck({ root, argv: ["--no-ledger", "--summary"], sink: pass.sink, readIssues: () => OPEN, games: cleared() }),
+    ).toBe(0);
     expect(pass.lines).toContain("debt: 0 (budget 0, was 1 on 2026-10-23)");
   });
 
   test("--write refuses to raise the budget when debt arrived", () => {
-    const root = fixture({ games: { ember: debtDeclaration(), harbour: harbourDeclaration() } });
+    const root = fixture();
     const { sink, errors } = capture();
-    const code = runCheck({ root, argv: ["--no-ledger", "--write"], sink, readIssues: () => OPEN });
-    expect(code).toBe(1);
+    expect(runCheck({ root, argv: ["--no-ledger", "--write"], sink, readIssues: () => OPEN, games: indebted() })).toBe(1);
     expect(errors.join("\n")).toContain("--write will not raise");
     expect(JSON.parse(readFileSync(join(root, BUDGET_REL), "utf8"))).toEqual(budget(0, {}));
   });
 
-  test("proof 4: a new capability with no game decision fails, before and after the ledger sync", () => {
+  test("proof 4: a stale ledger fails and names the generating command", () => {
     const extended: Ledger = {
       ...ledger,
       capabilities: [
@@ -657,67 +448,37 @@ describe("debt ratchet", () => {
         },
       ],
     };
-    const stale = fixture({
-      games: { ember: debtDeclaration(), harbour: harbourDeclaration() },
-      committedBudget: budget(1, { ember: 1 }),
-    });
+    const root = fixture({ committedBudget: budget(1, { ember: 1 }) });
     const before = capture();
-    expect(runCheck({ root: stale, argv: [], sink: before.sink, readIssues: () => OPEN, installed: extended })).toBe(1);
-    const driftOutput = before.errors.join("\n");
-    expect(driftOutput).toContain('added "traffic"');
-    expect(driftOutput).toContain("Games that must decide before this can pass:");
-    expect(driftOutput).toContain('"traffic" (@jgengine/core/nav/traffic): ember, harbour');
+    expect(
+      runCheck({ root, argv: [], sink: before.sink, readIssues: () => OPEN, installed: extended, games: indebted() }),
+    ).toBe(1);
+    const output = before.errors.join("\n");
+    expect(output).toContain('added "traffic"');
+    expect(output).toContain("bun run gen games-ledger");
 
-    // After `bun run gen games-ledger` the ledger knows the capability and every game
-    // still owes the answer, which is the failure that must not be silent debt.
-    const synced = fixture({
-      games: { ember: debtDeclaration(), harbour: harbourDeclaration() },
-      committedBudget: budget(1, { ember: 1 }),
-      ledger: extended,
-    });
+    // After the ledger catches up, no game owes an answer for it: the new capability passes.
+    const synced = fixture({ committedBudget: budget(1, { ember: 1 }), ledger: extended });
     const after = capture();
-    expect(runCheck({ root: synced, argv: ["--no-ledger"], sink: after.sink, readIssues: () => OPEN })).toBe(1);
-    expect(after.errors.join("\n")).toContain('does not declare game-facing capability "traffic"');
-  });
-
-  test("gamesToDecide skips a game that already declined the new capability", () => {
-    const extended: Ledger = {
-      ...ledger,
-      capabilities: [
-        ...ledger.capabilities,
-        {
-          id: "traffic",
-          packages: ["@jgengine/core"],
-          module: "@jgengine/core/nav/traffic",
-          domain: "traffic",
-          gameFacing: true,
-          probe: { kind: "devtools" },
-          intent: "drive traffic",
-        },
-      ],
-    };
-    const decided: Declaration = {
-      ...declaration(),
-      declines: {
-        ...declaration().declines,
-        traffic: { kind: "not-applicable", reason: "No traffic: this game has no roads or vehicles." },
-      },
-    };
-    expect(gamesToDecide(ledger, extended, [
-      { game: "ember", declaration: decided },
-      { game: "harbour", declaration: declaration() },
-    ])).toEqual([{ capability: "traffic", module: "@jgengine/core/nav/traffic", games: ["harbour"] }]);
+    expect(runCheck({ root: synced, argv: ["--no-ledger"], sink: after.sink, readIssues: () => OPEN, games: indebted() })).toBe(0);
   });
 
   test("a missing budget file fails until --write seeds it", () => {
-    const root = fixture({ games: { ember: clearedDeclaration(), harbour: harbourDeclaration() }, committedBudget: null });
+    const root = fixture({ committedBudget: null });
     const missing = capture();
-    expect(runCheck({ root, argv: ["--no-ledger"], sink: missing.sink, readIssues: () => OPEN })).toBe(1);
+    expect(runCheck({ root, argv: ["--no-ledger"], sink: missing.sink, readIssues: () => OPEN, games: cleared() })).toBe(1);
     expect(missing.errors.join("\n")).toContain(`${BUDGET_REL} is missing`);
 
     const write = capture();
     expect(
-      runCheck({ root, argv: ["--no-ledger", "--write"], sink: write.sink, readIssues: () => OPEN, today: "2026-10-23" }),
+      runCheck({
+        root,
+        argv: ["--no-ledger", "--write"],
+        sink: write.sink,
+        readIssues: () => OPEN,
+        today: "2026-10-23",
+        games: cleared(),
+      }),
     ).toBe(0);
     expect(JSON.parse(readFileSync(join(root, BUDGET_REL), "utf8"))).toMatchObject({ total: 0, games: { ember: 0 } });
   });
@@ -751,4 +512,3 @@ describe("budget file", () => {
     expect(buildBudget(budget(2, { ember: 2, harbour: 0 }), tallies, "2026-10-24").history).toEqual([]);
   });
 });
-

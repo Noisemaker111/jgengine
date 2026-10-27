@@ -8,18 +8,23 @@ export const PROJECT_CONFIG_FILE = "jgengine.json";
 export const GAME_TEMPLATES = ["3d", "2d", "builder"] as const;
 export type GameTemplate = (typeof GAME_TEMPLATES)[number];
 
-/** One capability a game chose not to run, and why. */
-export interface CapabilityDecline {
-  kind: "not-applicable" | "debt";
+/** A game-facing capability whose domain a game has while it runs its own version. */
+export interface CapabilityDebt {
+  /** What the game does in that domain today, in words that name the domain. */
   reason: string;
-  issue?: number;
+  /** The open issue that tracks adopting the shared system. */
+  issue: number;
 }
 
-/** A game's answers to the engine's game-facing capabilities (engine monorepo games). */
+/**
+ * What an engine monorepo game writes about capabilities. Adoption is not written: the gate reads
+ * it from the game's imports.
+ */
 export interface CapabilityAnswers {
-  adopts: string[];
+  /** Boot probes, by module, that prove an adopted system live on the running page. */
   probes?: Record<string, string[]>;
-  declines: Record<string, CapabilityDecline>;
+  /** Capability id to its debt. */
+  debt?: Record<string, CapabilityDebt>;
 }
 
 /**
@@ -34,7 +39,7 @@ export interface ProjectConfig {
   /**
    * The template the game was created from. Sync rewrites that template's shared files (wiring,
    * page, tooling scripts, agent guide) from the running engine. No template: the game owns every
-   * file and sync manages its engine packages and capabilities only.
+   * file and sync manages its engine packages only.
    */
   template?: GameTemplate;
   /** The scene editor wiring (`F2+E`); templates 3d and builder. Default true. */
@@ -43,7 +48,7 @@ export interface ProjectConfig {
   engine: string[];
   /** Template files this game rewrote and owns; sync leaves them alone. */
   owns?: string[];
-  /** Engine monorepo games: which game-facing capabilities the game adopts or declines. */
+  /** Engine monorepo games: boot probes and adoption debt (adoption itself is read from source). */
   capabilities?: CapabilityAnswers;
 }
 

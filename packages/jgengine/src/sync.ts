@@ -1,9 +1,8 @@
 import { existsSync, mkdirSync, readdirSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { basename, dirname, join, relative, resolve } from "node:path";
-import { pathToFileURL } from "node:url";
 
 import { cliVersion, findWorkspaceRoot, isEngineMonorepo, readPackageJson, sdkVersion } from "./pkg";
-import { type CapabilityAnswers, PROJECT_CONFIG_FILE, type ProjectConfig, readProjectConfig, renderProjectConfig } from "./projectConfig";
+import { PROJECT_CONFIG_FILE, type ProjectConfig, readProjectConfig } from "./projectConfig";
 import { compareSemver, loadReleaseNotes, lowestSdkVersion, releasesBetween, renderReleaseNotes } from "./releaseNotes";
 import { gameTemplate, type TemplateVariant } from "./templates";
 import { applyCatalogSync, planCatalogSync, readWorkspaceCatalog } from "./workspaceCatalog";
@@ -40,8 +39,6 @@ export interface SyncContext {
   variant: TemplateVariant;
   engineVersion: string;
   cliVersion: string;
-  /** Engine monorepo only: the game's capability answers brought up to the current ledger. */
-  capabilities?: (current: CapabilityAnswers | null) => CapabilityAnswers;
 }
 
 type Manifest = Record<string, unknown> & {
@@ -144,12 +141,6 @@ export function planSync(dir: string, context: SyncContext): SyncWrite[] {
     writes.push({ path: "package.json", contents: `${JSON.stringify(nextManifest, null, 2)}\n` });
   }
 
-  if (context.capabilities !== undefined) {
-    const answers = context.capabilities(config.capabilities ?? null);
-    if (JSON.stringify(answers) !== JSON.stringify(config.capabilities)) {
-      writes.push({ path: PROJECT_CONFIG_FILE, contents: renderProjectConfig({ ...config, capabilities: answers }) });
-    }
-  }
   return writes;
 }
 
@@ -168,21 +159,8 @@ export function applySync(dir: string, writes: SyncWrite[]): void {
   }
 }
 
-interface CapabilityModule {
-  syncDeclaration: (root: string, game: string, ledger: unknown, current: CapabilityAnswers | null) => CapabilityAnswers;
-}
-
-/** Monorepo games answer the engine's capability ledger; the ledger tooling lives with the games. */
-async function monorepoCapabilities(workspaceRoot: string, dir: string): Promise<SyncContext["capabilities"]> {
-  const gamesRoot = join(workspaceRoot, "games");
-  if (!existsSync(join(gamesRoot, "capabilities.json"))) return undefined;
-  const module = (await import(pathToFileURL(join(gamesRoot, "scripts", "capabilities.ts")).href)) as CapabilityModule;
-  const ledger = JSON.parse(readFileSync(join(gamesRoot, "capabilities.json"), "utf8")) as unknown;
-  return (current) => module.syncDeclaration(gamesRoot, basename(dir), ledger, current);
-}
-
 /** The context sync runs a game in: the monorepo variant when it sits in the engine's `games/`. */
-export async function syncContext(dir: string): Promise<SyncContext> {
+export function syncContext(dir: string): SyncContext {
   const workspaceRoot = findWorkspaceRoot(dir);
   const inRepo =
     workspaceRoot !== null &&
@@ -190,14 +168,14 @@ export async function syncContext(dir: string): Promise<SyncContext> {
     resolve(dirname(dir)) === resolve(join(workspaceRoot, "games"));
   const base = { engineVersion: sdkVersion(), cliVersion: cliVersion() };
   if (!inRepo || workspaceRoot === null) return { ...base, variant: "standalone" };
-  return { ...base, variant: "in-repo", capabilities: await monorepoCapabilities(workspaceRoot, dir) };
+  return { ...base, variant: "in-repo" };
 }
 
 const SYNC_USAGE = `usage: jgengine sync [dir...] [--check]
 
   Brings games up to this jgengine's engine version and makes each match its jgengine.json: the
   @jgengine packages in package.json, its template's shared files and scripts (wiring, page,
-  AGENTS.md, shoot/drive) and, in the engine monorepo, its capability answers. Run at a workspace
+  AGENTS.md, shoot/drive). Run at a workspace
   root it also moves the @jgengine pins in the root's Bun catalogs, then syncs every workspace game.
   When versions move it prints the release notes in between: Migrate steps first, oldest release
   first. Run a newer CLI (npx jgengine@latest sync) to move to a newer engine.
@@ -280,7 +258,7 @@ export async function runSync(argv: string[]): Promise<number> {
   for (const dir of games) {
     const label = relative(process.cwd(), dir) || basename(dir);
     try {
-      const context = await syncContext(dir);
+      const context = syncContext(dir);
       const writes = planSync(dir, context);
       if (writes.length === 0) {
         console.log(`sync ${label}: up to date`);

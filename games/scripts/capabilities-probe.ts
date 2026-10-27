@@ -21,7 +21,7 @@ import { join } from "node:path";
 import { fileURLToPath } from "node:url";
 
 import {
-  DECLINE_MIN,
+  gameAdoption,
   gameDirs,
   probeGivesUp,
   probeMatches,
@@ -29,7 +29,6 @@ import {
   readInstalled,
   windowProbeVerdict,
   type CapabilityEntry,
-  type Declaration,
   type Ledger,
 } from "./capabilities";
 
@@ -333,10 +332,8 @@ async function bootAndRead(game: string, port: number, expectations: Expectation
   }
 }
 
-function capabilitiesForModule(declaration: Declaration, module: string): CapabilityEntry[] {
-  return ledger.capabilities.filter(
-    (entry) => entry.module === module && declaration.adopts.includes(entry.id),
-  );
+function capabilitiesForModule(adopts: string[], module: string): CapabilityEntry[] {
+  return ledger.capabilities.filter((entry) => entry.module === module && adopts.includes(entry.id));
 }
 
 /** The system-level slug a probe should name, not a helper tag like mission-validation. */
@@ -362,6 +359,7 @@ for (const game of targets) {
   const declaration = readDeclaration(root, game);
   if (declaration === null) continue; // The static gate names the missing file.
   const entries = Object.entries(declaration.probes ?? {});
+  const adopts = gameAdoption(root, game, ledger);
   const expectations: Expectations = { windows: [], devtools: [] };
   for (const [module, patterns] of entries) {
     const info = installed.modules.find((item) => item.specifier === module);
@@ -380,7 +378,7 @@ for (const game of targets) {
         : " (the shell never stamped data-jg-phase: the game did not mount)";
 
   for (const [module, patterns] of entries) {
-    const capabilities = capabilitiesForModule(declaration, module);
+    const capabilities = capabilitiesForModule(adopts, module);
     if (capabilities.length === 0) continue;
     const capability = primaryCapability(capabilities);
     const info = installed.modules.find((item) => item.specifier === module);
@@ -390,7 +388,7 @@ for (const game of targets) {
       const readout = page.windows?.[global];
       const verdict = windowProbeVerdict(global, readout);
       if (verdict !== null) {
-        gameFailures.push({ game, capability, module, reason: `declared adopted, but ${verdict}${unmounted}` });
+        gameFailures.push({ game, capability, module, reason: `imported with a boot probe, but ${verdict}${unmounted}` });
       } else {
         const counters = Object.entries(readout as Record<string, unknown>)
           .filter(([, value]) => typeof value === "number")
@@ -410,7 +408,7 @@ for (const game of targets) {
         game,
         capability,
         module,
-        reason: `declared adopted, but debug_snapshot.probes has no ${missing.map((p) => `"${p}"`).join(" or ")} (keys: ${keys.slice(0, 8).join(", ") || "none"}${page.error === undefined ? "" : `; ${page.error}`})${unmounted}`,
+        reason: `imported with a boot probe, but debug_snapshot.probes has no ${missing.map((p) => `"${p}"`).join(" or ")} (keys: ${keys.slice(0, 8).join(", ") || "none"}${page.error === undefined ? "" : `; ${page.error}`})${unmounted}`,
       });
       continue;
     }
@@ -442,7 +440,7 @@ if (failures.length > 0) {
     console.error(`  ${failure.game}: "${failure.capability}" via ${failure.module}`);
     console.error(`    ${failure.reason}`);
     console.error(
-      `    Two ways out: mount the system at boot so its probe reports and keep the adoption, or drop the adoption and decline it with a ${DECLINE_MIN}+ character reason.`,
+      "    Two ways out: mount the system at boot so its probe reports, or remove the boot probe from the game's jgengine.json.",
     );
   }
   process.exit(1);
