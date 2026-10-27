@@ -19,13 +19,12 @@ Games run the engine source in `packages/` from the same commit, never a publish
 
 ## Capability adoption
 
-`capabilities.json` is generated from the engine's game-facing capabilities (`bun run gen games-ledger`). Each game answers every one in the `capabilities` section of its `jgengine.json`; `bun run jgengine sync` seeds the section for a new game and adds each newly arrived capability as a TODO decline:
+`capabilities.json` is generated from the engine's capabilities (`bun run gen games-ledger`, which `lane:close` runs). What a game adopts is read from its imports; nobody writes it. A game's `jgengine.json` `capabilities` section holds only what source cannot show:
 
-- **adopted** - the game runs the shared system.
-- **not-applicable** - the domain does not exist in this game; the reason names the domain.
-- **debt** - the game has the domain but not the shared system; the reason names the gap and an open issue in this repo.
+- **debt** - a game-facing capability whose domain the game has while it runs its own version: a 20+ character reason, in this game's words, that names the domain, and the open issue in this repo that tracks adopting it. Importing the capability pays the debt; the gate then asks you to remove the entry.
+- **probes** - by module, the boot probes that prove an adopted system live. Name one only for a system mounted at boot.
 
-Reasons are 20+ specific characters, never copied between games. `bun run check games-capabilities` fails missing, thin or template reasons, ownerless or closed-issue debt, and a stale ledger; `--summary` prints the per-game table. `bun run games:capabilities probe` boots games that name a probe and checks the system reports live counters; name a probe only for a system mounted at boot.
+`bun run check games-capabilities` fails thin, template or domain-less debt reasons, ownerless or closed-issue debt, debt on something already imported, a probe for a module the game does not import, and a stale ledger; `--summary` prints the per-game table. `bun run games:capabilities probe` boots games that name a probe and checks the system reports live counters.
 
 **Debt only goes down.** `scripts/debt-budget.json` holds a total and per-game ceiling. The gate fails when debt exceeds a ceiling or a ceiling sits above the tally; clearing debt lowers its budget with `bun run check games-capabilities --write`, which never raises one.
 

@@ -41,6 +41,5 @@ if (drift.length === 0) {
 console.error(`games-ledger FAIL - ${LEDGER_FILE} is behind the engine source:`);
 for (const line of drift) console.error(`  ${line}`);
 console.error("");
-console.error("Run: bun run gen games-ledger");
-console.error("Then declare each new capability in every game's capabilities.json (adopt or decline).");
+console.error("Run: bun run gen games-ledger (lane:close runs it)");
 process.exit(1);

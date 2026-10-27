@@ -1,6 +1,6 @@
 {
   "generatedBy": "bun run gen games-ledger",
-  "gameFacingRule": "Game-facing means the engine package ships a live probe with the capability: a devtools probe name or a window.__jgengine* readout. Every game declares each one: adopt it, or decline it as not-applicable (its domain does not exist here) or debt (this game has the domain and has not adopted the shared system, so an open issue tracks it).",
+  "gameFacingRule": "Game-facing means the engine package ships a live probe with the capability: a devtools probe name or a window.__jgengine* readout. A game adopts a capability by importing it (read from its source). A game that has a game-facing capability's domain but runs its own version records it as debt, with the open issue that tracks adopting the shared one, in its jgengine.json.",
   "capabilities": [
     {
       "id": "ability-bar",
@@ -239,7 +239,7 @@
         "@jgengine/core"
       ],
       "module": "@jgengine/core/agents/agent",
-      "domain": "agent loop",
+      "domain": "agents",
       "gameFacing": true,
       "probe": {
         "kind": "devtools"
@@ -670,7 +670,7 @@
         "@jgengine/core"
       ],
       "module": "@jgengine/core/audio/audioProbe.view",
-      "domain": "audio mix",
+      "domain": "audio",
       "gameFacing": true,
       "probe": {
         "kind": "window",
@@ -2059,7 +2059,7 @@
         "@jgengine/core"
       ],
       "module": "@jgengine/core/combat/cover",
-      "domain": "cover",
+      "domain": "combat",
       "gameFacing": true,
       "probe": {
         "kind": "devtools"
@@ -2072,7 +2072,7 @@
         "@jgengine/core"
       ],
       "module": "@jgengine/core/combat/cover",
-      "domain": "cover",
+      "domain": "combat",
       "gameFacing": true,
       "probe": {
         "kind": "devtools"
@@ -2085,7 +2085,7 @@
         "@jgengine/core"
       ],
       "module": "@jgengine/core/combat/cover",
-      "domain": "cover",
+      "domain": "combat",
       "gameFacing": true,
       "probe": {
         "kind": "devtools"
@@ -2098,7 +2098,7 @@
         "@jgengine/core"
       ],
       "module": "@jgengine/core/combat/cover",
-      "domain": "cover",
+      "domain": "combat",
       "gameFacing": true,
       "probe": {
         "kind": "devtools"
@@ -2111,7 +2111,7 @@
         "@jgengine/core"
       ],
       "module": "@jgengine/core/combat/cover",
-      "domain": "cover",
+      "domain": "combat",
       "gameFacing": true,
       "probe": {
         "kind": "devtools"
@@ -2443,7 +2443,7 @@
         "@jgengine/core"
       ],
       "module": "@jgengine/core/combat/damage/damageRuntime",
-      "domain": "damage table",
+      "domain": "combat",
       "gameFacing": true,
       "probe": {
         "kind": "devtools"
@@ -2511,7 +2511,7 @@
         "@jgengine/core"
       ],
       "module": "@jgengine/core/combat/damage/damageRuntime",
-      "domain": "damage table",
+      "domain": "combat",
       "gameFacing": true,
       "probe": {
         "kind": "devtools"
@@ -3394,7 +3394,7 @@
         "@jgengine/core"
       ],
       "module": "@jgengine/core/inventory/equipment",
-      "domain": "equipment slots",
+      "domain": "inventory",
       "gameFacing": true,
       "probe": {
         "kind": "devtools"
@@ -3891,7 +3891,7 @@
         "@jgengine/core"
       ],
       "module": "@jgengine/core/save/saveDocument",
-      "domain": "save document",
+      "domain": "save",
       "gameFacing": true,
       "probe": {
         "kind": "devtools"
@@ -3904,7 +3904,7 @@
         "@jgengine/core"
       ],
       "module": "@jgengine/core/save/saveDocument",
-      "domain": "save document",
+      "domain": "save",
       "gameFacing": true,
       "probe": {
         "kind": "devtools"
@@ -5656,7 +5656,7 @@
         "@jgengine/core"
       ],
       "module": "@jgengine/core/economy/loanBook",
-      "domain": "loans",
+      "domain": "economy",
       "gameFacing": true,
       "probe": {
         "kind": "devtools"
@@ -5669,7 +5669,7 @@
         "@jgengine/core"
       ],
       "module": "@jgengine/core/economy/loanBook",
-      "domain": "loans",
+      "domain": "economy",
       "gameFacing": true,
       "probe": {
         "kind": "devtools"
@@ -5759,7 +5759,7 @@
         "@jgengine/core"
       ],
       "module": "@jgengine/core/loot/lootGen",
-      "domain": "loot rolling",
+      "domain": "loot",
       "gameFacing": true,
       "probe": {
         "kind": "devtools"
@@ -5783,7 +5783,7 @@
         "@jgengine/core"
       ],
       "module": "@jgengine/core/loot/lootGen",
-      "domain": "loot rolling",
+      "domain": "loot",
       "gameFacing": true,
       "probe": {
         "kind": "devtools"
@@ -5807,7 +5807,7 @@
         "@jgengine/core"
       ],
       "module": "@jgengine/core/loot/lootGen",
-      "domain": "loot rolling",
+      "domain": "loot",
       "gameFacing": true,
       "probe": {
         "kind": "devtools"
@@ -5820,7 +5820,7 @@
         "@jgengine/core"
       ],
       "module": "@jgengine/core/loot/lootGen",
-      "domain": "loot rolling",
+      "domain": "loot",
       "gameFacing": true,
       "probe": {
         "kind": "devtools"
@@ -5844,7 +5844,7 @@
         "@jgengine/core"
       ],
       "module": "@jgengine/core/loot/lootGen",
-      "domain": "loot rolling",
+      "domain": "loot",
       "gameFacing": true,
       "probe": {
         "kind": "devtools"
@@ -6297,7 +6297,7 @@
         "@jgengine/core"
       ],
       "module": "@jgengine/core/mission/mission",
-      "domain": "mission runtime",
+      "domain": "mission",
       "gameFacing": true,
       "probe": {
         "kind": "devtools"
@@ -6310,7 +6310,7 @@
         "@jgengine/core"
       ],
       "module": "@jgengine/core/mission/mission",
-      "domain": "mission runtime",
+      "domain": "mission",
       "gameFacing": true,
       "probe": {
         "kind": "devtools"
@@ -6323,7 +6323,7 @@
         "@jgengine/core"
       ],
       "module": "@jgengine/core/mission/mission",
-      "domain": "mission runtime",
+      "domain": "mission",
       "gameFacing": true,
       "probe": {
         "kind": "devtools"
@@ -6347,7 +6347,7 @@
         "@jgengine/core"
       ],
       "module": "@jgengine/core/mission/mission",
-      "domain": "mission runtime",
+      "domain": "mission",
       "gameFacing": true,
       "probe": {
         "kind": "devtools"
@@ -6547,7 +6547,7 @@
         "@jgengine/shell"
       ],
       "module": "@jgengine/shell/GameHost",
-      "domain": "game host",
+      "domain": "mount-game",
       "gameFacing": true,
       "probe": {
         "kind": "window",
@@ -6704,7 +6704,7 @@
         "@jgengine/core"
       ],
       "module": "@jgengine/core/nav/navCrowd",
-      "domain": "navigation",
+      "domain": "nav",
       "gameFacing": true,
       "probe": {
         "kind": "devtools"
@@ -6728,7 +6728,7 @@
         "@jgengine/core"
       ],
       "module": "@jgengine/core/nav/navRuntime",
-      "domain": "navigation",
+      "domain": "nav",
       "gameFacing": true,
       "probe": {
         "kind": "devtools"
@@ -6752,7 +6752,7 @@
         "@jgengine/core"
       ],
       "module": "@jgengine/core/nav/navRuntime",
-      "domain": "navigation",
+      "domain": "nav",
       "gameFacing": true,
       "probe": {
         "kind": "devtools"
@@ -6776,7 +6776,7 @@
         "@jgengine/core"
       ],
       "module": "@jgengine/core/sim/nearAgents",
-      "domain": "agent loop",
+      "domain": "sim",
       "gameFacing": true,
       "probe": {
         "kind": "devtools"
@@ -6910,7 +6910,7 @@
         "@jgengine/core"
       ],
       "module": "@jgengine/core/sim/offScreen",
-      "domain": "offscreen simulation",
+      "domain": "sim",
       "gameFacing": true,
       "probe": {
         "kind": "devtools"
@@ -7286,7 +7286,7 @@
         "@jgengine/core"
       ],
       "module": "@jgengine/core/sensor/perception",
-      "domain": "perception",
+      "domain": "sensor",
       "gameFacing": true,
       "probe": {
         "kind": "devtools"
@@ -7563,7 +7563,7 @@
         "@jgengine/core"
       ],
       "module": "@jgengine/core/ai/policeResponse",
-      "domain": "police heat",
+      "domain": "ai",
       "gameFacing": true,
       "probe": {
         "kind": "devtools"
@@ -7576,7 +7576,7 @@
         "@jgengine/core"
       ],
       "module": "@jgengine/core/ai/policeResponse",
-      "domain": "police heat",
+      "domain": "ai",
       "gameFacing": true,
       "probe": {
         "kind": "devtools"
@@ -8304,7 +8304,7 @@
         "@jgengine/core"
       ],
       "module": "@jgengine/core/sim/rides",
-      "domain": "ride simulation",
+      "domain": "sim",
       "gameFacing": true,
       "probe": {
         "kind": "devtools"
@@ -8317,7 +8317,7 @@
         "@jgengine/core"
       ],
       "module": "@jgengine/core/sim/rides",
-      "domain": "ride simulation",
+      "domain": "sim",
       "gameFacing": true,
       "probe": {
         "kind": "devtools"
@@ -8341,7 +8341,7 @@
         "@jgengine/core"
       ],
       "module": "@jgengine/core/sim/rides",
-      "domain": "ride simulation",
+      "domain": "sim",
       "gameFacing": true,
       "probe": {
         "kind": "devtools"
@@ -8497,7 +8497,7 @@
         "@jgengine/core"
       ],
       "module": "@jgengine/core/ai/rvo",
-      "domain": "crowd steering",
+      "domain": "ai",
       "gameFacing": true,
       "probe": {
         "kind": "devtools"
@@ -9030,7 +9030,7 @@
         "@jgengine/core"
       ],
       "module": "@jgengine/core/progression/skillTree",
-      "domain": "skill tree",
+      "domain": "progression",
       "gameFacing": true,
       "probe": {
         "kind": "devtools"
@@ -9384,7 +9384,7 @@
         "@jgengine/core"
       ],
       "module": "@jgengine/core/combat/squadCombat",
-      "domain": "squad combat",
+      "domain": "combat",
       "gameFacing": true,
       "probe": {
         "kind": "devtools"
@@ -9661,7 +9661,7 @@
         "@jgengine/core"
       ],
       "module": "@jgengine/core/combat/statusRuntime",
-      "domain": "status effects",
+      "domain": "combat",
       "gameFacing": true,
       "probe": {
         "kind": "devtools"
@@ -9674,7 +9674,7 @@
         "@jgengine/core"
       ],
       "module": "@jgengine/core/combat/statusRuntime",
-      "domain": "status effects",
+      "domain": "combat",
       "gameFacing": true,
       "probe": {
         "kind": "devtools"
@@ -9731,7 +9731,7 @@
         "@jgengine/core"
       ],
       "module": "@jgengine/core/economy/market",
-      "domain": "market pricing",
+      "domain": "economy",
       "gameFacing": true,
       "probe": {
         "kind": "devtools"
@@ -10206,7 +10206,7 @@
         "@jgengine/core"
       ],
       "module": "@jgengine/core/nav/traffic",
-      "domain": "traffic",
+      "domain": "nav",
       "gameFacing": true,
       "probe": {
         "kind": "devtools"
@@ -10230,7 +10230,7 @@
         "@jgengine/core"
       ],
       "module": "@jgengine/core/economy/transactionLedger",
-      "domain": "transaction ledger",
+      "domain": "economy",
       "gameFacing": true,
       "probe": {
         "kind": "devtools"
@@ -10309,7 +10309,7 @@
         "@jgengine/core"
       ],
       "module": "@jgengine/core/worldModel/turfWar",
-      "domain": "turf war",
+      "domain": "worldModel",
       "gameFacing": false,
       "probe": null,
       "intent": "blocks that change hands between any number of sides, with fronts that push on their own clock"
@@ -10881,7 +10881,7 @@
         "@jgengine/core"
       ],
       "module": "@jgengine/core/ai/utilityBrain",
-      "domain": "agent loop",
+      "domain": "ai",
       "gameFacing": true,
       "probe": {
         "kind": "devtools"
@@ -10916,7 +10916,7 @@
         "@jgengine/core"
       ],
       "module": "@jgengine/core/physics/vehicleDamage",
-      "domain": "vehicle damage",
+      "domain": "physics",
       "gameFacing": true,
       "probe": {
         "kind": "devtools"
@@ -11017,7 +11017,7 @@
         "@jgengine/core"
       ],
       "module": "@jgengine/core/sim/population",
-      "domain": "park population",
+      "domain": "sim",
       "gameFacing": true,
       "probe": {
         "kind": "devtools"
@@ -11041,7 +11041,7 @@
         "@jgengine/core"
       ],
       "module": "@jgengine/core/sim/queue",
-      "domain": "queue",
+      "domain": "sim",
       "gameFacing": true,
       "probe": {
         "kind": "devtools"
@@ -11274,7 +11274,7 @@
         "@jgengine/core"
       ],
       "module": "@jgengine/core/combat/weaponSystem",
-      "domain": "weapon runtime",
+      "domain": "combat",
       "gameFacing": true,
       "probe": {
         "kind": "devtools"

@@ -1,44 +1,39 @@
 /**
- * Fail a games PR when a game's capability declaration is incomplete, a decline is
- * boilerplate, debt has no open owner, `capabilities.json` is behind the installed
- * packages, or the adoption debt is above its committed budget.
+ * Fail a games PR when a game's written capability answers are wrong, `capabilities.json` is
+ * behind the engine source, or adoption debt is above its committed budget.
  *
- * This is the adoption half of "build it once in the engine". `check games-framework`
- * stops new handrolled systems; this notices a shipped capability that no game
- * adopted or declined, and keeps "this game has no such domain" separate from
- * "we have not adopted it yet", which is the debt the ledger exists to surface.
+ * What a game adopts is read from its imports, so nobody writes it and nothing goes stale. A game
+ * writes two things in its `jgengine.json` `capabilities` section, and this checks both: `debt`, a
+ * game-facing capability whose domain the game has while it runs its own version (a reason naming
+ * the domain, and the open issue that tracks adopting the shared one), and `probes`, the boot probes
+ * that prove an adopted system live. `check games-framework` stops new hand-rolled systems; debt is
+ * the list of old ones.
  *
- * Adopting is not gated on a probe: any capability in the ledger can be adopted,
- * and the summary counts `adopted (verified)` apart from `adopted (declared)`.
- * Verified means the game named a boot probe for a capability that ships one;
- * `bun run games:capabilities probe` is what proves those counters live on a running page.
+ * The summary counts `adopted (verified)` apart from `adopted (declared)`: verified means the game
+ * named a boot probe for a capability that ships one; `bun run games:capabilities probe` is what
+ * proves those counters live on a running page.
  *
- * `scripts/debt-budget.json` makes that debt a ratchet: a total and a per-game
- * ceiling that `--write` seeds from the tally and may only lower. More debt than
- * the budget fails, and a budget above the tally fails too, so clearing an entry
- * has to take its budget with it. The summary's last line is the trend.
+ * `scripts/debt-budget.json` makes debt a ratchet: a total and a per-game ceiling that `--write`
+ * seeds from the tally and may only lower. More debt than the budget fails, and a budget above the
+ * tally fails too, so clearing an entry has to take its budget with it. The summary's last line is
+ * the trend.
  *
  * Usage: bun run check games-capabilities [--summary] [--write] [--no-ledger] [--no-issues]
- * `--summary` also prints the per-game adopted / not-applicable / debt table, which
- * CI keeps in the job log. `--write` re-seeds the debt budget from the tally and
- * only ever shrinks it. `--no-issues` skips reading the debt issues in this repo
- * (offline work only; the gate cannot prove an owner without them).
- * `bun run games:capabilities probe` proves the adopted systems actually run; this check only
- * reads declarations.
+ * `--summary` also prints the per-game adopted / debt table, which CI keeps in the job log.
+ * `--write` re-seeds the debt budget from the tally and only ever shrinks it. `--no-issues` skips
+ * reading the debt issues in this repo (offline work only; the gate cannot prove an owner without them).
  */
 import { execFileSync } from "node:child_process";
-import { existsSync, readFileSync, writeFileSync } from "node:fs";
+import { readFileSync, writeFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 
 import {
-  DECLINE_MIN,
+  DEBT_REASON_MIN,
   LEDGER_FILE,
   checkDeclarations,
-  declarationPath,
   deriveLedger,
-  gameDirs,
   ledgerDrift,
-  readDeclaration,
+  readGames,
   renderSummary,
   type GameDeclaration,
   type IssueState,
@@ -71,35 +66,10 @@ export interface CheckOptions {
   today?: string;
   /** The installed ledger; defaults to the installed `@jgengine/*` declarations. */
   installed?: Ledger;
+  /** Each game's answers and source adoption; defaults to reading the games under `root`. */
+  games?: GameDeclaration[];
   /** Debt issue states; defaults to one `gh issue list` for this repo. */
   readIssues?: (root: string) => Map<number, IssueState>;
-}
-
-/**
- * For a capability that arrived in the installed packages, which games have not
- * answered it yet. `capabilities.json` being stale is not a bookkeeping problem:
- * every one of these games owes a decision before the gate can pass.
- */
-export function gamesToDecide(
-  committed: Ledger,
-  installed: Ledger,
-  declarations: readonly GameDeclaration[],
-): Array<{ capability: string; module: string; games: string[] }> {
-  const before = new Map(committed.capabilities.map((entry) => [entry.id, entry]));
-  const pending: Array<{ capability: string; module: string; games: string[] }> = [];
-  for (const entry of installed.capabilities) {
-    if (!entry.gameFacing) continue;
-    const known = before.get(entry.id);
-    if (known !== undefined && known.gameFacing) continue;
-    const games = declarations
-      .filter(({ declaration }) => {
-        if (declaration === null) return true;
-        return !declaration.adopts.includes(entry.id) && declaration.declines[entry.id] === undefined;
-      })
-      .map(({ game }) => game);
-    if (games.length > 0) pending.push({ capability: entry.id, module: entry.module, games });
-  }
-  return pending.sort((a, b) => a.capability.localeCompare(b.capability));
 }
 
 /** The repo whose issues own the debt: the one this checkout pushes to. */
@@ -166,11 +136,7 @@ export function runCheck(options: CheckOptions): number {
   /** True when the tally itself cannot be trusted, so `--write` must not record it. */
   let blocked = false;
 
-  const games = gameDirs(root);
-  const declarations: GameDeclaration[] = games.map((game) => ({
-    game,
-    declaration: existsSync(declarationPath(root, game)) ? readDeclaration(root, game) : null,
-  }));
+  const declarations: GameDeclaration[] = options.games ?? readGames(root, committed);
 
   if (!skipLedger) {
     let installed: Ledger;
@@ -186,16 +152,7 @@ export function runCheck(options: CheckOptions): number {
       blocked = true;
       sink.error(`capability check: FAIL - ${LEDGER_FILE} is behind the installed @jgengine/* packages:`);
       for (const line of drift) sink.error(`  ${line}`);
-      const pending = gamesToDecide(committed, installed, declarations);
-      if (pending.length > 0) {
-        sink.error("");
-        sink.error("Games that must decide before this can pass:");
-        for (const entry of pending) {
-          sink.error(`  "${entry.capability}" (${entry.module}): ${entry.games.join(", ")}`);
-        }
-      }
-      sink.error("");
-      sink.error("Run bun run gen games-ledger, then declare each new capability in every game.");
+      sink.error("Run bun run gen games-ledger (lane:close runs it).");
     }
   }
 
@@ -248,9 +205,8 @@ export function runCheck(options: CheckOptions): number {
     sink.error(`capability check: FAIL - ${report.problems.length} problem(s):`);
     for (const problem of report.problems) sink.error(`  ${problem.message}`);
     sink.error("");
-    sink.error(`Every game declares each game-facing capability once: adopt it, or decline it as not-applicable (no such domain here) or debt (has the domain, no shared system yet) with ${DECLINE_MIN}+ characters that name the domain.`);
-    sink.error("A debt entry also needs the number of the open issue that tracks adopting it.");
-    sink.error("Ledger: capabilities.json   Declarations: <game>/capabilities.json   Rule: AGENTS.md -> Capability adoption");
+    sink.error(`A debt entry is a game-facing capability the game has the domain of but does not import: ${DEBT_REASON_MIN}+ characters naming the domain, and the open issue that tracks adopting it.`);
+    sink.error("Ledger: capabilities.json   Answers: <game>/jgengine.json capabilities.debt / .probes   Rule: games/AGENTS.md -> Capability adoption");
   }
 
   if (!write && verdict !== null && budget !== null && (verdict.over.length > 0 || verdict.stale.length > 0)) {
@@ -262,7 +218,7 @@ export function runCheck(options: CheckOptions): number {
         for (const line of describeBreach(entry)) sink.error(`  ${line}`);
       }
       sink.error("");
-      sink.error("Debt only goes down. Clear those entries (adopt the capability, or decline it as not-applicable with a reason naming its domain); --write will not raise the budget.");
+      sink.error("Debt only goes down. Clear those entries by adopting the capability (importing it pays the debt); --write will not raise the budget.");
     }
     if (verdict.stale.length > 0) {
       if (verdict.over.length > 0) sink.error("");
@@ -286,7 +242,7 @@ export function runCheck(options: CheckOptions): number {
         for (const line of describeBreach(entry)) sink.error(`  ${line}`);
       }
       sink.error("");
-      sink.error("Clear those entries first: adopt the capability, or decline it as not-applicable with a reason naming its domain.");
+      sink.error("Clear those entries first: adopt the capability, which pays the debt.");
       return 1;
     }
 
@@ -321,7 +277,7 @@ export function runCheck(options: CheckOptions): number {
       adopters.push(entry.game);
       byCapability.set(entry.capability, adopters);
     }
-    sink.log("Adopted (declared): no boot probe named, so the running page cannot prove it yet:");
+    sink.log("Adopted game-facing capabilities with no boot probe named, so the running page cannot prove them yet:");
     for (const [capability, adopters] of [...byCapability].sort()) {
       const entry = committed.capabilities.find((item) => item.id === capability);
       sink.log(`  ${capability} (${entry?.module ?? "?"}): ${adopters.join(", ")}`);
@@ -329,7 +285,7 @@ export function runCheck(options: CheckOptions): number {
   }
 
   sink.log(
-    `capability check: OK - ${games.length} games, ${committed.capabilities.filter((entry) => entry.gameFacing).length} game-facing capabilities, ${report.verified} adopted (verified), ${report.declared} adopted (declared), ${report.notApplicable} not-applicable, ${report.debt} debt${budget === null ? "" : ` (${BUDGET_REL} budget ${budget.total})`}`,
+    `capability check: OK - ${declarations.length} games, ${committed.capabilities.filter((entry) => entry.gameFacing).length} game-facing capabilities, ${report.verified} adopted (verified), ${report.declared} adopted (declared), ${report.debt} debt${budget === null ? "" : ` (${BUDGET_REL} budget ${budget.total})`}`,
   );
   return 0;
 }

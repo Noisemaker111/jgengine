@@ -266,7 +266,7 @@ export async function runCreate(argv: string[]): Promise<number> {
     const engineVersion = sdkVersion();
     writeGame(targetDir, id, displayName, variant, scene, { world, editor, player, ground, sceneMode, shape, dimension });
     writeProjectConfig(targetDir, { id, name: displayName, template, editor });
-    applySync(targetDir, planSync(targetDir, await syncContext(targetDir)));
+    applySync(targetDir, planSync(targetDir, syncContext(targetDir)));
     console.log(`created ${displayName} (${template}, ${variant}) → ${targetDir}`);
     console.log(`  folder ${folderName}  package ${id}  name "${displayName}"`);
     if (variant === "standalone") {
