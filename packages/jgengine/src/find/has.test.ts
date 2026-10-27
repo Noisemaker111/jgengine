@@ -50,3 +50,52 @@ test("answers every feature in one call: covered, partial and gap", () => {
   expect(answers[3]!.folders).toEqual(["packages/core/src/orbit/"]);
   expect(answers[4]).toEqual({ feature: "breeding", verdict: "gap", folders: [], capabilities: [] });
 });
+
+const WORDED: CapabilityEntry[] = [
+  {
+    skill: "jgengine-gameplay",
+    slug: "event-table",
+    description: "timed supply crates that fall from the sky",
+    imports: ['import { createEventTable } from "@jgengine/core/airdrops/eventTable"'],
+    symbols: ["createEventTable"],
+  },
+  {
+    skill: "jgengine-gameplay",
+    slug: "decay-meter",
+    description: "a survival meter that drains over time, like hunger",
+    imports: ['import { createDecayMeter } from "@jgengine/core/survival/decayMeter"'],
+    symbols: ["createDecayMeter"],
+  },
+  {
+    skill: "jgengine-world",
+    slug: "boat-hull",
+    description: "a floating hull pushed by thrust",
+    imports: ['import { createBoatHull } from "@jgengine/core/boats/boatHull"'],
+    symbols: ["createBoatHull"],
+  },
+];
+
+const WORDED_FILES: Record<string, string> = {
+  "airdrops/eventTable.ts": "/** Roll a timed event. */\nexport function createEventTable() {}\n",
+  "survival/decayMeter.ts":
+    "export interface DecayMeterOptions {\n  /** Per-second drain, e.g. hunger/thirst. */\n  rate: number;\n}\n/** A draining meter. */\nexport function createDecayMeter() {}\n",
+  "boats/boatHull.ts": "/** Spray kicks up at the bow. */\nexport function createBoatHull() {}\n",
+};
+
+function wordedSources(): HasSources {
+  const files: CodeFile[] = Object.keys(WORDED_FILES).map((rel) => ({ layer: "core", path: `packages/core/src/${rel}`, rel }));
+  return { capabilities: WORDED, code: indexCode(files, (file) => WORDED_FILES[file.rel]!) };
+}
+
+test("a feature worded differently from the capability is covered through its code's names and docs", () => {
+  const answers = answerHas(["supply drops", "hunger thirst", "bows", "thirst"], wordedSources());
+  expect(answers.map((answer) => [answer.feature, answer.verdict, answer.capabilities[0]?.slug ?? null])).toEqual([
+    // The row says supply; "drops" is only in the folder name `airdrops/`.
+    ["supply drops", "covered", "event-table"],
+    // The capability says hunger; one field doc in its file says "hunger/thirst".
+    ["hunger thirst", "covered", "decay-meter"],
+    // A doc comment alone never covers a feature: "bow" of a boat is not archery.
+    ["bows", "gap", null],
+    ["thirst", "gap", null],
+  ]);
+});

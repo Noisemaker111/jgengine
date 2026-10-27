@@ -204,6 +204,8 @@ export interface IndexedFile {
   nameWords: Words;
   exportWords: { entry: CodeExport; name: Words; doc: Words }[];
   everything: Words[];
+  /** Every doc comment in the file, one per entry: what the file says about itself beyond its exports' first lines. */
+  docs: Words[];
 }
 
 /** Read and split every file once; files that cannot be read are left out. */
@@ -222,7 +224,8 @@ export function indexCode(files: readonly CodeFile[], read: (file: CodeFile) => 
     const nameWords = wordSet(baseName(file.rel));
     const exportWords = exports.map((entry) => ({ entry, name: wordSet(entry.name), doc: wordSet(entry.doc ?? "") }));
     const everything = [dirWords, nameWords, ...exportWords.flatMap((row) => [row.name, row.doc])];
-    index.push({ file, exports, dir, dirWords, nameWords, exportWords, everything });
+    const docs = [...text.matchAll(/\/\*\*([\s\S]*?)\*\//g)].map((match) => wordSet(match[1]!));
+    index.push({ file, exports, dir, dirWords, nameWords, exportWords, everything, docs });
   }
   return index;
 }
