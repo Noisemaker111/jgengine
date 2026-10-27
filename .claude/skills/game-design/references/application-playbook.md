@@ -14,31 +14,33 @@ Use this playbook to turn a pitch or an existing game into implemented, testable
 
 ## 1. Greenfield procedure
 
-### Frame the bet
+### Write the design brief
 
-Write a compact contract before broad code or content:
+The greenfield contract is the `## Design brief` in the game's `PLAN.md`; its shape is in `create-game-jg` step 3 (in this repo, `games/scripts/designBrief.ts`, with a complete example in `games/scripts/briefExample.ts`). Design each line rather than filling it:
 
-| Field | Required form |
+| Brief line | What it must answer |
 | --- | --- |
-| audience/context | prior skills, player count, platform/input, session length, accessibility assumptions |
-| player promise | “The player repeatedly [verb/decision] so they feel [specific experience]” |
-| pillars | two or three observable behaviors or feelings |
-| anti-pillars | experiences the game must not drift toward |
-| core decision | situation, known information, viable options, tradeoff, consequence, recurrence |
-| completion proof | one end-to-end scenario a target player can perform and explain |
-| falsifier | observation that would show the design does not work |
+| Core loop | the 30-second verb and decision: situation, known information, viable options, tradeoff, consequence, recurrence |
+| Session loop | what one sitting builds toward, and the natural stopping point |
+| Long loop | what changes over hours: new places, rules or tools that recombine the core verb, not bigger numbers |
+| Second 0 | what the player has at the start and why that makes the right first verb; a new game starts small, so later beats have something to give |
+| First 10 minutes | beats with timestamps, each teaching or unlocking one thing, the first by 2:00 |
+| Pace, longest cycle | how often something new arrives, and the longest wait between payoffs a player accepts |
+| Content budget, minutes | how many items, areas, verbs (or this game's kinds) carry the long loop, and the minutes they add up to |
+| Systems | each system and the probe reading that shows a player used it |
+| Onboarding | guide character, objectives, hints or learning by doing |
 
-### Build the minimum design
+Write the player promise (“the player repeatedly [verb/decision] so they feel [specific experience]”), two or three pillars, the anti-pillars and the falsifier (the observation that would show the design does not work) in `## Direction`.
+
+### Build it ten minutes at a time
 
 1. Model each core verb from cue through future consequence.
-2. Draw moment, encounter, session, and meta loops.
-3. Draw resources and feedback structures.
-4. Map player skills and progression channels.
-5. Define failure, recovery, stopping, and replay.
-6. Create a content grammar: a small set of mechanics crossed with contexts and constraints.
-7. Select the riskiest assumption and build one vertical design slice around it.
+2. Draw resources and feedback structures, and the failure, recovery, stopping and replay rules.
+3. Create a content grammar: a small set of mechanics crossed with contexts and constraints; the content budget counts its products.
+4. Milestone 1 is the core loop playable from second 0, through real input, with feedback, one recurring decision, failure/recovery and a downstream consequence.
+5. Each later milestone is the next 10 minutes of play: the beats it adds, what they teach and unlock, and the from-zero flow reaching further.
 
-Do not build the entire feature list first. A vertical slice contains real input, meaningful state, feedback, one decision that recurs, failure/recovery, and a downstream consequence.
+Do not build the feature list first, and do not stop at a slice: a game that ends after the first 10 minutes is a demo.
 
 ## 2. Existing-game audit
 

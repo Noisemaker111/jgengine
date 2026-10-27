@@ -13,11 +13,11 @@ Use `level-design` for spatial realization; route implementation to `jgengine-ga
 
 For a new game, start with `create-game-jg`, which agrees the direction and writes `PLAN.md` before any code. For a substantial existing-game quality pass spanning concept, depth, world and presentation, use `game-improvement` to sequence these owners and keep a per-game implementation plan and acceptance evidence.
 
-For a greenfield build, read [references/application-playbook.md](references/application-playbook.md) and produce its greenfield contract (promise, pillars, anti-pillars, core decision, and falsifier) before writing code. Audits may read only the playbook's audit sections. Read [references/field-guide.md](references/field-guide.md) when the task needs deeper loop, economy, progression, genre, accessibility, or research guidance.
+For a greenfield build, the design work is the `## Design brief` in the game's `PLAN.md` (`create-game-jg` step 3): core, session and long loops, second 0, the first 10 minutes beat by beat, start state, content budget, systems, pace and onboarding. Read [references/application-playbook.md](references/application-playbook.md) §1 for how to design it. Audits may read only the playbook's audit sections. Read [references/field-guide.md](references/field-guide.md) when the task needs deeper loop, economy, progression, genre, accessibility, or research guidance.
 
 ## Choose the mode
 
-Greenfield: produce a vertical-slice contract (promise, pillars, core decision, loops, progression, failure/recovery) and build the smallest slice testing the riskiest assumption — see playbook §1. Existing game: reconstruct what it actually does from code and play, rank root problems by impact/confidence/reach/effort — see playbook §2.
+Greenfield: write the design brief, then build milestone 1 as the core loop playable from second 0 and each later milestone as the next 10 minutes of play, proven by the game's from-zero flow — see playbook §1. Existing game: reconstruct what it actually does from code and play, rank root problems by impact/confidence/reach/effort — see playbook §2.
 
 “Improve with game design” is an implementation request, not just an audit: select the highest-leverage intervention, implement it through shared engine seams, and prove the changed player behavior.
 
@@ -37,6 +37,6 @@ Before content, write a first-hour balance sheet: starting cash, time to first i
 
 Currency precision, elapsed-time anchoring, and reset mechanics are implemented per `jgengine-gameplay` "Persistent economies and input"; test fractional income over real tick cadences before tuning prices.
 
-The first-60-seconds gate requires the first tutorial verb to be executable from spawn with starting inventory. Grant dependencies such as land, power, and slots or let players buy them in-context; the tutorial cannot lock the surface needed to complete itself. Placement previews show cost and affordability inline.
+What a new game starts with is a design choice in the brief's `Second 0` line and capped by its start state; starting with nothing and earning the first tool or plot by play is a valid opening, and starting with half the game already built is not. The tutorial cannot lock the surface needed to complete itself: whatever its first step needs, the player has or can get by playing. Placement previews show cost and affordability inline.
 
 For a persistent shared-world builder, verify capacity and first-player onboarding before scaling the content catalog; presence, command read scopes, territory, chat, and join retry UI come from their owners in `jgengine-world`, `jgengine-ui`, and `jgengine-multiplayer`.
