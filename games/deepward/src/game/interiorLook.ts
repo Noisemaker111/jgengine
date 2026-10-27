@@ -37,7 +37,16 @@ export function librarySurface(name: LibrarySurfaceName, tint: string, extra: Pa
   const entry = findLibraryMaterial(name);
   if (entry === null || entry.source !== LIBRARY_SOURCES[name]) throw new Error(`Deepward: library material ${name} moved from ${LIBRARY_SOURCES[name]}`);
   const maps = Object.fromEntries(Object.entries(libraryMaterialMaps(entry)).filter(([role]) => !(OWN_HUE.has(name) && role === "color")).map(([role, map]) => [role, map!.url]));
-  return { color: tint, maps, repeatMetres: entry.tileMetres, roughness: entry.response.roughness, metalness: entry.response.metalness, anisotropy: 4, ...extra };
+  const { roughness, metalness } = entry.response;
+  const base: AuthoredSurfaceConfig = {
+    color: tint,
+    maps,
+    repeatMetres: entry.tileMetres,
+    ...(roughness === undefined ? {} : { roughness }),
+    ...(metalness === undefined ? {} : { metalness }),
+    anisotropy: 4,
+  };
+  return Object.assign(base, extra);
 }
 
 /** Everything that makes one floor its own place: its shell, its dressing and its light. */

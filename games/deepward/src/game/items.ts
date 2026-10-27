@@ -88,7 +88,7 @@ export function rollItem(kind: ItemKind, level: number, seed: string, id: string
 
 /** What the rail assays an item at, in scrip: the roll's own value stat, never a separate table. */
 export function itemValue(item: Item): number {
-  return Math.max(0, Math.round(item.stats.value ?? 0));
+  return Math.max(0, Math.round(item.stats["value"] ?? 0));
 }
 
 export function itemWeight(item: Item): number {
@@ -98,8 +98,8 @@ export function itemWeight(item: Item): number {
 /** One hand's numbers, read off the rolled rifle so an affix changes what firing does. */
 export function weaponStats(item: Item): { damage: number; interval: number; range: number; label: string } {
   return {
-    damage: Math.max(1, Math.round(item.stats.damage ?? 30)),
-    interval: Math.max(0.12, 1 / Math.max(0.2, item.stats.rate ?? 2)),
+    damage: Math.max(1, Math.round(item.stats["damage"] ?? 30)),
+    interval: Math.max(0.12, 1 / Math.max(0.2, item.stats["rate"] ?? 2)),
     range: 30,
     label: item.name,
   };

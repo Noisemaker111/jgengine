@@ -149,8 +149,8 @@ function drain(deep: Deep, dt: number, modifier: Record<string, number>): Deep {
 function galley(ctx: GameContext, deep: Deep): { deep: Deep; fed: string | null } {
   const world = marrowOf(ctx);
   let next = deep, fed: string | null = null;
-  if (next.body.values.food! < GALLEY_FEEDS_BELOW && world.spend({ "marrow.food": -1 })) { next = feed(next, "food", MEAL.food); fed = "Halloway: ate from the galley."; }
-  if (next.body.values.water! < GALLEY_FEEDS_BELOW && world.spend({ "marrow.water": -1 })) { next = feed(next, "water", MEAL.water); fed = "Halloway: drank from the galley."; }
+  if (next.body.values["food"]! < GALLEY_FEEDS_BELOW && world.spend({ "marrow.food": -1 })) { next = feed(next, "food", MEAL.food); fed = "Halloway: ate from the galley."; }
+  if (next.body.values["water"]! < GALLEY_FEEDS_BELOW && world.spend({ "marrow.water": -1 })) { next = feed(next, "water", MEAL.water); fed = "Halloway: drank from the galley."; }
   return { deep: next, fed };
 }
 /** The creatures' senses for this dive, one perception service per species. */
@@ -1058,7 +1058,7 @@ export function tickControls(ctx: GameContext, dt: number): void {
   // The body: the cold eats food, the ink makes you thirsty, an empty meter bleeds the suit, and a
   // seal rated short of this floor's pressure lets the hull crush in.
   let deep = drain(v.deep, dt, { food: place.drain.food * (hazards.has("frost") ? 3 : 1), water: place.drain.water });
-  const empty = (deep.body.values.food! <= 0 ? 1 : 0) + (deep.body.values.water! <= 0 ? 1 : 0);
+  const empty = (deep.body.values["food"]! <= 0 ? 1 : 0) + (deep.body.values["water"]! <= 0 ? 1 : 0);
   const crush = crushDamage(stratum, sealMark(deep));
   let dive = ageDive(v.dive, dt, steam, { damage: crush + empty * STARVE_DAMAGE, airRate: place.drain.air });
   if (hazards.has("ink")) dive = { ...dive, inked: 8 };
@@ -1239,7 +1239,7 @@ function completeChannel(ctx: GameContext, dive: Dive, deep: Deep, id: string, k
   return { dive, deep, hint: "" };
 }
 /** Read-only metrics for the published driver's standalone capture bridge. */
-export function captureProbe(ctx: GameContext): Record<string, number> {
+export function captureProbe(ctx: GameContext) {
   const v = viewStore.read(ctx), at = playerAt(ctx);
   const load = loadOf(v.dive?.cache ?? []);
   return { x: at?.[0] ?? 0, z: at?.[2] ?? 0, inDive: v.mode === "dive" ? 1 : 0,
@@ -1253,14 +1253,14 @@ export function captureProbe(ctx: GameContext): Record<string, number> {
     deaths: v.home.deaths, returns: v.home.extractions, ...depthProbe(ctx, v) };
 }
 /** The descent's numbers for the capture bridge: where, how fed, what is known and built. */
-function depthProbe(ctx: GameContext, v: View): Record<string, number> {
+function depthProbe(ctx: GameContext, v: View) {
   const world = marrowOf(ctx), dive = v.dive, at = playerAt(ctx);
   const alive = dive === null ? [] : Object.values(dive.fauna).filter(creature => creature.place === dive.stratum && creature.health > 0);
   const near = at === null ? Infinity : Math.min(Infinity, ...alive.map(creature => groundDistance(creature.at, at)));
   const flag = (key: string) => world.fact(key) === true ? 1 : 0;
   return {
     stratum: dive === null ? 0 : ["vault", "cold", "wells", "choir"].indexOf(dive.stratum) + 1,
-    food: Math.round(v.deep.body.values.food ?? 0), water: Math.round(v.deep.body.values.water ?? 0),
+    food: Math.round(v.deep.body.values["food"] ?? 0), water: Math.round(v.deep.body.values["water"] ?? 0),
     lamp: dive?.lamp === true ? 1 : 0, beltRation: dive?.belt.ration ?? 0, beltWater: dive?.belt.water ?? 0, beltLure: dive?.belt.lure ?? 0,
     lures: v.deep.lures, gear: v.deep.gear.length, codex: Object.keys(v.deep.codex.discovered).length, scans: v.deep.scanned.length,
     charted: v.deep.charted.length, seal: sealMark(v.deep), crawler: has(v.deep, "crawler") ? 1 : 0,

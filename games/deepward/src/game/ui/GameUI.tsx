@@ -114,7 +114,7 @@ export function GameUI() {
   const base = marrowOf(ctx);
   const goal = nextGoal(view.deep, base);
   const said = base.says("halloway");
-  const body = { food: view.deep.body.values.food ?? 0, water: view.deep.body.values.water ?? 0 };
+  const body = { food: view.deep.body.values["food"] ?? 0, water: view.deep.body.values["water"] ?? 0 };
   const stratum = dive?.stratum ?? "vault";
   const room = roomAt(at, stratum);
   const depthRoom = stratum === "vault" ? room : room.replace(/^(\d+)\s*\/\s*/, (_, n: string) => `${n} / ${STRATA[stratum].name} · `);
@@ -166,8 +166,8 @@ export function GameUI() {
       <HudButton className="dw-sheet-close" onClick={close}>Close bench ×</HudButton>
       <span className="dw-eyebrow">Permanent / saved on return</span><h2>Marrow's stash</h2>
       <p>These exact item instances survived the rail journey. They remain here through deaths and reloads. Each carries the level of the room it came from and whatever its roll turned out to be.</p>
-      {prepared !== null && <p className="dw-prepared"><strong>Prepared: {prepared.name}</strong> · {Math.round(prepared.stats.damage ?? 0)} damage · {(1 / (prepared.stats.rate ?? 2)).toFixed(2)}s cycle · {prepared.mass} weight. It is the baseline every other rifle is compared against.</p>}
-      <h3>Choose the next shift</h3><p>Travel light with the issue sidearm and twelve free cache squares, or risk a recovered rifle for {Math.round(prepared?.stats.damage ?? 30)} damage per shot instead of {weaponReadout(null).damage}. A rifle fills three squares and is lost on death. Returning banks the same rifle again.</p>
+      {prepared !== null && <p className="dw-prepared"><strong>Prepared: {prepared.name}</strong> · {Math.round(prepared.stats["damage"] ?? 0)} damage · {(1 / (prepared.stats["rate"] ?? 2)).toFixed(2)}s cycle · {prepared.mass} weight. It is the baseline every other rifle is compared against.</p>}
+      <h3>Choose the next shift</h3><p>Travel light with the issue sidearm and twelve free cache squares, or risk a recovered rifle for {Math.round(prepared?.stats["damage"] ?? 30)} damage per shot instead of {weaponReadout(null).damage}. A rifle fills three squares and is lost on death. Returning banks the same rifle again.</p>
       <HudButton aria-pressed={view.rifleUid === null} onClick={() => command("prepareRifle", { uid: null })}>Travel light / keep rifles safe</HudButton>
       {view.home.stash.length === 0 ? <p className="dw-empty">Empty shelves. Bring something home from Bellwether.</p> : <div className="dw-stash-list">{view.home.stash.map(item => <article key={item.id}>
         <ItemMark kind={kindOf(item)} size={38} /><div><strong>{item.name}</strong><p>{RARITY_LABEL[item.rarity] ?? item.rarity} · level {item.level} · {ITEMS[kindOf(item)].maker} · {ITEMS[kindOf(item)].found}</p><small>{ITEMS[kindOf(item)].detail}</small>

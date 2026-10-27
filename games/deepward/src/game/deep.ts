@@ -1,4 +1,5 @@
 import type { CodexSnapshot } from "@jgengine/core/codex/codex";
+import { isRecord } from "@jgengine/core/data/untyped";
 import type { NeedSnapshot } from "@jgengine/core/sim/needs";
 import type { WorldModel, WorldModelState } from "@jgengine/core/worldModel/worldModel";
 import { GEAR, type Gear } from "./fabricator";
@@ -29,18 +30,18 @@ export function newDeep(): Deep {
   return { version: 1, body: freshBody(), gear: [], lures: 0, codex: { discovered: {}, progress: {} }, scanned: [], charted: ["vault"], marrow: null };
 }
 
-const record = (value: unknown): value is Record<string, unknown> => typeof value === "object" && value !== null && !Array.isArray(value);
 const strings = (value: unknown): value is string[] => Array.isArray(value) && value.every(entry => typeof entry === "string");
 
 /** A section that does not hold together starts a fresh descent rather than half-loading one. */
 export function readDeep(value: unknown): Deep {
-  if (!record(value) || value.version !== 1) return newDeep();
-  const gear = value.gear, codex = value.codex, charted = value.charted;
-  if (!validBody(value.body) || !strings(gear) || !gear.every(id => Object.hasOwn(GEAR, id)) || !strings(value.scanned)) return newDeep();
-  if (!Array.isArray(charted) || !charted.every(isStratum) || !record(codex) || !record(codex.discovered)) return newDeep();
-  const lures = typeof value.lures === "number" && Number.isInteger(value.lures) && value.lures >= 0 ? value.lures : 0;
-  const marrow = record(value.marrow) && record(value.marrow.facts) ? value.marrow as unknown as WorldModelState : null;
-  return { version: 1, body: value.body, gear: gear as Gear[], lures, codex: codex as unknown as CodexSnapshot, scanned: value.scanned, charted, marrow };
+  if (!isRecord(value)) return newDeep();
+  const { version, gear, codex, charted, body, scanned, lures: storedLures, marrow: storedMarrow } = value;
+  if (version !== 1) return newDeep();
+  if (!validBody(body) || !strings(gear) || !gear.every(id => Object.hasOwn(GEAR, id)) || !strings(scanned)) return newDeep();
+  if (!Array.isArray(charted) || !charted.every(isStratum) || !isRecord(codex) || !isRecord(codex["discovered"])) return newDeep();
+  const lures = typeof storedLures === "number" && Number.isInteger(storedLures) && storedLures >= 0 ? storedLures : 0;
+  const marrow = isRecord(storedMarrow) && isRecord(storedMarrow["facts"]) ? storedMarrow as unknown as WorldModelState : null;
+  return { version: 1, body, gear: gear as Gear[], lures, codex: codex as unknown as CodexSnapshot, scanned, charted, marrow };
 }
 
 export function has(deep: Pick<Deep, "gear">, gear: Gear): boolean { return deep.gear.includes(gear); }

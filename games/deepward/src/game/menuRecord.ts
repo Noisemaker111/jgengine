@@ -41,9 +41,9 @@ function diveChips(run: RunSnapshot, home: Home): Record<string, string> {
 
 /** Read a record document into the words its card shows. */
 function chipsOf(_slot: string, document: GameSaveDocument): Record<string, string> {
-  const home = (document.systems.marrow ?? null) as Home | null;
-  const run = (document.systems.run ?? null) as RunSnapshot | null;
-  const profile = (document.systems.profile ?? {}) as { thumbnail?: unknown };
+  const home = (document.systems["marrow"] ?? null) as Home | null;
+  const run = (document.systems["run"] ?? null) as RunSnapshot | null;
+  const profile = (document.systems["profile"] ?? {}) as { thumbnail?: unknown };
   if (home === null) return {};
   const chips = run === null ? { depth: "At the home", haul: `${home.stash.length} banked`, life: `Life ${home.life}` } : diveChips(run, home);
   return {
@@ -54,8 +54,8 @@ function chipsOf(_slot: string, document: GameSaveDocument): Record<string, stri
 }
 
 function nameOf(_slot: string, document: GameSaveDocument): string {
-  const home = (document.systems.marrow ?? null) as Home | null;
-  const run = (document.systems.run ?? null) as RunSnapshot | null;
+  const home = (document.systems["marrow"] ?? null) as Home | null;
+  const run = (document.systems["run"] ?? null) as RunSnapshot | null;
   if (home === null) return "A Marrow record";
   if (run !== null && run.dive !== null && run.mode !== "home") return `Dive ${run.dive.id} · Life ${home.life}`;
   return `Halloway · Life ${home.life}`;

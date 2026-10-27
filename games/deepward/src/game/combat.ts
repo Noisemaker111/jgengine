@@ -167,6 +167,11 @@ export function shotTargets(fauna: Dive["fauna"], place: Place): ShotTarget[] {
 }
 
 /** One held weapon per dive; the hand is swapped by retuning it, so ammo and cadence carry over. */
+/** A creature hit as the weapon's contact, without the range the pick compared. */
+function contactOf({ distance: _distance, ...contact }: WeaponContact & { distance: number }): WeaponContact {
+  return contact;
+}
+
 export function createDeepwardWeapon(definition: WeaponDefinition, deps: WeaponDepsInput): WeaponSystem {
   return createWeaponSystem(definition, {
     rng: deps.rng,
@@ -181,10 +186,10 @@ export function createDeepwardWeapon(definition: WeaponDefinition, deps: WeaponD
       // The Fitter walks receiving only; below it, the shot meets whatever lives on that floor.
       const fitter = print === null || place !== "vault" ? null : fitterContact({ from, direction, maxRange, diverAt: at, print });
       const creature = deps.creatures === undefined ? null : creatureContact({ from, direction, maxRange, diverAt: at, targets: deps.creatures(), place });
-      if (fitter === null) return creature === null ? null : { target: creature.target, point: creature.point };
+      if (fitter === null) return creature === null ? null : contactOf(creature);
       if (creature === null) return fitter;
       const fitterRange = Math.hypot(fitter.point[0] - from[0], fitter.point[1] - from[1], fitter.point[2] - from[2]);
-      return creature.distance < fitterRange ? { target: creature.target, point: creature.point } : fitter;
+      return creature.distance < fitterRange ? contactOf(creature) : fitter;
     },
     devtoolsName: "deepward.weapon",
   });

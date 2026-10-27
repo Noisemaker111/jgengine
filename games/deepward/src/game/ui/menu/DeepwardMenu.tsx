@@ -110,7 +110,7 @@ function NewDivePane({ slot, onBegin }: { slot: string | null; onBegin: () => vo
 }
 
 /** The frozen dive computer: what the pause is holding, in four numbers. */
-function HeldBoard({ hint }: { hint?: string }): ReactNode {
+function HeldBoard({ hint }: { hint?: string | undefined }): ReactNode {
   const view = useStore(viewStore);
   const dive = view.dive;
   const at = useGameStore((state) => state.scene.entity.get(state.player.userId)?.position ?? ([0, 0, 0] as const));

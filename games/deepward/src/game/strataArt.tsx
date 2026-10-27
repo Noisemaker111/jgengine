@@ -200,7 +200,7 @@ export function MarrowBays({ world }: { world: WorldModel }) {
     </group>
     {BAYS.map((bay, index) => {
       const built = instances.find(instance => instance.slot === bay.id) ?? null;
-      const look = built === null ? null : MODULE_LOOK[built.kind];
+      const look = built === null ? null : MODULE_LOOK[built.kind] ?? null;
       const running = built !== null && built.ready && power >= 0;
       return <group key={bay.id} position={[bay.at[0], 0, bay.at[2]]} rotation-y={bay.turn}>
         <IndustrialBox at={[0, 0.015, 0]} size={[1.9, 0.03, 1.9]} color={built === null ? "#2b3133" : "#3a4448"} surface="rubber" />
@@ -227,8 +227,8 @@ export function StratumAtmosphere({ place }: { place: Place }) {
     if (scene.background instanceof Color) scene.background.set(place === "home" || place === "vault" ? C.black : fog.color);
     scene.traverse((object: Object3D) => {
       if (!(object instanceof AmbientLight) && !(object instanceof HemisphereLight)) return;
-      const base = (object.userData.deepwardBase as number | undefined) ?? object.intensity;
-      object.userData.deepwardBase = base;
+      const base = (object.userData["deepwardBase"] as number | undefined) ?? object.intensity;
+      object.userData["deepwardBase"] = base;
       object.intensity = base * ambient;
     });
   }, [place, scene]);
@@ -238,7 +238,7 @@ export function StratumAtmosphere({ place }: { place: Place }) {
 export function Headlamp({ on }: { on: boolean }) {
   const ref = useRef<SpotLight>(null);
   const { scene } = useThree();
-  useEffect(() => { const light = ref.current; if (light === null) return; light.userData.haze = false; scene.add(light.target); return () => { scene.remove(light.target); }; }, [scene]);
+  useEffect(() => { const light = ref.current; if (light === null) return; light.userData["haze"] = false; scene.add(light.target); return () => { scene.remove(light.target); }; }, [scene]);
   useFrame(({ camera }) => {
     const light = ref.current;
     if (light === null) return;

@@ -3,18 +3,18 @@ import { IsolatedEntityModel } from '@jgengine/core/model/SceneModels.draw';
 import { editorLayers, type Place } from '../world';
 
 export function stationModelMarkers(place: Place) {
- return editorLayers.markers.filter(marker => marker.kind === 'deepward-station-model' && marker.meta?.place === place);
+ return editorLayers.markers.filter(marker => marker.kind === 'deepward-station-model' && marker.meta?.["place"] === place);
 }
 export function stationModelReplacements(place: Place): Set<string> {
  return new Set(stationModelMarkers(place).flatMap(marker => {
-  const labels=marker.meta?.replaces;
+  const labels=marker.meta?.["replaces"];
   if(labels===undefined)return [];
   if(!Array.isArray(labels)||!labels.every(label=>typeof label==='string'))throw Error(`Invalid authored replacement links: ${marker.id}`);
   return labels as string[];
  }));
 }
 export function hasStationModel(place: Place, sourceId: string): boolean {
- return stationModelMarkers(place).some(marker => marker.meta?.sourceId === sourceId);
+ return stationModelMarkers(place).some(marker => marker.meta?.["sourceId"] === sourceId);
 }
 /** Catalog models render at authored marker transforms, with their original floor origin.
  * The room/machine/column volumes remain the single gameplay/collision authority.

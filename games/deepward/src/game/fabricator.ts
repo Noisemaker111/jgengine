@@ -48,7 +48,7 @@ export function createDeepCodex(saved?: CodexSnapshot): Codex<CodexMeta> {
 }
 
 export interface GearDef { name: string; effect: string; recipe: RecipeDef; permanent: boolean }
-const recipe = (id: Gear, inputs: readonly RecipeItem[]): RecipeDef => ({ id, inputs, outputs: [], station: undefined, category: "fabricator" });
+const recipe = (id: Gear, inputs: readonly RecipeItem[]): RecipeDef => ({ id, inputs, outputs: [], category: "fabricator" });
 export const GEAR: Record<Gear, GearDef> = {
   cutter: { name: "Plasma cutter", effect: "Cut cable runs", permanent: true, recipe: recipe("cutter", [{ itemId: "wire", count: 1 }, { itemId: "cells", count: 1 }]) },
   seal2: { name: "Seal Mk II", effect: "Suit rated to pressure 3", permanent: true, recipe: recipe("seal2", [{ itemId: "polymer", count: 2 }, { itemId: "wire", count: 1 }]) },
