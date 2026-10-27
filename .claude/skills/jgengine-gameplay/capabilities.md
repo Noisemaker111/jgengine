@@ -572,6 +572,10 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `createNeedSet` (function) · `import { createNeedSet } from "@jgengine/core/gameplay"`
 
+## new-game-state — declare what the player has at second 0 (cash, kit, unlocks, prebuilt pieces, systems that start on their own) as data the engine builds from and checks read
+
+- `NewGameConfig` (interface) · `import { NewGameConfig } from "@jgengine/core/game/newGame"`
+
 ## notice-feed — render ctx.game.notices as an animated toned stack (enter/exit motion, ×N stacking, HUD avoidance)
 
 - `NoticeStack` (function) · `import { NoticeStack } from "@jgengine/core/notifications/notices.view"`

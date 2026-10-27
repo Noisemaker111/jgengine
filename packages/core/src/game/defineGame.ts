@@ -6,6 +6,7 @@ import type { GamePhase } from "./gamePhase";
 import type { SystemDefinition } from "./defineSystem";
 import { mergeSystemFeatures } from "./defineSystem";
 import { composeGameLoop } from "./systemRuntime";
+import { buildNewGameWorld, giveNewGameStart, validateNewGame, type NewGameConfig } from "./newGame";
 import type { ItemTraits } from "../inventory/inventoryModel";
 import type { StorageTier } from "../inventory/storageTier";
 import type { GameContext } from "../runtime/gameContext";
@@ -265,6 +266,12 @@ export interface GameDefinition<
   /** The one save knob for solo games: offline whole-world save. **On by default** — an offline game autosaves the entire world to `localStorage` and binds `ctx.game.save` with no config at all; the game only drives save points and restore (`ctx.game.save.load()` at boot). Pass `false` to opt out entirely, or a config object to tune the mode/cadence/target (`storage: "memory"` for in-session-only, or a `SaveBackend` such as a cloud one). Ignored for multiplayer worlds (the host persists via `save`). */
   persist?: boolean | PersistConfig;
   ui?: unknown;
+  /**
+   * What the player has at second 0, as data: cash, kit, unlocks, prebuilt pieces and the systems
+   * that work for the player on their own. The engine builds every new game from it (pieces after
+   * `onInit`, the rest after `onNewPlayer` for each new player) and checks read it from here.
+   */
+  newGame?: NewGameConfig;
   loop?: GameLoop<GameContext>;
   /**
    * Resolved run lifecycle — see {@link LifecycleConfig}. The config boundary also accepts the
@@ -296,6 +303,24 @@ export type GameDefinitionConfig<
   lifecycle?: GameLifecycle;
 };
 
+function withNewGame(loop: GameLoop<GameContext>, config: GameDefinitionConfig<ModelAssetRef, unknown>): GameLoop<GameContext> {
+  const newGame = config.newGame;
+  if (newGame === undefined) return loop;
+  const inventories = Object.keys(config.inventories ?? {});
+  validateNewGame(newGame, { inventories, systems: (config.systems ?? []).map((system) => system.id) });
+  return {
+    ...loop,
+    onInit(ctx) {
+      loop.onInit?.(ctx);
+      buildNewGameWorld(ctx, newGame);
+    },
+    onNewPlayer(ctx, player) {
+      loop.onNewPlayer?.(ctx, player);
+      if (player === undefined ? ctx.player.isNew : player.isNew) giveNewGameStart(ctx, newGame, player?.userId ?? ctx.player.userId, inventories);
+    },
+  };
+}
+
 /**
  * Host-level constructor for a bare `GameDefinition`: fills in `scene` and default `assets`, validates
  * `name`, OR-merges `features` from installed systems, and composes `loop` from `systems` + any classic
@@ -312,7 +337,7 @@ export function defineGameDefinition<TAssetRef extends ModelAssetRef, TMultiplay
   // `feature: "quest"`. Both OR-merge here; `createGameContext` only reads this final map through
   // featureDescriptors.enabled — one enable path, no dual checks at install time.
   const features = mergeSystemFeatures(config.features, config.systems);
-  const loop = composeGameLoop(config.systems, config.loop);
+  const loop = withNewGame(composeGameLoop(config.systems, config.loop), config);
   // A place world carries the laws of that place: its physics resolves over the game-level default,
   // so every consumer of definition.physics (movement, combat, shell) sees the active world's laws.
   const physics = resolveWorldPhysics(config.world, config.physics);

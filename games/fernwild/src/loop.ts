@@ -13,7 +13,9 @@ import { TAME_STATS } from "./game/data/species";
 import { LEVEL_STATS, SURVIVOR } from "./game/data/survivor";
 import { BAG, HOTBAR } from "./game/bags";
 import { callSupplyDrop, openCrate, resetSupplyDrops, supplyDropsSave, tickSupplyDrops } from "./game/supplyDrops";
-import { cancelCraft, consume, grantXp, heldItem, learn, levelStat, resetSurvivor, selectSlot, setUpSurvivor, shuttle, startCraft, survivorSave, swing, tickSurvivor, use } from "./game/survivor";
+import type { NewGameConfig } from "@jgengine/core/game/newGame";
+import { START } from "./game/data/start";
+import { cancelCraft, consume, grantXp, heldItem, learn, learnFree, levelStat, resetSurvivor, selectSlot, setUpSurvivor, shuttle, startCraft, survivorSave, swing, tickSurvivor, use } from "./game/survivor";
 import { setScreen, toggleScreen, type SurvivorScreen } from "./game/screens";
 
 const ORIGIN: [number, number, number] = [0, 0, 0];
@@ -247,6 +249,9 @@ function cheat(ctx: GameContext, input: Cheat): void {
     if (slot >= 0) shuttle(ctx, BAG, slot);
   }
 }
+
+/** The fresh survivor's start, built by the engine from `data/start.ts`. */
+export const survivorStart: NewGameConfig ={ state: START, unlock: (ctx, engramId) => learnFree(ctx, engramId) };
 
 /** Wake on the authored beach with nothing, like a fresh survivor. */
 export function onNewPlayer(ctx: GameContext): void {

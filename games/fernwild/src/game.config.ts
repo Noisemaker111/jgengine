@@ -21,7 +21,7 @@ import { canRun, survivorPrompts, survivorView } from "./game/survivor";
 import { openScreen } from "./game/screens";
 import { GameUI } from "./game/ui/GameUI";
 import { BaseWorld } from "./game/ui/BaseWorld";
-import { onNewPlayer, systems } from "./loop";
+import { onNewPlayer, survivorStart, systems } from "./loop";
 import { time, world } from "./world";
 
 const SPAWN_YAW = authoredSpawnRotation(editorLayers);
@@ -58,6 +58,7 @@ export const game = defineGame({
   },
   movement: { canSprint: canRun, swim: { speedMultiplier: 0.6 }, feel: { runMultiplier: SURVIVOR.runMultiplier } },
   systems: [createGameFlowSystem(), ...systems],
+  newGame: survivorStart,
   loop: { onNewPlayer },
   GameUI,
   WorldOverlay: BaseWorld,
