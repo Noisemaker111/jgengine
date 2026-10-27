@@ -11,11 +11,19 @@ export type DayLoop = SessionLoop<never, void, void>;
  * carries nothing - a tycoon day banks its takings in the world as they happen. The loop owns the
  * day count and whether the gates are open; `park.day` republishes the count for the HUD and save.
  */
-const days = perContext((ctx: GameContext) => {
+function newLoop(): DayLoop {
   const loop = createSessionLoop<never, void, void>({ kind: "day", carries: false });
   installSessionProbe(loop);
-  return { loop, restored: false };
-});
+  return loop;
+}
+const days = perContext((_ctx: GameContext) => ({ loop: newLoop(), restored: false }));
+
+/** A fresh park counts its days from one again; the next read picks up the world's `park.day`. */
+export function resetDayLoop(ctx: GameContext): void {
+  const slot = days(ctx);
+  slot.loop = newLoop();
+  slot.restored = false;
+}
 
 export function dayLoop(ctx: GameContext): DayLoop {
   const slot = days(ctx);
@@ -39,7 +47,9 @@ export function openParkDay(ctx: GameContext): void {
 /** Close the day at midnight and republish the day number the loop now counts. */
 export function closeParkDay(ctx: GameContext): void {
   const loop = dayLoop(ctx);
-  if (loop.phase() === "open") loop.settle();
+  // A day the park ran without its gates being opened through `park.start` (a replayed scenario) still counts.
+  if (loop.phase() !== "open") loop.start();
+  loop.settle();
   park.of(ctx).set("park.day", loop.snapshot().closed + 1);
   loop.start();
 }

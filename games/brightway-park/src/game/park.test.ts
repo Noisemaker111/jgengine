@@ -38,6 +38,20 @@ function openPark() {
 }
 
 describe("a new park", () => {
+  test("a scenario started mid-way through another park starts its calendar again: 09:00, day one, one midnight a day", () => {
+    const { runner, w } = openPark();
+    for (let day = 0; day < 4; day += 1) closeDay(runner.ctx);
+    runner.ctx.time.hydrate({ ...runner.ctx.time.snapshot(), now: DAY_LENGTH * 4 + DAY_LENGTH * 0.6 });
+    expect(w.num("park.day")).toBe(5);
+    expect(runner.ctx.game.commands.run("park.scenario", { id: "brightway_beginnings" }).status).toBe("applied");
+    expect(runner.ctx.time.now()).toBeCloseTo(DAY_LENGTH * (9 / 24));
+    expect(w.num("park.day")).toBe(1);
+    step(runner, DAY_LENGTH);
+    expect(w.num("park.day")).toBe(2);
+    step(runner, DAY_LENGTH);
+    expect(w.num("park.day")).toBe(3);
+  }, 30_000);
+
   test("is an empty lot with a shut gate: no guests until a connected ride runs and the player opens it", () => {
     const runner = createHeadlessRunner({ game, maxStepSeconds: 1 });
     runner.ui.invoke("park.start");
