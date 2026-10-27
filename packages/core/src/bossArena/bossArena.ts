@@ -1,3 +1,4 @@
+// @skill jgengine-gameplay
 import type { WorldSolid } from "../world/worldSolids";
 
 /** One difficulty of a summoned boss: the survivor level it asks for and the tribute it eats. */
