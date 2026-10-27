@@ -30,3 +30,5 @@ Games run the engine source in `packages/` from the same commit, never a publish
 
 A game's build order is its `PLAN.md` (root [AGENTS.md](../AGENTS.md#game-changes-improve-the-framework), step 0). Its loop is its README design checklist ([rules](README.md#design-checklist-and-loop-proofs)); keep its numbers true to the build.
 
+
+Real-world numbers (a wiki's species stats, an item table) come from the page once: `bun run data-table <url> --list` numbers the page's tables, then `bun run data-table <url> --table <n> --out games/<id>/src/data/<name>.ts` writes a typed file the game imports. The page is cached for every worktree and the file names its source, so a second run fetches nothing; `--refresh` is the only way back to the network.

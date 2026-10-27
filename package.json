@@ -43,6 +43,7 @@
     "background": "bun scripts/background.ts",
     "find": "bun packages/jgengine/src/cli/index.ts find",
     "jgengine": "bun packages/jgengine/src/cli/index.ts",
+    "data-table": "bun scripts/data-table.ts",
     "check": "bun scripts/guard.ts 600 'bun scripts/run-stages.ts check'",
     "gen": "bun scripts/guard.ts 600 'bun scripts/run-stages.ts gen'",
     "test": "bun scripts/guard.ts 600 'bun scripts/ensure-ready.ts --install-only && bun test packages apps/dev apps/web apps/desktop scripts'",

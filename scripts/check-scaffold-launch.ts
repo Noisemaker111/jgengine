@@ -230,6 +230,7 @@ function proxyHijackableProbes(file: string, text: string): string[] {
 const REMOTE_FETCH: Record<string, string> = {
   "scripts/check-release-artifacts.ts": "registry.npmjs.org metadata and tarballs",
   "scripts/creator-app-fixture.ts": "browser-side page script inside a fixture app, not a Node probe",
+  "scripts/data-table.ts": "a public web page the caller names, fetched once for its data table",
   "scripts/mirror-assets.ts": "api.github.com and uploads.github.com",
   "scripts/pr-video.ts": "api.github.com",
   "packages/assets/src/cli/pull.ts": "remote asset registry, URL from the caller",
