@@ -42,15 +42,15 @@ export interface ServingModelSnapshot {
   tokensPerSecond: number;
   moneyPerToken: number;
   tokensPerToken: number;
-  paramsB?: number;
-  precision?: ComputePrecision | null;
-  benchmarkScore?: number | null;
-  trainedAt?: number;
-  baseModelId?: string;
+  paramsB?: number | undefined;
+  precision?: ComputePrecision | null | undefined;
+  benchmarkScore?: number | null | undefined;
+  trainedAt?: number | undefined;
+  baseModelId?: string | undefined;
 }
 
 export interface HostedModelSnapshot {
-  vendorModelId?: string;
+  vendorModelId?: string | undefined;
   revenueShareHost: number;
 }
 

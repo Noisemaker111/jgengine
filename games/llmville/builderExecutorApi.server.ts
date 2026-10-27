@@ -71,7 +71,7 @@ function findBalancedParenGroup(text: string): string | null {
 function findTopLevelIndex(text: string, char: string): number {
   let depth = 0;
   for (let index = 0; index < text.length; index += 1) {
-    const current = text[index];
+    const current = text[index] ?? "";
     if (BRACKET_OPENERS.includes(current)) depth += 1;
     else if (BRACKET_CLOSERS.includes(current)) depth -= 1;
     else if (current === char && depth === 0) return index;

@@ -28,7 +28,7 @@ export const recent = query({
     if (!(await ctx.auth.getUserIdentity())) return [];
     const server = await worldServerRow(ctx);
     if (!server) return [];
-    const rows = await recentChatMessages(ctx, { serverId: server._id, limit: args.limit });
+    const rows = await recentChatMessages(ctx, { serverId: server._id, ...(args.limit === undefined ? {} : { limit: args.limit }) });
     return rows.map(row => ({ id: row._id, authorExternalId: row.userId, authorName: row.authorName ?? "Anonymous", text: row.body, createdAt: row.at }));
   },
 });

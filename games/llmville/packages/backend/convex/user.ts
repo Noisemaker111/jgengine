@@ -13,7 +13,13 @@ const AUTH_ERRORS = {
   userNotFound: "User not found",
 } as const;
 
-const generateRandomUsername = () => `modelmaker${Math.floor(100000 + Math.random() * 900000)}`;
+interface UserPatch {
+  updatedAt: number;
+  username?: string;
+  displayName?: string;
+}
+
+const generateRandomUsername =() => `modelmaker${Math.floor(100000 + Math.random() * 900000)}`;
 
 export async function ensureUserRecord(ctx: MutationCtx, externalId: string, displayName: string, avatarId: string) {
   const ex = await ctx.db.query("users").withIndex("by_external_id", q => q.eq("externalId", externalId)).first();
@@ -143,7 +149,7 @@ export const createOrUpdate = mutation({
       !requestedUsername && args.email ? deriveUsernameFromEmail(args.email) : undefined;
     const preferredUsername = requestedUsername ?? emailDerivedUsername;
     if (u) {
-      const up: Record<string, unknown> = { updatedAt: Date.now() };
+      const up: UserPatch = { updatedAt: Date.now() };
       if (!u.username) {
         if (preferredUsername) {
           const taken = await ctx.db.query("users").withIndex("by_username", q => q.eq("username", preferredUsername)).first();
@@ -206,7 +212,7 @@ export const updateProfile = mutation({
     if (!id) throw new Error(AUTH_ERRORS.notAuthenticated);
     const u = await ctx.db.query("users").withIndex("by_external_id", q => q.eq("externalId", id.subject)).first();
     if (!u) throw new Error(AUTH_ERRORS.userNotFound);
-    const up: Record<string, unknown> = { updatedAt: Date.now() };
+    const up: UserPatch = { updatedAt: Date.now() };
     if (args.displayName !== undefined) {
       if (args.displayName.trim().length < 1 || args.displayName.trim().length > 32) throw new Error("Display name must be 1–32 characters");
       up.displayName = args.displayName.trim();

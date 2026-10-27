@@ -39,9 +39,9 @@ export interface EffectiveModelServingStats {
 }
 
 export interface EffectiveModelServingOptions {
-  trainedAt?: number;
-  frontierBenchmark?: number;
-  frontierBenchmarkAtTrain?: number;
+  trainedAt?: number | undefined;
+  frontierBenchmark?: number | undefined;
+  frontierBenchmarkAtTrain?: number | undefined;
   /** Pre-computed TPS for demand saturation; when omitted, saturation is 1 until throughput is known. */
   servingTps?: number;
 }
@@ -52,9 +52,9 @@ export function effectiveModelServingStats(
     tokensPerSecond: number;
     moneyPerToken: number;
     tokensPerToken: number;
-    paramsB?: number;
-    precision?: ComputePrecision | null;
-    benchmarkScore?: number | null;
+    paramsB?: number | undefined;
+    precision?: ComputePrecision | null | undefined;
+    benchmarkScore?: number | null | undefined;
   },
   options?: EffectiveModelServingOptions,
 ): EffectiveModelServingStats {

@@ -29,7 +29,7 @@ export async function currencyBalance(ctx: QueryCtx, game: Doc<"games">, currenc
 
 export async function currencyBalances(ctx: QueryCtx, game: Doc<"games">): Promise<Record<CurrencyId, number>> {
   const economy = (await readPlayerState(ctx, game.createdBy)).economy;
-  return { money: economy.money ?? 0, data: economy.data ?? 0 };
+  return { money: economy["money"] ?? 0, data: economy["data"] ?? 0 };
 }
 
 export async function seedOwnerEconomy(ctx: MutationCtx, ownerExternalId: string, economy: Record<CurrencyId, number>) {

@@ -107,7 +107,7 @@ function getResizeAnchor(
   ];
 }
 
-function normalizeDecorScale(scale: [number, number, number]): DecorItemSpec["scale"] {
+function normalizeDecorScale(scale: [number, number, number]): NonNullable<DecorItemSpec["scale"]> {
   if (scale[0] === scale[1] && scale[1] === scale[2]) return scale[0];
   return scale;
 }

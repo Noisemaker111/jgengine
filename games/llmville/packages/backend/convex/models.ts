@@ -123,7 +123,7 @@ async function advanceTrainingQueue(ctx: MutationCtx, game: Doc<"games">, now: n
 
 export async function unlockBaseModelInternal(
   ctx: MutationCtx,
-  args: { gameId: Id<"games">; externalId?: string; baseModelId: string },
+  args: { gameId: Id<"games">; externalId?: string | undefined; baseModelId: string },
 ) {
     const owned = await getEditorAccess(ctx, args.gameId, args.externalId);
     const shopMult = (await getFounderMultipliersForGameId(ctx, args.gameId)).shopPriceMultiplier;
@@ -216,7 +216,7 @@ export const train = mutation({
 
 export async function sellModelInternal(
   ctx: MutationCtx,
-  args: { modelId: Id<"models">; externalId?: string },
+  args: { modelId: Id<"models">; externalId?: string | undefined },
 ) {
     const model = await ctx.db.get(args.modelId);
     if (!model) return { sold: false, reason: ERRORS.modelNotFound };

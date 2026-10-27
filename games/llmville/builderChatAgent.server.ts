@@ -18,6 +18,7 @@
  */
 import { readFile } from "node:fs/promises";
 import path from "node:path";
+import { isRecord } from "@jgengine/core/data/untyped";
 
 import {
   agentCandidates,
@@ -77,15 +78,16 @@ export function extractPublicMethodSignatures(classBody: string): Map<string, st
   const signatures = new Map<string, string>();
 
   for (let index = 0; index < lines.length; index += 1) {
-    const match = startPattern.exec(lines[index]);
-    if (!match) continue;
+    const match = startPattern.exec(lines[index] ?? "");
+    const name = match?.[1];
+    if (name === undefined) continue;
 
     let depth = 0;
     let started = false;
     let collected = "";
     let endIndex = index;
     for (let cursor = index; cursor < lines.length; cursor += 1) {
-      const line = lines[cursor];
+      const line = lines[cursor] ?? "";
       collected += (cursor === index ? "" : " ") + line.trim();
       for (const char of line) {
         if (char === "(") { depth += 1; started = true; }
@@ -97,7 +99,7 @@ export function extractPublicMethodSignatures(classBody: string): Map<string, st
 
     const braceIndex = collected.indexOf("{");
     const signature = (braceIndex >= 0 ? collected.slice(0, braceIndex) : collected).trim().replace(/\s+/g, " ");
-    if (signature) signatures.set(match[1], signature);
+    if (signature) signatures.set(name, signature);
     index = endIndex;
   }
 
@@ -189,10 +191,6 @@ function buildChatPrompt(request: RunBuilderChatTurnRequest, toolDocs: string): 
   ].join("\n");
 }
 
-function isRecord(value: unknown): value is Record<string, unknown> {
-  return typeof value === "object" && value !== null && !Array.isArray(value);
-}
-
 function parseChatTurn(text: string, methodNames: readonly string[]): { ok: true; turn: BuilderChatTurn } | { ok: false; error: string } {
   const json = extractJsonObject(text);
   if (!json) return { ok: false, error: "Agent output contained no JSON object." };
@@ -204,28 +202,30 @@ function parseChatTurn(text: string, methodNames: readonly string[]): { ok: true
   }
   if (!isRecord(parsed)) return { ok: false, error: "Agent output was not a JSON object." };
 
-  if (typeof parsed.say === "string") {
-    return { ok: true, turn: { kind: "say", text: parsed.say } };
+  const { say, calls: rawCalls, note: rawNote } = parsed;
+  if (typeof say === "string") {
+    return { ok: true, turn: { kind: "say", text: say } };
   }
 
-  if (Array.isArray(parsed.calls)) {
+  if (Array.isArray(rawCalls)) {
     const methodSet = new Set(methodNames);
     const calls: BuilderChatToolCall[] = [];
-    for (const raw of parsed.calls) {
-      if (!isRecord(raw) || typeof raw.method !== "string" || !Array.isArray(raw.args)) {
+    for (const raw of rawCalls) {
+      const method = isRecord(raw) ? raw["method"] : undefined;
+      const args = isRecord(raw) ? raw["args"] : undefined;
+      if (typeof method !== "string" || !Array.isArray(args)) {
         return { ok: false, error: "Each call must be {method: string, args: array[]}." };
       }
-      if (!methodSet.has(raw.method)) {
-        return { ok: false, error: `Agent called an unknown method: "${raw.method}".` };
+      if (!methodSet.has(method)) {
+        return { ok: false, error: `Agent called an unknown method: "${method}".` };
       }
-      calls.push({ method: raw.method, args: raw.args });
+      calls.push({ method, args });
     }
     if (calls.length === 0) return { ok: false, error: "Agent returned an empty calls array." };
     if (calls.length > MAX_CALLS_PER_BATCH) {
       return { ok: false, error: `Agent returned ${calls.length} calls, over the ${MAX_CALLS_PER_BATCH}-call batch limit.` };
     }
-    const note = typeof parsed.note === "string" ? parsed.note : undefined;
-    return { ok: true, turn: { kind: "calls", calls, note } };
+    return { ok: true, turn: { kind: "calls", calls, ...(typeof rawNote === "string" ? { note: rawNote } : {}) } };
   }
 
   return { ok: false, error: 'Agent output must be {"say": string} or {"calls": [...]}.' };

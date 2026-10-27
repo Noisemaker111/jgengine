@@ -817,12 +817,12 @@ function builderScenePlugin(): Plugin {
           next();
           return;
         }
-        if (sceneState.history.length === 0) {
+        const previous = sceneState.history[sceneState.history.length - 1];
+        if (previous === undefined) {
           response.setHeader("content-type", "application/json");
           response.end(JSON.stringify({ version: sceneState.version, undone: false, reason: "No history" }));
           return;
         }
-        const previous = sceneState.history[sceneState.history.length - 1];
         sceneState = {
           ...sceneState,
           mapData: JSON.parse(previous),

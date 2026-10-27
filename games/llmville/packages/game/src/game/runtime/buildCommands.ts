@@ -55,10 +55,10 @@ export interface PickupBuildItemCommandInput {
 
 function parsePlaceInput(input: unknown): PlaceBuildItemCommandInput | null {
   if (!isRecord(input)) return null;
-  const itemId = readString(input.itemId);
-  const position = readPoint3(input.position);
-  const direction = readCardinalDirection(input.direction);
-  const now = readFiniteNumber(input.now);
+  const itemId = readString(input["itemId"]);
+  const position = readPoint3(input["position"]);
+  const direction = readCardinalDirection(input["direction"]);
+  const now = readFiniteNumber(input["now"]);
   if (itemId === null || position === null || direction === null || now === null) {
     return null;
   }
@@ -67,8 +67,8 @@ function parsePlaceInput(input: unknown): PlaceBuildItemCommandInput | null {
 
 function parsePickupInput(input: unknown): PickupBuildItemCommandInput | null {
   if (!isRecord(input)) return null;
-  const itemId = readString(input.itemId);
-  const player = readPoint2(input.player);
+  const itemId = readString(input["itemId"]);
+  const player = readPoint2(input["player"]);
   return itemId === null || player === null ? null : { itemId, player };
 }
 

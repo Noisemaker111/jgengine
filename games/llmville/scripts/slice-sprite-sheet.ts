@@ -84,6 +84,7 @@ async function parseOptions(args: string[]): Promise<CliOptions> {
 
   for (let index = 0; index < args.length; index += 1) {
     const arg = args[index];
+    if (arg === undefined) break;
     if (arg === "--help" || arg === "-h") {
       console.log(HELP.trim());
       process.exit(0);
@@ -129,8 +130,8 @@ async function parseOptions(args: string[]): Promise<CliOptions> {
       marginY: parseInteger(values.get("margin-y"), "margin-y", 0),
       gapX: parseInteger(values.get("gap-x"), "gap-x", 0),
       gapY: parseInteger(values.get("gap-y"), "gap-y", 0),
-      cellWidth: values.has("cell-width") ? parseInteger(values.get("cell-width"), "cell-width") : undefined,
-      cellHeight: values.has("cell-height") ? parseInteger(values.get("cell-height"), "cell-height") : undefined,
+      ...(values.has("cell-width") ? { cellWidth: parseInteger(values.get("cell-width"), "cell-width") } : {}),
+      ...(values.has("cell-height") ? { cellHeight: parseInteger(values.get("cell-height"), "cell-height") } : {}),
     },
     backgroundMode,
     tolerance: parseInteger(values.get("tolerance"), "tolerance", 28),
@@ -141,11 +142,11 @@ async function parseOptions(args: string[]): Promise<CliOptions> {
 
 function sample(data: Buffer, width: number, x: number, y: number): Rgba {
   const index = (y * width + x) * 4;
-  return { r: data[index], g: data[index + 1], b: data[index + 2] };
+  return { r: data[index] ?? 0, g: data[index + 1] ?? 0, b: data[index + 2] ?? 0 };
 }
 
 function colorDistance(data: Buffer, index: number, color: Rgba): number {
-  return Math.hypot(data[index] - color.r, data[index + 1] - color.g, data[index + 2] - color.b);
+  return Math.hypot((data[index] ?? 0) - color.r, (data[index + 1] ?? 0) - color.g, (data[index + 2] ?? 0) - color.b);
 }
 
 function matchesAnyBackground(data: Buffer, index: number, backgrounds: readonly Rgba[], tolerance: number): boolean {
