@@ -1,6 +1,7 @@
 import type { CSSProperties, ReactNode } from "react";
 import { useGame, useGameStore } from "@jgengine/react/hooks";
 
+import { viewedBreeding } from "../breeding";
 import { creaturesView, type CreatureCard } from "../creatures";
 import { itemLabel } from "../data/items";
 import { ItemIcon } from "./ItemIcon";
@@ -37,9 +38,16 @@ export function CreatureReadout({ card }: { card: CreatureCard }): ReactNode {
   return (
     <div data-creature-card={card.id} style={{ display: "flex", flexDirection: "column", gap: 4, width: 220 }}>
       <div style={{ fontWeight: 800, fontSize: 14 }}>
-        {card.label} · Lvl {card.level}
+        {card.label} {card.sex === "female" ? "♀" : "♂"} · Lvl {card.level}
         {card.dead ? " · Dead" : card.tamed ? " · Tamed" : taming?.unconscious === true ? " · Unconscious" : ""}
       </div>
+      {card.imprint > 0 || card.mutations > 0 ? (
+        <span style={{ fontSize: 11, opacity: 0.85 }}>
+          {card.imprint > 0 ? `Imprinted ${Math.round(card.imprint * 100)}%` : ""}
+          {card.imprint > 0 && card.mutations > 0 ? " · " : ""}
+          {card.mutations > 0 ? `${card.mutations} mutation${card.mutations === 1 ? "" : "s"}` : ""}
+        </span>
+      ) : null}
       {card.dead ? null : <Meter label="Health" value={card.health.value} max={card.health.max} color="#d8483f" />}
       {card.tamed && !card.dead ? <Meter label="Stamina" value={card.stamina.value} max={card.stamina.max} color="#e7c84a" testId="stamina" /> : null}
       {taming !== null && (taming.unconscious || taming.torpor > 0) ? <Meter label="Torpor" value={taming.torpor} max={taming.maxTorpor} color="#a45fd6" testId="torpor" /> : null}
@@ -78,6 +86,51 @@ function TameSheet({ growth }: { growth: NonNullable<CreatureCard["growth"]> }):
           ) : null}
         </div>
       ))}
+    </div>
+  );
+}
+
+/** Hours and minutes, the way ARK shows breeding timers. */
+function clock(seconds: number): string {
+  const hours = Math.floor(seconds / 3600);
+  const minutes = Math.floor((seconds % 3600) / 60);
+  return hours > 0 ? `${hours}h ${minutes}m` : `${minutes}m ${Math.floor(seconds % 60)}s`;
+}
+
+/** Breeding on the creature screen: the mating switch, mating and pregnancy, or a baby's growing, food and imprint. */
+function BreedingPanel({ mating }: { mating: boolean }): ReactNode {
+  const game = useGame();
+  const card = useGameStore(viewedBreeding, same);
+  if (card === null) return null;
+  const baby = card.baby;
+  return (
+    <div data-breeding={baby !== null ? "baby" : card.mating !== null ? "mating" : card.pregnancy !== null ? "pregnant" : "idle"} style={{ display: "flex", flexDirection: "column", gap: 4, fontSize: 12 }}>
+      {baby !== null ? (
+        <>
+          <Meter label={`${baby.stage[0]!.toUpperCase()}${baby.stage.slice(1)} · grown in ${clock(baby.secondsLeft)}`} value={Math.round(baby.matured * 100)} max={100} color="#6fb7c9" testId="maturation" />
+          <Meter label="Food" value={baby.food} max={baby.foodMax} color="#d79a3c" testId="baby-food" />
+          <Meter label="Imprinting" value={Math.round(baby.imprint * 100)} max={100} color="#e58fd0" testId="imprint" />
+          <span style={{ opacity: 0.9 }}>{baby.wants === null ? `Next wants care in ${clock(baby.nextCare)}` : `Wants: ${baby.wants}`}</span>
+          <span style={{ opacity: 0.75 }}>It eats meat or berries you put in its inventory.</span>
+        </>
+      ) : !card.breeds ? (
+        <span style={{ opacity: 0.75 }}>This kind does not breed.</span>
+      ) : (
+        <>
+          <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+            <span style={{ flex: 1 }}>
+              Mating: {mating ? "on" : "off"}
+              {card.incubation !== null ? ` · eggs need ${card.incubation[0]}–${card.incubation[1]} °C` : card.mode === "gestation" ? " · carries its young" : ""}
+            </span>
+            <button style={BUTTON} onClick={() => void game.commands.run("toggleMating", {})}>
+              {mating ? "Disable mating" : "Enable mating"}
+            </button>
+          </div>
+          {card.mating !== null ? <Meter label="Mating" value={Math.round(card.mating * 100)} max={100} color="#e58fd0" testId="mating" /> : null}
+          {card.pregnancy !== null ? <Meter label={`Gestation · born in ${clock(card.pregnancy.secondsLeft)}`} value={Math.round(card.pregnancy.progress * 100)} max={100} color="#e58fd0" testId="gestation" /> : null}
+          {card.cooldown > 0 ? <span style={{ opacity: 0.85 }}>Can mate again in {clock(card.cooldown)}</span> : null}
+        </>
+      )}
     </div>
   );
 }
@@ -136,6 +189,7 @@ export function CreaturePanel(): ReactNode {
           </button>
         </div>
       ) : null}
+      {card.tamed ? <BreedingPanel mating={card.mating} /> : null}
       {card.growth !== null ? <TameSheet growth={card.growth} /> : null}
       <div style={{ display: "flex", flexDirection: "column", gap: 3, maxHeight: "34vh", overflowY: "auto" }}>
         {card.inventory.every((slot) => slot === null) ? <span style={{ fontSize: 12, opacity: 0.7 }}>Empty. Double-click your items to give them.</span> : null}

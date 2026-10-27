@@ -61,6 +61,10 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `bodyComfort` (function) · `import { bodyComfort } from "@jgengine/core/gameplay"`
 
+## breeding — tame pairs mate, eggs incubate by temperature or mothers gestate, babies grow and imprint through care
+
+- `createBreedingField` (function) · `import { createBreedingField } from "@jgengine/core/breeding/breeding"`
+
 ## build — a serializable directed/undirected pair key that resists delimiter collisions
 
 - `createPairKeyCodec` (function) · `import { createPairKeyCodec } from "@jgengine/core/gameplay"`
@@ -882,6 +886,10 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `statModifierContributions` (function) · `import { statModifierContributions } from "@jgengine/core/gameplay"`
 
+## stat-inheritance — breed two parents' stat points into a baby's, favouring the stronger, with rare mutations
+
+- `inheritStats` (function) · `import { inheritStats } from "@jgengine/core/breeding/inheritance"`
+
 ## stat-points — level-up points spent into stats, each adding an amount or scaling the stat, with per-owner bases and a per-stat cap
 
 - `createStatPoints` (function) · `import { createStatPoints } from "@jgengine/core/progression/statPoints"`
@@ -1033,6 +1041,10 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 ## weighted-pick — pick one item from a set with an injected random source
 
 - `pickUniform` (function) · `import { pickUniform } from "@jgengine/core/gameplay"`
+
+## wild-stat-levels — spread a creature's levels over its stats at random so same-level creatures differ
+
+- `scatterLevels` (function) · `import { scatterLevels } from "@jgengine/core/breeding/inheritance"`
 
 ## work-active-jobs — list jobs currently progressing in a work queue
 

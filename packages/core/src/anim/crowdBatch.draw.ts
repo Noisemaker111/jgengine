@@ -83,7 +83,7 @@ export function writeCrowdBatch(frame: CrowdBatchFrame): number {
       play.setXYZ(count, entry.clip, entry.offset, 1);
     }
     scratchQuaternion.setFromAxisAngle(THREE.Object3D.DEFAULT_UP, member.rotationY);
-    scratchMatrix.compose(scratchPosition.set(member.x, member.y, member.z), scratchQuaternion, scratchScale.setScalar(placement.scale));
+    scratchMatrix.compose(scratchPosition.set(member.x, member.y, member.z), scratchQuaternion, scratchScale.setScalar(placement.scale * (member.size ?? 1)));
     scratchMatrix.multiply(scratchOffset.makeTranslation(placement.offset.x, placement.offset.y, placement.offset.z));
     mesh.setMatrixAt(count, scratchMatrix);
     ids[count] = id;

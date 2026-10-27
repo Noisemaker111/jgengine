@@ -28,6 +28,12 @@ export interface SceneEntity<TMeta = unknown> {
   behaviors: readonly BehaviorDescriptor[];
   /** Render-only visibility: `true` skips the entity's visual entirely (seated vehicle riders, cutscene actors, stealth cloaks) while the entity keeps simulating — position, stats, AI targeting, and queries are untouched. Absent/`false` renders normally. */
   hidden?: boolean;
+  /**
+   * Per-instance size: the model draws at this many times its catalog scale, so one kind can be a hatchling
+   * and a grown adult. Render-only, like `hidden`. Absent means 1.
+   * @capability entity-size grow or shrink one entity's model without a new kind, for babies growing up
+   */
+  size?: number;
   /** Game-defined per-instance data set at `spawn`/`update` and carried to `renderEntity`/queries — narrow with {@link entityMetaOf} (or a type guard) on read (#286.1); never encode state in the id/name string. */
   meta: TMeta;
 }
@@ -68,6 +74,7 @@ export interface SpawnOptions<TMeta = unknown> {
   movement?: EntityMovement;
   behaviors?: readonly BehaviorDescriptor[];
   hidden?: boolean;
+  size?: number;
   meta?: TMeta;
   /**
    * When `id` is already spawned: `"keep"` (default — adopt the live body and return its id, so a
@@ -108,7 +115,7 @@ export interface PoseConstraintFrame {
 export type PoseConstraint = (frame: PoseConstraintFrame) => readonly [number, number, number] | undefined | void;
 
 export type EntityUpdatePatch<TMeta = unknown> = Partial<
-  Pick<SceneEntity<TMeta>, "name" | "rotationY" | "rotationX" | "rotationZ" | "role" | "movement" | "behaviors" | "hidden" | "meta">
+  Pick<SceneEntity<TMeta>, "name" | "rotationY" | "rotationX" | "rotationZ" | "role" | "movement" | "behaviors" | "hidden" | "size" | "meta">
 > & {
   /** Accepts the same friendly shapes as `spawn`/`setPose` (#286.13). Raw patch semantics — velocity is not derived; use `setPose` with `dt` for that. */
   position?: SpawnPositionInput;
@@ -259,6 +266,7 @@ export function createEntityStore<TMeta = unknown>(options: EntityStoreOptions =
         movement: options.movement ?? {},
         behaviors: options.behaviors ?? [],
         ...(options.hidden === undefined ? {} : { hidden: options.hidden }),
+        ...(options.size === undefined ? {} : { size: options.size }),
         meta: options.meta as TMeta,
       });
       return id;
@@ -284,6 +292,7 @@ export function createEntityStore<TMeta = unknown>(options: EntityStoreOptions =
       if (patch.movement !== undefined) current.movement = patch.movement;
       if (patch.behaviors !== undefined) current.behaviors = patch.behaviors;
       if (patch.hidden !== undefined) current.hidden = patch.hidden;
+      if (patch.size !== undefined) current.size = patch.size;
       if (patch.meta !== undefined) current.meta = patch.meta;
       if (patch.behaviors === undefined) store.set(id, current);
       else writeEntity(current, previousBehaviors);
@@ -384,6 +393,7 @@ export function createEntityStore<TMeta = unknown>(options: EntityStoreOptions =
           movement: entity.movement,
           behaviors: entity.behaviors,
           ...(entity.hidden === undefined ? {} : { hidden: entity.hidden }),
+          ...(entity.size === undefined ? {} : { size: entity.size }),
           meta: entity.meta,
         });
         if (!spawnPoses.has(entity.id)) {

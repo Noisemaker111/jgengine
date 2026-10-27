@@ -16,6 +16,18 @@ describe("scene entity store", () => {
     expect(store.list().map((entity) => entity.id).sort()).toEqual([first, second].sort());
   });
 
+  test("an entity's own size is set at spawn, changed by update, and kept through a snapshot", () => {
+    const store = createEntityStore();
+    const id = store.spawn("raptor", { position: [0, 0, 0], size: 0.25 });
+    expect(store.get(id)?.size).toBe(0.25);
+    store.update(id, { size: 0.6 });
+    expect(store.get(id)?.size).toBe(0.6);
+    const copy = createEntityStore();
+    copy.hydrate(store.snapshot());
+    expect(copy.get(id)?.size).toBe(0.6);
+    expect(store.get(store.spawn("raptor"))?.size).toBeUndefined();
+  });
+
   test("spawn adopts a live id instead of throwing, and throw is opt-in", () => {
     const store = createEntityStore();
     store.spawn("rack.basic", { id: "hero", position: [0, 0, 0] });

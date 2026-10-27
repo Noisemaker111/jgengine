@@ -75,6 +75,22 @@ describe("a character batch", () => {
     expect(crowd.ids).toEqual(members.map((entry) => entry.id));
   });
 
+  test("a member's own size scales it on top of the kind's placement, so a baby draws small in the batch", () => {
+    const pair = batch(2);
+    pair.write([
+      { id: "adult", member: member(0) },
+      { id: "baby", member: { ...member(3), size: 0.25 } },
+    ]);
+    const matrix = new THREE.Matrix4();
+    const scale = new THREE.Vector3();
+    const sizes = [0, 1].map((index) => {
+      pair.mesh.getMatrixAt(index, matrix);
+      matrix.decompose(new THREE.Vector3(), new THREE.Quaternion(), scale);
+      return Number(scale.x.toFixed(3));
+    });
+    expect(sizes).toEqual([1, 0.25]);
+  });
+
   test("gives every member its own clip and time offset, so a crowd is not in lockstep", () => {
     const crowd = batch(4);
     crowd.write([

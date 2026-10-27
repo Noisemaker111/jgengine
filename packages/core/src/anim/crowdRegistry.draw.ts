@@ -11,6 +11,8 @@ export interface CrowdMember {
   rotationY: number;
   /** Ground speed in metres per second, which picks the crowd's idle/walk/run clip. */
   speed: number;
+  /** The entity's own size on top of the kind's placement scale; 1 when absent. */
+  size?: number;
 }
 
 /** Where a batch's merged geometry sits, so picking hits what the batch draws. @internal */

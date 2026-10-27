@@ -34,12 +34,13 @@ test("wake on the beach, punch a tree, pick stones, craft a Stone Pick, level up
   expect(survivorView(runner.ctx).aim.strike).not.toBeNull();
 
   // Fists strip thatch fast and wood slowly, like ARK's bare hands.
-  for (let swing = 0; swing < 12 && count(runner, "thatch") < 10; swing += 1) {
+  for (let swing = 0; swing < 30 && (count(runner, "thatch") < 10 || count(runner, "wood") < 1); swing += 1) {
     runner.ui.tryInvoke("fire", { yaw: facing });
     tick(runner, 0.6);
   }
   expect(count(runner, "thatch")).toBeGreaterThanOrEqual(10);
   expect(count(runner, "wood")).toBeGreaterThanOrEqual(1);
+  expect(count(runner, "thatch")).toBeGreaterThan(count(runner, "wood") * 2);
 
   runner.ui.tryInvoke("harvest", {});
   expect(count(runner, "stone")).toBeGreaterThanOrEqual(1);

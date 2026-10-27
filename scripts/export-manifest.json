@@ -113,6 +113,8 @@
     "./behaviour/behaviourDriver",
     "./board/laneBoard",
     "./board/timelineBoard",
+    "./breeding/breeding",
+    "./breeding/inheritance",
     "./buildings/BuildingKitBatch.draw",
     "./buildings/BuildingRenderBudget.draw",
     "./buildings/GeneratedBuilding.draw",

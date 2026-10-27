@@ -10,7 +10,7 @@ chains, Frozen Fang and Frozen Tooth in the snow, the redwoods, the swamp, the j
 rivers, with ARK's three obelisks and caves marked. Its 231 creature spawn zones carry ARK's
 species and weights per biome, and resources sit where ARK puts them: metal on the mountains,
 obsidian at the volcano, crystal on the peaks, oil on the frozen shore. Survival, creatures and
-thatch-to-stone building, death, weather and supply drops are in; breeding and the boss come next.
+thatch-to-stone building, death, weather, supply drops and breeding are in; the boss comes next.
 
 ## Controls
 
@@ -64,6 +64,19 @@ are drawn.
   survivor of the colour's level opens it (white 3, green 15, blue 25, purple 35, yellow 45, red 60);
   inside are resources, gear and saddles that grow with the colour. An emptied site sends the next
   crate 10 to 30 minutes later (timings approximate).
+- **Breeding.** Every creature is born male or female with its levels spread over health, stamina,
+  oxygen, food, weight and melee. Turn mating on in a tame's panel and leave a female and a male of a
+  kind side by side: they mate for about a minute and she lays a fertilized egg, or carries her young,
+  on the ARK wiki's times for every species that breeds (the sterile Titanoboa, leech, Titanomyrma
+  and Meganeura do not). An egg hatches only inside its kind's temperature (a raptor 20-28 °C, a rex
+  32-34 °C) and loses health outside it, so a campfire or the shade decides it. Babies hatch at a
+  quarter size with each stat whole from one parent (55% the higher), a 2.5% chance per roll of a
+  mutation adding two levels, and now and then twins or triplets. A baby eats from its own inventory
+  and starves without meat or berries in it, grows to full size over its maturation time, and every
+  eight hours asks for a cuddle, a walk or food; each answered request adds imprint, which lifts its
+  health, food, weight and melee by up to 20%. The mother waits 18 to 48 hours before mating again.
+  `cheat breedingSpeed` sets ARK's hatch, maturation and mating multipliers at once (mating time,
+  egg health and baby food are approximate).
 - **Failure states.** Food and water drain; when either empties you lose about 1 HP every 5 seconds
   and torpor rises. Heat and cold drain them faster and hurt past the comfort band. At 0 health you
   wake back on the beach with full vitals.

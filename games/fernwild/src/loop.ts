@@ -6,7 +6,8 @@ import { editorLayers } from "./editorLayers";
 import { baseSave, demolish, resetBase, rotateBuild, tickBase, useStructure } from "./game/base";
 import { cavesOf, cavesSave, resetCaves, takeArtifact } from "./game/caves";
 import { bodiesSave, recoverBody, resetBodies, tickBodies } from "./game/deathBody";
-import { closeCreature, creaturesSave, destroyWild, feedNarcotic, forceTame, giveTameXp, giveToCreature, levelTame, mountBite, resetCreatures, setTamingSpeed, spawnCreature, takeFromCreature, tickCreatures, unsaddle, useCreature, whistle } from "./game/creatures";
+import { breedingSave, careForBaby, resetBreeding, setBreedingSpeed, tickBreeding } from "./game/breeding";
+import { closeCreature, creaturesSave, destroyWild, feedNarcotic, forceTame, giveTameXp, giveToCreature, levelTame, mountBite, resetCreatures, setTamingSpeed, spawnCreature, takeFromCreature, tameSummoned, tickCreatures, toggleMating, unsaddle, useCreature, whistle } from "./game/creatures";
 import { TAME_STATS } from "./game/data/species";
 import { LEVEL_STATS, SURVIVOR } from "./game/data/survivor";
 import { BAG, HOTBAR } from "./game/bags";
@@ -136,6 +137,17 @@ export const systems = [
     save: supplyDropsSave,
     reset: resetSupplyDrops,
   }),
+  defineSystem({
+    id: "breeding",
+    tick: { type: "fixed", rate: 2 },
+    create(ctx) {
+      ctx.game.commands.define("toggleMating", { apply: (state) => (toggleMating(state), state) });
+      ctx.game.commands.define("careForBaby", { apply: (state) => (careForBaby(state), state) });
+    },
+    update: tickBreeding,
+    save: breedingSave,
+    reset: resetBreeding,
+  }),
 ];
 
 interface Cheat {
@@ -145,7 +157,9 @@ interface Cheat {
   spend?: Record<string, number>;
   tamingSpeed?: number;
   /** Spawn a creature this many metres in front of the survivor, and `side` metres to their right. */
-  summon?: { species: string; level?: number; distance?: number; side?: number };
+  summon?: { species: string; level?: number; distance?: number; side?: number; sex?: "female" | "male"; tamed?: boolean; mating?: boolean };
+  /** ARK's breeding multipliers (hatch, maturation, mating interval, imprint interval) all at once. */
+  breedingSpeed?: number;
   /** Tame the wild creature in front at once. */
   forceTame?: boolean;
   /** XP for the mount under you, or the tame whose inventory is open. */
@@ -174,6 +188,7 @@ function cheat(ctx: GameContext, input: Cheat): void {
     for (let point = 0; known !== undefined && point < points; point += 1) levelStat(ctx, known.id);
   }
   if (input.tamingSpeed !== undefined) setTamingSpeed(ctx, input.tamingSpeed);
+  if (input.breedingSpeed !== undefined) setBreedingSpeed(ctx, input.breedingSpeed);
   if (input.kill === true) ctx.scene.entity.stats.set(ctx.player.userId, "health", { current: 0 });
   if (input.destroyWild === true) destroyWild(ctx);
   if (input.clock !== undefined) ctx.time.hydrate({ ...ctx.time.snapshot(), now: input.clock });
@@ -190,7 +205,11 @@ function cheat(ctx: GameContext, input: Cheat): void {
     const sin = Math.sin(me.rotationY);
     const cos = Math.cos(me.rotationY);
     const at = [me.position[0] + sin * distance - cos * side, me.position[2] + cos * distance + sin * side] as const;
-    spawnCreature(ctx, input.summon.species, at, input.summon.level === undefined ? {} : { level: input.summon.level });
+    const id = spawnCreature(ctx, input.summon.species, at, {
+      ...(input.summon.level === undefined ? {} : { level: input.summon.level }),
+      ...(input.summon.sex === undefined ? {} : { sex: input.summon.sex }),
+    });
+    if (id !== null && input.summon.tamed === true) tameSummoned(ctx, id, input.summon.mating === true);
   }
   const cave = input.goto === undefined ? undefined : cavesOf(ctx).find((entry) => entry.id === input.goto!.cave);
   if (cave !== undefined && me !== null) {

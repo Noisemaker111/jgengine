@@ -293,6 +293,10 @@ export const SPECIES: Readonly<Record<string, SpeciesDef>> = {
 /** What a tame puts its level-up points into. */
 export type TameStat = "health" | "stamina" | "oxygen" | "food" | "weight" | "melee" | "speed";
 
+/** The stats a creature's wild levels go into and a baby inherits (ARK's, without torpor and speed). */
+export const WILD_STATS = ["health", "stamina", "oxygen", "food", "weight", "melee"] as const satisfies readonly TameStat[];
+export type WildStat = (typeof WILD_STATS)[number];
+
 /**
  * ARK's tamed level-ups (wiki, the same for the Island's common species): each point scales the stat
  * by a fraction of its value when tamed. Melee and speed are percentages, so they start at 100%.

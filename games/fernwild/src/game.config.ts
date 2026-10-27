@@ -7,6 +7,7 @@ import { assets } from "./game/assets";
 import { basePrompts, baseView } from "./game/base";
 import { cavePrompts, cavesOf, cavesView } from "./game/caves";
 import { bodyPrompts, bodyView } from "./game/deathBody";
+import { breedingPrompts, breedingView } from "./game/breeding";
 import { creaturePrompts, creaturesView } from "./game/creatures";
 import { content } from "./game/content";
 import { itemTraits } from "./game/data/items";
@@ -66,7 +67,7 @@ export const game = defineGame({
   sceneScatterBudget: 40_000,
   persist: { mode: "manual" },
   // The camera starts behind the survivor on the authored spawn facing, so you wash up looking inland.
-  prompts: (ctx) => [...survivorPrompts(ctx), ...creaturePrompts(ctx), ...basePrompts(ctx), ...cavePrompts(ctx), ...bodyPrompts(ctx), ...supplyDropPrompts(ctx)],
+  prompts: (ctx) => [...survivorPrompts(ctx), ...creaturePrompts(ctx), ...basePrompts(ctx), ...cavePrompts(ctx), ...bodyPrompts(ctx), ...supplyDropPrompts(ctx), ...breedingPrompts(ctx)],
   camera: { perspective: "third", initialYaw: authoredSpawnRotation(editorLayers), frustum: { far: 2400 } },
   capture: {
     play: [{ name: "start", input: {} }],
@@ -77,6 +78,7 @@ export const game = defineGame({
       const caves = cavesView(ctx);
       const body = bodyView(ctx);
       const crate = nearestSupplyDrop(ctx);
+      const breeding = breedingView(ctx);
       const me = ctx.scene.entity.get(ctx.player.userId);
       return {
         x: Math.round((me?.position[0] ?? 0) * 10) / 10,
@@ -157,6 +159,18 @@ export const game = defineGame({
         crateLanded: crate?.landed === true ? 1 : 0,
         // 1 while a landed crate is in reach, so E would open it.
         atCrate: supplyDropPrompts(ctx).length > 0 ? 1 : 0,
+        // Breeding: 1 while a pair is mating; eggs lying, the nearest's incubation and health in percent and its °C;
+        // babies growing, the first one's maturation and imprint in percent, 1 while it asks for care, its size in percent.
+        mating: breeding.mating ? 1 : 0,        eggs: breeding.eggs,
+        eggProgress: breeding.egg === null ? -1 : Math.round(breeding.egg.progress * 100),
+        eggHealth: breeding.egg === null ? -1 : Math.round(breeding.egg.health * 100),
+        eggTemperature: breeding.egg === null ? -99 : Math.round(breeding.egg.temperature),
+        babies: breeding.babies,
+        babyMatured: breeding.baby === null ? -1 : Math.round(breeding.baby.matured * 100),
+        babyImprint: breeding.baby === null ? -1 : Math.round(breeding.baby.imprint * 100),
+        babyWants: breeding.baby?.wants === null || breeding.baby === null ? 0 : 1,
+        babySize: breeding.baby === null ? -1 : Math.round(breeding.baby.size * 100),
+        atBaby: breedingPrompts(ctx).length > 0 ? 1 : 0,
       };
     },
   },
