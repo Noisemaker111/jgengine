@@ -16,6 +16,20 @@ export interface CheckoutProblem {
 }
 
 /**
+ * The binary `bun install` writes for tsgo: `tsgo.exe` on Windows, `tsgo` elsewhere. Every
+ * "is this checkout installed" question asks this one path; a check that looked for `tsgo` on
+ * Windows never found it, so every worktree ran a full install instead of sharing the main one.
+ */
+export function tsgoBin(root: string): string {
+  return join(root, "node_modules", ".bin", process.platform === "win32" ? "tsgo.exe" : "tsgo");
+}
+
+/** True when `root` has its dependencies installed (or linked). */
+export function hasInstall(root: string): boolean {
+  return existsSync(tsgoBin(root));
+}
+
+/**
  * Cheap readiness probe: `bun install` writes this binary, so its absence means the
  * checkout was never installed (or lost its store), not that a test failed.
  */
@@ -24,8 +38,7 @@ export function checkoutProblem(root: string): CheckoutProblem | null {
   if (!existsSync(modules) || !statSync(modules).isDirectory()) {
     return { detail: "node_modules is missing", fix: "bun install" };
   }
-  const tsgo = join(modules, ".bin", process.platform === "win32" ? "tsgo.exe" : "tsgo");
-  if (!existsSync(tsgo)) {
+  if (!hasInstall(root)) {
     return { detail: "node_modules is incomplete (node_modules/.bin/tsgo is not there)", fix: "bun install" };
   }
   return null;
