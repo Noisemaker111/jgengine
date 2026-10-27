@@ -11,6 +11,9 @@ import { audio, objectSounds } from "./game/audio/catalog";
 import { audioProbe } from "./game/audio/drive";
 import { frontProbe } from "./game/encounters/front";
 import { reserveProbe } from "./game/handroll/reserve";
+import { lookedAtItem } from "./game/commands";
+import { crashSite } from "./game/progression/onboarding";
+import { depthProbe } from "./game/progression/probe";
 import { content } from "./game/content";
 import { inventories } from "./game/inventories";
 import { DEFAULT_WALK_CODES, hotbarSlotBindings } from "@jgengine/core/input/actionBindings";
@@ -155,7 +158,7 @@ function prompts(ctx: GameContext): readonly PositionedPrompt[] {
   const base = [...staticPrompts, ...npcPrompts(ctx)];
   const playerEntity = ctx.scene.entity.get(ctx.player.userId);
   if (playerEntity === null) return base;
-  const nearestId = ctx.scene.worldItem.nearestInRadius(playerEntity.position, 2.8);
+  const nearestId = lookedAtItem(ctx, playerEntity.position, playerEntity.rotationY);
   if (nearestId === null) return base;
   const itemEntity = ctx.scene.entity.get(nearestId);
   if (itemEntity === null) return base;
@@ -200,7 +203,7 @@ export const game = defineGame({
       // the game's own downed tick opens the real 12 s window, banner, prompt and reconstruct fee.
       downed: [{ name: "character.pick", input: { characterId: "gunk" } }, "reserve.capture"],
     },
-    probe: (ctx) => ({ ...audioProbe(ctx), ...frontProbe(ctx), ...reserveProbe(ctx) }),
+    probe: (ctx) => ({ ...audioProbe(ctx), ...frontProbe(ctx), ...reserveProbe(ctx), ...depthProbe(ctx) }),
     // Ferralon's opening view carries the terrain shader, the scrub field, and a settlement's worth
     // of streamed GLB materials, and every one of those programs compiles on the first drawn frame.
     // On a software renderer that is seconds of work after readiness reports done, and the default
@@ -261,6 +264,7 @@ export const game = defineGame({
   persist: true,
   content,
   loop,
+  systems: [crashSite],
   GameUI,
   hudTheme: scrapTheme,
   entityModels,

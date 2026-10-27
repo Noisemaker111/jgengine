@@ -36,6 +36,7 @@ import {
   tickShields,
 } from "./game/handroll";
 import { itemUseHandlers } from "./game/items/use-handlers";
+import { ammoPackFor, ammoRollsFor } from "./game/items/ammoDrops";
 import { grantXp } from "./game/progression/curves";
 import { noteKill, noteZone } from "./game/progression/discovery";
 import { grantLevelUnlocks, rarityCapFor, zoneOpen } from "./game/progression/unlocks";
@@ -92,6 +93,21 @@ function dropGunAt(ctx: GameContext, event: EntityDiedEvent, anchor: readonly [n
   }
 }
 
+function dropAmmoAt(ctx: GameContext, event: EntityDiedEvent, anchor: readonly [number, number, number]): void {
+  const def = enemyById(event.catalogId);
+  if (def === undefined) return;
+  const packs = ammoRollsFor(def, dropRng());
+  for (let index = 0; index < packs; index += 1) {
+    const itemId = ammoPackFor(ctx);
+    if (itemId === null) return;
+    ctx.scene.worldItem.spawn({
+      itemId,
+      position: [anchor[0] + (dropRng() - 0.5) * 2.4, anchor[1], anchor[2] + (dropRng() - 0.5) * 2.4],
+      source: "kill",
+    });
+  }
+}
+
 function grantCores(ctx: GameContext, event: EntityDiedEvent): void {
   const def = enemyById(event.catalogId);
   if (def === undefined) return;
@@ -127,6 +143,7 @@ function onEntityDied(ctx: GameContext, event: EntityDiedEvent): void {
     } else {
       dropGunAt(ctx, event, anchor);
     }
+    dropAmmoAt(ctx, event, anchor);
     if (reservePhase(ctx) === "downed") {
       powerSurge(ctx);
       ctx.scene.entity.update(userId, { movement: { walkSpeed: playerDef.walkSpeed } });

@@ -72,13 +72,40 @@ function playerLevel(ctx: GameContext): number {
   return ctx.scene.entity.stats.get(ctx.player.userId, "level")?.current ?? 1;
 }
 
+/** How far off the facing direction (radians) an item still counts as the one being looked at. */
+const LOOK_CONE = Math.PI / 3;
+
+/**
+ * The drop E takes: the one in reach closest to where the player is facing, so a gun you just swapped
+ * out at your feet never steals the press meant for the one in front of you. Nearest when nothing in
+ * reach is in front.
+ */
+export function lookedAtItem(ctx: GameContext, from: readonly [number, number, number], yaw: number): string | null {
+  let best: string | null = null;
+  let bestOff = LOOK_CONE;
+  for (const item of ctx.scene.worldItem.list()) {
+    const at = ctx.scene.entity.get(item.instanceId)?.position;
+    if (at === undefined) continue;
+    const dx = at[0] - from[0];
+    const dz = at[2] - from[2];
+    const distance = Math.hypot(dx, dz);
+    if (distance > PICKUP_RADIUS) continue;
+    const off = distance < 0.35 ? LOOK_CONE * 0.99 : Math.abs(Math.atan2(Math.sin(Math.atan2(dx, dz) - yaw), Math.cos(Math.atan2(dx, dz) - yaw)));
+    if (off < bestOff) {
+      bestOff = off;
+      best = item.instanceId;
+    }
+  }
+  return best ?? ctx.scene.worldItem.nearestInRadius(from, PICKUP_RADIUS);
+}
+
 function pickupWorldItem(ctx: GameContext): void {
   const userId = ctx.player.userId;
   const playerEntity = ctx.scene.entity.get(userId);
   if (playerEntity === null) return;
-  const nearestId = ctx.scene.worldItem.nearestInRadius(playerEntity.position, PICKUP_RADIUS);
-  if (nearestId === null) return;
-  const record = ctx.scene.worldItem.get(nearestId);
+  const targetId = lookedAtItem(ctx, playerEntity.position, playerEntity.rotationY);
+  if (targetId === null) return;
+  const record = ctx.scene.worldItem.get(targetId);
   if (record === null) return;
 
   const gun = gunById(record.itemId);
@@ -96,9 +123,11 @@ function pickupWorldItem(ctx: GameContext): void {
     if (current !== null) {
       ctx.player.inventory.take("hotbar", current.itemId, current.count);
       const held = gunById(current.itemId);
+      // The gun you put down lands a step behind you, out of the way of the next one in front.
+      const back = playerEntity.rotationY + Math.PI;
       ctx.scene.worldItem.spawn({
         itemId: current.itemId,
-        position: [playerEntity.position[0], playerEntity.position[1], playerEntity.position[2]],
+        position: [playerEntity.position[0] + Math.sin(back) * 1.2, playerEntity.position[1], playerEntity.position[2] + Math.cos(back) * 1.2],
         ...(held === undefined ? {} : { rarity: held.rarity, baseType: held.family }),
         source: "swap",
       });

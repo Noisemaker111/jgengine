@@ -92,7 +92,9 @@ The kinds are counted from the game's data: `quests` is every quest in the catal
 - bosses — one per act: Captain Rusk, Wreck-Maw, the Foundry Heart, plus Old Tusk at the crash site
 - side quests — given by the hub's NPCs, the signal mast and the relay contract
 - second wind — down at zero health, a kill gets you back up
-- onboarding hints — Bolt's lines and hints blended into the crash site
+- onboarding hints — Bolt's lines and field notes blended into the crash site, one hint at a time
+- quest marker — a pin over the tracked objective, an edge arrow with the distance when it is off screen
+- ammo for what you carry — kills drop ammo for the carried gun that is emptiest
 - from-zero proof — a new game played for ten minutes through real input
 
 ## Engine coverage
@@ -110,12 +112,9 @@ The kinds are counted from the game's data: `quests` is every quest in the catal
 | zone gates | `@jgengine/core/progression/gates` | covered |
 | bosses | `@jgengine/core/ai/director/boss` | covered |
 | second wind | `@jgengine/core/combat/downed` | covered |
-| onboarding hints | the engine onboarding system (in flight) and `@jgengine/core/ui/coachMarks` | partial: adopt the onboarding system when it lands |
+| onboarding hints | `@jgengine/core/onboarding/onboardingSystem` (blended style) and `OnboardingHud` | covered |
+| quest marker | `@jgengine/core/map/waypointMarkers.view` | covered: the game picks the point, the engine draws the pin and edge arrow |
 | from-zero proof | `@jgengine/core/play/headlessFlow.draw` | covered |
-
-## Gaps
-
-- onboarding hints — the engine onboarding system is being built in `packages/`; Scrap Signal adopts it for the crash-site hints when it lands, and until then Bolt's lines carry the teaching.
 
 ## Milestones
 
@@ -124,4 +123,4 @@ The kinds are counted from the game's data: `quests` is every quest in the catal
 - [x] 3. Gates: element weakness on the target, a bank in Coretown in place of the field stash.
 - [ ] 4. Content to the budget: quests, enemy types, gun parts and gun models as data.
 - [ ] 5. From-zero proof: ten minutes from a new game through real input; Scrap Signal off the known-failing list.
-- [ ] 6. Onboarding hints in the crash site through the engine onboarding system.
+- [x] 6. Onboarding hints in the crash site through the engine onboarding system.
