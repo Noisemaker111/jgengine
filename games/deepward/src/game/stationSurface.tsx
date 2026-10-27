@@ -4,7 +4,7 @@ import { RepeatWrapping, SRGBColorSpace, TextureLoader, type MeshStandardMateria
 import { surfaceMaterial, type IndustrialSurface } from './industrialMaterials';
 
 /** Original imported maps retain metre-scale detail on editor-sized instanced boxes. */
-export function StationSurface({surface,color}:{surface:IndustrialSurface;color?:string}) {
+export function StationSurface({surface,color}:{surface:IndustrialSurface;color?:string|undefined}) {
  const family=surface==='floor'?'station-floor':'station-enamel';
  const tile=surface==='floor'?1:1.2;
  const textures=useLoader(TextureLoader,['color','roughness','normal'].map(role=>`/models/imported/deepward/surfaces/${family}-${role}.png`));

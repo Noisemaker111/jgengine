@@ -189,7 +189,7 @@ function WorldOverlay() {
     <RoomLights /><StationModels place={place} assets={stationAssets} />
     {dive === null && <MarrowBays world={base} />}
     {dive !== null && <StratumDressing dive={dive} deep={view.deep} world={base} />}
-    {editorLayers.markers.filter(m => m.kind === "deepward-station-sign" && m.meta?.place === place).map(m => <Sign key={m.id} at={[m.position.x,m.position.y,m.position.z]} title={m.label ?? m.id} sub={String(m.meta?.subtitle ?? "")} width={Number(m.meta?.width ?? 2.6)} turn={m.rotationY ?? 0} color={C.amber} />)}
+    {editorLayers.markers.filter(m => m.kind === "deepward-station-sign" && m.meta?.["place"] === place).map(m => <Sign key={m.id} at={[m.position.x,m.position.y,m.position.z]} title={m.label ?? m.id} sub={String(m.meta?.["subtitle"] ?? "")} width={Number(m.meta?.["width"] ?? 2.6)} turn={m.rotationY ?? 0} color={C.amber} />)}
     <group visible={dive === null}>
     <RailCart at={[GARAGE[0], GARAGE[1], GARAGE[2] - 0.7]} home />
 
@@ -212,7 +212,7 @@ function WorldOverlay() {
     <RailCart at={[EXIT[0], EXIT[1], EXIT[2] + 0.5]} />
     {DECOR.filter(entry => entry.id.startsWith("locker-shift-")).map(entry => <group key={entry.id} position={[entry.position.x, entry.position.y, entry.position.z]}>
       <ShiftLocker ajar={entry.id.endsWith("2") ? 0.35 : 0} />
-      <Sign at={[0, 1.6, 0.37]} title={String(entry.meta?.number ?? entry.label)} sub={String(entry.meta?.name ?? "SHIFT CREW")} width={0.65} />
+      <Sign at={[0, 1.6, 0.37]} title={String(entry.meta?.["number"] ?? entry.label)} sub={String(entry.meta?.["name"] ?? "SHIFT CREW")} width={0.65} />
     </group>)}
     <Sign at={decorPoint("sign-shift")} title="SHIFT 406" sub="REPORT TO YOUR POST" color={C.amber} />
     {SALVAGE.map(s => <group key={s.id} position={[s.at[0], 0, s.at[2]]}>

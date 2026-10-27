@@ -1,5 +1,6 @@
 import { createGameSave, GAME_SAVE_VERSION, type GameSave, type GameSaveDocument, type GameSaveSystem } from "@jgengine/core/save/saveDocument";
 import { localSaveBackend, type SaveBackend } from "@jgengine/core/save/saveStore";
+import { isRecord } from "@jgengine/core/data/untyped";
 import type { WeaponSystemState } from "@jgengine/core/combat/weaponSystem";
 import { createTransactionLedger, type LedgerState } from "@jgengine/core/economy/transactionLedger";
 import type { CareerBankState } from "@jgengine/core/progression/careerBank";
@@ -35,7 +36,14 @@ export interface StoragePort {
 const UNREADABLE = "Marrow's save is unreadable. It has been preserved; restore it before diving.";
 const DAMAGED = "Marrow's save is damaged or from another version. It has been preserved.";
 
-const record = (value: unknown): value is Record<string, unknown> => typeof value === "object" && value !== null && !Array.isArray(value);
+/** A stored object read through the keys a check names. Every field stays unknown, so any object fits. */
+type Fields<K extends string> = { readonly [P in K]?: unknown };
+function fields<K extends string>(value: unknown): value is Fields<K> {
+  return isRecord(value);
+}
+type HomeKey = "version" | "revision" | "nextDive" | "life" | "extractions" | "deaths" | "activeDive" | "last" | "stash" | "refits" | "reprintPending" | "bank" | "standing" | "ledger" | "books";
+/** A stored record before its fields are checked. */
+type RawHome = Fields<HomeKey>;
 const natural = (value: unknown): value is number => typeof value === "number" && Number.isSafeInteger(value) && value >= 0;
 const bankAmount = (value: unknown): value is number => typeof value === "number" && Number.isFinite(value) && value >= 0;
 const KINDS: readonly string[] = Object.keys(ITEMS);
@@ -54,7 +62,7 @@ function validId(item: Item): boolean {
 
 /** A saved instance must satisfy the same catalog that rolled it, not a hand-copied shape. */
 function validItem(value: unknown): value is Item {
-  if (!record(value) || typeof value.id !== "string") return false;
+  if (!fields<"id">(value) || typeof value.id !== "string") return false;
   const item = value as unknown as Item;
   if (itemIssues(item).length > 0) return false;
   if (!Number.isInteger(item.level) || item.level < 1 || item.level > 12) return false;
@@ -65,39 +73,39 @@ function validItem(value: unknown): value is Item {
 const purchased = (id: string): boolean => id.startsWith("purchase-");
 
 function validLedger(value: unknown, stash: readonly Item[]): boolean {
-  if (!record(value)) return false;
+  if (!isRecord(value)) return false;
   const ids = new Set(stash.map(item => item.id));
   return Object.entries(value).every(([id, outcome]) => (outcome === "salvaged" || outcome === "sold") && !ids.has(id));
 }
 function validBank(value: unknown): boolean {
-  return record(value) && bankAmount(value.banked) && bankAmount(value.haul) && bankAmount(value.deposited)
+  return fields<"banked" | "haul" | "deposited" | "lost" | "bestHaul" | "runs">(value) && bankAmount(value.banked) && bankAmount(value.haul) && bankAmount(value.deposited)
     && bankAmount(value.lost) && bankAmount(value.bestHaul) && natural(value.runs);
 }
 function validStanding(value: unknown): boolean {
-  if (!record(value) || !record(value.records)) return false;
-  return Object.values(value.records).every(row => record(row) && Object.entries(row).every(([track, score]) => track === "marrow" && typeof score === "number" && Number.isFinite(score)));
+  if (!fields<"records">(value) || !isRecord(value.records)) return false;
+  return Object.values(value.records).every(row => isRecord(row) &&Object.entries(row).every(([track, score]) => track === "marrow" && typeof score === "number" && Number.isFinite(score)));
 }
 /** The counter's books must be state the shared ledger can actually restore. */
 function validBooks(value: unknown): boolean {
-  if (!record(value)) return false;
+  if (!isRecord(value)) return false;
   return createTransactionLedger().restore(value as unknown as LedgerState);
 }
 
 /** The shared fields of every schema version, checked before the version-specific parts. */
-function validShared(value: unknown, versions: readonly number[]): value is Record<string, unknown> {
-  if (!record(value) || !versions.includes(value.version as number) || !natural(value.revision) || !natural(value.nextDive) || value.nextDive < 1 || !natural(value.life) || value.life < 1 || !natural(value.extractions) || !natural(value.deaths)) return false;
+function validShared(value: unknown, versions: readonly number[]): value is RawHome {
+  if (!fields<HomeKey>(value) ||!versions.includes(value.version as number) || !natural(value.revision) || !natural(value.nextDive) || value.nextDive < 1 || !natural(value.life) || value.life < 1 || !natural(value.extractions) || !natural(value.deaths)) return false;
   if (value.life !== value.deaths + 1 || value.nextDive !== value.extractions + value.deaths + 1 + (value.activeDive === null ? 0 : 1)) return false;
   if (value.activeDive !== null && (!natural(value.activeDive) || value.activeDive !== value.nextDive - 1)) return false;
   if (value.last === null) return value.extractions === 0 && value.deaths === 0;
   const last = value.last, version = value.version as number;
-  return record(last) && (last.kind === "extracted" || last.kind === "lost") && natural(last.dive) && last.dive > 0 && last.dive < (value.activeDive ?? value.nextDive) && (natural(last.count) || (version >= 2 && last.kind === "lost" && last.count === null)) && typeof last.reason === "string"
+  return fields<"kind" | "dive" | "count" | "reason" | "scrip">(last) && (last.kind === "extracted" || last.kind === "lost") && natural(last.dive) && last.dive > 0 && last.dive < (value.activeDive ?? value.nextDive) && (natural(last.count) || (version >= 2 && last.kind === "lost" && last.count === null)) && typeof last.reason === "string"
     && (last.scrip === undefined || bankAmount(last.scrip));
 }
 /** A haul id names the dive it came from, so an item can never appear before the Life that found it. */
 function ownedBefore(ids: readonly string[], dive: number): boolean {
   return ids.every(id => purchased(id) || Number(id.split(":")[0]) < dive);
 }
-function currentStash(value: Record<string, unknown>): value is Record<string, unknown> & { stash: Item[] } {
+function currentStash(value: RawHome): value is RawHome & { stash: Item[] } {
   const stash = value.stash;
   if (!Array.isArray(stash) || !stash.every(validItem) || new Set(stash.map(i => i.id)).size !== stash.length) return false;
   if (!ownedBefore(stash.map(i => i.id), (value.activeDive ?? value.nextDive) as number)) return false;
@@ -116,20 +124,24 @@ function validHomeShape(value: unknown): value is Home {
   if (!validBank(value.bank) || !validStanding(value.standing)) return false;
   if (!validLedger(value.ledger, value.stash)) return false;
   if (!validBooks(value.books)) return false;
-  return !value.reprintPending || (value.activeDive === null && record(value.last) && value.last.kind === "lost");
+  return !value.reprintPending || (value.activeDive === null && lostLast(value.last));
+}
+/** The last dive, when it ended with the diver lost. */
+function lostLast(last: unknown): boolean {
+  return fields<"kind">(last) && last.kind === "lost";
 }
 
 interface LegacyItem { uid: string; kind: ItemKind; level: number }
 /** v1-v3 stored an item as kind + level only; migrating rolls the instance the catalog would have. */
 function legacyItem(value: unknown): value is LegacyItem {
-  return record(value) && typeof value.uid === "string" && typeof value.kind === "string" && KINDS.includes(value.kind) && value.level === 1;
+  return fields<"uid" | "kind" | "level">(value) && typeof value.uid === "string" && typeof value.kind === "string" && KINDS.includes(value.kind) && value.level === 1;
 }
 /** Read legacy bytes without writing; the first record write migrates them atomically. */
 function readHome(value: unknown): Home | null {
   if (validHomeShape(value)) return value;
   if (validShared(value, [4])) {
     // v4 is this shape without the counter's books: open them at the balance it banked.
-    const { books: _books, ...rest } = value as Record<string, unknown>;
+    const { books: _books, ...rest } = value;
     const upgraded = { ...rest, version: 5, books: openScripBooks((value.bank as CareerBankState).banked) };
     return validHomeShape(upgraded) ? upgraded : null;
   }
@@ -140,12 +152,12 @@ function readHome(value: unknown): Home | null {
   if (value.last === null && !stash.every(i => purchased(i.uid))) return null;
   return migrate(value, value.version as number, stash);
 }
-function migrate(value: Record<string, unknown>, version: number, stash: readonly LegacyItem[]): Home {
+function migrate(value: RawHome, version: number, stash: readonly LegacyItem[]): Home {
   const blank = newHome();
   const refitted = {
     ...value,
     refits: version === 1 ? [] : value.refits,
-    reprintPending: version === 1 ? record(value.last) && value.last.kind === "lost" && value.activeDive === null : value.reprintPending,
+    reprintPending: version === 1 ? lostLast(value.last) && value.activeDive === null : value.reprintPending,
   };
   const items = stash.map(entry => rollItem(entry.kind, 1, `deepward:legacy:${entry.uid}`, entry.uid));
   return { ...(refitted as unknown as Home), version: 5, bank: blank.bank, standing: blank.standing, ledger: {}, books: blank.books, stash: items };
@@ -208,11 +220,11 @@ function decodeLegacy(raw: string): Home {
 function readRecord(raw: string): GameSaveDocument {
   let parsed: unknown;
   try { parsed = JSON.parse(raw); } catch { throw new Error(UNREADABLE); }
-  if (!record(parsed) || typeof parsed.version !== "number" || !record(parsed.value)) throw new Error(DAMAGED);
+  if (!fields<"version" | "value">(parsed) || typeof parsed.version !== "number" || !isRecord(parsed.value)) throw new Error(DAMAGED);
   if (parsed.version !== GAME_SAVE_VERSION) throw new Error(DAMAGED);
   const document = parsed.value as unknown as GameSaveDocument;
-  if (!record(document.systems)) throw new Error(DAMAGED);
-  if (!validHome(document.systems.marrow)) throw new Error(DAMAGED);
+  if (!isRecord(document.systems)) throw new Error(DAMAGED);
+  if (!validHome(document.systems["marrow"])) throw new Error(DAMAGED);
   return document;
 }
 

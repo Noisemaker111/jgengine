@@ -1,5 +1,6 @@
 import { environment } from "@jgengine/core/world/features";
 import type { EditorDocument, EditorMarker, EditorVolume } from "@jgengine/core/editor/types";
+import { requireMetaText } from "@jgengine/core/editor/markerMeta";
 import authored from "./editor.scene.json";
 import { isStratum, type Stratum } from "./game/strata";
 import { clutterFootprint, planFloorDressing, type FloorDressing, type FloorRect } from "./game/interiorPlan";
@@ -33,7 +34,7 @@ function footprint(entry: EditorVolume) {
   return { id: entry.id, x: entry.center.x, z: entry.center.z, w: half.x * 2, d: half.z * 2 };
 }
 export const ROOMS: readonly Room[] = editorLayers.volumes.filter(entry => entry.kind === "deepward-room").map(entry => {
-  const place = entry.meta?.place;
+  const place = entry.meta?.["place"];
   if (!isPlace(place)) throw new Error(`Deepward room missing place: ${entry.id}`);
   return { ...footprint(entry), name: entry.label ?? entry.id, place };
 });
@@ -44,7 +45,7 @@ export const GARAGE = point(marker("rail-garage"));
 export const STASH = point(marker("stash-marrow"));
 export const EXIT = point(marker("rail-extraction"));
 function reach(id: string): number {
-  const value = marker(id).meta?.reach;
+  const value = marker(id).meta?.["reach"];
   if (typeof value !== "number" || !Number.isFinite(value) || value <= 0) throw new Error(`Deepward anchor lacks an interaction reach: ${id}`);
   return value;
 }
@@ -57,8 +58,7 @@ const receiving = ROOMS.find(room => room.id === "room-rail-receiving");
 if (!receiving) throw new Error("Deepward scene is missing rail receiving");
 export const RECEIVING_BACK_Z = receiving.z - receiving.d / 2;
 const printMarker = marker("spawn-bellwether-fitter");
-if (typeof printMarker.meta?.entityId !== "string") throw new Error("Deepward printer spawn lacks its entity ID");
-export const PRINT_ID = printMarker.meta.entityId;
+export const PRINT_ID = requireMetaText(printMarker, "entityId");
 export const PRINT_SPAWN = point(printMarker);
 const steamVolume = editorLayers.volumes.find(entry => entry.id === "hazard-steam-printhouse");
 if (!steamVolume) throw new Error("Deepward scene is missing steam volume");
@@ -67,18 +67,18 @@ export type SalvageKind = "wire" | "polymer" | "cells" | "ink";
 const isSalvage = (kind: unknown): kind is SalvageKind => kind === "wire" || kind === "polymer" || kind === "cells" || kind === "ink";
 /** Where an entry stands; entries authored before the strata existed are in receiving. */
 function placeOf(entry: { id: string; meta?: Record<string, unknown> }, fallback: Place = "vault"): Place {
-  const place = entry.meta?.place ?? fallback;
+  const place = entry.meta?.["place"] ?? fallback;
   if (!isPlace(place)) throw new Error(`Deepward entry names an unknown place: ${entry.id}`);
   return place;
 }
 export const SALVAGE = editorLayers.markers.filter(entry => entry.kind === "deepward-loot").map(entry => {
-  const id = entry.meta?.sourceId, kind = entry.meta?.itemId;
+  const id = entry.meta?.["sourceId"], kind = entry.meta?.["itemId"];
   if (typeof id !== "string" || !isSalvage(kind)) throw new Error(`Deepward loot has unknown acquisition identity: ${entry.id}`);
   return { id, kind, at: point(entry), label: entry.label ?? entry.id, place: placeOf(entry) };
 });
 if (new Set(SALVAGE.map(entry => entry.id)).size !== SALVAGE.length) throw new Error("Deepward loot source IDs must be unique");
 /** Bearing columns and cabinets are solid only where the editor says so. */
-export const STATION_SOLIDS = editorLayers.volumes.filter(entry => entry.kind === "deepward-structure" && entry.meta?.solid === true).map(entry => ({ ...footprint(entry), place: entry.meta?.place }));
+export const STATION_SOLIDS = editorLayers.volumes.filter(entry => entry.kind === "deepward-structure" && entry.meta?.["solid"] === true).map(entry => ({ ...footprint(entry), place: entry.meta?.["place"] }));
 export const PROPS = editorLayers.volumes.filter(entry => entry.kind === "deepward-machine").map(footprint);
 
 const slug = /^[a-z0-9][a-z0-9-]*$/;
@@ -92,7 +92,7 @@ function idOf(entry: EditorMarker, field: string): string {
   if (typeof value !== "string" || !slug.test(value)) throw new Error(`Deepward ${entry.kind} needs a lowercase ${field}: ${entry.id}`);
   return value;
 }
-function anchors(role: string): EditorMarker[] { return editorLayers.markers.filter(entry => entry.kind === "deepward-anchor" && entry.meta?.role === role); }
+function anchors(role: string): EditorMarker[] { return editorLayers.markers.filter(entry => entry.kind === "deepward-anchor" && entry.meta?.["role"] === role); }
 function unique<T extends { id: string }>(entries: readonly T[], what: string): readonly T[] {
   if (new Set(entries.map(entry => entry.id)).size !== entries.length) throw new Error(`Deepward ${what} IDs must be unique`);
   return entries;
@@ -101,7 +101,7 @@ function unique<T extends { id: string }>(entries: readonly T[], what: string): 
 /** A descent lift: where it stands, which stratum it serves and where it goes. */
 export interface Lift { id: string; place: Stratum; to: Stratum; at: Point; reach: number }
 export const LIFTS: readonly Lift[] = anchors("lift").map(entry => {
-  const to = entry.meta?.to;
+  const to = entry.meta?.["to"];
   if (!isStratum(to)) throw new Error(`Deepward lift goes nowhere: ${entry.id}`);
   return { id: entry.id, place: stratumOf(entry), to, at: point(entry), reach: reach(entry.id) };
 });
@@ -112,7 +112,7 @@ export const STRATUM_SPAWNS: Readonly<Partial<Record<Stratum, Point>>> = Object.
 export type Tool = "hands" | "cutter" | "drill";
 export interface ResourceNode { id: string; place: Stratum; at: Point; yields: SalvageKind; tool: Tool; amount: number; label: string }
 export const NODES: readonly ResourceNode[] = unique(editorLayers.markers.filter(entry => entry.kind === "deepward-node").map(entry => {
-  const yields = entry.meta?.yields, tool = entry.meta?.tool, amount = entry.meta?.amount ?? 1;
+  const yields = entry.meta?.["yields"], tool = entry.meta?.["tool"], amount = entry.meta?.["amount"] ?? 1;
   if (!isSalvage(yields) || (tool !== "hands" && tool !== "cutter" && tool !== "drill") || typeof amount !== "number" || !Number.isInteger(amount) || amount < 1) throw new Error(`Deepward node is malformed: ${entry.id}`);
   return { id: idOf(entry, "nodeId"), place: stratumOf(entry), at: point(entry), yields, tool, amount, label: entry.label ?? entry.id };
 }), "node");
@@ -121,7 +121,7 @@ export const NODES: readonly ResourceNode[] = unique(editorLayers.markers.filter
 export type Supply = "ration" | "water";
 export interface SupplyCache { id: string; place: Stratum; at: Point; gives: Supply; amount: number; label: string }
 export const SUPPLIES: readonly SupplyCache[] = unique(editorLayers.markers.filter(entry => entry.kind === "deepward-supply").map(entry => {
-  const gives = entry.meta?.gives, amount = entry.meta?.amount ?? 1;
+  const gives = entry.meta?.["gives"], amount = entry.meta?.["amount"] ?? 1;
   if ((gives !== "ration" && gives !== "water") || typeof amount !== "number" || !Number.isInteger(amount) || amount < 1) throw new Error(`Deepward supply is malformed: ${entry.id}`);
   return { id: idOf(entry, "supplyId"), place: stratumOf(entry), at: point(entry), gives, amount, label: entry.label ?? entry.id };
 }), "supply");
@@ -142,7 +142,7 @@ export const FAUNA: readonly FaunaSpawn[] = unique(editorLayers.markers.filter(e
 export type HazardKind = "steam" | "frost" | "ink";
 export interface Hazard { id: string; place: Stratum; hazard: HazardKind; x: number; z: number; w: number; d: number }
 export const HAZARDS: readonly Hazard[] = editorLayers.volumes.filter(entry => entry.kind === "deepward-hazard").map(entry => {
-  const hazard = entry.meta?.hazard ?? "steam";
+  const hazard = entry.meta?.["hazard"] ?? "steam";
   if (hazard !== "steam" && hazard !== "frost" && hazard !== "ink") throw new Error(`Deepward hazard is unknown: ${entry.id}`);
   return { ...footprint(entry), place: stratumOf(entry), hazard };
 });
@@ -157,7 +157,7 @@ export const PRINTER_ZERO_REACH = reach("printer-zero");
 
 /** The floor and ceiling heights of a place's rooms, from their authored volumes. */
 export function placeElevation(place: Place): { floorY: number; ceilingY: number } {
-  const volume = editorLayers.volumes.find(entry => entry.kind === "deepward-room" && entry.meta?.place === place);
+  const volume = editorLayers.volumes.find(entry => entry.kind === "deepward-room" && entry.meta?.["place"] === place);
   if (volume?.shape !== "box" || !volume.halfExtents) throw new Error(`Deepward has no authored room elevation for ${place}`);
   return { floorY: volume.center.y - volume.halfExtents.y, ceilingY: volume.center.y + volume.halfExtents.y };
 }
@@ -184,7 +184,7 @@ export function floorDressing(stratum: Stratum): FloorDressing {
     ...(stratum === "choir" ? [near(PRINTER_ZERO, 3.5)] : []),
   ];
   const blocks: FloorRect[] = [
-    ...editorLayers.volumes.filter(entry => entry.kind === "deepward-structure" && entry.meta?.place === stratum && entry.center.y - (entry.halfExtents?.y ?? (entry.height ?? 0) / 2) < floorY + 2).map(entry => entry.shape === "box" && entry.halfExtents
+    ...editorLayers.volumes.filter(entry => entry.kind === "deepward-structure" && entry.meta?.["place"] === stratum && entry.center.y - (entry.halfExtents?.y ?? (entry.height ?? 0) / 2) < floorY + 2).map(entry => entry.shape === "box" && entry.halfExtents
       ? { x: entry.center.x, z: entry.center.z, w: entry.halfExtents.x * 2, d: entry.halfExtents.z * 2 }
       : { x: entry.center.x, z: entry.center.z, w: (entry.radius ?? 0.5) * 2, d: (entry.radius ?? 0.5) * 2 }),
     ...HAZARDS.filter(hazard => hazard.place === stratum),

@@ -212,7 +212,7 @@ export interface DocketProps {
   next: string;
   last: { kind: "extracted" | "lost"; reason: string } | null;
   /** Halloway's current line from Marrow's world, in place of the stock brief. */
-  brief?: string;
+  brief?: string | undefined;
   /** Marrow's base at a glance: the galley, the power balance and the body. */
   base?: { food: number; water: number; power: number; meals: number; flasks: number };
 }

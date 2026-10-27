@@ -38,7 +38,7 @@ export function validBody(value: unknown): value is NeedSnapshot {
 
 /** Which belt supply the body wants most, or null when it wants neither. */
 export function hungriest(body: Readonly<Record<string, number>>, belt: { ration: number; water: number }): "ration" | "water" | null {
-  const food = body.food ?? 0, water = body.water ?? 0;
+  const food = body["food"] ?? 0, water = body["water"] ?? 0;
   const wantsFood = belt.ration > 0 && food <= 100 - MEAL.food * 0.5;
   const wantsWater = belt.water > 0 && water <= 100 - MEAL.water * 0.5;
   if (wantsFood && wantsWater) return food <= water ? "ration" : "water";

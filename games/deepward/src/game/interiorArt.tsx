@@ -51,16 +51,16 @@ export function structureShapes(stratum: Stratum, look: FloorLook = FLOOR_LOOK[s
   const replacements = stationModelReplacements(stratum);
   const shapes: StaticShapeInstance[] = [];
   for (const part of editorLayers.volumes) {
-    if (part.kind !== "deepward-structure" || part.meta?.place !== stratum) continue;
+    if (part.kind !== "deepward-structure" || part.meta?.["place"] !== stratum) continue;
     if (part.label && replacements.has(part.label)) continue;
-    const kind = String(part.meta?.surface ?? "paint");
+    const kind = String(part.meta?.["surface"] ?? "paint");
     const color = part.color ?? "#89918c";
     let surface: AuthoredSurfaceConfig;
     if (kind === "lamp") surface = { color, emissive: color, emissiveIntensity: 1.6, roughness: 0.48, metalness: 0 };
     else if (kind === "glass") surface = { color: "#193a40", roughness: 0.16, metalness: 0, transparent: true, opacity: 0.72, depthWrite: false };
     else if (kind === "rubber") surface = { color: "#202a2c", roughness: 0.94, metalness: 0 };
     else surface = librarySurface(look.structure[kind as keyof FloorLook["structure"]] ?? look.structure.paint, blendTint(color, look.structureTint, look.structureBlend));
-    const rotation = [Number(part.meta?.turnX ?? 0), Number(part.meta?.turn ?? 0), Number(part.meta?.turnZ ?? 0)] as const;
+    const rotation = [Number(part.meta?.["turnX"] ?? 0), Number(part.meta?.["turn"] ?? 0), Number(part.meta?.["turnZ"] ?? 0)] as const;
     const position = [part.center.x, part.center.y, part.center.z] as const;
     if (part.shape === "box" && part.halfExtents) shapes.push({ shape: "box", position, rotation, scale: [part.halfExtents.x * 2, part.halfExtents.y * 2, part.halfExtents.z * 2], surface });
     else shapes.push({ shape: "cylinder", position, rotation, scale: [part.radius ?? 1, part.height ?? 1, part.radius ?? 1], surface, radialSegments: 16 });
