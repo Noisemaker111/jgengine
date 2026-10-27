@@ -27,7 +27,7 @@ export interface IrradianceVolume {
    * `PROBE_STRIDE` floats per probe, row-major (x fastest, then y, then z). Absent until baked, so a
    * freshly authored volume renders nothing rather than a fabricated ambient.
    */
-  samples?: readonly number[];
+  samples?: readonly number[] | undefined;
 }
 
 /** Authored bake inputs stored beside the samples so a volume can be re-baked without the editor. */
@@ -145,11 +145,12 @@ export function bakeIrradianceVolume(input: IrradianceBakeInput): IrradianceVolu
           const [dx, dy, dz] = sphereDirection(s, count);
           shDirection(dx, dy, dz, basis);
           const radiance = radianceIn(position, dx, dy, dz, { visibility, fill, sky, ground, ceiling, floor, lamps });
-          for (let band = 0; band < SH_COEFFICIENTS; band += 1) {
-            const weighted = basis[band]! * (4 * Math.PI) / count;
-            accum[band * 3] += radiance[0] * weighted;
-            accum[band * 3 + 1] += radiance[1] * weighted;
-            accum[band * 3 + 2] += radiance[2] * weighted;
+          for (const [band, coefficient] of basis.entries()) {
+            const weighted = coefficient * (4 * Math.PI) / count;
+            const at = band * 3;
+            accum[at] = (accum[at] ?? 0) + radiance[0] * weighted;
+            accum[at + 1] = (accum[at + 1] ?? 0) + radiance[1] * weighted;
+            accum[at + 2] = (accum[at + 2] ?? 0) + radiance[2] * weighted;
           }
         }
         const offset = ((iz * ny + iy) * nx + ix) * PROBE_STRIDE;

@@ -181,18 +181,16 @@ export function createRegionField<T = unknown>(config: RegionFieldConfig<T>): Re
       const weight = weights[index]!;
       if (weight > weights[dominant]!) dominant = index;
       if (weight < 0.01) continue;
-      for (let channel = 0; channel < 3; channel += 1) {
-        tint[channel] += tints[index]![channel]! * weight;
-        steep[channel] += steeps[index]![channel]! * weight;
-      }
+      addScaled(tint, tints[index], weight);
+      addScaled(steep, steeps[index], weight);
       const w = waters[index];
-      if (w !== null) {
-        for (let channel = 0; channel < 3; channel += 1) water[channel] += w[channel]! * weight;
+      if (w !== null && w !== undefined) {
+        addScaled(water, w, weight);
         waterWeight += weight;
       }
       const f = fogs[index];
-      if (f !== null) {
-        for (let channel = 0; channel < 3; channel += 1) fog[channel] += f[channel]! * weight;
+      if (f !== null && f !== undefined) {
+        addScaled(fog, f, weight);
         fogWeight += weight;
         fogDensity += (regions[index]!.fogDensity ?? 0) * weight;
       }
@@ -225,6 +223,14 @@ export function createRegionField<T = unknown>(config: RegionFieldConfig<T>): Re
     waterLevel: seaLevel,
     bounds: config.bounds,
   };
+}
+
+/** `into += from * weight`, per channel; a missing `from` adds nothing. */
+function addScaled(into: [number, number, number], from: readonly [number, number, number] | undefined, weight: number): void {
+  if (from === undefined) return;
+  into[0] += from[0] * weight;
+  into[1] += from[1] * weight;
+  into[2] += from[2] * weight;
 }
 
 function hashId(id: string): number {

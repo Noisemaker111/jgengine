@@ -35,7 +35,7 @@ export function PlayerFovProvider({
   orthographic,
   children,
 }: {
-  config?: GameCameraConfig;
+  config?: GameCameraConfig | undefined;
   orthographic: boolean;
   children: ReactNode;
 }) {

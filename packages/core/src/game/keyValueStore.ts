@@ -49,7 +49,7 @@ export interface KeyValueStore<T> {
 export interface KeyValueStoreConfig<T> extends KeyValueStorageErrorPolicy {
   readonly key: string;
   readonly initial: T;
-  readonly storage?: KeyValueStorage | null;
+  readonly storage?: KeyValueStorage | null | undefined;
   readonly serialize?: (value: T) => string;
   readonly deserialize?: (raw: string) => T;
 }

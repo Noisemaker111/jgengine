@@ -9,7 +9,7 @@ import { submitInstanceCount, submitsDraw } from "@jgengine/core/render/submitte
 /** @internal */
 export interface StaticObjectCandidate {
   object: SceneObject;
-  model?: ModelConfig;
+  model?: ModelConfig | undefined;
   authored: boolean;
   custom: boolean;
   catalog: GameContextObjectEntry | null;

@@ -29,7 +29,7 @@ import { TouchPlaySurface } from "@jgengine/core/input/TouchControlsOverlay.view
  * @internal
  */
 export function markHudCaptureReady(root: { dataset: DOMStringMap }): void {
-  if (root.dataset.jgCapture === undefined) root.dataset.jgCapture = "ready";
+  if (root.dataset["jgCapture"] === undefined) root.dataset["jgCapture"] = "ready";
 }
 
 /** HUD-only play surface for non-3D shells. @internal */

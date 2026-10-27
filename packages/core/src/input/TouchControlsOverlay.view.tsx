@@ -872,7 +872,7 @@ function ThumbArcCluster({
   side: "left" | "right";
 }) {
   const mainIndex = mainButtonIndex(buttons);
-  const main = mainIndex === -1 ? null : buttons[mainIndex];
+  const main = buttons[mainIndex] ?? null;
   const secondaries = buttons.filter((_, index) => index !== mainIndex);
   const layout = touchClusterLayout(secondaries.length, sizes);
   const width = main === null ? 0 : layout.width;

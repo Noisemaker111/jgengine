@@ -1,4 +1,5 @@
 import type { BackdropFogConfig, DirectionalLightingConfig, LightingConfig } from "../game/playableGame";
+import { definedOnly } from "../data/definedOnly";
 import type { SkyEnvironmentConfig } from "../world/features";
 import type { GradeConfig, PostProcessingConfig } from "./postProcessing";
 
@@ -210,7 +211,7 @@ function moodTokens(mood: LookMood): { tokens: MoodTokens; config: MoodConfig } 
  */
 export function resolveMood(mood: LookMood): ResolvedMood {
   const { tokens, config } = moodTokens(mood);
-  const sun: Required<MoodSun> = { ...tokens.sun, ...stripUndefined(config.sun ?? {}) };
+  const sun: Required<MoodSun> = { ...tokens.sun, ...definedOnly(config.sun ?? {}) };
   const skyColor = config.skyColor ?? tokens.zenith;
   const horizon = config.horizonColor ?? tokens.horizon;
   const haze = config.horizonColor ?? tokens.haze;
@@ -239,7 +240,7 @@ export function resolveMood(mood: LookMood): ResolvedMood {
     },
     directional,
   };
-  const fogRange = config.fog === false ? undefined : { ...tokens.fog, ...stripUndefined(config.fog ?? {}) };
+  const fogRange = config.fog === false ? undefined : { ...tokens.fog, ...definedOnly(config.fog ?? {}) };
   const sky: SkyEnvironmentConfig = {
     preset: tokens.skyPreset,
     zenithColor: skyColor,
@@ -288,6 +289,3 @@ function contrastedTint(lift: Rgb, gain: Rgb, contrast: number): { lift: Rgb; ga
   };
 }
 
-function stripUndefined<T extends object>(value: T): Partial<T> {
-  return Object.fromEntries(Object.entries(value).filter(([, entry]) => entry !== undefined)) as Partial<T>;
-}

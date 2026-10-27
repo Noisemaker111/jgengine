@@ -134,9 +134,9 @@ export interface ParticleFieldProps {
   scale?: number;
   depthWrite?: boolean;
   /** Point, instanced sprite, velocity streak, connected ribbon, or ground ripple output. */
-  render?: ParticleRenderHint;
+  render?: ParticleRenderHint | undefined;
   /** @internal Optional diagnostics; omitted in production. */
-  metrics?: ParticleFieldMetrics;
+  metrics?: ParticleFieldMetrics | undefined;
 }
 
 /**
@@ -220,8 +220,8 @@ export function ParticleField({ system, advance = true, blending = "additive", s
       ids.needsUpdate = true;
       (geometry as THREE.InstancedBufferGeometry).instanceCount = count;
     } else geometry.setDrawRange(0, count);
-    material.uniforms.uScale!.value = scale * dpr;
-    material.uniforms.uStretch!.value = render?.stretch ?? 0.08;
+    material.uniforms["uScale"]!.value = scale * dpr;
+    material.uniforms["uStretch"]!.value = render?.stretch ?? 0.08;
     if (metrics !== undefined) {
       const elapsed = performance.now() - started;
       metrics.totalUploadMs += elapsed;

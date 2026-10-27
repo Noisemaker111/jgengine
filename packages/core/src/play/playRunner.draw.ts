@@ -67,33 +67,33 @@ function eventValues(name: (typeof RECORDED_EVENTS)[number], payload: unknown): 
   switch (name) {
     case "combat.damage":
       return {
-        to: String(record.target ?? ""),
-        ...(record.source === undefined ? {} : { from: String(record.source) }),
-        amount: typeof record.amount === "number" ? Math.round(record.amount * 100) / 100 : null,
-        remaining: typeof record.remaining === "number" ? Math.round(record.remaining * 100) / 100 : null,
-        ...(record.lethal === true ? { lethal: true } : {}),
+        to: String(record["target"] ?? ""),
+        ...(record["source"] === undefined ? {} : { from: String(record["source"]) }),
+        amount: typeof record["amount"] === "number" ? Math.round(record["amount"] * 100) / 100 : null,
+        remaining: typeof record["remaining"] === "number" ? Math.round(record["remaining"] * 100) / 100 : null,
+        ...(record["lethal"] === true ? { lethal: true } : {}),
       };
     case "entity.died":
-      return { id: String(record.instanceId ?? ""), kind: String(record.catalogId ?? "") };
+      return { id: String(record["instanceId"] ?? ""), kind: String(record["catalogId"] ?? "") };
     case "stat.levelUp":
-      return { user: String(record.userId ?? ""), stat: String(record.stat ?? "") };
+      return { user: String(record["userId"] ?? ""), stat: String(record["stat"] ?? "") };
     case "quest.accepted":
     case "quest.completed":
-      return { quest: String(record.questId ?? "") };
+      return { quest: String(record["questId"] ?? "") };
     case "quest.updated":
       return {
-        quest: String(record.questId ?? ""),
-        ...(record.objectiveId === undefined ? {} : { objective: String(record.objectiveId) }),
-        ...(record.progress === undefined ? {} : { progress: Number(record.progress) }),
+        quest: String(record["questId"] ?? ""),
+        ...(record["objectiveId"] === undefined ? {} : { objective: String(record["objectiveId"]) }),
+        ...(record["progress"] === undefined ? {} : { progress: Number(record["progress"]) }),
       };
     case "loot.granted":
-      return { item: String(record.itemId ?? record.lootId ?? ""), ...(record.amount === undefined ? {} : { amount: Number(record.amount) }) };
+      return { item: String(record["itemId"] ?? record["lootId"] ?? ""), ...(record["amount"] === undefined ? {} : { amount: Number(record["amount"]) }) };
     case "worldItem.dropped":
-      return { item: String(record.itemId ?? "") };
+      return { item: String(record["itemId"] ?? "") };
     case "feedback.cue":
-      return { cue: String(record.cue ?? "") };
+      return { cue: String(record["cue"] ?? "") };
     case "command.refused":
-      return { command: String(record.command ?? ""), reason: String(record.reason ?? "") };
+      return { command: String(record["command"] ?? ""), reason: String(record["reason"] ?? "") };
   }
 }
 

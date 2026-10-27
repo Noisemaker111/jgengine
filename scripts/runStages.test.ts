@@ -152,6 +152,7 @@ describe("generated-artifact drift", () => {
     const stages = genPlan(GEN_TARGETS);
     expect(stages.map((stage) => stage.name)).toEqual([
       "ensure-ready", "source-paths", "skill-routing", "barrels", "capabilities", "skill-api", "export-manifest", "games-ledger",
+      "type-escapes",
     ]);
     expect(stages[3]!.needs).toEqual(["ensure-ready", "skill-routing"]);
     for (const stage of stages.slice(4)) expect(stage.needs).toEqual(["ensure-ready", "barrels"]);

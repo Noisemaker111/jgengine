@@ -156,8 +156,8 @@ export function createFallbackModel(diagnosis?: AssetLoadDiagnosis, name?: strin
   mesh.receiveShadow = true;
   scene.add(mesh);
   const userData: Record<string, unknown> = { jgengineFallback: true };
-  if (diagnosis !== undefined) userData.jgengineDiagnosis = diagnosis;
-  if (name !== undefined) userData.jgengineMissingModel = name;
+  if (diagnosis !== undefined) userData["jgengineDiagnosis"] = diagnosis;
+  if (name !== undefined) userData["jgengineMissingModel"] = name;
   return {
     scene,
     scenes: [scene],
@@ -281,7 +281,7 @@ export function countSceneTriangles(root: THREE.Object3D): number {
     const mesh = node as THREE.Mesh & { isMesh?: boolean; isInstancedMesh?: boolean; count?: number };
     if (mesh.isMesh !== true || mesh.geometry === undefined) return;
     const geometry = mesh.geometry;
-    const vertices = geometry.index !== null ? geometry.index.count : geometry.attributes.position?.count ?? 0;
+    const vertices = geometry.index !== null ? geometry.index.count : geometry.attributes["position"]?.count ?? 0;
     const instances = mesh.isInstancedMesh === true && typeof mesh.count === "number" ? mesh.count : 1;
     total += Math.floor(vertices / 3) * instances;
   });

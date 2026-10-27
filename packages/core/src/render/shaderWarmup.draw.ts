@@ -43,7 +43,7 @@ export interface ShaderWarmupRenderer {
   /** Links every mounted material's program; returns the materials it prepared. Lights come from `targetScene` when given. */
   compile(scene: Object3D, camera: Camera, targetScene?: Scene): unknown;
   /** Whether the shadow pass runs, which draws casters with depth materials the scene never holds. */
-  readonly shadowMap?: { readonly enabled?: boolean; autoUpdate?: boolean; needsUpdate?: boolean };
+  readonly shadowMap?: { readonly enabled?: boolean; autoUpdate?: boolean | undefined; needsUpdate?: boolean | undefined };
   /** Renderer program list; each entry answers `isReady()` once the driver finishes its link. */
   readonly info?: { readonly programs?: readonly unknown[] | null };
   /** The render target currently bound, if any; three builds different programs for a target. */

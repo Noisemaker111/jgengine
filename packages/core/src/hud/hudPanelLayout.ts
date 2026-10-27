@@ -10,9 +10,9 @@ export interface HudPanelClaim {
   /** The corner, edge or centre the panel hangs from. */
   anchor: HudAnchor;
   /** Stack position within the anchor, ascending away from the anchored edge. Default `0`. */
-  order?: number;
+  order?: number | undefined;
   /** `critical` never collapses; `tertiary` is the first to fold into a toggle. Default `secondary`. */
-  priority?: HudPriority;
+  priority?: HudPriority | undefined;
   /** The panel's full size, in HUD pixels. */
   size: HudSize;
   /** The size of its collapsed toggle. A panel without one never collapses. */

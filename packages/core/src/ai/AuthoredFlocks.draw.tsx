@@ -14,7 +14,7 @@ import { resolveModel } from "@jgengine/core/model/resolveModel";
 /** Caller-owned species models for authored habitat agents. */
 export interface AuthoredFlocksProps {
   models: Record<string, string | ModelConfig>;
-  assets?: AssetCatalog;
+  assets?: AssetCatalog | undefined;
   /** Model nose axis. Default -Z. */
   forward?: readonly [number, number, number];
   maxInstances?: number;

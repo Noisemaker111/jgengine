@@ -32,9 +32,9 @@ export interface BoneTextureInput {
   boneCount: number;
   clips: readonly BoneTextureClipInput[];
   /** Baked samples per second. Default 30. */
-  fps?: number;
+  fps?: number | undefined;
   /** Largest texture side the target GPU accepts. Default 4096. */
-  maxTextureSize?: number;
+  maxTextureSize?: number | undefined;
 }
 
 /**

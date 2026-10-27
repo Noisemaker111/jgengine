@@ -32,12 +32,12 @@ export interface CharacterLoadInput {
   /** Carried inventories (bag, rig, pockets); a stash left out does not weigh anything. */
   carried?: readonly InventoryState[];
   /** Worn item ids, one unit each — `Equipment.worn()` mapped to `itemId`. */
-  worn?: readonly string[];
+  worn?: readonly string[] | undefined;
   weightOf: WeightLookup;
   /** Carrying capacity in the same unit as `weightOf`; the caller adds level and gear bonuses. */
   capacity: number;
   /** Fraction of worn gear weight that counts against capacity (default `1`). */
-  wornFactor?: number;
+  wornFactor?: number | undefined;
   encumbrance?: EncumbranceConfig;
 }
 

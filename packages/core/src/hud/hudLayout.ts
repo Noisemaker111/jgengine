@@ -32,10 +32,10 @@ export interface HudPanelState {
   placement: HudPlacement;
   z: number;
   moved: boolean;
-  width?: number;
-  height?: number;
+  width?: number | undefined;
+  height?: number | undefined;
   visible: boolean;
-  type?: string;
+  type?: string | undefined;
 }
 
 export interface HudLayoutState {
@@ -45,13 +45,13 @@ export interface HudLayoutState {
 }
 
 export interface HudLayoutOptions {
-  snap?: number;
-  locked?: boolean;
+  snap?: number | undefined;
+  locked?: boolean | undefined;
   /**
    * Called after a panel placement/size is authored (move, resize, hydrate from document).
    * Canvas mode + agent RPCs use this to write undoable scene-document patches.
    */
-  onDocumentPatch?: (id: string, panel: import("./hudDocument").EditorUiPanelLayout) => void;
+  onDocumentPatch?: ((id: string, panel: import("./hudDocument").EditorUiPanelLayout) => void) | undefined;
 }
 
 /** @internal */
@@ -65,7 +65,7 @@ export interface HudLayoutStore {
   register(
     id: string,
     placement: HudPlacement,
-    options?: { width?: number; height?: number; visible?: boolean; type?: string },
+    options?: { width?: number | undefined; height?: number | undefined; visible?: boolean; type?: string | undefined },
   ): void;
   move(id: string, rect: HudRect, viewport: HudSize): void;
   resize(id: string, size: HudSize): void;
@@ -173,10 +173,10 @@ export function rectFromPlacement(
 
 interface PanelOverride {
   placement: HudPlacement;
-  width?: number;
-  height?: number;
-  visible?: boolean;
-  type?: string;
+  width?: number | undefined;
+  height?: number | undefined;
+  visible?: boolean | undefined;
+  type?: string | undefined;
 }
 
 interface SerializedPanel {

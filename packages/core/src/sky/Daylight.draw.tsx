@@ -73,10 +73,10 @@ export function setSkyMoon(
   intensity: number,
   starOpacity: number,
 ): void {
-  (material.uniforms.uMoonDirection!.value as THREE.Vector3).set(direction[0], direction[1], direction[2]).normalize();
-  (material.uniforms.uMoonColor!.value as THREE.Color).set(color);
-  material.uniforms.uMoonIntensity!.value = intensity;
-  material.uniforms.uStars!.value = starOpacity;
+  (material.uniforms["uMoonDirection"]!.value as THREE.Vector3).set(direction[0], direction[1], direction[2]).normalize();
+  (material.uniforms["uMoonColor"]!.value as THREE.Color).set(color);
+  material.uniforms["uMoonIntensity"]!.value = intensity;
+  material.uniforms["uStars"]!.value = starOpacity;
 }
 
 /**
@@ -94,8 +94,8 @@ export function SunLight({
   castShadow = true,
 }: {
   direction: readonly [number, number, number];
-  directionRef?: MutableRefObject<readonly [number, number, number]>;
-  lightRef?: RefObject<THREE.DirectionalLight | null>;
+  directionRef?: MutableRefObject<readonly [number, number, number]> | undefined;
+  lightRef?: RefObject<THREE.DirectionalLight | null> | undefined;
   intensity: number;
   color: string;
   /** Shadow-casting key light. Off for the moon: its light is too weak to read a shadow and a second shadow pass is not free. */
@@ -363,8 +363,8 @@ export function SkyDome({
   }, [authoredRadius, far, radius]);
   useFrame((state) => {
     const display = material.userData as SkyDomeDisplay;
-    writers.top.write(material.uniforms.topColor!.value as THREE.Color, display.top, state.gl);
-    writers.bottom.write(material.uniforms.bottomColor!.value as THREE.Color, display.bottom, state.gl);
+    writers.top.write(material.uniforms["topColor"]!.value as THREE.Color, display.top, state.gl);
+    writers.bottom.write(material.uniforms["bottomColor"]!.value as THREE.Color, display.bottom, state.gl);
     const mesh = meshRef.current;
     if (mesh === null) return;
     mesh.position.x = state.camera.position.x;
@@ -379,7 +379,7 @@ export function SkyDome({
 
 /** Points the dome's sun glow at `position` and keeps the disc lit; called per frame by the time-of-day drivers. */
 function aimSkySun(material: THREE.ShaderMaterial, position: readonly [number, number, number]): void {
-  (material.uniforms.uSunDirection!.value as THREE.Vector3).set(position[0], position[1], position[2]).normalize();
+  (material.uniforms["uSunDirection"]!.value as THREE.Vector3).set(position[0], position[1], position[2]).normalize();
 }
 
 /** Props for {@link Sky}: the sky descriptor, the clock that runs it, who owns the lights, and biome bands. */

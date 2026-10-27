@@ -165,8 +165,8 @@ function Birds({ flock }: { flock: NonNullable<ResolvedAmbientLife["birds"]> }) 
     if (centre.current === null) centre.current = focus.clone();
     else centre.current.lerp(focus, Math.min(1, delta * 0.05));
     const time = clock.getElapsedTime();
-    material.uniforms.uTime!.value = time;
-    material.uniforms.uOpacity!.value = Math.min(1, presence.current * 1.2);
+    material.uniforms["uTime"]!.value = time;
+    material.uniforms["uOpacity"]!.value = Math.min(1, presence.current * 1.2);
     const { count, height, radius } = flock;
     const middle = centre.current;
     uploadInstances(
@@ -254,10 +254,10 @@ function Litter({ litter }: { litter: NonNullable<ResolvedAmbientLife["litter"]>
     const speed = livingWorld.wind.length();
     const strength = Math.min(1, Math.max(0, (speed - 1) / 3)) * (1 - livingWorld.wetness * 0.8);
     if (mesh.current !== null) mesh.current.visible = strength > 0.02;
-    material.uniforms.uOpacity!.value = strength;
-    material.uniforms.uTime!.value = clock.getElapsedTime();
-    (material.uniforms.uAnchor!.value as THREE.Vector3).copy(camera.position);
-    (material.uniforms.uWind!.value as THREE.Vector2).copy(livingWorld.wind);
+    material.uniforms["uOpacity"]!.value = strength;
+    material.uniforms["uTime"]!.value = clock.getElapsedTime();
+    (material.uniforms["uAnchor"]!.value as THREE.Vector3).copy(camera.position);
+    (material.uniforms["uWind"]!.value as THREE.Vector2).copy(livingWorld.wind);
   });
   return <mesh ref={mesh} geometry={geometry} material={material} frustumCulled={false} />;
 }
@@ -333,9 +333,9 @@ function Steam({ vents, lowTier }: { vents: readonly Required<SteamVent>[]; lowT
     [],
   );
   useFrame(({ clock }) => {
-    material.uniforms.uTime!.value = clock.getElapsedTime();
-    (material.uniforms.uWind!.value as THREE.Vector2).copy(livingWorld.wind);
-    material.uniforms.uDensity!.value = steamDensity(livingWorld.sunHeight, livingWorld.rain);
+    material.uniforms["uTime"]!.value = clock.getElapsedTime();
+    (material.uniforms["uWind"]!.value as THREE.Vector2).copy(livingWorld.wind);
+    material.uniforms["uDensity"]!.value = steamDensity(livingWorld.sunHeight, livingWorld.rain);
   });
   return <mesh geometry={geometry} material={material} frustumCulled={false} renderOrder={3} />;
 }

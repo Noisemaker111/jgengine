@@ -34,7 +34,7 @@ export interface AssetResponseProbe {
   status?: number;
   statusText?: string;
   /** `Content-Type` response header, lower-cased or not — matched case-insensitively. */
-  contentType?: string;
+  contentType?: string | undefined;
   /** The leading bytes of the body (a few hundred is plenty); their signature decides GLB vs HTML vs corrupt. */
   bytes?: Uint8Array;
 }

@@ -112,9 +112,9 @@ export interface UtilityDecision {
 /** In-play dials that stay reachable through {@link UtilityBrain.retune}. */
 export interface UtilityTunables {
   /** Score margin a rival must beat the held pick by. Default `0.05`; `0` switches on any lead. */
-  readonly switchMargin?: number;
+  readonly switchMargin?: number | undefined;
   /** Seconds a pick is held before a non-interrupt rival may replace it. Default `0`. */
-  readonly minHoldSeconds?: number;
+  readonly minHoldSeconds?: number | undefined;
   /** Score points per candidate cost unit. Default `1`. */
   readonly costWeight?: number;
   /** Symmetric score noise amplitude from the injected `rng`; default `0` (ties keep the held pick). */
@@ -127,9 +127,9 @@ export interface UtilityBrainConfig extends UtilityTunables {
   readonly options: readonly UtilityOption[];
   readonly interrupts?: readonly UtilityInterrupt[];
   /** `[0,1)` source for `jitter`; pass `ctx.rng`. Only read when `jitter > 0`. */
-  readonly rng?: () => number;
+  readonly rng?: (() => number) | undefined;
   /** Register a devtools probe under this name so the perf overlay shows the live pick. */
-  readonly devtoolsName?: string;
+  readonly devtoolsName?: string | undefined;
 }
 
 /** One option's need-driven score, ignoring candidate cost. */

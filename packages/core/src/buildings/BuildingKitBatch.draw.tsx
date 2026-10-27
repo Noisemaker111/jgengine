@@ -70,7 +70,7 @@ function KitSourceChunk({ source, material, chunk }: {
 export interface BuildingKitBatchProps {
   url: string;
   instances: readonly BuildingKitInstance[];
-  materialAssets?: readonly MaterialAsset[];
+  materialAssets?: readonly MaterialAsset[] | undefined;
 }
 
 /**
@@ -109,7 +109,7 @@ export function BuildingKitBatch({ url, instances, materialAssets }: BuildingKit
   );
 }
 
-function StyledKitSources({ scene, materialAssets, group }: { scene: THREE.Object3D; materialAssets?: readonly MaterialAsset[]; group: BuildingKitStyleGroup }) {
+function StyledKitSources({ scene, materialAssets, group }: { scene: THREE.Object3D; materialAssets?: readonly MaterialAsset[] | undefined; group: BuildingKitStyleGroup }) {
   useMemo(() => validateBuildingKitSource(scene, group.part, materialAssets), [scene, group.key]);
   const textures = useBuildingSurfaceTextures(group.part.material);
   const materialTextures = useModelMaterialTextures({ materialAssets, materialAssignments: group.part.materialAssignments });

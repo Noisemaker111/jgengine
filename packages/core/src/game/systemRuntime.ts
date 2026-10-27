@@ -46,7 +46,7 @@ export function installSystems(
   ctx: GameContext,
   systems: readonly SystemDefinition[],
   options?: CompileSystemScheduleOptions & {
-    modules?: SystemModuleRegistration;
+    modules?: SystemModuleRegistration | undefined;
   },
 ): InstalledSystems {
   const schedule = compileSystemSchedule(systems, options);

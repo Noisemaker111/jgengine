@@ -136,7 +136,7 @@ export interface OrderEvent {
   type: "issued" | "activated" | "completed" | "canceled";
   orderId: string;
   kind: string;
-  reason?: OrderCancelReason;
+  reason?: OrderCancelReason | undefined;
 }
 
 /** What one `tick` did this frame, for tests and game reactions (play a bark on activation, flash on completion). Bounded per tick. */

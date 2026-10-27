@@ -65,12 +65,12 @@ const DEFAULT_PLAYER_STEP_HEIGHT = 0.4;
 /** The resolved, per-world movement configuration {@link stepPlayerMovement} integrates against — the same inputs the shell FrameDriver used to read piecemeal, gathered into one struct so single-player and host movement run identical math. */
 export interface PlayerMovementTuning {
   /** The simulation driver already clamps frame stalls; integrate its scaled step in full. */
-  authoritativeStep?: boolean;
-  collision?: VoxelCollisionConfig;
-  movement?: PlayerMovementConfig;
-  physics?: MovementTuningOverrides;
+  authoritativeStep?: boolean | undefined;
+  collision?: VoxelCollisionConfig | undefined;
+  movement?: PlayerMovementConfig | undefined;
+  physics?: MovementTuningOverrides | undefined;
   /** Optional physics-backed capsule controller; when present it replaces terrain/AABB walking collision. */
-  controller?: { backend: PhysicsBackend; capsule: CharacterControllerConfig };
+  controller?: { backend: PhysicsBackend; capsule: CharacterControllerConfig } | undefined;
   ground: TerrainField;
   hasTerrain: boolean;
 }
@@ -94,10 +94,10 @@ export function resolvePhysicsTuning(physics: PhysicsConfig | undefined): Moveme
 
 /** Gather a game's collision/movement/physics/world config into a {@link PlayerMovementTuning} — call once per world; both the shell and a host pass the result to {@link stepPlayerMovement}. */
 export function resolvePlayerMovementTuning(opts: {
-  collision?: VoxelCollisionConfig;
-  movement?: PlayerMovementConfig;
-  physics?: PhysicsConfig;
-  world?: WorldFeature;
+  collision?: VoxelCollisionConfig | undefined;
+  movement?: PlayerMovementConfig | undefined;
+  physics?: PhysicsConfig | undefined;
+  world?: WorldFeature | undefined;
 }): PlayerMovementTuning {
   const overrides: MovementTuningOverrides = {
     get gravityAcceleration() { return opts.physics?.gravity === undefined ? undefined : -opts.physics.gravity; },
@@ -122,10 +122,6 @@ export function resolvePlayerMovementTuning(opts: {
     height: 1.8,
     stepHeight: DEFAULT_PLAYER_STEP_HEIGHT,
   };
-  const controller = {
-    get backend() { return opts.physics!.backend!; },
-    get capsule() { return opts.physics?.controller ?? defaultCapsule; },
-  };
   return {
     get collision() { return opts.collision; },
     get movement() { return opts.movement; },
@@ -133,7 +129,10 @@ export function resolvePlayerMovementTuning(opts: {
       return opts.physics === undefined && opts.movement?.feel === undefined && opts.movement?.backpedalMult === undefined
         ? undefined : overrides;
     },
-    get controller() { return opts.physics?.backend === undefined ? undefined : controller; },
+    get controller() {
+      const backend = opts.physics?.backend;
+      return backend === undefined ? undefined : { backend, capsule: opts.physics?.controller ?? defaultCapsule };
+    },
     ground: groundFieldFor(opts.world),
     hasTerrain: hasEnvironmentTerrain(opts.world),
   };
@@ -147,9 +146,9 @@ export interface PlayerMovementTelemetry {
   /** Accepted physical height for heightfield walking; absent for other collision paths. */
   collisionHeight?: number;
   /** Live authored height requested for this completed heightfield step. */
-  requestedCollisionHeight?: number;
+  requestedCollisionHeight?: number | undefined;
   /** Growth is waiting for headroom; the accepted physical height remains collisionHeight. */
-  collisionHeightBlocked?: boolean;
+  collisionHeightBlocked?: boolean | undefined;
 }
 
 interface PlayerMovementState {
@@ -248,17 +247,7 @@ function retuneController(state: PlayerMovementState, config: CharacterControlle
     }
     if (!changed) return;
   }
-  const next = {
-    radius: config.radius,
-    height: config.height,
-    stepHeight: config.stepHeight,
-    maxSlopeDeg: config.maxSlopeDeg,
-    skinWidth: config.skinWidth,
-    crouchHeight: config.crouchHeight,
-    snapDistance: config.snapDistance,
-    maxSlides: config.maxSlides,
-    mask: config.mask,
-  };
+  const next: CharacterControllerConfig = { ...config };
   state.controller!.retune(next);
   state.controllerConfig = next;
 }
@@ -560,8 +549,8 @@ export function stepPlayerMovement(
     analog === null
       ? null
       : {
-          forward: (analog.moveForward ?? 0) - (analog.moveBack ?? 0),
-          right: (analog.moveRight ?? 0) - (analog.moveLeft ?? 0),
+          forward: (analog["moveForward"] ?? 0) - (analog["moveBack"] ?? 0),
+          right: (analog["moveRight"] ?? 0) - (analog["moveLeft"] ?? 0),
         };
   const intent = resolveMovementIntent(keys, true, analogMove);
   const walkSpeed = player.movement?.walkSpeed ?? DEFAULT_WALK_SPEED;

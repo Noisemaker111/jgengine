@@ -116,7 +116,7 @@ export function createRuntimeSnapshot(args: {
   server?: RuntimeServerRow;
   players?: Record<string, RuntimePlayerRow>;
   chunks?: Record<string, RuntimeChunkRow>;
-  revision?: number;
+  revision?: number | undefined;
 }): GameRuntimeSnapshot {
   return {
     version: RUNTIME_SNAPSHOT_VERSION,

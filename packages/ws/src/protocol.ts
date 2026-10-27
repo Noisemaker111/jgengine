@@ -28,9 +28,9 @@ export type WsChannel = "server" | "player" | "feed" | "presence" | "chat" | "vo
 /** Client-set cosmetic/state tags carried alongside a pose (skin, mount, emote, ...). Primitive values only. */
 export type WsAppearance = Record<string, string | number | boolean>;
 
-export type WsPose = PlayerPose & { appearance?: WsAppearance };
+export type WsPose = PlayerPose & { appearance?: WsAppearance | undefined };
 
-export type WsPresenceRow = PresencePoseRow & { appearance?: WsAppearance };
+export type WsPresenceRow = PresencePoseRow & { appearance?: WsAppearance | undefined };
 
 export type WsChatMessage = {
   id: string;
@@ -42,34 +42,34 @@ export type WsChatMessage = {
 
 export type WsVoiceParticipant = {
   userId: string;
-  streamId?: string;
+  streamId?: string | undefined;
 };
 
 export type WsClientMessage =
   | { v: 1; t: "ping"; id: number; at: number }
-  | { v: 1; t: "hello"; id: number; userId: string; token?: string }
+  | { v: 1; t: "hello"; id: number; userId: string; token?: string | undefined }
   | {
       v: 1;
       t: "join";
       id: number;
       gameId: string;
-      serverId?: string;
-      attributes?: SessionAttributes;
-      code?: string;
-      role?: "player" | "spectator";
+      serverId?: string | undefined;
+      attributes?: SessionAttributes | undefined;
+      code?: string | undefined;
+      role?: "player" | "spectator" | undefined;
       /** Client session holding this join; see `GameRuntimeTransport.joinServer`. */
-      sessionId?: string;
+      sessionId?: string | undefined;
     }
-  | { v: 1; t: "joinByCode"; id: number; gameId: string; code: string; role?: "player" | "spectator" }
-  | { v: 1; t: "browse"; id: number; gameId: string; filter?: MatchFilter; limit?: number }
-  | { v: 1; t: "leave"; id: number; serverId: string; sessionId?: string }
+  | { v: 1; t: "joinByCode"; id: number; gameId: string; code: string; role?: "player" | "spectator" | undefined }
+  | { v: 1; t: "browse"; id: number; gameId: string; filter?: MatchFilter | undefined; limit?: number | undefined }
+  | { v: 1; t: "leave"; id: number; serverId: string; sessionId?: string | undefined }
   | { v: 1; t: "runCommand"; id: number; serverId: string; command: string; input: unknown }
   | { v: 1; t: "pushFeed"; id: number; serverId: string; action: string; entry: unknown }
-  | { v: 1; t: "subscribe"; id: number; channel: WsChannel; serverId: string; action?: string }
-  | { v: 1; t: "unsubscribe"; id: number; channel: WsChannel; serverId: string; action?: string }
+  | { v: 1; t: "subscribe"; id: number; channel: WsChannel; serverId: string; action?: string | undefined }
+  | { v: 1; t: "unsubscribe"; id: number; channel: WsChannel; serverId: string; action?: string | undefined }
   | { v: 1; t: "pose"; serverId: string; pose: WsPose }
   | { v: 1; t: "chatSend"; id: number; serverId: string; channelId: string; body: string }
-  | { v: 1; t: "voiceJoin"; id: number; serverId: string; channelId: string; streamId?: string }
+  | { v: 1; t: "voiceJoin"; id: number; serverId: string; channelId: string; streamId?: string | undefined }
   | { v: 1; t: "voiceLeave"; id: number; serverId: string; channelId: string }
   | { v: 1; t: "voicePublish"; id: number; serverId: string; channelId: string; streamId: string };
 
@@ -114,8 +114,8 @@ function parseVersioned(raw: unknown): Record<string, unknown> | null {
     return null;
   }
   if (!isRecord(parsed)) return null;
-  if (parsed.v !== WS_PROTOCOL_VERSION) return null;
-  if (typeof parsed.t !== "string") return null;
+  if (parsed["v"] !== WS_PROTOCOL_VERSION) return null;
+  if (typeof parsed["t"] !== "string") return null;
   return parsed;
 }
 
@@ -153,18 +153,18 @@ function isFiniteNumber(value: unknown): value is number {
 function isPose(value: unknown): value is WsPose {
   return (
     isRecord(value) &&
-    isFiniteNumber(value.x) &&
-    isFiniteNumber(value.y) &&
-    isFiniteNumber(value.z) &&
-    isFiniteNumber(value.rotationY) &&
-    isFiniteNumber(value.rotationPitch) &&
-    (value.appearance === undefined || isAppearance(value.appearance))
+    isFiniteNumber(value["x"]) &&
+    isFiniteNumber(value["y"]) &&
+    isFiniteNumber(value["z"]) &&
+    isFiniteNumber(value["rotationY"]) &&
+    isFiniteNumber(value["rotationPitch"]) &&
+    (value["appearance"] === undefined || isAppearance(value["appearance"]))
   );
 }
 
 export type WsDecodeFailure = {
   reason: string;
-  id?: number;
+  id?: number | undefined;
 };
 
 /** @internal */
@@ -177,24 +177,24 @@ export function inspectWsDecodeFailure(raw: unknown): WsDecodeFailure {
     return { reason: "Invalid JSON" };
   }
   if (!isRecord(parsed)) return { reason: "Invalid message" };
-  const id = typeof parsed.id === "number" ? parsed.id : undefined;
-  if (parsed.v !== WS_PROTOCOL_VERSION) {
+  const id = typeof parsed["id"] === "number" ? parsed["id"] : undefined;
+  if (parsed["v"] !== WS_PROTOCOL_VERSION) {
     return { reason: "Protocol version mismatch", id };
   }
-  if (typeof parsed.t !== "string") {
+  if (typeof parsed["t"] !== "string") {
     return { reason: "Invalid message type", id };
   }
-  if (parsed.t === "runCommand" && typeof parsed.command === "string" && parsed.command.length > MAX_COMMAND_LENGTH) {
+  if (parsed["t"] === "runCommand" && typeof parsed["command"] === "string" && parsed["command"].length > MAX_COMMAND_LENGTH) {
     return { reason: "Command exceeds max length", id };
   }
-  if (parsed.t === "pushFeed" && typeof parsed.action === "string" && parsed.action.length > MAX_FEED_ACTION_LENGTH) {
+  if (parsed["t"] === "pushFeed" && typeof parsed["action"] === "string" && parsed["action"].length > MAX_FEED_ACTION_LENGTH) {
     return { reason: "Feed action exceeds max length", id };
   }
-  if (parsed.t === "pushFeed" && "entry" in parsed && !withinFeedEntryBudget(parsed.entry)) {
+  if (parsed["t"] === "pushFeed" && "entry" in parsed && !withinFeedEntryBudget(parsed["entry"])) {
     return { reason: "Feed entry exceeds max size", id };
   }
-  if (parsed.t === "pose" && isRecord(parsed.pose) && isRecord(parsed.pose.appearance)) {
-    const values = Object.values(parsed.pose.appearance);
+  if (parsed["t"] === "pose" && isRecord(parsed["pose"]) && isRecord(parsed["pose"]["appearance"])) {
+    const values = Object.values(parsed["pose"]["appearance"]);
     if (values.length > MAX_APPEARANCE_ENTRIES) {
       return { reason: "Appearance exceeds max entries", id };
     }
@@ -210,91 +210,91 @@ export function decodeWsClientMessage(raw: unknown): WsClientMessage | null {
   const message = parseVersioned(raw);
   if (message === null) return null;
 
-  switch (message.t) {
+  switch (message["t"]) {
     case "ping":
-      return typeof message.id === "number" && typeof message.at === "number" ? (message as WsClientMessage) : null;
+      return typeof message["id"] === "number" && typeof message["at"] === "number" ? (message as WsClientMessage) : null;
     case "hello":
-      return typeof message.id === "number" &&
-        typeof message.userId === "string" &&
-        (message.token === undefined || typeof message.token === "string")
+      return typeof message["id"] === "number" &&
+        typeof message["userId"] === "string" &&
+        (message["token"] === undefined || typeof message["token"] === "string")
         ? (message as WsClientMessage)
         : null;
     case "join":
-      return typeof message.id === "number" &&
-        typeof message.gameId === "string" &&
-        (message.serverId === undefined || typeof message.serverId === "string") &&
-        (message.code === undefined || typeof message.code === "string") &&
-        (message.role === undefined || message.role === "player" || message.role === "spectator") &&
-        isOptionalSessionId(message.sessionId)
+      return typeof message["id"] === "number" &&
+        typeof message["gameId"] === "string" &&
+        (message["serverId"] === undefined || typeof message["serverId"] === "string") &&
+        (message["code"] === undefined || typeof message["code"] === "string") &&
+        (message["role"] === undefined || message["role"] === "player" || message["role"] === "spectator") &&
+        isOptionalSessionId(message["sessionId"])
         ? (message as WsClientMessage)
         : null;
     case "joinByCode":
-      return typeof message.id === "number" &&
-        typeof message.gameId === "string" &&
-        typeof message.code === "string" &&
-        (message.role === undefined || message.role === "player" || message.role === "spectator")
+      return typeof message["id"] === "number" &&
+        typeof message["gameId"] === "string" &&
+        typeof message["code"] === "string" &&
+        (message["role"] === undefined || message["role"] === "player" || message["role"] === "spectator")
         ? (message as WsClientMessage)
         : null;
     case "browse":
-      return typeof message.id === "number" && typeof message.gameId === "string"
+      return typeof message["id"] === "number" && typeof message["gameId"] === "string"
         ? (message as WsClientMessage)
         : null;
     case "leave":
-      return typeof message.id === "number" && typeof message.serverId === "string" && isOptionalSessionId(message.sessionId)
+      return typeof message["id"] === "number" && typeof message["serverId"] === "string" && isOptionalSessionId(message["sessionId"])
         ? (message as WsClientMessage)
         : null;
     case "runCommand":
-      return typeof message.id === "number" &&
-        typeof message.serverId === "string" &&
-        typeof message.command === "string" &&
-        message.command.length <= MAX_COMMAND_LENGTH
+      return typeof message["id"] === "number" &&
+        typeof message["serverId"] === "string" &&
+        typeof message["command"] === "string" &&
+        message["command"].length <= MAX_COMMAND_LENGTH
         ? (message as WsClientMessage)
         : null;
     case "pushFeed":
-      return typeof message.id === "number" &&
-        typeof message.serverId === "string" &&
-        typeof message.action === "string" &&
-        message.action.length <= MAX_FEED_ACTION_LENGTH &&
-        withinFeedEntryBudget(message.entry)
+      return typeof message["id"] === "number" &&
+        typeof message["serverId"] === "string" &&
+        typeof message["action"] === "string" &&
+        message["action"].length <= MAX_FEED_ACTION_LENGTH &&
+        withinFeedEntryBudget(message["entry"])
         ? (message as WsClientMessage)
         : null;
     case "subscribe":
     case "unsubscribe":
-      return typeof message.id === "number" &&
-        isWsChannel(message.channel) &&
-        typeof message.serverId === "string" &&
-        (message.action === undefined || typeof message.action === "string")
+      return typeof message["id"] === "number" &&
+        isWsChannel(message["channel"]) &&
+        typeof message["serverId"] === "string" &&
+        (message["action"] === undefined || typeof message["action"] === "string")
         ? (message as WsClientMessage)
         : null;
     case "pose":
-      return typeof message.serverId === "string" && isPose(message.pose)
+      return typeof message["serverId"] === "string" && isPose(message["pose"])
         ? (message as WsClientMessage)
         : null;
     case "chatSend":
-      return typeof message.id === "number" &&
-        typeof message.serverId === "string" &&
-        typeof message.channelId === "string" &&
-        typeof message.body === "string"
+      return typeof message["id"] === "number" &&
+        typeof message["serverId"] === "string" &&
+        typeof message["channelId"] === "string" &&
+        typeof message["body"] === "string"
         ? (message as WsClientMessage)
         : null;
     case "voiceJoin":
-      return typeof message.id === "number" &&
-        typeof message.serverId === "string" &&
-        typeof message.channelId === "string" &&
-        (message.streamId === undefined || typeof message.streamId === "string")
+      return typeof message["id"] === "number" &&
+        typeof message["serverId"] === "string" &&
+        typeof message["channelId"] === "string" &&
+        (message["streamId"] === undefined || typeof message["streamId"] === "string")
         ? (message as WsClientMessage)
         : null;
     case "voiceLeave":
-      return typeof message.id === "number" &&
-        typeof message.serverId === "string" &&
-        typeof message.channelId === "string"
+      return typeof message["id"] === "number" &&
+        typeof message["serverId"] === "string" &&
+        typeof message["channelId"] === "string"
         ? (message as WsClientMessage)
         : null;
     case "voicePublish":
-      return typeof message.id === "number" &&
-        typeof message.serverId === "string" &&
-        typeof message.channelId === "string" &&
-        typeof message.streamId === "string"
+      return typeof message["id"] === "number" &&
+        typeof message["serverId"] === "string" &&
+        typeof message["channelId"] === "string" &&
+        typeof message["streamId"] === "string"
         ? (message as WsClientMessage)
         : null;
     default:
@@ -307,18 +307,18 @@ export function decodeWsServerMessage(raw: unknown): WsServerMessage | null {
   const message = parseVersioned(raw);
   if (message === null) return null;
 
-  switch (message.t) {
+  switch (message["t"]) {
     case "pong":
-      return typeof message.id === "number" && typeof message.at === "number" && typeof message.serverAt === "number" ? (message as WsServerMessage) : null;
+      return typeof message["id"] === "number" && typeof message["at"] === "number" && typeof message["serverAt"] === "number" ? (message as WsServerMessage) : null;
     case "reply":
-      if (typeof message.id !== "number") return null;
-      if (message.ok === true) return message as WsServerMessage;
-      if (message.ok === false && typeof message.reason === "string") {
+      if (typeof message["id"] !== "number") return null;
+      if (message["ok"] === true) return message as WsServerMessage;
+      if (message["ok"] === false && typeof message["reason"] === "string") {
         return message as WsServerMessage;
       }
       return null;
     case "update":
-      return isWsChannel(message.channel) && typeof message.serverId === "string"
+      return isWsChannel(message["channel"]) && typeof message["serverId"] === "string"
         ? (message as WsServerMessage)
         : null;
     default:

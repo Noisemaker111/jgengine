@@ -33,7 +33,7 @@ function rawCurve(def: CurveDef, x: number): number {
       return def.base * def.ratio ** x;
     case "steps": {
       const i = Math.max(0, Math.min(def.values.length - 1, Math.floor(x)));
-      return def.values[i];
+      return def.values[i] ?? 0;
     }
     case "piecewise":
       return interpolate(def.points, x);
@@ -41,18 +41,19 @@ function rawCurve(def: CurveDef, x: number): number {
 }
 
 function interpolate(points: [number, number][], x: number): number {
-  if (points.length === 0) return 0;
-  if (x <= points[0][0]) return points[0][1];
-  const last = points[points.length - 1];
+  const first = points[0];
+  const last = points.at(-1);
+  if (first === undefined || last === undefined) return 0;
+  if (x <= first[0]) return first[1];
   if (x >= last[0]) return last[1];
-  for (let i = 1; i < points.length; i += 1) {
-    const [x1, y1] = points[i];
+  let [x0, y0] = first;
+  for (const [x1, y1] of points) {
     if (x <= x1) {
-      const [x0, y0] = points[i - 1];
       const span = x1 - x0;
       const t = span === 0 ? 0 : (x - x0) / span;
       return y0 + t * (y1 - y0);
     }
+    [x0, y0] = [x1, y1];
   }
   return last[1];
 }

@@ -189,36 +189,36 @@ export interface MovementFrameStep {
  * `GameDefinition.physics`. Omitted fields fall back to {@link MOVEMENT_TUNING}.
  */
 export interface MovementTuningOverrides {
-  gravityAcceleration?: number;
-  jumpVelocity?: number;
+  gravityAcceleration?: number | undefined;
+  jumpVelocity?: number | undefined;
   /** Fraction of walk speed while backpedalling; overrides {@link MOVEMENT_TUNING.backpedalSpeedMultiplier}. */
-  backpedalSpeedMultiplier?: number;
+  backpedalSpeedMultiplier?: number | undefined;
   /** Ground velocity response, 1/s: how fast the body reaches its target velocity (default 26). */
-  groundAcceleration?: number;
+  groundAcceleration?: number | undefined;
   /** Air velocity response, 1/s: air control (default 12; `0` locks the jump arc). */
-  airAcceleration?: number;
+  airAcceleration?: number | undefined;
   /** Ground stopping response with no input, 1/s (default 18; lower slides). */
-  groundFriction?: number;
+  groundFriction?: number | undefined;
   /** Sprint speed as a multiple of walk speed (default 2.25). */
-  runSpeedMultiplier?: number;
+  runSpeedMultiplier?: number | undefined;
   /** Crouch speed as a multiple of walk speed (default 0.45). */
-  crouchSpeedMultiplier?: number;
+  crouchSpeedMultiplier?: number | undefined;
   /** A jump pressed up to this many ms before landing still fires on landing (default 0). Needs {@link MotionFrameOptions.buffer}. */
-  jumpBufferMs?: number;
+  jumpBufferMs?: number | undefined;
   /** A jump pressed up to this many ms after walking off a ledge still fires (default 0). */
-  coyoteMs?: number;
+  coyoteMs?: number | undefined;
   /** Rising speed kept when jump is released early, 0..1 (default 1: no cut). Lower makes a tap a hop. */
-  jumpCutFactor?: number;
+  jumpCutFactor?: number | undefined;
   /** Gravity multiplier near the peak, while vertical speed is under {@link MovementTuningOverrides.apexSpeed} (default 1). */
-  apexGravityScale?: number;
+  apexGravityScale?: number | undefined;
   /** Vertical speed under which the apex gravity scale applies, m/s (default 1.5). */
-  apexSpeed?: number;
+  apexSpeed?: number | undefined;
   /** Gravity multiplier while falling (default 1). Above 1 drops faster than it rose. */
-  fallGravityScale?: number;
+  fallGravityScale?: number | undefined;
   /** After landing, jumps wait and walk speed ramps back from {@link MovementTuningOverrides.landingSpeedScale} over this many ms (default 0). */
-  landingRecoveryMs?: number;
+  landingRecoveryMs?: number | undefined;
   /** Walk speed share right after landing when `landingRecoveryMs` is set (default 0.5). */
-  landingSpeedScale?: number;
+  landingSpeedScale?: number | undefined;
 }
 
 /**
@@ -228,11 +228,11 @@ export interface MovementTuningOverrides {
  */
 export interface MotionFrameOptions {
   /** Integrate a caller-clamped simulation step in full, including scaled game time. Default false. */
-  authoritativeStep?: boolean;
+  authoritativeStep?: boolean | undefined;
   /** Extra multiplier applied on top of the resolved target speed (e.g. swimming). Default 1. */
-  speedScale?: number;
+  speedScale?: number | undefined;
   /** Suppress gravity/jump integration and hold the avatar afloat this frame (e.g. swimming). Default false. */
-  floating?: boolean;
+  floating?: boolean | undefined;
   /** Buffers jump presses for `jumpBufferMs`. Without it a jump fires only on the press frame. */
   buffer?: InputBuffer;
   /** A collision controller supplies grounded state; integrate jump velocity without landing on the synthetic offset origin. */
@@ -400,16 +400,16 @@ export function motionStepSeconds(seconds: number, authoritativeStep = false): n
 export interface CollisionObstacle {
   position: readonly [number, number, number];
   /** Box half-size on each axis. Default `[0.5, 0.5, 0.5]` (unit-box scene objects). Ignored when `boxes` is set. */
-  halfExtents?: readonly [number, number, number];
+  halfExtents?: readonly [number, number, number] | undefined;
   /** Local center shift added to `position` for the single-AABB path (the collider's yaw-rotated offset). Ignored when `boxes` is set. */
-  offset?: readonly [number, number, number];
+  offset?: readonly [number, number, number] | undefined;
   /**
    * Optional compound solid: axis-aligned sub-boxes as `min`/`max` **relative to `position`** (add
    * `position` for world space), already yaw-rotated and conservatively expanded by the caller. When
    * present the capsule slides against EACH sub-box instead of the single `halfExtents` AABB, so a
    * concave opening (the gap between an archway's pillars/lintel) lets the capsule pass through.
    */
-  boxes?: readonly { min: readonly [number, number, number]; max: readonly [number, number, number] }[];
+  boxes?: readonly { min: readonly [number, number, number]; max: readonly [number, number, number] }[] | undefined;
 }
 
 const DEFAULT_OBSTACLE_HALF_EXTENTS: readonly [number, number, number] = [0.5, 0.5, 0.5];

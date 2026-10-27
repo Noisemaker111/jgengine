@@ -193,7 +193,7 @@ export function readGlbModel(bytes: Uint8Array): ReadModel {
       const flip = (world[0]! * (world[5]! * world[10]! - world[6]! * world[9]!) - world[4]! * (world[1]! * world[10]! - world[2]! * world[9]!) + world[8]! * (world[1]! * world[6]! - world[2]! * world[5]!)) < 0;
       for (const prim of gltf.meshes![node.mesh]!.primitives) {
         if ((prim.mode ?? 4) !== 4) continue;
-        const position = accessor(prim.attributes.POSITION!).data;
+        const position = accessor(prim.attributes["POSITION"]!).data;
         const count = position.length / 3;
         const positions = new Float32Array(count * 3);
         for (let i = 0; i < count; i += 1) {
@@ -207,8 +207,8 @@ export function readGlbModel(bytes: Uint8Array): ReadModel {
         else indices = Uint32Array.from(accessor(prim.indices).data);
         if (flip) for (let t = 0; t < indices.length; t += 3) [indices[t + 1], indices[t + 2]] = [indices[t + 2]!, indices[t + 1]!];
         const normals = new Float32Array(count * 3);
-        if (prim.attributes.NORMAL !== undefined) {
-          const normal = accessor(prim.attributes.NORMAL).data;
+        if (prim.attributes["NORMAL"] !== undefined) {
+          const normal = accessor(prim.attributes["NORMAL"]).data;
           for (let i = 0; i < count; i += 1) {
             const x = normal[i * 3]!, y = normal[i * 3 + 1]!, z = normal[i * 3 + 2]!;
             const nx = nm[0]! * x + nm[3]! * y + nm[6]! * z;
@@ -222,10 +222,10 @@ export function readGlbModel(bytes: Uint8Array): ReadModel {
         } else {
           faceNormals(positions, indices, normals);
         }
-        const uv = prim.attributes.TEXCOORD_0 === undefined ? undefined : accessor(prim.attributes.TEXCOORD_0).data;
+        const uv = prim.attributes["TEXCOORD_0"] === undefined ? undefined : accessor(prim.attributes["TEXCOORD_0"]).data;
         let colors: Float32Array | undefined;
-        if (prim.attributes.COLOR_0 !== undefined) {
-          const color = accessor(prim.attributes.COLOR_0);
+        if (prim.attributes["COLOR_0"] !== undefined) {
+          const color = accessor(prim.attributes["COLOR_0"]);
           colors = new Float32Array(count * 4);
           for (let i = 0; i < count; i += 1) {
             for (let k = 0; k < 3; k += 1) colors[i * 4 + k] = color.data[i * color.width + k]!;

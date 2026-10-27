@@ -45,18 +45,19 @@ export function createSnapshotBuffer<T>(config: {
       trim();
     },
     sampleAt(nowMs) {
-      if (entries.length === 0) return null;
+      const first = entries[0];
+      const last = entries.at(-1);
+      if (first === undefined || last === undefined) return null;
       const target = nowMs - delayMs;
-      if (target <= entries[0].atMs) return { before: entries[0].value, after: entries[0].value, alpha: 0 };
-      const last = entries[entries.length - 1];
+      if (target <= first.atMs) return { before: first.value, after: first.value, alpha: 0 };
       if (target >= last.atMs) return { before: last.value, after: last.value, alpha: 1 };
-      for (let i = 1; i < entries.length; i += 1) {
-        const after = entries[i];
+      let before = first;
+      for (const after of entries) {
         if (target <= after.atMs) {
-          const before = entries[i - 1];
           const span = after.atMs - before.atMs;
           return { before: before.value, after: after.value, alpha: span === 0 ? 1 : (target - before.atMs) / span };
         }
+        before = after;
       }
       return null;
     },

@@ -32,7 +32,7 @@ export interface RuntimeInspectorGetResult {
   id: string;
   kind: "entity" | "tunable" | "missing";
   entity?: RuntimeEntityState;
-  path?: string;
+  path?: string | undefined;
   value?: unknown;
   override?: RuntimeEntityState;
 }
@@ -153,8 +153,8 @@ function isFiniteNumber(value: unknown): value is number {
 function asPosition(value: unknown): { x: number; y: number; z: number } | null {
   if (value === null || typeof value !== "object" || Array.isArray(value)) return null;
   const record = value as Record<string, unknown>;
-  if (!isFiniteNumber(record.x) || !isFiniteNumber(record.y) || !isFiniteNumber(record.z)) return null;
-  return { x: record.x, y: record.y, z: record.z };
+  if (!isFiniteNumber(record["x"]) || !isFiniteNumber(record["y"]) || !isFiniteNumber(record["z"])) return null;
+  return { x: record["x"], y: record["y"], z: record["z"] };
 }
 
 /**

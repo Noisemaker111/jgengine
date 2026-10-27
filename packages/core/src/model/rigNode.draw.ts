@@ -25,7 +25,7 @@ export function resolveRigNode(rig: Object3D, name: string): RigNodeResolution {
   const authored: Object3D[] = [];
   rig.traverse((node) => {
     if (node.name === name) exact.push(node);
-    if (node.userData.name === name) authored.push(node);
+    if (node.userData["name"] === name) authored.push(node);
   });
   const matches = exact.length > 0 ? exact : authored;
   const matchedBy = exact.length > 0 ? "runtime" : "authored";

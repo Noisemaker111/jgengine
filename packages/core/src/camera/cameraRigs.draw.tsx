@@ -63,8 +63,8 @@ export const CAMERA_POST_FRAME_PRIORITY = ORBIT_CAMERA_FRAME_PRIORITY + 0.5;
 export interface RigProps {
   yawRef: MutableRefObject<number>;
   pitchRef: MutableRefObject<number>;
-  config?: GameCameraConfig;
-  followEntityId?: string | null;
+  config?: GameCameraConfig | undefined;
+  followEntityId?: string | null | undefined;
   /** When true, pose FOV is treated as absolute (cinematic keyframes). */
   absoluteFov?: boolean;
 }
@@ -292,7 +292,7 @@ const RTS_WASD_KEYS = new Set(["KeyW", "KeyA", "KeyS", "KeyD"]);
 const RTS_ROTATE_KEYS = new Set(["KeyQ", "KeyE"]);
 
 /** Strategy rig that pans with keys or screen edges, zooms and rotates over the map. */
-export function RtsRig(props: RigProps & { panKeysEnabled?: boolean; rotateKeysEnabled?: boolean }) {
+export function RtsRig(props: RigProps & { panKeysEnabled?: boolean | undefined; rotateKeysEnabled?: boolean | undefined }) {
   const { userId } = usePlayer();
   const ctx = useGameContext();
   const followId = resolveFollowId(props.followEntityId, userId);

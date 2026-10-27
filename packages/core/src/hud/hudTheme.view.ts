@@ -179,7 +179,7 @@ export interface HudTheme {
   slot: HudThemeSlot;
   /** Minimap chrome ring color. */
   ring: string;
-  skin?: HudSkin;
+  skin?: HudSkin | undefined;
   /** Type scale; unset uses {@link defaultHudTheme}'s. */
   type?: HudThemeType;
   /** Spacing steps; unset uses {@link defaultHudTheme}'s. */

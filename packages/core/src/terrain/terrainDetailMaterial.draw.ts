@@ -28,7 +28,7 @@ export interface TerrainDetailMaterialTextures {
 /** Surface-pass inputs beyond the resolved detail config. */
 export interface TerrainDetailMaterialOptions {
   /** Authored paint coverage from {@link createTerrainPaintTextures}; omit for unpainted ground. */
-  paint?: TerrainPaintTextures;
+  paint?: TerrainPaintTextures | undefined;
   /** Graphics tier. `low` draws one cheap mottle per surface and skips micro-normals. Default `high`. */
   quality?: GraphicsQuality;
   /**

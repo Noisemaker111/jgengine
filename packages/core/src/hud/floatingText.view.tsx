@@ -87,11 +87,11 @@ export interface FloatingTextProps extends FloatingTextLayoutOptions {
    * view. Merged over the defaults, so returning `{}` keeps them. The default look
    * uses `view.color` (or white), a bold sans stack, and a readable shadow.
    */
-  styleFor?: (view: FloatingTextView) => CSSProperties;
+  styleFor?: ((view: FloatingTextView) => CSSProperties) | undefined;
   /** Base font size in px at `size === 1`; scaled by each view's `size`. Default 20. */
-  fontSizePx?: number;
+  fontSizePx?: number | undefined;
   /** Class on the fullscreen overlay layer. */
-  className?: string;
+  className?: string | undefined;
   /** Style on the fullscreen overlay layer (merged over the absolute-fill default). */
   style?: CSSProperties;
   /** Per-entry render override; return your own node instead of the default text chip. */

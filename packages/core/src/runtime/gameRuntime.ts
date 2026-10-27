@@ -67,7 +67,7 @@ export type HydrateInput = {
 
 export type GameRuntime = {
   gameId: string;
-  topology?: "shared" | "rooms";
+  topology?: "shared" | "rooms" | undefined;
   save: SaveConfig;
   /**
    * Whether this runtime declares `loop.onTick`. A host's tick cron reads it to skip hydrating and

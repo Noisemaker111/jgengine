@@ -242,19 +242,19 @@ export interface KitFrameLook {
   /** Silhouette. Default `chamfer`. */
   cut?: KitCut;
   /** Corner and notch size in px. Default 14. */
-  depth?: number;
+  depth?: number | undefined;
   /** Replaces the material's base colour (e.g. a team or rarity colour). */
-  tint?: string;
+  tint?: string | undefined;
   /** Rim colour; `"none"` draws no rim. Default the material's edge. */
-  edge?: string;
+  edge?: string | undefined;
   /** Rim thickness in px. Default 2. */
-  edgeWidth?: number;
+  edgeWidth?: number | undefined;
   /** A hard cast shadow under the frame (a clipped plate, not a filter). Default true; a `glow` replaces it. */
   shadow?: boolean;
   /** Outer ring colour for a selected or charged frame (a clipped plate 3px wide, not a blur). */
-  glow?: string;
+  glow?: string | undefined;
   /** Inner padding. Default `12px 16px`. */
-  padding?: CSSProperties["padding"];
+  padding?: CSSProperties["padding"] | undefined;
 }
 
 // No CSS `filter` or `backdrop-filter` anywhere: over a live 3D canvas a filtered element is re-rendered
@@ -332,13 +332,13 @@ export function kitFrameVars({
 
 /** Props of the material surface a material `KitPanel`/`KitButton` renders. @internal */
 export interface KitFrameProps extends KitFrameLook, Omit<HTMLAttributes<HTMLElement>, "color"> {
-  as?: ElementType;
+  as?: ElementType | undefined;
   pressable: boolean;
   report: (kind: HudInteractKind) => void;
-  type?: "button" | "submit" | "reset";
-  disabled?: boolean;
-  ref?: Ref<HTMLElement>;
-  children?: ReactNode;
+  type?: "button" | "submit" | "reset" | undefined;
+  disabled?: boolean | undefined;
+  ref?: Ref<HTMLElement> | undefined;
+  children?: ReactNode | undefined;
 }
 
 /**

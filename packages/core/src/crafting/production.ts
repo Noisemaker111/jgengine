@@ -5,8 +5,8 @@ export interface ProductionBuildingDef {
   inputs: readonly RecipeItem[];
   outputs: readonly RecipeItem[];
   rate: number;
-  power?: number;
-  bufferMultiplier?: number;
+  power?: number | undefined;
+  bufferMultiplier?: number | undefined;
 }
 
 export interface ProductionBuildingConfig {

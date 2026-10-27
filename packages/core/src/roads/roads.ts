@@ -88,7 +88,7 @@ export interface RoadRibbonOptions {
   /** Lift above the sampled ground so the ribbon never z-fights the terrain. Default {@link GROUND_DECAL_LAYERS}.road. */
   elevation?: number;
   /** Longest centerline step before the polyline is subdivided to drape over relief. Default 4. */
-  maxSegmentLength?: number;
+  maxSegmentLength?: number | undefined;
 }
 
 function subdividePath(path: readonly RoadPoint[], maxLength: number): RoadPoint[] {
@@ -677,9 +677,9 @@ export interface JunctionApproach {
   /** Full pavement width at this mouth. */
   width?: number;
   /** Sidewalk widths attached to the source path's left and right pavement edges. */
-  sidewalkWidths?: IntersectionSidewalkWidths;
+  sidewalkWidths?: IntersectionSidewalkWidths | undefined;
   /** Lane-paint declaration inherited from the source street. */
-  markings?: IntersectionMarkingIntent;
+  markings?: IntersectionMarkingIntent | undefined;
 }
 
 /**

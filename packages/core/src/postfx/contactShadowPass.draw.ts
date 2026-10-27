@@ -214,11 +214,11 @@ export class ContactShadowPass extends Pass {
     if (light === null) return;
     const uniforms = this.material.uniforms;
     towardLight(light, this.lightWorld);
-    (uniforms.uLightView!.value as THREE.Vector3).copy(this.lightWorld).transformDirection(this.camera.matrixWorldInverse);
-    (uniforms.uProjection!.value as THREE.Matrix4).copy(this.camera.projectionMatrix);
-    (uniforms.uProjectionInverse!.value as THREE.Matrix4).copy(this.camera.projectionMatrixInverse);
+    (uniforms["uLightView"]!.value as THREE.Vector3).copy(this.lightWorld).transformDirection(this.camera.matrixWorldInverse);
+    (uniforms["uProjection"]!.value as THREE.Matrix4).copy(this.camera.projectionMatrix);
+    (uniforms["uProjectionInverse"]!.value as THREE.Matrix4).copy(this.camera.projectionMatrixInverse);
     this.frame = (this.frame + 1) % 64;
-    uniforms.uFrame!.value = this.frame;
+    uniforms["uFrame"]!.value = this.frame;
 
     renderer.setRenderTarget(this.shadowTarget);
     this.quad.render(renderer);

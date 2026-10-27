@@ -1,3 +1,4 @@
+import { definedOnly } from "../data/definedOnly";
 import type { EntityRole, EntityUpdatePatch, SpawnPositionInput } from "./entityStore";
 
 /**
@@ -20,19 +21,19 @@ export interface BodySnapshot {
 export interface BodyBindSpawnInput {
   id: string;
   position: SpawnPositionInput;
-  rotationY?: number;
-  rotationX?: number;
-  rotationZ?: number;
-  role?: EntityRole;
+  rotationY?: number | undefined;
+  rotationX?: number | undefined;
+  rotationZ?: number | undefined;
+  role?: EntityRole | undefined;
   meta?: unknown;
 }
 
 /** The pose a {@link BodyBindDeps.setPose} call receives for an id already bound. */
 export interface BodyBindPose {
   position: SpawnPositionInput;
-  rotationY?: number;
-  rotationX?: number;
-  rotationZ?: number;
+  rotationY?: number | undefined;
+  rotationX?: number | undefined;
+  rotationZ?: number | undefined;
   dt?: number;
 }
 
@@ -91,7 +92,7 @@ export function createBodyBind(deps: BodyBindDeps): BodyBind {
             ...(dt === undefined ? {} : { dt }),
           });
           if (body.role !== undefined || body.meta !== undefined) {
-            deps.update(body.id, { role: body.role, meta: body.meta });
+            deps.update(body.id, definedOnly({ role: body.role, meta: body.meta }));
           }
         }
         bound.add(body.id);

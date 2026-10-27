@@ -28,7 +28,7 @@ export interface Renderable {
   /** Bumps when transform, geometry, bounds, or overrides change — gates bounds/override recompute. */
   readonly version: number;
   readonly bounds?: BoundsSpec;
-  readonly overrides?: ObjectVisibilityOverrides;
+  readonly overrides?: ObjectVisibilityOverrides | undefined;
   readonly layer?: string;
   /** Fast-path exemption for UI, skyboxes, debug overlays, camera-attached, marked always-visible. */
   readonly alwaysVisible?: boolean;

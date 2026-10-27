@@ -36,7 +36,7 @@ export interface GrassPatchProps extends Omit<ThreeElements["group"], "children"
   /** Patch-local 0..1 coverage (roads, footings); 0 grows nothing. */
   coverageAt?: TerrainHeightSampler;
   /** Terrain colour the blade roots and far field blend into. */
-  groundColor?: THREE.ColorRepresentation;
+  groundColor?: THREE.ColorRepresentation | undefined;
   castShadow?: boolean;
   receiveShadow?: boolean;
   frustumCulled?: boolean;

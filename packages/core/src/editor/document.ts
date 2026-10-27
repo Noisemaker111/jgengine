@@ -147,7 +147,7 @@ export function editorDocumentExtras(doc: EditorDocument): {
   ui?: EditorDocument["ui"];
   directives?: EditorDirective[];
   minimap?: EditorMinimapBake;
-  bakes?: EditorBake[];
+  bakes?: EditorBake[] | undefined;
   environment?: EditorEnvironment;
   simulation?: EditorSimulation;
 } {
@@ -394,7 +394,7 @@ export function extractEditorFragment(doc: EditorDocument, ids: readonly string[
   const wanted = new Set(ids);
   return cloneEditorDocument({
     version: 1,
-    ...(doc.materialAssets === undefined ? {} : { materialAssets: doc.materialAssets.filter((asset) => doc.markers.some((marker) => wanted.has(marker.id) && parseMaterialAssignments(marker.meta?.materialAssignments ?? []).some((item) => item.materialId === asset.id))) }),
+    ...(doc.materialAssets === undefined ? {} : { materialAssets: doc.materialAssets.filter((asset) => doc.markers.some((marker) => wanted.has(marker.id) && parseMaterialAssignments(marker.meta?.["materialAssignments"] ?? []).some((item) => item.materialId === asset.id))) }),
     markers: doc.markers.filter((marker) => wanted.has(marker.id)),
     volumes: doc.volumes.filter((volume) => wanted.has(volume.id)),
     paths: doc.paths.filter((path) => wanted.has(path.id)),
@@ -748,11 +748,11 @@ function decodeArray<T>(
 }
 
 function decodeVec3(value: unknown, path: string, errors: EditorDocumentDiagnostic[]): EditorVec3 | null {
-  if (!isPlainObject(value) || typeof value.x !== "number" || typeof value.y !== "number" || typeof value.z !== "number") {
+  if (!isPlainObject(value) || typeof value["x"] !== "number" || typeof value["y"] !== "number" || typeof value["z"] !== "number") {
     errors.push({ path, message: "expected {x,y,z} numbers" });
     return null;
   }
-  return { x: value.x, y: value.y, z: value.z };
+  return { x: value["x"], y: value["y"], z: value["z"] };
 }
 
 function decodeMeta(
@@ -765,8 +765,8 @@ function decodeMeta(
     errors.push({ path, message: "expected an object" });
     return undefined;
   }
-  if (value.materialAssignments !== undefined) {
-    try { parseMaterialAssignments(value.materialAssignments); }
+  if (value["materialAssignments"] !== undefined) {
+    try { parseMaterialAssignments(value["materialAssignments"]); }
     catch (error) { errors.push({ path: `${path}.materialAssignments`, message: String(error) }); }
   }
   try { authoredHiddenNodes(value); }
@@ -779,19 +779,19 @@ function decodeMarker(item: unknown, path: string, errors: EditorDocumentDiagnos
     errors.push({ path, message: "expected an object" });
     return null;
   }
-  if (typeof item.id !== "string") errors.push({ path: `${path}.id`, message: "expected a string" });
-  if (typeof item.kind !== "string") errors.push({ path: `${path}.kind`, message: "expected a string" });
-  const position = decodeVec3(item.position, `${path}.position`, errors);
-  if (typeof item.id !== "string" || typeof item.kind !== "string" || position === null) return null;
-  const marker: EditorMarker = { id: item.id, kind: item.kind, position };
-  if (typeof item.rotationY === "number") marker.rotationY = item.rotationY;
-  if (typeof item.color === "string") marker.color = item.color;
-  if (typeof item.label === "string") marker.label = item.label;
-  if (typeof item.catalogId === "string") marker.catalogId = item.catalogId;
-  if (typeof item.parentId === "string") marker.parentId = item.parentId;
-  if (typeof item.locked === "boolean") marker.locked = item.locked;
-  if (typeof item.hidden === "boolean") marker.hidden = item.hidden;
-  const meta = decodeMeta(item.meta, `${path}.meta`, errors);
+  if (typeof item["id"] !== "string") errors.push({ path: `${path}.id`, message: "expected a string" });
+  if (typeof item["kind"] !== "string") errors.push({ path: `${path}.kind`, message: "expected a string" });
+  const position = decodeVec3(item["position"], `${path}.position`, errors);
+  if (typeof item["id"] !== "string" || typeof item["kind"] !== "string" || position === null) return null;
+  const marker: EditorMarker = { id: item["id"], kind: item["kind"], position };
+  if (typeof item["rotationY"] === "number") marker.rotationY = item["rotationY"];
+  if (typeof item["color"] === "string") marker.color = item["color"];
+  if (typeof item["label"] === "string") marker.label = item["label"];
+  if (typeof item["catalogId"] === "string") marker.catalogId = item["catalogId"];
+  if (typeof item["parentId"] === "string") marker.parentId = item["parentId"];
+  if (typeof item["locked"] === "boolean") marker.locked = item["locked"];
+  if (typeof item["hidden"] === "boolean") marker.hidden = item["hidden"];
+  const meta = decodeMeta(item["meta"], `${path}.meta`, errors);
   if (meta !== undefined) marker.meta = meta;
   return marker;
 }
@@ -803,25 +803,25 @@ function decodeVolume(item: unknown, path: string, errors: EditorDocumentDiagnos
     errors.push({ path, message: "expected an object" });
     return null;
   }
-  if (typeof item.id !== "string") errors.push({ path: `${path}.id`, message: "expected a string" });
-  if (typeof item.kind !== "string") errors.push({ path: `${path}.kind`, message: "expected a string" });
-  const validShape = typeof item.shape === "string" && VOLUME_SHAPES.has(item.shape);
+  if (typeof item["id"] !== "string") errors.push({ path: `${path}.id`, message: "expected a string" });
+  if (typeof item["kind"] !== "string") errors.push({ path: `${path}.kind`, message: "expected a string" });
+  const validShape = typeof item["shape"] === "string" && VOLUME_SHAPES.has(item["shape"]);
   if (!validShape) errors.push({ path: `${path}.shape`, message: "expected sphere | cylinder | box" });
-  const center = decodeVec3(item.center, `${path}.center`, errors);
-  if (typeof item.id !== "string" || typeof item.kind !== "string" || !validShape || center === null) return null;
-  const volume: EditorVolume = { id: item.id, kind: item.kind, shape: item.shape as EditorVolumeShape, center };
-  if (typeof item.radius === "number") volume.radius = item.radius;
-  if (typeof item.height === "number") volume.height = item.height;
-  if (item.halfExtents !== undefined) {
-    const halfExtents = decodeVec3(item.halfExtents, `${path}.halfExtents`, errors);
+  const center = decodeVec3(item["center"], `${path}.center`, errors);
+  if (typeof item["id"] !== "string" || typeof item["kind"] !== "string" || !validShape || center === null) return null;
+  const volume: EditorVolume = { id: item["id"], kind: item["kind"], shape: item["shape"] as EditorVolumeShape, center };
+  if (typeof item["radius"] === "number") volume.radius = item["radius"];
+  if (typeof item["height"] === "number") volume.height = item["height"];
+  if (item["halfExtents"] !== undefined) {
+    const halfExtents = decodeVec3(item["halfExtents"], `${path}.halfExtents`, errors);
     if (halfExtents !== null) volume.halfExtents = halfExtents;
   }
-  if (typeof item.color === "string") volume.color = item.color;
-  if (typeof item.label === "string") volume.label = item.label;
-  if (typeof item.parentId === "string") volume.parentId = item.parentId;
-  if (typeof item.locked === "boolean") volume.locked = item.locked;
-  if (typeof item.hidden === "boolean") volume.hidden = item.hidden;
-  const meta = decodeMeta(item.meta, `${path}.meta`, errors);
+  if (typeof item["color"] === "string") volume.color = item["color"];
+  if (typeof item["label"] === "string") volume.label = item["label"];
+  if (typeof item["parentId"] === "string") volume.parentId = item["parentId"];
+  if (typeof item["locked"] === "boolean") volume.locked = item["locked"];
+  if (typeof item["hidden"] === "boolean") volume.hidden = item["hidden"];
+  const meta = decodeMeta(item["meta"], `${path}.meta`, errors);
   if (meta !== undefined) volume.meta = meta;
   return volume;
 }
@@ -831,22 +831,22 @@ function decodePath(item: unknown, path: string, errors: EditorDocumentDiagnosti
     errors.push({ path, message: "expected an object" });
     return null;
   }
-  if (typeof item.id !== "string") errors.push({ path: `${path}.id`, message: "expected a string" });
-  if (typeof item.kind !== "string") errors.push({ path: `${path}.kind`, message: "expected a string" });
-  const validPoints = Array.isArray(item.points);
+  if (typeof item["id"] !== "string") errors.push({ path: `${path}.id`, message: "expected a string" });
+  if (typeof item["kind"] !== "string") errors.push({ path: `${path}.kind`, message: "expected a string" });
+  const validPoints = Array.isArray(item["points"]);
   if (!validPoints) errors.push({ path: `${path}.points`, message: "expected an array" });
   const points = validPoints
-    ? decodeArray(item.points, `${path}.points`, decodeVec3, errors)
+    ? decodeArray(item["points"], `${path}.points`, decodeVec3, errors)
     : [];
-  if (typeof item.id !== "string" || typeof item.kind !== "string" || !validPoints) return null;
-  const decodedPath: EditorPath = { id: item.id, kind: item.kind, points };
-  if (typeof item.width === "number") decodedPath.width = item.width;
-  if (typeof item.color === "string") decodedPath.color = item.color;
-  if (typeof item.label === "string") decodedPath.label = item.label;
-  if (typeof item.parentId === "string") decodedPath.parentId = item.parentId;
-  if (typeof item.locked === "boolean") decodedPath.locked = item.locked;
-  if (typeof item.hidden === "boolean") decodedPath.hidden = item.hidden;
-  const meta = decodeMeta(item.meta, `${path}.meta`, errors);
+  if (typeof item["id"] !== "string" || typeof item["kind"] !== "string" || !validPoints) return null;
+  const decodedPath: EditorPath = { id: item["id"], kind: item["kind"], points };
+  if (typeof item["width"] === "number") decodedPath.width = item["width"];
+  if (typeof item["color"] === "string") decodedPath.color = item["color"];
+  if (typeof item["label"] === "string") decodedPath.label = item["label"];
+  if (typeof item["parentId"] === "string") decodedPath.parentId = item["parentId"];
+  if (typeof item["locked"] === "boolean") decodedPath.locked = item["locked"];
+  if (typeof item["hidden"] === "boolean") decodedPath.hidden = item["hidden"];
+  const meta = decodeMeta(item["meta"], `${path}.meta`, errors);
   if (meta !== undefined) decodedPath.meta = meta;
   return decodedPath;
 }
@@ -856,16 +856,16 @@ function decodeNote(item: unknown, path: string, errors: EditorDocumentDiagnosti
     errors.push({ path, message: "expected an object" });
     return null;
   }
-  if (typeof item.id !== "string") errors.push({ path: `${path}.id`, message: "expected a string" });
-  if (typeof item.text !== "string") errors.push({ path: `${path}.text`, message: "expected a string" });
-  const position = decodeVec3(item.position, `${path}.position`, errors);
-  if (typeof item.id !== "string" || typeof item.text !== "string" || position === null) return null;
-  const note: EditorNote = { id: item.id, text: item.text, position };
-  if (typeof item.color === "string") note.color = item.color;
-  if (typeof item.parentId === "string") note.parentId = item.parentId;
-  if (typeof item.locked === "boolean") note.locked = item.locked;
-  if (typeof item.hidden === "boolean") note.hidden = item.hidden;
-  const meta = decodeMeta(item.meta, `${path}.meta`, errors);
+  if (typeof item["id"] !== "string") errors.push({ path: `${path}.id`, message: "expected a string" });
+  if (typeof item["text"] !== "string") errors.push({ path: `${path}.text`, message: "expected a string" });
+  const position = decodeVec3(item["position"], `${path}.position`, errors);
+  if (typeof item["id"] !== "string" || typeof item["text"] !== "string" || position === null) return null;
+  const note: EditorNote = { id: item["id"], text: item["text"], position };
+  if (typeof item["color"] === "string") note.color = item["color"];
+  if (typeof item["parentId"] === "string") note.parentId = item["parentId"];
+  if (typeof item["locked"] === "boolean") note.locked = item["locked"];
+  if (typeof item["hidden"] === "boolean") note.hidden = item["hidden"];
+  const meta = decodeMeta(item["meta"], `${path}.meta`, errors);
   if (meta !== undefined) note.meta = meta;
   return note;
 }
@@ -895,23 +895,23 @@ function decodeFragmentContent(
     errors.push({ path, message: "expected an object" });
     return null;
   }
-  const materialAssets = value.materialAssets === undefined ? undefined : decodeMaterialAssets(value.materialAssets, `${path}.materialAssets`, errors);
-  const markers = decodeArray(value.markers, `${path}.markers`, decodeMarker, errors);
+  const materialAssets = value["materialAssets"] === undefined ? undefined : decodeMaterialAssets(value["materialAssets"], `${path}.materialAssets`, errors);
+  const markers = decodeArray(value["markers"], `${path}.markers`, decodeMarker, errors);
   validateMarkerMaterialReferences(markers, materialAssets ?? [], path, errors);
   return {
     ...(materialAssets === undefined ? {} : { materialAssets }),
     markers,
-    volumes: decodeArray(value.volumes, `${path}.volumes`, decodeVolume, errors),
-    paths: decodeArray(value.paths, `${path}.paths`, decodePath, errors),
-    annotations: decodeArray(value.annotations, `${path}.annotations`, decodeNote, errors),
+    volumes: decodeArray(value["volumes"], `${path}.volumes`, decodeVolume, errors),
+    paths: decodeArray(value["paths"], `${path}.paths`, decodePath, errors),
+    annotations: decodeArray(value["annotations"], `${path}.annotations`, decodeNote, errors),
   };
 }
 
 function validateMarkerMaterialReferences(markers: readonly EditorMarker[], assets: readonly MaterialAsset[], path: string, errors: EditorDocumentDiagnostic[]): void {
   for (const [index, marker] of markers.entries()) {
-    if (marker.meta?.materialAssignments === undefined) continue;
+    if (marker.meta?.["materialAssignments"] === undefined) continue;
     try {
-      for (const diagnostic of validateMaterialAssignments(parseMaterialAssignments(marker.meta.materialAssignments), assets)) {
+      for (const diagnostic of validateMaterialAssignments(parseMaterialAssignments(marker.meta["materialAssignments"]), assets)) {
         if (diagnostic.severity === "error") errors.push({ path: `${path}.markers[${index}].meta.${diagnostic.path}`, message: diagnostic.message });
       }
     } catch {}
@@ -923,13 +923,13 @@ function decodePrefab(item: unknown, path: string, errors: EditorDocumentDiagnos
     errors.push({ path, message: "expected an object" });
     return null;
   }
-  if (typeof item.id !== "string") errors.push({ path: `${path}.id`, message: "expected a string" });
-  if (typeof item.name !== "string") errors.push({ path: `${path}.name`, message: "expected a string" });
-  const fragment = decodeFragmentContent(item.fragment, `${path}.fragment`, errors);
-  if (typeof item.id !== "string" || typeof item.name !== "string" || fragment === null) return null;
-  const prefab: EditorPrefab = { id: item.id, name: item.name, fragment };
-  if (item.staticBake !== undefined) {
-    try { prefab.staticBake = parseStaticPrefabBake(item.staticBake); }
+  if (typeof item["id"] !== "string") errors.push({ path: `${path}.id`, message: "expected a string" });
+  if (typeof item["name"] !== "string") errors.push({ path: `${path}.name`, message: "expected a string" });
+  const fragment = decodeFragmentContent(item["fragment"], `${path}.fragment`, errors);
+  if (typeof item["id"] !== "string" || typeof item["name"] !== "string" || fragment === null) return null;
+  const prefab: EditorPrefab = { id: item["id"], name: item["name"], fragment };
+  if (item["staticBake"] !== undefined) {
+    try { prefab.staticBake = parseStaticPrefabBake(item["staticBake"]); }
     catch (error) { errors.push({ path: `${path}.staticBake`, message: error instanceof Error ? error.message : String(error) }); }
   }
   return prefab;
@@ -940,22 +940,22 @@ function decodeCollection(item: unknown, path: string, errors: EditorDocumentDia
     errors.push({ path, message: "expected an object" });
     return null;
   }
-  if (typeof item.id !== "string") errors.push({ path: `${path}.id`, message: "expected a string" });
-  if (typeof item.name !== "string") errors.push({ path: `${path}.name`, message: "expected a string" });
+  if (typeof item["id"] !== "string") errors.push({ path: `${path}.id`, message: "expected a string" });
+  if (typeof item["name"] !== "string") errors.push({ path: `${path}.name`, message: "expected a string" });
   const memberIds: string[] = [];
-  if (!Array.isArray(item.memberIds)) {
+  if (!Array.isArray(item["memberIds"])) {
     errors.push({ path: `${path}.memberIds`, message: "expected an array of strings" });
   } else {
-    item.memberIds.forEach((member: unknown, index: number) => {
+    item["memberIds"].forEach((member: unknown, index: number) => {
       if (typeof member === "string") memberIds.push(member);
       else errors.push({ path: `${path}.memberIds[${index}]`, message: "expected a string" });
     });
   }
-  if (typeof item.id !== "string" || typeof item.name !== "string" || !Array.isArray(item.memberIds)) return null;
-  const collection: EditorCollection = { id: item.id, name: item.name, memberIds };
-  if (typeof item.color === "string") collection.color = item.color;
-  if (typeof item.locked === "boolean") collection.locked = item.locked;
-  if (typeof item.visible === "boolean") collection.visible = item.visible;
+  if (typeof item["id"] !== "string" || typeof item["name"] !== "string" || !Array.isArray(item["memberIds"])) return null;
+  const collection: EditorCollection = { id: item["id"], name: item["name"], memberIds };
+  if (typeof item["color"] === "string") collection.color = item["color"];
+  if (typeof item["locked"] === "boolean") collection.locked = item["locked"];
+  if (typeof item["visible"] === "boolean") collection.visible = item["visible"];
   return collection;
 }
 
@@ -964,13 +964,13 @@ function decodeCatalogEntry(item: unknown, path: string, errors: EditorDocumentD
     errors.push({ path, message: "expected an object" });
     return null;
   }
-  if (typeof item.id !== "string") {
+  if (typeof item["id"] !== "string") {
     errors.push({ path: `${path}.id`, message: "expected a string" });
     return null;
   }
-  const entry: EditorCatalogEntry = { id: item.id };
-  if (typeof item.label === "string") entry.label = item.label;
-  const meta = decodeMeta(item.meta, `${path}.meta`, errors);
+  const entry: EditorCatalogEntry = { id: item["id"] };
+  if (typeof item["label"] === "string") entry.label = item["label"];
+  const meta = decodeMeta(item["meta"], `${path}.meta`, errors);
   if (meta !== undefined) entry.meta = meta;
   return entry;
 }
@@ -988,19 +988,19 @@ function decodeParamSchema(
   errors: EditorDocumentDiagnostic[],
 ): ParamSchema | undefined {
   if (raw === undefined) return undefined;
-  if (!isPlainObject(raw) || !Array.isArray(raw.fields)) {
+  if (!isPlainObject(raw) || !Array.isArray(raw["fields"])) {
     errors.push({ path, message: "expected { fields: ParamField[] }" });
     return undefined;
   }
   const fields: ParamField[] = [];
-  raw.fields.forEach((field, index) => {
-    if (!isPlainObject(field) || typeof field.key !== "string" || typeof field.type !== "string") {
+  raw["fields"].forEach((field, index) => {
+    if (!isPlainObject(field) || typeof field["key"] !== "string" || typeof field["type"] !== "string") {
       errors.push({ path: `${path}.fields[${index}]`, message: "expected a ParamField with string key + type" });
       return;
     }
     fields.push(field as unknown as ParamField);
   });
-  return { fields, ...(Array.isArray(raw.groups) ? { groups: raw.groups as ParamSchema["groups"] } : {}) };
+  return { fields, ...(Array.isArray(raw["groups"]) ? { groups: raw["groups"] as ParamSchema["groups"] } : {}) };
 }
 
 function decodeCatalog(item: unknown, path: string, errors: EditorDocumentDiagnostic[]): EditorCatalogData | null {
@@ -1008,14 +1008,14 @@ function decodeCatalog(item: unknown, path: string, errors: EditorDocumentDiagno
     errors.push({ path, message: "expected an object" });
     return null;
   }
-  if (typeof item.id !== "string") {
+  if (typeof item["id"] !== "string") {
     errors.push({ path: `${path}.id`, message: "expected a string" });
     return null;
   }
-  const entries = decodeArray(item.entries, `${path}.entries`, decodeCatalogEntry, errors);
-  const schema = decodeParamSchema(item.schema, `${path}.schema`, errors);
-  const catalog: EditorCatalogData = { id: item.id, entries };
-  if (typeof item.label === "string") catalog.label = item.label;
+  const entries = decodeArray(item["entries"], `${path}.entries`, decodeCatalogEntry, errors);
+  const schema = decodeParamSchema(item["schema"], `${path}.schema`, errors);
+  const catalog: EditorCatalogData = { id: item["id"], entries };
+  if (typeof item["label"] === "string") catalog.label = item["label"];
   if (schema !== undefined) catalog.schema = schema;
   return catalog;
 }
@@ -1037,8 +1037,8 @@ function decodeDirectiveArea(
     }
     return [v[0], v[1]];
   };
-  const min = pair(value.min, `${path}.min`);
-  const max = pair(value.max, `${path}.max`);
+  const min = pair(value["min"], `${path}.min`);
+  const max = pair(value["max"], `${path}.max`);
   if (min === null || max === null) return undefined;
   return { min, max };
 }
@@ -1048,11 +1048,11 @@ function decodeSpecies(item: unknown, path: string, errors: EditorDocumentDiagno
     errors.push({ path, message: "expected an object" });
     return null;
   }
-  if (typeof item.id !== "string") errors.push({ path: `${path}.id`, message: "expected a string" });
-  if (typeof item.cap !== "number") errors.push({ path: `${path}.cap`, message: "expected a number" });
-  if (typeof item.id !== "string" || typeof item.cap !== "number") return null;
-  const species: EditorPopulationSpecies = { id: item.id, cap: item.cap };
-  if (typeof item.weight === "number") species.weight = item.weight;
+  if (typeof item["id"] !== "string") errors.push({ path: `${path}.id`, message: "expected a string" });
+  if (typeof item["cap"] !== "number") errors.push({ path: `${path}.cap`, message: "expected a number" });
+  if (typeof item["id"] !== "string" || typeof item["cap"] !== "number") return null;
+  const species: EditorPopulationSpecies = { id: item["id"], cap: item["cap"] };
+  if (typeof item["weight"] === "number") species.weight = item["weight"];
   return species;
 }
 
@@ -1061,29 +1061,29 @@ function decodeDirective(item: unknown, path: string, errors: EditorDocumentDiag
     errors.push({ path, message: "expected an object" });
     return null;
   }
-  if (typeof item.id !== "string") errors.push({ path: `${path}.id`, message: "expected a string" });
-  const kindOk = item.kind === "scatter" || item.kind === "population";
+  if (typeof item["id"] !== "string") errors.push({ path: `${path}.id`, message: "expected a string" });
+  const kindOk = item["kind"] === "scatter" || item["kind"] === "population";
   if (!kindOk) errors.push({ path: `${path}.kind`, message: "expected \"scatter\" | \"population\"" });
-  const area = decodeDirectiveArea(item.area, `${path}.area`, errors);
-  if (typeof item.id !== "string" || !kindOk) return null;
+  const area = decodeDirectiveArea(item["area"], `${path}.area`, errors);
+  if (typeof item["id"] !== "string" || !kindOk) return null;
   const base = {
-    id: item.id,
-    ...(typeof item.region === "string" ? { region: item.region } : {}),
+    id: item["id"],
+    ...(typeof item["region"] === "string" ? { region: item["region"] } : {}),
     ...(area === undefined ? {} : { area }),
-    ...(typeof item.seed === "string" || typeof item.seed === "number" ? { seed: item.seed } : {}),
-    ...(isPlainObject(item.meta) ? { meta: item.meta } : {}),
+    ...(typeof item["seed"] === "string" || typeof item["seed"] === "number" ? { seed: item["seed"] } : {}),
+    ...(isPlainObject(item["meta"]) ? { meta: item["meta"] } : {}),
   };
-  if (item.kind === "scatter") {
-    if (typeof item.asset !== "string") errors.push({ path: `${path}.asset`, message: "expected a string" });
-    if (typeof item.density !== "number") errors.push({ path: `${path}.density`, message: "expected a number" });
-    if (typeof item.asset !== "string" || typeof item.density !== "number") return null;
-    const scatter: EditorDirective = { ...base, kind: "scatter", asset: item.asset, density: item.density };
+  if (item["kind"] === "scatter") {
+    if (typeof item["asset"] !== "string") errors.push({ path: `${path}.asset`, message: "expected a string" });
+    if (typeof item["density"] !== "number") errors.push({ path: `${path}.density`, message: "expected a number" });
+    if (typeof item["asset"] !== "string" || typeof item["density"] !== "number") return null;
+    const scatter: EditorDirective = { ...base, kind: "scatter", asset: item["asset"], density: item["density"] };
     for (const key of ["minSpacing", "jitter", "minScale", "maxScale", "minYaw", "maxYaw"] as const) {
       if (typeof item[key] === "number") scatter[key] = item[key] as number;
     }
     return scatter;
   }
-  const species = decodeArray(item.species, `${path}.species`, decodeSpecies, errors);
+  const species = decodeArray(item["species"], `${path}.species`, decodeSpecies, errors);
   return { ...base, kind: "population", species };
 }
 
@@ -1101,11 +1101,11 @@ function decodeMinimapBake(
     errors.push({ path, message: "expected an object" });
     return undefined;
   }
-  const backgroundOk = typeof value.background === "string" && value.background.startsWith("data:image/");
+  const backgroundOk = typeof value["background"] === "string" && value["background"].startsWith("data:image/");
   if (!backgroundOk) {
     errors.push({ path: `${path}.background`, message: "expected a data:image/… string" });
   }
-  const bounds = value.bounds;
+  const bounds = value["bounds"];
   const boundsOk =
     isPlainObject(bounds) &&
     (["minX", "minZ", "maxX", "maxZ"] as const).every(
@@ -1117,7 +1117,7 @@ function decodeMinimapBake(
   if (!backgroundOk || !boundsOk) return undefined;
   const b = bounds as Record<"minX" | "minZ" | "maxX" | "maxZ", number>;
   return {
-    background: value.background as string,
+    background: value["background"] as string,
     bounds: { minX: b.minX, minZ: b.minZ, maxX: b.maxX, maxZ: b.maxZ },
   };
 }
@@ -1126,11 +1126,11 @@ function decodeBakes(value: unknown, path: string, errors: EditorDocumentDiagnos
   if (!Array.isArray(value)) { errors.push({ path, message: "expected an array" }); return undefined; }
   const bakes: EditorBake[] = [];
   value.forEach((item, index) => {
-    if (!isPlainObject(item) || (item.kind !== "nav" && item.kind !== "minimap") || typeof item.id !== "string" || item.data === undefined) {
+    if (!isPlainObject(item) || (item["kind"] !== "nav" && item["kind"] !== "minimap") || typeof item["id"] !== "string" || item["data"] === undefined) {
       errors.push({ path: `${path}[${index}]`, message: 'expected {kind: "nav" | "minimap", id, data}' });
       return;
     }
-    bakes.push({ kind: item.kind, id: item.id, data: structuredClone(item.data) });
+    bakes.push({ kind: item["kind"], id: item["id"], data: structuredClone(item["data"]) });
   });
   return bakes;
 }
@@ -1153,57 +1153,57 @@ function decodeEnvironment(
   }
   let failed = false;
   const env: EditorEnvironment = {};
-  if (value.source !== undefined) {
-    const source = value.source;
-    if (!isPlainObject(source) || typeof source.kind !== "string") {
+  if (value["source"] !== undefined) {
+    const source = value["source"];
+    if (!isPlainObject(source) || typeof source["kind"] !== "string") {
       errors.push({ path: `${path}.source`, message: "expected an environment source object" });
       failed = true;
-    } else if (source.kind === "gradient") {
-      if (typeof source.sky !== "string") { errors.push({ path: `${path}.source.sky`, message: "expected a string" }); failed = true; }
-      if (typeof source.ground !== "string") { errors.push({ path: `${path}.source.ground`, message: "expected a string" }); failed = true; }
-      if (source.sun !== undefined && typeof source.sun !== "string") { errors.push({ path: `${path}.source.sun`, message: "expected a string" }); failed = true; }
-      if (source.intensity !== undefined && (typeof source.intensity !== "number" || !Number.isFinite(source.intensity))) { errors.push({ path: `${path}.source.intensity`, message: "expected a finite number" }); failed = true; }
-      if (!failed) env.source = { kind: "gradient", sky: source.sky as string, ground: source.ground as string, ...(source.sun === undefined ? {} : { sun: source.sun as string }), ...(source.intensity === undefined ? {} : { intensity: source.intensity as number }) };
-    } else if (source.kind === "hdri" && typeof source.url === "string") {
-      env.source = { kind: "hdri", url: source.url, ...(typeof source.rotation === "number" ? { rotation: source.rotation } : {}), ...(typeof source.intensity === "number" ? { intensity: source.intensity } : {}) };
-    } else if (source.kind === "cube" && Array.isArray(source.urls) && source.urls.length === 6 && source.urls.every((url: unknown) => typeof url === "string")) {
-      env.source = { kind: "cube", urls: [...source.urls] as [string, string, string, string, string, string], ...(typeof source.intensity === "number" ? { intensity: source.intensity } : {}) };
+    } else if (source["kind"] === "gradient") {
+      if (typeof source["sky"] !== "string") { errors.push({ path: `${path}.source.sky`, message: "expected a string" }); failed = true; }
+      if (typeof source["ground"] !== "string") { errors.push({ path: `${path}.source.ground`, message: "expected a string" }); failed = true; }
+      if (source["sun"] !== undefined && typeof source["sun"] !== "string") { errors.push({ path: `${path}.source.sun`, message: "expected a string" }); failed = true; }
+      if (source["intensity"] !== undefined && (typeof source["intensity"] !== "number" || !Number.isFinite(source["intensity"]))) { errors.push({ path: `${path}.source.intensity`, message: "expected a finite number" }); failed = true; }
+      if (!failed) env.source = { kind: "gradient", sky: source["sky"] as string, ground: source["ground"] as string, ...(source["sun"] === undefined ? {} : { sun: source["sun"] as string }), ...(source["intensity"] === undefined ? {} : { intensity: source["intensity"] as number }) };
+    } else if (source["kind"] === "hdri" && typeof source["url"] === "string") {
+      env.source = { kind: "hdri", url: source["url"], ...(typeof source["rotation"] === "number" ? { rotation: source["rotation"] } : {}), ...(typeof source["intensity"] === "number" ? { intensity: source["intensity"] } : {}) };
+    } else if (source["kind"] === "cube" && Array.isArray(source["urls"]) && source["urls"].length === 6 && source["urls"].every((url: unknown) => typeof url === "string")) {
+      env.source = { kind: "cube", urls: [...source["urls"]] as [string, string, string, string, string, string], ...(typeof source["intensity"] === "number" ? { intensity: source["intensity"] } : {}) };
     } else {
       errors.push({ path: `${path}.source`, message: 'expected kind "gradient", "hdri", or "cube" with valid fields' });
       failed = true;
     }
   }
-  if (value.pointLights !== undefined) {
-    if (!Array.isArray(value.pointLights)) {
+  if (value["pointLights"] !== undefined) {
+    if (!Array.isArray(value["pointLights"])) {
       errors.push({ path: `${path}.pointLights`, message: "expected an array" });
       failed = true;
-    } else if (value.pointLights.length > 64 || value.pointLights.some((light: unknown) => {
-      if (!isPlainObject(light) || !Array.isArray(light.position) || light.position.length !== 3 || light.position.some((n: unknown) => typeof n !== "number" || !Number.isFinite(n))) return true;
-      return light.intensity !== undefined && (typeof light.intensity !== "number" || !Number.isFinite(light.intensity));
+    } else if (value["pointLights"].length > 64 || value["pointLights"].some((light: unknown) => {
+      if (!isPlainObject(light) || !Array.isArray(light["position"]) || light["position"].length !== 3 || light["position"].some((n: unknown) => typeof n !== "number" || !Number.isFinite(n))) return true;
+      return light["intensity"] !== undefined && (typeof light["intensity"] !== "number" || !Number.isFinite(light["intensity"]));
     })) {
       errors.push({ path: `${path}.pointLights`, message: "expected point lights with finite positions and intensities" });
       failed = true;
     } else {
-      env.pointLights = (value.pointLights as Array<Record<string, unknown>>).map((light) => ({
-        position: [...(light.position as number[])] as [number, number, number],
-        ...(typeof light.color === "string" ? { color: light.color } : {}),
-        ...(typeof light.intensity === "number" ? { intensity: light.intensity } : {}),
-        ...(typeof light.distance === "number" ? { distance: light.distance } : {}),
-        ...(typeof light.decay === "number" ? { decay: light.decay } : {}),
-        ...(typeof light.castShadow === "boolean" ? { castShadow: light.castShadow } : {}),
+      env.pointLights = (value["pointLights"] as Array<Record<string, unknown>>).map((light) => ({
+        position: [...(light["position"] as number[])] as [number, number, number],
+        ...(typeof light["color"] === "string" ? { color: light["color"] } : {}),
+        ...(typeof light["intensity"] === "number" ? { intensity: light["intensity"] } : {}),
+        ...(typeof light["distance"] === "number" ? { distance: light["distance"] } : {}),
+        ...(typeof light["decay"] === "number" ? { decay: light["decay"] } : {}),
+        ...(typeof light["castShadow"] === "boolean" ? { castShadow: light["castShadow"] } : {}),
       }));
     }
   }
-  if (value.probes !== undefined) {
-    if (!Array.isArray(value.probes)) {
+  if (value["probes"] !== undefined) {
+    if (!Array.isArray(value["probes"])) {
       errors.push({ path: `${path}.probes`, message: "expected an array" });
       failed = true;
-    } else if (value.probes.length > 16) {
+    } else if (value["probes"].length > 16) {
       errors.push({ path: `${path}.probes`, message: "at most 16 irradiance volumes" });
       failed = true;
     } else {
       const probes: EditorLightProbe[] = [];
-      for (const [index, entry] of value.probes.entries()) {
+      for (const [index, entry] of value["probes"].entries()) {
         const probe = decodeLightProbe(entry, `${path}.probes[${index}]`, errors);
         if (probe === undefined) failed = true;
         else probes.push(probe);
@@ -1211,30 +1211,30 @@ function decodeEnvironment(
       if (probes.length > 0) env.probes = probes;
     }
   }
-  if (value.preset !== undefined) {
-    if (typeof value.preset === "string" && SKY_PRESETS.has(value.preset)) {
-      env.preset = value.preset as EditorSkyPreset;
+  if (value["preset"] !== undefined) {
+    if (typeof value["preset"] === "string" && SKY_PRESETS.has(value["preset"])) {
+      env.preset = value["preset"] as EditorSkyPreset;
     } else {
       errors.push({ path: `${path}.preset`, message: 'expected "day" | "dusk" | "night"' });
       failed = true;
     }
   }
-  if (value.timeOfDay !== undefined) {
-    if (typeof value.timeOfDay === "boolean") env.timeOfDay = value.timeOfDay;
+  if (value["timeOfDay"] !== undefined) {
+    if (typeof value["timeOfDay"] === "boolean") env.timeOfDay = value["timeOfDay"];
     else {
       errors.push({ path: `${path}.timeOfDay`, message: "expected a boolean" });
       failed = true;
     }
   }
-  if (value.horizonColor !== undefined) {
-    if (typeof value.horizonColor === "string") env.horizonColor = value.horizonColor;
+  if (value["horizonColor"] !== undefined) {
+    if (typeof value["horizonColor"] === "string") env.horizonColor = value["horizonColor"];
     else {
       errors.push({ path: `${path}.horizonColor`, message: "expected a string" });
       failed = true;
     }
   }
-  if (value.zenithColor !== undefined) {
-    if (typeof value.zenithColor === "string") env.zenithColor = value.zenithColor;
+  if (value["zenithColor"] !== undefined) {
+    if (typeof value["zenithColor"] === "string") env.zenithColor = value["zenithColor"];
     else {
       errors.push({ path: `${path}.zenithColor`, message: "expected a string" });
       failed = true;
@@ -1248,22 +1248,22 @@ function decodeEnvironment(
       failed = true;
     }
   }
-  if (value.fog !== undefined) {
-    if (!isPlainObject(value.fog)) {
+  if (value["fog"] !== undefined) {
+    if (!isPlainObject(value["fog"])) {
       errors.push({ path: `${path}.fog`, message: "expected an object" });
       failed = true;
     } else {
       const fog: EditorFogConfig = {};
-      if (value.fog.color !== undefined) {
-        if (typeof value.fog.color === "string") fog.color = value.fog.color;
+      if (value["fog"]["color"] !== undefined) {
+        if (typeof value["fog"]["color"] === "string") fog.color = value["fog"]["color"];
         else {
           errors.push({ path: `${path}.fog.color`, message: "expected a string" });
           failed = true;
         }
       }
       for (const key of ["near", "far"] as const) {
-        if (value.fog[key] === undefined) continue;
-        if (typeof value.fog[key] === "number" && Number.isFinite(value.fog[key])) fog[key] = value.fog[key] as number;
+        if (value["fog"][key] === undefined) continue;
+        if (typeof value["fog"][key] === "number" && Number.isFinite(value["fog"][key])) fog[key] = value["fog"][key] as number;
         else {
           errors.push({ path: `${path}.fog.${key}`, message: "expected a finite number" });
           failed = true;
@@ -1272,8 +1272,8 @@ function decodeEnvironment(
       if (Object.keys(fog).length > 0) env.fog = fog;
     }
   }
-  if (value.grading !== undefined) {
-    const grading = decodeGrading(value.grading, `${path}.grading`, errors);
+  if (value["grading"] !== undefined) {
+    const grading = decodeGrading(value["grading"], `${path}.grading`, errors);
     if (grading === undefined) failed = true;
     else env.grading = grading;
   }
@@ -1306,8 +1306,8 @@ function decodeGrading(value: unknown, path: string, errors: EditorDocumentDiagn
   swatch("shadows");
   swatch("midtones");
   swatch("highlights");
-  if (value.size !== undefined) {
-    if (typeof value.size === "number" && Number.isInteger(value.size) && value.size >= 2 && value.size <= 16) grading.size = value.size;
+  if (value["size"] !== undefined) {
+    if (typeof value["size"] === "number" && Number.isInteger(value["size"]) && value["size"] >= 2 && value["size"] <= 16) grading.size = value["size"];
     else {
       errors.push({ path: `${path}.size`, message: "expected an integer cube size from 2 to 16" });
       failed = true;
@@ -1322,14 +1322,14 @@ function decodeGrading(value: unknown, path: string, errors: EditorDocumentDiagn
       failed = true;
     }
   }
-  if (value.autoExposure !== undefined) {
-    if (!isPlainObject(value.autoExposure)) {
+  if (value["autoExposure"] !== undefined) {
+    if (!isPlainObject(value["autoExposure"])) {
       errors.push({ path: `${path}.autoExposure`, message: "expected an object" });
       failed = true;
     } else {
       const exposure: NonNullable<EditorColorGrading["autoExposure"]> = {};
       for (const key of ["min", "max"] as const) {
-        const entry = value.autoExposure[key];
+        const entry = value["autoExposure"][key];
         if (entry === undefined) continue;
         if (typeof entry === "number" && Number.isFinite(entry) && entry > 0) exposure[key] = entry;
         else {
@@ -1360,14 +1360,14 @@ function decodeLightProbe(value: unknown, path: string, errors: EditorDocumentDi
     return [...(entry as number[])] as [number, number, number];
   };
   let failed = false;
-  const id = value.id;
+  const id = value["id"];
   if (typeof id !== "string" || id.length === 0) {
     errors.push({ path: `${path}.id`, message: "expected a non-empty string" });
     failed = true;
   }
-  const center = vec3(value.center);
-  const size = vec3(value.size);
-  const resolution = vec3(value.resolution);
+  const center = vec3(value["center"]);
+  const size = vec3(value["size"]);
+  const resolution = vec3(value["resolution"]);
   if (center === null) { errors.push({ path: `${path}.center`, message: "expected three finite numbers" }); failed = true; }
   if (size === null || (size !== null && size.some((extent) => extent <= 0))) { errors.push({ path: `${path}.size`, message: "expected three positive extents" }); failed = true; }
   if (resolution === null || (resolution !== null && resolution.some((count) => count < 1 || count > 16 || !Number.isInteger(count)))) {
@@ -1375,50 +1375,50 @@ function decodeLightProbe(value: unknown, path: string, errors: EditorDocumentDi
     failed = true;
   }
   let samples: number[] | undefined;
-  if (value.samples !== undefined) {
+  if (value["samples"] !== undefined) {
     const expected = resolution === null ? 0 : PROBE_STRIDE * resolution[0] * resolution[1] * resolution[2];
-    if (!Array.isArray(value.samples) || value.samples.length !== expected || value.samples.some((sample: unknown) => typeof sample !== "number" || !Number.isFinite(sample))) {
+    if (!Array.isArray(value["samples"]) || value["samples"].length !== expected || value["samples"].some((sample: unknown) => typeof sample !== "number" || !Number.isFinite(sample))) {
       errors.push({ path: `${path}.samples`, message: `expected ${expected} finite numbers for this resolution` });
       failed = true;
     } else {
-      samples = [...(value.samples as number[])];
+      samples = [...(value["samples"] as number[])];
     }
   }
   if (failed || center === null || size === null || resolution === null || typeof id !== "string") return undefined;
-  const bake = isPlainObject(value.bake) ? decodeLightProbeBake(value.bake) : undefined;
+  const bake = isPlainObject(value["bake"]) ? decodeLightProbeBake(value["bake"]) : undefined;
   return {
     id,
     center,
     size,
     resolution,
     ...(samples === undefined ? {} : { samples }),
-    ...(typeof value.label === "string" ? { label: value.label } : {}),
+    ...(typeof value["label"] === "string" ? { label: value["label"] } : {}),
     ...(bake === undefined ? {} : { bake }),
   };
 }
 
 function decodeLightProbeBake(value: Record<string, unknown>): IrradianceBakeSettings | undefined {
-  if (typeof value.skyVisibility !== "number" || !Number.isFinite(value.skyVisibility)) return undefined;
+  if (typeof value["skyVisibility"] !== "number" || !Number.isFinite(value["skyVisibility"])) return undefined;
   const color = (entry: unknown) => (typeof entry === "string" ? entry : undefined);
-  const lights = Array.isArray(value.lights)
-    ? value.lights.flatMap((light: unknown) => {
-        if (!isPlainObject(light) || !Array.isArray(light.position) || light.position.length !== 3) return [];
-        if (light.position.some((n: unknown) => typeof n !== "number" || !Number.isFinite(n))) return [];
+  const lights = Array.isArray(value["lights"])
+    ? value["lights"].flatMap((light: unknown) => {
+        if (!isPlainObject(light) || !Array.isArray(light["position"]) || light["position"].length !== 3) return [];
+        if (light["position"].some((n: unknown) => typeof n !== "number" || !Number.isFinite(n))) return [];
         return [{
-          position: [...(light.position as number[])] as [number, number, number],
-          ...(color(light.color) === undefined ? {} : { color: color(light.color)! }),
-          ...(typeof light.intensity === "number" && Number.isFinite(light.intensity) ? { intensity: light.intensity } : {}),
-          ...(typeof light.distance === "number" && Number.isFinite(light.distance) ? { distance: light.distance } : {}),
+          position: [...(light["position"] as number[])] as [number, number, number],
+          ...(color(light["color"]) === undefined ? {} : { color: color(light["color"])! }),
+          ...(typeof light["intensity"] === "number" && Number.isFinite(light["intensity"]) ? { intensity: light["intensity"] } : {}),
+          ...(typeof light["distance"] === "number" && Number.isFinite(light["distance"]) ? { distance: light["distance"] } : {}),
         }];
       })
     : undefined;
   return {
-    skyVisibility: Math.max(0, Math.min(1, value.skyVisibility)),
-    ...(color(value.skyColor) === undefined ? {} : { skyColor: color(value.skyColor)! }),
-    ...(color(value.groundColor) === undefined ? {} : { groundColor: color(value.groundColor)! }),
-    ...(color(value.ceilingColor) === undefined ? {} : { ceilingColor: color(value.ceilingColor)! }),
-    ...(color(value.floorColor) === undefined ? {} : { floorColor: color(value.floorColor)! }),
-    ...(typeof value.fillIntensity === "number" && Number.isFinite(value.fillIntensity) ? { fillIntensity: value.fillIntensity } : {}),
+    skyVisibility: Math.max(0, Math.min(1, value["skyVisibility"])),
+    ...(color(value["skyColor"]) === undefined ? {} : { skyColor: color(value["skyColor"])! }),
+    ...(color(value["groundColor"]) === undefined ? {} : { groundColor: color(value["groundColor"])! }),
+    ...(color(value["ceilingColor"]) === undefined ? {} : { ceilingColor: color(value["ceilingColor"])! }),
+    ...(color(value["floorColor"]) === undefined ? {} : { floorColor: color(value["floorColor"])! }),
+    ...(typeof value["fillIntensity"] === "number" && Number.isFinite(value["fillIntensity"]) ? { fillIntensity: value["fillIntensity"] } : {}),
     ...(lights === undefined || lights.length === 0 ? {} : { lights }),
   };
 }
@@ -1434,15 +1434,15 @@ function decodeGridPaletteEntry(
     errors.push({ path, message: "expected an object" });
     return null;
   }
-  if (typeof item.id !== "string") {
+  if (typeof item["id"] !== "string") {
     errors.push({ path: `${path}.id`, message: "expected a string" });
     return null;
   }
-  const entry: EditorGridPaletteEntry = { id: item.id };
-  if (typeof item.label === "string") entry.label = item.label;
-  if (typeof item.glyph === "string") entry.glyph = item.glyph;
-  if (typeof item.color === "string") entry.color = item.color;
-  const meta = decodeMeta(item.meta, `${path}.meta`, errors);
+  const entry: EditorGridPaletteEntry = { id: item["id"] };
+  if (typeof item["label"] === "string") entry.label = item["label"];
+  if (typeof item["glyph"] === "string") entry.glyph = item["glyph"];
+  if (typeof item["color"] === "string") entry.color = item["color"];
+  const meta = decodeMeta(item["meta"], `${path}.meta`, errors);
   if (meta !== undefined) entry.meta = meta;
   return entry;
 }
@@ -1452,22 +1452,22 @@ function decodeGridLayer(item: unknown, path: string, errors: EditorDocumentDiag
     errors.push({ path, message: "expected an object" });
     return null;
   }
-  if (typeof item.id !== "string") errors.push({ path: `${path}.id`, message: "expected a string" });
-  if (typeof item.kind !== "string") errors.push({ path: `${path}.kind`, message: "expected a string" });
-  const origin = decodeVec3(item.origin, `${path}.origin`, errors);
-  if (typeof item.cellSize !== "number") errors.push({ path: `${path}.cellSize`, message: "expected a number" });
-  if (typeof item.cols !== "number") errors.push({ path: `${path}.cols`, message: "expected a number" });
-  if (typeof item.rows !== "number") errors.push({ path: `${path}.rows`, message: "expected a number" });
-  const cellsValue = item.cells;
+  if (typeof item["id"] !== "string") errors.push({ path: `${path}.id`, message: "expected a string" });
+  if (typeof item["kind"] !== "string") errors.push({ path: `${path}.kind`, message: "expected a string" });
+  const origin = decodeVec3(item["origin"], `${path}.origin`, errors);
+  if (typeof item["cellSize"] !== "number") errors.push({ path: `${path}.cellSize`, message: "expected a number" });
+  if (typeof item["cols"] !== "number") errors.push({ path: `${path}.cols`, message: "expected a number" });
+  if (typeof item["rows"] !== "number") errors.push({ path: `${path}.rows`, message: "expected a number" });
+  const cellsValue = item["cells"];
   const validCells = isPlainObject(cellsValue);
   if (!validCells) errors.push({ path: `${path}.cells`, message: "expected an object" });
   if (
-    typeof item.id !== "string" ||
-    typeof item.kind !== "string" ||
+    typeof item["id"] !== "string" ||
+    typeof item["kind"] !== "string" ||
     origin === null ||
-    typeof item.cellSize !== "number" ||
-    typeof item.cols !== "number" ||
-    typeof item.rows !== "number" ||
+    typeof item["cellSize"] !== "number" ||
+    typeof item["cols"] !== "number" ||
+    typeof item["rows"] !== "number" ||
     !validCells
   ) {
     return null;
@@ -1481,24 +1481,24 @@ function decodeGridLayer(item: unknown, path: string, errors: EditorDocumentDiag
     cells[key] = value;
   }
   const layer: EditorGridLayer = {
-    id: item.id,
-    kind: item.kind,
+    id: item["id"],
+    kind: item["kind"],
     origin,
-    cellSize: item.cellSize,
-    cols: item.cols,
-    rows: item.rows,
+    cellSize: item["cellSize"],
+    cols: item["cols"],
+    rows: item["rows"],
     cells,
   };
-  if (typeof item.label === "string") layer.label = item.label;
-  if (typeof item.axes === "string" && GRID_AXES.has(item.axes)) layer.axes = item.axes as EditorGridAxes;
-  if (typeof item.empty === "string") layer.empty = item.empty;
-  if (typeof item.visible === "boolean") layer.visible = item.visible;
-  if (typeof item.parentId === "string") layer.parentId = item.parentId;
-  if (typeof item.schemaVersion === "number") layer.schemaVersion = item.schemaVersion;
-  if (Array.isArray(item.palette)) {
-    layer.palette = decodeArray(item.palette, `${path}.palette`, decodeGridPaletteEntry, errors);
+  if (typeof item["label"] === "string") layer.label = item["label"];
+  if (typeof item["axes"] === "string" && GRID_AXES.has(item["axes"])) layer.axes = item["axes"] as EditorGridAxes;
+  if (typeof item["empty"] === "string") layer.empty = item["empty"];
+  if (typeof item["visible"] === "boolean") layer.visible = item["visible"];
+  if (typeof item["parentId"] === "string") layer.parentId = item["parentId"];
+  if (typeof item["schemaVersion"] === "number") layer.schemaVersion = item["schemaVersion"];
+  if (Array.isArray(item["palette"])) {
+    layer.palette = decodeArray(item["palette"], `${path}.palette`, decodeGridPaletteEntry, errors);
   }
-  const meta = decodeMeta(item.meta, `${path}.meta`, errors);
+  const meta = decodeMeta(item["meta"], `${path}.meta`, errors);
   if (meta !== undefined) layer.meta = meta;
   return migrateGridLayer(layer);
 }
@@ -1516,27 +1516,27 @@ export function decodeEditorDocument(raw: unknown): DecodeEditorDocumentResult {
     return { ok: false, errors: [{ path: "$", message: "editor document must be an object" }] };
   }
   const errors: EditorDocumentDiagnostic[] = [];
-  const materialAssets = raw.materialAssets === undefined ? undefined : decodeMaterialAssets(raw.materialAssets, "$.materialAssets", errors);
-  const markers = decodeArray(raw.markers, "$.markers", decodeMarker, errors);
-  const volumes = decodeArray(raw.volumes, "$.volumes", decodeVolume, errors);
-  const paths = decodeArray(raw.paths, "$.paths", decodePath, errors);
-  const annotations = decodeArray(raw.annotations, "$.annotations", decodeNote, errors);
-  const prefabs = decodeArray(raw.prefabs, "$.prefabs", decodePrefab, errors);
-  const collections = decodeArray(raw.collections, "$.collections", decodeCollection, errors);
-  const catalogs = decodeArray(raw.catalogs, "$.catalogs", decodeCatalog, errors);
-  const grids = raw.grids === undefined ? undefined : decodeArray(raw.grids, "$.grids", decodeGridLayer, errors);
+  const materialAssets = raw["materialAssets"] === undefined ? undefined : decodeMaterialAssets(raw["materialAssets"], "$.materialAssets", errors);
+  const markers = decodeArray(raw["markers"], "$.markers", decodeMarker, errors);
+  const volumes = decodeArray(raw["volumes"], "$.volumes", decodeVolume, errors);
+  const paths = decodeArray(raw["paths"], "$.paths", decodePath, errors);
+  const annotations = decodeArray(raw["annotations"], "$.annotations", decodeNote, errors);
+  const prefabs = decodeArray(raw["prefabs"], "$.prefabs", decodePrefab, errors);
+  const collections = decodeArray(raw["collections"], "$.collections", decodeCollection, errors);
+  const catalogs = decodeArray(raw["catalogs"], "$.catalogs", decodeCatalog, errors);
+  const grids = raw["grids"] === undefined ? undefined : decodeArray(raw["grids"], "$.grids", decodeGridLayer, errors);
   const directives =
-    raw.directives === undefined ? undefined : decodeArray(raw.directives, "$.directives", decodeDirective, errors);
-  if (raw.terrain !== undefined && !isPlainObject(raw.terrain)) {
+    raw["directives"] === undefined ? undefined : decodeArray(raw["directives"], "$.directives", decodeDirective, errors);
+  if (raw["terrain"] !== undefined && !isPlainObject(raw["terrain"])) {
     errors.push({ path: "$.terrain", message: "expected an object" });
   }
-  const minimap = raw.minimap === undefined ? undefined : decodeMinimapBake(raw.minimap, "$.minimap", errors);
-  const bakes = raw.bakes === undefined ? undefined : decodeBakes(raw.bakes, "$.bakes", errors);
+  const minimap = raw["minimap"] === undefined ? undefined : decodeMinimapBake(raw["minimap"], "$.minimap", errors);
+  const bakes = raw["bakes"] === undefined ? undefined : decodeBakes(raw["bakes"], "$.bakes", errors);
   const environment =
-    raw.environment === undefined ? undefined : decodeEnvironment(raw.environment, "$.environment", errors);
+    raw["environment"] === undefined ? undefined : decodeEnvironment(raw["environment"], "$.environment", errors);
   let simulation: EditorSimulation | undefined;
-  if (raw.simulation !== undefined) {
-    try { simulation = decodeEditorSimulation(raw.simulation, { paths }); }
+  if (raw["simulation"] !== undefined) {
+    try { simulation = decodeEditorSimulation(raw["simulation"], { paths }); }
     catch (error) { errors.push({ path: "$.simulation", message: error instanceof Error ? error.message : String(error) }); }
   }
   // Placeable object ids form one document-global namespace (selection, parenting, and removal all
@@ -1561,8 +1561,8 @@ export function decodeEditorDocument(raw: unknown): DecodeEditorDocumentResult {
   }
   validateMarkerMaterialReferences(markers, materialAssets ?? [], "$", errors);
   if (errors.length > 0) return { ok: false, errors };
-  const terrain = raw.terrain === undefined ? undefined : migrateTerrainSnapshot(raw.terrain as EditorTerrain);
-  const ui = decodeEditorUiDocument(raw.ui);
+  const terrain = raw["terrain"] === undefined ? undefined : migrateTerrainSnapshot(raw["terrain"] as EditorTerrain);
+  const ui = decodeEditorUiDocument(raw["ui"]);
   return {
     ok: true,
     document: {

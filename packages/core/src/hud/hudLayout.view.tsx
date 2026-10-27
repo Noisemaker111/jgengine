@@ -93,7 +93,7 @@ function isDevBuild(): boolean {
     /* import.meta.env unavailable under this bundler */
   }
   const nodeEnv = (globalThis as { process?: { env?: Record<string, string | undefined> } }).process
-    ?.env?.NODE_ENV;
+    ?.env?.["NODE_ENV"];
   if (typeof nodeEnv === "string") return nodeEnv !== "production";
   return false;
 }
@@ -177,7 +177,7 @@ function measurableHost(canvas: HTMLElement): HTMLElement {
   return canvas;
 }
 
-function sizeStyle(panel: { width?: number; height?: number } | undefined): CSSProperties {
+function sizeStyle(panel: { width?: number | undefined; height?: number | undefined } | undefined): CSSProperties {
   if (panel === undefined) return {};
   return {
     ...(panel.width === undefined ? {} : { width: panel.width }),
@@ -313,8 +313,8 @@ interface HudCanvasContextValue {
 interface PanelDeclaration {
   id: string;
   anchor: HudAnchor;
-  order?: number;
-  priority?: HudPriority;
+  order?: number | undefined;
+  priority?: HudPriority | undefined;
   /** Toggle label, for sizing the toggle before it has been drawn. */
   chip: string;
 }

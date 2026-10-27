@@ -9,9 +9,9 @@ export interface StatPool {
 
 /** Input used to create a normalized pool. `current` defaults to `max`; `min` defaults to zero. */
 export interface StatPoolInput {
-  current?: number;
+  current?: number | undefined;
   max: number;
-  min?: number;
+  min?: number | undefined;
 }
 
 /** Partial update applied without mutating the previous pool. */

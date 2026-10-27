@@ -53,10 +53,10 @@ export interface EngineLayersAudio {
     params: {
       rate?: number;
       gain?: number;
-      at?: readonly [number, number, number];
-      velocity?: readonly [number, number, number];
-      lowpass?: number;
-      highpass?: number;
+      at?: readonly [number, number, number] | undefined;
+      velocity?: readonly [number, number, number] | undefined;
+      lowpass?: number | undefined;
+      highpass?: number | undefined;
     },
   ): void;
   stopLoop(id: string): void;
@@ -120,10 +120,10 @@ export function createEngineLayers(initial: EngineLayersConfig): EngineLayers {
   const params: {
     rate?: number;
     gain?: number;
-    at?: readonly [number, number, number];
-    velocity?: readonly [number, number, number];
-    lowpass?: number;
-    highpass?: number;
+    at?: readonly [number, number, number] | undefined;
+    velocity?: readonly [number, number, number] | undefined;
+    lowpass?: number | undefined;
+    highpass?: number | undefined;
   } = {};
 
   function rebuild(): void {

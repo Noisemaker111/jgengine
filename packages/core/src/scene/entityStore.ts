@@ -65,23 +65,23 @@ export function movedWhileFrozen(entity: SceneEntity<unknown>, threshold = DEFAU
 }
 
 export interface SpawnOptions<TMeta = unknown> {
-  id?: string;
-  position?: SpawnPositionInput;
-  rotationY?: number;
-  rotationX?: number;
-  rotationZ?: number;
-  role?: EntityRole;
-  movement?: EntityMovement;
-  behaviors?: readonly BehaviorDescriptor[];
-  hidden?: boolean;
-  size?: number;
-  meta?: TMeta;
+  id?: string | undefined;
+  position?: SpawnPositionInput | undefined;
+  rotationY?: number | undefined;
+  rotationX?: number | undefined;
+  rotationZ?: number | undefined;
+  role?: EntityRole | undefined;
+  movement?: EntityMovement | undefined;
+  behaviors?: readonly BehaviorDescriptor[] | undefined;
+  hidden?: boolean | undefined;
+  size?: number | undefined;
+  meta?: TMeta | undefined;
   /**
    * When `id` is already spawned: `"keep"` (default — adopt the live body and return its id, so a
    * re-stream, restore or teleport cannot make a second body for one id), `"replace"` (fresh spawn
    * over it — remount-safe world setup, #284.10), or `"throw"` (catch a double spawn as a bug).
    */
-  onExisting?: "throw" | "replace" | "keep";
+  onExisting?: "throw" | "replace" | "keep" | undefined;
 }
 
 function toEntityPosition(position: SpawnPositionInput | undefined): EntityPosition {

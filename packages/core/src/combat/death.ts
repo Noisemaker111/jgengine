@@ -145,7 +145,7 @@ export function createDeathSystem(deps: DeathSystemDeps): DeathSystem {
 
 export interface EffectDeathContext {
   from: string;
-  via?: EffectVia;
+  via?: EffectVia | undefined;
   userIdOf?(instanceId: string): string | undefined;
 }
 

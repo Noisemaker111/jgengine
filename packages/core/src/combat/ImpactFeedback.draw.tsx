@@ -164,7 +164,7 @@ export function drawnSurfaceHit(
     // Terrain-sized meshes cost tens of milliseconds to cast without a BVH; the physics ray
     // already covers ground, so only slabs, roads and props are refined here.
     const geometry = object.geometry;
-    const triangles = (geometry.index?.count ?? geometry.attributes.position?.count ?? 0) / 3;
+    const triangles = (geometry.index?.count ?? geometry.attributes["position"]?.count ?? 0) / 3;
     if (triangles > SURFACE_MAX_TRIANGLES) return;
     boundsScratch.copy(sphere).applyMatrix4(object.matrixWorld);
     const along = alongScratch.subVectors(boundsScratch.center, ray.origin).dot(ray.direction);

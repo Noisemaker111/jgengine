@@ -289,7 +289,7 @@ export function createStatGraph(def: StatGraphDef): StatGraph {
       const cached = valueCache.get(id);
       if (cached !== undefined) return cached;
       const steps = resolveSteps(id);
-      const value = steps.length === 0 ? 0 : steps[steps.length - 1].subtotal;
+      const value = steps.at(-1)?.subtotal ?? 0;
       valueCache.set(id, value);
       return value;
     }

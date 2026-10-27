@@ -19,7 +19,7 @@ export interface WorldGameHostOptions {
   session(args: { gameId: string; serverId: string }): HostedWorldSession | Promise<HostedWorldSession | null> | null;
   now?: () => number;
   /** Maximum active players per world; reconnecting members and spectators do not consume a new slot. */
-  slotsPerServer?: number;
+  slotsPerServer?: number | undefined;
 }
 
 /** A {@link GameServerHost} backed by `HostedWorldSession`s; `tick` advances worlds and `unload` explicitly saves and releases idle world references. */

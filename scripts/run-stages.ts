@@ -61,6 +61,7 @@ export const CHECKS: readonly CheckDef[] = [
   { name: "skill-api", script: "scripts/gen-skill-api.ts", args: ["--check"], jobs: ["types", "quick"], needsBuild: true, generated: true },
   { name: "orphan-ratchet", script: "scripts/check-orphan-ratchet.ts", jobs: [] },
   { name: "stateful-ratchet", script: "scripts/check-stateful-ratchet.ts", jobs: ["types"] },
+  { name: "type-escapes", script: "scripts/type-escapes.ts", args: ["--check"], jobs: ["types", "quick"], generated: true },
   { name: "module-globals", script: "scripts/check-module-globals.ts", jobs: ["types"], games: true },
   { name: "game-determinism", script: "scripts/check-game-determinism.ts", jobs: ["types"], games: true },
   { name: "game-front-end", script: "scripts/check-game-front-end.ts", jobs: ["types"], games: true },
@@ -163,6 +164,7 @@ export const GEN_TARGETS: readonly GenTarget[] = [
   { name: "skill-api", script: "scripts/gen-skill-api-safe.ts", after: ["barrels"] },
   { name: "export-manifest", script: "scripts/gen-export-manifest.ts", after: ["barrels"] },
   { name: "games-ledger", script: "games/scripts/capabilities-sync.ts", after: ["barrels"] },
+  { name: "type-escapes", script: "scripts/type-escapes.ts", after: ["barrels"] },
 ];
 
 export function genPlan(targets: readonly GenTarget[]): Stage[] {

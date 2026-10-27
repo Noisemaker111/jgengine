@@ -15,7 +15,7 @@ export interface FrustumTarget {
   id: string;
   position: EntityPosition;
   /** Subject radius in world units, used by the framing-size score. Default 0.5. */
-  radius?: number;
+  radius?: number | undefined;
 }
 
 export interface FrustumProjection {

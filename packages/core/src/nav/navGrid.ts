@@ -20,7 +20,7 @@ export interface FindPathOptions {
   /** Diameter of the mover in world units — blocks cells within this margin of an obstacle. Default 0. */
   clearance?: number;
   /** Multiplier (>=1) applied to the base cost of stepping from one cell center to a neighbour's. Use to penalize slopes, terrain, etc. */
-  stepCost?: (from: NavPoint, to: NavPoint) => number;
+  stepCost?: ((from: NavPoint, to: NavPoint) => number) | undefined;
   /** Additional edge/shortcut policy. Called after grid occupancy checks. */
   canTraverse?: (from: NavPoint, to: NavPoint) => boolean;
   /** Maximum expanded cells. Omit for the legacy whole-grid search. */

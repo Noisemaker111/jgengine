@@ -64,7 +64,7 @@ export class GroundChunks {
   /** Vertices built so far across every tile and level. */
   builtVertices(): number {
     let total = 0;
-    for (const tile of this.tiles) for (const mesh of tile.built.values()) total += mesh.geometry.attributes.position!.count;
+    for (const tile of this.tiles) for (const mesh of tile.built.values()) total += mesh.geometry.attributes["position"]!.count;
     return total;
   }
 

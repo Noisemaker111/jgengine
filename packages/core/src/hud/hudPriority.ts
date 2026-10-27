@@ -134,11 +134,11 @@ export interface LayoutRegion {
   rect: LayoutRect;
   /** `forbid` reports any overlap, `warn` reports softly, `allow` opts this region out of collision reporting entirely. */
   collisionPolicy: LayoutCollisionPolicy;
-  priority?: HudPriority;
+  priority?: HudPriority | undefined;
   /** Region ids this one may overlap without a report. */
-  allowOverlapWith?: readonly string[];
+  allowOverlapWith?: readonly string[] | undefined;
   /** Regions sharing a non-empty group never report against each other. */
-  collisionGroup?: string;
+  collisionGroup?: string | undefined;
 }
 
 /** One detected forbidden/warned overlap between two regions. */
@@ -181,10 +181,8 @@ export function detectLayoutCollisions(
 ): LayoutCollision[] {
   const minArea = options?.minArea ?? DEFAULT_MIN_AREA;
   const out: LayoutCollision[] = [];
-  for (let i = 0; i < regions.length; i += 1) {
-    for (let j = i + 1; j < regions.length; j += 1) {
-      const a = regions[i];
-      const b = regions[j];
+  for (const [i, a] of regions.entries()) {
+    for (const b of regions.slice(i + 1)) {
       if (a.collisionPolicy === "allow" || b.collisionPolicy === "allow") continue;
       if (allowsOverlap(a, b)) continue;
       const area = overlapArea(a.rect, b.rect);

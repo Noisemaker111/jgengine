@@ -10,7 +10,7 @@ export interface LeaderboardTrackDef {
 export interface LeaderboardRow {
   stat: string;
   scope: LeaderboardScope;
-  serverId?: string;
+  serverId?: string | undefined;
   userId: string;
   value: number;
 }

@@ -105,7 +105,7 @@ export interface ShapeCastDesc {
   position: PhysicsVec3;
   rotation?: PhysicsQuat;
   motion: PhysicsVec3;
-  mask?: number;
+  mask?: number | undefined;
   exclude?: BodyHandle;
 }
 
@@ -124,7 +124,7 @@ export interface OverlapDesc {
   shape: BodyShape;
   position: PhysicsVec3;
   rotation?: PhysicsQuat;
-  mask?: number;
+  mask?: number | undefined;
   exclude?: BodyHandle;
 }
 

@@ -39,6 +39,22 @@ function vec(value: unknown): value is Vec { return Array.isArray(value) && valu
 function subtract(a: Vec, b: Vec): [number, number, number] { return [a[0] - b[0], a[1] - b[1], a[2] - b[2]]; }
 function cross(a: Vec, b: Vec): [number, number, number] { return [a[1] * b[2] - a[2] * b[1], a[2] * b[0] - a[0] * b[2], a[0] * b[1] - a[1] * b[0]]; }
 function length(v: Vec): number { return Math.hypot(...v); }
+/** The guide's points with `subdivisions` evenly spaced samples per segment (the first point once). */
+function sampleGuide(points: readonly Vec[], subdivisions: number): [number, number, number][] {
+  const samples: [number, number, number][] = [];
+  for (const [index, to] of points.entries()) {
+    const from = points[index - 1];
+    if (from === undefined) {
+      samples.push([to[0], to[1], to[2]]);
+      continue;
+    }
+    for (let step = 1; step <= subdivisions; step++) {
+      const t = step / subdivisions;
+      samples.push([from[0] + (to[0] - from[0]) * t, from[1] + (to[1] - from[1]) * t, from[2] + (to[2] - from[2]) * t]);
+    }
+  }
+  return samples;
+}
 function normalized(v: Vec): [number, number, number] { const magnitude = length(v); return [v[0] / magnitude, v[1] / magnitude, v[2] / magnitude]; }
 
 /**
@@ -51,15 +67,15 @@ export function validateHairCardAuthoring(value: unknown): MaterialDiagnostic[] 
   if (typeof value !== "object" || value === null || Array.isArray(value)) return [{ severity: "error", code: "invalid-hair-guide", path: "", message: "Expected hair card authoring data." }];
   const input = value as Record<string, unknown>;
   for (const key of Object.keys(input)) if (!["guides", "subdivisionsPerSegment", "maxVertices"].includes(key)) error(key, "Unsupported hair geometry field.");
-  const subdivisions = input.subdivisionsPerSegment ?? 1;
-  const maxVertices = input.maxVertices ?? 65_536;
+  const subdivisions = input["subdivisionsPerSegment"] ?? 1;
+  const maxVertices = input["maxVertices"] ?? 65_536;
   if (typeof subdivisions !== "number" || !Number.isInteger(subdivisions) || subdivisions < 1 || subdivisions > 256) error("subdivisionsPerSegment", "Expected an integer from 1 to 256.");
   if (typeof maxVertices !== "number" || !Number.isInteger(maxVertices) || maxVertices < 4 || maxVertices > 1_000_000) error("maxVertices", "Expected a vertex ceiling from 4 to 1,000,000.");
-  if (!Array.isArray(input.guides) || input.guides.length === 0 || input.guides.length > 10_000) { error("guides", "Expected 1 to 10,000 authored guides."); return diagnostics; }
+  if (!Array.isArray(input["guides"]) || input["guides"].length === 0 || input["guides"].length > 10_000) { error("guides", "Expected 1 to 10,000 authored guides."); return diagnostics; }
   const ids = new Set<string>();
   let vertexCount = 0;
-  for (let index = 0; index < input.guides.length; index++) {
-    const guide = input.guides[index];
+  for (let index = 0; index < input["guides"].length; index++) {
+    const guide = input["guides"][index];
     const path = `guides.${index}`;
     if (typeof guide !== "object" || guide === null || Array.isArray(guide)) { error(path, "Expected a guide object."); continue; }
     for (const key of Object.keys(guide)) if (!["id", "points", "width", "tipWidth", "facing", "uvRect"].includes(key)) error(`${path}.${key}`, "Unsupported guide field.");
@@ -95,32 +111,33 @@ export function buildHairCards(input: HairCardAuthoring): HairCardMesh {
   for (const guide of input.guides) {
     const vertexStart = mesh.positions.length / 3;
     const indexStart = mesh.indices.length;
-    const samples: [number, number, number][] = [[...guide.points[0]]];
-    for (let segment = 1; segment < guide.points.length; segment++) {
-      const from = guide.points[segment - 1], to = guide.points[segment];
-      for (let step = 1; step <= subdivisions; step++) {
-        const t = step / subdivisions;
-        samples.push([from[0] + (to[0] - from[0]) * t, from[1] + (to[1] - from[1]) * t, from[2] + (to[2] - from[2]) * t]);
-      }
+    const samples = sampleGuide(guide.points, subdivisions);
+    const distances: number[] = [];
+    let totalLength = 0;
+    for (const [index, sample] of samples.entries()) {
+      const previous = samples[index - 1];
+      if (previous !== undefined) totalLength += length(subtract(sample, previous));
+      distances.push(totalLength);
     }
-    const distances = [0];
-    for (let index = 1; index < samples.length; index++) distances.push(distances[index - 1] + length(subtract(samples[index], samples[index - 1])));
-    const totalLength = distances[distances.length - 1];
     const atlas = guide.uvRect ?? [0, 0, 1, 1];
-    for (let index = 0; index < samples.length; index++) {
-      const tangent = normalized(subtract(samples[Math.min(index + 1, samples.length - 1)], samples[Math.max(index - 1, 0)]));
+    for (const [index, sample] of samples.entries()) {
+      const ahead = samples[index + 1] ?? sample;
+      const behind = samples[index - 1] ?? sample;
+      const tangent = normalized(subtract(ahead, behind));
       const widthDirection = cross(tangent, normalized(guide.facing));
       if (length(widthDirection) <= 1e-6 || !widthDirection.every(Number.isFinite)) throw new TypeError(`Guide ${guide.id} has an unstable tangent frame at sample ${index}; change its bend or facing.`);
       const across = normalized(widthDirection);
       const normal = normalized(cross(across, tangent));
-      const t = distances[index] / totalLength;
+      const t = (distances[index] ?? 0) / totalLength;
       const halfWidth = (guide.width + ((guide.tipWidth ?? guide.width * 0.1) - guide.width) * t) / 2;
       for (let side = 0; side < 2; side++) {
         const sign = side === 0 ? -1 : 1;
-        const position: [number, number, number] = [samples[index][0] + sign * across[0] * halfWidth, samples[index][1] + sign * across[1] * halfWidth, samples[index][2] + sign * across[2] * halfWidth];
+        const position: [number, number, number] = [sample[0] + sign * across[0] * halfWidth, sample[1] + sign * across[1] * halfWidth, sample[2] + sign * across[2] * halfWidth];
         mesh.positions.push(...position); mesh.normals.push(...normal); mesh.tangents.push(...across, 1);
         mesh.uvs.push(side === 0 ? atlas[0] : atlas[2], atlas[1] + (atlas[3] - atlas[1]) * t);
-        for (let axis = 0; axis < 3; axis++) { mesh.bounds.min[axis] = Math.min(mesh.bounds.min[axis], position[axis]); mesh.bounds.max[axis] = Math.max(mesh.bounds.max[axis], position[axis]); }
+        const { min, max } = mesh.bounds;
+        mesh.bounds.min = [Math.min(min[0], position[0]), Math.min(min[1], position[1]), Math.min(min[2], position[2])];
+        mesh.bounds.max = [Math.max(max[0], position[0]), Math.max(max[1], position[1]), Math.max(max[2], position[2])];
       }
       if (index < samples.length - 1) { const left = vertexStart + index * 2; mesh.indices.push(left, left + 1, left + 2, left + 1, left + 3, left + 2); }
     }

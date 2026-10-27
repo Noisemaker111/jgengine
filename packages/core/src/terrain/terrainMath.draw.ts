@@ -171,17 +171,17 @@ export type TerrainPaletteSampler = (x: number, z: number) => { low: string; hig
 
 /** How to mesh a terrain field: size, resolution, centre, colours, palette, surface shading and paint. */
 export interface FieldGroundOptions {
-  size?: TerrainArea;
-  segments?: number | readonly [x: number, z: number];
-  center?: readonly [x: number, z: number];
-  colors?: TerrainVertexColorOptions;
-  heightRange?: readonly [min: number, max: number];
+  size?: TerrainArea | undefined;
+  segments?: number | readonly [x: number, z: number] | undefined;
+  center?: readonly [x: number, z: number] | undefined;
+  colors?: TerrainVertexColorOptions | undefined;
+  heightRange?: readonly [min: number, max: number] | undefined;
   /** Sampled per vertex when set; `colors` still supplies `waterlineHeight` and the fallback. */
-  paletteAt?: TerrainPaletteSampler;
+  paletteAt?: TerrainPaletteSampler | undefined;
   /** Slope/noise surface shading over the height lerp. Omit for the default terrain look; pass `{ slopeStrength: 0, mottleStrength: 0 }` for a flat gradient. */
   surface?: TerrainSurfaceColorOptions;
   /** Authored paint overrides descriptor shading at painted vertices. */
-  paintColorAt?: (x: number, z: number, out: THREE.Color) => boolean;
+  paintColorAt?: ((x: number, z: number, out: THREE.Color) => boolean) | undefined;
 }
 
 /**
@@ -210,10 +210,10 @@ export interface GroundGrid {
   center: readonly [number, number];
   sampler: TerrainHeightSampler;
   colors: TerrainVertexColorOptions;
-  heightRange?: readonly [number, number];
-  paletteAt?: TerrainPaletteSampler;
-  surface?: TerrainSurfaceColorOptions;
-  paintColorAt?: (x: number, z: number, out: THREE.Color) => boolean;
+  heightRange?: readonly [number, number] | undefined;
+  paletteAt?: TerrainPaletteSampler | undefined;
+  surface?: TerrainSurfaceColorOptions | undefined;
+  paintColorAt?: ((x: number, z: number, out: THREE.Color) => boolean) | undefined;
 }
 
 /**

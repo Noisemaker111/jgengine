@@ -36,7 +36,7 @@ export function readAuthoredAnimation(
   defaults?: AuthoredAnimation,
 ): AuthoredAnimationResult {
   const index = document.markers.findIndex((marker) => marker.id === markerId);
-  return readAuthoredAnimationValue(document.markers[index]?.meta?.animation, `markers[${index}].meta.animation`, defaults);
+  return readAuthoredAnimationValue(document.markers[index]?.meta?.["animation"], `markers[${index}].meta.animation`, defaults);
 }
 
 /**
@@ -59,8 +59,8 @@ export function readAuthoredAnimationValue(
     reject(path, "Animation must be an object, auto, or none", "an animation object, auto, or none");
     return { animation: defaults, diagnostics };
   }
-  if (value.clock !== undefined && value.clock !== "real" && value.clock !== "game") reject(`${path}.clock`, "clock must be real or game", "real or game");
-  if (value.auto !== undefined && value.auto !== true) reject(`${path}.auto`, "auto must be true when supplied", "true, or omit auto to use explicit configuration");
+  if (value["clock"] !== undefined && value["clock"] !== "real" && value["clock"] !== "game") reject(`${path}.clock`, "clock must be real or game", "real or game");
+  if (value["auto"] !== undefined && value["auto"] !== true) reject(`${path}.auto`, "auto must be true when supplied", "true, or omit auto to use explicit configuration");
   for (const key of ["clip"] as const) {
     if (value[key] !== undefined && typeof value[key] !== "string") reject(`${path}.${key}`, `${key} must be a string`, "a clip-name string");
   }
@@ -70,27 +70,27 @@ export function readAuthoredAnimationValue(
   for (const key of ["timeScale", "time"] as const) {
     if (value[key] !== undefined && (typeof value[key] !== "number" || !Number.isFinite(value[key]))) reject(`${path}.${key}`, `${key} must be a finite number`, "a finite number");
   }
-  if (value.states !== undefined) {
-    if (!record(value.states)) reject(`${path}.states`, "states must be an object", "a role-mapping object");
+  if (value["states"] !== undefined) {
+    if (!record(value["states"])) reject(`${path}.states`, "states must be an object", "a role-mapping object");
     else {
       for (const key of ["idle", "walk", "run"] as const) {
-        if (value.states[key] !== undefined && typeof value.states[key] !== "string") reject(`${path}.states.${key}`, `${key} must be a string`, "a clip-name string");
+        if (value["states"][key] !== undefined && typeof value["states"][key] !== "string") reject(`${path}.states.${key}`, `${key} must be a string`, "a clip-name string");
       }
       for (const key of ["walkSpeed", "runSpeed", "fadeSec"] as const) {
-        const number = value.states[key];
+        const number = value["states"][key];
         if (number !== undefined && (typeof number !== "number" || !Number.isFinite(number))) reject(`${path}.states.${key}`, `${key} must be a finite number`, "a finite number");
       }
     }
   }
-  if (value.oneShots !== undefined) {
-    if (!record(value.oneShots)) reject(`${path}.oneShots`, "oneShots must be an object", "an event-to-clip mapping object");
-    else for (const [event, clips] of Object.entries(value.oneShots)) {
+  if (value["oneShots"] !== undefined) {
+    if (!record(value["oneShots"])) reject(`${path}.oneShots`, "oneShots must be an object", "an event-to-clip mapping object");
+    else for (const [event, clips] of Object.entries(value["oneShots"])) {
       if (typeof clips !== "string" && !(Array.isArray(clips) && clips.every((clip) => typeof clip === "string"))) reject(`${path}.oneShots[${JSON.stringify(event)}]`, "One-shot clips must be a string or an array of strings", "a clip-name string or an array of clip-name strings");
     }
   }
   let animation = value as unknown as AuthoredAnimation;
-  if (value.graph !== undefined) {
-    const graph = validateAnimGraph(value.graph);
+  if (value["graph"] !== undefined) {
+    const graph = validateAnimGraph(value["graph"]);
     for (const diagnostic of graph.diagnostics) diagnostics.push({ ...diagnostic, path: `${path}.graph${diagnostic.path === "" ? "" : `.${diagnostic.path}`}` });
     if (graph.graph !== undefined) animation = { ...value, graph: graph.graph };
   }

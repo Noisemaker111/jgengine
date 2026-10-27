@@ -44,7 +44,7 @@ export interface RuleCursor {
   /** Absolute time of the next cycle that has not yet been settled. */
   nextDueSeconds: number;
   /** Remaining finite reserve, when the rule declared one. */
-  reserveRemaining?: number;
+  reserveRemaining?: number | undefined;
   /** Total cycles fired so far — a stable, monotonic cycle index. */
   fired: number;
   /** Paused rules keep their cursor but fire nothing until resumed. */
@@ -66,8 +66,8 @@ export interface ResourceTransaction {
   ruleId: string;
   currency: string;
   amount: number;
-  source?: string;
-  recipient?: string;
+  source?: string | undefined;
+  recipient?: string | undefined;
   /** Which cycle of the rule produced this (from {@link RuleCursor.fired}). */
   cycleIndex: number;
   atSeconds: number;

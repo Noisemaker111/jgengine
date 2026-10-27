@@ -9,7 +9,7 @@ export interface MountKit {
 export interface MountSeat {
   id: string;
   offset: readonly [number, number, number];
-  control?: boolean;
+  control?: boolean | undefined;
 }
 
 export interface RideableConfig {

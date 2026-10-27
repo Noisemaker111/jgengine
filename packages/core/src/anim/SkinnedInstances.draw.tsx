@@ -19,11 +19,11 @@ export interface SkinnedCrowdSource {
 /** Options for {@link bakeSkinnedCrowd}. */
 export interface BakeSkinnedCrowdOptions {
   /** Clip names to bake, in order; default every clip on the rig. */
-  clips?: readonly string[];
+  clips?: readonly string[] | undefined;
   /** Baked samples per second. Default 30. */
-  fps?: number;
+  fps?: number | undefined;
   /** Clips that hold their last pose instead of looping. */
-  once?: readonly string[];
+  once?: readonly string[] | undefined;
   maxTextureSize?: number;
 }
 

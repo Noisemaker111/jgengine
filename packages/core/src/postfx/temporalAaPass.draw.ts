@@ -234,8 +234,8 @@ export class TemporalAaPass extends Pass {
 
   override setSize(width: number, height: number): void {
     for (const target of this.history) target.setSize(width, height);
-    (this.resolveMaterial.uniforms.uTexel!.value as THREE.Vector2).set(1 / width, 1 / height);
-    (this.sharpenMaterial.uniforms.uTexel!.value as THREE.Vector2).set(1 / width, 1 / height);
+    (this.resolveMaterial.uniforms["uTexel"]!.value as THREE.Vector2).set(1 / width, 1 / height);
+    (this.sharpenMaterial.uniforms["uTexel"]!.value as THREE.Vector2).set(1 / width, 1 / height);
     this.reset();
   }
 
@@ -253,15 +253,15 @@ export class TemporalAaPass extends Pass {
     const read = this.history[this.current]!;
     const write = this.history[1 - this.current]!;
     const uniforms = this.resolveMaterial.uniforms;
-    uniforms.tDiffuse!.value = readBuffer.texture;
-    uniforms.tHistory!.value = read.texture;
-    (uniforms.uInverseViewProjection!.value as THREE.Matrix4).multiplyMatrices(camera.projectionMatrix, camera.matrixWorldInverse).invert();
-    (uniforms.uPreviousViewProjection!.value as THREE.Matrix4).copy(this.previousViewProjection);
-    uniforms.uHistoryValid!.value = this.historyValid ? 1 : 0;
+    uniforms["tDiffuse"]!.value = readBuffer.texture;
+    uniforms["tHistory"]!.value = read.texture;
+    (uniforms["uInverseViewProjection"]!.value as THREE.Matrix4).multiplyMatrices(camera.projectionMatrix, camera.matrixWorldInverse).invert();
+    (uniforms["uPreviousViewProjection"]!.value as THREE.Matrix4).copy(this.previousViewProjection);
+    uniforms["uHistoryValid"]!.value = this.historyValid ? 1 : 0;
     renderer.setRenderTarget(write);
     this.resolveQuad.render(renderer);
 
-    this.sharpenMaterial.uniforms.tDiffuse!.value = write.texture;
+    this.sharpenMaterial.uniforms["tDiffuse"]!.value = write.texture;
     renderer.setRenderTarget(this.renderToScreen ? null : writeBuffer);
     if (this.clear) renderer.clear();
     this.sharpenQuad.render(renderer);

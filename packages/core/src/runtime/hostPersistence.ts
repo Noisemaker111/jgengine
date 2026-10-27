@@ -45,7 +45,7 @@ export type GameServerRecord = {
   revision: number;
   tickAnchorMs: number;
   lastSavedAt?: number;
-  dirtyAt?: number;
+  dirtyAt?: number | undefined;
   createdAt: number;
   updatedAt: number;
 };
@@ -159,8 +159,8 @@ export function topLeaderboardRows(
     gameId: string;
     stat: string;
     scope: LeaderboardScope;
-    serverId?: string;
-    limit?: number;
+    serverId?: string | undefined;
+    limit?: number | undefined;
   },
 ): LeaderboardEntry[] {
   const limit = clampLimit(args.limit, LEADERBOARD_TOP_LIMIT, LEADERBOARD_TOP_LIMIT);
@@ -219,11 +219,11 @@ export type ServerListing = {
   status: GameServerStatus;
   memberCount: number;
   slotsPerServer: number;
-  mode?: string;
-  label?: string;
-  visibility?: SessionVisibility;
+  mode?: string | undefined;
+  label?: string | undefined;
+  visibility?: SessionVisibility | undefined;
   joinCode?: string;
-  tags?: string[];
+  tags?: string[] | undefined;
   updatedAt: number;
 };
 
@@ -284,8 +284,8 @@ export type HostPersistence = {
     gameId: string;
     stat: string;
     scope: LeaderboardScope;
-    serverId?: string;
-    limit?: number;
+    serverId?: string | undefined;
+    limit?: number | undefined;
   }) => Promise<LeaderboardEntry[]>;
   getLeaderboardProfile: (args: { gameId: string; userId: string }) => Promise<Record<string, number>>;
 };

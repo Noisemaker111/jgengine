@@ -147,8 +147,7 @@ export function DataObjects<T>({
       castShadow={castShadow}
       receiveShadow={receiveShadow}
       frustumCulled={false}
-      onPointerMove={onHover === undefined ? undefined : handleMove}
-      onPointerOut={onHover === undefined ? undefined : () => onHover(null)}
+      {...(onHover === undefined ? {} : { onPointerMove: handleMove, onPointerOut: () => onHover(null) })}
     />
   );
 }

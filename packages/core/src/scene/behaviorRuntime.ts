@@ -324,19 +324,19 @@ function nonnegative(value: unknown): value is number {
 }
 
 function validPursueSnapshot(value: unknown): value is PursueBehaviorSnapshot {
-  if (!object(value) || value.kind !== "pursue" || !Array.isArray(value.home) || value.home.length !== 3
-    || !value.home.every(n => typeof n === "number" && Number.isFinite(n))
-    || !(value.targetId === null || typeof value.targetId === "string")
-    || !(value.explicitTargetId === null || typeof value.explicitTargetId === "string") || typeof value.returning !== "boolean"
-    || !object(value.pursuit) || !nonnegative(value.pursuit.attackCooldown) || !nonnegative(value.pending)
-    || !object(value.gate) || !(value.gate.state === "active" || value.gate.state === "dormant")
-    || !nonnegative(value.gate.clock) || !nonnegative(value.gate.awakeHold)
-    || !nonnegative(value.gate.phase) || value.gate.phase >= 1) return false;
-  if (value.threat !== undefined) {
-    if (!object(value.threat) || !Array.isArray(value.threat.entries) || !nonnegative(value.threat.forcedRemaining)
-      || !(value.threat.forcedSource === null || typeof value.threat.forcedSource === "string")) return false;
+  if (!object(value) || value["kind"] !== "pursue" || !Array.isArray(value["home"]) || value["home"].length !== 3
+    || !value["home"].every(n => typeof n === "number" && Number.isFinite(n))
+    || !(value["targetId"] === null || typeof value["targetId"] === "string")
+    || !(value["explicitTargetId"] === null || typeof value["explicitTargetId"] === "string") || typeof value["returning"] !== "boolean"
+    || !object(value["pursuit"]) || !nonnegative(value["pursuit"]["attackCooldown"]) || !nonnegative(value["pending"])
+    || !object(value["gate"]) || !(value["gate"]["state"] === "active" || value["gate"]["state"] === "dormant")
+    || !nonnegative(value["gate"]["clock"]) || !nonnegative(value["gate"]["awakeHold"])
+    || !nonnegative(value["gate"]["phase"]) || value["gate"]["phase"] >= 1) return false;
+  if (value["threat"] !== undefined) {
+    if (!object(value["threat"]) || !Array.isArray(value["threat"]["entries"]) || !nonnegative(value["threat"]["forcedRemaining"])
+      || !(value["threat"]["forcedSource"] === null || typeof value["threat"]["forcedSource"] === "string")) return false;
     const seen = new Set<string>();
-    for (const entry of value.threat.entries) {
+    for (const entry of value["threat"]["entries"]) {
       if (!Array.isArray(entry) || entry.length !== 2 || typeof entry[0] !== "string" || seen.has(entry[0])
         || typeof entry[1] !== "number" || !Number.isFinite(entry[1])) return false;
       seen.add(entry[0]);
@@ -665,14 +665,14 @@ export function installPursuitPersistence(ctx: GameContext, aoiRadius?: number,
       return { version: 1, instances };
     },
     decode(raw: unknown) {
-      if (!object(raw) || raw.version !== 1 || !Array.isArray(raw.instances)) return null;
+      if (!object(raw) || raw["version"] !== 1 || !Array.isArray(raw["instances"])) return null;
       const seen = new Set<string>();
-      for (const value of raw.instances) {
-        if (!object(value) || typeof value.id !== "string" || seen.has(value.id)
-          || !validPursueSnapshot(value.snapshot) || !(value.status === "active" || value.status === "paused" || value.status === "disabled")
-          || !(value.reason === null || typeof value.reason === "string") || !nonnegative(value.pausedElapsed)
-          || !ctx.scene.entity.get(value.id)?.behaviors.some(behavior => behavior.kind === "pursue")) return null;
-        seen.add(value.id);
+      for (const value of raw["instances"]) {
+        if (!object(value) || typeof value["id"] !== "string" || seen.has(value["id"])
+          || !validPursueSnapshot(value["snapshot"]) || !(value["status"] === "active" || value["status"] === "paused" || value["status"] === "disabled")
+          || !(value["reason"] === null || typeof value["reason"] === "string") || !nonnegative(value["pausedElapsed"])
+          || !ctx.scene.entity.get(value["id"])?.behaviors.some(behavior => behavior.kind === "pursue")) return null;
+        seen.add(value["id"]);
       }
       return structuredClone(raw) as { version: number; instances: PursueSaveRecord[] };
     },
@@ -692,7 +692,7 @@ export function installPursuitPersistence(ctx: GameContext, aoiRadius?: number,
     ...(aoiRadius === undefined ? {} : {
       project(data: { version: number; instances: PursueSaveRecord[] }, viewer: import("../runtime/worldSnapshot").SnapshotViewer,
         world: import("../runtime/worldSnapshot").WorldSnapshot) {
-        const visible = visibleEntityIds((world.entities ?? []) as readonly SceneEntity[], viewer, aoiRadius);
+        const visible = visibleEntityIds((world["entities"] ?? []) as readonly SceneEntity[], viewer, aoiRadius);
         return { ...data, instances: data.instances.filter(record => visible.has(record.id)) };
       },
     }),

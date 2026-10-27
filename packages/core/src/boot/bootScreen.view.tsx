@@ -14,7 +14,7 @@ export function useBootStep(): BootStep {
  * screen after Play does.
  * @internal
  */
-export function BootLoadingScreen({ label = "Loading", progress = null, detail, over = false }: { label?: string; progress?: number | null; detail?: string; over?: boolean }) {
+export function BootLoadingScreen({ label = "Loading", progress = null, detail, over = false }: { label?: string | undefined; progress?: number | null | undefined; detail?: string | undefined; over?: boolean | undefined }) {
   const share = progress === null ? 0.05 : Math.max(0.05, Math.min(1, progress));
   return (
     <div

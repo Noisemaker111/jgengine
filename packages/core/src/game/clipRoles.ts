@@ -162,9 +162,9 @@ export function defaultAnimationForClips(
   const hit = oneShotSpec(roles.hit);
   const death = oneShotSpec(roles.death);
   const attack = oneShotSpec(roles.attack);
-  if (hit !== undefined) oneShots.hit = hit;
-  if (death !== undefined) oneShots.death = death;
-  if (attack !== undefined) oneShots.attack = attack;
+  if (hit !== undefined) oneShots["hit"] = hit;
+  if (death !== undefined) oneShots["death"] = death;
+  if (attack !== undefined) oneShots["attack"] = attack;
   let strafeLeft: string | undefined;
   let strafeRight: string | undefined;
   for (const clip of roles.strafe ?? []) {

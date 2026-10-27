@@ -102,17 +102,17 @@ export function createSoilPatchMaterial(rules: SoilRules, edge?: SoilPatchEdge):
   });
 
   material.onBeforeCompile = (shader) => {
-    shader.uniforms.uSoilCrackColor = { value: new THREE.Color(rules.crackColor) };
-    shader.uniforms.uSoilCrackScale = { value: Math.max(0.1, rules.crackScale) };
-    shader.uniforms.uSoilCrackIntensity = { value: rules.crackIntensity };
-    shader.uniforms.uSoilMossColor = { value: new THREE.Color(rules.mossColor) };
-    shader.uniforms.uSoilMossCoverage = { value: rules.mossCoverage };
-    shader.uniforms.uSoilSeed = { value: seedOffset };
+    shader.uniforms["uSoilCrackColor"] = { value: new THREE.Color(rules.crackColor) };
+    shader.uniforms["uSoilCrackScale"] = { value: Math.max(0.1, rules.crackScale) };
+    shader.uniforms["uSoilCrackIntensity"] = { value: rules.crackIntensity };
+    shader.uniforms["uSoilMossColor"] = { value: new THREE.Color(rules.mossColor) };
+    shader.uniforms["uSoilMossCoverage"] = { value: rules.mossCoverage };
+    shader.uniforms["uSoilSeed"] = { value: seedOffset };
     if (edge !== undefined) {
-      shader.uniforms.uSoilCenter = { value: new THREE.Vector2(edge.center[0], edge.center[1]) };
-      shader.uniforms.uSoilHalfSize = { value: new THREE.Vector2(edge.halfSize[0], edge.halfSize[1]) };
-      shader.uniforms.uSoilEdgeFade = { value: edge.fade ?? 1.6 };
-      shader.uniforms.uSoilGroundColor = { value: new THREE.Color(edge.groundColor ?? rules.baseColor) };
+      shader.uniforms["uSoilCenter"] = { value: new THREE.Vector2(edge.center[0], edge.center[1]) };
+      shader.uniforms["uSoilHalfSize"] = { value: new THREE.Vector2(edge.halfSize[0], edge.halfSize[1]) };
+      shader.uniforms["uSoilEdgeFade"] = { value: edge.fade ?? 1.6 };
+      shader.uniforms["uSoilGroundColor"] = { value: new THREE.Color(edge.groundColor ?? rules.baseColor) };
     }
 
     shader.vertexShader = shader.vertexShader.replace(

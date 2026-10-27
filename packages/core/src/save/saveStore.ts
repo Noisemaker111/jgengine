@@ -108,21 +108,21 @@ export interface SaveStoreConfig<T> {
   /** Storage namespace, joined with the slot into the backend key. Default `"save"`. */
   key?: string;
   /** Active save slot — pass distinct slots for multiple parallel saves. Default `"default"`. */
-  slot?: string;
+  slot?: string | undefined;
   /** Current save-format version. Default `1`. Bump it on a breaking shape change and pass {@link migrate}. */
-  version?: number;
+  version?: number | undefined;
   /** Upgrade an older payload to the current shape. Receives the stored value and the version it was written at (`0` for a pre-versioned/raw payload). */
-  migrate?: (data: unknown, fromVersion: number) => T;
+  migrate?: ((data: unknown, fromVersion: number) => T) | undefined;
   /** Autosave on every `set`/`patch`. `false` (default) saves only on an explicit `save()`. */
-  autosave?: boolean | SaveAutoConfig;
+  autosave?: boolean | SaveAutoConfig | undefined;
   serialize?: (envelope: SaveEnvelope<T>) => string;
   deserialize?: (raw: string) => unknown;
   /** Injectable clock (ms). Default `Date.now`. */
-  now?: () => number;
+  now?: (() => number) | undefined;
   /** Injectable timers for autosave. Default ambient `setTimeout`/`clearTimeout`. */
-  timers?: SaveTimers;
+  timers?: SaveTimers | undefined;
   /** Notified on any backend read/write failure — status is already `"error"` when it runs. */
-  onError?: (error: unknown) => void;
+  onError?: ((error: unknown) => void) | undefined;
 }
 
 /**
@@ -185,7 +185,7 @@ function isEnvelope(value: unknown): value is SaveEnvelope<unknown> {
   return (
     typeof value === "object" &&
     value !== null &&
-    typeof (value as Record<string, unknown>).version === "number" &&
+    typeof (value as Record<string, unknown>)["version"] === "number" &&
     "value" in value
   );
 }

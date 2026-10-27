@@ -201,12 +201,14 @@ export function createCrowdField(grid: NavGrid): CrowdField {
   return {
     enter(point) {
       const cell = grid.cellAt(point);
-      occupancy[index(cell.col, cell.row)] += 1;
+      const key = index(cell.col, cell.row);
+      occupancy[key] = (occupancy[key] ?? 0) + 1;
     },
     leave(point) {
       const cell = grid.cellAt(point);
       const key = index(cell.col, cell.row);
-      if (occupancy[key]! > 0) occupancy[key] -= 1;
+      const current = occupancy[key] ?? 0;
+      if (current > 0) occupancy[key] = current - 1;
     },
     count(point) {
       const cell = grid.cellAt(point);

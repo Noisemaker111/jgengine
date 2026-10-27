@@ -32,7 +32,7 @@ export type TerrainNormal = readonly [number, number, number];
 export interface TerrainField {
   sampleHeight(x: number, z: number): number;
   sampleNormal(x: number, z: number): TerrainNormal;
-  readonly bounds?: WorldBounds;
+  readonly bounds?: WorldBounds | undefined;
   readonly waterLevel?: number;
 }
 
@@ -134,7 +134,7 @@ export function withNormal(sampleHeight: (x: number, z: number) => number): Terr
 
 function fieldFromHeight(
   sampleHeight: (x: number, z: number) => number,
-  extra?: { bounds?: WorldBounds; waterLevel?: number },
+  extra?: { bounds?: WorldBounds | undefined; waterLevel?: number | undefined },
 ): TerrainField {
   return {
     sampleHeight,
@@ -159,16 +159,16 @@ export function flatField(): TerrainField {
 
 /** Configuration for {@link noiseField}: seed, amplitude, and fractal noise shaping. */
 export interface NoiseFieldConfig {
-  seed?: string | number;
+  seed?: string | number | undefined;
   amplitude?: number;
-  frequency?: number;
-  octaves?: number;
+  frequency?: number | undefined;
+  octaves?: number | undefined;
   lacunarity?: number;
   persistence?: number;
-  baseHeight?: number;
-  ridged?: boolean;
-  bounds?: WorldBounds;
-  waterLevel?: number;
+  baseHeight?: number | undefined;
+  ridged?: boolean | undefined;
+  bounds?: WorldBounds | undefined;
+  waterLevel?: number | undefined;
 }
 
 /** Builds a `TerrainField` whose height is fractal noise shaped by `config`.

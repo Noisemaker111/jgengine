@@ -228,10 +228,10 @@ export function VolumetricClouds({ rules, sunDirection }: VolumetricCloudsProps)
       mesh.position.z = state.camera.position.z;
     }
     const uniforms = material.uniforms;
-    (uniforms.uCameraPos!.value as THREE.Vector3).copy(state.camera.position);
-    (uniforms.uProjection!.value as THREE.Matrix4).copy(state.camera.projectionMatrix);
-    (uniforms.uView!.value as THREE.Matrix4).copy(state.camera.matrixWorldInverse);
-    uniforms.uTime!.value = timeRef.current;
+    (uniforms["uCameraPos"]!.value as THREE.Vector3).copy(state.camera.position);
+    (uniforms["uProjection"]!.value as THREE.Matrix4).copy(state.camera.projectionMatrix);
+    (uniforms["uView"]!.value as THREE.Matrix4).copy(state.camera.matrixWorldInverse);
+    uniforms["uTime"]!.value = timeRef.current;
   });
 
   return (

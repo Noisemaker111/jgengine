@@ -3,7 +3,7 @@ export interface PresencePoseState {
   rotationY: number;
   rotationPitch?: number;
   lastSeenAtMs?: number;
-  appearance?: Record<string, string>;
+  appearance?: Record<string, string> | undefined;
 }
 
 export interface IncomingPose {
@@ -43,7 +43,7 @@ export interface PoseSyncDecision {
   position: { x: number; y: number; z: number };
   rotationY: number;
   rotationPitch: number;
-  appearance?: Record<string, string>;
+  appearance?: Record<string, string> | undefined;
   /** True when the pose differs and a pose write is needed. */
   changed: boolean;
   /** True when only the keep-alive stamp should be written. */

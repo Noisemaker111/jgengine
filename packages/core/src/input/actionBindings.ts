@@ -64,9 +64,38 @@ export type ActionStateBindingMap<TAction extends string, TCode extends string =
   ActionBindingConfig<TCode>
 >;
 
-export type ActionCodes<TCode extends string = string> =
-  | readonly TCode[]
-  | { hold?: readonly TCode[]; toggle?: readonly TCode[]; repeatMs?: number };
+/** The hold/toggle form of an {@link ActionCodes} entry, with an optional auto-repeat rate. */
+export interface ActionCodeModes<TCode extends string = string> {
+  hold?: readonly TCode[];
+  toggle?: readonly TCode[];
+  repeatMs?: number;
+}
+
+export type ActionCodes<TCode extends string = string> = readonly TCode[] | ActionCodeModes<TCode>;
+
+/**
+ * True when `codes` is the plain code list form rather than hold/toggle modes.
+ * @internal
+ */
+export function isCodeList<TCode extends string>(codes: ActionCodes<TCode>): codes is readonly TCode[] {
+  return Array.isArray(codes);
+}
+
+/**
+ * Every code an {@link ActionCodes} entry binds: the plain list, or hold then toggle.
+ * @internal
+ */
+export function allActionCodes<TCode extends string>(codes: ActionCodes<TCode>): readonly TCode[] {
+  return isCodeList(codes) ? codes : [...(codes.hold ?? []), ...(codes.toggle ?? [])];
+}
+
+/**
+ * The codes that name an action in labels and lookups: the plain list, else hold, else toggle.
+ * @internal
+ */
+export function primaryActionCodes<TCode extends string>(codes: ActionCodes<TCode>): readonly TCode[] {
+  return isCodeList(codes) ? codes : codes.hold ?? codes.toggle ?? [];
+}
 
 /**
  * Maps each game action name to the input codes (hold/toggle keys, repeat rate) that trigger it. In a
@@ -83,8 +112,8 @@ export type ActionCodesMap<TAction extends string = string, TCode extends string
 
 /** @internal */
 export function actionRepeatMs(codes: ActionCodes | undefined): number | undefined {
-  if (codes === undefined || Array.isArray(codes)) return undefined;
-  return (codes as { repeatMs?: number }).repeatMs;
+  if (codes === undefined || isCodeList(codes)) return undefined;
+  return codes.repeatMs;
 }
 
 export interface ShouldDispatchActionInput {
@@ -114,12 +143,9 @@ export function toActionStateBindingMap<TAction extends string, TCode extends st
   const result = {} as ActionStateBindingMap<TAction, TCode>;
   for (const action of Object.keys(map) as TAction[]) {
     const codes = map[action];
-    if (Array.isArray(codes)) {
-      result[action] = toBindings(codes as readonly TCode[]);
-    } else {
-      const modes = codes as { hold?: readonly TCode[]; toggle?: readonly TCode[] };
-      result[action] = { hold: toBindings(modes.hold ?? []), toggle: toBindings(modes.toggle ?? []) };
-    }
+    result[action] = isCodeList(codes)
+      ? toBindings(codes)
+      : { hold: toBindings(codes.hold ?? []), toggle: toBindings(codes.toggle ?? []) };
   }
   return result;
 }
@@ -183,8 +209,8 @@ export function hotbarSlotBindings(
   }
   const action = options?.action ?? ((slot: number) => `hotbarSlot${slot}`);
   const map: ActionCodesMap = {};
-  for (let slot = 1; slot <= count; slot += 1) {
-    map[action(slot)] = [HOTBAR_DIGIT_CODES[slot - 1]];
+  for (const [index, code] of HOTBAR_DIGIT_CODES.slice(0, count).entries()) {
+    map[action(index + 1)] = [code];
   }
   return map;
 }
@@ -270,14 +296,7 @@ export function bindingLabel(code: string, glyphSet: GamepadGlyphName | GamepadG
 export function actionLabel(map: ActionCodesMap, action: string): string | null {
   const codes = map[action];
   if (codes === undefined) return null;
-  let list: readonly string[];
-  if (Array.isArray(codes)) {
-    list = codes as readonly string[];
-  } else {
-    const modes = codes as { hold?: readonly string[]; toggle?: readonly string[] };
-    list = modes.hold ?? modes.toggle ?? [];
-  }
-  const first = list[0];
+  const first = primaryActionCodes(codes)[0];
   return first === undefined ? null : bindingLabel(first);
 }
 

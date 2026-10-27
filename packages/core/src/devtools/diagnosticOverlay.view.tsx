@@ -6,8 +6,8 @@ export interface RuntimeDiagnostic {
   id: number;
   phase: string;
   message: string;
-  stack?: string;
-  componentStack?: string;
+  stack?: string | undefined;
+  componentStack?: string | undefined;
   capturedAt: string;
 }
 
@@ -29,17 +29,17 @@ export class GameUiErrorBoundary extends Component<
   { children: ReactNode; onRuntimeError: (error: unknown, phase: string, componentStack?: string) => void },
   { failed: boolean }
 > {
-  state = { failed: false };
+  override state = { failed: false };
 
   static getDerivedStateFromError() {
     return { failed: true };
   }
 
-  componentDidCatch(error: unknown, info: ErrorInfo) {
+  override componentDidCatch(error: unknown, info: ErrorInfo) {
     this.props.onRuntimeError(error, "ui-render", info.componentStack ?? undefined);
   }
 
-  render() {
+  override render() {
     if (this.state.failed) return null;
     return this.props.children;
   }

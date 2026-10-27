@@ -164,7 +164,7 @@ export function findHazeLamps(scene: THREE.Object3D): HazeLamp[] {
   scene.traverseVisible((object) => {
     const light = object as HazeLamp;
     if (!(light as THREE.PointLight).isPointLight && !(light as THREE.SpotLight).isSpotLight) return;
-    if (light.userData?.haze === false) return;
+    if (light.userData?.["haze"] === false) return;
     lamps.push(light);
   });
   return lamps;
@@ -292,7 +292,7 @@ export class AtmospherePass extends Pass {
     const lost = (this.light !== null && (this.light.parent === null || !this.light.castShadow)) || this.lamps.some((lamp) => lamp.parent === null);
     if (lost || this.framesSinceScan >= LIGHT_RESCAN_FRAMES) {
       this.light = findKeyLight(this.scene);
-      this.lamps = this.material.uniforms.uLampStrength!.value > 0 ? findHazeLamps(this.scene) : [];
+      this.lamps = this.material.uniforms["uLampStrength"]!.value > 0 ? findHazeLamps(this.scene) : [];
       this.framesSinceScan = 0;
     }
     return this.light;
@@ -308,29 +308,29 @@ export class AtmospherePass extends Pass {
     if (light === null && !this.indoor) return;
     const uniforms = this.material.uniforms;
     // No sun indoors: the haze and the lamp glow still run, the shafts and the sun's warmth do not.
-    const sun = light === null ? (uniforms.uSunDirection!.value as THREE.Vector3).set(0, 1, 0) : towardLight(light, uniforms.uSunDirection!.value as THREE.Vector3);
-    if (light === null) (uniforms.uSunColor!.value as THREE.Color).setRGB(0, 0, 0);
-    else (uniforms.uSunColor!.value as THREE.Color).copy(light.color).multiplyScalar(Math.min(light.intensity, 3) * 0.35);
+    const sun = light === null ? (uniforms["uSunDirection"]!.value as THREE.Vector3).set(0, 1, 0) : towardLight(light, uniforms["uSunDirection"]!.value as THREE.Vector3);
+    if (light === null) (uniforms["uSunColor"]!.value as THREE.Color).setRGB(0, 0, 0);
+    else (uniforms["uSunColor"]!.value as THREE.Color).copy(light.color).multiplyScalar(Math.min(light.intensity, 3) * 0.35);
     const fog = this.scene.fog;
     const background = this.scene.background;
-    (uniforms.uFogColor!.value as THREE.Color).copy(
+    (uniforms["uFogColor"]!.value as THREE.Color).copy(
       fog !== null ? fog.color : background instanceof THREE.Color ? background : FALLBACK_FOG,
     );
-    (uniforms.uProjectionInverse!.value as THREE.Matrix4).copy(this.camera.projectionMatrixInverse);
-    (uniforms.uCameraWorld!.value as THREE.Matrix4).copy(this.camera.matrixWorld);
-    const cameraPosition = (uniforms.uCameraPosition!.value as THREE.Vector3).setFromMatrixPosition(this.camera.matrixWorld);
+    (uniforms["uProjectionInverse"]!.value as THREE.Matrix4).copy(this.camera.projectionMatrixInverse);
+    (uniforms["uCameraWorld"]!.value as THREE.Matrix4).copy(this.camera.matrixWorld);
+    const cameraPosition = (uniforms["uCameraPosition"]!.value as THREE.Vector3).setFromMatrixPosition(this.camera.matrixWorld);
 
     sunPoint.copy(sun).multiplyScalar(1000).add(cameraPosition);
     viewProjection.multiplyMatrices(this.camera.projectionMatrix, this.camera.matrixWorldInverse);
     projected.set(sunPoint.x, sunPoint.y, sunPoint.z, 1).applyMatrix4(viewProjection);
     const inFront = projected.w > 0;
-    const sunUv = uniforms.uSunUv!.value as THREE.Vector2;
+    const sunUv = uniforms["uSunUv"]!.value as THREE.Vector2;
     if (inFront) sunUv.set((projected.x / projected.w) * 0.5 + 0.5, (projected.y / projected.w) * 0.5 + 0.5);
-    uniforms.uSunVisible!.value = light === null ? 0 : sunShaftVisibility(sunUv, inFront, sun.y);
+    uniforms["uSunVisible"]!.value = light === null ? 0 : sunShaftVisibility(sunUv, inFront, sun.y);
     this.writeLamps(cameraPosition);
-    uniforms.uAspect!.value = this.aspect;
+    uniforms["uAspect"]!.value = this.aspect;
     this.frame = (this.frame + 1) % 64;
-    uniforms.uFrame!.value = this.frame;
+    uniforms["uFrame"]!.value = this.frame;
 
     renderer.setRenderTarget(this.target);
     this.quad.render(renderer);
@@ -344,10 +344,10 @@ export class AtmospherePass extends Pass {
   private writeLamps(eye: THREE.Vector3): void {
     const uniforms = this.material.uniforms;
     const nearest = this.lamps.length === 0 ? [] : nearestHazeLamps(this.lamps, eye);
-    const positions = uniforms.uLampPosition!.value as THREE.Vector3[];
-    const colors = uniforms.uLampColor!.value as THREE.Vector3[];
-    const spots = uniforms.uLampSpot!.value as THREE.Vector4[];
-    const shapes = uniforms.uLampShape!.value as THREE.Vector2[];
+    const positions = uniforms["uLampPosition"]!.value as THREE.Vector3[];
+    const colors = uniforms["uLampColor"]!.value as THREE.Vector3[];
+    const spots = uniforms["uLampSpot"]!.value as THREE.Vector4[];
+    const shapes = uniforms["uLampShape"]!.value as THREE.Vector2[];
     nearest.forEach((lamp, index) => {
       lamp.getWorldPosition(positions[index]!);
       colors[index]!.set(lamp.color.r, lamp.color.g, lamp.color.b).multiplyScalar(lamp.intensity);
@@ -359,7 +359,7 @@ export class AtmospherePass extends Pass {
         spots[index]!.set(lampTarget.x, lampTarget.y, lampTarget.z, Math.cos(spot.angle));
       } else spots[index]!.set(0, 0, 0, -2);
     });
-    uniforms.uLampCount!.value = nearest.length;
+    uniforms["uLampCount"]!.value = nearest.length;
   }
 
   override dispose(): void {

@@ -1,5 +1,7 @@
 import {
+  allActionCodes,
   bindingLabel,
+  isCodeList,
   normalizeKeyCode,
   type ActionCodes,
   type ActionCodesMap,
@@ -135,9 +137,7 @@ export interface RebindSession {
 
 /** All codes an {@link ActionCodes} entry binds (hold + toggle, or the plain array). */
 function allCodes(codes: ActionCodes): string[] {
-  if (Array.isArray(codes)) return [...(codes as readonly string[])];
-  const modes = codes as { hold?: readonly string[]; toggle?: readonly string[] };
-  return [...(modes.hold ?? []), ...(modes.toggle ?? [])];
+  return [...allActionCodes(codes)];
 }
 
 /** The first (primary) code of an {@link ActionCodes} entry, or `null` when unbound. */
@@ -147,10 +147,10 @@ function primaryCode(codes: ActionCodes): string | null {
 
 /** Replace the primary code of `codes` with `code`, keeping the hold/toggle/repeat shape. */
 function withPrimaryCode(codes: ActionCodes, code: string): ActionCodes {
-  if (Array.isArray(codes)) {
-    return [code, ...(codes as readonly string[]).slice(1)];
+  if (isCodeList(codes)) {
+    return [code, ...codes.slice(1)];
   }
-  const modes = codes as { hold?: readonly string[]; toggle?: readonly string[]; repeatMs?: number };
+  const modes = codes;
   if (modes.hold !== undefined && modes.hold.length > 0) {
     return { ...modes, hold: [code, ...modes.hold.slice(1)] };
   }

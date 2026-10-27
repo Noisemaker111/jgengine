@@ -29,7 +29,7 @@ const CYPRESS = "#31502f";
 function mergeParts(parts: ProxyPart[]): THREE.BufferGeometry {
   const geos = parts.map((part) => (part.geometry.index === null ? part.geometry : part.geometry.toNonIndexed()));
   let total = 0;
-  for (const geo of geos) total += (geo.attributes.position as THREE.BufferAttribute).count;
+  for (const geo of geos) total += (geo.attributes["position"] as THREE.BufferAttribute).count;
   const position = new Float32Array(total * 3);
   const normal = new Float32Array(total * 3);
   const color = new Float32Array(total * 3);
@@ -37,8 +37,8 @@ function mergeParts(parts: ProxyPart[]): THREE.BufferGeometry {
   let offset = 0;
   for (let i = 0; i < geos.length; i += 1) {
     const geo = geos[i]!;
-    const pos = geo.attributes.position as THREE.BufferAttribute;
-    const nor = geo.attributes.normal as THREE.BufferAttribute;
+    const pos = geo.attributes["position"] as THREE.BufferAttribute;
+    const nor = geo.attributes["normal"] as THREE.BufferAttribute;
     position.set(pos.array as Float32Array, offset * 3);
     normal.set(nor.array as Float32Array, offset * 3);
     tint.set(parts[i]!.color);

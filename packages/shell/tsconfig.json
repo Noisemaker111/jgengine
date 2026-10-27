@@ -5,7 +5,12 @@
     "jsx": "react-jsx",
     "noUnusedLocals": true,
     "noUnusedParameters": true,
-    "noFallthroughCasesInSwitch": true
+    "noFallthroughCasesInSwitch": true,
+    "noUncheckedIndexedAccess": true,
+    "exactOptionalPropertyTypes": true,
+    "noImplicitOverride": true,
+    "noPropertyAccessFromIndexSignature": true,
+    "noImplicitReturns": true
   },
   "include": ["src", "../core/src/**/*.draw.ts", "../core/src/**/*.draw.tsx"],
   "exclude": ["src/**/*.test.ts", "src/**/*.test.tsx"]

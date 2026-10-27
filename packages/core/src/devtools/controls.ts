@@ -25,17 +25,17 @@ export interface ControlRecord {
   group: string;
   initial: unknown;
   value: unknown;
-  min?: number;
-  max?: number;
-  step?: number;
-  options?: readonly unknown[];
-  choices?: readonly TunableChoice[];
-  unit?: AngleUnit;
-  displayUnit?: AngleUnit;
-  wrap?: boolean;
-  integer?: boolean;
-  axisBounds?: ResolvedAxisBounds;
-  hasAlpha?: boolean;
+  min?: number | undefined;
+  max?: number | undefined;
+  step?: number | undefined;
+  options?: readonly unknown[] | undefined;
+  choices?: readonly TunableChoice[] | undefined;
+  unit?: AngleUnit | undefined;
+  displayUnit?: AngleUnit | undefined;
+  wrap?: boolean | undefined;
+  integer?: boolean | undefined;
+  axisBounds?: ResolvedAxisBounds | undefined;
+  hasAlpha?: boolean | undefined;
   schemaVersion: number;
   listeners: Set<(value: unknown) => void>;
 }

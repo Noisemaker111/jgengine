@@ -7,7 +7,7 @@ export interface PingOpacityInput {
   /** Fade-in duration in ms. Default 220. */
   fadeInMs?: number;
   /** Wall-clock ms remaining until the ping expires; omit for a non-expiring ping. */
-  remainingMs?: number;
+  remainingMs?: number | undefined;
   /** Fade-out window (ms) before expiry. Default 600. */
   fadeOutMs?: number;
 }

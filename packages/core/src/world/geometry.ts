@@ -16,7 +16,7 @@ export interface Aabb {
 }
 
 export interface MoveOptions {
-  bounds?: Aabb;
+  bounds?: Aabb | undefined;
   radius?: number;
 }
 

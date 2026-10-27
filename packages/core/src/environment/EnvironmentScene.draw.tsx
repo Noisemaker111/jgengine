@@ -62,8 +62,8 @@ interface TerrainGroundLayout {
   colors: CarvedTerrainProps["colors"];
   heightRange: readonly [number, number];
   paletteAt: CarvedTerrainProps["paletteAt"];
-  paint?: TerrainPaintTextures;
-  center?: readonly [number, number];
+  paint?: TerrainPaintTextures | undefined;
+  center?: readonly [number, number] | undefined;
 }
 
 function TexturedTerrainGround({
@@ -234,7 +234,7 @@ function TerrainGround({
   terrain: Omit<TerrainEnvironmentDescriptor, "kind">;
   field: TerrainField;
   center?: readonly [number, number];
-  sculpt?: TerraformSnapshot;
+  sculpt?: TerraformSnapshot | undefined;
 }) {
   const detailEnabled = terrain.detail !== false;
   const paint = useMemo(() => {
@@ -332,7 +332,7 @@ function Vegetation({
 }: {
   grass: GrassEnvironmentDescriptor;
   field: TerrainField;
-  groundColor?: string;
+  groundColor?: string | undefined;
 }) {
   const [cx, cz] = areaCenter(grass.area);
   const heightAt = useMemo(

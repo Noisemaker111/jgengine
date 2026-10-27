@@ -106,7 +106,7 @@ function isMergeable(mesh: THREE.Mesh, root: THREE.Object3D): boolean {
   if (mesh.visible !== true) return false;
   if (Array.isArray(mesh.material) || mesh.material === undefined || mesh.material === null) return false;
   const geometry = mesh.geometry;
-  if (geometry === undefined || geometry.attributes.position === undefined) return false;
+  if (geometry === undefined || geometry.attributes["position"] === undefined) return false;
   if (Object.keys(geometry.morphAttributes).length > 0) return false;
   return !hasRiggedAncestor(mesh, root);
 }
@@ -205,7 +205,7 @@ function isMergeableSkinnedPart(mesh: THREE.Mesh): boolean {
   if (mesh.children.length > 0 || mesh.visible !== true) return false;
   if (Array.isArray(mesh.material) || mesh.material === undefined || mesh.material === null) return false;
   const geometry = mesh.geometry;
-  if (geometry.attributes.position === undefined) return false;
+  if (geometry.attributes["position"] === undefined) return false;
   if (Object.keys(geometry.morphAttributes).length > 0) return false;
   return geometry.getAttribute("skinIndex") !== undefined && geometry.getAttribute("skinWeight") !== undefined;
 }

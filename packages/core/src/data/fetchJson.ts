@@ -1,3 +1,4 @@
+import { definedOnly } from "./definedOnly";
 export type FetchImpl = typeof fetch;
 
 export interface FetchJsonOptions {
@@ -24,24 +25,22 @@ export class HttpStatusError extends Error {
 
 export class JsonParseError extends Error {
   readonly url: string;
-  readonly cause: unknown;
 
   constructor(url: string, cause: unknown) {
-    super(`failed to parse JSON response from ${url}`);
+    super(`failed to parse JSON response from ${url}`, { cause });
     this.name = "JsonParseError";
     this.url = url;
-    this.cause = cause;
   }
 }
 
 export async function fetchJson<T>(url: string, options: FetchJsonOptions = {}): Promise<T> {
   const fetchImpl = options.fetchImpl ?? fetch;
-  const response = await fetchImpl(url, {
+  const response = await fetchImpl(url, definedOnly({
     method: options.method,
     headers: options.headers,
     body: options.body,
     signal: options.signal,
-  });
+  }));
   if (!response.ok) {
     throw new HttpStatusError(response.status, response.statusText, url);
   }

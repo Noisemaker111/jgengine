@@ -22,11 +22,11 @@ export interface WeatherLayerProps {
   /** Read authored conditions at the camera from the authoritative simulation clock. */
   sample?: (x: number, z: number) => AuthoredWeatherSample;
   shelters?: readonly EditorVolume[];
-  metrics?: WeatherParticleMetrics;
-  rain?: Omit<RainFieldProps, "wind" | "lightning" | "timeScale"> | false;
-  snow?: Omit<SnowFieldProps, "wind" | "timeScale"> | false;
+  metrics?: WeatherParticleMetrics | undefined;
+  rain?: Omit<RainFieldProps, "wind" | "lightning" | "timeScale"> | false | undefined;
+  snow?: Omit<SnowFieldProps, "wind" | "timeScale"> | false | undefined;
   /** Airborne particulate. Drawn in `"dust"` mode, and alongside rain/snow whenever `dustAlways` is set. */
-  dust?: Omit<DustFieldProps, "wind" | "timeScale"> | false;
+  dust?: Omit<DustFieldProps, "wind" | "timeScale"> | false | undefined;
   /** Keep dust in the air in every mode — a world that is dusty whatever else the sky is doing. */
   dustAlways?: boolean;
   impacts?: RainImpactFieldProps | false;

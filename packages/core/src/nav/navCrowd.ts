@@ -99,7 +99,7 @@ export interface NavCrowdOptions {
   /** Milliseconds of path searching one `tick` may spend, whatever the budget. Default 1.5. */
   replanMs?: number;
   /** Milliseconds clock the `replanMs` cap reads. Default `performance.now`; a fixed clock leaves only `replanBudget`, so a replay is deterministic. */
-  clock?: () => number;
+  clock?: (() => number) | undefined;
   /** Avoidance tuning for the internal {@link RvoCrowd}. */
   avoid?: Partial<RvoTunables>;
   /** Register a devtools probe under this name so the perf overlay shows crowd counters. */

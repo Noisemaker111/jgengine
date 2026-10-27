@@ -44,24 +44,24 @@ export interface SceneRaycastInput {
   direction: EntityPosition;
   /** Finite, nonnegative segment length in world units. */
   maxDistance: number;
-  excludeInstanceIds?: ReadonlySet<string> | readonly string[];
-  filter?: SceneRaycastFilter;
+  excludeInstanceIds?: ReadonlySet<string> | readonly string[] | undefined;
+  filter?: SceneRaycastFilter | undefined;
   /** When set, only hits satisfying the predicate are kept (applied after geometry). */
   accept?: (hit: SceneRaycastHit) => boolean;
 }
 
 export interface SceneEntityQuerySource {
   list(): readonly { id: string; position: EntityPosition; rotationY: number; name?: string }[];
-  collidersOf?(instanceId: string): EntityColliderSet | null | undefined;
-  inRadius?(center: EntityPosition, radius: number): readonly string[];
+  collidersOf?: ((instanceId: string) => EntityColliderSet | null | undefined) | undefined;
+  inRadius?: ((center: EntityPosition, radius: number) => readonly string[]) | undefined;
   get?(instanceId: string): { id: string; position: EntityPosition; rotationY: number; name?: string } | null;
 }
 
 export interface SceneObjectQuerySource {
   list(): readonly SceneObject[];
-  inBox?(min: EntityPosition, max: EntityPosition): readonly SceneObject[];
-  collidersOf?(instanceId: string): EntityColliderSet | null | undefined;
-  halfExtentsOf?(catalogId: string): EntityPosition | null | undefined;
+  inBox?: ((min: EntityPosition, max: EntityPosition) => readonly SceneObject[]) | undefined;
+  collidersOf?: ((instanceId: string) => EntityColliderSet | null | undefined) | undefined;
+  halfExtentsOf?: ((catalogId: string) => EntityPosition | null | undefined) | undefined;
 }
 
 export interface TerrainRaycastSource {
@@ -80,12 +80,12 @@ export interface RaycastWall {
 }
 
 export interface SceneRaycastDeps {
-  entities?: SceneEntityQuerySource;
-  objects?: SceneObjectQuerySource;
-  terrain?: TerrainRaycastSource;
-  walls?: readonly RaycastWall[];
+  entities?: SceneEntityQuerySource | undefined;
+  objects?: SceneObjectQuerySource | undefined;
+  terrain?: TerrainRaycastSource | undefined;
+  walls?: readonly RaycastWall[] | undefined;
   /** Indexed geometry returns physical, non-damage wall hits with instance id `world-solid`. */
-  solids?: Pick<WorldSolids, "inBox" | "inRay">;
+  solids?: Pick<WorldSolids, "inBox" | "inRay"> | undefined;
 }
 
 export interface SceneRaycastApi {

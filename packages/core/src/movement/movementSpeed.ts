@@ -1,8 +1,8 @@
 import type { StatValue } from "../scene/entityStats";
 
 export interface MovementSpeedModifiers {
-  multiplier?: number;
-  flatBonus?: number;
+  multiplier?: number | undefined;
+  flatBonus?: number | undefined;
 }
 
 /** `base * (multiplier ?? 1) + (flatBonus ?? 0)`, clamped to never go negative. */

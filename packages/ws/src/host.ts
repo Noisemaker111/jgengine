@@ -57,9 +57,9 @@ export type HostChangeEvent =
 
 /** Configuration for {@link createGameServerHost}, including persistence, tick rate, and game runtimes. */
 export type GameServerHostOptions = {
-  runtimes?: GameRuntime[];
+  runtimes?: GameRuntime[] | undefined;
   persistence: HostPersistence;
-  tickMs?: number;
+  tickMs?: number | undefined;
   slotsPerServer?: number;
   now?: () => number;
   createServerId?: () => string;
@@ -71,15 +71,15 @@ export type GameServerHost = {
   joinServer: (args: {
     userId: string;
     gameId: string;
-    serverId?: string;
-    attributes?: SessionAttributes;
-    code?: string;
-    role?: SnapshotViewer["role"];
+    serverId?: string | undefined;
+    attributes?: SessionAttributes | undefined;
+    code?: string | undefined;
+    role?: SnapshotViewer["role"] | undefined;
   }) => Promise<JoinServerResult>;
   browseServers: (args: {
     gameId: string;
-    filter?: MatchFilter;
-    limit?: number;
+    filter?: MatchFilter | undefined;
+    limit?: number | undefined;
   }) => Promise<SessionListing[]>;
   joinByCode: (args: {
     userId: string;

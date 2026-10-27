@@ -35,7 +35,7 @@ export function EditableGround({
     const depth = bounds.maxZ - bounds.minZ;
     const geo = new THREE.PlaneGeometry(width, depth, segments, segments);
     geo.rotateX(-Math.PI / 2);
-    const position = geo.attributes.position;
+    const position = geo.getAttribute("position");
     const base = new THREE.Color(baseColor);
     const colors = new Float32Array(position.count * 3);
     const cx = (bounds.minX + bounds.maxX) / 2;

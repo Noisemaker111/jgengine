@@ -26,7 +26,7 @@ interface WorldPingProps {
   style: MarkerKindStyle;
   height: number;
   showCallout: boolean;
-  renderCallout?: (marker: MarkerView, style: MarkerKindStyle) => ReactNode;
+  renderCallout?: ((marker: MarkerView, style: MarkerKindStyle) => ReactNode) | undefined;
 }
 
 function WorldPing({ marker, style, height, showCallout, renderCallout }: WorldPingProps): ReactNode {

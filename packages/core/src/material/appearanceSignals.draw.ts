@@ -18,7 +18,7 @@ export function captureMaterialAppearanceBaseline(material: THREE.MeshStandardMa
     roughness: material.roughness,
     colorLinear: Object.freeze([material.color.r, material.color.g, material.color.b]) as readonly [number, number, number],
     ...(physical.isMeshPhysicalMaterial ? { sheen: physical.sheen, clearcoat: physical.clearcoat, clearcoatRoughness: physical.clearcoatRoughness } : {}),
-    cardBacklightExposure: (material.userData.jgHairLightExposure as number | undefined) ?? 1,
+    cardBacklightExposure: (material.userData["jgHairLightExposure"] as number | undefined) ?? 1,
   });
 }
 

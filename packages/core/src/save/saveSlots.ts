@@ -11,11 +11,11 @@ export interface SaveSlotMeta {
   /** Stable slot id — pair it with the same slot in the game's `createSaveStore`. */
   id: string;
   /** Player-facing label (character name, save title). `undefined` until named. */
-  name?: string;
+  name?: string | undefined;
   /** `true` when no save occupies this slot — the menu shows a "New Game" affordance. */
   empty: boolean;
   /** Clock time (ms) of the last {@link SaveSlots.write}, or `undefined` while empty. */
-  savedAt?: number;
+  savedAt?: number | undefined;
   /**
    * Free-string display fields the game owns and the menu renders as chips —
    * e.g. `{ chapter: "The Drowned Keep", playtime: "4h 12m", level: 8 }`. The
@@ -27,11 +27,11 @@ export interface SaveSlotMeta {
 /** What a {@link SaveSlots.write} stamps onto a slot — a name and/or a fresh `meta` bag. */
 export interface SaveSlotWrite {
   /** Player-facing label for the slot. Omit to keep the existing name. */
-  name?: string;
+  name?: string | undefined;
   /** Replacement free-string display fields. Omit to keep the existing `meta`. */
   meta?: Record<string, string | number>;
   /** The save's own write time (ms) when the payload knows it; omit to use the index's clock. */
-  savedAt?: number;
+  savedAt?: number | undefined;
 }
 
 /** How a {@link createSaveSlots} index is wired. */

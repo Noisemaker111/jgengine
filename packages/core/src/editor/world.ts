@@ -303,8 +303,8 @@ function decodeBounds(
     }
     return [v[0], v[1]];
   };
-  const min = pair(value.min, `${path}.min`);
-  const max = pair(value.max, `${path}.max`);
+  const min = pair(value["min"], `${path}.min`);
+  const max = pair(value["max"], `${path}.max`);
   if (min === null || max === null) return undefined;
   return { min, max };
 }
@@ -318,22 +318,22 @@ function decodeShard(
     errors.push({ path, message: "expected an object" });
     return null;
   }
-  if (typeof value.id !== "string") errors.push({ path: `${path}.id`, message: "expected a string" });
-  if (typeof value.file !== "string") errors.push({ path: `${path}.file`, message: "expected a string" });
-  const bounds = decodeBounds(value.bounds, `${path}.bounds`, errors);
+  if (typeof value["id"] !== "string") errors.push({ path: `${path}.id`, message: "expected a string" });
+  if (typeof value["file"] !== "string") errors.push({ path: `${path}.file`, message: "expected a string" });
+  const bounds = decodeBounds(value["bounds"], `${path}.bounds`, errors);
   let residency: WorldShardResidency | undefined;
-  if (value.residency !== undefined) {
-    if (value.residency === "always" || value.residency === "streamed") residency = value.residency;
+  if (value["residency"] !== undefined) {
+    if (value["residency"] === "always" || value["residency"] === "streamed") residency = value["residency"];
     else errors.push({ path: `${path}.residency`, message: "expected \"always\" | \"streamed\"" });
   }
-  if (value.overlay !== undefined && typeof value.overlay !== "string") {
+  if (value["overlay"] !== undefined && typeof value["overlay"] !== "string") {
     errors.push({ path: `${path}.overlay`, message: "expected a string" });
   }
-  if (typeof value.id !== "string" || typeof value.file !== "string") return null;
-  const shard: WorldManifestShard = { id: value.id, file: value.file };
+  if (typeof value["id"] !== "string" || typeof value["file"] !== "string") return null;
+  const shard: WorldManifestShard = { id: value["id"], file: value["file"] };
   if (bounds !== undefined) shard.bounds = bounds;
   if (residency !== undefined) shard.residency = residency;
-  if (typeof value.overlay === "string") shard.overlay = value.overlay;
+  if (typeof value["overlay"] === "string") shard.overlay = value["overlay"];
   return shard;
 }
 
@@ -348,34 +348,34 @@ export function decodeWorldManifest(raw: unknown): DecodeWorldManifestResult {
     return { ok: false, errors: [{ path: "$", message: "world manifest must be an object" }] };
   }
   const errors: EditorDocumentDiagnostic[] = [];
-  if (raw.kind !== WORLD_MANIFEST_KIND) {
+  if (raw["kind"] !== WORLD_MANIFEST_KIND) {
     errors.push({ path: "$.kind", message: `expected "${WORLD_MANIFEST_KIND}"` });
   }
-  if (raw.version !== undefined && typeof raw.version !== "number") {
+  if (raw["version"] !== undefined && typeof raw["version"] !== "number") {
     errors.push({ path: "$.version", message: "expected a number" });
   }
   let grid: WorldGrid | undefined;
-  if (raw.grid !== undefined) {
-    if (isPlainObject(raw.grid) && typeof raw.grid.cellSize === "number") grid = { cellSize: raw.grid.cellSize };
+  if (raw["grid"] !== undefined) {
+    if (isPlainObject(raw["grid"]) && typeof raw["grid"]["cellSize"] === "number") grid = { cellSize: raw["grid"]["cellSize"] };
     else errors.push({ path: "$.grid", message: "expected { cellSize: number }" });
   }
   let streaming: WorldStreamingConfig | undefined;
-  if (raw.streaming !== undefined) {
+  if (raw["streaming"] !== undefined) {
     if (
-      isPlainObject(raw.streaming) &&
-      typeof raw.streaming.loadRadius === "number" &&
-      typeof raw.streaming.keepRadius === "number"
+      isPlainObject(raw["streaming"]) &&
+      typeof raw["streaming"]["loadRadius"] === "number" &&
+      typeof raw["streaming"]["keepRadius"] === "number"
     ) {
-      streaming = { loadRadius: raw.streaming.loadRadius, keepRadius: raw.streaming.keepRadius };
+      streaming = { loadRadius: raw["streaming"]["loadRadius"], keepRadius: raw["streaming"]["keepRadius"] };
     } else {
       errors.push({ path: "$.streaming", message: "expected { loadRadius: number, keepRadius: number }" });
     }
   }
   const shards: WorldManifestShard[] = [];
-  if (!Array.isArray(raw.shards)) {
+  if (!Array.isArray(raw["shards"])) {
     errors.push({ path: "$.shards", message: "expected an array" });
   } else {
-    raw.shards.forEach((item, index) => {
+    raw["shards"].forEach((item, index) => {
       const shard = decodeShard(item, `$.shards[${index}]`, errors);
       if (shard !== null) shards.push(shard);
     });
@@ -387,7 +387,7 @@ export function decodeWorldManifest(raw: unknown): DecodeWorldManifestResult {
   }
   if (errors.length > 0) return { ok: false, errors };
   const manifest: WorldManifest = { kind: WORLD_MANIFEST_KIND, shards };
-  if (typeof raw.version === "number") manifest.version = raw.version;
+  if (typeof raw["version"] === "number") manifest.version = raw["version"];
   if (grid !== undefined) manifest.grid = grid;
   if (streaming !== undefined) manifest.streaming = streaming;
   return { ok: true, manifest };

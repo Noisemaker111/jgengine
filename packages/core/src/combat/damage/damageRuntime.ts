@@ -35,7 +35,7 @@ export interface TargetProfile {
   /** Resistance class (`"flesh"`, `"shield"`, `"armor"`) the target presents. */
   resistance: string;
   /** Armor points before any carried armor-shred statuses. Default `0`. */
-  armor?: number;
+  armor?: number | undefined;
 }
 
 /** One status a hit tries to apply, scaled against that status's own base chance and values. */

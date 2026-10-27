@@ -105,20 +105,15 @@ function groupSelection(
   members: readonly EntitySummaryDef[],
   labelOf: (kind: string) => string,
 ): SelectionGroup[] {
-  const order: string[] = [];
-  const byKind = new Map<string, { icon?: string; ids: string[] }>();
+  // Map iteration follows insertion order, so groups come out in first-seen order.
+  const byKind = new Map<string, { icon: string | undefined; ids: string[] }>();
   for (const member of members) {
     const kind = member.kind ?? "unit";
-    let bucket = byKind.get(kind);
-    if (bucket === undefined) {
-      bucket = { icon: member.icon, ids: [] };
-      byKind.set(kind, bucket);
-      order.push(kind);
-    }
+    const bucket = byKind.get(kind) ?? { icon: member.icon, ids: [] };
+    byKind.set(kind, bucket);
     bucket.ids.push(member.id);
   }
-  const groups: SelectionGroup[] = order.map((kind) => {
-    const bucket = byKind.get(kind)!;
+  const groups: SelectionGroup[] = [...byKind].map(([kind, bucket]) => {
     const group: SelectionGroup = { kind, label: labelOf(kind), count: bucket.ids.length, ids: bucket.ids };
     if (bucket.icon !== undefined) group.icon = bucket.icon;
     return group;

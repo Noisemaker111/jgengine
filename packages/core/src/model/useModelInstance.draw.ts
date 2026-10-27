@@ -20,7 +20,7 @@ export type ModelInstanceConfig = Pick<ModelConfig,
 
 /** Caller-owned styling runs on the isolated clone, never the loader cache. */
 export interface ModelInstanceOptions {
-  instanceId?: string;
+  instanceId?: string | undefined;
   /** Configure each new clone before placement measurement. Memoize this callback; changing it replaces the instance. Materials are isolated; geometry/textures stay borrowed. */
   configure?: (content: Object3D) => void;
 }

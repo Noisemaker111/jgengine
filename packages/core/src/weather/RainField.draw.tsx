@@ -1,6 +1,7 @@
 import { useFrame, useThree } from "@react-three/fiber";
 import { useEffect, useMemo } from "react";
 import * as THREE from "three";
+import { UniformMaterial } from "@jgengine/core/render/uniformMaterial.draw";
 
 import { reportRain, reportWind } from "@jgengine/core/weather/livingWorld.draw";
 
@@ -91,7 +92,7 @@ export function RainField({
       uColor: { value: new THREE.Color(color) },
     } satisfies Record<string, THREE.IUniform>;
 
-    return new THREE.ShaderMaterial({
+    return new UniformMaterial({
       uniforms,
       transparent: true,
       depthWrite: false,
@@ -158,15 +159,15 @@ export function RainField({
   useFrame(() => {
     const anchor = followCamera ? camera.position : null;
     const uniforms = material.uniforms;
-    const target = uniforms.uAnchor.value as THREE.Vector3;
+    const target = uniforms.uAnchor.value;
     if (anchor !== null) target.copy(anchor);
     else target.set(origin[0], origin[1], origin[2]);
-    (uniforms.uVolume.value as THREE.Vector3).set(volume[0], volume[1], volume[2]);
+    uniforms.uVolume.value.set(volume[0], volume[1], volume[2]);
     uniforms.uSpeed.value = speed;
     uniforms.uLength.value = length;
     uniforms.uWidth.value = width;
     uniforms.uOpacity.value = opacity;
-    (uniforms.uColor.value as THREE.Color).set(color);
+    uniforms.uColor.value.set(color);
     geometry.instanceCount = resolveWeatherInstanceCount(count, density * shared.rain.value, budget);
     const metrics = shared.metrics?.rain;
     if (metrics !== undefined) { metrics.count = geometry.instanceCount; metrics.capacity = geometry.getAttribute("aSpawn").count; }

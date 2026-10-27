@@ -46,7 +46,7 @@ export interface Chat {
   send(fromUserId: string, channelId: string, body: string): ChatSendResult;
   recent(options?: { limit?: number; channelId?: string; viewerUserId?: string }): ChatMessage[];
   whisper(fromUserId: string, toUserId: string, body: string): ChatSendResult;
-  history(channelId: string, options?: { limit?: number; viewerUserId?: string }): ChatMessage[];
+  history(channelId: string, options?: { limit?: number; viewerUserId?: string | undefined }): ChatMessage[];
   snapshot(): ChatSnapshot;
   hydrate(data: ChatSnapshot): void;
 }

@@ -321,7 +321,7 @@ export class PhysicsWorld {
     this.prevY = new Float32Array(cap);
     this.prevZ = new Float32Array(cap);
 
-    const span = (i: number) => Math.max(config.bounds.max[i] - config.bounds.min[i], this.cellSize);
+    const span = (i: 0 | 1 | 2) => Math.max(config.bounds.max[i] - config.bounds.min[i], this.cellSize);
     this.nx = Math.max(1, Math.ceil(span(0) / this.cellSize));
     this.ny = Math.max(1, Math.ceil(span(1) / this.cellSize));
     this.nz = Math.max(1, Math.ceil(span(2) / this.cellSize));

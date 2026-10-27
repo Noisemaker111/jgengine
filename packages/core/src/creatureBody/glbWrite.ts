@@ -131,8 +131,8 @@ export function encodeGlb(model: GlbModel): Uint8Array {
         if (v < min[k]!) min[k] = v;
         if (v > max[k]!) max[k] = v;
       }
-      accessor.min = min;
-      accessor.max = max;
+      accessor["min"] = min;
+      accessor["max"] = max;
     }
     accessors.push(accessor);
     return accessors.length - 1;
@@ -156,7 +156,7 @@ export function encodeGlb(model: GlbModel): Uint8Array {
   const meshes: Record<string, unknown>[] = [];
   const nodes = model.nodes.map((node) => {
     const out: Record<string, unknown> = { name: node.name, translation: [...node.translation] };
-    if (node.rotation !== undefined) out.rotation = [...node.rotation];
+    if (node.rotation !== undefined) out["rotation"] = [...node.rotation];
     const parts = node.primitives.filter((part) => part.indices.length > 0);
     if (parts.length > 0) {
       meshes.push({
@@ -173,15 +173,15 @@ export function encodeGlb(model: GlbModel): Uint8Array {
           material: part.material,
         })),
       });
-      out.mesh = meshes.length - 1;
+      out["mesh"] = meshes.length - 1;
     }
-    if (node.skin !== undefined) out.skin = node.skin;
+    if (node.skin !== undefined) out["skin"] = node.skin;
     return out;
   });
   model.nodes.forEach((node, index) => {
     if (node.parent < 0) return;
     const parent = nodes[node.parent]!;
-    parent.children = [...((parent.children as number[] | undefined) ?? []), index];
+    parent["children"] = [...((parent["children"] as number[] | undefined) ?? []), index];
   });
 
   const animations = model.clips.map((clip) => {

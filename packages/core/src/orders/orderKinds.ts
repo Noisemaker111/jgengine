@@ -29,7 +29,7 @@ export interface OrderMover {
   /** Current position, or `null` if the entity is gone (despawned) -- the kind then fails cleanly. */
   position(): OrderVec3 | null;
   /** Step toward `point` this tick and report arrival/remaining distance. */
-  moveToward(point: OrderVec3, options?: { speedScale?: number; arriveRadius?: number }): OrderMoveResult;
+  moveToward(point: OrderVec3, options?: { speedScale?: number | undefined; arriveRadius?: number }): OrderMoveResult;
   /** Stop moving (release throttle / clear steering) — used by stop/hold and on cancel. */
   halt(): void;
 }

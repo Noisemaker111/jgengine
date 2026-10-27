@@ -86,7 +86,7 @@ function inside(shelter: EditorVolume, x: number, y: number, z: number): boolean
 /** Compose authored weather, shelter, accumulation, named effect intents and fire with one clock.
  * @capability authored-environment compose authored weather, shelter, accumulation, fire, flocks and effects using one simulation clock
  */
-export function createAuthoredSimulation(options: { document?: EditorDocument; timeSeconds: () => number; particles?: ParticleDirector; maxSurfaces?: number }): AuthoredSimulationRuntime {
+export function createAuthoredSimulation(options: { document?: EditorDocument | undefined; timeSeconds: () => number; particles?: ParticleDirector | undefined; maxSurfaces?: number }): AuthoredSimulationRuntime {
   let document = options.document ?? createEmptyEditorDocument();
   let config: EditorSimulation = decodeEditorSimulation(document.simulation ?? {}, document);
   let weather = createAuthoredWeather(config.weather ?? {});
@@ -167,7 +167,7 @@ export function createAuthoredSimulation(options: { document?: EditorDocument; t
     let exposure = 1;
     for (const shelter of shelters) {
       if (!inside(shelter, x, y, z)) continue;
-      const authored = shelter.meta?.exposure;
+      const authored = shelter.meta?.["exposure"];
       const amount = typeof authored === "number" && Number.isFinite(authored) ? Math.max(0, Math.min(1, authored)) : 0;
       exposure = Math.min(exposure, amount);
     }

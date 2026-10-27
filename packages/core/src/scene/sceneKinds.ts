@@ -161,7 +161,7 @@ export interface ParamPreset {
 export interface ParamSchema {
   fields: readonly ParamField[];
   /** Optional named sections; fields reference one by `group`. Ungrouped fields render first, headerless. */
-  groups?: readonly ParamGroup[];
+  groups?: readonly ParamGroup[] | undefined;
   /** Optional named field-value bundles the inspector offers as one-click applies. */
   presets?: readonly ParamPreset[];
 }

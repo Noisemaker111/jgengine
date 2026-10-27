@@ -18,7 +18,7 @@ export function parseModelHiddenNodes(value: unknown): readonly string[] | undef
  * @capability model-node-visibility read authored per-placement model subtree selections
  */
 export function authoredHiddenNodes(meta: Record<string, unknown> | undefined): readonly string[] | undefined {
-  return parseModelHiddenNodes(meta?.hiddenNodes);
+  return parseModelHiddenNodes(meta?.["hiddenNodes"]);
 }
 
 /** Apply a placement's authored visibility without erasing omitted game model defaults. */

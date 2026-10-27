@@ -489,8 +489,7 @@ export function createVehicleDynamics(
     state.vy = 0;
     state.pitchRate = 0;
     state.rollRate = 0;
-    const sags = staticSags(tuning, suspension);
-    for (let i = 0; i < 4; i += 1) state.compression[i] = sags[i]!;
+    state.compression = staticSags(tuning, suspension);
   }
 
   function baseHeight(): number {
@@ -929,24 +928,24 @@ export function createVehicleDynamics(
     out.loadRear = loadRear;
   }
 
-  const corner = [0, 0, 0, 0];
+  const corner: Corners = [0, 0, 0, 0];
 
   /** Spring + damper + anti-roll force at each corner from the current body pose; updates stored compression. */
-  function springForces(suspension: VehicleSuspensionTuning, a: number, b: number, h: number, rsf: number): number[] {
+  function springForces(suspension: VehicleSuspensionTuning, a: number, b: number, h: number, rsf: number): Corners {
     const t = tuning;
     const half = Math.max(0.15, t.trackWidth / 2);
     const [fx, fz] = forwardOf(state.heading);
     const sags = staticSags(t, suspension);
     // A leaning single-track vehicle rolls about its tire contacts, so its lean never compresses one side's springs.
     const roll = t.lean !== undefined ? 0 : state.bodyRoll;
-    for (let i = 0; i < 4; i += 1) {
+    for (const i of CORNERS) {
       const along = i < 2 ? a : -b;
       const lat = i % 2 === 0 ? -half : half;
       const px = state.x + fx * along - fz * lat;
       const pz = state.z + fz * along + fx * lat;
       const attach = state.y - Math.sin(state.bodyPitch) * along + Math.sin(roll) * lat;
-      const c = groundAt(px, pz) + suspension.rideHeight + sags[i]! - attach;
-      const rate = h > 0 ? (c - state.compression[i]!) / h : 0;
+      const c = groundAt(px, pz) + suspension.rideHeight + sags[i] - attach;
+      const rate = h > 0 ? (c - state.compression[i]) / h : 0;
       state.compression[i] = c;
       let force = 0;
       if (c > 0) {
@@ -959,13 +958,12 @@ export function createVehicleDynamics(
     }
     const antiRoll = t.lean !== undefined ? 0 : (suspension.antiRoll ?? 0);
     if (antiRoll > 0) {
-      for (let axle = 0; axle < 2; axle += 1) {
-        const left = axle * 2;
-        if (corner[left]! <= 0 || corner[left + 1]! <= 0) continue;
-        const share = axle === 0 ? rsf : 1 - rsf;
+      for (const [left, right] of AXLES) {
+        if (corner[left] <= 0 || corner[right] <= 0) continue;
+        const share = left === 0 ? rsf : 1 - rsf;
         const shift = (antiRoll * share * state.bodyRoll) / (2 * half);
-        corner[left] = Math.max(0, corner[left]! + shift);
-        corner[left + 1] = Math.max(0, corner[left + 1]! - shift);
+        corner[left] = Math.max(0, corner[left] + shift);
+        corner[right] = Math.max(0, corner[right] - shift);
       }
     }
     return corner;
@@ -998,12 +996,12 @@ export function createVehicleDynamics(
     let lift = 0;
     let pitchMoment = 0;
     let rollMoment = 0;
-    for (let i = 0; i < 4; i += 1) {
+    for (const i of CORNERS) {
       const along = i < 2 ? a : -b;
       const lat = i % 2 === 0 ? -half : half;
-      lift += corner[i]!;
-      pitchMoment -= corner[i]! * along;
-      rollMoment += corner[i]! * lat;
+      lift += corner[i];
+      pitchMoment -= corner[i] * along;
+      rollMoment += corner[i] * lat;
     }
     if (grounded) {
       pitchMoment -= m * state.longitudinalAccel * t.comHeight;
@@ -1178,8 +1176,14 @@ function emptyTelemetry(): Telemetry {
   };
 }
 
+/** One number per wheel: front-left, front-right, rear-left, rear-right. */
+type Corners = [number, number, number, number];
+type Corner = 0 | 1 | 2 | 3;
+const CORNERS: readonly Corner[] = [0, 1, 2, 3];
+const AXLES: readonly (readonly [Corner, Corner])[] = [[0, 1], [2, 3]];
+
 /** Static spring compression at each corner that holds the car level at `rideHeight`. */
-function staticSags(tuning: VehicleDynamicsTuning, suspension: VehicleSuspensionTuning): readonly number[] {
+function staticSags(tuning: VehicleDynamicsTuning, suspension: VehicleSuspensionTuning): Corners {
   const front = clamp01(tuning.frontWeight);
   const perFront = (tuning.massKg * GRAVITY * front) / 2 / Math.max(1, suspension.springRate);
   const perRear = (tuning.massKg * GRAVITY * (1 - front)) / 2 / Math.max(1, suspension.springRate);

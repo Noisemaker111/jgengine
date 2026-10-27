@@ -629,9 +629,9 @@
 
 ## @jgengine/core/model/SceneModels.draw
 
-- `EntityModel` (function): function EntityModel({ model, instanceId, measure, lodLevel = 0, }: { model: ModelConfig; instanceId?: string; measure?: MeasureTarget; /** The variant level being drawn. Past the source level, a simplified asset may have dropped a selected slot. */ lodLevel?: number; }): React.JSX.Element — Draws an entity's model at the given LOD level, with animation, paint layer and bounds measurement.
+- `EntityModel` (function): function EntityModel({ model, instanceId, measure, lodLevel = 0, }: { model: ModelConfig; instanceId?: string | undefined; measure?: MeasureTarget | undefined; /** The variant level being drawn. Past the source level, a simplified asset may have dropped a selected slot. */ lodLevel?: number; }): Rea… — Draws an entity's model at the given LOD level, with animation, paint layer and bounds measurement.
 - `EntitySprite` (function): function EntitySprite({ sprite }: { sprite: EntitySpriteConfig }): React.JSX.Element — Draws an entity as a camera-facing sprite, playing its atlas clip when it has one.
-- `IsolatedEntityModel` (function): function IsolatedEntityModel({ model, instanceId, measure, fallback, }: { model: ModelConfig; instanceId?: string; measure?: MeasureTarget; fallback?: ReactNode; }): React.JSX.Element — Draws one entity model from its own loaded copy, for models that cannot share a batched instance.
+- `IsolatedEntityModel` (function): function IsolatedEntityModel({ model, instanceId, measure, fallback, }: { model: ModelConfig; instanceId?: string | undefined; measure?: MeasureTarget; fallback?: ReactNode; }): React.JSX.Element — Draws one entity model from its own loaded copy, for models that cannot share a batched instance.
 - `MeasureTarget` (interface): interface MeasureTarget — Where a measured model reports its rendered bounds: an entity kind or an object catalog id.
 
 ## @jgengine/core/model/measureBounds.draw
@@ -667,7 +667,7 @@
 - `MaterialCache` (interface): interface MaterialCache — A model's standard materials and the seed color they were tinted from.
 - `PAINT_TEXTURE_SIZE` (const): const PAINT_TEXTURE_SIZE: 512 — Edge length in pixels of the canvas a model's paint layer draws into.
 - `PaintCanvas` (interface): interface PaintCanvas — The canvas, 2D context and texture behind a model's paint layer.
-- `cloneModelScene` (function): function cloneModelScene(source: THREE.Object3D, options?: { cloneMaterials?: boolean; shadows?: ModelShadowMode; surfaceDetail?: boolean }): THREE.Object3D — Clone a model with independent pose and materials, retaining shared geometry and textures.
+- `cloneModelScene` (function): function cloneModelScene(source: THREE.Object3D, options?: { cloneMaterials?: boolean; shadows?: ModelShadowMode | undefined; surfaceDetail?: boolean | undefined }): THREE.Object3D — Clone a model with independent pose and materials, retaining shared geometry and textures.
 - `disposeModelScene` (function): function disposeModelScene(root: THREE.Object3D): void — Release materials and bone textures owned by `cloneModelScene`; shared assets and attached models remain owned by their callers.
 
 ## @jgengine/core/model/modelWind.draw

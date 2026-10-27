@@ -50,7 +50,7 @@ export interface RideDefinition {
   readonly rideSeconds: number;
   readonly unloadSeconds: number;
   /** Omit for a ride that never breaks down. */
-  readonly breakdown?: RideBreakdown;
+  readonly breakdown?: RideBreakdown | undefined;
 }
 
 /** A ride's line as a game or the devtools overlay reads it. */
@@ -620,9 +620,9 @@ export function rideChoiceOptions(
   const range = policy.range ?? DEFAULT_RIDE_RATING_RANGE;
   const terms =
     policy.funNeed === undefined
-      ? undefined
-      : [{ need: policy.funNeed, curve: policy.funCurve ?? DEFAULT_RIDE_FUN_CURVE, weight: policy.funWeight ?? 1 }];
-  return rides.map((ride) => ({ id: ride.id, base: rideAppeal(ride.ratings, taste, range), terms }));
+      ? {}
+      : { terms: [{ need: policy.funNeed, curve: policy.funCurve ?? DEFAULT_RIDE_FUN_CURVE, weight: policy.funWeight ?? 1 }] };
+  return rides.map((ride) => ({ id: ride.id, base: rideAppeal(ride.ratings, taste, range), ...terms }));
 }
 
 /** The live queue a ride-choice candidate is costed against. {@link RideSystem} satisfies this. */

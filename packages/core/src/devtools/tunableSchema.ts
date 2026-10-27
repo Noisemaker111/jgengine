@@ -211,7 +211,7 @@ export function isIntervalShape(value: unknown): value is TunableInterval {
   const record = value as Record<string, unknown>;
   const keys = Object.keys(record);
   if (keys.length !== 2 || !keys.includes("min") || !keys.includes("max")) return false;
-  return isFiniteNumber(record.min) && isFiniteNumber(record.max);
+  return isFiniteNumber(record["min"]) && isFiniteNumber(record["max"]);
 }
 
 /** @internal */
@@ -263,7 +263,7 @@ export function parseVec(
 /** @internal */
 export function parseInterval(
   raw: unknown,
-  options: { min?: number; max?: number; step?: number; integer?: boolean },
+  options: { min?: number | undefined; max?: number | undefined; step?: number | undefined; integer?: boolean | undefined },
 ): TunableInterval | null {
   if (!isIntervalShape(raw)) return null;
   let lo = raw.min;
@@ -309,7 +309,7 @@ export function convertAngle(value: number, from: AngleUnit, to: AngleUnit): num
 export function normalizeAngle(
   value: number,
   unit: AngleUnit,
-  options: { min?: number; max?: number; wrap?: boolean },
+  options: { min?: number | undefined; max?: number | undefined; wrap?: boolean | undefined },
 ): number {
   let next = value;
   if (options.wrap === true) {
@@ -458,16 +458,16 @@ export function validateControlValue(
   kind: DevtoolsControlKind,
   raw: unknown,
   context: {
-    min?: number;
-    max?: number;
-    step?: number;
-    integer?: boolean;
-    unit?: AngleUnit;
-    wrap?: boolean;
-    choices?: readonly TunableChoice[];
-    options?: readonly unknown[];
-    axisBounds?: ResolvedAxisBounds;
-    alpha?: boolean;
+    min?: number | undefined;
+    max?: number | undefined;
+    step?: number | undefined;
+    integer?: boolean | undefined;
+    unit?: AngleUnit | undefined;
+    wrap?: boolean | undefined;
+    choices?: readonly TunableChoice[] | undefined;
+    options?: readonly unknown[] | undefined;
+    axisBounds?: ResolvedAxisBounds | undefined;
+    alpha?: boolean | undefined;
   },
 ): { ok: true; value: unknown } | { ok: false; reason: string } {
   switch (kind) {
@@ -534,7 +534,7 @@ export interface DevtoolsOverrides {
   version: number;
   enabled: string[];
   values: Record<string, unknown>;
-  schemas?: Record<string, { kind: DevtoolsControlKind; schemaVersion?: number }>;
+  schemas?: Record<string, { kind: DevtoolsControlKind; schemaVersion?: number | undefined }> | undefined;
 }
 
 export interface OverrideApplyDiagnostic {
@@ -553,25 +553,25 @@ export function parseOverridesPayload(raw: unknown): OverrideParseResult {
     return { overrides: null, diagnostics: ["overrides payload is not an object"] };
   }
   const record = raw as Record<string, unknown>;
-  if (!Array.isArray(record.enabled) || typeof record.values !== "object" || record.values === null || Array.isArray(record.values)) {
+  if (!Array.isArray(record["enabled"]) || typeof record["values"] !== "object" || record["values"] === null || Array.isArray(record["values"])) {
     return { overrides: null, diagnostics: ["overrides missing enabled[] or values{}"] };
   }
-  const version = typeof record.version === "number" ? record.version : 0;
+  const version = typeof record["version"] === "number" ? record["version"] : 0;
   if (version > OVERRIDES_FORMAT_VERSION) {
     return {
       overrides: null,
       diagnostics: [`overrides version ${version} is newer than supported ${OVERRIDES_FORMAT_VERSION}`],
     };
   }
-  const enabled = record.enabled.filter((id): id is string => typeof id === "string");
+  const enabled = record["enabled"].filter((id): id is string => typeof id === "string");
   const values: Record<string, unknown> = {};
-  for (const [key, value] of Object.entries(record.values as Record<string, unknown>)) {
+  for (const [key, value] of Object.entries(record["values"] as Record<string, unknown>)) {
     values[key] = value;
   }
   let schemas: DevtoolsOverrides["schemas"];
-  if (typeof record.schemas === "object" && record.schemas !== null && !Array.isArray(record.schemas)) {
+  if (typeof record["schemas"] === "object" && record["schemas"] !== null && !Array.isArray(record["schemas"])) {
     schemas = {};
-    for (const [key, entry] of Object.entries(record.schemas as Record<string, unknown>)) {
+    for (const [key, entry] of Object.entries(record["schemas"] as Record<string, unknown>)) {
       if (entry !== null && typeof entry === "object" && !Array.isArray(entry)) {
         const kind = (entry as { kind?: unknown }).kind;
         if (typeof kind === "string") {

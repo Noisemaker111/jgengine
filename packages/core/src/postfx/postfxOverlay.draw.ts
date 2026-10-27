@@ -17,7 +17,7 @@ export const POSTFX_OVERLAY_USERDATA: { readonly jgPostfxOverlay: true } = {
  * @internal
  */
 export function isPostfxOverlay(object: { userData?: Record<string, unknown> }): boolean {
-  return object.userData?.jgPostfxOverlay === true;
+  return object.userData?.["jgPostfxOverlay"] === true;
 }
 
 /** Whether a normal-material prepass must leave `object` out: three's AO pass cannot describe these. */

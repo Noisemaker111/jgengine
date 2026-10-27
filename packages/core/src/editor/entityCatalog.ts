@@ -84,10 +84,10 @@ export function entityEntryFromCatalog(
   const schema =
     document.catalogs.find((catalog) => catalog.id === ENTITY_CATALOG_ID)?.schema ?? entityDefinitionSchema;
   const params = parseParams(schema, meta);
-  const role = params.role as CatalogEntityRole;
-  const maxHealth = params.maxHealth as number;
-  const walkSpeed = params.walkSpeed as number;
-  const scale = params.scale as number;
+  const role = params["role"] as CatalogEntityRole;
+  const maxHealth = params["maxHealth"] as number;
+  const walkSpeed = params["walkSpeed"] as number;
+  const scale = params["scale"] as number;
   const entry: GameContextEntityEntry = {
     role,
     stats: { health: { max: maxHealth, min: 0 } },

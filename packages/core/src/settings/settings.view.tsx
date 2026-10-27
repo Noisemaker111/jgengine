@@ -47,11 +47,11 @@ export interface SettingsRow {
   label: string;
   kind: SettingKind;
   value: SettingValue;
-  min?: number;
-  max?: number;
-  step?: number;
-  options?: readonly SettingOption[];
-  format?: (value: number) => string;
+  min?: number | undefined;
+  max?: number | undefined;
+  step?: number | undefined;
+  options?: readonly SettingOption[] | undefined;
+  format?: ((value: number) => string) | undefined;
   set: (value: SettingValue) => void;
 }
 
@@ -78,7 +78,7 @@ export interface SettingsActionView {
   id: string;
   label: string;
   kind: "default" | "danger";
-  description?: string;
+  description?: string | undefined;
   run: () => void;
 }
 

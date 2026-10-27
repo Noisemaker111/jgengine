@@ -67,8 +67,7 @@ export function gearScore(
     if (item === null || item === undefined) continue;
     let slotScore = 0;
     const contributions = lootStatContributions(item.stats, options);
-    for (const stat of Object.keys(contributions)) {
-      const contribution = contributions[stat];
+    for (const [stat, contribution] of Object.entries(contributions)) {
       slotScore += contribution;
       byStat[stat] = (byStat[stat] ?? 0) + contribution;
     }

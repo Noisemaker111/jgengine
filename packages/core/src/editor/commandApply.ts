@@ -365,7 +365,7 @@ const mutationHandlers: MutationHandlers = {
         ...marker,
         ...command.patch,
         position: command.patch.position === undefined ? marker.position : { ...command.patch.position },
-        meta: command.patch.meta === undefined ? marker.meta : { ...command.patch.meta },
+        ...(command.patch.meta === undefined ? {} : { meta: { ...command.patch.meta } }),
       };
     });
     return { ...state, document: { ...state.document, markers } };
@@ -377,11 +377,8 @@ const mutationHandlers: MutationHandlers = {
         ...volume,
         ...command.patch,
         center: command.patch.center === undefined ? volume.center : { ...command.patch.center },
-        halfExtents:
-          command.patch.halfExtents === undefined
-            ? volume.halfExtents
-            : { ...command.patch.halfExtents },
-        meta: command.patch.meta === undefined ? volume.meta : { ...command.patch.meta },
+        ...(command.patch.halfExtents === undefined ? {} : { halfExtents: { ...command.patch.halfExtents } }),
+        ...(command.patch.meta === undefined ? {} : { meta: { ...command.patch.meta } }),
       };
     });
     return { ...state, document: { ...state.document, volumes } };
@@ -396,7 +393,7 @@ const mutationHandlers: MutationHandlers = {
           command.patch.points === undefined
             ? path.points
             : command.patch.points.map((point) => ({ ...point })),
-        meta: command.patch.meta === undefined ? path.meta : { ...command.patch.meta },
+        ...(command.patch.meta === undefined ? {} : { meta: { ...command.patch.meta } }),
       };
     });
     return { ...state, document: { ...state.document, paths } };
@@ -408,7 +405,7 @@ const mutationHandlers: MutationHandlers = {
         ...note,
         ...command.patch,
         position: command.patch.position === undefined ? note.position : { ...command.patch.position },
-        meta: command.patch.meta === undefined ? note.meta : { ...command.patch.meta },
+        ...(command.patch.meta === undefined ? {} : { meta: { ...command.patch.meta } }),
       };
     });
     return { ...state, document: { ...state.document, annotations } };
@@ -561,7 +558,8 @@ const mutationHandlers: MutationHandlers = {
     if (!decoded.ok) {
       throw new Error(`invalid editor environment: ${decoded.errors.map((error) => `${error.path} ${error.message}`).join("; ")}`);
     }
-    return { ...state, document: { ...state.document, environment: decoded.document.environment } };
+    const { environment } = decoded.document;
+    return { ...state, document: { ...state.document, ...(environment === undefined ? {} : { environment }) } };
   },
   clearTerrain: (state) => {
     const nextDoc: EditorDocument = {
@@ -694,10 +692,10 @@ const mutationHandlers: MutationHandlers = {
   },
   detachPrefabInstance: (state, command) => {
     const strip = <T extends { meta?: Record<string, unknown> }>(item: T): T => {
-      if (item.meta?.prefabInstanceId !== command.instanceId) return item;
+      if (item.meta?.["prefabInstanceId"] !== command.instanceId) return item;
       const meta = { ...item.meta };
-      delete meta.prefabId;
-      delete meta.prefabInstanceId;
+      delete meta["prefabId"];
+      delete meta["prefabInstanceId"];
       return { ...item, meta };
     };
     return { ...state, document: { ...state.document, ...mapPlaceables(state.document, strip) } };
@@ -877,8 +875,8 @@ const mutationHandlers: MutationHandlers = {
     const ids = new Set(command.ids);
     for (const id of ids) if (isEditorObjectLocked(state.document, id)) throw new TypeError(`object is locked: ${id}`);
     const markers = state.document.markers.map((marker) => {
-      if (!ids.has(marker.id) || marker.meta?.materialAssignments === undefined) return marker;
-      const meta = { ...marker.meta }; delete meta.materialAssignments;
+      if (!ids.has(marker.id) || marker.meta?.["materialAssignments"] === undefined) return marker;
+      const meta = { ...marker.meta }; delete meta["materialAssignments"];
       return { ...marker, meta };
     });
     return { ...state, document: { ...state.document, markers } };

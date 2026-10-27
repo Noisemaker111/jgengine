@@ -12,7 +12,7 @@ export interface PipelineContext<V> {
 
 export interface TraceStep<V> {
   id: string;
-  source?: string;
+  source?: string | undefined;
   index: number;
   before: V;
   after: V;

@@ -272,7 +272,7 @@ function ObjectMarker({
 function GroundPlane() {
   const geometry = useMemo(() => {
     const next = new THREE.PlaneGeometry(GROUND_SIZE, GROUND_SIZE, GROUND_SEGMENTS, GROUND_SEGMENTS);
-    const positions = next.attributes.position;
+    const positions = next.getAttribute("position");
     const base = new THREE.Color("#33452f");
     const high = new THREE.Color("#4a5c3a");
     const colors = new Float32Array(positions.count * 3);

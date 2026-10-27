@@ -72,12 +72,12 @@ export interface KitPromptProps {
   label: ReactNode;
   device: KitDevice;
   /** 0..1 hold progress for hold-to-confirm. */
-  progress?: number;
-  tone?: KitTone;
+  progress?: number | undefined;
+  tone?: KitTone | undefined;
   /** Touch: the prompt itself is the control. When set the prompt renders as a `<button>`. */
-  onActivate?: () => void;
-  className?: string;
-  style?: CSSProperties;
+  onActivate?: (() => void) | undefined;
+  className?: string | undefined;
+  style?: CSSProperties | undefined;
 }
 
 /** A short-lived message. */

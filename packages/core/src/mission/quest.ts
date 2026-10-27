@@ -279,11 +279,10 @@ export function createQuestJournal(deps: QuestJournalDeps): QuestJournal {
   }
 
   function applyRewards(userId: string, rewards: QuestRewards): { reason: string } | null {
+    const grantItems = deps.rewards.grantItems;
     return applyQuestRewards(rewards, {
       grantItem: (inventoryId, itemId, count) => deps.rewards.grantItem(userId, inventoryId, itemId, count),
-      grantItems: deps.rewards.grantItems === undefined
-        ? undefined
-        : (items) => deps.rewards.grantItems!(userId, items),
+      ...(grantItems === undefined ? {} : { grantItems: (items) => grantItems(userId, items) }),
       grantXp: (amount) => deps.rewards.grantXp(userId, amount),
       grantEconomy: (currencyId, amount) => deps.rewards.grantEconomy(userId, currencyId, amount),
       grantUnlock: (unlockId) => deps.rewards.grantUnlock(userId, unlockId),

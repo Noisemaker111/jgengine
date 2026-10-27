@@ -23,7 +23,7 @@ export interface PlacementRequest {
 export interface PlacementRules {
   bounds?: Aabb;
   obstacles?: readonly PlacementObstacle[];
-  snap?: number;
+  snap?: number | undefined;
   /** Authoritative ownership/claim validation for this footprint. */
   territory?: (aabb: Aabb) => { ok: boolean };
 }

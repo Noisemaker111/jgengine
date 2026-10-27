@@ -127,7 +127,7 @@ export function createRunHaul<TId extends string>(config: RunHaulConfig<TId>): R
       const run = inventories.state(runId);
       for (let slot = 0; slot < run.slots.length; slot += 1) {
         const stack = inventories.state(runId).slots[slot];
-        if (stack === null) continue;
+        if (stack === null || stack === undefined) continue;
         const put = inventories.put(stashId, stack.itemId, stack.count);
         if (put.status !== "ok") {
           refused.push({ itemId: stack.itemId, count: stack.count });

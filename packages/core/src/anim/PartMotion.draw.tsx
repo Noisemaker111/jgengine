@@ -33,7 +33,7 @@ export function PartMotionRig({
 }: {
   parts: readonly ModelPart[];
   model: ModelConfig;
-  instanceId?: string;
+  instanceId?: string | undefined;
   /** Renders one part's model content (the shell passes its part renderer to avoid an import cycle). */
   renderPart: (part: ModelPart, index: number) => ReactNode;
   children: ReactNode;

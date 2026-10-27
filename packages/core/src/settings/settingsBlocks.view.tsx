@@ -36,7 +36,7 @@ const valueStyle: CSSProperties = {
   textAlign: "right",
 };
 
-function RowShell({ label, children, itemProps }: { label: string; children: ReactNode; itemProps?: MenuNavItemProps }): ReactNode {
+function RowShell({ label, children, itemProps }: { label: string; children: ReactNode; itemProps?: MenuNavItemProps | undefined }): ReactNode {
   return (
     <div data-settings-row="" style={rowStyle} {...itemProps}>
       <span style={labelStyle}>{label}</span>
@@ -77,7 +77,7 @@ export function adjustSettingRow(row: SettingsRow, delta: -1 | 1): SettingValue 
  *
  * @capability settings-slider a settings slider row that mirrors locally and persists on release
  */
-export function SettingsSlider({ row, itemProps }: { row: SettingsRow; itemProps?: MenuNavItemProps }): ReactNode {
+export function SettingsSlider({ row, itemProps }: { row: SettingsRow; itemProps?: MenuNavItemProps | undefined }): ReactNode {
   const { value, onInput, flush } = useDebouncedCommit(Number(row.value), (next) => row.set(next));
   const readout = row.format?.(value) ?? String(value);
   return (
@@ -100,7 +100,7 @@ export function SettingsSlider({ row, itemProps }: { row: SettingsRow; itemProps
 }
 
 /** One on/off row from a {@link SettingsRow}. */
-export function SettingsToggle({ row, itemProps }: { row: SettingsRow; itemProps?: MenuNavItemProps }): ReactNode {
+export function SettingsToggle({ row, itemProps }: { row: SettingsRow; itemProps?: MenuNavItemProps | undefined }): ReactNode {
   const on = Boolean(row.value);
   return (
     <RowShell label={row.label} itemProps={itemProps}>
@@ -140,7 +140,7 @@ export function SettingsToggle({ row, itemProps }: { row: SettingsRow; itemProps
 }
 
 /** One choice row from a {@link SettingsRow}, rendered as a pressed-state option group. */
-export function SettingsSelect({ row, itemProps }: { row: SettingsRow; itemProps?: MenuNavItemProps }): ReactNode {
+export function SettingsSelect({ row, itemProps }: { row: SettingsRow; itemProps?: MenuNavItemProps | undefined }): ReactNode {
   const current = String(row.value);
   return (
     <RowShell label={row.label} itemProps={itemProps}>
@@ -188,7 +188,7 @@ export interface SettingsKeybindControlProps {
   /** This row is waiting for a key. */
   armed?: boolean;
   /** Click on the binding — the caller arms capture. */
-  onArm?: () => void;
+  onArm?: (() => void) | undefined;
   /** Props the caller can spread onto the binding button for focus tracking. */
   buttonProps?: Record<string, unknown>;
   /** Props for the row element (a `useMenuNav` item). */

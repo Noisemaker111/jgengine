@@ -25,7 +25,7 @@ export function HudThemeRoot({
   accessibility,
   children,
 }: {
-  theme?: HudTheme | false;
+  theme?: HudTheme | false | undefined;
   accessibility?: Partial<AccessibilityState>;
   children?: ReactNode;
 }): ReactNode {

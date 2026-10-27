@@ -147,9 +147,9 @@ function applyRimLight(target: THREE.MeshStandardMaterial, rim: ModelRimLight): 
   previousKey.call(target);
   target.onBeforeCompile = (shader, renderer) => {
     previousCompile.call(target, shader, renderer);
-    shader.uniforms.uJgRimColor = { value: color };
-    shader.uniforms.uJgRimStrength = { value: strength };
-    shader.uniforms.uJgRimPower = { value: power };
+    shader.uniforms["uJgRimColor"] = { value: color };
+    shader.uniforms["uJgRimStrength"] = { value: strength };
+    shader.uniforms["uJgRimPower"] = { value: power };
     shader.fragmentShader = shader.fragmentShader
       .replace(
         "#include <common>",

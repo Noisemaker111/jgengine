@@ -186,7 +186,7 @@ export function NoticeStack({
   feed?: NoticeFeed;
   placement?: NoticePlacement;
   /** Distance from the band's screen edge (px or CSS length), added to the safe-area inset. */
-  offset?: number | string;
+  offset?: number | string | undefined;
   /** Move a top/bottom stack clear of registered HUD panels and touch controls in its column. Default true. */
   avoidHud?: boolean;
   /** Default 85: above `ModalHost` (80) and `PanelHost` (40). */

@@ -69,8 +69,9 @@ export function createLaneBoardState<C>(config: LaneBoardConfig<C>): LaneBoardSt
   return { lanes };
 }
 
-function validLane<C>(state: LaneBoardState<C>, lane: number): boolean {
-  return Number.isInteger(lane) && lane >= 0 && lane < state.lanes.length;
+/** The cells of lane `lane`, or undefined when `lane` is not a lane index. */
+function laneAt<C>(state: LaneBoardState<C>, lane: number): LaneCells<C> | undefined {
+  return Number.isInteger(lane) ? state.lanes[lane] : undefined;
 }
 
 /** @internal */
@@ -81,11 +82,11 @@ export function placeCard<C>(
   side: Side,
   card: C,
 ): LaneResult<C> {
-  if (!validLane(state, lane)) return { status: "rejected", reason: "invalid-lane" };
+  const cell = laneAt(state, lane);
+  if (cell === undefined) return { status: "rejected", reason: "invalid-lane" };
   if (!config.sides.includes(side)) return { status: "rejected", reason: "invalid-side" };
   const lanes = state.lanes.slice();
-  const cell = lanes[lane];
-  lanes[lane] = { ...cell, [side]: [...cell[side], card] };
+  lanes[lane] = { ...cell, [side]: [...(cell[side] ?? []), card] };
   return { status: "ok", state: { lanes } };
 }
 
@@ -96,11 +97,12 @@ export function removeCard<C>(
   side: Side,
   predicate: (card: C, index: number) => boolean,
 ): LaneResult<C> {
-  if (!validLane(state, lane)) return { status: "rejected", reason: "invalid-lane" };
-  const cell = state.lanes[lane];
-  if (cell[side] === undefined) return { status: "rejected", reason: "invalid-side" };
+  const cell = laneAt(state, lane);
+  if (cell === undefined) return { status: "rejected", reason: "invalid-lane" };
+  const cards = cell[side];
+  if (cards === undefined) return { status: "rejected", reason: "invalid-side" };
   const lanes = state.lanes.slice();
-  lanes[lane] = { ...cell, [side]: cell[side].filter((card, index) => !predicate(card, index)) };
+  lanes[lane] = { ...cell, [side]: cards.filter((card, index) => !predicate(card, index)) };
   return { status: "ok", state: { lanes } };
 }
 
@@ -152,7 +154,7 @@ export function boardTotals<C>(
   for (const side of config.sides) totals[side] = 0;
   for (let lane = 0; lane < state.lanes.length; lane++) {
     for (const side of config.sides) {
-      totals[side] += laneAggregate(state, config, lane, side).total;
+      totals[side] = (totals[side] ?? 0) + laneAggregate(state, config, lane, side).total;
     }
   }
   return totals;
@@ -167,7 +169,7 @@ export function lanesWon<C>(
   for (const side of config.sides) won[side] = 0;
   for (let lane = 0; lane < state.lanes.length; lane++) {
     const outcome = laneOutcome(state, config, lane);
-    if (outcome.winner !== null) won[outcome.winner] += 1;
+    if (outcome.winner !== null) won[outcome.winner] = (won[outcome.winner] ?? 0) + 1;
   }
   return won;
 }

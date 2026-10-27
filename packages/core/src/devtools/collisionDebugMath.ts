@@ -212,7 +212,7 @@ export interface ComputeAimLaserInput {
   collidersOf?(instanceId: string): EntityColliderSet | null | undefined;
   from: string;
   aim: Aim;
-  originPolicy?: ShotOriginPolicy;
+  originPolicy?: ShotOriginPolicy | undefined;
   maxDistance: number;
   counters?: { queries: number };
 }

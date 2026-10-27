@@ -1,6 +1,6 @@
 export interface UnlockDef {
   id: string;
-  category?: string;
+  category?: string | undefined;
 }
 
 export type UnlockState = readonly string[];

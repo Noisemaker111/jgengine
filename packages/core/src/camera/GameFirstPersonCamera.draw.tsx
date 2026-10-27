@@ -39,12 +39,12 @@ export interface ViewmodelProps {
 export interface GameFirstPersonCameraProps {
   yawRef: MutableRefObject<number>;
   pitchRef: MutableRefObject<number>;
-  config?: FirstPersonCameraConfig;
-  followEntityId?: string;
+  config?: FirstPersonCameraConfig | undefined;
+  followEntityId?: string | undefined;
   /** Custom viewmodel component replacing the built-in three-mesh gun, rendered inside the same camera-locked, muzzle-tracked anchor. Ignored when `config.viewmodel === false`. */
-  viewmodel?: ComponentType<ViewmodelProps>;
+  viewmodel?: ComponentType<ViewmodelProps> | undefined;
   /** Held-weapon source (`GameCameraConfig.weapon`): poses the viewmodel and adds recoil to the look. */
-  weapon?: (entityId: string) => CameraWeaponView | null;
+  weapon?: ((entityId: string) => CameraWeaponView | null) | undefined;
 }
 
 /** First-person camera locked to the followed entity's eyes, with mouse look, head bob and the muzzle-tracked viewmodel. */

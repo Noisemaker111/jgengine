@@ -214,20 +214,20 @@ export function composeMassing(b: MassingSpec): MassingBody[] {
       const p = capsuleProfile(i);
       const podH = Math.min(rowH * (0.62 + articulation * 0.12), b.floorHeight * 1.65);
       for (const side of [-1, 1])
-        for (let lane = 0; lane < spines; lane++) {
+        for (const [lane, laneOffset] of laneZ.entries()) {
           const rhythm = ((seed + i * 17 + lane * 11 + (side > 0 ? 3 : 0)) % 5) - 2;
           const projection = 1 + rhythm * articulation * 0.045;
           const podW = clamp(basePodW * p.reachScale * projection, 6.2, 28);
           const podD = clamp(basePodD * p.depthScale * (1 + (((rhythm + 2) % 3) - 1) * articulation * 0.035), 4.4, 11);
           const reach = coreW * 0.48 + podW * 0.44 + b.cantilever * 0.07 * (1 - p.t * 0.35);
           const x = p.driftX + side * reach;
-          const z = p.driftZ + laneZ[lane] + (i % 2 ? podD * 0.12 : -podD * 0.12) + rhythm * articulation * 0.11;
+          const z = p.driftZ + laneOffset + (i % 2 ? podD * 0.12 : -podD * 0.12) + rhythm * articulation * 0.11;
           const y = base + rowH * (i + 0.5) + rhythm * rowH * articulation * 0.018;
           bodies.push({ x, y, z, w: podW, h: podH, d: podD, ry: p.turn, kind: "capsule", facade: false, role: "mass" });
           bodies.push({
             x: p.driftX + side * reach * 0.48,
             y,
-            z: p.driftZ + laneZ[lane],
+            z: p.driftZ + laneOffset,
             w: reach * 0.94,
             h: Math.max(0.48, podH * 0.18),
             d: podD * 0.58,
@@ -355,8 +355,8 @@ export function composeMassing(b: MassingSpec): MassingBody[] {
       const y = base + Math.min(usable - 0.45, i * levelH) + 0.3;
       bodies.push({ x: 0, y, z: -frameDepth / 2, w: b.width + post, h: 0.72, d: post, facade: false, role: "transfer" });
       bodies.push({ x: 0, y, z: frameDepth / 2, w: b.width + post, h: 0.72, d: post, facade: false, role: "transfer" });
-      for (let bay = 0; bay <= bays; bay += 2)
-        bodies.push({ x: frameXs[bay], y, z: 0, w: post, h: 0.72, d: frameDepth + post, facade: false, role: "transfer" });
+      for (const x of frameXs.filter((_, bay) => bay % 2 === 0))
+        bodies.push({ x, y, z: 0, w: post, h: 0.72, d: frameDepth + post, facade: false, role: "transfer" });
     }
     for (let level = 0; level < levels; level++)
       for (let bay = 0; bay < bays; bay++) {

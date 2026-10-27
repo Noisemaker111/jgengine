@@ -17,6 +17,8 @@ import { CascadedShadows, DEFAULT_SHADOW_RADIUS } from "./CascadedShadows.draw";
 import { cullSmallShadowCasters, MIN_SHADOW_CASTER_RADIUS, type ShadowCasterCull } from "./shadowCasters.draw";
 import { minShadowCasterRadius, resolveCascadeCount, resolveShadowMapSize, SHADOW_CASTER_RADIUS_REFERENCE_MAP } from "./shadowTiers";
 
+/** three.js lights default to white; an unset light colour means this. */
+const LIGHT_DEFAULT_COLOR = "#ffffff";
 const DEFAULT_BACKDROP_FOG_COLOR = "#1a1c22";
 /** Default cap for combined dynamic point and spot lights. */
 export const POINT_LIGHT_BUDGET = 8;
@@ -55,7 +57,7 @@ function usesCascades(entry: DirectionalLightingConfig): boolean {
   return (entry.castShadow ?? false) && (entry.cascades ?? 1) > 1;
 }
 
-function DirectionalShadowLight({ entry, profile, modulation }: { entry: DirectionalLightingConfig; profile?: GraphicsProfile; modulation?: DaylightModulation }) {
+function DirectionalShadowLight({ entry, profile, modulation }: { entry: DirectionalLightingConfig; profile?: GraphicsProfile | undefined; modulation?: DaylightModulation }) {
   const resolved = profile === undefined
     ? entry
     : {
@@ -80,7 +82,7 @@ export function syncShadowProjection(light: DirectionalLight): void {
   light.shadow.camera.updateProjectionMatrix();
 }
 
-function SingleShadowLight({ entry, modulation }: { entry: DirectionalLightingConfig; modulation?: DaylightModulation }) {
+function SingleShadowLight({ entry, modulation }: { entry: DirectionalLightingConfig; modulation?: DaylightModulation | undefined }) {
   const lightRef = useRef<DirectionalLight>(null);
   const size = entry.shadowCameraSize ?? 40;
   const far = Math.max(200, size * 6);
@@ -106,7 +108,7 @@ function SingleShadowLight({ entry, modulation }: { entry: DirectionalLightingCo
       ref={lightRef}
       position={[entry.position[0], entry.position[1], entry.position[2]]}
       intensity={entry.intensity ?? 1.3}
-      color={entry.color}
+      color={entry.color ?? LIGHT_DEFAULT_COLOR}
       castShadow={entry.castShadow ?? false}
       shadow-mapSize-width={mapSize}
       shadow-mapSize-height={mapSize}
@@ -176,7 +178,7 @@ export function ConfiguredLighting({
   return (
     <>
       {lighting.ambient !== undefined ? (
-        <ambientLight ref={ambientRef} color={lighting.ambient.color} intensity={baseAmbient} />
+        <ambientLight ref={ambientRef} color={lighting.ambient.color ?? LIGHT_DEFAULT_COLOR} intensity={baseAmbient} />
       ) : null}
       {lighting.hemisphere !== undefined ? (
         <hemisphereLight
@@ -196,14 +198,14 @@ export function ConfiguredLighting({
           key={index}
           position={[entry.position[0], entry.position[1], entry.position[2]]}
           intensity={entry.intensity ?? 1}
-          color={entry.color}
+          color={entry.color ?? LIGHT_DEFAULT_COLOR}
           distance={entry.distance ?? 0}
           decay={entry.decay ?? 2}
           castShadow={entry.castShadow ?? false}
         />
       ))}
       {dynamic.spot.map((entry, index) => (
-        <spotLight key={index} position={[entry.position[0], entry.position[1], entry.position[2]]} intensity={entry.intensity ?? 1} color={entry.color} distance={entry.distance ?? 0} decay={entry.decay ?? 2} angle={entry.angle ?? Math.PI / 6} penumbra={entry.penumbra ?? 0} castShadow={entry.castShadow ?? false} target-position={[...(entry.target ?? [0, 0, 0])]} />
+        <spotLight key={index} position={[entry.position[0], entry.position[1], entry.position[2]]} intensity={entry.intensity ?? 1} color={entry.color ?? LIGHT_DEFAULT_COLOR} distance={entry.distance ?? 0} decay={entry.decay ?? 2} angle={entry.angle ?? Math.PI / 6} penumbra={entry.penumbra ?? 0} castShadow={entry.castShadow ?? false} target-position={[...(entry.target ?? [0, 0, 0])]} />
       ))}
     </>
   );

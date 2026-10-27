@@ -92,7 +92,7 @@ function applyFabric(material: THREE.MeshStandardMaterial, asset: MaterialAsset)
   const previousKey = material.customProgramCacheKey();
   material.onBeforeCompile = (shader, renderer) => {
     previousCompile.call(material, shader, renderer);
-    shader.uniforms.uJgFabric = { value: new THREE.Vector4(scale, strength, variation, direction) };
+    shader.uniforms["uJgFabric"] = { value: new THREE.Vector4(scale, strength, variation, direction) };
     shader.vertexShader = shader.vertexShader.replace("#include <common>", "#include <common>\nvarying vec2 vJgFabricUv;").replace("#include <uv_vertex>", "#include <uv_vertex>\nvJgFabricUv = uv;");
     shader.fragmentShader = shader.fragmentShader.replace("#include <common>", "#include <common>\nvarying vec2 vJgFabricUv;\nuniform vec4 uJgFabric;")
       .replace("#include <roughnessmap_fragment>", `#include <roughnessmap_fragment>
@@ -120,15 +120,15 @@ function applyHair(material: THREE.MeshStandardMaterial, asset: MaterialAsset): 
   const strength = hair.backlightStrength ?? 0.25;
   if (strength === 0) return;
   const tint = new THREE.Color(hair.backlightColor ?? asset.surface.color ?? "#ffffff");
-  material.userData.jgHairBacklightStrength = strength;
+  material.userData["jgHairBacklightStrength"] = strength;
   const previousCompile = material.onBeforeCompile;
   const previousKey = material.customProgramCacheKey();
   material.onBeforeCompile = function (this: THREE.MeshStandardMaterial, shader, renderer) {
     previousCompile.call(this, shader, renderer);
-    const uniform = { value: strength * ((this.userData.jgHairLightExposure as number | undefined) ?? 1) };
-    this.userData.jgHairBacklightUniform = uniform;
-    shader.uniforms.uJgHairBacklight = uniform;
-    shader.uniforms.uJgHairTint = { value: tint };
+    const uniform = { value: strength * ((this.userData["jgHairLightExposure"] as number | undefined) ?? 1) };
+    this.userData["jgHairBacklightUniform"] = uniform;
+    shader.uniforms["uJgHairBacklight"] = uniform;
+    shader.uniforms["uJgHairTint"] = { value: tint };
     const directLighting = /void\s+RE_Direct_Physical\s*\([^)]*\)\s*\{/;
     const chunk = THREE.ShaderChunk.lights_physical_pars_fragment;
     if (!directLighting.test(chunk)) throw new Error(`Three.js r${THREE.REVISION} physical shader lacks RE_Direct_Physical for the hair-card backlight adapter`);
@@ -285,7 +285,7 @@ export function useMaterialAssetMaterial(asset: MaterialAsset, options: Material
       applyNormalConventions(material, asset);
       applyFabric(material, asset);
       applyHair(material, asset);
-      material.userData.jgMaterialAsset = asset.id;
+      material.userData["jgMaterialAsset"] = asset.id;
       return [material, ...Object.values(textures)] as const;
     } catch (error) {
       material?.dispose();
@@ -418,7 +418,7 @@ export function useModelMaterialTextures(model: Pick<ModelConfig, "material" | "
 export function setHairCardLightExposure(material: THREE.Material, exposure: number): void {
   if (!Number.isFinite(exposure)) throw new Error("Hair light exposure must be finite");
   const value = Math.max(0, Math.min(1, exposure));
-  material.userData.jgHairLightExposure = value;
-  const uniform = material.userData.jgHairBacklightUniform as { value: number } | undefined;
-  if (uniform !== undefined) uniform.value = (material.userData.jgHairBacklightStrength as number) * value;
+  material.userData["jgHairLightExposure"] = value;
+  const uniform = material.userData["jgHairBacklightUniform"] as { value: number } | undefined;
+  if (uniform !== undefined) uniform.value = (material.userData["jgHairBacklightStrength"] as number) * value;
 }

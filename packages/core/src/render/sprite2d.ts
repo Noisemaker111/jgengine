@@ -9,7 +9,7 @@ export interface SpriteClipState { animation: string; frameIndex: number; elapse
 export function createSpriteClipPlayer(atlas: SpriteAtlas) {
   let state: SpriteClipState = { animation: Object.keys(atlas.animations)[0] ?? "", frameIndex: 0, elapsed: 0, done: false };
   let speed = 1;
-  const current = () => { const animation = atlas.animations[state.animation]; if (!animation) return undefined; return atlas.frames[animation.frames[state.frameIndex]]; };
+  const current = () => { const animation = atlas.animations[state.animation]; if (!animation) return undefined; const frame = animation.frames[state.frameIndex]; return frame === undefined ? undefined : atlas.frames[frame]; };
   return {
     play(name: string) { if (!atlas.animations[name]) throw new Error(`Unknown sprite animation: ${name}.`); state = { animation: name, frameIndex: 0, elapsed: 0, done: false }; },
     advance(dt: number) { if (!Number.isFinite(dt) || dt < 0) throw new Error("dt must be non-negative."); const animation = atlas.animations[state.animation]; if (!animation || state.done) return; state.elapsed += dt * speed; const duration = 1 / animation.fps; while (state.elapsed >= duration && !state.done) { state.elapsed -= duration; if (state.frameIndex + 1 < animation.frames.length) state.frameIndex += 1; else if (animation.loop === false) { state.frameIndex = animation.frames.length - 1; state.done = true; } else state.frameIndex = 0; } },

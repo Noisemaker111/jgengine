@@ -34,7 +34,7 @@ export interface CalendarTime {
   /** Progress through the current year, 0..1. */
   yearFraction: number;
   /** Current season name, present only when `TimeConfig.seasons` is configured. */
-  season?: string;
+  season?: string | undefined;
 }
 
 export interface ClockSnapshot {
@@ -104,7 +104,7 @@ function requireFiniteTimerValue(label: string, value: number): number {
 }
 
 export interface SimClockOptions {
-  config?: TimeConfig;
+  config?: TimeConfig | undefined;
   /** Called on control changes and once per displayed in-game minute so UI can rebind; never fires per frame. */
   onChange?: () => void;
 }

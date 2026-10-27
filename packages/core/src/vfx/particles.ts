@@ -163,7 +163,23 @@ function clamp01(v: number): number {
   return v < 0 ? 0 : v > 1 ? 1 : v;
 }
 
-type ResolvedEmitterConfig = Required<Omit<EmitterConfig, "seed" | "forces" | "collision" | "spawnShape">> & Pick<EmitterConfig, "forces" | "collision" | "spawnShape">;
+type ResolvedEmitterConfig = Required<Omit<EmitterConfig, "seed" | "forces" | "collision" | "spawnShape">> & {
+  forces: EmitterConfig["forces"];
+  collision: EmitterConfig["collision"];
+  spawnShape: EmitterConfig["spawnShape"];
+};
+
+/** The serializable config a resolved one stands for: unset optional fields stay absent. */
+function emitterConfigOf(cfg: ResolvedEmitterConfig, seed: EmitterConfig["seed"]): EmitterConfig {
+  const { forces, collision, spawnShape, ...rest } = cfg;
+  return {
+    ...rest,
+    ...(forces === undefined ? {} : { forces }),
+    ...(collision === undefined ? {} : { collision }),
+    ...(spawnShape === undefined ? {} : { spawnShape }),
+    ...(seed === undefined ? {} : { seed }),
+  };
+}
 
 function emitterDefaults(config: EmitterConfig): ResolvedEmitterConfig {
   return {
@@ -204,28 +220,9 @@ export function createParticleSystem(config: EmitterConfig = {}, options: Partic
   const cfg = emitterDefaults(config);
 
   const max = Number.isFinite(cfg.max) ? Math.max(1, Math.min(65536, Math.floor(cfg.max))) : 512;
-  // SoA live pool.
-  const px = new Float32Array(max);
-  const py = new Float32Array(max);
-  const pz = new Float32Array(max);
-  const vx = new Float32Array(max);
-  const vy = new Float32Array(max);
-  const vz = new Float32Array(max);
-  const age = new Float32Array(max);
-  const life = new Float32Array(max);
-  const ids = new Float64Array(max);
-  const previous = new Float32Array(max * 3);
-  // Per-particle baked endpoints (so mid-flight config changes don't recolor existing particles).
-  const sizeS = new Float32Array(max);
-  const sizeE = new Float32Array(max);
-  const r0 = new Float32Array(max);
-  const g0 = new Float32Array(max);
-  const b0 = new Float32Array(max);
-  const r1 = new Float32Array(max);
-  const g1 = new Float32Array(max);
-  const b1 = new Float32Array(max);
-  const a0 = new Float32Array(max);
-  const a1 = new Float32Array(max);
+  // A fixed pool of reusable records: the first `live` are alive. Retiring one swaps it past the live
+  // range, so the pool never allocates after creation.
+  const pool: Particle[] = Array.from({ length: max }, blankParticle);
 
   // Render buffers (rebuilt each frame from the live pool).
   const outPos = new Float32Array(max * 3);
@@ -233,8 +230,10 @@ export function createParticleSystem(config: EmitterConfig = {}, options: Partic
   const outColor = new Float32Array(max * 3);
   const outAlpha = new Float32Array(max);
   const outVelocity = new Float32Array(max * 3);
+  const outIds = new Float64Array(max);
+  const outPrevious = new Float32Array(max * 3);
   const renderBuffers: ParticleBuffers = { count: 0, positions: outPos, sizes: outSize, colors: outColor,
-    alphas: outAlpha, ids, velocities: outVelocity, previousPositions: previous };
+    alphas: outAlpha, ids: outIds, velocities: outVelocity, previousPositions: outPrevious };
 
   let live = 0;
   let accumulator = 0;
@@ -268,15 +267,16 @@ export function createParticleSystem(config: EmitterConfig = {}, options: Partic
   }
 
   function spawnOne(): void {
-    if (live >= max) return;
-    const i = live++;
-    ids[i] = nextId++;
+    const p = pool[live];
+    if (p === undefined) return;
+    live++;
+    p.id = nextId++;
     const [cr0, cg0, cb0] = unpackColor(cfg.colorStart);
     const [cr1, cg1, cb1] = unpackColor(cfg.colorEnd);
 
-    px[i] = cfg.position[0] + (rand() * 2 - 1) * cfg.spawnJitter[0];
-    py[i] = cfg.position[1] + (rand() * 2 - 1) * cfg.spawnJitter[1];
-    pz[i] = cfg.position[2] + (rand() * 2 - 1) * cfg.spawnJitter[2];
+    p.x = cfg.position[0] + (rand() * 2 - 1) * cfg.spawnJitter[0];
+    p.y = cfg.position[1] + (rand() * 2 - 1) * cfg.spawnJitter[1];
+    p.z = cfg.position[2] + (rand() * 2 - 1) * cfg.spawnJitter[2];
     const shape = cfg.spawnShape;
     if (shape !== undefined) {
       const theta = rand() * Math.PI * 2;
@@ -284,15 +284,15 @@ export function createParticleSystem(config: EmitterConfig = {}, options: Partic
         const y = rand() * 2 - 1;
         const radius = shape.radius * (shape.surface ? 1 : Math.cbrt(rand()));
         const horizontal = Math.sqrt(Math.max(0, 1 - y * y)) * radius;
-        px[i] += Math.cos(theta) * horizontal; py[i] += y * radius; pz[i] += Math.sin(theta) * horizontal;
+        p.x += Math.cos(theta) * horizontal; p.y += y * radius; p.z += Math.sin(theta) * horizontal;
       } else {
         const heightFraction = shape.kind === "cone" ? (shape.surface ? Math.sqrt(rand()) : Math.cbrt(rand())) : 1;
         const radius = shape.radius * heightFraction * (shape.surface ? 1 : Math.sqrt(rand()));
-        px[i] += Math.cos(theta) * radius; pz[i] += Math.sin(theta) * radius;
-        if (shape.kind === "cone") py[i] += (shape.height ?? shape.radius) * heightFraction;
+        p.x += Math.cos(theta) * radius; p.z += Math.sin(theta) * radius;
+        if (shape.kind === "cone") p.y += (shape.height ?? shape.radius) * heightFraction;
       }
     }
-    previous[i * 3] = px[i]; previous[i * 3 + 1] = py[i]; previous[i * 3 + 2] = pz[i];
+    p.px = p.x; p.py = p.y; p.pz = p.z;
 
     // Direction: base dir perturbed within a cone of half-angle `spread`.
     let dx = cfg.direction[0];
@@ -320,48 +320,43 @@ export function createParticleSystem(config: EmitterConfig = {}, options: Partic
       dz /= n;
     }
     const sp = range(cfg.speed);
-    vx[i] = dx * sp;
-    vy[i] = dy * sp;
-    vz[i] = dz * sp;
+    p.vx = dx * sp;
+    p.vy = dy * sp;
+    p.vz = dz * sp;
 
-    age[i] = 0;
-    life[i] = Math.max(0.0001, range(cfg.lifetime));
-    sizeS[i] = cfg.size.start;
-    sizeE[i] = cfg.size.end;
-    r0[i] = cr0;
-    g0[i] = cg0;
-    b0[i] = cb0;
-    r1[i] = cr1;
-    g1[i] = cg1;
-    b1[i] = cb1;
-    a0[i] = cfg.alpha.start;
-    a1[i] = cfg.alpha.end;
+    p.age = 0;
+    p.life = Math.max(0.0001, range(cfg.lifetime));
+    p.sizeStart = cfg.size.start;
+    p.sizeEnd = cfg.size.end;
+    p.r0 = cr0;
+    p.g0 = cg0;
+    p.b0 = cb0;
+    p.r1 = cr1;
+    p.g1 = cg1;
+    p.b1 = cb1;
+    p.a0 = cfg.alpha.start;
+    p.a1 = cfg.alpha.end;
   }
 
+  /** Retire the live record at `i` by swapping it with the last live one. */
   function swapRemove(i: number): void {
     const last = live - 1;
-    if (i !== last) {
-      px[i] = px[last]; py[i] = py[last]; pz[i] = pz[last];
-      vx[i] = vx[last]; vy[i] = vy[last]; vz[i] = vz[last];
-      age[i] = age[last]; life[i] = life[last]; ids[i] = ids[last];
-      previous[i * 3] = previous[last * 3];
-      previous[i * 3 + 1] = previous[last * 3 + 1];
-      previous[i * 3 + 2] = previous[last * 3 + 2];
-      sizeS[i] = sizeS[last]; sizeE[i] = sizeE[last];
-      r0[i] = r0[last]; g0[i] = g0[last]; b0[i] = b0[last];
-      r1[i] = r1[last]; g1[i] = g1[last]; b1[i] = b1[last];
-      a0[i] = a0[last]; a1[i] = a1[last];
+    const retired = pool[i];
+    const moved = pool[last];
+    if (i !== last && retired !== undefined && moved !== undefined) {
+      pool[i] = moved;
+      pool[last] = retired;
     }
     live--;
   }
 
   function bounded(value: number | undefined, fallback: number, cap: number): number {
-    return Number.isFinite(value) ? Math.max(0, Math.min(cap, Math.floor(value!))) : fallback;
+    return value !== undefined && Number.isFinite(value) ? Math.max(0, Math.min(cap, Math.floor(value))) : fallback;
   }
 
-  function recordEvent(type: ParticleEvent["type"], i: number, normal?: Vec3): void {
-    events.push({ type, particleId: ids[i], position: [px[i], py[i], pz[i]], velocity: [vx[i], vy[i], vz[i]],
-      ...(normal === undefined ? {} : { normal: [normal[0], normal[1], normal[2]] as Vec3 }) });
+  function recordEvent(type: ParticleEvent["type"], p: Particle, normal?: Vec3): void {
+    events.push({ type, particleId: p.id, position: [p.x, p.y, p.z], velocity: [p.vx, p.vy, p.vz],
+      ...(normal === undefined ? {} : { normal: [normal[0], normal[1], normal[2]] satisfies Vec3 }) });
   }
 
   const system: ParticleSystem = {
@@ -369,54 +364,57 @@ export function createParticleSystem(config: EmitterConfig = {}, options: Partic
       if (!Number.isFinite(dt) || dt <= 0) return;
       const damp = cfg.drag > 0 ? Math.max(0, 1 - cfg.drag * dt) : 1;
       const contact = cfg.collision;
+      const forces = (cfg.forces ?? []).slice(0, 8);
       const queryLimit = Math.min(max, bounded(contact?.maxQueries, 64, 4096));
       const eventLimit = bounded(contact?.maxEvents, 64, 1024);
       let queries = 0;
       for (let i = live - 1; i >= 0; i--) {
-        age[i] += dt;
-        if (age[i] >= life[i]) {
-          if (cfg.deathEvents && events.length < eventLimit) recordEvent("death", i);
+        const p = pool[i];
+        if (p === undefined) continue;
+        p.age += dt;
+        if (p.age >= p.life) {
+          if (cfg.deathEvents && events.length < eventLimit) recordEvent("death", p);
           swapRemove(i);
           continue;
         }
-        previous[i * 3] = px[i]; previous[i * 3 + 1] = py[i]; previous[i * 3 + 2] = pz[i];
+        p.px = p.x; p.py = p.y; p.pz = p.z;
         let ax = cfg.gravity[0], ay = cfg.gravity[1], az = cfg.gravity[2];
-        queryFrom[0] = px[i]; queryFrom[1] = py[i]; queryFrom[2] = pz[i];
-        for (let f = 0; f < Math.min(8, cfg.forces?.length ?? 0); f++) {
-          const force = sampleForceField(cfg.forces![f]!, queryFrom, 0xffffffff, sampledForce);
+        queryFrom[0] = p.x; queryFrom[1] = p.y; queryFrom[2] = p.z;
+        for (const field of forces) {
+          const force = sampleForceField(field, queryFrom, 0xffffffff, sampledForce);
           ax += force[0]; ay += force[1]; az += force[2];
         }
         if (options.acceleration !== undefined) {
-          queryVelocity[0] = vx[i]; queryVelocity[1] = vy[i]; queryVelocity[2] = vz[i];
+          queryVelocity[0] = p.vx; queryVelocity[1] = p.vy; queryVelocity[2] = p.vz;
           const force = options.acceleration(queryFrom, queryVelocity, sampledForce);
           ax += force[0]; ay += force[1]; az += force[2];
         }
-        vx[i] = (vx[i] + ax * dt) * damp;
-        vy[i] = (vy[i] + ay * dt) * damp;
-        vz[i] = (vz[i] + az * dt) * damp;
-        px[i] += vx[i] * dt; py[i] += vy[i] * dt; pz[i] += vz[i] * dt;
+        p.vx = (p.vx + ax * dt) * damp;
+        p.vy = (p.vy + ay * dt) * damp;
+        p.vz = (p.vz + az * dt) * damp;
+        p.x += p.vx * dt; p.y += p.vy * dt; p.z += p.vz * dt;
         if (contact === undefined) continue;
-        queryTo[0] = px[i]; queryTo[1] = py[i]; queryTo[2] = pz[i];
+        queryTo[0] = p.x; queryTo[1] = p.y; queryTo[2] = p.z;
         let hit: ParticleCollisionHit | null = null;
         if (options.collision !== undefined && queries < queryLimit) {
           queries++;
           hit = options.collision(queryFrom, queryTo);
         }
-        if (hit === null && contact.planeY !== undefined && queryFrom[1] >= contact.planeY && py[i] <= contact.planeY && vy[i] < 0) {
-          const t = (queryFrom[1] - contact.planeY) / (queryFrom[1] - py[i]);
-          hit = { position: [queryFrom[0] + (px[i] - queryFrom[0]) * t, contact.planeY, queryFrom[2] + (pz[i] - queryFrom[2]) * t], normal: [0, 1, 0] };
+        if (hit === null && contact.planeY !== undefined && queryFrom[1] >= contact.planeY && p.y <= contact.planeY && p.vy < 0) {
+          const t = (queryFrom[1] - contact.planeY) / (queryFrom[1] - p.y);
+          hit = { position: [queryFrom[0] + (p.x - queryFrom[0]) * t, contact.planeY, queryFrom[2] + (p.z - queryFrom[2]) * t], normal: [0, 1, 0] };
         }
         if (hit === null) continue;
-        px[i] = hit.position[0]; py[i] = hit.position[1]; pz[i] = hit.position[2];
-        if (events.length < eventLimit) recordEvent("collision", i, hit.normal);
+        p.x = hit.position[0]; p.y = hit.position[1]; p.z = hit.position[2];
+        if (events.length < eventLimit) recordEvent("collision", p, hit.normal);
         if (contact.response !== "bounce") { swapRemove(i); continue; }
         const length = Math.hypot(...hit.normal);
         if (length === 0) continue;
         const nx = hit.normal[0] / length, ny = hit.normal[1] / length, nz = hit.normal[2] / length;
-        const dot = vx[i] * nx + vy[i] * ny + vz[i] * nz;
+        const dot = p.vx * nx + p.vy * ny + p.vz * nz;
         if (dot < 0) {
           const impulse = (1 + clamp01(contact.restitution ?? 0.5)) * dot;
-          vx[i] -= impulse * nx; vy[i] -= impulse * ny; vz[i] -= impulse * nz;
+          p.vx -= impulse * nx; p.vy -= impulse * ny; p.vz -= impulse * nz;
         }
       }
       if (running && Number.isFinite(cfg.rate) && cfg.rate > 0) {
@@ -440,16 +438,22 @@ export function createParticleSystem(config: EmitterConfig = {}, options: Partic
     },
     buffers() {
       for (let i = 0; i < live; i++) {
-        const t = clamp01(age[i] / life[i]);
-        outVelocity[i * 3] = vx[i]; outVelocity[i * 3 + 1] = vy[i]; outVelocity[i * 3 + 2] = vz[i];
-        outPos[i * 3] = px[i];
-        outPos[i * 3 + 1] = py[i];
-        outPos[i * 3 + 2] = pz[i];
-        outSize[i] = sizeS[i] + (sizeE[i] - sizeS[i]) * t;
-        outColor[i * 3] = r0[i] + (r1[i] - r0[i]) * t;
-        outColor[i * 3 + 1] = g0[i] + (g1[i] - g0[i]) * t;
-        outColor[i * 3 + 2] = b0[i] + (b1[i] - b0[i]) * t;
-        outAlpha[i] = a0[i] + (a1[i] - a0[i]) * t;
+        const p = pool[i];
+        if (p === undefined) break;
+        const t = clamp01(p.age / p.life);
+        outVelocity[i * 3] = p.vx; outVelocity[i * 3 + 1] = p.vy; outVelocity[i * 3 + 2] = p.vz;
+        outPos[i * 3] = p.x;
+        outPos[i * 3 + 1] = p.y;
+        outPos[i * 3 + 2] = p.z;
+        outPrevious[i * 3] = p.px;
+        outPrevious[i * 3 + 1] = p.py;
+        outPrevious[i * 3 + 2] = p.pz;
+        outIds[i] = p.id;
+        outSize[i] = p.sizeStart + (p.sizeEnd - p.sizeStart) * t;
+        outColor[i * 3] = p.r0 + (p.r1 - p.r0) * t;
+        outColor[i * 3 + 1] = p.g0 + (p.g1 - p.g0) * t;
+        outColor[i * 3 + 2] = p.b0 + (p.b1 - p.b0) * t;
+        outAlpha[i] = p.a0 + (p.a1 - p.a0) * t;
       }
       renderBuffers.count = live;
       return renderBuffers;
@@ -473,44 +477,60 @@ export function createParticleSystem(config: EmitterConfig = {}, options: Partic
       return () => listeners.delete(listener);
     },
     snapshot() {
-      const data: number[] = [];
-      for (let i = 0; i < live; i++) {
-        data.push(
-          px[i], py[i], pz[i], vx[i], vy[i], vz[i], age[i], life[i],
-          sizeS[i], sizeE[i], r0[i], g0[i], b0[i], r1[i], g1[i], b1[i], a0[i], a1[i],
-        );
-      }
-      return { seed: seed as number, accumulator, count: live, data, running, nextId,
-        ids: Array.from(ids.subarray(0, live)), previousPositions: Array.from(previous.subarray(0, live * 3)), config: structuredClone({ ...cfg, seed: configuredSeed }) };
+      const living = pool.slice(0, live);
+      const data = living.flatMap((p) => [
+        p.x, p.y, p.z, p.vx, p.vy, p.vz, p.age, p.life,
+        p.sizeStart, p.sizeEnd, p.r0, p.g0, p.b0, p.r1, p.g1, p.b1, p.a0, p.a1,
+      ]);
+      return { seed, accumulator, count: live, data, running, nextId,
+        ids: living.map((p) => p.id), previousPositions: living.flatMap((p) => [p.px, p.py, p.pz]),
+        config: structuredClone(emitterConfigOf(cfg, configuredSeed)) };
     },
     restore(snapshot) {
       if (snapshot.config !== undefined) { Object.assign(cfg, structuredClone(snapshot.config)); configuredSeed = snapshot.config.seed; }
       seed = randomSeedFrom(snapshot.seed);
       accumulator = snapshot.accumulator;
-      live = Math.min(max, Math.max(0, Math.floor(snapshot.count)), Math.floor(snapshot.data.length / 18));
+      live = Math.min(max, Math.max(0, Math.floor(snapshot.count)), Math.floor(snapshot.data.length / SNAPSHOT_STRIDE));
       running = snapshot.running ?? true;
       nextId = snapshot.nextId ?? live + 1;
       events = [];
-      const stride = 18;
       for (let i = 0; i < live; i++) {
-        const o = i * stride;
-        px[i] = snapshot.data[o]!; py[i] = snapshot.data[o + 1]!; pz[i] = snapshot.data[o + 2]!;
-        vx[i] = snapshot.data[o + 3]!; vy[i] = snapshot.data[o + 4]!; vz[i] = snapshot.data[o + 5]!;
-        age[i] = snapshot.data[o + 6]!; life[i] = snapshot.data[o + 7]!;
-        sizeS[i] = snapshot.data[o + 8]!; sizeE[i] = snapshot.data[o + 9]!;
-        r0[i] = snapshot.data[o + 10]!; g0[i] = snapshot.data[o + 11]!; b0[i] = snapshot.data[o + 12]!;
-        r1[i] = snapshot.data[o + 13]!; g1[i] = snapshot.data[o + 14]!; b1[i] = snapshot.data[o + 15]!;
-        a0[i] = snapshot.data[o + 16]!; a1[i] = snapshot.data[o + 17]!;
-        ids[i] = snapshot.ids?.[i] ?? i + 1;
-        previous[i * 3] = snapshot.previousPositions?.[i * 3] ?? px[i];
-        previous[i * 3 + 1] = snapshot.previousPositions?.[i * 3 + 1] ?? py[i];
-        previous[i * 3 + 2] = snapshot.previousPositions?.[i * 3 + 2] ?? pz[i];
+        const p = pool[i];
+        if (p === undefined) break;
+        const [x = 0, y = 0, z = 0, vx = 0, vy = 0, vz = 0, age = 0, life = 1, sizeStart = 1, sizeEnd = 1,
+          r0 = 1, g0 = 1, b0 = 1, r1 = 1, g1 = 1, b1 = 1, a0 = 1, a1 = 0] = snapshot.data.slice(i * SNAPSHOT_STRIDE, (i + 1) * SNAPSHOT_STRIDE);
+        Object.assign(p, { x, y, z, vx, vy, vz, age, life, sizeStart, sizeEnd, r0, g0, b0, r1, g1, b1, a0, a1 });
+        p.id = snapshot.ids?.[i] ?? i + 1;
+        p.px = snapshot.previousPositions?.[i * 3] ?? x;
+        p.py = snapshot.previousPositions?.[i * 3 + 1] ?? y;
+        p.pz = snapshot.previousPositions?.[i * 3 + 2] ?? z;
       }
       notify();
     },
   };
 
   return system;
+}
+
+/** Numbers per particle in {@link ParticleSnapshot.data}. */
+const SNAPSHOT_STRIDE = 18;
+
+/** One pooled particle: position, velocity, the position before the last step, and its baked life curves. */
+interface Particle {
+  id: number;
+  x: number; y: number; z: number;
+  vx: number; vy: number; vz: number;
+  px: number; py: number; pz: number;
+  age: number; life: number;
+  sizeStart: number; sizeEnd: number;
+  r0: number; g0: number; b0: number;
+  r1: number; g1: number; b1: number;
+  a0: number; a1: number;
+}
+
+function blankParticle(): Particle {
+  return { id: 0, x: 0, y: 0, z: 0, vx: 0, vy: 0, vz: 0, px: 0, py: 0, pz: 0, age: 0, life: 1,
+    sizeStart: 1, sizeEnd: 1, r0: 1, g0: 1, b0: 1, r1: 1, g1: 1, b1: 1, a0: 1, a1: 0 };
 }
 
 /**
@@ -538,42 +558,42 @@ export function validateEmitterConfig(value: unknown): string[] {
     if (v === undefined) continue;
     if (v === null || typeof v !== "object") { errors.push(`${name} must be a min/max range`); continue; }
     const range = v as Record<string, unknown>;
-    if (!finite(range.min) || !finite(range.max) || range.min < lower || range.max < range.min) errors.push(`${name} must have finite ordered min/max values ${name === "lifetime" ? "above zero" : "at least zero"}`);
+    if (!finite(range["min"]) || !finite(range["max"]) || range["min"] < lower || range["max"] < range["min"]) errors.push(`${name} must have finite ordered min/max values ${name === "lifetime" ? "above zero" : "at least zero"}`);
   }
   for (const name of ["size", "alpha"]) {
     const v = config[name];
     if (v === undefined) continue;
     if (v === null || typeof v !== "object") { errors.push(`${name} must be a start/end curve`); continue; }
     const curve = v as Record<string, unknown>;
-    if (!finite(curve.start) || !finite(curve.end) || curve.start < 0 || curve.end < 0 || (name === "alpha" && (curve.start > 1 || curve.end > 1))) errors.push(`${name} must have finite nonnegative start/end values${name === "alpha" ? " at most one" : ""}`);
+    if (!finite(curve["start"]) || !finite(curve["end"]) || curve["start"] < 0 || curve["end"] < 0 || (name === "alpha" && (curve["start"] > 1 || curve["end"] > 1))) errors.push(`${name} must have finite nonnegative start/end values${name === "alpha" ? " at most one" : ""}`);
   }
-  if (config.spawnShape !== undefined) {
-    const shape = config.spawnShape as Record<string, unknown>;
+  if (config["spawnShape"] !== undefined) {
+    const shape = config["spawnShape"] as Record<string, unknown>;
     if (shape === null || typeof shape !== "object" || Array.isArray(shape)) errors.push("spawnShape must be a volume descriptor");
     else {
-      if (shape.kind !== "disc" && shape.kind !== "sphere" && shape.kind !== "cone") errors.push("spawnShape.kind must be disc, sphere, or cone");
-      if (!finite(shape.radius) || shape.radius <= 0) errors.push("spawnShape.radius must be finite and positive");
-      if (shape.height !== undefined && (!finite(shape.height) || shape.height <= 0)) errors.push("spawnShape.height must be finite and positive");
-      if (shape.surface !== undefined && typeof shape.surface !== "boolean") errors.push("spawnShape.surface must be boolean");
+      if (shape["kind"] !== "disc" && shape["kind"] !== "sphere" && shape["kind"] !== "cone") errors.push("spawnShape.kind must be disc, sphere, or cone");
+      if (!finite(shape["radius"]) || shape["radius"] <= 0) errors.push("spawnShape.radius must be finite and positive");
+      if (shape["height"] !== undefined && (!finite(shape["height"]) || shape["height"] <= 0)) errors.push("spawnShape.height must be finite and positive");
+      if (shape["surface"] !== undefined && typeof shape["surface"] !== "boolean") errors.push("spawnShape.surface must be boolean");
     }
   }
-  if (config.seed !== undefined && typeof config.seed !== "string" && !finite(config.seed)) errors.push("seed must be a string or finite number");
-  if (config.deathEvents !== undefined && typeof config.deathEvents !== "boolean") errors.push("deathEvents must be boolean");
-  if (config.forces !== undefined) {
-    if (!Array.isArray(config.forces) || config.forces.length > 8) errors.push("forces must be an array of at most eight fields");
-    else config.forces.forEach((value, i) => {
+  if (config["seed"] !== undefined && typeof config["seed"] !== "string" && !finite(config["seed"])) errors.push("seed must be a string or finite number");
+  if (config["deathEvents"] !== undefined && typeof config["deathEvents"] !== "boolean") errors.push("deathEvents must be boolean");
+  if (config["forces"] !== undefined) {
+    if (!Array.isArray(config["forces"]) || config["forces"].length > 8) errors.push("forces must be an array of at most eight fields");
+    else config["forces"].forEach((value, i) => {
       try { validateForceField(value as ForceFieldConfig); }
       catch (error) { errors.push(`forces[${i}]: ${error instanceof Error ? error.message : String(error)}`); }
     });
   }
 
-  if (config.collision !== undefined) {
-    const contact = config.collision as Record<string, unknown>;
+  if (config["collision"] !== undefined) {
+    const contact = config["collision"] as Record<string, unknown>;
     if (contact === null || typeof contact !== "object" || Array.isArray(contact)) errors.push("collision must be a contact policy");
     else {
-      if (contact.planeY !== undefined && !finite(contact.planeY)) errors.push("collision.planeY must be finite");
-      if (contact.response !== undefined && contact.response !== "kill" && contact.response !== "bounce") errors.push("collision.response must be kill or bounce");
-      if (contact.restitution !== undefined && (!finite(contact.restitution) || contact.restitution < 0 || contact.restitution > 1)) errors.push("collision.restitution must be in [0, 1]");
+      if (contact["planeY"] !== undefined && !finite(contact["planeY"])) errors.push("collision.planeY must be finite");
+      if (contact["response"] !== undefined && contact["response"] !== "kill" && contact["response"] !== "bounce") errors.push("collision.response must be kill or bounce");
+      if (contact["restitution"] !== undefined && (!finite(contact["restitution"]) || contact["restitution"] < 0 || contact["restitution"] > 1)) errors.push("collision.restitution must be in [0, 1]");
       for (const [name, cap] of [["maxQueries", 4096], ["maxEvents", 1024]] as const) if (contact[name] !== undefined && (!finite(contact[name]) || !Number.isInteger(contact[name]) || contact[name] < 0 || contact[name] > cap)) errors.push(`collision.${name} must be an integer in [0, ${cap}]`);
     }
   }

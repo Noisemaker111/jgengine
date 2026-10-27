@@ -683,7 +683,10 @@ export function createEditableTerrain(config: EditableTerrainConfig): EditableTe
           let previousTotal = 0;
           for (let layer = 0; layer < previous.length; layer += 1) previousTotal += previousWeights[cell * previous.length + layer]!;
           if (total < previousTotal) {
-            for (let layer = 0; layer < layers.length; layer += 1) buffer[cell * layers.length + layer] /= total;
+            for (let layer = 0; layer < layers.length; layer += 1) {
+              const at = cell * layers.length + layer;
+              buffer[at] = (buffer[at] ?? 0) / total;
+            }
           }
         } else {
           const fallback = layers.findIndex((layer) => layer.surface === surfaces[cell]);

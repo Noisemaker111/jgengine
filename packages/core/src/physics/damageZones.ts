@@ -50,8 +50,8 @@ export class DamageModel {
   private readonly zones = new Map<string, { def: DamageZoneDef; state: DamageZoneState }>();
   private readonly order: string[] = [];
   private readonly disableAt: number | null;
-  private readonly onStage?: (transition: DamageTransition) => void;
-  private readonly onDetach?: (zoneId: string, accumulated: number) => void;
+  private readonly onStage?: ((transition: DamageTransition) => void) | undefined;
+  private readonly onDetach?: ((zoneId: string, accumulated: number) => void) | undefined;
   private totalImpulse = 0;
   private disabledFlag = false;
 

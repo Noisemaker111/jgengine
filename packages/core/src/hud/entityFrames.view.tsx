@@ -131,14 +131,14 @@ export interface EntityFramesProps<E extends EntityFrameEntry> extends EntityFra
    */
   renderFrame: (entry: E, placement: EntityFramePlacement<E>) => ReactNode;
   /** Class on the fullscreen overlay layer. */
-  className?: string;
+  className?: string | undefined;
   /** Style on the fullscreen overlay layer (merged over the absolute-fill default). */
   style?: CSSProperties;
   /**
    * CSS transform on each frame wrapper, controlling how content sits relative
    * to the anchor point. Default `translate(-50%, -100%)` (centered, above).
    */
-  anchorTransform?: string;
+  anchorTransform?: string | undefined;
 }
 
 /**

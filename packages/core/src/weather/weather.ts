@@ -280,7 +280,7 @@ export function createFireGrid(config: FireGridConfig): FireGrid {
             if (!inBounds(nc, nr)) continue;
             const neighbour = cells[index(nc, nr)]!;
             if (neighbour.state === "burnt" || neighbour.fuel <= 0) continue;
-            addedHeat[index(nc, nr)] +=
+            addedHeat[index(nc, nr)] = (addedHeat[index(nc, nr)] ?? 0) +
               spreadRate * globalSpread * directionalWeight(dx, dz, vector) * burningDt;
           }
         }

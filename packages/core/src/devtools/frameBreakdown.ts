@@ -155,7 +155,7 @@ export function hitchCause(record: FrameBreakdownRecord): Pick<Hitch, "cause" | 
 export function summarizeBreakdown(
   records: readonly FrameBreakdownRecord[],
   draws: { objects: readonly DrawCost[]; materials: readonly DrawCost[] },
-  options: { programs?: number | null; top?: number; hitches?: number } = {},
+  options: { programs?: number | null | undefined; top?: number | undefined; hitches?: number | undefined } = {},
 ): FrameBreakdownSummary {
   const top = options.top ?? 12;
   const resolved = records.filter((record) => record.gpu !== null);
