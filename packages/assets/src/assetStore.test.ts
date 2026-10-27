@@ -2,9 +2,9 @@ import { describe, expect, test } from "bun:test";
 import { existsSync, lstatSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 
-import { assetStoreRoot, linkFromStore, mainCheckoutOf, seedCandidates, seedStore } from "./assetStore";
+import { assetStoreRoot, linkFromStore, mainCheckoutOf, provisionJobs, seedCandidates, seedStore } from "./assetStore";
 
-const scratch = join(import.meta.dir, "../../.scratch");
+const scratch = join(import.meta.dir, "../../../.scratch");
 mkdirSync(scratch, { recursive: true });
 
 function tree(): string {
@@ -58,6 +58,32 @@ describe("the shared asset store", () => {
       expect(seedStore(store, seedCandidates([root], join("models", "none")))).toBe(false);
       expect(linkFromStore(store, join(root, "public", "models", "none"))).toBe(false);
       expect(existsSync(join(root, "public", "models", "none"))).toBe(false);
+    } finally {
+      rmSync(root, { recursive: true, force: true });
+    }
+  });
+
+  test("provisionJobs pulls into the store only what no checkout has, then links it; a failed pull is reported", async () => {
+    const root = tree();
+    try {
+      const game = join(root, "games", "mine");
+      mkdirSync(join(game, "public"), { recursive: true });
+      const store = join(root, "store");
+      const pulls: string[] = [];
+      const result = await provisionJobs(game, [{ target: "fresh", dir: join("models", "fresh") }, { target: "broken", dir: join("models", "broken") }], {
+        env: { JG_ASSET_STORE: store },
+        log: () => {},
+        pull: async (target, outRoot) => {
+          pulls.push(target);
+          if (target === "broken") return false;
+          mkdirSync(join(outRoot, "models", target), { recursive: true });
+          writeFileSync(join(outRoot, "models", target, "a.glb"), "glb");
+          return true;
+        },
+      });
+      expect(pulls).toEqual(["fresh", "broken"]);
+      expect(result).toEqual({ linked: ["fresh"], pulled: ["fresh"], failed: ["broken"], absent: [] });
+      expect(readFileSync(join(game, "public", "models", "fresh", "a.glb"), "utf8")).toBe("glb");
     } finally {
       rmSync(root, { recursive: true, force: true });
     }

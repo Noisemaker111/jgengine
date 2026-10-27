@@ -10,7 +10,7 @@ import { fileURLToPath } from "node:url";
 import { chromium, type Frame, type Page } from "playwright-core";
 
 import { gamePublicRoots, resolveGamePublicFile } from "../apps/dev/gamePublicPlugin";
-import { assetStoreRoot } from "../games/shared/assetStore";
+import { assetStoreRoot } from "../packages/assets/src/assetStore";
 import { provisionGame } from "../games/shared/provisionAssets";
 import { compressedVariant, textureVariantDir } from "../games/shared/textureVariants";
 import { killPid, pickDebugPort, removeProfileDir, startBrowser, waitForPidExit } from "./browser-lib";

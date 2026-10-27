@@ -140,6 +140,12 @@
 - `createAssetBudgetReport` (function): function createAssetBudgetReport(target: string, budget: AssetBudget = {}): AssetBudgetReport — Scan a file or directory recursively for GLBs without changing their bytes or the catalog. Paths are relative to the scanned directory, sorted lexically; unknown/custom asset folders work equally.
 - `readGlbFileMetrics` (function): function readGlbFileMetrics(file: string, resourceRoot = dirname(file)): GlbMetrics — Read a GLB plus local resources under `resourceRoot`; remote URLs and symlink escapes fail without fetching.
 
+## @jgengine/assets/assetStore
+
+- `ProvisionResult` (interface): interface ProvisionResult — What {@link provisionJobs} did with each target.
+- `PullJob` (interface): interface PullJob — One pack or library model a game needs on disk.
+- `PullTarget` (type): type PullTarget = (target: string, outRoot: string) => Promise<boolean> — How {@link provisionJobs} fetches a target the store lacks: `assets pull <target> --dir <outRoot>`, true on success.
+
 ## @jgengine/assets/catalogs/build
 
 - `BuildCatalogOptions` (interface): interface BuildCatalogOptions { basePath?: string; sources?: readonly string[]; includeAliases?: boolean; includeSingles?: boolean; extras?: readonly CatalogExtra[] } — ⚠ undocumented · used by `buildCatalog`: Builds a game's asset catalog from the generated CC0 pack index plus singles, extras, and aliases.
@@ -212,6 +218,11 @@
 
 - `createStarterCatalog` (function): function createStarterCatalog(options: BuildCatalogOptions = {}): AssetCatalog<ModelAssetRef> — Catalog restricted to the curated starter packs (people/props/nature/urban). Prefer this for scaffolds and probes so `asset:person_casual` etc. resolve without pulling the whole library. Full index: {@link buildCatalog}.
 
+## @jgengine/assets/cli/find
+
+- `FindProvisionReport` (interface): interface FindProvisionReport — What `--provision` did: packs and library models served to the game, files copied from other games.
+- `FindRequest` (interface): interface FindRequest — One request: a name, and optionally the match id to provision instead of the top one.
+
 ## @jgengine/assets/cli/githubToken
 
 - `GITHUB_TOKEN_HOSTS` (const): const GITHUB_TOKEN_HOSTS: ReadonlySet<string> — Hosts that rate-limit anonymous pulls (60 API calls an hour per IP, shared by every agent on the machine) and accept a token. Release downloads on github.com are left alone: they redirect to a signed storage URL that rejects a second credential.
@@ -263,6 +274,16 @@
 - `MAX_ARCHIVE_DOWNLOAD_BYTES` (const): const MAX_ARCHIVE_DOWNLOAD_BYTES: number — Max size of a downloaded (still-compressed) archive, in bytes. Provider zips run tens of MB; this leaves headroom without buffering an unbounded response.
 - `MAX_ARCHIVE_ENTRY_COUNT` (const): const MAX_ARCHIVE_ENTRY_COUNT: 20000 — Max number of entries this module will extract out of one archive.
 - `MAX_ARCHIVE_UNCOMPRESSED_BYTES` (const): const MAX_ARCHIVE_UNCOMPRESSED_BYTES: number — Max total uncompressed size this module will inflate out of one archive, in bytes.
+
+## @jgengine/assets/findAssets
+
+- `AssetFindResult` (interface): interface AssetFindResult — Everything one request turned up.
+- `CONFIDENT_SCORE` (const): const CONFIDENT_SCORE: 60 — A match at or above this score is a real answer; below it the free sources are offered too.
+- `ElsewhereSource` (interface): interface ElsewhereSource — A free source to look on when nothing here fits, with the search already filled in.
+- `FindAssetsContext` (interface): interface FindAssetsContext — Where to look on disk: `has(rel)` answers for a path under the game's `public/` (or the store).
+- `FoundAsset` (type): type FoundAsset = | (FoundBase & { kind: "model"; source: string; url: string; pull: string }) /** A realistic library model: draw it with `libraryModel(name)`; `pull` is `null` for one a game generated and committed. */ | (FoundBase & { kind: "library"; url: string; use: string; pull: string | null… — One answer to an asset request, shaped by where its bytes come from.
+- `GameModelFile` (interface): interface GameModelFile — A model file a game already ships under its `public/` (`models/imported/creatures/trex.glb`).
+- `findAssets` (function): function findAssets(query: string, ctx: FindAssetsContext): AssetFindResult — Answer one asset request from everything the engine can reach: catalog pack models and aliases, the realistic model library, whole packs not indexed yet, and model files games already ship. Each match carries its licence, the URL a game loads it from and whether it is on disk; a weak answer also names the free sources to search, and the library's own note when it knows the gap.
 
 ## @jgengine/assets/generated
 

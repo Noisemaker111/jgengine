@@ -13,7 +13,7 @@ import { existsSync, readdirSync } from "node:fs";
 import { setPriority } from "node:os";
 import { join } from "node:path";
 
-import { assetStoreRoot } from "../shared/assetStore";
+import { assetStoreRoot } from "../../packages/assets/src/assetStore";
 import { compressTextures } from "../shared/compressTextures";
 import { shouldProvision } from "../shared/provisionAssets";
 import { textureVariantDir } from "../shared/textureVariants";

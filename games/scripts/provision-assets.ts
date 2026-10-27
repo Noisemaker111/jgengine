@@ -1,5 +1,5 @@
 /**
- * Serve every asset pack a game references from the shared asset store (`games/shared/assetStore.ts`),
+ * Serve every asset pack a game references from the shared asset store (`packages/assets/src/assetStore.ts`),
  * downloading into the store only what no checkout on this machine has pulled yet. A game's own
  * `bun run dev` does the same for that game on start (`viteProvisionAssets`).
  *
@@ -10,7 +10,7 @@
 import { existsSync, readdirSync } from "node:fs";
 import { join } from "node:path";
 
-import { assetStoreRoot } from "../shared/assetStore";
+import { assetStoreRoot } from "../../packages/assets/src/assetStore";
 import { provisionGame } from "../shared/provisionAssets";
 
 const root = join(import.meta.dir, "..");

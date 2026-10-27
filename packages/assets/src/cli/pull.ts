@@ -1,10 +1,12 @@
 #!/usr/bin/env node
 import { execFileSync } from "node:child_process";
-import { copyFileSync, existsSync, mkdirSync, readdirSync, readFileSync, writeFileSync } from "node:fs";
+import { copyFileSync, existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { basename, dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 
 import { createAssetBudgetReport, type AssetBudget } from "../assetBudget";
+import { dirHasEntries } from "../assetStore";
+import { cmdFind } from "./find";
 import { MATERIAL_LIBRARY } from "../catalogs/materialLibrary";
 import { MODEL_LIBRARY, findLibraryModelByName } from "../catalogs/modelLibrary";
 import { downloadPackArchive, extractGlbs, extractSpriteFiles } from "../download";
@@ -180,11 +182,6 @@ function cmdList(argv: string[]): void {
 }
 
 /** @internal */
-export function isPopulated(dir: string): boolean {
-  return existsSync(dir) && readdirSync(dir).length > 0;
-}
-
-/** @internal */
 export async function cmdPull(argv: string[]): Promise<void> {
   const sourceId = argv[0];
   if (sourceId === undefined) {
@@ -221,7 +218,7 @@ export async function cmdPull(argv: string[]): Promise<void> {
         : [findLibraryModelByName(sourceId.slice("model:".length)) ?? fail(`unknown library model: ${sourceId.slice(6)}`)];
     let total = 0;
     for (const entry of entries) {
-      if (isPopulated(join(modelsRoot, "library", ...entry.name.split("/"))) && !argv.includes("--force")) {
+      if (dirHasEntries(join(modelsRoot, "library", ...entry.name.split("/"))) && !argv.includes("--force")) {
         console.log(`${entry.name}: already pulled`);
         continue;
       }
@@ -263,7 +260,7 @@ export async function cmdPull(argv: string[]): Promise<void> {
   const mirrorBase = flag(argv, "mirror") ?? process.env.JGENGINE_ASSETS_MIRROR;
 
   if (offline) {
-    if (!isPopulated(outDir)) {
+    if (!dirHasEntries(outDir)) {
       fail(
         `--offline set but ${outDir} is empty; pull it once on a connected machine (or via ` +
           `--mirror/JGENGINE_ASSETS_MIRROR) and commit/host that directory before running offline`,
@@ -420,7 +417,7 @@ async function performAdd(match: AssetMatch, argv: string[]): Promise<void> {
     const source = sourceById.get(match.id);
     if (source === undefined) fail(`match resolves to unknown source: ${match.id}`);
     const outDir = join(outRoot, "materials", match.id);
-    if (isPopulated(outDir)) {
+    if (dirHasEntries(outDir)) {
       console.log(`${match.id} already present in ${outDir}`);
     } else {
       const result = await fetchPackInto(source, outRoot, { mirrorBase });
@@ -436,7 +433,7 @@ async function performAdd(match: AssetMatch, argv: string[]): Promise<void> {
     if (source === undefined) fail(`match resolves to unknown source: ${match.source}`);
     const outDir = join(outRoot, "sprites", match.source);
 
-    if (isPopulated(outDir)) {
+    if (dirHasEntries(outDir)) {
       console.log(`${match.source} already present in ${outDir}`);
     } else {
       const result = await fetchPackInto(source, outRoot, { mirrorBase });
@@ -462,7 +459,7 @@ async function performAdd(match: AssetMatch, argv: string[]): Promise<void> {
   if (source === undefined) fail(`match resolves to unknown source: ${match.source}`);
   const outDir = join(outRoot, "models", match.source);
 
-  if (isPopulated(outDir)) {
+  if (dirHasEntries(outDir)) {
     console.log(`${match.source} already present in ${outDir}`);
   } else {
     const result = await fetchPackInto(source, outRoot, { mirrorBase });
@@ -624,6 +621,9 @@ function cmdProvenance(argv: string[]): void {
 if (import.meta.main) {
   const [command, ...rest] = process.argv.slice(2);
   switch (command) {
+    case "find":
+      await cmdFind(rest);
+      break;
     case "list":
       cmdList(rest);
       break;
@@ -653,7 +653,8 @@ if (import.meta.main) {
       break;
     default:
       console.log(
-        "usage: assets <add|list|pull|register|reindex|reindex-sprites|budget|verify|provenance> [...args]\n" +
+        "usage: assets <find|add|list|pull|register|reindex|reindex-sprites|budget|verify|provenance> [...args]\n" +
+        "  assets find raptor \"street lamp\" --game games/my-game   # many names at once, JSON out\n" +
         "  assets pull starter   # every pack the starter catalog needs, into ./public/models",
       );
       if (command !== undefined && command !== "help") process.exit(1);

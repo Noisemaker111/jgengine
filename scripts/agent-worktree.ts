@@ -217,13 +217,13 @@ export function ensureWorktreeReady(cwd: string, options: WorktreeReadyOptions =
 }
 
 /**
- * Link every game's referenced packs from the shared asset store (`games/shared/assetStore.ts`).
+ * Link every game's referenced packs from the shared asset store (`packages/assets/src/assetStore.ts`).
  * Nothing is downloaded: a pack no checkout has pulled yet is fetched once, into the store, the first
  * time a dev server or `games:provision` needs it.
  */
 export async function linkGameAssets(target: string): Promise<{ linked: number; absent: number; store: string }> {
   const { provisionGame } = await import("../games/shared/provisionAssets");
-  const { assetStoreRoot } = await import("../games/shared/assetStore");
+  const { assetStoreRoot } = await import("../packages/assets/src/assetStore");
   const games = join(target, "games");
   let linked = 0;
   let absent = 0;

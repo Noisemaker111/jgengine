@@ -58,5 +58,5 @@ apps/web/.wrangler/
 # One checkout home and one scratch folder (JonsOCsetup docs/worktrees.md)
 .scratch/
 
-# The shared asset store every checkout links pulled packs from (games/shared/assetStore.ts).
+# The shared asset store every checkout links pulled packs from (packages/assets/src/assetStore.ts).
 /.asset-store/
