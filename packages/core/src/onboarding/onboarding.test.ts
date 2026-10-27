@@ -73,6 +73,16 @@ describe("onboarding", () => {
     expect(runtime.waypoints.tracked()?.label).toBe("Back to the beach");
   });
 
+  test("a step marked inArea: false points at its target past the teaching area", () => {
+    const steps = STEPS.steps.map((step) => (step.id === "kill" ? { ...step, inArea: false } : step));
+    const { ctx, tick, runtime } = boot({ ...STEPS, steps });
+    ctx.scene.entity.spawn("dodo", { id: "far", position: [230, 0, 0] });
+    ctx.scene.entity.setPose("p1", { position: [200, 0, 0] });
+    tick();
+    expect(runtime.pointing()).toEqual([230, 0, 0]);
+    expect(runtime.waypoints.tracked()?.label).toBe("Knock out a dodo");
+  });
+
   test("a lock refuses its command until the step that holds it is done", () => {
     const { ctx, died } = boot();
     const refused = ctx.game.commands.run("craft", {});

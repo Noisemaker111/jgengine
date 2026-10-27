@@ -50,6 +50,8 @@ export interface OnboardingStep<C> {
   /** Side of `anchor` the callout sits on. Default `"bottom"`. */
   placement?: "top" | "bottom" | "left" | "right";
   done: OnboardingDone<C>;
+  /** `"teaching-area"`: `false` lets this step send the player past the area, so its pointer is not pulled back. Default `true`. */
+  inArea?: boolean;
   /** Command ids (and UI ids a HUD asks about) refused until this step is done. */
   locks?: readonly string[];
   /** Given when this step is done: items, xp, currency, unlocks. */

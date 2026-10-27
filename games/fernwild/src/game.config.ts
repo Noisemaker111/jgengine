@@ -1,24 +1,27 @@
 import { authoredSpawnPosition, authoredSpawnRotation } from "@jgengine/core/world/authoredSpawn";
 import { createGameFlowSystem } from "@jgengine/core/game/gameFlow";
+import { onboardingOf } from "@jgengine/core/onboarding/onboardingSystem";
 import { DEFAULT_WALK_CODES, defineGame } from "@jgengine/shell/gameKit";
 
 import { editorLayers } from "./editorLayers";
 import { assets } from "./game/assets";
-import { basePrompts, baseView } from "./game/base";
+import { baseGhost, basePrompts, baseView, piecesBuilt, stations } from "./game/base";
 import { cavePrompts, cavesOf, cavesView } from "./game/caves";
 import { bodyPrompts, bodyView } from "./game/deathBody";
 import { breedingPrompts, breedingView } from "./game/breeding";
 import { broodView, obeliskPrompts } from "./game/broodmother";
 import { BROOD_PHASES } from "./game/data/bosses";
-import { creaturePrompts, creaturesView } from "./game/creatures";
+import { creaturePrompts, creaturesView, nearestCarcass, nearestThreat, nearestWild } from "./game/creatures";
+import { STRUCTURES } from "./game/data/structures";
 import { content } from "./game/content";
 import { itemTraits } from "./game/data/items";
 import { SURVIVOR } from "./game/data/survivor";
 import { entityModels, objectModels, scatterModels } from "./game/models";
 import { BAG, BAG_SLOTS, HOTBAR, HOTBAR_SLOTS } from "./game/bags";
 import { nearestSupplyDrop, supplyDropPrompts } from "./game/supplyDrops";
-import { canRun, survivorPrompts, survivorView } from "./game/survivor";
-import { firstDay } from "./game/onboarding";
+import { canRun, nearestHarvestable, survivorPrompts, survivorView } from "./game/survivor";
+import { firstDay, PREY } from "./game/onboarding";
+import { dossierView, nearestUnreadNote, notePrompts } from "./game/dossier";
 import { openScreen } from "./game/screens";
 import { GameUI } from "./game/ui/GameUI";
 import { BaseWorld } from "./game/ui/BaseWorld";
@@ -27,6 +30,7 @@ import { time, world } from "./world";
 
 const SPAWN_YAW = authoredSpawnRotation(editorLayers);
 const SPAWN_AT = authoredSpawnPosition(editorLayers);
+const PIECES: ReadonlySet<string> = new Set(STRUCTURES.map((entry) => entry.id));
 
 export const game = defineGame({
   name: "Fernwild",
@@ -71,7 +75,7 @@ export const game = defineGame({
   sceneScatterBudget: 40_000,
   persist: { mode: "manual" },
   // The camera starts behind the survivor on the authored spawn facing, so you wash up looking inland.
-  prompts: (ctx) => [...survivorPrompts(ctx), ...creaturePrompts(ctx), ...basePrompts(ctx), ...cavePrompts(ctx), ...bodyPrompts(ctx), ...supplyDropPrompts(ctx), ...breedingPrompts(ctx), ...obeliskPrompts(ctx)],
+  prompts: (ctx) => [...survivorPrompts(ctx), ...creaturePrompts(ctx), ...basePrompts(ctx), ...cavePrompts(ctx), ...bodyPrompts(ctx), ...supplyDropPrompts(ctx), ...breedingPrompts(ctx), ...obeliskPrompts(ctx), ...notePrompts(ctx)],
   camera: { perspective: "third", initialYaw: authoredSpawnRotation(editorLayers), frustum: { far: 2400 } },
   capture: {
     play: [{ name: "start", input: {} }],
@@ -85,7 +89,47 @@ export const game = defineGame({
       const breeding = breedingView(ctx);
       const brood = broodView(ctx);
       const me = ctx.scene.entity.get(ctx.player.userId);
+      const pointing = onboardingOf(ctx)?.pointing() ?? null;
+      const dossier = dossierView(ctx);
+      const tamesOn = creatures.viewing?.taming?.foods ?? null;
+      const here: [number, number, number] = me === null ? [0, 0, 0] : [me.position[0], me.position[1], me.position[2]];
+      const ghostPlan = baseGhost(ctx);
+      const stationNear =(id: string): [number, number, number] | null => {
+        const at = stations(ctx)
+          .filter((station) => station.catalogId === id)
+          .sort((a, b) => Math.hypot(a.position[0] - here[0], a.position[1] - here[2]) - Math.hypot(b.position[0] - here[0], b.position[1] - here[2]))[0]?.position;
+        return at === undefined ? null : [at[0], 0, at[1]];
+      };
+      const keyOf = (item: string): number => ctx.player.inventory.state(HOTBAR).slots.findIndex((slot) => slot?.itemId === item) + 1;
+      const sight = <K extends string>(what: K, at: readonly [number, number, number] | null) =>
+        // type-escape: computed template-literal keys widen to string; the two keys are exactly these.
+        ({
+          [`${what}Yaw`]: at === null ? 0 : Math.round(Math.atan2(at[0] - here[0], at[2] - here[2]) * 100) / 100,
+          [`${what}Dist`]: at === null || me === null ? -1 : Math.round(Math.hypot(at[0] - here[0], at[2] - here[2]) * 10) / 10,
+        }) as Record<`${K}Yaw` | `${K}Dist`, number>;
       return {
+        // The onboarding pointer: its bearing as a camera yaw and metres to it; 0 and -1 when it points nowhere.
+        pointYaw: pointing === null || me === null ? 0 : Math.round(Math.atan2(pointing[0] - me.position[0], pointing[2] - me.position[2]) * 100) / 100,
+        pointDist: pointing === null || me === null ? -1 : Math.round(Math.hypot(pointing[0] - me.position[0], pointing[2] - me.position[2]) * 10) / 10,
+        // Steps of the survivor's path done, and engrams known: what the depth check reads as taught and unlocked.
+        taught: onboardingOf(ctx)?.run().snapshot().done.length ?? 0,
+        unlocks: view.engrams.filter((engram) => engram.learned).length,
+        // The dossier: species met, items held and notes read, each of how many the island has; engrams learned of all.
+        speciesSeen: dossier.species.seen,
+        speciesTotal: dossier.species.total,
+        itemsSeen: dossier.items.seen,
+        itemsTotal: dossier.items.total,
+        notesSeen: dossier.notes.seen,
+        notesTotal: dossier.notes.total,
+        tamesSeen: dossier.tames.seen,
+        tamesTotal: dossier.tames.total,
+        engramsSeen: view.engrams.filter((engram) => engram.learned).length,
+        engramsTotal: view.engrams.length,
+        // Lifetime tallies the systems move: gathers that took something, items crafted, drinks, stat points spent.
+        gathered: view.tally.gathered,
+        crafted: view.tally.crafted,
+        drinks: view.tally.drinks,
+        spentPoints: view.spentPoints,
         x: Math.round((me?.position[0] ?? 0) * 10) / 10,
         z: Math.round((me?.position[2] ?? 0) * 10) / 10,
         yaw: Math.round((me?.rotationY ?? 0) * 100) / 100,
@@ -105,6 +149,45 @@ export const game = defineGame({
         fiber: ctx.player.inventory.count(BAG, "fiber"),
         flint: ctx.player.inventory.count(BAG, "flint"),
         engramPoints: view.engramPoints,
+        berries: ["mejoberry", "amarberry", "azulberry", "tintoberry"].reduce((sum, item) => sum + ctx.player.inventory.count(BAG, item), 0),
+        rawMeat: ctx.player.inventory.count(BAG, "raw_meat"),
+        hide: ctx.player.inventory.count(BAG, "hide"),
+        narcoberries: ctx.player.inventory.count(BAG, "narcoberry"),
+        spoiledMeat: ctx.player.inventory.count(BAG, "spoiled_meat"),
+        narcotics: ctx.player.inventory.count(BAG, "narcotic"),
+        clubs: ctx.player.inventory.count(BAG, "wooden_club") + ctx.player.inventory.count(HOTBAR, "wooden_club"),
+        // The bag slot holding a saddle, to double-click into a tame's inventory; -1 with none.
+        saddleSlot: ctx.player.inventory.state(BAG).slots.findIndex((slot) => slot !== null && slot.itemId.endsWith("_saddle")),
+        cookedMeat: ctx.player.inventory.count(BAG, "cooked_meat"),
+        hatchets: ctx.player.inventory.count(HOTBAR, "stone_hatchet") + ctx.player.inventory.count(BAG, "stone_hatchet"),
+        // The bag slot of the first building piece, to double-click onto the hotbar (-1 with none), and the
+        // hotbar key (1-based) holding one (0 with none). Campfires standing.
+        pieceSlot: ctx.player.inventory.state(BAG).slots.findIndex((slot) => slot !== null && PIECES.has(slot.itemId)),
+        pieceKey: ctx.player.inventory.state(HOTBAR).slots.findIndex((slot) => slot !== null && PIECES.has(slot.itemId)) + 1,
+        campfires: piecesBuilt(ctx, "campfire"),
+        // The hotbar key (1-based) holding each tool; 0 when it is not on the hotbar.
+        pickKey: keyOf("stone_pick"),
+        hatchetKey: keyOf("stone_hatchet"),
+        spearKey: keyOf("spear"),
+        // What the survivor can see around them: the nearest tree, flint rock and berry bush within 80 m, and
+        // the nearest easy prey or the grounds it grazes, as a camera yaw and metres (-1 with none).
+        ...sight("tree", nearestHarvestable(ctx, here, 80, "strike", "thatch")),
+        ...sight("rock", nearestHarvestable(ctx, here, 80, "strike", "flint")),
+        ...sight("bush", nearestHarvestable(ctx, here, 80, "pick", "mejoberry")),
+        // (passing over prey grazing within 30 m of a hunter, as a survivor with a spear would).
+        ...sight("prey", nearestWild(ctx, PREY, here, 220, (at) => nearestThreat(ctx, at, 30) === null)),
+        // The nearest body left to carve within 10 m.
+        ...sight("carcass", nearestCarcass(ctx, here, 10)),
+        // The nearest explorer note not yet read.
+        ...sight("note", nearestUnreadNote(ctx, here, 4000)),
+        // The nearest wild hunter within 40 m, the one to keep clear of.
+        ...sight("danger", nearestThreat(ctx, here, 40)),
+        // The nearest campfire and mortar the survivor placed, to walk back to and work at.
+        ...sight("campfire", stationNear("campfire")),
+        ...sight("mortar", stationNear("mortar_and_pestle")),
+        // The first foundation's and doorframe's centres, to build the hut around.
+        ...sight("floor", base.floor),
+        ...sight("doorway", base.doorway),
         crafting: view.queue.length,
         screen: openScreen(ctx) === null ? 0 : 1,
         picks: ctx.player.inventory.count(HOTBAR, "stone_pick") + ctx.player.inventory.count(BAG, "stone_pick"),
@@ -113,8 +196,17 @@ export const game = defineGame({
         aimedTorpor: creatures.aimed?.taming?.torpor ?? 0,
         // Metres between the survivor's and the aimed creature's centres, to a decimetre; 0 with nothing aimed.
         aimedGap: creatures.aimed === null || me === null ? 0 : Math.round((ctx.scene.entity.distance(me.id, creatures.aimed.id) ?? 0) * 10) / 10,
+        // 1 while the creature in front is wild (alive or a body to carve), 0 for a tame or nothing.
+        aimedWild: creatures.aimed !== null && !creatures.aimed.tamed ? 1 : 0,
+        // 1 while the creature in front is a live wild hunter (aggressive or territorial) that will fight back.
+        aimedThreat: creatures.aimed !== null && !creatures.aimed.tamed && !creatures.aimed.dead && (creatures.aimed.temperament === "aggressive" || creatures.aimed.temperament === "territorial") ? 1 : 0,
+        // The aimed creature's health; 0 with nothing aimed or a body.
+        aimedHealth: creatures.aimed?.health.value ?? 0,
         down: creatures.down,
         tamed: creatures.tamed,
+        // The bag slot of the first stack the creature whose inventory is open tames on (what you double-click to feed it); -1 with none.
+        foodSlot: tamesOn === null ? -1 : ctx.player.inventory.state(BAG).slots.findIndex((slot) => slot !== null && tamesOn.includes(slot.itemId)),
+        tameProgress: Math.round((creatures.viewing?.taming?.progress ?? creatures.aimed?.taming?.progress ?? 0) * 100),
         riding: creatures.riding === null ? 0 : 1,
         saddled: creatures.aimed?.saddled === true ? 1 : 0,
         tameLevel: creatures.viewing?.level ?? creatures.riding?.level ?? 0,
@@ -126,6 +218,8 @@ export const game = defineGame({
         // 1 a valid ghost, 0 a blocked one, -1 nothing in hand to build.
         ghost: base.ghost === null ? -1 : base.ghost.valid ? 1 : 0,
         ghostSnapped: base.ghost?.mode === "snap" ? 1 : 0,
+        // Whole metres the ghost stands above the ground under it: a wall stacked on a wall shows 3.
+        ghostLift: ghostPlan === null ? 0 : Math.round(ghostPlan.position[1] - ctx.world.groundHeightAt(ghostPlan.position[0], ghostPlan.position[2])),
         aimedStructureHealth: base.aimed?.health ?? 0,
         doorsOpen: base.open,
         // Metres the survivor stands past the first foundation's centre and past the first doorframe, along the

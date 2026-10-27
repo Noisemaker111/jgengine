@@ -6,12 +6,12 @@ import { onNewPlayer, survivorStart, systems } from "../loop";
 import { world } from "../world";
 import { BAG, BAG_SLOTS, HOTBAR, HOTBAR_SLOTS } from "./bags";
 import { content } from "./content";
-import { creaturesView } from "./creatures";
+import { creatureCard, creaturesView } from "./creatures";
 import { itemTraits } from "./data/items";
 import { openScreen } from "./screens";
 import { editorLayers } from "../editorLayers";
 import { markersOfKind } from "@jgengine/core/world/authoredSpawn";
-import { speciesDef } from "./data/species";
+import { speciesDef, wildLevelCap } from "./data/species";
 import { entityModels } from "./models";
 
 function islandRunner(): HeadlessRunner {
@@ -81,7 +81,7 @@ test("club a raptor unconscious, tame it on raw meat, saddle it and ride it", ()
   const runner = islandRunner();
   tick(runner, 0.1);
   // A survivor who levelled health and stamina, as anyone taking on a raptor with a club must: it
-  // bites for 15 every 0.8 s while they swing, so they need about 500 health to outlast 18 hits.
+  // bites for 15 every 0.8 s while they swing, so they need far more than a new survivor's 100 health.
   runner.ui.tryInvoke("cheat", { xp: 100000, give: { wooden_club: 1, raw_meat: 10, raptor_saddle: 1 }, tamingSpeed: 20, spend: { health: 45, stamina: 8 } });
   equip(runner, "wooden_club");
   runner.ui.tryInvoke("cheat", { summon: { species: "raptor", level: 1, distance: 2.5 } });
@@ -92,9 +92,9 @@ test("club a raptor unconscious, tame it on raw meat, saddle it and ride it", ()
     hits += 1;
     tick(runner, 0.95);
   }
-  // ARK's wiki counts 18 club hits for a level-1 raptor; its torpor drains a little between swings.
-  expect(hits).toBeGreaterThanOrEqual(18);
-  expect(hits).toBeLessThanOrEqual(19);
+  // A club hit lands 20 torpor on a level-1 raptor's 180; its torpor drains a little between swings.
+  expect(hits).toBeGreaterThanOrEqual(9);
+  expect(hits).toBeLessThanOrEqual(10);
   expect(creaturesView(runner.ctx).aimed?.taming?.unconscious).toBe(true);
   // It fought back the whole time, and the survivor outlasted it.
   const health = runner.ctx.scene.entity.stats.get(runner.userId, "health")!;
@@ -196,8 +196,62 @@ test("bare fists knock out as well as hurt: a punch puts ARK's 1.75x its damage 
   tick(runner, 0.1);
   const card = creaturesView(runner.ctx).aimed!;
   expect(card.health.value).toBe(card.health.max - 8);
-  // 8 damage x 1.75 = 14 torpor, of which a creature takes half (the same share a club's lands).
-  expect(card.taming?.torpor).toBe(7);
+  // 8 damage x 1.75 = 14 torpor, all of it on the creature.
+  expect(card.taming?.torpor).toBe(14);
+});
+
+test("danger rises with distance: the beach herds are level 5 at most, the far side of the island rolls up to 30", () => {
+  const runner = islandRunner();
+  tick(runner, 0.1);
+  const survivor = runner.ctx.scene.entity.get(runner.userId);
+  if (survivor === null) throw new Error("no survivor on the beach");
+  const start = survivor.position;
+  // A herd's zone is 40 m across, so a creature may stand up to 40 m nearer the start than its zone's centre.
+  const wild = runner.ctx.scene.entity.list().filter((entity) => entity.id !== runner.userId);
+  expect(wild.length).toBeGreaterThan(5);
+  for (const entity of wild) {
+    const fromStart = Math.hypot(entity.position[0] - start[0], entity.position[2] - start[2]);
+    expect(creatureCard(runner.ctx, entity.id)?.level ?? Infinity).toBeLessThanOrEqual(wildLevelCap(fromStart + 40));
+  }
+  const nearby = wild.filter((entity) => Math.hypot(entity.position[0] - start[0], entity.position[2] - start[2]) < 60);
+  expect(nearby.length).toBeGreaterThan(0);
+  for (const entity of nearby) expect(creatureCard(runner.ctx, entity.id)?.level ?? Infinity).toBeLessThanOrEqual(7);
+  // The beach by the start keeps no hunters: a new survivor learns the island before anything hunts them.
+  expect(nearby.filter((entity) => speciesDef(entity.name)?.temperament === "aggressive").map((entity) => entity.name)).toEqual([]);
+  expect(wildLevelCap(0)).toBe(5);
+  expect(wildLevelCap(500)).toBe(15);
+  expect(wildLevelCap(2000)).toBe(30);
+});
+
+test("fists put a dodo to sleep before they kill it, at any wild level", () => {
+  for (const level of [1, 15, 30]) {
+    const runner = islandRunner();
+    tick(runner, 0.1);
+    runner.ui.tryInvoke("cheat", { summon: { species: "dodo", level, distance: 1.2 } });
+    tick(runner, 0.1);
+    const me = runner.ctx.scene.entity.get(runner.userId);
+    if (me === null) throw new Error("no survivor on the beach");
+    const near = (id: string) => {
+      const at = runner.ctx.scene.entity.get(id)?.position;
+      return at === undefined ? Infinity : Math.hypot(at[0] - me.position[0], at[2] - me.position[2]);
+    };
+    const dodo = runner.ctx.scene.entity.list().filter((entity) => entity.name === "dodo").sort((a, b) => near(a.id) - near(b.id))[0]?.id ?? "";
+    expect(dodo).not.toBe("");
+    // The dodo runs when hit: each swing, the survivor has caught up with it again.
+    for (let swing = 0; swing < 60 && runner.ctx.scene.entity.get(dodo) !== undefined; swing += 1) {
+      const yaw = facing(runner);
+      const [x, , z] = me.position;
+      const ahead: [number, number] = [x + Math.sin(yaw) * 1.2, z + Math.cos(yaw) * 1.2];
+      runner.ctx.scene.entity.setPose(dodo, { position: [ahead[0], runner.ctx.world.groundHeightAt(ahead[0], ahead[1]), ahead[1]], rotationY: 0 });
+      tick(runner, 0.05);
+      const card = creaturesView(runner.ctx).aimed;
+      if (card?.taming?.unconscious === true) break;
+      runner.ui.tryInvoke("fire", { yaw });
+      tick(runner, 1);
+    }
+    expect(runner.ctx.scene.entity.get(dodo)).toBeDefined();
+    expect(creaturesView(runner.ctx).aimed?.taming?.unconscious).toBe(true);
+  }
 });
 
 test("a dodo runs when hit, and its body carves into meat and hide", () => {

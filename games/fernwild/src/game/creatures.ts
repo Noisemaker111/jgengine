@@ -21,7 +21,7 @@ import { BAG, HOTBAR } from "./bags";
 import { itemDef, itemLabel, itemTraits } from "./data/items";
 import { IMPRINT_BONUS, IMPRINTED_STATS } from "./data/breeding";
 import { TROPHY_DROPS } from "./data/bosses";
-import { killXp, SPECIES, speciesDef, statAt, TAME_LEVELS, TAME_STATS, temperamentOf, TORPOR_TAKEN, WILD_LEVELS, WILD_STATS, type SpeciesDef, type TameStat, type WildStat } from "./data/species";
+import { killXp, SPECIES, speciesDef, statAt, TAME_LEVELS, TAME_STATS, temperamentOf, WILD_LEVELS, wildLevelCap,WILD_STATS, type SpeciesDef, type TameStat, type WildStat } from "./data/species";
 import { setScreen } from "./screens";
 
 /** Slots in a creature's own inventory (ARK caps it by weight; slots are the simple stand-in). */
@@ -97,7 +97,7 @@ interface World {
   roster: ReturnType<typeof createCompanionRoster>;
   carcasses: ReturnType<typeof createResourceNodeField>;
   director: PopulationDirector;
-  regions: Map<string, { center: [number, number, number]; radius: number }>;
+  regions: Map<string, { center: [number, number, number]; radius: number; maxLevel: number }>;
   steps: Map<string, CreatureStep>;
   /** Seconds a distant wild creature has waited for its next, coarser step. */
   idle: Map<string, number>;
@@ -125,6 +125,8 @@ const NEAR_RANGE = 60;
 const FAR_STEP = 0.25;
 /** Herds wake when the survivor comes this close to their zone and sleep (wild ones vanish) past it. */
 const AWAKE_RANGE = 220;
+/** A herd never refills in plain view: only once the survivor is this many metres from the spawn point. */
+const REFILL_UNSEEN = 60;
 /** Herds wake, sleep and refill on this beat (seconds), not every frame: a big island queues hundreds of refills. */
 const HERD_CHECK = 0.5;
 /** ...or as soon as the survivor is this far (m) from where herds were last checked. */
@@ -154,6 +156,7 @@ function shareOut(count: number, listed: readonly ZoneSpecies[]): { species: str
  * no more; a species with no stats would be left out (creatures.test checks none is).
  */
 function herds() {
+  const start = markersOfKind(editorLayers, "player_spawn")[0];
   return markersOfKind(editorLayers, "creature_spawn").flatMap((marker) => {
     const meta = (marker.meta ?? {}) as { species?: readonly ZoneSpecies[]; count?: number; radius?: number };
     const listed = meta.species ?? [];
@@ -162,7 +165,8 @@ function herds() {
     const radius = meta.radius ?? 14;
     const center: [number, number, number] = [marker.position.x, marker.position.y, marker.position.z];
     const ring: NavPoint[] = Array.from({ length: 8 }, (_, i) => [center[0] + Math.cos((i / 8) * Math.PI * 2) * radius * 0.6, center[2] + Math.sin((i / 8) * Math.PI * 2) * radius * 0.6] as const);
-    return [{ region: marker.id, species, radius, center, ring }];
+    const fromStart = start === undefined ? Infinity : Math.hypot(center[0] - start.position.x, center[2] - start.position.z);
+    return [{ region: marker.id, species, radius, center, ring, maxLevel: wildLevelCap(fromStart) }];
   });
 }
 
@@ -179,7 +183,7 @@ const worldOf = perContext((ctx: GameContext): World => {
       respawnDelay: RESPAWN_SECONDS,
       seed: 7,
     }),
-    regions: new Map(authored.map((herd) => [herd.region, { center: herd.center, radius: herd.radius }])),
+    regions: new Map(authored.map((herd) => [herd.region, { center: herd.center, radius: herd.radius, maxLevel: herd.maxLevel }])),
     steps: new Map(),
     idle: new Map(),
     seq: 0,
@@ -232,9 +236,9 @@ function body(world: World, creature: Creature): CreatureBody {
 
 // --- spawning -----------------------------------------------------------------------------
 
-function rollLevel(ctx: GameContext): number {
+function rollLevel(ctx: GameContext, max: number): number {
   // Low levels are common and high ones rare, as on ARK's Island.
-  return WILD_LEVELS.min + Math.floor(Math.pow(ctx.rng(), 1.6) * (WILD_LEVELS.max - WILD_LEVELS.min + 1));
+  return WILD_LEVELS.min + Math.floor(Math.pow(ctx.rng(), 1.6) * (max - WILD_LEVELS.min + 1));
 }
 
 /** The nearest open ground to `at` a body of `radius` fits on: never inside a trunk or a boulder, never in the sea. */
@@ -270,7 +274,7 @@ export function spawnCreature(
   const world = worldOf(ctx);
   const id = `${species}_${(world.seq += 1)}`;
   const sex = ctx.rng() < 0.5 ? "female" : "male";
-  const genes = options.genes ?? { sex: options.sex ?? sex, wild: scatterLevels((options.level ?? rollLevel(ctx)) - 1, WILD_STATS, ctx.rng), mutations: 0 };
+  const genes = options.genes ?? { sex: options.sex ?? sex, wild: scatterLevels((options.level ?? rollLevel(ctx, world.regions.get(options.region ?? "")?.maxLevel ?? WILD_LEVELS.max)) - 1, WILD_STATS, ctx.rng), mutations: 0 };
   const level = 1 + WILD_STATS.reduce((sum, stat) => sum + genes.wild[stat], 0);
   ctx.scene.entity.spawn(species, { id, position, rotationY: ctx.rng() * Math.PI * 2, role: "npc", ...(options.size === undefined ? {} : { size: options.size }) });
   const creature: Creature = {
@@ -318,8 +322,8 @@ function tickHerds(ctx: GameContext, world: World, here: readonly [number, numbe
     const region = world.regions.get(request.region);
     const point = request.point ?? (region === undefined ? null : ([region.center[0], region.center[2]] as const));
     if (point === null) continue;
-    // A herd never refills in plain view (the very first fill aside): wait until the survivor has wandered off.
-    const near = world.populated && here !== null && Math.hypot(here[0] - point[0], here[2] - point[1]) < 60;
+    // The very first fill aside, wait until the survivor has wandered off.
+    const near = world.populated && here !== null && Math.hypot(here[0] - point[0], here[2] - point[1]) < REFILL_UNSEEN;
     if (near || spawnCreature(ctx, request.species, point, { region: request.region }) === null) world.director.notifyRemoved(request.region, request.species);
   }
   world.populated = true;
@@ -416,7 +420,7 @@ export function strikeCreature(ctx: GameContext, attackerId: string, yaw: number
   world.lastTarget = { id: target.id, until: ctx.time.now() + 10 };
   const wasDown = world.taming.state(target.id)?.unconscious === true;
   if (wasDown) world.taming.damage(target.id, damage / maxHealth(target));
-  const knockedOut = !wasDown && def.torporImmune !== true && world.taming.addTorpor(target.id, (tool.torpor ?? 0) * TORPOR_TAKEN * melee);
+  const knockedOut = !wasDown && def.torporImmune !== true && world.taming.addTorpor(target.id, (tool.torpor ?? 0) * melee);
   if (knockedOut) knockOut(ctx, target);
   const killed = (ctx.scene.entity.stats.get(target.id, "health")?.current ?? 1) <= 0;
   if (killed) kill(ctx, target);
@@ -851,6 +855,11 @@ export function whistle(ctx: GameContext, order: Extract<CompanionCommand, "foll
 }
 
 /** The E prompt for creatures, outranking a bush behind them. */
+/** Whether the survivor is in a saddle. */
+export function isMounted(ctx: GameContext): boolean {
+  return ridingOf(ctx).mountOf(ctx.player.userId) !== null;
+}
+
 export function creaturePrompts(ctx: GameContext): PositionedPrompt[] {
   const world = worldOf(ctx);
   const mounted = ridingOf(ctx).mountOf(ctx.player.userId);
@@ -1022,6 +1031,7 @@ export function creatureCard(ctx: GameContext, id: string | null) {
   const health = ctx.scene.entity.stats.get(creature.id, "health");
   return {
     id: creature.id,
+    species: creature.species,
     label: def.label,
     level: creature.level,
     temperament: def.temperament,
@@ -1068,38 +1078,98 @@ export function creaturesView(ctx: GameContext) {
 export type CreaturesView = ReturnType<typeof creaturesView>;
 
 /** Where each authored herd lives and who lives there: fixed by editor.scene.json, so shared by every run. */
-const HERD_HOMES: readonly { species: readonly string[]; center: readonly [number, number, number] }[] = herds().map((herd) => ({
+const HERD_HOMES: readonly { region: string; species: readonly string[]; center: readonly [number, number, number] }[] = herds().map((herd) => ({
+  region: herd.region,
   species: herd.species.map((entry) => entry.species),
   center: herd.center,
 }));
 
+/** The species of every live creature, wild or tamed, within `within` metres of `from`. */
+export function speciesNear(ctx: GameContext, from: readonly [number, number, number], within: number): Set<string> {
+  const near = new Set<string>();
+  for (const creature of worldOf(ctx).creatures.values()) {
+    if (creature.dead || near.has(creature.species)) continue;
+    const at = ctx.scene.entity.get(creature.id)?.position;
+    if (at !== undefined && Math.hypot(at[0] - from[0], at[2] - from[2]) <= within) near.add(creature.species);
+  }
+  return near;
+}
+
 /**
- * Where to find a wild `species` from `from`: the nearest live untamed one within `within` metres,
- * else the centre of the nearest spawn zone it lives in (asleep zones have nobody in them yet).
+ * Where to find a wild one of `species` (one id or several) from `from`: the nearest live untamed one
+ * within `within` metres, else the centre of the nearest spawn zone it lives in that may hold one: an
+ * asleep zone fills as you come, but an awake one with none left has shown you all it has until it refills.
+ * `keep` passes over ones a survivor would not go for (one grazing beside a raptor).
  */
-export function nearestWild(ctx: GameContext, species: string, from: readonly [number, number, number], within: number): [number, number, number] | null {
+export function nearestWild(
+  ctx: GameContext,
+  species: string | readonly string[],
+  from: readonly [number, number, number],
+  within: number,
+  keep: (at: readonly [number, number, number]) => boolean = () => true,
+): [number, number, number] | null {
+  const wanted: readonly string[] = typeof species === "string" ? [species] : species;
+  const world = worldOf(ctx);
   let best: [number, number, number] | null = null;
   let bestDistance = within;
-  for (const creature of worldOf(ctx).creatures.values()) {
-    if (creature.dead || creature.tamed || creature.species !== species) continue;
+  for (const creature of world.creatures.values()) {
+    if (creature.dead || creature.tamed || !wanted.includes(creature.species)) continue;
     const at = ctx.scene.entity.get(creature.id)?.position;
     const distance = at === undefined ? Number.POSITIVE_INFINITY : Math.hypot(at[0] - from[0], at[2] - from[2]);
-    if (at !== undefined && distance <= bestDistance) {
+    if (at !== undefined && distance <= bestDistance && keep(at)) {
       best = [at[0], at[1], at[2]];
       bestDistance = distance;
     }
   }
   if (best !== null) return best;
+  const emptied = (region: string): boolean =>
+    awake(world, region, from) && ![...world.creatures.values()].some((creature) => creature.region === region && !creature.dead && !creature.tamed && wanted.includes(creature.species));
   let home: readonly [number, number, number] | null = null;
   let homeDistance = Number.POSITIVE_INFINITY;
   for (const herd of HERD_HOMES) {
     const distance = Math.hypot(herd.center[0] - from[0], herd.center[2] - from[2]);
-    if (herd.species.includes(species) && distance < homeDistance) {
+    if (distance < homeDistance && wanted.some((id) => herd.species.includes(id)) && !emptied(herd.region) && keep(herd.center)) {
       home = herd.center;
       homeDistance = distance;
     }
   }
   return home === null ? null : [home[0], ctx.world.groundHeightAt(home[0], home[2]), home[2]];
+}
+
+/** The nearest wild body still holding meat and hide within `within` metres of `from`, or null. */
+export function nearestCarcass(ctx: GameContext, from: readonly [number, number, number], within: number): [number, number, number] | null {
+  let best: [number, number, number] | null = null;
+  let bestDistance = within;
+  for (const creature of worldOf(ctx).creatures.values()) {
+    // A body carved bare is left two seconds to rot.
+    if (!creature.dead || creature.tamed || creature.rot <= 2) continue;
+    const at = ctx.scene.entity.get(creature.id)?.position;
+    if (at === undefined) continue;
+    const distance = Math.hypot(at[0] - from[0], at[2] - from[2]);
+    if (distance <= bestDistance) {
+      best = [at[0], at[1], at[2]];
+      bestDistance = distance;
+    }
+  }
+  return best;
+}
+
+/** The nearest live wild hunter (aggressive or territorial) within `within` metres of `from`, or null. */
+export function nearestThreat(ctx: GameContext, from: readonly [number, number, number], within: number): [number, number, number] | null {
+  let best: [number, number, number] | null = null;
+  let bestDistance = within;
+  for (const creature of worldOf(ctx).creatures.values()) {
+    const temperament = defOf(creature).temperament;
+    if (creature.dead || creature.tamed || (temperament !== "aggressive" && temperament !== "territorial")) continue;
+    const at = ctx.scene.entity.get(creature.id)?.position;
+    if (at === undefined) continue;
+    const distance = Math.hypot(at[0] - from[0], at[2] - from[2]);
+    if (distance <= bestDistance) {
+      best = [at[0], at[1], at[2]];
+      bestDistance = distance;
+    }
+  }
+  return best;
 }
 
 // --- save -----------------------------------------------------------------------------------------

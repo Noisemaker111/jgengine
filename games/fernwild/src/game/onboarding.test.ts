@@ -41,7 +41,7 @@ const survivor = (runner: HeadlessRunner) => defined(runner.ctx.scene.entity.get
 const here = (runner: HeadlessRunner) => survivor(runner).position;
 const step = (onboarding: OnboardingRuntime) => onboarding.run().current()?.step.id ?? null;
 
-test("the first day walks a new survivor from a punched tree to a tamed dodo, pointing at each thing", () => {
+test("the survivor's path walks a new survivor from a punched tree to a tamed dodo, pointing at each thing", () => {
   const { runner, onboarding } = firstDayRunner();
   tick(runner, 0.3);
 
@@ -66,10 +66,12 @@ test("the first day walks a new survivor from a punched tree to a tamed dodo, po
   // Step 2 points at loose stones, not a tree, and stars them on the minimap.
   expect(step(onboarding)).toBe("stone");
   tick(runner, 0.3);
-  const stones = nearestHarvestable(runner.ctx, here(runner), 120, "pick", "stone");
-  expect(stones).not.toBeNull();
+  const stones = defined(nearestHarvestable(runner.ctx, here(runner), 120, "pick", "stone"));
   expect(onboarding.pointing()).toEqual(stones);
   expect(onboarding.markers.get(ONBOARDING_MARK)?.position).toEqual(stones);
+  // Turned to the stones the pointer names, E picks them.
+  const atStones = defined(runner.ctx.scene.entity.get(runner.userId)).position;
+  runner.ctx.scene.entity.setPose(runner.userId, { position: atStones, rotationY: Math.atan2(stones[0] - atStones[0], stones[2] - atStones[2]) });
   runner.ui.tryInvoke("harvest", {});
   tick(runner, 0.2);
   expect(onboarding.run().isDone("stone")).toBe(true);
@@ -82,12 +84,35 @@ test("the first day walks a new survivor from a punched tree to a tamed dodo, po
   expect(onboarding.run().isDone("pick")).toBe(true);
   expect(onboardingLock(runner.ctx, "learn")).toBeNull();
 
-  // Step 4 points at a dodo (or the dodo herd's grounds), and a tame finishes the day.
+  // Step 4 points at a rock with flint for the hatchet.
+  expect(step(onboarding)).toBe("hatchet");
+  tick(runner, 0.3);
+  expect(onboarding.pointing()).toEqual(nearestHarvestable(runner.ctx, here(runner), 120, "strike", "flint"));
+  runner.ctx.player.inventory.put(BAG, "stone_hatchet", 1);
+  tick(runner, 0.3);
+
+  // Step 5 points at a berry bush; step 6 at the shallows.
+  expect(step(onboarding)).toBe("berries");
+  expect(onboarding.pointing()).toEqual(nearestHarvestable(runner.ctx, here(runner), 120, "pick", "mejoberry"));
+  runner.ctx.player.inventory.put(BAG, "mejoberry", 12);
+  tick(runner, 0.3);
+  expect(step(onboarding)).toBe("drink");
+  expect(onboarding.pointing()).not.toBeNull();
+  const shore = defined(onboarding.pointing());
+  runner.ctx.scene.entity.setPose(runner.userId, { position: shore, rotationY: 0 });
+  tick(runner, 0.3);
+  runner.ui.tryInvoke("harvest", {});
+  tick(runner, 0.3);
+  runner.ctx.scene.entity.setPose(runner.userId, { position: atStones, rotationY: facing });
+  tick(runner, 0.3);
+
+  // Step 7 points at a dodo (or the dodo herd's grounds), and a tame finishes the beach.
   expect(step(onboarding)).toBe("tame");
   tick(runner, 0.3);
-  const dodo = nearestWild(runner.ctx, "dodo", here(runner), 250);
-  expect(dodo).not.toBeNull();
-  expect(onboarding.pointing()).toEqual(dodo);
+  const dodo = defined(nearestWild(runner.ctx, "dodo", here(runner), 250));
+  // The pointer looks on a 0.25 s beat, so a grazing dodo may have stepped a little since.
+  const pointed = defined(onboarding.pointing());
+  expect(Math.hypot(pointed[0] - dodo[0], pointed[2] - dodo[2])).toBeLessThan(1);
   expect(onboarding.run().isFinished()).toBe(false);
   expect(creaturesView(runner.ctx).tamed).toBe(0);
 
@@ -103,7 +128,10 @@ test("the first day walks a new survivor from a punched tree to a tamed dodo, po
   forceTame(runner.ctx);
   tick(runner, 0.3);
   expect(creaturesView(runner.ctx).tamed).toBe(1);
-  expect(onboarding.run().isFinished()).toBe(true);
+  // The beach is done; the path goes on across the island with a stat point, which points at nothing.
+  expect(onboarding.run().isDone("tame")).toBe(true);
+  expect(step(onboarding)).toBe("stat");
+  expect(onboarding.run().isFinished()).toBe(false);
   expect(onboarding.pointing()).toBeNull();
 });
 

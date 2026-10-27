@@ -13532,7 +13532,7 @@
       },
       "meta": {
         "biome": "south_coast",
-        "count": 3,
+        "count": 4,
         "radius": 40,
         "species": [
           {
@@ -13540,7 +13540,7 @@
             "weight": 4
           },
           {
-            "species": "dilophosaur",
+            "species": "phiomia",
             "weight": 3
           },
           {
@@ -13548,32 +13548,8 @@
             "weight": 2
           },
           {
-            "species": "phiomia",
-            "weight": 3
-          },
-          {
             "species": "parasaur",
             "weight": 2
-          },
-          {
-            "species": "triceratops",
-            "weight": 1
-          },
-          {
-            "species": "moschops",
-            "weight": 1
-          },
-          {
-            "species": "pachy",
-            "weight": 1
-          },
-          {
-            "species": "compy",
-            "weight": 1
-          },
-          {
-            "species": "raptor",
-            "weight": 0.5
           }
         ]
       }

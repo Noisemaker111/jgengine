@@ -7,6 +7,7 @@ import { useGameContext } from "@jgengine/react/provider";
 import { itemDef, itemLabel } from "../data/items";
 import type { SurvivorScreen } from "../screens";
 import { BAG, HOTBAR } from "../bags";
+import { dossierPages } from "../dossier";
 import { craftable } from "../survivor";
 import { ObeliskPanel } from "./Broodmother";
 import { CreaturePanel } from "./CreatureScreen";
@@ -58,6 +59,7 @@ function Tabs({ tab }: { tab: SurvivorScreen }): ReactNode {
     <div style={{ display: "flex", gap: 4 }}>
       {button("inventory", "Inventory", view.statPoints)}
       {button("engrams", "Engrams", view.engramPoints)}
+      {button("dossier", "Dossier", 0)}
     </div>
   );
 }
@@ -208,6 +210,64 @@ function Crafting(): ReactNode {
   );
 }
 
+/** ARK's dossier and explorer notes: every species, met or still "???", which you have tamed, and the notes you have found. */
+function Dossier(): ReactNode {
+  const pages = useGameStore(dossierPages, same);
+  const [open, setOpen] = useState<string | null>(null);
+  const met = pages.species.filter((entry) => entry.met).length;
+  const tamed = pages.species.filter((entry) => entry.tamed).length;
+  const tamable = pages.species.filter((entry) => entry.tamable).length;
+  const read = pages.notes.filter((note) => note.read);
+  const shown = read.find((note) => note.id === open) ?? null;
+  return (
+    <div style={{ display: "flex", gap: 10, alignItems: "stretch" }}>
+      <div data-dossier="" style={{ ...PANEL, width: 520 }}>
+        <div style={{ display: "flex", justifyContent: "space-between" }}>
+          <span style={HEADING}>Dossier</span>
+          <span style={{ fontSize: 12 }}>
+            {met}/{pages.species.length} met · {tamed}/{tamable} tamed
+          </span>
+        </div>
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 4, overflowY: "auto", maxHeight: "60vh" }}>
+          {pages.species.map((entry) => (
+            <div
+              key={entry.id}
+              data-species={entry.id}
+              style={{ padding: "4px 6px", borderRadius: 3, fontSize: 11, background: entry.tamed ? "#1f3a2a" : "#161f22", border: `1px solid ${entry.met ? "#8fd3e2" : "#6fb7c922"}`, opacity: entry.met ? 1 : 0.5 }}
+            >
+              {entry.name}
+              {entry.tamed ? <span style={{ color: "#9ef08a" }}> ✓</span> : null}
+              {entry.met && !entry.tamable ? <span style={{ color: "#ff8a7a" }}> ☠</span> : null}
+            </div>
+          ))}
+        </div>
+      </div>
+      <div style={{ ...PANEL, width: 360 }}>
+        <div style={{ display: "flex", justifyContent: "space-between" }}>
+          <span style={HEADING}>Explorer notes</span>
+          <span style={{ fontSize: 12 }}>
+            {read.length}/{pages.notes.length}
+          </span>
+        </div>
+        {read.length === 0 ? <span style={{ fontSize: 12, opacity: 0.8 }}>Notes lie at caves, obelisks and summits. The map marks them with ✎.</span> : null}
+        <div style={{ display: "flex", flexDirection: "column", gap: 3, overflowY: "auto", maxHeight: "24vh" }}>
+          {read.map((note) => (
+            <button
+              key={note.id}
+              data-note={note.id}
+              onClick={() => setOpen(note.id)}
+              style={{ textAlign: "left", background: note.id === open ? "#2d6f80" : "#161f22", color: "#e8f1f2", border: "1px solid #6fb7c944", padding: "4px 8px", fontSize: 12, cursor: "pointer" }}
+            >
+              {note.title}
+            </button>
+          ))}
+        </div>
+        {shown === null ? null : <p style={{ fontSize: 12, lineHeight: 1.5, margin: 0, whiteSpace: "pre-wrap", overflowY: "auto", maxHeight: "30vh" }}>{shown.text}</p>}
+      </div>
+    </div>
+  );
+}
+
 /** ARK's engram screen: everything by level, learn with engram points. */
 function Engrams(): ReactNode {
   const game = useGame();
@@ -294,6 +354,8 @@ export function InventoryScreen({ tab }: { tab: SurvivorScreen }): ReactNode {
           <Stats />
           <Crafting />
         </div>
+      ) : tab === "dossier" ? (
+        <Dossier />
       ) : (
         <Engrams />
       )}
