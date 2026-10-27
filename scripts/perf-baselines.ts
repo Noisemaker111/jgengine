@@ -75,7 +75,7 @@ export function saveBaseline(path: string, record: unknown): void {
   writeFileSync(path, `${JSON.stringify(record, null, 2)}\n`);
 }
 
-/** The cached record at `path`, or null when that side was never measured. */
-export function readBaselineAt<T>(path: string): T | null {
-  return existsSync(path) ? (JSON.parse(readFileSync(path, "utf8")) as T) : null;
+/** The cached record's text at `path`, or null when that side was never measured. */
+export function readBaselineAt(path: string): string | null {
+  return existsSync(path) ? readFileSync(path, "utf8") : null;
 }

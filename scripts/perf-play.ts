@@ -1329,14 +1329,14 @@ function resolveBaselines(compare: string | undefined, games: readonly string[],
   if (existsSync(file)) {
     const [only, ...rest] = games;
     if (only === undefined || rest.length > 0) throw new Error(`--compare ${compare} is one record; compare several games against a git ref (--compare HEAD) instead`);
-    baselines.set(only, checkedBaseline(JSON.parse(readFileSync(file, "utf8")) as PerfRecord, compare));
+    baselines.set(only, checkedBaseline(readFileSync(file, "utf8"), compare));
     return baselines;
   }
   const commit = resolveCommit(repoRoot, compare);
   if (commit === null) throw new Error(`--compare ${compare} is neither a record file nor a git ref`);
   const missing: string[] = [];
   for (const game of games) {
-    const record = readBaselineAt<PerfRecord>(baselinePath(repoRoot, game, commit, conditions));
+    const record = readBaselineAt(baselinePath(repoRoot, game, commit, conditions));
     if (record === null) missing.push(game);
     else baselines.set(game, checkedBaseline(record, `the cached ${game} run at ${commit}`));
   }
@@ -1350,7 +1350,9 @@ function resolveBaselines(compare: string | undefined, games: readonly string[],
   return baselines;
 }
 
-function checkedBaseline(record: PerfRecord, what: string): PerfRecord {
+/** A record file's text as the record a comparison reads, refusing one without a breakdown. */
+function checkedBaseline(text: string, what: string): PerfRecord {
+  const record = JSON.parse(text) as PerfRecord;
   if (record.breakdown === undefined || record.breakdown === null) {
     throw new Error(`${what} has no frame breakdown to compare against; it was written before the breakdown existed, or by a page without dev telemetry`);
   }

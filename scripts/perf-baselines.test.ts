@@ -54,7 +54,7 @@ test("a clean tree names its commit and keeps the record; an edited game or engi
     const path = baselinePath(root, "deepward", head, conditionsKey(base));
     expect(readBaselineAt(path)).toBeNull();
     saveBaseline(path, { game: "deepward", frame: 8 });
-    expect(readBaselineAt(path)).toEqual({ game: "deepward", frame: 8 });
+    expect(JSON.parse(readBaselineAt(path) ?? "null")).toEqual({ game: "deepward", frame: 8 });
 
     writeFileSync(join(root, "games", "deepward", "index.ts"), "2");
     expect(cleanCommitFor(root, "deepward")).toBeNull();
