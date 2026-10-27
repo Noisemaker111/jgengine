@@ -9,7 +9,7 @@ import { entityModels } from "./game/world/models";
  * one: in the world the loaders wander, and any given captured vantage may hold no robot at all.
  */
 export default function ScrapSignalPreview({ className }: GamePreviewProps) {
-  const loader = entityModels.loader;
+  const loader = entityModels["loader"];
   if (loader === undefined) return <div className={className} style={{ background: "#14161a" }} />;
   return (
     <div className={className} style={{ position: "relative", height: "100%", width: "100%", background: "#14161a" }}>

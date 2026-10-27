@@ -46,10 +46,11 @@ function isRecord(value: unknown): value is Record<string, unknown> {
 }
 
 function isCharacterSave(value: unknown): value is CharacterSave {
-  if (!isRecord(value) || typeof value.id !== "string") return false;
-  if (!isRecord(value.ranks)) return false;
-  if (!Object.values(value.ranks).every((rank) => typeof rank === "number" && Number.isFinite(rank))) return false;
-  return typeof value.points === "number" && Number.isFinite(value.points);
+  if (!isRecord(value)) return false;
+  const { id, ranks, points } = value;
+  if (typeof id !== "string" || !isRecord(ranks)) return false;
+  if (!Object.values(ranks).every((rank) => typeof rank === "number" && Number.isFinite(rank))) return false;
+  return typeof points === "number" && Number.isFinite(points);
 }
 
 /**
@@ -59,33 +60,37 @@ function isCharacterSave(value: unknown): value is CharacterSave {
  */
 function readReserve(value: unknown, userId: string): ReserveSnapshot {
   if (!isRecord(value)) return {};
-  if (typeof value.phase === "string" && typeof value.downedUntilMs === "number") {
-    return value.phase === "downed"
+  const { phase: legacyPhase, downedUntilMs } = value;
+  if (typeof legacyPhase === "string" && typeof downedUntilMs === "number") {
+    return legacyPhase === "downed"
       ? { [userId]: { phase: "downed", bleedoutRemaining: RESERVE_WINDOW_SECONDS, reviveProgress: 0, bannerRemaining: null } }
       : {};
   }
   const snapshot: ReserveSnapshot = {};
   for (const [instanceId, entry] of Object.entries(value)) {
-    if (!isRecord(entry) || typeof entry.phase !== "string") continue;
-    if (typeof entry.bleedoutRemaining !== "number" || !Number.isFinite(entry.bleedoutRemaining)) continue;
+    if (!isRecord(entry)) continue;
+    const { phase, bleedoutRemaining, reviveProgress, bannerRemaining } = entry;
+    if (typeof phase !== "string") continue;
+    if (typeof bleedoutRemaining !== "number" || !Number.isFinite(bleedoutRemaining)) continue;
     snapshot[instanceId] = {
-      phase: entry.phase === "downed" || entry.phase === "dead" ? entry.phase : "alive",
-      bleedoutRemaining: Math.max(0, entry.bleedoutRemaining),
-      reviveProgress: typeof entry.reviveProgress === "number" ? entry.reviveProgress : 0,
-      bannerRemaining: typeof entry.bannerRemaining === "number" ? entry.bannerRemaining : null,
+      phase: phase === "downed" || phase === "dead" ? phase : "alive",
+      bleedoutRemaining: Math.max(0, bleedoutRemaining),
+      reviveProgress: typeof reviveProgress === "number" ? reviveProgress : 0,
+      bannerRemaining: typeof bannerRemaining === "number" ? bannerRemaining : null,
     };
   }
   return snapshot;
 }
 
 function isRunSave(value: unknown): value is RunSave {
-  if (!isRecord(value) || typeof value.slot !== "number") return false;
-  if (!isRecord(value.reserve)) return false;
-  if (!Array.isArray(value.magazines)) return false;
-  return value.magazines.every(
-    (entry) =>
-      isRecord(entry) && typeof entry.gunId === "string" && typeof entry.loaded === "number" && Number.isFinite(entry.loaded),
-  );
+  if (!isRecord(value)) return false;
+  const { slot, reserve, magazines } = value;
+  if (typeof slot !== "number" || !isRecord(reserve) || !Array.isArray(magazines)) return false;
+  return magazines.every((entry) => {
+    if (!isRecord(entry)) return false;
+    const { gunId, loaded } = entry;
+    return typeof gunId === "string" && typeof loaded === "number" && Number.isFinite(loaded);
+  });
 }
 
 function characterSystem(ctx: GameContext): GameSaveSystem<CharacterSave> {
@@ -144,7 +149,7 @@ function combatSystem(ctx: GameContext): GameSaveSystem {
     name: "combat",
     snapshot: () => combatState(ctx),
     restore(section) {
-      if (!isRecord(section) || !Array.isArray(section.targets) || !isRecord(section.statuses)) return;
+      if (!isRecord(section) || !Array.isArray(section["targets"]) || !isRecord(section["statuses"])) return;
       restoreCombat(ctx, section as never);
     },
     reset() {
@@ -159,7 +164,7 @@ function ledgerSystem(ctx: GameContext): GameSaveSystem {
     name: "ledger",
     snapshot: () => ledgerState(ctx),
     restore(section) {
-      if (!isRecord(section) || !isRecord(section.accounts) || !Array.isArray(section.entries)) return;
+      if (!isRecord(section) || !isRecord(section["accounts"]) || !Array.isArray(section["entries"])) return;
       restoreLedger(ctx, section as never);
     },
     reset() {
@@ -182,9 +187,11 @@ function gunsSystem(): GameSaveSystem {
       if (!Array.isArray(section)) return;
       let serial = 0;
       for (const def of section) {
-        if (!isRecord(def) || typeof def.id !== "string" || !isRecord(def.weapon)) continue;
+        if (!isRecord(def)) continue;
+        const id = def["id"];
+        if (typeof id !== "string" || !isRecord(def["weapon"])) continue;
         registerGun(def as never);
-        serial = Math.max(serial, gunSerialOf(def.id));
+        serial = Math.max(serial, gunSerialOf(id));
       }
       ensureGunSerialAtLeast(serial);
     },
@@ -229,7 +236,7 @@ export function scrapSave(ctx: GameContext, initialSlot = "default"): GameSave {
 export async function loadScrapSave(ctx: GameContext): Promise<boolean> {
   const save = scrapSave(ctx);
   const document = await save.peek(save.slot());
-  if (document === null || document.systems.character === undefined) return false;
+  if (document === null || document.systems["character"] === undefined) return false;
   await save.load();
   return true;
 }

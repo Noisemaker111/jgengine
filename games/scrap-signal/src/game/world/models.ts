@@ -78,7 +78,7 @@ const WEAPON_PLAN: Record<string, ModelPick> = {
  * silhouette legible at range against open desert.
  */
 function enemyFinish(def: EnemyDef, kind: RigKind): ModelMaterialOverride {
-  const style = CHASSIS[def.id] ?? CHASSIS.husk!;
+  const style = CHASSIS[def.id] ?? CHASSIS["husk"]!;
   const machined = kind !== "beast";
   return {
     color: style.plate,
@@ -108,7 +108,7 @@ function enemyPick(def: EnemyDef): ModelPick | null {
   const weaponModel = weapon === undefined ? undefined : pickModel(assets, weapon);
   return {
     model: rig.model,
-    fallbackModel: rig.fallbackModel,
+    ...(rig.fallbackModel === undefined ? {} : { fallbackModel: rig.fallbackModel }),
     style: {
       targetHeight: BASE_HEIGHT[rig.kind] * def.scale,
       material: enemyFinish(def, rig.kind),
@@ -127,18 +127,18 @@ const NPC_PLAN: Record<string, ModelPick & { weapon?: ModelPick }> = {
   dr_sparx: {
     model: `${CHAR}/Mage`,
     fallbackModel: `${CHAR}/Rogue`,
-    style: { targetHeight: HUMANOID_HEIGHT, material: { color: NPC_STYLES.dr_sparx!.coat } },
+    style: { targetHeight: HUMANOID_HEIGHT, material: { color: NPC_STYLES["dr_sparx"]!.coat } },
   },
   rigg: {
     model: `${CHAR}/Barbarian`,
     fallbackModel: `${CHAR}/Knight`,
-    style: { targetHeight: HUMANOID_HEIGHT, material: { color: NPC_STYLES.rigg!.coat } },
+    style: { targetHeight: HUMANOID_HEIGHT, material: { color: NPC_STYLES["rigg"]!.coat } },
     weapon: { model: `${CHAR}/axe_1handed`, fallbackModel: `${CHAR}/sword_1handed` },
   },
   gauge: {
     model: `${CHAR}/Knight`,
     fallbackModel: `${CHAR}/Barbarian`,
-    style: { targetHeight: HUMANOID_HEIGHT, material: { color: NPC_STYLES.gauge!.coat } },
+    style: { targetHeight: HUMANOID_HEIGHT, material: { color: NPC_STYLES["gauge"]!.coat } },
     weapon: { model: `${CHAR}/sword_1handed`, fallbackModel: `${CHAR}/axe_1handed` },
   },
   reactor_hunter: {

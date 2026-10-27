@@ -137,7 +137,7 @@ export interface Manufacturer {
 export const MANUFACTURERS: readonly Manufacturer[] = [
   { id: "Blackwood", damage: 1.3, interval: 1.25, spread: 0.9, mag: 0.8, reload: 1.1, neverElemental: true, prefixes: ["Cowboy", "Buffalo", "Doc's", "Frontier"] },
   { id: "Apex", damage: 1, interval: 1, spread: 0.6, mag: 1, reload: 0.95, prefixes: ["Corporate", "Crowdsourced", "Visionary", "Future"] },
-  { id: "Voltek", damage: 0.95, interval: 1, spread: 0.85, mag: 1, reload: 1, forcedElement: undefined, prefixes: ["Pyrotechnic", "Refined", "Proactive", "Elegant"] },
+  { id: "Voltek", damage: 0.95, interval: 1, spread: 0.85, mag: 1, reload: 1, prefixes: ["Pyrotechnic", "Refined", "Proactive", "Elegant"] },
   { id: "Chuckwerk", damage: 0.9, interval: 0.95, spread: 1.05, mag: 0.9, reload: 0.45, prefixes: ["Bargain", "Value", "Practical", "Budget"] },
   { id: "Detonic", damage: 1.2, interval: 1.15, spread: 1.15, mag: 1, reload: 1.15, forcedElement: "explosive", prefixes: ["EXPLOSIVE", "Ferocious", "Original", "Wild"] },
   { id: "Ironworks", damage: 0.85, interval: 0.6, spread: 1.1, mag: 1.3, reload: 1, prefixes: ["Patriot's", "Rabid", "Worker's", "Surplus"] },

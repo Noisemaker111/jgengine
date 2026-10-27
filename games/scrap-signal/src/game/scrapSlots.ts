@@ -28,15 +28,15 @@ function characterName(id: unknown): string | null {
 export function refreshScrapSlots(ctx: GameContext): Promise<unknown> {
   return refreshSaveSlots(gameSaveSlotSource(scrapSave(ctx)), scrapSlots, {
     nameOf: (_slot, document) => {
-      const character = (document.systems.character ?? {}) as { id?: string };
-      const profile = (document.systems.profile ?? {}) as { name?: string | null };
+      const character = (document.systems["character"] ?? {}) as { id?: string };
+      const profile = (document.systems["profile"] ?? {}) as { name?: string | null };
       return profile.name ?? characterName(character.id) ?? "Reclaimer";
     },
     metaOf: (_slot, document) => {
-      const character = (document.systems.character ?? {}) as { id?: string };
-      const profile = (document.systems.profile ?? {}) as { name?: string | null; thumbnail?: string | null };
-      const run = (document.systems.combat ?? {}) as { wave?: number };
-      const relay = (document.systems.relay ?? {}) as { wave?: number };
+      const character = (document.systems["character"] ?? {}) as { id?: string };
+      const profile = (document.systems["profile"] ?? {}) as { name?: string | null; thumbnail?: string | null };
+      const run = (document.systems["combat"] ?? {}) as { wave?: number };
+      const relay = (document.systems["relay"] ?? {}) as { wave?: number };
       const name = profile.name ?? characterName(character.id);
       return {
         ...(name === null ? {} : { character: name }),

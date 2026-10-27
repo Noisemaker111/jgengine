@@ -42,9 +42,9 @@ export function createShotHunt(roster: () => readonly SoundHunter[], options: Sh
   const hunt = createSoundHunt({
     perception,
     hearingRange,
-    maxInvestigators: options.maxInvestigators,
-    giveUpConfidence: options.giveUpConfidence,
-    maxSeconds: options.maxSeconds,
+    ...(options.maxInvestigators === undefined ? {} : { maxInvestigators: options.maxInvestigators }),
+    ...(options.giveUpConfidence === undefined ? {} : { giveUpConfidence: options.giveUpConfidence }),
+    ...(options.maxSeconds === undefined ? {} : { maxSeconds: options.maxSeconds }),
     hunters: () => roster(),
   });
 

@@ -202,7 +202,7 @@ function playerHealthFraction(ctx: GameContext): number {
 function huntingRoster(ctx: GameContext): readonly { id: string; position: Vec3 }[] {
   const player = ctx.scene.entity.get(ctx.player.userId);
   if (player === null) return [];
-  const radius = HEARING_RANGE * SHOT_LOUDNESS.launcher!;
+  const radius = HEARING_RANGE * SHOT_LOUDNESS["launcher"]!;
   return ctx.scene.entity
     .inRadius(player.position, radius, (id) => {
       const entity = ctx.scene.entity.get(id);
@@ -384,7 +384,7 @@ export function spawnFrontUnit(ctx: GameContext, unit: string, around: { x: numb
       }
       runtime.stageBossFraction = null;
     }
-    ctx.game.notices.push({ text: FOREMAN_TELL_TEXT.wake ?? "", tone: "warn", ttlMs: 2600 });
+    ctx.game.notices.push({ text: FOREMAN_TELL_TEXT["wake"] ?? "", tone: "warn", ttlMs: 2600 });
     ctx.game.audio.play("wave", position);
   }
   return id;
@@ -415,7 +415,7 @@ function postFor(
       lineThrough: position,
       taken,
       blocked: (from, to) => blockedSegment(ctx, from, to),
-      weights: role.cover,
+      ...(role.cover === undefined ? {} : { weights: role.cover }),
     });
     if (choice !== null) {
       taken.add(choice.point.id);
