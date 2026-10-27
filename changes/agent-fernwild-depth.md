@@ -16,3 +16,4 @@ Engine seam: packages/core/src/inventory/spoilage.ts, packages/core/src/onboardi
 ### Fixed
 
 - Fernwild's Harvest Stones prompt no longer shows when you aim at a tree.
+- Fernwild's dehydration test steps whole seconds so it finishes inside CI's test timeout.
