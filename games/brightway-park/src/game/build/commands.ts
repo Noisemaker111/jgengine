@@ -159,6 +159,8 @@ function tryBuild(ctx: GameContext, input: PointerInput): void {
   if (!LAID_IN_RUNS.has(def.category)) session.selectedTool = null;
   if (placed !== undefined) recordStep({ type: "place", ids: [placed.id], cost: def.cost });
   const shut = placed === undefined ? null : accessReason(ctx, placed.id);
+  // A new ride or shop that is still shut opens its window, where "Connect it" waits.
+  if (placed !== undefined && shut !== null && (def.ride !== undefined || def.stall !== undefined)) session.selectedObject = placed.id;
   ctx.game.notices.push({ text: `${def.label} built · -$${def.cost}${shut === null ? "" : ` · ${shut}`}`, tone: "success" });
   if (kind === "track_piece" || kind === "ride_coaster") announceCircuit(ctx);
   const at = placed?.position;

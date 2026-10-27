@@ -1,11 +1,13 @@
 import type { WorldModel } from "@jgengine/core/worldModel/worldModel";
 
+import { BUILDABLES } from "./objects/catalog";
+import { researched } from "./park";
 import { FIRST_SCENARIO } from "./scenarios";
 
 /**
  * The first scenario's hints as content: each step says what to do, points at where (a spot on the
  * lot, a button on the HUD, or both), and is done when the world says so. The first step not done
- * whose `when` holds is the one shown. The HUD card and the world arrow only read `currentHint`.
+ * is the one shown. The HUD card and the world arrow only read `currentHint`.
  */
 
 export interface HintStep {
@@ -15,25 +17,17 @@ export interface HintStep {
   ui: readonly string[];
   /** A spot on the lot (x, z) to point an arrow at, or a function that finds one in the world. */
   world?: (w: WorldModel) => readonly [number, number] | null;
-  /** Shown only while this holds; default always. */
-  when?: (w: WorldModel) => boolean;
   done: (w: WorldModel) => boolean;
 }
 
 const BUILD = "[data-hint=build]";
+const RESEARCH_IDS = Object.values(BUILDABLES).filter((def) => def.research !== undefined).map((def) => def.id);
 /** The plaza inside the gate has two path cells; anything past that is the player's. */
 const PLAZA_PATHS = 2;
 
 const firstRide = (w: WorldModel): readonly [number, number] | null => w.instances("ride").find((ride) => ride.position !== null)?.position ?? null;
 
 export const HINT_STEPS: readonly HintStep[] = [
-  {
-    id: "mechanic",
-    text: "A ride has broken down. It stays down until a mechanic fixes it: hire one from Staff.",
-    ui: ["[data-build-item=staff_mechanic]", "[data-build-category=staff]", BUILD],
-    when: (w) => w.num("park.breakdowns") > 0,
-    done: (w) => w.num("n.staff_mechanic") > 0,
-  },
   {
     id: "path",
     text: "Lay a path in from the gate: pick Path, then click the ground just past the gate plaza.",
@@ -60,10 +54,22 @@ export const HINT_STEPS: readonly HintStep[] = [
     ui: ["[data-hint=gate]"],
     done: (w) => w.fact("park.gate") === true,
   },
+  {
+    id: "research",
+    text: "The lab opens new rides, shops and scenery. Open the Lab and start the Ice Cream Cart: it takes about a minute.",
+    ui: ["[data-research=stall_icecream]", "[data-hint=lab]"],
+    done: (w) => w.orders("lab").length > 0 || RESEARCH_IDS.some((id) => w.fact(researched(id)) === true),
+  },
+  {
+    id: "mechanic",
+    text: "Rides wear out and break down, and only a mechanic mends them. Hire one from Staff before the first breakdown.",
+    ui: ["[data-build-item=staff_mechanic]", "[data-build-category=staff]", BUILD],
+    done: (w) => w.num("n.staff_mechanic") > 0,
+  },
 ];
 
-/** The hint to show now: only in the first scenario, the first step not done whose `when` holds. */
+/** The hint to show now: only in the first scenario, the first step not done. */
 export function currentHint(w: WorldModel): HintStep | null {
   if (w.fact("scenario.id") !== FIRST_SCENARIO || w.fact("scenario.result") !== "") return null;
-  return HINT_STEPS.find((step) => (step.when === undefined || step.when(w)) && !step.done(w)) ?? null;
+  return HINT_STEPS.find((step) => !step.done(w)) ?? null;
 }

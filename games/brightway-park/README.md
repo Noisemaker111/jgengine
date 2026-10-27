@@ -34,8 +34,9 @@ Read from `src/game/{park,catalog,objects,sim,scenarios,milestones,rides}`; the 
     multiply the guests heading for the gate by 1.5, 1.8 and 2.5 while they run; they stack.
   - A research lab. Four rides (carousel, helter skelter, boat hire, wooden coaster), four shops
     and ten scenery pieces are open at the start; the other 24 rides, 6 shops and 4 theme pieces are
-    34 lab topics, each with its own fee and time (one to eight park days, about thirteen park months
-    for all of them), each after the one before it in its family.
+    34 lab topics, each with its own fee and time (the Ice Cream Cart and Topiary take a minute at
+    1x, the Teacups and Dodgems two and two and a half; the rest one to eight park days, about
+    thirteen park months for all of them), each after the one before it in its family.
   - Litter bins. Each bin catches about two-thirds of what one guest drops.
   - Theming. Fourteen scenery pieces (library trees, bushes, rocks, benches, lamps and bins, plus
     the park's own flower beds, hedges, fountain, topiary, statue, arch and flagpole) add charm to

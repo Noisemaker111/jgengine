@@ -49,7 +49,7 @@ export function GameUI() {
             <KitButton size="sm" pressed={clock.paused} aria-label="Pause park" onClick={() => commands.run("pauseToggle", {})}>Ⅱ</KitButton>
             {clock.speeds.map((s) => <KitButton key={s} size="sm" pressed={!clock.paused && clock.speed === s} onClick={() => commands.run("park.speed", { speed: s })}>{s}×</KitButton>)}
             <KitButton size="sm" variant="ghost" data-hint="build" pressed={panels.isOpen("build")} icon="🏗" onClick={() => panels.toggle("build")}><span className="bw-wide">Build</span></KitButton>
-            <KitButton size="sm" variant="ghost" pressed={panels.isOpen(RESEARCH_PANEL)} icon="🔬" onClick={() => panels.toggle(RESEARCH_PANEL)}><span className="bw-wide">Lab</span></KitButton>
+            <KitButton size="sm" variant="ghost" data-hint="lab" pressed={panels.isOpen(RESEARCH_PANEL)} icon="🔬" onClick={() => panels.toggle(RESEARCH_PANEL)}><span className="bw-wide">Lab</span></KitButton>
             <KitButton size="sm" variant="ghost" pressed={panels.isOpen("books")} icon="📒" onClick={() => panels.toggle("books")}><span className="bw-wide">Books</span></KitButton>
           </nav>
         </HudPanel>
