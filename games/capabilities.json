@@ -973,7 +973,6 @@
         "@jgengine/core"
       ],
       "module": "@jgengine/core/breeding/breeding",
-      "domain": "breeding",
       "gameFacing": false,
       "probe": null,
       "intent": "tame pairs mate, eggs incubate by temperature or mothers gestate, babies grow and imprint through care"
@@ -3089,7 +3088,6 @@
         "@jgengine/core"
       ],
       "module": "@jgengine/core/scene/entityStore",
-      "domain": "scene",
       "gameFacing": false,
       "probe": null,
       "intent": "grow or shrink one entity's model without a new kind, for babies growing up"
@@ -8703,7 +8701,6 @@
         "@jgengine/core"
       ],
       "module": "@jgengine/core/breeding/inheritance",
-      "domain": "breeding",
       "gameFacing": false,
       "probe": null,
       "intent": "breed two parents' stat points into a baby's, favouring the stronger, with rare mutations"
@@ -10364,7 +10361,6 @@
         "@jgengine/core"
       ],
       "module": "@jgengine/core/breeding/inheritance",
-      "domain": "breeding",
       "gameFacing": false,
       "probe": null,
       "intent": "spread a creature's levels over its stats at random so same-level creatures differ"
