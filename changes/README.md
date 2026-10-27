@@ -16,4 +16,4 @@ One file per PR means parallel PRs never conflict on `CHANGELOG.md`. Use the Kee
 
 Pure refactors, tests and internal-only changes skip it with `[skip changelog]` in a commit message.
 
-The note is also the commit message and the PR body; lines before the first `###` (the summary, `Closes #N`, `Root cause:`, `Prevention:`, the seam) go to the commit and PR only.
+The note is also the commit message and the PR body; lines before the first `###` (the summary, `Closes #N`, `Root cause:`, `Prevention:`, the seam) go to the commit and PR only. With no `-m` lines, `lane:close` writes the note from the branch's commit messages, bodies included.

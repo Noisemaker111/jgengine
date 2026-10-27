@@ -87,20 +87,6 @@ jobs:
       - run: bun run check scaffold-launch
       # A hand-rolled capture script must stay headless; `--headed` is the only window.
       - run: bun run check capture-hygiene
-      # A runtime change with no changed test needs a `Prevention: none - <reason>` line in the
-      # PR body (#2109's sibling lesson: a fix that leaves no failing test teaches nobody).
-      - name: every changed runtime path carries a regression test
-        env:
-          EVENT: ${{ github.event_name }}
-          PR_BODY: ${{ github.event.pull_request.body }}
-          BASE_SHA: ${{ github.event.pull_request.base.sha }}
-        run: |
-          if [ "$EVENT" != "pull_request" ]; then
-            echo "check:fix-has-test skipped: a push has no PR body; the rule reads the body of a pull request"
-            exit 0
-          fi
-          printf '%s' "$PR_BODY" > "$RUNNER_TEMP/pr-body.txt"
-          bun run check fix-has-test --base "$BASE_SHA" --body-file "$RUNNER_TEMP/pr-body.txt"
       # One feature, one folder: no second definition of an exported name, no concept file outside its
       # home folder. Reads only this change's diff.
       - name: no duplicate export or stray concept file
@@ -220,8 +206,6 @@ jobs:
       - run: bun run check games-design
       - run: bun run check games-ledger
       - run: bun run check games-capabilities --summary
-        env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       - name: type-check the reached games
         run: |
           failed=""

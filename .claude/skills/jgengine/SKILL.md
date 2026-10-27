@@ -19,11 +19,11 @@ capability, adopt it, or improve its shared owner before adding reusable game-lo
 Games keep unique rules, content, assets and presentation. Custom markup is not a reason
 to copy focus handling, input tracking, storage or model lifecycle.
 
-Check installed versions before recreating an upstream fix. A published upgrade may
-replace a workaround; a beta merge does not update consumers. In the games workspace,
-the root catalog owns SDK versions. After adoption, remove superseded local machinery
-and verify the actual game. Outside these repositories, report missing SDK contracts
-upstream rather than treating a local engine implementation as the finished solution.
+Check engine `beta` before recreating an upstream fix: games run the engine source from
+the same commit, so a fix that exists is adopted by importing it. After adoption, remove
+superseded local machinery and verify the actual game. Outside this repository, report
+missing SDK contracts upstream rather than treating a local engine implementation as the
+finished solution.
 
 ## 1. Establish the target
 

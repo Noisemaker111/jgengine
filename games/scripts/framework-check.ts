@@ -21,7 +21,10 @@
  *   - a module that runs `@jgengine/core/run/sessionLoop` composes the shared loop, so a local
  *     `RunPhase` there passes: it is adoption debt tracked by an issue, not a second engine.
  *
- * Usage: bun run check games-framework [--base origin/beta] [--allow "<reason>"]
+ * A file that truly cannot live upstream says so on its first line, `// framework-ok: <reason>`,
+ * and passes; the marker is in the file, so the PR diff shows it and `land` lists it as a bend.
+ *
+ * Usage: bun run check games-framework [--base origin/beta]
  */
 import { spawnSync } from "node:child_process";
 import { join } from "node:path";
@@ -127,6 +130,9 @@ const CODE_FILE = /\.[cm]?[jt]sx?$/;
 /** Tests describe systems; they do not own them. */
 const TEST_FILE = /\.(?:test|spec)\.[cm]?[jt]sx?$/;
 
+/** The in-file exemption, with a reason: `// framework-ok: authored campaign flow, no second adopter`. */
+const FRAMEWORK_OK = /^[ \t]*\/\/[ \t]*framework-ok:[ \t]*\S/;
+
 /**
  * Below this many lines of code a match is adoption glue - an adapter that names a shared system -
  * rather than a system of its own. AGENTS.md files the seam at "roughly 50 lines"; this sits lower
@@ -157,6 +163,7 @@ export function stripImports(code: string): string {
 /** The engine systems a file owns; empty when it is content, adoption or too small to be a system. */
 export function engineSeams(path: string, source: string): EngineSeam[] {
   if (!CODE_FILE.test(path) || TEST_FILE.test(path)) return [];
+  if (FRAMEWORK_OK.test(source)) return [];
   if (codeLines(source) < MIN_SYSTEM_LINES) return [];
   const withImports = stripComments(source);
   const code = stripImports(withImports);
@@ -210,7 +217,6 @@ async function main(argv: readonly string[]): Promise<number> {
     const index = argv.indexOf(name);
     return index >= 0 ? argv[index + 1] : undefined;
   };
-  const reason = arg("--allow");
   const base = arg("--base") ?? "origin/beta";
 
   const changed = (diffArgs: string[]): string[] => {
@@ -235,12 +241,6 @@ async function main(argv: readonly string[]): Promise<number> {
     return 0;
   }
 
-  if (reason !== undefined) {
-    console.log(`framework check: allowed ${offences.length} engine-shaped file(s) - ${reason}`);
-    for (const offence of offences) console.log(`  allowed: ${offence.file}`);
-    return 0;
-  }
-
   console.error("framework check: these game files own an engine system, judged by what they contain:");
   for (const offence of offences) {
     console.error(`  ${offence.file}`);
@@ -250,8 +250,8 @@ async function main(argv: readonly string[]): Promise<number> {
     [
       "",
       "A game that imports and calls a shared system is adoption and passes.",
-      "If this file truly cannot live upstream, rerun with: bun run check games-framework --allow \"<reason>\"",
-      "Rule: AGENTS.md -> Framework-first development.",
+      "If this file truly cannot live upstream, say why on its first line: // framework-ok: <reason>",
+      "Rule: games/AGENTS.md -> Framework-first development.",
     ].join("\n"),
   );
   return 1;

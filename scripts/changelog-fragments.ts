@@ -8,15 +8,23 @@ export const FRAGMENT_PATTERN = /^changes\/(?!README\.md$)[^/]+\.md$/;
 
 const ORDER = ["Migrate", "Added", "Changed", "Fixed", "Removed"];
 
-/** Group a notes body by its `### Heading`, keeping each bullet's raw markdown lines. */
+/** PR-body sections a fragment may carry that are not release notes; they never reach the changelog. */
+const DROPPED_HEADINGS = new Set(["Bends"]);
+
+/**
+ * Group a notes body by its `### Heading`, keeping each bullet's raw markdown lines. A heading at
+ * any level closes the group before it, and a `Bends` section (land writes one into PR bodies) is
+ * dropped whole.
+ */
 export function groupByHeading(lines: string[]): Map<string, string[]> {
   const groups = new Map<string, string[]>();
   let heading: string | null = null;
   for (const line of lines) {
-    const match = /^###\s+(\w+)/.exec(line);
+    const match = /^#{1,3}\s+(\w+)/.exec(line);
     if (match) {
       heading = match[1][0].toUpperCase() + match[1].slice(1).toLowerCase();
-      if (!groups.has(heading)) groups.set(heading, []);
+      if (DROPPED_HEADINGS.has(heading)) heading = null;
+      else if (!groups.has(heading)) groups.set(heading, []);
       continue;
     }
     if (heading) groups.get(heading)!.push(line);

@@ -3,7 +3,7 @@
 //   bun scripts/land.ts                    # bun run lane:close runs this; call it directly only from release.ts
 //   bun run lane:close                       # verify:fast, then the line below
 //   bun scripts/land.ts --commit                    # stage, commit, push, open, arm
-//   bun scripts/land.ts --verify "bun run preflight --ship"
+//   bun scripts/land.ts --verify "bun run check skills"
 //   bun scripts/land.ts --title "Menus" --body-file .scratch/body.md
 //
 // `--commit` is what lets a lane end with one command: it stages this worktree's
@@ -11,13 +11,13 @@
 // path it will commit, and refuses the ones a lane did not author: scratch artifacts,
 // a path git ignores, a lockfile staged without its `package.json` manifest, and a new
 // `changes/` fragment whose name is not part of the branch's name. The commit message
-// comes from that fragment, which is written from the commit summary when the diff has
-// none. `--allow <path>` keeps one refused file on purpose. Nothing to commit is not an
+// comes from that fragment, which is written from the newest commit message when the diff
+// has none. `--allow <path>` keeps one refused file on purpose. Nothing to commit is not an
 // error: the landing runs as it does without the flag.
 //
 // It refuses on `main` or (without `--commit`) a dirty tree, pushes, rebases onto the base, reuses
 // an open PR or opens one (body: --body-file when given, else the `changes/`
-// fragment this branch's own diff adds, else the branch's commit subjects),
+// fragment this branch's own diff adds, else the branch's commit messages, whole),
 // runs --verify, arms auto-merge and exits in seconds: it prints the PR URL and
 // `bun run ci:status --pr <n>`, the one command that answers status later. It
 // never polls and never sleeps.
@@ -34,13 +34,8 @@
 // Exit codes: 0 handed to the queue, 1 verify failed, 2 checks already failed,
 // 3 could not hand off (including a refused branch or dirty tree).
 //
-// --watch is deprecated and kept because older lanes call it: it prints one
-// line saying the queue owns waiting now and then lands the old way (watch up
-// to 25 minutes, merge, wait for MERGED).
-//
 // A body given on the command line is the author's, so it wins over the
-// fragment and is written over a reused PR's old body: a stale body keeps
-// check:fix-has-test red through no fault of the branch (#2200).
+// fragment and is written over a reused PR's old body (#2200).
 //
 // The branch land pushed is land's to rewrite: its own rebase would otherwise
 // leave the next push non-fast-forward and send the worker to a hand-typed
@@ -48,13 +43,10 @@
 // its own push in this run succeeded — a branch it did not push is refused.
 //
 // The lock covers only the moments two landings touch the same thing: the push,
-// rebase and PR for a branch and a base, and the merge into that base. The CI
-// watch is most of a landing's wall time and touches nothing shared, so it runs
-// with the lock free: two landings watch their checks at the same time and
-// queue for seconds around each other's pushes and merges. When the base moved
-// between a push and its merge, land releases, rebases and watches again, at
-// most MERGE_ATTEMPTS times. Every wait, and the work either side of it, is
-// printed, so throughput is measured rather than guessed.
+// rebase and PR for a branch and a base, and the arming. When the base moved
+// before the arming, land releases, rebases and arms again, at most
+// MERGE_ATTEMPTS times. Every wait, and the work either side of it, is printed,
+// so throughput is measured rather than guessed.
 //
 // The lock is one file in the repo's git directory: every worktree of the repo
 // shares it (so lanes queue with each other, not just with themselves), and it
@@ -74,14 +66,15 @@ import type { RollupEntry } from "./ci-status";
 
 const LAND_USAGE = {
   summary: "push this branch, open or reuse its PR, verify it and hand it to the landing queue",
-  usage: "bun scripts/land.ts [-m <message> ...] [--title <title>] [--body-file <path>] [--verify <command>] [--base <branch>] [--watch]",
+  usage: "bun scripts/land.ts [-m <message> ...] [--title <title>] [--body-file <path>] [--verify <command>] [--base <branch>] [--commit] [--allow <path>]",
   flags: [
     { flag: "-m, --message <text>", detail: "with --commit: what changed, in plain words; repeatable. `Fixed: ...`, `Added: ...`, `Removed: ...`, `Migrate: ...` pick the changelog heading (default Changed). Writes changes/<branch>.md" },
     { flag: "--title <title>", detail: "PR title when land opens a PR" },
     { flag: "--body-file <path>", detail: "PR body from this file; wins over a changes/ fragment" },
-    { flag: "--verify <command>", detail: "command to run before arming, e.g. \"bun run preflight --ship\"" },
+    { flag: "--verify <command>", detail: "command to run before arming, e.g. \"bun run verify:fast\"" },
     { flag: "--base <branch>", detail: "branch to land into (default: beta)" },
-    { flag: "--watch", detail: "deprecated: watch the checks here instead of leaving waiting to land:queue" },
+    { flag: "--commit", detail: "stage and commit this worktree's changes first, with the changes/ fragment as the message" },
+    { flag: "--allow <path>", detail: "commit a path the --commit guards refuse; repeatable" },
   ],
   example: 'bun scripts/land.ts --title "Menus" --body-file .scratch/body.md',
   exits: [
@@ -100,12 +93,7 @@ export const EXIT_VERIFY_FAILED = 1;
 export const EXIT_CHECKS_FAILED = 2;
 export const EXIT_COULD_NOT_MERGE = 3;
 
-const CHECKS_APPEAR_TIMEOUT_MS = 5 * 60_000;
-const WATCH_TIMEOUT_MS = 25 * 60_000;
-const MERGED_TIMEOUT_MS = 20 * 60_000;
-const POLL_INTERVAL_MS = 15_000;
-
-/** How many times one landing rebases and re-watches after the base moves under its merge. */
+/** How many times one landing rebases and arms again after the base moves under it. */
 export const MERGE_ATTEMPTS = 3;
 
 /** The label that marks a PR ready for the queue when the repo cannot arm auto-merge. */
@@ -122,13 +110,11 @@ export interface LandArgs {
   allow: string[];
   /** `-m`: the lane's own words for its change note; repeatable. */
   messages: string[];
-  /** Deprecated: wait and merge here, as land did before the queue owned waiting. */
-  watch: boolean;
 }
 
-/** `-m`, `--title`, `--body-file`, `--verify`, `--base beta`, `--commit`, `--allow <path>` and deprecated `--watch`; anything else is a typo. */
+/** `-m`, `--title`, `--body-file`, `--verify`, `--base beta`, `--commit` and `--allow <path>`; anything else is a typo. */
 export function parseArgs(argv: readonly string[]): LandArgs {
-  const args: LandArgs = { base: "beta", commit: false, allow: [], messages: [], watch: false };
+  const args: LandArgs = { base: "beta", commit: false, allow: [], messages: [] };
   for (let i = 0; i < argv.length; i += 1) {
     const arg = argv[i];
     if (arg === "--title") args.title = value(argv, (i += 1), arg);
@@ -138,7 +124,6 @@ export function parseArgs(argv: readonly string[]): LandArgs {
     else if (arg === "--commit") args.commit = true;
     else if (arg === "--allow") args.allow.push(value(argv, (i += 1), arg).replace(/\\/g, "/"));
     else if (arg === "-m" || arg === "--message") args.messages.push(value(argv, (i += 1), arg));
-    else if (arg === "--watch") args.watch = true;
     else throw new Error(`unknown argument ${arg}`);
   }
   return args;
@@ -205,11 +190,20 @@ export function ownFragments(
   };
 }
 
-/** The body a branch with no fragment gets: its own commit subjects, never another lane's note. */
-export function subjectsBody(subjects: readonly string[]): string {
-  const clean = subjects.map((subject) => subject.trim()).filter((subject) => subject.length > 0);
+/**
+ * The body a branch with no fragment gets: its own commit messages, whole, never another lane's
+ * note. Each subject is a bullet and its body sits under it, so a line the author wrote into a
+ * commit (an engine seam, a root cause) reaches the PR.
+ */
+export function commitsBody(messages: readonly string[]): string {
+  const clean = messages.map((message) => message.trim()).filter((message) => message.length > 0);
   if (clean.length === 0) return "";
-  return ["Changed on this branch:", ...clean.map((subject) => `- ${subject}`)].join("\n");
+  const bullets = clean.map((message) => {
+    const [subject, ...rest] = message.split("\n");
+    const body = rest.map((line) => line.trimEnd()).join("\n").trim();
+    return body.length === 0 ? `- ${subject!.trim()}` : `- ${subject!.trim()}\n\n${body.replace(/^/gm, "  ")}`;
+  });
+  return ["Changed on this branch:", ...bullets].join("\n");
 }
 
 /** Paths this branch adds or changes against `origin/<base>`, as git reports them. */
@@ -218,9 +212,35 @@ export function diffPaths(base: string, git: Git = (args) => run("git", args)): 
   return result.status === 0 ? result.stdout.split("\n").map((line) => line.trim()).filter(Boolean) : [];
 }
 
-export function branchSubjects(base: string, git: Git = (args) => run("git", args)): string[] {
-  const result = git(["log", "--format=%s", `origin/${base}..HEAD`]);
-  return result.status === 0 ? result.stdout.split("\n").map((line) => line.trim()).filter(Boolean) : [];
+/** Git trailers a commit carries for git, never for a reader of the note. */
+const TRAILER = /^(?:co-authored-by|signed-off-by|reviewed-by|change-id):/i;
+
+/**
+ * Whole commit messages as change-note lines: each subject and each body line is one `-m` message,
+ * so a body line the author wrote (`Closes #12`, a root cause) reaches the note the way `-m` would.
+ */
+export function noteLines(messages: readonly string[]): string[] {
+  const out: string[] = [];
+  for (const message of messages) {
+    for (const raw of message.split("\n")) {
+      const line = raw.trim().replace(/^[-*]\s+/, "");
+      if (line !== "" && !TRAILER.test(line)) out.push(line);
+    }
+  }
+  return out;
+}
+
+/** A record separator between whole messages; git writes `%x1e` as the byte, and a message never holds one. */
+const MESSAGE_END = "\u001e";
+
+/** This branch's commit messages against `origin/<base>`, subject and body, newest first. */
+export function branchCommits(base: string, git: Git = (args) => run("git", args)): string[] {
+  const result = git(["log", "--format=%B%x1e", `origin/${base}..HEAD`]);
+  if (result.status !== 0) return [];
+  return result.stdout
+    .split(MESSAGE_END)
+    .map((message) => message.replace(/\r\n/g, "\n").trim())
+    .filter((message) => message.length > 0);
 }
 
 /** An explicit body file wins; the fragment fills in only when land was given no body. */
@@ -240,13 +260,13 @@ export interface PrBody {
   text: string;
   /** True when the text came from `--body-file`, so land may write it over an open PR's body. */
   explicit: boolean;
-  /** The "Bends" section read from the diff (`scripts/bends.ts`), written into a reused PR's body too. */
+  /** The "Bends" section read from the diff (`scripts/bends.ts`), "" for none; a reused PR's body gets it too. */
   bends?: string;
 }
 
 /**
  * The body for this PR: `--body-file` if land was given one, else the branch's own `changes/`
- * fragment (one its diff adds), else its commit subjects, else a one-line summary. A fragment another
+ * fragment (one its diff adds), else its commit messages, else a one-line summary. A fragment another
  * lane left in the shared directory is named and skipped, so the body never claims work the diff lacks.
  */
 export function landBody(options: {
@@ -258,7 +278,8 @@ export function landBody(options: {
   files?: () => readonly FragmentFile[];
   /** Paths this branch's diff against origin/<base> adds; a fragment not among them is not this PR's. */
   added?: () => readonly string[];
-  subjects?: () => readonly string[];
+  /** This branch's commit messages, whole. */
+  commits?: () => readonly string[];
   log?: (line: string) => void;
 }): PrBody {
   const { args, branch, summary } = options;
@@ -276,10 +297,10 @@ export function landBody(options: {
   const fragment = pickFragment(own, branch);
   if (fragment !== null) return { text: fragment.text.trim(), explicit: (args.messages?.length ?? 0) > 0 };
 
-  const subjects = (options.subjects ?? (() => branchSubjects(args.base)))();
-  const commits = subjectsBody(subjects);
+  const messages = (options.commits ?? (() => branchCommits(args.base)))();
+  const commits = commitsBody(messages);
   if (commits.length > 0) {
-    log(`no changes/ fragment in this branch's diff; body lists its ${subjects.length} commit subject(s)`);
+    log(`no changes/ fragment in this branch's diff; body carries its ${messages.length} commit message(s)`);
     return { text: commits, explicit: false };
   }
   return { text: summary.trim(), explicit: false };
@@ -422,7 +443,7 @@ export interface CommitOptions {
  * Stage this worktree, print every path it will commit, refuse the ones a lane did not author, then
  * commit with the branch's change note as the message. The note is written (`scripts/change-note.ts`)
  * from the `-m` messages when there are any, else kept when the branch already has one (a lane closed
- * twice), else written from the branch's commit subjects; the written note also lists the exported
+ * twice), else written from the branch's commit messages, bodies included; the written note also lists the exported
  * API the diff added or removed and, for a game change, its engine seam. So the message, the PR body
  * and `changes/` cannot disagree. Another lane's fragment in the shared directory is never used.
  */
@@ -464,10 +485,10 @@ export function commitLane(options: CommitOptions): LaneCommitOutcome {
     return { kind: "failed", code: EXIT_COULD_NOT_MERGE, why: `refused ${blocked.length} file(s) this lane did not author`, refused: blocked };
   }
 
-  // The branch's own commits, never HEAD: on a lane with no commit yet HEAD is the base's merge
-  // commit, and its subject would become this lane's message, PR title and changelog line.
-  const subjects = lines(runGit(["log", "--reverse", "--format=%s", `origin/${base}..HEAD`]));
-  const summary = subjects[subjects.length - 1] ?? "";
+  // The branch's own commits, newest first and never HEAD: on a lane with no commit yet HEAD is the
+  // base's merge commit, and its subject would become this lane's message, PR title and changelog line.
+  const commits = branchCommits(base, runGit);
+  const summary = firstLine(commits[0] ?? "");
   const changed = [...new Set([...diffPaths(base, runGit), ...stagedPaths].map(normalizePath))];
   const candidates = new Set(changed.map((path) => basename(path)));
   const files = options.files ?? (() => fragmentFiles());
@@ -476,15 +497,17 @@ export function commitLane(options: CommitOptions): LaneCommitOutcome {
   let fragment = messages.length > 0 ? null : pickFragment(own, branch);
   let created = false;
 
-  if (fragment === null && messages.length === 0 && subjects.length === 0) {
+  if (fragment === null && messages.length === 0 && commits.length === 0) {
     refuse('land: this branch has no commit and no -m message; close again with -m "<what changed, in plain words>"');
     return { kind: "failed", code: EXIT_COULD_NOT_MERGE, why: "no -m message and no commit of this branch to write the change note from" };
   }
 
   if (fragment === null) {
     const path = join(checkout, "changes", `${branch.replace(/\//g, "-")}.md`);
+    // The whole message, not just its subject: a body line the author wrote (a root cause, an
+    // engine seam) is the note, and dropping it is how a required line went missing from PRs.
     const text = renderChangeNote({
-      messages: messages.length > 0 ? messages : subjects,
+      messages: messages.length > 0 ? messages : noteLines(commits),
       api: apiChangesIn(changed, base, runGit, (file) => {
         try {
           return read(join(checkout, file));
@@ -510,7 +533,7 @@ export function commitLane(options: CommitOptions): LaneCommitOutcome {
     }
     fragment = { path, text };
     created = true;
-    log(`wrote ${basename(path)} from ${messages.length > 0 ? "the -m messages" : "the branch's commit subjects"}`);
+    log(`wrote ${basename(path)} from ${messages.length > 0 ? "the -m messages" : "the branch's commit messages"}`);
   }
 
   const subject = fragmentSubject(fragment.text) || summary;
@@ -952,9 +975,6 @@ export interface LandIo {
   gh: Gh;
   /** Runs `--verify`; true when the command passed. */
   verify: (command: string) => boolean;
-  /** Blocks until the PR's checks settle. */
-  watch: (number: number) => void;
-  sleep: (ms: number) => void;
   log: (line: string) => void;
   error: (line: string) => void;
 }
@@ -972,20 +992,6 @@ function readChecks(runGh: Gh, number: number): { checks: GhCheck[]; error?: str
   return {
     checks: judged.map((check) => ({ name: check.name, state: check.state, bucket: check.bucket, link: check.url })),
   };
-}
-
-function waitForChecks(io: LandIo, number: number): GhCheck[] | null {
-  const deadline = Date.now() + CHECKS_APPEAR_TIMEOUT_MS;
-  while (Date.now() < deadline) {
-    const { checks, error } = readChecks(io.gh, number);
-    if (error !== undefined) {
-      io.error(error);
-      return null;
-    }
-    if (checks.length > 0) return checks;
-    io.sleep(POLL_INTERVAL_MS);
-  }
-  return null;
 }
 
 function runVerify(command: string): boolean {
@@ -1101,14 +1107,6 @@ function reportChecks(io: LandIo, checks: readonly GhCheck[]): number {
   return EXIT_CHECKS_FAILED;
 }
 
-/** Nothing has failed, but the checks are not done: say how many and on which run. */
-function reportRunning(io: LandIo, checks: readonly GhCheck[]): number {
-  const pending = checkVerdict(checks).pending;
-  const on = runningRunIds(checks, pending);
-  io.error(`checks still running: ${pending.length} of ${checks.length}${on}: ${pending.join(", ")}`);
-  return EXIT_CHECKS_FAILED;
-}
-
 /** ` (run 701)`, naming the Action runs the named checks are running on. */
 function runningRunIds(checks: readonly GhCheck[], names: readonly string[]): string {
   const wanted = new Set(names);
@@ -1123,22 +1121,6 @@ function runningRunIds(checks: readonly GhCheck[], names: readonly string[]): st
   return runs.length > 0 ? ` (run ${runs.join(", ")})` : "";
 }
 
-function watchChecks(io: LandIo, number: number): number {
-  const appeared = waitForChecks(io, number);
-  if (appeared === null) {
-    io.error("no checks appeared within 5 minutes");
-    return EXIT_CHECKS_FAILED;
-  }
-  io.log(`watching ${appeared.length} check(s)`);
-  io.watch(number);
-  const { checks } = readChecks(io.gh, number);
-  const verdict = checkVerdict(checks);
-  if (verdict.failures.length > 0) return reportChecks(io, checks);
-  if (verdict.pending.length > 0) return reportRunning(io, checks);
-  io.log(`${checks.length} check(s) green`);
-  return EXIT_LANDED;
-}
-
 /**
  * What GitHub says when a merge is refused because the base moved under the PR, so land rebases
  * instead of reporting a conflict the branch may not have. A real conflict also lands here: the
@@ -1149,54 +1131,6 @@ const BASE_MOVED =
 
 export function baseMoved(detail: string): boolean {
   return BASE_MOVED.test(detail);
-}
-
-export type MergeRequest =
-  | { kind: "requested" }
-  | { kind: "retry"; why: string }
-  | { kind: "failed"; code: number };
-
-/** Ask GitHub to merge a green PR. A refusal that names a moved base is the caller's to rebase. */
-function requestMerge(io: LandIo, number: number): MergeRequest {
-  const armed = io.gh(["pr", "merge", String(number), "--auto", "--merge"]);
-  if (armed.status !== 0) {
-    const { checks } = readChecks(io.gh, number);
-    if (checkVerdict(checks).failures.length > 0) return { kind: "failed", code: reportChecks(io, checks) };
-    const armedWhy = details(armed);
-    if (baseMoved(armedWhy)) return { kind: "retry", why: armedWhy };
-    io.log(`auto-merge unavailable (${firstLine(armedWhy)}); merging directly`);
-    const direct = io.gh(["pr", "merge", String(number), "--merge"]);
-    if (direct.status !== 0) {
-      const why = details(direct);
-      if (baseMoved(why)) return { kind: "retry", why };
-      io.error(`could not merge: ${why}`);
-      return { kind: "failed", code: EXIT_COULD_NOT_MERGE };
-    }
-  }
-  return { kind: "requested" };
-}
-
-function waitForMerged(io: LandIo, number: number): number {
-  const deadline = Date.now() + MERGED_TIMEOUT_MS;
-  while (Date.now() < deadline) {
-    const view = io.gh(["pr", "view", String(number), "--json", "state,url"]);
-    if (view.status !== 0) {
-      io.error(`gh pr view failed: ${details(view)}`);
-      return EXIT_COULD_NOT_MERGE;
-    }
-    const pr = JSON.parse(view.stdout) as { state: string; url: string };
-    if (pr.state === "MERGED") {
-      io.log(`landed ${pr.url}`);
-      return EXIT_LANDED;
-    }
-    if (pr.state === "CLOSED") {
-      io.error(`PR #${number} closed without merging`);
-      return EXIT_COULD_NOT_MERGE;
-    }
-    io.sleep(POLL_INTERVAL_MS);
-  }
-  io.error(`PR #${number} did not reach MERGED within ${MERGED_TIMEOUT_MS / 60_000} minutes`);
-  return EXIT_COULD_NOT_MERGE;
 }
 
 /** Push, rebase and open or reuse the PR: the part that needs the lock, and nothing after it. */
@@ -1214,14 +1148,14 @@ function prepare(args: LandArgs, branch: string, io: LandIo): PrRef | number {
     branch,
     summary,
     added: () => diffPaths(args.base, io.git),
-    subjects: () => branchSubjects(args.base, io.git),
+    commits: () => branchCommits(args.base, io.git),
     log: io.log,
   });
-  // Every PR names its bends - assertions deleted or loosened, budgets raised, tests skipped, checks
-  // disabled - read from the diff, so a reviewer who never opens it still sees them.
+  // A PR names its bends - assertions deleted, tests skipped, checks disabled - read from the diff,
+  // so a reviewer who never opens it still sees them. A clean diff adds no section.
   const diff = io.git(["diff", "--no-color", "-M", "-U0", `origin/${args.base}...HEAD`]);
   const bends = diff.status === 0 ? bendsSection(findBends(diff.stdout)) : undefined;
-  if (bends !== undefined) io.log(bends.includes("None found") ? "Bends: none found in the diff" : "Bends: listed in the PR body");
+  if (bends !== undefined) io.log(bends === "" ? "Bends: none in the diff" : "Bends: listed in the PR body");
   const withSection = bends === undefined ? body : { ...body, text: withBends(body.text, bends), bends };
   const pr = ensurePr({ args, branch, summary, body: withSection, gh: io.gh, log: io.log });
   return pr ?? EXIT_COULD_NOT_MERGE;
@@ -1278,8 +1212,8 @@ export interface LandRun {
 }
 
 /**
- * Land `branch`: hand it to the queue and return, unless `--watch` asked for the old in-process
- * wait. The lock is held only around the shared moments: the push and PR, and the arming.
+ * Land `branch`: push it, open or reuse its PR, arm auto-merge and return. The lock is held only
+ * around the shared moments: the push and PR, and the arming.
  */
 export function landBranch(run: LandRun): number {
   const waits = run.waits ?? [];
@@ -1306,7 +1240,7 @@ export function landBranch(run: LandRun): number {
           : "nothing to commit; landing what the branch already has",
       );
     }
-    return run.args.watch ? watchAndMerge(run, waits) : handOff(run, waits);
+    return handOff(run, waits);
   } finally {
     run.io.log(formatTiming(Date.now() - startedAt, waits));
   }
@@ -1356,40 +1290,6 @@ function handOff(run: LandRun, waits: LockWait[]): number {
   return EXIT_COULD_NOT_MERGE;
 }
 
-/** The old behaviour, kept only for lanes that still pass `--watch`. */
-function watchAndMerge(run: LandRun, waits: LockWait[]): number {
-  const { args, branch, io } = run;
-  io.log("--watch is deprecated: bun run lane:close --queue owns the waiting now; land hands the PR over and exits");
-  for (let attempt = 1; attempt <= MERGE_ATTEMPTS; attempt += 1) {
-    const prepared = landLocked({ path: run.lock, branch, log: io.log }, () => prepare(args, branch, io), waits);
-    if (typeof prepared === "number") return prepared;
-
-    if (args.verify !== undefined) {
-      io.log(`verify ${args.verify}`);
-      if (!io.verify(args.verify)) {
-        io.error(`verify failed: ${args.verify}`);
-        return EXIT_VERIFY_FAILED;
-      }
-    }
-
-    const watched = watchChecks(io, prepared.number);
-    if (watched !== EXIT_LANDED) return watched;
-
-    const merged = landLocked({ path: run.lock, branch, log: io.log }, () => requestMerge(io, prepared.number), waits);
-    if (merged.kind === "requested") return waitForMerged(io, prepared.number);
-    if (merged.kind === "failed") return merged.code;
-    if (attempt === MERGE_ATTEMPTS) {
-      io.error(`could not merge after ${MERGE_ATTEMPTS} attempts: ${firstLine(merged.why)}`);
-      return EXIT_COULD_NOT_MERGE;
-    }
-    io.log(
-      `merge refused because origin/${args.base} moved (${firstLine(merged.why)}); ` +
-        `rebasing and watching again (attempt ${attempt + 1} of ${MERGE_ATTEMPTS})`,
-    );
-  }
-  return EXIT_COULD_NOT_MERGE;
-}
-
 function main(): void {
   if (printHelpIfAsked("land", LAND_USAGE)) process.exit(EXIT_LANDED);
   assertCheckoutReady("land", root);
@@ -1415,10 +1315,6 @@ function main(): void {
       git: (gitArgs) => git(gitArgs, 120_000),
       gh,
       verify: runVerify,
-      watch: (number) => {
-        run("gh", ["pr", "checks", String(number), "--watch", "--interval", "20"], WATCH_TIMEOUT_MS);
-      },
-      sleep,
       log: (line) => console.log(`land: ${line}`),
       error: (line) => console.error(`land: ${line}`),
     },

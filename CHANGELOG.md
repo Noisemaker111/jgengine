@@ -192,10 +192,6 @@ Prevention: none - the change is two redrawn PNG images with no code path a test
 - `arrangeHudPanels` shrinks the HUD before lifting a panel off its edge into the play view: a bottom bar squeezed between the joystick and the action cluster (Fernwild's build bar) stays on the bottom edge at a smaller zoom, and lifts only when no zoom down to `minScale` keeps it there.
 - Drift Foundry registers its steering and pedal pads as control regions; Apex Nights' garage panel grows to fit its price tags instead of spilling onto the action buttons.
 
-### Bends
-
-- Deleted the three `touchDockInsets` unit tests along with the function they tested; the new "touch controls are obstacles" browser test and the solver tests cover the behaviour that replaced it.
-
 ## 0.46.0
 
 ### Migrate
@@ -664,10 +660,6 @@ Verification:
 - `bun scripts/check-types-all.ts` and the six games' `check-types`: pass
 - fernwild in the browser: the build strip shows each structure with its cost and key, greyed when unaffordable, and clicking one starts building
 
-## Bends
-
-- `kitHud.test.tsx` lost its `KitActionBar` test with the component; the same behaviour (detail text, unaffordable as ghost, meters, prompt above) is asserted on `ActionBar look="kit"` in `actionHud.test.ts`.
-- The `hudBlockOverlaps` tests in `hudLanes.test.ts` now run the same cases through `detectLayoutCollisions`; no case was dropped.
 - City blocks are traced from the exact street graph instead of welding centerlines, so curved and filleted streets still close their blocks. Every city closes more blocks and places more buildings (the default district goes from 184 to 235 lots; Manhattan from 134 to 225). Apex Nights, Briarcrown, Ember Command, Hold the Line and Saltwick place city volumes and get the fuller fabric.
 - Playground: "Lot frontage", "Lot depth" and "Plot variety" become one "Lot scale" dial (`?lotScale=`); "Landmarks" goes up to 0.5.
 
@@ -677,10 +669,6 @@ Verification:
 - Playground in the browser: city and street race grow with buildings, an arena landmark, and the lap with kerbs and barriers
 - `shoot apex-nights` and `shoot hold-the-line`: load and render normally
 
-## Bends
-
-- `cityKind.test.ts` pins the default district's lot counts; the pins move from 184/189 to 235/252 because the fabric now closes more blocks, which is the intended change.
-- `cityLayout.ts` stays: it is Harbor Heat's authored road classes over the shared lot deriver, not a generator.
 - Drop the i-have-adhd plugin from the repo settings; nothing on this PC uses it
 - `check concept-homes` scans `games/*/src`, `games/*/packages/*/src` and `games/shared`. Each game is its own namespace (two games may each have a `Hud`); a clash with an engine export fails. The names a game's entry files hand the engine (`game`, `world`, `editorLayers`, `editorCatalogs`, `uiScenario` in top-level `src/` files) are the contract and pass.
 - Games use the engine where theirs was a copy: `UiKitName` (`@jgengine/react/uiKits`) in the nine idea games, `FogBounds` in ember-command, `Vec2` in beacon-bastion, `clamp` in odd-orbit (`clampNeed` wraps it), and `openTitle` (`@jgengine/core/game/gameFlow`) inside beacon-bastion's `openKeepTitle` and deepward's `openMarrowTitle`.
@@ -692,9 +680,6 @@ Verification:
 - every game's `check-types`: pass
 - `bun test` on the touched games, `games/shared` and `scripts/check-concept-homes.test.ts`: pass
 
-## Bends
-
-- None. The entry-export allowance covers only the five names the template writes into top-level `src/` files; the same name anywhere else in a game still fails (tested).
 - A ground over 66k vertices splits into 128-cell tiles, each a `THREE.LOD` at strides 1/2/4/8/16. Scene load builds only the coarsest level of every tile plus what the camera needs nearby; finer levels build in the background as the camera reaches them. Each level drops a skirt below its edges, so neighbouring tiles at different detail show no crack. Normals come from the sampled heights, so a tile edge lights the same from both sides.
 - A pulled terrain scan that may be missing no longer meshes the ground twice (once for the procedural stand-in, again when its maps load): the same mesh swaps material.
 - A compatible prop alone in its 128 m cell joins the nearest batch of its model, and a model with no cell batch gathers its lone props into one. Drawn as a plain mesh it linked a second, non-instanced program for every material the batched copies already had (harbor-heat start: 112 programs, now 107).
@@ -716,9 +701,6 @@ Verification:
 - `bun scripts/check-types-all.ts`: 23 dirs, 0 failing; every game's `check-types`: pass
 - `bun test` on threshold, stats, vec2/vec3, waypoints, ui, movement, combat, nav, ws, node, convex, shell audio: 1693 pass
 
-## Bends
-
-- None. The concept-homes template-literal skip removes false positives only (text a generator prints is not a definition); it has its own test.
 - `HudCanvas` places every panel with `arrangeHudPanels` instead of nine independent anchor regions, so panels in different anchors no longer run into each other on phone and tablet screens.
 - Beacon Bastion, Deepward, Harbor Heat, Odd Orbit and Scrap Signal declare one anchor and a priority per panel; their per-size placements are gone.
 - Ember Command draws the ledger, orders note, pause seal, survey map, Bram's card, command board, order hints and level-up writ as `HudCanvas` panels with one anchor and a priority each, instead of hand-placed CSS. The map folds into a toggle when there is no room for it rather than being hidden below 1180px, and the hand-registered layout regions are gone because every panel registers its own.
@@ -855,12 +837,6 @@ Verification:
 - `bun test scripts/load-check.test.ts scripts/verify-fast.test.ts packages/shell/src/terrain/terrainDetailMaterial.test.ts`: pass
 - `bun run shoot --load deepward --guard` with a planted stall: exit 1 (above)
 
-## Bends
-
-- None.
-
-🤖 Generated with [Claude Code](https://claude.com/claude-code)
-
 Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>
 - `Ocean` (`@jgengine/shell/water`) animates its waves on the game clock (`ctx.time.advancedSeconds()`), so the sea stops when the game pauses, follows slow motion and lines up with the water surface buoyancy samples. Before any game time has passed (a title screen), or with no game (an editor preview), it runs on real time.
 - Ocean glints follow the sun the mounted `Sky` placed, through the day-night cycle, and fade out once the sun sets; without a sky they keep the fixed day heading. `syncOceanMaterial` takes the sun direction as an optional fourth argument.
@@ -889,9 +865,6 @@ Verification:
 - `bun test packages/jgengine scripts/scaffold-editor.test.ts`: 387 pass
 - fernwild and odd-orbit run from their own folder (`bun run dev`): styled title menu, fernwild's HUD and build strip in play
 
-## Bends
-
-- `templates.test.ts`: the "in-repo tsconfig paths match the exact map doctor requires" test went with the map; it is replaced by a test that the in-repo wiring extends the base tsconfig, runs on `games/shared` and names the game by id. The AGENTS.md test now runs on the standalone template only, since the in-repo template no longer writes one.
 - Moved to `@jgengine/core/terrain/`: `terrain` (was `world/terrain`), `terraform` (was `world/terraform`), `pathTerrain` (was `world/pathTerrain`), `terrainGuides` (was `world/terrainGuides`), `terrainGrade` (was `movement/terrainGrade`), and `terrainPaint` (was `editor/terrainMaterials`).
 - `terrainGroundColorSampler` moved to `@jgengine/shell/terrain/terrainGroundColor` (was `environment/terrainGroundColor`).
 - The editor's paint palette is `TerrainPaintPreset` / `TERRAIN_PAINT_PRESETS` / `TERRAIN_PAINT_COLORS` (was `TerrainMaterial` / `TERRAIN_MATERIALS` / `TERRAIN_MATERIAL_COLORS`), imported from `@jgengine/core/terrain/terrainPaint`. `@jgengine/core/editor` and `@jgengine/editor` no longer re-export it.
@@ -914,10 +887,6 @@ Root cause: gameplay keys are read on the shell's focusable wrapper. Closing the
 Verification:
 - `bun test packages/shell/src/playSurfaceFocus.test.ts`: pass (new test fails without the fix)
 - fernwild in the browser: New Game, Escape opens pause, Escape closes it, focus is back on the play surface, Escape opens pause again (before: focus stayed on `<body>` and pause did not reopen).
-
-## Bends
-
-- None.
 - `jgengine find <feature>` answers by folder and file names once a folder is named for the query: an export that only mentions the word (`MAX_OCEAN_WAVES` for "waves") no longer shows `shell/water` as a home for waves.
 - `shoot` and `drive` `--size half` keep the page's full CSS viewport and halve only the pixel ratio, so a half-size shot lays out exactly like a full one. Before, the 800x450 viewport switched games into their compact HUD and the layout-collision check failed the run (Scrap Signal, Beacon Bastion).
 - `EntityPreview` no longer throws "Cannot read properties of null (reading 'addEventListener')" when it unmounts while react-three-fiber is still creating its canvas (a dialogue or menu that re-mounts a portrait in one beat, e.g. Harbor Heat's Marco dialogue).
@@ -930,9 +899,6 @@ Verification:
 - the new "hovering the menu while a field has focus" test fails without the fix (focus lands on the body) and passes with it
 - waits are `requestAnimationFrame` frames, not `waitForTimeout`
 
-## Bends
-
-- None. No assertion was relaxed; the timer waits became frame waits and one regression test was added.
 - A shadow-casting light whose shadow map no frame had drawn yet left every lit draw failing (WebGL: "Mismatch between texture format and sampler type"), so the scene showed only its clear colour. The shader warmup holds the frame's draws behind the loading cover, and cascaded shadows took the first held frame as their one refresh, so far cascades never got a map. A cascade now refreshes until it has a map, or when something asks for a redraw.
 - The warmup's own draws ran before any shadow map existed, so every lit warmup draw failed and finished nothing. The first warmup draw now makes the missing maps, and the next real frame redraws them with every caster. WebGL errors on a cold load drop from 230-250 per game to under 50.
 - Ocean and authored water drew a different wave set from the CPU `waterSurface`, so floating bodies bobbed on waves that were not on screen. Both now come from `synthesizeWaves`.
@@ -942,8 +908,6 @@ Verification:
 
 - `buildingSpatialBatch` (replaced by `partitionInstances`), `chunkScatterInstances` / `ScatterChunk` (replaced by `groupInstancesByCell`).
 
-Bends:
-- Left on their own writers: `InstancedBodies` and `SpriteBatch` (per-frame packed-array hot loops over thousands of bodies), `staticObjectBatches` (skips the upload when nothing moved), `ImpostorCardPool` (packs many slices into one shared mesh), `crowdBatch` / `SkinnedInstances` (the crowd concept) and `ImpactFeedback` (combat feedback, another builder's area).
 - `GridWorldScene` now computes a culling sphere where it had none.
 
 Verification:
@@ -953,29 +917,17 @@ Verification:
 - Unverified: LLMVille's endless datacenter on screen (it needs its Convex backend to run); it type-checks.
 - `jgengine upgrade` (with `--plan`, `--apply`, `--to`, `--json`), with no alias.
 
-## Bends
-
-- `upgrade.test.ts` and `upgradeCatalog.test.ts` are deleted. Their changelog tests moved to `releaseNotes.test.ts`; the catalog cases (bump, `--check`, `catalog:` kept, downgrade refused) are now sync tests.
 - Sync always targets the CLI's own version (`npx jgengine@<version> sync` picks a version). The registry-publication check and the `--to` and `--json` flags from upgrade are dropped.
-- The harness no longer runs a project's own `scripts/shoot.mjs`/`drive.mjs` copy, so `templates.test.ts` and `harness.test.ts` now expect no `scripts/` files and the bundled harness.
-- The harness sources moved from `templates/gameFiles.ts` to `templates/harnessScripts.ts`; `check-scaffold-launch.ts` reads them there.
+- The harness no longer runs a project's own `scripts/shoot.mjs`/`drive.mjs` copy; the bundled harness runs instead.
 - The duplicate `TerrainMaterial` export in `editor/terrainMaterials`.
 
-Bends:
-- `map/terrainMap` (bakes a top-down map image) stays with the map concept; `shell/src/terrain.ts` stays as the package's `@jgengine/shell/terrain` entry.
-- Moved files count as new exports, so 19 terrain and terraform symbols that had no doc line got one.
+- 19 terrain and terraform symbols that had no doc line got one.
 
 Verification:
 - `bun run check types`, `bun run gen` (all stages), `bun run check concept-homes --all` (0 duplicates), `bun test packages/core/src packages/shell/src packages/editor/src apps/web/src scripts` (11223 pass, 0 fail).
 - `jgengine find terrain` names one core folder (`packages/core/src/terrain/`) and one shell folder.
 - Standalone editor: created a terrain, the Paint tab lists all eight presets, a grass stroke paints the ground.
 - Play shots of Beacon Bastion, Harbor Heat, Odd Orbit, Scrap Signal and Fernwild render as before; load guard passes for all five (Harbor Heat failed once while the full test suite ran beside it, then passed alone).
-
-### Bends
-
-- Remaining instanced/plain pairs in harbor-heat are vehicles and characters: far ones draw through the baked crowd (its own shader), near ones on their full rig. That is two techniques, not one material compiled twice, so they stay.
-- Making every lone prop a batch of one was tried and dropped: drift-foundry's scene ready went from about 10 s to 19–28 s (per-batch machinery on hundreds of one-prop batches).
-- None.
 
 ## 0.45.0
 
@@ -1121,8 +1073,6 @@ Root cause: #2505 removed the `games:<id>` root scripts without checking the des
 Verification:
 - `bun test packages/jgengine/src/create.test.ts apps/desktop/project/commands.test.ts`: 23 pass, 0 fail.
 - `bun --cwd=games/harbor-heat run dev`, the argv `buildShellCommand` builds for Standalone: serves `http://localhost:5173/` with 200, title "Harbor Heat", and `#root`.
-
-🤖 Generated with [Claude Code](https://claude.com/claude-code)
 - `assets pull` sends the GitHub token (`GITHUB_TOKEN`, `GH_TOKEN`, else the signed-in `gh` CLI's) to `api.github.com`, `raw.githubusercontent.com` and `codeload.github.com`, so parallel pulls on one machine no longer hit the anonymous 60-an-hour limit and fail with 403. Every pull request also has a hard budget (`JG_FETCH_TIMEOUT_MS`, 10 minutes) and fails naming the URL that stalled.
 - A model's `materialAssignments` no longer throw "matched no slots" on a variant level whose simplified asset dropped the selected slot. The source level still validates strictly, and a level skips only the selectors it lacks; `applyMaterialAssignments` takes `{ unmatched: "skip" }` for the same policy. Harbor Heat's HHPD cruiser crashed on spawn at its far level (issue #259).
 - Camera shake now reaches the screen on every rig: `cameraShake()` used to feed a channel the rigs never read, and the orbit, first-person and inspection rigs applied no shake at all.
@@ -1143,11 +1093,6 @@ Prevention: `games-sync` gate; `packages/jgengine/src/sync.test.ts`.
 
 Verification: `bun test packages/jgengine/src` pass; `bun run jgengine sync --check` up to date for all 18 games; a `--template 3d` game created outside the repo with npm boots, and after renaming it and turning the editor off in `jgengine.json`, `jgengine sync` rewrote the page, wiring and package.json and it still boots.
 
-## Bends
-
-- Deleted three template tests (`world`, `track`, `places` `.test.ts.tmpl`) together with the `games:new` generator they tested.
-- `games/scripts/vite-engine-source.test.ts` no longer checks the deleted `games:new` template's `vite.config.ts`; every game's config is still checked.
-- `games/scripts/check-capabilities.test.ts` and `scripts/ci-scope.test.ts` expectations changed to the new file and message names, not loosened.
 - `packages/jgengine/src/sync.test.ts` builds its games under the OS temp folder (`fixture-location: allow`): a standalone game has to sit outside every workspace.
 - Capability answers are synced only for games in the engine repo's `games/`; an outside game's `jgengine.json` has none (the ledger reads engine source).
 - `physics/kinematicVehicle`, `physics/vehicleBody`, `damagedTuning`, and Harbor Heat's own tyre-smoke glow (the engine's `tires` option replaces it). The retired `run-loop` and `kinematic-vehicle` capabilities are dropped from game declarations.

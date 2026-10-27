@@ -10,14 +10,14 @@ export type GameTemplate = (typeof GAME_TEMPLATES)[number];
 
 /** A game-facing capability whose domain a game has while it runs its own version. */
 export interface CapabilityDebt {
-  /** What the game does in that domain today, in words that name the domain. */
-  reason: string;
-  /** The open issue that tracks adopting the shared system. */
+  /** What the game does in that domain today, for the reader; no check reads it. */
+  reason?: string;
+  /** The issue that tracks adopting the shared system. */
   issue: number;
 }
 
 /**
- * What an engine monorepo game writes about capabilities. Adoption is not written: the gate reads
+ * What an engine monorepo game writes about capabilities. Adoption is not written: the check reads
  * it from the game's imports.
  */
 export interface CapabilityAnswers {

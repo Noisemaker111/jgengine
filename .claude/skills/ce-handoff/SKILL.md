@@ -20,13 +20,13 @@ Adapted for JGengine from [EveryInc/compound-engineering-plugin `ce-handoff`](ht
 
 ### Outcome
 
-Create one immutable handoff at the destination the user requested, or use the managed temporary store by default. Briefly summarize what the handoff captured, then report its final path or URL, retention limits, and continuity warnings. The handoff supplements authoritative artifacts (issues, PRs, plans under `docs/plans/`, skills); it does not replace them.
+Create one immutable handoff at the destination the user requested, or use the managed temporary store by default. Briefly summarize what the handoff captured, then report its final path or URL, retention limits, and continuity warnings. The handoff supplements authoritative artifacts (issues, PRs, skills); it does not replace them.
 
 ### Build the handoff
 
 1. Distill the current objective and the user's latest intent. If a focus was supplied, make it the `resume_focus`.
 2. Inspect only the workspace state needed to explain what exists now. Use JGengine project instructions already in context (`AGENTS.md`, `workflow`, domain skills).
-3. Point to plans, issues, commits, diffs, documentation, and relevant files instead of reproducing their contents. Prefer repository-relative paths (`docs/plans/…`, `packages/…`, `games/…`).
+3. Point to plans, issues, commits, diffs, documentation, and relevant files instead of reproducing their contents. Prefer repository-relative paths (`packages/…`, `games/…`, `changes/…`).
 4. Redact secrets, credentials, tokens, and unrelated personal information. Preserve operational paths only when the next agent needs them.
 5. Write or publish with existing tools. If the user named another path, folder, format, or publication destination, honor it. Do not also create a managed-store copy unless asked.
 
