@@ -9,6 +9,7 @@ import { itemNameById } from "../content";
 import { DamageVignette, HitMarker, LevelUpBurst } from "./components/Feedback";
 import { CashPlate, MissionTracker } from "./components/Mission";
 import { ReserveOverlay, VendorPanel } from "./components/Overlays";
+import { NpcDialog } from "./components/NpcDialog";
 import { TalentsPanel } from "./components/Talents";
 import { ScrapMenu } from "./menu/ScrapMenu";
 import { VitalsPlate } from "./components/Vitals";
@@ -113,6 +114,7 @@ export function GameUI() {
       <DamageVignette />
       <ReserveOverlay />
       <VendorPanel />
+      <NpcDialog />
       <TalentsPanel />
       <TravelPanel />
       <BlackMarketPanel />

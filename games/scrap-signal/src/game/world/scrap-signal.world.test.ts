@@ -2,7 +2,10 @@ import { join } from "node:path";
 import { describe, expect, test } from "bun:test";
 import { summarizeEnvironment } from "@jgengine/core/world/environmentSummary";
 import { terrainField, world } from "../../world";
-import { MAIN_QUEST_IDS, quests } from "../quests/catalog";
+import { findEditorMarker } from "@jgengine/core/editor/document";
+import { enemyById } from "../entities/enemies/catalog";
+import { START_ZONE } from "../progression/unlocks";
+import { MAIN_QUEST_IDS, quests, scrapQuests, zoneOpener } from "../quests/catalog";
 import { SETTLEMENT_KITS } from "./buildingKit";
 import { AUTHORED_PIECES, ROUTES, SPUR_ROUTES, authoredScene } from "./level";
 import { entityModels, objectModels } from "./models";
@@ -177,16 +180,28 @@ describe("campaign chain", () => {
     for (const id of MAIN_QUEST_IDS) expect(byId.has(id)).toBe(true);
   });
 
-  test("each main quest links to the next via rewards.quests", () => {
-    for (let index = 0; index < MAIN_QUEST_IDS.length - 1; index += 1) {
-      const quest = byId.get(MAIN_QUEST_IDS[index]!)!;
-      expect(quest.rewards?.quests).toContain(MAIN_QUEST_IDS[index + 1]!);
+  test("each main quest after the first waits on the one before it", () => {
+    expect(byId.get(MAIN_QUEST_IDS[0]!)?.requires ?? []).toEqual([]);
+    for (let index = 1; index < MAIN_QUEST_IDS.length; index += 1) {
+      expect(byId.get(MAIN_QUEST_IDS[index]!)?.requires).toContain(MAIN_QUEST_IDS[index - 1]!);
     }
   });
 
-  test("every chained quest id resolves to a registered quest", () => {
-    for (const quest of quests) {
-      for (const next of quest.rewards?.quests ?? []) expect(byId.has(next)).toBe(true);
+  test("every zone but the start one has a story quest that opens its road", () => {
+    for (const zone of ZONES) {
+      if (zone.id === START_ZONE) expect(zoneOpener(zone.id)).toBeUndefined();
+      else expect(zoneOpener(zone.id)?.main).toBe(true);
+    }
+  });
+
+  test("every prerequisite, kill target and marker a quest names is real", () => {
+    for (const quest of scrapQuests) {
+      for (const id of quest.requires ?? []) expect(byId.has(id)).toBe(true);
+      for (const objective of quest.objectives) {
+        if (objective.kind === "kill") expect(enemyById(objective.target)?.id).toBe(objective.target);
+      }
+      if (quest.spawn !== undefined) expect(findEditorMarker(authoredScene, quest.spawn.marker)).toBeDefined();
+      if (quest.meetAt !== undefined) expect(findEditorMarker(authoredScene, quest.meetAt)).toBeDefined();
     }
   });
 });

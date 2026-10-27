@@ -36,22 +36,23 @@ import {
   tickShields,
 } from "./game/handroll";
 import { itemUseHandlers } from "./game/items/use-handlers";
-import { loadouts } from "./game/loadouts";
 import { grantXp } from "./game/progression/curves";
-import { MAIN_QUEST_IDS, QUEST_IDS, quests } from "./game/quests/catalog";
+import { noteKill, noteZone } from "./game/progression/discovery";
+import { grantLevelUnlocks, rarityCapFor, zoneOpen } from "./game/progression/unlocks";
+import { NPCS, quests, zoneOpener } from "./game/quests/catalog";
+import { creditObjective, npcDialogStore, reconcileQuestWorld, settleRadioQuests } from "./game/quests/givers";
 import { session } from "./game/session";
 import { SCRAP_SLOTS } from "./game/scrapSlots";
 import {
   currentZoneStore,
   discoveredStationsStore,
-  echoStore,
-  ruskDownStore,
   reactorOpenStore,
   selectedSlotStore,
+  speechStore,
 } from "./game/stores";
 import { TRAVEL_STATIONS, zoneAt, zoneLevelAt } from "./game/world/sites";
 import { PLAYER_SPAWN, PLAYER_SPAWN_YAW, respawnClusters, setupWorld } from "./game/world/setup";
-import { bankFieldHaul, scanFieldGun } from "./game/items/fieldGear";
+import { bankFieldHaul } from "./game/items/fieldGear";
 
 const dropRng = seededRng("scrap-gun-drops");
 const RESPAWN_SWEEP_SECONDS = 25;
@@ -75,9 +76,11 @@ function dropGunAt(ctx: GameContext, event: EntityDiedEvent, anchor: readonly [n
   if (rolls === 0) return;
   const baseLevel = rift?.lootLevel ?? zoneLevelAt(anchor[0], anchor[2]);
   const level = Math.max(1, baseLevel + Math.floor(dropRng() * 3) - 1);
+  const maxRarity = rarityCapFor(ctx.scene.entity.stats.get(ctx.player.userId, "level")?.current ?? 1);
   for (let index = 0; index < rolls; index += 1) {
     const gun = rollGun(dropRng, level, {
       luck: def.gunLuck * (rift?.luck ?? 1),
+      maxRarity,
       ...(index < legendaries ? { rarity: "legendary" as const } : {}),
     });
     ctx.scene.worldItem.spawn({
@@ -112,6 +115,7 @@ function onEntityDied(ctx: GameContext, event: EntityDiedEvent): void {
   ctx.game.audio.play("enemy_die", deathAt);
   if (event.reason.kind === "player_kill" && event.reason.killerUserId === userId) {
     const anchor = deathAt;
+    noteKill(ctx, event.catalogId);
     if (event.reason.via?.item !== undefined) {
       const family = gunById(event.reason.via.item)?.family;
       if (family !== undefined) noteMastKill(ctx, event.catalogId, userId, family);
@@ -129,7 +133,6 @@ function onEntityDied(ctx: GameContext, event: EntityDiedEvent): void {
       ctx.scene.entity.update(userId, { movement: { walkSpeed: playerDef.walkSpeed } });
       ctx.scene.entity.floatText({ instanceId: userId, text: "POWER SURGE!", kind: "pickup" });
     }
-    if (enemy.id === "captain_rusk") ruskDownStore.write(ctx, true);
   }
 }
 
@@ -149,6 +152,10 @@ function onLevelUp(ctx: GameContext, userId: string): void {
   noteLevelUp(ctx.time.now() * 1000);
   ctx.game.audio.play("levelup");
   ctx.scene.entity.floatText({ instanceId: userId, text: "LEVEL UP! +1 SKILL POINT", kind: "pickup" });
+  const level = ctx.scene.entity.stats.get(userId, "level")?.current ?? 1;
+  for (const opened of grantLevelUnlocks(ctx, level)) {
+    ctx.game.notices.push({ text: `Unlocked: ${opened}`, tone: "success" });
+  }
 }
 
 function nearestDiscoveredStation(ctx: GameContext): { x: number; z: number } {
@@ -209,7 +216,35 @@ function tickReserve(ctx: GameContext, dt: number): void {
   syncReserve(ctx);
 }
 
+/** The last spot the player stood outside every closed zone: where a closed road turns them back to. */
+const openGround = perContext((): { at: readonly [number, number, number] | null; warnedAtMs: number } => ({ at: null, warnedAtMs: -Infinity }));
+
+/** Turn the player back at the edge of a zone the story has not opened. Returns whether they were turned. */
+function holdAtClosedZone(ctx: GameContext, nowMs: number): boolean {
+  const userId = ctx.player.userId;
+  const playerEntity = ctx.scene.entity.get(userId);
+  if (playerEntity === null) return false;
+  const ground = openGround(ctx);
+  const zone = zoneAt(playerEntity.position[0], playerEntity.position[2]);
+  if (zone === null || zoneOpen(ctx, zone.id)) {
+    ground.at = playerEntity.position;
+    return false;
+  }
+  if (ground.at !== null) ctx.scene.entity.update(userId, { position: ground.at });
+  if (nowMs - ground.warnedAtMs > 3000) {
+    ground.warnedAtMs = nowMs;
+    const quest = zoneOpener(zone.id);
+    ctx.scene.entity.floatText({
+      instanceId: userId,
+      text: `${zone.name.toUpperCase()} · LEVEL ${zone.level} · ${quest === undefined ? "CLOSED" : `OPENS WITH "${quest.title.toUpperCase()}"`}`,
+      kind: "warn",
+    });
+  }
+  return true;
+}
+
 function tickZoneAndStations(ctx: GameContext, nowMs: number): void {
+  if (holdAtClosedZone(ctx, nowMs)) return;
   const playerEntity = ctx.scene.entity.get(ctx.player.userId);
   if (playerEntity === null) return;
   const [x, , z] = playerEntity.position;
@@ -219,7 +254,8 @@ function tickZoneAndStations(ctx: GameContext, nowMs: number): void {
   if (zone !== null && zone.id !== currentZone?.id) {
     if (currentZone !== null) bankFieldHaul(ctx);
     currentZoneStore.write(ctx, { id: zone.id, name: zone.name, level: zone.level, atMs: nowMs });
-    scanFieldGun(ctx, `zone:${zone.id}:${Math.floor(nowMs)}`, zone.level);
+    noteZone(ctx, zone.id);
+    creditObjective(ctx, "reach", zone.id);
     void saveScrapState(ctx);
   }
 
@@ -238,9 +274,18 @@ function tickZoneAndStations(ctx: GameContext, nowMs: number): void {
   }
 }
 
+/** A conversation ends when the player walks away from the one talking. */
+function closeDistantDialog(ctx: GameContext): void {
+  const open = npcDialogStore.read(ctx);
+  if (open === null) return;
+  const npc = ctx.scene.entity.get(NPCS[open.npc].entity);
+  const player = ctx.scene.entity.get(ctx.player.userId);
+  if (npc === null || player === null) return;
+  if (Math.hypot(npc.position[0] - player.position[0], npc.position[2] - player.position[2]) > 6) npcDialogStore.clear(ctx);
+}
+
 function onInit(ctx: GameContext): void {
   ctx.item.use.register(itemUseHandlers);
-  ctx.player.loadout.register(loadouts);
   for (const table of lootTables) ctx.game.loot.register(table);
   ctx.game.quest!.register(quests);
   ctx.game.quest!.bind("entity.died");
@@ -257,14 +302,9 @@ function onInit(ctx: GameContext): void {
   ctx.game.events.on("stat.levelUp", (event) => {
     if (event.stat === "level") onLevelUp(ctx, event.userId);
   });
-  ctx.game.events.on("quest.accepted", (event) => {
-    echoStore.write(ctx, { questId: event.questId, atMs: ctx.time.now() * 1000 });
-  });
-  ctx.game.events.on("quest.completed", (event) => {
-    ctx.game.quest!.turnIn(event.userId, event.questId);
-    const reward = quests.find((quest) => quest.id === event.questId)?.rewards;
-    if (reward?.xp !== undefined) grantXp(ctx, event.userId, reward.xp.amount);
-    ctx.scene.entity.floatText({ instanceId: event.userId, text: "MISSION COMPLETE", kind: "pickup" });
+  // A radio quest turns itself in the moment its last objective lands; the rest wait for their giver.
+  ctx.game.events.on("quest.updated", () => settleRadioQuests(ctx));
+  ctx.game.events.on("quest.completed", () => {
     void saveScrapState(ctx);
   });
 
@@ -292,15 +332,12 @@ function onNewPlayer(ctx: GameContext): void {
     rotationY: PLAYER_SPAWN_YAW,
     role: "player",
   });
-  if (ctx.player.isNew) ctx.player.applyLoadout(ctx.player.userId, "starterKit");
+  // Empty-handed: the start is declared in game.config's `newGame`, and Bolt hands out the first quest.
   resetCombat(ctx);
   syncCombatTargets(ctx);
-  ctx.game.quest!.accept(ctx.player.userId, MAIN_QUEST_IDS[0]!);
-  ctx.game.quest!.accept(ctx.player.userId, QUEST_IDS.bruiserSurvey);
-  ctx.game.quest!.accept(ctx.player.userId, QUEST_IDS.ripperControl);
   session.reset(ctx);
-  noteEquipped(ctx.player.inventory.state("hotbar").slots[0]?.itemId ?? null);
-  scanFieldGun(ctx, "scrap-field-first", 1);
+  noteEquipped(null);
+  speechStore.write(ctx, { speaker: NPCS.bolt.name, line: "Hey! Over here, minion! You're alive! Come talk to me.", atMs: ctx.time.now() * 1000 });
   void resumeOrStart(ctx);
 }
 
@@ -323,6 +360,8 @@ async function resumeOrStart(ctx: GameContext): Promise<void> {
     if (!systemsLoaded) session.selectSlot(ctx, selectedSlotStore.read(ctx));
     noteEquipped(ctx.player.inventory.state("hotbar").slots[session.selectedSlot()]?.itemId ?? null);
     restoreMastWatch(ctx);
+    reconcileQuestWorld(ctx);
+    grantLevelUnlocks(ctx, ctx.scene.entity.stats.get(ctx.player.userId, "level")?.current ?? 1);
   }
   settleBootPhase(ctx);
 }
@@ -365,6 +404,7 @@ function onTick(ctx: GameContext, dt: number): void {
   tickRelay(ctx, dt);
   tickMastWatch(ctx, dt);
   tickZoneAndStations(ctx, nowMs);
+  closeDistantDialog(ctx);
   notePlayerHealth(nowMs, ctx.scene.entity.stats.get(ctx.player.userId, "health")?.current ?? null);
 }
 

@@ -7,7 +7,7 @@ import { gearItems, AMMO_PRICES } from "../../items/gear/catalog";
 import { FERRALON } from "../../palette";
 import { ScrapPanel } from "./ScrapPanel";
 import { Pips, SIGNAL } from "../fiction/kit";
-import { reserveStore, ruskDownStore, vendorOpenStore } from "../../stores";
+import { reserveStore, vendorOpenStore } from "../../stores";
 
 /** The emergency reserve: the rig’s tube flashes a reboot countdown across the middle of the view. */
 export function ReserveOverlay() {
@@ -50,24 +50,10 @@ export function VendorPanel() {
   const { commands } = useGame();
   const vendor = useStore(vendorOpenStore);
   const cash = useCurrency("cash");
-  const ruskDown = useStore(ruskDownStore);
   const open = vendor !== null;
   useCloseOnOpen(open);
   if (!open) return null;
   const close = () => commands.run("vendor.close", {});
-
-  if (vendor === "bolt") {
-    return (
-      <ScrapPanel title="B0-LT Steward Bot" closeLabel="Close [Esc]" onClose={close}>
-        <p className="text-sm font-semibold leading-relaxed text-stone-200">
-          {ruskDown
-            ? "Rusk’s blockade is down. The stolen modules are back on the relay, and Coretown can hear us again. Follow the signal toward the reactor or recover more equipment here."
-            : "Reclaimer, our relay parts are scattered east of camp. Ripper drones stripped the repair stock, and Rusk’s blockade has cut off the recovery crews. Your mission log marks the next job."}
-        </p>
-        <p className="mt-3 text-[11px] uppercase tracking-wider text-stone-500">Missions track on the left of your HUD</p>
-      </ScrapPanel>
-    );
-  }
 
   if (vendor === "sparx") {
     return (

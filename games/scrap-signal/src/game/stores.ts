@@ -18,7 +18,8 @@ export const openedChestsStore = defineStore<readonly string[]>("openedChests", 
 
 export const vendorOpenStore = defineStore<string | null>("vendorOpen", null);
 
-export const echoStore = defineStore<{ questId: string; atMs: number } | null>("echo", null);
+/** The last thing someone said over the radio or face to face. */
+export const speechStore = defineStore<{ speaker: string; line: string; atMs: number } | null>("scrap.speech", null);
 
 export const blackMarketOpenStore = defineStore<boolean>("blackMarketOpen", false);
 
@@ -36,7 +37,6 @@ export const talentRanksStore = defineStore<Record<string, number>>("talentRanks
 
 export const reactorOpenStore = defineStore<{ atMs: number } | null>("reactorOpen", null);
 
-export const ruskDownStore = defineStore<boolean>("ruskDown", false);
 
 export interface CurrentZoneView {
   id: string;

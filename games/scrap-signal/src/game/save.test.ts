@@ -39,7 +39,8 @@ describe("scrap-signal whole-world save", () => {
     legacy.game.store.set("characterId", "zero");
     legacy.game.store.set("talentRanks", { zero_headshot: 2 });
     legacy.game.store.set("echo", { questId: "q_skag_dog_days", atMs: 42 });
-    const ripperQuest = quests.find((quest) => quest.id === "q_ripper_control")!;
+    // The legacy save predates prerequisites: its quest was accepted on day one.
+    const { requires: _requires, ...ripperQuest } = quests.find((quest) => quest.id === "q_ripper_control")!;
     legacy.game.quest!.register([{ ...ripperQuest, id: "q_skag_dog_days" }]);
     legacy.game.quest!.accept("p1", "q_skag_dog_days");
     legacy.game.quest!.progress("p1", "q_skag_dog_days", "pups", 3);

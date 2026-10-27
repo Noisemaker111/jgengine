@@ -16,12 +16,15 @@ import { gunById, rollGun, startReload, reservePhase } from "./handroll";
 import { equipFieldGun, salvageFieldGun, bankFieldHaul } from "./items/fieldGear";
 import { playerDef } from "./entities/players/catalog";
 import { session } from "./session";
+import { noteGunHeld } from "./progression/discovery";
+import { award, isUnlocked, openWeaponSlots, rarityCapFor, SKILLS_LEVEL, unlock } from "./progression/unlocks";
+import { CRASH_CHEST, isNpcId, QUEST_IDS } from "./quests/catalog";
+import { acceptOffer, creditObjective, npcDialogStore, talkTo } from "./quests/givers";
 import {
   blackMarketOpenStore,
   blackMarketStore,
   characterIdStore,
   discoveredStationsStore,
-  echoStore,
   lastPickupStore,
   openedChestsStore,
   skillsOpenStore,
@@ -51,6 +54,8 @@ export function upgradeCost(count: number): number {
 }
 
 const PICKUP_RADIUS = 2.8;
+/** The crash chest's pistol: a plain budget maker, so the first gun is honest and the next one is better. */
+const STARTER_MAKER = "Chuckwerk";
 const chestRng = seededRng("scrap-red-chests");
 
 interface AimPayload {
@@ -78,8 +83,14 @@ function pickupWorldItem(ctx: GameContext): void {
 
   const gun = gunById(record.itemId);
   if (gun !== undefined) {
-    const slot = session.selectedSlot();
     const slots = ctx.player.inventory.state("hotbar").slots;
+    const open = openWeaponSlots(ctx);
+    if (open === 0) {
+      award(ctx, unlock.slot(1));
+      ctx.scene.entity.floatText({ instanceId: userId, text: "WEAPON SLOT 1 ONLINE", kind: "pickup" });
+    }
+    const empty = slots.findIndex((stack, index) => index < Math.max(1, open) && stack === null);
+    const slot = empty >= 0 ? empty : Math.min(session.selectedSlot(), Math.max(1, open) - 1);
     const current = slots[slot] ?? null;
     ctx.scene.worldItem.consume(record.instanceId);
     if (current !== null) {
@@ -93,10 +104,13 @@ function pickupWorldItem(ctx: GameContext): void {
       });
     }
     ctx.player.inventory.put("hotbar", gun.id, 1, { slot });
+    session.selectSlot(ctx, slot);
     noteEquipped(gun.id);
     lastPickupStore.write(ctx, { gunId: gun.id, atMs: ctx.time.now() * 1000 });
     ctx.scene.entity.floatText({ instanceId: userId, text: gun.name.toUpperCase(), kind: "pickup" });
     ctx.game.feed.push("loot.pickup", { itemId: gun.id, rarity: gun.rarity });
+    noteGunHeld(ctx, gun);
+    creditObjective(ctx, "pickup", "gun");
     return;
   }
 
@@ -133,13 +147,36 @@ function claimChest(ctx: GameContext, instanceId: string): boolean {
   return true;
 }
 
+/** The crash chest holds the crew's spare pistol, and stays shut until Bolt sends you to it. */
+function crashChestShut(ctx: GameContext): boolean {
+  const entry = ctx.game.quest?.list(ctx.player.userId).find((candidate) => candidate.questId === QUEST_IDS.firstGun);
+  return entry === undefined;
+}
+
 function openRedChest(ctx: GameContext, instanceId: string): void {
+  const crash = instanceId === CRASH_CHEST;
+  if (crash && crashChestShut(ctx)) {
+    ctx.scene.entity.floatText({ instanceId: ctx.player.userId, text: "LOCKED · TALK TO B0-LT", kind: "warn" });
+    return;
+  }
   if (!claimChest(ctx, instanceId)) return;
+  creditObjective(ctx, "chest", instanceId);
   const object = ctx.scene.object.get(instanceId);
   const at = object?.position ?? ctx.scene.entity.get(ctx.player.userId)?.position ?? [0, 0, 0];
+  if (crash) {
+    const pistol = rollGun(chestRng, 1, { family: "pistol", rarity: "common", maker: STARTER_MAKER });
+    ctx.scene.worldItem.spawn({
+      itemId: pistol.id,
+      position: [at[0] + 0.8, at[1], at[2] + 0.9],
+      rarity: pistol.rarity,
+      baseType: pistol.family,
+      source: "chest",
+    });
+    return;
+  }
   const chestLevel = Math.max(playerLevel(ctx), zoneLevelAt(at[0], at[2]));
   for (let roll = 0; roll < 2; roll += 1) {
-    const gun = rollGun(chestRng, chestLevel, { luck: 4 });
+    const gun = rollGun(chestRng, chestLevel, { luck: 4, maxRarity: rarityCapFor(playerLevel(ctx)) });
     ctx.scene.worldItem.spawn({
       itemId: gun.id,
       position: [at[0] + 0.8 + roll * 0.8, at[1], at[2] + 0.9],
@@ -198,6 +235,10 @@ export function registerCommands(ctx: GameContext): void {
   for (const slot of [0, 1, 2, 3]) {
     ctx.game.commands.define(`selectSlot${slot + 1}`, {
       apply(state: GameContext) {
+        if (slot >= openWeaponSlots(state)) {
+          state.scene.entity.floatText({ instanceId: state.player.userId, text: `WEAPON SLOT ${slot + 1} LOCKED`, kind: "warn" });
+          return;
+        }
         session.selectSlot(state, slot);
         noteEquipped(selectedGunId(state));
       },
@@ -307,7 +348,7 @@ export function registerCommands(ctx: GameContext): void {
         state.game.notices.push({ text: "Not enough cash.", tone: "deny" });
         return;
       }
-      const gun = rollGun(chestRng, playerLevel(state), { luck: 6 });
+      const gun = rollGun(chestRng, playerLevel(state), { luck: 6, maxRarity: rarityCapFor(playerLevel(state)) });
       const playerEntity = state.scene.entity.get(userId);
       const at = playerEntity?.position ?? [0, 0, 0];
       state.scene.worldItem.spawn({
@@ -320,9 +361,22 @@ export function registerCommands(ctx: GameContext): void {
     },
   });
 
-  ctx.game.commands.define("npc.gauge", {
+  ctx.game.commands.define<{ npc?: string }>("npc.talk", {
+    apply(state: GameContext, input) {
+      const npc = input.npc;
+      if (npc !== undefined && isNpcId(npc)) talkTo(state, npc);
+    },
+  });
+
+  ctx.game.commands.define("quest.acceptOffer", {
     apply(state: GameContext) {
-      echoStore.write(state, { questId: "q_bruiser_survey", atMs: state.time.now() * 1000 });
+      acceptOffer(state);
+    },
+  });
+
+  ctx.game.commands.define("npc.close", {
+    apply(state: GameContext) {
+      npcDialogStore.clear(state);
     },
   });
 
@@ -405,6 +459,10 @@ export function registerCommands(ctx: GameContext): void {
   ctx.game.commands.define("ui.openSkills", {
     apply(state: GameContext) {
       const open = skillsOpenStore.read(state);
+      if (!open && !isUnlocked(state, unlock.skills)) {
+        state.scene.entity.floatText({ instanceId: state.player.userId, text: `SKILL TREE OPENS AT LEVEL ${SKILLS_LEVEL}`, kind: "warn" });
+        return;
+      }
       if (open) skillsOpenStore.clear(state);
       else skillsOpenStore.write(state, true);
     },

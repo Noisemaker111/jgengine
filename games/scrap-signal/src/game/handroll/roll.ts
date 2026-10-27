@@ -73,6 +73,11 @@ export function rollRarity(rng: () => number, luck = 1): Rarity {
   return "common";
 }
 
+/** A tier's place from common (0) to legendary (4). */
+export function rarityRank(rarity: Rarity): number {
+  return RARITY_TIERS.findIndex((tier) => tier.id === rarity);
+}
+
 export interface RollGunOptions {
   rarity?: Rarity;
   family?: GunFamily;
@@ -80,6 +85,10 @@ export interface RollGunOptions {
   luck?: number;
   /** Pin a named legendary ("Sixgun"): forces legendary rarity, its family and its maker. */
   legendary?: string;
+  /** Pin a maker for a non-legendary roll ("Chuckwerk"). */
+  maker?: string;
+  /** The rarest tier this roll may land on; rarer tiers get no weight. A pinned rarity ignores it. */
+  maxRarity?: Rarity;
 }
 
 /** The family and maker a named legendary belongs to, or undefined for a name nobody rolls. */
@@ -99,14 +108,15 @@ export function legendaryEntry(name: string): { family: GunFamily; maker: string
  * serializable provenance (see {@link gunProvenance}). The gun-specific stat, element, and name
  * feel below stays game-local — the seam owns selection, not the numbers.
  */
-function gunSelectionSchema(luck: number): GenSchema {
+function gunSelectionSchema(luck: number, maxRarity: Rarity): GenSchema {
+  const cap = RARITY_TIERS.findIndex((tier) => tier.id === maxRarity);
   return {
     steps: [
       { id: "family", select: "uniform", pool: FAMILY_BASES.map((value) => ({ id: value.family, value })) },
       {
         id: "rarity",
         select: "weighted",
-        pool: RARITY_TIERS.map((value) => ({ id: value.id, value })),
+        pool: RARITY_TIERS.filter((_, index) => index <= cap).map((value) => ({ id: value.id, value })),
         weightOf: (option) => (option.value as GunRarity).weight * (option.id === "common" ? 1 : luck),
       },
       {
@@ -144,6 +154,7 @@ export function rollGun(rng: () => number, level: number, options: RollGunOption
   const pin: Record<string, string> = {};
   if (options.family !== undefined) pin["family"] = options.family;
   if (options.rarity !== undefined) pin["rarity"] = options.rarity;
+  if (options.maker !== undefined) pin["maker"] = options.maker;
   if (options.legendary !== undefined) {
     const entry = legendaryEntry(options.legendary);
     if (entry === undefined) throw new Error(`unknown legendary: ${options.legendary}`);
@@ -151,7 +162,11 @@ export function rollGun(rng: () => number, level: number, options: RollGunOption
     pin["rarity"] = "legendary";
     pin["maker"] = `${entry.maker}:${options.legendary}`;
   }
-  const rolled = generate(gunSelectionSchema(options.luck ?? 1), rng, { pin });
+  // A pinned plain maker cannot land on a named legendary, whose maker ids carry the name.
+  const ceiling: Rarity = options.maker !== undefined && options.legendary === undefined ? "epic" : "legendary";
+  const wanted = options.maxRarity ?? ceiling;
+  const maxRarity = pin["rarity"] !== undefined ? "legendary" : rarityRank(wanted) < rarityRank(ceiling) ? wanted : ceiling;
+  const rolled = generate(gunSelectionSchema(options.luck ?? 1, maxRarity), rng, { pin });
   if (!rolled.ok) throw new Error(`gun roll failed: ${rolled.reason}`);
   const base = rolled.result.values["family"] as FamilyBase;
   const tier = rolled.result.values["rarity"] as GunRarity;
@@ -183,6 +198,7 @@ export function rollGun(rng: () => number, level: number, options: RollGunOption
     name,
     family: base.family,
     manufacturer: manufacturer.id,
+    model: legendaryName !== null ? `legendary:${legendaryName}` : `${manufacturer.id}:${base.family}`,
     rarity,
     element,
     level: gunLevel,

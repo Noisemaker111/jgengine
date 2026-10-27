@@ -2,9 +2,8 @@ import { GameIcon, type GameIconName } from "@jgengine/core/ui/icons/gameIcons.v
 import { HudFade } from "@jgengine/core/hud/hudLayout.view";
 import { useCurrency, useGame, useQuestJournal } from "@jgengine/react/hooks";
 import { useStore } from "@jgengine/react/store";
-import { quests } from "../../quests/catalog";
+import { NPCS, objectiveLabel, scrapQuestById } from "../../quests/catalog";
 import { FERRALON } from "../../palette";
-import { enemies } from "../../entities/enemies/catalog";
 import { mastReadoutStore } from "../../mast";
 import { Plate, Stamp } from "../fiction/kit";
 
@@ -41,34 +40,39 @@ export function MissionTracker() {
   const active = journal.filter((entry) => entry.status === "active");
   const progress = active.map((entry) => `${entry.questId}:${entry.objectives.map((o) => o.progress).join(",")}`);
   const { primary, others } = splitTrackedQuests(active);
-  const primaryDef = quests.find((quest) => quest.id === primary?.questId);
+  const primaryDef = primary === undefined ? undefined : scrapQuestById(primary.questId);
+  const finished = primary !== undefined && primary.objectives.every((objective) => objective.progress >= objective.count);
+  const returnTo = primaryDef === undefined || primaryDef.turnIn === "radio" ? null : NPCS[primaryDef.turnIn].name;
   return (
     <HudFade watch={progress} dimTo={0.5} idleMs={9000}>
       <div className="ss-log">
         <div className="ss-log-head"><Stamp tone="amber">Mission log</Stamp></div>
         <MastCard />
         {active.length === 0 ? (
-          <div className="ss-log-entry"><p>All missions complete · Ferralon is (briefly) quiet</p></div>
+          <div className="ss-log-entry"><p>No mission · find someone with a "Talk" prompt [E]</p></div>
         ) : null}
         {primary !== undefined && primaryDef !== undefined ? (
           <div key={primary.questId} className="ss-log-entry">
             <div className="ss-log-title"><span>{primaryDef.title}</span></div>
-            <p>{primaryDef.description}</p>
             {primary.objectives.map((objective) => {
               const done = objective.progress >= objective.count;
+              const goal = primaryDef.objectives.find((candidate) => candidate.id === objective.id);
               return (
                 <div key={objective.id} className={`ss-log-goal ${done ? "done" : ""}`}>
-                  <span>{done ? "✓" : "▸"} Defeat {enemies.find((enemy) => enemy.id === primaryDef.objectives.find((goal) => goal.id === objective.id)?.target)?.name ?? "hostiles"}</span>
+                  <span>{done ? "✓" : "▸"} {goal === undefined ? objective.id : objectiveLabel(goal)}</span>
                   <em>{Math.min(objective.progress, objective.count)} / {objective.count}</em>
                 </div>
               );
             })}
+            {finished && returnTo !== null ? (
+              <div className="ss-log-goal"><span>▸ Return to {returnTo}</span></div>
+            ) : null}
           </div>
         ) : null}
         {others.length > 0 ? (
           <div className="ss-log-others">
             {others.map((entry) => {
-              const def = quests.find((quest) => quest.id === entry.questId);
+              const def = scrapQuestById(entry.questId);
               return def === undefined ? null : <span key={entry.questId}>+ {def.title}</span>;
             })}
           </div>

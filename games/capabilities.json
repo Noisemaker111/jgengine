@@ -7311,6 +7311,16 @@
       "intent": "diagnose authored quest ids, prerequisite and reward references, quantities, and blocked dependencies with caller-declared external unlocks"
     },
     {
+      "id": "quest-giver",
+      "packages": [
+        "@jgengine/core"
+      ],
+      "module": "@jgengine/core/mission/questGivers",
+      "gameFacing": false,
+      "probe": null,
+      "intent": "an NPC that hands out its quests one at a time and takes them back when done"
+    },
+    {
       "id": "quest-log",
       "packages": [
         "@jgengine/core"

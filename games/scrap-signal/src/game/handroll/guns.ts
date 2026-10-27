@@ -23,6 +23,8 @@ export interface GunDef {
   name: string;
   family: GunFamily;
   manufacturer: string;
+  /** The gun model: `legendary:<name>` for a named legendary, else `<maker>:<family>`. */
+  model?: string;
   rarity: Rarity;
   element: GunElement;
   level: number;

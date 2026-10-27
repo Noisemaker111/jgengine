@@ -717,6 +717,10 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `validateQuestCatalog` (function) · `import { validateQuestCatalog } from "@jgengine/core/mission/questCatalog"`
 
+## quest-giver — an NPC that hands out its quests one at a time and takes them back when done
+
+- `giverOffer` (function) · `import { giverOffer } from "@jgengine/core/mission/questGivers"`
+
 ## quest-log — track accepted quests and their objective progress from game events
 
 - `createQuestEvaluator` (function) · `import { createQuestEvaluator } from "@jgengine/core/mission/quest"`
