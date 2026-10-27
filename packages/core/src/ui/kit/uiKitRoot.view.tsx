@@ -95,7 +95,7 @@ export interface UiKitRootProps {
   /** Controller family for pad glyphs. Default `xbox`. */
   glyphSet?: GamepadGlyphName;
   children?: ReactNode;
-  className?: string;
+  className?: string | undefined;
   style?: CSSProperties;
   /** Render a real box instead of `display: contents`. */
   box?: boolean;

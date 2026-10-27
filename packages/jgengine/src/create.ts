@@ -17,16 +17,16 @@ export function writeGame(
   variant: TemplateVariant,
   scene?: EditorSceneDoc,
   options?: {
-    shape?: "shared-world-builder";
+    shape?: "shared-world-builder" | undefined;
     world?: boolean;
     editor?: boolean;
-    player?: string;
+    player?: string | undefined;
     ground?: "flat" | "terrain";
     sceneMode?: "empty" | "starter";
     dimension?: "2d" | "3d";
   },
 ): void {
-  for (const file of gameTemplate({ id, name, variant, engineVersion: sdkVersion(), cliVersion: cliVersion(), scene, ...options })) {
+  for (const file of gameTemplate({ id, name, variant, engineVersion: sdkVersion(), cliVersion: cliVersion(), ...(scene === undefined ? {} : { scene }), ...options })) {
     const dest = join(targetDir, file.path);
     mkdirSync(dirname(dest), { recursive: true });
     writeFileSync(dest, file.contents);
@@ -160,7 +160,7 @@ export function runAssetsPull(targetDir: string): boolean {
   const manifestPath = join(pkgDir, "package.json");
   if (!existsSync(manifestPath)) return false;
   const manifest = JSON.parse(readFileSync(manifestPath, "utf8")) as { bin?: string | Record<string, string> };
-  const bin = typeof manifest.bin === "string" ? manifest.bin : manifest.bin?.assets;
+  const bin = typeof manifest.bin === "string" ? manifest.bin : manifest.bin?.["assets"];
   if (bin === undefined) return false;
   const result = spawnSync(process.execPath, [join(pkgDir, bin), "pull", "starter"], { cwd: targetDir, stdio: "inherit" });
   return result.status === 0;

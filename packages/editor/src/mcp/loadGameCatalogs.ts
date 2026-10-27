@@ -12,7 +12,7 @@ function isPlainObject(value: unknown): value is Record<string, unknown> {
 }
 
 function decodeSchema(value: unknown, path: string, errors: { path: string; message: string }[]): ParamSchema | null {
-  if (!isPlainObject(value) || !Array.isArray(value.fields)) {
+  if (!isPlainObject(value) || !Array.isArray(value["fields"])) {
     errors.push({ path, message: "expected { fields: ParamField[] }" });
     return null;
   }
@@ -37,28 +37,28 @@ export function decodeGameCatalogs(resolved: unknown): LoadGameCatalogsResult {
       errors.push({ path, message: "expected an object" });
       return;
     }
-    if (typeof item.id !== "string") errors.push({ path: `${path}.id`, message: "expected a string" });
-    if (typeof item.label !== "string") errors.push({ path: `${path}.label`, message: "expected a string" });
-    const schema = decodeSchema(item.schema, `${path}.schema`, errors);
-    if (!Array.isArray(item.entries)) {
+    if (typeof item["id"] !== "string") errors.push({ path: `${path}.id`, message: "expected a string" });
+    if (typeof item["label"] !== "string") errors.push({ path: `${path}.label`, message: "expected a string" });
+    const schema = decodeSchema(item["schema"], `${path}.schema`, errors);
+    if (!Array.isArray(item["entries"])) {
       errors.push({ path: `${path}.entries`, message: "expected an array" });
       return;
     }
-    if (typeof item.id !== "string" || typeof item.label !== "string" || schema === null) return;
+    if (typeof item["id"] !== "string" || typeof item["label"] !== "string" || schema === null) return;
     const entries: EditorCatalogEntry[] = [];
-    item.entries.forEach((entry, entryIndex) => {
+    item["entries"].forEach((entry, entryIndex) => {
       const entryPath = `${path}.entries[${entryIndex}]`;
-      if (!isPlainObject(entry) || typeof entry.id !== "string") {
+      if (!isPlainObject(entry) || typeof entry["id"] !== "string") {
         errors.push({ path: entryPath, message: "expected { id: string, label?, meta? }" });
         return;
       }
       entries.push({
-        id: entry.id,
-        ...(typeof entry.label === "string" ? { label: entry.label } : {}),
-        ...(isPlainObject(entry.meta) ? { meta: entry.meta } : {}),
+        id: entry["id"],
+        ...(typeof entry["label"] === "string" ? { label: entry["label"] } : {}),
+        ...(isPlainObject(entry["meta"]) ? { meta: entry["meta"] } : {}),
       });
     });
-    catalogs.push({ id: item.id, label: item.label, schema, entries });
+    catalogs.push({ id: item["id"], label: item["label"], schema, entries });
   });
   if (errors.length > 0) return { ok: false, errors };
   return { ok: true, catalogs };
@@ -74,8 +74,8 @@ export async function loadGameCatalogs(gameId: string): Promise<LoadGameCatalogs
   try {
     const path = new URL(`../../../../games/${gameId}/src/editorCatalogs.ts`, import.meta.url);
     const mod = await importOptionalGameModule(path);
-    if (mod?.editorCatalogs === undefined) return { ok: true, catalogs: [] };
-    const value = mod.editorCatalogs as EditorCatalogsInput;
+    if (mod?.["editorCatalogs"] === undefined) return { ok: true, catalogs: [] };
+    const value = mod["editorCatalogs"] as EditorCatalogsInput;
     resolved = typeof value === "function" ? value() : value;
   } catch (error) {
     return { ok: false, errors: [{ path: "$", message: error instanceof Error ? error.message : String(error) }] };

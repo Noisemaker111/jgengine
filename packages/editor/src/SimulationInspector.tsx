@@ -4,6 +4,7 @@ import type { EditorSession } from "@jgengine/core/editor/commands";
 import type { EditorSimulation } from "@jgengine/core/editor/simulation";
 import { effectNames } from "@jgengine/core/vfx/effectLibrary";
 import type { AuthoredWeatherConfig, AuthoredWeatherMode } from "@jgengine/core/weather/authoredWeather";
+import { withField } from "@jgengine/core/data/withField";
 import { useStoreSelector } from "./useStoreSelector";
 
 const modes: AuthoredWeatherMode[] = ["clear", "rain", "snow", "mixed", "dust"];
@@ -15,7 +16,7 @@ function NumberInput({ label, value, onChange, min = 0, step = 0.1 }: { label: s
 /** Production authoring controls share the same validated command and undo history as RPC.
  * @capability simulation-inspector author weather schedules, effects, fire, wind zones, forces and habitats with validated undoable controls
  */
-export function SimulationInspector({ session, creatorPolicy }: { session: EditorSession; creatorPolicy?: CreatorPolicy }) {
+export function SimulationInspector({ session, creatorPolicy }: { session: EditorSession; creatorPolicy?: CreatorPolicy | undefined }) {
   const simulation = useStoreSelector(session, (state) => state.document.simulation);
   const [error, setError] = useState<string | null>(null);
   const [advanced, setAdvanced] = useState<string | null>(null);
@@ -79,7 +80,7 @@ export function SimulationInspector({ session, creatorPolicy }: { session: Edito
         <NumberInput label={`${zone.id} radius metres`} value={zone.radius} onChange={(radius) => setWeather({ ...weather, zones: weather.zones!.map((row, i) => i === index ? { ...row, radius } : row) })} />
         <NumberInput label={`${zone.id} speed m/s`} value={zone.wind?.speed ?? 0} onChange={(speed) => setWeather({ ...weather, zones: weather.zones!.map((row, i) => i === index ? { ...row, wind: { ...row.wind, speed } } : row) })} />
         <label><input type="checkbox" checked={zone.radial ?? false} onChange={(event) => setWeather({ ...weather, zones: weather.zones!.map((row, i) => i === index ? { ...row, radial: event.target.checked } : row) })} /> Radial wind</label>
-        <label>Falls as <select aria-label={`${zone.id} precipitation falls as`} value={zone.precipitationAs ?? ""} onChange={(event) => setWeather({ ...weather, zones: weather.zones!.map((row, i) => i === index ? { ...row, precipitationAs: event.target.value === "" ? undefined : (event.target.value as "rain" | "snow") } : row) })}><option value="">as scheduled</option><option value="rain">rain</option><option value="snow">snow</option></select></label>
+        <label>Falls as <select aria-label={`${zone.id} precipitation falls as`} value={zone.precipitationAs ?? ""} onChange={(event) => setWeather({ ...weather, zones: weather.zones!.map((row, i) => i === index ? withField(row, "precipitationAs", event.target.value === "rain" || event.target.value === "snow" ? event.target.value : undefined) : row) })}><option value="">as scheduled</option><option value="rain">rain</option><option value="snow">snow</option></select></label>
         <button type="button" onClick={() => setWeather({ ...weather, zones: weather.zones!.filter((_, i) => i !== index) })}>Remove wind zone</button>
       </div>)}
       <button type="button" onClick={() => setWeather({ ...weather, zones: [...(weather.zones ?? []), { id: id("wind", weather.zones ?? []), center: [0, 0], radius: 10, falloff: 5, wind: { direction: [1, 0], speed: 3 } }] })}>Add wind zone</button>
@@ -98,7 +99,7 @@ export function SimulationInspector({ session, creatorPolicy }: { session: Edito
     </fieldset>
     <fieldset hidden={!allowEmitters} className="space-y-2"><legend>Named effects</legend>
       {(simulation?.emitters ?? []).map((emitter, index) => <div key={emitter.id} className="space-y-1 border-l border-neutral-700 pl-2"><span>{emitter.id}</span>
-        <label>Effect<select aria-label={`${emitter.id} effect`} value={emitter.effect ?? ""} onChange={(event) => update({ ...simulation, emitters: simulation!.emitters!.map((row, i) => i === index ? (event.target.value === "" ? { ...row, effect: undefined, config: row.config ?? { rate: 8, max: 64, lifetime: { min: 1, max: 2 }, seed: row.id } } : { ...row, effect: event.target.value, config: undefined }) : row) })}><option value="">Custom config</option>{effectNames().map((name) => <option key={name}>{name}</option>)}</select></label>
+        <label>Effect<select aria-label={`${emitter.id} effect`} value={emitter.effect ?? ""} onChange={(event) => update({ ...simulation, emitters: simulation!.emitters!.map((row, i) => i === index ? (event.target.value === "" ? { ...withField(row, "effect", undefined), config: row.config ?? { rate: 8, max: 64, lifetime: { min: 1, max: 2 }, seed: row.id } } : withField({ ...row, effect: event.target.value }, "config", undefined)) : row) })}><option value="">Custom config</option>{effectNames().map((name) => <option key={name}>{name}</option>)}</select></label>
         {emitter.effect === undefined ? <>
           <select aria-label={`${emitter.id} appearance`} value={emitter.options?.render?.shape ?? "point"} onChange={(event) => update({ ...simulation, emitters: simulation!.emitters!.map((row, i) => i === index ? { ...row, options: { ...row.options, render: { shape: event.target.value as "point" | "streak" | "flake" | "flame" | "smoke" | "ribbon" | "ripple" } } } : row) })}>{["point", "streak", "flake", "flame", "smoke", "ribbon", "ripple"].map((shape) => <option key={shape}>{shape}</option>)}</select>
           <NumberInput label={`${emitter.id} particles/second`} value={emitter.config?.rate ?? 0} onChange={(rate) => update({ ...simulation, emitters: simulation!.emitters!.map((row, i) => i === index ? { ...row, config: { ...row.config, rate } } : row) })} />
@@ -106,7 +107,7 @@ export function SimulationInspector({ session, creatorPolicy }: { session: Edito
         </> : <span>{emitter.effect}</span>}
         {(["x", "y", "z"] as const).map((axis) => <NumberInput key={axis} label={`${emitter.id} ${axis.toUpperCase()} metres`} min={-1e6} value={emitter.position[axis]} onChange={(value) => update({ ...simulation, emitters: simulation!.emitters!.map((row, i) => i === index ? { ...row, position: { ...row.position, [axis]: value } } : row) })} />)}
         <label><input type="checkbox" checked={emitter.options?.active !== false} onChange={(event) => update({ ...simulation, emitters: simulation!.emitters!.map((row, i) => i === index ? { ...row, options: { ...row.options, active: event.target.checked } } : row) })} /> Spawning</label>
-        <label>Fire binding<select aria-label={`${emitter.id} fire area`} value={emitter.fireAreaId ?? ""} onChange={(event) => update({ ...simulation, emitters: simulation!.emitters!.map((row, i) => i === index ? { ...row, fireAreaId: event.target.value || undefined } : row) })}><option value="">Independent</option>{simulation?.fires?.map((area) => <option key={area.id}>{area.id}</option>)}</select></label>
+        <label>Fire binding<select aria-label={`${emitter.id} fire area`} value={emitter.fireAreaId ?? ""} onChange={(event) => update({ ...simulation, emitters: simulation!.emitters!.map((row, i) => i === index ? withField(row, "fireAreaId", event.target.value || undefined) : row) })}><option value="">Independent</option>{simulation?.fires?.map((area) => <option key={area.id}>{area.id}</option>)}</select></label>
         <button type="button" onClick={() => update({ ...simulation, emitters: simulation!.emitters!.filter((_, i) => i !== index) })}>Remove emitter</button>
       </div>)}
       <button type="button" onClick={() => update({ ...simulation, emitters: [...(simulation?.emitters ?? []), { id: id("emitter", simulation?.emitters ?? []), position: { x: 0, y: 1, z: 0 }, effect: effectNames()[0]! }] })}>Add named emitter</button>
@@ -118,7 +119,7 @@ export function SimulationInspector({ session, creatorPolicy }: { session: Edito
         <NumberInput label={`${area.id} fuel consumed/second`} value={area.config.burnRate ?? 0.25} onChange={(burnRate) => update({ ...simulation, fires: simulation!.fires!.map((row, i) => i === index ? { ...row, config: { ...row.config, burnRate } } : row) })} />
         <NumberInput label={`${area.id} rain cooling heat/second`} value={area.extinguishRate ?? 0} onChange={(extinguishRate) => update({ ...simulation, fires: simulation!.fires!.map((row, i) => i === index ? { ...row, extinguishRate } : row) })} />
         <label><input type="checkbox" checked={(area.ignitions?.length ?? 0) > 0} onChange={(event) => update({ ...simulation, fires: simulation!.fires!.map((row, i) => i === index ? { ...row, ignitions: event.target.checked ? [{ col: 0, row: 0 }] : [] } : row) })} /> Ignite first cell on play</label>
-        <button type="button" onClick={() => update({ ...simulation, fires: simulation!.fires!.filter((_, i) => i !== index), emitters: simulation?.emitters?.map((emitter) => emitter.fireAreaId === area.id ? { ...emitter, fireAreaId: undefined } : emitter) })}>Remove fire area</button>
+        <button type="button" onClick={() => update({ ...simulation, fires: simulation!.fires!.filter((_, i) => i !== index), ...(simulation?.emitters === undefined ? {} : { emitters: simulation.emitters.map((emitter) => emitter.fireAreaId === area.id ? withField(emitter, "fireAreaId", undefined) : emitter) }) })}>Remove fire area</button>
       </div>)}
       <button type="button" onClick={() => update({ ...simulation, fires: [...(simulation?.fires ?? []), { id: id("fire", simulation?.fires ?? []), position: { x: 0, y: 0, z: 0 }, config: { cols: 4, rows: 4, cellSize: 1 }, ignitions: [] }] })}>Add fire area</button>
     </fieldset>
@@ -128,7 +129,7 @@ export function SimulationInspector({ session, creatorPolicy }: { session: Edito
         <NumberInput label={`${habitat.id} bird count`} step={1} value={habitat.count} onChange={(count) => update({ ...simulation, habitats: simulation!.habitats!.map((row, i) => i === index ? { ...row, count } : row) })} />
         <NumberInput label={`${habitat.id} radius metres`} value={habitat.radius} onChange={(radius) => update({ ...simulation, habitats: simulation!.habitats!.map((row, i) => i === index ? { ...row, radius } : row) })} />
         {(["x", "y", "z"] as const).map((axis) => <NumberInput key={axis} label={`${habitat.id} ${axis.toUpperCase()} metres`} min={-1e6} value={habitat.position[axis]} onChange={(value) => update({ ...simulation, habitats: simulation!.habitats!.map((row, i) => i === index ? { ...row, position: { ...row.position, [axis]: value } } : row) })} />)}
-        <select aria-label={`${habitat.id} route`} value={habitat.routeId ?? ""} onChange={(event) => update({ ...simulation, habitats: simulation!.habitats!.map((row, i) => i === index ? { ...row, routeId: event.target.value || undefined } : row) })}><option value="">Stay in habitat</option>{session.getState().document.paths.filter((path) => path.points.length > 1).map((path) => <option key={path.id} value={path.id}>{path.label ?? path.id}</option>)}</select>
+        <select aria-label={`${habitat.id} route`} value={habitat.routeId ?? ""} onChange={(event) => update({ ...simulation, habitats: simulation!.habitats!.map((row, i) => i === index ? withField(row, "routeId", event.target.value || undefined) : row) })}><option value="">Stay in habitat</option>{session.getState().document.paths.filter((path) => path.points.length > 1).map((path) => <option key={path.id} value={path.id}>{path.label ?? path.id}</option>)}</select>
         <button type="button" onClick={() => update({ ...simulation, habitats: simulation!.habitats!.filter((_, i) => i !== index) })}>Remove habitat</button>
       </div>)}
       <label>Game species<input aria-label="Game species" value={species} onChange={(event) => setSpecies(event.target.value)} /></label>

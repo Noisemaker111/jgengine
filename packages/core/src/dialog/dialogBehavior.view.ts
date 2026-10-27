@@ -30,11 +30,11 @@ export interface DialogBehaviorOptions {
   /** Whether the dialog is mounted and open. */
   open: boolean;
   /** Escape requests a close; leaving `open` true keeps the dialog active. Omit to disable Escape. */
-  onClose?: () => void;
+  onClose?: (() => void) | undefined;
   /** Preferred initial focus, falling back to the first available control or the dialog root. */
   initialFocus?: "root" | (() => HTMLElement | null);
   /** Refocus when the content identity changes, without replacing the original return target. */
-  focusKey?: unknown;
+  focusKey?: unknown | undefined;
 }
 
 /**

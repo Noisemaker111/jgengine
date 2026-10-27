@@ -69,7 +69,7 @@ export type AnimationMode = "default" | "auto" | "none" | "custom";
 
 /** Reads a whole valid override, retaining authored fields; malformed values return undefined. */
 export function readAnimationSetting(meta: Record<string, unknown> | undefined): AnimationSetting | undefined {
-  return readAnimationSettingResult({ markers: [{ id: "animation", meta }] }, "animation").setting;
+  return readAnimationSettingResult({ markers: [meta === undefined ? { id: "animation" } : { id: "animation", meta }] }, "animation").setting;
 }
 
 /** Validates a placement's animation with its saved-document repair locations. @internal */

@@ -20,7 +20,7 @@ export interface PresenceSession<TGameId extends string = string> {
 /** Resident identity used to suppress offline actors while their owner is online. */
 export interface PresenceResidentRow {
   actorExternalId: string;
-  ownerActorId?: string;
+  ownerActorId?: string | undefined;
 }
 
 export interface EnsurePresenceArgs<TGameId extends string = string> {

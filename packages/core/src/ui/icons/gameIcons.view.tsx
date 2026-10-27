@@ -619,7 +619,7 @@ export function GameIcon({
 }: {
   name: GameIconName;
   size?: number;
-  color?: string;
+  color?: string | undefined;
   className?: string;
 }) {
   const style: CSSProperties = { color, display: "block" };

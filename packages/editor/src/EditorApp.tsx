@@ -53,10 +53,10 @@ export interface EditorAppProps {
   gameId: string;
   playable: PlayableGame;
   /** Layers to open. Defaults to `playable.editorLayers`, so a game shipping its document via `defineGame({ editorLayers })` needs no extra wiring. */
-  layers?: EditorLayersInput;
+  layers?: EditorLayersInput | undefined;
   /** Game-exported gameplay catalog definitions (schemas + defaults) for the Data panel / catalog RPC. */
-  catalogs?: readonly EditorCatalogDefinition[];
-  save?: EditorSaveFn;
+  catalogs?: readonly EditorCatalogDefinition[] | undefined;
+  save?: EditorSaveFn | undefined;
   /** Skin for the play/walk escape chip. Omit for the default pill; pass `null` to hide it (F2+E still exits); pass a component to place the game's own. */
   modeChip?: ComponentType<{ mode: EditorRunMode; onExit: () => void }> | null;
   /**
@@ -198,7 +198,7 @@ function EditorWorldOverlay({
 }: {
   api: EditorHostApi;
   ui: EditorUiStore;
-  world?: WorldFeature;
+  world?: WorldFeature | undefined;
   readout: TerrainReadoutStore;
 }) {
   const session = api.getSession();
@@ -547,20 +547,20 @@ export function EditorApp({ gameId, playable, layers, catalogs, save, modeChip, 
 
   useEffect(() => {
     if (typeof document === "undefined") return;
-    document.documentElement.dataset.jgEditor = "1";
-    document.documentElement.dataset.jgEditorGame = gameId;
+    document.documentElement.dataset["jgEditor"] = "1";
+    document.documentElement.dataset["jgEditorGame"] = gameId;
     const frame = requestAnimationFrame(() => {
       requestAnimationFrame(() => {
-        document.documentElement.dataset.jgFrameReady = "1";
-        if (document.documentElement.dataset.jgCapture === "preparing") {
-          document.documentElement.dataset.jgCapture = "ready";
+        document.documentElement.dataset["jgFrameReady"] = "1";
+        if (document.documentElement.dataset["jgCapture"] === "preparing") {
+          document.documentElement.dataset["jgCapture"] = "ready";
         }
       });
     });
     return () => {
       cancelAnimationFrame(frame);
-      delete document.documentElement.dataset.jgEditor;
-      delete document.documentElement.dataset.jgEditorGame;
+      delete document.documentElement.dataset["jgEditor"];
+      delete document.documentElement.dataset["jgEditorGame"];
     };
   }, [gameId]);
 
@@ -581,7 +581,7 @@ export function EditorApp({ gameId, playable, layers, catalogs, save, modeChip, 
       onTick: () => {
         // Placement/walk views freeze combat/AI so the frame isn't burned on sim.
       },
-      onPlayerLeave: playable.loop.onPlayerLeave,
+      ...(playable.loop.onPlayerLeave === undefined ? {} : { onPlayerLeave: playable.loop.onPlayerLeave }),
       onReset: playable.loop.onReset,
       onDispose: playable.loop.onDispose,
     };

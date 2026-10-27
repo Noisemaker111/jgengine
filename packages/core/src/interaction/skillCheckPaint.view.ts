@@ -15,8 +15,8 @@ export function paintSkillCheckDom(
   zone.style.left = `${zoneLeft}%`;
   zone.style.width = `${zoneWidth}%`;
   marker.style.left = `${markerLeft}%`;
-  root.dataset.inZone = result.success ? "true" : "false";
-  root.dataset.timedOut = result.timedOut ? "true" : "false";
+  root.dataset["inZone"] = result.success ? "true" : "false";
+  root.dataset["timedOut"] = result.timedOut ? "true" : "false";
 }
 
 /** @internal */
@@ -39,7 +39,7 @@ export function paintQteStepDom(
       .join(" ");
     if (classes.length > 0) el.className = classes;
     else el.removeAttribute("class");
-    el.dataset.active = isActive ? "true" : "false";
-    el.dataset.done = isDone ? "true" : "false";
+    el.dataset["active"] = isActive ? "true" : "false";
+    el.dataset["done"] = isDone ? "true" : "false";
   }
 }

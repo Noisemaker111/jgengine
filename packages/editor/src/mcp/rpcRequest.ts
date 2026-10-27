@@ -22,7 +22,7 @@ function isPlainObject(value: unknown): value is Record<string, unknown> {
 }
 
 function isVec3(value: unknown): boolean {
-  return isPlainObject(value) && typeof value.x === "number" && typeof value.y === "number" && typeof value.z === "number";
+  return isPlainObject(value) && typeof value["x"] === "number" && typeof value["y"] === "number" && typeof value["z"] === "number";
 }
 
 function validateField(value: unknown, spec: RpcFieldSpec, errors: RpcRequestDiagnostic[]): void {
@@ -80,7 +80,7 @@ export function decodeEditorBridgeRequest(raw: unknown): DecodeRpcRequestResult 
     return { ok: false, errors: [{ path: "$", message: "expected an RPC request object" }] };
   }
   const record = raw as Record<string, unknown>;
-  const method = record.method;
+  const method = record["method"];
   if (typeof method !== "string") {
     return { ok: false, errors: [{ path: "$.method", message: "expected a string" }] };
   }

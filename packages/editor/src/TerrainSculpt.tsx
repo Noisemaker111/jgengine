@@ -332,7 +332,7 @@ export const TerrainSculpt = memo(function TerrainSculpt({
 }: {
   api: EditorHostApi;
   ui: EditorUiStore;
-  world?: WorldFeature;
+  world?: WorldFeature | undefined;
 }) {
   const ctx = useGameContext();
   const gl = useThree((state) => state.gl);

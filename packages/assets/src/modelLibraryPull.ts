@@ -405,7 +405,7 @@ async function pullKhronosModel(entry: ModelLibraryEntry, origin: KhronosModelOr
   const fetchImpl = options.fetchImpl ?? fetch;
   const listingUrl = `https://api.github.com/repos/KhronosGroup/glTF-Sample-Assets/contents/Models/${origin.model}/glTF-Binary?ref=${KHRONOS_COMMIT}`;
   const headers: Record<string, string> = { accept: "application/vnd.github+json" };
-  if (options.githubToken !== undefined) headers.authorization = `Bearer ${options.githubToken}`;
+  if (options.githubToken !== undefined) headers["authorization"] = `Bearer ${options.githubToken}`;
   const listing = await fetchImpl(listingUrl, { headers });
   if (!listing.ok) throw new Error(`${listingUrl}: HTTP ${listing.status}`);
   const file = ((await listing.json()) as GitHubListing[]).find((candidate) => candidate.name === `${origin.model}.glb`);

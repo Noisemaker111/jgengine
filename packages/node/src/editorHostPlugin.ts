@@ -184,7 +184,7 @@ export function editorHostPlugin(options: EditorHostOptions = {}): EditorHostPlu
           });
       });
       server.middlewares.use(ASSET_ROUTE, (req, res, next) => {
-        const rel = decodeURIComponent((req.url ?? "").split("?")[0]).replace(/^\/+/, "");
+        const rel = decodeURIComponent((req.url ?? "").split("?")[0] ?? "").replace(/^\/+/, "");
         const full = resolve(assetsDir, rel);
         if (!full.startsWith(assetsDir) || !existsSync(full) || !statSync(full).isFile()) {
           next();

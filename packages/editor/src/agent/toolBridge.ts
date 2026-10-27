@@ -15,7 +15,7 @@ export interface AgentToolResult {
   name: string;
   ok: boolean;
   result?: unknown;
-  error?: string;
+  error?: string | undefined;
   /** True when the document JSON changed — lands as one undo step the human can reverse. */
   mutated: boolean;
   /** Short human-readable summary for the patch transcript. */
@@ -60,8 +60,8 @@ export function toolCallToRequest(call: AgentToolCall): { ok: true; request: Edi
 function summarizeCall(name: string, args: Record<string, unknown>, response: EditorBridgeResponse, mutated: boolean): string {
   if (!response.ok) return `${name} failed: ${response.error ?? "unknown error"}`;
   if (mutated) {
-    const id = typeof args.id === "string" ? args.id : undefined;
-    const ids = Array.isArray(args.ids) ? (args.ids as string[]).join(",") : undefined;
+    const id = typeof args["id"] === "string" ? args["id"] : undefined;
+    const ids = Array.isArray(args["ids"]) ? (args["ids"] as string[]).join(",") : undefined;
     const target = id ?? ids;
     return target !== undefined && target.length > 0 ? `${name} · ${target}` : name;
   }

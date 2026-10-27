@@ -10,7 +10,7 @@ import { runWorkspaceDoctor } from "./workspaceDoctor";
 export interface Finding {
   ok: boolean;
   label: string;
-  fix?: string;
+  fix?: string | undefined;
 }
 
 function allEngineDeps(pkg: PackageJson): Record<string, string> {
@@ -83,7 +83,7 @@ export function diagnoseProject(dir: string): Finding[] {
   });
 
   findings.push({
-    ok: pkg.scripts?.dev !== undefined,
+    ok: pkg.scripts?.["dev"] !== undefined,
     label: '"dev" script present',
     fix: 'add "dev": "vite" so the standalone harness can launch',
   });
@@ -130,14 +130,14 @@ export function diagnoseProject(dir: string): Finding[] {
   const usesReactPkg = engineDeps["@jgengine/react"] !== undefined || engineDeps["@jgengine/shell"] !== undefined;
   if (usesReactPkg) {
     findings.push({
-      ok: deps.react !== undefined && deps["react-dom"] !== undefined,
+      ok: deps["react"] !== undefined && deps["react-dom"] !== undefined,
       label: "react + react-dom present for @jgengine/react|shell",
       fix: "bun add react react-dom (@jgengine/react peers on react ^19)",
     });
   }
   if (engineDeps["@jgengine/shell"] !== undefined) {
     findings.push({
-      ok: deps.three !== undefined && deps["@react-three/fiber"] !== undefined,
+      ok: deps["three"] !== undefined && deps["@react-three/fiber"] !== undefined,
       label: "three + @react-three/fiber present for @jgengine/shell",
       fix: "bun add three @react-three/fiber (the shell renders through react-three-fiber)",
     });

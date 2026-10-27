@@ -149,15 +149,15 @@ export function EditorChrome({
   ui: EditorUiStore;
   /** The document as loaded — drives the header unsaved indicator by reference compare. */
   baselineDocument?: EditorDocument;
-  save?: (json: string) => Promise<{ ok: boolean; path?: string; error?: string }>;
+  save?: ((json: string) => Promise<{ ok: boolean; path?: string; error?: string }>) | undefined;
   /** Closes the editor and returns to the game; set only when summoned over a game. Shows "Exit to game". */
-  onExitEditor?: () => void;
-  allowedKinds?: readonly string[];
-  exitLabel?: string;
-  maxImportBytes?: number;
+  onExitEditor?: (() => void) | undefined;
+  allowedKinds?: readonly string[] | undefined;
+  exitLabel?: string | undefined;
+  maxImportBytes?: number | undefined;
   documentSave?: EditorDocumentSave;
   draftAutosave?: boolean;
-  creatorPolicy?: CreatorPolicy;
+  creatorPolicy?: CreatorPolicy | undefined;
   /**
    * Network workspace inspection payload (adapter config + optional host presence).
    * Built by `EditorApp` from the game definition; live presence rows only when the host injects them.
@@ -233,7 +233,7 @@ export function EditorChrome({
   const uiState = ui.getState();
   const layoutState = layout.getState();
   const materialMarker = state.document.markers.find((item) => state.selection.includes(item.id));
-  const materialSourceUrl = liveAssets.find((item) => item.id === (materialMarker?.catalogId ?? materialMarker?.meta?.catalogId))?.url;
+  const materialSourceUrl = liveAssets.find((item) => item.id === (materialMarker?.catalogId ?? materialMarker?.meta?.["catalogId"]))?.url;
   const materialPreviewConfig = useMemo(() => {
     try {
       return { model: materialSourceUrl && materialMarker ? modelWithAuthoredNodeVisibility(modelWithAuthoredMaterials({ url: materialSourceUrl, targetHeight: 1.8, animation: "none" }, state.document, materialMarker.id), materialMarker) : undefined, error: null };

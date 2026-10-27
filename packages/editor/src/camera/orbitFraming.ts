@@ -28,12 +28,12 @@ export interface OrbitFrameInput {
   /** Elevation above the horizon, degrees: 0 = level with the target, 90 = straight-down aerial. */
   pitchDeg: number;
   /** Azimuth around the target, degrees: 0 looks along +Z toward the target, increasing toward +X. */
-  yawDeg?: number;
+  yawDeg?: number | undefined;
   /**
    * Explicit camera height above the target (world units). When set it overrides the pitch-derived
    * height, letting a caller pin a fixed altitude while pitch still sets the horizontal pull-back.
    */
-  height?: number;
+  height?: number | undefined;
 }
 
 /** Smallest distance we will place the camera at, so `distance: 0` never collapses onto the target. */

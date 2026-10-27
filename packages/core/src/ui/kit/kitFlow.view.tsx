@@ -44,7 +44,7 @@ export function formatCountdown(seconds: number): string {
 export interface KitObjectiveProps {
   /** What to do now, in a few words: "Deliver to Shore Steps". */
   title: ReactNode;
-  eyebrow?: ReactNode;
+  eyebrow?: ReactNode | undefined;
   /** Optional checklist; done steps are struck. */
   steps?: readonly KitObjectiveStep[];
   /** Metres to the target; shown as "72 m". */
@@ -62,7 +62,7 @@ export interface KitObjectiveProps {
   /** Seconds without progress before the hint appears. Default 12. */
   hintAfter?: number;
   /** Anything that changes when the player makes progress (distance bucket, step count); resets the hint timer. */
-  progressKey?: string | number;
+  progressKey?: string | number | undefined;
   /** The next action, drawn as a device-correct prompt under the objective. */
   prompt?: KitActionPromptProps;
   className?: string;

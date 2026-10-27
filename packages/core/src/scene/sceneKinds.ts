@@ -24,7 +24,7 @@ export interface WeightedParamEntry {
 export interface RangeParamField {
   type: "range";
   key: string;
-  label?: string;
+  label?: string | undefined;
   /** Optional group id — the inspector renders fields sharing a group under one collapsible section. */
   group?: string;
   min: number;
@@ -39,7 +39,7 @@ export interface RangeParamField {
 export interface NumberParamField {
   type: "number";
   key: string;
-  label?: string;
+  label?: string | undefined;
   /** Optional group id — the inspector renders fields sharing a group under one collapsible section. */
   group?: string;
   step?: number;
@@ -52,7 +52,7 @@ export interface NumberParamField {
 export interface BoolParamField {
   type: "bool";
   key: string;
-  label?: string;
+  label?: string | undefined;
   /** Optional group id — the inspector renders fields sharing a group under one collapsible section. */
   group?: string;
   default: boolean;
@@ -62,7 +62,7 @@ export interface BoolParamField {
 export interface SelectParamField {
   type: "select";
   key: string;
-  label?: string;
+  label?: string | undefined;
   /** Optional group id — the inspector renders fields sharing a group under one collapsible section. */
   group?: string;
   options: readonly { value: string; label?: string }[];
@@ -73,7 +73,7 @@ export interface SelectParamField {
 export interface ColorParamField {
   type: "color";
   key: string;
-  label?: string;
+  label?: string | undefined;
   /** Optional group id — the inspector renders fields sharing a group under one collapsible section. */
   group?: string;
   default: string;
@@ -83,7 +83,7 @@ export interface ColorParamField {
 export interface TextParamField {
   type: "text";
   key: string;
-  label?: string;
+  label?: string | undefined;
   /** Optional group id — the inspector renders fields sharing a group under one collapsible section. */
   group?: string;
   default: string;
@@ -93,7 +93,7 @@ export interface TextParamField {
 export interface SeedParamField {
   type: "seed";
   key: string;
-  label?: string;
+  label?: string | undefined;
   /** Optional group id — the inspector renders fields sharing a group under one collapsible section. */
   group?: string;
   default: string;
@@ -103,7 +103,7 @@ export interface SeedParamField {
 export interface WeightedListParamField {
   type: "weightedList";
   key: string;
-  label?: string;
+  label?: string | undefined;
   /** Optional group id — the inspector renders fields sharing a group under one collapsible section. */
   group?: string;
   /** Placeholder for the item id input. */
@@ -119,7 +119,7 @@ export interface WeightedListParamField {
 export interface ActionParamField {
   type: "action";
   key: string;
-  label?: string;
+  label?: string | undefined;
   group?: string;
   action: "randomize" | "reset";
 }

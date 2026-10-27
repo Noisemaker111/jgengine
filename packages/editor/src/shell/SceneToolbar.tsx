@@ -175,7 +175,7 @@ export function SceneToolbar({
   onStartPlacement: (tool: PlacementTool) => void;
   onOpenAssistant: () => void;
   assistantOpen: boolean;
-  allowedKinds?: readonly string[];
+  allowedKinds?: readonly string[] | undefined;
 }) {
   const [addOpen, setAddOpen] = useState(false);
   const [snapOpen, setSnapOpen] = useState(false);

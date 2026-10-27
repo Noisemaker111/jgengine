@@ -98,8 +98,8 @@ export function TopAppBar({
 }: {
   gameId: string;
   /** When set (editor summoned over a game), renders an "Exit to game" control that closes the editor. */
-  onExitToGame?: () => void;
-  exitLabel?: string;
+  onExitToGame?: (() => void) | undefined;
+  exitLabel?: string | undefined;
   dirty: boolean;
   saveState: TopBarSaveState;
   /** Epoch ms of the last successful save this session; omit/null when never saved. */

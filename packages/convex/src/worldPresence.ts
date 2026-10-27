@@ -1,5 +1,6 @@
 import type { DocumentByName, GenericQueryCtx } from "convex/server";
 import type { JGDataModel, JGMutationCtx } from "./server";
+import { definedOnly } from "@jgengine/core/data/definedOnly";
 import { DEFAULT_POSE_SYNC_RULES, decidePoseSync, shouldPersistWorldSnapshot, type IncomingPose, type PoseSyncRules } from "@jgengine/core/multiplayer/presenceModel";
 import type { PresencePosition, PresenceResidentRow } from "@jgengine/core/multiplayer/presenceContract";
 import { chunkKeyAt, chunkKeysAround, parseChunkKey, DEFAULT_CHUNK_SIZE } from "@jgengine/core/runtime/worldChunks";
@@ -19,7 +20,7 @@ export interface WorldPresenceRecord extends PresenceResidentRow {
   rotationY: number;
   rotationPitch: number;
   lastSeenAt: number;
-  lastWorldSnapshotAt?: number;
+  lastWorldSnapshotAt?: number | undefined;
 }
 
 /** World chunk size and host-owned pose, checkpoint and retention policies. */
@@ -84,7 +85,7 @@ export function createWorldPresenceStore(options: WorldPresenceOptions = {}) {
         label: args.label ?? existing?.label, x: args.position.x, y: args.position.y, z: args.position.z,
         rotationY: 0, rotationPitch: 0, chunkKey: chunkKeyAt([args.position.x, args.position.y, args.position.z], size),
         updatedAt: nowMs, revokedAt: undefined };
-      const id = existing ? existing._id : await ctx.db.insert("jgPoses", patch);
+      const id = existing ? existing._id : await ctx.db.insert("jgPoses", definedOnly(patch));
       if (existing) await ctx.db.patch(id, patch);
       return record((await ctx.db.get("jgPoses", id))!);
     },

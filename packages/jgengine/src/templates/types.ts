@@ -18,7 +18,7 @@ export interface EditorSceneDoc {
 
 export interface TemplateOptions {
   id: string;
-  shape?: "shared-world-builder";
+  shape?: "shared-world-builder" | undefined;
   name: string;
   variant: TemplateVariant;
   engineVersion: string;
@@ -29,12 +29,12 @@ export interface TemplateOptions {
    * the "promote a scene folder into a game" path (`jgengine create --from-scene`). The generated
    * scene test is tailored to what this document actually ships.
    */
-  scene?: EditorSceneDoc;
+  scene?: EditorSceneDoc | undefined;
   /** Additionally scaffold world.ts + game/assets.ts + game/models.ts (every 3d template). */
   world?: boolean;
   /** Ship the authored scene document + editor wiring. Default true; `create --no-editor` drops it. */
   editor?: boolean;
-  player?: string;
+  player?: string | undefined;
   ground?: "flat" | "terrain";
   sceneMode?: "empty" | "starter";
   /** `"2d"` scaffolds a board game with no 3D scene, editor document, or models (`create --template 2d`). Default `"3d"`. */

@@ -74,10 +74,10 @@ export function CardFace({
 }: {
   rank: Rank;
   suit: Suit;
-  faceDown?: boolean;
+  faceDown?: boolean | undefined;
   width?: number;
   height?: number;
-  className?: string;
+  className?: string | undefined;
   style?: CSSProperties;
   children?: ReactNode;
 }) {

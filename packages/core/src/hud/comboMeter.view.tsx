@@ -76,7 +76,7 @@ export interface ComboMeterHudProps {
   style?: CSSProperties;
 }
 
-function resolveTheme(theme: ComboMeterTheme | undefined): Required<Omit<ComboMeterTheme, "label">> & { label?: string } {
+function resolveTheme(theme: ComboMeterTheme | undefined): Required<Omit<ComboMeterTheme, "label">> & { label?: string | undefined } {
   return {
     accent: theme?.accent ?? "var(--jg-accent, #38bdf8)",
     count: theme?.count ?? "#f8fafc",

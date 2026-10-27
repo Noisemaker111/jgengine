@@ -86,7 +86,7 @@ function markerTransform(marker: EditorMarker): { catalogId: string; translation
     if (marker.meta?.[key] !== undefined || (marker as unknown as Record<string, unknown>)[key] !== undefined)
       throw new Error(`Static prefab marker ${marker.id}: unsupported ${key}; keep this part outside the static bake`);
   }
-  const lift = marker.meta?.verticalOffset ?? 0;
+  const lift = marker.meta?.["verticalOffset"] ?? 0;
   const yaw = marker.rotationY ?? 0;
   const translation: [number, number, number] = [marker.position.x, marker.position.y, marker.position.z];
   if (!translation.every(Number.isFinite) || typeof lift !== "number" || !Number.isFinite(lift) || !Number.isFinite(yaw))
@@ -140,7 +140,7 @@ function validateStaticSource(json: GLTF.IGLTF, path: string): void {
   }
   for (const mesh of json.meshes ?? []) {
     for (const primitive of mesh.primitives) {
-      if ((primitive.mode ?? 4) !== 4 || primitive.attributes.POSITION === undefined || Object.keys(primitive.attributes).some((name) => /^(JOINTS|WEIGHTS)_/.test(name)))
+      if ((primitive.mode ?? 4) !== 4 || primitive.attributes["POSITION"] === undefined || Object.keys(primitive.attributes).some((name) => /^(JOINTS|WEIGHTS)_/.test(name)))
         throw new Error(`${path}: static prefabs require unskinned triangle primitives with POSITION`);
     }
   }
@@ -150,8 +150,9 @@ function encodeGlb(output: JSONDocument, document: Document): Uint8Array {
   const json = output.json;
   const buffer = json.buffers?.[0];
   if (json.buffers?.length !== 1 || buffer?.uri === undefined) throw new Error("Static prefab output requires one binary buffer");
-  let binary = output.resources[buffer.uri];
-  if (binary === undefined) throw new Error("Static prefab output buffer is missing");
+  const stored = output.resources[buffer.uri];
+  if (stored === undefined) throw new Error("Static prefab output buffer is missing");
+  let binary: Uint8Array = stored;
   const textures = document.getRoot().listTextures();
   for (let i = 0; i < (json.images?.length ?? 0); i += 1) {
     const image = json.images![i]!;

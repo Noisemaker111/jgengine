@@ -50,30 +50,30 @@ function jsonData(value: unknown, ancestors = new Set<object>(), depth = 0): boo
  */
 export function validateImportSpec(spec: unknown): ImportSpecValidation {
   if (!record(spec)) return { ok: false, reason: "spec must be an object" };
-  if (typeof spec.id !== "string" || !/^[a-zA-Z0-9][a-zA-Z0-9._/-]*$/.test(spec.id) || !safePath(spec.id)) {
+  if (typeof spec["id"] !== "string" || !/^[a-zA-Z0-9][a-zA-Z0-9._/-]*$/.test(spec["id"]) || !safePath(spec["id"])) {
     return { ok: false, reason: "id must be a non-empty path-safe string" };
   }
-  if (typeof spec.kind !== "string" || !kinds.has(spec.kind)) return { ok: false, reason: "kind is unsupported" };
-  if (!Array.isArray(spec.files) || spec.files.length === 0) return { ok: false, reason: "files must contain at least one file" };
+  if (typeof spec["kind"] !== "string" || !kinds.has(spec["kind"])) return { ok: false, reason: "kind is unsupported" };
+  if (!Array.isArray(spec["files"]) || spec["files"].length === 0) return { ok: false, reason: "files must contain at least one file" };
   const paths = new Set<string>();
   const files: AssetImportSpec["files"] = [];
-  for (const file of spec.files) {
-    if (!record(file) || typeof file.path !== "string" || !safePath(file.path)) return { ok: false, reason: "files must have safe non-empty relative paths" };
-    if (paths.has(file.path)) return { ok: false, reason: `duplicate file path: ${file.path}` };
-    if (file.role !== undefined && (typeof file.role !== "string" || file.role.trim() !== file.role || file.role.length === 0 || /[\u0000-\u001f\u007f]/.test(file.role))) {
-      return { ok: false, reason: `file role must be a non-empty printable string: ${file.path}` };
+  for (const file of spec["files"]) {
+    if (!record(file) || typeof file["path"] !== "string" || !safePath(file["path"])) return { ok: false, reason: "files must have safe non-empty relative paths" };
+    if (paths.has(file["path"])) return { ok: false, reason: `duplicate file path: ${file["path"]}` };
+    if (file["role"] !== undefined && (typeof file["role"] !== "string" || file["role"].trim() !== file["role"] || file["role"].length === 0 || /[\u0000-\u001f\u007f]/.test(file["role"]))) {
+      return { ok: false, reason: `file role must be a non-empty printable string: ${file["path"]}` };
     }
-    paths.add(file.path);
-    files.push({ path: file.path, ...(file.role === undefined ? {} : { role: file.role }) });
+    paths.add(file["path"]);
+    files.push({ path: file["path"], ...(file["role"] === undefined ? {} : { role: file["role"] }) });
   }
-  if (spec.meta !== undefined && (!record(spec.meta) || !jsonData(spec.meta))) return { ok: false, reason: "meta must contain plain JSON data without cycles or non-finite numbers" };
+  if (spec["meta"] !== undefined && (!record(spec["meta"]) || !jsonData(spec["meta"]))) return { ok: false, reason: "meta must contain plain JSON data without cycles or non-finite numbers" };
   return {
     ok: true,
     entry: {
-      id: spec.id,
-      kind: spec.kind as AssetImportKind,
+      id: spec["id"],
+      kind: spec["kind"] as AssetImportKind,
       files,
-      ...(spec.meta === undefined ? {} : { meta: JSON.parse(JSON.stringify(spec.meta)) as Record<string, unknown> }),
+      ...(spec["meta"] === undefined ? {} : { meta: JSON.parse(JSON.stringify(spec["meta"])) as Record<string, unknown> }),
     },
   };
 }
@@ -94,7 +94,7 @@ function json(bytes: Uint8Array): unknown {
 }
 
 function gltf(value: unknown): boolean {
-  return record(value) && record(value.asset) && typeof value.asset.version === "string" && /^2\.\d+$/.test(value.asset.version);
+  return record(value) && record(value["asset"]) && typeof value["asset"]["version"] === "string" && /^2\.\d+$/.test(value["asset"]["version"]);
 }
 
 function wav(bytes: Uint8Array, view: DataView): boolean {
@@ -207,6 +207,6 @@ export function classifyAssetFile(bytes: Uint8Array, _filename: string): AssetIm
   }
   const value = json(bytes);
   if (gltf(value)) return "model";
-  if (record(value) && (record(value.frames) || Array.isArray(value.frames)) && Object.keys(value.frames).length > 0) return "spriteSheet";
+  if (record(value) && (record(value["frames"]) || Array.isArray(value["frames"])) && Object.keys(value["frames"]).length > 0) return "spriteSheet";
   return null;
 }

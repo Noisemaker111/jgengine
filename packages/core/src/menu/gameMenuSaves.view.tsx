@@ -51,7 +51,7 @@ function progressEntries(slot: SaveSlotMeta): [string, string][] {
 }
 
 function playtimeOf(slot: SaveSlotMeta): string | null {
-  const value = slot.meta.playtime;
+  const value = slot.meta["playtime"];
   if (value === undefined) return null;
   if (typeof value === "number") return formatSavePlaytime(value);
   return String(value);

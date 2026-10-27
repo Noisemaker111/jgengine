@@ -31,26 +31,26 @@ export type ConvexGameApi = {
       "public",
       {
         gameId: string;
-        serverId?: string;
+        serverId?: string | undefined;
         mode?: string;
         visibility?: "public" | "private";
         joinCode?: string;
-        externalId?: string;
+        externalId?: string | undefined;
         sessionId?: string;
       },
       JoinServerOutcome
     >;
-    leaveServer: FunctionReference<"mutation", "public", { serverId: string; externalId?: string; sessionId?: string }, null>;
+    leaveServer: FunctionReference<"mutation", "public", { serverId: string; externalId?: string | undefined; sessionId?: string }, null>;
     runCommand: FunctionReference<
       "mutation",
       "public",
-      { serverId: string; command: string; input: unknown; externalId?: string },
+      { serverId: string; command: string; input: unknown; externalId?: string | undefined },
       { ok: true } | { ok: false; reason: string }
     >;
     pushFeedEntry: FunctionReference<
       "mutation",
       "public",
-      { serverId: string; action: string; entry: unknown; externalId?: string },
+      { serverId: string; action: string; entry: unknown; externalId?: string | undefined },
       null
     >;
     getServer: FunctionReference<"query", "public", { serverId: string; externalId?: string }, unknown>;
@@ -58,7 +58,7 @@ export type ConvexGameApi = {
     getFeed: FunctionReference<
       "query",
       "public",
-      { serverId: string; action: string; externalId?: string },
+      { serverId: string; action: string; externalId?: string | undefined },
       unknown[]
     >;
   };
@@ -66,7 +66,7 @@ export type ConvexGameApi = {
     list: FunctionReference<
       "query",
       "public",
-      { serverId: string; externalId?: string; viewerChunkKey?: string },
+      { serverId: string; externalId?: string | undefined; viewerChunkKey?: string },
       PresencePoseRow[]
     >;
     sync: FunctionReference<
@@ -78,7 +78,7 @@ export type ConvexGameApi = {
         sessionId?: string;
         kind?: string;
         label?: string;
-        externalId?: string;
+        externalId?: string | undefined;
       },
       {
         pose: { x: number; y: number; z: number; rotationY: number; rotationPitch: number };
@@ -97,13 +97,13 @@ export type ConvexGameApi = {
     messages: FunctionReference<
       "query",
       "public",
-      { serverId: string; channelId: string; externalId?: string },
+      { serverId: string; channelId: string; externalId?: string | undefined },
       ChatMessage[]
     >;
     sendMessage: FunctionReference<
       "mutation",
       "public",
-      { serverId: string; channelId: string; body: string; externalId?: string },
+      { serverId: string; channelId: string; body: string; externalId?: string | undefined },
       ChatSendOutcome
     >;
   };
@@ -221,7 +221,7 @@ export function createConvexGameFeeds(
         api.runtime.getServer as FunctionReference<
           "query",
           "public",
-          { serverId: string; externalId?: string },
+          { serverId: string; externalId?: string | undefined },
           ServerQueryResult
         >,
         { serverId, externalId: config.userId },
@@ -247,7 +247,7 @@ export function createConvexGameFeeds(
         api.runtime.getPlayerProfile as FunctionReference<
           "query",
           "public",
-          { gameId: string; externalId?: string },
+          { gameId: string; externalId?: string | undefined },
           PlayerProfileQueryResult
         >,
         { gameId: config.gameId, externalId: config.userId },

@@ -12,8 +12,8 @@ export function tweenAt(from: number, to: number, t: number, ease: (t: number) =
 /** Options for {@link useTweenedValue}. */
 export interface TweenOptions {
   /** Tween length in ms. Default 450. */
-  durationMs?: number;
-  ease?: (t: number) => number;
+  durationMs?: number | undefined;
+  ease?: ((t: number) => number) | undefined;
 }
 
 /**

@@ -23,7 +23,7 @@ import {
   useWorldInvites,
 } from "@jgengine/react/hooks";
 
-export function PresenceDot({ userId, className }: { userId: string; className?: string }) {
+export function PresenceDot({ userId, className }: { userId: string; className?: string | undefined }) {
   const presence = usePresence(userId);
   return (
     <span
@@ -43,8 +43,8 @@ export function FriendRow({
   children,
 }: {
   friend: FriendEntry;
-  className?: string;
-  dotClassName?: string;
+  className?: string | undefined;
+  dotClassName?: string | undefined;
   children?: ReactNode;
 }) {
   return (
@@ -184,8 +184,8 @@ export function PartyMemberRow({
   children,
 }: {
   member: PartyMemberEntry;
-  className?: string;
-  dotClassName?: string;
+  className?: string | undefined;
+  dotClassName?: string | undefined;
   children?: ReactNode;
 }) {
   return (

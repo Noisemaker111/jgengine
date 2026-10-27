@@ -67,7 +67,7 @@ export type GameRuntimeTransport = {
    * Join a server. `sessionId` names this client session (one tab, one mounted view) so the host keeps
    * the user a member while any of their sessions is still live.
    */
-  joinServer: (args: { gameId: string; serverId?: string; role?: MultiplayerRole; sessionId?: string }) => Promise<JoinServerOutcome>;
+  joinServer: (args: { gameId: string; serverId?: string | undefined; role?: MultiplayerRole; sessionId?: string }) => Promise<JoinServerOutcome>;
   /** Leave a server. With `sessionId` only that session ends; the user leaves once no session remains. Without it the user leaves outright. */
   leaveServer: (args: { serverId: string; sessionId?: string }) => Promise<void>;
   runCommand: (args: RunCommandArgs) => Promise<TransportRunCommandResult>;

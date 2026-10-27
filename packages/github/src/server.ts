@@ -176,14 +176,14 @@ const PROXY_RESPONSE_HEADERS = {
 
 function proxyHeaders(token: string | undefined): Record<string, string> {
   const headers: Record<string, string> = { Accept: "application/vnd.github+json", "User-Agent": "jgengine" };
-  if (token !== undefined) headers.Authorization = `Bearer ${token}`;
+  if (token !== undefined) headers["Authorization"] = `Bearer ${token}`;
   return headers;
 }
 
 async function passthrough(upstream: Response): Promise<Response> {
   const headers: Record<string, string> = { ...PROXY_RESPONSE_HEADERS };
   const link = upstream.headers.get("link");
-  if (link !== null) headers.Link = link;
+  if (link !== null) headers["Link"] = link;
   return new Response(await upstream.text(), { status: upstream.status, headers });
 }
 

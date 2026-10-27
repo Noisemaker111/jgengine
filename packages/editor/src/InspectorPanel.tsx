@@ -274,7 +274,7 @@ function ComponentAddBar({
   target: TriggerSourceKind;
   meta: Record<string, unknown> | undefined;
   onMeta: (patch: Record<string, unknown>, coalesce: string) => void;
-  api?: EditorHostApi;
+  api?: EditorHostApi | undefined;
   selectionIds: readonly string[];
 }) {
   const offerTrigger = canAuthorTrigger(target) && !hasAuthoredTrigger(meta);
@@ -635,7 +635,7 @@ export function InspectorPanel({
 }: {
   session: EditorSession;
   ui: EditorUiStore;
-  creatorPolicy?: CreatorPolicy;
+  creatorPolicy?: CreatorPolicy | undefined;
   onClose?: () => void;
   /** Host API for RPC-backed actions (material assignment, camera). */
   api?: EditorHostApi;

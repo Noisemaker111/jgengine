@@ -5,9 +5,9 @@ export type BrowserSuspensionReason = "blur" | "hidden" | "pointer-lock-lost";
 
 /** Select suspension events; all are observed by default. No callback runs on attachment. */
 export interface BrowserSuspensionOptions {
-  blur?: boolean;
-  hidden?: boolean;
-  pointerLockLost?: boolean;
+  blur?: boolean | undefined;
+  hidden?: boolean | undefined;
+  pointerLockLost?: boolean | undefined;
 }
 
 /**

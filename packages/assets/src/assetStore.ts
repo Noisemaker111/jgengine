@@ -10,7 +10,7 @@ import { basename, dirname, join, resolve } from "node:path";
  * @internal
  */
 export function assetStoreRoot(repoRoot: string, env: Readonly<Record<string, string | undefined>> = process.env): string {
-  const override = env.JG_ASSET_STORE;
+  const override = env["JG_ASSET_STORE"];
   if (override !== undefined && override !== "") return resolve(override);
   return join(mainCheckoutOf(repoRoot) ?? repoRoot, ".asset-store");
 }

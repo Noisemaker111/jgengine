@@ -206,7 +206,7 @@ export function parseCaptureArgs(tool: CaptureTool, argv: readonly string[], fla
         }
         if (payload === null || typeof payload !== "object" || Array.isArray(payload)) throw new Error("--rpc expects a JSON object with a method");
         const request = payload as Record<string, unknown>;
-        const summarized = request.method === "debug_snapshot" && request.detail === undefined;
+        const summarized = request["method"] === "debug_snapshot" && request["detail"] === undefined;
         out.steps.push({ kind: "rpc", json: summarized ? JSON.stringify({ ...request, detail: "summary" }) : text, summarized });
       } else if (name === "probe") out.steps.push({ kind: "probe", name: text === "" ? "probe" : text });
       continue;
@@ -221,19 +221,19 @@ export function parseCaptureArgs(tool: CaptureTool, argv: readonly string[], fla
     const value = out.options[name];
     if (typeof value === "string") number("--" + name, value);
   }
-  for (const pair of (out.options.param as string[] | undefined) ?? []) {
+  for (const pair of (out.options["param"] as string[] | undefined) ?? []) {
     if (pair.indexOf("=") <= 0) throw new Error("--param expects key=value, got \"" + pair + "\"");
   }
-  const size = out.options.size;
+  const size = out.options["size"];
   if (typeof size === "string" && size !== "full" && size !== "half") throw new Error("--size must be full or half (got " + size + ")");
-  const quality = out.options.quality;
+  const quality = out.options["quality"];
   if (typeof quality === "string" && !["low", "medium", "high", "ultra"].includes(quality)) {
     throw new Error(tool + ": --quality must be one of low, medium, high, ultra (got " + quality + ")");
   }
-  if (out.options.draft === true && typeof quality === "string") {
+  if (out.options["draft"] === true && typeof quality === "string") {
     throw new Error(tool + ": --draft is the iteration preset (low tier, half size), so drop it or drop --quality " + quality);
   }
-  const device = out.options.device;
+  const device = out.options["device"];
   if (typeof device === "string" && !["desktop", "mobile", "mobile-landscape"].concat(tool === "shoot" ? ["both"] : []).includes(device)) {
     throw new Error("--device must be desktop, mobile, mobile-landscape" + (tool === "shoot" ? ", or both" : "") + " (got " + device + ")");
   }

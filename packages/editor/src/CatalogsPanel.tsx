@@ -304,8 +304,8 @@ export function CatalogsPanel({
                       onChange={(event) => {
                         const value = event.target.value;
                         const next = { ...field } as Record<string, unknown>;
-                        if (value === "") delete next.min;
-                        else next.min = Number(value);
+                        if (value === "") delete next["min"];
+                        else next["min"] = Number(value);
                         patchField(index, next as unknown as ParamField);
                       }}
                     />
@@ -318,8 +318,8 @@ export function CatalogsPanel({
                       onChange={(event) => {
                         const value = event.target.value;
                         const next = { ...field } as Record<string, unknown>;
-                        if (value === "") delete next.max;
-                        else next.max = Number(value);
+                        if (value === "") delete next["max"];
+                        else next["max"] = Number(value);
                         patchField(index, next as unknown as ParamField);
                       }}
                     />

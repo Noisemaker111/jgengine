@@ -49,11 +49,11 @@ export interface SelectionKeyEvent {
 /** Options for {@link useSelectionView}. */
 export interface UseSelectionViewOptions {
   /** Member count above which `grouped` flips true (default 12). */
-  groupThreshold?: number;
+  groupThreshold?: number | undefined;
   /** Map a member `kind` to a display label for its group. */
-  labelOf?: (kind: string) => string;
+  labelOf?: ((kind: string) => string) | undefined;
   /** Fired when the focused (primary) member changes. */
-  onFocusChange?: (id: string) => void;
+  onFocusChange?: ((id: string) => void) | undefined;
 }
 
 /** The live selection model returned by {@link useSelectionView}. */
@@ -192,7 +192,7 @@ export function EntityPortrait({
             style={{
               width: `${Math.max(0, Math.min(1, vital.max <= 0 ? 0 : vital.current / vital.max)) * 100}%`,
               height: "100%",
-              background: (VITAL_TONES[vital.tone ?? "health"] ?? VITAL_TONES.neutral!)[0],
+              background: (VITAL_TONES[vital.tone ?? "health"] ?? VITAL_TONES["neutral"]!)[0],
             }}
           />
         </div>
@@ -204,7 +204,7 @@ export function EntityPortrait({
 const VITAL_KIT_TONES: Record<string, KitTone> = { health: "good", shield: "accent", energy: "accent" };
 
 /** The focused member: name, kind, tags and one kit meter per vital. Swap a vital row via `renderVital`. */
-function PrimarySummary({ entity, renderVital }: { entity: EntitySummaryDef; renderVital?: (vital: EntityVital) => ReactNode }) {
+function PrimarySummary({ entity, renderVital }: { entity: EntitySummaryDef; renderVital?: ((vital: EntityVital) => ReactNode) | undefined }) {
   return (
     <div data-entity-summary={entity.id} style={{ display: "flex", flexDirection: "column", gap: 4, minWidth: 140 }}>
       <div style={{ display: "flex", alignItems: "baseline", gap: 6 }}>
@@ -247,7 +247,7 @@ export function SelectionGroupChip({
   style,
 }: {
   group: SelectionGroup;
-  onSelect?: (group: SelectionGroup) => void;
+  onSelect?: ((group: SelectionGroup) => void) | undefined;
   renderIcon?: (group: SelectionGroup) => ReactNode;
   className?: string;
   style?: CSSProperties;
@@ -293,10 +293,10 @@ export function SelectionCollectionChrome({
   itemSize?: number;
   gap?: number;
   /** Cap the mounted portraits; the model virtualizes past this many members. */
-  windowSize?: number;
+  windowSize?: number | undefined;
   scroll?: number;
   ariaLabel?: string;
-  renderMember?: (entity: EntitySummaryDef, selected: boolean) => ReactNode;
+  renderMember?: ((entity: EntitySummaryDef, selected: boolean) => ReactNode) | undefined;
   renderGroup?: (group: SelectionGroup) => ReactNode;
   onGroupSelect?: (group: SelectionGroup) => void;
   className?: string;

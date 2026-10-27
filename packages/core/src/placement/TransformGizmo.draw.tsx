@@ -36,7 +36,7 @@ export interface TransformGizmoProps {
   /** Vertical offset so the gizmo sits above ground markers. */
   lift?: number;
   size?: number;
-  groundSnap?: (x: number, z: number) => number;
+  groundSnap?: ((x: number, z: number) => number) | undefined;
   /** Disable orbit/pan while dragging (shell/editor cameras). */
   onDraggingChange?: (dragging: boolean) => void;
   onRelease: (pose: TransformGizmoPose) => void;

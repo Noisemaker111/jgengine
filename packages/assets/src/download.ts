@@ -187,7 +187,7 @@ async function verifyPinnedSha(source: AssetSource, archive: Uint8Array): Promis
 
 export interface DownloadPackOptions {
   /** Explicit mirror base override (CLI `--mirror` / `JGENGINE_ASSETS_MIRROR`), tried before the primary provider path. */
-  mirrorBase?: string;
+  mirrorBase?: string | undefined;
   fetchImpl?: FetchLike;
 }
 
@@ -235,7 +235,7 @@ export async function downloadPackArchive(
     if (result !== undefined) return result;
   }
 
-  if (process.env.JGENGINE_ASSETS_NO_DEFAULT_MIRROR !== "1") {
+  if (process.env["JGENGINE_ASSETS_NO_DEFAULT_MIRROR"] !== "1") {
     const result = await tryUrl(defaultReleaseUrl(source));
     if (result !== undefined) return result;
   }

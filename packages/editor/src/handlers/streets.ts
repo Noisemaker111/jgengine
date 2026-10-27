@@ -88,7 +88,7 @@ function genPrefix(seed: string): string {
 function isGeneratedForSeed(path: EditorPath, seed: string): boolean {
   if (path.id.startsWith(genPrefix(seed))) return true;
   const meta = path.meta;
-  return meta !== undefined && meta.generator === GENERATOR_TAG && meta.seed === seed;
+  return meta !== undefined && meta["generator"] === GENERATOR_TAG && meta["seed"] === seed;
 }
 
 /** Half-extents (hx, hz) and world origin a volume fills, so the generator grows inside its footprint. */

@@ -75,7 +75,7 @@ export function pullGithubToken(): string | undefined {
 
 /** One request's hard budget: `JG_FETCH_TIMEOUT_MS`, else ten minutes (the curl fallback's own cap). */
 export function fetchTimeoutMs(env: NodeJS.ProcessEnv = process.env): number {
-  const ms = Number(env.JG_FETCH_TIMEOUT_MS);
+  const ms = Number(env["JG_FETCH_TIMEOUT_MS"]);
   return Number.isFinite(ms) && ms > 0 ? ms : 600_000;
 }
 
@@ -257,7 +257,7 @@ export async function cmdPull(argv: string[]): Promise<void> {
   const outRoot = flag(argv, "dir") !== undefined ? resolve(flag(argv, "dir")!) : resolveDefaultOutputRoot(here);
   const outDir = join(outRoot, packSubdir(source), sourceId);
   const offline = argv.includes("--offline");
-  const mirrorBase = flag(argv, "mirror") ?? process.env.JGENGINE_ASSETS_MIRROR;
+  const mirrorBase = flag(argv, "mirror") ?? process.env["JGENGINE_ASSETS_MIRROR"];
 
   if (offline) {
     if (!dirHasEntries(outDir)) {
@@ -301,7 +301,7 @@ function describeFetchResult(source: AssetSource, result: FetchPackResult): stri
 async function fetchPackInto(
   source: AssetSource,
   outRoot: string,
-  options: { mirrorBase?: string },
+  options: { mirrorBase?: string | undefined },
 ): Promise<FetchPackResult> {
   const outDir = join(outRoot, packSubdir(source), source.id);
   console.log(
@@ -411,7 +411,7 @@ async function performAdd(match: AssetMatch, argv: string[]): Promise<void> {
   }
 
   const outRoot = flag(argv, "dir") !== undefined ? resolve(flag(argv, "dir")!) : resolveDefaultOutputRoot(here);
-  const mirrorBase = flag(argv, "mirror") ?? process.env.JGENGINE_ASSETS_MIRROR;
+  const mirrorBase = flag(argv, "mirror") ?? process.env["JGENGINE_ASSETS_MIRROR"];
 
   if (match.kind === "material") {
     const source = sourceById.get(match.id);

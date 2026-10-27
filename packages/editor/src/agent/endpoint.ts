@@ -24,7 +24,7 @@ export interface AgentChatRequest {
 /** Model reply: optional prose plus zero or more tool calls to run via editor RPC. */
 export interface AgentChatResponse {
   message?: string;
-  toolCalls?: AgentToolCall[];
+  toolCalls?: AgentToolCall[] | undefined;
 }
 
 /** Pluggable agent backend — HTTP, Claude SDK adapter, or a local rule engine. */
@@ -43,8 +43,8 @@ export const EDITOR_AGENT_KEY_FALLBACK_ENV = "ANTHROPIC_API_KEY";
 
 /** Resolved remote agent settings: optional URL and optional Bearer API key. */
 export interface AgentEndpointConfig {
-  url?: string;
-  apiKey?: string;
+  url?: string | undefined;
+  apiKey?: string | undefined;
 }
 
 function readProcessEnv(): Record<string, string | undefined> {
@@ -72,7 +72,7 @@ export function resolveAgentEndpointConfig(
  */
 export function createHttpAgentEndpoint(config: {
   url: string;
-  apiKey?: string;
+  apiKey?: string | undefined;
   fetchImpl?: typeof fetch;
 }): AgentEndpoint {
   const fetchImpl = config.fetchImpl ?? fetch;
@@ -81,7 +81,7 @@ export function createHttpAgentEndpoint(config: {
     async chat(request) {
       const headers: Record<string, string> = { "content-type": "application/json" };
       if (config.apiKey !== undefined && config.apiKey.length > 0) {
-        headers.authorization = `Bearer ${config.apiKey}`;
+        headers["authorization"] = `Bearer ${config.apiKey}`;
       }
       const response = await fetchImpl(config.url, {
         method: "POST",
