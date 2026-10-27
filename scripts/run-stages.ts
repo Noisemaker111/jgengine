@@ -164,7 +164,7 @@ export const GEN_TARGETS: readonly GenTarget[] = [
   { name: "skill-api", script: "scripts/gen-skill-api-safe.ts", after: ["barrels"] },
   { name: "export-manifest", script: "scripts/gen-export-manifest.ts", after: ["barrels"] },
   { name: "games-ledger", script: "games/scripts/capabilities-sync.ts", after: ["barrels"] },
-  { name: "type-escapes", script: "scripts/type-escapes.ts" },
+  { name: "type-escapes", script: "scripts/type-escapes.ts", after: ["barrels"] },
 ];
 
 export function genPlan(targets: readonly GenTarget[]): Stage[] {
