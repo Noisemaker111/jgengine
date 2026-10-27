@@ -1,5 +1,5 @@
-import { actionLabel, bindingLabel, type ActionCodesMap } from "@jgengine/core/input/actionBindings";
-import type { BindingOverrides } from "@jgengine/core/input/bindingOverrides";
+import { actionLabel, bindingLabel, isActionLocked, type ActionCodesMap } from "@jgengine/core/input/actionBindings";
+import { applyBindingOverrides, type BindingOverrides } from "@jgengine/core/input/bindingOverrides";
 import type { AudioBusDef } from "@jgengine/core/audio/audioFalloff";
 import {
   BUILT_IN_SETTING_CATEGORIES,
@@ -176,21 +176,7 @@ export function useSettingsCategories(config: SettingsControllerInput): Settings
     ...extrasFor("gameplay"),
   ];
 
-  const hiddenBindings = new Set(config.hideBindings);
-  const keybinds: SettingsKeybindRow[] = Object.keys(config.input)
-    .filter((action) => !hiddenBindings.has(action))
-    .map((action) => {
-    const override = config.overrides[action];
-    const effective = override === undefined ? config.input : { ...config.input, [action]: override };
-    return {
-      action,
-      label: humanizeAction(action),
-      bindingLabel: actionLabel(effective, action) ?? "Unbound",
-      isDefault: override === undefined,
-      rebind: (code: string) => config.rebind(action, code),
-      reset: () => config.resetBinding(action),
-    };
-  });
+  const keybinds = keybindSettingRows(config);
 
   const controlsRows: SettingsRow[] = [
     ...(config.touchStyle
@@ -247,6 +233,32 @@ export function useSettingsCategories(config: SettingsControllerInput): Settings
 
   views.sort((a, b) => (declaredOrder.get(a.id) ?? indexOrder(order, a.id)) - (declaredOrder.get(b.id) ?? indexOrder(order, b.id)));
   return views;
+}
+
+/**
+ * The Controls keybind rows: every visible action with its effective key; `locked` actions keep
+ * their authored key whatever overrides say.
+ * @internal
+ */
+export function keybindSettingRows(
+  config: Pick<SettingsControllerInput, "input" | "overrides" | "hideBindings" | "rebind" | "resetBinding">,
+): SettingsKeybindRow[] {
+  const hiddenBindings = new Set(config.hideBindings);
+  const effective = applyBindingOverrides(config.input, config.overrides);
+  return Object.keys(config.input)
+    .filter((action) => !hiddenBindings.has(action))
+    .map((action) => {
+      const locked = isActionLocked(config.input[action]);
+      return {
+        action,
+        label: humanizeAction(action),
+        bindingLabel: actionLabel(effective, action) ?? "Unbound",
+        isDefault: locked || config.overrides[action] === undefined,
+        locked,
+        rebind: (code: string) => config.rebind(action, code),
+        reset: () => config.resetBinding(action),
+      };
+    });
 }
 
 /**

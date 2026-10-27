@@ -12,6 +12,7 @@ import type { GameContext } from "../runtime/gameContext";
 import type { ReplicationPolicy } from "../runtime/worldProjection";
 import type { RuntimeSaveMode, RuntimeSaveOptions } from "../save/snapshotSave";
 import type { SaveConfig } from "../save/saveConfig";
+import type { SaveBackend } from "../save/saveStore";
 import { createAssetCatalog, type AssetCatalog, type ModelAssetRef } from "../scene/assetCatalog";
 import { createEntityStore, type EntityStore } from "../scene/entityStore";
 import type { StoreHandle } from "../store/defineStore";
@@ -26,8 +27,8 @@ import type { CharacterControllerConfig } from "../movement/characterController"
 export interface PersistConfig {
   /** `"autosave"` (default) writes on a trailing timer while the world changes — at most once per `autosaveMs`, so a never-idle world (AI, physics, day/night) still persists; `"manual"` writes only on `ctx.game.save.checkpoint()` (save points / quest triggers). */
   mode?: RuntimeSaveMode;
-  /** `"local"` (default) persists to `localStorage`; `"memory"` keeps saves in-session only (tests, "no persistence" mode). */
-  storage?: "local" | "memory";
+  /** Where the whole-world save goes: `"local"` (default) is `localStorage`, `"memory"` keeps saves in-session only (tests, "no persistence" mode), or any {@link SaveBackend} (e.g. `createConvexSaveBackend` for cloud saves). */
+  storage?: "local" | "memory" | SaveBackend;
   /** Save-format version. Supply `migrate` for incompatible older shapes; without it, mismatched versions retain compatible load behavior. */
   version?: number;
   /** Convert a mismatched version (or raw payload, version 0) before world restoration. Throw to reject without hydrating or changing the stored save. Current-version payloads bypass this hook. */
@@ -261,7 +262,7 @@ export interface GameDefinition<
   server?: GameServerConfig;
   /** Hosted per-player save policy, read only by an authoritative multiplayer host. Solo games leave this unset (nothing persists by default) and use `persist` when they want a save at all. */
   save?: SaveConfig;
-  /** The one save knob for solo games: offline whole-world save. **On by default** — an offline game autosaves the entire world to `localStorage` and binds `ctx.game.save` with no config at all; the game only drives save points and restore (`ctx.game.save.load()` at boot). Pass `false` to opt out entirely, or a config object to tune the mode/cadence/target (`storage: "memory"` for in-session-only). Ignored for multiplayer worlds (the host persists via `save`). */
+  /** The one save knob for solo games: offline whole-world save. **On by default** — an offline game autosaves the entire world to `localStorage` and binds `ctx.game.save` with no config at all; the game only drives save points and restore (`ctx.game.save.load()` at boot). Pass `false` to opt out entirely, or a config object to tune the mode/cadence/target (`storage: "memory"` for in-session-only, or a `SaveBackend` such as a cloud one). Ignored for multiplayer worlds (the host persists via `save`). */
   persist?: boolean | PersistConfig;
   ui?: unknown;
   loop?: GameLoop<GameContext>;

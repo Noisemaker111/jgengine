@@ -202,6 +202,33 @@ export interface SettingsKeybindControlProps {
  * @capability settings-keybind-row one rebindable controls row — key glyph, armed state and reset
  */
 export function SettingsKeybindControl({ row, armed = false, onArm, buttonProps, rowProps }: SettingsKeybindControlProps): ReactNode {
+  if (row.locked === true) {
+    return (
+      <div data-settings-keybind={row.action} data-locked="" style={rowStyle} {...rowProps}>
+        <span style={labelStyle}>{row.label}</span>
+        <span
+          data-settings-locked=""
+          title="This control can't be changed"
+          style={{
+            minWidth: 84,
+            minHeight: 30,
+            marginRight: `calc(30px + ${hudSpace("xs")})`,
+            display: "inline-flex",
+            alignItems: "center",
+            justifyContent: "center",
+            gap: 6,
+            padding: `0 ${hudSpace("sm")}`,
+            color: "var(--jg-text-dim, #94a3a0)",
+            fontFamily: "var(--jg-font-numeric, monospace)",
+            fontSize: hudType("sm"),
+          }}
+        >
+          <span aria-label="Locked">🔒</span>
+          {row.bindingLabel}
+        </span>
+      </div>
+    );
+  }
   return (
     <div data-settings-keybind={row.action} data-armed={armed ? "" : undefined} style={rowStyle} {...rowProps}>
       <span style={labelStyle}>{row.label}</span>
@@ -341,9 +368,11 @@ export function SettingsSection({
         return;
       }
       if (!capture) return;
-      arm(id.slice(KEY_ITEM_PREFIX.length));
+      const action = id.slice(KEY_ITEM_PREFIX.length);
+      if (keybinds.find((row) => row.action === action)?.locked === true) return;
+      arm(action);
     },
-    [arm, capture, rows],
+    [arm, capture, rows, keybinds],
   );
 
   const nav = useMenuNav({
@@ -357,7 +386,7 @@ export function SettingsSection({
   useEffect(() => {
     if (armed === null) return;
     const row = keybinds.find((candidate) => candidate.action === armed);
-    if (row === undefined) {
+    if (row === undefined || row.locked === true) {
       arm(null);
       return;
     }

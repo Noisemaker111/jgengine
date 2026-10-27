@@ -1,5 +1,6 @@
-import type { ReactNode } from "react";
+import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 
+import { litLines, type Trace, type TraceLines } from "../live/trace";
 import { CopyButton } from "./Copy";
 
 const KEYWORDS = new Set([
@@ -65,6 +66,43 @@ function CodeLine({ line }: { line: string }) {
   return <>{out}</>;
 }
 
+/** Lines whose text differs from the last render; they flash once so a slider's edit is easy to spot. */
+function useChangedLines(code: string): ReadonlySet<number> {
+  const previous = useRef(code);
+  const [changed, setChanged] = useState<ReadonlySet<number>>(() => new Set());
+  useEffect(() => {
+    if (previous.current === code) return;
+    const before = previous.current.split("\n");
+    previous.current = code;
+    const next = new Set<number>();
+    code.split("\n").forEach((line, i) => {
+      if (before[i] !== line) next.add(i);
+    });
+    setChanged(next);
+    const timer = setTimeout(() => setChanged(new Set()), 1400);
+    return () => clearTimeout(timer);
+  }, [code]);
+  return changed;
+}
+
+/** Re-reads which lines a running demo lights, a few times a second. */
+function useLitLines(code: string, trace: { channel: Trace; lines: TraceLines } | undefined): ReadonlySet<number> {
+  const [lit, setLit] = useState<ReadonlySet<number>>(() => new Set());
+  useEffect(() => {
+    if (trace === undefined) return;
+    let key = "";
+    const timer = setInterval(() => {
+      const next = litLines(code, trace.lines, trace.channel.lit(performance.now()));
+      const nextKey = [...next].join(",");
+      if (nextKey === key) return;
+      key = nextKey;
+      setLit(next);
+    }, 90);
+    return () => clearInterval(timer);
+  }, [code, trace]);
+  return lit;
+}
+
 /** A titled, copyable code panel: the "show the real thing" surface across the site. */
 export function CodeBlock({
   code,
@@ -72,16 +110,39 @@ export function CodeBlock({
   tone = "neutral",
   copy = true,
   className = "",
+  trace,
 }: {
   code: string;
   filename?: string;
   tone?: "neutral" | "good" | "bad";
   copy?: boolean;
   className?: string;
+  /** A running demo; the lines doing what it does right now light up. */
+  trace?: { channel: Trace; lines: TraceLines };
 }) {
   const border = tone === "good" ? "border-accent/40" : tone === "bad" ? "border-line" : "border-line";
+  const lit = useLitLines(code, trace);
+  const changed = useChangedLines(code);
+  const boxRef = useRef<HTMLDivElement>(null);
+  const hovered = useRef(false);
+  useEffect(() => {
+    const box = boxRef.current;
+    const first = Math.min(...lit, ...changed);
+    if (box === null || !Number.isFinite(first) || hovered.current || box.scrollHeight <= box.clientHeight) return;
+    const row = box.querySelector<HTMLElement>(`[data-line="${first}"]`);
+    if (row === null) return;
+    const top = row.offsetTop - box.offsetTop;
+    if (top < box.scrollTop + 40 || top > box.scrollTop + box.clientHeight - 60) {
+      box.scrollTo({ top: Math.max(0, top - box.clientHeight / 3), behavior: "smooth" });
+    }
+  }, [lit, changed]);
   return (
-    <div className={`code-surface overflow-hidden rounded-lg border ${border} ${className}`}>
+    <div
+      ref={boxRef}
+      onPointerEnter={() => (hovered.current = true)}
+      onPointerLeave={() => (hovered.current = false)}
+      className={`code-surface relative overflow-hidden rounded-lg border ${border} ${className}`}
+    >
       {(filename !== undefined || copy) && (
         <div className="flex items-center justify-between gap-3 border-b border-line px-4 py-2">
           <span className="flex min-w-0 items-center gap-2 font-mono text-[11px] text-faint">
@@ -97,7 +158,7 @@ export function CodeBlock({
       <pre className="overflow-x-auto px-4 py-4 text-left text-[12.5px] leading-[1.7] sm:text-[13px]">
         <code className="font-mono">
           {code.split("\n").map((line, i) => (
-            <div key={i}>
+            <div key={i} data-line={i} className={`code-line ${lit.has(i) ? "is-lit" : ""} ${changed.has(i) ? "is-changed" : ""}`}>
               <CodeLine line={line} />
             </div>
           ))}
@@ -115,6 +176,7 @@ export function VersusBlock({
   afterLabel = "With jgengine",
   beforeNote,
   afterNote,
+  trace,
 }: {
   before: string;
   after: string;
@@ -122,22 +184,26 @@ export function VersusBlock({
   afterLabel?: string;
   beforeNote?: string;
   afterNote?: string;
+  /** A running demo: both columns light the lines doing what it does right now. */
+  trace?: { channel: Trace; before: TraceLines; after: TraceLines };
 }) {
+  const beforeTrace = useMemo(() => (trace === undefined ? undefined : { channel: trace.channel, lines: trace.before }), [trace]);
+  const afterTrace = useMemo(() => (trace === undefined ? undefined : { channel: trace.channel, lines: trace.after }), [trace]);
   return (
-    <div className="grid gap-5 lg:grid-cols-2">
+    <div className="grid gap-5 md:grid-cols-2">
       <div className="flex min-w-0 flex-col gap-2">
         <div className="flex flex-wrap items-baseline justify-between gap-x-3 px-1">
           <span className="font-mono text-xs uppercase tracking-[0.14em] text-faint">{beforeLabel}</span>
           {beforeNote && <span className="text-xs text-faint">{beforeNote}</span>}
         </div>
-        <CodeBlock code={before} tone="bad" copy={false} className="max-h-[34rem] overflow-y-auto" />
+        <CodeBlock code={before} tone="bad" copy={false} className="max-h-[30rem] overflow-y-auto" trace={beforeTrace} />
       </div>
-      <div className="flex min-w-0 flex-col gap-2 lg:sticky lg:top-24 lg:self-start">
+      <div className="flex min-w-0 flex-col gap-2 md:sticky md:top-24 md:self-start">
         <div className="flex flex-wrap items-baseline justify-between gap-x-3 px-1">
           <span className="font-mono text-xs uppercase tracking-[0.14em] text-accent-text">{afterLabel}</span>
           {afterNote && <span className="text-xs text-muted">{afterNote}</span>}
         </div>
-        <CodeBlock code={after} tone="good" copy={false} />
+        <CodeBlock code={after} tone="good" copy={false} className="max-h-[30rem] overflow-y-auto" trace={afterTrace} />
       </div>
     </div>
   );

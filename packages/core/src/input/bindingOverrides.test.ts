@@ -41,6 +41,12 @@ describe("bindingOverrides", () => {
     expect(applyBindingOverrides(input, {})).toBe(input);
   });
 
+  test("applyBindingOverrides ignores overrides for locked actions", () => {
+    const input: ActionCodesMap = { jump: ["Space"], fire: { hold: ["mouse0"], repeatMs: 120, locked: true } };
+    const merged = applyBindingOverrides(input, { jump: ["KeyJ"], fire: ["KeyF"] });
+    expect(merged).toEqual({ jump: ["KeyJ"], fire: { hold: ["mouse0"], repeatMs: 120, locked: true } });
+  });
+
   test("ignores malformed persisted entries", () => {
     const storage = memStorage();
     storage.setItem("jgengine:keybinds:dune", JSON.stringify({ jump: 5, fire: ["mouse0"] }));

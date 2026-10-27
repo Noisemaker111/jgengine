@@ -40,6 +40,7 @@ beforeAll(async () => {
       actions: [
         { id: 'jump', label: 'Jump', defaultCodes: ['Space'] },
         { id: 'fire', label: 'Fire', defaultCodes: ['KeyF'] },
+        { id: 'aim', label: 'Aim', defaultCodes: { hold: ['mouse2'], locked: true } },
       ],
     });
     const store = createSettingsStore({
@@ -82,6 +83,7 @@ beforeAll(async () => {
           label: row.label,
           bindingLabel: row.bindingLabel,
           isDefault: row.isDefault,
+          locked: row.locked,
           rebind: (code) => { session.beginCapture(row.actionId); session.capture(code); },
           reset: () => { session.reset(row.actionId); },
         })),
@@ -151,6 +153,25 @@ describe("SettingsSection rebinding", () => {
     await page.keyboard.press("Escape");
     await page.waitForTimeout(120);
     expect(await page.evaluate(() => (window as any).fixture.bindings().fire)).toBe("F");
+  });
+
+  test("confirming a locked row never arms capture", async () => {
+    await page.evaluate(() => {
+      (document.querySelector('[data-jg-menu-item="key:aim"]') as HTMLElement | null)?.focus();
+    });
+    await page.waitForFunction(() => document.activeElement?.getAttribute("data-jg-menu-item") === "key:aim");
+    await page.evaluate(() => {
+      (window as any).menuKeys = [];
+      window.addEventListener("keydown", (event) => (window as any).menuKeys.push(event.code));
+    });
+    await page.keyboard.press("Enter");
+    await page.waitForTimeout(120);
+    await page.keyboard.press("KeyQ");
+    await page.waitForTimeout(120);
+    // An armed capture swallows the next key; a locked row must leave it to the menu.
+    expect(await page.evaluate(() => (window as any).menuKeys)).toContain("KeyQ");
+    expect(await page.locator('[data-settings-keybind="aim"] [data-settings-capture]').count()).toBe(0);
+    expect(await page.evaluate(() => (window as any).fixture.overrides())).toEqual({});
   });
 
   test("a captured key never reaches the surrounding menu", async () => {

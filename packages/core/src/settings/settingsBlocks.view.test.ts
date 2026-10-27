@@ -3,7 +3,7 @@ import { createElement } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 
 import type { SettingsCategoryView, SettingsRow } from "./settings.view";
-import { SettingsRowControl, SettingsSection, SettingsTabs } from "./settingsBlocks.view";
+import { SettingsKeybindControl, SettingsRowControl, SettingsSection, SettingsTabs } from "./settingsBlocks.view";
 
 const row = (overrides: Partial<SettingsRow> & Pick<SettingsRow, "id" | "label" | "kind">): SettingsRow => ({
   value: 0.5,
@@ -79,6 +79,20 @@ describe("SettingsSection", () => {
     const html = renderToStaticMarkup(createElement(SettingsSection, { category: CATEGORY, heading: false }));
     expect(html).not.toContain(">Accessibility<");
     expect(html).toContain("Text size");
+  });
+});
+
+describe("SettingsKeybindControl", () => {
+  test("a locked row shows a lock and its key with no capture or reset button", () => {
+    const locked = { action: "fire", label: "Fire", bindingLabel: "LMB", isDefault: true, locked: true, rebind: () => undefined, reset: () => undefined };
+    const html = renderToStaticMarkup(createElement(SettingsKeybindControl, { row: locked }));
+    expect(html).toContain("data-settings-locked");
+    expect(html).toContain("🔒");
+    expect(html).toContain("LMB");
+    expect(html).not.toContain("data-settings-capture");
+    expect(html).not.toContain("data-settings-reset");
+    const open = renderToStaticMarkup(createElement(SettingsKeybindControl, { row: { ...locked, locked: false } }));
+    expect(open).toContain("data-settings-capture");
   });
 });
 

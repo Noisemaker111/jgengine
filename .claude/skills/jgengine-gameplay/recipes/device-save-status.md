@@ -44,3 +44,6 @@ game's checkpoint schema or a supplied deserializer.
 For intentional session-only/headless success, use `memorySaveBackend()`,
 `persist: { storage: "memory" }`, or a key-value cell with `storage: null`.
 Memory success does not promise persistence across reloads.
+
+To send the whole-world save elsewhere, pass any `SaveBackend` as
+`persist: { storage: backend }`, e.g. `createConvexSaveBackend(...)` for cloud saves.

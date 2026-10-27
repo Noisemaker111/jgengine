@@ -4,6 +4,7 @@ import type { ReactNode } from "react";
 import { HeroShowcase } from "../components/HeroShowcase";
 import { GitHubIcon, Page } from "../components/Layout";
 import { CodeBlock } from "../components/marketing";
+import { EngineTour } from "../live/EngineTour";
 import { PromptStudio } from "../components/PromptStudio";
 import { CAPABILITIES, capability } from "../lib/capabilities";
 import { GAME_IDS, gameCover, gameTitle } from "../lib/games";
@@ -64,6 +65,13 @@ function Home() {
         </div>
       </section>
 
+      <EngineTour
+        demos={["car", "projectiles", "keys", "grass", "saves", "minimap", "xp"]}
+        eyebrow="Live"
+        title="Try the engine here."
+        lede="Each demo runs the engine in your browser and plays itself. Take over with the keys or mouse, or move a control and the code under it changes. Highlighted lines are the ones doing what the demo is doing right now."
+      />
+
       <div id="features">
         <Feature
           id="start"
@@ -112,26 +120,7 @@ function Home() {
         </Feature>
 
         <Feature
-          id="save"
-          eyebrow="Saves"
-          title="Saving is on before you write a line."
-          body={
-            <>
-              <p>
-                A single-player game saves its whole world to the browser and loads it back, by default. Set how often it
-                writes, bump a version and migrate old saves, or turn it off with{" "}
-                <code className="inline-code">persist: false</code>.
-              </p>
-              <p>Add the game-flow system for the title, pause and checkpoint flow, and a Continue that picks up the last save.</p>
-            </>
-          }
-        >
-          <CodeBlock code={snippet("save.ts")} filename="src/game.config.ts" />
-        </Feature>
-
-        <Feature
           id="movement"
-          alt
           eyebrow="Movement"
           title="Walking, driving and flying that feel right from the start."
           body={
@@ -164,6 +153,7 @@ function Home() {
 
         <Feature
           id="physics"
+          alt
           eyebrow="Physics"
           title="Physics built in. Rapier when you need more."
           body={
@@ -181,7 +171,6 @@ function Home() {
 
         <Feature
           id="desktop"
-          alt
           eyebrow="Windows"
           title="Ship it as a Windows .exe."
           body={
@@ -234,7 +223,7 @@ function Home() {
             <Link to="/playground" className="btn btn-primary">
               Grow a city with sliders <span className="arrow" aria-hidden>→</span>
             </Link>
-            <Link to="/capabilities" className="btn btn-secondary">
+            <Link to="/docs" className="btn btn-secondary">
               Search all {CAPABILITIES.length} capabilities <span className="arrow" aria-hidden>→</span>
             </Link>
           </div>

@@ -13,6 +13,7 @@ import { restoreFromCache, saveToCache } from "../../scripts/games-player-cache"
 import { devServerMarkerPlugin } from "../../scripts/devServerMarker";
 import { devReportPlugin } from "../dev/devReportPlugin";
 import { parseGameReadme, parseGameSeed } from "./src/lib/gameReadme";
+import { DEMO_PARTS } from "./src/live/demoParts";
 import { shouldRouteMdRequestToSsr } from "./src/lib/mdSsrRoute";
 
 const repoRoot = fileURLToPath(new URL("../..", import.meta.url));
@@ -51,7 +52,20 @@ const parseGameCredit = (
   return { text, ...(url !== undefined ? { url } : {}), ...(handle !== undefined ? { handle } : {}) };
 };
 
-/** Exposes the games/* ids and per-game credit to routes as `virtual:jgengine-games`, resolved at build time. */
+/** The site's live demos whose engine part a game's source (or editor scene) uses. */
+const gameDemoParts = (srcDir: string): string[] => {
+  // walk-ok: build-time scan of one game's own src folder for engine imports
+  const files = readdirSync(srcDir, { recursive: true, encoding: "utf8" }).filter((file) => /\.(tsx?|json)$/.test(file));
+  const found = new Set<string>();
+  for (const file of files) {
+    const text = readFileSync(join(srcDir, file), "utf8");
+    for (const part of DEMO_PARTS) if (!found.has(part.key) && part.source.test(text)) found.add(part.key);
+    if (found.size === DEMO_PARTS.length) break;
+  }
+  return DEMO_PARTS.filter((part) => found.has(part.key)).map((part) => part.key);
+};
+
+/** Exposes the games/* ids, per-game credit and the demoed engine parts each game uses to routes as `virtual:jgengine-games`, resolved at build time. */
 const gamesIndexPlugin = (): Plugin => ({
   name: "jgengine-games-index",
   resolveId(id) {
@@ -80,7 +94,10 @@ const gamesIndexPlugin = (): Plugin => ({
       const seed = existsSync(gameReadme) ? parseGameSeed(readFileSync(gameReadme, "utf8")) : null;
       if (seed !== null) seeds[gameId] = seed;
     }
+    const parts: Record<string, string[]> = {};
+    for (const gameId of ids) parts[gameId] = gameDemoParts(join(gamesDir, gameId, "src"));
     return `export const GAME_IDS = ${JSON.stringify(ids)};
+export const GAME_PARTS = ${JSON.stringify(parts)};
 export const GAME_CREDITS = ${JSON.stringify(credits)};
 export const GAME_META = ${JSON.stringify(meta)};
 export const GAME_THUMBS = ${JSON.stringify(thumbs)};

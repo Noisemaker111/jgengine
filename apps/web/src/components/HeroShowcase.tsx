@@ -63,7 +63,7 @@ export function HeroShowcase() {
           <p className="hero-code-note">
             That is the whole game file of a new project. <code className="inline-code">bun dev</code> and you are walking a
             3D world with a HUD; F2+E opens the scene editor.{" "}
-            <Link to="/editor" className="link">
+            <Link to="/playground" hash="editor" className="link">
               Try the editor
             </Link>
           </p>

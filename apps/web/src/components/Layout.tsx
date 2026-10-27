@@ -104,9 +104,8 @@ export function PageHero({
 
 const NAV_LINKS = [
   { to: "/playground", label: "Playground" },
-  { to: "/editor", label: "Editor" },
-  { to: "/capabilities", label: "Capabilities" },
   { to: "/games", label: "Games" },
+  { to: "/docs", label: "Docs" },
   { to: "/why", label: "Why" },
 ] as const;
 
@@ -226,8 +225,7 @@ const FOOTER_COLUMNS: { title: string; links: { label: string; to?: string; href
     links: [
       { label: "Games", to: "/games" },
       { label: "Playground", to: "/playground" },
-      { label: "Editor", to: "/editor" },
-      { label: "Capabilities", to: "/capabilities" },
+      { label: "Docs", to: "/docs" },
       { label: "Why jgengine", to: "/why" },
       { label: "Use one system", to: "/adopt" },
     ],

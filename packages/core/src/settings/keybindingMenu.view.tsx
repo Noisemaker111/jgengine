@@ -73,8 +73,8 @@ export interface KeybindingMenuProps {
  * action showing its label and current key glyph. Clicking a row arms capture
  * ("Press a key…") and a window `keydown` listener feeds the pressed
  * `event.code` to `session.capture`; rows that collide with another action show
- * a conflict badge; each row has a Reset button and the panel has a Reset-all
- * button. Presentation only — all conflict/capture/reset logic lives in the core
+ * a conflict badge; `locked` actions show a lock mark and no capture button;
+ * each row has a Reset button and the panel has a Reset-all button. Presentation only — all conflict/capture/reset logic lives in the core
  * session, and action ids/labels are the game's free strings. Reskin via
  * {@link KeybindingMenuTheme} or ambient HudTheme tokens. A game owns its overall
  * settings layout; this is the reusable controls block it drops in.
@@ -197,6 +197,7 @@ function KeybindingRow({
       data-keybinding-row={row.actionId}
       data-armed={armed ? "" : undefined}
       data-conflict={conflicted ? "" : undefined}
+      data-locked={row.locked ? "" : undefined}
       style={{
         display: "flex",
         alignItems: "center",
@@ -231,41 +232,39 @@ function KeybindingRow({
         ) : null}
       </div>
 
-      <button
-        type="button"
-        data-keybinding-capture=""
-        onClick={onArm}
-        style={{
-          minWidth: 96,
-          display: "flex",
-          justifyContent: "center",
-          cursor: "pointer",
-          background: "transparent",
-          border: "none",
-          padding: 0,
-        }}
-      >
-        {armed ? (
-          <span style={{ fontSize: 12, fontWeight: 700, color: theme.accent }}>{capturePrompt}</span>
-        ) : (
-          <Keycap
-            style={{
-              minWidth: 34,
-              padding: "3px 9px",
-              borderRadius: 6,
-              textAlign: "center",
-              fontSize: 13,
-              fontWeight: 700,
-              color: conflicted ? theme.conflict : theme.text,
-              background: "rgba(0,0,0,0.4)",
-              border: `1px solid ${conflicted ? theme.conflict : "rgba(255,255,255,0.18)"}`,
-              boxShadow: "inset 0 -2px 0 rgba(0,0,0,0.4)",
-            }}
-          >
-            {row.bindingLabel || "—"}
-          </Keycap>
-        )}
-      </button>
+      {row.locked ? (
+        <div
+          data-keybinding-locked=""
+          title="This control can't be changed"
+          style={{ minWidth: 96, display: "flex", justifyContent: "center", alignItems: "center", gap: 6, color: theme.muted }}
+        >
+          <span aria-label="Locked" style={{ fontSize: 12 }}>
+            🔒
+          </span>
+          <Keycap style={{ ...keycapStyle(theme, conflicted), opacity: 0.7 }}>{row.bindingLabel || "—"}</Keycap>
+        </div>
+      ) : (
+        <button
+          type="button"
+          data-keybinding-capture=""
+          onClick={onArm}
+          style={{
+            minWidth: 96,
+            display: "flex",
+            justifyContent: "center",
+            cursor: "pointer",
+            background: "transparent",
+            border: "none",
+            padding: 0,
+          }}
+        >
+          {armed ? (
+            <span style={{ fontSize: 12, fontWeight: 700, color: theme.accent }}>{capturePrompt}</span>
+          ) : (
+            <Keycap style={keycapStyle(theme, conflicted)}>{row.bindingLabel || "—"}</Keycap>
+          )}
+        </button>
+      )}
 
       <button
         type="button"
@@ -285,6 +284,21 @@ function KeybindingRow({
       </button>
     </div>
   );
+}
+
+function keycapStyle(theme: Required<KeybindingMenuTheme>, conflicted: boolean): CSSProperties {
+  return {
+    minWidth: 34,
+    padding: "3px 9px",
+    borderRadius: 6,
+    textAlign: "center",
+    fontSize: 13,
+    fontWeight: 700,
+    color: conflicted ? theme.conflict : theme.text,
+    background: "rgba(0,0,0,0.4)",
+    border: `1px solid ${conflicted ? theme.conflict : "rgba(255,255,255,0.18)"}`,
+    boxShadow: "inset 0 -2px 0 rgba(0,0,0,0.4)",
+  };
 }
 
 function buttonStyle(color: string, border: string): CSSProperties {

@@ -158,3 +158,45 @@ describe("createRebindSession", () => {
     expect(fresh.capturingActionId()).toBe("jump");
   });
 });
+
+describe("createRebindSession locked actions", () => {
+  const lockedSession = (overrides?: BindingOverrides) =>
+    createRebindSession({
+      input: { jump: ["Space"], fire: { hold: ["mouse0"], repeatMs: 120, locked: true } },
+      overrides,
+      now: () => 1000,
+    });
+
+  it("marks only the locked row locked", () => {
+    const s = lockedSession();
+    expect(s.row("fire")!.locked).toBe(true);
+    expect(s.row("jump")!.locked).toBe(false);
+  });
+
+  it("ignores a saved override for a locked action", () => {
+    const s = lockedSession({ fire: ["KeyF"] });
+    expect(s.overrides()).toEqual({});
+    expect(s.row("fire")!.code).toBe("mouse0");
+    expect(s.row("fire")!.isDefault).toBe(true);
+  });
+
+  it("never arms capture on a locked row, so capture and reset change nothing", () => {
+    const s = lockedSession();
+    s.beginCapture("fire");
+    expect(s.capturingActionId()).toBeNull();
+    expect(s.capture("KeyF")).toBe(false);
+    s.reset("fire");
+    expect(s.row("fire")!.code).toBe("mouse0");
+    s.restore({ overrides: { fire: ["KeyF"] }, changedAt: {}, capturingActionId: "fire" });
+    expect(s.capturingActionId()).toBeNull();
+    expect(s.row("fire")!.code).toBe("mouse0");
+  });
+
+  it("reports a conflict when another action is captured onto a locked code", () => {
+    const s = lockedSession();
+    s.beginCapture("jump");
+    s.capture("mouse0");
+    expect(s.conflicts()).toEqual([{ code: "mouse0", actionIds: ["jump", "fire"] }]);
+    expect(s.row("fire")!.conflictWith).toEqual(["jump"]);
+  });
+});

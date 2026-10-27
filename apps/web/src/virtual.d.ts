@@ -15,4 +15,7 @@ declare module "virtual:jgengine-games" {
 
   /** The one-line idea each game was first generated from, from its own README, keyed by game id. */
   export const GAME_SEEDS: Readonly<Record<string, string>>;
+
+  /** The site's live demos (`DemoKey`s) whose engine part each game's source uses, keyed by game id. */
+  export const GAME_PARTS: Readonly<Record<string, readonly string[]>>;
 }

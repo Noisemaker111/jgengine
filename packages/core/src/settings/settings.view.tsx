@@ -61,6 +61,8 @@ export interface SettingsKeybindRow {
   label: string;
   bindingLabel: string;
   isDefault: boolean;
+  /** The game marked this action `locked`: shown read-only, never armed for capture. */
+  locked?: boolean;
   rebind: (code: string) => void;
   reset: () => void;
 }

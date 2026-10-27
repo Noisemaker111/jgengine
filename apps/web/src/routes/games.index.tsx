@@ -3,7 +3,9 @@ import { useState } from "react";
 
 import { GameCard } from "../components/GameCard";
 import { Page } from "../components/Layout";
-import { GAME_IDS, SEEDED_GAME_COUNT, gameBlurb, gameSeed, gameTitle } from "../lib/games";
+import { GAME_IDS, SEEDED_GAME_COUNT, gameBlurb, gameParts, gameSeed, gameTitle } from "../lib/games";
+import { DEMO_PARTS, demoPart, type DemoKey } from "../live/demoParts";
+import { TracedDemo } from "../live/TracedDemo";
 import { seo } from "../lib/seo";
 import { BASELINE_GPU, SCENE_READY_RANGE_MS, WORST_MENU_CLICK_MS, secondsCeil } from "../lib/siteFacts";
 
@@ -17,11 +19,19 @@ export const Route = createFileRoute("/games/")({
   component: Games,
 });
 
+const PART_COUNTS = DEMO_PARTS.map((part) => ({ part, count: GAME_IDS.filter((id) => gameParts(id).includes(part.key)).length })).filter(
+  (row) => row.count > 0,
+);
+
 function Games() {
   const [query, setQuery] = useState("");
+  const [uses, setUses] = useState<DemoKey | null>(null);
+  const [showDemo, setShowDemo] = useState(false);
   const needle = query.trim().toLowerCase();
-  const games = GAME_IDS.filter((id) =>
-    `${gameTitle(id)} ${gameBlurb(id) ?? ""} ${gameSeed(id) ?? ""}`.toLowerCase().includes(needle),
+  const games = GAME_IDS.filter(
+    (id) =>
+      (uses === null || gameParts(id).includes(uses)) &&
+      `${gameTitle(id)} ${gameBlurb(id) ?? ""} ${gameSeed(id) ?? ""}`.toLowerCase().includes(needle),
   );
   return (
     <Page>
@@ -59,6 +69,37 @@ function Games() {
               {games.length} {games.length === 1 ? "game" : "games"}
             </span>
           </div>
+          <div className="mb-6 flex flex-wrap items-center gap-1.5" role="group" aria-label="Filter by engine part">
+            <span className="mr-1 font-mono text-[11px] uppercase tracking-[0.12em] text-faint">Uses</span>
+            {PART_COUNTS.map(({ part, count }) => (
+              <button
+                key={part.key}
+                type="button"
+                aria-pressed={uses === part.key}
+                onClick={() => setUses(uses === part.key ? null : part.key)}
+                className={`rounded-full border px-3 py-1 font-mono text-[12px] transition-colors ${
+                  uses === part.key ? "border-accent bg-accent/10 text-accent-text" : "border-line text-muted hover:text-fg"
+                }`}
+              >
+                {part.label} <span className="text-faint">{count}</span>
+              </button>
+            ))}
+          </div>
+          {uses !== null && (
+            <div className="mb-8">
+              <p className="text-sm text-muted">
+                {demoPart(uses).does}{" "}
+                <button type="button" className="link" aria-expanded={showDemo} onClick={() => setShowDemo(!showDemo)}>
+                  {showDemo ? "Hide the demo" : "▶ Try it live"}
+                </button>
+              </p>
+              {showDemo && (
+                <div className="mt-4">
+                  <TracedDemo key={uses} demo={uses} />
+                </div>
+              )}
+            </div>
+          )}
           {games.length > 0 ? (
             <ul className="games-wall">
               {games.map((id, index) => (
