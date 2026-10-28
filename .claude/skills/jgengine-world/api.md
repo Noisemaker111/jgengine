@@ -1543,6 +1543,7 @@
 - `bakeGeneratorVariants` (function): function bakeGeneratorVariants<Schema extends ParamSchema, Output>(definition: GeneratorDefinition<Schema, Output>, base: Readonly<Record<string, unknown>> | undefined, options: GeneratorVariantOptions = {}): BakedGeneratorVariant<Schema, Output>[] — Bake N variants of a generator at each of its `lods` — the set an instanced renderer draws from (pick one per instance with {@link variantIndexAt}) and the editor's variant grid previews.
 - `defineGenerator` (function): function defineGenerator<Schema extends ParamSchema, Output>(definition: GeneratorDefinition<Schema, Output>): GeneratorDefinition<Schema, Output> — Declare a generator with its schema and output types inferred.
 - `generatorSeed` (function): function generatorSeed(schema: ParamSchema, meta: Readonly<Record<string, unknown>> | undefined, fallback: string): string — The seed an object's `meta` resolves to: the schema's `seed` field when it is set, else a `meta.seed` string, else `fallback` (an editor object passes its id, so two objects differ).
+- `generatorVariantFor` (function): function generatorVariantFor<Schema extends ParamSchema>(definition: GeneratorDefinition<Schema, unknown>, base: Readonly<Record<string, unknown>> | undefined, key: string, options: Pick<GeneratorVariantOptions, "seed" | "explore"> = {}): GeneratorVariant<Schema> — The one variant of `base` that belongs to `key` (a placement id): its own seed, and params nudged by `explore` from a stream seeded by the key. The same key always gives the same variant, so a field can grow every placement as its own plant and regrow any of them anywhere.
 - `generatorVariants` (function): function generatorVariants<Schema extends ParamSchema>(definition: GeneratorDefinition<Schema, unknown>, base: Readonly<Record<string, unknown>> | undefined, options: GeneratorVariantOptions = {}): GeneratorVariant<Schema>[] — A grid of seeded variants around `base`: kept variants first, then the base itself, then fresh ones, each with its own seed and params nudged by `explore`. Pure — the same base and options always give the same grid, which is what the editor's variant panel and the `generator_variants` verb show.
 - `getGenerator` (function): function getGenerator(id: string): GeneratorDefinition | undefined — The registered generator for an id, or undefined.
 - `listGenerators` (function): function listGenerators(output?: string): GeneratorDefinition[] — Every registered generator, in registration order, optionally of one output family.
@@ -3440,6 +3441,15 @@
 - `SiteIndexCurve` (interface): interface SiteIndexCurve — A Carmean, Hahn & Jacobs 1989 (GTR NC-128) site-index curve in its Chapman–Richards form, H = BH + b1·SI^b2·(1 − e^(b3·A))^(b4·SI^b5), heights in feet. Coefficients as printed in NC-128 and reproduced in the Forest Vegetation Simulator's Lake States `htcalc.f` (both US public domain).
 - `siteIndexHeightM` (function): function siteIndexHeightM(curve: SiteIndexCurve, siteIndexFt: number, ageYears: number): number — Height in metres at `ageYears` for a site index given in feet at base age 50.
 
+## @jgengine/core/plants/validation/plantSilhouette
+
+- `PlantSilhouetteFrame` (interface): interface PlantSilhouetteFrame — The world box a set of silhouettes is drawn into, so masks of different plants line up.
+- `PlantSilhouettes` (interface): interface PlantSilhouettes — Silhouettes of one plant from several sides: one 0/1 mask per view, `size` × `size`, rows from the top.
+- `branchAzimuthHistogram` (function): function branchAzimuthHistogram(structure: PlantStructure, bins = 12): Float64Array — Where a plant's main limbs point: the share of first-order branches whose first segment leaves the stem toward each of `bins` compass sectors, counter-clockwise from +x. Sums to 1, or all zero for a plant with no limbs.
+- `histogramDistance` (function): function histogramDistance(a: Float64Array, b: Float64Array): number — Total variation distance between two histograms: 0 when equal, 1 when they share nothing.
+- `plantSilhouettes` (function): function plantSilhouettes(structure: PlantStructure, frame: PlantSilhouetteFrame, views = 8): PlantSilhouettes — Side-on silhouettes of a plant from `views` directions spread evenly around it, drawn orthographically into `frame`: wood as its segments at their radius, and each leaf row as a disc of the area its leaves cover. Two plants drawn into one frame can be compared view by view with {@link silhouetteIoU}.
+- `silhouetteIoU` (function): function silhouetteIoU(a: PlantSilhouettes, b: PlantSilhouettes): number — Intersection over union of two silhouette sets, view by view, averaged over the views; 1 when both are empty.
+
 ## @jgengine/core/postfx/PostProcessing.draw
 
 - `PostProcessing` (function): function PostProcessing({ config, quality = "high", stages, immediate = false, }: { config: PostProcessingConfig; quality?: GraphicsQuality; stages?: { ao: boolean; bloom: boolean; dof: boolean; smaa: boolean }; immediate?: boolean; }): null — Mounts an `EffectComposer` inside the shell Canvas and takes over rendering (priority-1 `useFrame`, which disables R3F auto-render) to run the configured post chain: RenderPass → GTAO → UnrealBloom → SMAA → exposure meter → OutputPass → Stylize → Grade. Rendered only when `PlayableGame.postProcessing` is set, so games without it draw unchanged.
@@ -3607,6 +3617,10 @@
 - `InstancedScatter` (function): function InstancedScatter({ instances, chunkSize = DEFAULT_CHUNK_SIZE, maxInstances = DEFAULT_MAX_INSTANCES, maxChunks = DEFAULT_MAX_CHUNKS, resolveItem, hidden, }: InstancedScatterProps): React.JSX.Element | null — Renders resolved {@link ScatterInstance}s grouped into per-chunk, per-species GPU-instanced draws that frustum-cull independently. Species with no `resolveItem` mapping (or a `null` result) render as stylized proxy models (trunked trees, stacked pines, round bushes, faceted rocks, grass tufts); species `resolveItem` resolves to a `ModelConfig` GPU-instance the real catalog GLB instead. The one runtime foliage renderer shared by the editor's scatter preview and games that consume `resolveScatter` — never one node per placement.
 - `InstancedScatterProps` (interface): interface InstancedScatterProps — Props for {@link InstancedScatter}: the resolved instances plus chunking/instance-cap knobs.
 
+## @jgengine/core/scatter/ScatterHeroes.draw
+
+- `ScatterHeroesProps` (interface): interface ScatterHeroesProps — Props for {@link ScatterHeroes}.
+
 ## @jgengine/core/scatter/scatter
 
 - `ScatterArea` (interface): interface ScatterArea { w: number; d: number; center?: Vec2 } — ⚠ undocumented
@@ -3640,8 +3654,19 @@
 
 - `ScatterGeneratorItem` (interface): interface ScatterGeneratorItem — A scatter palette item grown by a registered generator.
 - `isScatterGeneratorItem` (function): function isScatterGeneratorItem(value: unknown): value is ScatterGeneratorItem — True when a scatter mapping names a generator rather than a model.
+- `isUniqueScatterItem` (function): function isUniqueScatterItem(item: ScatterGeneratorItem): boolean — True when every placement of the item grows from its own seed.
 - `scatterGeneratorBase` (function): function scatterGeneratorBase(item: ScatterGeneratorItem, schema: ParamSchema): Record<string, unknown> — The base `meta` a generator item's variants grow around: preset values, then params.
 - `scatterGeneratorVariantCount` (function): function scatterGeneratorVariantCount(item: ScatterGeneratorItem): number — How many variants a generator item bakes.
+- `scatterPlacementVariant` (function): function scatterPlacementVariant(definition: GeneratorDefinition, item: string, spec: ScatterGeneratorItem, placementId: string): GeneratorVariant — The variant one placement of a unique item grows as: its own seed and params, from the palette item and the placement id alone, so it regrows the same anywhere.
+
+## @jgengine/core/scatter/scatterHeroes
+
+- `ScatterHeroMember` (interface): interface ScatterHeroMember — Which placements of a unique scatter species draw as their own grown mesh: the nearest few within reach of the camera. Everything else draws as a shared stand-in variant and, far away, its impostor. Hero meshes stay resident after a placement leaves the set, least recently used first out, so walking back and forth regrows nothing.
+- `ScatterHeroSet` (interface): interface ScatterHeroSet — A hero set: pick heroes near a camera from placements bucketed on a ground grid.
+- `ScatterHeroSetOptions` (interface): interface ScatterHeroSetOptions — Options for {@link createScatterHeroSet}.
+- `ScatterHeroSetState` (interface): interface ScatterHeroSetState — The hero set's state: current heroes and resident ids, least recently used first.
+- `ScatterHeroUpdate` (interface): interface ScatterHeroUpdate — What {@link ScatterHeroSet.update} changed.
+- `createScatterHeroSet` (function): function createScatterHeroSet(options: ScatterHeroSetOptions = {}): ScatterHeroSet — A hero set for one species. `update` costs the placements in the few grid cells within reach of the camera, never the whole field.
 
 ## @jgengine/core/scatter/scatterModels.draw
 

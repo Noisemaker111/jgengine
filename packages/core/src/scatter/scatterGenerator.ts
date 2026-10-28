@@ -55,7 +55,7 @@ export function scatterGeneratorVariantCount(item: ScatterGeneratorItem): number
 /** Shared variants a unique item draws its far placements with. */
 const UNIQUE_STAND_INS = 4;
 
-/** True when every placement of the item grows from its own seed. */
+/** True when every placement of the item grows from its own seed. @internal */
 export function isUniqueScatterItem(item: ScatterGeneratorItem): boolean {
   return item.variants === "unique";
 }

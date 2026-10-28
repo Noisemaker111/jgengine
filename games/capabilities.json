@@ -8473,7 +8473,7 @@
       "packages": [
         "@jgengine/core"
       ],
-      "module": "@jgengine/core/scatter/scatterGenerator",
+      "module": "@jgengine/core/scatter/scatterHeroes",
       "gameFacing": false,
       "probe": null,
       "intent": "grow a scatter palette item from a seeded generator's baked variants"
