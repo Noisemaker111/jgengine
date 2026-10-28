@@ -15,19 +15,13 @@ import { OPEN_TEMPERATE_SITE } from "../growth/plantEnvironment";
 import { createPlantGrowth, PLANT_SIM_VERSION } from "../growth/plantGrowth";
 import { buildPlantMesh, PLANT_MESH_LODS, plantMeshLod, type PlantMesh, type PlantStyle } from "../mesh/plantMesh";
 import { ACER_SACCHARUM } from "../species/data/acerSaccharum";
-import { PINUS_STROBUS } from "../species/data/pinusStrobus";
-import { plantSpeciesById, registerPlantSpecies, type PlantSpecies } from "../species/plantSpecies";
+import { PLANT_LIBRARY } from "../species/data/plantLibrary";
+import { plantSpeciesById, registerPlantSpecies } from "../species/plantSpecies";
 import { hashPlantStructure } from "../structure/plantStructure";
 import { createWorkerPlantGrower, type PlantGrower, type PlantGrowRequest, type PlantGrowResult, type PlantMeshOrder } from "./plantGrowPool";
 
 /** The generator output family a grown plant returns: a {@link PlantMesh}. */
 export const PLANT_MESH_OUTPUT = "plant-mesh";
-
-/**
- * Species the engine ships, registered with {@link registerPlantGenerators}.
- * @capability plant-grown place, scatter and preview simulation-grown plants of any species, age and style
- */
-export const BUILTIN_PLANT_SPECIES: readonly PlantSpecies[] = [ACER_SACCHARUM, PINUS_STROBUS];
 
 /** Grown-plant params: what grows (species, age, site) and how it looks (every style field). */
 export const PLANT_GROWN_SCHEMA = defineParamSchema({
@@ -115,7 +109,7 @@ export function plantStyleOf(params: PlantGrownParams): PlantStyle {
 }
 
 function growRequest(params: PlantGrownParams, context: GeneratorContext): PlantGrowRequest {
-  const species = plantSpeciesById(params.species) ?? BUILTIN_PLANT_SPECIES.find((known) => known.id === params.species) ?? ACER_SACCHARUM;
+  const species = plantSpeciesById(params.species) ?? PLANT_LIBRARY.find((known) => known.id === params.species) ?? ACER_SACCHARUM;
   const age = Math.max(1, Math.min(species.limits.maxAgeYears, Math.round(params.age)));
   return { species, env: { ...OPEN_TEMPERATE_SITE, light: params.light }, seed: context.seed, age, day: Math.round(params.day) };
 }
@@ -256,12 +250,12 @@ export const PLANT_CACHE: PlantCache = createPlantCache({ storage: createIndexed
 export const PLANT_GROWN_GENERATOR = createPlantGrownGenerator(PLANT_CACHE);
 
 /**
- * Register the built-in species and the grown-plant generator, and let scenes place its output.
+ * Register the species library and the grown-plant generator, and let scenes place its output.
  * Called by `registerBuiltinSceneKinds`.
  * @internal
  */
 export function registerPlantGenerators(): void {
-  for (const species of BUILTIN_PLANT_SPECIES) if (plantSpeciesById(species.id) === undefined) registerPlantSpecies(species);
+  for (const species of PLANT_LIBRARY) if (plantSpeciesById(species.id) === undefined) registerPlantSpecies(species);
   registerGenerator(PLANT_GROWN_GENERATOR);
   registerPlaceableGeneratorOutput(PLANT_MESH_OUTPUT);
 }

@@ -30,11 +30,12 @@ export const PLANT_SOURCES = {
   "fao-56": "Allen et al. 1998, FAO Irrigation and Drainage Paper 56, extraterrestrial radiation and day length",
   "fia": "USDA Forest Service, Forest Inventory and Analysis site-tree data, Wisconsin, Michigan and Minnesota (US public domain)",
   "utd": "McPherson, van Doorn & Peper 2016, Urban tree database, USDA Forest Service Research Data Archive RDS-2016-0005 (US public domain): open-grown sugar maple DBH by age",
-  "baad-2015": "Falster et al. 2015, BAAD: a Biomass And Allometry Database for woody plants, Ecology 96 (CC0): leaf area per sapwood area",
+  "baad-2015": "Falster et al. 2015, BAAD: a Biomass And Allometry Database for woody plants, Ecology 96 (CC0): leaf area per sapwood area, and leaf area per leaf mass of plants 5 m or taller",
   "thornley-1976": "Thornley 1976, Mathematical models in plant physiology, Academic Press: the rectangular-hyperbola leaf light response",
   "barthelemy-2007": "Barthélémy & Caraglio 2007, Plant architecture: a dynamic, multilevel and comprehensive approach to plant form, structure and ontogeny, Ann. Bot. 99: the establishment phase",
   "putz-1984": "Putz, Parker & Archibald 1984, Mechanical abrasion and intercrown spacing, Am. Midl. Nat. 112: crown shyness between neighbours",
-  "crown-fit": "Fitted by CMA-ES against the Carmean 1989 height curve, FIA stand diameters, Ek 1974 and Tallo crown widths and the crown profile of open- and forest-grown trees (plants/validation/crownAllometry.test.ts)",
+  "crown-fit": "Fitted by CMA-ES (Stava et al. 2014) against the Carmean 1989 height curve, FIA site-tree diameters, Tallo heights and crown widths, Ek 1974 and the crown profile of open- and forest-grown trees (`bun run jgengine plants fit`; plants/species/data/plantLibrary.test.ts)",
+  "stava-2014": "Stava, Pirk, Kratt, Chen, Měch, Deussen & Benes 2014, Inverse procedural modelling of trees, Computer Graphics Forum 33: fitting a tree model's parameters by searching until grown trees match target statistics",
 } as const;
 
 /** Id of a credited plant data or model source. */

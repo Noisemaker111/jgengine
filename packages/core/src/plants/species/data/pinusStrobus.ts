@@ -1,59 +1,70 @@
 import type { PlantSpecies } from "../plantSpecies";
 
 /**
- * Eastern white pine. Traits from Silvics of North America (Wendel & Smith 1990), the USDA Wood
- * Handbook and USDA PLANTS: an excurrent conifer that sets one whorl of three to five branches at the
- * top of each year's leader, needles in fives kept two to three years. Carbon and architecture fitted
- * against the Carmean 1989 height curve, FIA site-tree diameters, Ek 1974 and Tallo crown widths and
- * the crown profile of open- and forest-grown trees. The crown radius limit is Ek 1974 at the largest
- * DBH.
+ * Eastern white pine. Excurrent: the leader keeps its lead into a conical crown. Traits from
+ * Silvics of North America, the Wood Handbook, FIA and USDA PLANTS; growth and carbon fitted to
+ * 1339 FIA site trees on site index 65 ft and 330 Tallo crowns. Written by `bun run jgengine
+ * plants write pinus-strobus`; edit the importer's traits or refit, not this file.
  */
 export const PINUS_STROBUS: PlantSpecies = {
   id: "pinus-strobus",
-  version: 3,
+  version: 4,
   names: { scientific: "Pinus strobus L.", common: { en: "eastern white pine", fr: "pin blanc" } },
   ids: { usda: "PIST" },
   habit: "tree",
   architecture: { model: "rauh", phyllotaxis: "whorled", divergence: 137.5 },
   growth: {
-    apicalControl: 0.6391,
-    apicalControlMature: 0.4384,
-    apicalControlHalfYears: 80,
-    internodeMax: 0.1482,
-    branchAngle: 48.55,
+    apicalControl: 0.8028,
+    apicalControlMature: 0.474,
+    apicalControlHalfYears: 24.06,
+    internodeMax: 0.1435,
+    branchAngle: 35.71,
     lateralBudsPerNode: 5,
-    maxMetamersPerShoot: 4,
-    establishmentYears: 0,
-    horizontalVigour: 0.2434,
-    vigourIndexWeight: 0.4276,
-    tropism: { gravity: 0.4305, gravityOrderDecay: 0.6, setpointAngle: 82.77, setpointPerOrder: 2.673, optimal: 0.137, wind: 0.2 },
-    budLightThreshold: 0.06222,
+    maxMetamersPerShoot: 3,
+    establishmentYears: 9.666,
+    horizontalVigour: 0.334,
+    vigourIndexWeight: 0.02941,
+    tropism: {
+      gravity: 0.6,
+      gravityOrderDecay: 0.6,
+      setpointAngle: 90,
+      setpointPerOrder: 13.62,
+      optimal: 0,
+      wind: 0.2,
+    },
+    budLightThreshold: 0.02,
     budDeathYears: 2,
     dormantBudYears: 2,
-    spurYears: 3,
+    spurYears: 2,
     shadow: { a: 1, b: 1, depth: 24 },
     extinction: 0.45,
     jitter: 0.1,
   },
   carbon: {
-    lueGPerMJ: 3.338,
-    lightHalfSaturation: 0.969,
-    respiration: 2.459,
+    lueGPerMJ: 2.808,
+    lightHalfSaturation: 1.447,
+    respiration: 3,
     sapwoodRespiration: 0.02,
     rootRespiration: 1.5,
     rootPerFoliage: 0.5,
     rootTurnover: 0.8,
     foliageTurnover: 0.4,
     growthEfficiency: 0.75,
-    sapwoodPerFoliage: 4.01e-4,
+    sapwoodPerFoliage: 0.000401,
     sapwoodTurnover: 0.04,
     pipeExponent: 2.3,
     reproductiveShare: 0.05,
     pruneDeficitYears: 2,
     coarseRootShare: 0.25,
-    hydraulicExponent: 1,
+    hydraulicExponent: 2,
   },
-  wood: { densityKgM3: 340, greenFactor: 2, modulusGPa: 6.8, reactionCompensation: 0.7, shootRadiusM: 0.002 },
+  wood: {
+    densityKgM3: 340,
+    greenFactor: 1.65,
+    modulusGPa: 6.8,
+    reactionCompensation: 0.7,
+    shootRadiusM: 0.002,
+  },
   limits: { maxAgeYears: 450, maxHeightM: 50, maxDbhCm: 150, maxCrownRadiusM: 13 },
   tolerance: { shade: 0.5, drought: 0.6, frost: 0.9, waterlogging: 0.3 },
   leaf: {
@@ -68,13 +79,25 @@ export const PINUS_STROBUS: PlantSpecies = {
   reproduction: { firstFlowerYears: 10, seedMassMg: 17 },
   phenology: { forcingBaseC: 5, forcingSum: 200, chillingDays: 60, senescencePhotoperiodH: 11 },
   provenance: {
+    names: { source: "usda-plants" },
+    architecture: { source: "silvics-654" },
     limits: { source: "silvics-654" },
     "limits.maxCrownRadiusM": { source: "ek-1974" },
-    tolerance: { source: "usda-plants" },
+    tolerance: { source: "silvics-654" },
     leaf: { source: "silvics-654" },
     wood: { source: "wood-handbook" },
+    "wood.densityKgM3": { source: "fia" },
+    "wood.greenFactor": { source: "fia" },
+    bark: { source: "silvics-654" },
     reproduction: { source: "silvics-654" },
-    growth: { source: "crown-fit", fitted: { score: 8.0, against: "carmean-1989, fia, ek-1974, tallo-2022" } },
-    carbon: { source: "crown-fit", fitted: { score: 8.0, against: "carmean-1989, fia, ek-1974, tallo-2022" } },
+    phenology: { source: "silvics-654" },
+    growth: {
+      source: "crown-fit",
+      fitted: { score: 5.63, against: "fia, carmean-1989, tallo-2022, ek-1974" },
+    },
+    carbon: {
+      source: "crown-fit",
+      fitted: { score: 5.63, against: "fia, carmean-1989, tallo-2022, ek-1974" },
+    },
   },
 };

@@ -1,58 +1,70 @@
 import type { PlantSpecies } from "../plantSpecies";
 
 /**
- * Sugar maple. Traits from Silvics of North America (Godman, Yawney & Tubbs 1990), the USDA Wood
- * Handbook and USDA PLANTS. Decurrent: apical control falls with age until laterals overtake the leader
- * into a broad rounded crown. Architecture and carbon parameters fitted against the Carmean 1989
- * height curve, FIA site-tree and UTD open-grown diameters, Ek 1974 and Tallo crown widths and the crown
- * profile of open- and forest-grown trees.
+ * Sugar maple. Decurrent: laterals overtake the leader into a rounded crown with age. Traits from
+ * Silvics of North America, the Wood Handbook, FIA and USDA PLANTS; growth and carbon fitted to
+ * 6305 FIA site trees on site index 65 ft and 4842 Tallo crowns. Written by `bun run jgengine
+ * plants write acer-saccharum`; edit the importer's traits or refit, not this file.
  */
 export const ACER_SACCHARUM: PlantSpecies = {
   id: "acer-saccharum",
-  version: 3,
+  version: 5,
   names: { scientific: "Acer saccharum Marshall", common: { en: "sugar maple", fr: "érable à sucre" } },
   ids: { usda: "ACSA3" },
   habit: "tree",
   architecture: { model: "rauh", phyllotaxis: "opposite", divergence: 90 },
   growth: {
-    apicalControl: 0.9358,
-    apicalControlMature: 0.8173,
-    apicalControlHalfYears: 7.839,
-    internodeMax: 0.1613,
-    branchAngle: 35.33,
+    apicalControl: 0.95,
+    apicalControlMature: 0.8047,
+    apicalControlHalfYears: 7.008,
+    internodeMax: 0.1611,
+    branchAngle: 35,
     lateralBudsPerNode: 2,
     maxMetamersPerShoot: 3,
-    establishmentYears: 0,
-    horizontalVigour: 0.4762,
-    vigourIndexWeight: 0.2078,
-    tropism: { gravity: 0.197, gravityOrderDecay: 0.4, setpointAngle: 82.64, setpointPerOrder: 16.27, optimal: 0.206, wind: 0.15 },
-    budLightThreshold: 0.02,
+    establishmentYears: 1.443,
+    horizontalVigour: 0.4166,
+    vigourIndexWeight: 0.2189,
+    tropism: {
+      gravity: 0.1565,
+      gravityOrderDecay: 0.4,
+      setpointAngle: 81.66,
+      setpointPerOrder: 8.689,
+      optimal: 0.1578,
+      wind: 0.15,
+    },
+    budLightThreshold: 0.03371,
     budDeathYears: 3,
     dormantBudYears: 5,
-    spurYears: 28,
+    spurYears: 16,
     shadow: { a: 1, b: 1, depth: 24 },
     extinction: 0.5,
     jitter: 0.12,
   },
   carbon: {
-    lueGPerMJ: 2.084,
-    lightHalfSaturation: 0.2212,
-    respiration: 1.096,
+    lueGPerMJ: 2.265,
+    lightHalfSaturation: 0.4289,
+    respiration: 0.7626,
     sapwoodRespiration: 0.02,
     rootRespiration: 2,
     rootPerFoliage: 0.6,
     rootTurnover: 0.8,
     foliageTurnover: 1,
     growthEfficiency: 0.75,
-    sapwoodPerFoliage: 1.75e-4,
+    sapwoodPerFoliage: 0.000175,
     sapwoodTurnover: 0.04,
     pipeExponent: 2.3,
     reproductiveShare: 0.06,
     pruneDeficitYears: 2,
     coarseRootShare: 0.25,
-    hydraulicExponent: 3,
+    hydraulicExponent: 2,
   },
-  wood: { densityKgM3: 560, greenFactor: 1.8, modulusGPa: 10.7, reactionCompensation: 0.6, shootRadiusM: 0.0015 },
+  wood: {
+    densityKgM3: 560,
+    greenFactor: 1.57,
+    modulusGPa: 10.7,
+    reactionCompensation: 0.6,
+    shootRadiusM: 0.0015,
+  },
   limits: { maxAgeYears: 400, maxHeightM: 33, maxDbhCm: 120, maxCrownRadiusM: 12 },
   tolerance: { shade: 0.9, drought: 0.4, frost: 0.9, waterlogging: 0.2 },
   leaf: {
@@ -67,12 +79,25 @@ export const ACER_SACCHARUM: PlantSpecies = {
   reproduction: { firstFlowerYears: 22, flowerColor: "#c9c96a", seedMassMg: 65 },
   phenology: { forcingBaseC: 5, forcingSum: 150, chillingDays: 60, senescencePhotoperiodH: 11.5 },
   provenance: {
+    names: { source: "usda-plants" },
+    architecture: { source: "silvics-654" },
     limits: { source: "silvics-654" },
-    tolerance: { source: "usda-plants" },
-    leaf: { source: "usda-plants" },
+    "limits.maxCrownRadiusM": { source: "ek-1974" },
+    tolerance: { source: "silvics-654" },
+    leaf: { source: "silvics-654" },
     wood: { source: "wood-handbook" },
+    "wood.densityKgM3": { source: "fia" },
+    "wood.greenFactor": { source: "fia" },
+    bark: { source: "silvics-654" },
     reproduction: { source: "silvics-654" },
-    growth: { source: "crown-fit", fitted: { score: 22.2, against: "carmean-1989, fia, utd, ek-1974, tallo-2022" } },
-    carbon: { source: "crown-fit", fitted: { score: 22.2, against: "carmean-1989, fia, utd, ek-1974, tallo-2022" } },
+    phenology: { source: "silvics-654" },
+    growth: {
+      source: "crown-fit",
+      fitted: { score: 7.39, against: "fia, carmean-1989, tallo-2022, ek-1974" },
+    },
+    carbon: {
+      source: "crown-fit",
+      fitted: { score: 7.39, against: "fia, carmean-1989, tallo-2022, ek-1974" },
+    },
   },
 };

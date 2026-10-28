@@ -70,6 +70,7 @@ usage: jgengine <command> [...args]
                        --workspace [--json]: root + declared owners' installed SDK identities only
   assets [...]          @jgengine/assets CLI: list, search, pull CC0 packs
   editor-mcp [...]      scene editor agent bridge (document RPC / localhost server)
+  plants <verb> [id...] plant species library (monorepo): import field data, fit, write records, report
   versions              CLI + installed @jgengine/* versions
   help                  this map
 `;
@@ -170,6 +171,16 @@ function runEditor(argv: string[]): number {
   return result.status ?? 1;
 }
 
+function runPlants(argv: string[]): number {
+  const here = dirname(fileURLToPath(import.meta.url));
+  const monorepoCli = join(here, "..", "..", "..", "..", "scripts", "species-import", "plantsCommand.ts");
+  if (!existsSync(monorepoCli)) {
+    console.error("error: the plants CLI fits the engine's species library and runs only inside the jgengine monorepo.");
+    return 1;
+  }
+  return spawnSync("bun", [monorepoCli, ...argv], { stdio: "inherit" }).status ?? 1;
+}
+
 function runEditorMcp(argv: string[]): number {
   const here = dirname(fileURLToPath(import.meta.url));
   const monorepoCli = join(here, "..", "..", "..", "editor", "src", "mcp", "cli.ts");
@@ -226,6 +237,9 @@ switch (command) {
     break;
   case "editor-mcp":
     process.exit(runEditorMcp(rest));
+    break;
+  case "plants":
+    process.exit(runPlants(rest));
     break;
   case "shoot":
     process.exit(runHarness("shoot", rest));

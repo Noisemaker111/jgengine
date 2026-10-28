@@ -3801,7 +3801,6 @@
 
 ## @jgengine/core/plants/grown/plantGrown
 
-- `BUILTIN_PLANT_SPECIES` (const): const BUILTIN_PLANT_SPECIES: readonly PlantSpecies[] — Species the engine ships, registered with {@link registerPlantGenerators}.
 - `PLANT_CACHE` (const): const PLANT_CACHE: PlantCache — The cache the built-in {@link PLANT_GROWN_GENERATOR} uses: IndexedDB in a browser, memory elsewhere. Swap its storage with `setStorage`.
 - `PLANT_GROWN_GENERATOR` (const): const PLANT_GROWN_GENERATOR: GeneratorDefinition<ParamSchema<readonly [{ readonly type: "seed"; readonly key: "seed"; readonly label: "seed"; readonly default: ""; }, { readonly type: "select"; readonly key: "species"; readonly label: "species"; readonly group: "plant"; readonly default: "acer-sacch… — The built-in grown-plant generator, `plant.grown`.
 - `PLANT_GROWN_SCHEMA` (const): const PLANT_GROWN_SCHEMA: ParamSchema<readonly [{ readonly type: "seed"; readonly key: "seed"; readonly label: "seed"; readonly default: ""; }, { readonly type: "select"; readonly key: "species"; readonly label: "species"; readonly group: "plant"; readonly default: "acer-saccharum"; readonly vary: f… — Grown-plant params: what grows (species, age, site) and how it looks (every style field).
@@ -3889,13 +3888,49 @@
 - `plantMeshMaterials` (function): function plantMeshMaterials(look: PlantMeshLook): { bark: THREE.Material; leaves: THREE.Material } — The shared materials a plant mesh's wood and foliage draw with for its look: lit vertex colour (with generated bark grain when asked) or one cel-shading ramp for both. Foliage with a leaf atlas samples the atlas baked from its species' leaf shape and cuts leaves out by its alpha.
 - `plantMeshSources` (function): function plantMeshSources(mesh: PlantMesh): GeneratorMeshSource[] — A plant mesh as instanceable draws, wood then foliage; the geometries belong to the caller.
 
+## @jgengine/core/plants/species/data/abiesBalsamea
+
+- `ABIES_BALSAMEA` (const): const ABIES_BALSAMEA: PlantSpecies — Balsam fir. Excurrent: the leader keeps its lead into a conical crown. Traits from Silvics of North America, the Wood Handbook, FIA and USDA PLANTS; growth and carbon fitted to 5230 FIA site trees on site index 47 ft and 2229 Tallo crowns. Written by `bun run jgengine plants write abies-balsamea`; edit the importer's traits or refit, not this file.
+
+## @jgengine/core/plants/species/data/acerRubrum
+
+- `ACER_RUBRUM` (const): const ACER_RUBRUM: PlantSpecies — Red maple. Decurrent: laterals overtake the leader into a rounded crown with age. Traits from Silvics of North America, the Wood Handbook, FIA and USDA PLANTS; growth and carbon fitted to 5890 FIA site trees on site index 57 ft and 747 Tallo crowns. Written by `bun run jgengine plants write acer-rubrum`; edit the importer's traits or refit, not this file.
+
 ## @jgengine/core/plants/species/data/acerSaccharum
 
-- `ACER_SACCHARUM` (const): const ACER_SACCHARUM: PlantSpecies — Sugar maple. Traits from Silvics of North America (Godman, Yawney & Tubbs 1990), the USDA Wood Handbook and USDA PLANTS. Decurrent: apical control falls with age until laterals overtake the leader into a broad rounded crown. Architecture and carbon parameters fitted against the Carmean 1989 height curve, FIA site-tree and UTD open-grown diameters, Ek 1974 and Tallo crown widths and the crown profile of open- and forest-grown trees.
+- `ACER_SACCHARUM` (const): const ACER_SACCHARUM: PlantSpecies — Sugar maple. Decurrent: laterals overtake the leader into a rounded crown with age. Traits from Silvics of North America, the Wood Handbook, FIA and USDA PLANTS; growth and carbon fitted to 6305 FIA site trees on site index 65 ft and 4842 Tallo crowns. Written by `bun run jgengine plants write acer-saccharum`; edit the importer's traits or refit, not this file.
+
+## @jgengine/core/plants/species/data/betulaPapyrifera
+
+- `BETULA_PAPYRIFERA` (const): const BETULA_PAPYRIFERA: PlantSpecies — Paper birch. Decurrent: laterals overtake the leader into a rounded crown with age. Traits from Silvics of North America, the Wood Handbook, FIA and USDA PLANTS; growth and carbon fitted to 3725 FIA site trees on site index 54 ft and 411 Tallo crowns. Written by `bun run jgengine plants write betula-papyrifera`; edit the importer's traits or refit, not this file.
+
+## @jgengine/core/plants/species/data/piceaGlauca
+
+- `PICEA_GLAUCA` (const): const PICEA_GLAUCA: PlantSpecies — White spruce. Excurrent: the leader keeps its lead into a conical crown. Traits from Silvics of North America, the Wood Handbook, FIA and USDA PLANTS; growth and carbon fitted to 2289 FIA site trees on site index 47 ft and 480 Tallo crowns. Written by `bun run jgengine plants write picea-glauca`; edit the importer's traits or refit, not this file.
+
+## @jgengine/core/plants/species/data/pinusResinosa
+
+- `PINUS_RESINOSA` (const): const PINUS_RESINOSA: PlantSpecies — Red pine. Excurrent: the leader keeps its lead into a conical crown. Traits from Silvics of North America, the Wood Handbook, FIA and USDA PLANTS; growth and carbon fitted to 6338 FIA site trees on site index 62 ft and 80 Tallo crowns. Written by `bun run jgengine plants write pinus-resinosa`; edit the importer's traits or refit, not this file.
 
 ## @jgengine/core/plants/species/data/pinusStrobus
 
-- `PINUS_STROBUS` (const): const PINUS_STROBUS: PlantSpecies — Eastern white pine. Traits from Silvics of North America (Wendel & Smith 1990), the USDA Wood Handbook and USDA PLANTS: an excurrent conifer that sets one whorl of three to five branches at the top of each year's leader, needles in fives kept two to three years. Carbon and architecture fitted against the Carmean 1989 height curve, FIA site-tree diameters, Ek 1974 and Tallo crown widths and the crown profile of open- and forest-grown trees. The crown radius limit is Ek 1974 at the largest DBH.
+- `PINUS_STROBUS` (const): const PINUS_STROBUS: PlantSpecies — Eastern white pine. Excurrent: the leader keeps its lead into a conical crown. Traits from Silvics of North America, the Wood Handbook, FIA and USDA PLANTS; growth and carbon fitted to 1339 FIA site trees on site index 65 ft and 330 Tallo crowns. Written by `bun run jgengine plants write pinus-strobus`; edit the importer's traits or refit, not this file.
+
+## @jgengine/core/plants/species/data/plantLibrary
+
+- `PLANT_LIBRARY` (const): const PLANT_LIBRARY: readonly PlantSpecies[] — Every species record the engine ships, registered with the grown-plant generator. Written by `bun run jgengine plants write`.
+
+## @jgengine/core/plants/species/data/populusTremuloides
+
+- `POPULUS_TREMULOIDES` (const): const POPULUS_TREMULOIDES: PlantSpecies — Quaking aspen. Decurrent: laterals overtake the leader into a rounded crown with age. Traits from Silvics of North America, the Wood Handbook, FIA and USDA PLANTS; growth and carbon fitted to 16834 FIA site trees on site index 66 ft and 566 Tallo crowns. Written by `bun run jgengine plants write populus-tremuloides`; edit the importer's traits or refit, not this file.
+
+## @jgengine/core/plants/species/data/quercusRubra
+
+- `QUERCUS_RUBRA` (const): const QUERCUS_RUBRA: PlantSpecies — Northern red oak. Decurrent: laterals overtake the leader into a rounded crown with age. Traits from Silvics of North America, the Wood Handbook, FIA and USDA PLANTS; growth and carbon fitted to 4985 FIA site trees on site index 62 ft and 479 Tallo crowns. Written by `bun run jgengine plants write quercus-rubra`; edit the importer's traits or refit, not this file.
+
+## @jgengine/core/plants/species/data/tiliaAmericana
+
+- `TILIA_AMERICANA` (const): const TILIA_AMERICANA: PlantSpecies — American basswood. Decurrent: laterals overtake the leader into a rounded crown with age. Traits from Silvics of North America, the Wood Handbook, FIA and USDA PLANTS; growth and carbon fitted to 3292 FIA site trees on site index 62 ft and 241 Tallo crowns. Written by `bun run jgengine plants write tilia-americana`; edit the importer's traits or refit, not this file.
 
 ## @jgengine/core/plants/species/plantSpecies
 
@@ -3908,6 +3943,20 @@
 - `plantSpeciesIds` (function): function plantSpeciesIds(): string[] — Every registered species id, sorted.
 - `registerPlantSpecies` (function): function registerPlantSpecies(species: PlantSpecies): void — Register a species so tools and generators can look it up by id. Throws on an invalid record.
 - `validatePlantSpecies` (function): function validatePlantSpecies(species: PlantSpecies): string[] — Out-of-range or non-finite fields of a species record, as readable lines; empty when valid.
+
+## @jgengine/core/plants/species/speciesReference
+
+- `GrowthCurve` (interface): interface GrowthCurve — Chapman–Richards growth curve y = a·(1 − e^(−k·t))^p of total age t.
+- `REFERENCE_STAND` (const): const REFERENCE_STAND: PlantEnvironment — The stand a species is grown in to compare with its reference: fully stocked and even-aged, seen from a dominant tree. FIA site trees and Tallo stand-grown crowns are dominant and codominant trees, which hold more growing space than the stand's mean tree (Oliver & Larson 1996, Forest Stand Dynamics), so the spacing index is 0.3 rather than the mean tree's 0.25.
+- `SpeciesReference` (interface): interface SpeciesReference — What measured trees say one species should grow into, imported from public tables by `bun run jgengine plants import` and checked by the species library test.
+- `crownWidthBandM` (function): function crownWidthBandM(reference: Pick<SpeciesReference, "crownWidth">, dbhCm: number): { lowM: number; highM: number } | null — The 10th–90th percentile crown width in metres of measured stand-grown trees of a species at `dbhCm`, interpolated between its Tallo DBH classes; below the first class it scales linearly to zero. Null when the species has no Tallo record.
+- `growthCurveAt` (function): function growthCurveAt(curve: GrowthCurve, ageYears: number): number — A {@link GrowthCurve} at `ageYears`.
+- `standDbhAtCm` (function): function standDbhAtCm(reference: SpeciesReference, ageYears: number): number — DBH in centimetres of a dominant stand-grown tree of the species at `ageYears`: its FIA site-tree curve within the ages those trees cover; younger, the site trees' height–diameter relation read at {@link standHeightAtM}, since height is known at every age and a young tree's DBH is not.
+- `standHeightAtM` (function): function standHeightAtM(reference: SpeciesReference, ageYears: number): number — Height in metres of a dominant stand-grown tree of the species at `ageYears`: its Carmean curve on the reference site index, else the curve fitted to its FIA site trees.
+
+## @jgengine/core/plants/species/speciesReferenceTable
+
+- `SPECIES_REFERENCE` (const): const SPECIES_REFERENCE: Readonly<Record<string, SpeciesReference>> — Written by `bun run jgengine plants import` from USDA FIA site trees and FVS (US public domain), Tallo (Jucker et al. 2022, CC BY 4.0) and BAAD (Falster et al. 2015, CC0). Do not edit by hand.
 
 ## @jgengine/core/plants/species/speciesSources
 
@@ -3932,20 +3981,15 @@
 ## @jgengine/core/plants/validation/crownAllometry
 
 - `CrownProfile` (interface): interface CrownProfile — Where a crown carries its spread, from its envelope.
-- `CrownWidthClass` (interface): interface CrownWidthClass — A DBH class of measured stand-grown trees: its middle and the 10th and 90th percentile crown width.
-- `CrownWidthEquations` (interface): interface CrownWidthEquations — Published crown width of one species from its trunk: Ek 1974 for open-grown trees and Bechtold 2003 for forest-grown ones, both in feet from DBH in inches, as coded in the Forest Vegetation Simulator's Lake States `cwcalc.f` (US public domain).
-- `EASTERN_WHITE_PINE_CROWN_WIDTH` (const): const EASTERN_WHITE_PINE_CROWN_WIDTH: CrownWidthEquations — FVS `cwcalc.f` species 129, eastern white pine.
-- `SUGAR_MAPLE_CROWN_WIDTH` (const): const SUGAR_MAPLE_CROWN_WIDTH: CrownWidthEquations — FVS `cwcalc.f` species 318, sugar maple.
-- `TALLO_CROWN_WIDTH` (const): const TALLO_CROWN_WIDTH: Readonly<Record<string, readonly CrownWidthClass[]>> — Measured crown widths of stand-grown trees by DBH class, from the Tallo database (Jucker et al. 2022, CC BY 4.0): every record of the species with both DBH and crown radius.
+- `CrownWidthClass` (interface): interface CrownWidthClass — A DBH class of measured stand-grown trees: its middle and the 10th, 50th and 90th percentile crown width.
+- `ForestCrownWidthEquation` (interface): interface ForestCrownWidthEquation — Bechtold 2003 forest-grown crown width CW = a + b·D + cr·CR% + hi·HI in feet from DBH in inches, used from 5 in DBH, as coded in FVS Lake States `cwcalc.f` (US public domain).
+- `OpenCrownWidthEquation` (interface): interface OpenCrownWidthEquation — Ek 1974 open-grown crown width CW = a + b·D^c in feet from DBH in inches, used from 3 in DBH, as coded in the Forest Vegetation Simulator's Lake States `cwcalc.f` (US public domain).
 - `crownProfile` (function): function crownProfile(structure: PlantStructure): CrownProfile — Crown profile of a plant from its envelope's sector-mean radius per height bin. An excurrent conifer carries its spread low with a narrow top; a decurrent broadleaf carries it near mid-crown with full shoulders. One long low limb moves the centroid only as far as its share of the crown.
-- `forestGrownCrownWidthM` (function): function forestGrownCrownWidthM(equations: CrownWidthEquations, dbhCm: number, crownRatio: number): number — Crown width in metres of a forest-grown tree of `dbhCm` and crown ratio 0..1 (Bechtold 2003) in northern Wisconsin. Below 5 in DBH it scales linearly to zero, as FVS does.
-- `measuredCrownWidthBandM` (function): function measuredCrownWidthBandM(speciesId: string, dbhCm: number): { lowM: number; highM: number } | null — The 10th–90th percentile crown width in metres of measured stand-grown trees at `dbhCm`, interpolated between Tallo DBH classes; below the first class it scales linearly to zero. Null for a species with no record.
-- `openGrownCrownWidthM` (function): function openGrownCrownWidthM(equations: CrownWidthEquations, dbhCm: number): number — Crown width in metres of an open-grown tree of `dbhCm` (Ek 1974). Below 3 in DBH it scales linearly to zero, as FVS does.
+- `forestGrownCrownWidthM` (function): function forestGrownCrownWidthM(equation: ForestCrownWidthEquation, dbhCm: number, crownRatio: number): number — Crown width in metres of a forest-grown tree of `dbhCm` and crown ratio 0..1 (Bechtold 2003) in northern Wisconsin. Below 5 in DBH it scales linearly to zero, as FVS does.
+- `openGrownCrownWidthM` (function): function openGrownCrownWidthM(equation: OpenCrownWidthEquation, dbhCm: number): number — Crown width in metres of an open-grown tree of `dbhCm` (Ek 1974). Below 3 in DBH it scales linearly to zero, as FVS does.
 
 ## @jgengine/core/plants/validation/heightAgeCurves
 
-- `EASTERN_WHITE_PINE_CARMEAN` (const): const EASTERN_WHITE_PINE_CARMEAN: SiteIndexCurve — NC-128 curve 103: eastern white pine, northern Wisconsin (FVS `htcalc.f`), total age.
-- `SUGAR_MAPLE_CARMEAN` (const): const SUGAR_MAPLE_CARMEAN: SiteIndexCurve — NC-128 curve 3: sugar maple, northern Wisconsin and Upper Michigan (Carmean 1978), total age.
 - `SiteIndexCurve` (interface): interface SiteIndexCurve — A Carmean, Hahn & Jacobs 1989 (GTR NC-128) site-index curve in its Chapman–Richards form, H = BH + b1·SI^b2·(1 − e^(b3·A))^(b4·SI^b5), heights in feet. Coefficients as printed in NC-128 and reproduced in the Forest Vegetation Simulator's Lake States `htcalc.f` (both US public domain).
 - `siteIndexHeightM` (function): function siteIndexHeightM(curve: SiteIndexCurve, siteIndexFt: number, ageYears: number): number — Height in metres at `ageYears` for a site index given in feet at base age 50.
 
@@ -3961,9 +4005,7 @@
 ## @jgengine/core/plants/validation/stemAllometry
 
 - `BAAD_LEAF_TO_SAPWOOD` (const): const BAAD_LEAF_TO_SAPWOOD: Readonly<Record<"evergreen" | "deciduous", LeafToSapwoodBand>> — Leaf area per sapwood area at breast height of temperate and boreal trees taller than 5 m in the Biomass And Allometry Database (Falster et al. 2015, CC0), 10th–90th percentile by leaf habit.
-- `FIA_STAND_DIAMETER` (const): const FIA_STAND_DIAMETER: Readonly<Record<string, readonly StandDiameterAtAge[]>> — Median DBH of USDA Forest Inventory and Analysis site trees (US public domain) in Wisconsin, Michigan and Minnesota on site index 55–75 ft, by age. Site trees are dominant or codominant trees of a fully stocked stand, so they match a crown grown in a closed stand.
 - `LeafToSapwoodBand` (interface): interface LeafToSapwoodBand — The 10th–90th percentile leaf area per sapwood area at breast height, m² per m².
-- `StandDiameterAtAge` (interface): interface StandDiameterAtAge — Median trunk diameter of measured stand-grown trees at a given age.
 
 ## @jgengine/core/postfx/PostProcessing.draw
 
