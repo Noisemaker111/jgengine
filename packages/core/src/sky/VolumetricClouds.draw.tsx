@@ -96,14 +96,14 @@ float jgCloudDensity(vec3 pos, bool detailed) {
 // Light reaching a point through the cloud above it toward the sun or moon (Beer's law), so the
 // clouds shade themselves: bright crowns, dark undersides.
 float jgCloudLightAt(vec3 pos) {
-  float stepL = uThickness * 0.22;
+  float stepL = uThickness * 0.3;
   float dens = 0.0;
   vec3 p = pos;
-  for (int i = 0; i < 3; i++) {
+  for (int i = 0; i < 2; i++) {
     p += uLightDirection * stepL;
     dens += jgCloudDensity(p, false);
   }
-  return exp(-dens * 0.9);
+  return exp(-dens * 1.35);
 }
 
 float jgHenyeyGreenstein(float cosTheta, float g) {
@@ -121,7 +121,7 @@ void main() {
   if (tFar <= tNear) discard;
   tFar = min(tFar, tNear + uThickness * 4.0);
 
-  const int STEPS = 20;
+  const int STEPS = 14;
   float stepLen = (tFar - tNear) / float(STEPS);
   // Per-pixel jitter turns banding into fine noise that temporal AA settles.
   float jitter = fract(52.9829189 * fract(dot(gl_FragCoord.xy + uFrame * 5.588238, vec2(0.06711056, 0.00583715))));
