@@ -164,6 +164,33 @@ here as required.
 - Real-car specifications and published test numbers in `realCars.ts`, each cited per field there: Mazda and Toyota specification listings and Wikipedia's Mazda MX-5 (ND) and Toyota 86 articles (mass, weight split, dimensions, gearing, torque curves, steering ratio, manufacturer 0–100 km/h claims); Car and Driver's 2016 Mazda MX-5 Miata test (skidpad); Edmunds' 2016 MX-5 Miata review and 2013 Scion FR-S track test (braking, FR-S skidpad). Numbers only.
 - Standard manoeuvres follow the procedures of ISO 4138 (steady-state circular driving), ISO 7401 (lateral transient response) and ISO 3888-1 (double lane change) as publicly summarized; no standard text copied.
 
+## Plant growth simulation
+
+The plant simulator (`packages/core/src/plants/`) ports models and data, not code. Every source is
+listed in `PLANT_SOURCES` (`plants/species/speciesSources.ts`) and named in each species record's
+provenance.
+
+- **USDA Forest Service** (US public domain): the sugar maple height-age curve from Carmean, Hahn &
+  Jacobs 1989, *Site index curves for forest tree species in the eastern United States*, GTR NC-128,
+  with coefficients read from the Forest Vegetation Simulator Lake States variant (`htcalc.f`);
+  Burns & Honkala 1990, *Silvics of North America*, Agriculture Handbook 654; Forest Products
+  Laboratory 2010, *Wood Handbook*, FPL-GTR-190; the USDA NRCS PLANTS Database.
+- Palubicki et al. 2009, *Self-organizing tree models for image synthesis*, ACM SIGGRAPH: bud
+  self-organisation, shadow voxels and extended Borchert–Honda allocation.
+- Perttunen et al. 1996 and 1998, LIGNUM, *Annals of Botany* 77 and 82; Nikinmaa et al. 2003,
+  *Tree Physiology* 23: carbon balance, the vigour index and light-dependent shoot length.
+- Shinozaki et al. 1964, the pipe model theory, *Japanese Journal of Ecology* 14; Minamino & Tateno
+  2014, da Vinci's rule, *PLOS ONE* 9.
+- Mäkelä 1997, carbon balance and self-pruning, *Forest Science* 43.
+- Jirasek, Prusinkiewicz & Moulia 2000, biomechanics in L-system plant models: gravitational sag.
+- Ryan & Yoder 1997, hydraulic limits to tree height, *BioScience* 47.
+- Wareing & Nasr 1961, gravimorphism, *Annals of Botany* 25; Digby & Firn 1995, the gravitropic
+  set-point angle, *Plant, Cell & Environment* 18.
+- Landsberg & Waring 1997, the 3-PG site modifiers, *Forest Ecology and Management* 95.
+- Niinemets 2007, shade acclimation of leaves, *Plant, Cell & Environment* 30.
+- Cairns et al. 1997, root allocation, *Oecologia* 111.
+- Allen et al. 1998, FAO Irrigation and Drainage Paper 56: extraterrestrial radiation and day length.
+
 ## Game and level design research
 
 The `game-design` and `level-design` skills synthesize and rephrase design

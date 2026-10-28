@@ -3028,6 +3028,98 @@
 - `createPlacementController` (function): function createPlacementController(config: PlacementControllerConfig): PlacementController — Headless placement ghost: hover → valid/invalid preview, rotate, grid/free/surface snap, commit. Pair with `PlacementGhost` (`./PlacementGhost.draw`) and {@link placeAssetFromCommit}.
 - `quarterTurnsToRotationY` (function): function quarterTurnsToRotationY(quarterTurns: number): number — Maps 0–3 quarter turns onto radians for ghost/commit rotation.
 
+## @jgengine/core/plants/growth/carbonBalance
+
+- `ShootCandidates` (interface): interface ShootCandidates — Growth candidates for one year: every bud that could extend, with its Borchert–Honda share of the tree's vigour and its carbon cost per metamer. `copies` counts identical lateral buds on one node.
+- `StructureCost` (interface): interface StructureCost — The extra cost a trial scale puts on the existing structure: `add` the leaf area each candidate would hang on its node, then `total` returns the carbon of the wood that leaf area needs.
+
+## @jgengine/core/plants/growth/growthState
+
+- `GrowthState` (interface): interface GrowthState — The whole simulation state as struct-of-arrays. Nodes are annual shoots (later merged into longer bare segments) kept in creation order, so a parent always sits before its children: a reverse loop is a basipetal pass, a forward loop acropetal.
+- `NODE_AXIS_START` (const): const NODE_AXIS_START: 2 — Node flag: first internode of a lateral axis (a branch base).
+- `NODE_DEAD` (const): const NODE_DEAD: 1 — Node flag: the branch is dead wood still attached.
+- `NODE_FIELDS` (const): const NODE_FIELDS: readonly ["nodeId", "parent", "born", "order", "flags", "length", "dir", "end", "phase", "sapArea", "heartArea", "foliage", "metamers", "latent", "latentAge", "light", "vigour", "moment", "deficit", "deadAge", "flowers"] — Typed-array fields of {@link GrowthState}, in snapshot order.
+- `NODE_NO_SPUR` (const): const NODE_NO_SPUR: 8 — Node flag: the short shoots on this node died in shade and bear no more leaves.
+- `NODE_SCAR` (const): const NODE_SCAR: 4 — Node flag: a shed branch left a scar at this node's tip.
+- `SCALAR_FIELDS` (const): const SCALAR_FIELDS: readonly ["nodeCount", "budCount", "nextNodeId", "nextBudId", "year", "reserveKg", "stressYears", "alive", "health", "shedKg"] — Scalar fields of {@link GrowthState} carried in a snapshot.
+
+## @jgengine/core/plants/growth/lightField
+
+- `LightField` (interface): interface LightField — Relative light (0..1 of open sky) and the least-shaded direction at a point.
+
+## @jgengine/core/plants/growth/phenology
+
+- `GrowingSeason` (interface): interface GrowingSeason — The leaf-on window of one year and the radiation it collects.
+
+## @jgengine/core/plants/growth/pipeModel
+
+- `PipeCost` (interface): interface PipeCost extends StructureCost — {@link StructureCost} rebuilt each year from the current foliage.
+
+## @jgengine/core/plants/growth/plantEnvironment
+
+- `OPEN_TEMPERATE_SITE` (const): const OPEN_TEMPERATE_SITE: PlantEnvironment — A temperate, well-watered, fertile open site at 45° N: the site Carmean's curves describe.
+- `PlantEnvironment` (interface): interface PlantEnvironment — Where a plant grows, as plain numbers so it serialises and hashes.
+
+## @jgengine/core/plants/growth/plantGrowth
+
+- `DEFAULT_GROWTH_LIMITS` (const): const DEFAULT_GROWTH_LIMITS: GrowthLimits — Most buds and nodes a plant may hold: 4000 and 60000.
+- `GrowthLimits` (interface): interface GrowthLimits — Caps that bound one plant's memory and per-year work.
+- `PLANT_SIM_VERSION` (const): const PLANT_SIM_VERSION: 1 — Bumped whenever a rule changes what a seed grows into; part of every structure cache key.
+- `PlantGrowth` (interface): interface PlantGrowth — One plant growing year by year.
+- `PlantGrowthSnapshot` (interface): interface PlantGrowthSnapshot — A grown plant's whole state as JSON-safe values: typed arrays travel as base64.
+- `PlantGrowthStats` (interface): interface PlantGrowthStats — Counters a {@link PlantGrowth} reports each year.
+- `createPlantGrowth` (function): function createPlantGrowth(species: PlantSpecies, env: PlantEnvironment, seed: string, limits: GrowthLimits = DEFAULT_GROWTH_LIMITS): PlantGrowth — Grow one plant from seed with a biology simulation: Palubicki 2009 bud self-organisation on shadow voxels with extended Borchert–Honda vigour, a LIGNUM carbon balance that pays for every shoot and ring, pipe-model thickening, tropisms, gravitational sag and self-pruning of branches that cannot pay for themselves. Same species, environment and seed give the same plant on every JS engine.
+
+## @jgengine/core/plants/growth/plantMath
+
+- `PLANT_PI` (const): const PLANT_PI: 3.141592653589793 — π to double precision.
+
+## @jgengine/core/plants/growth/tropism
+
+- `TropismWeights` (interface): interface TropismWeights — The weights Palubicki et al. 2009 combine into a new metamer's direction.
+
+## @jgengine/core/plants/species/data/acerSaccharum
+
+- `ACER_SACCHARUM` (const): const ACER_SACCHARUM: PlantSpecies — Sugar maple. Traits from Silvics of North America (Godman, Yawney & Tubbs 1990), the USDA Wood Handbook and USDA PLANTS; architecture and carbon parameters tuned by hand against the Carmean 1989 site-index curve until the milestone-4 fit replaces them.
+
+## @jgengine/core/plants/species/plantSpecies
+
+- `BarkKind` (type): type BarkKind = "smooth" | "furrowed" | "plated" | "peeling" | "fibrous" | "scaly" — Bark surface kind a style reads to pick its bark material.
+- `HalleOldemanModel` (type): type HalleOldemanModel = "rauh" | "troll" | "corner" | "leeuwenberg" | "attims" | "massart" | "scarrone" | "roux" | "tomlinson" — Hallé–Oldeman architectural model of a genus (Hallé, Oldeman & Tomlinson 1978).
+- `LeafShapeParams` (interface): interface LeafShapeParams — A leaf outline as numbers, so a style can draw it at any detail.
+- `PlantSpecies` (interface): interface PlantSpecies — One species' biology as plain data: architecture, carbon economy, wood, leaves and limits. Every value is a measured trait or a fitted parameter, never a look; styles live elsewhere.
+- `SeasonalColor` (interface): interface SeasonalColor — Leaf colours across the season as hex strings.
+- `plantSpeciesById` (function): function plantSpeciesById(id: string): PlantSpecies | undefined — A registered species, or undefined.
+- `plantSpeciesIds` (function): function plantSpeciesIds(): string[] — Every registered species id, sorted.
+- `registerPlantSpecies` (function): function registerPlantSpecies(species: PlantSpecies): void — Register a species so tools and generators can look it up by id. Throws on an invalid record.
+- `validatePlantSpecies` (function): function validatePlantSpecies(species: PlantSpecies): string[] — Out-of-range or non-finite fields of a species record, as readable lines; empty when valid.
+
+## @jgengine/core/plants/species/speciesSources
+
+- `PLANT_SOURCES` (const): const PLANT_SOURCES: { readonly "carmean-1989": "Carmean, Hahn & Jacobs 1989, Site index curves for forest tree species in the eastern United States, USDA Forest Service GTR NC-128 (US public domain)"; readonly fvs: "USDA Forest Service, Forest Vegetation Simulator, Lake States variant htcalc.f (US … — Every source a plant species value or growth rule comes from; each one is credited in CREDITS.md.
+- `PlantSourceId` (type): type PlantSourceId = keyof typeof PLANT_SOURCES — Id of a credited plant data or model source.
+
+## @jgengine/core/plants/structure/plantStructure
+
+- `CROWN_HULL_BINS` (const): const CROWN_HULL_BINS: 16 — Height bins and azimuth sectors of {@link PlantStructure.crownHull}.
+- `CROWN_HULL_SECTORS` (const): const CROWN_HULL_SECTORS: 8 — Compass sectors per height bin of the crown envelope.
+- `PLANT_CLUSTER_LEVELS` (const): const PLANT_CLUSTER_LEVELS: 3 — Cluster levels per leaf: own shoot axis, its order-2 limb, its order-1 limb.
+- `PLANT_ORGAN` (const): const PLANT_ORGAN: { readonly flower: 0; readonly fruit: 1; } — Reproductive organ kind per row of {@link PlantStructure.reproductive}.
+- `PLANT_REGION` (const): const PLANT_REGION: { readonly trunk: 0; readonly branch: 1; readonly twig: 2; readonly deadwood: 3; readonly scar: 4; readonly rootFlare: 5; } — Region code per skeleton segment; a style picks material and detail by it.
+- `PlantClusterLevel` (interface): interface PlantClusterLevel — One cluster level: centre (3 per row), radius, parent row in the next level, leaf rows inside.
+- `PlantRegion` (type): type PlantRegion = (typeof PLANT_REGION)[keyof typeof PLANT_REGION] — Region code of a skeleton segment (a value of {@link PLANT_REGION}).
+- `PlantStructure` (interface): interface PlantStructure — A grown plant's structure: the growth output and the input of every style. Struct-of-arrays, one row per skeleton segment, leaf cohort, cluster or reproductive organ. Positions are metres with y up and the stem base at the origin.
+- `PlantStructureSource` (interface): interface PlantStructureSource — What the structure builder reads from a growth run.
+- `buildPlantStructure` (function): function buildPlantStructure(source: PlantStructureSource): PlantStructure — Build the style-facing structure from a growth state.
+- `crownRatio` (function): function crownRatio(structure: PlantStructure): number — Crown ratio: live crown length over total height.
+- `hashPlantStructure` (function): function hashPlantStructure(structure: PlantStructure): string — FNV-1a over every number and typed-array byte of a structure, as 8 hex digits per lane.
+
+## @jgengine/core/plants/validation/heightAgeCurves
+
+- `SUGAR_MAPLE_CARMEAN` (const): const SUGAR_MAPLE_CARMEAN: SiteIndexCurve — NC-128 curve 3: sugar maple, northern Wisconsin and Upper Michigan (Carmean 1978), total age.
+- `SiteIndexCurve` (interface): interface SiteIndexCurve — A Carmean, Hahn & Jacobs 1989 (GTR NC-128) site-index curve in its Chapman–Richards form, H = BH + b1·SI^b2·(1 − e^(b3·A))^(b4·SI^b5), heights in feet. Coefficients as printed in NC-128 and reproduced in the Forest Vegetation Simulator's Lake States `htcalc.f` (both US public domain).
+- `siteIndexHeightM` (function): function siteIndexHeightM(curve: SiteIndexCurve, siteIndexFt: number, ageYears: number): number — Height in metres at `ageYears` for a site index given in feet at base age 50.
+
 ## @jgengine/core/postfx/PostProcessing.draw
 
 - `PostProcessing` (function): function PostProcessing({ config, quality = "high", stages, immediate = false, }: { config: PostProcessingConfig; quality?: GraphicsQuality; stages?: { ao: boolean; bloom: boolean; dof: boolean; smaa: boolean }; immediate?: boolean; }): null — Mounts an `EffectComposer` inside the shell Canvas and takes over rendering (priority-1 `useFrame`, which disables R3F auto-render) to run the configured post chain: RenderPass → GTAO → UnrealBloom → SMAA → exposure meter → OutputPass → Stylize → Grade. Rendered only when `PlayableGame.postProcessing` is set, so games without it draw unchanged.

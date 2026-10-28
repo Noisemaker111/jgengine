@@ -7027,6 +7027,46 @@
       "intent": "cap live particles to a graphics tier and drop whole effects lowest-priority-first when over budget"
     },
     {
+      "id": "plant-growth",
+      "packages": [
+        "@jgengine/core"
+      ],
+      "module": "@jgengine/core/plants/growth/plantGrowth",
+      "gameFacing": false,
+      "probe": null,
+      "intent": "grow a tree from seed to any age with a real biology simulation; snapshot, restore, retune"
+    },
+    {
+      "id": "plant-species",
+      "packages": [
+        "@jgengine/core"
+      ],
+      "module": "@jgengine/core/plants/species/plantSpecies",
+      "gameFacing": false,
+      "probe": null,
+      "intent": "register and validate plant species records: measured biology as plain data"
+    },
+    {
+      "id": "plant-structure",
+      "packages": [
+        "@jgengine/core"
+      ],
+      "module": "@jgengine/core/plants/structure/plantStructure",
+      "gameFacing": false,
+      "probe": null,
+      "intent": "a grown plant as a skeleton with regions, leaves, clusters and a crown envelope"
+    },
+    {
+      "id": "plant-validation",
+      "packages": [
+        "@jgengine/core"
+      ],
+      "module": "@jgengine/core/plants/validation/heightAgeCurves",
+      "gameFacing": false,
+      "probe": null,
+      "intent": "published height-age curves to check a growth model against"
+    },
+    {
       "id": "play-script",
       "packages": [
         "@jgengine/core"

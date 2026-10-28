@@ -1,0 +1,26 @@
+/** Every source a plant species value or growth rule comes from; each one is credited in CREDITS.md. */
+export const PLANT_SOURCES = {
+  "carmean-1989": "Carmean, Hahn & Jacobs 1989, Site index curves for forest tree species in the eastern United States, USDA Forest Service GTR NC-128 (US public domain)",
+  "fvs": "USDA Forest Service, Forest Vegetation Simulator, Lake States variant htcalc.f (US public domain)",
+  "silvics-654": "Burns & Honkala 1990, Silvics of North America, USDA Agriculture Handbook 654 (US public domain)",
+  "wood-handbook": "Forest Products Laboratory 2010, Wood Handbook, USDA FPL-GTR-190 (US public domain)",
+  "usda-plants": "USDA NRCS PLANTS Database, characteristics (US public domain)",
+  "palubicki-2009": "Palubicki et al. 2009, Self-organizing tree models for image synthesis, ACM SIGGRAPH",
+  "lignum-1996": "Perttunen et al. 1996, LIGNUM: a tree model based on simple structural units, Ann. Bot. 77; Perttunen et al. 1998, Ann. Bot. 82",
+  "pipe-model": "Shinozaki et al. 1964, A quantitative analysis of plant form: the pipe model theory, Jpn. J. Ecol. 14",
+  "makela-1997": "Mäkelä 1997, A carbon balance model of growth and self-pruning in trees based on structural relationships, For. Sci. 43",
+  "minamino-2014": "Minamino & Tateno 2014, Tree branching: Leonardo da Vinci's rule versus biomechanical models, PLOS ONE 9",
+  "jirasek-2000": "Jirasek, Prusinkiewicz & Moulia 2000, Integrating biomechanics into developmental plant models expressed using L-systems",
+  "ryan-yoder-1997": "Ryan & Yoder 1997, Hydraulic limits to tree height and tree growth, BioScience 47",
+  "wareing-nasr-1961": "Wareing & Nasr 1961, Gravimorphism in trees: effects of gravity on growth and apical dominance in fruit trees, Ann. Bot. 25",
+  "landsberg-waring-1997": "Landsberg & Waring 1997, A generalised model of forest productivity using simplified concepts of radiation-use efficiency, carbon balance and partitioning (3-PG), For. Ecol. Manage. 95",
+  "niinemets-2007": "Niinemets 2007, Photosynthesis and resource distribution through plant canopies, Plant Cell Environ. 30",
+  "cairns-1997": "Cairns et al. 1997, Root biomass allocation in the world's upland forests, Oecologia 111",
+  "digby-firn-1995": "Digby & Firn 1995, The gravitropic set-point angle (GSA): the identification of an important developmentally controlled variable governing plant architecture, Plant Cell Environ. 18",
+  "nikinmaa-2003": "Nikinmaa, Messier, Sievänen, Perttunen & Lehtonen 2003, Shoot growth and crown development: effect of crown position in three-dimensional simulations, Tree Physiol. 23",
+  "fao-56": "Allen et al. 1998, FAO Irrigation and Drainage Paper 56, extraterrestrial radiation and day length",
+  "hand-tuned": "Tuned by hand against the Carmean 1989 height curve until the milestone-4 fit replaces it",
+} as const;
+
+/** Id of a credited plant data or model source. */
+export type PlantSourceId = keyof typeof PLANT_SOURCES;
