@@ -611,6 +611,7 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `bakeGeneratorVariants` (function) · `import { bakeGeneratorVariants } from "@jgengine/core/world"`
 - `jitterParams` (function) · `import { jitterParams } from "@jgengine/core/world"`
+- `registerPlaceableGeneratorOutput` (function) · `import { registerPlaceableGeneratorOutput } from "@jgengine/core/world"`
 - `sampleGradient` (function) · `import { sampleGradient } from "@jgengine/core/world"`
 - `untypedGenerator` (function) · `import { untypedGenerator } from "@jgengine/core/world"`
 - `variantIndexAt` (function) · `import { variantIndexAt } from "@jgengine/core/generator/generator"`
@@ -855,6 +856,17 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 ## moving-sphere-sweep — detect contact with spheres crossing a projectile segment between simulation poses
 
 - `sweepMovingSphere` (function) · `import { sweepMovingSphere } from "@jgengine/core/physics/ballisticSweep"`
+
+## nature-generator — seeded trees, palms, bushes, ferns, rocks and pebbles with editor variants and instanced scatter
+
+- `addBlob` (function) · `import { addBlob } from "@jgengine/core/world"`
+- `addCone` (function) · `import { addCone } from "@jgengine/core/world"`
+- `addFrond` (function) · `import { addFrond } from "@jgengine/core/world"`
+- `addStone` (function) · `import { addStone } from "@jgengine/core/world"`
+- `addTube` (function) · `import { addTube } from "@jgengine/core/world"`
+- `isNatureMesh` (function) · `import { isNatureMesh } from "@jgengine/core/world"`
+- `natureGeometry` (function) · `import { natureGeometry } from "@jgengine/core/nature/natureMesh.draw"`
+- `natureMaterial` (function) · `import { natureMaterial } from "@jgengine/core/nature/natureMesh.draw"`
 
 ## nav-crowd — move many agents across an editor-baked nav mesh with avoidance
 
@@ -1137,6 +1149,11 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 ## scatter-coverage — shared density/budget semantics for scatterable kinds
 
 - `ScatterCoverageKind` (type) · `import { ScatterCoverageKind } from "@jgengine/core/world"`
+
+## scatter-generator — grow a scatter palette item from a seeded generator's baked variants
+
+- `scatterGeneratorBase` (function) · `import { scatterGeneratorBase } from "@jgengine/core/world"`
+- `scatterGeneratorVariantCount` (function) · `import { scatterGeneratorVariantCount } from "@jgengine/core/world"`
 
 ## scene-capture-binding — expose the in-Canvas scene-capture function to outside-Canvas HUD (photo mode, save thumbnails)
 

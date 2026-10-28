@@ -15,6 +15,7 @@ import { registerPoleLineRenderer } from "./PoleLineRenderer.draw";
 import { registerDecalRenderer } from "./DecalRenderer.draw";
 import { registerGrassPreview } from "@jgengine/core/grass/grassPreview.draw";
 import { registerPartsPreview } from "./GeneratedAssetRenderer.draw";
+import { registerNatureDraw } from "@jgengine/core/nature/naturePreview.draw";
 
 let registered = false;
 
@@ -31,4 +32,5 @@ export function registerBuiltinSceneKindRenderers(): void {
   registerDecalRenderer();
   registerGrassPreview();
   registerPartsPreview();
+  registerNatureDraw();
 }

@@ -19,6 +19,16 @@ import { writeScatterVariantLevel } from "./scatterVariants.draw";
 import { detailDrawDistance, IMPOSTOR_MIN_RADIUS, sourceRadius } from "@jgengine/core/lod/impostor.draw";
 import { useTerrainQuality } from "@jgengine/core/terrain/terrainQuality.draw";
 import { ScatterImpostorField } from "./ScatterImpostorField.draw";
+import { bakeGeneratorVariants, getGenerator, type GeneratorDefinition } from "@jgengine/core/generator/generator";
+import { getGeneratorMesh } from "@jgengine/core/generator/generatorMesh.draw";
+import {
+  assignScatterVariants,
+  isScatterGeneratorItem,
+  parseScatterVariantItem,
+  scatterGeneratorBase,
+  scatterGeneratorVariantCount,
+  type ScatterGeneratorItem,
+} from "./scatterGenerator";
 
 /** Chunk edge (m): dense fields split into this-sized buckets, each frustum-culled independently. */
 const DEFAULT_CHUNK_SIZE = 24;
@@ -136,7 +146,7 @@ function ScatterModelSourceInstances({ source, matrices }: { source: ScatterMode
     const mesh = meshRef.current;
     if (mesh !== null) uploadInstances(mesh, matrices, { localMatrix: source.localMatrix });
   }, [matrices, source]);
-  return <instancedMesh ref={meshRef} args={[source.geometry, source.material, matrices.length]} castShadow receiveShadow />;
+  return <instancedMesh ref={meshRef} args={[source.geometry, source.material, matrices.length]} castShadow={source.skipShadow !== true} receiveShadow />;
 }
 
 /**
@@ -185,7 +195,7 @@ function ScatterVariantSourceInstances({ source, batch, level, selector }: {
     <instancedMesh
       ref={meshRef}
       args={[source.geometry, source.material, batch.matrices.length]}
-      castShadow={source.castShadow ?? true}
+      castShadow={source.skipShadow !== true && (source.castShadow ?? true)}
       receiveShadow={source.receiveShadow ?? true}
     />
   );
@@ -299,11 +309,73 @@ function ScatterSingleSpecies({ model, batches }: { model: ModelConfig; batches:
   const gltf = useLoader(sharedGltfLoader, model.url);
   const { sources, root } = useMemo(() => buildScatterModelSources(gltf.scene, model), [gltf, model]);
   useEffect(() => () => disposeScatterModelSources(root), [root]);
+  return <ScatterSourcesField cacheKey={`scatter:${model.url}:${JSON.stringify(model)}`} sources={sources} batches={batches} />;
+}
+
+/** A species draw: big ones get the impostor far field, small ones stop past their detail distance. */
+function ScatterSourcesField({ cacheKey, sources, farSources, batches }: {
+  cacheKey: string;
+  sources: ScatterModelSource[];
+  farSources?: ScatterModelSource[] | undefined;
+  batches: ScatterBatch[];
+}) {
   const radius = useMemo(() => sourceRadius(sources), [sources]);
-  if (radius >= IMPOSTOR_MIN_RADIUS) {
-    return <ScatterImpostorField cacheKey={`scatter:${model.url}:${JSON.stringify(model)}`} sources={sources} batches={batches} radius={radius} />;
-  }
+  if (radius >= IMPOSTOR_MIN_RADIUS) return <ScatterImpostorField cacheKey={cacheKey} sources={sources} farSources={farSources} batches={batches} radius={radius} />;
   return <ScatterDetailInstances sources={sources} batches={batches} radius={radius} />;
+}
+
+const IDENTITY = new THREE.Matrix4();
+/** Generated meshes smaller than this bounding radius (metres) skip the shadow pass. */
+const SMALL_SHADOW_RADIUS = 0.6;
+
+/** One generator-grown species, resolved: the generator, the item, and its placements per variant. */
+interface ScatterGeneratorSpeciesDraw {
+  definition: GeneratorDefinition;
+  spec: ScatterGeneratorItem;
+  byVariant: Map<number, ScatterBatch[]>;
+}
+
+/**
+ * A palette item grown by a generator: its variants are baked once, each turned into instanced draws
+ * through the mesh builder registered for the generator's output, and every variant draws only the
+ * placements assigned to it. Far away every variant draws one shared impostor baked from the first,
+ * so more variants cost near draws, not atlas memory.
+ */
+function ScatterGeneratorSpecies({ item, species }: { item: string; species: ScatterGeneratorSpeciesDraw }) {
+  const { definition, spec } = species;
+  const variants = useMemo(() => {
+    const build = getGeneratorMesh(definition.output);
+    if (build === undefined) return [];
+    const baked = bakeGeneratorVariants({ ...definition, lods: [spec.detail ?? 1] }, scatterGeneratorBase(spec, definition.schema), {
+      count: scatterGeneratorVariantCount(spec),
+      explore: spec.explore ?? 0.3,
+      seed: item,
+      ...(spec.keep === undefined ? {} : { keep: spec.keep }),
+    });
+    return baked.map((variant) => (build(variant.lods[0]?.output) ?? []).map((source): ScatterModelSource => {
+      if (source.geometry.boundingSphere === null) source.geometry.computeBoundingSphere();
+      // Pebble-sized meshes cast no shadow: the map cannot resolve them, so they only draw a detached halo.
+      const small = (source.geometry.boundingSphere?.radius ?? 1) < SMALL_SHADOW_RADIUS;
+      return { ...source, localMatrix: IDENTITY, ...(small ? { skipShadow: true } : {}) };
+    }));
+  }, [definition, spec, item]);
+  useEffect(() => () => variants.forEach((sources) => sources.forEach((source) => source.geometry.dispose())), [variants]);
+  const key = useMemo(() => `generator:${item}:${JSON.stringify(spec)}`, [item, spec]);
+  return (
+    <>
+      {[...species.byVariant.entries()].map(([variant, batches]) => {
+        const sources = variants[variant];
+        return sources === undefined || sources.length === 0 ? null : <ScatterSourcesField key={variant} cacheKey={key} sources={sources} farSources={variants[0]} batches={batches} />;
+      })}
+    </>
+  );
+}
+
+/** The generator a palette item grows from: its mapping, else a registered generator whose id is the item and whose output draws as meshes. */
+function generatorSpec(item: string, resolved: ModelConfig | ScatterGeneratorItem | null): ScatterGeneratorItem | null {
+  if (resolved !== null) return isScatterGeneratorItem(resolved) ? resolved : null;
+  const definition = getGenerator(item);
+  return definition !== undefined && getGeneratorMesh(definition.output) !== undefined ? { generator: item } : null;
 }
 
 /** One species draw: the level switch for a model with `variants`, the single GLB otherwise. */
@@ -324,9 +396,11 @@ export interface InstancedScatterProps {
   maxChunks?: number;
   /**
    * Per-species override: return a real catalog `ModelConfig` for an item to GPU-instance the actual
-   * GLB instead of the stylized proxy; return `null` (or omit the prop) to keep `buildScatterProxy`.
+   * GLB, or a {@link ScatterGeneratorItem} to grow it from a generator's baked variants. `null` (or
+   * omitting the prop) grows an item named after a registered mesh generator (`"nature.palm"`) from
+   * that generator, and draws anything else as the stylized `buildScatterProxy`.
    */
-  resolveItem?: (item: string) => ModelConfig | null;
+  resolveItem?: (item: string) => ModelConfig | ScatterGeneratorItem | null;
   /** Placement ids not drawn — felled trees, mined rocks ({@link ScatterClearing}). */
   hidden?: ReadonlySet<string>;
 }
@@ -348,19 +422,69 @@ export function InstancedScatter({
   hidden,
 }: InstancedScatterProps) {
   const capped = useMemo(() => capScatterInstances(instances, maxInstances), [instances, maxInstances]);
+  const resolved = useMemo(() => {
+    const byItem = new Map<string, ModelConfig | ScatterGeneratorItem | null>();
+    for (const instance of capped) if (!byItem.has(instance.item)) byItem.set(instance.item, resolveItem?.(instance.item) ?? null);
+    const generators = new Map<string, { definition: GeneratorDefinition; spec: ScatterGeneratorItem }>();
+    for (const [item, result] of byItem) {
+      const spec = generatorSpec(item, result);
+      const definition = spec === null ? undefined : getGenerator(spec.generator);
+      if (spec !== null && definition !== undefined) generators.set(item, { definition, spec });
+    }
+    return { byItem, generators };
+  }, [capped, resolveItem]);
+  const assigned = useMemo(
+    () => resolved.generators.size === 0 ? capped : assignScatterVariants(capped, (item) => {
+      const generator = resolved.generators.get(item);
+      return generator === undefined ? undefined : scatterGeneratorVariantCount(generator.spec);
+    }),
+    [capped, resolved],
+  );
   // The grid is sized from every placement, not the shown ones, so clearing a tree never re-chunks the field.
-  const edge = useMemo(() => scatterChunkSize(capped, chunkSize, maxChunks), [capped, chunkSize, maxChunks]);
-  const allBatches = useMemo(() => scatterBatchInstances(capped, edge), [capped, edge]);
+  const edge = useMemo(() => scatterChunkSize(assigned, chunkSize, maxChunks), [assigned, chunkSize, maxChunks]);
+  const allBatches = useMemo(() => {
+    if (resolved.generators.size === 0) return scatterBatchInstances(assigned, edge);
+    // A generator species splits into variants, each its own draw per chunk; a coarser grid for it
+    // keeps its chunk-times-variant count near what one model species costs, since every chunk draw
+    // is a scene node walked each frame.
+    const plain: ScatterInstance[] = [];
+    const grown = new Map<string, { variants: number; instances: ScatterInstance[] }>();
+    for (const instance of assigned) {
+      const tagged = parseScatterVariantItem(instance.item);
+      const generator = tagged === null ? undefined : resolved.generators.get(tagged.item);
+      if (tagged === null || generator === undefined) {
+        plain.push(instance);
+        continue;
+      }
+      const entry = grown.get(tagged.item) ?? { variants: scatterGeneratorVariantCount(generator.spec), instances: [] };
+      entry.instances.push(instance);
+      grown.set(tagged.item, entry);
+    }
+    const out = scatterBatchInstances(plain, edge);
+    for (const { variants, instances } of grown.values()) out.push(...scatterBatchInstances(instances, edge * Math.sqrt(variants)));
+    return out;
+  }, [assigned, edge, resolved]);
   const batches = useMemo(() => hideScatterPlacements(allBatches, hidden), [allBatches, hidden]);
 
-  const { proxyBatches, modelSpecies } = useMemo(() => {
+  const { proxyBatches, modelSpecies, generatorSpecies } = useMemo(() => {
     // Dev diagnostic (no-op unless armed): re-zero the scatter seam before re-tallying which species
     // fall to a stylized proxy (no resolveItem mapping / a null result). Reported once per species.
     beginFallbackSeam("scatter");
     const proxy: ScatterBatch[] = [];
     const bySpecies = new Map<string, { model: ModelConfig; batches: ScatterBatch[] }>();
     const knownProxy = new Set<string>();
+    const grown = new Map<string, ScatterGeneratorSpeciesDraw>();
     for (const batch of batches) {
+      const tagged = parseScatterVariantItem(batch.item);
+      const generator = tagged === null ? undefined : resolved.generators.get(tagged.item);
+      if (tagged !== null && generator !== undefined) {
+        const entry = grown.get(tagged.item) ?? { ...generator, byVariant: new Map<number, ScatterBatch[]>() };
+        grown.set(tagged.item, entry);
+        const list = entry.byVariant.get(tagged.variant);
+        if (list === undefined) entry.byVariant.set(tagged.variant, [batch]);
+        else list.push(batch);
+        continue;
+      }
       const species = bySpecies.get(batch.item);
       if (species !== undefined) {
         species.batches.push(batch);
@@ -370,17 +494,17 @@ export function InstancedScatter({
         proxy.push(batch);
         continue;
       }
-      const resolved = resolveItem?.(batch.item) ?? null;
-      if (resolved === null) {
+      const model = resolved.byItem.get(batch.item) ?? null;
+      if (model === null || isScatterGeneratorItem(model)) {
         knownProxy.add(batch.item);
         reportFallbackSeam("scatter", "omittedMapping");
         proxy.push(batch);
         continue;
       }
-      bySpecies.set(batch.item, { model: resolved, batches: [batch] });
+      bySpecies.set(batch.item, { model, batches: [batch] });
     }
-    return { proxyBatches: proxy, modelSpecies: [...bySpecies.entries()] };
-  }, [batches, resolveItem]);
+    return { proxyBatches: proxy, modelSpecies: [...bySpecies.entries()], generatorSpecies: [...grown.entries()] };
+  }, [batches, resolved]);
 
   const geometries = useMemo(() => {
     const items = new Set(proxyBatches.map((batch) => batch.item));
@@ -401,6 +525,9 @@ export function InstancedScatter({
         <Suspense key={item} fallback={null}>
           <ScatterModelSpecies model={species.model} batches={species.batches} />
         </Suspense>
+      ))}
+      {generatorSpecies.map(([item, species]) => (
+        <ScatterGeneratorSpecies key={item} item={item} species={species} />
       ))}
     </>
   );

@@ -4,7 +4,7 @@ import { join } from "node:path";
 
 import { getSceneKind } from "../packages/core/src/scene/sceneKinds";
 import { parseParams } from "../packages/core/src/generator/paramSchema";
-import { getPartsGenerator, resolveGeneratorAsset } from "../packages/core/src/scene/assetGenerator";
+import { placedGeneratorFor, resolveGeneratorAsset } from "../packages/core/src/scene/assetGenerator";
 import { registerBuiltinSceneKinds } from "../packages/core/src/scene/builtinSceneKinds";
 import { POLE_LINE_KIND, POLE_LINE_SCHEMA, resolvePoleLine } from "../packages/core/src/world/poleLineKind";
 import { BOOKCASE_GENERATOR_ID, registerBookcaseStudio } from "../examples/studios/src/bookcaseStudio";
@@ -35,7 +35,7 @@ describe("studio/editor parity: pole line is a builtin scene kind", () => {
 describe("adding a studio needs only the public seam", () => {
   test("registerBookcaseStudio lights up a generator asset re-resolvable from meta", () => {
     registerBookcaseStudio();
-    expect(getPartsGenerator(BOOKCASE_GENERATOR_ID)).toBeDefined();
+    expect(placedGeneratorFor({ assetId: BOOKCASE_GENERATOR_ID })).toBeDefined();
     const asset = resolveGeneratorAsset({ assetId: BOOKCASE_GENERATOR_ID, width: 1.2, shelves: 3, seed: "s" });
     expect(asset).not.toBeNull();
     expect(asset!.parts.length).toBeGreaterThan(5);

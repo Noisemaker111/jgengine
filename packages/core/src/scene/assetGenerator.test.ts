@@ -1,7 +1,7 @@
 import { describe, expect, test } from "bun:test";
 
 import { listGenerators, registerGenerator } from "../generator/generator";
-import { PARTS_OUTPUT, getPartsGenerator, partsBounds, resolveGeneratorAsset, type GeneratedAsset } from "./assetGenerator";
+import { PARTS_OUTPUT, partsBounds, placedGeneratorFor, resolveGeneratorAsset, type GeneratedAsset } from "./assetGenerator";
 import { registerBuiltinSceneKinds } from "./builtinSceneKinds";
 import type { ParamSchema } from "../generator/paramSchema";
 
@@ -26,7 +26,7 @@ registerGenerator({
 
 describe("asset generator registry", () => {
   test("registers and lists a generator", () => {
-    expect(getPartsGenerator("test_box")?.label).toBe("Test box");
+    expect(placedGeneratorFor({ assetId: "test_box" })?.label).toBe("Test box");
     expect(listGenerators(PARTS_OUTPUT).some((generator) => generator.id === "test_box")).toBe(true);
   });
 
@@ -44,7 +44,7 @@ describe("asset generator registry", () => {
 
   test("ignores generators of another output family", () => {
     registerGenerator({ id: "test_field", label: "Field", output: "field", schema: { fields: [] }, generate: () => ({ parts: [], bounds: { min: [0, 0, 0], max: [0, 0, 0] } }) });
-    expect(getPartsGenerator("test_field")).toBeUndefined();
+    expect(placedGeneratorFor({ assetId: "test_field" })).toBeUndefined();
     expect(resolveGeneratorAsset({ assetId: "test_field" })).toBeNull();
   });
 

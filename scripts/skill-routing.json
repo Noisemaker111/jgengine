@@ -62,6 +62,7 @@
     "model": "jgengine-assets",
     "movement": "jgengine-world",
     "multiplayer": "jgengine-multiplayer",
+    "nature": "jgengine-world",
     "nav": "jgengine-world",
     "notifications": "jgengine-gameplay",
     "onboarding": "jgengine-gameplay",

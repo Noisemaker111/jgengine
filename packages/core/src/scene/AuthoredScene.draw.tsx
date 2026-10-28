@@ -24,7 +24,9 @@ import { isScatterPath, resolveScatter } from "@jgengine/core/scatter/scatterReg
 import { scatterClearingOf } from "@jgengine/core/scatter/scatterClearing";
 import type { TerrainField } from "@jgengine/core/terrain/terrain";
 
-import { partsGeneratorFor } from "@jgengine/core/scene/assetGenerator";
+import { PARTS_OUTPUT, placedGeneratorFor } from "@jgengine/core/scene/assetGenerator";
+import { GeneratorMeshInstance } from "@jgengine/core/generator/GeneratorMeshInstance.draw";
+import { isScatterGeneratorItem, type ScatterGeneratorItem } from "@jgengine/core/scatter/scatterGenerator";
 import { useGameContext } from "@jgengine/react/provider";
 
 import { Roads } from "@jgengine/core/roads/RoadRibbons.draw";
@@ -87,19 +89,20 @@ function pathToKindObject(path: EditorPath): SceneKindObject {
 /** Renders every marker placed as a parametric generator asset, re-resolved from its `meta` + seed. */
 function AuthoredGenerators({ document, field }: { document: EditorDocument; field: TerrainField }) {
   const markers = useMemo(
-    () => document.markers.filter((marker) => partsGeneratorFor(marker.meta) !== undefined),
+    () => document.markers.flatMap((marker) => {
+      const definition = placedGeneratorFor(marker.meta);
+      return definition === undefined ? [] : [{ marker, definition }];
+    }),
     [document.markers],
   );
   return (
     <>
-      {markers.map((marker) => (
-        <GeneratedAssetInstance
-          key={marker.id}
-          meta={marker.meta}
-          position={[marker.position.x, field.sampleHeight(marker.position.x, marker.position.z), marker.position.z]}
-          rotationY={marker.rotationY ?? 0}
-        />
-      ))}
+      {markers.map(({ marker, definition }) => {
+        const position = [marker.position.x, field.sampleHeight(marker.position.x, marker.position.z), marker.position.z] as const;
+        return definition.output === PARTS_OUTPUT
+          ? <GeneratedAssetInstance key={marker.id} meta={marker.meta} position={position} rotationY={marker.rotationY ?? 0} />
+          : <GeneratorMeshInstance key={marker.id} definition={definition} meta={marker.meta} fallbackSeed={marker.id} position={position} rotationY={marker.rotationY ?? 0} />;
+      })}
     </>
   );
 }
@@ -241,6 +244,23 @@ export function AuthoredSolids({ document, field }: { document: EditorDocument; 
   return null;
 }
 
+/** Resolve palette items to generator items directly and to models through the catalog. */
+function scatterItemResolver(
+  map: Record<string, string | ModelConfig | ScatterGeneratorItem> | undefined,
+  assets: AssetCatalog | undefined,
+): ((item: string) => ModelConfig | ScatterGeneratorItem | null) | undefined {
+  if (map === undefined) return undefined;
+  const models: Record<string, string | ModelConfig> = {};
+  const grown = new Map<string, ScatterGeneratorItem>();
+  for (const [item, value] of Object.entries(map)) {
+    if (isScatterGeneratorItem(value)) grown.set(item, value);
+    else models[item] = value;
+  }
+  const resolveModel = createModelMapResolver(models, assets, "scatterModels");
+  if (grown.size === 0) return resolveModel;
+  return (item) => grown.get(item) ?? resolveModel?.(item) ?? null;
+}
+
 /** Props for {@link AuthoredScene}: the document to render and the ground field to drape/ground on. */
 export interface AuthoredSceneProps {
   document: EditorDocument;
@@ -252,11 +272,12 @@ export interface AuthoredSceneProps {
   /** Procedural surface, wear and soft edges on paths (default true); see {@link AuthoredPathsProps.surfaceDetail}. */
   pathSurfaceDetail?: boolean;
   /**
-   * Scatter palette item id → model asset id or `ModelConfig`; a mapped item GPU-instances the real
-   * catalog GLB instead of the stylized proxy. Keyed by scatter `item` (not entity name — pass a
-   * dedicated map even if it shares entries with `entityModels`). Requires `assets`.
+   * Scatter palette item id → model asset id, `ModelConfig`, or {@link ScatterGeneratorItem}; a mapped
+   * item GPU-instances the real catalog GLB, or a generator's baked variants, instead of the stylized
+   * proxy. Keyed by scatter `item` (not entity name — pass a dedicated map even if it shares entries
+   * with `entityModels`). Asset ids and model configs require `assets`.
    */
-  scatterModels?: Record<string, string | ModelConfig>;
+  scatterModels?: Record<string, string | ModelConfig | ScatterGeneratorItem>;
   /** Most scatter instances drawn; past it the foliage thins evenly. Default 20000. */
   scatterBudget?: number;
   /** Animated models keyed by authored cosmetic habitat species. */
@@ -312,7 +333,7 @@ export function AuthoredScene({
   const clearing = scatterClearingOf(ctx);
   const hidden = useSyncExternalStore(clearing.subscribe, clearing.hidden, clearing.hidden);
   const resolveItem = useMemo(
-    () => createModelMapResolver(scatterModels, assets, "scatterModels"),
+    () => scatterItemResolver(scatterModels, assets),
     [scatterModels, assets],
   );
   const shouldPlaceObjects = placeObjects === true || (typeof placeObjects === "object" && placeObjects !== null);
