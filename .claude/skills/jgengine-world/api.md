@@ -1545,6 +1545,8 @@
 - `generatorVariants` (function): function generatorVariants<Schema extends ParamSchema>(definition: GeneratorDefinition<Schema, unknown>, base: Readonly<Record<string, unknown>> | undefined, options: GeneratorVariantOptions = {}): GeneratorVariant<Schema>[] — A grid of seeded variants around `base`: kept variants first, then the base itself, then fresh ones, each with its own seed and params nudged by `explore`. Pure — the same base and options always give the same grid, which is what the editor's variant panel and the `generator_variants` verb show.
 - `getGenerator` (function): function getGenerator(id: string): GeneratorDefinition | undefined — The registered generator for an id, or undefined.
 - `listGenerators` (function): function listGenerators(output?: string): GeneratorDefinition[] — Every registered generator, in registration order, optionally of one output family.
+- `prepareGenerator` (function): function prepareGenerator<Schema extends ParamSchema, Output>(definition: GeneratorDefinition<Schema, Output>, meta: Readonly<Record<string, unknown>> | undefined, options: RunGeneratorOptions = {}): Promise<void> — Await a generator's `prepare` for the output {@link runGenerator} would return with the same arguments. Resolves at once for a generator without one.
+- `prepareGeneratorVariants` (function): function prepareGeneratorVariants<Schema extends ParamSchema, Output>(definition: GeneratorDefinition<Schema, Output>, base: Readonly<Record<string, unknown>> | undefined, options: GeneratorVariantOptions = {}): Promise<void> — Await `prepare` for every variant and detail level {@link bakeGeneratorVariants} would bake with the same arguments, one after another, so a bake right after it is fast.
 - `registerGenerator` (function): function registerGenerator<Schema extends ParamSchema, Output>(definition: GeneratorDefinition<Schema, Output>): void — Register a generator so the editor, the asset catalog and agents can find it. Last registration per id wins.
 - `runGenerator` (function): function runGenerator<Schema extends ParamSchema, Output>(definition: GeneratorDefinition<Schema, Output>, meta: Readonly<Record<string, unknown>> | undefined, options: RunGeneratorOptions = {}): Output — Parse `meta` against the generator's schema, resolve its seed and generate.
 - `untypedGenerator` (function): function untypedGenerator<Schema extends ParamSchema, Output>(definition: GeneratorDefinition<Schema, Output>): GeneratorDefinition — The untyped view of a typed generator, for code that holds raw meta bags (the editor, the variant grid): its `generate` parses params against the schema first. Registered generators are already this shape.
@@ -2534,12 +2536,8 @@
 
 ## @jgengine/core/nature/natureGenerators
 
-- `BROADLEAF_GENERATOR` (const): const BROADLEAF_GENERATOR: GeneratorDefinition<ParamSchema<readonly [{ readonly type: "seed"; readonly key: "seed"; readonly label: "seed"; readonly default: ""; }, { readonly type: "range"; readonly key: "height"; readonly label: "height"; readonly group: "trunk"; readonly min: 1.5; readonly max: 3… — Broadleaf trees: oak, birch, tropical hardwood, dead tree.
-- `BROADLEAF_SCHEMA` (const): const BROADLEAF_SCHEMA: ParamSchema<readonly [{ readonly type: "seed"; readonly key: "seed"; readonly label: "seed"; readonly default: ""; }, { readonly type: "range"; readonly key: "height"; readonly label: "height"; readonly group: "trunk"; readonly min: 1.5; readonly max: 30; readonly step: 0.1; … — Broadleaf tree params: trunk, branching, canopy clusters and colours.
 - `BUSH_GENERATOR` (const): const BUSH_GENERATOR: GeneratorDefinition<ParamSchema<readonly [{ readonly type: "seed"; readonly key: "seed"; readonly label: "seed"; readonly default: ""; }, { readonly type: "range"; readonly key: "width"; readonly label: "width"; readonly group: "shape"; readonly min: 0.3; readonly max: 5; reado… — Bushes: shrub, berry bush, low hedge.
 - `BUSH_SCHEMA` (const): const BUSH_SCHEMA: ParamSchema<readonly [{ readonly type: "seed"; readonly key: "seed"; readonly label: "seed"; readonly default: ""; }, { readonly type: "range"; readonly key: "width"; readonly label: "width"; readonly group: "shape"; readonly min: 0.3; readonly max: 5; readonly step: 0.05; readonl… — Bush params: footprint, clumps, berries and colours.
-- `CONIFER_GENERATOR` (const): const CONIFER_GENERATOR: GeneratorDefinition<ParamSchema<readonly [{ readonly type: "seed"; readonly key: "seed"; readonly label: "seed"; readonly default: ""; }, { readonly type: "range"; readonly key: "height"; readonly label: "height"; readonly group: "trunk"; readonly min: 1.5; readonly max: 45;… — Conifers: pine, spruce, redwood.
-- `CONIFER_SCHEMA` (const): const CONIFER_SCHEMA: ParamSchema<readonly [{ readonly type: "seed"; readonly key: "seed"; readonly label: "seed"; readonly default: ""; }, { readonly type: "range"; readonly key: "height"; readonly label: "height"; readonly group: "trunk"; readonly min: 1.5; readonly max: 45; readonly step: 0.1; re… — Conifer params: trunk, tiered crown and colours.
 - `DRIFTWOOD_GENERATOR` (const): const DRIFTWOOD_GENERATOR: GeneratorDefinition<ParamSchema<readonly [{ readonly type: "seed"; readonly key: "seed"; readonly label: "seed"; readonly default: ""; }, { readonly type: "range"; readonly key: "length"; readonly label: "length"; readonly group: "shape"; readonly min: 0.5; readonly max: 8… — Driftwood and fallen logs.
 - `DRIFTWOOD_SCHEMA` (const): const DRIFTWOOD_SCHEMA: ParamSchema<readonly [{ readonly type: "seed"; readonly key: "seed"; readonly label: "seed"; readonly default: ""; }, { readonly type: "range"; readonly key: "length"; readonly label: "length"; readonly group: "shape"; readonly min: 0.5; readonly max: 8; readonly step: 0.05; … — Driftwood params: a weathered log lying on the ground.
 - `FERN_GENERATOR` (const): const FERN_GENERATOR: GeneratorDefinition<ParamSchema<readonly [{ readonly type: "seed"; readonly key: "seed"; readonly label: "seed"; readonly default: ""; }, { readonly type: "range"; readonly key: "fronds"; readonly label: "fronds"; readonly group: "fronds"; readonly min: 3; readonly max: 22; rea… — Ferns: fern, low frond clump, bracken.
@@ -3258,6 +3256,35 @@
 - `createPlacementController` (function): function createPlacementController(config: PlacementControllerConfig): PlacementController — Headless placement ghost: hover → valid/invalid preview, rotate, grid/free/surface snap, commit. Pair with `PlacementGhost` (`./PlacementGhost.draw`) and {@link placeAssetFromCommit}.
 - `quarterTurnsToRotationY` (function): function quarterTurnsToRotationY(quarterTurns: number): number — Maps 0–3 quarter turns onto radians for ghost/commit rotation.
 
+## @jgengine/core/plants/cache/plantCache
+
+- `CachedPlantStructure` (interface): interface CachedPlantStructure — A structure with the hash every mesh built from it carries.
+- `PlantCache` (interface): interface PlantCache — Grown structures and styled meshes by key: a byte-bounded memory tier answers at once, the storage tier survives reloads.
+- `PlantCacheOptions` (interface): interface PlantCacheOptions — Options for {@link createPlantCache}.
+- `PlantCacheState` (interface): interface PlantCacheState — Counters of a {@link PlantCache}'s memory tier.
+- `PlantCacheStorage` (interface): interface PlantCacheStorage — Where cached plants persist between sessions: bytes by key. IndexedDB in a browser ({@link createIndexedDbPlantCacheStorage}), memory in tests and tools, or anything with the same shape.
+- `createIndexedDbPlantCacheStorage` (function): function createIndexedDbPlantCacheStorage(name = "jgengine-plants"): PlantCacheStorage | null — A storage over the browser's IndexedDB, or null where there is none (bun, node, a locked-down frame). Failures read as misses, so a full or blocked database only costs regrowing.
+- `createMemoryPlantCacheStorage` (function): function createMemoryPlantCacheStorage(): PlantCacheStorage & { keys(): string[] } — A storage that keeps bytes in a map: for tests, tools and servers.
+- `createPlantCache` (function): function createPlantCache(options: PlantCacheOptions = {}): PlantCache — A plant cache over injected storage.
+
+## @jgengine/core/plants/cache/plantCodec
+
+- `decodePlantMesh` (function): function decodePlantMesh(bytes: Uint8Array): PlantMesh — The mesh {@link encodePlantMesh} wrote.
+- `decodePlantStructure` (function): function decodePlantStructure(bytes: Uint8Array): { structure: PlantStructure; hash: string } — The structure and hash {@link encodePlantStructure} wrote.
+- `encodePlantMesh` (function): function encodePlantMesh(mesh: PlantMesh): Uint8Array — A styled plant mesh as bytes for a {@link PlantCacheStorage}.
+- `encodePlantStructure` (function): function encodePlantStructure(structure: PlantStructure, hash: string): Uint8Array — A grown plant's structure as bytes, with its hash, for a {@link PlantCacheStorage}.
+
+## @jgengine/core/plants/grown/plantGrown
+
+- `BUILTIN_PLANT_SPECIES` (const): const BUILTIN_PLANT_SPECIES: readonly PlantSpecies[] — Species the engine ships, registered with {@link registerPlantGenerators}.
+- `PLANT_CACHE` (const): const PLANT_CACHE: PlantCache — The cache the built-in {@link PLANT_GROWN_GENERATOR} uses: IndexedDB in a browser, memory elsewhere. Swap its storage with `setStorage`.
+- `PLANT_GROWN_GENERATOR` (const): const PLANT_GROWN_GENERATOR: GeneratorDefinition<ParamSchema<readonly [{ readonly type: "seed"; readonly key: "seed"; readonly label: "seed"; readonly default: ""; }, { readonly type: "select"; readonly key: "species"; readonly label: "species"; readonly group: "plant"; readonly default: "acer-sacch… — The built-in grown-plant generator, `plant.grown`.
+- `PLANT_GROWN_SCHEMA` (const): const PLANT_GROWN_SCHEMA: ParamSchema<readonly [{ readonly type: "seed"; readonly key: "seed"; readonly label: "seed"; readonly default: ""; }, { readonly type: "select"; readonly key: "species"; readonly label: "species"; readonly group: "plant"; readonly default: "acer-saccharum"; readonly vary: f… — Grown-plant params: what grows (species, age, site) and how it looks (every style field).
+- `PLANT_MESH_OUTPUT` (const): const PLANT_MESH_OUTPUT: "plant-mesh" — The generator output family a grown plant returns: a {@link PlantMesh}.
+- `createPlantGrownGenerator` (function): function createPlantGrownGenerator(cache: PlantCache): GeneratorDefinition<ParamSchema<readonly [{ readonly type: "seed"; readonly key: "seed"; readonly label: "seed"; readonly default: ""; }, { readonly type: "select"; readonly key: "species"; readonly label: "species"; readonly group: "plant"; rea… — A grown-plant generator over one cache. `prepare` grows in slices off the frame (or loads from storage); `generate` answers from the cache, growing on the spot only when nothing prepared it.
+- `plantStructureKey` (function): function plantStructureKey(request: GrowRequest): string — The cache key of a grown structure: species and its version, simulation version, seed, age, day and site. Anything that changes what grows is in it; nothing about the look is.
+- `plantStyleOf` (function): function plantStyleOf(params: PlantGrownParams): PlantStyle — The style a grown plant's params describe.
+
 ## @jgengine/core/plants/growth/carbonBalance
 
 - `ShootCandidates` (interface): interface ShootCandidates — Growth candidates for one year: every bud that could extend, with its Borchert–Honda share of the tree's vigour and its carbon cost per metamer. `copies` counts identical lateral buds on one node.
@@ -3309,9 +3336,31 @@
 
 - `TropismWeights` (interface): interface TropismWeights — The weights Palubicki et al. 2009 combine into a new metamer's direction.
 
+## @jgengine/core/plants/mesh/plantMesh
+
+- `DEFAULT_PLANT_STYLE` (const): const DEFAULT_PLANT_STYLE: PlantStyle — The style a plant gets when none is given: the species' own colours, lit, with real leaves.
+- `PLANT_MESH_LODS` (const): const PLANT_MESH_LODS: readonly [1, 0.5, 0.25, 0.1] — Detail of each mesh level, highest first: leaves, shoot cards, limb clumps, crown clumps.
+- `PLANT_MESH_TRIANGLE_BUDGETS` (const): const PLANT_MESH_TRIANGLE_BUDGETS: readonly [120000, 30000, 8000, 1500] — Most triangles a plant mesh may have at each level of {@link PLANT_MESH_LODS}, at any age.
+- `PlantMesh` (interface): interface PlantMesh — A grown plant drawn in one style at one detail level: wood and foliage as separate vertex-coloured meshes so each takes its own material.
+- `PlantMeshInput` (interface): interface PlantMeshInput — What {@link buildPlantMesh} draws.
+- `PlantMeshLook` (interface): interface PlantMeshLook — What the draw side needs to pick materials for a plant mesh.
+- `PlantStyle` (interface): interface PlantStyle — How a grown plant looks: everything a style changes without regrowing it. A game builds its own looks from these parts; the engine names none.
+- `buildPlantMesh` (function): function buildPlantMesh(input: PlantMeshInput): PlantMesh — Draw a grown plant in one style at one detail level, within that level's triangle budget at any age: leaf blades near, shoot cards, then limb and crown clumps; wood thinnest-first culled to fit.
+- `isPlantMesh` (function): function isPlantMesh(value: unknown): value is PlantMesh — True when a generator output is a {@link PlantMesh}.
+- `plantMeshLod` (function): function plantMeshLod(detail: number): number — The level of {@link PLANT_MESH_LODS} a generator detail value draws.
+
+## @jgengine/core/plants/mesh/plantMesh.draw
+
+- `plantMeshMaterials` (function): function plantMeshMaterials(look: PlantMeshLook): { bark: THREE.Material; leaves: THREE.Material } — The shared materials a plant mesh's wood and foliage draw with for its look: lit vertex colour (with generated bark grain when asked) or one cel-shading ramp for both.
+- `plantMeshSources` (function): function plantMeshSources(mesh: PlantMesh): GeneratorMeshSource[] — A plant mesh as instanceable draws, wood then foliage; the geometries belong to the caller.
+
 ## @jgengine/core/plants/species/data/acerSaccharum
 
 - `ACER_SACCHARUM` (const): const ACER_SACCHARUM: PlantSpecies — Sugar maple. Traits from Silvics of North America (Godman, Yawney & Tubbs 1990), the USDA Wood Handbook and USDA PLANTS; architecture and carbon parameters tuned by hand against the Carmean 1989 site-index curve until the milestone-4 fit replaces them.
+
+## @jgengine/core/plants/species/data/pinusStrobus
+
+- `PINUS_STROBUS` (const): const PINUS_STROBUS: PlantSpecies — Eastern white pine. Traits from Silvics of North America (Wendel & Smith 1990), the USDA Wood Handbook and USDA PLANTS: an excurrent conifer that sets one whorl of three to five branches at the top of each year's leader, needles in fives kept two to three years. Carbon and architecture tuned by hand against the Carmean 1989 site-index curve until the milestone-4 fit replaces them.
 
 ## @jgengine/core/plants/species/plantSpecies
 
@@ -3347,6 +3396,7 @@
 
 ## @jgengine/core/plants/validation/heightAgeCurves
 
+- `EASTERN_WHITE_PINE_CARMEAN` (const): const EASTERN_WHITE_PINE_CARMEAN: SiteIndexCurve — NC-128 curve 103: eastern white pine, northern Wisconsin (FVS `htcalc.f`), total age.
 - `SUGAR_MAPLE_CARMEAN` (const): const SUGAR_MAPLE_CARMEAN: SiteIndexCurve — NC-128 curve 3: sugar maple, northern Wisconsin and Upper Michigan (Carmean 1978), total age.
 - `SiteIndexCurve` (interface): interface SiteIndexCurve — A Carmean, Hahn & Jacobs 1989 (GTR NC-128) site-index curve in its Chapman–Richards form, H = BH + b1·SI^b2·(1 − e^(b3·A))^(b4·SI^b5), heights in feet. Coefficients as printed in NC-128 and reproduced in the Forest Vegetation Simulator's Lake States `htcalc.f` (both US public domain).
 - `siteIndexHeightM` (function): function siteIndexHeightM(curve: SiteIndexCurve, siteIndexFt: number, ageYears: number): number — Height in metres at `ageYears` for a site index given in feet at base age 50.
@@ -4900,8 +4950,6 @@
 - `AutoTargetPolicy` (type): type AutoTargetPolicy = | "nearest" | "farthest" | "random" | "strongest" | "weakest" | "first" | "last" — ⚠ undocumented · used by `AUTO_TARGET_POLICIES`: Every policy, in the order a "cycle targeting" button steps through them.
 - `AvoidZone` (interface): interface AvoidZone — A circular clearance around a gameplay spot (spawn, plot, path point, POI): scatter is repelled from it and terrain is flattened toward its center. `feather` (meters) is the soft outer band — full effect within `radius - feather`, ramping to zero at `radius`.
 - `AvoidanceAgent` (interface): interface AvoidanceAgent — A circular agent that avoidance may push on the XZ plane.
-- `BROADLEAF_GENERATOR` (const): const BROADLEAF_GENERATOR: GeneratorDefinition<ParamSchema<readonly [{ readonly type: "seed"; readonly key: "seed"; readonly label: "seed"; readonly default: ""; }, { readonly type: "range"; readonly key: "height"; readonly label: "height"; readonly group: "trunk"; readonly min: 1.5; readonly max: 3… — Broadleaf trees: oak, birch, tropical hardwood, dead tree.
-- `BROADLEAF_SCHEMA` (const): const BROADLEAF_SCHEMA: ParamSchema<readonly [{ readonly type: "seed"; readonly key: "seed"; readonly label: "seed"; readonly default: ""; }, { readonly type: "range"; readonly key: "height"; readonly label: "height"; readonly group: "trunk"; readonly min: 1.5; readonly max: 30; readonly step: 0.1; … — Broadleaf tree params: trunk, branching, canopy clusters and colours.
 - `BUSH_GENERATOR` (const): const BUSH_GENERATOR: GeneratorDefinition<ParamSchema<readonly [{ readonly type: "seed"; readonly key: "seed"; readonly label: "seed"; readonly default: ""; }, { readonly type: "range"; readonly key: "width"; readonly label: "width"; readonly group: "shape"; readonly min: 0.3; readonly max: 5; reado… — Bushes: shrub, berry bush, low hedge.
 - `BUSH_SCHEMA` (const): const BUSH_SCHEMA: ParamSchema<readonly [{ readonly type: "seed"; readonly key: "seed"; readonly label: "seed"; readonly default: ""; }, { readonly type: "range"; readonly key: "width"; readonly label: "width"; readonly group: "shape"; readonly min: 0.3; readonly max: 5; readonly step: 0.05; readonl… — Bush params: footprint, clumps, berries and colours.
 - `BakedGeneratorVariant` (interface): interface BakedGeneratorVariant<Schema extends ParamSchema, Output> — One baked variant: the variant and its output at each detail level, highest detail first.
@@ -4938,8 +4986,6 @@
 - `CITY_TREE_SPECIES` (const): const CITY_TREE_SPECIES: readonly CityTreeSpecies[] — All species, for schema hints and validation.
 - `CITY_ZONE_KIND` (const): const CITY_ZONE_KIND: "cityzone" — The editor volume kind that locally overrides a city's zone band/mix — a district in a district.
 - `CITY_ZONE_SCHEMA` (const): const CITY_ZONE_SCHEMA: ParamSchema — Zone-override schema for `cityzone` volumes: pin a band and optionally a bespoke class mix.
-- `CONIFER_GENERATOR` (const): const CONIFER_GENERATOR: GeneratorDefinition<ParamSchema<readonly [{ readonly type: "seed"; readonly key: "seed"; readonly label: "seed"; readonly default: ""; }, { readonly type: "range"; readonly key: "height"; readonly label: "height"; readonly group: "trunk"; readonly min: 1.5; readonly max: 45;… — Conifers: pine, spruce, redwood.
-- `CONIFER_SCHEMA` (const): const CONIFER_SCHEMA: ParamSchema<readonly [{ readonly type: "seed"; readonly key: "seed"; readonly label: "seed"; readonly default: ""; }, { readonly type: "range"; readonly key: "height"; readonly label: "height"; readonly group: "trunk"; readonly min: 1.5; readonly max: 45; readonly step: 0.1; re… — Conifer params: trunk, tiered crown and colours.
 - `CREATIVE_FLIGHT_TUNING` (const): const CREATIVE_FLIGHT_TUNING: FreeFlightTuning — Preset for Minecraft-like creative flight — weightless, collides, yaw-relative strafe.
 - `CameraShakeConfig` (interface): interface CameraShakeConfig — Configuration for {@link createCameraShake}. Every field has a game-feel default.
 - `CameraShakeController` (interface): interface CameraShakeController — A live, dt-driven, trauma-based camera shake controller.

@@ -38,6 +38,13 @@ export interface GeneratorDefinition<Schema extends ParamSchema = ParamSchema, O
   readonly output: string;
   /** Detail levels {@link bakeGeneratorVariants} bakes per variant, highest first. Default `[1]`. */
   readonly lods?: readonly number[];
+  /**
+   * Optional slow or stored work for one params, seed and detail (growing a plant, reading a cache)
+   * that `generate` then reads synchronously. Display paths await it through {@link prepareGenerator}
+   * or {@link prepareGeneratorVariants}; an unprepared `generate` must still return the same output,
+   * only slower.
+   */
+  prepare?(params: ParamsOf<Schema>, context: GeneratorContext): Promise<void>;
   generate(params: ParamsOf<Schema>, context: GeneratorContext): Output;
 }
 
@@ -84,6 +91,20 @@ export function runGenerator<Schema extends ParamSchema, Output>(
 ): Output {
   const seed = generatorSeed(definition.schema, meta, options.fallbackSeed ?? definition.id);
   return definition.generate(parseParams(definition.schema, meta), generatorContext(seed, options.detail ?? 1));
+}
+
+/**
+ * Await a generator's `prepare` for the output {@link runGenerator} would return with the same
+ * arguments. Resolves at once for a generator without one.
+ */
+export async function prepareGenerator<Schema extends ParamSchema, Output>(
+  definition: GeneratorDefinition<Schema, Output>,
+  meta: Readonly<Record<string, unknown>> | undefined,
+  options: RunGeneratorOptions = {},
+): Promise<void> {
+  if (definition.prepare === undefined) return;
+  const seed = generatorSeed(definition.schema, meta, options.fallbackSeed ?? definition.id);
+  await definition.prepare(parseParams(definition.schema, meta), generatorContext(seed, options.detail ?? 1));
 }
 
 /** One seeded variant: the `meta` it would write, and its parsed params and seed. */
@@ -169,6 +190,24 @@ export function bakeGeneratorVariants<Schema extends ParamSchema, Output>(
 }
 
 /**
+ * Await `prepare` for every variant and detail level {@link bakeGeneratorVariants} would bake with the
+ * same arguments, one after another, so a bake right after it is fast.
+ * @capability generator-contract seeded, schema-driven procedural generator with variants and editor exposure
+ */
+export async function prepareGeneratorVariants<Schema extends ParamSchema, Output>(
+  definition: GeneratorDefinition<Schema, Output>,
+  base: Readonly<Record<string, unknown>> | undefined,
+  options: GeneratorVariantOptions = {},
+): Promise<void> {
+  const prepare = definition.prepare;
+  if (prepare === undefined) return;
+  const lods = definition.lods !== undefined && definition.lods.length > 0 ? definition.lods : [1];
+  for (const variant of generatorVariants(definition, base, options)) {
+    for (const detail of lods) await prepare.call(definition, variant.params, generatorContext(variant.seed, detail));
+  }
+}
+
+/**
  * A stable variant index in `[0, count)` for one placed instance key (an id, a grid cell).
  * @capability generator-contract seeded, schema-driven procedural generator with variants and editor exposure
  */
@@ -197,6 +236,9 @@ export function untypedGenerator<Schema extends ParamSchema, Output>(definition:
     schema: definition.schema,
     output: definition.output,
     ...(definition.lods === undefined ? {} : { lods: definition.lods }),
+    ...(definition.prepare === undefined
+      ? {}
+      : { prepare: (params: Readonly<Record<string, unknown>>, context: GeneratorContext) => definition.prepare?.(parseParams(definition.schema, params), context) ?? Promise.resolve() }),
     // Registry callers hold untyped params, so they are parsed against the schema on the way in.
     generate: (params, context) => definition.generate(parseParams(definition.schema, params), context),
   };

@@ -1,11 +1,10 @@
 // @skill jgengine-world
 /**
- * Seeded nature generators on the generator contract: broadleaf and conifer trees, palms and
- * cycads, bushes, ferns, rocks from pebbles to boulders, and driftwood. Each is a bounded param
- * schema (trunk shape, branching, leaf clusters, bark and leaf colour, rock shape and erosion …)
- * whose variants differ in lean, branching, clumps, tint and wear while still reading as their
- * species. Species recipes (oak, birch, dead tree, pine, redwood, palm, cycad, berry bush, boulder,
- * pebbles …) are schema presets. Every generator returns a {@link NatureMesh} under
+ * Seeded nature generators on the generator contract: palms and cycads, bushes, ferns, rocks from
+ * pebbles to boulders, and driftwood; trees are grown by the plant simulation (`plant.grown`). Each
+ * is a bounded param schema (trunk shape, fronds, clumps, colour, rock shape and erosion …) whose
+ * variants differ in lean, clumps, tint and wear while still reading as their species. Species
+ * recipes (palm, cycad, berry bush, boulder, pebbles …) are schema presets. Every generator returns a {@link NatureMesh} under
  * {@link NATURE_OUTPUT}, so one draw path previews, places and scatter-instances them all.
  *
  * @capability nature-generator seeded trees, palms, bushes, ferns, rocks and pebbles with editor variants and instanced scatter
@@ -16,7 +15,6 @@ import { registerPlaceableGeneratorOutput } from "../scene/assetGenerator";
 import {
 
   addBlob,
-  addCone,
   addFrond,
   addStone,
   addTube,
@@ -43,9 +41,6 @@ export const NATURE_OUTPUT = "nature-mesh";
 const NATURE_LODS = [1, 0.5] as const;
 
 const GOLDEN = Math.PI * (3 - Math.sqrt(5));
-/** Most leaf clusters one broadleaf grows, so a tree's triangle count stays bounded at any slider setting. */
-const MAX_LEAF_CLUSTERS = 24;
-const DEG = Math.PI / 180;
 
 function lerp(a: number, b: number, t: number): number {
   return a + (b - a) * t;
@@ -112,183 +107,6 @@ function limbPath(start: NatureVec, azimuth: number, elevation: number, length: 
   }
   return points;
 }
-
-// --- Broadleaf -----------------------------------------------------------------------------------
-
-/** Broadleaf tree params: trunk, branching, canopy clusters and colours. */
-export const BROADLEAF_SCHEMA = defineParamSchema({
-  groups: [
-    { id: "trunk", label: "Trunk" },
-    { id: "branches", label: "Branches" },
-    { id: "canopy", label: "Canopy" },
-    { id: "colour", label: "Colour" },
-  ],
-  fields: [
-    { type: "seed", key: "seed", label: "seed", default: "" },
-    { type: "range", key: "height", label: "height", group: "trunk", min: 1.5, max: 30, step: 0.1, default: 9, unit: "m", explore: [5, 14], exploreScale: "log" },
-    { type: "range", key: "trunkRadius", label: "trunk radius", group: "trunk", min: 0.06, max: 1.6, step: 0.01, default: 0.34, unit: "m", explore: [0.18, 0.6], exploreScale: "log" },
-    { type: "range", key: "taper", label: "taper", group: "trunk", min: 0.2, max: 0.9, step: 0.01, default: 0.6 },
-    { type: "range", key: "lean", label: "lean", group: "trunk", min: 0, max: 0.5, step: 0.01, default: 0.07, unit: "rad", explore: [0, 0.2] },
-    { type: "range", key: "bend", label: "bend", group: "trunk", min: 0, max: 1, step: 0.01, default: 0.35 },
-    { type: "range", key: "gnarl", label: "gnarl", group: "trunk", min: 0, max: 0.6, step: 0.01, default: 0.18 },
-    { type: "range", key: "branches", label: "branches", group: "branches", min: 0, max: 10, step: 1, default: 5, explore: [3, 8] },
-    { type: "range", key: "branchStart", label: "first branch", group: "branches", min: 0.15, max: 0.85, step: 0.01, default: 0.42, explore: [0.3, 0.6] },
-    { type: "range", key: "branchAngle", label: "branch angle", group: "branches", min: 15, max: 85, step: 1, default: 52, unit: "°", explore: [35, 70] },
-    { type: "range", key: "branchLength", label: "branch length", group: "branches", min: 0.15, max: 0.8, step: 0.01, default: 0.42, explore: [0.3, 0.55] },
-    { type: "range", key: "twigs", label: "twigs per branch", group: "branches", min: 0, max: 3, step: 1, default: 1 },
-    { type: "range", key: "leafDensity", label: "leaf density", group: "canopy", min: 0, max: 1, step: 0.01, default: 1, vary: false },
-    { type: "range", key: "clusterSize", label: "cluster size", group: "canopy", min: 0.4, max: 5, step: 0.05, default: 2.1, unit: "m", explore: [1.5, 2.8] },
-    { type: "range", key: "clusterSquash", label: "cluster squash", group: "canopy", min: 0.4, max: 1.2, step: 0.01, default: 0.72 },
-    { type: "range", key: "lumpiness", label: "lumpiness", group: "canopy", min: 0, max: 0.6, step: 0.01, default: 0.28 },
-    { type: "color", key: "barkColor", label: "bark", group: "colour", default: "#6a4e38", explore: { hue: 10, saturation: 0.2, lightness: 0.06 } },
-    { type: "color", key: "leafColor", label: "leaves", group: "colour", default: "#4f8a36", explore: { hue: 18, saturation: 0.2, lightness: 0.07 } },
-    { type: "range", key: "leafTint", label: "leaf tint variation", group: "colour", min: 0, max: 0.5, step: 0.01, default: 0.16 },
-  ],
-  presets: [
-    { id: "oak", label: "Oak", values: { height: 9, trunkRadius: 0.38, branches: 6, branchAngle: 58, twigs: 2, clusterSize: 1.7, leafColor: "#4f8a36", barkColor: "#6a4e38" } },
-    { id: "birch", label: "Birch", values: { height: 11, trunkRadius: 0.18, taper: 0.5, branches: 5, branchStart: 0.5, branchAngle: 38, branchLength: 0.3, clusterSize: 1.5, clusterSquash: 0.95, barkColor: "#d9d4c7", leafColor: "#7fae3e" } },
-    { id: "tropical", label: "Tropical hardwood", values: { height: 14, trunkRadius: 0.5, branchStart: 0.62, branchAngle: 66, branchLength: 0.45, clusterSize: 2.8, clusterSquash: 0.55, leafColor: "#3b7a2f", barkColor: "#7b6650" } },
-    { id: "dead", label: "Dead tree", values: { leafDensity: 0, twigs: 2, branches: 6, gnarl: 0.35, bend: 0.6, barkColor: "#8a8173" } },
-  ],
-});
-
-/** Broadleaf trees: oak, birch, tropical hardwood, dead tree. */
-export const BROADLEAF_GENERATOR = defineGenerator({
-  id: "nature.broadleaf",
-  label: "Broadleaf tree",
-  output: NATURE_OUTPUT,
-  schema: BROADLEAF_SCHEMA,
-  lods: NATURE_LODS,
-  generate(params, context): NatureMesh {
-    const random = context.random("shape");
-    const seed = noiseSeed(context.seed);
-    const builder = new NatureMeshBuilder();
-    const bark = hexRgb(params.barkColor);
-    const leaf = hexRgb(params.leafColor);
-    const sides = sidesFor(context.detail, 9);
-    const height = params.height;
-    const trunk = trunkPath(height, params.lean, params.bend, Math.max(3, Math.round(6 * context.detail)), random);
-    const trunkRadius = (t: number) => params.trunkRadius * (1 - params.taper * t) * (t < 0.08 ? 1 + (0.08 - t) * 6 : 1);
-    addTube(builder, trunk, trunk.map((_, i) => trunkRadius(i / (trunk.length - 1))), { sides, color: barkColors(bark, seed), wobble: params.gnarl, seed });
-    const tips: { at: NatureVec; scale: number }[] = [];
-    const limbSegments = context.detail >= 0.75 ? 3 : 2;
-    for (let b = 0; b < params.branches; b += 1) {
-      const t = params.branchStart + (1 - params.branchStart) * 0.82 * ((b + random() * 0.8) / Math.max(1, params.branches));
-      const start = pointOnPath(trunk, t);
-      const azimuth = b * GOLDEN * 1.0 + random() * 0.9;
-      const elevation = params.branchAngle * DEG * spread(random, 0.2);
-      const length = params.branchLength * height * (1 - 0.45 * (t - params.branchStart)) * spread(random, 0.2);
-      const limb = limbPath(start, azimuth, elevation, length, 0.5 + params.bend * 0.4, limbSegments);
-      const base = trunkRadius(t) * 0.62;
-      addTube(builder, limb, limb.map((_, i) => base * (1 - 0.75 * (i / limb.length))), { sides: Math.max(3, sides - 3), color: barkColors(bark, seed + b), wobble: params.gnarl * 0.5, seed: seed + b });
-      tips.push({ at: pick(limb, limb.length - 1), scale: 1 });
-      for (let k = 0; k < params.twigs && tips.length < MAX_LEAF_CLUSTERS - 1; k += 1) {
-        const from = pointOnPath(limb, 0.45 + random() * 0.4);
-        const twig = limbPath(from, azimuth + (random() - 0.5) * 2.2, elevation * spread(random, 0.3), length * 0.42 * spread(random, 0.25), 0.4, 2);
-        addTube(builder, twig, [base * 0.45, base * 0.28, base * 0.12], { sides: 3, color: barkColors(bark, seed + b * 7 + k), seed });
-        tips.push({ at: pick(twig, twig.length - 1), scale: 0.72 });
-      }
-    }
-    tips.push({ at: pick(trunk, trunk.length - 1), scale: 1.15 });
-    const clusterRandom = context.random("leaves");
-    for (const tip of tips) {
-      const keep = clusterRandom();
-      if (keep >= params.leafDensity) continue;
-      const size = params.clusterSize * tip.scale * spread(clusterRandom, 0.2);
-      const lift = tip.at[1] / Math.max(1, height);
-      addBlob(builder, {
-        center: [tip.at[0], tip.at[1] + size * 0.15, tip.at[2]],
-        radii: [size, size * params.clusterSquash, size * spread(clusterRandom, 0.12)],
-        level: blobLevel(context.detail),
-        lumpiness: params.lumpiness,
-        seed: seed + Math.floor(keep * 100000),
-        color: shade(tinted(leaf, clusterRandom, params.leafTint), 0.9 + lift * 0.15),
-        colorJitter: params.leafTint,
-        shadeBelow: 0.4,
-      });
-    }
-    return builder.build();
-  },
-});
-
-// --- Conifer -------------------------------------------------------------------------------------
-
-/** Conifer params: trunk, tiered crown and colours. */
-export const CONIFER_SCHEMA = defineParamSchema({
-  groups: [
-    { id: "trunk", label: "Trunk" },
-    { id: "crown", label: "Crown" },
-    { id: "colour", label: "Colour" },
-  ],
-  fields: [
-    { type: "seed", key: "seed", label: "seed", default: "" },
-    { type: "range", key: "height", label: "height", group: "trunk", min: 1.5, max: 45, step: 0.1, default: 12, unit: "m", explore: [8, 16], exploreScale: "log" },
-    { type: "range", key: "trunkRadius", label: "trunk radius", group: "trunk", min: 0.05, max: 2, step: 0.01, default: 0.3, unit: "m", explore: [0.2, 0.45], exploreScale: "log" },
-    { type: "range", key: "lean", label: "lean", group: "trunk", min: 0, max: 0.35, step: 0.01, default: 0.03, unit: "rad", explore: [0, 0.1] },
-    { type: "range", key: "crownBase", label: "crown starts at", group: "crown", min: 0.02, max: 0.7, step: 0.01, default: 0.18, explore: [0.1, 0.3] },
-    { type: "range", key: "crownWidth", label: "crown width", group: "crown", min: 0.12, max: 0.7, step: 0.01, default: 0.34, explore: [0.26, 0.42] },
-    { type: "range", key: "tiers", label: "tiers", group: "crown", min: 3, max: 14, step: 1, default: 7, explore: [5, 9] },
-    { type: "range", key: "droop", label: "tier droop", group: "crown", min: 0, max: 0.8, step: 0.01, default: 0.32 },
-    { type: "range", key: "ragged", label: "raggedness", group: "crown", min: 0, max: 0.8, step: 0.01, default: 0.3 },
-    { type: "range", key: "sparse", label: "gaps", group: "crown", min: 0, max: 0.6, step: 0.01, default: 0.05, explore: [0, 0.1] },
-    { type: "color", key: "barkColor", label: "bark", group: "colour", default: "#5b4334", explore: { hue: 8, saturation: 0.2, lightness: 0.05 } },
-    { type: "color", key: "needleColor", label: "needles", group: "colour", default: "#2f5f3a", explore: { hue: 14, saturation: 0.2, lightness: 0.06 } },
-    { type: "range", key: "tint", label: "tint variation", group: "colour", min: 0, max: 0.5, step: 0.01, default: 0.12 },
-  ],
-  presets: [
-    { id: "pine", label: "Pine", values: { height: 12, crownBase: 0.2, crownWidth: 0.34, tiers: 7 } },
-    { id: "spruce", label: "Spruce", values: { height: 14, crownBase: 0.06, crownWidth: 0.4, tiers: 10, droop: 0.45, needleColor: "#264f37" } },
-    { id: "redwood", label: "Redwood", values: { height: 32, trunkRadius: 1.25, crownBase: 0.52, crownWidth: 0.2, tiers: 11, droop: 0.2, ragged: 0.45, sparse: 0.2, barkColor: "#7a3f2a", needleColor: "#335c34" } },
-  ],
-});
-
-/** Conifers: pine, spruce, redwood. */
-export const CONIFER_GENERATOR = defineGenerator({
-  id: "nature.conifer",
-  label: "Conifer",
-  output: NATURE_OUTPUT,
-  schema: CONIFER_SCHEMA,
-  lods: NATURE_LODS,
-  generate(params, context): NatureMesh {
-    const random = context.random("shape");
-    const seed = noiseSeed(context.seed);
-    const builder = new NatureMeshBuilder();
-    const bark = hexRgb(params.barkColor);
-    const needles = hexRgb(params.needleColor);
-    const height = params.height;
-    const trunk = trunkPath(height * 0.97, params.lean, 0.15, Math.max(2, Math.round(4 * context.detail)), random);
-    addTube(builder, trunk, trunk.map((_, i) => {
-      const t = i / (trunk.length - 1);
-      return params.trunkRadius * (1 - 0.88 * t) * (t < 0.1 ? 1 + (0.1 - t) * 5 : 1);
-    }), { sides: sidesFor(context.detail, 8), color: barkColors(bark, seed), wobble: 0.15, seed });
-    const crownStart = params.crownBase * height;
-    const crownSpan = height - crownStart;
-    const tiers = params.tiers;
-    const tierHeight = (crownSpan / tiers) * 1.9;
-    const sides = Math.max(4, Math.round(lerp(4, 7, context.detail)));
-    const treeNeedles = tinted(needles, random, params.tint);
-    for (let i = 0; i < tiers; i += 1) {
-      const t = i / Math.max(1, tiers - 1);
-      if (i > 0 && i < tiers - 1 && random() < params.sparse) continue;
-      const at = pointOnPath(trunk, (crownStart + crownSpan * t * 0.9) / height);
-      const radius = Math.max(0.15, height * params.crownWidth * 0.5 * Math.pow(1 - t * 0.92, 0.9) * spread(random, 0.12));
-      const color = tinted(shade(treeNeedles, 0.88 + t * 0.2), random, params.tint * 0.3);
-      const coneHeight = Math.min(tierHeight, radius * 2.4);
-      addCone(builder, {
-        base: [at[0] + (random() - 0.5) * radius * 0.12, Math.max(at[1], coneHeight * params.droop + 0.1), at[2] + (random() - 0.5) * radius * 0.12],
-        height: coneHeight,
-        radius,
-        sides,
-        droop: params.droop,
-        ragged: params.ragged,
-        seed: seed + i * 13,
-        color,
-        rimColor: shade(color, 0.78),
-      });
-    }
-    return builder.build();
-  },
-});
 
 // --- Palm ----------------------------------------------------------------------------------------
 
@@ -639,8 +457,6 @@ export const DRIFTWOOD_GENERATOR = defineGenerator({
 
 /** Every nature generator, in editor order, as the untyped registry view. */
 export const NATURE_GENERATORS: readonly GeneratorDefinition[] = [
-  untypedGenerator(BROADLEAF_GENERATOR),
-  untypedGenerator(CONIFER_GENERATOR),
   untypedGenerator(PALM_GENERATOR),
   untypedGenerator(BUSH_GENERATOR),
   untypedGenerator(FERN_GENERATOR),

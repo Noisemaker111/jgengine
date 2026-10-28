@@ -6,7 +6,7 @@ import { registerBuiltinSceneKinds } from "@jgengine/core/scene/builtinSceneKind
 import { isNatureMesh, type NatureMesh } from "./natureMesh";
 import { findSchemaPreset, parseParams } from "@jgengine/core/generator/paramSchema";
 import type { GeneratorDefinition } from "@jgengine/core/generator/generator";
-import { BROADLEAF_GENERATOR, BUSH_GENERATOR, NATURE_GENERATORS, NATURE_OUTPUT, PALM_GENERATOR, ROCK_GENERATOR } from "./natureGenerators";
+import { BUSH_GENERATOR, NATURE_GENERATORS, NATURE_OUTPUT, PALM_GENERATOR, ROCK_GENERATOR } from "./natureGenerators";
 
 function mesh(value: unknown): NatureMesh {
   if (!isNatureMesh(value)) throw new Error("not a nature mesh");
@@ -26,7 +26,7 @@ const FULL_DETAIL_TRIANGLES = 3200;
 describe("nature generators", () => {
   test("cover every species the issue names", () => {
     const presets = new Set(SPECIES.map((species) => species.preset));
-    for (const name of ["coconut", "cycad", "oak", "pine", "redwood", "dead", "shrub", "berry", "fern", "rock", "boulder", "pebbles", "driftwood"]) {
+    for (const name of ["coconut", "cycad", "shrub", "berry", "fern", "rock", "boulder", "pebbles", "driftwood"]) {
       expect(presets.has(name)).toBe(true);
     }
     expect(NATURE_GENERATORS.every((definition) => definition.output === NATURE_OUTPUT)).toBe(true);
@@ -69,9 +69,8 @@ describe("nature generators", () => {
     }
   });
 
-  test("variants keep what makes the species: dead trees stay bare, cycads fruitless, shrubs berry-free, boulders one stone", () => {
+  test("variants keep what makes the species: cycads fruitless, shrubs berry-free, boulders one stone", () => {
     const pinned: [GeneratorDefinition, string, string][] = [
-      [BROADLEAF_GENERATOR, "dead", "leafDensity"],
       [PALM_GENERATOR, "cycad", "fruit"],
       [BUSH_GENERATOR, "shrub", "berries"],
       [ROCK_GENERATOR, "boulder", "count"],

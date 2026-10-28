@@ -296,3 +296,8 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 - `surfaceMaterialArrayTextures` (function) · `import { surfaceMaterialArrayTextures } from "@jgengine/core/material/surfaceMaterialTextures.draw"`
 - `surfaceMaterialMeta` (function) · `import { surfaceMaterialMeta } from "@jgengine/core/material/surfaceMaterialGenerator"`
 - `surfaceMaterialStandardMaps` (function) · `import { surfaceMaterialStandardMaps } from "@jgengine/core/material/surfaceMaterialTextures.draw"`
+
+## toon-ramp — cel-shading ramp a toon material reads: flat light bands with an optional soft edge
+
+- `ToonRamp` (interface) · `import { ToonRamp } from "@jgengine/core/material/toonRamp"`
+- `toonRampMaterial` (function) · `import { toonRampMaterial } from "@jgengine/core/material/toonRamp.draw"`

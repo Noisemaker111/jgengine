@@ -3,7 +3,7 @@ import type { GrowthState } from "../growth/growthState";
 import { NODE_AXIS_START, NODE_DEAD, NODE_SCAR } from "../growth/growthState";
 import type { GrowingSeason } from "../growth/phenology";
 import { PLANT_PI } from "../growth/plantMath";
-import type { BarkKind, LeafShapeParams, PlantSpecies } from "../species/plantSpecies";
+import type { BarkKind, LeafShapeParams, PlantSpecies, SeasonalColor } from "../species/plantSpecies";
 
 /** Region code per skeleton segment; a style picks material and detail by it. */
 export const PLANT_REGION = { trunk: 0, branch: 1, twig: 2, deadwood: 3, scar: 4, rootFlare: 5 } as const;
@@ -88,6 +88,8 @@ export interface PlantStructure {
   clusters: { levels: readonly PlantClusterLevel[] };
   reproductive: { kind: Uint8Array; position: Float32Array; size: Float32Array; stage: Float32Array; count: Uint16Array };
   leafShape: LeafShapeParams;
+  /** The species' leaf colours across the season; {@link PlantStructure.leaves} `colorState` mixes them. */
+  leafColor: SeasonalColor;
   bark: { kind: BarkKind; furrow: number; color: string };
 }
 
@@ -105,9 +107,11 @@ function radiusOf(state: GrowthState, i: number): number {
 }
 
 function leafColor(day: number, season: GrowingSeason, out: Float32Array, at: number): void {
+  // Evergreen foliage (out all year) never turns.
+  const evergreen = season.leafOnDay <= 1 && season.leafOffDay >= 365;
   const fall = season.leafOffDay - day;
-  const flush = day - season.leafOnDay;
-  let senescence = fall < 25 ? (25 - fall) / 25 : 0;
+  const flush = evergreen ? 365 : day - season.leafOnDay;
+  let senescence = !evergreen && fall < 25 ? (25 - fall) / 25 : 0;
   if (senescence > 1) senescence = 1;
   const young = flush < 14 ? 1 - flush / 14 : 0;
   out[at] = (1 - senescence) * (1 - 0.3 * young);
@@ -357,6 +361,7 @@ export function buildPlantStructure(source: PlantStructureSource): PlantStructur
     clusters: { levels },
     reproductive: { kind: organKind, position: organPosition, size: organSize, stage: organStage, count: organCount },
     leafShape: species.leaf.shape,
+    leafColor: species.leaf.color,
     bark: { kind: species.bark.kind, furrow, color: species.bark.color },
   };
 }
