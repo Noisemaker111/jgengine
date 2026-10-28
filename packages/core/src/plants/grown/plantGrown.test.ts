@@ -167,6 +167,11 @@ describe("plant grow workers", () => {
           expect(result?.mesh).toBeNull();
         }
       });
+      expect(grower.state()).toEqual({ queued: 0, running: 0, workers: 0 });
+      const cancelled = grower.grow({ species: ACER_SACCHARUM, env: OPEN_TEMPERATE_SITE, seed: "w4", age: 40, day: 200 });
+      grower.reset();
+      await expect(cancelled).rejects.toThrow("reset");
+      expect(grower.state()).toEqual({ queued: 0, running: 0, workers: 0 });
     } finally {
       grower.dispose();
     }

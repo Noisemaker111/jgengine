@@ -38,6 +38,21 @@ export interface PlantGrower {
   dispose(): void;
 }
 
+/** What a worker pool is doing: jobs waiting, jobs running and workers alive. */
+export interface WorkerPlantGrowerState {
+  queued: number;
+  running: number;
+  workers: number;
+}
+
+/** A {@link PlantGrower} backed by workers. */
+export interface WorkerPlantGrower extends PlantGrower {
+  /** Jobs waiting, jobs running and workers alive. */
+  state(): WorkerPlantGrowerState;
+  /** Cancel every job (they reject) and stop every worker; the pool starts workers again on the next grow. */
+  reset(): void;
+}
+
 /** @internal A request on its way to a worker. */
 export interface PlantGrowJob {
   id: number;
@@ -90,7 +105,7 @@ function spawnDefault(): Worker {
  * drains. Null where the platform has no workers.
  * @capability plant-grown place, scatter and preview simulation-grown plants of any species, age and style
  */
-export function createWorkerPlantGrower(options: WorkerPlantGrowerOptions = {}): PlantGrower | null {
+export function createWorkerPlantGrower(options: WorkerPlantGrowerOptions = {}): WorkerPlantGrower | null {
   if (typeof Worker === "undefined") return null;
   const most = Math.max(1, options.workers ?? defaultWorkerCount());
   const spawn = options.spawn ?? spawnDefault;
@@ -137,6 +152,17 @@ export function createWorkerPlantGrower(options: WorkerPlantGrowerOptions = {}):
     return worker;
   }
 
+  function reset(): void {
+    for (const pending of queue.splice(0)) pending.reject(new Error("plant grower reset"));
+    for (const [worker, pending] of busy) {
+      worker.terminate();
+      pending.reject(new Error("plant grower reset"));
+    }
+    busy.clear();
+    for (const worker of idle.splice(0)) worker.terminate();
+    atlasesOrdered.clear();
+  }
+
   function pump(): void {
     while (queue.length > 0) {
       const worker = idle.pop() ?? (busy.size < most ? start() : undefined);
@@ -171,14 +197,10 @@ export function createWorkerPlantGrower(options: WorkerPlantGrowerOptions = {}):
       }
       return Promise.all([result, ordered]).then(([grown]) => grown);
     },
-    dispose() {
-      for (const pending of queue.splice(0)) pending.reject(new Error("plant grower disposed"));
-      for (const [worker, pending] of busy) {
-        worker.terminate();
-        pending.reject(new Error("plant grower disposed"));
-      }
-      busy.clear();
-      for (const worker of idle.splice(0)) worker.terminate();
+    state() {
+      return { queued: queue.length, running: busy.size, workers: busy.size + idle.length };
     },
+    reset,
+    dispose: reset,
   };
 }
