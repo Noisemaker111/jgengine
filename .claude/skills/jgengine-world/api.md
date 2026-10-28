@@ -1346,7 +1346,7 @@
 - `FuelMoistureSnapshot` (interface): interface FuelMoistureSnapshot — Serializable state of a fuel moisture model.
 - `FuelMoistureTuning` (interface): interface FuelMoistureTuning — Live policy of a fuel moisture model; every value can change during play with `retune`.
 - `MoistureWeather` (interface): interface MoistureWeather — The weather a fuel moisture model reads; the only seam between fire and a weather system.
-- `createFuelMoistureModel` (function): function createFuelMoistureModel(config: { cells: number; initial: FuelMoisture; exposure?: Float32Array; tuning?: Partial<FuelMoistureTuning>; }): FuelMoistureModel — Fuel moisture over time from weather, one value set per fire grid cell, ready to hand to a fire landscape with `setMoistureField`. Dead fuels relax exponentially toward their equilibrium moisture (Simard 1968 at fuel-level conditions for 1-h and 10-h, air conditions for 100-h) with NFDRS 1978 time lags and rain boundaries; live fuels start at `initial` and follow a Jolly 2005 growing season index mapped onto the NFDRS 2016 live moisture ranges, averaged over the index's window. `exposure` (0..1 per cell) is how much sun reaches the fuel.
+- `createFuelMoistureModel` (function): function createFuelMoistureModel(config: { cells: number; initial: FuelMoisture; exposure?: Float32Array; /** Share of the rain that reaches each cell's fuel, 0 (under a roof) .. 1 (open); all open when omitted. */ rainShare?: Float32Array; tuning?: Partial<FuelMoistureTuning>; }): FuelMoistureModel — Fuel moisture over time from weather, one value set per fire grid cell, ready to hand to a fire landscape with `setMoistureField`. Dead fuels relax exponentially toward their equilibrium moisture (Simard 1968 at fuel-level conditions for 1-h and 10-h, air conditions for 100-h) with NFDRS 1978 time lags and rain boundaries; live fuels start at `initial` and follow a Jolly 2005 growing season index mapped onto the NFDRS 2016 live moisture ranges, averaged over the index's window. `exposure` (0..1 per cell) is how much sun reaches the fuel.
 - `equilibriumMoistureContent` (function): function equilibriumMoistureContent(temperatureC: number, relativeHumidity: number): number — Equilibrium moisture content of dead wood, fraction of dry mass, from temperature (°C) and relative humidity (0..1): Simard 1968's three-part regression as used by the 1978 NFDRS.
 - `fuelLevelWeather` (function): function fuelLevelWeather(temperatureC: number, relativeHumidity: number, cloudCover: number, sun: number): { temperatureC: number; relativeHumidity: number } — Temperature and humidity at the surface of sunlit fuel (Cohen & Deeming 1985): sun heats the fuel above the air and dries the air next to it, more under clear sky than overcast. `sun` scales the correction from none (night or full shade) to the full table value.
 - `growingSeasonIndex` (function): function growingSeasonIndex(minimumTemperatureC: number, vaporPressureDeficitPa: number, dayLengthHours: number): number — Jolly et al. 2005 growing season index, 0..1: the product of ramps on daily minimum temperature (−2..5 °C), vapour pressure deficit (900..4100 Pa, inverted) and day length (10..11 h).
@@ -5321,11 +5321,6 @@
 - `DustField` (function): function DustField({ count = DEFAULT_DUST_COUNT, density = DEFAULT_DUST_DENSITY, budget, volume = DEFAULT_VOLUME, wind, origin = DEFAULT_ORIGIN, followCamera = true, speed = 2.4, size = 0.16, sway = 0.5, opacity = 0.3, color = DEFAULT_DUST_COLOR, groundBias = 0.65, timeScale, timeSeconds, seed = 514… — Renders wind-borne particulate as camera-facing motes. Reach for it whenever the air itself should read as weather — a desert gale, ash off a volcano, pollen in a meadow, grain dust in a silo. Compose it through {@link WeatherLayer}'s `"dust"` mode (or `dustAlways` alongside rain and snow) rather than mounting it directly, so it shares one wind and time source with the other layers.
 - `DustFieldProps` (interface): interface DustFieldProps — Wind-borne particulate: dust, sand, ash, pollen, spores. Unlike rain and snow this is not falling — motion is dominated by horizontal wind with a slow vertical bob, and density thins with height so the air near the ground carries the most grit. Any arid, volcanic, or blown-out world needs it.
 
-## @jgengine/core/weather/FireSpreadLayer.draw
-
-- `FireSpreadLayer` (function): function FireSpreadLayer({ grid, cellSize = grid.cellSize, origin = grid.origin, heightAt, flameHeight = 1.6, burningColor = "#ff6a1a", emberColor = "#4a1206", timeSeconds, }: FireSpreadLayerProps): React.JSX.Element — Draw a fire-spread grid as billboarded flames on burning cells and embers on burnt ones.
-- `FireSpreadLayerProps` (interface): interface FireSpreadLayerProps — Props for {@link FireSpreadLayer}: the fire grid, its cell size and origin, a ground-height sampler and flame look.
-
 ## @jgengine/core/weather/LightningStrike.draw
 
 - `LightningStrike` (function): function LightningStrike({ origin, target, strikeKey = 0, seed = 451, visible = true, duration = 0.18, color = DEFAULT_COLOR, glow = 2.4, branches = 5, jaggedness = 0.08, impactLight = 26, renderOrder = 20, timeSeconds, startedAt, }: LightningStrikeProps): React.JSX.Element — A jagged, briefly flashing lightning bolt from `origin` to `target`.
@@ -5380,19 +5375,12 @@
 
 ## @jgengine/core/weather/weather
 
-- `FireCell` (interface): interface FireCell — One fire-grid cell: fuel left, heat and burn state.
-- `FireCellState` (type): type FireCellState = "unburnt" | "burning" | "burnt" — Whether a fire-grid cell has not caught, is burning, or has burnt out.
-- `FireGrid` (interface): interface FireGrid — A cellular fire-spread grid stepped by game time; ignite cells and read their state.
-- `FireGridConfig` (interface): interface FireGridConfig — Size, origin, cell size, fuel and spread settings for {@link createFireGrid}.
-- `FireGridTuning` (type): type FireGridTuning = Pick<FireGridConfig, "ignitionThreshold" | "spreadRate" | "burnRate" | "wind" | "windBias"> — Live fire ignition, spread, consumption and wind policies; grid geometry stays fixed.
-- `FireStepOptions` (interface): interface FireStepOptions — Per-step inputs to a fire grid: spread multiplier, wind and per-cell wetness.
 - `ResolvedWeather` (interface): interface ResolvedWeather — Every {@link WeatherModifier} field for the current weather, scaled by its intensity.
 - `WeatherKind` (type): type WeatherKind = string — A weather kind's name, as a game's {@link WeatherModifierTable} keys it (`"rain"`, `"storm"`, ...).
 - `WeatherKindOf` (type): type WeatherKindOf<TTable extends WeatherModifierTable> = Extract<keyof TTable, string> — The kind names a {@link WeatherModifierTable} defines.
 - `WeatherModifier` (interface): interface WeatherModifier — How one weather kind changes play at full intensity: grip, visibility, structure damage, chill, fire ignition and spread.
 - `WeatherModifierTable` (type): type WeatherModifierTable<K extends string = string> = Record<K, WeatherModifier> — A game's weather kinds, each with its {@link WeatherModifier}.
 - `WeatherState` (interface): interface WeatherState — The weather now: its kind, intensity 0..1 and optional wind.
-- `createFireGrid` (function): function createFireGrid(config: FireGridConfig): FireGrid — Create a {@link FireGrid}; throws on sizes outside its cell budget.
 - `resolveWeather` (function): function resolveWeather<TTable extends WeatherModifierTable>(state: WeatherState, table: TTable): ResolvedWeather — Resolve the current weather against a game's modifier table; throws on a kind the table does not define.
 
 ## @jgengine/core/weather/weatherMath
@@ -5581,7 +5569,7 @@
 - `FastTravelNetwork` (interface): interface FastTravelNetwork<TMeta = unknown> — A network of fast-travel points with per-player discovery + distance queries.
 - `FastTravelOptions` (interface): interface FastTravelOptions<TMeta = unknown> — Options for {@link createFastTravelNetwork}.
 - `FastTravelSnapshot` (interface): interface FastTravelSnapshot — Serializable discovery state.
-- `FireGrid` (interface): interface FireGrid — A cellular fire-spread grid stepped by game time; ignite cells and read their state.
+- `FireLandscape` (interface): interface FireLandscape — A fire growing over a landscape of fuel, terrain and canopy.
 - `FlatGround` (interface): interface FlatGround — A 3D walkable plane/slab. `Infinity` axes are unbounded; no separate "infinite" mode exists.
 - `FlatGroundSize` (interface): interface FlatGroundSize — Size of a `flat` ground: extents in world units. `Infinity` on an axis means unbounded — an endless plain needs no bounds number invented for it. `y` optionally bounds vertical play space.
 - `FogCells` (interface): interface FogCells — A fog field's grid: size, origin, cell size and row-major revealed flags.
@@ -6151,7 +6139,7 @@
 - `createFactionGraph` (function): function createFactionGraph(config: FactionGraphConfig): FactionGraph — ⚠ undocumented
 - `createFactionRoster` (function): function createFactionRoster(graph: FactionGraph): FactionRoster — ⚠ undocumented
 - `createFastTravelNetwork` (function): function createFastTravelNetwork<TMeta = unknown>(options: FastTravelOptions<TMeta>): FastTravelNetwork<TMeta> — A fast-travel network: defined destinations plus per-player discovery, with distance-sorted queries, a `nearest` lookup, a `canTravel` gate, an `onDiscover` seam, and serializable `snapshot`/`restore`. Travel itself is a teleport the game applies to `TravelPointView.position`; this owns the unlock/where-can-I-go state. Points marked `initial` start discovered.
-- `createFireGrid` (function): function createFireGrid(config: FireGridConfig): FireGrid — Create a {@link FireGrid}; throws on sizes outside its cell budget.
+- `createFireLandscape` (function): function createFireLandscape(config: FireLandscapeConfig): FireLandscape — Grow a wildfire over a grid of fuel, terrain and canopy. Each cell spreads as a Rothermel surface fire shaped by the Anderson ellipse, or as a Rothermel 1991 crown fire once Van Wagner's 1977 thresholds are passed; arrival times follow Finney's 2002 minimum-travel-time method on an 8-, 16- or 32-direction stencil, integrating travel time through every cell a path crosses, on the slope surface, with a semi-Lagrangian triangle update so fronts also travel between stencil directions. Torching and crowning cells loft embers to Albini's maximum spotting distance, which light fuel with the NFDRS ignition probability. Cells flame for the Anderson residence time, smoulder coarse fuel out, and leave char, ash and scorch. Deterministic for a seed; cost is bounded by the event budget per step and the cells actively burning.
 - `createFogField` (function): function createFogField(config: FogConfig): FogField — Create a fog-of-war field over `bounds`; reveal cells as the player explores. Throws on a non-positive cell size.
 - `createFootprintGrid` (function): function createFootprintGrid(options: FootprintGridOptions = {}): FootprintGrid — Multi-cell footprint occupancy/reservation on a shared build grid — `world/placementController` only owns the ghost preview; this is the persistent claim a committed placement holds so the next hover's `isFree` check (or another player's, in a shared world) sees it. Bridge into `world/placement`'s `PlacementRules.obstacles` with {@link footprintObstacles} instead of hand-rolling an occupancy map per game.
 - `createFreeFlightController` (function): function createFreeFlightController(initialTuning: FreeFlightTuning, options: { yaw?: number; pitch?: number; state?: FreeFlightState } = {}): FreeFlightController — Totally free flight for any actor — character, camera, drone, or debug rig. Horizontal is always yaw-relative strafe; vertical is jump/crouch. Use `alignWithLook` for a 6DOF spectator that flies where the camera looks.
@@ -6466,6 +6454,7 @@
 
 ## @jgengine/core/world/authoredSimulation
 
+- `AuthoredFireRuntime` (interface): interface AuthoredFireRuntime — One authored fire area at runtime: its landscape fire and the fuel moisture authored weather drives.
 - `AuthoredFlockState` (interface): interface AuthoredFlockState — A habitat's live poses; game species determine appearance and gameplay actor policy.
 - `AuthoredSimulationRuntime` (interface): interface AuthoredSimulationRuntime — Engine-owned authority uses the caller's simulation clock; render quality cannot change it.
 - `AuthoredSimulationSnapshot` (interface): interface AuthoredSimulationSnapshot — Runtime state excludes authored configuration and cosmetic particle pools.

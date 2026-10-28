@@ -182,6 +182,7 @@ export {
   effectiveRelation,
   tierForStanding,
 } from "./faction/reputation";
+export { createFireLandscape, type FireLandscape } from "./fire/fireLandscape";
 export {
   aircraftAttitudeQuaternion,
   aircraftHeadingQuaternion,
@@ -944,7 +945,6 @@ export {
   type WaveSpawnSink,
   type WaveView,
 } from "./waves/waveRunner";
-export { createFireLandscape, type FireLandscape } from "./fire/fireLandscape";
 export {
   resolveWeather,
   type ResolvedWeather,

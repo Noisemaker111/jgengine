@@ -58,11 +58,13 @@ test("pause, whole simulation restore and durable runtime restore retain state w
 test("weather retuning preserves progressed fire and teardown releases authored effects", () => {
   const ctx = context(true);
   advance(ctx, 0.1);
-  const before = ctx.environment.fire("fire")!.fire.snapshot();
-  expect(ctx.environment.fire("fire")!.fire.cell(0, 0).state).toBe("flaming");
+  const area = ctx.environment.fire("fire");
+  if (area === undefined) throw new Error("fire area missing");
+  const before = area.fire.snapshot();
+  expect(area.fire.cell(0, 0).state).toBe("flaming");
   const next = document(); next.simulation!.weather!.ambient = { mode: "clear", intensity: 0 };
   ctx.environment.retune(next);
-  expect(ctx.environment.fire("fire")!.fire.snapshot()).toEqual(before);
+  expect(ctx.environment.fire("fire")?.fire.snapshot()).toEqual(before);
   expect(ctx.particles.emitters()).toHaveLength(1);
   ctx.environment.dispose();
   expect(ctx.particles.emitters()).toHaveLength(0);
@@ -176,13 +178,13 @@ test("fire binding stops spawning on extinction and appearance signals keep Cels
   const out: [number, number, number] = [9, 9, 9];
   expect(ctx.environment.accelerationAt([8, 0, 0], 0, 1, 3, 0, out)).toBe(out);
   expect(out).toEqual([3, 0, 0]);
-  expect(ctx.environment.fire("fire")!.extinguish(8.5, 0.5)).toBe(true);
+  expect(ctx.environment.fire("fire")?.extinguish(8.5, 0.5)).toBe(true);
   advance(ctx, 0.05);
   expect(ctx.particles.emitters()[0]!.active).toBe(false);
-  expect(ctx.environment.fire("fire")!.ignite(9.5, 0.5)).toBe(true);
+  expect(ctx.environment.fire("fire")?.ignite(9.5, 0.5)).toBe(true);
   advance(ctx, 0.05);
   expect(ctx.particles.emitters()[0]!.active).toBe(false);
-  expect(ctx.environment.fire("fire")!.ignite(11.5, 0.5)).toBe(true);
+  expect(ctx.environment.fire("fire")?.ignite(11.5, 0.5)).toBe(true);
   advance(ctx, 0.05);
   expect(ctx.particles.emitters()[0]!.active).toBe(true);
   next.simulation!.emitters[0]!.options!.active = false;

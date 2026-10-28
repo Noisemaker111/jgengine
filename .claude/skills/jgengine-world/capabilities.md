@@ -677,7 +677,7 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 ## fire-landscape — grow a wildfire over fuel, terrain and canopy with crown fire, ember spotting and burnout; snapshot, restore, retune
 
-- `createFireLandscape` (function) · `import { createFireLandscape } from "@jgengine/core/fire/fireLandscape"`
+- `createFireLandscape` (function) · `import { createFireLandscape } from "@jgengine/core/world"`
 
 ## fire-length-to-breadth — Anderson 1983 surface fire ellipse shape from effective wind
 
