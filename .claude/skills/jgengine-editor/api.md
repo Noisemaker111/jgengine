@@ -487,7 +487,7 @@
 - `EditorBridgeServer` (interface): interface EditorBridgeServer — A running editor bridge server: its bound port, URL, and a stop handle.
 - `EditorBridgeServerOptions` (interface): interface EditorBridgeServerOptions — Options for starting the editor's HTTP bridge server: host api, port, hostname.
 - `EditorCameraDriver` (const): const EditorCameraDriver: React.MemoExoticComponent<({ api }: { api: EditorHostApi; }) => null> — Drives the editor orbit camera from the host's focus target. When the target carries only a point, the camera pans to keep it centered (the historical behavior). When it also carries placement (`distance`/`pitch`/`yaw`/`height`), the camera is repositioned to that orbit pose — how `camera_goto`/`camera_frame` compose an aerial without the KeyF-buries-in-terrain problem.
-- `EditorChrome` (function): function EditorChrome({ gameId, session, api, assets, ui, baselineDocument, save, networkSnapshot, importAsset = importAssetToHost, onRegisterAsset, onExitEditor, allowedKinds, exitLabel, maxImportBytes, documentSave, draftAutosave = true, creatorPolicy, }: { gameId: string; session: EditorSession; … — The full editor UI shell — global app bar, contextual scene toolbar, workspace rail, resizable hierarchy/inspector docks, tabbed bottom dock (content browser, console, profiler, AI assistant), viewport overlays, and status bar — wired to the session, UI store, layout store, and host RPC. Mounted by `EditorApp`; not a game-author entry point.
+- `EditorChrome` (function): function EditorChrome({ gameId, session, api, assets, ui, baselineDocument, save, networkSnapshot, importAsset = importAssetToHost, onRegisterAsset, onExitEditor, allowedKinds, exitLabel, maxImportBytes, documentSave, draftAutosave = true, creatorPolicy, libraryDropTarget, }: { gameId: string; sessi… — The full editor UI shell — global app bar, contextual scene toolbar, workspace rail, resizable hierarchy/inspector docks, tabbed bottom dock (content browser, console, profiler, AI assistant), viewport overlays, and status bar — wired to the session, UI store, layout store, and host RPC. Mounted by `EditorApp`; not a game-author entry point.
 - `EditorHostApi` (interface): interface EditorHostApi — The live editor's global control surface — session, visibility, camera focus, assets, mode, RPC.
 - `EditorLayerOverlays` (function): function EditorLayerOverlays({ document, visibility, selection, hoverId = null, onSelect, activePathPoint, groundHeightAt, }: { document: EditorDocument; visibility: EditorKindVisibility; selection: readonly string[]; /** Pre-selection hover id from viewport pointer pick; ignored when already select… — Renders every visible marker, volume, path, and note from a document as in-scene 3D gizmos.
 - `EditorMaterialSlotInfo` (type): type EditorMaterialSlotInfo = Readonly<Omit<ModelMaterialSlotInfo, "uvSets">> & { readonly uvSets: readonly number[] } — Canonical imported slot names and mesh prerequisites reported by the loaded model.
@@ -569,7 +569,7 @@
 
 ## @jgengine/editor/EditorChrome
 
-- `EditorChrome` (function): function EditorChrome({ gameId, session, api, assets, ui, baselineDocument, save, networkSnapshot, importAsset = importAssetToHost, onRegisterAsset, onExitEditor, allowedKinds, exitLabel, maxImportBytes, documentSave, draftAutosave = true, creatorPolicy, }: { gameId: string; session: EditorSession; … — The full editor UI shell — global app bar, contextual scene toolbar, workspace rail, resizable hierarchy/inspector docks, tabbed bottom dock (content browser, console, profiler, AI assistant), viewport overlays, and status bar — wired to the session, UI store, layout store, and host RPC. Mounted by `EditorApp`; not a game-author entry point.
+- `EditorChrome` (function): function EditorChrome({ gameId, session, api, assets, ui, baselineDocument, save, networkSnapshot, importAsset = importAssetToHost, onRegisterAsset, onExitEditor, allowedKinds, exitLabel, maxImportBytes, documentSave, draftAutosave = true, creatorPolicy, libraryDropTarget, }: { gameId: string; sessi… — The full editor UI shell — global app bar, contextual scene toolbar, workspace rail, resizable hierarchy/inspector docks, tabbed bottom dock (content browser, console, profiler, AI assistant), viewport overlays, and status bar — wired to the session, UI store, layout store, and host RPC. Mounted by `EditorApp`; not a game-author entry point.
 
 ## @jgengine/editor/MaterialAssetEditor
 
@@ -736,6 +736,13 @@
 ## @jgengine/editor/handlers/terrain
 
 - `terrainHandlers` (const): const terrainHandlers: Pick< HandlerTable, | "create_terrain" | "sculpt_terrain" | "terrain_summary" | "paint_terrain" | "fill_terrain" | "auto_paint" | "terrain_materials" | "terrain_layers" | "set_terrain_layers" | "blend_terrain" | "convert_scatter" | "add_foliage" | "scatter_summary" > — Sculpt heightfield, material painting, terrain layers, and foliage/scatter verbs.
+
+## @jgengine/editor/libraryDrag
+
+- `LIBRARY_DRAG_MIME` (const): const LIBRARY_DRAG_MIME: "application/x-jgengine-library-asset" — Custom drag mime for a shared-library model or character card dragged toward the viewport.
+- `LibraryDragPayload` (type): type LibraryDragPayload = Pick<LibraryEntry, "key" | "title" | "kind" | "author" | "license"> — The fields of a library entry a drop needs to pull, credit and place it.
+- `LibraryDropHandler` (type): type LibraryDropHandler = (payload: LibraryDragPayload, point: LibraryDropPoint) => void — Called by the viewport when a library card is dropped on it.
+- `LibraryDropPoint` (interface): interface LibraryDropPoint — Where a viewport drop landed, in world space.
 
 ## @jgengine/editor/listDocumentTriggers
 
