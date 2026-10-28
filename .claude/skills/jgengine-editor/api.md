@@ -513,7 +513,7 @@
 - `PlacementTool` (type): type PlacementTool = | { tool: "marker"; kind: string } | { tool: "volume"; kind: string; shape: EditorVolumeShape } | { tool: "note" } | { tool: "path"; kind: string } — The active creation tool — what a viewport click places next.
 - `SculptSettings` (interface): interface SculptSettings — Live terrain-brush controls driven by the terrain tool panel.
 - `SelectionGizmo` (const): const SelectionGizmo: React.MemoExoticComponent<({ session, ui, groundSnap, }: { session: EditorSession; ui: EditorUiStore; groundSnap?: ((x: number, z: number) => number) | undefined; }) => React.JSX.Element | null> — Drag-to-transform gizmo bound to the current selection, dispatching editor commands on release. Mounts the shared shell `TransformGizmo` and maps release poses onto editor commands (multi-select translate, volume scale, path vertex move).
-- `StandaloneAsset` (interface): interface StandaloneAsset — Shared model-import helpers used by the standalone editor strip and the in-game Content Browser. Host-agnostic and free of React/shell so unit tests can exercise the importer without a DOM or three.
+- `StandaloneAsset` (interface): interface StandaloneAsset — One user-supplied model the editor can place: a stable id and a resolvable URL.
 - `StandaloneEditor` (function): function StandaloneEditor({ sceneId = "standalone", scene, assets, world, save, importAsset = importAssetToHost, hidePickers = false, }: StandaloneEditorProps): React.JSX.Element — The scene editor, mounted over a blank gameless world instead of a game — the same `EditorApp` every jgengine game ships, usable standalone on the user's own project (CLI `jgengine editor`, desktop app, or any React host). Ships a slim strip to open a world file and pull in an asset folder; both are also settable up front through props.
 - `StandaloneEditorProps` (interface): interface StandaloneEditorProps — Props for the gameless scene editor — everything optional so it boots on a blank world with nothing wired.
 - `SubscribableStore` (interface): interface SubscribableStore<S> — The minimal external-store shape both the editor session and UI store satisfy.
@@ -601,7 +601,7 @@
 
 - `AssetImporter` (type): type AssetImporter = (file: File) => Promise<StandaloneAsset | null> — Persists a dropped model file through the editor host so it survives reload as a durable catalog asset, returning the host-assigned id/url (which the manifest scan re-lists on reload). Resolves `null` when no host is listening — a plain browser mount with no dev server — so the caller can fall back to a blob URL.
 - `BlankPlayableOptions` (interface): interface BlankPlayableOptions — Options for the blank, gameless world the standalone editor authors over.
-- `StandaloneAsset` (interface): interface StandaloneAsset — Shared model-import helpers used by the standalone editor strip and the in-game Content Browser. Host-agnostic and free of React/shell so unit tests can exercise the importer without a DOM or three.
+- `StandaloneAsset` (interface): interface StandaloneAsset — One user-supplied model the editor can place: a stable id and a resolvable URL.
 - `StandaloneEditor` (function): function StandaloneEditor({ sceneId = "standalone", scene, assets, world, save, importAsset = importAssetToHost, hidePickers = false, }: StandaloneEditorProps): React.JSX.Element — The scene editor, mounted over a blank gameless world instead of a game — the same `EditorApp` every jgengine game ships, usable standalone on the user's own project (CLI `jgengine editor`, desktop app, or any React host). Ships a slim strip to open a world file and pull in an asset folder; both are also settable up front through props.
 - `StandaloneEditorProps` (interface): interface StandaloneEditorProps — Props for the gameless scene editor — everything optional so it boots on a blank world with nothing wired.
 - `blankWorld` (function): function blankWorld(_seed = "standalone"): EnvironmentWorldFeature — The default flat-ground authoring canvas the standalone editor opens on when the host supplies none. Deliberately thin — bare sculptable ground under a clear default sky. Dressing (sky look, foliage scatter, props) is what the author adds here, written into the scene document; it is never pre-baked into the canvas. The `seed` parameter is legacy and unused.
@@ -661,7 +661,7 @@
 ## @jgengine/editor/assetImport
 
 - `AssetImporter` (type): type AssetImporter = (file: File) => Promise<StandaloneAsset | null> — Persists a dropped model file through the editor host so it survives reload as a durable catalog asset, returning the host-assigned id/url (which the manifest scan re-lists on reload). Resolves `null` when no host is listening — a plain browser mount with no dev server — so the caller can fall back to a blob URL.
-- `StandaloneAsset` (interface): interface StandaloneAsset — Shared model-import helpers used by the standalone editor strip and the in-game Content Browser. Host-agnostic and free of React/shell so unit tests can exercise the importer without a DOM or three.
+- `StandaloneAsset` (interface): interface StandaloneAsset — One user-supplied model the editor can place: a stable id and a resolvable URL.
 
 ## @jgengine/editor/camera/orbitFraming
 
