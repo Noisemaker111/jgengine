@@ -20,6 +20,7 @@ export interface CoefficientTable {
  * nothing per sample.
  * @capability coefficient-table N-dimensional gridded data table with multilinear interpolation and per-axis extrapolation
  */
+// stateless: strides and breakpoints are built once from the axes and never written after the factory returns
 export function createCoefficientTable(axes: readonly CoefficientTableAxis[], values: readonly number[]): CoefficientTable {
   if (axes.length === 0) throw new Error("createCoefficientTable: at least one axis");
   let size = 1;

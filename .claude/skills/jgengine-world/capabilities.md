@@ -32,6 +32,10 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `measureAir` (function) · `import { measureAir } from "@jgengine/core/physics/handlingProbe"`
 
+## aircraft-trim — trim a reference aircraft for steady flight — alpha, sideslip, throttle and surfaces
+
+- `trimReferenceAircraft` (function) · `import { trimReferenceAircraft } from "@jgengine/core/flight/reference/aircraftTrim"`
+
 ## ambience-zones — a scene declares looping sound beds keyed to world volumes; walking between them crossfades bed levels on the existing buses instead of cutting.
 
 - `AmbienceZoneDef` (interface) · `import { AmbienceZoneDef } from "@jgengine/core/audio/ambience"`
@@ -336,6 +340,10 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `caveMesh` (function) · `import { caveMesh } from "@jgengine/core/cave/caveMesh"`
 
+## cessna172-reference — Cessna 172N reference airframe — tabled lift and drag through the stall, propeller and piston engine, tricycle gear
+
+- `createCessna172Model` (function) · `import { createCessna172Model } from "@jgengine/core/flight/reference/cessna172Aircraft"`
+
 ## character-controller — capsule walk over the physics backend — slide, step-up, slopes, crouch, platforms
 
 - `createCharacterController` (function) · `import { createCharacterController } from "@jgengine/core/movement/characterController"`
@@ -368,6 +376,11 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 ## city-lots — lay zoned building lots, corners and driveways from one city layout
 
 - `cityLots` (function) · `import { cityLots } from "@jgengine/core/city/cityLayout"`
+
+## coefficient-table — N-dimensional gridded data table with multilinear interpolation and per-axis extrapolation
+
+- `createCoefficientTable` (function) · `import { createCoefficientTable } from "@jgengine/core/flight/reference/coefficientTable"`
+- `evenBreakpoints` (function) · `import { evenBreakpoints } from "@jgengine/core/flight/reference/coefficientTable"`
 
 ## companion-intent — resolve a companion's command + threat context into a per-tick follow/hold/engage/assist intent
 
@@ -515,6 +528,14 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `createEventFeedback` (function) · `import { createEventFeedback } from "@jgengine/core/audio/eventFeedback"`
 
+## f16-reference — NASA TP-1538 F-16 coefficient-table reference airframe with thrust table and power lag
+
+- `createF16Model` (function) · `import { createF16Model } from "@jgengine/core/flight/reference/f16Aircraft"`
+- `f16CycleEngine` (function) · `import { f16CycleEngine } from "@jgengine/core/flight/reference/f16Aircraft"`
+- `f16PowerCommand` (function) · `import { f16PowerCommand } from "@jgengine/core/flight/reference/f16Aircraft"`
+- `f16Thrust` (function) · `import { f16Thrust } from "@jgengine/core/flight/reference/f16Aircraft"`
+- `stevensLewisAtmosphere` (function) · `import { stevensLewisAtmosphere } from "@jgengine/core/flight/reference/f16Aircraft"`
+
 ## fast-travel — network of fast-travel destinations with discovery, distance-sorted queries, nearest lookup, a travel gate, and serializable state
 
 - `createFastTravelNetwork` (function) · `import { createFastTravelNetwork } from "@jgengine/core/world"`
@@ -555,9 +576,25 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `firstPersonArms` (function) · `import { firstPersonArms } from "@jgengine/core/anim/humanoidActionClips.draw"`
 
+## flight-comparison — compare a game aircraft's flight tests with a reference aircraft and published figures
+
+- `compareFlight` (function) · `import { compareFlight } from "@jgengine/core/flight/reference/flightComparison"`
+- `compareJetEngines` (function) · `import { compareJetEngines } from "@jgengine/core/flight/reference/jetEngineComparison"`
+- `formatFlightComparison` (function) · `import { formatFlightComparison } from "@jgengine/core/flight/reference/flightComparison"`
+
 ## flight-metrics — measure an aircraft's feel as numbers — roll rate, sustained turn, stall speed, climb, throttle response, hover drift
 
 - `measureFlight` (function) · `import { measureFlight } from "@jgengine/core/physics/handlingProbe"`
+
+## flight-modes — linearize a trimmed reference aircraft and read short period, phugoid, dutch roll, roll and spiral modes
+
+- `linearizeReferenceAircraft` (function) · `import { linearizeReferenceAircraft } from "@jgengine/core/flight/reference/aircraftTrim"`
+
+## flight-tests — fly a reference aircraft model through the flight tests
+
+- `referenceFlightSubject` (function) · `import { referenceFlightSubject } from "@jgengine/core/flight/reference/flightTests"`
+- `rigidAircraftFlightSubject` (function) · `import { rigidAircraftFlightSubject } from "@jgengine/core/flight/reference/flightTests"`
+- `runFlightTests` (function) · `import { runFlightTests } from "@jgengine/core/flight/reference/flightTests"`
 
 ## follow-trail — trailing follower/snake formation that chases a leader
 
@@ -614,6 +651,15 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 ## gamepad-input — Resolve sampled gamepad input into actions with deadzones and response curves.
 
 - `resolveGamepadFrame` (function) · `import { resolveGamepadFrame } from "@jgengine/core/input/gamepadModel"`
+
+## gas-turbine — real-gas air and combustion product properties
+
+- `WALSH_FLETCHER_GAS` (const) · `import { WALSH_FLETCHER_GAS } from "@jgengine/core/flight/reference/gasTurbine"`
+- `createGasTurbineCycle` (function) · `import { createGasTurbineCycle } from "@jgengine/core/flight/reference/gasTurbine"`
+- `createGasTurbineEngine` (function) · `import { createGasTurbineEngine } from "@jgengine/core/flight/reference/gasTurbineEngine"`
+- `gasTurbinePropulsion` (function) · `import { gasTurbinePropulsion } from "@jgengine/core/flight/reference/gasTurbineEngine"`
+- `inletShockRecovery` (function) · `import { inletShockRecovery } from "@jgengine/core/flight/reference/gasTurbine"`
+- `perfectGas` (function) · `import { perfectGas } from "@jgengine/core/flight/reference/gasTurbine"`
 
 ## generator-contract — seeded, schema-driven procedural generator with variants and editor exposure
 
@@ -821,6 +867,10 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `resolveMaterialAppearance` (function) · `import { resolveMaterialAppearance } from "@jgengine/core/material/appearanceSignals"`
 - `sampleMaterialAppearance` (function) · `import { sampleMaterialAppearance } from "@jgengine/core/material/appearanceSignals"`
+
+## matrix-eigenvalues — eigenvalues of a small real matrix
+
+- `matrixEigenvalues` (function) · `import { matrixEigenvalues } from "@jgengine/core/flight/reference/aircraftTrim"`
 
 ## merge-footprint-regions — pool adjacent compatible footprints with serializable capacity provenance
 
@@ -1106,6 +1156,12 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `ProceduralGround` (function) · `import { ProceduralGround } from "@jgengine/core/terrain/ProceduralGround.draw"`
 
+## propeller-bemt — Clark Y propeller section lift and drag
+
+- `clarkYPropellerSection` (function) · `import { clarkYPropellerSection } from "@jgengine/core/flight/reference/propeller"`
+- `createPropellerMap` (function) · `import { createPropellerMap } from "@jgengine/core/flight/reference/propeller"`
+- `solvePropeller` (function) · `import { solvePropeller } from "@jgengine/core/flight/reference/propeller"`
+
 ## proximity-prompt — a "press E" contextual prompt shown near an interactable
 
 - `resolveActivePrompt` (function) · `import { resolveActivePrompt } from "@jgengine/core/world"`
@@ -1137,6 +1193,12 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 ## rate-window-policy — Evaluate deterministic request windows with retry timing.
 
 - `decideRateWindow` (function) · `import { decideRateWindow } from "@jgengine/core/time/rateWindow"`
+
+## reference-aircraft — 6-DOF reference flight sim — quaternion rigid body, RK4, standard atmosphere, coefficient-table aero, gear, wind
+
+- `createReferenceAircraft` (function) · `import { createReferenceAircraft } from "@jgengine/core/flight/reference/referenceAircraft"`
+- `referenceEuler` (function) · `import { referenceEuler } from "@jgengine/core/flight/reference/referenceAircraft"`
+- `referenceQuaternion` (function) · `import { referenceQuaternion } from "@jgengine/core/flight/reference/referenceAircraft"`
 
 ## reference-car — multibody reference car on Magic Formula tires and real suspension kinematics — the physics ruler for game vehicle handling
 
@@ -1344,6 +1406,13 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 ## split-footprint-regions — split pooled regions along retained contributions without area-based capacity loss
 
 - `splitRegion` (function) · `import { splitRegion } from "@jgengine/core/world"`
+
+## standard-atmosphere — calibrated airspeed from true airspeed
+
+- `calibratedAirspeed` (function) · `import { calibratedAirspeed } from "@jgengine/core/flight/reference/standardAtmosphere"`
+- `geopotentialAltitude` (function) · `import { geopotentialAltitude } from "@jgengine/core/flight/reference/standardAtmosphere"`
+- `standardAtmosphere` (function) · `import { standardAtmosphere } from "@jgengine/core/flight/reference/standardAtmosphere"`
+- `standardGravity` (function) · `import { standardGravity } from "@jgengine/core/flight/reference/standardAtmosphere"`
 
 ## standard-maneuvers — measure a vehicle with ISO 4138 steady-state circle, ISO 7401 step steer and ISO 3888-1 lane change
 
@@ -1639,6 +1708,15 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 ## weather-surface-accumulation — Persist and retune bounded surface wetness, snow, temperature and exposure independently of rendering.
 
 - `createWeatherExposure` (function) · `import { createWeatherExposure } from "@jgengine/core/weather/authoredWeather"`
+
+## wind-axis-rates — state rates in wind-axis variables for check cases and linearisation
+
+- `windAxisRates` (function) · `import { windAxisRates } from "@jgengine/core/flight/reference/aircraftTrim"`
+
+## wind-axis-state — build a reference aircraft state from airspeed, alpha, beta and Euler angles
+
+- `referenceStateFromWindAxes` (function) · `import { referenceStateFromWindAxes } from "@jgengine/core/flight/reference/aircraftTrim"`
+- `windAxesOf` (function) · `import { windAxesOf } from "@jgengine/core/flight/reference/aircraftTrim"`
 
 ## world-environment — compose editor/preset-derived outdoor dressing — terrain, weather, water, structures — into a legacy environment feature
 

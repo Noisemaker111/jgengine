@@ -91,9 +91,16 @@ export function compareFlight(aircraft: readonly FlightComparisonAircraft[]): Fl
   });
 }
 
+/** Any game / reference / real comparison {@link formatFlightComparison} can print. */
+export interface ComparisonTable {
+  aircraft: string;
+  reference: string;
+  rows: readonly { label: string; unit: string; game: number; reference: number; real: number | undefined }[];
+}
+
 function figure(value: number | undefined): string {
   if (value === undefined || !Number.isFinite(value)) return "—";
-  return Math.abs(value) >= 100 ? value.toFixed(0) : value.toFixed(1);
+  return Math.abs(value) >= 100 ? value.toFixed(0) : Math.abs(value) >= 10 ? value.toFixed(1) : value.toFixed(2);
 }
 
 function delta(value: number | undefined, base: number | undefined): string {
@@ -106,7 +113,7 @@ function delta(value: number | undefined, base: number | undefined): string {
  * Renders comparisons as a plain-text table per aircraft: game, reference and real values with the deltas between them.
  * @capability flight-comparison plain-text game / reference / real table
  */
-export function formatFlightComparison(comparisons: readonly FlightComparison[]): string {
+export function formatFlightComparison(comparisons: readonly ComparisonTable[]): string {
   const blocks = comparisons.map((comparison) => {
     const header = ["metric", "unit", "game", "reference", "real", "game vs ref", "ref vs real"];
     const lines = comparison.rows.map((row) => [row.label, row.unit, figure(row.game), figure(row.reference), figure(row.real), delta(row.game, row.reference), delta(row.reference, row.real)]);

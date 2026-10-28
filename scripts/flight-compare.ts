@@ -5,11 +5,12 @@ import { pathToFileURL } from "node:url";
 
 import type { RigidAircraftTuning } from "../packages/core/src/flight/aircraftDynamics";
 import { compareFlight, formatFlightComparison, type FlightComparisonAircraft } from "../packages/core/src/flight/reference/flightComparison";
+import { compareJetEngines, type JetComparisonAircraft } from "../packages/core/src/flight/reference/jetEngineComparison";
 import { printHelpIfAsked } from "./script-help";
 
 if (
   printHelpIfAsked("flight-compare", {
-    summary: "fly every game aircraft built on createRigidAircraft and its reference aircraft through the same flight tests",
+    summary: "fly every game aircraft built on createRigidAircraft and its reference aircraft through the same flight tests, then measure every game jet engine against the F100 cycle",
     usage: "bun run perf flight [game...]",
     flags: [],
     example: "bun run perf flight harbor-heat",
@@ -34,28 +35,36 @@ function sourceFiles(games: readonly string[]): string[] {
   return found.stdout.split("\n").filter((line) => line.endsWith(".ts"));
 }
 
-/** Every fixed-wing tuning a module exports, named by the nearest `label` or `id` above it; rotor-only craft are skipped. */
-function aircraftIn(module: Record<string, unknown>, file: string): FlightComparisonAircraft[] {
-  const found: FlightComparisonAircraft[] = [];
+type FoundAircraft = FlightComparisonAircraft & JetComparisonAircraft;
+
+/**
+ * Every fixed-wing tuning a module exports, named by the nearest `label` or `id` above it, with the nearest `afterburner`
+ * thrust multiplier beside it; rotor-only craft are skipped.
+ */
+function aircraftIn(module: Record<string, unknown>, file: string): FoundAircraft[] {
+  const found: FoundAircraft[] = [];
   const seen = new Set<unknown>();
-  const visit = (value: unknown, name: string, labelled: boolean, topSpeed: number | undefined, depth: number): void => {
+  const visit = (value: unknown, name: string, labelled: boolean, topSpeed: number | undefined, afterburner: number | undefined, depth: number): void => {
     if (!isRecord(value) || seen.has(value) || depth > 8) return;
     seen.add(value);
     const own = typeof value["label"] === "string" ? value["label"] : typeof value["id"] === "string" ? value["id"] : undefined;
     const label = own ?? name;
     const speed = typeof value["topSpeed"] === "number" ? value["topSpeed"] : topSpeed;
+    const boost = typeof value["afterburner"] === "number" ? value["afterburner"] : afterburner;
     if (isTuning(value)) {
-      if (value.engine !== undefined || value.motor !== undefined) found.push({ name: label, tuning: value, cruiseSpeed: 0.6 * (speed ?? 80) });
+      if (value.engine !== undefined || value.motor !== undefined) {
+        found.push({ name: label, tuning: value, cruiseSpeed: 0.6 * (speed ?? 80), ...(boost === undefined ? {} : { afterburner: boost }) });
+      }
       return;
     }
-    for (const [key, child] of Object.entries(value)) visit(child, labelled || own !== undefined || Array.isArray(value) ? label : `${label}.${key}`, labelled || own !== undefined, speed, depth + 1);
+    for (const [key, child] of Object.entries(value)) visit(child, labelled || own !== undefined || Array.isArray(value) ? label : `${label}.${key}`, labelled || own !== undefined, speed, boost, depth + 1);
   };
-  for (const [key, value] of Object.entries(module)) visit(value, `${file}:${key}`, false, undefined, 0);
+  for (const [key, value] of Object.entries(module)) visit(value, `${file}:${key}`, false, undefined, undefined, 0);
   return found;
 }
 
 const games = process.argv.slice(2);
-const aircraft: FlightComparisonAircraft[] = [];
+const aircraft: FoundAircraft[] = [];
 for (const file of sourceFiles(games)) {
   const loaded: unknown = await import(pathToFileURL(resolve(root, file)).href);
   if (isRecord(loaded)) aircraft.push(...aircraftIn(loaded, file));
@@ -65,3 +74,6 @@ if (aircraft.length === 0) {
   process.exit(0);
 }
 console.log(formatFlightComparison(compareFlight(aircraft)));
+const jets = compareJetEngines(aircraft);
+if (jets.length > 0) console.log(`
+${formatFlightComparison(jets)}`);

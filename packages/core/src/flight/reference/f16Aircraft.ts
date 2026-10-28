@@ -1,5 +1,8 @@
 // @skill jgengine-world
 import { createCoefficientTable, evenBreakpoints, type CoefficientTable } from "./coefficientTable";
+import { createGasTurbineCycle } from "./gasTurbine";
+import { createGasTurbineEngine, gasTurbinePropulsion, type GasTurbineEngine } from "./gasTurbineEngine";
+import { F100_PW_220, F100_PW_220_DYNAMICS } from "./referenceEngines";
 import type { ReferenceAircraftModel, ReferenceAirData, ReferenceGearLeg, ReferencePropulsion } from "./referenceAircraft";
 import type { AtmosphereSample } from "./standardAtmosphere";
 
@@ -197,10 +200,34 @@ const f16Propulsion: ReferencePropulsion = {
   },
 };
 
+let f100Engine: GasTurbineEngine | undefined;
+
+/**
+ * The F100-PW-220 cycle engine the F-16 shares across instances (its operating-line tables fill in as it flies).
+ * @capability f16-reference shared F100-PW-220 cycle engine with spool dynamics
+ */
+export function f16CycleEngine(): GasTurbineEngine {
+  f100Engine ??= createGasTurbineEngine(createGasTurbineCycle(F100_PW_220), F100_PW_220_DYNAMICS);
+  return f100Engine;
+}
+
+function f16CyclePropulsion(): ReferencePropulsion {
+  return gasTurbinePropulsion(f16CycleEngine(), (throttle) => {
+    const power = f16PowerCommand(throttle);
+    return { dry: Math.min(1, power / 50), afterburner: Math.max(0, (power - 50) / 50) };
+  });
+}
+
 /** Options for {@link createF16Model}. */
 export interface F16ModelOptions {
   /** Centre of gravity, fraction of the mean aerodynamic chord (default `0.35`, the data's reference). */
   xcg?: number;
+  /**
+   * `"table"` (default): the Stevens & Lewis F100 thrust table and power lag. `"cycle"`: the F100-PW-220
+   * thermodynamic cycle with spool inertia, fuel control and afterburner ({@link f16CycleEngine}); its states are low
+   * and high spool rpm and afterburner share, and its gyroscopic momentum comes from the spools.
+   */
+  engine?: "table" | "cycle";
 }
 
 /**
@@ -241,7 +268,7 @@ export function createF16Model(options: F16ModelOptions = {}): ReferenceAircraft
       aileron: { atFullPositive: -21.5 * DEG, atFullNegative: 21.5 * DEG, bandwidth: 20.2, rateLimit: 80 * DEG },
       rudder: { atFullPositive: -30 * DEG, atFullNegative: 30 * DEG, bandwidth: 20.2, rateLimit: 120 * DEG },
     },
-    propulsion: f16Propulsion,
+    propulsion: options.engine === "cycle" ? f16CyclePropulsion() : f16Propulsion,
     gear: F16_GEAR,
     aerodynamics(air: ReferenceAirData, surfaces, out) {
       const alpha = air.alpha * RAD_TO_DEG;
