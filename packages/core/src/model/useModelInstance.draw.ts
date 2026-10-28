@@ -12,7 +12,7 @@ import { cloneModelScene, disposeModelScene, modelPlacementTransform } from "./m
 import { applyModelWindToScene } from "./modelWind.draw";
 import { useModelAnimation } from "@jgengine/core/anim/useModelAnimation.draw";
 import { addHumanoidSockets, firstPersonArms, withHumanoidActionClips } from "@jgengine/core/anim/humanoidActionClips.draw";
-import { collapseHead, humanoidHead, useFirstPersonBody } from "@jgengine/core/camera/firstPersonBody.draw";
+import { collapseHead, humanoidHead, keepHeadUnderEye, useFirstPersonBody } from "@jgengine/core/camera/firstPersonBody.draw";
 import { applyModelNodeVisibility, modelHiddenNodesKey } from "./modelNodeVisibility.draw";
 
 /** Model loading, placement, shadows and animation for a custom renderer. */
@@ -80,14 +80,21 @@ export function useModelInstance(model: ModelInstanceConfig, options: ModelInsta
   const firstPersonBody = useFirstPersonBody(instanceId);
   const head = useMemo(() => (firstPersonBody ? humanoidHead(content) : null), [content, firstPersonBody]);
   const arms = useMemo(() => (firstPersonBody ? firstPersonArms(content, gltf.scene, gltf.animations) : null), [content, gltf, firstPersonBody]);
+  const bodyRest = useMemo(() => content.position.clone(), [content]);
   useEffect(() => {
     if (head === null) return;
     const rest = head.scale.clone();
-    return () => void head.scale.copy(rest);
-  }, [head]);
-  // Registered after the animation's frame callback, so it works on the pose that frame wrote.
-  useFrame(() => {
-    if (head !== null) collapseHead(head);
+    return () => {
+      head.scale.copy(rest);
+      content.position.copy(bodyRest);
+    };
+  }, [head, content, bodyRest]);
+  // Registered after the animation's and the camera's frame callbacks, so it works on the pose and eye that frame wrote.
+  useFrame(({ camera }) => {
+    if (head !== null) {
+      collapseHead(head);
+      keepHeadUnderEye(content, head, camera, bodyRest);
+    }
     arms?.();
   });
   return { content, scene, ...placement };

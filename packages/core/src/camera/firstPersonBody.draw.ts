@@ -1,5 +1,5 @@
 import { createContext, useContext } from "react";
-import type * as THREE from "three";
+import * as THREE from "three";
 
 import { detectHumanoidRig } from "@jgengine/core/anim/skeletonStandard";
 
@@ -34,4 +34,26 @@ export function humanoidHead(scene: THREE.Object3D): THREE.Object3D | null {
 /** Folds a head bone away for this frame; the animation writes its pose first, so call it after. */
 export function collapseHead(head: THREE.Object3D): void {
   head.scale.setScalar(COLLAPSED);
+}
+
+const headWorld = new THREE.Vector3();
+const eyeWorld = new THREE.Vector3();
+const eyeLocal = new THREE.Vector3();
+const headLocal = new THREE.Vector3();
+
+/**
+ * Slides `body` across the ground so its folded head sits straight under the `eye` camera, from `rest` (the
+ * body's own position before any slide). A walk or run clip leans the torso forward; without this the
+ * neck, nape hair and collar swing out in front of an eye-height camera. Call after `collapseHead`.
+ */
+export function keepHeadUnderEye(body: THREE.Object3D, head: THREE.Object3D, eye: THREE.Object3D, rest: THREE.Vector3): void {
+  body.position.copy(rest);
+  const parent = body.parent;
+  if (parent === null) return;
+  head.getWorldPosition(headWorld);
+  eye.getWorldPosition(eyeWorld);
+  eyeLocal.set(eyeWorld.x, headWorld.y, eyeWorld.z);
+  parent.worldToLocal(eyeLocal);
+  parent.worldToLocal(headLocal.copy(headWorld));
+  body.position.add(eyeLocal.sub(headLocal));
 }
