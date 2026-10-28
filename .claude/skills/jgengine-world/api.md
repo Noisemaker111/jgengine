@@ -3654,7 +3654,6 @@
 
 - `ScatterGeneratorItem` (interface): interface ScatterGeneratorItem — A scatter palette item grown by a registered generator.
 - `isScatterGeneratorItem` (function): function isScatterGeneratorItem(value: unknown): value is ScatterGeneratorItem — True when a scatter mapping names a generator rather than a model.
-- `isUniqueScatterItem` (function): function isUniqueScatterItem(item: ScatterGeneratorItem): boolean — True when every placement of the item grows from its own seed.
 - `scatterGeneratorBase` (function): function scatterGeneratorBase(item: ScatterGeneratorItem, schema: ParamSchema): Record<string, unknown> — The base `meta` a generator item's variants grow around: preset values, then params.
 - `scatterGeneratorVariantCount` (function): function scatterGeneratorVariantCount(item: ScatterGeneratorItem): number — How many variants a generator item bakes.
 - `scatterPlacementVariant` (function): function scatterPlacementVariant(definition: GeneratorDefinition, item: string, spec: ScatterGeneratorItem, placementId: string): GeneratorVariant — The variant one placement of a unique item grows as: its own seed and params, from the palette item and the placement id alone, so it regrows the same anywhere.
