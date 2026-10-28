@@ -2904,6 +2904,20 @@
 - `SegmentParameters` (interface): interface SegmentParameters — One segment row of a body-segment-parameter table: shares of body mass and of segment length.
 - `planarHumanSegments` (function): function planarHumanSegments(mass = DE_LEVA_MALE.mass, stature = DE_LEVA_MALE.stature, table: AnthropometricTable = DE_LEVA_MALE): PlanarHumanGeometry — The seven-segment sagittal human of Winter's gait model — head-arms-trunk (HAT), and per leg thigh, shank and foot — built from a segment table scaled to `mass` (kg) and `stature` (m): lengths with stature, masses with mass, inertias with mass × stature². The HAT lumps head, trunk and both arms hanging at the sides, each with its own parallel-axis term. Reference pose: standing upright, hip joint centre at the origin, feet flat.
 
+## @jgengine/core/movement/reference/arthropodGait
+
+- `ARTHROPOD_RUNNERS` (const): const ARTHROPOD_RUNNERS: Record<"cockroach" | "silverAnt" | "desertAnt" | "tarantula", ArthropodRunner> — Arthropods with published stride fits, leg lengths and top speeds. Speeds in m/s; the papers' fits in mm/s are converted here.
+- `ArthropodComparison` (interface): interface ArthropodComparison — One game arthropod against real ones scaled to its leg length.
+- `ArthropodGait` (type): type ArthropodGait = "tripod" | "running" | "alternating tetrapod" — Gaits of a running arthropod.
+- `ArthropodLocomotion` (interface): interface ArthropodLocomotion — A game arthropod's legs and speeds.
+- `ArthropodRunner` (interface): interface ArthropodRunner — A measured arthropod runner: size, top speed and the published stride fits over speed (m/s).
+- `ArthropodStride` (interface): interface ArthropodStride — Stride length (m), stride frequency (Hz) and duty factor of one leg at a running speed.
+- `HEXAPOD_AERIAL_FROUDE` (const): const HEXAPOD_AERIAL_FROUDE: number — Froude number above which a six-legged runner takes aerial phases: the geometric mean of the onsets measured in the cockroach and the two Cataglyphis ants (0.34 to 3.4).
+- `arthropodStride` (function): function arthropodStride(runner: ArthropodRunner, speed: number): ArthropodStride & { gait: ArthropodGait } — Stride of a measured arthropod at `speed`, clamped to the speeds it was measured over, with its gait.
+- `arthropodTopSpeed` (function): function arthropodTopSpeed(legs: 6 | 8, legLength: number): { low: number; high: number } — Real top speed range of an arthropod with `legs` legs `legLength` long, m/s: every measured runner with as many legs, scaled at equal Froude number (dynamic similarity, speed ∝ √leg length).
+- `compareArthropod` (function): function compareArthropod(creature: ArthropodLocomotion): ArthropodComparison — Compare a game arthropod's walk and run with real insects or spiders at equal Froude number.
+- `validateArthropodReference` (function): function validateArthropodReference(): HumanValidationRow[] — Validate the arthropod reference: each runner's stride fits multiply back to its speed, the two ants predict the cockroach's top speed at equal Froude number, and √leg-length scaling sits inside Hurlbert et al.'s measured ant exponents.
+
 ## @jgengine/core/movement/reference/bipedRunning
 
 - `BIPED_EXTENSOR_LIMITS` (const): const BIPED_EXTENSOR_LIMITS: { readonly perJoint: 7; readonly perLeg: 15; } — Hutchinson's limits for extensors (2004, part II): no living biped has more than 7% of body mass acting about one joint, and a generous 15% of body mass for all of one leg's extensors.

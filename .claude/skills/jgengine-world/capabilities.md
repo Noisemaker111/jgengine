@@ -96,6 +96,22 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `uniqueByStackKey` (function) · `import { uniqueByStackKey } from "@jgengine/core/world"`
 
+## arthropod-compare — score a game insect or spider's gaits and top speed against real arthropods
+
+- `compareArthropod` (function) · `import { compareArthropod } from "@jgengine/core/movement/reference/arthropodGait"`
+
+## arthropod-reference-validation — check the arthropod reference against published insect and spider running data
+
+- `validateArthropodReference` (function) · `import { validateArthropodReference } from "@jgengine/core/movement/reference/arthropodGait"`
+
+## arthropod-stride — stride length, frequency, duty factor and gait of a real insect or spider at a speed
+
+- `arthropodStride` (function) · `import { arthropodStride } from "@jgengine/core/movement/reference/arthropodGait"`
+
+## arthropod-top-speed — top running speed range of an insect or spider scaled to a leg length
+
+- `arthropodTopSpeed` (function) · `import { arthropodTopSpeed } from "@jgengine/core/movement/reference/arthropodGait"`
+
 ## asset-anchor — resolve a model's pivot offset from its footprint center
 
 - `resolveAnchorOffset` (function) · `import { resolveAnchorOffset } from "@jgengine/core/world"`
