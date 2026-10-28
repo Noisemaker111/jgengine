@@ -384,6 +384,16 @@ export interface OceanEnvironmentConfig {
    * oil. `color` stays the shallow tone; any field left out keeps the shell's ocean default.
    */
   palette?: OceanPalette;
+  /**
+   * The sea runs to the horizon: the surface follows the camera out to the far plane in every
+   * direction, with its finest waves near the viewer. `bounds` then only limits where the bed under
+   * it is read for shallows and shore foam. Default false: a sheet the size of `bounds`.
+   */
+  horizon?: boolean;
+  /** Metres of water you see through before it takes its colour: clear shallows want 3 or more. Default 1.2. */
+  clarity?: number;
+  /** Bed-map texels per side for shallows and shore foam; more gives a finer shoreline. Default about one per two metres, at most 256. */
+  bedResolution?: number;
 }
 
 /** Optional ocean surface colors beyond the shallow `color` (all hex). */
@@ -601,7 +611,7 @@ export interface GrassEnvironmentDescriptor {
 export type OceanEnvironmentDescriptor = { kind: "ocean" } & Required<
   Pick<OceanEnvironmentConfig, "bounds" | "level" | "waveHeight" | "waveScale" | "waveSpeed" | "color">
 > &
-  Pick<OceanEnvironmentConfig, "position" | "levelAt" | "palette">;
+  Pick<OceanEnvironmentConfig, "position" | "levelAt" | "palette" | "horizon" | "clarity" | "bedResolution">;
 
 export type BuildingEnvironmentDescriptor = { kind: "building" } & Required<
   Pick<BuildingEnvironmentConfig, "count" | "footprint" | "stories" | "storyHeight" | "spacing" | "style">
@@ -1149,6 +1159,9 @@ export function ocean(config: OceanEnvironmentConfig = {}): OceanEnvironmentDesc
     ...(config.position === undefined ? {} : { position: config.position }),
     ...(config.levelAt === undefined ? {} : { levelAt: config.levelAt }),
     ...(config.palette === undefined ? {} : { palette: { ...config.palette } }),
+    ...(config.horizon === undefined ? {} : { horizon: config.horizon }),
+    ...(config.clarity === undefined ? {} : { clarity: config.clarity }),
+    ...(config.bedResolution === undefined ? {} : { bedResolution: config.bedResolution }),
   };
 }
 

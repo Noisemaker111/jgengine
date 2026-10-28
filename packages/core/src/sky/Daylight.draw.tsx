@@ -14,12 +14,13 @@ import type { DaylightModulation } from "@jgengine/core/lighting/SceneLighting.d
 import {
   bandFogColor,
   daylightStateAt,
+  type DaylightState,
   DEFAULT_DAY_AMBIENT_INTENSITY,
   DEFAULT_DAY_SUN_INTENSITY,
   overcastDaylight,
   SKY_PRESET_DAY_FRACTION,
 } from "@jgengine/core/sky/daylightCycle";
-import { publishSkySun } from "./skySun.draw";
+import { createSkyLight, publishSkyLight, type SkyLight } from "./skyLight.draw";
 import { SUN_SHADOW, sunLightPosition, sunShadowFocus } from "./sunShadowMath";
 import { VolumetricClouds } from "./VolumetricClouds.draw";
 
@@ -406,10 +407,11 @@ export interface SkyProps {
   /** Fog range authored on the game's `backdrop.fog`, used when the sky descriptor sets none. */
   fogRange?: { near?: number; far?: number };
   /**
-   * The world's weather (`ctx.environment`): wherever the camera is, falling rain or snow clouds the
-   * sky over, greying the dome and fog and dimming the sun. Omit for a sky that ignores the weather.
+   * The world's weather (`ctx.environment`): wherever the camera is, its cloud cover (an overcast
+   * profile, or falling rain or snow) greys the dome and fog, dims the sun and thickens the clouds.
+   * Omit for a sky that ignores the weather.
    */
-  weather?: { sample(x: number, z: number): { precipitation: number } };
+  weather?: { sample(x: number, z: number): { precipitation: number; cloudCover?: number } };
 }
 
 /** Fog range: the sky's own fields win, then the authored backdrop, then the caller's default. */
@@ -431,6 +433,31 @@ function skyDomeShape(
 }
 
 const NO_BANDS: readonly BiomeBand[] = [];
+
+interface SkyLightWriters {
+  zenith: DisplayColorWriter;
+  horizon: DisplayColorWriter;
+  display: THREE.Color;
+}
+
+/** Fill the published {@link SkyLight} from this frame's daylight, as the dome and the lights show it. */
+function writeSkyLight(
+  light: SkyLight,
+  writers: SkyLightWriters,
+  gl: THREE.WebGLRenderer,
+  state: Pick<DaylightState, "sunPosition" | "sunColor" | "moonPosition" | "moonColor" | "moonIntensity">,
+  sky: { zenithColor: string; horizonColor: string; sunIntensity: number; ambientIntensity: number },
+  cover: number,
+): void {
+  light.sunDirection.set(state.sunPosition[0], state.sunPosition[1], state.sunPosition[2]).normalize();
+  light.sun.set(state.sunColor).multiplyScalar(light.sunDirection.y > -0.02 ? sky.sunIntensity : 0);
+  light.moonDirection.set(state.moonPosition[0], state.moonPosition[1], state.moonPosition[2]).normalize();
+  light.moon.set(state.moonColor).multiplyScalar(state.moonIntensity);
+  light.ambient.set(HEMI_SKY).multiplyScalar(sky.ambientIntensity);
+  writers.zenith.write(light.zenith, writers.display.set(sky.zenithColor), gl);
+  writers.horizon.write(light.horizon, writers.display.set(sky.horizonColor), gl);
+  light.cloudCover = cover;
+}
 
 /**
  * The engine's one sky: a dome with sun, moon and stars, volumetric clouds when the descriptor asks,
@@ -475,15 +502,19 @@ export function Sky({ sky, clock, lights = true, modulation, bands = NO_BANDS, f
   // relink the whole scene: a cycling sky keeps it mounted, dark by day. A fixed day sky, whose moon
   // never rises, does not carry it; a zero-intensity light still costs every lit fragment a loop.
   const mountMoon = (lights || modulation !== undefined) && (timeOfDay || initial.moonIntensity > 0);
+  const skyLight = useMemo(() => createSkyLight(), []);
+  const lightWriters = useMemo<SkyLightWriters>(() => ({ zenith: new DisplayColorWriter(), horizon: new DisplayColorWriter(), display: new THREE.Color() }), []);
 
   useFrame((state) => {
+    publishSkyLight(state.scene, skyLight);
     if (!timeOfDay && !banded && weather === undefined) {
-      publishSkySun(state.scene, initial.sunPosition);
+      writeSkyLight(skyLight, lightWriters, state.gl, initial, { zenithColor: initial.skyTop, horizonColor: initial.skyBottom, sunIntensity: initial.sunIntensity, ambientIntensity: initial.ambientIntensity }, 0);
       return;
     }
     const cycle = timeOfDay ? daylightStateAt(clock!.calendar().dayFraction, sky) : initial;
-    const base = weather === undefined ? cycle : overcastDaylight(cycle, weather.sample(state.camera.position.x, state.camera.position.z).precipitation);
-    publishSkySun(state.scene, base.sunPosition);
+    const here = weather?.sample(state.camera.position.x, state.camera.position.z);
+    const cover = here === undefined ? 0 : (here.cloudCover ?? here.precipitation);
+    const base = cover > 0 ? overcastDaylight(cycle, cover) : cycle;
     const z = state.camera.position.z;
     const fog = banded ? fogSampler(z) : null;
     const skyValue = banded
@@ -493,7 +524,7 @@ export function Sky({ sky, clock, lights = true, modulation, bands = NO_BANDS, f
     if (fogNode !== null) {
       // Under a day cycle the sky owns the fog color (bands still own its range): a fixed noon
       // tint would leave bright haze hanging in a black night sky.
-      setSkyFogColor(fogNode, bandFogColor({ authored: sky.fog?.color, timeOfDay, cycle: base.fogColor, band: fog?.color ?? fogFallback.color }));
+      setSkyFogColor(fogNode, bandFogColor({ timeOfDay, cycle: base.fogColor, band: fog?.color ?? fogFallback.color }));
       if (fog !== null) {
         fogNode.near = fog.near;
         fogNode.far = fog.far;
@@ -519,6 +550,7 @@ export function Sky({ sky, clock, lights = true, modulation, bands = NO_BANDS, f
     }
     const hemi = hemiRef.current;
     if (hemi !== null) hemi.intensity = skyValue.ambientIntensity;
+    writeSkyLight(skyLight, lightWriters, state.gl, base, skyValue, cover);
     if (modulation !== undefined) {
       modulation.sunFactor = skyValue.sunIntensity / noonSun;
       modulation.sunColor = base.sunColor;
@@ -541,7 +573,7 @@ export function Sky({ sky, clock, lights = true, modulation, bands = NO_BANDS, f
         {...skyDomeShape(sky)}
       />
       {sky.volumetricClouds === undefined ? null : (
-        <VolumetricClouds rules={resolveVolumetricClouds(sky.volumetricClouds)} sunDirection={initial.sunPosition} />
+        <VolumetricClouds rules={resolveVolumetricClouds(sky.volumetricClouds)} />
       )}
       <SkyFog fogRef={fogRef} color={fogFallback.color} near={fogFallback.near} far={fogFallback.far} />
       {lights ? (

@@ -23,6 +23,8 @@ export interface DaylightCycleConfig {
   sunColor?: string;
   /** Authored noon fog colour; dawn, dusk and night cross-fade to their own haze. Default the noon horizon. */
   fogColor?: string;
+  /** The sky's fog; under a day cycle its colour is the noon fog when `fogColor` is unset. */
+  fog?: { color?: string | undefined } | undefined;
   /** Peak moonlight as a fraction of `sunIntensity`. Default `MOONLIGHT_PEAK`. */
   moonIntensity?: number;
   /** Moonlight colour. Default `MOONLIGHT_COLOR`. */
@@ -79,6 +81,9 @@ export const DEFAULT_DAY_SKY_TOP = "#3fa4f2";
 export const DEFAULT_DAY_SKY_BOTTOM = "#e3f4ff";
 /** Warm-white noon sun used when the game authored no sun tint (the shell's `SUN_COLOR`). */
 export const DEFAULT_SUN_COLOR = "#fff1c9";
+
+/** Twilight's length either side of sunrise and sunset, as a fraction of the day (about 1.4 hours). */
+const TWILIGHT = 0.06;
 
 const SUN_DISTANCE = 200;
 const SUN_DEPTH_RATIO = 0.4;
@@ -145,7 +150,7 @@ function buildKeyframes(config: DaylightCycleConfig): readonly DaylightKeyframe[
     ambientIntensity: config.ambientIntensity ?? DEFAULT_DAY_AMBIENT_INTENSITY,
     skyTop: config.zenithColor ?? DEFAULT_DAY_SKY_TOP,
     skyBottom: config.horizonColor ?? DEFAULT_DAY_SKY_BOTTOM,
-    fog: config.fogColor ?? config.horizonColor ?? DEFAULT_DAY_SKY_BOTTOM,
+    fog: config.fogColor ?? config.fog?.color ?? config.horizonColor ?? DEFAULT_DAY_SKY_BOTTOM,
   };
   const dusk: DaylightKeyframe = {
     t: 0.75,
@@ -156,9 +161,13 @@ function buildKeyframes(config: DaylightCycleConfig): readonly DaylightKeyframe[
     fog: DUSK_SKY_BOTTOM,
   };
   const midnight: DaylightKeyframe = { ...night, t: 1 };
+  // Night holds from the end of evening twilight to the start of morning twilight, so dusk's reds do
+  // not linger into the small hours.
+  const nightEnds: DaylightKeyframe = { ...night, t: dawn.t - TWILIGHT };
+  const nightStarts: DaylightKeyframe = { ...night, t: dusk.t + TWILIGHT };
   const hold = Math.max(0, Math.min(0.24, config.dayHold ?? 0));
-  if (hold === 0) return [night, dawn, day, dusk, midnight];
-  return [night, dawn, { ...day, t: 0.5 - hold }, { ...day, t: 0.5 + hold }, dusk, midnight];
+  if (hold === 0) return [night, nightEnds, dawn, day, dusk, nightStarts, midnight];
+  return [night, nightEnds, dawn, { ...day, t: 0.5 - hold }, { ...day, t: 0.5 + hold }, dusk, nightStarts, midnight];
 }
 
 function wrapFraction(dayFraction: number): number {
@@ -270,8 +279,8 @@ function normalize(v: readonly [number, number, number], fallback: readonly [num
  * Under a day cycle the sky owns it (its authored fog, else the cycle's), so a fixed noon tint never
  * hangs in a night sky.
  */
-export function bandFogColor(input: { authored: string | undefined; timeOfDay: boolean; cycle: string; band: string }): string {
-  return input.timeOfDay ? (input.authored ?? input.cycle) : input.band;
+export function bandFogColor(input: { timeOfDay: boolean; cycle: string; band: string }): string {
+  return input.timeOfDay ? input.cycle : input.band;
 }
 
 /** The grey an overcast sky takes over a colour: its own brightness, dimmed and a touch cool. */

@@ -37,6 +37,8 @@ export const game = defineGame({
   simulation: { hz: 60 },
   look: "cinematic",
   mood: "day",
+  // The open sky and the sea carry the frame; a dark vignette only muddies their corners.
+  postProcessing: { grade: { vignette: 0.04 } },
   assets,
   world,
   time,

@@ -38886,14 +38886,14 @@
   "catalogs": [],
   "environment": {
     "preset": "day",
-    "horizonColor": "#d3e8f4",
+    "horizonColor": "#a3cdee",
     "zenithColor": "#2a6fc9",
     "sunAzimuth": 128,
     "sunElevation": 38,
     "fog": {
-      "color": "#cfe4f5",
-      "near": 220,
-      "far": 1500
+      "color": "#acd0ec",
+      "near": 300,
+      "far": 2000
     }
   },
   "simulation": {
@@ -38907,6 +38907,12 @@
           "id": "clear",
           "mode": "clear",
           "intensity": 0
+        },
+        {
+          "id": "overcast",
+          "mode": "clear",
+          "intensity": 0,
+          "cloudCover": 0.85
         },
         {
           "id": "rain",
@@ -38936,6 +38942,11 @@
       ],
       "initialProfileId": "clear",
       "schedule": [
+        {
+          "atSeconds": 2050,
+          "profileId": "overcast",
+          "transitionSeconds": 240
+        },
         {
           "atSeconds": 2400,
           "profileId": "rain",
