@@ -131,7 +131,7 @@ const MIGRATED_FIRE_FUEL = "GR2";
 /** Rewrite a fire area saved by the cellular fire grid (`config: { cols, rows, cellSize, ... }`, 0..1 fuel) as a fuel-model area. */
 function migrateFireArea(entry: unknown): unknown {
   if (entry === null || typeof entry !== "object" || Array.isArray(entry)) return entry;
-  const { config, fuel, ...rest } = entry as Record<string, unknown>;
+  const { config, fuel, ...rest } = object(entry, "$.simulation.fires[]");
   delete rest["extinguishRate"];
   if (config === null || typeof config !== "object" || Array.isArray(config)) return entry;
   const grid = config as Record<string, unknown>;

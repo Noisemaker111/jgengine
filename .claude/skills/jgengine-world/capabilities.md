@@ -161,6 +161,10 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `createAuthoredSimulation` (function) · `import { createAuthoredSimulation } from "@jgengine/core/world/authoredSimulation"`
 
+## authored-fire-rendering — draw editor-authored fire areas burning in the shared authored simulation
+
+- `AuthoredFires` (function) · `import { AuthoredFires } from "@jgengine/core/fire/AuthoredFires.draw"`
+
 ## authored-flocks — render authored habitat agents through caller-selected animated species models with velocity orientation and bounded model lifetime
 
 - `AuthoredFlocks` (function) · `import { AuthoredFlocks } from "@jgengine/core/ai/AuthoredFlocks.draw"`

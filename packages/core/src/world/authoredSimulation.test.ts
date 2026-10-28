@@ -58,7 +58,8 @@ test("pause, whole simulation restore and durable runtime restore retain state w
 test("weather retuning preserves progressed fire and teardown releases authored effects", () => {
   const ctx = context(true);
   advance(ctx, 0.1);
-  const fire = ctx.environment.fire("fire")!;
+  const fire = ctx.environment.fire("fire");
+  if (fire === undefined) throw new Error("authored fire area missing");
   expect(fire.cell(0, 0).state).toBe("flaming");
   const progressed = fire.snapshot();
   const next = document(); next.simulation!.weather!.ambient = { mode: "clear", intensity: 0 };
@@ -182,7 +183,8 @@ test("fire binding stops spawning on extinction and appearance signals keep Cels
   const out: [number, number, number] = [9, 9, 9];
   expect(ctx.environment.accelerationAt([8, 0, 0], 0, 1, 3, 0, out)).toBe(out);
   expect(out).toEqual([3, 0, 0]);
-  const fire = ctx.environment.fire("fire")!;
+  const fire = ctx.environment.fire("fire");
+  if (fire === undefined) throw new Error("authored fire area missing");
   for (let i = 0; i < 600 && fire.activeCells().length > 0; i++) advance(ctx, 1);
   expect(fire.cell(1, 0).state).toBe("burnt");
   expect(ctx.particles.emitters()[0]!.active).toBe(false);

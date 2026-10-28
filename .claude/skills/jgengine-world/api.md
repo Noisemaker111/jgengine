@@ -1282,6 +1282,11 @@
 - `effectiveRelation` (function): function effectiveRelation(input: EffectiveRelationInput): FactionRelation — ⚠ undocumented
 - `tierForStanding` (function): function tierForStanding(tiers: readonly ReputationTier[], standing: number): ReputationTier — Map a faction standing value to its named reputation tier.
 
+## @jgengine/core/fire/AuthoredFires.draw
+
+- `AuthoredFires` (function): function AuthoredFires({ document, heightAt }: AuthoredFiresProps): React.JSX.Element — Draw the document's authored fire areas from the game's own authored simulation (`ctx.environment`), so what burns on screen is what gameplay reads. Smoke drifts with the weather's wind at each area.
+- `AuthoredFiresProps` (interface): interface AuthoredFiresProps — Props for {@link AuthoredFires}.
+
 ## @jgengine/core/fire/FireLandscape.draw
 
 - `FireLandscapeView` (function): function FireLandscapeView({ fire, heightAt, wind = [0, 0], maxFlames = 2048, maxSmoke = 1024, overlayCellsPerFrame = 4096 }: FireLandscapeViewProps): React.JSX.Element — Draw a {@link FireLandscape}: a ground overlay of flaming, smouldering, charred and ashen cells, flame billboards as tall as each cell's flame length, and smoke puffs rising from burning cells and drifting downwind. Per-frame work is bounded by the burning cells plus `overlayCellsPerFrame`.
@@ -5321,11 +5326,6 @@
 - `DustField` (function): function DustField({ count = DEFAULT_DUST_COUNT, density = DEFAULT_DUST_DENSITY, budget, volume = DEFAULT_VOLUME, wind, origin = DEFAULT_ORIGIN, followCamera = true, speed = 2.4, size = 0.16, sway = 0.5, opacity = 0.3, color = DEFAULT_DUST_COLOR, groundBias = 0.65, timeScale, timeSeconds, seed = 514… — Renders wind-borne particulate as camera-facing motes. Reach for it whenever the air itself should read as weather — a desert gale, ash off a volcano, pollen in a meadow, grain dust in a silo. Compose it through {@link WeatherLayer}'s `"dust"` mode (or `dustAlways` alongside rain and snow) rather than mounting it directly, so it shares one wind and time source with the other layers.
 - `DustFieldProps` (interface): interface DustFieldProps — Wind-borne particulate: dust, sand, ash, pollen, spores. Unlike rain and snow this is not falling — motion is dominated by horizontal wind with a slow vertical bob, and density thins with height so the air near the ground carries the most grit. Any arid, volcanic, or blown-out world needs it.
 
-## @jgengine/core/weather/FireSpreadLayer.draw
-
-- `FireSpreadLayer` (function): function FireSpreadLayer({ grid, cellSize = grid.cellSize, origin = grid.origin, heightAt, flameHeight = 1.6, burningColor = "#ff6a1a", emberColor = "#4a1206", timeSeconds, }: FireSpreadLayerProps): React.JSX.Element — Draw a fire-spread grid as billboarded flames on burning cells and embers on burnt ones.
-- `FireSpreadLayerProps` (interface): interface FireSpreadLayerProps — Props for {@link FireSpreadLayer}: the fire grid, its cell size and origin, a ground-height sampler and flame look.
-
 ## @jgengine/core/weather/LightningStrike.draw
 
 - `LightningStrike` (function): function LightningStrike({ origin, target, strikeKey = 0, seed = 451, visible = true, duration = 0.18, color = DEFAULT_COLOR, glow = 2.4, branches = 5, jaggedness = 0.08, impactLight = 26, renderOrder = 20, timeSeconds, startedAt, }: LightningStrikeProps): React.JSX.Element — A jagged, briefly flashing lightning bolt from `origin` to `target`.
@@ -5380,19 +5380,12 @@
 
 ## @jgengine/core/weather/weather
 
-- `FireCell` (interface): interface FireCell — One fire-grid cell: fuel left, heat and burn state.
-- `FireCellState` (type): type FireCellState = "unburnt" | "burning" | "burnt" — Whether a fire-grid cell has not caught, is burning, or has burnt out.
-- `FireGrid` (interface): interface FireGrid — A cellular fire-spread grid stepped by game time; ignite cells and read their state.
-- `FireGridConfig` (interface): interface FireGridConfig — Size, origin, cell size, fuel and spread settings for {@link createFireGrid}.
-- `FireGridTuning` (type): type FireGridTuning = Pick<FireGridConfig, "ignitionThreshold" | "spreadRate" | "burnRate" | "wind" | "windBias"> — Live fire ignition, spread, consumption and wind policies; grid geometry stays fixed.
-- `FireStepOptions` (interface): interface FireStepOptions — Per-step inputs to a fire grid: spread multiplier, wind and per-cell wetness.
 - `ResolvedWeather` (interface): interface ResolvedWeather — Every {@link WeatherModifier} field for the current weather, scaled by its intensity.
 - `WeatherKind` (type): type WeatherKind = string — A weather kind's name, as a game's {@link WeatherModifierTable} keys it (`"rain"`, `"storm"`, ...).
 - `WeatherKindOf` (type): type WeatherKindOf<TTable extends WeatherModifierTable> = Extract<keyof TTable, string> — The kind names a {@link WeatherModifierTable} defines.
 - `WeatherModifier` (interface): interface WeatherModifier — How one weather kind changes play at full intensity: grip, visibility, structure damage, chill, fire ignition and spread.
 - `WeatherModifierTable` (type): type WeatherModifierTable<K extends string = string> = Record<K, WeatherModifier> — A game's weather kinds, each with its {@link WeatherModifier}.
 - `WeatherState` (interface): interface WeatherState — The weather now: its kind, intensity 0..1 and optional wind.
-- `createFireGrid` (function): function createFireGrid(config: FireGridConfig): FireGrid — Create a {@link FireGrid}; throws on sizes outside its cell budget.
 - `resolveWeather` (function): function resolveWeather<TTable extends WeatherModifierTable>(state: WeatherState, table: TTable): ResolvedWeather — Resolve the current weather against a game's modifier table; throws on a kind the table does not define.
 
 ## @jgengine/core/weather/weatherMath
@@ -5581,7 +5574,6 @@
 - `FastTravelNetwork` (interface): interface FastTravelNetwork<TMeta = unknown> — A network of fast-travel points with per-player discovery + distance queries.
 - `FastTravelOptions` (interface): interface FastTravelOptions<TMeta = unknown> — Options for {@link createFastTravelNetwork}.
 - `FastTravelSnapshot` (interface): interface FastTravelSnapshot — Serializable discovery state.
-- `FireGrid` (interface): interface FireGrid — A cellular fire-spread grid stepped by game time; ignite cells and read their state.
 - `FlatGround` (interface): interface FlatGround — A 3D walkable plane/slab. `Infinity` axes are unbounded; no separate "infinite" mode exists.
 - `FlatGroundSize` (interface): interface FlatGroundSize — Size of a `flat` ground: extents in world units. `Infinity` on an axis means unbounded — an endless plain needs no bounds number invented for it. `y` optionally bounds vertical play space.
 - `FogCells` (interface): interface FogCells — A fog field's grid: size, origin, cell size and row-major revealed flags.
@@ -6151,7 +6143,6 @@
 - `createFactionGraph` (function): function createFactionGraph(config: FactionGraphConfig): FactionGraph — ⚠ undocumented
 - `createFactionRoster` (function): function createFactionRoster(graph: FactionGraph): FactionRoster — ⚠ undocumented
 - `createFastTravelNetwork` (function): function createFastTravelNetwork<TMeta = unknown>(options: FastTravelOptions<TMeta>): FastTravelNetwork<TMeta> — A fast-travel network: defined destinations plus per-player discovery, with distance-sorted queries, a `nearest` lookup, a `canTravel` gate, an `onDiscover` seam, and serializable `snapshot`/`restore`. Travel itself is a teleport the game applies to `TravelPointView.position`; this owns the unlock/where-can-I-go state. Points marked `initial` start discovered.
-- `createFireGrid` (function): function createFireGrid(config: FireGridConfig): FireGrid — Create a {@link FireGrid}; throws on sizes outside its cell budget.
 - `createFogField` (function): function createFogField(config: FogConfig): FogField — Create a fog-of-war field over `bounds`; reveal cells as the player explores. Throws on a non-positive cell size.
 - `createFootprintGrid` (function): function createFootprintGrid(options: FootprintGridOptions = {}): FootprintGrid — Multi-cell footprint occupancy/reservation on a shared build grid — `world/placementController` only owns the ghost preview; this is the persistent claim a committed placement holds so the next hover's `isFree` check (or another player's, in a shared world) sees it. Bridge into `world/placement`'s `PlacementRules.obstacles` with {@link footprintObstacles} instead of hand-rolling an occupancy map per game.
 - `createFreeFlightController` (function): function createFreeFlightController(initialTuning: FreeFlightTuning, options: { yaw?: number; pitch?: number; state?: FreeFlightState } = {}): FreeFlightController — Totally free flight for any actor — character, camera, drone, or debug rig. Horizontal is always yaw-relative strafe; vertical is jump/crouch. Use `alignWithLook` for a 6DOF spectator that flies where the camera looks.

@@ -101,8 +101,8 @@ test("a scene saved with the cellular fire grid opens as a fuel-model fire area"
   const saved = { ...createEmptyEditorDocument(), simulation: { fires: [{ id: "camp", position: { x: 1, y: 0, z: 2 }, extinguishRate: 0.5, config: { cols: 2, rows: 2, cellSize: 1.5, burnRate: 0.2, ignitionThreshold: 1 }, fuel: [1, 0, 0.5, 1], ignitions: [{ col: 0, row: 0 }] }] } };
   const decoded = decodeEditorDocument(saved);
   expect(decoded.ok).toBe(true);
-  if (decoded.ok) expect(decoded.document.simulation!.fires).toEqual([{ id: "camp", position: { x: 1, y: 0, z: 2 }, cols: 2, rows: 2, cellSize: 1.5, fuels: ["GR2", "NB1"], fuel: [0, 1, 0, 0], ignitions: [{ col: 0, row: 0 }] }]);
-  expect(saved.simulation.fires[0]!.config.cols).toBe(2);
+  if (decoded.ok) expect(decoded.document.simulation?.fires).toEqual([{ id: "camp", position: { x: 1, y: 0, z: 2 }, cols: 2, rows: 2, cellSize: 1.5, fuels: ["GR2", "NB1"], fuel: [0, 1, 0, 0], ignitions: [{ col: 0, row: 0 }] }]);
+  expect(saved.simulation.fires[0]?.config.cols).toBe(2);
 });
 
 test("emitter fire bindings require a defined authored area", () => {

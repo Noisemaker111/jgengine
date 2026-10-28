@@ -688,6 +688,16 @@
       "intent": "compose authored weather, shelter, accumulation, fire, flocks and effects using one simulation clock"
     },
     {
+      "id": "authored-fire-rendering",
+      "packages": [
+        "@jgengine/core"
+      ],
+      "module": "@jgengine/core/fire/AuthoredFires.draw",
+      "gameFacing": false,
+      "probe": null,
+      "intent": "draw editor-authored fire areas burning in the shared authored simulation"
+    },
+    {
       "id": "authored-flocks",
       "packages": [
         "@jgengine/core"
