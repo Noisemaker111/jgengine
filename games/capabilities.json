@@ -275,6 +275,16 @@
       "intent": "measure a vehicle's jumps and air control — apex height and time, double jump, air rotation rates"
     },
     {
+      "id": "aircraft-trim",
+      "packages": [
+        "@jgengine/core"
+      ],
+      "module": "@jgengine/core/flight/reference/aircraftTrim",
+      "gameFacing": false,
+      "probe": null,
+      "intent": "trim a reference aircraft for steady flight — alpha, sideslip, throttle and surfaces"
+    },
+    {
       "id": "airdrops",
       "packages": [
         "@jgengine/core"
@@ -1348,6 +1358,16 @@
       "intent": "immutable 2D board of cells with row clears, gravity collapse, and match runs"
     },
     {
+      "id": "cessna172-reference",
+      "packages": [
+        "@jgengine/core"
+      ],
+      "module": "@jgengine/core/flight/reference/cessna172Aircraft",
+      "gameFacing": false,
+      "probe": null,
+      "intent": "Cessna 172N reference airframe — tabled lift and drag through the stall, propeller and piston engine, tricycle gear"
+    },
+    {
       "id": "character-controller",
       "packages": [
         "@jgengine/core"
@@ -1546,6 +1566,16 @@
       "gameFacing": false,
       "probe": null,
       "intent": "codex/bestiary gallery with category tabs, discovered/locked cards, secret masking, and a completion header"
+    },
+    {
+      "id": "coefficient-table",
+      "packages": [
+        "@jgengine/core"
+      ],
+      "module": "@jgengine/core/flight/reference/coefficientTable",
+      "gameFacing": false,
+      "probe": null,
+      "intent": "N-dimensional gridded data table with multilinear interpolation and per-axis extrapolation"
     },
     {
       "id": "collider-autofit",
@@ -3235,6 +3265,16 @@
       "intent": "settle bounded offline expedition ticks without losing supplies rewards or RNG continuity"
     },
     {
+      "id": "f16-reference",
+      "packages": [
+        "@jgengine/core"
+      ],
+      "module": "@jgengine/core/flight/reference/f16Aircraft",
+      "gameFacing": false,
+      "probe": null,
+      "intent": "F-16 throttle gearing to engine power command"
+    },
+    {
       "id": "fast-travel",
       "packages": [
         "@jgengine/core"
@@ -3345,6 +3385,16 @@
       "intent": "bind a key or mouse button to a named action that runs the same-named command with the aim; repeatMs auto-fires while held, `held` tells a click from a held trigger"
     },
     {
+      "id": "flight-comparison",
+      "packages": [
+        "@jgengine/core"
+      ],
+      "module": "@jgengine/core/flight/reference/flightComparison",
+      "gameFacing": false,
+      "probe": null,
+      "intent": "compare a game aircraft's flight tests with a reference aircraft and published figures"
+    },
+    {
       "id": "flight-metrics",
       "packages": [
         "@jgengine/core"
@@ -3353,6 +3403,26 @@
       "gameFacing": false,
       "probe": null,
       "intent": "measure an aircraft's feel as numbers — roll rate, sustained turn, stall speed, climb, throttle response, hover drift"
+    },
+    {
+      "id": "flight-modes",
+      "packages": [
+        "@jgengine/core"
+      ],
+      "module": "@jgengine/core/flight/reference/aircraftTrim",
+      "gameFacing": false,
+      "probe": null,
+      "intent": "linearize a trimmed reference aircraft and read short period, phugoid, dutch roll, roll and spiral modes"
+    },
+    {
+      "id": "flight-tests",
+      "packages": [
+        "@jgengine/core"
+      ],
+      "module": "@jgengine/core/flight/reference/flightTests",
+      "gameFacing": false,
+      "probe": null,
+      "intent": "fly a reference aircraft model through the flight tests"
     },
     {
       "id": "floating-text",
@@ -5554,6 +5624,16 @@
       "intent": "render a material asset on world geometry without UVs"
     },
     {
+      "id": "matrix-eigenvalues",
+      "packages": [
+        "@jgengine/core"
+      ],
+      "module": "@jgengine/core/flight/reference/aircraftTrim",
+      "gameFacing": false,
+      "probe": null,
+      "intent": "eigenvalues of a small real matrix"
+    },
+    {
       "id": "maturation-stage",
       "packages": [
         "@jgengine/core"
@@ -7311,6 +7391,16 @@
       "intent": "write a game's proof route in TypeScript with typed keys and probe checks; it runs headless or in the browser"
     },
     {
+      "id": "propeller-bemt",
+      "packages": [
+        "@jgengine/core"
+      ],
+      "module": "@jgengine/core/flight/reference/propeller",
+      "gameFacing": false,
+      "probe": null,
+      "intent": "Clark Y propeller section lift and drag"
+    },
+    {
       "id": "proximity-prompt",
       "packages": [
         "@jgengine/core"
@@ -7569,6 +7659,16 @@
       "gameFacing": false,
       "probe": null,
       "intent": "locate broken crafting item/station/unlock references, duplicate inputs and invalid authored quantities with repair guidance"
+    },
+    {
+      "id": "reference-aircraft",
+      "packages": [
+        "@jgengine/core"
+      ],
+      "module": "@jgengine/core/flight/reference/referenceAircraft",
+      "gameFacing": false,
+      "probe": null,
+      "intent": "attitude quaternion from heading, pitch and bank"
     },
     {
       "id": "refusal-feedback",
@@ -8814,6 +8914,16 @@
       "gameFacing": false,
       "probe": null,
       "intent": "render persisted chat with focus controls and visible send failures"
+    },
+    {
+      "id": "standard-atmosphere",
+      "packages": [
+        "@jgengine/core"
+      ],
+      "module": "@jgengine/core/flight/reference/standardAtmosphere",
+      "gameFacing": false,
+      "probe": null,
+      "intent": "geopotential altitude from geometric altitude"
     },
     {
       "id": "standing",
@@ -10624,6 +10734,26 @@
       "gameFacing": false,
       "probe": null,
       "intent": "spread a creature's levels over its stats at random so same-level creatures differ"
+    },
+    {
+      "id": "wind-axis-rates",
+      "packages": [
+        "@jgengine/core"
+      ],
+      "module": "@jgengine/core/flight/reference/aircraftTrim",
+      "gameFacing": false,
+      "probe": null,
+      "intent": "state rates in wind-axis variables for check cases and linearisation"
+    },
+    {
+      "id": "wind-axis-state",
+      "packages": [
+        "@jgengine/core"
+      ],
+      "module": "@jgengine/core/flight/reference/aircraftTrim",
+      "gameFacing": false,
+      "probe": null,
+      "intent": "build a reference aircraft state from airspeed, alpha, beta and Euler angles"
     },
     {
       "id": "window",
