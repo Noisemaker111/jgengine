@@ -773,6 +773,14 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 - `animGraphFromConfig` (function) · `import { animGraphFromConfig } from "@jgengine/core/anim/locomotionGraph"`
 - `locomotionGraph` (function) · `import { locomotionGraph } from "@jgengine/core/anim/locomotionGraph"`
 
+## magic-formula-tire — evaluate a published Pacejka Magic Formula 6.1 tire — combined slip, load, camber, pressure, turn slip, Fx Fy Mx My Mz
+
+- `magicFormula` (function) · `import { magicFormula } from "@jgengine/core/physics/reference/magicFormulaTire"`
+
+## magic-formula-tire-transient — run a Magic Formula tire with relaxation-length dynamics, standstill-stable, serializable state
+
+- `createMagicFormulaTire` (function) · `import { createMagicFormulaTire } from "@jgengine/core/physics/reference/magicFormulaTire"`
+
 ## map-annotations — player-drawn map annotation layer — freehand strokes, area shapes, and pinned notes, projected into the map's routes/zones props and serializable
 
 - `createAnnotationLayer` (function) · `import { createAnnotationLayer } from "@jgengine/core/world"`
@@ -1405,9 +1413,29 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `TimerRing` (function) · `import { TimerRing } from "@jgengine/core/time/timerReadout.view"`
 
+## tir-file — read a TNO/ADAMS .tir tyre property file into Magic Formula coefficients
+
+- `parseTirFile` (function) · `import { parseTirFile } from "@jgengine/core/physics/reference/magicFormulaTire"`
+
 ## tire-marks — skid marks laid by sliding wheels that fade over time from a fixed pool
 
 - `createTireMarks` (function) · `import { createTireMarks } from "@jgengine/core/world"`
+
+## tire-relaxation-length — tyre relaxation lengths and carcass stiffness from a Magic Formula set
+
+- `magicFormulaRelaxation` (function) · `import { magicFormulaRelaxation } from "@jgengine/core/physics/reference/magicFormulaTire"`
+
+## tire-rolling-radius — effective rolling radius of a loaded, spinning tyre
+
+- `magicFormulaRollingRadius` (function) · `import { magicFormulaRollingRadius } from "@jgengine/core/physics/reference/magicFormulaTire"`
+
+## tire-spin-slip — spin and turn slip of a yawing, cambered wheel for the Magic Formula turn-slip terms
+
+- `magicFormulaSpinSlip` (function) · `import { magicFormulaSpinSlip } from "@jgengine/core/physics/reference/magicFormulaTire"`
+
+## tire-vertical-force — tyre vertical force from deflection with speed, force, pressure and bottoming terms
+
+- `magicFormulaVerticalForce` (function) · `import { magicFormulaVerticalForce } from "@jgengine/core/physics/reference/magicFormulaTire"`
 
 ## touch-controls — switch the on-screen touch control set when gameplay context changes (enter/exit vehicle, mount, build mode)
 

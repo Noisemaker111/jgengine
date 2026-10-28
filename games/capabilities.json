@@ -5404,6 +5404,26 @@
       "intent": "a weapon magazine with capacity, timed reload, and reserve-pool interaction"
     },
     {
+      "id": "magic-formula-tire",
+      "packages": [
+        "@jgengine/core"
+      ],
+      "module": "@jgengine/core/physics/reference/magicFormulaTire",
+      "gameFacing": false,
+      "probe": null,
+      "intent": "evaluate a published Pacejka Magic Formula 6.1 tire — combined slip, load, camber, pressure, turn slip, Fx Fy Mx My Mz"
+    },
+    {
+      "id": "magic-formula-tire-transient",
+      "packages": [
+        "@jgengine/core"
+      ],
+      "module": "@jgengine/core/physics/reference/magicFormulaTire",
+      "gameFacing": false,
+      "probe": null,
+      "intent": "run a Magic Formula tire with relaxation-length dynamics, standstill-stable, serializable state"
+    },
+    {
       "id": "map-annotations",
       "packages": [
         "@jgengine/core"
@@ -9472,6 +9492,16 @@
       "intent": "radial SVG charge/cooldown ring bound to a TimerSet's progress"
     },
     {
+      "id": "tir-file",
+      "packages": [
+        "@jgengine/core"
+      ],
+      "module": "@jgengine/core/physics/reference/magicFormulaTire",
+      "gameFacing": false,
+      "probe": null,
+      "intent": "read a TNO/ADAMS .tir tyre property file into Magic Formula coefficients"
+    },
+    {
       "id": "tire-marks",
       "packages": [
         "@jgengine/core"
@@ -9480,6 +9510,46 @@
       "gameFacing": false,
       "probe": null,
       "intent": "skid marks laid by sliding wheels that fade over time from a fixed pool"
+    },
+    {
+      "id": "tire-relaxation-length",
+      "packages": [
+        "@jgengine/core"
+      ],
+      "module": "@jgengine/core/physics/reference/magicFormulaTire",
+      "gameFacing": false,
+      "probe": null,
+      "intent": "tyre relaxation lengths and carcass stiffness from a Magic Formula set"
+    },
+    {
+      "id": "tire-rolling-radius",
+      "packages": [
+        "@jgengine/core"
+      ],
+      "module": "@jgengine/core/physics/reference/magicFormulaTire",
+      "gameFacing": false,
+      "probe": null,
+      "intent": "effective rolling radius of a loaded, spinning tyre"
+    },
+    {
+      "id": "tire-spin-slip",
+      "packages": [
+        "@jgengine/core"
+      ],
+      "module": "@jgengine/core/physics/reference/magicFormulaTire",
+      "gameFacing": false,
+      "probe": null,
+      "intent": "spin and turn slip of a yawing, cambered wheel for the Magic Formula turn-slip terms"
+    },
+    {
+      "id": "tire-vertical-force",
+      "packages": [
+        "@jgengine/core"
+      ],
+      "module": "@jgengine/core/physics/reference/magicFormulaTire",
+      "gameFacing": false,
+      "probe": null,
+      "intent": "tyre vertical force from deflection with speed, force, pressure and bottoming terms"
     },
     {
       "id": "touch-controls",

@@ -155,6 +155,12 @@ lightning-branches, shield, boots, medal, stopwatch, and visored-helm. Recoloure
 to gold via `currentColor`, otherwise unmodified. CC BY 3.0 — attribution given
 here as required.
 
+## Vehicle reference physics data
+
+- Magic Formula 6.1 tyre equations: H. B. Pacejka, *Tire and Vehicle Dynamics*, 3rd ed., Butterworth-Heinemann (2012), §4.3, §7.2 and Appendix 3; I. J. M. Besselink, A. J. C. Schmeitz and H. B. Pacejka, "An improved Magic Formula/Swift tyre model that can handle inflation pressure changes", *Vehicle System Dynamics* 48 sup1 (2010). Used by `packages/core/src/physics/reference/magicFormulaTire.ts`.
+- TNO 205/60 R15 coefficient set (`TNO_car205_60R15.tir`, Delft-Tyre / TNO Automotive 2013), as printed in Pacejka (2012) Appendix 3. Coefficients only.
+- Equation cross-check against MFeval (Marco Furlan, TU Delft) and its Julia port, read for reference; no code copied.
+
 ## Game and level design research
 
 The `game-design` and `level-design` skills synthesize and rephrase design
