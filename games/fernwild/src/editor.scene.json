@@ -39213,6 +39213,145 @@
           }
         ]
       }
+    },
+    {
+      "id": "scatter_south_beach_boulders",
+      "kind": "scatter",
+      "points": [
+        {
+          "x": -60,
+          "y": 0,
+          "z": 1220
+        },
+        {
+          "x": 520,
+          "y": 0,
+          "z": 1220
+        },
+        {
+          "x": 520,
+          "y": 0,
+          "z": 1420
+        },
+        {
+          "x": -60,
+          "y": 0,
+          "z": 1420
+        }
+      ],
+      "label": "Beach: boulders on the sand and in the surf",
+      "meta": {
+        "seed": "south-beach-boulders",
+        "density": 0.0006,
+        "minSpacing": 14,
+        "minHeight": -0.9,
+        "maxHeight": 2.6,
+        "minScale": 0.6,
+        "maxScale": 1.35,
+        "autoAvoid": true,
+        "palette": [
+          {
+            "item": "seaboulder",
+            "weight": 1
+          }
+        ],
+        "clearance": 5.5
+      }
+    },
+    {
+      "id": "scatter_south_beach_ferns",
+      "kind": "scatter",
+      "points": [
+        {
+          "x": -60,
+          "y": 0,
+          "z": 1220
+        },
+        {
+          "x": 520,
+          "y": 0,
+          "z": 1220
+        },
+        {
+          "x": 520,
+          "y": 0,
+          "z": 1420
+        },
+        {
+          "x": -60,
+          "y": 0,
+          "z": 1420
+        }
+      ],
+      "label": "Beach: ferns and cycads out on the sand",
+      "meta": {
+        "seed": "south-beach-ferns",
+        "density": 0.006,
+        "minSpacing": 2.5,
+        "minHeight": 0.5,
+        "maxHeight": 2.6,
+        "minScale": 0.9,
+        "maxScale": 1.6,
+        "autoAvoid": true,
+        "palette": [
+          {
+            "item": "fern",
+            "weight": 3
+          },
+          {
+            "item": "cycad",
+            "weight": 2
+          },
+          {
+            "item": "bracken",
+            "weight": 1
+          }
+        ]
+      }
+    },
+    {
+      "id": "scatter_south_beach_rocks",
+      "kind": "scatter",
+      "points": [
+        {
+          "x": -60,
+          "y": 0,
+          "z": 1220
+        },
+        {
+          "x": 520,
+          "y": 0,
+          "z": 1220
+        },
+        {
+          "x": 520,
+          "y": 0,
+          "z": 1420
+        },
+        {
+          "x": -60,
+          "y": 0,
+          "z": 1420
+        }
+      ],
+      "label": "Beach: weathered rocks on the sand",
+      "meta": {
+        "seed": "south-beach-rocks",
+        "density": 0.0008,
+        "minSpacing": 9,
+        "minHeight": -0.6,
+        "maxHeight": 2.6,
+        "minScale": 0.7,
+        "maxScale": 1.3,
+        "autoAvoid": true,
+        "clearance": 2.5,
+        "palette": [
+          {
+            "item": "searock",
+            "weight": 1
+          }
+        ]
+      }
     }
   ],
   "annotations": [],

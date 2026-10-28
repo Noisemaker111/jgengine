@@ -11,7 +11,7 @@ import { bodyPrompts, bodyView } from "./game/deathBody";
 import { breedingPrompts, breedingView } from "./game/breeding";
 import { broodView, obeliskPrompts } from "./game/broodmother";
 import { BROOD_PHASES } from "./game/data/bosses";
-import { creaturePrompts, creaturesView, nearestCarcass, nearestThreat, nearestWild } from "./game/creatures";
+import { creaturePrompts, creaturesView, nearestCarcass, nearestTame, nearestThreat, nearestWild } from "./game/creatures";
 import { STRUCTURES } from "./game/data/structures";
 import { content } from "./game/content";
 import { itemTraits } from "./game/data/items";
@@ -147,6 +147,7 @@ export const game = defineGame({
         water: Math.round(view.water.value),
         stamina: Math.round(view.stamina.value),
         weight: view.weight.value,
+        weightMax: view.weight.max,
         thatch: ctx.player.inventory.count(BAG, "thatch"),
         wood: ctx.player.inventory.count(BAG, "wood"),
         stone: ctx.player.inventory.count(BAG, "stone"),
@@ -186,6 +187,8 @@ export const game = defineGame({
         ...sight("note", nearestUnreadNote(ctx, here, 4000)),
         // The nearest wild hunter within 40 m, the one to keep clear of.
         ...sight("danger", nearestThreat(ctx, here, 40)),
+        // The nearest tamed Phiomia, to walk back to with its saddle.
+        ...sight("phiomia", nearestTame(ctx, here, "phiomia")),
         // The nearest campfire and mortar the survivor placed, to walk back to and work at.
         ...sight("campfire", stationNear("campfire")),
         ...sight("mortar", stationNear("mortar_and_pestle")),

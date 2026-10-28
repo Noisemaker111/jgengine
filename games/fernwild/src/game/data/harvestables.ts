@@ -75,6 +75,8 @@ export const HARVESTABLES: Readonly<Record<string, Harvestable>> = {
   deadtree: tree("Dead Tree", 20, 0.5),
   boulder: rock("Boulder", 30, 1.4),
   boulder2: rock("Boulder", 30, 1.3),
+  seaboulder: rock("Boulder", 45, 2.6),
+  searock: rock("Rock", 24, 1.2),
   rock: rock("Rock", 18, 0.9),
   metal_rock: ore("Metal Rock", "metal", 40, 1.3),
   obsidian_rock: ore("Obsidian", "obsidian", 30, 1.1),

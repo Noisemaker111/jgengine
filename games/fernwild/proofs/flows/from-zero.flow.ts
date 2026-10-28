@@ -4,7 +4,7 @@ import { game } from "../../src/game.config";
 type Probe = ReturnType<NonNullable<NonNullable<typeof game.capture>["probe"]>>;
 type Check = (p: Probe) => boolean;
 /** Things the survivor can see and walk to: the path's pointer, the nearest tree, flint rock, bush or easy prey, or a station it built. */
-type Sight = "point" | "tree" | "rock" | "bush" | "prey" | "campfire" | "mortar" | "floor" | "doorway" | "carcass" | "note" | "danger";
+type Sight = "point" | "tree" | "rock" | "bush" | "prey" | "campfire" | "mortar" | "floor" | "doorway" | "carcass" | "note" | "danger" | "phiomia";
 
 /** The number keys, by the hotbar key they take in hand (Digit0 is the tenth). */
 const DIGITS = ["Digit0", "Digit1", "Digit2", "Digit3", "Digit4", "Digit5", "Digit6", "Digit7", "Digit8", "Digit9"] as const;
@@ -87,6 +87,14 @@ async function gather(f: Flow<Probe>, what: "tree" | "rock" | "bush", done: Chec
   for (let spent = 0; spent < maxMs; ) {
     const now = await f.probe();
     if (done(now)) return;
+    // E on a bush with the tame standing in front opens the tame's inventory instead: close it, as a player would.
+    if (now.screen === 1) await f.command("closeCreature", {});
+    if (what !== "bush" && now.stamina < 10) {
+      // Too tired to swing: get the breath back first.
+      await f.wait(5000);
+      spent += 5000;
+      continue;
+    }
     const evaded = await keepClear(f, now, health);
     health = now.health;
     if (evaded > 0) {
@@ -105,9 +113,9 @@ async function gather(f: Flow<Probe>, what: "tree" | "rock" | "bush", done: Chec
     }
     const at = await f.probe();
     const before = at.gathered;
+    // A swing and E both take what is in front, so look at it first: arriving already in reach turns nothing.
+    await f.heading(yawOf(at, what));
     if (what === "bush") {
-      // E picks what is in front, so look at the bush first.
-      await f.heading(yawOf(at, "bush"));
       for (let pick = 0; pick < 3; pick += 1) await f.press("KeyE");
       spent += 600;
     } else {
@@ -454,7 +462,6 @@ export default defineFlow(game, {
       if (p.foodSlot < 0) break;
       await f.command("giveCreature", { inventoryId: "inventory", slot: p.foodSlot });
     }
-    const beside = await f.probe();
     await guardUntil(f, (p) => p.tamed === 2, "the Phiomia eats its way to tamed", 600_000);
     await f.command("closeCreature", {});
     // its saddle: hide from a hunt with the hatchet, then fiber and wood
@@ -466,10 +473,10 @@ export default defineFlow(game, {
     await gather(f, "tree", (p) => p.wood >= 5);
     await f.command("craft", { recipeId: "phiomia_saddle" });
     await f.waitFor((p) => p.saddleSlot >= 0, { timeoutMs: 30_000, note: "the saddle is made" });
-    // back to the tame where it was won, the saddle into its inventory, then E to climb on
+    // back to the Phiomia, the saddle into its inventory, then E to climb on
     await hand(f, bare);
-    await walkTo(f, 1.5, toSpot(beside.x, beside.z));
-    await f.heading(beside.yaw);
+    await walkTo(f, 2.2, "phiomia");
+    await f.heading(yawOf(await f.probe(), "phiomia"));
     await f.hold("KeyE", { until: (p) => p.screen === 1, timeoutMs: 3000 });
     await f.command("giveCreature", { inventoryId: "inventory", slot: (await f.probe()).saddleSlot });
     await f.command("closeCreature", {});
@@ -507,9 +514,11 @@ export default defineFlow(game, {
     await hand(f, bare);
     await gather(f, "bush", (p) => p.fiber >= 15);
     await learnAndCraft(f, "wooden_club", (p) => p.clubs >= 1);
-    // wood laid in for the next walls, as a survivor would before nightfall
+    // wood laid in for the next walls, as a survivor would before nightfall, until the bag is near full
     await hand(f, hatchet);
-    await gather(f, "tree", (p) => p.wood >= 230);
+    await gather(f, "tree", (p) => p.wood >= 230 || p.weight >= p.weightMax - 4, 480_000);
+    // and carried home to the campfire
+    await walkTo(f, 3, "campfire", 300_000);
     await f.wait(1000);
   },
 });
