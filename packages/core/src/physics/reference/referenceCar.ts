@@ -532,11 +532,12 @@ export function createReferenceCar(spec: ReferenceCarSpec, options: ReferenceCar
   const k3 = new Float64Array(PLANT_SIZE);
   const k4 = new Float64Array(PLANT_SIZE);
   const stage = new Float64Array(PLANT_SIZE);
-  const report = {
-    loads: [0, 0, 0, 0] as [number, number, number, number],
-    slips: [0, 0, 0, 0] as [number, number, number, number],
-    angles: [0, 0, 0, 0] as [number, number, number, number],
-    cambers: [0, 0, 0, 0] as [number, number, number, number],
+  type Quad = [number, number, number, number];
+  const report: { loads: Quad; slips: Quad; angles: Quad; cambers: Quad; steer: number; airborne: boolean } = {
+    loads: [0, 0, 0, 0],
+    slips: [0, 0, 0, 0],
+    angles: [0, 0, 0, 0],
+    cambers: [0, 0, 0, 0],
     steer: 0,
     airborne: false,
   };
