@@ -8,7 +8,10 @@ import {
   generatorVariants,
   getGenerator,
   listGenerators,
+  prepareGenerator,
+  prepareGeneratorVariants,
   registerGenerator,
+  untypedGenerator,
   runGenerator,
   variantIndexAt,
 } from "./generator";
@@ -120,5 +123,41 @@ describe("registry", () => {
     registerGenerator(POINTS);
     const output = getGenerator("test-points")?.generate({ count: 999 }, generatorContext("r"));
     expect(Array.isArray(output) ? output.length : 0).toBe(20);
+  });
+});
+
+describe("prepare", () => {
+  const prepared: string[] = [];
+  const SLOW = defineGenerator({
+    id: "test-slow",
+    label: "Slow",
+    output: "points",
+    schema: SCHEMA,
+    lods: [1, 0.5],
+    async prepare(params, context) {
+      prepared.push(`${context.seed}@${context.detail}:${params.count}`);
+    },
+    generate: (params) => params.count,
+  });
+
+  test("prepareGenerator prepares the output runGenerator returns", async () => {
+    prepared.length = 0;
+    await prepareGenerator(SLOW, { count: 7, seed: "a" });
+    expect(prepared).toEqual(["a@1:7"]);
+    expect(runGenerator(SLOW, { count: 7, seed: "a" })).toBe(7);
+  });
+
+  test("prepareGeneratorVariants prepares every variant at every detail level", async () => {
+    prepared.length = 0;
+    await prepareGeneratorVariants(SLOW, { count: 3 }, { count: 2, explore: 0 });
+    const baked = bakeGeneratorVariants(SLOW, { count: 3 }, { count: 2, explore: 0 });
+    expect(prepared).toEqual(baked.flatMap((entry) => entry.lods.map((lod) => `${entry.variant.seed}@${lod.detail}:3`)));
+  });
+
+  test("an untyped generator keeps prepare and parses its params", async () => {
+    prepared.length = 0;
+    await untypedGenerator(SLOW).prepare?.({ count: 999 }, generatorContext("u"));
+    expect(prepared).toEqual(["u@1:20"]);
+    await prepareGenerator(POINTS, {});
   });
 });
