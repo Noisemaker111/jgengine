@@ -1684,7 +1684,7 @@
   "packages/core/src/terrain/soilPatchMaterial.draw.test.ts": {"cast":3},
   "packages/core/src/terrain/surfaceBumpNormal.draw.test.ts": {"cast":1,"any":1},
   "packages/core/src/terrain/surveyTerrain.test.ts": {"nonNull":1},
-  "packages/core/src/terrain/surveyTerrain.ts": {"cast":2,"nonNull":3},
+  "packages/core/src/terrain/surveyTerrain.ts": {"cast":2,"nonNull":1},
   "packages/core/src/terrain/terraform.ts": {"nonNull":41,"cast":1},
   "packages/core/src/terrain/terraformMaterial.test.ts": {"nonNull":10},
   "packages/core/src/terrain/terrain.test.ts": {"cast":2,"nonNull":22},

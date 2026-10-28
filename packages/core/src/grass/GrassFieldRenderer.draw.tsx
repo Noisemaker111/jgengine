@@ -4,7 +4,7 @@ import { resolveGrassObject } from "@jgengine/core/grass/grassKind";
 import type { SceneKindObject } from "@jgengine/core/scene/sceneKinds";
 import type { TerrainField } from "@jgengine/core/terrain/terrain";
 import { clearanceMasksFrom, DEFAULT_CLEARANCE_KINDS } from "@jgengine/core/scatter/scatterRegion";
-import { masksInfluence } from "@jgengine/core/world/geometry";
+import { masksInfluence, masksWithin } from "@jgengine/core/world/geometry";
 
 import { GrassPatch } from "@jgengine/core/grass/GrassPatch.draw";
 import type { GrassExclusion } from "@jgengine/core/grass/grassBake.draw";
@@ -62,11 +62,16 @@ function OneGrass({ object, context }: { object: SceneKindObject; context: Scene
       kinds: [...DEFAULT_CLEARANCE_KINDS, "road", "walkway", "route", "path"],
     });
     // Keep the entire authored footing clear; feather regrowth outside its edge.
-    return {
+    const grown = {
       discs: authored.discs.map(zone => ({ ...zone, radius: zone.radius + (zone.feather ?? 0) })),
       corridors: authored.corridors.map(zone => ({ ...zone, halfWidth: zone.halfWidth + (zone.feather ?? 0) })),
     };
-  }, [markers, paths, context.document.volumes]);
+    if (resolved === null) return grown;
+    // Every tuft and mat vertex tests these, so keep only the ones that reach this patch.
+    const [cx, , cz] = resolved.center;
+    const [w, d] = resolved.size;
+    return masksWithin(grown, { minX: cx - w / 2, maxX: cx + w / 2, minZ: cz - d / 2, maxZ: cz + d / 2 });
+  }, [markers, paths, context.document.volumes, resolved]);
   const coverageAt = useCallback((x: number, z: number) => resolved === null ? 0 :
     1 - masksInfluence(x + resolved.center[0], z + resolved.center[2], masks), [resolved, masks]);
   // Depends on the volumes slice, not the context object — the live-sync context is recreated

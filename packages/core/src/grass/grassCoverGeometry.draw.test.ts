@@ -56,6 +56,27 @@ describe("grass cover geometry", () => {
     expect(createGrassCoverGeometry({ ...base, strength: 0 }).positions.length).toBe(0);
   });
 
+  test("samples the ground once per vertex and hands that height to the coverage", () => {
+    let samples = 0;
+    const heights: number[] = [];
+    const cover = createGrassCoverGeometry({
+      ...base,
+      heightAt: (x) => {
+        samples += 1;
+        return 1.2 + x * 0.05;
+      },
+      coverageAt: (_x, _z, height) => {
+        heights.push(height);
+        return 1;
+      },
+    });
+    const vertices = cover.positions.length / 3;
+    expect(samples).toBe(vertices);
+    expect(heights).toHaveLength(vertices);
+    expect(cover.normals[0]).toBeCloseTo(-0.05 / Math.hypot(0.05, 1), 5);
+    expect(cover.normals[1]).toBeCloseTo(1 / Math.hypot(0.05, 1), 5);
+  });
+
   test("bounds the grid for a large park", () => {
     const cover = createGrassCoverGeometry({ ...base, area: [400, 400] });
     const cols = Math.round(Math.sqrt(cover.positions.length / 3));

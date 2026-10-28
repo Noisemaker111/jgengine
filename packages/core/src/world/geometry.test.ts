@@ -7,6 +7,9 @@ import {
   clampToEllipse,
   ellipseNormal,
   footprintAabb,
+  masksInfluence,
+  masksWithin,
+  type AvoidMasks,
   pointInAabb,
   pointInEllipse,
   resolveMove,
@@ -85,5 +88,35 @@ describe("ellipse", () => {
     expect(ellipseNormal([4, 0], arena)).toEqual([1, 0]);
     const n = ellipseNormal([2, 1], arena);
     expect(Math.hypot(n[0], n[1])).toBeCloseTo(1);
+  });
+});
+
+describe("masksWithin", () => {
+  const masks: AvoidMasks = {
+    discs: [
+      { x: 5, z: 5, radius: 3, feather: 1 },
+      { x: 500, z: 500, radius: 10 },
+      { x: -12, z: 0, radius: 4 },
+    ],
+    corridors: [
+      { points: [[-400, 8], [-200, 8], [-50, 8], [0, 8], [50, 8], [200, 8], [400, 8]], halfWidth: 4, feather: 2 },
+      { points: [[300, 300], [600, 300]], halfWidth: 5 },
+    ],
+  };
+  const area = { minX: -10, maxX: 20, minZ: -10, maxZ: 20 };
+  const trimmed = masksWithin(masks, area);
+
+  test("keeps only the masks that reach the area, and a long corridor only near it", () => {
+    expect(trimmed.discs.map((disc) => disc.x)).toEqual([5, -12]);
+    expect(trimmed.corridors).toHaveLength(1);
+    expect(trimmed.corridors[0]?.points).toEqual([[-50, 8], [0, 8], [50, 8]]);
+  });
+
+  test("reads the same influence anywhere inside the area", () => {
+    for (let x = area.minX; x <= area.maxX; x += 0.7) {
+      for (let z = area.minZ; z <= area.maxZ; z += 0.7) {
+        expect(masksInfluence(x, z, trimmed)).toBe(masksInfluence(x, z, masks));
+      }
+    }
   });
 });

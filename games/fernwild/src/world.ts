@@ -11,7 +11,7 @@ export const SEA_LEVEL = 0;
 const SIZE = 3300;
 
 /**
- * The Island lives in editor.scene.json: shores, summits, mountain chains, rivers, biome outlines,
+ * The Island lives in editor.scene.json: shores, summits, mountain chains, hills, cliffs, rivers, biome outlines,
  * spawn zones and foliage (F2+E). This file only says how the plains roll and how ground, sea and
  * sky are drawn.
  */

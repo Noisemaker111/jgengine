@@ -101,6 +101,44 @@ export function masksInfluence(x: number, z: number, masks: AvoidMasks): number 
   return best;
 }
 
+/**
+ * The part of `masks` that can reach `area`: discs that overlap it, and each corridor cut down to the
+ * runs of segments within its half-width of it. {@link masksInfluence} reads the same inside `area`
+ * from the result, so a consumer that samples one small region of a large scene (a grass patch, one
+ * scatter region) tests a handful of masks instead of the whole document's.
+ * @internal
+ */
+export function masksWithin(masks: AvoidMasks, area: Aabb): AvoidMasks {
+  const discs = masks.discs.filter(
+    (disc) => disc.x + disc.radius >= area.minX && disc.x - disc.radius <= area.maxX && disc.z + disc.radius >= area.minZ && disc.z - disc.radius <= area.maxZ,
+  );
+  const corridors: AvoidCorridor[] = [];
+  for (const corridor of masks.corridors) {
+    const reach = corridor.halfWidth;
+    let run: Vec2[] = [];
+    let previous: Vec2 | undefined;
+    for (const point of corridor.points) {
+      if (previous !== undefined) {
+        const near =
+          Math.max(previous[0], point[0]) + reach >= area.minX &&
+          Math.min(previous[0], point[0]) - reach <= area.maxX &&
+          Math.max(previous[1], point[1]) + reach >= area.minZ &&
+          Math.min(previous[1], point[1]) - reach <= area.maxZ;
+        if (near) {
+          if (run.length === 0) run.push(previous);
+          run.push(point);
+        } else if (run.length > 0) {
+          corridors.push({ ...corridor, points: run });
+          run = [];
+        }
+      }
+      previous = point;
+    }
+    if (run.length > 0) corridors.push({ ...corridor, points: run });
+  }
+  return { discs, corridors };
+}
+
 /** @internal */
 export function snapToGrid(point: Vec2, size: number): Vec2 {
   if (!(size > 0)) return point;

@@ -5059,9 +5059,11 @@
 
 ## @jgengine/core/terrain/surveyTerrain
 
-- `SURVEY_KINDS` (const): const SURVEY_KINDS: { readonly coast: "coast"; readonly peak: "peak"; readonly ridge: "ridge"; readonly river: "river"; readonly biome: "biome"; } — Scene kinds a surveyed landmass reads: shore outlines, summits, mountain chains, rivers and biome outlines.
-- `Survey` (interface): interface Survey — Everything a surveyed landmass is built from: shores, summits, chains, rivers and biomes.
+- `SURVEY_KINDS` (const): const SURVEY_KINDS: { readonly coast: "coast"; readonly peak: "peak"; readonly ridge: "ridge"; readonly river: "river"; readonly biome: "biome"; readonly hills: "hills"; readonly cliff: "cliff"; } — Scene kinds a surveyed landmass reads: shore outlines, summits, mountain chains, hills, cliffs, rivers and biome outlines.
+- `Survey` (interface): interface Survey — Everything a surveyed landmass is built from: shores, summits, chains, hills, cliffs, rivers and biomes.
 - `SurveyBiome` (interface): interface SurveyBiome — A named biome outline with the ground it paints.
+- `SurveyCliff` (interface): interface SurveyCliff — A cliff along a line: one side stands `height` higher, across a face `face` metres wide.
+- `SurveyHills` (interface): interface SurveyHills — Rolling hills inside an outline, eased in from its edge.
 - `SurveyPeak` (interface): interface SurveyPeak — A summit raised over the plains: a cone `radius` wide at its base, optionally with a crater.
 - `SurveyPlains` (interface): interface SurveyPlains — The rolling ground between the mountains.
 - `SurveyRidge` (interface): interface SurveyRidge — A mountain chain: crest heights along a centerline, falling off to the plains across `width / 2`.
@@ -5069,8 +5071,8 @@
 - `SurveyTerrainConfig` (interface): interface SurveyTerrainConfig — The terrain config a survey resolves to — spread it into `terrain({ ... })`.
 - `SurveyTerrainOptions` (interface): interface SurveyTerrainOptions — Knobs for {@link surveyTerrain}: the plains, the shore, the sea floor.
 - `surveyBiomeAt` (function): function surveyBiomeAt(survey: Survey, x: number, z: number): SurveyBiome | null — The biome at a point: the last outline (in survey order) that contains it, or null outside them all.
-- `surveyFromDocument` (function): function surveyFromDocument(doc: SceneDocumentLike): Survey — Reads a landmass survey from a scene document: `coast` and `biome` outlines, `peak` markers, `ridge` and `river` paths (see {@link SURVEY_KINDS}). Pure; the document stays the one place the map lives.
-- `surveyHeightField` (function): function surveyHeightField(survey: Survey, plains: SurveyPlains = {}): (x: number, z: number) => number — The surveyed ground height before the shore is applied: rolling plains, every summit as a cone (with its crater), every chain as a crest falling off to the plains. Mountains rise out of the plains with a rock roughness that grows with height. Pure and deterministic; feed it to `terrain({ heightField })` with {@link surveyTerrain}'s coast so the shore eases it down to the beach.
+- `surveyFromDocument` (function): function surveyFromDocument(doc: SceneDocumentLike): Survey — Reads a landmass survey from a scene document: `coast`, `hills` and `biome` outlines, `peak` markers, `ridge`, `cliff` and `river` paths (see {@link SURVEY_KINDS}). Pure; the document stays the one place the map lives.
+- `surveyHeightField` (function): function surveyHeightField(survey: Survey, plains: SurveyPlains = {}): (x: number, z: number) => number — The surveyed ground height before the shore is applied: rolling plains, hills inside their outlines, cliffs along their lines, every summit as a cone (with its crater), every chain as a crest falling off to the plains. Mountains rise out of the plains with a rock roughness that grows with height, and an eroded one is cut by gullies. Pure and deterministic; feed it to `terrain({ heightField })` with {@link surveyTerrain}'s coast so the shore eases it down to the beach.
 - `surveyIsLand` (function): function surveyIsLand(survey: Survey, x: number, z: number): boolean — Whether a point is on land: inside one of the survey's shore outlines.
 - `surveyTerrain` (function): function surveyTerrain(survey: Survey, options: SurveyTerrainOptions = {}): SurveyTerrainConfig — Turns a survey into terrain config: its height field, its shore outlines as the coast, its biomes as polygon ground regions and its rivers as carved channels.
 
