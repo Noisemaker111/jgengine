@@ -1548,6 +1548,16 @@
       "intent": "read a GLB's animation clip names for the asset index at reindex"
     },
     {
+      "id": "clip-retarget",
+      "packages": [
+        "@jgengine/assets"
+      ],
+      "module": "@jgengine/assets/clipRetarget",
+      "gameFacing": false,
+      "probe": null,
+      "intent": "retarget a clip between differently built humanoid skeletons in an asset pipeline"
+    },
+    {
       "id": "clip-roles",
       "packages": [
         "@jgengine/core"
@@ -5692,6 +5702,16 @@
       "gameFacing": false,
       "probe": null,
       "intent": "run a Magic Formula tire with relaxation-length dynamics, standstill-stable, serializable state"
+    },
+    {
+      "id": "makehuman-character",
+      "packages": [
+        "@jgengine/assets"
+      ],
+      "module": "@jgengine/assets/makehumanPull",
+      "gameFacing": false,
+      "probe": null,
+      "intent": "build a rigged, animated CC0 MakeHuman person from its base mesh and targets into one GLB"
     },
     {
       "id": "map-annotations",

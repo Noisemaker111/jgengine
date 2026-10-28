@@ -46,6 +46,8 @@ export function libraryServedPath(entry: LibraryEntry): LibraryServedPath {
       }
       return { dir: `models/library/rocketbox/${name}`, url: `/models/library/rocketbox/${name}/model.glb` };
     }
+    case "makehuman":
+      return { dir: `models/library/makehuman/${id}`, url: `/models/library/makehuman/${id}/model.glb` };
     case "sketchfab":
       return { dir: `models/sketchfab/${id}`, url: `/models/sketchfab/${id}/model.glb` };
     case "kaykit":

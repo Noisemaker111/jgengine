@@ -57,8 +57,8 @@ export interface PulledRocketboxModel {
   height: number;
 }
 
-/** `FileReader` is a browser API GLTFExporter needs for its binary writer; Node and Bun lack it. */
-function installFileReader(): void {
+/** `FileReader` is a browser API GLTFExporter needs for its binary writer; Node and Bun lack it. @internal */
+export function installFileReader(): void {
   const scope = globalThis as unknown as { FileReader?: unknown };
   if (scope.FileReader !== undefined) return;
   scope.FileReader = class {
@@ -259,9 +259,38 @@ export interface PulledRocketboxClip {
  * @capability rocketbox-clip pull one Microsoft Rocketbox animation clip as a skeleton-only GLB that plays on any Rocketbox human
  */
 export async function pullRocketboxClip(clip: RocketboxClip, options: PullRocketboxClipOptions): Promise<PulledRocketboxClip> {
+  const { skeleton: group, clip: animation, bones } = await loadRocketboxClip(clip, options);
+  const scene = new THREE.Scene();
+  scene.add(group);
+  installFileReader();
+  const glb = await new GLTFExporter().parseAsync(scene, { binary: true, animations: [animation], onlyVisible: false });
+  if (!(glb instanceof ArrayBuffer)) throw new Error(`${clip.file}: the exporter returned no binary GLB`);
+  await MeshoptEncoder.ready;
+  const io = new NodeIO().registerExtensions(ALL_EXTENSIONS).registerDependencies({ "meshopt.encoder": MeshoptEncoder });
+  const document = await io.readBinary(new Uint8Array(glb));
+  await document.transform(resample(), meshopt({ encoder: MeshoptEncoder, level: "medium" }));
+  mkdirSync(options.outDir, { recursive: true });
+  const file = join(options.outDir, "clip.glb");
+  const bytes = await io.writeBinary(document);
+  writeFileSync(file, bytes);
+  return { name: clip.name, file, bytes: bytes.byteLength, duration: animation.duration, bones };
+}
+
+/** One Rocketbox clip loaded in memory: its skeleton at rest (metres, no mesh) and the animation. */
+export interface LoadedRocketboxClip {
+  skeleton: THREE.Group;
+  clip: THREE.AnimationClip;
+  bones: readonly string[];
+}
+
+/**
+ * Load one Rocketbox animation clip without writing it: the FBX's Bip01 skeleton under a 0.01 root
+ * (meshes, lights and helpers dropped) and its animation named `clip.name`, ready to retarget.
+ * @internal
+ */
+export async function loadRocketboxClip(clip: RocketboxClip, options: { fetchImpl?: typeof fetch; githubToken?: string | undefined }): Promise<LoadedRocketboxClip> {
   const source = new RocketboxSource(options.fetchImpl ?? fetch, options.githubToken);
   const loader = fbxLoader();
-  installFileReader();
   const group = parseFbx(loader, await source.file(clipFolder(clip), clip.file));
   const take = group.animations[0];
   if (take === undefined) throw new Error(`${clip.file} carries no animation`);
@@ -283,22 +312,9 @@ export async function pullRocketboxClip(clip: RocketboxClip, options: PullRocket
   if (tracks.length === 0) throw new Error(`${clip.file}: no track animates a bone`);
   const animation = new THREE.AnimationClip(clip.name, take.duration, tracks);
   const bones = [...new Set(tracks.map((track) => track.name.slice(0, track.name.lastIndexOf("."))))].sort();
-
   group.scale.setScalar(0.01);
   group.updateMatrixWorld(true);
-  const scene = new THREE.Scene();
-  scene.add(group);
-  const glb = await new GLTFExporter().parseAsync(scene, { binary: true, animations: [animation], onlyVisible: false });
-  if (!(glb instanceof ArrayBuffer)) throw new Error(`${clip.file}: the exporter returned no binary GLB`);
-  await MeshoptEncoder.ready;
-  const io = new NodeIO().registerExtensions(ALL_EXTENSIONS).registerDependencies({ "meshopt.encoder": MeshoptEncoder });
-  const document = await io.readBinary(new Uint8Array(glb));
-  await document.transform(resample(), meshopt({ encoder: MeshoptEncoder, level: "medium" }));
-  mkdirSync(options.outDir, { recursive: true });
-  const file = join(options.outDir, "clip.glb");
-  const bytes = await io.writeBinary(document);
-  writeFileSync(file, bytes);
-  return { name: clip.name, file, bytes: bytes.byteLength, duration: take.duration, bones };
+  return { skeleton: group, clip: animation, bones };
 }
 
 /**

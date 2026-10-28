@@ -8,7 +8,8 @@ export type LibrarySourceId =
   | "sketchfab"
   | "kaykit"
   | "quaternius"
-  | "rocketbox";
+  | "rocketbox"
+  | "makehuman";
 
 /** What a library entry is, which decides where it is served and which browser tab shows it. */
 export type LibraryKind = "model" | "character" | "animation" | "material" | "decal" | "hdri" | "icon";
@@ -44,6 +45,9 @@ export const GAMEICONS_REVISION = "82d948812bfe3f269ef8f731dcdb07b08160edc4";
 
 /** The Microsoft Rocketbox commit the avatar index and previews are pinned to (the same one `rocketboxPull` reads). */
 export const ROCKETBOX_REVISION = "0943055db6ec570bcef9f2c8b41c9e5467c808f9";
+
+/** The MakeHuman commit the pinned people are built from (the same one `makehumanPull` reads). */
+export const MAKEHUMAN_REVISION = "a8bc2d54ff0ac92e78ff71431b1023eda42bf482";
 
 /** The upstreams the shared asset library indexes, in ingest order. */
 export const ASSET_LIBRARY_SOURCES: readonly LibrarySource[] = [
@@ -99,6 +103,16 @@ export const ASSET_LIBRARY_SOURCES: readonly LibrarySource[] = [
     thumbnailKinds: ["character"],
     rehost: true,
     revision: ROCKETBOX_REVISION,
+  },
+  {
+    id: "makehuman",
+    title: "MakeHuman (CC0 people built by JGengine)",
+    homepage: "http://www.makehumancommunity.org",
+    license: "CC0-1.0",
+    author: "MakeHuman Community (Data Collection AB, Joel Palmius, Jonas Hauquier; base by Manuel Bastioni)",
+    page: `https://github.com/makehumancommunity/makehuman/tree/${MAKEHUMAN_REVISION}/makehuman/data`,
+    rehost: true,
+    revision: MAKEHUMAN_REVISION,
   },
   {
     id: "kaykit",
