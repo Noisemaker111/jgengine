@@ -140,6 +140,6 @@ const ROCK_HEIGHTS: Readonly<Record<string, number>> = {
  * The rocks the survivor walks around instead of through, as in ARK: each blocks with a box as wide
  * as its harvest radius and as tall as the rock. Pebbles, plants and trees stay walk-through.
  */
-export const scatterSolids: Record<string, ScatterSolidSpec> = Object.fromEntries(
+export const rockSolids: Record<string, ScatterSolidSpec> = Object.fromEntries(
   Object.entries(ROCK_HEIGHTS).map(([item, height]) => [item, { radius: (HARVESTABLES[item]?.radius ?? 1) * 0.85, height }]),
 );

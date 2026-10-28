@@ -9059,6 +9059,16 @@
       "intent": "strike scatter trees, rocks and bushes for tool-biased resources; spent ones vanish and regrow"
     },
     {
+      "id": "scatter-solids",
+      "packages": [
+        "@jgengine/core"
+      ],
+      "module": "@jgengine/core/scatter/scatterSolids",
+      "gameFacing": false,
+      "probe": null,
+      "intent": "scattered rocks and props block the player, NPCs and physics like any wall"
+    },
+    {
       "id": "scene-capture-binding",
       "packages": [
         "@jgengine/core"

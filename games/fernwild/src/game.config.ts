@@ -16,7 +16,7 @@ import { STRUCTURES } from "./game/data/structures";
 import { content } from "./game/content";
 import { itemTraits } from "./game/data/items";
 import { SURVIVOR } from "./game/data/survivor";
-import { entityModels, objectModels, scatterModels, scatterSolids } from "./game/models";
+import { entityModels, objectModels, scatterModels, rockSolids } from "./game/models";
 import { BAG, BAG_SLOTS, HOTBAR, HOTBAR_SLOTS } from "./game/bags";
 import { nearestSupplyDrop, supplyDropPrompts } from "./game/supplyDrops";
 import { canRun, nearestHarvestable, survivorPrompts, survivorView } from "./game/survivor";
@@ -77,7 +77,7 @@ export const game = defineGame({
   sceneScatterModels: scatterModels,
   // The whole Island's forests, rocks and ore plus the dense south beach: about 48k placements, all drawn.
   sceneScatterBudget: 60_000,
-  sceneScatterSolids: scatterSolids,
+  sceneScatterSolids: rockSolids,
   persist: { mode: "manual" },
   // The camera starts behind the survivor on the authored spawn facing, so you wash up looking inland.
   prompts: (ctx) => [...survivorPrompts(ctx), ...creaturePrompts(ctx), ...basePrompts(ctx), ...cavePrompts(ctx), ...bodyPrompts(ctx), ...supplyDropPrompts(ctx), ...breedingPrompts(ctx), ...obeliskPrompts(ctx), ...notePrompts(ctx)],
