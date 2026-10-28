@@ -53,9 +53,35 @@ export interface ItemDef {
   stack: number;
   consume?: Consume;
   tool?: ToolDef;
+  /** Armour: the body slot it is worn in and how far it widens the comfortable band, in °C. */
+  wear?: WearDef;
   /** Short words for the tooltip, ours not ARK's. */
   note: string;
 }
+
+/** ARK's armour slots, in the order its inventory lists them. */
+export const GEAR_SLOTS = [
+  { id: "head", label: "Head" },
+  { id: "torso", label: "Torso" },
+  { id: "legs", label: "Legs" },
+  { id: "hands", label: "Hands" },
+  { id: "feet", label: "Feet" },
+] as const;
+
+export type GearSlot = (typeof GEAR_SLOTS)[number]["id"];
+
+export interface WearDef {
+  slot: GearSlot;
+  /** °C added to the top of the comfortable band (ARK's hyperthermal insulation). */
+  heatC: number;
+  /** °C taken off the bottom of the comfortable band (ARK's hypothermal insulation). */
+  coldC: number;
+}
+
+/** Cloth keeps the sun off more than it keeps the cold out; five pieces add 10 °C at the hot end and 7.5 °C at the cold end. */
+const cloth = (id: string, label: string, slot: GearSlot, weight: number): ItemDef => ({
+  id, label, kind: "armor", weight, stack: 1, wear: { slot, heatC: 2, coldC: 1.5 }, note: "Keeps the sun off. Double-click to wear it.",
+});
 
 const resource = (id: string, label: string, weight: number, stack: number, note: string): ItemDef => ({ id, label, kind: "resource", weight, stack, note });
 const berry = (id: string, label: string, consume: Consume, note: string): ItemDef => ({ id, label, kind: "consumable", weight: 0.1, stack: 100, consume, note });
@@ -148,11 +174,11 @@ export const ITEMS: readonly ItemDef[] = [
   { id: "torch", label: "Torch", kind: "tool", weight: 0.5, stack: 1, note: "Light and a little warmth.", tool: { gather: { power: 1, biases: {}, defaultBias: 0 }, reach: 1.8, damage: 8, stamina: 5, cooldown: 0.7 } },
   { id: "storage_box", label: "Storage Box", kind: "structure", weight: 4, stack: 100, note: "Holds 15 stacks. Placing it comes later." },
   { id: "hide_sleeping_bag", label: "Hide Sleeping Bag", kind: "structure", weight: 2, stack: 1, note: "A one-time respawn point." },
-  { id: "cloth_shirt", label: "Cloth Shirt", kind: "armor", weight: 1, stack: 1, note: "Keeps the sun off." },
-  { id: "cloth_pants", label: "Cloth Pants", kind: "armor", weight: 1, stack: 1, note: "Keeps the sun off." },
-  { id: "cloth_hat", label: "Cloth Hat", kind: "armor", weight: 0.5, stack: 1, note: "Keeps the sun off." },
-  { id: "cloth_gloves", label: "Cloth Gloves", kind: "armor", weight: 0.5, stack: 1, note: "Keeps the sun off." },
-  { id: "cloth_boots", label: "Cloth Boots", kind: "armor", weight: 0.5, stack: 1, note: "Keeps the sun off." },
+  cloth("cloth_shirt", "Cloth Shirt", "torso", 1),
+  cloth("cloth_pants", "Cloth Pants", "legs", 1),
+  cloth("cloth_hat", "Cloth Hat", "head", 0.5),
+  cloth("cloth_gloves", "Cloth Gloves", "hands", 0.5),
+  cloth("cloth_boots", "Cloth Boots", "feet", 0.5),
   { id: "waterskin", label: "Waterskin", kind: "consumable", weight: 0.5, stack: 1, consume: { water: 20 }, note: "Carry a drink with you." },
   { id: "slingshot", label: "Slingshot", kind: "tool", weight: 1, stack: 1, note: "Throws stones that knock creatures out.", tool: { gather: { power: 1, biases: {}, defaultBias: 0 }, reach: 2, damage: 5, torpor: 8, damageClass: "ranged", stamina: 4, cooldown: 1 } },
   ...STRUCTURES.map((entry): ItemDef => ({ id: entry.id, label: entry.label, kind: "structure", weight: entry.weight, stack: 100, note: entry.note })),

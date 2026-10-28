@@ -7,7 +7,7 @@ import { world } from "../world";
 import { content } from "./content";
 import { itemTraits } from "./data/items";
 import { BAG, BAG_SLOTS, HOTBAR, HOTBAR_SLOTS } from "./bags";
-import { nearestHarvestable, survivorSave, survivorView } from "./survivor";
+import { nearestHarvestable, shuttle, survivorSave, survivorView, takeOff } from "./survivor";
 
 /** A survivor on the authored beach with the real island under them and the survivor system installed. */
 function survivorRunner(): HeadlessRunner {
@@ -135,4 +135,39 @@ test("a save keeps how far the meat has gone off", () => {
   for (let second = 0; second < 20; second += 1) after.step(1);
   expect(count(after, "raw_meat")).toBe(1);
   expect(count(after, "spoiled_meat")).toBe(1);
+});
+
+test("double-clicked cloth is worn in its slot, insulates and weighs, swaps, comes off and survives a save", () => {
+  const runner = survivorRunner();
+  tick(runner, 0.1);
+  const { ctx } = runner;
+  ctx.player.inventory.put(BAG, "cloth_shirt", 2);
+  ctx.player.inventory.put(BAG, "cloth_hat", 1);
+  const slotOf = (item: string) => ctx.player.inventory.state(BAG).slots.findIndex((stack) => stack?.itemId === item);
+  const weightBefore = survivorView(ctx).weight.value;
+
+  shuttle(ctx, BAG, slotOf("cloth_shirt"));
+  shuttle(ctx, BAG, slotOf("cloth_hat"));
+  const worn = survivorView(ctx);
+  expect(worn.gear.find((slot) => slot.id === "torso")?.item).toBe("cloth_shirt");
+  expect(worn.gear.find((slot) => slot.id === "head")?.item).toBe("cloth_hat");
+  expect(ctx.player.inventory.count(BAG, "cloth_shirt")).toBe(1);
+  expect(ctx.player.inventory.count(HOTBAR, "cloth_hat")).toBe(0);
+  expect(worn.insulation).toEqual({ heat: 4, cold: 3 });
+  expect(worn.weight.value).toBe(weightBefore);
+
+  // The second shirt replaces the first, which goes back into the bag.
+  shuttle(ctx, BAG, slotOf("cloth_shirt"));
+  expect(ctx.player.inventory.count(BAG, "cloth_shirt")).toBe(1);
+  expect(survivorView(ctx).gear.find((slot) => slot.id === "torso")?.item).toBe("cloth_shirt");
+
+  const saved = survivorSave(ctx).snapshot();
+  takeOff(ctx, "head");
+  expect(ctx.player.inventory.count(BAG, "cloth_hat")).toBe(1);
+  expect(survivorView(ctx).insulation).toEqual({ heat: 2, cold: 1.5 });
+
+  const after = survivorRunner();
+  tick(after, 0.1);
+  survivorSave(after.ctx).hydrate(saved);
+  expect(survivorView(after.ctx).gear.filter((slot) => slot.item !== null).map((slot) => slot.id)).toEqual(["head", "torso"]);
 });

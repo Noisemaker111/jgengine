@@ -1,5 +1,5 @@
 // @skill jgengine-ui
-import { Canvas, events as pointerEvents } from "@react-three/fiber";
+import { Canvas, events as pointerEvents, type RootState } from "@react-three/fiber";
 import type { CSSProperties, ReactNode } from "react";
 
 import type { ModelConfig } from "@jgengine/core/game/playableGame";
@@ -38,6 +38,8 @@ export interface EntityPreviewProps {
   environment?: boolean;
   /** Camera position framing the subject. Default `[0, 1, 3]`. */
   cameraPosition?: [number, number, number];
+  /** Point the camera looks at, e.g. a standing figure's chest. Default `[0, 0, 0]`, the subject's feet. */
+  cameraTarget?: readonly [number, number, number];
   /** Camera field of view. Default 35. */
   fov?: number;
   /** Device pixel ratio clamp. Default `[1, 2]`. */
@@ -79,6 +81,7 @@ export function EntityPreview({
   forward,
   environment = true,
   cameraPosition = [0, 1, 3],
+  cameraTarget,
   fov = 35,
   dpr = [1, 2],
   className,
@@ -100,6 +103,7 @@ export function EntityPreview({
         camera={{ position: cameraPosition, fov }}
         gl={{ preserveDrawingBuffer: true }}
         events={previewEvents}
+        {...(cameraTarget === undefined ? {} : { onCreated: (state: RootState) => state.camera.lookAt(cameraTarget[0], cameraTarget[1], cameraTarget[2]) })}
         style={{ touchAction: "none" }}
       >
         <GameContextBridge context={ctx}>
