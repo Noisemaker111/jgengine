@@ -3050,6 +3050,17 @@
 - `RagdollLinkSpec` (interface): interface RagdollLinkSpec { a: string; b: string; kind?: "hinge" | "distance"; anchor?: readonly [number, number, number] } — ⚠ undocumented
 - `createRagdoll` (function): function createRagdoll(world: PhysicsWorld, config: RagdollConfig): Ragdoll — ⚠ undocumented
 
+## @jgengine/core/physics/reference/boatComparison
+
+- `BoatComparisonSubject` (interface): interface BoatComparisonSubject — A reference boat with the game build of it and the published figures it carries.
+- `ReferenceBoat` (interface): interface ReferenceBoat — A real hull the game model is measured against: its calm-water resistance and surge inertia, SI units.
+- `compareBoat` (function): function compareBoat(subject: BoatComparisonSubject, gameName = `${subject.name} (game build)`): ComparisonTable — Runs a game boat tuning and its reference hull through the same straight-line tests (calm-water resistance at set speeds, top speed and time to 90% of it on the game's own thrust law, coast-down distance to a quarter of top speed, and running trim for planing hulls) and lines them up beside published figures.
+- `holtropExampleSubject` (function): function holtropExampleSubject(): BoatComparisonSubject — Holtrop–Mennen's 1982 example ship as a reference boat, with its B-series propeller and a game build of it.
+- `referenceBoatSubjects` (function): function referenceBoatSubjects(): BoatComparisonSubject[] — The reference boats every comparison run includes.
+- `referenceSubjectFor` (function): function referenceSubjectFor(name: string, tuning: BoatTuning): BoatComparisonSubject — Builds a reference boat for any game tuning: a planing hull (`planingSpeed` set) becomes an 18° deadrise prismatic hull of its length, beam and mass; a displacement hull becomes a Holtrop–Mennen hull of its length, beam and mass with workboat coefficients (`C_B 0.55`, `C_M 0.85`, `C_WP 0.75`, LCB 1.5% aft).
+- `speedboatSubject` (function): function speedboatSubject(): BoatComparisonSubject — The 6 m outboard speedboat of the `boatDynamics` docs as a reference boat: an 18° deadrise prismatic planing hull of the same beam and mass, centre of gravity 38% of the length forward of the transom, run through Savitsky's equations.
+- `surgeAddedMass` (function): function surgeAddedMass(massKg: number, length: number, density = RHO): number — Surge added mass of a hull as the half of a prolate spheroid of the same length and twice its volume (the double-body image across the still surface): Lamb's `k₁ = α₀/(2 − α₀)` times the displaced mass.
+
 ## @jgengine/core/physics/reference/compareHandling
 
 - `BikeHandlingComparison` (interface): interface BikeHandlingComparison — Result of {@link compareBikeTuning}.
@@ -3078,6 +3089,39 @@
 
 - `polynomialRoots` (function): function polynomialRoots(coefficients: readonly number[]): Eigenvalue[] — Roots of the real polynomial `c[0] + c[1]·λ + … + c[n]·λⁿ` (`c[n] ≠ 0`): the companion-matrix eigenvalues, then two Newton steps on the polynomial itself to recover full double precision.
 
+## @jgengine/core/physics/reference/hullForm
+
+- `HullMesh` (interface): interface HullMesh — A closed, outward-facing triangle mesh in hull axes: `positions` holds `x, y, z` triples, `triangles` index triples.
+- `HullOffsets` (interface): interface HullOffsets — A hull as a table of offsets, the way lines plans publish it. Hull axes: `x` forward from the aft end of the table, `y` to port, `z` up from the baseline (keel). The top waterline is the deck edge.
+- `PrismaticPlaningHullOptions` (interface): interface PrismaticPlaningHullOptions — Dimensions of a {@link prismaticPlaningHull}.
+- `WigleyHullOptions` (interface): interface WigleyHullOptions — Dimensions of a {@link wigleyHull}.
+- `boxBarge` (function): function boxBarge(length: number, beam: number, depth: number, stations = 3, waterlines = 3): HullOffsets — A rectangular box barge `length × beam × depth`: the textbook hull whose large-angle righting arm has a closed form.
+- `hullMeshFromOffsets` (function): function hullMeshFromOffsets(offsets: HullOffsets): HullMesh — Builds a closed, outward-facing triangle mesh from a table of offsets: the two hull sides, the deck, and flat end caps where a station has breadth (a transom). Every section is a closed ring from the keel up the starboard side, across the deck and down the port side.
+- `meshVolume` (function): function meshVolume(mesh: HullMesh): number — Signed volume enclosed by a mesh, m³ (positive when its triangles face outward).
+- `prismaticPlaningHull` (function): function prismaticPlaningHull(options: PrismaticPlaningHullOptions): HullOffsets — A constant-deadrise planing hull: a V bottom of the given deadrise up to a hard chine, vertical topsides above it, a flat transom aft and a bow that narrows to a point over `bowLength`. The prismatic hull Savitsky's equations describe.
+- `wigleyHull` (function): function wigleyHull(options: WigleyHullOptions): HullOffsets — The Wigley parabolic hull, `y = B/2 · (1 − (2x/L)²) · (1 − (z/T)²)` below the waterline, with vertical topsides above it — the standard mathematical test hull of ship hydrodynamics. Its hydrostatics are known in closed form: `C_B = 4/9`, `C_WP = 2/3`, `KB = 5T/8`, `BM_T = 3B²/(35T)`, `BM_L = 3L²/(40T)`. The table's `x` runs `0..L` from the stern.
+
+## @jgengine/core/physics/reference/hullHydrostatics
+
+- `FloatingAttitude` (interface): interface FloatingAttitude — A hull's floating attitude.
+- `FloatingCondition` (interface): interface FloatingCondition — Mass properties of a floating hull, hull axes.
+- `HullIntegrator` (interface): interface HullIntegrator — Integrates water pressure over a hull mesh in any pose.
+- `HullLoads` (interface): interface HullLoads — Pressure loads and submerged geometry of a posed hull, earth axes.
+- `HullWater` (interface): interface HullWater — The water a hull sits in, sampled at earth points (`x`, `y` horizontal, `z` up). `submergence` is how far below the free surface a point is (negative above it); `pressure` is the gauge pressure there, Pa. Still water: `submergence = −z`, `pressure = ρ·g·max(0, −z)`.
+- `HydrostaticParticulars` (interface): interface HydrostaticParticulars — Upright hydrostatic particulars at the free-floating attitude, hull axes.
+- `MARINE_GRAVITY` (const): const MARINE_GRAVITY: 9.80665 — Standard gravity, m/s².
+- `RightingArmPoint` (interface): interface RightingArmPoint — One point of a righting-arm curve.
+- `SEA_WATER_DENSITY` (const): const SEA_WATER_DENSITY: 1025.9 — Sea water at 15 °C (ITTC 7.5-02-01-03), kg/m³.
+- `StabilitySummary` (interface): interface StabilitySummary — Stability figures read off a GZ curve, the ones intact-stability criteria (IMO IS Code 2008, 2.2) ask for.
+- `createHullIntegrator` (function): function createHullIntegrator(mesh: HullMesh): HullIntegrator — Creates a {@link HullIntegrator} for a closed, outward-facing mesh. Pressure is taken linear over each (cut) triangle, which is exact for still water, so buoyancy, its centre and the waterplane come straight out of the geometry; the submerged volume and its centroid use the divergence theorem over the wetted surface alone (the waterplane carries none of it). Scratch buffers are allocated once.
+- `createHullLoads` (function): function createHullLoads(): HullLoads — Creates an empty {@link HullLoads} to pass to {@link HullIntegrator.integrate}.
+- `floatingEquilibrium` (function): function floatingEquilibrium(mesh: HullMesh, condition: FloatingCondition, guess?: FloatingAttitude): FloatingAttitude — Finds where a hull floats freely in still water: the height, heel and trim at which buoyancy carries the weight and passes through the centre of gravity.
+- `heelTrimRotation` (function): function heelTrimRotation(phi: number, theta: number, out: Float64Array = new Float64Array(9)): Float64Array — Row-major rotation for heel `phi` (about +x, positive heels to starboard) then trim `theta` (about +y, positive bow down).
+- `hydrostaticParticulars` (function): function hydrostaticParticulars(mesh: HullMesh, condition: FloatingCondition): HydrostaticParticulars — Floats a hull and reads its hydrostatics off the integrated geometry: volume, centre of buoyancy, waterplane, metacentric radii (`I/∇` of the cut waterplane) and metacentric heights.
+- `rightingArmCurve` (function): function rightingArmCurve(mesh: HullMesh, condition: FloatingCondition, heels: readonly number[]): RightingArmPoint[] — The statical stability (GZ) curve with free trim: at each heel the hull sinks and trims until buoyancy carries the weight with no trimming moment, and the remaining heeling moment over the weight is the righting arm. Heels in rad.
+- `stillWater` (function): function stillWater(density = SEA_WATER_DENSITY, gravity = MARINE_GRAVITY, level = 0): HullWater — Still water with its surface at `level`.
+- `summarizeStability` (function): function summarizeStability(curve: readonly RightingArmPoint[]): StabilitySummary — Reads the {@link StabilitySummary} off a GZ curve (trapezoidal areas).
+
 ## @jgengine/core/physics/reference/magicFormulaTire
 
 - `MagicFormulaCoefficients` (type): type MagicFormulaCoefficients = typeof TNO_VALUES — Pacejka Magic Formula 6.1 coefficients, named after the keys of a TNO `.tir` property file in camelCase (`PCX1` → `pcx1`, `UNLOADED_RADIUS` → `unloadedRadius`, `Q_FZ2` → `qFz2`). SI units: m, N, rad, kg, s, Pa. {@link parseTirFile} reads a `.tir` file into this shape.
@@ -3099,6 +3143,22 @@
 - `magicFormulaSpinSlip` (function): function magicFormulaSpinSlip(p: Readonly<MagicFormulaCoefficients>, input: { yawRate: number; spin: number; gamma: number; vx: number; vy?: number; fz: number }): { phi: number; phit: number } — Spin slip φ and turn slip φt (Pacejka 2012 §4.3.3, Eqs. 4.75–4.76 written for ISO yaw), 1/m, for {@link MagicFormulaInput}: `φt = ψ̇/Vc` and `φ = (ψ̇ + (1 − εγ)·Ω·sin γ)/Vc`, where εγ = `PECP1·(1 + PECP2·dfz)` is the share of camber that does not act as spin. A wheel leaning into a turn at its own rolling-cone curvature has φ ≈ 0. `Vc` is floored at `VXLOW`.
 - `magicFormulaVerticalForce` (function): function magicFormulaVerticalForce(p: Readonly<MagicFormulaCoefficients>, input: MagicFormulaVerticalInput): number — Tyre vertical force, N, from deflection (MF 6.1, Besselink et al. 2010 Eq. 4): `Fz = (1 + qV2·|Ω|R0/V0 − (qFcx·Fx/Fz0)² − (qFcy·Fy/Fz0)²)·(qFz1·ρ/R0 + qFz2·(ρ/R0)²)·(1 + pFz1·dpi)·Fz0`, with `qFz1` set so the stiffness at nominal load equals `VERTICAL_STIFFNESS`. Adds `VERTICAL_DAMPING` on the deflection rate and the MF-Swift bottoming spring once the rim is within `BOTTOM_OFFST`. Never pulls (≥ 0).
 - `parseTirFile` (function): function parseTirFile(text: string, base: Readonly<MagicFormulaCoefficients> = TNO_205_60R15): MagicFormulaCoefficients — Read a TNO/ADAMS `.tir` property file into {@link MagicFormulaCoefficients}. Keys the file leaves out keep the value from `base` (default {@link TNO_205_60R15}), so a partial file still yields a complete set.
+
+## @jgengine/core/physics/reference/marinePropeller
+
+- `BSeriesPropeller` (interface): interface BSeriesPropeller — Geometry of a Wageningen B-series propeller.
+- `OpenWaterPoint` (interface): interface OpenWaterPoint — Open-water thrust and torque coefficients at one advance ratio.
+- `PropellerOperatingPoint` (interface): interface PropellerOperatingPoint extends OpenWaterPoint — Where a propeller runs to deliver a thrust at an inflow speed.
+- `ScrewBladeSection` (interface): interface ScrewBladeSection — Blade chord and thickness at 0.75R, the section the ITTC-1978 correction scales.
+- `Waterjet` (interface): interface Waterjet — A waterjet: an inlet in the hull bottom, a pump, and a nozzle.
+- `WaterjetPoint` (interface): interface WaterjetPoint — A waterjet's thrust at one speed and power.
+- `bSeriesBladeSection` (function): function bSeriesBladeSection(propeller: BSeriesPropeller): ScrewBladeSection — Holtrop and Mennen's (1982) estimate of the 0.75R chord and thickness ratio from diameter, blades and area ratio.
+- `bSeriesOpenWater` (function): function bSeriesOpenWater(propeller: BSeriesPropeller, advance: number): OpenWaterPoint — Open-water `K_T` and `K_Q` of a Wageningen B-series propeller from the Oosterveld–van Oossanen regression polynomials (model scale, Re = 2·10⁶). Valid for positive thrust; past the zero-thrust advance the polynomials are extrapolations.
+- `bSeriesShipOpenWater` (function): function bSeriesShipOpenWater(propeller: BSeriesPropeller, advance: number): OpenWaterPoint — Full-scale open water of a B-series propeller: the series polynomials with the ITTC-1978 correction `K_T −= ΔC_D·0.3·(P/D)·(c·Z/D)`, `K_Q += ΔC_D·0.25·(c·Z/D)`.
+- `optimumPitchPropeller` (function): function optimumPitchPropeller(propeller: Omit<BSeriesPropeller, "pitchRatio">, thrust: number, advanceSpeed: number, density = 1025): { propeller: BSeriesPropeller; point: PropellerOperatingPoint } — The pitch ratio that delivers `thrust` at `advanceSpeed` with the best open-water efficiency, searched over `P/D` 0.5–1.4 (golden section on the efficiency of {@link propellerForThrust}).
+- `propellerForThrust` (function): function propellerForThrust(propeller: BSeriesPropeller, thrust: number, advanceSpeed: number, density = 1025): PropellerOperatingPoint — The shaft speed at which a full-scale B-series propeller delivers `thrust` with inflow `advanceSpeed`: solves `K_T(J)/J² = T/(ρ·D²·V_A²)` for `J` by bisection on the falling branch.
+- `propellerProfileDragIncrement` (function): function propellerProfileDragIncrement(section: ScrewBladeSection, roughness = 30e-6): number — ITTC-1978 profile drag change `ΔC_D` between the model-scale series and a full-scale propeller of the given roughness.
+- `waterjetThrust` (function): function waterjetThrust(jet: Waterjet, power: number, speed: number, density = 1025): WaterjetPoint — Momentum theory of a waterjet: the pump lifts the swallowed flow from inlet to jet velocity, `η_p·P = ṁ·((1 + k_n)·V_j²/2 − (1 − k_i)·V_in²/2)`, and the thrust is the momentum it adds, `T = ṁ·(V_j − V_in)`, with `ṁ = ρ·A_n·V_j`. Solves the jet velocity for a shaft power by bisection.
 
 ## @jgengine/core/physics/reference/motorcycleManeuvers
 
@@ -3123,6 +3183,21 @@
 - `SPORT_FRONT_120_70_ZR17` (const): const SPORT_FRONT_120_70_ZR17: Readonly<MotorcycleTireCoefficients> — Front 120/70 ZR17 sport tyre (Sharp, Evangelou & Limebeer 2004, Tables II–III middle rows; longitudinal shape from the 160/70 fit with pDx1 = 1.381, pDx2 = −0.04143, §4.5; relaxation §4.8).
 - `SPORT_REAR_180_55_ZR17` (const): const SPORT_REAR_180_55_ZR17: Readonly<MotorcycleTireCoefficients> — Rear 180/55 ZR17 sport tyre (Sharp, Evangelou & Limebeer 2004, Tables II–III bottom rows; pDx1 = 1.355, pDx2 = −0.0603, §4.5; relaxation §4.8).
 - `motorcycleMagicFormula` (function): function motorcycleMagicFormula(p: Readonly<MotorcycleTireCoefficients>, input: MotorcycleTireInput, v?: number): MotorcycleTireOutput — The steady-state motorcycle Magic Formula of Sharp, Evangelou & Limebeer (2004), Eqs. (1)–(31): pure and combined longitudinal and side slip with camber thrust as its own term, load-dependent stiffnesses, and an aligning moment from pneumatic trail on the zero-camber side force plus a camber twisting moment (residual torque Dr). The overturning moment is not here: it comes from the contact point moving across the tyre's round crown, which the vehicle's contact geometry carries. Sign convention: ISO-W, so the published formula (positive force for positive slip and camber) is mirrored. The published fit has one shift (rBy3) that would make left and right differ; it is applied to |β| so the tyre stays symmetric as the paper intends.
+
+## @jgengine/core/physics/reference/planingHull
+
+- `NACA_TN2876_MODEL` (const): const NACA_TN2876_MODEL: { readonly beam: number; readonly deadrise: number; readonly density: number; readonly viscosity: number; } — Model 276's beam, m, and its tank water.
+- `NACA_TN2876_RUNS` (const): const NACA_TN2876_RUNS: readonly PrismaticPlaningRun[] — Langley tank model 276 (NACA TN 2876, Table I, public domain): a 20° deadrise prismatic surface, 4 in beam, in fresh water at 63.4 lb/ft³ and ν = 10.55·10⁻⁶ ft²/s. Rows with wetted chines, read from the table.
+- `PlaningEquilibrium` (interface): interface PlaningEquilibrium extends PlaningState — Planing equilibrium and its stability margin.
+- `PlaningFluid` (interface): interface PlaningFluid — Fluid for a planing calculation.
+- `PlaningHull` (interface): interface PlaningHull — A prismatic planing hull for Savitsky's method, SI units.
+- `PlaningState` (interface): interface PlaningState — A planing hull's running state at one speed and trim.
+- `PrismaticPlaningRun` (interface): interface PrismaticPlaningRun — One run of a prismatic planing surface from NACA TN 2876 (Chambliss and Boyd, 1953), 20° deadrise, 4 in beam.
+- `planingAtTrim` (function): function planingAtTrim(hull: PlaningHull, speed: number, trim: number, fluid: PlaningFluid = {}): PlaningState — Savitsky's planing equations at a given trim: wetted length from the lift fit, mean bottom velocity, Schoenherr friction, the centre of pressure `l_p/(λb) = 0.75 − 1/(5.21·C_V²/λ² + 2.39)`, and the force and moment balance with the thrust line.
+- `planingEquilibrium` (function): function planingEquilibrium(hull: PlaningHull, speed: number, fluid: PlaningFluid = {}): PlaningEquilibrium — The trim at which a planing hull runs: the trim where the bottom pressure, friction and thrust leave no pitching moment about the centre of gravity (Savitsky's general equilibrium), with its resistance and porpoising margin.
+- `savitskyLiftCoefficient` (function): function savitskyLiftCoefficient(trimDeg: number, meanWettedLengthRatio: number, speedCoefficient: number, deadriseDeg: number): number — Savitsky's lift coefficient of a prismatic planing surface, `C_Lβ = C_L0 − 0.0065·β·C_L0^0.6` with `C_L0 = τ^1.1·(0.012·λ^0.5 + 0.0055·λ^2.5/C_V²)` (τ and β in degrees, as the fit is written).
+- `savitskyPorpoisingTrim` (function): function savitskyPorpoisingTrim(liftCoefficient: number, deadrise: number): number — Savitsky's (1964) porpoising stability limit: the trim above which a planing hull porpoises, against `√(C_Lβ/2)`, for deadrise 0°, 10° and 20° (Day and Haag's tests), interpolated quadratically in deadrise. The curves are the cubic fits of the chart published with OpenPlaning (Castro-Feliciano, MIT); valid for `0.13 ≤ √(C_Lβ/2) ≤ 0.3`, deadrise 0–20°.
+- `savitskyWettedLength` (function): function savitskyWettedLength(trimDeg: number, liftCoefficient: number, speedCoefficient: number, deadriseDeg: number): number — The mean wetted length–beam ratio `λ` at which the surface carries `liftCoefficient` (bisection on Savitsky's lift).
 
 ## @jgengine/core/physics/reference/realCars
 
@@ -3186,6 +3261,20 @@
 
 - `RungeKutta4` (interface): interface RungeKutta4 — A reusable classical fourth-order Runge–Kutta stepper over a fixed-size state vector.
 - `createRungeKutta4` (function): function createRungeKutta4(size: number): RungeKutta4 — Creates a {@link RungeKutta4} for states of `size` entries; its scratch buffers are allocated once, so a step allocates nothing.
+
+## @jgengine/core/physics/reference/shipResistance
+
+- `HOLTROP_MENNEN_EXAMPLE` (const): const HOLTROP_MENNEN_EXAMPLE: { readonly hull: { length: number; lengthBetweenPerpendiculars: number; beam: number; draftForward: number; draftAft: number; volume: number; lcb: number; bulbArea: number; bulbCentre: number; midshipCoefficient: number; waterplaneCoefficient: number; transomArea: numbe… — The hypothetical single-screw ship of Holtrop and Mennen's 1982 numerical example, with the results the paper prints for 25 knots, so the method is checked against its own authors' arithmetic.
+- `HoltropConditions` (interface): interface HoltropConditions — Fluid and roughness settings for {@link holtropMennenResistance}.
+- `HoltropHull` (interface): interface HoltropHull — A hull as the Holtrop–Mennen method describes it, SI units.
+- `HoltropPropeller` (interface): interface HoltropPropeller — A single-screw propeller as the propulsion-factor regressions need it.
+- `HoltropPropulsionFactors` (interface): interface HoltropPropulsionFactors — Wake, thrust deduction and the propeller's minimum blade area.
+- `HoltropResistance` (interface): interface HoltropResistance — Every resistance component and intermediate coefficient, SI units (N, m²).
+- `SEA_WATER_VISCOSITY` (const): const SEA_WATER_VISCOSITY: 0.00000118831 — Kinematic viscosity of sea water at 15 °C (ITTC 7.5-02-01-03), m²/s.
+- `holtropMennenResistance` (function): function holtropMennenResistance(hull: HoltropHull, speed: number, conditions: HoltropConditions = {}): HoltropResistance — Holtrop and Mennen's statistical resistance prediction for displacement ships: ITTC-1957 friction times the regressed form factor, appendages, wave-making and wave-breaking, a bulb near the surface, an immersed transom and the model–ship correlation allowance. Wave resistance up to `Fn = 0.4` is the 1982 formula; above `Fn = 0.55` it is the 1984 high-speed formula; between them, the 1984 interpolation.
+- `holtropPropulsionFactors` (function): function holtropPropulsionFactors(hull: HoltropHull, resistance: HoltropResistance, propeller: HoltropPropeller, density = 1025, gravity = 9.81): HoltropPropulsionFactors — Holtrop and Mennen's (1982) propulsion factors for a single-screw ship with a conventional stern, from a resistance prediction: wake fraction, thrust deduction, Keller's blade-area ratio and relative-rotative efficiency.
+- `ittc1957Friction` (function): function ittc1957Friction(reynolds: number): number — ITTC-1957 model–ship correlation line, `C_F = 0.075 / (log₁₀ Re − 2)²`.
+- `schoenherrFriction` (function): function schoenherrFriction(reynolds: number): number — Schoenherr's turbulent flat-plate line, `0.242/√C_F = log₁₀(Re·C_F)`, solved by Newton's method.
 
 ## @jgengine/core/physics/reference/standardManeuvers
 

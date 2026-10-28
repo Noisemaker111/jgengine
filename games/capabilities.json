@@ -948,6 +948,16 @@
       "intent": "board a rideable, freeze/hide its rider and apply caller camera policy"
     },
     {
+      "id": "boat-comparison",
+      "packages": [
+        "@jgengine/core"
+      ],
+      "module": "@jgengine/core/physics/reference/boatComparison",
+      "gameFacing": false,
+      "probe": null,
+      "intent": "surge added mass of a hull from Lamb's prolate-spheroid coefficient"
+    },
+    {
       "id": "boat-dynamics",
       "packages": [
         "@jgengine/core"
@@ -4440,6 +4450,26 @@
       "intent": "inline-style accessors for the HudTheme type scale, spacing, motion, elevation, and focus ring"
     },
     {
+      "id": "hull-form",
+      "packages": [
+        "@jgengine/core"
+      ],
+      "module": "@jgengine/core/physics/reference/hullForm",
+      "gameFacing": false,
+      "probe": null,
+      "intent": "triangle mesh of a hull from a published table of offsets"
+    },
+    {
+      "id": "hull-hydrostatics",
+      "packages": [
+        "@jgengine/core"
+      ],
+      "module": "@jgengine/core/physics/reference/hullHydrostatics",
+      "gameFacing": false,
+      "probe": null,
+      "intent": "still-water pressure field for hull integration"
+    },
+    {
       "id": "humanoid-actions",
       "packages": [
         "@jgengine/core"
@@ -5752,6 +5782,16 @@
       "gameFacing": false,
       "probe": null,
       "intent": "marker-kind key (glyph + color + label per kind) sharing the map's kindStyles"
+    },
+    {
+      "id": "marine-propeller",
+      "packages": [
+        "@jgengine/core"
+      ],
+      "module": "@jgengine/core/physics/reference/marinePropeller",
+      "gameFacing": false,
+      "probe": null,
+      "intent": "Wageningen B-series open-water K_T, K_Q polynomials"
     },
     {
       "id": "match-rounds",
@@ -7357,6 +7397,16 @@
       "intent": "cap live particles to a graphics tier and drop whole effects lowest-priority-first when over budget"
     },
     {
+      "id": "planing-hull",
+      "packages": [
+        "@jgengine/core"
+      ],
+      "module": "@jgengine/core/physics/reference/planingHull",
+      "gameFacing": false,
+      "probe": null,
+      "intent": "Savitsky (1964) planing lift coefficient"
+    },
+    {
       "id": "plant-cache",
       "packages": [
         "@jgengine/core"
@@ -8860,6 +8910,16 @@
       "gameFacing": false,
       "probe": null,
       "intent": "shared/group currency pools tracking per-member contributions"
+    },
+    {
+      "id": "ship-resistance",
+      "packages": [
+        "@jgengine/core"
+      ],
+      "module": "@jgengine/core/physics/reference/shipResistance",
+      "gameFacing": false,
+      "probe": null,
+      "intent": "ITTC-1957 friction line"
     },
     {
       "id": "shop-grid",

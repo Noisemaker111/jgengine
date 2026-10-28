@@ -248,6 +248,15 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `boardVehicle` (function) · `import { boardVehicle } from "@jgengine/core/world"`
 
+## boat-comparison — compare a game boat with a reference hull and published figures, metric by metric
+
+- `compareBoat` (function) · `import { compareBoat } from "@jgengine/core/physics/reference/boatComparison"`
+- `holtropExampleSubject` (function) · `import { holtropExampleSubject } from "@jgengine/core/physics/reference/boatComparison"`
+- `referenceBoatSubjects` (function) · `import { referenceBoatSubjects } from "@jgengine/core/physics/reference/boatComparison"`
+- `referenceSubjectFor` (function) · `import { referenceSubjectFor } from "@jgengine/core/physics/reference/boatComparison"`
+- `speedboatSubject` (function) · `import { speedboatSubject } from "@jgengine/core/physics/reference/boatComparison"`
+- `surgeAddedMass` (function) · `import { surgeAddedMass } from "@jgengine/core/physics/reference/boatComparison"`
+
 ## boat-dynamics — force-based powered hull — hull-speed drag hump, planing, keel, rudder that needs flow or outboard thrust
 
 - `createBoatDynamics` (function) · `import { createBoatDynamics } from "@jgengine/core/physics/boatDynamics"`
@@ -742,6 +751,25 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `hotbarSlotBindings` (function) · `import { hotbarSlotBindings } from "@jgengine/core/input/actionBindings"`
 
+## hull-form — a rectangular box barge as a table of offsets
+
+- `boxBarge` (function) · `import { boxBarge } from "@jgengine/core/physics/reference/hullForm"`
+- `hullMeshFromOffsets` (function) · `import { hullMeshFromOffsets } from "@jgengine/core/physics/reference/hullForm"`
+- `meshVolume` (function) · `import { meshVolume } from "@jgengine/core/physics/reference/hullForm"`
+- `prismaticPlaningHull` (function) · `import { prismaticPlaningHull } from "@jgengine/core/physics/reference/hullForm"`
+- `wigleyHull` (function) · `import { wigleyHull } from "@jgengine/core/physics/reference/hullForm"`
+
+## hull-hydrostatics — pressure integration over a hull mesh cut at the free surface
+
+- `createHullIntegrator` (function) · `import { createHullIntegrator } from "@jgengine/core/physics/reference/hullHydrostatics"`
+- `createHullLoads` (function) · `import { createHullLoads } from "@jgengine/core/physics/reference/hullHydrostatics"`
+- `floatingEquilibrium` (function) · `import { floatingEquilibrium } from "@jgengine/core/physics/reference/hullHydrostatics"`
+- `heelTrimRotation` (function) · `import { heelTrimRotation } from "@jgengine/core/physics/reference/hullHydrostatics"`
+- `hydrostaticParticulars` (function) · `import { hydrostaticParticulars } from "@jgengine/core/physics/reference/hullHydrostatics"`
+- `rightingArmCurve` (function) · `import { rightingArmCurve } from "@jgengine/core/physics/reference/hullHydrostatics"`
+- `stillWater` (function) · `import { stillWater } from "@jgengine/core/physics/reference/hullHydrostatics"`
+- `summarizeStability` (function) · `import { summarizeStability } from "@jgengine/core/physics/reference/hullHydrostatics"`
+
 ## humanoid-actions — engine-authored jump, swim, punch, swing, gather, hurt and death clips for any humanoid rig
 
 - `HUMANOID_ACTIONS` (const) · `import { HUMANOID_ACTIONS } from "@jgengine/core/anim/humanoidActions"`
@@ -891,6 +919,16 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 ## map-legend — marker-kind key (glyph + color + label per kind) sharing the map's kindStyles
 
 - `MapLegend` (function) · `import { MapLegend } from "@jgengine/core/map/map.view"`
+
+## marine-propeller — B-series blade chord and thickness at 0.75R
+
+- `bSeriesBladeSection` (function) · `import { bSeriesBladeSection } from "@jgengine/core/physics/reference/marinePropeller"`
+- `bSeriesOpenWater` (function) · `import { bSeriesOpenWater } from "@jgengine/core/physics/reference/marinePropeller"`
+- `bSeriesShipOpenWater` (function) · `import { bSeriesShipOpenWater } from "@jgengine/core/physics/reference/marinePropeller"`
+- `optimumPitchPropeller` (function) · `import { optimumPitchPropeller } from "@jgengine/core/physics/reference/marinePropeller"`
+- `propellerForThrust` (function) · `import { propellerForThrust } from "@jgengine/core/physics/reference/marinePropeller"`
+- `propellerProfileDragIncrement` (function) · `import { propellerProfileDragIncrement } from "@jgengine/core/physics/reference/marinePropeller"`
+- `waterjetThrust` (function) · `import { waterjetThrust } from "@jgengine/core/physics/reference/marinePropeller"`
 
 ## material-appearance-signals — adapt selected surface response to sampled wetness and local card exposure
 
@@ -1149,6 +1187,14 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 ## plan-particle-budget — cap live particles to a graphics tier and drop whole effects lowest-priority-first when over budget
 
 - `planParticleBudget` (function) · `import { planParticleBudget } from "@jgengine/core/vfx/particleBudget"`
+
+## planing-hull — Savitsky planing forces, wetted length and pitching moment at a trim
+
+- `planingAtTrim` (function) · `import { planingAtTrim } from "@jgengine/core/physics/reference/planingHull"`
+- `planingEquilibrium` (function) · `import { planingEquilibrium } from "@jgengine/core/physics/reference/planingHull"`
+- `savitskyLiftCoefficient` (function) · `import { savitskyLiftCoefficient } from "@jgengine/core/physics/reference/planingHull"`
+- `savitskyPorpoisingTrim` (function) · `import { savitskyPorpoisingTrim } from "@jgengine/core/physics/reference/planingHull"`
+- `savitskyWettedLength` (function) · `import { savitskyWettedLength } from "@jgengine/core/physics/reference/planingHull"`
 
 ## plant-cache — cache grown plant structures and styled meshes in memory and injected storage
 
@@ -1451,6 +1497,13 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 ## shared-annotations — broadcast local map-drawing edits over the party feed and mirror inbound edits — collaborative annotations over any replicated feed
 
 - `createSharedAnnotations` (function) · `import { createSharedAnnotations } from "@jgengine/core/world"`
+
+## ship-resistance — Holtrop–Mennen (1982/1984) displacement-ship resistance, component by component
+
+- `holtropMennenResistance` (function) · `import { holtropMennenResistance } from "@jgengine/core/physics/reference/shipResistance"`
+- `holtropPropulsionFactors` (function) · `import { holtropPropulsionFactors } from "@jgengine/core/physics/reference/shipResistance"`
+- `ittc1957Friction` (function) · `import { ittc1957Friction } from "@jgengine/core/physics/reference/shipResistance"`
+- `schoenherrFriction` (function) · `import { schoenherrFriction } from "@jgengine/core/physics/reference/shipResistance"`
 
 ## sight-line — block a sight test behind the world's own collision boxes
 
