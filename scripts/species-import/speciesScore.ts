@@ -1,4 +1,5 @@
 import { openGrownCrownWidthM } from "../../packages/core/src/plants/validation/crownAllometry";
+import { jenkinsFoliageKg, type JenkinsGroup } from "../../packages/core/src/plants/validation/foliageAllometry";
 import { crownWidthBandM, standDbhAtCm, standHeightAtM, type SpeciesReference } from "../../packages/core/src/plants/species/speciesReference";
 import type { CrownForm } from "./speciesTraits";
 import type { Trial, TrialReading } from "./speciesTrial";
@@ -10,6 +11,8 @@ export interface FitTarget {
   maxCrownRadiusM: number;
   /** Shade-tolerant species must keep a leafy crown for 100 years under 0.2 light. */
   shadeTolerant: boolean;
+  /** Jenkins 2003 group and leaf area per mass, m²/kg, the foliage mass is held to. */
+  foliage: { group: JenkinsGroup; sla: number };
 }
 
 const sq = (x: number): number => x * x;
@@ -53,6 +56,13 @@ export function scoreTrial(target: FitTarget, trial: Trial): { total: number; pa
       if (reference.openCrownWidth !== undefined) {
         const ek = openGrownCrownWidthM(reference.openCrownWidth, open.dbhCm);
         add("openCrown", hinge(open.crownWidthM / ek, 0.85, 1.18, 0.05));
+      }
+      // Foliage mass within about 30% of Jenkins 2003 for the stem's DBH, open and in a stand, to 50 years.
+      if (age <= 50) {
+        for (const r of [open, stand]) {
+          const ratio = r.leafAreaM2 / target.foliage.sla / jenkinsFoliageKg(target.foliage.group, Math.max(1, r.dbhCm));
+          add("foliage", hinge(Math.log(Math.max(1e-6, ratio)), Math.log(0.75), Math.log(1.3), 0.05));
+        }
       }
       add("maxCrown", hinge(open.crownWidthM / 2, 0, target.maxCrownRadiusM, 0.5));
       add("crownRatio", hinge(open.crownRatio, 0.57, 1, 0.04) + (age >= 50 ? hinge(stand.crownRatio, 0, 0.5, 0.04) : 0));

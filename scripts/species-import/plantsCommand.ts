@@ -7,6 +7,7 @@ import { join } from "node:path";
 import { fileURLToPath } from "node:url";
 
 import type { PlantSpecies } from "../../packages/core/src/plants/species/plantSpecies";
+import { jenkinsGroupOf } from "../../packages/core/src/plants/validation/foliageAllometry";
 import { siteIndexHeightM, type SiteIndexCurve } from "../../packages/core/src/plants/validation/heightAgeCurves";
 import { growthCurveAt, standDbhAtCm, standHeightAtM, type SpeciesReference } from "../../packages/core/src/plants/species/speciesReference";
 import { SPECIES_REFERENCE } from "../../packages/core/src/plants/species/speciesReferenceTable";
@@ -165,7 +166,13 @@ function importedValues(traits: SpeciesTraits, reference: SpeciesReference): Imp
 }
 
 function fitTarget(traits: SpeciesTraits, record: PlantSpecies, reference: SpeciesReference): FitTarget {
-  return { reference, form: traits.form, maxCrownRadiusM: record.limits.maxCrownRadiusM, shadeTolerant: SHADE_TOLERANCE[traits.shade] >= 0.7 };
+  return {
+    reference,
+    form: traits.form,
+    maxCrownRadiusM: record.limits.maxCrownRadiusM,
+    shadeTolerant: SHADE_TOLERANCE[traits.shade] >= 0.7,
+    foliage: { group: jenkinsGroupOf(traits.scientific), sla: record.leaf.sla },
+  };
 }
 
 async function loadRecord(id: string): Promise<PlantSpecies | undefined> {

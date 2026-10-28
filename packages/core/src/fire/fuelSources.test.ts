@@ -2,16 +2,13 @@ import { describe, expect, test } from "bun:test";
 import { OPEN_TEMPERATE_SITE, type PlantEnvironment } from "../plants/growth/plantEnvironment";
 import { createPlantGrowth } from "../plants/growth/plantGrowth";
 import { ACER_SACCHARUM } from "../plants/species/data/acerSaccharum";
+import { jenkinsFoliageKg } from "../plants/validation/foliageAllometry";
 import { createFireLandscape } from "./fireLandscape";
 import { MOISTURE_SCENARIOS } from "./fuelModels";
 import { plantCanopyFuel, rasterizeCanopyFuel, sampleFireGround, sunExposure, type PlantCanopyFuel } from "./fuelSources";
 
 const STAND: PlantEnvironment = { ...OPEN_TEMPERATE_SITE, stand: { spacingIndex: 0.25 } };
 
-/** Jenkins et al. 2003 (USFS, NE-GTR-319): maple/oak/hickory/beech aboveground mass and foliage share by DBH (cm). */
-function jenkinsHardwoodFoliageKg(dbhCm: number): number {
-  return Math.exp(-2.0127 + 2.4342 * Math.log(dbhCm)) * Math.exp(-4.0813 + 5.8816 / dbhCm);
-}
 
 describe("crown fuel from a grown plant", () => {
   test("sugar maple foliage mass is within 40 % of Jenkins 2003 at 20 and 50 years, open and in a stand", () => {
@@ -21,7 +18,7 @@ describe("crown fuel from a grown plant", () => {
         plant.step(age - plant.ageYears());
         const structure = plant.structure();
         const fuel = plantCanopyFuel(structure, ACER_SACCHARUM, plant.stats().leafAreaM2);
-        const ratio = fuel.foliageKg / jenkinsHardwoodFoliageKg(structure.stats.dbhCm);
+        const ratio = fuel.foliageKg / jenkinsFoliageKg("hard-maple-oak-hickory-beech", structure.stats.dbhCm);
         expect(ratio, `${age} y`).toBeGreaterThan(0.6);
         expect(ratio, `${age} y`).toBeLessThan(1.4);
         expect(fuel.availableKg).toBeCloseTo(fuel.foliageKg + 0.5 * fuel.fineWoodKg, 9);
