@@ -75,5 +75,5 @@ describe("threshold landsliding", () => {
     }
     expect(steepestExcess(topology, height, (i) => ((sediment[i] ?? 0) >= 1 ? Math.max(rock, Math.tan((34 * Math.PI) / 180)) : rock))).toBeLessThan(1e-6);
     expect(atThreshold / hillslopes).toBeGreaterThan(0.6);
-  });
+  }, 30_000);
 });

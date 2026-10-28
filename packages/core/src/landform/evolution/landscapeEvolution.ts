@@ -23,6 +23,7 @@
 import { seededRng } from "../../random/rng";
 import { createFlowRouter, type FlowRouting } from "../flow/flowRouting";
 import { landformTopology, type LandformGrid } from "../grid/landformGrid";
+import { COVER, COVER_CLASSES, createSedimentCover, DEFAULT_GRAIN_SIZES, DEFAULT_ROCK_YIELD, settlingVelocity, weatheredDepth, type GrainSizes } from "../materials/sedimentCover";
 import { createHillslopeDiffuser } from "./hillslopeDiffusion";
 import { createLandslider } from "./landsliding";
 import { resolveStrata, tanDegrees, UNIFORM_ROCK, type LandformStrata, type ResolvedStrata } from "./rockStrata";
@@ -46,10 +47,19 @@ export interface LandformParams {
   diffusivity: number;
   /** Diffusivity in m²/yr under standing water, spreading deltas and lake floors. */
   marineDiffusivity: number;
-  /** Dimensionless deposition coefficient G; 0 carries all sediment out, about 1 builds wide fans. */
+  /**
+   * Dimensionless deposition coefficient G of sand; gravel and silt scale it by their settling
+   * speed against sand's. 0 carries all sediment out, about 1 builds wide fans.
+   */
   deposition: number;
   /** Multiplier on K where loose sediment covers the rock. */
   sedimentErodibility: number;
+  /** Soil production rate P₀ in m/yr from bare bedrock (Heimsath et al. 1997 measured 7.7·10⁻⁵). */
+  soilProduction: number;
+  /** Soil depth scale h₀ in metres over which production falls by e. */
+  soilDepthScale: number;
+  /** Representative grain diameters in metres; their settling speeds sort what rivers lay down. Default 20 mm, 0.5 mm, 0.02 mm. */
+  grainSizes?: GrainSizes;
   /** Angle of repose of loose sediment and debris, in degrees. */
   reposeAngle: number;
   /** Sea surface in metres; base-level cells below it, and land joined to them below it, are sea. Default none. */
@@ -73,6 +83,8 @@ export const DEFAULT_LANDFORM_PARAMS: LandformParams = {
   marineDiffusivity: 1,
   deposition: 0,
   sedimentErodibility: 2,
+  soilProduction: 7.7e-5,
+  soilDepthScale: 0.5,
   reposeAngle: 34,
   timeStep: 1e4,
 };
@@ -113,6 +125,8 @@ export interface LandformSnapshot {
   sediment: readonly number[];
   exhumation: readonly number[];
   debris: readonly number[];
+  /** Cover thickness per cell and class, cell-major in `COVER_CLASSES` order. */
+  cover: readonly number[];
 }
 
 /** Per-cell fields of a run. The arrays are live; read them, never write them. */
@@ -127,6 +141,8 @@ export interface LandformFields {
   readonly layer: Uint8Array;
   /** Cumulative debris thickness laid by landslide runout, in metres. */
   readonly debris: Float64Array;
+  /** Loose cover per cell and class in metres, `cells × 5`, cell-major in `COVER_CLASSES` order (gravel, sand, silt, scree, soil); each cell sums to `sediment`. */
+  readonly cover: Float64Array;
 }
 
 /** A running landscape. */
@@ -176,13 +192,14 @@ function checkMap(name: string, map: readonly number[] | undefined, cells: numbe
 }
 
 function copyParams(params: LandformParams): LandformParams {
-  const { upliftMap, rainfall, strata, seaLevel, ...rest } = params;
+  const { upliftMap, rainfall, strata, seaLevel, grainSizes, ...rest } = params;
   return {
     ...rest,
     ...(upliftMap === undefined ? {} : { upliftMap: [...upliftMap] }),
     ...(rainfall === undefined ? {} : { rainfall: [...rainfall] }),
     ...(strata === undefined ? {} : { strata: { ...strata, layers: strata.layers.map((layer) => ({ ...layer })) } }),
     ...(seaLevel === undefined ? {} : { seaLevel }),
+    ...(grainSizes === undefined ? {} : { grainSizes: { ...grainSizes } }),
   };
 }
 
@@ -204,6 +221,11 @@ export function hashLandformArrays(...arrays: readonly Float64Array[]): string {
   return out;
 }
 
+function settlingShares(sizes: GrainSizes): readonly number[] {
+  const sand = settlingVelocity(sizes.sand);
+  return [settlingVelocity(sizes.gravel) / sand, 1, settlingVelocity(sizes.silt) / sand];
+}
+
 /**
  * Start a landscape evolution run on a grid.
  * @capability landform-evolution grow a heightfield from uplift, river incision, hillslopes, landslides, sediment and rock strata
@@ -211,7 +233,7 @@ export function hashLandformArrays(...arrays: readonly Float64Array[]): string {
 export function createLandscapeEvolution(options: LandscapeEvolutionOptions): LandscapeEvolution {
   const grid: LandformGrid = { ...options.grid, ...(options.grid.outlets === undefined ? {} : { outlets: [...options.grid.outlets] }) };
   const topology = landformTopology(grid);
-  const { cells, base, cellArea, cols, rows, cellSize } = topology;
+  const { cells, base, cellArea, cols, rows, cellSize, neighbour } = topology;
   const seed = options.seed;
   let params = copyParams({ ...DEFAULT_LANDFORM_PARAMS, ...options.params });
   checkMap("upliftMap", params.upliftMap, cells);
@@ -238,7 +260,16 @@ export function createLandscapeEvolution(options: LandscapeEvolutionOptions): La
   const layer = new Uint8Array(cells);
   const before = new Float64Array(cells);
   const erosion = new Float64Array(cells);
-  const flux = new Float64Array(cells);
+  const flux = new Float64Array(cells * 3);
+  const source = new Float64Array(cells * 3);
+  const laid = new Float64Array(cells);
+  const coverBefore = new Float64Array(cells);
+  const cover = createSedimentCover(cells);
+  const lake = new Int32Array(cells);
+  const lakeStart = new Int32Array(cells + 1);
+  const lakeCells = new Int32Array(cells);
+  const pool = new Float64Array(cells);
+  const settled = new Uint8Array(cells);
   const wet = new Uint8Array(cells);
   const kCell = new Float64Array(cells);
   const dCell = new Float64Array(cells);
@@ -246,6 +277,7 @@ export function createLandscapeEvolution(options: LandscapeEvolutionOptions): La
   const router = createFlowRouter(topology);
   const diffuser = createHillslopeDiffuser(topology);
   const slider = createLandslider(topology);
+  let settling: readonly number[] = settlingShares(params.grainSizes ?? DEFAULT_GRAIN_SIZES);
   let time = 0;
   let steps = 0;
 
@@ -273,39 +305,170 @@ export function createLandscapeEvolution(options: LandscapeEvolutionOptions): La
     }
   }
 
-  function strip(i: number, loss: number): void {
-    const s = sediment[i] ?? 0;
-    sediment[i] = s > loss ? s - loss : 0;
+  function strip(i: number, loss: number): number {
+    const taken = cover.remove(i, loss);
+    sediment[i] = cover.total(i);
+    return taken;
   }
 
+  function weather(dt: number): void {
+    if (params.soilProduction <= 0) return;
+    for (let i = 0; i < cells; i += 1) {
+      if (base[i] === 1 || wet[i] === 1) continue;
+      const depth = sediment[i] ?? 0;
+      const rate = params.soilProduction * (strata.layers[layer[i] ?? 0]?.weathering ?? 1);
+      const made = weatheredDepth(depth, rate, params.soilDepthScale, dt) - depth;
+      if (made <= 0) continue;
+      cover.add(i, COVER.soil, made);
+      sediment[i] = cover.total(i);
+    }
+  }
+
+  // What each cell's erosion put into the river, as gravel, sand and silt: the cover it lost, then rock.
+  function release(): void {
+    source.fill(0);
+    const layers = strata.layers;
+    for (let i = 0; i < cells; i += 1) {
+      const e = erosion[i] ?? 0;
+      if (e <= 0) continue;
+      const fromCover = cover.remove(i, e, source);
+      sediment[i] = cover.total(i);
+      const rock = e - fromCover;
+      if (rock <= 0) continue;
+      const mix = layers[layer[i] ?? 0]?.yields ?? DEFAULT_ROCK_YIELD;
+      source[i * 3] = (source[i * 3] ?? 0) + rock * mix.gravel;
+      source[i * 3 + 1] = (source[i * 3 + 1] ?? 0) + rock * mix.sand;
+      source[i * 3 + 2] = (source[i * 3 + 2] ?? 0) + rock * mix.silt;
+    }
+  }
+
+  // Each body of standing water (cells joined at one water level) gets a label, and its cells are
+  // listed together, so the silt it catches can settle over its whole floor.
+  function labelWater(): number {
+    const { water } = router;
+    lake.fill(-1);
+    let count = 0;
+    let written = 0;
+    for (let seedCell = 0; seedCell < cells; seedCell += 1) {
+      if (wet[seedCell] !== 1 || lake[seedCell] !== -1) continue;
+      const level = water[seedCell] ?? 0;
+      lakeStart[count] = written;
+      lake[seedCell] = count;
+      lakeCells[written] = seedCell;
+      let read = written;
+      written += 1;
+      while (read < written) {
+        const c = lakeCells[read] ?? 0;
+        read += 1;
+        for (let k = 0; k < 8; k += 1) {
+          const n = neighbour[c * 8 + k] ?? -1;
+          if (n < 0 || wet[n] !== 1 || lake[n] !== -1 || water[n] !== level) continue;
+          lake[n] = count;
+          lakeCells[written] = n;
+          written += 1;
+        }
+      }
+      count += 1;
+    }
+    lakeStart[count] = written;
+    return count;
+  }
+
+  // Lay a body of water's suspended silt over its floor in proportion to depth; returns what did not fit.
+  function settleSilt(label: number, report: LandformStepReport): number {
+    const volume = pool[label] ?? 0;
+    pool[label] = 0;
+    if (volume <= 0) return 0;
+    const { water } = router;
+    const from = lakeStart[label] ?? 0;
+    const to = lakeStart[label + 1] ?? 0;
+    let room = 0;
+    for (let j = from; j < to; j += 1) {
+      const c = lakeCells[j] ?? 0;
+      if (base[c] === 1) continue;
+      const depth = (water[c] ?? 0) - (height[c] ?? 0);
+      if (depth > 0) room += depth;
+    }
+    room *= cellArea;
+    if (room <= 0) return volume;
+    const laidTotal = volume < room ? volume : room;
+    const share = laidTotal / room;
+    for (let j = from; j < to; j += 1) {
+      const c = lakeCells[j] ?? 0;
+      if (base[c] === 1) continue;
+      const depth = (water[c] ?? 0) - (height[c] ?? 0);
+      if (depth <= 0) continue;
+      const thickness = depth * share;
+      cover.add(c, COVER.silt, thickness);
+      height[c] = (height[c] ?? 0) + thickness;
+      sediment[c] = cover.total(c);
+    }
+    report.deposited += laidTotal;
+    return volume - laidTotal;
+  }
+
+  // Carry each grain size down the stack. On land each size settles a share G·v/v_sand·a/A of what
+  // passes. Standing water keeps gravel and sand where the river enters, building a delta, and holds
+  // silt in suspension until it settles over the whole floor, when the stack reaches the outlet.
   function settle(report: LandformStepReport): void {
     const { stack, receiver, area, water } = router;
+    const bodies = labelWater();
+    pool.fill(0, 0, bodies);
+    settled.fill(0, 0, bodies);
     flux.fill(0);
     const g = params.deposition;
     for (let s = cells - 1; s >= 0; s -= 1) {
       const i = stack[s] ?? 0;
-      const volume = (flux[i] ?? 0) + (erosion[i] ?? 0) * cellArea;
-      if (volume <= 0) continue;
       const r = receiver[i] ?? i;
+      let passing = 0;
+      for (let c = 0; c < 3; c += 1) {
+        const volume = (flux[i * 3 + c] ?? 0) + (source[i * 3 + c] ?? 0) * cellArea;
+        flux[i * 3 + c] = volume;
+        passing += volume;
+      }
+      const label = lake[i] ?? -1;
+      if (passing > 0 && label >= 0) {
+        pool[label] = (pool[label] ?? 0) + (flux[i * 3 + 2] ?? 0);
+        passing -= flux[i * 3 + 2] ?? 0;
+        flux[i * 3 + 2] = 0;
+      }
       if (r === i) {
-        report.exported += volume;
+        report.exported += passing;
         continue;
       }
-      let laid = 0;
-      if (wet[i] === 1) {
-        const room = ((water[i] ?? 0) - (height[i] ?? 0)) * cellArea;
-        laid = room > 0 ? (volume < room ? volume : room) : 0;
-      } else if (g > 0) {
-        const share = (g * cellArea) / (area[i] ?? cellArea);
-        laid = volume * (share < 1 ? share : 1);
+      let room = label >= 0 ? ((water[i] ?? 0) - (height[i] ?? 0)) * cellArea : 0;
+      let laidHere = 0;
+      for (let c = 0; c < 3; c += 1) {
+        const volume = flux[i * 3 + c] ?? 0;
+        let kept = 0;
+        if (volume > 0) {
+          if (label >= 0) {
+            kept = room > 0 ? (volume < room ? volume : room) : 0;
+            room -= kept;
+          } else if (g > 0) {
+            const share = (g * (settling[c] ?? 1) * cellArea) / (area[i] ?? cellArea);
+            kept = volume * (share < 1 ? share : 1);
+          }
+        }
+        if (kept > 0) {
+          cover.add(i, c, kept / cellArea);
+          laidHere += kept;
+        }
+        flux[r * 3 + c] = (flux[r * 3 + c] ?? 0) + volume - kept;
       }
-      if (laid > 0) {
-        height[i] = (height[i] ?? 0) + laid / cellArea;
-        sediment[i] = (sediment[i] ?? 0) + laid / cellArea;
-        report.deposited += laid;
+      if (laidHere > 0) {
+        height[i] = (height[i] ?? 0) + laidHere / cellArea;
+        sediment[i] = cover.total(i);
+        report.deposited += laidHere;
       }
-      flux[r] = (flux[r] ?? 0) + volume - laid;
+      // The lake's outlet: every inflow is in, so its silt settles and the rest spills on.
+      if (label >= 0 && lake[r] !== label) {
+        flux[r * 3 + 2] = (flux[r * 3 + 2] ?? 0) + settleSilt(label, report);
+        settled[label] = 1;
+      }
     }
+    // Bodies that drain off the map (the sea) settle last; what does not fit leaves.
+    for (let label = 0; label < bodies; label += 1) if (settled[label] !== 1) report.exported += settleSilt(label, report);
   }
 
   function step(dtIn?: number): LandformStepReport {
@@ -323,6 +486,7 @@ export function createLandscapeEvolution(options: LandscapeEvolutionOptions): La
     classify();
     route();
     materialProperties();
+    weather(dt);
 
     incise({
       height,
@@ -336,12 +500,8 @@ export function createLandscapeEvolution(options: LandscapeEvolutionOptions): La
       dt,
       erosion,
     });
-    for (let i = 0; i < cells; i += 1) {
-      const e = erosion[i] ?? 0;
-      if (e <= 0) continue;
-      report.eroded += e * cellArea;
-      strip(i, e);
-    }
+    for (let i = 0; i < cells; i += 1) report.eroded += (erosion[i] ?? 0) * cellArea;
+    release();
     settle(report);
 
     if (params.diffusivity > 0 || params.marineDiffusivity > 0) {
@@ -349,17 +509,30 @@ export function createLandscapeEvolution(options: LandscapeEvolutionOptions): La
       diffuser.diffuse(height, dCell, dt);
       for (let i = 0; i < cells; i += 1) {
         const change = (height[i] ?? 0) - (erosion[i] ?? 0);
-        if (change > 0) sediment[i] = (sediment[i] ?? 0) + change;
-        else if (change < 0) strip(i, -change);
+        if (change > 0) {
+          // Creep lays colluvium, which reads as soil.
+          cover.add(i, COVER.soil, change);
+          sediment[i] = cover.total(i);
+        } else if (change < 0) strip(i, -change);
       }
     }
 
     failed.fill(0);
-    flux.fill(0);
-    const slid = slider.collapse(height, sediment, critical, reposeSlope, flux, failed);
+    laid.fill(0);
+    coverBefore.set(sediment);
+    const slid = slider.collapse(height, sediment, critical, reposeSlope, laid, failed);
     report.landslid = slid.failed;
     report.exported += slid.exported;
-    for (let i = 0; i < cells; i += 1) debris[i] = (debris[i] ?? 0) + (flux[i] ?? 0);
+    for (let i = 0; i < cells; i += 1) {
+      const fresh = laid[i] ?? 0;
+      if (fresh <= 0 && (failed[i] ?? 0) <= 0) continue;
+      // Cover that slid away is what the cell lost beyond the debris it gained; the debris is scree.
+      const lostCover = fresh - ((sediment[i] ?? 0) - (coverBefore[i] ?? 0));
+      if (lostCover > 0) cover.remove(i, lostCover);
+      cover.add(i, COVER.scree, fresh);
+      sediment[i] = cover.total(i);
+      debris[i] = (debris[i] ?? 0) + fresh;
+    }
     for (let i = 0; i < cells; i += 1) {
       if (base[i] === 1) continue;
       const rate = Math.abs((height[i] ?? 0) - (before[i] ?? 0)) / dt;
@@ -378,12 +551,13 @@ export function createLandscapeEvolution(options: LandscapeEvolutionOptions): La
 
   function restoreFrom(snapshot: LandformSnapshot): void {
     if (snapshot.grid.cols !== cols || snapshot.grid.rows !== rows) throw new Error(`landform snapshot is ${snapshot.grid.cols}×${snapshot.grid.rows}, this run is ${cols}×${rows}`);
-    if (snapshot.height.length !== cells || snapshot.sediment.length !== cells || snapshot.exhumation.length !== cells || snapshot.debris.length !== cells) throw new Error("landform snapshot arrays do not match the grid");
+    if (snapshot.height.length !== cells || snapshot.sediment.length !== cells || snapshot.exhumation.length !== cells || snapshot.debris.length !== cells || snapshot.cover.length !== cells * COVER_CLASSES.length) throw new Error("landform snapshot arrays do not match the grid");
     retune(snapshot.params);
     height.set(snapshot.height);
     sediment.set(snapshot.sediment);
     exhumation.set(snapshot.exhumation);
     debris.set(snapshot.debris);
+    cover.thickness.set(snapshot.cover);
     time = snapshot.time;
     steps = snapshot.steps;
     classify();
@@ -398,6 +572,7 @@ export function createLandscapeEvolution(options: LandscapeEvolutionOptions): La
     strata = resolveStrata(params.strata ?? UNIFORM_ROCK, cols, rows, cellSize);
     rockSlopes = strata.layers.map((rock) => tanDegrees(rock.criticalAngle ?? 45));
     reposeSlope = tanDegrees(params.reposeAngle);
+    settling = settlingShares(params.grainSizes ?? DEFAULT_GRAIN_SIZES);
   }
 
   classify();
@@ -420,7 +595,7 @@ export function createLandscapeEvolution(options: LandscapeEvolutionOptions): La
     },
     time: () => time,
     steps: () => steps,
-    fields: () => ({ height, sediment, exhumation, layer, debris }),
+    fields: () => ({ height, sediment, exhumation, layer, debris, cover: cover.thickness }),
     routing: () => router,
     snapshot: () => ({
       version: 1,
@@ -433,6 +608,7 @@ export function createLandscapeEvolution(options: LandscapeEvolutionOptions): La
       sediment: Array.from(sediment),
       exhumation: Array.from(exhumation),
       debris: Array.from(debris),
+      cover: Array.from(cover.thickness),
     }),
     restore: restoreFrom,
     reset() {
@@ -440,11 +616,12 @@ export function createLandscapeEvolution(options: LandscapeEvolutionOptions): La
       sediment.fill(0);
       exhumation.fill(0);
       debris.fill(0);
+      cover.thickness.fill(0);
       time = 0;
       steps = 0;
       classify();
       route();
     },
-    hash: () => hashLandformArrays(height, sediment),
+    hash: () => hashLandformArrays(height, sediment, cover.thickness),
   };
 }
