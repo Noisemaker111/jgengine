@@ -3,6 +3,8 @@
  * Host-agnostic and free of React/shell so unit tests can exercise the importer without a DOM or three.
  */
 
+import { addGameAssetFiles } from "@jgengine/core/assets/assetBase";
+
 /** One user-supplied model the editor can place: a stable id and a resolvable URL. */
 export interface StandaloneAsset {
   id: string;
@@ -58,21 +60,25 @@ export async function importAssetToHost(
 const LIBRARY_PULL_ROUTE = "/__jgengine/library-pull";
 
 /**
- * Asks the game's dev server to serve one shared-library asset (`polyhaven:ArmChair_01`), pulling it
- * through the shared asset store, and resolves the URL the game loads it from. Null when no host
- * answers or the pull fails.
+ * Asks the dev server to serve one shared-library asset (`polyhaven:ArmChair_01`) in game `game`,
+ * pulling it through the shared asset store, and resolves the URL the game loads it from. The served
+ * files join the running game's asset list, so a host serving many games (the dev runner) resolves
+ * them. Null when no host answers or the pull fails.
  * @internal
  */
 export async function pullLibraryAssetToHost(
   key: string,
+  game: string,
   route: string = LIBRARY_PULL_ROUTE,
   fetchImpl: (route: string, init: RequestInit) => Promise<Response> = (target, init) => fetch(target, init),
 ): Promise<string | null> {
   try {
-    const response = await fetchImpl(route, { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ key }) });
+    const response = await fetchImpl(route, { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ key, game }) });
     if (!response.ok) return null;
     const body: unknown = await response.json();
-    return typeof body === "object" && body !== null && "url" in body && typeof body.url === "string" ? body.url : null;
+    if (typeof body !== "object" || body === null || !("url" in body) || typeof body.url !== "string") return null;
+    if ("files" in body && Array.isArray(body.files)) addGameAssetFiles(body.files.filter((file): file is string => typeof file === "string"));
+    return body.url;
   } catch {
     return null;
   }

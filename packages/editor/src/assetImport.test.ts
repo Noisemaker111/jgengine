@@ -1,5 +1,7 @@
 import { afterEach, expect, test } from "bun:test";
 
+import { resolveAssetBaseUrl, setGameAssetFiles } from "@jgengine/core/assets/assetBase";
+
 import { editorAssetFromImport, mergeEditorAssets } from "./AssetBrowser";
 import {
   loadDroppedAssets,
@@ -77,14 +79,20 @@ test("editorAssetFromImport and mergeEditorAssets feed Content Browser entries",
   expect(merged.map((asset) => asset.id)).toEqual(["rock", "ship"]);
 });
 
-test("pullLibraryAssetToHost posts the key and returns the served URL, or null without a host", async () => {
+test("pullLibraryAssetToHost posts the key and game, returns the served URL and adds the served files to the game's list", async () => {
   let sent = "";
   const host = (_route: string, init: RequestInit) => {
     sent = String(init.body ?? "");
-    return Promise.resolve(new Response(JSON.stringify({ url: "/sprites/gameicons-icons/lorc/wheat.svg" })));
+    return Promise.resolve(new Response(JSON.stringify({ url: "/models/library/a/model.glb", files: ["/models/library/a/model.glb"] })));
   };
-  expect(await pullLibraryAssetToHost("gameicons:lorc/wheat", "/r", host)).toBe("/sprites/gameicons-icons/lorc/wheat.svg");
-  expect(JSON.parse(sent)).toEqual({ key: "gameicons:lorc/wheat" });
+  setGameAssetFiles("games/saltwick", []);
+  try {
+    expect(await pullLibraryAssetToHost("polyhaven:a", "saltwick", "/r", host)).toBe("/models/library/a/model.glb");
+    expect(JSON.parse(sent)).toEqual({ key: "polyhaven:a", game: "saltwick" });
+    expect(resolveAssetBaseUrl("/models/library/a/model.glb")).toBe("/games/saltwick/models/library/a/model.glb");
+  } finally {
+    setGameAssetFiles(null);
+  }
   const down = () => Promise.reject(new Error("offline"));
-  expect(await pullLibraryAssetToHost("gameicons:lorc/wheat", "/r", down)).toBeNull();
+  expect(await pullLibraryAssetToHost("polyhaven:a", "saltwick", "/r", down)).toBeNull();
 });

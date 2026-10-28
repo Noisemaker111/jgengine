@@ -26,7 +26,7 @@ export interface LibraryPullJob extends PullJob {
   url: string;
 }
 
-const LIBRARY_KEY = /["'`]((?:ambientcg|polyhaven|gameicons|sketchfab|kaykit|quaternius|rocketbox):[A-Za-z0-9_./-]+)["'`]/g;
+const LIBRARY_KEY = /["'`]((?:ambientcg|polyhaven|gameicons|sketchfab|kaykit|quaternius|rocketbox|makehuman):[A-Za-z0-9_./-]+)["'`]/g;
 
 function sourceText(dir: string): string {
   if (!existsSync(dir)) return "";
@@ -147,17 +147,38 @@ export async function provisionGame(
  * Serve one shared-library key in a game: link it from the shared asset store, or pull it into the
  * store first. Returns the URL the game loads, or null for an unknown key or a failed pull.
  */
-export async function provisionLibraryKey(gameDir: string, key: string, options: { log?: (line: string) => void } = {}): Promise<{ url: string } | null> {
+export async function provisionLibraryKey(gameDir: string, key: string, options: { log?: (line: string) => void } = {}): Promise<{ url: string; files: string[] } | null> {
   const job = (await loadCatalogs()).libraryPull?.(key);
   if (job === undefined) return null;
   const result = await provisionJobs(gameDir, [job], { pull: (target, outRoot) => runPull(gameDir, target, outRoot), log: options.log });
-  return result.failed.length > 0 ? null : { url: job.url };
+  if (result.failed.length > 0) return null;
+  const servedDir = job.dir.split(sep).join("/");
+  return { url: job.url, files: servedFiles(join(gameDir, "public", job.dir)).map((path) => `/${servedDir}/${path}`) };
+}
+
+/** Every file under a served asset folder, links followed, as paths relative to it. */
+function servedFiles(dir: string, prefix = ""): string[] {
+  if (!existsSync(dir)) return [];
+  const out: string[] = [];
+  // walk-ok: one pulled asset's own folder, listed so a multi-game host can serve its files
+  for (const name of readdirSync(dir).sort()) {
+    const path = join(dir, name);
+    const stat = statSync(path, { throwIfNoEntry: false });
+    if (stat?.isDirectory() === true) out.push(...servedFiles(path, `${prefix}${name}/`));
+    else if (stat?.isFile() === true) out.push(`${prefix}${name}`);
+  }
+  return out;
 }
 
 /** The dev-server route the editor's asset library posts `{ key }` to, answering `{ url }` once the asset is served. */
 export const LIBRARY_PULL_ROUTE = "/__jgengine/library-pull";
 
-function libraryPullMiddleware(gameDir: string) {
+/**
+ * The handler for {@link LIBRARY_PULL_ROUTE}. `gameDirOf` names the game folder a request serves
+ * into: a game's own server ignores the posted `game`, a host serving many games (the dev runner)
+ * reads it. Answers `{ url, files }`, `files` being every root-absolute path the pull served.
+ */
+export function libraryPullMiddleware(gameDirOf: (game: string | undefined) => string | undefined) {
   return (req: IncomingMessage, res: ServerResponse, next: () => void): void => {
     if (req.method !== "POST") return next();
     let body = "";
@@ -171,13 +192,17 @@ function libraryPullMiddleware(gameDir: string) {
         res.end(JSON.stringify(value));
       };
       let key: unknown;
+      let game: unknown;
       try {
         const parsed: unknown = JSON.parse(body);
         key = typeof parsed === "object" && parsed !== null && "key" in parsed ? parsed.key : undefined;
+        game = typeof parsed === "object" && parsed !== null && "game" in parsed ? parsed.game : undefined;
       } catch {
         key = undefined;
       }
       if (typeof key !== "string" || !/^[a-z]+:[A-Za-z0-9_./-]+$/.test(key)) return reply(400, { error: "expected { key: \"<source>:<id>\" }" });
+      const gameDir = gameDirOf(typeof game === "string" ? game : undefined);
+      if (gameDir === undefined) return reply(404, { error: `no game ${String(game)} to serve ${key} into` });
       // Vite runs under Node, which cannot load the library index's TypeScript, so Bun does the pull.
       const child = spawn("bun", [provisionScript, basename(gameDir), "--library", key], { cwd: gameDir, windowsHide: true });
       let out = "";
@@ -266,7 +291,7 @@ export function viteProvisionAssets(): {
     async configureServer(server) {
       const repoRoot = resolve(server.config.root, "..", "..");
       if (server.config.publicDir) server.middlewares.use(textureVariantMiddleware(server.config.publicDir, textureVariantDir(assetStoreRoot(repoRoot))));
-      server.middlewares.use(LIBRARY_PULL_ROUTE, libraryPullMiddleware(server.config.root));
+      server.middlewares.use(LIBRARY_PULL_ROUTE, libraryPullMiddleware(() => server.config.root));
       if (!shouldProvision(process.env)) return;
       // Vite runs under Node, which cannot load the asset catalogs' TypeScript source, so the work
       // runs in Bun: the same `games:provision` a lane would type.

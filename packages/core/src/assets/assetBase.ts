@@ -56,3 +56,12 @@ export function setAssetBase(base: string): void {
 export function setGameAssetFiles(folder: string | null, files: Iterable<string> = []): void {
   gameFiles = folder === null ? null : { folder: folder.replace(/^\/+|\/+$/g, ""), files: new Set(files) };
 }
+
+/**
+ * Adds files to the running game's own list after it was set, such as an asset the editor pulled
+ * while the game runs. A no-op when no game folder is set (a standalone game serves from its root).
+ */
+export function addGameAssetFiles(files: Iterable<string>): void {
+  if (gameFiles === null) return;
+  gameFiles = { folder: gameFiles.folder, files: new Set([...gameFiles.files, ...files]) };
+}

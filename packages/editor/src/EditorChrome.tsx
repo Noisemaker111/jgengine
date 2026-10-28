@@ -644,7 +644,7 @@ export function EditorChrome({
 
   const addLibraryAsset = useCallback(
     async (entry: LibraryDragPayload): Promise<string | null> => {
-      const url = await pullLibraryAssetToHost(entry.key);
+      const url = await pullLibraryAssetToHost(entry.key, gameId);
       if (url === null) {
         notify(`Could not add ${entry.title}: no dev server answered, or the pull failed`, "error");
         return null;
@@ -657,7 +657,7 @@ export function EditorChrome({
       notify(`Added ${entry.title} (${entry.license}, ${entry.author}); quote "${entry.key}" in the game to keep it`);
       return url;
     },
-    [api, notify, onRegisterAsset],
+    [api, gameId, notify, onRegisterAsset],
   );
 
   useEffect(() => {
