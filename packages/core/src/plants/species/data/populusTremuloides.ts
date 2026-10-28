@@ -8,7 +8,7 @@ import type { PlantSpecies } from "../plantSpecies";
  */
 export const POPULUS_TREMULOIDES: PlantSpecies = {
   id: "populus-tremuloides",
-  version: 1,
+  version: 2,
   names: {
     scientific: "Populus tremuloides Michx.",
     common: { en: "quaking aspen", fr: "peuplier faux-tremble" },
@@ -34,6 +34,7 @@ export const POPULUS_TREMULOIDES: PlantSpecies = {
       setpointPerOrder: 19.77,
       optimal: 0.2479,
       wind: 0.15,
+      setpointMax: 90,
     },
     budLightThreshold: 0.2,
     budDeathYears: 3,
@@ -42,8 +43,10 @@ export const POPULUS_TREMULOIDES: PlantSpecies = {
     shadow: { a: 1, b: 1, depth: 24 },
     extinction: 0.5,
     jitter: 0.12,
+    basalStems: 1,
   },
   carbon: {
+    hydraulicHeightShare: 1,
     lueGPerMJ: 2.272,
     lightHalfSaturation: 0.3552,
     respiration: 0.6208,

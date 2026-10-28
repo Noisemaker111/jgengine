@@ -17,7 +17,7 @@ import { siteTreesOf, standReference } from "./siteTrees";
 import { fitSpecies, type Evaluate } from "./speciesFit";
 import { buildSpeciesRecord, speciesRecordSource, type FittedParameters, type ImportedValues } from "./speciesRecord";
 import { scoreTrial, type FitTarget } from "./speciesScore";
-import { SHADE_TOLERANCE, SPECIES_TRAITS, type SpeciesTraits } from "./speciesTraits";
+import { SHADE_TOLERANCE, SPECIES_TRAITS, type CrownForm, type SpeciesTraits } from "./speciesTraits";
 import { TRIAL_AGES, runTrial, type Trial } from "./speciesTrial";
 import { talloCrownWidthClasses } from "./tallo";
 
@@ -116,7 +116,7 @@ function referenceTableSource(references: readonly SpeciesReference[]): string {
       `    crownWidth: {`,
       `      trees: ${r.crownWidth.trees},`,
       `      classes: [`,
-      ...r.crownWidth.classes.map((k) => `        { dbhCm: ${k.dbhCm}, p10M: ${k.p10M}, p50M: ${k.p50M}, p90M: ${k.p90M} },`),
+      ...r.crownWidth.classes.map((k) => `        { dbhCm: ${k.dbhCm}, p10M: ${k.p10M}, p50M: ${k.p50M}, p90M: ${k.p90M}${k.genus === true ? ", genus: true" : ""} },`),
       `      ],`,
       `    },`,
       ...(r.openCrownWidth === undefined ? [] : [`    openCrownWidth: { a: ${r.openCrownWidth.a}, b: ${r.openCrownWidth.b}, c: ${r.openCrownWidth.c} },`]),
@@ -189,6 +189,13 @@ async function startingRecord(traits: SpeciesTraits): Promise<PlantSpecies> {
   return buildSpeciesRecord(traits, importedValues(traits, referenceOf(traits.id)), fitted, prior, (own?.version ?? 0) + 1);
 }
 
+const HABIT: Readonly<Record<CrownForm, string>> = {
+  excurrent: "Excurrent: the leader keeps its lead into a conical crown.",
+  decurrent: "Decurrent: laterals overtake the leader into a rounded crown with age.",
+  columnar: "Columnar: a narrow crown of near-even width from base to top.",
+  weeping: "Weeping: a conical crown whose fine shoots hang below the horizontal.",
+};
+
 function flag(argv: readonly string[], name: string, fallback: string): string {
   const at = argv.indexOf(name);
   return at >= 0 ? (argv[at + 1] ?? fallback) : fallback;
@@ -243,7 +250,8 @@ async function runFit(ids: readonly string[], argv: readonly string[]): Promise<
     const traits = traitsOf(id);
     const out = join(FIT_DIR, `${id}.json`);
     const resumed: FitFile | undefined = existsSync(out) ? JSON.parse(readFileSync(out, "utf8")) : undefined;
-    const start = resumed?.species ?? (await startingRecord(traits));
+    // A fit saved before a field existed resumes with that field's neutral value.
+    const start = resumed === undefined ? await startingRecord(traits) : { ...resumed.species, carbon: { ...resumed.species.carbon, hydraulicHeightShare: resumed.species.carbon.hydraulicHeightShare ?? 1 } };
     const target = fitTarget(traits, start, referenceOf(id));
     const pool = workerPool(workers, seeds, target.shadeTolerant);
     await fitSpecies(start, target, pool.evaluate, {
@@ -291,7 +299,7 @@ async function runWrite(ids: readonly string[]): Promise<void> {
     const reference = referenceOf(id);
     const unchanged = own === undefined ? undefined : buildSpeciesRecord(traits, importedValues(traits, reference), parameters, prior, own.version);
     const record = unchanged !== undefined && JSON.stringify(unchanged) === JSON.stringify(own) ? unchanged : buildSpeciesRecord(traits, importedValues(traits, reference), parameters, prior, (own?.version ?? 0) + 1);
-    const habit = traits.form === "excurrent" ? "Excurrent: the leader keeps its lead into a conical crown." : "Decurrent: laterals overtake the leader into a rounded crown with age.";
+    const habit = HABIT[traits.form] + (traits.basalStems !== undefined && traits.basalStems > 1 ? ` It forks at the base into ${traits.basalStems} stems.` : "");
     const name = `${traits.common.en[0]?.toUpperCase() ?? ""}${traits.common.en.slice(1)}.`;
     const summary = `${name} ${habit} Traits from Silvics of North America, the Wood Handbook, FIA and USDA PLANTS; growth and carbon fitted to ${reference.siteTrees.count} FIA site trees on site index ${reference.siteIndexFt} ft and ${reference.crownWidth.trees} Tallo crowns. Written by \`bun run jgengine plants write ${id}\`; edit the importer's traits or refit, not this file.`;
     writeFileSync(join(PLANTS, "species/data", `${camel(id)}.ts`), speciesRecordSource(traits, record, wrap(summary, 96)));

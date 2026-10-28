@@ -67,6 +67,12 @@ export interface PlantSpecies {
      */
     establishmentYears: number;
     /**
+     * Stems the seedling sets at its base: 1 for a single trunk, more for a multi-stemmed tree that
+     * forks at the root collar (Barthélémy & Caraglio 2007, basitony). DBH is then the quadratic sum
+     * of the stems at breast height, as forest inventories measure it.
+     */
+    basalStems: number;
+    /**
      * Gravimorphism (Wareing & Nasr 1961): share of that maximum a horizontal shoot keeps; upright
      * shoots keep all of it, in between scales with the shoot's vertical component.
      */
@@ -87,8 +93,13 @@ export interface PlantSpecies {
        * laterals bend towards this angle instead of straight up. The trunk's set point is 0.
        */
       setpointAngle: number;
-      /** Degrees added to the set point per further branch order (capped at 90). */
+      /** Degrees added to the set point per further branch order, up to `setpointMax`. */
       setpointPerOrder: number;
+      /**
+       * Largest set point of any order, degrees from vertical: 90 keeps the finest shoots level, more
+       * lets them hang below the horizontal as a weeping crown's do.
+       */
+      setpointMax: number;
       /** Pull towards the least-shaded neighbouring voxel (Palubicki's optimal growth direction). */
       optimal: number;
       /** Pull along the prevailing wind, per unit wind strength. */
@@ -147,9 +158,14 @@ export interface PlantSpecies {
     coarseRootShare: number;
     /**
      * Hydraulic limitation (Ryan & Yoder 1997): photosynthesis at height h is scaled by
-     * 1 − (h / limits.maxHeightM)^p. A whole number p.
+     * 1 − (h / H)^p, H being `hydraulicHeightShare` of limits.maxHeightM. A whole number p.
      */
     hydraulicExponent: number;
+    /**
+     * Share of limits.maxHeightM where the reference site stops height growth: the record height
+     * comes from the best sites, and a typical one tops out lower (Koch et al. 2004). 1 uses the record.
+     */
+    hydraulicHeightShare: number;
   };
   wood: {
     /** Basic density, dry kg per green m³. */
@@ -173,6 +189,7 @@ export interface PlantSpecies {
   tolerance: { shade: number; drought: number; frost: number; waterlogging: number };
   leaf: {
     shape: LeafShapeParams;
+    /** Leaf length, cm; a scale-leaved species gives its flattened spray segment, the unit it grows foliage in. */
     sizeCm: number;
     /** Specific leaf area, m² per kg dry mass. */
     sla: number;
@@ -204,6 +221,8 @@ const FIELD_RANGES: readonly (readonly [path: string, read: (s: PlantSpecies) =>
   ["growth.lateralBudsPerNode", (s) => s.growth.lateralBudsPerNode, 0, 8],
   ["growth.maxMetamersPerShoot", (s) => s.growth.maxMetamersPerShoot, 1, 64],
   ["growth.establishmentYears", (s) => s.growth.establishmentYears, 0, 100],
+  ["growth.basalStems", (s) => s.growth.basalStems, 1, 8],
+  ["growth.tropism.setpointMax", (s) => s.growth.tropism.setpointMax, 0, 170],
   ["growth.budLightThreshold", (s) => s.growth.budLightThreshold, 0, 1],
   ["growth.extinction", (s) => s.growth.extinction, 0.01, 2],
   ["growth.shadow.depth", (s) => s.growth.shadow.depth, 1, 512],
@@ -211,6 +230,7 @@ const FIELD_RANGES: readonly (readonly [path: string, read: (s: PlantSpecies) =>
   ["carbon.growthEfficiency", (s) => s.carbon.growthEfficiency, 0.1, 1],
   ["carbon.sapwoodPerFoliage", (s) => s.carbon.sapwoodPerFoliage, 1e-6, 0.01],
   ["carbon.pipeExponent", (s) => s.carbon.pipeExponent, 1.5, 3],
+  ["carbon.hydraulicHeightShare", (s) => s.carbon.hydraulicHeightShare, 0.3, 1],
   ["wood.densityKgM3", (s) => s.wood.densityKgM3, 100, 1400],
   ["leaf.sla", (s) => s.leaf.sla, 1, 100],
   ["limits.maxHeightM", (s) => s.limits.maxHeightM, 0.01, 130],

@@ -8,7 +8,7 @@ import type { PlantSpecies } from "../plantSpecies";
  */
 export const ACER_SACCHARUM: PlantSpecies = {
   id: "acer-saccharum",
-  version: 5,
+  version: 6,
   names: { scientific: "Acer saccharum Marshall", common: { en: "sugar maple", fr: "érable à sucre" } },
   ids: { usda: "ACSA3" },
   habit: "tree",
@@ -31,6 +31,7 @@ export const ACER_SACCHARUM: PlantSpecies = {
       setpointPerOrder: 8.689,
       optimal: 0.1578,
       wind: 0.15,
+      setpointMax: 90,
     },
     budLightThreshold: 0.03371,
     budDeathYears: 3,
@@ -39,8 +40,10 @@ export const ACER_SACCHARUM: PlantSpecies = {
     shadow: { a: 1, b: 1, depth: 24 },
     extinction: 0.5,
     jitter: 0.12,
+    basalStems: 1,
   },
   carbon: {
+    hydraulicHeightShare: 1,
     lueGPerMJ: 2.265,
     lightHalfSaturation: 0.4289,
     respiration: 0.7626,

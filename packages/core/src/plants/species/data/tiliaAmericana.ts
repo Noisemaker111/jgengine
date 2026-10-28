@@ -8,7 +8,7 @@ import type { PlantSpecies } from "../plantSpecies";
  */
 export const TILIA_AMERICANA: PlantSpecies = {
   id: "tilia-americana",
-  version: 1,
+  version: 2,
   names: {
     scientific: "Tilia americana L.",
     common: { en: "American basswood", fr: "tilleul d'Amérique" },
@@ -34,6 +34,7 @@ export const TILIA_AMERICANA: PlantSpecies = {
       setpointPerOrder: 0,
       optimal: 0.2099,
       wind: 0.15,
+      setpointMax: 90,
     },
     budLightThreshold: 0.03073,
     budDeathYears: 3,
@@ -42,8 +43,10 @@ export const TILIA_AMERICANA: PlantSpecies = {
     shadow: { a: 1, b: 1, depth: 24 },
     extinction: 0.5,
     jitter: 0.12,
+    basalStems: 1,
   },
   carbon: {
+    hydraulicHeightShare: 1,
     lueGPerMJ: 1.558,
     lightHalfSaturation: 0.3294,
     respiration: 2.099,

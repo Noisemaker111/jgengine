@@ -19,6 +19,8 @@ const logRatio = (a: number, b: number): number => Math.log(Math.max(1e-6, a) / 
 /** Crown-shape bands of each form (Brown, McAlpine & Kormanik 1967), as the crown tests check them. */
 function shapePenalty(form: CrownForm, r: TrialReading): number {
   if (form === "decurrent") return hinge(r.centroid, 0.4, 0.66, 0.03) + hinge(r.shoulder, r.age >= 50 ? 0.64 : 0.49, 2, 0.03);
+  // A column keeps its width up the crown and stays under 0.4 of the tree's height across.
+  if (form === "columnar") return hinge(r.centroid, 0.25, 0.55, 0.03) + hinge(r.shoulder, 0.5, 2, 0.03) + (r.age >= 50 ? hinge(r.crownWidthM / Math.max(0.1, r.heightM), 0, 0.4, 0.03) : 0);
   return hinge(r.centroid, 0, 0.33, 0.03) + (r.age >= 50 ? hinge(r.shoulder, 0, 0.42, 0.03) : 0);
 }
 

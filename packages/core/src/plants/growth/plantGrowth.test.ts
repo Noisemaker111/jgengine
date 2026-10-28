@@ -129,6 +129,46 @@ describe("plant growth", () => {
     }
   }, 120_000);
 
+  test("a multi-stemmed seedling grows its basal stems, and DBH is their quadratic sum", () => {
+    const plant = createPlantGrowth({ ...ACER_SACCHARUM, growth: { ...ACER_SACCHARUM.growth, basalStems: 3 } }, OPEN_TEMPERATE_SITE, SEED);
+    plant.step(25);
+    const { segments, stats } = plant.structure();
+    let squared = 0;
+    let stems = 0;
+    for (let i = 0; i < segments.order.length; i += 1) {
+      const startY = segments.start[i * 3 + 1] ?? 0;
+      const endY = segments.end[i * 3 + 1] ?? 0;
+      if (segments.order[i] !== 0 || startY > 1.3 || endY <= 1.3) continue;
+      stems += 1;
+      squared += (2 * (segments.radiusStart[i] ?? 0) * 100) ** 2;
+    }
+    expect(stems).toBe(3);
+    expect(stats.dbhCm).toBeGreaterThan(0);
+    expect(Math.abs(stats.dbhCm - Math.sqrt(squared)) / stats.dbhCm).toBeLessThan(0.1);
+  }, 60_000);
+
+  test("a set point past 90 degrees lets fine shoots hang below the horizontal", () => {
+    const hangingShare = (setpointMax: number): number => {
+      const tropism = { ...PINUS_STROBUS.growth.tropism, setpointAngle: 80, setpointPerOrder: 30, setpointMax };
+      const plant = createPlantGrowth({ ...PINUS_STROBUS, growth: { ...PINUS_STROBUS.growth, tropism } }, OPEN_TEMPERATE_SITE, SEED);
+      plant.step(30);
+      const { segments } = plant.structure();
+      let hanging = 0;
+      let total = 0;
+      for (let i = 0; i < segments.order.length; i += 1) {
+        const dx = (segments.end[i * 3] ?? 0) - (segments.start[i * 3] ?? 0);
+        const dy = (segments.end[i * 3 + 1] ?? 0) - (segments.start[i * 3 + 1] ?? 0);
+        const dz = (segments.end[i * 3 + 2] ?? 0) - (segments.start[i * 3 + 2] ?? 0);
+        const length = Math.hypot(dx, dy, dz);
+        total += length;
+        if (dy < -0.5 * length) hanging += length;
+      }
+      return hanging / Math.max(1e-9, total);
+    };
+    // Share of shoot length hanging steeper than 30 degrees below the horizontal.
+    expect(hangingShare(150)).toBeGreaterThan(2 * hangingShare(90) + 0.02);
+  }, 120_000);
+
   test("an open-grown tree keeps a longer crown than one grown in a closed stand", () => {
     const run = growLong();
     const stand = createPlantGrowth(ACER_SACCHARUM, { ...OPEN_TEMPERATE_SITE, stand: { spacingIndex: 0.25 } }, SEED);

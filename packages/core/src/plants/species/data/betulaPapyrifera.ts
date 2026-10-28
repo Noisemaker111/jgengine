@@ -8,7 +8,7 @@ import type { PlantSpecies } from "../plantSpecies";
  */
 export const BETULA_PAPYRIFERA: PlantSpecies = {
   id: "betula-papyrifera",
-  version: 3,
+  version: 4,
   names: {
     scientific: "Betula papyrifera Marshall",
     common: { en: "paper birch", fr: "bouleau à papier" },
@@ -34,6 +34,7 @@ export const BETULA_PAPYRIFERA: PlantSpecies = {
       setpointPerOrder: 16.8,
       optimal: 0.1749,
       wind: 0.15,
+      setpointMax: 90,
     },
     budLightThreshold: 0.02,
     budDeathYears: 3,
@@ -42,8 +43,10 @@ export const BETULA_PAPYRIFERA: PlantSpecies = {
     shadow: { a: 1, b: 1, depth: 24 },
     extinction: 0.5,
     jitter: 0.12,
+    basalStems: 1,
   },
   carbon: {
+    hydraulicHeightShare: 1,
     lueGPerMJ: 2.588,
     lightHalfSaturation: 1.242,
     respiration: 1.051,

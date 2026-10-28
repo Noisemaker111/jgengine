@@ -4279,21 +4279,113 @@
 
 - `ABIES_BALSAMEA` (const): const ABIES_BALSAMEA: PlantSpecies — Balsam fir. Excurrent: the leader keeps its lead into a conical crown. Traits from Silvics of North America, the Wood Handbook, FIA and USDA PLANTS; growth and carbon fitted to 5230 FIA site trees on site index 47 ft and 2229 Tallo crowns. Written by `bun run jgengine plants write abies-balsamea`; edit the importer's traits or refit, not this file.
 
+## @jgengine/core/plants/species/data/abiesGrandis
+
+- `ABIES_GRANDIS` (const): const ABIES_GRANDIS: PlantSpecies — Grand fir. Excurrent: the leader keeps its lead into a conical crown. Traits from Silvics of North America, the Wood Handbook, FIA and USDA PLANTS; growth and carbon fitted to 2313 FIA site trees on site index 84 ft and 131 Tallo crowns. Written by `bun run jgengine plants write abies-grandis`; edit the importer's traits or refit, not this file.
+
+## @jgengine/core/plants/species/data/abiesLasiocarpa
+
+- `ABIES_LASIOCARPA` (const): const ABIES_LASIOCARPA: PlantSpecies — Subalpine fir. Columnar: a narrow crown of near-even width from base to top. Traits from Silvics of North America, the Wood Handbook, FIA and USDA PLANTS; growth and carbon fitted to 4693 FIA site trees on site index 38 ft and 458 Tallo crowns. Written by `bun run jgengine plants write abies-lasiocarpa`; edit the importer's traits or refit, not this file.
+
 ## @jgengine/core/plants/species/data/acerRubrum
 
 - `ACER_RUBRUM` (const): const ACER_RUBRUM: PlantSpecies — Red maple. Decurrent: laterals overtake the leader into a rounded crown with age. Traits from Silvics of North America, the Wood Handbook, FIA and USDA PLANTS; growth and carbon fitted to 5890 FIA site trees on site index 57 ft and 747 Tallo crowns. Written by `bun run jgengine plants write acer-rubrum`; edit the importer's traits or refit, not this file.
+
+## @jgengine/core/plants/species/data/acerSaccharinum
+
+- `ACER_SACCHARINUM` (const): const ACER_SACCHARINUM: PlantSpecies — Silver maple. Decurrent: laterals overtake the leader into a rounded crown with age. It forks at the base into 3 stems. Traits from Silvics of North America, the Wood Handbook, FIA and USDA PLANTS; growth and carbon fitted to 697 FIA site trees on site index 73 ft and 17 Tallo crowns. Written by `bun run jgengine plants write acer-saccharinum`; edit the importer's traits or refit, not this file.
 
 ## @jgengine/core/plants/species/data/acerSaccharum
 
 - `ACER_SACCHARUM` (const): const ACER_SACCHARUM: PlantSpecies — Sugar maple. Decurrent: laterals overtake the leader into a rounded crown with age. Traits from Silvics of North America, the Wood Handbook, FIA and USDA PLANTS; growth and carbon fitted to 6305 FIA site trees on site index 65 ft and 4842 Tallo crowns. Written by `bun run jgengine plants write acer-saccharum`; edit the importer's traits or refit, not this file.
 
+## @jgengine/core/plants/species/data/betulaAlleghaniensis
+
+- `BETULA_ALLEGHANIENSIS` (const): const BETULA_ALLEGHANIENSIS: PlantSpecies — Yellow birch. Decurrent: laterals overtake the leader into a rounded crown with age. Traits from Silvics of North America, the Wood Handbook, FIA and USDA PLANTS; growth and carbon fitted to 1220 FIA site trees on site index 57 ft and 176 Tallo crowns. Written by `bun run jgengine plants write betula-alleghaniensis`; edit the importer's traits or refit, not this file.
+
 ## @jgengine/core/plants/species/data/betulaPapyrifera
 
 - `BETULA_PAPYRIFERA` (const): const BETULA_PAPYRIFERA: PlantSpecies — Paper birch. Decurrent: laterals overtake the leader into a rounded crown with age. Traits from Silvics of North America, the Wood Handbook, FIA and USDA PLANTS; growth and carbon fitted to 3725 FIA site trees on site index 54 ft and 411 Tallo crowns. Written by `bun run jgengine plants write betula-papyrifera`; edit the importer's traits or refit, not this file.
 
+## @jgengine/core/plants/species/data/caryaOvata
+
+- `CARYA_OVATA` (const): const CARYA_OVATA: PlantSpecies — Shagbark hickory. Decurrent: laterals overtake the leader into a rounded crown with age. Traits from Silvics of North America, the Wood Handbook, FIA and USDA PLANTS; growth and carbon fitted to 1452 FIA site trees on site index 54 ft and 50 Tallo crowns. Written by `bun run jgengine plants write carya-ovata`; edit the importer's traits or refit, not this file.
+
+## @jgengine/core/plants/species/data/fagusGrandifolia
+
+- `FAGUS_GRANDIFOLIA` (const): const FAGUS_GRANDIFOLIA: PlantSpecies — American beech. Decurrent: laterals overtake the leader into a rounded crown with age. Traits from Silvics of North America, the Wood Handbook, FIA and USDA PLANTS; growth and carbon fitted to 535 FIA site trees on site index 60 ft and 723 Tallo crowns. Written by `bun run jgengine plants write fagus-grandifolia`; edit the importer's traits or refit, not this file.
+
+## @jgengine/core/plants/species/data/fraxinusAmericana
+
+- `FRAXINUS_AMERICANA` (const): const FRAXINUS_AMERICANA: PlantSpecies — White ash. Decurrent: laterals overtake the leader into a rounded crown with age. Traits from Silvics of North America, the Wood Handbook, FIA and USDA PLANTS; growth and carbon fitted to 6163 FIA site trees on site index 72 ft and 167 Tallo crowns. Written by `bun run jgengine plants write fraxinus-americana`; edit the importer's traits or refit, not this file.
+
+## @jgengine/core/plants/species/data/fraxinusNigra
+
+- `FRAXINUS_NIGRA` (const): const FRAXINUS_NIGRA: PlantSpecies — Black ash. Decurrent: laterals overtake the leader into a rounded crown with age. Traits from Silvics of North America, the Wood Handbook, FIA and USDA PLANTS; growth and carbon fitted to 4971 FIA site trees on site index 46 ft and 57 Tallo crowns. Written by `bun run jgengine plants write fraxinus-nigra`; edit the importer's traits or refit, not this file.
+
+## @jgengine/core/plants/species/data/fraxinusPennsylvanica
+
+- `FRAXINUS_PENNSYLVANICA` (const): const FRAXINUS_PENNSYLVANICA: PlantSpecies — Green ash. Decurrent: laterals overtake the leader into a rounded crown with age. Traits from Silvics of North America, the Wood Handbook, FIA and USDA PLANTS; growth and carbon fitted to 3820 FIA site trees on site index 72 ft and 66 Tallo crowns. Written by `bun run jgengine plants write fraxinus-pennsylvanica`; edit the importer's traits or refit, not this file.
+
+## @jgengine/core/plants/species/data/juglansNigra
+
+- `JUGLANS_NIGRA` (const): const JUGLANS_NIGRA: PlantSpecies — Black walnut. Decurrent: laterals overtake the leader into a rounded crown with age. Traits from Silvics of North America, the Wood Handbook, FIA and USDA PLANTS; growth and carbon fitted to 671 FIA site trees on site index 70 ft and 48 Tallo crowns. Written by `bun run jgengine plants write juglans-nigra`; edit the importer's traits or refit, not this file.
+
+## @jgengine/core/plants/species/data/larixLaricina
+
+- `LARIX_LARICINA` (const): const LARIX_LARICINA: PlantSpecies — Tamarack. Excurrent: the leader keeps its lead into a conical crown. Traits from Silvics of North America, the Wood Handbook, FIA and USDA PLANTS; growth and carbon fitted to 4485 FIA site trees on site index 42 ft and 46 Tallo crowns. Written by `bun run jgengine plants write larix-laricina`; edit the importer's traits or refit, not this file.
+
+## @jgengine/core/plants/species/data/larixOccidentalis
+
+- `LARIX_OCCIDENTALIS` (const): const LARIX_OCCIDENTALIS: PlantSpecies — Western larch. Excurrent: the leader keeps its lead into a conical crown. Traits from Silvics of North America, the Wood Handbook, FIA and USDA PLANTS; growth and carbon fitted to 1994 FIA site trees on site index 64 ft and 29 Tallo crowns. Written by `bun run jgengine plants write larix-occidentalis`; edit the importer's traits or refit, not this file.
+
+## @jgengine/core/plants/species/data/liquidambarStyraciflua
+
+- `LIQUIDAMBAR_STYRACIFLUA` (const): const LIQUIDAMBAR_STYRACIFLUA: PlantSpecies — Sweetgum. Excurrent: the leader keeps its lead into a conical crown. Traits from Silvics of North America, the Wood Handbook, FIA and USDA PLANTS; growth and carbon fitted to 3276 FIA site trees on site index 84 ft and 365 Tallo crowns. Written by `bun run jgengine plants write liquidambar-styraciflua`; edit the importer's traits or refit, not this file.
+
+## @jgengine/core/plants/species/data/liriodendronTulipifera
+
+- `LIRIODENDRON_TULIPIFERA` (const): const LIRIODENDRON_TULIPIFERA: PlantSpecies — Yellow-poplar. Excurrent: the leader keeps its lead into a conical crown. Traits from Silvics of North America, the Wood Handbook, FIA and USDA PLANTS; growth and carbon fitted to 9777 FIA site trees on site index 91 ft and 384 Tallo crowns. Written by `bun run jgengine plants write liriodendron-tulipifera`; edit the importer's traits or refit, not this file.
+
+## @jgengine/core/plants/species/data/piceaEngelmannii
+
+- `PICEA_ENGELMANNII` (const): const PICEA_ENGELMANNII: PlantSpecies — Engelmann spruce. Excurrent: the leader keeps its lead into a conical crown. Traits from Silvics of North America, the Wood Handbook, FIA and USDA PLANTS; growth and carbon fitted to 4376 FIA site trees on site index 43 ft and 452 Tallo crowns. Written by `bun run jgengine plants write picea-engelmannii`; edit the importer's traits or refit, not this file.
+
 ## @jgengine/core/plants/species/data/piceaGlauca
 
 - `PICEA_GLAUCA` (const): const PICEA_GLAUCA: PlantSpecies — White spruce. Excurrent: the leader keeps its lead into a conical crown. Traits from Silvics of North America, the Wood Handbook, FIA and USDA PLANTS; growth and carbon fitted to 2289 FIA site trees on site index 47 ft and 480 Tallo crowns. Written by `bun run jgengine plants write picea-glauca`; edit the importer's traits or refit, not this file.
+
+## @jgengine/core/plants/species/data/piceaMariana
+
+- `PICEA_MARIANA` (const): const PICEA_MARIANA: PlantSpecies — Black spruce. Columnar: a narrow crown of near-even width from base to top. Traits from Silvics of North America, the Wood Handbook, FIA and USDA PLANTS; growth and carbon fitted to 6877 FIA site trees on site index 37 ft and 1267 Tallo crowns. Written by `bun run jgengine plants write picea-mariana`; edit the importer's traits or refit, not this file.
+
+## @jgengine/core/plants/species/data/piceaSitchensis
+
+- `PICEA_SITCHENSIS` (const): const PICEA_SITCHENSIS: PlantSpecies — Sitka spruce. Excurrent: the leader keeps its lead into a conical crown. Traits from Silvics of North America, the Wood Handbook, FIA and USDA PLANTS; growth and carbon fitted to 282 FIA site trees on site index 106 ft and 10 Tallo crowns. Written by `bun run jgengine plants write picea-sitchensis`; edit the importer's traits or refit, not this file.
+
+## @jgengine/core/plants/species/data/pinusBanksiana
+
+- `PINUS_BANKSIANA` (const): const PINUS_BANKSIANA: PlantSpecies — Jack pine. Excurrent: the leader keeps its lead into a conical crown. Traits from Silvics of North America, the Wood Handbook, FIA and USDA PLANTS; growth and carbon fitted to 3793 FIA site trees on site index 51 ft and 31 Tallo crowns. Written by `bun run jgengine plants write pinus-banksiana`; edit the importer's traits or refit, not this file.
+
+## @jgengine/core/plants/species/data/pinusClausa
+
+- `PINUS_CLAUSA` (const): const PINUS_CLAUSA: PlantSpecies — Sand pine. Excurrent: the leader keeps its lead into a conical crown. Traits from Silvics of North America, the Wood Handbook, FIA and USDA PLANTS; growth and carbon fitted to 203 FIA site trees on site index 77.5 ft and 0 Tallo crowns. Written by `bun run jgengine plants write pinus-clausa`; edit the importer's traits or refit, not this file.
+
+## @jgengine/core/plants/species/data/pinusContorta
+
+- `PINUS_CONTORTA` (const): const PINUS_CONTORTA: PlantSpecies — Lodgepole pine. Excurrent: the leader keeps its lead into a conical crown. Traits from Silvics of North America, the Wood Handbook, FIA and USDA PLANTS; growth and carbon fitted to 5201 FIA site trees on site index 51 ft and 797 Tallo crowns. Written by `bun run jgengine plants write pinus-contorta`; edit the importer's traits or refit, not this file.
+
+## @jgengine/core/plants/species/data/pinusEchinata
+
+- `PINUS_ECHINATA` (const): const PINUS_ECHINATA: PlantSpecies — Shortleaf pine. Excurrent: the leader keeps its lead into a conical crown. Traits from Silvics of North America, the Wood Handbook, FIA and USDA PLANTS; growth and carbon fitted to 6254 FIA site trees on site index 65 ft and 43 Tallo crowns. Written by `bun run jgengine plants write pinus-echinata`; edit the importer's traits or refit, not this file.
+
+## @jgengine/core/plants/species/data/pinusElliottii
+
+- `PINUS_ELLIOTTII` (const): const PINUS_ELLIOTTII: PlantSpecies — Slash pine. Excurrent: the leader keeps its lead into a conical crown. Traits from Silvics of North America, the Wood Handbook, FIA and USDA PLANTS; growth and carbon fitted to 7034 FIA site trees on site index 80 ft and 133 Tallo crowns. Written by `bun run jgengine plants write pinus-elliottii`; edit the importer's traits or refit, not this file.
+
+## @jgengine/core/plants/species/data/pinusPalustris
+
+- `PINUS_PALUSTRIS` (const): const PINUS_PALUSTRIS: PlantSpecies — Longleaf pine. Excurrent: the leader keeps its lead into a conical crown. Traits from Silvics of North America, the Wood Handbook, FIA and USDA PLANTS; growth and carbon fitted to 2968 FIA site trees on site index 70 ft and 173 Tallo crowns. Written by `bun run jgengine plants write pinus-palustris`; edit the importer's traits or refit, not this file.
 
 ## @jgengine/core/plants/species/data/pinusResinosa
 
@@ -4303,21 +4395,97 @@
 
 - `PINUS_STROBUS` (const): const PINUS_STROBUS: PlantSpecies — Eastern white pine. Excurrent: the leader keeps its lead into a conical crown. Traits from Silvics of North America, the Wood Handbook, FIA and USDA PLANTS; growth and carbon fitted to 1339 FIA site trees on site index 65 ft and 330 Tallo crowns. Written by `bun run jgengine plants write pinus-strobus`; edit the importer's traits or refit, not this file.
 
+## @jgengine/core/plants/species/data/pinusTaeda
+
+- `PINUS_TAEDA` (const): const PINUS_TAEDA: PlantSpecies — Loblolly pine. Excurrent: the leader keeps its lead into a conical crown. Traits from Silvics of North America, the Wood Handbook, FIA and USDA PLANTS; growth and carbon fitted to 27324 FIA site trees on site index 86 ft and 648 Tallo crowns. Written by `bun run jgengine plants write pinus-taeda`; edit the importer's traits or refit, not this file.
+
+## @jgengine/core/plants/species/data/pinusVirginiana
+
+- `PINUS_VIRGINIANA` (const): const PINUS_VIRGINIANA: PlantSpecies — Virginia pine. Excurrent: the leader keeps its lead into a conical crown. Traits from Silvics of North America, the Wood Handbook, FIA and USDA PLANTS; growth and carbon fitted to 2520 FIA site trees on site index 70 ft and 77 Tallo crowns. Written by `bun run jgengine plants write pinus-virginiana`; edit the importer's traits or refit, not this file.
+
 ## @jgengine/core/plants/species/data/plantLibrary
 
 - `PLANT_LIBRARY` (const): const PLANT_LIBRARY: readonly PlantSpecies[] — Every species record the engine ships, registered with the grown-plant generator. Written by `bun run jgengine plants write`.
+
+## @jgengine/core/plants/species/data/populusDeltoides
+
+- `POPULUS_DELTOIDES` (const): const POPULUS_DELTOIDES: PlantSpecies — Eastern cottonwood. Decurrent: laterals overtake the leader into a rounded crown with age. Traits from Silvics of North America, the Wood Handbook, FIA and USDA PLANTS; growth and carbon fitted to 418 FIA site trees on site index 70 ft and 18 Tallo crowns. Written by `bun run jgengine plants write populus-deltoides`; edit the importer's traits or refit, not this file.
+
+## @jgengine/core/plants/species/data/populusGrandidentata
+
+- `POPULUS_GRANDIDENTATA` (const): const POPULUS_GRANDIDENTATA: PlantSpecies — Bigtooth aspen. Decurrent: laterals overtake the leader into a rounded crown with age. Traits from Silvics of North America, the Wood Handbook, FIA and USDA PLANTS; growth and carbon fitted to 2827 FIA site trees on site index 72 ft and 54 Tallo crowns. Written by `bun run jgengine plants write populus-grandidentata`; edit the importer's traits or refit, not this file.
 
 ## @jgengine/core/plants/species/data/populusTremuloides
 
 - `POPULUS_TREMULOIDES` (const): const POPULUS_TREMULOIDES: PlantSpecies — Quaking aspen. Decurrent: laterals overtake the leader into a rounded crown with age. Traits from Silvics of North America, the Wood Handbook, FIA and USDA PLANTS; growth and carbon fitted to 16834 FIA site trees on site index 66 ft and 566 Tallo crowns. Written by `bun run jgengine plants write populus-tremuloides`; edit the importer's traits or refit, not this file.
 
+## @jgengine/core/plants/species/data/prunusSerotina
+
+- `PRUNUS_SEROTINA` (const): const PRUNUS_SEROTINA: PlantSpecies — Black cherry. Decurrent: laterals overtake the leader into a rounded crown with age. Traits from Silvics of North America, the Wood Handbook, FIA and USDA PLANTS; growth and carbon fitted to 1582 FIA site trees on site index 68 ft and 81 Tallo crowns. Written by `bun run jgengine plants write prunus-serotina`; edit the importer's traits or refit, not this file.
+
+## @jgengine/core/plants/species/data/pseudotsugaMenziesii
+
+- `PSEUDOTSUGA_MENZIESII` (const): const PSEUDOTSUGA_MENZIESII: PlantSpecies — Douglas-fir. Excurrent: the leader keeps its lead into a conical crown. Traits from Silvics of North America, the Wood Handbook, FIA and USDA PLANTS; growth and carbon fitted to 33633 FIA site trees on site index 109 ft and 4251 Tallo crowns. Written by `bun run jgengine plants write pseudotsuga-menziesii`; edit the importer's traits or refit, not this file.
+
+## @jgengine/core/plants/species/data/quercusAlba
+
+- `QUERCUS_ALBA` (const): const QUERCUS_ALBA: PlantSpecies — White oak. Decurrent: laterals overtake the leader into a rounded crown with age. Traits from Silvics of North America, the Wood Handbook, FIA and USDA PLANTS; growth and carbon fitted to 9965 FIA site trees on site index 61 ft and 346 Tallo crowns. Written by `bun run jgengine plants write quercus-alba`; edit the importer's traits or refit, not this file.
+
+## @jgengine/core/plants/species/data/quercusCoccinea
+
+- `QUERCUS_COCCINEA` (const): const QUERCUS_COCCINEA: PlantSpecies — Scarlet oak. Decurrent: laterals overtake the leader into a rounded crown with age. Traits from Silvics of North America, the Wood Handbook, FIA and USDA PLANTS; growth and carbon fitted to 1094 FIA site trees on site index 68 ft and 54 Tallo crowns. Written by `bun run jgengine plants write quercus-coccinea`; edit the importer's traits or refit, not this file.
+
+## @jgengine/core/plants/species/data/quercusFalcata
+
+- `QUERCUS_FALCATA` (const): const QUERCUS_FALCATA: PlantSpecies — Southern red oak. Decurrent: laterals overtake the leader into a rounded crown with age. Traits from Silvics of North America, the Wood Handbook, FIA and USDA PLANTS; growth and carbon fitted to 1299 FIA site trees on site index 72 ft and 51 Tallo crowns. Written by `bun run jgengine plants write quercus-falcata`; edit the importer's traits or refit, not this file.
+
+## @jgengine/core/plants/species/data/quercusMacrocarpa
+
+- `QUERCUS_MACROCARPA` (const): const QUERCUS_MACROCARPA: PlantSpecies — Bur oak. Decurrent: laterals overtake the leader into a rounded crown with age. Traits from Silvics of North America, the Wood Handbook, FIA and USDA PLANTS; growth and carbon fitted to 2158 FIA site trees on site index 45 ft and 48 Tallo crowns. Written by `bun run jgengine plants write quercus-macrocarpa`; edit the importer's traits or refit, not this file.
+
+## @jgengine/core/plants/species/data/quercusMontana
+
+- `QUERCUS_MONTANA` (const): const QUERCUS_MONTANA: PlantSpecies — Chestnut oak. Decurrent: laterals overtake the leader into a rounded crown with age. Traits from Silvics of North America, the Wood Handbook, FIA and USDA PLANTS; growth and carbon fitted to 3716 FIA site trees on site index 66 ft and 42 Tallo crowns. Written by `bun run jgengine plants write quercus-montana`; edit the importer's traits or refit, not this file.
+
+## @jgengine/core/plants/species/data/quercusNigra
+
+- `QUERCUS_NIGRA` (const): const QUERCUS_NIGRA: PlantSpecies — Water oak. Decurrent: laterals overtake the leader into a rounded crown with age. Traits from Silvics of North America, the Wood Handbook, FIA and USDA PLANTS; growth and carbon fitted to 1134 FIA site trees on site index 85 ft and 67 Tallo crowns. Written by `bun run jgengine plants write quercus-nigra`; edit the importer's traits or refit, not this file.
+
 ## @jgengine/core/plants/species/data/quercusRubra
 
 - `QUERCUS_RUBRA` (const): const QUERCUS_RUBRA: PlantSpecies — Northern red oak. Decurrent: laterals overtake the leader into a rounded crown with age. Traits from Silvics of North America, the Wood Handbook, FIA and USDA PLANTS; growth and carbon fitted to 4985 FIA site trees on site index 62 ft and 479 Tallo crowns. Written by `bun run jgengine plants write quercus-rubra`; edit the importer's traits or refit, not this file.
 
+## @jgengine/core/plants/species/data/quercusVelutina
+
+- `QUERCUS_VELUTINA` (const): const QUERCUS_VELUTINA: PlantSpecies — Black oak. Decurrent: laterals overtake the leader into a rounded crown with age. Traits from Silvics of North America, the Wood Handbook, FIA and USDA PLANTS; growth and carbon fitted to 4741 FIA site trees on site index 63 ft and 107 Tallo crowns. Written by `bun run jgengine plants write quercus-velutina`; edit the importer's traits or refit, not this file.
+
+## @jgengine/core/plants/species/data/robiniaPseudoacacia
+
+- `ROBINIA_PSEUDOACACIA` (const): const ROBINIA_PSEUDOACACIA: PlantSpecies — Black locust. Decurrent: laterals overtake the leader into a rounded crown with age. Traits from Silvics of North America, the Wood Handbook, FIA and USDA PLANTS; growth and carbon fitted to 381 FIA site trees on site index 71 ft and 110 Tallo crowns. Written by `bun run jgengine plants write robinia-pseudoacacia`; edit the importer's traits or refit, not this file.
+
+## @jgengine/core/plants/species/data/thujaOccidentalis
+
+- `THUJA_OCCIDENTALIS` (const): const THUJA_OCCIDENTALIS: PlantSpecies — Northern white-cedar. Columnar: a narrow crown of near-even width from base to top. Traits from Silvics of North America, the Wood Handbook, FIA and USDA PLANTS; growth and carbon fitted to 4882 FIA site trees on site index 29 ft and 78 Tallo crowns. Written by `bun run jgengine plants write thuja-occidentalis`; edit the importer's traits or refit, not this file.
+
+## @jgengine/core/plants/species/data/thujaPlicata
+
+- `THUJA_PLICATA` (const): const THUJA_PLICATA: PlantSpecies — Western redcedar. Excurrent: the leader keeps its lead into a conical crown. Traits from Silvics of North America, the Wood Handbook, FIA and USDA PLANTS; growth and carbon fitted to 492 FIA site trees on site index 48 ft and 47 Tallo crowns. Written by `bun run jgengine plants write thuja-plicata`; edit the importer's traits or refit, not this file.
+
 ## @jgengine/core/plants/species/data/tiliaAmericana
 
 - `TILIA_AMERICANA` (const): const TILIA_AMERICANA: PlantSpecies — American basswood. Decurrent: laterals overtake the leader into a rounded crown with age. Traits from Silvics of North America, the Wood Handbook, FIA and USDA PLANTS; growth and carbon fitted to 3292 FIA site trees on site index 62 ft and 241 Tallo crowns. Written by `bun run jgengine plants write tilia-americana`; edit the importer's traits or refit, not this file.
+
+## @jgengine/core/plants/species/data/tsugaCanadensis
+
+- `TSUGA_CANADENSIS` (const): const TSUGA_CANADENSIS: PlantSpecies — Eastern hemlock. Excurrent: the leader keeps its lead into a conical crown. Traits from Silvics of North America, the Wood Handbook, FIA and USDA PLANTS; growth and carbon fitted to 1593 FIA site trees on site index 50 ft and 458 Tallo crowns. Written by `bun run jgengine plants write tsuga-canadensis`; edit the importer's traits or refit, not this file.
+
+## @jgengine/core/plants/species/data/tsugaHeterophylla
+
+- `TSUGA_HETEROPHYLLA` (const): const TSUGA_HETEROPHYLLA: PlantSpecies — Western hemlock. Weeping: a conical crown whose fine shoots hang below the horizontal. Traits from Silvics of North America, the Wood Handbook, FIA and USDA PLANTS; growth and carbon fitted to 2742 FIA site trees on site index 95 ft and 97 Tallo crowns. Written by `bun run jgengine plants write tsuga-heterophylla`; edit the importer's traits or refit, not this file.
+
+## @jgengine/core/plants/species/data/ulmusAmericana
+
+- `ULMUS_AMERICANA` (const): const ULMUS_AMERICANA: PlantSpecies — American elm. Decurrent: laterals overtake the leader into a rounded crown with age. Traits from Silvics of North America, the Wood Handbook, FIA and USDA PLANTS; growth and carbon fitted to 1921 FIA site trees on site index 65 ft and 125 Tallo crowns. Written by `bun run jgengine plants write ulmus-americana`; edit the importer's traits or refit, not this file.
 
 ## @jgengine/core/plants/species/plantSpecies
 

@@ -37,6 +37,7 @@ export const FIT_PARAMETERS: readonly FitParameter[] = [
   { path: "carbon.lightHalfSaturation", lo: 0.2, hi: 1.5, log: true },
   { path: "carbon.respiration", lo: 0.6, hi: 3, log: true },
   { path: "carbon.hydraulicExponent", lo: 1, hi: 8, integer: true },
+  { path: "carbon.hydraulicHeightShare", lo: 0.4, hi: 1 },
 ];
 
 type Bag = Record<string, unknown>;

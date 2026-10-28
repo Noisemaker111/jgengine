@@ -1,16 +1,18 @@
 import { describe, expect, test } from "bun:test";
 
 import { prepareGenerator, runGenerator } from "../../generator/generator";
+import { parseParams } from "../../generator/paramSchema";
 import { createMemoryPlantCacheStorage, createPlantCache } from "../cache/plantCache";
 import { decodePlantMesh, decodePlantStructure, encodePlantMesh, encodePlantStructure } from "../cache/plantCodec";
 import { OPEN_TEMPERATE_SITE } from "../growth/plantEnvironment";
 import { createPlantGrowth } from "../growth/plantGrowth";
 import { buildPlantMesh, DEFAULT_PLANT_STYLE, PLANT_MESH_LODS, PLANT_MESH_TRIANGLE_BUDGETS } from "../mesh/plantMesh";
 import { ACER_SACCHARUM } from "../species/data/acerSaccharum";
+import { PLANT_LIBRARY } from "../species/data/plantLibrary";
 import { PINUS_STROBUS } from "../species/data/pinusStrobus";
 import { hashPlantStructure } from "../structure/plantStructure";
 import { createWorkerPlantGrower } from "./plantGrowPool";
-import { createPlantGrownGenerator, PLANT_MESH_OUTPUT } from "./plantGrown";
+import { createPlantGrownGenerator, PLANT_GROWN_SCHEMA, PLANT_MESH_OUTPUT } from "./plantGrown";
 
 /** The three looks the milestone asks for, built only from style params. */
 const REALISTIC = { foliage: "leaves", shading: "lit", barkGrain: true };
@@ -28,6 +30,11 @@ function fastest(run: () => void, times = 5): number {
 }
 
 describe("plant mesh", () => {
+  test("every library species is a species a scene can ask for", () => {
+    for (const species of PLANT_LIBRARY) expect(parseParams(PLANT_GROWN_SCHEMA, { species: species.id }).species).toBe(species.id);
+  });
+
+
   test("every level stays within its triangle budget at every age", () => {
     for (const species of [ACER_SACCHARUM, PINUS_STROBUS]) {
       const growth = createPlantGrowth(species, OPEN_TEMPERATE_SITE, "budget");

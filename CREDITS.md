@@ -259,8 +259,8 @@ The plant simulator (`packages/core/src/plants/`) ports models and data, not cod
 listed in `PLANT_SOURCES` (`plants/species/speciesSources.ts`) and named in each species record's
 provenance.
 
-- **USDA Forest Service** (US public domain): height-age curves of every species from Carmean, Hahn &
-  Jacobs 1989, *Site index curves for forest tree species in the eastern United States*, GTR NC-128,
+- **USDA Forest Service** (US public domain): height-age curves of the eastern species from Carmean,
+  Hahn & Jacobs 1989, *Site index curves for forest tree species in the eastern United States*, GTR NC-128,
   with coefficients read from the Forest Vegetation Simulator Lake States variant (`htcalc.f`);
   Burns & Honkala 1990, *Silvics of North America*, Agriculture Handbook 654; Forest Products
   Laboratory 2010, *Wood Handbook*, FPL-GTR-190; the USDA NRCS PLANTS Database; Forest Inventory
@@ -273,15 +273,17 @@ provenance.
   forest-grown trees, Bechtold 2003, *Crown-diameter prediction models for 87 species of
   stand-grown trees in the eastern United States*, SJAF 27.
 - **Tallo** (CC BY 4.0): Jucker et al. 2022, *Tallo: a global tree allometry and crown architecture
-  database*, Global Change Biology 28: measured crown widths and heights by DBH of every species.
+  database*, Global Change Biology 28: measured crown widths and heights by DBH of every species; a DBH class with fewer than 10 trees of
+  a species takes its genus's trees.
 - **BAAD** (CC0): Falster et al. 2015, *BAAD: a Biomass And Allometry Database for woody plants*,
-  Ecology 96: leaf area per sapwood area of temperate and boreal trees.
+  Ecology 96: leaf area per sapwood area of temperate and boreal trees, and leaf area per leaf mass
+  of plants 5 m or taller.
 - Stava et al. 2014, *Inverse procedural modelling of trees*, Computer Graphics Forum 33: fitting
   growth parameters by search until grown trees match measured ones (`bun run jgengine plants`).
 - Thornley 1976, *Mathematical models in plant physiology*: the rectangular-hyperbola leaf light
   response.
 - Barthélémy & Caraglio 2007, plant architecture and ontogeny, *Annals of Botany* 99: the
-  establishment phase of a seedling.
+  establishment phase of a seedling and the basal stems of a tree that forks at its collar.
 - Brown, McAlpine & Kormanik 1967, apical dominance and form in woody plants, *American Journal of
   Botany* 54; Wilson 2000, apical control of branch growth and angle in woody plants, *American
   Journal of Botany* 87: decurrent and excurrent habit as apical control that changes with age.
