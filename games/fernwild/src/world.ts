@@ -33,7 +33,17 @@ export const world = environment({
     colors: { low: "#4f7f35", high: "#7d9a4a" },
     waterLevel: SEA_LEVEL,
     // The sand band rides a little above the sea so beaches read wide; snow is painted by the snow biomes.
-    detail: { waterLevel: 2.6, snowHeight: 10_000, sandColor: "#d8c58f" },
+    detail: {
+      waterLevel: 2.6,
+      snowHeight: 10_000,
+      sandColor: "#d8c58f",
+      // Generated PBR ground: pale beach sand with grain and pebbles, soil-and-grass inland, cliff rock on steep slopes.
+      surfaces: {
+        ground: { preset: "grass", seed: "the-island-ground", tile: 5, tint: 0.65 },
+        sand: { preset: "beach-sand", seed: "the-island-beach", tile: 3.5 },
+        rock: { preset: "cliff", seed: "the-island-cliff", tile: 9 },
+      },
+    },
   }),
   // ARK keeps a long blue day; dawn and dusk are short.
   sky: sky({ preset: "day", timeOfDay: true, dayHold: 0.2, ...(authored.sky ?? {}) }),

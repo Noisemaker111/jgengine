@@ -14,10 +14,12 @@ import type {
   TerrainMaterial,
   TerrainMaterialMaps,
   TerrainMaterialRegion,
+  TerrainSurfacesConfig,
   WorldBounds,
   WorldFeature,
 } from "../world/features";
 import type { AvoidZone } from "../world/geometry";
+import type { SurfaceMaterialSpec } from "../material/surfaceMaterialGenerator";
 import { type TerrainPathProfile, withPathProfiles } from "./pathTerrain";
 import { buildPolylineIndex } from "../world/polylineIndex";
 import { distanceToRing, pointInPolygon, polygonSignedArea } from "../world/polygon";
@@ -669,10 +671,46 @@ export interface ResolvedTerrainDetailMaterial {
   missing: "procedural" | "fail";
 }
 
+/** One generated terrain surface with its tile metres and tint resolved. */
+export interface ResolvedTerrainSurfaceLayer {
+  spec: SurfaceMaterialSpec;
+  tile: number;
+  tint: number;
+}
+
+/** The terrain roles a generated surface can draw. */
+export type TerrainSurfaceRole = "ground" | "sand" | "rock";
+
+/** Resolved {@link TerrainSurfacesConfig}: only the roles the terrain set. */
+export type ResolvedTerrainSurfaces = Partial<Record<TerrainSurfaceRole, ResolvedTerrainSurfaceLayer>>;
+
+const SURFACE_ROLE_DEFAULTS: Record<TerrainSurfaceRole, { tile: number; tint: number }> = {
+  ground: { tile: 5, tint: 0.6 },
+  sand: { tile: 4, tint: 0 },
+  rock: { tile: 8, tint: 0 },
+};
+
+function resolveTerrainSurfaces(config: TerrainSurfacesConfig): ResolvedTerrainSurfaces {
+  const resolved: ResolvedTerrainSurfaces = {};
+  for (const role of ["ground", "sand", "rock"] as const) {
+    const layer = config[role];
+    if (layer === undefined) continue;
+    const { tile, tint, ...spec } = layer;
+    const defaults = SURFACE_ROLE_DEFAULTS[role];
+    resolved[role] = {
+      spec,
+      tile: tile !== undefined && Number.isFinite(tile) && tile > 0 ? tile : defaults.tile,
+      tint: clamp01(tint ?? defaults.tint),
+    };
+  }
+  return resolved;
+}
+
 /** A {@link TerrainDetailConfig} with every field resolved to a concrete value — the shape the shell's detail material consumes. */
-export type ResolvedTerrainDetail = Required<Omit<TerrainDetailConfig, "waterLevel" | "material" | "sweeps">> & {
+export type ResolvedTerrainDetail = Required<Omit<TerrainDetailConfig, "waterLevel" | "material" | "sweeps" | "surfaces">> & {
   waterLevel: number;
   material?: ResolvedTerrainDetailMaterial;
+  surfaces?: ResolvedTerrainSurfaces;
   sweeps: { dry: readonly [number, number, number]; wet: readonly [number, number, number] };
 };
 
@@ -727,6 +765,7 @@ export function resolveTerrainDetail(config: TerrainDetailConfig | undefined, te
       wet: config.sweeps?.wet ?? DEFAULT_TERRAIN_DETAIL.sweeps.wet,
     },
     waterLevel: config.waterLevel ?? terrainWaterLevel ?? NO_WATER_SAND_LEVEL,
+    ...(config.surfaces === undefined ? {} : { surfaces: resolveTerrainSurfaces(config.surfaces) }),
     ...(config.material === undefined
       ? {}
       : {
