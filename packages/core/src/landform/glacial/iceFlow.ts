@@ -128,6 +128,13 @@ export function createIceFlow(topology: LandformTopology): IceFlow {
   const gradY = new Float64Array(cells);
   const residual = new Float64Array(cells);
   const free = new Uint8Array(cells);
+  // Ice moves only in and next to icy cells, and the Newton system couples only free cells, so the
+  // heavy sweeps visit those lists (ascending) and cost what the ice covers, not the whole grid.
+  const near = new Uint8Array(cells);
+  const nearList = new Int32Array(cells);
+  let nearCount = 0;
+  const freeList = new Int32Array(cells);
+  let freeCount = 0;
   // Face diffusivity and its derivatives by the surface on either side, per east and south face.
   const eastD = new Float64Array(cells);
   const eastDi = new Float64Array(cells);
@@ -160,9 +167,11 @@ export function createIceFlow(topology: LandformTopology): IceFlow {
   // Centred surface gradients, with bare rock standing above a cell's ice counted as level with it:
   // a valley wall holds the ice in, it does not drive it.
   function gradients(s: Float64Array, bed: Float64Array): void {
-    for (let row = 0; row < rows; row += 1) {
-      for (let col = 0; col < cols; col += 1) {
-        const i = row * cols + col;
+    for (let k = 0; k < nearCount; k += 1) {
+      {
+        const i = nearList[k] ?? 0;
+        const row = (i - (i % cols)) / cols;
+        const col = i % cols;
         const own = s[i] ?? 0;
         const at = (j: number): number => {
           const top = s[j] ?? 0;
@@ -226,19 +235,35 @@ export function createIceFlow(topology: LandformTopology): IceFlow {
 
   // Residual (H − H_old)/dt − b − ∇·(D∇s) per cell; a bare cell that would lose ice reads 0 and is
   // held, the rest are free. Returns the sum of squares over the cells.
+  // A face with no ice on either side carries nothing, so only faces between near cells are evaluated.
   function evaluateFaces(s: Float64Array, bed: Float64Array, settings: IceFlowSettings): void {
+    markNear(s, bed);
+    for (const field of [eastD, eastDi, eastDj, eastH, southD, southDi, southDj, southH]) field.fill(0);
     gradients(s, bed);
     const eastScale = settings.eastScale;
     const southScale = settings.southScale;
-    for (let row = 0; row < rows; row += 1) {
-      for (let col = 0; col < cols; col += 1) {
-        const i = row * cols + col;
-        if (col < cols - 1) face(s, bed, i, i + 1, 0.5 * ((gradY[i] ?? 0) + (gradY[i + 1] ?? 0)), eastScale?.[i] ?? 1, settings, eastD, eastDi, eastDj, eastH);
-        else eastD[i] = 0;
-        if (row < rows - 1) face(s, bed, i, i + cols, 0.5 * ((gradX[i] ?? 0) + (gradX[i + cols] ?? 0)), southScale?.[i] ?? 1, settings, southD, southDi, southDj, southH);
-        else southD[i] = 0;
-      }
+    for (let k = 0; k < nearCount; k += 1) {
+      const i = nearList[k] ?? 0;
+      const row = (i - (i % cols)) / cols;
+      const col = i % cols;
+      if (col < cols - 1 && near[i + 1] === 1) face(s, bed, i, i + 1, 0.5 * ((gradY[i] ?? 0) + (gradY[i + 1] ?? 0)), eastScale?.[i] ?? 1, settings, eastD, eastDi, eastDj, eastH);
+      if (row < rows - 1 && near[i + cols] === 1) face(s, bed, i, i + cols, 0.5 * ((gradX[i] ?? 0) + (gradX[i + cols] ?? 0)), southScale?.[i] ?? 1, settings, southD, southDi, southDj, southH);
     }
+  }
+
+  // Icy cells and their four neighbours.
+  function markNear(s: Float64Array, bed: Float64Array): void {
+    near.fill(0);
+    for (let i = 0; i < cells; i += 1) {
+      if ((s[i] ?? 0) <= (bed[i] ?? 0)) continue;
+      near[i] = 1;
+      if (i % cols > 0) near[i - 1] = 1;
+      if (i % cols < cols - 1) near[i + 1] = 1;
+      if (i >= cols) near[i - cols] = 1;
+      if (i + cols < cells) near[i + cols] = 1;
+    }
+    nearCount = 0;
+    for (let i = 0; i < cells; i += 1) if (near[i] === 1) nearList[nearCount++] = i;
   }
 
   function evaluate(s: Float64Array, bed: Float64Array, dt: number, settings: IceFlowSettings, balance: Float64Array | undefined): number {
@@ -281,7 +306,9 @@ export function createIceFlow(topology: LandformTopology): IceFlow {
 
   // The Newton matrix ∂F/∂s over free cells (held cells are identity rows), then its ILU(0) pivots.
   function assemble(s: Float64Array, dt: number, settings: IceFlowSettings, balance: Float64Array | undefined): void {
+    freeCount = 0;
     for (let i = 0; i < cells; i += 1) {
+      if (free[i] === 1) freeList[freeCount++] = i;
       east[i] = 0;
       west[i] = 0;
       south[i] = 0;
@@ -309,12 +336,10 @@ export function createIceFlow(topology: LandformTopology): IceFlow {
         if (free[a] === 1) toA[b] = (toA[b] ?? 0) + byA;
       }
     };
-    for (let row = 0; row < rows; row += 1) {
-      for (let col = 0; col < cols; col += 1) {
-        const i = row * cols + col;
-        if (col < cols - 1) couple(i, i + 1, eastD[i] ?? 0, eastDi[i] ?? 0, eastDj[i] ?? 0, east, west);
-        if (row < rows - 1) couple(i, i + cols, southD[i] ?? 0, southDi[i] ?? 0, southDj[i] ?? 0, south, north);
-      }
+    for (let k = 0; k < nearCount; k += 1) {
+      const i = nearList[k] ?? 0;
+      if (i % cols < cols - 1) couple(i, i + 1, eastD[i] ?? 0, eastDi[i] ?? 0, eastDj[i] ?? 0, east, west);
+      if (i + cols < cells) couple(i, i + cols, southD[i] ?? 0, southDi[i] ?? 0, southDj[i] ?? 0, south, north);
     }
     for (let i = 0; i < cells; i += 1) {
       let d = diag[i] ?? 1;
@@ -326,8 +351,11 @@ export function createIceFlow(topology: LandformTopology): IceFlow {
     }
   }
 
+  // Held rows are identity rows that no free row couples to, and their entries stay 0, so the solve
+  // runs over the free list alone.
   function multiply(x: Float64Array, out: Float64Array): void {
-    for (let i = 0; i < cells; i += 1) {
+    for (let k = 0; k < freeCount; k += 1) {
+      const i = freeList[k] ?? 0;
       let sum = (diag[i] ?? 0) * (x[i] ?? 0);
       if (i % cols < cols - 1) sum += (east[i] ?? 0) * (x[i + 1] ?? 0);
       if (i % cols > 0) sum += (west[i] ?? 0) * (x[i - 1] ?? 0);
@@ -339,13 +367,15 @@ export function createIceFlow(topology: LandformTopology): IceFlow {
 
   // Apply (D + L)⁻¹ then (I + D⁻¹U)⁻¹ of the incomplete factors.
   function precondition(x: Float64Array, out: Float64Array): void {
-    for (let i = 0; i < cells; i += 1) {
+    for (let k = 0; k < freeCount; k += 1) {
+      const i = freeList[k] ?? 0;
       let sum = x[i] ?? 0;
       if (i % cols > 0) sum -= (west[i] ?? 0) * (out[i - 1] ?? 0);
       if (i >= cols) sum -= (north[i] ?? 0) * (out[i - cols] ?? 0);
       out[i] = sum / (pivot[i] ?? 1);
     }
-    for (let i = cells - 1; i >= 0; i -= 1) {
+    for (let k = freeCount - 1; k >= 0; k -= 1) {
+      const i = freeList[k] ?? 0;
       let sum = 0;
       if (i % cols < cols - 1) sum += (east[i] ?? 0) * (out[i + 1] ?? 0);
       if (i + cols < cells) sum += (south[i] ?? 0) * (out[i + cols] ?? 0);
@@ -355,17 +385,18 @@ export function createIceFlow(topology: LandformTopology): IceFlow {
 
   function dot(a: Float64Array, b: Float64Array): number {
     let sum = 0;
-    for (let i = 0; i < cells; i += 1) sum += (a[i] ?? 0) * (b[i] ?? 0);
+    for (let k = 0; k < freeCount; k += 1) {
+      const i = freeList[k] ?? 0;
+      sum += (a[i] ?? 0) * (b[i] ?? 0);
+    }
     return sum;
   }
 
   // Solve the Newton system for `delta` from `rhs` by right-preconditioned BiCGSTAB; returns iterations.
   function bicgstab(): number {
-    delta.fill(0);
+    for (const field of [delta, p, v, y, z, t]) field.fill(0);
     r.set(rhs);
     rHat.set(rhs);
-    p.fill(0);
-    v.fill(0);
     const target = LINEAR_TOLERANCE * LINEAR_TOLERANCE * dot(rhs, rhs);
     if (target === 0) return 0;
     let rho = 1;
@@ -376,13 +407,17 @@ export function createIceFlow(topology: LandformTopology): IceFlow {
       if (rhoNext === 0) return k;
       const beta = (rhoNext / rho) * (alpha / omega);
       rho = rhoNext;
-      for (let i = 0; i < cells; i += 1) p[i] = (r[i] ?? 0) + beta * ((p[i] ?? 0) - omega * (v[i] ?? 0));
+      for (let q = 0; q < freeCount; q += 1) {
+        const i = freeList[q] ?? 0;
+        p[i] = (r[i] ?? 0) + beta * ((p[i] ?? 0) - omega * (v[i] ?? 0));
+      }
       precondition(p, y);
       multiply(y, v);
       const along = dot(rHat, v);
       if (along === 0) return k;
       alpha = rho / along;
-      for (let i = 0; i < cells; i += 1) {
+      for (let q = 0; q < freeCount; q += 1) {
+        const i = freeList[q] ?? 0;
         delta[i] = (delta[i] ?? 0) + alpha * (y[i] ?? 0);
         r[i] = (r[i] ?? 0) - alpha * (v[i] ?? 0);
       }
@@ -391,7 +426,8 @@ export function createIceFlow(topology: LandformTopology): IceFlow {
       multiply(z, t);
       const tt = dot(t, t);
       omega = tt > 0 ? dot(t, r) / tt : 0;
-      for (let i = 0; i < cells; i += 1) {
+      for (let q = 0; q < freeCount; q += 1) {
+        const i = freeList[q] ?? 0;
         delta[i] = (delta[i] ?? 0) + omega * (z[i] ?? 0);
         r[i] = (r[i] ?? 0) - omega * (t[i] ?? 0);
       }
@@ -471,6 +507,7 @@ export function createIceFlow(topology: LandformTopology): IceFlow {
         dt = 2 * dt < longest ? 2 * dt : longest;
       }
       for (let i = 0; i < cells; i += 1) surface[i] = (bed[i] ?? 0) + (ice[i] ?? 0);
+      markNear(surface, bed);
       gradients(surface, bed);
       slide(bed, ice, settings);
       return report;
