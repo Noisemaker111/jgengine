@@ -3357,8 +3357,6 @@
 - `PLANT_LEAF_ATLAS_CELL_COUNT` (const): const PLANT_LEAF_ATLAS_CELL_COUNT: 3 — Cell count across a {@link PlantLeafAtlas}.
 - `PlantLeafAtlas` (interface): interface PlantLeafAtlas — A leaf texture baked from a species' leaf shape: RGBA texels, rows bottom to top, cells side by side. Colour is brightness only (veins and per-leaf variation) so vertex colour keeps the season, health and style tint; alpha is the leaf silhouette.
 - `bakePlantLeafAtlas` (function): function bakePlantLeafAtlas(shape: LeafShapeParams, cellPx = 128): PlantLeafAtlas — Bake the leaf atlas of a leaf shape: `cellPx` texels per cell side, three cells across. Pure and deterministic, so the same shape always bakes the same texels.
-- `hasPlantLeafAtlas` (function): function hasPlantLeafAtlas(shape: LeafShapeParams): boolean — True once a shape's atlas is baked or kept here.
-- `keepPlantLeafAtlas` (function): function keepPlantLeafAtlas(shape: LeafShapeParams, atlas: PlantLeafAtlas): void — Keep an atlas baked elsewhere (a worker) so {@link plantLeafAtlas} does not bake it again.
 - `plantLeafAtlas` (function): function plantLeafAtlas(shape: LeafShapeParams): PlantLeafAtlas — The leaf atlas of a shape at the default size, baked once per shape and kept; an atlas a worker baked ({@link keepPlantLeafAtlas}) is used as is.
 - `plantLeafAtlasKey` (function): function plantLeafAtlasKey(shape: LeafShapeParams): string — A key that is equal for two leaf shapes exactly when they bake the same atlas.
 
