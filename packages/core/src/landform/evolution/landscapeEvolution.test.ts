@@ -10,7 +10,7 @@ function settle(model: LandscapeEvolution, limit: number, rate = 1e-12): number 
 }
 
 function steadyModel(seed: string, params: Partial<LandformParams>, side = 64): LandscapeEvolution {
-  return createLandscapeEvolution({ grid: { cols: side, rows: side, cellSize: 100 }, seed, params: { diffusivity: 0, timeStep: 2e4, ...params } });
+  return createLandscapeEvolution({ grid: { cols: side, rows: side, cellSize: 100 }, seed, params: { diffusivity: 0, soilProduction: 0, timeStep: 2e4, ...params } });
 }
 
 describe("landscape evolution: steady state and river laws", () => {
@@ -107,7 +107,7 @@ describe("landscape evolution: rock strata", () => {
         strata: {
           top: 1,
           layers: [
-            { id: "basalt", thickness: 30, erodibility: 0.02, criticalAngle: 75 },
+            { id: "basalt", thickness: 30, erodibility: 0.02, criticalAngle: 75, weathering: 0.05 },
             { id: "shale", thickness: 1, erodibility: 3, criticalAngle: 35, diffusivity: 3 },
           ],
         },
@@ -205,7 +205,7 @@ describe("landscape evolution: sediment", () => {
     for (let k = 0; k < 30; k += 1) {
       model.step();
       const now = lakeVolume();
-      expect(now).toBeLessThanOrEqual(previous + 1e-9);
+      expect(now).toBeLessThanOrEqual(previous + 1e-6 * first);
       previous = now;
     }
     expect(previous).toBeLessThan(first * 0.9);

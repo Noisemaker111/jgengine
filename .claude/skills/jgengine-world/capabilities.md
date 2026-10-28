@@ -905,6 +905,11 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `Keycap` (function) · `import { Keycap } from "@jgengine/core/input/keyHint.view"`
 
+## landform-dunes — grow barchan, transverse, linear and star dunes from a wind regime and sand supply
+
+- `createDuneField` (function) · `import { createDuneField } from "@jgengine/core/landform/dunes/duneField"`
+- `duneSlopeAngle` (function) · `import { duneSlopeAngle } from "@jgengine/core/landform/dunes/duneField"`
+
 ## landform-evolution — grow a heightfield from uplift, river incision, hillslopes, landslides, sediment and rock strata
 
 - `LandformEdge` (type) · `import { LandformEdge } from "@jgengine/core/landform/grid/landformGrid"`
@@ -915,6 +920,12 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 - `hashLandformArrays` (function) · `import { hashLandformArrays } from "@jgengine/core/landform/evolution/landscapeEvolution"`
 - `slopeAreaFit` (function) · `import { slopeAreaFit } from "@jgengine/core/landform/validation/geomorphicLaws"`
 - `upstreamLength` (function) · `import { upstreamLength } from "@jgengine/core/landform/validation/geomorphicLaws"`
+
+## landform-materials — per-cell bedrock, soil, gravel, sand, silt and scree from a landform simulation
+
+- `landformSurface` (function) · `import { landformSurface } from "@jgengine/core/landform/materials/landformSurface"`
+- `settlingVelocity` (function) · `import { settlingVelocity } from "@jgengine/core/landform/materials/sedimentCover"`
+- `weatheredDepth` (function) · `import { weatheredDepth } from "@jgengine/core/landform/materials/sedimentCover"`
 
 ## lane-graph — directed lane topology with junctions, signals and parking for vehicle traffic
 

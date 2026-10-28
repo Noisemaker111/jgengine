@@ -5300,6 +5300,16 @@
       "intent": "resolve a hit through a damage chart and apply it to the world as one damage effect"
     },
     {
+      "id": "landform-dunes",
+      "packages": [
+        "@jgengine/core"
+      ],
+      "module": "@jgengine/core/landform/dunes/duneField",
+      "gameFacing": false,
+      "probe": null,
+      "intent": "grow barchan, transverse, linear and star dunes from a wind regime and sand supply"
+    },
+    {
       "id": "landform-evolution",
       "packages": [
         "@jgengine/core"
@@ -5308,6 +5318,16 @@
       "gameFacing": false,
       "probe": null,
       "intent": "grow a heightfield from uplift, river incision, hillslopes, landslides, sediment and rock strata"
+    },
+    {
+      "id": "landform-materials",
+      "packages": [
+        "@jgengine/core"
+      ],
+      "module": "@jgengine/core/landform/materials/sedimentCover",
+      "gameFacing": false,
+      "probe": null,
+      "intent": "per-cell bedrock, soil, gravel, sand, silt and scree from a landform simulation"
     },
     {
       "id": "lane-board",

@@ -2163,6 +2163,19 @@
 - `skillCheckMarkerPosition` (function): function skillCheckMarkerPosition(config: SkillCheckConfig, elapsedSeconds: number): number — ⚠ undocumented
 - `skillCheckZoneAt` (function): function skillCheckZoneAt(config: SkillCheckConfig, elapsedSeconds: number): SkillCheckZone — A timing-bar skill check that succeeds when the moving marker is released inside the target zone.
 
+## @jgengine/core/landform/dunes/duneField
+
+- `DEFAULT_DUNE_PARAMS` (const): const DEFAULT_DUNE_PARAMS: DuneParams — Werner's (1995) rules: one wind toward the east, hop 1, landing 0.6 on sand and 0.4 on bed, 15° shadow.
+- `DuneField` (interface): interface DuneField — A running dune field.
+- `DuneFieldOptions` (interface): interface DuneFieldOptions — Options for {@link createDuneField}.
+- `DuneGrid` (interface): interface DuneGrid — A dune field grid: `cols` × `rows` cells, `cellSize` metres a side, row 0 at the north edge, wrapping at every edge.
+- `DuneInitial` (interface): interface DuneInitial — Starting sand: a mean thickness spread at random, or slab counts per cell.
+- `DuneParams` (interface): interface DuneParams — Dune rules. All of them retune between sweeps.
+- `DuneSnapshot` (interface): interface DuneSnapshot — Everything that defines a dune field at one moment, as plain JSON.
+- `WindMode` (interface): interface WindMode — One wind of a regime: the bearing sand moves toward (degrees clockwise from north) and its share of the time.
+- `createDuneField` (function): function createDuneField(options: DuneFieldOptions): DuneField — Start a dune field.
+- `duneSlopeAngle` (function): function duneSlopeAngle(field: DuneField, slabDrop: number, cells = 1): number — Angle in degrees of a slope that drops `slabDrop` slabs over `cells` cells, for a field's slab thickness.
+
 ## @jgengine/core/landform/evolution/landscapeEvolution
 
 - `DEFAULT_LANDFORM_PARAMS` (const): const DEFAULT_LANDFORM_PARAMS: LandformParams — Sensible defaults for a 100 m grid: 1 mm/yr uplift, K = 2·10⁻⁵, m = 0.5, n = 1 (concavity 0.5), D = 0.01 m²/yr, repose 34°, 10 kyr steps.
@@ -2198,6 +2211,29 @@
 - `LANDFORM_MAX_SIDE` (const): const LANDFORM_MAX_SIDE: 2048 — Largest grid side the model accepts, so one step's work stays bounded.
 - `LandformEdge` (type): type LandformEdge = "north" | "south" | "east" | "west" — The square-cell grid every landform process runs on: row-major cells, the eight D8 neighbours with their distances, and which cells are base level (outlets held at a fixed height, where water and sediment leave the map).
 - `LandformGrid` (interface): interface LandformGrid — A landform grid: `cols` × `rows` square cells, `cellSize` metres a side, row 0 at the north edge.
+
+## @jgengine/core/landform/materials/landformSurface
+
+- `LANDFORM_SURFACE_KINDS` (const): const LANDFORM_SURFACE_KINDS: readonly ["rock", "gravel", "sand", "mud", "soil"] — The surface kinds a landform paints, in their order in {@link LandformSurface.weights}.
+- `LandformSurface` (interface): interface LandformSurface — A landform's ground, per cell.
+- `LandformSurfaceKind` (type): type LandformSurfaceKind = (typeof LANDFORM_SURFACE_KINDS)[number] — One surface kind a landform paints.
+- `LandformSurfaceOptions` (interface): interface LandformSurfaceOptions — Options for {@link landformSurface}.
+- `landformSurface` (function): function landformSurface(model: LandscapeEvolution, options: LandformSurfaceOptions = {}): LandformSurface — Read a landscape's ground out as surface material weights.
+
+## @jgengine/core/landform/materials/sedimentCover
+
+- `COVER_CLASSES` (const): const COVER_CLASSES: readonly ["gravel", "sand", "silt", "scree", "soil"] — Classes of loose cover, in their order in {@link SedimentCover.thickness}.
+- `CoverClass` (type): type CoverClass = (typeof COVER_CLASSES)[number] — One class of loose cover.
+- `DEFAULT_GRAIN_SIZES` (const): const DEFAULT_GRAIN_SIZES: GrainSizes — Default diameters: 20 mm gravel, 0.5 mm sand, 0.02 mm silt.
+- `DEFAULT_ROCK_YIELD` (const): const DEFAULT_ROCK_YIELD: GrainMix — What a rock breaks into when rivers cut it, unless its layer says otherwise.
+- `GRAIN_CLASSES` (const): const GRAIN_CLASSES: readonly ["gravel", "sand", "silt"] — River-carried grain sizes, in their order in grain arrays.
+- `GrainClass` (type): type GrainClass = (typeof GRAIN_CLASSES)[number] — One river-carried grain size.
+- `GrainMix` (interface): interface GrainMix — Share of each grain size, summing to 1.
+- `GrainSizes` (interface): interface GrainSizes — Representative grain diameters in metres.
+- `SCREE_YIELD` (const): const SCREE_YIELD: GrainMix — What scree breaks into when a river picks it up: angular, coarse.
+- `SOIL_YIELD` (const): const SOIL_YIELD: GrainMix — What soil is made of when a river picks it up.
+- `settlingVelocity` (function): function settlingVelocity(diameter: number): number — Settling velocity in m/s of a natural quartz grain of diameter `diameter` metres in water (Ferguson & Church 2004, with C₁ = 18 and C₂ = 1 for natural grains).
+- `weatheredDepth` (function): function weatheredDepth(depth: number, production: number, depthScale: number, dt: number): number — Soil thickness after weathering for `dt` years from `depth`, solving dh/dt = P₀ e^(−h/h₀) exactly: h' = h₀ ln(e^(h/h₀) + P₀ dt / h₀).
 
 ## @jgengine/core/landform/validation/geomorphicLaws
 

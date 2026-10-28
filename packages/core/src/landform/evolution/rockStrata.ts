@@ -8,6 +8,7 @@
  * @capability landform-evolution grow a heightfield from uplift, river incision, hillslopes, landslides, sediment and rock strata
  */
 import { plantCos, plantSin, PLANT_PI } from "../../plants/growth/plantMath";
+import type { GrainMix } from "../materials/sedimentCover";
 
 /** One rock layer. */
 export interface RockLayer {
@@ -21,6 +22,10 @@ export interface RockLayer {
   readonly diffusivity?: number;
   /** Steepest angle in degrees the bare rock stands at before it fails. Default 45. */
   readonly criticalAngle?: number;
+  /** Multiplier on soil production from this rock: below 1 for rock that weathers slowly. Default 1. */
+  readonly weathering?: number;
+  /** What the rock breaks into when rivers cut it. Default 20% gravel, 50% sand, 30% silt. */
+  readonly yields?: GrainMix;
 }
 
 /** A tilted stack of rock layers. */
