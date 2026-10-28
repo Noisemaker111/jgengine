@@ -14,6 +14,8 @@ Every procedural system is one `defineGenerator({ id, label, output, schema, lod
 
 Grass is the reference adopter (`GRASS_GENERATOR`, output `grass-field`).
 
+Nature generators (`@jgengine/core/nature/natureGenerators`, output `nature-mesh`) grow trees, palms, bushes, ferns, rocks and driftwood: `nature.broadleaf` (oak, birch, tropical, dead), `nature.conifer` (pine, spruce, redwood), `nature.palm` (coconut, cycad, fan), `nature.bush`, `nature.fern`, `nature.rock` (rock, boulder, pebbles, slab) and `nature.driftwood`; species recipes are schema presets. To fill a scatter region with them, map a palette item to `{ generator, preset?, params?, variants? }` (`ScatterGeneratorItem`) in `sceneScatterModels`, or name the generator id itself as the palette item. The field bakes a few variants, gives each placement a stable one, and draws them instanced with one shared far impostor per species. A marker whose `meta.assetId` names a nature generator renders it and gets the variant grid in the inspector. A new output family joins the same paths with `registerGeneratorMesh(output, build)` and `registerPlaceableGeneratorOutput(output)`.
+
 ## World = place (the definition of a world)
 
 A world is the place a game happens in — substrate + laws — declared with `world()` from
