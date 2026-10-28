@@ -1,6 +1,7 @@
 import { EXCLUDED_PROVIDERS, normalizeLibraryLicense, type LibraryLicense } from "./libraryLicense";
 import type { LibraryRecord, LibraryRecordFile } from "./assetLibrary";
 import { GAMEICONS_ARTISTS, GAMEICONS_CC0_ARTISTS, GAMEICONS_PACK } from "./libraryIcons";
+import { rocketboxAnimationRecords } from "./libraryRocketbox";
 import { GAMEICONS_REVISION, ROCKETBOX_REVISION, type LibraryKind, type LibrarySourceId } from "./librarySources";
 
 /** The fetch seam ingest uses; tests pass a stub. */
@@ -253,7 +254,8 @@ export function sketchfabRecord(result: unknown): LibraryRecord | null {
 }
 
 /**
- * Microsoft Rocketbox: every avatar and animal folder at the pinned commit (MIT), all rigged.
+ * Microsoft Rocketbox: every avatar and animal folder at the pinned commit (MIT), all rigged, and
+ * every animation clip in its shared skeleton's library.
  *
  * @internal
  */
@@ -271,6 +273,7 @@ export async function ingestRocketbox(options: IngestOptions = {}): Promise<Libr
     if (!paths.includes(`${folder}/${name}.png`)) continue;
     records.push({ id, title: titleCase(name), kind: "character", tags, rigged: true });
   }
+  records.push(...rocketboxAnimationRecords(paths));
   return limited(records, options);
 }
 

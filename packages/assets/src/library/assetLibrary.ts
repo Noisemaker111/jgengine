@@ -130,7 +130,8 @@ export function parseLibrarySourceId(value: string | undefined): LibrarySourceId
 export function expandLibraryRecord(source: LibrarySourceId, record: LibraryRecord): LibraryEntry {
   const info = librarySource(source);
   if (info === undefined) throw new Error(`unknown library source: ${source}`);
-  const thumbnail = record.thumbnail ?? (info.thumbnail === undefined ? undefined : fillLibraryTemplate(info.thumbnail, record.id));
+  const templated = info.thumbnail !== undefined && (info.thumbnailKinds === undefined || info.thumbnailKinds.includes(record.kind));
+  const thumbnail = record.thumbnail ?? (templated && info.thumbnail !== undefined ? fillLibraryTemplate(info.thumbnail, record.id) : undefined);
   return {
     ...record,
     key: `${source}:${record.id}`,

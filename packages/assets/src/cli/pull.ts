@@ -260,12 +260,15 @@ export async function cmdPull(argv: string[]): Promise<void> {
   // `<source>:<id>` pulls one shared-library entry (`polyhaven:ArmChair_01`, `gameicons:lorc/broadsword`).
   const libraryPrefix = sourceId.split(":")[0] ?? "";
   if (sourceId.includes(":") && librarySource(libraryPrefix) !== undefined) {
-    const entry = assetLibrary().find((candidate) => candidate.key === sourceId) ?? fail(`unknown library key: ${sourceId} (search with: assets library search <words>)`);
+    const library = assetLibrary();
+    const entry = library.find((candidate) => candidate.key === sourceId) ?? fail(`unknown library key: ${sourceId} (search with: assets library search <words>)`);
+    const clipKeys = (flag(argv, "clips") ?? "").split(",").map((key) => key.trim()).filter((key) => key.length > 0);
+    const clips = clipKeys.map((key) => library.find((candidate) => candidate.key === key) ?? fail(`unknown clip key: ${key} (search with: assets library search walk --kind animation)`));
     const dirFlag = flag(argv, "dir");
     const outRoot = dirFlag !== undefined ? resolve(dirFlag) : resolveDefaultOutputRoot(here);
     const served = libraryServedPath(entry);
     if (dirHasEntries(join(outRoot, ...served.dir.split("/"))) && !argv.includes("--force")) {
-      console.log(`${entry.key}: already pulled -> ${served.url}`);
+      console.log(`${entry.key}: already pulled -> ${served.url}${clips.length > 0 ? " (pass --force to bake the clips on)" : ""}`);
       return;
     }
     const mirrorBase = flag(argv, "mirror") ?? process.env["JGENGINE_ASSETS_MIRROR"];
@@ -274,6 +277,7 @@ export async function cmdPull(argv: string[]): Promise<void> {
       outRoot,
       fetchImpl: cliFetch,
       ...(githubToken === undefined ? {} : { githubToken }),
+      ...(clips.length === 0 ? {} : { clips }),
       pullPack: async (pack) => {
         if (dirHasEntries(join(outRoot, packSubdir(pack), pack.id)) && !argv.includes("--force")) return;
         console.log(describeFetchResult(pack, await fetchPackInto(pack, outRoot, { mirrorBase })));

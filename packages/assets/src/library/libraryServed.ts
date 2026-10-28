@@ -1,4 +1,5 @@
 import type { LibraryEntry } from "./assetLibrary";
+import { rocketboxClipOf } from "./libraryRocketbox";
 
 /**
  * A library id as a folder-safe lowercase slug (`Bricks090` → `bricks090`), the shipped catalog's material id scheme.
@@ -39,6 +40,10 @@ export function libraryServedPath(entry: LibraryEntry): LibraryServedPath {
       return { dir: `models/library/polyhaven/${id}`, url: `/models/library/polyhaven/${id}/near.gltf` };
     case "rocketbox": {
       const name = id.split("/").pop() ?? id;
+      if (entry.kind === "animation") {
+        const clip = rocketboxClipOf(entry);
+        return { dir: `animations/rocketbox/${clip.folder}/${clip.name}`, url: `/animations/rocketbox/${clip.folder}/${clip.name}/clip.glb` };
+      }
       return { dir: `models/library/rocketbox/${name}`, url: `/models/library/rocketbox/${name}/model.glb` };
     }
     case "sketchfab":

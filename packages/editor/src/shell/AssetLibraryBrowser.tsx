@@ -17,6 +17,7 @@ const defaultLoader: LibraryLoader = () => import("@jgengine/assets/library/libr
 const KIND_LABEL: Record<LibraryKind, string> = {
   model: "Models",
   character: "Characters",
+  animation: "Animations",
   material: "Materials",
   decal: "Decals",
   hdri: "HDRIs",
@@ -193,7 +194,7 @@ export function AssetLibraryBrowser({
                 >
                   <div className="flex h-[72px] items-center justify-center overflow-hidden border-b border-white/[0.05] bg-black/30 text-neutral-500">
                     {entry.thumbnail === undefined ? (
-                      <Icon name={entry.kind === "material" ? "sphere" : entry.kind === "icon" ? "image" : "cube"} size={22} />
+                      <Icon name={entry.kind === "material" ? "sphere" : entry.kind === "icon" ? "image" : entry.kind === "animation" ? "film" : "cube"} size={22} />
                     ) : (
                       <img
                         src={entry.thumbnail}

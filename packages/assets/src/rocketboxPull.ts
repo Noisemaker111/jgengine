@@ -11,6 +11,7 @@ import { FBXLoader } from "three/examples/jsm/loaders/FBXLoader.js";
 
 import { decodeTgaForGltf, encodeJpeg, encodePng, fitRgba, gitBlobSha, type RgbaImage } from "./imageCodec";
 import { libraryModelDir, type ModelLibraryEntry, type RocketboxClip, type RocketboxModelOrigin } from "./catalogs/modelLibrary";
+import { ROCKETBOX_CLIP_FOLDERS } from "./library/libraryRocketbox";
 
 /**
  * Microsoft Rocketbox (MIT) ships rigged avatars and animals as FBX with 2048 px TGA maps. This
@@ -226,9 +227,78 @@ async function attachTextures(
   }
 }
 
-/** The upstream folder a clip's FBX lives in: in-place (static) or root-travelling (xy) takes. */
+/** The upstream folder a clip's FBX lives in: in-place (static) or travelling (xy, xyz) takes. */
 function clipFolder(clip: RocketboxClip): string {
-  return `Assets/Animations/${clip.folder === "static" ? "all_animations_max_motextr_static" : "all_animations_max_motextr_xy"}`;
+  return `Assets/Animations/${ROCKETBOX_CLIP_FOLDERS[clip.folder]}`;
+}
+
+/** Settings for {@link pullRocketboxClip}. */
+export interface PullRocketboxClipOptions {
+  /** The folder `clip.glb` is written into. */
+  outDir: string;
+  fetchImpl?: typeof fetch;
+  githubToken?: string;
+}
+
+/** What one Rocketbox clip pull wrote. */
+export interface PulledRocketboxClip {
+  name: string;
+  file: string;
+  bytes: number;
+  /** Seconds. */
+  duration: number;
+  /** Bones the clip animates; every Rocketbox human shares these names, so the clip plays on any of them. */
+  bones: readonly string[];
+}
+
+/**
+ * Pull one clip from Rocketbox's animation library and write `<outDir>/clip.glb`: the shared
+ * skeleton (no mesh) and one animation named `clip.name`, its tracks keyed by bone name in the
+ * same centimetre-under-a-0.01-root units a pulled avatar uses, so a mixer on any pulled Rocketbox
+ * human plays it unchanged. Travel is kept; bake a clip onto a character with `clips` for in-place.
+ * @capability rocketbox-clip pull one Microsoft Rocketbox animation clip as a skeleton-only GLB that plays on any Rocketbox human
+ */
+export async function pullRocketboxClip(clip: RocketboxClip, options: PullRocketboxClipOptions): Promise<PulledRocketboxClip> {
+  const source = new RocketboxSource(options.fetchImpl ?? fetch, options.githubToken);
+  const loader = fbxLoader();
+  installFileReader();
+  const group = parseFbx(loader, await source.file(clipFolder(clip), clip.file));
+  const take = group.animations[0];
+  if (take === undefined) throw new Error(`${clip.file} carries no animation`);
+
+  const drop: THREE.Object3D[] = [];
+  group.traverse((object) => {
+    if (["isMesh", "isLight", "isCamera"].some((flag) => flag in object && Reflect.get(object, flag) === true)) drop.push(object);
+  });
+  for (const object of drop) {
+    const parent = object.parent ?? group;
+    for (const child of [...object.children]) parent.add(child);
+    object.removeFromParent();
+  }
+  const names = new Set<string>();
+  group.traverse((object) => {
+    if (object.name.startsWith("Bip01") || ("isBone" in object && object.isBone === true)) names.add(object.name);
+  });
+  const tracks = take.tracks.filter((track) => names.has(track.name.slice(0, track.name.lastIndexOf("."))) && !track.name.endsWith(".scale"));
+  if (tracks.length === 0) throw new Error(`${clip.file}: no track animates a bone`);
+  const animation = new THREE.AnimationClip(clip.name, take.duration, tracks);
+  const bones = [...new Set(tracks.map((track) => track.name.slice(0, track.name.lastIndexOf("."))))].sort();
+
+  group.scale.setScalar(0.01);
+  group.updateMatrixWorld(true);
+  const scene = new THREE.Scene();
+  scene.add(group);
+  const glb = await new GLTFExporter().parseAsync(scene, { binary: true, animations: [animation], onlyVisible: false });
+  if (!(glb instanceof ArrayBuffer)) throw new Error(`${clip.file}: the exporter returned no binary GLB`);
+  await MeshoptEncoder.ready;
+  const io = new NodeIO().registerExtensions(ALL_EXTENSIONS).registerDependencies({ "meshopt.encoder": MeshoptEncoder });
+  const document = await io.readBinary(new Uint8Array(glb));
+  await document.transform(resample(), meshopt({ encoder: MeshoptEncoder, level: "medium" }));
+  mkdirSync(options.outDir, { recursive: true });
+  const file = join(options.outDir, "clip.glb");
+  const bytes = await io.writeBinary(document);
+  writeFileSync(file, bytes);
+  return { name: clip.name, file, bytes: bytes.byteLength, duration: take.duration, bones };
 }
 
 /**
@@ -295,6 +365,7 @@ export async function pullRocketboxModel(entry: ModelLibraryEntry, options: Pull
     const take = parseFbx(loader, await source.file(clipFolder(clip), clip.file)).animations[0];
     if (take === undefined) throw new Error(`${clip.file} carries no animation`);
     const tracks = take.tracks.filter((track) => boneNames.has(track.name.slice(0, track.name.lastIndexOf("."))) && !track.name.endsWith(".scale"));
+    if (tracks.length === 0) throw new Error(`${clip.file} animates no bone of ${entry.name}`);
     const named = new THREE.AnimationClip(clip.name, take.duration, tracks);
     if (clip.inPlace) inPlace(named, origin.rootBone);
     clips.push(named);
