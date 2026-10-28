@@ -215,6 +215,14 @@ All implemented from the papers; no code copied from LIGGGHTS, YADE or other DEM
 - Silos: H. A. Janssen, *Zeitschrift des Vereines Deutscher Ingenieure* 39 (1895) 1045–1049; L. Vanel and E. Clément, *Eur. Phys. J. B* 11 (1999) 525–533; J. Jaky, *J. Soc. Hungarian Architects and Engineers* (1944) for K₀ = 1 − sin φ.
 - Discharge: W. A. Beverloo, H. A. Leniger and J. van de Velde, *Chem. Eng. Sci.* 15 (1961) 260–269; R. M. Nedderman, *Statics and Kinematics of Granular Materials* (1992).
 - Brazil-nut segregation: A. Rosato, K. J. Strandburg, F. Prinz and R. H. Swendsen, *Phys. Rev. Lett.* 58 (1987) 1038; J. B. Knight, H. M. Jaeger and S. R. Nagel, *Phys. Rev. Lett.* 70 (1993) 3728.
+- Column collapse: G. Lube, H. E. Huppert, R. S. J. Sparks and M. A. Hallworth, "Axisymmetric collapses of granular columns", *J. Fluid Mech.* 508 (2004) 175–199. Used by `collapsedColumn` and `granular/granularExperiments.ts`.
+
+The game-facing granular layer in `granular/` (`granularMaterial.ts`, `granularLayer.ts`, `granularTerrain.ts`) is implemented from these papers:
+
+- Depth-averaged flow: S. B. Savage and K. Hutter, *J. Fluid Mech.* 199 (1989) 177–215; well-balanced upwinding over bed steps after E. Audusse, F. Bouchut, M.-O. Bristeau, R. Klein and B. Perthame, *SIAM J. Sci. Comput.* 25 (2004) 2050–2065.
+- Basal friction law and glass-bead constants: O. Pouliquen, *Phys. Fluids* 11 (1999) 542–548; O. Pouliquen and Y. Forterre, "Friction law for dense granular flows", *J. Fluid Mech.* 453 (2002) 133–151.
+- Pressure–sinkage: M. G. Bekker, *Theory of Land Locomotion* (1956) and *Introduction to Terrain-Vehicle Systems* (1969); soil values from J. Y. Wong, *Theory of Ground Vehicles*, 4th ed. (2008), Table 2.3.
+- Cohesive banks: K. Culmann, *Die graphische Statik* (1866), the planar-wedge critical height as given in K. Terzaghi, *Theoretical Soil Mechanics* (1943). Capillary tensile strength: H. Rumpf, *Chem. Ing. Tech.* 30 (1958) 144–158.
 
 ## Plant growth simulation
 

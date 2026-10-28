@@ -1749,6 +1749,50 @@
 - `sampleCurve` (function): function sampleCurve(points: readonly CurvePoint[], x: number): number — The value of a curve at `x` (0..1), linear between control points and flat past the ends.
 - `sampleGradient` (function): function sampleGradient(stops: readonly GradientStop[], t: number): string — The hex colour of a gradient at `t` (0..1), mixed between neighbouring stops.
 
+## @jgengine/core/granular/granularExperiments
+
+- `ContinuumCollapse` (interface): interface ContinuumCollapse — Where a released column of the continuum came to rest.
+- `FlumeFlow` (interface): interface FlumeFlow — Steady flow down a rough incline, read at the middle of a long channel.
+- `PouredHeap` (interface): interface PouredHeap — A heap poured from a point.
+- `continuumCollapse` (function): function continuumCollapse(material: GranularMaterial, aspect: number, radius = 0.1, cellsPerRadius = 20): ContinuumCollapse — Release a column of `aspect` = h_i / r_i, radius `radius` m, on a flat bed and measure the deposit. The edge is the farthest cell deeper than 1% of the initial height.
+- `inclinedFlume` (function): function inclinedFlume(material: GranularMaterial, angle: number, depth: number, seconds = 3, gravity = 9.81): FlumeFlow — A uniform layer `depth` m deep released on a `angle`° incline, run for `seconds`, then read far from both ends: the steady uniform flow Pouliquen (1999) measured.
+- `pouredHeap` (function): function pouredHeap(material: GranularMaterial, volume = 0.6, cell = 0.1, cells = 61): PouredHeap — Pour `volume` m³ in small batches onto the middle of a flat bed of `cell` m cells and measure the heap once still.
+
+## @jgengine/core/granular/granularLayer
+
+- `GranularLayer` (interface): interface GranularLayer — A granular layer. Cell arrays are row-major, `gz * cols + gx`.
+- `GranularLayerConfig` (interface): interface GranularLayerConfig — Grid, starting ground and tuning for {@link createGranularLayer}.
+- `GranularLayerSnapshot` (interface): interface GranularLayerSnapshot — Plain JSON of a {@link GranularLayer}.
+- `GranularPressReport` (interface): interface GranularPressReport — What a load did to the ground.
+- `GranularStepReport` (interface): interface GranularStepReport — What one {@link GranularLayer.step} did.
+- `createGranularLayer` (function): function createGranularLayer(config: GranularLayerConfig): GranularLayer — Create a granular layer over a bedrock grid.
+
+## @jgengine/core/granular/granularMaterial
+
+- `BekkerSoil` (interface): interface BekkerSoil — What a loose granular material is, for the depth-averaged model in {@link createGranularLayer}: how steep it stands and how it flows, from the friction law of Pouliquen & Forterre (2002), how it packs, and how far a load sinks into it, from the pressure–sinkage law of Bekker (1956) with the soil values Wong (2008) tabulates.
+- `DAMP_SAND` (const): const DAMP_SAND: GranularMaterial — Sand with about 1% water. Repose angle from the damp poured-cone DEM (3.3° over dry, about half the Nowak et al. 2005 maximum excess); cohesion 0.5 kPa, the tensile strength Rumpf (1958) gives for capillary bridges between 0.5 mm grains, (1 − ε)/ε · 2πRγ/d², which lets a cut stand.
+- `DRY_SAND` (const): const DRY_SAND: GranularMaterial — Dry quartz sand. Repose angle from the poured-cone DEM (`physics/reference`, mean of three heaps 32.3°); the span to δ₂ and δ₃ and β from the glass-bead fit; packing 0.56 to 0.64 (porosity 0.44 to 0.36); Bekker values for dry sand from Wong (2008).
+- `GLASS_BEADS` (const): const GLASS_BEADS: GranularMaterial — Glass beads 0.5 mm across on a rough plane, the material Pouliquen & Forterre (2002) fitted their law to.
+- `GRAVEL` (const): const GRAVEL: GranularMaterial — Rounded river gravel, 10–20 mm: repose 38° (Al-Hashemi & Al-Amoudi 2018); depth scale for a 15 mm grain.
+- `GranularMaterial` (interface): interface GranularMaterial — A loose granular material. Angles are in degrees.
+- `SANDY_LOAM` (const): const SANDY_LOAM: GranularMaterial — Sandy loam (Michigan), Bekker values and cohesion 1.72 kPa from Wong (2008); stands at its friction angle, 29°.
+- `culmannHeight` (function): function culmannHeight(cohesion: number, unitWeight: number, slope: number, friction: number): number — Tallest bank, m, of cohesion `cohesion` Pa and unit weight `unitWeight` N/m³ that stands at slope angle `slope` with friction angle `friction` (both radians): Culmann's planar wedge, H_c = 4c sin β cos φ / (γ (1 − cos(β − φ))). Infinite at or below the friction angle.
+- `flowFriction` (function): function flowFriction(material: GranularMaterial, depth: number, froude: number): number — Basal friction of a layer `depth` m deep flowing at Froude number `froude` = u/√(gh), Pouliquen & Forterre (2002): μ_stop(hβ/Fr) above Fr = β and (Fr/β)^γ (μ_stop − μ_start) + μ_start below, γ = 10⁻³. Steady uniform flow then obeys Fr = β h/h_stop(θ).
+- `plateSinkage` (function): function plateSinkage(soil: BekkerSoil, pressure: number, width: number): number — Bekker sinkage, m, of a flat plate pressing `pressure` Pa on soil, `width` m its smaller dimension: z = (p/(k_c/b + k_φ))^(1/n).
+- `plateSinkagePressure` (function): function plateSinkagePressure(soil: BekkerSoil, sinkage: number, width: number): number — Pressure, Pa, that sinks a plate `width` m wide to `sinkage` m: the inverse of {@link plateSinkage}.
+- `startFriction` (function): function startFriction(material: GranularMaterial, depth: number): number — Friction μ_start(h) a static layer `depth` m deep must exceed to start: tan δ₃ + (tan δ₂ − tan δ₁)/(h/L + 1).
+- `stopFriction` (function): function stopFriction(material: GranularMaterial, depth: number): number — Basal friction μ_stop(h) of a layer `depth` m deep that is just stopping: tan δ₁ + (tan δ₂ − tan δ₁)/(h/L + 1).
+- `stoppingDepth` (function): function stoppingDepth(material: GranularMaterial, angle: number): number — Thickness h_stop(θ) a layer leaves behind when it stops on a slope of `angle` degrees: L (tan δ₂ − tan θ)/(tan θ − tan δ₁). Infinite at or below δ₁, 0 at or above δ₂.
+- `wheelSinkage` (function): function wheelSinkage(soil: BekkerSoil, load: number, width: number, diameter: number): number — Static sinkage, m, of a rigid wheel of `diameter` and `width` m carrying `load` N, Bekker's closed form: z₀ = (3W / ((3 − n)(k_c + b k_φ) √D))^(2/(2n+1)).
+
+## @jgengine/core/granular/granularTerrain
+
+- `GranularTerrain` (interface): interface GranularTerrain — A granular layer bound to a terrain; positions are world x/z.
+- `GranularTerrainOptions` (interface): interface GranularTerrainOptions — Options for {@link createGranularTerrain}.
+- `LandformCoverPlacement` (interface): interface LandformCoverPlacement — Where a landform's cover grid sits in the world: cell (gx, gz) spans `origin + g · cellSize` to the next cell.
+- `createGranularTerrain` (function): function createGranularTerrain(terrain: EditableTerrain, options: GranularTerrainOptions): GranularTerrain — Bind a granular layer to a terrain's vertex grid.
+- `landformLooseCover` (function): function landformLooseCover(surface: LandformSurface, placement: LandformCoverPlacement): Pick<GranularTerrainOptions, "looseDepth" | "materialAt"> — Loose depth and material callbacks for {@link createGranularTerrain} from a landform simulation's cover: depth is the cover thickness, material the heaviest-weighted loose kind the placement maps.
+
 ## @jgengine/core/grass/GrassCover.draw
 
 - `GrassCover` (function): function GrassCover({ area, seed, colorBase, colorTip, strength, edgeFeather, heightAt, coverageAt, segments, lift, stripeAt, position, }: GrassCoverProps): React.JSX.Element | null — The turf surface under one authored `grass_field` patch: a ground-draped, edge-feathered mat that turns a bare pavement footprint into grass the blade field stands in. Bounded to one draw and a {@link GRASS_COVER_MAX_SEGMENTS}² grid, so a large park still costs a single mesh.
@@ -3278,6 +3322,8 @@
 
 ## @jgengine/core/physics/reference/discreteElementExperiments
 
+- `ColumnCollapseOptions` (interface): interface ColumnCollapseOptions — Options for {@link collapsedColumn}.
+- `ColumnCollapseResult` (interface): interface ColumnCollapseResult — Where a released column came to rest.
 - `DEM_GLASS_BEADS` (const): const DEM_GLASS_BEADS: DemMaterial — Soda-lime glass beads: restitution 0.97 and friction 0.092 measured by Foerster, Louge, Chang & Allia (1994).
 - `DEM_SAND` (const): const DEM_SAND: DemMaterial — Natural quartz sand as DEM grains: solid density 2650 kg/m³, sliding friction 0.5 and restitution 0.55 (the measured ranges collected by Al-Hashemi & Al-Amoudi 2018), rolling resistance 0.7 standing in for angular grain shape (Wensrich & Katterfeld 2012), contact stiffness lowered to 5 MPa as DEM practice does.
 - `DEM_STEEL` (const): const DEM_STEEL: DemMaterial — A rigid steel container wall (same simulation stiffness as the grains).
@@ -3292,6 +3338,7 @@
 - `SiloResult` (interface): interface SiloResult — Base load against filled mass, kg, for each filling stage.
 - `beverlooHopper` (function): function beverlooHopper(options: HopperOptions): HopperResult — Discharge of a flat-bottomed cylindrical silo through a round orifice, grains recycled to the top so the head stays steady. Beverloo, Leniger & van de Velde (1961) predict W = C ρ_b √g (D − k d)^{5/2}, independent of the head.
 - `brazilNutShaker` (function): function brazilNutShaker(options: ShakerOptions = {}): ShakerResult — A large intruder buried at the floor of a vertically vibrated box of small grains (Rosato, Strandburg, Prinz & Swendsen 1987; Knight, Jaeger & Nagel 1993): it rises when the peak acceleration exceeds gravity.
+- `collapsedColumn` (function): function collapsedColumn(options: ColumnCollapseOptions): ColumnCollapseResult — A cylinder of grains on a rough floor, released by lifting its frictionless wall away fast: the axisymmetric collapse of Lube, Huppert, Sparks & Hallworth (2004), who measured r_∞/r_i = 1 + 1.24 a for a < 1.7.
 - `fitBeverloo` (function): function fitBeverloo(result: HopperResult, gravity = 9.81): { c: number; k: number } — Fit Beverloo's C and k to measured rates by least squares on W^{2/5} = (C ρ_b √g)^{2/5} (D − k d), which is linear in D.
 - `janssenLoad` (function): function janssenLoad(fill: number, fit: JanssenFit): number — Base load of a silo holding `fill` kg: all of it up to the hydrostatic mass, then M_h + M_∞ (1 − e^{−(M − M_h)/M_∞}).
 - `janssenSilo` (function): function janssenSilo(options: SiloOptions = {}): SiloResult — A silo filled layer by layer, weighing its base after each layer settles (the experiment of Vanel & Clément 1999): Janssen (1895) predicts the base carries M_∞ (1 − e^{−M/M_∞}) as wall friction takes the rest, above a bottom zone that rests on the base in full.

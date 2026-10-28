@@ -49,7 +49,7 @@ describe("granular layer", () => {
       settle(layer, 5);
       return layer.depth(layer.index(14, 15));
     };
-    // Culmann: damp sand (c 0.5 kPa, φ 37.8°) stands vertical to 0.31 m.
+    // Culmann: damp sand (c 0.5 kPa, φ 36.8°) stands vertical to 0.31 m.
     expect(cut(DAMP_SAND)).toBeGreaterThan(0.19);
     expect(cut(DRY_SAND)).toBeLessThan(0.15);
   });

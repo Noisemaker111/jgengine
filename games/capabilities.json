@@ -4289,6 +4289,16 @@
       "intent": "discrete element reference for sand, gravel and powders with Hertz–Mindlin contacts, rolling resistance and capillary cohesion"
     },
     {
+      "id": "granular-flow",
+      "packages": [
+        "@jgengine/core"
+      ],
+      "module": "@jgengine/core/granular/granularLayer",
+      "gameFacing": false,
+      "probe": null,
+      "intent": "sand, gravel and soil that pile, avalanche, dig, compact and rut on a heightfield"
+    },
+    {
       "id": "grapple-swing",
       "packages": [
         "@jgengine/core"

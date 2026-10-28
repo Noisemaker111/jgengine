@@ -50,7 +50,7 @@ export interface GranularMaterial {
 export const GLASS_BEADS: GranularMaterial = { id: "glass-beads", grainDensity: 2500, loosePacking: 0.6, densePacking: 0.64, stopAngle: 21, flowAngle: 30.7, startAngle: 22.2, beta: 0.136, depthScale: 0.65e-3, cohesion: 0 };
 
 /**
- * Dry quartz sand. Repose angle from the poured-cone DEM (`physics/reference`, 30.4°); the span to δ₂ and δ₃ and β
+ * Dry quartz sand. Repose angle from the poured-cone DEM (`physics/reference`, mean of three heaps 32.3°); the span to δ₂ and δ₃ and β
  * from the glass-bead fit; packing 0.56 to 0.64 (porosity 0.44 to 0.36); Bekker values for dry sand from Wong (2008).
  * @capability granular-flow sand, gravel and soil that pile, avalanche, dig, compact and rut on a heightfield
  */
@@ -59,9 +59,9 @@ export const DRY_SAND: GranularMaterial = {
   grainDensity: 2650,
   loosePacking: 0.56,
   densePacking: 0.64,
-  stopAngle: 30.4,
-  flowAngle: 40.1,
-  startAngle: 31.6,
+  stopAngle: 32.3,
+  flowAngle: 42.0,
+  startAngle: 33.5,
   beta: 0.136,
   depthScale: 0.65e-3,
   cohesion: 0,
@@ -69,11 +69,11 @@ export const DRY_SAND: GranularMaterial = {
 };
 
 /**
- * Sand with about 1% water. Repose angle from the damp poured-cone DEM (36.6°, 6.2° over dry, as Nowak et al. 2005
- * predict); cohesion 0.5 kPa, the tensile strength Rumpf (1958) gives for capillary bridges between 0.5 mm grains, (1 − ε)/ε · 2πRγ/d², which lets a cut stand.
+ * Sand with about 1% water. Repose angle from the damp poured-cone DEM (3.3° over dry, about half the Nowak et al. 2005 maximum
+ * excess); cohesion 0.5 kPa, the tensile strength Rumpf (1958) gives for capillary bridges between 0.5 mm grains, (1 − ε)/ε · 2πRγ/d², which lets a cut stand.
  * @capability granular-flow sand, gravel and soil that pile, avalanche, dig, compact and rut on a heightfield
  */
-export const DAMP_SAND: GranularMaterial = { ...DRY_SAND, id: "damp-sand", loosePacking: 0.5, stopAngle: 36.6, flowAngle: 46.3, startAngle: 37.8, cohesion: 500 };
+export const DAMP_SAND: GranularMaterial = { ...DRY_SAND, id: "damp-sand", loosePacking: 0.5, stopAngle: 35.6, flowAngle: 45.3, startAngle: 36.8, cohesion: 500 };
 
 /**
  * Rounded river gravel, 10–20 mm: repose 38° (Al-Hashemi & Al-Amoudi 2018); depth scale for a 15 mm grain.
