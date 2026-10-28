@@ -325,6 +325,16 @@
       "intent": "data-first animation state machine with blend trees, crossfades, layers, and clip events"
     },
     {
+      "id": "animal-top-speed",
+      "packages": [
+        "@jgengine/core"
+      ],
+      "module": "@jgengine/core/movement/reference/quadrupedGait",
+      "gameFacing": false,
+      "probe": null,
+      "intent": "top running speed of an animal from its body mass (Hirt 2017)"
+    },
+    {
       "id": "animation",
       "packages": [
         "@jgengine/core"
@@ -4053,6 +4063,26 @@
       "gameFacing": false,
       "probe": null,
       "intent": "camera-relative creative/spectator/noclip/hover flight with correct strafe, sprint, and optional gravity"
+    },
+    {
+      "id": "froude-number",
+      "packages": [
+        "@jgengine/core"
+      ],
+      "module": "@jgengine/core/movement/reference/quadrupedGait",
+      "gameFacing": false,
+      "probe": null,
+      "intent": "dimensionless speed v²/(g·h) that sets gait across animal sizes"
+    },
+    {
+      "id": "froude-speed",
+      "packages": [
+        "@jgengine/core"
+      ],
+      "module": "@jgengine/core/movement/reference/quadrupedGait",
+      "gameFacing": false,
+      "probe": null,
+      "intent": "speed of a dimensionless Froude number for an animal of a given leg length"
     },
     {
       "id": "fullscreen-map",
@@ -8559,6 +8589,46 @@
       "gameFacing": false,
       "probe": null,
       "intent": "a quick-time-event timed input sequence with hit windows"
+    },
+    {
+      "id": "quadruped-compare",
+      "packages": [
+        "@jgengine/core"
+      ],
+      "module": "@jgengine/core/movement/reference/quadrupedGait",
+      "gameFacing": false,
+      "probe": null,
+      "intent": "score a game creature's walk and run speeds against real animal gait transitions and top speed"
+    },
+    {
+      "id": "quadruped-mass-estimate",
+      "packages": [
+        "@jgengine/core"
+      ],
+      "module": "@jgengine/core/movement/reference/quadrupedGait",
+      "gameFacing": false,
+      "probe": null,
+      "intent": "estimate a quadruped's body mass from its hip height"
+    },
+    {
+      "id": "quadruped-reference-validation",
+      "packages": [
+        "@jgengine/core"
+      ],
+      "module": "@jgengine/core/movement/reference/quadrupedGait",
+      "gameFacing": false,
+      "probe": null,
+      "intent": "check the quadruped reference against published animal top speeds and duty factors"
+    },
+    {
+      "id": "quadruped-stride",
+      "packages": [
+        "@jgengine/core"
+      ],
+      "module": "@jgengine/core/movement/reference/quadrupedGait",
+      "gameFacing": false,
+      "probe": null,
+      "intent": "gait, stride length, stride frequency and duty factor of a dog, horse or any quadruped at a speed"
     },
     {
       "id": "quest-catalog-validation",

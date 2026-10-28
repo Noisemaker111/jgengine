@@ -10,14 +10,18 @@ import type { PhysicsConfig } from "@jgengine/core/game/defineGame";
 import type { PlayerMovementConfig } from "@jgengine/core/game/playableGame";
 import { compareLocomotion, formatLocomotionComparison, type LocomotionComparisonRow } from "@jgengine/core/movement/reference/compareLocomotion";
 import { formatHumanValidation, validateHumanReference } from "@jgengine/core/movement/reference/humanReferenceValidation";
+import { compareQuadruped, validateQuadrupedReference, type QuadrupedComparison } from "@jgengine/core/movement/reference/quadrupedGait";
 
 const USAGE = `usage: bun run games:capabilities locomotion [game[:entity]...] [--sprint] [--json]
+       bun run games:capabilities locomotion --creatures <module>#<export> [--json]
        bun run games:capabilities locomotion --validate
   game        a folder under games/ (default: every game with a walking player)
   :entity     the player's catalog id, when the game sets role "player" only at spawn
   --sprint    measure with sprint held
   --json      print the rows as JSON
-  --validate  check the human reference itself against published biomechanics (slow: walks every fitted gait)`;
+  --creatures every {id, walk, sprint} record in the export (a CreatureBody table) vs a real animal of the size the
+              game's entityModels draw it (hip height 0.45 of targetHeight)
+  --validate  check the human and quadruped references themselves against published biomechanics (slow: walks every fitted gait)`;
 
 const GAMES = resolve(import.meta.dir, "..");
 
@@ -80,13 +84,68 @@ async function walkingPlayer(target: string): Promise<WalkingPlayer | string> {
   return named === undefined ? "no player entity; name it as <game>:<entity> if role is set at spawn" : `no entity "${named}"`;
 }
 
+/** Hip-joint height over a standing animal's overall height (head up): about 0.45 for a horse or a dog. */
+const HIP_OVER_HEIGHT = 0.45;
+
+/** Every record with numeric `walk` and `sprint` (a `CreatureBody`) and a string `id` inside `value`. */
+function collectCreatures(value: unknown, out: { id: string; walk: number; sprint: number }[], depth = 0): void {
+  if (!isRecord(value) || depth > 4) return;
+  const id = value["id"];
+  const walk = value["walk"];
+  const sprint = value["sprint"];
+  if (typeof id === "string" && typeof walk === "number" && typeof sprint === "number") {
+    out.push({ id, walk, sprint });
+    return;
+  }
+  for (const entry of Object.values(value)) collectCreatures(entry, out, depth + 1);
+}
+
+async function creatures(spec: string, json: boolean): Promise<number> {
+  const [file, name] = spec.split("#");
+  if (file === undefined || name === undefined) {
+    console.error(USAGE);
+    return 2;
+  }
+  const path = resolve(GAMES, "..", file);
+  const module: unknown = await import(pathToFileURL(path).href);
+  const found: { id: string; walk: number; sprint: number }[] = [];
+  if (isRecord(module)) collectCreatures(module[name], found);
+  const game = /games[\\/]([^\\/]+)[\\/]/.exec(path)?.[1];
+  const configModule: unknown = game === undefined ? undefined : await import(pathToFileURL(join(GAMES, game, "src", "game.config.ts")).href);
+  const config = isRecord(configModule) ? (configModule["game"] ?? configModule["gameConfig"]) : undefined;
+  const models = isRecord(config) && isRecord(config["entityModels"]) ? config["entityModels"] : {};
+  const rows: ({ id: string; walk: number; sprint: number; height: number } & QuadrupedComparison)[] = [];
+  const skipped: string[] = [];
+  for (const creature of found) {
+    const model = models[creature.id];
+    const height = isRecord(model) && typeof model["targetHeight"] === "number" ? model["targetHeight"] : undefined;
+    if (height === undefined) {
+      skipped.push(creature.id);
+      continue;
+    }
+    rows.push({ ...creature, height, ...compareQuadruped({ walkSpeed: creature.walk, runSpeed: creature.sprint, hipHeight: HIP_OVER_HEIGHT * height }) });
+  }
+  if (json) {
+    console.log(JSON.stringify({ rows, skipped }, null, 2));
+    return 0;
+  }
+  const f = (v: number, digits = 1) => v.toFixed(digits);
+  console.log("| Creature | Height (m) | Mass est. (kg) | Walk (m/s) | Real walk–trot | Walk gait | Sprint (m/s) | Sprint gait | Real top speed | Sprint ÷ real |");
+  console.log("| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |");
+  for (const r of rows) console.log(`| ${r.id} | ${f(r.height)} | ${f(r.mass, 0)} | ${f(r.walk)} | ${f(r.referenceWalkMax)} | ${r.walkGait} | ${f(r.sprint)} | ${r.runGait} | ${f(r.referenceTopSpeed)} | ${f(r.topSpeedRatio, 2)} |`);
+  if (skipped.length > 0) console.log(`\nNo model height: ${skipped.join(", ")}`);
+  return 0;
+}
+
 async function main(argv: string[]): Promise<number> {
   if (argv.includes("--help") || argv.includes("-h")) {
     console.log(USAGE);
     return 0;
   }
+  const creatureSpec = argv.indexOf("--creatures");
+  if (creatureSpec >= 0) return creatures(argv[creatureSpec + 1] ?? "", argv.includes("--json"));
   if (argv.includes("--validate")) {
-    const rows = validateHumanReference();
+    const rows = [...validateHumanReference(), ...validateQuadrupedReference()];
     console.log(formatHumanValidation(rows));
     return rows.some((row) => !row.pass) ? 1 : 0;
   }
