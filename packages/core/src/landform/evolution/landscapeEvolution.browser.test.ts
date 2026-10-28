@@ -7,7 +7,7 @@ import { buildBrowserFixture, findChromeExecutable } from "../../../../../script
 setDefaultTimeout(60_000);
 
 // The same landscape grows in bun (JSC) and in Chrome (V8): every process runs, with a nonlinear slope
-// exponent, tilted strata, deposition, a sea and landslides, plus D∞ routing, then glaciers and waves. Any engine-dependent
+// exponent, tilted strata, deposition, a sea and landslides, plus D∞ routing, then glaciers (shallow-ice and first-order) and waves. Any engine-dependent
 // rounding shows up as a different hash.
 const root = resolve(import.meta.dir, "../../../../..").replaceAll("\\", "/");
 const scratch = `${root}/.scratch/landform-browser-test`;
@@ -46,10 +46,15 @@ export function landformCheck() {
     grid: { cols: 40, rows: 30, cellSize: 100, outlets: ["west"] },
     seed: "range",
     initial: { heights, roughness: 10 },
-    params: { uplift: 1e-3, erodibility: 2e-6, seaLevel: 0, timeStep: 2000, glacial: { ela: 1500 }, coastal: { cliffRetreat: 0.2 } },
+    params: { uplift: 1e-3, erodibility: 2e-6, seaLevel: 0, timeStep: 2000, glacial: { ela: 1500, model: "shallow-ice" }, coastal: { cliffRetreat: 0.2 } },
   });
   for (let k = 0; k < 20; k += 1) range.step();
   if (!range.fields().ice.some((h) => h > 0)) throw new Error("no glacier grew");
+  hashes.push(range.hash());
+  // The grown glacier under first-order ice: Glen's law through the engine's portable pow, Newton steps and conjugate gradients.
+  range.retune({ glacial: { ela: 1500, model: "first-order", erosionExponent: 2, layers: 4 } });
+  for (let k = 0; k < 3; k += 1) range.step();
+  if (!range.fields().iceSliding.some((u) => u > 0)) throw new Error("no first-order glacier slid");
   hashes.push(range.hash());
   return hashes.join(",");
 }

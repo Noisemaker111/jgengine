@@ -1,5 +1,5 @@
 import { describe, expect, test } from "bun:test";
-import { createLandscapeEvolution, type LandscapeEvolution } from "../evolution/landscapeEvolution";
+import { createLandscapeEvolution, type GlacialParams, type LandscapeEvolution } from "../evolution/landscapeEvolution";
 import { landformTopology } from "../grid/landformGrid";
 import { COVER, COVER_CLASSES } from "../materials/sedimentCover";
 import { fitPowerLaw } from "../validation/geomorphicLaws";
@@ -59,12 +59,12 @@ function vValley(): number[] {
 
 const START = vValley();
 
-function glaciate(timeStep: number): LandscapeEvolution {
+function glaciate(timeStep: number, glacial: GlacialParams = { ela: 1950, model: "shallow-ice" }): LandscapeEvolution {
   return createLandscapeEvolution({
     grid: { cols: COLS, rows: ROWS, cellSize: DX, outlets: ["west"] },
     seed: "valley",
     initial: { heights: START, roughness: 0 },
-    params: { uplift: 0, erodibility: 0, diffusivity: 0, marineDiffusivity: 0, soilProduction: 0, timeStep, glacial: { ela: 1950 } },
+    params: { uplift: 0, erodibility: 0, diffusivity: 0, marineDiffusivity: 0, soilProduction: 0, timeStep, glacial },
   });
 }
 
@@ -127,7 +127,7 @@ function axisAndFlank(model: LandscapeEvolution): { axis: number; flank: number 
   return { axis: axis / count, flank: flank / count };
 }
 
-describe("glacial erosion", () => {
+describe("glacial erosion by shallow ice, the fast path", () => {
   test("ice in the bottom of a V, walled by rock, slides slower, so the glacier cuts its flanks faster than its axis (Harbor 1992)", () => {
     for (const timeStep of [1000, 2000, 5000]) {
       const model = glaciate(timeStep);
@@ -179,5 +179,38 @@ describe("glacial erosion", () => {
     expect(model.hash()).toBe(ahead);
     model.reset();
     expect(model.fields().ice.every((h) => h === 0)).toBe(true);
+  }, 60_000);
+});
+
+describe("glacial erosion by first-order (Blatter–Pattyn) ice flow", () => {
+  const firstOrder: GlacialParams = { ela: 1950, model: "first-order", layers: 4 };
+
+  test("the walls drag the ice in a V: it slides slower on the axis than beside it", () => {
+    const model = glaciate(2000, firstOrder);
+    for (let k = 0; k < 4; k += 1) model.step();
+    const { ice, iceSliding } = model.fields();
+    let slowerAxis = 0;
+    let columns = 0;
+    for (let col = 24; col <= 40; col += 1) {
+      const axis = MID * COLS + col;
+      if ((ice[axis] ?? 0) < 50) continue;
+      columns += 1;
+      let fastest = 0;
+      for (let y = -HALF; y <= HALF; y += 1) fastest = Math.max(fastest, iceSliding[(MID + y) * COLS + col] ?? 0);
+      if ((iceSliding[axis] ?? 0) < 0.9 * fastest) slowerAxis += 1;
+    }
+    expect(columns).toBeGreaterThan(5);
+    expect(slowerAxis / columns).toBeGreaterThan(0.5);
+  }, 60_000);
+
+  test("its flux scale is state: a snapshot restores it and the run resumes bit for bit", () => {
+    const model = glaciate(2000, firstOrder);
+    for (let k = 0; k < 2; k += 1) model.step();
+    const saved = JSON.stringify(model.snapshot());
+    model.step();
+    const ahead = model.hash();
+    model.restore(JSON.parse(saved));
+    model.step();
+    expect(model.hash()).toBe(ahead);
   }, 60_000);
 });

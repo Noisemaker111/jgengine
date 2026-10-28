@@ -1021,6 +1021,7 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 ## landform-glacial — glaciers that flow, slide, carve their valleys wider and deeper and lay moraines
 
+- `createFirstOrderIceFlow` (function) · `import { createFirstOrderIceFlow } from "@jgengine/core/landform/glacial/firstOrderIceFlow"`
 - `iceDeformationRate` (function) · `import { iceDeformationRate } from "@jgengine/core/landform/glacial/iceFlow"`
 
 ## landform-materials — per-cell bedrock, soil, gravel, sand, silt and scree from a landform simulation

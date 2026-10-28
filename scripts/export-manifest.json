@@ -578,6 +578,8 @@
     "./landform/generator/landformGenerator",
     "./landform/generator/landformTerrain",
     "./landform/generator/landformWorker",
+    "./landform/glacial/firstOrderIceFlow",
+    "./landform/glacial/glacierFlow",
     "./landform/glacial/iceFlow",
     "./landform/grid/landformGrid",
     "./landform/materials/landformSurface",
