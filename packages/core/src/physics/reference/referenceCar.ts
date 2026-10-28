@@ -1,5 +1,6 @@
 import type { AxisInput } from "../../input/axisInput";
 import { magicFormula, magicFormulaContact, magicFormulaVerticalForce, type MagicFormulaCoefficients, type MagicFormulaTireStep } from "./magicFormulaTire";
+import { createRungeKutta4, solveLinearSystem } from "./rungeKutta";
 import { createSuspensionSample, createSuspensionTable, solveSuspension, type SuspensionGeometry, type SuspensionSample, type SuspensionTable } from "./suspensionKinematics";
 
 /** One axle's suspension: linkage geometry plus springs, dampers, bar, stops and bushings, rated at the wheel. */
@@ -311,36 +312,6 @@ function peakTorque(curve: readonly (readonly [number, number])[]): number {
   return peak;
 }
 
-/** Solve `m·x = b` (n×n, row-major, overwritten) by Gaussian elimination with partial pivoting. */
-function solveLinear(m: Float64Array, b: Float64Array, n: number): void {
-  for (let col = 0; col < n; col++) {
-    let pivot = col;
-    for (let row = col + 1; row < n; row++) if (Math.abs(m[row * n + col] ?? 0) > Math.abs(m[pivot * n + col] ?? 0)) pivot = row;
-    if (pivot !== col) {
-      for (let k = 0; k < n; k++) {
-        const t = m[col * n + k] ?? 0;
-        m[col * n + k] = m[pivot * n + k] ?? 0;
-        m[pivot * n + k] = t;
-      }
-      const t = b[col] ?? 0;
-      b[col] = b[pivot] ?? 0;
-      b[pivot] = t;
-    }
-    const d = m[col * n + col] ?? 1;
-    for (let row = col + 1; row < n; row++) {
-      const f = (m[row * n + col] ?? 0) / d;
-      if (f === 0) continue;
-      for (let k = col; k < n; k++) m[row * n + k] = (m[row * n + k] ?? 0) - f * (m[col * n + k] ?? 0);
-      b[row] = (b[row] ?? 0) - f * (b[col] ?? 0);
-    }
-  }
-  for (let row = n - 1; row >= 0; row--) {
-    let sum = b[row] ?? 0;
-    for (let k = row + 1; k < n; k++) sum -= (m[row * n + k] ?? 0) * (b[k] ?? 0);
-    b[row] = sum / (m[row * n + row] ?? 1);
-  }
-}
-
 /**
  * Creates a {@link ReferenceCar}: a multibody car integrated with classical fourth-order Runge–Kutta (default 0.5 ms;
  * halving the step converges at fourth order between control samples) and a 1 kHz driver/controller sample.
@@ -528,10 +499,8 @@ export function createReferenceCar(spec: ReferenceCarSpec, options: ReferenceCar
   const mass10 = new Float64Array(100);
   const rhs10 = new Float64Array(10);
   const k1 = new Float64Array(PLANT_SIZE);
-  const k2 = new Float64Array(PLANT_SIZE);
-  const k3 = new Float64Array(PLANT_SIZE);
-  const k4 = new Float64Array(PLANT_SIZE);
-  const stage = new Float64Array(PLANT_SIZE);
+  const integrator = createRungeKutta4(PLANT_SIZE);
+  const plantDerivative = (x: Float64Array, out: Float64Array) => derivative(x, out, false);
   type Quad = [number, number, number, number];
   const report: { loads: Quad; slips: Quad; angles: Quad; cambers: Quad; steer: number; airborne: boolean } = {
     loads: [0, 0, 0, 0],
@@ -905,7 +874,7 @@ export function createReferenceCar(spec: ReferenceCarSpec, options: ReferenceCar
     }
     out[RACK] = (steerCompliance * ((kingpin[0] ?? 0) + (kingpin[1] ?? 0)) - (x[RACK] ?? 0)) / BUSHING_LAG;
 
-    solveLinear(mass10, rhs10, 10);
+    solveLinearSystem(mass10, rhs10, 10);
     out[0] = vx;
     out[1] = vy;
     out[2] = vz;
@@ -986,15 +955,7 @@ export function createReferenceCar(spec: ReferenceCarSpec, options: ReferenceCar
   }
 
   function rk4(): void {
-    const n = PLANT_SIZE;
-    derivative(plant, k1, false);
-    for (let k = 0; k < n; k++) stage[k] = (plant[k] ?? 0) + 0.5 * h * (k1[k] ?? 0);
-    derivative(stage, k2, false);
-    for (let k = 0; k < n; k++) stage[k] = (plant[k] ?? 0) + 0.5 * h * (k2[k] ?? 0);
-    derivative(stage, k3, false);
-    for (let k = 0; k < n; k++) stage[k] = (plant[k] ?? 0) + h * (k3[k] ?? 0);
-    derivative(stage, k4, false);
-    for (let k = 0; k < n; k++) plant[k] = (plant[k] ?? 0) + (h / 6) * ((k1[k] ?? 0) + 2 * (k2[k] ?? 0) + 2 * (k3[k] ?? 0) + (k4[k] ?? 0));
+    integrator.step(plant, h, plantDerivative);
     const norm = Math.hypot(plant[3] ?? 1, plant[4] ?? 0, plant[5] ?? 0, plant[6] ?? 0) || 1;
     for (let k = 3; k < 7; k++) plant[k] = (plant[k] ?? 0) / norm;
     if ((plant[ENGINE] ?? 0) < 0) plant[ENGINE] = 0;

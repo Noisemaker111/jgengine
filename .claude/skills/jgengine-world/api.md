@@ -2968,19 +2968,33 @@
 
 ## @jgengine/core/physics/reference/compareHandling
 
+- `BikeHandlingComparison` (interface): interface BikeHandlingComparison — Result of {@link compareBikeTuning}.
 - `ComparableHandlingMetrics` (interface): interface ComparableHandlingMetrics — The metrics {@link compareVehicleTuning} puts side by side; each is comparable across any `CourseSubject`.
 - `ComparableHandlingOptions` (interface): interface ComparableHandlingOptions — Scenario settings for {@link measureComparableHandling}.
-- `HandlingComparisonRow` (interface): interface HandlingComparisonRow — One metric across the game model, the reference car and the real car's published number.
+- `HandlingComparisonRow` (interface): interface HandlingComparisonRow<Metric extends string = keyof ComparableHandlingMetrics> — One metric across the game model, the reference vehicle and the real vehicle's published number.
+- `MOTORCYCLE_PUBLISHED_TOLERANCES` (const): const MOTORCYCLE_PUBLISHED_TOLERANCES: { readonly zeroTo100: 0.12; readonly zeroTo200: 0.12; readonly brake100: 0.05; } — How close the reference motorcycle must land to each published number: braking within 5%, 0-100 and 0-200 km/h within 12% (the torque curve between the engine's published peaks and its inertia are estimates).
+- `MotorcyclePublishedCheck` (interface): interface MotorcyclePublishedCheck — One published number checked against the reference motorcycle.
 - `PUBLISHED_TOLERANCES` (const): const PUBLISHED_TOLERANCES: { readonly zeroTo100: 0.05; readonly brake100To0: 0.05; readonly skidpadG: 0.03; } — How close the reference car must land to each published number: 0–100 km/h and 100–0 km/h braking within 5%, skidpad within 0.03 g.
 - `PublishedCheck` (interface): interface PublishedCheck — One published number checked against the reference car by {@link checkReferenceAgainstPublished}.
 - `VehicleHandlingComparison` (interface): interface VehicleHandlingComparison — Result of {@link compareVehicleTuning}.
 - `checkReferenceAgainstPublished` (function): function checkReferenceAgainstPublished(car: RealCar, reference: ComparableHandlingMetrics): PublishedCheck[] — Check a real car's measured reference metrics against its published test numbers within {@link PUBLISHED_TOLERANCES}.
+- `checkReferenceMotorcycle` (function): function checkReferenceMotorcycle(bike: RealMotorcycle, reference: BikeHandlingMetrics): MotorcyclePublishedCheck[] — Check a real motorcycle's measured reference metrics against its published tests within {@link MOTORCYCLE_PUBLISHED_TOLERANCES}.
+- `compareBikeMetrics` (function): function compareBikeMetrics(game: BikeHandlingMetrics, reference: BikeHandlingMetrics, real?: PublishedMotorcyclePerformance): HandlingComparisonRow<keyof BikeHandlingMetrics>[] — Line up a game bike's and the reference motorcycle's measured bike metrics and, optionally, the real bike's published numbers.
+- `compareBikeTuning` (function): function compareBikeTuning(tuning: VehicleDynamicsTuning, bike: RealMotorcycle, reference?: BikeHandlingMetrics): BikeHandlingComparison — Score a game's single-track `VehicleDynamics` tuning (one with a `lean` block) against the multibody reference motorcycle ridden by its steering-torque rider and the real bike's published tests: launch, braking, lean, countersteer, lane change and slalom, game / reference / real per metric.
 - `compareHandlingMetrics` (function): function compareHandlingMetrics(game: ComparableHandlingMetrics, reference: ComparableHandlingMetrics, real?: RealCarTestData): HandlingComparisonRow[] — Line up two measured metric sets and, optionally, a real car's published numbers.
 - `compareVehicleTuning` (function): function compareVehicleTuning(tuning: VehicleDynamicsTuning, car: RealCar, reference?: ComparableHandlingMetrics): VehicleHandlingComparison — Score a game's `VehicleDynamics` tuning against real physics: run the same scenarios on the game model and on the multi-body reference model of `car`, and line up game / reference / real per metric. A bad feel becomes a named number ("the game pulls 1.4 g on the skidpad where the reference and the real car pull 0.9 g").
-- `formatHandlingComparison` (function): function formatHandlingComparison(title: string, rows: readonly HandlingComparisonRow[]): string — Plain-text table of comparison rows: metric, unit, game, reference, real, and game − reference.
+- `formatHandlingComparison` (function): function formatHandlingComparison(title: string, rows: readonly HandlingComparisonRow<string>[]): string — Plain-text table of comparison rows: metric, unit, game, reference, real, and game − reference.
 - `measureComparableHandling` (function): function measureComparableHandling(create: () => CourseSubject, options: ComparableHandlingOptions): ComparableHandlingMetrics — Drives fresh vehicles from `create` through every comparison scenario: launch, top speed and braking from `measureHandling`, the skidpad from `measureCourse`, and the ISO tests from `measureStandardManeuvers`.
 - `measureReferenceCar` (function): function measureReferenceCar(car: RealCar, dt?: number): ComparableHandlingMetrics — Measure a real car's reference model; pass the result to {@link compareVehicleTuning} to reuse it across many game cars.
+- `measureReferenceMotorcycle` (function): function measureReferenceMotorcycle(bike: RealMotorcycle, options: { dt?: number; tests?: readonly BikeScenario[] } = {}): BikeHandlingMetrics — Measure a real motorcycle's reference model with its rider; pass the result to {@link compareBikeTuning} to reuse it.
 - `validateReferenceCars` (function): function validateReferenceCars(cars: readonly RealCar[] = REAL_CARS): { car: RealCar; metrics: ComparableHandlingMetrics; checks: PublishedCheck[] }[] — Measure every real car's reference model and check it against the published numbers: the full validation behind `bun run games:capabilities handling --validate`.
+- `validateReferenceMotorcycles` (function): function validateReferenceMotorcycles(bikes: readonly RealMotorcycle[] = REAL_MOTORCYCLES): { bike: RealMotorcycle; metrics: BikeHandlingMetrics; checks: MotorcyclePublishedCheck[] }[] — Measure every real motorcycle's reference model and check it against its published tests: the bike half of `bun run games:capabilities handling --validate`.
+
+## @jgengine/core/physics/reference/eigenvalues
+
+- `Eigenvalue` (interface): interface Eigenvalue — One eigenvalue `re + i·im`, 1/s for a linearised plant.
+- `matrixEigenvalues` (function): function matrixEigenvalues(matrix: ArrayLike<number>, n: number): Eigenvalue[] — Eigenvalues of a real square matrix (row-major, `n × n`): balancing, reduction to upper Hessenberg form by stabilised elimination, then the Francis double-shift QR iteration (Wilkinson & Reinsch, *Handbook for Automatic Computation* II, the EISPACK `balanc`/`elmhes`/`hqr` scheme). Complex pairs come out together. The input is not modified. Sorted by real part, then imaginary part, descending.
+- `polynomialRoots` (function): function polynomialRoots(coefficients: readonly number[]): Eigenvalue[] — Roots of the real polynomial `c[0] + c[1]·λ + … + c[n]·λⁿ` (`c[n] ≠ 0`): the companion-matrix eigenvalues, then two Newton steps on the polynomial itself to recover full double precision.
 
 ## @jgengine/core/physics/reference/magicFormulaTire
 
@@ -3004,6 +3018,30 @@
 - `magicFormulaVerticalForce` (function): function magicFormulaVerticalForce(p: Readonly<MagicFormulaCoefficients>, input: MagicFormulaVerticalInput): number — Tyre vertical force, N, from deflection (MF 6.1, Besselink et al. 2010 Eq. 4): `Fz = (1 + qV2·|Ω|R0/V0 − (qFcx·Fx/Fz0)² − (qFcy·Fy/Fz0)²)·(qFz1·ρ/R0 + qFz2·(ρ/R0)²)·(1 + pFz1·dpi)·Fz0`, with `qFz1` set so the stiffness at nominal load equals `VERTICAL_STIFFNESS`. Adds `VERTICAL_DAMPING` on the deflection rate and the MF-Swift bottoming spring once the rim is within `BOTTOM_OFFST`. Never pulls (≥ 0).
 - `parseTirFile` (function): function parseTirFile(text: string, base: Readonly<MagicFormulaCoefficients> = TNO_205_60R15): MagicFormulaCoefficients — Read a TNO/ADAMS `.tir` property file into {@link MagicFormulaCoefficients}. Keys the file leaves out keep the value from `base` (default {@link TNO_205_60R15}), so a partial file still yields a complete set.
 
+## @jgengine/core/physics/reference/motorcycleManeuvers
+
+- `BikeCourseSubject` (interface): interface BikeCourseSubject — The slice of a single-track sim the bike scenarios drive: a `VehicleDynamics` with a `lean` block or a {@link RiddenMotorcycle}.
+- `BikeHandlingMetrics` (interface): interface BikeHandlingMetrics — Bike metrics comparable across any {@link BikeCourseSubject}.
+- `BikeHandlingOptions` (interface): interface BikeHandlingOptions — Settings for {@link measureBikeHandling}.
+- `BikeScenario` (type): type BikeScenario = "launch" | "brake" | "lean" | "laneChange" | "slalom" — One scenario of {@link measureBikeHandling}.
+- `measureBikeHandling` (function): function measureBikeHandling(create: (speed: number) => BikeCourseSubject, options: BikeHandlingOptions): BikeHandlingMetrics — Drives fresh bikes from `create` through every bike scenario: a launch (0-100, 0-200 km/h), braking from 100 km/h, a full-steer lean test like `measureLean` (plus the lateral g the lean holds), an ISO 3888-1 double lane change with lanes sized for the bike, and a slalom. `create(speed)` may spawn rolling at `speed`; a subject that ignores it is launched from rest. Steering is a lean request (`steer · maxLean`) for every subject, so a game bike and the ridden reference motorcycle get the same inputs.
+
+## @jgengine/core/physics/reference/motorcycleRider
+
+- `MotorcycleRiderOptions` (interface): interface MotorcycleRiderOptions extends ReferenceMotorcycleOptions — Settings for {@link createRiddenMotorcycle}.
+- `RiddenMotorcycle` (interface): interface RiddenMotorcycle — A reference motorcycle with a rider on it, driven like a game bike: `steer` asks for a lean (`steer · maxLean`, positive right), throttle and brake go to the bike's own launch, shift, wheelie and brake-limit logic.
+- `RiddenMotorcycleState` (interface): interface RiddenMotorcycleState — Serializable state of a {@link RiddenMotorcycle}.
+- `createRiddenMotorcycle` (function): function createRiddenMotorcycle(spec: ReferenceMotorcycleSpec, options: MotorcycleRiderOptions = {}): RiddenMotorcycle — Puts a steering-torque rider on a reference motorcycle; the bike only ever gets a bar torque, so countersteer, the lean response and its limits come from the multibody physics. The rider runs at 1 kHz: bar torque from lean error (proportional and integral) and lean rate, with the rate damping falling with speed as the bike's own lean damping rises (more of it at speed excites wobble). The structure is Sharp, Evangelou & Limebeer's (2004) steering controller; the gains are retuned for a quick, well-damped lean from 6 to 75 m/s. Steady turns, lane changes and slaloms are then scored through the same `AxisInput` a game bike takes.
+
+## @jgengine/core/physics/reference/motorcycleTire
+
+- `MotorcycleTireCoefficients` (interface): interface MotorcycleTireCoefficients — Coefficients of the motorcycle Magic Formula as identified by Sharp, Evangelou & Limebeer (2004), "Advances in the modelling of motorcycle dynamics", *Multibody System Dynamics* 12:251–283, §4 and Tables I–III, from the de Vries & Pacejka (1998) measurements. Camber enters the side force as its own arctangent term (the motorcycle form of Pacejka, *Tyre and Vehicle Dynamics*, ch. 11), so a leaned tyre carries camber thrust without sideslip. SI units, angles in rad.
+- `MotorcycleTireInput` (interface): interface MotorcycleTireInput — Inputs to {@link motorcycleMagicFormula}, ISO-W axes (x forward, y left, z up).
+- `MotorcycleTireOutput` (interface): interface MotorcycleTireOutput — Forces and moment from {@link motorcycleMagicFormula}, ISO-W axes, at the contact point.
+- `SPORT_FRONT_120_70_ZR17` (const): const SPORT_FRONT_120_70_ZR17: Readonly<MotorcycleTireCoefficients> — Front 120/70 ZR17 sport tyre (Sharp, Evangelou & Limebeer 2004, Tables II–III middle rows; longitudinal shape from the 160/70 fit with pDx1 = 1.381, pDx2 = −0.04143, §4.5; relaxation §4.8).
+- `SPORT_REAR_180_55_ZR17` (const): const SPORT_REAR_180_55_ZR17: Readonly<MotorcycleTireCoefficients> — Rear 180/55 ZR17 sport tyre (Sharp, Evangelou & Limebeer 2004, Tables II–III bottom rows; pDx1 = 1.355, pDx2 = −0.0603, §4.5; relaxation §4.8).
+- `motorcycleMagicFormula` (function): function motorcycleMagicFormula(p: Readonly<MotorcycleTireCoefficients>, input: MotorcycleTireInput, v?: number): MotorcycleTireOutput — The steady-state motorcycle Magic Formula of Sharp, Evangelou & Limebeer (2004), Eqs. (1)–(31): pure and combined longitudinal and side slip with camber thrust as its own term, load-dependent stiffnesses, and an aligning moment from pneumatic trail on the zero-camber side force plus a camber twisting moment (residual torque Dr). The overturning moment is not here: it comes from the contact point moving across the tyre's round crown, which the vehicle's contact geometry carries. Sign convention: ISO-W, so the published formula (positive force for positive slip and camber) is mirrored. The published fit has one shift (rBy3) that would make left and right differ; it is applied to |β| so the tyre stays symmetric as the paper intends.
+
 ## @jgengine/core/physics/reference/realCars
 
 - `MAZDA_MX5_ND` (const): const MAZDA_MX5_ND: RealCar — 2016 Mazda MX-5 Miata Club (ND, 2.0 L, six-speed manual, limited-slip differential): light, 50:50, rear drive.
@@ -3011,6 +3049,13 @@
 - `RealCar` (interface): interface RealCar — A real car: the {@link ReferenceCarSpec} built from its published specifications, and its published test results.
 - `RealCarTestData` (interface): interface RealCarTestData — Numbers a magazine or the maker published for a car, with where each came from.
 - `SCION_FRS_2013` (const): const SCION_FRS_2013: RealCar — 2013 Scion FR-S (Toyota 86 / Subaru BRZ, 2.0 L flat-four, six-speed manual, Torsen differential).
+
+## @jgengine/core/physics/reference/realMotorcycles
+
+- `GSXR1000_SHARP_2004` (const): const GSXR1000_SHARP_2004: ReferenceMotorcycleSpec — Suzuki GSX-R1000 K1 (2001) with a prone rider, the machine of Sharp, Evangelou & Limebeer, "Advances in the modelling of motorcycle dynamics", *Multibody System Dynamics* 12 (2004) 251–283, Appendix tables A.I–A.VIII: masses, inertias, geometry, stops, stiffness, damping and aerodynamics as published, tyres from their section 3. This is their nominal machine (250.65 kg with the rider, no extra fuel).
+- `PublishedMotorcyclePerformance` (interface): interface PublishedMotorcyclePerformance — Published figures a reference motorcycle is checked against, with where each came from.
+- `REAL_MOTORCYCLES` (const): const REAL_MOTORCYCLES: readonly RealMotorcycle[] — Real motorcycles with published tests, each with its reference multibody spec.
+- `RealMotorcycle` (interface): interface RealMotorcycle — A real motorcycle: the multibody spec and its published performance.
 
 ## @jgengine/core/physics/reference/referenceCar
 
@@ -3029,6 +3074,36 @@
 - `ReferenceSteering` (interface): interface ReferenceSteering — Rack-and-pinion steering.
 - `ReferenceTire` (interface): interface ReferenceTire — The tyre fitted to all four corners.
 - `createReferenceCar` (function): function createReferenceCar(spec: ReferenceCarSpec, options: ReferenceCarOptions = {}): ReferenceCar — Creates a {@link ReferenceCar}: a multibody car integrated with classical fourth-order Runge–Kutta (default 0.5 ms; halving the step converges at fourth order between control samples) and a 1 kHz driver/controller sample.
+
+## @jgengine/core/physics/reference/referenceMotorcycle
+
+- `MotorcycleBody` (interface): interface MotorcycleBody — A rigid body of the motorcycle: mass, centre and inertia tensor about the centre (SAE axes, z down, tensor elements), kg·m².
+- `MotorcycleControls` (interface): interface MotorcycleControls — Controls for one {@link ReferenceMotorcycle.step}.
+- `MotorcycleModes` (interface): interface MotorcycleModes — Out-of-plane and in-plane straight-running eigenvalues of a reference motorcycle, 1/s.
+- `MotorcyclePowertrain` (interface): interface MotorcyclePowertrain — Engine, primary drive, gearbox and chain.
+- `MotorcycleRearLinkage` (interface): interface MotorcycleRearLinkage — Monoshock rear suspension: a rocker on the frame, a pull rod to the swing arm and the spring-damper unit.
+- `MotorcycleWheel` (interface): interface MotorcycleWheel — A wheel and its tyre.
+- `ReferenceMotorcycle` (interface): interface ReferenceMotorcycle — The reference motorcycle: a ruler for game bikes, not a game runtime.
+- `ReferenceMotorcycleOptions` (interface): interface ReferenceMotorcycleOptions — Spawn options for {@link createReferenceMotorcycle}.
+- `ReferenceMotorcycleSpec` (interface): interface ReferenceMotorcycleSpec — A real motorcycle as a multibody model in the form of Sharp, Evangelou & Limebeer (2004): main frame with the rider's lower body, rider upper body on a roll joint, frame torsional flexibility at the steering head (twist axis normal to the steer axis), steering body, telescopic front suspension, swing arm with a monoshock linkage, two wheels with thick (toroidal) tyres. Points and inertias are as tabulated (SAE side view, z down).
+- `ReferenceMotorcycleState` (interface): interface ReferenceMotorcycleState — Serializable state of a {@link ReferenceMotorcycle}.
+- `ReferenceMotorcycleStep` (interface): interface ReferenceMotorcycleStep — One {@link ReferenceMotorcycle} sample; the first fields match the vehicle steps the handling probes read.
+- `SidePoint` (type): type SidePoint = readonly [number, number] — A side-view point `[x, z]` as tabulated by Sharp et al.: x forward from the rear contact, z down (negative above ground), m.
+- `createReferenceMotorcycle` (function): function createReferenceMotorcycle(spec: ReferenceMotorcycleSpec, options: ReferenceMotorcycleOptions = {}): ReferenceMotorcycle — Creates a {@link ReferenceMotorcycle}: the multibody motorcycle of {@link ReferenceMotorcycleSpec} on a {@link createRigidBodyTree} (13 degrees of freedom), integrated by classical RK4 at 0.5 ms under a 1 kHz control sample.
+- `motorcycleStraightRunningModes` (function): function motorcycleStraightRunningModes(spec: ReferenceMotorcycleSpec, speed: number): MotorcycleModes — Straight-running stability of a {@link ReferenceMotorcycleSpec} at `speed` (Sharp, Evangelou & Limebeer 2004, section 6): settle the bike at speed under their speed controller, take the Jacobian of the full nonlinear plant by central differences, and split it into its out-of-plane and in-plane blocks. Rigid-body zero roots (position, heading, wheel angles) are dropped.
+
+## @jgengine/core/physics/reference/rigidBodyTree
+
+- `RigidBodyDefinition` (interface): interface RigidBodyDefinition — One rigid body of a {@link RigidBodyTree}. Every frame is parallel to the world in the reference pose (all joint coordinates zero, root unrotated), so a body is placed by world points in that pose.
+- `RigidBodyTree` (interface): interface RigidBodyTree — The positions of a tree: root position (3, world) and unit quaternion `[w, x, y, z]` (body to world), then one coordinate per non-root joint. Velocities: root angular then linear velocity of the root origin, both in root axes (6), then one rate per non-root joint.
+- `RigidJoint` (type): type RigidJoint = | { kind: "free" } /** Rotation about `axis` (unit, parent axes) through the body's origin. */ | { kind: "revolute"; axis: Vec3 } /** Translation along `axis` (unit, parent axes). */ | { kind: "prismatic"; axis: Vec3 } — How a body moves relative to its parent.
+- `createRigidBodyTree` (function): function createRigidBodyTree(definitions: readonly RigidBodyDefinition[]): RigidBodyTree — Creates a {@link RigidBodyTree}: a tree of rigid bodies on free, revolute and prismatic joints with exact dynamics in spatial-vector form (Featherstone, *Rigid Body Dynamics Algorithms*, 2008): the composite-rigid-body algorithm for the mass matrix and the recursive Newton–Euler algorithm for the velocity-product and applied forces. No small-angle or decoupling approximations; gyroscopic coupling of every spinning body is included.
+
+## @jgengine/core/physics/reference/rungeKutta
+
+- `RungeKutta4` (interface): interface RungeKutta4 — A reusable classical fourth-order Runge–Kutta stepper over a fixed-size state vector.
+- `createRungeKutta4` (function): function createRungeKutta4(size: number): RungeKutta4 — Creates a {@link RungeKutta4} for states of `size` entries; its scratch buffers are allocated once, so a step allocates nothing.
+- `solveLinearSystem` (function): function solveLinearSystem(m: Float64Array, b: Float64Array, n: number): void — Solve `m·x = b` in place (n×n, row-major; `m` is overwritten and `b` becomes `x`) by Gaussian elimination with partial pivoting.
 
 ## @jgengine/core/physics/reference/standardManeuvers
 
@@ -3049,6 +3124,24 @@
 - `createSuspensionSample` (function): function createSuspensionSample(): SuspensionSample — An empty {@link SuspensionSample} to reuse with {@link SuspensionTable.sample}.
 - `createSuspensionTable` (function): function createSuspensionTable(geometry: SuspensionGeometry, range: { thetaMin: number; thetaMax: number; rackTravel?: number; thetaNodes?: number; rackNodes?: number }): SuspensionTable — Tabulate a corner's linkage over lower-arm angles `[thetaMin, thetaMax]` and rack travel `±rackTravel` by exact solves; θ-derivatives come from central differences of exact solves.
 - `solveSuspension` (function): function solveSuspension(geometry: SuspensionGeometry, theta: number, rack: number, guess: { upper: number; psi: number } = { upper: 0, psi: 0 }): SuspensionPose & { upper: number; psi: number } — Solve the linkage: the lower arm turned `theta` rad about its body pivots (positive raises the wheel on a typical corner), the rack moved `rack` m toward +y. Exact closure of every link length, no small-angle terms.
+
+## @jgengine/core/physics/reference/whippleBicycle
+
+- `BENCHMARK_BICYCLE` (const): const BENCHMARK_BICYCLE: Readonly<WhippleBicycleParameters> — The benchmark bicycle of Meijaard et al. (2007), Table 1 (exact values).
+- `BENCHMARK_BICYCLE_EIGENVALUES` (const): const BENCHMARK_BICYCLE_EIGENVALUES: { readonly standstill: readonly [3.13164324790656, 5.53094371765393]; readonly doubleRootSpeed: 0.68428307889246; readonly doubleRoot: 3.7829040512932; readonly weaveSpeed: 4.29238253634111; readonly weaveFrequency: 3.43503384866144; readonly capsizeSpeed: 6.0242… — Meijaard et al. (2007), Table 2: the benchmark bicycle's published eigenvalues and characteristic speeds, fourteen decimals.
+- `WhippleBicycle` (interface): interface WhippleBicycle — The nonlinear Whipple bicycle: four rigid bodies (rear wheel, rear frame with rider, front frame, front wheel) with knife-edge wheels rolling without slip on flat ground.
+- `WhippleBicycleInput` (interface): interface WhippleBicycleInput — Inputs to {@link WhippleBicycle.step}.
+- `WhippleBicycleParameters` (interface): interface WhippleBicycleParameters — The 25 design parameters of the Whipple–Carvallo bicycle in the notation and axes of Meijaard, Papadopoulos, Ruina & Schwab (2007), *Proc. R. Soc. A* 463:1955–1982, Table 1: SAE axes with the origin at the rear contact in the upright, straight reference pose, x forward, y right, z down. Inertias are tensor elements about each body's own centre of mass. SI units.
+- `WhippleBicycleSnapshot` (interface): interface WhippleBicycleSnapshot — Serializable state of a {@link WhippleBicycle}: tree positions and velocities.
+- `WhippleBicycleStart` (interface): interface WhippleBicycleStart — Start conditions for {@link createWhippleBicycle}.
+- `WhippleBicycleState` (interface): interface WhippleBicycleState — One {@link WhippleBicycle} sample. ISO world axes (x forward at spawn, y left, z up).
+- `WhippleLinearCoefficients` (interface): interface WhippleLinearCoefficients — The constant matrices of the linearised lean and steer equations `M·q̈ + v·C1·q̇ + (g·K0 + v²·K2)·q = f`, `q = [φ, δ]`, row-major 2×2.
+- `createWhippleBicycle` (function): function createWhippleBicycle(start: WhippleBicycleStart, p: Readonly<WhippleBicycleParameters> = BENCHMARK_BICYCLE): WhippleBicycle — Creates the nonlinear Whipple–Carvallo bicycle (Meijaard et al. 2007 §2–4, without the linearisation): rear frame with rider, front frame on the steer axis and two knife-edge wheels, each wheel rolling without slip at its lowest point on flat ground. Exact rigid-body dynamics on a {@link createRigidBodyTree} with the six contact constraints solved as a KKT system each evaluation (Baumgarte-stabilised, then projected back onto the constraint manifold after every RK4 step), so lean, steer, gyroscopic and trail effects are all nonlinear.
+- `linearizeWhippleBicycle` (function): function linearizeWhippleBicycle(v: number, p: Readonly<WhippleBicycleParameters> = BENCHMARK_BICYCLE, h = 1e-6): Float64Array — Numerically linearise the nonlinear Whipple bicycle about upright straight running at speed `v`: central differences of the lean and steer accelerations over constraint-consistent states. Returns the 4×4 state matrix for `[φ, δ, φ̇, δ̇]` (row-major); its eigenvalues should equal {@link whippleEigenvalues}.
+- `nonlinearWhippleEigenvalues` (function): function nonlinearWhippleEigenvalues(v: number, p: Readonly<WhippleBicycleParameters> = BENCHMARK_BICYCLE): Eigenvalue[] — Eigenvalues of {@link linearizeWhippleBicycle}: the nonlinear bicycle's own stability modes at speed `v`.
+- `whippleCriticalSpeeds` (function): function whippleCriticalSpeeds(p: Readonly<WhippleBicycleParameters> = BENCHMARK_BICYCLE, maxSpeed = 10): { doubleRoot: number; weave: number; capsize: number } — The bicycle's characteristic speeds (Meijaard et al. 2007, §6b): where the weave pair turns complex (`doubleRoot`), where weave turns stable (`weave`) and where capsize turns unstable (`capsize`). Between `weave` and `capsize` the uncontrolled bicycle is self-stable. Searches `0..maxSpeed` (default 10 m/s).
+- `whippleEigenvalues` (function): function whippleEigenvalues(v: number, p: Readonly<WhippleBicycleParameters> = BENCHMARK_BICYCLE): Eigenvalue[] — The four eigenvalues of the linearised bicycle at forward speed `v`: roots of the characteristic quartic `det(M·λ² + v·C1·λ + g·K0 + v²·K2) = 0`, polished to double precision. Sorted by real part, descending.
+- `whippleLinearCoefficients` (function): function whippleLinearCoefficients(p: Readonly<WhippleBicycleParameters> = BENCHMARK_BICYCLE): WhippleLinearCoefficients — The linearised Whipple bicycle about upright, straight running at any speed: Meijaard et al. (2007), Appendix A, Eqs. (A1)–(A27). `q = [φ lean right, δ steer right]`; inputs `[Tφ, Tδ]`.
 
 ## @jgengine/core/physics/structure
 
