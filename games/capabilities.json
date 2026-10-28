@@ -4279,6 +4279,16 @@
       "intent": "deliver rolled loot drops into inventory and currency"
     },
     {
+      "id": "granular-dem",
+      "packages": [
+        "@jgengine/core"
+      ],
+      "module": "@jgengine/core/physics/reference/discreteElements",
+      "gameFacing": false,
+      "probe": null,
+      "intent": "discrete element reference for sand, gravel and powders with Hertz–Mindlin contacts, rolling resistance and capillary cohesion"
+    },
+    {
       "id": "grapple-swing",
       "packages": [
         "@jgengine/core"

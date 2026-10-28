@@ -853,6 +853,25 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `createGlideModel` (function) · `import { createGlideModel } from "@jgengine/core/world"`
 
+## granular-dem — discrete element reference for sand, gravel and powders with Hertz–Mindlin contacts, rolling resistance and capillary cohesion
+
+- `beverlooHopper` (function) · `import { beverlooHopper } from "@jgengine/core/physics/reference/discreteElementExperiments"`
+- `brazilNutShaker` (function) · `import { brazilNutShaker } from "@jgengine/core/physics/reference/discreteElementExperiments"`
+- `bridgeRuptureDistance` (function) · `import { bridgeRuptureDistance } from "@jgengine/core/physics/reference/discreteElements"`
+- `bridgeVolumeFromMoisture` (function) · `import { bridgeVolumeFromMoisture } from "@jgengine/core/physics/reference/discreteElements"`
+- `capillaryForce` (function) · `import { capillaryForce } from "@jgengine/core/physics/reference/discreteElements"`
+- `createDiscreteElements` (function) · `import { createDiscreteElements } from "@jgengine/core/physics/reference/discreteElements"`
+- `fitBeverloo` (function) · `import { fitBeverloo } from "@jgengine/core/physics/reference/discreteElementExperiments"`
+- `janssenLoad` (function) · `import { janssenLoad } from "@jgengine/core/physics/reference/discreteElementExperiments"`
+- `janssenSilo` (function) · `import { janssenSilo } from "@jgengine/core/physics/reference/discreteElementExperiments"`
+- `measuredRestitution` (function) · `import { measuredRestitution } from "@jgengine/core/physics/reference/discreteElementExperiments"`
+- `nowakExcessAngle` (function) · `import { nowakExcessAngle } from "@jgengine/core/physics/reference/discreteElementExperiments"`
+- `pouredCone` (function) · `import { pouredCone } from "@jgengine/core/physics/reference/discreteElementExperiments"`
+- `rayleighTime` (function) · `import { rayleighTime } from "@jgengine/core/physics/reference/discreteElements"`
+- `restitutionDamping` (function) · `import { restitutionDamping } from "@jgengine/core/physics/reference/discreteElements"`
+- `settleGrains` (function) · `import { settleGrains } from "@jgengine/core/physics/reference/discreteElementExperiments"`
+- `waterBridges` (function) · `import { waterBridges } from "@jgengine/core/physics/reference/discreteElementExperiments"`
+
 ## grapple-swing — grappling-hook rope swing physics with reel-in
 
 - `createGrappleSwing` (function) · `import { createGrappleSwing } from "@jgengine/core/world"`

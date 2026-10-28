@@ -794,6 +794,8 @@
     "./physics/ragdoll",
     "./physics/reference/boatComparison",
     "./physics/reference/compareHandling",
+    "./physics/reference/discreteElementExperiments",
+    "./physics/reference/discreteElements",
     "./physics/reference/eigenvalues",
     "./physics/reference/hullForm",
     "./physics/reference/hullHydrostatics",

@@ -204,6 +204,18 @@ here as required.
 - Ship manoeuvring: H. Yasukawa and Y. Yoshimura, "Introduction of MMG standard method for ship maneuvering predictions", *J. Mar. Sci. Technol.* 20 (2015) 37–52, open access under CC BY 4.0: the MMG equations and the KVLCC2 L7 coefficients, turning and zig-zag results of its Tables 1 and 3–5 (free-running tests by MARIN for SIMMAN 2008). Used by `physics/reference/shipManoeuvring.ts` and `boatComparison.ts`.
 - Seakeeping: N. Salvesen, E. O. Tuck and O. Faltinsen, "Ship motions and sea loads", *Trans. SNAME* 78 (1970) (strip theory, zero-speed form); W. Frank, *Oscillation of cylinders in or below the free surface of deep fluids*, NSRDC Report 2375 (1967), public domain (close-fit source method); F. M. Lewis (1929) sections with the a1/a3 fit of J. M. J. Journée and L. J. M. Adegeest, *Theoretical Manual of Strip Theory Program SEAWAY* (TU Delft); JONSWAP and Pierson–Moskowitz spectra in the form of DNV-RP-C205; T. von Kármán (1929) momentum slamming. Methods only. Used by `physics/reference/oceanWaves.ts`, `sectionHydrodynamics.ts`, `stripTheory.ts` and `seakeepingHull.ts`.
 
+## Granular materials reference physics
+
+All implemented from the papers; no code copied from LIGGGHTS, YADE or other DEM codes. Used by `physics/reference/discreteElements.ts` and `discreteElementExperiments.ts`.
+
+- Soft-sphere DEM: P. A. Cundall and O. D. L. Strack, "A discrete numerical model for granular assemblies", *Géotechnique* 29 (1979) 47–65. Hertz–Mindlin contact with the restitution dashpot of Y. Tsuji, T. Tanaka and T. Ishida, *Powder Technology* 71 (1992) 239–250, in the form of D. Antypov and J. A. Elliott, *EPL* 94 (2011) 50004.
+- Rolling resistance: J. Ai, J.-F. Chen, J. M. Rotter and J. Y. Ooi, "Assessment of rolling resistance models in discrete element simulations", *Powder Technology* 206 (2011) 269–282 (EPSD model). C. M. Wensrich and A. Katterfeld, *Powder Technology* 217 (2012) 409–417 (rolling friction as a shape proxy).
+- Capillary bridges: C. D. Willett, M. J. Adams, S. A. Johnson and J. P. K. Seville, *Langmuir* 16 (2000) 9396–9405 (force); G. Lian, C. Thornton and M. J. Adams, *J. Colloid Interface Sci.* 161 (1993) 138–147 (rupture distance). Damp-heap excess angle: S. Nowak, A. Samadani and A. Kudrolli, *Nature Physics* 1 (2005) 50–52.
+- Angle of repose of dry sands: Y. Al-Hashemi and O. S. B. Al-Amoudi, "A review on the angle of repose of granular materials", *Powder Technology* 330 (2018) 397–417. Glass-bead contact data: S. F. Foerster, M. Y. Louge, H. Chang and K. Allia, *Physics of Fluids* 6 (1994) 1108–1115.
+- Silos: H. A. Janssen, *Zeitschrift des Vereines Deutscher Ingenieure* 39 (1895) 1045–1049; L. Vanel and E. Clément, *Eur. Phys. J. B* 11 (1999) 525–533; J. Jaky, *J. Soc. Hungarian Architects and Engineers* (1944) for K₀ = 1 − sin φ.
+- Discharge: W. A. Beverloo, H. A. Leniger and J. van de Velde, *Chem. Eng. Sci.* 15 (1961) 260–269; R. M. Nedderman, *Statics and Kinematics of Granular Materials* (1992).
+- Brazil-nut segregation: A. Rosato, K. J. Strandburg, F. Prinz and R. H. Swendsen, *Phys. Rev. Lett.* 58 (1987) 1038; J. B. Knight, H. M. Jaeger and S. R. Nagel, *Phys. Rev. Lett.* 70 (1993) 3728.
+
 ## Plant growth simulation
 
 The plant simulator (`packages/core/src/plants/`) ports models and data, not code. Every source is

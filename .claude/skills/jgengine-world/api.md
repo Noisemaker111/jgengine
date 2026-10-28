@@ -3276,6 +3276,51 @@
 - `validateReferenceCars` (function): function validateReferenceCars(cars: readonly RealCar[] = REAL_CARS): { car: RealCar; metrics: ComparableHandlingMetrics; checks: PublishedCheck[] }[] — Measure every real car's reference model and check it against the published numbers: the full validation behind `bun run games:capabilities handling --validate`.
 - `validateReferenceMotorcycles` (function): function validateReferenceMotorcycles(bikes: readonly RealMotorcycle[] = REAL_MOTORCYCLES): { bike: RealMotorcycle; metrics: BikeHandlingMetrics; checks: MotorcyclePublishedCheck[] }[] — Measure every real motorcycle's reference model and check it against its published tests: the bike half of `bun run games:capabilities handling --validate`.
 
+## @jgengine/core/physics/reference/discreteElementExperiments
+
+- `DEM_GLASS_BEADS` (const): const DEM_GLASS_BEADS: DemMaterial — Soda-lime glass beads: restitution 0.97 and friction 0.092 measured by Foerster, Louge, Chang & Allia (1994).
+- `DEM_SAND` (const): const DEM_SAND: DemMaterial — Natural quartz sand as DEM grains: solid density 2650 kg/m³, sliding friction 0.5 and restitution 0.55 (the measured ranges collected by Al-Hashemi & Al-Amoudi 2018), rolling resistance 0.6 standing in for angular grain shape (Wensrich & Katterfeld 2012), contact stiffness lowered to 5 MPa as DEM practice does.
+- `DEM_STEEL` (const): const DEM_STEEL: DemMaterial — A rigid steel container wall (same simulation stiffness as the grains).
+- `HopperOptions` (interface): interface HopperOptions — Options for {@link beverlooHopper}.
+- `HopperResult` (interface): interface HopperResult — Steady mass discharge rates, kg/s, one per orifice.
+- `JanssenFit` (interface): interface JanssenFit — A fitted Janssen curve with the hydrostatic zone of Vanel & Clément (1999).
+- `PouredConeOptions` (interface): interface PouredConeOptions — Options for {@link pouredCone}.
+- `PouredConeResult` (interface): interface PouredConeResult — A cone poured onto a fixed rough base.
+- `ShakerOptions` (interface): interface ShakerOptions — Options for {@link brazilNutShaker}.
+- `ShakerResult` (interface): interface ShakerResult — Intruder height over time in a vertically shaken bed.
+- `SiloOptions` (interface): interface SiloOptions — Options for {@link janssenSilo}.
+- `SiloResult` (interface): interface SiloResult — Base load against filled mass, kg, for each filling stage.
+- `beverlooHopper` (function): function beverlooHopper(options: HopperOptions): HopperResult — Discharge of a flat-bottomed cylindrical silo through a round orifice, grains recycled to the top so the head stays steady. Beverloo, Leniger & van de Velde (1961) predict W = C ρ_b √g (D − k d)^{5/2}, independent of the head.
+- `brazilNutShaker` (function): function brazilNutShaker(options: ShakerOptions = {}): ShakerResult — A large intruder buried at the floor of a vertically vibrated box of small grains (Rosato, Strandburg, Prinz & Swendsen 1987; Knight, Jaeger & Nagel 1993): it rises when the peak acceleration exceeds gravity.
+- `fitBeverloo` (function): function fitBeverloo(result: HopperResult, gravity = 9.81): { c: number; k: number } — Fit Beverloo's C and k to measured rates by least squares on W^{2/5} = (C ρ_b √g)^{2/5} (D − k d), which is linear in D.
+- `janssenLoad` (function): function janssenLoad(fill: number, fit: JanssenFit): number — Base load of a silo holding `fill` kg: all of it up to the hydrostatic mass, then M_h + M_∞ (1 − e^{−(M − M_h)/M_∞}).
+- `janssenSilo` (function): function janssenSilo(options: SiloOptions = {}): SiloResult — A silo filled layer by layer, weighing its base after each layer settles (the experiment of Vanel & Clément 1999): Janssen (1895) predicts the base carries M_∞ (1 − e^{−M/M_∞}) as wall friction takes the rest, above a bottom zone that rests on the base in full.
+- `measuredRestitution` (function): function measuredRestitution(material: DemMaterial, speed: number, grainRadius = 0.005): number — Normal coefficient of restitution measured from a head-on collision of two equal grains at `speed` each.
+- `nowakExcessAngle` (function): function nowakExcessAngle(dryAngle: number, surfaceTension: number, density: number, grainRadius: number, slopeLength: number, gravity = 9.81): number — Excess avalanche angle a damp pile gains over the dry one, after Nowak, Samadani & Kudrolli (2005): θ_m − θ_d = √((9π/2f_p)^{1/3} α₀ cos θ_d Γ / (√6 tan θ_d ρ g r L)), α₀ = 1.2, f_p = 0.64. Radians.
+- `pouredCone` (function): function pouredCone(options: PouredConeOptions = {}): PouredConeResult — Angle of repose by the fixed-base cone (the poured-heap method of ISO 4324 and Al-Hashemi & Al-Amoudi 2018): pour grains slowly onto the axis of a disc of glued grains until the excess spills over the rim, then fit the cone.
+- `settleGrains` (function): function settleGrains(dem: DiscreteElements, speed = 0.005, limit = 1): number — Run until the mean grain speed falls under `speed` m/s or `limit` seconds pass. Returns the time spent.
+- `waterBridges` (function): function waterBridges(moisture: number, grainRadius: number, solidDensity = DEM_SAND.density): DemLiquid — Capillary bridges of water on clean silica (surface tension 0.072 N/m, contact angle 0) at gravimetric `moisture`.
+
+## @jgengine/core/physics/reference/discreteElements
+
+- `DemBodySpec` (interface): interface DemBodySpec — A body to add: one sphere (`radius`) or a rigid clump (`spheres`).
+- `DemInteraction` (interface): interface DemInteraction — Contact coefficients for one pair of materials (a grain on a wall, say). Unset pairs take the lower friction and rolling coefficients of the two and the mean restitution.
+- `DemLiquid` (interface): interface DemLiquid — Pendular liquid bridges between damp grains.
+- `DemMaterial` (interface): interface DemMaterial — A grain material. Simulation stiffness may be far below the solid's (see {@link DemMaterial.youngsModulus}).
+- `DemSnapshot` (interface): interface DemSnapshot — A serializable state of a {@link DiscreteElements} system.
+- `DemSphereSpec` (interface): interface DemSphereSpec — One sphere of a body, in the body's frame.
+- `DemStepReport` (interface): interface DemStepReport — What one step did.
+- `DemWallMotion` (interface): interface DemWallMotion — How a wall moves: steady velocity plus a sinusoidal shake, both from the moment the motion is set.
+- `DemWallShape` (type): type DemWallShape = | { kind: "plane"; point: Vec3; normal: Vec3; material: number } /** Thin annulus in the plane through `center` normal to `normal`: a floor with a round orifice (`innerRadius` > 0). Two-sided. */ | { kind: "disc"; center: Vec3; normal: Vec3; innerRadius: number; outerRadius: numb… — A frictional boundary. Walls take the material at index `material`.
+- `DiscreteElementConfig` (interface): interface DiscreteElementConfig — Configuration of {@link createDiscreteElements}.
+- `DiscreteElements` (interface): interface DiscreteElements — A running DEM system. Arrays are live views for measurement; mutate state only through methods.
+- `bridgeRuptureDistance` (function): function bridgeRuptureDistance(liquid: DemLiquid): number — Gap at which a bridge breaks (Lian et al. 1993): (1 + θ/2) V^{1/3}.
+- `bridgeVolumeFromMoisture` (function): function bridgeVolumeFromMoisture(moisture: number, radius: number, solidDensity: number, liquidDensity = 1000, coordination = 6): number — Volume of one liquid bridge when a grain of `radius` holds `moisture` (liquid mass per solid mass) shared among `coordination` bridges, each fed by both grains: 2 w (ρ_s/ρ_l) V_p / z.
+- `capillaryForce` (function): function capillaryForce(liquid: DemLiquid, radius: number, separation: number): number — Capillary force of a bridge between spheres of harmonic-mean radius `radius` at gap `separation` (Willett et al. 2000): 2π R γ cos θ / (1 + 1.05 Ŝ + 2.5 Ŝ²), Ŝ = S √(R/V).
+- `createDiscreteElements` (function): function createDiscreteElements(config: DiscreteElementConfig): DiscreteElements — Create a DEM system. Add grains with `addBody`, then `step` or `run`.
+- `rayleighTime` (function): function rayleighTime(material: DemMaterial, radius: number): number — Rayleigh-wave time step of a grain, π R √(ρ/G) / (0.1631 ν + 0.8766); a DEM step is a fraction of it.
+- `restitutionDamping` (function): function restitutionDamping(restitution: number): number — Damping ratio β of the restitution-matched Hertzian dashpot, ln e / √(ln² e + π²) (negative).
+
 ## @jgengine/core/physics/reference/eigenvalues
 
 - `polynomialRoots` (function): function polynomialRoots(coefficients: readonly number[]): Eigenvalue[] — Roots of the real polynomial `c[0] + c[1]·λ + … + c[n]·λⁿ` (`c[n] ≠ 0`): the companion-matrix eigenvalues, then two Newton steps on the polynomial itself to recover full double precision.
