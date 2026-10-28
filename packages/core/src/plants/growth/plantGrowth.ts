@@ -21,12 +21,12 @@ import {
 import { createLightField } from "./lightField";
 import { growingSeason, type GrowingSeason } from "./phenology";
 import { siteModifier, type PlantEnvironment } from "./plantEnvironment";
-import { PLANT_PI, plantCos, plantExp, plantSin } from "./plantMath";
+import { PLANT_PI, plantCos, plantSin } from "./plantMath";
 import { applyThickening, createPipeCost, pipeDemand } from "./pipeModel";
 import { bendTowardsTropisms, lateralDirection, normalize3, type TropismWeights } from "./tropism";
 
 /** Bumped whenever a rule changes what a seed grows into; part of every structure cache key. */
-export const PLANT_SIM_VERSION = 3;
+export const PLANT_SIM_VERSION = 4;
 
 /** Caps that bound one plant's memory and per-year work. */
 export interface GrowthLimits {
@@ -82,10 +82,13 @@ export interface PlantGrowthStats {
   photosynthesisKg: number;
   /** Leaf area this year, m². */
   leafAreaM2: number;
+  /** Sapwood cross-section of the stem at breast height (1.3 m), m²; 0 below that height. */
+  sapwoodAtBreastHeightM2: number;
   shedKg: number;
 }
 
 const CELL_M = 0.5;
+const BREAST_HEIGHT_M = 1.3;
 const SEEDLING_LENGTH_M = 0.04;
 const MERGE_COS = 0.985;
 const MERGE_MAX_LENGTH_M = 3;
@@ -169,7 +172,8 @@ export function createPlantGrowth(species: PlantSpecies, env: PlantEnvironment, 
     const vigourShare = 1 - g.vigourIndexWeight + g.vigourIndexWeight * (index > 1 ? 1 : index);
     // Shoot length follows the light the bud sees (LIGNUM's f(Q)), so shaded shoots stay short.
     const lightShare = light > 1 ? 1 : light;
-    return Math.max(1, Math.floor(g.maxMetamersPerShoot * posture * vigourShare * lightShare + 0.5));
+    const establishment = g.establishmentYears > state.year ? state.year / g.establishmentYears : 1;
+    return Math.max(1, Math.floor(g.maxMetamersPerShoot * posture * vigourShare * lightShare * establishment + 0.5));
   };
   const hydraulicFactor = (path: number, maxPath: number): number => hydraulicFactorWith(path, maxPath, c.hydraulicExponent);
   // At the height limit leaves stop expanding, but gas exchange only falls to about half (Koch et al.
@@ -178,6 +182,9 @@ export function createPlantGrowth(species: PlantSpecies, env: PlantEnvironment, 
   // Shade leaves are thinner (lower mass per area) and so cheaper to build and run (Niinemets 2007).
   const shadeAcclimation = 0.6 * species.tolerance.shade;
   const acclimation = (light: number): number => 1 - shadeAcclimation * (1 - (light > 1 ? 1 : light));
+  // Leaf photosynthesis saturates with light: a rectangular hyperbola scaled to 1 in open sky.
+  const halfSaturation = c.lightHalfSaturation;
+  const lightResponse = (light: number): number => (light * (1 + halfSaturation)) / (light + halfSaturation);
 
   const pipeCost = createPipeCost(species, nodeCap);
   const tipLight = new Float64Array(nodeCap);
@@ -197,10 +204,6 @@ export function createPlantGrowth(species: PlantSpecies, env: PlantEnvironment, 
   /** Light-field cell of each leafy node's shoot midpoint, from this year's flush. */
   const midCell = new Int32Array(nodeCap);
   const need = new Float64Array(nodeCap);
-  /** Leaf area per height layer, then the stand's open-sky share per layer (even-aged stand only). */
-  const standLayers = Math.ceil((species.limits.maxHeightM + 4) / CELL_M) + 1;
-  const standLeaf = new Float64Array(standLayers);
-  const standSky = new Float64Array(standLayers);
   const firstChild = new Int32Array(nodeCap);
   const nextSibling = new Int32Array(nodeCap);
   const lastChild = new Int32Array(nodeCap);
@@ -211,8 +214,9 @@ export function createPlantGrowth(species: PlantSpecies, env: PlantEnvironment, 
   const removed = new Uint8Array(nodeCap);
   const keptParent = new Int32Array(nodeCap);
   const sag = createSagScratch(nodeCap);
-  const candidates = createShootCandidates(budCap + nodeCap);
-  const candidateRef = new Int32Array(budCap + nodeCap);
+  // A terminal per bud, a lateral per node, and a short shoot per node for laterals the bud cap refused.
+  const candidates = createShootCandidates(budCap + 2 * nodeCap);
+  const candidateRef = new Int32Array(budCap + 2 * nodeCap);
   const shareScratch = new Float64Array(budCap + nodeCap * Math.max(1, g.lateralBudsPerNode));
   const optimal = new Float64Array(3);
   const heading = new Float64Array(3);
@@ -375,10 +379,11 @@ export function createPlantGrowth(species: PlantSpecies, env: PlantEnvironment, 
         if (foliage > 0) {
           const light = nodeLight[i] ?? 0;
           const midY = 0.5 * ((pi >= 0 ? (end[pi * 3 + 1] ?? 0) : 0) + (end[i * 3 + 1] ?? 0));
-          p = lue * light * foliage * hydraulicGas(midY, maxHeight);
+          p = lue * lightResponse(light) * foliage * hydraulicGas(midY, maxHeight);
           const leafMass = (foliage / species.leaf.sla) * acclimation(light);
           const upkeep = leafMass * (c.respiration + c.rootPerFoliage * c.rootRespiration);
-          const renewal = leafMass * (c.foliageTurnover + c.rootPerFoliage * c.rootTurnover);
+          const regrown = state.year - (leafBorn[i] ?? 0) > species.leaf.lifespanYears ? c.foliageTurnover : 0;
+          const renewal = leafMass * (regrown + c.rootPerFoliage * c.rootTurnover);
           // Short-shoot leaves below their compensation point are shed for good (leaf-level carbon balance).
           if (state.year - (leafBorn[i] ?? 0) > 1 && efficiency * (p - upkeep) < renewal) {
             flags[i] = nodeFlags | NODE_NO_SPUR;
@@ -481,8 +486,6 @@ export function createPlantGrowth(species: PlantSpecies, env: PlantEnvironment, 
     field.clear();
     let lowest = Number.POSITIVE_INFINITY;
     let top = 0;
-    const stand = environment.stand !== undefined;
-    if (stand) standLeaf.fill(0);
     for (let i = 0; i < n; i += 1) {
       flowers[i] = 0;
       const nodeFlags = flags[i] ?? 0;
@@ -513,7 +516,6 @@ export function createPlantGrowth(species: PlantSpecies, env: PlantEnvironment, 
         const mz = 0.5 * ((pi >= 0 ? (end[pi * 3 + 2] ?? 0) : 0) + (end[i * 3 + 2] ?? 0));
         midCell[i] = field.deposit(mx, my, mz, foliage);
         if (my < lowest) lowest = my;
-        if (stand) standLeaf[standLayer(my)] = (standLeaf[standLayer(my)] ?? 0) + foliage;
       }
       const y = end[i * 3 + 1] ?? 0;
       if (y > top) top = y;
@@ -521,15 +523,16 @@ export function createPlantGrowth(species: PlantSpecies, env: PlantEnvironment, 
     }
     field.propagate(lowest === Number.POSITIVE_INFINITY ? 0 : lowest);
     const extinction = g.extinction;
-    if (stand) shadeStand(top, extinction);
+    // In an even-aged stand every neighbour is a copy of this plant spacingIndex × its height away.
+    field.setPeriod(environment.stand ? Math.max(1, environment.stand.spacingIndex * top) : 0);
+    const sky = environment.light;
     for (let i = 0; i < n; i += 1) {
       state.light[i] = 0;
       tipLight[i] = 0;
       const nodeFlags = flags[i] ?? 0;
       if ((nodeFlags & NODE_DEAD) !== 0) continue;
       if ((leaves[i] ?? 0) > 0) {
-        const my = 0.5 * (((parent[i] ?? -1) >= 0 ? (end[(parent[i] ?? 0) * 3 + 1] ?? 0) : 0) + (end[i * 3 + 1] ?? 0));
-        const light = field.lightAtCell(midCell[i] ?? -1, skyAt(my), extinction);
+        const light = field.lightAtCell(midCell[i] ?? -1, sky, extinction);
         state.light[i] = light;
         if (light < g.budLightThreshold) {
           // Short shoots starve in deep shade and never leaf again.
@@ -538,34 +541,9 @@ export function createPlantGrowth(species: PlantSpecies, env: PlantEnvironment, 
         }
       }
       if ((budAt[i] ?? -1) >= 0 || (latent[i] ?? 0) > 0) {
-        tipLight[i] = field.lightAt(end[i * 3] ?? 0, end[i * 3 + 1] ?? 0, end[i * 3 + 2] ?? 0, skyAt(end[i * 3 + 1] ?? 0), extinction);
+        tipLight[i] = field.lightAt(end[i * 3] ?? 0, end[i * 3 + 1] ?? 0, end[i * 3 + 2] ?? 0, sky, extinction);
       }
     }
-  }
-
-  function standLayer(y: number): number {
-    const k = Math.floor(y / CELL_M);
-    return k < 0 ? 0 : k >= standLayers ? standLayers - 1 : k;
-  }
-
-  /**
-   * Open sky per height layer inside an even-aged stand of the plant's equals: each neighbour holds the
-   * plant's own leaf profile on a square of side spacingIndex × height, so the stand's leaf area index
-   * above a layer is the plant's leaf area above it over that square.
-   */
-  function shadeStand(top: number, extinction: number): void {
-    const spacing = Math.max(1, (environment.stand?.spacingIndex ?? 0) * top);
-    const perArea = 1 / (spacing * spacing);
-    let above = 0;
-    for (let k = standLayers - 1; k >= 0; k -= 1) {
-      const own = standLeaf[k] ?? 0;
-      standSky[k] = environment.light * plantExp(-extinction * (above + 0.5 * own) * perArea);
-      above += own;
-    }
-  }
-
-  function skyAt(y: number): number {
-    return environment.stand ? (standSky[standLayer(y)] ?? 0) : environment.light;
   }
 
   /** Extended Borchert–Honda: split the root's vigour down the tree by light, with apical control λ. */
@@ -656,19 +634,22 @@ export function createPlantGrowth(species: PlantSpecies, env: PlantEnvironment, 
     }
     candidates.count = count;
     // The bud cap keeps only the strongest lateral buds in play, so it never throttles existing tips.
+    // A lateral it refuses still grows, as a leafy short shoot on its node: the cap bounds how much
+    // skeleton is drawn, not how much leaf area the tree's carbon buys.
+    const lateralEnd = count;
     const freeBuds = budCap - state.budCount;
     let copies = 0;
-    for (let k = lateralStart; k < count; k += 1) copies += candidates.copies[k] ?? 0;
+    for (let k = lateralStart; k < lateralEnd; k += 1) copies += candidates.copies[k] ?? 0;
     budSlotsShort = copies > freeBuds;
     if (!budSlotsShort) return;
     if (freeBuds <= 0) {
-      for (let k = lateralStart; k < count; k += 1) candidates.share[k] = 0;
+      for (let k = lateralStart; k < lateralEnd; k += 1) toShortShoot(k);
       return;
     }
     // Threshold share t: every bud above t fits, buds at t fill the rest in candidate order. With each
     // node's share listed once per bud, t is the free-th largest entry.
     let listed = 0;
-    for (let k = lateralStart; k < count; k += 1) {
+    for (let k = lateralStart; k < lateralEnd; k += 1) {
       const share = candidates.share[k] ?? 0;
       for (let copy = candidates.copies[k] ?? 0; copy > 0; copy -= 1) {
         shareScratch[listed] = share;
@@ -677,19 +658,50 @@ export function createPlantGrowth(species: PlantSpecies, env: PlantEnvironment, 
     }
     const threshold = selectNth(shareScratch, listed, listed - freeBuds);
     let room = freeBuds;
-    for (let k = lateralStart; k < count; k += 1) if ((candidates.share[k] ?? 0) > threshold) room -= candidates.copies[k] ?? 0;
-    for (let k = lateralStart; k < count; k += 1) {
+    for (let k = lateralStart; k < lateralEnd; k += 1) if ((candidates.share[k] ?? 0) > threshold) room -= candidates.copies[k] ?? 0;
+    for (let k = lateralStart; k < lateralEnd; k += 1) {
       const share = candidates.share[k] ?? 0;
       if (share > threshold) continue;
       if (share < threshold || room <= 0) {
-        candidates.share[k] = 0;
+        toShortShoot(k);
         continue;
       }
       const have = candidates.copies[k] ?? 0;
       const take = have < room ? have : room;
       room -= take;
+      if (take === have) continue;
+      // The buds past the room grow as short shoots beside the ones that took a slot.
+      const extra = candidates.count;
+      candidates.share[extra] = share;
+      candidates.costKg[extra] = candidates.costKg[k] ?? metamerCostKg;
+      candidates.node[extra] = candidates.node[k] ?? 0;
+      candidates.maxMetamers[extra] = candidates.maxMetamers[k] ?? 1;
+      candidates.copies[extra] = have - take;
+      candidates.opensAxis[extra] = 2;
+      candidateRef[extra] = shortShootRef(candidates.node[k] ?? 0);
+      candidates.count = extra + 1;
       candidates.copies[k] = take;
     }
+  }
+
+  function shortShootRef(node: number): number {
+    return -1 - nodeCap - node;
+  }
+
+  function toShortShoot(k: number): void {
+    candidates.opensAxis[k] = 2;
+    candidateRef[k] = shortShootRef(candidates.node[k] ?? 0);
+  }
+
+  /** Add `metamers` leafy short-shoot metamers to a node's leaf pool; returns how many fit. */
+  function addShortShoots(node: number, metamers: number): number {
+    const leafy = (state.foliage[node] ?? 0) > 0 ? leafMetamers(node) : 0;
+    const room = 255 - leafy;
+    const add = metamers < room ? metamers : room;
+    if (add <= 0) return 0;
+    state.leafBorn[node] = Math.floor(((state.leafBorn[node] ?? 0) * leafy + state.year * add) / (leafy + add) + 0.5);
+    setLeafMetamers(node, leafy + add, leafAreaPerNode * (leafy + add));
+    return add;
   }
 
   /** Tropism weights per branch order for the current environment; cleared when the wind changes. */
@@ -752,17 +764,27 @@ export function createPlantGrowth(species: PlantSpecies, env: PlantEnvironment, 
     return addNode(fromNode, order, firstFlags, axisDir, length, startPhase + (metamers - 1) * divergence, metamers);
   }
 
-  function grow(scale: number): void {
-    if (scale <= 0) return;
+  /** Grow every candidate at vigour scale α; returns the metamers added as short shoots. */
+  function grow(scale: number): number {
+    if (scale <= 0) return 0;
     const year = state.year;
     const budsBefore = state.budCount;
+    let shortMetamers = 0;
     for (let k = 0; k < candidates.count; k += 1) {
       const raw = Math.floor(scale * (candidates.share[k] ?? 0));
       if (raw < 1) continue;
       const cap = candidates.maxMetamers[k] ?? 1;
       const metamers = raw > cap ? cap : raw;
       const ref = candidateRef[k] ?? 0;
-      if (ref >= 0) {
+      if (ref < -nodeCap) {
+        const node = -1 - nodeCap - ref;
+        const available = state.latent[node] ?? 0;
+        const want = candidates.copies[k] ?? 1;
+        const used = want < available ? want : available;
+        if (used === 0) continue;
+        state.latent[node] = available - used;
+        shortMetamers += addShortShoots(node, metamers * used);
+      } else if (ref >= 0) {
         if (ref >= budsBefore) continue;
         const node = state.budNode[ref] ?? 0;
         axisDir[0] = state.dir[node * 3] ?? 0;
@@ -795,6 +817,7 @@ export function createPlantGrowth(species: PlantSpecies, env: PlantEnvironment, 
         }
       }
     }
+    return shortMetamers;
   }
 
   /**
@@ -1066,8 +1089,7 @@ export function createPlantGrowth(species: PlantSpecies, env: PlantEnvironment, 
       leafAreaPerMetamer: leafAreaPerNode,
     }, pipeCost);
     const before = state.nodeCount;
-    grow(scale);
-    let grown = 0;
+    let grown = grow(scale);
     for (let i = before; i < state.nodeCount; i += 1) grown += state.metamers[i] ?? 0;
     const spent = grown * metamerCostKg;
     appendChildren(before);
@@ -1088,6 +1110,16 @@ export function createPlantGrowth(species: PlantSpecies, env: PlantEnvironment, 
     compact();
     if (state.nodeCount > maxNodesSeen) maxNodesSeen = state.nodeCount;
     if (state.budCount > maxBudsSeen) maxBudsSeen = state.budCount;
+  }
+
+  function sapwoodAtBreastHeight(): number {
+    for (let i = 0; i < state.nodeCount; i += 1) {
+      if ((state.order[i] ?? 0) !== 0) continue;
+      const p = state.parent[i] ?? -1;
+      const startY = p >= 0 ? (state.end[p * 3 + 1] ?? 0) : 0;
+      if (startY <= BREAST_HEIGHT_M && (state.end[i * 3 + 1] ?? 0) > BREAST_HEIGHT_M) return state.sapArea[i] ?? 0;
+    }
+    return 0;
   }
 
   function snapshotArrays(): Record<string, string> {
@@ -1131,6 +1163,7 @@ export function createPlantGrowth(species: PlantSpecies, env: PlantEnvironment, 
       health: state.health,
       photosynthesisKg: lastPhotosynthesis,
       leafAreaM2: lastLeafArea,
+      sapwoodAtBreastHeightM2: sapwoodAtBreastHeight(),
       shedKg: state.shedKg,
     }),
     snapshot() {

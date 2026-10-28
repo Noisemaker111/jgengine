@@ -62,6 +62,11 @@ export interface PlantSpecies {
     /** Most internodes one bud makes in a year. */
     maxMetamersPerShoot: number;
     /**
+     * Years of the establishment phase: a seedling's growth units start small and reach full size over
+     * this many years as its root system builds (Barthélémy & Caraglio 2007). 0 for none.
+     */
+    establishmentYears: number;
+    /**
      * Gravimorphism (Wareing & Nasr 1961): share of that maximum a horizontal shoot keeps; upright
      * shoots keep all of it, in between scales with the shoot's vertical component.
      */
@@ -105,8 +110,14 @@ export interface PlantSpecies {
     jitter: number;
   };
   carbon: {
-    /** Gross light-use efficiency, grams of dry matter per MJ of absorbed PAR. */
+    /** Gross light-use efficiency of a leaf in open sky, grams of dry matter per MJ of absorbed PAR. */
     lueGPerMJ: number;
+    /**
+     * Light (0..1 of open sky) at which a leaf's photosynthesis is half its light-saturated rate. Leaf
+     * photosynthesis saturates with light (a rectangular hyperbola, Thornley 1976), so shade leaves use
+     * each photon better than sun leaves; shade-tolerant species saturate at lower light.
+     */
+    lightHalfSaturation: number;
     /** Foliage maintenance respiration, kg per kg per year. */
     respiration: number;
     sapwoodRespiration: number;
@@ -114,7 +125,11 @@ export interface PlantSpecies {
     /** Fine-root mass per foliage mass. */
     rootPerFoliage: number;
     rootTurnover: number;
-    /** Share of foliage replaced each year (1 for deciduous). */
+    /**
+     * Share of a node's foliage regrown each year once its leaves outlive `leaf.lifespanYears` (1 for a
+     * deciduous tree re-leafing its spurs). Leaves still within their lifespan were paid for with the
+     * shoot that bore them.
+     */
     foliageTurnover: number;
     /** Construction efficiency: kg of tissue per kg of assimilate. */
     growthEfficiency: number;
@@ -188,9 +203,11 @@ const FIELD_RANGES: readonly (readonly [path: string, read: (s: PlantSpecies) =>
   ["growth.branchAngle", (s) => s.growth.branchAngle, 0, 180],
   ["growth.lateralBudsPerNode", (s) => s.growth.lateralBudsPerNode, 0, 8],
   ["growth.maxMetamersPerShoot", (s) => s.growth.maxMetamersPerShoot, 1, 64],
+  ["growth.establishmentYears", (s) => s.growth.establishmentYears, 0, 100],
   ["growth.budLightThreshold", (s) => s.growth.budLightThreshold, 0, 1],
   ["growth.extinction", (s) => s.growth.extinction, 0.01, 2],
   ["growth.shadow.depth", (s) => s.growth.shadow.depth, 1, 512],
+  ["carbon.lightHalfSaturation", (s) => s.carbon.lightHalfSaturation, 0.01, 10],
   ["carbon.growthEfficiency", (s) => s.carbon.growthEfficiency, 0.1, 1],
   ["carbon.sapwoodPerFoliage", (s) => s.carbon.sapwoodPerFoliage, 1e-6, 0.01],
   ["carbon.pipeExponent", (s) => s.carbon.pipeExponent, 1.5, 3],

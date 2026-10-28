@@ -3470,7 +3470,7 @@
 
 - `DEFAULT_GROWTH_LIMITS` (const): const DEFAULT_GROWTH_LIMITS: GrowthLimits — Most buds and nodes a plant may hold: 4000 and 60000.
 - `GrowthLimits` (interface): interface GrowthLimits — Caps that bound one plant's memory and per-year work.
-- `PLANT_SIM_VERSION` (const): const PLANT_SIM_VERSION: 3 — Bumped whenever a rule changes what a seed grows into; part of every structure cache key.
+- `PLANT_SIM_VERSION` (const): const PLANT_SIM_VERSION: 4 — Bumped whenever a rule changes what a seed grows into; part of every structure cache key.
 - `PlantGrowth` (interface): interface PlantGrowth — One plant growing year by year.
 - `PlantGrowthSnapshot` (interface): interface PlantGrowthSnapshot — A grown plant's whole state as JSON-safe values: typed arrays travel as base64.
 - `PlantGrowthStats` (interface): interface PlantGrowthStats — Counters a {@link PlantGrowth} reports each year.
@@ -3513,11 +3513,11 @@
 
 ## @jgengine/core/plants/species/data/acerSaccharum
 
-- `ACER_SACCHARUM` (const): const ACER_SACCHARUM: PlantSpecies — Sugar maple. Traits from Silvics of North America (Godman, Yawney & Tubbs 1990), the USDA Wood Handbook and USDA PLANTS. Decurrent: apical control falls with age until laterals overtake the leader into a broad rounded crown. Architecture and carbon parameters fitted against the Carmean 1989 height curve, Ek 1974 and Tallo crown widths and the crown profile of open- and forest-grown trees.
+- `ACER_SACCHARUM` (const): const ACER_SACCHARUM: PlantSpecies — Sugar maple. Traits from Silvics of North America (Godman, Yawney & Tubbs 1990), the USDA Wood Handbook and USDA PLANTS. Decurrent: apical control falls with age until laterals overtake the leader into a broad rounded crown. Architecture and carbon parameters fitted against the Carmean 1989 height curve, FIA site-tree and UTD open-grown diameters, Ek 1974 and Tallo crown widths and the crown profile of open- and forest-grown trees.
 
 ## @jgengine/core/plants/species/data/pinusStrobus
 
-- `PINUS_STROBUS` (const): const PINUS_STROBUS: PlantSpecies — Eastern white pine. Traits from Silvics of North America (Wendel & Smith 1990), the USDA Wood Handbook and USDA PLANTS: an excurrent conifer that sets one whorl of three to five branches at the top of each year's leader, needles in fives kept two to three years. Carbon and architecture fitted against the Carmean 1989 height curve, Ek 1974 and Tallo crown widths and the crown profile of open- and forest-grown trees.
+- `PINUS_STROBUS` (const): const PINUS_STROBUS: PlantSpecies — Eastern white pine. Traits from Silvics of North America (Wendel & Smith 1990), the USDA Wood Handbook and USDA PLANTS: an excurrent conifer that sets one whorl of three to five branches at the top of each year's leader, needles in fives kept two to three years. Carbon and architecture fitted against the Carmean 1989 height curve, FIA site-tree diameters, Ek 1974 and Tallo crown widths and the crown profile of open- and forest-grown trees. The crown radius limit is Ek 1974 at the largest DBH.
 
 ## @jgengine/core/plants/species/plantSpecies
 
@@ -3579,6 +3579,13 @@
 - `histogramDistance` (function): function histogramDistance(a: Float64Array, b: Float64Array): number — Total variation distance between two histograms: 0 when equal, 1 when they share nothing.
 - `plantSilhouettes` (function): function plantSilhouettes(structure: PlantStructure, frame: PlantSilhouetteFrame, views = 8): PlantSilhouettes — Side-on silhouettes of a plant from `views` directions spread evenly around it, drawn orthographically into `frame`: wood as its segments at their radius, and each leaf row as a disc of the area its leaves cover. Two plants drawn into one frame can be compared view by view with {@link silhouetteIoU}.
 - `silhouetteIoU` (function): function silhouetteIoU(a: PlantSilhouettes, b: PlantSilhouettes): number — Intersection over union of two silhouette sets, view by view, averaged over the views; 1 when both are empty.
+
+## @jgengine/core/plants/validation/stemAllometry
+
+- `BAAD_LEAF_TO_SAPWOOD` (const): const BAAD_LEAF_TO_SAPWOOD: Readonly<Record<"evergreen" | "deciduous", LeafToSapwoodBand>> — Leaf area per sapwood area at breast height of temperate and boreal trees taller than 5 m in the Biomass And Allometry Database (Falster et al. 2015, CC0), 10th–90th percentile by leaf habit.
+- `FIA_STAND_DIAMETER` (const): const FIA_STAND_DIAMETER: Readonly<Record<string, readonly StandDiameterAtAge[]>> — Median DBH of USDA Forest Inventory and Analysis site trees (US public domain) in Wisconsin, Michigan and Minnesota on site index 55–75 ft, by age. Site trees are dominant or codominant trees of a fully stocked stand, so they match a crown grown in a closed stand.
+- `LeafToSapwoodBand` (interface): interface LeafToSapwoodBand — The 10th–90th percentile leaf area per sapwood area at breast height, m² per m².
+- `StandDiameterAtAge` (interface): interface StandDiameterAtAge — Median trunk diameter of measured stand-grown trees at a given age.
 
 ## @jgengine/core/postfx/PostProcessing.draw
 

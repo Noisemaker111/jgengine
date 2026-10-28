@@ -7,7 +7,10 @@ export interface ShootCandidates {
   share: Float64Array;
   costKg: Float64Array;
   copies: Uint8Array;
-  /** 1 when the candidate starts a new axis (it takes a bud slot). */
+  /**
+   * What the candidate grows: 0 extends an axis (one new node), 1 starts a new axis (a node and a bud
+   * slot), 2 a leafy short shoot on its node (no new node or bud).
+   */
   opensAxis: Uint8Array;
   /** Node the candidate's new shoot hangs from. */
   node: Int32Array;
@@ -70,8 +73,9 @@ function countAt(candidates: ShootCandidates, liveCount: number, scale: number, 
     if (raw < 1) continue;
     const cap = candidates.maxMetamers[i] ?? 1;
     const copies = candidates.copies[i] ?? 1;
-    nodes += (raw > cap ? cap : raw) * copies;
-    if ((candidates.opensAxis[i] ?? 0) === 1) axes += copies;
+    const kind = candidates.opensAxis[i] ?? 0;
+    if (kind !== 2) nodes += (raw > cap ? cap : raw) * copies;
+    if (kind === 1) axes += copies;
   }
   return nodes <= budget.freeNodes && axes <= budget.freeBuds;
 }

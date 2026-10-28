@@ -207,7 +207,9 @@ provenance.
   Jacobs 1989, *Site index curves for forest tree species in the eastern United States*, GTR NC-128,
   with coefficients read from the Forest Vegetation Simulator Lake States variant (`htcalc.f`);
   Burns & Honkala 1990, *Silvics of North America*, Agriculture Handbook 654; Forest Products
-  Laboratory 2010, *Wood Handbook*, FPL-GTR-190; the USDA NRCS PLANTS Database.
+  Laboratory 2010, *Wood Handbook*, FPL-GTR-190; the USDA NRCS PLANTS Database; Forest Inventory
+  and Analysis site-tree data for Wisconsin, Michigan and Minnesota (stand-grown DBH by age);
+  McPherson, van Doorn & Peper 2016, *Urban tree database*, RDS-2016-0005 (open-grown DBH by age).
 - **Forest Vegetation Simulator** (USDA Forest Service, US public domain): crown-width coefficients
   from the Lake States variant (`cwcalc.f`) for open-grown trees, Ek 1974, *Dimensional
   relationships of forest and open grown trees in Wisconsin*, University of Wisconsin, and for
@@ -215,11 +217,18 @@ provenance.
   stand-grown trees in the eastern United States*, SJAF 27.
 - **Tallo** (CC BY 4.0): Jucker et al. 2022, *Tallo: a global tree allometry and crown architecture
   database*, Global Change Biology 28: measured crown widths by DBH for sugar maple and white pine.
+- **BAAD** (CC0): Falster et al. 2015, *BAAD: a Biomass And Allometry Database for woody plants*,
+  Ecology 96: leaf area per sapwood area of temperate and boreal trees.
+- Thornley 1976, *Mathematical models in plant physiology*: the rectangular-hyperbola leaf light
+  response.
+- Barthélémy & Caraglio 2007, plant architecture and ontogeny, *Annals of Botany* 99: the
+  establishment phase of a seedling.
 - Brown, McAlpine & Kormanik 1967, apical dominance and form in woody plants, *American Journal of
   Botany* 54; Wilson 2000, apical control of branch growth and angle in woody plants, *American
   Journal of Botany* 87: decurrent and excurrent habit as apical control that changes with age.
 - Hart 1928 and Becking 1953, the relative spacing index of even-aged stands; Monsi & Saeki 1953,
-  light extinction in plant canopies.
+  light extinction in plant canopies; Putz, Parker & Archibald 1984, mechanical abrasion and
+  intercrown spacing, *American Midland Naturalist* 112: crown shyness between neighbours.
 - Palubicki et al. 2009, *Self-organizing tree models for image synthesis*, ACM SIGGRAPH: bud
   self-organisation, shadow voxels and extended Borchert–Honda allocation.
 - Perttunen et al. 1996 and 1998, LIGNUM, *Annals of Botany* 77 and 82; Nikinmaa et al. 2003,
