@@ -199,12 +199,13 @@ describe("authored sun bearing", () => {
 
 describe("bandFogColor", () => {
   test("a static sky's banded fog follows the band, not the sky's authored fog", () => {
-    expect(bandFogColor({ authored: "#7a4a24", timeOfDay: false, cycle: "#000000", band: "#0e1224" })).toBe("#0e1224");
+    expect(bandFogColor({ timeOfDay: false, cycle: "#000000", band: "#0e1224" })).toBe("#0e1224");
   });
 
-  test("under a day cycle the sky owns the fog color", () => {
-    expect(bandFogColor({ authored: "#7a4a24", timeOfDay: true, cycle: "#101010", band: "#0e1224" })).toBe("#7a4a24");
-    expect(bandFogColor({ authored: undefined, timeOfDay: true, cycle: "#101010", band: "#0e1224" })).toBe("#101010");
+  test("under a day cycle the sky owns the fog color, and an authored fog color is its noon", () => {
+    expect(bandFogColor({ timeOfDay: true, cycle: "#101010", band: "#0e1224" })).toBe("#101010");
+    expect(daylightStateAt(0.5, { fog: { color: "#7a4a24" } }).fogColor).toBe("#7a4a24");
+    expect(daylightStateAt(0, { fog: { color: "#7a4a24" } }).fogColor).not.toBe("#7a4a24");
   });
 });
 
@@ -250,5 +251,18 @@ describe("overcastDaylight", () => {
     const storm = overcastDaylight(night, 1);
     expect(brightness(storm.skyTop)).toBeLessThanOrEqual(brightness(night.skyTop));
     expect(storm.starOpacity).toBe(0);
+  });
+});
+
+describe("night between twilights", () => {
+  test("dusk's reds are gone by the small hours and dawn's start only shortly before sunrise", () => {
+    const midnight = daylightStateAt(0);
+    for (const fraction of [0.05, 0.12, 0.85, 0.95]) {
+      const state = daylightStateAt(fraction, { dayHold: 0.2 });
+      expect(state.skyBottom).toBe(midnight.skyBottom);
+      expect(state.fogColor).toBe(midnight.fogColor);
+    }
+    expect(daylightStateAt(0.78).skyBottom).not.toBe(midnight.skyBottom);
+    expect(daylightStateAt(0.22).skyBottom).not.toBe(midnight.skyBottom);
   });
 });

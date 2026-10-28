@@ -45,9 +45,32 @@ export const world = environment({
       },
     },
   }),
-  // ARK keeps a long blue day; dawn and dusk are short.
-  sky: sky({ preset: "day", timeOfDay: true, dayHold: 0.2, ...(authored.sky ?? {}) }),
-  water: [ocean({ bounds: { w: SIZE * 1.6, d: SIZE * 1.6 }, level: SEA_LEVEL, color: "#1a9cb8", waveHeight: 0.35, waveScale: 30, waveSpeed: 0.45 })],
+  // ARK keeps a long blue day; dawn and dusk are short. High cumulus drift over it and fill in with the weather.
+  sky: sky({
+    preset: "day",
+    timeOfDay: true,
+    dayHold: 0.2,
+    cloudiness: 0,
+    hazeStrength: 0.25,
+    gradientExponent: 0.5,
+    volumetricClouds: { height: 420, thickness: 260, scale: 620, coverage: 0.4, density: 1.4, speed: 5, fade: 4200, seed: "the-island" },
+    ...(authored.sky ?? {}),
+  }),
+  // The sea runs to the horizon; the shelf's clear turquoise shallows fall away to deep blue.
+  water: [
+    ocean({
+      bounds: { w: SIZE * 1.6, d: SIZE * 1.6 },
+      level: SEA_LEVEL,
+      color: "#3fd0c9",
+      palette: { deep: "#0b4f78", crest: "#9fe8ef", foam: "#f4fbff", fresnel: 0.8 },
+      waveHeight: 0.35,
+      waveScale: 30,
+      waveSpeed: 0.45,
+      horizon: true,
+      clarity: 1.6,
+      bedResolution: 512,
+    }),
+  ],
   clearings: authored.clearings,
 });
 

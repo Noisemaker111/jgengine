@@ -1,26 +1,20 @@
 import { useFrame } from "@react-three/fiber";
-import { useRef } from "react";
+import { useMemo, useRef } from "react";
 import * as THREE from "three";
 
 import type { VolumetricCloudsRules } from "@jgengine/core/sky/volumetricClouds";
+import { cloudNoiseVolume, CLOUD_NOISE_SIZE } from "@jgengine/core/sky/volumetricClouds";
 
 import { useDisposable } from "@jgengine/core/render/useDisposable.draw";
+import { createSkyLight, readSkyLight } from "./skyLight.draw";
 
-/** Props for {@link VolumetricClouds} — fully-resolved cloud rules plus the shared sun direction. */
+/** Props for {@link VolumetricClouds}: fully resolved cloud rules. Light and cover come from the scene's {@link readSkyLight}. */
 export interface VolumetricCloudsProps {
   rules: VolumetricCloudsRules;
-  /** Direction toward the sun (same vector `SkyDome`/`Sky` use for the sun disc). */
-  sunDirection: readonly [number, number, number];
 }
 
-/**
- * Camera-centered proxy dome radius. Must sit inside the default camera far plane
- * (`CAMERA_FRUSTUM_DEFAULTS.far` = 300) — a bigger sphere is clipped whole and renders nothing. The
- * raymarch works in world space against the absolute cloud slab, so this size only has to cover the
- * screen (camera is always at the dome center), never bound the clouds; each fragment writes its own
- * depth at the first cloud hit, so the dome's radius never decides what occludes the clouds.
- */
-const INSIDE_FRUSTUM_DOME_RADIUS = 240;
+/** The proxy sphere sits at this fraction of the camera far plane, so nearer geometry hides the clouds before their shader runs. */
+const FAR_FRACTION = 0.9;
 
 function hashSeed(text: string): number {
   let h = 2166136261 >>> 0;
@@ -28,12 +22,26 @@ function hashSeed(text: string): number {
     h ^= text.charCodeAt(i);
     h = Math.imul(h, 16777619);
   }
-  return (h >>> 0) % 100000;
+  return ((h >>> 0) % 1000) / 1000;
 }
 
-function normalizeVec3(v: readonly [number, number, number]): THREE.Vector3 {
-  const out = new THREE.Vector3(v[0], v[1], v[2]);
-  return out.lengthSq() === 0 ? new THREE.Vector3(0, 1, 0) : out.normalize();
+let sharedNoise: THREE.Data3DTexture | null = null;
+
+/** One tileable noise volume per page, shared by every cloud layer. */
+function cloudNoiseTexture(): THREE.Data3DTexture {
+  if (sharedNoise !== null) return sharedNoise;
+  const texture = new THREE.Data3DTexture(cloudNoiseVolume(), CLOUD_NOISE_SIZE, CLOUD_NOISE_SIZE, CLOUD_NOISE_SIZE);
+  texture.format = THREE.RedFormat;
+  texture.type = THREE.UnsignedByteType;
+  texture.minFilter = THREE.LinearFilter;
+  texture.magFilter = THREE.LinearFilter;
+  texture.wrapS = THREE.RepeatWrapping;
+  texture.wrapT = THREE.RepeatWrapping;
+  texture.wrapR = THREE.RepeatWrapping;
+  texture.unpackAlignment = 1;
+  texture.needsUpdate = true;
+  sharedNoise = texture;
+  return texture;
 }
 
 const CLOUD_VERTEX_SHADER = /* glsl */ `
@@ -45,198 +53,214 @@ void main() {
 `;
 
 const CLOUD_FRAGMENT_SHADER = /* glsl */ `
+precision highp sampler3D;
+uniform sampler3D uNoise;
 uniform vec3 uCameraPos;
-uniform vec3 uColor;
-uniform vec3 uSunColor;
-uniform vec3 uSunDirection;
+uniform vec3 uAlbedo;
+uniform vec3 uRim;
+uniform vec3 uLightDirection;
+uniform vec3 uLight;
+uniform vec3 uAmbientTop;
+uniform vec3 uAmbientBottom;
+uniform vec3 uHorizon;
 uniform float uSunScatter;
 uniform float uCoverage;
 uniform float uDensity;
 uniform float uBaseHeight;
 uniform float uThickness;
 uniform float uScale;
-uniform float uSpeed;
-uniform float uTime;
-uniform float uSeedOffset;
-uniform mat4 uProjection;
-uniform mat4 uView;
+uniform float uFade;
+uniform vec3 uWind;
+uniform float uFrame;
+uniform float uSeed;
 varying vec3 vJgCloudWorldPos;
 
-// Depth-buffer value of a world point, so the proxy dome tests against the scene at the cloud's
-// own distance instead of the dome's: a tower in front of the slab entry then occludes the cloud.
-float jgCloudDepthAt(vec3 worldPos){
-  vec4 clip = uProjection * uView * vec4(worldPos, 1.0);
-  float ndc = clip.z / max(clip.w, 1e-5);
-  return clamp(ndc * 0.5 + 0.5, 0.0, 0.999999);
+float jgCloudShape(vec3 pos, float heightFrac, bool detailed) {
+  vec3 q = (pos + uWind) / uScale + uSeed * 17.0;
+  // Fields of cloud with clear sky between them, filling in as the cover rises.
+  float field = texture(uNoise, vec3(q.xz * 0.045, 0.31)).r;
+  float n = texture(uNoise, q * 0.25).r;
+  if (detailed) n -= (1.0 - texture(uNoise, q * 1.3 + 0.37).r) * 0.16;
+  // Rounded bases, eroded tops: the threshold rises toward both edges of the slab.
+  float rounding = (1.0 - smoothstep(0.0, 0.18, heightFrac)) * 0.25 + smoothstep(0.45, 1.0, heightFrac) * 0.35;
+  float threshold = mix(0.66, 0.3, clamp(uCoverage + (field - 0.5) * 0.9 * (1.0 - uCoverage), 0.0, 1.0)) + rounding;
+  return clamp((n - threshold) * 4.0, 0.0, 1.0);
 }
 
-float jgCloudHash13(vec3 p){
-  p = fract(p * 0.1031 + uSeedOffset * 0.0007);
-  p += dot(p, p.yzx + 33.33);
-  return fract((p.x + p.y) * p.z);
-}
-
-float jgCloudNoise(vec3 p){
-  vec3 i = floor(p);
-  vec3 f = fract(p);
-  f = f * f * (3.0 - 2.0 * f);
-  float n000 = jgCloudHash13(i + vec3(0.0, 0.0, 0.0));
-  float n100 = jgCloudHash13(i + vec3(1.0, 0.0, 0.0));
-  float n010 = jgCloudHash13(i + vec3(0.0, 1.0, 0.0));
-  float n110 = jgCloudHash13(i + vec3(1.0, 1.0, 0.0));
-  float n001 = jgCloudHash13(i + vec3(0.0, 0.0, 1.0));
-  float n101 = jgCloudHash13(i + vec3(1.0, 0.0, 1.0));
-  float n011 = jgCloudHash13(i + vec3(0.0, 1.0, 1.0));
-  float n111 = jgCloudHash13(i + vec3(1.0, 1.0, 1.0));
-  return mix(
-    mix(mix(n000, n100, f.x), mix(n010, n110, f.x), f.y),
-    mix(mix(n001, n101, f.x), mix(n011, n111, f.x), f.y),
-    f.z
-  );
-}
-
-float jgCloudFbm(vec3 p){
-  float v = 0.0;
-  float a = 0.5;
-  for (int i = 0; i < 5; i++) {
-    v += a * jgCloudNoise(p);
-    p = p * 2.03 + vec3(11.3, 7.1, 5.7);
-    a *= 0.5;
-  }
-  return v;
-}
-
-// Density of the cloud slab at a world point: a 3D-FBM puff field carved by a coverage threshold and
-// shaped by a cumulus vertical profile (rounded base, eroded anvil top). 0 outside the slab.
-float jgCloudDensity(vec3 pos){
+float jgCloudDensity(vec3 pos, bool detailed) {
   float heightFrac = (pos.y - uBaseHeight) / uThickness;
   if (heightFrac < 0.0 || heightFrac > 1.0) return 0.0;
-  float profile = smoothstep(0.0, 0.2, heightFrac) * smoothstep(1.0, 0.5, heightFrac);
-  vec3 wind = vec3(uTime * uSpeed, 0.0, uTime * uSpeed * 0.6);
-  vec3 sp = (pos + wind) / uScale;
-  float shape = jgCloudFbm(sp);
-  float threshold = mix(0.62, 0.2, uCoverage);
-  float d = smoothstep(threshold, threshold + 0.3, shape * profile + profile * 0.12);
-  return d * profile * uDensity;
+  return jgCloudShape(pos, heightFrac, detailed) * uDensity;
 }
 
-// March a few steps toward the sun and turn the accumulated density into transmittance (Beer's law) —
-// the self-shadowing that gives the clouds volume instead of a flat wash.
-float jgCloudLight(vec3 pos){
-  vec3 ldir = normalize(uSunDirection);
-  float stepL = uThickness * 0.2;
+// Light reaching a point through the cloud above it toward the sun or moon (Beer's law), so the
+// clouds shade themselves: bright crowns, dark undersides.
+float jgCloudLightAt(vec3 pos) {
+  float stepL = uThickness * 0.3;
   float dens = 0.0;
   vec3 p = pos;
-  for (int i = 0; i < 4; i++) {
-    p += ldir * stepL;
-    dens += jgCloudDensity(p);
+  for (int i = 0; i < 2; i++) {
+    p += uLightDirection * stepL;
+    dens += jgCloudDensity(p, false);
   }
-  return exp(-dens * stepL * 1.6);
+  return exp(-dens * 1.35);
+}
+
+float jgHenyeyGreenstein(float cosTheta, float g) {
+  float g2 = g * g;
+  return (1.0 - g2) / pow(1.0 + g2 - 2.0 * g * cosTheta, 1.5) * 0.0796;
 }
 
 void main() {
-  vec3 rayOrigin = uCameraPos;
   vec3 rayDir = normalize(vJgCloudWorldPos - uCameraPos);
-  if (rayDir.y < 0.015) discard;
-
-  float tBottom = (uBaseHeight - rayOrigin.y) / rayDir.y;
-  float tTop = (uBaseHeight + uThickness - rayOrigin.y) / rayDir.y;
+  float tBottom = (uBaseHeight - uCameraPos.y) / rayDir.y;
+  float tTop = (uBaseHeight + uThickness - uCameraPos.y) / rayDir.y;
+  if (abs(rayDir.y) < 1e-4) discard;
   float tNear = max(min(tBottom, tTop), 0.0);
   float tFar = max(tBottom, tTop);
   if (tFar <= tNear) discard;
-  tFar = min(tFar, tNear + uThickness * 6.0);
+  tFar = min(tFar, tNear + uThickness * 4.0);
 
-  const int STEPS = 32;
+  const int STEPS = 14;
   float stepLen = (tFar - tNear) / float(STEPS);
-  float t = tNear + stepLen * 0.5;
+  // Per-pixel jitter turns banding into fine noise that temporal AA settles.
+  float jitter = fract(52.9829189 * fract(dot(gl_FragCoord.xy + uFrame * 5.588238, vec2(0.06711056, 0.00583715))));
+  float t = tNear + stepLen * jitter;
   float transmittance = 1.0;
   vec3 color = vec3(0.0);
-  float sunDot = max(dot(rayDir, normalize(uSunDirection)), 0.0);
-  float silver = pow(sunDot, 5.0) * uSunScatter;
+  float cosTheta = dot(rayDir, uLightDirection);
+  float phase = mix(jgHenyeyGreenstein(cosTheta, 0.6), jgHenyeyGreenstein(cosTheta, -0.2), 0.3);
   float tHit = -1.0;
 
   for (int i = 0; i < STEPS; i++) {
-    vec3 pos = rayOrigin + rayDir * t;
-    float dens = jgCloudDensity(pos);
-    if (dens > 0.002) {
+    vec3 pos = uCameraPos + rayDir * t;
+    float dens = jgCloudDensity(pos, true);
+    if (dens > 0.001) {
       if (tHit < 0.0) tHit = t;
-      float light = jgCloudLight(pos);
-      float powder = 1.0 - exp(-dens * 3.0);
-      vec3 lit = mix(uColor, uSunColor, light) * (0.55 + 0.45 * powder) + uSunColor * silver * 0.5;
-      float dt = dens * stepLen * 1.3;
-      float a = 1.0 - exp(-dt);
+      float heightFrac = clamp((pos.y - uBaseHeight) / uThickness, 0.0, 1.0);
+      float lightT = jgCloudLightAt(pos);
+      // Multiple scattering, roughly: thick cloud still glows a little inside (the powder term).
+      float powder = 1.0 - exp(-dens * 2.0);
+      vec3 ambient = mix(uAmbientBottom, uAmbientTop, heightFrac);
+      vec3 direct = uLight * lightT * (phase * 12.0 * (1.0 + uSunScatter) * (0.4 + 0.6 * powder) + 0.9);
+      vec3 lit = uAlbedo * (ambient + direct) + uRim * uLight * lightT * pow(max(cosTheta, 0.0), 8.0) * uSunScatter * 0.15;
+      float a = 1.0 - exp(-dens * stepLen / uThickness * 6.0);
       color += transmittance * a * lit;
       transmittance *= 1.0 - a;
-      if (transmittance < 0.02) break;
+      if (transmittance < 0.03) break;
     }
     t += stepLen;
   }
 
-  float alpha = (1.0 - transmittance) * smoothstep(0.015, 0.22, rayDir.y);
-  if (alpha < 0.01 || tHit < 0.0) discard;
-  gl_FragDepthEXT = jgCloudDepthAt(rayOrigin + rayDir * tHit);
-  gl_FragColor = vec4(color, alpha);
+  if (tHit < 0.0) discard;
+  float alpha = 1.0 - transmittance;
+  vec3 shaded = color / max(alpha, 1e-4);
+  // Distant cloud sinks into the horizon haze, and a cloud seen from far below its slab edge-on thins out.
+  float haze = 1.0 - exp(-tHit / uFade);
+  shaded = mix(shaded, uHorizon, haze * 0.85);
+  alpha *= 1.0 - haze * haze * 0.9;
+  alpha *= smoothstep(0.0, 0.03, rayDir.y) + step(uBaseHeight, uCameraPos.y);
+  if (alpha < 0.004) discard;
+  gl_FragColor = vec4(shaded, clamp(alpha, 0.0, 1.0));
+  #include <tonemapping_fragment>
+  #include <colorspace_fragment>
 }
 `;
 
+/** The camera's far plane, or infinity for a camera without one. */
+function cameraFar(camera: THREE.Camera): number {
+  return camera instanceof THREE.PerspectiveCamera || camera instanceof THREE.OrthographicCamera ? camera.far : Number.POSITIVE_INFINITY;
+}
+
 /**
- * A raymarched volumetric cloud slab: a large horizontal box straddling `[height, height+thickness]`,
- * following the camera in XZ (like `SkyDome`), whose fragment shader raymarches 3D FBM noise inside
- * the slab and accumulates density-weighted color with a sun-facing forward-scatter term. Mounted
- * from `Sky` whenever a sky descriptor carries
- * `volumetricClouds`; off by default (the component itself is simply not rendered). A game never
- * mounts this directly — author clouds via `sky({ volumetricClouds })`.
+ * A raymarched cloud slab between `height` and `height + thickness`, drawn on a camera-centred sphere
+ * just inside the far plane. Each frame it reads the scene's {@link readSkyLight}: the sun (or the moon
+ * at night) lights and shadows it, the sky colours its shade, and the weather's cloud cover thickens
+ * and darkens it. Mounted by `Sky` when a sky descriptor carries `volumetricClouds`; a game with its own
+ * sky can mount it beside that sky as long as the sky publishes its light.
  * @internal
  */
-export function VolumetricClouds({ rules, sunDirection }: VolumetricCloudsProps) {
+export function VolumetricClouds({ rules }: VolumetricCloudsProps) {
   const meshRef = useRef<THREE.Mesh>(null);
   const timeRef = useRef(0);
+  const frameRef = useRef(0);
+  const fallback = useRef(createSkyLight());
 
-  const material = useDisposable(() => {
-    return new THREE.ShaderMaterial({
-      uniforms: {
-        uCameraPos: { value: new THREE.Vector3() },
-        uColor: { value: new THREE.Color(rules.color) },
-        uSunColor: { value: new THREE.Color(rules.sunColor) },
-        uSunDirection: { value: normalizeVec3(sunDirection) },
-        uSunScatter: { value: rules.sunScatter },
-        uCoverage: { value: rules.coverage },
-        uDensity: { value: rules.density },
-        uBaseHeight: { value: rules.height },
-        uThickness: { value: rules.thickness },
-        uScale: { value: rules.scale },
-        uSpeed: { value: rules.speed },
-        uTime: { value: 0 },
-        uSeedOffset: { value: hashSeed(rules.seed) },
-        uProjection: { value: new THREE.Matrix4() },
-        uView: { value: new THREE.Matrix4() },
-      },
-      vertexShader: CLOUD_VERTEX_SHADER,
-      fragmentShader: CLOUD_FRAGMENT_SHADER,
-      transparent: true,
-      depthWrite: false,
-      side: THREE.BackSide,
-      fog: false,
-    });
-  }, [rules, sunDirection]);
+  const uniforms = useMemo(
+    () => ({
+      uNoise: { value: cloudNoiseTexture() },
+      uCameraPos: { value: new THREE.Vector3() },
+      uAlbedo: { value: new THREE.Color(rules.color) },
+      uRim: { value: new THREE.Color(rules.sunColor) },
+      uLightDirection: { value: new THREE.Vector3(0, 1, 0) },
+      uLight: { value: new THREE.Color() },
+      uAmbientTop: { value: new THREE.Color() },
+      uAmbientBottom: { value: new THREE.Color() },
+      uHorizon: { value: new THREE.Color() },
+      uSunScatter: { value: rules.sunScatter },
+      uCoverage: { value: rules.coverage },
+      uDensity: { value: rules.density },
+      uBaseHeight: { value: rules.height },
+      uThickness: { value: rules.thickness },
+      uScale: { value: rules.scale },
+      uFade: { value: rules.fade },
+      uWind: { value: new THREE.Vector3() },
+      uFrame: { value: 0 },
+      uSeed: { value: hashSeed(rules.seed) },
+    }),
+    [rules],
+  );
+  const material = useDisposable(
+    () =>
+      new THREE.ShaderMaterial({
+        uniforms,
+        vertexShader: CLOUD_VERTEX_SHADER,
+        fragmentShader: CLOUD_FRAGMENT_SHADER,
+        transparent: true,
+        depthWrite: false,
+        side: THREE.BackSide,
+        fog: false,
+      }),
+    [uniforms],
+  );
 
+  const albedo = useRef(new THREE.Color());
   useFrame((state, delta) => {
     timeRef.current += delta;
+    frameRef.current = (frameRef.current + 1) % 64;
     const mesh = meshRef.current;
     if (mesh !== null) {
-      mesh.position.x = state.camera.position.x;
-      mesh.position.z = state.camera.position.z;
+      mesh.position.set(state.camera.position.x, state.camera.position.y, state.camera.position.z);
+      const far = cameraFar(state.camera);
+      mesh.scale.setScalar(Number.isFinite(far) && far > 0 ? far * FAR_FRACTION : 1000);
     }
-    const uniforms = material.uniforms;
-    (uniforms["uCameraPos"]!.value as THREE.Vector3).copy(state.camera.position);
-    (uniforms["uProjection"]!.value as THREE.Matrix4).copy(state.camera.projectionMatrix);
-    (uniforms["uView"]!.value as THREE.Matrix4).copy(state.camera.matrixWorldInverse);
-    uniforms["uTime"]!.value = timeRef.current;
+    const light = readSkyLight(state.scene) ?? fallback.current;
+    const cover = light.cloudCover;
+    const u = uniforms;
+    u.uCameraPos.value.copy(state.camera.position);
+    // The sun lights the clouds by day; once it is well down the moon takes over.
+    const sunUp = THREE.MathUtils.smoothstep(light.sunDirection.y, -0.08, 0.02);
+    const lightDirection = u.uLightDirection.value;
+    if (sunUp > 0) lightDirection.copy(light.sunDirection);
+    else lightDirection.copy(light.moonDirection);
+    if (lightDirection.y < 0.05) lightDirection.setY(0.05).normalize();
+    const lit = u.uLight.value;
+    lit.copy(light.moon).lerp(light.sun, sunUp).multiplyScalar(1 - cover * 0.7);
+    u.uAmbientTop.value.copy(light.zenith).lerp(light.horizon, 0.4).multiplyScalar(1.1);
+    u.uAmbientBottom.value.copy(light.horizon).lerp(light.zenith, 0.3).multiplyScalar(0.55 - cover * 0.15);
+    u.uHorizon.value.copy(light.horizon);
+    // Rain clouds are thicker, fuller and greyer than fair-weather cumulus.
+    albedo.current.set(rules.color).multiplyScalar(1 - cover * 0.45);
+    u.uAlbedo.value.copy(albedo.current);
+    u.uCoverage.value = rules.coverage + (1 - rules.coverage) * cover * 0.85;
+    u.uDensity.value = rules.density * (1 + cover * 1.5);
+    u.uWind.value.set(timeRef.current * rules.speed, timeRef.current * rules.speed * 0.15, timeRef.current * rules.speed * 0.6);
+    u.uFrame.value = frameRef.current;
   });
 
   return (
     <mesh ref={meshRef} material={material} renderOrder={-0.5} frustumCulled={false}>
-      <sphereGeometry args={[INSIDE_FRUSTUM_DOME_RADIUS, 32, 16]} />
+      <sphereGeometry args={[1, 32, 16]} />
     </mesh>
   );
 }

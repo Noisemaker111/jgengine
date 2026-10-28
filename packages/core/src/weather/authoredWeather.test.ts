@@ -1,6 +1,11 @@
 import { describe, expect, test } from "bun:test";
 import { createAuthoredWeather, createWeatherExposure, createWeatherEnvironmentField, validateAuthoredWeather } from "./authoredWeather";
 
+/** A serialized copy, as a save would carry it. */
+function roundTrip<T>(value: T): T {
+  return structuredClone(value);
+}
+
 const config = {
   initialProfileId: "dry",
   profiles: [
@@ -54,6 +59,58 @@ describe("authored weather", () => {
     expect(() => validateAuthoredWeather({ ambient: { mode: "rain", intensity: NaN } })).toThrow();
     expect(() => validateAuthoredWeather({ zones: [{ id: "bad", center: [0, 0], radius: Infinity }] })).toThrow();
     expect(() => validateAuthoredWeather({ profiles: Array.from({ length: 257 }, (_, i) => ({ id: String(i), mode: "clear", intensity: 0 })) })).toThrow("limited");
+  });
+});
+
+describe("authored weather cloud cover", () => {
+  const sky = {
+    initialProfileId: "clear",
+    profiles: [
+      { id: "clear", mode: "clear" as const, intensity: 0 },
+      { id: "overcast", mode: "clear" as const, intensity: 0, cloudCover: 0.8 },
+      { id: "rain", mode: "rain" as const, intensity: 0.6 },
+      { id: "storm", mode: "rain" as const, intensity: 1, lightning: 0.7, cloudCover: 1 },
+    ],
+    schedule: [
+      { atSeconds: 100, profileId: "overcast", transitionSeconds: 100 },
+      { atSeconds: 300, profileId: "rain", transitionSeconds: 0 },
+      { atSeconds: 400, profileId: "storm", transitionSeconds: 50 },
+      { atSeconds: 600, profileId: "clear", transitionSeconds: 100 },
+    ],
+    repeatSeconds: 1000,
+  };
+
+  test("clear, overcast, rain and storm each cover the sky as authored, blending through transitions", () => {
+    const weather = createAuthoredWeather(sky);
+    expect(weather.sample(0, 0, 50).cloudCover).toBe(0);
+    expect(weather.sample(0, 0, 150).cloudCover).toBeCloseTo(0.4);
+    const overcast = weather.sample(0, 0, 250);
+    expect(overcast.cloudCover).toBeCloseTo(0.8);
+    expect(overcast.precipitation).toBe(0);
+    expect(overcast.mode).toBe("clear");
+    // rain covers at least as much as it falls, even with no cover of its own
+    const rain = weather.sample(0, 0, 350);
+    expect(rain.precipitation).toBeCloseTo(0.6);
+    expect(rain.cloudCover).toBeCloseTo(0.6);
+    expect(weather.sample(0, 0, 500).cloudCover).toBe(1);
+    expect(weather.sample(0, 0, 500).lightning).toBeCloseTo(0.7);
+    expect(weather.sample(0, 0, 650).cloudCover).toBeCloseTo(0.5);
+    expect(weather.sample(0, 0, 800).cloudCover).toBe(0);
+  });
+
+  test("the sky is a pure function of the clock, so a restored clock replays it on any lap", () => {
+    const weather = createAuthoredWeather(sky);
+    const times = [0, 150, 250, 350, 425, 650, 999];
+    const first = times.map((t) => weather.sample(10, 20, t));
+    const restored = createAuthoredWeather(roundTrip(sky));
+    expect(times.map((t) => restored.sample(10, 20, t))).toEqual(first);
+    expect(restored.sample(10, 20, 1000 + 250).cloudCover).toBeCloseTo(first[2]?.cloudCover ?? Number.NaN);
+    expect(restored.sample(10, 20, 3000 + 425).cloudCover).toBeCloseTo(first[4]?.cloudCover ?? Number.NaN);
+  });
+
+  test("rejects cover outside 0..1", () => {
+    expect(() => validateAuthoredWeather({ ambient: { mode: "clear", intensity: 0, cloudCover: 1.5 } })).toThrow("cloudCover");
+    expect(() => validateAuthoredWeather({ ambient: { mode: "clear", intensity: 0, cloudCover: -0.1 } })).toThrow("cloudCover");
   });
 });
 

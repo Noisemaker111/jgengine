@@ -2128,6 +2128,16 @@
       "intent": "read the player's selected target (click or tab target) to drive a target frame"
     },
     {
+      "id": "custom-sky-light",
+      "packages": [
+        "@jgengine/core"
+      ],
+      "module": "@jgengine/core/sky/skyLight.draw",
+      "gameFacing": false,
+      "probe": null,
+      "intent": "a game's own sky lights the engine's water and clouds by publishing its sun, moon and sky colours"
+    },
+    {
       "id": "custom-viewmodel-muzzle",
       "packages": [
         "@jgengine/core"
@@ -8434,6 +8444,16 @@
       "intent": "spend, refuse and refund points over an authored tree with passives, actives and synergies"
     },
     {
+      "id": "sky-light",
+      "packages": [
+        "@jgengine/core"
+      ],
+      "module": "@jgengine/core/sky/skyLight.draw",
+      "gameFacing": false,
+      "probe": null,
+      "intent": "one per-frame record of sun, moon, sky colour and cloud cover that water, clouds and a game's own sky share"
+    },
+    {
       "id": "social-emotes",
       "packages": [
         "@jgengine/core"
@@ -10319,7 +10339,7 @@
       "module": "@jgengine/core/sky/volumetricClouds",
       "gameFacing": false,
       "probe": null,
-      "intent": "raymarched cloud layer sky option"
+      "intent": "raymarched cloud layer, lit by the day and thickened by the weather"
     },
     {
       "id": "wait-queue",

@@ -21,6 +21,7 @@ import type {
   TerrainEnvironmentDescriptor,
   TerrainMaterialMaps,
   WeatherEnvironmentDescriptor,
+  WorldBounds,
 } from "@jgengine/core/world/features";
 import {
   createTerrainPaletteSampler,
@@ -48,6 +49,7 @@ import { MAX_TERRAIN_LAYER_MAPS, type TerrainDetailMaterialTextures, type Terrai
 import { useTerrainQuality } from "@jgengine/core/terrain/terrainQuality.draw";
 import { createTerrainPaintTextures, packTerrainPaintWeights, type TerrainPaintTextures } from "@jgengine/core/terrain/terrainSurfaces.draw";
 import { Ocean } from "@jgengine/core/water/Ocean.draw";
+import { oceanBedBounds } from "@jgengine/core/water/oceanBed";
 import { RainField } from "@jgengine/core/weather/RainField.draw";
 import { SnowField } from "@jgengine/core/weather/SnowField.draw";
 
@@ -431,6 +433,8 @@ function oceanConfig(ocean: OceanEnvironmentDescriptor) {
   return {
     size: ocean.bounds.w,
     depth: ocean.bounds.d,
+    ...(ocean.horizon === true ? { follow: true, quality: "high" as const } : {}),
+    ...(ocean.bedResolution === undefined ? {} : { bedResolution: ocean.bedResolution }),
     waves: waterSurfaceConfigFromDescriptor(ocean),
     color: oceanColor(ocean),
   };
@@ -439,43 +443,45 @@ function oceanConfig(ocean: OceanEnvironmentDescriptor) {
 function useOceanConfig(ocean: OceanEnvironmentDescriptor) {
   return useMemo(
     () => oceanConfig(ocean),
-    [ocean.bounds.w, ocean.bounds.d, ocean.waveHeight, ocean.waveSpeed, ocean.waveScale, ocean.color, ocean.palette?.deep, ocean.palette?.crest, ocean.palette?.foam, ocean.palette?.fresnel],
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [ocean.bounds.w, ocean.bounds.d, ocean.waveHeight, ocean.waveSpeed, ocean.waveScale, ocean.color, ocean.palette?.deep, ocean.palette?.crest, ocean.palette?.foam, ocean.palette?.fresnel, ocean.horizon, ocean.clarity, ocean.bedResolution],
   );
 }
 
-function DynamicWater({ ocean }: { ocean: OceanEnvironmentDescriptor & { levelAt: (time: number) => number } }) {
+function useOceanBed(ocean: OceanEnvironmentDescriptor, terrain: WorldBounds | undefined) {
+  const ctx = useGameContext();
+  const [x, z] = ocean.position ?? [0, 0];
+  // The descriptor has no bed of its own: the live ground under the sheet is the bed, so it shades
+  // shallow to deep and foams where the ground meets the surface, at any water level.
+  const bedAt = useCallback((lx: number, lz: number) => ctx.world.ground.sampleHeight(x + lx, z + lz), [ctx.world.ground, x, z]);
+  const bounds = useMemo(() => oceanBedBounds(ocean, terrain), [ocean.bounds.w, ocean.bounds.d, x, z, terrain?.w, terrain?.d]);
+  return { bedAt, bounds };
+}
+
+function DynamicWater({ ocean, terrain }: { ocean: OceanEnvironmentDescriptor & { levelAt: (time: number) => number }; terrain: WorldBounds | undefined }) {
   const ctx = useGameContext();
   const groupRef = useRef<Group>(null);
   const [x, z] = ocean.position ?? [0, 0];
   const config = useOceanConfig(ocean);
-  const depthAt = useCallback(
-    (lx: number, lz: number) => ocean.levelAt!(ctx.time.now()) - ctx.world.ground.sampleHeight(x + lx, z + lz),
-    [ctx.time.now, ctx.world.ground, ocean.levelAt, x, z],
-  );
+  const { bedAt, bounds } = useOceanBed(ocean, terrain);
   useFrame(() => {
     if (groupRef.current !== null) groupRef.current.position.y = ocean.levelAt(ctx.time.now());
   });
   return (
     <group ref={groupRef} position={[0, ocean.level, 0]}>
-      <Ocean position={[x, 0, z]} config={config} depthAt={depthAt} />
+      <Ocean position={[x, 0, z]} config={config} bedAt={bedAt} bedBounds={bounds} />
     </group>
   );
 }
 
-function Water({ ocean }: { ocean: OceanEnvironmentDescriptor }) {
-  const ctx = useGameContext();
+function Water({ ocean, terrain }: { ocean: OceanEnvironmentDescriptor; terrain: WorldBounds | undefined }) {
   const [x, z] = ocean.position ?? [0, 0];
   const config = useOceanConfig(ocean);
-  // The ocean descriptor has no depth field: sample the live ground so the sheet shades
-  // shallow→deep and the shoreline foam band lands where the bed meets the surface.
-  const depthAt = useCallback(
-    (lx: number, lz: number) => ocean.level - ctx.world.ground.sampleHeight(x + lx, z + lz),
-    [ctx.world.ground, ocean.level, x, z],
-  );
+  const { bedAt, bounds } = useOceanBed(ocean, terrain);
   if (ocean.levelAt !== undefined) {
-    return <DynamicWater ocean={ocean as OceanEnvironmentDescriptor & { levelAt: (time: number) => number }} />;
+    return <DynamicWater ocean={ocean as OceanEnvironmentDescriptor & { levelAt: (time: number) => number }} terrain={terrain} />;
   }
-  return <Ocean position={[x, ocean.level, z]} config={config} depthAt={depthAt} />;
+  return <Ocean position={[x, ocean.level, z]} config={config} bedAt={bedAt} bedBounds={bounds} />;
 }
 
 function Structures({
@@ -541,7 +547,7 @@ export function EnvironmentScene({ feature }: EnvironmentSceneProps) {
         <TerrainGround key={`island-${index}`} terrain={entry} field={field} center={entry.origin} sculpt={feature.sculpt} />
       ))}
       {water.map((ocean, index) => (
-        <Water key={`ocean-${index}`} ocean={ocean} />
+        <Water key={`ocean-${index}`} ocean={ocean} terrain={feature.terrain?.bounds} />
       ))}
       <Roads roads={roads} field={field} />
       {structures.map((entry, index) => (

@@ -37,18 +37,15 @@ function toOceanConfig({ rules, size, surface }: ResolvedWater, depthRange: numb
 
 /**
  * One authored water volume → a bounded, animated Ocean sheet at the box top, draped over the live
- * terrain's depth: the carved lake bed (see `lakebedFromWaterVolumes`) gives every vertex a real
- * water-column depth, which drives shallow→deep color, shore transparency/foam, and wave damping.
+ * terrain: the carved lake bed (see `lakebedFromWaterVolumes`) is baked into the sheet's bed map, which
+ * drives shallow→deep color, clear shallows, shore foam, and wave damping.
  */
 function OneWater({ object, context }: { object: SceneKindObject; context: SceneKindRenderContext }) {
   const resolved = useMemo(() => resolveWaterObject(object), [object]);
   const surfaceY = resolved === null ? 0 : resolved.center[1];
   const centerX = resolved === null ? 0 : resolved.center[0];
   const centerZ = resolved === null ? 0 : resolved.center[2];
-  const depthAt = useCallback(
-    (x: number, z: number) => surfaceY - context.field.sampleHeight(centerX + x, centerZ + z),
-    [context.field, surfaceY, centerX, centerZ],
-  );
+  const bedAt = useCallback((x: number, z: number) => context.field.sampleHeight(centerX + x, centerZ + z), [context.field, centerX, centerZ]);
   const config = useMemo(() => {
     if (resolved === null) return null;
     // Full deep color roughly where the carved bed bottoms out (box depth + undercut headroom).
@@ -56,7 +53,7 @@ function OneWater({ object, context }: { object: SceneKindObject; context: Scene
     return toOceanConfig(resolved, Math.max(0.8, boxDepth * 0.9));
   }, [resolved, object]);
   if (resolved === null || config === null) return null;
-  return <Ocean config={config} position={[centerX, surfaceY, centerZ]} depthAt={depthAt} />;
+  return <Ocean config={config} position={[centerX, surfaceY, centerZ]} bedAt={bedAt} />;
 }
 
 /** Registers the `water` volume runtime renderer. Called by `registerBuiltinSceneKindRenderers`. @internal */

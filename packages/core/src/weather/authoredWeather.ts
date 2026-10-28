@@ -4,12 +4,17 @@ import { windField, type WindField, type WindFieldConfig, type WindVector } from
 /** Wind is metres/second along world X,Z; world Y points up. Times are simulation seconds. */
 export type AuthoredWeatherMode = "clear" | "rain" | "snow" | "mixed" | "dust";
 
-/** Precipitation intensity, temperature offset in degrees, and normalized lightning brightness. */
+/** Precipitation intensity, temperature offset in degrees, normalized lightning brightness and cloud cover. */
 export interface WeatherConditions {
   mode: AuthoredWeatherMode;
   intensity: number;
   temperatureOffset?: number;
   lightning?: number;
+  /**
+   * How much of the sky cloud covers, 0..1, with or without anything falling: 0.85 is a dry overcast day. Falling rain
+   * or snow covers the sky at least as much as it falls, so a storm needs no cover of its own. Default 0.
+   */
+  cloudCover?: number;
 }
 
 /** A named set of conditions referenced by the authored schedule. */
@@ -62,6 +67,8 @@ export interface AuthoredWeatherConfig {
 /** Resolved conditions and wind at a world point and absolute simulation time. */
 export interface AuthoredWeatherSample extends WeatherConditions {
   timeSeconds: number;
+  /** Sky cover here: the authored `cloudCover`, raised to at least the precipitation. */
+  cloudCover: number;
   wind: WindVector;
   precipitation: number;
   rain: number;
@@ -94,7 +101,7 @@ function objectKeys(value: object, allowed: readonly string[], label: string): v
 }
 
 function conditions(value: WeatherConditions, profile = false): void {
-  objectKeys(value, ["mode", "intensity", "temperatureOffset", "lightning", ...(profile ? ["id"] : [])], "weather conditions");
+  objectKeys(value, ["mode", "intensity", "temperatureOffset", "lightning", "cloudCover", ...(profile ? ["id"] : [])], "weather conditions");
   if (!MODES.includes(value.mode)) throw new Error(`unknown weather mode: ${value.mode}`);
   finite(value.intensity, "weather intensity", 0);
   if (value.intensity > 1) throw new Error("weather intensity must be <= 1");
@@ -102,6 +109,10 @@ function conditions(value: WeatherConditions, profile = false): void {
   if (value.lightning !== undefined) {
     finite(value.lightning, "weather lightning", 0);
     if (value.lightning > 1) throw new Error("weather lightning must be <= 1");
+  }
+  if (value.cloudCover !== undefined) {
+    finite(value.cloudCover, "weather cloudCover", 0);
+    if (value.cloudCover > 1) throw new Error("weather cloudCover must be <= 1");
   }
 }
 
@@ -191,16 +202,17 @@ interface Blend {
   dust: number;
   temperatureOffset: number;
   lightning: number;
+  cloudCover: number;
 }
 
 function blendOf(value: WeatherConditions): Blend {
   const [rain, snow, dust] = amounts(value);
-  return { rain, snow, dust, temperatureOffset: value.temperatureOffset ?? 0, lightning: value.lightning ?? 0 };
+  return { rain, snow, dust, temperatureOffset: value.temperatureOffset ?? 0, lightning: value.lightning ?? 0, cloudCover: value.cloudCover ?? 0 };
 }
 
 function blend(a: Blend, b: Blend, weight: number): Blend {
   const out = { ...a };
-  for (const key of ["rain", "snow", "dust", "temperatureOffset", "lightning"] as const) out[key] += (b[key] - a[key]) * weight;
+  for (const key of ["rain", "snow", "dust", "temperatureOffset", "lightning", "cloudCover"] as const) out[key] += (b[key] - a[key]) * weight;
   return out;
 }
 
@@ -292,7 +304,8 @@ export function createAuthoredWeather(source: AuthoredWeatherConfig = {}): Autho
         }
       }
       const precipitation = value.rain + value.snow;
-      return { ...value, mode: modeOf(value.rain, value.snow, value.dust), intensity: Math.min(1, precipitation + value.dust), timeSeconds, wind: [wx, wz], precipitation };
+      const cloudCover = Math.min(1, Math.max(value.cloudCover, precipitation));
+      return { ...value, mode: modeOf(value.rain, value.snow, value.dust), intensity: Math.min(1, precipitation + value.dust), timeSeconds, wind: [wx, wz], precipitation, cloudCover };
     },
   };
 }
