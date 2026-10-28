@@ -14,7 +14,3 @@ a landform simulator in core/landform grows terrain from tectonic uplift, river 
 ### Changed
 
 - Part of #2742
-
-### Removed
-
-- `@jgengine/core/plants/validation/stemAllometry` no longer exports `BAAD_LEAF_TO_SAPWOOD`, `FIA_STAND_DIAMETER`, `LeafToSapwoodBand`, `StandDiameterAtAge`.
