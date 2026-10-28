@@ -55,9 +55,11 @@ export function markFarPlacements(
  * instanced draw for the whole species. The split is recomputed only when the camera moves.
  * @internal
  */
-export function ScatterImpostorField({ cacheKey, sources, batches, radius }: {
+export function ScatterImpostorField({ cacheKey, sources, farSources, batches, radius }: {
   cacheKey: string;
   sources: readonly ScatterModelSource[];
+  /** What the far card is baked from when it is not `sources` — variants of one species share one atlas. */
+  farSources?: readonly ScatterModelSource[] | undefined;
   batches: readonly ScatterBatch[];
   radius: number;
 }) {
@@ -66,10 +68,10 @@ export function ScatterImpostorField({ cacheKey, sources, batches, radius }: {
   const settings = useMemo(() => impostorSettingsForQuality(quality), [quality]);
   const [entry, setEntry] = useState<ImpostorEntry | null>(null);
   useEffect(() => {
-    const acquired = acquireImpostor(cacheKey, gl, sources, settings);
+    const acquired = acquireImpostor(cacheKey, gl, farSources ?? sources, settings);
     setEntry(acquired);
     return () => releaseImpostor(cacheKey, settings);
-  }, [cacheKey, gl, sources, settings]);
+  }, [cacheKey, gl, sources, farSources, settings]);
 
   // Near draws are cached per batch object: a batch that comes back unchanged (every chunk but the one
   // a felled tree stood in) keeps its mesh, so clearing a placement does not rebuild the species.

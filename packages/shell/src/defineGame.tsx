@@ -12,6 +12,7 @@ import { offline } from "@jgengine/core/runtime/adapter";
 import type { GameContext, GameContextContent } from "@jgengine/core/runtime/gameContext";
 import type { AssetCatalog, ModelAssetRef } from "@jgengine/core/scene/assetCatalog";
 import type { ModelConfig } from "@jgengine/core/game/playableGame";
+import type { ScatterGeneratorItem } from "@jgengine/core/scatter/scatterGenerator";
 import type { EnvironmentWorldFeature, SkyEnvironmentConfig } from "@jgengine/core/world/features";
 import type { EnvironmentSource } from "@jgengine/core/lighting/environmentLighting";
 import { lightingFromDocument, skyFromDocument } from "@jgengine/core/editor/environment";
@@ -36,8 +37,8 @@ type PresentationFields<TProbe extends ProbeReadings> = Omit<PlayableGame<TProbe
   GameUI?: ComponentType;
   /** Tunes how the auto-mounted `AuthoredScene` places catalog-id markers into the object store. Default `true`; `excludeKinds` replaces the resolver's mob/boss exclusions, so include those when adding game-owned spawn kinds. Pass `false` when the game places all content itself. */
   scenePlacement?: boolean | ({ verticalOffset?: number } & ResolveAuthoredObjectsOptions);
-  /** GLB models for the auto-mounted scene's scatter palette items, keyed by palette item id; string ids resolve through the game's asset catalog. Unmatched items keep the built-in proxy meshes. */
-  sceneScatterModels?: Record<string, string | ModelConfig>;
+  /** What the auto-mounted scene's scatter palette items draw, keyed by palette item id: a GLB (`ModelConfig`, or a string id resolved through the game's asset catalog) or a generator (`{ generator: "nature.palm", preset, params, variants }`, see `ScatterGeneratorItem`). Unmatched items keep the built-in proxy meshes. */
+  sceneScatterModels?: Record<string, string | ModelConfig | ScatterGeneratorItem>;
   /** Most scatter instances the auto-mounted scene draws; past it the foliage thins evenly. Default 20000 — raise it for a whole-island world. */
   sceneScatterBudget?: number;
   /** Animated species models for cosmetic authored habitats; gameplay actors remain game-owned. */
@@ -77,7 +78,7 @@ function authoredSceneOverlay(
   document: EditorDocument,
   diagnostics: boolean,
   placement: boolean | ({ verticalOffset?: number } & ResolveAuthoredObjectsOptions),
-  scatterModels: Record<string, string | ModelConfig> | undefined,
+  scatterModels: Record<string, string | ModelConfig | ScatterGeneratorItem> | undefined,
   scatterBudget: number | undefined,
   flockModels: Record<string, string | ModelConfig> | undefined,
   pathKinds: readonly string[] | undefined,

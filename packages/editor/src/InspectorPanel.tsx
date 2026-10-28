@@ -12,7 +12,6 @@ import {
 } from "@jgengine/core/editor/index";
 import { getSceneKind, isSceneKind, type SceneKindObject } from "@jgengine/core/scene/sceneKinds";
 import { parseParams } from "@jgengine/core/generator/paramSchema";
-import { partsGeneratorFor } from "@jgengine/core/scene/assetGenerator";
 import type { TriggerSourceKind } from "@jgengine/core/scene/authoredTriggers";
 import type { AuthoredAnimationDiagnostic } from "@jgengine/core/world/authoredAnimation";
 import { markerCatalogId } from "@jgengine/core/world/authoredObjects";
@@ -28,7 +27,7 @@ import {
 } from "./authoredComponentMeta";
 import { SchemaInspector, type MetaPatch } from "./SchemaInspector";
 import { GeneratorVariants } from "./GeneratorVariants";
-import { generatorForObject } from "@jgengine/core/scene/assetGenerator";
+import { generatorForObject, placedGeneratorFor } from "@jgengine/core/scene/assetGenerator";
 import { TriggerInspector } from "./TriggerInspector";
 import { describeClipRoles, type EditorAssetEntry } from "./AssetBrowser";
 import {
@@ -117,7 +116,7 @@ function KindInspector({ object, meta, onMeta }: { object: SceneKindObject; meta
 
 /** Auto-generated inspector for a placed generator asset's params (building/bookcase/…). */
 function GeneratorInspector({ meta, onMeta }: { meta: Record<string, unknown> | undefined; onMeta: MetaPatch }) {
-  const generator = partsGeneratorFor(meta);
+  const generator = placedGeneratorFor(meta);
   if (generator === undefined) return null;
   return <SchemaInspector schema={generator.schema} label={`${generator.label} (generator)`} accent="#a78bfa" meta={meta} onMeta={onMeta} />;
 }
@@ -808,7 +807,7 @@ export function InspectorPanel({
     const animation = readAnimationSettingResult(document, marker.id);
     const hasTrigger = hasAuthoredTrigger(marker.meta);
     const hasMaterial = hasMaterialAssignment(marker.meta);
-    const hasGenerator = partsGeneratorFor(marker.meta) !== undefined;
+    const hasGenerator = placedGeneratorFor(marker.meta) !== undefined;
     const hasKindParams = isSceneKind(marker.kind);
     const componentCards = (
       <>

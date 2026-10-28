@@ -1,5 +1,6 @@
 import type { ModelConfig } from "@jgengine/core/game/playableGame";
 import { resolveModelPlan } from "@jgengine/core/model/resolveModel";
+import type { ScatterGeneratorItem } from "@jgengine/core/scatter/scatterGenerator";
 
 import { assets } from "./assets";
 import { SPECIES_MODELS } from "./data/creatureModels";
@@ -25,26 +26,32 @@ export const entityModels: Record<string, ModelConfig> = {
 
 export const objectModels: Record<string, ModelConfig> = {};
 
-/** Scatter palette item (the island's forests, rocks and bushes in editor.scene.json) → the model it draws. */
-export const scatterModels: Record<string, ModelConfig> = {
-  palm: nature("CommonTree_3", 9),
-  tree: nature("CommonTree_1", 11),
-  tree2: nature("CommonTree_2", 10),
-  tree3: nature("CommonTree_5", 12),
-  pine: nature("Pine_2", 13),
-  pine2: nature("Pine_3", 11),
-  rock: nature("Rock_Medium_2", 1.6),
-  boulder: nature("Rock_Medium_1", 3.4),
-  boulder2: nature("Rock_Medium_3", 3),
-  bush: nature("Bush_Common", 1.3),
-  berrybush: nature("Bush_Common_Flowers", 1.3),
-  fern: nature("Fern_1", 1),
-  pebble: nature("Pebble_Round_1", 0.35),
-  pebble2: nature("Pebble_Round_3", 0.35),
+/** A palette item grown by an engine nature generator: a few seeded variants of one species. */
+const grown = (generator: string, preset: string, params: Record<string, unknown> = {}, variants = 6): ScatterGeneratorItem => ({ generator, preset, params, variants });
+
+/**
+ * Scatter palette item (the island's forests, rocks and bushes in editor.scene.json) → what it draws.
+ * Trees, palms, bushes, ferns, rocks and pebbles grow from the engine's nature generators, so no two
+ * neighbours match; grass, flowers and ore rocks stay catalog models.
+ */
+export const scatterModels: Record<string, ModelConfig | ScatterGeneratorItem> = {
+  palm: grown("nature.palm", "coconut", { height: 9, frondLength: 3.6 }),
+  tree: grown("nature.broadleaf", "oak", { height: 10 }),
+  tree2: grown("nature.broadleaf", "tropical", { height: 11, leafColor: "#467f33" }),
+  tree3: grown("nature.broadleaf", "oak", { height: 12, branches: 7, clusterSize: 2.6, leafColor: "#3d7531", barkColor: "#5e4532" }),
+  pine: grown("nature.conifer", "pine", { height: 13 }),
+  pine2: grown("nature.conifer", "spruce", { height: 11 }),
+  redwood: grown("nature.conifer", "redwood", { height: 30 }),
+  deadtree: grown("nature.broadleaf", "dead", { height: 8 }),
+  rock: grown("nature.rock", "rock", { size: 2.2 }),
+  boulder: grown("nature.rock", "boulder", { size: 4.6 }),
+  boulder2: grown("nature.rock", "slab", { size: 4.2, flatness: 0.55, moss: 0.4 }),
+  bush: grown("nature.bush", "shrub", { width: 1.6, height: 1.3 }),
+  berrybush: grown("nature.bush", "berry", { width: 1.6, height: 1.3 }),
+  fern: grown("nature.fern", "fern", { frondLength: 1.4 }),
+  pebble: grown("nature.rock", "pebbles", { size: 0.42 }, 4),
+  pebble2: grown("nature.rock", "pebbles", { size: 0.48, count: 4, color: "#a39a88" }, 4),
   grass: nature("Grass_Common_Tall", 0.7),
-  // ARK's redwoods tower over everything else on the island; at 3/8 scale they still stand ~30 m.
-  redwood: nature("Pine_1", 30),
-  deadtree: nature("DeadTree_1", 8),
   flowers: nature("Flower_4_Group", 0.6),
   tallgrass: nature("Grass_Wispy_Tall", 1),
   plant: nature("Plant_1_Big", 1.2),

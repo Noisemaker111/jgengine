@@ -693,7 +693,43 @@ export {
   type ScatterTerrain,
 } from "./scatter/scatterRegion";
 export { createAssetCatalog, type AssetCatalog, type ModelAssetRef, type ModelDims } from "./scene/assetCatalog";
-export { PARTS_OUTPUT, partsBounds, type GeneratedAsset, type GeneratedPart } from "./scene/assetGenerator";
+export { PARTS_OUTPUT, partsBounds, placedGeneratorFor, registerPlaceableGeneratorOutput, type GeneratedAsset, type GeneratedPart } from "./scene/assetGenerator";
+export { isScatterGeneratorItem, scatterGeneratorBase, scatterGeneratorVariantCount, type ScatterGeneratorItem } from "./scatter/scatterGenerator";
+export {
+  BROADLEAF_GENERATOR,
+  BROADLEAF_SCHEMA,
+  BUSH_GENERATOR,
+  BUSH_SCHEMA,
+  CONIFER_GENERATOR,
+  CONIFER_SCHEMA,
+  DRIFTWOOD_GENERATOR,
+  DRIFTWOOD_SCHEMA,
+  FERN_GENERATOR,
+  FERN_SCHEMA,
+  NATURE_GENERATORS,
+  NATURE_OUTPUT,
+  PALM_GENERATOR,
+  PALM_SCHEMA,
+  ROCK_GENERATOR,
+  ROCK_SCHEMA,
+} from "./nature/natureGenerators";
+export {
+  NatureMeshBuilder,
+  addBlob,
+  addCone,
+  addFrond,
+  addStone,
+  addTube,
+  isNatureMesh,
+  type BlobOptions,
+  type ConeOptions,
+  type FrondOptions,
+  type NatureMesh,
+  type NatureRgb,
+  type NatureVec,
+  type StoneOptions,
+  type TubeOptions,
+} from "./nature/natureMesh";
 export {
   applyRotationPolicy,
   headingToRotationY,

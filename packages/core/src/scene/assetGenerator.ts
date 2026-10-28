@@ -70,22 +70,27 @@ export function isGeneratedAsset(value: unknown): value is GeneratedAsset {
   return "parts" in value && Array.isArray(value.parts) && "bounds" in value && typeof value.bounds === "object" && value.bounds !== null;
 }
 
-/** The registered parts generator for an asset id, or undefined when the id names none. @internal */
-export function getPartsGenerator(assetId: string): GeneratorDefinition | undefined {
-  const definition = getGenerator(assetId);
-  return definition?.output === PARTS_OUTPUT ? definition : undefined;
+const placeableOutputs = new Set<string>([PARTS_OUTPUT]);
+
+/**
+ * Let markers place generators of an output family by `meta.assetId` (parts always can). The
+ * family also needs a draw-side mesh builder (`registerGeneratorMesh`) to render at runtime.
+ */
+export function registerPlaceableGeneratorOutput(output: string): void {
+  placeableOutputs.add(output);
 }
 
-/** An object's generator: its kind's `generator`, else the parts generator its `meta.assetId` names. @internal */
+/** An object's generator: its kind's `generator`, else the placeable generator its `meta.assetId` names. @internal */
 export function generatorForObject(kind: string, meta: Readonly<Record<string, unknown>> | undefined): GeneratorDefinition | undefined {
   const kindGenerator = getSceneKind(kind)?.generator;
-  return kindGenerator === undefined ? partsGeneratorFor(meta) : getGenerator(kindGenerator);
+  return kindGenerator === undefined ? placedGeneratorFor(meta) : getGenerator(kindGenerator);
 }
 
-/** The parts generator a placed marker's `meta.assetId` names, or undefined. */
-export function partsGeneratorFor(meta: Readonly<Record<string, unknown>> | undefined): GeneratorDefinition | undefined {
+/** The placeable generator (parts, nature …) a placed marker's `meta.assetId` names, or undefined. */
+export function placedGeneratorFor(meta: Readonly<Record<string, unknown>> | undefined): GeneratorDefinition | undefined {
   const assetId = meta?.["assetId"];
-  return typeof assetId === "string" ? getPartsGenerator(assetId) : undefined;
+  const definition = typeof assetId === "string" ? getGenerator(assetId) : undefined;
+  return definition !== undefined && placeableOutputs.has(definition.output) ? definition : undefined;
 }
 
 /**
@@ -95,8 +100,8 @@ export function partsGeneratorFor(meta: Readonly<Record<string, unknown>> | unde
  * @internal
  */
 export function resolveGeneratorAsset(meta: Readonly<Record<string, unknown>> | undefined): GeneratedAsset | null {
-  const definition = partsGeneratorFor(meta);
-  if (definition === undefined) return null;
+  const definition = placedGeneratorFor(meta);
+  if (definition?.output !== PARTS_OUTPUT) return null;
   const asset = runGenerator(definition, meta, { fallbackSeed: definition.id });
   return isGeneratedAsset(asset) ? asset : null;
 }
