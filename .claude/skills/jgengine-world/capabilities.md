@@ -1164,8 +1164,12 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 ## landform-glacial — glaciers that flow, slide, carve their valleys wider and deeper and lay moraines
 
+- `Delta18ORecord` (interface) · `import { Delta18ORecord } from "@jgengine/core/landform/glacial/glacialClimate"`
+- `LR04_STACK` (const) · `import { LR04_STACK } from "@jgengine/core/landform/glacial/glacialClimate"`
 - `createFirstOrderIceFlow` (function) · `import { createFirstOrderIceFlow } from "@jgengine/core/landform/glacial/firstOrderIceFlow"`
 - `iceDeformationRate` (function) · `import { iceDeformationRate } from "@jgengine/core/landform/glacial/iceFlow"`
+- `snowlineAt` (function) · `import { snowlineAt } from "@jgengine/core/landform/glacial/glacialClimate"`
+- `snowlineHistory` (function) · `import { snowlineHistory } from "@jgengine/core/landform/glacial/glacialClimate"`
 
 ## landform-materials — per-cell bedrock, soil, gravel, sand, silt and scree from a landform simulation
 

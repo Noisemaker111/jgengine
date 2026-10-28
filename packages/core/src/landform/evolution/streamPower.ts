@@ -17,6 +17,8 @@ export interface IncisionInput {
   routing: FlowRouting;
   /** 1 where a cell lies under standing water (a lake or the sea): no incision there. */
   wet: Uint8Array;
+  /** 1 where glacier ice covers the bed: no river incision there. Default none. */
+  shielded?: Uint8Array;
   /** Bedrock K per cell, its rock layer applied. */
   erodibility: Float64Array;
   /** K of loose sediment. */
@@ -59,13 +61,13 @@ export function solveIncision(h: number, target: number, g: number, n: number): 
 
 /** Run one implicit stream-power update down the stack. @internal */
 export function incise(input: IncisionInput): void {
-  const { height, routing, wet, erodibility, looseErodibility, sediment, areaExponent, slopeExponent, dt, erosion } = input;
+  const { height, routing, wet, shielded, erodibility, looseErodibility, sediment, areaExponent, slopeExponent, dt, erosion } = input;
   const { stack, receiver, receiverDistance, area, water } = routing;
   erosion.fill(0);
   for (let s = 0; s < stack.length; s += 1) {
     const i = stack[s] ?? 0;
     const r = receiver[i] ?? i;
-    if (r === i || wet[i] === 1) continue;
+    if (r === i || wet[i] === 1 || shielded?.[i] === 1) continue;
     // A river entering a lake or the sea cuts down to the water surface, not the drowned floor.
     const target = wet[r] === 1 ? (water[r] ?? 0) : (height[r] ?? 0);
     const h = height[i] ?? 0;

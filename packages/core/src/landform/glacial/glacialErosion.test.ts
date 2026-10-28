@@ -3,6 +3,7 @@ import { createLandscapeEvolution, type GlacialParams, type LandscapeEvolution }
 import { landformTopology } from "../grid/landformGrid";
 import { COVER, COVER_CLASSES } from "../materials/sedimentCover";
 import { fitPowerLaw } from "../validation/geomorphicLaws";
+import { snowlineHistory } from "./glacialClimate";
 import { createIceFlow, iceDeformationRate } from "./iceFlow";
 
 describe("ice flow", () => {
@@ -18,9 +19,8 @@ describe("ice flow", () => {
     const balance = new Float64Array(topology.cells).fill(snowfall);
     const gamma = iceDeformationRate();
     const settings = { deformation: gamma, sliding: 0, ela: 0, balanceGradient: 0, maxAccumulation: 0, lateralDrag: 0 };
-    let residual = Infinity;
-    for (let k = 0; k < 200; k += 1) residual = flow.relax(bed, ice, 2000, 4, settings, balance);
-    expect(residual).toBeLessThan(1e-9);
+    const report = flow.advance(bed, ice, 400_000, settings, { balance, maxStep: 5000, tolerance: 1e-10 });
+    expect(report.rate).toBeLessThan(1e-9);
     // H(x) = H₀ (1 − (|x|/L)^(4/3))^(3/8), H₀ = 2^(3/8) (a/Γ)^(1/8) L^(1/2) for Glen's n = 3.
     const dome = 2 ** (3 / 8) * (snowfall / gamma) ** (1 / 8) * Math.sqrt(half);
     for (const [share, tolerance] of [
@@ -38,7 +38,7 @@ describe("ice flow", () => {
   });
 });
 
-// A river's V-shaped valley, 1.2 km deep, climbing to a high cirque basin above an ELA of 1950 m.
+// A river's V-shaped valley, 1.2 km deep, climbing to a high cirque basin above an ELA of 1500 m.
 const COLS = 60;
 const HALF = 12;
 const ROWS = 2 * HALF + 9;
@@ -59,7 +59,7 @@ function vValley(): number[] {
 
 const START = vValley();
 
-function glaciate(timeStep: number, glacial: GlacialParams = { ela: 1950, model: "shallow-ice" }): LandscapeEvolution {
+function glaciate(timeStep: number, glacial: GlacialParams = { ela: 1500, model: "shallow-ice" }): LandscapeEvolution {
   return createLandscapeEvolution({
     grid: { cols: COLS, rows: ROWS, cellSize: DX, outlets: ["west"] },
     seed: "valley",
@@ -145,14 +145,6 @@ describe("glacial erosion by shallow ice, the fast path", () => {
     }
   }, 60_000);
 
-  test("the V's trough steepens toward a U: its cross-section exponent rises from 1", () => {
-    const model = glaciate(2000);
-    for (let k = 0; k < 40; k += 1) model.step();
-    const exponent = medianTroughExponent(model);
-    expect(exponent).toBeGreaterThan(1.15);
-    expect(exponent).toBeLessThan(2.5);
-  }, 60_000);
-
   test("glaciers drop till where the ice ends, and every cubic metre is accounted for", () => {
     const model = glaciate(2000);
     const { height, cover, ice } = model.fields();
@@ -183,7 +175,17 @@ describe("glacial erosion by shallow ice, the fast path", () => {
 });
 
 describe("glacial erosion by first-order (Blatter–Pattyn) ice flow", () => {
-  const firstOrder: GlacialParams = { ela: 1950, model: "first-order", layers: 4 };
+  const firstOrder: GlacialParams = { ela: 1500, model: "first-order", layers: 4 };
+
+  // Shallow ice slides as fast on the thin ice up the walls as in the trough, so it lowers the whole V;
+  // the walls' drag in first-order flow is what leaves them standing.
+  test("the V's trough steepens toward a U: its cross-section exponent rises from 1", () => {
+    const model = glaciate(2000, firstOrder);
+    for (let k = 0; k < 10; k += 1) model.step();
+    const exponent = medianTroughExponent(model);
+    expect(exponent).toBeGreaterThan(1.2);
+    expect(exponent).toBeLessThan(2.5);
+  }, 120_000);
 
   test("the walls drag the ice in a V: it slides slower on the axis than beside it", () => {
     const model = glaciate(2000, firstOrder);
@@ -203,8 +205,8 @@ describe("glacial erosion by first-order (Blatter–Pattyn) ice flow", () => {
     expect(slowerAxis / columns).toBeGreaterThan(0.5);
   }, 60_000);
 
-  test("its flux scale is state: a snapshot restores it and the run resumes bit for bit", () => {
-    const model = glaciate(2000, firstOrder);
+  test("its flux scale is state: a snapshot restores it and a run through the LR04 snowline resumes bit for bit", () => {
+    const model = glaciate(2000, { model: "first-order", layers: 4, elaHistory: snowlineHistory({ presentEla: 2200, glacialEla: 1500, startKa: 24 }) });
     for (let k = 0; k < 2; k += 1) model.step();
     const saved = JSON.stringify(model.snapshot());
     model.step();
@@ -212,5 +214,37 @@ describe("glacial erosion by first-order (Blatter–Pattyn) ice flow", () => {
     model.restore(JSON.parse(saved));
     model.step();
     expect(model.hash()).toBe(ahead);
+  }, 60_000);
+});
+
+describe("ice surface on a smooth steep bed", () => {
+  // A straight trough, sloping 0.3 or 0.5, under a temperate glacier 100 m thick. Mismatched face
+  // fluxes would pile ice into steps; the smooth bed allows none.
+  test.each([0.3, 0.5])("at slope %p the first-order glacier's surface has no steps over 10 m", (slope) => {
+    const cols = 60;
+    const rows = 31;
+    const mid = 15;
+    const heights: number[] = [];
+    for (let row = 0; row < rows; row += 1) for (let col = 0; col < cols; col += 1) heights.push(1000 + slope * col * 100 + 0.0004 * ((row - mid) * 100) ** 2);
+    const model = createLandscapeEvolution({
+      grid: { cols, rows, cellSize: 100, outlets: ["west"] },
+      seed: "smooth",
+      initial: { heights, roughness: 0 },
+      params: { uplift: 0, erodibility: 0, diffusivity: 0, marineDiffusivity: 0, soilProduction: 0, timeStep: 1000, glacial: { ela: 1000 + slope * 4500, model: "first-order", layers: 4, erosion: 0, snowlineTemperature: 10 } },
+    });
+    for (let k = 0; k < 10; k += 1) model.step();
+    const { height, ice } = model.fields();
+    const surface = (i: number): number => (height[i] ?? 0) + (ice[i] ?? 0);
+    let worst = 0;
+    let measured = 0;
+    // Away from the outlet edge and the head, wherever ice 20 m thick spans five cells.
+    for (let col = 4; col < cols - 4; col += 1) {
+      const i = mid * cols + col;
+      if ([-2, -1, 0, 1, 2].some((k) => (ice[i + k] ?? 0) < 20)) continue;
+      measured += 1;
+      worst = Math.max(worst, Math.abs(surface(i + 1) - 2 * surface(i) + surface(i - 1)));
+    }
+    expect(measured).toBeGreaterThan(30);
+    expect(worst).toBeLessThan(10);
   }, 60_000);
 });

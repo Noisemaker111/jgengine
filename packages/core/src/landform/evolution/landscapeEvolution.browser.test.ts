@@ -14,6 +14,7 @@ const scratch = `${root}/.scratch/landform-browser-test`;
 const CHECK = `
 import { createLandscapeEvolution, hashLandformArrays } from "${root}/packages/core/src/landform/evolution/landscapeEvolution";
 import { dInfinityArea } from "${root}/packages/core/src/landform/flow/dInfinity";
+import { snowlineHistory } from "${root}/packages/core/src/landform/glacial/glacialClimate";
 import { landformTopology } from "${root}/packages/core/src/landform/grid/landformGrid";
 export function landformCheck() {
   const grid = { cols: 48, rows: 40, cellSize: 80, outlets: ["south", "west"] };
@@ -51,8 +52,8 @@ export function landformCheck() {
   for (let k = 0; k < 20; k += 1) range.step();
   if (!range.fields().ice.some((h) => h > 0)) throw new Error("no glacier grew");
   hashes.push(range.hash());
-  // The grown glacier under first-order ice: Glen's law through the engine's portable pow, Newton steps and conjugate gradients.
-  range.retune({ glacial: { ela: 1500, model: "first-order", erosionExponent: 2, layers: 4 } });
+  // The grown glacier under first-order ice through the LR04 snowline: Glen's law through the engine's portable pow, Newton steps and Krylov solves.
+  range.retune({ glacial: { elaHistory: snowlineHistory({ presentEla: 1900, glacialEla: 1400, startKa: 60 }), model: "first-order", erosionExponent: 2, layers: 4 } });
   for (let k = 0; k < 3; k += 1) range.step();
   if (!range.fields().iceSliding.some((u) => u > 0)) throw new Error("no first-order glacier slid");
   hashes.push(range.hash());

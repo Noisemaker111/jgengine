@@ -384,6 +384,29 @@ no code is copied (Landlab, Fastscape and TopoToolbox were not used as sources).
   its parameters and the exponents and form ratios it is tested against.
 - Hallet 1979, a theoretical model of glacial abrasion, *Journal of Glaciology* 23: erosion growing
   with the square of sliding speed.
+- Lisiecki & Raymo 2005, a Pliocene–Pleistocene stack of 57 globally distributed benthic δ18O
+  records, *Paleoceanography* 20; data from PANGAEA, doi:10.1594/PANGAEA.701576 (CC BY 3.0): the
+  δ18O record (0–800 ka) behind the glacial cycles. Pedersen & Egholm 2013, glaciations in response
+  to climate variations preconditioned by evolving topography, *Nature* 493: snowline scaled by
+  that record.
+- Hindmarsh & Payne 1996, time-step limits for stable solutions of the ice-sheet equation, *Annals
+  of Glaciology* 23; Jouvet & Bueler 2012, steady, shallow ice sheets as obstacle problems, *SIAM
+  Journal on Applied Mathematics* 72: the fully implicit ice step with an active set keeping H ≥ 0.
+  van der Vorst 1992, Bi-CGSTAB, *SIAM Journal on Scientific and Statistical Computing* 13: its
+  linear solver. Jarosch, Schoof & Anslow 2013, restoring mass conservation to shallow ice flow
+  models over complex terrain, *The Cryosphere* 7 (CC BY 3.0): why a face's thickness is capped at
+  its upper cell's.
+- Kleman & Hättestrand 1999, frozen-bed Fennoscandian and Laurentide ice sheets during the Last
+  Glacial Maximum, *Nature* 402: cold-based ice that keeps its bed; Cuffey & Paterson 2010: basal
+  temperature by conduction and the pressure-melting point.
+- Hallet, Hunter & Bogen 1996, rates of erosion and sediment evacuation by glaciers, *Global and
+  Planetary Change* 12: the glacial erosion rates the default erosion constant falls among.
+- Alley, Lawson, Larson, Evenson & Baker 2003, stabilizing feedbacks in glacier-bed erosion,
+  *Nature* 424: supercooling meltwater stops erosion where the bed rises out of an overdeepening
+  1.2–1.7 times as steeply as the ice surface falls.
+- Brozović, Burbank & Meigs 1997, climatic limits on landscape development in the northwestern
+  Himalaya, *Science* 276; Egholm, Nielsen, Pedersen & Lesemann 2009, glacial effects limiting
+  mountain height, *Nature* 460: the glacial buzzsaw capping a range near the snowline.
 - Sunamura 1992, *Geomorphology of Rocky Coasts*; Anderson, Densmore & Ellis 1999, the generation and
   degradation of marine terraces, *Basin Research* 11: cliff retreat damped by the platform it leaves,
   and platform lowering by depth.

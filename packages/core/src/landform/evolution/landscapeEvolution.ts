@@ -27,6 +27,8 @@ import { plantPow } from "../../plants/growth/plantMath";
 import { seededRng } from "../../random/rng";
 import { createWaveEroder } from "../coastal/waveErosion";
 import { createFlowRouter, type FlowRouting } from "../flow/flowRouting";
+import { temperateBed } from "../glacial/basalTemperature";
+import { snowlineAt, type SnowlineHistory } from "../glacial/glacialClimate";
 import { createGlacierFlow, type GlacierModel } from "../glacial/glacierFlow";
 import { GLEN_RATE_FACTOR, iceDeformationRate } from "../glacial/iceFlow";
 import { landformTopology, type LandformGrid } from "../grid/landformGrid";
@@ -47,8 +49,10 @@ export interface GlacialParams {
   /** First-order layers per ice column. Default 8. */
   layers?: number;
 
-  /** Equilibrium line altitude in metres: ice grows above it and melts below. */
-  ela: number;
+  /** Equilibrium line altitude in metres: ice grows above it and melts below. Needed unless `elaHistory` is given. */
+  ela?: number;
+  /** The ELA through time, [model year, metres] points (see `snowlineHistory` for glacial cycles from the LR04 record); each step uses its midpoint's ELA, and it overrides `ela`. */
+  elaHistory?: SnowlineHistory;
   /** Mass balance gradient in (m/yr of ice) per metre of altitude. Default 0.005. */
   balanceGradient?: number;
   /** Largest accumulation in m/yr. Default 2. */
@@ -57,18 +61,26 @@ export interface GlacialParams {
   flowRate?: number;
   /** Sliding coefficient C of u_b = C·τ_b, in m yr⁻¹ Pa⁻¹. Default 5·10⁻⁴ (50 m/yr under 100 kPa). */
   sliding?: number;
+  /** Mean annual air temperature at the ELA in °C; colder freezes more thin ice to its bed, where it neither slides nor erodes (see `glacial/basalTemperature`). Default −2. */
+  snowlineTemperature?: number;
+  /** Fall of air temperature with altitude in K/m. Default 0.0065. */
+  lapseRate?: number;
+  /** Geothermal heat flux in W/m² warming the bed. Default 0.06. */
+  geothermalFlux?: number;
   /** Shallow-ice only: effective ice viscosity in Pa·yr through which neighbouring columns and valley walls drag on sliding ice. Default 10⁶ (about 3·10¹³ Pa·s). */
   lateralDrag?: number;
   /** Share of the rock a glacier plucks that it drops as till where the ice ends; meltwater carries the rest away. Default 0.25. */
   tillShare?: number;
-  /** Erosion constant K_g of ė = K_g·u_bˡ, normal to the bed, in m^(1−l) yr^(l−1). Default 10⁻⁴ (Humphrey & Raymond 1994 for l = 1; Harbor 1992 for l = 2). */
+  /**
+   * Erosion constant K_g of ė = K_g·u_bˡ, normal to the bed, in m^(1−l) yr^(l−1). Default 10⁻⁴·50^(1−l),
+   * so 50 m/yr of sliding wears 5 mm/yr whatever l (10⁻⁴ for l = 1, Humphrey & Raymond 1994); field
+   * rates of temperate valley glaciers run 0.1–10 mm/yr (Hallet, Hunter & Bogen 1996).
+   */
   erosion?: number;
-  /** Exponent l of sliding speed in the erosion law. Default 1; abrasion theory (Hallet 1979) and Harbor (1992) use 2. */
+  /** Exponent l of sliding speed in the erosion law. Default 1; abrasion theory (Hallet 1979) and Harbor (1992) use 2, which can still run away at grid scale over tens of kyr (#2790). */
   erosionExponent?: number;
-  /** Years the ice flows each step; a glacier settles within centuries, so less than a step is enough. Default 200. */
-  iceYears?: number;
-  /** Implicit ice steps per landscape step, bounding the work; a glacier front advances at most one cell per ice step. Default 20. */
-  iceSteps?: number;
+  /** Longest implicit ice step in years; the ice flows the whole landscape step in steps up to this long. Default 50. */
+  iceStep?: number;
 }
 
 /** Waves on the coast: cliff retreat and platform wear (see `coastal/waveErosion`). Needs a `seaLevel`. */
@@ -181,7 +193,7 @@ export interface LandformStepReport {
 
 /** Plain-JSON state of a run, enough to resume it exactly. */
 export interface LandformSnapshot {
-  version: 3;
+  version: 4;
   grid: LandformGrid;
   params: LandformParams;
   seed: string;
@@ -195,8 +207,10 @@ export interface LandformSnapshot {
   cover: readonly number[];
   /** Ice thickness per cell in metres. */
   ice: readonly number[];
-  /** Per cell, first-order ice flux over shallow-ice flux from the last step (1 where there is no ice). */
-  iceFlux: readonly number[];
+  /** Per cell, first-order over shallow-ice flux through its east face from the last step (1 where there is no ice). */
+  iceEastScale: readonly number[];
+  /** The same through each cell's south face. */
+  iceSouthScale: readonly number[];
 }
 
 /** Per-cell fields of a run. The arrays are live; read them, never write them. */
@@ -276,7 +290,7 @@ function copyParams(params: LandformParams): LandformParams {
     ...(strata === undefined ? {} : { strata: { ...strata, layers: strata.layers.map((layer) => ({ ...layer })) } }),
     ...(seaLevel === undefined ? {} : { seaLevel }),
     ...(grainSizes === undefined ? {} : { grainSizes: { ...grainSizes } }),
-    ...(glacial === undefined ? {} : { glacial: { ...glacial } }),
+    ...(glacial === undefined ? {} : { glacial: { ...glacial, ...(glacial.elaHistory === undefined ? {} : { elaHistory: glacial.elaHistory.map(([year, ela]) => [year, ela] as const) }) } }),
     ...(coastal === undefined ? {} : { coastal: { ...coastal } }),
   };
 }
@@ -352,16 +366,23 @@ export function createLandscapeEvolution(options: LandscapeEvolutionOptions): La
   const kCell = new Float64Array(cells);
   const dCell = new Float64Array(cells);
   const critical = new Float64Array(cells);
+  const shielded = new Uint8Array(cells);
   const router = createFlowRouter(topology);
   const diffuser = createHillslopeDiffuser(topology);
   const slider = createLandslider(topology);
   const glacier = createGlacierFlow(topology);
   const ice = new Float64Array(cells);
-  const iceFlux = new Float64Array(cells).fill(1);
+  const iceTemperate = new Float64Array(cells);
+  const iceEastScale = new Float64Array(cells).fill(1);
+  const iceSouthScale = new Float64Array(cells).fill(1);
   const carried = new Float64Array(cells);
   const bedArea = new Float64Array(cells);
+  const wearRate = new Float64Array(cells);
   const iceSurface = new Float64Array(cells);
   const iceRouter = createFlowRouter(topology);
+  const iceDischarge = new Float64Array(cells);
+  // The mass balance of the last glacial step, which says where carried debris melts out.
+  const balance = { ela: Number.POSITIVE_INFINITY, gradient: 0.005, max: 2 };
   const waves = createWaveEroder(topology);
   const grains = new Float64Array(cells * 3);
   let settling: readonly number[] = settlingShares(params.grainSizes ?? DEFAULT_GRAIN_SIZES);
@@ -378,7 +399,8 @@ export function createLandscapeEvolution(options: LandscapeEvolutionOptions): La
   function route(): void {
     router.route(height, params.seaLevel ?? Number.NEGATIVE_INFINITY, params.rainfall);
     const { water } = router;
-    for (let i = 0; i < cells; i += 1) wet[i] = (water[i] ?? 0) > (height[i] ?? 0) ? 1 : 0;
+    // A basin full of glacier ice holds no lake.
+    for (let i = 0; i < cells; i += 1) wet[i] = (water[i] ?? 0) > (height[i] ?? 0) && !((ice[i] ?? 0) > 0) ? 1 : 0;
   }
 
   function materialProperties(): void {
@@ -387,7 +409,10 @@ export function createLandscapeEvolution(options: LandscapeEvolutionOptions): La
       const rock = layers[layer[i] ?? 0];
       const loose = (sediment[i] ?? 0) >= LOOSE_DEPTH;
       kCell[i] = params.erodibility * (rock?.erodibility ?? 1);
-      dCell[i] = wet[i] === 1 ? params.marineDiffusivity : params.diffusivity * (loose ? 1 : (rock?.diffusivity ?? 1));
+      // Glacier ice shields its bed from rivers and creep; only the ice wears it. Its walls still fail.
+      const iced = (ice[i] ?? 0) > 0;
+      shielded[i] = iced ? 1 : 0;
+      dCell[i] = iced ? 0 : wet[i] === 1 ? params.marineDiffusivity : params.diffusivity * (loose ? 1 : (rock?.diffusivity ?? 1));
       critical[i] = rockSlopes[layer[i] ?? 0] ?? 1;
     }
   }
@@ -532,7 +557,7 @@ export function createLandscapeEvolution(options: LandscapeEvolutionOptions): La
           if (label >= 0) {
             kept = room > 0 ? (volume < room ? volume : room) : 0;
             room -= kept;
-          } else if (g > 0) {
+          } else if (g > 0 && shielded[i] !== 1) {
             const share = (g * (settling[c] ?? 1) * cellArea) / (area[i] ?? cellArea);
             kept = volume * (share < 1 ? share : 1);
           }
@@ -579,79 +604,136 @@ export function createLandscapeEvolution(options: LandscapeEvolutionOptions): La
     const g = params.glacial;
     if (g === undefined) return;
     const rateFactor = g.flowRate ?? GLEN_RATE_FACTOR;
-    glacier.flow(height, ice, iceFlux, Math.min(g.iceYears ?? 200, dt), g.iceSteps ?? 20, {
+    const ela = g.elaHistory !== undefined ? snowlineAt(g.elaHistory, time + 0.5 * dt) : g.ela;
+    if (ela === undefined) throw new Error("landform glacial params need an ela or an elaHistory");
+    balance.ela = ela;
+    balance.gradient = g.balanceGradient ?? 0.005;
+    balance.max = g.maxAccumulation ?? 2;
+    temperateBed(iceTemperate, height, ice, { ela, snowlineTemperature: g.snowlineTemperature ?? -2, lapseRate: g.lapseRate ?? 0.0065, geothermalFlux: g.geothermalFlux ?? 0.06 });
+    glacier.flow(height, ice, iceEastScale, iceSouthScale, dt, {
       model: g.model ?? "first-order",
       rateFactor,
       layers: g.layers ?? 8,
       deformation: iceDeformationRate(rateFactor),
       sliding: g.sliding ?? 5e-4,
-      ela: g.ela,
+      ela,
+      maxStep: g.iceStep ?? 50,
       balanceGradient: g.balanceGradient ?? 0.005,
       maxAccumulation: g.maxAccumulation ?? 2,
       lateralDrag: g.lateralDrag ?? 1e6,
+      temperate: iceTemperate,
     });
-    const kg = g.erosion ?? 1e-4;
     const power = g.erosionExponent ?? 1;
+    const kg = g.erosion ?? 1e-4 * plantPow(50, 1 - power);
     const tillShare = g.tillShare ?? 0.25;
     const { sliding } = glacier;
-    // Ice wears its bed along the bed's normal, which lowers a sloping bed by √(1 + |∇b|²) times as
-    // much; the slope is the upwind (Godunov) one, so a trough's floor keeps its point and a ridge wears from both sides.
+    // Ice wears its bed along the bed's normal at K_g·u_bˡ, which lowers a sloping bed by √(1 + |∇b|²)
+    // times as much; the slope is the upwind (Godunov) one, so a trough's floor keeps its point and a
+    // ridge wears from both sides. That update is stable while a step wears less than half a cell
+    // (the eikonal CFL condition), so a step that would wear more is split, at most 256 ways.
+    // Out of an overdeepening, meltwater climbing a bed that rises more than 1.2 times as steeply as
+    // the ice surface falls supercools and freezes, and by 1.7 times the bed stops wearing (Alley et
+    // al. 2003), which bounds how deep a glacier digs below its outlet.
+    for (let i = 0; i < cells; i += 1) iceSurface[i] = (height[i] ?? 0) + (ice[i] ?? 0);
+    let fastest = 0;
     for (let i = 0; i < cells; i += 1) {
-      if ((ice[i] ?? 0) <= 0) continue;
-      const h = height[i] ?? 0;
-      let slope2 = 0;
-      for (const [ahead, behind] of [[0, 4], [2, 6]] as const) {
-        const a = neighbour[i * 8 + ahead] ?? -1;
-        const b = neighbour[i * 8 + behind] ?? -1;
-        const rise = a < 0 ? 0 : ((height[a] ?? 0) - h) / cellSize;
-        const fall = b < 0 ? 0 : (h - (height[b] ?? 0)) / cellSize;
-        const up = fall > 0 ? fall : 0;
-        const down = rise < 0 ? -rise : 0;
-        const g = up > down ? up : down;
-        slope2 += g * g;
-      }
-      bedArea[i] = Math.sqrt(1 + slope2);
+      const rate = base[i] === 1 || (ice[i] ?? 0) <= 0 ? 0 : kg * plantPow(sliding[i] ?? 0, power);
+      wearRate[i] = rate;
+      if (rate > fastest) fastest = rate;
     }
+    const parts = Math.min(256, Math.max(1, Math.ceil((fastest * dt) / (0.5 * cellSize))));
+    const part = dt / parts;
     carried.fill(0);
-    for (let i = 0; i < cells; i += 1) {
-      if (base[i] === 1 || (ice[i] ?? 0) <= 0) continue;
-      const u = sliding[i] ?? 0;
-      const depth = kg * plantPow(u, power) * dt * (bedArea[i] ?? 1);
-      if (depth <= 0) continue;
-      cover.remove(i, depth);
-      sediment[i] = cover.total(i);
-      height[i] = (height[i] ?? 0) - depth;
-      carried[i] = depth * cellArea;
-      report.eroded += depth * cellArea;
+    for (let k = 0; k < parts; k += 1) {
+      for (let i = 0; i < cells; i += 1) {
+        if ((wearRate[i] ?? 0) <= 0) continue;
+        const h = height[i] ?? 0;
+        let slope2 = 0;
+        for (const [ahead, behind] of [[0, 4], [2, 6]] as const) {
+          const a = neighbour[i * 8 + ahead] ?? -1;
+          const b = neighbour[i * 8 + behind] ?? -1;
+          const rise = a < 0 ? 0 : ((height[a] ?? 0) - h) / cellSize;
+          const fall = b < 0 ? 0 : (h - (height[b] ?? 0)) / cellSize;
+          const up = fall > 0 ? fall : 0;
+          const down = rise < 0 ? -rise : 0;
+          const steepest = up > down ? up : down;
+          slope2 += steepest * steepest;
+        }
+        bedArea[i] = Math.sqrt(1 + slope2);
+      }
+      for (let i = 0; i < cells; i += 1) {
+        const rate = (wearRate[i] ?? 0) > 0 ? (wearRate[i] ?? 0) * supercooling(i) : 0;
+        if (rate <= 0) continue;
+        const depth = rate * part * (bedArea[i] ?? 1);
+        cover.remove(i, depth);
+        sediment[i] = cover.total(i);
+        height[i] = (height[i] ?? 0) - depth;
+        carried[i] = (carried[i] ?? 0) + depth * cellArea;
+        report.eroded += depth * cellArea;
+      }
     }
-    // Debris rides the ice down its surface, pits filled (Priority-Flood), until it reaches bare
-    // ground at the ice's edge or leaves the map.
+    rideIce(tillShare, report);
+  }
+
+  // Share of the bed's wear left by supercooling: 1 while the bed out of an overdeepening rises less
+  // than 1.2 times as steeply as the ice surface falls, 0 from 1.7 times.
+  function supercooling(i: number): number {
+    let bedDotSurface = 0;
+    let surfaceSlope2 = 0;
+    for (const [ahead, behind] of [[0, 4], [2, 6]] as const) {
+      const a = neighbour[i * 8 + ahead] ?? -1;
+      const b = neighbour[i * 8 + behind] ?? -1;
+      const from = b < 0 ? i : b;
+      const to = a < 0 ? i : a;
+      const span = (to === i ? 0 : 1) + (from === i ? 0 : 1);
+      if (span === 0) continue;
+      const bed = ((height[to] ?? 0) - (height[from] ?? 0)) / span;
+      const top = ((iceSurface[to] ?? 0) - (iceSurface[from] ?? 0)) / span;
+      bedDotSurface += bed * top;
+      surfaceSlope2 += top * top;
+    }
+    if (bedDotSurface >= 0) return 1;
+    const ratio = -bedDotSurface / (surfaceSlope2 > 1e-12 ? surfaceSlope2 : 1e-12);
+    return ratio <= 1.2 ? 1 : ratio >= 1.7 ? 0 : (1.7 - ratio) / 0.5;
+  }
+
+  // Debris in `carried` rides the ice down its surface, pits filled (Priority-Flood), and melts out
+  // where the ice melts: each cell releases the share of the arriving ice that ablates there, so till
+  // spreads over the ablation zone and what reaches the ice's edge builds the end moraine. `share` of
+  // what melts out stays as till; meltwater carries the rest away, and debris that reaches the map's
+  // edge leaves it.
+  function rideIce(share: number, report: LandformStepReport): void {
     for (let i = 0; i < cells; i += 1) iceSurface[i] = (height[i] ?? 0) + (ice[i] ?? 0);
     iceRouter.route(iceSurface, Number.NEGATIVE_INFINITY);
     const { stack, receiver } = iceRouter;
+    iceDischarge.fill(0);
     for (let k = cells - 1; k >= 0; k -= 1) {
       const i = stack[k] ?? 0;
       const load = carried[i] ?? 0;
-      if (load <= 0 || (ice[i] ?? 0) <= 0) continue;
       const next = receiver[i] ?? i;
-      if (next === i) continue;
-      carried[next] = (carried[next] ?? 0) + load;
+      let released = load;
+      if ((ice[i] ?? 0) > 0 && base[i] !== 1 && next !== i) {
+        const rule = balance.gradient * ((iceSurface[i] ?? 0) - balance.ela);
+        const b = (rule < balance.max ? rule : balance.max) * cellArea;
+        const arriving = (iceDischarge[i] ?? 0) + (b > 0 ? b : 0);
+        const melt = b < 0 ? -b : 0;
+        released = arriving > melt ? (load * melt) / arriving : load;
+        iceDischarge[next] = (iceDischarge[next] ?? 0) + (arriving > melt ? arriving - melt : 0);
+        carried[next] = (carried[next] ?? 0) + load - released;
+      }
       carried[i] = 0;
-    }
-    for (let i = 0; i < cells; i += 1) {
-      const load = carried[i] ?? 0;
-      if (load <= 0) continue;
+      if (released <= 0) continue;
       if (base[i] === 1) {
-        report.exported += load;
+        report.exported += released;
         continue;
       }
-      const kept = load * tillShare;
+      const kept = released * share;
       const thickness = kept / cellArea;
       cover.add(i, COVER.till, thickness);
       height[i] = (height[i] ?? 0) + thickness;
       sediment[i] = cover.total(i);
       report.deposited += kept;
-      report.exported += load - kept;
+      report.exported += released - kept;
     }
   }
 
@@ -718,6 +800,7 @@ export function createLandscapeEvolution(options: LandscapeEvolutionOptions): La
       height,
       routing: router,
       wet,
+      shielded,
       erodibility: kCell,
       looseErodibility: params.erodibility * params.sedimentErodibility,
       sediment,
@@ -752,16 +835,32 @@ export function createLandscapeEvolution(options: LandscapeEvolutionOptions): La
     const slid = slider.collapse(height, sediment, critical, reposeSlope, laid, failed);
     report.landslid = slid.failed;
     report.exported += slid.exported;
+    carried.fill(0);
+    let onIce = false;
     for (let i = 0; i < cells; i += 1) {
       const fresh = laid[i] ?? 0;
       if (fresh <= 0 && (failed[i] ?? 0) <= 0) continue;
+      if ((ice[i] ?? 0) > 0) {
+        // Debris that ends up on a glacier rides it to the snout and is laid there as moraine: the
+        // cover's net gain here, since debris can land and slide on within one collapse.
+        const gained = (sediment[i] ?? 0) - (coverBefore[i] ?? 0);
+        if (gained < 0) cover.remove(i, -gained);
+        else if (gained > 0) {
+          height[i] = (height[i] ?? 0) - gained;
+          carried[i] = gained * cellArea;
+          onIce = true;
+        }
+        sediment[i] = cover.total(i);
+        continue;
+      }
       // Cover that slid away is what the cell lost beyond the debris it gained; the debris is scree.
       const lostCover = fresh - ((sediment[i] ?? 0) - (coverBefore[i] ?? 0));
       if (lostCover > 0) cover.remove(i, lostCover);
       cover.add(i, COVER.scree, fresh);
-      sediment[i] = cover.total(i);
       debris[i] = (debris[i] ?? 0) + fresh;
+      sediment[i] = cover.total(i);
     }
+    if (onIce) rideIce(1, report);
     for (let i = 0; i < cells; i += 1) {
       if (base[i] === 1) continue;
       const rate = Math.abs((height[i] ?? 0) - (before[i] ?? 0)) / dt;
@@ -780,7 +879,7 @@ export function createLandscapeEvolution(options: LandscapeEvolutionOptions): La
 
   function restoreFrom(snapshot: LandformSnapshot): void {
     if (snapshot.grid.cols !== cols || snapshot.grid.rows !== rows) throw new Error(`landform snapshot is ${snapshot.grid.cols}×${snapshot.grid.rows}, this run is ${cols}×${rows}`);
-    if (snapshot.height.length !== cells || snapshot.sediment.length !== cells || snapshot.exhumation.length !== cells || snapshot.debris.length !== cells || snapshot.cover.length !== cells * COVER_CLASSES.length || snapshot.ice.length !== cells || snapshot.iceFlux.length !== cells) throw new Error("landform snapshot arrays do not match the grid");
+    if (snapshot.height.length !== cells || snapshot.sediment.length !== cells || snapshot.exhumation.length !== cells || snapshot.debris.length !== cells || snapshot.cover.length !== cells * COVER_CLASSES.length || snapshot.ice.length !== cells || snapshot.iceEastScale.length !== cells || snapshot.iceSouthScale.length !== cells) throw new Error("landform snapshot arrays do not match the grid");
     retune(snapshot.params);
     height.set(snapshot.height);
     sediment.set(snapshot.sediment);
@@ -788,7 +887,8 @@ export function createLandscapeEvolution(options: LandscapeEvolutionOptions): La
     debris.set(snapshot.debris);
     cover.thickness.set(snapshot.cover);
     ice.set(snapshot.ice);
-    iceFlux.set(snapshot.iceFlux);
+    iceEastScale.set(snapshot.iceEastScale);
+    iceSouthScale.set(snapshot.iceSouthScale);
     time = snapshot.time;
     steps = snapshot.steps;
     classify();
@@ -829,7 +929,7 @@ export function createLandscapeEvolution(options: LandscapeEvolutionOptions): La
     fields: () => ({ height, sediment, exhumation, layer, debris, cover: cover.thickness, ice, iceSliding: glacier.sliding, waveEnergy: waves.energy }),
     routing: () => router,
     snapshot: () => ({
-      version: 3,
+      version: 4,
       grid: { ...grid },
       params: copyParams(params),
       seed,
@@ -841,7 +941,8 @@ export function createLandscapeEvolution(options: LandscapeEvolutionOptions): La
       debris: Array.from(debris),
       cover: Array.from(cover.thickness),
       ice: Array.from(ice),
-      iceFlux: Array.from(iceFlux),
+      iceEastScale: Array.from(iceEastScale),
+      iceSouthScale: Array.from(iceSouthScale),
     }),
     restore: restoreFrom,
     reset() {
@@ -851,7 +952,8 @@ export function createLandscapeEvolution(options: LandscapeEvolutionOptions): La
       debris.fill(0);
       cover.thickness.fill(0);
       ice.fill(0);
-      iceFlux.fill(1);
+      iceEastScale.fill(1);
+      iceSouthScale.fill(1);
       time = 0;
       steps = 0;
       classify();
