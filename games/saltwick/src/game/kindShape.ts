@@ -21,6 +21,8 @@ export interface CropWord {
   /** What the plot shows while it grows, and once it is ripe. */
   sprout: ModelRef;
   ripe: ModelRef;
+  /** The seed bar's icon: a game-icons.net library key (`gameicons:delapouite/cabbage`). */
+  icon?: string;
 }
 
 /** Something that bites at the water. */

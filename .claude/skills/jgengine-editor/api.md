@@ -879,9 +879,13 @@
 - `EditorSessionState` (interface): interface EditorSessionState — The document plus current selection at a point in editor history.
 - `installEditorHost` (function): function installEditorHost(api: EditorHostApi): () => void — Publishes an editor host globally so devtools and MCP agents can reach it; returns a cleanup fn.
 
+## @jgengine/editor/shell/AssetLibraryBrowser
+
+- `LibraryLoader` (type): type LibraryLoader = () => Promise<readonly LibraryEntry[]> — Loads the shared asset library index; lazy so the editor bundle never carries it until opened.
+
 ## @jgengine/editor/shell/BottomDock
 
-- `BottomDock` (function): function BottomDock({ tab, onSelectTab, onClose, assets, session, api, ui, consoleStore, perfHistory, browserView, onSetBrowserView, onPlaceAsset, onImportModels, importBusy, }: { tab: BottomDockTab; onSelectTab: (tab: BottomDockTab) => void; onClose: () => void; assets: readonly EditorAssetEntry[];… — Tabbed bottom dock: Content Browser, Console, Profiler, Animation (path flythrough scrub), and the AI Assistant. Only the active tab's panel mounts, so hidden tools cost nothing per frame.
+- `BottomDock` (function): function BottomDock({ tab, onSelectTab, onClose, assets, session, api, ui, consoleStore, perfHistory, browserView, onSetBrowserView, onPlaceAsset, onImportModels, importBusy, onAddLibraryAsset, }: { tab: BottomDockTab; onSelectTab: (tab: BottomDockTab) => void; onClose: () => void; assets: readonly … — Tabbed bottom dock: Content Browser, Console, Profiler, Animation (path flythrough scrub), and the AI Assistant. Only the active tab's panel mounts, so hidden tools cost nothing per frame.
 
 ## @jgengine/editor/shell/CommandPalette
 
@@ -893,7 +897,7 @@
 
 ## @jgengine/editor/shell/ContentBrowser
 
-- `ContentBrowser` (function): function ContentBrowser({ assets, session, onPlace, view, onSetView, onImportModels, importBusy = false, }: { assets: readonly EditorAssetEntry[]; session: EditorSession; onPlace: (entry: EditorAssetEntry) => void; view: BrowserViewMode; onSetView: (view: BrowserViewMode) => void; /** When set, enab… — Content Browser dock tab: folder rail + searchable asset grid/list over the game's real asset catalog, plus the terrain material palette (drag chips onto objects or the viewport). Assets are draggable into the viewport for placement (and still double-click / Place). Model cards with a URL get a real offscreen-GLB thumbnail (cached); catalog/marker rows and failed loads keep typed glyphs — never a fabricated screenshot. Import reuses the standalone editor's host importer.
+- `ContentBrowser` (function): function ContentBrowser({ assets, session, onPlace, view, onSetView, onImportModels, importBusy = false, onAddLibraryAsset, }: { assets: readonly EditorAssetEntry[]; session: EditorSession; onPlace: (entry: EditorAssetEntry) => void; view: BrowserViewMode; onSetView: (view: BrowserViewMode) => void;… — Content Browser dock tab: folder rail + searchable asset grid/list over the game's real asset catalog, plus the terrain material palette (drag chips onto objects or the viewport). Assets are draggable into the viewport for placement (and still double-click / Place). Model cards with a URL get a real offscreen-GLB thumbnail (cached); catalog/marker rows and failed loads keep typed glyphs — never a fabricated screenshot. Import reuses the standalone editor's host importer.
 
 ## @jgengine/editor/shell/HierarchyPanel
 

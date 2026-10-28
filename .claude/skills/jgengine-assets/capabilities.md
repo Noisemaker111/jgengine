@@ -19,6 +19,10 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `validateImportSpec` (function) · `import { validateImportSpec } from "@jgengine/assets"`
 
+## asset-library — thousands of licensed models, characters, materials, HDRIs and icons with credit data
+
+- `assetLibrary` (function) · `import { assetLibrary } from "@jgengine/assets/library/libraryIndex"`
+
 ## asset-reference-integrity — validate asset references against the provisioning contract (dangling / committed / provisioned)
 
 - `validateAssetReferences` (function) · `import { validateAssetReferences } from "@jgengine/assets"`
@@ -101,13 +105,45 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `libraryBuildingSurface` (function) · `import { libraryBuildingSurface } from "@jgengine/assets/catalogs/materialLibrary"`
 
+## library-credits — generate in-game credits from the library assets a game ships
+
+- `libraryCreditSections` (function) · `import { libraryCreditSections } from "@jgengine/assets/library/assetLibrary"`
+
+## library-credits-document — a ready credits document from the library assets a game ships
+
+- `libraryCredits` (function) · `import { libraryCredits } from "@jgengine/assets/library/assetLibrary"`
+
 ## library-foliage-thinning — thin a foliage scan's leaf clusters for a lighter level while keeping canopy cover
 
 - `thinIslands` (function) · `import { thinIslands } from "@jgengine/assets/modelLibraryPull"`
 
+## library-icon-credits — credit game-icons.net icons per artist from the keys a game ships
+
+- `libraryIconCredits` (function) · `import { libraryIconCredits } from "@jgengine/assets/library/libraryIcons"`
+
+## library-icon-url — resolve a game-icons.net library key to the icon a game serves
+
+- `libraryIconUrl` (function) · `import { libraryIconUrl } from "@jgengine/assets/library/libraryIcons"`
+
+## library-license-gate — refuse any asset licence outside CC0, public domain, MIT and CC BY
+
+- `normalizeLibraryLicense` (function) · `import { normalizeLibraryLicense } from "@jgengine/assets/library/libraryLicense"`
+
 ## library-model — draw a realistic library model at real size with its near and far LOD
 
 - `libraryModel` (function) · `import { libraryModel } from "@jgengine/assets"`
+
+## library-pull — fetch one library asset (model, material, HDRI, icon pack) into the folder a game serves it from
+
+- `pullLibraryEntry` (function) · `import { pullLibraryEntry } from "@jgengine/assets/library/libraryPull"`
+
+## library-search — search thousands of licensed models, materials, HDRIs and icons by words and tags
+
+- `searchLibrary` (function) · `import { searchLibrary } from "@jgengine/assets/library/assetLibrary"`
+
+## library-served-path — the public folder and URL a pulled library asset is served from
+
+- `libraryServedPath` (function) · `import { libraryServedPath } from "@jgengine/assets/library/libraryServed"`
 
 ## library-surface-parameters — carry a named library material's response into authored overrides
 
@@ -120,6 +156,10 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 ## library-terrain-material — put a named library material on terrain without faking optional maps
 
 - `libraryTerrainMaterial` (function) · `import { libraryTerrainMaterial } from "@jgengine/assets/catalogs/materialLibrary"`
+
+## library-validate — check every library entry has an allowed licence and full credit fields
+
+- `validateLibrary` (function) · `import { validateLibrary } from "@jgengine/assets/library/assetLibrary"`
 
 ## material-appearance-signals — update one owned material from wetness and local card exposure without global lighting edits
 

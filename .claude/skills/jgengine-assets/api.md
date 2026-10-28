@@ -14,7 +14,7 @@
 - `AssetProvenanceKind` (type): type AssetProvenanceKind = "committed" | "provisioned" | "dangling" — How an asset id's bytes reach a clean checkout: - `committed` — resolves to a self-hosted / remote URL carried in the shipped index (a {@link SingleAsset}); no pull step, available immediately. - `provisioned` — a pack {@link IndexEntry}; the id is declared but its GLB is fetched on demand by `assets pull <source>` into the consumer's served dir. - `dangling` — nothing in the index, singles, or aliases owns the id, so no provisioning step exists and it can never resolve on a clean clone.
 - `AssetProvider` (type): type AssetProvider = | "quaternius" | "kaykit" | "polypizza" | "itch" | "ambientcg" | "gameicons" | "custom" — ⚠ undocumented
 - `AssetReference` (interface): interface AssetReference — A logical asset id referenced by some consumer (a game, scene, or config), for validation.
-- `AssetSource` (interface): interface AssetSource { id: string; kind?: AssetSourceKind; provider: AssetProvider; title: string; license: string; author: string; categories: readonly string[]; download: AssetDownload; homepage?: string; materialMaps?: readonly MaterialMapRole[]; mirror?: st… — ⚠ undocumented · used by `ambientcgSources`: Every ambientCG material source: the generated family sweep plus the pinned variants the shared library needs.
+- `AssetSource` (interface): interface AssetSource { id: string; kind?: AssetSourceKind; provider: AssetProvider; title: string; license: string; author: string; categories: readonly string[]; download: AssetDownload; homepage?: string; spriteLayout?: "flat" | "folders"; materialMaps?: read… — ⚠ undocumented · used by `ambientcgSources`: Every ambientCG material source: the generated family sweep plus the pinned variants the shared library needs.
 - `AssetSourceKind` (type): type AssetSourceKind = "model" | "material" | "sprite" — What a source's archive contains: GLB models (default), one PBR material's texture maps, or a pack of individual 2D sprite/icon files (SVG/PNG).
 - `AssetSpace` (interface): interface AssetSpace — Catalog-level asset-space metadata: how a model is authored relative to the engine, owned by the catalog entry rather than re-derived per game. Every field is optional so an unmeasured asset stays valid; {@link resolveFacingRotationY}/{@link assetUnitScale}/{@link resolveAnchorOffset} supply the documented defaults.
 - `BuildCatalogOptions` (interface): interface BuildCatalogOptions { basePath?: string; sources?: readonly string[]; includeAliases?: boolean; includeSingles?: boolean; extras?: readonly CatalogExtra[] } — ⚠ undocumented · used by `buildCatalog`: Builds a game's asset catalog from the generated CC0 pack index plus singles, extras, and aliases.
@@ -333,12 +333,78 @@
 - `keyFromFile` (function): function keyFromFile(file: string): string — ⚠ undocumented
 - `reindex` (function): function reindex(modelsDir: string, outDir: string): ReindexResult — ⚠ undocumented
 
+## @jgengine/assets/library/assetLibrary
+
+- `LibraryEntry` (interface): interface LibraryEntry extends LibraryRecord — One asset in the shared library, with its source defaults filled in.
+- `LibraryHit` (interface): interface LibraryHit — A ranked {@link searchLibrary} hit.
+- `LibraryIssue` (interface): interface LibraryIssue — One reason a library entry is refused.
+- `LibraryRecord` (interface): interface LibraryRecord — One indexed asset as ingest writes it: only what differs from its source's defaults. Committed as JSON under `library/generated/`; the bytes stay upstream until `assets pull <key>`.
+- `LibraryRecordFile` (interface): interface LibraryRecordFile — A committed ingest result: one source's records.
+- `LibrarySearchOptions` (interface): interface LibrarySearchOptions — Filters for {@link searchLibrary}.
+- `libraryCreditSections` (function): function libraryCreditSections(used: readonly LibraryEntry[]): CreditsSection[] — Credit sections for the library entries a game ships: one section per source, one line per credited author (game-icons.net's "Icons made by …" rule) with the entries listed, and one line per CC0 source. Fold it into the game's own credits with `mergeCredits`.
+- `libraryCredits` (function): function libraryCredits(used: readonly LibraryEntry[], options: { title?: string; notice?: string } = {}): CreditsDocument — {@link libraryCreditSections} as a ready {@link CreditsDocument}.
+- `libraryLicenseLabel` (function): function libraryLicenseLabel(license: LibraryLicense): string — A short human label for a licence (`CC BY 3.0`).
+- `libraryTagCounts` (function): function libraryTagCounts(entries: readonly LibraryEntry[], limit = 40): { tag: string; count: number }[] — How many entries carry each tag, most common first: the browser's tag chips.
+- `searchLibrary` (function): function searchLibrary(entries: readonly LibraryEntry[], query: string, options: LibrarySearchOptions = {}): LibraryHit[] — Ranks library entries against free text. Every word must match the title, a tag or the id; a whole title word ranks above a tag, a tag above a prefix. An empty query lists the filtered entries in index order.
+- `validateLibrary` (function): function validateLibrary(entries: readonly LibraryEntry[]): LibraryIssue[] — Checks every entry carries an accepted licence, an author, a page and a credit-ready title, that kinds are known, keys are unique and tags are lowercase. An empty array means the library is clean.
+
+## @jgengine/assets/library/generated
+
+- `libraryRecordFiles` (const): const libraryRecordFiles: readonly unknown[] — Every committed library ingest file, as untyped JSON; `readLibraryRecordFile` checks each one.
+
+## @jgengine/assets/library/libraryIcons
+
+- `GAMEICONS_ARTISTS` (const): const GAMEICONS_ARTISTS: Readonly<Record<string, string>> — game-icons.net's folder names and the credit each artist asks for ("Icons made by {author}"), from the repository's `license.txt`. Ingest refuses a folder missing here, so every icon has a named artist.
+- `GAMEICONS_CC0_ARTISTS` (const): const GAMEICONS_CC0_ARTISTS: ReadonlySet<string> — game-icons.net artists who release under CC0 instead of CC BY 3.0 (`license.txt`).
+- `GAMEICONS_PACK` (const): const GAMEICONS_PACK: "gameicons-icons" — The pack every game-icons.net library entry is pulled with (`assets pull gameicons-icons`).
+- `libraryIconCredits` (function): function libraryIconCredits(keys: Iterable<string>): CreditsSection[] — Credit sections for the game-icons.net icons a game ships: one "Icons made by …" line per artist.
+- `libraryIconUrl` (function): function libraryIconUrl(key: string, options: { basePath?: string } = {}): string — The URL a pulled game-icons.net icon is served at (`/sprites/gameicons-icons/lorc/broadsword.svg`). Draw it with `SpriteIcon` from `@jgengine/core/ui/icons/spriteIcon.view`, which tints it.
+
+## @jgengine/assets/library/libraryIndex
+
+- `assetLibrary` (function): function assetLibrary(): readonly LibraryEntry[] — Every entry in the shared asset library: the committed ingest files plus the measured packs. Built once on first call. Import this module lazily from a browser (`await import(...)`): the index is a few megabytes of metadata.
+
+## @jgengine/assets/library/libraryIngest
+
+- `IngestFetch` (type): type IngestFetch = (url: string, init?: { headers?: Record<string, string> }) => Promise<{ ok: boolean; status: number; json(): Promise<unknown>; text(): Promise<string> }> — The fetch seam ingest uses; tests pass a stub.
+- `IngestOptions` (interface): interface IngestOptions — What every ingester takes.
+- `KayKitTreePack` (interface): interface KayKitTreePack — One KayKit pack the library lists from its repository tree before any pull has indexed it.
+
+## @jgengine/assets/library/libraryLicense
+
+- `EXCLUDED_PROVIDERS` (const): const EXCLUDED_PROVIDERS: RegExp — Providers JGengine never ships, whatever licence a re-upload claims: Kenney (house rule), and Mixamo, Textures.com, Fab and BlenderKit (no redistribution). Matched against author, title and tags.
+- `LIBRARY_LICENSES` (const): const LIBRARY_LICENSES: readonly ["CC0-1.0", "public-domain", "MIT", "CC-BY-3.0", "CC-BY-4.0"] — The only licences the shared asset library accepts: each allows commercial use and re-hosting, and the CC BY ones only ask for a credit, which the library generates from each entry's data.
+- `LibraryLicense` (type): type LibraryLicense = (typeof LIBRARY_LICENSES)[number] — One accepted library licence (an SPDX id, or `public-domain`).
+- `licenseRequiresCredit` (function): function licenseRequiresCredit(license: LibraryLicense): boolean — Whether shipping an asset under this licence obliges a visible credit.
+- `normalizeLibraryLicense` (function): function normalizeLibraryLicense(label: string): LibraryLicense | null — Maps a provider's licence label (`"CC0 Public Domain"`, `"CC Attribution"`, `"MIT License"`) to an accepted {@link LibraryLicense}, or `null` for anything else. Non-commercial, share-alike, no-derivatives, editorial, store and custom licences all return `null`: the library refuses them.
+
+## @jgengine/assets/library/libraryPull
+
+- `LibraryPullContext` (interface): interface LibraryPullContext — What {@link pullLibraryEntry} needs from its caller.
+- `pullLibraryEntry` (function): function pullLibraryEntry(entry: LibraryEntry, ctx: LibraryPullContext): Promise<LibraryServedPath> — Pulls one library entry into `ctx.outRoot` at {@link libraryServedPath}: pack entries through the pack pull, ambientCG materials through the material path, Poly Haven and Rocketbox models through the model library's converters, Poly Haven textures and HDRIs and ambientCG HDRIs as files, and a Sketchfab model through its download API with the token named by the source (`SKETCHFAB_TOKEN`).
+
+## @jgengine/assets/library/libraryServed
+
+- `LibraryServedPath` (interface): interface LibraryServedPath — Where a pulled library entry is served from, relative to a game's `public/`.
+- `libraryServedPath` (function): function libraryServedPath(entry: LibraryEntry): LibraryServedPath — The served folder and URL for a library entry. Pack entries (KayKit, Quaternius, game-icons) share their pack's folder; everything else gets its own.
+
+## @jgengine/assets/library/librarySources
+
+- `ASSET_LIBRARY_SOURCES` (const): const ASSET_LIBRARY_SOURCES: readonly LibrarySource[] — The upstreams the shared asset library indexes, in ingest order.
+- `GAMEICONS_REVISION` (const): const GAMEICONS_REVISION: "82d948812bfe3f269ef8f731dcdb07b08160edc4" — The game-icons.net repository commit the icon index and thumbnails are pinned to.
+- `LIBRARY_KINDS` (const): const LIBRARY_KINDS: readonly LibraryKind[] — Every {@link LibraryKind}, in browser tab order.
+- `LibraryKind` (type): type LibraryKind = "model" | "character" | "material" | "decal" | "hdri" | "icon" — What a library entry is, which decides where it is served and which browser tab shows it.
+- `LibrarySource` (interface): interface LibrarySource — One upstream the library indexes. `{id}` in a template is replaced by the entry's native id.
+- `LibrarySourceId` (type): type LibrarySourceId = | "ambientcg" | "polyhaven" | "gameicons" | "sketchfab" | "kaykit" | "quaternius" | "rocketbox" — Where a library entry's bytes come from.
+- `ROCKETBOX_REVISION` (const): const ROCKETBOX_REVISION: "0943055db6ec570bcef9f2c8b41c9e5467c808f9" — The Microsoft Rocketbox commit the avatar index and previews are pinned to (the same one `rocketboxPull` reads).
+- `librarySource` (function): function librarySource(id: string): LibrarySource | undefined — The library source with this id, or undefined.
+
 ## @jgengine/assets/manifest
 
 - `AssetAlias` (interface): interface AssetAlias { key: string; target: string } — ⚠ undocumented · used by `aliases` (@jgengine/assets): Semantic keys → live catalog ids.
 - `AssetDownload` (type): type AssetDownload = PinnedDownload | ScrapeDownload — ⚠ undocumented
 - `AssetProvider` (type): type AssetProvider = | "quaternius" | "kaykit" | "polypizza" | "itch" | "ambientcg" | "gameicons" | "custom" — ⚠ undocumented
-- `AssetSource` (interface): interface AssetSource { id: string; kind?: AssetSourceKind; provider: AssetProvider; title: string; license: string; author: string; categories: readonly string[]; download: AssetDownload; homepage?: string; materialMaps?: readonly MaterialMapRole[]; mirror?: st… — ⚠ undocumented · used by `ambientcgSources` (@jgengine/assets): Every ambientCG material source: the generated family sweep plus the pinned variants the shared library needs.
+- `AssetSource` (interface): interface AssetSource { id: string; kind?: AssetSourceKind; provider: AssetProvider; title: string; license: string; author: string; categories: readonly string[]; download: AssetDownload; homepage?: string; spriteLayout?: "flat" | "folders"; materialMaps?: read… — ⚠ undocumented · used by `ambientcgSources` (@jgengine/assets): Every ambientCG material source: the generated family sweep plus the pinned variants the shared library needs.
 - `AssetSourceKind` (type): type AssetSourceKind = "model" | "material" | "sprite" — What a source's archive contains: GLB models (default), one PBR material's texture maps, or a pack of individual 2D sprite/icon files (SVG/PNG).
 - `AssetSpace` (interface): interface AssetSpace — Catalog-level asset-space metadata: how a model is authored relative to the engine, owned by the catalog entry rather than re-derived per game. Every field is optional so an unmeasured asset stays valid; {@link resolveFacingRotationY}/{@link assetUnitScale}/{@link resolveAnchorOffset} supply the documented defaults.
 - `CollisionMeshData` (interface): interface CollisionMeshData — Compact, serializable triangle collision mesh measured at asset reindex — the renderer-free source of mesh-accurate hitboxes. Positions are welded onto a 16-bit grid spanning `min`..`max` (model space) and stored base64-encoded, so an opted-in catalog asset ships its collision triangles inside the generated index without the runtime ever touching the rendered scene graph.

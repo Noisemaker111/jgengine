@@ -83,6 +83,16 @@ Material sources declare the map roles in their pinned archive through `AssetSou
 - Generated models (text- or image-to-3D) enter as `origin: { provider: "generated", generator, prompt, file }`: the game generates, reviews and commits the GLB under `/models/generated/`, records the generator's output terms as `license`, and `libraryModel` serves it. The library never calls or pays for a generator.
 - A new entry needs a single object at real scale; Poly Haven packs that ship variants side by side take `keep` (a node-name regex), foliage scans take `thin` (keep a share of leaf clusters, grown to keep canopy cover) and `error`, and multi-piece modular kits do not belong in the library. Rocketbox FBX converts in Bun through three.js (`FBXLoader` then `GLTFExporter`); its TGA maps are decoded by `imageCodec`.
 
+## Shared asset library
+
+`@jgengine/assets/library/*` is the breadth layer: about 12,700 tagged, licensed entries (models, characters, materials, decals, HDRIs, icons) from ambientCG, Poly Haven, game-icons.net, Sketchfab (CC0/CC BY), Rocketbox, KayKit and Quaternius. It stores metadata only; bytes go through the shared asset store.
+
+- A key is `<source>:<id>` (`polyhaven:ArmChair_01`, `gameicons:lorc/broadsword`, `ambientcg:Bricks090`). `assets library search <words> [--kind icon] [--source polyhaven] [--tag sword]` finds one; `assetLibrary()` + `searchLibrary()` do the same in code (import `libraryIndex` lazily in a browser: it is megabytes).
+- `assets pull <key> --dir <public>` fetches one entry to its served path (`libraryServedPath`). A game that quotes a key in its source gets it at provision time; the editor's Content Browser → Asset library adds one to the running game through `/__jgengine/library-pull`.
+- Item icons: `libraryIconUrl("gameicons:delapouite/beet")` is the served SVG and `<SpriteIcon src={...} />` (`@jgengine/core/ui/icons/spriteIcon.view`) draws it tinted to the HUD; pass it as an `ActionBar` `renderIcon`, an `InventoryGrid` `itemIcon` or an `IconTreatment` glyph instead of a two-letter tile.
+- Credits come from data: `libraryCredits(entries)`, `libraryIconCredits(keys)` and `assets library credits <key...>` write one line per author and licence.
+- The licence gate is code (`normalizeLibraryLicense`, `EXCLUDED_PROVIDERS`, `validateLibrary`): CC0, public domain, MIT and CC BY only. Re-ingest a source with `assets library ingest <source>` (Sketchfab downloads need `SKETCHFAB_TOKEN`; GitHub listings use the gh token); `assets library stats` prints counts.
+
 ## Source rules
 
 - Never use or reference Kenney.nl assets.

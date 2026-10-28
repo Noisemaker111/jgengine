@@ -33,6 +33,11 @@ import { STARTER_PEOPLE, STARTER_SOURCE_PACKS } from "../packs/starter";
 import { materialSources, sourceById, spriteSources } from "../sources";
 import { reindexSprites } from "../spriteIndexGen";
 import { verifyManifest } from "../verify";
+import { cmdLibrary } from "../library/libraryCli";
+import { assetLibrary } from "../library/libraryIndex";
+import { pullLibraryEntry } from "../library/libraryPull";
+import { libraryServedPath } from "../library/libraryServed";
+import { librarySource } from "../library/librarySources";
 import {
   resolveDefaultOutputRoot,
   resolveDefaultReindexDir,
@@ -252,6 +257,31 @@ export async function cmdPull(argv: string[]): Promise<void> {
     console.log(`model library: ${entries.length} model(s), ${(total / 1e6).toFixed(2)} MB written`);
     return;
   }
+  // `<source>:<id>` pulls one shared-library entry (`polyhaven:ArmChair_01`, `gameicons:lorc/broadsword`).
+  const libraryPrefix = sourceId.split(":")[0] ?? "";
+  if (sourceId.includes(":") && librarySource(libraryPrefix) !== undefined) {
+    const entry = assetLibrary().find((candidate) => candidate.key === sourceId) ?? fail(`unknown library key: ${sourceId} (search with: assets library search <words>)`);
+    const dirFlag = flag(argv, "dir");
+    const outRoot = dirFlag !== undefined ? resolve(dirFlag) : resolveDefaultOutputRoot(here);
+    const served = libraryServedPath(entry);
+    if (dirHasEntries(join(outRoot, ...served.dir.split("/"))) && !argv.includes("--force")) {
+      console.log(`${entry.key}: already pulled -> ${served.url}`);
+      return;
+    }
+    const mirrorBase = flag(argv, "mirror") ?? process.env["JGENGINE_ASSETS_MIRROR"];
+    const githubToken = pullGithubToken();
+    await pullLibraryEntry(entry, {
+      outRoot,
+      fetchImpl: cliFetch,
+      ...(githubToken === undefined ? {} : { githubToken }),
+      pullPack: async (pack) => {
+        if (dirHasEntries(join(outRoot, packSubdir(pack), pack.id)) && !argv.includes("--force")) return;
+        console.log(describeFetchResult(pack, await fetchPackInto(pack, outRoot, { mirrorBase })));
+      },
+    });
+    console.log(`${entry.key}: ${entry.title} (${entry.license}, ${entry.author}) -> ${served.url}`);
+    return;
+  }
   const source = sourceById.get(sourceId);
   if (source === undefined) fail(`unknown source: ${sourceId}`);
 
@@ -328,10 +358,13 @@ async function fetchPackInto(
     return { outDir, models: 0, textures: maps.length, url };
   }
   if (source.kind === "sprite") {
-    const files = extractSpriteFiles(archive);
+    const files = extractSpriteFiles(archive, source.spriteLayout ?? "flat");
     if (files.length === 0) fail(`no .svg/.png files found in ${source.id} archive`);
-    mkdirSync(outDir, { recursive: true });
-    for (const file of files) writeFileSync(join(outDir, file.file), file.bytes);
+    for (const file of files) {
+      const target = join(outDir, ...file.file.split("/"));
+      mkdirSync(dirname(target), { recursive: true });
+      writeFileSync(target, file.bytes);
+    }
     return { outDir, models: files.length, textures: 0, url };
   }
   const { models, images } = extractGlbs(archive);
@@ -652,9 +685,13 @@ if (import.meta.main) {
     case "provenance":
       cmdProvenance(rest);
       break;
+    case "library":
+      await cmdLibrary(rest, join(packageTreeRoot, "library", "generated"), fail).catch((error: unknown) => fail(describeNetworkFailure(error)));
+      break;
     default:
       console.log(
-        "usage: assets <find|add|list|pull|register|reindex|reindex-sprites|budget|verify|provenance> [...args]\n" +
+        "usage: assets <find|add|list|pull|register|reindex|reindex-sprites|budget|verify|provenance|library> [...args]\n" +
+        "  assets library search \"iron sword\" --kind icon   # the shared asset library; pull a key with: assets pull <key>\n" +
         "  assets find raptor \"street lamp\" --game games/my-game   # many names at once, JSON out\n" +
         "  assets pull starter   # every pack the starter catalog needs, into ./public/models",
       );

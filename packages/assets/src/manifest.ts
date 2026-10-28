@@ -50,6 +50,12 @@ export interface AssetSource {
   categories: readonly string[];
   download: AssetDownload;
   homepage?: string;
+  /**
+   * How a sprite pack's files are laid out once pulled: `flat` (default) dedupes every file by its
+   * basename into one folder; `folders` keeps each file's path below the archive's root folder, for
+   * packs whose files share names across folders (game-icons.net's per-artist folders).
+   */
+  spriteLayout?: "flat" | "folders";
   /** Map roles present in the pinned material archive, used by the catalog and checked during pull. */
   materialMaps?: readonly MaterialMapRole[];
   /** Direct archive URL tried as a last resort when the primary provider path fails; see `downloadPackArchive`. */

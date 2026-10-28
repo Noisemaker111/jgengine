@@ -9,13 +9,16 @@ import {
   type EditorAssetEntry,
 } from "../AssetBrowser";
 import { TERRAIN_PAINT_PRESETS } from "@jgengine/core/terrain/terrainPaint";
+import type { LibraryEntry } from "@jgengine/assets/library/assetLibrary";
+
+import { AssetLibraryBrowser } from "./AssetLibraryBrowser";
 import { AssetThumbnail } from "./AssetThumbnail";
 import { Icon, type IconName } from "./icons";
 import type { BrowserViewMode } from "./layoutStore";
 import { FOCUS_RING, INPUT_CLS, MICRO_LABEL } from "./theme";
 import { EmptyState, IconButton, Segmented } from "./ui";
 
-type BrowserFolder = { id: string; label: string; icon: IconName; count: number };
+type BrowserFolder = { id: string; label: string; icon: IconName; count?: number };
 
 const ASSET_KIND_ICON: Record<EditorAssetEntry["kind"], IconName> = {
   model: "cube",
@@ -40,6 +43,7 @@ export function ContentBrowser({
   onSetView,
   onImportModels,
   importBusy = false,
+  onAddLibraryAsset,
 }: {
   assets: readonly EditorAssetEntry[];
   session: EditorSession;
@@ -50,6 +54,8 @@ export function ContentBrowser({
   onImportModels?: (files: readonly File[]) => void | Promise<void>;
   /** True while an import is in flight (disables the Import control). */
   importBusy?: boolean;
+  /** Serves a picked shared-library asset in the game and resolves its URL (null on failure); enables "Add to game". */
+  onAddLibraryAsset?: (entry: LibraryEntry) => Promise<string | null>;
 }) {
   const [query, setQuery] = useState("");
   const [folder, setFolder] = useState("all");
@@ -69,6 +75,7 @@ export function ContentBrowser({
         count,
       })),
       { id: "materials", label: "Materials", icon: "sphere", count: TERRAIN_PAINT_PRESETS.length },
+      { id: "library", label: "Asset library", icon: "sparkle" },
     ];
   }, [assets]);
 
@@ -139,11 +146,14 @@ export function ContentBrowser({
           >
             <Icon name={entry.icon} size={13} className="shrink-0" />
             <span className="min-w-0 flex-1 truncate">{entry.label}</span>
-            <span className="text-[9px] tabular-nums text-neutral-600">{entry.count}</span>
+            {entry.count === undefined ? null : <span className="text-[9px] tabular-nums text-neutral-600">{entry.count}</span>}
           </button>
         ))}
       </nav>
 
+      {folder === "library" ? (
+        <AssetLibraryBrowser {...(onAddLibraryAsset === undefined ? {} : { onAdd: onAddLibraryAsset })} />
+      ) : (
       <div className="flex min-h-0 min-w-0 flex-1 flex-col">
         <div className="flex h-9 shrink-0 items-center gap-2 border-b border-white/[0.06] px-2">
           <div className="flex items-center gap-1 text-[11px] text-neutral-500">
@@ -374,6 +384,7 @@ export function ContentBrowser({
           </div>
         </div>
       </div>
+      )}
     </div>
   );
 }

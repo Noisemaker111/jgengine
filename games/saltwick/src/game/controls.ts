@@ -1,4 +1,5 @@
 import { libraryModelCredits } from "@jgengine/assets/catalogs/modelLibrary";
+import { libraryIconCredits } from "@jgengine/assets/library/libraryIcons";
 
 import { idea } from "./idea";
 
@@ -30,4 +31,7 @@ export const CREDITS: readonly string[] = [
   `${idea.name} - made with JGengine.`,
   "Creatures, buildings and nature: KayKit (Kay Lousberg) and Quaternius, CC0.",
   ...libraryModelCredits([...new Set(libraryNames)]),
+  ...libraryIconCredits(idea.crops.flatMap((crop) => (crop.icon === undefined ? [] : [crop.icon]))).flatMap((section) =>
+    section.entries.map((entry) => `${entry.label} (${section.heading}): ${entry.detail ?? ""}`),
+  ),
 ];

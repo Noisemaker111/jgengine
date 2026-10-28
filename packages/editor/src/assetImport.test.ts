@@ -4,6 +4,7 @@ import { editorAssetFromImport, mergeEditorAssets } from "./AssetBrowser";
 import {
   loadDroppedAssets,
   mergeStandaloneAssets,
+  pullLibraryAssetToHost,
   type AssetImporter,
   type StandaloneAsset,
 } from "./assetImport";
@@ -74,4 +75,16 @@ test("editorAssetFromImport and mergeEditorAssets feed Content Browser entries",
     [entry],
   );
   expect(merged.map((asset) => asset.id)).toEqual(["rock", "ship"]);
+});
+
+test("pullLibraryAssetToHost posts the key and returns the served URL, or null without a host", async () => {
+  let sent = "";
+  const host = (_route: string, init: RequestInit) => {
+    sent = String(init.body ?? "");
+    return Promise.resolve(new Response(JSON.stringify({ url: "/sprites/gameicons-icons/lorc/wheat.svg" })));
+  };
+  expect(await pullLibraryAssetToHost("gameicons:lorc/wheat", "/r", host)).toBe("/sprites/gameicons-icons/lorc/wheat.svg");
+  expect(JSON.parse(sent)).toEqual({ key: "gameicons:lorc/wheat" });
+  const down = () => Promise.reject(new Error("offline"));
+  expect(await pullLibraryAssetToHost("gameicons:lorc/wheat", "/r", down)).toBeNull();
 });

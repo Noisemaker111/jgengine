@@ -17,7 +17,16 @@ export interface AssetCatalogs {
   library: readonly { name: string; origin: { provider: string } }[];
   /** Semantic keys (`asset:prop_crate`, `nature/tree_pine`) and the `pack/model` ids they stand for. */
   aliases?: readonly { key: string; target: string }[];
+  /** Shared-library keys (`gameicons:lorc/wheat`, `polyhaven:ArmChair_01`): what to pull and where it is served. */
+  libraryPull?: (key: string) => LibraryPullJob | undefined;
 }
+
+/** A pull for one shared-library key, with the URL the game loads once it is served. */
+export interface LibraryPullJob extends PullJob {
+  url: string;
+}
+
+const LIBRARY_KEY = /["'`]((?:ambientcg|polyhaven|gameicons|sketchfab|kaykit|quaternius|rocketbox):[A-Za-z0-9_./-]+)["'`]/g;
 
 function sourceText(dir: string): string {
   if (!existsSync(dir)) return "";
@@ -49,6 +58,13 @@ export function missingPulls(text: string, publicDir: string, catalogs: AssetCat
     if (entry.origin.provider === "generated" || !text.includes(`"${entry.name}"`)) continue;
     const dir = join("models", "library", ...entry.name.split("/"));
     if (!dirHasEntries(join(publicDir, dir))) jobs.push({ target: `model:${entry.name}`, dir });
+  }
+  if (catalogs.libraryPull !== undefined) {
+    for (const match of text.matchAll(LIBRARY_KEY)) {
+      const job = match[1] === undefined ? undefined : catalogs.libraryPull(match[1]);
+      if (job === undefined || jobs.some((other) => other.dir === job.dir) || dirHasEntries(join(publicDir, job.dir))) continue;
+      jobs.push(job);
+    }
   }
   return jobs;
 }
@@ -89,7 +105,16 @@ export async function loadCatalogs(): Promise<AssetCatalogs> {
     MODEL_LIBRARY?: AssetCatalogs["library"];
     aliases?: AssetCatalogs["aliases"];
   };
-  return { sources: module.sources, library: module.MODEL_LIBRARY ?? [], aliases: module.aliases ?? [] };
+  const index: typeof import("../../packages/assets/src/library/libraryIndex") = await import(join(assetsDir, "src/library/libraryIndex.ts"));
+  const served: typeof import("../../packages/assets/src/library/libraryServed") = await import(join(assetsDir, "src/library/libraryServed.ts"));
+  const byKey = new Map(index.assetLibrary().map((entry) => [entry.key, entry]));
+  const libraryPull = (key: string): LibraryPullJob | undefined => {
+    const entry = byKey.get(key);
+    if (entry === undefined) return undefined;
+    const path = served.libraryServedPath(entry);
+    return { target: entry.pack ?? entry.key, dir: join(...path.dir.split("/")), url: path.url };
+  };
+  return { sources: module.sources, library: module.MODEL_LIBRARY ?? [], aliases: module.aliases ?? [], libraryPull };
 }
 
 function runPull(cwd: string, target: string, outRoot: string): Promise<boolean> {
@@ -116,6 +141,62 @@ export async function provisionGame(
 ): Promise<ProvisionResult> {
   const jobs = missingPulls(referencedAssetText(gameDir), join(gameDir, "public"), await loadCatalogs());
   return provisionJobs(gameDir, jobs, { pull: (target, outRoot) => runPull(gameDir, target, outRoot), log: options.log, download: options.download, env: options.env });
+}
+
+/**
+ * Serve one shared-library key in a game: link it from the shared asset store, or pull it into the
+ * store first. Returns the URL the game loads, or null for an unknown key or a failed pull.
+ */
+export async function provisionLibraryKey(gameDir: string, key: string, options: { log?: (line: string) => void } = {}): Promise<{ url: string } | null> {
+  const job = (await loadCatalogs()).libraryPull?.(key);
+  if (job === undefined) return null;
+  const result = await provisionJobs(gameDir, [job], { pull: (target, outRoot) => runPull(gameDir, target, outRoot), log: options.log });
+  return result.failed.length > 0 ? null : { url: job.url };
+}
+
+/** The dev-server route the editor's asset library posts `{ key }` to, answering `{ url }` once the asset is served. */
+export const LIBRARY_PULL_ROUTE = "/__jgengine/library-pull";
+
+function libraryPullMiddleware(gameDir: string) {
+  return (req: IncomingMessage, res: ServerResponse, next: () => void): void => {
+    if (req.method !== "POST") return next();
+    let body = "";
+    req.on("data", (chunk: Buffer) => {
+      body += chunk.toString("utf8");
+    });
+    req.on("end", () => {
+      const reply = (status: number, value: unknown) => {
+        res.statusCode = status;
+        res.setHeader("Content-Type", "application/json");
+        res.end(JSON.stringify(value));
+      };
+      let key: unknown;
+      try {
+        const parsed: unknown = JSON.parse(body);
+        key = typeof parsed === "object" && parsed !== null && "key" in parsed ? parsed.key : undefined;
+      } catch {
+        key = undefined;
+      }
+      if (typeof key !== "string" || !/^[a-z]+:[A-Za-z0-9_./-]+$/.test(key)) return reply(400, { error: "expected { key: \"<source>:<id>\" }" });
+      // Vite runs under Node, which cannot load the library index's TypeScript, so Bun does the pull.
+      const child = spawn("bun", [provisionScript, basename(gameDir), "--library", key], { cwd: gameDir, windowsHide: true });
+      let out = "";
+      child.stdout.on("data", (chunk: Buffer) => {
+        out += chunk.toString("utf8");
+      });
+      child.once("error", () => reply(500, { error: "bun is not on PATH" }));
+      child.once("exit", (code) => {
+        const last = out.trim().split(/\r?\n/).pop() ?? "";
+        try {
+          const parsed: unknown = JSON.parse(last);
+          if (code === 0 && typeof parsed === "object" && parsed !== null && "url" in parsed) return reply(200, parsed);
+        } catch {
+          // fall through to the failure reply
+        }
+        reply(502, { error: `could not provision ${key}; run: bun run games:provision ${basename(gameDir)}` });
+      });
+    });
+  };
 }
 
 /** Whether a dev server should pull missing assets: on by default, off in CI, `JG_DEV_PROVISION` overrides both. */
@@ -174,7 +255,10 @@ export function textureVariantMiddleware(publicDir: string, variantDir: string) 
 export function viteProvisionAssets(): {
   name: string;
   apply: "serve";
-  configureServer(server: { config: { root: string; publicDir: string }; middlewares: { use(handler: ReturnType<typeof textureVariantMiddleware>): void } }): Promise<void>;
+  configureServer(server: {
+    config: { root: string; publicDir: string };
+    middlewares: { use(handler: ReturnType<typeof textureVariantMiddleware>): void; use(route: string, handler: ReturnType<typeof libraryPullMiddleware>): void };
+  }): Promise<void>;
 } {
   return {
     name: "jg-dev-provision-assets",
@@ -182,6 +266,7 @@ export function viteProvisionAssets(): {
     async configureServer(server) {
       const repoRoot = resolve(server.config.root, "..", "..");
       if (server.config.publicDir) server.middlewares.use(textureVariantMiddleware(server.config.publicDir, textureVariantDir(assetStoreRoot(repoRoot))));
+      server.middlewares.use(LIBRARY_PULL_ROUTE, libraryPullMiddleware(server.config.root));
       if (!shouldProvision(process.env)) return;
       // Vite runs under Node, which cannot load the asset catalogs' TypeScript source, so the work
       // runs in Bun: the same `games:provision` a lane would type.
