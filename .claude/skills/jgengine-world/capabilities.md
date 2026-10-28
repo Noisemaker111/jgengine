@@ -907,6 +907,7 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 ## landform-dunes — grow barchan, transverse, linear and star dunes from a wind regime and sand supply
 
 - `createDuneField` (function) · `import { createDuneField } from "@jgengine/core/landform/dunes/duneField"`
+- `duneSlopeAngle` (function) · `import { duneSlopeAngle } from "@jgengine/core/landform/dunes/duneField"`
 
 ## landform-evolution — grow a heightfield from uplift, river incision, hillslopes, landslides, sediment and rock strata
 
