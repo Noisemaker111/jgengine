@@ -292,6 +292,12 @@ no code is copied (Landlab, Fastscape and TopoToolbox were not used as sources).
   für Bauwesen* 25 (public domain): exponential downstream fining.
 - Forte, Yanites & Whipple 2016, complexities of landscape evolution during incision through layered
   stratigraphy, *Earth Surface Processes and Landforms* 41: rivers steepening in hard layers.
+- Werner 1995, eolian dunes: computer simulations and attractor interpretation, *Geology* 23: the
+  slab model of dunes (lift, hop, shadow zone, avalanching) and its barchan, transverse, linear and
+  star dune regimes.
+- Bagnold 1941, *The Physics of Blown Sand and Desert Dunes*: dune speed falls as one over height.
+- Rubin & Hunter 1987, bedform alignment in directionally varying flows, *Science* 237: linear dunes
+  trending along the resultant of two winds.
 
 ## Fire simulation
 
