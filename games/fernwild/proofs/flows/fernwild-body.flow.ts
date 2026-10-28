@@ -7,6 +7,9 @@ export default defineFlow(game, {
     // arrival on the beach: a realistic survivor, empty fists
     await f.waitFor((p) => p.pedestals === 8, { timeoutMs: 60000 });
     await f.shot("fernwild-body-idle");
+    // walk, then run
+    await f.hold("KeyW", { ms: 1200 });
+    await f.hold(["ShiftLeft", "KeyW"], { ms: 1200 });
     // a stone pick on the hotbar, then in hand
     await f.command("cheat", { give: { stone_pick: 1 }, toHotbar: ["stone_pick"] });
     await f.press("Digit1");
