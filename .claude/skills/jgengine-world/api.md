@@ -2252,7 +2252,7 @@
 
 - `CoastalParams` (interface): interface CoastalParams — Waves on the coast: cliff retreat and platform wear (see `coastal/waveErosion`). Needs a `seaLevel`.
 - `DEFAULT_LANDFORM_PARAMS` (const): const DEFAULT_LANDFORM_PARAMS: LandformParams — Sensible defaults for a 100 m grid: 1 mm/yr uplift, K = 2·10⁻⁵, m = 0.5, n = 1 (concavity 0.5), D = 0.01 m²/yr, repose 34°, 10 kyr steps.
-- `GlacialParams` (interface): interface GlacialParams — Glaciers: shallow-ice flow with sliding, which erodes the bed (see `glacial/iceFlow`).
+- `GlacialParams` (interface): interface GlacialParams — Glaciers: ice that flows and slides, and erodes its bed by sliding (see `glacial/glacierFlow`).
 - `LandformFields` (interface): interface LandformFields — Per-cell fields of a run. The arrays are live; read them, never write them.
 - `LandformInitial` (interface): interface LandformInitial — Starting surface of a run.
 - `LandformParams` (interface): interface LandformParams — Physical parameters of a landscape evolution run; every one can be retuned between steps.
@@ -2306,6 +2306,19 @@
 - `LandformTerrain` (interface): interface LandformTerrain — A grown landform in world metres (after {@link LandformRecipe.scale}). Heights are cell centres, row-major, row 0 at the north edge.
 - `growLandform` (function): function growLandform(recipe: LandformRecipe, seed: string): LandformTerrain — Grow a landform from a recipe and seed: erosion first, then dunes over it.
 - `landformTerrainSnapshot` (function): function landformTerrainSnapshot(terrain: LandformTerrain, options: LandformSnapshotOptions = {}): TerraformSnapshot — The editor terrain document for a grown landform: cell centres become the sculpt grid's vertices, and each surface kind becomes a material layer with per-cell blend weights.
+
+## @jgengine/core/landform/glacial/firstOrderIceFlow
+
+- `FirstOrderGrid` (interface): interface FirstOrderGrid — A first-order Stokes grid: `cols` × `rows` plan nodes `dx` × `dy` metres apart, each column `layers` layers deep.
+- `FirstOrderIceFlow` (interface): interface FirstOrderIceFlow — A reusable first-order Stokes solver for one grid.
+- `FirstOrderInput` (interface): interface FirstOrderInput — Ice geometry and rheology for one solve.
+- `FirstOrderOptions` (interface): interface FirstOrderOptions — How hard to solve.
+- `FirstOrderReport` (interface): interface FirstOrderReport — What one solve did.
+- `createFirstOrderIceFlow` (function): function createFirstOrderIceFlow(grid: FirstOrderGrid): FirstOrderIceFlow — A first-order (Blatter–Pattyn) Stokes ice-flow solver for a plan grid.
+
+## @jgengine/core/landform/glacial/glacierFlow
+
+- `GlacierModel` (type): type GlacierModel = "first-order" | "shallow-ice" — Which ice model moves a glacier.
 
 ## @jgengine/core/landform/glacial/iceFlow
 
