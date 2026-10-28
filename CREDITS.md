@@ -312,8 +312,18 @@ code is copied. Its tests check it against the expected outputs of the BehavePlu
   scenarios); Andrews 2012, *Modeling wind adjustment factor and midflame wind speed*, RMRS-GTR-266;
   Andrews, Cruz & Rothermel 2013, the revised wind limit, *International Journal of Wildland Fire* 22;
   Andrews 2018, *The Rothermel surface fire spread model and associated developments*, RMRS-GTR-371.
+- Van Wagner 1977, *Conditions for the start and spread of crown fire*, Canadian Journal of Forest
+  Research 7; Van Wagner 1993, crown fraction burned, CJFR 23; Rothermel 1991, *Predicting behavior and
+  size of crown fires in the northern Rocky Mountains*, INT-438 (USFS); Thomas 1963, crown flame length.
+- Finney 2002, *Fire growth using minimum travel time methods*, CJFR 32 (the travel-time solver is
+  implemented from the paper; no FARSITE or FlamMap code); Sethian & Vladimirsky 2003, ordered upwind
+  methods, the idea behind the triangle update.
+- Albini 1979, *Spot fire distance from burning trees*, INT-56, and Albini 1983, *Potential spotting
+  distance from wind-driven surface fires*, INT-309 (USFS); Chase 1981, spotting over ridge-valley
+  terrain, INT-310; Schroeder 1969, probability of ignition, in the NFDRS form of Cohen & Deeming
+  1985, PSW-82 (USFS).
 - **BehavePlus / firelab `behave`** (USFS Missoula Fire Sciences Laboratory, US public domain): the
-  reference outputs in `fire/surfaceFire.test.ts`.
+  reference outputs in `fire/surfaceFire.test.ts` and `fire/crownFire.test.ts`.
 - Anderson 1969, flame residence time, INT-69; Byram 1959, fireline intensity and flame length, in
   *Forest Fire: Control and Use*; Albini & Baughman 1979, wind adjustment, INT-221; Albini & Chase
   1980, vector addition of wind and slope; Anderson 1983, *Predicting wind-driven wild land fire
