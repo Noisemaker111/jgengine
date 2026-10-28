@@ -2,6 +2,7 @@
 import type { ComparisonTable } from "../../flight/reference/flightComparison";
 import { createBoatDynamics, type BoatTuning } from "../boatDynamics";
 import { bSeriesShipOpenWater, type BSeriesPropeller } from "./marinePropeller";
+import { wigleyHull } from "./hullForm";
 import { planingEquilibrium, type PlaningHull } from "./planingHull";
 import {
   KVLCC2_L7,
@@ -15,6 +16,7 @@ import {
   type MmgShip,
 } from "./shipManoeuvring";
 import { HOLTROP_MENNEN_EXAMPLE, holtropMennenResistance, holtropPropulsionFactors, type HoltropHull } from "./shipResistance";
+import { heavePitchResponse, stripSections, type StripHull } from "./stripTheory";
 
 const KNOT = 0.5144444;
 const DEG = Math.PI / 180;
@@ -209,6 +211,57 @@ function manoeuvringRows(tuning: BoatTuning, subject: ManoeuvringSubject): Compa
 }
 
 /**
+ * A Wigley hull (`C_B` 4/9) with a boat tuning's length, beam and mass, floating level with G on the waterline: the
+ * seakeeping stand-in for a boat whose real lines are unknown.
+ * @capability boat-comparison Wigley seakeeping stand-in for any game boat tuning
+ */
+export function wigleyStandIn(tuning: BoatTuning): StripHull {
+  const draft = tuning.massKg / (RHO * (4 / 9) * tuning.length * tuning.beam);
+  const offsets = wigleyHull({ length: tuning.length, beam: tuning.beam, draft, freeboard: 0.5 * draft, stations: 21, waterlines: 12 });
+  return { offsets, draft, centreOfGravity: [tuning.length / 2, draft], pitchRadius: 0.25 * tuning.length, density: RHO };
+}
+
+/** Heave over A and pitch over kA of the game boat riding regular head waves at rest, by projection once settled. */
+function gameHeavePitch(tuning: BoatTuning, wavelength: number, amplitude: number): { heave: number; pitch: number } {
+  const k = (2 * Math.PI) / wavelength;
+  const omega = Math.sqrt(G * k);
+  // The boat faces +z; head waves travel toward −z.
+  const boat = createBoatDynamics(tuning, { waterHeight: (_x, z, t) => amplitude * Math.cos(k * z + omega * t) });
+  const period = (2 * Math.PI) / omega;
+  const dt = period / 40;
+  let heaveCos = 0, heaveSin = 0, pitchCos = 0, pitchSin = 0, samples = 0;
+  for (let i = 0; i < 40 * 30; i += 1) {
+    const step = boat.tick(dt, { throttle: 0, brake: 0, steer: 0, handbrake: 0 });
+    if (i < 40 * 20) continue;
+    const phase = omega * (i + 1) * dt;
+    heaveCos += step.position[1] * Math.cos(phase);
+    heaveSin += step.position[1] * Math.sin(phase);
+    pitchCos += step.bodyPitch * Math.cos(phase);
+    pitchSin += step.bodyPitch * Math.sin(phase);
+    samples += 1;
+  }
+  return { heave: (2 * Math.hypot(heaveCos, heaveSin)) / samples / amplitude, pitch: (2 * Math.hypot(pitchCos, pitchSin)) / samples / (k * amplitude) };
+}
+
+/** Heave and pitch in regular head waves of one and two boat lengths: the game boat against strip theory on its Wigley stand-in. */
+function seakeepingRows(tuning: BoatTuning): ComparisonRow[] {
+  const hull = wigleyStandIn(tuning);
+  const prepared = stripSections(hull.offsets, hull.draft);
+  const rows: ComparisonRow[] = [];
+  for (const ratio of [1, 2]) {
+    const wavelength = ratio * tuning.length;
+    const reference = heavePitchResponse(hull, Math.sqrt((2 * Math.PI * G) / wavelength), prepared);
+    const game = gameHeavePitch(tuning, wavelength, 0.005 * wavelength);
+    const label = ratio === 1 ? "λ = L" : `λ = ${ratio}L`;
+    rows.push(
+      { label: `heave RAO, head seas ${label}`, unit: "z/A", game: game.heave, reference: reference.heave, real: undefined },
+      { label: `pitch RAO, head seas ${label}`, unit: "θ/kA", game: game.pitch, reference: reference.pitch, real: undefined },
+    );
+  }
+  return rows;
+}
+
+/**
  * A game boat as a trial boat: started straight at `speed` with the throttle that holds it (full throttle if it
  * cannot), steered by the input that sets the rudder or outboard to the target angle over `maxAngle`.
  */
@@ -231,7 +284,9 @@ function gameTrialBoat(tuning: BoatTuning, speed: number, maxAngle: number): Man
 /**
  * Runs a game boat tuning and its reference hull through the same straight-line tests (calm-water resistance at set
  * speeds, top speed and time to 90% of it on the game's own thrust law, coast-down distance to a quarter of top speed,
- * and running trim for planing hulls) and lines them up beside published figures.
+ * and running trim for planing hulls), heave and pitch in regular head waves against strip theory on the boat's
+ * {@link wigleyStandIn}, turning circles and zig-zags when the subject has an MMG model, and lines them up beside
+ * published figures.
  * @capability boat-comparison compare a game boat with a reference hull and published figures, metric by metric
  */
 export function compareBoat(subject: BoatComparisonSubject, gameName = `${subject.name} (game build)`): ComparisonTable {
@@ -257,6 +312,7 @@ export function compareBoat(subject: BoatComparisonSubject, gameName = `${subjec
   }
   rows.push(...(subject.extra ?? []));
   if (subject.manoeuvring !== undefined) rows.push(...manoeuvringRows(tuning, subject.manoeuvring));
+  rows.push(...seakeepingRows(tuning));
   return { aircraft: gameName, reference: reference.name, rows };
 }
 

@@ -7063,6 +7063,16 @@
       "intent": "check progress of a threshold objective against a live metric"
     },
     {
+      "id": "ocean-waves",
+      "packages": [
+        "@jgengine/core"
+      ],
+      "module": "@jgengine/core/physics/reference/oceanWaves",
+      "gameFacing": false,
+      "probe": null,
+      "intent": "Pierson–Moskowitz and JONSWAP wave spectra"
+    },
+    {
       "id": "offscreen-markers",
       "packages": [
         "@jgengine/core"
@@ -9009,6 +9019,26 @@
       "intent": "reachable horizontal controls with visible overflow navigation and keyboard focus reveal"
     },
     {
+      "id": "seakeeping-hull",
+      "packages": [
+        "@jgengine/core"
+      ],
+      "module": "@jgengine/core/physics/reference/seakeepingHull",
+      "gameFacing": false,
+      "probe": null,
+      "intent": "time-domain seakeeping hull built from strip theory"
+    },
+    {
+      "id": "section-hydrodynamics",
+      "packages": [
+        "@jgengine/core"
+      ],
+      "module": "@jgengine/core/physics/reference/sectionHydrodynamics",
+      "gameFacing": false,
+      "probe": null,
+      "intent": "2-D heave added mass and radiation damping of a ship section (Frank close-fit)"
+    },
+    {
       "id": "seeded-random",
       "packages": [
         "@jgengine/core"
@@ -10018,6 +10048,16 @@
       "gameFacing": false,
       "probe": null,
       "intent": "seed-driven procedural streets and race circuits from one slider-driven engine"
+    },
+    {
+      "id": "strip-theory",
+      "packages": [
+        "@jgengine/core"
+      ],
+      "module": "@jgengine/core/physics/reference/stripTheory",
+      "gameFacing": false,
+      "probe": null,
+      "intent": "ship sections below the waterline from a table of offsets"
     },
     {
       "id": "studio-stage",
