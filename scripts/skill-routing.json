@@ -69,6 +69,7 @@
     "orders": "jgengine-world",
     "physics": "jgengine-world",
     "placement": "jgengine-world",
+    "plants": "jgengine-world",
     "play": "jgengine-ui",
     "postfx": "jgengine-world",
     "procedural": "jgengine-world",

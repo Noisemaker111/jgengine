@@ -1053,6 +1053,27 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `planParticleBudget` (function) · `import { planParticleBudget } from "@jgengine/core/vfx/particleBudget"`
 
+## plant-growth — grow a tree from seed to any age with a real biology simulation; snapshot, restore, retune
+
+- `createPlantGrowth` (function) · `import { createPlantGrowth } from "@jgengine/core/plants/growth/plantGrowth"`
+
+## plant-species — register and validate plant species records: measured biology as plain data
+
+- `plantSpeciesById` (function) · `import { plantSpeciesById } from "@jgengine/core/plants/species/plantSpecies"`
+- `plantSpeciesIds` (function) · `import { plantSpeciesIds } from "@jgengine/core/plants/species/plantSpecies"`
+- `registerPlantSpecies` (function) · `import { registerPlantSpecies } from "@jgengine/core/plants/species/plantSpecies"`
+- `validatePlantSpecies` (function) · `import { validatePlantSpecies } from "@jgengine/core/plants/species/plantSpecies"`
+
+## plant-structure — a grown plant as a skeleton with regions, leaves, clusters and a crown envelope
+
+- `buildPlantStructure` (function) · `import { buildPlantStructure } from "@jgengine/core/plants/structure/plantStructure"`
+- `crownRatio` (function) · `import { crownRatio } from "@jgengine/core/plants/structure/plantStructure"`
+- `hashPlantStructure` (function) · `import { hashPlantStructure } from "@jgengine/core/plants/structure/plantStructure"`
+
+## plant-validation — published height-age curves to check a growth model against
+
+- `siteIndexHeightM` (function) · `import { siteIndexHeightM } from "@jgengine/core/plants/validation/heightAgeCurves"`
+
 ## plot-permissions — Owner, editor and guild build rights on a plot
 
 - `createPlotPermissions` (function) · `import { createPlotPermissions } from "@jgengine/core/world"`
