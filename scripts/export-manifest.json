@@ -1576,6 +1576,7 @@
     "./materials",
     "./modelLibraryAuthored",
     "./modelLibraryPull",
+    "./packModelConvert",
     "./packs/starter",
     "./provisioning",
     "./rankAssets",

@@ -634,7 +634,6 @@
   "packages/assets/src/download.test.ts": {"cast":3,"nonNull":7},
   "packages/assets/src/download.ts": {"cast":2,"nonNull":3},
   "packages/assets/src/findAssets.test.ts": {"nonNull":2},
-  "packages/assets/src/generated/index.ts": {"cast":9},
   "packages/assets/src/glbMetrics.test.ts": {"nonNull":11},
   "packages/assets/src/glbMetrics.ts": {"nonNull":7,"cast":3},
   "packages/assets/src/gltfMaterials.test.ts": {"nonNull":81,"cast":1},

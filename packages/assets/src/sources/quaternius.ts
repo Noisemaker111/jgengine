@@ -151,7 +151,7 @@ const quaterniusOgaSources: readonly AssetSource[] = QUATERNIUS_OGA_PACKS.map((p
   mirror: `${OGA_FILES}/${pack.zip}`,
 }));
 
-export const quaterniusSources: readonly AssetSource[] = QUATERNIUS_PACKS.map((pack) => ({
+export const quaterniusSources: readonly AssetSource[] = QUATERNIUS_PACKS.map((pack): AssetSource => ({
   id: pack.id,
   provider: "quaternius",
   title: pack.title,
