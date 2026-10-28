@@ -91,7 +91,7 @@ export function ScatterImpostorField({ cacheKey, sources, farSources, batches, r
       }
       const draws = sources.map((source) => {
         const mesh = new THREE.InstancedMesh(source.geometry, source.material, batch.matrices.length);
-        mesh.castShadow = source.castShadow ?? true;
+        mesh.castShadow = source.skipShadow !== true && (source.castShadow ?? true);
         mesh.receiveShadow = source.receiveShadow ?? true;
         const composed = new Float32Array(batch.matrices.length * 16);
         const scratch = new THREE.Matrix4();

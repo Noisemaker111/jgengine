@@ -15,6 +15,8 @@ export interface ScatterModelSource {
   localMatrix: THREE.Matrix4;
   castShadow?: boolean;
   receiveShadow?: boolean;
+  /** Leave this source out of the shadow pass on every scatter path (pebble-sized generated meshes). */
+  skipShadow?: boolean;
 }
 
 /** The scale + position offset a `ModelConfig` applies before any per-instance transform — same anchor/targetHeight rules as the single-instance entity renderer. */

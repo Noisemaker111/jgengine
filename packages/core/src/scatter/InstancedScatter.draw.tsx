@@ -146,7 +146,7 @@ function ScatterModelSourceInstances({ source, matrices }: { source: ScatterMode
     const mesh = meshRef.current;
     if (mesh !== null) uploadInstances(mesh, matrices, { localMatrix: source.localMatrix });
   }, [matrices, source]);
-  return <instancedMesh ref={meshRef} args={[source.geometry, source.material, matrices.length]} castShadow receiveShadow />;
+  return <instancedMesh ref={meshRef} args={[source.geometry, source.material, matrices.length]} castShadow={source.skipShadow !== true} receiveShadow />;
 }
 
 /**
@@ -195,7 +195,7 @@ function ScatterVariantSourceInstances({ source, batch, level, selector }: {
     <instancedMesh
       ref={meshRef}
       args={[source.geometry, source.material, batch.matrices.length]}
-      castShadow={source.castShadow ?? true}
+      castShadow={source.skipShadow !== true && (source.castShadow ?? true)}
       receiveShadow={source.receiveShadow ?? true}
     />
   );
@@ -325,6 +325,8 @@ function ScatterSourcesField({ cacheKey, sources, farSources, batches }: {
 }
 
 const IDENTITY = new THREE.Matrix4();
+/** Generated meshes smaller than this bounding radius (metres) skip the shadow pass. */
+const SMALL_SHADOW_RADIUS = 0.6;
 
 /** One generator-grown species, resolved: the generator, the item, and its placements per variant. */
 interface ScatterGeneratorSpeciesDraw {
@@ -350,7 +352,12 @@ function ScatterGeneratorSpecies({ item, species }: { item: string; species: Sca
       seed: item,
       ...(spec.keep === undefined ? {} : { keep: spec.keep }),
     });
-    return baked.map((variant) => (build(variant.lods[0]?.output) ?? []).map((source): ScatterModelSource => ({ ...source, localMatrix: IDENTITY })));
+    return baked.map((variant) => (build(variant.lods[0]?.output) ?? []).map((source): ScatterModelSource => {
+      if (source.geometry.boundingSphere === null) source.geometry.computeBoundingSphere();
+      // Pebble-sized meshes cast no shadow: the map cannot resolve them, so they only draw a detached halo.
+      const small = (source.geometry.boundingSphere?.radius ?? 1) < SMALL_SHADOW_RADIUS;
+      return { ...source, localMatrix: IDENTITY, ...(small ? { skipShadow: true } : {}) };
+    }));
   }, [definition, spec, item]);
   useEffect(() => () => variants.forEach((sources) => sources.forEach((source) => source.geometry.dispose())), [variants]);
   const key = useMemo(() => `generator:${item}:${JSON.stringify(spec)}`, [item, spec]);

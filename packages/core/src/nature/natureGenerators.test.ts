@@ -4,7 +4,9 @@ import { bakeGeneratorVariants, generatorVariants, getGenerator, runGenerator } 
 import { placedGeneratorFor } from "@jgengine/core/scene/assetGenerator";
 import { registerBuiltinSceneKinds } from "@jgengine/core/scene/builtinSceneKinds";
 import { isNatureMesh, type NatureMesh } from "./natureMesh";
-import { NATURE_GENERATORS, NATURE_OUTPUT } from "./natureGenerators";
+import { findSchemaPreset, parseParams } from "@jgengine/core/generator/paramSchema";
+import type { GeneratorDefinition } from "@jgengine/core/generator/generator";
+import { BROADLEAF_GENERATOR, BUSH_GENERATOR, NATURE_GENERATORS, NATURE_OUTPUT, PALM_GENERATOR, ROCK_GENERATOR } from "./natureGenerators";
 
 function mesh(value: unknown): NatureMesh {
   if (!isNatureMesh(value)) throw new Error("not a nature mesh");
@@ -62,6 +64,21 @@ describe("nature generators", () => {
         expect(height / baseHeight).toBeGreaterThan(0.4);
         expect(height / baseHeight).toBeLessThan(2.5);
       }
+    }
+  });
+
+  test("variants keep what makes the species: dead trees stay bare, cycads fruitless, shrubs berry-free, boulders one stone", () => {
+    const pinned: [GeneratorDefinition, string, string][] = [
+      [BROADLEAF_GENERATOR, "dead", "leafDensity"],
+      [PALM_GENERATOR, "cycad", "fruit"],
+      [BUSH_GENERATOR, "shrub", "berries"],
+      [ROCK_GENERATOR, "boulder", "count"],
+    ];
+    for (const [definition, presetId, key] of pinned) {
+      const preset = findSchemaPreset(definition.schema, presetId);
+      const base = { ...preset?.values };
+      const expected = parseParams(definition.schema, base)[key];
+      for (const variant of generatorVariants(definition, base, { count: 20, explore: 1 })) expect(variant.params[key]).toBe(expected);
     }
   });
 

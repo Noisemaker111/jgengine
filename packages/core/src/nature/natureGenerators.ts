@@ -36,6 +36,8 @@ export const NATURE_OUTPUT = "nature-mesh";
 const NATURE_LODS = [1, 0.5] as const;
 
 const GOLDEN = Math.PI * (3 - Math.sqrt(5));
+/** Most leaf clusters one broadleaf grows, so a tree's triangle count stays bounded at any slider setting. */
+const MAX_LEAF_CLUSTERS = 24;
 const DEG = Math.PI / 180;
 
 function lerp(a: number, b: number, t: number): number {
@@ -127,7 +129,7 @@ export const BROADLEAF_SCHEMA = defineParamSchema({
     { type: "range", key: "branchAngle", label: "branch angle", group: "branches", min: 15, max: 85, step: 1, default: 52, unit: "°", explore: [35, 70] },
     { type: "range", key: "branchLength", label: "branch length", group: "branches", min: 0.15, max: 0.8, step: 0.01, default: 0.42, explore: [0.3, 0.55] },
     { type: "range", key: "twigs", label: "twigs per branch", group: "branches", min: 0, max: 3, step: 1, default: 1 },
-    { type: "range", key: "leafDensity", label: "leaf density", group: "canopy", min: 0, max: 1, step: 0.01, default: 1, explore: [0.75, 1] },
+    { type: "range", key: "leafDensity", label: "leaf density", group: "canopy", min: 0, max: 1, step: 0.01, default: 1, vary: false },
     { type: "range", key: "clusterSize", label: "cluster size", group: "canopy", min: 0.4, max: 5, step: 0.05, default: 2.1, unit: "m", explore: [1.5, 2.8] },
     { type: "range", key: "clusterSquash", label: "cluster squash", group: "canopy", min: 0.4, max: 1.2, step: 0.01, default: 0.72 },
     { type: "range", key: "lumpiness", label: "lumpiness", group: "canopy", min: 0, max: 0.6, step: 0.01, default: 0.28 },
@@ -136,7 +138,7 @@ export const BROADLEAF_SCHEMA = defineParamSchema({
     { type: "range", key: "leafTint", label: "leaf tint variation", group: "colour", min: 0, max: 0.5, step: 0.01, default: 0.16 },
   ],
   presets: [
-    { id: "oak", label: "Oak", values: { height: 9, trunkRadius: 0.38, branches: 6, branchAngle: 58, clusterSize: 2.3, leafColor: "#4f8a36", barkColor: "#6a4e38" } },
+    { id: "oak", label: "Oak", values: { height: 9, trunkRadius: 0.38, branches: 6, branchAngle: 58, twigs: 2, clusterSize: 1.7, leafColor: "#4f8a36", barkColor: "#6a4e38" } },
     { id: "birch", label: "Birch", values: { height: 11, trunkRadius: 0.18, taper: 0.5, branches: 5, branchStart: 0.5, branchAngle: 38, branchLength: 0.3, clusterSize: 1.5, clusterSquash: 0.95, barkColor: "#d9d4c7", leafColor: "#7fae3e" } },
     { id: "tropical", label: "Tropical hardwood", values: { height: 14, trunkRadius: 0.5, branchStart: 0.62, branchAngle: 66, branchLength: 0.45, clusterSize: 2.8, clusterSquash: 0.55, leafColor: "#3b7a2f", barkColor: "#7b6650" } },
     { id: "dead", label: "Dead tree", values: { leafDensity: 0, twigs: 2, branches: 6, gnarl: 0.35, bend: 0.6, barkColor: "#8a8173" } },
@@ -173,7 +175,7 @@ export const BROADLEAF_GENERATOR = defineGenerator({
       const base = trunkRadius(t) * 0.62;
       addTube(builder, limb, limb.map((_, i) => base * (1 - 0.75 * (i / limb.length))), { sides: Math.max(3, sides - 3), color: barkColors(bark, seed + b), wobble: params.gnarl * 0.5, seed: seed + b });
       tips.push({ at: limb[limb.length - 1]!, scale: 1 });
-      for (let k = 0; k < params.twigs; k += 1) {
+      for (let k = 0; k < params.twigs && tips.length < MAX_LEAF_CLUSTERS - 1; k += 1) {
         const from = pointOnPath(limb, 0.45 + random() * 0.4);
         const twig = limbPath(from, azimuth + (random() - 0.5) * 2.2, elevation * spread(random, 0.3), length * 0.42 * spread(random, 0.25), 0.4, 2);
         addTube(builder, twig, [base * 0.45, base * 0.28, base * 0.12], { sides: 3, color: barkColors(bark, seed + b * 7 + k), seed });
@@ -221,7 +223,7 @@ export const CONIFER_SCHEMA = defineParamSchema({
     { type: "range", key: "tiers", label: "tiers", group: "crown", min: 3, max: 14, step: 1, default: 7, explore: [5, 9] },
     { type: "range", key: "droop", label: "tier droop", group: "crown", min: 0, max: 0.8, step: 0.01, default: 0.32 },
     { type: "range", key: "ragged", label: "raggedness", group: "crown", min: 0, max: 0.8, step: 0.01, default: 0.3 },
-    { type: "range", key: "sparse", label: "gaps", group: "crown", min: 0, max: 0.6, step: 0.01, default: 0.05 },
+    { type: "range", key: "sparse", label: "gaps", group: "crown", min: 0, max: 0.6, step: 0.01, default: 0.05, explore: [0, 0.1] },
     { type: "color", key: "barkColor", label: "bark", group: "colour", default: "#5b4334", explore: { hue: 8, saturation: 0.2, lightness: 0.05 } },
     { type: "color", key: "needleColor", label: "needles", group: "colour", default: "#2f5f3a", explore: { hue: 14, saturation: 0.2, lightness: 0.06 } },
     { type: "range", key: "tint", label: "tint variation", group: "colour", min: 0, max: 0.5, step: 0.01, default: 0.12 },
@@ -302,7 +304,7 @@ export const PALM_SCHEMA = defineParamSchema({
     { type: "range", key: "frondWidth", label: "frond width", group: "fronds", min: 0.1, max: 1.6, step: 0.01, default: 0.75 },
     { type: "range", key: "droop", label: "droop", group: "fronds", min: 0, max: 1.4, step: 0.01, default: 0.75, explore: [0.5, 1] },
     { type: "range", key: "leaflets", label: "leaflets", group: "fronds", min: 0, max: 14, step: 1, default: 8 },
-    { type: "range", key: "fruit", label: "coconuts", group: "fronds", min: 0, max: 8, step: 1, default: 3 },
+    { type: "range", key: "fruit", label: "coconuts", group: "fronds", min: 0, max: 8, step: 1, default: 3, vary: false },
     { type: "color", key: "trunkColor", label: "trunk", group: "colour", default: "#8a7356", explore: { hue: 8, saturation: 0.2, lightness: 0.05 } },
     { type: "color", key: "frondColor", label: "fronds", group: "colour", default: "#4f8f3a", explore: { hue: 14, saturation: 0.2, lightness: 0.06 } },
     { type: "color", key: "tipColor", label: "frond tips", group: "colour", default: "#8fae4a", explore: { hue: 14, saturation: 0.2, lightness: 0.06 } },
@@ -381,7 +383,7 @@ export const BUSH_SCHEMA = defineParamSchema({
     { type: "range", key: "clumps", label: "clumps", group: "shape", min: 2, max: 14, step: 1, default: 6, explore: [4, 9] },
     { type: "range", key: "clumpSize", label: "clump size", group: "shape", min: 0.25, max: 0.8, step: 0.01, default: 0.48 },
     { type: "range", key: "lumpiness", label: "lumpiness", group: "shape", min: 0, max: 0.6, step: 0.01, default: 0.3 },
-    { type: "range", key: "berries", label: "berries", group: "berries", min: 0, max: 40, step: 1, default: 0 },
+    { type: "range", key: "berries", label: "berries", group: "berries", min: 0, max: 40, step: 1, default: 0, vary: false },
     { type: "range", key: "berrySize", label: "berry size", group: "berries", min: 0.02, max: 0.15, step: 0.005, default: 0.06, unit: "m" },
     { type: "color", key: "leafColor", label: "leaves", group: "colour", default: "#4a7f34", explore: { hue: 18, saturation: 0.2, lightness: 0.07 } },
     { type: "range", key: "tint", label: "tint variation", group: "colour", min: 0, max: 0.5, step: 0.01, default: 0.18 },

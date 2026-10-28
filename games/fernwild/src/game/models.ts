@@ -36,9 +36,9 @@ const grown = (generator: string, preset: string, params: Record<string, unknown
  */
 export const scatterModels: Record<string, ModelConfig | ScatterGeneratorItem> = {
   palm: grown("nature.palm", "coconut", { height: 9, frondLength: 3.6 }),
-  tree: grown("nature.broadleaf", "oak", { height: 10 }),
-  tree2: grown("nature.broadleaf", "tropical", { height: 11, leafColor: "#467f33" }),
-  tree3: grown("nature.broadleaf", "oak", { height: 12, branches: 7, clusterSize: 2.6, leafColor: "#3d7531", barkColor: "#5e4532" }),
+  tree: grown("nature.broadleaf", "oak", { height: 11, branchStart: 0.5, clusterSize: 1.5 }),
+  tree2: grown("nature.broadleaf", "tropical", { height: 12, twigs: 2, clusterSize: 1.7, leafColor: "#467f33" }),
+  tree3: grown("nature.broadleaf", "birch", { height: 13, twigs: 2, clusterSize: 1.4, leafColor: "#5d9a3a" }),
   pine: grown("nature.conifer", "pine", { height: 13 }),
   pine2: grown("nature.conifer", "spruce", { height: 11 }),
   redwood: grown("nature.conifer", "redwood", { height: 30 }),
