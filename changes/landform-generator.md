@@ -8,8 +8,3 @@ Closes #2742
 - landformTerrainSnapshot turns a grown landform into the editor's terrain document, and the editor's grow_landform verb applies it as one undoable edit
 - `LANDFORM_CACHE` (`@jgengine/core/landform/generator/landformGenerator`): The cache {@link LANDFORM_GENERATOR} uses: memory only. Also `LANDFORM_GENERATOR`, `LANDFORM_OUTPUT`, `LANDFORM_SCHEMA`, `LandformCache`, `LandformCacheOptions`, `LandformGeneratorOptions`, `LandformGeneratorParams`, `LandformGrower` and 7 more.
 - `LANDFORM_TERRAIN_MAX_SIDE` (`@jgengine/core/landform/generator/landformTerrain`): Largest landform side `growLandform` accepts, so one job's work stays bounded. Also `LANDFORM_TERRAIN_SURFACES`, `LandformRecipe`, `LandformSnapshotOptions`, `LandformTerrain`, `growLandform`, `landformTerrainSnapshot`.
-
-### Removed
-
-- `@jgengine/core/physics/reference/boatComparison` no longer exports `ManoeuvringSubject`, `kvlcc2Subject`.
-- `@jgengine/core/physics/reference/shipManoeuvring` no longer exports `KVLCC2_L7`, `KVLCC2_L7_PUBLISHED`, `KVLCC2_L7_SPEED`, `ManoeuvringTrialBoat`, `MmgForces`, `MmgHullDerivatives`, `MmgPropeller`, `MmgRudder` and 11 more.
