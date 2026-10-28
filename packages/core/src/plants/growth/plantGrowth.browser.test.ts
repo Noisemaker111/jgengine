@@ -7,7 +7,8 @@ import { buildBrowserFixture, findChromeExecutable } from "../../../../../script
 setDefaultTimeout(60_000);
 
 // The same check runs in bun (JSC) and in Chrome (V8): plantMath bit patterns and the structure hash
-// of a 40-year tree. Any engine-dependent rounding in the growth path shows up as a mismatch.
+// of a 160-year tree, past the bud cap. Any engine-dependent rounding in the growth path shows up as a
+// mismatch.
 const root = resolve(import.meta.dir, "../../../../..").replaceAll("\\", "/");
 const scratch = `${root}/.scratch/plant-growth-browser-test`;
 const CHECK = `
@@ -26,7 +27,7 @@ export function plantCheck() {
     out.push(bits(plantLog(0.01 + i * 1.77)), bits(plantPow(0.01 + i * 1.77, 1.15)), bits(plantAcos(-0.99 + i * 0.031)));
   }
   const plant = createPlantGrowth(ACER_SACCHARUM, OPEN_TEMPERATE_SITE, "browser");
-  plant.step(40);
+  plant.step(160);
   return JSON.stringify({ math: out.join(","), hash: hashPlantStructure(plant.structure()) });
 }
 `;

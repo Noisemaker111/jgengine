@@ -31,6 +31,11 @@ export interface GrowthState {
   nodeId: Uint32Array;
   parent: Int32Array;
   born: Uint16Array;
+  /**
+   * Year the node's leaf cohort flushed. Equal to `born` for a fresh shoot; when merging or folding
+   * pools two cohorts it becomes their leaf-weighted mean, so leaves keep their own age.
+   */
+  leafBorn: Uint16Array;
   order: Uint8Array;
   flags: Uint8Array;
   length: Float32Array;
@@ -57,13 +62,13 @@ export interface GrowthState {
   flowers: Uint16Array;
   budId: Uint32Array;
   budNode: Int32Array;
-  /** Years the bud has not flushed for lack of light. */
+  /** Years the bud has idled: shaded, or a lateral losing the contest for scarce bud slots. */
   budIdle: Uint8Array;
 }
 
 /** Typed-array fields of {@link GrowthState}, in snapshot order. */
 export const NODE_FIELDS = [
-  "nodeId", "parent", "born", "order", "flags", "length", "dir", "end", "phase", "sapArea", "heartArea", "foliage", "metamers",
+  "nodeId", "parent", "born", "leafBorn", "order", "flags", "length", "dir", "end", "phase", "sapArea", "heartArea", "foliage", "metamers",
   "latent", "latentAge", "light", "vigour", "moment", "deficit", "deadAge", "flowers",
 ] as const;
 /**
@@ -108,6 +113,7 @@ export function createGrowthState(nodeCap: number, budCap: number): GrowthState 
     nodeId: new Uint32Array(nodeCap),
     parent: new Int32Array(nodeCap),
     born: new Uint16Array(nodeCap),
+    leafBorn: new Uint16Array(nodeCap),
     order: new Uint8Array(nodeCap),
     flags: new Uint8Array(nodeCap),
     length: new Float32Array(nodeCap),

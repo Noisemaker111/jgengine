@@ -14,7 +14,7 @@ const PLANT_MATH_BITS: readonly (readonly [name: string, fn: (x: number) => numb
   ["exp", plantExp, 0.1, "3ff1aec7b35a00d4"],
   ["exp", plantExp, 1, "4005bf0a8b14576a"],
   ["exp", plantExp, 12.5, "411060c52565ba66"],
-  ["log", plantLog, 0.003, "c0173c8ffae4bedd"],
+  ["log", plantLog, 0.003, "c0173c8ffae4bede"],
   ["log", plantLog, 0.5, "bfe62e42fefa39ef"],
   ["log", plantLog, 1.5, "3fd9f323ecbf984c"],
   ["log", plantLog, 12345.678, "4022d79559791e31"],

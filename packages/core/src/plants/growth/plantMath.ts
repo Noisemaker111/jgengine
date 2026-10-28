@@ -36,6 +36,33 @@ const EXP_TAYLOR: readonly number[] = (() => {
   return out;
 })();
 
+const taylor = (n: number): number => EXP_TAYLOR[n] ?? 0;
+const E2 = taylor(2);
+const E3 = taylor(3);
+const E4 = taylor(4);
+const E5 = taylor(5);
+const E6 = taylor(6);
+const E7 = taylor(7);
+const E8 = taylor(8);
+const E9 = taylor(9);
+const E10 = taylor(10);
+const E11 = taylor(11);
+const E12 = taylor(12);
+const E13 = taylor(13);
+const E14 = taylor(14);
+/** 1/n for the odd n of the log series, built by division once. */
+const R3 = 1 / 3;
+const R5 = 1 / 5;
+const R7 = 1 / 7;
+const R9 = 1 / 9;
+const R11 = 1 / 11;
+const R13 = 1 / 13;
+const R15 = 1 / 15;
+const R17 = 1 / 17;
+const R19 = 1 / 19;
+const R21 = 1 / 21;
+const R23 = 1 / 23;
+
 function roundHalfAway(x: number): number {
   return x < 0 ? -Math.floor(-x + 0.5) : Math.floor(x + 0.5);
 }
@@ -50,8 +77,7 @@ export function plantExp(x: number): number {
   if (x < -745) return 0;
   const k = roundHalfAway(x * INV_LN2);
   const r = x - k * LN2_HI - k * LN2_LO;
-  let sum = EXP_TAYLOR[EXP_TAYLOR.length - 1] ?? 0;
-  for (let n = EXP_TAYLOR.length - 2; n >= 0; n -= 1) sum = sum * r + (EXP_TAYLOR[n] ?? 0);
+  const sum = 1 + r * (1 + r * (E2 + r * (E3 + r * (E4 + r * (E5 + r * (E6 + r * (E7 + r * (E8 + r * (E9 + r * (E10 + r * (E11 + r * (E12 + r * (E13 + r * E14)))))))))))));
   if (k < -1021) return sum * twoTo(k + 54) * twoTo(-54);
   if (k > 1023) return sum * twoTo(k - 1) * 2;
   return sum * twoTo(k);
@@ -82,13 +108,8 @@ export function plantLog(x: number): number {
   }
   const s = (m - 1) / (m + 1);
   const s2 = s * s;
-  let term = s;
-  let sum = 0;
   // s² ≤ 0.0295 here, so terms past s^23 fall under double precision.
-  for (let n = 1; n <= 23; n += 2) {
-    sum += term / n;
-    term *= s2;
-  }
+  const sum = s * (1 + s2 * (R3 + s2 * (R5 + s2 * (R7 + s2 * (R9 + s2 * (R11 + s2 * (R13 + s2 * (R15 + s2 * (R17 + s2 * (R19 + s2 * (R21 + s2 * R23)))))))))));
   return 2 * sum + e * LN2_LO + e * LN2_HI;
 }
 
