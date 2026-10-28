@@ -7,6 +7,9 @@ import { trackSceneWork } from "@jgengine/core/model/modelLoad.draw";
 import { runSliced, SlicedWorkCancelled } from "@jgengine/core/run/slicedWork";
 import type { NatureMesh, NatureSurface } from "./natureMesh";
 
+/** A generated surface: a baked texture set projected in world space. */
+type BakedSurface = Exclude<NatureSurface, "leaf">;
+
 /**
  * A three geometry for a nature mesh, its sRGB vertex colours converted to linear. The caller owns it.
  * @capability nature-generator seeded trees, palms, bushes, ferns, rocks and pebbles with editor variants and instanced scatter
@@ -31,10 +34,11 @@ export function natureGeometry(mesh: NatureMesh): THREE.BufferGeometry {
 }
 
 let material: THREE.MeshStandardMaterial | null = null;
-const surfaceMaterials = new Map<NatureSurface, THREE.MeshStandardMaterial>();
+let leafMaterial: THREE.MeshStandardMaterial | null = null;
+const surfaceMaterials = new Map<BakedSurface, THREE.MeshStandardMaterial>();
 
 /** The generated surface each nature surface draws with, and the world metres one tile covers. */
-const NATURE_SURFACES: Record<NatureSurface, { preset: string; tile: number }> = {
+const NATURE_SURFACES: Record<BakedSurface, { preset: string; tile: number }> = {
   rock: { preset: "rock", tile: 1.6 },
   bark: { preset: "bark", tile: 0.8 },
 };
@@ -87,7 +91,7 @@ function applyBake(target: THREE.MeshStandardMaterial, baked: SurfaceMaterialMap
   for (const texture of placeholders) texture?.dispose();
 }
 
-function surfaceMaterial(surface: NatureSurface): THREE.MeshStandardMaterial {
+function surfaceMaterial(surface: BakedSurface): THREE.MeshStandardMaterial {
   const cached = surfaceMaterials.get(surface);
   if (cached !== undefined) return cached;
   const look = NATURE_SURFACES[surface];
@@ -120,13 +124,41 @@ function surfaceMaterial(surface: NatureSurface): THREE.MeshStandardMaterial {
 }
 
 /**
- * The material a nature mesh shares with every mesh of its surface: vertex colours, matte; leaf blades
- * carry both faces themselves. Rocks and wood (`surface`) add the generated rock or bark grain, normal,
- * roughness and AO, projected in world space so the meshes need no UVs.
+ * The material a nature mesh shares with every mesh of its surface: vertex colours, matte; frond
+ * blades carry both faces themselves, while `"leaf"` blades are single-sided and lit from both faces.
+ * Rocks and wood (`surface`) add the generated rock or bark grain, normal, roughness and AO,
+ * projected in world space so the meshes need no UVs.
  * @capability nature-generator seeded trees, palms, bushes, ferns, rocks and pebbles with editor variants and instanced scatter
  */
 export function natureMaterial(surface?: NatureSurface): THREE.MeshStandardMaterial {
+  if (surface === "leaf") {
+    leafMaterial ??= new THREE.MeshStandardMaterial({ vertexColors: true, roughness: 0.82, metalness: 0, side: THREE.DoubleSide });
+    return leafMaterial;
+  }
   if (surface !== undefined) return surfaceMaterial(surface);
   material ??= new THREE.MeshStandardMaterial({ vertexColors: true, roughness: 0.92, metalness: 0 });
   return material;
+}
+
+/**
+ * Every draw a nature mesh makes: one geometry and material per part (a tree's bark trunk, its
+ * leaves), or one for a single-surface mesh. The caller owns and disposes the geometries.
+ * @capability nature-generator seeded trees, palms, bushes, ferns, rocks and pebbles with editor variants and instanced scatter
+ */
+export function natureDraws(mesh: NatureMesh): { geometry: THREE.BufferGeometry; material: THREE.MeshStandardMaterial }[] {
+  const whole = natureGeometry(mesh);
+  if (mesh.parts === undefined || mesh.parts.length === 0) return [{ geometry: whole, material: natureMaterial(mesh.surface) }];
+  const draws = mesh.parts.map((part) => {
+    const geometry = new THREE.BufferGeometry();
+    for (const name of ["position", "normal", "color"] as const) {
+      const attribute = whole.getAttribute(name);
+      if (attribute instanceof THREE.BufferAttribute) geometry.setAttribute(name, attribute.clone());
+    }
+    geometry.setIndex(new THREE.BufferAttribute(mesh.indices.slice(part.start, part.start + part.count), 1));
+    geometry.computeBoundingBox();
+    geometry.computeBoundingSphere();
+    return { geometry, material: natureMaterial(part.surface) };
+  });
+  whole.dispose();
+  return draws;
 }

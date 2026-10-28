@@ -45,13 +45,17 @@ export const DEFAULT_AUTO_EXPOSURE: Readonly<Required<AutoExposureConfig>> = {
 /**
  * Exposure that places a frame whose key luminance is `keyLuminance` on {@link MID_GREY}, bounded by
  * the authored range. A dark interior asks for more than `max` and gets `max`; a blown-out exterior
- * asks for less than `min` and gets `min`, so the frame never runs away at either end.
+ * asks for less than `min` and gets `min`, so the frame never runs away at either end. `daylight`
+ * (0..1, the sky's share of full day light) scales how far above 1 the meter may lift: a frame dark
+ * because it is night keeps its dark, while a dark room by day still opens up.
  */
-export function exposureForKey(keyLuminance: number, config: AutoExposureConfig = {}): number {
+export function exposureForKey(keyLuminance: number, config: AutoExposureConfig = {}, daylight = 1): number {
   const min = config.min ?? DEFAULT_AUTO_EXPOSURE.min;
   const max = config.max ?? DEFAULT_AUTO_EXPOSURE.max;
   const low = Math.min(min, max);
-  const high = Math.max(min, max);
+  const share = Number.isFinite(daylight) ? Math.min(1, Math.max(0, daylight)) : 1;
+  const top = Math.max(min, max);
+  const high = top > 1 ? Math.max(low, 1 + (top - 1) * share) : top;
   if (!Number.isFinite(keyLuminance) || keyLuminance <= 0) return high;
   return Math.min(high, Math.max(low, MID_GREY / keyLuminance));
 }

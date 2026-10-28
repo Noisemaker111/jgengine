@@ -53,6 +53,8 @@ export const objectModels: Record<string, ModelConfig> = {};
 
 /** A palette item grown by an engine nature generator: a few seeded variants of one species. */
 const grown = (generator: string, preset: string, params: Record<string, unknown> = {}, variants = 6): ScatterGeneratorItem => ({ generator, preset, params, variants });
+/** Undergrowth stands by the thousand, so it grows at the generators' lighter leaf budget. */
+const undergrowth = (generator: string, preset: string, params: Record<string, unknown> = {}, variants = 6): ScatterGeneratorItem => ({ ...grown(generator, preset, params, variants), detail: 0.5 });
 
 /** The island's tree look: rounded leaf clumps over the grown wood, lit, a touch more saturated than life. */
 const TREE_LOOK = { foliage: "clumps", shading: "lit", saturation: 1.15, brightness: 1.05, barkGrain: true };
@@ -83,11 +85,21 @@ export const scatterModels: Record<string, ModelConfig | ScatterGeneratorItem> =
   rock: grown("nature.rock", "rock", { size: 2.2 }),
   boulder: grown("nature.rock", "boulder", { size: 4.6 }),
   boulder2: grown("nature.rock", "slab", { size: 4.2, flatness: 0.55, moss: 0.4 }),
-  bush: grown("nature.bush", "shrub", { width: 1.6, height: 1.3 }),
-  berrybush: grown("nature.bush", "berry", { width: 1.6, height: 1.3 }),
-  fern: grown("nature.fern", "fern", { frondLength: 1.4 }),
-  pebble: grown("nature.rock", "pebbles", { size: 0.42 }, 4),
-  pebble2: grown("nature.rock", "pebbles", { size: 0.48, count: 4, color: "#a39a88" }, 4),
+  bush: undergrowth("nature.bush", "shrub", { width: 1.6, height: 1.3 }),
+  berrybush: undergrowth("nature.bush", "berry", { width: 1.6, height: 1.3 }),
+  fern: undergrowth("nature.fern", "fern", { frondLength: 1.4 }),
+  pebble: grown("nature.rock", "pebbles", { size: 0.42, color: "#b9b2a4" }, 4),
+  pebble2: grown("nature.rock", "pebbles", { size: 0.48, count: 4, color: "#cfc7b6" }, 4),
+  // The south beach and the jungle wall behind it.
+  cycad: undergrowth("nature.palm", "cycad", { height: 1.6 }, 4),
+  fanpalm: grown("nature.palm", "fan", { height: 4.5 }, 4),
+  treefern: grown("nature.palm", "cycad", { height: 4.2, trunkRadius: 0.18, curve: 0.15, fronds: 14, frondLength: 2.4, frondWidth: 0.55, droop: 0.55, leaflets: 14, frondColor: "#3d7a33", tipColor: "#6f9c3c" }, 4),
+  driftwood: grown("nature.driftwood", "driftwood", {}, 4),
+  log: grown("nature.driftwood", "fallen-log", {}, 3),
+  bracken: undergrowth("nature.fern", "bracken", {}, 4),
+  shrub: undergrowth("nature.bush", "shrub", { width: 2.2, height: 1.8, leafSize: 0.22, leafColor: "#3e7430" }, 4),
+  jungletree: tree("acer-saccharum", 60, { leafTint: "#b4d49c" }),
+  youngtree: tree("acer-saccharum", 12, { leafTint: "#c8e4b0" }),
   grass: nature("Grass_Common_Tall", 0.7),
   flowers: nature("Flower_4_Group", 0.6),
   tallgrass: nature("Grass_Wispy_Tall", 1),

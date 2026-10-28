@@ -62,6 +62,10 @@ const bush = (label: string, berries: Record<string, number>): Harvestable => ({
 /** Scatter palette item → what it yields. Items not listed (grass) are scenery. */
 export const HARVESTABLES: Readonly<Record<string, Harvestable>> = {
   palm: tree("Tree", 30, 0.5),
+  fanpalm: tree("Tree", 20, 0.4),
+  treefern: tree("Tree", 15, 0.3),
+  jungletree: tree("Tree", 60, 0.7),
+  youngtree: tree("Tree", 25, 0.35),
   tree: tree("Tree", 40, 0.6),
   tree2: tree("Tree", 40, 0.6),
   tree3: tree("Tree", 50, 0.7),
@@ -83,6 +87,9 @@ export const HARVESTABLES: Readonly<Record<string, Harvestable>> = {
   bush: bush("Bush", { mejoberry: 2, amarberry: 2, azulberry: 2, tintoberry: 2, narcoberry: 1, stimberry: 1 }),
   berrybush: bush("Berry Bush", { mejoberry: 4, amarberry: 3, azulberry: 3, tintoberry: 3, narcoberry: 2, stimberry: 2 }),
   fern: bush("Fern", { tintoberry: 1 }),
+  bracken: bush("Fern", { tintoberry: 1 }),
+  cycad: bush("Bush", { amarberry: 1 }),
+  shrub: bush("Bush", { mejoberry: 2, amarberry: 2, azulberry: 2, tintoberry: 2 }),
   pebble2: { by: "pick", label: "Stones", budget: 1, radius: 0.5, respawn: REGROW, resources: [{ kind: "stone", amount: 1 }, { kind: "flint", amount: [0, 1] }] },
   pebble: { by: "pick", label: "Stones", budget: 1, radius: 0.5, respawn: REGROW, resources: [{ kind: "stone", amount: 1 }, { kind: "flint", amount: [0, 1] }] },
 };

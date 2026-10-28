@@ -29,6 +29,13 @@ describe("exposureForKey", () => {
     expect(exposureForKey(MID_GREY * 20, { min: 0.25, max: 2.5 })).toBe(0.25);
   });
 
+  it("keeps a night dark: the lift above 1 shrinks with the sky's daylight", () => {
+    expect(exposureForKey(0.005, {}, 1)).toBe(DEFAULT_AUTO_EXPOSURE.max);
+    expect(exposureForKey(0.005, {}, 0)).toBe(1);
+    expect(exposureForKey(0.005, {}, 0.5)).toBeCloseTo(1 + (DEFAULT_AUTO_EXPOSURE.max - 1) * 0.5, 6);
+    expect(exposureForKey(6, {}, 0)).toBe(DEFAULT_AUTO_EXPOSURE.min);
+  });
+
   it("survives a zero or non-finite key by asking for the ceiling", () => {
     expect(exposureForKey(0)).toBe(DEFAULT_AUTO_EXPOSURE.max);
     expect(exposureForKey(Number.NaN)).toBe(DEFAULT_AUTO_EXPOSURE.max);

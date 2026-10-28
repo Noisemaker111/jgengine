@@ -1607,7 +1607,7 @@
 
 ## @jgengine/core/grass/GrassPatch.draw
 
-- `GrassPatch` (function): function GrassPatch({ look, area, seed, edgeFeather, exclude, heightAt, coverageAt, groundColor, castShadow = false, receiveShadow = true, frustumCulled = true, ...groupProps }: GrassPatchProps): React.JSX.Element — The engine's one grass renderer: a camera-streamed blade field over a turf mat. Work follows the camera — nodes near it bake every tuft, far ones a thinning share, and nothing past the distance where a blade would be under a pixel — so a patch of any size costs what the view shows.
+- `GrassPatch` (function): function GrassPatch({ look, area, seed, edgeFeather, exclude, heightAt, coverageAt, baseHeight, groundColor, castShadow = false, receiveShadow = true, frustumCulled = true, ...groupProps }: GrassPatchProps): React.JSX.Element — The engine's one grass renderer: a camera-streamed blade field over a turf mat. Work follows the camera — nodes near it bake every tuft, far ones a thinning share, and nothing past the distance where a blade would be under a pixel — so a patch of any size costs what the view shows.
 - `GrassPatchProps` (interface): interface GrassPatchProps extends Omit<ThreeElements["group"], "children"> — Props for {@link GrassPatch}.
 
 ## @jgengine/core/grass/grassBake.draw
@@ -2554,23 +2554,27 @@
 - `BlobOptions` (interface): interface BlobOptions — Options for {@link addBlob}.
 - `ConeOptions` (interface): interface ConeOptions — Options for {@link addCone}.
 - `FrondOptions` (interface): interface FrondOptions — Options for {@link addFrond}.
+- `LeafClusterOptions` (interface): interface LeafClusterOptions — Options for {@link addLeafCluster}.
 - `NatureMesh` (interface): interface NatureMesh — Indexed triangle mesh with per-vertex sRGB colours, in metres with the base at y = 0.
+- `NatureMeshPart` (interface): interface NatureMeshPart — One run of a nature mesh's index buffer drawn with one surface (none: plain vertex colour).
 - `NatureRgb` (type): type NatureRgb = readonly [number, number, number] — An sRGB colour, 0..1 per channel.
-- `NatureSurface` (type): type NatureSurface = "rock" | "bark" — Generated surface materials a nature mesh can be drawn with.
+- `NatureSurface` (type): type NatureSurface = "rock" | "bark" | "leaf" — Generated surface materials a nature mesh can be drawn with; `"leaf"` is vertex colour lit from both faces.
 - `NatureVec` (type): type NatureVec = readonly [number, number, number] — A point or direction in a nature mesh's local space.
 - `StoneOptions` (interface): interface StoneOptions — Options for {@link addStone}.
 - `TubeOptions` (interface): interface TubeOptions — Options for {@link addTube}.
 - `addBlob` (function): function addBlob(builder: NatureMeshBuilder, options: BlobOptions): void — A lumpy ellipsoid: a leaf cluster, a bush clump, a coconut.
 - `addCone` (function): function addCone(builder: NatureMeshBuilder, options: ConeOptions): void — A closed, drooping cone: one conifer tier.
 - `addFrond` (function): function addFrond(builder: NatureMeshBuilder, options: FrondOptions): void — A folded, drooping leaf blade: palm and cycad fronds, fern fronds, broad bush leaves. Both faces are emitted (the shared material is single-sided) with normals leaning up, so the underside of a raised frond reads as lit foliage rather than a black sliver.
+- `addLeafCluster` (function): function addLeafCluster(builder: NatureMeshBuilder, options: LeafClusterOptions): void — A leafy cluster: a shaded core with folded leaf blades fanned out over its shell, so a canopy or a bush reads as foliage with a broken edge instead of a smooth ball. The blades are single-sided; draw them with the `"leaf"` surface, which lights both faces.
 - `addStone` (function): function addStone(builder: NatureMeshBuilder, options: StoneOptions): void — One stone: an icosphere displaced by noise, sliced by `facets` random planes (sharp edges), with `erosion` blending the cuts back toward smooth, moss on the faces that look up, and a flat buried base. Vertices are not shared between faces, so it shades faceted like a real low-poly rock.
 - `addTube` (function): function addTube(builder: NatureMeshBuilder, path: readonly NatureVec[], radii: readonly number[], options: TubeOptions): void — A tapered tube along `path` with radius `radii[i]` at each point: trunks, branches, logs. Rings follow the path's tangent with a rotation-minimising frame so a bent trunk does not twist.
 - `isNatureMesh` (function): function isNatureMesh(value: unknown): value is NatureMesh — True when a generator output is a {@link NatureMesh}.
 
 ## @jgengine/core/nature/natureMesh.draw
 
+- `natureDraws` (function): function natureDraws(mesh: NatureMesh): { geometry: THREE.BufferGeometry; material: THREE.MeshStandardMaterial }[] — Every draw a nature mesh makes: one geometry and material per part (a tree's bark trunk, its leaves), or one for a single-surface mesh. The caller owns and disposes the geometries.
 - `natureGeometry` (function): function natureGeometry(mesh: NatureMesh): THREE.BufferGeometry — A three geometry for a nature mesh, its sRGB vertex colours converted to linear. The caller owns it.
-- `natureMaterial` (function): function natureMaterial(surface?: NatureSurface): THREE.MeshStandardMaterial — The material a nature mesh shares with every mesh of its surface: vertex colours, matte; leaf blades carry both faces themselves. Rocks and wood (`surface`) add the generated rock or bark grain, normal, roughness and AO, projected in world space so the meshes need no UVs.
+- `natureMaterial` (function): function natureMaterial(surface?: NatureSurface): THREE.MeshStandardMaterial — The material a nature mesh shares with every mesh of its surface: vertex colours, matte; frond blades carry both faces themselves, while `"leaf"` blades are single-sided and lit from both faces. Rocks and wood (`surface`) add the generated rock or bark grain, normal, roughness and AO, projected in world space so the meshes need no UVs.
 
 ## @jgengine/core/nav/corridors
 
@@ -3443,7 +3447,7 @@
 ## @jgengine/core/roads/pathRoads
 
 - `PAVED_PATH_KINDS` (const): const PAVED_PATH_KINDS: ReadonlySet<string> — Editor path kinds that pave: they default to asphalt (with the scanned carriageway), a road-grey colour and gutters. Every other drawn path kind (`trail`, `route`, `promenade`, …) is unpaved ground named by its `meta.surface` or its kind, with soft edges and no kerb.
-- `pathRoad` (function): function pathRoad(path: EditorPath, options: { surfaceDetail?: boolean } = {}): RoadEnvironmentDescriptor | null — An authored editor path as a {@link road} descriptor, so streets, race tracks and trails all draw through the one road renderer. Read from the path: `width` (else `meta.width`, else 4), `color` / `meta.color`, and in `meta`: `surface` (a terrain paint id, or `false` for flat colour), `markings`, `sidewalk` (`true`, a width in metres, or an object like {@link road}'s), `kerb`, `closed`, `cornerRadius`, `wear`, `edgeSoftness` and `surfaceDetail: false`. `null` for a path with fewer than two points.
+- `pathRoad` (function): function pathRoad(path: EditorPath, options: { surfaceDetail?: boolean } = {}): RoadEnvironmentDescriptor | null — An authored editor path as a {@link road} descriptor, so streets, race tracks and trails all draw through the one road renderer. Read from the path: `width` (else `meta.width`, else 4), `color` / `meta.color`, and in `meta`: `surface` (a terrain paint id, or `false` for flat colour), `markings`, `sidewalk` (`true`, a width in metres, or an object like {@link road}'s), `kerb`, `closed`, `cornerRadius`, `wear`, `edgeSoftness` and `surfaceDetail: false`. `null` for a path with fewer than two points, and for a survey outline (coast, ridge, river, biome), which shapes the terrain instead.
 
 ## @jgengine/core/roads/raceCircuit
 

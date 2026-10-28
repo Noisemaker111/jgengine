@@ -149,3 +149,4 @@ One PR each, in order; the gaps go first that later milestones need. Tick a mile
 - [ ] 9. Cooking pot and kibble for taming
 - [x] 10. Explorer notes, the dossier and the island map
 - [ ] 11. Megapithecus, the Dragon and the Overseer on the boss arena feature
+- [x] 12. The south beach as ARK draws it: pale sand with pebbles and driftwood, palms near the water, a jungle wall of trees, ferns, bushes and waist-high grass (#2687)

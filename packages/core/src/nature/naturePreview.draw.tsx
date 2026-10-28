@@ -4,7 +4,7 @@ import { runGenerator } from "@jgengine/core/generator/generator";
 import { registerGeneratorMesh } from "@jgengine/core/generator/generatorMesh.draw";
 import { registerGeneratorPreview, type GeneratorPreviewProps } from "@jgengine/core/generator/generatorPreview.draw";
 import { isNatureMesh, type NatureMesh } from "./natureMesh";
-import { natureGeometry, natureMaterial } from "./natureMesh.draw";
+import { natureDraws } from "./natureMesh.draw";
 import { NATURE_OUTPUT } from "./natureGenerators";
 
 function variantMesh({ definition, variant }: GeneratorPreviewProps): NatureMesh | null {
@@ -15,23 +15,26 @@ function variantMesh({ definition, variant }: GeneratorPreviewProps): NatureMesh
 function NaturePreview(props: GeneratorPreviewProps) {
   const { definition, variant } = props;
   const mesh = useMemo(() => variantMesh({ definition, variant }), [definition, variant]);
-  const geometry = useMemo(() => (mesh === null ? null : natureGeometry(mesh)), [mesh]);
-  useEffect(() => () => geometry?.dispose(), [geometry]);
-  if (geometry === null) return null;
+  const draws = useMemo(() => (mesh === null ? null : natureDraws(mesh)), [mesh]);
+  useEffect(() => () => draws?.forEach((draw) => draw.geometry.dispose()), [draws]);
+  const geometry = draws?.[0]?.geometry;
+  if (draws === null || geometry === undefined) return null;
   return (
     <>
       <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, -0.01, 0]} receiveShadow>
         <circleGeometry args={[Math.max(1, (geometry.boundingSphere?.radius ?? 1) * 1.4), 24]} />
         <meshStandardMaterial color="#5a4b38" roughness={1} />
       </mesh>
-      <mesh geometry={geometry} material={natureMaterial(mesh?.surface)} castShadow receiveShadow />
+      {draws.map((draw, index) => (
+        <mesh key={index} geometry={draw.geometry} material={draw.material} castShadow receiveShadow />
+      ))}
     </>
   );
 }
 
 /** Registers the nature variant-tile preview and its instanced mesh builder. Called by `registerBuiltinSceneKindRenderers`. @internal */
 export function registerNatureDraw(): void {
-  registerGeneratorMesh(NATURE_OUTPUT, (output) => (isNatureMesh(output) ? [{ geometry: natureGeometry(output), material: natureMaterial(output.surface) }] : null));
+  registerGeneratorMesh(NATURE_OUTPUT, (output) => (isNatureMesh(output) ? natureDraws(output) : null));
   registerGeneratorPreview(NATURE_OUTPUT, {
     Component: NaturePreview,
     frame: (props) => {

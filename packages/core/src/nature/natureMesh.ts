@@ -23,10 +23,21 @@ export interface NatureMesh {
   triangles: number;
   /** The generated surface material its faces take (`"rock"`, `"bark"`); omitted draws vertex colour only. */
   surface?: NatureSurface;
+  /** Index ranges drawn with their own surface (a tree's bark trunk and its leaves); overrides `surface`. */
+  parts?: readonly NatureMeshPart[];
 }
 
-/** Generated surface materials a nature mesh can be drawn with. */
-export type NatureSurface = "rock" | "bark";
+/** Generated surface materials a nature mesh can be drawn with; `"leaf"` is vertex colour lit from both faces. */
+export type NatureSurface = "rock" | "bark" | "leaf";
+
+/** One run of a nature mesh's index buffer drawn with one surface (none: plain vertex colour). */
+export interface NatureMeshPart {
+  surface?: NatureSurface;
+  /** First index (not triangle) of the run. */
+  start: number;
+  /** Indices in the run, a multiple of three. */
+  count: number;
+}
 
 /**
  * True when a generator output is a {@link NatureMesh}.
@@ -120,8 +131,24 @@ function perpendicular(axis: NatureVec): [number, number, number] {
 export class NatureMeshBuilder {
   private readonly positions: number[] = [];
   private readonly colors: number[] = [];
-  private readonly indices: number[] = [];
+  private readonly runs = new Map<NatureSurface | "", number[]>();
+  private indices: number[] = [];
   private readonly upBias: number[] = [];
+
+  constructor() {
+    this.runs.set("", this.indices);
+  }
+
+  /** Draw the triangles added from now on with `surface` (none: plain vertex colour). */
+  surface(surface?: NatureSurface): void {
+    const key = surface ?? "";
+    let run = this.runs.get(key);
+    if (run === undefined) {
+      run = [];
+      this.runs.set(key, run);
+    }
+    this.indices = run;
+  }
 
   /** Vertex count so far. */
   get vertexCount(): number {
@@ -143,10 +170,21 @@ export class NatureMeshBuilder {
     this.indices.push(a, b, c);
   }
 
-  /** Emit the mesh: smooth area-weighted normals, bounds and triangle count, drawn with `surface` when given. */
+  /**
+   * Emit the mesh: smooth area-weighted normals, bounds and triangle count, drawn with `surface` when
+   * given. Triangles added under {@link surface} come out as parts, one per surface.
+   */
   build(surface?: NatureSurface): NatureMesh {
     const positions = Float32Array.from(this.positions);
-    const indices = Uint32Array.from(this.indices);
+    const used = [...this.runs].filter(([, run]) => run.length > 0);
+    const parts: NatureMeshPart[] = [];
+    let start = 0;
+    for (const [key, run] of used) {
+      parts.push({ ...(key === "" ? {} : { surface: key }), start, count: run.length });
+      start += run.length;
+    }
+    const indices = Uint32Array.from(used.flatMap(([, run]) => run));
+    const split = used.length > 1 || (used.length === 1 && used[0]?.[0] !== "");
     const normals = new Float32Array(positions.length);
     for (let i = 0; i < indices.length; i += 3) {
       const a = (indices[i] ?? 0) * 3;
@@ -189,7 +227,16 @@ export class NatureMeshBuilder {
       min.fill(0);
       max.fill(0);
     }
-    return { positions, normals, colors: Float32Array.from(this.colors), indices, bounds: { min, max }, triangles: indices.length / 3, ...(surface === undefined ? {} : { surface }) };
+    return {
+      positions,
+      normals,
+      colors: Float32Array.from(this.colors),
+      indices,
+      bounds: { min, max },
+      triangles: indices.length / 3,
+      ...(surface === undefined ? {} : { surface }),
+      ...(split ? { parts } : {}),
+    };
   }
 }
 
@@ -340,6 +387,84 @@ export function addBlob(builder: NatureMeshBuilder, options: BlobOptions): void 
     builder.vertex([cx + v[0] * options.radii[0] * r, cy + v[1] * options.radii[1] * r, cz + v[2] * options.radii[2] * r], shade(options.color, light, [jitter * 0.3, jitter * 0.5, -jitter * 0.2], options.colorJitter * 0.25));
   }
   for (const [a, b, c] of faces) builder.triangle(base + a, base + b, base + c);
+}
+
+/** Options for {@link addLeafCluster}. */
+export interface LeafClusterOptions {
+  center: NatureVec;
+  radii: NatureVec;
+  seed: number;
+  color: NatureRgb;
+  /** Per-blade colour variation 0..1. */
+  colorJitter: number;
+  /** Darken the underside by this much, 0..1. */
+  shadeBelow: number;
+  /** Leaf blades over the cluster's shell. */
+  leaves: number;
+  /** Blade length in metres. */
+  leafSize: number;
+  /** Icosphere level of the shaded core the blades grow from (0..2), or -1 for blades only. */
+  coreLevel: number;
+  /** Lumpiness of the core, 0..1. */
+  lumpiness: number;
+}
+
+/**
+ * A leafy cluster: a shaded core with folded leaf blades fanned out over its shell, so a canopy or a
+ * bush reads as foliage with a broken edge instead of a smooth ball. The blades are single-sided;
+ * draw them with the `"leaf"` surface, which lights both faces.
+ * @capability nature-generator seeded trees, palms, bushes, ferns, rocks and pebbles with editor variants and instanced scatter
+ */
+export function addLeafCluster(builder: NatureMeshBuilder, options: LeafClusterOptions): void {
+  const [cx, cy, cz] = options.center;
+  const [rx, ry, rz] = options.radii;
+  if (options.coreLevel >= 0) {
+    addBlob(builder, {
+      center: options.center,
+      radii: [rx * 0.8, ry * 0.8, rz * 0.8],
+      level: options.coreLevel,
+      lumpiness: options.lumpiness,
+      seed: options.seed,
+      color: shade(options.color, 0.68),
+      colorJitter: options.colorJitter,
+      shadeBelow: options.shadeBelow,
+    });
+  }
+  const count = Math.max(0, Math.floor(options.leaves));
+  for (let i = 0; i < count; i += 1) {
+    const n1 = natureNoise(options.seed, i * 0.71, 3.1, i * 0.37);
+    const n2 = natureNoise(options.seed + 5, i * 0.53, 7.7, i * 0.91);
+    const n3 = natureNoise(options.seed + 11, i * 1.13, 1.9, i * 0.29);
+    // Golden-spiral directions over the shell, jittered so no two clusters fan the same way.
+    const y = 1 - (2 * (i + 0.5)) / count;
+    const ring = Math.sqrt(Math.max(0, 1 - y * y));
+    const theta = i * 2.399963 + (n1 - 0.5) * 1.2;
+    const dir = normalize([Math.cos(theta) * ring, y + (n2 - 0.5) * 0.3, Math.sin(theta) * ring]);
+    const shell = 0.84 + n3 * 0.26;
+    const at: NatureVec = [cx + dir[0] * rx * shell, cy + dir[1] * ry * shell, cz + dir[2] * rz * shell];
+    // Blades point out and sag a little under their own weight.
+    const axis = normalize([dir[0] + (n1 - 0.5) * 0.9, dir[1] - 0.45 + (n3 - 0.5) * 0.4, dir[2] + (n2 - 0.5) * 0.9]);
+    const crossed = cross(axis, dir);
+    const side = Math.hypot(crossed[0], crossed[1], crossed[2]) < 1e-4 ? perpendicular(axis) : normalize(crossed);
+    const face = normalize(cross(side, axis));
+    const length = options.leafSize * (0.75 + n2 * 0.5);
+    const width = length * (0.38 + n1 * 0.14);
+    const point = (along: number, across: number, lift: number): NatureVec => [
+      at[0] + axis[0] * length * along + side[0] * width * across + face[0] * width * lift,
+      at[1] + axis[1] * length * along + side[1] * width * across + face[1] * width * lift,
+      at[2] + axis[2] * length * along + side[2] * width * across + face[2] * width * lift,
+    ];
+    const jitter = (n3 - 0.5) * 2;
+    const light = 1 - options.shadeBelow * (1 - (dir[1] + 1) / 2) + jitter * options.colorJitter * 0.6;
+    const body = shade(options.color, light, [jitter * 0.3, jitter * 0.45, -jitter * 0.25], options.colorJitter * 0.3);
+    const tip = shade(body, 1.12, [0.05, 0.08, -0.04], 0.5);
+    const base = builder.vertex(point(-0.35, 0, 0), shade(body, 0.8), 0.45);
+    const left = builder.vertex(point(0.12, 0.5, -0.22), body, 0.45);
+    const end = builder.vertex(point(0.65, 0, 0), tip, 0.45);
+    const right = builder.vertex(point(0.12, -0.5, -0.22), body, 0.45);
+    builder.triangle(base, left, end);
+    builder.triangle(base, end, right);
+  }
 }
 
 /** Options for {@link addCone}. */

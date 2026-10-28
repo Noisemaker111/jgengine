@@ -36,6 +36,8 @@ export interface GrassBakeOptions {
   heightAt?: TerrainHeightSampler;
   /** Patch-local coverage, 0..1, composed with `exclude`. */
   coverageAt?: TerrainHeightSampler;
+  /** World height of the patch origin, so `look.growAbove` (a world height) can be read off `heightAt`. Default 0. */
+  baseHeight?: number;
 }
 
 /** A patch ready to bake: the look plus every derived number the bake and stream share. */
@@ -49,6 +51,10 @@ export interface ResolvedGrassBake {
   exclude: readonly GrassExclusion[];
   heightAt: TerrainHeightSampler;
   coverageAt: TerrainHeightSampler;
+  /** `look.growAbove` in patch-local height. */
+  growAbove: number;
+  /** Coverage of the turf mat: `coverageAt`, bare below `growAbove` like the blades. */
+  turfAt: TerrainHeightSampler;
   /** Blades per m² at full detail. */
   bladesPerM2: number;
   /** Tuft roots per m² at full detail. */
@@ -78,6 +84,9 @@ export function resolveGrassBake(options: GrassBakeOptions): ResolvedGrassBake {
   const bladesPerM2 = grassBladeDensity(look);
   const seed = look.seed.length > 0 ? look.seed : String(options.seed ?? "grass");
   const tallest = Math.max(1, look.mixShare > 0 ? look.mixHeight : 1);
+  const heightAt = options.heightAt ?? (() => 0);
+  const coverageAt = bareCoverage(look, seed, options.coverageAt);
+  const growAbove = look.growAbove - (options.baseHeight ?? 0);
   return {
     look,
     width: size.width,
@@ -86,8 +95,10 @@ export function resolveGrassBake(options: GrassBakeOptions): ResolvedGrassBake {
     segments: Math.max(1, Math.floor(options.segments ?? 4)),
     edgeFeather: Math.max(0, options.edgeFeather ?? Math.min(4, Math.max(1.5, Math.min(size.width, size.depth) * 0.12))),
     exclude: options.exclude ?? [],
-    heightAt: options.heightAt ?? (() => 0),
-    coverageAt: bareCoverage(look, seed, options.coverageAt),
+    heightAt,
+    coverageAt,
+    growAbove,
+    turfAt: (x, z) => coverageAt(x, z) * smoothstep(growAbove, growAbove + 1, heightAt(x, z)),
     bladesPerM2,
     tuftsPerM2: bladesPerM2 / look.tuftBlades,
     columns,
@@ -219,8 +230,9 @@ export function bakeGrassNode(bake: ResolvedGrassBake, level: number, ix: number
         const dist = Math.max(Math.abs(x - zone.center[0]) - zone.half[0], Math.abs(z - zone.center[1]) - zone.half[1]);
         height *= Math.min(1, Math.max(0, dist / Math.max(0.001, zone.feather ?? 1.5)));
       }
-      height *= Math.max(0, Math.min(1, bake.coverageAt(x, z)));
-      const width = look.bladeWidth * (1 - look.widthVariation * 0.6 * (1 - widthRoll)) * (species === 1 ? look.mixWidth : 1);
+      height *= Math.max(0, Math.min(1, bake.coverageAt(x, z))) * smoothstep(bake.growAbove, bake.growAbove + 1, y);
+      // A blade masked down to nothing narrows with it, so no flat sliver lies on bare ground.
+      const width = look.bladeWidth * (1 - look.widthVariation * 0.6 * (1 - widthRoll)) * (species === 1 ? look.mixWidth : 1) * Math.min(1, height / Math.max(1e-4, look.bladeHeight * 0.2));
       const bend = look.curvature * (0.6 + 0.8 * bendRoll) * (1 + flutterStiff * 0.4);
       const flower = flowerRoll < look.flowerShare && grown > 0.5 ? 2 : 0;
       offsets[n * 3] = x;

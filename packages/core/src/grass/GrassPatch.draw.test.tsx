@@ -4,6 +4,8 @@ import { createElement, type ReactElement } from "react";
 import * as THREE from "three";
 
 import { GrassCover } from "./GrassCover.draw";
+import { bakeGrassNode, resolveGrassBake } from "./grassBake.draw";
+import { readGrassLook } from "./grassKind";
 import { registerGrassFieldRenderer } from "@jgengine/core/grass/GrassFieldRenderer.draw";
 import { getSceneKindRenderer, type SceneKindRenderContext } from "@jgengine/core/scene/sceneKindRenderers.draw";
 
@@ -115,7 +117,8 @@ test("the authored look reaches the blade shader", async () => {
     expect(material.roughness).toBe(0.63);
     for (const mesh of meshes) {
       const shape = mesh.geometry.getAttribute("instanceShape");
-      for (let i = 0; i < shape.count; i++) expect(Math.abs(shape.getZ(i) - 0.025)).toBeLessThan(1e-6);
+      // Every grown blade carries the authored width; a blade the edge feather drops narrows to nothing.
+      for (let i = 0; i < shape.count; i++) if (shape.getY(i) >= 0.2 * 0.55) expect(Math.abs(shape.getZ(i) - 0.025)).toBeLessThan(1e-6);
     }
     const shader = { uniforms: {}, vertexShader: "#include <common>\n#include <beginnormal_vertex>\n#include <begin_vertex>", fragmentShader: "#include <common>\n#include <color_fragment>\n#include <lights_fragment_end>" };
     material.onBeforeCompile(shader as unknown as THREE.WebGLProgramParametersWithUniforms, {} as THREE.WebGLRenderer);
@@ -164,4 +167,23 @@ test("the turf mat drapes the ground on its own, with a zero-strength mat drawin
   await mounted(cameraAt(0, 6, 10, [0, 0, 0]), createElement(GrassCover, { ...props, strength: 0 }), (scene) => {
     expect(covers(scene)).toHaveLength(0);
   });
+});
+
+test("blades and turf stay off ground below the height a field grows above", () => {
+  const look = readGrassLook({ growAbove: 3, bladeHeight: 0.5 });
+  // Ground climbs from 0 m at x = -10 to 6 m at x = 10; the patch sits at world height 1.
+  const bake = resolveGrassBake({ look, area: [20, 6], seed: "shore", edgeFeather: 0, baseHeight: 1, heightAt: (x) => (x + 10) * 0.3 - 1 });
+  const tufts = bakeGrassNode(bake, bake.rootLevel, 0, 0, 1);
+  let low = 0;
+  let high = 0;
+  for (let i = 0; i < tufts.count; i += 1) {
+    const x = tufts.offsets[i * 3] ?? 0;
+    const height = tufts.shape[i * 4 + 1] ?? 0;
+    if (x < -1) low = Math.max(low, height);
+    if (x > 1) high = Math.max(high, height);
+  }
+  expect(low).toBe(0);
+  expect(high).toBeGreaterThan(0.2);
+  expect(bake.turfAt(-8, 0)).toBe(0);
+  expect(bake.turfAt(8, 0)).toBe(1);
 });

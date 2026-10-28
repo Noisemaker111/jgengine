@@ -959,9 +959,11 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 - `addBlob` (function) · `import { addBlob } from "@jgengine/core/world"`
 - `addCone` (function) · `import { addCone } from "@jgengine/core/world"`
 - `addFrond` (function) · `import { addFrond } from "@jgengine/core/world"`
+- `addLeafCluster` (function) · `import { addLeafCluster } from "@jgengine/core/nature/natureMesh"`
 - `addStone` (function) · `import { addStone } from "@jgengine/core/world"`
 - `addTube` (function) · `import { addTube } from "@jgengine/core/world"`
 - `isNatureMesh` (function) · `import { isNatureMesh } from "@jgengine/core/world"`
+- `natureDraws` (function) · `import { natureDraws } from "@jgengine/core/nature/natureMesh.draw"`
 - `natureGeometry` (function) · `import { natureGeometry } from "@jgengine/core/nature/natureMesh.draw"`
 - `natureMaterial` (function) · `import { natureMaterial } from "@jgengine/core/nature/natureMesh.draw"`
 

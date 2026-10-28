@@ -25,6 +25,11 @@ describe("readGrassLook", () => {
     expect(look.groundCover).toBe(GRASS_DEFAULTS.groundCover);
   });
 
+  test("grows everywhere by default and only above the ground height a field names", () => {
+    expect(readGrassLook({}).growAbove).toBeLessThan(-50);
+    expect(readGrassLook({ growAbove: 3.2 }).growAbove).toBe(3.2);
+  });
+
   test("clamps every knob to its schema range and rejects bad colours", () => {
     const look = readGrassLook({ groundCover: 4, density: -3, bladeHeight: 90, tuftBlades: 4.6, clumping: 3, baseColor: "green", flowerColor: "#abcdef" });
     expect(look.groundCover).toBe(1);

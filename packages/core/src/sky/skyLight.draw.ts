@@ -28,6 +28,11 @@ export interface SkyLight {
   horizon: THREE.Color;
   /** How much of the sky cloud covers, 0..1, from the weather. */
   cloudCover: number;
+  /**
+   * Share of full daylight the sky gives now: 1 by day, near 0 at night. Auto-exposure lifts a dark
+   * frame only by this share, so a night stays dark instead of being metered back up to dusk.
+   */
+  daylight: number;
 }
 
 /** A sky light at noon under a clear sky, for a scene whose sky has not published one yet. */
@@ -41,6 +46,7 @@ export function createSkyLight(): SkyLight {
     zenith: new THREE.Color(0.1, 0.3, 0.75),
     horizon: new THREE.Color(0.55, 0.7, 0.85),
     cloudCover: 0,
+    daylight: 1,
   };
 }
 

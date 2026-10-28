@@ -34,6 +34,7 @@ import type { GraphicsQuality } from "@jgengine/core/settings/settingsModel";
 
 import { measureComposerPasses } from "@jgengine/core/devtools/frameBreakdown.draw";
 import { linkDrawsOffFrame, sceneRevealed, warmupDraws } from "@jgengine/core/render/shaderWarmup.draw";
+import { readSkyLight } from "@jgengine/core/sky/skyLight.draw";
 import { ExposureMeterPass } from "./autoExposure.draw";
 import { AtmospherePass } from "./atmospherePass.draw";
 import { ContactShadowPass } from "./contactShadowPass.draw";
@@ -458,7 +459,7 @@ export function buildPostGraph(
     let sampled = false;
     composer.addPass(
       new ExposureMeterPass((samples, seconds) => {
-        const target = authoredExposure * exposureForKey(keyLuminanceFromSamples(samples), autoExposure);
+        const target = authoredExposure * exposureForKey(keyLuminanceFromSamples(samples), autoExposure, readSkyLight(scene)?.daylight ?? 1);
         // The first sample lands on its own target; fading in from the authored exposure would
         // open every load on a visible exposure slideshow.
         current = sampled ? adaptExposure(current, target, seconds, autoExposure.adaptationSeconds) : target;

@@ -1,4 +1,5 @@
 import type { EditorPath } from "../editor/types";
+import { SURVEY_KINDS } from "../terrain/surveyTerrain";
 import { road, type RoadEnvironmentDescriptor } from "../world/features";
 import { GROUND_DECAL_LAYERS } from "./roads";
 
@@ -11,6 +12,9 @@ export const PAVED_PATH_KINDS: ReadonlySet<string> = new Set(["road", "street", 
 
 const UNPAVED_COLOR = "#7a6444";
 
+/** Survey outlines (shores, mountain chains, rivers, biome borders) shape the terrain; they are never drawn as ground strips. */
+const SURVEY_PATH_KINDS: ReadonlySet<string> = new Set<string>(Object.values(SURVEY_KINDS));
+
 function num(value: unknown): number | undefined {
   return typeof value === "number" && Number.isFinite(value) ? value : undefined;
 }
@@ -21,10 +25,11 @@ function num(value: unknown): number | undefined {
  * `meta.color`, and in `meta`: `surface` (a terrain paint id, or `false` for flat colour),
  * `markings`, `sidewalk` (`true`, a width in metres, or an object like {@link road}'s), `kerb`,
  * `closed`, `cornerRadius`, `wear`, `edgeSoftness` and `surfaceDetail: false`. `null` for a path
- * with fewer than two points.
+ * with fewer than two points, and for a survey outline (coast, ridge, river, biome), which shapes the
+ * terrain instead.
  */
 export function pathRoad(path: EditorPath, options: { surfaceDetail?: boolean } = {}): RoadEnvironmentDescriptor | null {
-  if (path.points.length < 2) return null;
+  if (path.points.length < 2 || SURVEY_PATH_KINDS.has(path.kind)) return null;
   const meta = path.meta ?? {};
   const paved = PAVED_PATH_KINDS.has(path.kind);
   const width = path.width ?? num(meta["width"]) ?? 4;

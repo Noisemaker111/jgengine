@@ -91,6 +91,17 @@ describe("nature generators", () => {
     }
   });
 
+  test("palms draw their trunks with the bark surface and bushes their canopy as two-sided leaves", () => {
+    const palm = mesh(runGenerator(PALM_GENERATOR, { preset: "coconut" }));
+    expect(palm.parts?.some((part) => part.surface === "bark")).toBe(true);
+    expect(palm.parts?.reduce((sum, part) => sum + part.count, 0)).toBe(palm.indices.length);
+    const shrub = mesh(runGenerator(BUSH_GENERATOR, { preset: "shrub" }));
+    expect(shrub.parts?.some((part) => part.surface === "leaf")).toBe(true);
+    const rock = mesh(runGenerator(ROCK_GENERATOR, {}));
+    expect(rock.parts).toBeUndefined();
+    expect(rock.surface).toBe("rock");
+  });
+
   test("register as placeable generators", () => {
     registerBuiltinSceneKinds();
     for (const definition of NATURE_GENERATORS) {

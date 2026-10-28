@@ -88,6 +88,7 @@ function OneGrass({ object, context }: { object: SceneKindObject; context: Scene
       groundColor={context.groundColorAt?.(center[0], center[2])}
       heightAt={heightAt}
       coverageAt={coverageAt}
+      baseHeight={center[1]}
       edgeFeather={2.2}
       exclude={exclude}
     />
