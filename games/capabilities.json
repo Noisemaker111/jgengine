@@ -4940,6 +4940,16 @@
       "intent": "torque-driven countermovement jump of the reference human: height, airtime, push force, touchdown speed"
     },
     {
+      "id": "human-locomotion-reference",
+      "packages": [
+        "@jgengine/core"
+      ],
+      "module": "@jgengine/core/movement/reference/compareLocomotion",
+      "gameFacing": false,
+      "probe": null,
+      "intent": "the default real-person sprint, turn and jump models locomotion comparisons use"
+    },
+    {
       "id": "human-reference-body",
       "packages": [
         "@jgengine/core"
@@ -4968,6 +4978,16 @@
       "gameFacing": false,
       "probe": null,
       "intent": "distance and time a runner needs to stop from a speed"
+    },
+    {
+      "id": "human-time-to-speed",
+      "packages": [
+        "@jgengine/core"
+      ],
+      "module": "@jgengine/core/movement/reference/humanEnvelope",
+      "gameFacing": false,
+      "probe": null,
+      "intent": "time a runner needs from a standing start to a speed"
     },
     {
       "id": "human-turn-radius",
@@ -6214,6 +6234,26 @@
       "intent": "a solvable grid depth-puzzle with fog-of-war, gates, and hidden traps"
     },
     {
+      "id": "locomotion-compare",
+      "packages": [
+        "@jgengine/core"
+      ],
+      "module": "@jgengine/core/movement/reference/compareLocomotion",
+      "gameFacing": false,
+      "probe": null,
+      "intent": "score a game character's movement against human biomechanics: start, stop, turn, jump, landing and slope"
+    },
+    {
+      "id": "locomotion-compare-table",
+      "packages": [
+        "@jgengine/core"
+      ],
+      "module": "@jgengine/core/movement/reference/compareLocomotion",
+      "gameFacing": false,
+      "probe": null,
+      "intent": "markdown table of a game character's movement against the human reference"
+    },
+    {
       "id": "locomotion-graph",
       "packages": [
         "@jgengine/core"
@@ -6222,6 +6262,26 @@
       "gameFacing": false,
       "probe": null,
       "intent": "build the default idle/walk/run plus one-shot graph from clip names"
+    },
+    {
+      "id": "locomotion-metrics",
+      "packages": [
+        "@jgengine/core"
+      ],
+      "module": "@jgengine/core/movement/reference/compareLocomotion",
+      "gameFacing": false,
+      "probe": null,
+      "intent": "measure a game character's start, stop, turn radius, reversal, jump, landing speed and uphill speed for comparison with real people"
+    },
+    {
+      "id": "locomotion-reference",
+      "packages": [
+        "@jgengine/core"
+      ],
+      "module": "@jgengine/core/movement/reference/compareLocomotion",
+      "gameFacing": false,
+      "probe": null,
+      "intent": "what a real person achieves at a game character's speed: start, stop, turn radius, reversal, jump and uphill speed"
     },
     {
       "id": "loot-beams",

@@ -219,6 +219,7 @@ Used by `packages/core/src/movement/reference/`. Equations and published data on
 - Slopes: A. E. Minetti et al., "Energy cost of walking and running at extreme uphill and downhill slopes", *J. Appl. Physiol.* 93 (2002). Used by `humanEnvelope.ts`.
 - Jumping: D. Selbie and G. Caldwell, *J. Biomech.* 29 (1996); M. F. Bobbert et al., *Med. Sci. Sports Exerc.* 28 (1996); N. P. Linthorne, *Am. J. Phys.* 69 (2001); C. Bosco, P. Luhtanen and P. V. Komi, *Eur. J. Appl. Physiol.* 50 (1983); G. Markovic et al., *J. Strength Cond. Res.* 18 (2004). Used by `humanJump.ts`.
 - Validation data: H. J. Ralston, *Int. Z. Angew. Physiol.* 17 (1958); R. W. Bohannon and A. W. Andrews, *Physiotherapy* 97 (2011); M. P. Murray, A. B. Drought and R. C. Kory, *J. Bone Joint Surg.* 46 (1964); D. A. Winter, *The Biomechanics and Motor Control of Human Gait*, 2nd ed., University of Waterloo Press (1991); A. Hreljac, *J. Biomech.* 26 (1993); A. Thorstensson and H. Roberthson, *Acta Physiol. Scand.* 131 (1987); R. McN. Alexander, *Physiol. Rev.* 69 (1989); R. Margaria et al., *J. Appl. Physiol.* 18 (1963); P. E. di Prampero et al., *Eur. J. Appl. Physiol.* 55 (1986). Used by `humanReferenceValidation.ts`.
+- Gait initiation: P. Crenna and C. Frigo, "A motor programme for the initiation of forward-oriented movements in humans", *J. Physiol.* 437 (1991). Used by `compareLocomotion.ts`.
 
 ## Plant growth simulation
 

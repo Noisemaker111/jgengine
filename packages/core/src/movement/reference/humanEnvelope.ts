@@ -101,20 +101,27 @@ export function stoppingDistance(profile: SprintProfile, speed: number): { dista
 }
 
 /**
- * Time to reverse from `speed` to the same speed the other way, s: brake to rest, then sprint back up.
- * @capability human-turnaround-time time a runner needs to reverse direction at a speed
+ * Time to sprint from rest to `speed` (capped just under top speed), s.
+ * @capability human-time-to-speed time a runner needs from a standing start to a speed
  */
-export function turnaroundTime(profile: SprintProfile, speed: number): number {
-  const back = sprint(profile, { time: 30 }, 0);
-  const target = Math.min(speed, back.speed * 0.999);
+export function timeToSpeed(profile: SprintProfile, speed: number): number {
+  const target = Math.min(speed, sprintTopSpeed(profile) * 0.999);
+  const grip = Math.min(profile.f0, profile.friction * 9.81);
   let v = 0;
   let t = 0;
-  const grip = Math.min(profile.f0, profile.friction * 9.81);
   while (v < target && t < 30) {
     v += (grip * Math.max(0, 1 - v / profile.v0) - profile.drag * v * v) * 0.001;
     t += 0.001;
   }
-  return speed / brakingDeceleration(profile) + t;
+  return t;
+}
+
+/**
+ * Time to reverse from `speed` to the same speed the other way, s: brake to rest, then sprint back up.
+ * @capability human-turnaround-time time a runner needs to reverse direction at a speed
+ */
+export function turnaroundTime(profile: SprintProfile, speed: number): number {
+  return speed / brakingDeceleration(profile) + timeToSpeed(profile, speed);
 }
 
 /**
