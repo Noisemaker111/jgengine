@@ -257,6 +257,7 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 - `referenceSubjectFor` (function) · `import { referenceSubjectFor } from "@jgengine/core/physics/reference/boatComparison"`
 - `speedboatSubject` (function) · `import { speedboatSubject } from "@jgengine/core/physics/reference/boatComparison"`
 - `surgeAddedMass` (function) · `import { surgeAddedMass } from "@jgengine/core/physics/reference/boatComparison"`
+- `wigleyStandIn` (function) · `import { wigleyStandIn } from "@jgengine/core/physics/reference/boatComparison"`
 
 ## boat-dynamics — force-based powered hull — hull-speed drag hump, planing, keel, rudder that needs flow or outboard thrust
 
@@ -1235,6 +1236,15 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `SceneObjectSlots` (interface) · `import { SceneObjectSlots } from "@jgengine/core/world"`
 
+## ocean-waves — seeded irregular sea from a Pierson–Moskowitz or JONSWAP spectrum
+
+- `irregularSea` (function) · `import { irregularSea } from "@jgengine/core/physics/reference/oceanWaves"`
+- `regularSea` (function) · `import { regularSea } from "@jgengine/core/physics/reference/oceanWaves"`
+- `seaElevation` (function) · `import { seaElevation } from "@jgengine/core/physics/reference/oceanWaves"`
+- `seaWaterAt` (function) · `import { seaWaterAt } from "@jgengine/core/physics/reference/oceanWaves"`
+- `spectralMoment` (function) · `import { spectralMoment } from "@jgengine/core/physics/reference/oceanWaves"`
+- `waveSpectrum` (function) · `import { waveSpectrum } from "@jgengine/core/physics/reference/oceanWaves"`
+
 ## order-queue — serializable per-entity command queue with lifecycle, preemption, and pluggable order kinds
 
 - `createOrderQueue` (function) · `import { createOrderQueue } from "@jgengine/core/world"`
@@ -1646,6 +1656,17 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `ScreenEffectsOverlay` (function) · `import { ScreenEffectsOverlay } from "@jgengine/core/postfx/ScreenEffectsOverlay.draw"`
 
+## seakeeping-hull — hull at rest in still water
+
+- `restingSeakeepingState` (function) · `import { restingSeakeepingState } from "@jgengine/core/physics/reference/seakeepingHull"`
+- `seakeepingHullFromStrip` (function) · `import { seakeepingHullFromStrip } from "@jgengine/core/physics/reference/seakeepingHull"`
+- `stepSeakeeping` (function) · `import { stepSeakeeping } from "@jgengine/core/physics/reference/seakeepingHull"`
+
+## section-hydrodynamics — Lewis-form ship section from beam, draft and area coefficient
+
+- `lewisSection` (function) · `import { lewisSection } from "@jgengine/core/physics/reference/sectionHydrodynamics"`
+- `sectionHeave` (function) · `import { sectionHeave } from "@jgengine/core/physics/reference/sectionHydrodynamics"`
+
 ## selection-bookmark-recall — fold a saved set into the active selection with stale-ref pruning and a caller focus hook
 
 - `recallSelectionBookmark` (function) · `import { recallSelectionBookmark } from "@jgengine/core/world"`
@@ -1804,6 +1825,11 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 ## street-generator — build a deterministic street/track graph (nodes, edges, streets, junctions, sidewalks, bridges, tunnels) from sliders
 
 - `generateStreets` (function) · `import { generateStreets } from "@jgengine/core/roads/streetGenerator"`
+
+## strip-theory — heave and pitch response amplitude operators in head waves
+
+- `heavePitchResponse` (function) · `import { heavePitchResponse } from "@jgengine/core/physics/reference/stripTheory"`
+- `stripSections` (function) · `import { stripSections } from "@jgengine/core/physics/reference/stripTheory"`
 
 ## studio-stage — cinematic lighting rig + backdrop + turntable for parametric studios
 

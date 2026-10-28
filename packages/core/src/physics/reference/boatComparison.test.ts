@@ -20,6 +20,10 @@ describe("compareBoat", () => {
     const trim = table.rows.find((row) => row.label.startsWith("running trim"));
     expect(trim?.reference).toBeGreaterThan(1);
     expect(trim?.reference).toBeLessThan(6);
+    const heave = table.rows.find((row) => row.label === "heave RAO, head seas λ = L");
+    // The game hull rides the surface point under it; a real hull a boat length long averages the wave out.
+    expect(Math.abs((heave?.game ?? 0) - 1)).toBeLessThan(0.02);
+    expect(heave?.reference).toBeLessThan(0.6);
   });
 
   test("runs the KVLCC2 game build and its MMG model through the same turning circles and zig-zags, beside the tank", () => {

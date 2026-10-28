@@ -3205,13 +3205,14 @@
 - `BoatComparisonSubject` (interface): interface BoatComparisonSubject — A reference boat with the game build of it and the published figures it carries.
 - `ManoeuvringSubject` (interface): interface ManoeuvringSubject — Turning and zig-zag trials for a subject: its MMG ship, approach speed and the free-running results, if any.
 - `ReferenceBoat` (interface): interface ReferenceBoat — A real hull the game model is measured against: its calm-water resistance and surge inertia, SI units.
-- `compareBoat` (function): function compareBoat(subject: BoatComparisonSubject, gameName = `${subject.name} (game build)`): ComparisonTable — Runs a game boat tuning and its reference hull through the same straight-line tests (calm-water resistance at set speeds, top speed and time to 90% of it on the game's own thrust law, coast-down distance to a quarter of top speed, and running trim for planing hulls) and lines them up beside published figures.
+- `compareBoat` (function): function compareBoat(subject: BoatComparisonSubject, gameName = `${subject.name} (game build)`): ComparisonTable — Runs a game boat tuning and its reference hull through the same straight-line tests (calm-water resistance at set speeds, top speed and time to 90% of it on the game's own thrust law, coast-down distance to a quarter of top speed, and running trim for planing hulls), heave and pitch in regular head waves against strip theory on the boat's {@link wigleyStandIn}, turning circles and zig-zags when the subject has an MMG model, and lines them up beside published figures.
 - `holtropExampleSubject` (function): function holtropExampleSubject(): BoatComparisonSubject — Holtrop–Mennen's 1982 example ship as a reference boat, with its B-series propeller and a game build of it.
 - `kvlcc2Subject` (function): function kvlcc2Subject(): BoatComparisonSubject — The KVLCC2 L7 tanker model as a reference boat: its MMG model for resistance and manoeuvring, a game build with the same mass, rudder, steering rate and propeller (bollard thrust and zero-thrust speed at the self-propulsion revolutions), and MARIN's free-running turning and zig-zag results.
 - `referenceBoatSubjects` (function): function referenceBoatSubjects(): BoatComparisonSubject[] — The reference boats every comparison run includes.
 - `referenceSubjectFor` (function): function referenceSubjectFor(name: string, tuning: BoatTuning): BoatComparisonSubject — Builds a reference boat for any game tuning: a planing hull (`planingSpeed` set) becomes an 18° deadrise prismatic hull of its length, beam and mass; a displacement hull becomes a Holtrop–Mennen hull of its length, beam and mass with workboat coefficients (`C_B 0.55`, `C_M 0.85`, `C_WP 0.75`, LCB 1.5% aft).
 - `speedboatSubject` (function): function speedboatSubject(): BoatComparisonSubject — The 6 m outboard speedboat of the `boatDynamics` docs as a reference boat: an 18° deadrise prismatic planing hull of the same beam and mass, centre of gravity 38% of the length forward of the transom, run through Savitsky's equations.
 - `surgeAddedMass` (function): function surgeAddedMass(massKg: number, length: number, density = RHO): number — Surge added mass of a hull as the half of a prolate spheroid of the same length and twice its volume (the double-body image across the still surface): Lamb's `k₁ = α₀/(2 − α₀)` times the displaced mass.
+- `wigleyStandIn` (function): function wigleyStandIn(tuning: BoatTuning): StripHull — A Wigley hull (`C_B` 4/9) with a boat tuning's length, beam and mass, floating level with G on the waterline: the seakeeping stand-in for a boat whose real lines are unknown.
 
 ## @jgengine/core/physics/reference/compareHandling
 
@@ -3336,6 +3337,19 @@
 - `SPORT_REAR_180_55_ZR17` (const): const SPORT_REAR_180_55_ZR17: Readonly<MotorcycleTireCoefficients> — Rear 180/55 ZR17 sport tyre (Sharp, Evangelou & Limebeer 2004, Tables II–III bottom rows; pDx1 = 1.355, pDx2 = −0.0603, §4.5; relaxation §4.8).
 - `motorcycleMagicFormula` (function): function motorcycleMagicFormula(p: Readonly<MotorcycleTireCoefficients>, input: MotorcycleTireInput, v?: number): MotorcycleTireOutput — The steady-state motorcycle Magic Formula of Sharp, Evangelou & Limebeer (2004), Eqs. (1)–(31): pure and combined longitudinal and side slip with camber thrust as its own term, load-dependent stiffnesses, and an aligning moment from pneumatic trail on the zero-camber side force plus a camber twisting moment (residual torque Dr). The overturning moment is not here: it comes from the contact point moving across the tyre's round crown, which the vehicle's contact geometry carries. Sign convention: ISO-W, so the published formula (positive force for positive slip and camber) is mirrored. The published fit has one shift (rBy3) that would make left and right differ; it is applied to |β| so the tyre stays symmetric as the paper intends.
 
+## @jgengine/core/physics/reference/oceanWaves
+
+- `IrregularSeaOptions` (interface): interface IrregularSeaOptions — How to sample a spectrum into components.
+- `OceanSea` (interface): interface OceanSea — A sea as a sum of regular components on deep water, plain data.
+- `SeaSpectrum` (interface): interface SeaSpectrum — A sea spectrum by its significant height and peak period; `peakEnhancement` 1 is Pierson–Moskowitz, 3.3 the mean JONSWAP sea.
+- `WaveComponent` (interface): interface WaveComponent — One regular wave component: `η = a·cos(k(x cos θ + y sin θ) − ωt + φ)`.
+- `irregularSea` (function): function irregularSea(spectrum: SeaSpectrum, options: IrregularSeaOptions): OceanSea — Samples a spectrum into a deterministic irregular sea: frequencies in equal bands from 0.5ωp to 4ωp, each jittered within its band so the record does not repeat, amplitudes `√(2·S(ω)·Δω)`, random phases, and with `spreading` each component given a heading drawn from `cos^(2s)` about the mean.
+- `regularSea` (function): function regularSea(amplitude: number, period: number, direction = 0, phase = 0, density = SEA_WATER_DENSITY, gravity = MARINE_GRAVITY): OceanSea — A single regular wave as an {@link OceanSea}: amplitude, m, period, s, travelling toward `direction`.
+- `seaElevation` (function): function seaElevation(sea: OceanSea, x: number, y: number, time: number): number — Surface elevation, m, at a point and time.
+- `seaWaterAt` (function): function seaWaterAt(sea: OceanSea, time: number): HullWater — The sea at one instant as {@link HullWater} for the hull integrator: submergence below the local surface and the incident-wave (Froude–Krylov) pressure, hydrostatic plus each component's dynamic pressure decaying as `e^(k·z')` with Wheeler stretching `z' = z − η`, so the pressure is zero on the moving surface. Integrating it over the wetted hull gives buoyancy and the nonlinear Froude–Krylov wave force together.
+- `spectralMoment` (function): function spectralMoment(spectrum: SeaSpectrum, order: number, steps = 4000): number — Spectral moment `m_n = ∫ωⁿ·S(ω) dω`, by Simpson's rule from 0.2ωp to 6ωp.
+- `waveSpectrum` (function): function waveSpectrum(spectrum: SeaSpectrum, omega: number): number — Spectral density `S(ω)`, m²·s, of a Pierson–Moskowitz (`γ = 1`) or JONSWAP sea in the DNV-RP-C205 form: `S_PM = (5/16)·Hs²·ωp⁴·ω⁻⁵·exp(−1.25(ωp/ω)⁴)`, times `(1 − 0.287 ln γ)·γ^exp(−(ω−ωp)²/(2σ²ωp²))` with `σ` 0.07 below the peak and 0.09 above it.
+
 ## @jgengine/core/physics/reference/planingHull
 
 - `NACA_TN2876_MODEL` (const): const NACA_TN2876_MODEL: { readonly beam: number; readonly deadrise: number; readonly density: number; readonly viscosity: number; } — Model 276's beam, m, and its tank water.
@@ -3414,6 +3428,24 @@
 - `RungeKutta4` (interface): interface RungeKutta4 — A reusable classical fourth-order Runge–Kutta stepper over a fixed-size state vector.
 - `createRungeKutta4` (function): function createRungeKutta4(size: number): RungeKutta4 — Creates a {@link RungeKutta4} for states of `size` entries; its scratch buffers are allocated once, so a step allocates nothing.
 
+## @jgengine/core/physics/reference/seakeepingHull
+
+- `SeakeepingHull` (interface): interface SeakeepingHull — A rigid hull for time-domain seakeeping, in hull axes (x forward from the aft end, y to port, z up from the keel). Buoyancy and the Froude–Krylov wave force come from integrating the incident sea's pressure over the instantaneous wetted mesh; radiation is constant added mass and damping about G; each station adds a diffraction force by the strip-theory diffraction force (its section's diffraction integral at the reference frequency, applied to every wave component) and a momentum slamming force when it re-enters the water.
+- `SeakeepingHullOptions` (interface): interface SeakeepingHullOptions — Options for {@link seakeepingHullFromStrip}.
+- `SeakeepingState` (interface): interface SeakeepingState — Body state: G in earth axes (z up from still water), roll/pitch/yaw, and body velocities `[u, v, w, p, q, r]` at G.
+- `SeakeepingStation` (interface): interface SeakeepingStation — One strip of the hull for the station forces.
+- `SurgeForce` (type): type SurgeForce = (state: SeakeepingState) => number — External surge force along the body x axis, N, e.g. a propeller holding speed against resistance.
+- `restingSeakeepingState` (function): function restingSeakeepingState(hull: SeakeepingHull): SeakeepingState — The hull floating at rest in still water: G above the origin at its equilibrium height, heel and trim.
+- `seakeepingHullFromStrip` (function): function seakeepingHullFromStrip(hull: StripHull, options: SeakeepingHullOptions = {}): SeakeepingHull — Builds a {@link SeakeepingHull} from a strip-theory hull: mesh from its offsets, heave–pitch added mass and damping from strip theory at the reference frequency, surge added mass from Lamb's spheroid, sway and yaw from flat-plate strips (`ρπT²/2`), roll as shares of the dry inertia and of critical damping, and per-station diffraction and high-frequency slamming tables from the 2-D sections.
+- `stepSeakeeping` (function): function stepSeakeeping(hull: SeakeepingHull, sea: OceanSea, state: SeakeepingState, dt: number, surge?: SurgeForce): SeakeepingState — Advances a hull in a sea by `dt` with fourth-order Runge–Kutta, in place. Forces: weight; buoyancy and Froude–Krylov from the sea pressure over the wetted mesh; constant added mass and damping; per-station diffraction `ρω²·Re(A·D·e^(iθ))` from each section's diffraction integral; momentum slamming `−(dm∞/dh)·ḣ²` on a station whose immersion `h` is rising; and an optional surge force.
+
+## @jgengine/core/physics/reference/sectionHydrodynamics
+
+- `HalfSection` (type): type HalfSection = readonly (readonly [number, number])[] — Half a symmetric ship section below the waterline: points from the keel on the centreline to the waterline, as `[half-breadth, depth]` pairs with depth ≤ 0 (the waterline at 0).
+- `SectionHeave` (interface): interface SectionHeave — Heave added mass, kg/m, and radiation damping, N·s/m², of a section at one frequency, with what the strip method needs.
+- `lewisSection` (function): function lewisSection(halfBreadth: number, draft: number, areaCoefficient: number, points = 41): { section: HalfSection; a1: number; a3: number; scale: number } — A Lewis-form half-section `x = M((1 + a1) sin θ − a3 sin 3θ)`, `y = −M((1 − a1) cos θ + a3 cos 3θ)` from the keel (`θ = 0`) to the waterline (`θ = π/2`), fitted to a half-breadth, draft and section area coefficient.
+- `sectionHeave` (function): function sectionHeave(section: HalfSection, frequency: number, density = 1025, gravity = 9.80665, panels = 24): SectionHeave — Heave added mass and damping of a symmetric section by Frank's close-fit source method: pulsating sources of constant strength on straight panels (mirrored to port) with the deep-water free-surface Green's function, the body condition met at panel midpoints. `frequency` `Infinity` uses the high-frequency limit (`φ = 0` on the surface).
+
 ## @jgengine/core/physics/reference/shipManoeuvring
 
 - `KVLCC2_L7` (const): const KVLCC2_L7: MmgShip — The KVLCC2 L7 free-running model (1/45.7, MARIN) with the hull, propeller and rudder coefficients Yasukawa and Yoshimura used for their simulations (2015, Tables 1 and 3). `R'0` is the L3 captive-test value (0.022 at Re 1.9·10⁶) carried to the L7 Reynolds number with a constant form factor on Schoenherr's line, the paper's 3-D extrapolation; `x'P = −0.48` and `x'R = −0.5` are the method's standard positions. Fresh tank water.
@@ -3456,6 +3488,15 @@
 - `StandardManeuverOptions` (interface): interface StandardManeuverOptions — Settings for {@link measureStandardManeuvers}; every field but `wheelbase` has a default.
 - `StandardManeuverReport` (interface): interface StandardManeuverReport — Results of the standard handling tests, as the standards define them. `NaN` means the test could not be run.
 - `measureStandardManeuvers` (function): function measureStandardManeuvers(create: () => CourseSubject, options: StandardManeuverOptions): StandardManeuverReport — Runs the standard handling tests on fresh vehicles from `create`: ISO 4138 steady-state circular driving (constant radius), ISO 7401 step steer, and the ISO 3888-1 double lane change. Drivers steer through `AxisInput` and read the reported road-wheel angle, so any vehicle sim that fits `CourseSubject` — a game's `VehicleDynamics` or the reference car — runs the same tests and gives comparable numbers.
+
+## @jgengine/core/physics/reference/stripTheory
+
+- `HeavePitchCoefficients` (interface): interface HeavePitchCoefficients — Heave–pitch hydrodynamic coefficients about G: `[33, 35, 53, 55]` for added mass, damping and restoring, and the rigid-body mass.
+- `HeavePitchResponse` (interface): interface HeavePitchResponse — Heave and pitch in regular head waves at zero speed, per unit wave amplitude, phases relative to the crest at G.
+- `StripHull` (interface): interface StripHull — A hull for strip theory: its offsets, the draft it floats at (level trim) and its mass distribution.
+- `StripSections` (interface): interface StripSections — Station positions, half-sections and waterline half-breadths below the draft.
+- `heavePitchResponse` (function): function heavePitchResponse(hull: StripHull, frequency: number, prepared: StripSections = stripSections(hull.offsets, hull.draft)): HeavePitchResponse — Heave and pitch of a hull in regular head waves at zero speed by strip theory (Salvesen–Tuck–Faltinsen, `U = 0`): each section's added mass, damping and diffraction from {@link sectionHeave}, Froude–Krylov force from the incident pressure on the section contour, waterplane restoring, and the coupled heave–pitch equations solved about G.
+- `stripSections` (function): function stripSections(offsets: HullOffsets, draft: number): StripSections — Cuts a hull's offsets into half-sections below `draft`, waterline at depth 0, keel point on the centreline.
 
 ## @jgengine/core/physics/reference/suspensionKinematics
 
