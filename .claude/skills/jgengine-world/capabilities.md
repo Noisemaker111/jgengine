@@ -889,6 +889,49 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `createGlideModel` (function) · `import { createGlideModel } from "@jgengine/core/world"`
 
+## granular-dem — discrete element reference for sand, gravel and powders with Hertz–Mindlin contacts, rolling resistance and capillary cohesion
+
+- `beverlooHopper` (function) · `import { beverlooHopper } from "@jgengine/core/physics/reference/discreteElementExperiments"`
+- `brazilNutShaker` (function) · `import { brazilNutShaker } from "@jgengine/core/physics/reference/discreteElementExperiments"`
+- `bridgeRuptureDistance` (function) · `import { bridgeRuptureDistance } from "@jgengine/core/physics/reference/discreteElements"`
+- `bridgeVolumeFromMoisture` (function) · `import { bridgeVolumeFromMoisture } from "@jgengine/core/physics/reference/discreteElements"`
+- `capillaryForce` (function) · `import { capillaryForce } from "@jgengine/core/physics/reference/discreteElements"`
+- `collapsedColumn` (function) · `import { collapsedColumn } from "@jgengine/core/physics/reference/discreteElementExperiments"`
+- `createDiscreteElements` (function) · `import { createDiscreteElements } from "@jgengine/core/physics/reference/discreteElements"`
+- `fitBeverloo` (function) · `import { fitBeverloo } from "@jgengine/core/physics/reference/discreteElementExperiments"`
+- `janssenLoad` (function) · `import { janssenLoad } from "@jgengine/core/physics/reference/discreteElementExperiments"`
+- `janssenSilo` (function) · `import { janssenSilo } from "@jgengine/core/physics/reference/discreteElementExperiments"`
+- `measuredRestitution` (function) · `import { measuredRestitution } from "@jgengine/core/physics/reference/discreteElementExperiments"`
+- `nowakExcessAngle` (function) · `import { nowakExcessAngle } from "@jgengine/core/physics/reference/discreteElementExperiments"`
+- `pouredCone` (function) · `import { pouredCone } from "@jgengine/core/physics/reference/discreteElementExperiments"`
+- `rayleighTime` (function) · `import { rayleighTime } from "@jgengine/core/physics/reference/discreteElements"`
+- `restitutionDamping` (function) · `import { restitutionDamping } from "@jgengine/core/physics/reference/discreteElements"`
+- `settleGrains` (function) · `import { settleGrains } from "@jgengine/core/physics/reference/discreteElementExperiments"`
+- `waterBridges` (function) · `import { waterBridges } from "@jgengine/core/physics/reference/discreteElementExperiments"`
+
+## granular-flow — sand, gravel and soil that pile, avalanche, dig, compact and rut on a heightfield
+
+- `BekkerSoil` (interface) · `import { BekkerSoil } from "@jgengine/core/granular/granularMaterial"`
+- `DAMP_SAND` (const) · `import { DAMP_SAND } from "@jgengine/core/granular/granularMaterial"`
+- `DRY_SAND` (const) · `import { DRY_SAND } from "@jgengine/core/granular/granularMaterial"`
+- `GLASS_BEADS` (const) · `import { GLASS_BEADS } from "@jgengine/core/granular/granularMaterial"`
+- `GRAVEL` (const) · `import { GRAVEL } from "@jgengine/core/granular/granularMaterial"`
+- `SANDY_LOAM` (const) · `import { SANDY_LOAM } from "@jgengine/core/granular/granularMaterial"`
+- `continuumCollapse` (function) · `import { continuumCollapse } from "@jgengine/core/granular/granularExperiments"`
+- `createGranularLayer` (function) · `import { createGranularLayer } from "@jgengine/core/granular/granularLayer"`
+- `createGranularTerrain` (function) · `import { createGranularTerrain } from "@jgengine/core/granular/granularTerrain"`
+- `culmannHeight` (function) · `import { culmannHeight } from "@jgengine/core/granular/granularMaterial"`
+- `flowFriction` (function) · `import { flowFriction } from "@jgengine/core/granular/granularMaterial"`
+- `inclinedFlume` (function) · `import { inclinedFlume } from "@jgengine/core/granular/granularExperiments"`
+- `landformLooseCover` (function) · `import { landformLooseCover } from "@jgengine/core/granular/granularTerrain"`
+- `plateSinkage` (function) · `import { plateSinkage } from "@jgengine/core/granular/granularMaterial"`
+- `plateSinkagePressure` (function) · `import { plateSinkagePressure } from "@jgengine/core/granular/granularMaterial"`
+- `pouredHeap` (function) · `import { pouredHeap } from "@jgengine/core/granular/granularExperiments"`
+- `startFriction` (function) · `import { startFriction } from "@jgengine/core/granular/granularMaterial"`
+- `stopFriction` (function) · `import { stopFriction } from "@jgengine/core/granular/granularMaterial"`
+- `stoppingDepth` (function) · `import { stoppingDepth } from "@jgengine/core/granular/granularMaterial"`
+- `wheelSinkage` (function) · `import { wheelSinkage } from "@jgengine/core/granular/granularMaterial"`
+
 ## grapple-swing — grappling-hook rope swing physics with reel-in
 
 - `createGrappleSwing` (function) · `import { createGrappleSwing } from "@jgengine/core/world"`
@@ -1764,6 +1807,50 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 ## road-ribbons — draw roads, tracks and trails as surfaced ribbons with curbs, sidewalks, lane markings and trimmed junctions
 
 - `RoadRibbons` (function) · `import { RoadRibbons } from "@jgengine/core/roads/RoadRibbons.draw"`
+
+## rock-fracture — rock that breaks by impact into fragments sized by measured comminution laws
+
+- `BASALT` (const) · `import { BASALT } from "@jgengine/core/physics/reference/bondedRock"`
+- `BASALT_BREAKAGE` (const) · `import { BASALT_BREAKAGE } from "@jgengine/core/fracture/rockFracture"`
+- `BEREA_SANDSTONE` (const) · `import { BEREA_SANDSTONE } from "@jgengine/core/physics/reference/bondedRock"`
+- `CellVec` (type) · `import { CellVec } from "@jgengine/core/fracture/convexCell"`
+- `FragmentSizes` (interface) · `import { FragmentSizes } from "@jgengine/core/fracture/fragmentSize"`
+- `GRANITE_BREAKAGE` (const) · `import { GRANITE_BREAKAGE } from "@jgengine/core/fracture/rockFracture"`
+- `INDIANA_LIMESTONE` (const) · `import { INDIANA_LIMESTONE } from "@jgengine/core/physics/reference/bondedRock"`
+- `LIMESTONE_BREAKAGE` (const) · `import { LIMESTONE_BREAKAGE } from "@jgengine/core/fracture/rockFracture"`
+- `ROCKS` (const) · `import { ROCKS } from "@jgengine/core/physics/reference/bondedRock"`
+- `ROCK_BREAKAGE` (const) · `import { ROCK_BREAKAGE } from "@jgengine/core/fracture/rockFracture"`
+- `ROCK_FRACTURE_GENERATOR` (const) · `import { ROCK_FRACTURE_GENERATOR } from "@jgengine/core/fracture/rockFractureGenerator"`
+- `SANDSTONE_BREAKAGE` (const) · `import { SANDSTONE_BREAKAGE } from "@jgengine/core/fracture/rockFracture"`
+- `WESTERLY_GRANITE` (const) · `import { WESTERLY_GRANITE } from "@jgengine/core/physics/reference/bondedRock"`
+- `bondedFragments` (function) · `import { bondedFragments } from "@jgengine/core/physics/reference/bondedRock"`
+- `bondedSpecimen` (function) · `import { bondedSpecimen } from "@jgengine/core/physics/reference/bondedRock"`
+- `boxCell` (function) · `import { boxCell } from "@jgengine/core/fracture/convexCell"`
+- `brazilianTest` (function) · `import { brazilianTest } from "@jgengine/core/physics/reference/bondedRock"`
+- `breakageProbability` (function) · `import { breakageProbability } from "@jgengine/core/fracture/fragmentSize"`
+- `calibrateBondedRock` (function) · `import { calibrateBondedRock } from "@jgengine/core/physics/reference/bondedRock"`
+- `cellContains` (function) · `import { cellContains } from "@jgengine/core/fracture/convexCell"`
+- `cellVolume` (function) · `import { cellVolume } from "@jgengine/core/fracture/convexCell"`
+- `clipCell` (function) · `import { clipCell } from "@jgengine/core/fracture/convexCell"`
+- `compareFracture` (function) · `import { compareFracture } from "@jgengine/core/fracture/fractureComparison"`
+- `convexCellBounds` (function) · `import { convexCellBounds } from "@jgengine/core/fracture/rockFracture"`
+- `fitGaudinSchuhmann` (function) · `import { fitGaudinSchuhmann } from "@jgengine/core/fracture/fragmentSize"`
+- `fitRosinRammler` (function) · `import { fitRosinRammler } from "@jgengine/core/fracture/fragmentSize"`
+- `fitT10` (function) · `import { fitT10 } from "@jgengine/core/fracture/fragmentSize"`
+- `formatFractureComparison` (function) · `import { formatFractureComparison } from "@jgengine/core/fracture/fractureComparison"`
+- `fractureRock` (function) · `import { fractureRock } from "@jgengine/core/fracture/rockFracture"`
+- `fragmentMesh` (function) · `import { fragmentMesh } from "@jgengine/core/fracture/rockFractureGenerator"`
+- `fragmentSizes` (function) · `import { fragmentSizes } from "@jgengine/core/fracture/rockFracture"`
+- `gaudinSchuhmann` (function) · `import { gaudinSchuhmann } from "@jgengine/core/fracture/fragmentSize"`
+- `impactBreakage` (function) · `import { impactBreakage } from "@jgengine/core/physics/reference/bondedRock"`
+- `jkT10` (function) · `import { jkT10 } from "@jgengine/core/fracture/fragmentSize"`
+- `packSpecimen` (function) · `import { packSpecimen } from "@jgengine/core/physics/reference/bondedRock"`
+- `passingFraction` (function) · `import { passingFraction } from "@jgengine/core/fracture/fragmentSize"`
+- `rockCell` (function) · `import { rockCell } from "@jgengine/core/fracture/rockFractureGenerator"`
+- `rosinRammler` (function) · `import { rosinRammler } from "@jgengine/core/fracture/fragmentSize"`
+- `t10` (function) · `import { t10 } from "@jgengine/core/fracture/fragmentSize"`
+- `transformCell` (function) · `import { transformCell } from "@jgengine/core/fracture/convexCell"`
+- `uniaxialModulus` (function) · `import { uniaxialModulus } from "@jgengine/core/physics/reference/bondedRock"`
 
 ## rocket-6dof — multistage rocket ascent on a rotating Earth: thrust curves, gimbal, staging, drag through Mach, max-Q
 

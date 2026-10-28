@@ -4369,6 +4369,26 @@
       "intent": "deliver rolled loot drops into inventory and currency"
     },
     {
+      "id": "granular-dem",
+      "packages": [
+        "@jgengine/core"
+      ],
+      "module": "@jgengine/core/physics/reference/discreteElements",
+      "gameFacing": false,
+      "probe": null,
+      "intent": "discrete element reference for sand, gravel and powders with Hertz–Mindlin contacts, rolling resistance and capillary cohesion"
+    },
+    {
+      "id": "granular-flow",
+      "packages": [
+        "@jgengine/core"
+      ],
+      "module": "@jgengine/core/granular/granularLayer",
+      "gameFacing": false,
+      "probe": null,
+      "intent": "sand, gravel and soil that pile, avalanche, dig, compact and rut on a heightfield"
+    },
+    {
       "id": "grapple-swing",
       "packages": [
         "@jgengine/core"
@@ -9255,6 +9275,16 @@
       "gameFacing": false,
       "probe": null,
       "intent": "draw roads, tracks and trails as surfaced ribbons with curbs, sidewalks, lane markings and trimmed junctions"
+    },
+    {
+      "id": "rock-fracture",
+      "packages": [
+        "@jgengine/core"
+      ],
+      "module": "@jgengine/core/fracture/convexCell",
+      "gameFacing": false,
+      "probe": null,
+      "intent": "rock that breaks by impact into fragments sized by measured comminution laws"
     },
     {
       "id": "rocket-6dof",
