@@ -18,6 +18,10 @@ export const PLANT_SOURCES = {
   "cairns-1997": "Cairns et al. 1997, Root biomass allocation in the world's upland forests, Oecologia 111",
   "digby-firn-1995": "Digby & Firn 1995, The gravitropic set-point angle (GSA): the identification of an important developmentally controlled variable governing plant architecture, Plant Cell Environ. 18",
   "nikinmaa-2003": "Nikinmaa, Messier, Sievänen, Perttunen & Lehtonen 2003, Shoot growth and crown development: effect of crown position in three-dimensional simulations, Tree Physiol. 23",
+  "sachs-novoplansky-1995": "Sachs & Novoplansky 1995, Tree form: architectural models do not suffice, Isr. J. Plant Sci. 43",
+  "koch-2004": "Koch, Sillett, Jennings & Davis 2004, The limits to tree height, Nature 428",
+  "fay-2002": "Fay 2002, Environmental arboriculture, tree ecology and veteran tree management, Arboric. J. 26",
+  "lonsdale-2013": "Lonsdale (ed.) 2013, Ancient and other veteran trees: further guidance on management, The Tree Council",
   "fao-56": "Allen et al. 1998, FAO Irrigation and Drainage Paper 56, extraterrestrial radiation and day length",
   "hand-tuned": "Tuned by hand against the Carmean 1989 height curve until the milestone-4 fit replaces it",
 } as const;

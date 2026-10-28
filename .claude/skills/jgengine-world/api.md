@@ -3268,7 +3268,7 @@
 - `GrowthState` (interface): interface GrowthState — The whole simulation state as struct-of-arrays. Nodes are annual shoots (later merged into longer bare segments) kept in creation order, so a parent always sits before its children: a reverse loop is a basipetal pass, a forward loop acropetal.
 - `NODE_AXIS_START` (const): const NODE_AXIS_START: 2 — Node flag: first internode of a lateral axis (a branch base).
 - `NODE_DEAD` (const): const NODE_DEAD: 1 — Node flag: the branch is dead wood still attached.
-- `NODE_FIELDS` (const): const NODE_FIELDS: readonly ["nodeId", "parent", "born", "order", "flags", "length", "dir", "end", "phase", "sapArea", "heartArea", "foliage", "metamers", "latent", "latentAge", "light", "vigour", "moment", "deficit", "deadAge", "flowers"] — Typed-array fields of {@link GrowthState}, in snapshot order.
+- `NODE_FIELDS` (const): const NODE_FIELDS: readonly ["nodeId", "parent", "born", "leafBorn", "order", "flags", "length", "dir", "end", "phase", "sapArea", "heartArea", "foliage", "metamers", "latent", "latentAge", "light", "vigour", "moment", "deficit", "deadAge", "flowers"] — Typed-array fields of {@link GrowthState}, in snapshot order.
 - `NODE_NO_SPUR` (const): const NODE_NO_SPUR: 8 — Node flag: the short shoots on this node died in shade and bear no more leaves.
 - `NODE_SCAR` (const): const NODE_SCAR: 4 — Node flag: a shed branch left a scar at this node's tip.
 - `SCALAR_FIELDS` (const): const SCALAR_FIELDS: readonly ["nodeCount", "budCount", "nextNodeId", "nextBudId", "year", "reserveKg", "stressYears", "alive", "health", "shedKg"] — Scalar fields of {@link GrowthState} carried in a snapshot.
@@ -3295,7 +3295,7 @@
 
 - `DEFAULT_GROWTH_LIMITS` (const): const DEFAULT_GROWTH_LIMITS: GrowthLimits — Most buds and nodes a plant may hold: 4000 and 60000.
 - `GrowthLimits` (interface): interface GrowthLimits — Caps that bound one plant's memory and per-year work.
-- `PLANT_SIM_VERSION` (const): const PLANT_SIM_VERSION: 1 — Bumped whenever a rule changes what a seed grows into; part of every structure cache key.
+- `PLANT_SIM_VERSION` (const): const PLANT_SIM_VERSION: 2 — Bumped whenever a rule changes what a seed grows into; part of every structure cache key.
 - `PlantGrowth` (interface): interface PlantGrowth — One plant growing year by year.
 - `PlantGrowthSnapshot` (interface): interface PlantGrowthSnapshot — A grown plant's whole state as JSON-safe values: typed arrays travel as base64.
 - `PlantGrowthStats` (interface): interface PlantGrowthStats — Counters a {@link PlantGrowth} reports each year.

@@ -11,6 +11,6 @@ test("a sugar maple grows from seed to 400 years within budget", () => {
   const elapsed = performance.now() - started;
   const stats = plant.stats();
   expect(stats.alive).toBe(true);
-  // Fastest run 6.4 s (this machine, 2026-10-28); the #2699 target is 4 s.
-  gateTimingMs("plant growth, Acer saccharum seed to 400 years", [elapsed], 15_000, `${stats.maxNodesSeen} nodes at most`);
+  // Fastest run 3.6 s on the recording machine (2026-10-28, #2699 target 4 s); the budget is about 2x.
+  gateTimingMs("plant growth, Acer saccharum seed to 400 years", [elapsed], 7_500, `${stats.maxNodesSeen} nodes at most`);
 }, 120_000);

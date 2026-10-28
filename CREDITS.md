@@ -217,6 +217,10 @@ provenance.
 - Landsberg & Waring 1997, the 3-PG site modifiers, *Forest Ecology and Management* 95.
 - Niinemets 2007, shade acclimation of leaves, *Plant, Cell & Environment* 30.
 - Cairns et al. 1997, root allocation, *Oecologia* 111.
+- Sachs & Novoplansky 1995, correlative inhibition among buds, *Israel Journal of Plant Sciences* 43.
+- Koch, Sillett, Jennings & Davis 2004, the limits to tree height, *Nature* 428.
+- Fay 2002, veteran tree ecology, *Arboricultural Journal* 26; Lonsdale (ed.) 2013, *Ancient and
+  other veteran trees*, The Tree Council: crown retrenchment of old trees.
 - Allen et al. 1998, FAO Irrigation and Drainage Paper 56: extraterrestrial radiation and day length.
 
 ## Game and level design research

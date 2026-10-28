@@ -10,6 +10,8 @@ import { plantPow } from "./plantMath";
  * parent is also kept at least as thick as the da Vinci rule r^n = Σ r_i^n allows.
  *
  * Fills `need` with each node's new sapwood area (m²) and returns the carbon (kg) that new wood costs.
+ * With `gather`, `foliageAbove` is summed from the live leaves in the same pass and `out` receives the
+ * wood carbon of one m² of sapwood per m² of leaves on every live node (Pressler weighting).
  * @internal
  */
 export function pipeDemand(
@@ -19,41 +21,74 @@ export function pipeDemand(
   firstChild: Int32Array,
   nextSibling: Int32Array,
   need: Float64Array,
+  gather?: { pressler: number },
 ): number {
   const { sapwoodPerFoliage, sapwoodTurnover, pipeExponent } = species.carbon;
   const woodKgPerM3 = species.wood.densityKgM3 * (1 + species.carbon.coarseRootShare);
+  const { flags, sapArea, heartArea, length, parent, foliage } = state;
+  const toChild = pipeExponent / 2;
+  const toParent = 2 / pipeExponent;
   let carbon = 0;
+  let pressler = 0;
+  if (gather) foliageAbove.fill(0, 0, state.nodeCount);
   for (let i = state.nodeCount - 1; i >= 0; i -= 1) {
     need[i] = 0;
-    if (((state.flags[i] ?? 0) & NODE_DEAD) !== 0) continue;
-    const sap = state.sapArea[i] ?? 0;
+    const dead = ((flags[i] ?? 0) & NODE_DEAD) !== 0;
+    if (gather) {
+      const above = (foliageAbove[i] ?? 0) + (dead ? 0 : (foliage[i] ?? 0));
+      foliageAbove[i] = above;
+      const p = parent[i] ?? -1;
+      if (p >= 0) foliageAbove[p] = (foliageAbove[p] ?? 0) + above;
+      if (!dead) pressler += above * (length[i] ?? 0) * woodKgPerM3;
+    }
+    if (dead) continue;
+    const sap = sapArea[i] ?? 0;
     const retained = sap * (1 - sapwoodTurnover);
     const required = sapwoodPerFoliage * (foliageAbove[i] ?? 0);
     let add = required > retained ? required - retained : 0;
     const first = firstChild[i] ?? -1;
     if (first >= 0 && (nextSibling[first] ?? -1) >= 0) {
-      const total = sap + (state.heartArea[i] ?? 0) + add;
+      const total = sap + (heartArea[i] ?? 0) + add;
       let plain = 0;
       for (let c = first; c >= 0; c = nextSibling[c] ?? -1) {
-        if (((state.flags[c] ?? 0) & NODE_DEAD) === 0) plain += (state.sapArea[c] ?? 0) + (state.heartArea[c] ?? 0) + (need[c] ?? 0);
+        if (((flags[c] ?? 0) & NODE_DEAD) === 0) plain += (sapArea[c] ?? 0) + (heartArea[c] ?? 0) + (need[c] ?? 0);
       }
       // For n ≥ 2 the da Vinci area never exceeds the plain sum of child areas, so it can only bind
       // when the parent is thinner than that sum.
       if (plain > total) {
         let sum = 0;
         for (let c = first; c >= 0; c = nextSibling[c] ?? -1) {
-          if (((state.flags[c] ?? 0) & NODE_DEAD) !== 0) continue;
-          const childArea = (state.sapArea[c] ?? 0) + (state.heartArea[c] ?? 0) + (need[c] ?? 0);
-          sum += plantPow(childArea, pipeExponent / 2);
+          if (((flags[c] ?? 0) & NODE_DEAD) !== 0) continue;
+          sum += plantPow((sapArea[c] ?? 0) + (heartArea[c] ?? 0) + (need[c] ?? 0), toChild);
         }
-        const floorArea = plantPow(sum, 2 / pipeExponent);
+        const floorArea = plantPow(sum, toParent);
         if (floorArea > total) add += floorArea - total;
       }
     }
     need[i] = add;
-    carbon += add * (state.length[i] ?? 0) * woodKgPerM3;
+    carbon += add * (length[i] ?? 0) * woodKgPerM3;
   }
+  if (gather) gather.pressler = pressler;
   return carbon;
+}
+
+/**
+ * One node's yearly ring: retire a share of sapwood (and any above the pipe requirement) to heartwood,
+ * then add `area` m² of new sapwood.
+ * @internal
+ */
+export function thickenNode(state: GrowthState, species: PlantSpecies, i: number, foliageAbove: number, area: number): void {
+  const { sapwoodPerFoliage, sapwoodTurnover } = species.carbon;
+  const sap = state.sapArea[i] ?? 0;
+  let heart = (state.heartArea[i] ?? 0) + sap * sapwoodTurnover;
+  let next = sap * (1 - sapwoodTurnover);
+  const required = sapwoodPerFoliage * foliageAbove;
+  if (next > required) {
+    heart += next - required;
+    next = required;
+  }
+  state.sapArea[i] = next + area;
+  state.heartArea[i] = heart;
 }
 
 /**
@@ -61,20 +96,9 @@ export function pipeDemand(
  * @internal
  */
 export function applyThickening(state: GrowthState, species: PlantSpecies, foliageAbove: Float64Array, need: Float64Array, share: number): void {
-  const { sapwoodPerFoliage, sapwoodTurnover } = species.carbon;
   for (let i = 0; i < state.nodeCount; i += 1) {
     if (((state.flags[i] ?? 0) & NODE_DEAD) !== 0) continue;
-    const sap = state.sapArea[i] ?? 0;
-    let heart = (state.heartArea[i] ?? 0) + sap * sapwoodTurnover;
-    let next = sap * (1 - sapwoodTurnover);
-    const required = sapwoodPerFoliage * (foliageAbove[i] ?? 0);
-    if (next > required) {
-      heart += next - required;
-      next = required;
-    }
-    next += (need[i] ?? 0) * share;
-    state.sapArea[i] = next;
-    state.heartArea[i] = heart;
+    thickenNode(state, species, i, foliageAbove[i] ?? 0, (need[i] ?? 0) * share);
   }
 }
 
@@ -86,62 +110,104 @@ export interface PipeCost extends StructureCost {
 
 /**
  * The pipe-model cost of hanging extra leaf area on the tree, for the growth solve: every node below a
- * new shoot needs sapwood for the leaves above it, less what it already has. Prepared once per year
- * over the candidates' ancestors only, so each trial is one pass over that path set.
+ * new shoot needs sapwood for the leaves above it, less what it already has. A node already short of
+ * sapwood costs linearly in the leaf area added above it, so prepare folds those into one wood weight
+ * per path node; each trial then walks only the path nodes with sapwood to spare.
  * @internal
  */
 export function createPipeCost(species: PlantSpecies, capacity: number): PipeCost {
-  const shortfall = new Float64Array(capacity);
-  const woodPerArea = new Float64Array(capacity);
-  const added = new Float64Array(capacity);
-  const parent = new Int32Array(capacity);
-  const slot = new Int32Array(capacity);
-  const { sapwoodPerFoliage, sapwoodTurnover } = species.carbon;
-  const woodKgPerM3 = species.wood.densityKgM3 * (1 + species.carbon.coarseRootShare);
-  let n = 0;
-  let base = 0;
-  return {
-    prepare(state, foliageAbove, nodes, count) {
-      slot.fill(-1, 0, state.nodeCount);
-      for (let k = 0; k < count; k += 1) {
-        for (let i = nodes[k] ?? -1; i >= 0 && (slot[i] ?? 0) < 0; i = state.parent[i] ?? -1) slot[i] = 0;
+  return new PipeCostWalk(species, capacity);
+}
+
+// A class rather than closures, so the solve's calls stay inlined however many plants are alive.
+class PipeCostWalk implements PipeCost {
+  private readonly shortfall: Float64Array;
+  private readonly woodPerArea: Float64Array;
+  private readonly added: Float64Array;
+  private readonly parent: Int32Array;
+  private readonly slot: Int32Array;
+  /** Per path node: the nearest spare-sapwood node at or below it in the tree, as a walk slot. */
+  private readonly spare: Int32Array;
+  /** Per path node: sapwood-per-foliage times the wood of every short node from it down to the root. */
+  private readonly linearWood: Float64Array;
+  private readonly sapwoodPerFoliage: number;
+  private readonly sapwoodTurnover: number;
+  private readonly woodKgPerM3: number;
+  private n = 0;
+  private base = 0;
+  private linear = 0;
+
+  constructor(species: PlantSpecies, capacity: number) {
+    this.shortfall = new Float64Array(capacity);
+    this.woodPerArea = new Float64Array(capacity);
+    this.added = new Float64Array(capacity);
+    this.parent = new Int32Array(capacity);
+    this.slot = new Int32Array(capacity);
+    this.spare = new Int32Array(capacity);
+    this.linearWood = new Float64Array(capacity);
+    this.sapwoodPerFoliage = species.carbon.sapwoodPerFoliage;
+    this.sapwoodTurnover = species.carbon.sapwoodTurnover;
+    this.woodKgPerM3 = species.wood.densityKgM3 * (1 + species.carbon.coarseRootShare);
+  }
+
+  prepare(state: GrowthState, foliageAbove: Float64Array, nodes: Int32Array, count: number): void {
+    const { slot, spare, linearWood, parent, shortfall, woodPerArea, sapwoodPerFoliage, sapwoodTurnover, woodKgPerM3 } = this;
+    slot.fill(-1, 0, state.nodeCount);
+    for (let k = 0; k < count; k += 1) {
+      for (let i = nodes[k] ?? -1; i >= 0 && (slot[i] ?? 0) < 0; i = state.parent[i] ?? -1) slot[i] = 0;
+    }
+    let n = 0;
+    let base = 0;
+    for (let i = 0; i < state.nodeCount; i += 1) {
+      const dead = ((state.flags[i] ?? 0) & NODE_DEAD) !== 0;
+      const need = dead ? Number.NEGATIVE_INFINITY : sapwoodPerFoliage * (foliageAbove[i] ?? 0) - (state.sapArea[i] ?? 0) * (1 - sapwoodTurnover);
+      const wood = dead ? 0 : (state.length[i] ?? 0) * woodKgPerM3;
+      if ((slot[i] ?? -1) < 0) {
+        if (need > 0) base += need * wood;
+        continue;
       }
-      n = 0;
-      base = 0;
-      for (let i = 0; i < state.nodeCount; i += 1) {
-        const dead = ((state.flags[i] ?? 0) & NODE_DEAD) !== 0;
-        const need = dead ? Number.NEGATIVE_INFINITY : sapwoodPerFoliage * (foliageAbove[i] ?? 0) - (state.sapArea[i] ?? 0) * (1 - sapwoodTurnover);
-        const wood = dead ? 0 : (state.length[i] ?? 0) * woodKgPerM3;
-        if ((slot[i] ?? -1) < 0) {
-          if (need > 0) base += need * wood;
-          continue;
-        }
-        slot[i] = n;
-        const p = state.parent[i] ?? -1;
-        parent[n] = p >= 0 ? (slot[p] ?? -1) : -1;
-        shortfall[n] = need;
-        woodPerArea[n] = wood;
-        n += 1;
+      const p = state.parent[i] ?? -1;
+      const above = p >= 0 ? (spare[p] ?? -1) : -1;
+      const carried = p >= 0 ? (linearWood[p] ?? 0) : 0;
+      if (need >= 0) {
+        base += need * wood;
+        spare[i] = above;
+        linearWood[i] = carried + sapwoodPerFoliage * wood;
+        continue;
       }
-    },
-    begin() {
-      // total() leaves `added` zeroed behind it.
-    },
-    add(node, leafAreaM2) {
-      const at = slot[node] ?? -1;
-      if (at >= 0) added[at] = (added[at] ?? 0) + leafAreaM2;
-    },
-    total() {
-      let carbon = base;
-      for (let i = n - 1; i >= 0; i -= 1) {
-        const extra = added[i] ?? 0;
-        added[i] = 0;
-        const need = (shortfall[i] ?? 0) + sapwoodPerFoliage * extra;
-        if (need > 0) carbon += need * (woodPerArea[i] ?? 0);
-        const p = parent[i] ?? -1;
-        if (p >= 0 && extra > 0) added[p] = (added[p] ?? 0) + extra;
-      }
-      return carbon;
-    },
-  };
+      spare[i] = n;
+      linearWood[i] = carried;
+      parent[n] = above;
+      shortfall[n] = need;
+      woodPerArea[n] = wood;
+      n += 1;
+    }
+    this.n = n;
+    this.base = base;
+  }
+
+  begin(): void {
+    // total() leaves `added` zeroed behind it.
+    this.linear = 0;
+  }
+
+  add(node: number, leafAreaM2: number): void {
+    this.linear += leafAreaM2 * (this.linearWood[node] ?? 0);
+    const at = this.spare[node] ?? -1;
+    if (at >= 0) this.added[at] = (this.added[at] ?? 0) + leafAreaM2;
+  }
+
+  total(): number {
+    const { added, shortfall, woodPerArea, parent, sapwoodPerFoliage } = this;
+    let carbon = this.base + this.linear;
+    for (let i = this.n - 1; i >= 0; i -= 1) {
+      const extra = added[i] ?? 0;
+      added[i] = 0;
+      const need = (shortfall[i] ?? 0) + sapwoodPerFoliage * extra;
+      if (need > 0) carbon += need * (woodPerArea[i] ?? 0);
+      const p = parent[i] ?? -1;
+      if (p >= 0 && extra > 0) added[p] = (added[p] ?? 0) + extra;
+    }
+    return carbon;
+  }
 }
