@@ -1,5 +1,5 @@
 // @skill jgengine-world
-import { bytesToBase64, base64ToBytes } from "../plants/growth/growthState";
+import { decodeFireArray, encodeFireArray } from "./fireArrays";
 import { seededRng } from "../random/rng";
 import { CANOPY_HEAT_KJ_KG, assessCrownFire, canopyFuelLoad, crownFlameLength, crownInitiationIntensity, type CanopyFuel } from "./crownFire";
 import { ANDERSON_FUEL_MODELS, totalFuelLoad, type FuelModel, type FuelMoisture } from "./fuelModels";
@@ -147,7 +147,6 @@ export interface FireLandscapeSnapshot {
   version: 1;
   time: number;
   rng: number;
-  epoch: number;
   fuel: string;
   arrival: string;
   tentative: string;
@@ -181,6 +180,9 @@ export interface FireLandscape {
   readonly cols: number;
   readonly rows: number;
   readonly cellSize: number;
+  /** World position of the grid's (0,0) corner. */
+  readonly originX: number;
+  readonly originZ: number;
   /** Simulation clock, s. */
   readonly time: number;
   readonly layers: FireLayers;
@@ -190,6 +192,9 @@ export interface FireLandscape {
   ignite(col: number, row: number, time?: number): void;
   /** Light the cell under a world position; false when it is off the grid. */
   igniteAt(x: number, z: number, time?: number): boolean;
+  /** Put out a flaming or smouldering cell now; false when it is not burning. Fronts it already launched still
+   * arrive unless the fuel ahead cannot burn (wet it through the moisture field first). */
+  extinguish(col: number, row: number): boolean;
   /** Change a cell's fuel (a dug line, a cleared yard, new growth). */
   setFuel(col: number, row: number, fuelIndex: number): void;
   /** Feed fuel moisture per cell; `null` uses the weather's moisture everywhere. */
@@ -314,16 +319,6 @@ class EventHeap {
     this.cells[i] = lc;
     return top;
   }
-}
-
-function encode(array: { buffer: ArrayBufferLike; byteOffset: number; byteLength: number }): string {
-  return bytesToBase64(new Uint8Array(array.buffer, array.byteOffset, array.byteLength));
-}
-
-function decodeInto(text: string, target: Float64Array | Float32Array | Uint8Array, name: string): void {
-  const bytes = base64ToBytes(text);
-  if (bytes.byteLength !== target.byteLength) throw new Error(`fire snapshot ${name} has the wrong size`);
-  new Uint8Array(target.buffer, target.byteOffset, target.byteLength).set(bytes);
 }
 
 /**
@@ -641,7 +636,7 @@ export function createFireLandscape(config: FireLandscapeConfig): FireLandscape 
     stats.ignitions++;
     const f = fuels[fuel[i] ?? 0];
     const crossed = crossRate[i] ?? 0;
-    const rate = crossed > 0 ? crossed : Math.max(bHead[i] ?? 0, 1e-6);
+    const rate = crossed > 0 ? crossed : (bHead[i] ?? 0);
     const k = bKind[i] ?? 0;
     kind[i] = k;
     const c = canopyOf[i] ?? -1;
@@ -751,6 +746,12 @@ export function createFireLandscape(config: FireLandscapeConfig): FireLandscape 
       const i = heap.pop();
       if ((arrival[i] ?? Infinity) < Infinity || at > (tentative[i] ?? Infinity)) continue;
       events++;
+      // Fuel that cannot burn now (soaked since the front was scheduled, or lit while wet) does not catch.
+      behaviour(i);
+      if ((bHead[i] ?? 0) <= 0) {
+        tentative[i] = Infinity;
+        continue;
+      }
       igniteCell(i, at, weather, stats);
     }
     time = target;
@@ -771,6 +772,21 @@ export function createFireLandscape(config: FireLandscapeConfig): FireLandscape 
     schedule(i, at, 0);
   }
 
+  function extinguish(col: number, row: number): boolean {
+    const i = index(col, row);
+    const s = state[i] ?? 0;
+    if (s !== 1 && s !== 2) return false;
+    const start = arrival[i] ?? time;
+    const end = burnEnd[i] ?? time;
+    const progress = end > start ? Math.min(1, (time - start) / (end - start)) : 1;
+    consumed[i] = (consumed[i] ?? 0) * progress;
+    char[i] = (char[i] ?? 0) * progress;
+    flameEnd[i] = time;
+    burnEnd[i] = time;
+    updateActive(time);
+    return true;
+  }
+
   function rebuildHeap(): void {
     heap.clear();
     for (let i = 0; i < n; i++) if ((arrival[i] ?? Infinity) === Infinity && (tentative[i] ?? Infinity) < Infinity) heap.push(tentative[i] ?? Infinity, i);
@@ -782,12 +798,15 @@ export function createFireLandscape(config: FireLandscapeConfig): FireLandscape 
     cols,
     rows,
     cellSize,
+    originX,
+    originZ,
     get time() {
       return time;
     },
     layers,
     step,
     ignite,
+    extinguish,
     igniteAt(x, z, at) {
       const i = cellOf(x, z);
       if (i < 0) return false;
@@ -836,51 +855,50 @@ export function createFireLandscape(config: FireLandscapeConfig): FireLandscape 
         version: 1,
         time,
         rng: rng.state(),
-        epoch,
-        fuel: encode(fuel),
-        arrival: encode(arrival),
-        tentative: encode(tentative),
-        crossRate: encode(crossRate),
-        flameEnd: encode(flameEnd),
-        burnEnd: encode(burnEnd),
-        state: encode(state),
-        kind: encode(kind),
-        spotted: encode(spotted),
-        intensity: encode(intensity),
-        flameLength: encode(flameLen),
-        scorchHeight: encode(scorch),
-        char: encode(char),
-        ash: encode(ash),
-        fuelLeft: encode(fuelLeft),
-        consumed: encode(consumed),
+        fuel: encodeFireArray(fuel),
+        arrival: encodeFireArray(arrival),
+        tentative: encodeFireArray(tentative),
+        crossRate: encodeFireArray(crossRate),
+        flameEnd: encodeFireArray(flameEnd),
+        burnEnd: encodeFireArray(burnEnd),
+        state: encodeFireArray(state),
+        kind: encodeFireArray(kind),
+        spotted: encodeFireArray(spotted),
+        intensity: encodeFireArray(intensity),
+        flameLength: encodeFireArray(flameLen),
+        scorchHeight: encodeFireArray(scorch),
+        char: encodeFireArray(char),
+        ash: encodeFireArray(ash),
+        fuelLeft: encodeFireArray(fuelLeft),
+        consumed: encodeFireArray(consumed),
         active: [...active],
       };
     },
     restore(s) {
       if (s.version !== 1) throw new Error("fire snapshot version is not supported");
       if (!Number.isFinite(s.time) || s.time < 0) throw new Error("fire snapshot time is invalid");
-      decodeInto(s.fuel, fuel, "fuel");
+      decodeFireArray(s.fuel, fuel, "fuel");
       for (let i = 0; i < n; i++) if ((fuel[i] ?? 0) >= fuels.length) throw new Error("fire snapshot fuel index is outside the palette");
-      decodeInto(s.arrival, arrival, "arrival");
-      decodeInto(s.tentative, tentative, "tentative");
-      decodeInto(s.crossRate, crossRate, "crossRate");
-      decodeInto(s.flameEnd, flameEnd, "flameEnd");
-      decodeInto(s.burnEnd, burnEnd, "burnEnd");
-      decodeInto(s.state, state, "state");
-      decodeInto(s.kind, kind, "kind");
-      decodeInto(s.spotted, spotted, "spotted");
-      decodeInto(s.intensity, intensity, "intensity");
-      decodeInto(s.flameLength, flameLen, "flameLength");
-      decodeInto(s.scorchHeight, scorch, "scorchHeight");
-      decodeInto(s.char, char, "char");
-      decodeInto(s.ash, ash, "ash");
-      decodeInto(s.fuelLeft, fuelLeft, "fuelLeft");
-      decodeInto(s.consumed, consumed, "consumed");
+      decodeFireArray(s.arrival, arrival, "arrival");
+      decodeFireArray(s.tentative, tentative, "tentative");
+      decodeFireArray(s.crossRate, crossRate, "crossRate");
+      decodeFireArray(s.flameEnd, flameEnd, "flameEnd");
+      decodeFireArray(s.burnEnd, burnEnd, "burnEnd");
+      decodeFireArray(s.state, state, "state");
+      decodeFireArray(s.kind, kind, "kind");
+      decodeFireArray(s.spotted, spotted, "spotted");
+      decodeFireArray(s.intensity, intensity, "intensity");
+      decodeFireArray(s.flameLength, flameLen, "flameLength");
+      decodeFireArray(s.scorchHeight, scorch, "scorchHeight");
+      decodeFireArray(s.char, char, "char");
+      decodeFireArray(s.ash, ash, "ash");
+      decodeFireArray(s.fuelLeft, fuelLeft, "fuelLeft");
+      decodeFireArray(s.consumed, consumed, "consumed");
       if (!s.active.every((i) => Number.isInteger(i) && i >= 0 && i < n)) throw new Error("fire snapshot active cells are invalid");
       active = [...s.active];
       time = s.time;
       rng.restore(s.rng);
-      epoch = Math.max(epoch, s.epoch) + 1;
+      epoch++;
       paletteBeds.clear();
       fm10Bed = undefined;
       rebuildHeap();

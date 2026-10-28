@@ -330,6 +330,17 @@ code is copied. Its tests check it against the expected outputs of the BehavePlu
   size and shape*, INT-305; Catchpole, de Mestre & Gill 1982, spread rate along an elliptical
   perimeter, *Combustion Science and Technology* 27; Turner & Lawson 1978, the 10-m to 20-ft wind ratio, Canadian Forestry Service BC-X-177; Van Wagner 1973, crown scorch height, *Canadian
   Journal of Forest Research* 3.
+- **Fuel moisture** (`fire/fuelMoisture.ts`, implemented from the papers): Simard 1968, equilibrium
+  moisture content of wood, USDA FPL; Cohen & Deeming 1985, *The National Fire-Danger Rating System:
+  basic equations*, PSW-82 (USFS), for fuel-level sun corrections, time lags and rain boundaries;
+  Byram 1963, the time-lag concept; Rothermel 1983, *How to predict the spread and intensity of
+  forest and range fires*, INT-143, reference fine fuel moisture table (the test reference); Jolly,
+  Nemani & Running 2005, growing season index, *Global Change Biology* 11; Jolly et al. 2016 / NFDRS
+  2016, live fuel moisture ranges; Tetens 1930, saturation vapour pressure.
+- **Fuel from plants and ground** (`fire/fuelSources.ts`): Scott & Reinhardt 2001, *Assessing crown
+  fire potential*, RMRS-RP-29 (USFS), available canopy fuel as foliage plus half the fine branchwood;
+  Jenkins, Chojnacky, Heath & Birdsey 2003, national-scale biomass estimators, *Forest Science* 49
+  and NE-GTR-319 (USFS), the test reference for foliage mass.
 
 ## Game and level design research
 

@@ -5,8 +5,10 @@ import type { EditorSimulation } from "@jgengine/core/editor/simulation";
 import { effectNames } from "@jgengine/core/vfx/effectLibrary";
 import type { AuthoredWeatherConfig, AuthoredWeatherMode } from "@jgengine/core/weather/authoredWeather";
 import { withField } from "@jgengine/core/data/withField";
+import { ANDERSON_FUEL_MODELS, MOISTURE_SCENARIOS, NON_BURNABLE_FUEL_MODELS, SCOTT_BURGAN_FUEL_MODELS } from "@jgengine/core/fire/fuelModels";
 import { useStoreSelector } from "./useStoreSelector";
 
+const fuelCodes = [...Object.keys(SCOTT_BURGAN_FUEL_MODELS), ...Object.keys(ANDERSON_FUEL_MODELS), ...Object.keys(NON_BURNABLE_FUEL_MODELS)];
 const modes: AuthoredWeatherMode[] = ["clear", "rain", "snow", "mixed", "dust"];
 
 function NumberInput({ label, value, onChange, min = 0, step = 0.1 }: { label: string; value: number; onChange: (value: number) => void; min?: number; step?: number }) {
@@ -118,12 +120,12 @@ export function SimulationInspector({ session, creatorPolicy }: { session: Edito
       {(simulation?.fires ?? []).map((area, index) => <div key={area.id} className="space-y-1 border-l border-neutral-700 pl-2"><span>{area.id}</span>
         {(["x", "y", "z"] as const).map((axis) => <NumberInput key={axis} label={`${area.id} ${axis.toUpperCase()} metres`} min={-1e6} value={area.position[axis]} onChange={(value) => update({ ...simulation, fires: simulation!.fires!.map((row, i) => i === index ? { ...row, position: { ...row.position, [axis]: value } } : row) })} />)}
         <NumberInput label={`${area.id} cell size metres`} value={area.config.cellSize} onChange={(cellSize) => update({ ...simulation, fires: simulation!.fires!.map((row, i) => i === index ? { ...row, config: { ...row.config, cellSize } } : row) })} />
-        <NumberInput label={`${area.id} fuel consumed/second`} value={area.config.burnRate ?? 0.25} onChange={(burnRate) => update({ ...simulation, fires: simulation!.fires!.map((row, i) => i === index ? { ...row, config: { ...row.config, burnRate } } : row) })} />
-        <NumberInput label={`${area.id} rain cooling heat/second`} value={area.extinguishRate ?? 0} onChange={(extinguishRate) => update({ ...simulation, fires: simulation!.fires!.map((row, i) => i === index ? { ...row, extinguishRate } : row) })} />
+        {typeof area.fuel !== "object" ? <label>Ground fuel<select aria-label={`${area.id} fuel model`} value={area.fuel ?? "GR2"} onChange={(event) => update({ ...simulation, fires: simulation!.fires!.map((row, i) => i === index ? { ...row, fuel: event.target.value } : row) })}>{fuelCodes.map((code) => <option key={code}>{code}</option>)}</select></label> : <span>Per-cell fuel map</span>}
+        <label>Moisture<select aria-label={`${area.id} moisture scenario`} value={area.moisture ?? "D2L2"} onChange={(event) => update({ ...simulation, fires: simulation!.fires!.map((row, i) => i === index ? { ...row, moisture: event.target.value } : row) })}>{Object.keys(MOISTURE_SCENARIOS).map((code) => <option key={code}>{code}</option>)}</select></label>
         <label><input type="checkbox" checked={(area.ignitions?.length ?? 0) > 0} onChange={(event) => update({ ...simulation, fires: simulation!.fires!.map((row, i) => i === index ? { ...row, ignitions: event.target.checked ? [{ col: 0, row: 0 }] : [] } : row) })} /> Ignite first cell on play</label>
         <button type="button" onClick={() => update({ ...simulation, fires: simulation!.fires!.filter((_, i) => i !== index), ...(simulation?.emitters === undefined ? {} : { emitters: simulation.emitters.map((emitter) => emitter.fireAreaId === area.id ? withField(emitter, "fireAreaId", undefined) : emitter) }) })}>Remove fire area</button>
       </div>)}
-      <button type="button" onClick={() => update({ ...simulation, fires: [...(simulation?.fires ?? []), { id: id("fire", simulation?.fires ?? []), position: { x: 0, y: 0, z: 0 }, config: { cols: 4, rows: 4, cellSize: 1 }, ignitions: [] }] })}>Add fire area</button>
+      <button type="button" onClick={() => update({ ...simulation, fires: [...(simulation?.fires ?? []), { id: id("fire", simulation?.fires ?? []), position: { x: 0, y: 0, z: 0 }, config: { cols: 4, rows: 4, cellSize: 1 }, fuel: "GR2", moisture: "D2L2", ignitions: [] }] })}>Add fire area</button>
     </fieldset>
     <fieldset hidden={!allowFlocks} className="space-y-2"><legend>Flock habitats</legend>
       {(simulation?.habitats ?? []).map((habitat, index) => <div key={habitat.id} className="space-y-1 border-l border-neutral-700 pl-2"><span>{habitat.id} · {habitat.species}</span>

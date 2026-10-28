@@ -599,6 +599,10 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `canopyFuelLoad` (function) · `import { canopyFuelLoad } from "@jgengine/core/fire/crownFire"`
 
+## fire-canopy-raster — turn placed plants' crown fuel into per-cell canopy stands for a fire landscape
+
+- `rasterizeCanopyFuel` (function) · `import { rasterizeCanopyFuel } from "@jgengine/core/fire/fuelSources"`
+
 ## fire-crown-fire — classify a surface fire as surface, torching, crowning or conditional crown fire and give the crown rate and intensity
 
 - `assessCrownFire` (function) · `import { assessCrownFire } from "@jgengine/core/fire/crownFire"`
@@ -623,9 +627,17 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `ellipseEccentricity` (function) · `import { ellipseEccentricity } from "@jgengine/core/fire/surfaceFire"`
 
+## fire-equilibrium-moisture — equilibrium moisture of dead fuel from air temperature and humidity
+
+- `equilibriumMoistureContent` (function) · `import { equilibriumMoistureContent } from "@jgengine/core/fire/fuelMoisture"`
+
 ## fire-flame-length — Byram flame length from fireline intensity
 
 - `flameLength` (function) · `import { flameLength } from "@jgengine/core/fire/surfaceFire"`
+
+## fire-fuel-level-weather — temperature and humidity at sunlit fuel from air values, cloud and sun
+
+- `fuelLevelWeather` (function) · `import { fuelLevelWeather } from "@jgengine/core/fire/fuelMoisture"`
 
 ## fire-fuel-load — total surface fuel load of a fuel model
 
@@ -638,6 +650,14 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 ## fire-fuel-models — the 40 Scott & Burgan 2005 surface fuel models, the 13 Anderson 1982 models and the non-burnable codes, in metric units
 
 - `SCOTT_BURGAN_FUEL_MODELS` (const) · `import { SCOTT_BURGAN_FUEL_MODELS } from "@jgengine/core/fire/fuelModels"`
+
+## fire-fuel-moisture — per-cell dead and live fuel moisture that dries in sun and heat and wets in rain, as a fire moisture field
+
+- `createFuelMoistureModel` (function) · `import { createFuelMoistureModel } from "@jgengine/core/fire/fuelMoisture"`
+
+## fire-growing-season-index — Jolly 2005 growing season index from minimum temperature, vapour pressure deficit and day length
+
+- `growingSeasonIndex` (function) · `import { growingSeasonIndex } from "@jgengine/core/fire/fuelMoisture"`
 
 ## fire-herb-curing — share of live herbs cured to dead fuel at a herb moisture (Scott & Burgan 2005)
 
@@ -657,7 +677,7 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 ## fire-landscape — grow a wildfire over fuel, terrain and canopy with crown fire, ember spotting and burnout; snapshot, restore, retune
 
-- `createFireLandscape` (function) · `import { createFireLandscape } from "@jgengine/core/fire/fireLandscape"`
+- `createFireLandscape` (function) · `import { createFireLandscape } from "@jgengine/core/world"`
 
 ## fire-length-to-breadth — Anderson 1983 surface fire ellipse shape from effective wind
 
@@ -667,6 +687,10 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `normalSpreadRate` (function) · `import { normalSpreadRate } from "@jgengine/core/fire/surfaceFire"`
 
+## fire-plant-fuel — crown fuel (foliage and fine branchwood mass, height, base, radius) of a grown plant
+
+- `plantCanopyFuel` (function) · `import { plantCanopyFuel } from "@jgengine/core/fire/fuelSources"`
+
 ## fire-ray-spread — rate a fire travels along a ray from its ignition point
 
 - `rayFromIgnitionRate` (function) · `import { rayFromIgnitionRate } from "@jgengine/core/fire/surfaceFire"`
@@ -674,6 +698,14 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 ## fire-scorch-height — Van Wagner crown scorch height from intensity, wind and air temperature
 
 - `scorchHeight` (function) · `import { scorchHeight } from "@jgengine/core/fire/surfaceFire"`
+
+## fire-snapshot-arrays — base64 typed-array codec for fire and fuel moisture snapshots
+
+- `encodeFireArray` (function) · `import { encodeFireArray } from "@jgengine/core/fire/fireArrays"`
+
+## fire-snapshot-arrays-decode — restore a typed array from a fire snapshot's base64
+
+- `decodeFireArray` (function) · `import { decodeFireArray } from "@jgengine/core/fire/fireArrays"`
 
 ## fire-spotting-surface — maximum ember spotting distance from a surface fire's flame length and wind
 
@@ -683,6 +715,10 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `torchingTreeSpotDistance` (function) · `import { torchingTreeSpotDistance } from "@jgengine/core/fire/spotting"`
 
+## fire-sun-exposure — per-cell sun on surface fuel from terrain slope, aspect and canopy cover
+
+- `sunExposure` (function) · `import { sunExposure } from "@jgengine/core/fire/fuelSources"`
+
 ## fire-surface-fuelbed — reduce a fuel model and moisture to Rothermel reaction intensity, residence time and no-wind spread rate
 
 - `surfaceFuelbed` (function) · `import { surfaceFuelbed } from "@jgengine/core/fire/surfaceFire"`
@@ -691,9 +727,17 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `surfaceSpread` (function) · `import { surfaceSpread } from "@jgengine/core/fire/surfaceFire"`
 
+## fire-terrain-fuel — sample terrain height and ground-cover fuel codes into a fire landscape's elevation and fuel grids
+
+- `sampleFireGround` (function) · `import { sampleFireGround } from "@jgengine/core/fire/fuelSources"`
+
 ## fire-twenty-foot-wind — 20-ft open wind from a 10-m wind
 
 - `twentyFootWind` (function) · `import { twentyFootWind } from "@jgengine/core/fire/windAdjustment"`
+
+## fire-vapor-pressure-deficit — vapour pressure deficit from air temperature and humidity
+
+- `vaporPressureDeficit` (function) · `import { vaporPressureDeficit } from "@jgengine/core/fire/fuelMoisture"`
 
 ## fire-wind-adjustment — convert 20-ft or 10-m open wind to midflame wind over open or sheltered fuel
 

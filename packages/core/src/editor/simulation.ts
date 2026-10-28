@@ -4,7 +4,7 @@ import { validateAuthoredWeather } from "@jgengine/core/weather/authoredWeather"
 import { validateEmitterConfig, type EmitterConfig } from "../vfx/particles";
 import { effectNames } from "../vfx/effectLibrary";
 import { validateParticleAttachOptions, type ParticleAttachOptions } from "../vfx/particleDirector";
-import type { FireGridConfig } from "@jgengine/core/weather/weather";
+import { MOISTURE_SCENARIOS, standardFuelModel } from "../fire/fuelModels";
 import type { FlockConfig } from "../ai/flock";
 import type { EditorDocument, EditorVec3 } from "./types";
 
@@ -21,14 +21,19 @@ export interface AuthoredEmitter {
   options?: ParticleAttachOptions;
 }
 
-/** A bounded fire grid; fuel and damage policy remain game content. */
+/** A bounded landscape fire (`@jgengine/core/fire`); damage policy remains game content. */
 export interface AuthoredFireArea {
   id: string;
-  /** Rain cooling in heat units/second at full exposure; zero disables automatic extinguishing. */
-  extinguishRate?: number;
+  /** World position of the grid's (0,0) corner; `y` is the ground the fire burns on. */
   position: EditorVec3;
-  config: Omit<FireGridConfig, "fuelAt" | "origin" | "wind">;
-  fuel?: readonly number[];
+  /** Grid size: at most 256 × 256 and 16384 cells, cell edge in metres. */
+  config: { cols: number; rows: number; cellSize: number };
+  /** Standard fuel model code (`GR2`, `TU5`, `NB9`, ...) for every cell, or one per cell row-major. Default `GR2`. */
+  fuel?: string | readonly string[];
+  /** Starting dead and live fuel moisture as a Scott & Burgan scenario (`D1L1`..`D4L4`). Default `D2L2`. */
+  moisture?: string;
+  /** Air temperature (°C) and relative humidity (0..1) under clear authored weather. Default 25 °C, 0.35. */
+  climate?: { airTemperatureC: number; relativeHumidity: number };
   ignitions?: readonly { col: number; row: number }[];
 }
 
@@ -162,22 +167,27 @@ export function decodeEditorSimulation(value: unknown, document?: Pick<EditorDoc
     }
   });
   rows(source["fires"], "$.simulation.fires", 32, (row, path) => {
-    known(row, ["id", "position", "config", "fuel", "ignitions", "extinguishRate"], path);
-    if (row["extinguishRate"] !== undefined) finite(row["extinguishRate"], `${path}.extinguishRate`, 0);
+    known(row, ["id", "position", "config", "fuel", "moisture", "climate", "ignitions"], path);
     const config = object(row["config"], `${path}.config`);
-    known(config, ["cols", "rows", "cellSize", "ignitionThreshold", "spreadRate", "burnRate", "windBias", "maxCells"], `${path}.config`);
+    known(config, ["cols", "rows", "cellSize"], `${path}.config`);
     const cols = finite(config["cols"], `${path}.config.cols`, 1, 256);
     const count = cols * finite(config["rows"], `${path}.config.rows`, 1, 256);
     if (!Number.isInteger(cols) || !Number.isInteger(config["rows"]) || count > 16_384) throw new Error(`${path}.config: expected integral dimensions with at most 16384 cells`);
     finite(config["cellSize"], `${path}.config.cellSize`, Number.EPSILON);
-    if (config["maxCells"] !== undefined) {
-      const capacity = finite(config["maxCells"], `${path}.config.maxCells`, count, 1_048_576);
-      if (!Number.isInteger(capacity)) throw new Error(`${path}.config.maxCells: expected an integer`);
+    const fuel = row["fuel"];
+    if (fuel !== undefined) {
+      const codes = typeof fuel === "string" ? [fuel] : fuel;
+      if (!Array.isArray(codes) || (typeof fuel !== "string" && codes.length !== count)) throw new Error(`${path}.fuel: expected a fuel model code or ${count} cell codes`);
+      const distinct = new Set<unknown>(codes);
+      if (distinct.size > 255) throw new Error(`${path}.fuel: at most 255 distinct fuel models`);
+      for (const code of distinct) if (typeof code !== "string" || standardFuelModel(code) === undefined) throw new Error(`${path}.fuel: unknown fuel model ${String(code)}`);
     }
-    for (const key of ["ignitionThreshold", "spreadRate", "burnRate", "windBias"]) if (config[key] !== undefined) finite(config[key], `${path}.config.${key}`, 0, key === "windBias" ? 1 : Infinity);
-    if (row["fuel"] !== undefined) {
-      if (!Array.isArray(row["fuel"]) || row["fuel"].length !== count) throw new Error(`${path}.fuel: expected ${count} cell values`);
-      row["fuel"].forEach((fuel, index) => finite(fuel, `${path}.fuel[${index}]`, 0, 1));
+    if (row["moisture"] !== undefined && (typeof row["moisture"] !== "string" || MOISTURE_SCENARIOS[row["moisture"]] === undefined)) throw new Error(`${path}.moisture: expected a moisture scenario D1L1..D4L4`);
+    if (row["climate"] !== undefined) {
+      const climate = object(row["climate"], `${path}.climate`);
+      known(climate, ["airTemperatureC", "relativeHumidity"], `${path}.climate`);
+      finite(climate["airTemperatureC"], `${path}.climate.airTemperatureC`, -60, 60);
+      finite(climate["relativeHumidity"], `${path}.climate.relativeHumidity`, 0, 1);
     }
     if (row["ignitions"] !== undefined) {
       if (!Array.isArray(row["ignitions"]) || row["ignitions"].length > count) throw new Error(`${path}.ignitions: expected at most ${count} cells`);
