@@ -39,8 +39,8 @@ export const world = environment({
       sandColor: "#d8c58f",
       // Generated PBR ground: pale beach sand with grain and pebbles, soil-and-grass inland, cliff rock on steep slopes.
       surfaces: {
-        ground: { preset: "grass", seed: "the-island-ground", tile: 5, tint: 0.65 },
-        sand: { preset: "beach-sand", seed: "the-island-beach", tile: 3.5 },
+        ground: { preset: "grass", seed: "the-island-ground", tile: 5, tint: 0.9 },
+        sand: { preset: "beach-sand", seed: "the-island-beach", tile: 3.5, tint: 0.5 },
         rock: { preset: "cliff", seed: "the-island-cliff", tile: 9 },
       },
     },

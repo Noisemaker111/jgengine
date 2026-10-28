@@ -99,7 +99,7 @@ export const SURFACE_MATERIAL_SCHEMA = defineParamSchema({
     { id: "dry-grass", label: "Dry grass", values: { kind: "grass", color: "#8a6f4a", color2: "#5c4632", coverColor: "#b4a05a", cover: 0.6, stones: 0.15, colorVariance: 0.25, roughness: 0.95 } },
     { id: "soil", label: "Forest soil", values: { kind: "soil", color: "#5e4632", color2: "#3a2a1e", coverColor: "#7a5a2c", stones: 0.25, stoneSize: 0.35, cracks: 0.15, cover: 0.45, roughness: 0.92, relief: 1 } },
     { id: "dirt", label: "Dry dirt", values: { kind: "soil", color: "#8a6a4a", color2: "#5a4430", coverColor: "#9a8460", stones: 0.4, stoneSize: 0.4, cracks: 0.55, cover: 0.1, roughness: 0.95, relief: 1 } },
-    { id: "mud", label: "Mud", values: { kind: "mud", color: "#6a5440", color2: "#4a3a2a", coverColor: "#5a5a3a", wetness: 0.7, cracks: 0.1, stones: 0.1, ripples: 0.5, roughness: 0.75, relief: 0.9 } },
+    { id: "mud", label: "Mud", values: { kind: "mud", color: "#806a52", color2: "#5e4c3a", coverColor: "#5a5a3a", wetness: 0.7, cracks: 0.1, stones: 0.1, ripples: 0.5, roughness: 0.75, relief: 0.9 } },
     { id: "cracked-mud", label: "Cracked mud", values: { kind: "mud", color: "#7a6448", color2: "#4a3a2a", wetness: 0.1, cracks: 0.9, stones: 0.05, ripples: 0.1, roughness: 0.9, relief: 1.2 } },
     { id: "rock", label: "Granite", values: { kind: "rock", color: "#8c8a84", color2: "#5e5c58", coverColor: "#a8a878", cracks: 0.5, ripples: 0.15, cover: 0.2, stones: 0.1, roughness: 0.82, relief: 1.2 } },
     { id: "cliff", label: "Cliff rock", values: { kind: "rock", color: "#7a756c", color2: "#4e4a44", coverColor: "#5c6e38", cracks: 0.7, ripples: 0.45, cover: 0.3, roughness: 0.86, relief: 1.4 } },

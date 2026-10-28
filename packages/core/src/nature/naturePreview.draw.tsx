@@ -14,10 +14,8 @@ function variantMesh({ definition, variant }: GeneratorPreviewProps): NatureMesh
 
 function NaturePreview(props: GeneratorPreviewProps) {
   const { definition, variant } = props;
-  const geometry = useMemo(() => {
-    const mesh = variantMesh({ definition, variant });
-    return mesh === null ? null : natureGeometry(mesh);
-  }, [definition, variant]);
+  const mesh = useMemo(() => variantMesh({ definition, variant }), [definition, variant]);
+  const geometry = useMemo(() => (mesh === null ? null : natureGeometry(mesh)), [mesh]);
   useEffect(() => () => geometry?.dispose(), [geometry]);
   if (geometry === null) return null;
   return (
@@ -26,14 +24,14 @@ function NaturePreview(props: GeneratorPreviewProps) {
         <circleGeometry args={[Math.max(1, (geometry.boundingSphere?.radius ?? 1) * 1.4), 24]} />
         <meshStandardMaterial color="#5a4b38" roughness={1} />
       </mesh>
-      <mesh geometry={geometry} material={natureMaterial()} castShadow receiveShadow />
+      <mesh geometry={geometry} material={natureMaterial(mesh?.surface)} castShadow receiveShadow />
     </>
   );
 }
 
 /** Registers the nature variant-tile preview and its instanced mesh builder. Called by `registerBuiltinSceneKindRenderers`. @internal */
 export function registerNatureDraw(): void {
-  registerGeneratorMesh(NATURE_OUTPUT, (output) => (isNatureMesh(output) ? [{ geometry: natureGeometry(output), material: natureMaterial() }] : null));
+  registerGeneratorMesh(NATURE_OUTPUT, (output) => (isNatureMesh(output) ? [{ geometry: natureGeometry(output), material: natureMaterial(output.surface) }] : null));
   registerGeneratorPreview(NATURE_OUTPUT, {
     Component: NaturePreview,
     frame: (props) => {

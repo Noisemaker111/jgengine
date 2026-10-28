@@ -685,7 +685,7 @@ export type TerrainSurfaceRole = "ground" | "sand" | "rock";
 export type ResolvedTerrainSurfaces = Partial<Record<TerrainSurfaceRole, ResolvedTerrainSurfaceLayer>>;
 
 const SURFACE_ROLE_DEFAULTS: Record<TerrainSurfaceRole, { tile: number; tint: number }> = {
-  ground: { tile: 5, tint: 0.6 },
+  ground: { tile: 5, tint: 0.8 },
   sand: { tile: 4, tint: 0 },
   rock: { tile: 8, tint: 0 },
 };

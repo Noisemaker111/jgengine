@@ -170,44 +170,60 @@ JgGen jgGenSample(float layer, vec2 p, float tile){
 #endif
   return g;
 }
+vec3 jgGenTilt;
+// Flat ground takes the map from above; slopes take it on their own face as well, so a hillside
+// never smears one texel down its length. The world-space tilt lands in jgGenTilt.
+JgGen jgGenProject(float layer, vec3 wp, float tile, bool antiTile){
+  vec3 an = abs(normalize(vJgWorldNormal));
+  float topW = smoothstep(0.55, 0.85, an.y);
+  JgGen g = JgGen(vec3(0.0), 0.0, vec2(0.0), 1.0, 1.0);
+  jgGenTilt = vec3(0.0);
+  if (topW > 0.0) {
+    if (antiTile) g = jgGenSample(layer, wp.xz, tile);
+    else g = jgGenRead(layer, wp.xz / tile);
+    jgGenTilt = vec3(g.tilt.x, 0.0, g.tilt.y);
+  }
+  if (topW < 1.0) {
+    bool xFace = an.x > an.z;
+    JgGen side = jgGenRead(layer, (xFace ? wp.zy : wp.xy) / tile);
+    vec3 sideTilt = xFace ? vec3(0.0, side.tilt.y, side.tilt.x) : vec3(side.tilt.x, side.tilt.y, 0.0);
+    if (topW <= 0.0) {
+      g = side;
+      jgGenTilt = sideTilt;
+    } else {
+      g.albedo = mix(side.albedo, g.albedo, topW);
+      g.height = mix(side.height, g.height, topW);
+      g.rough = mix(side.rough, g.rough, topW);
+      g.ao = mix(side.ao, g.ao, topW);
+      jgGenTilt = mix(sideTilt, jgGenTilt, topW);
+    }
+  }
+  return g;
+}
 #endif
 JgSurf jgSlot(int slot, vec3 baseTone, vec3 wp){
   jgSlotTilt = vec3(0.0);
   jgSlotAo = 1.0;
 #ifdef JG_GEN_GROUND
   if (slot == 0) {
-    JgGen g = jgGenSample(JG_GEN_GROUND, wp.xz, uGenTile.x);
+    JgGen g = jgGenProject(JG_GEN_GROUND, wp, uGenTile.x, true);
     JgSurf gs;
     gs.albedo = mix(g.albedo, g.albedo * baseTone / max(uGenMean0, vec3(1e-3)), uGenTint.x);
-    gs.height = g.height; gs.rough = g.rough; gs.bump = 0.0;
-    jgSlotTilt = vec3(g.tilt.x, 0.0, g.tilt.y);
+    // The map's height spans 0..1; the procedural surfaces sit near 0.2..0.6, so it is rescaled to
+    // that band or the generated ground would win every height-aware edge against painted layers.
+    gs.height = 0.2 + g.height * 0.4; gs.rough = g.rough; gs.bump = 0.0;
+    jgSlotTilt = jgGenTilt;
     jgSlotAo = g.ao;
     return gs;
   }
 #endif
 #ifdef JG_GEN_ROCK
   if (slot == 9) {
-    // Cliffs take the map on their own face (strata run level), flat tops from above.
-    vec3 n = normalize(vJgWorldNormal);
-    vec3 an = abs(n);
-    bool xFace = an.x > an.z;
-    JgGen side = jgGenRead(JG_GEN_ROCK, (xFace ? wp.zy : wp.xy) / uGenTile.z);
-    vec3 sideTilt = xFace ? vec3(0.0, side.tilt.y, side.tilt.x) : vec3(side.tilt.x, side.tilt.y, 0.0);
-    float topW = smoothstep(0.5, 0.85, an.y);
-    JgGen g = side;
-    vec3 tilt = sideTilt;
-    if (topW > 0.0) {
-      JgGen top = jgGenRead(JG_GEN_ROCK, wp.xz / uGenTile.z);
-      g.albedo = mix(side.albedo, top.albedo, topW);
-      g.height = mix(side.height, top.height, topW);
-      g.rough = mix(side.rough, top.rough, topW);
-      g.ao = mix(side.ao, top.ao, topW);
-      tilt = mix(sideTilt, vec3(top.tilt.x, 0.0, top.tilt.y), topW);
-    }
+    JgGen g = jgGenProject(JG_GEN_ROCK, wp, uGenTile.z, false);
     JgSurf rs;
     rs.albedo = mix(g.albedo, g.albedo * uRockColor / max(uGenMean2, vec3(1e-3)), uGenTint.z);
-    rs.height = g.height; rs.rough = g.rough; rs.bump = 0.0;
-    jgSlotTilt = tilt;
+    rs.height = 0.2 + g.height * 0.4; rs.rough = g.rough; rs.bump = 0.0;
+    jgSlotTilt = jgGenTilt;
     jgSlotAo = g.ao;
     return rs;
   }
@@ -552,7 +568,7 @@ if (jgSandW > 0.001) {
   JgGen jgSd = jgGenSample(JG_GEN_SAND, jgWp, uGenTile.y);
   // Along the shore edge the sand fills the ground's hollows first and the tall tufts stand out of it.
   float jgUnderH = jgS1.height * jgA1 + jgS2.height * jgA2;
-  jgSandW = clamp((jgSandW - 0.5) * 1.6 + 0.5 + (jgSd.height - jgUnderH) * 0.6, 0.0, 1.0) * smoothstep(0.0, 0.2, jgSandW);
+  jgSandW = clamp((jgSandW - 0.5) * 1.6 + 0.5 + (0.2 + jgSd.height * 0.4 - jgUnderH) * 0.6, 0.0, 1.0) * smoothstep(0.0, 0.2, jgSandW);
   vec3 jgSandC = mix(jgSd.albedo, jgSd.albedo * uSandColor / max(uGenMean1, vec3(1e-3)), uGenTint.y);
   jgCol = mix(jgCol, jgSandC * (0.94 + 0.12 * jgMacro), jgSandW);
   jgRough = mix(jgRough, jgSd.rough, jgSandW);

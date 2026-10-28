@@ -87,7 +87,7 @@ export interface TerrainSurfaceLayer extends SurfaceMaterialSpec {
   tile?: number;
   /**
    * 0..1 how much the terrain's own colour (biome tint and sweeps for ground, `sandColor`,
-   * `rockColor`) recolours the map while keeping its grain. Default 0.6 ground, 0 sand and rock.
+   * `rockColor`) recolours the map while keeping its grain. Default 0.8 ground (so biome tints carry), 0 sand and rock.
    */
   tint?: number;
 }
