@@ -126,8 +126,8 @@ export interface ObjectiveBannerHostProps {
 }
 
 /**
- * A full-screen overlay that renders an {@link ObjectiveBannerController} as the
- * classic transient centered title stamp — "WAVE 3", "VICTORY", "OBJECTIVE
+ * A full-screen overlay (or, with `placement: "inline"`, a block in a HUD slot) that renders an
+ * {@link ObjectiveBannerController} as the classic transient centered title stamp — "WAVE 3", "VICTORY", "OBJECTIVE
  * COMPLETE" — flying in, holding, and fading out. It subscribes to the model,
  * drives `advance()` on an animation frame (unless the game ticks it), and maps the
  * current banner's phase + progress to opacity/scale/translate. Reskin the base
