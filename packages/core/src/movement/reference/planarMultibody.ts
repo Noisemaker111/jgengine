@@ -39,6 +39,7 @@ export interface PlanarMultibody {
   kineticEnergy(q: ArrayLike<number>, u: ArrayLike<number>): number;
 }
 
+// stateless: only scratch buffers and an index of the segment tree; the body's state is the caller-held q and u.
 /**
  * Creates a {@link PlanarMultibody} from segments. Dynamics are Lagrange's equations in absolute coordinates:
  * `M(q)·q̈ = Q − Σ mᵢ Jᵢᵀ (J̇ᵢ q̇) + gravity`, with `M = Σ mᵢ JᵢᵀJᵢ + Iᵢ eᵢeᵢᵀ` solved by Cholesky.
