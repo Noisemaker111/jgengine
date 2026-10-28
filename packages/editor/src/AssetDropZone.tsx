@@ -3,16 +3,18 @@ import { memo, useEffect } from "react";
 import * as THREE from "three";
 
 import { ASSET_DRAG_MIME, decodeAssetDragPayload } from "./AssetBrowser";
+import { decodeLibraryDragPayload, LIBRARY_DRAG_MIME, type LibraryDropTarget } from "./libraryDrag";
 import type { EditorHostApi } from "./session";
 
 const GROUND_PLANE = new THREE.Plane(new THREE.Vector3(0, 1, 0), 0);
 
 /**
  * Viewport drop target for content-browser assets. Drops call `place_asset` at the ground hit
- * (or the host focus target when the ray misses). No-op when the payload is not an asset drag.
+ * (or the host focus target when the ray misses); a shared-library card goes to `library`'s handler,
+ * which pulls the asset first. No-op when the payload is not an asset drag.
  * @internal — mounted by `EditorApp`'s world overlay.
  */
-export const AssetDropZone = memo(function AssetDropZone({ api }: { api: EditorHostApi }) {
+export const AssetDropZone = memo(function AssetDropZone({ api, library }: { api: EditorHostApi; library?: LibraryDropTarget | undefined }) {
   const gl = useThree((state) => state.gl);
   const camera = useThree((state) => state.camera);
   const scene = useThree((state) => state.scene);
@@ -24,7 +26,9 @@ export const AssetDropZone = memo(function AssetDropZone({ api }: { api: EditorH
     const planeHit = new THREE.Vector3();
 
     const onDragOver = (event: DragEvent) => {
-      if (event.dataTransfer === null || !event.dataTransfer.types.includes(ASSET_DRAG_MIME)) return;
+      if (event.dataTransfer === null) return;
+      const types = event.dataTransfer.types;
+      if (!types.includes(ASSET_DRAG_MIME) && !(library !== undefined && types.includes(LIBRARY_DRAG_MIME))) return;
       event.preventDefault();
       event.dataTransfer.dropEffect = "copy";
     };
@@ -48,6 +52,12 @@ export const AssetDropZone = memo(function AssetDropZone({ api }: { api: EditorH
     };
 
     const onDrop = (event: DragEvent) => {
+      const libraryPayload = decodeLibraryDragPayload(event.dataTransfer?.getData(LIBRARY_DRAG_MIME) ?? "");
+      if (libraryPayload !== null && library?.handler != null) {
+        event.preventDefault();
+        library.handler(libraryPayload, groundAt(event.clientX, event.clientY));
+        return;
+      }
       const entry = decodeAssetDragPayload(event.dataTransfer?.getData(ASSET_DRAG_MIME) ?? "");
       if (entry === null) return;
       event.preventDefault();
@@ -68,7 +78,7 @@ export const AssetDropZone = memo(function AssetDropZone({ api }: { api: EditorH
       canvas.removeEventListener("dragover", onDragOver);
       canvas.removeEventListener("drop", onDrop);
     };
-  }, [gl, camera, scene, api]);
+  }, [gl, camera, scene, api, library]);
 
   return null;
 });

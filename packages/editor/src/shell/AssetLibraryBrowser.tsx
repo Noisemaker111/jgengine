@@ -4,6 +4,7 @@ import { libraryLicenseLabel, libraryTagCounts, searchLibrary, type LibraryEntry
 import { licenseRequiresCredit } from "@jgengine/assets/library/libraryLicense";
 import { LIBRARY_KINDS, librarySource, type LibraryKind } from "@jgengine/assets/library/librarySources";
 
+import { encodeLibraryDragPayload, isPlaceableLibraryKind, LIBRARY_DRAG_MIME } from "../libraryDrag";
 import { Icon } from "./icons";
 import { FOCUS_RING, INPUT_CLS, MICRO_LABEL } from "./theme";
 import { EmptyState } from "./ui";
@@ -34,6 +35,7 @@ function formatSize(size: readonly [number, number, number]): string {
  * characters, materials, decals, HDRIs and icons by words, kind and tag, with provider thumbnails,
  * licence and credit on every card. `onAdd` serves the picked asset in the running game (the dev
  * server pulls it through the shared asset store); without it the panel offers the key to copy.
+ * Model and character cards drag onto the viewport, which pulls and places them.
  * @internal — mounted by `ContentBrowser` as its Library folder.
  */
 export function AssetLibraryBrowser({
@@ -178,7 +180,13 @@ export function AssetLibraryBrowser({
                   data-library-key={entry.key}
                   onClick={() => setSelectedKey(entry.key)}
                   onDoubleClick={() => void add(entry)}
-                  title={`${entry.title} — ${entry.author} (${libraryLicenseLabel(entry.license)})`}
+                  draggable={isPlaceableLibraryKind(entry.kind)}
+                  onDragStart={(event) => {
+                    if (!isPlaceableLibraryKind(entry.kind)) return;
+                    event.dataTransfer.setData(LIBRARY_DRAG_MIME, encodeLibraryDragPayload(entry));
+                    event.dataTransfer.effectAllowed = "copy";
+                  }}
+                  title={`${entry.title} — ${entry.author} (${libraryLicenseLabel(entry.license)})${isPlaceableLibraryKind(entry.kind) ? " · drag onto the viewport to place" : ""}`}
                   className={`group flex flex-col overflow-hidden rounded-[6px] border text-left transition-colors ${FOCUS_RING} ${
                     entry.key === selectedKey ? "border-cyan-400/50 bg-cyan-500/10" : "border-white/[0.07] bg-white/[0.02] hover:border-white/[0.14] hover:bg-white/[0.04]"
                   }`}
