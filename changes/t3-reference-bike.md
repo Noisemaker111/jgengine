@@ -8,7 +8,6 @@ Whipple bicycle benchmark (Meijaard et al. 2007): linear eigenvalues and weave/c
 - compareBikeTuning and the handling command score any tuning with a lean block against the reference bike and MOTORRAD's 2001 GSX-R1000 test (0-100 3.22 s vs 2.9, 0-200 7.98 s vs 7.3, 100-0 38.3 m vs 38.6)
 - rigidBodyTree (Featherstone CRBA/RNEA), matrix eigenvalues and a shared RK4; the reference car now uses the shared RK4 and linear solve
 - `matrixEigenvalues` (`@jgengine/core/math/linearAlgebra`): Eigenvalues of a real square matrix (row-major, `n × n`): balancing, reduction to upper Hessenberg form by stabilised elimination, then the Francis double-shift QR iteration (Wilkinson & Reinsch, *Handbook for Automatic Computation* II, the EISPACK `balanc`/`elmhes`/`hqr` scheme). Also `Eigenvalue`, `solveLinearSystem`.
-- `BROADLEAF_GENERATOR` (`@jgengine/core/nature/natureGenerators`): Broadleaf trees: oak, birch, tropical hardwood, dead tree. Also `BROADLEAF_SCHEMA`, `CONIFER_GENERATOR`, `CONIFER_SCHEMA`.
 - `MOTORCYCLE_PUBLISHED_TOLERANCES` (`@jgengine/core/physics/reference/compareHandling`): How close the reference motorcycle must land to each published number: braking within 5%, 0-100 and 0-200 km/h within 12% (the torque curve between the engine's published peaks and its inertia are estimates). Also `BikeHandlingComparison`, `MotorcyclePublishedCheck`, `checkReferenceMotorcycle`, `compareBikeMetrics`, `compareBikeTuning`, `measureReferenceMotorcycle`, `validateReferenceMotorcycles`.
 - `polynomialRoots` (`@jgengine/core/physics/reference/eigenvalues`): Roots of the real polynomial `c[0] + c[1]·λ + … + c[n]·λⁿ` (`c[n] ≠ 0`): the companion-matrix eigenvalues, then two Newton steps on the polynomial itself to recover full double precision.
 - `measureBikeHandling` (`@jgengine/core/physics/reference/motorcycleManeuvers`): Drives fresh bikes from `create` through every bike scenario: a launch (0-100, 0-200 km/h), braking from 100 km/h, a full-steer lean test like `measureLean` (plus the lateral g the lean holds), an ISO 3888-1 double lane change with lanes sized for the bike, and a slalom. Also `BikeCourseSubject`, `BikeHandlingMetrics`, `BikeHandlingOptions`, `BikeScenario`.
@@ -19,7 +18,6 @@ Whipple bicycle benchmark (Meijaard et al. 2007): linear eigenvalues and weave/c
 - `createRigidBodyTree` (`@jgengine/core/physics/reference/rigidBodyTree`): Creates a {@link RigidBodyTree}: a tree of rigid bodies on free, revolute and prismatic joints with exact dynamics in spatial-vector form (Featherstone, *Rigid Body Dynamics Algorithms*, 2008): the composite-rigid-body algorithm for the mass matrix and the recursive Newton–Euler algorithm for the velocity-product and applied forces. Also `RigidBodyDefinition`, `RigidBodyTree`, `RigidBodyTreeState`, `RigidJoint`.
 - `createRungeKutta4` (`@jgengine/core/physics/reference/rungeKutta`): Creates a {@link RungeKutta4} for states of `size` entries; its scratch buffers are allocated once, so a step allocates nothing. Also `RungeKutta4`.
 - `BENCHMARK_BICYCLE` (`@jgengine/core/physics/reference/whippleBicycle`): The benchmark bicycle of Meijaard et al. Also `BENCHMARK_BICYCLE_EIGENVALUES`, `WhippleBicycle`, `WhippleBicycleInput`, `WhippleBicycleParameters`, `WhippleBicycleSnapshot`, `WhippleBicycleStart`, `WhippleBicycleState`, `WhippleLinearCoefficients` and 6 more.
-- `BROADLEAF_GENERATOR` (`@jgengine/core/world`): Broadleaf trees: oak, birch, tropical hardwood, dead tree. Also `BROADLEAF_SCHEMA`, `CONIFER_GENERATOR`, `CONIFER_SCHEMA`.
 
 ### Changed
 
@@ -32,22 +30,7 @@ Whipple bicycle benchmark (Meijaard et al. 2007): linear eigenvalues and weave/c
 
 ### Removed
 
-- `@jgengine/core/camera/firstPersonBody.draw` no longer exports `keepHeadUnderEye`.
 - `@jgengine/core/flight/reference/aircraftTrim` no longer exports `Eigenvalue`, `matrixEigenvalues`, `solveLinearSystem`.
-- `@jgengine/core/generator/generator` no longer exports `generatorVariantFor`, `prepareGenerator`, `prepareGeneratorVariants`.
-- `@jgengine/core/nature/natureMesh` no longer exports `LeafClusterOptions`, `NatureMeshPart`, `addLeafCluster`.
-- `@jgengine/core/nature/natureMesh.draw` no longer exports `natureDraws`.
-- `@jgengine/core/plants/cache/plantCache` no longer exports `CachedPlantStructure`, `PlantCache`, `PlantCacheOptions`, `PlantCacheState`, `PlantCacheStorage`, `createIndexedDbPlantCacheStorage`, `createMemoryPlantCacheStorage`, `createPlantCache`.
-- `@jgengine/core/plants/cache/plantCodec` no longer exports `decodePlantMesh`, `decodePlantStructure`, `encodePlantMesh`, `encodePlantStructure`.
-- `@jgengine/core/plants/grown/plantGrown` no longer exports `BUILTIN_PLANT_SPECIES`, `PLANT_CACHE`, `PLANT_GROWN_GENERATOR`, `PLANT_GROWN_SCHEMA`, `PLANT_MESH_OUTPUT`, `PlantGrownGeneratorOptions`, `createPlantGrownGenerator`, `plantStructureKey` and 1 more.
-- `@jgengine/core/plants/grown/plantGrowPool` no longer exports `PlantGrowRequest`, `PlantGrowResult`, `PlantGrower`, `PlantMeshOrder`, `WorkerPlantGrower`, `WorkerPlantGrowerOptions`, `WorkerPlantGrowerState`, `createWorkerPlantGrower`.
-- `@jgengine/core/plants/mesh/plantLeafAtlas` no longer exports `PLANT_LEAF_ATLAS_CELLS`, `PLANT_LEAF_ATLAS_CELL_COUNT`, `PlantLeafAtlas`, `bakePlantLeafAtlas`, `plantLeafAtlas`, `plantLeafAtlasKey`.
-- `@jgengine/core/plants/mesh/plantMesh` no longer exports `DEFAULT_PLANT_STYLE`, `PLANT_MESH_LODS`, `PLANT_MESH_TRIANGLE_BUDGETS`, `PlantMesh`, `PlantMeshInput`, `PlantMeshLook`, `PlantStyle`, `buildPlantMesh` and 2 more.
-- `@jgengine/core/plants/mesh/plantMesh.draw` no longer exports `plantMeshMaterials`, `plantMeshSources`.
-- `@jgengine/core/plants/species/data/pinusStrobus` no longer exports `PINUS_STROBUS`.
-- `@jgengine/core/plants/validation/crownAllometry` no longer exports `CrownProfile`, `CrownWidthClass`, `CrownWidthEquations`, `EASTERN_WHITE_PINE_CROWN_WIDTH`, `SUGAR_MAPLE_CROWN_WIDTH`, `TALLO_CROWN_WIDTH`, `crownProfile`, `forestGrownCrownWidthM` and 2 more.
-- `@jgengine/core/plants/validation/heightAgeCurves` no longer exports `EASTERN_WHITE_PINE_CARMEAN`.
-- `@jgengine/core/plants/validation/plantSilhouette` no longer exports `PlantSilhouetteFrame`, `PlantSilhouettes`, `branchAzimuthHistogram`, `histogramDistance`, `plantSilhouettes`, `silhouetteIoU`.
 - `@jgengine/core/scatter/scatterGenerator` no longer exports `scatterPlacementVariant`.
 - `@jgengine/core/scatter/scatterHeroes` no longer exports `ScatterHeroMember`, `ScatterHeroSet`, `ScatterHeroSetOptions`, `ScatterHeroSetState`, `ScatterHeroUpdate`, `createScatterHeroSet`.
 - `@jgengine/core/scatter/ScatterHeroes.draw` no longer exports `ScatterHeroesProps`.
