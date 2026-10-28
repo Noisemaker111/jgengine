@@ -2250,7 +2250,9 @@
 
 ## @jgengine/core/landform/evolution/landscapeEvolution
 
+- `CoastalParams` (interface): interface CoastalParams — Waves on the coast: cliff retreat and platform wear (see `coastal/waveErosion`). Needs a `seaLevel`.
 - `DEFAULT_LANDFORM_PARAMS` (const): const DEFAULT_LANDFORM_PARAMS: LandformParams — Sensible defaults for a 100 m grid: 1 mm/yr uplift, K = 2·10⁻⁵, m = 0.5, n = 1 (concavity 0.5), D = 0.01 m²/yr, repose 34°, 10 kyr steps.
+- `GlacialParams` (interface): interface GlacialParams — Glaciers: shallow-ice flow with sliding, which erodes the bed (see `glacial/iceFlow`).
 - `LandformFields` (interface): interface LandformFields — Per-cell fields of a run. The arrays are live; read them, never write them.
 - `LandformInitial` (interface): interface LandformInitial — Starting surface of a run.
 - `LandformParams` (interface): interface LandformParams — Physical parameters of a landscape evolution run; every one can be retuned between steps.
@@ -2305,6 +2307,12 @@
 - `growLandform` (function): function growLandform(recipe: LandformRecipe, seed: string): LandformTerrain — Grow a landform from a recipe and seed: erosion first, then dunes over it.
 - `landformTerrainSnapshot` (function): function landformTerrainSnapshot(terrain: LandformTerrain, options: LandformSnapshotOptions = {}): TerraformSnapshot — The editor terrain document for a grown landform: cell centres become the sculpt grid's vertices, and each surface kind becomes a material layer with per-cell blend weights.
 
+## @jgengine/core/landform/glacial/iceFlow
+
+- `GLEN_RATE_FACTOR` (const): const GLEN_RATE_FACTOR: 7.57e-17 — Glen's flow rate factor A of temperate ice in Pa⁻³ yr⁻¹ (2.4·10⁻²⁴ Pa⁻³ s⁻¹, Cuffey & Paterson 2010).
+- `ICE_WEIGHT` (const): const ICE_WEIGHT: number — Weight of ice per unit volume, ρg in Pa/m (910 kg/m³ × 9.81 m/s²).
+- `iceDeformationRate` (function): function iceDeformationRate(rateFactor: number = GLEN_RATE_FACTOR): number — Γ = 2A(ρg)³/(n + 2) of the shallow-ice flux for Glen's n = 3, in m⁻³ yr⁻¹.
+
 ## @jgengine/core/landform/grid/landformGrid
 
 - `D8_DCOL` (const): const D8_DCOL: readonly number[] — Column offsets of the D8 neighbours: east, south-east, south, south-west, west, north-west, north, north-east.
@@ -2323,7 +2331,7 @@
 
 ## @jgengine/core/landform/materials/sedimentCover
 
-- `COVER_CLASSES` (const): const COVER_CLASSES: readonly ["gravel", "sand", "silt", "scree", "soil"] — Classes of loose cover, in their order in {@link SedimentCover.thickness}.
+- `COVER_CLASSES` (const): const COVER_CLASSES: readonly ["gravel", "sand", "silt", "scree", "soil", "till", "beach"] — Classes of loose cover, in their order in {@link SedimentCover.thickness}.
 - `CoverClass` (type): type CoverClass = (typeof COVER_CLASSES)[number] — One class of loose cover.
 - `DEFAULT_GRAIN_SIZES` (const): const DEFAULT_GRAIN_SIZES: GrainSizes — Default diameters: 20 mm gravel, 0.5 mm sand, 0.02 mm silt.
 - `DEFAULT_ROCK_YIELD` (const): const DEFAULT_ROCK_YIELD: GrainMix — What a rock breaks into when rivers cut it, unless its layer says otherwise.
@@ -2333,6 +2341,7 @@
 - `GrainSizes` (interface): interface GrainSizes — Representative grain diameters in metres.
 - `SCREE_YIELD` (const): const SCREE_YIELD: GrainMix — What scree breaks into when a river picks it up: angular, coarse.
 - `SOIL_YIELD` (const): const SOIL_YIELD: GrainMix — What soil is made of when a river picks it up.
+- `TILL_YIELD` (const): const TILL_YIELD: GrainMix — What glacial till breaks into: unsorted, from boulders to rock flour.
 - `settlingVelocity` (function): function settlingVelocity(diameter: number): number — Settling velocity in m/s of a natural quartz grain of diameter `diameter` metres in water (Ferguson & Church 2004, with C₁ = 18 and C₂ = 1 for natural grains).
 - `weatheredDepth` (function): function weatheredDepth(depth: number, production: number, depthScale: number, dt: number): number — Soil thickness after weathering for `dt` years from `depth`, solving dh/dt = P₀ e^(−h/h₀) exactly: h' = h₀ ln(e^(h/h₀) + P₀ dt / h₀).
 

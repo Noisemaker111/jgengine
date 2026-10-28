@@ -5520,6 +5520,16 @@
       "intent": "resolve a hit through a damage chart and apply it to the world as one damage effect"
     },
     {
+      "id": "landform-coastal",
+      "packages": [
+        "@jgengine/core"
+      ],
+      "module": "@jgengine/core/landform/coastal/waveErosion",
+      "gameFacing": false,
+      "probe": null,
+      "intent": "sea cliffs that retreat under waves and leave shore platforms and beaches"
+    },
+    {
       "id": "landform-dunes",
       "packages": [
         "@jgengine/core"
@@ -5548,6 +5558,16 @@
       "gameFacing": false,
       "probe": null,
       "intent": "grow a terrain heightfield and its material layers from geology, rivers and wind, for the editor and runtime"
+    },
+    {
+      "id": "landform-glacial",
+      "packages": [
+        "@jgengine/core"
+      ],
+      "module": "@jgengine/core/landform/glacial/iceFlow",
+      "gameFacing": false,
+      "probe": null,
+      "intent": "glaciers that flow, slide, carve their valleys wider and deeper and lay moraines"
     },
     {
       "id": "landform-materials",
