@@ -96,95 +96,90 @@ export function createHullIntegrator(mesh: HullMesh): HullIntegrator {
   // One cut polygon: up to four corners of x, y, z, depth, pressure.
   const poly = new Float64Array(4 * 5);
   const tri = new Float64Array(3 * 5);
-  let acc: HullLoads = createHullLoads();
-  let vx = 0, vy = 0, vz = 0;
-  let wa = 0, wcx = 0, wcy = 0, wixx = 0, wiyy = 0, wixy = 0;
-  let xMin = Infinity, xMax = -Infinity, yMin = Infinity, yMax = -Infinity;
-
-  function addTriangle(a: number, b: number, c: number): void {
-    const ax = poly[a] ?? 0, ay = poly[a + 1] ?? 0, az = poly[a + 2] ?? 0;
-    const bx = poly[b] ?? 0, by = poly[b + 1] ?? 0, bz = poly[b + 2] ?? 0;
-    const cx = poly[c] ?? 0, cy = poly[c + 1] ?? 0, cz = poly[c + 2] ?? 0;
-    const da = poly[a + 3] ?? 0, db = poly[b + 3] ?? 0, dc = poly[c + 3] ?? 0;
-    const pa = poly[a + 4] ?? 0, pb = poly[b + 4] ?? 0, pc = poly[c + 4] ?? 0;
-    const ux = bx - ax, uy = by - ay, uz = bz - az;
-    const wx = cx - ax, wy = cy - ay, wz = cz - az;
-    // Area vector: half the cross product, along the outward normal.
-    const nx = 0.5 * (uy * wz - uz * wy);
-    const ny = 0.5 * (uz * wx - ux * wz);
-    const nz = 0.5 * (ux * wy - uy * wx);
-    acc.wettedArea += Math.hypot(nx, ny, nz);
-    const pSum = pa + pb + pc;
-    const pMean = pSum / 3;
-    acc.force[0] = (acc.force[0] ?? 0) - pMean * nx;
-    acc.force[1] = (acc.force[1] ?? 0) - pMean * ny;
-    acc.force[2] = (acc.force[2] ?? 0) - pMean * nz;
-    // ∫p·r dA / A for linear p over a triangle: (Σpᵢrᵢ + Σpᵢ·Σrᵢ)/12; moment = −(that) × area vector.
-    const rx = (pa * ax + pb * bx + pc * cx + pSum * (ax + bx + cx)) / 12;
-    const ry = (pa * ay + pb * by + pc * cy + pSum * (ay + by + cy)) / 12;
-    const rz = (pa * az + pb * bz + pc * cz + pSum * (az + bz + cz)) / 12;
-    acc.moment[0] = (acc.moment[0] ?? 0) - (ry * nz - rz * ny);
-    acc.moment[1] = (acc.moment[1] ?? 0) - (rz * nx - rx * nz);
-    acc.moment[2] = (acc.moment[2] ?? 0) - (rx * ny - ry * nx);
-    // Volume integrals by the divergence theorem with fields that vanish on the free surface (e = −depth).
-    const ea = -da, eb = -db, ec = -dc;
-    const eSum = ea + eb + ec;
-    acc.volume += (nz * eSum) / 3;
-    vx += (nz * (ax * ea + bx * eb + cx * ec + (ax + bx + cx) * eSum)) / 12;
-    vy += (nz * (ay * ea + by * eb + cy * ec + (ay + by + cy) * eSum)) / 12;
-    // ∫z dV = ∮ (z² − η²)/2 n_z with η = z + depth: (z − η)(z + η)/2 = e·(2z + d)/2.
-    const ha = az + 0.5 * da, hb = bz + 0.5 * db, hc = cz + 0.5 * dc;
-    vz += (nz * (ha * ea + hb * eb + hc * ec + (ha + hb + hc) * eSum)) / 12;
-  }
-
-  function addWaterline(p: number, q: number): void {
-    const xp = poly[p] ?? 0, yp = poly[p + 1] ?? 0, xq = poly[q] ?? 0, yq = poly[q + 1] ?? 0;
-    const cross = xp * yq - xq * yp;
-    xMin = Math.min(xMin, xp, xq);
-    xMax = Math.max(xMax, xp, xq);
-    yMin = Math.min(yMin, yp, yq);
-    yMax = Math.max(yMax, yp, yq);
-    wa += cross / 2;
-    wcx += ((xp + xq) * cross) / 6;
-    wcy += ((yp + yq) * cross) / 6;
-    wixx += ((yp * yp + yp * yq + yq * yq) * cross) / 12;
-    wiyy += ((xp * xp + xp * xq + xq * xq) * cross) / 12;
-    wixy += ((xp * yq + 2 * xp * yp + 2 * xq * yq + xq * yp) * cross) / 24;
-  }
-
-  function loadCorner(slot: number, vertex: number): void {
-    tri[slot] = earth[vertex * 3] ?? 0;
-    tri[slot + 1] = earth[vertex * 3 + 1] ?? 0;
-    tri[slot + 2] = earth[vertex * 3 + 2] ?? 0;
-    tri[slot + 3] = depth[vertex] ?? 0;
-    tri[slot + 4] = pressure[vertex] ?? 0;
-  }
-
-  function copyCorner(to: number, from: number): void {
-    for (let k = 0; k < 5; k += 1) poly[to + k] = tri[from + k] ?? 0;
-  }
-
-  function crossing(to: number, from: number, onto: number): void {
-    const d0 = tri[from + 3] ?? 0;
-    const d1 = tri[onto + 3] ?? 0;
-    const s = d0 / (d0 - d1);
-    for (let k = 0; k < 5; k += 1) poly[to + k] = (tri[from + k] ?? 0) + s * ((tri[onto + k] ?? 0) - (tri[from + k] ?? 0));
-    // The surface itself: zero submergence and zero gauge pressure.
-    poly[to + 3] = 0;
-    poly[to + 4] = 0;
-  }
 
   return {
     integrate(rotation, translation, water, out) {
-      acc = out;
       out.force.fill(0);
       out.moment.fill(0);
       out.volume = 0;
       out.wettedArea = 0;
-      vx = vy = vz = 0;
-      wa = wcx = wcy = wixx = wiyy = wixy = 0;
-      xMin = yMin = Infinity;
-      xMax = yMax = -Infinity;
+      let vx = 0, vy = 0, vz = 0;
+      let wa = 0, wcx = 0, wcy = 0, wixx = 0, wiyy = 0, wixy = 0;
+      let xMin = Infinity, xMax = -Infinity, yMin = Infinity, yMax = -Infinity;
+
+      function addTriangle(a: number, b: number, c: number): void {
+        const ax = poly[a] ?? 0, ay = poly[a + 1] ?? 0, az = poly[a + 2] ?? 0;
+        const bx = poly[b] ?? 0, by = poly[b + 1] ?? 0, bz = poly[b + 2] ?? 0;
+        const cx = poly[c] ?? 0, cy = poly[c + 1] ?? 0, cz = poly[c + 2] ?? 0;
+        const da = poly[a + 3] ?? 0, db = poly[b + 3] ?? 0, dc = poly[c + 3] ?? 0;
+        const pa = poly[a + 4] ?? 0, pb = poly[b + 4] ?? 0, pc = poly[c + 4] ?? 0;
+        const ux = bx - ax, uy = by - ay, uz = bz - az;
+        const wx = cx - ax, wy = cy - ay, wz = cz - az;
+        // Area vector: half the cross product, along the outward normal.
+        const nx = 0.5 * (uy * wz - uz * wy);
+        const ny = 0.5 * (uz * wx - ux * wz);
+        const nz = 0.5 * (ux * wy - uy * wx);
+        out.wettedArea += Math.hypot(nx, ny, nz);
+        const pSum = pa + pb + pc;
+        const pMean = pSum / 3;
+        out.force[0] = (out.force[0] ?? 0) - pMean * nx;
+        out.force[1] = (out.force[1] ?? 0) - pMean * ny;
+        out.force[2] = (out.force[2] ?? 0) - pMean * nz;
+        // ∫p·r dA / A for linear p over a triangle: (Σpᵢrᵢ + Σpᵢ·Σrᵢ)/12; moment = −(that) × area vector.
+        const rx = (pa * ax + pb * bx + pc * cx + pSum * (ax + bx + cx)) / 12;
+        const ry = (pa * ay + pb * by + pc * cy + pSum * (ay + by + cy)) / 12;
+        const rz = (pa * az + pb * bz + pc * cz + pSum * (az + bz + cz)) / 12;
+        out.moment[0] = (out.moment[0] ?? 0) - (ry * nz - rz * ny);
+        out.moment[1] = (out.moment[1] ?? 0) - (rz * nx - rx * nz);
+        out.moment[2] = (out.moment[2] ?? 0) - (rx * ny - ry * nx);
+        // Volume integrals by the divergence theorem with fields that vanish on the free surface (e = −depth).
+        const ea = -da, eb = -db, ec = -dc;
+        const eSum = ea + eb + ec;
+        out.volume += (nz * eSum) / 3;
+        vx += (nz * (ax * ea + bx * eb + cx * ec + (ax + bx + cx) * eSum)) / 12;
+        vy += (nz * (ay * ea + by * eb + cy * ec + (ay + by + cy) * eSum)) / 12;
+        // ∫z dV = ∮ (z² − η²)/2 n_z with η = z + depth: (z − η)(z + η)/2 = e·(2z + d)/2.
+        const ha = az + 0.5 * da, hb = bz + 0.5 * db, hc = cz + 0.5 * dc;
+        vz += (nz * (ha * ea + hb * eb + hc * ec + (ha + hb + hc) * eSum)) / 12;
+      }
+
+      function addWaterline(p: number, q: number): void {
+        const xp = poly[p] ?? 0, yp = poly[p + 1] ?? 0, xq = poly[q] ?? 0, yq = poly[q + 1] ?? 0;
+        const cross = xp * yq - xq * yp;
+        xMin = Math.min(xMin, xp, xq);
+        xMax = Math.max(xMax, xp, xq);
+        yMin = Math.min(yMin, yp, yq);
+        yMax = Math.max(yMax, yp, yq);
+        wa += cross / 2;
+        wcx += ((xp + xq) * cross) / 6;
+        wcy += ((yp + yq) * cross) / 6;
+        wixx += ((yp * yp + yp * yq + yq * yq) * cross) / 12;
+        wiyy += ((xp * xp + xp * xq + xq * xq) * cross) / 12;
+        wixy += ((xp * yq + 2 * xp * yp + 2 * xq * yq + xq * yp) * cross) / 24;
+      }
+
+      function loadCorner(slot: number, vertex: number): void {
+        tri[slot] = earth[vertex * 3] ?? 0;
+        tri[slot + 1] = earth[vertex * 3 + 1] ?? 0;
+        tri[slot + 2] = earth[vertex * 3 + 2] ?? 0;
+        tri[slot + 3] = depth[vertex] ?? 0;
+        tri[slot + 4] = pressure[vertex] ?? 0;
+      }
+
+      function copyCorner(to: number, from: number): void {
+        for (let k = 0; k < 5; k += 1) poly[to + k] = tri[from + k] ?? 0;
+      }
+
+      function crossing(to: number, from: number, onto: number): void {
+        const d0 = tri[from + 3] ?? 0;
+        const d1 = tri[onto + 3] ?? 0;
+        const s = d0 / (d0 - d1);
+        for (let k = 0; k < 5; k += 1) poly[to + k] = (tri[from + k] ?? 0) + s * ((tri[onto + k] ?? 0) - (tri[from + k] ?? 0));
+        // The surface itself: zero submergence and zero gauge pressure.
+        poly[to + 3] = 0;
+        poly[to + 4] = 0;
+      }
+
       const r0 = rotation[0] ?? 0, r1 = rotation[1] ?? 0, r2 = rotation[2] ?? 0;
       const r3 = rotation[3] ?? 0, r4 = rotation[4] ?? 0, r5 = rotation[5] ?? 0;
       const r6 = rotation[6] ?? 0, r7 = rotation[7] ?? 0, r8 = rotation[8] ?? 0;
