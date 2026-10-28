@@ -24,6 +24,7 @@ import { placeHeld, stations, strikeStructure } from "./base";
 import { mountCanSprint, strikeCreature } from "./creatures";
 import { climateAt, inWater, type ClimateHere } from "./climate";
 import { leaveBody } from "./deathBody";
+import { feedAdded, feedConsumed } from "./pickupFeed";
 import { openScreen } from "./screens";
 import { COMFORT, ENGRAM_POINTS, LEVEL_STATS, MAX_LEVEL, SURVIVOR, survivorVitals, XP_TO_LEVEL, type LevelStat } from "./data/survivor";
 
@@ -47,7 +48,6 @@ interface Survivor {
   comfort: BodyComfort;
   /** The air and weather where the survivor stood last tick. */
   climate: ClimateHere | null;
-  lastGain: { text: string; at: number } | null;
   /** What sits in front of the survivor: the struck node in reach, or what E would pick. */
   aim: { strike: string | null; pick: string | null; pickAt: { x: number; z: number } | null; water: boolean };
   dead: boolean;
@@ -87,7 +87,6 @@ const survivorOf = perContext((ctx: GameContext): Survivor => ({
   swingReady: 0,
   comfort: bodyComfort(25, COMFORT),
   climate: null,
-  lastGain: null,
   aim: { strike: null, pick: null, pickAt: null, water: false },
   dead: false,
   web: null,
@@ -160,6 +159,7 @@ export function give(ctx: GameContext, itemId: string, count: number): number {
     ctx.game.notices.push({ text: `No room for ${itemLabel(itemId)}`, tone: "deny" });
     return 0;
   }
+  feedAdded(ctx, itemId, count);
   return count;
 }
 
@@ -207,18 +207,16 @@ export function nearestHarvestable(ctx: GameContext, from: readonly [number, num
   return hit === null ? null : [hit.x, ctx.world.groundHeightAt(hit.x, hit.z), hit.z];
 }
 
-function grantGather(ctx: GameContext, survivor: Survivor, granted: readonly { kind: string; amount: number }[]): string[] {
-  const got: string[] = [];
+function grantGather(ctx: GameContext, survivor: Survivor, granted: readonly { kind: string; amount: number }[]): void {
+  let got = false;
   for (const grant of granted) {
     const whole = Math.floor(grant.amount + ctx.rng());
-    if (give(ctx, grant.kind, whole) > 0) got.push(`${whole} ${itemLabel(grant.kind)}`);
+    if (give(ctx, grant.kind, whole) > 0) got = true;
   }
-  if (got.length > 0) {
+  if (got) {
     survivor.tally.gathered += 1;
-    survivor.lastGain = { text: got.join(", "), at: ctx.time.now() };
     grantXp(ctx, SURVIVOR.gatherXp);
   }
-  return got;
 }
 
 /** What E would pick from where the survivor stands and faces: the nearest bush or stones in front, never one behind a tree you face. */
@@ -269,8 +267,7 @@ export function swing(ctx: GameContext, yaw?: number): void {
   const melee = statValue(survivor, "melee") / 100;
   const struck = strikeCreature(ctx, ctx.player.userId, yaw ?? me.rotationY, tool, melee);
   if (struck !== null) {
-    const got = grantGather(ctx, survivor, struck.granted);
-    if (got.length > 0) ctx.scene.entity.floatText({ instanceId: ctx.player.userId, text: `+${got.join(", +")}`, kind: "pickup" });
+    grantGather(ctx, survivor, struck.granted);
     if (struck.killed) grantXp(ctx, struck.xp);
     return;
   }
@@ -286,8 +283,7 @@ export function swing(ctx: GameContext, yaw?: number): void {
     accepts: gatheredBy("strike"),
   });
   if (hit === null) return;
-  const got = grantGather(ctx, survivor, hit.granted);
-  if (got.length > 0) ctx.scene.entity.floatText({ instanceId: ctx.player.userId, text: `+${got.join(", +")}`, kind: "pickup" });
+  grantGather(ctx, survivor, hit.granted);
 }
 
 /**
@@ -319,14 +315,12 @@ export function use(ctx: GameContext): void {
   const hit = survivor.aim.pick === null ? null : survivor.harvest.strike({ ...pickSpec(me.position, me.rotationY), tool: PICK_UP.gather });
   if (hit !== null) {
     ctx.game.playEntityAnimation(ctx.player.userId, "gather");
-    const got = grantGather(ctx, survivor, hit.granted);
-    if (got.length > 0) ctx.scene.entity.floatText({ instanceId: ctx.player.userId, text: `+${got.join(", +")}`, kind: "pickup" });
+    grantGather(ctx, survivor, hit.granted);
     return;
   }
   if (inWater(ctx, me.position)) {
     survivor.vitals.change("water", SURVIVOR.drink);
     survivor.tally.drinks += 1;
-    ctx.scene.entity.floatText({ instanceId: ctx.player.userId, text: "Drank", kind: "pickup" });
   }
 }
 
@@ -347,7 +341,7 @@ export function consume(ctx: GameContext, inventoryId: string, slot: number): bo
     if (vital === "health") ctx.scene.entity.stats.delta(ctx.player.userId, "health", amount);
     else survivor.vitals.change(vital, amount);
   }
-  ctx.scene.entity.floatText({ instanceId: ctx.player.userId, text: `Ate ${itemLabel(stack.itemId)}`, kind: "pickup" });
+  feedConsumed(ctx, stack.itemId, 1);
   return true;
 }
 
@@ -450,7 +444,8 @@ function finishCraft(ctx: GameContext, spec: CraftSpec): void {
     const def = itemDef(output.itemId);
     // ARK slots a freshly made tool onto the hotbar when there is room.
     const toHotbar = def?.tool !== undefined && ctx.player.inventory.put(HOTBAR, output.itemId, output.count).status === "ok";
-    if (!toHotbar) give(ctx, output.itemId, output.count);
+    if (toHotbar) feedAdded(ctx, output.itemId, output.count);
+    else give(ctx, output.itemId, output.count);
     ctx.game.notices.push({ text: `Crafted ${itemLabel(output.itemId)}`, tone: "success" });
   }
   survivorOf(ctx).tally.crafted += 1;
@@ -668,7 +663,6 @@ export function survivorView(ctx: GameContext) {
     spentPoints: Object.values(survivor.points).reduce((sum, points) => sum + points, 0),
     activeSlot: survivor.activeSlot,
     aim: survivor.aim,
-    gain: survivor.lastGain !== null && now - survivor.lastGain.at < 2.5 ? survivor.lastGain.text : null,
     queue: survivor.queue.jobs.map((job) => ({ id: job.id, recipeId: job.spec.recipeId, output: recipeDef(job.spec.recipeId)?.outputs[0]?.itemId ?? job.spec.recipeId, progress: jobProgress(job) })),
     engrams: ENGRAMS.map((entry) => ({ id: entry.id, level: entry.level, points: entry.points, learned: survivor.engrams.isUnlocked(entry.id) })),
   };

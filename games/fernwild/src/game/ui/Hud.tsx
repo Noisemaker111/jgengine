@@ -1,4 +1,5 @@
 import { useMemo, type CSSProperties, type ReactNode } from "react";
+import { KillFeed } from "@jgengine/core/feed/killFeed.view";
 import { Hotbar } from "@jgengine/core/hud/hudReadouts.view";
 import { Minimap, useMarkers } from "@jgengine/core/map/map.view";
 import type { MarkerView } from "@jgengine/core/map/markers";
@@ -11,6 +12,7 @@ import { baseView } from "../base";
 import { bodyView } from "../deathBody";
 import { dossierView } from "../dossier";
 import { ISLAND_MARKS, islandBake, islandMarks } from "../islandMap";
+import { pickupFeed } from "../pickupFeed";
 import { openScreen } from "../screens";
 import { HOTBAR } from "../bags";
 import { survivorView, type SurvivorView } from "../survivor";
@@ -113,12 +115,32 @@ const crosshair: CSSProperties = {
   pointerEvents: "none",
 };
 
-/** The gather feed, ARK's "+3 Thatch" on the left. */
-function Feed(): ReactNode {
-  const view = useSurvivor();
-  return view.gain === null ? null : (
-    <div data-gain="" style={{ color: "#f4efe2", fontWeight: 700, fontSize: 15, textShadow: "0 1px 3px #000", pointerEvents: "none" }}>
-      +{view.gain}
+/** ARK's item lines under the top edge: an icon and "ADDED: 3x Thatch" in cyan, "CONSUMED" in yellow, stacking down and fading. */
+const PICKUP_ROW: CSSProperties = {
+  background: "none",
+  borderLeft: "none",
+  boxShadow: "none",
+  padding: "1px 0",
+  fontSize: 15,
+  fontWeight: 800,
+  letterSpacing: "0.05em",
+  textShadow: "0 0 3px #000, 0 1px 2px #000",
+  transform: "none",
+};
+const PICKUP_KINDS = { added: { color: "#74e4ef" }, consumed: { color: "#f2d54b" } };
+const pickupIcon = (entry: { icon: string | undefined }): ReactNode =>
+  entry.icon === undefined ? null : <span style={{ width: 22, height: 22, flexShrink: 0, display: "block" }}>{itemIcon(entry.icon)}</span>;
+
+function PickupLines(): ReactNode {
+  const ticker = pickupFeed(useGameContext());
+  return <KillFeed ticker={ticker} oldestFirst renderIcon={pickupIcon} rowStyle={PICKUP_ROW} kindStyles={PICKUP_KINDS} style={{ alignItems: "center", gap: 2 }} />;
+}
+
+function Top(): ReactNode {
+  return (
+    <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 6 }}>
+      <BossBar />
+      <PickupLines />
     </div>
   );
 }
@@ -259,7 +281,7 @@ export function Hud(): ReactNode {
   return (
     <HudSlots
       storageKey="fernwild"
-      slots={{ topLeft: <OnboardingHud accent="#e7c84a" ahead={1} />, top: <BossBar />, topRight: <BodyLine />, right: <MapCorner />, left: <Feed />, bottomLeft: <Mount />, bottom: <Bar />, bottomRight: <Vitals /> }}
+      slots={{ topLeft: <OnboardingHud accent="#e7c84a" ahead={1} />, top: <Top />, topRight: <BodyLine />, right: <MapCorner />, bottomLeft: <Mount />, bottom: <Bar />, bottomRight: <Vitals /> }}
       overlay={<Screens />}
     />
   );

@@ -86,6 +86,12 @@ export interface KillFeedProps {
   animate?: boolean;
   /** Extra `z-index` for the stack. Default `40`. */
   zIndex?: number;
+  /** Draws an entry's icon in place of the {@link GameIcon} lookup (a game's own item art); null draws none. */
+  renderIcon?: (entry: EventTickerView) => ReactNode;
+  /** Merged over each row's style: `{ background: "none", borderLeft: "none" }` gives bare lines. */
+  rowStyle?: CSSProperties;
+  /** Show the oldest entry first, so a new line lands at the bottom. Default `false` (newest on top). */
+  oldestFirst?: boolean;
   className?: string;
   style?: CSSProperties;
 }
@@ -107,10 +113,14 @@ export function KillFeed({
   iconSize = 18,
   animate = true,
   zIndex = 40,
+  renderIcon,
+  rowStyle,
+  oldestFirst = false,
   className,
   style,
 }: KillFeedProps): ReactNode {
-  const entries = useEventTicker(ticker, animate);
+  const recent = useEventTicker(ticker, animate);
+  const entries = oldestFirst ? [...recent].reverse() : recent;
   const t = resolveTheme(theme);
 
   return (
@@ -155,9 +165,12 @@ export function KillFeed({
               boxShadow: "0 2px 8px rgba(0,0,0,0.4)",
               transform: `translateX(${entry.fade * 8}px)`,
               willChange: "opacity, transform",
+              ...rowStyle,
             }}
           >
-            {iconName !== undefined && isGameIconName(iconName) ? (
+            {renderIcon !== undefined ? (
+              renderIcon(entry)
+            ) : iconName !== undefined && isGameIconName(iconName) ? (
               <span style={{ color: accent, display: "flex", flexShrink: 0 }}>
                 <GameIcon name={iconName} size={iconSize} />
               </span>
