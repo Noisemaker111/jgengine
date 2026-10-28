@@ -9,6 +9,7 @@ import { buildPlantMesh, DEFAULT_PLANT_STYLE, PLANT_MESH_LODS, PLANT_MESH_TRIANG
 import { ACER_SACCHARUM } from "../species/data/acerSaccharum";
 import { PINUS_STROBUS } from "../species/data/pinusStrobus";
 import { hashPlantStructure } from "../structure/plantStructure";
+import { createWorkerPlantGrower } from "./plantGrowPool";
 import { createPlantGrownGenerator, PLANT_MESH_OUTPUT } from "./plantGrown";
 
 /** The three looks the milestone asks for, built only from style params. */
@@ -132,5 +133,55 @@ describe("plant.grown", () => {
     expect(near.lod).toBe(0);
     expect(far.lod).toBe(3);
     expect(far.structureHash).toBe(near.structureHash);
+  });
+});
+
+describe("plant grow workers", () => {
+  test("a worker grows the same structure as the main thread", async () => {
+    const grower = createWorkerPlantGrower({ workers: 2 });
+    expect(grower).not.toBeNull();
+    if (grower === null) return;
+    try {
+      const requests = [
+        { species: ACER_SACCHARUM, env: OPEN_TEMPERATE_SITE, seed: "w1", age: 30, day: 200 },
+        { species: PINUS_STROBUS, env: OPEN_TEMPERATE_SITE, seed: "w2", age: 20, day: 30 },
+        { species: ACER_SACCHARUM, env: { ...OPEN_TEMPERATE_SITE, light: 0.4 }, seed: "w3", age: 12, day: 120 },
+      ];
+      const order = { style: DEFAULT_PLANT_STYLE, detail: 0.25 };
+      const results = await Promise.all(requests.map((request, index) => grower.grow(request, index === 0 ? order : undefined)));
+      requests.forEach((request, index) => {
+        const growth = createPlantGrowth(request.species, request.env, request.seed);
+        growth.step(request.age);
+        const structure = growth.structure(request.day);
+        const hash = hashPlantStructure(structure);
+        const result = results[index];
+        expect(result?.grown.hash).toBe(hash);
+        expect(hashPlantStructure(result?.grown.structure ?? structure)).toBe(hash);
+        if (index === 0) {
+          // A mesh built in the worker is the mesh the main thread builds.
+          const local = buildPlantMesh({ structure, style: order.style, detail: order.detail, structureHash: hash });
+          const remote = result?.mesh;
+          expect(remote).not.toBeNull();
+          if (remote) expect(Buffer.from(encodePlantMesh(remote)).equals(Buffer.from(encodePlantMesh(local)))).toBe(true);
+        } else {
+          expect(result?.mesh).toBeNull();
+        }
+      });
+      expect(grower.state()).toEqual({ queued: 0, running: 0, workers: 0 });
+      const cancelled = grower.grow({ species: ACER_SACCHARUM, env: OPEN_TEMPERATE_SITE, seed: "w4", age: 40, day: 200 });
+      grower.reset();
+      await expect(cancelled).rejects.toThrow("reset");
+      expect(grower.state()).toEqual({ queued: 0, running: 0, workers: 0 });
+    } finally {
+      grower.dispose();
+    }
+  }, 60_000);
+
+  test("a generator whose grower fails grows on the main thread instead", async () => {
+    const broken = { grow: () => Promise.reject(new Error("no workers here")), dispose: () => undefined };
+    const generator = createPlantGrownGenerator(createPlantCache(), { grower: broken });
+    await prepareGenerator(generator, { species: "acer-saccharum", age: 10, seed: "fallback" });
+    const direct = runGenerator(createPlantGrownGenerator(createPlantCache(), { grower: null }), { species: "acer-saccharum", age: 10, seed: "fallback" });
+    expect(runGenerator(generator, { species: "acer-saccharum", age: 10, seed: "fallback" }).structureHash).toBe(direct.structureHash);
   });
 });

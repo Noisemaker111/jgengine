@@ -12,7 +12,7 @@ import { demoGame } from "./demoGame";
 /** Three looks built from style params alone; the engine names none of them. */
 const STYLES = [
   { label: "Realistic", meta: { foliage: "leaves", shading: "lit", barkGrain: true } },
-  { label: "Toon", meta: { foliage: "clumps", shading: "ramp", rampBands: 3, rampSoftness: 0.08, rampShadow: 0.4, saturation: 1.35, brightness: 1.1, barkGrain: false } },
+  { label: "Toon", meta: { foliage: "leaves", shading: "ramp", rampBands: 3, rampSoftness: 0.08, rampShadow: 0.4, saturation: 1.35, brightness: 1.1, barkGrain: false } },
   {
     label: "Clay",
     meta: { foliage: "clumps", shading: "lit", paint: 0.9, brightness: 1.05, colorJitter: 0.03, barkGrain: false, leafTint: "#e9d8c4", barkTint: "#cdb8a0" },
@@ -25,22 +25,25 @@ const PLANTS = [
 ];
 
 const SPACING = 22;
+/** The realistic look again at the three lower detail levels, beside each tree's style row. */
+const DETAILS = [0.5, 0.25, 0.1];
+const DETAIL_ROW_OFFSET = 75;
 
-function GrownPlant({ meta, position }: { meta: Record<string, unknown>; position: [number, number, number] }) {
+function GrownPlant({ meta, detail, position }: { meta: Record<string, unknown>; detail: number; position: [number, number, number] }) {
   const [mesh, setMesh] = useState<PlantMesh | null>(null);
   useEffect(() => {
     let live = true;
-    const done = trackSceneWork(`plant-styles:${JSON.stringify(meta)}`);
-    prepareGenerator(PLANT_GROWN_GENERATOR, meta)
+    const done = trackSceneWork(`plant-styles:${detail}:${JSON.stringify(meta)}`);
+    prepareGenerator(PLANT_GROWN_GENERATOR, meta, { detail })
       .then(() => {
-        const output = runGenerator(PLANT_GROWN_GENERATOR, meta);
+        const output = runGenerator(PLANT_GROWN_GENERATOR, meta, { detail });
         if (live && isPlantMesh(output)) setMesh(output);
       })
       .finally(done);
     return () => {
       live = false;
     };
-  }, [meta]);
+  }, [meta, detail]);
   const sources = useMemo(() => (mesh === null ? [] : plantMeshSources(mesh)), [mesh]);
   useEffect(() => () => sources.forEach((source) => source.geometry.dispose()), [sources]);
   return (
@@ -55,29 +58,36 @@ function GrownPlant({ meta, position }: { meta: Record<string, unknown>; positio
 function PlantStyles() {
   const placements = useMemo(
     () =>
-      PLANTS.flatMap((plant) =>
-        STYLES.map((style, column) => ({
+      PLANTS.flatMap((plant) => [
+        ...STYLES.map((style, column) => ({
           key: `${plant.label}/${style.label}`,
           meta: { ...plant.meta, ...style.meta },
+          detail: 1,
           position: [plant.x + (column - 1) * SPACING, 0, 0] satisfies [number, number, number],
         })),
-      ),
+        ...DETAILS.map((detail, column) => ({
+          key: `${plant.label}/detail ${detail}`,
+          meta: { ...plant.meta, ...STYLES[0]?.meta },
+          detail,
+          position: [plant.x + DETAIL_ROW_OFFSET + (column - 1) * SPACING, 0, 0] satisfies [number, number, number],
+        })),
+      ]),
     [],
   );
   return (
     <group>
       <mesh rotation-x={-Math.PI / 2} receiveShadow>
-        <planeGeometry args={[500, 200]} />
+        <planeGeometry args={[700, 200]} />
         <meshStandardMaterial color="#6b7a4a" roughness={1} />
       </mesh>
       {placements.map((entry) => (
-        <GrownPlant key={entry.key} meta={entry.meta} position={entry.position} />
+        <GrownPlant key={entry.key} meta={entry.meta} detail={entry.detail} position={entry.position} />
       ))}
     </group>
   );
 }
 
-/** One grown maple and one grown pine, each in three looks from the same structure. */
+/** One grown maple and one grown pine, each in three looks from the same structure and at each lower detail level. */
 export const plantStylesGame: PlayableGame = {
   ...demoGame,
   game: { ...demoGame.game, name: "plant-styles" },
@@ -89,11 +99,8 @@ export const plantStylesGame: PlayableGame = {
   environment: () => <PlantStyles />,
   GameUI: () => (
     <div style={{ pointerEvents: "none", position: "absolute", inset: 0, color: "#fff", fontFamily: "sans-serif", textShadow: "0 1px 3px rgba(0,0,0,0.85)" }}>
-      <div style={{ position: "absolute", top: 12, left: 16, fontSize: 15, fontWeight: 600 }}>One grown structure per tree · three looks from style params</div>
-      <div style={{ position: "absolute", bottom: 12, left: 16, right: 16, fontSize: 13, display: "grid", gridTemplateColumns: "repeat(3, 1fr)", textAlign: "center" }}>
-        {STYLES.map((style) => (
-          <span key={style.label}>{style.label}</span>
-        ))}
+      <div style={{ position: "absolute", top: 12, left: 16, fontSize: 15, fontWeight: 600 }}>
+        One grown structure per tree · styles: realistic, toon, clay · detail rows: 30k, 8k, 1.5k triangles (left to right)
       </div>
     </div>
   ),
@@ -101,6 +108,8 @@ export const plantStylesGame: PlayableGame = {
     views: {
       maples: { look: "0,11,0", lookFrom: "62,10,0" },
       pines: { look: "150,12,0", lookFrom: "62,10,0" },
+      "maple-details": { look: "75,11,0", lookFrom: "62,10,0" },
+      "pine-details": { look: "225,12,0", lookFrom: "62,10,0" },
     },
   },
 };

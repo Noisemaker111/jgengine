@@ -5,7 +5,7 @@ import type { PlantClusterLevel, PlantStructure } from "../structure/plantStruct
 
 type PackedArray = Float32Array | Float64Array | Int32Array | Uint8Array | Uint16Array | Uint32Array;
 
-const CODEC_VERSION = 1;
+const CODEC_VERSION = 2;
 const ALIGN = 8;
 
 function typeCode(array: PackedArray): number {
@@ -260,17 +260,21 @@ export function decodePlantStructure(bytes: Uint8Array): { structure: PlantStruc
       stage: data.f32("reproductive.stage"),
       count: data.u16("reproductive.count"),
     },
-    leafShape: {
-      kind: oneOf(LEAF_KINDS, str(leafShape, "kind"), "leaf shape"),
-      lobes: num(leafShape, "lobes"),
-      lobeDepth: num(leafShape, "lobeDepth"),
-      aspect: num(leafShape, "aspect"),
-      petioleFraction: num(leafShape, "petioleFraction"),
-    },
+    leafShape: readLeafShape(leafShape),
     leafColor: { spring: str(leafColor, "spring"), summer: str(leafColor, "summer"), autumn: str(leafColor, "autumn") },
     bark: { kind: oneOf(BARK_KINDS, str(bark, "kind"), "bark kind"), furrow: num(bark, "furrow"), color: str(bark, "color") },
   };
   return { structure, hash: str(meta, "hash") };
+}
+
+function readLeafShape(record: Json): LeafShapeParams {
+  return {
+    kind: oneOf(LEAF_KINDS, str(record, "kind"), "leaf shape"),
+    lobes: num(record, "lobes"),
+    lobeDepth: num(record, "lobeDepth"),
+    aspect: num(record, "aspect"),
+    petioleFraction: num(record, "petioleFraction"),
+  };
 }
 
 function partMeta(part: NatureMesh): Json {
@@ -319,7 +323,7 @@ export function encodePlantMesh(mesh: PlantMesh): Uint8Array {
     bark: partMeta(mesh.bark),
     leaves: partMeta(mesh.leaves),
   };
-  return pack(meta, [...partArrays("bark", mesh.bark), ...partArrays("leaves", mesh.leaves)]);
+  return pack(meta, [...partArrays("bark", mesh.bark), ...partArrays("leaves", mesh.leaves), ["leafUvs", mesh.leafUvs]]);
 }
 
 /**
@@ -338,6 +342,7 @@ export function decodePlantMesh(bytes: Uint8Array): PlantMesh {
     shading: shading === "ramp" ? "ramp" : "lit",
     ramp: { bands: num(ramp, "bands"), softness: num(ramp, "softness"), shadow: num(ramp, "shadow") },
     barkGrain: bool(look, "barkGrain"),
+    leafAtlas: field(look, "leafAtlas") === null ? null : readLeafShape(obj(look, "leafAtlas")),
   };
   return {
     structureHash: str(meta, "structureHash"),
@@ -347,6 +352,7 @@ export function decodePlantMesh(bytes: Uint8Array): PlantMesh {
     stats: { heightM: num(stats, "heightM"), dbhCm: num(stats, "dbhCm"), crownRadiusM: num(stats, "crownRadiusM"), crownBaseM: num(stats, "crownBaseM") },
     bark: readPart(data, "bark", obj(meta, "bark")),
     leaves: readPart(data, "leaves", obj(meta, "leaves")),
+    leafUvs: data.f32("leafUvs"),
     look: decodedLook,
     triangles: num(meta, "triangles"),
     bounds: { min: vec3(bounds, "min"), max: vec3(bounds, "max") },

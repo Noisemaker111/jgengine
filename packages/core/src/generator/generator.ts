@@ -191,7 +191,8 @@ export function bakeGeneratorVariants<Schema extends ParamSchema, Output>(
 
 /**
  * Await `prepare` for every variant and detail level {@link bakeGeneratorVariants} would bake with the
- * same arguments, one after another, so a bake right after it is fast.
+ * same arguments, all at once, so a generator that prepares off the main thread (a worker pool) runs
+ * them in parallel and a bake right after it is fast.
  * @capability generator-contract seeded, schema-driven procedural generator with variants and editor exposure
  */
 export async function prepareGeneratorVariants<Schema extends ParamSchema, Output>(
@@ -202,9 +203,11 @@ export async function prepareGeneratorVariants<Schema extends ParamSchema, Outpu
   const prepare = definition.prepare;
   if (prepare === undefined) return;
   const lods = definition.lods !== undefined && definition.lods.length > 0 ? definition.lods : [1];
+  const jobs: Promise<void>[] = [];
   for (const variant of generatorVariants(definition, base, options)) {
-    for (const detail of lods) await prepare.call(definition, variant.params, generatorContext(variant.seed, detail));
+    for (const detail of lods) jobs.push(prepare.call(definition, variant.params, generatorContext(variant.seed, detail)));
   }
+  await Promise.all(jobs);
 }
 
 /**

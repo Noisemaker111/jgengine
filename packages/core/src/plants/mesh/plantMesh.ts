@@ -1,9 +1,11 @@
 // @skill jgengine-world
 import { normalizeToonRamp, type ToonRamp } from "../../material/toonRamp";
 import { hexRgb, icosphere, type NatureMesh, type NatureRgb } from "../../nature/natureMesh";
+import type { LeafShapeParams } from "../species/plantSpecies";
 import { hashPlantStructure, PLANT_CLUSTER_LEVELS, PLANT_REGION, type PlantStructure } from "../structure/plantStructure";
+import { PLANT_LEAF_ATLAS_CELL_COUNT, PLANT_LEAF_ATLAS_CELLS } from "./plantLeafAtlas";
 
-/** Detail of each mesh level, highest first: leaves, shoot cards, limb clumps, crown clumps. */
+/** Detail of each mesh level, highest first: leaves, shoot cards, then leaf clusters at two sizes. */
 export const PLANT_MESH_LODS = [1, 0.5, 0.25, 0.1] as const;
 
 /** Most triangles a plant mesh may have at each level of {@link PLANT_MESH_LODS}, at any age. */
@@ -18,7 +20,11 @@ const BARK_SHARE = [0.33, 0.27, 0.25, 0.2] as const;
  * @capability plant-mesh turn a grown plant into a styled mesh at four detail levels within fixed triangle budgets
  */
 export interface PlantStyle {
-  /** `leaves`: each leaf near, shoot cards further out. `clumps`: rounded clumps per shoot and limb. */
+  /**
+   * `leaves`: textured from the species' leaf shape at every level: each leaf near, leafy shoot cards
+   * further out, crossed leaf-cluster cards far away. `clumps`: untextured rounded clumps per shoot
+   * and limb (toon, clay).
+   */
   foliage: "leaves" | "clumps";
   /** Drawn leaf size over the species' leaf size, 0.5..5. */
   leafScale: number;
@@ -64,6 +70,8 @@ export interface PlantMeshLook {
   shading: "lit" | "ramp";
   ramp: ToonRamp;
   barkGrain: boolean;
+  /** The leaf shape the foliage's atlas is baked from ({@link bakePlantLeafAtlas}); null draws untextured foliage. */
+  leafAtlas: LeafShapeParams | null;
 }
 
 /**
@@ -81,6 +89,8 @@ export interface PlantMesh {
   stats: PlantStructure["stats"];
   bark: NatureMesh;
   leaves: NatureMesh;
+  /** Two atlas coordinates per foliage vertex when {@link PlantMeshLook.leafAtlas} is set, else empty. */
+  leafUvs: Float32Array;
   look: PlantMeshLook;
   triangles: number;
   bounds: { min: [number, number, number]; max: [number, number, number] };
@@ -110,6 +120,7 @@ class PartWriter {
   positions: Float32Array = new Float32Array(3 * 1024);
   normals: Float32Array = new Float32Array(3 * 1024);
   colors: Float32Array = new Float32Array(3 * 1024);
+  uvs: Float32Array = new Float32Array(2 * 1024);
   indices: Uint32Array = new Uint32Array(3 * 1024);
   vertexCount = 0;
   indexCount = 0;
@@ -119,6 +130,7 @@ class PartWriter {
       this.positions = grow(this.positions);
       this.normals = grow(this.normals);
       this.colors = grow(this.colors);
+      this.uvs = grow(this.uvs);
     }
     const at = this.vertexCount * 3;
     this.positions[at] = x;
@@ -132,6 +144,17 @@ class PartWriter {
     this.colors[at + 2] = color[2] ?? 0;
     this.vertexCount += 1;
     return this.vertexCount - 1;
+  }
+
+  /** Atlas coordinates of the vertex just written. */
+  uv(u: number, v: number): void {
+    const at = (this.vertexCount - 1) * 2;
+    this.uvs[at] = u;
+    this.uvs[at + 1] = v;
+  }
+
+  builtUvs(): Float32Array {
+    return this.uvs.slice(0, this.vertexCount * 2);
   }
 
   triangle(a: number, b: number, c: number): void {
@@ -520,17 +543,20 @@ function outwardInto(structure: PlantStructure, row: number, out: Float64Array):
   normalizeInto(out, (p[row * 3] ?? 0) - cx, (p[row * 3 + 1] ?? 0) - cy + 0.3, (p[row * 3 + 2] ?? 0) - cz);
 }
 
+/** Left edge of an atlas cell in texture u. */
+function cellU(cell: number): number {
+  return cell / PLANT_LEAF_ATLAS_CELL_COUNT;
+}
+
 /**
- * Leaf blades as kites around each leaf row. `perRow` leaves per row (1 draws one shoot card standing
- * for the row's leaves), rows kept at `keep` with sizes scaled so the crown keeps its cover.
+ * Textured leaf quads around each leaf row. `perRow` leaves per row (1 draws one leafy shoot card
+ * standing for the row's leaves), rows kept at `keep` with sizes scaled so the crown keeps its cover.
  */
-function addLeafKites(build: FoliageBuild, perRowOverride: number | null, cardScale: number): void {
+function addLeafCards(build: FoliageBuild, perRowOverride: number | null, cardScale: number): void {
   const { structure, writer, style } = build;
   const { position, normal, up, size, count, segment } = structure.leaves;
   const { start } = structure.segments;
   const rows = size.length;
-  const shape = structure.leafShape;
-  const tuft = shape.kind === "needle" || shape.kind === "scale";
   let leaves = 0;
   for (let row = 0; row < rows; row += 1) leaves += perRowOverride ?? (count[row] ?? 1);
   // Sampled a little under the budget so the hard stop below rarely drops the last rows.
@@ -569,7 +595,6 @@ function addLeafKites(build: FoliageBuild, perRowOverride: number | null, cardSc
     const leafLength = (size[row] ?? 0.1) * style.leafScale * cardScale * coverScale;
     // A shoot card stands for every leaf on the shoot, so it is never shorter than half the shoot.
     const length = perRow === 1 ? Math.max(leafLength, shootLength * 0.5 * style.leafScale) : leafLength;
-    const width = length * (tuft ? 0.45 : Math.max(0.25, Math.min(1, shape.aspect)) * 0.5);
     const turn = hash01(build.seed ^ 0x5bd1, row) * Math.PI * 2;
     for (let k = 0; k < perRow; k += 1) {
       if (writer.triangles + 2 > build.budget) return;
@@ -595,20 +620,27 @@ function addLeafKites(build: FoliageBuild, perRowOverride: number | null, cardSc
       const nx = face[0] ?? 0;
       const ny = face[1] ?? 1;
       const nz = face[2] ?? 0;
-      const stalk = length * shape.petioleFraction * 0.4;
-      const t = perRow === 1 ? 0.6 : 0.3 + (0.7 * (k + 0.5)) / perRow;
-      const baseX = sx + (px - sx) * t + dx * stalk;
-      const baseY = sy + (py - sy) * t + dy * stalk;
-      const baseZ = sz + (pz - sz) * t + dz * stalk;
+      const t = perRow === 1 ? 0.35 : 0.3 + (0.7 * (k + 0.5)) / perRow;
+      // The atlas leaf spans about 0.1..0.9 of its cell, so the quad is a little longer than the leaf.
+      const quad = length / 0.8;
+      const half = quad * 0.5;
+      const baseX = sx + (px - sx) * t - dx * quad * 0.1;
+      const baseY = sy + (py - sy) * t - dy * quad * 0.1;
+      const baseZ = sz + (pz - sz) * t - dz * quad * 0.1;
       color[0] = build.rowColors[row * 3] ?? 0;
       color[1] = build.rowColors[row * 3 + 1] ?? 0;
       color[2] = build.rowColors[row * 3 + 2] ?? 0;
       grade(color, build.grade, hash01(build.seed + k, row));
-      const mid = tuft ? 0.5 : 0.42;
-      const v0 = writer.vertex(baseX, baseY, baseZ, nx, ny, nz, color);
-      const v1 = writer.vertex(baseX + dx * length * mid + wx * width, baseY + dy * length * mid + wy * width, baseZ + dz * length * mid + wz * width, nx, ny, nz, color);
-      const v2 = writer.vertex(baseX + dx * length, baseY + dy * length, baseZ + dz * length, nx, ny, nz, color);
-      const v3 = writer.vertex(baseX + dx * length * mid - wx * width, baseY + dy * length * mid - wy * width, baseZ + dz * length * mid - wz * width, nx, ny, nz, color);
+      const u0 = cellU(perRow === 1 ? PLANT_LEAF_ATLAS_CELLS.shoot : PLANT_LEAF_ATLAS_CELLS.leaf);
+      const u1 = u0 + cellU(1);
+      const v0 = writer.vertex(baseX - wx * half, baseY - wy * half, baseZ - wz * half, nx, ny, nz, color);
+      writer.uv(u0, 0);
+      const v1 = writer.vertex(baseX + wx * half, baseY + wy * half, baseZ + wz * half, nx, ny, nz, color);
+      writer.uv(u1, 0);
+      const v2 = writer.vertex(baseX + dx * quad + wx * half, baseY + dy * quad + wy * half, baseZ + dz * quad + wz * half, nx, ny, nz, color);
+      writer.uv(u1, 1);
+      const v3 = writer.vertex(baseX + dx * quad - wx * half, baseY + dy * quad - wy * half, baseZ + dz * quad - wz * half, nx, ny, nz, color);
+      writer.uv(u0, 1);
       writer.triangle(v0, v1, v2);
       writer.triangle(v0, v2, v3);
     }
@@ -626,10 +658,53 @@ const OCTAHEDRON = {
  * cell grows until the clumps fit the budget, so a clump never stands for a whole limb.
  */
 function addClumps(build: FoliageBuild, baseCell: number, sphereLevel: number): void {
-  const { structure, writer } = build;
+  const { writer } = build;
   const shape = sphereLevel < 0 ? OCTAHEDRON : icosphere(sphereLevel);
-  const perClump = shape.faces.length;
-  const most = Math.max(1, Math.floor(build.budget / perClump));
+  const { slots, cell, sums, members, meanMembers } = groupLeaves(build, baseCell, shape.faces.length);
+  const vertexColor = new Float64Array(3);
+  for (let slot = 0; slot < slots; slot += 1) {
+    const n = Math.max(1, members[slot] ?? 1);
+    const cx = (sums[slot * 6] ?? 0) / n;
+    const cy = (sums[slot * 6 + 1] ?? 0) / n;
+    const cz = (sums[slot * 6 + 2] ?? 0) / n;
+    const fill = Math.min(1.2, Math.sqrt(n / Math.max(1, meanMembers)));
+    const radius = cell * (0.38 + 0.32 * fill);
+    const base = writer.vertexCount;
+    for (let v = 0; v < shape.vertices.length; v += 1) {
+      const vertex = shape.vertices[v];
+      const vx = vertex?.[0] ?? 0;
+      const vy = vertex?.[1] ?? 0;
+      const vz = vertex?.[2] ?? 0;
+      const lump = 1 + (hash01(build.seed ^ slot, v) - 0.5) * 0.3;
+      const below = 1 - 0.3 * (1 - (vy + 1) / 2);
+      vertexColor[0] = ((sums[slot * 6 + 3] ?? 0) / n) * below;
+      vertexColor[1] = ((sums[slot * 6 + 4] ?? 0) / n) * below;
+      vertexColor[2] = ((sums[slot * 6 + 5] ?? 0) / n) * below;
+      grade(vertexColor, build.grade, hash01(build.seed + slot, v));
+      writer.vertex(cx + vx * radius * lump, cy + vy * radius * lump * 0.85, cz + vz * radius * lump, vx, vy, vz, vertexColor);
+    }
+    for (const face of shape.faces) writer.triangle(base + face[0], base + face[1], base + face[2]);
+  }
+}
+
+interface LeafGroups {
+  slots: number;
+  /** Final grid cell size, metres. */
+  cell: number;
+  /** Per slot: summed position (3) then summed colour (3). */
+  sums: Float64Array;
+  members: Uint32Array;
+  meanMembers: number;
+}
+
+/**
+ * Leaf rows grouped over an even grid of the crown: every occupied cell of `baseCell` metres is one
+ * group at the mean of its leaves. The cell grows until the groups fit the budget at `perGroup`
+ * triangles each, so a group never stands for a whole limb.
+ */
+function groupLeaves(build: FoliageBuild, baseCell: number, perGroup: number): LeafGroups {
+  const { structure } = build;
+  const most = Math.max(1, Math.floor(build.budget / perGroup));
   const { position } = structure.leaves;
   const rows = structure.leaves.size.length;
   const slotOf = new Int32Array(rows);
@@ -665,29 +740,61 @@ function addClumps(build: FoliageBuild, baseCell: number, sphereLevel: number): 
   }
   let meanMembers = 0;
   for (let slot = 0; slot < slots; slot += 1) meanMembers += (members[slot] ?? 0) / slots;
-  const vertexColor = new Float64Array(3);
+  return { slots, cell, sums, members, meanMembers };
+}
+
+/**
+ * Crossed leaf-cluster cards over the crown, textured with the atlas's cluster cell: two upright
+ * cards per group, plus a tilted level one when `level` is set. Normals point out from the crown's
+ * middle, so the whole crown lights as one volume.
+ */
+function addClusterCards(build: FoliageBuild, baseCell: number, level: boolean): void {
+  const { writer, structure } = build;
+  const cardsPerGroup = level ? 3 : 2;
+  const { slots, cell, sums, members, meanMembers } = groupLeaves(build, baseCell, cardsPerGroup * 2);
+  const { heightM, crownBaseM } = structure.stats;
+  const midY = (heightM + crownBaseM) / 2;
+  const u0 = cellU(PLANT_LEAF_ATLAS_CELLS.cluster);
+  const u1 = u0 + cellU(1);
+  const color = new Float64Array(3);
+  const normal = new Float64Array(3);
   for (let slot = 0; slot < slots; slot += 1) {
     const n = Math.max(1, members[slot] ?? 1);
     const cx = (sums[slot * 6] ?? 0) / n;
     const cy = (sums[slot * 6 + 1] ?? 0) / n;
     const cz = (sums[slot * 6 + 2] ?? 0) / n;
     const fill = Math.min(1.2, Math.sqrt(n / Math.max(1, meanMembers)));
-    const radius = cell * (0.38 + 0.32 * fill);
-    const base = writer.vertexCount;
-    for (let v = 0; v < shape.vertices.length; v += 1) {
-      const vertex = shape.vertices[v];
-      const vx = vertex?.[0] ?? 0;
-      const vy = vertex?.[1] ?? 0;
-      const vz = vertex?.[2] ?? 0;
-      const lump = 1 + (hash01(build.seed ^ slot, v) - 0.5) * 0.3;
-      const below = 1 - 0.3 * (1 - (vy + 1) / 2);
-      vertexColor[0] = ((sums[slot * 6 + 3] ?? 0) / n) * below;
-      vertexColor[1] = ((sums[slot * 6 + 4] ?? 0) / n) * below;
-      vertexColor[2] = ((sums[slot * 6 + 5] ?? 0) / n) * below;
-      grade(vertexColor, build.grade, hash01(build.seed + slot, v));
-      writer.vertex(cx + vx * radius * lump, cy + vy * radius * lump * 0.85, cz + vz * radius * lump, vx, vy, vz, vertexColor);
+    // The atlas cluster fills about two thirds of its cell, so a card is wider than its group.
+    const half = cell * (0.55 + 0.35 * fill);
+    const yaw = hash01(build.seed ^ 0x2f6b, slot) * Math.PI;
+    for (let card = 0; card < cardsPerGroup; card += 1) {
+      // Upright cards cross at right angles; the third lies tilted towards the sky.
+      const angle = yaw + (card * Math.PI) / 2;
+      const ax = Math.cos(angle);
+      const az = Math.sin(angle);
+      const flat = card === 2;
+      const bx = flat ? -az * 0.94 : 0;
+      const by = flat ? 0.34 : 1;
+      const bz = flat ? ax * 0.94 : 0;
+      const base = writer.vertexCount;
+      for (let k = 0; k < 4; k += 1) {
+        const su = k === 0 || k === 3 ? -1 : 1;
+        const sv = k < 2 ? -1 : 1;
+        const x = cx + (ax * su + bx * sv) * half;
+        const y = cy + by * sv * half;
+        const z = cz + (az * su + bz * sv) * half;
+        normalizeInto(normal, x, (y - midY) * 1.2 + half * 0.6, z);
+        const shade = 0.82 + (0.18 * (sv + 1)) / 2;
+        color[0] = ((sums[slot * 6 + 3] ?? 0) / n) * shade;
+        color[1] = ((sums[slot * 6 + 4] ?? 0) / n) * shade;
+        color[2] = ((sums[slot * 6 + 5] ?? 0) / n) * shade;
+        grade(color, build.grade, hash01(build.seed + slot, card * 4 + k));
+        writer.vertex(x, y, z, normal[0] ?? 0, normal[1] ?? 1, normal[2] ?? 0, color);
+        writer.uv(su < 0 ? u0 : u1, sv < 0 ? 0 : 1);
+      }
+      writer.triangle(base, base + 1, base + 2);
+      writer.triangle(base, base + 2, base + 3);
     }
-    for (const face of shape.faces) writer.triangle(base + face[0], base + face[1], base + face[2]);
   }
 }
 
@@ -698,14 +805,17 @@ function addFoliage(build: FoliageBuild, lod: number): void {
   const cell = Math.max(0.4, 4 * (build.structure.leaves.size[0] ?? 0.1) * build.style.leafScale);
   if (lod === 0) {
     if (clumps) addClumps(build, cell, 1);
-    else addLeafKites(build, null, 1);
+    else addLeafCards(build, null, 1);
   } else if (lod === 1) {
     if (clumps) addClumps(build, cell * 1.5, 0);
-    else addLeafKites(build, 1, 1.9);
+    else addLeafCards(build, 1, 1.9);
   } else if (lod === 2) {
-    addClumps(build, cell * 2, 0);
-  } else {
+    if (clumps) addClumps(build, cell * 2, 0);
+    else addClusterCards(build, cell * 1.2, true);
+  } else if (clumps) {
     addClumps(build, cell * 3.5, -1);
+  } else {
+    addClusterCards(build, cell * 2, false);
   }
 }
 
@@ -752,6 +862,7 @@ export function buildPlantMesh(input: PlantMeshInput): PlantMesh {
   );
   const bark = barkWriter.build(style.barkGrain && style.shading === "lit" ? "bark" : undefined);
   const leaves = leafWriter.build();
+  const textured = style.foliage === "leaves";
   const bounds = unionBounds(bark, leaves);
   return {
     structureHash: input.structureHash ?? hashPlantStructure(structure),
@@ -761,7 +872,8 @@ export function buildPlantMesh(input: PlantMeshInput): PlantMesh {
     stats: structure.stats,
     bark,
     leaves,
-    look: { shading: style.shading, ramp: normalizeToonRamp(style.ramp), barkGrain: style.barkGrain },
+    leafUvs: textured ? leafWriter.builtUvs() : new Float32Array(0),
+    look: { shading: style.shading, ramp: normalizeToonRamp(style.ramp), barkGrain: style.barkGrain, leafAtlas: textured ? { ...structure.leafShape } : null },
     triangles: bark.triangles + leaves.triangles,
     bounds,
   };
