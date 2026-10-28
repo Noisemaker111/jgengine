@@ -34,7 +34,8 @@ describe("findAssets", () => {
     expect(raptor).toMatchObject({ kind: "game-file", id: "other:models/imported/creatures/velociraptor.glb", from: "other", url: "/models/imported/creatures/velociraptor.glb", license: null, onDisk: false });
     const pine = findAssets("Pine_1", ctx).matches;
     expect(pine.some((match) => match.kind === "game-file")).toBe(false);
-    expect(pine[0]).toMatchObject({ kind: "model", id: "quaternius-stylized-nature/Pine_1" });
+    // Several packs ship a Pine_1; the game's copy is offered as the stylized-nature one it came from.
+    expect(pine.some((match) => match.kind === "model" && match.id === "quaternius-stylized-nature/Pine_1")).toBe(true);
   });
 
   test("the game's own copy counts as on disk", () => {
