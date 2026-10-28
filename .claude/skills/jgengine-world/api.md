@@ -1282,6 +1282,37 @@
 - `effectiveRelation` (function): function effectiveRelation(input: EffectiveRelationInput): FactionRelation — ⚠ undocumented
 - `tierForStanding` (function): function tierForStanding(tiers: readonly ReputationTier[], standing: number): ReputationTier — Map a faction standing value to its named reputation tier.
 
+## @jgengine/core/fire/crownFire
+
+- `CANOPY_HEAT_KJ_KG` (const): const CANOPY_HEAT_KJ_KG: number — Low heat of combustion of crown foliage, kJ/kg (8000 Btu/lb, as BehavePlus).
+- `CanopyFuel` (interface): interface CanopyFuel — The canopy fuel of a forest stand, as crown fire models read it.
+- `CrownFire` (interface): interface CrownFire — A crown fire assessment for one place.
+- `CrownFireType` (type): type CrownFireType = "surface" | "torching" | "crowning" | "conditional" — Crown fire type in Rothermel's 1991 sense (as BehavePlus): `surface` when the surface fire neither torches nor could sustain a crown fire, `torching` (passive) when it lights crowns it cannot carry, `crowning` (active) when it lights them and the crown rate passes Van Wagner's threshold, and `conditional` when an active crown fire could run but this surface fire cannot start one.
+- `activeCrownCriticalRate` (function): function activeCrownCriticalRate(canopy: CanopyFuel): number — Van Wagner 1977 critical spread rate for an active crown fire, m/s: a crown fire sustains itself once it moves 3 kg/m²/min of canopy fuel, R = 3 / CBD (m/min).
+- `assessCrownFire` (function): function assessCrownFire(input: { canopy: CanopyFuel; moisture: FuelMoisture; twentyFootWind: number; surfaceIntensity: number; surfaceHeatPerUnitArea: number; fm10Bed?: SurfaceFuelbed; }): CrownFire — Assess crown fire from a surface fire under a canopy: Van Wagner 1977 initiation and active thresholds, Rothermel 1991 crown spread rate and shape, Thomas 1963 flame length.
+- `canopyFuelLoad` (function): function canopyFuelLoad(canopy: CanopyFuel): number — Canopy fuel load available to a crown fire, kg/m².
+- `crownFlameLength` (function): function crownFlameLength(firelineIntensityKWm: number): number — Thomas 1963 crown flame length, m, from fireline intensity, kW/m: L = 0.2·I^(2/3) (ft, Btu/ft/s).
+- `crownInitiationIntensity` (function): function crownInitiationIntensity(canopy: CanopyFuel): number — Van Wagner 1977 critical surface fireline intensity to ignite the crown, kW/m: I₀ = (0.010·CBH·(460 + 25.9·FMC))^1.5, CBH in m, FMC in percent (floored at 30 %).
+- `crownLengthToBreadth` (function): function crownLengthToBreadth(twentyFootWind: number): number — Rothermel 1991 crown fire length-to-breadth ratio, 1 + 0.125 × the 20-ft wind in mph.
+- `rothermelCrownRate` (function): function rothermelCrownRate(moisture: FuelMoisture, twentyFootWind: number, fm10Bed?: SurfaceFuelbed): number — Rothermel 1991 active crown fire spread rate, m/s: 3.34 times the surface rate of fuel model 10 at the same dead and live moisture, with midflame wind 0.4 × the 20-ft wind, on level ground.
+
+## @jgengine/core/fire/fireLandscape
+
+- `CanopyStand` (interface): interface CanopyStand extends CanopyFuel — A forest stand over a cell: the canopy that shelters the wind and can carry crown fire.
+- `DEFAULT_FIRE_TUNING` (const): const DEFAULT_FIRE_TUNING: FireTuning — Defaults: 16-direction stencil, BehavePlus-default wind limit, crown fire and spotting on.
+- `FireBurnState` (type): type FireBurnState = "unburnt" | "flaming" | "smouldering" | "burnt" — What a cell is doing: never burnt, flaming, smouldering coarse fuel, or burnt out.
+- `FireCellKind` (type): type FireCellKind = "none" | "surface" | "torching" | "crowning" — How fire moved through a cell.
+- `FireCellReading` (interface): interface FireCellReading — One cell's fire record, for game logic; renderers read the typed arrays of {@link FireLandscape.layers}.
+- `FireLandscape` (interface): interface FireLandscape — A fire growing over a landscape of fuel, terrain and canopy.
+- `FireLandscapeConfig` (interface): interface FireLandscapeConfig — Size, terrain, fuel and canopy of a fire landscape.
+- `FireLandscapeSnapshot` (interface): interface FireLandscapeSnapshot — A landscape fire's whole state as JSON-safe values.
+- `FireLayers` (interface): interface FireLayers — Typed per-cell outputs for renderers, row-major, updated in place every step.
+- `FireMoistureField` (interface): interface FireMoistureField — Per-cell fuel moisture that changes over time (a dead-fuel moisture model, irrigation, rain).
+- `FireStepStats` (interface): interface FireStepStats — Counters from the last step.
+- `FireTuning` (interface): interface FireTuning — Live policy of a fire landscape; every value can change during play with `retune`.
+- `FireWeather` (interface): interface FireWeather — Fire weather for one step. Directions are radians in the grid plane, from +x towards +z.
+- `createFireLandscape` (function): function createFireLandscape(config: FireLandscapeConfig): FireLandscape — Grow a wildfire over a grid of fuel, terrain and canopy. Each cell spreads as a Rothermel surface fire shaped by the Anderson ellipse, or as a Rothermel 1991 crown fire once Van Wagner's 1977 thresholds are passed; arrival times follow Finney's 2002 minimum-travel-time method on an 8-, 16- or 32-direction stencil, integrating travel time through every cell a path crosses, on the slope surface, with a semi-Lagrangian triangle update so fronts also travel between stencil directions. Torching and crowning cells loft embers to Albini's maximum spotting distance, which light fuel with the NFDRS ignition probability. Cells flame for the Anderson residence time, smoulder coarse fuel out, and leave char, ash and scorch. Deterministic for a seed; cost is bounded by the event budget per step and the cells actively burning.
+
 ## @jgengine/core/fire/fuelModels
 
 - `ANDERSON_FUEL_MODELS` (const): const ANDERSON_FUEL_MODELS: Readonly<Record<string, FuelModel>> — The original 13 fuel models (Anderson 1982; Albini 1976), keyed by code `FM1`..`FM13`.
@@ -1297,6 +1328,15 @@
 - `SCOTT_BURGAN_FUEL_MODELS` (const): const SCOTT_BURGAN_FUEL_MODELS: Readonly<Record<string, FuelModel>> — The 40 standard fire behavior fuel models of Scott & Burgan 2005 (grass GR, grass-shrub GS, shrub SH, timber-understory TU, timber litter TL, slash-blowdown SB), keyed by code.
 - `standardFuelModel` (function): function standardFuelModel(code: string): FuelModel | undefined — Every standard fuel model by code.
 - `totalFuelLoad` (function): function totalFuelLoad(fuel: FuelModel): number — Total fuel load of a model, kg/m².
+
+## @jgengine/core/fire/spotting
+
+- `SpotDistance` (interface): interface SpotDistance — How far embers from a source travel, and how high they were lofted.
+- `SpotTerrain` (interface): interface SpotTerrain — The ground downwind of a fire, where embers fall.
+- `TorchingSpecies` (type): type TorchingSpecies = | "engelmannSpruce" | "douglasFir" | "subalpineFir" | "westernHemlock" | "ponderosaPine" | "lodgepolePine" | "westernWhitePine" | "grandFir" | "balsamFir" | "slashPine" | "longleafPine" | "pondPine" | "shortleafPine" | "loblollyPine" — Albini 1979 torching-tree flame height and duration coefficients by species group.
+- `emberIgnitionProbability` (function): function emberIgnitionProbability(oneHourMoisture: number, fuelTemperatureC: number): number — Probability that a firebrand landing in fine dead fuel starts a fire (Schroeder 1969, in the NFDRS form of Cohen & Deeming 1985): from 1-h fuel moisture and the fuel's temperature, 0..1.
+- `surfaceFireSpotDistance` (function): function surfaceFireSpotDistance(flameLengthM: number, twentyFootWind: number, terrain: SpotTerrain): SpotDistance — Maximum spotting distance from a wind-driven surface fire (Albini 1983 as in BehavePlus): the firebrand is lofted by the flame's plume, then carried by the 20-ft wind over the downwind cover.
+- `torchingTreeSpotDistance` (function): function torchingTreeSpotDistance(input: { species: TorchingSpecies; dbhM: number; treeHeightM: number; trees: number; twentyFootWind: number; terrain: SpotTerrain; }): SpotDistance — Maximum spotting distance from torching trees (Albini 1979): steady flame height and duration from species, DBH and number of trees torching together, the loft that flame gives a firebrand, and its drift over the downwind cover.
 
 ## @jgengine/core/fire/surfaceFire
 

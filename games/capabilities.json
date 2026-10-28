@@ -3425,6 +3425,16 @@
       "intent": "look up one named particle effect in the shared library, or undefined when unknown"
     },
     {
+      "id": "fire-active-crown-threshold",
+      "packages": [
+        "@jgengine/core"
+      ],
+      "module": "@jgengine/core/fire/crownFire",
+      "gameFacing": false,
+      "probe": null,
+      "intent": "Van Wagner 1977 spread rate a crown fire needs to stay active"
+    },
+    {
       "id": "fire-byram-intensity",
       "packages": [
         "@jgengine/core"
@@ -3443,6 +3453,66 @@
       "gameFacing": false,
       "probe": null,
       "intent": "a serializable minimum-interval rate gate for repeated actions (weapon fire, ability spam)"
+    },
+    {
+      "id": "fire-canopy-load",
+      "packages": [
+        "@jgengine/core"
+      ],
+      "module": "@jgengine/core/fire/crownFire",
+      "gameFacing": false,
+      "probe": null,
+      "intent": "canopy fuel load from bulk density and crown depth"
+    },
+    {
+      "id": "fire-crown-fire",
+      "packages": [
+        "@jgengine/core"
+      ],
+      "module": "@jgengine/core/fire/crownFire",
+      "gameFacing": false,
+      "probe": null,
+      "intent": "classify a surface fire as surface, torching, crowning or conditional crown fire and give the crown rate and intensity"
+    },
+    {
+      "id": "fire-crown-flame-length",
+      "packages": [
+        "@jgengine/core"
+      ],
+      "module": "@jgengine/core/fire/crownFire",
+      "gameFacing": false,
+      "probe": null,
+      "intent": "Thomas 1963 crown fire flame length from intensity"
+    },
+    {
+      "id": "fire-crown-initiation",
+      "packages": [
+        "@jgengine/core"
+      ],
+      "module": "@jgengine/core/fire/crownFire",
+      "gameFacing": false,
+      "probe": null,
+      "intent": "Van Wagner 1977 surface intensity needed to torch a canopy"
+    },
+    {
+      "id": "fire-crown-shape",
+      "packages": [
+        "@jgengine/core"
+      ],
+      "module": "@jgengine/core/fire/crownFire",
+      "gameFacing": false,
+      "probe": null,
+      "intent": "Rothermel 1991 crown fire ellipse shape from the 20-ft wind"
+    },
+    {
+      "id": "fire-crown-spread",
+      "packages": [
+        "@jgengine/core"
+      ],
+      "module": "@jgengine/core/fire/crownFire",
+      "gameFacing": false,
+      "probe": null,
+      "intent": "Rothermel 1991 crown fire spread rate from 20-ft wind and fuel moisture"
     },
     {
       "id": "fire-ellipse-eccentricity",
@@ -3505,6 +3575,16 @@
       "intent": "share of live herbs cured to dead fuel at a herb moisture (Scott & Burgan 2005)"
     },
     {
+      "id": "fire-ignition-probability",
+      "packages": [
+        "@jgengine/core"
+      ],
+      "module": "@jgengine/core/fire/spotting",
+      "gameFacing": false,
+      "probe": null,
+      "intent": "chance an ember lighting fine fuel at a moisture and temperature starts a fire"
+    },
+    {
       "id": "fire-input",
       "packages": [
         "@jgengine/core"
@@ -3523,6 +3603,16 @@
       "gameFacing": false,
       "probe": null,
       "intent": "fireline intensity that gives a flame length"
+    },
+    {
+      "id": "fire-landscape",
+      "packages": [
+        "@jgengine/core"
+      ],
+      "module": "@jgengine/core/fire/fireLandscape",
+      "gameFacing": false,
+      "probe": null,
+      "intent": "grow a wildfire over fuel, terrain and canopy with crown fire, ember spotting and burnout; snapshot, restore, retune"
     },
     {
       "id": "fire-length-to-breadth",
@@ -3563,6 +3653,26 @@
       "gameFacing": false,
       "probe": null,
       "intent": "Van Wagner crown scorch height from intensity, wind and air temperature"
+    },
+    {
+      "id": "fire-spotting-surface",
+      "packages": [
+        "@jgengine/core"
+      ],
+      "module": "@jgengine/core/fire/spotting",
+      "gameFacing": false,
+      "probe": null,
+      "intent": "maximum ember spotting distance from a surface fire's flame length and wind"
+    },
+    {
+      "id": "fire-spotting-torching",
+      "packages": [
+        "@jgengine/core"
+      ],
+      "module": "@jgengine/core/fire/spotting",
+      "gameFacing": false,
+      "probe": null,
+      "intent": "maximum ember spotting distance from a group of torching trees"
     },
     {
       "id": "fire-surface-fuelbed",
