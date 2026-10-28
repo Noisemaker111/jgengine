@@ -1,0 +1,118 @@
+[
+  {
+    "id": "quaternius-low-poly-guns/ak47",
+    "source": "quaternius-low-poly-guns",
+    "categories": [
+      "weapon",
+      "gun"
+    ],
+    "file": "ak47.glb",
+    "metrics": {
+      "glbBytes": 118060,
+      "byteLength": 118060,
+      "triangles": 1196,
+      "primitives": 3,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 5.569769978523254,
+        "d": 0.5982620716094971
+      },
+      "center": {
+        "x": 1.6075310111045837,
+        "z": 0.8199520111083984
+      },
+      "minY": 0.28857699036598206,
+      "maxY": 2.3520030975341797
+    }
+  },
+  {
+    "id": "quaternius-low-poly-guns/Rifle",
+    "source": "quaternius-low-poly-guns",
+    "categories": [
+      "weapon",
+      "gun"
+    ],
+    "file": "Rifle.glb",
+    "metrics": {
+      "glbBytes": 68232,
+      "byteLength": 68232,
+      "triangles": 676,
+      "primitives": 3,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 0.4236920028924942,
+        "d": 8.774086743593216
+      },
+      "center": {
+        "x": 0.017354004085063934,
+        "z": -4.029978379607201
+      },
+      "minY": -0.5594940185546875,
+      "maxY": 0.6674630045890808
+    }
+  },
+  {
+    "id": "quaternius-low-poly-guns/RocketLauncher",
+    "source": "quaternius-low-poly-guns",
+    "categories": [
+      "weapon",
+      "gun"
+    ],
+    "file": "RocketLauncher.glb",
+    "metrics": {
+      "glbBytes": 131564,
+      "byteLength": 131564,
+      "triangles": 1346,
+      "primitives": 2,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 6.556964993476868,
+        "d": 0.8404259979724884
+      },
+      "center": {
+        "x": -1.3257364630699158,
+        "z": -0.004641994833946228
+      },
+      "minY": -0.49406901001930237,
+      "maxY": 0.4225279986858368
+    }
+  },
+  {
+    "id": "quaternius-low-poly-guns/Uzi",
+    "source": "quaternius-low-poly-guns",
+    "categories": [
+      "weapon",
+      "gun"
+    ],
+    "file": "Uzi.glb",
+    "metrics": {
+      "glbBytes": 101708,
+      "byteLength": 101708,
+      "triangles": 1377,
+      "primitives": 3,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 0.39662300050258636,
+        "d": 3.4253430366516113
+      },
+      "center": {
+        "x": 0.000021494925022125244,
+        "z": -0.5370244979858398
+      },
+      "minY": -1.1412949562072754,
+      "maxY": 1.0430129766464233
+    }
+  }
+]

@@ -1,0 +1,5540 @@
+[
+  {
+    "id": "quaternius-fantasy-props/Anvil_Log",
+    "source": "quaternius-fantasy-props",
+    "categories": [
+      "fantasy",
+      "prop"
+    ],
+    "file": "Anvil_Log.glb",
+    "metrics": {
+      "glbBytes": 135012,
+      "byteLength": 24496430,
+      "triangles": 3808,
+      "primitives": 3,
+      "textures": [
+        {
+          "image": 0,
+          "width": 2048,
+          "height": 2048,
+          "byteLength": 3478660
+        },
+        {
+          "image": 1,
+          "width": 2048,
+          "height": 2048,
+          "byteLength": 2232961
+        },
+        {
+          "image": 2,
+          "width": 2048,
+          "height": 2048,
+          "byteLength": 2064585
+        },
+        {
+          "image": 3,
+          "width": 2048,
+          "height": 2048,
+          "byteLength": 3622271
+        },
+        {
+          "image": 4,
+          "width": 2048,
+          "height": 2048,
+          "byteLength": 1361221
+        },
+        {
+          "image": 5,
+          "width": 2048,
+          "height": 2048,
+          "byteLength": 1871475
+        },
+        {
+          "image": 6,
+          "width": 2048,
+          "height": 2048,
+          "byteLength": 4449962
+        },
+        {
+          "image": 7,
+          "width": 2048,
+          "height": 2048,
+          "byteLength": 2263132
+        },
+        {
+          "image": 8,
+          "width": 2048,
+          "height": 2048,
+          "byteLength": 3017151
+        }
+      ],
+      "maxTextureDimension": 2048
+    },
+    "dims": {
+      "footprint": {
+        "w": 0.9292868077754974,
+        "d": 0.8213925957679749
+      },
+      "center": {
+        "x": 0.052725449204444885,
+        "z": 0.0637761652469635
+      },
+      "minY": 0.0014315724838525057,
+      "maxY": 1.0748099088668823
+    }
+  },
+  {
+    "id": "quaternius-fantasy-props/Anvil",
+    "source": "quaternius-fantasy-props",
+    "categories": [
+      "fantasy",
+      "prop"
+    ],
+    "file": "Anvil.glb",
+    "metrics": {
+      "glbBytes": 26368,
+      "byteLength": 6881335,
+      "triangles": 750,
+      "primitives": 2,
+      "textures": [
+        {
+          "image": 0,
+          "width": 2048,
+          "height": 2048,
+          "byteLength": 3622271
+        },
+        {
+          "image": 1,
+          "width": 2048,
+          "height": 2048,
+          "byteLength": 1361221
+        },
+        {
+          "image": 2,
+          "width": 2048,
+          "height": 2048,
+          "byteLength": 1871475
+        }
+      ],
+      "maxTextureDimension": 2048
+    },
+    "dims": {
+      "footprint": {
+        "w": 1.0815600454807281,
+        "d": 0.40155115723609924
+      },
+      "center": {
+        "x": 0.06136505305767059,
+        "z": 0
+      },
+      "minY": 0.002673726761713624,
+      "maxY": 0.558722198009491
+    }
+  },
+  {
+    "id": "quaternius-fantasy-props/Axe_Bronze",
+    "source": "quaternius-fantasy-props",
+    "categories": [
+      "fantasy",
+      "prop"
+    ],
+    "file": "Axe_Bronze.glb",
+    "metrics": {
+      "glbBytes": 33072,
+      "byteLength": 9763317,
+      "triangles": 826,
+      "primitives": 1,
+      "textures": [
+        {
+          "image": 0,
+          "width": 2048,
+          "height": 2048,
+          "byteLength": 4449962
+        },
+        {
+          "image": 1,
+          "width": 2048,
+          "height": 2048,
+          "byteLength": 2263132
+        },
+        {
+          "image": 2,
+          "width": 2048,
+          "height": 2048,
+          "byteLength": 3017151
+        }
+      ],
+      "maxTextureDimension": 2048
+    },
+    "dims": {
+      "footprint": {
+        "w": 0.2944634303729942,
+        "d": 0.046015113048522904
+      },
+      "center": {
+        "x": -0.04863585057830572,
+        "z": -1.5774778150401403e-9
+      },
+      "minY": -0.38061130724746745,
+      "maxY": 0.44631493616378687
+    }
+  },
+  {
+    "id": "quaternius-fantasy-props/Bag",
+    "source": "quaternius-fantasy-props",
+    "categories": [
+      "fantasy",
+      "prop"
+    ],
+    "file": "Bag.glb",
+    "metrics": {
+      "glbBytes": 30392,
+      "byteLength": 14284694,
+      "triangles": 858,
+      "primitives": 2,
+      "textures": [
+        {
+          "image": 0,
+          "width": 2048,
+          "height": 2048,
+          "byteLength": 3917916
+        },
+        {
+          "image": 1,
+          "width": 2048,
+          "height": 2048,
+          "byteLength": 1936754
+        },
+        {
+          "image": 2,
+          "width": 2048,
+          "height": 2048,
+          "byteLength": 623426
+        },
+        {
+          "image": 3,
+          "width": 2048,
+          "height": 2048,
+          "byteLength": 3478660
+        },
+        {
+          "image": 4,
+          "width": 2048,
+          "height": 2048,
+          "byteLength": 2232961
+        },
+        {
+          "image": 5,
+          "width": 2048,
+          "height": 2048,
+          "byteLength": 2064585
+        }
+      ],
+      "maxTextureDimension": 2048
+    },
+    "dims": {
+      "footprint": {
+        "w": 0.6551766395568848,
+        "d": 0.5443934202194214
+      },
+      "center": {
+        "x": -0.0021847188472747803,
+        "z": 0.0282936692237854
+      },
+      "minY": 0.002416962292045355,
+      "maxY": 0.8015695214271545
+    }
+  },
+  {
+    "id": "quaternius-fantasy-props/Banner_1_Cloth",
+    "source": "quaternius-fantasy-props",
+    "categories": [
+      "fantasy",
+      "prop"
+    ],
+    "file": "Banner_1_Cloth.glb",
+    "metrics": {
+      "glbBytes": 10076,
+      "byteLength": 13343139,
+      "triangles": 138,
+      "primitives": 2,
+      "textures": [
+        {
+          "image": 0,
+          "width": 2048,
+          "height": 2048,
+          "byteLength": 3622271
+        },
+        {
+          "image": 1,
+          "width": 2048,
+          "height": 2048,
+          "byteLength": 1361221
+        },
+        {
+          "image": 2,
+          "width": 2048,
+          "height": 2048,
+          "byteLength": 1871475
+        },
+        {
+          "image": 3,
+          "width": 2048,
+          "height": 2048,
+          "byteLength": 3917916
+        },
+        {
+          "image": 4,
+          "width": 2048,
+          "height": 2048,
+          "byteLength": 1936754
+        },
+        {
+          "image": 5,
+          "width": 2048,
+          "height": 2048,
+          "byteLength": 623426
+        }
+      ],
+      "maxTextureDimension": 2048
+    },
+    "dims": {
+      "footprint": {
+        "w": 0.8101676106452942,
+        "d": 0.056755486875772476
+      },
+      "center": {
+        "x": -0.0027953684329986572,
+        "z": -0.005357550457119942
+      },
+      "minY": -2.24641489982605,
+      "maxY": -5.960464477539063e-8
+    }
+  },
+  {
+    "id": "quaternius-fantasy-props/Banner_1",
+    "source": "quaternius-fantasy-props",
+    "categories": [
+      "fantasy",
+      "prop"
+    ],
+    "file": "Banner_1.glb",
+    "metrics": {
+      "glbBytes": 25996,
+      "byteLength": 21135265,
+      "triangles": 448,
+      "primitives": 3,
+      "textures": [
+        {
+          "image": 0,
+          "width": 2048,
+          "height": 2048,
+          "byteLength": 3478660
+        },
+        {
+          "image": 1,
+          "width": 2048,
+          "height": 2048,
+          "byteLength": 2232961
+        },
+        {
+          "image": 2,
+          "width": 2048,
+          "height": 2048,
+          "byteLength": 2064585
+        },
+        {
+          "image": 3,
+          "width": 2048,
+          "height": 2048,
+          "byteLength": 3622271
+        },
+        {
+          "image": 4,
+          "width": 2048,
+          "height": 2048,
+          "byteLength": 1361221
+        },
+        {
+          "image": 5,
+          "width": 2048,
+          "height": 2048,
+          "byteLength": 1871475
+        },
+        {
+          "image": 6,
+          "width": 2048,
+          "height": 2048,
+          "byteLength": 3917916
+        },
+        {
+          "image": 7,
+          "width": 2048,
+          "height": 2048,
+          "byteLength": 1936754
+        },
+        {
+          "image": 8,
+          "width": 2048,
+          "height": 2048,
+          "byteLength": 623426
+        }
+      ],
+      "maxTextureDimension": 2048
+    },
+    "dims": {
+      "footprint": {
+        "w": 1.613107708923053,
+        "d": 0.1905701905488968
+      },
+      "center": {
+        "x": 0.805746183876181,
+        "z": 0.00232560932636261
+      },
+      "minY": -1.548718810081482,
+      "maxY": 0.8435074090957642
+    }
+  },
+  {
+    "id": "quaternius-fantasy-props/Banner_2_Cloth",
+    "source": "quaternius-fantasy-props",
+    "categories": [
+      "fantasy",
+      "prop"
+    ],
+    "file": "Banner_2_Cloth.glb",
+    "metrics": {
+      "glbBytes": 8380,
+      "byteLength": 13341443,
+      "triangles": 119,
+      "primitives": 2,
+      "textures": [
+        {
+          "image": 0,
+          "width": 2048,
+          "height": 2048,
+          "byteLength": 3622271
+        },
+        {
+          "image": 1,
+          "width": 2048,
+          "height": 2048,
+          "byteLength": 1361221
+        },
+        {
+          "image": 2,
+          "width": 2048,
+          "height": 2048,
+          "byteLength": 1871475
+        },
+        {
+          "image": 3,
+          "width": 2048,
+          "height": 2048,
+          "byteLength": 3917916
+        },
+        {
+          "image": 4,
+          "width": 2048,
+          "height": 2048,
+          "byteLength": 1936754
+        },
+        {
+          "image": 5,
+          "width": 2048,
+          "height": 2048,
+          "byteLength": 623426
+        }
+      ],
+      "maxTextureDimension": 2048
+    },
+    "dims": {
+      "footprint": {
+        "w": 0.8101676106452942,
+        "d": 0.056755486875772476
+      },
+      "center": {
+        "x": -0.0027953684329986572,
+        "z": -0.005357550457119942
+      },
+      "minY": -1.9312705993652344,
+      "maxY": -5.960464477539063e-8
+    }
+  },
+  {
+    "id": "quaternius-fantasy-props/Banner_2",
+    "source": "quaternius-fantasy-props",
+    "categories": [
+      "fantasy",
+      "prop"
+    ],
+    "file": "Banner_2.glb",
+    "metrics": {
+      "glbBytes": 24300,
+      "byteLength": 21133569,
+      "triangles": 429,
+      "primitives": 3,
+      "textures": [
+        {
+          "image": 0,
+          "width": 2048,
+          "height": 2048,
+          "byteLength": 3478660
+        },
+        {
+          "image": 1,
+          "width": 2048,
+          "height": 2048,
+          "byteLength": 2232961
+        },
+        {
+          "image": 2,
+          "width": 2048,
+          "height": 2048,
+          "byteLength": 2064585
+        },
+        {
+          "image": 3,
+          "width": 2048,
+          "height": 2048,
+          "byteLength": 3622271
+        },
+        {
+          "image": 4,
+          "width": 2048,
+          "height": 2048,
+          "byteLength": 1361221
+        },
+        {
+          "image": 5,
+          "width": 2048,
+          "height": 2048,
+          "byteLength": 1871475
+        },
+        {
+          "image": 6,
+          "width": 2048,
+          "height": 2048,
+          "byteLength": 3917916
+        },
+        {
+          "image": 7,
+          "width": 2048,
+          "height": 2048,
+          "byteLength": 1936754
+        },
+        {
+          "image": 8,
+          "width": 2048,
+          "height": 2048,
+          "byteLength": 623426
+        }
+      ],
+      "maxTextureDimension": 2048
+    },
+    "dims": {
+      "footprint": {
+        "w": 1.613107708923053,
+        "d": 0.1905701905488968
+      },
+      "center": {
+        "x": 0.805746183876181,
+        "z": 0.00232560932636261
+      },
+      "minY": -1.233574390411377,
+      "maxY": 0.8435074090957642
+    }
+  },
+  {
+    "id": "quaternius-fantasy-props/Barrel_Apples",
+    "source": "quaternius-fantasy-props",
+    "categories": [
+      "fantasy",
+      "prop"
+    ],
+    "file": "Barrel_Apples.glb",
+    "metrics": {
+      "glbBytes": 109224,
+      "byteLength": 24470642,
+      "triangles": 2480,
+      "primitives": 3,
+      "textures": [
+        {
+          "image": 0,
+          "width": 2048,
+          "height": 2048,
+          "byteLength": 3478660
+        },
+        {
+          "image": 1,
+          "width": 2048,
+          "height": 2048,
+          "byteLength": 2232961
+        },
+        {
+          "image": 2,
+          "width": 2048,
+          "height": 2048,
+          "byteLength": 2064585
+        },
+        {
+          "image": 3,
+          "width": 2048,
+          "height": 2048,
+          "byteLength": 3622271
+        },
+        {
+          "image": 4,
+          "width": 2048,
+          "height": 2048,
+          "byteLength": 1361221
+        },
+        {
+          "image": 5,
+          "width": 2048,
+          "height": 2048,
+          "byteLength": 1871475
+        },
+        {
+          "image": 6,
+          "width": 2048,
+          "height": 2048,
+          "byteLength": 4449962
+        },
+        {
+          "image": 7,
+          "width": 2048,
+          "height": 2048,
+          "byteLength": 2263132
+        },
+        {
+          "image": 8,
+          "width": 2048,
+          "height": 2048,
+          "byteLength": 3017151
+        }
+      ],
+      "maxTextureDimension": 2048
+    },
+    "dims": {
+      "footprint": {
+        "w": 0.6980310082435608,
+        "d": 0.6980309784412384
+      },
+      "center": {
+        "x": -5.960464477539063e-8,
+        "z": 1.4901161193847656e-8
+      },
+      "minY": 0.003436744213104248,
+      "maxY": 0.9013950824737549
+    }
+  },
+  {
+    "id": "quaternius-fantasy-props/Barrel_Holder",
+    "source": "quaternius-fantasy-props",
+    "categories": [
+      "fantasy",
+      "prop"
+    ],
+    "file": "Barrel_Holder.glb",
+    "metrics": {
+      "glbBytes": 165040,
+      "byteLength": 14796213,
+      "triangles": 2676,
+      "primitives": 2,
+      "textures": [
+        {
+          "image": 0,
+          "width": 2048,
+          "height": 2048,
+          "byteLength": 3478660
+        },
+        {
+          "image": 1,
+          "width": 2048,
+          "height": 2048,
+          "byteLength": 2232961
+        },
+        {
+          "image": 2,
+          "width": 2048,
+          "height": 2048,
+          "byteLength": 2064585
+        },
+        {
+          "image": 3,
+          "width": 2048,
+          "height": 2048,
+          "byteLength": 3622271
+        },
+        {
+          "image": 4,
+          "width": 2048,
+          "height": 2048,
+          "byteLength": 1361221
+        },
+        {
+          "image": 5,
+          "width": 2048,
+          "height": 2048,
+          "byteLength": 1871475
+        }
+      ],
+      "maxTextureDimension": 2048
+    },
+    "dims": {
+      "footprint": {
+        "w": 1.359246015548706,
+        "d": 0.740966409444809
+      },
+      "center": {
+        "x": 0,
+        "z": 0.018484875559806824
+      },
+      "minY": -0.006288634147495031,
+      "maxY": 1.2511107921600342
+    }
+  },
+  {
+    "id": "quaternius-fantasy-props/Barrel",
+    "source": "quaternius-fantasy-props",
+    "categories": [
+      "fantasy",
+      "prop"
+    ],
+    "file": "Barrel.glb",
+    "metrics": {
+      "glbBytes": 60340,
+      "byteLength": 14691513,
+      "triangles": 824,
+      "primitives": 2,
+      "textures": [
+        {
+          "image": 0,
+          "width": 2048,
+          "height": 2048,
+          "byteLength": 3478660
+        },
+        {
+          "image": 1,
+          "width": 2048,
+          "height": 2048,
+          "byteLength": 2232961
+        },
+        {
+          "image": 2,
+          "width": 2048,
+          "height": 2048,
+          "byteLength": 2064585
+        },
+        {
+          "image": 3,
+          "width": 2048,
+          "height": 2048,
+          "byteLength": 3622271
+        },
+        {
+          "image": 4,
+          "width": 2048,
+          "height": 2048,
+          "byteLength": 1361221
+        },
+        {
+          "image": 5,
+          "width": 2048,
+          "height": 2048,
+          "byteLength": 1871475
+        }
+      ],
+      "maxTextureDimension": 2048
+    },
+    "dims": {
+      "footprint": {
+        "w": 0.6980310082435608,
+        "d": 0.6980309784412384
+      },
+      "center": {
+        "x": -5.960464477539063e-8,
+        "z": 1.4901161193847656e-8
+      },
+      "minY": 0.003436744213104248,
+      "maxY": 0.9013950824737549
+    }
+  },
+  {
+    "id": "quaternius-fantasy-props/Bed_Twin1",
+    "source": "quaternius-fantasy-props",
+    "categories": [
+      "fantasy",
+      "prop"
+    ],
+    "file": "Bed_Twin1.glb",
+    "metrics": {
+      "glbBytes": 81964,
+      "byteLength": 21191233,
+      "triangles": 1600,
+      "primitives": 3,
+      "textures": [
+        {
+          "image": 0,
+          "width": 2048,
+          "height": 2048,
+          "byteLength": 3478660
+        },
+        {
+          "image": 1,
+          "width": 2048,
+          "height": 2048,
+          "byteLength": 2232961
+        },
+        {
+          "image": 2,
+          "width": 2048,
+          "height": 2048,
+          "byteLength": 2064585
+        },
+        {
+          "image": 3,
+          "width": 2048,
+          "height": 2048,
+          "byteLength": 3622271
+        },
+        {
+          "image": 4,
+          "width": 2048,
+          "height": 2048,
+          "byteLength": 1361221
+        },
+        {
+          "image": 5,
+          "width": 2048,
+          "height": 2048,
+          "byteLength": 1871475
+        },
+        {
+          "image": 6,
+          "width": 2048,
+          "height": 2048,
+          "byteLength": 3917916
+        },
+        {
+          "image": 7,
+          "width": 2048,
+          "height": 2048,
+          "byteLength": 1936754
+        },
+        {
+          "image": 8,
+          "width": 2048,
+          "height": 2048,
+          "byteLength": 623426
+        }
+      ],
+      "maxTextureDimension": 2048
+    },
+    "dims": {
+      "footprint": {
+        "w": 1.8757234811782837,
+        "d": 2.411898136138916
+      },
+      "center": {
+        "x": 0,
+        "z": 0
+      },
+      "minY": 0.0004533232713583857,
+      "maxY": 0.8055568933486938
+    }
+  },
+  {
+    "id": "quaternius-fantasy-props/Bed_Twin2",
+    "source": "quaternius-fantasy-props",
+    "categories": [
+      "fantasy",
+      "prop"
+    ],
+    "file": "Bed_Twin2.glb",
+    "metrics": {
+      "glbBytes": 81228,
+      "byteLength": 21190497,
+      "triangles": 1584,
+      "primitives": 3,
+      "textures": [
+        {
+          "image": 0,
+          "width": 2048,
+          "height": 2048,
+          "byteLength": 3478660
+        },
+        {
+          "image": 1,
+          "width": 2048,
+          "height": 2048,
+          "byteLength": 2232961
+        },
+        {
+          "image": 2,
+          "width": 2048,
+          "height": 2048,
+          "byteLength": 2064585
+        },
+        {
+          "image": 3,
+          "width": 2048,
+          "height": 2048,
+          "byteLength": 3622271
+        },
+        {
+          "image": 4,
+          "width": 2048,
+          "height": 2048,
+          "byteLength": 1361221
+        },
+        {
+          "image": 5,
+          "width": 2048,
+          "height": 2048,
+          "byteLength": 1871475
+        },
+        {
+          "image": 6,
+          "width": 2048,
+          "height": 2048,
+          "byteLength": 3917916
+        },
+        {
+          "image": 7,
+          "width": 2048,
+          "height": 2048,
+          "byteLength": 1936754
+        },
+        {
+          "image": 8,
+          "width": 2048,
+          "height": 2048,
+          "byteLength": 623426
+        }
+      ],
+      "maxTextureDimension": 2048
+    },
+    "dims": {
+      "footprint": {
+        "w": 1.8757234811782837,
+        "d": 2.411898136138916
+      },
+      "center": {
+        "x": 0,
+        "z": 0
+      },
+      "minY": 0.0004533232713583857,
+      "maxY": 0.7600604295730591
+    }
+  },
+  {
+    "id": "quaternius-fantasy-props/Bench",
+    "source": "quaternius-fantasy-props",
+    "categories": [
+      "fantasy",
+      "prop"
+    ],
+    "file": "Bench.glb",
+    "metrics": {
+      "glbBytes": 22488,
+      "byteLength": 14653661,
+      "triangles": 404,
+      "primitives": 2,
+      "textures": [
+        {
+          "image": 0,
+          "width": 2048,
+          "height": 2048,
+          "byteLength": 3478660
+        },
+        {
+          "image": 1,
+          "width": 2048,
+          "height": 2048,
+          "byteLength": 2232961
+        },
+        {
+          "image": 2,
+          "width": 2048,
+          "height": 2048,
+          "byteLength": 2064585
+        },
+        {
+          "image": 3,
+          "width": 2048,
+          "height": 2048,
+          "byteLength": 3622271
+        },
+        {
+          "image": 4,
+          "width": 2048,
+          "height": 2048,
+          "byteLength": 1361221
+        },
+        {
+          "image": 5,
+          "width": 2048,
+          "height": 2048,
+          "byteLength": 1871475
+        }
+      ],
+      "maxTextureDimension": 2048
+    },
+    "dims": {
+      "footprint": {
+        "w": 2.776681661605835,
+        "d": 0.5342670679092407
+      },
+      "center": {
+        "x": 0,
+        "z": 0.005013257265090942
+      },
+      "minY": -0.007262172643095255,
+      "maxY": 0.525951623916626
+    }
+  },
+  {
+    "id": "quaternius-fantasy-props/Book_5",
+    "source": "quaternius-fantasy-props",
+    "categories": [
+      "fantasy",
+      "prop"
+    ],
+    "file": "Book_5.glb",
+    "metrics": {
+      "glbBytes": 7636,
+      "byteLength": 9737881,
+      "triangles": 96,
+      "primitives": 1,
+      "textures": [
+        {
+          "image": 0,
+          "width": 2048,
+          "height": 2048,
+          "byteLength": 4449962
+        },
+        {
+          "image": 1,
+          "width": 2048,
+          "height": 2048,
+          "byteLength": 2263132
+        },
+        {
+          "image": 2,
+          "width": 2048,
+          "height": 2048,
+          "byteLength": 3017151
+        }
+      ],
+      "maxTextureDimension": 2048
+    },
+    "dims": {
+      "footprint": {
+        "w": 0.21292509883642197,
+        "d": 0.28712451457977295
+      },
+      "center": {
+        "x": -0.014097224920988083,
+        "z": 0
+      },
+      "minY": -0.031820107251405716,
+      "maxY": 0.031820107251405716
+    }
+  },
+  {
+    "id": "quaternius-fantasy-props/Book_7",
+    "source": "quaternius-fantasy-props",
+    "categories": [
+      "fantasy",
+      "prop"
+    ],
+    "file": "Book_7.glb",
+    "metrics": {
+      "glbBytes": 35836,
+      "byteLength": 16621048,
+      "triangles": 724,
+      "primitives": 2,
+      "textures": [
+        {
+          "image": 0,
+          "width": 2048,
+          "height": 2048,
+          "byteLength": 4449962
+        },
+        {
+          "image": 1,
+          "width": 2048,
+          "height": 2048,
+          "byteLength": 2263132
+        },
+        {
+          "image": 2,
+          "width": 2048,
+          "height": 2048,
+          "byteLength": 3017151
+        },
+        {
+          "image": 3,
+          "width": 2048,
+          "height": 2048,
+          "byteLength": 3622271
+        },
+        {
+          "image": 4,
+          "width": 2048,
+          "height": 2048,
+          "byteLength": 1361221
+        },
+        {
+          "image": 5,
+          "width": 2048,
+          "height": 2048,
+          "byteLength": 1871475
+        }
+      ],
+      "maxTextureDimension": 2048
+    },
+    "dims": {
+      "footprint": {
+        "w": 0.24700626730918884,
+        "d": 0.3332519829273224
+      },
+      "center": {
+        "x": -0.007788702845573425,
+        "z": 0
+      },
+      "minY": -0.03394145146012306,
+      "maxY": 0.03394145146012306
+    }
+  },
+  {
+    "id": "quaternius-fantasy-props/Book_Simplified_Single",
+    "source": "quaternius-fantasy-props",
+    "categories": [
+      "fantasy",
+      "prop"
+    ],
+    "file": "Book_Simplified_Single.glb",
+    "metrics": {
+      "glbBytes": 4984,
+      "byteLength": 9735229,
+      "triangles": 52,
+      "primitives": 1,
+      "textures": [
+        {
+          "image": 0,
+          "width": 2048,
+          "height": 2048,
+          "byteLength": 4449962
+        },
+        {
+          "image": 1,
+          "width": 2048,
+          "height": 2048,
+          "byteLength": 2263132
+        },
+        {
+          "image": 2,
+          "width": 2048,
+          "height": 2048,
+          "byteLength": 3017151
+        }
+      ],
+      "maxTextureDimension": 2048
+    },
+    "dims": {
+      "footprint": {
+        "w": 0.06459478475153446,
+        "d": 0.20997100323438644
+      },
+      "center": {
+        "x": 0.0034226207062602043,
+        "z": -0.015870612114667892
+      },
+      "minY": -0.0007664225995540619,
+      "maxY": 0.2675683796405792
+    }
+  },
+  {
+    "id": "quaternius-fantasy-props/Book_Stack_1",
+    "source": "quaternius-fantasy-props",
+    "categories": [
+      "fantasy",
+      "prop"
+    ],
+    "file": "Book_Stack_1.glb",
+    "metrics": {
+      "glbBytes": 14560,
+      "byteLength": 9744805,
+      "triangles": 208,
+      "primitives": 1,
+      "textures": [
+        {
+          "image": 0,
+          "width": 2048,
+          "height": 2048,
+          "byteLength": 4449962
+        },
+        {
+          "image": 1,
+          "width": 2048,
+          "height": 2048,
+          "byteLength": 2263132
+        },
+        {
+          "image": 2,
+          "width": 2048,
+          "height": 2048,
+          "byteLength": 3017151
+        }
+      ],
+      "maxTextureDimension": 2048
+    },
+    "dims": {
+      "footprint": {
+        "w": 0.2849311977624893,
+        "d": 0.22628693282604218
+      },
+      "center": {
+        "x": -0.003334350883960724,
+        "z": 0.006070755422115326
+      },
+      "minY": 0.0011552744545042515,
+      "maxY": 0.21486791968345642
+    }
+  },
+  {
+    "id": "quaternius-fantasy-props/Book_Stack_2",
+    "source": "quaternius-fantasy-props",
+    "categories": [
+      "fantasy",
+      "prop"
+    ],
+    "file": "Book_Stack_2.glb",
+    "metrics": {
+      "glbBytes": 27144,
+      "byteLength": 16612356,
+      "triangles": 446,
+      "primitives": 2,
+      "textures": [
+        {
+          "image": 0,
+          "width": 2048,
+          "height": 2048,
+          "byteLength": 4449962
+        },
+        {
+          "image": 1,
+          "width": 2048,
+          "height": 2048,
+          "byteLength": 2263132
+        },
+        {
+          "image": 2,
+          "width": 2048,
+          "height": 2048,
+          "byteLength": 3017151
+        },
+        {
+          "image": 3,
+          "width": 2048,
+          "height": 2048,
+          "byteLength": 3622271
+        },
+        {
+          "image": 4,
+          "width": 2048,
+          "height": 2048,
+          "byteLength": 1361221
+        },
+        {
+          "image": 5,
+          "width": 2048,
+          "height": 2048,
+          "byteLength": 1871475
+        }
+      ],
+      "maxTextureDimension": 2048
+    },
+    "dims": {
+      "footprint": {
+        "w": 0.27448324859142303,
+        "d": 0.22727052122354507
+      },
+      "center": {
+        "x": -0.002957575023174286,
+        "z": 0.012406762689352036
+      },
+      "minY": -0.0014250061940401793,
+      "maxY": 0.19697490334510803
+    }
+  },
+  {
+    "id": "quaternius-fantasy-props/Bookcase_2",
+    "source": "quaternius-fantasy-props",
+    "categories": [
+      "fantasy",
+      "prop"
+    ],
+    "file": "Bookcase_2.glb",
+    "metrics": {
+      "glbBytes": 96176,
+      "byteLength": 14727349,
+      "triangles": 2148,
+      "primitives": 2,
+      "textures": [
+        {
+          "image": 0,
+          "width": 2048,
+          "height": 2048,
+          "byteLength": 3478660
+        },
+        {
+          "image": 1,
+          "width": 2048,
+          "height": 2048,
+          "byteLength": 2232961
+        },
+        {
+          "image": 2,
+          "width": 2048,
+          "height": 2048,
+          "byteLength": 2064585
+        },
+        {
+          "image": 3,
+          "width": 2048,
+          "height": 2048,
+          "byteLength": 3622271
+        },
+        {
+          "image": 4,
+          "width": 2048,
+          "height": 2048,
+          "byteLength": 1361221
+        },
+        {
+          "image": 5,
+          "width": 2048,
+          "height": 2048,
+          "byteLength": 1871475
+        }
+      ],
+      "maxTextureDimension": 2048
+    },
+    "dims": {
+      "footprint": {
+        "w": 1.4612386226654053,
+        "d": 0.4289800673723221
+      },
+      "center": {
+        "x": 0,
+        "z": -4.0978193283081055e-7
+      },
+      "minY": -0.017383012920618057,
+      "maxY": 2.5274698734283447
+    }
+  },
+  {
+    "id": "quaternius-fantasy-props/BookGroup_Medium_1",
+    "source": "quaternius-fantasy-props",
+    "categories": [
+      "fantasy",
+      "prop"
+    ],
+    "file": "BookGroup_Medium_1.glb",
+    "metrics": {
+      "glbBytes": 27332,
+      "byteLength": 9757577,
+      "triangles": 416,
+      "primitives": 1,
+      "textures": [
+        {
+          "image": 0,
+          "width": 2048,
+          "height": 2048,
+          "byteLength": 4449962
+        },
+        {
+          "image": 1,
+          "width": 2048,
+          "height": 2048,
+          "byteLength": 2263132
+        },
+        {
+          "image": 2,
+          "width": 2048,
+          "height": 2048,
+          "byteLength": 3017151
+        }
+      ],
+      "maxTextureDimension": 2048
+    },
+    "dims": {
+      "footprint": {
+        "w": 1.0626159310340881,
+        "d": 0.24748581647872925
+      },
+      "center": {
+        "x": -0.011607855558395386,
+        "z": -0.033910542726516724
+      },
+      "minY": -0.003822582308202982,
+      "maxY": 0.2944376766681671
+    }
+  },
+  {
+    "id": "quaternius-fantasy-props/BookGroup_Medium_2",
+    "source": "quaternius-fantasy-props",
+    "categories": [
+      "fantasy",
+      "prop"
+    ],
+    "file": "BookGroup_Medium_2.glb",
+    "metrics": {
+      "glbBytes": 30524,
+      "byteLength": 9760769,
+      "triangles": 468,
+      "primitives": 1,
+      "textures": [
+        {
+          "image": 0,
+          "width": 2048,
+          "height": 2048,
+          "byteLength": 4449962
+        },
+        {
+          "image": 1,
+          "width": 2048,
+          "height": 2048,
+          "byteLength": 2263132
+        },
+        {
+          "image": 2,
+          "width": 2048,
+          "height": 2048,
+          "byteLength": 3017151
+        }
+      ],
+      "maxTextureDimension": 2048
+    },
+    "dims": {
+      "footprint": {
+        "w": 1.1045619249343872,
+        "d": 0.24748583137989044
+      },
+      "center": {
+        "x": -0.000019252300262451172,
+        "z": -0.03427819162607193
+      },
+      "minY": -0.0003685504198074341,
+      "maxY": 0.29451099038124084
+    }
+  },
+  {
+    "id": "quaternius-fantasy-props/BookGroup_Medium_3",
+    "source": "quaternius-fantasy-props",
+    "categories": [
+      "fantasy",
+      "prop"
+    ],
+    "file": "BookGroup_Medium_3.glb",
+    "metrics": {
+      "glbBytes": 30528,
+      "byteLength": 9760773,
+      "triangles": 468,
+      "primitives": 1,
+      "textures": [
+        {
+          "image": 0,
+          "width": 2048,
+          "height": 2048,
+          "byteLength": 4449962
+        },
+        {
+          "image": 1,
+          "width": 2048,
+          "height": 2048,
+          "byteLength": 2263132
+        },
+        {
+          "image": 2,
+          "width": 2048,
+          "height": 2048,
+          "byteLength": 3017151
+        }
+      ],
+      "maxTextureDimension": 2048
+    },
+    "dims": {
+      "footprint": {
+        "w": 1.04190194606781,
+        "d": 0.24748583137989044
+      },
+      "center": {
+        "x": -0.007388055324554443,
+        "z": -0.03484753519296646
+      },
+      "minY": -0.0004983625840395689,
+      "maxY": 0.29438117146492004
+    }
+  },
+  {
+    "id": "quaternius-fantasy-props/BookGroup_Small_1",
+    "source": "quaternius-fantasy-props",
+    "categories": [
+      "fantasy",
+      "prop"
+    ],
+    "file": "BookGroup_Small_1.glb",
+    "metrics": {
+      "glbBytes": 8176,
+      "byteLength": 9738421,
+      "triangles": 104,
+      "primitives": 1,
+      "textures": [
+        {
+          "image": 0,
+          "width": 2048,
+          "height": 2048,
+          "byteLength": 4449962
+        },
+        {
+          "image": 1,
+          "width": 2048,
+          "height": 2048,
+          "byteLength": 2263132
+        },
+        {
+          "image": 2,
+          "width": 2048,
+          "height": 2048,
+          "byteLength": 3017151
+        }
+      ],
+      "maxTextureDimension": 2048
+    },
+    "dims": {
+      "footprint": {
+        "w": 0.28933286666870117,
+        "d": 0.22558676451444626
+      },
+      "center": {
+        "x": -0.02827209234237671,
+        "z": -0.008062716573476791
+      },
+      "minY": -0.004515784326940775,
+      "maxY": 0.2937444746494293
+    }
+  },
+  {
+    "id": "quaternius-fantasy-props/BookGroup_Small_2",
+    "source": "quaternius-fantasy-props",
+    "categories": [
+      "fantasy",
+      "prop"
+    ],
+    "file": "BookGroup_Small_2.glb",
+    "metrics": {
+      "glbBytes": 8176,
+      "byteLength": 9738421,
+      "triangles": 104,
+      "primitives": 1,
+      "textures": [
+        {
+          "image": 0,
+          "width": 2048,
+          "height": 2048,
+          "byteLength": 4449962
+        },
+        {
+          "image": 1,
+          "width": 2048,
+          "height": 2048,
+          "byteLength": 2263132
+        },
+        {
+          "image": 2,
+          "width": 2048,
+          "height": 2048,
+          "byteLength": 3017151
+        }
+      ],
+      "maxTextureDimension": 2048
+    },
+    "dims": {
+      "footprint": {
+        "w": 0.22755281627178192,
+        "d": 0.2372443675994873
+      },
+      "center": {
+        "x": 0.0098680779337883,
+        "z": -0.013891518115997314
+      },
+      "minY": -0.0011350593995302916,
+      "maxY": 0.28198251128196716
+    }
+  },
+  {
+    "id": "quaternius-fantasy-props/BookGroup_Small_3",
+    "source": "quaternius-fantasy-props",
+    "categories": [
+      "fantasy",
+      "prop"
+    ],
+    "file": "BookGroup_Small_3.glb",
+    "metrics": {
+      "glbBytes": 9772,
+      "byteLength": 9740017,
+      "triangles": 130,
+      "primitives": 1,
+      "textures": [
+        {
+          "image": 0,
+          "width": 2048,
+          "height": 2048,
+          "byteLength": 4449962
+        },
+        {
+          "image": 1,
+          "width": 2048,
+          "height": 2048,
+          "byteLength": 2263132
+        },
+        {
+          "image": 2,
+          "width": 2048,
+          "height": 2048,
+          "byteLength": 3017151
+        }
+      ],
+      "maxTextureDimension": 2048
+    },
+    "dims": {
+      "footprint": {
+        "w": 0.24481415003538132,
+        "d": 0.2372443675994873
+      },
+      "center": {
+        "x": 0.01854756847023964,
+        "z": -0.013891518115997314
+      },
+      "minY": -0.0011350593995302916,
+      "maxY": 0.2762168049812317
+    }
+  },
+  {
+    "id": "quaternius-fantasy-props/BookStand",
+    "source": "quaternius-fantasy-props",
+    "categories": [
+      "fantasy",
+      "prop"
+    ],
+    "file": "BookStand.glb",
+    "metrics": {
+      "glbBytes": 63672,
+      "byteLength": 7839878,
+      "triangles": 1526,
+      "primitives": 1,
+      "textures": [
+        {
+          "image": 0,
+          "width": 2048,
+          "height": 2048,
+          "byteLength": 3478660
+        },
+        {
+          "image": 1,
+          "width": 2048,
+          "height": 2048,
+          "byteLength": 2232961
+        },
+        {
+          "image": 2,
+          "width": 2048,
+          "height": 2048,
+          "byteLength": 2064585
+        }
+      ],
+      "maxTextureDimension": 2048
+    },
+    "dims": {
+      "footprint": {
+        "w": 0.5071145594120026,
+        "d": 0.5111870467662811
+      },
+      "center": {
+        "x": 0.00007559359073638916,
+        "z": 0.00007618963718414307
+      },
+      "minY": -0.00249952613376081,
+      "maxY": 1.444292664527893
+    }
+  },
+  {
+    "id": "quaternius-fantasy-props/Bottle_1",
+    "source": "quaternius-fantasy-props",
+    "categories": [
+      "fantasy",
+      "prop"
+    ],
+    "file": "Bottle_1.glb",
+    "metrics": {
+      "glbBytes": 15740,
+      "byteLength": 9745985,
+      "triangles": 312,
+      "primitives": 1,
+      "textures": [
+        {
+          "image": 0,
+          "width": 2048,
+          "height": 2048,
+          "byteLength": 4449962
+        },
+        {
+          "image": 1,
+          "width": 2048,
+          "height": 2048,
+          "byteLength": 2263132
+        },
+        {
+          "image": 2,
+          "width": 2048,
+          "height": 2048,
+          "byteLength": 3017151
+        }
+      ],
+      "maxTextureDimension": 2048
+    },
+    "dims": {
+      "footprint": {
+        "w": 0.11274329200387001,
+        "d": 0.1128895953297615
+      },
+      "center": {
+        "x": 0.0005928780883550644,
+        "z": 0
+      },
+      "minY": 0.001575734349898994,
+      "maxY": 0.36624231934547424
+    }
+  },
+  {
+    "id": "quaternius-fantasy-props/Bucket_Metal",
+    "source": "quaternius-fantasy-props",
+    "categories": [
+      "fantasy",
+      "prop"
+    ],
+    "file": "Bucket_Metal.glb",
+    "metrics": {
+      "glbBytes": 20456,
+      "byteLength": 6875423,
+      "triangles": 540,
+      "primitives": 1,
+      "textures": [
+        {
+          "image": 0,
+          "width": 2048,
+          "height": 2048,
+          "byteLength": 3622271
+        },
+        {
+          "image": 1,
+          "width": 2048,
+          "height": 2048,
+          "byteLength": 1361221
+        },
+        {
+          "image": 2,
+          "width": 2048,
+          "height": 2048,
+          "byteLength": 1871475
+        }
+      ],
+      "maxTextureDimension": 2048
+    },
+    "dims": {
+      "footprint": {
+        "w": 0.4854022264480591,
+        "d": 0.4490349590778351
+      },
+      "center": {
+        "x": 0,
+        "z": 0.017739608883857727
+      },
+      "minY": -0.005221627652645111,
+      "maxY": 0.3598247468471527
+    }
+  },
+  {
+    "id": "quaternius-fantasy-props/Bucket_Wooden_1",
+    "source": "quaternius-fantasy-props",
+    "categories": [
+      "fantasy",
+      "prop"
+    ],
+    "file": "Bucket_Wooden_1.glb",
+    "metrics": {
+      "glbBytes": 35440,
+      "byteLength": 14666613,
+      "triangles": 976,
+      "primitives": 2,
+      "textures": [
+        {
+          "image": 0,
+          "width": 2048,
+          "height": 2048,
+          "byteLength": 3478660
+        },
+        {
+          "image": 1,
+          "width": 2048,
+          "height": 2048,
+          "byteLength": 2232961
+        },
+        {
+          "image": 2,
+          "width": 2048,
+          "height": 2048,
+          "byteLength": 2064585
+        },
+        {
+          "image": 3,
+          "width": 2048,
+          "height": 2048,
+          "byteLength": 3622271
+        },
+        {
+          "image": 4,
+          "width": 2048,
+          "height": 2048,
+          "byteLength": 1361221
+        },
+        {
+          "image": 5,
+          "width": 2048,
+          "height": 2048,
+          "byteLength": 1871475
+        }
+      ],
+      "maxTextureDimension": 2048
+    },
+    "dims": {
+      "footprint": {
+        "w": 0.4339291751384735,
+        "d": 0.38345417380332947
+      },
+      "center": {
+        "x": 0.0009952932596206665,
+        "z": -0.007712274789810181
+      },
+      "minY": 0.0007063584635034204,
+      "maxY": 0.2934951186180115
+    }
+  },
+  {
+    "id": "quaternius-fantasy-props/Cabinet",
+    "source": "quaternius-fantasy-props",
+    "categories": [
+      "fantasy",
+      "prop"
+    ],
+    "file": "Cabinet.glb",
+    "metrics": {
+      "glbBytes": 117976,
+      "byteLength": 14749149,
+      "triangles": 2388,
+      "primitives": 2,
+      "textures": [
+        {
+          "image": 0,
+          "width": 2048,
+          "height": 2048,
+          "byteLength": 3478660
+        },
+        {
+          "image": 1,
+          "width": 2048,
+          "height": 2048,
+          "byteLength": 2232961
+        },
+        {
+          "image": 2,
+          "width": 2048,
+          "height": 2048,
+          "byteLength": 2064585
+        },
+        {
+          "image": 3,
+          "width": 2048,
+          "height": 2048,
+          "byteLength": 3622271
+        },
+        {
+          "image": 4,
+          "width": 2048,
+          "height": 2048,
+          "byteLength": 1361221
+        },
+        {
+          "image": 5,
+          "width": 2048,
+          "height": 2048,
+          "byteLength": 1871475
+        }
+      ],
+      "maxTextureDimension": 2048
+    },
+    "dims": {
+      "footprint": {
+        "w": 1.361828327178955,
+        "d": 0.35706448554992676
+      },
+      "center": {
+        "x": 0,
+        "z": -0.002014756202697754
+      },
+      "minY": 0.0001875162124633789,
+      "maxY": 0.9976039528846741
+    }
+  },
+  {
+    "id": "quaternius-fantasy-props/Cage_Small",
+    "source": "quaternius-fantasy-props",
+    "categories": [
+      "fantasy",
+      "prop"
+    ],
+    "file": "Cage_Small.glb",
+    "metrics": {
+      "glbBytes": 173484,
+      "byteLength": 7028451,
+      "triangles": 4588,
+      "primitives": 1,
+      "textures": [
+        {
+          "image": 0,
+          "width": 2048,
+          "height": 2048,
+          "byteLength": 3622271
+        },
+        {
+          "image": 1,
+          "width": 2048,
+          "height": 2048,
+          "byteLength": 1361221
+        },
+        {
+          "image": 2,
+          "width": 2048,
+          "height": 2048,
+          "byteLength": 1871475
+        }
+      ],
+      "maxTextureDimension": 2048
+    },
+    "dims": {
+      "footprint": {
+        "w": 0.8548744022846222,
+        "d": 0.8842760026454926
+      },
+      "center": {
+        "x": -0.006100103259086609,
+        "z": 0.017232075333595276
+      },
+      "minY": -0.042451318353414536,
+      "maxY": 0.7627282738685608
+    }
+  },
+  {
+    "id": "quaternius-fantasy-props/Candle_1",
+    "source": "quaternius-fantasy-props",
+    "categories": [
+      "fantasy",
+      "prop"
+    ],
+    "file": "Candle_1.glb",
+    "metrics": {
+      "glbBytes": 7824,
+      "byteLength": 9738069,
+      "triangles": 212,
+      "primitives": 1,
+      "textures": [
+        {
+          "image": 0,
+          "width": 2048,
+          "height": 2048,
+          "byteLength": 4449962
+        },
+        {
+          "image": 1,
+          "width": 2048,
+          "height": 2048,
+          "byteLength": 2263132
+        },
+        {
+          "image": 2,
+          "width": 2048,
+          "height": 2048,
+          "byteLength": 3017151
+        }
+      ],
+      "maxTextureDimension": 2048
+    },
+    "dims": {
+      "footprint": {
+        "w": 0.09388052299618721,
+        "d": 0.10786718875169754
+      },
+      "center": {
+        "x": -0.00007565878331661224,
+        "z": -0.003395345062017441
+      },
+      "minY": 0.0007347526261582971,
+      "maxY": 0.1327235847711563
+    }
+  },
+  {
+    "id": "quaternius-fantasy-props/Candle_2",
+    "source": "quaternius-fantasy-props",
+    "categories": [
+      "fantasy",
+      "prop"
+    ],
+    "file": "Candle_2.glb",
+    "metrics": {
+      "glbBytes": 7748,
+      "byteLength": 9737993,
+      "triangles": 210,
+      "primitives": 1,
+      "textures": [
+        {
+          "image": 0,
+          "width": 2048,
+          "height": 2048,
+          "byteLength": 4449962
+        },
+        {
+          "image": 1,
+          "width": 2048,
+          "height": 2048,
+          "byteLength": 2263132
+        },
+        {
+          "image": 2,
+          "width": 2048,
+          "height": 2048,
+          "byteLength": 3017151
+        }
+      ],
+      "maxTextureDimension": 2048
+    },
+    "dims": {
+      "footprint": {
+        "w": 0.09440002590417862,
+        "d": 0.09754424542188644
+      },
+      "center": {
+        "x": 0.0004340223968029022,
+        "z": -0.0010805465281009674
+      },
+      "minY": 0.002289015566930175,
+      "maxY": 0.2534194588661194
+    }
+  },
+  {
+    "id": "quaternius-fantasy-props/CandleStick_Stand",
+    "source": "quaternius-fantasy-props",
+    "categories": [
+      "fantasy",
+      "prop"
+    ],
+    "file": "CandleStick_Stand.glb",
+    "metrics": {
+      "glbBytes": 229448,
+      "byteLength": 16814660,
+      "triangles": 5738,
+      "primitives": 2,
+      "textures": [
+        {
+          "image": 0,
+          "width": 2048,
+          "height": 2048,
+          "byteLength": 3622271
+        },
+        {
+          "image": 1,
+          "width": 2048,
+          "height": 2048,
+          "byteLength": 1361221
+        },
+        {
+          "image": 2,
+          "width": 2048,
+          "height": 2048,
+          "byteLength": 1871475
+        },
+        {
+          "image": 3,
+          "width": 2048,
+          "height": 2048,
+          "byteLength": 4449962
+        },
+        {
+          "image": 4,
+          "width": 2048,
+          "height": 2048,
+          "byteLength": 2263132
+        },
+        {
+          "image": 5,
+          "width": 2048,
+          "height": 2048,
+          "byteLength": 3017151
+        }
+      ],
+      "maxTextureDimension": 2048
+    },
+    "dims": {
+      "footprint": {
+        "w": 0.7322670221328735,
+        "d": 0.7312857210636139
+      },
+      "center": {
+        "x": -0.0004905462265014648,
+        "z": -0.000022545456886291504
+      },
+      "minY": -0.007947052828967571,
+      "maxY": 1.304558515548706
+    }
+  },
+  {
+    "id": "quaternius-fantasy-props/CandleStick_Triple",
+    "source": "quaternius-fantasy-props",
+    "categories": [
+      "fantasy",
+      "prop"
+    ],
+    "file": "CandleStick_Triple.glb",
+    "metrics": {
+      "glbBytes": 77248,
+      "byteLength": 16662460,
+      "triangles": 2528,
+      "primitives": 2,
+      "textures": [
+        {
+          "image": 0,
+          "width": 2048,
+          "height": 2048,
+          "byteLength": 3622271
+        },
+        {
+          "image": 1,
+          "width": 2048,
+          "height": 2048,
+          "byteLength": 1361221
+        },
+        {
+          "image": 2,
+          "width": 2048,
+          "height": 2048,
+          "byteLength": 1871475
+        },
+        {
+          "image": 3,
+          "width": 2048,
+          "height": 2048,
+          "byteLength": 4449962
+        },
+        {
+          "image": 4,
+          "width": 2048,
+          "height": 2048,
+          "byteLength": 2263132
+        },
+        {
+          "image": 5,
+          "width": 2048,
+          "height": 2048,
+          "byteLength": 3017151
+        }
+      ],
+      "maxTextureDimension": 2048
+    },
+    "dims": {
+      "footprint": {
+        "w": 0.44232940673828125,
+        "d": 0.13635826110839844
+      },
+      "center": {
+        "x": 0.002972126007080078,
+        "z": 0.0021991729736328125
+      },
+      "minY": -0.0008449911838397384,
+      "maxY": 0.4624083340167999
+    }
+  },
+  {
+    "id": "quaternius-fantasy-props/CandleStick",
+    "source": "quaternius-fantasy-props",
+    "categories": [
+      "fantasy",
+      "prop"
+    ],
+    "file": "CandleStick.glb",
+    "metrics": {
+      "glbBytes": 23064,
+      "byteLength": 6878031,
+      "triangles": 730,
+      "primitives": 1,
+      "textures": [
+        {
+          "image": 0,
+          "width": 2048,
+          "height": 2048,
+          "byteLength": 3622271
+        },
+        {
+          "image": 1,
+          "width": 2048,
+          "height": 2048,
+          "byteLength": 1361221
+        },
+        {
+          "image": 2,
+          "width": 2048,
+          "height": 2048,
+          "byteLength": 1871475
+        }
+      ],
+      "maxTextureDimension": 2048
+    },
+    "dims": {
+      "footprint": {
+        "w": 0.26091766357421875,
+        "d": 0.179351806640625
+      },
+      "center": {
+        "x": -0.04582786560058594,
+        "z": 0
+      },
+      "minY": 0.0014611477963626385,
+      "maxY": 0.15667979419231415
+    }
+  },
+  {
+    "id": "quaternius-fantasy-props/Carrot",
+    "source": "quaternius-fantasy-props",
+    "categories": [
+      "fantasy",
+      "prop"
+    ],
+    "file": "Carrot.glb",
+    "metrics": {
+      "glbBytes": 24032,
+      "byteLength": 9754277,
+      "triangles": 634,
+      "primitives": 1,
+      "textures": [
+        {
+          "image": 0,
+          "width": 2048,
+          "height": 2048,
+          "byteLength": 4449962
+        },
+        {
+          "image": 1,
+          "width": 2048,
+          "height": 2048,
+          "byteLength": 2263132
+        },
+        {
+          "image": 2,
+          "width": 2048,
+          "height": 2048,
+          "byteLength": 3017151
+        }
+      ],
+      "maxTextureDimension": 2048
+    },
+    "dims": {
+      "footprint": {
+        "w": 0.17985311150550842,
+        "d": 0.22204574197530746
+      },
+      "center": {
+        "x": -0.024570830166339874,
+        "z": 0.0040275417268276215
+      },
+      "minY": -0.23777589201927185,
+      "maxY": 0.32802721858024597
+    }
+  },
+  {
+    "id": "quaternius-fantasy-props/Cauldron",
+    "source": "quaternius-fantasy-props",
+    "categories": [
+      "fantasy",
+      "prop"
+    ],
+    "file": "Cauldron.glb",
+    "metrics": {
+      "glbBytes": 64340,
+      "byteLength": 6919307,
+      "triangles": 2020,
+      "primitives": 1,
+      "textures": [
+        {
+          "image": 0,
+          "width": 2048,
+          "height": 2048,
+          "byteLength": 3622271
+        },
+        {
+          "image": 1,
+          "width": 2048,
+          "height": 2048,
+          "byteLength": 1361221
+        },
+        {
+          "image": 2,
+          "width": 2048,
+          "height": 2048,
+          "byteLength": 1871475
+        }
+      ],
+      "maxTextureDimension": 2048
+    },
+    "dims": {
+      "footprint": {
+        "w": 0.9891010522842407,
+        "d": 0.9439575374126434
+      },
+      "center": {
+        "x": -2.9802322387695312e-8,
+        "z": -4.470348358154297e-8
+      },
+      "minY": -0.0028319580014795065,
+      "maxY": 0.8127009272575378
+    }
+  },
+  {
+    "id": "quaternius-fantasy-props/Chain_Coil",
+    "source": "quaternius-fantasy-props",
+    "categories": [
+      "fantasy",
+      "prop"
+    ],
+    "file": "Chain_Coil.glb",
+    "metrics": {
+      "glbBytes": 195464,
+      "byteLength": 7050431,
+      "triangles": 3744,
+      "primitives": 1,
+      "textures": [
+        {
+          "image": 0,
+          "width": 2048,
+          "height": 2048,
+          "byteLength": 3622271
+        },
+        {
+          "image": 1,
+          "width": 2048,
+          "height": 2048,
+          "byteLength": 1361221
+        },
+        {
+          "image": 2,
+          "width": 2048,
+          "height": 2048,
+          "byteLength": 1871475
+        }
+      ],
+      "maxTextureDimension": 2048
+    },
+    "dims": {
+      "footprint": {
+        "w": 1.0702911019325256,
+        "d": 0.9077416956424713
+      },
+      "center": {
+        "x": -0.046635836362838745,
+        "z": 0.04747854173183441
+      },
+      "minY": 0.004720371216535568,
+      "maxY": 0.09187339246273041
+    }
+  },
+  {
+    "id": "quaternius-fantasy-props/Chair_1",
+    "source": "quaternius-fantasy-props",
+    "categories": [
+      "fantasy",
+      "prop"
+    ],
+    "file": "Chair_1.glb",
+    "metrics": {
+      "glbBytes": 31292,
+      "byteLength": 14662465,
+      "triangles": 496,
+      "primitives": 2,
+      "textures": [
+        {
+          "image": 0,
+          "width": 2048,
+          "height": 2048,
+          "byteLength": 3478660
+        },
+        {
+          "image": 1,
+          "width": 2048,
+          "height": 2048,
+          "byteLength": 2232961
+        },
+        {
+          "image": 2,
+          "width": 2048,
+          "height": 2048,
+          "byteLength": 2064585
+        },
+        {
+          "image": 3,
+          "width": 2048,
+          "height": 2048,
+          "byteLength": 3622271
+        },
+        {
+          "image": 4,
+          "width": 2048,
+          "height": 2048,
+          "byteLength": 1361221
+        },
+        {
+          "image": 5,
+          "width": 2048,
+          "height": 2048,
+          "byteLength": 1871475
+        }
+      ],
+      "maxTextureDimension": 2048
+    },
+    "dims": {
+      "footprint": {
+        "w": 0.5805182456970215,
+        "d": 0.5489380955696106
+      },
+      "center": {
+        "x": 0,
+        "z": -0.01707783341407776
+      },
+      "minY": -0.0027060508728027344,
+      "maxY": 1.1205782890319824
+    }
+  },
+  {
+    "id": "quaternius-fantasy-props/Chalice",
+    "source": "quaternius-fantasy-props",
+    "categories": [
+      "fantasy",
+      "prop"
+    ],
+    "file": "Chalice.glb",
+    "metrics": {
+      "glbBytes": 17272,
+      "byteLength": 6872239,
+      "triangles": 458,
+      "primitives": 1,
+      "textures": [
+        {
+          "image": 0,
+          "width": 2048,
+          "height": 2048,
+          "byteLength": 3622271
+        },
+        {
+          "image": 1,
+          "width": 2048,
+          "height": 2048,
+          "byteLength": 1361221
+        },
+        {
+          "image": 2,
+          "width": 2048,
+          "height": 2048,
+          "byteLength": 1871475
+        }
+      ],
+      "maxTextureDimension": 2048
+    },
+    "dims": {
+      "footprint": {
+        "w": 0.118422482162714,
+        "d": 0.12451673299074173
+      },
+      "center": {
+        "x": 9.313225746154785e-9,
+        "z": 0
+      },
+      "minY": -0.0009331703186035156,
+      "maxY": 0.25575128197669983
+    }
+  },
+  {
+    "id": "quaternius-fantasy-props/Chandelier",
+    "source": "quaternius-fantasy-props",
+    "categories": [
+      "fantasy",
+      "prop"
+    ],
+    "file": "Chandelier.glb",
+    "metrics": {
+      "glbBytes": 271324,
+      "byteLength": 24632742,
+      "triangles": 5680,
+      "primitives": 3,
+      "textures": [
+        {
+          "image": 0,
+          "width": 2048,
+          "height": 2048,
+          "byteLength": 3622271
+        },
+        {
+          "image": 1,
+          "width": 2048,
+          "height": 2048,
+          "byteLength": 1361221
+        },
+        {
+          "image": 2,
+          "width": 2048,
+          "height": 2048,
+          "byteLength": 1871475
+        },
+        {
+          "image": 3,
+          "width": 2048,
+          "height": 2048,
+          "byteLength": 3478660
+        },
+        {
+          "image": 4,
+          "width": 2048,
+          "height": 2048,
+          "byteLength": 2232961
+        },
+        {
+          "image": 5,
+          "width": 2048,
+          "height": 2048,
+          "byteLength": 2064585
+        },
+        {
+          "image": 6,
+          "width": 2048,
+          "height": 2048,
+          "byteLength": 4449962
+        },
+        {
+          "image": 7,
+          "width": 2048,
+          "height": 2048,
+          "byteLength": 2263132
+        },
+        {
+          "image": 8,
+          "width": 2048,
+          "height": 2048,
+          "byteLength": 3017151
+        }
+      ],
+      "maxTextureDimension": 2048
+    },
+    "dims": {
+      "footprint": {
+        "w": 1.3025147318840027,
+        "d": 1.302514672279358
+      },
+      "center": {
+        "x": -2.9802322387695312e-8,
+        "z": 0
+      },
+      "minY": -1.4217151403427124,
+      "maxY": 0.035917043685913086
+    }
+  },
+  {
+    "id": "quaternius-fantasy-props/Chest_Wood",
+    "source": "quaternius-fantasy-props",
+    "categories": [
+      "fantasy",
+      "prop"
+    ],
+    "file": "Chest_Wood.glb",
+    "metrics": {
+      "glbBytes": 199096,
+      "byteLength": 14830269,
+      "triangles": 2546,
+      "primitives": 4,
+      "textures": [
+        {
+          "image": 0,
+          "width": 2048,
+          "height": 2048,
+          "byteLength": 3478660
+        },
+        {
+          "image": 1,
+          "width": 2048,
+          "height": 2048,
+          "byteLength": 2232961
+        },
+        {
+          "image": 2,
+          "width": 2048,
+          "height": 2048,
+          "byteLength": 2064585
+        },
+        {
+          "image": 3,
+          "width": 2048,
+          "height": 2048,
+          "byteLength": 3622271
+        },
+        {
+          "image": 4,
+          "width": 2048,
+          "height": 2048,
+          "byteLength": 1361221
+        },
+        {
+          "image": 5,
+          "width": 2048,
+          "height": 2048,
+          "byteLength": 1871475
+        }
+      ],
+      "maxTextureDimension": 2048
+    },
+    "dims": {
+      "footprint": {
+        "w": 1.276046633720398,
+        "d": 0.7554108500480652
+      },
+      "center": {
+        "x": -0.0004227161407470703,
+        "z": 0
+      },
+      "minY": -0.022696882486343384,
+      "maxY": 0.6925303339958191
+    },
+    "clips": [
+      "Chest_Close",
+      "Chest_Closed",
+      "Chest_Open",
+      "Chest_Opened"
+    ]
+  },
+  {
+    "id": "quaternius-fantasy-props/Coin_Pile_2",
+    "source": "quaternius-fantasy-props",
+    "categories": [
+      "fantasy",
+      "prop"
+    ],
+    "file": "Coin_Pile_2.glb",
+    "metrics": {
+      "glbBytes": 54416,
+      "byteLength": 6909383,
+      "triangles": 1062,
+      "primitives": 1,
+      "textures": [
+        {
+          "image": 0,
+          "width": 2048,
+          "height": 2048,
+          "byteLength": 3622271
+        },
+        {
+          "image": 1,
+          "width": 2048,
+          "height": 2048,
+          "byteLength": 1361221
+        },
+        {
+          "image": 2,
+          "width": 2048,
+          "height": 2048,
+          "byteLength": 1871475
+        }
+      ],
+      "maxTextureDimension": 2048
+    },
+    "dims": {
+      "footprint": {
+        "w": 0.2787255272269249,
+        "d": 0.2001621052622795
+      },
+      "center": {
+        "x": -0.030456576496362686,
+        "z": 0.0029318444430828094
+      },
+      "minY": 0.0002548198390286416,
+      "maxY": 0.05870247259736061
+    }
+  },
+  {
+    "id": "quaternius-fantasy-props/Coin_Pile",
+    "source": "quaternius-fantasy-props",
+    "categories": [
+      "fantasy",
+      "prop"
+    ],
+    "file": "Coin_Pile.glb",
+    "metrics": {
+      "glbBytes": 49320,
+      "byteLength": 6904287,
+      "triangles": 960,
+      "primitives": 1,
+      "textures": [
+        {
+          "image": 0,
+          "width": 2048,
+          "height": 2048,
+          "byteLength": 3622271
+        },
+        {
+          "image": 1,
+          "width": 2048,
+          "height": 2048,
+          "byteLength": 1361221
+        },
+        {
+          "image": 2,
+          "width": 2048,
+          "height": 2048,
+          "byteLength": 1871475
+        }
+      ],
+      "maxTextureDimension": 2048
+    },
+    "dims": {
+      "footprint": {
+        "w": 0.19745580106973648,
+        "d": 0.15423469245433807
+      },
+      "center": {
+        "x": 0.00033459439873695374,
+        "z": 0.00132858008146286
+      },
+      "minY": -0.0034759596455842257,
+      "maxY": 0.07000648230314255
+    }
+  },
+  {
+    "id": "quaternius-fantasy-props/Coin",
+    "source": "quaternius-fantasy-props",
+    "categories": [
+      "fantasy",
+      "prop"
+    ],
+    "file": "Coin.glb",
+    "metrics": {
+      "glbBytes": 16252,
+      "byteLength": 6871219,
+      "triangles": 304,
+      "primitives": 1,
+      "textures": [
+        {
+          "image": 0,
+          "width": 2048,
+          "height": 2048,
+          "byteLength": 3622271
+        },
+        {
+          "image": 1,
+          "width": 2048,
+          "height": 2048,
+          "byteLength": 1361221
+        },
+        {
+          "image": 2,
+          "width": 2048,
+          "height": 2048,
+          "byteLength": 1871475
+        }
+      ],
+      "maxTextureDimension": 2048
+    },
+    "dims": {
+      "footprint": {
+        "w": 0.06825312972068787,
+        "d": 0.014505970757454634
+      },
+      "center": {
+        "x": 0,
+        "z": 6.984919309616089e-10
+      },
+      "minY": -0.03412656858563423,
+      "maxY": 0.03412656858563423
+    }
+  },
+  {
+    "id": "quaternius-fantasy-props/Crate_Metal",
+    "source": "quaternius-fantasy-props",
+    "categories": [
+      "fantasy",
+      "prop"
+    ],
+    "file": "Crate_Metal.glb",
+    "metrics": {
+      "glbBytes": 130040,
+      "byteLength": 14761213,
+      "triangles": 2738,
+      "primitives": 2,
+      "textures": [
+        {
+          "image": 0,
+          "width": 2048,
+          "height": 2048,
+          "byteLength": 3478660
+        },
+        {
+          "image": 1,
+          "width": 2048,
+          "height": 2048,
+          "byteLength": 2232961
+        },
+        {
+          "image": 2,
+          "width": 2048,
+          "height": 2048,
+          "byteLength": 2064585
+        },
+        {
+          "image": 3,
+          "width": 2048,
+          "height": 2048,
+          "byteLength": 3622271
+        },
+        {
+          "image": 4,
+          "width": 2048,
+          "height": 2048,
+          "byteLength": 1361221
+        },
+        {
+          "image": 5,
+          "width": 2048,
+          "height": 2048,
+          "byteLength": 1871475
+        }
+      ],
+      "maxTextureDimension": 2048
+    },
+    "dims": {
+      "footprint": {
+        "w": 0.8638981580734253,
+        "d": 0.8659214973449707
+      },
+      "center": {
+        "x": 0,
+        "z": 0
+      },
+      "minY": 0.002629682421684265,
+      "maxY": 0.8705162405967712
+    }
+  },
+  {
+    "id": "quaternius-fantasy-props/Crate_Wooden",
+    "source": "quaternius-fantasy-props",
+    "categories": [
+      "fantasy",
+      "prop"
+    ],
+    "file": "Crate_Wooden.glb",
+    "metrics": {
+      "glbBytes": 69764,
+      "byteLength": 14700937,
+      "triangles": 1576,
+      "primitives": 2,
+      "textures": [
+        {
+          "image": 0,
+          "width": 2048,
+          "height": 2048,
+          "byteLength": 3478660
+        },
+        {
+          "image": 1,
+          "width": 2048,
+          "height": 2048,
+          "byteLength": 2232961
+        },
+        {
+          "image": 2,
+          "width": 2048,
+          "height": 2048,
+          "byteLength": 2064585
+        },
+        {
+          "image": 3,
+          "width": 2048,
+          "height": 2048,
+          "byteLength": 3622271
+        },
+        {
+          "image": 4,
+          "width": 2048,
+          "height": 2048,
+          "byteLength": 1361221
+        },
+        {
+          "image": 5,
+          "width": 2048,
+          "height": 2048,
+          "byteLength": 1871475
+        }
+      ],
+      "maxTextureDimension": 2048
+    },
+    "dims": {
+      "footprint": {
+        "w": 0.8422585464421317,
+        "d": 0.9082932976203466
+      },
+      "center": {
+        "x": -0.004715506025771532,
+        "z": 0
+      },
+      "minY": -0.05243159234251937,
+      "maxY": 0.8784963503875858
+    }
+  },
+  {
+    "id": "quaternius-fantasy-props/Dummy",
+    "source": "quaternius-fantasy-props",
+    "categories": [
+      "fantasy",
+      "prop"
+    ],
+    "file": "Dummy.glb",
+    "metrics": {
+      "glbBytes": 85112,
+      "byteLength": 21194381,
+      "triangles": 2858,
+      "primitives": 3,
+      "textures": [
+        {
+          "image": 0,
+          "width": 2048,
+          "height": 2048,
+          "byteLength": 3478660
+        },
+        {
+          "image": 1,
+          "width": 2048,
+          "height": 2048,
+          "byteLength": 2232961
+        },
+        {
+          "image": 2,
+          "width": 2048,
+          "height": 2048,
+          "byteLength": 2064585
+        },
+        {
+          "image": 3,
+          "width": 2048,
+          "height": 2048,
+          "byteLength": 3622271
+        },
+        {
+          "image": 4,
+          "width": 2048,
+          "height": 2048,
+          "byteLength": 1361221
+        },
+        {
+          "image": 5,
+          "width": 2048,
+          "height": 2048,
+          "byteLength": 1871475
+        },
+        {
+          "image": 6,
+          "width": 2048,
+          "height": 2048,
+          "byteLength": 3917916
+        },
+        {
+          "image": 7,
+          "width": 2048,
+          "height": 2048,
+          "byteLength": 1936754
+        },
+        {
+          "image": 8,
+          "width": 2048,
+          "height": 2048,
+          "byteLength": 623426
+        }
+      ],
+      "maxTextureDimension": 2048
+    },
+    "dims": {
+      "footprint": {
+        "w": 0.8085009455680847,
+        "d": 0.5846032500267029
+      },
+      "center": {
+        "x": 0.00020378828048706055,
+        "z": 0.00022149085998535156
+      },
+      "minY": -0.002887953072786331,
+      "maxY": 1.8597913980484009
+    }
+  },
+  {
+    "id": "quaternius-fantasy-props/FarmCrate_Apple",
+    "source": "quaternius-fantasy-props",
+    "categories": [
+      "fantasy",
+      "prop"
+    ],
+    "file": "FarmCrate_Apple.glb",
+    "metrics": {
+      "glbBytes": 139132,
+      "byteLength": 24500550,
+      "triangles": 4028,
+      "primitives": 3,
+      "textures": [
+        {
+          "image": 0,
+          "width": 2048,
+          "height": 2048,
+          "byteLength": 3478660
+        },
+        {
+          "image": 1,
+          "width": 2048,
+          "height": 2048,
+          "byteLength": 2232961
+        },
+        {
+          "image": 2,
+          "width": 2048,
+          "height": 2048,
+          "byteLength": 2064585
+        },
+        {
+          "image": 3,
+          "width": 2048,
+          "height": 2048,
+          "byteLength": 3622271
+        },
+        {
+          "image": 4,
+          "width": 2048,
+          "height": 2048,
+          "byteLength": 1361221
+        },
+        {
+          "image": 5,
+          "width": 2048,
+          "height": 2048,
+          "byteLength": 1871475
+        },
+        {
+          "image": 6,
+          "width": 2048,
+          "height": 2048,
+          "byteLength": 4449962
+        },
+        {
+          "image": 7,
+          "width": 2048,
+          "height": 2048,
+          "byteLength": 2263132
+        },
+        {
+          "image": 8,
+          "width": 2048,
+          "height": 2048,
+          "byteLength": 3017151
+        }
+      ],
+      "maxTextureDimension": 2048
+    },
+    "dims": {
+      "footprint": {
+        "w": 0.7137976288795471,
+        "d": 0.41416001319885254
+      },
+      "center": {
+        "x": 0,
+        "z": 0
+      },
+      "minY": -0.01598539389669895,
+      "maxY": 0.227791890501976
+    }
+  },
+  {
+    "id": "quaternius-fantasy-props/FarmCrate_Carrot",
+    "source": "quaternius-fantasy-props",
+    "categories": [
+      "fantasy",
+      "prop"
+    ],
+    "file": "FarmCrate_Carrot.glb",
+    "metrics": {
+      "glbBytes": 208944,
+      "byteLength": 24570362,
+      "triangles": 5262,
+      "primitives": 3,
+      "textures": [
+        {
+          "image": 0,
+          "width": 2048,
+          "height": 2048,
+          "byteLength": 4449962
+        },
+        {
+          "image": 1,
+          "width": 2048,
+          "height": 2048,
+          "byteLength": 2263132
+        },
+        {
+          "image": 2,
+          "width": 2048,
+          "height": 2048,
+          "byteLength": 3017151
+        },
+        {
+          "image": 3,
+          "width": 2048,
+          "height": 2048,
+          "byteLength": 3478660
+        },
+        {
+          "image": 4,
+          "width": 2048,
+          "height": 2048,
+          "byteLength": 2232961
+        },
+        {
+          "image": 5,
+          "width": 2048,
+          "height": 2048,
+          "byteLength": 2064585
+        },
+        {
+          "image": 6,
+          "width": 2048,
+          "height": 2048,
+          "byteLength": 3622271
+        },
+        {
+          "image": 7,
+          "width": 2048,
+          "height": 2048,
+          "byteLength": 1361221
+        },
+        {
+          "image": 8,
+          "width": 2048,
+          "height": 2048,
+          "byteLength": 1871475
+        }
+      ],
+      "maxTextureDimension": 2048
+    },
+    "dims": {
+      "footprint": {
+        "w": 0.7137976288795471,
+        "d": 0.5669960379600525
+      },
+      "center": {
+        "x": 0,
+        "z": -0.07641801238059998
+      },
+      "minY": -0.01598544418811798,
+      "maxY": 0.39533743262290955
+    }
+  },
+  {
+    "id": "quaternius-fantasy-props/FarmCrate_Empty",
+    "source": "quaternius-fantasy-props",
+    "categories": [
+      "fantasy",
+      "prop"
+    ],
+    "file": "FarmCrate_Empty.glb",
+    "metrics": {
+      "glbBytes": 57604,
+      "byteLength": 14688777,
+      "triangles": 1928,
+      "primitives": 2,
+      "textures": [
+        {
+          "image": 0,
+          "width": 2048,
+          "height": 2048,
+          "byteLength": 3478660
+        },
+        {
+          "image": 1,
+          "width": 2048,
+          "height": 2048,
+          "byteLength": 2232961
+        },
+        {
+          "image": 2,
+          "width": 2048,
+          "height": 2048,
+          "byteLength": 2064585
+        },
+        {
+          "image": 3,
+          "width": 2048,
+          "height": 2048,
+          "byteLength": 3622271
+        },
+        {
+          "image": 4,
+          "width": 2048,
+          "height": 2048,
+          "byteLength": 1361221
+        },
+        {
+          "image": 5,
+          "width": 2048,
+          "height": 2048,
+          "byteLength": 1871475
+        }
+      ],
+      "maxTextureDimension": 2048
+    },
+    "dims": {
+      "footprint": {
+        "w": 0.713845431804657,
+        "d": 0.41416001319885254
+      },
+      "center": {
+        "x": 0,
+        "z": 0
+      },
+      "minY": -0.015985392034053802,
+      "maxY": 0.22779184579849243
+    }
+  },
+  {
+    "id": "quaternius-fantasy-props/Key_Gold",
+    "source": "quaternius-fantasy-props",
+    "categories": [
+      "fantasy",
+      "prop"
+    ],
+    "file": "Key_Gold.glb",
+    "metrics": {
+      "glbBytes": 60436,
+      "byteLength": 6915403,
+      "triangles": 1366,
+      "primitives": 1,
+      "textures": [
+        {
+          "image": 0,
+          "width": 2048,
+          "height": 2048,
+          "byteLength": 3622271
+        },
+        {
+          "image": 1,
+          "width": 2048,
+          "height": 2048,
+          "byteLength": 1361221
+        },
+        {
+          "image": 2,
+          "width": 2048,
+          "height": 2048,
+          "byteLength": 1871475
+        }
+      ],
+      "maxTextureDimension": 2048
+    },
+    "dims": {
+      "footprint": {
+        "w": 0.05807504430413246,
+        "d": 0.12228081375360489
+      },
+      "center": {
+        "x": 0,
+        "z": 0.009801585227251053
+      },
+      "minY": -0.006268944591283798,
+      "maxY": 0.0060126399621367455
+    }
+  },
+  {
+    "id": "quaternius-fantasy-props/Key_Metal",
+    "source": "quaternius-fantasy-props",
+    "categories": [
+      "fantasy",
+      "prop"
+    ],
+    "file": "Key_Metal.glb",
+    "metrics": {
+      "glbBytes": 20968,
+      "byteLength": 6875935,
+      "triangles": 546,
+      "primitives": 1,
+      "textures": [
+        {
+          "image": 0,
+          "width": 2048,
+          "height": 2048,
+          "byteLength": 3622271
+        },
+        {
+          "image": 1,
+          "width": 2048,
+          "height": 2048,
+          "byteLength": 1361221
+        },
+        {
+          "image": 2,
+          "width": 2048,
+          "height": 2048,
+          "byteLength": 1871475
+        }
+      ],
+      "maxTextureDimension": 2048
+    },
+    "dims": {
+      "footprint": {
+        "w": 0.047962525859475136,
+        "d": 0.11104895547032356
+      },
+      "center": {
+        "x": -0.0007169349119067192,
+        "z": 0.0030224788933992386
+      },
+      "minY": -0.0063133747316896915,
+      "maxY": 0.00611448148265481
+    }
+  },
+  {
+    "id": "quaternius-fantasy-props/Lantern_Wall",
+    "source": "quaternius-fantasy-props",
+    "categories": [
+      "fantasy",
+      "prop"
+    ],
+    "file": "Lantern_Wall.glb",
+    "metrics": {
+      "glbBytes": 121668,
+      "byteLength": 6976635,
+      "triangles": 2822,
+      "primitives": 1,
+      "textures": [
+        {
+          "image": 0,
+          "width": 2048,
+          "height": 2048,
+          "byteLength": 3622271
+        },
+        {
+          "image": 1,
+          "width": 2048,
+          "height": 2048,
+          "byteLength": 1361221
+        },
+        {
+          "image": 2,
+          "width": 2048,
+          "height": 2048,
+          "byteLength": 1871475
+        }
+      ],
+      "maxTextureDimension": 2048
+    },
+    "dims": {
+      "footprint": {
+        "w": 0.3573414534330368,
+        "d": 1.302314456552267
+      },
+      "center": {
+        "x": 7.450580596923828e-9,
+        "z": 0.6001799423247576
+      },
+      "minY": 0.08183755725622177,
+      "maxY": 1.4188451766967773
+    }
+  },
+  {
+    "id": "quaternius-fantasy-props/Mug",
+    "source": "quaternius-fantasy-props",
+    "categories": [
+      "fantasy",
+      "prop"
+    ],
+    "file": "Mug.glb",
+    "metrics": {
+      "glbBytes": 15364,
+      "byteLength": 14646537,
+      "triangles": 268,
+      "primitives": 2,
+      "textures": [
+        {
+          "image": 0,
+          "width": 2048,
+          "height": 2048,
+          "byteLength": 3622271
+        },
+        {
+          "image": 1,
+          "width": 2048,
+          "height": 2048,
+          "byteLength": 1361221
+        },
+        {
+          "image": 2,
+          "width": 2048,
+          "height": 2048,
+          "byteLength": 1871475
+        },
+        {
+          "image": 3,
+          "width": 2048,
+          "height": 2048,
+          "byteLength": 3478660
+        },
+        {
+          "image": 4,
+          "width": 2048,
+          "height": 2048,
+          "byteLength": 2232961
+        },
+        {
+          "image": 5,
+          "width": 2048,
+          "height": 2048,
+          "byteLength": 2064585
+        }
+      ],
+      "maxTextureDimension": 2048
+    },
+    "dims": {
+      "footprint": {
+        "w": 0.19208257645368576,
+        "d": 0.14678776264190674
+      },
+      "center": {
+        "x": 0.025670450180768967,
+        "z": -0.0013401880860328674
+      },
+      "minY": -0.004642794374376535,
+      "maxY": 0.1792401522397995
+    }
+  },
+  {
+    "id": "quaternius-fantasy-props/Nightstand_Shelf",
+    "source": "quaternius-fantasy-props",
+    "categories": [
+      "fantasy",
+      "prop"
+    ],
+    "file": "Nightstand_Shelf.glb",
+    "metrics": {
+      "glbBytes": 23228,
+      "byteLength": 7799434,
+      "triangles": 262,
+      "primitives": 1,
+      "textures": [
+        {
+          "image": 0,
+          "width": 2048,
+          "height": 2048,
+          "byteLength": 3478660
+        },
+        {
+          "image": 1,
+          "width": 2048,
+          "height": 2048,
+          "byteLength": 2232961
+        },
+        {
+          "image": 2,
+          "width": 2048,
+          "height": 2048,
+          "byteLength": 2064585
+        }
+      ],
+      "maxTextureDimension": 2048
+    },
+    "dims": {
+      "footprint": {
+        "w": 0.6933237314224243,
+        "d": 0.39348797500133514
+      },
+      "center": {
+        "x": 0,
+        "z": 0.003579162061214447
+      },
+      "minY": -0.006172299385070801,
+      "maxY": 1.2094584703445435
+    }
+  },
+  {
+    "id": "quaternius-fantasy-props/Peg_Rack",
+    "source": "quaternius-fantasy-props",
+    "categories": [
+      "fantasy",
+      "prop"
+    ],
+    "file": "Peg_Rack.glb",
+    "metrics": {
+      "glbBytes": 29544,
+      "byteLength": 14660717,
+      "triangles": 712,
+      "primitives": 2,
+      "textures": [
+        {
+          "image": 0,
+          "width": 2048,
+          "height": 2048,
+          "byteLength": 3478660
+        },
+        {
+          "image": 1,
+          "width": 2048,
+          "height": 2048,
+          "byteLength": 2232961
+        },
+        {
+          "image": 2,
+          "width": 2048,
+          "height": 2048,
+          "byteLength": 2064585
+        },
+        {
+          "image": 3,
+          "width": 2048,
+          "height": 2048,
+          "byteLength": 3622271
+        },
+        {
+          "image": 4,
+          "width": 2048,
+          "height": 2048,
+          "byteLength": 1361221
+        },
+        {
+          "image": 5,
+          "width": 2048,
+          "height": 2048,
+          "byteLength": 1871475
+        }
+      ],
+      "maxTextureDimension": 2048
+    },
+    "dims": {
+      "footprint": {
+        "w": 1.1838538646697998,
+        "d": 0.09572542061869171
+      },
+      "center": {
+        "x": 0,
+        "z": 0.04782257800070511
+      },
+      "minY": -0.17394767701625824,
+      "maxY": 0.17394767701625824
+    }
+  },
+  {
+    "id": "quaternius-fantasy-props/Pickaxe_Bronze",
+    "source": "quaternius-fantasy-props",
+    "categories": [
+      "fantasy",
+      "prop"
+    ],
+    "file": "Pickaxe_Bronze.glb",
+    "metrics": {
+      "glbBytes": 32532,
+      "byteLength": 9762777,
+      "triangles": 776,
+      "primitives": 1,
+      "textures": [
+        {
+          "image": 0,
+          "width": 2048,
+          "height": 2048,
+          "byteLength": 4449962
+        },
+        {
+          "image": 1,
+          "width": 2048,
+          "height": 2048,
+          "byteLength": 2263132
+        },
+        {
+          "image": 2,
+          "width": 2048,
+          "height": 2048,
+          "byteLength": 3017151
+        }
+      ],
+      "maxTextureDimension": 2048
+    },
+    "dims": {
+      "footprint": {
+        "w": 0.8128515183925629,
+        "d": 0.13565810024738312
+      },
+      "center": {
+        "x": -0.0038678795099258423,
+        "z": 0
+      },
+      "minY": -0.49387088418006897,
+      "maxY": 0.7037505507469177
+    }
+  },
+  {
+    "id": "quaternius-fantasy-props/Pot_1_Lid",
+    "source": "quaternius-fantasy-props",
+    "categories": [
+      "fantasy",
+      "prop"
+    ],
+    "file": "Pot_1_Lid.glb",
+    "metrics": {
+      "glbBytes": 47748,
+      "byteLength": 6902715,
+      "triangles": 1292,
+      "primitives": 1,
+      "textures": [
+        {
+          "image": 0,
+          "width": 2048,
+          "height": 2048,
+          "byteLength": 3622271
+        },
+        {
+          "image": 1,
+          "width": 2048,
+          "height": 2048,
+          "byteLength": 1361221
+        },
+        {
+          "image": 2,
+          "width": 2048,
+          "height": 2048,
+          "byteLength": 1871475
+        }
+      ],
+      "maxTextureDimension": 2048
+    },
+    "dims": {
+      "footprint": {
+        "w": 0.5393148064613342,
+        "d": 0.4860188663005829
+      },
+      "center": {
+        "x": 0,
+        "z": 0
+      },
+      "minY": -0.02260822057723999,
+      "maxY": 0.2578542232513428
+    }
+  },
+  {
+    "id": "quaternius-fantasy-props/Pot_1",
+    "source": "quaternius-fantasy-props",
+    "categories": [
+      "fantasy",
+      "prop"
+    ],
+    "file": "Pot_1.glb",
+    "metrics": {
+      "glbBytes": 38780,
+      "byteLength": 6893747,
+      "triangles": 1068,
+      "primitives": 1,
+      "textures": [
+        {
+          "image": 0,
+          "width": 2048,
+          "height": 2048,
+          "byteLength": 3622271
+        },
+        {
+          "image": 1,
+          "width": 2048,
+          "height": 2048,
+          "byteLength": 1361221
+        },
+        {
+          "image": 2,
+          "width": 2048,
+          "height": 2048,
+          "byteLength": 1871475
+        }
+      ],
+      "maxTextureDimension": 2048
+    },
+    "dims": {
+      "footprint": {
+        "w": 0.5393148064613342,
+        "d": 0.4860188663005829
+      },
+      "center": {
+        "x": 0,
+        "z": 0
+      },
+      "minY": -0.02260822057723999,
+      "maxY": 0.2012079805135727
+    }
+  },
+  {
+    "id": "quaternius-fantasy-props/Potion_1",
+    "source": "quaternius-fantasy-props",
+    "categories": [
+      "fantasy",
+      "prop"
+    ],
+    "file": "Potion_1.glb",
+    "metrics": {
+      "glbBytes": 19996,
+      "byteLength": 9750241,
+      "triangles": 440,
+      "primitives": 1,
+      "textures": [
+        {
+          "image": 0,
+          "width": 2048,
+          "height": 2048,
+          "byteLength": 4449962
+        },
+        {
+          "image": 1,
+          "width": 2048,
+          "height": 2048,
+          "byteLength": 2263132
+        },
+        {
+          "image": 2,
+          "width": 2048,
+          "height": 2048,
+          "byteLength": 3017151
+        }
+      ],
+      "maxTextureDimension": 2048
+    },
+    "dims": {
+      "footprint": {
+        "w": 0.11386897414922714,
+        "d": 0.11386897414922714
+      },
+      "center": {
+        "x": 0,
+        "z": 0
+      },
+      "minY": -0.00039556194678880274,
+      "maxY": 0.13998661935329437
+    }
+  },
+  {
+    "id": "quaternius-fantasy-props/Potion_2",
+    "source": "quaternius-fantasy-props",
+    "categories": [
+      "fantasy",
+      "prop"
+    ],
+    "file": "Potion_2.glb",
+    "metrics": {
+      "glbBytes": 21468,
+      "byteLength": 9751713,
+      "triangles": 472,
+      "primitives": 1,
+      "textures": [
+        {
+          "image": 0,
+          "width": 2048,
+          "height": 2048,
+          "byteLength": 4449962
+        },
+        {
+          "image": 1,
+          "width": 2048,
+          "height": 2048,
+          "byteLength": 2263132
+        },
+        {
+          "image": 2,
+          "width": 2048,
+          "height": 2048,
+          "byteLength": 3017151
+        }
+      ],
+      "maxTextureDimension": 2048
+    },
+    "dims": {
+      "footprint": {
+        "w": 0.1274363398551941,
+        "d": 0.1274363398551941
+      },
+      "center": {
+        "x": 0,
+        "z": 0
+      },
+      "minY": -0.00017592633957974613,
+      "maxY": 0.26134130358695984
+    }
+  },
+  {
+    "id": "quaternius-fantasy-props/Potion_4",
+    "source": "quaternius-fantasy-props",
+    "categories": [
+      "fantasy",
+      "prop"
+    ],
+    "file": "Potion_4.glb",
+    "metrics": {
+      "glbBytes": 24332,
+      "byteLength": 9754577,
+      "triangles": 536,
+      "primitives": 1,
+      "textures": [
+        {
+          "image": 0,
+          "width": 2048,
+          "height": 2048,
+          "byteLength": 4449962
+        },
+        {
+          "image": 1,
+          "width": 2048,
+          "height": 2048,
+          "byteLength": 2263132
+        },
+        {
+          "image": 2,
+          "width": 2048,
+          "height": 2048,
+          "byteLength": 3017151
+        }
+      ],
+      "maxTextureDimension": 2048
+    },
+    "dims": {
+      "footprint": {
+        "w": 0.14771853387355804,
+        "d": 0.14771853387355804
+      },
+      "center": {
+        "x": 0,
+        "z": 0
+      },
+      "minY": -0.00017592633957974613,
+      "maxY": 0.20038259029388428
+    }
+  },
+  {
+    "id": "quaternius-fantasy-props/Pouch_Large",
+    "source": "quaternius-fantasy-props",
+    "categories": [
+      "fantasy",
+      "prop"
+    ],
+    "file": "Pouch_Large.glb",
+    "metrics": {
+      "glbBytes": 34764,
+      "byteLength": 16619976,
+      "triangles": 730,
+      "primitives": 2,
+      "textures": [
+        {
+          "image": 0,
+          "width": 2048,
+          "height": 2048,
+          "byteLength": 4449962
+        },
+        {
+          "image": 1,
+          "width": 2048,
+          "height": 2048,
+          "byteLength": 2263132
+        },
+        {
+          "image": 2,
+          "width": 2048,
+          "height": 2048,
+          "byteLength": 3017151
+        },
+        {
+          "image": 3,
+          "width": 2048,
+          "height": 2048,
+          "byteLength": 3622271
+        },
+        {
+          "image": 4,
+          "width": 2048,
+          "height": 2048,
+          "byteLength": 1361221
+        },
+        {
+          "image": 5,
+          "width": 2048,
+          "height": 2048,
+          "byteLength": 1871475
+        }
+      ],
+      "maxTextureDimension": 2048
+    },
+    "dims": {
+      "footprint": {
+        "w": 0.22549332678318024,
+        "d": 0.11981960013508797
+      },
+      "center": {
+        "x": -0.0010453015565872192,
+        "z": 0.011899372562766075
+      },
+      "minY": 0.0007084211683832109,
+      "maxY": 0.15981073677539825
+    }
+  },
+  {
+    "id": "quaternius-fantasy-props/Rope_1",
+    "source": "quaternius-fantasy-props",
+    "categories": [
+      "fantasy",
+      "prop"
+    ],
+    "file": "Rope_1.glb",
+    "metrics": {
+      "glbBytes": 43280,
+      "byteLength": 7819486,
+      "triangles": 1748,
+      "primitives": 1,
+      "textures": [
+        {
+          "image": 0,
+          "width": 2048,
+          "height": 2048,
+          "byteLength": 3478660
+        },
+        {
+          "image": 1,
+          "width": 2048,
+          "height": 2048,
+          "byteLength": 2232961
+        },
+        {
+          "image": 2,
+          "width": 2048,
+          "height": 2048,
+          "byteLength": 2064585
+        }
+      ],
+      "maxTextureDimension": 2048
+    },
+    "dims": {
+      "footprint": {
+        "w": 0.5573887228965759,
+        "d": 0.6063040792942047
+      },
+      "center": {
+        "x": -0.006909489631652832,
+        "z": -0.02861805260181427
+      },
+      "minY": -0.02687135338783264,
+      "maxY": 0.07098738104104996
+    }
+  },
+  {
+    "id": "quaternius-fantasy-props/Rope_2",
+    "source": "quaternius-fantasy-props",
+    "categories": [
+      "fantasy",
+      "prop"
+    ],
+    "file": "Rope_2.glb",
+    "metrics": {
+      "glbBytes": 36560,
+      "byteLength": 7812766,
+      "triangles": 1460,
+      "primitives": 1,
+      "textures": [
+        {
+          "image": 0,
+          "width": 2048,
+          "height": 2048,
+          "byteLength": 3478660
+        },
+        {
+          "image": 1,
+          "width": 2048,
+          "height": 2048,
+          "byteLength": 2232961
+        },
+        {
+          "image": 2,
+          "width": 2048,
+          "height": 2048,
+          "byteLength": 2064585
+        }
+      ],
+      "maxTextureDimension": 2048
+    },
+    "dims": {
+      "footprint": {
+        "w": 0.8078216016292572,
+        "d": 0.8450003564357758
+      },
+      "center": {
+        "x": 0.020588800311088562,
+        "z": -0.023022428154945374
+      },
+      "minY": -0.0032811202108860016,
+      "maxY": 0.12029828131198883
+    }
+  },
+  {
+    "id": "quaternius-fantasy-props/Rope_3",
+    "source": "quaternius-fantasy-props",
+    "categories": [
+      "fantasy",
+      "prop"
+    ],
+    "file": "Rope_3.glb",
+    "metrics": {
+      "glbBytes": 43284,
+      "byteLength": 7819490,
+      "triangles": 1748,
+      "primitives": 1,
+      "textures": [
+        {
+          "image": 0,
+          "width": 2048,
+          "height": 2048,
+          "byteLength": 3478660
+        },
+        {
+          "image": 1,
+          "width": 2048,
+          "height": 2048,
+          "byteLength": 2232961
+        },
+        {
+          "image": 2,
+          "width": 2048,
+          "height": 2048,
+          "byteLength": 2064585
+        }
+      ],
+      "maxTextureDimension": 2048
+    },
+    "dims": {
+      "footprint": {
+        "w": 1.2280073761940002,
+        "d": 0.950765460729599
+      },
+      "center": {
+        "x": -0.21559807658195496,
+        "z": -0.03729547560214996
+      },
+      "minY": -0.027140291407704353,
+      "maxY": 0.07461394369602203
+    }
+  },
+  {
+    "id": "quaternius-fantasy-props/Scroll_1",
+    "source": "quaternius-fantasy-props",
+    "categories": [
+      "fantasy",
+      "prop"
+    ],
+    "file": "Scroll_1.glb",
+    "metrics": {
+      "glbBytes": 23032,
+      "byteLength": 17240011,
+      "triangles": 512,
+      "primitives": 2,
+      "textures": [
+        {
+          "image": 0,
+          "width": 4096,
+          "height": 4096,
+          "byteLength": 7486734
+        },
+        {
+          "image": 1,
+          "width": 2048,
+          "height": 2048,
+          "byteLength": 4449962
+        },
+        {
+          "image": 2,
+          "width": 2048,
+          "height": 2048,
+          "byteLength": 2263132
+        },
+        {
+          "image": 3,
+          "width": 2048,
+          "height": 2048,
+          "byteLength": 3017151
+        }
+      ],
+      "maxTextureDimension": 4096
+    },
+    "dims": {
+      "footprint": {
+        "w": 0.2438921332359314,
+        "d": 0.06311644986271858
+      },
+      "center": {
+        "x": 0.0012515708804130554,
+        "z": 0.0061180125921964645
+      },
+      "minY": 0.0009954404085874557,
+      "maxY": 0.05978281795978546
+    }
+  },
+  {
+    "id": "quaternius-fantasy-props/Scroll_2",
+    "source": "quaternius-fantasy-props",
+    "categories": [
+      "fantasy",
+      "prop"
+    ],
+    "file": "Scroll_2.glb",
+    "metrics": {
+      "glbBytes": 31324,
+      "byteLength": 17248303,
+      "triangles": 672,
+      "primitives": 2,
+      "textures": [
+        {
+          "image": 0,
+          "width": 4096,
+          "height": 4096,
+          "byteLength": 7486734
+        },
+        {
+          "image": 1,
+          "width": 2048,
+          "height": 2048,
+          "byteLength": 4449962
+        },
+        {
+          "image": 2,
+          "width": 2048,
+          "height": 2048,
+          "byteLength": 2263132
+        },
+        {
+          "image": 3,
+          "width": 2048,
+          "height": 2048,
+          "byteLength": 3017151
+        }
+      ],
+      "maxTextureDimension": 4096
+    },
+    "dims": {
+      "footprint": {
+        "w": 0.23294197022914886,
+        "d": 0.06367844715714455
+      },
+      "center": {
+        "x": 0.0037502869963645935,
+        "z": 0.006399011239409447
+      },
+      "minY": 0.00041361525654792786,
+      "maxY": 0.059123024344444275
+    }
+  },
+  {
+    "id": "quaternius-fantasy-props/Shelf_Arch",
+    "source": "quaternius-fantasy-props",
+    "categories": [
+      "fantasy",
+      "prop"
+    ],
+    "file": "Shelf_Arch.glb",
+    "metrics": {
+      "glbBytes": 68048,
+      "byteLength": 14699221,
+      "triangles": 1286,
+      "primitives": 2,
+      "textures": [
+        {
+          "image": 0,
+          "width": 2048,
+          "height": 2048,
+          "byteLength": 3622271
+        },
+        {
+          "image": 1,
+          "width": 2048,
+          "height": 2048,
+          "byteLength": 1361221
+        },
+        {
+          "image": 2,
+          "width": 2048,
+          "height": 2048,
+          "byteLength": 1871475
+        },
+        {
+          "image": 3,
+          "width": 2048,
+          "height": 2048,
+          "byteLength": 3478660
+        },
+        {
+          "image": 4,
+          "width": 2048,
+          "height": 2048,
+          "byteLength": 2232961
+        },
+        {
+          "image": 5,
+          "width": 2048,
+          "height": 2048,
+          "byteLength": 2064585
+        }
+      ],
+      "maxTextureDimension": 2048
+    },
+    "dims": {
+      "footprint": {
+        "w": 1.245151162147522,
+        "d": 0.31161100789904594
+      },
+      "center": {
+        "x": 5.960464477539063e-8,
+        "z": 0.1509560588747263
+      },
+      "minY": -0.6144747734069824,
+      "maxY": 0.9746949672698975
+    }
+  },
+  {
+    "id": "quaternius-fantasy-props/Shelf_Simple",
+    "source": "quaternius-fantasy-props",
+    "categories": [
+      "fantasy",
+      "prop"
+    ],
+    "file": "Shelf_Simple.glb",
+    "metrics": {
+      "glbBytes": 23668,
+      "byteLength": 7799874,
+      "triangles": 480,
+      "primitives": 1,
+      "textures": [
+        {
+          "image": 0,
+          "width": 2048,
+          "height": 2048,
+          "byteLength": 3478660
+        },
+        {
+          "image": 1,
+          "width": 2048,
+          "height": 2048,
+          "byteLength": 2232961
+        },
+        {
+          "image": 2,
+          "width": 2048,
+          "height": 2048,
+          "byteLength": 2064585
+        }
+      ],
+      "maxTextureDimension": 2048
+    },
+    "dims": {
+      "footprint": {
+        "w": 1.1838538646697998,
+        "d": 0.2922859787940979
+      },
+      "center": {
+        "x": -0.0005778074264526367,
+        "z": 0.18967431783676147
+      },
+      "minY": -0.20106926560401917,
+      "maxY": 0.10765185207128525
+    }
+  },
+  {
+    "id": "quaternius-fantasy-props/Shelf_Small_Bottles",
+    "source": "quaternius-fantasy-props",
+    "categories": [
+      "fantasy",
+      "prop"
+    ],
+    "file": "Shelf_Small_Bottles.glb",
+    "metrics": {
+      "glbBytes": 234124,
+      "byteLength": 24595542,
+      "triangles": 5234,
+      "primitives": 3,
+      "textures": [
+        {
+          "image": 0,
+          "width": 2048,
+          "height": 2048,
+          "byteLength": 4449962
+        },
+        {
+          "image": 1,
+          "width": 2048,
+          "height": 2048,
+          "byteLength": 2263132
+        },
+        {
+          "image": 2,
+          "width": 2048,
+          "height": 2048,
+          "byteLength": 3017151
+        },
+        {
+          "image": 3,
+          "width": 2048,
+          "height": 2048,
+          "byteLength": 3622271
+        },
+        {
+          "image": 4,
+          "width": 2048,
+          "height": 2048,
+          "byteLength": 1361221
+        },
+        {
+          "image": 5,
+          "width": 2048,
+          "height": 2048,
+          "byteLength": 1871475
+        },
+        {
+          "image": 6,
+          "width": 2048,
+          "height": 2048,
+          "byteLength": 3478660
+        },
+        {
+          "image": 7,
+          "width": 2048,
+          "height": 2048,
+          "byteLength": 2232961
+        },
+        {
+          "image": 8,
+          "width": 2048,
+          "height": 2048,
+          "byteLength": 2064585
+        }
+      ],
+      "maxTextureDimension": 2048
+    },
+    "dims": {
+      "footprint": {
+        "w": 1.1371342539787292,
+        "d": 0.28457875549793243
+      },
+      "center": {
+        "x": -0.00008276104927062988,
+        "z": 0.15238668769598007
+      },
+      "minY": -0.019115358591079712,
+      "maxY": 0.6282642483711243
+    }
+  },
+  {
+    "id": "quaternius-fantasy-props/Shield_Wooden",
+    "source": "quaternius-fantasy-props",
+    "categories": [
+      "fantasy",
+      "prop"
+    ],
+    "file": "Shield_Wooden.glb",
+    "metrics": {
+      "glbBytes": 68808,
+      "byteLength": 24430226,
+      "triangles": 1404,
+      "primitives": 3,
+      "textures": [
+        {
+          "image": 0,
+          "width": 2048,
+          "height": 2048,
+          "byteLength": 3478660
+        },
+        {
+          "image": 1,
+          "width": 2048,
+          "height": 2048,
+          "byteLength": 2232961
+        },
+        {
+          "image": 2,
+          "width": 2048,
+          "height": 2048,
+          "byteLength": 2064585
+        },
+        {
+          "image": 3,
+          "width": 2048,
+          "height": 2048,
+          "byteLength": 3622271
+        },
+        {
+          "image": 4,
+          "width": 2048,
+          "height": 2048,
+          "byteLength": 1361221
+        },
+        {
+          "image": 5,
+          "width": 2048,
+          "height": 2048,
+          "byteLength": 1871475
+        },
+        {
+          "image": 6,
+          "width": 2048,
+          "height": 2048,
+          "byteLength": 4449962
+        },
+        {
+          "image": 7,
+          "width": 2048,
+          "height": 2048,
+          "byteLength": 2263132
+        },
+        {
+          "image": 8,
+          "width": 2048,
+          "height": 2048,
+          "byteLength": 3017151
+        }
+      ],
+      "maxTextureDimension": 2048
+    },
+    "dims": {
+      "footprint": {
+        "w": 0.6145763993263245,
+        "d": 0.17882439389359206
+      },
+      "center": {
+        "x": 0,
+        "z": 0.08863860421115533
+      },
+      "minY": -0.3104481101036072,
+      "maxY": 0.3104481101036072
+    }
+  },
+  {
+    "id": "quaternius-fantasy-props/SmallBottle",
+    "source": "quaternius-fantasy-props",
+    "categories": [
+      "fantasy",
+      "prop"
+    ],
+    "file": "SmallBottle.glb",
+    "metrics": {
+      "glbBytes": 7464,
+      "byteLength": 9737709,
+      "triangles": 130,
+      "primitives": 1,
+      "textures": [
+        {
+          "image": 0,
+          "width": 2048,
+          "height": 2048,
+          "byteLength": 4449962
+        },
+        {
+          "image": 1,
+          "width": 2048,
+          "height": 2048,
+          "byteLength": 2263132
+        },
+        {
+          "image": 2,
+          "width": 2048,
+          "height": 2048,
+          "byteLength": 3017151
+        }
+      ],
+      "maxTextureDimension": 2048
+    },
+    "dims": {
+      "footprint": {
+        "w": 0.060423584654927254,
+        "d": 0.04921665973961353
+      },
+      "center": {
+        "x": -3.380700945854187e-7,
+        "z": -1.555308699607849e-7
+      },
+      "minY": 0,
+      "maxY": 0.1194595918059349
+    }
+  },
+  {
+    "id": "quaternius-fantasy-props/SmallBottles_1",
+    "source": "quaternius-fantasy-props",
+    "categories": [
+      "fantasy",
+      "prop"
+    ],
+    "file": "SmallBottles_1.glb",
+    "metrics": {
+      "glbBytes": 22348,
+      "byteLength": 9752593,
+      "triangles": 486,
+      "primitives": 1,
+      "textures": [
+        {
+          "image": 0,
+          "width": 2048,
+          "height": 2048,
+          "byteLength": 4449962
+        },
+        {
+          "image": 1,
+          "width": 2048,
+          "height": 2048,
+          "byteLength": 2263132
+        },
+        {
+          "image": 2,
+          "width": 2048,
+          "height": 2048,
+          "byteLength": 3017151
+        }
+      ],
+      "maxTextureDimension": 2048
+    },
+    "dims": {
+      "footprint": {
+        "w": 0.21505411714315414,
+        "d": 0.05578115954995155
+      },
+      "center": {
+        "x": -0.00536709651350975,
+        "z": 0
+      },
+      "minY": 0.001300513162277639,
+      "maxY": 0.146688312292099
+    }
+  },
+  {
+    "id": "quaternius-fantasy-props/Stall_Cart_Empty",
+    "source": "quaternius-fantasy-props",
+    "categories": [
+      "fantasy",
+      "prop"
+    ],
+    "file": "Stall_Cart_Empty.glb",
+    "metrics": {
+      "glbBytes": 242348,
+      "byteLength": 21351617,
+      "triangles": 3936,
+      "primitives": 3,
+      "textures": [
+        {
+          "image": 0,
+          "width": 2048,
+          "height": 2048,
+          "byteLength": 3622271
+        },
+        {
+          "image": 1,
+          "width": 2048,
+          "height": 2048,
+          "byteLength": 1361221
+        },
+        {
+          "image": 2,
+          "width": 2048,
+          "height": 2048,
+          "byteLength": 1871475
+        },
+        {
+          "image": 3,
+          "width": 2048,
+          "height": 2048,
+          "byteLength": 3478660
+        },
+        {
+          "image": 4,
+          "width": 2048,
+          "height": 2048,
+          "byteLength": 2232961
+        },
+        {
+          "image": 5,
+          "width": 2048,
+          "height": 2048,
+          "byteLength": 2064585
+        },
+        {
+          "image": 6,
+          "width": 2048,
+          "height": 2048,
+          "byteLength": 3917916
+        },
+        {
+          "image": 7,
+          "width": 2048,
+          "height": 2048,
+          "byteLength": 1936754
+        },
+        {
+          "image": 8,
+          "width": 2048,
+          "height": 2048,
+          "byteLength": 623426
+        }
+      ],
+      "maxTextureDimension": 2048
+    },
+    "dims": {
+      "footprint": {
+        "w": 3.0205445885658264,
+        "d": 1.059701681137085
+      },
+      "center": {
+        "x": -0.5965170562267303,
+        "z": 0
+      },
+      "minY": -0.0038988939486443996,
+      "maxY": 2.627926826477051
+    }
+  },
+  {
+    "id": "quaternius-fantasy-props/Stall_Empty",
+    "source": "quaternius-fantasy-props",
+    "categories": [
+      "fantasy",
+      "prop"
+    ],
+    "file": "Stall_Empty.glb",
+    "metrics": {
+      "glbBytes": 93212,
+      "byteLength": 21202481,
+      "triangles": 1496,
+      "primitives": 3,
+      "textures": [
+        {
+          "image": 0,
+          "width": 2048,
+          "height": 2048,
+          "byteLength": 3622271
+        },
+        {
+          "image": 1,
+          "width": 2048,
+          "height": 2048,
+          "byteLength": 1361221
+        },
+        {
+          "image": 2,
+          "width": 2048,
+          "height": 2048,
+          "byteLength": 1871475
+        },
+        {
+          "image": 3,
+          "width": 2048,
+          "height": 2048,
+          "byteLength": 3478660
+        },
+        {
+          "image": 4,
+          "width": 2048,
+          "height": 2048,
+          "byteLength": 2232961
+        },
+        {
+          "image": 5,
+          "width": 2048,
+          "height": 2048,
+          "byteLength": 2064585
+        },
+        {
+          "image": 6,
+          "width": 2048,
+          "height": 2048,
+          "byteLength": 3917916
+        },
+        {
+          "image": 7,
+          "width": 2048,
+          "height": 2048,
+          "byteLength": 1936754
+        },
+        {
+          "image": 8,
+          "width": 2048,
+          "height": 2048,
+          "byteLength": 623426
+        }
+      ],
+      "maxTextureDimension": 2048
+    },
+    "dims": {
+      "footprint": {
+        "w": 1.844859004020691,
+        "d": 0.9322552680969238
+      },
+      "center": {
+        "x": 0,
+        "z": 0.00541609525680542
+      },
+      "minY": -0.0048178937286138535,
+      "maxY": 2.6223647594451904
+    }
+  },
+  {
+    "id": "quaternius-fantasy-props/Stool",
+    "source": "quaternius-fantasy-props",
+    "categories": [
+      "fantasy",
+      "prop"
+    ],
+    "file": "Stool.glb",
+    "metrics": {
+      "glbBytes": 13276,
+      "byteLength": 7789482,
+      "triangles": 152,
+      "primitives": 1,
+      "textures": [
+        {
+          "image": 0,
+          "width": 2048,
+          "height": 2048,
+          "byteLength": 3478660
+        },
+        {
+          "image": 1,
+          "width": 2048,
+          "height": 2048,
+          "byteLength": 2232961
+        },
+        {
+          "image": 2,
+          "width": 2048,
+          "height": 2048,
+          "byteLength": 2064585
+        }
+      ],
+      "maxTextureDimension": 2048
+    },
+    "dims": {
+      "footprint": {
+        "w": 0.47460806369781494,
+        "d": 0.47460809350013733
+      },
+      "center": {
+        "x": -0.00030650198459625244,
+        "z": -0.0003065168857574463
+      },
+      "minY": -0.0064485399052500725,
+      "maxY": 0.5822744369506836
+    }
+  },
+  {
+    "id": "quaternius-fantasy-props/Sword_Bronze",
+    "source": "quaternius-fantasy-props",
+    "categories": [
+      "fantasy",
+      "prop"
+    ],
+    "file": "Sword_Bronze.glb",
+    "metrics": {
+      "glbBytes": 71728,
+      "byteLength": 9801973,
+      "triangles": 1540,
+      "primitives": 1,
+      "textures": [
+        {
+          "image": 0,
+          "width": 2048,
+          "height": 2048,
+          "byteLength": 4449962
+        },
+        {
+          "image": 1,
+          "width": 2048,
+          "height": 2048,
+          "byteLength": 2263132
+        },
+        {
+          "image": 2,
+          "width": 2048,
+          "height": 2048,
+          "byteLength": 3017151
+        }
+      ],
+      "maxTextureDimension": 2048
+    },
+    "dims": {
+      "footprint": {
+        "w": 0.2665614187717438,
+        "d": 0.06539797782897949
+      },
+      "center": {
+        "x": 0,
+        "z": 0
+      },
+      "minY": -0.20807738602161407,
+      "maxY": 0.9240942597389221
+    }
+  },
+  {
+    "id": "quaternius-fantasy-props/Table_Fork",
+    "source": "quaternius-fantasy-props",
+    "categories": [
+      "fantasy",
+      "prop"
+    ],
+    "file": "Table_Fork.glb",
+    "metrics": {
+      "glbBytes": 6556,
+      "byteLength": 6861523,
+      "triangles": 108,
+      "primitives": 1,
+      "textures": [
+        {
+          "image": 0,
+          "width": 2048,
+          "height": 2048,
+          "byteLength": 3622271
+        },
+        {
+          "image": 1,
+          "width": 2048,
+          "height": 2048,
+          "byteLength": 1361221
+        },
+        {
+          "image": 2,
+          "width": 2048,
+          "height": 2048,
+          "byteLength": 1871475
+        }
+      ],
+      "maxTextureDimension": 2048
+    },
+    "dims": {
+      "footprint": {
+        "w": 0.05045219697058201,
+        "d": 0.2625505328178406
+      },
+      "center": {
+        "x": -0.00040578562766313553,
+        "z": -0.04880823194980621
+      },
+      "minY": -0.00307985651306808,
+      "maxY": 0.00307985651306808
+    }
+  },
+  {
+    "id": "quaternius-fantasy-props/Table_Knife",
+    "source": "quaternius-fantasy-props",
+    "categories": [
+      "fantasy",
+      "prop"
+    ],
+    "file": "Table_Knife.glb",
+    "metrics": {
+      "glbBytes": 3796,
+      "byteLength": 6858763,
+      "triangles": 54,
+      "primitives": 1,
+      "textures": [
+        {
+          "image": 0,
+          "width": 2048,
+          "height": 2048,
+          "byteLength": 3622271
+        },
+        {
+          "image": 1,
+          "width": 2048,
+          "height": 2048,
+          "byteLength": 1361221
+        },
+        {
+          "image": 2,
+          "width": 2048,
+          "height": 2048,
+          "byteLength": 1871475
+        }
+      ],
+      "maxTextureDimension": 2048
+    },
+    "dims": {
+      "footprint": {
+        "w": 0.041659372858703136,
+        "d": 0.2865777462720871
+      },
+      "center": {
+        "x": -0.0074808490462601185,
+        "z": -0.060821838676929474
+      },
+      "minY": -0.00307985651306808,
+      "maxY": 0.00307985651306808
+    }
+  },
+  {
+    "id": "quaternius-fantasy-props/Table_Large",
+    "source": "quaternius-fantasy-props",
+    "categories": [
+      "fantasy",
+      "prop"
+    ],
+    "file": "Table_Large.glb",
+    "metrics": {
+      "glbBytes": 59592,
+      "byteLength": 14690765,
+      "triangles": 986,
+      "primitives": 2,
+      "textures": [
+        {
+          "image": 0,
+          "width": 2048,
+          "height": 2048,
+          "byteLength": 3478660
+        },
+        {
+          "image": 1,
+          "width": 2048,
+          "height": 2048,
+          "byteLength": 2232961
+        },
+        {
+          "image": 2,
+          "width": 2048,
+          "height": 2048,
+          "byteLength": 2064585
+        },
+        {
+          "image": 3,
+          "width": 2048,
+          "height": 2048,
+          "byteLength": 3622271
+        },
+        {
+          "image": 4,
+          "width": 2048,
+          "height": 2048,
+          "byteLength": 1361221
+        },
+        {
+          "image": 5,
+          "width": 2048,
+          "height": 2048,
+          "byteLength": 1871475
+        }
+      ],
+      "maxTextureDimension": 2048
+    },
+    "dims": {
+      "footprint": {
+        "w": 2.8484928607940674,
+        "d": 1.0966623425483704
+      },
+      "center": {
+        "x": 0,
+        "z": 0.006345599889755249
+      },
+      "minY": 0.001262865960597992,
+      "maxY": 0.8147094249725342
+    }
+  },
+  {
+    "id": "quaternius-fantasy-props/Table_Plate",
+    "source": "quaternius-fantasy-props",
+    "categories": [
+      "fantasy",
+      "prop"
+    ],
+    "file": "Table_Plate.glb",
+    "metrics": {
+      "glbBytes": 8420,
+      "byteLength": 6863387,
+      "triangles": 172,
+      "primitives": 1,
+      "textures": [
+        {
+          "image": 0,
+          "width": 2048,
+          "height": 2048,
+          "byteLength": 3622271
+        },
+        {
+          "image": 1,
+          "width": 2048,
+          "height": 2048,
+          "byteLength": 1361221
+        },
+        {
+          "image": 2,
+          "width": 2048,
+          "height": 2048,
+          "byteLength": 1871475
+        }
+      ],
+      "maxTextureDimension": 2048
+    },
+    "dims": {
+      "footprint": {
+        "w": 0.3332788646221161,
+        "d": 0.33693213760852814
+      },
+      "center": {
+        "x": 0.0001119077205657959,
+        "z": 2.2351741790771484e-8
+      },
+      "minY": -0.0007553889881819487,
+      "maxY": 0.01940305158495903
+    }
+  },
+  {
+    "id": "quaternius-fantasy-props/Table_Spoon",
+    "source": "quaternius-fantasy-props",
+    "categories": [
+      "fantasy",
+      "prop"
+    ],
+    "file": "Table_Spoon.glb",
+    "metrics": {
+      "glbBytes": 6476,
+      "byteLength": 6861443,
+      "triangles": 164,
+      "primitives": 1,
+      "textures": [
+        {
+          "image": 0,
+          "width": 2048,
+          "height": 2048,
+          "byteLength": 3622271
+        },
+        {
+          "image": 1,
+          "width": 2048,
+          "height": 2048,
+          "byteLength": 1361221
+        },
+        {
+          "image": 2,
+          "width": 2048,
+          "height": 2048,
+          "byteLength": 1871475
+        }
+      ],
+      "maxTextureDimension": 2048
+    },
+    "dims": {
+      "footprint": {
+        "w": 0.04600726626813412,
+        "d": 0.27182936668395996
+      },
+      "center": {
+        "x": 0.00035723764449357986,
+        "z": -0.053447648882865906
+      },
+      "minY": -0.015140607953071594,
+      "maxY": 0.00307985651306808
+    }
+  },
+  {
+    "id": "quaternius-fantasy-props/Torch_Metal",
+    "source": "quaternius-fantasy-props",
+    "categories": [
+      "fantasy",
+      "prop"
+    ],
+    "file": "Torch_Metal.glb",
+    "metrics": {
+      "glbBytes": 40732,
+      "byteLength": 6895699,
+      "triangles": 970,
+      "primitives": 1,
+      "textures": [
+        {
+          "image": 0,
+          "width": 2048,
+          "height": 2048,
+          "byteLength": 3622271
+        },
+        {
+          "image": 1,
+          "width": 2048,
+          "height": 2048,
+          "byteLength": 1361221
+        },
+        {
+          "image": 2,
+          "width": 2048,
+          "height": 2048,
+          "byteLength": 1871475
+        }
+      ],
+      "maxTextureDimension": 2048
+    },
+    "dims": {
+      "footprint": {
+        "w": 0.22316071391105652,
+        "d": 0.3883977671903267
+      },
+      "center": {
+        "x": 0,
+        "z": 0.19425477880031394
+      },
+      "minY": -0.2776470482349396,
+      "maxY": 0.37051382660865784
+    }
+  },
+  {
+    "id": "quaternius-fantasy-props/Vase_2",
+    "source": "quaternius-fantasy-props",
+    "categories": [
+      "fantasy",
+      "prop"
+    ],
+    "file": "Vase_2.glb",
+    "metrics": {
+      "glbBytes": 22972,
+      "byteLength": 9753217,
+      "triangles": 598,
+      "primitives": 1,
+      "textures": [
+        {
+          "image": 0,
+          "width": 2048,
+          "height": 2048,
+          "byteLength": 4449962
+        },
+        {
+          "image": 1,
+          "width": 2048,
+          "height": 2048,
+          "byteLength": 2263132
+        },
+        {
+          "image": 2,
+          "width": 2048,
+          "height": 2048,
+          "byteLength": 3017151
+        }
+      ],
+      "maxTextureDimension": 2048
+    },
+    "dims": {
+      "footprint": {
+        "w": 0.6946826875209808,
+        "d": 0.6946826577186584
+      },
+      "center": {
+        "x": 1.4901161193847656e-8,
+        "z": 0
+      },
+      "minY": -0.0008944488363340497,
+      "maxY": 0.515419065952301
+    }
+  },
+  {
+    "id": "quaternius-fantasy-props/Vase_4",
+    "source": "quaternius-fantasy-props",
+    "categories": [
+      "fantasy",
+      "prop"
+    ],
+    "file": "Vase_4.glb",
+    "metrics": {
+      "glbBytes": 23820,
+      "byteLength": 9754065,
+      "triangles": 598,
+      "primitives": 1,
+      "textures": [
+        {
+          "image": 0,
+          "width": 2048,
+          "height": 2048,
+          "byteLength": 4449962
+        },
+        {
+          "image": 1,
+          "width": 2048,
+          "height": 2048,
+          "byteLength": 2263132
+        },
+        {
+          "image": 2,
+          "width": 2048,
+          "height": 2048,
+          "byteLength": 3017151
+        }
+      ],
+      "maxTextureDimension": 2048
+    },
+    "dims": {
+      "footprint": {
+        "w": 0.35963454842567444,
+        "d": 0.35963454842567444
+      },
+      "center": {
+        "x": 0,
+        "z": 0
+      },
+      "minY": 0.0007824180647730827,
+      "maxY": 0.48624053597450256
+    }
+  },
+  {
+    "id": "quaternius-fantasy-props/Vase_Rubble_Medium",
+    "source": "quaternius-fantasy-props",
+    "categories": [
+      "fantasy",
+      "prop"
+    ],
+    "file": "Vase_Rubble_Medium.glb",
+    "metrics": {
+      "glbBytes": 87780,
+      "byteLength": 9818025,
+      "triangles": 1113,
+      "primitives": 1,
+      "textures": [
+        {
+          "image": 0,
+          "width": 2048,
+          "height": 2048,
+          "byteLength": 4449962
+        },
+        {
+          "image": 1,
+          "width": 2048,
+          "height": 2048,
+          "byteLength": 2263132
+        },
+        {
+          "image": 2,
+          "width": 2048,
+          "height": 2048,
+          "byteLength": 3017151
+        }
+      ],
+      "maxTextureDimension": 2048
+    },
+    "dims": {
+      "footprint": {
+        "w": 0.7969479262828827,
+        "d": 0.5984407663345337
+      },
+      "center": {
+        "x": 0.018836870789527893,
+        "z": 0.021255701780319214
+      },
+      "minY": 0.0031880736351013184,
+      "maxY": 0.17781302332878113
+    }
+  },
+  {
+    "id": "quaternius-fantasy-props/WeaponStand",
+    "source": "quaternius-fantasy-props",
+    "categories": [
+      "fantasy",
+      "prop"
+    ],
+    "file": "WeaponStand.glb",
+    "metrics": {
+      "glbBytes": 79204,
+      "byteLength": 14710377,
+      "triangles": 2084,
+      "primitives": 2,
+      "textures": [
+        {
+          "image": 0,
+          "width": 2048,
+          "height": 2048,
+          "byteLength": 3478660
+        },
+        {
+          "image": 1,
+          "width": 2048,
+          "height": 2048,
+          "byteLength": 2232961
+        },
+        {
+          "image": 2,
+          "width": 2048,
+          "height": 2048,
+          "byteLength": 2064585
+        },
+        {
+          "image": 3,
+          "width": 2048,
+          "height": 2048,
+          "byteLength": 3622271
+        },
+        {
+          "image": 4,
+          "width": 2048,
+          "height": 2048,
+          "byteLength": 1361221
+        },
+        {
+          "image": 5,
+          "width": 2048,
+          "height": 2048,
+          "byteLength": 1871475
+        }
+      ],
+      "maxTextureDimension": 2048
+    },
+    "dims": {
+      "footprint": {
+        "w": 1.3861967325210571,
+        "d": 0.9831410944461823
+      },
+      "center": {
+        "x": 0,
+        "z": -0.003127560019493103
+      },
+      "minY": -0.0033770801965147257,
+      "maxY": 1.1059458255767822
+    }
+  },
+  {
+    "id": "quaternius-fantasy-props/Whetstone",
+    "source": "quaternius-fantasy-props",
+    "categories": [
+      "fantasy",
+      "prop"
+    ],
+    "file": "Whetstone.glb",
+    "metrics": {
+      "glbBytes": 63876,
+      "byteLength": 24425294,
+      "triangles": 1100,
+      "primitives": 3,
+      "textures": [
+        {
+          "image": 0,
+          "width": 2048,
+          "height": 2048,
+          "byteLength": 3478660
+        },
+        {
+          "image": 1,
+          "width": 2048,
+          "height": 2048,
+          "byteLength": 2232961
+        },
+        {
+          "image": 2,
+          "width": 2048,
+          "height": 2048,
+          "byteLength": 2064585
+        },
+        {
+          "image": 3,
+          "width": 2048,
+          "height": 2048,
+          "byteLength": 3622271
+        },
+        {
+          "image": 4,
+          "width": 2048,
+          "height": 2048,
+          "byteLength": 1361221
+        },
+        {
+          "image": 5,
+          "width": 2048,
+          "height": 2048,
+          "byteLength": 1871475
+        },
+        {
+          "image": 6,
+          "width": 2048,
+          "height": 2048,
+          "byteLength": 4449962
+        },
+        {
+          "image": 7,
+          "width": 2048,
+          "height": 2048,
+          "byteLength": 2263132
+        },
+        {
+          "image": 8,
+          "width": 2048,
+          "height": 2048,
+          "byteLength": 3017151
+        }
+      ],
+      "maxTextureDimension": 2048
+    },
+    "dims": {
+      "footprint": {
+        "w": 1.140888273715973,
+        "d": 0.9017546772956848
+      },
+      "center": {
+        "x": 0.007694989442825317,
+        "z": 0.07603833079338074
+      },
+      "minY": 0.002910962328314781,
+      "maxY": 1.172794222831726
+    }
+  },
+  {
+    "id": "quaternius-fantasy-props/Workbench_Drawers",
+    "source": "quaternius-fantasy-props",
+    "categories": [
+      "fantasy",
+      "prop"
+    ],
+    "file": "Workbench_Drawers.glb",
+    "metrics": {
+      "glbBytes": 20008,
+      "byteLength": 14651181,
+      "triangles": 364,
+      "primitives": 2,
+      "textures": [
+        {
+          "image": 0,
+          "width": 2048,
+          "height": 2048,
+          "byteLength": 3478660
+        },
+        {
+          "image": 1,
+          "width": 2048,
+          "height": 2048,
+          "byteLength": 2232961
+        },
+        {
+          "image": 2,
+          "width": 2048,
+          "height": 2048,
+          "byteLength": 2064585
+        },
+        {
+          "image": 3,
+          "width": 2048,
+          "height": 2048,
+          "byteLength": 3622271
+        },
+        {
+          "image": 4,
+          "width": 2048,
+          "height": 2048,
+          "byteLength": 1361221
+        },
+        {
+          "image": 5,
+          "width": 2048,
+          "height": 2048,
+          "byteLength": 1871475
+        }
+      ],
+      "maxTextureDimension": 2048
+    },
+    "dims": {
+      "footprint": {
+        "w": 0.42310619354248047,
+        "d": 0.2990276962518692
+      },
+      "center": {
+        "x": 0.5159571766853333,
+        "z": -0.34550725668668747
+      },
+      "minY": 0.8841613531112671,
+      "maxY": 1.126501202583313
+    }
+  },
+  {
+    "id": "quaternius-fantasy-props/Workbench",
+    "source": "quaternius-fantasy-props",
+    "categories": [
+      "fantasy",
+      "prop"
+    ],
+    "file": "Workbench.glb",
+    "metrics": {
+      "glbBytes": 66608,
+      "byteLength": 14697781,
+      "triangles": 1368,
+      "primitives": 2,
+      "textures": [
+        {
+          "image": 0,
+          "width": 2048,
+          "height": 2048,
+          "byteLength": 3478660
+        },
+        {
+          "image": 1,
+          "width": 2048,
+          "height": 2048,
+          "byteLength": 2232961
+        },
+        {
+          "image": 2,
+          "width": 2048,
+          "height": 2048,
+          "byteLength": 2064585
+        },
+        {
+          "image": 3,
+          "width": 2048,
+          "height": 2048,
+          "byteLength": 3622271
+        },
+        {
+          "image": 4,
+          "width": 2048,
+          "height": 2048,
+          "byteLength": 1361221
+        },
+        {
+          "image": 5,
+          "width": 2048,
+          "height": 2048,
+          "byteLength": 1871475
+        }
+      ],
+      "maxTextureDimension": 2048
+    },
+    "dims": {
+      "footprint": {
+        "w": 2.019096851348877,
+        "d": 1.0242360830307007
+      },
+      "center": {
+        "x": 1.1920928955078125e-7,
+        "z": -0.002673208713531494
+      },
+      "minY": 0.00017460077651776373,
+      "maxY": 0.8948198556900024
+    }
+  }
+]

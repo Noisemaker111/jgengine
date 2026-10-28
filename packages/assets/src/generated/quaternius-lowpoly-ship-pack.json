@@ -1,0 +1,182 @@
+[
+  {
+    "id": "quaternius-lowpoly-ship-pack/Boat",
+    "source": "quaternius-lowpoly-ship-pack",
+    "categories": [
+      "vehicle",
+      "ship",
+      "boat"
+    ],
+    "file": "Boat.glb",
+    "metrics": {
+      "glbBytes": 20924,
+      "byteLength": 20924,
+      "triangles": 172,
+      "primitives": 25,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 0.3645388185977936,
+        "d": 0.668401117855566
+      },
+      "center": {
+        "x": 0,
+        "z": -0.007132319118443142
+      },
+      "minY": -0.002202903582692575,
+      "maxY": 0.15471219384632795
+    }
+  },
+  {
+    "id": "quaternius-lowpoly-ship-pack/BoatWSail",
+    "source": "quaternius-lowpoly-ship-pack",
+    "categories": [
+      "vehicle",
+      "ship",
+      "boat"
+    ],
+    "file": "BoatWSail.glb",
+    "metrics": {
+      "glbBytes": 101248,
+      "byteLength": 101248,
+      "triangles": 1020,
+      "primitives": 77,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 0.4032173901796341,
+        "d": 0.9890372726116325
+      },
+      "center": {
+        "x": -0.010335679948329929,
+        "z": 0.06617234710484918
+      },
+      "minY": -0.0046908853684633905,
+      "maxY": 0.8500247660095692
+    }
+  },
+  {
+    "id": "quaternius-lowpoly-ship-pack/CruiseShip",
+    "source": "quaternius-lowpoly-ship-pack",
+    "categories": [
+      "vehicle",
+      "ship",
+      "boat"
+    ],
+    "file": "CruiseShip.glb",
+    "metrics": {
+      "glbBytes": 126236,
+      "byteLength": 126236,
+      "triangles": 858,
+      "primitives": 148,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 4,
+        "d": 18.046453596999186
+      },
+      "center": {
+        "x": 0,
+        "z": 0.16351407696462772
+      },
+      "minY": -0.0013530383551694574,
+      "maxY": 6.595243997015155
+    }
+  },
+  {
+    "id": "quaternius-lowpoly-ship-pack/Lifeboat",
+    "source": "quaternius-lowpoly-ship-pack",
+    "categories": [
+      "vehicle",
+      "ship",
+      "boat"
+    ],
+    "file": "Lifeboat.glb",
+    "metrics": {
+      "glbBytes": 69772,
+      "byteLength": 69772,
+      "triangles": 626,
+      "primitives": 81,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 0.6471477746963501,
+        "d": 1.112765525063045
+      },
+      "center": {
+        "x": 0,
+        "z": 0.0224218502769416
+      },
+      "minY": -0.003982041411391985,
+      "maxY": 0.20504194987289223
+    }
+  },
+  {
+    "id": "quaternius-lowpoly-ship-pack/Sail ship",
+    "source": "quaternius-lowpoly-ship-pack",
+    "categories": [
+      "vehicle",
+      "ship",
+      "boat"
+    ],
+    "file": "Sail ship.glb",
+    "metrics": {
+      "glbBytes": 380260,
+      "byteLength": 380260,
+      "triangles": 3938,
+      "primitives": 278,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 1.6950589418411255,
+        "d": 6.375427873285888
+      },
+      "center": {
+        "x": -2.3489653777630792e-8,
+        "z": 0.583226035235767
+      },
+      "minY": -0.11195220117079971,
+      "maxY": 3.73772725332319
+    }
+  },
+  {
+    "id": "quaternius-lowpoly-ship-pack/Viking boat",
+    "source": "quaternius-lowpoly-ship-pack",
+    "categories": [
+      "vehicle",
+      "ship",
+      "boat"
+    ],
+    "file": "Viking boat.glb",
+    "metrics": {
+      "glbBytes": 156344,
+      "byteLength": 156344,
+      "triangles": 1640,
+      "primitives": 105,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 1.5672084612660955,
+        "d": 4.2014645142723985
+      },
+      "center": {
+        "x": 0.007558075785634666,
+        "z": 0.18382969486715006
+      },
+      "minY": -0.012313730877740169,
+      "maxY": 2.496833227882652
+    }
+  }
+]

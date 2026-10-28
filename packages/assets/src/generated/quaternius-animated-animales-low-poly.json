@@ -1,0 +1,178 @@
+[
+  {
+    "id": "quaternius-animated-animales-low-poly/Cat",
+    "source": "quaternius-animated-animales-low-poly",
+    "categories": [
+      "animal",
+      "creature",
+      "rigged",
+      "animated"
+    ],
+    "file": "Cat.glb",
+    "metrics": {
+      "glbBytes": 273972,
+      "byteLength": 273972,
+      "triangles": 807,
+      "primitives": 72,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 5.675111293792725,
+        "d": 1.4242755239451317
+      },
+      "center": {
+        "x": 0.3964962959289551,
+        "z": -2.404998975524819e-7
+      },
+      "minY": -0.007116552980202838,
+      "maxY": 4.422875043542622
+    },
+    "clips": [
+      "CatArmature|Idle",
+      "CatArmature|Walking"
+    ]
+  },
+  {
+    "id": "quaternius-animated-animales-low-poly/Dog",
+    "source": "quaternius-animated-animales-low-poly",
+    "categories": [
+      "animal",
+      "creature",
+      "rigged",
+      "animated"
+    ],
+    "file": "Dog.glb",
+    "metrics": {
+      "glbBytes": 220920,
+      "byteLength": 220920,
+      "triangles": 602,
+      "primitives": 1,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 6.909321892027233,
+        "d": 2.1264062375816546
+      },
+      "center": {
+        "x": 0.2441317098004787,
+        "z": -0.3344833952648578
+      },
+      "minY": -0.06431975901781084,
+      "maxY": 4.3183910258530025
+    },
+    "clips": [
+      "DogArmature|Walking",
+      "DogArmature|Idle"
+    ]
+  },
+  {
+    "id": "quaternius-animated-animales-low-poly/Eagle",
+    "source": "quaternius-animated-animales-low-poly",
+    "categories": [
+      "animal",
+      "creature",
+      "rigged",
+      "animated"
+    ],
+    "file": "Eagle.glb",
+    "metrics": {
+      "glbBytes": 4005608,
+      "byteLength": 4005608,
+      "triangles": 24800,
+      "primitives": 57,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 12.461037635803223,
+        "d": 5.140933515470693
+      },
+      "center": {
+        "x": -4.76837158203125e-7,
+        "z": 1.1028231830155364
+      },
+      "minY": -1.0121648318523828,
+      "maxY": 0.46246761324444186
+    },
+    "clips": [
+      "Eagle|Idle",
+      "EagleArmature|Flying",
+      "EagleArmature|Idle"
+    ]
+  },
+  {
+    "id": "quaternius-animated-animales-low-poly/Piranha",
+    "source": "quaternius-animated-animales-low-poly",
+    "categories": [
+      "animal",
+      "creature",
+      "rigged",
+      "animated"
+    ],
+    "file": "Piranha.glb",
+    "metrics": {
+      "glbBytes": 314760,
+      "byteLength": 314760,
+      "triangles": 1388,
+      "primitives": 198,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 2.4443771839141846,
+        "d": 8.941191542512355
+      },
+      "center": {
+        "x": 0,
+        "z": -1.4669542359755325
+      },
+      "minY": -2.4965572493930384,
+      "maxY": 2.5544173842679396
+    },
+    "clips": [
+      "PiranhaArmature|Swimming",
+      "PiranhaArmature|Bite"
+    ]
+  },
+  {
+    "id": "quaternius-animated-animales-low-poly/Wolf",
+    "source": "quaternius-animated-animales-low-poly",
+    "categories": [
+      "animal",
+      "creature",
+      "rigged",
+      "animated"
+    ],
+    "file": "Wolf.glb",
+    "metrics": {
+      "glbBytes": 223504,
+      "byteLength": 223504,
+      "triangles": 622,
+      "primitives": 1,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 9.979426264986266,
+        "d": 2.208735427229985
+      },
+      "center": {
+        "x": -0.5698140072581865,
+        "z": -0.3639349902252049
+      },
+      "minY": -0.01473144423710604,
+      "maxY": 5.285887738610167
+    },
+    "clips": [
+      "WolfArmature|Walking",
+      "WolfArmature|Idle"
+    ]
+  }
+]

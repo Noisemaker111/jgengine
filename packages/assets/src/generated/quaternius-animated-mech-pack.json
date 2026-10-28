@@ -1,0 +1,290 @@
+[
+  {
+    "id": "quaternius-animated-mech-pack/George",
+    "source": "quaternius-animated-mech-pack",
+    "categories": [
+      "character",
+      "robot",
+      "mech",
+      "scifi",
+      "rigged",
+      "animated"
+    ],
+    "file": "George.glb",
+    "metrics": {
+      "glbBytes": 4670500,
+      "byteLength": 4670500,
+      "triangles": 7864,
+      "primitives": 1,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 7.256680965423584,
+        "d": 2.4580480362391204
+      },
+      "center": {
+        "x": 0,
+        "z": 0.42533532565694093
+      },
+      "minY": -0.019081799865600536,
+      "maxY": 6.508558542844691
+    },
+    "clips": [
+      "RobotArmature|Idle",
+      "RobotArmature|Kick",
+      "RobotArmature|Run_Holding",
+      "RobotArmature|Walk_Holding",
+      "No",
+      "RobotArmature|Death",
+      "Yes",
+      "Death",
+      "RobotArmature|Run_Tall",
+      "Jump",
+      "RobotArmature|HitRecieve_2",
+      "RobotArmature|Hello",
+      "Walk_Tall",
+      "Hello",
+      "Walk_Holding",
+      "RobotArmature|SwordSlash",
+      "RobotArmature|Shoot",
+      "Dance",
+      "RobotArmature|Run",
+      "Punch",
+      "SwordSlash",
+      "Walk",
+      "Run_Tall",
+      "Run_Holding",
+      "RobotArmature|Punch",
+      "RobotArmature|Walk_Tall",
+      "RobotArmature|Walk",
+      "HitRecieve_1",
+      "HitRecieve_2",
+      "RobotArmature|Yes",
+      "RobotArmature|Jump",
+      "Idle",
+      "RobotArmature|No",
+      "RobotArmature|HitRecieve_1",
+      "Kick",
+      "Pickup",
+      "Run",
+      "RobotArmature|Dance",
+      "Shoot",
+      "RobotArmature|Pickup"
+    ]
+  },
+  {
+    "id": "quaternius-animated-mech-pack/Leela",
+    "source": "quaternius-animated-mech-pack",
+    "categories": [
+      "character",
+      "robot",
+      "mech",
+      "scifi",
+      "rigged",
+      "animated"
+    ],
+    "file": "Leela.glb",
+    "metrics": {
+      "glbBytes": 1552164,
+      "byteLength": 1552164,
+      "triangles": 2368,
+      "primitives": 1,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 2.958587884902954,
+        "d": 2.6749557507364523
+      },
+      "center": {
+        "x": 0,
+        "z": 0.2972151542831796
+      },
+      "minY": -0.019081626066888274,
+      "maxY": 5.256686476957553
+    },
+    "clips": [
+      "No",
+      "RobotArmature|SwordSlash",
+      "RobotArmature|Jump",
+      "Kick",
+      "Death",
+      "Run",
+      "Punch",
+      "Pickup",
+      "RobotArmature|No",
+      "Hello",
+      "RobotArmature|Shoot",
+      "Jump",
+      "RobotArmature|Walk",
+      "RobotArmature|Death",
+      "Yes",
+      "Idle",
+      "HitRecieve_2",
+      "Run_Tall",
+      "RobotArmature|Walk_Tall",
+      "RobotArmature|Kick",
+      "RobotArmature|Yes",
+      "RobotArmature|Hello",
+      "SwordSlash",
+      "RobotArmature|HitRecieve_2",
+      "Dance",
+      "RobotArmature|HitRecieve_1",
+      "HitRecieve_1",
+      "RobotArmature|Punch",
+      "Walk_Tall",
+      "RobotArmature|Dance",
+      "RobotArmature|Pickup",
+      "Walk",
+      "Shoot",
+      "RobotArmature|Run",
+      "RobotArmature|Idle",
+      "RobotArmature|Run_Tall"
+    ]
+  },
+  {
+    "id": "quaternius-animated-mech-pack/Mike",
+    "source": "quaternius-animated-mech-pack",
+    "categories": [
+      "character",
+      "robot",
+      "mech",
+      "scifi",
+      "rigged",
+      "animated"
+    ],
+    "file": "Mike.glb",
+    "metrics": {
+      "glbBytes": 3782016,
+      "byteLength": 3782016,
+      "triangles": 6062,
+      "primitives": 1,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 8.535268783569336,
+        "d": 1.6636352886199293
+      },
+      "center": {
+        "x": 0,
+        "z": -0.20358635966255367
+      },
+      "minY": 0.014455603316439369,
+      "maxY": 5.349436862300528
+    },
+    "clips": [
+      "RobotArmature|No",
+      "RobotArmature|HitRecieve_2",
+      "No",
+      "Hello",
+      "SwordSlash",
+      "Kick",
+      "Yes",
+      "RobotArmature|Jump",
+      "RobotArmature|Idle",
+      "Run",
+      "RobotArmature|Walk",
+      "Jump",
+      "Punch",
+      "RobotArmature|Walk_Holding",
+      "RobotArmature|SwordSlash",
+      "RobotArmature|Death",
+      "RobotArmature|Punch",
+      "RobotArmature|Dance",
+      "RobotArmature|Shoot",
+      "Walk",
+      "Shoot",
+      "Death",
+      "Walk_Holding",
+      "Run_Holding",
+      "RobotArmature|Run_Holding",
+      "RobotArmature|Yes",
+      "HitRecieve_2",
+      "Dance",
+      "RobotArmature|Hello",
+      "HitRecieve_1",
+      "RobotArmature|Kick",
+      "Idle",
+      "RobotArmature|Pickup",
+      "RobotArmature|Run",
+      "RobotArmature|HitRecieve_1",
+      "Pickup"
+    ]
+  },
+  {
+    "id": "quaternius-animated-mech-pack/Stan",
+    "source": "quaternius-animated-mech-pack",
+    "categories": [
+      "character",
+      "robot",
+      "mech",
+      "scifi",
+      "rigged",
+      "animated"
+    ],
+    "file": "Stan.glb",
+    "metrics": {
+      "glbBytes": 3796276,
+      "byteLength": 3796276,
+      "triangles": 6110,
+      "primitives": 1,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 8.549878120422363,
+        "d": 1.567976663250547
+      },
+      "center": {
+        "x": 0,
+        "z": -0.4104230477761025
+      },
+      "minY": 0.015643970161798488,
+      "maxY": 6.477414192025975
+    },
+    "clips": [
+      "RobotArmature|Idle",
+      "RobotArmature|Kick",
+      "RobotArmature|Run_Holding",
+      "RobotArmature|Walk_Holding",
+      "No",
+      "RobotArmature|Death",
+      "Yes",
+      "Death",
+      "Jump",
+      "RobotArmature|HitRecieve_2",
+      "RobotArmature|Hello",
+      "Hello",
+      "Walk_Holding",
+      "RobotArmature|SwordSlash",
+      "RobotArmature|Shoot",
+      "Dance",
+      "RobotArmature|Run",
+      "Punch",
+      "SwordSlash",
+      "Walk",
+      "Run_Holding",
+      "RobotArmature|Punch",
+      "RobotArmature|Walk",
+      "HitRecieve_1",
+      "HitRecieve_2",
+      "RobotArmature|Yes",
+      "RobotArmature|Jump",
+      "Idle",
+      "RobotArmature|No",
+      "RobotArmature|HitRecieve_1",
+      "Kick",
+      "Pickup",
+      "Run",
+      "RobotArmature|Dance",
+      "Shoot",
+      "RobotArmature|Pickup"
+    ]
+  }
+]

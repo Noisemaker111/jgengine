@@ -1,0 +1,247 @@
+[
+  {
+    "id": "quaternius-animated-fish/Dolphin",
+    "source": "quaternius-animated-fish",
+    "categories": [
+      "animal",
+      "fish",
+      "creature",
+      "rigged",
+      "animated"
+    ],
+    "file": "Dolphin.glb",
+    "metrics": {
+      "glbBytes": 122384,
+      "byteLength": 122384,
+      "triangles": 440,
+      "primitives": 44,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 3.2936675548553467,
+        "d": 9.26885272165714
+      },
+      "center": {
+        "x": 0,
+        "z": -0.0349790046844487
+      },
+      "minY": -0.782721863569299,
+      "maxY": 2.2111938930775095
+    },
+    "clips": [
+      "Armature|Swim"
+    ]
+  },
+  {
+    "id": "quaternius-animated-fish/Fish1",
+    "source": "quaternius-animated-fish",
+    "categories": [
+      "animal",
+      "fish",
+      "creature",
+      "rigged",
+      "animated"
+    ],
+    "file": "Fish1.glb",
+    "metrics": {
+      "glbBytes": 135724,
+      "byteLength": 135724,
+      "triangles": 544,
+      "primitives": 95,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 1.1535407304763794,
+        "d": 7.983493762428131
+      },
+      "center": {
+        "x": 0,
+        "z": -0.9658687332588878
+      },
+      "minY": -1.199231836254874,
+      "maxY": 1.4666910332917937
+    },
+    "clips": [
+      "Armature|Swim"
+    ]
+  },
+  {
+    "id": "quaternius-animated-fish/Fish2",
+    "source": "quaternius-animated-fish",
+    "categories": [
+      "animal",
+      "fish",
+      "creature",
+      "rigged",
+      "animated"
+    ],
+    "file": "Fish2.glb",
+    "metrics": {
+      "glbBytes": 122412,
+      "byteLength": 122412,
+      "triangles": 502,
+      "primitives": 66,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 1.2873958349227905,
+        "d": 9.874196577556305
+      },
+      "center": {
+        "x": 0,
+        "z": -1.5950076923334529
+      },
+      "minY": -2.8639250907042784,
+      "maxY": 3.2853408536386177
+    },
+    "clips": [
+      "Armature|Swim.001"
+    ]
+  },
+  {
+    "id": "quaternius-animated-fish/Fish3",
+    "source": "quaternius-animated-fish",
+    "categories": [
+      "animal",
+      "fish",
+      "creature",
+      "rigged",
+      "animated"
+    ],
+    "file": "Fish3.glb",
+    "metrics": {
+      "glbBytes": 147956,
+      "byteLength": 147956,
+      "triangles": 686,
+      "primitives": 83,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 0.960480809211731,
+        "d": 7.877126640477696
+      },
+      "center": {
+        "x": 0,
+        "z": -0.8143562586462239
+      },
+      "minY": -1.7198888654361442,
+      "maxY": 2.3434882485608495
+    },
+    "clips": [
+      "Armature|Swim"
+    ]
+  },
+  {
+    "id": "quaternius-animated-fish/Manta ray",
+    "source": "quaternius-animated-fish",
+    "categories": [
+      "animal",
+      "fish",
+      "creature",
+      "rigged",
+      "animated"
+    ],
+    "file": "Manta ray.glb",
+    "metrics": {
+      "glbBytes": 176772,
+      "byteLength": 176772,
+      "triangles": 696,
+      "primitives": 73,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 8.388596534729004,
+        "d": 11.725941399817462
+      },
+      "center": {
+        "x": 4.76837158203125e-7,
+        "z": -2.457629156223564
+      },
+      "minY": -0.6703058434115549,
+      "maxY": 0.6716666299216091
+    },
+    "clips": [
+      "Armature|Swim"
+    ]
+  },
+  {
+    "id": "quaternius-animated-fish/Shark",
+    "source": "quaternius-animated-fish",
+    "categories": [
+      "animal",
+      "fish",
+      "creature",
+      "rigged",
+      "animated"
+    ],
+    "file": "Shark.glb",
+    "metrics": {
+      "glbBytes": 150240,
+      "byteLength": 150240,
+      "triangles": 644,
+      "primitives": 84,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 5.828666543381769,
+        "d": 15.831291388451586
+      },
+      "center": {
+        "x": 0,
+        "z": -0.06577171623021982
+      },
+      "minY": -1.5444357909538178,
+      "maxY": 3.640714491118799
+    },
+    "clips": [
+      "Armature|Swim"
+    ]
+  },
+  {
+    "id": "quaternius-animated-fish/Whale",
+    "source": "quaternius-animated-fish",
+    "categories": [
+      "animal",
+      "fish",
+      "creature",
+      "rigged",
+      "animated"
+    ],
+    "file": "Whale.glb",
+    "metrics": {
+      "glbBytes": 114944,
+      "byteLength": 114944,
+      "triangles": 444,
+      "primitives": 5,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 4.062573432922363,
+        "d": 10.194278282308247
+      },
+      "center": {
+        "x": 0,
+        "z": -1.5610417502656948
+      },
+      "minY": -2.0941203951343272,
+      "maxY": 1.0911226073151732
+    },
+    "clips": [
+      "Armature|Swim"
+    ]
+  }
+]

@@ -1,0 +1,422 @@
+[
+  {
+    "id": "quaternius-low-poly-desert-assets/BigPalmTree",
+    "source": "quaternius-low-poly-desert-assets",
+    "categories": [
+      "nature",
+      "desert",
+      "prop"
+    ],
+    "file": "BigPalmTree.glb",
+    "metrics": {
+      "glbBytes": 109636,
+      "byteLength": 109636,
+      "triangles": 1129,
+      "primitives": 1,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 6.66780898720026,
+        "d": 6.6678078174591064
+      },
+      "center": {
+        "x": -3.391155492514372,
+        "z": -0.9073928594589233
+      },
+      "minY": -4.097128868103027,
+      "maxY": 1.2646689414978027
+    }
+  },
+  {
+    "id": "quaternius-low-poly-desert-assets/Bones",
+    "source": "quaternius-low-poly-desert-assets",
+    "categories": [
+      "nature",
+      "desert",
+      "prop"
+    ],
+    "file": "Bones.glb",
+    "metrics": {
+      "glbBytes": 60460,
+      "byteLength": 60460,
+      "triangles": 616,
+      "primitives": 1,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 1.5395379662513733,
+        "d": 1.5599790215492249
+      },
+      "center": {
+        "x": 0.04947999119758606,
+        "z": -0.3417675197124481
+      },
+      "minY": -0.29813799262046814,
+      "maxY": 1.0910730361938477
+    }
+  },
+  {
+    "id": "quaternius-low-poly-desert-assets/Brickwall",
+    "source": "quaternius-low-poly-desert-assets",
+    "categories": [
+      "nature",
+      "desert",
+      "prop"
+    ],
+    "file": "Brickwall.glb",
+    "metrics": {
+      "glbBytes": 18512,
+      "byteLength": 18512,
+      "triangles": 180,
+      "primitives": 1,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 0.24929000437259674,
+        "d": 2.242057979106903
+      },
+      "center": {
+        "x": 0,
+        "z": -0.15397098660469055
+      },
+      "minY": -0.20046499371528625,
+      "maxY": 0.8968380093574524
+    }
+  },
+  {
+    "id": "quaternius-low-poly-desert-assets/Cactus",
+    "source": "quaternius-low-poly-desert-assets",
+    "categories": [
+      "nature",
+      "desert",
+      "prop"
+    ],
+    "file": "Cactus.glb",
+    "metrics": {
+      "glbBytes": 8824,
+      "byteLength": 8824,
+      "triangles": 78,
+      "primitives": 1,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 1.0542349815368652,
+        "d": 1.2173261046409607
+      },
+      "center": {
+        "x": -1.8857674598693848,
+        "z": -1.5122540295124054
+      },
+      "minY": -1.7060680389404297,
+      "maxY": -0.7304739952087402
+    }
+  },
+  {
+    "id": "quaternius-low-poly-desert-assets/Cactus2",
+    "source": "quaternius-low-poly-desert-assets",
+    "categories": [
+      "nature",
+      "desert",
+      "prop"
+    ],
+    "file": "Cactus2.glb",
+    "metrics": {
+      "glbBytes": 13896,
+      "byteLength": 13896,
+      "triangles": 131,
+      "primitives": 1,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 0.7166890501976013,
+        "d": 1.0766200125217438
+      },
+      "center": {
+        "x": -1.1276535093784332,
+        "z": 0.1419989913702011
+      },
+      "minY": -0.7969099879264832,
+      "maxY": 0.6587880253791809
+    }
+  },
+  {
+    "id": "quaternius-low-poly-desert-assets/Cactus3",
+    "source": "quaternius-low-poly-desert-assets",
+    "categories": [
+      "nature",
+      "desert",
+      "prop"
+    ],
+    "file": "Cactus3.glb",
+    "metrics": {
+      "glbBytes": 13560,
+      "byteLength": 13560,
+      "triangles": 128,
+      "primitives": 1,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 0.6500070095062256,
+        "d": 0.9171819761395454
+      },
+      "center": {
+        "x": -0.055349498987197876,
+        "z": 0.3775939904153347
+      },
+      "minY": -0.0049680001102387905,
+      "maxY": 1.698425054550171
+    }
+  },
+  {
+    "id": "quaternius-low-poly-desert-assets/CactusWithSombrero",
+    "source": "quaternius-low-poly-desert-assets",
+    "categories": [
+      "nature",
+      "desert",
+      "prop"
+    ],
+    "file": "CactusWithSombrero.glb",
+    "metrics": {
+      "glbBytes": 37868,
+      "byteLength": 37868,
+      "triangles": 381,
+      "primitives": 1,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 1.6017340421676636,
+        "d": 1.2252280116081238
+      },
+      "center": {
+        "x": -0.04589700698852539,
+        "z": -0.375654011964798
+      },
+      "minY": -0.2780439853668213,
+      "maxY": 1.6863789558410645
+    }
+  },
+  {
+    "id": "quaternius-low-poly-desert-assets/DeadTree",
+    "source": "quaternius-low-poly-desert-assets",
+    "categories": [
+      "nature",
+      "desert",
+      "prop"
+    ],
+    "file": "DeadTree.glb",
+    "metrics": {
+      "glbBytes": 19176,
+      "byteLength": 19176,
+      "triangles": 186,
+      "primitives": 1,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 0.4592890739440918,
+        "d": 1.299152135848999
+      },
+      "center": {
+        "x": -3.2907204627990723,
+        "z": -1.8960360288619995
+      },
+      "minY": -1.9474749565124512,
+      "maxY": 2.774487018585205
+    }
+  },
+  {
+    "id": "quaternius-low-poly-desert-assets/Fish",
+    "source": "quaternius-low-poly-desert-assets",
+    "categories": [
+      "nature",
+      "desert",
+      "prop"
+    ],
+    "file": "Fish.glb",
+    "metrics": {
+      "glbBytes": 40068,
+      "byteLength": 40068,
+      "triangles": 404,
+      "primitives": 1,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 1.8819230198860168,
+        "d": 5.472273826599121
+      },
+      "center": {
+        "x": -0.030694514513015747,
+        "z": -0.6345930099487305
+      },
+      "minY": -0.6722229719161987,
+      "maxY": 1.3688219785690308
+    }
+  },
+  {
+    "id": "quaternius-low-poly-desert-assets/Monument",
+    "source": "quaternius-low-poly-desert-assets",
+    "categories": [
+      "nature",
+      "desert",
+      "prop"
+    ],
+    "file": "Monument.glb",
+    "metrics": {
+      "glbBytes": 99164,
+      "byteLength": 99164,
+      "triangles": 1020,
+      "primitives": 1,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 1.3356430232524872,
+        "d": 1.223675012588501
+      },
+      "center": {
+        "x": -0.22649849951267242,
+        "z": 0.00112152099609375
+      },
+      "minY": -0.9700210094451904,
+      "maxY": 1.9897429943084717
+    }
+  },
+  {
+    "id": "quaternius-low-poly-desert-assets/Pyramid",
+    "source": "quaternius-low-poly-desert-assets",
+    "categories": [
+      "nature",
+      "desert",
+      "prop"
+    ],
+    "file": "Pyramid.glb",
+    "metrics": {
+      "glbBytes": 12440,
+      "byteLength": 12440,
+      "triangles": 116,
+      "primitives": 1,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 1.9740670397877693,
+        "d": 1.9740670323371887
+      },
+      "center": {
+        "x": -0.8755855225026608,
+        "z": -0.02497848868370056
+      },
+      "minY": -1.1634809970855713,
+      "maxY": 0.5380820035934448
+    }
+  },
+  {
+    "id": "quaternius-low-poly-desert-assets/Scorpion",
+    "source": "quaternius-low-poly-desert-assets",
+    "categories": [
+      "nature",
+      "desert",
+      "prop"
+    ],
+    "file": "Scorpion.glb",
+    "metrics": {
+      "glbBytes": 91900,
+      "byteLength": 91900,
+      "triangles": 944,
+      "primitives": 1,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 5.360368013381958,
+        "d": 2.799942135810852
+      },
+      "center": {
+        "x": 0.8360689878463745,
+        "z": 3.051144063472748
+      },
+      "minY": -0.03763800114393234,
+      "maxY": 2.746612071990967
+    }
+  },
+  {
+    "id": "quaternius-low-poly-desert-assets/Skull",
+    "source": "quaternius-low-poly-desert-assets",
+    "categories": [
+      "nature",
+      "desert",
+      "prop"
+    ],
+    "file": "Skull.glb",
+    "metrics": {
+      "glbBytes": 10648,
+      "byteLength": 10648,
+      "triangles": 97,
+      "primitives": 1,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 1.995618999004364,
+        "d": 1.371304988861084
+      },
+      "center": {
+        "x": 0.02660849690437317,
+        "z": 0.13042151927947998
+      },
+      "minY": 0.18075400590896606,
+      "maxY": 1.1023459434509277
+    }
+  },
+  {
+    "id": "quaternius-low-poly-desert-assets/SmallPalmTree",
+    "source": "quaternius-low-poly-desert-assets",
+    "categories": [
+      "nature",
+      "desert",
+      "prop"
+    ],
+    "file": "SmallPalmTree.glb",
+    "metrics": {
+      "glbBytes": 86024,
+      "byteLength": 86024,
+      "triangles": 883,
+      "primitives": 1,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 4.140860080718994,
+        "d": 4.140859961509705
+      },
+      "center": {
+        "x": -0.04850196838378906,
+        "z": 0.3270450234413147
+      },
+      "minY": -0.2721889913082123,
+      "maxY": 2.1295859813690186
+    }
+  }
+]

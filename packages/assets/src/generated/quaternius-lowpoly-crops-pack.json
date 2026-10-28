@@ -1,0 +1,3164 @@
+[
+  {
+    "id": "quaternius-lowpoly-crops-pack/Apple_1",
+    "source": "quaternius-lowpoly-crops-pack",
+    "categories": [
+      "nature",
+      "crop",
+      "farm",
+      "plant"
+    ],
+    "file": "Apple_1.glb",
+    "metrics": {
+      "glbBytes": 7432,
+      "byteLength": 7432,
+      "triangles": 80,
+      "primitives": 1,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 0.23776352405548096,
+        "d": 0.10662382401142584
+      },
+      "center": {
+        "x": 0.01261928677558899,
+        "z": -0.02743241710367877
+      },
+      "minY": -0.0003447658091148315,
+      "maxY": 0.24703826431857362
+    }
+  },
+  {
+    "id": "quaternius-lowpoly-crops-pack/Apple_2",
+    "source": "quaternius-lowpoly-crops-pack",
+    "categories": [
+      "nature",
+      "crop",
+      "farm",
+      "plant"
+    ],
+    "file": "Apple_2.glb",
+    "metrics": {
+      "glbBytes": 29232,
+      "byteLength": 29232,
+      "triangles": 252,
+      "primitives": 6,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 0.5148928314447403,
+        "d": 0.4378114680300126
+      },
+      "center": {
+        "x": 0.08027081936597824,
+        "z": -0.0410556365967165
+      },
+      "minY": -0.000002870438429471788,
+      "maxY": 0.9389225534276556
+    }
+  },
+  {
+    "id": "quaternius-lowpoly-crops-pack/Apple_3",
+    "source": "quaternius-lowpoly-crops-pack",
+    "categories": [
+      "nature",
+      "crop",
+      "farm",
+      "plant"
+    ],
+    "file": "Apple_3.glb",
+    "metrics": {
+      "glbBytes": 48796,
+      "byteLength": 48796,
+      "triangles": 446,
+      "primitives": 5,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 1.1662500500679016,
+        "d": 0.9739735247658242
+      },
+      "center": {
+        "x": 0.1613312065601349,
+        "z": -0.2344696284309758
+      },
+      "minY": -0.000004736900080212452,
+      "maxY": 2.0865436011683114
+    }
+  },
+  {
+    "id": "quaternius-lowpoly-crops-pack/Apple_4",
+    "source": "quaternius-lowpoly-crops-pack",
+    "categories": [
+      "nature",
+      "crop",
+      "farm",
+      "plant"
+    ],
+    "file": "Apple_4.glb",
+    "metrics": {
+      "glbBytes": 165744,
+      "byteLength": 165744,
+      "triangles": 1584,
+      "primitives": 6,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 1.8635428547859192,
+        "d": 1.578646931142444
+      },
+      "center": {
+        "x": 0.24942359328269958,
+        "z": -0.31282790158634
+      },
+      "minY": -0.000006140027653982351,
+      "maxY": 2.762720900918908
+    }
+  },
+  {
+    "id": "quaternius-lowpoly-crops-pack/Apple_Crop",
+    "source": "quaternius-lowpoly-crops-pack",
+    "categories": [
+      "nature",
+      "crop",
+      "farm",
+      "plant"
+    ],
+    "file": "Apple_Crop.glb",
+    "metrics": {
+      "glbBytes": 48496,
+      "byteLength": 48496,
+      "triangles": 440,
+      "primitives": 5,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 0.15752184391021729,
+        "d": 0.1582609316201577
+      },
+      "center": {
+        "x": -7.450580596923828e-9,
+        "z": 0.0000057545558156194
+      },
+      "minY": -0.07774410195803057,
+      "maxY": 0.09023724295540828
+    }
+  },
+  {
+    "id": "quaternius-lowpoly-crops-pack/Apple_Harvested",
+    "source": "quaternius-lowpoly-crops-pack",
+    "categories": [
+      "nature",
+      "crop",
+      "farm",
+      "plant"
+    ],
+    "file": "Apple_Harvested.glb",
+    "metrics": {
+      "glbBytes": 103740,
+      "byteLength": 103740,
+      "triangles": 984,
+      "primitives": 4,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 1.8006973266601562,
+        "d": 1.57864687153778
+      },
+      "center": {
+        "x": 0.2180008888244629,
+        "z": -0.31282781217934386
+      },
+      "minY": -0.000006259236924111472,
+      "maxY": 2.762720662500339
+    }
+  },
+  {
+    "id": "quaternius-lowpoly-crops-pack/Bamboo_1",
+    "source": "quaternius-lowpoly-crops-pack",
+    "categories": [
+      "nature",
+      "crop",
+      "farm",
+      "plant"
+    ],
+    "file": "Bamboo_1.glb",
+    "metrics": {
+      "glbBytes": 10556,
+      "byteLength": 10556,
+      "triangles": 82,
+      "primitives": 10,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 0.3829322010278702,
+        "d": 0.07228222556840273
+      },
+      "center": {
+        "x": -0.041422195732593536,
+        "z": 0.026059351712112655
+      },
+      "minY": -0.001154262585226193,
+      "maxY": 0.5117489796886363
+    }
+  },
+  {
+    "id": "quaternius-lowpoly-crops-pack/Bamboo_2",
+    "source": "quaternius-lowpoly-crops-pack",
+    "categories": [
+      "nature",
+      "crop",
+      "farm",
+      "plant"
+    ],
+    "file": "Bamboo_2.glb",
+    "metrics": {
+      "glbBytes": 33260,
+      "byteLength": 33260,
+      "triangles": 300,
+      "primitives": 35,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 0.20527363568544388,
+        "d": 0.14753917626097923
+      },
+      "center": {
+        "x": 0.012382928282022476,
+        "z": -0.00846989039408888
+      },
+      "minY": -0.003167666156330686,
+      "maxY": 0.7298480974726151
+    }
+  },
+  {
+    "id": "quaternius-lowpoly-crops-pack/Bamboo_3",
+    "source": "quaternius-lowpoly-crops-pack",
+    "categories": [
+      "nature",
+      "crop",
+      "farm",
+      "plant"
+    ],
+    "file": "Bamboo_3.glb",
+    "metrics": {
+      "glbBytes": 50120,
+      "byteLength": 50120,
+      "triangles": 492,
+      "primitives": 43,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 0.3380802869796753,
+        "d": 0.3579923795242124
+      },
+      "center": {
+        "x": 0.020394355058670044,
+        "z": 0.01167883111216833
+      },
+      "minY": -0.004028868646897279,
+      "maxY": 1.5426532340754424
+    }
+  },
+  {
+    "id": "quaternius-lowpoly-crops-pack/Bamboo_4",
+    "source": "quaternius-lowpoly-crops-pack",
+    "categories": [
+      "nature",
+      "crop",
+      "farm",
+      "plant"
+    ],
+    "file": "Bamboo_4.glb",
+    "metrics": {
+      "glbBytes": 64488,
+      "byteLength": 64488,
+      "triangles": 644,
+      "primitives": 54,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 0.5299291163682938,
+        "d": 0.5581831903142749
+      },
+      "center": {
+        "x": 0.0271221324801445,
+        "z": 0.014904148237764758
+      },
+      "minY": -0.032932793922244706,
+      "maxY": 2.693193483566895
+    }
+  },
+  {
+    "id": "quaternius-lowpoly-crops-pack/Bamboo_Crop",
+    "source": "quaternius-lowpoly-crops-pack",
+    "categories": [
+      "nature",
+      "crop",
+      "farm",
+      "plant"
+    ],
+    "file": "Bamboo_Crop.glb",
+    "metrics": {
+      "glbBytes": 14112,
+      "byteLength": 14112,
+      "triangles": 108,
+      "primitives": 17,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 0.09679366275668144,
+        "d": 0.09928295863175463
+      },
+      "center": {
+        "x": 0.0025211963802576065,
+        "z": 2.627689697776159e-10
+      },
+      "minY": -0.1647976568751155,
+      "maxY": 0.16157192800567735
+    }
+  },
+  {
+    "id": "quaternius-lowpoly-crops-pack/Beet_1",
+    "source": "quaternius-lowpoly-crops-pack",
+    "categories": [
+      "nature",
+      "crop",
+      "farm",
+      "plant"
+    ],
+    "file": "Beet_1.glb",
+    "metrics": {
+      "glbBytes": 11800,
+      "byteLength": 11800,
+      "triangles": 121,
+      "primitives": 2,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 0.33394545316696167,
+        "d": 0.09757732802741104
+      },
+      "center": {
+        "x": 0.003940030932426453,
+        "z": -0.027151718424744693
+      },
+      "minY": -0.030997169469104597,
+      "maxY": 0.6216873561824149
+    }
+  },
+  {
+    "id": "quaternius-lowpoly-crops-pack/Beet_2",
+    "source": "quaternius-lowpoly-crops-pack",
+    "categories": [
+      "nature",
+      "crop",
+      "farm",
+      "plant"
+    ],
+    "file": "Beet_2.glb",
+    "metrics": {
+      "glbBytes": 19252,
+      "byteLength": 19252,
+      "triangles": 217,
+      "primitives": 2,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 0.21307072788476944,
+        "d": 0.13892563283158121
+      },
+      "center": {
+        "x": 0.042200665920972824,
+        "z": -3.138225621035495e-8
+      },
+      "minY": -0.237242918602605,
+      "maxY": 0.6224887484232328
+    }
+  },
+  {
+    "id": "quaternius-lowpoly-crops-pack/Beet_3",
+    "source": "quaternius-lowpoly-crops-pack",
+    "categories": [
+      "nature",
+      "crop",
+      "farm",
+      "plant"
+    ],
+    "file": "Beet_3.glb",
+    "metrics": {
+      "glbBytes": 28212,
+      "byteLength": 28212,
+      "triangles": 323,
+      "primitives": 5,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 0.5092884600162506,
+        "d": 0.23003577440049855
+      },
+      "center": {
+        "x": 0.061181917786598206,
+        "z": -2.7474919554737465e-8
+      },
+      "minY": -0.2657794245710679,
+      "maxY": 0.6030591317644381
+    }
+  },
+  {
+    "id": "quaternius-lowpoly-crops-pack/Beet_4",
+    "source": "quaternius-lowpoly-crops-pack",
+    "categories": [
+      "nature",
+      "crop",
+      "farm",
+      "plant"
+    ],
+    "file": "Beet_4.glb",
+    "metrics": {
+      "glbBytes": 40728,
+      "byteLength": 40728,
+      "triangles": 480,
+      "primitives": 6,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 0.7511656582355499,
+        "d": 0.3898911632147673
+      },
+      "center": {
+        "x": 0.030379757285118103,
+        "z": -0.037139520307474166
+      },
+      "minY": -0.3206820270044002,
+      "maxY": 0.7811672348582588
+    }
+  },
+  {
+    "id": "quaternius-lowpoly-crops-pack/Beet_Crop",
+    "source": "quaternius-lowpoly-crops-pack",
+    "categories": [
+      "nature",
+      "crop",
+      "farm",
+      "plant"
+    ],
+    "file": "Beet_Crop.glb",
+    "metrics": {
+      "glbBytes": 14724,
+      "byteLength": 14724,
+      "triangles": 165,
+      "primitives": 1,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 0.3156120777130127,
+        "d": 0.31561210273094276
+      },
+      "center": {
+        "x": -0.017765164375305176,
+        "z": 0.013008171921356101
+      },
+      "minY": -0.31827380632066193,
+      "maxY": 0.20113593142603625
+    }
+  },
+  {
+    "id": "quaternius-lowpoly-crops-pack/BushBerries_1",
+    "source": "quaternius-lowpoly-crops-pack",
+    "categories": [
+      "nature",
+      "crop",
+      "farm",
+      "plant"
+    ],
+    "file": "BushBerries_1.glb",
+    "metrics": {
+      "glbBytes": 10416,
+      "byteLength": 10416,
+      "triangles": 88,
+      "primitives": 7,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 0.25946927258243246,
+        "d": 0.05014928879710266
+      },
+      "center": {
+        "x": -0.008390205341054294,
+        "z": 0.011894144080225393
+      },
+      "minY": 0.001554416859303897,
+      "maxY": 0.35442914923750457
+    }
+  },
+  {
+    "id": "quaternius-lowpoly-crops-pack/BushBerries_2",
+    "source": "quaternius-lowpoly-crops-pack",
+    "categories": [
+      "nature",
+      "crop",
+      "farm",
+      "plant"
+    ],
+    "file": "BushBerries_2.glb",
+    "metrics": {
+      "glbBytes": 12780,
+      "byteLength": 12780,
+      "triangles": 140,
+      "primitives": 1,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 0.5922706723213196,
+        "d": 0.5147420544662014
+      },
+      "center": {
+        "x": -0.014041543006896973,
+        "z": 0.022527855987047388
+      },
+      "minY": -0.00802799601314274,
+      "maxY": 0.4976009288467776
+    }
+  },
+  {
+    "id": "quaternius-lowpoly-crops-pack/BushBerries_3",
+    "source": "quaternius-lowpoly-crops-pack",
+    "categories": [
+      "nature",
+      "crop",
+      "farm",
+      "plant"
+    ],
+    "file": "BushBerries_3.glb",
+    "metrics": {
+      "glbBytes": 14576,
+      "byteLength": 14576,
+      "triangles": 163,
+      "primitives": 1,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 1.274573802947998,
+        "d": 1.1077313442886043
+      },
+      "center": {
+        "x": 0.006192982196807861,
+        "z": 0.030787051167515456
+      },
+      "minY": -0.008777110376027889,
+      "maxY": 0.7350343226232249
+    }
+  },
+  {
+    "id": "quaternius-lowpoly-crops-pack/BushBerries_4",
+    "source": "quaternius-lowpoly-crops-pack",
+    "categories": [
+      "nature",
+      "crop",
+      "farm",
+      "plant"
+    ],
+    "file": "BushBerries_4.glb",
+    "metrics": {
+      "glbBytes": 71960,
+      "byteLength": 71960,
+      "triangles": 892,
+      "primitives": 2,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 1.718888282775879,
+        "d": 1.3923852138371253
+      },
+      "center": {
+        "x": -0.0016376376152038574,
+        "z": -0.027240971092468924
+      },
+      "minY": -0.03212468563917515,
+      "maxY": 1.24387203624739
+    }
+  },
+  {
+    "id": "quaternius-lowpoly-crops-pack/BushBerries_Crop",
+    "source": "quaternius-lowpoly-crops-pack",
+    "categories": [
+      "nature",
+      "crop",
+      "farm",
+      "plant"
+    ],
+    "file": "BushBerries_Crop.glb",
+    "metrics": {
+      "glbBytes": 5608,
+      "byteLength": 5608,
+      "triangles": 48,
+      "primitives": 1,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 0.1689598560333252,
+        "d": 0.16613938570327957
+      },
+      "center": {
+        "x": 0.0002537965774536133,
+        "z": -0.006983282787120813
+      },
+      "minY": -0.049871694066926396,
+      "maxY": 0.08185334253139268
+    }
+  },
+  {
+    "id": "quaternius-lowpoly-crops-pack/BushBerries_Harvested",
+    "source": "quaternius-lowpoly-crops-pack",
+    "categories": [
+      "nature",
+      "crop",
+      "farm",
+      "plant"
+    ],
+    "file": "BushBerries_Harvested.glb",
+    "metrics": {
+      "glbBytes": 30276,
+      "byteLength": 30276,
+      "triangles": 364,
+      "primitives": 1,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 1.7176393866539001,
+        "d": 1.3195944670730684
+      },
+      "center": {
+        "x": -0.0022620856761932373,
+        "z": 0.009154402289559549
+      },
+      "minY": -0.032124673780058004,
+      "maxY": 1.2141423123170316
+    }
+  },
+  {
+    "id": "quaternius-lowpoly-crops-pack/Cactus_1",
+    "source": "quaternius-lowpoly-crops-pack",
+    "categories": [
+      "nature",
+      "crop",
+      "farm",
+      "plant"
+    ],
+    "file": "Cactus_1.glb",
+    "metrics": {
+      "glbBytes": 9756,
+      "byteLength": 9756,
+      "triangles": 112,
+      "primitives": 1,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 0.09270986169576645,
+        "d": 0.09270988891005377
+      },
+      "center": {
+        "x": 0,
+        "z": -1.3083186398837876e-8
+      },
+      "minY": -0.003216038093984207,
+      "maxY": 0.16382408897307307
+    }
+  },
+  {
+    "id": "quaternius-lowpoly-crops-pack/Cactus_2",
+    "source": "quaternius-lowpoly-crops-pack",
+    "categories": [
+      "nature",
+      "crop",
+      "farm",
+      "plant"
+    ],
+    "file": "Cactus_2.glb",
+    "metrics": {
+      "glbBytes": 19480,
+      "byteLength": 19480,
+      "triangles": 220,
+      "primitives": 2,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 0.29776139557361603,
+        "d": 0.3011081834345549
+      },
+      "center": {
+        "x": -0.00561002641916275,
+        "z": -0.00121474245423768
+      },
+      "minY": -0.007275146012783095,
+      "maxY": 0.3705935125468633
+    }
+  },
+  {
+    "id": "quaternius-lowpoly-crops-pack/Cactus_3",
+    "source": "quaternius-lowpoly-crops-pack",
+    "categories": [
+      "nature",
+      "crop",
+      "farm",
+      "plant"
+    ],
+    "file": "Cactus_3.glb",
+    "metrics": {
+      "glbBytes": 27508,
+      "byteLength": 27508,
+      "triangles": 320,
+      "primitives": 3,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 0.3937111794948578,
+        "d": 0.38199557201264467
+      },
+      "center": {
+        "x": 0.005481928586959839,
+        "z": -0.001368513128098367
+      },
+      "minY": -0.007683242812314577,
+      "maxY": 0.7140304159119153
+    }
+  },
+  {
+    "id": "quaternius-lowpoly-crops-pack/Cactus_4",
+    "source": "quaternius-lowpoly-crops-pack",
+    "categories": [
+      "nature",
+      "crop",
+      "farm",
+      "plant"
+    ],
+    "file": "Cactus_4.glb",
+    "metrics": {
+      "glbBytes": 145244,
+      "byteLength": 145244,
+      "triangles": 1814,
+      "primitives": 7,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 1.3050017952919006,
+        "d": 0.5629140088722902
+      },
+      "center": {
+        "x": 0.054892510175704956,
+        "z": -0.00009473734006176793
+      },
+      "minY": -0.010727061194500167,
+      "maxY": 1.4220455151237703
+    }
+  },
+  {
+    "id": "quaternius-lowpoly-crops-pack/Cactus_Crop",
+    "source": "quaternius-lowpoly-crops-pack",
+    "categories": [
+      "nature",
+      "crop",
+      "farm",
+      "plant"
+    ],
+    "file": "Cactus_Crop.glb",
+    "metrics": {
+      "glbBytes": 21816,
+      "byteLength": 21816,
+      "triangles": 256,
+      "primitives": 1,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 0.36192522943019867,
+        "d": 0.3660235193797906
+      },
+      "center": {
+        "x": 0.013538561761379242,
+        "z": -4.874604296600804e-8
+      },
+      "minY": -0.0018419474504122767,
+      "maxY": 0.23439340294814115
+    }
+  },
+  {
+    "id": "quaternius-lowpoly-crops-pack/Cactus_Harvested",
+    "source": "quaternius-lowpoly-crops-pack",
+    "categories": [
+      "nature",
+      "crop",
+      "farm",
+      "plant"
+    ],
+    "file": "Cactus_Harvested.glb",
+    "metrics": {
+      "glbBytes": 104804,
+      "byteLength": 104804,
+      "triangles": 1302,
+      "primitives": 6,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 1.0943137407302856,
+        "d": 0.5629139801553676
+      },
+      "center": {
+        "x": 0.03419911861419678,
+        "z": -0.00009472298160051462
+      },
+      "minY": -0.010727061194500167,
+      "maxY": 1.2457823019661187
+    }
+  },
+  {
+    "id": "quaternius-lowpoly-crops-pack/Carrot_1",
+    "source": "quaternius-lowpoly-crops-pack",
+    "categories": [
+      "nature",
+      "crop",
+      "farm",
+      "plant"
+    ],
+    "file": "Carrot_1.glb",
+    "metrics": {
+      "glbBytes": 7996,
+      "byteLength": 7996,
+      "triangles": 88,
+      "primitives": 1,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 0.3550688922405243,
+        "d": 0.0686264180246601
+      },
+      "center": {
+        "x": -0.011481523513793945,
+        "z": 0.016276467587516795
+      },
+      "minY": 0.0021271308369535964,
+      "maxY": 0.35233993162390526
+    }
+  },
+  {
+    "id": "quaternius-lowpoly-crops-pack/Carrot_2",
+    "source": "quaternius-lowpoly-crops-pack",
+    "categories": [
+      "nature",
+      "crop",
+      "farm",
+      "plant"
+    ],
+    "file": "Carrot_2.glb",
+    "metrics": {
+      "glbBytes": 22800,
+      "byteLength": 22800,
+      "triangles": 262,
+      "primitives": 2,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 0.1613825559616089,
+        "d": 0.06549869543072981
+      },
+      "center": {
+        "x": 0.0016382038593292236,
+        "z": 0.00514710520244197
+      },
+      "minY": -0.15136556777039967,
+      "maxY": 0.16133054218199086
+    }
+  },
+  {
+    "id": "quaternius-lowpoly-crops-pack/Carrot_3",
+    "source": "quaternius-lowpoly-crops-pack",
+    "categories": [
+      "nature",
+      "crop",
+      "farm",
+      "plant"
+    ],
+    "file": "Carrot_3.glb",
+    "metrics": {
+      "glbBytes": 34188,
+      "byteLength": 34188,
+      "triangles": 408,
+      "primitives": 2,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 0.33360931277275085,
+        "d": 0.2582201242708293
+      },
+      "center": {
+        "x": -0.015476658940315247,
+        "z": -0.042024797672264955
+      },
+      "minY": -0.24413783656193142,
+      "maxY": 0.2773599170467144
+    }
+  },
+  {
+    "id": "quaternius-lowpoly-crops-pack/Carrot_4",
+    "source": "quaternius-lowpoly-crops-pack",
+    "categories": [
+      "nature",
+      "crop",
+      "farm",
+      "plant"
+    ],
+    "file": "Carrot_4.glb",
+    "metrics": {
+      "glbBytes": 43204,
+      "byteLength": 43204,
+      "triangles": 514,
+      "primitives": 4,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 0.67652827501297,
+        "d": 0.5015674082296895
+      },
+      "center": {
+        "x": -0.04029190540313721,
+        "z": -0.05488991478887624
+      },
+      "minY": -0.6097196242519743,
+      "maxY": 0.6694517454771359
+    }
+  },
+  {
+    "id": "quaternius-lowpoly-crops-pack/Carrot_Crop",
+    "source": "quaternius-lowpoly-crops-pack",
+    "categories": [
+      "nature",
+      "crop",
+      "farm",
+      "plant"
+    ],
+    "file": "Carrot_Crop.glb",
+    "metrics": {
+      "glbBytes": 18064,
+      "byteLength": 18064,
+      "triangles": 186,
+      "primitives": 6,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 0.23902559280395508,
+        "d": 0.2390256543689505
+      },
+      "center": {
+        "x": 0.0002847015857696533,
+        "z": 0.017275050272739324
+      },
+      "minY": -0.6461952495248278,
+      "maxY": 0.23473276936349557
+    }
+  },
+  {
+    "id": "quaternius-lowpoly-crops-pack/Coconut_Half",
+    "source": "quaternius-lowpoly-crops-pack",
+    "categories": [
+      "nature",
+      "crop",
+      "farm",
+      "plant"
+    ],
+    "file": "Coconut_Half.glb",
+    "metrics": {
+      "glbBytes": 12892,
+      "byteLength": 12892,
+      "triangles": 132,
+      "primitives": 3,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 0.7835690975189209,
+        "d": 0.41198739214881824
+      },
+      "center": {
+        "x": 0,
+        "z": -0.17655938046918676
+      },
+      "minY": -0.3757181194814007,
+      "maxY": 0.40120524647558864
+    }
+  },
+  {
+    "id": "quaternius-lowpoly-crops-pack/Corn_1",
+    "source": "quaternius-lowpoly-crops-pack",
+    "categories": [
+      "nature",
+      "crop",
+      "farm",
+      "plant"
+    ],
+    "file": "Corn_1.glb",
+    "metrics": {
+      "glbBytes": 7992,
+      "byteLength": 7992,
+      "triangles": 88,
+      "primitives": 1,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 0.16682741791009903,
+        "d": 0.032243829939435614
+      },
+      "center": {
+        "x": -0.005394537001848221,
+        "z": 0.007647402062274546
+      },
+      "minY": 0.0009994222945759804,
+      "maxY": 0.38841197281896506
+    }
+  },
+  {
+    "id": "quaternius-lowpoly-crops-pack/Corn_2",
+    "source": "quaternius-lowpoly-crops-pack",
+    "categories": [
+      "nature",
+      "crop",
+      "farm",
+      "plant"
+    ],
+    "file": "Corn_2.glb",
+    "metrics": {
+      "glbBytes": 11756,
+      "byteLength": 11756,
+      "triangles": 140,
+      "primitives": 1,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 0.2837385907769203,
+        "d": 0.3051460862409632
+      },
+      "center": {
+        "x": 0.047584544867277145,
+        "z": 0.018181091543420444
+      },
+      "minY": -0.00005468360726686142,
+      "maxY": 0.6586300412852523
+    }
+  },
+  {
+    "id": "quaternius-lowpoly-crops-pack/Corn_3",
+    "source": "quaternius-lowpoly-crops-pack",
+    "categories": [
+      "nature",
+      "crop",
+      "farm",
+      "plant"
+    ],
+    "file": "Corn_3.glb",
+    "metrics": {
+      "glbBytes": 26736,
+      "byteLength": 26736,
+      "triangles": 348,
+      "primitives": 1,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 0.6746875047683716,
+        "d": 0.5725651626673449
+      },
+      "center": {
+        "x": 0.018148481845855713,
+        "z": 0.03411536194314416
+      },
+      "minY": -0.00011381050306220204,
+      "maxY": 1.2467586324072588
+    }
+  },
+  {
+    "id": "quaternius-lowpoly-crops-pack/Corn_4",
+    "source": "quaternius-lowpoly-crops-pack",
+    "categories": [
+      "nature",
+      "crop",
+      "farm",
+      "plant"
+    ],
+    "file": "Corn_4.glb",
+    "metrics": {
+      "glbBytes": 80116,
+      "byteLength": 80116,
+      "triangles": 958,
+      "primitives": 14,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 0.8872804343700409,
+        "d": 0.6489972696765537
+      },
+      "center": {
+        "x": 0.006952062249183655,
+        "z": -0.04064736949817277
+      },
+      "minY": 0.0034812648066617287,
+      "maxY": 1.9705778822818971
+    }
+  },
+  {
+    "id": "quaternius-lowpoly-crops-pack/Corn_Crop",
+    "source": "quaternius-lowpoly-crops-pack",
+    "categories": [
+      "nature",
+      "crop",
+      "farm",
+      "plant"
+    ],
+    "file": "Corn_Crop.glb",
+    "metrics": {
+      "glbBytes": 8600,
+      "byteLength": 8600,
+      "triangles": 80,
+      "primitives": 2,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 0.3481656424701214,
+        "d": 0.14880772124198066
+      },
+      "center": {
+        "x": 0.11526804603636265,
+        "z": -0.000013049686456205467
+      },
+      "minY": -0.07443740686224797,
+      "maxY": 0.07437038888552651
+    }
+  },
+  {
+    "id": "quaternius-lowpoly-crops-pack/Corn_Harvested",
+    "source": "quaternius-lowpoly-crops-pack",
+    "categories": [
+      "nature",
+      "crop",
+      "farm",
+      "plant"
+    ],
+    "file": "Corn_Harvested.glb",
+    "metrics": {
+      "glbBytes": 52136,
+      "byteLength": 52136,
+      "triangles": 638,
+      "primitives": 2,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 0.8872804343700409,
+        "d": 0.6489972696765537
+      },
+      "center": {
+        "x": 0.006952062249183655,
+        "z": -0.04064736949817277
+      },
+      "minY": 0.0034812648066617287,
+      "maxY": 1.9705778822818971
+    }
+  },
+  {
+    "id": "quaternius-lowpoly-crops-pack/Flower_1",
+    "source": "quaternius-lowpoly-crops-pack",
+    "categories": [
+      "nature",
+      "crop",
+      "farm",
+      "plant"
+    ],
+    "file": "Flower_1.glb",
+    "metrics": {
+      "glbBytes": 7452,
+      "byteLength": 7452,
+      "triangles": 80,
+      "primitives": 1,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 0.1267053335905075,
+        "d": 0.024489140351466397
+      },
+      "center": {
+        "x": -0.0004134923219680786,
+        "z": 0.0043382988335329
+      },
+      "minY": -0.0000981103878733246,
+      "maxY": 0.1098238852814943
+    }
+  },
+  {
+    "id": "quaternius-lowpoly-crops-pack/Flower_2",
+    "source": "quaternius-lowpoly-crops-pack",
+    "categories": [
+      "nature",
+      "crop",
+      "farm",
+      "plant"
+    ],
+    "file": "Flower_2.glb",
+    "metrics": {
+      "glbBytes": 4716,
+      "byteLength": 4716,
+      "triangles": 42,
+      "primitives": 1,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 0.08389418199658394,
+        "d": 0.049899377884710994
+      },
+      "center": {
+        "x": 0.005730384960770607,
+        "z": -0.010169233623335765
+      },
+      "minY": -0.00030752017023798835,
+      "maxY": 0.4114254141092387
+    }
+  },
+  {
+    "id": "quaternius-lowpoly-crops-pack/Flower_3",
+    "source": "quaternius-lowpoly-crops-pack",
+    "categories": [
+      "nature",
+      "crop",
+      "farm",
+      "plant"
+    ],
+    "file": "Flower_3.glb",
+    "metrics": {
+      "glbBytes": 14164,
+      "byteLength": 14164,
+      "triangles": 152,
+      "primitives": 2,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 0.1941457837820053,
+        "d": 0.19924117691506887
+      },
+      "center": {
+        "x": -0.0029917657375335693,
+        "z": -0.0018488916610891193
+      },
+      "minY": -0.0003075114514431487,
+      "maxY": 0.5068341652896813
+    }
+  },
+  {
+    "id": "quaternius-lowpoly-crops-pack/Flower_4",
+    "source": "quaternius-lowpoly-crops-pack",
+    "categories": [
+      "nature",
+      "crop",
+      "farm",
+      "plant"
+    ],
+    "file": "Flower_4.glb",
+    "metrics": {
+      "glbBytes": 20472,
+      "byteLength": 20472,
+      "triangles": 230,
+      "primitives": 3,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 0.29177576303482056,
+        "d": 0.2926470633713325
+      },
+      "center": {
+        "x": -0.004419311881065369,
+        "z": -0.004265144210417307
+      },
+      "minY": -0.00046976873946248833,
+      "maxY": 0.8204797141728332
+    }
+  },
+  {
+    "id": "quaternius-lowpoly-crops-pack/Flowers_Crop",
+    "source": "quaternius-lowpoly-crops-pack",
+    "categories": [
+      "nature",
+      "crop",
+      "farm",
+      "plant"
+    ],
+    "file": "Flowers_Crop.glb",
+    "metrics": {
+      "glbBytes": 13888,
+      "byteLength": 13888,
+      "triangles": 134,
+      "primitives": 7,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 0.2917757034301758,
+        "d": 0.2926469336545897
+      },
+      "center": {
+        "x": -0.0014352798461914062,
+        "z": 0.00037241763391952787
+      },
+      "minY": -0.01460363858557014,
+      "maxY": 0.10161283021998188
+    }
+  },
+  {
+    "id": "quaternius-lowpoly-crops-pack/Flowers_Harvested",
+    "source": "quaternius-lowpoly-crops-pack",
+    "categories": [
+      "nature",
+      "crop",
+      "farm",
+      "plant"
+    ],
+    "file": "Flowers_Harvested.glb",
+    "metrics": {
+      "glbBytes": 8908,
+      "byteLength": 8908,
+      "triangles": 100,
+      "primitives": 1,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 0.19278324395418167,
+        "d": 0.06720932301358877
+      },
+      "center": {
+        "x": 0.00007412955164909363,
+        "z": -0.011025319303417326
+      },
+      "minY": -0.0004697514766026855,
+      "maxY": 0.7145535386632208
+    }
+  },
+  {
+    "id": "quaternius-lowpoly-crops-pack/Grass_1",
+    "source": "quaternius-lowpoly-crops-pack",
+    "categories": [
+      "nature",
+      "crop",
+      "farm",
+      "plant"
+    ],
+    "file": "Grass_1.glb",
+    "metrics": {
+      "glbBytes": 6292,
+      "byteLength": 6292,
+      "triangles": 64,
+      "primitives": 1,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 0.25006821751594543,
+        "d": 0.27326227377412543
+      },
+      "center": {
+        "x": 0.0518520325422287,
+        "z": 0.017242368905392498
+      },
+      "minY": -0.015862320442904733,
+      "maxY": 0.23721849445050494
+    }
+  },
+  {
+    "id": "quaternius-lowpoly-crops-pack/Grass_2",
+    "source": "quaternius-lowpoly-crops-pack",
+    "categories": [
+      "nature",
+      "crop",
+      "farm",
+      "plant"
+    ],
+    "file": "Grass_2.glb",
+    "metrics": {
+      "glbBytes": 6296,
+      "byteLength": 6296,
+      "triangles": 64,
+      "primitives": 1,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 0.25006821751594543,
+        "d": 0.27326231785706107
+      },
+      "center": {
+        "x": 0.0518520325422287,
+        "z": 0.017242346863924667
+      },
+      "minY": -0.015862320442904733,
+      "maxY": 0.5077976239079751
+    }
+  },
+  {
+    "id": "quaternius-lowpoly-crops-pack/Grass_3",
+    "source": "quaternius-lowpoly-crops-pack",
+    "categories": [
+      "nature",
+      "crop",
+      "farm",
+      "plant"
+    ],
+    "file": "Grass_3.glb",
+    "metrics": {
+      "glbBytes": 9752,
+      "byteLength": 9752,
+      "triangles": 112,
+      "primitives": 1,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 0.37383775413036346,
+        "d": 0.2824134185033541
+      },
+      "center": {
+        "x": -0.010032735764980316,
+        "z": 0.021817852949660495
+      },
+      "minY": -0.015862322305549882,
+      "maxY": 0.779324915743106
+    }
+  },
+  {
+    "id": "quaternius-lowpoly-crops-pack/Grass_4",
+    "source": "quaternius-lowpoly-crops-pack",
+    "categories": [
+      "nature",
+      "crop",
+      "farm",
+      "plant"
+    ],
+    "file": "Grass_4.glb",
+    "metrics": {
+      "glbBytes": 15512,
+      "byteLength": 15512,
+      "triangles": 192,
+      "primitives": 1,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 0.37383775413036346,
+        "d": 0.3272169690308392
+      },
+      "center": {
+        "x": -0.010032735764980316,
+        "z": -0.0005839223140820665
+      },
+      "minY": -0.015862329604969007,
+      "maxY": 0.9969206717970277
+    }
+  },
+  {
+    "id": "quaternius-lowpoly-crops-pack/Lettuce_1",
+    "source": "quaternius-lowpoly-crops-pack",
+    "categories": [
+      "nature",
+      "crop",
+      "farm",
+      "plant"
+    ],
+    "file": "Lettuce_1.glb",
+    "metrics": {
+      "glbBytes": 8008,
+      "byteLength": 8008,
+      "triangles": 88,
+      "primitives": 1,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 0.2761464864015579,
+        "d": 0.11096166022399642
+      },
+      "center": {
+        "x": -0.008929483592510223,
+        "z": 0.014021202911723794
+      },
+      "minY": 0.001654321558102016,
+      "maxY": 0.29572389662108983
+    }
+  },
+  {
+    "id": "quaternius-lowpoly-crops-pack/Lettuce_2",
+    "source": "quaternius-lowpoly-crops-pack",
+    "categories": [
+      "nature",
+      "crop",
+      "farm",
+      "plant"
+    ],
+    "file": "Lettuce_2.glb",
+    "metrics": {
+      "glbBytes": 30452,
+      "byteLength": 30452,
+      "triangles": 400,
+      "primitives": 1,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 0.36894361674785614,
+        "d": 0.367291746596747
+      },
+      "center": {
+        "x": 0.0044972822070121765,
+        "z": -0.005809269155505767
+      },
+      "minY": -0.04405263545203775,
+      "maxY": 0.3099705270582771
+    }
+  },
+  {
+    "id": "quaternius-lowpoly-crops-pack/Lettuce_3",
+    "source": "quaternius-lowpoly-crops-pack",
+    "categories": [
+      "nature",
+      "crop",
+      "farm",
+      "plant"
+    ],
+    "file": "Lettuce_3.glb",
+    "metrics": {
+      "glbBytes": 45756,
+      "byteLength": 45756,
+      "triangles": 612,
+      "primitives": 1,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 0.6231620907783508,
+        "d": 0.6763978924182313
+      },
+      "center": {
+        "x": -0.021026700735092163,
+        "z": 0.010999525664188048
+      },
+      "minY": -0.06932452436400408,
+      "maxY": 0.31227454271813865
+    }
+  },
+  {
+    "id": "quaternius-lowpoly-crops-pack/Lettuce_4",
+    "source": "quaternius-lowpoly-crops-pack",
+    "categories": [
+      "nature",
+      "crop",
+      "farm",
+      "plant"
+    ],
+    "file": "Lettuce_4.glb",
+    "metrics": {
+      "glbBytes": 101912,
+      "byteLength": 101912,
+      "triangles": 1392,
+      "primitives": 1,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 1.0440011024475098,
+        "d": 1.0440011797047533
+      },
+      "center": {
+        "x": -3.5762786865234375e-7,
+        "z": 3.188354236183244e-8
+      },
+      "minY": -0.0669500039108315,
+      "maxY": 0.40725183050710645
+    }
+  },
+  {
+    "id": "quaternius-lowpoly-crops-pack/Lettuce_Crop",
+    "source": "quaternius-lowpoly-crops-pack",
+    "categories": [
+      "nature",
+      "crop",
+      "farm",
+      "plant"
+    ],
+    "file": "Lettuce_Crop.glb",
+    "metrics": {
+      "glbBytes": 33956,
+      "byteLength": 33956,
+      "triangles": 448,
+      "primitives": 1,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 0.3753950893878937,
+        "d": 0.37539515596283646
+      },
+      "center": {
+        "x": 0,
+        "z": -3.022433055221985e-8
+      },
+      "minY": -0.018801470133310516,
+      "maxY": 0.38983270603680703
+    }
+  },
+  {
+    "id": "quaternius-lowpoly-crops-pack/Lettuce_Harvested",
+    "source": "quaternius-lowpoly-crops-pack",
+    "categories": [
+      "nature",
+      "crop",
+      "farm",
+      "plant"
+    ],
+    "file": "Lettuce_Harvested.glb",
+    "metrics": {
+      "glbBytes": 93864,
+      "byteLength": 93864,
+      "triangles": 1280,
+      "primitives": 1,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 1.0440011024475098,
+        "d": 1.0440011797047533
+      },
+      "center": {
+        "x": -3.5762786865234375e-7,
+        "z": 3.188354236183244e-8
+      },
+      "minY": -0.0669500039108315,
+      "maxY": 0.40725183050710645
+    }
+  },
+  {
+    "id": "quaternius-lowpoly-crops-pack/Mushroom_1",
+    "source": "quaternius-lowpoly-crops-pack",
+    "categories": [
+      "nature",
+      "crop",
+      "farm",
+      "plant"
+    ],
+    "file": "Mushroom_1.glb",
+    "metrics": {
+      "glbBytes": 15296,
+      "byteLength": 15296,
+      "triangles": 160,
+      "primitives": 4,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 0.10849956050515175,
+        "d": 0.10849956493270069
+      },
+      "center": {
+        "x": 0.0009899456053972244,
+        "z": -0.0008230809688486822
+      },
+      "minY": 0.00047884543039455836,
+      "maxY": 0.11911764866317144
+    }
+  },
+  {
+    "id": "quaternius-lowpoly-crops-pack/Mushroom_2",
+    "source": "quaternius-lowpoly-crops-pack",
+    "categories": [
+      "nature",
+      "crop",
+      "farm",
+      "plant"
+    ],
+    "file": "Mushroom_2.glb",
+    "metrics": {
+      "glbBytes": 50168,
+      "byteLength": 50168,
+      "triangles": 604,
+      "primitives": 5,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 0.14152222871780396,
+        "d": 0.141522317318238
+      },
+      "center": {
+        "x": 0.0009899511933326721,
+        "z": -0.0008231023699981008
+      },
+      "minY": -0.0007254040893803134,
+      "maxY": 0.22298085338863827
+    }
+  },
+  {
+    "id": "quaternius-lowpoly-crops-pack/Mushroom_3",
+    "source": "quaternius-lowpoly-crops-pack",
+    "categories": [
+      "nature",
+      "crop",
+      "farm",
+      "plant"
+    ],
+    "file": "Mushroom_3.glb",
+    "metrics": {
+      "glbBytes": 74572,
+      "byteLength": 74572,
+      "triangles": 920,
+      "primitives": 4,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 0.244882233440876,
+        "d": 0.24441777353398364
+      },
+      "center": {
+        "x": -0.0002322159707546234,
+        "z": -2.327021304121546e-8
+      },
+      "minY": -1.9910351095734864e-8,
+      "maxY": 0.2856631180071948
+    }
+  },
+  {
+    "id": "quaternius-lowpoly-crops-pack/Mushroom_4",
+    "source": "quaternius-lowpoly-crops-pack",
+    "categories": [
+      "nature",
+      "crop",
+      "farm",
+      "plant"
+    ],
+    "file": "Mushroom_4.glb",
+    "metrics": {
+      "glbBytes": 142156,
+      "byteLength": 142156,
+      "triangles": 1760,
+      "primitives": 13,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 0.44511687755584717,
+        "d": 0.4451169575379228
+      },
+      "center": {
+        "x": 1.1920928955078125e-7,
+        "z": -2.50898782444553e-8
+      },
+      "minY": -4.4641275271041716e-8,
+      "maxY": 0.3994638686377566
+    }
+  },
+  {
+    "id": "quaternius-lowpoly-crops-pack/Mushroom_Crop",
+    "source": "quaternius-lowpoly-crops-pack",
+    "categories": [
+      "nature",
+      "crop",
+      "farm",
+      "plant"
+    ],
+    "file": "Mushroom_Crop.glb",
+    "metrics": {
+      "glbBytes": 103108,
+      "byteLength": 103108,
+      "triangles": 1280,
+      "primitives": 6,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 0.43630969524383545,
+        "d": 0.43630971455025336
+      },
+      "center": {
+        "x": -0.006661504507064819,
+        "z": 0.013618529732380147
+      },
+      "minY": -0.06471045667352937,
+      "maxY": 0.05379159799331461
+    }
+  },
+  {
+    "id": "quaternius-lowpoly-crops-pack/Mushroom_Harvested",
+    "source": "quaternius-lowpoly-crops-pack",
+    "categories": [
+      "nature",
+      "crop",
+      "farm",
+      "plant"
+    ],
+    "file": "Mushroom_Harvested.glb",
+    "metrics": {
+      "glbBytes": 42864,
+      "byteLength": 42864,
+      "triangles": 526,
+      "primitives": 1,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 0.19102375209331512,
+        "d": 0.19102383736477685
+      },
+      "center": {
+        "x": 1.1920928955078125e-7,
+        "z": -2.0283988995395408e-8
+      },
+      "minY": -2.3942765355964235e-8,
+      "maxY": 0.29473583466219305
+    }
+  },
+  {
+    "id": "quaternius-lowpoly-crops-pack/Orange_1",
+    "source": "quaternius-lowpoly-crops-pack",
+    "categories": [
+      "nature",
+      "crop",
+      "farm",
+      "plant"
+    ],
+    "file": "Orange_1.glb",
+    "metrics": {
+      "glbBytes": 7432,
+      "byteLength": 7432,
+      "triangles": 80,
+      "primitives": 1,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 0.23776352405548096,
+        "d": 0.10662382401142584
+      },
+      "center": {
+        "x": 0.01261928677558899,
+        "z": -0.02743241710367877
+      },
+      "minY": -0.0003447658091148315,
+      "maxY": 0.24703826431857362
+    }
+  },
+  {
+    "id": "quaternius-lowpoly-crops-pack/Orange_2",
+    "source": "quaternius-lowpoly-crops-pack",
+    "categories": [
+      "nature",
+      "crop",
+      "farm",
+      "plant"
+    ],
+    "file": "Orange_2.glb",
+    "metrics": {
+      "glbBytes": 29236,
+      "byteLength": 29236,
+      "triangles": 252,
+      "primitives": 6,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 0.438523605465889,
+        "d": 0.5212975929031728
+      },
+      "center": {
+        "x": -0.03242247551679611,
+        "z": -0.07963331986669354
+      },
+      "minY": -0.000002883524339949394,
+      "maxY": 0.9389225539433614
+    }
+  },
+  {
+    "id": "quaternius-lowpoly-crops-pack/Orange_3",
+    "source": "quaternius-lowpoly-crops-pack",
+    "categories": [
+      "nature",
+      "crop",
+      "farm",
+      "plant"
+    ],
+    "file": "Orange_3.glb",
+    "metrics": {
+      "glbBytes": 37568,
+      "byteLength": 37568,
+      "triangles": 336,
+      "primitives": 5,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 0.9216982498764992,
+        "d": 1.1151997182593174
+      },
+      "center": {
+        "x": 0.356493454426527,
+        "z": -0.31677165795417334
+      },
+      "minY": -0.000004761813115506424,
+      "maxY": 2.1242621337335463
+    }
+  },
+  {
+    "id": "quaternius-lowpoly-crops-pack/Orange_4",
+    "source": "quaternius-lowpoly-crops-pack",
+    "categories": [
+      "nature",
+      "crop",
+      "farm",
+      "plant"
+    ],
+    "file": "Orange_4.glb",
+    "metrics": {
+      "glbBytes": 130272,
+      "byteLength": 130272,
+      "triangles": 1244,
+      "primitives": 4,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 1.8635428547859192,
+        "d": 1.5786468715377993
+      },
+      "center": {
+        "x": 0.24942359328269958,
+        "z": 0.3128274812852794
+      },
+      "minY": -0.00000603809544894541,
+      "maxY": 2.7627210028511033
+    }
+  },
+  {
+    "id": "quaternius-lowpoly-crops-pack/Orange_Crop",
+    "source": "quaternius-lowpoly-crops-pack",
+    "categories": [
+      "nature",
+      "crop",
+      "farm",
+      "plant"
+    ],
+    "file": "Orange_Crop.glb",
+    "metrics": {
+      "glbBytes": 21836,
+      "byteLength": 21836,
+      "triangles": 208,
+      "primitives": 1,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 0.1513267382979393,
+        "d": 0.1513267703211449
+      },
+      "center": {
+        "x": 1.9744038581848145e-7,
+        "z": -4.257060376364197e-7
+      },
+      "minY": -0.06913408379650335,
+      "maxY": 0.08169164996228888
+    }
+  },
+  {
+    "id": "quaternius-lowpoly-crops-pack/Orange_Harvested",
+    "source": "quaternius-lowpoly-crops-pack",
+    "categories": [
+      "nature",
+      "crop",
+      "farm",
+      "plant"
+    ],
+    "file": "Orange_Harvested.glb",
+    "metrics": {
+      "glbBytes": 78724,
+      "byteLength": 78724,
+      "triangles": 744,
+      "primitives": 3,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 1.8006973266601562,
+        "d": 1.5786468715377848
+      },
+      "center": {
+        "x": 0.2180008888244629,
+        "z": 0.3128277197038901
+      },
+      "minY": -0.000006188038344615184,
+      "maxY": 2.7627207644325633
+    }
+  },
+  {
+    "id": "quaternius-lowpoly-crops-pack/PalmTree_1",
+    "source": "quaternius-lowpoly-crops-pack",
+    "categories": [
+      "nature",
+      "crop",
+      "farm",
+      "plant"
+    ],
+    "file": "PalmTree_1.glb",
+    "metrics": {
+      "glbBytes": 14344,
+      "byteLength": 14344,
+      "triangles": 176,
+      "primitives": 1,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 0.3550688922405243,
+        "d": 0.41836906714772804
+      },
+      "center": {
+        "x": -0.011481523513793945,
+        "z": 0.02016850653635069
+      },
+      "minY": 0.0021271029808921844,
+      "maxY": 0.35233996074815394
+    }
+  },
+  {
+    "id": "quaternius-lowpoly-crops-pack/PalmTree_2",
+    "source": "quaternius-lowpoly-crops-pack",
+    "categories": [
+      "nature",
+      "crop",
+      "farm",
+      "plant"
+    ],
+    "file": "PalmTree_2.glb",
+    "metrics": {
+      "glbBytes": 66424,
+      "byteLength": 66424,
+      "triangles": 776,
+      "primitives": 16,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 1.094359815120697,
+        "d": 1.4372658233419644
+      },
+      "center": {
+        "x": 0.0643865168094635,
+        "z": -0.0381599373719958
+      },
+      "minY": -0.0263328481366141,
+      "maxY": 1.498396388290772
+    }
+  },
+  {
+    "id": "quaternius-lowpoly-crops-pack/PalmTree_3",
+    "source": "quaternius-lowpoly-crops-pack",
+    "categories": [
+      "nature",
+      "crop",
+      "farm",
+      "plant"
+    ],
+    "file": "PalmTree_3.glb",
+    "metrics": {
+      "glbBytes": 101292,
+      "byteLength": 101292,
+      "triangles": 1220,
+      "primitives": 17,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 1.3108220100402832,
+        "d": 1.6288930834419886
+      },
+      "center": {
+        "x": 0.12705367803573608,
+        "z": -0.04251417379187411
+      },
+      "minY": -0.027123760350182016,
+      "maxY": 2.205228931305708
+    }
+  },
+  {
+    "id": "quaternius-lowpoly-crops-pack/PalmTree_4",
+    "source": "quaternius-lowpoly-crops-pack",
+    "categories": [
+      "nature",
+      "crop",
+      "farm",
+      "plant"
+    ],
+    "file": "PalmTree_4.glb",
+    "metrics": {
+      "glbBytes": 172536,
+      "byteLength": 172536,
+      "triangles": 2100,
+      "primitives": 27,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 1.8131675124168396,
+        "d": 2.0450190237121033
+      },
+      "center": {
+        "x": 0.2432493269443512,
+        "z": -0.05337511868778455
+      },
+      "minY": -0.017273141266325488,
+      "maxY": 3.233284154474022
+    }
+  },
+  {
+    "id": "quaternius-lowpoly-crops-pack/PalmTree_Crop",
+    "source": "quaternius-lowpoly-crops-pack",
+    "categories": [
+      "nature",
+      "crop",
+      "farm",
+      "plant"
+    ],
+    "file": "PalmTree_Crop.glb",
+    "metrics": {
+      "glbBytes": 7580,
+      "byteLength": 7580,
+      "triangles": 82,
+      "primitives": 1,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 0.2243470400571823,
+        "d": 0.22601131276087283
+      },
+      "center": {
+        "x": 0,
+        "z": -0.000060022476243655476
+      },
+      "minY": -0.10838972384027314,
+      "maxY": 0.11574244104149865
+    }
+  },
+  {
+    "id": "quaternius-lowpoly-crops-pack/PalmTree_Harvested",
+    "source": "quaternius-lowpoly-crops-pack",
+    "categories": [
+      "nature",
+      "crop",
+      "farm",
+      "plant"
+    ],
+    "file": "PalmTree_Harvested.glb",
+    "metrics": {
+      "glbBytes": 146468,
+      "byteLength": 146468,
+      "triangles": 1772,
+      "primitives": 26,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 1.8131675124168396,
+        "d": 2.0450190237121033
+      },
+      "center": {
+        "x": 0.2432493269443512,
+        "z": -0.05337511868778455
+      },
+      "minY": -0.017273141266325488,
+      "maxY": 3.233284154474022
+    }
+  },
+  {
+    "id": "quaternius-lowpoly-crops-pack/Pumpkin_1",
+    "source": "quaternius-lowpoly-crops-pack",
+    "categories": [
+      "nature",
+      "crop",
+      "farm",
+      "plant"
+    ],
+    "file": "Pumpkin_1.glb",
+    "metrics": {
+      "glbBytes": 12624,
+      "byteLength": 12624,
+      "triangles": 132,
+      "primitives": 2,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 0.21702811866998672,
+        "d": 0.09284150086367597
+      },
+      "center": {
+        "x": 0.031073298305273056,
+        "z": 0.020220401451568927
+      },
+      "minY": 0.00013289488075275005,
+      "maxY": 0.39159465921842257
+    }
+  },
+  {
+    "id": "quaternius-lowpoly-crops-pack/Pumpkin_2",
+    "source": "quaternius-lowpoly-crops-pack",
+    "categories": [
+      "nature",
+      "crop",
+      "farm",
+      "plant"
+    ],
+    "file": "Pumpkin_2.glb",
+    "metrics": {
+      "glbBytes": 70060,
+      "byteLength": 70060,
+      "triangles": 862,
+      "primitives": 4,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 0.4684057831764221,
+        "d": 0.44018193753512
+      },
+      "center": {
+        "x": -0.1737980842590332,
+        "z": -0.03811514360243355
+      },
+      "minY": 0.008936372428002074,
+      "maxY": 0.26332169755724405
+    }
+  },
+  {
+    "id": "quaternius-lowpoly-crops-pack/Pumpkin_3",
+    "source": "quaternius-lowpoly-crops-pack",
+    "categories": [
+      "nature",
+      "crop",
+      "farm",
+      "plant"
+    ],
+    "file": "Pumpkin_3.glb",
+    "metrics": {
+      "glbBytes": 139028,
+      "byteLength": 139028,
+      "triangles": 1752,
+      "primitives": 2,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 0.8754338622093201,
+        "d": 0.7492434427242395
+      },
+      "center": {
+        "x": -0.040722399950027466,
+        "z": -0.02779635507992989
+      },
+      "minY": -0.030876215916959472,
+      "maxY": 0.3624750046728196
+    }
+  },
+  {
+    "id": "quaternius-lowpoly-crops-pack/Pumpkin_4",
+    "source": "quaternius-lowpoly-crops-pack",
+    "categories": [
+      "nature",
+      "crop",
+      "farm",
+      "plant"
+    ],
+    "file": "Pumpkin_4.glb",
+    "metrics": {
+      "glbBytes": 228744,
+      "byteLength": 228744,
+      "triangles": 2896,
+      "primitives": 3,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 1.289722204208374,
+        "d": 1.0753186114204274
+      },
+      "center": {
+        "x": 0.13548988103866577,
+        "z": -0.12687010717907726
+      },
+      "minY": -0.04178898432223961,
+      "maxY": 0.5481896473665682
+    }
+  },
+  {
+    "id": "quaternius-lowpoly-crops-pack/Pumpkin_Crop",
+    "source": "quaternius-lowpoly-crops-pack",
+    "categories": [
+      "nature",
+      "crop",
+      "farm",
+      "plant"
+    ],
+    "file": "Pumpkin_Crop.glb",
+    "metrics": {
+      "glbBytes": 33676,
+      "byteLength": 33676,
+      "triangles": 396,
+      "primitives": 4,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 0.5875114500522614,
+        "d": 0.578061969007086
+      },
+      "center": {
+        "x": -0.0018569082021713257,
+        "z": -7.549157415853713e-8
+      },
+      "minY": 0.003230336996205422,
+      "maxY": 0.5576469177022029
+    }
+  },
+  {
+    "id": "quaternius-lowpoly-crops-pack/Pumpkin_Harvested",
+    "source": "quaternius-lowpoly-crops-pack",
+    "categories": [
+      "nature",
+      "crop",
+      "farm",
+      "plant"
+    ],
+    "file": "Pumpkin_Harvested.glb",
+    "metrics": {
+      "glbBytes": 200740,
+      "byteLength": 200740,
+      "triangles": 2540,
+      "primitives": 3,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 1.289722204208374,
+        "d": 1.0753186114204274
+      },
+      "center": {
+        "x": 0.13548988103866577,
+        "z": -0.12687010717907726
+      },
+      "minY": -0.04178898432223961,
+      "maxY": 0.5481896473665682
+    }
+  },
+  {
+    "id": "quaternius-lowpoly-crops-pack/Rice_1",
+    "source": "quaternius-lowpoly-crops-pack",
+    "categories": [
+      "nature",
+      "crop",
+      "farm",
+      "plant"
+    ],
+    "file": "Rice_1.glb",
+    "metrics": {
+      "glbBytes": 7992,
+      "byteLength": 7992,
+      "triangles": 88,
+      "primitives": 1,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 0.15841076523065567,
+        "d": 0.03061708840796141
+      },
+      "center": {
+        "x": -0.00512237474322319,
+        "z": 0.0072615814000549575
+      },
+      "minY": 0.0009490000943812449,
+      "maxY": 0.36881608138633326
+    }
+  },
+  {
+    "id": "quaternius-lowpoly-crops-pack/Rice_2",
+    "source": "quaternius-lowpoly-crops-pack",
+    "categories": [
+      "nature",
+      "crop",
+      "farm",
+      "plant"
+    ],
+    "file": "Rice_2.glb",
+    "metrics": {
+      "glbBytes": 22848,
+      "byteLength": 22848,
+      "triangles": 294,
+      "primitives": 1,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 0.25466370582580566,
+        "d": 0.1272105600639657
+      },
+      "center": {
+        "x": -0.03728148341178894,
+        "z": 0.00287172313883945
+      },
+      "minY": -0.015083882607886167,
+      "maxY": 0.5496704090657919
+    }
+  },
+  {
+    "id": "quaternius-lowpoly-crops-pack/Rice_3",
+    "source": "quaternius-lowpoly-crops-pack",
+    "categories": [
+      "nature",
+      "crop",
+      "farm",
+      "plant"
+    ],
+    "file": "Rice_3.glb",
+    "metrics": {
+      "glbBytes": 46892,
+      "byteLength": 46892,
+      "triangles": 628,
+      "primitives": 1,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 0.6185909807682037,
+        "d": 0.2383525358047146
+      },
+      "center": {
+        "x": 0.029940560460090637,
+        "z": 0.011575151944283518
+      },
+      "minY": -0.023075614891157,
+      "maxY": 0.7460682605141357
+    }
+  },
+  {
+    "id": "quaternius-lowpoly-crops-pack/Rice_4",
+    "source": "quaternius-lowpoly-crops-pack",
+    "categories": [
+      "nature",
+      "crop",
+      "farm",
+      "plant"
+    ],
+    "file": "Rice_4.glb",
+    "metrics": {
+      "glbBytes": 153684,
+      "byteLength": 153684,
+      "triangles": 1940,
+      "primitives": 2,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 0.7785822451114655,
+        "d": 0.8808433774788389
+      },
+      "center": {
+        "x": 0.010202541947364807,
+        "z": 0.1043954670128199
+      },
+      "minY": -0.03752209877840772,
+      "maxY": 0.9159333401428885
+    }
+  },
+  {
+    "id": "quaternius-lowpoly-crops-pack/Rice_Crop",
+    "source": "quaternius-lowpoly-crops-pack",
+    "categories": [
+      "nature",
+      "crop",
+      "farm",
+      "plant"
+    ],
+    "file": "Rice_Crop.glb",
+    "metrics": {
+      "glbBytes": 28332,
+      "byteLength": 28332,
+      "triangles": 370,
+      "primitives": 1,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 0.9062734842300415,
+        "d": 0.3868306279069036
+      },
+      "center": {
+        "x": -0.13301175832748413,
+        "z": -0.07374945187609383
+      },
+      "minY": -0.05154770122505756,
+      "maxY": -0.005885872120302166
+    }
+  },
+  {
+    "id": "quaternius-lowpoly-crops-pack/Tomato_1",
+    "source": "quaternius-lowpoly-crops-pack",
+    "categories": [
+      "nature",
+      "crop",
+      "farm",
+      "plant"
+    ],
+    "file": "Tomato_1.glb",
+    "metrics": {
+      "glbBytes": 6004,
+      "byteLength": 6004,
+      "triangles": 60,
+      "primitives": 1,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 0.10107333213090897,
+        "d": 0.06475190573597533
+      },
+      "center": {
+        "x": 0.016301829367876053,
+        "z": 0.0040563505986136745
+      },
+      "minY": 0.00013289884284384108,
+      "maxY": 0.17947076854600874
+    }
+  },
+  {
+    "id": "quaternius-lowpoly-crops-pack/Tomato_2",
+    "source": "quaternius-lowpoly-crops-pack",
+    "categories": [
+      "nature",
+      "crop",
+      "farm",
+      "plant"
+    ],
+    "file": "Tomato_2.glb",
+    "metrics": {
+      "glbBytes": 20832,
+      "byteLength": 20832,
+      "triangles": 266,
+      "primitives": 1,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 0.37681102752685547,
+        "d": 0.1873889438253128
+      },
+      "center": {
+        "x": 0.00945417582988739,
+        "z": -0.0018318667519395745
+      },
+      "minY": -0.006989257140879997,
+      "maxY": 0.783822372620879
+    }
+  },
+  {
+    "id": "quaternius-lowpoly-crops-pack/Tomato_3",
+    "source": "quaternius-lowpoly-crops-pack",
+    "categories": [
+      "nature",
+      "crop",
+      "farm",
+      "plant"
+    ],
+    "file": "Tomato_3.glb",
+    "metrics": {
+      "glbBytes": 87652,
+      "byteLength": 87652,
+      "triangles": 1194,
+      "primitives": 1,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 0.6409116983413696,
+        "d": 0.5863144936032366
+      },
+      "center": {
+        "x": 0.020423293113708496,
+        "z": 0.021162721667421003
+      },
+      "minY": -0.0015067389060304992,
+      "maxY": 1.426449707695715
+    }
+  },
+  {
+    "id": "quaternius-lowpoly-crops-pack/Tomato_4",
+    "source": "quaternius-lowpoly-crops-pack",
+    "categories": [
+      "nature",
+      "crop",
+      "farm",
+      "plant"
+    ],
+    "file": "Tomato_4.glb",
+    "metrics": {
+      "glbBytes": 120772,
+      "byteLength": 120772,
+      "triangles": 1518,
+      "primitives": 2,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 0.7931811809539795,
+        "d": 0.8100020409615978
+      },
+      "center": {
+        "x": 0.026824593544006348,
+        "z": 0.06852772233240195
+      },
+      "minY": -0.00014113560744793735,
+      "maxY": 1.7199623164130435
+    }
+  },
+  {
+    "id": "quaternius-lowpoly-crops-pack/Tomato_Crop",
+    "source": "quaternius-lowpoly-crops-pack",
+    "categories": [
+      "nature",
+      "crop",
+      "farm",
+      "plant"
+    ],
+    "file": "Tomato_Crop.glb",
+    "metrics": {
+      "glbBytes": 40088,
+      "byteLength": 40088,
+      "triangles": 344,
+      "primitives": 12,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 0.17796888202428818,
+        "d": 0.1779688838083476
+      },
+      "center": {
+        "x": -9.94652509689331e-7,
+        "z": -4.6536309369904494e-7
+      },
+      "minY": -0.05303689797087464,
+      "maxY": 0.09510763694195692
+    }
+  },
+  {
+    "id": "quaternius-lowpoly-crops-pack/Tomato_Harvested",
+    "source": "quaternius-lowpoly-crops-pack",
+    "categories": [
+      "nature",
+      "crop",
+      "farm",
+      "plant"
+    ],
+    "file": "Tomato_Harvested.glb",
+    "metrics": {
+      "glbBytes": 107792,
+      "byteLength": 107792,
+      "triangles": 1358,
+      "primitives": 1,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 0.7931811809539795,
+        "d": 0.8100020409615831
+      },
+      "center": {
+        "x": 0.026824533939361572,
+        "z": 0.06852915284386923
+      },
+      "minY": -0.00014104588010557933,
+      "maxY": 1.7199623164132767
+    }
+  },
+  {
+    "id": "quaternius-lowpoly-crops-pack/Watermelon_1",
+    "source": "quaternius-lowpoly-crops-pack",
+    "categories": [
+      "nature",
+      "crop",
+      "farm",
+      "plant"
+    ],
+    "file": "Watermelon_1.glb",
+    "metrics": {
+      "glbBytes": 12628,
+      "byteLength": 12628,
+      "triangles": 132,
+      "primitives": 2,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 0.21702811866998672,
+        "d": 0.09284150086367597
+      },
+      "center": {
+        "x": 0.031073298305273056,
+        "z": 0.020220401451568927
+      },
+      "minY": 0.00013289488075275005,
+      "maxY": 0.39159465921842257
+    }
+  },
+  {
+    "id": "quaternius-lowpoly-crops-pack/Watermelon_2",
+    "source": "quaternius-lowpoly-crops-pack",
+    "categories": [
+      "nature",
+      "crop",
+      "farm",
+      "plant"
+    ],
+    "file": "Watermelon_2.glb",
+    "metrics": {
+      "glbBytes": 70068,
+      "byteLength": 70068,
+      "triangles": 862,
+      "primitives": 4,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 0.4684057831764221,
+        "d": 0.44018193753512
+      },
+      "center": {
+        "x": -0.1737980842590332,
+        "z": -0.03811514360243355
+      },
+      "minY": 0.008936372428002074,
+      "maxY": 0.26332169755724405
+    }
+  },
+  {
+    "id": "quaternius-lowpoly-crops-pack/Watermelon_3",
+    "source": "quaternius-lowpoly-crops-pack",
+    "categories": [
+      "nature",
+      "crop",
+      "farm",
+      "plant"
+    ],
+    "file": "Watermelon_3.glb",
+    "metrics": {
+      "glbBytes": 139036,
+      "byteLength": 139036,
+      "triangles": 1752,
+      "primitives": 2,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 0.8754338622093201,
+        "d": 0.7492434427242395
+      },
+      "center": {
+        "x": -0.040722399950027466,
+        "z": -0.02779635507992989
+      },
+      "minY": -0.030876215916959472,
+      "maxY": 0.3624750046728196
+    }
+  },
+  {
+    "id": "quaternius-lowpoly-crops-pack/Watermelon_4",
+    "source": "quaternius-lowpoly-crops-pack",
+    "categories": [
+      "nature",
+      "crop",
+      "farm",
+      "plant"
+    ],
+    "file": "Watermelon_4.glb",
+    "metrics": {
+      "glbBytes": 207768,
+      "byteLength": 207768,
+      "triangles": 2600,
+      "primitives": 12,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 1.2897223234176636,
+        "d": 1.07531861142043
+      },
+      "center": {
+        "x": 0.1468430757522583,
+        "z": -0.11567668599280706
+      },
+      "minY": -0.20460024689431577,
+      "maxY": 0.3853783996956533
+    }
+  },
+  {
+    "id": "quaternius-lowpoly-crops-pack/Watermelon_Crop",
+    "source": "quaternius-lowpoly-crops-pack",
+    "categories": [
+      "nature",
+      "crop",
+      "farm",
+      "plant"
+    ],
+    "file": "Watermelon_Crop.glb",
+    "metrics": {
+      "glbBytes": 21360,
+      "byteLength": 21360,
+      "triangles": 220,
+      "primitives": 10,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 0.44433513283729553,
+        "d": 0.36903831120388875
+      },
+      "center": {
+        "x": 0,
+        "z": -5.960464477539063e-8
+      },
+      "minY": -0.17548817422130597,
+      "maxY": 0.17548817422128654
+    }
+  },
+  {
+    "id": "quaternius-lowpoly-crops-pack/Watermelon_Harvested",
+    "source": "quaternius-lowpoly-crops-pack",
+    "categories": [
+      "nature",
+      "crop",
+      "farm",
+      "plant"
+    ],
+    "file": "Watermelon_Harvested.glb",
+    "metrics": {
+      "glbBytes": 188268,
+      "byteLength": 188268,
+      "triangles": 2380,
+      "primitives": 3,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 1.2897223234176636,
+        "d": 1.07531861142043
+      },
+      "center": {
+        "x": 0.1468430757522583,
+        "z": -0.11567668599280706
+      },
+      "minY": -0.20460024689431577,
+      "maxY": 0.3853783996956533
+    }
+  },
+  {
+    "id": "quaternius-lowpoly-crops-pack/Wheat_1",
+    "source": "quaternius-lowpoly-crops-pack",
+    "categories": [
+      "nature",
+      "crop",
+      "farm",
+      "plant"
+    ],
+    "file": "Wheat_1.glb",
+    "metrics": {
+      "glbBytes": 4544,
+      "byteLength": 4544,
+      "triangles": 40,
+      "primitives": 1,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 0.12142141885124147,
+        "d": 0.03325216415195509
+      },
+      "center": {
+        "x": -0.057530183461494744,
+        "z": 0.0012422524013221536
+      },
+      "minY": -0.00030582008525739684,
+      "maxY": 0.21913868479969859
+    }
+  },
+  {
+    "id": "quaternius-lowpoly-crops-pack/Wheat_2",
+    "source": "quaternius-lowpoly-crops-pack",
+    "categories": [
+      "nature",
+      "crop",
+      "farm",
+      "plant"
+    ],
+    "file": "Wheat_2.glb",
+    "metrics": {
+      "glbBytes": 10136,
+      "byteLength": 10136,
+      "triangles": 118,
+      "primitives": 1,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 0.07243967801332474,
+        "d": 0.12447191986324409
+      },
+      "center": {
+        "x": -0.007278714329004288,
+        "z": 0.008343546525228972
+      },
+      "minY": -8.780174314340853e-9,
+      "maxY": 0.5388909097265456
+    }
+  },
+  {
+    "id": "quaternius-lowpoly-crops-pack/Wheat_3",
+    "source": "quaternius-lowpoly-crops-pack",
+    "categories": [
+      "nature",
+      "crop",
+      "farm",
+      "plant"
+    ],
+    "file": "Wheat_3.glb",
+    "metrics": {
+      "glbBytes": 19352,
+      "byteLength": 19352,
+      "triangles": 246,
+      "primitives": 1,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 0.16476502269506454,
+        "d": 0.2431161640706313
+      },
+      "center": {
+        "x": -0.0442582406103611,
+        "z": 0.006960752674803783
+      },
+      "minY": -1.867025635306593e-8,
+      "maxY": 0.6942765326075256
+    }
+  },
+  {
+    "id": "quaternius-lowpoly-crops-pack/Wheat_4",
+    "source": "quaternius-lowpoly-crops-pack",
+    "categories": [
+      "nature",
+      "crop",
+      "farm",
+      "plant"
+    ],
+    "file": "Wheat_4.glb",
+    "metrics": {
+      "glbBytes": 8988,
+      "byteLength": 8988,
+      "triangles": 102,
+      "primitives": 1,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 0.09784408379346132,
+        "d": 0.055860935558512195
+      },
+      "center": {
+        "x": -0.033743423875421286,
+        "z": -0.01275198014310737
+      },
+      "minY": -6.6279869011450775e-9,
+      "maxY": 0.9479931617670053
+    }
+  },
+  {
+    "id": "quaternius-lowpoly-crops-pack/Wheat_Crop",
+    "source": "quaternius-lowpoly-crops-pack",
+    "categories": [
+      "nature",
+      "crop",
+      "farm",
+      "plant"
+    ],
+    "file": "Wheat_Crop.glb",
+    "metrics": {
+      "glbBytes": 45752,
+      "byteLength": 45752,
+      "triangles": 612,
+      "primitives": 1,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 0.5906015634536743,
+        "d": 0.7583736650015382
+      },
+      "center": {
+        "x": 0.020236968994140625,
+        "z": 0.016625747084617393
+      },
+      "minY": -0.052397675276295984,
+      "maxY": 0.05239768069365201
+    }
+  }
+]

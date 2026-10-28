@@ -1,0 +1,44 @@
+[
+  {
+    "id": "quaternius-animated-human-low-poly/Animated Human",
+    "source": "quaternius-animated-human-low-poly",
+    "categories": [
+      "character",
+      "human",
+      "rigged",
+      "animated"
+    ],
+    "file": "Animated Human.glb",
+    "metrics": {
+      "glbBytes": 1164156,
+      "byteLength": 1164156,
+      "triangles": 1578,
+      "primitives": 1,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 1.0496926282938694,
+        "d": 5.895453997307785
+      },
+      "center": {
+        "x": 0.08501518449450488,
+        "z": 4.4843704216646074e-7
+      },
+      "minY": -0.015154260179938967,
+      "maxY": 5.520127470964451
+    },
+    "clips": [
+      "Human Armature|Working",
+      "Human Armature|Idle",
+      "Human Armature|Death",
+      "Human Armature|Punch",
+      "Human Armature|ArmatureAction.002",
+      "Human Armature|ArmatureAction.001",
+      "Human Armature|Run",
+      "Human Armature|Jump",
+      "Human Armature|Walk"
+    ]
+  }
+]

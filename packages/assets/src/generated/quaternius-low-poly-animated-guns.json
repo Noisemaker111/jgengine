@@ -1,0 +1,211 @@
+[
+  {
+    "id": "quaternius-low-poly-animated-guns/P90",
+    "source": "quaternius-low-poly-animated-guns",
+    "categories": [
+      "weapon",
+      "gun",
+      "animated"
+    ],
+    "file": "P90.glb",
+    "metrics": {
+      "glbBytes": 167224,
+      "byteLength": 167224,
+      "triangles": 954,
+      "primitives": 3,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 1.3708092570304913,
+        "d": 11.083215346161772
+      },
+      "center": {
+        "x": 0.011827923357487058,
+        "z": -0.7116564068484088
+      },
+      "minY": -1.9380828431900425,
+      "maxY": 1.6608191506889167
+    },
+    "clips": [
+      "P90|Fire",
+      "P90Armature|Fire",
+      "P90Armature|Reload"
+    ]
+  },
+  {
+    "id": "quaternius-low-poly-animated-guns/Pistol",
+    "source": "quaternius-low-poly-animated-guns",
+    "categories": [
+      "weapon",
+      "gun",
+      "animated"
+    ],
+    "file": "Pistol.glb",
+    "metrics": {
+      "glbBytes": 262544,
+      "byteLength": 262544,
+      "triangles": 1491,
+      "primitives": 13,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 9.735436898682256,
+        "d": 1.512298262742382
+      },
+      "center": {
+        "x": 0.06872145370443539,
+        "z": 2.569869603230579e-7
+      },
+      "minY": -3.2337765413093247,
+      "maxY": 3.0705699121768033
+    },
+    "clips": [
+      "PistolArmature|Slide",
+      "PistolArmature|Reload",
+      "PistolArmature|Fire"
+    ]
+  },
+  {
+    "id": "quaternius-low-poly-animated-guns/Revolver",
+    "source": "quaternius-low-poly-animated-guns",
+    "categories": [
+      "weapon",
+      "gun",
+      "animated"
+    ],
+    "file": "Revolver.glb",
+    "metrics": {
+      "glbBytes": 477340,
+      "byteLength": 477340,
+      "triangles": 2812,
+      "primitives": 60,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 2.8610501435274287,
+        "d": 9.60809956456464
+      },
+      "center": {
+        "x": 0.6957311452701043,
+        "z": -0.0496506160004091
+      },
+      "minY": -2.498652677779627,
+      "maxY": 2.73072496804371
+    },
+    "clips": [
+      "RevolverArmature|Fire",
+      "RevolverArmature|Reload"
+    ]
+  },
+  {
+    "id": "quaternius-low-poly-animated-guns/Rifle",
+    "source": "quaternius-low-poly-animated-guns",
+    "categories": [
+      "weapon",
+      "gun",
+      "animated"
+    ],
+    "file": "Rifle.glb",
+    "metrics": {
+      "glbBytes": 365268,
+      "byteLength": 365268,
+      "triangles": 1912,
+      "primitives": 161,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 0.39777385309092983,
+        "d": 9.59734433662279
+      },
+      "center": {
+        "x": -7.616604902338509e-9,
+        "z": 0.049340729027756325
+      },
+      "minY": -0.89661390175262,
+      "maxY": 0.7847190405647204
+    },
+    "clips": [
+      "RifleArmature|FireWOBullet",
+      "RifleArmature|FireWBullet",
+      "RifleArmature|Reload"
+    ]
+  },
+  {
+    "id": "quaternius-low-poly-animated-guns/Shotgun",
+    "source": "quaternius-low-poly-animated-guns",
+    "categories": [
+      "weapon",
+      "gun",
+      "animated"
+    ],
+    "file": "Shotgun.glb",
+    "metrics": {
+      "glbBytes": 209372,
+      "byteLength": 209372,
+      "triangles": 1033,
+      "primitives": 78,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 0.4755522310733795,
+        "d": 8.535959995845891
+      },
+      "center": {
+        "x": 2.56299972356544e-8,
+        "z": -2.4465507925233174
+      },
+      "minY": -1.1178249991651572,
+      "maxY": 0.5715532821785114
+    },
+    "clips": [
+      "ShotgunArmature|FireWBullet",
+      "ShotgunArmature|Reload",
+      "ShotgunArmature|FireWOBullet"
+    ]
+  },
+  {
+    "id": "quaternius-low-poly-animated-guns/SniperRifle",
+    "source": "quaternius-low-poly-animated-guns",
+    "categories": [
+      "weapon",
+      "gun",
+      "animated"
+    ],
+    "file": "SniperRifle.glb",
+    "metrics": {
+      "glbBytes": 322328,
+      "byteLength": 322328,
+      "triangles": 1710,
+      "primitives": 87,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 0.4916369318962113,
+        "d": 9.787272496455085
+      },
+      "center": {
+        "x": 0.06134474158287037,
+        "z": 0.18919765448936987
+      },
+      "minY": -0.8515182417417576,
+      "maxY": 0.876721220162607
+    },
+    "clips": [
+      "SniperRifle |FireWOBullet",
+      "SniperRifle |Reload",
+      "SniperRifle |FireWBullet"
+    ]
+  }
+]

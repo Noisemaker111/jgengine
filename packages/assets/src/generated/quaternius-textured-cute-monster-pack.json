@@ -1,0 +1,845 @@
+[
+  {
+    "id": "quaternius-textured-cute-monster-pack/Alien_Tall",
+    "source": "quaternius-textured-cute-monster-pack",
+    "categories": [
+      "monster",
+      "creature",
+      "rigged",
+      "animated"
+    ],
+    "file": "Alien_Tall.glb",
+    "metrics": {
+      "glbBytes": 366364,
+      "byteLength": 366364,
+      "triangles": 1592,
+      "primitives": 1,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 2.0294551849365234,
+        "d": 1.5746019936230913
+      },
+      "center": {
+        "x": 0,
+        "z": -0.05681543148024443
+      },
+      "minY": -0.041870109425145144,
+      "maxY": 2.065812706749213
+    },
+    "clips": [
+      "MonsterArmature|Bite_InPlace",
+      "MonsterArmature|Jump",
+      "MonsterArmature|No",
+      "MonsterArmature|Yes",
+      "MonsterArmature|HitRecieve",
+      "MonsterArmature|Dance",
+      "MonsterArmature|Bite_Front",
+      "MonsterArmature|Idle",
+      "MonsterArmature|Death",
+      "MonsterArmature|Walk"
+    ]
+  },
+  {
+    "id": "quaternius-textured-cute-monster-pack/Alien",
+    "source": "quaternius-textured-cute-monster-pack",
+    "categories": [
+      "monster",
+      "creature",
+      "rigged",
+      "animated"
+    ],
+    "file": "Alien.glb",
+    "metrics": {
+      "glbBytes": 430072,
+      "byteLength": 430072,
+      "triangles": 1720,
+      "primitives": 2,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 2.1894145011901855,
+        "d": 1.416956500012855
+      },
+      "center": {
+        "x": 0,
+        "z": 0.02200731274012191
+      },
+      "minY": -0.026004990644358215,
+      "maxY": 2.031279917852436
+    },
+    "clips": [
+      "MonsterArmature|Bite_InPlace",
+      "MonsterArmature|Jump",
+      "MonsterArmature|No",
+      "MonsterArmature|Yes",
+      "MonsterArmature|HitRecieve",
+      "MonsterArmature|Dance",
+      "MonsterArmature|Bite_Front",
+      "MonsterArmature|Idle",
+      "MonsterArmature|Death",
+      "MonsterArmature|Walk"
+    ]
+  },
+  {
+    "id": "quaternius-textured-cute-monster-pack/Bat",
+    "source": "quaternius-textured-cute-monster-pack",
+    "categories": [
+      "monster",
+      "creature",
+      "rigged",
+      "animated"
+    ],
+    "file": "Bat.glb",
+    "metrics": {
+      "glbBytes": 309132,
+      "byteLength": 309132,
+      "triangles": 1200,
+      "primitives": 1,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 3.206251859664917,
+        "d": 1.4169565912647908
+      },
+      "center": {
+        "x": 0,
+        "z": 0.022007207082746894
+      },
+      "minY": -0.02338554159514328,
+      "maxY": 1.7306029794619155
+    },
+    "clips": [
+      "MonsterArmature|Bite_Front",
+      "MonsterArmature|Flying",
+      "MonsterArmature|Death"
+    ]
+  },
+  {
+    "id": "quaternius-textured-cute-monster-pack/Bee",
+    "source": "quaternius-textured-cute-monster-pack",
+    "categories": [
+      "monster",
+      "creature",
+      "rigged",
+      "animated"
+    ],
+    "file": "Bee.glb",
+    "metrics": {
+      "glbBytes": 311004,
+      "byteLength": 311004,
+      "triangles": 1492,
+      "primitives": 1,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 2.890105724334717,
+        "d": 1.485414635277644
+      },
+      "center": {
+        "x": 0,
+        "z": 0.0562363244539299
+      },
+      "minY": -0.02020127893199791,
+      "maxY": 1.8769596924660512
+    },
+    "clips": [
+      "MonsterArmature|Bite_Front",
+      "MonsterArmature|Flying",
+      "MonsterArmature|Death"
+    ]
+  },
+  {
+    "id": "quaternius-textured-cute-monster-pack/Cactus",
+    "source": "quaternius-textured-cute-monster-pack",
+    "categories": [
+      "monster",
+      "creature",
+      "rigged",
+      "animated"
+    ],
+    "file": "Cactus.glb",
+    "metrics": {
+      "glbBytes": 389636,
+      "byteLength": 389636,
+      "triangles": 1500,
+      "primitives": 1,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 2.3670571755517633,
+        "d": 1.4584368767891
+      },
+      "center": {
+        "x": 0,
+        "z": 0.004541476235471076
+      },
+      "minY": -0.16685811611922863,
+      "maxY": 2.0575453658032283
+    },
+    "clips": [
+      "MonsterArmature|Bite_InPlace",
+      "MonsterArmature|Jump",
+      "MonsterArmature|No",
+      "MonsterArmature|Yes",
+      "MonsterArmature|HitRecieve",
+      "MonsterArmature|Dance",
+      "MonsterArmature|Bite_Front",
+      "MonsterArmature|Idle",
+      "MonsterArmature|Death",
+      "MonsterArmature|Walk"
+    ]
+  },
+  {
+    "id": "quaternius-textured-cute-monster-pack/Chicken",
+    "source": "quaternius-textured-cute-monster-pack",
+    "categories": [
+      "monster",
+      "creature",
+      "rigged",
+      "animated"
+    ],
+    "file": "Chicken.glb",
+    "metrics": {
+      "glbBytes": 199736,
+      "byteLength": 199736,
+      "triangles": 1040,
+      "primitives": 1,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 2.269101858139038,
+        "d": 1.5548524504698955
+      },
+      "center": {
+        "x": 0,
+        "z": 0.09095551798001261
+      },
+      "minY": -0.02794157721804904,
+      "maxY": 1.5853370054719107
+    },
+    "clips": [
+      "MonsterArmature|Idle"
+    ]
+  },
+  {
+    "id": "quaternius-textured-cute-monster-pack/Crab",
+    "source": "quaternius-textured-cute-monster-pack",
+    "categories": [
+      "monster",
+      "creature",
+      "rigged",
+      "animated"
+    ],
+    "file": "Crab.glb",
+    "metrics": {
+      "glbBytes": 443992,
+      "byteLength": 443992,
+      "triangles": 1820,
+      "primitives": 1,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 2.5668439865112305,
+        "d": 1.416956501160909
+      },
+      "center": {
+        "x": 0,
+        "z": 0.02200731260376293
+      },
+      "minY": -0.028691377572320483,
+      "maxY": 1.5380941627428726
+    },
+    "clips": [
+      "MonsterArmature|Yes",
+      "MonsterArmature|Bite_InPlace",
+      "MonsterArmature|Walk",
+      "MonsterArmature|HitRecieve",
+      "MonsterArmature|Idle",
+      "MonsterArmature|Death",
+      "MonsterArmature|Bite_Front",
+      "MonsterArmature|No",
+      "MonsterArmature|Dance",
+      "MonsterArmature|Jump"
+    ]
+  },
+  {
+    "id": "quaternius-textured-cute-monster-pack/Cthulhu",
+    "source": "quaternius-textured-cute-monster-pack",
+    "categories": [
+      "monster",
+      "creature",
+      "rigged",
+      "animated"
+    ],
+    "file": "Cthulhu.glb",
+    "metrics": {
+      "glbBytes": 346980,
+      "byteLength": 346980,
+      "triangles": 1576,
+      "primitives": 1,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 3.206251859664917,
+        "d": 1.4898556636079516
+      },
+      "center": {
+        "x": 0,
+        "z": 0.058456898708044214
+      },
+      "minY": -0.05667116501142801,
+      "maxY": 1.508136284109095
+    },
+    "clips": [
+      "MonsterArmature|HitRecieve",
+      "MonsterArmature|Flying"
+    ]
+  },
+  {
+    "id": "quaternius-textured-cute-monster-pack/Cyclops",
+    "source": "quaternius-textured-cute-monster-pack",
+    "categories": [
+      "monster",
+      "creature",
+      "rigged",
+      "animated"
+    ],
+    "file": "Cyclops.glb",
+    "metrics": {
+      "glbBytes": 301168,
+      "byteLength": 301168,
+      "triangles": 972,
+      "primitives": 1,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 1.636674404144287,
+        "d": 1.472681734412287
+      },
+      "center": {
+        "x": 0,
+        "z": 0.04986991317263456
+      },
+      "minY": -0.030710898421309942,
+      "maxY": 1.636650213539191
+    },
+    "clips": [
+      "MonsterArmature|Bite_InPlace",
+      "MonsterArmature|Jump",
+      "MonsterArmature|No",
+      "MonsterArmature|Yes",
+      "MonsterArmature|HitRecieve",
+      "MonsterArmature|Dance",
+      "MonsterArmature|Bite_Front",
+      "MonsterArmature|Idle",
+      "MonsterArmature|Death",
+      "MonsterArmature|Walk"
+    ]
+  },
+  {
+    "id": "quaternius-textured-cute-monster-pack/Deer",
+    "source": "quaternius-textured-cute-monster-pack",
+    "categories": [
+      "monster",
+      "creature",
+      "rigged",
+      "animated"
+    ],
+    "file": "Deer.glb",
+    "metrics": {
+      "glbBytes": 296772,
+      "byteLength": 296772,
+      "triangles": 1180,
+      "primitives": 1,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 1.8914916515350342,
+        "d": 1.445688616450586
+      },
+      "center": {
+        "x": 0,
+        "z": 0.036373198991228706
+      },
+      "minY": -0.04008026801757215,
+      "maxY": 1.857563023281745
+    },
+    "clips": [
+      "MonsterArmature|Bite_InPlace",
+      "MonsterArmature|Jump",
+      "MonsterArmature|No",
+      "MonsterArmature|Yes",
+      "MonsterArmature|HitRecieve",
+      "MonsterArmature|Dance",
+      "MonsterArmature|Bite_Front",
+      "MonsterArmature|Idle",
+      "MonsterArmature|Death",
+      "MonsterArmature|Walk"
+    ]
+  },
+  {
+    "id": "quaternius-textured-cute-monster-pack/Demon",
+    "source": "quaternius-textured-cute-monster-pack",
+    "categories": [
+      "monster",
+      "creature",
+      "rigged",
+      "animated"
+    ],
+    "file": "Demon.glb",
+    "metrics": {
+      "glbBytes": 413356,
+      "byteLength": 413356,
+      "triangles": 1640,
+      "primitives": 1,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 1.9780619144439697,
+        "d": 1.4169565105353534
+      },
+      "center": {
+        "x": 0,
+        "z": 0.02200731171842568
+      },
+      "minY": -0.05202718087246246,
+      "maxY": 1.57229828814723
+    },
+    "clips": [
+      "MonsterArmature|Bite_Front",
+      "MonsterArmature|Death",
+      "MonsterArmature|Dance",
+      "MonsterArmature|HitRecieve",
+      "MonsterArmature|No",
+      "MonsterArmature|Jump",
+      "MonsterArmature|Bite_InPlace",
+      "MonsterArmature|Walk",
+      "MonsterArmature|Yes",
+      "MonsterArmature|Idle"
+    ]
+  },
+  {
+    "id": "quaternius-textured-cute-monster-pack/Ghost",
+    "source": "quaternius-textured-cute-monster-pack",
+    "categories": [
+      "monster",
+      "creature",
+      "rigged",
+      "animated"
+    ],
+    "file": "Ghost.glb",
+    "metrics": {
+      "glbBytes": 306032,
+      "byteLength": 306032,
+      "triangles": 1000,
+      "primitives": 1,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 1.4516735076904297,
+        "d": 1.4623302114103818
+      },
+      "center": {
+        "x": 0,
+        "z": 0.0053281249309578005
+      },
+      "minY": -0.0047271460984547944,
+      "maxY": 1.3928805597482596
+    },
+    "clips": [
+      "MonsterArmature|Bite_InPlace",
+      "MonsterArmature|Jump",
+      "MonsterArmature|No",
+      "MonsterArmature|Yes",
+      "MonsterArmature|HitRecieve",
+      "MonsterArmature|Dance",
+      "MonsterArmature|Bite_Front",
+      "MonsterArmature|Idle",
+      "MonsterArmature|Death",
+      "MonsterArmature|Walk"
+    ]
+  },
+  {
+    "id": "quaternius-textured-cute-monster-pack/GreenDemon",
+    "source": "quaternius-textured-cute-monster-pack",
+    "categories": [
+      "monster",
+      "creature",
+      "rigged",
+      "animated"
+    ],
+    "file": "GreenDemon.glb",
+    "metrics": {
+      "glbBytes": 352940,
+      "byteLength": 352940,
+      "triangles": 1280,
+      "primitives": 1,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 1.6842701435089111,
+        "d": 1.4169564509306807
+      },
+      "center": {
+        "x": 0,
+        "z": 0.022007399871905087
+      },
+      "minY": -0.044333241961481994,
+      "maxY": 1.579992055694847
+    },
+    "clips": [
+      "MonsterArmature|Bite_InPlace",
+      "MonsterArmature|Jump",
+      "MonsterArmature|No",
+      "MonsterArmature|Yes",
+      "MonsterArmature|HitRecieve",
+      "MonsterArmature|Dance",
+      "MonsterArmature|Bite_Front",
+      "MonsterArmature|Idle",
+      "MonsterArmature|Death",
+      "MonsterArmature|Walk"
+    ]
+  },
+  {
+    "id": "quaternius-textured-cute-monster-pack/Mushroom",
+    "source": "quaternius-textured-cute-monster-pack",
+    "categories": [
+      "monster",
+      "creature",
+      "rigged",
+      "animated"
+    ],
+    "file": "Mushroom.glb",
+    "metrics": {
+      "glbBytes": 163744,
+      "byteLength": 163744,
+      "triangles": 868,
+      "primitives": 1,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 1.922871251313409,
+        "d": 1.9253259243184497
+      },
+      "center": {
+        "x": 0,
+        "z": -0.01865656544284061
+      },
+      "minY": -0.022364983352685004,
+      "maxY": 2.0484115870783337
+    },
+    "clips": [
+      "MonsterArmature|Idle"
+    ]
+  },
+  {
+    "id": "quaternius-textured-cute-monster-pack/Panda",
+    "source": "quaternius-textured-cute-monster-pack",
+    "categories": [
+      "monster",
+      "creature",
+      "rigged",
+      "animated"
+    ],
+    "file": "Panda.glb",
+    "metrics": {
+      "glbBytes": 377616,
+      "byteLength": 377616,
+      "triangles": 1428,
+      "primitives": 1,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 1.8297301530838013,
+        "d": 1.4728871873612204
+      },
+      "center": {
+        "x": 0,
+        "z": 0.04997252454762896
+      },
+      "minY": -0.029779218218845247,
+      "maxY": 1.611424335810804
+    },
+    "clips": [
+      "MonsterArmature|Bite_Front",
+      "MonsterArmature|Death",
+      "MonsterArmature|Dance",
+      "MonsterArmature|HitRecieve",
+      "MonsterArmature|No",
+      "MonsterArmature|Jump",
+      "MonsterArmature|Bite_InPlace",
+      "MonsterArmature|Walk",
+      "MonsterArmature|Yes",
+      "MonsterArmature|Idle"
+    ]
+  },
+  {
+    "id": "quaternius-textured-cute-monster-pack/Penguin",
+    "source": "quaternius-textured-cute-monster-pack",
+    "categories": [
+      "monster",
+      "creature",
+      "rigged",
+      "animated"
+    ],
+    "file": "Penguin.glb",
+    "metrics": {
+      "glbBytes": 199768,
+      "byteLength": 199768,
+      "triangles": 1040,
+      "primitives": 1,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 2.269101858139038,
+        "d": 1.5548524504698955
+      },
+      "center": {
+        "x": 0,
+        "z": 0.09095551798001261
+      },
+      "minY": -0.02794157721804904,
+      "maxY": 1.5853370054719107
+    },
+    "clips": [
+      "MonsterArmature|Idle"
+    ]
+  },
+  {
+    "id": "quaternius-textured-cute-monster-pack/Pig",
+    "source": "quaternius-textured-cute-monster-pack",
+    "categories": [
+      "monster",
+      "creature",
+      "rigged",
+      "animated"
+    ],
+    "file": "Pig.glb",
+    "metrics": {
+      "glbBytes": 239028,
+      "byteLength": 239028,
+      "triangles": 1316,
+      "primitives": 1,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 1.9018586874008179,
+        "d": 1.8908718519986334
+      },
+      "center": {
+        "x": 0,
+        "z": -0.09198947480729791
+      },
+      "minY": -0.16685814175913696,
+      "maxY": 1.475556274221664
+    },
+    "clips": [
+      "MonsterArmature|Idle"
+    ]
+  },
+  {
+    "id": "quaternius-textured-cute-monster-pack/Skull",
+    "source": "quaternius-textured-cute-monster-pack",
+    "categories": [
+      "monster",
+      "creature",
+      "rigged",
+      "animated"
+    ],
+    "file": "Skull.glb",
+    "metrics": {
+      "glbBytes": 173752,
+      "byteLength": 173752,
+      "triangles": 450,
+      "primitives": 1,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 1.4608911275863647,
+        "d": 1.4648338697507945
+      },
+      "center": {
+        "x": 0,
+        "z": 0.00197566234030655
+      },
+      "minY": -0.08498322198122436,
+      "maxY": 1.4650990967366475
+    },
+    "clips": [
+      "MonsterArmature|Bite_InPlace",
+      "MonsterArmature|Jump",
+      "MonsterArmature|No",
+      "MonsterArmature|Yes",
+      "MonsterArmature|HitRecieve",
+      "MonsterArmature|Dance",
+      "MonsterArmature|Bite_Front",
+      "MonsterArmature|Idle",
+      "MonsterArmature|Death",
+      "MonsterArmature|Walk"
+    ]
+  },
+  {
+    "id": "quaternius-textured-cute-monster-pack/Tree",
+    "source": "quaternius-textured-cute-monster-pack",
+    "categories": [
+      "monster",
+      "creature",
+      "rigged",
+      "animated"
+    ],
+    "file": "Tree.glb",
+    "metrics": {
+      "glbBytes": 373600,
+      "byteLength": 373600,
+      "triangles": 1368,
+      "primitives": 3,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 2.8114051818847656,
+        "d": 1.7268678151191734
+      },
+      "center": {
+        "x": 0,
+        "z": -0.09633359307131845
+      },
+      "minY": -0.04068852969220499,
+      "maxY": 2.8052939234231355
+    },
+    "clips": [
+      "MonsterArmature|Bite_InPlace",
+      "MonsterArmature|Jump",
+      "MonsterArmature|No",
+      "MonsterArmature|Yes",
+      "MonsterArmature|HitRecieve",
+      "MonsterArmature|Dance",
+      "MonsterArmature|Bite_Front",
+      "MonsterArmature|Idle",
+      "MonsterArmature|Death",
+      "MonsterArmature|Walk"
+    ]
+  },
+  {
+    "id": "quaternius-textured-cute-monster-pack/YellowDragon",
+    "source": "quaternius-textured-cute-monster-pack",
+    "categories": [
+      "monster",
+      "creature",
+      "rigged",
+      "animated"
+    ],
+    "file": "YellowDragon.glb",
+    "metrics": {
+      "glbBytes": 542620,
+      "byteLength": 542620,
+      "triangles": 1592,
+      "primitives": 1,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 3.206251859664917,
+        "d": 1.416956514216293
+      },
+      "center": {
+        "x": 0,
+        "z": 0.022007308659859837
+      },
+      "minY": -0.04455056049635248,
+      "maxY": 1.602368354599256
+    },
+    "clips": [
+      "MonsterArmature|HitRecieve",
+      "MonsterArmature|Flying.001",
+      "MonsterArmature|Bite_Front.001",
+      "MonsterArmature|Flying.003",
+      "MonsterArmature|Bite_Front",
+      "MonsterArmature|Flying",
+      "MonsterArmature|Death",
+      "MonsterArmature|Flying.002"
+    ]
+  },
+  {
+    "id": "quaternius-textured-cute-monster-pack/Yeti",
+    "source": "quaternius-textured-cute-monster-pack",
+    "categories": [
+      "monster",
+      "creature",
+      "rigged",
+      "animated"
+    ],
+    "file": "Yeti.glb",
+    "metrics": {
+      "glbBytes": 354948,
+      "byteLength": 354948,
+      "triangles": 1292,
+      "primitives": 1,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 1.6842701435089111,
+        "d": 1.4408585164571908
+      },
+      "center": {
+        "x": 0,
+        "z": 0.03395830260856997
+      },
+      "minY": -0.02044327565243114,
+      "maxY": 1.6463881767993545
+    },
+    "clips": [
+      "MonsterArmature|Bite_InPlace",
+      "MonsterArmature|Jump",
+      "MonsterArmature|No",
+      "MonsterArmature|Yes",
+      "MonsterArmature|HitRecieve",
+      "MonsterArmature|Dance",
+      "MonsterArmature|Bite_Front",
+      "MonsterArmature|Idle",
+      "MonsterArmature|Death",
+      "MonsterArmature|Walk"
+    ]
+  }
+]

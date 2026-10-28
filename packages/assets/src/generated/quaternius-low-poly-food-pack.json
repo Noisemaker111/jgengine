@@ -1,0 +1,2989 @@
+[
+  {
+    "id": "quaternius-low-poly-food-pack/Apple_Green",
+    "source": "quaternius-low-poly-food-pack",
+    "categories": [
+      "food",
+      "prop"
+    ],
+    "file": "Apple_Green.glb",
+    "metrics": {
+      "glbBytes": 48480,
+      "byteLength": 48480,
+      "triangles": 440,
+      "primitives": 5,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 0.8024517893791199,
+        "d": 0.7987045841278977
+      },
+      "center": {
+        "x": -0.00002917647361755371,
+        "z": 2.4642162532728662e-8
+      },
+      "minY": -0.3941964859706996,
+      "maxY": 0.45754215667078174
+    }
+  },
+  {
+    "id": "quaternius-low-poly-food-pack/Apple",
+    "source": "quaternius-low-poly-food-pack",
+    "categories": [
+      "food",
+      "prop"
+    ],
+    "file": "Apple.glb",
+    "metrics": {
+      "glbBytes": 48472,
+      "byteLength": 48472,
+      "triangles": 440,
+      "primitives": 5,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 0.8024517893791199,
+        "d": 0.7987045841278977
+      },
+      "center": {
+        "x": 0.00002917647361755371,
+        "z": 2.4642162532728662e-8
+      },
+      "minY": -0.3941964859706996,
+      "maxY": 0.45754215667078174
+    }
+  },
+  {
+    "id": "quaternius-low-poly-food-pack/Avocado_Empty",
+    "source": "quaternius-low-poly-food-pack",
+    "categories": [
+      "food",
+      "prop"
+    ],
+    "file": "Avocado_Empty.glb",
+    "metrics": {
+      "glbBytes": 22764,
+      "byteLength": 22764,
+      "triangles": 212,
+      "primitives": 19,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 0.7384063601493835,
+        "d": 0.3818002896030138
+      },
+      "center": {
+        "x": 0,
+        "z": 0.14659407488853893
+      },
+      "minY": -0.3374941421213046,
+      "maxY": 0.7564113689953887
+    }
+  },
+  {
+    "id": "quaternius-low-poly-food-pack/Avocado",
+    "source": "quaternius-low-poly-food-pack",
+    "categories": [
+      "food",
+      "prop"
+    ],
+    "file": "Avocado.glb",
+    "metrics": {
+      "glbBytes": 23976,
+      "byteLength": 23976,
+      "triangles": 256,
+      "primitives": 8,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 0.7531428337097168,
+        "d": 0.5397528925557304
+      },
+      "center": {
+        "x": 0,
+        "z": 0.22557038009018754
+      },
+      "minY": -0.33749414212130396,
+      "maxY": 0.7564113947291348
+    }
+  },
+  {
+    "id": "quaternius-low-poly-food-pack/Bacon_Burned",
+    "source": "quaternius-low-poly-food-pack",
+    "categories": [
+      "food",
+      "prop"
+    ],
+    "file": "Bacon_Burned.glb",
+    "metrics": {
+      "glbBytes": 74376,
+      "byteLength": 74376,
+      "triangles": 564,
+      "primitives": 123,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 1.1574786305427551,
+        "d": 0.296763207503138
+      },
+      "center": {
+        "x": 0.018194764852523804,
+        "z": -0.08531992336714216
+      },
+      "minY": -0.021267856361826303,
+      "maxY": 2.0313157854268252e-7
+    }
+  },
+  {
+    "id": "quaternius-low-poly-food-pack/Bacon_Cooked",
+    "source": "quaternius-low-poly-food-pack",
+    "categories": [
+      "food",
+      "prop"
+    ],
+    "file": "Bacon_Cooked.glb",
+    "metrics": {
+      "glbBytes": 76040,
+      "byteLength": 76040,
+      "triangles": 564,
+      "primitives": 129,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 1.1574786305427551,
+        "d": 0.296763207503138
+      },
+      "center": {
+        "x": 0.018194764852523804,
+        "z": -0.08531992336714216
+      },
+      "minY": -0.021267856361826303,
+      "maxY": 2.0313157854268252e-7
+    }
+  },
+  {
+    "id": "quaternius-low-poly-food-pack/Bacon_Uncooked",
+    "source": "quaternius-low-poly-food-pack",
+    "categories": [
+      "food",
+      "prop"
+    ],
+    "file": "Bacon_Uncooked.glb",
+    "metrics": {
+      "glbBytes": 76024,
+      "byteLength": 76024,
+      "triangles": 564,
+      "primitives": 129,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 1.1574786305427551,
+        "d": 0.296763207503138
+      },
+      "center": {
+        "x": 0.018194764852523804,
+        "z": -0.08531992336714216
+      },
+      "minY": -0.021267856361826303,
+      "maxY": 2.0313157854268252e-7
+    }
+  },
+  {
+    "id": "quaternius-low-poly-food-pack/Banana",
+    "source": "quaternius-low-poly-food-pack",
+    "categories": [
+      "food",
+      "prop"
+    ],
+    "file": "Banana.glb",
+    "metrics": {
+      "glbBytes": 26728,
+      "byteLength": 26728,
+      "triangles": 348,
+      "primitives": 1,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 1.175395131111145,
+        "d": 0.30947968889509814
+      },
+      "center": {
+        "x": -0.1189756989479065,
+        "z": -0.03842096482049432
+      },
+      "minY": -0.44574561881879693,
+      "maxY": 0.9584647606575745
+    }
+  },
+  {
+    "id": "quaternius-low-poly-food-pack/Bottle1",
+    "source": "quaternius-low-poly-food-pack",
+    "categories": [
+      "food",
+      "prop"
+    ],
+    "file": "Bottle1.glb",
+    "metrics": {
+      "glbBytes": 20692,
+      "byteLength": 20692,
+      "triangles": 220,
+      "primitives": 6,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 0.4516759067773819,
+        "d": 0.4516761466524747
+      },
+      "center": {
+        "x": -3.725290298461914e-8,
+        "z": -1.2721145908889397e-7
+      },
+      "minY": -0.0010844350391105537,
+      "maxY": 1.5627211700257675
+    }
+  },
+  {
+    "id": "quaternius-low-poly-food-pack/Bottle2",
+    "source": "quaternius-low-poly-food-pack",
+    "categories": [
+      "food",
+      "prop"
+    ],
+    "file": "Bottle2.glb",
+    "metrics": {
+      "glbBytes": 23260,
+      "byteLength": 23260,
+      "triangles": 220,
+      "primitives": 16,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 0.4516759067773819,
+        "d": 0.45167615630952535
+      },
+      "center": {
+        "x": -3.725290298461914e-8,
+        "z": -1.3203998441846387e-7
+      },
+      "minY": -0.0010844350391105537,
+      "maxY": 1.6219957242783913
+    }
+  },
+  {
+    "id": "quaternius-low-poly-food-pack/Bread_Slice",
+    "source": "quaternius-low-poly-food-pack",
+    "categories": [
+      "food",
+      "prop"
+    ],
+    "file": "Bread_Slice.glb",
+    "metrics": {
+      "glbBytes": 57184,
+      "byteLength": 57184,
+      "triangles": 368,
+      "primitives": 72,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 0.6933386921882629,
+        "d": 0.10827736945248997
+      },
+      "center": {
+        "x": -0.0007164180278778076,
+        "z": 1.0924347867286022e-8
+      },
+      "minY": -0.4905649213778954,
+      "maxY": 0.3564585833537578
+    }
+  },
+  {
+    "id": "quaternius-low-poly-food-pack/Bread",
+    "source": "quaternius-low-poly-food-pack",
+    "categories": [
+      "food",
+      "prop"
+    ],
+    "file": "Bread.glb",
+    "metrics": {
+      "glbBytes": 62136,
+      "byteLength": 62136,
+      "triangles": 412,
+      "primitives": 74,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 0.6933388113975525,
+        "d": 1.1990498492250463
+      },
+      "center": {
+        "x": 0,
+        "z": -7.015845765456774e-8
+      },
+      "minY": 0.007117691563694313,
+      "maxY": 0.8541413926311928
+    }
+  },
+  {
+    "id": "quaternius-low-poly-food-pack/Broccoli",
+    "source": "quaternius-low-poly-food-pack",
+    "categories": [
+      "food",
+      "prop"
+    ],
+    "file": "Broccoli.glb",
+    "metrics": {
+      "glbBytes": 23380,
+      "byteLength": 23380,
+      "triangles": 270,
+      "primitives": 2,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 0.7514625191688538,
+        "d": 0.6444057499770348
+      },
+      "center": {
+        "x": -0.00309714674949646,
+        "z": 0.0027538108526571625
+      },
+      "minY": -0.003293293884690705,
+      "maxY": 0.8963361911905956
+    }
+  },
+  {
+    "id": "quaternius-low-poly-food-pack/Burger_Bread",
+    "source": "quaternius-low-poly-food-pack",
+    "categories": [
+      "food",
+      "prop"
+    ],
+    "file": "Burger_Bread.glb",
+    "metrics": {
+      "glbBytes": 19364,
+      "byteLength": 19364,
+      "triangles": 218,
+      "primitives": 2,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 1.477427899837494,
+        "d": 1.5785242978417795
+      },
+      "center": {
+        "x": -0.00040665268898010254,
+        "z": -0.023225627789557057
+      },
+      "minY": -0.06545415346728044,
+      "maxY": 0.33922827803194416
+    }
+  },
+  {
+    "id": "quaternius-low-poly-food-pack/Burger",
+    "source": "quaternius-low-poly-food-pack",
+    "categories": [
+      "food",
+      "prop"
+    ],
+    "file": "Burger.glb",
+    "metrics": {
+      "glbBytes": 70456,
+      "byteLength": 70456,
+      "triangles": 847,
+      "primitives": 6,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 1.6519359946250916,
+        "d": 1.7000677532929005
+      },
+      "center": {
+        "x": -0.020260125398635864,
+        "z": 0.009604525102999917
+      },
+      "minY": -0.42001338584373904,
+      "maxY": 0.6452087968407253
+    }
+  },
+  {
+    "id": "quaternius-low-poly-food-pack/BurgerLarge",
+    "source": "quaternius-low-poly-food-pack",
+    "categories": [
+      "food",
+      "prop"
+    ],
+    "file": "BurgerLarge.glb",
+    "metrics": {
+      "glbBytes": 115168,
+      "byteLength": 115168,
+      "triangles": 1408,
+      "primitives": 10,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 1.719404399394989,
+        "d": 1.6659899921631331
+      },
+      "center": {
+        "x": 0.006019324064254761,
+        "z": 0.04050756245706255
+      },
+      "minY": -0.7687093118518209,
+      "maxY": 0.6772644750829023
+    }
+  },
+  {
+    "id": "quaternius-low-poly-food-pack/BurgerPatty_Burned",
+    "source": "quaternius-low-poly-food-pack",
+    "categories": [
+      "food",
+      "prop"
+    ],
+    "file": "BurgerPatty_Burned.glb",
+    "metrics": {
+      "glbBytes": 10924,
+      "byteLength": 10924,
+      "triangles": 128,
+      "primitives": 1,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 1.4254666566848755,
+        "d": 1.425466711486285
+      },
+      "center": {
+        "x": 0,
+        "z": 0
+      },
+      "minY": -0.16818450082263217,
+      "maxY": 0.16818450082263217
+    }
+  },
+  {
+    "id": "quaternius-low-poly-food-pack/BurgerPatty_Cooked",
+    "source": "quaternius-low-poly-food-pack",
+    "categories": [
+      "food",
+      "prop"
+    ],
+    "file": "BurgerPatty_Cooked.glb",
+    "metrics": {
+      "glbBytes": 10916,
+      "byteLength": 10916,
+      "triangles": 128,
+      "primitives": 1,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 1.4254666566848755,
+        "d": 1.425466711486285
+      },
+      "center": {
+        "x": 0,
+        "z": 0
+      },
+      "minY": -0.16818450082263217,
+      "maxY": 0.16818450082263217
+    }
+  },
+  {
+    "id": "quaternius-low-poly-food-pack/BurgerPatty_Raw",
+    "source": "quaternius-low-poly-food-pack",
+    "categories": [
+      "food",
+      "prop"
+    ],
+    "file": "BurgerPatty_Raw.glb",
+    "metrics": {
+      "glbBytes": 10908,
+      "byteLength": 10908,
+      "triangles": 128,
+      "primitives": 1,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 1.4254666566848755,
+        "d": 1.425466711486285
+      },
+      "center": {
+        "x": 0,
+        "z": 0
+      },
+      "minY": -0.16818450082263217,
+      "maxY": 0.16818450082263217
+    }
+  },
+  {
+    "id": "quaternius-low-poly-food-pack/Carrot",
+    "source": "quaternius-low-poly-food-pack",
+    "categories": [
+      "food",
+      "prop"
+    ],
+    "file": "Carrot.glb",
+    "metrics": {
+      "glbBytes": 69744,
+      "byteLength": 69744,
+      "triangles": 864,
+      "primitives": 2,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 0.9467268884181976,
+        "d": 0.9316220638008252
+      },
+      "center": {
+        "x": 0.004503175616264343,
+        "z": 0.009328240105802077
+      },
+      "minY": -0.9865278749304236,
+      "maxY": 1.7920177756979268
+    }
+  },
+  {
+    "id": "quaternius-low-poly-food-pack/Cheese_Singles",
+    "source": "quaternius-low-poly-food-pack",
+    "categories": [
+      "food",
+      "prop"
+    ],
+    "file": "Cheese_Singles.glb",
+    "metrics": {
+      "glbBytes": 8568,
+      "byteLength": 8568,
+      "triangles": 96,
+      "primitives": 1,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 1.03066024184227,
+        "d": 0.9750520931241995
+      },
+      "center": {
+        "x": 0.09770078957080841,
+        "z": 0.07952042094407086
+      },
+      "minY": -0.02465406188216127,
+      "maxY": 0.0037350239661801316
+    }
+  },
+  {
+    "id": "quaternius-low-poly-food-pack/Cheeseburger",
+    "source": "quaternius-low-poly-food-pack",
+    "categories": [
+      "food",
+      "prop"
+    ],
+    "file": "Cheeseburger.glb",
+    "metrics": {
+      "glbBytes": 49236,
+      "byteLength": 49236,
+      "triangles": 588,
+      "primitives": 4,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 1.4647635221481323,
+        "d": 1.5409589746238446
+      },
+      "center": {
+        "x": -0.000918269157409668,
+        "z": -0.020390131496896724
+      },
+      "minY": -0.417732009990659,
+      "maxY": 0.5204569131291219
+    }
+  },
+  {
+    "id": "quaternius-low-poly-food-pack/ChickenLeg",
+    "source": "quaternius-low-poly-food-pack",
+    "categories": [
+      "food",
+      "prop"
+    ],
+    "file": "ChickenLeg.glb",
+    "metrics": {
+      "glbBytes": 25736,
+      "byteLength": 25736,
+      "triangles": 288,
+      "primitives": 6,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 1.3989630937576294,
+        "d": 0.6119474225927661
+      },
+      "center": {
+        "x": -0.08902496099472046,
+        "z": 1.5497039512757382e-8
+      },
+      "minY": -0.294414123078267,
+      "maxY": 0.2870991728505345
+    }
+  },
+  {
+    "id": "quaternius-low-poly-food-pack/ChocolateBar",
+    "source": "quaternius-low-poly-food-pack",
+    "categories": [
+      "food",
+      "prop"
+    ],
+    "file": "ChocolateBar.glb",
+    "metrics": {
+      "glbBytes": 32992,
+      "byteLength": 32992,
+      "triangles": 436,
+      "primitives": 1,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 0.575210452079773,
+        "d": 0.874202441377673
+      },
+      "center": {
+        "x": 0,
+        "z": -9.748372220563795e-9
+      },
+      "minY": 0.025679051443756415,
+      "maxY": 0.09399111239629745
+    }
+  },
+  {
+    "id": "quaternius-low-poly-food-pack/Chopsticks",
+    "source": "quaternius-low-poly-food-pack",
+    "categories": [
+      "food",
+      "prop"
+    ],
+    "file": "Chopsticks.glb",
+    "metrics": {
+      "glbBytes": 33344,
+      "byteLength": 33344,
+      "triangles": 440,
+      "primitives": 1,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 1.629812240600586,
+        "d": 0.1260701132021479
+      },
+      "center": {
+        "x": 0,
+        "z": 3.725290298461914e-9
+      },
+      "minY": -0.02658581643087783,
+      "maxY": 0.026585816430879046
+    }
+  },
+  {
+    "id": "quaternius-low-poly-food-pack/Coconut_Half",
+    "source": "quaternius-low-poly-food-pack",
+    "categories": [
+      "food",
+      "prop"
+    ],
+    "file": "Coconut_Half.glb",
+    "metrics": {
+      "glbBytes": 12892,
+      "byteLength": 12892,
+      "triangles": 132,
+      "primitives": 3,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 0.7835690975189209,
+        "d": 0.41198739214881824
+      },
+      "center": {
+        "x": 0,
+        "z": -0.17655938046918676
+      },
+      "minY": -0.3757181194814007,
+      "maxY": 0.40120524647558864
+    }
+  },
+  {
+    "id": "quaternius-low-poly-food-pack/Coconut",
+    "source": "quaternius-low-poly-food-pack",
+    "categories": [
+      "food",
+      "prop"
+    ],
+    "file": "Coconut.glb",
+    "metrics": {
+      "glbBytes": 8224,
+      "byteLength": 8224,
+      "triangles": 82,
+      "primitives": 1,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 0.777668297290802,
+        "d": 0.7834372594122496
+      },
+      "center": {
+        "x": 0,
+        "z": -0.00020805208878321713
+      },
+      "minY": -0.37571812100855484,
+      "maxY": 0.40120530546529937
+    }
+  },
+  {
+    "id": "quaternius-low-poly-food-pack/CookingPot_Soup",
+    "source": "quaternius-low-poly-food-pack",
+    "categories": [
+      "food",
+      "prop"
+    ],
+    "file": "CookingPot_Soup.glb",
+    "metrics": {
+      "glbBytes": 22776,
+      "byteLength": 22776,
+      "triangles": 260,
+      "primitives": 3,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 2.417551875114441,
+        "d": 1.9921613300008039
+      },
+      "center": {
+        "x": -0.02517753839492798,
+        "z": -2.053652964351116e-8
+      },
+      "minY": -0.41179798380387816,
+      "maxY": 0.6639026238108938
+    }
+  },
+  {
+    "id": "quaternius-low-poly-food-pack/CookingPot",
+    "source": "quaternius-low-poly-food-pack",
+    "categories": [
+      "food",
+      "prop"
+    ],
+    "file": "CookingPot.glb",
+    "metrics": {
+      "glbBytes": 20300,
+      "byteLength": 20300,
+      "triangles": 260,
+      "primitives": 1,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 2.417551875114441,
+        "d": 1.9921613300008039
+      },
+      "center": {
+        "x": -0.02517753839492798,
+        "z": -2.053652964351116e-8
+      },
+      "minY": -0.41179798380387816,
+      "maxY": 0.6639026238108938
+    }
+  },
+  {
+    "id": "quaternius-low-poly-food-pack/CookingPot2_Soup",
+    "source": "quaternius-low-poly-food-pack",
+    "categories": [
+      "food",
+      "prop"
+    ],
+    "file": "CookingPot2_Soup.glb",
+    "metrics": {
+      "glbBytes": 22812,
+      "byteLength": 22812,
+      "triangles": 260,
+      "primitives": 3,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 2.2905678749084473,
+        "d": 1.9921612561521354
+      },
+      "center": {
+        "x": 0,
+        "z": -5.746086378932702e-8
+      },
+      "minY": 0.041481910041435546,
+      "maxY": 0.6639026238108938
+    }
+  },
+  {
+    "id": "quaternius-low-poly-food-pack/CookingPot2",
+    "source": "quaternius-low-poly-food-pack",
+    "categories": [
+      "food",
+      "prop"
+    ],
+    "file": "CookingPot2.glb",
+    "metrics": {
+      "glbBytes": 22060,
+      "byteLength": 22060,
+      "triangles": 260,
+      "primitives": 1,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 2.2905678749084473,
+        "d": 1.9921612561521354
+      },
+      "center": {
+        "x": 0,
+        "z": -5.746086378932702e-8
+      },
+      "minY": 0.041481910041435546,
+      "maxY": 0.6639026238108938
+    }
+  },
+  {
+    "id": "quaternius-low-poly-food-pack/Corndog",
+    "source": "quaternius-low-poly-food-pack",
+    "categories": [
+      "food",
+      "prop"
+    ],
+    "file": "Corndog.glb",
+    "metrics": {
+      "glbBytes": 24640,
+      "byteLength": 24640,
+      "triangles": 284,
+      "primitives": 3,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 0.2561560869216919,
+        "d": 0.2561563071615526
+      },
+      "center": {
+        "x": 0,
+        "z": -1.1007615065283805e-7
+      },
+      "minY": -0.00026874893140067753,
+      "maxY": 1.3515539377976962
+    }
+  },
+  {
+    "id": "quaternius-low-poly-food-pack/Croissant",
+    "source": "quaternius-low-poly-food-pack",
+    "categories": [
+      "food",
+      "prop"
+    ],
+    "file": "Croissant.glb",
+    "metrics": {
+      "glbBytes": 11188,
+      "byteLength": 11188,
+      "triangles": 132,
+      "primitives": 1,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 1.3044735193252563,
+        "d": 0.7304901780341104
+      },
+      "center": {
+        "x": 0,
+        "z": 0.09035271406173587
+      },
+      "minY": -0.2748923749553193,
+      "maxY": 0.27489240439597046
+    }
+  },
+  {
+    "id": "quaternius-low-poly-food-pack/Cupcake",
+    "source": "quaternius-low-poly-food-pack",
+    "categories": [
+      "food",
+      "prop"
+    ],
+    "file": "Cupcake.glb",
+    "metrics": {
+      "glbBytes": 34972,
+      "byteLength": 34972,
+      "triangles": 412,
+      "primitives": 3,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 0.7341572642326355,
+        "d": 0.7258007255958026
+      },
+      "center": {
+        "x": -0.02063506841659546,
+        "z": -0.0025283657502590817
+      },
+      "minY": -0.12249409400500134,
+      "maxY": 0.8090634933128668
+    }
+  },
+  {
+    "id": "quaternius-low-poly-food-pack/Donut1",
+    "source": "quaternius-low-poly-food-pack",
+    "categories": [
+      "food",
+      "prop"
+    ],
+    "file": "Donut1.glb",
+    "metrics": {
+      "glbBytes": 93268,
+      "byteLength": 93268,
+      "triangles": 984,
+      "primitives": 60,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 0.8590501248836517,
+        "d": 0.8697766540319998
+      },
+      "center": {
+        "x": 0.0007077306509017944,
+        "z": 0.008824494493767127
+      },
+      "minY": -0.12747668710850418,
+      "maxY": 0.16390609519629226
+    }
+  },
+  {
+    "id": "quaternius-low-poly-food-pack/Donut2",
+    "source": "quaternius-low-poly-food-pack",
+    "categories": [
+      "food",
+      "prop"
+    ],
+    "file": "Donut2.glb",
+    "metrics": {
+      "glbBytes": 86940,
+      "byteLength": 86940,
+      "triangles": 984,
+      "primitives": 35,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 0.8795295357704163,
+        "d": 0.8672928986818869
+      },
+      "center": {
+        "x": 0.009132683277130127,
+        "z": -0.00571702717466685
+      },
+      "minY": -0.1274766892752912,
+      "maxY": 0.16390609262485012
+    }
+  },
+  {
+    "id": "quaternius-low-poly-food-pack/Donut3",
+    "source": "quaternius-low-poly-food-pack",
+    "categories": [
+      "food",
+      "prop"
+    ],
+    "file": "Donut3.glb",
+    "metrics": {
+      "glbBytes": 37956,
+      "byteLength": 37956,
+      "triangles": 504,
+      "primitives": 1,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 0.8590501248836517,
+        "d": 0.8566481331345825
+      },
+      "center": {
+        "x": 0.0007077306509017944,
+        "z": 0.002260236403908822
+      },
+      "minY": -0.130666340266692,
+      "maxY": 0.14942757349847866
+    }
+  },
+  {
+    "id": "quaternius-low-poly-food-pack/Donut4",
+    "source": "quaternius-low-poly-food-pack",
+    "categories": [
+      "food",
+      "prop"
+    ],
+    "file": "Donut4.glb",
+    "metrics": {
+      "glbBytes": 86948,
+      "byteLength": 86948,
+      "triangles": 984,
+      "primitives": 35,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 0.8810679018497467,
+        "d": 0.8675334924217137
+      },
+      "center": {
+        "x": -0.01109980046749115,
+        "z": 0.0037492188001919113
+      },
+      "minY": -0.1274766877526429,
+      "maxY": 0.16139684294978066
+    }
+  },
+  {
+    "id": "quaternius-low-poly-food-pack/DoubleCheeseburger",
+    "source": "quaternius-low-poly-food-pack",
+    "categories": [
+      "food",
+      "prop"
+    ],
+    "file": "DoubleCheeseburger.glb",
+    "metrics": {
+      "glbBytes": 71044,
+      "byteLength": 71044,
+      "triangles": 860,
+      "primitives": 6,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 1.4940839409828186,
+        "d": 1.5409590168201648
+      },
+      "center": {
+        "x": -0.6975936591625214,
+        "z": 6.9783677819752565
+      },
+      "minY": -0.37162156115337874,
+      "maxY": 0.8255665308392319
+    }
+  },
+  {
+    "id": "quaternius-low-poly-food-pack/Egg_Burned",
+    "source": "quaternius-low-poly-food-pack",
+    "categories": [
+      "food",
+      "prop"
+    ],
+    "file": "Egg_Burned.glb",
+    "metrics": {
+      "glbBytes": 10444,
+      "byteLength": 10444,
+      "triangles": 101,
+      "primitives": 3,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 1.1921337246894836,
+        "d": 1.1167190249458987
+      },
+      "center": {
+        "x": 0.12768062949180603,
+        "z": -0.038535780346500514
+      },
+      "minY": -0.013101827742275392,
+      "maxY": 0.09402931009906504
+    }
+  },
+  {
+    "id": "quaternius-low-poly-food-pack/Egg_Fried",
+    "source": "quaternius-low-poly-food-pack",
+    "categories": [
+      "food",
+      "prop"
+    ],
+    "file": "Egg_Fried.glb",
+    "metrics": {
+      "glbBytes": 10416,
+      "byteLength": 10416,
+      "triangles": 101,
+      "primitives": 3,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 1.1921337246894836,
+        "d": 1.1167190249458987
+      },
+      "center": {
+        "x": 0.12768062949180603,
+        "z": -0.038535780346500514
+      },
+      "minY": -0.013101827742275392,
+      "maxY": 0.09402931009906504
+    }
+  },
+  {
+    "id": "quaternius-low-poly-food-pack/Egg_Whole_White",
+    "source": "quaternius-low-poly-food-pack",
+    "categories": [
+      "food",
+      "prop"
+    ],
+    "file": "Egg_Whole_White.glb",
+    "metrics": {
+      "glbBytes": 29596,
+      "byteLength": 29596,
+      "triangles": 288,
+      "primitives": 1,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 0.36325401067733765,
+        "d": 0.36325408658067726
+      },
+      "center": {
+        "x": 0,
+        "z": -3.747729580838577e-8
+      },
+      "minY": -0.002911731389234133,
+      "maxY": 0.4629797337324058
+    }
+  },
+  {
+    "id": "quaternius-low-poly-food-pack/Egg_Whole",
+    "source": "quaternius-low-poly-food-pack",
+    "categories": [
+      "food",
+      "prop"
+    ],
+    "file": "Egg_Whole.glb",
+    "metrics": {
+      "glbBytes": 29588,
+      "byteLength": 29588,
+      "triangles": 288,
+      "primitives": 1,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 0.36325401067733765,
+        "d": 0.36325408658067726
+      },
+      "center": {
+        "x": 0,
+        "z": -3.747729580838577e-8
+      },
+      "minY": -0.002911731389234133,
+      "maxY": 0.4629797337324058
+    }
+  },
+  {
+    "id": "quaternius-low-poly-food-pack/Eggplant",
+    "source": "quaternius-low-poly-food-pack",
+    "categories": [
+      "food",
+      "prop"
+    ],
+    "file": "Eggplant.glb",
+    "metrics": {
+      "glbBytes": 31080,
+      "byteLength": 31080,
+      "triangles": 368,
+      "primitives": 2,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 0.9622368812561035,
+        "d": 0.7180079691876242
+      },
+      "center": {
+        "x": -0.09103602170944214,
+        "z": 4.80039416550504e-9
+      },
+      "minY": -0.7225289929678952,
+      "maxY": 1.0294504750540825
+    }
+  },
+  {
+    "id": "quaternius-low-poly-food-pack/Fish",
+    "source": "quaternius-low-poly-food-pack",
+    "categories": [
+      "food",
+      "prop"
+    ],
+    "file": "Fish.glb",
+    "metrics": {
+      "glbBytes": 50268,
+      "byteLength": 50268,
+      "triangles": 438,
+      "primitives": 61,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 3.20234751701355,
+        "d": 1.0590807991087328
+      },
+      "center": {
+        "x": -0.26612770557403564,
+        "z": -0.05373930763847215
+      },
+      "minY": -0.0702832769936703,
+      "maxY": 0.23267787996133663
+    }
+  },
+  {
+    "id": "quaternius-low-poly-food-pack/FishBone",
+    "source": "quaternius-low-poly-food-pack",
+    "categories": [
+      "food",
+      "prop"
+    ],
+    "file": "FishBone.glb",
+    "metrics": {
+      "glbBytes": 44020,
+      "byteLength": 44020,
+      "triangles": 588,
+      "primitives": 1,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 1.954840362071991,
+        "d": 0.8296087031745796
+      },
+      "center": {
+        "x": 0.05264165997505188,
+        "z": -0.018879152641389785
+      },
+      "minY": -0.030204128349484268,
+      "maxY": 0.302222584617389
+    }
+  },
+  {
+    "id": "quaternius-low-poly-food-pack/Fork",
+    "source": "quaternius-low-poly-food-pack",
+    "categories": [
+      "food",
+      "prop"
+    ],
+    "file": "Fork.glb",
+    "metrics": {
+      "glbBytes": 15136,
+      "byteLength": 15136,
+      "triangles": 188,
+      "primitives": 1,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 0.2078731656074524,
+        "d": 2.0175923782324707
+      },
+      "center": {
+        "x": 2.2351741790771484e-8,
+        "z": 0.2831459337265697
+      },
+      "minY": -0.01991430943966217,
+      "maxY": 0.027485748758137536
+    }
+  },
+  {
+    "id": "quaternius-low-poly-food-pack/Fries",
+    "source": "quaternius-low-poly-food-pack",
+    "categories": [
+      "food",
+      "prop"
+    ],
+    "file": "Fries.glb",
+    "metrics": {
+      "glbBytes": 34688,
+      "byteLength": 34688,
+      "triangles": 324,
+      "primitives": 32,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 0.9488380253314972,
+        "d": 1.3262873650228293
+      },
+      "center": {
+        "x": 0.008633211255073547,
+        "z": -0.21217738198422031
+      },
+      "minY": -0.011950931627352765,
+      "maxY": 0.5737978954703243
+    }
+  },
+  {
+    "id": "quaternius-low-poly-food-pack/FryingPan",
+    "source": "quaternius-low-poly-food-pack",
+    "categories": [
+      "food",
+      "prop"
+    ],
+    "file": "FryingPan.glb",
+    "metrics": {
+      "glbBytes": 19024,
+      "byteLength": 19024,
+      "triangles": 214,
+      "primitives": 2,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 1.7373179197311401,
+        "d": 2.7883786971333095
+      },
+      "center": {
+        "x": 0,
+        "z": 0.480827215131663
+      },
+      "minY": 0.0392392205272181,
+      "maxY": 0.2922637537173428
+    }
+  },
+  {
+    "id": "quaternius-low-poly-food-pack/Hotdog_Bun",
+    "source": "quaternius-low-poly-food-pack",
+    "categories": [
+      "food",
+      "prop"
+    ],
+    "file": "Hotdog_Bun.glb",
+    "metrics": {
+      "glbBytes": 36824,
+      "byteLength": 36824,
+      "triangles": 488,
+      "primitives": 1,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 0.7852928638458252,
+        "d": 1.6434376906725636
+      },
+      "center": {
+        "x": 0,
+        "z": 0.012107984569085462
+      },
+      "minY": -0.3043578394028026,
+      "maxY": 0.10501295501857617
+    }
+  },
+  {
+    "id": "quaternius-low-poly-food-pack/Hotdog",
+    "source": "quaternius-low-poly-food-pack",
+    "categories": [
+      "food",
+      "prop"
+    ],
+    "file": "Hotdog.glb",
+    "metrics": {
+      "glbBytes": 80404,
+      "byteLength": 80404,
+      "triangles": 988,
+      "primitives": 4,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 0.7852928638458252,
+        "d": 1.6618940901133288
+      },
+      "center": {
+        "x": 0,
+        "z": 0.002879784848702882
+      },
+      "minY": -0.30435784240973174,
+      "maxY": 0.10501295501857617
+    }
+  },
+  {
+    "id": "quaternius-low-poly-food-pack/IceCream_1",
+    "source": "quaternius-low-poly-food-pack",
+    "categories": [
+      "food",
+      "prop"
+    ],
+    "file": "IceCream_1.glb",
+    "metrics": {
+      "glbBytes": 39196,
+      "byteLength": 39196,
+      "triangles": 466,
+      "primitives": 3,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 0.7005897760391235,
+        "d": 0.700589971252904
+      },
+      "center": {
+        "x": 0,
+        "z": -5.516888143541898e-8
+      },
+      "minY": -0.2604827259469257,
+      "maxY": 0.937731084673418
+    }
+  },
+  {
+    "id": "quaternius-low-poly-food-pack/IceCream_2",
+    "source": "quaternius-low-poly-food-pack",
+    "categories": [
+      "food",
+      "prop"
+    ],
+    "file": "IceCream_2.glb",
+    "metrics": {
+      "glbBytes": 54036,
+      "byteLength": 54036,
+      "triangles": 638,
+      "primitives": 8,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 0.729616641998291,
+        "d": 0.729616987830454
+      },
+      "center": {
+        "x": 0.0005363225936889648,
+        "z": 0.0026452726686708172
+      },
+      "minY": -0.2604827278804877,
+      "maxY": 1.3134440782297456
+    }
+  },
+  {
+    "id": "quaternius-low-poly-food-pack/IceCream_3",
+    "source": "quaternius-low-poly-food-pack",
+    "categories": [
+      "food",
+      "prop"
+    ],
+    "file": "IceCream_3.glb",
+    "metrics": {
+      "glbBytes": 102528,
+      "byteLength": 102528,
+      "triangles": 1278,
+      "primitives": 3,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 0.51554736495018,
+        "d": 0.5155474564459754
+      },
+      "center": {
+        "x": 0.0020358115434646606,
+        "z": -0.0031292195800788902
+      },
+      "minY": -0.1553826906168527,
+      "maxY": 0.7720653233548229
+    }
+  },
+  {
+    "id": "quaternius-low-poly-food-pack/IceCream_4",
+    "source": "quaternius-low-poly-food-pack",
+    "categories": [
+      "food",
+      "prop"
+    ],
+    "file": "IceCream_4.glb",
+    "metrics": {
+      "glbBytes": 120160,
+      "byteLength": 120160,
+      "triangles": 1498,
+      "primitives": 5,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 0.51554736495018,
+        "d": 0.5155474982976684
+      },
+      "center": {
+        "x": 0.0020358115434646606,
+        "z": -0.0031292405059253903
+      },
+      "minY": -0.1553826906168527,
+      "maxY": 1.0289491829892188
+    }
+  },
+  {
+    "id": "quaternius-low-poly-food-pack/IceCream_Cone",
+    "source": "quaternius-low-poly-food-pack",
+    "categories": [
+      "food",
+      "prop"
+    ],
+    "file": "IceCream_Cone.glb",
+    "metrics": {
+      "glbBytes": 26716,
+      "byteLength": 26716,
+      "triangles": 348,
+      "primitives": 1,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 0.552440345287323,
+        "d": 0.5524405071272103
+      },
+      "center": {
+        "x": 0,
+        "z": -3.8481933833933724e-8
+      },
+      "minY": -0.26048271387862754,
+      "maxY": 0.5499582144622676
+    }
+  },
+  {
+    "id": "quaternius-low-poly-food-pack/IceCream_Cone2",
+    "source": "quaternius-low-poly-food-pack",
+    "categories": [
+      "food",
+      "prop"
+    ],
+    "file": "IceCream_Cone2.glb",
+    "metrics": {
+      "glbBytes": 85764,
+      "byteLength": 85764,
+      "triangles": 1076,
+      "primitives": 1,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 0.4668119102716446,
+        "d": 0.44879884846919493
+      },
+      "center": {
+        "x": 3.203749656677246e-7,
+        "z": -1.8963140967220848e-7
+      },
+      "minY": -0.24847573717616073,
+      "maxY": 0.38127011736408895
+    }
+  },
+  {
+    "id": "quaternius-low-poly-food-pack/Jar_Large",
+    "source": "quaternius-low-poly-food-pack",
+    "categories": [
+      "food",
+      "prop"
+    ],
+    "file": "Jar_Large.glb",
+    "metrics": {
+      "glbBytes": 20564,
+      "byteLength": 20564,
+      "triangles": 216,
+      "primitives": 7,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 0.6332404613494873,
+        "d": 0.6022476103901299
+      },
+      "center": {
+        "x": 0,
+        "z": -6.60275711883429e-9
+      },
+      "minY": -0.004289176945574496,
+      "maxY": 0.6341200961517232
+    }
+  },
+  {
+    "id": "quaternius-low-poly-food-pack/KetchupBottle",
+    "source": "quaternius-low-poly-food-pack",
+    "categories": [
+      "food",
+      "prop"
+    ],
+    "file": "KetchupBottle.glb",
+    "metrics": {
+      "glbBytes": 18644,
+      "byteLength": 18644,
+      "triangles": 236,
+      "primitives": 1,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 0.499563604593277,
+        "d": 0.4995638543008887
+      },
+      "center": {
+        "x": 0,
+        "z": -1.2212507070896716e-7
+      },
+      "minY": -0.01674891793682829,
+      "maxY": 1.5159455944742029
+    }
+  },
+  {
+    "id": "quaternius-low-poly-food-pack/KetchupMustard",
+    "source": "quaternius-low-poly-food-pack",
+    "categories": [
+      "food",
+      "prop"
+    ],
+    "file": "KetchupMustard.glb",
+    "metrics": {
+      "glbBytes": 58992,
+      "byteLength": 58992,
+      "triangles": 720,
+      "primitives": 4,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 0.16279134154319763,
+        "d": 1.2806464010072713
+      },
+      "center": {
+        "x": -0.006295040249824524,
+        "z": -0.025330752134322787
+      },
+      "minY": -0.05292441737465932,
+      "maxY": 0.05292440912085261
+    }
+  },
+  {
+    "id": "quaternius-low-poly-food-pack/Knife",
+    "source": "quaternius-low-poly-food-pack",
+    "categories": [
+      "food",
+      "prop"
+    ],
+    "file": "Knife.glb",
+    "metrics": {
+      "glbBytes": 9684,
+      "byteLength": 9684,
+      "triangles": 112,
+      "primitives": 1,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 0.16193338483572006,
+        "d": 2.0078334266116293
+      },
+      "center": {
+        "x": -0.02325240895152092,
+        "z": 0.28802540953699035
+      },
+      "minY": -0.01991430784972752,
+      "maxY": 0.013116448191524056
+    }
+  },
+  {
+    "id": "quaternius-low-poly-food-pack/Lettuce_Whole",
+    "source": "quaternius-low-poly-food-pack",
+    "categories": [
+      "food",
+      "prop"
+    ],
+    "file": "Lettuce_Whole.glb",
+    "metrics": {
+      "glbBytes": 44296,
+      "byteLength": 44296,
+      "triangles": 592,
+      "primitives": 1,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 1.6612406373023987,
+        "d": 1.6612408602587623
+      },
+      "center": {
+        "x": -2.9802322387695312e-8,
+        "z": 3.796122516330769e-8
+      },
+      "minY": -0.7343273920047471,
+      "maxY": 0.6341694158542455
+    }
+  },
+  {
+    "id": "quaternius-low-poly-food-pack/Lettuce",
+    "source": "quaternius-low-poly-food-pack",
+    "categories": [
+      "food",
+      "prop"
+    ],
+    "file": "Lettuce.glb",
+    "metrics": {
+      "glbBytes": 46324,
+      "byteLength": 46324,
+      "triangles": 620,
+      "primitives": 1,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 1.78805011510849,
+        "d": 1.6828683990356774
+      },
+      "center": {
+        "x": 0.04556038975715637,
+        "z": 0.06191169353130699
+      },
+      "minY": -0.06234058026742863,
+      "maxY": 0.16821738893779153
+    }
+  },
+  {
+    "id": "quaternius-low-poly-food-pack/MayoBottle",
+    "source": "quaternius-low-poly-food-pack",
+    "categories": [
+      "food",
+      "prop"
+    ],
+    "file": "MayoBottle.glb",
+    "metrics": {
+      "glbBytes": 18636,
+      "byteLength": 18636,
+      "triangles": 236,
+      "primitives": 1,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 0.499563604593277,
+        "d": 0.4995638543008887
+      },
+      "center": {
+        "x": 0,
+        "z": -1.2212507070896716e-7
+      },
+      "minY": -0.01674891793682829,
+      "maxY": 1.5159455944742029
+    }
+  },
+  {
+    "id": "quaternius-low-poly-food-pack/Mushroom_Sliced",
+    "source": "quaternius-low-poly-food-pack",
+    "categories": [
+      "food",
+      "prop"
+    ],
+    "file": "Mushroom_Sliced.glb",
+    "metrics": {
+      "glbBytes": 9768,
+      "byteLength": 9768,
+      "triangles": 92,
+      "primitives": 3,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 0.41344907879829407,
+        "d": 0.4166370917803287
+      },
+      "center": {
+        "x": 2.9802322387695312e-8,
+        "z": -0.09285436355623627
+      },
+      "minY": -0.009980354165287723,
+      "maxY": 0.1665099302294617
+    }
+  },
+  {
+    "id": "quaternius-low-poly-food-pack/Mushroom",
+    "source": "quaternius-low-poly-food-pack",
+    "categories": [
+      "food",
+      "prop"
+    ],
+    "file": "Mushroom.glb",
+    "metrics": {
+      "glbBytes": 8272,
+      "byteLength": 8272,
+      "triangles": 92,
+      "primitives": 1,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 0.3580574542284012,
+        "d": 0.41344920514174827
+      },
+      "center": {
+        "x": -2.2351741790771484e-8,
+        "z": -2.626389175586219e-8
+      },
+      "minY": -0.04361337811063019,
+      "maxY": 0.36602661401341213
+    }
+  },
+  {
+    "id": "quaternius-low-poly-food-pack/MustardBottle",
+    "source": "quaternius-low-poly-food-pack",
+    "categories": [
+      "food",
+      "prop"
+    ],
+    "file": "MustardBottle.glb",
+    "metrics": {
+      "glbBytes": 18644,
+      "byteLength": 18644,
+      "triangles": 236,
+      "primitives": 1,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 0.499563604593277,
+        "d": 0.4995638543008887
+      },
+      "center": {
+        "x": 0,
+        "z": -1.2212507070896716e-7
+      },
+      "minY": -0.01674891793682829,
+      "maxY": 1.5159455944742029
+    }
+  },
+  {
+    "id": "quaternius-low-poly-food-pack/Orange",
+    "source": "quaternius-low-poly-food-pack",
+    "categories": [
+      "food",
+      "prop"
+    ],
+    "file": "Orange.glb",
+    "metrics": {
+      "glbBytes": 21824,
+      "byteLength": 21824,
+      "triangles": 208,
+      "primitives": 1,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 0.7449114918708801,
+        "d": 0.7449115830282148
+      },
+      "center": {
+        "x": -0.000002086162567138672,
+        "z": -9.736109576885532e-7
+      },
+      "minY": -0.3403150748048107,
+      "maxY": 0.4021301876337026
+    }
+  },
+  {
+    "id": "quaternius-low-poly-food-pack/Pancake",
+    "source": "quaternius-low-poly-food-pack",
+    "categories": [
+      "food",
+      "prop"
+    ],
+    "file": "Pancake.glb",
+    "metrics": {
+      "glbBytes": 33052,
+      "byteLength": 33052,
+      "triangles": 378,
+      "primitives": 5,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 1.4422597289085388,
+        "d": 1.4422592936672323
+      },
+      "center": {
+        "x": 0.01038023829460144,
+        "z": 0.015212269266814737
+      },
+      "minY": -0.13765911337870454,
+      "maxY": 0.11765475646758611
+    }
+  },
+  {
+    "id": "quaternius-low-poly-food-pack/Pancakes_Stack",
+    "source": "quaternius-low-poly-food-pack",
+    "categories": [
+      "food",
+      "prop"
+    ],
+    "file": "Pancakes_Stack.glb",
+    "metrics": {
+      "glbBytes": 74316,
+      "byteLength": 74316,
+      "triangles": 896,
+      "primitives": 9,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 1.5806618332862854,
+        "d": 1.6205703462559167
+      },
+      "center": {
+        "x": 0.052019089460372925,
+        "z": -0.07197362878147806
+      },
+      "minY": -0.09321694293776907,
+      "maxY": 0.5442162166874235
+    }
+  },
+  {
+    "id": "quaternius-low-poly-food-pack/PeanutButter_2",
+    "source": "quaternius-low-poly-food-pack",
+    "categories": [
+      "food",
+      "prop"
+    ],
+    "file": "PeanutButter_2.glb",
+    "metrics": {
+      "glbBytes": 20572,
+      "byteLength": 20572,
+      "triangles": 216,
+      "primitives": 7,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 0.4746073782444,
+        "d": 0.4513785677942549
+      },
+      "center": {
+        "x": 1.4901161193847656e-8,
+        "z": -2.140285811080833e-8
+      },
+      "minY": -0.002102619484887522,
+      "maxY": 0.722155607753325
+    }
+  },
+  {
+    "id": "quaternius-low-poly-food-pack/PeanutButter",
+    "source": "quaternius-low-poly-food-pack",
+    "categories": [
+      "food",
+      "prop"
+    ],
+    "file": "PeanutButter.glb",
+    "metrics": {
+      "glbBytes": 20572,
+      "byteLength": 20572,
+      "triangles": 216,
+      "primitives": 7,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 0.4746073782444,
+        "d": 0.4513785677942572
+      },
+      "center": {
+        "x": 1.4901161193847656e-8,
+        "z": -2.2310994315932753e-8
+      },
+      "minY": 0.0034714737153787646,
+      "maxY": 0.72772971492343
+    }
+  },
+  {
+    "id": "quaternius-low-poly-food-pack/Pepper_Green",
+    "source": "quaternius-low-poly-food-pack",
+    "categories": [
+      "food",
+      "prop"
+    ],
+    "file": "Pepper_Green.glb",
+    "metrics": {
+      "glbBytes": 75264,
+      "byteLength": 75264,
+      "triangles": 808,
+      "primitives": 45,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 0.6740087568759918,
+        "d": 0.7117884786137427
+      },
+      "center": {
+        "x": -0.0000791698694229126,
+        "z": -9.384054885930304e-8
+      },
+      "minY": 0.017698338014769086,
+      "maxY": 1.1342800243368716
+    }
+  },
+  {
+    "id": "quaternius-low-poly-food-pack/Pepper_Red",
+    "source": "quaternius-low-poly-food-pack",
+    "categories": [
+      "food",
+      "prop"
+    ],
+    "file": "Pepper_Red.glb",
+    "metrics": {
+      "glbBytes": 75264,
+      "byteLength": 75264,
+      "triangles": 808,
+      "primitives": 45,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 0.6740088760852814,
+        "d": 0.7117885662489795
+      },
+      "center": {
+        "x": -0.0000791400671005249,
+        "z": -1.078558150569009e-7
+      },
+      "minY": 0.01769815547553475,
+      "maxY": 1.1234050376883171
+    }
+  },
+  {
+    "id": "quaternius-low-poly-food-pack/Pizza_Burned",
+    "source": "quaternius-low-poly-food-pack",
+    "categories": [
+      "food",
+      "prop"
+    ],
+    "file": "Pizza_Burned.glb",
+    "metrics": {
+      "glbBytes": 38684,
+      "byteLength": 38684,
+      "triangles": 392,
+      "primitives": 26,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 1.0718575716018677,
+        "d": 1.1637145725370985
+      },
+      "center": {
+        "x": 0,
+        "z": -0.5496764743842738
+      },
+      "minY": 0.0019981414595901166,
+      "maxY": 0.11479113775262667
+    }
+  },
+  {
+    "id": "quaternius-low-poly-food-pack/Pizza_Slice",
+    "source": "quaternius-low-poly-food-pack",
+    "categories": [
+      "food",
+      "prop"
+    ],
+    "file": "Pizza_Slice.glb",
+    "metrics": {
+      "glbBytes": 38652,
+      "byteLength": 38652,
+      "triangles": 392,
+      "primitives": 26,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 1.0718575716018677,
+        "d": 1.1637145725370985
+      },
+      "center": {
+        "x": 0,
+        "z": -0.5496764743842738
+      },
+      "minY": 0.0019981414595901166,
+      "maxY": 0.11479113775262667
+    }
+  },
+  {
+    "id": "quaternius-low-poly-food-pack/Pizza",
+    "source": "quaternius-low-poly-food-pack",
+    "categories": [
+      "food",
+      "prop"
+    ],
+    "file": "Pizza.glb",
+    "metrics": {
+      "glbBytes": 109988,
+      "byteLength": 109988,
+      "triangles": 1200,
+      "primitives": 62,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 3.3718374967575073,
+        "d": 3.3568620943955434
+      },
+      "center": {
+        "x": 0.004414737224578857,
+        "z": -0.014893781028892383
+      },
+      "minY": -0.014109364916893847,
+      "maxY": 0.14682421368590506
+    }
+  },
+  {
+    "id": "quaternius-low-poly-food-pack/Plate_Square",
+    "source": "quaternius-low-poly-food-pack",
+    "categories": [
+      "food",
+      "prop"
+    ],
+    "file": "Plate_Square.glb",
+    "metrics": {
+      "glbBytes": 16268,
+      "byteLength": 16268,
+      "triangles": 204,
+      "primitives": 1,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 1.6370456218719482,
+        "d": 1.6370456432998914
+      },
+      "center": {
+        "x": 0,
+        "z": -1.2045603625665535e-8
+      },
+      "minY": 0.008173298846854332,
+      "maxY": 0.13969747646532898
+    }
+  },
+  {
+    "id": "quaternius-low-poly-food-pack/Plate",
+    "source": "quaternius-low-poly-food-pack",
+    "categories": [
+      "food",
+      "prop"
+    ],
+    "file": "Plate.glb",
+    "metrics": {
+      "glbBytes": 12864,
+      "byteLength": 12864,
+      "triangles": 156,
+      "primitives": 1,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 1.737317979335785,
+        "d": 1.8267243323486546
+      },
+      "center": {
+        "x": 2.9802322387695312e-8,
+        "z": -2.2124681531288104e-8
+      },
+      "minY": 0.008434822057581892,
+      "maxY": 0.26316583135982297
+    }
+  },
+  {
+    "id": "quaternius-low-poly-food-pack/Plate2",
+    "source": "quaternius-low-poly-food-pack",
+    "categories": [
+      "food",
+      "prop"
+    ],
+    "file": "Plate2.glb",
+    "metrics": {
+      "glbBytes": 15744,
+      "byteLength": 15744,
+      "triangles": 196,
+      "primitives": 1,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 1.9730457067489624,
+        "d": 2.0745830893877217
+      },
+      "center": {
+        "x": 0,
+        "z": -1.9042124099755142e-8
+      },
+      "minY": 0.007013569159124393,
+      "maxY": 0.22674587877311583
+    }
+  },
+  {
+    "id": "quaternius-low-poly-food-pack/Popsicle_Chocolate",
+    "source": "quaternius-low-poly-food-pack",
+    "categories": [
+      "food",
+      "prop"
+    ],
+    "file": "Popsicle_Chocolate.glb",
+    "metrics": {
+      "glbBytes": 8820,
+      "byteLength": 8820,
+      "triangles": 84,
+      "primitives": 2,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 0.29110187292099,
+        "d": 0.079843652608053
+      },
+      "center": {
+        "x": 0,
+        "z": -3.775281023910004e-8
+      },
+      "minY": -0.2632771795463718,
+      "maxY": 0.726727372951517
+    }
+  },
+  {
+    "id": "quaternius-low-poly-food-pack/Popsicle_Multiple",
+    "source": "quaternius-low-poly-food-pack",
+    "categories": [
+      "food",
+      "prop"
+    ],
+    "file": "Popsicle_Multiple.glb",
+    "metrics": {
+      "glbBytes": 15804,
+      "byteLength": 15804,
+      "triangles": 120,
+      "primitives": 18,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 0.29110187292099,
+        "d": 0.079843652608053
+      },
+      "center": {
+        "x": 0,
+        "z": -3.775281023910004e-8
+      },
+      "minY": -0.2632771795463718,
+      "maxY": 0.726727372951517
+    }
+  },
+  {
+    "id": "quaternius-low-poly-food-pack/Popsicle_Strawberry",
+    "source": "quaternius-low-poly-food-pack",
+    "categories": [
+      "food",
+      "prop"
+    ],
+    "file": "Popsicle_Strawberry.glb",
+    "metrics": {
+      "glbBytes": 8816,
+      "byteLength": 8816,
+      "triangles": 84,
+      "primitives": 2,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 0.29110187292099,
+        "d": 0.079843652608053
+      },
+      "center": {
+        "x": 0,
+        "z": -3.775281023910004e-8
+      },
+      "minY": -0.2632771795463718,
+      "maxY": 0.726727372951517
+    }
+  },
+  {
+    "id": "quaternius-low-poly-food-pack/Pumpkin",
+    "source": "quaternius-low-poly-food-pack",
+    "categories": [
+      "food",
+      "prop"
+    ],
+    "file": "Pumpkin.glb",
+    "metrics": {
+      "glbBytes": 52580,
+      "byteLength": 52580,
+      "triangles": 644,
+      "primitives": 2,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 1.4972639083862305,
+        "d": 1.5123118486764286
+      },
+      "center": {
+        "x": 0.03167831897735596,
+        "z": -7.516235928095583e-8
+      },
+      "minY": -0.004129447767448163,
+      "maxY": 0.9268159906174236
+    }
+  },
+  {
+    "id": "quaternius-low-poly-food-pack/Sashimi_Salmon",
+    "source": "quaternius-low-poly-food-pack",
+    "categories": [
+      "food",
+      "prop"
+    ],
+    "file": "Sashimi_Salmon.glb",
+    "metrics": {
+      "glbBytes": 21408,
+      "byteLength": 21408,
+      "triangles": 160,
+      "primitives": 31,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 0.5976004600524902,
+        "d": 0.27157467095813187
+      },
+      "center": {
+        "x": -2.9802322387695312e-8,
+        "z": 0
+      },
+      "minY": -0.0758762804362178,
+      "maxY": 0.0758762804362178
+    }
+  },
+  {
+    "id": "quaternius-low-poly-food-pack/Sashimi_Salmon2",
+    "source": "quaternius-low-poly-food-pack",
+    "categories": [
+      "food",
+      "prop"
+    ],
+    "file": "Sashimi_Salmon2.glb",
+    "metrics": {
+      "glbBytes": 21412,
+      "byteLength": 21412,
+      "triangles": 160,
+      "primitives": 31,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 0.5976004600524902,
+        "d": 0.2715746560569707
+      },
+      "center": {
+        "x": -0.03244933485984802,
+        "z": 0.003809925297214495
+      },
+      "minY": 0.08339490826481195,
+      "maxY": 0.23514746913724513
+    }
+  },
+  {
+    "id": "quaternius-low-poly-food-pack/Sausage_Cooked",
+    "source": "quaternius-low-poly-food-pack",
+    "categories": [
+      "food",
+      "prop"
+    ],
+    "file": "Sausage_Cooked.glb",
+    "metrics": {
+      "glbBytes": 11744,
+      "byteLength": 11744,
+      "triangles": 140,
+      "primitives": 1,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 0.23957031965255737,
+        "d": 1.6561344063056551
+      },
+      "center": {
+        "x": 0,
+        "z": -6.106226635438361e-16
+      },
+      "minY": -0.12066173633348391,
+      "maxY": 0.12066174378406451
+    }
+  },
+  {
+    "id": "quaternius-low-poly-food-pack/Sausage_Raw",
+    "source": "quaternius-low-poly-food-pack",
+    "categories": [
+      "food",
+      "prop"
+    ],
+    "file": "Sausage_Raw.glb",
+    "metrics": {
+      "glbBytes": 11724,
+      "byteLength": 11724,
+      "triangles": 140,
+      "primitives": 1,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 0.23957031965255737,
+        "d": 1.6561344063056551
+      },
+      "center": {
+        "x": 0,
+        "z": -6.106226635438361e-16
+      },
+      "minY": -0.12066173633348391,
+      "maxY": 0.12066174378406451
+    }
+  },
+  {
+    "id": "quaternius-low-poly-food-pack/Soda",
+    "source": "quaternius-low-poly-food-pack",
+    "categories": [
+      "food",
+      "prop"
+    ],
+    "file": "Soda.glb",
+    "metrics": {
+      "glbBytes": 47344,
+      "byteLength": 47344,
+      "triangles": 472,
+      "primitives": 38,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 0.9117939174175262,
+        "d": 0.9117942008988296
+      },
+      "center": {
+        "x": -1.4901161193847656e-8,
+        "z": -1.5727347671412595e-7
+      },
+      "minY": 0.0038770134540117387,
+      "maxY": 1.9267984179334614
+    }
+  },
+  {
+    "id": "quaternius-low-poly-food-pack/SoySauce",
+    "source": "quaternius-low-poly-food-pack",
+    "categories": [
+      "food",
+      "prop"
+    ],
+    "file": "SoySauce.glb",
+    "metrics": {
+      "glbBytes": 7228,
+      "byteLength": 7228,
+      "triangles": 60,
+      "primitives": 3,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 0.5959281921386719,
+        "d": 0.5959282369382056
+      },
+      "center": {
+        "x": 0,
+        "z": -2.6144742149014633e-8
+      },
+      "minY": 0.022986421245826134,
+      "maxY": 0.29796414461384496
+    }
+  },
+  {
+    "id": "quaternius-low-poly-food-pack/Spoon",
+    "source": "quaternius-low-poly-food-pack",
+    "categories": [
+      "food",
+      "prop"
+    ],
+    "file": "Spoon.glb",
+    "metrics": {
+      "glbBytes": 10848,
+      "byteLength": 10848,
+      "triangles": 128,
+      "primitives": 1,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 0.39281177520751953,
+        "d": 1.8850825565070441
+      },
+      "center": {
+        "x": -0.0014608651399612427,
+        "z": -0.23117896706574204
+      },
+      "minY": -0.05453271169630193,
+      "maxY": 0.029010080212712716
+    }
+  },
+  {
+    "id": "quaternius-low-poly-food-pack/Steak_burned",
+    "source": "quaternius-low-poly-food-pack",
+    "categories": [
+      "food",
+      "prop"
+    ],
+    "file": "Steak_burned.glb",
+    "metrics": {
+      "glbBytes": 36728,
+      "byteLength": 36728,
+      "triangles": 412,
+      "primitives": 12,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 1.3199170231819153,
+        "d": 1.9126601176524045
+      },
+      "center": {
+        "x": 0.26549193263053894,
+        "z": -0.07666710019111528
+      },
+      "minY": -0.16983542284657258,
+      "maxY": 0.16983539786526042
+    }
+  },
+  {
+    "id": "quaternius-low-poly-food-pack/Steak",
+    "source": "quaternius-low-poly-food-pack",
+    "categories": [
+      "food",
+      "prop"
+    ],
+    "file": "Steak.glb",
+    "metrics": {
+      "glbBytes": 36708,
+      "byteLength": 36708,
+      "triangles": 412,
+      "primitives": 12,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 1.3199170231819153,
+        "d": 1.9126601176524045
+      },
+      "center": {
+        "x": 0.26549193263053894,
+        "z": -0.07666710019111528
+      },
+      "minY": -0.16983542284657258,
+      "maxY": 0.16983539786526042
+    }
+  },
+  {
+    "id": "quaternius-low-poly-food-pack/Sushi_Nigiri1",
+    "source": "quaternius-low-poly-food-pack",
+    "categories": [
+      "food",
+      "prop"
+    ],
+    "file": "Sushi_Nigiri1.glb",
+    "metrics": {
+      "glbBytes": 24480,
+      "byteLength": 24480,
+      "triangles": 196,
+      "primitives": 32,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 0.5976004600524902,
+        "d": 0.27157466951421416
+      },
+      "center": {
+        "x": -0.03244933485984802,
+        "z": 0.003809932025836238
+      },
+      "minY": 0.0007949368796060254,
+      "maxY": 0.23514746913724513
+    }
+  },
+  {
+    "id": "quaternius-low-poly-food-pack/Sushi_Nigiri2",
+    "source": "quaternius-low-poly-food-pack",
+    "categories": [
+      "food",
+      "prop"
+    ],
+    "file": "Sushi_Nigiri2.glb",
+    "metrics": {
+      "glbBytes": 24760,
+      "byteLength": 24760,
+      "triangles": 196,
+      "primitives": 32,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 0.5976004600524902,
+        "d": 0.27157466951421416
+      },
+      "center": {
+        "x": -0.03244933485984802,
+        "z": 0.003809932025836238
+      },
+      "minY": 0.0007949368796060254,
+      "maxY": 0.23514746913724513
+    }
+  },
+  {
+    "id": "quaternius-low-poly-food-pack/Sushi_NigiriOctopus",
+    "source": "quaternius-low-poly-food-pack",
+    "categories": [
+      "food",
+      "prop"
+    ],
+    "file": "Sushi_NigiriOctopus.glb",
+    "metrics": {
+      "glbBytes": 66336,
+      "byteLength": 66336,
+      "triangles": 648,
+      "primitives": 59,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 0.7620159387588501,
+        "d": 0.2673106615522767
+      },
+      "center": {
+        "x": -0.040441036224365234,
+        "z": -0.005855626234749126
+      },
+      "minY": 0.0007949356522373243,
+      "maxY": 0.35126732881795997
+    }
+  },
+  {
+    "id": "quaternius-low-poly-food-pack/Sushi_Roll1",
+    "source": "quaternius-low-poly-food-pack",
+    "categories": [
+      "food",
+      "prop"
+    ],
+    "file": "Sushi_Roll1.glb",
+    "metrics": {
+      "glbBytes": 13996,
+      "byteLength": 13996,
+      "triangles": 140,
+      "primitives": 4,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 0.29227137565612793,
+        "d": 0.292271400802513
+      },
+      "center": {
+        "x": 0,
+        "z": 0
+      },
+      "minY": -0.07717374112848992,
+      "maxY": 0.07717374112848992
+    }
+  },
+  {
+    "id": "quaternius-low-poly-food-pack/Sushi_Roll2",
+    "source": "quaternius-low-poly-food-pack",
+    "categories": [
+      "food",
+      "prop"
+    ],
+    "file": "Sushi_Roll2.glb",
+    "metrics": {
+      "glbBytes": 14508,
+      "byteLength": 14508,
+      "triangles": 140,
+      "primitives": 5,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 0.29259151220321655,
+        "d": 0.29259153734960164
+      },
+      "center": {
+        "x": 0,
+        "z": 0
+      },
+      "minY": -0.07717374115456835,
+      "maxY": 0.07717374115456835
+    }
+  },
+  {
+    "id": "quaternius-low-poly-food-pack/Tentacle",
+    "source": "quaternius-low-poly-food-pack",
+    "categories": [
+      "food",
+      "prop"
+    ],
+    "file": "Tentacle.glb",
+    "metrics": {
+      "glbBytes": 63012,
+      "byteLength": 63012,
+      "triangles": 612,
+      "primitives": 58,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 0.7620159089565277,
+        "d": 0.26731064936512594
+      },
+      "center": {
+        "x": 0.07330857217311859,
+        "z": -0.0024499759952697903
+      },
+      "minY": -0.1738822979941415,
+      "maxY": 0.10178589723293498
+    }
+  },
+  {
+    "id": "quaternius-low-poly-food-pack/Tomato_Slice",
+    "source": "quaternius-low-poly-food-pack",
+    "categories": [
+      "food",
+      "prop"
+    ],
+    "file": "Tomato_Slice.glb",
+    "metrics": {
+      "glbBytes": 49912,
+      "byteLength": 49912,
+      "triangles": 670,
+      "primitives": 1,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 0.8056535124778748,
+        "d": 0.6685962503609402
+      },
+      "center": {
+        "x": 0.1263236105442047,
+        "z": -0.15837328419616298
+      },
+      "minY": -0.020838720896604296,
+      "maxY": 0.05565920358092177
+    }
+  },
+  {
+    "id": "quaternius-low-poly-food-pack/Tomato",
+    "source": "quaternius-low-poly-food-pack",
+    "categories": [
+      "food",
+      "prop"
+    ],
+    "file": "Tomato.glb",
+    "metrics": {
+      "glbBytes": 40088,
+      "byteLength": 40088,
+      "triangles": 344,
+      "primitives": 12,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 0.752480685710907,
+        "d": 0.7524806983539394
+      },
+      "center": {
+        "x": -0.000004202127456665039,
+        "z": -0.0000019665424252079955
+      },
+      "minY": -0.22424842586539676,
+      "maxY": 0.40213018825012664
+    }
+  },
+  {
+    "id": "quaternius-low-poly-food-pack/Turnip",
+    "source": "quaternius-low-poly-food-pack",
+    "categories": [
+      "food",
+      "prop"
+    ],
+    "file": "Turnip.glb",
+    "metrics": {
+      "glbBytes": 79212,
+      "byteLength": 79212,
+      "triangles": 976,
+      "primitives": 4,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 1.2482662200927734,
+        "d": 1.2336838565319286
+      },
+      "center": {
+        "x": 0.0022658109664916992,
+        "z": 0.01894570758995534
+      },
+      "minY": -0.5476362487233841,
+      "maxY": 1.843838318457182
+    }
+  },
+  {
+    "id": "quaternius-low-poly-food-pack/Waffle",
+    "source": "quaternius-low-poly-food-pack",
+    "categories": [
+      "food",
+      "prop"
+    ],
+    "file": "Waffle.glb",
+    "metrics": {
+      "glbBytes": 81712,
+      "byteLength": 81712,
+      "triangles": 1112,
+      "primitives": 1,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 1.1340015530586243,
+        "d": 1.5291895648715916
+      },
+      "center": {
+        "x": -0.00005409121513366699,
+        "z": 0.00002041459083557129
+      },
+      "minY": -0.11612059711536316,
+      "maxY": 0.11612059712201507
+    }
+  }
+]

@@ -6,9 +6,56 @@ import s_kaykit_dungeon from "./kaykit-dungeon.json" with { type: "json" };
 import s_kaykit_furniture from "./kaykit-furniture.json" with { type: "json" };
 import s_kaykit_skeletons from "./kaykit-skeletons.json" with { type: "json" };
 import s_kaykit_space_base from "./kaykit-space-base.json" with { type: "json" };
+import s_quaternius_5_low_poly_animals from "./quaternius-5-low-poly-animals.json" with { type: "json" };
+import s_quaternius_animated_animales_low_poly from "./quaternius-animated-animales-low-poly.json" with { type: "json" };
+import s_quaternius_animated_characters_pack from "./quaternius-animated-characters-pack.json" with { type: "json" };
+import s_quaternius_animated_fish from "./quaternius-animated-fish.json" with { type: "json" };
+import s_quaternius_animated_human_low_poly from "./quaternius-animated-human-low-poly.json" with { type: "json" };
+import s_quaternius_animated_lowpoly_robot from "./quaternius-animated-lowpoly-robot.json" with { type: "json" };
+import s_quaternius_animated_mech_pack from "./quaternius-animated-mech-pack.json" with { type: "json" };
+import s_quaternius_fantasy_low_poly_trees_and_bushes from "./quaternius-fantasy-low-poly-trees-and-bushes.json" with { type: "json" };
+import s_quaternius_fantasy_props from "./quaternius-fantasy-props.json" with { type: "json" };
+import s_quaternius_furniture_low_poly from "./quaternius-furniture-low-poly.json" with { type: "json" };
+import s_quaternius_low_poly_animated_guns from "./quaternius-low-poly-animated-guns.json" with { type: "json" };
+import s_quaternius_low_poly_cars_0 from "./quaternius-low-poly-cars-0.json" with { type: "json" };
+import s_quaternius_low_poly_desert_assets from "./quaternius-low-poly-desert-assets.json" with { type: "json" };
+import s_quaternius_low_poly_food_pack from "./quaternius-low-poly-food-pack.json" with { type: "json" };
+import s_quaternius_low_poly_furniture_1 from "./quaternius-low-poly-furniture-1.json" with { type: "json" };
+import s_quaternius_low_poly_guns from "./quaternius-low-poly-guns.json" with { type: "json" };
+import s_quaternius_low_poly_guns_pack from "./quaternius-low-poly-guns-pack.json" with { type: "json" };
+import s_quaternius_low_poly_medieval_weapons from "./quaternius-low-poly-medieval-weapons.json" with { type: "json" };
+import s_quaternius_low_poly_nature_pack_1 from "./quaternius-low-poly-nature-pack-1.json" with { type: "json" };
+import s_quaternius_low_poly_pirate_pack from "./quaternius-low-poly-pirate-pack.json" with { type: "json" };
+import s_quaternius_low_poly_rpg_pack from "./quaternius-low-poly-rpg-pack.json" with { type: "json" };
+import s_quaternius_low_poly_space_assets from "./quaternius-low-poly-space-assets.json" with { type: "json" };
+import s_quaternius_lowpoly_animated_farm_animal_pack from "./quaternius-lowpoly-animated-farm-animal-pack.json" with { type: "json" };
+import s_quaternius_lowpoly_animated_knight from "./quaternius-lowpoly-animated-knight.json" with { type: "json" };
+import s_quaternius_lowpoly_animated_monsters from "./quaternius-lowpoly-animated-monsters.json" with { type: "json" };
+import s_quaternius_lowpoly_buildings from "./quaternius-lowpoly-buildings.json" with { type: "json" };
+import s_quaternius_lowpoly_buildings_pack from "./quaternius-lowpoly-buildings-pack.json" with { type: "json" };
+import s_quaternius_lowpoly_cars from "./quaternius-lowpoly-cars.json" with { type: "json" };
+import s_quaternius_lowpoly_crops_pack from "./quaternius-lowpoly-crops-pack.json" with { type: "json" };
+import s_quaternius_lowpoly_house_interior_pack from "./quaternius-lowpoly-house-interior-pack.json" with { type: "json" };
+import s_quaternius_lowpoly_medieval_buildings from "./quaternius-lowpoly-medieval-buildings.json" with { type: "json" };
+import s_quaternius_lowpoly_medieval_village_pack from "./quaternius-lowpoly-medieval-village-pack.json" with { type: "json" };
+import s_quaternius_lowpoly_medieval_weapons from "./quaternius-lowpoly-medieval-weapons.json" with { type: "json" };
+import s_quaternius_lowpoly_modular_dungeon_pack from "./quaternius-lowpoly-modular-dungeon-pack.json" with { type: "json" };
+import s_quaternius_lowpoly_modular_sci_fi_environments from "./quaternius-lowpoly-modular-sci-fi-environments.json" with { type: "json" };
+import s_quaternius_lowpoly_modular_street_pack from "./quaternius-lowpoly-modular-street-pack.json" with { type: "json" };
+import s_quaternius_lowpoly_nature_pack from "./quaternius-lowpoly-nature-pack.json" with { type: "json" };
+import s_quaternius_lowpoly_posed_humans from "./quaternius-lowpoly-posed-humans.json" with { type: "json" };
+import s_quaternius_lowpoly_public_transport from "./quaternius-lowpoly-public-transport.json" with { type: "json" };
+import s_quaternius_lowpoly_rpg from "./quaternius-lowpoly-rpg.json" with { type: "json" };
+import s_quaternius_lowpoly_rpg_characters from "./quaternius-lowpoly-rpg-characters.json" with { type: "json" };
+import s_quaternius_lowpoly_ship_pack from "./quaternius-lowpoly-ship-pack.json" with { type: "json" };
+import s_quaternius_lowpoly_spaceships_pack from "./quaternius-lowpoly-spaceships-pack.json" with { type: "json" };
+import s_quaternius_lowpoly_steampunk_turrets from "./quaternius-lowpoly-steampunk-turrets.json" with { type: "json" };
+import s_quaternius_lowpoly_survival_pack from "./quaternius-lowpoly-survival-pack.json" with { type: "json" };
+import s_quaternius_lowpoly_textured_trees from "./quaternius-lowpoly-textured-trees.json" with { type: "json" };
 import s_quaternius_medieval_village from "./quaternius-medieval-village.json" with { type: "json" };
 import s_quaternius_modular_scifi from "./quaternius-modular-scifi.json" with { type: "json" };
 import s_quaternius_stylized_nature from "./quaternius-stylized-nature.json" with { type: "json" };
+import s_quaternius_textured_cute_monster_pack from "./quaternius-textured-cute-monster-pack.json" with { type: "json" };
 
 export const generatedBySource: Record<string, IndexEntry[]> = {
   "kaykit-adventurers": s_kaykit_adventurers as IndexEntry[],
@@ -17,9 +64,56 @@ export const generatedBySource: Record<string, IndexEntry[]> = {
   "kaykit-furniture": s_kaykit_furniture as IndexEntry[],
   "kaykit-skeletons": s_kaykit_skeletons as IndexEntry[],
   "kaykit-space-base": s_kaykit_space_base as IndexEntry[],
+  "quaternius-5-low-poly-animals": s_quaternius_5_low_poly_animals as IndexEntry[],
+  "quaternius-animated-animales-low-poly": s_quaternius_animated_animales_low_poly as IndexEntry[],
+  "quaternius-animated-characters-pack": s_quaternius_animated_characters_pack as IndexEntry[],
+  "quaternius-animated-fish": s_quaternius_animated_fish as IndexEntry[],
+  "quaternius-animated-human-low-poly": s_quaternius_animated_human_low_poly as IndexEntry[],
+  "quaternius-animated-lowpoly-robot": s_quaternius_animated_lowpoly_robot as IndexEntry[],
+  "quaternius-animated-mech-pack": s_quaternius_animated_mech_pack as IndexEntry[],
+  "quaternius-fantasy-low-poly-trees-and-bushes": s_quaternius_fantasy_low_poly_trees_and_bushes as IndexEntry[],
+  "quaternius-fantasy-props": s_quaternius_fantasy_props as IndexEntry[],
+  "quaternius-furniture-low-poly": s_quaternius_furniture_low_poly as IndexEntry[],
+  "quaternius-low-poly-animated-guns": s_quaternius_low_poly_animated_guns as IndexEntry[],
+  "quaternius-low-poly-cars-0": s_quaternius_low_poly_cars_0 as IndexEntry[],
+  "quaternius-low-poly-desert-assets": s_quaternius_low_poly_desert_assets as IndexEntry[],
+  "quaternius-low-poly-food-pack": s_quaternius_low_poly_food_pack as IndexEntry[],
+  "quaternius-low-poly-furniture-1": s_quaternius_low_poly_furniture_1 as IndexEntry[],
+  "quaternius-low-poly-guns": s_quaternius_low_poly_guns as IndexEntry[],
+  "quaternius-low-poly-guns-pack": s_quaternius_low_poly_guns_pack as IndexEntry[],
+  "quaternius-low-poly-medieval-weapons": s_quaternius_low_poly_medieval_weapons as IndexEntry[],
+  "quaternius-low-poly-nature-pack-1": s_quaternius_low_poly_nature_pack_1 as IndexEntry[],
+  "quaternius-low-poly-pirate-pack": s_quaternius_low_poly_pirate_pack as IndexEntry[],
+  "quaternius-low-poly-rpg-pack": s_quaternius_low_poly_rpg_pack as IndexEntry[],
+  "quaternius-low-poly-space-assets": s_quaternius_low_poly_space_assets as IndexEntry[],
+  "quaternius-lowpoly-animated-farm-animal-pack": s_quaternius_lowpoly_animated_farm_animal_pack as IndexEntry[],
+  "quaternius-lowpoly-animated-knight": s_quaternius_lowpoly_animated_knight as IndexEntry[],
+  "quaternius-lowpoly-animated-monsters": s_quaternius_lowpoly_animated_monsters as IndexEntry[],
+  "quaternius-lowpoly-buildings": s_quaternius_lowpoly_buildings as IndexEntry[],
+  "quaternius-lowpoly-buildings-pack": s_quaternius_lowpoly_buildings_pack as IndexEntry[],
+  "quaternius-lowpoly-cars": s_quaternius_lowpoly_cars as IndexEntry[],
+  "quaternius-lowpoly-crops-pack": s_quaternius_lowpoly_crops_pack as IndexEntry[],
+  "quaternius-lowpoly-house-interior-pack": s_quaternius_lowpoly_house_interior_pack as IndexEntry[],
+  "quaternius-lowpoly-medieval-buildings": s_quaternius_lowpoly_medieval_buildings as IndexEntry[],
+  "quaternius-lowpoly-medieval-village-pack": s_quaternius_lowpoly_medieval_village_pack as IndexEntry[],
+  "quaternius-lowpoly-medieval-weapons": s_quaternius_lowpoly_medieval_weapons as IndexEntry[],
+  "quaternius-lowpoly-modular-dungeon-pack": s_quaternius_lowpoly_modular_dungeon_pack as IndexEntry[],
+  "quaternius-lowpoly-modular-sci-fi-environments": s_quaternius_lowpoly_modular_sci_fi_environments as IndexEntry[],
+  "quaternius-lowpoly-modular-street-pack": s_quaternius_lowpoly_modular_street_pack as IndexEntry[],
+  "quaternius-lowpoly-nature-pack": s_quaternius_lowpoly_nature_pack as IndexEntry[],
+  "quaternius-lowpoly-posed-humans": s_quaternius_lowpoly_posed_humans as IndexEntry[],
+  "quaternius-lowpoly-public-transport": s_quaternius_lowpoly_public_transport as IndexEntry[],
+  "quaternius-lowpoly-rpg": s_quaternius_lowpoly_rpg as IndexEntry[],
+  "quaternius-lowpoly-rpg-characters": s_quaternius_lowpoly_rpg_characters as IndexEntry[],
+  "quaternius-lowpoly-ship-pack": s_quaternius_lowpoly_ship_pack as IndexEntry[],
+  "quaternius-lowpoly-spaceships-pack": s_quaternius_lowpoly_spaceships_pack as IndexEntry[],
+  "quaternius-lowpoly-steampunk-turrets": s_quaternius_lowpoly_steampunk_turrets as IndexEntry[],
+  "quaternius-lowpoly-survival-pack": s_quaternius_lowpoly_survival_pack as IndexEntry[],
+  "quaternius-lowpoly-textured-trees": s_quaternius_lowpoly_textured_trees as IndexEntry[],
   "quaternius-medieval-village": s_quaternius_medieval_village as IndexEntry[],
   "quaternius-modular-scifi": s_quaternius_modular_scifi as IndexEntry[],
   "quaternius-stylized-nature": s_quaternius_stylized_nature as IndexEntry[],
+  "quaternius-textured-cute-monster-pack": s_quaternius_textured_cute_monster_pack as IndexEntry[],
 };
 
 export const generatedIndex: IndexEntry[] = Object.values(generatedBySource).flat();

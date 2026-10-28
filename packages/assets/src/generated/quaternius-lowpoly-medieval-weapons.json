@@ -1,0 +1,698 @@
+[
+  {
+    "id": "quaternius-lowpoly-medieval-weapons/Arrow",
+    "source": "quaternius-lowpoly-medieval-weapons",
+    "categories": [
+      "weapon",
+      "medieval"
+    ],
+    "file": "Arrow.glb",
+    "metrics": {
+      "glbBytes": 21896,
+      "byteLength": 21896,
+      "triangles": 224,
+      "primitives": 9,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 0.2741458863019943,
+        "d": 2.7338238150648477
+      },
+      "center": {
+        "x": -0.00045552104711532593,
+        "z": 1.3246848527947601
+      },
+      "minY": -0.0852102929604925,
+      "maxY": 0.15306418282333348
+    }
+  },
+  {
+    "id": "quaternius-lowpoly-medieval-weapons/Axe_Double",
+    "source": "quaternius-lowpoly-medieval-weapons",
+    "categories": [
+      "weapon",
+      "medieval"
+    ],
+    "file": "Axe_Double.glb",
+    "metrics": {
+      "glbBytes": 189356,
+      "byteLength": 189356,
+      "triangles": 1892,
+      "primitives": 170,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 2.0622897148132324,
+        "d": 0.26087918074762373
+      },
+      "center": {
+        "x": 0.6080136299133301,
+        "z": 0
+      },
+      "minY": -3.176554701121786,
+      "maxY": 3.176554701121786
+    }
+  },
+  {
+    "id": "quaternius-lowpoly-medieval-weapons/Axe_Small",
+    "source": "quaternius-lowpoly-medieval-weapons",
+    "categories": [
+      "weapon",
+      "medieval"
+    ],
+    "file": "Axe_Small.glb",
+    "metrics": {
+      "glbBytes": 96376,
+      "byteLength": 96376,
+      "triangles": 964,
+      "primitives": 82,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 1.1708133518695831,
+        "d": 0.24829122905584547
+      },
+      "center": {
+        "x": 0.44868646562099457,
+        "z": -4.0294202224844256e-8
+      },
+      "minY": -1.230854650696108,
+      "maxY": 1.725502749641719
+    }
+  },
+  {
+    "id": "quaternius-lowpoly-medieval-weapons/Axe",
+    "source": "quaternius-lowpoly-medieval-weapons",
+    "categories": [
+      "weapon",
+      "medieval"
+    ],
+    "file": "Axe.glb",
+    "metrics": {
+      "glbBytes": 112528,
+      "byteLength": 112528,
+      "triangles": 1130,
+      "primitives": 96,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 1.1708133518695831,
+        "d": 0.2482916043443587
+      },
+      "center": {
+        "x": 0.44868646562099457,
+        "z": -1.4826273640050625e-7
+      },
+      "minY": -1.7199007474978594,
+      "maxY": 3.5399611198504353
+    }
+  },
+  {
+    "id": "quaternius-lowpoly-medieval-weapons/Bow_Evil",
+    "source": "quaternius-lowpoly-medieval-weapons",
+    "categories": [
+      "weapon",
+      "medieval"
+    ],
+    "file": "Bow_Evil.glb",
+    "metrics": {
+      "glbBytes": 67148,
+      "byteLength": 67148,
+      "triangles": 772,
+      "primitives": 21,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 1.5562323331832886,
+        "d": 0.23078469487705583
+      },
+      "center": {
+        "x": 0.33012455701828003,
+        "z": 7.562339305877686e-7
+      },
+      "minY": -2.84457089396741,
+      "maxY": 2.8445708939676564
+    }
+  },
+  {
+    "id": "quaternius-lowpoly-medieval-weapons/Bow_Golden",
+    "source": "quaternius-lowpoly-medieval-weapons",
+    "categories": [
+      "weapon",
+      "medieval"
+    ],
+    "file": "Bow_Golden.glb",
+    "metrics": {
+      "glbBytes": 67460,
+      "byteLength": 67460,
+      "triangles": 776,
+      "primitives": 21,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 1.5800896883010864,
+        "d": 0.2434104299648818
+      },
+      "center": {
+        "x": 0.30992335081100464,
+        "z": 7.674098014831543e-7
+      },
+      "minY": -2.718302508155089,
+      "maxY": 2.718302508155339
+    }
+  },
+  {
+    "id": "quaternius-lowpoly-medieval-weapons/Bow_Wooden",
+    "source": "quaternius-lowpoly-medieval-weapons",
+    "categories": [
+      "weapon",
+      "medieval"
+    ],
+    "file": "Bow_Wooden.glb",
+    "metrics": {
+      "glbBytes": 63488,
+      "byteLength": 63488,
+      "triangles": 728,
+      "primitives": 20,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 1.4679219722747803,
+        "d": 0.2434104299648818
+      },
+      "center": {
+        "x": 0.3494623899459839,
+        "z": 7.674098014831543e-7
+      },
+      "minY": -2.718302508155089,
+      "maxY": 2.718302508155339
+    }
+  },
+  {
+    "id": "quaternius-lowpoly-medieval-weapons/Bow_Wooden2",
+    "source": "quaternius-lowpoly-medieval-weapons",
+    "categories": [
+      "weapon",
+      "medieval"
+    ],
+    "file": "Bow_Wooden2.glb",
+    "metrics": {
+      "glbBytes": 58720,
+      "byteLength": 58720,
+      "triangles": 664,
+      "primitives": 21,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 1.4679219722747803,
+        "d": 0.2434104299648818
+      },
+      "center": {
+        "x": 0.3763478994369507,
+        "z": 7.674098014831543e-7
+      },
+      "minY": -2.718302508155089,
+      "maxY": 2.718302508155339
+    }
+  },
+  {
+    "id": "quaternius-lowpoly-medieval-weapons/Claymore",
+    "source": "quaternius-lowpoly-medieval-weapons",
+    "categories": [
+      "weapon",
+      "medieval"
+    ],
+    "file": "Claymore.glb",
+    "metrics": {
+      "glbBytes": 125308,
+      "byteLength": 125308,
+      "triangles": 1031,
+      "primitives": 183,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 0.9779456257820129,
+        "d": 0.27128526719885243
+      },
+      "center": {
+        "x": 0,
+        "z": -4.847885447523126e-7
+      },
+      "minY": -0.32169412796246943,
+      "maxY": 6.272915862247745
+    }
+  },
+  {
+    "id": "quaternius-lowpoly-medieval-weapons/Dagger_2",
+    "source": "quaternius-lowpoly-medieval-weapons",
+    "categories": [
+      "weapon",
+      "medieval"
+    ],
+    "file": "Dagger_2.glb",
+    "metrics": {
+      "glbBytes": 89300,
+      "byteLength": 89300,
+      "triangles": 736,
+      "primitives": 127,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 0.6440001130104065,
+        "d": 0.2563672058882486
+      },
+      "center": {
+        "x": 0,
+        "z": -1.4304404936937853e-7
+      },
+      "minY": -0.6747644156438414,
+      "maxY": 2.430760642908222
+    }
+  },
+  {
+    "id": "quaternius-lowpoly-medieval-weapons/Dagger",
+    "source": "quaternius-lowpoly-medieval-weapons",
+    "categories": [
+      "weapon",
+      "medieval"
+    ],
+    "file": "Dagger.glb",
+    "metrics": {
+      "glbBytes": 84836,
+      "byteLength": 84836,
+      "triangles": 726,
+      "primitives": 111,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 0.5579814016819,
+        "d": 0.20828208355584532
+      },
+      "center": {
+        "x": -0.004480794072151184,
+        "z": -1.2894511773609008e-7
+      },
+      "minY": -0.5813489129933,
+      "maxY": 2.027073877135123
+    }
+  },
+  {
+    "id": "quaternius-lowpoly-medieval-weapons/Hammer_Double",
+    "source": "quaternius-lowpoly-medieval-weapons",
+    "categories": [
+      "weapon",
+      "medieval"
+    ],
+    "file": "Hammer_Double.glb",
+    "metrics": {
+      "glbBytes": 179096,
+      "byteLength": 179096,
+      "triangles": 1918,
+      "primitives": 117,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 2.2170910835266113,
+        "d": 0.8057082347520057
+      },
+      "center": {
+        "x": 0.020450115203857422,
+        "z": 0.00041865195107468334
+      },
+      "minY": -1.7772730052469579,
+      "maxY": 3.1936917962006515
+    }
+  },
+  {
+    "id": "quaternius-lowpoly-medieval-weapons/Hammer_Small",
+    "source": "quaternius-lowpoly-medieval-weapons",
+    "categories": [
+      "weapon",
+      "medieval"
+    ],
+    "file": "Hammer_Small.glb",
+    "metrics": {
+      "glbBytes": 137028,
+      "byteLength": 137028,
+      "triangles": 1474,
+      "primitives": 85,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 1.4866333305835724,
+        "d": 0.805708070676046
+      },
+      "center": {
+        "x": 0.36522887647151947,
+        "z": 0.0004187259887135364
+      },
+      "minY": -1.1793912112711116,
+      "maxY": 3.1503332318238355
+    }
+  },
+  {
+    "id": "quaternius-lowpoly-medieval-weapons/Scythe",
+    "source": "quaternius-lowpoly-medieval-weapons",
+    "categories": [
+      "weapon",
+      "medieval"
+    ],
+    "file": "Scythe.glb",
+    "metrics": {
+      "glbBytes": 143872,
+      "byteLength": 143872,
+      "triangles": 1310,
+      "primitives": 170,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 3.0287325978279114,
+        "d": 0.2770610306988118
+      },
+      "center": {
+        "x": 0.9509297311306,
+        "z": -9.37553760738119e-8
+      },
+      "minY": -2.2154653298051,
+      "maxY": 3.3663981186539615
+    }
+  },
+  {
+    "id": "quaternius-lowpoly-medieval-weapons/Shield_Celtic_Golden",
+    "source": "quaternius-lowpoly-medieval-weapons",
+    "categories": [
+      "weapon",
+      "medieval"
+    ],
+    "file": "Shield_Celtic_Golden.glb",
+    "metrics": {
+      "glbBytes": 68656,
+      "byteLength": 68656,
+      "triangles": 832,
+      "primitives": 6,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 2.0985605716705322,
+        "d": 1.4127383052852396
+      },
+      "center": {
+        "x": 0,
+        "z": 2.0705410719301653e-8
+      },
+      "minY": -2.2671774584505857,
+      "maxY": 2.0129996496889926
+    }
+  },
+  {
+    "id": "quaternius-lowpoly-medieval-weapons/Shield_Heater_2",
+    "source": "quaternius-lowpoly-medieval-weapons",
+    "categories": [
+      "weapon",
+      "medieval"
+    ],
+    "file": "Shield_Heater_2.glb",
+    "metrics": {
+      "glbBytes": 99456,
+      "byteLength": 99456,
+      "triangles": 1212,
+      "primitives": 11,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 2.0050151348114014,
+        "d": 0.59865857705904
+      },
+      "center": {
+        "x": 0,
+        "z": 0.14862048450806534
+      },
+      "minY": -1.4997693545782518,
+      "maxY": 1.063955976033511
+    }
+  },
+  {
+    "id": "quaternius-lowpoly-medieval-weapons/Shield_Heater",
+    "source": "quaternius-lowpoly-medieval-weapons",
+    "categories": [
+      "weapon",
+      "medieval"
+    ],
+    "file": "Shield_Heater.glb",
+    "metrics": {
+      "glbBytes": 157988,
+      "byteLength": 157988,
+      "triangles": 1888,
+      "primitives": 36,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 2.0050151348114014,
+        "d": 0.5970429484589196
+      },
+      "center": {
+        "x": 0,
+        "z": 0.004809517049413237
+      },
+      "minY": -1.3024943353425456,
+      "maxY": 1.2612309950059981
+    }
+  },
+  {
+    "id": "quaternius-lowpoly-medieval-weapons/Shield_Round_2",
+    "source": "quaternius-lowpoly-medieval-weapons",
+    "categories": [
+      "weapon",
+      "medieval"
+    ],
+    "file": "Shield_Round_2.glb",
+    "metrics": {
+      "glbBytes": 112660,
+      "byteLength": 112660,
+      "triangles": 1204,
+      "primitives": 70,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 1.9999999403953552,
+        "d": 0.6036777178472716
+      },
+      "center": {
+        "x": 2.9802322387695312e-8,
+        "z": -0.07060167193412688
+      },
+      "minY": -1.0000000606782244,
+      "maxY": 1.0000000376732798
+    }
+  },
+  {
+    "id": "quaternius-lowpoly-medieval-weapons/Shield_Round",
+    "source": "quaternius-lowpoly-medieval-weapons",
+    "categories": [
+      "weapon",
+      "medieval"
+    ],
+    "file": "Shield_Round.glb",
+    "metrics": {
+      "glbBytes": 86772,
+      "byteLength": 86772,
+      "triangles": 1056,
+      "primitives": 9,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 1.9999999403953552,
+        "d": 0.6036775986379821
+      },
+      "center": {
+        "x": -2.9802322387695312e-8,
+        "z": -0.07060173153877165
+      },
+      "minY": -1.0000000606782244,
+      "maxY": 1.0000000376732603
+    }
+  },
+  {
+    "id": "quaternius-lowpoly-medieval-weapons/Spear",
+    "source": "quaternius-lowpoly-medieval-weapons",
+    "categories": [
+      "weapon",
+      "medieval"
+    ],
+    "file": "Spear.glb",
+    "metrics": {
+      "glbBytes": 138668,
+      "byteLength": 138668,
+      "triangles": 1202,
+      "primitives": 184,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 0.530115470290184,
+        "d": 0.32488584877371596
+      },
+      "center": {
+        "x": 0.04553843289613724,
+        "z": -4.4043048429143195e-7
+      },
+      "minY": -2.155194547415471,
+      "maxY": 7.561880614996577
+    }
+  },
+  {
+    "id": "quaternius-lowpoly-medieval-weapons/Sword_2",
+    "source": "quaternius-lowpoly-medieval-weapons",
+    "categories": [
+      "weapon",
+      "medieval"
+    ],
+    "file": "Sword_2.glb",
+    "metrics": {
+      "glbBytes": 110708,
+      "byteLength": 110708,
+      "triangles": 942,
+      "primitives": 150,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 1.217596709728241,
+        "d": 0.3104222507706752
+      },
+      "center": {
+        "x": 0.00034627318382263184,
+        "z": -3.146361261807673e-7
+      },
+      "minY": -0.8405327453759809,
+      "maxY": 4.520052935138042
+    }
+  },
+  {
+    "id": "quaternius-lowpoly-medieval-weapons/Sword_Big",
+    "source": "quaternius-lowpoly-medieval-weapons",
+    "categories": [
+      "weapon",
+      "medieval"
+    ],
+    "file": "Sword_Big.glb",
+    "metrics": {
+      "glbBytes": 102452,
+      "byteLength": 102452,
+      "triangles": 830,
+      "primitives": 152,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 1.0204544067382812,
+        "d": 0.23858319880012968
+      },
+      "center": {
+        "x": 0,
+        "z": -4.6704664852237343e-7
+      },
+      "minY": -0.3546475962439077,
+      "maxY": 6.088071365717861
+    }
+  },
+  {
+    "id": "quaternius-lowpoly-medieval-weapons/Sword_Golden",
+    "source": "quaternius-lowpoly-medieval-weapons",
+    "categories": [
+      "weapon",
+      "medieval"
+    ],
+    "file": "Sword_Golden.glb",
+    "metrics": {
+      "glbBytes": 118992,
+      "byteLength": 118992,
+      "triangles": 1006,
+      "primitives": 164,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 1.2147138118743896,
+        "d": 0.23858312117346017
+      },
+      "center": {
+        "x": 0,
+        "z": -3.84977094980421e-7
+      },
+      "minY": -0.6201523736753922,
+      "maxY": 5.346097488764745
+    }
+  },
+  {
+    "id": "quaternius-lowpoly-medieval-weapons/Sword",
+    "source": "quaternius-lowpoly-medieval-weapons",
+    "categories": [
+      "weapon",
+      "medieval"
+    ],
+    "file": "Sword.glb",
+    "metrics": {
+      "glbBytes": 107088,
+      "byteLength": 107088,
+      "triangles": 872,
+      "primitives": 158,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 1.14239501953125,
+        "d": 0.26114504959424845
+      },
+      "center": {
+        "x": 0,
+        "z": -3.107907003696564e-7
+      },
+      "minY": -0.8187680457174613,
+      "maxY": 4.634007475191287
+    }
+  }
+]

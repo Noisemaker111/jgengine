@@ -1,0 +1,1592 @@
+[
+  {
+    "id": "quaternius-lowpoly-survival-pack/Axe_Small",
+    "source": "quaternius-lowpoly-survival-pack",
+    "categories": [
+      "survival",
+      "prop",
+      "item"
+    ],
+    "file": "Axe_Small.glb",
+    "metrics": {
+      "glbBytes": 18420,
+      "byteLength": 18420,
+      "triangles": 176,
+      "primitives": 11,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 0.8999631898703171,
+        "d": 0.14227926688016457
+      },
+      "center": {
+        "x": -0.28526761396261746,
+        "z": 1.0932599846247282e-8
+      },
+      "minY": -0.9348945086826859,
+      "maxY": 1.5285219300457005
+    }
+  },
+  {
+    "id": "quaternius-lowpoly-survival-pack/Axe",
+    "source": "quaternius-lowpoly-survival-pack",
+    "categories": [
+      "survival",
+      "prop",
+      "item"
+    ],
+    "file": "Axe.glb",
+    "metrics": {
+      "glbBytes": 23552,
+      "byteLength": 23552,
+      "triangles": 236,
+      "primitives": 13,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 1.2621764218658427,
+        "d": 0.19022169323498622
+      },
+      "center": {
+        "x": -0.2419885994269498,
+        "z": -0.001055954724308375
+      },
+      "minY": -0.7980041545148029,
+      "maxY": 2.458044071543602
+    }
+  },
+  {
+    "id": "quaternius-lowpoly-survival-pack/Backpack",
+    "source": "quaternius-lowpoly-survival-pack",
+    "categories": [
+      "survival",
+      "prop",
+      "item"
+    ],
+    "file": "Backpack.glb",
+    "metrics": {
+      "glbBytes": 154148,
+      "byteLength": 154148,
+      "triangles": 1748,
+      "primitives": 66,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 3.3428663949732984,
+        "d": 1.7456721068647885
+      },
+      "center": {
+        "x": 0,
+        "z": 0.24385220017335446
+      },
+      "minY": -1.464718249685001,
+      "maxY": 1.6545983087301581
+    }
+  },
+  {
+    "id": "quaternius-lowpoly-survival-pack/Bandages",
+    "source": "quaternius-lowpoly-survival-pack",
+    "categories": [
+      "survival",
+      "prop",
+      "item"
+    ],
+    "file": "Bandages.glb",
+    "metrics": {
+      "glbBytes": 23388,
+      "byteLength": 23388,
+      "triangles": 156,
+      "primitives": 41,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 0.30233955437864213,
+        "d": 0.31789869569066775
+      },
+      "center": {
+        "x": 7.4112114084590175e-9,
+        "z": 0
+      },
+      "minY": -0.18074149267140752,
+      "maxY": 0.18074149267140752
+    }
+  },
+  {
+    "id": "quaternius-lowpoly-survival-pack/Battery_Big",
+    "source": "quaternius-lowpoly-survival-pack",
+    "categories": [
+      "survival",
+      "prop",
+      "item"
+    ],
+    "file": "Battery_Big.glb",
+    "metrics": {
+      "glbBytes": 12508,
+      "byteLength": 12508,
+      "triangles": 100,
+      "primitives": 11,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 0.3000711359500303,
+        "d": 0.3000712109216732
+      },
+      "center": {
+        "x": 0.0029351383208057746,
+        "z": -0.0070861110743093425
+      },
+      "minY": 0.0023447586694673884,
+      "maxY": 0.4625174940513112
+    }
+  },
+  {
+    "id": "quaternius-lowpoly-survival-pack/Battery_Small",
+    "source": "quaternius-lowpoly-survival-pack",
+    "categories": [
+      "survival",
+      "prop",
+      "item"
+    ],
+    "file": "Battery_Small.glb",
+    "metrics": {
+      "glbBytes": 15252,
+      "byteLength": 15252,
+      "triangles": 132,
+      "primitives": 12,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 0.1838453371500998,
+        "d": 0.18384541157228487
+      },
+      "center": {
+        "x": 0,
+        "z": -3.7593106683164734e-8
+      },
+      "minY": 0.002344763612660877,
+      "maxY": 0.45914492292679454
+    }
+  },
+  {
+    "id": "quaternius-lowpoly-survival-pack/BearTrap_Closed",
+    "source": "quaternius-lowpoly-survival-pack",
+    "categories": [
+      "survival",
+      "prop",
+      "item"
+    ],
+    "file": "BearTrap_Closed.glb",
+    "metrics": {
+      "glbBytes": 45432,
+      "byteLength": 45432,
+      "triangles": 608,
+      "primitives": 1,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 2.815703725490912,
+        "d": 3.5438971444115275
+      },
+      "center": {
+        "x": 0,
+        "z": 0.29798167604312775
+      },
+      "minY": -0.04665507218767801,
+      "maxY": 1.6485594532351986
+    }
+  },
+  {
+    "id": "quaternius-lowpoly-survival-pack/BearTrap_Open",
+    "source": "quaternius-lowpoly-survival-pack",
+    "categories": [
+      "survival",
+      "prop",
+      "item"
+    ],
+    "file": "BearTrap_Open.glb",
+    "metrics": {
+      "glbBytes": 45428,
+      "byteLength": 45428,
+      "triangles": 608,
+      "primitives": 1,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 2.9915389258432152,
+        "d": 3.5438970967908743
+      },
+      "center": {
+        "x": 0,
+        "z": 0.2979817000687913
+      },
+      "minY": -0.047976802453595715,
+      "maxY": 0.6271091808860826
+    }
+  },
+  {
+    "id": "quaternius-lowpoly-survival-pack/Bonfire_Fire",
+    "source": "quaternius-lowpoly-survival-pack",
+    "categories": [
+      "survival",
+      "prop",
+      "item"
+    ],
+    "file": "Bonfire_Fire.glb",
+    "metrics": {
+      "glbBytes": 61092,
+      "byteLength": 61092,
+      "triangles": 704,
+      "primitives": 17,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 2.175589688050932,
+        "d": 1.984109678379475
+      },
+      "center": {
+        "x": 0.08055749647660382,
+        "z": -0.01266875516357091
+      },
+      "minY": -0.059411836126484485,
+      "maxY": 2.2518608179875907
+    }
+  },
+  {
+    "id": "quaternius-lowpoly-survival-pack/Bonfire",
+    "source": "quaternius-lowpoly-survival-pack",
+    "categories": [
+      "survival",
+      "prop",
+      "item"
+    ],
+    "file": "Bonfire.glb",
+    "metrics": {
+      "glbBytes": 53708,
+      "byteLength": 53708,
+      "triangles": 616,
+      "primitives": 16,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 2.175589688050932,
+        "d": 1.984109411903852
+      },
+      "center": {
+        "x": -0.006599298380688179,
+        "z": -0.10188419755157013
+      },
+      "minY": -0.02548396958614213,
+      "maxY": 0.6501729750459527
+    }
+  },
+  {
+    "id": "quaternius-lowpoly-survival-pack/Can_Broken",
+    "source": "quaternius-lowpoly-survival-pack",
+    "categories": [
+      "survival",
+      "prop",
+      "item"
+    ],
+    "file": "Can_Broken.glb",
+    "metrics": {
+      "glbBytes": 36380,
+      "byteLength": 36380,
+      "triangles": 428,
+      "primitives": 5,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 0.47334614396095276,
+        "d": 0.4733462180198756
+      },
+      "center": {
+        "x": 0,
+        "z": 6.727866377898017e-8
+      },
+      "minY": -3.8558915883997224e-8,
+      "maxY": 0.637495854312883
+    }
+  },
+  {
+    "id": "quaternius-lowpoly-survival-pack/Can_Closed",
+    "source": "quaternius-lowpoly-survival-pack",
+    "categories": [
+      "survival",
+      "prop",
+      "item"
+    ],
+    "file": "Can_Closed.glb",
+    "metrics": {
+      "glbBytes": 36376,
+      "byteLength": 36376,
+      "triangles": 428,
+      "primitives": 5,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 0.47334614396095276,
+        "d": 0.4733462180198756
+      },
+      "center": {
+        "x": 0,
+        "z": 6.727866377898017e-8
+      },
+      "minY": -3.8558915883997224e-8,
+      "maxY": 0.637495854312883
+    }
+  },
+  {
+    "id": "quaternius-lowpoly-survival-pack/Can_Open",
+    "source": "quaternius-lowpoly-survival-pack",
+    "categories": [
+      "survival",
+      "prop",
+      "item"
+    ],
+    "file": "Can_Open.glb",
+    "metrics": {
+      "glbBytes": 38240,
+      "byteLength": 38240,
+      "triangles": 452,
+      "primitives": 5,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 0.473346084356308,
+        "d": 0.4733462180198756
+      },
+      "center": {
+        "x": 0,
+        "z": 6.727866377898017e-8
+      },
+      "minY": -3.8558915883997224e-8,
+      "maxY": 0.637495854312883
+    }
+  },
+  {
+    "id": "quaternius-lowpoly-survival-pack/Can_Red",
+    "source": "quaternius-lowpoly-survival-pack",
+    "categories": [
+      "survival",
+      "prop",
+      "item"
+    ],
+    "file": "Can_Red.glb",
+    "metrics": {
+      "glbBytes": 34632,
+      "byteLength": 34632,
+      "triangles": 332,
+      "primitives": 29,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 0.47334614396095276,
+        "d": 0.4733462180198756
+      },
+      "center": {
+        "x": 0,
+        "z": 6.727866377898017e-8
+      },
+      "minY": -3.8558915883997224e-8,
+      "maxY": 0.637495854312883
+    }
+  },
+  {
+    "id": "quaternius-lowpoly-survival-pack/Compass_Closed",
+    "source": "quaternius-lowpoly-survival-pack",
+    "categories": [
+      "survival",
+      "prop",
+      "item"
+    ],
+    "file": "Compass_Closed.glb",
+    "metrics": {
+      "glbBytes": 42108,
+      "byteLength": 42108,
+      "triangles": 484,
+      "primitives": 11,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 0.6382403075695038,
+        "d": 0.28403792333389966
+      },
+      "center": {
+        "x": 0.017317995429039,
+        "z": 0.14441898702739847
+      },
+      "minY": -0.3057934041881315,
+      "maxY": 0.4995681812129304
+    }
+  },
+  {
+    "id": "quaternius-lowpoly-survival-pack/Compass_Open",
+    "source": "quaternius-lowpoly-survival-pack",
+    "categories": [
+      "survival",
+      "prop",
+      "item"
+    ],
+    "file": "Compass_Open.glb",
+    "metrics": {
+      "glbBytes": 60516,
+      "byteLength": 60516,
+      "triangles": 656,
+      "primitives": 29,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 0.9079255163669586,
+        "d": 0.702707176688791
+      },
+      "center": {
+        "x": -0.11752460896968842,
+        "z": 0.35375361393767485
+      },
+      "minY": -0.3057934339904539,
+      "maxY": 0.49956824942280975
+    }
+  },
+  {
+    "id": "quaternius-lowpoly-survival-pack/FirstAidKit_Hard",
+    "source": "quaternius-lowpoly-survival-pack",
+    "categories": [
+      "survival",
+      "prop",
+      "item"
+    ],
+    "file": "FirstAidKit_Hard.glb",
+    "metrics": {
+      "glbBytes": 24936,
+      "byteLength": 24936,
+      "triangles": 268,
+      "primitives": 7,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 1.8837201150827287,
+        "d": 0.6769992221650001
+      },
+      "center": {
+        "x": 0.0007828907288717213,
+        "z": 0.03915762125027375
+      },
+      "minY": -0.6177137886463241,
+      "maxY": 0.6593619043542402
+    }
+  },
+  {
+    "id": "quaternius-lowpoly-survival-pack/FirstAidKit",
+    "source": "quaternius-lowpoly-survival-pack",
+    "categories": [
+      "survival",
+      "prop",
+      "item"
+    ],
+    "file": "FirstAidKit.glb",
+    "metrics": {
+      "glbBytes": 93852,
+      "byteLength": 93852,
+      "triangles": 754,
+      "primitives": 143,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 1.5631111686263557,
+        "d": 0.733305439968052
+      },
+      "center": {
+        "x": 0.0008867959128883718,
+        "z": -1.2603969368196744e-8
+      },
+      "minY": -0.6023205949275049,
+      "maxY": 0.7570458192691034
+    }
+  },
+  {
+    "id": "quaternius-lowpoly-survival-pack/FlareGun",
+    "source": "quaternius-lowpoly-survival-pack",
+    "categories": [
+      "survival",
+      "prop",
+      "item"
+    ],
+    "file": "FlareGun.glb",
+    "metrics": {
+      "glbBytes": 44912,
+      "byteLength": 44912,
+      "triangles": 540,
+      "primitives": 4,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 2.505265718064445,
+        "d": 0.6032828395576157
+      },
+      "center": {
+        "x": 0.8374895532049197,
+        "z": -0.002130712148536301
+      },
+      "minY": -0.532530748334414,
+      "maxY": 1.1237001369809188
+    }
+  },
+  {
+    "id": "quaternius-lowpoly-survival-pack/GasCan",
+    "source": "quaternius-lowpoly-survival-pack",
+    "categories": [
+      "survival",
+      "prop",
+      "item"
+    ],
+    "file": "GasCan.glb",
+    "metrics": {
+      "glbBytes": 72320,
+      "byteLength": 72320,
+      "triangles": 788,
+      "primitives": 38,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 1.877467424237425,
+        "d": 0.6153409542969686
+      },
+      "center": {
+        "x": 0.03775013183856801,
+        "z": -2.008813874410098e-7
+      },
+      "minY": -0.003470522644066758,
+      "maxY": 2.4694728483514514
+    }
+  },
+  {
+    "id": "quaternius-lowpoly-survival-pack/Knife",
+    "source": "quaternius-lowpoly-survival-pack",
+    "categories": [
+      "survival",
+      "prop",
+      "item"
+    ],
+    "file": "Knife.glb",
+    "metrics": {
+      "glbBytes": 43320,
+      "byteLength": 43320,
+      "triangles": 450,
+      "primitives": 25,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 0.2654469886351478,
+        "d": 0.07781290519563469
+      },
+      "center": {
+        "x": 0.023147503308546785,
+        "z": -6.807121620891476e-8
+      },
+      "minY": -0.3636141671329424,
+      "maxY": 1.1992504579893797
+    }
+  },
+  {
+    "id": "quaternius-lowpoly-survival-pack/Match_Burnt",
+    "source": "quaternius-lowpoly-survival-pack",
+    "categories": [
+      "survival",
+      "prop",
+      "item"
+    ],
+    "file": "Match_Burnt.glb",
+    "metrics": {
+      "glbBytes": 7160,
+      "byteLength": 7160,
+      "triangles": 76,
+      "primitives": 1,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 0.05683305114507675,
+        "d": 0.08221006538942027
+      },
+      "center": {
+        "x": 0.00023843534290790558,
+        "z": 0.01028298905504835
+      },
+      "minY": -0.29842749740167934,
+      "maxY": 0.2707127118385753
+    }
+  },
+  {
+    "id": "quaternius-lowpoly-survival-pack/Match_Fire",
+    "source": "quaternius-lowpoly-survival-pack",
+    "categories": [
+      "survival",
+      "prop",
+      "item"
+    ],
+    "file": "Match_Fire.glb",
+    "metrics": {
+      "glbBytes": 8596,
+      "byteLength": 8596,
+      "triangles": 80,
+      "primitives": 2,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 0.0689472146332264,
+        "d": 0.07030741486332917
+      },
+      "center": {
+        "x": -0.0016052443534135818,
+        "z": 0.0020357840772828525
+      },
+      "minY": -0.2998057955815087,
+      "maxY": 0.3854558826477455
+    }
+  },
+  {
+    "id": "quaternius-lowpoly-survival-pack/Match",
+    "source": "quaternius-lowpoly-survival-pack",
+    "categories": [
+      "survival",
+      "prop",
+      "item"
+    ],
+    "file": "Match.glb",
+    "metrics": {
+      "glbBytes": 4748,
+      "byteLength": 4748,
+      "triangles": 28,
+      "primitives": 3,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 0.04135662689805031,
+        "d": 0.03797555239208933
+      },
+      "center": {
+        "x": -1.862645149230957e-9,
+        "z": 9.313274301064878e-10
+      },
+      "minY": -0.29980579327941764,
+      "maxY": 0.29980573367477314
+    }
+  },
+  {
+    "id": "quaternius-lowpoly-survival-pack/Matchbox",
+    "source": "quaternius-lowpoly-survival-pack",
+    "categories": [
+      "survival",
+      "prop",
+      "item"
+    ],
+    "file": "Matchbox.glb",
+    "metrics": {
+      "glbBytes": 39908,
+      "byteLength": 39908,
+      "triangles": 396,
+      "primitives": 29,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 0.5396760702133179,
+        "d": 0.16525199126063123
+      },
+      "center": {
+        "x": 0,
+        "z": -0.021726704172757114
+      },
+      "minY": -0.2989111712713599,
+      "maxY": 0.7901567915951668
+    }
+  },
+  {
+    "id": "quaternius-lowpoly-survival-pack/Pan_Small",
+    "source": "quaternius-lowpoly-survival-pack",
+    "categories": [
+      "survival",
+      "prop",
+      "item"
+    ],
+    "file": "Pan_Small.glb",
+    "metrics": {
+      "glbBytes": 22028,
+      "byteLength": 22028,
+      "triangles": 246,
+      "primitives": 3,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 1.1749643364407893,
+        "d": 2.1872298654623257
+      },
+      "center": {
+        "x": 0.006494443096235036,
+        "z": 0.5936134296793363
+      },
+      "minY": -0.13416611019346883,
+      "maxY": 0.09748153335114142
+    }
+  },
+  {
+    "id": "quaternius-lowpoly-survival-pack/Pan",
+    "source": "quaternius-lowpoly-survival-pack",
+    "categories": [
+      "survival",
+      "prop",
+      "item"
+    ],
+    "file": "Pan.glb",
+    "metrics": {
+      "glbBytes": 22016,
+      "byteLength": 22016,
+      "triangles": 246,
+      "primitives": 3,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 1.72298036996508,
+        "d": 2.8246296214835995
+      },
+      "center": {
+        "x": 0,
+        "z": 0.9409608073412699
+      },
+      "minY": -0.2735045325823068,
+      "maxY": 0.06852089911075307
+    }
+  },
+  {
+    "id": "quaternius-lowpoly-survival-pack/Phone",
+    "source": "quaternius-lowpoly-survival-pack",
+    "categories": [
+      "survival",
+      "prop",
+      "item"
+    ],
+    "file": "Phone.glb",
+    "metrics": {
+      "glbBytes": 22564,
+      "byteLength": 22564,
+      "triangles": 224,
+      "primitives": 13,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 0.4241066324246549,
+        "d": 0.06062732396252331
+      },
+      "center": {
+        "x": 0.0029009853059915325,
+        "z": 0.0014759474538593772
+      },
+      "minY": -0.45465084810416256,
+      "maxY": 0.4538054961664229
+    }
+  },
+  {
+    "id": "quaternius-lowpoly-survival-pack/Pistol_1",
+    "source": "quaternius-lowpoly-survival-pack",
+    "categories": [
+      "survival",
+      "prop",
+      "item"
+    ],
+    "file": "Pistol_1.glb",
+    "metrics": {
+      "glbBytes": 94656,
+      "byteLength": 94656,
+      "triangles": 1040,
+      "primitives": 47,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 1.8194009959697723,
+        "d": 0.323209966715854
+      },
+      "center": {
+        "x": 0.5700568109750748,
+        "z": -8.031590593982063e-8
+      },
+      "minY": -0.40792175780079676,
+      "maxY": 0.7536340619160706
+    }
+  },
+  {
+    "id": "quaternius-lowpoly-survival-pack/Pistol_2",
+    "source": "quaternius-lowpoly-survival-pack",
+    "categories": [
+      "survival",
+      "prop",
+      "item"
+    ],
+    "file": "Pistol_2.glb",
+    "metrics": {
+      "glbBytes": 106388,
+      "byteLength": 106388,
+      "triangles": 1200,
+      "primitives": 45,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 1.81940096616745,
+        "d": 0.32320996671583946
+      },
+      "center": {
+        "x": 0.5609667599201202,
+        "z": -7.957543336767348e-8
+      },
+      "minY": -0.4124667013718874,
+      "maxY": 0.7490890289380128
+    }
+  },
+  {
+    "id": "quaternius-lowpoly-survival-pack/Pot_Small",
+    "source": "quaternius-lowpoly-survival-pack",
+    "categories": [
+      "survival",
+      "prop",
+      "item"
+    ],
+    "file": "Pot_Small.glb",
+    "metrics": {
+      "glbBytes": 27784,
+      "byteLength": 27784,
+      "triangles": 326,
+      "primitives": 2,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 1.193876823529281,
+        "d": 1.4070692926769668
+      },
+      "center": {
+        "x": 0,
+        "z": -3.346166621565061e-8
+      },
+      "minY": -0.003547629367213849,
+      "maxY": 0.4143201154168011
+    }
+  },
+  {
+    "id": "quaternius-lowpoly-survival-pack/Pot",
+    "source": "quaternius-lowpoly-survival-pack",
+    "categories": [
+      "survival",
+      "prop",
+      "item"
+    ],
+    "file": "Pot.glb",
+    "metrics": {
+      "glbBytes": 27776,
+      "byteLength": 27776,
+      "triangles": 326,
+      "primitives": 2,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 1.72298036996508,
+        "d": 2.0306557537034253
+      },
+      "center": {
+        "x": 0,
+        "z": -8.390081585041287e-8
+      },
+      "minY": -0.0051198712799555195,
+      "maxY": 1.035078942048569
+    }
+  },
+  {
+    "id": "quaternius-lowpoly-survival-pack/PropaneTank",
+    "source": "quaternius-lowpoly-survival-pack",
+    "categories": [
+      "survival",
+      "prop",
+      "item"
+    ],
+    "file": "PropaneTank.glb",
+    "metrics": {
+      "glbBytes": 44316,
+      "byteLength": 44316,
+      "triangles": 516,
+      "primitives": 7,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 2.1551815834059287,
+        "d": 2.0497002982066097
+      },
+      "center": {
+        "x": -0.0038742848784977246,
+        "z": -0.04774069511546891
+      },
+      "minY": -1.3648769719627272,
+      "maxY": 1.5260940462084758
+    }
+  },
+  {
+    "id": "quaternius-lowpoly-survival-pack/Radio",
+    "source": "quaternius-lowpoly-survival-pack",
+    "categories": [
+      "survival",
+      "prop",
+      "item"
+    ],
+    "file": "Radio.glb",
+    "metrics": {
+      "glbBytes": 44764,
+      "byteLength": 44764,
+      "triangles": 481,
+      "primitives": 21,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 1.6856378031058556,
+        "d": 0.5701199281229821
+      },
+      "center": {
+        "x": 0,
+        "z": 0.16479613724072306
+      },
+      "minY": 0.005460894507530908,
+      "maxY": 2.1077078238839424
+    }
+  },
+  {
+    "id": "quaternius-lowpoly-survival-pack/Raft_Paddle",
+    "source": "quaternius-lowpoly-survival-pack",
+    "categories": [
+      "survival",
+      "prop",
+      "item"
+    ],
+    "file": "Raft_Paddle.glb",
+    "metrics": {
+      "glbBytes": 22948,
+      "byteLength": 22948,
+      "triangles": 264,
+      "primitives": 2,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 1.671092637499778,
+        "d": 14.852258872065152
+      },
+      "center": {
+        "x": 0,
+        "z": 1.5376741123645745
+      },
+      "minY": -0.15202777643952156,
+      "maxY": 0.15202881108456615
+    }
+  },
+  {
+    "id": "quaternius-lowpoly-survival-pack/Raft",
+    "source": "quaternius-lowpoly-survival-pack",
+    "categories": [
+      "survival",
+      "prop",
+      "item"
+    ],
+    "file": "Raft.glb",
+    "metrics": {
+      "glbBytes": 86556,
+      "byteLength": 86556,
+      "triangles": 1036,
+      "primitives": 17,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 11.964097023010254,
+        "d": 23.64509843343572
+      },
+      "center": {
+        "x": 0,
+        "z": -1.2755705380840254e-7
+      },
+      "minY": -1.3680848071114937,
+      "maxY": 2.933964032842369
+    }
+  },
+  {
+    "id": "quaternius-lowpoly-survival-pack/Revolver_1",
+    "source": "quaternius-lowpoly-survival-pack",
+    "categories": [
+      "survival",
+      "prop",
+      "item"
+    ],
+    "file": "Revolver_1.glb",
+    "metrics": {
+      "glbBytes": 85760,
+      "byteLength": 85760,
+      "triangles": 1046,
+      "primitives": 9,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 1.981894537806511,
+        "d": 0.2943564910985397
+      },
+      "center": {
+        "x": 0.7489578500390053,
+        "z": -0.000016501657797360347
+      },
+      "minY": -0.3161696435412905,
+      "maxY": 0.5736387015727211
+    }
+  },
+  {
+    "id": "quaternius-lowpoly-survival-pack/Revolver_2",
+    "source": "quaternius-lowpoly-survival-pack",
+    "categories": [
+      "survival",
+      "prop",
+      "item"
+    ],
+    "file": "Revolver_2.glb",
+    "metrics": {
+      "glbBytes": 79760,
+      "byteLength": 79760,
+      "triangles": 966,
+      "primitives": 10,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 1.4726619273424149,
+        "d": 0.2943564952219714
+      },
+      "center": {
+        "x": 0.5140876993536949,
+        "z": -0.000016667839437767284
+      },
+      "minY": -0.3148981572589686,
+      "maxY": 0.6002196313288587
+    }
+  },
+  {
+    "id": "quaternius-lowpoly-survival-pack/Revolver_3",
+    "source": "quaternius-lowpoly-survival-pack",
+    "categories": [
+      "survival",
+      "prop",
+      "item"
+    ],
+    "file": "Revolver_3.glb",
+    "metrics": {
+      "glbBytes": 109148,
+      "byteLength": 109148,
+      "triangles": 1334,
+      "primitives": 13,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 1.9011051505804062,
+        "d": 0.2943565029785351
+      },
+      "center": {
+        "x": 0.7672777250409126,
+        "z": -0.000016486571964777208
+      },
+      "minY": -0.2622999192676047,
+      "maxY": 0.7004273177531443
+    }
+  },
+  {
+    "id": "quaternius-lowpoly-survival-pack/Shotgun_1",
+    "source": "quaternius-lowpoly-survival-pack",
+    "categories": [
+      "survival",
+      "prop",
+      "item"
+    ],
+    "file": "Shotgun_1.glb",
+    "metrics": {
+      "glbBytes": 109008,
+      "byteLength": 109008,
+      "triangles": 1270,
+      "primitives": 33,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 5.214977979660034,
+        "d": 0.24653373370654336
+      },
+      "center": {
+        "x": 1.1930805444717407,
+        "z": 2.7206898928211487e-8
+      },
+      "minY": -0.5240067444403042,
+      "maxY": 0.418673922832722
+    }
+  },
+  {
+    "id": "quaternius-lowpoly-survival-pack/Shotgun_2",
+    "source": "quaternius-lowpoly-survival-pack",
+    "categories": [
+      "survival",
+      "prop",
+      "item"
+    ],
+    "file": "Shotgun_2.glb",
+    "metrics": {
+      "glbBytes": 85992,
+      "byteLength": 85992,
+      "triangles": 978,
+      "primitives": 32,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 5.7849003076553345,
+        "d": 0.2465337337065482
+      },
+      "center": {
+        "x": 1.415306270122528,
+        "z": 2.6152003992918615e-8
+      },
+      "minY": -0.5632631979544039,
+      "maxY": 0.3794174991209445
+    }
+  },
+  {
+    "id": "quaternius-lowpoly-survival-pack/Shotgun_SawedOff",
+    "source": "quaternius-lowpoly-survival-pack",
+    "categories": [
+      "survival",
+      "prop",
+      "item"
+    ],
+    "file": "Shotgun_SawedOff.glb",
+    "metrics": {
+      "glbBytes": 85604,
+      "byteLength": 85604,
+      "triangles": 956,
+      "primitives": 36,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 3.688200891017914,
+        "d": 0.42245184113847545
+      },
+      "center": {
+        "x": 1.4411077797412872,
+        "z": -0.0000017523437295802191
+      },
+      "minY": -0.45538893803119385,
+      "maxY": 0.5647411690563201
+    }
+  },
+  {
+    "id": "quaternius-lowpoly-survival-pack/Shotgun_ShortStock",
+    "source": "quaternius-lowpoly-survival-pack",
+    "categories": [
+      "survival",
+      "prop",
+      "item"
+    ],
+    "file": "Shotgun_ShortStock.glb",
+    "metrics": {
+      "glbBytes": 130916,
+      "byteLength": 130916,
+      "triangles": 1612,
+      "primitives": 12,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 4.471266448497772,
+        "d": 0.24653374510294462
+      },
+      "center": {
+        "x": 1.8133646547794342,
+        "z": 2.8040474775448132e-8
+      },
+      "minY": -0.4269044898111679,
+      "maxY": 0.5399954519827331
+    }
+  },
+  {
+    "id": "quaternius-lowpoly-survival-pack/Shovel",
+    "source": "quaternius-lowpoly-survival-pack",
+    "categories": [
+      "survival",
+      "prop",
+      "item"
+    ],
+    "file": "Shovel.glb",
+    "metrics": {
+      "glbBytes": 42744,
+      "byteLength": 42744,
+      "triangles": 322,
+      "primitives": 15,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 0.8046451245372601,
+        "d": 0.1837414818335526
+      },
+      "center": {
+        "x": 0.0004602065839298952,
+        "z": 0.008486479766656459
+      },
+      "minY": -2.083291541907152,
+      "maxY": 1.7903625242102148
+    }
+  },
+  {
+    "id": "quaternius-lowpoly-survival-pack/Tent",
+    "source": "quaternius-lowpoly-survival-pack",
+    "categories": [
+      "survival",
+      "prop",
+      "item"
+    ],
+    "file": "Tent.glb",
+    "metrics": {
+      "glbBytes": 71216,
+      "byteLength": 71216,
+      "triangles": 784,
+      "primitives": 33,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 14.580490179040353,
+        "d": 24.868194056770086
+      },
+      "center": {
+        "x": 0,
+        "z": 4.34331400178678e-7
+      },
+      "minY": -0.1758685559758313,
+      "maxY": 10.148577022903405
+    }
+  },
+  {
+    "id": "quaternius-lowpoly-survival-pack/Torch",
+    "source": "quaternius-lowpoly-survival-pack",
+    "categories": [
+      "survival",
+      "prop",
+      "item"
+    ],
+    "file": "Torch.glb",
+    "metrics": {
+      "glbBytes": 54204,
+      "byteLength": 54204,
+      "triangles": 610,
+      "primitives": 18,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 0.6763757905128068,
+        "d": 0.6661004069426222
+      },
+      "center": {
+        "x": -4.1502783915126074e-7,
+        "z": -0.010354765229381141
+      },
+      "minY": -1.4471624069827362,
+      "maxY": 1.0649731086210366
+    }
+  },
+  {
+    "id": "quaternius-lowpoly-survival-pack/Trashcan",
+    "source": "quaternius-lowpoly-survival-pack",
+    "categories": [
+      "survival",
+      "prop",
+      "item"
+    ],
+    "file": "Trashcan.glb",
+    "metrics": {
+      "glbBytes": 60016,
+      "byteLength": 60016,
+      "triangles": 739,
+      "primitives": 2,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 3.7165774095398776,
+        "d": 4.858672815565133
+      },
+      "center": {
+        "x": 0.005370656884324476,
+        "z": -0.2297567035135124
+      },
+      "minY": -0.00008714643800094799,
+      "maxY": 6.751132526438894
+    }
+  },
+  {
+    "id": "quaternius-lowpoly-survival-pack/WaterBottle_1",
+    "source": "quaternius-lowpoly-survival-pack",
+    "categories": [
+      "survival",
+      "prop",
+      "item"
+    ],
+    "file": "WaterBottle_1.glb",
+    "metrics": {
+      "glbBytes": 15496,
+      "byteLength": 15496,
+      "triangles": 168,
+      "primitives": 2,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 0.5510841626548972,
+        "d": 0.5510844641316742
+      },
+      "center": {
+        "x": 0,
+        "z": -6.278684955285385e-8
+      },
+      "minY": -0.5398427634950821,
+      "maxY": 1.3106086319150114
+    }
+  },
+  {
+    "id": "quaternius-lowpoly-survival-pack/WaterBottle_2",
+    "source": "quaternius-lowpoly-survival-pack",
+    "categories": [
+      "survival",
+      "prop",
+      "item"
+    ],
+    "file": "WaterBottle_2.glb",
+    "metrics": {
+      "glbBytes": 38192,
+      "byteLength": 38192,
+      "triangles": 456,
+      "primitives": 3,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 0.5511274737743974,
+        "d": 0.5511277752511745
+      },
+      "center": {
+        "x": 1.4822422816918035e-8,
+        "z": -7.760927236977189e-8
+      },
+      "minY": -0.5398427634986126,
+      "maxY": 1.310608631918537
+    }
+  },
+  {
+    "id": "quaternius-lowpoly-survival-pack/WaterBottle_3",
+    "source": "quaternius-lowpoly-survival-pack",
+    "categories": [
+      "survival",
+      "prop",
+      "item"
+    ],
+    "file": "WaterBottle_3.glb",
+    "metrics": {
+      "glbBytes": 30608,
+      "byteLength": 30608,
+      "triangles": 288,
+      "primitives": 26,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 0.4994602726951871,
+        "d": 0.4994605064915688
+      },
+      "center": {
+        "x": 0,
+        "z": -8.708012097513596e-8
+      },
+      "minY": -0.001063303796051058,
+      "maxY": 1.4339687752938957
+    }
+  },
+  {
+    "id": "quaternius-lowpoly-survival-pack/WoodenTorch_Fire",
+    "source": "quaternius-lowpoly-survival-pack",
+    "categories": [
+      "survival",
+      "prop",
+      "item"
+    ],
+    "file": "WoodenTorch_Fire.glb",
+    "metrics": {
+      "glbBytes": 39108,
+      "byteLength": 39108,
+      "triangles": 454,
+      "primitives": 5,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 0.6209054528919182,
+        "d": 0.5010253325244147
+      },
+      "center": {
+        "x": -0.009097606059043528,
+        "z": -0.0034556487646333206
+      },
+      "minY": -0.5834049778729261,
+      "maxY": 2.9632063174777157
+    }
+  },
+  {
+    "id": "quaternius-lowpoly-survival-pack/WoodenTorch",
+    "source": "quaternius-lowpoly-survival-pack",
+    "categories": [
+      "survival",
+      "prop",
+      "item"
+    ],
+    "file": "WoodenTorch.glb",
+    "metrics": {
+      "glbBytes": 38100,
+      "byteLength": 38100,
+      "triangles": 448,
+      "primitives": 4,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 0.4572325557839463,
+        "d": 0.4188265082187042
+      },
+      "center": {
+        "x": 0.0052865797179890706,
+        "z": -2.0603087108606033e-7
+      },
+      "minY": -0.5834049706140416,
+      "maxY": 2.1071884170703723
+    }
+  },
+  {
+    "id": "quaternius-lowpoly-survival-pack/WoodLog",
+    "source": "quaternius-lowpoly-survival-pack",
+    "categories": [
+      "survival",
+      "prop",
+      "item"
+    ],
+    "file": "WoodLog.glb",
+    "metrics": {
+      "glbBytes": 18704,
+      "byteLength": 18704,
+      "triangles": 202,
+      "primitives": 4,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 4.640860347547846,
+        "d": 4.5696722291418395
+      },
+      "center": {
+        "x": -0.030682816071712526,
+        "z": -0.032954288538016296
+      },
+      "minY": -0.01947578214413813,
+      "maxY": 1.0740359076926822
+    }
+  }
+]

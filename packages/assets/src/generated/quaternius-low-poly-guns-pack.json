@@ -1,0 +1,1597 @@
+[
+  {
+    "id": "quaternius-low-poly-guns-pack/AssaultRifle_1",
+    "source": "quaternius-low-poly-guns-pack",
+    "categories": [
+      "weapon",
+      "gun"
+    ],
+    "file": "AssaultRifle_1.glb",
+    "metrics": {
+      "glbBytes": 107036,
+      "byteLength": 107036,
+      "triangles": 1244,
+      "primitives": 33,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 3.104801654815674,
+        "d": 0.19602120334310547
+      },
+      "center": {
+        "x": 1.3642017841339111,
+        "z": -5.205248697348619e-9
+      },
+      "minY": -0.43799795317038065,
+      "maxY": 0.8220164935527693
+    }
+  },
+  {
+    "id": "quaternius-low-poly-guns-pack/AssaultRifle_2",
+    "source": "quaternius-low-poly-guns-pack",
+    "categories": [
+      "weapon",
+      "gun"
+    ],
+    "file": "AssaultRifle_2.glb",
+    "metrics": {
+      "glbBytes": 115364,
+      "byteLength": 115364,
+      "triangles": 1294,
+      "primitives": 51,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 5.421656966209412,
+        "d": 0.19602125895564554
+      },
+      "center": {
+        "x": 1.106018602848053,
+        "z": 6.114548917190987e-8
+      },
+      "minY": -0.74154152082784,
+      "maxY": 0.8598202626644094
+    }
+  },
+  {
+    "id": "quaternius-low-poly-guns-pack/AssaultRifle_3",
+    "source": "quaternius-low-poly-guns-pack",
+    "categories": [
+      "weapon",
+      "gun"
+    ],
+    "file": "AssaultRifle_3.glb",
+    "metrics": {
+      "glbBytes": 105204,
+      "byteLength": 105204,
+      "triangles": 1208,
+      "primitives": 36,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 3.431155025959015,
+        "d": 0.19602125895564554
+      },
+      "center": {
+        "x": 1.5318184792995453,
+        "z": 6.647528293102223e-8
+      },
+      "minY": -0.7285242240367623,
+      "maxY": 0.872837559455487
+    }
+  },
+  {
+    "id": "quaternius-low-poly-guns-pack/AssaultRifle_4",
+    "source": "quaternius-low-poly-guns-pack",
+    "categories": [
+      "weapon",
+      "gun"
+    ],
+    "file": "AssaultRifle_4.glb",
+    "metrics": {
+      "glbBytes": 118728,
+      "byteLength": 118728,
+      "triangles": 1378,
+      "primitives": 37,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 5.493686199188232,
+        "d": 0.19602125895564554
+      },
+      "center": {
+        "x": 1.0800817012786865,
+        "z": 5.28739453609095e-8
+      },
+      "minY": -0.736502484553885,
+      "maxY": 0.8648592989383643
+    }
+  },
+  {
+    "id": "quaternius-low-poly-guns-pack/AssaultRifle_5",
+    "source": "quaternius-low-poly-guns-pack",
+    "categories": [
+      "weapon",
+      "gun"
+    ],
+    "file": "AssaultRifle_5.glb",
+    "metrics": {
+      "glbBytes": 110888,
+      "byteLength": 110888,
+      "triangles": 1294,
+      "primitives": 34,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 5.421657085418701,
+        "d": 0.1960212589556261
+      },
+      "center": {
+        "x": 1.1110577583312988,
+        "z": 8.02134072358518e-8
+      },
+      "minY": -0.721385494941301,
+      "maxY": 0.8799761693416588
+    }
+  },
+  {
+    "id": "quaternius-low-poly-guns-pack/AssaultRifle2_1",
+    "source": "quaternius-low-poly-guns-pack",
+    "categories": [
+      "weapon",
+      "gun"
+    ],
+    "file": "AssaultRifle2_1.glb",
+    "metrics": {
+      "glbBytes": 240644,
+      "byteLength": 240644,
+      "triangles": 1930,
+      "primitives": 168,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 5.168815970420837,
+        "d": 0.346405365706954
+      },
+      "center": {
+        "x": 1.0247676968574524,
+        "z": 0.0016631568563779398
+      },
+      "minY": -0.7184699457214986,
+      "maxY": 1.0720124529582222
+    }
+  },
+  {
+    "id": "quaternius-low-poly-guns-pack/AssaultRifle2_2",
+    "source": "quaternius-low-poly-guns-pack",
+    "categories": [
+      "weapon",
+      "gun"
+    ],
+    "file": "AssaultRifle2_2.glb",
+    "metrics": {
+      "glbBytes": 199400,
+      "byteLength": 199400,
+      "triangles": 1792,
+      "primitives": 58,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 4.826422691345215,
+        "d": 0.26932295525209815
+      },
+      "center": {
+        "x": 0.8500967025756836,
+        "z": -0.0007242122766556724
+      },
+      "minY": -0.7065367919240337,
+      "maxY": 1.0839449385462758
+    }
+  },
+  {
+    "id": "quaternius-low-poly-guns-pack/AssaultRifle2_3",
+    "source": "quaternius-low-poly-guns-pack",
+    "categories": [
+      "weapon",
+      "gun"
+    ],
+    "file": "AssaultRifle2_3.glb",
+    "metrics": {
+      "glbBytes": 202456,
+      "byteLength": 202456,
+      "triangles": 1614,
+      "primitives": 144,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 3.7526495456695557,
+        "d": 0.34640532637773686
+      },
+      "center": {
+        "x": 1.5913387537002563,
+        "z": 0.0016631271751552934
+      },
+      "minY": -0.4155873935745934,
+      "maxY": 1.042031316636201
+    }
+  },
+  {
+    "id": "quaternius-low-poly-guns-pack/AssaultRifle2_4",
+    "source": "quaternius-low-poly-guns-pack",
+    "categories": [
+      "weapon",
+      "gun"
+    ],
+    "file": "AssaultRifle2_4.glb",
+    "metrics": {
+      "glbBytes": 152824,
+      "byteLength": 152824,
+      "triangles": 1372,
+      "primitives": 43,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 2.957313656806946,
+        "d": 0.24469957497364103
+      },
+      "center": {
+        "x": 0.4323825240135193,
+        "z": 4.446248196010583e-9
+      },
+      "minY": -0.5073676904693165,
+      "maxY": 1.0472933253303174
+    }
+  },
+  {
+    "id": "quaternius-low-poly-guns-pack/Bayonet_2",
+    "source": "quaternius-low-poly-guns-pack",
+    "categories": [
+      "weapon",
+      "gun"
+    ],
+    "file": "Bayonet_2.glb",
+    "metrics": {
+      "glbBytes": 42328,
+      "byteLength": 42328,
+      "triangles": 368,
+      "primitives": 49,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 1.1675502955913544,
+        "d": 0.13225484733307183
+      },
+      "center": {
+        "x": 0.37084318697452545,
+        "z": 3.565532452620701e-9
+      },
+      "minY": -0.13909524266419823,
+      "maxY": 0.09532507841287131
+    }
+  },
+  {
+    "id": "quaternius-low-poly-guns-pack/Bayonet",
+    "source": "quaternius-low-poly-guns-pack",
+    "categories": [
+      "weapon",
+      "gun"
+    ],
+    "file": "Bayonet.glb",
+    "metrics": {
+      "glbBytes": 28244,
+      "byteLength": 28244,
+      "triangles": 240,
+      "primitives": 31,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 1.16676464676857,
+        "d": 0.13225484733307183
+      },
+      "center": {
+        "x": 0.37045036256313324,
+        "z": 3.565532452620701e-9
+      },
+      "minY": -0.13909524266419823,
+      "maxY": 0.09532507841287131
+    }
+  },
+  {
+    "id": "quaternius-low-poly-guns-pack/Bipod",
+    "source": "quaternius-low-poly-guns-pack",
+    "categories": [
+      "weapon",
+      "gun"
+    ],
+    "file": "Bipod.glb",
+    "metrics": {
+      "glbBytes": 41068,
+      "byteLength": 41068,
+      "triangles": 476,
+      "primitives": 9,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 0.14527596533298492,
+        "d": 1.21622166868383
+      },
+      "center": {
+        "x": -0.00700271874666214,
+        "z": 9.406406209500062e-8
+      },
+      "minY": -1.2430977619995163,
+      "maxY": 0.08837557060615638
+    }
+  },
+  {
+    "id": "quaternius-low-poly-guns-pack/Bullpup_1",
+    "source": "quaternius-low-poly-guns-pack",
+    "categories": [
+      "weapon",
+      "gun"
+    ],
+    "file": "Bullpup_1.glb",
+    "metrics": {
+      "glbBytes": 230876,
+      "byteLength": 230876,
+      "triangles": 2778,
+      "primitives": 52,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 5.248059034347534,
+        "d": 0.3102845526812862
+      },
+      "center": {
+        "x": 0.0951768159866333,
+        "z": 5.481333813228684e-8
+      },
+      "minY": -0.4209163441692734,
+      "maxY": 1.1199727311169325
+    }
+  },
+  {
+    "id": "quaternius-low-poly-guns-pack/Bullpup_2",
+    "source": "quaternius-low-poly-guns-pack",
+    "categories": [
+      "weapon",
+      "gun"
+    ],
+    "file": "Bullpup_2.glb",
+    "metrics": {
+      "glbBytes": 210764,
+      "byteLength": 210764,
+      "triangles": 2532,
+      "primitives": 48,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 3.756657123565674,
+        "d": 0.310284548913771
+      },
+      "center": {
+        "x": 0.8388526439666748,
+        "z": 5.732425510662775e-8
+      },
+      "minY": -0.4247658207451248,
+      "maxY": 1.0929984107052506
+    }
+  },
+  {
+    "id": "quaternius-low-poly-guns-pack/Bullpup_3",
+    "source": "quaternius-low-poly-guns-pack",
+    "categories": [
+      "weapon",
+      "gun"
+    ],
+    "file": "Bullpup_3.glb",
+    "metrics": {
+      "glbBytes": 198024,
+      "byteLength": 198024,
+      "triangles": 2386,
+      "primitives": 41,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 4.3053977489471436,
+        "d": 0.3102845913999269
+      },
+      "center": {
+        "x": 0.5260134935379028,
+        "z": 0.000481746494616922
+      },
+      "minY": -0.5197610511029754,
+      "maxY": 1.0758559957370368
+    }
+  },
+  {
+    "id": "quaternius-low-poly-guns-pack/Flashlight",
+    "source": "quaternius-low-poly-guns-pack",
+    "categories": [
+      "weapon",
+      "gun"
+    ],
+    "file": "Flashlight.glb",
+    "metrics": {
+      "glbBytes": 14668,
+      "byteLength": 14668,
+      "triangles": 156,
+      "primitives": 3,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 0.3898349404335022,
+        "d": 0.3185614121631747
+      },
+      "center": {
+        "x": 0.07734274864196777,
+        "z": -1.2953312131247507e-8
+      },
+      "minY": -0.03411297859971077,
+      "maxY": 0.19312670441691215
+    }
+  },
+  {
+    "id": "quaternius-low-poly-guns-pack/Grip",
+    "source": "quaternius-low-poly-guns-pack",
+    "categories": [
+      "weapon",
+      "gun"
+    ],
+    "file": "Grip.glb",
+    "metrics": {
+      "glbBytes": 58928,
+      "byteLength": 58928,
+      "triangles": 796,
+      "primitives": 1,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 0.26339197158813477,
+        "d": 0.276946861909951
+      },
+      "center": {
+        "x": 0,
+        "z": -1.455168974207055e-8
+      },
+      "minY": -0.24411606064420352,
+      "maxY": 0.4227513300476588
+    }
+  },
+  {
+    "id": "quaternius-low-poly-guns-pack/Pistol_1",
+    "source": "quaternius-low-poly-guns-pack",
+    "categories": [
+      "weapon",
+      "gun"
+    ],
+    "file": "Pistol_1.glb",
+    "metrics": {
+      "glbBytes": 94656,
+      "byteLength": 94656,
+      "triangles": 1040,
+      "primitives": 47,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 1.8194009959697723,
+        "d": 0.323209966715854
+      },
+      "center": {
+        "x": 0.5700568109750748,
+        "z": -8.031590593982063e-8
+      },
+      "minY": -0.40792175780079676,
+      "maxY": 0.7536340619160706
+    }
+  },
+  {
+    "id": "quaternius-low-poly-guns-pack/Pistol_2",
+    "source": "quaternius-low-poly-guns-pack",
+    "categories": [
+      "weapon",
+      "gun"
+    ],
+    "file": "Pistol_2.glb",
+    "metrics": {
+      "glbBytes": 106388,
+      "byteLength": 106388,
+      "triangles": 1200,
+      "primitives": 45,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 1.81940096616745,
+        "d": 0.32320996671583946
+      },
+      "center": {
+        "x": 0.5609667599201202,
+        "z": -7.957543336767348e-8
+      },
+      "minY": -0.4124667013718874,
+      "maxY": 0.7490890289380128
+    }
+  },
+  {
+    "id": "quaternius-low-poly-guns-pack/Pistol_3",
+    "source": "quaternius-low-poly-guns-pack",
+    "categories": [
+      "weapon",
+      "gun"
+    ],
+    "file": "Pistol_3.glb",
+    "metrics": {
+      "glbBytes": 129956,
+      "byteLength": 129956,
+      "triangles": 1442,
+      "primitives": 65,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 1.8449520766735077,
+        "d": 0.3287212571251026
+      },
+      "center": {
+        "x": 0.5828323513269424,
+        "z": -8.062134523867392e-8
+      },
+      "minY": -0.42610194976662136,
+      "maxY": 0.8670264750275262
+    }
+  },
+  {
+    "id": "quaternius-low-poly-guns-pack/Pistol_4",
+    "source": "quaternius-low-poly-guns-pack",
+    "categories": [
+      "weapon",
+      "gun"
+    ],
+    "file": "Pistol_4.glb",
+    "metrics": {
+      "glbBytes": 126576,
+      "byteLength": 126576,
+      "triangles": 1320,
+      "primitives": 93,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 1.9755147099494934,
+        "d": 0.30093323888636125
+      },
+      "center": {
+        "x": 0.6220869719982147,
+        "z": -4.864901126389043e-8
+      },
+      "minY": -0.5154811389016076,
+      "maxY": 1.1126921422051275
+    }
+  },
+  {
+    "id": "quaternius-low-poly-guns-pack/Pistol_5",
+    "source": "quaternius-low-poly-guns-pack",
+    "categories": [
+      "weapon",
+      "gun"
+    ],
+    "file": "Pistol_5.glb",
+    "metrics": {
+      "glbBytes": 90100,
+      "byteLength": 90100,
+      "triangles": 968,
+      "primitives": 54,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 1.8193072080612183,
+        "d": 0.2743569185759043
+      },
+      "center": {
+        "x": 0.5428335070610046,
+        "z": -7.293495961346874e-8
+      },
+      "minY": -0.4768260642860684,
+      "maxY": 0.7218187674854344
+    }
+  },
+  {
+    "id": "quaternius-low-poly-guns-pack/Pistol_6",
+    "source": "quaternius-low-poly-guns-pack",
+    "categories": [
+      "weapon",
+      "gun"
+    ],
+    "file": "Pistol_6.glb",
+    "metrics": {
+      "glbBytes": 167376,
+      "byteLength": 167376,
+      "triangles": 1878,
+      "primitives": 81,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 2.447174370288849,
+        "d": 0.3087722167339255
+      },
+      "center": {
+        "x": 0.8855796754360199,
+        "z": -7.295414544694623e-8
+      },
+      "minY": -0.40737643372964144,
+      "maxY": 0.7541790856117938
+    }
+  },
+  {
+    "id": "quaternius-low-poly-guns-pack/Revolver_1",
+    "source": "quaternius-low-poly-guns-pack",
+    "categories": [
+      "weapon",
+      "gun"
+    ],
+    "file": "Revolver_1.glb",
+    "metrics": {
+      "glbBytes": 85760,
+      "byteLength": 85760,
+      "triangles": 1046,
+      "primitives": 9,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 1.981894537806511,
+        "d": 0.2943564910985397
+      },
+      "center": {
+        "x": 0.7489578500390053,
+        "z": -0.000016501657797360347
+      },
+      "minY": -0.3161696435412905,
+      "maxY": 0.5736387015727211
+    }
+  },
+  {
+    "id": "quaternius-low-poly-guns-pack/Revolver_2",
+    "source": "quaternius-low-poly-guns-pack",
+    "categories": [
+      "weapon",
+      "gun"
+    ],
+    "file": "Revolver_2.glb",
+    "metrics": {
+      "glbBytes": 103052,
+      "byteLength": 103052,
+      "triangles": 1252,
+      "primitives": 13,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 1.981895238161087,
+        "d": 0.29435649988039214
+      },
+      "center": {
+        "x": 0.7945910543203354,
+        "z": -0.000016512209681504575
+      },
+      "minY": -0.27835395350070263,
+      "maxY": 0.6653570176509059
+    }
+  },
+  {
+    "id": "quaternius-low-poly-guns-pack/Revolver_3",
+    "source": "quaternius-low-poly-guns-pack",
+    "categories": [
+      "weapon",
+      "gun"
+    ],
+    "file": "Revolver_3.glb",
+    "metrics": {
+      "glbBytes": 117324,
+      "byteLength": 117324,
+      "triangles": 1434,
+      "primitives": 13,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 1.9849862839259642,
+        "d": 0.294356486430295
+      },
+      "center": {
+        "x": 0.7793883081869217,
+        "z": -0.000016510561773708243
+      },
+      "minY": -0.33511695611067416,
+      "maxY": 0.6473731553564903
+    }
+  },
+  {
+    "id": "quaternius-low-poly-guns-pack/Revolver_4",
+    "source": "quaternius-low-poly-guns-pack",
+    "categories": [
+      "weapon",
+      "gun"
+    ],
+    "file": "Revolver_4.glb",
+    "metrics": {
+      "glbBytes": 79760,
+      "byteLength": 79760,
+      "triangles": 966,
+      "primitives": 10,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 1.4726619273424149,
+        "d": 0.2943564952219714
+      },
+      "center": {
+        "x": 0.5140876993536949,
+        "z": -0.000016667839437767284
+      },
+      "minY": -0.3148981572589686,
+      "maxY": 0.6002196313288587
+    }
+  },
+  {
+    "id": "quaternius-low-poly-guns-pack/Revolver_5",
+    "source": "quaternius-low-poly-guns-pack",
+    "categories": [
+      "weapon",
+      "gun"
+    ],
+    "file": "Revolver_5.glb",
+    "metrics": {
+      "glbBytes": 109148,
+      "byteLength": 109148,
+      "triangles": 1334,
+      "primitives": 13,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 1.9011051505804062,
+        "d": 0.2943565029785351
+      },
+      "center": {
+        "x": 0.7672777250409126,
+        "z": -0.000016486571964777208
+      },
+      "minY": -0.2622999192676047,
+      "maxY": 0.7004273177531443
+    }
+  },
+  {
+    "id": "quaternius-low-poly-guns-pack/Scope_1",
+    "source": "quaternius-low-poly-guns-pack",
+    "categories": [
+      "weapon",
+      "gun"
+    ],
+    "file": "Scope_1.glb",
+    "metrics": {
+      "glbBytes": 36320,
+      "byteLength": 36320,
+      "triangles": 412,
+      "primitives": 9,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 2.1045643091201782,
+        "d": 0.30991608206200505
+      },
+      "center": {
+        "x": -0.04129546880722046,
+        "z": -2.795304482605676e-7
+      },
+      "minY": -0.031306351635217854,
+      "maxY": 0.35306670806137
+    }
+  },
+  {
+    "id": "quaternius-low-poly-guns-pack/Scope_2",
+    "source": "quaternius-low-poly-guns-pack",
+    "categories": [
+      "weapon",
+      "gun"
+    ],
+    "file": "Scope_2.glb",
+    "metrics": {
+      "glbBytes": 40684,
+      "byteLength": 40684,
+      "triangles": 468,
+      "primitives": 9,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 2.0793545246124268,
+        "d": 0.36058733394680553
+      },
+      "center": {
+        "x": 0.038358092308044434,
+        "z": -2.806698074231395e-7
+      },
+      "minY": -0.03123888703031962,
+      "maxY": 0.36698591666256253
+    }
+  },
+  {
+    "id": "quaternius-low-poly-guns-pack/Scope_3",
+    "source": "quaternius-low-poly-guns-pack",
+    "categories": [
+      "weapon",
+      "gun"
+    ],
+    "file": "Scope_3.glb",
+    "metrics": {
+      "glbBytes": 37560,
+      "byteLength": 37560,
+      "triangles": 428,
+      "primitives": 9,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 1.9231653809547424,
+        "d": 0.37848680581701166
+      },
+      "center": {
+        "x": 0.07994243502616882,
+        "z": -2.9015454242053984e-7
+      },
+      "minY": -0.028970153169041668,
+      "maxY": 0.3896882842343205
+    }
+  },
+  {
+    "id": "quaternius-low-poly-guns-pack/Shotgun_1",
+    "source": "quaternius-low-poly-guns-pack",
+    "categories": [
+      "weapon",
+      "gun"
+    ],
+    "file": "Shotgun_1.glb",
+    "metrics": {
+      "glbBytes": 109008,
+      "byteLength": 109008,
+      "triangles": 1270,
+      "primitives": 33,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 5.214977979660034,
+        "d": 0.24653373370654336
+      },
+      "center": {
+        "x": 1.1930805444717407,
+        "z": 2.7206898928211487e-8
+      },
+      "minY": -0.5240067444403042,
+      "maxY": 0.418673922832722
+    }
+  },
+  {
+    "id": "quaternius-low-poly-guns-pack/Shotgun_2",
+    "source": "quaternius-low-poly-guns-pack",
+    "categories": [
+      "weapon",
+      "gun"
+    ],
+    "file": "Shotgun_2.glb",
+    "metrics": {
+      "glbBytes": 68476,
+      "byteLength": 68476,
+      "triangles": 746,
+      "primitives": 33,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 5.784901022911072,
+        "d": 0.24653375716205683
+      },
+      "center": {
+        "x": 1.4575121998786926,
+        "z": -4.3178965205420416e-7
+      },
+      "minY": -0.5683020554145024,
+      "maxY": 0.38115351420227733
+    }
+  },
+  {
+    "id": "quaternius-low-poly-guns-pack/Shotgun_3",
+    "source": "quaternius-low-poly-guns-pack",
+    "categories": [
+      "weapon",
+      "gun"
+    ],
+    "file": "Shotgun_3.glb",
+    "metrics": {
+      "glbBytes": 85992,
+      "byteLength": 85992,
+      "triangles": 978,
+      "primitives": 32,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 5.7849003076553345,
+        "d": 0.2465337337065482
+      },
+      "center": {
+        "x": 1.415306270122528,
+        "z": 2.6152003992918615e-8
+      },
+      "minY": -0.5632631979544039,
+      "maxY": 0.3794174991209445
+    }
+  },
+  {
+    "id": "quaternius-low-poly-guns-pack/Shotgun_4",
+    "source": "quaternius-low-poly-guns-pack",
+    "categories": [
+      "weapon",
+      "gun"
+    ],
+    "file": "Shotgun_4.glb",
+    "metrics": {
+      "glbBytes": 59144,
+      "byteLength": 59144,
+      "triangles": 668,
+      "primitives": 19,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 5.448816418647766,
+        "d": 0.19927694846103278
+      },
+      "center": {
+        "x": 1.204948604106903,
+        "z": 7.417910251328319e-9
+      },
+      "minY": -0.5775054855553544,
+      "maxY": 0.349249856015864
+    }
+  },
+  {
+    "id": "quaternius-low-poly-guns-pack/Shotgun_SawedOff",
+    "source": "quaternius-low-poly-guns-pack",
+    "categories": [
+      "weapon",
+      "gun"
+    ],
+    "file": "Shotgun_SawedOff.glb",
+    "metrics": {
+      "glbBytes": 85604,
+      "byteLength": 85604,
+      "triangles": 956,
+      "primitives": 36,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 3.688200891017914,
+        "d": 0.42245184113847545
+      },
+      "center": {
+        "x": 1.4411077797412872,
+        "z": -0.0000017523437295802191
+      },
+      "minY": -0.45538893803119385,
+      "maxY": 0.5647411690563201
+    }
+  },
+  {
+    "id": "quaternius-low-poly-guns-pack/Shotgun_ShortStock",
+    "source": "quaternius-low-poly-guns-pack",
+    "categories": [
+      "weapon",
+      "gun"
+    ],
+    "file": "Shotgun_ShortStock.glb",
+    "metrics": {
+      "glbBytes": 130916,
+      "byteLength": 130916,
+      "triangles": 1612,
+      "primitives": 12,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 4.471266448497772,
+        "d": 0.24653374510294462
+      },
+      "center": {
+        "x": 1.8133646547794342,
+        "z": 2.8040474775448132e-8
+      },
+      "minY": -0.4269044898111679,
+      "maxY": 0.5399954519827331
+    }
+  },
+  {
+    "id": "quaternius-low-poly-guns-pack/Silencer_1",
+    "source": "quaternius-low-poly-guns-pack",
+    "categories": [
+      "weapon",
+      "gun"
+    ],
+    "file": "Silencer_1.glb",
+    "metrics": {
+      "glbBytes": 19476,
+      "byteLength": 19476,
+      "triangles": 248,
+      "primitives": 1,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 1.7447413206100464,
+        "d": 0.3314105934814595
+      },
+      "center": {
+        "x": 0.7770581841468811,
+        "z": 1.2665990292703988e-7
+      },
+      "minY": -0.1575953038293732,
+      "maxY": 0.15759490149806224
+    }
+  },
+  {
+    "id": "quaternius-low-poly-guns-pack/Silencer_2",
+    "source": "quaternius-low-poly-guns-pack",
+    "categories": [
+      "weapon",
+      "gun"
+    ],
+    "file": "Silencer_2.glb",
+    "metrics": {
+      "glbBytes": 45400,
+      "byteLength": 45400,
+      "triangles": 608,
+      "primitives": 1,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 1.657738596200943,
+        "d": 0.3323517062647996
+      },
+      "center": {
+        "x": 0.7587633579969406,
+        "z": 1.1920931626552278e-7
+      },
+      "minY": -0.158042785776689,
+      "maxY": 0.1580424579511816
+    }
+  },
+  {
+    "id": "quaternius-low-poly-guns-pack/Silencer_3",
+    "source": "quaternius-low-poly-guns-pack",
+    "categories": [
+      "weapon",
+      "gun"
+    ],
+    "file": "Silencer_3.glb",
+    "metrics": {
+      "glbBytes": 61496,
+      "byteLength": 61496,
+      "triangles": 832,
+      "primitives": 1,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 1.7716478407382965,
+        "d": 0.34861352480929947
+      },
+      "center": {
+        "x": 0.8021815270185471,
+        "z": 1.341104835239637e-7
+      },
+      "minY": -0.16577578940641036,
+      "maxY": 0.1657753870751018
+    }
+  },
+  {
+    "id": "quaternius-low-poly-guns-pack/Silencer_long",
+    "source": "quaternius-low-poly-guns-pack",
+    "categories": [
+      "weapon",
+      "gun"
+    ],
+    "file": "Silencer_long.glb",
+    "metrics": {
+      "glbBytes": 19480,
+      "byteLength": 19480,
+      "triangles": 248,
+      "primitives": 1,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 2.6600539311766624,
+        "d": 0.33141059348145707
+      },
+      "center": {
+        "x": 1.2216924615204334,
+        "z": 1.2665990170579455e-7
+      },
+      "minY": -0.157595288928212,
+      "maxY": 0.15759490149806224
+    }
+  },
+  {
+    "id": "quaternius-low-poly-guns-pack/Silencer_Short",
+    "source": "quaternius-low-poly-guns-pack",
+    "categories": [
+      "weapon",
+      "gun"
+    ],
+    "file": "Silencer_Short.glb",
+    "metrics": {
+      "glbBytes": 19484,
+      "byteLength": 19484,
+      "triangles": 248,
+      "primitives": 1,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 0.8758703321218491,
+        "d": 0.33141059348145707
+      },
+      "center": {
+        "x": 0.34100503474473953,
+        "z": 1.2665989929105947e-7
+      },
+      "minY": -0.1575952740270508,
+      "maxY": 0.15759491639922343
+    }
+  },
+  {
+    "id": "quaternius-low-poly-guns-pack/SniperRifle_1",
+    "source": "quaternius-low-poly-guns-pack",
+    "categories": [
+      "weapon",
+      "gun"
+    ],
+    "file": "SniperRifle_1.glb",
+    "metrics": {
+      "glbBytes": 119688,
+      "byteLength": 119688,
+      "triangles": 1382,
+      "primitives": 40,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 7.294632911682129,
+        "d": 0.45931062437440917
+      },
+      "center": {
+        "x": 1.6038918495178223,
+        "z": 0.07469689103133037
+      },
+      "minY": -0.7878497495386574,
+      "maxY": 0.696122874730959
+    }
+  },
+  {
+    "id": "quaternius-low-poly-guns-pack/SniperRifle_2",
+    "source": "quaternius-low-poly-guns-pack",
+    "categories": [
+      "weapon",
+      "gun"
+    ],
+    "file": "SniperRifle_2.glb",
+    "metrics": {
+      "glbBytes": 148456,
+      "byteLength": 148456,
+      "triangles": 1732,
+      "primitives": 46,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 7.413838863372803,
+        "d": 0.48464626791383486
+      },
+      "center": {
+        "x": 1.8324267864227295,
+        "z": 0.0620291548133369
+      },
+      "minY": -0.7641864116672888,
+      "maxY": 0.7432591814936683
+    }
+  },
+  {
+    "id": "quaternius-low-poly-guns-pack/SniperRifle_3",
+    "source": "quaternius-low-poly-guns-pack",
+    "categories": [
+      "weapon",
+      "gun"
+    ],
+    "file": "SniperRifle_3.glb",
+    "metrics": {
+      "glbBytes": 149528,
+      "byteLength": 149528,
+      "triangles": 1722,
+      "primitives": 54,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 7.244653344154358,
+        "d": 0.44573745323269987
+      },
+      "center": {
+        "x": 1.689149558544159,
+        "z": 0.08148355974759715
+      },
+      "minY": -0.3835658959421792,
+      "maxY": 0.8172202010096682
+    }
+  },
+  {
+    "id": "quaternius-low-poly-guns-pack/SniperRifle_4",
+    "source": "quaternius-low-poly-guns-pack",
+    "categories": [
+      "weapon",
+      "gun"
+    ],
+    "file": "SniperRifle_4.glb",
+    "metrics": {
+      "glbBytes": 117436,
+      "byteLength": 117436,
+      "triangles": 1344,
+      "primitives": 43,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 6.335608124732971,
+        "d": 0.4593106022650554
+      },
+      "center": {
+        "x": 1.7902576327323914,
+        "z": 0.07469715822945333
+      },
+      "minY": -0.7137188567850136,
+      "maxY": 0.6345475215854042
+    }
+  },
+  {
+    "id": "quaternius-low-poly-guns-pack/SniperRifle_5",
+    "source": "quaternius-low-poly-guns-pack",
+    "categories": [
+      "weapon",
+      "gun"
+    ],
+    "file": "SniperRifle_5.glb",
+    "metrics": {
+      "glbBytes": 148992,
+      "byteLength": 148992,
+      "triangles": 1688,
+      "primitives": 62,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 6.335608005523682,
+        "d": 1.2478508467321516
+      },
+      "center": {
+        "x": 0.8098719120025635,
+        "z": 0.0038576661966877035
+      },
+      "minY": -0.9127031978884297,
+      "maxY": 0.9865774342986162
+    }
+  },
+  {
+    "id": "quaternius-low-poly-guns-pack/SniperRifle_6",
+    "source": "quaternius-low-poly-guns-pack",
+    "categories": [
+      "weapon",
+      "gun"
+    ],
+    "file": "SniperRifle_6.glb",
+    "metrics": {
+      "glbBytes": 118284,
+      "byteLength": 118284,
+      "triangles": 1370,
+      "primitives": 38,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 7.2060041427612305,
+        "d": 0.4935959815945208
+      },
+      "center": {
+        "x": 1.6436104774475098,
+        "z": 0.05755435666388853
+      },
+      "minY": -0.7585778544705872,
+      "maxY": 0.7596819300593516
+    }
+  },
+  {
+    "id": "quaternius-low-poly-guns-pack/Stock",
+    "source": "quaternius-low-poly-guns-pack",
+    "categories": [
+      "weapon",
+      "gun"
+    ],
+    "file": "Stock.glb",
+    "metrics": {
+      "glbBytes": 13816,
+      "byteLength": 13816,
+      "triangles": 170,
+      "primitives": 1,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 1.619595505297184,
+        "d": 0.1141610513676816
+      },
+      "center": {
+        "x": -0.7775657288730145,
+        "z": 6.869841761431017e-8
+      },
+      "minY": -0.6261020991814722,
+      "maxY": 0.12575137055046834
+    }
+  },
+  {
+    "id": "quaternius-low-poly-guns-pack/SubmachineGun_1",
+    "source": "quaternius-low-poly-guns-pack",
+    "categories": [
+      "weapon",
+      "gun"
+    ],
+    "file": "SubmachineGun_1.glb",
+    "metrics": {
+      "glbBytes": 99852,
+      "byteLength": 99852,
+      "triangles": 1164,
+      "primitives": 29,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 2.771468997001648,
+        "d": 0.31854560497063267
+      },
+      "center": {
+        "x": 0.8855352997779846,
+        "z": 1.3962521207278034e-7
+      },
+      "minY": -0.7509978077023151,
+      "maxY": 0.9576871058552869
+    }
+  },
+  {
+    "id": "quaternius-low-poly-guns-pack/SubmachineGun_2",
+    "source": "quaternius-low-poly-guns-pack",
+    "categories": [
+      "weapon",
+      "gun"
+    ],
+    "file": "SubmachineGun_2.glb",
+    "metrics": {
+      "glbBytes": 116488,
+      "byteLength": 116488,
+      "triangles": 1374,
+      "primitives": 30,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 4.043949365615845,
+        "d": 0.3185456424589982
+      },
+      "center": {
+        "x": 0.22689449787139893,
+        "z": 6.425462735493159e-8
+      },
+      "minY": -0.8607408067791715,
+      "maxY": 0.986583378037739
+    }
+  },
+  {
+    "id": "quaternius-low-poly-guns-pack/SubmachineGun_3",
+    "source": "quaternius-low-poly-guns-pack",
+    "categories": [
+      "weapon",
+      "gun"
+    ],
+    "file": "SubmachineGun_3.glb",
+    "metrics": {
+      "glbBytes": 131020,
+      "byteLength": 131020,
+      "triangles": 1566,
+      "primitives": 28,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 3.9975855350494385,
+        "d": 0.3185455895613632
+      },
+      "center": {
+        "x": 0.12341105937957764,
+        "z": 5.792544333083072e-8
+      },
+      "minY": -0.7510135433285527,
+      "maxY": 0.7716272732823377
+    }
+  },
+  {
+    "id": "quaternius-low-poly-guns-pack/SubmachineGun_4",
+    "source": "quaternius-low-poly-guns-pack",
+    "categories": [
+      "weapon",
+      "gun"
+    ],
+    "file": "SubmachineGun_4.glb",
+    "metrics": {
+      "glbBytes": 88708,
+      "byteLength": 88708,
+      "triangles": 1024,
+      "primitives": 28,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 2.549446076154709,
+        "d": 0.3185456083599943
+      },
+      "center": {
+        "x": 0.9089813381433487,
+        "z": 7.041736721502545e-8
+      },
+      "minY": -0.7939183375447059,
+      "maxY": 0.844107653817465
+    }
+  },
+  {
+    "id": "quaternius-low-poly-guns-pack/SubmachineGun_5",
+    "source": "quaternius-low-poly-guns-pack",
+    "categories": [
+      "weapon",
+      "gun"
+    ],
+    "file": "SubmachineGun_5.glb",
+    "metrics": {
+      "glbBytes": 122164,
+      "byteLength": 122164,
+      "triangles": 1440,
+      "primitives": 32,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 5.029029965400696,
+        "d": 0.3185456234332114
+      },
+      "center": {
+        "x": 0.7242500185966492,
+        "z": -5.661869306727851e-9
+      },
+      "minY": -0.7390573880284198,
+      "maxY": 0.9914873501866245
+    }
+  },
+  {
+    "id": "quaternius-low-poly-guns-pack/Tripod",
+    "source": "quaternius-low-poly-guns-pack",
+    "categories": [
+      "weapon",
+      "gun"
+    ],
+    "file": "Tripod.glb",
+    "metrics": {
+      "glbBytes": 55176,
+      "byteLength": 55176,
+      "triangles": 648,
+      "primitives": 12,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 1.310559630393982,
+        "d": 1.2162217037560188
+      },
+      "center": {
+        "x": 0.152155339717865,
+        "z": 0.001780273758426043
+      },
+      "minY": -1.1529001985381073,
+      "maxY": 0.027993992614668728
+    }
+  }
+]

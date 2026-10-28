@@ -1,0 +1,1307 @@
+[
+  {
+    "id": "quaternius-lowpoly-textured-trees/Birch_1",
+    "source": "quaternius-lowpoly-textured-trees",
+    "categories": [
+      "nature",
+      "tree"
+    ],
+    "file": "Birch_1.glb",
+    "metrics": {
+      "glbBytes": 237692,
+      "byteLength": 237692,
+      "triangles": 2308,
+      "primitives": 2,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 4.8933916091918945,
+        "d": 4.462148422151028
+      },
+      "center": {
+        "x": -0.43228697776794434,
+        "z": -0.270130869641504
+      },
+      "minY": -0.0010981701057494278,
+      "maxY": 9.475345931050361
+    }
+  },
+  {
+    "id": "quaternius-lowpoly-textured-trees/Birch_10",
+    "source": "quaternius-lowpoly-textured-trees",
+    "categories": [
+      "nature",
+      "tree"
+    ],
+    "file": "Birch_10.glb",
+    "metrics": {
+      "glbBytes": 233208,
+      "byteLength": 233208,
+      "triangles": 2264,
+      "primitives": 2,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 5.360859394073486,
+        "d": 4.741540906887607
+      },
+      "center": {
+        "x": -0.5440776348114014,
+        "z": 0.1814131751259509
+      },
+      "minY": -0.002992689837116305,
+      "maxY": 10.229007183076304
+    }
+  },
+  {
+    "id": "quaternius-lowpoly-textured-trees/Birch_2",
+    "source": "quaternius-lowpoly-textured-trees",
+    "categories": [
+      "nature",
+      "tree"
+    ],
+    "file": "Birch_2.glb",
+    "metrics": {
+      "glbBytes": 114880,
+      "byteLength": 114880,
+      "triangles": 1104,
+      "primitives": 2,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 5.114714622497559,
+        "d": 3.0590702560655703
+      },
+      "center": {
+        "x": 1.38673734664917,
+        "z": -0.18731446373322247
+      },
+      "minY": -0.0016896150413856872,
+      "maxY": 8.941600064561614
+    }
+  },
+  {
+    "id": "quaternius-lowpoly-textured-trees/Birch_3",
+    "source": "quaternius-lowpoly-textured-trees",
+    "categories": [
+      "nature",
+      "tree"
+    ],
+    "file": "Birch_3.glb",
+    "metrics": {
+      "glbBytes": 254420,
+      "byteLength": 254420,
+      "triangles": 2472,
+      "primitives": 2,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 8.757755279541016,
+        "d": 4.345731028389931
+      },
+      "center": {
+        "x": -0.34296417236328125,
+        "z": 0.8590892514216181
+      },
+      "minY": -0.0018219582967699103,
+      "maxY": 10.293656843150123
+    }
+  },
+  {
+    "id": "quaternius-lowpoly-textured-trees/Birch_4",
+    "source": "quaternius-lowpoly-textured-trees",
+    "categories": [
+      "nature",
+      "tree"
+    ],
+    "file": "Birch_4.glb",
+    "metrics": {
+      "glbBytes": 156912,
+      "byteLength": 156912,
+      "triangles": 1516,
+      "primitives": 2,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 5.171781778335571,
+        "d": 4.501838404704619
+      },
+      "center": {
+        "x": -0.5626939535140991,
+        "z": 1.0061770884148737
+      },
+      "minY": -0.0010979654019352748,
+      "maxY": 9.991319233345962
+    }
+  },
+  {
+    "id": "quaternius-lowpoly-textured-trees/Birch_5",
+    "source": "quaternius-lowpoly-textured-trees",
+    "categories": [
+      "nature",
+      "tree"
+    ],
+    "file": "Birch_5.glb",
+    "metrics": {
+      "glbBytes": 169968,
+      "byteLength": 169968,
+      "triangles": 1644,
+      "primitives": 2,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 6.349177837371826,
+        "d": 3.9274396200041277
+      },
+      "center": {
+        "x": -1.1972458362579346,
+        "z": 0.7549062125156148
+      },
+      "minY": -0.0010979595484610501,
+      "maxY": 9.083622421680044
+    }
+  },
+  {
+    "id": "quaternius-lowpoly-textured-trees/Birch_6",
+    "source": "quaternius-lowpoly-textured-trees",
+    "categories": [
+      "nature",
+      "tree"
+    ],
+    "file": "Birch_6.glb",
+    "metrics": {
+      "glbBytes": 213620,
+      "byteLength": 213620,
+      "triangles": 2072,
+      "primitives": 2,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 6.529108047485352,
+        "d": 5.669426576995523
+      },
+      "center": {
+        "x": -1.112389087677002,
+        "z": 0.2322541993249161
+      },
+      "minY": -0.0029927571399604837,
+      "maxY": 9.610977672523862
+    }
+  },
+  {
+    "id": "quaternius-lowpoly-textured-trees/Birch_7",
+    "source": "quaternius-lowpoly-textured-trees",
+    "categories": [
+      "nature",
+      "tree"
+    ],
+    "file": "Birch_7.glb",
+    "metrics": {
+      "glbBytes": 163848,
+      "byteLength": 163848,
+      "triangles": 1584,
+      "primitives": 2,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 4.875017166137695,
+        "d": 4.462148495206347
+      },
+      "center": {
+        "x": -0.7056150436401367,
+        "z": -0.2701309067306311
+      },
+      "minY": 0.0023480937374665287,
+      "maxY": 9.927202544209536
+    }
+  },
+  {
+    "id": "quaternius-lowpoly-textured-trees/Birch_8",
+    "source": "quaternius-lowpoly-textured-trees",
+    "categories": [
+      "nature",
+      "tree"
+    ],
+    "file": "Birch_8.glb",
+    "metrics": {
+      "glbBytes": 256056,
+      "byteLength": 256056,
+      "triangles": 2488,
+      "primitives": 2,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 7.329128742218018,
+        "d": 4.509133164002771
+      },
+      "center": {
+        "x": -0.34168076515197754,
+        "z": 0.6694761200165666
+      },
+      "minY": -0.0018220024994740833,
+      "maxY": 9.900015353706229
+    }
+  },
+  {
+    "id": "quaternius-lowpoly-textured-trees/Birch_9",
+    "source": "quaternius-lowpoly-textured-trees",
+    "categories": [
+      "nature",
+      "tree"
+    ],
+    "file": "Birch_9.glb",
+    "metrics": {
+      "glbBytes": 151200,
+      "byteLength": 151200,
+      "triangles": 1460,
+      "primitives": 2,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 5.20812201499939,
+        "d": 4.7022662606196395
+      },
+      "center": {
+        "x": -1.458356499671936,
+        "z": 0.9059631604573635
+      },
+      "minY": -0.00109799805580272,
+      "maxY": 9.051486545968045
+    }
+  },
+  {
+    "id": "quaternius-lowpoly-textured-trees/DeadBirch_1",
+    "source": "quaternius-lowpoly-textured-trees",
+    "categories": [
+      "nature",
+      "tree"
+    ],
+    "file": "DeadBirch_1.glb",
+    "metrics": {
+      "glbBytes": 117344,
+      "byteLength": 117344,
+      "triangles": 1204,
+      "primitives": 1,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 3.8582416772842407,
+        "d": 3.0590035689334547
+      },
+      "center": {
+        "x": -0.5189020037651062,
+        "z": -0.0030035857786833153
+      },
+      "minY": -0.0010980122845369916,
+      "maxY": 9.372278462198976
+    }
+  },
+  {
+    "id": "quaternius-lowpoly-textured-trees/DeadBirch_10",
+    "source": "quaternius-lowpoly-textured-trees",
+    "categories": [
+      "nature",
+      "tree"
+    ],
+    "file": "DeadBirch_10.glb",
+    "metrics": {
+      "glbBytes": 115428,
+      "byteLength": 115428,
+      "triangles": 1184,
+      "primitives": 1,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 4.245141506195068,
+        "d": 3.0781694376473734
+      },
+      "center": {
+        "x": -0.6320550441741943,
+        "z": 0.10453934897032269
+      },
+      "minY": -0.0029925668626513504,
+      "maxY": 10.072539597309024
+    }
+  },
+  {
+    "id": "quaternius-lowpoly-textured-trees/DeadBirch_2",
+    "source": "quaternius-lowpoly-textured-trees",
+    "categories": [
+      "nature",
+      "tree"
+    ],
+    "file": "DeadBirch_2.glb",
+    "metrics": {
+      "glbBytes": 52448,
+      "byteLength": 52448,
+      "triangles": 528,
+      "primitives": 1,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 3.8574477434158325,
+        "d": 1.8973471462397387
+      },
+      "center": {
+        "x": 1.18154639005661,
+        "z": -0.5152910021010867
+      },
+      "minY": -0.0016895738411922272,
+      "maxY": 8.741940568958917
+    }
+  },
+  {
+    "id": "quaternius-lowpoly-textured-trees/DeadBirch_3",
+    "source": "quaternius-lowpoly-textured-trees",
+    "categories": [
+      "nature",
+      "tree"
+    ],
+    "file": "DeadBirch_3.glb",
+    "metrics": {
+      "glbBytes": 140004,
+      "byteLength": 140004,
+      "triangles": 1440,
+      "primitives": 1,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 7.134078025817871,
+        "d": 2.4053354613661346
+      },
+      "center": {
+        "x": -0.8442411422729492,
+        "z": 0.5938449925827637
+      },
+      "minY": -0.0018218434452679485,
+      "maxY": 10.09119444552097
+    }
+  },
+  {
+    "id": "quaternius-lowpoly-textured-trees/DeadBirch_4",
+    "source": "quaternius-lowpoly-textured-trees",
+    "categories": [
+      "nature",
+      "tree"
+    ],
+    "file": "DeadBirch_4.glb",
+    "metrics": {
+      "glbBytes": 96608,
+      "byteLength": 96608,
+      "triangles": 988,
+      "primitives": 1,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 4.205620884895325,
+        "d": 2.231881132880573
+      },
+      "center": {
+        "x": -0.3294796347618103,
+        "z": 1.0140082881849442
+      },
+      "minY": -0.0010977792145895,
+      "maxY": 9.640042652005263
+    }
+  },
+  {
+    "id": "quaternius-lowpoly-textured-trees/DeadBirch_5",
+    "source": "quaternius-lowpoly-textured-trees",
+    "categories": [
+      "nature",
+      "tree"
+    ],
+    "file": "DeadBirch_5.glb",
+    "metrics": {
+      "glbBytes": 83552,
+      "byteLength": 83552,
+      "triangles": 852,
+      "primitives": 1,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 5.021795630455017,
+        "d": 1.892589334527498
+      },
+      "center": {
+        "x": -1.098823606967926,
+        "z": 0.4440429193179739
+      },
+      "minY": -0.001097844434931783,
+      "maxY": 8.802976834790995
+    }
+  },
+  {
+    "id": "quaternius-lowpoly-textured-trees/DeadBirch_6",
+    "source": "quaternius-lowpoly-textured-trees",
+    "categories": [
+      "nature",
+      "tree"
+    ],
+    "file": "DeadBirch_6.glb",
+    "metrics": {
+      "glbBytes": 115424,
+      "byteLength": 115424,
+      "triangles": 1184,
+      "primitives": 1,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 5.13328742980957,
+        "d": 2.902701231011089
+      },
+      "center": {
+        "x": -1.1878342628479004,
+        "z": -0.11314134358708017
+      },
+      "minY": -0.002992588033657442,
+      "maxY": 9.339422443973987
+    }
+  },
+  {
+    "id": "quaternius-lowpoly-textured-trees/DeadBirch_7",
+    "source": "quaternius-lowpoly-textured-trees",
+    "categories": [
+      "nature",
+      "tree"
+    ],
+    "file": "DeadBirch_7.glb",
+    "metrics": {
+      "glbBytes": 73184,
+      "byteLength": 73184,
+      "triangles": 744,
+      "primitives": 1,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 3.8094362616539,
+        "d": 2.305986340099046
+      },
+      "center": {
+        "x": -0.997388631105423,
+        "z": -0.39551850955873946
+      },
+      "minY": 0.0023482489509328817,
+      "maxY": 9.85137570324214
+    }
+  },
+  {
+    "id": "quaternius-lowpoly-textured-trees/DeadBirch_8",
+    "source": "quaternius-lowpoly-textured-trees",
+    "categories": [
+      "nature",
+      "tree"
+    ],
+    "file": "DeadBirch_8.glb",
+    "metrics": {
+      "glbBytes": 132324,
+      "byteLength": 132324,
+      "triangles": 1360,
+      "primitives": 1,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 6.382467269897461,
+        "d": 2.2998389422653607
+      },
+      "center": {
+        "x": -0.46843576431274414,
+        "z": 0.6465932521331508
+      },
+      "minY": -0.0018218262577119847,
+      "maxY": 9.766245180994607
+    }
+  },
+  {
+    "id": "quaternius-lowpoly-textured-trees/DeadBirch_9",
+    "source": "quaternius-lowpoly-textured-trees",
+    "categories": [
+      "nature",
+      "tree"
+    ],
+    "file": "DeadBirch_9.glb",
+    "metrics": {
+      "glbBytes": 79712,
+      "byteLength": 79712,
+      "triangles": 812,
+      "primitives": 1,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 4.318017601966858,
+        "d": 1.9914010573822045
+      },
+      "center": {
+        "x": -1.5006605982780457,
+        "z": 0.4934488035342351
+      },
+      "minY": -0.001097844434931783,
+      "maxY": 8.663099531553536
+    }
+  },
+  {
+    "id": "quaternius-lowpoly-textured-trees/DeadTree_1",
+    "source": "quaternius-lowpoly-textured-trees",
+    "categories": [
+      "nature",
+      "tree"
+    ],
+    "file": "DeadTree_1.glb",
+    "metrics": {
+      "glbBytes": 44380,
+      "byteLength": 44380,
+      "triangles": 444,
+      "primitives": 1,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 2.443497896194458,
+        "d": 1.5189561626032848
+      },
+      "center": {
+        "x": -0.6812803745269775,
+        "z": 0.32531798793064426
+      },
+      "minY": 0.011172545189467394,
+      "maxY": 5.182299313851122
+    }
+  },
+  {
+    "id": "quaternius-lowpoly-textured-trees/DeadTree_10",
+    "source": "quaternius-lowpoly-textured-trees",
+    "categories": [
+      "nature",
+      "tree"
+    ],
+    "file": "DeadTree_10.glb",
+    "metrics": {
+      "glbBytes": 74332,
+      "byteLength": 74332,
+      "triangles": 756,
+      "primitives": 1,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 3.3398499488830566,
+        "d": 3.8451403310760517
+      },
+      "center": {
+        "x": -1.1635017395019531,
+        "z": -0.4295051657328516
+      },
+      "minY": -0.0013802630916058417,
+      "maxY": 4.34667373186805
+    }
+  },
+  {
+    "id": "quaternius-lowpoly-textured-trees/DeadTree_2",
+    "source": "quaternius-lowpoly-textured-trees",
+    "categories": [
+      "nature",
+      "tree"
+    ],
+    "file": "DeadTree_2.glb",
+    "metrics": {
+      "glbBytes": 72408,
+      "byteLength": 72408,
+      "triangles": 736,
+      "primitives": 1,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 4.604300618171692,
+        "d": 3.539407444409143
+      },
+      "center": {
+        "x": -0.5436274409294128,
+        "z": -0.3402969598566715
+      },
+      "minY": -0.0013802236526266366,
+      "maxY": 4.8303596918031975
+    }
+  },
+  {
+    "id": "quaternius-lowpoly-textured-trees/DeadTree_3",
+    "source": "quaternius-lowpoly-textured-trees",
+    "categories": [
+      "nature",
+      "tree"
+    ],
+    "file": "DeadTree_3.glb",
+    "metrics": {
+      "glbBytes": 135388,
+      "byteLength": 135388,
+      "triangles": 1392,
+      "primitives": 1,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 4.503663539886475,
+        "d": 4.516108474608629
+      },
+      "center": {
+        "x": -0.09182429313659668,
+        "z": -0.09402082414618307
+      },
+      "minY": -0.0013802630915281551,
+      "maxY": 5.61733376473613
+    }
+  },
+  {
+    "id": "quaternius-lowpoly-textured-trees/DeadTree_4",
+    "source": "quaternius-lowpoly-textured-trees",
+    "categories": [
+      "nature",
+      "tree"
+    ],
+    "file": "DeadTree_4.glb",
+    "metrics": {
+      "glbBytes": 97756,
+      "byteLength": 97756,
+      "triangles": 1000,
+      "primitives": 1,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 4.890018939971924,
+        "d": 4.479376888572231
+      },
+      "center": {
+        "x": 0.31401491165161133,
+        "z": -0.0017450305034845126
+      },
+      "minY": -0.01785720149470287,
+      "maxY": 4.959536917036395
+    }
+  },
+  {
+    "id": "quaternius-lowpoly-textured-trees/DeadTree_5",
+    "source": "quaternius-lowpoly-textured-trees",
+    "categories": [
+      "nature",
+      "tree"
+    ],
+    "file": "DeadTree_5.glb",
+    "metrics": {
+      "glbBytes": 85464,
+      "byteLength": 85464,
+      "triangles": 872,
+      "primitives": 1,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 5.238936185836792,
+        "d": 2.987511780527819
+      },
+      "center": {
+        "x": -0.3136242628097534,
+        "z": 0.19807438535874988
+      },
+      "minY": 0.011172404829835956,
+      "maxY": 6.027390278838404
+    }
+  },
+  {
+    "id": "quaternius-lowpoly-textured-trees/DeadTree_6",
+    "source": "quaternius-lowpoly-textured-trees",
+    "categories": [
+      "nature",
+      "tree"
+    ],
+    "file": "DeadTree_6.glb",
+    "metrics": {
+      "glbBytes": 101592,
+      "byteLength": 101592,
+      "triangles": 1040,
+      "primitives": 1,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 4.7923208475112915,
+        "d": 4.618407296608073
+      },
+      "center": {
+        "x": 0.6650077700614929,
+        "z": -0.23686077621853197
+      },
+      "minY": 0.0032778504351890767,
+      "maxY": 7.609742979076382
+    }
+  },
+  {
+    "id": "quaternius-lowpoly-textured-trees/DeadTree_7",
+    "source": "quaternius-lowpoly-textured-trees",
+    "categories": [
+      "nature",
+      "tree"
+    ],
+    "file": "DeadTree_7.glb",
+    "metrics": {
+      "glbBytes": 51292,
+      "byteLength": 51292,
+      "triangles": 516,
+      "primitives": 1,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 2.908723831176758,
+        "d": 0.4729999046312327
+      },
+      "center": {
+        "x": -0.00897669792175293,
+        "z": -0.04924393256118556
+      },
+      "minY": 0.021687438724204148,
+      "maxY": 5.259929687490231
+    }
+  },
+  {
+    "id": "quaternius-lowpoly-textured-trees/DeadTree_8",
+    "source": "quaternius-lowpoly-textured-trees",
+    "categories": [
+      "nature",
+      "tree"
+    ],
+    "file": "DeadTree_8.glb",
+    "metrics": {
+      "glbBytes": 61660,
+      "byteLength": 61660,
+      "triangles": 624,
+      "primitives": 1,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 4.5920281410217285,
+        "d": 1.2097107187713565
+      },
+      "center": {
+        "x": 0.23032855987548828,
+        "z": 0.3158629510575482
+      },
+      "minY": 0.011172568840279392,
+      "maxY": 4.959794671335774
+    }
+  },
+  {
+    "id": "quaternius-lowpoly-textured-trees/DeadTree_9",
+    "source": "quaternius-lowpoly-textured-trees",
+    "categories": [
+      "nature",
+      "tree"
+    ],
+    "file": "DeadTree_9.glb",
+    "metrics": {
+      "glbBytes": 66640,
+      "byteLength": 66640,
+      "triangles": 676,
+      "primitives": 1,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 5.087071895599365,
+        "d": 3.845140699993264
+      },
+      "center": {
+        "x": 0.0087738037109375,
+        "z": -0.4295049925635891
+      },
+      "minY": -0.0013802630916058417,
+      "maxY": 4.415967230861027
+    }
+  },
+  {
+    "id": "quaternius-lowpoly-textured-trees/Pine_1",
+    "source": "quaternius-lowpoly-textured-trees",
+    "categories": [
+      "nature",
+      "tree"
+    ],
+    "file": "Pine_1.glb",
+    "metrics": {
+      "glbBytes": 69992,
+      "byteLength": 69992,
+      "triangles": 664,
+      "primitives": 2,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 7.73455810546875,
+        "d": 6.763683839151022
+      },
+      "center": {
+        "x": -0.2667365074157715,
+        "z": -0.12729289293807122
+      },
+      "minY": -0.0009103733994038509,
+      "maxY": 7.581400447835777
+    }
+  },
+  {
+    "id": "quaternius-lowpoly-textured-trees/Pine_2",
+    "source": "quaternius-lowpoly-textured-trees",
+    "categories": [
+      "nature",
+      "tree"
+    ],
+    "file": "Pine_2.glb",
+    "metrics": {
+      "glbBytes": 64276,
+      "byteLength": 64276,
+      "triangles": 608,
+      "primitives": 2,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 6.612585067749023,
+        "d": 6.78472464123981
+      },
+      "center": {
+        "x": -0.3744392395019531,
+        "z": -0.11969198960731964
+      },
+      "minY": -0.38055495021874297,
+      "maxY": 7.963258322797375
+    }
+  },
+  {
+    "id": "quaternius-lowpoly-textured-trees/Pine_3",
+    "source": "quaternius-lowpoly-textured-trees",
+    "categories": [
+      "nature",
+      "tree"
+    ],
+    "file": "Pine_3.glb",
+    "metrics": {
+      "glbBytes": 56524,
+      "byteLength": 56524,
+      "triangles": 532,
+      "primitives": 2,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 6.882893800735474,
+        "d": 7.293716080916441
+      },
+      "center": {
+        "x": -0.32452523708343506,
+        "z": 0.1689578972118484
+      },
+      "minY": -0.07409782000384699,
+      "maxY": 8.022987987397874
+    }
+  },
+  {
+    "id": "quaternius-lowpoly-textured-trees/Pine_4",
+    "source": "quaternius-lowpoly-textured-trees",
+    "categories": [
+      "nature",
+      "tree"
+    ],
+    "file": "Pine_4.glb",
+    "metrics": {
+      "glbBytes": 49244,
+      "byteLength": 49244,
+      "triangles": 460,
+      "primitives": 2,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 4.30932698337263,
+        "d": 4.180967060102482
+      },
+      "center": {
+        "x": 0.01597208930108529,
+        "z": -0.013578427180022556
+      },
+      "minY": -0.00068075842870605,
+      "maxY": 5.669920598372677
+    }
+  },
+  {
+    "id": "quaternius-lowpoly-textured-trees/Pine_5",
+    "source": "quaternius-lowpoly-textured-trees",
+    "categories": [
+      "nature",
+      "tree"
+    ],
+    "file": "Pine_5.glb",
+    "metrics": {
+      "glbBytes": 69992,
+      "byteLength": 69992,
+      "triangles": 664,
+      "primitives": 2,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 6.795617580413818,
+        "d": 6.035305033567471
+      },
+      "center": {
+        "x": -0.22227978706359863,
+        "z": -0.16038251421716154
+      },
+      "minY": -0.0012373146121041532,
+      "maxY": 10.306259620781672
+    }
+  },
+  {
+    "id": "quaternius-lowpoly-textured-trees/Tree_1",
+    "source": "quaternius-lowpoly-textured-trees",
+    "categories": [
+      "nature",
+      "tree"
+    ],
+    "file": "Tree_1.glb",
+    "metrics": {
+      "glbBytes": 84276,
+      "byteLength": 84276,
+      "triangles": 804,
+      "primitives": 2,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 4.137980222702026,
+        "d": 4.130350062515926
+      },
+      "center": {
+        "x": -0.2638922929763794,
+        "z": -0.006032205090569676
+      },
+      "minY": 0.011172278480644204,
+      "maxY": 5.555436946652413
+    }
+  },
+  {
+    "id": "quaternius-lowpoly-textured-trees/Tree_10",
+    "source": "quaternius-lowpoly-textured-trees",
+    "categories": [
+      "nature",
+      "tree"
+    ],
+    "file": "Tree_10.glb",
+    "metrics": {
+      "glbBytes": 125900,
+      "byteLength": 125900,
+      "triangles": 1212,
+      "primitives": 2,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 4.280693292617798,
+        "d": 3.980501644895935
+      },
+      "center": {
+        "x": -1.1452869176864624,
+        "z": -0.36182450882290984
+      },
+      "minY": -0.0013802630916058417,
+      "maxY": 4.346673753921207
+    }
+  },
+  {
+    "id": "quaternius-lowpoly-textured-trees/Tree_2",
+    "source": "quaternius-lowpoly-textured-trees",
+    "categories": [
+      "nature",
+      "tree"
+    ],
+    "file": "Tree_2.glb",
+    "metrics": {
+      "glbBytes": 145892,
+      "byteLength": 145892,
+      "triangles": 1408,
+      "primitives": 2,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 5.892803907394409,
+        "d": 5.870095899908042
+      },
+      "center": {
+        "x": -0.702224850654602,
+        "z": -0.03186043637780833
+      },
+      "minY": -0.0013803632605961927,
+      "maxY": 5.432774063077101
+    }
+  },
+  {
+    "id": "quaternius-lowpoly-textured-trees/Tree_3",
+    "source": "quaternius-lowpoly-textured-trees",
+    "categories": [
+      "nature",
+      "tree"
+    ],
+    "file": "Tree_3.glb",
+    "metrics": {
+      "glbBytes": 215248,
+      "byteLength": 215248,
+      "triangles": 2088,
+      "primitives": 2,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 5.781787872314453,
+        "d": 5.170949199386008
+      },
+      "center": {
+        "x": 0.06001734733581543,
+        "z": 0.2333995212440494
+      },
+      "minY": -0.0013802630915281551,
+      "maxY": 5.72166965633533
+    }
+  },
+  {
+    "id": "quaternius-lowpoly-textured-trees/Tree_4",
+    "source": "quaternius-lowpoly-textured-trees",
+    "categories": [
+      "nature",
+      "tree"
+    ],
+    "file": "Tree_4.glb",
+    "metrics": {
+      "glbBytes": 172820,
+      "byteLength": 172820,
+      "triangles": 1672,
+      "primitives": 2,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 6.270970344543457,
+        "d": 5.4620570291201
+      },
+      "center": {
+        "x": 0.22094511985778809,
+        "z": 0.4905403112162041
+      },
+      "minY": -0.01789606356908267,
+      "maxY": 5.316891241412845
+    }
+  },
+  {
+    "id": "quaternius-lowpoly-textured-trees/Tree_5",
+    "source": "quaternius-lowpoly-textured-trees",
+    "categories": [
+      "nature",
+      "tree"
+    ],
+    "file": "Tree_5.glb",
+    "metrics": {
+      "glbBytes": 191584,
+      "byteLength": 191584,
+      "triangles": 1856,
+      "primitives": 2,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 6.736713171005249,
+        "d": 4.984705053735889
+      },
+      "center": {
+        "x": -0.2727581262588501,
+        "z": -0.09409455787828991
+      },
+      "minY": 0.011172194537439577,
+      "maxY": 6.370689782815577
+    }
+  },
+  {
+    "id": "quaternius-lowpoly-textured-trees/Tree_6",
+    "source": "quaternius-lowpoly-textured-trees",
+    "categories": [
+      "nature",
+      "tree"
+    ],
+    "file": "Tree_6.glb",
+    "metrics": {
+      "glbBytes": 154864,
+      "byteLength": 154864,
+      "triangles": 1496,
+      "primitives": 2,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 6.838670253753662,
+        "d": 4.796579058048241
+      },
+      "center": {
+        "x": 1.2744648456573486,
+        "z": -0.0237267886982242
+      },
+      "minY": -3.952948138978612e-7,
+      "maxY": 8.38454952779544
+    }
+  },
+  {
+    "id": "quaternius-lowpoly-textured-trees/Tree_7",
+    "source": "quaternius-lowpoly-textured-trees",
+    "categories": [
+      "nature",
+      "tree"
+    ],
+    "file": "Tree_7.glb",
+    "metrics": {
+      "glbBytes": 138136,
+      "byteLength": 138136,
+      "triangles": 1332,
+      "primitives": 2,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 5.547688961029053,
+        "d": 4.471998454447556
+      },
+      "center": {
+        "x": -0.08385777473449707,
+        "z": -0.09409416140595006
+      },
+      "minY": 0.021687105657410177,
+      "maxY": 5.883323541556987
+    }
+  },
+  {
+    "id": "quaternius-lowpoly-textured-trees/Tree_8",
+    "source": "quaternius-lowpoly-textured-trees",
+    "categories": [
+      "nature",
+      "tree"
+    ],
+    "file": "Tree_8.glb",
+    "metrics": {
+      "glbBytes": 151596,
+      "byteLength": 151596,
+      "triangles": 1464,
+      "primitives": 2,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 6.944384574890137,
+        "d": 4.393518870245414
+      },
+      "center": {
+        "x": 0.655461311340332,
+        "z": -0.054854367591788966
+      },
+      "minY": 0.011172249088683141,
+      "maxY": 5.530464044486679
+    }
+  },
+  {
+    "id": "quaternius-lowpoly-textured-trees/Tree_9",
+    "source": "quaternius-lowpoly-textured-trees",
+    "categories": [
+      "nature",
+      "tree"
+    ],
+    "file": "Tree_9.glb",
+    "metrics": {
+      "glbBytes": 132420,
+      "byteLength": 132420,
+      "triangles": 1276,
+      "primitives": 2,
+      "textures": [],
+      "maxTextureDimension": 0
+    },
+    "dims": {
+      "footprint": {
+        "w": 6.364439249038696,
+        "d": 4.936392725290178
+      },
+      "center": {
+        "x": 0.21230733394622803,
+        "z": 0.11612084491611308
+      },
+      "minY": -0.0013802630916058417,
+      "maxY": 5.491145555010811
+    }
+  }
+]
