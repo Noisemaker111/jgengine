@@ -1592,6 +1592,7 @@
     "./library/libraryPull",
     "./library/libraryRocketbox",
     "./library/libraryServed",
+    "./library/librarySmithsonian",
     "./library/librarySources",
     "./makehumanPull",
     "./manifest",
