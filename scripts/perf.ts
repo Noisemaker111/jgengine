@@ -1,4 +1,4 @@
-// `bun run perf <game> | perf <gate|network|timing|flight|live>`: every performance measurement.
+// `bun run perf <game> | perf <gate|network|timing|flight|boat|live>`: every performance measurement.
 import { runVerb, type VerbTable } from "./subcommands";
 
 export const PERF: VerbTable = {
@@ -10,6 +10,7 @@ export const PERF: VerbTable = {
     network: { script: "scripts/perf-network.ts", detail: "<game...>: bytes and requests per game, cold and cached" },
     timing: { script: "scripts/bench-cpu.ts", guardSeconds: 900, detail: "run the test files that carry wall-clock budgets with the budgets enforced" },
     flight: { script: "scripts/flight-compare.ts", guardSeconds: 300, detail: "[game...]: fly each game's fixed-wing aircraft and the reference flight model through the same tests; print game / reference / real" },
+    boat: { script: "scripts/boat-compare.ts", guardSeconds: 300, detail: "[game...]: run each game's boats and a reference hull (Holtrop–Mennen, Savitsky) through the same straight-line tests; print game / reference / real" },
     live: { script: "scripts/debug-report.ts", guardSeconds: 60, detail: "<game>: read the report a game open in a browser is producing and gate it" },
   },
   fallback: "play",
