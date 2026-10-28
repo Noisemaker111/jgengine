@@ -735,7 +735,7 @@
 
 ## @jgengine/editor/handlers/terrain
 
-- `terrainHandlers` (const): const terrainHandlers: Pick< HandlerTable, | "create_terrain" | "sculpt_terrain" | "terrain_summary" | "paint_terrain" | "fill_terrain" | "auto_paint" | "terrain_materials" | "terrain_layers" | "set_terrain_layers" | "blend_terrain" | "convert_scatter" | "add_foliage" | "scatter_summary" > — Sculpt heightfield, material painting, terrain layers, and foliage/scatter verbs.
+- `terrainHandlers` (const): const terrainHandlers: Pick< HandlerTable, | "create_terrain" | "grow_landform" | "sculpt_terrain" | "terrain_summary" | "paint_terrain" | "fill_terrain" | "auto_paint" | "terrain_materials" | "terrain_layers" | "set_terrain_layers" | "blend_terrain" | "convert_scatter" | "add_foliage" | "scatter_su… — Sculpt heightfield, material painting, terrain layers, and foliage/scatter verbs.
 
 ## @jgengine/editor/libraryDrag
 

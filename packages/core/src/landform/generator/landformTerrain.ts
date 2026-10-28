@@ -80,7 +80,10 @@ function caprockStrata(caprock: number): readonly RockLayer[] | undefined {
   ];
 }
 
-/** Grow a landform from a recipe and seed: erosion first, then dunes over it. */
+/**
+ * Grow a landform from a recipe and seed: erosion first, then dunes over it.
+ * @capability landform-generator grow a terrain heightfield and its material layers from geology, rivers and wind, for the editor and runtime
+ */
 export function growLandform(recipe: LandformRecipe, seed: string): LandformTerrain {
   const side = Math.round(recipe.side);
   if (!(side >= 16 && side <= LANDFORM_TERRAIN_MAX_SIDE)) throw new Error(`landform side must be 16..${LANDFORM_TERRAIN_MAX_SIDE}, got ${recipe.side}`);

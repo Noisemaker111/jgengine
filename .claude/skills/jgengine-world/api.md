@@ -2204,6 +2204,35 @@
 - `FLAT_RISE` (const): const FLAT_RISE: 0.000001 — Rise per cell across filled flats, in metres; small next to any relief, large next to rounding.
 - `FlowRouting` (interface): interface FlowRouting — Flow routing of one heightfield. Arrays are owned by the router and overwritten by the next {@link FlowRouter.route}.
 
+## @jgengine/core/landform/generator/landformGenerator
+
+- `LANDFORM_CACHE` (const): const LANDFORM_CACHE: LandformCache — The cache {@link LANDFORM_GENERATOR} uses: memory only.
+- `LANDFORM_GENERATOR` (const): const LANDFORM_GENERATOR: GeneratorDefinition<ParamSchema<readonly [{ readonly key: "seed"; readonly type: "seed"; readonly label: "Seed"; readonly default: "landform"; }, { readonly key: "side"; readonly type: "range"; readonly label: "Cells per side"; readonly group: "map"; readonly min: 32; reado… — The built-in landform generator.
+- `LANDFORM_OUTPUT` (const): const LANDFORM_OUTPUT: "landform" — The output family of landform generators.
+- `LANDFORM_SCHEMA` (const): const LANDFORM_SCHEMA: ParamSchema<readonly [{ readonly key: "seed"; readonly type: "seed"; readonly label: "Seed"; readonly default: "landform"; }, { readonly key: "side"; readonly type: "range"; readonly label: "Cells per side"; readonly group: "map"; readonly min: 32; readonly max: 256; readonly … — The `landform` generator's params.
+- `LandformCache` (interface): interface LandformCache — Grown landforms by key: a bounded in-memory cache over optional durable storage.
+- `LandformCacheOptions` (interface): interface LandformCacheOptions — Options for {@link createLandformCache}.
+- `LandformGeneratorOptions` (interface): interface LandformGeneratorOptions — Options for {@link createLandformGenerator}.
+- `LandformGeneratorParams` (type): type LandformGeneratorParams = ParamsOf<typeof LANDFORM_SCHEMA> — Parsed params of the `landform` generator.
+- `LandformGrower` (interface): interface LandformGrower — Grows landforms somewhere other than the caller's frame.
+- `LandformStore` (interface): interface LandformStore — Durable storage for grown landforms, e.g. IndexedDB or a file. Injected; the cache works without it.
+- `WorkerLandformGrowerOptions` (interface): interface WorkerLandformGrowerOptions — Options for {@link createWorkerLandformGrower}.
+- `createLandformCache` (function): function createLandformCache(options: LandformCacheOptions = {}): LandformCache — A landform cache.
+- `createLandformGenerator` (function): function createLandformGenerator(cache: LandformCache, options: LandformGeneratorOptions = {}): GeneratorDefinition<ParamSchema<readonly [{ readonly key: "seed"; readonly type: "seed"; readonly label: "Seed"; readonly default: "landform"; }, { readonly key: "side"; readonly type: "range"; readonly l… — A landform generator over one cache.
+- `createWorkerLandformGrower` (function): function createWorkerLandformGrower(options: WorkerLandformGrowerOptions = {}): LandformGrower | null — A pool of workers that grow landforms with the same models as the main thread. Workers start on demand and stop when the queue drains. Null where the platform has no workers.
+- `landformKey` (function): function landformKey(recipe: LandformRecipe, seed: string): string — The cache key of a grown landform: model version, recipe and seed.
+- `landformRecipe` (function): function landformRecipe(params: LandformGeneratorParams, detail = 1): LandformRecipe — The recipe a generator's params and detail level grow: lower detail keeps the map size with fewer, larger cells.
+
+## @jgengine/core/landform/generator/landformTerrain
+
+- `LANDFORM_TERRAIN_MAX_SIDE` (const): const LANDFORM_TERRAIN_MAX_SIDE: 256 — Largest landform side `growLandform` accepts, so one job's work stays bounded.
+- `LANDFORM_TERRAIN_SURFACES` (const): const LANDFORM_TERRAIN_SURFACES: Readonly<Record<LandformSurfaceKind, string>> — The terrain paint palette id each landform surface kind paints by default.
+- `LandformRecipe` (interface): interface LandformRecipe — What a landform is grown from: plain data, so it crosses to a worker unchanged.
+- `LandformSnapshotOptions` (interface): interface LandformSnapshotOptions — Options for {@link landformTerrainSnapshot}.
+- `LandformTerrain` (interface): interface LandformTerrain — A grown landform in world metres (after {@link LandformRecipe.scale}). Heights are cell centres, row-major, row 0 at the north edge.
+- `growLandform` (function): function growLandform(recipe: LandformRecipe, seed: string): LandformTerrain — Grow a landform from a recipe and seed: erosion first, then dunes over it.
+- `landformTerrainSnapshot` (function): function landformTerrainSnapshot(terrain: LandformTerrain, options: LandformSnapshotOptions = {}): TerraformSnapshot — The editor terrain document for a grown landform: cell centres become the sculpt grid's vertices, and each surface kind becomes a material layer with per-cell blend weights.
+
 ## @jgengine/core/landform/grid/landformGrid
 
 - `D8_DCOL` (const): const D8_DCOL: readonly number[] — Column offsets of the D8 neighbours: east, south-east, south, south-west, west, north-west, north, north-east.

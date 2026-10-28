@@ -53,7 +53,10 @@ function windRegime(toward: number, spread: number): WindMode[] {
   return [0, 120, 240].map((turn) => ({ toward: toward + turn, share: 1 }));
 }
 
-/** The recipe a generator's params and detail level grow: lower detail keeps the map size with fewer, larger cells. */
+/**
+ * The recipe a generator's params and detail level grow: lower detail keeps the map size with fewer, larger cells.
+ * @capability landform-generator grow a terrain heightfield and its material layers from geology, rivers and wind, for the editor and runtime
+ */
 export function landformRecipe(params: LandformGeneratorParams, detail = 1): LandformRecipe {
   const side = Math.max(16, Math.min(LANDFORM_TERRAIN_MAX_SIDE, Math.round(params.side * detail)));
   const extent = params.side * params.cellSize;
@@ -78,7 +81,10 @@ export function landformRecipe(params: LandformGeneratorParams, detail = 1): Lan
 // Bump when growLandform changes what a recipe grows, so stored terrain is not reused.
 const LANDFORM_VERSION = 1;
 
-/** The cache key of a grown landform: model version, recipe and seed. */
+/**
+ * The cache key of a grown landform: model version, recipe and seed.
+ * @capability landform-generator grow a terrain heightfield and its material layers from geology, rivers and wind, for the editor and runtime
+ */
 export function landformKey(recipe: LandformRecipe, seed: string): string {
   return JSON.stringify([LANDFORM_VERSION, seed, recipe]);
 }

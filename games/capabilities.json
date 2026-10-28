@@ -5320,6 +5320,16 @@
       "intent": "grow a heightfield from uplift, river incision, hillslopes, landslides, sediment and rock strata"
     },
     {
+      "id": "landform-generator",
+      "packages": [
+        "@jgengine/core"
+      ],
+      "module": "@jgengine/core/landform/generator/landformTerrain",
+      "gameFacing": false,
+      "probe": null,
+      "intent": "grow a terrain heightfield and its material layers from geology, rivers and wind, for the editor and runtime"
+    },
+    {
       "id": "landform-materials",
       "packages": [
         "@jgengine/core"
