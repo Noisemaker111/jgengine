@@ -2,6 +2,7 @@ import { canCraft, craftSeconds, type RecipeDef } from "@jgengine/core/crafting/
 import { createUnlockPoints, type UnlockPoints, type UnlockPointsState } from "@jgengine/core/economy/unlockPoints";
 import { createScatterHarvest, type ScatterHarvest, type ScatterHarvestState } from "@jgengine/core/harvest/scatterHarvest";
 import { resolveEncumbrance, totalLoad } from "@jgengine/core/inventory/encumbrance";
+import { createEquipment, type Equipment, type EquipmentState } from "@jgengine/core/inventory/equipment";
 import type { InventoryState } from "@jgengine/core/inventory/inventoryModel";
 import { createSpoilage, type Spoilage } from "@jgengine/core/inventory/spoilage";
 import { leveling } from "@jgengine/core/progression/leveling";
@@ -19,7 +20,7 @@ import { BAG, BAG_SLOTS, HOTBAR } from "./bags";
 import { ENGRAMS, engramDef, CRAFTING_RECIPES, recipeDef } from "./data/engrams";
 import { gatheredBy, HARVESTABLES, type GatherBy } from "./data/harvestables";
 import { command, keybind, proximityPrompt, type PositionedPrompt } from "@jgengine/core/interaction/proximityPrompt";
-import { FIST, itemDef, itemLabel, itemTraits, PICK_UP, SPOILS, type ToolDef } from "./data/items";
+import { FIST, GEAR_SLOTS, itemDef, itemLabel, itemTraits, PICK_UP, SPOILS, type ToolDef } from "./data/items";
 import { placeHeld, stations, strikeStructure } from "./base";
 import { mountCanSprint, strikeCreature } from "./creatures";
 import { climateAt, inWater, type ClimateHere } from "./climate";
@@ -57,6 +58,8 @@ interface Survivor {
   tally: Tally;
   /** Meat going off in the bag and on the hotbar. Timers restart on load. */
   spoilage: Spoilage;
+  /** Armour worn in ARK's five body slots. */
+  gear: Equipment;
 }
 
 interface Tally {
@@ -92,7 +95,18 @@ const survivorOf = perContext((ctx: GameContext): Survivor => ({
   web: null,
   tally: { ...NO_TALLY },
   spoilage: createSpoilage(SPOILS),
+  gear: createGear(),
 }));
+
+function createGear(): Equipment {
+  return createEquipment(
+    GEAR_SLOTS.map((slot) => ({ id: slot.id, accepts: ["armor"] })),
+    (itemId) => {
+      const wear = itemDef(itemId)?.wear;
+      return wear === undefined ? null : { slots: [wear.slot], kind: "armor" };
+    },
+  );
+}
 
 /** No engram known; the new-game declaration (`data/start.ts`) teaches the starting ones. */
 function freshEngrams(): UnlockPoints {
@@ -147,8 +161,25 @@ function carried(ctx: GameContext) {
   return [...slotsOf(ctx.player.inventory.state(BAG)), ...slotsOf(ctx.player.inventory.state(HOTBAR))];
 }
 
+/** Worn armour weighs what it does in the bag, as in ARK. */
+function worn(survivor: Survivor) {
+  return survivor.gear.worn().map((entry) => ({ itemId: entry.itemId, quantity: 1 }));
+}
+
+/** What the worn armour adds to each end of the comfortable band, in °C. */
+function insulation(survivor: Survivor): { heat: number; cold: number } {
+  let heat = 0;
+  let cold = 0;
+  for (const entry of survivor.gear.worn()) {
+    const wear = itemDef(entry.itemId)?.wear;
+    heat += wear?.heatC ?? 0;
+    cold += wear?.coldC ?? 0;
+  }
+  return { heat, cold };
+}
+
 function encumbrance(ctx: GameContext, survivor: Survivor) {
-  return resolveEncumbrance(totalLoad(carried(ctx), (id) => itemDef(id)?.weight ?? 0), statValue(survivor, "weight"));
+  return resolveEncumbrance(totalLoad([...carried(ctx), ...worn(survivor)], (id) => itemDef(id)?.weight ?? 0), statValue(survivor, "weight"));
 }
 
 /** Put items in the bag; whatever does not fit is lost with a notice. */
@@ -358,13 +389,40 @@ export function selectSlot(ctx: GameContext, slot: number): void {
   survivor.activeSlot = survivor.activeSlot === slot || !holdable ? null : slot;
 }
 
-/** Double-click in the inventory: tools and food go to the hotbar, hotbar items come back. */
+/** Double-click in the inventory: armour is worn, tools and food go to the hotbar, hotbar items come back. */
 export function shuttle(ctx: GameContext, from: string, slot: number): void {
+  if (wearArmour(ctx, from, slot)) return;
   const to = from === BAG ? HOTBAR : BAG;
   const moved = ctx.player.inventory.move(from, slot, to);
   if (moved.status !== "ok") ctx.game.notices.push({ text: to === HOTBAR ? "Hotbar is full" : "Inventory is full", tone: "deny" });
   const survivor = survivorOf(ctx);
   if (from === HOTBAR && survivor.activeSlot === slot) survivor.activeSlot = null;
+}
+
+// --- armour ------------------------------------------------------------------------------
+
+/** Wear the armour in this slot; whatever its body slot held goes back where it came from. */
+export function wearArmour(ctx: GameContext, inventoryId: string, slot: number): boolean {
+  const stack = ctx.player.inventory.state(inventoryId).slots[slot] ?? null;
+  if (stack === null || itemDef(stack.itemId)?.wear === undefined) return false;
+  const gear = survivorOf(ctx).gear;
+  const result = gear.equipBest(stack.itemId);
+  if (result.status !== "ok") return false;
+  ctx.player.inventory.take(inventoryId, stack.itemId, 1);
+  if (result.replaced !== null) ctx.player.inventory.put(inventoryId, result.replaced, 1, { slot });
+  return true;
+}
+
+/** Take off what a body slot holds, into the bag; refused when the bag is full. */
+export function takeOff(ctx: GameContext, slotId: string): void {
+  const gear = survivorOf(ctx).gear;
+  const entry = gear.worn().find((worn) => worn.slotId === slotId);
+  if (entry === undefined) return;
+  if (ctx.player.inventory.put(BAG, entry.itemId, 1).status !== "ok") {
+    ctx.game.notices.push({ text: "Inventory is full", tone: "deny" });
+    return;
+  }
+  gear.unequip(slotId);
 }
 
 // --- engrams and crafting ----------------------------------------------------------------
@@ -481,7 +539,7 @@ export function tickSurvivor(ctx: GameContext, dt: number): void {
   const moving = Math.hypot(me.velocity[0], me.velocity[2]) > 0.5;
   const running = moving && ctx.input.isDown("sprint") && mountCanSprint(ctx) === null && canRun(ctx);
   survivor.climate = climateAt(ctx, me.position);
-  survivor.comfort = bodyComfort(survivor.climate.temperature, COMFORT, { fortitude: survivor.points.fortitude * 2 });
+  survivor.comfort = bodyComfort(survivor.climate.temperature, COMFORT, { fortitude: survivor.points.fortitude * 2, ...insulation(survivor) });
   const extra = [
     ...(running ? [{ vital: "stamina", rate: -SURVIVOR.runStamina }, { vital: "water", rate: -0.03 }] : []),
     ...(survivor.comfort.damagePerSecond > 0 ? [{ vital: "health", rate: -survivor.comfort.damagePerSecond }] : []),
@@ -537,7 +595,8 @@ function spoil(ctx: GameContext, survivor: Survivor, dt: number): void {
 function die(ctx: GameContext, survivor: Survivor): void {
   survivor.dead = true;
   const me = ctx.scene.entity.get(ctx.player.userId);
-  const left = me === null ? 0 : leaveBody(ctx, me.position);
+  const left = me === null ? 0 : leaveBody(ctx, me.position, survivor.gear.worn().map((entry) => entry.itemId));
+  survivor.gear.reset();
   ctx.game.notices.push({ text: left > 0 ? "You died. Your things lie with your body where you fell." : "You died. You wake on the beach.", tone: "deny" });
   respawn(ctx, survivor);
 }
@@ -590,6 +649,8 @@ interface SurvivorSave {
   tally: Tally;
   /** Seconds each carried perishable stack has been going off; absent in saves from before spoilage. */
   spoilage?: Record<string, number>;
+  /** Worn armour; absent in saves from before armour could be worn. */
+  gear?: EquipmentState;
 }
 
 export function survivorSave(ctx: GameContext) {
@@ -597,7 +658,7 @@ export function survivorSave(ctx: GameContext) {
     key: "fernwild.survivor",
     snapshot: (): SurvivorSave => {
       const survivor = survivorOf(ctx);
-      return { vitals: survivor.vitals.state(), points: { ...survivor.points }, engrams: survivor.engrams.snapshot(), queue: survivor.queue, harvest: survivor.harvest.snapshot(), tally: { ...survivor.tally }, spoilage: survivor.spoilage.snapshot() };
+      return { vitals: survivor.vitals.state(), points: { ...survivor.points }, engrams: survivor.engrams.snapshot(), queue: survivor.queue, harvest: survivor.harvest.snapshot(), tally: { ...survivor.tally }, spoilage: survivor.spoilage.snapshot(), gear: survivor.gear.state() };
     },
     hydrate: (data: SurvivorSave) => {
       const survivor = survivorOf(ctx);
@@ -609,6 +670,7 @@ export function survivorSave(ctx: GameContext) {
       survivor.harvest.restore(data.harvest);
       survivor.tally = { ...data.tally };
       survivor.spoilage.restore(data.spoilage ?? {});
+      if (!survivor.gear.restore(data.gear ?? { slots: [] })) survivor.gear.reset();
       applyMaxes(ctx, survivor, false);
     },
   };
@@ -624,6 +686,7 @@ export function resetSurvivor(ctx: GameContext): void {
   survivor.activeSlot = null;
   survivor.tally = { ...NO_TALLY };
   survivor.spoilage = createSpoilage(SPOILS);
+  survivor.gear.reset();
 }
 
 // --- what the HUD reads ----------------------------------------------------------------------
@@ -657,6 +720,8 @@ export function survivorView(ctx: GameContext) {
     temperature: Math.round(survivor.comfort.ambientC),
     comfort: survivor.comfort.band,
     weather: survivor.climate?.weather ?? "clear",
+    gear: GEAR_SLOTS.map((slot) => ({ id: slot.id, label: slot.label, item: survivor.gear.worn().find((entry) => entry.slotId === slot.id)?.itemId ?? null })),
+    insulation: insulation(survivor),
     sheltered: survivor.climate?.covered ?? false,
     webbed: survivor.web !== null && survivor.web.until > now,
     tally: survivor.tally,

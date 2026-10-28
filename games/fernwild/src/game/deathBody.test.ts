@@ -8,6 +8,7 @@ import { content } from "./content";
 import { itemTraits } from "./data/items";
 import { BAG, BAG_SLOTS, HOTBAR, HOTBAR_SLOTS } from "./bags";
 import { bodies, BODY_LASTS, bodyView } from "./deathBody";
+import { shuttle, survivorView } from "./survivor";
 
 function runner(): HeadlessRunner {
   const definition = defineGameDefinition({
@@ -110,4 +111,16 @@ test("a body and what it holds are kept in the save", () => {
   tick(other, 0.1);
   other.ctx.restore(saved);
   expect(bodies(other.ctx).map((body) => body.contents)).toEqual([[{ item: "wood", count: 7 }]]);
+});
+
+test("worn armour stays with the body, and the survivor wakes with every slot empty", () => {
+  const game = runner();
+  tick(game, 0.1);
+  game.ui.tryInvoke("cheat", { give: { cloth_shirt: 1 } });
+  shuttle(game.ctx, BAG, game.ctx.player.inventory.state(BAG).slots.findIndex((stack) => stack?.itemId === "cloth_shirt"));
+  expect(survivorView(game.ctx).gear.find((slot) => slot.id === "torso")?.item).toBe("cloth_shirt");
+  game.ui.tryInvoke("cheat", { kill: true });
+  tick(game, 0.2);
+  expect(bodies(game.ctx)[0]?.contents).toContainEqual({ item: "cloth_shirt", count: 1 });
+  expect(survivorView(game.ctx).gear.every((slot) => slot.item === null)).toBe(true);
 });

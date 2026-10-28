@@ -36,9 +36,10 @@ function emptyPockets(ctx: GameContext): RemainsStack[] {
   return taken;
 }
 
-/** On death, everything the survivor carried stays with their body where they fell. Returns how many stacks were left. */
-export function leaveBody(ctx: GameContext, at: readonly [number, number, number]): number {
-  const left = bodiesOf(ctx).leave({ owner: ctx.player.userId, at, contents: emptyPockets(ctx), now: ctx.time.now() });
+/** On death, everything the survivor carried or wore stays with their body where they fell. Returns how many stacks were left. */
+export function leaveBody(ctx: GameContext, at: readonly [number, number, number], wornItems: readonly string[] = []): number {
+  const contents = [...emptyPockets(ctx), ...wornItems.map((item) => ({ item, count: 1 }))];
+  const left = bodiesOf(ctx).leave({ owner: ctx.player.userId, at, contents, now: ctx.time.now() });
   return left === null ? 0 : left.contents.length;
 }
 

@@ -16,7 +16,7 @@ import { closeNote, dossierSave, readNote, resetDossier, tickDossier } from "./g
 import { callSupplyDrop, openCrate, resetSupplyDrops, supplyDropsSave, tickSupplyDrops } from "./game/supplyDrops";
 import type { NewGameConfig } from "@jgengine/core/game/newGame";
 import { START } from "./game/data/start";
-import { cancelCraft, consume, grantXp, heldItem, learn, learnFree, levelStat, resetSurvivor, selectSlot, setUpSurvivor, shuttle, startCraft, survivorSave, swing, tickSurvivor, use } from "./game/survivor";
+import { cancelCraft, consume, grantXp, heldItem, learn, learnFree, levelStat, resetSurvivor, selectSlot, setUpSurvivor, shuttle, startCraft, survivorSave, swing, takeOff, tickSurvivor, use, wearArmour } from "./game/survivor";
 import { setScreen, toggleScreen, type SurvivorScreen } from "./game/screens";
 
 const ORIGIN: [number, number, number] = [0, 0, 0];
@@ -71,6 +71,7 @@ export const systems = [
       });
       commands.define<{ inventoryId?: string; slot: number }>("consume", { apply: (state, input) => (consume(state, input.inventoryId ?? BAG, input.slot), state) });
       commands.define<{ inventoryId: string; slot: number }>("shuttle", { apply: (state, input) => (shuttle(state, input.inventoryId, input.slot), state) });
+      commands.define<{ slot: string }>("takeOff", { apply: (state, input) => (takeOff(state, input.slot), state) });
     },
     update: tickSurvivor,
     save: survivorSave,
@@ -213,6 +214,8 @@ interface Cheat {
   drop?: string | true;
   /** ARK's admin SetHealth on the Broodmother in her lair: her health to this share of its max. */
   broodHealth?: number;
+  /** Wear these armour items from the bag, as a double-click would. */
+  wear?: readonly string[];
 }
 
 function cheat(ctx: GameContext, input: Cheat): void {
@@ -263,6 +266,10 @@ function cheat(ctx: GameContext, input: Cheat): void {
   }
   if (input.forceTame === true) forceTame(ctx);
   if (input.tameXp !== undefined) giveTameXp(ctx, input.tameXp);
+  for (const itemId of input.wear ?? []) {
+    const slot = ctx.player.inventory.state(BAG).slots.findIndex((stack) => stack?.itemId === itemId);
+    if (slot >= 0) wearArmour(ctx, BAG, slot);
+  }
   for (const itemId of input.toHotbar ?? []) {
     const slot = ctx.player.inventory.state(BAG).slots.findIndex((stack) => stack?.itemId === itemId);
     if (slot >= 0) shuttle(ctx, BAG, slot);

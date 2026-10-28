@@ -1,5 +1,7 @@
 import { useEffect, useState, type CSSProperties, type ReactNode } from "react";
+import { Paperdoll } from "@jgengine/core/inventory/characterSheet.view";
 import { InventoryGrid } from "@jgengine/core/inventory/inventoryGrid.view";
+import { EntityPreview } from "@jgengine/core/render/EntityPreview.draw";
 import { onboardingLock } from "@jgengine/core/onboarding/onboardingSystem";
 import { useGame, useGameStore } from "@jgengine/react/hooks";
 import { useGameContext } from "@jgengine/react/provider";
@@ -8,6 +10,7 @@ import { itemDef, itemLabel } from "../data/items";
 import type { SurvivorScreen } from "../screens";
 import { BAG, HOTBAR } from "../bags";
 import { dossierPages } from "../dossier";
+import { entityModels } from "../models";
 import { craftable } from "../survivor";
 import { ObeliskPanel } from "./Broodmother";
 import { CreaturePanel } from "./CreatureScreen";
@@ -100,8 +103,24 @@ function Carried({ give = false }: { give?: boolean }): ReactNode {
   );
 }
 
-/** Centre: the survivor's stats with ARK's level-up buttons. */
-function Stats(): ReactNode {
+/** Left of the doll: head, torso, legs; right: hands, feet, as ARK's equipped row reads left to right. */
+const GEAR_SIDE: Record<string, "left" | "right"> = { head: "left", torso: "left", legs: "left", hands: "right", feet: "right" };
+
+/** The survivor as they stand now, turned to face you. */
+function Portrait(): ReactNode {
+  const ctx = useGameContext();
+  const player = entityModels["player"];
+  return (
+    <div data-portrait="" style={{ width: 170, height: 290, borderRadius: 4, overflow: "hidden", border: "1px solid #6fb7c933" }}>
+      {player === undefined ? null : (
+        <EntityPreview model={player} instanceId={ctx.player.userId} faceCamera mood="studio" backdrop="#14222a" cameraPosition={[0, 1.1, 4.6]} cameraTarget={[0, 0.92, 0]} fov={30} />
+      )}
+    </div>
+  );
+}
+
+/** Centre: ARK's survivor pane — the body with its armour slots, insulation, the XP bar and the stats with their level-up buttons. */
+function Survivor(): ReactNode {
   const game = useGame();
   const view = useSurvivor();
   const current: Record<string, string> = {
@@ -112,12 +131,36 @@ function Stats(): ReactNode {
     water: `${Math.floor(view.water.value)} / ${view.water.max}`,
     weight: `${view.weight.value} / ${view.weight.max}`,
   };
+  const xpShare = Math.max(0, Math.min(1, (view.xp - view.xpFrom) / Math.max(1, view.xpNext - view.xpFrom)));
   return (
-    <div style={{ ...PANEL, width: 300 }}>
-      <span style={HEADING}>Survivor · level {view.level}</span>
-      <span style={{ fontSize: 12, opacity: 0.8 }}>
-        XP {view.xp} / {view.xpNext} · {view.statPoints} stat point{view.statPoints === 1 ? "" : "s"}
-      </span>
+    <div style={{ ...PANEL, width: 400 }}>
+      <span style={{ ...HEADING, textAlign: "center", fontSize: 14 }}>Survivor - Lvl {view.level}</span>
+      <Paperdoll
+        slots={view.gear.map((slot) => ({
+          id: slot.id,
+          label: slot.label,
+          position: GEAR_SIDE[slot.id] ?? "left",
+          item: slot.item === null ? null : { glyph: <ItemIcon itemId={slot.item} />, label: itemLabel(slot.item) },
+        }))}
+        portrait={<Portrait />}
+        slotSize={50}
+        onSlotActivate={(slot) => void game.commands.run("takeOff", { slot })}
+      />
+      <div data-insulation="" style={{ display: "flex", justifyContent: "space-between", fontSize: 12, opacity: 0.85 }}>
+        <span>Hypothermal insulation +{view.insulation.cold}°C</span>
+        <span>Hyperthermal insulation +{view.insulation.heat}°C</span>
+      </div>
+      <div data-xp="" style={{ position: "relative", height: 14, background: "#0009", border: "1px solid #6fb7c955", borderRadius: 7 }}>
+        <div style={{ width: `${xpShare * 100}%`, height: "100%", background: "#2d8fa6", borderRadius: 7 }} />
+        <span style={{ position: "absolute", inset: 0, textAlign: "center", fontSize: 10, lineHeight: "14px" }}>
+          XP: {view.xp} / {view.xpNext}
+        </span>
+      </div>
+      {view.statPoints > 0 ? (
+        <span style={{ fontSize: 12, color: "#9ef08a", fontWeight: 800 }}>
+          {view.statPoints} point{view.statPoints === 1 ? "" : "s"} to spend
+        </span>
+      ) : null}
       {view.stats.map((stat) => (
         <div key={stat.id} data-stat={stat.id} style={{ display: "flex", alignItems: "center", gap: 8, fontSize: 13 }}>
           <span style={{ flex: 1 }}>{stat.label}</span>
@@ -127,8 +170,8 @@ function Stats(): ReactNode {
             disabled={view.statPoints <= 0}
             onClick={() => void game.commands.run("levelStat", { stat: stat.id })}
             style={{
-              width: 24,
-              height: 24,
+              width: 22,
+              height: 22,
               borderRadius: 4,
               border: "1px solid #6fb7c966",
               background: view.statPoints > 0 ? "#2f8a4a" : "#16252b",
@@ -144,6 +187,7 @@ function Stats(): ReactNode {
       <span style={{ fontSize: 12, opacity: 0.75 }}>
         {view.temperature}°C · {view.comfort} · Torpor {Math.floor(view.torpor.value)} / {view.torpor.max}
       </span>
+      <span style={{ fontSize: 11, opacity: 0.7 }}>Double-click armour to wear it; click a worn piece to take it off.</span>
     </div>
   );
 }
@@ -351,7 +395,7 @@ export function InventoryScreen({ tab }: { tab: SurvivorScreen }): ReactNode {
       ) : tab === "inventory" ? (
         <div style={{ display: "flex", gap: 10, alignItems: "stretch" }}>
           <Carried />
-          <Stats />
+          <Survivor />
           <Crafting />
         </div>
       ) : tab === "dossier" ? (
