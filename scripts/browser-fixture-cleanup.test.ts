@@ -8,16 +8,12 @@ import { removeDir } from "./removeDir";
 test("owned force kill drains a held response, HTTP server and scratch without awaiting graceful close", async () => {
   const scratch = await mkdtemp(join(tmpdir(), "browser-fixture-cleanup-"));
   await writeFile(join(scratch, "fixture.js"), "owned fixture");
+  // A held save response, with no real socket: a real Bun.serve + fetch pair stalls on Linux CI (#2738).
   let releaseResponse!: () => void;
   let saveReleased = false;
-  let sawRequest!: () => void;
-  const requested = new Promise<void>((resolve) => { sawRequest = resolve; });
-  const response = new Promise<Response>((resolve) => {
-    releaseResponse = () => { saveReleased = true; resolve(new Response("released")); };
+  const response = new Promise<string>((resolve) => {
+    releaseResponse = () => { saveReleased = true; resolve("released"); };
   });
-  const server = Bun.serve({ hostname: "127.0.0.1", port: 0, fetch: () => { sawRequest(); return response; } });
-  const request = fetch(`http://127.0.0.1:${server.port}`).then((value) => value.text()).catch(() => undefined);
-  await requested;
   let gracefulCalls = 0;
   let releaseGraceful!: () => void;
   const stalledClose = new Promise<void>((resolve) => { releaseGraceful = resolve; });
@@ -29,11 +25,11 @@ test("owned force kill drains a held response, HTTP server and scratch without a
     releasePending: releaseResponse,
     ownedBrowserProcess: owned,
     browser: { close: owned.close },
-    server: { stop: async (force) => { expect(force).toBe(true); await server.stop(force); stopped = true; } },
+    // A forced stop drains in-flight responses, so it only settles once the held one has.
+    server: { stop: async (force) => { expect(force).toBe(true); expect(await response).toBe("released"); stopped = true; } },
     removeScratch: async () => { await removeDir(scratch); removed = true; },
   });
   try {
-    // Let immediately settled cleanup operations run; no timeout or browser launch.
     await new Promise<void>((resolve) => setImmediate(resolve));
     expect(owned.killed).toBe(true);
     await cleanup;
@@ -47,9 +43,7 @@ test("owned force kill drains a held response, HTTP server and scratch without a
     releaseResponse();
     releaseGraceful();
     await cleanup;
-    await server.stop(true);
     await removeDir(scratch);
-    await request;
   }
 });
 
