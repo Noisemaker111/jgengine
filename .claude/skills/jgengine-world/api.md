@@ -2419,6 +2419,15 @@
 - `FirstOrderReport` (interface): interface FirstOrderReport — What one solve did.
 - `createFirstOrderIceFlow` (function): function createFirstOrderIceFlow(grid: FirstOrderGrid): FirstOrderIceFlow — A first-order (Blatter–Pattyn) Stokes ice-flow solver for a plan grid.
 
+## @jgengine/core/landform/glacial/glacialClimate
+
+- `Delta18ORecord` (interface): interface Delta18ORecord — Glacial climate: the snowline (equilibrium line altitude, ELA) through the glacial cycles of the last 800 kyr, read off the LR04 stack of 57 benthic δ¹⁸O records (Lisiecki & Raymo 2005, PANGAEA doi:10.1594/PANGAEA.701576, CC BY 3.0). Benthic δ¹⁸O tracks global ice volume and deep-sea temperature, so the snowline is scaled linearly between today's and the Last Glacial Maximum's by δ¹⁸O, as Pedersen & Egholm (2013) scale mountain climate with the same record.
+- `LR04_STACK` (const): const LR04_STACK: Delta18ORecord — The LR04 benthic δ¹⁸O stack (Lisiecki & Raymo 2005), 0 to 800 ka.
+- `SnowlineHistory` (type): type SnowlineHistory = readonly (readonly [number, number])[] — A snowline through time: [model year, ELA in metres] points, years ascending.
+- `SnowlineHistoryOptions` (interface): interface SnowlineHistoryOptions — Options for {@link snowlineHistory}.
+- `snowlineAt` (function): function snowlineAt(history: SnowlineHistory, year: number): number — The ELA of a snowline history at a model year, linear between points and level past either end.
+- `snowlineHistory` (function): function snowlineHistory(options: SnowlineHistoryOptions): [number, number][] — The snowline from `startKa` to `endKa`, one point per record point, scaled linearly by δ¹⁸O so it stands at `presentEla` at today's δ¹⁸O and at `glacialEla` at 18 ka's.
+
 ## @jgengine/core/landform/glacial/glacierFlow
 
 - `GlacierModel` (type): type GlacierModel = "first-order" | "shallow-ice" — Which ice model moves a glacier.
