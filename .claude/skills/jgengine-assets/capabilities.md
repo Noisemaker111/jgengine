@@ -40,6 +40,10 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `readGlbClips` (function) · `import { readGlbClips } from "@jgengine/assets/dims"`
 
+## clip-retarget — retarget a clip between differently built humanoid skeletons in an asset pipeline
+
+- `retargetClipByRest` (function) · `import { retargetClipByRest } from "@jgengine/assets/clipRetarget"`
+
 ## creature-body — give a creature an animated low-poly body from knobs (torso, legs, neck, head, tail, horns, frill, plates, wings...) without a model file
 
 - `bodyModel` (function) · `import { bodyModel } from "@jgengine/core/creatureBody/bodyPlan"`
@@ -160,6 +164,10 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 ## library-validate — check every library entry has an allowed licence and full credit fields
 
 - `validateLibrary` (function) · `import { validateLibrary } from "@jgengine/assets/library/assetLibrary"`
+
+## makehuman-character — build a rigged, animated CC0 MakeHuman person from its base mesh and targets into one GLB
+
+- `pullMakeHumanCharacter` (function) · `import { pullMakeHumanCharacter } from "@jgengine/assets/makehumanPull"`
 
 ## material-appearance-signals — update one owned material from wetness and local card exposure without global lighting edits
 

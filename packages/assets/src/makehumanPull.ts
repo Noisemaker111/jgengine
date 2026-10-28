@@ -358,7 +358,7 @@ export async function pullMakeHumanCharacter(preset: MakeHumanPreset, options: P
 
   const buildGeometry = (faces: ObjMesh["faces"], uvs: readonly number[], baseIndexOf: (vert: number) => number) => {
     const key = new Map<string, number>();
-    const out = { position: [] as number[], uv: [] as number[], skinIndex: [] as number[], skinWeight: [] as number[], index: [] as number[] };
+    const out: Record<"position" | "uv" | "skinIndex" | "skinWeight" | "index", number[]> = { position: [], uv: [], skinIndex: [], skinWeight: [], index: [] };
     const corner = (vert: number, uv: number) => {
       const id = `${vert}/${uv}`;
       const existing = key.get(id);
@@ -369,7 +369,8 @@ export async function pullMakeHumanCharacter(preset: MakeHumanPreset, options: P
       const p = at(baseVert);
       out.position.push(p.x, p.y, p.z);
       out.uv.push(uvs[uv * 2] ?? 0, uvs[uv * 2 + 1] ?? 0);
-      const list = [...(influences.get(baseVert) ?? [[headIndex, 1] as [number, number]])].sort((a, b) => b[1] - a[1]).slice(0, 4);
+      const fallback: [number, number][] = [[headIndex, 1]];
+      const list = [...(influences.get(baseVert) ?? fallback)].sort((a, b) => b[1] - a[1]).slice(0, 4);
       const total = list.reduce((sum, [, weight]) => sum + weight, 0) || 1;
       for (let slot = 0; slot < 4; slot += 1) {
         out.skinIndex.push(list[slot]?.[0] ?? 0);

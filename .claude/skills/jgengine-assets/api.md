@@ -240,6 +240,12 @@
 - `generatedSpritesDir` (const): const generatedSpritesDir: string — Sprite-pack counterpart of `generatedDir`.
 - `pullGithubToken` (function): function pullGithubToken(): string | undefined — The GitHub token every pull uses, read once per run: env first, then `gh auth token`.
 
+## @jgengine/assets/clipRetarget
+
+- `RetargetBone` (interface): interface RetargetBone — One retargeted bone: the target bone driven by a source bone, and optional children that aim each.
+- `RetargetOptions` (interface): interface RetargetOptions — How {@link retargetClipByRest} maps one skeleton's motion onto another.
+- `retargetClipByRest` (function): function retargetClipByRest(target: THREE.Object3D, source: THREE.Object3D, clip: THREE.AnimationClip, options: RetargetOptions): THREE.AnimationClip — Retarget a clip from one skeleton onto another whose bones have different names, orientations and rest pose. Each mapped bone takes the source bone's world-space rotation away from its rest, applied after turning the target's rest bone to point where the source's does (`aim`), so an A-pose body plays T-pose motion with its arms down. Unmapped bones keep their rest pose relative to their parent. Both roots must be at rest when called; the source is posed while sampling and returned to rest. Bone lengths stay the target's; only the hip translates.
+
 ## @jgengine/assets/collisionMeshAssets
 
 - `COLLISION_MESH_ASSET_IDS` (const): const COLLISION_MESH_ASSET_IDS: ReadonlySet<string> — Catalog assets that ship a collision mesh in the generated index. Opt-in only: each entry adds ~10-30KB of quantized triangles to the index and a BVH raycast per query, so list only concave models whose fitted box lies (archways, rings, frames).
@@ -378,10 +384,14 @@
 - `licenseRequiresCredit` (function): function licenseRequiresCredit(license: LibraryLicense): boolean — Whether shipping an asset under this licence obliges a visible credit.
 - `normalizeLibraryLicense` (function): function normalizeLibraryLicense(label: string): LibraryLicense | null — Maps a provider's licence label (`"CC0 Public Domain"`, `"CC Attribution"`, `"MIT License"`) to an accepted {@link LibraryLicense}, or `null` for anything else. Non-commercial, share-alike, no-derivatives, editorial, store and custom licences all return `null`: the library refuses them.
 
+## @jgengine/assets/library/libraryMakehuman
+
+- `MAKEHUMAN_PRESETS` (const): const MAKEHUMAN_PRESETS: readonly MakeHumanPreset[] — The pinned MakeHuman people the library lists: both genders across MakeHuman's three ethnic targets, ages from young adult to old, and muscle and weight extremes. Each is built on pull from the CC0 base mesh and targets, so the set is data, not files.
+
 ## @jgengine/assets/library/libraryPull
 
 - `LibraryPullContext` (interface): interface LibraryPullContext — What {@link pullLibraryEntry} needs from its caller.
-- `pullLibraryEntry` (function): function pullLibraryEntry(entry: LibraryEntry, ctx: LibraryPullContext): Promise<LibraryServedPath> — Pulls one library entry into `ctx.outRoot` at {@link libraryServedPath}: pack entries through the pack pull, ambientCG materials through the material path, Poly Haven and Rocketbox models through the model library's converters (a Rocketbox character with `ctx.clips` baked on), a Rocketbox animation as a skeleton-only clip GLB, Poly Haven textures and HDRIs and ambientCG HDRIs as files, and a Sketchfab model through its download API with the token named by the source (`SKETCHFAB_TOKEN`).
+- `pullLibraryEntry` (function): function pullLibraryEntry(entry: LibraryEntry, ctx: LibraryPullContext): Promise<LibraryServedPath> — Pulls one library entry into `ctx.outRoot` at {@link libraryServedPath}: pack entries through the pack pull, ambientCG materials through the material path, Poly Haven and Rocketbox models through the model library's converters (a Rocketbox character with `ctx.clips` baked on), a Rocketbox animation as a skeleton-only clip GLB, a MakeHuman person built from its CC0 base mesh and targets, Poly Haven textures and HDRIs and ambientCG HDRIs as files, and a Sketchfab model through its download API with the token named by the source (`SKETCHFAB_TOKEN`).
 
 ## @jgengine/assets/library/libraryRocketbox
 
@@ -399,9 +409,19 @@
 - `LIBRARY_KINDS` (const): const LIBRARY_KINDS: readonly LibraryKind[] — Every {@link LibraryKind}, in browser tab order.
 - `LibraryKind` (type): type LibraryKind = "model" | "character" | "animation" | "material" | "decal" | "hdri" | "icon" — What a library entry is, which decides where it is served and which browser tab shows it.
 - `LibrarySource` (interface): interface LibrarySource — One upstream the library indexes. `{id}` in a template is replaced by the entry's native id.
-- `LibrarySourceId` (type): type LibrarySourceId = | "ambientcg" | "polyhaven" | "gameicons" | "sketchfab" | "kaykit" | "quaternius" | "rocketbox" — Where a library entry's bytes come from.
+- `LibrarySourceId` (type): type LibrarySourceId = | "ambientcg" | "polyhaven" | "gameicons" | "sketchfab" | "kaykit" | "quaternius" | "rocketbox" | "makehuman" — Where a library entry's bytes come from.
+- `MAKEHUMAN_REVISION` (const): const MAKEHUMAN_REVISION: "a8bc2d54ff0ac92e78ff71431b1023eda42bf482" — The MakeHuman commit the pinned people are built from (the same one `makehumanPull` reads).
 - `ROCKETBOX_REVISION` (const): const ROCKETBOX_REVISION: "0943055db6ec570bcef9f2c8b41c9e5467c808f9" — The Microsoft Rocketbox commit the avatar index and previews are pinned to (the same one `rocketboxPull` reads).
 - `librarySource` (function): function librarySource(id: string): LibrarySource | undefined — The library source with this id, or undefined.
+
+## @jgengine/assets/makehumanPull
+
+- `MAKEHUMAN_COMMIT` (const): const MAKEHUMAN_COMMIT: "a8bc2d54ff0ac92e78ff71431b1023eda42bf482" — MakeHuman (CC0 assets since September 2020) builds people from one base mesh and a library of morph targets. This plays MakeHuman's export in Bun: it reads the base mesh, the ethnicity, age and body targets, the default skeleton, its weights and the eye proxy at a pinned commit (each file checked against Git's blob hash), sums the targets a preset names, places every joint from the morphed mesh, skins the body, and bakes Rocketbox idle, walk and run clips onto it with a rest-aligned retarget. The result is one meshopt GLB in metres, standing on y = 0, facing +Z.
+- `MakeHumanEthnicity` (interface): interface MakeHumanEthnicity — Ethnic mix of a MakeHuman body; MakeHuman normalises the three to sum to 1.
+- `MakeHumanPreset` (interface): interface MakeHumanPreset — One pinned MakeHuman person: the macro settings MakeHuman's sliders would hold.
+- `PullMakeHumanOptions` (interface): interface PullMakeHumanOptions — Settings for {@link pullMakeHumanCharacter}.
+- `PulledMakeHuman` (interface): interface PulledMakeHuman — What one MakeHuman build wrote.
+- `pullMakeHumanCharacter` (function): function pullMakeHumanCharacter(preset: MakeHumanPreset, options: PullMakeHumanOptions): Promise<PulledMakeHuman> — Build one pinned MakeHuman person and write `<outDir>/model.glb`: the skinned body and eyes on MakeHuman's default skeleton, a skin tone from the ethnic mix, and Rocketbox `Idle`, `Walk` and `Run` retargeted onto it (walk and run in place).
 
 ## @jgengine/assets/manifest
 
@@ -492,6 +512,7 @@
 
 ## @jgengine/assets/rocketboxPull
 
+- `LoadedRocketboxClip` (interface): interface LoadedRocketboxClip — One Rocketbox clip loaded in memory: its skeleton at rest (metres, no mesh) and the animation.
 - `PullRocketboxClipOptions` (interface): interface PullRocketboxClipOptions — Settings for {@link pullRocketboxClip}.
 - `PullRocketboxOptions` (interface): interface PullRocketboxOptions — Fetch and settings for {@link pullRocketboxModel}.
 - `PulledRocketboxClip` (interface): interface PulledRocketboxClip — What one Rocketbox clip pull wrote.
