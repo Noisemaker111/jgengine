@@ -300,6 +300,20 @@ no code is copied (Landlab, Fastscape and TopoToolbox were not used as sources).
 - Bagnold 1941, *The Physics of Blown Sand and Desert Dunes*: dune speed falls as one over height.
 - Rubin & Hunter 1987, bedform alignment in directionally varying flows, *Science* 237: linear dunes
   trending along the resultant of two winds.
+- Glen 1955, the creep of polycrystalline ice, *Proceedings of the Royal Society A* 228; Cuffey &
+  Paterson 2010, *The Physics of Glaciers* (4th ed.): Glen's flow law and the temperate rate factor.
+- Vialov 1958, regularities of glacial shields movement and the theory of plastic viscous flow, *IAHS
+  Publication* 47: the ice-sheet profile the ice solver is tested against.
+- Mahaffy 1976, a three-dimensional numerical model of ice sheets, *JGR* 81: the staggered-grid
+  shallow-ice flux.
+- Harbor 1992, numerical modeling of the development of U-shaped valleys by glacial erosion, *GSA
+  Bulletin* 104: wall drag slowing ice at a valley's corners, and the cross-section exponent.
+- Humphrey & Raymond 1994, hydrology, erosion and sediment production in a surging glacier, *Journal
+  of Glaciology* 40; Braun, Zwartz & Tomkin 1999, a new surface-processes model combining glacial
+  and fluvial erosion, *Annals of Glaciology* 28: erosion proportional to sliding speed.
+- Sunamura 1992, *Geomorphology of Rocky Coasts*; Anderson, Densmore & Ellis 1999, the generation and
+  degradation of marine terraces, *Basin Research* 11: cliff retreat damped by the platform it leaves,
+  and platform lowering by depth.
 
 ## Fire simulation
 
