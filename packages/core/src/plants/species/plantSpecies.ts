@@ -44,8 +44,16 @@ export interface PlantSpecies {
     divergence: number;
   };
   growth: {
-    /** Borchert–Honda apical control λ in 0..1: the main axis's weight against its laterals. */
+    /** Borchert–Honda apical control λ in 0..1 of a young plant: the main axis's weight against its laterals. */
     apicalControl: number;
+    /**
+     * λ the plant settles to with age. Decurrent trees (maples, oaks) lose much of their apical control
+     * as they mature and laterals overtake the leader into a rounded crown; excurrent trees (pines,
+     * firs) keep most of it and stay conical (Brown, McAlpine & Kormanik 1967; Wilson 2000).
+     */
+    apicalControlMature: number;
+    /** Age in years at which λ has moved halfway from {@link apicalControl} to {@link apicalControlMature}. */
+    apicalControlHalfYears: number;
     /** Internode length, metres. */
     internodeMax: number;
     /** Branching angle between a lateral shoot and its parent axis, degrees. */
@@ -174,6 +182,8 @@ export interface PlantSpecies {
 
 const FIELD_RANGES: readonly (readonly [path: string, read: (s: PlantSpecies) => number, min: number, max: number])[] = [
   ["growth.apicalControl", (s) => s.growth.apicalControl, 0, 1],
+  ["growth.apicalControlMature", (s) => s.growth.apicalControlMature, 0, 1],
+  ["growth.apicalControlHalfYears", (s) => s.growth.apicalControlHalfYears, 0.1, 1000],
   ["growth.internodeMax", (s) => s.growth.internodeMax, 0.001, 2],
   ["growth.branchAngle", (s) => s.growth.branchAngle, 0, 180],
   ["growth.lateralBudsPerNode", (s) => s.growth.lateralBudsPerNode, 0, 8],

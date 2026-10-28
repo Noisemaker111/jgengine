@@ -1169,8 +1169,12 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 - `crownRatio` (function) · `import { crownRatio } from "@jgengine/core/plants/structure/plantStructure"`
 - `hashPlantStructure` (function) · `import { hashPlantStructure } from "@jgengine/core/plants/structure/plantStructure"`
 
-## plant-validation — published height-age curves to check a growth model against
+## plant-validation — published crown allometry and crown-shape measures to check a growth model against
 
+- `crownProfile` (function) · `import { crownProfile } from "@jgengine/core/plants/validation/crownAllometry"`
+- `forestGrownCrownWidthM` (function) · `import { forestGrownCrownWidthM } from "@jgengine/core/plants/validation/crownAllometry"`
+- `measuredCrownWidthBandM` (function) · `import { measuredCrownWidthBandM } from "@jgengine/core/plants/validation/crownAllometry"`
+- `openGrownCrownWidthM` (function) · `import { openGrownCrownWidthM } from "@jgengine/core/plants/validation/crownAllometry"`
 - `siteIndexHeightM` (function) · `import { siteIndexHeightM } from "@jgengine/core/plants/validation/heightAgeCurves"`
 
 ## plot-permissions — Owner, editor and guild build rights on a plot

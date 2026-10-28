@@ -113,12 +113,17 @@ describe("plant growth", () => {
     expect(stats.maxBudsSeen).toBeLessThanOrEqual(limits.maxBuds);
   });
 
-  test("an open-grown tree keeps a longer crown than one grown under 0.2 light", () => {
-    const run = growLong();
+  test("a sugar maple survives 100 years under 0.2 light", () => {
     const shaded = createPlantGrowth(ACER_SACCHARUM, { ...OPEN_TEMPERATE_SITE, light: 0.2 }, SEED);
     shaded.step(100);
     expect(shaded.stats().alive).toBe(true);
-    expect(run.crownRatioAt100).toBeGreaterThan(crownRatio(shaded.structure()));
+  }, 120_000);
+
+  test("an open-grown tree keeps a longer crown than one grown in a closed stand", () => {
+    const run = growLong();
+    const stand = createPlantGrowth(ACER_SACCHARUM, { ...OPEN_TEMPERATE_SITE, stand: { spacingIndex: 0.25 } }, SEED);
+    stand.step(100);
+    expect(run.crownRatioAt100).toBeGreaterThan(crownRatio(stand.structure()) + 0.2);
   }, 120_000);
 
   test("retune changes the site from the next year on", () => {

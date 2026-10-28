@@ -3,26 +3,29 @@ import type { PlantSpecies } from "../plantSpecies";
 /**
  * Eastern white pine. Traits from Silvics of North America (Wendel & Smith 1990), the USDA Wood
  * Handbook and USDA PLANTS: an excurrent conifer that sets one whorl of three to five branches at the
- * top of each year's leader, needles in fives kept two to three years. Carbon and architecture tuned
- * by hand against the Carmean 1989 site-index curve until the milestone-4 fit replaces them.
+ * top of each year's leader, needles in fives kept two to three years. Carbon and architecture fitted
+ * against the Carmean 1989 height curve, Ek 1974 and Tallo crown widths and the crown profile of open-
+ * and forest-grown trees.
  */
 export const PINUS_STROBUS: PlantSpecies = {
   id: "pinus-strobus",
-  version: 1,
+  version: 2,
   names: { scientific: "Pinus strobus L.", common: { en: "eastern white pine", fr: "pin blanc" } },
   ids: { usda: "PIST" },
   habit: "tree",
   architecture: { model: "rauh", phyllotaxis: "whorled", divergence: 137.5 },
   growth: {
-    apicalControl: 0.85,
+    apicalControl: 0.785,
+    apicalControlMature: 0.6,
+    apicalControlHalfYears: 30,
     internodeMax: 0.08,
-    branchAngle: 70,
+    branchAngle: 74,
     lateralBudsPerNode: 5,
     maxMetamersPerShoot: 6,
-    horizontalVigour: 0.35,
-    vigourIndexWeight: 0.8,
-    tropism: { gravity: 0.3, gravityOrderDecay: 0.6, setpointAngle: 75, setpointPerOrder: 10, optimal: 0.1, wind: 0.2 },
-    budLightThreshold: 0.12,
+    horizontalVigour: 0.461,
+    vigourIndexWeight: 0.1,
+    tropism: { gravity: 0.3, gravityOrderDecay: 0.6, setpointAngle: 89, setpointPerOrder: 2, optimal: 0.1, wind: 0.2 },
+    budLightThreshold: 0.093,
     budDeathYears: 2,
     dormantBudYears: 2,
     spurYears: 3,
@@ -39,7 +42,7 @@ export const PINUS_STROBUS: PlantSpecies = {
     rootTurnover: 0.8,
     foliageTurnover: 0.4,
     growthEfficiency: 0.75,
-    sapwoodPerFoliage: 3e-4,
+    sapwoodPerFoliage: 4.01e-4,
     sapwoodTurnover: 0.04,
     pipeExponent: 2.3,
     reproductiveShare: 0.05,
@@ -67,7 +70,7 @@ export const PINUS_STROBUS: PlantSpecies = {
     leaf: { source: "silvics-654" },
     wood: { source: "wood-handbook" },
     reproduction: { source: "silvics-654" },
-    growth: { source: "hand-tuned", fitted: { score: 0, against: "carmean-1989" } },
-    carbon: { source: "hand-tuned", fitted: { score: 0, against: "carmean-1989" } },
+    growth: { source: "crown-fit", fitted: { score: 36.7, against: "carmean-1989, ek-1974, tallo-2022" } },
+    carbon: { source: "crown-fit", fitted: { score: 36.7, against: "carmean-1989, ek-1974, tallo-2022" } },
   },
 };

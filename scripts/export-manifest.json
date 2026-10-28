@@ -806,6 +806,7 @@
     "./plants/species/plantSpecies",
     "./plants/species/speciesSources",
     "./plants/structure/plantStructure",
+    "./plants/validation/crownAllometry",
     "./plants/validation/heightAgeCurves",
     "./play/flow",
     "./play/flowSteps",

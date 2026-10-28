@@ -18,6 +18,13 @@ export interface PlantEnvironment {
   /** Prevailing wind: compass direction in degrees the wind blows towards, strength 0..1. */
   wind: { dir: number; strength: number };
   slope: { dir: number; deg: number };
+  /**
+   * An even-aged stand around the plant; absent means open-grown. Neighbours are taken as the plant's
+   * equals spaced `spacingIndex` × its own height apart (the Hart–Becking spacing index; 0.2–0.25 is a
+   * fully stocked stand), so the stand thins as it grows. Their leaves shade every point by
+   * Beer–Lambert over the stand's leaf area index above it (Monsi & Saeki 1953).
+   */
+  stand?: { spacingIndex: number };
 }
 
 /** A temperate, well-watered, fertile open site at 45° N: the site Carmean's curves describe. */

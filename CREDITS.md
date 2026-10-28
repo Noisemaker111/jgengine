@@ -203,6 +203,18 @@ provenance.
   with coefficients read from the Forest Vegetation Simulator Lake States variant (`htcalc.f`);
   Burns & Honkala 1990, *Silvics of North America*, Agriculture Handbook 654; Forest Products
   Laboratory 2010, *Wood Handbook*, FPL-GTR-190; the USDA NRCS PLANTS Database.
+- **Forest Vegetation Simulator** (USDA Forest Service, US public domain): crown-width coefficients
+  from the Lake States variant (`cwcalc.f`) for open-grown trees, Ek 1974, *Dimensional
+  relationships of forest and open grown trees in Wisconsin*, University of Wisconsin, and for
+  forest-grown trees, Bechtold 2003, *Crown-diameter prediction models for 87 species of
+  stand-grown trees in the eastern United States*, SJAF 27.
+- **Tallo** (CC BY 4.0): Jucker et al. 2022, *Tallo: a global tree allometry and crown architecture
+  database*, Global Change Biology 28: measured crown widths by DBH for sugar maple and white pine.
+- Brown, McAlpine & Kormanik 1967, apical dominance and form in woody plants, *American Journal of
+  Botany* 54; Wilson 2000, apical control of branch growth and angle in woody plants, *American
+  Journal of Botany* 87: decurrent and excurrent habit as apical control that changes with age.
+- Hart 1928 and Becking 1953, the relative spacing index of even-aged stands; Monsi & Saeki 1953,
+  light extinction in plant canopies.
 - Palubicki et al. 2009, *Self-organizing tree models for image synthesis*, ACM SIGGRAPH: bud
   self-organisation, shadow voxels and extended Borchert–Honda allocation.
 - Perttunen et al. 1996 and 1998, LIGNUM, *Annals of Botany* 77 and 82; Nikinmaa et al. 2003,

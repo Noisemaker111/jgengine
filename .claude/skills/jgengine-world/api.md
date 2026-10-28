@@ -3326,7 +3326,7 @@
 
 - `DEFAULT_GROWTH_LIMITS` (const): const DEFAULT_GROWTH_LIMITS: GrowthLimits — Most buds and nodes a plant may hold: 4000 and 60000.
 - `GrowthLimits` (interface): interface GrowthLimits — Caps that bound one plant's memory and per-year work.
-- `PLANT_SIM_VERSION` (const): const PLANT_SIM_VERSION: 2 — Bumped whenever a rule changes what a seed grows into; part of every structure cache key.
+- `PLANT_SIM_VERSION` (const): const PLANT_SIM_VERSION: 3 — Bumped whenever a rule changes what a seed grows into; part of every structure cache key.
 - `PlantGrowth` (interface): interface PlantGrowth — One plant growing year by year.
 - `PlantGrowthSnapshot` (interface): interface PlantGrowthSnapshot — A grown plant's whole state as JSON-safe values: typed arrays travel as base64.
 - `PlantGrowthStats` (interface): interface PlantGrowthStats — Counters a {@link PlantGrowth} reports each year.
@@ -3360,11 +3360,11 @@
 
 ## @jgengine/core/plants/species/data/acerSaccharum
 
-- `ACER_SACCHARUM` (const): const ACER_SACCHARUM: PlantSpecies — Sugar maple. Traits from Silvics of North America (Godman, Yawney & Tubbs 1990), the USDA Wood Handbook and USDA PLANTS; architecture and carbon parameters tuned by hand against the Carmean 1989 site-index curve until the milestone-4 fit replaces them.
+- `ACER_SACCHARUM` (const): const ACER_SACCHARUM: PlantSpecies — Sugar maple. Traits from Silvics of North America (Godman, Yawney & Tubbs 1990), the USDA Wood Handbook and USDA PLANTS. Decurrent: apical control falls with age until laterals overtake the leader into a broad rounded crown. Architecture and carbon parameters fitted against the Carmean 1989 height curve, Ek 1974 and Tallo crown widths and the crown profile of open- and forest-grown trees.
 
 ## @jgengine/core/plants/species/data/pinusStrobus
 
-- `PINUS_STROBUS` (const): const PINUS_STROBUS: PlantSpecies — Eastern white pine. Traits from Silvics of North America (Wendel & Smith 1990), the USDA Wood Handbook and USDA PLANTS: an excurrent conifer that sets one whorl of three to five branches at the top of each year's leader, needles in fives kept two to three years. Carbon and architecture tuned by hand against the Carmean 1989 site-index curve until the milestone-4 fit replaces them.
+- `PINUS_STROBUS` (const): const PINUS_STROBUS: PlantSpecies — Eastern white pine. Traits from Silvics of North America (Wendel & Smith 1990), the USDA Wood Handbook and USDA PLANTS: an excurrent conifer that sets one whorl of three to five branches at the top of each year's leader, needles in fives kept two to three years. Carbon and architecture fitted against the Carmean 1989 height curve, Ek 1974 and Tallo crown widths and the crown profile of open- and forest-grown trees.
 
 ## @jgengine/core/plants/species/plantSpecies
 
@@ -3397,6 +3397,19 @@
 - `buildPlantStructure` (function): function buildPlantStructure(source: PlantStructureSource): PlantStructure — Build the style-facing structure from a growth state.
 - `crownRatio` (function): function crownRatio(structure: PlantStructure): number — Crown ratio: live crown length over total height.
 - `hashPlantStructure` (function): function hashPlantStructure(structure: PlantStructure): string — FNV-1a over every number and typed-array byte of a structure, as 8 hex digits per lane.
+
+## @jgengine/core/plants/validation/crownAllometry
+
+- `CrownProfile` (interface): interface CrownProfile — Where a crown carries its spread, from its envelope.
+- `CrownWidthClass` (interface): interface CrownWidthClass — A DBH class of measured stand-grown trees: its middle and the 10th and 90th percentile crown width.
+- `CrownWidthEquations` (interface): interface CrownWidthEquations — Published crown width of one species from its trunk: Ek 1974 for open-grown trees and Bechtold 2003 for forest-grown ones, both in feet from DBH in inches, as coded in the Forest Vegetation Simulator's Lake States `cwcalc.f` (US public domain).
+- `EASTERN_WHITE_PINE_CROWN_WIDTH` (const): const EASTERN_WHITE_PINE_CROWN_WIDTH: CrownWidthEquations — FVS `cwcalc.f` species 129, eastern white pine.
+- `SUGAR_MAPLE_CROWN_WIDTH` (const): const SUGAR_MAPLE_CROWN_WIDTH: CrownWidthEquations — FVS `cwcalc.f` species 318, sugar maple.
+- `TALLO_CROWN_WIDTH` (const): const TALLO_CROWN_WIDTH: Readonly<Record<string, readonly CrownWidthClass[]>> — Measured crown widths of stand-grown trees by DBH class, from the Tallo database (Jucker et al. 2022, CC BY 4.0): every record of the species with both DBH and crown radius.
+- `crownProfile` (function): function crownProfile(structure: PlantStructure): CrownProfile — Crown profile of a plant from its envelope's sector-mean radius per height bin. An excurrent conifer carries its spread low with a narrow top; a decurrent broadleaf carries it near mid-crown with full shoulders. One long low limb moves the centroid only as far as its share of the crown.
+- `forestGrownCrownWidthM` (function): function forestGrownCrownWidthM(equations: CrownWidthEquations, dbhCm: number, crownRatio: number): number — Crown width in metres of a forest-grown tree of `dbhCm` and crown ratio 0..1 (Bechtold 2003) in northern Wisconsin. Below 5 in DBH it scales linearly to zero, as FVS does.
+- `measuredCrownWidthBandM` (function): function measuredCrownWidthBandM(speciesId: string, dbhCm: number): { lowM: number; highM: number } | null — The 10th–90th percentile crown width in metres of measured stand-grown trees at `dbhCm`, interpolated between Tallo DBH classes; below the first class it scales linearly to zero. Null for a species with no record.
+- `openGrownCrownWidthM` (function): function openGrownCrownWidthM(equations: CrownWidthEquations, dbhCm: number): number — Crown width in metres of an open-grown tree of `dbhCm` (Ek 1974). Below 3 in DBH it scales linearly to zero, as FVS does.
 
 ## @jgengine/core/plants/validation/heightAgeCurves
 
