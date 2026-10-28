@@ -7,7 +7,8 @@
  * engine environment kind (like water/grass_field) so cracked, mossy ground is slider-authorable in
  * the editor and persisted in `editor.scene.json` — the #815 soil studio.
  */
-import { registerSceneKind, type ParamSchema, type SceneKindObject } from "../scene/sceneKinds";
+import { registerSceneKind, type SceneKindObject } from "../scene/sceneKinds";
+import { type ParamSchema } from "../generator/paramSchema";
 
 /**
  * The editor volume kind marking a box as a soil crack/moss patch.

@@ -1,7 +1,7 @@
 import { describe, expect, test } from "bun:test";
 
 import type { EditorCatalogDefinition } from "@jgengine/core/editor/index";
-import type { ParamSchema } from "@jgengine/core/scene/sceneKinds";
+import type { ParamSchema } from "@jgengine/core/generator/paramSchema";
 
 import { createEditorHost } from "./session";
 

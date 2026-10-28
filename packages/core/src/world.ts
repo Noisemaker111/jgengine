@@ -654,7 +654,7 @@ export {
   type ScatterTerrain,
 } from "./scatter/scatterRegion";
 export { createAssetCatalog, type AssetCatalog, type ModelAssetRef, type ModelDims } from "./scene/assetCatalog";
-export { partsBounds, registerAssetGenerator, type GeneratedAsset, type GeneratedPart } from "./scene/assetGenerator";
+export { PARTS_OUTPUT, partsBounds, type GeneratedAsset, type GeneratedPart } from "./scene/assetGenerator";
 export {
   applyRotationPolicy,
   headingToRotationY,
@@ -734,18 +734,9 @@ export { MountController, createMountController } from "./scene/mount";
 export { objectVisualScale, type ObjectVisual, type SceneObject } from "./scene/objectStore";
 export { type PaintStroke } from "./scene/paintLayer";
 export { type RosterEntry } from "./scene/roster";
-export {
-  findSchemaPreset,
-  parseParams,
-  registerSceneKind,
-  type ParamField,
-  type ParamPreset,
-  type ParamSchema,
-  type ParsedParams,
-  type SceneKindObject,
-  type SceneKindResolveContext,
-  type WeightedParamEntry,
-} from "./scene/sceneKinds";
+export { registerSceneKind, type SceneKindObject, type SceneKindResolveContext } from "./scene/sceneKinds";
+export { defineParamSchema, findSchemaPreset, parseParams, type ParamField, type ParamPreset, type ParamSchema, type ParamsOf, type ParsedParams, type WeightedParamEntry } from "./generator/paramSchema";
+export { bakeGeneratorVariants, defineGenerator, generatorVariants, registerGenerator, runGenerator, type GeneratorContext, type GeneratorDefinition, type GeneratorVariant } from "./generator/generator";
 export { firstImpact, hitsUntilBlocked, type SceneRaycastApi, type SceneRaycastHit } from "./scene/sceneRaycast";
 export {
   createSelectionSet,

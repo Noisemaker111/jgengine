@@ -9,7 +9,7 @@ import {
   type TriggerEvent,
   type TriggerSourceKind,
 } from "@jgengine/core/scene/authoredTriggers";
-import { defaultParamMeta, parseParams } from "@jgengine/core/scene/sceneKinds";
+import { defaultParamMeta, parseParams } from "@jgengine/core/generator/paramSchema";
 
 import { SchemaInspector, type MetaPatch } from "./SchemaInspector";
 import { INPUT, MICRO } from "./chromeStyles";

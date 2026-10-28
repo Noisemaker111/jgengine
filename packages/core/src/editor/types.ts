@@ -1,7 +1,7 @@
 import type { EditorSimulation } from "./simulation";
 import type { MaterialAsset } from "../material/materialAsset";
 import type { StaticPrefabBake } from "./staticPrefab";
-import type { ParamSchema } from "../scene/sceneKinds";
+import type { ParamSchema } from "../generator/paramSchema";
 import type { EditorUiDocument } from "../hud/hudDocument";
 import type { MinimapBakeBounds } from "@jgengine/core/map/minimapBake";
 import type { TerraformSnapshot } from "../terrain/terraform";

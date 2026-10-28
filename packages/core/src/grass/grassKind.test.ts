@@ -1,6 +1,6 @@
 import { describe, expect, test } from "bun:test";
 
-import { defaultParamMeta, parseParams, randomizeGroupParams } from "@jgengine/core/scene/sceneKinds";
+import { defaultParamMeta, parseParams, randomizeGroupParams } from "@jgengine/core/generator/paramSchema";
 import { GRASS_DEFAULTS, GRASS_PRESETS, GRASS_SCHEMA, grassBladeDensity, readGrassLook, resolveGrassObject } from "./grassKind";
 
 describe("readGrassLook", () => {

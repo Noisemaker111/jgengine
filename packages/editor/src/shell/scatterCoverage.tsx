@@ -1,12 +1,6 @@
 import { scatterFootprintArea } from "@jgengine/core/scatter/scatterCoverage";
-import type {
-  ParamField,
-  ParamSchema,
-  ParsedParams,
-  SceneKindCoverage,
-  SceneKindObject,
-  WeightedParamEntry,
-} from "@jgengine/core/scene/sceneKinds";
+import type { SceneKindCoverage, SceneKindObject } from "@jgengine/core/scene/sceneKinds";
+import type { ParamField, ParamSchema, ParsedParams, WeightedParamEntry } from "@jgengine/core/generator/paramSchema";
 import { useDebouncedCommit } from "@jgengine/core/ui/useDebouncedCommit.view";
 
 import { MICRO_LABEL } from "./theme";

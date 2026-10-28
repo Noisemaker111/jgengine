@@ -10,7 +10,7 @@ import { useLoader } from "@react-three/fiber";
 import * as THREE from "three";
 import { sharedGltfLoader } from "@jgengine/core/model/modelLoad.draw";
 
-import { parseParams } from "@jgengine/core/scene/sceneKinds";
+import { parseParams } from "@jgengine/core/generator/paramSchema";
 import { readNamedSockets, type ModelNode } from "@jgengine/core/scene/modelSockets";
 import { POLE_LINE_KIND, POLE_LINE_SCHEMA, resolvePoleLine, type Cable, type Pole, type ResolvedPoleLine } from "@jgengine/core/world/poleLineKind";
 import type { SceneKindObject } from "@jgengine/core/scene/sceneKinds";

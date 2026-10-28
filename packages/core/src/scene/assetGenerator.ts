@@ -1,14 +1,14 @@
 /**
- * The generator-asset seam: register a parametric asset generator (`generate(params, seed) → parts`)
- * so a slider-driven prop (a bookcase with width/shelves/book-density, a building with floors/bays)
- * lives in the catalog alongside static GLBs. A placed instance stores only `{ assetId, params, seed }`
- * — the geometry is re-resolved at runtime, never baked. Schema drives the inspector via #809. The
- * generic seam is engine; concrete generators (building, bookcase) are adopters registered from
- * game/example code — the building generator is the one engine adopter, as a proof it composes.
+ * Parts generators: a generator (`@jgengine/core/generator/generator`) whose `output` is
+ * {@link PARTS_OUTPUT} returns box parts, so a slider-driven prop (a bookcase with width, shelves
+ * and book density; a building with floors and bays) lives in the catalog beside static GLBs. A
+ * placed instance stores only `{ assetId, seed, ...params }`; the geometry regrows at runtime.
+ * Concrete generators (building, bookcase) register from engine, game or example code with
+ * `registerGenerator`.
  *
  * @capability asset-generator seeded parametric geometry registered as a placeable asset
  */
-import { parseParams, type ParamSchema, type ParsedParams } from "./sceneKinds";
+import { getGenerator, runGenerator, type GeneratorDefinition } from "../generator/generator";
 
 /** One generated primitive part — a box/panel placed in the asset's local space. */
 export interface GeneratedPart {
@@ -37,32 +37,6 @@ export interface GeneratedAsset {
   forward?: readonly [number, number, number];
 }
 
-/** A registered asset generator — schema drives the inspector; `generate` is a pure seeded function. */
-export interface AssetGeneratorDefinition {
-  id: string;
-  label: string;
-  schema: ParamSchema;
-  /** Deterministic geometry from validated params + a seed string. Same inputs → same parts. */
-  generate: (params: ParsedParams, seed: string) => GeneratedAsset;
-}
-
-const generators = new Map<string, AssetGeneratorDefinition>();
-
-/** Register a parametric asset generator. Idempotent per id (last wins); call at module load. */
-export function registerAssetGenerator(definition: AssetGeneratorDefinition): void {
-  generators.set(definition.id, definition);
-}
-
-/** The registered generator for an id, or undefined. @internal */
-export function getAssetGenerator(id: string): AssetGeneratorDefinition | undefined {
-  return generators.get(id);
-}
-
-/** Every registered generator, in registration order. @internal */
-export function listAssetGenerators(): AssetGeneratorDefinition[] {
-  return [...generators.values()];
-}
-
 /**
  * Compute bounds from parts (each part is an axis-aligned box at its center) — a helper generators
  * return so callers can frame/ground the asset without re-deriving it.
@@ -86,18 +60,36 @@ export function partsBounds(parts: readonly GeneratedPart[]): GeneratedAsset["bo
   return { min: [minX, minY, minZ], max: [maxX, maxY, maxZ] };
 }
 
+/** The output family of a generator that returns {@link GeneratedAsset} parts. */
+export const PARTS_OUTPUT = "parts";
+
+/** True when a generate result has the {@link GeneratedAsset} shape. */
+export function isGeneratedAsset(value: unknown): value is GeneratedAsset {
+  if (typeof value !== "object" || value === null) return false;
+  return "parts" in value && Array.isArray(value.parts) && "bounds" in value && typeof value.bounds === "object" && value.bounds !== null;
+}
+
+/** The registered parts generator for an asset id, or undefined when the id names none. */
+export function getPartsGenerator(assetId: string): GeneratorDefinition | undefined {
+  const definition = getGenerator(assetId);
+  return definition?.output === PARTS_OUTPUT ? definition : undefined;
+}
+
+/** The parts generator a placed marker's `meta.assetId` names, or undefined. */
+export function partsGeneratorFor(meta: Readonly<Record<string, unknown>> | undefined): GeneratorDefinition | undefined {
+  const assetId = meta?.["assetId"];
+  return typeof assetId === "string" ? getPartsGenerator(assetId) : undefined;
+}
+
 /**
- * Re-resolve a placed generator instance from its stored `meta` (`{ assetId, seed, ...params }`): look
- * up the generator, parse its params off `meta` against the schema, and generate. Returns null when
- * `assetId` names no registered generator. This is what a runtime renderer calls per placed instance.
+ * Regrow a placed parts-generator instance from its stored `meta` (`{ assetId, seed, ...params }`):
+ * parse the params against the generator's schema and generate. Null when `assetId` names no
+ * registered parts generator. A runtime renderer calls this per placed instance.
  * @internal
  */
-export function resolveGeneratorAsset(meta: Record<string, unknown> | undefined): GeneratedAsset | null {
-  const assetId = typeof meta?.["assetId"] === "string" ? (meta["assetId"] as string) : undefined;
-  if (assetId === undefined) return null;
-  const generator = generators.get(assetId);
-  if (generator === undefined) return null;
-  const seed = typeof meta?.["seed"] === "string" ? (meta["seed"] as string) : assetId;
-  const params: ParsedParams = parseParams(generator.schema, meta);
-  return generator.generate(params, seed);
+export function resolveGeneratorAsset(meta: Readonly<Record<string, unknown>> | undefined): GeneratedAsset | null {
+  const definition = partsGeneratorFor(meta);
+  if (definition === undefined) return null;
+  const asset = runGenerator(definition, meta, { fallbackSeed: definition.id });
+  return isGeneratedAsset(asset) ? asset : null;
 }

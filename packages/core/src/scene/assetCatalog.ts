@@ -25,7 +25,7 @@ export interface ModelAssetRef {
 }
 
 /**
- * A catalog entry backed by a registered {@link registerAssetGenerator} instead of a GLB URL — a
+ * A catalog entry backed by a registered parts generator (`registerGenerator`, output `"parts"`) instead of a GLB URL — a
  * slider-driven parametric prop (bookcase, building). `defaults` seeds a fresh placement's params.
  * Placed instances persist `{ assetId, params, seed }` in the scene and re-resolve at runtime.
  */

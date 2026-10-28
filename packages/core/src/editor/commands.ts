@@ -23,7 +23,7 @@ import {
   wouldCreateCycle,
 } from "./document";
 import type { EditorGridCellEdit, EditorGridLayer } from "./grid";
-import type { ParamSchema } from "../scene/sceneKinds";
+import type { ParamSchema } from "../generator/paramSchema";
 import type {
   EditorCatalogEntry,
   EditorBake,

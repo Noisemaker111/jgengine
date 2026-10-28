@@ -1,5 +1,6 @@
 import { registerBuiltinSceneKinds } from "../scene/builtinSceneKinds";
-import { getSceneKind, parseParams, type SceneKindObject } from "../scene/sceneKinds";
+import { getSceneKind, type SceneKindObject } from "../scene/sceneKinds";
+import { parseParams } from "../generator/paramSchema";
 import type { WorldSolid, WorldSolids } from "./worldSolids";
 
 type Vec3Like = { x: number; y: number; z: number };

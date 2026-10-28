@@ -46,24 +46,26 @@ registerSceneKindRenderer("zipline", ({ objects, context }) => /* three.js rende
 Generic engine primitives you compose (never re-implement): `placeAlongPath` (instances-along-path),
 `sagCurve` / `catenaryCurve` (cables), `readNamedSockets` (GLB attachment points).
 
-## 2. A generator asset — a slider-driven prop placed as a marker (`registerAssetGenerator`)
+## 2. A generator asset — a slider-driven prop placed as a marker (`registerGenerator`)
 
 `bookcaseStudio.ts` registers a bookcase generator: dimensions, shelves, book density, seed. A placed
 instance stores only `{ assetId, ...params, seed }` in the scene; the geometry is re-resolved at
 runtime, never baked.
 
 ```ts
-import { registerAssetGenerator, partsBounds } from "@jgengine/core/scene/assetGenerator";
-import { DEFAULT_FORWARD } from "@jgengine/core/scene/facing";
-registerAssetGenerator({
+import { defineGenerator, registerGenerator } from "@jgengine/core/generator/generator";
+import { defineParamSchema } from "@jgengine/core/generator/paramSchema";
+import { PARTS_OUTPUT, partsBounds } from "@jgengine/core/scene/assetGenerator";
+registerGenerator(defineGenerator({
   id: "bookcase",
   label: "Bookcase",
-  schema: { fields: [/* same field types */] },
-  generate: (params, seed) => ({ parts: [/* boxes */], bounds: partsBounds(parts), forward: DEFAULT_FORWARD }),
-});
+  output: PARTS_OUTPUT,
+  schema: defineParamSchema({ fields: [/* typed fields: params.width is a number */] }),
+  generate: (params, context) => ({ parts: [/* boxes; context.random("books") for seeded rolls */], bounds: partsBounds(parts) }),
+}));
 ```
 
-`AuthoredScene` renders any marker whose `meta.assetId` names a registered generator, and the editor
+`AuthoredScene` renders any marker whose `meta.assetId` names a registered parts generator, and the editor
 shows its slider inspector automatically. The engine registers the **building** generator the same
 way (`packages/core/src/buildings/buildingGenerator.ts`) — proof the seam serves engine and third parties
 identically.

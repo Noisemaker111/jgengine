@@ -1,24 +1,20 @@
 /**
  * EXAMPLE GENERATOR ADOPTER — a "Bookcase Studio" (Chiro-Visuals style): dimensions, shelves, board
  * thickness, tint, book density/leaning, seeded randomize. NOT engine code — a self-contained module
- * that registers a parametric asset with ONE `registerAssetGenerator` call using only public seam
+ * that registers a parts generator with ONE `registerGenerator` call using only public seam
  * APIs. Placed instances persist `{ assetId, ...params, seed }` and re-resolve at runtime. Copy + swap
  * the schema/`generate` to make any slider-driven prop.
  */
-import {
-  partsBounds,
-  registerAssetGenerator,
-  type GeneratedAsset,
-  type GeneratedPart,
-} from "@jgengine/core/scene/assetGenerator";
+import { defineGenerator, registerGenerator, type GeneratorContext } from "@jgengine/core/generator/generator";
+import { defineParamSchema, type ParamsOf } from "@jgengine/core/generator/paramSchema";
+import { PARTS_OUTPUT, partsBounds, type GeneratedAsset, type GeneratedPart } from "@jgengine/core/scene/assetGenerator";
 import { DEFAULT_FORWARD } from "@jgengine/core/scene/facing";
-import type { ParamSchema, ParsedParams } from "@jgengine/core/scene/sceneKinds";
 
 /** The generator id a catalog entry / placed marker references. */
 export const BOOKCASE_GENERATOR_ID = "bookcase";
 
 /** The bookcase slider schema — the editor auto-generates the inspector from this. */
-export const BOOKCASE_SCHEMA: ParamSchema = {
+export const BOOKCASE_SCHEMA = defineParamSchema({
   fields: [
     { type: "range", key: "width", label: "width", min: 0.6, max: 3, step: 0.05, default: 1.2, unit: "m", group: "carcass" },
     { type: "range", key: "height", label: "height", min: 0.8, max: 3, step: 0.05, default: 2, unit: "m", group: "carcass" },
@@ -36,29 +32,17 @@ export const BOOKCASE_SCHEMA: ParamSchema = {
     { id: "carcass", label: "Carcass" },
     { id: "books", label: "Books" },
   ],
-};
-
-function hash01(text: string): number {
-  let h = 2166136261 >>> 0;
-  for (let i = 0; i < text.length; i += 1) {
-    h ^= text.charCodeAt(i);
-    h = Math.imul(h, 16777619);
-  }
-  return (h >>> 0) / 4294967296;
-}
+});
 
 const BOOK_COLORS = ["#8c3b3b", "#3b5a8c", "#3b8c5a", "#8c7a3b", "#5a3b8c", "#8c5a3b", "#2f2f34"];
 
 /** Generate a bookcase's board + book parts from validated params + seed — the seam hook. */
-export function generateBookcase(params: ParsedParams, seed: string): GeneratedAsset {
-  const width = params["width"] as number;
-  const height = params["height"] as number;
-  const depth = params["depth"] as number;
-  const shelves = Math.round(params["shelves"] as number);
-  const board = params["boardThickness"] as number;
-  const density = params["bookDensity"] as number;
-  const lean = params["lean"] as number;
-  const tint = params["tint"] as string;
+export function generateBookcase(params: ParamsOf<typeof BOOKCASE_SCHEMA>, context: GeneratorContext): GeneratedAsset {
+  const { width, height, depth, lean, tint } = params;
+  const shelves = Math.round(params.shelves);
+  const board = params.boardThickness;
+  const density = params.bookDensity;
+  const roll = (key: string): number => context.random(key)();
 
   const parts: GeneratedPart[] = [];
   // Carcass: two sides, top, bottom, back.
@@ -78,17 +62,17 @@ export function generateBookcase(params: ParsedParams, seed: string): GeneratedA
     let x = -inner / 2 + 0.02;
     let index = 0;
     while (x < inner / 2 - 0.03) {
-      const bookWidth = 0.03 + hash01(`${seed}:${s}:${index}:w`) * 0.04;
-      if (hash01(`${seed}:${s}:${index}:present`) < density) {
-        const bookHeight = gap * (0.7 + hash01(`${seed}:${s}:${index}:h`) * 0.28);
-        const tilt = (hash01(`${seed}:${s}:${index}:tilt`) - 0.5) * 2 * lean;
+      const bookWidth = 0.03 + roll(`${s}:${index}:w`) * 0.04;
+      if (roll(`${s}:${index}:present`) < density) {
+        const bookHeight = gap * (0.7 + roll(`${s}:${index}:h`) * 0.28);
+        const tilt = (roll(`${s}:${index}:tilt`) - 0.5) * 2 * lean;
         parts.push({
           id: `book_${s}_${index}`,
           kind: "book",
           position: [x + bookWidth / 2, baseY + bookHeight / 2, 0],
           size: [bookWidth, bookHeight, depth * 0.82],
           rotationY: tilt,
-          color: BOOK_COLORS[Math.floor(hash01(`${seed}:${s}:${index}:c`) * BOOK_COLORS.length)]!,
+          color: BOOK_COLORS[Math.floor(roll(`${s}:${index}:c`) * BOOK_COLORS.length)]!,
         });
       }
       x += bookWidth + 0.004;
@@ -98,7 +82,16 @@ export function generateBookcase(params: ParsedParams, seed: string): GeneratedA
   return { parts, bounds: partsBounds(parts), forward: DEFAULT_FORWARD };
 }
 
+/** The bookcase parts generator. */
+export const BOOKCASE_GENERATOR = defineGenerator({
+  id: BOOKCASE_GENERATOR_ID,
+  label: "Bookcase",
+  output: PARTS_OUTPUT,
+  schema: BOOKCASE_SCHEMA,
+  generate: generateBookcase,
+});
+
 /** Register the bookcase generator asset. One call — no engine edits. */
 export function registerBookcaseStudio(): void {
-  registerAssetGenerator({ id: BOOKCASE_GENERATOR_ID, label: "Bookcase", schema: BOOKCASE_SCHEMA, generate: generateBookcase });
+  registerGenerator(BOOKCASE_GENERATOR);
 }

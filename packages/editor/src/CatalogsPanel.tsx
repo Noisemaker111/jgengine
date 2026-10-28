@@ -2,7 +2,7 @@ import { useMemo, useState } from "react";
 
 import type { EditorCatalogDefinition, EditorSession } from "@jgengine/core/editor/index";
 import { findEditorCatalog, findEditorCatalogEntry } from "@jgengine/core/editor/index";
-import { parseParams, type ParamField, type ParamSchema } from "@jgengine/core/scene/sceneKinds";
+import { parseParams, type ParamField, type ParamSchema } from "@jgengine/core/generator/paramSchema";
 
 import { SchemaInspector } from "./SchemaInspector";
 import { BORDER, CONTROL, FOCUS_RING, INPUT_CLS, MICRO_LABEL } from "./shell/theme";
@@ -26,6 +26,8 @@ const FIELD_TYPES: readonly ParamField["type"][] = [
   "text",
   "seed",
   "weightedList",
+  "curve",
+  "gradient",
   "action",
 ];
 
@@ -58,6 +60,10 @@ function coerceField(prev: ParamField, type: ParamField["type"]): ParamField {
       return { key, label, type: "seed", default: prevString };
     case "weightedList":
       return { key, label, type: "weightedList", default: [] };
+    case "curve":
+      return { key, label, type: "curve", default: [{ x: 0, y: 0 }, { x: 1, y: 1 }] };
+    case "gradient":
+      return { key, label, type: "gradient", default: [{ at: 0, color: "#000000" }, { at: 1, color: "#ffffff" }] };
     case "action":
       return { key, label, type: "action", action: "randomize" };
   }

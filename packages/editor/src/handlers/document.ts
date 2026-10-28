@@ -8,7 +8,8 @@ import {
   type EditorPath,
 } from "@jgengine/core/editor/index";
 import { resolvePlaceAsset, toEditorMarker } from "@jgengine/core/placement/placeAsset";
-import { findSchemaPreset, getSceneKind, validateParams } from "@jgengine/core/scene/sceneKinds";
+import { getSceneKind } from "@jgengine/core/scene/sceneKinds";
+import { findSchemaPreset, validateParams } from "@jgengine/core/generator/paramSchema";
 
 import { EDITOR_RUN_MODES } from "../session";
 import { boundsCenter, frameDistanceForBounds } from "../camera/orbitFraming";

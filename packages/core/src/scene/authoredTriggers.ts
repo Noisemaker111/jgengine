@@ -6,7 +6,7 @@
  */
 
 import type { SceneDocumentLike, SceneMarkerLike, SceneVolumeLike } from "../world/sceneShapes";
-import { parseParams, type ParamSchema, type ParsedParams } from "./sceneKinds";
+import { parseParams, type ParamSchema, type ParsedParams } from "../generator/paramSchema";
 
 /** Event edge that can fire an authored trigger. */
 export type TriggerEvent = "enter" | "exit" | "interact";

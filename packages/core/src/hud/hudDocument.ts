@@ -1,4 +1,4 @@
-import type { ParamSchema } from "../scene/sceneKinds";
+import type { ParamSchema } from "../generator/paramSchema";
 import type { HudAnchor, HudPlacement, HudSize } from "./hudLayout";
 import { isHudAnchor } from "./hudLayout";
 

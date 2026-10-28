@@ -30,14 +30,8 @@
  * @capability city-district editor-authorable procedural city district (streets, zoning, buildings, furniture)
  */
 import { seededStreams } from "../random/rng";
-import {
-  parseParams,
-  registerSceneKind,
-  type ParamSchema,
-  type SceneKindObject,
-  type SceneKindResolveContext,
-  type WeightedParamEntry,
-} from "../scene/sceneKinds";
+import { registerSceneKind, type SceneKindObject, type SceneKindResolveContext } from "../scene/sceneKinds";
+import { parseParams, type ParamSchema, type WeightedParamEntry } from "../generator/paramSchema";
 import { BUILDING_STYLE_PALETTES, DEFAULT_BUILDING_STYLE, type BuildingStyle } from "../buildings/buildings";
 import {
   buildLandmarkPieces,

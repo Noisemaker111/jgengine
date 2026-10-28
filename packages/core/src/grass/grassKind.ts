@@ -8,7 +8,8 @@
  *
  * @capability grass-field editor-authorable GPU grass patch
  */
-import { registerSceneKind, type ParamField, type ParamSchema, type SceneKindObject } from "@jgengine/core/scene/sceneKinds";
+import { registerSceneKind, type SceneKindObject } from "@jgengine/core/scene/sceneKinds";
+import { type ParamField, type ParamSchema } from "@jgengine/core/generator/paramSchema";
 
 /** The editor volume kind marking a box as a GPU grass patch. */
 export const GRASS_FIELD_KIND = "grass_field";

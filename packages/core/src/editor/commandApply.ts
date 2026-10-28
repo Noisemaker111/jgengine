@@ -34,7 +34,7 @@ import {
   resizeGridLayer,
   type EditorGridLayer,
 } from "./grid";
-import { parseParams } from "../scene/sceneKinds";
+import { parseParams } from "../generator/paramSchema";
 import type {
   EditorCatalogData,
   EditorCatalogEntry,

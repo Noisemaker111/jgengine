@@ -1,19 +1,7 @@
 import { describe, expect, test } from "bun:test";
 
-import {
-  defaultParamMeta,
-  definePlaceableMarkerKind,
-  getSceneKind,
-  isSceneKind,
-  listSceneKinds,
-  parseParams,
-  parseSceneKindParams,
-  randomizeGroupParams,
-  registerSceneKind,
-  resetGroupParams,
-  validateParams,
-  type ParamSchema,
-} from "./sceneKinds";
+import { definePlaceableMarkerKind, getSceneKind, isSceneKind, listSceneKinds, parseSceneKindParams, registerSceneKind } from "./sceneKinds";
+import { defaultParamMeta, parseParams, type ParamSchema } from "../generator/paramSchema";
 import { registerBuiltinSceneKinds, SCATTER_SCHEMA } from "./builtinSceneKinds";
 
 const TEST_SCHEMA: ParamSchema = {
@@ -27,42 +15,6 @@ const TEST_SCHEMA: ParamSchema = {
     { type: "weightedList", key: "palette", default: [{ item: "grass", weight: 1 }] },
   ],
 };
-
-describe("parseParams", () => {
-  test("fills defaults for missing/invalid values", () => {
-    const parsed = parseParams(TEST_SCHEMA, undefined);
-    expect(parsed["density"]).toBe(0.5);
-    expect(parsed["count"]).toBe(3);
-    expect(parsed["align"]).toBe(false);
-    expect(parsed["mode"]).toBe("a");
-    expect(parsed["seed"]).toBe("");
-    expect(parsed["palette"]).toEqual([{ item: "grass", weight: 1 }]);
-  });
-
-  test("clamps ranges and rejects unknown select options", () => {
-    const parsed = parseParams(TEST_SCHEMA, { density: 9, mode: "z", align: true });
-    expect(parsed["density"]).toBe(2);
-    expect(parsed["mode"]).toBe("a");
-    expect(parsed["align"]).toBe(true);
-  });
-
-  test("reads weighted lists, dropping empty items", () => {
-    const parsed = parseParams(TEST_SCHEMA, { palette: [{ item: "tree", weight: 2 }, { item: "", weight: 5 }] });
-    expect(parsed["palette"]).toEqual([{ item: "tree", weight: 2 }]);
-  });
-});
-
-describe("validateParams", () => {
-  test("flags out-of-range and wrong-type values", () => {
-    const issues = validateParams(TEST_SCHEMA, { density: 5, align: "yes", mode: "z" });
-    const keys = issues.map((issue) => issue.key).sort();
-    expect(keys).toEqual(["align", "density", "mode"]);
-  });
-
-  test("passes a valid patch", () => {
-    expect(validateParams(TEST_SCHEMA, { density: 1, mode: "b" })).toEqual([]);
-  });
-});
 
 describe("registry", () => {
   test("registers, looks up, and lists by target", () => {
@@ -100,47 +52,6 @@ describe("registry", () => {
     definePlaceableMarkerKind({ kind: "test_bare", label: "Bare" });
     expect(getSceneKind("test_bare")?.addCategory).toBe("Custom");
     expect(getSceneKind("test_bare")?.schema.fields).toEqual([]);
-  });
-
-  test("defaultParamMeta produces a fresh, valid patch", () => {
-    const meta = defaultParamMeta(TEST_SCHEMA);
-    expect(validateParams(TEST_SCHEMA, meta)).toEqual([]);
-  });
-});
-
-describe("group randomize / reset", () => {
-  const GROUPED: ParamSchema = {
-    groups: [
-      { id: "shape", label: "Shape" },
-      { id: "look", label: "Look" },
-    ],
-    fields: [
-      { type: "range", key: "width", min: 1, max: 4, step: 0.1, default: 2, group: "shape" },
-      { type: "range", key: "shelves", min: 1, max: 8, step: 1, default: 4, group: "shape" },
-      { type: "color", key: "tint", default: "#7a5230", group: "look" },
-      { type: "seed", key: "seed", default: "", group: "shape" },
-      { type: "action", key: "rand", action: "randomize", group: "shape" },
-    ],
-  };
-
-  test("randomizeGroupParams only touches the group and stays in range", () => {
-    const patch = randomizeGroupParams(GROUPED, "shape", () => 0.5);
-    expect(Object.keys(patch).sort()).toEqual(["seed", "shelves", "width"]);
-    expect(patch["width"]).toBeGreaterThanOrEqual(1);
-    expect(patch["width"]).toBeLessThanOrEqual(4);
-    expect(patch["shelves"]).toBe(5); // 1 + 0.5*7 = 4.5 → round 5, integer step
-    expect(patch["tint"]).toBeUndefined();
-    // The generated patch is always schema-valid.
-    expect(validateParams(GROUPED, patch)).toEqual([]);
-  });
-
-  test("resetGroupParams restores the group's defaults", () => {
-    expect(resetGroupParams(GROUPED, "shape")).toEqual({ width: 2, shelves: 4, seed: "" });
-  });
-
-  test("action fields carry no value and no default", () => {
-    expect(parseParams(GROUPED, {})["rand"]).toBeUndefined();
-    expect(defaultParamMeta(GROUPED)["rand"]).toBeUndefined();
   });
 });
 

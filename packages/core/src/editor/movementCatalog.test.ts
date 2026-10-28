@@ -3,7 +3,7 @@ import { describe, expect, test } from "bun:test";
 import { createEditorSession } from "./commands";
 import { createEmptyEditorDocument, exportEditorDocumentJson, importEditorDocumentJson } from "./document";
 import { bindAuthoredMovement, createAuthoredMovementReader, createMovementSchema, readAuthoredMovement } from "./movementCatalog";
-import { parseParams, validateParams } from "../scene/sceneKinds";
+import { parseParams, validateParams } from "../generator/paramSchema";
 import { measureMovement } from "../movement/movementProbe";
 import { resolvePlayerMovementTuning } from "../movement/playerMovement";
 

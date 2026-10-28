@@ -17,7 +17,8 @@ import { registerDecalKind } from "../world/decalKind";
 import { registerBuildingGenerator } from "../buildings/buildingGenerator";
 import { registerCityKind } from "../city/cityKind";
 import { describeScatterCoverage, densityCoverage } from "../scatter/scatterCoverage";
-import { registerSceneKind, type ParamSchema } from "./sceneKinds";
+import { registerSceneKind } from "./sceneKinds";
+import { type ParamSchema } from "../generator/paramSchema";
 
 /**
  * The scatter/foliage region schema. `palette` (what fills the area) leads the schema body and

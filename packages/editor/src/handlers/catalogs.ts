@@ -1,5 +1,5 @@
 import { findEditorCatalog, findEditorCatalogEntry } from "@jgengine/core/editor/index";
-import { parseParams, validateParams } from "@jgengine/core/scene/sceneKinds";
+import { parseParams, validateParams } from "@jgengine/core/generator/paramSchema";
 
 import type { HandlerTable } from "./context";
 

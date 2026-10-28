@@ -2,7 +2,8 @@ import { expect, test } from "bun:test";
 import { act, createRoot, extend } from "@react-three/fiber";
 import { createElement, Suspense } from "react";
 import * as THREE from "three";
-import { registerAssetGenerator } from "@jgengine/core/scene/assetGenerator";
+import { registerGenerator } from "@jgengine/core/generator/generator";
+import { PARTS_OUTPUT } from "@jgengine/core/scene/assetGenerator";
 import { GeneratedAssetInstance } from "./GeneratedAssetRenderer.draw";
 
 test("authored generator rendering retains transforms, material defaults, clamps and color draws", async () => {
@@ -13,7 +14,7 @@ test("authored generator rendering retains transforms, material defaults, clamps
   const root = createRoot({} as HTMLCanvasElement);
   await root.configure({ frameloop: "never", size: { width: 100, height: 100, top: 0, left: 0 }, dpr: 1,
     gl: () => ({ render() {}, setSize() {}, setPixelRatio() {} }) as unknown as THREE.WebGLRenderer });
-  registerAssetGenerator({ id: "render-test-bookcase", label: "test", schema: { fields: [] }, generate: () => ({
+  registerGenerator({ id: "render-test-bookcase", label: "test", output: PARTS_OUTPUT, schema: { fields: [] }, generate: () => ({
     parts: [
       { id: "shelf", position: [1, 2, 3], size: [2, 0.1, 1], rotationY: 0.6, color: "#123456" },
       { id: "board", position: [-1, 0, 0], size: [0, 2, 1], color: "#123456" },

@@ -10,13 +10,9 @@ import {
   type EditorSession,
   type EditorVolume,
 } from "@jgengine/core/editor/index";
-import {
-  getSceneKind,
-  isSceneKind,
-  parseParams,
-  type SceneKindObject,
-} from "@jgengine/core/scene/sceneKinds";
-import { getAssetGenerator } from "@jgengine/core/scene/assetGenerator";
+import { getSceneKind, isSceneKind, type SceneKindObject } from "@jgengine/core/scene/sceneKinds";
+import { parseParams } from "@jgengine/core/generator/paramSchema";
+import { partsGeneratorFor } from "@jgengine/core/scene/assetGenerator";
 import type { TriggerSourceKind } from "@jgengine/core/scene/authoredTriggers";
 import type { AuthoredAnimationDiagnostic } from "@jgengine/core/world/authoredAnimation";
 import { markerCatalogId } from "@jgengine/core/world/authoredObjects";
@@ -119,8 +115,7 @@ function KindInspector({ object, meta, onMeta }: { object: SceneKindObject; meta
 
 /** Auto-generated inspector for a placed generator asset's params (building/bookcase/…). */
 function GeneratorInspector({ meta, onMeta }: { meta: Record<string, unknown> | undefined; onMeta: MetaPatch }) {
-  const assetId = typeof meta?.["assetId"] === "string" ? (meta["assetId"] as string) : undefined;
-  const generator = assetId === undefined ? undefined : getAssetGenerator(assetId);
+  const generator = partsGeneratorFor(meta);
   if (generator === undefined) return null;
   return <SchemaInspector schema={generator.schema} label={`${generator.label} (generator)`} accent="#a78bfa" meta={meta} onMeta={onMeta} />;
 }
@@ -786,7 +781,7 @@ export function InspectorPanel({
     const animation = readAnimationSettingResult(document, marker.id);
     const hasTrigger = hasAuthoredTrigger(marker.meta);
     const hasMaterial = hasMaterialAssignment(marker.meta);
-    const hasGenerator = typeof marker.meta?.["assetId"] === "string" && getAssetGenerator(marker.meta["assetId"] as string) !== undefined;
+    const hasGenerator = partsGeneratorFor(marker.meta) !== undefined;
     const hasKindParams = isSceneKind(marker.kind);
     const componentCards = (
       <>

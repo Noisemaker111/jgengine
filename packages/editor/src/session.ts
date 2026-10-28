@@ -25,7 +25,7 @@ import {
   type RuntimePlayControl,
 } from "@jgengine/core/editor/index";
 import type { TerraformMode, TerrainMaterialLayer } from "@jgengine/core/terrain/terraform";
-import type { ParamSchema } from "@jgengine/core/scene/sceneKinds";
+import type { ParamSchema } from "@jgengine/core/generator/paramSchema";
 import type { TerrainField } from "@jgengine/core/terrain/terrain";
 import type { ModelMaterialSlotInfo } from "@jgengine/core/material/materialAsset.draw";
 
