@@ -24,9 +24,3 @@ Engine seam: packages/assets/src/aliases.ts, packages/assets/src/catalogs/modelL
 ### Removed
 
 - the KayKit people starter theme and the character/* aliases
-- `@jgengine/core/physics/reference/compareHandling` no longer exports `ComparableHandlingMetrics`, `ComparableHandlingOptions`, `HandlingComparisonRow`, `PUBLISHED_TOLERANCES`, `PublishedCheck`, `VehicleHandlingComparison`, `checkReferenceAgainstPublished`, `compareHandlingMetrics` and 5 more.
-- `@jgengine/core/physics/reference/magicFormulaTire` no longer exports `MagicFormulaContactState`, `magicFormulaContact`.
-- `@jgengine/core/physics/reference/realCars` no longer exports `MAZDA_MX5_ND`, `REAL_CARS`, `RealCar`, `RealCarTestData`, `SCION_FRS_2013`.
-- `@jgengine/core/physics/reference/referenceCar` no longer exports `ReferenceAero`, `ReferenceAxle`, `ReferenceBrakes`, `ReferenceCar`, `ReferenceCarOptions`, `ReferenceCarSpec`, `ReferenceCarState`, `ReferenceCarStep` and 7 more.
-- `@jgengine/core/physics/reference/standardManeuvers` no longer exports `StandardManeuver`, `StandardManeuverOptions`, `StandardManeuverReport`, `measureStandardManeuvers`.
-- `@jgengine/core/physics/reference/suspensionKinematics` no longer exports `DoubleWishboneGeometry`, `MacPhersonGeometry`, `SuspensionGeometry`, `SuspensionPoint`, `SuspensionPose`, `SuspensionSample`, `SuspensionTable`, `createSuspensionSample` and 2 more.
