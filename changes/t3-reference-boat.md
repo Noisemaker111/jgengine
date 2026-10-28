@@ -17,7 +17,3 @@ Reference hull hydrostatics in physics/reference: water pressure integrated over
 ### Changed
 
 - Part of #2698
-
-### Removed
-
-- `@jgengine/core/plants/validation/stemAllometry` no longer exports `BAAD_LEAF_TO_SAPWOOD`, `FIA_STAND_DIAMETER`, `LeafToSapwoodBand`, `StandDiameterAtAge`.
