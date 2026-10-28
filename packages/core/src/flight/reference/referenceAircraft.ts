@@ -74,10 +74,13 @@ export interface ReferencePropulsionOutput {
 export interface ReferencePropulsion {
   /** Names of the integrated states, in order. */
   readonly stateNames: readonly string[];
-  /** Writes the steady states for a throttle setting in this air (trim and a clean start). */
-  settle(throttle: number, air: ReferenceAirData, state: number[]): void;
+  /**
+   * Writes the steady states for a throttle setting in this air (trim and a clean start). `surfaces` are the control
+   * actuator positions, for propulsion they drive (a rotor's cyclic and tail pitch).
+   */
+  settle(throttle: number, air: ReferenceAirData, state: number[], surfaces?: ReferenceSurfaces): void;
   /** Evaluates forces, moments and state rates. `state` holds this model's states only. */
-  evaluate(state: readonly number[], throttle: number, air: ReferenceAirData, out: ReferencePropulsionOutput): void;
+  evaluate(state: readonly number[], throttle: number, air: ReferenceAirData, out: ReferencePropulsionOutput, surfaces?: ReferenceSurfaces): void;
 }
 
 /** One surface actuator: where full pilot input puts it, and how fast it gets there. */
@@ -438,7 +441,7 @@ export function createReferenceAircraft(model: ReferenceAircraftModel, options: 
 
     const throttle = clamp(input.throttle, 0, 1);
     for (let i = 0; i < propulsionSize; i += 1) propState[i] = at(s, BASE + i);
-    model.propulsion.evaluate(propState, throttle, air, propulsionOut);
+    model.propulsion.evaluate(propState, throttle, air, propulsionOut, surfaces);
 
     const qS = air.dynamicPressure * model.wingArea;
     let fx = qS * coefficients.cx + propulsionOut.force[0];
@@ -652,7 +655,7 @@ export function createReferenceAircraft(model: ReferenceAircraftModel, options: 
     };
   }
 
-  function airDataAt(altitude: number, airspeed: number): ReferenceAirData {
+  function airDataAt(height: number, altitude: number, airspeed: number): ReferenceAirData {
     const sample = atmosphere(altitude);
     return {
       airspeed,
@@ -662,7 +665,7 @@ export function createReferenceAircraft(model: ReferenceAircraftModel, options: 
       dynamicPressure: 0.5 * sample.density * airspeed * airspeed,
       density: sample.density,
       altitude,
-      heightAboveGround: altitude,
+      heightAboveGround: height,
       p: 0,
       q: 0,
       r: 0,
@@ -691,7 +694,7 @@ export function createReferenceAircraft(model: ReferenceAircraftModel, options: 
       const pitch = (initial.pitch ?? 0) + alpha;
       const attitude = referenceQuaternion(initial.heading ?? 0, pitch, initial.bank ?? 0);
       const propulsion = new Array<number>(propulsionSize).fill(0);
-      model.propulsion.settle(initial.throttle ?? 0, airDataAt(initial.altitude, initial.airspeed), propulsion);
+      model.propulsion.settle(initial.throttle ?? 0, airDataAt(initial.altitude - groundAt(initial.north ?? 0, initial.east ?? 0), initial.altitude, initial.airspeed), propulsion, { elevator: 0, aileron: 0, rudder: 0, flap: 0 });
       values = pack({
         time: 0,
         position: [initial.north ?? 0, initial.east ?? 0, -initial.altitude],

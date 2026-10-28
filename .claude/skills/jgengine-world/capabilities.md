@@ -32,8 +32,9 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `measureAir` (function) · `import { measureAir } from "@jgengine/core/physics/handlingProbe"`
 
-## aircraft-trim — trim a reference aircraft for steady flight — alpha, sideslip, throttle and surfaces
+## aircraft-trim — air data for a steady flight condition, to settle propulsion or rotor states
 
+- `steadyAirData` (function) · `import { steadyAirData } from "@jgengine/core/flight/reference/aircraftTrim"`
 - `trimReferenceAircraft` (function) · `import { trimReferenceAircraft } from "@jgengine/core/flight/reference/aircraftTrim"`
 
 ## ambience-zones — a scene declares looping sound beds keyed to world volumes; walking between them crossfades bed levels on the existing buses instead of cutting.
@@ -234,6 +235,10 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 ## behavior-tick — auto-advance spawned patrol, wander, pursuit and decision graph behaviors with lifecycle control
 
 - `advanceBehaviors` (function) · `import { advanceBehaviors } from "@jgengine/core/world"`
+
+## bo105-reference — MBB Bo-105 reference helicopter validated against NASA TM-110356 rotor data
+
+- `createBo105Model` (function) · `import { createBo105Model } from "@jgengine/core/flight/reference/bo105Helicopter"`
 
 ## board-vehicle — board a rideable, freeze/hide its rider and apply caller camera policy
 
@@ -580,6 +585,7 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `compareFlight` (function) · `import { compareFlight } from "@jgengine/core/flight/reference/flightComparison"`
 - `compareJetEngines` (function) · `import { compareJetEngines } from "@jgengine/core/flight/reference/jetEngineComparison"`
+- `compareRotorcraft` (function) · `import { compareRotorcraft } from "@jgengine/core/flight/reference/rotorcraftComparison"`
 - `formatFlightComparison` (function) · `import { formatFlightComparison } from "@jgengine/core/flight/reference/flightComparison"`
 
 ## flight-metrics — measure an aircraft's feel as numbers — roll rate, sustained turn, stall speed, climb, throttle response, hover drift
@@ -826,6 +832,10 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `createMultiRegionHealth` (function) · `import { createMultiRegionHealth } from "@jgengine/core/procedural"`
 
+## linear-solve — solve a small dense linear system
+
+- `solveLinearSystem` (function) · `import { solveLinearSystem } from "@jgengine/core/flight/reference/aircraftTrim"`
+
 ## local-avoidance — bounded deterministic local collision avoidance for moving agents
 
 - `resolveLocalAvoidance` (function) · `import { resolveLocalAvoidance } from "@jgengine/core/world"`
@@ -981,6 +991,10 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 ## needs — decaying needs an agent reads by index to decide what it wants next
 
 - `createNeedSet` (function) · `import { createNeedSet } from "@jgengine/core/procedural"`
+
+## nonlinear-solve — solve a small nonlinear system of equations
+
+- `solveNewton` (function) · `import { solveNewton } from "@jgengine/core/flight/reference/helicopterRotor"`
 
 ## object-slot-inventory — placed objects hold validated per-instance container contents that replicate and save with the placement
 
@@ -1204,6 +1218,11 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `createReferenceCar` (function) · `import { createReferenceCar } from "@jgengine/core/physics/reference/referenceCar"`
 
+## reference-helicopter — blade-element helicopter on the reference 6-DOF: flapping, dynamic inflow, governor, autorotation
+
+- `createHelicopterModel` (function) · `import { createHelicopterModel } from "@jgengine/core/flight/reference/helicopter"`
+- `trimHelicopter` (function) · `import { trimHelicopter } from "@jgengine/core/flight/reference/helicopter"`
+
 ## reference-validation — check the reference car model against a real car's published 0-100, braking and skidpad numbers
 
 - `checkReferenceAgainstPublished` (function) · `import { checkReferenceAgainstPublished } from "@jgengine/core/physics/reference/compareHandling"`
@@ -1248,6 +1267,16 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 ## road-ribbons — draw roads, tracks and trails as surfaced ribbons with curbs, sidewalks, lane markings and trimmed junctions
 
 - `RoadRibbons` (function) · `import { RoadRibbons } from "@jgengine/core/roads/RoadRibbons.draw"`
+
+## rotor-bemt — allocate rotor load buffers once, outside the hot path
+
+- `createRotorLoads` (function) · `import { createRotorLoads } from "@jgengine/core/flight/reference/helicopterRotor"`
+- `evaluateRotor` (function) · `import { evaluateRotor } from "@jgengine/core/flight/reference/helicopterRotor"`
+- `naca23012RotorSection` (function) · `import { naca23012RotorSection } from "@jgengine/core/flight/reference/helicopterRotor"`
+- `rotorStateCount` (function) · `import { rotorStateCount } from "@jgengine/core/flight/reference/helicopterRotor"`
+- `rotorStateNames` (function) · `import { rotorStateNames } from "@jgengine/core/flight/reference/helicopterRotor"`
+- `settleRotor` (function) · `import { settleRotor } from "@jgengine/core/flight/reference/helicopterRotor"`
+- `trimIsolatedRotor` (function) · `import { trimIsolatedRotor } from "@jgengine/core/flight/reference/helicopterRotor"`
 
 ## route-course — build a branching race course from track pieces: locate, wall clamp, checkpoints, hazard spans, racing lines
 

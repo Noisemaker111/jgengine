@@ -6,11 +6,12 @@ import { pathToFileURL } from "node:url";
 import type { RigidAircraftTuning } from "../packages/core/src/flight/aircraftDynamics";
 import { compareFlight, formatFlightComparison, type FlightComparisonAircraft } from "../packages/core/src/flight/reference/flightComparison";
 import { compareJetEngines, type JetComparisonAircraft } from "../packages/core/src/flight/reference/jetEngineComparison";
+import { compareRotorcraft } from "../packages/core/src/flight/reference/rotorcraftComparison";
 import { printHelpIfAsked } from "./script-help";
 
 if (
   printHelpIfAsked("flight-compare", {
-    summary: "fly every game aircraft built on createRigidAircraft and its reference aircraft through the same flight tests, then measure every game jet engine against the F100 cycle",
+    summary: "fly every game aircraft built on createRigidAircraft and its reference aircraft through the same flight tests, then measure every game jet engine against the F100 cycle and every game rotor against the Bo-105 rotor",
     usage: "bun run perf flight [game...]",
     flags: [],
     example: "bun run perf flight harbor-heat",
@@ -39,9 +40,9 @@ type FoundAircraft = FlightComparisonAircraft & JetComparisonAircraft;
 
 /**
  * Every fixed-wing tuning a module exports, named by the nearest `label` or `id` above it, with the nearest `afterburner`
- * thrust multiplier beside it; rotor-only craft are skipped.
+ * thrust multiplier beside it. Rotor-only craft go to `rotors` alone; a VTOL goes to both.
  */
-function aircraftIn(module: Record<string, unknown>, file: string): FoundAircraft[] {
+function aircraftIn(module: Record<string, unknown>, file: string, rotors: FoundAircraft[]): FoundAircraft[] {
   const found: FoundAircraft[] = [];
   const seen = new Set<unknown>();
   const visit = (value: unknown, name: string, labelled: boolean, topSpeed: number | undefined, afterburner: number | undefined, depth: number): void => {
@@ -52,6 +53,7 @@ function aircraftIn(module: Record<string, unknown>, file: string): FoundAircraf
     const speed = typeof value["topSpeed"] === "number" ? value["topSpeed"] : topSpeed;
     const boost = typeof value["afterburner"] === "number" ? value["afterburner"] : afterburner;
     if (isTuning(value)) {
+      if (value.rotor !== undefined) rotors.push({ name: label, tuning: value, cruiseSpeed: 0 });
       if (value.engine !== undefined || value.motor !== undefined) {
         found.push({ name: label, tuning: value, cruiseSpeed: 0.6 * (speed ?? 80), ...(boost === undefined ? {} : { afterburner: boost }) });
       }
@@ -65,15 +67,14 @@ function aircraftIn(module: Record<string, unknown>, file: string): FoundAircraf
 
 const games = process.argv.slice(2);
 const aircraft: FoundAircraft[] = [];
+const rotors: FoundAircraft[] = [];
 for (const file of sourceFiles(games)) {
   const loaded: unknown = await import(pathToFileURL(resolve(root, file)).href);
-  if (isRecord(loaded)) aircraft.push(...aircraftIn(loaded, file));
+  if (isRecord(loaded)) aircraft.push(...aircraftIn(loaded, file, rotors));
 }
-if (aircraft.length === 0) {
+if (aircraft.length === 0 && rotors.length === 0) {
   console.log("no game aircraft built on createRigidAircraft found");
   process.exit(0);
 }
-console.log(formatFlightComparison(compareFlight(aircraft)));
-const jets = compareJetEngines(aircraft);
-if (jets.length > 0) console.log(`
-${formatFlightComparison(jets)}`);
+const tables = [...compareFlight(aircraft), ...compareJetEngines(aircraft), ...compareRotorcraft(rotors)];
+console.log(formatFlightComparison(tables));
