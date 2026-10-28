@@ -158,6 +158,7 @@ export type EditorBridgeRequest =
   | { method: "list_assets" }
   | { method: "place_asset"; id: string; kind?: string; x?: number; y?: number; z?: number }
   | { method: "create_terrain"; width?: number; depth?: number; cellSize?: number; centerX?: number; centerZ?: number }
+  | { method: "grow_landform"; params?: Record<string, unknown>; centerX?: number; centerZ?: number; datum?: number }
   | {
       method: "sculpt_terrain";
       mode: TerraformMode;
