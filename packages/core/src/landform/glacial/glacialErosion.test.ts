@@ -217,9 +217,39 @@ describe("glacial erosion by first-order (Blatter–Pattyn) ice flow", () => {
   }, 60_000);
 });
 
+describe("glacial erosion as the square of sliding speed (Hallet 1979)", () => {
+  // Wear that grows as u_b² once ran away here (#2790): long steps let the bed outrun the ice, till
+  // stacked kilometres high in one cell, and the cliffs it left drove sliding to km/yr. Ice and bed
+  // now take turns short enough that the step length no longer matters.
+  test("stays bounded and gives the same valley whether 16 kyr pass in one landscape step or eight", () => {
+    const run = (timeStep: number): { eroded: number; fastest: number; deepest: number; tallest: number } => {
+      const model = glaciate(timeStep, { ela: 1500, model: "shallow-ice", erosionExponent: 2 });
+      let eroded = 0;
+      let fastest = 0;
+      for (let t = timeStep; t <= 16_000; t += timeStep) {
+        eroded += model.step().eroded;
+        for (const u of model.fields().iceSliding) fastest = Math.max(fastest, u);
+      }
+      let deepest = Number.POSITIVE_INFINITY;
+      for (let i = 0; i < COLS * ROWS; i += 1) deepest = Math.min(deepest, rockAt(model, i));
+      return { eroded, fastest, deepest, tallest: Math.max(...model.fields().sediment) };
+    };
+    const long = run(16_000);
+    const short = run(2000);
+    for (const r of [long, short]) {
+      expect(r.fastest).toBeLessThan(500);
+      expect(r.deepest).toBeGreaterThan(500);
+      expect(r.tallest).toBeLessThan(200);
+    }
+    expect(long.eroded).toBeGreaterThan(1e8);
+    expect(Math.abs(long.eroded / short.eroded - 1)).toBeLessThan(0.1);
+  }, 60_000);
+});
+
 describe("ice surface on a smooth steep bed", () => {
   // A straight trough, sloping 0.3 or 0.5, under a temperate glacier 100 m thick. Mismatched face
-  // fluxes would pile ice into steps; the smooth bed allows none.
+  // fluxes would pile ice into steps; the smooth bed allows none. The trough's walls start too steep
+  // to stand, and their debris rides the ice to its moraines, so only bare bed is measured.
   test.each([0.3, 0.5])("at slope %p the first-order glacier's surface has no steps over 10 m", (slope) => {
     const cols = 60;
     const rows = 31;
@@ -233,14 +263,14 @@ describe("ice surface on a smooth steep bed", () => {
       params: { uplift: 0, erodibility: 0, diffusivity: 0, marineDiffusivity: 0, soilProduction: 0, timeStep: 1000, glacial: { ela: 1000 + slope * 4500, model: "first-order", layers: 4, erosion: 0, snowlineTemperature: 10 } },
     });
     for (let k = 0; k < 10; k += 1) model.step();
-    const { height, ice } = model.fields();
+    const { height, ice, sediment } = model.fields();
     const surface = (i: number): number => (height[i] ?? 0) + (ice[i] ?? 0);
     let worst = 0;
     let measured = 0;
-    // Away from the outlet edge and the head, wherever ice 20 m thick spans five cells.
+    // Away from the outlet edge and the head, wherever ice 20 m thick spans five cells of bare bed.
     for (let col = 4; col < cols - 4; col += 1) {
       const i = mid * cols + col;
-      if ([-2, -1, 0, 1, 2].some((k) => (ice[i + k] ?? 0) < 20)) continue;
+      if ([-2, -1, 0, 1, 2].some((k) => (ice[i + k] ?? 0) < 20 || (sediment[i + k] ?? 0) > 0)) continue;
       measured += 1;
       worst = Math.max(worst, Math.abs(surface(i + 1) - 2 * surface(i) + surface(i - 1)));
     }
