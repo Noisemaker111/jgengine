@@ -938,6 +938,56 @@
       "intent": "measure any single-track sim on bike scenarios — launch, braking, lean, lane change, slalom"
     },
     {
+      "id": "biped-compare",
+      "packages": [
+        "@jgengine/core"
+      ],
+      "module": "@jgengine/core/movement/reference/bipedRunning",
+      "gameFacing": false,
+      "probe": null,
+      "intent": "score a game biped's walk and run speeds against real bird gaits, top speed and theropod leg muscle"
+    },
+    {
+      "id": "biped-extensor-mass",
+      "packages": [
+        "@jgengine/core"
+      ],
+      "module": "@jgengine/core/movement/reference/bipedRunning",
+      "gameFacing": false,
+      "probe": null,
+      "intent": "the leg muscle mass a biped joint needs to support fast running (Hutchinson 2004)"
+    },
+    {
+      "id": "biped-limb-scale",
+      "packages": [
+        "@jgengine/core"
+      ],
+      "module": "@jgengine/core/movement/reference/bipedRunning",
+      "gameFacing": false,
+      "probe": null,
+      "intent": "scale a published biped limb model to another size by geometric similarity"
+    },
+    {
+      "id": "biped-reference-validation",
+      "packages": [
+        "@jgengine/core"
+      ],
+      "module": "@jgengine/core/movement/reference/bipedRunning",
+      "gameFacing": false,
+      "probe": null,
+      "intent": "check the biped reference against published bird and theropod leg muscle and top speeds"
+    },
+    {
+      "id": "biped-running-support",
+      "packages": [
+        "@jgengine/core"
+      ],
+      "module": "@jgengine/core/movement/reference/bipedRunning",
+      "gameFacing": false,
+      "probe": null,
+      "intent": "whether a biped's leg muscles could carry fast running, joint by joint"
+    },
+    {
       "id": "bo105-reference",
       "packages": [
         "@jgengine/core"
@@ -11090,6 +11140,16 @@
       "gameFacing": false,
       "probe": null,
       "intent": "Load the footprint and foreign-owner gap without scanning the world."
+    },
+    {
+      "id": "theropod-mass-estimate",
+      "packages": [
+        "@jgengine/core"
+      ],
+      "module": "@jgengine/core/movement/reference/bipedRunning",
+      "gameFacing": false,
+      "probe": null,
+      "intent": "estimate a theropod's body mass from its leg length"
     },
     {
       "id": "threats-from-memory",
