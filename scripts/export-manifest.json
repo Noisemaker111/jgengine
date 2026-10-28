@@ -738,6 +738,7 @@
     "./physics/physicsWorldBackend",
     "./physics/radialImpulse",
     "./physics/ragdoll",
+    "./physics/reference/magicFormulaTire",
     "./physics/structure",
     "./physics/tireMarks",
     "./physics/vehicleBackendLink",
