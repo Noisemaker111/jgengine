@@ -1,6 +1,7 @@
 import * as THREE from "three";
 
-import { bakeSurfaceMaterial, type SurfaceMaterialMaps, type SurfaceMaterialSpec } from "./surfaceMaterialGenerator";
+import { runToEnd, type SlicedJob } from "../run/slicedWork";
+import { bakeSurfaceMaterialJob, type SurfaceMaterialMaps, type SurfaceMaterialSpec } from "./surfaceMaterialGenerator";
 
 const BAKE_CACHE_LIMIT = 12;
 const baked = new Map<string, SurfaceMaterialMaps>();
@@ -11,6 +12,14 @@ const baked = new Map<string, SurfaceMaterialMaps>();
  * @capability surface-material-generator seeded tileable PBR ground and nature materials (sand, grass, soil, mud, rock, gravel, bark, snow)
  */
 export function bakeSurfaceMaterialShared(spec: SurfaceMaterialSpec, detail = 1): SurfaceMaterialMaps {
+  return runToEnd(bakeSurfaceMaterialSharedJob(spec, detail));
+}
+
+/**
+ * {@link bakeSurfaceMaterialShared} as a sliced job, for bakes that run at load under `runSliced`.
+ * @capability surface-material-generator seeded tileable PBR ground and nature materials (sand, grass, soil, mud, rock, gravel, bark, snow)
+ */
+export function* bakeSurfaceMaterialSharedJob(spec: SurfaceMaterialSpec, detail = 1): SlicedJob<SurfaceMaterialMaps> {
   const key = `${detail}|${spec.preset ?? ""}|${spec.seed ?? ""}|${JSON.stringify(spec.params ?? {})}`;
   const hit = baked.get(key);
   if (hit !== undefined) {
@@ -18,7 +27,7 @@ export function bakeSurfaceMaterialShared(spec: SurfaceMaterialSpec, detail = 1)
     baked.set(key, hit);
     return hit;
   }
-  const maps = bakeSurfaceMaterial(spec, { detail });
+  const maps = yield* bakeSurfaceMaterialJob(spec, { detail });
   baked.set(key, maps);
   for (const oldest of baked.keys()) {
     if (baked.size <= BAKE_CACHE_LIMIT) break;

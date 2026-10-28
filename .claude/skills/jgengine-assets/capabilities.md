@@ -232,3 +232,15 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `freezeStaticTransforms` (function) · `import { freezeStaticTransforms } from "@jgengine/core/model/staticTransforms.draw"`
 - `thawStaticTransforms` (function) · `import { thawStaticTransforms } from "@jgengine/core/model/staticTransforms.draw"`
+
+## surface-material-generator — seeded tileable PBR ground and nature materials (sand, grass, soil, mud, rock, gravel, bark, snow)
+
+- `SURFACE_MATERIAL_GENERATOR` (const) · `import { SURFACE_MATERIAL_GENERATOR } from "@jgengine/core/material/surfaceMaterialGenerator"`
+- `bakeSurfaceMaterial` (function) · `import { bakeSurfaceMaterial } from "@jgengine/core/material/surfaceMaterialGenerator"`
+- `bakeSurfaceMaterialJob` (function) · `import { bakeSurfaceMaterialJob } from "@jgengine/core/material/surfaceMaterialGenerator"`
+- `bakeSurfaceMaterialShared` (function) · `import { bakeSurfaceMaterialShared } from "@jgengine/core/material/surfaceMaterialTextures.draw"`
+- `bakeSurfaceMaterialSharedJob` (function) · `import { bakeSurfaceMaterialSharedJob } from "@jgengine/core/material/surfaceMaterialTextures.draw"`
+- `isSurfaceMaterialMaps` (function) · `import { isSurfaceMaterialMaps } from "@jgengine/core/material/surfaceMaterialGenerator"`
+- `surfaceMaterialArrayTextures` (function) · `import { surfaceMaterialArrayTextures } from "@jgengine/core/material/surfaceMaterialTextures.draw"`
+- `surfaceMaterialMeta` (function) · `import { surfaceMaterialMeta } from "@jgengine/core/material/surfaceMaterialGenerator"`
+- `surfaceMaterialStandardMaps` (function) · `import { surfaceMaterialStandardMaps } from "@jgengine/core/material/surfaceMaterialTextures.draw"`

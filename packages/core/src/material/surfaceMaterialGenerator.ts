@@ -13,6 +13,7 @@ import { defineGenerator, generatorContext, generatorSeed, registerGenerator, ty
 import { parseParams, type ParamsOf } from "../generator/paramSchema";
 import { defineParamSchema } from "../generator/paramSchema";
 import { hashString } from "../random/rng";
+import { runToEnd, type SlicedJob } from "../run/slicedWork";
 
 /** The generator output family every surface material returns: {@link SurfaceMaterialMaps}. */
 export const SURFACE_MATERIAL_OUTPUT = "surface-material";
@@ -385,12 +386,16 @@ interface BakeInputs {
   s: number;
 }
 
+/** A bake step that yields between rows, so a sliced runner can hand the thread back. */
+type BakeJob = Generator<void, void, void>;
+
 /** Writes each texel from `shade(u, v, index)`, which fills the canvas at `index`. */
-function eachTexel(canvas: SurfaceCanvas, shade: (u: number, v: number, index: number) => void): void {
+function* eachTexel(canvas: SurfaceCanvas, shade: (u: number, v: number, index: number) => void): BakeJob {
   const size = canvas.size;
   for (let y = 0; y < size; y += 1) {
     const v = (y + 0.5) / size;
     for (let x = 0; x < size; x += 1) shade((x + 0.5) / size, v, y * size + x);
+    yield;
   }
 }
 
@@ -403,7 +408,7 @@ function variance(u: number, v: number, seed: number, amount: number): number {
  * Splat round stones (pebbles, gravel, shells): domed height, a colour per stone picked between
  * `palette` entries, smoother roughness. A stone only lands where it stands above what is there.
  */
-function splatStones(
+function* splatStones(
   input: BakeInputs,
   count: number,
   radiusMin: number,
@@ -412,9 +417,10 @@ function splatStones(
   lift: number,
   roughness: number,
   where?: (u: number, v: number) => boolean,
-): void {
+): BakeJob {
   const { canvas, random } = input;
   for (let n = 0; n < count; n += 1) {
+    if ((n & 31) === 31) yield;
     const cu = random();
     const cv = random();
     const radius = lerp(radiusMin, radiusMax, random() ** 1.6);
@@ -441,7 +447,7 @@ function splatStones(
 }
 
 /** Splat thin strokes (grass blades, twigs, pine needles) that rise toward their tip. */
-function splatStrokes(
+function* splatStrokes(
   input: BakeInputs,
   count: number,
   length: number,
@@ -450,11 +456,12 @@ function splatStrokes(
   lift: number,
   roughness: number,
   accept: (u: number, v: number, random: () => number) => boolean,
-): void {
+): BakeJob {
   const { canvas, random } = input;
   const size = canvas.size;
   const halfWidth = Math.max(0.6, width * size) / size;
   for (let n = 0; n < count; n += 1) {
+    if ((n & 31) === 31) yield;
     const cu = random();
     const cv = random();
     const len = length * lerp(0.5, 1.3, random());
@@ -481,10 +488,10 @@ function splatStrokes(
 // ---------------------------------------------------------------------------------------------
 // Per-kind recipes.
 
-function bakeSand(input: BakeInputs): void {
+function* bakeSand(input: BakeInputs): BakeJob {
   const { params, canvas, seed, base, second, cover, s } = input;
   const rippleCount = Math.max(1, Math.round(7 * s));
-  eachTexel(canvas, (u, v, i) => {
+  yield* eachTexel(canvas, (u, v, i) => {
     const warp = fbm(u, v, 3, 3, seed + 11);
     const ripple = 0.5 + 0.5 * Math.sin(2 * Math.PI * (v * rippleCount + u + warp * 1.6));
     const ripples = ripple * ripple * params.ripples;
@@ -510,17 +517,17 @@ function bakeSand(input: BakeInputs): void {
     canvas.set(i, h, r, g, b, params.roughness);
   });
   const pebbles = Math.round(params.stones * 260 * s * s);
-  splatStones(input, pebbles, 0.003, 0.004 + params.stoneSize * 0.012, [second, base, [second[0] * 0.7, second[1] * 0.7, second[2] * 0.7]], 0.85, params.roughness * 0.7);
+  yield* splatStones(input, pebbles, 0.003, 0.004 + params.stoneSize * 0.012, [second, base, [second[0] * 0.7, second[1] * 0.7, second[2] * 0.7]], 0.85, params.roughness * 0.7);
   // Shell and coral bits.
   const shells = Math.round(params.cover * 120 * s * s);
-  splatStones(input, shells, 0.002, 0.006, [cover], 0.7, params.roughness * 0.55);
+  yield* splatStones(input, shells, 0.002, 0.006, [cover], 0.7, params.roughness * 0.55);
 }
 
-function bakeSoilBase(input: BakeInputs, dampen: number): void {
+function* bakeSoilBase(input: BakeInputs, dampen: number): BakeJob {
   const { params, canvas, seed, base, second, s } = input;
   const clods = Math.max(2, Math.round(14 * s));
   const crackCells = Math.max(2, Math.round(5 * s));
-  eachTexel(canvas, (u, v, i) => {
+  yield* eachTexel(canvas, (u, v, i) => {
     const c = cells(u, v, clods, clods, seed + 21);
     const clod = 1 - smoothstep(0, 0.75, c.f1);
     const clodId = c.id;
@@ -541,14 +548,14 @@ function bakeSoilBase(input: BakeInputs, dampen: number): void {
   });
 }
 
-function bakeSoil(input: BakeInputs): void {
+function* bakeSoil(input: BakeInputs): BakeJob {
   const { params, s, second, base, cover } = input;
-  bakeSoilBase(input, 1);
+  yield* bakeSoilBase(input, 1);
   const stones = Math.round(params.stones * 340 * s * s);
-  splatStones(input, stones, 0.003, 0.005 + params.stoneSize * 0.018, [[0.55, 0.52, 0.48], [0.42, 0.4, 0.37], base], 0.95, params.roughness * 0.8);
+  yield* splatStones(input, stones, 0.003, 0.005 + params.stoneSize * 0.018, [[0.55, 0.52, 0.48], [0.42, 0.4, 0.37], base], 0.95, params.roughness * 0.8);
   // Leaf litter and twigs.
   const litter = Math.round(params.cover * 900 * s * s);
-  splatStrokes(
+  yield* splatStrokes(
     input,
     litter,
     0.018 / s,
@@ -563,11 +570,11 @@ function bakeSoil(input: BakeInputs): void {
   );
 }
 
-function bakeGrass(input: BakeInputs): void {
+function* bakeGrass(input: BakeInputs): BakeJob {
   const { params, canvas, seed, s, cover } = input;
-  bakeSoilBase(input, 0.6);
+  yield* bakeSoilBase(input, 0.6);
   const stones = Math.round(params.stones * 200 * s * s);
-  splatStones(input, stones, 0.003, 0.004 + params.stoneSize * 0.012, [[0.55, 0.52, 0.48], [0.45, 0.43, 0.4]], 0.7, params.roughness * 0.8);
+  yield* splatStones(input, stones, 0.003, 0.004 + params.stoneSize * 0.012, [[0.55, 0.52, 0.48], [0.45, 0.43, 0.4]], 0.7, params.roughness * 0.8);
   // Blades cluster into tufts; the soil shows through between them where cover is low.
   const tufts = (u: number, v: number): number => {
     const patch = fbm(u, v, 4, 3, seed + 61);
@@ -576,7 +583,7 @@ function bakeGrass(input: BakeInputs): void {
   };
   const blades = Math.round(canvas.size * canvas.size * 0.11 * (0.25 + params.cover));
   const spreadBy = params.colorVariance;
-  splatStrokes(
+  yield* splatStrokes(
     input,
     blades,
     0.022 / s,
@@ -596,11 +603,11 @@ function bakeGrass(input: BakeInputs): void {
   );
 }
 
-function bakeMud(input: BakeInputs): void {
+function* bakeMud(input: BakeInputs): BakeJob {
   const { params, canvas, seed, base, second, cover, s } = input;
   const crackCells = Math.max(2, Math.round(7 * s));
   const rutCount = Math.max(1, Math.round(3 * s));
-  eachTexel(canvas, (u, v, i) => {
+  yield* eachTexel(canvas, (u, v, i) => {
     const soft = fbm(u, v, 3 * s, 5, seed + 3);
     const rut = 0.5 + 0.5 * Math.sin(2 * Math.PI * (u * rutCount + fbm(u, v, 2, 3, seed + 5) * 1.2));
     const fine = vnoise(u, v, canvas.size >> 2, canvas.size >> 2, seed + 9);
@@ -623,15 +630,15 @@ function bakeMud(input: BakeInputs): void {
     );
   });
   const stones = Math.round(params.stones * 160 * s * s);
-  splatStones(input, stones, 0.003, 0.004 + params.stoneSize * 0.014, [[0.4, 0.36, 0.32], second], 0.85, 0.35);
+  yield* splatStones(input, stones, 0.003, 0.004 + params.stoneSize * 0.014, [[0.4, 0.36, 0.32], second], 0.85, 0.35);
 }
 
-function bakeRock(input: BakeInputs): void {
+function* bakeRock(input: BakeInputs): BakeJob {
   const { params, canvas, seed, base, second, cover, s } = input;
   const strata = Math.max(1, Math.round(9 * s));
   const big = Math.max(2, Math.round(3 * s));
   const small = Math.max(3, Math.round(11 * s));
-  eachTexel(canvas, (u, v, i) => {
+  yield* eachTexel(canvas, (u, v, i) => {
     const body = ridged(u, v, 3 * s, 6, seed + 3);
     const warp = fbm(u, v, 3, 3, seed + 5);
     const band = 0.5 + 0.5 * Math.sin(2 * Math.PI * (v * strata + warp * 2.2));
@@ -661,13 +668,13 @@ function bakeRock(input: BakeInputs): void {
     );
   });
   const chips = Math.round(params.stones * 120 * s * s);
-  splatStones(input, chips, 0.003, 0.004 + params.stoneSize * 0.01, [second, base], 0.9, params.roughness);
+  yield* splatStones(input, chips, 0.003, 0.004 + params.stoneSize * 0.01, [second, base], 0.9, params.roughness);
 }
 
-function bakeGravel(input: BakeInputs): void {
+function* bakeGravel(input: BakeInputs): BakeJob {
   const { params, canvas, seed, base, second, cover, s } = input;
   const count = Math.max(4, Math.round((40 - params.stoneSize * 26) * s));
-  eachTexel(canvas, (u, v, i) => {
+  yield* eachTexel(canvas, (u, v, i) => {
     const c = cells(u, v, count, count, seed + 21, 0.95);
     // Round stones: distance from the cell's centre against its half-gap to the next one.
     const ratio = c.f1 / Math.max(1e-4, (c.f1 + c.f2) * 0.5);
@@ -693,13 +700,13 @@ function bakeGravel(input: BakeInputs): void {
   });
 }
 
-function bakeBark(input: BakeInputs): void {
+function* bakeBark(input: BakeInputs): BakeJob {
   const { params, canvas, seed, base, second, cover, s } = input;
   // v runs up the trunk: furrows are long along v and narrow across u.
   const furrowsU = Math.max(2, Math.round(12 * s));
   const platesU = Math.max(2, Math.round(6 * s));
   const platesV = Math.max(1, Math.round(3 * s));
-  eachTexel(canvas, (u, v, i) => {
+  yield* eachTexel(canvas, (u, v, i) => {
     const warp = fbm(u, v, 3, 3, seed + 5);
     const furrow = ridged(u + warp * 0.04, v, furrowsU, 4, seed + 3, 0.25);
     const plate = cells(u + warp * 0.03, v, platesU, platesV, seed + 41, 0.8);
@@ -721,10 +728,10 @@ function bakeBark(input: BakeInputs): void {
   });
 }
 
-function bakeSnow(input: BakeInputs): void {
+function* bakeSnow(input: BakeInputs): BakeJob {
   const { params, canvas, seed, base, second, cover, s } = input;
   const waves = Math.max(1, Math.round(4 * s));
-  eachTexel(canvas, (u, v, i) => {
+  yield* eachTexel(canvas, (u, v, i) => {
     const soft = fbm(u, v, 3 * s, 5, seed + 3);
     const drift = 0.5 + 0.5 * Math.sin(2 * Math.PI * (v * waves + u + fbm(u, v, 2, 3, seed + 5) * 1.4));
     const fine = vnoise(u, v, canvas.size >> 1, canvas.size >> 1, seed + 9);
@@ -744,7 +751,7 @@ function bakeSnow(input: BakeInputs): void {
   });
 }
 
-const RECIPES: Record<SurfaceMaterialKind, (input: BakeInputs) => void> = {
+const RECIPES: Record<SurfaceMaterialKind, (input: BakeInputs) => BakeJob> = {
   sand: bakeSand,
   grass: bakeGrass,
   soil: bakeSoil,
@@ -765,7 +772,7 @@ function isKind(value: string): value is SurfaceMaterialKind {
 // Encoding: height normalised into albedo alpha; normal, roughness and AO packed into `surface`.
 
 /** Box blur with wrap, separable, in place on a scratch buffer. */
-function blurWrap(source: Float32Array, size: number, radius: number): Float32Array {
+function* blurWrap(source: Float32Array, size: number, radius: number): Generator<void, Float32Array, void> {
   const tmp = new Float32Array(size * size);
   const out = new Float32Array(size * size);
   const span = radius * 2 + 1;
@@ -777,6 +784,7 @@ function blurWrap(source: Float32Array, size: number, radius: number): Float32Ar
       tmp[row + x] = sum / span;
       sum += (source[row + mod(x + radius + 1, size)] ?? 0) - (source[row + mod(x - radius, size)] ?? 0);
     }
+    yield;
   }
   for (let x = 0; x < size; x += 1) {
     let sum = 0;
@@ -785,6 +793,7 @@ function blurWrap(source: Float32Array, size: number, radius: number): Float32Ar
       out[y * size + x] = sum / span;
       sum += (tmp[mod(y + radius + 1, size) * size + x] ?? 0) - (tmp[mod(y - radius, size) * size + x] ?? 0);
     }
+    yield;
   }
   return out;
 }
@@ -793,7 +802,7 @@ function toByte(value: number): number {
   return Math.round(clamp01(value) * 255);
 }
 
-function encode(canvas: SurfaceCanvas, params: SurfaceMaterialParams, kind: SurfaceMaterialKind): SurfaceMaterialMaps {
+function* encode(canvas: SurfaceCanvas, params: SurfaceMaterialParams, kind: SurfaceMaterialKind): Generator<void, SurfaceMaterialMaps, void> {
   const { size, height, color, rough } = canvas;
   const count = size * size;
   let min = Infinity;
@@ -806,8 +815,8 @@ function encode(canvas: SurfaceCanvas, params: SurfaceMaterialParams, kind: Surf
   const range = max - min > 1e-6 ? max - min : 1;
   for (let i = 0; i < count; i += 1) height[i] = ((height[i] ?? 0) - min) / range;
 
-  const near = blurWrap(height, size, Math.max(1, Math.round(size / 96)));
-  const far = blurWrap(height, size, Math.max(2, Math.round(size / 20)));
+  const near = yield* blurWrap(height, size, Math.max(1, Math.round(size / 96)));
+  const far = yield* blurWrap(height, size, Math.max(2, Math.round(size / 20)));
   const albedo = new Uint8Array(count * 4);
   const surface = new Uint8Array(count * 4);
   // Normal slope per height unit across one texel, scaled so relief reads the same at any resolution.
@@ -849,6 +858,7 @@ function encode(canvas: SurfaceCanvas, params: SurfaceMaterialParams, kind: Surf
       mean[1] += SRGB_TO_LINEAR[gb] ?? 0;
       mean[2] += SRGB_TO_LINEAR[bb] ?? 0;
     }
+    yield;
   }
   return { kind, size, albedo, surface, meanLinear: [mean[0] / count, mean[1] / count, mean[2] / count] };
 }
@@ -861,7 +871,7 @@ function resolutionOf(value: string, detail: number): number {
   return Math.max(64, size >> Math.max(0, Math.round(Math.log2(1 / Math.max(detail, 1 / 16)))));
 }
 
-function bake(params: SurfaceMaterialParams, context: GeneratorContext): SurfaceMaterialMaps {
+function* bakeJob(params: SurfaceMaterialParams, context: GeneratorContext): SlicedJob<SurfaceMaterialMaps> {
   const kind = isKind(params.kind) ? params.kind : "sand";
   const size = resolutionOf(params.resolution, context.detail);
   const canvas = new SurfaceCanvas(size);
@@ -876,9 +886,13 @@ function bake(params: SurfaceMaterialParams, context: GeneratorContext): Surface
     s: params.scale,
   };
   clearCaches();
-  RECIPES[kind](input);
+  yield* RECIPES[kind](input);
   clearCaches();
-  return encode(canvas, params, kind);
+  return yield* encode(canvas, params, kind);
+}
+
+function bake(params: SurfaceMaterialParams, context: GeneratorContext): SurfaceMaterialMaps {
+  return runToEnd(bakeJob(params, context));
 }
 
 /**
@@ -923,9 +937,18 @@ export function surfaceMaterialMeta(spec: SurfaceMaterialSpec): Record<string, u
  * @capability surface-material-generator seeded tileable PBR ground and nature materials (sand, grass, soil, mud, rock, gravel, bark, snow)
  */
 export function bakeSurfaceMaterial(spec: SurfaceMaterialSpec, options: { detail?: number } = {}): SurfaceMaterialMaps {
+  return runToEnd(bakeSurfaceMaterialJob(spec, options));
+}
+
+/**
+ * {@link bakeSurfaceMaterial} as a sliced job that yields between rows, so `runSliced` can bake at
+ * load without freezing the page. Same bytes as the direct bake.
+ * @capability surface-material-generator seeded tileable PBR ground and nature materials (sand, grass, soil, mud, rock, gravel, bark, snow)
+ */
+export function bakeSurfaceMaterialJob(spec: SurfaceMaterialSpec, options: { detail?: number } = {}): SlicedJob<SurfaceMaterialMaps> {
   const meta = surfaceMaterialMeta(spec);
   const seed = generatorSeed(SURFACE_MATERIAL_SCHEMA, meta, "surface");
-  return bake(parseParams(SURFACE_MATERIAL_SCHEMA, meta), generatorContext(seed, options.detail ?? 1));
+  return bakeJob(parseParams(SURFACE_MATERIAL_SCHEMA, meta), generatorContext(seed, options.detail ?? 1));
 }
 
 /** Register the surface material generator so the editor and agents can find it. @internal */

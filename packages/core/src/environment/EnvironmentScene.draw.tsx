@@ -42,7 +42,8 @@ import { GrassPatch } from "@jgengine/core/grass/GrassPatch.draw";
 import { CarvedTerrain, type CarvedTerrainProps } from "@jgengine/core/terrain/CarvedTerrain.draw";
 import { ImageTextureLoader } from "@jgengine/core/material/imageTexture.draw";
 import { trackSceneWork } from "@jgengine/core/model/modelLoad.draw";
-import { createTerrainDetailMaterial, createTerrainSurfaceTextures, type TerrainSurfaceTextures } from "@jgengine/core/terrain/terrainDetailMaterial.draw";
+import { createTerrainDetailMaterial, createTerrainSurfaceTexturesJob, type TerrainSurfaceTextures } from "@jgengine/core/terrain/terrainDetailMaterial.draw";
+import { useSlicedValue } from "@jgengine/core/render/useSlicedValue.draw";
 import { MAX_TERRAIN_LAYER_MAPS, type TerrainDetailMaterialTextures, type TerrainLayerMap } from "@jgengine/core/terrain/terrainDetailMaterial.draw";
 import { useTerrainQuality } from "@jgengine/core/terrain/terrainQuality.draw";
 import { createTerrainPaintTextures, packTerrainPaintWeights, type TerrainPaintTextures } from "@jgengine/core/terrain/terrainSurfaces.draw";
@@ -279,18 +280,21 @@ function TerrainGround({
   );
   const quality = useTerrainQuality();
   const layerMaps = useTerrainLayerMaps(paint);
-  // Baked once per surface spec (shared across remounts) behind the loading cover.
-  const surfaces = useMemo(
-    () => createTerrainSurfaceTextures(resolvedDetail?.surfaces, quality === "low" ? 0.5 : 1),
+  // Baked in slices behind the loading cover, once per surface spec (shared across remounts).
+  const baked = useSlicedValue(
+    "terrain-surfaces",
+    () => createTerrainSurfaceTexturesJob(resolvedDetail?.surfaces, quality === "low" ? 0.5 : 1),
     [resolvedDetail?.surfaces, quality],
   );
+  const surfaces = baked ?? undefined;
+  const surfacesPending = resolvedDetail?.surfaces !== undefined && baked === null;
   useEffect(() => () => surfaces?.dispose(), [surfaces]);
   const proceduralMaterial = useMemo(
     () =>
-      resolvedDetail === undefined || (resolvedDetail.material !== undefined && resolvedDetail.material.missing === "fail")
+      resolvedDetail === undefined || surfacesPending || (resolvedDetail.material !== undefined && resolvedDetail.material.missing === "fail")
         ? undefined
         : createTerrainDetailMaterial(resolvedDetail, undefined, { paint, quality, surfaces, ...(layerMaps === undefined ? {} : { layerMaps }) }).material,
-    [resolvedDetail, paint, quality, layerMaps, surfaces],
+    [resolvedDetail, surfacesPending, paint, quality, layerMaps, surfaces],
   );
   useEffect(() => () => proceduralMaterial?.dispose(), [proceduralMaterial]);
 

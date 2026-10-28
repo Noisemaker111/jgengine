@@ -2328,6 +2328,7 @@
 - `FrondOptions` (interface): interface FrondOptions — Options for {@link addFrond}.
 - `NatureMesh` (interface): interface NatureMesh — Indexed triangle mesh with per-vertex sRGB colours, in metres with the base at y = 0.
 - `NatureRgb` (type): type NatureRgb = readonly [number, number, number] — An sRGB colour, 0..1 per channel.
+- `NatureSurface` (type): type NatureSurface = "rock" | "bark" — Generated surface materials a nature mesh can be drawn with.
 - `NatureVec` (type): type NatureVec = readonly [number, number, number] — A point or direction in a nature mesh's local space.
 - `StoneOptions` (interface): interface StoneOptions — Options for {@link addStone}.
 - `TubeOptions` (interface): interface TubeOptions — Options for {@link addTube}.
@@ -2341,7 +2342,7 @@
 ## @jgengine/core/nature/natureMesh.draw
 
 - `natureGeometry` (function): function natureGeometry(mesh: NatureMesh): THREE.BufferGeometry — A three geometry for a nature mesh, its sRGB vertex colours converted to linear. The caller owns it.
-- `natureMaterial` (function): function natureMaterial(): THREE.MeshStandardMaterial — The one material every nature mesh shares: vertex colours, matte; leaf blades carry both faces themselves.
+- `natureMaterial` (function): function natureMaterial(surface?: NatureSurface): THREE.MeshStandardMaterial — The material a nature mesh shares with every mesh of its surface: vertex colours, matte; leaf blades carry both faces themselves. Rocks and wood (`surface`) add the generated rock or bark grain, normal, roughness and AO, projected in world space so the meshes need no UVs.
 
 ## @jgengine/core/nav/corridors
 
@@ -3888,14 +3889,17 @@
 - `HeightMapFieldConfig` (interface): interface HeightMapFieldConfig — A grid of height samples (row-major) stretched over world bounds, with scale and base height.
 - `ISLAND_VOID_HEIGHT` (const): const ISLAND_VOID_HEIGHT: -256 — Ground height between islands when no base terrain exists — deep enough to read as a fall into the void, finite so physics stays sane.
 - `NoiseFieldConfig` (interface): interface NoiseFieldConfig — Configuration for {@link noiseField}: seed, amplitude, and fractal noise shaping.
-- `ResolvedTerrainDetail` (type): type ResolvedTerrainDetail = Required<Omit<TerrainDetailConfig, "waterLevel" | "material" | "sweeps">> & { waterLevel: number; material?: ResolvedTerrainDetailMaterial; sweeps: { dry: readonly [number, number, number]; wet: readonly [number, number, number] }; } — A {@link TerrainDetailConfig} with every field resolved to a concrete value — the shape the shell's detail material consumes.
+- `ResolvedTerrainDetail` (type): type ResolvedTerrainDetail = Required<Omit<TerrainDetailConfig, "waterLevel" | "material" | "sweeps" | "surfaces">> & { waterLevel: number; material?: ResolvedTerrainDetailMaterial; surfaces?: ResolvedTerrainSurfaces; sweeps: { dry: readonly [number, number, number]; wet: readonly [number, number, n… — A {@link TerrainDetailConfig} with every field resolved to a concrete value — the shape the shell's detail material consumes.
 - `ResolvedTerrainDetailMaterial` (interface): interface ResolvedTerrainDetailMaterial — A resolved {@link TerrainDetailMaterialConfig} — `repeat`/`strength` filled with defaults, `maps` passed through.
+- `ResolvedTerrainSurfaceLayer` (interface): interface ResolvedTerrainSurfaceLayer — One generated terrain surface with its tile metres and tint resolved.
+- `ResolvedTerrainSurfaces` (type): type ResolvedTerrainSurfaces = Partial<Record<TerrainSurfaceRole, ResolvedTerrainSurfaceLayer>> — Resolved {@link TerrainSurfacesConfig}: only the roles the terrain set.
 - `RollingFieldConfig` (interface): interface RollingFieldConfig — Seed, amplitude, frequency and bounds for gentle rolling-hill ground.
 - `TERRAIN_MATERIAL_PALETTES` (const): const TERRAIN_MATERIAL_PALETTES: Record<TerrainMaterial, TerrainPalette> — Built-in ground colors for each named terrain material.
 - `TerrainField` (interface): interface TerrainField — A sampleable ground surface: height and normal at any x/z, with optional bounds and water level.
 - `TerrainNormal` (type): type TerrainNormal = readonly [number, number, number] — A surface normal vector at a terrain sample point.
 - `TerrainPalette` (interface): interface TerrainPalette — Ground colors for one terrain material: low ground, high ground and the waterline band.
 - `TerrainSlopeSample` (interface): interface TerrainSlopeSample — Which way the ground falls at a point and how steeply.
+- `TerrainSurfaceRole` (type): type TerrainSurfaceRole = "ground" | "sand" | "rock" — The terrain roles a generated surface can draw.
 - `applyPathProfiles` (function): function applyPathProfiles(field: TerrainField, profiles: readonly TerrainPathProfile[]): TerrainField — Composes authored path profiles onto a field — the shared seam that turns a scene road/river/ramp path into flattened, graded, carved, or retained ground. Applies after `flatten` masks in `resolveTerrainField` so a corridor grades over already-leveled pads; call it directly to layer profiles onto any field a game builds by hand. Returns the field unchanged when no profile is given.
 - `raycastHeightField` (function): function raycastHeightField(sampleHeight: (x: number, z: number) => number, origin: readonly [number, number, number], direction: readonly [number, number, number], options: HeightFieldRaycastOptions): HeightFieldRayHit | null — Intersects a ray with a `sampleHeight` field by fixed-step raymarching plus bisection — the O(steps) editor/gameplay picking seam that replaces brute-force triangle raycasts against a tessellated ground mesh (tens of thousands of triangle tests per pick on a sculpt-sized grid). The ray is clipped to `bounds` on XZ first, marched at `step`, and the first above→below crossing is bisected. An origin already under the surface hits immediately at entry. Returns null when the clipped ray never crosses the surface.
 - `withCoast` (function): function withCoast(height: (x: number, z: number) => number, coast: TerrainCoast): (x: number, z: number) => number — Bend a height function into an island: inside the wobbling shore ring the ground keeps its height (eased down to `shoreHeight` across `falloff`), past it the ground drops along a shelf to `seaFloor`. Deterministic for a seed.
@@ -3912,6 +3916,10 @@
 - `TerrainDetailMaterialOptions` (interface): interface TerrainDetailMaterialOptions — Surface-pass inputs beyond the resolved detail config.
 - `TerrainDetailMaterialTextures` (interface): interface TerrainDetailMaterialTextures — Loaded PBR textures matching a resolved `ResolvedTerrainDetailMaterial.maps`' roles. The caller (a React component, via `useTexture`/`useLoader`) owns loading and disposal; `core` never touches `THREE.Texture` and this shell function never fetches a URL itself. Omitted AO/roughness skip sampling.
 - `TerrainLayerMap` (interface): interface TerrainLayerMap — One painted layer's scanned color map plus the world metres one tile covers.
+- `TerrainSurfaceSlot` (interface): interface TerrainSurfaceSlot — One terrain role's generated surface: its array layer, tile metres and tint.
+- `TerrainSurfaceTextures` (interface): interface TerrainSurfaceTextures — Generated terrain surfaces baked into array textures, ready for {@link createTerrainDetailMaterial}.
+- `createTerrainSurfaceTextures` (function): function createTerrainSurfaceTextures(surfaces: ResolvedTerrainSurfaces | undefined, detail = 1): TerrainSurfaceTextures | undefined — Bake a terrain's generated surfaces (shared per spec) and stack them into array textures. `detail` 1 bakes each map at its own resolution, 0.5 at half; layers are rebaked at the smallest size any role asks for so they stack. Undefined when the terrain names no surfaces.
+- `createTerrainSurfaceTexturesJob` (function): function createTerrainSurfaceTexturesJob(surfaces: ResolvedTerrainSurfaces | undefined, detail = 1): SlicedJob<TerrainSurfaceTextures | undefined> — {@link createTerrainSurfaceTextures} as a sliced job, so the terrain bakes its surfaces at load without a long freeze.
 
 ## @jgengine/core/terrain/terrainGrade
 
@@ -5641,6 +5649,8 @@
 - `TerrainPolylineRegion` (interface): interface TerrainPolylineRegion extends TerrainRegionStyle — A ribbon palette zone following a centerline — roads and rivers, instead of chaining overlapping circles.
 - `TerrainRectRegion` (interface): interface TerrainRectRegion extends TerrainRegionStyle — A rectangular palette zone, optionally rotated about the world y axis — plazas, fields, districts.
 - `TerrainRegionStyle` (interface): interface TerrainRegionStyle — Palette and blend fields shared by every `TerrainMaterialRegion` shape.
+- `TerrainSurfaceLayer` (interface): interface TerrainSurfaceLayer extends SurfaceMaterialSpec — One generated terrain surface: a material spec plus how it tiles and tints.
+- `TerrainSurfacesConfig` (interface): interface TerrainSurfacesConfig — Which generated surface draws each terrain role.
 - `TilemapWorldConfig` (interface): interface TilemapWorldConfig extends WorldGridConfig { map: string; tileSet?: {atlas: SpriteAtlas; tiles: Record<string, string>}; sortingLayer?: string } — ⚠ undocumented · used by `tilemap`: Declares a 2D tilemap world from a map string.
 - `VegetationEnvironmentDescriptor` (type): type VegetationEnvironmentDescriptor = GrassEnvironmentDescriptor — ⚠ undocumented
 - `VoxelWorldConfig` (interface): interface VoxelWorldConfig extends WorldGridConfig { seed: string; generate?: string; streaming?: {radius: number} } — ⚠ undocumented · used by `voxel`: Declares a voxel-grid world for block-based games.

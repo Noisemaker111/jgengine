@@ -1,7 +1,10 @@
 import * as THREE from "three";
 
 import { applyTriplanarProjection } from "@jgengine/core/material/triplanarMaterial.draw";
-import { bakeSurfaceMaterialShared, surfaceMaterialStandardMaps } from "@jgengine/core/material/surfaceMaterialTextures.draw";
+import { bakeSurfaceMaterialSharedJob, surfaceMaterialStandardMaps } from "@jgengine/core/material/surfaceMaterialTextures.draw";
+import type { SurfaceMaterialMaps } from "@jgengine/core/material/surfaceMaterialGenerator";
+import { trackSceneWork } from "@jgengine/core/model/modelLoad.draw";
+import { runSliced, SlicedWorkCancelled } from "@jgengine/core/run/slicedWork";
 import type { NatureMesh, NatureSurface } from "./natureMesh";
 
 /**
@@ -63,25 +66,56 @@ function grainTexture(albedo: Uint8Array, size: number): THREE.DataTexture {
   return texture;
 }
 
+/** A 1x1 repeat texture of one texel value, standing in until the bake lands. */
+function texel(r: number, g: number, b: number): THREE.DataTexture {
+  const texture = new THREE.DataTexture(new Uint8Array([r, g, b, 255]), 1, 1);
+  texture.wrapS = THREE.RepeatWrapping;
+  texture.wrapT = THREE.RepeatWrapping;
+  texture.needsUpdate = true;
+  return texture;
+}
+
+function applyBake(target: THREE.MeshStandardMaterial, baked: SurfaceMaterialMaps): void {
+  const maps = surfaceMaterialStandardMaps(baked);
+  maps.map.dispose();
+  const placeholders = [target.map, target.normalMap, target.roughnessMap];
+  // Same slots filled, so the program stays the one compiled with the placeholders.
+  target.map = grainTexture(baked.albedo, baked.size);
+  target.normalMap = maps.normalMap;
+  target.roughnessMap = maps.ormMap;
+  target.aoMap = maps.ormMap;
+  for (const texture of placeholders) texture?.dispose();
+}
+
 function surfaceMaterial(surface: NatureSurface): THREE.MeshStandardMaterial {
   const cached = surfaceMaterials.get(surface);
   if (cached !== undefined) return cached;
   const look = NATURE_SURFACES[surface];
-  const baked = bakeSurfaceMaterialShared({ preset: look.preset, seed: `nature-${surface}`, params: { resolution: "256" } });
-  const maps = surfaceMaterialStandardMaps(baked);
-  maps.map.dispose();
+  const orm = texel(255, 255, 0);
   const created = new THREE.MeshStandardMaterial({
     vertexColors: true,
     color: new THREE.Color(2, 2, 2),
-    map: grainTexture(baked.albedo, baked.size),
-    normalMap: maps.normalMap,
-    roughnessMap: maps.ormMap,
-    aoMap: maps.ormMap,
+    map: texel(128, 128, 128),
+    normalMap: texel(128, 128, 255),
+    roughnessMap: orm,
+    aoMap: orm,
     roughness: 1,
     metalness: 0,
   });
   applyTriplanarProjection(created, { tileMetres: look.tile, sharpness: 6, normalScale: 1 });
   surfaceMaterials.set(surface, created);
+  // Baked in slices so the first rock on screen never freezes the page; counts as scene loading.
+  const done = trackSceneWork(`nature-${surface}-surface`);
+  runSliced(bakeSurfaceMaterialSharedJob({ preset: look.preset, seed: `nature-${surface}`, params: { resolution: "256" } })).done.then(
+    (baked) => {
+      applyBake(created, baked);
+      done();
+    },
+    (error: unknown) => {
+      done();
+      if (!(error instanceof SlicedWorkCancelled)) console.error(`[jgengine] nature ${surface} surface failed to bake`, error);
+    },
+  );
   return created;
 }
 

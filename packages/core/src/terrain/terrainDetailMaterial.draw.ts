@@ -2,7 +2,8 @@ import * as THREE from "three";
 
 import type { GraphicsQuality } from "@jgengine/core/settings/settingsModel";
 import type { ResolvedTerrainDetail, ResolvedTerrainSurfaces, TerrainSurfaceRole } from "@jgengine/core/terrain/terrain";
-import { bakeSurfaceMaterialShared, surfaceMaterialArrayTextures, type SurfaceMaterialArrayTextures } from "@jgengine/core/material/surfaceMaterialTextures.draw";
+import { bakeSurfaceMaterialSharedJob, surfaceMaterialArrayTextures, type SurfaceMaterialArrayTextures } from "@jgengine/core/material/surfaceMaterialTextures.draw";
+import { runToEnd, type SlicedJob } from "@jgengine/core/run/slicedWork";
 import type { SurfaceMaterialMaps } from "@jgengine/core/material/surfaceMaterialGenerator";
 
 import { NOISE_GLSL, PAINT_PARS_GLSL, SURFACE_BUMP_NORMAL_GLSL, SURFACE_FUNCTIONS_GLSL, surfaceNoiseUniforms } from "./terrainSurfaceShader.draw";
@@ -69,6 +70,11 @@ export interface TerrainSurfaceTextures {
  * role asks for so they stack. Undefined when the terrain names no surfaces.
  */
 export function createTerrainSurfaceTextures(surfaces: ResolvedTerrainSurfaces | undefined, detail = 1): TerrainSurfaceTextures | undefined {
+  return runToEnd(createTerrainSurfaceTexturesJob(surfaces, detail));
+}
+
+/** {@link createTerrainSurfaceTextures} as a sliced job, so the terrain bakes its surfaces at load without a long freeze. */
+export function* createTerrainSurfaceTexturesJob(surfaces: ResolvedTerrainSurfaces | undefined, detail = 1): SlicedJob<TerrainSurfaceTextures | undefined> {
   if (surfaces === undefined) return undefined;
   const roles: Partial<Record<TerrainSurfaceRole, TerrainSurfaceSlot>> = {};
   const specs: ResolvedTerrainSurfaces[TerrainSurfaceRole][] = [];
@@ -78,15 +84,15 @@ export function createTerrainSurfaceTextures(surfaces: ResolvedTerrainSurfaces |
     if (layer === undefined) continue;
     roles[role] = { layer: baked.length, tile: layer.tile, tint: layer.tint };
     specs.push(layer);
-    baked.push(bakeSurfaceMaterialShared(layer.spec, detail));
+    baked.push(yield* bakeSurfaceMaterialSharedJob(layer.spec, detail));
   }
   if (baked.length === 0) return undefined;
   const size = Math.min(...baked.map((maps) => maps.size));
-  const stacked = baked.map((maps, index) => {
+  const stacked: SurfaceMaterialMaps[] = [];
+  for (const [index, maps] of baked.entries()) {
     const spec = specs[index]?.spec;
-    if (maps.size === size || spec === undefined) return maps;
-    return bakeSurfaceMaterialShared({ ...spec, params: { ...spec.params, resolution: String(size) } }, 1);
-  });
+    stacked.push(maps.size === size || spec === undefined ? maps : yield* bakeSurfaceMaterialSharedJob({ ...spec, params: { ...spec.params, resolution: String(size) } }, 1));
+  }
   const textures = surfaceMaterialArrayTextures(stacked);
   return { textures, roles, dispose: () => textures.dispose() };
 }

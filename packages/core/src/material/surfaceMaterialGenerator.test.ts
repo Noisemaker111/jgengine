@@ -3,6 +3,7 @@ import { describe, expect, test } from "bun:test";
 import { bakeGeneratorVariants } from "@jgengine/core/generator/generator";
 import {
   bakeSurfaceMaterial,
+  bakeSurfaceMaterialJob,
   isSurfaceMaterialMaps,
   SURFACE_MATERIAL_GENERATOR,
   SURFACE_MATERIAL_KINDS,
@@ -96,6 +97,18 @@ describe("surface material generator", () => {
       return sum / (maps.size * maps.size);
     };
     expect(mean(small("dirt", { wetness: 0.9 }))).toBeLessThan(mean(small("dirt", { wetness: 0 })) - 20);
+  });
+
+  test("the sliced bake yields along the way and bakes the same bytes", () => {
+    const job = bakeSurfaceMaterialJob({ preset: "grass", params: { resolution: "128" } });
+    let yields = 0;
+    let step = job.next();
+    while (step.done !== true) {
+      yields += 1;
+      step = job.next();
+    }
+    expect(yields).toBeGreaterThan(128);
+    expect(Buffer.from(step.value.albedo).equals(Buffer.from(small("grass").albedo))).toBe(true);
   });
 
   test("a lower detail level bakes a smaller map", () => {
