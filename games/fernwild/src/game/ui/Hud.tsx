@@ -77,7 +77,7 @@ function Vitals(): ReactNode {
           ▲ Level up — press I
         </div>
       ) : null}
-      <KitVitalIcons vitals={vitals} size={30} readout={detail} />
+      <KitVitalIcons vitals={vitals} size={34} readout={detail} />
     </div>
   );
 }
