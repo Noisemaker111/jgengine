@@ -312,6 +312,13 @@ provenance.
 - Fay 2002, veteran tree ecology, *Arboricultural Journal* 26; Lonsdale (ed.) 2013, *Ancient and
   other veteran trees*, The Tree Council: crown retrenchment of old trees.
 - Allen et al. 1998, FAO Irrigation and Drainage Paper 56: extraterrestrial radiation and day length.
+- **Forest stands** (`plants/stand/standSim.ts`): Pacala et al. 1996, SORTIE, *Ecological
+  Monographs* 66, and Pacala, Canham & Silander 1994, light-dependent sapling growth, *Canadian
+  Journal of Forest Research* 24; Kobe et al. 1995, growth-dependent sapling mortality, *Ecological
+  Applications* 5; Botkin, Janak & Wallis 1972, JABOWA, *Journal of Ecology* 60; Greene & Johnson
+  1993 and 1994, seed dispersal and seed production, *Ecology* 74 and 75; Niinemets 2010, leaf area
+  of shade-tolerant crowns, *Ecological Research* 25; Oliver & Larson 1996, *Forest Stand
+  Dynamics*; Reineke 1933, the stand density index, *Journal of Agricultural Research* 46.
 
 ## Landform simulation
 

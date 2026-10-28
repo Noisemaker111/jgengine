@@ -950,6 +950,7 @@
     "./plants/species/speciesReference",
     "./plants/species/speciesReferenceTable",
     "./plants/species/speciesSources",
+    "./plants/stand/standSim",
     "./plants/structure/plantStructure",
     "./plants/validation/crownAllometry",
     "./plants/validation/heightAgeCurves",
