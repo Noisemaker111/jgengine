@@ -736,6 +736,7 @@
     "./movement/reference/jointStrength",
     "./movement/reference/muscleTendon",
     "./movement/reference/planarMultibody",
+    "./movement/reference/quadrupedGait",
     "./movement/reference/reflexWalker",
     "./movement/reference/springMassRunning",
     "./movement/serverStep",

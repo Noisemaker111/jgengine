@@ -47,6 +47,10 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 - `parseAnimGraph` (function) · `import { parseAnimGraph } from "@jgengine/core/anim/animGraph"`
 - `validateAnimGraph` (function) · `import { validateAnimGraph } from "@jgengine/core/anim/animGraph"`
 
+## animal-top-speed — top running speed of an animal from its body mass (Hirt 2017)
+
+- `animalTopSpeed` (function) · `import { animalTopSpeed } from "@jgengine/core/movement/reference/quadrupedGait"`
+
 ## animation — build a masked one-shot overlay layer for upper-body actions and hit reactions
 
 - `actionLayer` (function) · `import { actionLayer } from "@jgengine/core/anim/actionLayer"`
@@ -837,6 +841,14 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `createFreeFlightController` (function) · `import { createFreeFlightController } from "@jgengine/core/world"`
 
+## froude-number — dimensionless speed v²/(g·h) that sets gait across animal sizes
+
+- `froudeNumber` (function) · `import { froudeNumber } from "@jgengine/core/movement/reference/quadrupedGait"`
+
+## froude-speed — speed of a dimensionless Froude number for an animal of a given leg length
+
+- `speedAtFroude` (function) · `import { speedAtFroude } from "@jgengine/core/movement/reference/quadrupedGait"`
+
 ## fullscreen-map — fullscreen pan/zoom world-map overlay over WorldMapSurface — wheel-zoom, drag-pan, click-to-place, and a freehand draw tool (onStrokeComplete)
 
 - `FullscreenMap` (function) · `import { FullscreenMap } from "@jgengine/core/map/map.view"`
@@ -1618,6 +1630,22 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 ## qte — a quick-time-event timed input sequence with hit windows
 
 - `evaluateQteSequence` (function) · `import { evaluateQteSequence } from "@jgengine/core/world"`
+
+## quadruped-compare — score a game creature's walk and run speeds against real animal gait transitions and top speed
+
+- `compareQuadruped` (function) · `import { compareQuadruped } from "@jgengine/core/movement/reference/quadrupedGait"`
+
+## quadruped-mass-estimate — estimate a quadruped's body mass from its hip height
+
+- `quadrupedMassFromHeight` (function) · `import { quadrupedMassFromHeight } from "@jgengine/core/movement/reference/quadrupedGait"`
+
+## quadruped-reference-validation — check the quadruped reference against published animal top speeds and duty factors
+
+- `validateQuadrupedReference` (function) · `import { validateQuadrupedReference } from "@jgengine/core/movement/reference/quadrupedGait"`
+
+## quadruped-stride — gait, stride length, stride frequency and duty factor of a dog, horse or any quadruped at a speed
+
+- `quadrupedStride` (function) · `import { quadrupedStride } from "@jgengine/core/movement/reference/quadrupedGait"`
 
 ## radio-stations — in-vehicle radio: stations that keep broadcasting while untuned, a dial with next/previous/off, a now-playing readout, and news/DJ bulletins fed by game events with priority, cooldown and break-in
 

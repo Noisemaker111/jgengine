@@ -2899,6 +2899,25 @@
 - `PlanarSegment` (interface): interface PlanarSegment — One rigid segment of a {@link PlanarMultibody}, given in the reference pose (every angle zero).
 - `createPlanarMultibody` (function): function createPlanarMultibody(segments: readonly PlanarSegment[]): PlanarMultibody — Creates a {@link PlanarMultibody} from segments. Dynamics are Lagrange's equations in absolute coordinates: `M(q)·q̈ = Q − Σ mᵢ Jᵢᵀ (J̇ᵢ q̇) + gravity`, with `M = Σ mᵢ JᵢᵀJᵢ + Iᵢ eᵢeᵢᵀ` solved by Cholesky.
 
+## @jgengine/core/movement/reference/quadrupedGait
+
+- `ALEXANDER_JAYES_CURSORIAL` (const): const ALEXANDER_JAYES_CURSORIAL: { strideLength: FroudePowerLaw; dutyFactorFore: FroudePowerLaw; dutyFactorHind: FroudePowerLaw } — The dynamic-similarity fits of R. McN. Alexander and A. S. Jayes, "A dynamic similarity hypothesis for the gaits of quadrupedal mammals", *J. Zool.* 201 (1983), table 2, for cursorial mammals, as tabulated by A. C. Basu et al., *J. Exp. Biol.* 222 (2019): relative stride length `λ/h = 2.4·Fr^0.34`, forelimb duty factor `0.52·Fr^−0.14` and hindlimb duty factor `0.52·Fr^−0.18`, with `Fr = v²/(g·h)`.
+- `CreatureLocomotion` (interface): interface CreatureLocomotion — A game creature's speeds and size for {@link compareQuadruped}.
+- `FroudePowerLaw` (interface): interface FroudePowerLaw — A power law `a·Frᵇ` of the Froude number.
+- `MAMMAL_TOP_SPEEDS` (const): const MAMMAL_TOP_SPEEDS: readonly { animal: string; mass: number; low: number; high: number }[] — Published top speeds of running mammals, km/h, with their body masses, kg (Hirt et al. 2017, supplementary data).
+- `QUADRUPED_GAIT_TRANSITIONS` (const): const QUADRUPED_GAIT_TRANSITIONS: { walkTrot: number; trotGallop: number; } — Froude numbers of the gait changes. Walk to trot at 0.35: horses change at 0.30–0.37 (`√Fr` 0.55–0.61, as compiled by C. L. Shine et al., "Grizzly bear locomotion: gaits and ground reaction forces", *J. Exp. Biol.* 218, 2015). Trot to gallop at 2.5, the middle of the 2–3 Alexander and Jayes (1983) found from rodents to rhinoceroses.
+- `QuadrupedBody` (interface): interface QuadrupedBody — A legged animal's size for the dynamic-similarity equations.
+- `QuadrupedComparison` (interface): interface QuadrupedComparison — One creature against the quadruped reference of its size.
+- `QuadrupedGait` (type): type QuadrupedGait = "walk" | "trot" | "gallop" — Symmetrical and asymmetrical gaits of a running quadruped.
+- `QuadrupedStride` (interface): interface QuadrupedStride — A quadruped's stride at one speed.
+- `animalTopSpeed` (function): function animalTopSpeed(mass: number): number — Realised top running speed of an animal of `mass` (kg), m/s, from the time-limited acceleration law of M. R. Hirt et al., "A general scaling law reveals why the largest animals are not the fastest", *Nat. Ecol. Evol.* 1 (2017), supplementary table 4: `v = 25.5·M^0.26·(1 − e^(−22·M^−0.6))` km/h, fitted to 453 running species.
+- `compareQuadruped` (function): function compareQuadruped(creature: CreatureLocomotion): QuadrupedComparison — Compare a game creature's walk and run with a real quadruped of the same size: the gait each speed would be, the walk–trot and trot–gallop speeds of its legs, and its top speed for its mass.
+- `froudeNumber` (function): function froudeNumber(speed: number, hipHeight: number): number — Froude number `v²/(g·h)` of `speed` (m/s) on legs `hipHeight` (m) long.
+- `quadrupedMassFromHeight` (function): function quadrupedMassFromHeight(hipHeight: number): number — Body mass of a cursorial quadruped from its hip-joint height, kg, by geometric similarity with a 500 kg horse whose hip joint stands 1.05 m high. It puts a dog with a 0.4 m hip at 28 kg. Use a known mass when there is one.
+- `quadrupedStride` (function): function quadrupedStride(body: QuadrupedBody, speed: number): QuadrupedStride — Gait, stride and duty factors of a cursorial quadruped at `speed` (m/s) from Alexander and Jayes's dynamic similarity: animals of any size move alike at equal Froude numbers. Duty factors are capped at 0.9 for very slow walks.
+- `speedAtFroude` (function): function speedAtFroude(froude: number, hipHeight: number): number — Speed of a Froude number on legs `hipHeight` long, m/s.
+- `validateQuadrupedReference` (function): function validateQuadrupedReference(): HumanValidationRow[] — Validate the quadruped reference against published animals: top speed by mass within the ±20% scatter of the Hirt fit, and the duty factor at the trot–gallop transition, 0.41 ± 0.02 at any size from mice to horses (A. A. Biewener, *J. Exp. Biol.* 105, 1983).
+
 ## @jgengine/core/movement/reference/reflexWalker
 
 - `GEYER_HERR_MUSCLES` (const): const GEYER_HERR_MUSCLES: Record<LegMuscle, MuscleSpec> — Muscle–tendon units of H. Geyer and H. Herr, "A muscle-reflex model that encodes principles of legged mechanics produces human walking dynamics and muscle activities", *IEEE Trans. Neural Syst. Rehabil. Eng.* 18 (2010), Tables II and III: soleus, tibialis anterior, gastrocnemius, vasti, hamstrings, glutei and hip flexors. Angles are extension angles: hip and knee 180° straight, ankle 90° neutral and rising in plantarflexion.
