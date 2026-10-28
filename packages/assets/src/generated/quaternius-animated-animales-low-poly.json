@@ -10,10 +10,10 @@
     ],
     "file": "Cat.glb",
     "metrics": {
-      "glbBytes": 273972,
-      "byteLength": 273972,
+      "glbBytes": 193420,
+      "byteLength": 193420,
       "triangles": 807,
-      "primitives": 72,
+      "primitives": 3,
       "textures": [],
       "maxTextureDimension": 0
     },
@@ -45,8 +45,8 @@
     ],
     "file": "Dog.glb",
     "metrics": {
-      "glbBytes": 220920,
-      "byteLength": 220920,
+      "glbBytes": 159416,
+      "byteLength": 159416,
       "triangles": 602,
       "primitives": 1,
       "textures": [],
@@ -80,10 +80,10 @@
     ],
     "file": "Eagle.glb",
     "metrics": {
-      "glbBytes": 4005608,
-      "byteLength": 4005608,
+      "glbBytes": 3931640,
+      "byteLength": 3931640,
       "triangles": 24800,
-      "primitives": 57,
+      "primitives": 4,
       "textures": [],
       "maxTextureDimension": 0
     },
@@ -116,10 +116,10 @@
     ],
     "file": "Piranha.glb",
     "metrics": {
-      "glbBytes": 314760,
-      "byteLength": 314760,
+      "glbBytes": 234072,
+      "byteLength": 234072,
       "triangles": 1388,
-      "primitives": 198,
+      "primitives": 4,
       "textures": [],
       "maxTextureDimension": 0
     },
@@ -151,8 +151,8 @@
     ],
     "file": "Wolf.glb",
     "metrics": {
-      "glbBytes": 223504,
-      "byteLength": 223504,
+      "glbBytes": 161268,
+      "byteLength": 161268,
       "triangles": 622,
       "primitives": 1,
       "textures": [],

@@ -11,10 +11,10 @@
     ],
     "file": "Cow.glb",
     "metrics": {
-      "glbBytes": 533564,
-      "byteLength": 533564,
+      "glbBytes": 318036,
+      "byteLength": 318036,
       "triangles": 796,
-      "primitives": 106,
+      "primitives": 3,
       "textures": [],
       "maxTextureDimension": 0
     },
@@ -51,10 +51,10 @@
     ],
     "file": "Horse.glb",
     "metrics": {
-      "glbBytes": 488160,
-      "byteLength": 488160,
+      "glbBytes": 291428,
+      "byteLength": 291428,
       "triangles": 690,
-      "primitives": 45,
+      "primitives": 2,
       "textures": [],
       "maxTextureDimension": 0
     },
@@ -91,10 +91,10 @@
     ],
     "file": "Llama.glb",
     "metrics": {
-      "glbBytes": 263340,
-      "byteLength": 263340,
+      "glbBytes": 186896,
+      "byteLength": 186896,
       "triangles": 662,
-      "primitives": 59,
+      "primitives": 3,
       "textures": [],
       "maxTextureDimension": 0
     },
@@ -127,10 +127,10 @@
     ],
     "file": "Pig.glb",
     "metrics": {
-      "glbBytes": 232864,
-      "byteLength": 232864,
+      "glbBytes": 168332,
+      "byteLength": 168332,
       "triangles": 562,
-      "primitives": 17,
+      "primitives": 2,
       "textures": [],
       "maxTextureDimension": 0
     },
@@ -163,10 +163,10 @@
     ],
     "file": "Pug.glb",
     "metrics": {
-      "glbBytes": 228328,
-      "byteLength": 228328,
+      "glbBytes": 160944,
+      "byteLength": 160944,
       "triangles": 644,
-      "primitives": 28,
+      "primitives": 2,
       "textures": [],
       "maxTextureDimension": 0
     },
@@ -199,10 +199,10 @@
     ],
     "file": "Sheep.glb",
     "metrics": {
-      "glbBytes": 245820,
-      "byteLength": 245820,
+      "glbBytes": 176332,
+      "byteLength": 176332,
       "triangles": 612,
-      "primitives": 32,
+      "primitives": 2,
       "textures": [],
       "maxTextureDimension": 0
     },
@@ -235,10 +235,10 @@
     ],
     "file": "Zebra.glb",
     "metrics": {
-      "glbBytes": 672352,
-      "byteLength": 672352,
+      "glbBytes": 415508,
+      "byteLength": 415508,
       "triangles": 1354,
-      "primitives": 264,
+      "primitives": 2,
       "textures": [],
       "maxTextureDimension": 0
     },

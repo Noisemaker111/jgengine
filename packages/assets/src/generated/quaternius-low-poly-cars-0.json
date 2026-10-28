@@ -8,8 +8,8 @@
     ],
     "file": "RaceCar.glb",
     "metrics": {
-      "glbBytes": 83596,
-      "byteLength": 83596,
+      "glbBytes": 62048,
+      "byteLength": 62048,
       "triangles": 836,
       "primitives": 3,
       "textures": [],
@@ -37,8 +37,8 @@
     ],
     "file": "SimpleCar.glb",
     "metrics": {
-      "glbBytes": 93532,
-      "byteLength": 93532,
+      "glbBytes": 69588,
+      "byteLength": 69588,
       "triangles": 940,
       "primitives": 3,
       "textures": [],
@@ -66,8 +66,8 @@
     ],
     "file": "Truck.glb",
     "metrics": {
-      "glbBytes": 79700,
-      "byteLength": 79700,
+      "glbBytes": 51648,
+      "byteLength": 51648,
       "triangles": 796,
       "primitives": 3,
       "textures": [],

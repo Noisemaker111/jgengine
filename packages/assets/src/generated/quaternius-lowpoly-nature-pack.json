@@ -10,8 +10,8 @@
     ],
     "file": "Bush1.glb",
     "metrics": {
-      "glbBytes": 8976,
-      "byteLength": 8976,
+      "glbBytes": 8572,
+      "byteLength": 8572,
       "triangles": 86,
       "primitives": 2,
       "textures": [],
@@ -19,14 +19,14 @@
     },
     "dims": {
       "footprint": {
-        "w": 1.3380851300595857,
+        "w": 1.3380851300595853,
         "d": 1.4491174370140623
       },
       "center": {
         "x": 0.026966857221793816,
         "z": 0.04661182069229819
       },
-      "minY": -0.2836588013451732,
+      "minY": -0.28365880134517296,
       "maxY": 1.5717227405791419
     }
   },
@@ -41,8 +41,8 @@
     ],
     "file": "Bush2.glb",
     "metrics": {
-      "glbBytes": 18848,
-      "byteLength": 18848,
+      "glbBytes": 18484,
+      "byteLength": 18484,
       "triangles": 214,
       "primitives": 2,
       "textures": [],
@@ -55,7 +55,7 @@
       },
       "center": {
         "x": -0.09361040797917666,
-        "z": 0.029094033133510278
+        "z": 0.029094033133510305
       },
       "minY": -0.1064338743732125,
       "maxY": 0.8502423497621919
@@ -72,8 +72,8 @@
     ],
     "file": "Bush3.glb",
     "metrics": {
-      "glbBytes": 10200,
-      "byteLength": 10200,
+      "glbBytes": 9812,
+      "byteLength": 9812,
       "triangles": 104,
       "primitives": 2,
       "textures": [],
@@ -82,14 +82,14 @@
     "dims": {
       "footprint": {
         "w": 0.8552200794219971,
-        "d": 0.9561676932715677
+        "d": 0.9561676932715678
       },
       "center": {
         "x": -0.008508924245834326,
         "z": -0.019248835227281158
       },
-      "minY": 0.2499457258633898,
-      "maxY": 1.5019744363207936
+      "minY": 0.24994572586338976,
+      "maxY": 1.5019744363207939
     }
   },
   {
@@ -103,8 +103,8 @@
     ],
     "file": "Grass1.glb",
     "metrics": {
-      "glbBytes": 7928,
-      "byteLength": 7928,
+      "glbBytes": 7772,
+      "byteLength": 7772,
       "triangles": 88,
       "primitives": 1,
       "textures": [],
@@ -113,14 +113,14 @@
     "dims": {
       "footprint": {
         "w": 2.4633481866903275,
-        "d": 0.1205363532605907
+        "d": 0.12053635326059071
       },
       "center": {
         "x": -0.3111645024772496,
         "z": -2.508156536629169e-9
       },
-      "minY": -0.2274752296531497,
-      "maxY": 2.3299000945425483
+      "minY": -0.22747522965314992,
+      "maxY": 2.3299000945425488
     }
   },
   {
@@ -134,8 +134,8 @@
     ],
     "file": "Grass2.glb",
     "metrics": {
-      "glbBytes": 14948,
-      "byteLength": 14948,
+      "glbBytes": 14736,
+      "byteLength": 14736,
       "triangles": 184,
       "primitives": 1,
       "textures": [],
@@ -143,15 +143,15 @@
     },
     "dims": {
       "footprint": {
-        "w": 0.7612538703549164,
+        "w": 0.7612538703549163,
         "d": 0.8408621882237678
       },
       "center": {
-        "x": -0.003128281673449085,
+        "x": -0.0031282816734491126,
         "z": -0.08479222661419389
       },
-      "minY": -0.03416488828828601,
-      "maxY": 0.6894273447416573
+      "minY": -0.0341648882882859,
+      "maxY": 0.6894273447416572
     }
   },
   {
@@ -165,8 +165,8 @@
     ],
     "file": "Grass3.glb",
     "metrics": {
-      "glbBytes": 14104,
-      "byteLength": 14104,
+      "glbBytes": 13872,
+      "byteLength": 13872,
       "triangles": 172,
       "primitives": 1,
       "textures": [],
@@ -178,10 +178,10 @@
         "d": 0.6330702104715019
       },
       "center": {
-        "x": 0.0009959450977196915,
+        "x": 0.0009959450977197193,
         "z": -0.09416265229021555
       },
-      "minY": -0.03416488287892022,
+      "minY": -0.03416488287892011,
       "maxY": 0.6826591961759763
     }
   },
@@ -196,8 +196,8 @@
     ],
     "file": "Rock1.glb",
     "metrics": {
-      "glbBytes": 3948,
-      "byteLength": 3948,
+      "glbBytes": 3692,
+      "byteLength": 3692,
       "triangles": 34,
       "primitives": 1,
       "textures": [],
@@ -206,14 +206,14 @@
     "dims": {
       "footprint": {
         "w": 2.1410831212997437,
-        "d": 2.597558265353427
+        "d": 2.5975582653534275
       },
       "center": {
         "x": -0.001983940601348877,
         "z": 0.0022942815933169047
       },
-      "minY": -0.6230681266637672,
-      "maxY": 0.8734154436764486
+      "minY": -0.6230681266637673,
+      "maxY": 0.8734154436764487
     }
   },
   {
@@ -227,8 +227,8 @@
     ],
     "file": "Rock2.glb",
     "metrics": {
-      "glbBytes": 4060,
-      "byteLength": 4060,
+      "glbBytes": 3852,
+      "byteLength": 3852,
       "triangles": 34,
       "primitives": 1,
       "textures": [],
@@ -237,14 +237,14 @@
     "dims": {
       "footprint": {
         "w": 1.4186320520362004,
-        "d": 2.044195793386811
+        "d": 2.0441957933868116
       },
       "center": {
         "x": 0.09181029024675352,
-        "z": -0.027312349825014903
+        "z": -0.02731234982501496
       },
-      "minY": -0.05048962701565579,
-      "maxY": 0.9837023776571133
+      "minY": -0.05048962701565585,
+      "maxY": 0.9837023776571134
     }
   },
   {
@@ -258,8 +258,8 @@
     ],
     "file": "Rock3.glb",
     "metrics": {
-      "glbBytes": 3704,
-      "byteLength": 3704,
+      "glbBytes": 3472,
+      "byteLength": 3472,
       "triangles": 28,
       "primitives": 1,
       "textures": [],
@@ -289,10 +289,10 @@
     ],
     "file": "Tree1.glb",
     "metrics": {
-      "glbBytes": 41516,
-      "byteLength": 41516,
+      "glbBytes": 32224,
+      "byteLength": 32224,
       "triangles": 390,
-      "primitives": 41,
+      "primitives": 2,
       "textures": [],
       "maxTextureDimension": 0
     },
@@ -320,10 +320,10 @@
     ],
     "file": "Tree2.glb",
     "metrics": {
-      "glbBytes": 50936,
-      "byteLength": 50936,
+      "glbBytes": 42360,
+      "byteLength": 42360,
       "triangles": 520,
-      "primitives": 38,
+      "primitives": 2,
       "textures": [],
       "maxTextureDimension": 0
     },
@@ -351,24 +351,24 @@
     ],
     "file": "Tree3.glb",
     "metrics": {
-      "glbBytes": 34504,
-      "byteLength": 34504,
+      "glbBytes": 33400,
+      "byteLength": 33400,
       "triangles": 404,
-      "primitives": 5,
+      "primitives": 2,
       "textures": [],
       "maxTextureDimension": 0
     },
     "dims": {
       "footprint": {
         "w": 1.3223610257013207,
-        "d": 3.4001711066598914
+        "d": 3.4001711066598905
       },
       "center": {
         "x": -0.05002257669583743,
         "z": 0.0576559114420474
       },
-      "minY": -0.3990399242260261,
-      "maxY": 3.0394993375432446
+      "minY": -0.39903992422602585,
+      "maxY": 3.039499337543244
     }
   },
   {
@@ -382,23 +382,23 @@
     ],
     "file": "Tree4.glb",
     "metrics": {
-      "glbBytes": 66308,
-      "byteLength": 66308,
+      "glbBytes": 60440,
+      "byteLength": 60440,
       "triangles": 752,
-      "primitives": 26,
+      "primitives": 2,
       "textures": [],
       "maxTextureDimension": 0
     },
     "dims": {
       "footprint": {
         "w": 1.696545019761579,
-        "d": 3.585249711025807
+        "d": 3.5852497110258064
       },
       "center": {
         "x": -2.8536221726528126,
-        "z": 0.34684831480315714
+        "z": 0.3468483148031575
       },
-      "minY": -0.39541446763255406,
+      "minY": -0.39541446763255367,
       "maxY": 2.688236536897459
     }
   }

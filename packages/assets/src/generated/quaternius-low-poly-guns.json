@@ -8,8 +8,8 @@
     ],
     "file": "ak47.glb",
     "metrics": {
-      "glbBytes": 118060,
-      "byteLength": 118060,
+      "glbBytes": 87988,
+      "byteLength": 87988,
       "triangles": 1196,
       "primitives": 3,
       "textures": [],
@@ -37,8 +37,8 @@
     ],
     "file": "Rifle.glb",
     "metrics": {
-      "glbBytes": 68232,
-      "byteLength": 68232,
+      "glbBytes": 50580,
+      "byteLength": 50580,
       "triangles": 676,
       "primitives": 3,
       "textures": [],
@@ -66,8 +66,8 @@
     ],
     "file": "RocketLauncher.glb",
     "metrics": {
-      "glbBytes": 131564,
-      "byteLength": 131564,
+      "glbBytes": 98324,
+      "byteLength": 98324,
       "triangles": 1346,
       "primitives": 2,
       "textures": [],
@@ -95,8 +95,8 @@
     ],
     "file": "Uzi.glb",
     "metrics": {
-      "glbBytes": 101708,
-      "byteLength": 101708,
+      "glbBytes": 101036,
+      "byteLength": 101036,
       "triangles": 1377,
       "primitives": 3,
       "textures": [],

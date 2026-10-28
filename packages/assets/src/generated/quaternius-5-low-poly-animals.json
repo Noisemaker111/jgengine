@@ -9,10 +9,10 @@
     ],
     "file": "bird.glb",
     "metrics": {
-      "glbBytes": 98208,
-      "byteLength": 98208,
+      "glbBytes": 53604,
+      "byteLength": 53604,
       "triangles": 158,
-      "primitives": 11,
+      "primitives": 2,
       "textures": [],
       "maxTextureDimension": 0
     },
@@ -44,10 +44,10 @@
     ],
     "file": "Chick.glb",
     "metrics": {
-      "glbBytes": 82132,
-      "byteLength": 82132,
+      "glbBytes": 66724,
+      "byteLength": 66724,
       "triangles": 250,
-      "primitives": 9,
+      "primitives": 2,
       "textures": [],
       "maxTextureDimension": 0
     },
@@ -77,8 +77,8 @@
     ],
     "file": "Fish.glb",
     "metrics": {
-      "glbBytes": 78980,
-      "byteLength": 78980,
+      "glbBytes": 59228,
+      "byteLength": 59228,
       "triangles": 304,
       "primitives": 1,
       "textures": [],
@@ -110,10 +110,10 @@
     ],
     "file": "Red Fox.glb",
     "metrics": {
-      "glbBytes": 145780,
-      "byteLength": 145780,
+      "glbBytes": 111900,
+      "byteLength": 111900,
       "triangles": 490,
-      "primitives": 39,
+      "primitives": 2,
       "textures": [],
       "maxTextureDimension": 0
     },
@@ -143,24 +143,24 @@
     ],
     "file": "Whale.glb",
     "metrics": {
-      "glbBytes": 213484,
-      "byteLength": 213484,
+      "glbBytes": 182344,
+      "byteLength": 182344,
       "triangles": 954,
-      "primitives": 33,
+      "primitives": 2,
       "textures": [],
       "maxTextureDimension": 0
     },
     "dims": {
       "footprint": {
-        "w": 3.3009250238078116,
-        "d": 9.301896524664443
+        "w": 3.3009239216995416,
+        "d": 9.30189603568666
       },
       "center": {
-        "x": -1.3042848991484381,
-        "z": -1.936048379891727
+        "x": -1.3042848111172134,
+        "z": -1.936048342748109
       },
-      "minY": -0.4357207141717563,
-      "maxY": 2.50352431469124
+      "minY": -0.43572050766266335,
+      "maxY": 2.503524017757709
     },
     "clips": [
       "Armature|ArmatureAction",

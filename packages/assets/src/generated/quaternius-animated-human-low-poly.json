@@ -10,8 +10,8 @@
     ],
     "file": "Animated Human.glb",
     "metrics": {
-      "glbBytes": 1164156,
-      "byteLength": 1164156,
+      "glbBytes": 726572,
+      "byteLength": 726572,
       "triangles": 1578,
       "primitives": 1,
       "textures": [],
@@ -20,14 +20,14 @@
     "dims": {
       "footprint": {
         "w": 1.0496926282938694,
-        "d": 5.895453997307785
+        "d": 5.89545309549605
       },
       "center": {
         "x": 0.08501518449450488,
-        "z": 4.4843704216646074e-7
+        "z": 0
       },
-      "minY": -0.015154260179938967,
-      "maxY": 5.520127470964451
+      "minY": -0.015153779934269097,
+      "maxY": 5.520126990718855
     },
     "clips": [
       "Human Armature|Working",

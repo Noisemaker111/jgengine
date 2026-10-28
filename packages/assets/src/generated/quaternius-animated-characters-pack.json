@@ -10,10 +10,10 @@
     ],
     "file": "BaseCharacter.glb",
     "metrics": {
-      "glbBytes": 824712,
-      "byteLength": 824712,
+      "glbBytes": 524352,
+      "byteLength": 524352,
       "triangles": 2104,
-      "primitives": 3,
+      "primitives": 2,
       "textures": [],
       "maxTextureDimension": 0
     },
@@ -54,10 +54,10 @@
     ],
     "file": "BlueSoldier_Female.glb",
     "metrics": {
-      "glbBytes": 1604508,
-      "byteLength": 1604508,
+      "glbBytes": 1269120,
+      "byteLength": 1269120,
       "triangles": 7062,
-      "primitives": 127,
+      "primitives": 6,
       "textures": [],
       "maxTextureDimension": 0
     },
@@ -98,10 +98,10 @@
     ],
     "file": "BlueSoldier_Male.glb",
     "metrics": {
-      "glbBytes": 992800,
-      "byteLength": 992800,
+      "glbBytes": 658848,
+      "byteLength": 658848,
       "triangles": 2994,
-      "primitives": 127,
+      "primitives": 6,
       "textures": [],
       "maxTextureDimension": 0
     },
@@ -142,10 +142,10 @@
     ],
     "file": "Casual_Bald.glb",
     "metrics": {
-      "glbBytes": 881776,
-      "byteLength": 881776,
+      "glbBytes": 556212,
+      "byteLength": 556212,
       "triangles": 2312,
-      "primitives": 95,
+      "primitives": 5,
       "textures": [],
       "maxTextureDimension": 0
     },
@@ -186,10 +186,10 @@
     ],
     "file": "Casual_Female.glb",
     "metrics": {
-      "glbBytes": 1528324,
-      "byteLength": 1528324,
+      "glbBytes": 1202344,
+      "byteLength": 1202344,
       "triangles": 6614,
-      "primitives": 96,
+      "primitives": 6,
       "textures": [],
       "maxTextureDimension": 0
     },
@@ -230,10 +230,10 @@
     ],
     "file": "Casual_Male.glb",
     "metrics": {
-      "glbBytes": 1510648,
-      "byteLength": 1510648,
+      "glbBytes": 1183724,
+      "byteLength": 1183724,
       "triangles": 6492,
-      "primitives": 96,
+      "primitives": 6,
       "textures": [],
       "maxTextureDimension": 0
     },
@@ -274,10 +274,10 @@
     ],
     "file": "Casual2_Female.glb",
     "metrics": {
-      "glbBytes": 1548828,
-      "byteLength": 1548828,
+      "glbBytes": 1223160,
+      "byteLength": 1223160,
       "triangles": 6748,
-      "primitives": 96,
+      "primitives": 6,
       "textures": [],
       "maxTextureDimension": 0
     },
@@ -318,10 +318,10 @@
     ],
     "file": "Casual2_Male.glb",
     "metrics": {
-      "glbBytes": 1017136,
-      "byteLength": 1017136,
+      "glbBytes": 693272,
+      "byteLength": 693272,
       "triangles": 3216,
-      "primitives": 96,
+      "primitives": 6,
       "textures": [],
       "maxTextureDimension": 0
     },
@@ -362,10 +362,10 @@
     ],
     "file": "Casual3_Female.glb",
     "metrics": {
-      "glbBytes": 1799592,
-      "byteLength": 1799592,
+      "glbBytes": 1474392,
+      "byteLength": 1474392,
       "triangles": 8430,
-      "primitives": 89,
+      "primitives": 6,
       "textures": [],
       "maxTextureDimension": 0
     },
@@ -406,10 +406,10 @@
     ],
     "file": "Casual3_Male.glb",
     "metrics": {
-      "glbBytes": 1271412,
-      "byteLength": 1271412,
+      "glbBytes": 947888,
+      "byteLength": 947888,
       "triangles": 4920,
-      "primitives": 89,
+      "primitives": 6,
       "textures": [],
       "maxTextureDimension": 0
     },
@@ -450,10 +450,10 @@
     ],
     "file": "Chef_Female.glb",
     "metrics": {
-      "glbBytes": 1842240,
-      "byteLength": 1842240,
+      "glbBytes": 1520136,
+      "byteLength": 1520136,
       "triangles": 8754,
-      "primitives": 77,
+      "primitives": 6,
       "textures": [],
       "maxTextureDimension": 0
     },
@@ -494,10 +494,10 @@
     ],
     "file": "Chef_Hat.glb",
     "metrics": {
-      "glbBytes": 985088,
-      "byteLength": 985088,
+      "glbBytes": 664024,
+      "byteLength": 664024,
       "triangles": 3048,
-      "primitives": 79,
+      "primitives": 7,
       "textures": [],
       "maxTextureDimension": 0
     },
@@ -538,10 +538,10 @@
     ],
     "file": "Chef_Male.glb",
     "metrics": {
-      "glbBytes": 1345236,
-      "byteLength": 1345236,
+      "glbBytes": 1024440,
+      "byteLength": 1024440,
       "triangles": 5452,
-      "primitives": 78,
+      "primitives": 6,
       "textures": [],
       "maxTextureDimension": 0
     },
@@ -582,10 +582,10 @@
     ],
     "file": "Cow.glb",
     "metrics": {
-      "glbBytes": 981552,
-      "byteLength": 981552,
+      "glbBytes": 646120,
+      "byteLength": 646120,
       "triangles": 2332,
-      "primitives": 135,
+      "primitives": 9,
       "textures": [],
       "maxTextureDimension": 0
     },
@@ -626,10 +626,10 @@
     ],
     "file": "Cowboy_Female.glb",
     "metrics": {
-      "glbBytes": 1570312,
-      "byteLength": 1570312,
+      "glbBytes": 1235788,
+      "byteLength": 1235788,
       "triangles": 6830,
-      "primitives": 126,
+      "primitives": 9,
       "textures": [],
       "maxTextureDimension": 0
     },
@@ -670,10 +670,10 @@
     ],
     "file": "Cowboy_Hair.glb",
     "metrics": {
-      "glbBytes": 1525252,
-      "byteLength": 1525252,
+      "glbBytes": 1195684,
+      "byteLength": 1195684,
       "triangles": 6560,
-      "primitives": 113,
+      "primitives": 8,
       "textures": [],
       "maxTextureDimension": 0
     },
@@ -714,10 +714,10 @@
     ],
     "file": "Cowboy_Male.glb",
     "metrics": {
-      "glbBytes": 1020624,
-      "byteLength": 1020624,
+      "glbBytes": 687424,
+      "byteLength": 687424,
       "triangles": 3176,
-      "primitives": 126,
+      "primitives": 9,
       "textures": [],
       "maxTextureDimension": 0
     },
@@ -758,10 +758,10 @@
     ],
     "file": "Doctor_Female_Old.glb",
     "metrics": {
-      "glbBytes": 1555164,
-      "byteLength": 1555164,
+      "glbBytes": 1227148,
+      "byteLength": 1227148,
       "triangles": 6786,
-      "primitives": 98,
+      "primitives": 6,
       "textures": [],
       "maxTextureDimension": 0
     },
@@ -771,8 +771,8 @@
         "d": 1.4228835558057318
       },
       "center": {
-        "x": 3.3306690738754696e-14,
-        "z": -0.05017483702217701
+        "x": 0,
+        "z": -0.050174851923338204
       },
       "minY": -0.018590715930910707,
       "maxY": 3.185749876944829
@@ -802,10 +802,10 @@
     ],
     "file": "Doctor_Female_Young.glb",
     "metrics": {
-      "glbBytes": 1815256,
-      "byteLength": 1815256,
+      "glbBytes": 1487248,
+      "byteLength": 1487248,
       "triangles": 8516,
-      "primitives": 98,
+      "primitives": 6,
       "textures": [],
       "maxTextureDimension": 0
     },
@@ -815,8 +815,8 @@
         "d": 1.4220914696813116
       },
       "center": {
-        "x": 3.3306690738754696e-14,
-        "z": 0.056333686203605904
+        "x": 0,
+        "z": 0.05633367130244471
       },
       "minY": -0.018590698513946114,
       "maxY": 3.1857498942327465
@@ -846,10 +846,10 @@
     ],
     "file": "Doctor_Male_Old.glb",
     "metrics": {
-      "glbBytes": 1286496,
-      "byteLength": 1286496,
+      "glbBytes": 961616,
+      "byteLength": 961616,
       "triangles": 5006,
-      "primitives": 98,
+      "primitives": 6,
       "textures": [],
       "maxTextureDimension": 0
     },
@@ -859,8 +859,8 @@
         "d": 1.0833541607376291
       },
       "center": {
-        "x": 3.3306690738754696e-14,
-        "z": -0.04016554825200902
+        "x": 0,
+        "z": -0.040165563153170214
       },
       "minY": -0.018590686642010676,
       "maxY": 3.185966811824352
@@ -890,10 +890,10 @@
     ],
     "file": "Doctor_Male_Young.glb",
     "metrics": {
-      "glbBytes": 1511152,
-      "byteLength": 1511152,
+      "glbBytes": 1185428,
+      "byteLength": 1185428,
       "triangles": 6498,
-      "primitives": 98,
+      "primitives": 6,
       "textures": [],
       "maxTextureDimension": 0
     },
@@ -903,8 +903,8 @@
         "d": 1.3245710187389703
       },
       "center": {
-        "x": 3.3306690738754696e-14,
-        "z": 0.055990770843783566
+        "x": 0,
+        "z": 0.05599075594262237
       },
       "minY": -0.018590690625761838,
       "maxY": 3.306525585848307
@@ -934,10 +934,10 @@
     ],
     "file": "Elf.glb",
     "metrics": {
-      "glbBytes": 932140,
-      "byteLength": 932140,
+      "glbBytes": 598952,
+      "byteLength": 598952,
       "triangles": 2594,
-      "primitives": 125,
+      "primitives": 6,
       "textures": [],
       "maxTextureDimension": 0
     },
@@ -978,10 +978,10 @@
     ],
     "file": "Goblin_Female.glb",
     "metrics": {
-      "glbBytes": 1577272,
-      "byteLength": 1577272,
+      "glbBytes": 1255548,
+      "byteLength": 1255548,
       "triangles": 6968,
-      "primitives": 80,
+      "primitives": 5,
       "textures": [],
       "maxTextureDimension": 0
     },
@@ -1022,10 +1022,10 @@
     ],
     "file": "Goblin_Male.glb",
     "metrics": {
-      "glbBytes": 889712,
-      "byteLength": 889712,
+      "glbBytes": 579164,
+      "byteLength": 579164,
       "triangles": 2462,
-      "primitives": 43,
+      "primitives": 4,
       "textures": [],
       "maxTextureDimension": 0
     },
@@ -1066,10 +1066,10 @@
     ],
     "file": "Kimono_Female.glb",
     "metrics": {
-      "glbBytes": 1905376,
-      "byteLength": 1905376,
+      "glbBytes": 1590480,
+      "byteLength": 1590480,
       "triangles": 9228,
-      "primitives": 48,
+      "primitives": 5,
       "textures": [],
       "maxTextureDimension": 0
     },
@@ -1110,10 +1110,10 @@
     ],
     "file": "Kimono_Male.glb",
     "metrics": {
-      "glbBytes": 899932,
-      "byteLength": 899932,
+      "glbBytes": 586672,
+      "byteLength": 586672,
       "triangles": 2540,
-      "primitives": 47,
+      "primitives": 4,
       "textures": [],
       "maxTextureDimension": 0
     },
@@ -1154,10 +1154,10 @@
     ],
     "file": "Knight_Golden_Female.glb",
     "metrics": {
-      "glbBytes": 1470544,
-      "byteLength": 1470544,
+      "glbBytes": 1139316,
+      "byteLength": 1139316,
       "triangles": 6218,
-      "primitives": 116,
+      "primitives": 6,
       "textures": [],
       "maxTextureDimension": 0
     },
@@ -1198,10 +1198,10 @@
     ],
     "file": "Knight_Golden_Male.glb",
     "metrics": {
-      "glbBytes": 981280,
-      "byteLength": 981280,
+      "glbBytes": 653200,
+      "byteLength": 653200,
       "triangles": 2964,
-      "primitives": 115,
+      "primitives": 5,
       "textures": [],
       "maxTextureDimension": 0
     },
@@ -1242,10 +1242,10 @@
     ],
     "file": "Knight_Male.glb",
     "metrics": {
-      "glbBytes": 984972,
-      "byteLength": 984972,
+      "glbBytes": 655092,
+      "byteLength": 655092,
       "triangles": 2992,
-      "primitives": 112,
+      "primitives": 5,
       "textures": [],
       "maxTextureDimension": 0
     },
@@ -1286,10 +1286,10 @@
     ],
     "file": "Ninja_Female.glb",
     "metrics": {
-      "glbBytes": 1623788,
-      "byteLength": 1623788,
+      "glbBytes": 1273988,
+      "byteLength": 1273988,
       "triangles": 7094,
-      "primitives": 181,
+      "primitives": 6,
       "textures": [],
       "maxTextureDimension": 0
     },
@@ -1330,10 +1330,10 @@
     ],
     "file": "Ninja_Male_Hair.glb",
     "metrics": {
-      "glbBytes": 1762088,
-      "byteLength": 1762088,
+      "glbBytes": 1412288,
+      "byteLength": 1412288,
       "triangles": 8016,
-      "primitives": 181,
+      "primitives": 6,
       "textures": [],
       "maxTextureDimension": 0
     },
@@ -1374,10 +1374,10 @@
     ],
     "file": "Ninja_Male.glb",
     "metrics": {
-      "glbBytes": 965216,
-      "byteLength": 965216,
+      "glbBytes": 617408,
+      "byteLength": 617408,
       "triangles": 2720,
-      "primitives": 180,
+      "primitives": 5,
       "textures": [],
       "maxTextureDimension": 0
     },
@@ -1418,10 +1418,10 @@
     ],
     "file": "Ninja_Sand_Female.glb",
     "metrics": {
-      "glbBytes": 1623780,
-      "byteLength": 1623780,
+      "glbBytes": 1273980,
+      "byteLength": 1273980,
       "triangles": 7094,
-      "primitives": 181,
+      "primitives": 6,
       "textures": [],
       "maxTextureDimension": 0
     },
@@ -1462,10 +1462,10 @@
     ],
     "file": "Ninja_Sand.glb",
     "metrics": {
-      "glbBytes": 967060,
-      "byteLength": 967060,
+      "glbBytes": 617288,
+      "byteLength": 617288,
       "triangles": 2720,
-      "primitives": 187,
+      "primitives": 5,
       "textures": [],
       "maxTextureDimension": 0
     },
@@ -1506,10 +1506,10 @@
     ],
     "file": "OldClassy_Female.glb",
     "metrics": {
-      "glbBytes": 1589144,
-      "byteLength": 1589144,
+      "glbBytes": 1262256,
+      "byteLength": 1262256,
       "triangles": 7004,
-      "primitives": 101,
+      "primitives": 8,
       "textures": [],
       "maxTextureDimension": 0
     },
@@ -1550,10 +1550,10 @@
     ],
     "file": "OldClassy_Male.glb",
     "metrics": {
-      "glbBytes": 1351976,
-      "byteLength": 1351976,
+      "glbBytes": 1024964,
+      "byteLength": 1024964,
       "triangles": 5432,
-      "primitives": 102,
+      "primitives": 8,
       "textures": [],
       "maxTextureDimension": 0
     },
@@ -1594,10 +1594,10 @@
     ],
     "file": "Pirate_Female.glb",
     "metrics": {
-      "glbBytes": 1974600,
-      "byteLength": 1974600,
+      "glbBytes": 1629044,
+      "byteLength": 1629044,
       "triangles": 9452,
-      "primitives": 167,
+      "primitives": 9,
       "textures": [],
       "maxTextureDimension": 0
     },
@@ -1638,10 +1638,10 @@
     ],
     "file": "Pirate_Male.glb",
     "metrics": {
-      "glbBytes": 963108,
-      "byteLength": 963108,
+      "glbBytes": 619504,
+      "byteLength": 619504,
       "triangles": 2724,
-      "primitives": 166,
+      "primitives": 8,
       "textures": [],
       "maxTextureDimension": 0
     },
@@ -1682,10 +1682,10 @@
     ],
     "file": "Pug.glb",
     "metrics": {
-      "glbBytes": 937092,
-      "byteLength": 937092,
+      "glbBytes": 606980,
+      "byteLength": 606980,
       "triangles": 2124,
-      "primitives": 115,
+      "primitives": 8,
       "textures": [],
       "maxTextureDimension": 0
     },
@@ -1726,10 +1726,10 @@
     ],
     "file": "Soldier_Female.glb",
     "metrics": {
-      "glbBytes": 1604512,
-      "byteLength": 1604512,
+      "glbBytes": 1269124,
+      "byteLength": 1269124,
       "triangles": 7062,
-      "primitives": 127,
+      "primitives": 6,
       "textures": [],
       "maxTextureDimension": 0
     },
@@ -1770,10 +1770,10 @@
     ],
     "file": "Soldier_Male.glb",
     "metrics": {
-      "glbBytes": 992816,
-      "byteLength": 992816,
+      "glbBytes": 658932,
+      "byteLength": 658932,
       "triangles": 2994,
-      "primitives": 127,
+      "primitives": 6,
       "textures": [],
       "maxTextureDimension": 0
     },
@@ -1814,10 +1814,10 @@
     ],
     "file": "Suit_Female.glb",
     "metrics": {
-      "glbBytes": 1561792,
-      "byteLength": 1561792,
+      "glbBytes": 1231408,
+      "byteLength": 1231408,
       "triangles": 6806,
-      "primitives": 110,
+      "primitives": 7,
       "textures": [],
       "maxTextureDimension": 0
     },
@@ -1858,10 +1858,10 @@
     ],
     "file": "Suit_Male.glb",
     "metrics": {
-      "glbBytes": 1518384,
-      "byteLength": 1518384,
+      "glbBytes": 1188188,
+      "byteLength": 1188188,
       "triangles": 6518,
-      "primitives": 110,
+      "primitives": 7,
       "textures": [],
       "maxTextureDimension": 0
     },
@@ -1902,10 +1902,10 @@
     ],
     "file": "Viking_Female.glb",
     "metrics": {
-      "glbBytes": 1636000,
-      "byteLength": 1636000,
+      "glbBytes": 1307856,
+      "byteLength": 1307856,
       "triangles": 7314,
-      "primitives": 105,
+      "primitives": 6,
       "textures": [],
       "maxTextureDimension": 0
     },
@@ -1946,10 +1946,10 @@
     ],
     "file": "Viking_Male.glb",
     "metrics": {
-      "glbBytes": 1477136,
-      "byteLength": 1477136,
+      "glbBytes": 1148424,
+      "byteLength": 1148424,
       "triangles": 6260,
-      "primitives": 105,
+      "primitives": 6,
       "textures": [],
       "maxTextureDimension": 0
     },
@@ -1990,10 +1990,10 @@
     ],
     "file": "VikingHelmet.glb",
     "metrics": {
-      "glbBytes": 1514844,
-      "byteLength": 1514844,
+      "glbBytes": 1184924,
+      "byteLength": 1184924,
       "triangles": 6494,
-      "primitives": 110,
+      "primitives": 8,
       "textures": [],
       "maxTextureDimension": 0
     },
@@ -2034,10 +2034,10 @@
     ],
     "file": "Witch.glb",
     "metrics": {
-      "glbBytes": 1604260,
-      "byteLength": 1604260,
+      "glbBytes": 1269032,
+      "byteLength": 1269032,
       "triangles": 7062,
-      "primitives": 126,
+      "primitives": 7,
       "textures": [],
       "maxTextureDimension": 0
     },
@@ -2078,10 +2078,10 @@
     ],
     "file": "Wizard.glb",
     "metrics": {
-      "glbBytes": 1516204,
-      "byteLength": 1516204,
+      "glbBytes": 1181988,
+      "byteLength": 1181988,
       "triangles": 6478,
-      "primitives": 126,
+      "primitives": 7,
       "textures": [],
       "maxTextureDimension": 0
     },
@@ -2122,10 +2122,10 @@
     ],
     "file": "Worker_Female.glb",
     "metrics": {
-      "glbBytes": 1420692,
-      "byteLength": 1420692,
+      "glbBytes": 1088092,
+      "byteLength": 1088092,
       "triangles": 5852,
-      "primitives": 124,
+      "primitives": 7,
       "textures": [],
       "maxTextureDimension": 0
     },
@@ -2166,10 +2166,10 @@
     ],
     "file": "Worker_Male.glb",
     "metrics": {
-      "glbBytes": 920900,
-      "byteLength": 920900,
+      "glbBytes": 588436,
+      "byteLength": 588436,
       "triangles": 2524,
-      "primitives": 123,
+      "primitives": 6,
       "textures": [],
       "maxTextureDimension": 0
     },
@@ -2210,10 +2210,10 @@
     ],
     "file": "Zombie_Female.glb",
     "metrics": {
-      "glbBytes": 2009908,
-      "byteLength": 2009908,
+      "glbBytes": 1670076,
+      "byteLength": 1670076,
       "triangles": 9746,
-      "primitives": 147,
+      "primitives": 8,
       "textures": [],
       "maxTextureDimension": 0
     },
@@ -2254,10 +2254,10 @@
     ],
     "file": "Zombie_Male.glb",
     "metrics": {
-      "glbBytes": 1156156,
-      "byteLength": 1156156,
+      "glbBytes": 814868,
+      "byteLength": 814868,
       "triangles": 4046,
-      "primitives": 158,
+      "primitives": 8,
       "textures": [],
       "maxTextureDimension": 0
     },

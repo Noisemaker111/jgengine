@@ -12,12 +12,19 @@
     ],
     "file": "George.glb",
     "metrics": {
-      "glbBytes": 4670500,
-      "byteLength": 4670500,
+      "glbBytes": 4517644,
+      "byteLength": 4517644,
       "triangles": 7864,
       "primitives": 1,
-      "textures": [],
-      "maxTextureDimension": 0
+      "textures": [
+        {
+          "image": 0,
+          "width": 2048,
+          "height": 2048,
+          "byteLength": 2295756
+        }
+      ],
+      "maxTextureDimension": 2048
     },
     "dims": {
       "footprint": {
@@ -87,12 +94,19 @@
     ],
     "file": "Leela.glb",
     "metrics": {
-      "glbBytes": 1552164,
-      "byteLength": 1552164,
+      "glbBytes": 2650208,
+      "byteLength": 2650208,
       "triangles": 2368,
       "primitives": 1,
-      "textures": [],
-      "maxTextureDimension": 0
+      "textures": [
+        {
+          "image": 0,
+          "width": 2048,
+          "height": 2048,
+          "byteLength": 1929427
+        }
+      ],
+      "maxTextureDimension": 2048
     },
     "dims": {
       "footprint": {
@@ -158,12 +172,19 @@
     ],
     "file": "Mike.glb",
     "metrics": {
-      "glbBytes": 3782016,
-      "byteLength": 3782016,
+      "glbBytes": 3906824,
+      "byteLength": 3906824,
       "triangles": 6062,
       "primitives": 1,
-      "textures": [],
-      "maxTextureDimension": 0
+      "textures": [
+        {
+          "image": 0,
+          "width": 2048,
+          "height": 2048,
+          "byteLength": 2065288
+        }
+      ],
+      "maxTextureDimension": 2048
     },
     "dims": {
       "footprint": {
@@ -229,12 +250,19 @@
     ],
     "file": "Stan.glb",
     "metrics": {
-      "glbBytes": 3796276,
-      "byteLength": 3796276,
+      "glbBytes": 3372344,
+      "byteLength": 3372344,
       "triangles": 6110,
       "primitives": 1,
-      "textures": [],
-      "maxTextureDimension": 0
+      "textures": [
+        {
+          "image": 0,
+          "width": 2048,
+          "height": 2048,
+          "byteLength": 1560762
+        }
+      ],
+      "maxTextureDimension": 2048
     },
     "dims": {
       "footprint": {

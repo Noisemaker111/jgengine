@@ -9,21 +9,21 @@
     ],
     "file": "Ambulance.glb",
     "metrics": {
-      "glbBytes": 173084,
-      "byteLength": 173084,
+      "glbBytes": 127760,
+      "byteLength": 127760,
       "triangles": 1634,
-      "primitives": 197,
+      "primitives": 8,
       "textures": [],
       "maxTextureDimension": 0
     },
     "dims": {
       "footprint": {
         "w": 2.8379573694032296,
-        "d": 5.7168196943524325
+        "d": 5.716819694352433
       },
       "center": {
         "x": 0,
-        "z": 0.7682931759213563
+        "z": 0.7682931759213565
       },
       "minY": -0.41076580013066866,
       "maxY": 2.5032036695062985
@@ -39,10 +39,10 @@
     ],
     "file": "Bicycle.glb",
     "metrics": {
-      "glbBytes": 250328,
-      "byteLength": 250328,
-      "triangles": 2964,
-      "primitives": 75,
+      "glbBytes": 213592,
+      "byteLength": 213592,
+      "triangles": 2700,
+      "primitives": 5,
       "textures": [],
       "maxTextureDimension": 0
     },
@@ -69,10 +69,10 @@
     ],
     "file": "Bus.glb",
     "metrics": {
-      "glbBytes": 159436,
-      "byteLength": 159436,
+      "glbBytes": 119128,
+      "byteLength": 119128,
       "triangles": 1526,
-      "primitives": 176,
+      "primitives": 8,
       "textures": [],
       "maxTextureDimension": 0
     },
@@ -86,7 +86,7 @@
         "z": 3.636892481617693e-8
       },
       "minY": -1.1215470364524762,
-      "maxY": 0.554444514772629
+      "maxY": 0.5544445147726291
     }
   },
   {
@@ -99,17 +99,17 @@
     ],
     "file": "SchoolBus.glb",
     "metrics": {
-      "glbBytes": 181496,
-      "byteLength": 181496,
+      "glbBytes": 138952,
+      "byteLength": 138952,
       "triangles": 1782,
-      "primitives": 185,
+      "primitives": 7,
       "textures": [],
       "maxTextureDimension": 0
     },
     "dims": {
       "footprint": {
         "w": 4.607690215110779,
-        "d": 1.8785291709536265
+        "d": 1.8785291709536267
       },
       "center": {
         "x": 1.5044856667518616,
@@ -129,10 +129,10 @@
     ],
     "file": "SquareFrameBicycle.glb",
     "metrics": {
-      "glbBytes": 109684,
-      "byteLength": 109684,
-      "triangles": 1308,
-      "primitives": 25,
+      "glbBytes": 84428,
+      "byteLength": 84428,
+      "triangles": 1044,
+      "primitives": 5,
       "textures": [],
       "maxTextureDimension": 0
     },
@@ -146,7 +146,7 @@
         "z": 0.283407516479492
       },
       "minY": -0.9500000870848982,
-      "maxY": 2.3455893635536365
+      "maxY": 2.345589363553636
     }
   },
   {
@@ -159,24 +159,24 @@
     ],
     "file": "Taxi.glb",
     "metrics": {
-      "glbBytes": 156848,
-      "byteLength": 156848,
-      "triangles": 1584,
-      "primitives": 3,
+      "glbBytes": 80156,
+      "byteLength": 80156,
+      "triangles": 1072,
+      "primitives": 2,
       "textures": [],
       "maxTextureDimension": 0
     },
     "dims": {
       "footprint": {
         "w": 1.8355256563067088,
-        "d": 3.7934907133251956
+        "d": 3.7934907133251965
       },
       "center": {
         "x": 0,
         "z": 0.08424979365499163
       },
       "minY": -0.7847624851207183,
-      "maxY": 0.6679835851435683
+      "maxY": 0.6679835851435684
     }
   },
   {
@@ -189,24 +189,24 @@
     ],
     "file": "TrafficCone.glb",
     "metrics": {
-      "glbBytes": 15056,
-      "byteLength": 15056,
+      "glbBytes": 11300,
+      "byteLength": 11300,
       "triangles": 124,
-      "primitives": 17,
+      "primitives": 2,
       "textures": [],
       "maxTextureDimension": 0
     },
     "dims": {
       "footprint": {
         "w": 0.9995871485106363,
-        "d": 0.9995873541487043
+        "d": 0.9995873541487037
       },
       "center": {
         "x": 0,
-        "z": -9.69942492434761e-8
+        "z": -9.699424899367592e-8
       },
-      "minY": -0.035752396485333945,
-      "maxY": 1.2264453104802986
+      "minY": -0.03575239648533372,
+      "maxY": 1.2264453104802984
     }
   },
   {
@@ -219,10 +219,10 @@
     ],
     "file": "TrafficLight.glb",
     "metrics": {
-      "glbBytes": 80500,
-      "byteLength": 80500,
+      "glbBytes": 67624,
+      "byteLength": 67624,
       "triangles": 842,
-      "primitives": 57,
+      "primitives": 4,
       "textures": [],
       "maxTextureDimension": 0
     },
@@ -249,23 +249,23 @@
     ],
     "file": "TrafficSign1.glb",
     "metrics": {
-      "glbBytes": 10684,
-      "byteLength": 10684,
+      "glbBytes": 9908,
+      "byteLength": 9908,
       "triangles": 104,
-      "primitives": 4,
+      "primitives": 2,
       "textures": [],
       "maxTextureDimension": 0
     },
     "dims": {
       "footprint": {
-        "w": 0.10585975440014239,
-        "d": 0.46510295653291955
+        "w": 0.10585975440014288,
+        "d": 0.46510295653292016
       },
       "center": {
-        "x": -0.0026216618285734156,
-        "z": 1.5440819595147204e-9
+        "x": -0.002621661828573575,
+        "z": 1.54408227870384e-9
       },
-      "minY": -0.0007589253402312444,
+      "minY": -0.0007589253402313285,
       "maxY": 1.51456805672643
     }
   },
@@ -279,24 +279,24 @@
     ],
     "file": "TrafficSign2.glb",
     "metrics": {
-      "glbBytes": 8920,
-      "byteLength": 8920,
+      "glbBytes": 7952,
+      "byteLength": 7952,
       "triangles": 78,
-      "primitives": 5,
+      "primitives": 3,
       "textures": [],
       "maxTextureDimension": 0
     },
     "dims": {
       "footprint": {
         "w": 0.4590719735630046,
-        "d": 0.12498185454557895
+        "d": 0.12498178961282061
       },
       "center": {
         "x": -1.3797989584229953e-8,
-        "z": 0.030506408635212773
+        "z": 0.030506429895835945
       },
-      "minY": -0.0010281277672421485,
-      "maxY": 1.4844602363957602
+      "minY": -0.001028125739757968,
+      "maxY": 1.4844602329601184
     }
   },
   {
@@ -309,21 +309,21 @@
     ],
     "file": "TrafficSign3.glb",
     "metrics": {
-      "glbBytes": 10372,
-      "byteLength": 10372,
+      "glbBytes": 8992,
+      "byteLength": 8992,
       "triangles": 90,
-      "primitives": 7,
+      "primitives": 3,
       "textures": [],
       "maxTextureDimension": 0
     },
     "dims": {
       "footprint": {
         "w": 1.4709568471680061,
-        "d": 0.11129024320722078
+        "d": 0.11129024320722081
       },
       "center": {
         "x": 0.0004896841429262722,
-        "z": 0.032193818154071574
+        "z": 0.0321938181540716
       },
       "minY": -0.03252653200368982,
       "maxY": 1.438430306719341
@@ -339,10 +339,10 @@
     ],
     "file": "Train.glb",
     "metrics": {
-      "glbBytes": 78044,
-      "byteLength": 78044,
+      "glbBytes": 57648,
+      "byteLength": 57648,
       "triangles": 712,
-      "primitives": 90,
+      "primitives": 4,
       "textures": [],
       "maxTextureDimension": 0
     },

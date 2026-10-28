@@ -9,8 +9,8 @@
     ],
     "file": "P90.glb",
     "metrics": {
-      "glbBytes": 167224,
-      "byteLength": 167224,
+      "glbBytes": 155756,
+      "byteLength": 155756,
       "triangles": 954,
       "primitives": 3,
       "textures": [],
@@ -44,10 +44,10 @@
     ],
     "file": "Pistol.glb",
     "metrics": {
-      "glbBytes": 262544,
-      "byteLength": 262544,
+      "glbBytes": 241324,
+      "byteLength": 241324,
       "triangles": 1491,
-      "primitives": 13,
+      "primitives": 6,
       "textures": [],
       "maxTextureDimension": 0
     },
@@ -79,10 +79,10 @@
     ],
     "file": "Revolver.glb",
     "metrics": {
-      "glbBytes": 477340,
-      "byteLength": 477340,
+      "glbBytes": 443888,
+      "byteLength": 443888,
       "triangles": 2812,
-      "primitives": 60,
+      "primitives": 5,
       "textures": [],
       "maxTextureDimension": 0
     },
@@ -113,10 +113,10 @@
     ],
     "file": "Rifle.glb",
     "metrics": {
-      "glbBytes": 365268,
-      "byteLength": 365268,
+      "glbBytes": 304540,
+      "byteLength": 304540,
       "triangles": 1912,
-      "primitives": 161,
+      "primitives": 7,
       "textures": [],
       "maxTextureDimension": 0
     },
@@ -148,10 +148,10 @@
     ],
     "file": "Shotgun.glb",
     "metrics": {
-      "glbBytes": 209372,
-      "byteLength": 209372,
+      "glbBytes": 170960,
+      "byteLength": 170960,
       "triangles": 1033,
-      "primitives": 78,
+      "primitives": 6,
       "textures": [],
       "maxTextureDimension": 0
     },
@@ -183,10 +183,10 @@
     ],
     "file": "SniperRifle.glb",
     "metrics": {
-      "glbBytes": 322328,
-      "byteLength": 322328,
+      "glbBytes": 277096,
+      "byteLength": 277096,
       "triangles": 1710,
-      "primitives": 87,
+      "primitives": 8,
       "textures": [],
       "maxTextureDimension": 0
     },

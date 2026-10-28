@@ -9,24 +9,24 @@
     ],
     "file": "Brass Telescope.glb",
     "metrics": {
-      "glbBytes": 38140,
-      "byteLength": 38140,
+      "glbBytes": 34164,
+      "byteLength": 34164,
       "triangles": 414,
-      "primitives": 18,
+      "primitives": 3,
       "textures": [],
       "maxTextureDimension": 0
     },
     "dims": {
       "footprint": {
         "w": 0.3741501097660512,
-        "d": 3.1996996643027655
+        "d": 3.1996996479481457
       },
       "center": {
         "x": 3.484626722727313e-7,
-        "z": -1.1299136542156352
+        "z": -1.1299136542156338
       },
-      "minY": 0.5100438973144323,
-      "maxY": 0.8841941591767303
+      "minY": 0.5100439727492632,
+      "maxY": 0.8841940947482363
     }
   },
   {
@@ -39,23 +39,23 @@
     ],
     "file": "Cannon.glb",
     "metrics": {
-      "glbBytes": 61296,
-      "byteLength": 61296,
+      "glbBytes": 58920,
+      "byteLength": 58920,
       "triangles": 726,
-      "primitives": 10,
+      "primitives": 5,
       "textures": [],
       "maxTextureDimension": 0
     },
     "dims": {
       "footprint": {
         "w": 1.4406330453793545,
-        "d": 5.36868084292282
+        "d": 5.368680809816439
       },
       "center": {
         "x": -0.6136649313357476,
-        "z": -0.05435426309488145
+        "z": -0.054354279648071824
       },
-      "minY": 0.09144627330586041,
+      "minY": 0.09144635164358994,
       "maxY": 2.0561062741838367
     }
   },
@@ -69,8 +69,8 @@
     ],
     "file": "ChestAnimated.glb",
     "metrics": {
-      "glbBytes": 63292,
-      "byteLength": 63292,
+      "glbBytes": 47064,
+      "byteLength": 47064,
       "triangles": 366,
       "primitives": 3,
       "textures": [],
@@ -104,24 +104,24 @@
     ],
     "file": "Gun.glb",
     "metrics": {
-      "glbBytes": 68196,
-      "byteLength": 68196,
+      "glbBytes": 51740,
+      "byteLength": 51740,
       "triangles": 626,
-      "primitives": 73,
+      "primitives": 5,
       "textures": [],
       "maxTextureDimension": 0
     },
     "dims": {
       "footprint": {
         "w": 0.7987989031103415,
-        "d": 4.775692720574548
+        "d": 4.775692647767954
       },
       "center": {
         "x": -0.220639120299154,
-        "z": -0.104111330734868
+        "z": -0.10411131016192487
       },
-      "minY": 0.05959497552048387,
-      "maxY": 1.7252159831365392
+      "minY": 0.05959504934035076,
+      "maxY": 1.7252158482042523
     }
   },
   {
@@ -134,8 +134,8 @@
     ],
     "file": "PirateSword.glb",
     "metrics": {
-      "glbBytes": 40608,
-      "byteLength": 40608,
+      "glbBytes": 40064,
+      "byteLength": 40064,
       "triangles": 490,
       "primitives": 3,
       "textures": [],
@@ -150,8 +150,8 @@
         "x": 0.01629789173603058,
         "z": -9.22973816264161e-8
       },
-      "minY": -0.4334954064517989,
-      "maxY": 2.3406597154766176
+      "minY": -0.433495406451799,
+      "maxY": 2.340659715476618
     }
   },
   {
@@ -164,24 +164,24 @@
     ],
     "file": "Pistol.glb",
     "metrics": {
-      "glbBytes": 72464,
-      "byteLength": 72464,
+      "glbBytes": 49860,
+      "byteLength": 49860,
       "triangles": 602,
-      "primitives": 100,
+      "primitives": 5,
       "textures": [],
       "maxTextureDimension": 0
     },
     "dims": {
       "footprint": {
         "w": 0.7191731984575744,
-        "d": 3.913007240064238
+        "d": 3.913007179834175
       },
       "center": {
         "x": -0.22063902125703405,
-        "z": -0.10467344831345804
+        "z": -0.10467343361778592
       },
-      "minY": 0.3379100389734728,
-      "maxY": 1.7158134986140379
+      "minY": 0.33791009391417925,
+      "maxY": 1.7158133825117692
     }
   },
   {
@@ -194,24 +194,24 @@
     ],
     "file": "Rifle.glb",
     "metrics": {
-      "glbBytes": 85232,
-      "byteLength": 85232,
+      "glbBytes": 69280,
+      "byteLength": 69280,
       "triangles": 856,
-      "primitives": 71,
+      "primitives": 7,
       "textures": [],
       "maxTextureDimension": 0
     },
     "dims": {
       "footprint": {
         "w": 0.8722174197807908,
-        "d": 9.152515156036914
+        "d": 9.152515084967016
       },
       "center": {
         "x": -0.00003568972559150896,
-        "z": -1.079861658564812
+        "z": -1.0798616312071683
       },
-      "minY": -0.7416959507056937,
-      "maxY": 0.8841942497779207
+      "minY": -0.7416956934332846,
+      "maxY": 0.8841941069811583
     }
   },
   {
@@ -224,8 +224,8 @@
     ],
     "file": "Skull.glb",
     "metrics": {
-      "glbBytes": 11160,
-      "byteLength": 11160,
+      "glbBytes": 8380,
+      "byteLength": 8380,
       "triangles": 97,
       "primitives": 1,
       "textures": [],
@@ -240,7 +240,7 @@
         "x": -0.03843858493550223,
         "z": 0.007024930310709776
       },
-      "minY": 0.3190943412307261,
+      "minY": 0.3190943412307262,
       "maxY": 1.898222253010117
     }
   }

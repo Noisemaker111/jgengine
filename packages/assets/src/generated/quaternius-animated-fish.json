@@ -11,10 +11,10 @@
     ],
     "file": "Dolphin.glb",
     "metrics": {
-      "glbBytes": 122384,
-      "byteLength": 122384,
+      "glbBytes": 93700,
+      "byteLength": 93700,
       "triangles": 440,
-      "primitives": 44,
+      "primitives": 2,
       "textures": [],
       "maxTextureDimension": 0
     },
@@ -46,10 +46,10 @@
     ],
     "file": "Fish1.glb",
     "metrics": {
-      "glbBytes": 135724,
-      "byteLength": 135724,
+      "glbBytes": 99776,
+      "byteLength": 99776,
       "triangles": 544,
-      "primitives": 95,
+      "primitives": 3,
       "textures": [],
       "maxTextureDimension": 0
     },
@@ -81,10 +81,10 @@
     ],
     "file": "Fish2.glb",
     "metrics": {
-      "glbBytes": 122412,
-      "byteLength": 122412,
+      "glbBytes": 93980,
+      "byteLength": 93980,
       "triangles": 502,
-      "primitives": 66,
+      "primitives": 3,
       "textures": [],
       "maxTextureDimension": 0
     },
@@ -116,10 +116,10 @@
     ],
     "file": "Fish3.glb",
     "metrics": {
-      "glbBytes": 147956,
-      "byteLength": 147956,
+      "glbBytes": 118128,
+      "byteLength": 118128,
       "triangles": 686,
-      "primitives": 83,
+      "primitives": 3,
       "textures": [],
       "maxTextureDimension": 0
     },
@@ -151,10 +151,10 @@
     ],
     "file": "Manta ray.glb",
     "metrics": {
-      "glbBytes": 176772,
-      "byteLength": 176772,
+      "glbBytes": 140868,
+      "byteLength": 140868,
       "triangles": 696,
-      "primitives": 73,
+      "primitives": 2,
       "textures": [],
       "maxTextureDimension": 0
     },
@@ -186,10 +186,10 @@
     ],
     "file": "Shark.glb",
     "metrics": {
-      "glbBytes": 150240,
-      "byteLength": 150240,
+      "glbBytes": 116808,
+      "byteLength": 116808,
       "triangles": 644,
-      "primitives": 84,
+      "primitives": 2,
       "textures": [],
       "maxTextureDimension": 0
     },
@@ -221,10 +221,10 @@
     ],
     "file": "Whale.glb",
     "metrics": {
-      "glbBytes": 114944,
-      "byteLength": 114944,
+      "glbBytes": 96428,
+      "byteLength": 96428,
       "triangles": 444,
-      "primitives": 5,
+      "primitives": 2,
       "textures": [],
       "maxTextureDimension": 0
     },

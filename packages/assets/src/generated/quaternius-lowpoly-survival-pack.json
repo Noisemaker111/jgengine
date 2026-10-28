@@ -9,10 +9,10 @@
     ],
     "file": "Axe_Small.glb",
     "metrics": {
-      "glbBytes": 18420,
-      "byteLength": 18420,
+      "glbBytes": 16232,
+      "byteLength": 16232,
       "triangles": 176,
-      "primitives": 11,
+      "primitives": 3,
       "textures": [],
       "maxTextureDimension": 0
     },
@@ -23,10 +23,10 @@
       },
       "center": {
         "x": -0.28526761396261746,
-        "z": 1.0932599846247282e-8
+        "z": 1.0932599839308388e-8
       },
-      "minY": -0.9348945086826859,
-      "maxY": 1.5285219300457005
+      "minY": -0.934894508682686,
+      "maxY": 1.5285219300457007
     }
   },
   {
@@ -39,24 +39,24 @@
     ],
     "file": "Axe.glb",
     "metrics": {
-      "glbBytes": 23552,
-      "byteLength": 23552,
+      "glbBytes": 20896,
+      "byteLength": 20896,
       "triangles": 236,
-      "primitives": 13,
+      "primitives": 3,
       "textures": [],
       "maxTextureDimension": 0
     },
     "dims": {
       "footprint": {
         "w": 1.2621764218658427,
-        "d": 0.19022169323498622
+        "d": 0.19022169323498628
       },
       "center": {
         "x": -0.2419885994269498,
         "z": -0.001055954724308375
       },
-      "minY": -0.7980041545148029,
-      "maxY": 2.458044071543602
+      "minY": -0.7980041545148031,
+      "maxY": 2.4580440715436023
     }
   },
   {
@@ -69,24 +69,24 @@
     ],
     "file": "Backpack.glb",
     "metrics": {
-      "glbBytes": 154148,
-      "byteLength": 154148,
+      "glbBytes": 139280,
+      "byteLength": 139280,
       "triangles": 1748,
-      "primitives": 66,
+      "primitives": 4,
       "textures": [],
       "maxTextureDimension": 0
     },
     "dims": {
       "footprint": {
         "w": 3.3428663949732984,
-        "d": 1.7456721068647885
+        "d": 1.745672106864789
       },
       "center": {
         "x": 0,
-        "z": 0.24385220017335446
+        "z": 0.24385220017335452
       },
-      "minY": -1.464718249685001,
-      "maxY": 1.6545983087301581
+      "minY": -1.4647182496850013,
+      "maxY": 1.6545983087301583
     }
   },
   {
@@ -99,24 +99,24 @@
     ],
     "file": "Bandages.glb",
     "metrics": {
-      "glbBytes": 23388,
-      "byteLength": 23388,
+      "glbBytes": 14232,
+      "byteLength": 14232,
       "triangles": 156,
-      "primitives": 41,
+      "primitives": 2,
       "textures": [],
       "maxTextureDimension": 0
     },
     "dims": {
       "footprint": {
         "w": 0.30233955437864213,
-        "d": 0.31789869569066775
+        "d": 0.3178986956906678
       },
       "center": {
         "x": 7.4112114084590175e-9,
         "z": 0
       },
-      "minY": -0.18074149267140752,
-      "maxY": 0.18074149267140752
+      "minY": -0.18074149267140754,
+      "maxY": 0.18074149267140754
     }
   },
   {
@@ -129,10 +129,10 @@
     ],
     "file": "Battery_Big.glb",
     "metrics": {
-      "glbBytes": 12508,
-      "byteLength": 12508,
+      "glbBytes": 10308,
+      "byteLength": 10308,
       "triangles": 100,
-      "primitives": 11,
+      "primitives": 3,
       "textures": [],
       "maxTextureDimension": 0
     },
@@ -159,10 +159,10 @@
     ],
     "file": "Battery_Small.glb",
     "metrics": {
-      "glbBytes": 15252,
-      "byteLength": 15252,
+      "glbBytes": 12812,
+      "byteLength": 12812,
       "triangles": 132,
-      "primitives": 12,
+      "primitives": 3,
       "textures": [],
       "maxTextureDimension": 0
     },
@@ -189,8 +189,8 @@
     ],
     "file": "BearTrap_Closed.glb",
     "metrics": {
-      "glbBytes": 45432,
-      "byteLength": 45432,
+      "glbBytes": 45284,
+      "byteLength": 45284,
       "triangles": 608,
       "primitives": 1,
       "textures": [],
@@ -199,13 +199,13 @@
     "dims": {
       "footprint": {
         "w": 2.815703725490912,
-        "d": 3.5438971444115275
+        "d": 3.543897144411528
       },
       "center": {
         "x": 0,
-        "z": 0.29798167604312775
+        "z": 0.297981676043128
       },
-      "minY": -0.04665507218767801,
+      "minY": -0.04665507218767802,
       "maxY": 1.6485594532351986
     }
   },
@@ -219,8 +219,8 @@
     ],
     "file": "BearTrap_Open.glb",
     "metrics": {
-      "glbBytes": 45428,
-      "byteLength": 45428,
+      "glbBytes": 45280,
+      "byteLength": 45280,
       "triangles": 608,
       "primitives": 1,
       "textures": [],
@@ -229,14 +229,14 @@
     "dims": {
       "footprint": {
         "w": 2.9915389258432152,
-        "d": 3.5438970967908743
+        "d": 3.543897096790875
       },
       "center": {
         "x": 0,
-        "z": 0.2979817000687913
+        "z": 0.29798170006879143
       },
       "minY": -0.047976802453595715,
-      "maxY": 0.6271091808860826
+      "maxY": 0.6271091808860827
     }
   },
   {
@@ -249,23 +249,23 @@
     ],
     "file": "Bonfire_Fire.glb",
     "metrics": {
-      "glbBytes": 61092,
-      "byteLength": 61092,
+      "glbBytes": 57416,
+      "byteLength": 57416,
       "triangles": 704,
-      "primitives": 17,
+      "primitives": 3,
       "textures": [],
       "maxTextureDimension": 0
     },
     "dims": {
       "footprint": {
         "w": 2.175589688050932,
-        "d": 1.984109678379475
+        "d": 1.9841096783794754
       },
       "center": {
         "x": 0.08055749647660382,
-        "z": -0.01266875516357091
+        "z": -0.012668755163570966
       },
-      "minY": -0.059411836126484485,
+      "minY": -0.05941183612648449,
       "maxY": 2.2518608179875907
     }
   },
@@ -279,24 +279,24 @@
     ],
     "file": "Bonfire.glb",
     "metrics": {
-      "glbBytes": 53708,
-      "byteLength": 53708,
+      "glbBytes": 50124,
+      "byteLength": 50124,
       "triangles": 616,
-      "primitives": 16,
+      "primitives": 2,
       "textures": [],
       "maxTextureDimension": 0
     },
     "dims": {
       "footprint": {
         "w": 2.175589688050932,
-        "d": 1.984109411903852
+        "d": 1.9841094119038523
       },
       "center": {
         "x": -0.006599298380688179,
-        "z": -0.10188419755157013
+        "z": -0.10188419755157019
       },
-      "minY": -0.02548396958614213,
-      "maxY": 0.6501729750459527
+      "minY": -0.025483969586142134,
+      "maxY": 0.6501729750459528
     }
   },
   {
@@ -309,23 +309,23 @@
     ],
     "file": "Can_Broken.glb",
     "metrics": {
-      "glbBytes": 36380,
-      "byteLength": 36380,
+      "glbBytes": 35368,
+      "byteLength": 35368,
       "triangles": 428,
-      "primitives": 5,
+      "primitives": 2,
       "textures": [],
       "maxTextureDimension": 0
     },
     "dims": {
       "footprint": {
         "w": 0.47334614396095276,
-        "d": 0.4733462180198756
+        "d": 0.47334621801987564
       },
       "center": {
         "x": 0,
         "z": 6.727866377898017e-8
       },
-      "minY": -3.8558915883997224e-8,
+      "minY": -3.855891588399723e-8,
       "maxY": 0.637495854312883
     }
   },
@@ -339,23 +339,23 @@
     ],
     "file": "Can_Closed.glb",
     "metrics": {
-      "glbBytes": 36376,
-      "byteLength": 36376,
+      "glbBytes": 35360,
+      "byteLength": 35360,
       "triangles": 428,
-      "primitives": 5,
+      "primitives": 2,
       "textures": [],
       "maxTextureDimension": 0
     },
     "dims": {
       "footprint": {
         "w": 0.47334614396095276,
-        "d": 0.4733462180198756
+        "d": 0.47334621801987564
       },
       "center": {
         "x": 0,
         "z": 6.727866377898017e-8
       },
-      "minY": -3.8558915883997224e-8,
+      "minY": -3.855891588399723e-8,
       "maxY": 0.637495854312883
     }
   },
@@ -369,23 +369,23 @@
     ],
     "file": "Can_Open.glb",
     "metrics": {
-      "glbBytes": 38240,
-      "byteLength": 38240,
+      "glbBytes": 37224,
+      "byteLength": 37224,
       "triangles": 452,
-      "primitives": 5,
+      "primitives": 2,
       "textures": [],
       "maxTextureDimension": 0
     },
     "dims": {
       "footprint": {
         "w": 0.473346084356308,
-        "d": 0.4733462180198756
+        "d": 0.47334621801987564
       },
       "center": {
         "x": 0,
         "z": 6.727866377898017e-8
       },
-      "minY": -3.8558915883997224e-8,
+      "minY": -3.855891588399723e-8,
       "maxY": 0.637495854312883
     }
   },
@@ -399,23 +399,23 @@
     ],
     "file": "Can_Red.glb",
     "metrics": {
-      "glbBytes": 34632,
-      "byteLength": 34632,
+      "glbBytes": 28288,
+      "byteLength": 28288,
       "triangles": 332,
-      "primitives": 29,
+      "primitives": 3,
       "textures": [],
       "maxTextureDimension": 0
     },
     "dims": {
       "footprint": {
         "w": 0.47334614396095276,
-        "d": 0.4733462180198756
+        "d": 0.47334621801987564
       },
       "center": {
         "x": 0,
         "z": 6.727866377898017e-8
       },
-      "minY": -3.8558915883997224e-8,
+      "minY": -3.855891588399723e-8,
       "maxY": 0.637495854312883
     }
   },
@@ -429,24 +429,24 @@
     ],
     "file": "Compass_Closed.glb",
     "metrics": {
-      "glbBytes": 42108,
-      "byteLength": 42108,
+      "glbBytes": 39764,
+      "byteLength": 39764,
       "triangles": 484,
-      "primitives": 11,
+      "primitives": 2,
       "textures": [],
       "maxTextureDimension": 0
     },
     "dims": {
       "footprint": {
         "w": 0.6382403075695038,
-        "d": 0.28403792333389966
+        "d": 0.2840379233338997
       },
       "center": {
         "x": 0.017317995429039,
-        "z": 0.14441898702739847
+        "z": 0.1444189870273985
       },
       "minY": -0.3057934041881315,
-      "maxY": 0.4995681812129304
+      "maxY": 0.49956818121293045
     }
   },
   {
@@ -459,24 +459,24 @@
     ],
     "file": "Compass_Open.glb",
     "metrics": {
-      "glbBytes": 60516,
-      "byteLength": 60516,
+      "glbBytes": 54436,
+      "byteLength": 54436,
       "triangles": 656,
-      "primitives": 29,
+      "primitives": 5,
       "textures": [],
       "maxTextureDimension": 0
     },
     "dims": {
       "footprint": {
         "w": 0.9079255163669586,
-        "d": 0.702707176688791
+        "d": 0.7027071766887911
       },
       "center": {
         "x": -0.11752460896968842,
-        "z": 0.35375361393767485
+        "z": 0.3537536139376749
       },
       "minY": -0.3057934339904539,
-      "maxY": 0.49956824942280975
+      "maxY": 0.4995682494228098
     }
   },
   {
@@ -489,10 +489,10 @@
     ],
     "file": "FirstAidKit_Hard.glb",
     "metrics": {
-      "glbBytes": 24936,
-      "byteLength": 24936,
+      "glbBytes": 23824,
+      "byteLength": 23824,
       "triangles": 268,
-      "primitives": 7,
+      "primitives": 4,
       "textures": [],
       "maxTextureDimension": 0
     },
@@ -503,10 +503,10 @@
       },
       "center": {
         "x": 0.0007828907288717213,
-        "z": 0.03915762125027375
+        "z": 0.03915762125027378
       },
-      "minY": -0.6177137886463241,
-      "maxY": 0.6593619043542402
+      "minY": -0.6177137886463242,
+      "maxY": 0.6593619043542404
     }
   },
   {
@@ -519,24 +519,24 @@
     ],
     "file": "FirstAidKit.glb",
     "metrics": {
-      "glbBytes": 93852,
-      "byteLength": 93852,
+      "glbBytes": 61316,
+      "byteLength": 61316,
       "triangles": 754,
-      "primitives": 143,
+      "primitives": 3,
       "textures": [],
       "maxTextureDimension": 0
     },
     "dims": {
       "footprint": {
         "w": 1.5631111686263557,
-        "d": 0.733305439968052
+        "d": 0.7333054399680521
       },
       "center": {
         "x": 0.0008867959128883718,
         "z": -1.2603969368196744e-8
       },
-      "minY": -0.6023205949275049,
-      "maxY": 0.7570458192691034
+      "minY": -0.602320594927505,
+      "maxY": 0.7570458192691035
     }
   },
   {
@@ -549,24 +549,24 @@
     ],
     "file": "FlareGun.glb",
     "metrics": {
-      "glbBytes": 44912,
-      "byteLength": 44912,
+      "glbBytes": 44204,
+      "byteLength": 44204,
       "triangles": 540,
-      "primitives": 4,
+      "primitives": 2,
       "textures": [],
       "maxTextureDimension": 0
     },
     "dims": {
       "footprint": {
         "w": 2.505265718064445,
-        "d": 0.6032828395576157
+        "d": 0.6032828395576159
       },
       "center": {
         "x": 0.8374895532049197,
-        "z": -0.002130712148536301
+        "z": -0.002130712148536329
       },
       "minY": -0.532530748334414,
-      "maxY": 1.1237001369809188
+      "maxY": 1.123700136980919
     }
   },
   {
@@ -579,10 +579,10 @@
     ],
     "file": "GasCan.glb",
     "metrics": {
-      "glbBytes": 72320,
-      "byteLength": 72320,
+      "glbBytes": 63976,
+      "byteLength": 63976,
       "triangles": 788,
-      "primitives": 38,
+      "primitives": 3,
       "textures": [],
       "maxTextureDimension": 0
     },
@@ -595,8 +595,8 @@
         "x": 0.03775013183856801,
         "z": -2.008813874410098e-7
       },
-      "minY": -0.003470522644066758,
-      "maxY": 2.4694728483514514
+      "minY": -0.0034705226440667584,
+      "maxY": 2.469472848351452
     }
   },
   {
@@ -609,10 +609,10 @@
     ],
     "file": "Knife.glb",
     "metrics": {
-      "glbBytes": 43320,
-      "byteLength": 43320,
+      "glbBytes": 38024,
+      "byteLength": 38024,
       "triangles": 450,
-      "primitives": 25,
+      "primitives": 4,
       "textures": [],
       "maxTextureDimension": 0
     },
@@ -626,7 +626,7 @@
         "z": -6.807121620891476e-8
       },
       "minY": -0.3636141671329424,
-      "maxY": 1.1992504579893797
+      "maxY": 1.19925045798938
     }
   },
   {
@@ -639,8 +639,8 @@
     ],
     "file": "Match_Burnt.glb",
     "metrics": {
-      "glbBytes": 7160,
-      "byteLength": 7160,
+      "glbBytes": 6892,
+      "byteLength": 6892,
       "triangles": 76,
       "primitives": 1,
       "textures": [],
@@ -653,10 +653,10 @@
       },
       "center": {
         "x": 0.00023843534290790558,
-        "z": 0.01028298905504835
+        "z": 0.010282989055048352
       },
-      "minY": -0.29842749740167934,
-      "maxY": 0.2707127118385753
+      "minY": -0.2984274974016794,
+      "maxY": 0.27071271183857537
     }
   },
   {
@@ -669,8 +669,8 @@
     ],
     "file": "Match_Fire.glb",
     "metrics": {
-      "glbBytes": 8596,
-      "byteLength": 8596,
+      "glbBytes": 8228,
+      "byteLength": 8228,
       "triangles": 80,
       "primitives": 2,
       "textures": [],
@@ -683,10 +683,10 @@
       },
       "center": {
         "x": -0.0016052443534135818,
-        "z": 0.0020357840772828525
+        "z": 0.002035784077282849
       },
-      "minY": -0.2998057955815087,
-      "maxY": 0.3854558826477455
+      "minY": -0.29980579558150877,
+      "maxY": 0.38545588264774555
     }
   },
   {
@@ -699,10 +699,10 @@
     ],
     "file": "Match.glb",
     "metrics": {
-      "glbBytes": 4748,
-      "byteLength": 4748,
+      "glbBytes": 4164,
+      "byteLength": 4164,
       "triangles": 28,
-      "primitives": 3,
+      "primitives": 2,
       "textures": [],
       "maxTextureDimension": 0
     },
@@ -715,8 +715,8 @@
         "x": -1.862645149230957e-9,
         "z": 9.313274301064878e-10
       },
-      "minY": -0.29980579327941764,
-      "maxY": 0.29980573367477314
+      "minY": -0.2998057932794177,
+      "maxY": 0.2998057336747732
     }
   },
   {
@@ -729,24 +729,24 @@
     ],
     "file": "Matchbox.glb",
     "metrics": {
-      "glbBytes": 39908,
-      "byteLength": 39908,
+      "glbBytes": 33728,
+      "byteLength": 33728,
       "triangles": 396,
-      "primitives": 29,
+      "primitives": 4,
       "textures": [],
       "maxTextureDimension": 0
     },
     "dims": {
       "footprint": {
         "w": 0.5396760702133179,
-        "d": 0.16525199126063123
+        "d": 0.16525199126063125
       },
       "center": {
         "x": 0,
-        "z": -0.021726704172757114
+        "z": -0.021726704172757117
       },
-      "minY": -0.2989111712713599,
-      "maxY": 0.7901567915951668
+      "minY": -0.29891117127135997,
+      "maxY": 0.7901567915951669
     }
   },
   {
@@ -759,8 +759,8 @@
     ],
     "file": "Pan_Small.glb",
     "metrics": {
-      "glbBytes": 22028,
-      "byteLength": 22028,
+      "glbBytes": 21696,
+      "byteLength": 21696,
       "triangles": 246,
       "primitives": 3,
       "textures": [],
@@ -769,14 +769,14 @@
     "dims": {
       "footprint": {
         "w": 1.1749643364407893,
-        "d": 2.1872298654623257
+        "d": 2.187229865462326
       },
       "center": {
         "x": 0.006494443096235036,
         "z": 0.5936134296793363
       },
-      "minY": -0.13416611019346883,
-      "maxY": 0.09748153335114142
+      "minY": -0.13416611019346886,
+      "maxY": 0.09748153335114143
     }
   },
   {
@@ -789,8 +789,8 @@
     ],
     "file": "Pan.glb",
     "metrics": {
-      "glbBytes": 22016,
-      "byteLength": 22016,
+      "glbBytes": 21684,
+      "byteLength": 21684,
       "triangles": 246,
       "primitives": 3,
       "textures": [],
@@ -799,11 +799,11 @@
     "dims": {
       "footprint": {
         "w": 1.72298036996508,
-        "d": 2.8246296214835995
+        "d": 2.8246296214836
       },
       "center": {
         "x": 0,
-        "z": 0.9409608073412699
+        "z": 0.94096080734127
       },
       "minY": -0.2735045325823068,
       "maxY": 0.06852089911075307
@@ -819,24 +819,24 @@
     ],
     "file": "Phone.glb",
     "metrics": {
-      "glbBytes": 22564,
-      "byteLength": 22564,
+      "glbBytes": 19964,
+      "byteLength": 19964,
       "triangles": 224,
-      "primitives": 13,
+      "primitives": 3,
       "textures": [],
       "maxTextureDimension": 0
     },
     "dims": {
       "footprint": {
         "w": 0.4241066324246549,
-        "d": 0.06062732396252331
+        "d": 0.06062732396252332
       },
       "center": {
         "x": 0.0029009853059915325,
-        "z": 0.0014759474538593772
+        "z": 0.001475947453859379
       },
-      "minY": -0.45465084810416256,
-      "maxY": 0.4538054961664229
+      "minY": -0.4546508481041626,
+      "maxY": 0.45380549616642296
     }
   },
   {
@@ -849,23 +849,23 @@
     ],
     "file": "Pistol_1.glb",
     "metrics": {
-      "glbBytes": 94656,
-      "byteLength": 94656,
+      "glbBytes": 84404,
+      "byteLength": 84404,
       "triangles": 1040,
-      "primitives": 47,
+      "primitives": 5,
       "textures": [],
       "maxTextureDimension": 0
     },
     "dims": {
       "footprint": {
         "w": 1.8194009959697723,
-        "d": 0.323209966715854
+        "d": 0.3232099667158541
       },
       "center": {
         "x": 0.5700568109750748,
         "z": -8.031590593982063e-8
       },
-      "minY": -0.40792175780079676,
+      "minY": -0.4079217578007968,
       "maxY": 0.7536340619160706
     }
   },
@@ -879,24 +879,24 @@
     ],
     "file": "Pistol_2.glb",
     "metrics": {
-      "glbBytes": 106388,
-      "byteLength": 106388,
+      "glbBytes": 96452,
+      "byteLength": 96452,
       "triangles": 1200,
-      "primitives": 45,
+      "primitives": 4,
       "textures": [],
       "maxTextureDimension": 0
     },
     "dims": {
       "footprint": {
         "w": 1.81940096616745,
-        "d": 0.32320996671583946
+        "d": 0.32320996671583957
       },
       "center": {
         "x": 0.5609667599201202,
         "z": -7.957543336767348e-8
       },
-      "minY": -0.4124667013718874,
-      "maxY": 0.7490890289380128
+      "minY": -0.41246670137188746,
+      "maxY": 0.7490890289380129
     }
   },
   {
@@ -909,8 +909,8 @@
     ],
     "file": "Pot_Small.glb",
     "metrics": {
-      "glbBytes": 27784,
-      "byteLength": 27784,
+      "glbBytes": 27508,
+      "byteLength": 27508,
       "triangles": 326,
       "primitives": 2,
       "textures": [],
@@ -919,14 +919,14 @@
     "dims": {
       "footprint": {
         "w": 1.193876823529281,
-        "d": 1.4070692926769668
+        "d": 1.407069292676967
       },
       "center": {
         "x": 0,
         "z": -3.346166621565061e-8
       },
-      "minY": -0.003547629367213849,
-      "maxY": 0.4143201154168011
+      "minY": -0.0035476293672138492,
+      "maxY": 0.41432011541680114
     }
   },
   {
@@ -939,8 +939,8 @@
     ],
     "file": "Pot.glb",
     "metrics": {
-      "glbBytes": 27776,
-      "byteLength": 27776,
+      "glbBytes": 27496,
+      "byteLength": 27496,
       "triangles": 326,
       "primitives": 2,
       "textures": [],
@@ -949,13 +949,13 @@
     "dims": {
       "footprint": {
         "w": 1.72298036996508,
-        "d": 2.0306557537034253
+        "d": 2.0306557537034258
       },
       "center": {
         "x": 0,
         "z": -8.390081585041287e-8
       },
-      "minY": -0.0051198712799555195,
+      "minY": -0.00511987127995552,
       "maxY": 1.035078942048569
     }
   },
@@ -969,10 +969,10 @@
     ],
     "file": "PropaneTank.glb",
     "metrics": {
-      "glbBytes": 44316,
-      "byteLength": 44316,
+      "glbBytes": 43168,
+      "byteLength": 43168,
       "triangles": 516,
-      "primitives": 7,
+      "primitives": 4,
       "textures": [],
       "maxTextureDimension": 0
     },
@@ -983,10 +983,10 @@
       },
       "center": {
         "x": -0.0038742848784977246,
-        "z": -0.04774069511546891
+        "z": -0.047740695115468856
       },
-      "minY": -1.3648769719627272,
-      "maxY": 1.5260940462084758
+      "minY": -1.3648769719627274,
+      "maxY": 1.526094046208476
     }
   },
   {
@@ -999,24 +999,24 @@
     ],
     "file": "Radio.glb",
     "metrics": {
-      "glbBytes": 44764,
-      "byteLength": 44764,
+      "glbBytes": 40452,
+      "byteLength": 40452,
       "triangles": 481,
-      "primitives": 21,
+      "primitives": 4,
       "textures": [],
       "maxTextureDimension": 0
     },
     "dims": {
       "footprint": {
         "w": 1.6856378031058556,
-        "d": 0.5701199281229821
+        "d": 0.5701199281229822
       },
       "center": {
         "x": 0,
         "z": 0.16479613724072306
       },
-      "minY": 0.005460894507530908,
-      "maxY": 2.1077078238839424
+      "minY": 0.00546089450753091,
+      "maxY": 2.107707823883943
     }
   },
   {
@@ -1029,8 +1029,8 @@
     ],
     "file": "Raft_Paddle.glb",
     "metrics": {
-      "glbBytes": 22948,
-      "byteLength": 22948,
+      "glbBytes": 22672,
+      "byteLength": 22672,
       "triangles": 264,
       "primitives": 2,
       "textures": [],
@@ -1039,11 +1039,11 @@
     "dims": {
       "footprint": {
         "w": 1.671092637499778,
-        "d": 14.852258872065152
+        "d": 14.852258872065153
       },
       "center": {
         "x": 0,
-        "z": 1.5376741123645745
+        "z": 1.5376741123645754
       },
       "minY": -0.15202777643952156,
       "maxY": 0.15202881108456615
@@ -1059,24 +1059,24 @@
     ],
     "file": "Raft.glb",
     "metrics": {
-      "glbBytes": 86556,
-      "byteLength": 86556,
+      "glbBytes": 82800,
+      "byteLength": 82800,
       "triangles": 1036,
-      "primitives": 17,
+      "primitives": 2,
       "textures": [],
       "maxTextureDimension": 0
     },
     "dims": {
       "footprint": {
         "w": 11.964097023010254,
-        "d": 23.64509843343572
+        "d": 23.645098433435727
       },
       "center": {
         "x": 0,
         "z": -1.2755705380840254e-7
       },
-      "minY": -1.3680848071114937,
-      "maxY": 2.933964032842369
+      "minY": -1.368084807111494,
+      "maxY": 2.9339640328423693
     }
   },
   {
@@ -1089,10 +1089,10 @@
     ],
     "file": "Revolver_1.glb",
     "metrics": {
-      "glbBytes": 85760,
-      "byteLength": 85760,
+      "glbBytes": 84016,
+      "byteLength": 84016,
       "triangles": 1046,
-      "primitives": 9,
+      "primitives": 3,
       "textures": [],
       "maxTextureDimension": 0
     },
@@ -1105,8 +1105,8 @@
         "x": 0.7489578500390053,
         "z": -0.000016501657797360347
       },
-      "minY": -0.3161696435412905,
-      "maxY": 0.5736387015727211
+      "minY": -0.31616964354129057,
+      "maxY": 0.5736387015727212
     }
   },
   {
@@ -1119,24 +1119,24 @@
     ],
     "file": "Revolver_2.glb",
     "metrics": {
-      "glbBytes": 79760,
-      "byteLength": 79760,
+      "glbBytes": 77780,
+      "byteLength": 77780,
       "triangles": 966,
-      "primitives": 10,
+      "primitives": 3,
       "textures": [],
       "maxTextureDimension": 0
     },
     "dims": {
       "footprint": {
         "w": 1.4726619273424149,
-        "d": 0.2943564952219714
+        "d": 0.29435649522197144
       },
       "center": {
         "x": 0.5140876993536949,
         "z": -0.000016667839437767284
       },
-      "minY": -0.3148981572589686,
-      "maxY": 0.6002196313288587
+      "minY": -0.31489815725896864,
+      "maxY": 0.6002196313288588
     }
   },
   {
@@ -1149,10 +1149,10 @@
     ],
     "file": "Revolver_3.glb",
     "metrics": {
-      "glbBytes": 109148,
-      "byteLength": 109148,
+      "glbBytes": 106484,
+      "byteLength": 106484,
       "triangles": 1334,
-      "primitives": 13,
+      "primitives": 3,
       "textures": [],
       "maxTextureDimension": 0
     },
@@ -1165,8 +1165,8 @@
         "x": 0.7672777250409126,
         "z": -0.000016486571964777208
       },
-      "minY": -0.2622999192676047,
-      "maxY": 0.7004273177531443
+      "minY": -0.26229991926760476,
+      "maxY": 0.7004273177531444
     }
   },
   {
@@ -1179,23 +1179,23 @@
     ],
     "file": "Shotgun_1.glb",
     "metrics": {
-      "glbBytes": 109008,
-      "byteLength": 109008,
+      "glbBytes": 101916,
+      "byteLength": 101916,
       "triangles": 1270,
-      "primitives": 33,
+      "primitives": 4,
       "textures": [],
       "maxTextureDimension": 0
     },
     "dims": {
       "footprint": {
         "w": 5.214977979660034,
-        "d": 0.24653373370654336
+        "d": 0.24653373370654338
       },
       "center": {
         "x": 1.1930805444717407,
         "z": 2.7206898928211487e-8
       },
-      "minY": -0.5240067444403042,
+      "minY": -0.5240067444403043,
       "maxY": 0.418673922832722
     }
   },
@@ -1209,24 +1209,24 @@
     ],
     "file": "Shotgun_2.glb",
     "metrics": {
-      "glbBytes": 85992,
-      "byteLength": 85992,
+      "glbBytes": 79132,
+      "byteLength": 79132,
       "triangles": 978,
-      "primitives": 32,
+      "primitives": 4,
       "textures": [],
       "maxTextureDimension": 0
     },
     "dims": {
       "footprint": {
         "w": 5.7849003076553345,
-        "d": 0.2465337337065482
+        "d": 0.24653373370654824
       },
       "center": {
         "x": 1.415306270122528,
         "z": 2.6152003992918615e-8
       },
-      "minY": -0.5632631979544039,
-      "maxY": 0.3794174991209445
+      "minY": -0.563263197954404,
+      "maxY": 0.3794174991209446
     }
   },
   {
@@ -1239,10 +1239,10 @@
     ],
     "file": "Shotgun_SawedOff.glb",
     "metrics": {
-      "glbBytes": 85604,
-      "byteLength": 85604,
+      "glbBytes": 77864,
+      "byteLength": 77864,
       "triangles": 956,
-      "primitives": 36,
+      "primitives": 5,
       "textures": [],
       "maxTextureDimension": 0
     },
@@ -1255,8 +1255,8 @@
         "x": 1.4411077797412872,
         "z": -0.0000017523437295802191
       },
-      "minY": -0.45538893803119385,
-      "maxY": 0.5647411690563201
+      "minY": -0.4553889380311939,
+      "maxY": 0.5647411690563202
     }
   },
   {
@@ -1269,24 +1269,24 @@
     ],
     "file": "Shotgun_ShortStock.glb",
     "metrics": {
-      "glbBytes": 130916,
-      "byteLength": 130916,
+      "glbBytes": 128612,
+      "byteLength": 128612,
       "triangles": 1612,
-      "primitives": 12,
+      "primitives": 4,
       "textures": [],
       "maxTextureDimension": 0
     },
     "dims": {
       "footprint": {
         "w": 4.471266448497772,
-        "d": 0.24653374510294462
+        "d": 0.24653374510294465
       },
       "center": {
         "x": 1.8133646547794342,
         "z": 2.8040474775448132e-8
       },
       "minY": -0.4269044898111679,
-      "maxY": 0.5399954519827331
+      "maxY": 0.5399954519827332
     }
   },
   {
@@ -1299,24 +1299,24 @@
     ],
     "file": "Shovel.glb",
     "metrics": {
-      "glbBytes": 42744,
-      "byteLength": 42744,
+      "glbBytes": 39324,
+      "byteLength": 39324,
       "triangles": 322,
-      "primitives": 15,
+      "primitives": 3,
       "textures": [],
       "maxTextureDimension": 0
     },
     "dims": {
       "footprint": {
         "w": 0.8046451245372601,
-        "d": 0.1837414818335526
+        "d": 0.18374148183355266
       },
       "center": {
         "x": 0.0004602065839298952,
         "z": 0.008486479766656459
       },
       "minY": -2.083291541907152,
-      "maxY": 1.7903625242102148
+      "maxY": 1.790362524210215
     }
   },
   {
@@ -1329,24 +1329,24 @@
     ],
     "file": "Tent.glb",
     "metrics": {
-      "glbBytes": 71216,
-      "byteLength": 71216,
+      "glbBytes": 64084,
+      "byteLength": 64084,
       "triangles": 784,
-      "primitives": 33,
+      "primitives": 4,
       "textures": [],
       "maxTextureDimension": 0
     },
     "dims": {
       "footprint": {
         "w": 14.580490179040353,
-        "d": 24.868194056770086
+        "d": 24.86819405677008
       },
       "center": {
         "x": 0,
-        "z": 4.34331400178678e-7
+        "z": 4.3433140195503483e-7
       },
-      "minY": -0.1758685559758313,
-      "maxY": 10.148577022903405
+      "minY": -0.17586855597582854,
+      "maxY": 10.148577022903401
     }
   },
   {
@@ -1359,10 +1359,10 @@
     ],
     "file": "Torch.glb",
     "metrics": {
-      "glbBytes": 54204,
-      "byteLength": 54204,
+      "glbBytes": 50508,
+      "byteLength": 50508,
       "triangles": 610,
-      "primitives": 18,
+      "primitives": 4,
       "textures": [],
       "maxTextureDimension": 0
     },
@@ -1373,9 +1373,9 @@
       },
       "center": {
         "x": -4.1502783915126074e-7,
-        "z": -0.010354765229381141
+        "z": -0.010354765229381113
       },
-      "minY": -1.4471624069827362,
+      "minY": -1.4471624069827365,
       "maxY": 1.0649731086210366
     }
   },
@@ -1389,8 +1389,8 @@
     ],
     "file": "Trashcan.glb",
     "metrics": {
-      "glbBytes": 60016,
-      "byteLength": 60016,
+      "glbBytes": 59736,
+      "byteLength": 59736,
       "triangles": 739,
       "primitives": 2,
       "textures": [],
@@ -1399,13 +1399,13 @@
     "dims": {
       "footprint": {
         "w": 3.7165774095398776,
-        "d": 4.858672815565133
+        "d": 4.858672815565132
       },
       "center": {
         "x": 0.005370656884324476,
-        "z": -0.2297567035135124
+        "z": -0.22975670351351174
       },
-      "minY": -0.00008714643800094799,
+      "minY": -0.00008714643800035755,
       "maxY": 6.751132526438894
     }
   },
@@ -1419,8 +1419,8 @@
     ],
     "file": "WaterBottle_1.glb",
     "metrics": {
-      "glbBytes": 15496,
-      "byteLength": 15496,
+      "glbBytes": 15184,
+      "byteLength": 15184,
       "triangles": 168,
       "primitives": 2,
       "textures": [],
@@ -1429,14 +1429,14 @@
     "dims": {
       "footprint": {
         "w": 0.5510841626548972,
-        "d": 0.5510844641316742
+        "d": 0.5510844641316743
       },
       "center": {
         "x": 0,
         "z": -6.278684955285385e-8
       },
       "minY": -0.5398427634950821,
-      "maxY": 1.3106086319150114
+      "maxY": 1.3106086319150116
     }
   },
   {
@@ -1449,10 +1449,10 @@
     ],
     "file": "WaterBottle_2.glb",
     "metrics": {
-      "glbBytes": 38192,
-      "byteLength": 38192,
+      "glbBytes": 37652,
+      "byteLength": 37652,
       "triangles": 456,
-      "primitives": 3,
+      "primitives": 2,
       "textures": [],
       "maxTextureDimension": 0
     },
@@ -1463,10 +1463,10 @@
       },
       "center": {
         "x": 1.4822422816918035e-8,
-        "z": -7.760927236977189e-8
+        "z": -7.760927239752746e-8
       },
       "minY": -0.5398427634986126,
-      "maxY": 1.310608631918537
+      "maxY": 1.3106086319185373
     }
   },
   {
@@ -1479,23 +1479,23 @@
     ],
     "file": "WaterBottle_3.glb",
     "metrics": {
-      "glbBytes": 30608,
-      "byteLength": 30608,
+      "glbBytes": 24972,
+      "byteLength": 24972,
       "triangles": 288,
-      "primitives": 26,
+      "primitives": 3,
       "textures": [],
       "maxTextureDimension": 0
     },
     "dims": {
       "footprint": {
         "w": 0.4994602726951871,
-        "d": 0.4994605064915688
+        "d": 0.49946050649156887
       },
       "center": {
         "x": 0,
         "z": -8.708012097513596e-8
       },
-      "minY": -0.001063303796051058,
+      "minY": -0.0010633037960510582,
       "maxY": 1.4339687752938957
     }
   },
@@ -1509,10 +1509,10 @@
     ],
     "file": "WoodenTorch_Fire.glb",
     "metrics": {
-      "glbBytes": 39108,
-      "byteLength": 39108,
+      "glbBytes": 38352,
+      "byteLength": 38352,
       "triangles": 454,
-      "primitives": 5,
+      "primitives": 4,
       "textures": [],
       "maxTextureDimension": 0
     },
@@ -1539,10 +1539,10 @@
     ],
     "file": "WoodenTorch.glb",
     "metrics": {
-      "glbBytes": 38100,
-      "byteLength": 38100,
+      "glbBytes": 37452,
+      "byteLength": 37452,
       "triangles": 448,
-      "primitives": 4,
+      "primitives": 3,
       "textures": [],
       "maxTextureDimension": 0
     },
@@ -1569,21 +1569,21 @@
     ],
     "file": "WoodLog.glb",
     "metrics": {
-      "glbBytes": 18704,
-      "byteLength": 18704,
+      "glbBytes": 17880,
+      "byteLength": 17880,
       "triangles": 202,
-      "primitives": 4,
+      "primitives": 2,
       "textures": [],
       "maxTextureDimension": 0
     },
     "dims": {
       "footprint": {
-        "w": 4.640860347547846,
-        "d": 4.5696722291418395
+        "w": 4.6408603475478465,
+        "d": 4.56967222914184
       },
       "center": {
-        "x": -0.030682816071712526,
-        "z": -0.032954288538016296
+        "x": -0.030682816071712304,
+        "z": -0.032954288538016074
       },
       "minY": -0.01947578214413813,
       "maxY": 1.0740359076926822

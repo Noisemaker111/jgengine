@@ -8,8 +8,8 @@
     ],
     "file": "BasicCar.glb",
     "metrics": {
-      "glbBytes": 184108,
-      "byteLength": 184108,
+      "glbBytes": 100676,
+      "byteLength": 100676,
       "triangles": 1868,
       "primitives": 3,
       "textures": [],
@@ -18,14 +18,14 @@
     "dims": {
       "footprint": {
         "w": 2.0114370584487915,
-        "d": 4.20281534328538
+        "d": 4.202815343285382
       },
       "center": {
         "x": 0.0018505454063415527,
         "z": 0.10439230156134527
       },
       "minY": -0.7959308953996722,
-      "maxY": 0.7850154165319209
+      "maxY": 0.785015416531921
     }
   },
   {
@@ -37,24 +37,24 @@
     ],
     "file": "CopCar.glb",
     "metrics": {
-      "glbBytes": 169696,
-      "byteLength": 169696,
-      "triangles": 1718,
-      "primitives": 3,
+      "glbBytes": 89796,
+      "byteLength": 89796,
+      "triangles": 1206,
+      "primitives": 2,
       "textures": [],
       "maxTextureDimension": 0
     },
     "dims": {
       "footprint": {
         "w": 1.856416404247284,
-        "d": 3.9916018151340245
+        "d": 3.9916018151340253
       },
       "center": {
         "x": 0.0012933313846588135,
-        "z": -0.014805710300606623
+        "z": -0.014805710300606734
       },
       "minY": -0.8036056018809723,
-      "maxY": 0.95615339689469
+      "maxY": 0.9561533968946903
     }
   },
   {
@@ -66,24 +66,24 @@
     ],
     "file": "RaceCar.glb",
     "metrics": {
-      "glbBytes": 182964,
-      "byteLength": 182964,
-      "triangles": 1856,
-      "primitives": 3,
+      "glbBytes": 99748,
+      "byteLength": 99748,
+      "triangles": 1344,
+      "primitives": 2,
       "textures": [],
       "maxTextureDimension": 0
     },
     "dims": {
       "footprint": {
         "w": 2.627465852308933,
-        "d": 4.914636590176676
+        "d": 4.914636590176677
       },
       "center": {
         "x": 0.0031047160114530126,
-        "z": -0.6298853694104859
+        "z": -0.629885369410486
       },
       "minY": -0.4596800925294372,
-      "maxY": 0.9933906790628042
+      "maxY": 0.9933906790628043
     }
   },
   {
@@ -95,24 +95,24 @@
     ],
     "file": "SimpleCarHigh.glb",
     "metrics": {
-      "glbBytes": 146876,
-      "byteLength": 146876,
-      "triangles": 1480,
-      "primitives": 3,
+      "glbBytes": 72684,
+      "byteLength": 72684,
+      "triangles": 968,
+      "primitives": 2,
       "textures": [],
       "maxTextureDimension": 0
     },
     "dims": {
       "footprint": {
         "w": 2.1362987361161507,
-        "d": 4.029721514251172
+        "d": 4.0297215142511735
       },
       "center": {
         "x": 0,
         "z": 0.07368980255971702
       },
       "minY": -0.9504688144664215,
-      "maxY": 0.6512356805507998
+      "maxY": 0.6512356805508
     }
   },
   {
@@ -124,24 +124,24 @@
     ],
     "file": "SimpleCarShort.glb",
     "metrics": {
-      "glbBytes": 146876,
-      "byteLength": 146876,
-      "triangles": 1480,
-      "primitives": 3,
+      "glbBytes": 72684,
+      "byteLength": 72684,
+      "triangles": 968,
+      "primitives": 2,
       "textures": [],
       "maxTextureDimension": 0
     },
     "dims": {
       "footprint": {
         "w": 2.1890889963911104,
-        "d": 4.029721507764629
+        "d": 4.02972150776463
       },
       "center": {
         "x": 0,
         "z": 0.0736898249285437
       },
       "minY": -0.8000848270396637,
-      "maxY": 0.7686274993881119
+      "maxY": 0.768627499388112
     }
   },
   {
@@ -153,10 +153,10 @@
     ],
     "file": "Taxi.glb",
     "metrics": {
-      "glbBytes": 155308,
-      "byteLength": 155308,
-      "triangles": 1568,
-      "primitives": 3,
+      "glbBytes": 79004,
+      "byteLength": 79004,
+      "triangles": 1056,
+      "primitives": 2,
       "textures": [],
       "maxTextureDimension": 0
     },
@@ -170,7 +170,7 @@
         "z": -0.0033777085167620013
       },
       "minY": -0.7847624851207183,
-      "maxY": 0.9044711988062982
+      "maxY": 0.9044711988062983
     }
   }
 ]

@@ -49,6 +49,24 @@ describe("extractPackModels", () => {
     expect(material?.getBaseColorTexture()).toBeNull();
   });
 
+  test("a material takes an archive texture named after it when its files name none", async () => {
+    const quad = ["v 0 0 0", "v 1 0 0", "v 1 1 0", "v 0 1 0", "vt 0 0", "vt 1 0", "vt 1 1", "vt 0 1", "usemtl Leaves", "f 1/1 2/2 3/3 4/4"].join("\n");
+    // An 8-bit RGBA PNG header: colour type 6 at byte 25 means the leaves cut out on alpha.
+    const png = new Uint8Array(33);
+    png.set([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a, 0, 0, 0, 13, 0x49, 0x48, 0x44, 0x52, 0, 0, 0, 1, 0, 0, 0, 1, 8, 6]);
+    const archive = zipSync({
+      "Pack/OBJ/Tree.obj": strToU8(`mtllib Tree.mtl\n${quad}`),
+      "Pack/OBJ/Tree.mtl": strToU8("newmtl Leaves\nKd 0.6 0.6 0.6\n"),
+      "Pack/Textures/Leaves_Green.png": png,
+      "Pack/Textures/Variations/Leaves_Red.png": png,
+    });
+    const { models } = await extractPackModels(archive);
+    const document = await new NodeIO().readBinary(models[0]?.bytes ?? new Uint8Array());
+    const material = document.getRoot().listMaterials()[0];
+    expect(material?.getBaseColorTexture()?.getName()).toBe("Leaves_Green");
+    expect(material?.getAlphaMode()).toBe("MASK");
+  });
+
   test("a pack that ships glTF is taken as it is, never converted", async () => {
     const gltf = { asset: { version: "2.0" }, scenes: [{ nodes: [0] }], scene: 0, nodes: [{ name: "Empty" }] };
     const archive = zipSync({ "glTF/Thing.gltf": strToU8(JSON.stringify(gltf)), "OBJ/Thing.obj": strToU8(CUBE_OBJ) });

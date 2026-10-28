@@ -11,24 +11,24 @@
     ],
     "file": "Robot.glb",
     "metrics": {
-      "glbBytes": 1434796,
-      "byteLength": 1434796,
+      "glbBytes": 696656,
+      "byteLength": 696656,
       "triangles": 3236,
-      "primitives": 44,
+      "primitives": 19,
       "textures": [],
       "maxTextureDimension": 0
     },
     "dims": {
       "footprint": {
         "w": 6.61854887008667,
-        "d": 2.8079130462431126
+        "d": 2.807914799840957
       },
       "center": {
         "x": -0.002715637087821854,
-        "z": -0.0011346962285899709
+        "z": -0.0011346598900126015
       },
-      "minY": -0.020304441806611728,
-      "maxY": 4.618532857996651
+      "minY": -0.020304399584710753,
+      "maxY": 4.618533053442575
     },
     "clips": [
       "RobotArmature|Robot_No",

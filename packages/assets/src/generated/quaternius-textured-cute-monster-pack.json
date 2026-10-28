@@ -10,8 +10,8 @@
     ],
     "file": "Alien_Tall.glb",
     "metrics": {
-      "glbBytes": 366364,
-      "byteLength": 366364,
+      "glbBytes": 269180,
+      "byteLength": 269180,
       "triangles": 1592,
       "primitives": 1,
       "textures": [],
@@ -53,8 +53,8 @@
     ],
     "file": "Alien.glb",
     "metrics": {
-      "glbBytes": 430072,
-      "byteLength": 430072,
+      "glbBytes": 306608,
+      "byteLength": 306608,
       "triangles": 1720,
       "primitives": 2,
       "textures": [],
@@ -96,8 +96,8 @@
     ],
     "file": "Bat.glb",
     "metrics": {
-      "glbBytes": 309132,
-      "byteLength": 309132,
+      "glbBytes": 227020,
+      "byteLength": 227020,
       "triangles": 1200,
       "primitives": 1,
       "textures": [],
@@ -132,8 +132,8 @@
     ],
     "file": "Bee.glb",
     "metrics": {
-      "glbBytes": 311004,
-      "byteLength": 311004,
+      "glbBytes": 242044,
+      "byteLength": 242044,
       "triangles": 1492,
       "primitives": 1,
       "textures": [],
@@ -168,8 +168,8 @@
     ],
     "file": "Cactus.glb",
     "metrics": {
-      "glbBytes": 389636,
-      "byteLength": 389636,
+      "glbBytes": 272496,
+      "byteLength": 272496,
       "triangles": 1500,
       "primitives": 1,
       "textures": [],
@@ -211,8 +211,8 @@
     ],
     "file": "Chicken.glb",
     "metrics": {
-      "glbBytes": 199736,
-      "byteLength": 199736,
+      "glbBytes": 164440,
+      "byteLength": 164440,
       "triangles": 1040,
       "primitives": 1,
       "textures": [],
@@ -225,10 +225,10 @@
       },
       "center": {
         "x": 0,
-        "z": 0.09095551798001261
+        "z": 0.09095545837536784
       },
-      "minY": -0.02794157721804904,
-      "maxY": 1.5853370054719107
+      "minY": -0.027941636822693815,
+      "maxY": 1.585336945867266
     },
     "clips": [
       "MonsterArmature|Idle"
@@ -245,8 +245,8 @@
     ],
     "file": "Crab.glb",
     "metrics": {
-      "glbBytes": 443992,
-      "byteLength": 443992,
+      "glbBytes": 319200,
+      "byteLength": 319200,
       "triangles": 1820,
       "primitives": 1,
       "textures": [],
@@ -288,8 +288,8 @@
     ],
     "file": "Cthulhu.glb",
     "metrics": {
-      "glbBytes": 346980,
-      "byteLength": 346980,
+      "glbBytes": 268164,
+      "byteLength": 268164,
       "triangles": 1576,
       "primitives": 1,
       "textures": [],
@@ -323,8 +323,8 @@
     ],
     "file": "Cyclops.glb",
     "metrics": {
-      "glbBytes": 301168,
-      "byteLength": 301168,
+      "glbBytes": 196688,
+      "byteLength": 196688,
       "triangles": 972,
       "primitives": 1,
       "textures": [],
@@ -366,8 +366,8 @@
     ],
     "file": "Deer.glb",
     "metrics": {
-      "glbBytes": 296772,
-      "byteLength": 296772,
+      "glbBytes": 209680,
+      "byteLength": 209680,
       "triangles": 1180,
       "primitives": 1,
       "textures": [],
@@ -409,8 +409,8 @@
     ],
     "file": "Demon.glb",
     "metrics": {
-      "glbBytes": 413356,
-      "byteLength": 413356,
+      "glbBytes": 292980,
+      "byteLength": 292980,
       "triangles": 1640,
       "primitives": 1,
       "textures": [],
@@ -452,8 +452,8 @@
     ],
     "file": "Ghost.glb",
     "metrics": {
-      "glbBytes": 306032,
-      "byteLength": 306032,
+      "glbBytes": 201324,
+      "byteLength": 201324,
       "triangles": 1000,
       "primitives": 1,
       "textures": [],
@@ -495,8 +495,8 @@
     ],
     "file": "GreenDemon.glb",
     "metrics": {
-      "glbBytes": 352940,
-      "byteLength": 352940,
+      "glbBytes": 240988,
+      "byteLength": 240988,
       "triangles": 1280,
       "primitives": 1,
       "textures": [],
@@ -538,8 +538,8 @@
     ],
     "file": "Mushroom.glb",
     "metrics": {
-      "glbBytes": 163744,
-      "byteLength": 163744,
+      "glbBytes": 135548,
+      "byteLength": 135548,
       "triangles": 868,
       "primitives": 1,
       "textures": [],
@@ -572,8 +572,8 @@
     ],
     "file": "Panda.glb",
     "metrics": {
-      "glbBytes": 377616,
-      "byteLength": 377616,
+      "glbBytes": 262184,
+      "byteLength": 262184,
       "triangles": 1428,
       "primitives": 1,
       "textures": [],
@@ -615,8 +615,8 @@
     ],
     "file": "Penguin.glb",
     "metrics": {
-      "glbBytes": 199768,
-      "byteLength": 199768,
+      "glbBytes": 164384,
+      "byteLength": 164384,
       "triangles": 1040,
       "primitives": 1,
       "textures": [],
@@ -629,10 +629,10 @@
       },
       "center": {
         "x": 0,
-        "z": 0.09095551798001261
+        "z": 0.09095545837536784
       },
-      "minY": -0.02794157721804904,
-      "maxY": 1.5853370054719107
+      "minY": -0.027941636822693815,
+      "maxY": 1.585336945867266
     },
     "clips": [
       "MonsterArmature|Idle"
@@ -649,8 +649,8 @@
     ],
     "file": "Pig.glb",
     "metrics": {
-      "glbBytes": 239028,
-      "byteLength": 239028,
+      "glbBytes": 200092,
+      "byteLength": 200092,
       "triangles": 1316,
       "primitives": 1,
       "textures": [],
@@ -683,8 +683,8 @@
     ],
     "file": "Skull.glb",
     "metrics": {
-      "glbBytes": 173752,
-      "byteLength": 173752,
+      "glbBytes": 104552,
+      "byteLength": 104552,
       "triangles": 450,
       "primitives": 1,
       "textures": [],
@@ -726,8 +726,8 @@
     ],
     "file": "Tree.glb",
     "metrics": {
-      "glbBytes": 373600,
-      "byteLength": 373600,
+      "glbBytes": 257740,
+      "byteLength": 257740,
       "triangles": 1368,
       "primitives": 3,
       "textures": [],
@@ -769,8 +769,8 @@
     ],
     "file": "YellowDragon.glb",
     "metrics": {
-      "glbBytes": 542620,
-      "byteLength": 542620,
+      "glbBytes": 324976,
+      "byteLength": 324976,
       "triangles": 1592,
       "primitives": 1,
       "textures": [],
@@ -810,8 +810,8 @@
     ],
     "file": "Yeti.glb",
     "metrics": {
-      "glbBytes": 354948,
-      "byteLength": 354948,
+      "glbBytes": 242836,
+      "byteLength": 242836,
       "triangles": 1292,
       "primitives": 1,
       "textures": [],
