@@ -918,6 +918,16 @@
       "intent": "persist personal-best times/scores with safe storage fallback"
     },
     {
+      "id": "bike-handling-compare",
+      "packages": [
+        "@jgengine/core"
+      ],
+      "module": "@jgengine/core/physics/reference/motorcycleManeuvers",
+      "gameFacing": false,
+      "probe": null,
+      "intent": "measure any single-track sim on bike scenarios — launch, braking, lean, lane change, slalom"
+    },
+    {
       "id": "bo105-reference",
       "packages": [
         "@jgengine/core"
@@ -5414,10 +5424,10 @@
       "packages": [
         "@jgengine/core"
       ],
-      "module": "@jgengine/core/flight/reference/aircraftTrim",
+      "module": "@jgengine/core/math/linearAlgebra",
       "gameFacing": false,
       "probe": null,
-      "intent": "solve a small dense linear system"
+      "intent": "dense linear solve with partial pivoting for reference physics plants and constraints"
     },
     {
       "id": "listing-book",
@@ -5838,10 +5848,10 @@
       "packages": [
         "@jgengine/core"
       ],
-      "module": "@jgengine/core/flight/reference/aircraftTrim",
+      "module": "@jgengine/core/math/linearAlgebra",
       "gameFacing": false,
       "probe": null,
-      "intent": "eigenvalues of a small real matrix"
+      "intent": "eigenvalues of a real matrix — stability modes of a linearised plant"
     },
     {
       "id": "maturation-stage",
@@ -6330,6 +6340,36 @@
       "gameFacing": false,
       "probe": null,
       "intent": "a mood derived from how satisfied an agent's needs are"
+    },
+    {
+      "id": "motorcycle-modes",
+      "packages": [
+        "@jgengine/core"
+      ],
+      "module": "@jgengine/core/physics/reference/referenceMotorcycle",
+      "gameFacing": false,
+      "probe": null,
+      "intent": "weave and wobble eigenvalues of a multibody motorcycle at any speed"
+    },
+    {
+      "id": "motorcycle-rider",
+      "packages": [
+        "@jgengine/core"
+      ],
+      "module": "@jgengine/core/physics/reference/motorcycleRider",
+      "gameFacing": false,
+      "probe": null,
+      "intent": "steering-torque rider for the reference motorcycle — steady turns, lane changes, slaloms"
+    },
+    {
+      "id": "motorcycle-tire",
+      "packages": [
+        "@jgengine/core"
+      ],
+      "module": "@jgengine/core/physics/reference/motorcycleTire",
+      "gameFacing": false,
+      "probe": null,
+      "intent": "motorcycle Magic Formula tyre with camber thrust, combined slip and aligning/twisting moment (Sharp, Evangelou & Limebeer 2004)"
     },
     {
       "id": "mount-game",
@@ -7531,6 +7571,16 @@
       "intent": "scale a transaction by a context threshold band"
     },
     {
+      "id": "polynomial-roots",
+      "packages": [
+        "@jgengine/core"
+      ],
+      "module": "@jgengine/core/physics/reference/eigenvalues",
+      "gameFacing": false,
+      "probe": null,
+      "intent": "all complex roots of a real polynomial to double precision"
+    },
+    {
       "id": "popover",
       "packages": [
         "@jgengine/core"
@@ -7981,6 +8031,16 @@
       "intent": "blade-element helicopter on the reference 6-DOF: flapping, dynamic inflow, governor, autorotation"
     },
     {
+      "id": "reference-motorcycle",
+      "packages": [
+        "@jgengine/core"
+      ],
+      "module": "@jgengine/core/physics/reference/referenceMotorcycle",
+      "gameFacing": false,
+      "probe": null,
+      "intent": "multibody reference motorcycle — countersteer, weave and wobble from the physics, motorcycle Magic Formula tyres"
+    },
+    {
       "id": "reference-validation",
       "packages": [
         "@jgengine/core"
@@ -8247,6 +8307,16 @@
       "intent": "force-and-torque aircraft — lifting surfaces with stall and drag polar, control surfaces, inertia, loops and rolls"
     },
     {
+      "id": "rigid-body-tree",
+      "packages": [
+        "@jgengine/core"
+      ],
+      "module": "@jgengine/core/physics/reference/rigidBodyTree",
+      "gameFacing": false,
+      "probe": null,
+      "intent": "exact multibody dynamics of a tree of rigid bodies — mass matrix, bias forces, point Jacobians"
+    },
+    {
       "id": "road-ribbons",
       "packages": [
         "@jgengine/core"
@@ -8375,6 +8445,16 @@
       "gameFacing": false,
       "probe": null,
       "intent": "a roguelike run built from stacking drafted modifier picks"
+    },
+    {
+      "id": "runge-kutta-4",
+      "packages": [
+        "@jgengine/core"
+      ],
+      "module": "@jgengine/core/physics/reference/rungeKutta",
+      "gameFacing": false,
+      "probe": null,
+      "intent": "fixed-step fourth-order Runge–Kutta integrator for reference physics plants"
     },
     {
       "id": "runtime",
@@ -11124,6 +11204,56 @@
       "gameFacing": false,
       "probe": null,
       "intent": "pick one item from a set with an injected random source"
+    },
+    {
+      "id": "whipple-bicycle",
+      "packages": [
+        "@jgengine/core"
+      ],
+      "module": "@jgengine/core/physics/reference/whippleBicycle",
+      "gameFacing": false,
+      "probe": null,
+      "intent": "nonlinear Whipple bicycle simulation — self-stability, countersteer and capsize from rigid-body physics"
+    },
+    {
+      "id": "whipple-eigenvalues",
+      "packages": [
+        "@jgengine/core"
+      ],
+      "module": "@jgengine/core/physics/reference/whippleBicycle",
+      "gameFacing": false,
+      "probe": null,
+      "intent": "stability eigenvalues of the Whipple bicycle at any speed — weave, capsize, castering"
+    },
+    {
+      "id": "whipple-linear",
+      "packages": [
+        "@jgengine/core"
+      ],
+      "module": "@jgengine/core/physics/reference/whippleBicycle",
+      "gameFacing": false,
+      "probe": null,
+      "intent": "linearised Whipple bicycle lean/steer equations (Meijaard 2007 benchmark coefficients)"
+    },
+    {
+      "id": "whipple-nonlinear-linearisation",
+      "packages": [
+        "@jgengine/core"
+      ],
+      "module": "@jgengine/core/physics/reference/whippleBicycle",
+      "gameFacing": false,
+      "probe": null,
+      "intent": "linearise the full nonlinear bicycle multibody model to check it against the benchmark"
+    },
+    {
+      "id": "whipple-self-stability",
+      "packages": [
+        "@jgengine/core"
+      ],
+      "module": "@jgengine/core/physics/reference/whippleBicycle",
+      "gameFacing": false,
+      "probe": null,
+      "intent": "weave and capsize speeds of a Whipple bicycle — its self-stable speed range"
     },
     {
       "id": "wild-stat-levels",

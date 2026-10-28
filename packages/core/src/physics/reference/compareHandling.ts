@@ -2,6 +2,9 @@ import { measureCourse, measureHandling, type CourseSubject } from "../handlingP
 import { createVehicleDynamics, type VehicleDynamicsTuning } from "../vehicleDynamics";
 import { REAL_CARS, type RealCar, type RealCarTestData } from "./realCars";
 import { createReferenceCar } from "./referenceCar";
+import { measureBikeHandling, type BikeHandlingMetrics, type BikeScenario } from "./motorcycleManeuvers";
+import { createRiddenMotorcycle } from "./motorcycleRider";
+import { REAL_MOTORCYCLES, type PublishedMotorcyclePerformance, type RealMotorcycle } from "./realMotorcycles";
 import { measureStandardManeuvers } from "./standardManeuvers";
 
 /** The metrics {@link compareVehicleTuning} puts side by side; each is comparable across any `CourseSubject`. */
@@ -59,9 +62,9 @@ export function measureComparableHandling(create: () => CourseSubject, options: 
   };
 }
 
-/** One metric across the game model, the reference car and the real car's published number. */
-export interface HandlingComparisonRow {
-  metric: keyof ComparableHandlingMetrics;
+/** One metric across the game model, the reference vehicle and the real vehicle's published number. */
+export interface HandlingComparisonRow<Metric extends string = keyof ComparableHandlingMetrics> {
+  metric: Metric;
   label: string;
   unit: string;
   game: number;
@@ -149,7 +152,7 @@ function cell(value: number | null, digits: number): string {
 }
 
 /** Plain-text table of comparison rows: metric, unit, game, reference, real, and game − reference. */
-export function formatHandlingComparison(title: string, rows: readonly HandlingComparisonRow[]): string {
+export function formatHandlingComparison(title: string, rows: readonly HandlingComparisonRow<string>[]): string {
   const header = ["metric", "unit", "game", "reference", "real", "game - ref"];
   const lines = rows.map((row) => {
     const digits = row.unit === "km/h" || row.unit === "m" ? 1 : 2;
@@ -202,5 +205,118 @@ export function validateReferenceCars(cars: readonly RealCar[] = REAL_CARS): { c
   return cars.map((car) => {
     const metrics = measureReferenceCar(car);
     return { car, metrics, checks: checkReferenceAgainstPublished(car, metrics) };
+  });
+}
+
+const BIKE_ROWS: readonly { metric: keyof BikeHandlingMetrics; label: string; unit: string; real?: "zeroTo100" | "zeroTo200" | "brake100" }[] = [
+  { metric: "zeroTo100", label: "0-100 km/h", unit: "s", real: "zeroTo100" },
+  { metric: "zeroTo200", label: "0-200 km/h", unit: "s", real: "zeroTo200" },
+  { metric: "brake100To0", label: "100-0 km/h braking", unit: "m", real: "brake100" },
+  { metric: "steadyLeanDeg", label: "lean at full steer (20 m/s)", unit: "deg" },
+  { metric: "steadyLateralG", label: "lateral g at that lean", unit: "g" },
+  { metric: "timeToLean", label: "time to 90% lean", unit: "s" },
+  { metric: "counterSteerDeg", label: "countersteer (bar the wrong way)", unit: "deg" },
+  { metric: "counterLeanDeg", label: "lean the wrong way first", unit: "deg" },
+  { metric: "laneChangeSpeed", label: "lane change (ISO 3888-1 lanes)", unit: "km/h" },
+  { metric: "slalomSpeed", label: "slalom (18 m cones)", unit: "km/h" },
+];
+
+/**
+ * Line up a game bike's and the reference motorcycle's measured bike metrics and, optionally, the real bike's
+ * published numbers.
+ * @capability handling-compare line up two bikes' measured metrics with deltas per metric
+ */
+export function compareBikeMetrics(
+  game: BikeHandlingMetrics,
+  reference: BikeHandlingMetrics,
+  real?: PublishedMotorcyclePerformance,
+): HandlingComparisonRow<keyof BikeHandlingMetrics>[] {
+  return BIKE_ROWS.map((row) => {
+    const g = game[row.metric];
+    const r = reference[row.metric];
+    const delta = g - r;
+    return {
+      metric: row.metric,
+      label: row.label,
+      unit: row.unit,
+      game: g,
+      reference: r,
+      real: row.real === undefined || real === undefined ? null : real[row.real],
+      delta,
+      deltaShare: Number.isFinite(r) && r !== 0 ? delta / Math.abs(r) : Number.NaN,
+    };
+  });
+}
+
+/** Measure a real motorcycle's reference model with its rider; pass the result to {@link compareBikeTuning} to reuse it. */
+export function measureReferenceMotorcycle(bike: RealMotorcycle, options: { dt?: number; tests?: readonly BikeScenario[] } = {}): BikeHandlingMetrics {
+  return measureBikeHandling((speed) => createRiddenMotorcycle(bike.spec, { speed }), { maxLean: 0.785, ...options });
+}
+
+/** Result of {@link compareBikeTuning}. */
+export interface BikeHandlingComparison {
+  bike: RealMotorcycle;
+  game: BikeHandlingMetrics;
+  reference: BikeHandlingMetrics;
+  rows: HandlingComparisonRow<keyof BikeHandlingMetrics>[];
+}
+
+/**
+ * Score a game's single-track `VehicleDynamics` tuning (one with a `lean` block) against the multibody reference
+ * motorcycle ridden by its steering-torque rider and the real bike's published tests: launch, braking, lean,
+ * countersteer, lane change and slalom, game / reference / real per metric.
+ * @capability handling-compare score a game bike tuning against a multibody reference motorcycle and real published tests
+ */
+export function compareBikeTuning(tuning: VehicleDynamicsTuning, bike: RealMotorcycle, reference?: BikeHandlingMetrics): BikeHandlingComparison {
+  const maxLean = tuning.lean?.maxLean;
+  if (maxLean === undefined) throw new Error("compareBikeTuning: the tuning has no lean block");
+  const game = measureBikeHandling(() => createVehicleDynamics(tuning), { maxLean });
+  const ref = reference ?? measureReferenceMotorcycle(bike);
+  return { bike, game, reference: ref, rows: compareBikeMetrics(game, ref, bike.published) };
+}
+
+/**
+ * How close the reference motorcycle must land to each published number: braking within 5%, 0-100 and 0-200 km/h
+ * within 12% (the torque curve between the engine's published peaks and its inertia are estimates).
+ */
+export const MOTORCYCLE_PUBLISHED_TOLERANCES = { zeroTo100: 0.12, zeroTo200: 0.12, brake100: 0.05 } as const;
+
+/** One published number checked against the reference motorcycle. */
+export interface MotorcyclePublishedCheck {
+  metric: keyof typeof MOTORCYCLE_PUBLISHED_TOLERANCES;
+  reference: number;
+  published: number;
+  /** Relative gap. */
+  gap: number;
+  allowed: number;
+  pass: boolean;
+}
+
+/**
+ * Check a real motorcycle's measured reference metrics against its published tests within
+ * {@link MOTORCYCLE_PUBLISHED_TOLERANCES}.
+ * @capability reference-validation check the reference motorcycle against a real bike's published 0-100, 0-200 and braking
+ */
+export function checkReferenceMotorcycle(bike: RealMotorcycle, reference: BikeHandlingMetrics): MotorcyclePublishedCheck[] {
+  const measured = { zeroTo100: reference.zeroTo100, zeroTo200: reference.zeroTo200, brake100: reference.brake100To0 };
+  return (["zeroTo100", "zeroTo200", "brake100"] as const).map((metric) => {
+    const published = bike.published[metric];
+    const gap = (measured[metric] - published) / published;
+    const allowed = MOTORCYCLE_PUBLISHED_TOLERANCES[metric];
+    return { metric, reference: measured[metric], published, gap, allowed, pass: Math.abs(gap) <= allowed };
+  });
+}
+
+/**
+ * Measure every real motorcycle's reference model and check it against its published tests: the bike half of
+ * `bun run games:capabilities handling --validate`.
+ * @capability reference-validation measure every real motorcycle's reference model and check it against published tests
+ */
+export function validateReferenceMotorcycles(
+  bikes: readonly RealMotorcycle[] = REAL_MOTORCYCLES,
+): { bike: RealMotorcycle; metrics: BikeHandlingMetrics; checks: MotorcyclePublishedCheck[] }[] {
+  return bikes.map((bike) => {
+    const metrics = measureReferenceMotorcycle(bike);
+    return { bike, metrics, checks: checkReferenceMotorcycle(bike, metrics) };
   });
 }

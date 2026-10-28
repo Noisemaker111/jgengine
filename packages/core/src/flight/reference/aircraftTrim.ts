@@ -8,6 +8,7 @@ import {
   type ReferencePilotInput,
   type ReferenceSurfaces,
 } from "./referenceAircraft";
+import { matrixEigenvalues, solveLinearSystem, type Eigenvalue } from "../../math/linearAlgebra";
 
 /** Flight state in wind axes and Euler angles, the form Stevens & Lewis tabulate: SI units and radians. */
 export interface WindAxisState {
@@ -126,42 +127,6 @@ export interface TrimResult {
 }
 
 /**
- * Solves `A·x = b` by Gaussian elimination with partial pivoting; a singular pivot leaves that unknown at `0`.
- * @capability linear-solve solve a small dense linear system
- */
-export function solveLinearSystem(matrix: readonly (readonly number[])[], rhs: readonly number[]): number[] {
-  const n = rhs.length;
-  const a = matrix.map((row, i) => [...row, rhs[i] ?? 0]);
-  for (let col = 0; col < n; col += 1) {
-    let pivot = col;
-    for (let row = col + 1; row < n; row += 1) if (Math.abs(a[row]?.[col] ?? 0) > Math.abs(a[pivot]?.[col] ?? 0)) pivot = row;
-    const top = a[col];
-    const best = a[pivot];
-    if (top === undefined || best === undefined) continue;
-    a[col] = best;
-    a[pivot] = top;
-    const lead = best[col] ?? 0;
-    if (Math.abs(lead) < 1e-14) continue;
-    for (let row = col + 1; row < n; row += 1) {
-      const target = a[row];
-      if (target === undefined) continue;
-      const factor = (target[col] ?? 0) / lead;
-      for (let k = col; k <= n; k += 1) target[k] = (target[k] ?? 0) - factor * (best[k] ?? 0);
-    }
-  }
-  const x = new Array<number>(n).fill(0);
-  for (let row = n - 1; row >= 0; row -= 1) {
-    const line = a[row];
-    if (line === undefined) continue;
-    let sum = line[n] ?? 0;
-    for (let k = row + 1; k < n; k += 1) sum -= (line[k] ?? 0) * (x[k] ?? 0);
-    const lead = line[row] ?? 0;
-    x[row] = Math.abs(lead) < 1e-14 ? 0 : sum / lead;
-  }
-  return x;
-}
-
-/**
  * Air data for a reference aircraft at rest in steady flight: no body rates, height above the ground at the origin.
  * @capability aircraft-trim air data for a steady flight condition, to settle propulsion or rotor states
  */
@@ -227,7 +192,10 @@ export function trimReferenceAircraft(aircraft: ReferenceAircraft, condition: Tr
         if (line !== undefined) line[col] = ((ru[row] ?? 0) - (rd[row] ?? 0)) / (2 * step);
       }
     }
-    const delta = solveLinearSystem(jacobian, r.map((value) => -value));
+    const flat = Float64Array.from(jacobian.flat());
+    const step = Float64Array.from(r, (value) => -value);
+    solveLinearSystem(flat, step, r.length);
+    const delta = Array.from(step);
     let scale = 1;
     let accepted = false;
     for (let attempt = 0; attempt < 30; attempt += 1) {
@@ -258,12 +226,6 @@ export function trimReferenceAircraft(aircraft: ReferenceAircraft, condition: Tr
   };
 }
 
-/** A complex eigenvalue. */
-export interface Eigenvalue {
-  real: number;
-  imag: number;
-}
-
 /** One dynamic mode read from eigenvalues. */
 export interface FlightMode {
   name: "short period" | "phugoid" | "dutch roll" | "roll subsidence" | "spiral";
@@ -285,78 +247,9 @@ export interface FlightLinearization {
   modes: FlightMode[];
 }
 
-/**
- * Eigenvalues of a small real matrix: Faddeev–LeVerrier characteristic polynomial, then Durand–Kerner roots.
- * @capability matrix-eigenvalues eigenvalues of a small real matrix
- */
-export function matrixEigenvalues(matrix: readonly (readonly number[])[]): Eigenvalue[] {
-  const n = matrix.length;
-  const at = (m: readonly (readonly number[])[], i: number, j: number): number => m[i]?.[j] ?? 0;
-  // Faddeev–LeVerrier: M_k = A M_{k-1} + c_{n-k+1} I, c_{n-k} = −tr(A M_k)/k.
-  const coefficients = new Array<number>(n + 1).fill(0);
-  coefficients[n] = 1;
-  let m: number[][] = Array.from({ length: n }, () => new Array<number>(n).fill(0));
-  for (let k = 1; k <= n; k += 1) {
-    const next: number[][] = Array.from({ length: n }, () => new Array<number>(n).fill(0));
-    for (let i = 0; i < n; i += 1) {
-      for (let j = 0; j < n; j += 1) {
-        let sum = 0;
-        for (let l = 0; l < n; l += 1) sum += at(matrix, i, l) * at(m, l, j);
-        const row = next[i];
-        if (row !== undefined) row[j] = sum + (i === j ? (coefficients[n - k + 1] ?? 0) : 0);
-      }
-    }
-    m = next;
-    let trace = 0;
-    for (let i = 0; i < n; i += 1) for (let l = 0; l < n; l += 1) trace += at(matrix, i, l) * at(m, l, i);
-    coefficients[n - k] = -trace / k;
-  }
-  // Durand–Kerner on the monic polynomial.
-  const re = new Array<number>(n).fill(0);
-  const im = new Array<number>(n).fill(0);
-  for (let i = 0; i < n; i += 1) {
-    const angle = (2 * Math.PI * i) / n + 0.4;
-    const radius = 1 + Math.max(...coefficients.map(Math.abs));
-    re[i] = 0.5 * radius * Math.cos(angle);
-    im[i] = 0.5 * radius * Math.sin(angle);
-  }
-  for (let iteration = 0; iteration < 2000; iteration += 1) {
-    let change = 0;
-    for (let i = 0; i < n; i += 1) {
-      const zr = re[i] ?? 0;
-      const zi = im[i] ?? 0;
-      let pr = 1;
-      let pi = 0;
-      for (let k = n - 1; k >= 0; k -= 1) {
-        const tr = pr * zr - pi * zi + (coefficients[k] ?? 0);
-        pi = pr * zi + pi * zr;
-        pr = tr;
-      }
-      let dr = 1;
-      let di = 0;
-      for (let j = 0; j < n; j += 1) {
-        if (j === i) continue;
-        const ar = zr - (re[j] ?? 0);
-        const ai = zi - (im[j] ?? 0);
-        const tr = dr * ar - di * ai;
-        di = dr * ai + di * ar;
-        dr = tr;
-      }
-      const den = dr * dr + di * di || 1e-300;
-      const qr = (pr * dr + pi * di) / den;
-      const qi = (pi * dr - pr * di) / den;
-      re[i] = zr - qr;
-      im[i] = zi - qi;
-      change = Math.max(change, Math.hypot(qr, qi));
-    }
-    if (change < 1e-14) break;
-  }
-  return re.map((real, i) => ({ real, imag: Math.abs(im[i] ?? 0) < 1e-9 ? 0 : (im[i] ?? 0) }));
-}
-
 function modeOf(name: FlightMode["name"], eigenvalue: Eigenvalue): FlightMode {
-  const frequency = Math.hypot(eigenvalue.real, eigenvalue.imag);
-  return { name, eigenvalue, frequency, damping: frequency > 0 ? -eigenvalue.real / frequency : 1 };
+  const frequency = Math.hypot(eigenvalue.re, eigenvalue.im);
+  return { name, eigenvalue, frequency, damping: frequency > 0 ? -eigenvalue.re / frequency : 1 };
 }
 
 /**
@@ -387,18 +280,18 @@ export function linearizeReferenceAircraft(aircraft: ReferenceAircraft, trim: Tr
   };
   const longitudinal = jacobian(["airspeed", "alpha", "pitch", "q"]);
   const lateral = jacobian(["beta", "bank", "p", "r"]);
-  const longitudinalEigenvalues = matrixEigenvalues(longitudinal);
-  const lateralEigenvalues = matrixEigenvalues(lateral);
+  const longitudinalEigenvalues = matrixEigenvalues(longitudinal.flat(), longitudinal.length);
+  const lateralEigenvalues = matrixEigenvalues(lateral.flat(), lateral.length);
   const modes: FlightMode[] = [];
-  const longPairs = longitudinalEigenvalues.filter((e) => e.imag > 0).sort((a, b) => Math.hypot(a.real, a.imag) - Math.hypot(b.real, b.imag));
+  const longPairs = longitudinalEigenvalues.filter((e) => e.im > 0).sort((a, b) => Math.hypot(a.re, a.im) - Math.hypot(b.re, b.im));
   const phugoid = longPairs[0];
   const shortPeriod = longPairs[1];
   if (phugoid !== undefined && shortPeriod !== undefined) {
     modes.push(modeOf("short period", shortPeriod), modeOf("phugoid", phugoid));
   }
-  const dutch = lateralEigenvalues.find((e) => e.imag > 0);
+  const dutch = lateralEigenvalues.find((e) => e.im > 0);
   if (dutch !== undefined) modes.push(modeOf("dutch roll", dutch));
-  const reals = lateralEigenvalues.filter((e) => e.imag === 0).sort((a, b) => Math.abs(b.real) - Math.abs(a.real));
+  const reals = lateralEigenvalues.filter((e) => e.im === 0).sort((a, b) => Math.abs(b.re) - Math.abs(a.re));
   const roll = reals[0];
   const spiral = reals[reals.length - 1];
   if (roll !== undefined && spiral !== undefined && reals.length >= 2) modes.push(modeOf("roll subsidence", roll), modeOf("spiral", spiral));

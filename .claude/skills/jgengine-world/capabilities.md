@@ -236,6 +236,10 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `advanceBehaviors` (function) · `import { advanceBehaviors } from "@jgengine/core/world"`
 
+## bike-handling-compare — measure any single-track sim on bike scenarios — launch, braking, lean, lane change, slalom
+
+- `measureBikeHandling` (function) · `import { measureBikeHandling } from "@jgengine/core/physics/reference/motorcycleManeuvers"`
+
 ## bo105-reference — MBB Bo-105 reference helicopter validated against NASA TM-110356 rotor data
 
 - `createBo105Model` (function) · `import { createBo105Model } from "@jgengine/core/flight/reference/bo105Helicopter"`
@@ -706,8 +710,10 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `grounded` (function) · `import { grounded } from "@jgengine/core/world"`
 
-## handling-compare — line up two vehicles' measured handling metrics with deltas per metric
+## handling-compare — line up two bikes' measured metrics with deltas per metric
 
+- `compareBikeMetrics` (function) · `import { compareBikeMetrics } from "@jgengine/core/physics/reference/compareHandling"`
+- `compareBikeTuning` (function) · `import { compareBikeTuning } from "@jgengine/core/physics/reference/compareHandling"`
 - `compareHandlingMetrics` (function) · `import { compareHandlingMetrics } from "@jgengine/core/physics/reference/compareHandling"`
 - `compareVehicleTuning` (function) · `import { compareVehicleTuning } from "@jgengine/core/physics/reference/compareHandling"`
 - `measureComparableHandling` (function) · `import { measureComparableHandling } from "@jgengine/core/physics/reference/compareHandling"`
@@ -834,9 +840,9 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `createMultiRegionHealth` (function) · `import { createMultiRegionHealth } from "@jgengine/core/procedural"`
 
-## linear-solve — solve a small dense linear system
+## linear-solve — dense linear solve with partial pivoting for reference physics plants and constraints
 
-- `solveLinearSystem` (function) · `import { solveLinearSystem } from "@jgengine/core/flight/reference/aircraftTrim"`
+- `solveLinearSystem` (function) · `import { solveLinearSystem } from "@jgengine/core/math/linearAlgebra"`
 
 ## local-avoidance — bounded deterministic local collision avoidance for moving agents
 
@@ -880,9 +886,9 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 - `resolveMaterialAppearance` (function) · `import { resolveMaterialAppearance } from "@jgengine/core/material/appearanceSignals"`
 - `sampleMaterialAppearance` (function) · `import { sampleMaterialAppearance } from "@jgengine/core/material/appearanceSignals"`
 
-## matrix-eigenvalues — eigenvalues of a small real matrix
+## matrix-eigenvalues — eigenvalues of a real matrix — stability modes of a linearised plant
 
-- `matrixEigenvalues` (function) · `import { matrixEigenvalues } from "@jgengine/core/flight/reference/aircraftTrim"`
+- `matrixEigenvalues` (function) · `import { matrixEigenvalues } from "@jgengine/core/math/linearAlgebra"`
 
 ## merge-footprint-regions — pool adjacent compatible footprints with serializable capacity provenance
 
@@ -934,6 +940,18 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 ## model-sockets — named attachment points read from a model
 
 - `ModelNode` (interface) · `import { ModelNode } from "@jgengine/core/world"`
+
+## motorcycle-modes — weave and wobble eigenvalues of a multibody motorcycle at any speed
+
+- `motorcycleStraightRunningModes` (function) · `import { motorcycleStraightRunningModes } from "@jgengine/core/physics/reference/referenceMotorcycle"`
+
+## motorcycle-rider — steering-torque rider for the reference motorcycle — steady turns, lane changes, slaloms
+
+- `createRiddenMotorcycle` (function) · `import { createRiddenMotorcycle } from "@jgengine/core/physics/reference/motorcycleRider"`
+
+## motorcycle-tire — motorcycle Magic Formula tyre with camber thrust, combined slip and aligning/twisting moment (Sharp, Evangelou & Limebeer 2004)
+
+- `motorcycleMagicFormula` (function) · `import { motorcycleMagicFormula } from "@jgengine/core/physics/reference/motorcycleTire"`
 
 ## move-order — go-to-point order that completes on arrival, composed over a motion adapter
 
@@ -1202,6 +1220,10 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `policeRoadsFromLaneGraph` (function) · `import { policeRoadsFromLaneGraph } from "@jgengine/core/world"`
 
+## polynomial-roots — all complex roots of a real polynomial to double precision
+
+- `polynomialRoots` (function) · `import { polynomialRoots } from "@jgengine/core/physics/reference/eigenvalues"`
+
 ## population-director — ambient per-region creature population manager with timed weighted respawns and caps
 
 - `createPopulationDirector` (function) · `import { createPopulationDirector } from "@jgengine/core/ai/populationDirector"`
@@ -1271,10 +1293,16 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 - `createHelicopterModel` (function) · `import { createHelicopterModel } from "@jgengine/core/flight/reference/helicopter"`
 - `trimHelicopter` (function) · `import { trimHelicopter } from "@jgengine/core/flight/reference/helicopter"`
 
+## reference-motorcycle — multibody reference motorcycle — countersteer, weave and wobble from the physics, motorcycle Magic Formula tyres
+
+- `createReferenceMotorcycle` (function) · `import { createReferenceMotorcycle } from "@jgengine/core/physics/reference/referenceMotorcycle"`
+
 ## reference-validation — check the reference car model against a real car's published 0-100, braking and skidpad numbers
 
 - `checkReferenceAgainstPublished` (function) · `import { checkReferenceAgainstPublished } from "@jgengine/core/physics/reference/compareHandling"`
+- `checkReferenceMotorcycle` (function) · `import { checkReferenceMotorcycle } from "@jgengine/core/physics/reference/compareHandling"`
 - `validateReferenceCars` (function) · `import { validateReferenceCars } from "@jgengine/core/physics/reference/compareHandling"`
+- `validateReferenceMotorcycles` (function) · `import { validateReferenceMotorcycles } from "@jgengine/core/physics/reference/compareHandling"`
 
 ## reputation — faction standing that crosses named reputation tiers
 
@@ -1311,6 +1339,10 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 ## rigid-aircraft — force-and-torque aircraft — lifting surfaces with stall and drag polar, control surfaces, inertia, loops and rolls
 
 - `createRigidAircraft` (function) · `import { createRigidAircraft } from "@jgengine/core/world"`
+
+## rigid-body-tree — exact multibody dynamics of a tree of rigid bodies — mass matrix, bias forces, point Jacobians
+
+- `createRigidBodyTree` (function) · `import { createRigidBodyTree } from "@jgengine/core/physics/reference/rigidBodyTree"`
 
 ## road-ribbons — draw roads, tracks and trails as surfaced ribbons with curbs, sidewalks, lane markings and trimmed junctions
 
@@ -1356,6 +1388,10 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `controlGroupKey` (function) · `import { controlGroupKey } from "@jgengine/core/world"`
 - `resolveControlGroupIntent` (function) · `import { resolveControlGroupIntent } from "@jgengine/core/world"`
+
+## runge-kutta-4 — fixed-step fourth-order Runge–Kutta integrator for reference physics plants
+
+- `createRungeKutta4` (function) · `import { createRungeKutta4 } from "@jgengine/core/physics/reference/rungeKutta"`
 
 ## rvo-avoidance — reciprocal collision avoidance between many steering agents
 
@@ -1802,6 +1838,27 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 ## weather-surface-accumulation — Persist and retune bounded surface wetness, snow, temperature and exposure independently of rendering.
 
 - `createWeatherExposure` (function) · `import { createWeatherExposure } from "@jgengine/core/weather/authoredWeather"`
+
+## whipple-bicycle — nonlinear Whipple bicycle simulation — self-stability, countersteer and capsize from rigid-body physics
+
+- `createWhippleBicycle` (function) · `import { createWhippleBicycle } from "@jgengine/core/physics/reference/whippleBicycle"`
+
+## whipple-eigenvalues — stability eigenvalues of the Whipple bicycle at any speed — weave, capsize, castering
+
+- `whippleEigenvalues` (function) · `import { whippleEigenvalues } from "@jgengine/core/physics/reference/whippleBicycle"`
+
+## whipple-linear — linearised Whipple bicycle lean/steer equations (Meijaard 2007 benchmark coefficients)
+
+- `whippleLinearCoefficients` (function) · `import { whippleLinearCoefficients } from "@jgengine/core/physics/reference/whippleBicycle"`
+
+## whipple-nonlinear-linearisation — linearise the full nonlinear bicycle multibody model to check it against the benchmark
+
+- `linearizeWhippleBicycle` (function) · `import { linearizeWhippleBicycle } from "@jgengine/core/physics/reference/whippleBicycle"`
+- `nonlinearWhippleEigenvalues` (function) · `import { nonlinearWhippleEigenvalues } from "@jgengine/core/physics/reference/whippleBicycle"`
+
+## whipple-self-stability — weave and capsize speeds of a Whipple bicycle — its self-stable speed range
+
+- `whippleCriticalSpeeds` (function) · `import { whippleCriticalSpeeds } from "@jgengine/core/physics/reference/whippleBicycle"`
 
 ## wind-axis-rates — state rates in wind-axis variables for check cases and linearisation
 

@@ -1,25 +1,32 @@
-// `bun run games:capabilities handling <module>#<export> ...`: score game cars against real physics.
+// `bun run games:capabilities handling <module>#<export> ...`: score game vehicles against real physics.
 // Every VehicleSpec or VehicleDynamicsTuning found in each export runs the same scenarios as the
-// multi-body reference model of a real car, and the table shows game / reference / real per metric.
+// multi-body reference model of a real car (or, for a tuning with a lean block, a real motorcycle with
+// its rider), and the table shows game / reference / real per metric.
 import { resolve } from "node:path";
 import { pathToFileURL } from "node:url";
 
 import {
+  compareBikeTuning,
   compareVehicleTuning,
   formatHandlingComparison,
   measureReferenceCar,
+  measureReferenceMotorcycle,
   validateReferenceCars,
+  validateReferenceMotorcycles,
   type ComparableHandlingMetrics,
 } from "@jgengine/core/physics/reference/compareHandling";
+import type { BikeHandlingMetrics } from "@jgengine/core/physics/reference/motorcycleManeuvers";
+import { REAL_MOTORCYCLES } from "@jgengine/core/physics/reference/realMotorcycles";
 import { REAL_CARS, type RealCar } from "@jgengine/core/physics/reference/realCars";
 import type { VehicleDynamicsTuning } from "@jgengine/core/physics/vehicleDynamics";
 import { vehicleTuning, type VehicleSpec } from "@jgengine/core/physics/vehicleSpec";
 
 const USAGE = `usage: bun run games:capabilities handling <module>#<export> ... [--car <id>] [--json]
        bun run games:capabilities handling --validate
-  --validate         full validation: every real car's reference model against its published tests (slow)
+  --validate         full validation: every real car's and motorcycle's reference model against its published tests (slow)
   <module>#<export>  a file and the export holding a VehicleSpec, a VehicleDynamicsTuning, or arrays/records of them
   --car <id>         real car to compare with (default: the closest in mass): ${REAL_CARS.map((car) => car.id).join(", ")}
+                     a tuning with a lean block is a bike: it is compared with ${REAL_MOTORCYCLES.map((bike) => bike.name).join(", ")}
   --json             print the rows as JSON
 example: bun run games:capabilities handling games/apex-nights/src/game/race.ts#BASE`;
 
@@ -72,6 +79,15 @@ function validate(): number {
     console.log(`  ISO 4138 understeer ${metrics.understeerGradient.toFixed(2)} deg/g, max ${metrics.steadyStateMaxG.toFixed(2)} g; ISO 7401 response ${metrics.stepResponseTime.toFixed(2)} s, overshoot ${metrics.stepOvershoot.toFixed(2)}; ISO 3888-1 ${metrics.laneChangeSpeed.toFixed(0)} km/h
 `);
   }
+  for (const { bike, metrics, checks } of validateReferenceMotorcycles()) {
+    console.log(`${bike.name}`);
+    for (const check of checks) {
+      console.log(`  ${check.pass ? "ok  " : "FAIL"} ${check.metric.padEnd(12)} reference ${check.reference.toFixed(2).padStart(6)}  published ${check.published.toFixed(2).padStart(6)}  gap ${check.gap >= 0 ? "+" : ""}${(check.gap * 100).toFixed(1)}% (allowed ${check.allowed * 100}%)`);
+      if (!check.pass) failed += 1;
+    }
+    console.log(`  lean ${metrics.steadyLeanDeg.toFixed(0)} deg at ${metrics.steadyLateralG.toFixed(2)} g, 90% in ${metrics.timeToLean.toFixed(2)} s, countersteer ${metrics.counterSteerDeg.toFixed(1)} deg; lane change ${metrics.laneChangeSpeed.toFixed(0)} km/h, slalom ${metrics.slalomSpeed.toFixed(0)} km/h
+`);
+  }
   return failed === 0 ? 0 : 1;
 }
 
@@ -108,8 +124,18 @@ async function main(argv: readonly string[]): Promise<number> {
     if (found.length === before) console.error(`handling: ${target} holds no VehicleSpec or VehicleDynamicsTuning`);
   }
   const references = new Map<string, ComparableHandlingMetrics>();
+  let bikeReference: BikeHandlingMetrics | undefined;
   const results = [];
   for (const entry of found) {
+    if (entry.tuning.lean !== undefined) {
+      const bike = REAL_MOTORCYCLES[0];
+      if (bike === undefined) throw new Error("no real motorcycles");
+      bikeReference ??= measureReferenceMotorcycle(bike);
+      const comparison = compareBikeTuning(entry.tuning, bike, bikeReference);
+      results.push({ label: entry.label, bike: bike.name, rows: comparison.rows });
+      if (!json) console.log(`${formatHandlingComparison(`${entry.label} vs ${bike.name} (${Math.round(entry.tuning.massKg)} kg)`, comparison.rows)}\n`);
+      continue;
+    }
     const car = forced ?? nearest(entry.tuning.massKg);
     let reference = references.get(car.id);
     if (reference === undefined) {
