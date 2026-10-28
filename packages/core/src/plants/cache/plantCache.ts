@@ -36,6 +36,26 @@ function request<T>(req: IDBRequest<T>): Promise<T> {
   });
 }
 
+const PLANT_DB_STORE = "entries";
+// One connection per database name for the page's lifetime, shared by every storage over it.
+const plantDatabases = new Map<string, Promise<IDBDatabase>>();
+
+function openPlantDatabase(factory: IDBFactory, name: string): Promise<IDBDatabase> {
+  const known = plantDatabases.get(name);
+  if (known !== undefined) return known;
+  const opening = new Promise<IDBDatabase>((resolve, reject) => {
+    const req = factory.open(name, 1);
+    req.onupgradeneeded = () => {
+      if (!req.result.objectStoreNames.contains(PLANT_DB_STORE)) req.result.createObjectStore(PLANT_DB_STORE);
+    };
+    req.onsuccess = () => resolve(req.result);
+    req.onerror = () => reject(req.error ?? new Error("indexedDB open failed"));
+  });
+  plantDatabases.set(name, opening);
+  opening.catch(() => plantDatabases.delete(name));
+  return opening;
+}
+
 /**
  * A storage over the browser's IndexedDB, or null where there is none (bun, node, a locked-down
  * frame). Failures read as misses, so a full or blocked database only costs regrowing.
@@ -44,19 +64,8 @@ function request<T>(req: IDBRequest<T>): Promise<T> {
 export function createIndexedDbPlantCacheStorage(name = "jgengine-plants"): PlantCacheStorage | null {
   const factory = typeof indexedDB === "undefined" ? undefined : indexedDB;
   if (factory === undefined) return null;
-  const store = "entries";
-  let opened: Promise<IDBDatabase> | null = null;
-  const open = (): Promise<IDBDatabase> => {
-    opened ??= new Promise((resolve, reject) => {
-      const req = factory.open(name, 1);
-      req.onupgradeneeded = () => {
-        if (!req.result.objectStoreNames.contains(store)) req.result.createObjectStore(store);
-      };
-      req.onsuccess = () => resolve(req.result);
-      req.onerror = () => reject(req.error ?? new Error("indexedDB open failed"));
-    });
-    return opened;
-  };
+  const store = PLANT_DB_STORE;
+  const open = (): Promise<IDBDatabase> => openPlantDatabase(factory, name);
   return {
     async get(key) {
       try {

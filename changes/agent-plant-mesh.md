@@ -35,7 +35,5 @@ Engine seam: packages/core/src/generator/generator.ts, packages/core/src/materia
 ### Removed
 
 - the nature.broadleaf and nature.conifer generators with their schemas and presets
-- `@jgengine/assets/library/libraryRocketbox` no longer exports `ROCKETBOX_CLIP_FOLDERS`.
-- `@jgengine/assets/rocketboxPull` no longer exports `PullRocketboxClipOptions`, `PulledRocketboxClip`, `pullRocketboxClip`.
 - `@jgengine/core/nature/natureGenerators` no longer exports `BROADLEAF_GENERATOR`, `BROADLEAF_SCHEMA`, `CONIFER_GENERATOR`, `CONIFER_SCHEMA`.
 - `@jgengine/core/world` no longer exports `BROADLEAF_GENERATOR`, `BROADLEAF_SCHEMA`, `CONIFER_GENERATOR`, `CONIFER_SCHEMA`.
