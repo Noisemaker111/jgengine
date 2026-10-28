@@ -1,9 +1,10 @@
-import type { ReactNode } from "react";
+import type { CSSProperties, ReactNode } from "react";
 
 import { HUD_CORNER_WIDTH } from "./hudLayout.view";
 import { KitBanner, KitObjective, type KitBannerProps } from "@jgengine/core/ui/kit/kitFlow.view";
 import type { KitTone } from "@jgengine/core/ui/kit/uiKit.view";
 import { KitMeter, KitPanel } from "@jgengine/core/ui/kit/uiKitRoot.view";
+import { SpriteIcon } from "@jgengine/core/ui/icons/spriteIcon.view";
 
 /**
  * The play-HUD readouts every game repeats, drawn from the active UI kit's parts: resource counts,
@@ -175,6 +176,94 @@ export function KitHint({ text, tone = "accent", banner }: KitHintProps): ReactN
         </KitPanel>
       )}
       {banner === undefined ? null : <KitBanner {...banner} />}
+    </div>
+  );
+}
+
+/** One pool on a {@link KitVitalIcons} strip. */
+export interface KitVitalIcon {
+  /** Marks the pool for tests and drives as `data-vital`. */
+  id: string;
+  /** Spoken name and the readout's label ("Health"). */
+  label: string;
+  /** A served one-colour glyph (`libraryIconUrl("gameicons:lorc/heart-plus")`), drawn like {@link SpriteIcon}. */
+  icon: string;
+  value: number;
+  max: number;
+  /** Default `accent`. */
+  tone?: KitTone;
+  /** A colour of its own instead of the tone's. */
+  color?: string;
+  /** Below this fraction of `max` the glyph turns `lowTone`. Unset never turns. */
+  lowAt?: number;
+  /** Default `bad`. */
+  lowTone?: KitTone;
+  /** Turns the glyph `lowTone` whatever the value (hungry, encumbered). */
+  warn?: boolean;
+  /** What the readout prints under the label instead of `value / max` ("24°C"). */
+  text?: string;
+}
+
+/** Props for {@link KitVitalIcons}. */
+export interface KitVitalIconsProps {
+  vitals: readonly KitVitalIcon[];
+  /** Glyph edge in px. Default 32. */
+  size?: number;
+  /** Prints each pool's label and `value / max` beside each glyph in a column (on its left, toward the screen), under it in a row. Default `false`. */
+  readout?: boolean;
+  /** Default `column`. */
+  direction?: "column" | "row";
+}
+
+const TONE_COLOR: Record<KitTone, string> = {
+  neutral: "var(--kit-ink, #e8e4da)",
+  accent: "var(--kit-accent, #5fd0e0)",
+  good: "var(--kit-good, #6fcf6a)",
+  warn: "var(--kit-warn, #e7c84a)",
+  bad: "var(--kit-bad, #e0503f)",
+};
+
+/**
+ * Survival pools as a strip of glyphs that fill from the bottom as the pool fills: a heart, a bolt,
+ * a drumstick, a drop. Quieter than a card of bars; `readout` adds the numbers beside each glyph for
+ * a detailed mode. Each glyph is a `role="meter"` with its value for assistive tech and tests.
+ *
+ * @capability kit-vital-icons survival pools as a column of glyphs that fill from the bottom, numbers on demand
+ */
+export function KitVitalIcons({ vitals, size = 32, readout = false, direction = "column" }: KitVitalIconsProps): ReactNode {
+  return (
+    <div data-kit-vital-icons="" style={{ display: "flex", flexDirection: direction, alignItems: direction === "column" ? "flex-end" : "flex-start", gap: 4, pointerEvents: "none" }}>
+      {vitals.map((vital) => {
+        const fill = vital.max > 0 ? Math.max(0, Math.min(1, vital.value / vital.max)) : 0;
+        const low = vital.warn === true || (vital.lowAt !== undefined && vital.value < vital.max * vital.lowAt);
+        const color = low ? TONE_COLOR[vital.lowTone ?? "bad"] : (vital.color ?? TONE_COLOR[vital.tone ?? "accent"]);
+        const glyph: CSSProperties = { position: "absolute", inset: 0, width: size, height: size, filter: "drop-shadow(0 1px 1px #000a)" };
+        return (
+          <div
+            key={vital.id}
+            data-vital={vital.id}
+            data-low={low ? "" : undefined}
+            role="meter"
+            aria-label={vital.label}
+            aria-valuemin={0}
+            aria-valuemax={vital.max}
+            aria-valuenow={Math.floor(vital.value)}
+            style={{ display: "flex", flexDirection: direction === "column" ? "row-reverse" : "column", alignItems: "center", gap: direction === "column" ? 6 : 1 }}
+          >
+            <span style={{ position: "relative", width: size, height: size }}>
+              <SpriteIcon src={vital.icon} size={size} color={color} style={{ ...glyph, opacity: 0.28 }} />
+              <SpriteIcon src={vital.icon} size={size} color={color} style={{ ...glyph, clipPath: `inset(${(1 - fill) * 100}% 0 0 0)` }} />
+            </span>
+            {readout ? (
+              <span style={{ fontSize: 10, lineHeight: 1.15, textAlign: direction === "column" ? "right" : "center", whiteSpace: "nowrap", color: "var(--kit-ink, #e8e4da)", textShadow: "0 1px 2px #000", fontVariantNumeric: "tabular-nums" }}>
+                {vital.label}
+                <br />
+                {vital.text ?? `${Math.floor(vital.value)} / ${Math.round(vital.max)}`}
+              </span>
+            ) : null}
+          </div>
+        );
+      })}
     </div>
   );
 }

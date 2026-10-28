@@ -5470,6 +5470,16 @@
       "intent": "a short message drawn by the active UI kit, with its enter/exit motion"
     },
     {
+      "id": "kit-vital-icons",
+      "packages": [
+        "@jgengine/core"
+      ],
+      "module": "@jgengine/core/hud/kitHud.view",
+      "gameFacing": false,
+      "probe": null,
+      "intent": "survival pools as a column of glyphs that fill from the bottom, numbers on demand"
+    },
+    {
       "id": "kit-vitals",
       "packages": [
         "@jgengine/core"

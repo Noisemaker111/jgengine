@@ -462,6 +462,10 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `KitToast` (function) · `import { KitToast } from "@jgengine/react"`
 
+## kit-vital-icons — survival pools as a column of glyphs that fill from the bottom, numbers on demand
+
+- `KitVitalIcons` (function) · `import { KitVitalIcons } from "@jgengine/core/hud/kitHud.view"`
+
 ## kit-vitals — a HUD vitals card — meters that turn bad when low, extra readouts, the labeled current objective under it
 
 - `KitVitals` (function) · `import { KitVitals } from "@jgengine/core/hud/kitHud.view"`

@@ -57,6 +57,8 @@ export const game = defineGame({
     whistleFollow: ["KeyT"],
     whistleStay: ["KeyU"],
     inventory: ["KeyI", "Tab"],
+    // ARK's extended HUD: the numbers under the vital icons.
+    hudDetail: ["KeyH"],
     // ARK's third/first-person swap.
     view: ["KeyV"],
     // Building: R turns the ghost, G demolishes the piece in front.

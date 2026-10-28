@@ -27,6 +27,7 @@ export const CONTROLS: readonly (readonly [string, string])[] = [
   ["T / U", "Whistle your tames to follow / stay"],
   ["I", "Inventory, crafting, stats and engrams"],
   ["V", "First / third person"],
+  ["H", "Show the numbers under the vital icons"],
   ["1 - 0", "Equip a hotbar tool or eat hotbar food"],
   ["Esc", "Pause"],
 ];

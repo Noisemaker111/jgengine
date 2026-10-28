@@ -63,6 +63,18 @@ const BY_SHAPE: Readonly<Record<string, string>> = {
   pillar: "gameicons:delapouite/wood-beam",
 };
 
+/** ARK's vital icons on the HUD, one game-icons.net glyph per pool. */
+export const VITAL_ICON = {
+  health: "gameicons:sbed/health-normal",
+  stamina: "gameicons:badges/bolt",
+  food: "gameicons:lorc/chicken-leg",
+  water: "gameicons:sbed/water-drop",
+  weight: "gameicons:delapouite/weight",
+  torpor: "gameicons:lorc/sleepy",
+  xp: "gameicons:delapouite/upgrade",
+  temperature: "gameicons:lorc/thermometer-scale",
+} as const;
+
 /** The game-icons.net key an item draws with, or null for an item with none. */
 export function itemIconKey(itemId: string): string | null {
   const direct = BY_ITEM[itemId];
@@ -77,7 +89,7 @@ export function itemIconKey(itemId: string): string | null {
 }
 
 /** Every icon the game ships, for its credits. */
-export const ITEM_ICON_KEYS: readonly string[] = [...new Set([...Object.values(BY_ITEM), ARTIFACT, TROPHY, BERRY, SADDLE, ...Object.values(BY_SHAPE)])];
+export const ITEM_ICON_KEYS: readonly string[] = [...new Set([...Object.values(BY_ITEM), ARTIFACT, TROPHY, BERRY, SADDLE, ...Object.values(BY_SHAPE), ...Object.values(VITAL_ICON)])];
 
 /** One credit line per game-icons.net artist. */
 export function itemIconCredits(): string[] {
