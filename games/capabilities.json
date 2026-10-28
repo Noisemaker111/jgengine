@@ -455,6 +455,46 @@
       "intent": "read the fraction of a hit armor removes at a given armor value"
     },
     {
+      "id": "arthropod-compare",
+      "packages": [
+        "@jgengine/core"
+      ],
+      "module": "@jgengine/core/movement/reference/arthropodGait",
+      "gameFacing": false,
+      "probe": null,
+      "intent": "score a game insect or spider's gaits and top speed against real arthropods"
+    },
+    {
+      "id": "arthropod-reference-validation",
+      "packages": [
+        "@jgengine/core"
+      ],
+      "module": "@jgengine/core/movement/reference/arthropodGait",
+      "gameFacing": false,
+      "probe": null,
+      "intent": "check the arthropod reference against published insect and spider running data"
+    },
+    {
+      "id": "arthropod-stride",
+      "packages": [
+        "@jgengine/core"
+      ],
+      "module": "@jgengine/core/movement/reference/arthropodGait",
+      "gameFacing": false,
+      "probe": null,
+      "intent": "stride length, frequency, duty factor and gait of a real insect or spider at a speed"
+    },
+    {
+      "id": "arthropod-top-speed",
+      "packages": [
+        "@jgengine/core"
+      ],
+      "module": "@jgengine/core/movement/reference/arthropodGait",
+      "gameFacing": false,
+      "probe": null,
+      "intent": "top running speed range of an insect or spider scaled to a leg length"
+    },
+    {
       "id": "asset-anchor",
       "packages": [
         "@jgengine/core"
