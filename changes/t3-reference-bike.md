@@ -21,25 +21,3 @@ Whipple bicycle benchmark (Meijaard et al. 2007): linear eigenvalues and weave/c
 ### Changed
 
 - Part of #2698
-
-### Removed
-
-- `@jgengine/core/anim/humanoidActionClips.draw` no longer exports `HUMANOID_SOCKETS`, `addHumanoidSockets`, `buildHumanoidActionClips`, `firstPersonArms`, `withHumanoidActionClips`.
-- `@jgengine/core/anim/humanoidActions` no longer exports `HUMANOID_ACTIONS`, `HUMANOID_ACTION_NAMES`, `HUMANOID_ACTION_SLOTS`, `HUMANOID_FIRST_PERSON_CARRY`, `HumanoidActionClip`, `HumanoidActionName`, `HumanoidAnimationInput`, `HumanoidPoseKey` and 2 more.
-- `@jgengine/core/anim/locomotionGraph` no longer exports `LOCOMOTION_AIRBORNE_PARAM`, `LOCOMOTION_AIRBORNE_STATE`, `LOCOMOTION_SWIMMING_PARAM`, `LOCOMOTION_SWIM_STATE`.
-- `@jgengine/core/anim/skeletonStandard` no longer exports `BIPED_SCHEME`, `HUMANOID_BODY_SLOTS`, `detectHumanoidRig`.
-- `@jgengine/core/camera/firstPersonBody.draw` no longer exports `FirstPersonBodyContext`, `collapseHead`, `humanoidHead`, `useFirstPersonBody`.
-- `@jgengine/core/plants/growth/carbonBalance` no longer exports `ShootCandidates`, `StructureCost`.
-- `@jgengine/core/plants/growth/growthState` no longer exports `GrowthState`, `NODE_AXIS_START`, `NODE_DEAD`, `NODE_FIELDS`, `NODE_NO_SPUR`, `NODE_SCAR`, `SCALAR_FIELDS`.
-- `@jgengine/core/plants/growth/lightField` no longer exports `LightField`, `LightFieldSnapshot`.
-- `@jgengine/core/plants/growth/phenology` no longer exports `GrowingSeason`.
-- `@jgengine/core/plants/growth/pipeModel` no longer exports `PipeCost`.
-- `@jgengine/core/plants/growth/plantEnvironment` no longer exports `OPEN_TEMPERATE_SITE`, `PlantEnvironment`.
-- `@jgengine/core/plants/growth/plantGrowth` no longer exports `DEFAULT_GROWTH_LIMITS`, `GrowthLimits`, `PLANT_SIM_VERSION`, `PlantGrowth`, `PlantGrowthSnapshot`, `PlantGrowthStats`, `createPlantGrowth`.
-- `@jgengine/core/plants/growth/plantMath` no longer exports `PLANT_PI`.
-- `@jgengine/core/plants/growth/tropism` no longer exports `TropismWeights`.
-- `@jgengine/core/plants/species/data/acerSaccharum` no longer exports `ACER_SACCHARUM`.
-- `@jgengine/core/plants/species/plantSpecies` no longer exports `BarkKind`, `HalleOldemanModel`, `LeafShapeParams`, `PlantSpecies`, `SeasonalColor`, `plantSpeciesById`, `plantSpeciesIds`, `registerPlantSpecies` and 1 more.
-- `@jgengine/core/plants/species/speciesSources` no longer exports `PLANT_SOURCES`, `PlantSourceId`.
-- `@jgengine/core/plants/structure/plantStructure` no longer exports `CROWN_HULL_BINS`, `CROWN_HULL_SECTORS`, `PLANT_CLUSTER_LEVELS`, `PLANT_ORGAN`, `PLANT_REGION`, `PlantClusterLevel`, `PlantRegion`, `PlantStructure` and 4 more.
-- `@jgengine/core/plants/validation/heightAgeCurves` no longer exports `SUGAR_MAPLE_CARMEAN`, `SiteIndexCurve`, `siteIndexHeightM`.
