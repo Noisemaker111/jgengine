@@ -249,6 +249,39 @@ provenance.
   other veteran trees*, The Tree Council: crown retrenchment of old trees.
 - Allen et al. 1998, FAO Irrigation and Drainage Paper 56: extraterrestrial radiation and day length.
 
+## Landform simulation
+
+The landform simulator (`packages/core/src/landform/`) implements published models from the papers;
+no code is copied (Landlab, Fastscape and TopoToolbox were not used as sources).
+
+- Braun & Willett 2013, *A very efficient O(n), implicit and parallel method to solve the stream
+  power equation governing fluvial incision and landscape evolution*, Geomorphology 180–181: the
+  flow stack and the implicit stream-power solver.
+- Howard & Kerby 1983, channel changes in badlands, *GSA Bulletin* 94; Whipple & Tucker 1999,
+  dynamics of the stream-power river incision model, *JGR* 104: the stream-power law.
+- Barnes, Lehman & Mulla 2014, *Priority-Flood: an optimal depression-filling and watershed-labeling
+  algorithm for digital elevation models*, Computers & Geosciences 62: lake filling and the ε rise.
+- O'Callaghan & Mark 1984, the extraction of drainage networks from digital elevation data, *CVGIP*
+  28: D8 routing. Tarboton 1997, a new method for the determination of flow directions and upslope
+  areas in grid digital elevation models, *Water Resources Research* 33: D∞ routing.
+- Davy & Lague 2009, the erosion/transport equation of landscape evolution models revisited, *JGR*
+  114; Yuan, Braun, Guerit, Rouby & Cordonnier 2019, a new efficient method to solve the stream
+  power law model taking into account sediment deposition, *JGR Earth Surface* 124: deposition.
+- Culling 1960, analytical theory of erosion, *Journal of Geology* 68; Fernandes & Dietrich 1997,
+  hillslope evolution by diffusive processes, *Water Resources Research* 33; Hanks, Bucknam,
+  Lajoie & Wallace 1984, modification of wave-cut and faulting-controlled landforms, *JGR* 89: hillslope
+  diffusion and the scarp profile it is tested against.
+- Burbank et al. 1996, bedrock incision, rock uplift and threshold hillslopes in the northwestern
+  Himalayas, *Nature* 379; Montgomery & Brandon 2002, topographic controls on erosion rates in
+  tectonically active mountain ranges, *EPSL* 201: threshold landsliding.
+- Flint 1974, stream gradient as a function of order, magnitude and discharge, *Water Resources
+  Research* 10; Whipple 2004, bedrock rivers and the geomorphology of active orogens, *Annual Review
+  of Earth and Planetary Sciences* 32: the slope–area law and concavity range.
+- Hack 1957, studies of longitudinal stream profiles in Virginia and Maryland, USGS Professional
+  Paper 294-B (US public domain); Rigon et al. 1996, on Hack's law, *Water Resources Research* 32.
+- Forte, Yanites & Whipple 2016, complexities of landscape evolution during incision through layered
+  stratigraphy, *Earth Surface Processes and Landforms* 41: rivers steepening in hard layers.
+
 ## Game and level design research
 
 The `game-design` and `level-design` skills synthesize and rephrase design
