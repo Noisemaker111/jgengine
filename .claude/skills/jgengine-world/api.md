@@ -1282,6 +1282,48 @@
 - `effectiveRelation` (function): function effectiveRelation(input: EffectiveRelationInput): FactionRelation — ⚠ undocumented
 - `tierForStanding` (function): function tierForStanding(tiers: readonly ReputationTier[], standing: number): ReputationTier — Map a faction standing value to its named reputation tier.
 
+## @jgengine/core/fire/fuelModels
+
+- `ANDERSON_FUEL_MODELS` (const): const ANDERSON_FUEL_MODELS: Readonly<Record<string, FuelModel>> — The original 13 fuel models (Anderson 1982; Albini 1976), keyed by code `FM1`..`FM13`.
+- `FuelLoads` (interface): interface FuelLoads — Fuel loads of one surface fuel model by size class, kg/m².
+- `FuelModel` (interface): interface FuelModel — A surface fuel bed in the form Rothermel's model reads: loads, particle sizes, depth, heat content and the dead moisture of extinction. Metric units; the standard models below are converted from their published English values.
+- `FuelMoisture` (interface): interface FuelMoisture — Fuel moisture by size class, as a fraction of dry mass (0.06 = 6 %).
+- `KG_M2_PER_LB_FT2` (const): const KG_M2_PER_LB_FT2: number — kg/m² per lb/ft².
+- `KG_M2_PER_TON_ACRE` (const): const KG_M2_PER_TON_ACRE: number — kg/m² per ton/acre (short tons).
+- `KJ_KG_PER_BTU_LB` (const): const KJ_KG_PER_BTU_LB: 2.326 — kJ/kg per Btu/lb.
+- `MOISTURE_SCENARIOS` (const): const MOISTURE_SCENARIOS: Readonly<Record<string, FuelMoisture>> — Scott & Burgan 2005 fuel moisture scenarios: dead D1 (very low) to D4 (high) and live L1 (fully cured herbs) to L4 (fully green), keyed `D1L1`..`D4L4`.
+- `M_PER_FT` (const): const M_PER_FT: 0.3048 — Metres per foot.
+- `NON_BURNABLE_FUEL_MODELS` (const): const NON_BURNABLE_FUEL_MODELS: Readonly<Record<string, FuelModel>> — Non-burnable cover (urban, snow, agriculture, water, bare ground), keyed by code `NB1`..`NB9`.
+- `SCOTT_BURGAN_FUEL_MODELS` (const): const SCOTT_BURGAN_FUEL_MODELS: Readonly<Record<string, FuelModel>> — The 40 standard fire behavior fuel models of Scott & Burgan 2005 (grass GR, grass-shrub GS, shrub SH, timber-understory TU, timber litter TL, slash-blowdown SB), keyed by code.
+- `standardFuelModel` (function): function standardFuelModel(code: string): FuelModel | undefined — Every standard fuel model by code.
+- `totalFuelLoad` (function): function totalFuelLoad(fuel: FuelModel): number — Total fuel load of a model, kg/m².
+
+## @jgengine/core/fire/surfaceFire
+
+- `KW_M_PER_BTU_FT_S` (const): const KW_M_PER_BTU_FT_S: number — kW/m per Btu/ft/s.
+- `MPS_PER_MPH` (const): const MPS_PER_MPH: 0.44704 — m/s per mile/hour.
+- `SpreadConditions` (interface): interface SpreadConditions — Wind and terrain under which a fuel bed spreads.
+- `SurfaceFuelbed` (interface): interface SurfaceFuelbed — A fuel bed reduced to the wind- and slope-independent terms of Rothermel's model. Compute it once per fuel and moisture, then spread it under any wind and slope with {@link surfaceSpread}.
+- `SurfaceSpread` (interface): interface SurfaceSpread — The head of a surface fire: its rate, direction, intensity and the ellipse it grows in.
+- `WindLimit` (type): type WindLimit = "none" | "rothermel1972" | "andrews2013" — How the effective wind speed is capped. `none` is BehavePlus's default; `rothermel1972` caps it at 0.9·I_R ft/min; `andrews2013` uses the revised limit 96.8·I_R^(1/3) ft/min (Andrews, Cruz & Rothermel 2013).
+- `curedHerbFraction` (function): function curedHerbFraction(liveHerbMoisture: number): number — Herbaceous load that has cured to dead in a dynamic fuel model: all of it at or below 30 % herb moisture, none from about 120 % (Scott & Burgan 2005), on the line BehavePlus uses.
+- `ellipseEccentricity` (function): function ellipseEccentricity(lb: number): number — Eccentricity of a fire ellipse with length-to-breadth ratio `lb`.
+- `firelineIntensity` (function): function firelineIntensity(heatPerUnitArea: number, rate: number): number — Byram 1959 fireline intensity I = H·R, kW/m, from heat per unit area (kJ/m²) and spread rate (m/s).
+- `flameLength` (function): function flameLength(firelineIntensityKWm: number): number — Byram 1959 flame length L = 0.45·I^0.46 (ft, Btu/ft/s), in metres from kW/m.
+- `intensityForFlameLength` (function): function intensityForFlameLength(flameLengthM: number): number — Fireline intensity (kW/m) that gives a flame length (m); the inverse of {@link flameLength}.
+- `normalSpreadRate` (function): function normalSpreadRate(spread: SurfaceSpread, angle: number): number — Rate at which the fire front advances along its outward normal at `angle` radians from the heading, for the ellipse of `spread` (the support function of the ellipse; BehavePlus's "from perimeter" rate). Huygens-type growth models advance the front at this rate.
+- `rayFromIgnitionRate` (function): function rayFromIgnitionRate(spread: SurfaceSpread, angle: number): number — Rate at which the fire travels along a ray at `angle` radians from the heading, measured from the ignition point at the rear focus of the ellipse (BehavePlus's "from ignition point" rate).
+- `scorchHeight` (function): function scorchHeight(firelineIntensityKWm: number, midflameWind: number, airTemperatureC: number): number — Van Wagner 1973 crown scorch height, m, from fireline intensity (kW/m), midflame wind (m/s) and air temperature (°C).
+- `surfaceFuelbed` (function): function surfaceFuelbed(fuel: FuelModel, moisture: FuelMoisture): SurfaceFuelbed — Reduce a fuel model at a moisture state to Rothermel's 1972 fuel bed terms, with Albini's 1976 corrections: size-class weighting of net load, the live moisture of extinction and the computer-model forms of A and Γ'. Dynamic models first cure live herbs to dead.
+- `surfaceLengthToBreadth` (function): function surfaceLengthToBreadth(effectiveWind: number): number — Anderson 1983 length-to-breadth ratio of a wind-driven surface fire from the midflame effective wind (m/s), in the mile-per-hour form BehavePlus and Andrews 2018 publish, capped at 8.
+- `surfaceSpread` (function): function surfaceSpread(bed: SurfaceFuelbed, conditions: SpreadConditions): SurfaceSpread — Spread a fuel bed under wind and slope: Rothermel's wind and slope factors combined as vectors (Albini & Chase 1980, as in BehavePlus), the effective wind speed, the Anderson 1983 ellipse and Byram intensity and flame length at the head.
+
+## @jgengine/core/fire/windAdjustment
+
+- `CanopyShelter` (interface): interface CanopyShelter — The forest canopy over a surface fuel bed, if any.
+- `twentyFootWind` (function): function twentyFootWind(tenMetreWind: number): number — 20-ft wind from a 10-m wind: divide by 1.15 (Turner & Lawson 1978, as in BehavePlus).
+- `windAdjustmentFactor` (function): function windAdjustmentFactor(fuelbedDepthM: number, canopy?: CanopyShelter): number — Wind adjustment factor from the 20-ft (6.1 m) open wind to midflame wind (Albini & Baughman 1979; Baughman & Albini 1980; Andrews 2012). Unsheltered fuel uses the fuel bed depth; fuel under a canopy that fills at least 5 % of the crown space and stands 6 ft or taller is sheltered.
+
 ## @jgengine/core/flight/aircraftDynamics
 
 - `AircraftAssistCommand` (interface): interface AircraftAssistCommand — Control commands, `-1..1`, that drive the actuators after the assists.

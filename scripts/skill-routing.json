@@ -35,6 +35,7 @@
     "environment": "jgengine-world",
     "faction": "jgengine-world",
     "feed": "jgengine-gameplay",
+    "fire": "jgengine-world",
     "flight": "jgengine-world",
     "format": "jgengine-ui",
     "game": "jgengine-gameplay",

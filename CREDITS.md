@@ -287,6 +287,27 @@ no code is copied (Landlab, Fastscape and TopoToolbox were not used as sources).
 - Forte, Yanites & Whipple 2016, complexities of landscape evolution during incision through layered
   stratigraphy, *Earth Surface Processes and Landforms* 41: rivers steepening in hard layers.
 
+## Fire simulation
+
+The fire simulator (`packages/core/src/fire/`) implements published fire science from the papers; no
+code is copied. Its tests check it against the expected outputs of the BehavePlus engine's test suite.
+
+- **USDA Forest Service** (US public domain): Rothermel 1972, *A mathematical model for predicting fire
+  spread in wildland fuels*, INT-115; Albini 1976, *Estimating wildfire behavior and effects*, INT-30;
+  Anderson 1982, *Aids to determining fuel models for estimating fire behavior*, INT-122; Scott &
+  Burgan 2005, *Standard fire behavior fuel models*, RMRS-GTR-153 (the 40 fuel models and moisture
+  scenarios); Andrews 2012, *Modeling wind adjustment factor and midflame wind speed*, RMRS-GTR-266;
+  Andrews, Cruz & Rothermel 2013, the revised wind limit, *International Journal of Wildland Fire* 22;
+  Andrews 2018, *The Rothermel surface fire spread model and associated developments*, RMRS-GTR-371.
+- **BehavePlus / firelab `behave`** (USFS Missoula Fire Sciences Laboratory, US public domain): the
+  reference outputs in `fire/surfaceFire.test.ts`.
+- Anderson 1969, flame residence time, INT-69; Byram 1959, fireline intensity and flame length, in
+  *Forest Fire: Control and Use*; Albini & Baughman 1979, wind adjustment, INT-221; Albini & Chase
+  1980, vector addition of wind and slope; Anderson 1983, *Predicting wind-driven wild land fire
+  size and shape*, INT-305; Catchpole, de Mestre & Gill 1982, spread rate along an elliptical
+  perimeter, *Combustion Science and Technology* 27; Turner & Lawson 1978, the 10-m to 20-ft wind ratio, Canadian Forestry Service BC-X-177; Van Wagner 1973, crown scorch height, *Canadian
+  Journal of Forest Research* 3.
+
 ## Game and level design research
 
 The `game-design` and `level-design` skills synthesize and rephrase design

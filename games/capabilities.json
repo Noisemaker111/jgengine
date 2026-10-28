@@ -3425,6 +3425,16 @@
       "intent": "look up one named particle effect in the shared library, or undefined when unknown"
     },
     {
+      "id": "fire-byram-intensity",
+      "packages": [
+        "@jgengine/core"
+      ],
+      "module": "@jgengine/core/fire/surfaceFire",
+      "gameFacing": false,
+      "probe": null,
+      "intent": "Byram fireline intensity from heat per unit area and spread rate"
+    },
+    {
       "id": "fire-cadence",
       "packages": [
         "@jgengine/core"
@@ -3435,6 +3445,66 @@
       "intent": "a serializable minimum-interval rate gate for repeated actions (weapon fire, ability spam)"
     },
     {
+      "id": "fire-ellipse-eccentricity",
+      "packages": [
+        "@jgengine/core"
+      ],
+      "module": "@jgengine/core/fire/surfaceFire",
+      "gameFacing": false,
+      "probe": null,
+      "intent": "eccentricity of a fire ellipse from its length-to-breadth ratio"
+    },
+    {
+      "id": "fire-flame-length",
+      "packages": [
+        "@jgengine/core"
+      ],
+      "module": "@jgengine/core/fire/surfaceFire",
+      "gameFacing": false,
+      "probe": null,
+      "intent": "Byram flame length from fireline intensity"
+    },
+    {
+      "id": "fire-fuel-load",
+      "packages": [
+        "@jgengine/core"
+      ],
+      "module": "@jgengine/core/fire/fuelModels",
+      "gameFacing": false,
+      "probe": null,
+      "intent": "total surface fuel load of a fuel model"
+    },
+    {
+      "id": "fire-fuel-model-lookup",
+      "packages": [
+        "@jgengine/core"
+      ],
+      "module": "@jgengine/core/fire/fuelModels",
+      "gameFacing": false,
+      "probe": null,
+      "intent": "look up any standard surface fuel model by its published code"
+    },
+    {
+      "id": "fire-fuel-models",
+      "packages": [
+        "@jgengine/core"
+      ],
+      "module": "@jgengine/core/fire/fuelModels",
+      "gameFacing": false,
+      "probe": null,
+      "intent": "the 40 Scott & Burgan 2005 surface fuel models, the 13 Anderson 1982 models and the non-burnable codes, in metric units"
+    },
+    {
+      "id": "fire-herb-curing",
+      "packages": [
+        "@jgengine/core"
+      ],
+      "module": "@jgengine/core/fire/surfaceFire",
+      "gameFacing": false,
+      "probe": null,
+      "intent": "share of live herbs cured to dead fuel at a herb moisture (Scott & Burgan 2005)"
+    },
+    {
       "id": "fire-input",
       "packages": [
         "@jgengine/core"
@@ -3443,6 +3513,96 @@
       "gameFacing": false,
       "probe": null,
       "intent": "bind a key or mouse button to a named action that runs the same-named command with the aim; repeatMs auto-fires while held, `held` tells a click from a held trigger"
+    },
+    {
+      "id": "fire-intensity-for-flame",
+      "packages": [
+        "@jgengine/core"
+      ],
+      "module": "@jgengine/core/fire/surfaceFire",
+      "gameFacing": false,
+      "probe": null,
+      "intent": "fireline intensity that gives a flame length"
+    },
+    {
+      "id": "fire-length-to-breadth",
+      "packages": [
+        "@jgengine/core"
+      ],
+      "module": "@jgengine/core/fire/surfaceFire",
+      "gameFacing": false,
+      "probe": null,
+      "intent": "Anderson 1983 surface fire ellipse shape from effective wind"
+    },
+    {
+      "id": "fire-normal-spread",
+      "packages": [
+        "@jgengine/core"
+      ],
+      "module": "@jgengine/core/fire/surfaceFire",
+      "gameFacing": false,
+      "probe": null,
+      "intent": "rate a fire front advances along its normal at any angle from the head"
+    },
+    {
+      "id": "fire-ray-spread",
+      "packages": [
+        "@jgengine/core"
+      ],
+      "module": "@jgengine/core/fire/surfaceFire",
+      "gameFacing": false,
+      "probe": null,
+      "intent": "rate a fire travels along a ray from its ignition point"
+    },
+    {
+      "id": "fire-scorch-height",
+      "packages": [
+        "@jgengine/core"
+      ],
+      "module": "@jgengine/core/fire/surfaceFire",
+      "gameFacing": false,
+      "probe": null,
+      "intent": "Van Wagner crown scorch height from intensity, wind and air temperature"
+    },
+    {
+      "id": "fire-surface-fuelbed",
+      "packages": [
+        "@jgengine/core"
+      ],
+      "module": "@jgengine/core/fire/surfaceFire",
+      "gameFacing": false,
+      "probe": null,
+      "intent": "reduce a fuel model and moisture to Rothermel reaction intensity, residence time and no-wind spread rate"
+    },
+    {
+      "id": "fire-surface-spread",
+      "packages": [
+        "@jgengine/core"
+      ],
+      "module": "@jgengine/core/fire/surfaceFire",
+      "gameFacing": false,
+      "probe": null,
+      "intent": "Rothermel 1972 surface fire rate, heading, ellipse, Byram intensity and flame length under wind and slope"
+    },
+    {
+      "id": "fire-twenty-foot-wind",
+      "packages": [
+        "@jgengine/core"
+      ],
+      "module": "@jgengine/core/fire/windAdjustment",
+      "gameFacing": false,
+      "probe": null,
+      "intent": "20-ft open wind from a 10-m wind"
+    },
+    {
+      "id": "fire-wind-adjustment",
+      "packages": [
+        "@jgengine/core"
+      ],
+      "module": "@jgengine/core/fire/windAdjustment",
+      "gameFacing": false,
+      "probe": null,
+      "intent": "convert 20-ft or 10-m open wind to midflame wind over open or sheltered fuel"
     },
     {
       "id": "first-person-arms",
