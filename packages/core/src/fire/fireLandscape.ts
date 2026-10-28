@@ -181,6 +181,9 @@ export interface FireLandscape {
   readonly cols: number;
   readonly rows: number;
   readonly cellSize: number;
+  /** World position of the grid's (0,0) corner. */
+  readonly originX: number;
+  readonly originZ: number;
   /** Simulation clock, s. */
   readonly time: number;
   readonly layers: FireLayers;
@@ -772,6 +775,8 @@ export function createFireLandscape(config: FireLandscapeConfig): FireLandscape 
     cols,
     rows,
     cellSize,
+    originX,
+    originZ,
     get time() {
       return time;
     },

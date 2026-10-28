@@ -3465,6 +3465,16 @@
       "intent": "canopy fuel load from bulk density and crown depth"
     },
     {
+      "id": "fire-canopy-raster",
+      "packages": [
+        "@jgengine/core"
+      ],
+      "module": "@jgengine/core/fire/fuelSources",
+      "gameFacing": false,
+      "probe": null,
+      "intent": "turn placed plants' crown fuel into per-cell canopy stands for a fire landscape"
+    },
+    {
       "id": "fire-crown-fire",
       "packages": [
         "@jgengine/core"
@@ -3675,6 +3685,16 @@
       "intent": "rate a fire front advances along its normal at any angle from the head"
     },
     {
+      "id": "fire-plant-fuel",
+      "packages": [
+        "@jgengine/core"
+      ],
+      "module": "@jgengine/core/fire/fuelSources",
+      "gameFacing": false,
+      "probe": null,
+      "intent": "crown fuel (foliage and fine branchwood mass, height, base, radius) of a grown plant"
+    },
+    {
       "id": "fire-ray-spread",
       "packages": [
         "@jgengine/core"
@@ -3735,6 +3755,16 @@
       "intent": "maximum ember spotting distance from a group of torching trees"
     },
     {
+      "id": "fire-sun-exposure",
+      "packages": [
+        "@jgengine/core"
+      ],
+      "module": "@jgengine/core/fire/fuelSources",
+      "gameFacing": false,
+      "probe": null,
+      "intent": "per-cell sun on surface fuel from terrain slope, aspect and canopy cover"
+    },
+    {
       "id": "fire-surface-fuelbed",
       "packages": [
         "@jgengine/core"
@@ -3753,6 +3783,16 @@
       "gameFacing": false,
       "probe": null,
       "intent": "Rothermel 1972 surface fire rate, heading, ellipse, Byram intensity and flame length under wind and slope"
+    },
+    {
+      "id": "fire-terrain-fuel",
+      "packages": [
+        "@jgengine/core"
+      ],
+      "module": "@jgengine/core/fire/fuelSources",
+      "gameFacing": false,
+      "probe": null,
+      "intent": "sample terrain height and ground-cover fuel codes into a fire landscape's elevation and fuel grids"
     },
     {
       "id": "fire-twenty-foot-wind",
