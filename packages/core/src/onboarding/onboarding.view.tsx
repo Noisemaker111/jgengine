@@ -79,19 +79,22 @@ export function OnboardingHud({ accent, skipLabel = "Skip tutorial", nextLabel =
 }
 
 /**
- * The step-done banner ("Gather stone" / "Next: Craft a Stone Pick") through `ObjectiveBannerHost`,
- * near the top of the screen. Put it in the HUD's full-screen overlay.
+ * The step-done banner ("Gather stone" / "Next: Craft a Stone Pick") through `ObjectiveBannerHost`.
+ * By default it sits near the top of the screen; put it in the HUD's full-screen overlay. With
+ * `placement: "inline"` it lays out in its parent instead: put it in a `HudSlots` slot (usually `top`)
+ * so it stacks with that slot's other lines rather than over them.
  *
  * @capability onboarding-banner announces each finished onboarding step and the next one on the objective banner
  */
-export function OnboardingBanner({ theme }: { theme?: ObjectiveBannerTheme }): ReactNode {
+export function OnboardingBanner({ theme, placement = "overlay" }: { theme?: ObjectiveBannerTheme; placement?: "overlay" | "inline" }): ReactNode {
   const runtime = useOnboarding();
   if (runtime === null) return null;
   return (
     <ObjectiveBannerHost
       controller={runtime.banner}
       theme={{ titleSize: "clamp(1.4rem, 3vw, 2.2rem)", subtitleSize: "clamp(0.9rem, 1.6vw, 1.1rem)", ...theme }}
-      style={{ justifyContent: "flex-start", paddingTop: "14vh" }}
+      placement={placement}
+      {...(placement === "overlay" ? { style: { justifyContent: "flex-start", paddingTop: "14vh" } } : {})}
     />
   );
 }

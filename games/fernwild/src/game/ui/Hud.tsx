@@ -140,6 +140,7 @@ function Top(): ReactNode {
   return (
     <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 6 }}>
       <BossBar />
+      <OnboardingBanner theme={{ accent: "#e7c84a" }} placement="inline" />
       <PickupLines />
     </div>
   );
@@ -233,7 +234,6 @@ function Screens(): ReactNode {
       {screen === null ? <Prompt /> : null}
       {screen === null ? <NoteReader /> : null}
       {screen === null ? null : <InventoryScreen tab={screen} />}
-      <OnboardingBanner theme={{ accent: "#e7c84a" }} />
     </>
   );
 }

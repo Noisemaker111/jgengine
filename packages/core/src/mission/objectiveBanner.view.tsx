@@ -116,6 +116,11 @@ export interface ObjectiveBannerHostProps {
   dismissOnClick?: boolean;
   /** Extra `z-index` for the overlay root. Default `50`. */
   zIndex?: number;
+  /**
+   * `"overlay"` (default) covers the screen and centres the stamp. `"inline"` lays the stamp out in
+   * its parent's flow, so a HUD slot can stack it with its other parts instead of drawing over them.
+   */
+  placement?: "overlay" | "inline";
   className?: string;
   style?: CSSProperties;
 }
@@ -139,6 +144,7 @@ export function ObjectiveBannerHost({
   animate = true,
   dismissOnClick = false,
   zIndex = 50,
+  placement = "overlay",
   className,
   style,
 }: ObjectiveBannerHostProps): ReactNode {
@@ -154,15 +160,13 @@ export function ObjectiveBannerHost({
       className={className}
       data-objective-banner-host=""
       onClick={dismissOnClick ? () => controller.skip() : undefined}
+      data-placement={placement}
       style={{
-        position: "absolute",
-        inset: 0,
+        ...(placement === "overlay" ? { position: "absolute", inset: 0, justifyContent: "center", zIndex } : {}),
         display: "flex",
         flexDirection: "column",
         alignItems: "center",
-        justifyContent: "center",
         pointerEvents: dismissOnClick ? "auto" : "none",
-        zIndex,
         fontFamily: t.fontFamily,
         textAlign: "center",
         ...style,
