@@ -18,9 +18,8 @@ describe("ice flow", () => {
     const balance = new Float64Array(topology.cells).fill(snowfall);
     const gamma = iceDeformationRate();
     const settings = { deformation: gamma, sliding: 0, ela: 0, balanceGradient: 0, maxAccumulation: 0, lateralDrag: 0 };
-    let residual = Infinity;
-    for (let k = 0; k < 200; k += 1) residual = flow.relax(bed, ice, 2000, 4, settings, balance);
-    expect(residual).toBeLessThan(1e-9);
+    const report = flow.advance(bed, ice, 400_000, settings, { balance, maxStep: 5000, tolerance: 1e-10 });
+    expect(report.rate).toBeLessThan(1e-9);
     // H(x) = H₀ (1 − (|x|/L)^(4/3))^(3/8), H₀ = 2^(3/8) (a/Γ)^(1/8) L^(1/2) for Glen's n = 3.
     const dome = 2 ** (3 / 8) * (snowfall / gamma) ** (1 / 8) * Math.sqrt(half);
     for (const [share, tolerance] of [
@@ -38,7 +37,7 @@ describe("ice flow", () => {
   });
 });
 
-// A river's V-shaped valley, 1.2 km deep, climbing to a high cirque basin above an ELA of 1950 m.
+// A river's V-shaped valley, 1.2 km deep, climbing to a high cirque basin above an ELA of 1500 m.
 const COLS = 60;
 const HALF = 12;
 const ROWS = 2 * HALF + 9;
@@ -59,7 +58,7 @@ function vValley(): number[] {
 
 const START = vValley();
 
-function glaciate(timeStep: number, glacial: GlacialParams = { ela: 1950, model: "shallow-ice" }): LandscapeEvolution {
+function glaciate(timeStep: number, glacial: GlacialParams = { ela: 1500, model: "shallow-ice" }): LandscapeEvolution {
   return createLandscapeEvolution({
     grid: { cols: COLS, rows: ROWS, cellSize: DX, outlets: ["west"] },
     seed: "valley",
@@ -145,14 +144,6 @@ describe("glacial erosion by shallow ice, the fast path", () => {
     }
   }, 60_000);
 
-  test("the V's trough steepens toward a U: its cross-section exponent rises from 1", () => {
-    const model = glaciate(2000);
-    for (let k = 0; k < 40; k += 1) model.step();
-    const exponent = medianTroughExponent(model);
-    expect(exponent).toBeGreaterThan(1.15);
-    expect(exponent).toBeLessThan(2.5);
-  }, 60_000);
-
   test("glaciers drop till where the ice ends, and every cubic metre is accounted for", () => {
     const model = glaciate(2000);
     const { height, cover, ice } = model.fields();
@@ -183,7 +174,17 @@ describe("glacial erosion by shallow ice, the fast path", () => {
 });
 
 describe("glacial erosion by first-order (Blatter–Pattyn) ice flow", () => {
-  const firstOrder: GlacialParams = { ela: 1950, model: "first-order", layers: 4 };
+  const firstOrder: GlacialParams = { ela: 1500, model: "first-order", layers: 4 };
+
+  // Shallow ice slides as fast on the thin ice up the walls as in the trough, so it lowers the whole V;
+  // the walls' drag in first-order flow is what leaves them standing.
+  test("the V's trough steepens toward a U: its cross-section exponent rises from 1", () => {
+    const model = glaciate(2000, firstOrder);
+    for (let k = 0; k < 15; k += 1) model.step();
+    const exponent = medianTroughExponent(model);
+    expect(exponent).toBeGreaterThan(1.25);
+    expect(exponent).toBeLessThan(2.5);
+  }, 120_000);
 
   test("the walls drag the ice in a V: it slides slower on the axis than beside it", () => {
     const model = glaciate(2000, firstOrder);
