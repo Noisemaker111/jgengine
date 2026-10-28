@@ -27,3 +27,4 @@ Engine seam: packages/assets/src/cli/pull.ts, packages/assets/src/download.ts, p
 ### Fixed
 
 - the dev runner served .svg files as octet-stream, so SVG masks and images from a game's public folder did not draw
+- library ingest's public-catalogue fetch is on the scaffold-launch remote list
