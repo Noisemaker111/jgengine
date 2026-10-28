@@ -2634,6 +2634,13 @@
 - `resolveMaterialAppearance` (function): function resolveMaterialAppearance(sample: EnvironmentSample, baseline: MaterialAppearanceBaseline, policy: MaterialAppearancePolicy = {}): MaterialAppearanceResponse — Resolve one surface from an immutable dry baseline, avoiding cumulative drift. Wetness already includes field shelter; neither exposure nor sheltered is multiplied into it again. No accumulation or drying simulation.
 - `sampleMaterialAppearance` (function): function sampleMaterialAppearance(field: Pick<EnvironmentField, "sample">, target: MaterialAppearanceTarget, baseline: MaterialAppearanceBaseline, policy: MaterialAppearancePolicy = {}): MaterialAppearanceResponse — Exactly one field sample per target; no traversal, subscription, hidden tick, or full-world scan.
 
+## @jgengine/core/math/cmaEvolutionStrategy
+
+- `CmaEvolutionStrategy` (interface): interface CmaEvolutionStrategy — An ask/tell minimiser: `ask()` a population, evaluate it anywhere (other processes included), `tell()` the costs.
+- `CmaOptions` (interface): interface CmaOptions — Options for {@link createCmaEvolutionStrategy}.
+- `CmaState` (interface): interface CmaState — Serializable state of a {@link CmaEvolutionStrategy}.
+- `createCmaEvolutionStrategy` (function): function createCmaEvolutionStrategy(options: CmaOptions): CmaEvolutionStrategy — Creates a CMA-ES minimiser (N. Hansen, "The CMA Evolution Strategy: A Tutorial", arXiv:1604.00772, 2016) with the tutorial's default weights and learning rates, rank-one and rank-μ covariance updates and cumulative step-size adaptation. Derivative-free and robust to noisy, discontinuous costs such as a controller that sometimes falls.
+
 ## @jgengine/core/math/linearAlgebra
 
 - `Eigenvalue` (interface): interface Eigenvalue — One eigenvalue `re + i·im`, 1/s for a linearised plant.
@@ -2775,6 +2782,128 @@
 - `PoseSnapshot` (interface): interface PoseSnapshot { poses: Record<string, MovementPose>; aims: Record<string, AimMode> } — ⚠ undocumented
 - `PoseState` (interface): interface PoseState { getPose(instanceId: string): MovementPose; setPose(instanceId: string, pose: MovementPose): PoseRejection | null; getAim(instanceId: string): AimMode; setAim(instanceId: string, mode: AimMode): PoseRejection | null; clear(instanceId: stri… — ⚠ undocumented · used by `createPoseState`: Stance/pose transitions — stand, crouch, prone — that change the hitbox and movement.
 - `createPoseState` (function): function createPoseState(resolveAllowed: (instanceId: string) => PoseAllowedStates | null | undefined): PoseState — Stance/pose transitions — stand, crouch, prone — that change the hitbox and movement.
+
+## @jgengine/core/movement/reference/anthropometry
+
+- `AnthropometricTable` (interface): interface AnthropometricTable — A body-segment-parameter table for one reference subject.
+- `DE_LEVA_MALE` (const): const DE_LEVA_MALE: AnthropometricTable — Adult male body-segment parameters of P. de Leva, "Adjustments to Zatsiorsky–Seluyanov's segment inertia parameters", *J. Biomech.* 29 (1996) 1223–1230, Table 4 (73.0 kg, 1.741 m), referenced to joint centres. The ankle height and heel position follow D. A. Winter, *Biomechanics and Motor Control of Human Movement*, 4th ed. (2009), Fig. 4.1 (ankle 0.039 H above the sole; heel about 0.2 foot lengths behind the ankle).
+- `HUMAN_SEGMENT` (const): const HUMAN_SEGMENT: { readonly hat: 0; readonly rightThigh: 1; readonly rightShank: 2; readonly rightFoot: 3; readonly leftThigh: 4; readonly leftShank: 5; readonly leftFoot: 6; } — Sagittal-plane human segment indices in a {@link planarHumanSegments} body.
+- `PlanarHumanGeometry` (interface): interface PlanarHumanGeometry — Geometry of a sagittal human built by {@link planarHumanSegments}, scaled to the subject.
+- `SegmentParameters` (interface): interface SegmentParameters — One segment row of a body-segment-parameter table: shares of body mass and of segment length.
+- `planarHumanSegments` (function): function planarHumanSegments(mass = DE_LEVA_MALE.mass, stature = DE_LEVA_MALE.stature, table: AnthropometricTable = DE_LEVA_MALE): PlanarHumanGeometry — The seven-segment sagittal human of Winter's gait model — head-arms-trunk (HAT), and per leg thigh, shank and foot — built from a segment table scaled to `mass` (kg) and `stature` (m): lengths with stature, masses with mass, inertias with mass × stature². The HAT lumps head, trunk and both arms hanging at the sides, each with its own parallel-axis term. Reference pose: standing upright, hip joint centre at the origin, feet flat.
+
+## @jgengine/core/movement/reference/curveRunning
+
+- `CHANG_KRAM_CURVE_SPEEDS` (const): const CHANG_KRAM_CURVE_SPEEDS: readonly { radius: number; speed: number }[] — Chang & Kram (2007) measured top speeds on flat curves by radius (m → m/s), and on the straight.
+- `RECREATIONAL_SPRINTER` (const): const RECREATIONAL_SPRINTER: SprintMechanics — Recreational male sprinters: top speed 7.70 m/s on the straight (Y.-H. Chang and R. Kram, "Limitations to maximum running speed on flat curves", *J. Exp. Biol.* 210, 2007), contact and aerial times at top speed of about 0.12 s each (P. G. Weyand et al., *J. Appl. Physiol.* 89, 2000), friction of a rubber sole on a track surface 0.9.
+- `SprintMechanics` (interface): interface SprintMechanics — Straight-line sprint mechanics that bound running on a curve.
+- `maxCurveSpeed` (function): function maxCurveSpeed(mechanics: SprintMechanics, radius: number): number — Fastest speed a runner holds on a flat curve of `radius` (m). Two limits, after J. R. Usherwood and A. M. Wilson ("Accounting for elite indoor 200 m sprint results", *Biol. Lett.* 2, 2006) and P. R. Greene (*J. Biomech.* 18, 1985): the leg's peak mean contact force stays what it is at top speed on the straight, `mg·(t_a + t_c)/t_c`, while a curve needs `m·√(g² + (v²/R)²)` averaged over the stride with the contact length `v_s·t_c` fixed; and the resultant may not tilt past the friction cone, `v²/R ≤ μg`.
+- `minTurnRadius` (function): function minTurnRadius(mechanics: SprintMechanics, speed: number): number — Tightest turn radius (m) a runner holds at `speed` (m/s): the inverse of {@link maxCurveSpeed}. `Infinity` above top speed.
+
+## @jgengine/core/movement/reference/footContact
+
+- `ContactParameters` (interface): interface ContactParameters — Contact law parameters.
+- `ContactPointState` (interface): interface ContactPointState — Per-point stick state: the anchor the tangential spring pulls toward, or `null` when not in contact.
+- `GroundProfile` (interface): interface GroundProfile — A sagittal ground profile: a polyline of `[x, y]` vertices with `x` never decreasing, so a stair riser is two vertices at the same `x`. Beyond the ends the first and last segments extend flat.
+- `SHOE_ON_CONCRETE` (const): const SHOE_ON_CONCRETE: ContactParameters — Shoe sole on a hard floor. Stiffness and damping put a 1 BW load at about 7 mm of sole compression with a restitution near zero, as in heel-pad and sole tests (Ackermann & van den Bogert, *J. Biomech.* 43, 2010); friction 0.8 is a rubber sole on dry concrete (ASTM F1679 range 0.6–1.0).
+- `footContactForce` (function): function footContactForce(ground: GroundProfile, params: ContactParameters, p: ArrayLike<number>, v: ArrayLike<number>, state: ContactPointState, out: Float64Array): number — Contact force on a foot point at `p` moving at `v` against `ground` (world, N), written to `out`; returns the normal force. Normal: Hunt–Crossley `k·d^1.5·(1 + 1.5·c·ḋ)` (K. H. Hunt and F. R. E. Crossley, *J. Appl. Mech.* 42, 1975), never pulling. Tangential: a stick spring to the touchdown anchor, capped at `μ·N`; when the cap is hit the anchor slides along so the point slips at the Coulomb limit.
+- `slopeGround` (function): function slopeGround(angle: number, startX = 0): GroundProfile — Ground flat until `startX`, then a constant grade of `angle` rad (positive climbs toward +x).
+- `stairGround` (function): function stairGround(rise: number, going: number, count: number, startX = 0): GroundProfile — Flat ground until `startX`, then `count` steps of `rise` × `going` (m), flat at the top. Negative `rise` descends.
+
+## @jgengine/core/movement/reference/humanBody
+
+- `FootForces` (interface): interface FootForces — Ground force on each foot after the last step, world N.
+- `HumanBody` (interface): interface HumanBody — The sagittal human body: a seven-segment multibody on compliant foot contact, driven by torque-limited joints.
+- `HumanBodyOptions` (interface): interface HumanBodyOptions — Options for {@link createHumanBody}.
+- `HumanBodyState` (interface): interface HumanBodyState — Serializable state of a {@link HumanBody}.
+- `HumanJointTorques` (interface): interface HumanJointTorques — Joint torques commanded for one step, N·m, in the joint conventions of {@link HumanJointStrength}.
+- `HumanSide` (type): type HumanSide = "right" | "left" — A leg of the sagittal human.
+- `createHumanBody` (function): function createHumanBody(options: HumanBodyOptions = {}): HumanBody — Creates the sagittal reference human (Winter's seven-segment gait model with de Leva anthropometry), stepping its exact multibody dynamics with semi-implicit Euler at a fixed step. Commanded torques are clamped to the torque-angle-velocity strength of each joint; passive end-stops hold the range of motion.
+
+## @jgengine/core/movement/reference/humanEnvelope
+
+- `RECREATIONAL_SPRINT_PROFILE` (const): const RECREATIONAL_SPRINT_PROFILE: SprintProfile — A physically active young man (80 kg, 1.80 m) who is not a trained sprinter: F0 7.5 N/kg sits in the team-sport and recreational range of the force–velocity profiles in J.-B. Morin and P. Samozino, *Int. J. Sports Physiol. Perform.* 11 (2016) (F0 6–9 N/kg), and V0 7.95 m/s puts top speed at the 7.7 m/s of the recreational sprinters of Chang and Kram (2007) used by `maxCurveSpeed`; 30 m takes about 4.9 s. Braking at 6 m/s² is the average maximal horizontal deceleration from a 20 m sprint of team-sport athletes (D. J. Harper et al., *Eur. J. Sport Sci.* 22, 2022: about 5–6 m/s²).
+- `SprintProfile` (interface): interface SprintProfile — Whole-body limits of a runner on flat ground: the linear horizontal force–velocity profile of sprint acceleration (P. Samozino et al., "A simple method for measuring power, force, velocity properties, and mechanical effectiveness in sprint running", *Scand. J. Med. Sci. Sports* 26, 2016), air drag on the frontal area of C. Arsac and E. Locatelli's model (*J. Appl. Physiol.* 92, 2002), and the largest braking deceleration.
+- `SprintState` (interface): interface SprintState — Speed and distance after a sprint.
+- `slopeCostOfTransport` (function): function slopeCostOfTransport(gait: "walk" | "run", grade: number): number — Net metabolic cost of transport on a gradient `grade` (rise over run, −0.45…0.45), J/(kg·m), from the polynomials of A. E. Minetti et al., "Energy cost of walking and running at extreme uphill and downhill slopes", *J. Appl. Physiol.* 93 (2002).
+- `slopeSpeed` (function): function slopeSpeed(gait: "walk" | "run", levelSpeed: number, grade: number, cap = 1.5 * levelSpeed): number — Speed on a gradient at the same metabolic power as `levelSpeed` on the flat (m/s), from {@link slopeCostOfTransport}: how much a person slows uphill at a steady effort, and how much faster they could go downhill. Capped at `cap` (default 1.5× the level speed) because steep downhill speed is limited by control, not energy.
+- `sprint` (function): function sprint(profile: SprintProfile, limit: { distance?: number; time?: number }, speed = 0): SprintState — Sprint from `speed` (m/s) under the profile until `distance` (m) is covered or `time` (s) passes, whichever first. Integrates `a = F0·(1 − v/V0)·min(1, μg/F0) − k·v²` at 1 ms.
+- `sprintTopSpeed` (function): function sprintTopSpeed(profile: SprintProfile): number — Highest speed of the profile on flat ground, where horizontal force equals drag, m/s.
+- `stoppingDistance` (function): function stoppingDistance(profile: SprintProfile, speed: number): { distance: number; time: number } — Distance to stop from `speed`, m, and the time it takes, s, at the largest deceleration.
+- `test505Time` (function): function test505Time(profile: SprintProfile): number — Time of the 505 change-of-direction test (E. Draper and M. Lancaster, 1985): the 5 m into a 180° turn and the 5 m back, entered at the speed of a 10 m flying start, s.
+- `turnaroundTime` (function): function turnaroundTime(profile: SprintProfile, speed: number): number — Time to reverse from `speed` to the same speed the other way, s: brake to rest, then sprint back up.
+
+## @jgengine/core/movement/reference/humanGaitAnalysis
+
+- `GaitReport` (interface): interface GaitReport — Steady-state gait measures of the reference human.
+- `LocomotionDriver` (interface): interface LocomotionDriver — A controller driving a {@link HumanBody} one step at a time, as {@link analyzeLocomotion} needs it.
+- `StanceForce` (interface): interface StanceForce — Vertical ground force of one foot over one stance, in body weights.
+- `analyzeLocomotion` (function): function analyzeLocomotion(driver: LocomotionDriver, settle = 4, measure = 6): GaitReport — Measure a driver's steady gait: run `settle` seconds, then `measure` seconds of speed, stride, duty factor, flight, per-stance vertical ground force shape and metabolic cost of transport.
+
+## @jgengine/core/movement/reference/humanGaits
+
+- `FITTED_WALKS` (const): const FITTED_WALKS: readonly FittedWalk[] — Geyer–Herr reflex parameters fitted by CMA-ES on the 80 kg, 1.80 m reference human, minimising gross metabolic cost of transport at the target speed with penalties on speed error, step-time variation, a heel-strike transient above 1.3 body weights, a loading peak above 1.25, a mid-stance valley under 0.55, and any flight phase. The fits at 1.9 and 2.2 m/s are the fastest the walker holds: it settles at 1.70 and 1.78 m/s.
+- `FittedWalk` (interface): interface FittedWalk — Reflex parameters fitted for one walking speed and terrain.
+- `WALK_TERRAIN` (const): const WALK_TERRAIN: Record<WalkTerrain, GroundProfile> — The terrains the fits ran on: level; a 6% grade up or down starting 3 m ahead; a flight of 0.15 m × 0.30 m steps (a common building-code stair) starting 4 m ahead.
+- `WalkTerrain` (type): type WalkTerrain = "level" | "uphill" | "downhill" | "stairs" — Ground a fitted walk was tuned on.
+- `fittedWalk` (function): function fittedWalk(speed: number, terrain: WalkTerrain = "level"): FittedWalk — The fitted walk nearest `speed` on `terrain`.
+- `measureWalk` (function): function measureWalk(walk: FittedWalk, settle = 4, measure = 6): GaitReport — Walk the reference human with a fitted walk on its terrain and measure the steady gait (see `analyzeLocomotion`).
+
+## @jgengine/core/movement/reference/humanJump
+
+- `COUNTERMOVEMENT_JUMP` (const): const COUNTERMOVEMENT_JUMP: JumpParameters — Fitted by CMA-ES maximising the reference human's jump height with the trunk within 0.25 rad of upright at takeoff and the push force under 3 body weights.
+- `JumpParameters` (interface): interface JumpParameters — A vertical jump by torque generators, as in the jump simulations of D. Selbie and G. Caldwell (*J. Biomech.* 29, 1996) and M. A. King and M. R. Yeadon (*J. Appl. Biomech.* 18, 2002). The joints first servo, within their strength, from quiet stance down toward a squat (the countermovement); then each joint's drive ramps to full extension at its own onset. Torque at every instant is limited by the joint's torque–angle–velocity strength, so jump height comes from strength, not a set takeoff speed.
+- `JumpReport` (interface): interface JumpReport — Result of {@link simulateJump}.
+- `simulateJump` (function): function simulateJump(params: JumpParameters = COUNTERMOVEMENT_JUMP, options: HumanBodyOptions = {}): JumpReport — Jump the reference human (both legs together) from quiet stance with a countermovement, to touchdown. A long `sink` with no motion at its end is a squat jump.
+
+## @jgengine/core/movement/reference/humanReferenceValidation
+
+- `HumanValidationRow` (interface): interface HumanValidationRow — One reference number against the range published for real people.
+- `RUNNING_NET_COST` (const): const RUNNING_NET_COST: 3.9 — Net metabolic cost of level running, J/(kg·m), nearly independent of speed: 3.8–4.0 (P. E. di Prampero et al., *Eur. J. Appl. Physiol.* 55, 1986; R. Margaria et al., *J. Appl. Physiol.* 18, 1963).
+- `formatHumanValidation` (function): function formatHumanValidation(rows: readonly HumanValidationRow[]): string — Plain-text table of {@link validateHumanReference} rows.
+- `validateHumanReference` (function): function validateHumanReference(measured = measureFittedWalks()): HumanValidationRow[] — Validate the human locomotion reference against published biomechanics: walking energetics, stride and ground force from the muscle-reflex walker; the walk–run transition; running ground force and contact from the spring-mass runner; sprint, braking, change of direction and curve limits; and the countermovement jump.
+
+## @jgengine/core/movement/reference/jointStrength
+
+- `HumanJointStrength` (interface): interface HumanJointStrength — A torque generator per lower-limb joint and direction. Angles: hip = thigh relative to trunk (flexion positive), knee = shank relative to thigh (flexion negative), ankle = foot relative to shank (dorsiflexion positive).
+- `JointExertion` (interface): interface JointExertion — Maximum voluntary torque of one exertion (one joint, one direction).
+- `LegJoint` (type): type LegJoint = "hip" | "knee" | "ankle" — Joints of the sagittal leg.
+- `YOUNG_MALE_STRENGTH` (const): const YOUNG_MALE_STRENGTH: HumanJointStrength — Young adult male lower-limb strength. Isometric peaks, normalised to body mass × stature, sit in the middle of the ranges gathered by the joint moment–angle–velocity meta-visualization of hip, knee and ankle datasets (bioRxiv 10.1101/2024.06.22.600197, 2024: hip flexion 1.5–2.0, hip extension 1.0–1.6 and above 2.0 flexed, knee extension 1.0–2.0 at 60–80° flexion, plantarflexion 0.5–2.0 N·m/(kg·m)) and with Anderson & Pandy (1999). Eccentric torque plateaus near 1.25× isometric. Concentric torque follows Hill's hyperbola (A. V. Hill, *Proc. R. Soc. B* 126, 1938) at joint level, where tendon compliance and moment arms flatten the muscle curve: `a/T₀ = 1` with an 18 rad/s knee maximum gives 70% of isometric at 180°/s and 55% at 300°/s, as isokinetic knee-extension tests show (A. Thorstensson, G. Grimby and J. Karlsson, *J. Appl. Physiol.* 40, 1976). Joint maximum velocities are those of torque-generator models of jumping (M. A. King and M. R. Yeadon, *J. Appl. Biomech.* 18, 2002; 12–25 rad/s).
+- `maxJointTorque` (function): function maxJointTorque(strength: HumanJointStrength, joint: LegJoint, sign: number, angle: number, velocity: number, massTimesStature: number): number — Largest torque magnitude the joint can produce in the direction of `sign` at `angle` (rad) and joint speed `velocity` (rad/s), for a subject of `massTimesStature` (kg·m). Positive `sign` means the joint's positive direction: hip flexion, knee extension, ankle dorsiflexion. Moving with the torque is concentric (Hill hyperbola to zero at the maximum velocity); against it is eccentric (rising to the eccentric plateau).
+
+## @jgengine/core/movement/reference/muscleTendon
+
+- `HILL_CONSTANTS` (const): const HILL_CONSTANTS: { readonly tau: 0.01; readonly width: 0.56; readonly residual: 0.05; readonly eccentric: 1.5; readonly shape: 5; readonly tendonStrain: 0.04; } — Shared contractile and elastic constants of the muscle model of H. Geyer, A. Seyfarth and R. Blickhan ("Positive force feedback in bouncing gaits?", *Proc. R. Soc. B* 270, 2003), as listed in Appendix II of Geyer & Herr (2010): activation time constant 10 ms, force–length width 0.56·lopt with residual force 0.05, eccentric enhancement 1.5 and shape factor 5, tendon reference strain 0.04.
+- `MuscleJointSpan` (interface): interface MuscleJointSpan — One joint a muscle–tendon unit crosses, in the extension-angle convention of {@link MuscleSpec}.
+- `MuscleSpec` (interface): interface MuscleSpec — A Hill-type muscle–tendon unit.
+- `MuscleState` (interface): interface MuscleState — Live state of one muscle.
+- `muscleMetabolicPower` (function): function muscleMetabolicPower(spec: MuscleSpec, state: MuscleState): number — Metabolic power of a muscle, W (A. E. Minetti and R. McN. Alexander, "A theory of metabolic costs for bipedal gaits", *J. Theor. Biol.* 186, 1997): `A·Fmax·vmax·φ(v/vmax)` with `φ(x) = (0.054 + 0.506x + 2.46x²)/(1 − 1.13x + 12.8x² − 1.64x³)` while shortening, and the isometric rate while lengthening.
+- `stepMuscle` (function): function stepMuscle(spec: MuscleSpec, state: MuscleState, lmtu: number, stimulation: number, dt: number): number — Advance one muscle by `dt` at unit length `lmtu` (m) under stimulation `stimulation` (0.01–1): first-order activation, then the fibre velocity that balances tendon, contractile, parallel and buffer forces (Geyer & Herr 2010, Appendix II), integrated for the new fibre length. Returns the tendon force, N.
+
+## @jgengine/core/movement/reference/planarMultibody
+
+- `PlanarMultibody` (interface): interface PlanarMultibody — A planar tree of rigid segments on a floating base, in absolute coordinates: `q = [x, y, φ₀ … φₙ₋₁]` where `(x, y)` is the root's proximal joint and `φᵢ` is segment `i`'s counter-clockwise rotation from its reference pose. Absolute angles keep every Jacobian a sum of perpendicular lever arms, so the mass matrix and the velocity-product terms are exact and cheap.
+- `PlanarSegment` (interface): interface PlanarSegment — One rigid segment of a {@link PlanarMultibody}, given in the reference pose (every angle zero).
+- `createPlanarMultibody` (function): function createPlanarMultibody(segments: readonly PlanarSegment[]): PlanarMultibody — Creates a {@link PlanarMultibody} from segments. Dynamics are Lagrange's equations in absolute coordinates: `M(q)·q̈ = Q − Σ mᵢ Jᵢᵀ (J̇ᵢ q̇) + gravity`, with `M = Σ mᵢ JᵢᵀJᵢ + Iᵢ eᵢeᵢᵀ` solved by Cholesky.
+
+## @jgengine/core/movement/reference/reflexWalker
+
+- `GEYER_HERR_MUSCLES` (const): const GEYER_HERR_MUSCLES: Record<LegMuscle, MuscleSpec> — Muscle–tendon units of H. Geyer and H. Herr, "A muscle-reflex model that encodes principles of legged mechanics produces human walking dynamics and muscle activities", *IEEE Trans. Neural Syst. Rehabil. Eng.* 18 (2010), Tables II and III: soleus, tibialis anterior, gastrocnemius, vasti, hamstrings, glutei and hip flexors. Angles are extension angles: hip and knee 180° straight, ankle 90° neutral and rising in plantarflexion.
+- `GEYER_HERR_REFLEXES` (const): const GEYER_HERR_REFLEXES: ReflexParameters — The hand-tuned walking reflexes of Geyer & Herr (2010), Table I.
+- `LegMuscle` (type): type LegMuscle = "SOL" | "TA" | "GAS" | "VAS" | "HAM" | "GLU" | "HFL" — The seven leg muscles of the Geyer & Herr model.
+- `LegStimulation` (type): type LegStimulation = Record<LegMuscle, number> — Stimulation per leg muscle, 0.01–1.
+- `ReflexParameters` (interface): interface ReflexParameters — Reflex parameters (Geyer & Herr 2010, Table I). Force gains are per `fmax` of the muscle, length offsets are in optimal lengths, `kbw` is per body weight, the trunk lean reference and gains are in rad and rad/s.
+- `ReflexWalker` (interface): interface ReflexWalker — A muscle-reflex controller on a {@link HumanBody}.
+- `ReflexWalkerState` (interface): interface ReflexWalkerState — Live state of a {@link ReflexWalker}.
+- `actuateLegMuscles` (function): function actuateLegMuscles(body: HumanBody, side: HumanSide, muscles: Record<LegMuscle, MuscleState>, stimulation: LegStimulation, dt: number, out: HumanJointTorques): number — Step one leg's seven muscles under `stimulation` and write the joint torques they make into `out` (body conventions). Returns their metabolic power, W.
+- `createReflexWalker` (function): function createReflexWalker(body: HumanBody, params: ReflexParameters = GEYER_HERR_REFLEXES): ReflexWalker — Creates the Geyer & Herr (2010) muscle-reflex walker on a sagittal human: seven Hill muscles per leg, stance and swing reflexes switched by foot contact, positive force feedback in the stance extensors, trunk balance through the hip muscles in proportion to the load each leg bears, swing initiation in double support, and swing-leg retraction. No central pattern: the gait self-organises from the interplay with the ground.
+
+## @jgengine/core/movement/reference/springMassRunning
+
+- `RECREATIONAL_RUNNER` (const): const RECREATIONAL_RUNNER: SpringMassRunner — An 80 kg, 1.80 m man: leg length 0.94 m; leg stiffness 11 kN/m for 70 kg scaled with body mass (C. T. Farley, J. Glasheen and T. A. McMahon, *J. Exp. Biol.* 185, 1993: human leg stiffness near-constant across running speeds); stride frequency rising slowly with speed, 1.35 Hz at 3 m/s to 1.55 Hz at 6 m/s, fitted to P. R. Cavanagh and R. Kram, *Med. Sci. Sports Exerc.* 21 (1989) and P. G. Weyand et al., *J. Appl. Physiol.* 89 (2000).
+- `SpringMassRunner` (interface): interface SpringMassRunner — A runner as the spring-mass model of R. Blickhan ("The spring-mass model for running and hopping", *J. Biomech.* 22, 1989) and T. A. McMahon and G. C. Cheng (*J. Biomech.* 23, 1990): a point mass on a massless linear leg spring.
+- `SpringMassStep` (interface): interface SpringMassStep — A steady spring-mass running step from {@link springMassStep}.
+- `springMassStep` (function): function springMassStep(runner: SpringMassRunner, speed: number): SpringMassStep — Steady running at `speed` (m/s): the touchdown angle that makes the stance symmetric (no net horizontal impulse) and the step time that matches the runner's stride frequency, solved by bisection. Contact time, duty factor and peak force follow from the spring.
 
 ## @jgengine/core/movement/serverStep
 
