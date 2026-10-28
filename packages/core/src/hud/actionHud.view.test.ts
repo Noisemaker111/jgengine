@@ -110,4 +110,15 @@ describe("action renderers (SSR)", () => {
     expect(html).toContain('role="meter"');
     expect(html.indexOf("E to open")).toBeLessThan(html.indexOf("data-action-bar"));
   });
+
+  test("renderIcon draws a game's icon in both looks, before the label in kit", () => {
+    const defs = [{ id: "turnip", label: "Turnip", hotkey: "1" }];
+    const renderIcon = (action: { id: string }) => createElement("i", { "data-icon": action.id });
+    const kit = renderToStaticMarkup(createElement(ActionBar, { look: "kit", defs, renderIcon }));
+    expect(kit).toContain('data-icon="turnip"');
+    expect(kit.indexOf('data-icon="turnip"')).toBeLessThan(kit.indexOf(">Turnip"));
+    const slots = renderToStaticMarkup(createElement(ActionBar, { defs, renderIcon }));
+    expect(slots).toContain('data-icon="turnip"');
+    expect(slots).not.toContain(">Tu<");
+  });
 });

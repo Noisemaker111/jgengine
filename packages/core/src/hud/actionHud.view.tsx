@@ -372,6 +372,7 @@ export function ActionBarChrome({
   gap = 6,
   ariaLabel = "Actions",
   renderItem,
+  renderIcon,
   className,
   style,
 }: {
@@ -381,6 +382,8 @@ export function ActionBarChrome({
   gap?: number;
   ariaLabel?: string;
   renderItem?: ((action: ResolvedAction, ctx: ActionItemContext) => ReactNode) | undefined;
+  /** Draws each slot's icon (a `SpriteIcon`) in place of the action's text icon. */
+  renderIcon?: ((action: ResolvedAction) => ReactNode) | undefined;
   className?: string;
   style?: CSSProperties;
 }) {
@@ -430,6 +433,7 @@ export function ActionBarChrome({
             onActivate={model.activate}
             onFocus={model.setFocus}
             onHover={model.setHover}
+            {...(renderIcon === undefined ? {} : { renderIcon })}
           />
         );
       })}
@@ -475,6 +479,8 @@ export interface ActionBarProps {
   onActivate?: (id: string) => void;
   /** `slots` only: swap the per-slot chrome. */
   renderItem?: (action: ResolvedAction, ctx: ActionItemContext) => ReactNode;
+  /** Each action's icon (a `SpriteIcon` item icon): the slot face in `slots`, drawn before the label in `kit`. */
+  renderIcon?: (action: ResolvedAction) => ReactNode;
   /** Orders in progress, drawn as meters after the buttons. */
   progress?: readonly ActionProgress[];
   /** After the buttons and meters: a count, a note. */
@@ -498,12 +504,14 @@ function KitActionRow({
   progress,
   trailing,
   wrapAt,
+  renderIcon,
 }: {
   model: ActionBarModel;
   ariaLabel: string;
   progress: readonly ActionProgress[];
   trailing: ReactNode;
   wrapAt: number | undefined;
+  renderIcon: ((action: ResolvedAction) => ReactNode) | undefined;
 }): ReactNode {
   return (
     <KitPanel variant="strip">
@@ -527,6 +535,11 @@ function KitActionRow({
               title={[tip.body ?? tip.title, ...(tip.notes ?? [])].join("\n")}
               onClick={() => model.activate(action.id)}
             >
+              {renderIcon === undefined ? null : (
+                <span data-action-icon aria-hidden style={{ display: "inline-flex", verticalAlign: "middle", marginRight: 6 }}>
+                  {renderIcon(action)}
+                </span>
+              )}
               {action.label}
               {action.detail === undefined ? null : <span style={{ opacity: 0.65, marginLeft: 4, fontSize: "0.85em" }}>{action.detail}</span>}
             </KitButton>
@@ -559,6 +572,7 @@ export function ActionBar({
   ariaLabel = "Actions",
   onActivate,
   renderItem,
+  renderIcon,
   progress = [],
   trailing,
   prompt,
@@ -569,10 +583,10 @@ export function ActionBar({
   const model = useActionBar(defs, { columns, wrap, hotkeys, onActivate });
   const bar =
     look === "kit" ? (
-      <KitActionRow model={model} ariaLabel={ariaLabel} progress={progress} trailing={trailing} wrapAt={wrapAt} />
+      <KitActionRow model={model} ariaLabel={ariaLabel} progress={progress} trailing={trailing} wrapAt={wrapAt} renderIcon={renderIcon} />
     ) : (
       <div data-action-panel="" style={{ ...PANEL, display: "inline-flex", gap: 8, alignItems: "center" }}>
-        <ActionBarChrome model={model} layout={layout} itemSize={itemSize} ariaLabel={ariaLabel} renderItem={renderItem} />
+        <ActionBarChrome model={model} layout={layout} itemSize={itemSize} ariaLabel={ariaLabel} renderItem={renderItem} renderIcon={renderIcon} />
         <ProgressMeters progress={progress} />
         {trailing}
       </div>

@@ -781,6 +781,10 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `SpriteBatch` (function) · `import { SpriteBatch } from "@jgengine/core/render/SpriteBatch.draw"`
 
+## sprite-icon — draw a served one-colour icon (game-icons.net SVG) tinted to the HUD theme
+
+- `SpriteIcon` (function) · `import { SpriteIcon } from "@jgengine/core/ui/icons/spriteIcon.view"`
+
 ## start-new-game — start a fresh run from a menu or result screen; reloads the page when a run already played
 
 - `startNewGame` (function) · `import { startNewGame } from "@jgengine/core/menu/gameFlowMenus.view"`

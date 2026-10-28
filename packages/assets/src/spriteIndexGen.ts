@@ -19,14 +19,14 @@ export function entryForSpriteFile(source: AssetSource, file: string): IndexEntr
   };
 }
 
-function collectSpriteFiles(dir: string): { file: string; full: string }[] {
+function collectSpriteFiles(dir: string, prefix: string, keepFolders: boolean): { file: string; full: string }[] {
   const found: { file: string; full: string }[] = [];
   for (const name of readdirSync(dir)) {
     const full = join(dir, name);
     if (statSync(full).isDirectory()) {
-      found.push(...collectSpriteFiles(full));
+      found.push(...collectSpriteFiles(full, `${prefix}${name}/`, keepFolders));
     } else if (/\.(svg|png)$/i.test(name)) {
-      found.push({ file: name, full });
+      found.push({ file: keepFolders ? `${prefix}${name}` : name, full });
     }
   }
   return found;
@@ -36,7 +36,7 @@ function collectSpriteFiles(dir: string): { file: string; full: string }[] {
 export function indexSpriteSourceDir(source: AssetSource, dir: string): IndexEntry[] {
   const seen = new Set<string>();
   const entries: IndexEntry[] = [];
-  for (const { file } of collectSpriteFiles(dir).sort((a, b) => a.file.localeCompare(b.file))) {
+  for (const { file } of collectSpriteFiles(dir, "", source.spriteLayout === "folders").sort((a, b) => a.file.localeCompare(b.file))) {
     if (seen.has(file)) continue;
     seen.add(file);
     entries.push(entryForSpriteFile(source, file));

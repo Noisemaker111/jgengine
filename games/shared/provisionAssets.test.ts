@@ -15,6 +15,18 @@ const catalogs = {
 mkdirSync(join(import.meta.dir, "../../.scratch"), { recursive: true });
 
 describe("dev provisions what a game references", () => {
+  test("pulls quoted shared-library keys once per served folder", () => {
+    const publicDir = mkdtempSync(join(import.meta.dir, "../../.scratch/jg-provision-"));
+    try {
+      const libraryPull = (key: string) =>
+        key.startsWith("gameicons:") ? { target: "gameicons-icons", dir: join("sprites", "gameicons-icons") } : key === "polyhaven:chair" ? { target: key, dir: join("models", "library", "polyhaven", "chair") } : undefined;
+      const text = `icon: "gameicons:lorc/wheat", other: 'gameicons:delapouite/beet', model("polyhaven:chair"), unknown("polyhaven:nope")`;
+      expect(missingPulls(text, publicDir, { ...catalogs, libraryPull }).map((job) => job.target)).toEqual(["gameicons-icons", "polyhaven:chair"]);
+    } finally {
+      rmSync(publicDir, { recursive: true, force: true });
+    }
+  });
+
   test("pulls referenced packs and library models that are not on disk, and nothing else", () => {
     const publicDir = mkdtempSync(join(import.meta.dir, "../../.scratch/jg-provision-"));
     try {

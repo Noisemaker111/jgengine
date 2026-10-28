@@ -54,6 +54,30 @@ export async function importAssetToHost(
   }
 }
 
+/** Route a game's dev server serves shared-library pulls on; must match `LIBRARY_PULL_ROUTE` in `games/shared/provisionAssets.ts`. */
+const LIBRARY_PULL_ROUTE = "/__jgengine/library-pull";
+
+/**
+ * Asks the game's dev server to serve one shared-library asset (`polyhaven:ArmChair_01`), pulling it
+ * through the shared asset store, and resolves the URL the game loads it from. Null when no host
+ * answers or the pull fails.
+ * @internal
+ */
+export async function pullLibraryAssetToHost(
+  key: string,
+  route: string = LIBRARY_PULL_ROUTE,
+  fetchImpl: (route: string, init: RequestInit) => Promise<Response> = (target, init) => fetch(target, init),
+): Promise<string | null> {
+  try {
+    const response = await fetchImpl(route, { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ key }) });
+    if (!response.ok) return null;
+    const body: unknown = await response.json();
+    return typeof body === "object" && body !== null && "url" in body && typeof body.url === "string" ? body.url : null;
+  } catch {
+    return null;
+  }
+}
+
 /**
  * Turns dropped files into placeable assets: each model is persisted through `importer` when a host answers,
  * else falls back to an ephemeral `blob:` URL (lost on reload). Non-model files are skipped. Pure and

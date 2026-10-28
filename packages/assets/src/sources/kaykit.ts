@@ -69,6 +69,30 @@ const KAYKIT_PACKS: readonly KayKitPack[] = [
     title: "KayKit Space Base Bits",
     categories: ["scifi", "environment", "prop"],
   },
+  {
+    id: "kaykit-halloween",
+    repo: "KayKit-Halloween-Bits-1.0",
+    itch: "kaykit-halloween-bits",
+    title: "KayKit Halloween Bits",
+    categories: ["halloween", "prop", "environment"],
+    unpulled: "listed in the asset library from its repository tree; reindex after the first pull",
+  },
+  {
+    id: "kaykit-prototype",
+    repo: "KayKit-Prototype-Bits-1.0",
+    itch: "kaykit-prototype-bits",
+    title: "KayKit Prototype Bits",
+    categories: ["prototype", "prop", "blockout"],
+    unpulled: "listed in the asset library from its repository tree; reindex after the first pull",
+  },
+  {
+    id: "kaykit-restaurant",
+    repo: "KayKit-Restaurant-Bits-1.0",
+    itch: "kaykit-restaurant-bits",
+    title: "KayKit Restaurant Bits",
+    categories: ["restaurant", "food", "prop", "interior"],
+    unpulled: "listed in the asset library from its repository tree; reindex after the first pull",
+  },
 ];
 
 function githubArchiveUrl(repo: string): string {

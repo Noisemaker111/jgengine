@@ -36,6 +36,26 @@ and Darmstadt Graphics Group GmbH, licensed [CC BY 4.0](https://creativecommons.
 The pull removes the licence plate and the Khronos and glTF logos (trademarks the license does not
 grant) and simplifies the mesh. A game that ships it must show that credit.
 
+## Shared asset library
+
+`@jgengine/assets/library/*` indexes about 12,700 assets that every game can pick from in the editor's
+Asset library: ambientCG materials and HDRIs (CC0), Poly Haven models, textures and HDRIs (CC0),
+game-icons.net icons (CC BY 3.0), Sketchfab models marked CC0 or CC BY, Microsoft Rocketbox
+characters (MIT) and KayKit and older Quaternius packs (CC0). Only CC0, public domain, MIT and CC BY
+are accepted; Kenney, Mixamo, Textures.com, Fab and BlenderKit are refused. The library stores
+metadata only (source, author, licence, page, tags, bounds, triangles); `assets pull <source>:<id>`
+fetches the bytes into the shared asset store. Each entry keeps its author and licence, so
+`libraryCredits` and `assets library credits <key...>` write a game's credit lines from the assets it
+ships.
+
+game-icons.net icons are by Lorc, Delapouite, Andy Meneely, Aussiesim, Carl Olsen, Caro Asercion,
+Cathelineau, Catsu, DarkZaitzev, Faithtoken, Felbrigg, GeneralAce135, Guard13007, HeavenlyDog,
+Irongamer, John Colburn, John Redman, Kier Heyl, Lord Berandas, Lucas, Pepijn Poolman, Pierre
+Leducq, PriorBlue, Quoting, Rihlsul, Sbed, SeregaCthtuf, Skoll, Sparker, SpencerDub, Starseeker,
+Willdabeast, Zajkonur and others, under [CC BY 3.0](https://creativecommons.org/licenses/by/3.0/);
+icons by Viscious Speed and Zeromancer are CC0. Saltwick's crop icons (beet, cabbage, sunflower,
+raspberry) are by Delapouite.
+
 JGengine stands on the shoulders of open work by others.
 This file records that debt and thanks the people whose projects shaped ours.
 

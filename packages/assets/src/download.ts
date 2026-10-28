@@ -468,11 +468,19 @@ export interface ExtractedSpriteFile {
   bytes: Uint8Array;
 }
 
-/** Pulls every SVG/PNG out of a sprite/icon-pack archive, deduped by basename regardless of nesting depth.
+/** Pulls every SVG/PNG out of a sprite/icon-pack archive: deduped by basename (`flat`), or keeping each path below the archive's root folder (`folders`).
  * @internal
  */
-export function extractSpriteFiles(archive: Uint8Array): ExtractedSpriteFile[] {
-  return dedupeByBasename(archive, /\.(svg|png)$/i);
+export function extractSpriteFiles(archive: Uint8Array, layout: "flat" | "folders" = "flat"): ExtractedSpriteFile[] {
+  if (layout === "flat") return dedupeByBasename(archive, /\.(svg|png)$/i);
+  const entries = unzipSync(archive, { filter: boundedExtractFilter((file) => /\.(svg|png)$/i.test(file.name)) });
+  const paths = Object.keys(entries);
+  const rootOf = (path: string) => path.split("/")[0] ?? "";
+  const sharedRoot = paths.length > 0 && paths.every((path) => path.includes("/") && rootOf(path) === rootOf(paths[0] ?? "")) ? `${rootOf(paths[0] ?? "")}/` : "";
+  return Object.entries(entries)
+    .map(([path, bytes]) => ({ file: path.slice(sharedRoot.length), bytes }))
+    .filter((entry) => entry.file.length > 0 && !entry.file.split("/").some((part) => part === ".." || part.startsWith(".")))
+    .sort((a, b) => a.file.localeCompare(b.file));
 }
 
 /** @internal */

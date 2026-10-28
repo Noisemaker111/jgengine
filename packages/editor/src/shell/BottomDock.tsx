@@ -1,5 +1,6 @@
 import { useSyncExternalStore, type ReactNode } from "react";
 
+import type { LibraryEntry } from "@jgengine/assets/library/assetLibrary";
 import type { EditorSession } from "@jgengine/core/editor/index";
 
 import type { EditorAssetEntry } from "../AssetBrowser";
@@ -35,6 +36,7 @@ export function BottomDock({
   onPlaceAsset,
   onImportModels,
   importBusy,
+  onAddLibraryAsset,
 }: {
   tab: BottomDockTab;
   onSelectTab: (tab: BottomDockTab) => void;
@@ -50,6 +52,7 @@ export function BottomDock({
   onPlaceAsset: (entry: EditorAssetEntry) => void;
   onImportModels?: (files: readonly File[]) => void | Promise<void>;
   importBusy?: boolean;
+  onAddLibraryAsset?: (entry: LibraryEntry) => Promise<string | null>;
 }) {
   const consoleEntries = useSyncExternalStore(consoleStore.subscribe, consoleStore.getEntries, consoleStore.getEntries);
   const consoleErrorCount = consoleEntries.reduce((sum, entry) => (entry.severity === "error" ? sum + 1 : sum), 0);
@@ -63,6 +66,7 @@ export function BottomDock({
         view={browserView}
         onSetView={onSetBrowserView}
         {...(onImportModels === undefined ? {} : { onImportModels, importBusy })}
+        {...(onAddLibraryAsset === undefined ? {} : { onAddLibraryAsset })}
       />
     );
   } else if (tab === "console") {

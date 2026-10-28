@@ -17,6 +17,7 @@ export const gameiconsSources: readonly AssetSource[] = [
     license: "CC BY 3.0",
     author: "game-icons.net contributors (Lorc, Delapouite, and 40+ others — see homepage for per-icon credit)",
     categories: ["icon", "item", "ability", "ui"],
+    spriteLayout: "folders",
     download: { url: "https://codeload.github.com/game-icons/icons/zip/HEAD" },
     homepage: "https://game-icons.net",
   },

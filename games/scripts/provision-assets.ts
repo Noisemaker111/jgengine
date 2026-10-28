@@ -6,16 +6,33 @@
  *   bun run games:provision                     every game
  *   bun run games:provision ember-command       one game
  *   bun run games:provision --link-only         link what the store has, download nothing
+ *   bun run games:provision saltwick --library gameicons:lorc/wheat   serve one library key; prints { url }
  */
 import { existsSync, readdirSync } from "node:fs";
 import { join } from "node:path";
 
 import { assetStoreRoot } from "../../packages/assets/src/assetStore";
-import { provisionGame } from "../shared/provisionAssets";
+import { provisionGame, provisionLibraryKey } from "../shared/provisionAssets";
 
 const root = join(import.meta.dir, "..");
 const argv = process.argv.slice(2).filter((arg) => arg !== "--");
 const linkOnly = argv.includes("--link-only");
+const libraryIndex = argv.indexOf("--library");
+if (libraryIndex >= 0) {
+  const key = argv[libraryIndex + 1];
+  const game = argv.find((arg, index) => !arg.startsWith("--") && index !== libraryIndex + 1);
+  if (key === undefined || game === undefined) {
+    console.error("usage: games:provision <game> --library <source>:<id>");
+    process.exit(1);
+  }
+  const served = await provisionLibraryKey(join(root, game), key, { log: (line) => console.error(line) });
+  if (served === null) {
+    console.error(`games:provision: could not serve ${key} in ${game}`);
+    process.exit(1);
+  }
+  console.log(JSON.stringify(served));
+  process.exit(0);
+}
 const only = argv.filter((arg) => !arg.startsWith("--"));
 const games = readdirSync(root)
   .filter((name) => existsSync(join(root, name, "src")) && existsSync(join(root, name, "package.json")))

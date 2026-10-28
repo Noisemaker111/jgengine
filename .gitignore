@@ -63,3 +63,8 @@ apps/web/.wrangler/
 
 # Web pages `bun run data-table` fetched, kept in the main checkout for every worktree.
 .web-cache/
+# Shared asset library pulls (assets pull <source>:<id>); bytes live in the shared asset store.
+**/public/sprites/gameicons-icons/
+**/public/hdri/
+**/public/models/sketchfab/
+**/public/materials/polyhaven-*/

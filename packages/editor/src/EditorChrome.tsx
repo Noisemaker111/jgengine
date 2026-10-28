@@ -7,6 +7,7 @@ import {
   type EditorDocument,
   type EditorSession,
 } from "@jgengine/core/editor/index";
+import type { LibraryEntry } from "@jgengine/assets/library/assetLibrary";
 import { scatterRegionEstimate, SCATTER_PATH_KIND } from "@jgengine/core/scatter/scatterRegion";
 
 import {
@@ -34,6 +35,7 @@ import type { EditorHostApi } from "./session";
 import {
   importAssetToHost,
   loadDroppedAssets,
+  pullLibraryAssetToHost,
   type AssetImporter,
 } from "./assetImport";
 import { newPlacementId, type EditorUiStore, type PlacementTool } from "./uiStore";
@@ -637,6 +639,24 @@ export function EditorChrome({
     else notify(`Place failed: ${response.error ?? "unknown error"}`, "error");
   };
 
+  const addLibraryAsset = useCallback(
+    async (entry: LibraryEntry): Promise<string | null> => {
+      const url = await pullLibraryAssetToHost(entry.key);
+      if (url === null) {
+        notify(`Could not add ${entry.title}: no dev server answered, or the pull failed`, "error");
+        return null;
+      }
+      if (entry.kind === "model" || entry.kind === "character") {
+        const asset: EditorAssetEntry = { id: entry.key, label: entry.title, kind: "model", url };
+        onRegisterAsset?.(asset.id, url);
+        setImportedAssets((current) => mergeEditorAssets(current, [asset]));
+      }
+      notify(`Added ${entry.title} (${entry.license}, ${entry.author}); quote "${entry.key}" in the game to keep it`);
+      return url;
+    },
+    [notify, onRegisterAsset],
+  );
+
   const importModels = useCallback(
     async (files: readonly File[]) => {
       if (files.length === 0 || importBusy) return;
@@ -1074,6 +1094,7 @@ export function EditorChrome({
                   onSetBrowserView={(view) => layout.patch({ browserView: view })}
                   onPlaceAsset={placeAsset}
                   onImportModels={importModels}
+                  onAddLibraryAsset={addLibraryAsset}
                   importBusy={importBusy}
                 />
               </div>

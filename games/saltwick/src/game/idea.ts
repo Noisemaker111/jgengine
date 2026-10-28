@@ -56,6 +56,7 @@ export const idea: Idea = {
   "crops": [
     {
       "id": "turnip",
+      "icon": "gameicons:delapouite/beet",
       "label": "Turnip",
       "seed": 4,
       "hours": 5,
@@ -74,6 +75,7 @@ export const idea: Idea = {
     },
     {
       "id": "cabbage",
+      "icon": "gameicons:delapouite/cabbage",
       "label": "Cabbage",
       "seed": 8,
       "hours": 9,
@@ -91,6 +93,7 @@ export const idea: Idea = {
     },
     {
       "id": "sunflower",
+      "icon": "gameicons:delapouite/sunflower",
       "label": "Sunflower",
       "seed": 14,
       "hours": 14,
@@ -108,6 +111,7 @@ export const idea: Idea = {
     },
     {
       "id": "berry",
+      "icon": "gameicons:delapouite/raspberry",
       "label": "Sea berry",
       "seed": 20,
       "hours": 20,

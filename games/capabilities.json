@@ -525,6 +525,16 @@
       "intent": "validate game-owned multi-file asset descriptions before ingest"
     },
     {
+      "id": "asset-library",
+      "packages": [
+        "@jgengine/assets"
+      ],
+      "module": "@jgengine/assets/library/libraryIndex",
+      "gameFacing": false,
+      "probe": null,
+      "intent": "thousands of licensed models, characters, materials, HDRIs and icons with credit data"
+    },
+    {
       "id": "asset-load-diagnostics",
       "packages": [
         "@jgengine/core"
@@ -5190,6 +5200,26 @@
       "intent": "paint a building part from a named library material"
     },
     {
+      "id": "library-credits",
+      "packages": [
+        "@jgengine/assets"
+      ],
+      "module": "@jgengine/assets/library/assetLibrary",
+      "gameFacing": false,
+      "probe": null,
+      "intent": "generate in-game credits from the library assets a game ships"
+    },
+    {
+      "id": "library-credits-document",
+      "packages": [
+        "@jgengine/assets"
+      ],
+      "module": "@jgengine/assets/library/assetLibrary",
+      "gameFacing": false,
+      "probe": null,
+      "intent": "a ready credits document from the library assets a game ships"
+    },
+    {
       "id": "library-foliage-thinning",
       "packages": [
         "@jgengine/assets"
@@ -5200,6 +5230,36 @@
       "intent": "thin a foliage scan's leaf clusters for a lighter level while keeping canopy cover"
     },
     {
+      "id": "library-icon-credits",
+      "packages": [
+        "@jgengine/assets"
+      ],
+      "module": "@jgengine/assets/library/libraryIcons",
+      "gameFacing": false,
+      "probe": null,
+      "intent": "credit game-icons.net icons per artist from the keys a game ships"
+    },
+    {
+      "id": "library-icon-url",
+      "packages": [
+        "@jgengine/assets"
+      ],
+      "module": "@jgengine/assets/library/libraryIcons",
+      "gameFacing": false,
+      "probe": null,
+      "intent": "resolve a game-icons.net library key to the icon a game serves"
+    },
+    {
+      "id": "library-license-gate",
+      "packages": [
+        "@jgengine/assets"
+      ],
+      "module": "@jgengine/assets/library/libraryLicense",
+      "gameFacing": false,
+      "probe": null,
+      "intent": "refuse any asset licence outside CC0, public domain, MIT and CC BY"
+    },
+    {
       "id": "library-model",
       "packages": [
         "@jgengine/assets"
@@ -5208,6 +5268,36 @@
       "gameFacing": false,
       "probe": null,
       "intent": "draw a realistic library model at real size with its near and far LOD"
+    },
+    {
+      "id": "library-pull",
+      "packages": [
+        "@jgengine/assets"
+      ],
+      "module": "@jgengine/assets/library/libraryPull",
+      "gameFacing": false,
+      "probe": null,
+      "intent": "fetch one library asset (model, material, HDRI, icon pack) into the folder a game serves it from"
+    },
+    {
+      "id": "library-search",
+      "packages": [
+        "@jgengine/assets"
+      ],
+      "module": "@jgengine/assets/library/assetLibrary",
+      "gameFacing": false,
+      "probe": null,
+      "intent": "search thousands of licensed models, materials, HDRIs and icons by words and tags"
+    },
+    {
+      "id": "library-served-path",
+      "packages": [
+        "@jgengine/assets"
+      ],
+      "module": "@jgengine/assets/library/libraryServed",
+      "gameFacing": false,
+      "probe": null,
+      "intent": "the public folder and URL a pulled library asset is served from"
     },
     {
       "id": "library-surface-parameters",
@@ -5238,6 +5328,16 @@
       "gameFacing": false,
       "probe": null,
       "intent": "put a named library material on terrain without faking optional maps"
+    },
+    {
+      "id": "library-validate",
+      "packages": [
+        "@jgengine/assets"
+      ],
+      "module": "@jgengine/assets/library/assetLibrary",
+      "gameFacing": false,
+      "probe": null,
+      "intent": "check every library entry has an allowed licence and full credit fields"
     },
     {
       "id": "lifecycle",
@@ -8992,6 +9092,16 @@
       "gameFacing": false,
       "probe": null,
       "intent": "Draw many atlas sprites in one instanced draw"
+    },
+    {
+      "id": "sprite-icon",
+      "packages": [
+        "@jgengine/core"
+      ],
+      "module": "@jgengine/core/ui/icons/spriteIcon.view",
+      "gameFacing": false,
+      "probe": null,
+      "intent": "draw a served one-colour icon (game-icons.net SVG) tinted to the HUD theme"
     },
     {
       "id": "squad-combat",

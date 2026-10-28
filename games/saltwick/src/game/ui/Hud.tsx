@@ -9,6 +9,8 @@ import { KitBanner, KitObjective } from "@jgengine/core/ui/kit/kitFlow.view";
 import { KitCount, KitCounts } from "@jgengine/core/hud/kitHud.view";
 import { HudSlots } from "@jgengine/shell/gameKit";
 import { KitActionPrompt, KitButton, KitPanel } from "@jgengine/core/ui/kit/uiKitRoot.view";
+import { SpriteIcon } from "@jgengine/core/ui/icons/spriteIcon.view";
+import { libraryIconUrl } from "@jgengine/assets/library/libraryIcons";
 
 import { idea } from "../idea";
 import { farmView, prompts } from "../prompts";
@@ -115,6 +117,10 @@ function SeedBar(): ReactNode {
           {farm.planted}/{farm.plots} planted
         </span>
       }
+      renderIcon={(action) => {
+        const icon = idea.crops.find((crop) => crop.id === action.id)?.icon;
+        return icon === undefined ? null : <SpriteIcon src={libraryIconUrl(icon)} size={22} />;
+      }}
       onActivate={(id) => ctx.game.commands.run(`digit${idea.crops.findIndex((crop) => crop.id === id) + 1}`, {})}
     />
   );
