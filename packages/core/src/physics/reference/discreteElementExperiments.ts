@@ -173,6 +173,78 @@ export function pouredCone(options: PouredConeOptions = {}): PouredConeResult {
   return { ...cone, grains: resting, maxOverlap: worst };
 }
 
+/** Options for {@link collapsedColumn}. */
+export interface ColumnCollapseOptions {
+  material?: DemMaterial;
+  grainRadius?: number;
+  /** Column height over radius, a = h_i / r_i. */
+  aspect: number;
+  /** Column radius in grain radii. Default 10. */
+  columnRadius?: number;
+  seed?: string;
+}
+
+/** Where a released column came to rest. */
+export interface ColumnCollapseResult {
+  /** Column radius and settled height before release, m. */
+  initialRadius: number;
+  initialHeight: number;
+  /** Radius of the deposit's edge, the farthest grain once still, m (Lube et al. measured the edge). */
+  runout: number;
+  /** Highest grain top once still, m. */
+  finalHeight: number;
+  /** Seconds from release until the grains stopped. */
+  duration: number;
+}
+
+/**
+ * A cylinder of grains on a rough floor, released by lifting its frictionless wall away fast: the axisymmetric
+ * collapse of Lube, Huppert, Sparks & Hallworth (2004), who measured r_∞/r_i = 1 + 1.24 a for a < 1.7.
+ * @capability granular-dem discrete element reference for sand, gravel and powders with Hertz–Mindlin contacts, rolling resistance and capillary cohesion
+ */
+export function collapsedColumn(options: ColumnCollapseOptions): ColumnCollapseResult {
+  const r = options.grainRadius ?? 0.005;
+  const ri = (options.columnRadius ?? 10) * r;
+  const material = options.material ?? DEM_SAND;
+  const rng = seededRng(options.seed ?? "column");
+  const reachFactor = options.aspect < 1.7 ? 1 + 1.24 * options.aspect : 1 + 1.6 * Math.sqrt(options.aspect);
+  const floorRadius = ri * reachFactor * 1.6 + 4 * r;
+  const target = options.aspect * ri;
+  const count = Math.ceil((0.6 * Math.PI * ri * ri * target) / ((4 / 3) * Math.PI * r * r * r));
+  const span = floorRadius + 10 * r;
+  const dem = createDiscreteElements({
+    materials: [material, DEM_STEEL],
+    interactions: [{ a: 0, b: 1, friction: 0, rollingFriction: 0 }],
+    walls: [{ kind: "cylinder", center: [0, 0, 0], axis: [0, 1, 0], radius: ri, length: 4 * target + 20 * r, material: 1 }],
+    domain: { min: [-span, -r, -span], max: [span, 20 * target + 200 * r, span] },
+    maxBodies: count + Math.ceil((floorRadius * floorRadius * Math.PI) / (3.4 * r * r)) + 8,
+  });
+  const floor = roughFloor(dem, floorRadius, r, 0);
+  lattice(dem, { center: [0, 0, 0], radius: ri, bottom: 2 * r, count, grainRadius: r, spread: 0.1, material: 0, rng });
+  settleGrains(dem, 0.003, 1.5);
+  let height = 0;
+  for (let b = floor; b < dem.bodyCount; b += 1) height = Math.max(height, (dem.py[b] ?? 0) + (dem.sphereRadius[b] ?? 0) - 2 * r);
+  // Lift the wall clear in a few hundredths of a second, faster than the column can move.
+  dem.setWallMotion(0, { velocity: [0, Math.max(2, 40 * height), 0] });
+  let duration = 0;
+  for (let k = 0; k < 400; k += 1) {
+    dem.run(0.01);
+    duration += 0.01;
+    if (duration < 0.1) continue;
+    let fastest = 0;
+    for (let b = floor; b < dem.bodyCount; b += 1) if (dem.active[b] === 1) fastest = Math.max(fastest, Math.hypot(dem.vx[b] ?? 0, dem.vy[b] ?? 0, dem.vz[b] ?? 0));
+    if (fastest < 0.02) break;
+  }
+  let edge = 0;
+  let top = 0;
+  for (let b = floor; b < dem.bodyCount; b += 1) {
+    if (dem.active[b] !== 1) continue;
+    edge = Math.max(edge, Math.hypot(dem.px[b] ?? 0, dem.pz[b] ?? 0) + (dem.sphereRadius[b] ?? 0));
+    top = Math.max(top, (dem.py[b] ?? 0) + (dem.sphereRadius[b] ?? 0) - 2 * r);
+  }
+  return { initialRadius: ri, initialHeight: height, runout: edge, finalHeight: top, duration };
+}
+
 function clear(dem: DiscreteElements, x: number, y: number, z: number, gap: number): boolean {
   for (let b = 0; b < dem.bodyCount; b += 1) {
     if (dem.active[b] !== 1) continue;
