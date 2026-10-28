@@ -8257,6 +8257,26 @@
       "intent": "draw roads, tracks and trails as surfaced ribbons with curbs, sidewalks, lane markings and trimmed junctions"
     },
     {
+      "id": "rocket-6dof",
+      "packages": [
+        "@jgengine/core"
+      ],
+      "module": "@jgengine/core/flight/reference/rocket",
+      "gameFacing": false,
+      "probe": null,
+      "intent": "geodetic latitude, longitude and height to Earth-fixed coordinates"
+    },
+    {
+      "id": "rocket-comparison",
+      "packages": [
+        "@jgengine/core"
+      ],
+      "module": "@jgengine/core/flight/reference/rocketComparison",
+      "gameFacing": false,
+      "probe": null,
+      "intent": "the Saturn V S-IC flight built as a game rigid-body rocket"
+    },
+    {
       "id": "rocketbox-clip",
       "packages": [
         "@jgengine/assets"

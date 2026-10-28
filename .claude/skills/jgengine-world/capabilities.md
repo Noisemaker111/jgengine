@@ -1316,6 +1316,20 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `RoadRibbons` (function) · `import { RoadRibbons } from "@jgengine/core/roads/RoadRibbons.draw"`
 
+## rocket-6dof — multistage rocket ascent on a rotating Earth: thrust curves, gimbal, staging, drag through Mach, max-Q
+
+- `createRocket` (function) · `import { createRocket } from "@jgengine/core/flight/reference/rocket"`
+- `earthFixedToGeodetic` (function) · `import { earthFixedToGeodetic } from "@jgengine/core/flight/reference/rocket"`
+- `earthGravity` (function) · `import { earthGravity } from "@jgengine/core/flight/reference/rocket"`
+- `geodeticToEarthFixed` (function) · `import { geodeticToEarthFixed } from "@jgengine/core/flight/reference/rocket"`
+- `gravityTurnTarget` (function) · `import { gravityTurnTarget } from "@jgengine/core/flight/reference/rocket"`
+- `steerRocket` (function) · `import { steerRocket } from "@jgengine/core/flight/reference/rocket"`
+
+## rocket-comparison — compare a game rocket's ascent with a reference 6-DOF rocket and the Apollo 11 Saturn V
+
+- `compareRocketAscent` (function) · `import { compareRocketAscent } from "@jgengine/core/flight/reference/rocketComparison"`
+- `saturnVGameTuning` (function) · `import { saturnVGameTuning } from "@jgengine/core/flight/reference/rocketComparison"`
+
 ## rotor-bemt — allocate rotor load buffers once, outside the hot path
 
 - `createRotorLoads` (function) · `import { createRotorLoads } from "@jgengine/core/flight/reference/helicopterRotor"`

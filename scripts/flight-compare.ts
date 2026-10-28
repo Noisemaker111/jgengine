@@ -6,12 +6,13 @@ import { pathToFileURL } from "node:url";
 import type { RigidAircraftTuning } from "../packages/core/src/flight/aircraftDynamics";
 import { compareFlight, formatFlightComparison, type FlightComparisonAircraft } from "../packages/core/src/flight/reference/flightComparison";
 import { compareJetEngines, type JetComparisonAircraft } from "../packages/core/src/flight/reference/jetEngineComparison";
+import { compareRocketAscent } from "../packages/core/src/flight/reference/rocketComparison";
 import { compareRotorcraft } from "../packages/core/src/flight/reference/rotorcraftComparison";
 import { printHelpIfAsked } from "./script-help";
 
 if (
   printHelpIfAsked("flight-compare", {
-    summary: "fly every game aircraft built on createRigidAircraft and its reference aircraft through the same flight tests, then measure every game jet engine against the F100 cycle and every game rotor against the Bo-105 rotor",
+    summary: "fly every game aircraft built on createRigidAircraft and its reference aircraft through the same flight tests, then measure every game jet engine against the F100 cycle every game rotor against the Bo-105 rotor and every game rocket (and a game build of the Saturn V) against the reference rocket",
     usage: "bun run perf flight [game...]",
     flags: [],
     example: "bun run perf flight harbor-heat",
@@ -76,5 +77,6 @@ if (aircraft.length === 0 && rotors.length === 0) {
   console.log("no game aircraft built on createRigidAircraft found");
   process.exit(0);
 }
-const tables = [...compareFlight(aircraft), ...compareJetEngines(aircraft), ...compareRotorcraft(rotors)];
+const rockets = aircraft.filter((entry) => entry.tuning.motor !== undefined).map((entry) => compareRocketAscent(entry.tuning, entry.name));
+const tables = [...compareFlight(aircraft), ...compareJetEngines(aircraft), ...compareRotorcraft(rotors), compareRocketAscent(), ...rockets];
 console.log(formatFlightComparison(tables));
