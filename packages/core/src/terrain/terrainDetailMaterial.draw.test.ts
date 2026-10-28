@@ -246,6 +246,7 @@ test("generated surfaces bake into one array texture and compile only the roles 
   expect(material.defines?.["JG_GEN_ROCK"]).toBe("1.0");
   expect(material.defines?.["JG_GEN_GROUND"]).toBeUndefined();
   const shader = fakeShader();
+  // type-escape: the fake shader stands in for three's program parameters, as in the tests above.
   material.onBeforeCompile?.(shader as never, undefined as never);
   expect(shader.uniforms["uGenAlbedo"]?.value).toBe(surfaces?.textures.albedo);
   expect(shader.fragmentShader).toContain("jgGenProject(JG_GEN_ROCK");

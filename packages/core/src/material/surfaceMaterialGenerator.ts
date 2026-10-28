@@ -755,8 +755,10 @@ const RECIPES: Record<SurfaceMaterialKind, (input: BakeInputs) => void> = {
   snow: bakeSnow,
 };
 
+const KIND_SET: ReadonlySet<string> = new Set(SURFACE_MATERIAL_KINDS);
+
 function isKind(value: string): value is SurfaceMaterialKind {
-  return (SURFACE_MATERIAL_KINDS as readonly string[]).includes(value);
+  return KIND_SET.has(value);
 }
 
 // ---------------------------------------------------------------------------------------------
