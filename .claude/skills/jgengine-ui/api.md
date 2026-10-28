@@ -397,6 +397,9 @@
 - `KitHint` (function): function KitHint({ text, tone = "accent", banner }: KitHintProps): ReactNode — The one-line hint across the top of a HUD — what the held tool does, why work stopped — plus the phase banner that shares its slot.
 - `KitHintProps` (interface): interface KitHintProps — Props for {@link KitHint}.
 - `KitVital` (interface): interface KitVital — One meter on a {@link KitVitals} card.
+- `KitVitalIcon` (interface): interface KitVitalIcon — One pool on a {@link KitVitalIcons} strip.
+- `KitVitalIcons` (function): function KitVitalIcons({ vitals, size = 32, readout = false, direction = "column" }: KitVitalIconsProps): ReactNode — Survival pools as a strip of glyphs that fill from the bottom as the pool fills: a heart, a bolt, a drumstick, a drop. Quieter than a card of bars; `readout` adds the numbers beside each glyph for a detailed mode. Each glyph is a `role="meter"` with its value for assistive tech and tests.
+- `KitVitalIconsProps` (interface): interface KitVitalIconsProps — Props for {@link KitVitalIcons}.
 - `KitVitals` (function): function KitVitals({ eyebrow, title, vitals = [], children, objective, width = HUD_CORNER_WIDTH }: KitVitalsProps): ReactNode — The corner card of a play HUD: the game's name, the player's (and what they protect's) meters, and the labeled objective under it. Passes pointer events through to the world.
 - `KitVitalsObjective` (interface): interface KitVitalsObjective — The current objective under a {@link KitVitals} card: who asks, what, and the one step.
 - `KitVitalsProps` (interface): interface KitVitalsProps — Props for {@link KitVitals}.
