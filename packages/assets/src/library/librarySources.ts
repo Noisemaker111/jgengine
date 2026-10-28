@@ -9,7 +9,8 @@ export type LibrarySourceId =
   | "kaykit"
   | "quaternius"
   | "rocketbox"
-  | "makehuman";
+  | "makehuman"
+  | "smithsonian";
 
 /** What a library entry is, which decides where it is served and which browser tab shows it. */
 export type LibraryKind = "model" | "character" | "animation" | "material" | "decal" | "hdri" | "icon";
@@ -113,6 +114,16 @@ export const ASSET_LIBRARY_SOURCES: readonly LibrarySource[] = [
     page: `https://github.com/makehumancommunity/makehuman/tree/${MAKEHUMAN_REVISION}/makehuman/data`,
     rehost: true,
     revision: MAKEHUMAN_REVISION,
+  },
+  {
+    id: "smithsonian",
+    title: "Smithsonian Open Access (CC0 3D)",
+    homepage: "https://www.si.edu/openaccess",
+    license: "CC0-1.0",
+    author: "Smithsonian Institution",
+    page: "https://3d-api.si.edu/voyager/3d_package:{id}",
+    thumbnail: "https://3d-api.si.edu/content/document/3d_package:{id}/scene-image-thumb.jpg",
+    rehost: true,
   },
   {
     id: "kaykit",

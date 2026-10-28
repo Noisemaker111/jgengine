@@ -391,7 +391,7 @@
 ## @jgengine/assets/library/libraryPull
 
 - `LibraryPullContext` (interface): interface LibraryPullContext — What {@link pullLibraryEntry} needs from its caller.
-- `pullLibraryEntry` (function): function pullLibraryEntry(entry: LibraryEntry, ctx: LibraryPullContext): Promise<LibraryServedPath> — Pulls one library entry into `ctx.outRoot` at {@link libraryServedPath}: pack entries through the pack pull, ambientCG materials through the material path, Poly Haven and Rocketbox models through the model library's converters (a Rocketbox character with `ctx.clips` baked on), a Rocketbox animation as a skeleton-only clip GLB, a MakeHuman person built from its CC0 base mesh and targets, Poly Haven textures and HDRIs and ambientCG HDRIs as files, and a Sketchfab model through its download API with the token named by the source (`SKETCHFAB_TOKEN`).
+- `pullLibraryEntry` (function): function pullLibraryEntry(entry: LibraryEntry, ctx: LibraryPullContext): Promise<LibraryServedPath> — Pulls one library entry into `ctx.outRoot` at {@link libraryServedPath}: pack entries through the pack pull, ambientCG materials through the material path, Poly Haven and Rocketbox models through the model library's converters (a Rocketbox character with `ctx.clips` baked on), a Rocketbox animation as a skeleton-only clip GLB, a MakeHuman person built from its CC0 base mesh and targets, a Smithsonian scan as its CC0 GLB, Poly Haven textures and HDRIs and ambientCG HDRIs as files, and a Sketchfab model through its download API with the token named by the source (`SKETCHFAB_TOKEN`).
 
 ## @jgengine/assets/library/libraryRocketbox
 
@@ -409,7 +409,7 @@
 - `LIBRARY_KINDS` (const): const LIBRARY_KINDS: readonly LibraryKind[] — Every {@link LibraryKind}, in browser tab order.
 - `LibraryKind` (type): type LibraryKind = "model" | "character" | "animation" | "material" | "decal" | "hdri" | "icon" — What a library entry is, which decides where it is served and which browser tab shows it.
 - `LibrarySource` (interface): interface LibrarySource — One upstream the library indexes. `{id}` in a template is replaced by the entry's native id.
-- `LibrarySourceId` (type): type LibrarySourceId = | "ambientcg" | "polyhaven" | "gameicons" | "sketchfab" | "kaykit" | "quaternius" | "rocketbox" | "makehuman" — Where a library entry's bytes come from.
+- `LibrarySourceId` (type): type LibrarySourceId = | "ambientcg" | "polyhaven" | "gameicons" | "sketchfab" | "kaykit" | "quaternius" | "rocketbox" | "makehuman" | "smithsonian" — Where a library entry's bytes come from.
 - `MAKEHUMAN_REVISION` (const): const MAKEHUMAN_REVISION: "a8bc2d54ff0ac92e78ff71431b1023eda42bf482" — The MakeHuman commit the pinned people are built from (the same one `makehumanPull` reads).
 - `ROCKETBOX_REVISION` (const): const ROCKETBOX_REVISION: "0943055db6ec570bcef9f2c8b41c9e5467c808f9" — The Microsoft Rocketbox commit the avatar index and previews are pinned to (the same one `rocketboxPull` reads).
 - `librarySource` (function): function librarySource(id: string): LibrarySource | undefined — The library source with this id, or undefined.
