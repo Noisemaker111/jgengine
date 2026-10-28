@@ -19,9 +19,9 @@ describe("dev provisions what a game references", () => {
     const publicDir = mkdtempSync(join(import.meta.dir, "../../.scratch/jg-provision-"));
     try {
       const libraryPull = (key: string) =>
-        key.startsWith("gameicons:") ? { target: "gameicons-icons", dir: join("sprites", "gameicons-icons") } : key === "polyhaven:chair" ? { target: key, dir: join("models", "library", "polyhaven", "chair") } : undefined;
-      const text = `icon: "gameicons:lorc/wheat", other: 'gameicons:delapouite/beet', model("polyhaven:chair"), unknown("polyhaven:nope")`;
-      expect(missingPulls(text, publicDir, { ...catalogs, libraryPull }).map((job) => job.target)).toEqual(["gameicons-icons", "polyhaven:chair"]);
+        key.startsWith("gameicons:") ? { target: "gameicons-icons", dir: join("sprites", "gameicons-icons") } : key === "makehuman:old-man" ? { target: key, dir: join("models", "library", "makehuman", "old-man") } : key === "polyhaven:chair" ? { target: key, dir: join("models", "library", "polyhaven", "chair") } : undefined;
+      const text = `icon: "gameicons:lorc/wheat", other: 'gameicons:delapouite/beet', model("polyhaven:chair"), person("makehuman:old-man"), unknown("polyhaven:nope")`;
+      expect(missingPulls(text, publicDir, { ...catalogs, libraryPull }).map((job) => job.target)).toEqual(["gameicons-icons", "polyhaven:chair", "makehuman:old-man"]);
     } finally {
       rmSync(publicDir, { recursive: true, force: true });
     }

@@ -5,7 +5,7 @@ import { basename, dirname, extname, join, normalize, resolve, sep } from "node:
 import type { Plugin, ViteDevServer } from "vite";
 
 import { assetStoreRoot } from "../../packages/assets/src/assetStore";
-import { gameAssetText } from "../../games/shared/provisionAssets";
+import { gameAssetText, LIBRARY_PULL_ROUTE, libraryPullMiddleware } from "../../games/shared/provisionAssets";
 import { compressedVariant, textureVariantDir } from "../../games/shared/textureVariants";
 import { prefetchTier, type PrefetchItem } from "../../packages/core/src/boot/prefetchTier";
 
@@ -207,6 +207,18 @@ export function gamePublicIndexModule(games: readonly string[]): string {
 }
 
 /**
+ * The in-repo game folder the editor's asset library pulls into when the runner hosts `game`, or
+ * undefined for an unknown game or one served from another checkout (`games:provision` takes an
+ * in-repo game name).
+ */
+export function libraryPullGameDir(dirs: ReadonlyMap<string, string>, gamesDir: string, game: string | undefined): string | undefined {
+  const pub = game === undefined ? undefined : dirs.get(game);
+  if (pub === undefined) return undefined;
+  const gameDir = dirname(pub);
+  return resolve(dirname(gameDir)) === resolve(gamesDir) ? gameDir : undefined;
+}
+
+/**
  * Serves each game's own `public/` to the runner under `games/<id>/`, in dev from the game's folder
  * and in a production build as files written next to the bundle, and gives the runner each game's
  * file list (`virtual:jgengine-game-public`) so a game's `/models/…` resolves to its own copy.
@@ -252,6 +264,7 @@ export const prefetch = ${JSON.stringify(prefetch)};
       };
       devServer.watcher.on("add", refresh);
       devServer.watcher.on("unlink", refresh);
+      devServer.middlewares.use(LIBRARY_PULL_ROUTE, libraryPullMiddleware((game) => libraryPullGameDir(dirs, gamesDir, game)));
       devServer.middlewares.use((req: IncomingMessage, res: ServerResponse, next: () => void) => {
         if (req.method !== "GET" && req.method !== "HEAD") return next();
         const split = splitGamePublicUrl(req.url ?? "");

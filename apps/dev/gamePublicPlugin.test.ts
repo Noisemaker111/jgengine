@@ -4,7 +4,7 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 
 import { contentKey, imageVariantName } from "../../games/shared/textureVariants";
-import { gamePrefetchList, gamePublicDirs, gamePublicIndexModule, listPublicFiles, resolvePublicFile, splitGamePublicUrl, writeGamePublics } from "./gamePublicPlugin";
+import { gamePrefetchList, gamePublicDirs, gamePublicIndexModule, libraryPullGameDir, listPublicFiles, resolvePublicFile, splitGamePublicUrl, writeGamePublics } from "./gamePublicPlugin";
 
 function fixture() {
   // fixture-location: allow plain bytes on disk; the plugin imports nothing from @jgengine
@@ -98,4 +98,16 @@ describe("each game's own files reach the runner", () => {
     expect(resolvePublicFile("/color.png?ktx2=color,top", pub, variants)).toBe(twin);
     expect(resolvePublicFile("/color.png", pub, variants)).toBe(original);
   });
+});
+
+test("the editor's library pulls go into the hosted in-repo game, never another checkout's", () => {
+  const dirs = new Map([
+    ["harbor", join("/repo", "games", "harbor", "public")],
+    ["lane", join("/elsewhere", "lane", "public")],
+  ]);
+  const gamesDir = join("/repo", "games");
+  expect(libraryPullGameDir(dirs, gamesDir, "harbor")).toBe(join("/repo", "games", "harbor"));
+  expect(libraryPullGameDir(dirs, gamesDir, "lane")).toBeUndefined();
+  expect(libraryPullGameDir(dirs, gamesDir, "nope")).toBeUndefined();
+  expect(libraryPullGameDir(dirs, gamesDir, undefined)).toBeUndefined();
 });
