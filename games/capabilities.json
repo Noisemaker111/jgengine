@@ -3819,6 +3819,16 @@
       "intent": "validate authored ribbon guides and their vertex allocation ceiling"
     },
     {
+      "id": "handling-compare",
+      "packages": [
+        "@jgengine/core"
+      ],
+      "module": "@jgengine/core/physics/reference/compareHandling",
+      "gameFacing": false,
+      "probe": null,
+      "intent": "measure any vehicle sim on every comparison scenario (0-100, braking, skidpad, ISO tests)"
+    },
+    {
       "id": "handling-metrics",
       "packages": [
         "@jgengine/core"
@@ -5412,6 +5422,16 @@
       "gameFacing": false,
       "probe": null,
       "intent": "a weapon magazine with capacity, timed reload, and reserve-pool interaction"
+    },
+    {
+      "id": "magic-formula-contact",
+      "packages": [
+        "@jgengine/core"
+      ],
+      "module": "@jgengine/core/physics/reference/magicFormulaTire",
+      "gameFacing": false,
+      "probe": null,
+      "intent": "relaxation-length tire contact as a pure ODE right-hand side for a multibody integrator"
     },
     {
       "id": "magic-formula-tire",
@@ -7571,6 +7591,26 @@
       "intent": "locate broken crafting item/station/unlock references, duplicate inputs and invalid authored quantities with repair guidance"
     },
     {
+      "id": "reference-car",
+      "packages": [
+        "@jgengine/core"
+      ],
+      "module": "@jgengine/core/physics/reference/referenceCar",
+      "gameFacing": false,
+      "probe": null,
+      "intent": "multibody reference car on Magic Formula tires and real suspension kinematics — the physics ruler for game vehicle handling"
+    },
+    {
+      "id": "reference-validation",
+      "packages": [
+        "@jgengine/core"
+      ],
+      "module": "@jgengine/core/physics/reference/compareHandling",
+      "gameFacing": false,
+      "probe": null,
+      "intent": "check the reference car model against a real car's published 0-100, braking and skidpad numbers"
+    },
+    {
       "id": "refusal-feedback",
       "packages": [
         "@jgengine/core"
@@ -8816,6 +8856,16 @@
       "intent": "render persisted chat with focus controls and visible send failures"
     },
     {
+      "id": "standard-maneuvers",
+      "packages": [
+        "@jgengine/core"
+      ],
+      "module": "@jgengine/core/physics/reference/standardManeuvers",
+      "gameFacing": false,
+      "probe": null,
+      "intent": "measure a vehicle with ISO 4138 steady-state circle, ISO 7401 step steer and ISO 3888-1 lane change"
+    },
+    {
       "id": "standing",
       "packages": [
         "@jgengine/core"
@@ -9170,6 +9220,16 @@
       "gameFacing": false,
       "probe": null,
       "intent": "linked survival meters — drain, delayed regen that costs other vitals, starvation links and knockout-style flags"
+    },
+    {
+      "id": "suspension-kinematics",
+      "packages": [
+        "@jgengine/core"
+      ],
+      "module": "@jgengine/core/physics/reference/suspensionKinematics",
+      "gameFacing": false,
+      "probe": null,
+      "intent": "solve a double-wishbone or MacPherson corner from hardpoints — camber, toe, track and spring length through travel and steer"
     },
     {
       "id": "sync-authored-objects",

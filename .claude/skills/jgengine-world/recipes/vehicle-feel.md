@@ -41,6 +41,7 @@
 - **Sound.** Play a one-shot on `step.landingSpeed` (thud, suspension clunk).
 - **Proof.** For jumps and air control, `measureAir` reports apex height and time, double-jump height, and air rotation rates.
 - **Proof.** `measureHandling(() => createVehicleDynamics(tuning), options?)` from `@jgengine/core/physics/handlingProbe` returns deterministic numbers. Assert them in a test. For a sprung car, `measureRide` adds settle time, brake dive, roll per g and landing bounces.
+- **Real-physics check.** `bun run games:capabilities handling <module>#<export>` runs every car tuning in that export through 0–100, braking, skidpad and the ISO 4138 / 7401 / 3888-1 tests next to a multibody reference model of a real car and its published numbers (`compareVehicleTuning` in `@jgengine/core/physics/reference/compareHandling`). Read the gaps as a feel decision: an arcade car may grip past a road car on purpose, but write that down.
 - **Proof.** `feelOf(setup.spec)` gives comparable numbers per build, and a test drives the same scripted inputs on two `surfaceFriction` values (or before/after `damagedSpec`) and asserts the grip difference — slip retained, heading turned, and top speed reached.
 
 ## Workflow

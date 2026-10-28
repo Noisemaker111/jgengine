@@ -648,6 +648,12 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `grounded` (function) · `import { grounded } from "@jgengine/core/world"`
 
+## handling-compare — line up two vehicles' measured handling metrics with deltas per metric
+
+- `compareHandlingMetrics` (function) · `import { compareHandlingMetrics } from "@jgengine/core/physics/reference/compareHandling"`
+- `compareVehicleTuning` (function) · `import { compareVehicleTuning } from "@jgengine/core/physics/reference/compareHandling"`
+- `measureComparableHandling` (function) · `import { measureComparableHandling } from "@jgengine/core/physics/reference/compareHandling"`
+
 ## handling-metrics — measure a vehicle's feel as numbers — 0–100, braking, lateral g, turn-in, sideslip, spin
 
 - `measureHandling` (function) · `import { measureHandling } from "@jgengine/core/physics/handlingProbe"`
@@ -776,6 +782,10 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `animGraphFromConfig` (function) · `import { animGraphFromConfig } from "@jgengine/core/anim/locomotionGraph"`
 - `locomotionGraph` (function) · `import { locomotionGraph } from "@jgengine/core/anim/locomotionGraph"`
+
+## magic-formula-contact — relaxation-length tire contact as a pure ODE right-hand side for a multibody integrator
+
+- `magicFormulaContact` (function) · `import { magicFormulaContact } from "@jgengine/core/physics/reference/magicFormulaTire"`
 
 ## magic-formula-tire — evaluate a published Pacejka Magic Formula 6.1 tire — combined slip, load, camber, pressure, turn slip, Fx Fy Mx My Mz
 
@@ -1093,6 +1103,15 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `decideRateWindow` (function) · `import { decideRateWindow } from "@jgengine/core/time/rateWindow"`
 
+## reference-car — multibody reference car on Magic Formula tires and real suspension kinematics — the physics ruler for game vehicle handling
+
+- `createReferenceCar` (function) · `import { createReferenceCar } from "@jgengine/core/physics/reference/referenceCar"`
+
+## reference-validation — check the reference car model against a real car's published 0-100, braking and skidpad numbers
+
+- `checkReferenceAgainstPublished` (function) · `import { checkReferenceAgainstPublished } from "@jgengine/core/physics/reference/compareHandling"`
+- `validateReferenceCars` (function) · `import { validateReferenceCars } from "@jgengine/core/physics/reference/compareHandling"`
+
 ## reputation — faction standing that crosses named reputation tiers
 
 - `tierForStanding` (function) · `import { tierForStanding } from "@jgengine/core/world"`
@@ -1290,6 +1309,10 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `splitRegion` (function) · `import { splitRegion } from "@jgengine/core/world"`
 
+## standard-maneuvers — measure a vehicle with ISO 4138 steady-state circle, ISO 7401 step steer and ISO 3888-1 lane change
+
+- `measureStandardManeuvers` (function) · `import { measureStandardManeuvers } from "@jgengine/core/physics/reference/standardManeuvers"`
+
 ## static-shape-instances — render authored primitive transforms as static material-compatible instance batches
 
 - `StaticShapeInstances` (function) · `import { StaticShapeInstances } from "@jgengine/core/instancing/staticShapeInstances.draw"`
@@ -1332,6 +1355,12 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 - `surveyFromDocument` (function) · `import { surveyFromDocument } from "@jgengine/core/terrain/surveyTerrain"`
 - `surveyHeightField` (function) · `import { surveyHeightField } from "@jgengine/core/terrain/surveyTerrain"`
 - `surveyIsLand` (function) · `import { surveyIsLand } from "@jgengine/core/terrain/surveyTerrain"`
+
+## suspension-kinematics — allocate a reusable sample for table lookups in a hot loop
+
+- `createSuspensionSample` (function) · `import { createSuspensionSample } from "@jgengine/core/physics/reference/suspensionKinematics"`
+- `createSuspensionTable` (function) · `import { createSuspensionTable } from "@jgengine/core/physics/reference/suspensionKinematics"`
+- `solveSuspension` (function) · `import { solveSuspension } from "@jgengine/core/physics/reference/suspensionKinematics"`
 
 ## sync-authored-objects — synchronize edited catalog prop poses, elevation and removal through the existing object store
 

@@ -149,10 +149,17 @@ describe("magicFormula combined slip, camber and moments", () => {
     expect(Math.abs(magicFormula(tire, { kappa: 0, alpha: 0, gamma: 0, fz: FZ0 }).fy)).toBeGreaterThan(10);
   });
 
-  test("reversing mirrors the slip response", () => {
-    const fwd = magicFormula(tire, { kappa: 0.05, alpha: 0, gamma: 0, fz: FZ0, vx: 10 });
-    const back = magicFormula(tire, { kappa: 0.05, alpha: 0, gamma: 0, fz: FZ0, vx: -10 });
-    expect(relative(back.fx, -fwd.fx)).toBeLessThan(1e-9);
+  test("rolling backward, friction still opposes the contact's sliding", () => {
+    // A locked wheel reversing slides backward: κ = −Vsx/|Vx| = +1 and the force pushes forward.
+    expect(magicFormula(tire, { kappa: 1, alpha: 0, gamma: 0, fz: FZ0, vx: -10 }).fx).toBeGreaterThan(2900);
+    // Rolling backward is the tyre turned 180° about z: the slips mirror and the forces turn back, so the tyre's own
+    // offsets (conicity, ply steer) flip sign in the world frame.
+    for (const slip of [0.02, 0.05, 0.2]) {
+      const back = magicFormula(tire, { kappa: slip, alpha: 0, gamma: 0, fz: FZ0, vx: -10 }).fx;
+      expect(relative(back, -magicFormula(tire, { kappa: -slip, alpha: 0, gamma: 0, fz: FZ0, vx: 10 }).fx)).toBeLessThan(1e-9);
+      const side = magicFormula(tire, { kappa: 0, alpha: slip, gamma: 0, fz: FZ0, vx: -10 }).fy;
+      expect(relative(side, -magicFormula(tire, { kappa: 0, alpha: -slip, gamma: 0, fz: FZ0, vx: 10 }).fy)).toBeLessThan(1e-9);
+    }
   });
 
   test("zero load gives zero force", () => {

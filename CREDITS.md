@@ -160,6 +160,9 @@ here as required.
 - Magic Formula 6.1 tyre equations: H. B. Pacejka, *Tire and Vehicle Dynamics*, 3rd ed., Butterworth-Heinemann (2012), §4.3, §7.2 and Appendix 3; I. J. M. Besselink, A. J. C. Schmeitz and H. B. Pacejka, "An improved Magic Formula/Swift tyre model that can handle inflation pressure changes", *Vehicle System Dynamics* 48 sup1 (2010). Used by `packages/core/src/physics/reference/magicFormulaTire.ts`.
 - TNO 205/60 R15 coefficient set (`TNO_car205_60R15.tir`, Delft-Tyre / TNO Automotive 2013), as printed in Pacejka (2012) Appendix 3. Coefficients only.
 - Equation cross-check against MFeval (Marco Furlan, TU Delft) and its Julia port, read for reference; no code copied.
+- Multibody reference car (`referenceCar.ts`, `suspensionKinematics.ts`): Kane's method as in T. R. Kane and D. A. Levinson, *Dynamics: Theory and Applications* (1985); suspension closure and Karnopp stick–slip friction (D. Karnopp, ASME J. Dyn. Sys. 107, 1985) from the textbook formulations, no code copied.
+- Real-car specifications and published test numbers in `realCars.ts`, each cited per field there: Mazda and Toyota specification listings and Wikipedia's Mazda MX-5 (ND) and Toyota 86 articles (mass, weight split, dimensions, gearing, torque curves, steering ratio, manufacturer 0–100 km/h claims); Car and Driver's 2016 Mazda MX-5 Miata test (skidpad); Edmunds' 2016 MX-5 Miata review and 2013 Scion FR-S track test (braking, FR-S skidpad). Numbers only.
+- Standard manoeuvres follow the procedures of ISO 4138 (steady-state circular driving), ISO 7401 (lateral transient response) and ISO 3888-1 (double lane change) as publicly summarized; no standard text copied.
 
 ## Game and level design research
 
