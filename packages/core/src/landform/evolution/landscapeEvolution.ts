@@ -44,14 +44,18 @@ export interface GlacialParams {
   maxAccumulation?: number;
   /** Glen's flow rate factor A in Pa⁻³ yr⁻¹. Default 7.57·10⁻¹⁷, temperate ice. */
   flowRate?: number;
-  /** Sliding coefficient C of u_b = C·τ_b³, in m yr⁻¹ Pa⁻³. Default 5·10⁻¹⁴ (about 50 m/yr under 100 kPa). */
+  /** Sliding coefficient C of u_b = C·τ_b, in m yr⁻¹ Pa⁻¹. Default 5·10⁻⁴ (50 m/yr under 100 kPa). */
   sliding?: number;
+  /** Effective ice viscosity in Pa·yr that couples neighbouring columns' sliding (lateral drag). Default 3·10⁶ (about 10¹⁴ Pa·s). */
+  lateralDrag?: number;
+  /** Share of the rock a glacier plucks that it drops as till where the ice ends; meltwater carries the rest away. Default 0.25. */
+  tillShare?: number;
   /** Erosion constant K_g of ė = K_g·u_b, dimensionless. Default 10⁻⁴ (Humphrey & Raymond 1994). */
   erosion?: number;
-  /** Years the ice flows each step; ice settles within centuries, so less than a step is enough. Default 2000. */
+  /** Years the ice flows each step; a glacier settles within centuries, so less than a step is enough. Default 1000. */
   iceYears?: number;
-  /** Most ice sub-steps per step, bounding the work. Default 400. */
-  maxIterations?: number;
+  /** Implicit ice steps per landscape step, bounding the work. Default 10. */
+  iceSteps?: number;
 }
 
 /** Waves on the coast: cliff retreat and platform wear (see `coastal/waveErosion`). Needs a `seaLevel`. */
@@ -556,21 +560,22 @@ export function createLandscapeEvolution(options: LandscapeEvolutionOptions): La
   function glaciate(dt: number, report: LandformStepReport): void {
     const g = params.glacial;
     if (g === undefined) return;
-    const iceYears = g.iceYears ?? 2000;
-    iceFlow.advance(
+    iceFlow.relax(
       height,
       ice,
-      iceYears < dt ? iceYears : dt,
+      Math.min(g.iceYears ?? 1000, dt),
+      g.iceSteps ?? 10,
       {
         deformation: iceDeformationRate(g.flowRate ?? GLEN_RATE_FACTOR),
-        sliding: g.sliding ?? 5e-14,
+        sliding: g.sliding ?? 5e-4,
         ela: g.ela,
         balanceGradient: g.balanceGradient ?? 0.005,
         maxAccumulation: g.maxAccumulation ?? 2,
+        lateralDrag: g.lateralDrag ?? 3e6,
       },
-      g.maxIterations ?? 400,
     );
     const kg = g.erosion ?? 1e-4;
+    const tillShare = g.tillShare ?? 0.25;
     const { sliding } = iceFlow;
     carried.fill(0);
     let count = 0;
@@ -615,11 +620,13 @@ export function createLandscapeEvolution(options: LandscapeEvolutionOptions): La
         report.exported += load;
         continue;
       }
-      const thickness = load / cellArea;
+      const kept = load * tillShare;
+      const thickness = kept / cellArea;
       cover.add(i, COVER.till, thickness);
       height[i] = (height[i] ?? 0) + thickness;
       sediment[i] = cover.total(i);
-      report.deposited += load;
+      report.deposited += kept;
+      report.exported += load - kept;
     }
   }
 

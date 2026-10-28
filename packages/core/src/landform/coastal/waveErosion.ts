@@ -6,10 +6,10 @@
  * leaves widens (Sunamura 1992; the energy-dissipating platform of Anderson, Densmore & Ellis 1999).
  * The waves also wear the submerged platform down at a rate that falls exponentially with depth.
  *
- * A cliff cell retreats R·dt of its width: it loses that share of a column as tall as the land behind
- * it, down to a notch just below sea level, so the coast moves smoothly between cells. The shallow-water distance is a
- * Dijkstra sweep over sea cells from deep water; long steps split into sub-steps of at most half a
- * cell of retreat, up to a fixed count.
+ * A cliff cell retreats R·dt of its width: it loses that share of a column as tall as the land
+ * behind it, down to a notch just below sea level, so the coast moves smoothly between cells. The
+ * shallow-water distance is a Dijkstra sweep over sea cells from deep water; long steps split into
+ * sub-steps of at most a tenth of a cell of retreat, up to a fixed count.
  *
  * @capability landform-coastal sea cliffs that retreat under waves and leave shore platforms and beaches
  */
@@ -126,7 +126,7 @@ export function createWaveEroder(topology: LandformTopology): WaveEroder {
     sea,
     erode(height, settings, dt, cut, maxSubsteps) {
       const fastest = settings.cliffRetreat * dt;
-      let substeps = Math.ceil(fastest / (0.5 * cellSize));
+      let substeps = Math.ceil(fastest / (0.1 * cellSize));
       if (substeps < 1) substeps = 1;
       if (substeps > maxSubsteps) substeps = maxSubsteps;
       const h = dt / substeps;
