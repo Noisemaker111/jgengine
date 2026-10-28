@@ -825,6 +825,7 @@
     "./plants/validation/crownAllometry",
     "./plants/validation/heightAgeCurves",
     "./plants/validation/plantSilhouette",
+    "./plants/validation/stemAllometry",
     "./play/flow",
     "./play/flowSteps",
     "./play/headlessFlow.draw",

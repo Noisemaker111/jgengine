@@ -16,6 +16,12 @@ export interface LightField {
   lightAt(x: number, y: number, z: number, openSky: number, extinction: number): number;
   /** {@link LightField.lightAt} at a cell {@link LightField.deposit} returned. */
   lightAtCell(cell: number, openSky: number, extinction: number): number;
+  /**
+   * Repeat the plant on a square grid `periodM` apart, as a stand of identical neighbours: light and
+   * the least-shaded direction then sum the shadow of every copy within two spacings, and space nearer
+   * a neighbour's stem than the plant's own gets no light. 0 is one plant.
+   */
+  setPeriod(periodM: number): void;
   /** Write the direction of least shadow at a point into `out` (zero when the field is flat there). */
   optimalDirection(x: number, y: number, z: number, out: Float64Array): void;
   /** Copy of the deposited leaf area and propagated shadow, with the boxes they cover. */
@@ -90,6 +96,10 @@ class ShadowVoxels implements LightField {
   private shadowMaxX = -1;
   private shadowMinZ = 0;
   private shadowMaxZ = -1;
+  /** Neighbour spacing in cells, 0 for a lone plant. */
+  private period = 0;
+  /** Copies of the plant on each side that fall inside the grid, at most two. */
+  private images = 0;
 
   constructor(options: LightFieldOptions) {
     const cell = options.cellM;
@@ -136,8 +146,30 @@ class ShadowVoxels implements LightField {
     return this.shadow[cy * this.layer + cz * this.nx + cx] ?? 0;
   }
 
+  /** Shadow at a cell from the plant and, in a stand, every neighbour copy in reach. */
+  private shadowSum(cx: number, cy: number, cz: number): number {
+    if (this.images === 0) return this.shadowAt(cx, cy, cz);
+    const { period, images } = this;
+    let sum = 0;
+    for (let m = -images; m <= images; m += 1) {
+      for (let k = -images; k <= images; k += 1) sum += this.shadowAt(cx + m * period, cy, cz + k * period);
+    }
+    return sum;
+  }
+
   private lightIn(at: number, openSky: number, extinction: number): number {
-    const above = (this.shadow[at] ?? 0) - 0.5 * (this.leaf[at] ?? 0) * this.lai;
+    let shade = this.shadow[at] ?? 0;
+    if (this.images > 0) {
+      const cy = Math.floor(at / this.layer);
+      const rest = at - cy * this.layer;
+      const cz = Math.floor(rest / this.nx);
+      const cx = rest - cz * this.nx;
+      // Crown shyness (Putz et al. 1984): space nearer a neighbour's stem is its crown, abraded bare.
+      const half = 0.5 * this.period;
+      if (Math.abs(cx + 0.5 - 0.5 * this.nx) > half || Math.abs(cz + 0.5 - 0.5 * this.nz) > half) return 0;
+      shade = this.shadowSum(cx, cy, cz);
+    }
+    const above = shade - 0.5 * (this.leaf[at] ?? 0) * this.lai;
     if (above <= 0) return openSky;
     const depth = extinction * above * EXP_TABLE_STEPS;
     // e^-40 is below 1e-17: full shade.
@@ -288,13 +320,19 @@ class ShadowVoxels implements LightField {
     this.shadowMaxZ = b[10] ?? -1;
   }
 
+  setPeriod(periodM: number): void {
+    const period = periodM > 0 ? Math.max(1, Math.round(periodM * this.perCell)) : 0;
+    this.period = period;
+    this.images = period === 0 ? 0 : Math.min(2, Math.floor((this.nx - 1) / period));
+  }
+
   optimalDirection(x: number, y: number, z: number, out: Float64Array): void {
     const cx = this.ix(x);
     const cy = this.iy(y);
     const cz = this.iz(z);
-    const gx = this.shadowAt(cx - 1, cy, cz) - this.shadowAt(cx + 1, cy, cz);
-    const gy = this.shadowAt(cx, cy - 1, cz) - this.shadowAt(cx, cy + 1, cz);
-    const gz = this.shadowAt(cx, cy, cz - 1) - this.shadowAt(cx, cy, cz + 1);
+    const gx = this.shadowSum(cx - 1, cy, cz) - this.shadowSum(cx + 1, cy, cz);
+    const gy = this.shadowSum(cx, cy - 1, cz) - this.shadowSum(cx, cy + 1, cz);
+    const gz = this.shadowSum(cx, cy, cz - 1) - this.shadowSum(cx, cy, cz + 1);
     const length = Math.sqrt(gx * gx + gy * gy + gz * gz);
     if (length < 1e-9) {
       out[0] = 0;

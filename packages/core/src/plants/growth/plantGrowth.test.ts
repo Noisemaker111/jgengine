@@ -113,10 +113,13 @@ describe("plant growth", () => {
     expect(stats.maxBudsSeen).toBeLessThanOrEqual(limits.maxBuds);
   });
 
-  test("a sugar maple survives 100 years under 0.2 light", () => {
-    const shaded = createPlantGrowth(ACER_SACCHARUM, { ...OPEN_TEMPERATE_SITE, light: 0.2 }, SEED);
-    shaded.step(100);
-    expect(shaded.stats().alive).toBe(true);
+  test("a sugar maple keeps a leafy crown for 100 years under 0.2 light on every seed", () => {
+    for (const seed of [SEED, "a", "b"]) {
+      const shaded = createPlantGrowth(ACER_SACCHARUM, { ...OPEN_TEMPERATE_SITE, light: 0.2 }, seed);
+      shaded.step(100);
+      expect(shaded.stats().alive, seed).toBe(true);
+      expect(shaded.stats().leafAreaM2, seed).toBeGreaterThan(2);
+    }
   }, 120_000);
 
   test("an open-grown tree keeps a longer crown than one grown in a closed stand", () => {

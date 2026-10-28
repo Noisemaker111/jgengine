@@ -19,10 +19,10 @@ export interface PlantEnvironment {
   wind: { dir: number; strength: number };
   slope: { dir: number; deg: number };
   /**
-   * An even-aged stand around the plant; absent means open-grown. Neighbours are taken as the plant's
-   * equals spaced `spacingIndex` × its own height apart (the Hart–Becking spacing index; 0.2–0.25 is a
-   * fully stocked stand), so the stand thins as it grows. Their leaves shade every point by
-   * Beer–Lambert over the stand's leaf area index above it (Monsi & Saeki 1953).
+   * An even-aged stand around the plant; absent means open-grown. Neighbours are copies of the plant
+   * on a square grid `spacingIndex` × its own height apart (the Hart–Becking spacing index; 0.2–0.25 is
+   * a fully stocked stand), so the stand thins as it grows and a crown that spreads past half the
+   * spacing grows into its neighbours' shade (Beer–Lambert, Monsi & Saeki 1953).
    */
   stand?: { spacingIndex: number };
 }
