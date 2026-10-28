@@ -252,6 +252,10 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `rankAssets` (function) · `import { rankAssets } from "@jgengine/assets"`
 
+## rocketbox-clip — pull one Microsoft Rocketbox animation clip as a skeleton-only GLB that plays on any Rocketbox human
+
+- `pullRocketboxClip` (function) · `import { pullRocketboxClip } from "@jgengine/assets/rocketboxPull"`
+
 ## sources-for-asset-ids — resolve the asset packs behind the ids a game actually ships
 
 - `sourcesForAssetIds` (function) · `import { sourcesForAssetIds } from "@jgengine/assets/credits"`

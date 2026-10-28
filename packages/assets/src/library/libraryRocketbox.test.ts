@@ -27,7 +27,9 @@ describe("Rocketbox animations in the library", () => {
     expect(walk).toMatchObject({ kind: "animation", title: "Male Walk Neutral 01", rigged: true });
     expect(walk?.tags).toEqual(["animation", "human", "in-place", "male", "walk", "neutral"]);
     expect(records.find((record) => record.id === "Animations/xy/f_run_fast_01")?.tags).toContain("root-motion");
-    const entry = expandLibraryRecord("rocketbox", records[0]!);
+    const first = records[0];
+    if (first === undefined) throw new Error("no records");
+    const entry = expandLibraryRecord("rocketbox", first);
     expect(entry.license).toBe("MIT");
     expect(entry.thumbnail).toBeUndefined();
     expect(entry.page).toContain("f_idle_finger%20nail_01.max.fbx");

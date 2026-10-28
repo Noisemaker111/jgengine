@@ -381,7 +381,11 @@
 ## @jgengine/assets/library/libraryPull
 
 - `LibraryPullContext` (interface): interface LibraryPullContext — What {@link pullLibraryEntry} needs from its caller.
-- `pullLibraryEntry` (function): function pullLibraryEntry(entry: LibraryEntry, ctx: LibraryPullContext): Promise<LibraryServedPath> — Pulls one library entry into `ctx.outRoot` at {@link libraryServedPath}: pack entries through the pack pull, ambientCG materials through the material path, Poly Haven and Rocketbox models through the model library's converters, Poly Haven textures and HDRIs and ambientCG HDRIs as files, and a Sketchfab model through its download API with the token named by the source (`SKETCHFAB_TOKEN`).
+- `pullLibraryEntry` (function): function pullLibraryEntry(entry: LibraryEntry, ctx: LibraryPullContext): Promise<LibraryServedPath> — Pulls one library entry into `ctx.outRoot` at {@link libraryServedPath}: pack entries through the pack pull, ambientCG materials through the material path, Poly Haven and Rocketbox models through the model library's converters (a Rocketbox character with `ctx.clips` baked on), a Rocketbox animation as a skeleton-only clip GLB, Poly Haven textures and HDRIs and ambientCG HDRIs as files, and a Sketchfab model through its download API with the token named by the source (`SKETCHFAB_TOKEN`).
+
+## @jgengine/assets/library/libraryRocketbox
+
+- `ROCKETBOX_CLIP_FOLDERS` (const): const ROCKETBOX_CLIP_FOLDERS: { readonly static: "all_animations_max_motextr_static"; readonly xy: "all_animations_max_motextr_xy"; readonly xyz: "all_animations_max_motextr_xyz"; } — Rocketbox's three animation folders: in place (`static`), travelling on the ground (`xy`) and in 3D (`xyz`).
 
 ## @jgengine/assets/library/libraryServed
 
@@ -393,7 +397,7 @@
 - `ASSET_LIBRARY_SOURCES` (const): const ASSET_LIBRARY_SOURCES: readonly LibrarySource[] — The upstreams the shared asset library indexes, in ingest order.
 - `GAMEICONS_REVISION` (const): const GAMEICONS_REVISION: "82d948812bfe3f269ef8f731dcdb07b08160edc4" — The game-icons.net repository commit the icon index and thumbnails are pinned to.
 - `LIBRARY_KINDS` (const): const LIBRARY_KINDS: readonly LibraryKind[] — Every {@link LibraryKind}, in browser tab order.
-- `LibraryKind` (type): type LibraryKind = "model" | "character" | "material" | "decal" | "hdri" | "icon" — What a library entry is, which decides where it is served and which browser tab shows it.
+- `LibraryKind` (type): type LibraryKind = "model" | "character" | "animation" | "material" | "decal" | "hdri" | "icon" — What a library entry is, which decides where it is served and which browser tab shows it.
 - `LibrarySource` (interface): interface LibrarySource — One upstream the library indexes. `{id}` in a template is replaced by the entry's native id.
 - `LibrarySourceId` (type): type LibrarySourceId = | "ambientcg" | "polyhaven" | "gameicons" | "sketchfab" | "kaykit" | "quaternius" | "rocketbox" — Where a library entry's bytes come from.
 - `ROCKETBOX_REVISION` (const): const ROCKETBOX_REVISION: "0943055db6ec570bcef9f2c8b41c9e5467c808f9" — The Microsoft Rocketbox commit the avatar index and previews are pinned to (the same one `rocketboxPull` reads).
@@ -488,9 +492,12 @@
 
 ## @jgengine/assets/rocketboxPull
 
+- `PullRocketboxClipOptions` (interface): interface PullRocketboxClipOptions — Settings for {@link pullRocketboxClip}.
 - `PullRocketboxOptions` (interface): interface PullRocketboxOptions — Fetch and settings for {@link pullRocketboxModel}.
+- `PulledRocketboxClip` (interface): interface PulledRocketboxClip — What one Rocketbox clip pull wrote.
 - `PulledRocketboxModel` (interface): interface PulledRocketboxModel — What one Rocketbox pull wrote.
 - `ROCKETBOX_COMMIT` (const): const ROCKETBOX_COMMIT: "0943055db6ec570bcef9f2c8b41c9e5467c808f9" — Microsoft Rocketbox (MIT) ships rigged avatars and animals as FBX with 2048 px TGA maps. This converts one into a single meshopt-compressed GLB the engine can draw and animate: the avatar's skinned mesh and bones, the requested clips retargeted by bone name (the library is one skeleton family), metres instead of centimetres, and JPEG/PNG maps halved to the texture budget. Every file comes from the repository at a pinned commit and is checked against Git's own blob hash.
+- `pullRocketboxClip` (function): function pullRocketboxClip(clip: RocketboxClip, options: PullRocketboxClipOptions): Promise<PulledRocketboxClip> — Pull one clip from Rocketbox's animation library and write `<outDir>/clip.glb`: the shared skeleton (no mesh) and one animation named `clip.name`, its tracks keyed by bone name in the same centimetre-under-a-0.01-root units a pulled avatar uses, so a mixer on any pulled Rocketbox human plays it unchanged. Travel is kept; bake a clip onto a character with `clips` for in-place.
 - `pullRocketboxModel` (function): function pullRocketboxModel(entry: ModelLibraryEntry, options: PullRocketboxOptions): Promise<PulledRocketboxModel> — Pull one Rocketbox avatar or animal and write `<modelsRoot>/library/<name>/model.glb`: the skinned mesh, its bones, the entry's clips (in place), base colour and normal maps.
 
 ## @jgengine/assets/singles
