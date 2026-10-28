@@ -281,12 +281,12 @@ export function plantLeafAtlas(shape: LeafShapeParams): PlantLeafAtlas {
   return atlas;
 }
 
-/** True once a shape's atlas is baked or kept here. */
+/** @internal True once a shape's atlas is baked or kept here. */
 export function hasPlantLeafAtlas(shape: LeafShapeParams): boolean {
   return bakedAtlases.has(plantLeafAtlasKey(shape));
 }
 
-/** Keep an atlas baked elsewhere (a worker) so {@link plantLeafAtlas} does not bake it again. */
+/** @internal Keep an atlas baked elsewhere (a worker) so {@link plantLeafAtlas} does not bake it again. */
 export function keepPlantLeafAtlas(shape: LeafShapeParams, atlas: PlantLeafAtlas): void {
   bakedAtlases.set(plantLeafAtlasKey(shape), atlas);
 }

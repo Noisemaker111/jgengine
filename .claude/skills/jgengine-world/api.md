@@ -1547,7 +1547,7 @@
 - `getGenerator` (function): function getGenerator(id: string): GeneratorDefinition | undefined — The registered generator for an id, or undefined.
 - `listGenerators` (function): function listGenerators(output?: string): GeneratorDefinition[] — Every registered generator, in registration order, optionally of one output family.
 - `prepareGenerator` (function): function prepareGenerator<Schema extends ParamSchema, Output>(definition: GeneratorDefinition<Schema, Output>, meta: Readonly<Record<string, unknown>> | undefined, options: RunGeneratorOptions = {}): Promise<void> — Await a generator's `prepare` for the output {@link runGenerator} would return with the same arguments. Resolves at once for a generator without one.
-- `prepareGeneratorVariants` (function): function prepareGeneratorVariants<Schema extends ParamSchema, Output>(definition: GeneratorDefinition<Schema, Output>, base: Readonly<Record<string, unknown>> | undefined, options: GeneratorVariantOptions = {}): Promise<void> — Await `prepare` for every variant and detail level {@link bakeGeneratorVariants} would bake with the same arguments, one after another, so a bake right after it is fast.
+- `prepareGeneratorVariants` (function): function prepareGeneratorVariants<Schema extends ParamSchema, Output>(definition: GeneratorDefinition<Schema, Output>, base: Readonly<Record<string, unknown>> | undefined, options: GeneratorVariantOptions = {}): Promise<void> — Await `prepare` for every variant and detail level {@link bakeGeneratorVariants} would bake with the same arguments, all at once, so a generator that prepares off the main thread (a worker pool) runs them in parallel and a bake right after it is fast.
 - `registerGenerator` (function): function registerGenerator<Schema extends ParamSchema, Output>(definition: GeneratorDefinition<Schema, Output>): void — Register a generator so the editor, the asset catalog and agents can find it. Last registration per id wins.
 - `runGenerator` (function): function runGenerator<Schema extends ParamSchema, Output>(definition: GeneratorDefinition<Schema, Output>, meta: Readonly<Record<string, unknown>> | undefined, options: RunGeneratorOptions = {}): Output — Parse `meta` against the generator's schema, resolve its seed and generate.
 - `untypedGenerator` (function): function untypedGenerator<Schema extends ParamSchema, Output>(definition: GeneratorDefinition<Schema, Output>): GeneratorDefinition — The untyped view of a typed generator, for code that holds raw meta bags (the editor, the variant grid): its `generate` parses params against the schema first. Registered generators are already this shape.
@@ -3279,6 +3279,15 @@
 - `encodePlantMesh` (function): function encodePlantMesh(mesh: PlantMesh): Uint8Array — A styled plant mesh as bytes for a {@link PlantCacheStorage}.
 - `encodePlantStructure` (function): function encodePlantStructure(structure: PlantStructure, hash: string): Uint8Array — A grown plant's structure as bytes, with its hash, for a {@link PlantCacheStorage}.
 
+## @jgengine/core/plants/grown/plantGrowPool
+
+- `PlantGrowRequest` (interface): interface PlantGrowRequest — Everything that decides what grows: species, site, seed, age and the day it is seen. Plain data, so it crosses to a worker unchanged.
+- `PlantGrowResult` (interface): interface PlantGrowResult — A grown plant, with its mesh when one was ordered.
+- `PlantGrower` (interface): interface PlantGrower — Grows plants somewhere other than the caller's frame and hands back their structure.
+- `PlantMeshOrder` (interface): interface PlantMeshOrder — A mesh to build where the plant grows: the style and generator detail it is drawn at.
+- `WorkerPlantGrowerOptions` (interface): interface WorkerPlantGrowerOptions — Options for {@link createWorkerPlantGrower}.
+- `createWorkerPlantGrower` (function): function createWorkerPlantGrower(options: WorkerPlantGrowerOptions = {}): PlantGrower | null — A pool of workers that grow plants with the same simulation as the main thread, so a first visit grows a forest without spending frame time. Workers start on demand and stop when the queue drains. Null where the platform has no workers.
+
 ## @jgengine/core/plants/grown/plantGrown
 
 - `BUILTIN_PLANT_SPECIES` (const): const BUILTIN_PLANT_SPECIES: readonly PlantSpecies[] — Species the engine ships, registered with {@link registerPlantGenerators}.
@@ -3286,8 +3295,9 @@
 - `PLANT_GROWN_GENERATOR` (const): const PLANT_GROWN_GENERATOR: GeneratorDefinition<ParamSchema<readonly [{ readonly type: "seed"; readonly key: "seed"; readonly label: "seed"; readonly default: ""; }, { readonly type: "select"; readonly key: "species"; readonly label: "species"; readonly group: "plant"; readonly default: "acer-sacch… — The built-in grown-plant generator, `plant.grown`.
 - `PLANT_GROWN_SCHEMA` (const): const PLANT_GROWN_SCHEMA: ParamSchema<readonly [{ readonly type: "seed"; readonly key: "seed"; readonly label: "seed"; readonly default: ""; }, { readonly type: "select"; readonly key: "species"; readonly label: "species"; readonly group: "plant"; readonly default: "acer-saccharum"; readonly vary: f… — Grown-plant params: what grows (species, age, site) and how it looks (every style field).
 - `PLANT_MESH_OUTPUT` (const): const PLANT_MESH_OUTPUT: "plant-mesh" — The generator output family a grown plant returns: a {@link PlantMesh}.
-- `createPlantGrownGenerator` (function): function createPlantGrownGenerator(cache: PlantCache): GeneratorDefinition<ParamSchema<readonly [{ readonly type: "seed"; readonly key: "seed"; readonly label: "seed"; readonly default: ""; }, { readonly type: "select"; readonly key: "species"; readonly label: "species"; readonly group: "plant"; rea… — A grown-plant generator over one cache. `prepare` grows in slices off the frame (or loads from storage); `generate` answers from the cache, growing on the spot only when nothing prepared it.
-- `plantStructureKey` (function): function plantStructureKey(request: GrowRequest): string — The cache key of a grown structure: species and its version, simulation version, seed, age, day and site. Anything that changes what grows is in it; nothing about the look is.
+- `PlantGrownGeneratorOptions` (interface): interface PlantGrownGeneratorOptions — Options for {@link createPlantGrownGenerator}.
+- `createPlantGrownGenerator` (function): function createPlantGrownGenerator(cache: PlantCache, options: PlantGrownGeneratorOptions = {}): GeneratorDefinition<ParamSchema<readonly [{ readonly type: "seed"; readonly key: "seed"; readonly label: "seed"; readonly default: ""; }, { readonly type: "select"; readonly key: "species"; readonly labe… — A grown-plant generator over one cache. `prepare` grows in a worker (or in slices off the frame, or loads from storage); `generate` answers from the cache, growing on the spot only when nothing prepared it.
+- `plantStructureKey` (function): function plantStructureKey(request: PlantGrowRequest): string — The cache key of a grown structure: species and its version, simulation version, seed, age, day and site. Anything that changes what grows is in it; nothing about the look is.
 - `plantStyleOf` (function): function plantStyleOf(params: PlantGrownParams): PlantStyle — The style a grown plant's params describe.
 
 ## @jgengine/core/plants/growth/carbonBalance
@@ -3341,10 +3351,21 @@
 
 - `TropismWeights` (interface): interface TropismWeights — The weights Palubicki et al. 2009 combine into a new metamer's direction.
 
+## @jgengine/core/plants/mesh/plantLeafAtlas
+
+- `PLANT_LEAF_ATLAS_CELLS` (const): const PLANT_LEAF_ATLAS_CELLS: { readonly leaf: 0; readonly shoot: 1; readonly cluster: 2; } — Cells of a {@link PlantLeafAtlas}, left to right: one leaf, a leafy shoot, a crown cluster.
+- `PLANT_LEAF_ATLAS_CELL_COUNT` (const): const PLANT_LEAF_ATLAS_CELL_COUNT: 3 — Cell count across a {@link PlantLeafAtlas}.
+- `PlantLeafAtlas` (interface): interface PlantLeafAtlas — A leaf texture baked from a species' leaf shape: RGBA texels, rows bottom to top, cells side by side. Colour is brightness only (veins and per-leaf variation) so vertex colour keeps the season, health and style tint; alpha is the leaf silhouette.
+- `bakePlantLeafAtlas` (function): function bakePlantLeafAtlas(shape: LeafShapeParams, cellPx = 128): PlantLeafAtlas — Bake the leaf atlas of a leaf shape: `cellPx` texels per cell side, three cells across. Pure and deterministic, so the same shape always bakes the same texels.
+- `hasPlantLeafAtlas` (function): function hasPlantLeafAtlas(shape: LeafShapeParams): boolean — True once a shape's atlas is baked or kept here.
+- `keepPlantLeafAtlas` (function): function keepPlantLeafAtlas(shape: LeafShapeParams, atlas: PlantLeafAtlas): void — Keep an atlas baked elsewhere (a worker) so {@link plantLeafAtlas} does not bake it again.
+- `plantLeafAtlas` (function): function plantLeafAtlas(shape: LeafShapeParams): PlantLeafAtlas — The leaf atlas of a shape at the default size, baked once per shape and kept; an atlas a worker baked ({@link keepPlantLeafAtlas}) is used as is.
+- `plantLeafAtlasKey` (function): function plantLeafAtlasKey(shape: LeafShapeParams): string — A key that is equal for two leaf shapes exactly when they bake the same atlas.
+
 ## @jgengine/core/plants/mesh/plantMesh
 
 - `DEFAULT_PLANT_STYLE` (const): const DEFAULT_PLANT_STYLE: PlantStyle — The style a plant gets when none is given: the species' own colours, lit, with real leaves.
-- `PLANT_MESH_LODS` (const): const PLANT_MESH_LODS: readonly [1, 0.5, 0.25, 0.1] — Detail of each mesh level, highest first: leaves, shoot cards, limb clumps, crown clumps.
+- `PLANT_MESH_LODS` (const): const PLANT_MESH_LODS: readonly [1, 0.5, 0.25, 0.1] — Detail of each mesh level, highest first: leaves, shoot cards, then leaf clusters at two sizes.
 - `PLANT_MESH_TRIANGLE_BUDGETS` (const): const PLANT_MESH_TRIANGLE_BUDGETS: readonly [120000, 30000, 8000, 1500] — Most triangles a plant mesh may have at each level of {@link PLANT_MESH_LODS}, at any age.
 - `PlantMesh` (interface): interface PlantMesh — A grown plant drawn in one style at one detail level: wood and foliage as separate vertex-coloured meshes so each takes its own material.
 - `PlantMeshInput` (interface): interface PlantMeshInput — What {@link buildPlantMesh} draws.
@@ -3356,7 +3377,7 @@
 
 ## @jgengine/core/plants/mesh/plantMesh.draw
 
-- `plantMeshMaterials` (function): function plantMeshMaterials(look: PlantMeshLook): { bark: THREE.Material; leaves: THREE.Material } — The shared materials a plant mesh's wood and foliage draw with for its look: lit vertex colour (with generated bark grain when asked) or one cel-shading ramp for both.
+- `plantMeshMaterials` (function): function plantMeshMaterials(look: PlantMeshLook): { bark: THREE.Material; leaves: THREE.Material } — The shared materials a plant mesh's wood and foliage draw with for its look: lit vertex colour (with generated bark grain when asked) or one cel-shading ramp for both. Foliage with a leaf atlas samples the atlas baked from its species' leaf shape and cuts leaves out by its alpha.
 - `plantMeshSources` (function): function plantMeshSources(mesh: PlantMesh): GeneratorMeshSource[] — A plant mesh as instanceable draws, wood then foliage; the geometries belong to the caller.
 
 ## @jgengine/core/plants/species/data/acerSaccharum

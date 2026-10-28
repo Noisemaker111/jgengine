@@ -1138,6 +1138,7 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 - `PLANT_CACHE` (const) · `import { PLANT_CACHE } from "@jgengine/core/plants/grown/plantGrown"`
 - `PLANT_GROWN_GENERATOR` (const) · `import { PLANT_GROWN_GENERATOR } from "@jgengine/core/plants/grown/plantGrown"`
 - `createPlantGrownGenerator` (function) · `import { createPlantGrownGenerator } from "@jgengine/core/plants/grown/plantGrown"`
+- `createWorkerPlantGrower` (function) · `import { createWorkerPlantGrower } from "@jgengine/core/plants/grown/plantGrowPool"`
 - `plantStructureKey` (function) · `import { plantStructureKey } from "@jgengine/core/plants/grown/plantGrown"`
 - `plantStyleOf` (function) · `import { plantStyleOf } from "@jgengine/core/plants/grown/plantGrown"`
 
@@ -1150,8 +1151,11 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 - `DEFAULT_PLANT_STYLE` (const) · `import { DEFAULT_PLANT_STYLE } from "@jgengine/core/plants/mesh/plantMesh"`
 - `PlantMesh` (interface) · `import { PlantMesh } from "@jgengine/core/plants/mesh/plantMesh"`
 - `PlantStyle` (interface) · `import { PlantStyle } from "@jgengine/core/plants/mesh/plantMesh"`
+- `bakePlantLeafAtlas` (function) · `import { bakePlantLeafAtlas } from "@jgengine/core/plants/mesh/plantLeafAtlas"`
 - `buildPlantMesh` (function) · `import { buildPlantMesh } from "@jgengine/core/plants/mesh/plantMesh"`
 - `isPlantMesh` (function) · `import { isPlantMesh } from "@jgengine/core/plants/mesh/plantMesh"`
+- `plantLeafAtlas` (function) · `import { plantLeafAtlas } from "@jgengine/core/plants/mesh/plantLeafAtlas"`
+- `plantLeafAtlasKey` (function) · `import { plantLeafAtlasKey } from "@jgengine/core/plants/mesh/plantLeafAtlas"`
 - `plantMeshLod` (function) · `import { plantMeshLod } from "@jgengine/core/plants/mesh/plantMesh"`
 - `plantMeshMaterials` (function) · `import { plantMeshMaterials } from "@jgengine/core/plants/mesh/plantMesh.draw"`
 - `plantMeshSources` (function) · `import { plantMeshSources } from "@jgengine/core/plants/mesh/plantMesh.draw"`
