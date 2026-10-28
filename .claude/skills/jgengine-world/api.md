@@ -4566,6 +4566,19 @@
 - `PLANT_SOURCES` (const): const PLANT_SOURCES: { readonly "carmean-1989": "Carmean, Hahn & Jacobs 1989, Site index curves for forest tree species in the eastern United States, USDA Forest Service GTR NC-128 (US public domain)"; readonly fvs: "USDA Forest Service, Forest Vegetation Simulator, Lake States variant htcalc.f (US … — Every source a plant species value or growth rule comes from; each one is credited in CREDITS.md.
 - `PlantSourceId` (type): type PlantSourceId = keyof typeof PLANT_SOURCES — Id of a credited plant data or model source.
 
+## @jgengine/core/plants/stand/standSim
+
+- `Stand` (interface): interface Stand — A stateful forest plot: step it, read its trees, snapshot and restore it.
+- `StandOptions` (interface): interface StandOptions — A forest plot of individual trees competing for light, stepped a year at a time (Tier A of the plant simulator: SORTIE-style stems and crowns, Pacala et al. 1996, not grown skeletons). Each tree advances along its species' dominant-tree curves (FIA site trees, Carmean) by the light it gets, so a tree in full sun grows like a site tree and a suppressed one waits. Seeds fall from mature trees into a seedling bank per cell, and saplings that reach breast height join the plot as trees.
+- `StandPlanting` (interface): interface StandPlanting — One tree to plant: species index, position on the plot and its age in years (0 for a seedling at breast height).
+- `StandSnapshot` (interface): interface StandSnapshot — A stand's whole state as JSON-safe values.
+- `StandStats` (interface): interface StandStats — Plot totals per hectare.
+- `StandTree` (interface): interface StandTree — A live tree on the plot.
+- `StandTreeGrowth` (interface): interface StandTreeGrowth — What a single tree of a stand would be grown from at full detail (Tier B).
+- `StandTreeState` (interface): interface StandTreeState — One tree's state in a {@link StandSnapshot}.
+- `createStand` (function): function createStand(options: StandOptions): Stand — Create a forest plot. Trees advance along their species' dominant-tree curves by `site × lightResponse(light)` years per year; mortality follows suppression and age; seeds fall from trees past first flowering into 5 m seedling-bank cells.
+- `standTreeGrowth` (function): function standTreeGrowth(options: Pick<StandOptions, "species" | "seed" | "site">, tree: StandTree, treesPerHa: number): StandTreeGrowth — The full-detail growth inputs of one stand tree (Tier B): its species, its own seed, its age, and a site whose open sky is the light it got over its life and whose spacing is its neighbours'.
+
 ## @jgengine/core/plants/structure/plantStructure
 
 - `CROWN_HULL_BINS` (const): const CROWN_HULL_BINS: 16 — Height bins and azimuth sectors of {@link PlantStructure.crownHull}.

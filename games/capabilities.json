@@ -8377,6 +8377,16 @@
       "intent": "register and validate plant species records: measured biology as plain data"
     },
     {
+      "id": "plant-stand",
+      "packages": [
+        "@jgengine/core"
+      ],
+      "module": "@jgengine/core/plants/stand/standSim",
+      "gameFacing": false,
+      "probe": null,
+      "intent": "grow a forest plot of competing trees over centuries: succession, self-thinning and each tree's light history"
+    },
+    {
       "id": "plant-structure",
       "packages": [
         "@jgengine/core"

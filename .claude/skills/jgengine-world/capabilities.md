@@ -1658,6 +1658,11 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 - `registerPlantSpecies` (function) · `import { registerPlantSpecies } from "@jgengine/core/plants/species/plantSpecies"`
 - `validatePlantSpecies` (function) · `import { validatePlantSpecies } from "@jgengine/core/plants/species/plantSpecies"`
 
+## plant-stand — grow a forest plot of competing trees over centuries: succession, self-thinning and each tree's light history
+
+- `createStand` (function) · `import { createStand } from "@jgengine/core/plants/stand/standSim"`
+- `standTreeGrowth` (function) · `import { standTreeGrowth } from "@jgengine/core/plants/stand/standSim"`
+
 ## plant-structure — a grown plant as a skeleton with regions, leaves, clusters and a crown envelope
 
 - `buildPlantStructure` (function) · `import { buildPlantStructure } from "@jgengine/core/plants/structure/plantStructure"`
