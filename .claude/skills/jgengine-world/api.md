@@ -3285,8 +3285,10 @@
 - `PlantGrowResult` (interface): interface PlantGrowResult — A grown plant, with its mesh when one was ordered.
 - `PlantGrower` (interface): interface PlantGrower — Grows plants somewhere other than the caller's frame and hands back their structure.
 - `PlantMeshOrder` (interface): interface PlantMeshOrder — A mesh to build where the plant grows: the style and generator detail it is drawn at.
+- `WorkerPlantGrower` (interface): interface WorkerPlantGrower extends PlantGrower — A {@link PlantGrower} backed by workers.
 - `WorkerPlantGrowerOptions` (interface): interface WorkerPlantGrowerOptions — Options for {@link createWorkerPlantGrower}.
-- `createWorkerPlantGrower` (function): function createWorkerPlantGrower(options: WorkerPlantGrowerOptions = {}): PlantGrower | null — A pool of workers that grow plants with the same simulation as the main thread, so a first visit grows a forest without spending frame time. Workers start on demand and stop when the queue drains. Null where the platform has no workers.
+- `WorkerPlantGrowerState` (interface): interface WorkerPlantGrowerState — What a worker pool is doing: jobs waiting, jobs running and workers alive.
+- `createWorkerPlantGrower` (function): function createWorkerPlantGrower(options: WorkerPlantGrowerOptions = {}): WorkerPlantGrower | null — A pool of workers that grow plants with the same simulation as the main thread, so a first visit grows a forest without spending frame time. Workers start on demand and stop when the queue drains. Null where the platform has no workers.
 
 ## @jgengine/core/plants/grown/plantGrown
 
