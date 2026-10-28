@@ -16,9 +16,9 @@
  * Sliding is what erodes: the bed lowers at K_g·u_b (Harbor 1992; Braun, Zwartz & Tomkin 1999).
  * Neighbouring columns shear each other where their ice meets, and rock holds the ice still where
  * a neighbour's bed rises beside it, so ice in the bottom of a V slides slower than ice on its
- * flanks, the corner effect behind Harbor's (1992) widening of V-shaped valleys. A plan-view model
- * resolves it only roughly: a V's cross-section exponent rises from 1 toward 1.3 here, where
- * Harbor's cross-section model reaches about 2.
+ * flanks, the corner effect behind Harbor's (1992) widening of V-shaped valleys. This stand-in
+ * resolves it only roughly: a V's cross-section exponent rises from 1 toward 1.3 here; the
+ * first-order solver (`firstOrderIceFlow`) resolves the walls' drag and reaches Harbor's 2.
  *
  * @capability landform-glacial glaciers that flow, slide, carve their valleys wider and deeper and lay moraines
  */
@@ -55,6 +55,8 @@ export interface IceFlowSettings {
   maxAccumulation: number;
   /** Effective ice viscosity in Pa·yr coupling neighbouring columns' sliding; 0 slides each column alone. */
   lateralDrag: number;
+  /** Per cell, the true ice flux over the shallow-ice flux on the same geometry; scales each face's flux by its two cells' mean. */
+  fluxScale?: Float64Array;
 }
 
 /** A reusable ice solver for one grid. @internal */
@@ -111,7 +113,9 @@ export function createIceFlow(topology: LandformTopology): IceFlow {
     const h = 0.5 * ((ice[a] ?? 0) + (ice[b] ?? 0));
     const h2 = h * h;
     const h4 = h2 * h2;
-    return settings.deformation * h4 * h * (along * along + across * across) + settings.sliding * ICE_WEIGHT * h2;
+    const flux = settings.deformation * h4 * h * (along * along + across * across) + settings.sliding * ICE_WEIGHT * h2;
+    const scale = settings.fluxScale;
+    return scale === undefined ? flux : flux * 0.5 * ((scale[a] ?? 1) + (scale[b] ?? 1));
   }
 
   // How much of column i's ice faces column j's ice, and how much faces rock, in metres.

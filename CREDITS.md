@@ -315,6 +315,26 @@ no code is copied (Landlab, Fastscape and TopoToolbox were not used as sources).
 - Humphrey & Raymond 1994, hydrology, erosion and sediment production in a surging glacier, *Journal
   of Glaciology* 40; Braun, Zwartz & Tomkin 1999, a new surface-processes model combining glacial
   and fluvial erosion, *Annals of Glaciology* 28: erosion proportional to sliding speed.
+- Blatter 1995, velocity and stress fields in grounded glaciers: a simple algorithm for including
+  deviatoric stress gradients, *Journal of Glaciology* 41; Pattyn 2003, a new three-dimensional
+  higher-order thermomechanical ice sheet model, *JGR* 108: the first-order Stokes equations of the
+  higher-order ice solver.
+- Dukowicz, Price & Lipscomb 2010, consistent approximations and boundary conditions for ice-sheet
+  dynamics from a principle of least action, *Journal of Glaciology* 56: the first-order equations as
+  a convex functional, which the solver's Newton steps descend.
+- Lipscomb et al. 2019, description and evaluation of the Community Ice Sheet Model (CISM) v2.1,
+  *Geoscientific Model Development* 12 (CC BY 4.0): the hybrid surface gradient at glacier margins.
+- Eisenstat & Walker 1996, choosing the forcing terms in an inexact Newton method, *SIAM Journal on
+  Scientific Computing* 17: loose linear solves far from the answer.
+- Pattyn et al. 2008, benchmark experiments for higher-order and full-Stokes ice sheet models
+  (ISMIP-HOM), *The Cryosphere* 2 (CC BY 3.0): experiments A–D and the published ensemble speeds
+  (Tables 4 and 5) the solver is tested against.
+- Nye 1965, the flow of a glacier in a channel of rectangular, elliptic or parabolic cross-section,
+  *Journal of Glaciology* 5; Seddik, Greve, Sugiyama & Naruse 2009, numerical simulation of the
+  evolution of glacial valley cross sections (arXiv:0901.1177): Harbor's cross-section experiment,
+  its parameters and the exponents and form ratios it is tested against.
+- Hallet 1979, a theoretical model of glacial abrasion, *Journal of Glaciology* 23: erosion growing
+  with the square of sliding speed.
 - Sunamura 1992, *Geomorphology of Rocky Coasts*; Anderson, Densmore & Ellis 1999, the generation and
   degradation of marine terraces, *Basin Research* 11: cliff retreat damped by the platform it leaves,
   and platform lowering by depth.
