@@ -1,6 +1,6 @@
 import { describe, expect, test } from "bun:test";
 
-import { compareBoat, holtropExampleSubject, referenceSubjectFor, speedboatSubject, surgeAddedMass } from "./boatComparison";
+import { compareBoat, holtropExampleSubject, kvlcc2Subject, referenceSubjectFor, speedboatSubject, surgeAddedMass } from "./boatComparison";
 
 describe("compareBoat", () => {
   test("lines the Holtrop–Mennen example ship's game build up against its reference and the published 25-knot resistance", () => {
@@ -20,6 +20,18 @@ describe("compareBoat", () => {
     const trim = table.rows.find((row) => row.label.startsWith("running trim"));
     expect(trim?.reference).toBeGreaterThan(1);
     expect(trim?.reference).toBeLessThan(6);
+  });
+
+  test("runs the KVLCC2 game build and its MMG model through the same turning circles and zig-zags, beside the tank", () => {
+    const table = compareBoat(kvlcc2Subject());
+    const row = (label: string) => table.rows.find((entry) => entry.label.startsWith(label));
+    const tactical = row("tactical diameter, 35° to starboard");
+    expect(Math.abs((tactical?.reference ?? 0) / (tactical?.real ?? 1) - 1)).toBeLessThan(0.07);
+    expect(Number.isFinite(tactical?.game)).toBe(true);
+    const overshoot = row("10/10 zig-zag, 1st overshoot");
+    expect(overshoot?.reference).toBeGreaterThan(3);
+    expect(Number.isFinite(overshoot?.game)).toBe(true);
+    expect(row("resistance at")?.unit).toBe("N");
   });
 
   test("builds a reference for any game tuning, planing or not", () => {

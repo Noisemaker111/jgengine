@@ -3,6 +3,17 @@ import type { ComparisonTable } from "../../flight/reference/flightComparison";
 import { createBoatDynamics, type BoatTuning } from "../boatDynamics";
 import { bSeriesShipOpenWater, type BSeriesPropeller } from "./marinePropeller";
 import { planingEquilibrium, type PlaningHull } from "./planingHull";
+import {
+  KVLCC2_L7,
+  KVLCC2_L7_PUBLISHED,
+  KVLCC2_L7_SPEED,
+  mmgTrialBoat,
+  runTurningCircle,
+  runZigZag,
+  selfPropulsionRevs,
+  type ManoeuvringTrialBoat,
+  type MmgShip,
+} from "./shipManoeuvring";
 import { HOLTROP_MENNEN_EXAMPLE, holtropMennenResistance, holtropPropulsionFactors, type HoltropHull } from "./shipResistance";
 
 const KNOT = 0.5144444;
@@ -149,7 +160,72 @@ export interface BoatComparisonSubject {
   /** Published resistance at a speed, N. */
   published?: { speed: number; resistance: number; label: string };
   /** Extra reference-only rows (propeller, porpoising). */
-  extra?: readonly { label: string; unit: string; game: number; reference: number; real: number | undefined }[];
+  extra?: readonly ComparisonRow[];
+  /** An MMG model of the same ship, for turning-circle and zig-zag rows. */
+  manoeuvring?: ManoeuvringSubject;
+}
+
+type ComparisonRow = { label: string; unit: string; game: number; reference: number; real: number | undefined };
+
+/** Turning and zig-zag trials for a subject: its MMG ship, approach speed and the free-running results, if any. */
+export interface ManoeuvringSubject {
+  ship: MmgShip;
+  speed: number;
+  /** Measured advance and tactical diameter over `L` at full rudder to starboard and to port. */
+  turning?: { starboard: { advance: number; tacticalDiameter: number }; port: { advance: number; tacticalDiameter: number } };
+  /** Measured 10/10 first and second and 20/20 first overshoots, degrees. */
+  zigZag?: { first10: number; second10: number; first20: number };
+}
+
+/** Fixed-throttle turning and zig-zag trials on the game boat and its MMG reference, from straight running at the approach speed. */
+function manoeuvringRows(tuning: BoatTuning, subject: ManoeuvringSubject): ComparisonRow[] {
+  const { ship, speed } = subject;
+  const L = ship.length;
+  const full = ship.maxSteer;
+  const dt = 0.05;
+  const maxTime = (400 * L) / speed;
+  const game = () => gameTrialBoat(tuning, speed, full);
+  const reference = () => mmgTrialBoat(ship, speed);
+  const turn = (boat: () => ManoeuvringTrialBoat, rudder: number) => runTurningCircle(boat(), rudder, speed, dt, maxTime);
+  const zig = (boat: () => ManoeuvringTrialBoat, rudder: number) => runZigZag(boat(), rudder, dt, maxTime, 2).overshoots.map((value) => value / DEG);
+  const measured = subject.turning;
+  const angle = Math.round(full / DEG);
+  const rows: ComparisonRow[] = [];
+  for (const [side, rudder, real] of [["starboard", full, measured?.starboard], ["port", -full, measured?.port]] as const) {
+    const g = turn(game, rudder);
+    const r = turn(reference, rudder);
+    rows.push(
+      { label: `advance, ${angle}° to ${side}`, unit: "L", game: g.advance / L, reference: r.advance / L, real: real?.advance },
+      { label: `tactical diameter, ${angle}° to ${side}`, unit: "L", game: g.tacticalDiameter / L, reference: r.tacticalDiameter / L, real: real?.tacticalDiameter },
+    );
+  }
+  const [g10, g20, r10, r20] = [zig(game, 10 * DEG), zig(game, 20 * DEG), zig(reference, 10 * DEG), zig(reference, 20 * DEG)];
+  rows.push(
+    { label: "10/10 zig-zag, 1st overshoot", unit: "deg", game: g10[0] ?? Number.NaN, reference: r10[0] ?? Number.NaN, real: subject.zigZag?.first10 },
+    { label: "10/10 zig-zag, 2nd overshoot", unit: "deg", game: g10[1] ?? Number.NaN, reference: r10[1] ?? Number.NaN, real: subject.zigZag?.second10 },
+    { label: "20/20 zig-zag, 1st overshoot", unit: "deg", game: g20[0] ?? Number.NaN, reference: r20[0] ?? Number.NaN, real: subject.zigZag?.first20 },
+  );
+  return rows;
+}
+
+/**
+ * A game boat as a trial boat: started straight at `speed` with the throttle that holds it (full throttle if it
+ * cannot), steered by the input that sets the rudder or outboard to the target angle over `maxAngle`.
+ */
+function gameTrialBoat(tuning: BoatTuning, speed: number, maxAngle: number): ManoeuvringTrialBoat {
+  const trial: BoatTuning = { ...tuning, steering: { ...tuning.steering, maxAngle } };
+  const drag = gameResistance(trial, speed);
+  const thrust = gameThrust(trial, speed);
+  const throttle = thrust > drag ? drag / thrust : 1;
+  const boat = createBoatDynamics(trial);
+  boat.restore({ ...boat.snapshot(), vx: 0, vz: speed, heading: 0 });
+  return {
+    step(steerTarget, dt) {
+      // Positive game steer turns to port; the game heading grows turning toward +x, which is starboard here.
+      const step = boat.tick(dt, { throttle, brake: 0, steer: -steerTarget / maxAngle, handbrake: 0 });
+      return { x: step.position[2], y: step.position[0], heading: step.heading, speed: Math.hypot(step.forwardSpeed, step.lateralSpeed) };
+    },
+  };
 }
 
 /**
@@ -162,9 +238,11 @@ export function compareBoat(subject: BoatComparisonSubject, gameName = `${subjec
   const { reference, tuning } = subject;
   const game = gameStraightLine(tuning);
   const ref = referenceStraightLine(reference, tuning);
-  const rows: { label: string; unit: string; game: number; reference: number; real: number | undefined }[] = subject.speeds.map((speed) => {
-    const published = subject.published !== undefined && Math.abs(subject.published.speed - speed) < 1e-6 ? subject.published.resistance / 1000 : undefined;
-    return { label: `resistance at ${(speed / KNOT).toFixed(1)} kn`, unit: "kN", game: gameResistance(tuning, speed) / 1000, reference: reference.resistance(speed) / 1000, real: published };
+  const fastest = Math.max(...subject.speeds);
+  const [unit, scale] = reference.resistance(fastest) < 1000 ? ["N", 1] : ["kN", 1000];
+  const rows: ComparisonRow[] = subject.speeds.map((speed) => {
+    const published = subject.published !== undefined && Math.abs(subject.published.speed - speed) < 1e-6 ? subject.published.resistance / scale : undefined;
+    return { label: `resistance at ${(speed / KNOT).toFixed(1)} kn`, unit, game: gameResistance(tuning, speed) / scale, reference: reference.resistance(speed) / scale, real: published };
   });
   rows.push(
     { label: "top speed (game thrust law)", unit: "kn", game: game.topSpeed / KNOT, reference: ref.topSpeed / KNOT, real: undefined },
@@ -178,6 +256,7 @@ export function compareBoat(subject: BoatComparisonSubject, gameName = `${subjec
     }
   }
   rows.push(...(subject.extra ?? []));
+  if (subject.manoeuvring !== undefined) rows.push(...manoeuvringRows(tuning, subject.manoeuvring));
   return { aircraft: gameName, reference: reference.name, rows };
 }
 
@@ -270,11 +349,58 @@ export function speedboatSubject(): BoatComparisonSubject {
 }
 
 /**
+ * The KVLCC2 L7 tanker model as a reference boat: its MMG model for resistance and manoeuvring, a game build with the
+ * same mass, rudder, steering rate and propeller (bollard thrust and zero-thrust speed at the self-propulsion
+ * revolutions), and MARIN's free-running turning and zig-zag results.
+ * @capability boat-comparison the KVLCC2 L7 model as an MMG reference boat with a game build
+ */
+export function kvlcc2Subject(): BoatComparisonSubject {
+  const ship = KVLCC2_L7;
+  const speed = KVLCC2_L7_SPEED;
+  const p = ship.propeller;
+  const revs = selfPropulsionRevs(ship, speed);
+  const [k0, k1, k2] = p.thrust;
+  const zeroThrust = (-k1 - Math.sqrt(k1 * k1 - 4 * k2 * k0)) / (2 * k2);
+  const massKg = ship.density * ship.displacement;
+  const tuning: BoatTuning = {
+    massKg,
+    length: ship.length,
+    beam: ship.beam,
+    maxThrust: (1 - p.thrustDeduction) * ship.density * revs * revs * p.diameter ** 4 * k0,
+    propSpeed: (zeroThrust * revs * p.diameter) / (1 - p.wake),
+    steering: { kind: "rudder", area: ship.rudder?.area ?? 0, maxAngle: ship.maxSteer },
+    steerRate: ship.steerRate,
+  };
+  const { turning, zigZag } = KVLCC2_L7_PUBLISHED;
+  const half = 0.5 * ship.density * ship.length * ship.draft;
+  return {
+    name: "KVLCC2 L7 tanker model",
+    reference: {
+      name: "MMG standard method (Yasukawa & Yoshimura 2015)",
+      massKg,
+      addedMass: ship.addedMass.surge * half * ship.length,
+      resistance: (u) => half * u * u * ship.resistance,
+    },
+    tuning,
+    speeds: [0.5 * speed, 0.75 * speed, speed],
+    manoeuvring: {
+      ship,
+      speed,
+      turning: {
+        starboard: { advance: turning[0].advance.measured, tacticalDiameter: turning[0].tacticalDiameter.measured },
+        port: { advance: turning[1].advance.measured, tacticalDiameter: turning[1].tacticalDiameter.measured },
+      },
+      zigZag: { first10: zigZag[0].overshoots.measured[0], second10: zigZag[0].overshoots.measured[1], first20: zigZag[1].overshoots.measured[0] },
+    },
+  };
+}
+
+/**
  * The reference boats every comparison run includes.
  * @capability boat-comparison every built-in reference boat with its game build
  */
 export function referenceBoatSubjects(): BoatComparisonSubject[] {
-  return [holtropExampleSubject(), speedboatSubject()];
+  return [holtropExampleSubject(), speedboatSubject(), kvlcc2Subject()];
 }
 
 /**

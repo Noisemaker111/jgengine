@@ -794,6 +794,7 @@
     "./physics/reference/referenceMotorcycle",
     "./physics/reference/rigidBodyTree",
     "./physics/reference/rungeKutta",
+    "./physics/reference/shipManoeuvring",
     "./physics/reference/shipResistance",
     "./physics/reference/standardManeuvers",
     "./physics/reference/suspensionKinematics",
