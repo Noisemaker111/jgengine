@@ -7371,10 +7371,10 @@
       "packages": [
         "@jgengine/core"
       ],
-      "module": "@jgengine/core/plants/validation/heightAgeCurves",
+      "module": "@jgengine/core/plants/validation/crownAllometry",
       "gameFacing": false,
       "probe": null,
-      "intent": "published height-age curves to check a growth model against"
+      "intent": "published crown allometry and crown-shape measures to check a growth model against"
     },
     {
       "id": "play-script",

@@ -2,26 +2,29 @@ import type { PlantSpecies } from "../plantSpecies";
 
 /**
  * Sugar maple. Traits from Silvics of North America (Godman, Yawney & Tubbs 1990), the USDA Wood
- * Handbook and USDA PLANTS; architecture and carbon parameters tuned by hand against the Carmean 1989
- * site-index curve until the milestone-4 fit replaces them.
+ * Handbook and USDA PLANTS. Decurrent: apical control falls with age until laterals overtake the leader
+ * into a broad rounded crown. Architecture and carbon parameters fitted against the Carmean 1989
+ * height curve, Ek 1974 and Tallo crown widths and the crown profile of open- and forest-grown trees.
  */
 export const ACER_SACCHARUM: PlantSpecies = {
   id: "acer-saccharum",
-  version: 1,
+  version: 2,
   names: { scientific: "Acer saccharum Marshall", common: { en: "sugar maple", fr: "érable à sucre" } },
   ids: { usda: "ACSA3" },
   habit: "tree",
   architecture: { model: "rauh", phyllotaxis: "opposite", divergence: 90 },
   growth: {
-    apicalControl: 0.55,
-    internodeMax: 0.1,
-    branchAngle: 40,
+    apicalControl: 0.828,
+    apicalControlMature: 0.487,
+    apicalControlHalfYears: 3,
+    internodeMax: 0.115,
+    branchAngle: 66,
     lateralBudsPerNode: 2,
-    maxMetamersPerShoot: 5,
-    horizontalVigour: 0.4,
-    vigourIndexWeight: 0.75,
-    tropism: { gravity: 0.35, gravityOrderDecay: 0.7, setpointAngle: 50, setpointPerOrder: 10, optimal: 0.2, wind: 0.15 },
-    budLightThreshold: 0.06,
+    maxMetamersPerShoot: 6,
+    horizontalVigour: 0.0763,
+    vigourIndexWeight: 0.262,
+    tropism: { gravity: 0.347, gravityOrderDecay: 0.4, setpointAngle: 67, setpointPerOrder: 17, optimal: 0.2, wind: 0.15 },
+    budLightThreshold: 0.0664,
     budDeathYears: 3,
     dormantBudYears: 5,
     spurYears: 25,
@@ -38,13 +41,13 @@ export const ACER_SACCHARUM: PlantSpecies = {
     rootTurnover: 0.8,
     foliageTurnover: 1,
     growthEfficiency: 0.75,
-    sapwoodPerFoliage: 1.6e-4,
+    sapwoodPerFoliage: 1.75e-4,
     sapwoodTurnover: 0.04,
     pipeExponent: 2.3,
     reproductiveShare: 0.06,
     pruneDeficitYears: 2,
     coarseRootShare: 0.25,
-    hydraulicExponent: 2,
+    hydraulicExponent: 5,
   },
   wood: { densityKgM3: 560, greenFactor: 1.8, modulusGPa: 10.7, reactionCompensation: 0.6, shootRadiusM: 0.0015 },
   limits: { maxAgeYears: 400, maxHeightM: 33, maxDbhCm: 120, maxCrownRadiusM: 12 },
@@ -66,7 +69,7 @@ export const ACER_SACCHARUM: PlantSpecies = {
     leaf: { source: "usda-plants" },
     wood: { source: "wood-handbook" },
     reproduction: { source: "silvics-654" },
-    growth: { source: "hand-tuned", fitted: { score: 0, against: "carmean-1989" } },
-    carbon: { source: "hand-tuned", fitted: { score: 0, against: "carmean-1989" } },
+    growth: { source: "crown-fit", fitted: { score: 4.9, against: "carmean-1989, ek-1974, tallo-2022" } },
+    carbon: { source: "crown-fit", fitted: { score: 4.9, against: "carmean-1989, ek-1974, tallo-2022" } },
   },
 };

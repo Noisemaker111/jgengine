@@ -22,8 +22,13 @@ export const PLANT_SOURCES = {
   "koch-2004": "Koch, Sillett, Jennings & Davis 2004, The limits to tree height, Nature 428",
   "fay-2002": "Fay 2002, Environmental arboriculture, tree ecology and veteran tree management, Arboric. J. 26",
   "lonsdale-2013": "Lonsdale (ed.) 2013, Ancient and other veteran trees: further guidance on management, The Tree Council",
+  "ek-1974": "Ek 1974, Dimensional relationships of forest and open grown trees in Wisconsin, Univ. of Wisconsin: open-grown crown widths as coded in the Forest Vegetation Simulator Lake States variant cwcalc.f (US public domain)",
+  "bechtold-2003": "Bechtold 2003, Crown-diameter prediction models for 87 species of stand-grown trees in the eastern United States, South. J. Appl. For. 27, as coded in FVS cwcalc.f (US public domain)",
+  "tallo-2022": "Jucker et al. 2022, Tallo: a global tree allometry and crown architecture database, Glob. Change Biol. 28 (CC BY 4.0)",
+  "brown-1967": "Brown, McAlpine & Kormanik 1967, Apical dominance and form in woody plants: a reappraisal, Am. J. Bot. 54; Wilson 2000, Apical control of branch growth and angle in woody plants, Am. J. Bot. 87",
+  "hart-becking": "Hart 1928 and Becking 1953, relative spacing index of even-aged stands; Monsi & Saeki 1953, light extinction in plant canopies",
   "fao-56": "Allen et al. 1998, FAO Irrigation and Drainage Paper 56, extraterrestrial radiation and day length",
-  "hand-tuned": "Tuned by hand against the Carmean 1989 height curve until the milestone-4 fit replaces it",
+  "crown-fit": "Fitted by random search against the Carmean 1989 height curve, Ek 1974 and Tallo crown widths and the crown profile of open- and forest-grown trees (plants/validation/crownAllometry.test.ts)",
 } as const;
 
 /** Id of a credited plant data or model source. */

@@ -21,12 +21,12 @@ import {
 import { createLightField } from "./lightField";
 import { growingSeason, type GrowingSeason } from "./phenology";
 import { siteModifier, type PlantEnvironment } from "./plantEnvironment";
-import { PLANT_PI, plantCos, plantSin } from "./plantMath";
+import { PLANT_PI, plantCos, plantExp, plantSin } from "./plantMath";
 import { applyThickening, createPipeCost, pipeDemand } from "./pipeModel";
 import { bendTowardsTropisms, lateralDirection, normalize3, type TropismWeights } from "./tropism";
 
 /** Bumped whenever a rule changes what a seed grows into; part of every structure cache key. */
-export const PLANT_SIM_VERSION = 2;
+export const PLANT_SIM_VERSION = 3;
 
 /** Caps that bound one plant's memory and per-year work. */
 export interface GrowthLimits {
@@ -142,7 +142,7 @@ function selectNth(values: Float64Array, count: number, nth: number): number {
 export function createPlantGrowth(species: PlantSpecies, env: PlantEnvironment, seed: string, limits: GrowthLimits = DEFAULT_GROWTH_LIMITS): PlantGrowth {
   const nodeCap = limits.maxNodes;
   const budCap = limits.maxBuds;
-  let environment: PlantEnvironment = { ...env, wind: { ...env.wind }, slope: { ...env.slope } };
+  let environment: PlantEnvironment = copyEnvironment(env);
   let season: GrowingSeason = growingSeason(species, environment);
   let site = siteModifier(environment);
   let state: GrowthState = createGrowthState(nodeCap, budCap);
@@ -197,6 +197,10 @@ export function createPlantGrowth(species: PlantSpecies, env: PlantEnvironment, 
   /** Light-field cell of each leafy node's shoot midpoint, from this year's flush. */
   const midCell = new Int32Array(nodeCap);
   const need = new Float64Array(nodeCap);
+  /** Leaf area per height layer, then the stand's open-sky share per layer (even-aged stand only). */
+  const standLayers = Math.ceil((species.limits.maxHeightM + 4) / CELL_M) + 1;
+  const standLeaf = new Float64Array(standLayers);
+  const standSky = new Float64Array(standLayers);
   const firstChild = new Int32Array(nodeCap);
   const nextSibling = new Int32Array(nodeCap);
   const lastChild = new Int32Array(nodeCap);
@@ -476,6 +480,9 @@ export function createPlantGrowth(species: PlantSpecies, env: PlantEnvironment, 
     const year = state.year;
     field.clear();
     let lowest = Number.POSITIVE_INFINITY;
+    let top = 0;
+    const stand = environment.stand !== undefined;
+    if (stand) standLeaf.fill(0);
     for (let i = 0; i < n; i += 1) {
       flowers[i] = 0;
       const nodeFlags = flags[i] ?? 0;
@@ -506,20 +513,23 @@ export function createPlantGrowth(species: PlantSpecies, env: PlantEnvironment, 
         const mz = 0.5 * ((pi >= 0 ? (end[pi * 3 + 2] ?? 0) : 0) + (end[i * 3 + 2] ?? 0));
         midCell[i] = field.deposit(mx, my, mz, foliage);
         if (my < lowest) lowest = my;
+        if (stand) standLeaf[standLayer(my)] = (standLeaf[standLayer(my)] ?? 0) + foliage;
       }
       const y = end[i * 3 + 1] ?? 0;
+      if (y > top) top = y;
       if (((budAt[i] ?? -1) >= 0 || buds > 0) && y < lowest) lowest = y;
     }
     field.propagate(lowest === Number.POSITIVE_INFINITY ? 0 : lowest);
-    const openSky = environment.light;
     const extinction = g.extinction;
+    if (stand) shadeStand(top, extinction);
     for (let i = 0; i < n; i += 1) {
       state.light[i] = 0;
       tipLight[i] = 0;
       const nodeFlags = flags[i] ?? 0;
       if ((nodeFlags & NODE_DEAD) !== 0) continue;
       if ((leaves[i] ?? 0) > 0) {
-        const light = field.lightAtCell(midCell[i] ?? -1, openSky, extinction);
+        const my = 0.5 * (((parent[i] ?? -1) >= 0 ? (end[(parent[i] ?? 0) * 3 + 1] ?? 0) : 0) + (end[i * 3 + 1] ?? 0));
+        const light = field.lightAtCell(midCell[i] ?? -1, skyAt(my), extinction);
         state.light[i] = light;
         if (light < g.budLightThreshold) {
           // Short shoots starve in deep shade and never leaf again.
@@ -528,15 +538,40 @@ export function createPlantGrowth(species: PlantSpecies, env: PlantEnvironment, 
         }
       }
       if ((budAt[i] ?? -1) >= 0 || (latent[i] ?? 0) > 0) {
-        tipLight[i] = field.lightAt(end[i * 3] ?? 0, end[i * 3 + 1] ?? 0, end[i * 3 + 2] ?? 0, openSky, extinction);
+        tipLight[i] = field.lightAt(end[i * 3] ?? 0, end[i * 3 + 1] ?? 0, end[i * 3 + 2] ?? 0, skyAt(end[i * 3 + 1] ?? 0), extinction);
       }
     }
+  }
+
+  function standLayer(y: number): number {
+    const k = Math.floor(y / CELL_M);
+    return k < 0 ? 0 : k >= standLayers ? standLayers - 1 : k;
+  }
+
+  /**
+   * Open sky per height layer inside an even-aged stand of the plant's equals: each neighbour holds the
+   * plant's own leaf profile on a square of side spacingIndex × height, so the stand's leaf area index
+   * above a layer is the plant's leaf area above it over that square.
+   */
+  function shadeStand(top: number, extinction: number): void {
+    const spacing = Math.max(1, (environment.stand?.spacingIndex ?? 0) * top);
+    const perArea = 1 / (spacing * spacing);
+    let above = 0;
+    for (let k = standLayers - 1; k >= 0; k -= 1) {
+      const own = standLeaf[k] ?? 0;
+      standSky[k] = environment.light * plantExp(-extinction * (above + 0.5 * own) * perArea);
+      above += own;
+    }
+  }
+
+  function skyAt(y: number): number {
+    return environment.stand ? (standSky[standLayer(y)] ?? 0) : environment.light;
   }
 
   /** Extended Borchert–Honda: split the root's vigour down the tree by light, with apical control λ. */
   function distributeVigour(): void {
     const n = state.nodeCount;
-    const lambda = g.apicalControl;
+    const lambda = apicalControlAt(g, state.year);
     vigour.fill(0, 0, n);
     latentShare.fill(0, 0, n);
     budShare.fill(0, 0, state.budCount);
@@ -1111,7 +1146,7 @@ export function createPlantGrowth(species: PlantSpecies, env: PlantEnvironment, 
         speciesVersion: species.version,
         seed,
         limits: { maxBuds: budCap, maxNodes: nodeCap },
-        env: { ...environment, wind: { ...environment.wind }, slope: { ...environment.slope } },
+        env: copyEnvironment(environment),
         scalars,
         arrays: snapshotArrays(),
       };
@@ -1133,7 +1168,7 @@ export function createPlantGrowth(species: PlantSpecies, env: PlantEnvironment, 
         new Uint8Array(next[name].buffer).set(bytes);
       }
       state = next;
-      environment = { ...snapshot.env, wind: { ...snapshot.env.wind }, slope: { ...snapshot.env.slope } };
+      environment = copyEnvironment(snapshot.env);
       weightsByOrder.length = 0;
       season = growingSeason(species, environment);
       site = siteModifier(environment);
@@ -1146,21 +1181,27 @@ export function createPlantGrowth(species: PlantSpecies, env: PlantEnvironment, 
       germinate();
     },
     retune(change) {
-      environment = {
-        ...environment,
-        ...change,
-        wind: { ...(change.wind ?? environment.wind) },
-        slope: { ...(change.slope ?? environment.slope) },
-      };
+      environment = copyEnvironment({ ...environment, ...change });
       weightsByOrder.length = 0;
       season = growingSeason(species, environment);
       site = siteModifier(environment);
     },
-    environment: () => ({ ...environment, wind: { ...environment.wind }, slope: { ...environment.slope } }),
+    environment: () => copyEnvironment(environment),
   };
   return growth;
 }
 
+
+function copyEnvironment(env: PlantEnvironment): PlantEnvironment {
+  const { stand, ...rest } = env;
+  return { ...rest, wind: { ...env.wind }, slope: { ...env.slope }, ...(stand ? { stand: { ...stand } } : {}) };
+}
+
+/** λ at an age: from the young value towards the mature one, halfway at `apicalControlHalfYears`. */
+function apicalControlAt(g: PlantSpecies["growth"], ageYears: number): number {
+  const half = g.apicalControlHalfYears;
+  return g.apicalControlMature + ((g.apicalControl - g.apicalControlMature) * half) / (half + ageYears);
+}
 
 /** Ryan & Yoder hydraulic limitation along a water path: 1 − (path / maxPath)^p, floored at 0. */
 function hydraulicFactorWith(path: number, maxPath: number, exponent: number): number {
