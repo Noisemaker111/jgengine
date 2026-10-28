@@ -733,6 +733,7 @@
     "./movement/playerMovement",
     "./movement/poseState",
     "./movement/reference/anthropometry",
+    "./movement/reference/bipedRunning",
     "./movement/reference/compareLocomotion",
     "./movement/reference/compareRagdollFall",
     "./movement/reference/curveRunning",

@@ -13,9 +13,10 @@ import { formatHumanValidation, validateHumanReference } from "@jgengine/core/mo
 import { compareRagdollFall, formatRagdollFall } from "@jgengine/core/movement/reference/compareRagdollFall";
 import { validateHumanFall } from "@jgengine/core/movement/reference/humanFall";
 import { compareQuadruped, validateQuadrupedReference, type QuadrupedComparison } from "@jgengine/core/movement/reference/quadrupedGait";
+import { compareBiped, validateBipedReference, type BipedComparison } from "@jgengine/core/movement/reference/bipedRunning";
 
 const USAGE = `usage: bun run games:capabilities locomotion [game[:entity]...] [--sprint] [--json]
-       bun run games:capabilities locomotion --creatures <module>#<export> [--json]
+       bun run games:capabilities locomotion --creatures <module>#<export> [--bipeds <id,...>] [--json]
        bun run games:capabilities locomotion --falls [--json]
        bun run games:capabilities locomotion --validate
   game        a folder under games/ (default: every game with a walking player)
@@ -24,8 +25,10 @@ const USAGE = `usage: bun run games:capabilities locomotion [game[:entity]...] [
   --json      print the rows as JSON
   --creatures every {id, walk, sprint} record in the export (a CreatureBody table) vs a real animal of the size the
               game's entityModels draw it (hip height 0.45 of targetHeight)
+  --bipeds    creatures (by id) to score as two-legged theropods instead: bird walk-run, top speed and whether
+              a Tyrannosaurus leg scaled to them could carry a fast run (hip height 0.75 of targetHeight)
   --falls     the stock humanoid ragdoll's backward fall and drop landings vs a simulated person and injury limits
-  --validate  check the human, quadruped and fall references themselves against published biomechanics (slow: walks every fitted gait)`;
+  --validate  check the human, quadruped, biped and fall references themselves against published biomechanics (slow: walks every fitted gait)`;
 
 const GAMES = resolve(import.meta.dir, "..");
 
@@ -91,6 +94,9 @@ async function walkingPlayer(target: string): Promise<WalkingPlayer | string> {
 /** Hip-joint height over a standing animal's overall height (head up): about 0.45 for a horse or a dog. */
 const HIP_OVER_HEIGHT = 0.45;
 
+/** Hip-joint height over a theropod's standing height: about 0.75 for Tyrannosaurus (3.1 m leg, about 4 m tall). */
+const BIPED_HIP_OVER_HEIGHT = 0.75;
+
 /** Every record with numeric `walk` and `sprint` (a `CreatureBody`) and a string `id` inside `value`. */
 function collectCreatures(value: unknown, out: { id: string; walk: number; sprint: number }[], depth = 0): void {
   if (!isRecord(value) || depth > 4) return;
@@ -104,7 +110,7 @@ function collectCreatures(value: unknown, out: { id: string; walk: number; sprin
   for (const entry of Object.values(value)) collectCreatures(entry, out, depth + 1);
 }
 
-async function creatures(spec: string, json: boolean): Promise<number> {
+async function creatures(spec: string, bipedIds: ReadonlySet<string>, json: boolean): Promise<number> {
   const [file, name] = spec.split("#");
   if (file === undefined || name === undefined) {
     console.error(USAGE);
@@ -119,6 +125,7 @@ async function creatures(spec: string, json: boolean): Promise<number> {
   const config = isRecord(configModule) ? (configModule["game"] ?? configModule["gameConfig"]) : undefined;
   const models = isRecord(config) && isRecord(config["entityModels"]) ? config["entityModels"] : {};
   const rows: ({ id: string; walk: number; sprint: number; height: number } & QuadrupedComparison)[] = [];
+  const bipeds: ({ id: string; walk: number; sprint: number; height: number } & BipedComparison)[] = [];
   const skipped: string[] = [];
   for (const creature of found) {
     const model = models[creature.id];
@@ -127,16 +134,22 @@ async function creatures(spec: string, json: boolean): Promise<number> {
       skipped.push(creature.id);
       continue;
     }
-    rows.push({ ...creature, height, ...compareQuadruped({ walkSpeed: creature.walk, runSpeed: creature.sprint, hipHeight: HIP_OVER_HEIGHT * height }) });
+    if (bipedIds.has(creature.id)) bipeds.push({ ...creature, height, ...compareBiped({ walkSpeed: creature.walk, runSpeed: creature.sprint, hipHeight: BIPED_HIP_OVER_HEIGHT * height }) });
+    else rows.push({ ...creature, height, ...compareQuadruped({ walkSpeed: creature.walk, runSpeed: creature.sprint, hipHeight: HIP_OVER_HEIGHT * height }) });
   }
   if (json) {
-    console.log(JSON.stringify({ rows, skipped }, null, 2));
+    console.log(JSON.stringify({ rows, bipeds, skipped }, null, 2));
     return 0;
   }
   const f = (v: number, digits = 1) => v.toFixed(digits);
   console.log("| Creature | Height (m) | Mass est. (kg) | Walk (m/s) | Real walk–trot | Walk gait | Sprint (m/s) | Sprint gait | Real top speed | Sprint ÷ real |");
   console.log("| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |");
   for (const r of rows) console.log(`| ${r.id} | ${f(r.height)} | ${f(r.mass, 0)} | ${f(r.walk)} | ${f(r.referenceWalkMax)} | ${r.walkGait} | ${f(r.sprint)} | ${r.runGait} | ${f(r.referenceTopSpeed)} | ${f(r.topSpeedRatio, 2)} |`);
+  if (bipeds.length > 0) {
+    console.log("\n| Biped | Height (m) | Mass est. (kg) | Walk (m/s) | Real walk–run | Walk gait | Sprint (m/s) | Sprint Froude | Real top speed | Sprint ÷ real | Leg muscle a fast run needs (% body) | Muscle there ÷ needed |");
+    console.log("| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |");
+    for (const r of bipeds) console.log(`| ${r.id} | ${f(r.height)} | ${f(r.mass, 0)} | ${f(r.walk)} | ${f(r.referenceWalkMax)} | ${r.walkGait} | ${f(r.sprint)} | ${f(r.runFroude)} | ${f(r.referenceTopSpeed)} | ${f(r.topSpeedRatio, 2)} | ${f(r.extensorMassNeeded)} | ${f(r.runningSupport, 2)} |`);
+  }
   if (skipped.length > 0) console.log(`\nNo model height: ${skipped.join(", ")}`);
   return 0;
 }
@@ -147,14 +160,16 @@ async function main(argv: string[]): Promise<number> {
     return 0;
   }
   const creatureSpec = argv.indexOf("--creatures");
-  if (creatureSpec >= 0) return creatures(argv[creatureSpec + 1] ?? "", argv.includes("--json"));
+  const bipedFlag = argv.indexOf("--bipeds");
+  const bipedIds = new Set(bipedFlag >= 0 ? (argv[bipedFlag + 1] ?? "").split(",").filter((id) => id.length > 0) : []);
+  if (creatureSpec >= 0) return creatures(argv[creatureSpec + 1] ?? "", bipedIds, argv.includes("--json"));
   if (argv.includes("--falls")) {
     const rows = compareRagdollFall();
     console.log(argv.includes("--json") ? JSON.stringify(rows, null, 2) : formatRagdollFall(rows));
     return 0;
   }
   if (argv.includes("--validate")) {
-    const rows = [...validateHumanReference(), ...validateQuadrupedReference(), ...validateHumanFall()];
+    const rows = [...validateHumanReference(), ...validateQuadrupedReference(), ...validateBipedReference(), ...validateHumanFall()];
     console.log(formatHumanValidation(rows));
     return rows.some((row) => !row.pass) ? 1 : 0;
   }

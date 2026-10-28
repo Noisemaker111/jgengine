@@ -244,6 +244,26 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `measureBikeHandling` (function) · `import { measureBikeHandling } from "@jgengine/core/physics/reference/motorcycleManeuvers"`
 
+## biped-compare — score a game biped's walk and run speeds against real bird gaits, top speed and theropod leg muscle
+
+- `compareBiped` (function) · `import { compareBiped } from "@jgengine/core/movement/reference/bipedRunning"`
+
+## biped-extensor-mass — the leg muscle mass a biped joint needs to support fast running (Hutchinson 2004)
+
+- `requiredExtensorMass` (function) · `import { requiredExtensorMass } from "@jgengine/core/movement/reference/bipedRunning"`
+
+## biped-limb-scale — scale a published biped limb model to another size by geometric similarity
+
+- `scaleBipedLimb` (function) · `import { scaleBipedLimb } from "@jgengine/core/movement/reference/bipedRunning"`
+
+## biped-reference-validation — check the biped reference against published bird and theropod leg muscle and top speeds
+
+- `validateBipedReference` (function) · `import { validateBipedReference } from "@jgengine/core/movement/reference/bipedRunning"`
+
+## biped-running-support — whether a biped's leg muscles could carry fast running, joint by joint
+
+- `bipedRunningSupport` (function) · `import { bipedRunningSupport } from "@jgengine/core/movement/reference/bipedRunning"`
+
 ## bo105-reference — MBB Bo-105 reference helicopter validated against NASA TM-110356 rotor data
 
 - `createBo105Model` (function) · `import { createBo105Model } from "@jgengine/core/flight/reference/bo105Helicopter"`
@@ -2241,6 +2261,10 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 ## territory-read-scope — Load the footprint and foreign-owner gap without scanning the world.
 
 - `territoryChunkKeys` (function) · `import { territoryChunkKeys } from "@jgengine/core/world/territory"`
+
+## theropod-mass-estimate — estimate a theropod's body mass from its leg length
+
+- `theropodMassFromLegLength` (function) · `import { theropodMassFromLegLength } from "@jgengine/core/movement/reference/bipedRunning"`
 
 ## timer-readout — live digital mm:ss/m:ss.d timer readout bound to a TimerSet
 
