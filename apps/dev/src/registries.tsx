@@ -239,6 +239,7 @@ export const gameRegistry: GameRegistry = {
   "nature-variants": () => import("./demo/natureVariantsDemo").then((module) => module.natureVariantsGame),
   "plant-styles": () => import("./demo/plantStylesDemo").then((module) => module.plantStylesGame),
   "plant-library": () => import("./demo/plantLibraryDemo").then((module) => module.plantLibraryGame),
+  "plant-life-cycle": () => import("./demo/plantLifeCycleDemo").then((module) => module.plantLifeCycleGame),
   "forest-stand": () => import("./demo/forestStandDemo").then((module) => module.forestStandGame),
   "material-variants": () => import("./demo/materialVariantsDemo").then((module) => module.materialVariantsGame),
   decals: () => import("./demo/decalShowcase").then((module) => module.decalShowcaseGame),

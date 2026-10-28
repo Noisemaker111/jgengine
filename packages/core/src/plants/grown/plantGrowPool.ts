@@ -16,6 +16,8 @@ export interface PlantGrowRequest {
   seed: string;
   age: number;
   day: number;
+  /** Years the plant has stood dead after reaching `age`; 0 is alive. */
+  deadYears: number;
 }
 
 /** A mesh to build where the plant grows: the style and generator detail it is drawn at. */

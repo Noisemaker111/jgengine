@@ -4315,7 +4315,7 @@
 
 - `DEFAULT_GROWTH_LIMITS` (const): const DEFAULT_GROWTH_LIMITS: GrowthLimits — Most buds and nodes a plant may hold: 4000 and 60000.
 - `GrowthLimits` (interface): interface GrowthLimits — Caps that bound one plant's memory and per-year work.
-- `PLANT_SIM_VERSION` (const): const PLANT_SIM_VERSION: 4 — Bumped whenever a rule changes what a seed grows into; part of every structure cache key.
+- `PLANT_SIM_VERSION` (const): const PLANT_SIM_VERSION: 5 — Bumped whenever a rule changes what a seed grows into; part of every structure cache key.
 - `PlantGrowth` (interface): interface PlantGrowth — One plant growing year by year.
 - `PlantGrowthSnapshot` (interface): interface PlantGrowthSnapshot — A grown plant's whole state as JSON-safe values: typed arrays travel as base64.
 - `PlantGrowthStats` (interface): interface PlantGrowthStats — Counters a {@link PlantGrowth} reports each year.

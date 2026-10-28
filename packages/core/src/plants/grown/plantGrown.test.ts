@@ -132,6 +132,15 @@ describe("plant.grown", () => {
     expect(direct.triangles).toBe(fromCache.triangles);
   });
 
+  test("a snag dead for years has no leaves and stands shorter than the tree it was", () => {
+    const generator = createPlantGrownGenerator(createPlantCache());
+    const living = runGenerator(generator, { ...params, age: 40 });
+    const snag = runGenerator(generator, { ...params, age: 40, deadYears: 15 });
+    expect(snag.leaves.positions.length).toBe(0);
+    expect(snag.structureHash).not.toBe(living.structureHash);
+    expect(snag.stats.heightM).toBeLessThan(living.stats.heightM);
+  });
+
   test("detail picks the mesh level from one structure", () => {
     const generator = createPlantGrownGenerator(createPlantCache());
     expect(generator.output).toBe(PLANT_MESH_OUTPUT);
@@ -150,9 +159,9 @@ describe("plant grow workers", () => {
     if (grower === null) return;
     try {
       const requests = [
-        { species: ACER_SACCHARUM, env: OPEN_TEMPERATE_SITE, seed: "w1", age: 30, day: 200 },
-        { species: PINUS_STROBUS, env: OPEN_TEMPERATE_SITE, seed: "w2", age: 20, day: 30 },
-        { species: ACER_SACCHARUM, env: { ...OPEN_TEMPERATE_SITE, light: 0.4 }, seed: "w3", age: 12, day: 120 },
+        { species: ACER_SACCHARUM, env: OPEN_TEMPERATE_SITE, seed: "w1", age: 30, day: 200, deadYears: 0 },
+        { species: PINUS_STROBUS, env: OPEN_TEMPERATE_SITE, seed: "w2", age: 20, day: 30, deadYears: 0 },
+        { species: ACER_SACCHARUM, env: { ...OPEN_TEMPERATE_SITE, light: 0.4 }, seed: "w3", age: 12, day: 120, deadYears: 0 },
       ];
       const order = { style: DEFAULT_PLANT_STYLE, detail: 0.25 };
       const results = await Promise.all(requests.map((request, index) => grower.grow(request, index === 0 ? order : undefined)));
@@ -175,7 +184,7 @@ describe("plant grow workers", () => {
         }
       });
       expect(grower.state()).toEqual({ queued: 0, running: 0, workers: 0 });
-      const cancelled = grower.grow({ species: ACER_SACCHARUM, env: OPEN_TEMPERATE_SITE, seed: "w4", age: 40, day: 200 });
+      const cancelled = grower.grow({ species: ACER_SACCHARUM, env: OPEN_TEMPERATE_SITE, seed: "w4", age: 40, day: 200, deadYears: 0 });
       grower.reset();
       await expect(cancelled).rejects.toThrow("reset");
       expect(grower.state()).toEqual({ queued: 0, running: 0, workers: 0 });
