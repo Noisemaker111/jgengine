@@ -1,7 +1,9 @@
 // @skill jgengine-world
 import type { CachedPlantStructure } from "../cache/plantCache";
-import { decodePlantStructure } from "../cache/plantCodec";
+import { decodePlantMesh, decodePlantStructure } from "../cache/plantCodec";
 import type { PlantEnvironment } from "../growth/plantEnvironment";
+import { hasPlantLeafAtlas, keepPlantLeafAtlas, plantLeafAtlasKey, type PlantLeafAtlas } from "../mesh/plantLeafAtlas";
+import type { PlantMesh, PlantStyle } from "../mesh/plantMesh";
 import type { PlantSpecies } from "../species/plantSpecies";
 
 /**
@@ -16,9 +18,22 @@ export interface PlantGrowRequest {
   day: number;
 }
 
+/** A mesh to build where the plant grows: the style and generator detail it is drawn at. */
+export interface PlantMeshOrder {
+  style: PlantStyle;
+  detail: number;
+}
+
+/** A grown plant, with its mesh when one was ordered. */
+export interface PlantGrowResult {
+  grown: CachedPlantStructure;
+  mesh: PlantMesh | null;
+}
+
 /** Grows plants somewhere other than the caller's frame and hands back their structure. */
 export interface PlantGrower {
-  grow(request: PlantGrowRequest): Promise<CachedPlantStructure>;
+  /** Grow a plant and, with `mesh`, build that mesh of it in the same place. */
+  grow(request: PlantGrowRequest, mesh?: PlantMeshOrder): Promise<PlantGrowResult>;
   /** Stop every worker; pending growth rejects. */
   dispose(): void;
 }
@@ -27,10 +42,13 @@ export interface PlantGrower {
 export interface PlantGrowJob {
   id: number;
   request: PlantGrowRequest;
+  mesh: PlantMeshOrder | null;
+  /** Also bake the leaf atlas of the plant's leaf shape, the first time this pool meets that shape. */
+  atlas: boolean;
 }
 
-/** @internal A worker's answer: the grown structure as codec bytes, or why it failed. */
-export type PlantGrowReply = { id: number; bytes: Uint8Array } | { id: number; error: string };
+/** @internal A worker's answer: the grown structure (and mesh) as codec bytes, or why it failed. */
+export type PlantGrowReply = { id: number; bytes: Uint8Array; meshBytes: Uint8Array | null; atlas: PlantLeafAtlas | null } | { id: number; error: string };
 
 /** @internal */
 export function isPlantGrowJob(value: unknown): value is PlantGrowJob {
@@ -39,7 +57,8 @@ export function isPlantGrowJob(value: unknown): value is PlantGrowJob {
 
 function isPlantGrowReply(value: unknown): value is PlantGrowReply {
   if (typeof value !== "object" || value === null || !("id" in value) || typeof value.id !== "number") return false;
-  return ("bytes" in value && value.bytes instanceof Uint8Array) || ("error" in value && typeof value.error === "string");
+  if ("error" in value) return typeof value.error === "string";
+  return "bytes" in value && value.bytes instanceof Uint8Array && "meshBytes" in value && (value.meshBytes === null || value.meshBytes instanceof Uint8Array) && "atlas" in value;
 }
 
 /** Options for {@link createWorkerPlantGrower}. */
@@ -52,7 +71,7 @@ export interface WorkerPlantGrowerOptions {
 
 interface Pending {
   job: PlantGrowJob;
-  resolve: (grown: CachedPlantStructure) => void;
+  resolve: (result: PlantGrowResult) => void;
   reject: (error: Error) => void;
 }
 
@@ -79,6 +98,9 @@ export function createWorkerPlantGrower(options: WorkerPlantGrowerOptions = {}):
   const busy = new Map<Worker, Pending>();
   const idle: Worker[] = [];
   let nextId = 1;
+  // Leaf shapes some job is baking an atlas for: each shape is baked once, and every other leafy
+  // mesh of that shape is handed back only once its atlas is here, so the main thread never bakes it.
+  const atlasesOrdered = new Map<string, Promise<unknown>>();
 
   function fail(worker: Worker, error: Error): void {
     const pending = busy.get(worker);
@@ -98,7 +120,9 @@ export function createWorkerPlantGrower(options: WorkerPlantGrowerOptions = {}):
       if ("error" in reply) pending.reject(new Error(`plant grow worker: ${reply.error}`));
       else {
         try {
-          pending.resolve(decodePlantStructure(reply.bytes));
+          const grown = decodePlantStructure(reply.bytes);
+          if (reply.atlas !== null) keepPlantLeafAtlas(grown.structure.leafShape, reply.atlas);
+          pending.resolve({ grown, mesh: reply.meshBytes === null ? null : decodePlantMesh(reply.meshBytes) });
         } catch (error) {
           pending.reject(error instanceof Error ? error : new Error(String(error)));
         }
@@ -129,12 +153,23 @@ export function createWorkerPlantGrower(options: WorkerPlantGrowerOptions = {}):
   }
 
   return {
-    grow(request) {
-      return new Promise<CachedPlantStructure>((resolve, reject) => {
-        queue.push({ job: { id: nextId, request }, resolve, reject });
+    grow(request, mesh) {
+      const shape = request.species.leaf.shape;
+      const leafy = mesh?.style.foliage === "leaves" && !hasPlantLeafAtlas(shape);
+      const key = plantLeafAtlasKey(shape);
+      const ordered = leafy ? atlasesOrdered.get(key) : undefined;
+      const result = new Promise<PlantGrowResult>((resolve, reject) => {
+        queue.push({ job: { id: nextId, request, mesh: mesh ?? null, atlas: leafy && ordered === undefined }, resolve, reject });
         nextId += 1;
         pump();
       });
+      if (!leafy) return result;
+      if (ordered === undefined) {
+        // Settles either way: if this job fails, whoever waited bakes the atlas itself.
+        atlasesOrdered.set(key, result.catch(() => undefined));
+        return result;
+      }
+      return Promise.all([result, ordered]).then(([grown]) => grown);
     },
     dispose() {
       for (const pending of queue.splice(0)) pending.reject(new Error("plant grower disposed"));

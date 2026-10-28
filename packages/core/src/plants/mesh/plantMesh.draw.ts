@@ -5,7 +5,7 @@ import { toonRampKey } from "@jgengine/core/material/toonRamp";
 import { toonRampMaterial, toonRampTexture } from "@jgengine/core/material/toonRamp.draw";
 import { natureGeometry, natureMaterial } from "@jgengine/core/nature/natureMesh.draw";
 import type { LeafShapeParams } from "../species/plantSpecies";
-import { bakePlantLeafAtlas, plantLeafAtlasKey } from "./plantLeafAtlas";
+import { plantLeafAtlas, plantLeafAtlasKey } from "./plantLeafAtlas";
 import type { PlantMesh, PlantMeshLook } from "./plantMesh";
 
 /** Below this atlas alpha a leaf texel is cut away. */
@@ -21,7 +21,7 @@ function leafAtlasTexture(shape: LeafShapeParams): THREE.DataTexture {
   const key = plantLeafAtlasKey(shape);
   const known = atlases.get(key);
   if (known !== undefined) return known;
-  const atlas = bakePlantLeafAtlas(shape);
+  const atlas = plantLeafAtlas(shape);
   const texture = new THREE.DataTexture(atlas.data, atlas.width, atlas.height, THREE.RGBAFormat);
   texture.colorSpace = THREE.SRGBColorSpace;
   texture.magFilter = THREE.LinearFilter;

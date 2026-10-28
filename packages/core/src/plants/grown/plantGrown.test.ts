@@ -147,13 +147,25 @@ describe("plant grow workers", () => {
         { species: PINUS_STROBUS, env: OPEN_TEMPERATE_SITE, seed: "w2", age: 20, day: 30 },
         { species: ACER_SACCHARUM, env: { ...OPEN_TEMPERATE_SITE, light: 0.4 }, seed: "w3", age: 12, day: 120 },
       ];
-      const grown = await Promise.all(requests.map((request) => grower.grow(request)));
+      const order = { style: DEFAULT_PLANT_STYLE, detail: 0.25 };
+      const results = await Promise.all(requests.map((request, index) => grower.grow(request, index === 0 ? order : undefined)));
       requests.forEach((request, index) => {
         const growth = createPlantGrowth(request.species, request.env, request.seed);
         growth.step(request.age);
         const structure = growth.structure(request.day);
-        expect(grown[index]?.hash).toBe(hashPlantStructure(structure));
-        expect(hashPlantStructure(grown[index]?.structure ?? structure)).toBe(hashPlantStructure(structure));
+        const hash = hashPlantStructure(structure);
+        const result = results[index];
+        expect(result?.grown.hash).toBe(hash);
+        expect(hashPlantStructure(result?.grown.structure ?? structure)).toBe(hash);
+        if (index === 0) {
+          // A mesh built in the worker is the mesh the main thread builds.
+          const local = buildPlantMesh({ structure, style: order.style, detail: order.detail, structureHash: hash });
+          const remote = result?.mesh;
+          expect(remote).not.toBeNull();
+          if (remote) expect(Buffer.from(encodePlantMesh(remote)).equals(Buffer.from(encodePlantMesh(local)))).toBe(true);
+        } else {
+          expect(result?.mesh).toBeNull();
+        }
       });
     } finally {
       grower.dispose();

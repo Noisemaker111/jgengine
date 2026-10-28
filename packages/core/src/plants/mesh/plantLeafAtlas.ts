@@ -264,3 +264,29 @@ export function bakePlantLeafAtlas(shape: LeafShapeParams, cellPx = 128): PlantL
 export function plantLeafAtlasKey(shape: LeafShapeParams): string {
   return `${shape.kind}/${shape.lobes}/${shape.lobeDepth}/${shape.aspect}/${shape.petioleFraction}`;
 }
+
+const bakedAtlases = new Map<string, PlantLeafAtlas>();
+
+/**
+ * The leaf atlas of a shape at the default size, baked once per shape and kept; an atlas a worker
+ * baked ({@link keepPlantLeafAtlas}) is used as is.
+ * @capability plant-mesh turn a grown plant into a styled mesh at four detail levels within fixed triangle budgets
+ */
+export function plantLeafAtlas(shape: LeafShapeParams): PlantLeafAtlas {
+  const key = plantLeafAtlasKey(shape);
+  const known = bakedAtlases.get(key);
+  if (known !== undefined) return known;
+  const atlas = bakePlantLeafAtlas(shape);
+  bakedAtlases.set(key, atlas);
+  return atlas;
+}
+
+/** True once a shape's atlas is baked or kept here. */
+export function hasPlantLeafAtlas(shape: LeafShapeParams): boolean {
+  return bakedAtlases.has(plantLeafAtlasKey(shape));
+}
+
+/** Keep an atlas baked elsewhere (a worker) so {@link plantLeafAtlas} does not bake it again. */
+export function keepPlantLeafAtlas(shape: LeafShapeParams, atlas: PlantLeafAtlas): void {
+  bakedAtlases.set(plantLeafAtlasKey(shape), atlas);
+}

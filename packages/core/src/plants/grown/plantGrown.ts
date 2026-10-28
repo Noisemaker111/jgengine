@@ -18,7 +18,7 @@ import { ACER_SACCHARUM } from "../species/data/acerSaccharum";
 import { PINUS_STROBUS } from "../species/data/pinusStrobus";
 import { plantSpeciesById, registerPlantSpecies, type PlantSpecies } from "../species/plantSpecies";
 import { hashPlantStructure } from "../structure/plantStructure";
-import { createWorkerPlantGrower, type PlantGrower, type PlantGrowRequest } from "./plantGrowPool";
+import { createWorkerPlantGrower, type PlantGrower, type PlantGrowRequest, type PlantGrowResult, type PlantMeshOrder } from "./plantGrowPool";
 
 /** The generator output family a grown plant returns: a {@link PlantMesh}. */
 export const PLANT_MESH_OUTPUT = "plant-mesh";
@@ -173,11 +173,11 @@ export interface PlantGrownGeneratorOptions {
 export function createPlantGrownGenerator(cache: PlantCache, options: PlantGrownGeneratorOptions = {}) {
   const growing = new Map<string, Promise<CachedPlantStructure>>();
   let grower: PlantGrower | null | undefined = options.grower;
-  const growOffFrame = async (request: PlantGrowRequest): Promise<CachedPlantStructure> => {
+  const growOffFrame = async (request: PlantGrowRequest, order: PlantMeshOrder): Promise<PlantGrowResult> => {
     grower ??= createWorkerPlantGrower();
     if (grower !== null) {
       try {
-        return await grower.grow(request);
+        return await grower.grow(request, order);
       } catch (error) {
         // A platform that cannot run the worker grows in frame slices from now on.
         console.warn("[jgengine] plant worker unavailable, growing on the main thread", error);
@@ -185,24 +185,7 @@ export function createPlantGrownGenerator(cache: PlantCache, options: PlantGrown
         grower = null;
       }
     }
-    return runSliced(growJob(request), { budgetMs: GROW_SLICE_MS }).done;
-  };
-  const structureFor = async (request: PlantGrowRequest): Promise<CachedPlantStructure> => {
-    const key = plantStructureKey(request);
-    const stored = await cache.loadStructure(key);
-    if (stored !== undefined) return stored;
-    const pending = growing.get(key);
-    if (pending !== undefined) return pending;
-    const run = growOffFrame(request).then((grown) => {
-      cache.putStructure(key, grown);
-      return grown;
-    });
-    growing.set(key, run);
-    try {
-      return await run;
-    } finally {
-      growing.delete(key);
-    }
+    return { grown: await runSliced(growJob(request), { budgetMs: GROW_SLICE_MS }).done, mesh: null };
   };
   const meshFrom = (key: string, grown: CachedPlantStructure, style: PlantStyle, lod: number): PlantMesh => {
     const mesh = buildPlantMesh({ structure: grown.structure, style, detail: PLANT_MESH_LODS[lod] ?? 1, structureHash: grown.hash });
@@ -222,7 +205,24 @@ export function createPlantGrownGenerator(cache: PlantCache, options: PlantGrown
       const structureKey = plantStructureKey(request);
       const key = meshKey(structureKey, style, lod);
       if ((await cache.loadMesh(key)) !== undefined) return;
-      meshFrom(key, await structureFor(request), style, lod);
+      const stored = (await cache.loadStructure(structureKey)) ?? (await growing.get(structureKey));
+      if (stored !== undefined) {
+        meshFrom(key, stored, style, lod);
+        return;
+      }
+      // Nothing grown yet: grow it and build this mesh in one go, off the main thread where possible.
+      const run = growOffFrame(request, { style, detail: PLANT_MESH_LODS[lod] ?? 1 });
+      const structure = run.then((result) => result.grown);
+      structure.catch(() => undefined);
+      growing.set(structureKey, structure);
+      try {
+        const { grown, mesh } = await run;
+        cache.putStructure(structureKey, grown);
+        if (mesh === null) meshFrom(key, grown, style, lod);
+        else cache.putMesh(key, mesh);
+      } finally {
+        growing.delete(structureKey);
+      }
     },
     generate(params, context): PlantMesh {
       const request = growRequest(params, context);
